@@ -1,0 +1,44 @@
+---
+Language: Cpp
+BasedOnStyle: Google
+ColumnLimit: 0
+AlignAfterOpenBracket: Align
+AlignConsecutiveAssignments: AcrossComments
+AlignConsecutiveDeclarations: AcrossComments
+AlignConsecutiveMacros: AcrossComments
+AlignEscapedNewlines: Right
+AlignOperands: true
+AlignTrailingComments: true
+AllowAllArgumentsOnNextLine: true      # Changed to true
+AllowAllParametersOfDeclarationOnNextLine: true  # Changed to true
+AllowShortBlocksOnASingleLine: Empty
+AllowShortCaseLabelsOnASingleLine: false
+AllowShortFunctionsOnASingleLine: Empty
+AllowShortIfStatementsOnASingleLine: Never
+AllowShortLoopsOnASingleLine: false
+AlwaysBreakAfterReturnType: None
+AlwaysBreakTemplateDeclarations: No    # Changed to No
+BinPackArguments: true                 # Changed to true
+BinPackParameters: true                # Changed to true
+BreakBeforeBraces: Allman              # Optional: consider Attach
+IndentWidth: 2
+TabWidth: 2
+UseTab: Never
+PointerAlignment: Left
+SpaceAfterCStyleCast: true
+SpaceAfterLogicalNot: false
+SpaceAfterTemplateKeyword: true
+SpaceBeforeAssignmentOperators: true
+SpaceBeforeCpp11BracedList: true
+SpaceBeforeCtorInitializerColon: true
+SpaceBeforeInheritanceColon: true
+SpaceBeforeParens: ControlStatements
+SpaceBeforeRangeBasedForLoopColon: true
+SpaceInEmptyParentheses: false
+SpacesInAngles: false
+SpacesInCStyleCastParentheses: false
+SpacesInContainerLiterals: false
+SpacesInParentheses: false
+SpacesInSquareBrackets: false
+AlignArrayOfStructures: Right
+DerivePointerAlignment: false
