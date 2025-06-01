@@ -49,12 +49,23 @@ Ensure the following dependencies are installed:
     - Add exception support:
         - CMAKE_CXX_FLAGS -fexceptions
         - CMAKE_EXE_LINKER_FLAGS -fexceptions
-- Configure the project with Emscripten:
-    E.G. `emcmake cmake .. -DOpenCASCADE_DIR=C:\src\OCCT-7_9_0_em_install\lib\cmake\opencascade`
-    If you have `ninja` `emcmake cmake .. -G Ninja -DOpenCASCADE_DIR=C:\src\OCCT-7_9_0_em_install\lib\cmake\opencascade`
+- Configure the EsyCad project with Emscripten:
+    - `mkdir build_em`
+    - `emcmake cmake .. -DOpenCASCADE_DIR=C:\src\OCCT-7_9_0_em_install\lib\cmake\opencascade`
+    - If you have ninja:
+        - Debug: 
+            1. `emcmake cmake .. -G Ninja -DOpenCASCADE_DIR=C:\src\OCCT-7_9_0_em_install\lib\cmake\opencascade -DCMAKE_BUILD_TYPE=Debug`
+            2. `ninja`
+            3. At time of writing approx 50mb `EsyCas.wasm` file.
+            4.
+        - Release: 
+            1. `emcmake cmake .. -G Ninja -DOpenCASCADE_DIR=C:\src\OCCT-7_9_0_em_install\lib\cmake\opencascade -DCMAKE_BUILD_TYPE=Release` 
+            2. `ninja`
+            3. At time of writing approx 19mb `EsyCas.wasm` file.
     
 - Build the project:
-- Serve the WebAssembly build locally: `python.exe -m http.server 8000`
+- Serve the WebAssembly: `python.exe -m http.server 8000`
+- Or build and serve: `ninja && python.exe -m http.server 8000`
 - ImGUI in `third_party` has been modified as explained in:
   https://github.com/ocornut/imgui/issues/7519#issuecomment-2629628233 to improve font rendering.
 

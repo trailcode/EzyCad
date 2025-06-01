@@ -199,6 +199,15 @@ if(CMAKE_CXX_COMPILER_ID STREQUAL "Emscripten")
         ${imguiImplSrcs}
         third_party/tinyfiledialogs/tinyfiledialogs.c)
 
+    # Copy EzyCad.html to the build directory for Emscripten
+    add_custom_command(
+        TARGET ${PROJECT_NAME} POST_BUILD
+        COMMAND ${CMAKE_COMMAND} -E copy_if_different
+            ${CMAKE_SOURCE_DIR}/web/EzyCad.html
+            $<TARGET_FILE_DIR:${PROJECT_NAME}>/EzyCad.html
+        COMMENT "Copying EzyCad.html to build directory"
+    )
+
     target_link_libraries(
         ${PROJECT_NAME}
         ${OpenCASCADE_LIBS})
