@@ -320,14 +320,6 @@ source_group("imgui" FILES ${imguiSrc})
 source_group("src" FILES ${srcs})
 source_group("web" FILES ${WEB_FILES})
 
-# Use the file command to glob or list the .clang-format file
-file(GLOB CONFIG_FILES "${CMAKE_SOURCE_DIR}/.clang-format")
-
-# Add a custom target to include the .clang-format file in the project
-add_custom_target(ClangFormat ALL
-    SOURCES ${CONFIG_FILES}
-)
-
 # Add README to VS solution
 if(MSVC)
     # Create a source group for documentation files
