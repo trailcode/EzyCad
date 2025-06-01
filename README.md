@@ -15,25 +15,27 @@ user interface for CAD operations.
 
 ### Prerequisites  
 Ensure the following dependencies are installed:  
-- CMake (minimum version 3.14.0)  
+- CMake (minimum version 3.14.0)
+- Nuget command line utility
 - A C++20 compatible compiler (e.g., MSVC, GCC, or Clang)  
 - OpenGL development libraries  
-- Open CASCADE Technology (OCCT 7.9.0) https://github.com/Open-Cascade-SAS/OCCT
+- Open CASCADE Technology (OCCT 7.9.1) https://github.com/Open-Cascade-SAS/OCCT
 
 ### OCCT Build
+
 #### For VS2022
-1. Create a build dir, e.g.: `C:\src\OCCT-7_9_0_build`
-2. In this dir, run `cmake-gui` from the: x86 Native Tools Command Prompt for VS 2022
-3. Press `Configure`
-3. Set `3RDPARTY_DIR` equal to unzipped of: https://github.com/Open-Cascade-SAS/OCCT/releases/download/V7_9_0/3rdparty-vc14-64.zip
-4. Press `Configure`, then `Generate`
-5. In the `cmd` window: `ninja`
+* See: https://dev.opencascade.org/doc/overview/html/build_upgrade__building_occt.html
+* Currently building EzyCad has only been tested with the Release build of OCCT.
+* Or download pre-build binaries: https://github.com/Open-Cascade-SAS/OCCT/releases/tag/V7_9_1
 
 ### Steps to Build  
 1. Clone the repository:
 2. Create a build directory:
-3. Configure the project using CMake:
-    E.G. `cmake .. -DOpenCASCADE_DIR=C:\src\OCCT-7_9_0_install\cmake`
+    E.G. `C:\src\EzyCad_build`
+3. Configure the project in the build directory using CMake:
+    - E.G. `cmake C:\src\EzyCad -DOpenCASCADE_DIR=C:\bin\OCCT-7_9_1_install\cmake -DFREETYPE_BIN_DIR=C:\bin\3rdparty-vc14-64\freetype-2.13.3-x64\bin`
+    - `FREETYPE_BIN_DIR` should point to FreeType inside the OCCT 3rdparty distribution.
+    - Cmake will use `nuget` to download dependices.
 4. Build the project
 
 ### Notes for Windows Users  

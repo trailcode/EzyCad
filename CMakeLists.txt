@@ -83,7 +83,6 @@ add_library(${PROJECT_NAME}_lib ${App_SRCS} ${imguiImplSrcs} third_party/tinyfil
 find_package(OpenCASCADE REQUIRED NO_DEFAULT_PATH)
 if(OpenCASCADE_FOUND)
   message (STATUS "Using OpenCASCADE from \"${OpenCASCADE_DIR}\"" )
-  message (STATUS "Using l OpenCASCADE from \"${OpenCASCADE_LIBRARY_DIR}\"" )
   
   INCLUDE_DIRECTORIES(${PROJECT_NAME} ${OpenCASCADE_INCLUDE_DIR})
   LINK_DIRECTORIES(${PROJECT_NAME} ${OpenCASCADE_LIBRARY_DIR})
@@ -267,7 +266,7 @@ else()
           ${OpenCASCADE_BINARY_DIR}/TKBool.dll
           ${OpenCASCADE_BINARY_DIR}/TKXSBase.dll
           ${OpenCASCADE_BINARY_DIR}/TKDE.dll
-          C:/src/3rdparty-vc14-64/freetype-2.13.3-x64/bin/freetype.dll
+          ${FREETYPE_BIN_DIR}/freetype.dll
       )
       foreach(lib ${OpenCASCADE_LIBS})
         list(APPEND DLLS_COMMON ${OpenCASCADE_BINARY_DIR}/${lib}.dll)
