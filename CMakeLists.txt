@@ -152,7 +152,7 @@ if(CMAKE_CXX_COMPILER_ID STREQUAL "Emscripten")
             -s EXPORTED_RUNTIME_METHODS=\"['ccall']\" \
             --preload-file ${CMAKE_SOURCE_DIR}/third_party/imgui/fonts/DroidSans.ttf@/DroidSans.ttf \
             --preload-file ${CMAKE_SOURCE_DIR}/imgui.ini@/imgui.ini \
-            --shell-file ${CMAKE_SOURCE_DIR}/shell_minimal.html"
+            --shell-file ${CMAKE_SOURCE_DIR}/web/EzyCad.html"
         )
     else()
         set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS_DEBUG} \
@@ -180,7 +180,7 @@ if(CMAKE_CXX_COMPILER_ID STREQUAL "Emscripten")
             -s EXPORTED_RUNTIME_METHODS=\"['ccall']\" \
             --preload-file ${CMAKE_SOURCE_DIR}/third_party/imgui/fonts/DroidSans.ttf@/DroidSans.ttf \
             --preload-file ${CMAKE_SOURCE_DIR}/imgui.ini@/imgui.ini \
-            --shell-file ${CMAKE_SOURCE_DIR}/shell_minimal.html"
+            --shell-file ${CMAKE_SOURCE_DIR}/web/EzyCad.html"
         )
     endif()
 
@@ -236,12 +236,13 @@ else()
       # Configure MSVC compiler flags
       set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /EHc /MP")
 
-      # Define SDL2 DLL paths for distribution
       set(DLLS_COMMON 
           ${BINARY_DIR}/thirdParty/unofficial-flayan-glew.redist.${GLEW_VERSION}/build/native/bin/x64/dynamic/glew32.dll
           ${BINARY_DIR}/thirdParty/glfw.${GLFW_VERSION}/build/native/bin/dynamic/v142/x64/glfw3.dll
           ${OpenCASCADE_BINARY_DIR}/TKBO.dll
           ${OpenCASCADE_BINARY_DIR}/TKBool.dll
+          ${OpenCASCADE_BINARY_DIR}/TKXSBase.dll
+          ${OpenCASCADE_BINARY_DIR}/TKDE.dll
           C:/src/3rdparty-vc14-64/freetype-2.13.3-x64/bin/freetype.dll
       )
       foreach(lib ${OpenCASCADE_LIBS})
@@ -249,15 +250,17 @@ else()
       endforeach(lib)
       set(FONT_ASSETS ${CMAKE_SOURCE_DIR}/third_party/imgui/fonts/DroidSans.ttf)
       
+      set(CONFIG_ASSETS ${CMAKE_SOURCE_DIR}/imgui.ini)
+
       # Copy DLLs and assets to Release configurations
-      foreach(file ${DLLS_RELEASE} ${DLLS_COMMON} ${FONT_ASSETS} ${ICON_ASSETS})
+      foreach(file ${DLLS_RELEASE} ${DLLS_COMMON} ${FONT_ASSETS} ${ICON_ASSETS} ${CONFIG_ASSETS})
         file(COPY "${file}" DESTINATION "${CMAKE_CURRENT_BINARY_DIR}/Release")
         file(COPY "${file}" DESTINATION "${CMAKE_CURRENT_BINARY_DIR}/RelWithDebInfo")
         file(COPY "${file}" DESTINATION "${CMAKE_CURRENT_BINARY_DIR}/MinSizeRel")
       endforeach(file)
       
       # Copy DLLs and assets to Debug configuration
-      foreach(file ${DLLS_DEBUG} ${DLLS_COMMON} ${FONT_ASSETS} ${ICON_ASSETS})
+      foreach(file ${DLLS_DEBUG} ${DLLS_COMMON} ${FONT_ASSETS} ${ICON_ASSETS} ${CONFIG_ASSETS})
           file(COPY "${file}" DESTINATION "${CMAKE_CURRENT_BINARY_DIR}/Debug")
       endforeach(file)
 
