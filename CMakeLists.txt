@@ -94,6 +94,7 @@ else()
 endif()
 
 file(GLOB ICON_ASSETS "${CMAKE_SOURCE_DIR}/icons/*.png")
+file(GLOB WEB_FILES "${CMAKE_SOURCE_DIR}/web/EzyCad.html")
 
 set(OpenCASCADE_LIBS
     TKFillet
@@ -211,6 +212,20 @@ if(CMAKE_CXX_COMPILER_ID STREQUAL "Emscripten")
     target_link_libraries(
         ${PROJECT_NAME}
         ${OpenCASCADE_LIBS})
+
+    target_sources(${PROJECT_NAME} PRIVATE ${WEB_FILES})
+
+    # Add web/EzyCad.html to a "web" filter in the IDE
+    file(GLOB WEB_FILES "${CMAKE_SOURCE_DIR}/web/EzyCad.html")
+    set(WEB_FILES_REL)
+    foreach(f ${WEB_FILES})
+        file(RELATIVE_PATH f_rel "${CMAKE_SOURCE_DIR}" "${f}")
+        list(APPEND WEB_FILES_REL "${f_rel}")
+    endforeach()
+    source_group("web" FILES ${WEB_FILES_REL})
+
+    # Add to target sources (so it appears in the IDE)
+    target_sources(${PROJECT_NAME} PRIVATE ${WEB_FILES_REL})
 else()
 
     list(APPEND OpenCASCADE_LIBS TKOpenGl)
@@ -268,6 +283,7 @@ else()
         file(COPY "${file}" DESTINATION "${CMAKE_CURRENT_BINARY_DIR}/MinSizeRel")
       endforeach(file)
       
+
       # Copy DLLs and assets to Debug configuration
       foreach(file ${DLLS_DEBUG} ${DLLS_COMMON} ${FONT_ASSETS} ${ICON_ASSETS} ${CONFIG_ASSETS})
           file(COPY "${file}" DESTINATION "${CMAKE_CURRENT_BINARY_DIR}/Debug")
@@ -302,6 +318,7 @@ target_link_libraries(${PROJECT_NAME} ${OPENGL_LIBRARIES} ${OPENGL_gl_LIBRARY})
 
 source_group("imgui" FILES ${imguiSrc})
 source_group("src" FILES ${srcs})
+source_group("web" FILES ${WEB_FILES})
 
 # Use the file command to glob or list the .clang-format file
 file(GLOB CONFIG_FILES "${CMAKE_SOURCE_DIR}/.clang-format")
@@ -365,3 +382,13 @@ if(NOT CMAKE_CXX_COMPILER_ID STREQUAL "Emscripten")
     include(GoogleTest)
     gtest_discover_tests(${PROJECT_NAME}_tests)
 endif()
+
+# After add_executable(${PROJECT_NAME} ...)
+file(GLOB WEB_FILES "${CMAKE_SOURCE_DIR}/web/EzyCad.html")
+set(WEB_FILES_REL)
+foreach(f ${WEB_FILES})
+    file(RELATIVE_PATH f_rel "${CMAKE_SOURCE_DIR}" "${f}")
+    list(APPEND WEB_FILES_REL "${f_rel}")
+endforeach()
+source_group("web" FILES ${WEB_FILES_REL})
+target_sources(${PROJECT_NAME} PRIVATE ${WEB_FILES_REL})
