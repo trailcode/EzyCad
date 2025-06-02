@@ -1,3 +1,5 @@
+[🚀 Try EzyCad in your browser! (WebAssembly version) 🚀](https://trailcode.github.io/EzyCad/EzyCad.html)
+
 # EzyCad  
 
 EzyCad (Easy CAD) is a modern CAD (Computer-Aided Design) application designed for
