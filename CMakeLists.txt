@@ -266,8 +266,17 @@ else()
           ${OpenCASCADE_BINARY_DIR}/TKBool.dll
           ${OpenCASCADE_BINARY_DIR}/TKXSBase.dll
           ${OpenCASCADE_BINARY_DIR}/TKDE.dll
-          ${FREETYPE_BIN_DIR}/freetype.dll
+          ${OCCT_3RD_PARTY_DIR}/freetype-2.13.3-x64/bin/freetype.dll
+          ${OCCT_3RD_PARTY_DIR}/freeimage-3.18.0-x64/bin/FreeImage.dll
+          ${OCCT_3RD_PARTY_DIR}/openvr-1.14.15-64/bin/win64/openvr_api.dll
+          ${OCCT_3RD_PARTY_DIR}/ffmpeg-3.3.4-64/bin/avcodec-57.dll
+          ${OCCT_3RD_PARTY_DIR}/ffmpeg-3.3.4-64/bin/avformat-57.dll
+          ${OCCT_3RD_PARTY_DIR}/ffmpeg-3.3.4-64/bin/avutil-55.dll
+          ${OCCT_3RD_PARTY_DIR}/ffmpeg-3.3.4-64/bin/swscale-4.dll
+          ${OCCT_3RD_PARTY_DIR}/tbb-2021.13.0-x64/bin/tbb12.dll
+          ${OCCT_3RD_PARTY_DIR}/jemalloc-vc14-64/bin/jemalloc.dll
       )
+
       foreach(lib ${OpenCASCADE_LIBS})
         list(APPEND DLLS_COMMON ${OpenCASCADE_BINARY_DIR}/${lib}.dll)
       endforeach(lib)

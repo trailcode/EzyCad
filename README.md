@@ -25,6 +25,7 @@ Ensure the following dependencies are installed:
 
 #### For VS2022
 * See: https://dev.opencascade.org/doc/overview/html/build_upgrade__building_occt.html
+* OCCT 3rd-party binaries: https://github.com/Open-Cascade-SAS/OCCT/releases/download/V7_9_1/3rdparty-vc14-64.zip
 * Currently building EzyCad has only been tested with the Release build of OCCT.
 * Or download pre-build binaries: https://github.com/Open-Cascade-SAS/OCCT/releases/tag/V7_9_1
 
@@ -33,9 +34,9 @@ Ensure the following dependencies are installed:
 2. Create a build directory:
     E.G. `C:\src\EzyCad_build`
 3. Configure the project in the build directory using CMake:
-    - E.G. `cmake C:\src\EzyCad -DOpenCASCADE_DIR=C:\bin\OCCT-7_9_1_install\cmake -DFREETYPE_BIN_DIR=C:\bin\3rdparty-vc14-64\freetype-2.13.3-x64\bin`
-    - `FREETYPE_BIN_DIR` should point to FreeType inside the OCCT 3rdparty distribution.
-    - Cmake will use `nuget` to download dependices.
+    - E.G. `cmake C:\src\EzyCad -DOpenCASCADE_DIR=C:\bin\OCCT-7_9_1_install\cmake -DOCCT_3RD_PARTY_DIR=C:\bin\3rdparty-vc14-64`
+    - `OCCT_3RD_PARTY_DIR` should point to the OCCT 3rdparty distribution.
+    - Cmake will use `nuget` to download additional dependices.
 4. Build the project
 
 ### Notes for Windows Users  
@@ -59,7 +60,6 @@ Ensure the following dependencies are installed:
             1. `emcmake cmake .. -G Ninja -DOpenCASCADE_DIR=C:\src\OCCT-7_9_0_em_install\lib\cmake\opencascade -DCMAKE_BUILD_TYPE=Debug`
             2. `ninja`
             3. At time of writing approx 50mb `EsyCas.wasm` file.
-            4.
         - Release: 
             1. `emcmake cmake .. -G Ninja -DOpenCASCADE_DIR=C:\src\OCCT-7_9_0_em_install\lib\cmake\opencascade -DCMAKE_BUILD_TYPE=Release` 
             2. `ninja`
