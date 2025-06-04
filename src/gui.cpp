@@ -570,19 +570,15 @@ void GUI::options_normal_mode_()
 
 void GUI::options_move_mode_()
 {
-  ImGui::TextUnformatted("Move constrain axis:");
+  ImGui::TextUnformatted("Move axis:");
 
-  static bool move_constrain_x = false;
-  static bool move_constrain_y = false;
-  static bool move_constrain_z = false;
+  Move_options& opts = m_view->shp_move().get_opts();
 
-  if (ImGui::Checkbox("X", &move_constrain_x))
-    int hi = 0;
-
+  ImGui::Checkbox("X", &opts.axis_x);
   ImGui::SameLine();
-  ImGui::Checkbox("Y", &move_constrain_y);
+  ImGui::Checkbox("Y", &opts.axis_y);
   ImGui::SameLine();
-  ImGui::Checkbox("Z", &move_constrain_z);
+  ImGui::Checkbox("Z", &opts.axis_z);
 }
 
 void GUI::options_sketch_operation_axis_mode_()

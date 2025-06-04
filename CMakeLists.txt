@@ -83,7 +83,6 @@ add_library(${PROJECT_NAME}_lib ${App_SRCS} ${imguiImplSrcs} third_party/tinyfil
 find_package(OpenCASCADE REQUIRED NO_DEFAULT_PATH)
 if(OpenCASCADE_FOUND)
   message (STATUS "Using OpenCASCADE from \"${OpenCASCADE_DIR}\"" )
-  message (STATUS "Using l OpenCASCADE from \"${OpenCASCADE_LIBRARY_DIR}\"" )
   
   INCLUDE_DIRECTORIES(${PROJECT_NAME} ${OpenCASCADE_INCLUDE_DIR})
   LINK_DIRECTORIES(${PROJECT_NAME} ${OpenCASCADE_LIBRARY_DIR})
@@ -94,6 +93,7 @@ else()
 endif()
 
 file(GLOB ICON_ASSETS "${CMAKE_SOURCE_DIR}/icons/*.png")
+file(GLOB WEB_FILES "${CMAKE_SOURCE_DIR}/web/EzyCad.html")
 
 set(OpenCASCADE_LIBS
     TKFillet
@@ -152,7 +152,7 @@ if(CMAKE_CXX_COMPILER_ID STREQUAL "Emscripten")
             -s EXPORTED_RUNTIME_METHODS=\"['ccall']\" \
             --preload-file ${CMAKE_SOURCE_DIR}/third_party/imgui/fonts/DroidSans.ttf@/DroidSans.ttf \
             --preload-file ${CMAKE_SOURCE_DIR}/imgui.ini@/imgui.ini \
-            --shell-file ${CMAKE_SOURCE_DIR}/shell_minimal.html"
+            --shell-file ${CMAKE_SOURCE_DIR}/web/EzyCad.html"
         )
     else()
         set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS_DEBUG} \
@@ -180,7 +180,7 @@ if(CMAKE_CXX_COMPILER_ID STREQUAL "Emscripten")
             -s EXPORTED_RUNTIME_METHODS=\"['ccall']\" \
             --preload-file ${CMAKE_SOURCE_DIR}/third_party/imgui/fonts/DroidSans.ttf@/DroidSans.ttf \
             --preload-file ${CMAKE_SOURCE_DIR}/imgui.ini@/imgui.ini \
-            --shell-file ${CMAKE_SOURCE_DIR}/shell_minimal.html"
+            --shell-file ${CMAKE_SOURCE_DIR}/web/EzyCad.html"
         )
     endif()
 
@@ -199,9 +199,32 @@ if(CMAKE_CXX_COMPILER_ID STREQUAL "Emscripten")
         ${imguiImplSrcs}
         third_party/tinyfiledialogs/tinyfiledialogs.c)
 
+    # Copy EzyCad.html to the build directory for Emscripten
+    add_custom_command(
+        TARGET ${PROJECT_NAME} POST_BUILD
+        COMMAND ${CMAKE_COMMAND} -E copy_if_different
+            ${CMAKE_SOURCE_DIR}/web/EzyCad.html
+            $<TARGET_FILE_DIR:${PROJECT_NAME}>/EzyCad.html
+        COMMENT "Copying EzyCad.html to build directory"
+    )
+
     target_link_libraries(
         ${PROJECT_NAME}
         ${OpenCASCADE_LIBS})
+
+    target_sources(${PROJECT_NAME} PRIVATE ${WEB_FILES})
+
+    # Add web/EzyCad.html to a "web" filter in the IDE
+    file(GLOB WEB_FILES "${CMAKE_SOURCE_DIR}/web/EzyCad.html")
+    set(WEB_FILES_REL)
+    foreach(f ${WEB_FILES})
+        file(RELATIVE_PATH f_rel "${CMAKE_SOURCE_DIR}" "${f}")
+        list(APPEND WEB_FILES_REL "${f_rel}")
+    endforeach()
+    source_group("web" FILES ${WEB_FILES_REL})
+
+    # Add to target sources (so it appears in the IDE)
+    target_sources(${PROJECT_NAME} PRIVATE ${WEB_FILES_REL})
 else()
 
     list(APPEND OpenCASCADE_LIBS TKOpenGl)
@@ -236,28 +259,41 @@ else()
       # Configure MSVC compiler flags
       set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /EHc /MP")
 
-      # Define SDL2 DLL paths for distribution
       set(DLLS_COMMON 
           ${BINARY_DIR}/thirdParty/unofficial-flayan-glew.redist.${GLEW_VERSION}/build/native/bin/x64/dynamic/glew32.dll
           ${BINARY_DIR}/thirdParty/glfw.${GLFW_VERSION}/build/native/bin/dynamic/v142/x64/glfw3.dll
           ${OpenCASCADE_BINARY_DIR}/TKBO.dll
           ${OpenCASCADE_BINARY_DIR}/TKBool.dll
-          C:/src/3rdparty-vc14-64/freetype-2.13.3-x64/bin/freetype.dll
+          ${OpenCASCADE_BINARY_DIR}/TKXSBase.dll
+          ${OpenCASCADE_BINARY_DIR}/TKDE.dll
+          ${OCCT_3RD_PARTY_DIR}/freetype-2.13.3-x64/bin/freetype.dll
+          ${OCCT_3RD_PARTY_DIR}/freeimage-3.18.0-x64/bin/FreeImage.dll
+          ${OCCT_3RD_PARTY_DIR}/openvr-1.14.15-64/bin/win64/openvr_api.dll
+          ${OCCT_3RD_PARTY_DIR}/ffmpeg-3.3.4-64/bin/avcodec-57.dll
+          ${OCCT_3RD_PARTY_DIR}/ffmpeg-3.3.4-64/bin/avformat-57.dll
+          ${OCCT_3RD_PARTY_DIR}/ffmpeg-3.3.4-64/bin/avutil-55.dll
+          ${OCCT_3RD_PARTY_DIR}/ffmpeg-3.3.4-64/bin/swscale-4.dll
+          ${OCCT_3RD_PARTY_DIR}/tbb-2021.13.0-x64/bin/tbb12.dll
+          ${OCCT_3RD_PARTY_DIR}/jemalloc-vc14-64/bin/jemalloc.dll
       )
+
       foreach(lib ${OpenCASCADE_LIBS})
         list(APPEND DLLS_COMMON ${OpenCASCADE_BINARY_DIR}/${lib}.dll)
       endforeach(lib)
       set(FONT_ASSETS ${CMAKE_SOURCE_DIR}/third_party/imgui/fonts/DroidSans.ttf)
       
+      set(CONFIG_ASSETS ${CMAKE_SOURCE_DIR}/imgui.ini)
+
       # Copy DLLs and assets to Release configurations
-      foreach(file ${DLLS_RELEASE} ${DLLS_COMMON} ${FONT_ASSETS} ${ICON_ASSETS})
+      foreach(file ${DLLS_RELEASE} ${DLLS_COMMON} ${FONT_ASSETS} ${ICON_ASSETS} ${CONFIG_ASSETS})
         file(COPY "${file}" DESTINATION "${CMAKE_CURRENT_BINARY_DIR}/Release")
         file(COPY "${file}" DESTINATION "${CMAKE_CURRENT_BINARY_DIR}/RelWithDebInfo")
         file(COPY "${file}" DESTINATION "${CMAKE_CURRENT_BINARY_DIR}/MinSizeRel")
       endforeach(file)
       
+
       # Copy DLLs and assets to Debug configuration
-      foreach(file ${DLLS_DEBUG} ${DLLS_COMMON} ${FONT_ASSETS} ${ICON_ASSETS})
+      foreach(file ${DLLS_DEBUG} ${DLLS_COMMON} ${FONT_ASSETS} ${ICON_ASSETS} ${CONFIG_ASSETS})
           file(COPY "${file}" DESTINATION "${CMAKE_CURRENT_BINARY_DIR}/Debug")
       endforeach(file)
 
@@ -290,14 +326,7 @@ target_link_libraries(${PROJECT_NAME} ${OPENGL_LIBRARIES} ${OPENGL_gl_LIBRARY})
 
 source_group("imgui" FILES ${imguiSrc})
 source_group("src" FILES ${srcs})
-
-# Use the file command to glob or list the .clang-format file
-file(GLOB CONFIG_FILES "${CMAKE_SOURCE_DIR}/.clang-format")
-
-# Add a custom target to include the .clang-format file in the project
-add_custom_target(ClangFormat ALL
-    SOURCES ${CONFIG_FILES}
-)
+source_group("web" FILES ${WEB_FILES})
 
 # Add README to VS solution
 if(MSVC)
@@ -353,3 +382,13 @@ if(NOT CMAKE_CXX_COMPILER_ID STREQUAL "Emscripten")
     include(GoogleTest)
     gtest_discover_tests(${PROJECT_NAME}_tests)
 endif()
+
+# After add_executable(${PROJECT_NAME} ...)
+file(GLOB WEB_FILES "${CMAKE_SOURCE_DIR}/web/EzyCad.html")
+set(WEB_FILES_REL)
+foreach(f ${WEB_FILES})
+    file(RELATIVE_PATH f_rel "${CMAKE_SOURCE_DIR}" "${f}")
+    list(APPEND WEB_FILES_REL "${f_rel}")
+endforeach()
+source_group("web" FILES ${WEB_FILES_REL})
+target_sources(${PROJECT_NAME} PRIVATE ${WEB_FILES_REL})

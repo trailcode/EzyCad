@@ -1,9 +1,9 @@
 #pragma once
 
-#include "shp_operation.h"
-
 #include <gp_Pln.hxx>
 #include <optional>
+
+#include "shp_operation.h"
 
 struct Move_options
 {
@@ -19,9 +19,11 @@ class Shp_move : private Shp_operation_base
   Shp_move(Occt_view& view);
 
   [[nodiscard]] Status move_selected(const ScreenCoords& screen_coords);
-  void finalize_move_selected();
-  void cancel_move_selected();
+  void                 finalize_move_selected();
+  void                 cancel_move_selected();
+  Move_options&        get_opts();
 
  private:
-  std::optional<gp_Pln>   m_move_pln;
+  std::optional<gp_Pln> m_move_pln;
+  Move_options          m_opts;
 };

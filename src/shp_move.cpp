@@ -34,14 +34,11 @@ Status Shp_move::move_selected(const ScreenCoords& screen_coords)
   {
     // gp_Pnt center = get_shape_bbox_center(shape->Shape());
     gp_Trsf translation;
-    /*
-    translation.SetTranslation(gp_Vec(pos->X() - center.X(),
-                                      pos->Y() - center.Y(),
-                                      pos->Z() - center.Z()));
-                                      */
-    translation.SetTranslation(gp_Vec(pos->X() - center.X(),
-                                      0,
-                                      0));
+    
+    translation.SetTranslation(gp_Vec(m_opts.axis_x ? pos->X() - center.X() : 0,
+                                      m_opts.axis_y ? pos->Y() - center.Y() : 0,
+                                      m_opts.axis_z ? pos->Z() - center.Z() : 0));
+
     shape->SetLocalTransformation(translation);
     ctx().Redisplay(shape, true);
   }
@@ -58,6 +55,7 @@ void Shp_move::finalize_move_selected()
   for (AIS_Shape_ptr& shape : selected)
     view().bake_transform_into_geometry(shape);
 
+  m_opts = {}; // Reset options;
   gui().set_mode(Mode::Normal);
 }
 
@@ -66,5 +64,11 @@ void Shp_move::cancel_move_selected()
   for (AIS_Shape_ptr& shape : get_selected())
     shape->ResetTransformation();
 
+  m_opts = {};  // Reset options;
   gui().set_mode(Mode::Normal);
+}
+
+Move_options& Shp_move::get_opts()
+{
+  return m_opts;
 }

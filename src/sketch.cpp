@@ -1422,6 +1422,7 @@ void Sketch::set_name(const std::string& name)
 
 gp_Vec2d Sketch::edge_outgoing_dir_(size_t idx_a, size_t idx_b, const Edge& edge) const
 {
+  #if 0
   boost_geom::linestring_2d ls;
   boost_geom::linestring_2d ls2;
   ls.push_back(to_boost(m_nodes[idx_a]));
@@ -1437,7 +1438,7 @@ gp_Vec2d Sketch::edge_outgoing_dir_(size_t idx_a, size_t idx_b, const Edge& edge
     if (!p_end_2d.IsEqual(e, Precision::Confusion()))
     {
       std::tie(od, p_end) = get_out_dir_and_end_pt(Geom_TrimmedCurve_ptr::DownCast(edge.circle_arc->Reversed()));
-      int hi              = 0;
+      int hi = 0;
     }
     auto p = to_2d(m_pln, {od.X(), od.Y(), od.Z()});
     ls2.push_back(to_boost(m_nodes[idx_b]));
@@ -1446,6 +1447,7 @@ gp_Vec2d Sketch::edge_outgoing_dir_(size_t idx_a, size_t idx_b, const Edge& edge
     return gp_Vec2d(p.X(), p.Y());
     int i = 0;
   }
+  #endif
 
   gp_Vec2d ret(m_nodes[idx_a], m_nodes[idx_b]);
   ret.Normalize();
