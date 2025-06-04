@@ -133,6 +133,7 @@ class GUI
   void shape_list_();
   void options_();
   void options_normal_mode_();
+  void options_move_mode_();
   void options_sketch_operation_axis_mode_();
   void options_shape_chamfer_mode_();
   void options_shape_polar_duplicate_mode_();

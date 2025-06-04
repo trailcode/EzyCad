@@ -534,6 +534,7 @@ void GUI::options_()
   switch (get_mode())
   {
     case Mode::Normal:                options_normal_mode_();                 break;
+    case Mode::Move:                  options_move_mode_();                   break;
     case Mode::Sketch_operation_axis: options_sketch_operation_axis_mode_();  break;
     case Mode::Shape_chamfer:         options_shape_chamfer_mode_();          break;
     case Mode::Shape_polar_duplicate: options_shape_polar_duplicate_mode_();  break;
@@ -565,6 +566,23 @@ void GUI::options_normal_mode_()
 
     ImGui::EndCombo();
   }
+}
+
+void GUI::options_move_mode_()
+{
+  ImGui::TextUnformatted("Move constrain axis:");
+
+  static bool move_constrain_x = false;
+  static bool move_constrain_y = false;
+  static bool move_constrain_z = false;
+
+  if (ImGui::Checkbox("X", &move_constrain_x))
+    int hi = 0;
+
+  ImGui::SameLine();
+  ImGui::Checkbox("Y", &move_constrain_y);
+  ImGui::SameLine();
+  ImGui::Checkbox("Z", &move_constrain_z);
 }
 
 void GUI::options_sketch_operation_axis_mode_()

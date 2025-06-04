@@ -1421,10 +1421,16 @@ void Sketch::set_name(const std::string& name)
 
 gp_Vec2d Sketch::edge_outgoing_dir_(size_t idx_a, size_t idx_b, const Edge& edge) const
 {
-  if (edge.circle_arc)
+  #if 0
+  boost_geom::linestring_2d ls;
+  boost_geom::linestring_2d ls2;
+  ls.push_back(to_boost(m_nodes[idx_a]));
+  ls.push_back(to_boost(m_nodes[idx_b]));
+  if (false && edge.circle_arc)
   {
     gp_Vec et = get_end_tangent(edge.circle_arc);
   }
+
   gp_Vec2d ret(m_nodes[idx_a], m_nodes[idx_b]);
   ret.Normalize();
   return ret;
