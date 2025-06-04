@@ -30,14 +30,16 @@ Status Shp_move::move_selected(const ScreenCoords& screen_coords)
   // Use the point of the first selected object.
   gp_Pnt center = get_shape_bbox_center(selected.front()->Shape());
 
+  bool no_axis_constraints = !m_opts.constrain_axis_x && !m_opts.constrain_axis_y && !m_opts.constrain_axis_z;
+
   for (const AIS_Shape_ptr& shape : selected)
   {
     // gp_Pnt center = get_shape_bbox_center(shape->Shape());
     gp_Trsf translation;
-    
-    translation.SetTranslation(gp_Vec(m_opts.axis_x ? pos->X() - center.X() : 0,
-                                      m_opts.axis_y ? pos->Y() - center.Y() : 0,
-                                      m_opts.axis_z ? pos->Z() - center.Z() : 0));
+
+    translation.SetTranslation(gp_Vec(no_axis_constraints || m_opts.constrain_axis_x ? pos->X() - center.X() : 0,
+                                      no_axis_constraints || m_opts.constrain_axis_y ? pos->Y() - center.Y() : 0,
+                                      no_axis_constraints || m_opts.constrain_axis_z ? pos->Z() - center.Z() : 0));
 
     shape->SetLocalTransformation(translation);
     ctx().Redisplay(shape, true);
@@ -55,7 +57,7 @@ void Shp_move::finalize_move_selected()
   for (AIS_Shape_ptr& shape : selected)
     view().bake_transform_into_geometry(shape);
 
-  m_opts = {}; // Reset options;
+  m_opts = {};  // Reset options;
   gui().set_mode(Mode::Normal);
 }
 

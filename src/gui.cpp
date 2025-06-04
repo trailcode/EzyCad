@@ -574,11 +574,11 @@ void GUI::options_move_mode_()
 
   Move_options& opts = m_view->shp_move().get_opts();
 
-  ImGui::Checkbox("X", &opts.axis_x);
+  ImGui::Checkbox("X", &opts.constrain_axis_x);
   ImGui::SameLine();
-  ImGui::Checkbox("Y", &opts.axis_y);
+  ImGui::Checkbox("Y", &opts.constrain_axis_y);
   ImGui::SameLine();
-  ImGui::Checkbox("Z", &opts.axis_z);
+  ImGui::Checkbox("Z", &opts.constrain_axis_z);
 }
 
 void GUI::options_sketch_operation_axis_mode_()

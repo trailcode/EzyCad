@@ -7,9 +7,9 @@
 
 struct Move_options
 {
-  bool                  axis_x {true};
-  bool                  axis_y {true};
-  bool                  axis_z {true};
+  bool                  constrain_axis_x {false};
+  bool                  constrain_axis_y {false};
+  bool                  constrain_axis_z {false};
   std::optional<double> axis_dist;
 };
 
