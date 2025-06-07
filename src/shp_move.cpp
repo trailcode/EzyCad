@@ -1,5 +1,4 @@
 #include "shp_move.h"
-
 #include "geom.h"
 #include "gui.h"
 #include "occt_view.h"
@@ -63,56 +62,56 @@ void Shp_move::show_dist_edit(const ScreenCoords& screen_coords)
 {
   bool no_axis_constraints = !m_opts.constr_axis_x && !m_opts.constr_axis_y && !m_opts.constr_axis_z;
 
-  m_dist_axis_x = [&, screen_coords](float new_dist, bool is_final)
+  auto dist_edit_axis_x = [&, screen_coords](float new_dist, bool is_final)
   {
     m_delta.override_x = new_dist * view().get_dimension_scale();
     move_selected(screen_coords);
     if (is_final)
-      if (!check_finalize_())
-      {
-        // if (!m_delta.override_y.has_value() && (no_axis_constraints || m_opts.constr_axis_y))
-        // gui().set_dist_edit(float(m_delta.delta.Y() / view().get_dimension_scale()), std::move(m_dist_axis_y), screen_coords);
-
-        int hi = 0;
-      }
+    {
+      DBG_MSG("Dist X: " << new_dist);
+      check_finalize_();
+    }
   };
 
-  m_dist_axis_y = [&, screen_coords](float new_dist, bool is_final)
+  auto dist_edit_axis_y = [&, screen_coords](float new_dist, bool is_final)
   {
     m_delta.override_y = new_dist * view().get_dimension_scale();
     move_selected(screen_coords);
     if (is_final)
+    {
+      DBG_MSG("Dist Y: " << new_dist);
       check_finalize_();
+    }
   };
 
-  m_dist_axis_z = [&, screen_coords](float new_dist, bool is_final)
+  auto dist_edit_axis_z = [&, screen_coords](float new_dist, bool is_final)
   {
     m_delta.override_z = new_dist * view().get_dimension_scale();
     move_selected(screen_coords);
     if (is_final)
+    {
+      DBG_MSG("Dist Z: " << new_dist);
       check_finalize_();
+    }
   };
 
   if (!m_delta.override_x.has_value() && (no_axis_constraints || m_opts.constr_axis_x))
-    gui().set_dist_edit(float(m_delta.delta.X() / view().get_dimension_scale()), std::move(m_dist_axis_x));
+    gui().set_dist_edit(float(m_delta.delta.X() / view().get_dimension_scale()), std::move(std::function<void(float, bool)>(dist_edit_axis_x)));
 
   else if (!m_delta.override_y.has_value() && (no_axis_constraints || m_opts.constr_axis_y))
-    gui().set_dist_edit(float(m_delta.delta.Y() / view().get_dimension_scale()), std::move(m_dist_axis_y));
+    gui().set_dist_edit(float(m_delta.delta.Y() / view().get_dimension_scale()), std::move(std::function<void(float, bool)>(dist_edit_axis_y)));
 
   else if (!m_delta.override_z.has_value() && (no_axis_constraints || m_opts.constr_axis_z))
-    gui().set_dist_edit(float(m_delta.delta.Z() / view().get_dimension_scale()), std::move(m_dist_axis_z));
+    gui().set_dist_edit(float(m_delta.delta.Z() / view().get_dimension_scale()), std::move(std::function<void(float, bool)>(dist_edit_axis_z)));
 }
 
-bool Shp_move::check_finalize_()
+void Shp_move::check_finalize_()
 {
   bool no_axis_constraints = !m_opts.constr_axis_x && !m_opts.constr_axis_y && !m_opts.constr_axis_z;
   if (no_axis_constraints)
   {
     if (m_delta.override_x.has_value() && m_delta.override_y.has_value() && m_delta.override_z.has_value())
-    {
       finalize_move_selected();
-      return true;
-    }
   }
   else
   {
@@ -121,13 +120,8 @@ bool Shp_move::check_finalize_()
     bool got_z = !m_opts.constr_axis_z || m_delta.override_z.has_value();
 
     if (got_x && got_y && got_z)
-    {
       finalize_move_selected();
-      return true;
-    }
   }
-
-  return false;
 }
 
 void Shp_move::finalize_move_selected()

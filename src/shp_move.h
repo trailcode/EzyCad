@@ -37,13 +37,13 @@ class Shp_move : private Shp_operation_base
     gp_XYZ delta {0, 0, 0};
   };
 
-  bool check_finalize_();
+  void check_finalize_();
   void post_opts_();
 
   std::optional<gp_Pln>            m_move_pln;
   Move_options                     m_opts;
   Deltas                           m_delta;
-  std::function<void(float, bool)> m_dist_axis_x;
-  std::function<void(float, bool)> m_dist_axis_y;
-  std::function<void(float, bool)> m_dist_axis_z;
+  //std::function<void(float, bool)> m_dist_axis_x;
+  //std::function<void(float, bool)> m_dist_axis_y;
+  //std::function<void(float, bool)> m_dist_axis_z;
 };
