@@ -334,6 +334,7 @@ if(MSVC)
     set(DOC_FILES
         ${CMAKE_CURRENT_SOURCE_DIR}/README.md
         ${CMAKE_CURRENT_SOURCE_DIR}/usage.md
+        ${CMAKE_CURRENT_SOURCE_DIR}/bugs.md
     )
     #source_group("Documentation" FILES ${DOC_FILES})
     
