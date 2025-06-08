@@ -126,6 +126,8 @@ The shape move tool allows you to reposition selected shapes in the 3D viewer wi
 **How to Use:**
 1. **Activate Move Tool:** Select one or more shapes and press `G` or click the ![Assembly_AxialMove](icons/Assembly_AxialMove.png) icon.
 2. **Constrain Movement (Optional):** Use the options panel to lock movement to a specific axis, or use keyboard shortcuts (e.g., `X`, `Y`, `Z`).
+
+   ![Move constrain axis example](doc/gen/move_constrain_axis.png)
 3. **Edit Distance (Optional):**  
 While moving a shape, you can press `Tab` to activate a floating distance input box for the current axis. If no axis constraints are set, you can edit distances for X, Y, and Z in sequence. If axis constraints are enabled, only the allowed axes are available for editing. After entering a distance, that axis is locked to the specified value. Pressing `Tab` again advances to the next available axis.
 4. **Finalize or Cancel:** Press the `left mouse button` to confirm and apply the move, or `Esc` to cancel and revert.
@@ -133,7 +135,7 @@ While moving a shape, you can press `Tab` to activate a floating distance input 
 **Tips:**
 - Use axis constraints for straight-line moves.
 - Use interactive distance editing for precise adjustments.
-- You can always cancel and try again if the move isn’t as expected.
+- You can always cancel and try again if the move isn't as expected.
 
 2. **Feature Operations**
    - Extrude sketches (E)

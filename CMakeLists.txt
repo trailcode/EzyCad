@@ -328,6 +328,7 @@ source_group("imgui" FILES ${imguiSrc})
 source_group("src" FILES ${srcs})
 source_group("web" FILES ${WEB_FILES})
 
+
 # Add README to VS solution
 if(MSVC)
     # Create a source group for documentation files
