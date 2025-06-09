@@ -11,7 +11,7 @@ EzyCad (Easy CAD) is a CAD application for hobbyist machinists to design and edi
 - Interactive GUI built with ImGui.  
 
 ## Usage Guide  
-See `usage.txt` in the repository for a detailed guide on using EzyCad. It covers the user interface, modeling tools (e.g., sketching, extrusions, Boolean operations), keyboard shortcuts, and view controls. Example workflows, such as creating 2D sketches and 3D shapes, are included to help you get started.  
+See `usage.md` in the repository for a detailed guide on using EzyCad. It covers the user interface, modeling tools (e.g., sketching, extrusions, Boolean operations), keyboard shortcuts, and view controls. Example workflows, such as creating 2D sketches and 3D shapes, are included to help you get started.  
 
 ## Building Instructions  
 
@@ -75,4 +75,4 @@ Ensure the following dependencies are installed:
 
 ## Support and Contributions  
 - Report issues or suggest features on the GitHub repository.  
-- Additional resources, including video tutorials and online documentation, are linked in `usage.txt`.  
+- Additional resources, including video tutorials and online documentation, are linked in `usage.md`.  
