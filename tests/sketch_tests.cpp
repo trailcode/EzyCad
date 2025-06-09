@@ -719,6 +719,58 @@ TEST_F(Sketch_test, ExtrudeSketchFace_EzyCad)
 #endif
 }
 
+TEST_F(Sketch_test, SquareTwoArcs)
+{
+  gp_Pln default_plane(gp::Origin(), gp::DZ());
+  Sketch sketch("TestSketch", view(), default_plane);
+
+  // Define square corners
+  gp_Pnt2d p1(-10, -10);
+  gp_Pnt2d p2(10, -10);
+  gp_Pnt2d p3(10, 10);
+  gp_Pnt2d p4(-10, 10);
+
+  // Add square edges
+  Sketch_access::add_edge_(sketch, p1, p2);
+  Sketch_access::add_edge_(sketch, p2, p3);
+  Sketch_access::add_edge_(sketch, p3, p4);
+  Sketch_access::add_edge_(sketch, p4, p1);
+
+  // Compute the center of the square
+  gp_Pnt2d center(0, 0);
+
+  // Add first arc: from p1 to p2, arc through center
+  //Sketch_access::add_arc_circle_(sketch, p1, p2, center);
+
+  // Add second arc: from p1 to p2, arc through center (again)
+  Sketch_access::add_arc_circle_(sketch, p1, p2, center);
+
+  // Update faces
+  Sketch_access::update_faces_(sketch);
+
+  // There should be one face (the square with two arcs replacing one edge)
+  const auto& faces = Sketch_access::get_faces(sketch);
+  EXPECT_EQ(faces.size(), 1);
+
+  // Check the face is a valid TopoDS_Face
+  const auto& face = faces[0];
+  EXPECT_EQ(face->Shape().ShapeType(), TopAbs_FACE);
+
+  // Convert to Boost.Geometry polygon for further checks
+  boost_geom::polygon_2d boost_poly = to_boost(face->Shape(), default_plane);
+
+  // Check that the ring is closed
+  const auto& outer = boost_poly.outer();
+  EXPECT_NEAR(outer.front().x(), outer.back().x(), 1e-6);
+  EXPECT_NEAR(outer.front().y(), outer.back().y(), 1e-6);
+
+  // Check the polygon is valid
+  EXPECT_TRUE(bg::is_valid(boost_poly));
+
+  // Optionally, print WKT for visual inspection
+  // std::cout << to_wkt_string(boost_poly) << std::endl;
+}
+
 // Helper to add all permutations of edges (with both orientations) to a sketch and call a lambda
 template <typename Callback>
 void Sketch_test::for_all_edge_permutations_(

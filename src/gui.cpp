@@ -4,10 +4,10 @@
 #include <windows.h>
 #endif
 
-#include "gui.h"
-
 #include <array>
 #include <map>
+
+#include "gui.h"
 
 #ifdef __EMSCRIPTEN__
 #include <emscripten.h>
@@ -28,7 +28,6 @@ GUI::GUI()
   m_view = std::make_unique<Occt_view>(*this);
   DO_ASSERT(!gui_instance);
   gui_instance = this;
-  
 }
 
 GUI::~GUI()
@@ -76,16 +75,16 @@ void GUI::set_mode(Mode mode)
 void GUI::set_parent_mode()
 {
   static std::map<Mode, Mode> parent_modes = {
-      {                        Mode::Normal,      Mode::Normal},
-      {                          Mode::Move,      Mode::Normal},
-      {                         Mode::Scale,      Mode::Normal},
-      {                        Mode::Rotate,      Mode::Normal},
-      {                   Mode::Sketch_inspection_mode,      Mode::Normal},
-      {              Mode::Sketch_from_face,      Mode::Normal},
-      {           Mode::Sketch_face_extrude,      Mode::Normal},
-      {                 Mode::Shape_chamfer,      Mode::Normal},
-      {                  Mode::Shape_fillet,      Mode::Normal},
-      {         Mode::Shape_polar_duplicate,      Mode::Normal},
+      {                        Mode::Normal,                 Mode::Normal},
+      {                          Mode::Move,                 Mode::Normal},
+      {                         Mode::Scale,                 Mode::Normal},
+      {                        Mode::Rotate,                 Mode::Normal},
+      {        Mode::Sketch_inspection_mode,                 Mode::Normal},
+      {              Mode::Sketch_from_face,                 Mode::Normal},
+      {           Mode::Sketch_face_extrude,                 Mode::Normal},
+      {                 Mode::Shape_chamfer,                 Mode::Normal},
+      {                  Mode::Shape_fillet,                 Mode::Normal},
+      {         Mode::Shape_polar_duplicate,                 Mode::Normal},
       {               Mode::Sketch_add_node, Mode::Sketch_inspection_mode},
       {               Mode::Sketch_add_edge, Mode::Sketch_inspection_mode},
       {        Mode::Sketch_add_multi_edges, Mode::Sketch_inspection_mode},
@@ -145,6 +144,13 @@ void GUI::on_key(int key, int scancode, int action, int mods)
         hide_dist_edit();
         break;
     }
+
+    switch (get_mode())
+    {
+      case Mode::Move:
+        on_key_move_mode_(key);
+        break;
+    }
   }
 }
 
@@ -156,7 +162,7 @@ void GUI::initialize_toolbar_()
       {             load_texture("Assembly_AxialMove.png"), false,                   "Shape move (g)",                           Mode::Move},
       {                   load_texture("Draft_Rotate.png"), false,                     "Shape rotate",                         Mode::Rotate},
       {                     load_texture("Part_Scale.png"), false,                      "Shape Scale",                          Mode::Scale},
-      {        load_texture("Workbench_Sketcher_none.png"), false,           "Sketch inspection mode",                    Mode::Sketch_inspection_mode},
+      {        load_texture("Workbench_Sketcher_none.png"), false,           "Sketch inspection mode",         Mode::Sketch_inspection_mode},
       {          load_texture("Macro_FaceToSketch_48.png"), false,        "Create a sketch from face",               Mode::Sketch_from_face},
       {          load_texture("Sketcher_MirrorSketch.png"), false,            "Define operation axis",          Mode::Sketch_operation_axis},
       {           load_texture("Sketcher_CreatePoint.png"), false,                         "Add node",                Mode::Sketch_add_node},
@@ -299,6 +305,31 @@ void GUI::toolbar_()
   ImGui::End();
 }
 
+// Distance edit related
+void GUI::set_dist_edit(float dist, std::function<void(float, bool)>&& callback, const std::optional<ScreenCoords> screen_coords)
+{
+  DBG_MSG("dist " << dist);
+  m_dist_val = dist;
+  if (screen_coords.has_value())
+    m_dist_edit_loc = *screen_coords;
+  else
+    m_dist_edit_loc = ScreenCoords(glm::dvec2(ImGui::GetIO().MousePos.x, ImGui::GetIO().MousePos.y));
+
+  m_dist_callback = std::move(callback);
+}
+
+void GUI::hide_dist_edit()
+{
+  if (m_dist_callback)
+  {
+    std::function<void(float, bool)> callback;
+    // In case the callback sets a new m_dist_callback
+    std::swap(callback, m_dist_callback);
+    // In case just enter was pressed, or the callback needs to finalize something
+    callback(m_dist_val, true);
+  }
+}
+
 void GUI::dist_edit_()
 {
   if (!m_dist_callback)
@@ -319,10 +350,15 @@ void GUI::dist_edit_()
 
   ImGui::SetNextItemWidth(80.0f);
   ImGui::SetKeyboardFocusHere();
-
+  
   // Add a small input float widget and check for changes
-  if (ImGui::InputFloat("##float_value", &m_dist_val, 0.0f, 0.0f, "%.2f"))
-    m_dist_callback(m_dist_val);
+  if (ImGui::InputFloat("##dist_edit_float_value", &m_dist_val, 0.0f, 0.0f, "%.2f"))
+    m_dist_callback(m_dist_val, false);
+  else
+  {
+    m_dist_val = std::round(m_dist_val * 100.0f) / 100.0f;
+    int hi = 0;
+  }
 
   ImGui::End();
 }
@@ -333,7 +369,7 @@ void GUI::sketch_list_()
   {
     ImGui::Begin("Sketch List", &m_show_sketch_list, ImGuiWindowFlags_None);
 
-    int index = 0;
+    int                     index = 0;
     std::shared_ptr<Sketch> sketch_to_delete;
     for (std::shared_ptr<Sketch>& sketch : m_view->get_sketches())
     {
@@ -373,7 +409,7 @@ void GUI::sketch_list_()
       {
         if (ImGui::MenuItem("Delete"))
           sketch_to_delete = sketch;
-        
+
         ImGui::EndPopup();
       }
       ImGui::PopID();
@@ -534,6 +570,7 @@ void GUI::options_()
   switch (get_mode())
   {
     case Mode::Normal:                options_normal_mode_();                 break;
+    case Mode::Move:                  options_move_mode_();                   break;
     case Mode::Sketch_operation_axis: options_sketch_operation_axis_mode_();  break;
     case Mode::Shape_chamfer:         options_shape_chamfer_mode_();          break;
     case Mode::Shape_polar_duplicate: options_shape_polar_duplicate_mode_();  break;
@@ -564,6 +601,43 @@ void GUI::options_normal_mode_()
         m_view->set_shp_selection_mode(static_cast<TopAbs_ShapeEnum>(i));
 
     ImGui::EndCombo();
+  }
+}
+
+void GUI::options_move_mode_()
+{
+  ImGui::TextUnformatted("Move constrain axis:");
+
+  Move_options& opts = m_view->shp_move().get_opts();
+
+  ImGui::Checkbox("X", &opts.constr_axis_x);
+  ImGui::SameLine();
+  ImGui::Checkbox("Y", &opts.constr_axis_y);
+  ImGui::SameLine();
+  ImGui::Checkbox("Z", &opts.constr_axis_z);
+}
+
+void GUI::on_key_move_mode_(int key)
+{
+  Move_options&      opts = m_view->shp_move().get_opts();
+  const ScreenCoords screen_coords(glm::dvec2(ImGui::GetIO().MousePos.x, ImGui::GetIO().MousePos.y));
+
+  switch (key)
+  {
+    case GLFW_KEY_X:
+      opts.constr_axis_x ^= 1;
+      break;
+    case GLFW_KEY_Y:
+      opts.constr_axis_y ^= 1;
+      break;
+    case GLFW_KEY_Z:
+      opts.constr_axis_z ^= 1;
+      break;
+    case GLFW_KEY_TAB:
+      m_view->shp_move().show_dist_edit(screen_coords);
+      break;
+    default:
+      break;
   }
 }
 
@@ -722,13 +796,6 @@ void GUI::log_window_()
 
   ImGui::EndChild();
   ImGui::End();
-}
-
-void GUI::set_dist_edit(float dist, const ScreenCoords& screen_coords, std::function<void(float)>&& callback)
-{
-  m_dist_val      = dist;
-  m_dist_edit_loc = screen_coords;
-  m_dist_callback = std::move(callback);
 }
 
 void GUI::init(GLFWwindow* window)

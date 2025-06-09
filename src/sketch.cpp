@@ -37,7 +37,8 @@ Sketch::Sketch(const std::string& name, Occt_view& view, const gp_Pln& pln, cons
 
 Sketch::~Sketch()
 {
-  auto remove_edge = [&](Edge& e) {
+  auto remove_edge = [&](Edge& e)
+  {
     m_ctx.Remove(e.shp, false);
     m_ctx.Remove(e.dim, false);
   };
@@ -281,14 +282,14 @@ void Sketch::move_line_string_pt_(const ScreenCoords& screen_coords)
       gp_Dir2d     edge_dir = get_unit_dir(pt_a, pt_b);
       ScreenCoords spos     = m_view.get_screen_coords(to_3d(m_pln, center_point(pt_a, pt_b)));
 
-      auto l = [&, edge_dir](float new_dist)
+      auto l = [&, edge_dir](float new_dist, bool _)
       {
         m_entered_edge_len = {
             edge_dir,
             new_dist * m_view.get_dimension_scale()};
       };
 
-      m_view.gui().set_dist_edit(float(dist), spos, std::move(std::function<void(float)>(l)));
+      m_view.gui().set_dist_edit(float(dist), std::move(std::function<void(float, bool)>(l)), spos);
     }
 
     update_edge_shp_(edge, pt_a, pt_b);
@@ -1421,10 +1422,33 @@ void Sketch::set_name(const std::string& name)
 
 gp_Vec2d Sketch::edge_outgoing_dir_(size_t idx_a, size_t idx_b, const Edge& edge) const
 {
-  if (edge.circle_arc)
+  #if 0
+  boost_geom::linestring_2d ls;
+  boost_geom::linestring_2d ls2;
+  ls.push_back(to_boost(m_nodes[idx_a]));
+  ls.push_back(to_boost(m_nodes[idx_b]));
+  if (false && edge.circle_arc)
   {
-    gp_Vec et = get_end_tangent(edge.circle_arc);
+    // TODO this will work for some cases and fail for others.
+    // to_boost(*edge.circle_arc, m_pln);
+    auto [od, p_end] = get_out_dir_and_end_pt(edge.circle_arc);
+    auto p_end_2d    = to_2d(m_pln, {p_end.X(), p_end.Y(), p_end.Z()});
+
+    auto e = m_nodes[idx_b];
+    if (!p_end_2d.IsEqual(e, Precision::Confusion()))
+    {
+      std::tie(od, p_end) = get_out_dir_and_end_pt(Geom_TrimmedCurve_ptr::DownCast(edge.circle_arc->Reversed()));
+      int hi = 0;
+    }
+    auto p = to_2d(m_pln, {od.X(), od.Y(), od.Z()});
+    ls2.push_back(to_boost(m_nodes[idx_b]));
+    auto pp = m_nodes[idx_b].XY() + p.XY();
+    ls2.push_back({pp.X(), pp.Y()});
+    return gp_Vec2d(p.X(), p.Y());
+    int i = 0;
   }
+  #endif
+
   gp_Vec2d ret(m_nodes[idx_a], m_nodes[idx_b]);
   ret.Normalize();
   return ret;

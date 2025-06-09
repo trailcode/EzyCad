@@ -353,6 +353,23 @@ gp_Vec get_end_tangent(const Handle(Geom_TrimmedCurve) & curve)
   return tangent_end;
 }
 
+std::pair<gp_Vec, gp_Pnt> get_out_dir_and_end_pt(const Handle(Geom_TrimmedCurve) & curve)
+{
+  Standard_Real u_end = curve->LastParameter();
+  gp_Vec        out_dir;
+  gp_Vec        unused;
+  gp_Pnt        p_end;
+
+  // D1 gives point (P) and first second (V1)
+  curve->D2(u_end, p_end, unused, out_dir);
+
+  // Normalize the out direction vector to get unit directions
+  DO_ASSERT_MSG(out_dir.Magnitude() > 1e-10, "Start vector too small!");
+  out_dir.Normalize();
+
+  return {out_dir, p_end};
+}
+
 std::pair<gp_Pnt, gp_Pnt> get_edge_endpoints(const TopoDS_Edge& edge)
 {
   // Extract start and end vertices
@@ -632,7 +649,7 @@ boost_geom::polygon_2d to_boost(const TopoDS_Shape& shape, const gp_Pln& pln2)
   DO_ASSERT_MSG(!plane.IsNull(), "Face surface must be planar.");
 
   // Get the plane's coordinate system
-  //gp_Pln pln = plane->Pln(); // Centers poly using the origin of the shape plane.
+  // gp_Pln pln = plane->Pln(); // Centers poly using the origin of the shape plane.
   const gp_Pln& pln = pln2;
 
   // Initialize the Boost.Geometry polygon
@@ -715,12 +732,12 @@ boost_geom::polygon_2d to_boost(const TopoDS_Shape& shape, const gp_Pln& pln2)
                                         {
                                           if (std::abs(a.x() - b.x()) > Precision::Confusion())
                                             return a.x() < b.x();
-                                          
+
                                           return a.y() < b.y();
                                         });
 
     // Rotate the points so the leftmost point is first
-    // Ensures consistency for comparisons 
+    // Ensures consistency for comparisons
     std::rotate(out.begin(), leftmost_it, out.end());
     out.push_back(out.front());
   };

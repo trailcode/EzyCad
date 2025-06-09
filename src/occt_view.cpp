@@ -711,12 +711,12 @@ void Occt_view::sketch_face_extrude(const ScreenCoords& screen_coords)
 
       if (m_show_dim_input)
       {
-        auto l = [&](float new_dist)
+        auto l = [&](float new_dist, bool _)
         {
           m_entered_dim = new_dist * get_dimension_scale();
         };
 
-        gui().set_dist_edit(float(scaled_dist), screen_coords, std::move(std::function<void(float)>(l)));
+        gui().set_dist_edit(float(scaled_dist), std::move(std::function<void(float, bool)>(l)), screen_coords);
       }
       if (side_of_plane(m_to_extrude_pln, *p) == Plane_side::Front)
         extrude_vec *= extrude_dist;

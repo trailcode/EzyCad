@@ -328,12 +328,14 @@ source_group("imgui" FILES ${imguiSrc})
 source_group("src" FILES ${srcs})
 source_group("web" FILES ${WEB_FILES})
 
+
 # Add README to VS solution
 if(MSVC)
     # Create a source group for documentation files
     set(DOC_FILES
         ${CMAKE_CURRENT_SOURCE_DIR}/README.md
         ${CMAKE_CURRENT_SOURCE_DIR}/usage.md
+        ${CMAKE_CURRENT_SOURCE_DIR}/bugs.md
     )
     #source_group("Documentation" FILES ${DOC_FILES})
     

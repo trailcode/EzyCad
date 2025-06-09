@@ -6,6 +6,8 @@
 #include <windows.h>
 #endif
 
+#include <GLFW/glfw3.h>
+
 #include <chrono>  // For message status window (from previous request)
 #include <functional>
 #include <glm/glm.hpp>
@@ -17,8 +19,6 @@
 #include "modes.h"
 #include "shapes.h"
 #include "types.h"
-
-#include <GLFW/glfw3.h>
 
 class Occt_view;
 struct GLFWwindow;
@@ -37,9 +37,9 @@ class GUI
   GUI();
   ~GUI();
 
-  #ifdef __EMSCRIPTEN__
+#ifdef __EMSCRIPTEN__
   static GUI& instance();
-  #endif
+#endif
 
   void init(GLFWwindow* window);
 
@@ -57,8 +57,8 @@ class GUI
   Chamfer_mode get_chamfer_mode() const { return m_chamfer_mode; }
   void set_mode(Mode mode);
   void set_parent_mode();
-  void set_dist_edit(float dist, const ScreenCoords& screen_coords, std::function<void(float)>&& callback);
-  void hide_dist_edit() { m_dist_callback = nullptr; }
+  void set_dist_edit(float dist, std::function<void(float, bool)>&& callback, const std::optional<ScreenCoords> screen_coords = std::nullopt);
+  void hide_dist_edit();
   void show_message(const std::string& message);
   void log_message(const std::string& message);
   // clang-format on
@@ -71,7 +71,7 @@ class GUI
   void on_file(const std::string& file_path, const std::string& json_str);
   void on_import_file(const std::string& file_path, const std::string& file_data);
 
- //private:
+  // private:
   friend class GUI_access;
 
   // Structure to hold button state and texture
@@ -133,6 +133,8 @@ class GUI
   void shape_list_();
   void options_();
   void options_normal_mode_();
+  void options_move_mode_();
+  void on_key_move_mode_(int key);
   void options_sketch_operation_axis_mode_();
   void options_shape_chamfer_mode_();
   void options_shape_polar_duplicate_mode_();
@@ -152,9 +154,9 @@ class GUI
   std::unique_ptr<Occt_view> m_view;
 
   // Sketch segment manual length input related
-  std::function<void(float)> m_dist_callback;
-  ScreenCoords               m_dist_edit_loc {glm::dvec2(0, 0)};
-  float                      m_dist_val;
+  std::function<void(float, bool)> m_dist_callback;
+  ScreenCoords                     m_dist_edit_loc {glm::dvec2(0, 0)};
+  float                            m_dist_val;
 
   // Mode related
   Mode                        m_mode         = Mode::Normal;
