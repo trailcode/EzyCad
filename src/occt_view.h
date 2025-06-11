@@ -16,6 +16,7 @@
 #include "shp_fuse.h"
 #include "shp_move.h"
 #include "shp_polar_dup.h"
+#include "shp_rotate.h"
 #include "utl.h"
 
 class Sketch;
@@ -86,6 +87,7 @@ class Occt_view : protected AIS_ViewController
   std::list<ShapeBase_ptr>& get_shapes();
 
   Shp_move&      shp_move();
+  Shp_rotate&    shp_rotate();
   Shp_chamfer&   shp_chamfer();
   Shp_cut&       shp_cut();
   Shp_fuse&      shp_fuse();
@@ -187,6 +189,7 @@ class Occt_view : protected AIS_ViewController
   bool                       m_headless_view {false};
 
   Shp_move      m_shp_move;
+  Shp_rotate    m_shp_rotate;
   Shp_chamfer   m_shp_chamfer;
   Shp_cut       m_shp_cut;
   Shp_fuse      m_shp_fuse;

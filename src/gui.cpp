@@ -819,6 +819,12 @@ void GUI::on_mouse_pos(const ScreenCoords& screen_coords)
 
       break;
 
+    case Mode::Rotate:
+      if (Status s = m_view->shp_rotate().rotate_selected(screen_coords); !s.is_ok())
+        show_message(s.message());
+
+      break;
+
     case Mode::Shape_polar_duplicate:
       if (Status s = m_view->shp_polar_dup().move_point(screen_coords); !s.is_ok())
         show_message(s.message());

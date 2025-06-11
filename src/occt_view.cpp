@@ -37,7 +37,7 @@
 #include <sstream>
 
 Occt_view::Occt_view(GUI& gui)
-    : m_gui(gui), m_shp_move(*this), m_shp_chamfer(*this), m_shp_cut(*this), m_shp_fuse(*this), m_shp_common(*this), m_shp_polar_dup(*this)
+    : m_gui(gui), m_shp_move(*this), m_shp_rotate(*this), m_shp_chamfer(*this), m_shp_cut(*this), m_shp_fuse(*this), m_shp_common(*this), m_shp_polar_dup(*this)
 {
 }
 
@@ -171,8 +171,8 @@ void Occt_view::init_viewer()
   aViewer->Grid()->SetColors(cc, cd);
   // aViewer->Grid()->SetDrawMode(Aspect_GridDrawMode::Aspect_GDM_Points);
 
-  //aViewer->SetComputedMode(false);
-  //  Enable anti-aliasing through the viewer
+  // aViewer->SetComputedMode(false);
+  //   Enable anti-aliasing through the viewer
   aViewer->SetDefaultComputedMode(Standard_True);
   aViewer->SetDefaultShadingModel(Graphic3d_TypeOfShadingModel_Phong);
   aViewer->SetDefaultLights();
@@ -228,7 +228,7 @@ void Occt_view::init_viewer()
 void Occt_view::init_default()
 {
   create_default_sketch_();
-  
+
   if (m_ctx.IsNull())
     return;
 
@@ -402,6 +402,10 @@ void Occt_view::cancel(Set_parent_mode set_parent_mode)
   {
     case Mode::Move:
       shp_move().cancel_move_selected();
+      gui().set_mode(Mode::Normal);
+      break;
+    case Mode::Rotate:
+      shp_rotate().cancel_rotate_selected();
       gui().set_mode(Mode::Normal);
       break;
     default:
@@ -1091,6 +1095,7 @@ std::list<ShapeBase_ptr>& Occt_view::get_shapes()
 
 // clang-format off
 Shp_move&      Occt_view::shp_move()      { return m_shp_move;      }
+Shp_rotate&    Occt_view::shp_rotate()    { return m_shp_rotate;    }
 Shp_chamfer&   Occt_view::shp_chamfer()   { return m_shp_chamfer;   }
 Shp_cut&       Occt_view::shp_cut()       { return m_shp_cut;       }
 Shp_fuse&      Occt_view::shp_fuse()      { return m_shp_fuse;      }
