@@ -23,7 +23,6 @@ class Shp_polar_dup : private Shp_operation_base
   void                 reset();
 
  private:
-  std::vector<AIS_Shape_ptr> m_shps_to_dup;
   gp_Pnt                     m_shps_center;
   AIS_Shape_ptr              m_polar_arm;
   std::optional<gp_Pnt2d>    m_polar_arm_end;

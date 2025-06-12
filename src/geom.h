@@ -106,6 +106,11 @@ Plane_side side_of_plane(const gp_Pln& plane, const gp_Pnt& point);
 // Function to get gp_Pln from a TopoDS_Face
 std::optional<gp_Pln> plane_from_face(const TopoDS_Face& face);
 
+bool planes_equal(const gp_Pln& plane1, const gp_Pln& plane2);
+
+// Projects a vector onto a plane defined by its normal
+gp_Vec project_onto_plane(const gp_Vec& v, const gp_Pln& pln);
+
 gp_Pln xy_plane();
 
 // Function to compute the center point between two gp_Pnt2d points
@@ -164,8 +169,6 @@ bool operator<(const gp_Pnt2d& lhs, const gp_Pnt2d& rhs);
 
 // Add this function declaration to geom.h
 gp_Pnt2d rotate_point(const gp_Pnt2d& origin, const gp_Pnt2d& point, double angle_degrees);
-
-bool planes_equal(const gp_Pln& plane1, const gp_Pln& plane2);
 
 // Check if a ring is clockwise using the shoelace formula
 bool is_clockwise(const boost_geom::ring_2d& ring);

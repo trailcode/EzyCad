@@ -435,6 +435,35 @@ std::optional<gp_Pln> plane_from_face(const TopoDS_Face& face)
   return plane_surface->Pln();
 }
 
+bool planes_equal(const gp_Pln& plane1, const gp_Pln& plane2)
+{
+  // Get the position and orientation of both planes
+  gp_Ax3 pos1 = plane1.Position();
+  gp_Ax3 pos2 = plane2.Position();
+
+  // Check if the origins are the same (within precision)
+  if (!pos1.Location().IsEqual(pos2.Location(), Precision::Confusion()))
+    return false;
+
+  // Check if the normal directions are parallel (within angular precision)
+  if (!pos1.Direction().IsParallel(pos2.Direction(), Precision::Angular()))
+    return false;
+
+  // Check if the X directions are parallel (within angular precision)
+  if (!pos1.XDirection().IsParallel(pos2.XDirection(), Precision::Angular()))
+    return false;
+
+  return true;
+}
+
+// Projects a vector onto a plane defined by its normal
+gp_Vec project_onto_plane(const gp_Vec& v, const gp_Pln& pln)
+{
+  gp_Dir normal = pln.Axis().Direction();
+  gp_Vec n(normal);
+  return v - n * (v.Dot(n));
+}
+
 gp_Pln xy_plane()
 {
   gp_Ax3 xy_system = gp::XOY();                                // Predefined XY coordinate system
@@ -827,27 +856,6 @@ gp_Pnt2d rotate_point(const gp_Pnt2d& origin, const gp_Pnt2d& point, double angl
 
   // Add back the origin offset
   return gp_Pnt2d(origin.X() + rotated_x, origin.Y() + rotated_y);
-}
-
-bool planes_equal(const gp_Pln& plane1, const gp_Pln& plane2)
-{
-  // Get the position and orientation of both planes
-  gp_Ax3 pos1 = plane1.Position();
-  gp_Ax3 pos2 = plane2.Position();
-
-  // Check if the origins are the same (within precision)
-  if (!pos1.Location().IsEqual(pos2.Location(), Precision::Confusion()))
-    return false;
-
-  // Check if the normal directions are parallel (within angular precision)
-  if (!pos1.Direction().IsParallel(pos2.Direction(), Precision::Angular()))
-    return false;
-
-  // Check if the X directions are parallel (within angular precision)
-  if (!pos1.XDirection().IsParallel(pos2.XDirection(), Precision::Angular()))
-    return false;
-
-  return true;
 }
 
 bool is_clockwise(const boost_geom::ring_2d& ring)

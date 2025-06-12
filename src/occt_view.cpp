@@ -1177,6 +1177,9 @@ void Occt_view::load(const std::string& json_str)
     m_shps.push_back(shp);
     m_ctx->Display(shp, AIS_Shaded, 0, true);
   }
+
+  // Ensure correct state
+  gui().set_mode(Mode::Normal);
 }
 
 bool Occt_view::import_step(const std::string& step_data)

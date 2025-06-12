@@ -7,6 +7,13 @@
 #include "dbg.h"
 #include "types.h"
 
+#define CHK_RET(status)  \
+  do                     \
+  {                      \
+    if (!status.is_ok()) \
+      return (status);   \
+  } while (0)
+
 /**
  * @brief Clears a variable number of arguments recursively.
  *
@@ -25,7 +32,7 @@ void clear_all(T& arg, Args&... args);
 template <typename Container>
 typename Container::value_type&& pop_back(Container& container)
 {
-  DO_ASSERT(container.size());               // Ensure the container isn’t empty
+  DO_ASSERT(container.size());               // Ensure the container isnï¿½t empty
   auto value = std::move(container.back());  // Get the last element
   container.pop_back();                      // Remove the last element
   return std::move(value);                   // Return the retrieved element
@@ -42,9 +49,9 @@ typename Container::value_type&& pop_back(Container& container)
  *        with begin() and end() methods. The function will iterate over their elements and apply
  *        the lambda to each one individually.
  *   - Multiple arguments of any mix of types can be passed in any order after the lambda. For
- *     non-containers, the lambda is called once per argument; for containers, it’s called once
+ *     non-containers, the lambda is called once per argument; for containers, itï¿½s called once
  *     per element within the container.
- *   - The lambda’s parameter type must be compatible with the types of the non-container elements
+ *   - The lambdaï¿½s parameter type must be compatible with the types of the non-container elements
  *     (or their common type if heterogeneous). No specific type is enforced on the arguments;
  *     type mismatches are caught at compile time by lambda deduction failure.
  * The lambda is the first parameter and defines how each flattened element is processed.

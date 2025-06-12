@@ -1,4 +1,5 @@
 #include "shp_common.h"
+#include "utl.h"
 
 #include <BRepAlgoAPI_Common.hxx>
 
@@ -7,17 +8,15 @@ Shp_common::Shp_common(Occt_view& view)
 
 Status Shp_common::selected_common()
 {
-  std::vector<AIS_Shape_ptr> selected = get_selected();
-  if (selected.size() < 2)
-    return Status::user_error("Select two or more shapes.");
+  CHK_RET(ensure_operation_multi_shps_());
 
-  std::vector<AIS_Shape_ptr>::iterator itr = selected.begin();
+  std::vector<ShapeBase_ptr>::iterator itr = m_shps.begin();
 
   // Start with the first shape
   TopoDS_Shape result = (*itr)->Shape();
 
   // Intersect with each subsequent shape
-  for (++itr; itr != selected.end(); ++itr)
+  for (++itr; itr != m_shps.end(); ++itr)
   {
     BRepAlgoAPI_Common common_op(result, (*itr)->Shape());
 
@@ -35,7 +34,7 @@ Status Shp_common::selected_common()
   // Create a new shape from the common result
   ExtrudedShp_ptr shp = new ExtrudedShp(ctx(), result);
   shp->set_name("Common");
-  delete_selected_();
+  delete_operation_shps_();
   add_shp_(shp);
   return Status::ok();
 }

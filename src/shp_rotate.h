@@ -13,6 +13,6 @@ class Shp_rotate : private Shp_operation_base
   void                 cancel_rotate_selected();
 
  private:
-
-   std::optional<ScreenCoords> m_start;
+  std::optional<gp_Pln> m_rotate_pln;
+  std::optional<gp_Pnt> m_initial_mouse_pos;
 };

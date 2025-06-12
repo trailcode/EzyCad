@@ -23,18 +23,15 @@ Status Shp_polar_dup::move_point(const ScreenCoords& screen_coords)
 
   const gp_Pln& sketch_pln = view().curr_sketch().get_plane();
 
-  if (m_shps_to_dup.empty())
+  if (m_shps.empty())
   {
-    m_shps_to_dup = get_selected();
-    if (m_shps_to_dup.empty())
-      return Status::user_error("Select one or more shapes.");
+    CHK_RET(ensure_operation_shps_());
 
     // TODO consider all shapes.
-    m_shps_center = get_shape_bbox_center(m_shps_to_dup[0]->Shape());
-    // to_2d(sketch_pln, m_shps_center);
+    m_shps_center = get_shape_bbox_center(m_shps[0]->Shape());
   }
 
-  DO_ASSERT(m_shps_to_dup.size());
+  DO_ASSERT(m_shps.size());
 
   Sketch_nodes& nodes = view().curr_sketch().get_nodes();
 
@@ -66,7 +63,7 @@ Status Shp_polar_dup::add_point(const ScreenCoords& screen_coords)
   if (m_polar_arm_origin.has_value())
     return Status::ok();
 
-  if (m_shps_to_dup.empty())
+  if (m_shps.empty())
     return Status::user_error("Select one or more shapes.");
 
   DO_ASSERT(m_polar_arm);
@@ -97,7 +94,7 @@ Status Shp_polar_dup::dup()
     const double current_angle_degrees = step_angle * (i + 1); // Skip 0 since that's the original
     const double current_angle_radians = current_angle_degrees * M_PI / 180.0; // Convert to radians
     
-    for (const AIS_Shape_ptr& shape : m_shps_to_dup)
+    for (const AIS_Shape_ptr& shape : m_shps)
     {
       // Get the shape's center in 2D
       const gp_Pnt shape_center_3d = get_shape_bbox_center(shape->Shape());
@@ -160,7 +157,7 @@ Status Shp_polar_dup::dup()
     add_shp_(new_shape);
   }
 
-  view().delete_(m_shps_to_dup);
+  delete_operation_shps_();
   gui().set_mode(Mode::Normal); // Will call reset()
   return Status::ok();
 }
@@ -171,7 +168,7 @@ void Shp_polar_dup::reset()
   {
     ctx().Remove(m_polar_arm, false);
     ctx().ClearSelected(true);
-    clear_all(m_polar_arm, m_polar_arm_end, m_polar_arm_origin, m_shps_to_dup);
+    clear_all(m_polar_arm, m_polar_arm_end, m_polar_arm_origin, m_shps);
   }
 }
 
