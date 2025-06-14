@@ -135,6 +135,7 @@ class GUI
   void options_normal_mode_();
   void options_move_mode_();
   void on_key_move_mode_(int key);
+  void on_key_rotate_mode_(int key);
   void options_sketch_operation_axis_mode_();
   void options_shape_chamfer_mode_();
   void options_shape_polar_duplicate_mode_();

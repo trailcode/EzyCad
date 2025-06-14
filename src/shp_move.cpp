@@ -103,7 +103,7 @@ void Shp_move::check_finalize_()
   if (no_axis_constraints)
   {
     if (m_delta.override_x.has_value() && m_delta.override_y.has_value() && m_delta.override_z.has_value())
-      finalize_move_selected();
+      finalize();
   }
   else
   {
@@ -112,29 +112,25 @@ void Shp_move::check_finalize_()
     bool got_z = !m_opts.constr_axis_z || m_delta.override_z.has_value();
 
     if (got_x && got_y && got_z)
-      finalize_move_selected();
+      finalize();
   }
 }
 
-void Shp_move::finalize_move_selected()
+void Shp_move::finalize()
 {
   if (m_shps.empty())
     // If the move tool is activated and no shapes are selected,
     // then we do not want to call post_opts_() because they could
-    // select while in move mode.
+    // be selected while in move mode.
     return;
 
-  for (AIS_Shape_ptr& shape : m_shps)
-    view().bake_transform_into_geometry(shape);
-
+  operation_shps_finalize_();
   post_opts_();
 }
 
-void Shp_move::cancel_move_selected()
+void Shp_move::cancel()
 {
-  for (AIS_Shape_ptr& shape : m_shps)
-    shape->ResetTransformation();
-
+  operation_shps_cancel_();
   post_opts_();
 }
 

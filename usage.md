@@ -108,7 +108,7 @@ EzyCad is a modern CAD (Computer-Aided Design) application designed for creating
 ### 3D Modeling
 1. **Transform Operations**
    - Move shapes (G)
-   - Rotate objects
+   - Rotate objects (R)
    - Scale elements
    - Polar duplicate
 

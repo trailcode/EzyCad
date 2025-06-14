@@ -19,7 +19,8 @@
 #include "imgui.h"
 #include "occt_view.h"
 #include "sketch.h"
-#include "utl.h"
+//#include "utl.h"
+#include "geom.h"
 
 GUI* gui_instance = nullptr;
 
@@ -124,21 +125,28 @@ void GUI::on_key(int key, int scancode, int action, int mods)
       case GLFW_KEY_D:
         m_view->delete_selected();
         break;
+
       case GLFW_KEY_G:
         set_mode(Mode::Move);
         break;
+
+      case GLFW_KEY_R:
+        set_mode(Mode::Rotate);
+        break;
+
       case GLFW_KEY_E:
         set_mode(Mode::Sketch_face_extrude);
         break;
-      case GLFW_KEY_L:
-        break;
+
       case GLFW_KEY_TAB:
         m_view->dimension_input(screen_coords);
         break;
+
       case GLFW_KEY_ESCAPE:
         m_view->cancel(Set_parent_mode::Yes);
         hide_dist_edit();
         break;
+
       case GLFW_KEY_ENTER:
         m_view->on_enter(screen_coords);
         hide_dist_edit();
@@ -150,6 +158,9 @@ void GUI::on_key(int key, int scancode, int action, int mods)
       case Mode::Move:
         on_key_move_mode_(key);
         break;
+      case Mode::Rotate:
+        on_key_rotate_mode_(key);
+        break;
     }
   }
 }
@@ -160,7 +171,7 @@ void GUI::initialize_toolbar_()
   m_toolbar_buttons = {
       {                           load_texture("User.png"),  true,                  "Inspection mode",                         Mode::Normal},
       {             load_texture("Assembly_AxialMove.png"), false,                   "Shape move (g)",                           Mode::Move},
-      {                   load_texture("Draft_Rotate.png"), false,                     "Shape rotate",                         Mode::Rotate},
+      {                   load_texture("Draft_Rotate.png"), false,                 "Shape rotate (r)",                         Mode::Rotate},
       {                     load_texture("Part_Scale.png"), false,                      "Shape Scale",                          Mode::Scale},
       {        load_texture("Workbench_Sketcher_none.png"), false,           "Sketch inspection mode",         Mode::Sketch_inspection_mode},
       {          load_texture("Macro_FaceToSketch_48.png"), false,        "Create a sketch from face",               Mode::Sketch_from_face},
@@ -350,14 +361,14 @@ void GUI::dist_edit_()
 
   ImGui::SetNextItemWidth(80.0f);
   ImGui::SetKeyboardFocusHere();
-  
+
   // Add a small input float widget and check for changes
   if (ImGui::InputFloat("##dist_edit_float_value", &m_dist_val, 0.0f, 0.0f, "%.2f"))
     m_dist_callback(m_dist_val, false);
   else
   {
     m_dist_val = std::round(m_dist_val * 100.0f) / 100.0f;
-    int hi = 0;
+    int hi     = 0;
   }
 
   ImGui::End();
@@ -641,6 +652,22 @@ void GUI::on_key_move_mode_(int key)
   }
 }
 
+void GUI::on_key_rotate_mode_(int key)
+{
+  const ScreenCoords screen_coords(glm::dvec2(ImGui::GetIO().MousePos.x, ImGui::GetIO().MousePos.y));
+
+  switch (key)
+  {
+    case GLFW_KEY_TAB:
+      if (Status s = m_view->shp_rotate().show_angle_edit(screen_coords); !s.is_ok())
+        show_message(s.message());
+
+      break;
+    default:
+      break;
+  }
+}
+
 void GUI::options_sketch_operation_axis_mode_()
 {
   if (m_view->curr_sketch().has_operation_axis())
@@ -858,7 +885,11 @@ void GUI::on_mouse_button(int button, int action, int mods)
     switch (m_mode)
     {
       case Mode::Move:
-        m_view->shp_move().finalize_move_selected();
+        m_view->shp_move().finalize();
+        break;
+
+      case Mode::Rotate:
+        m_view->shp_rotate().finalize();
         break;
 
       case Mode::Sketch_add_edge:

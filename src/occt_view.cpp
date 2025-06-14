@@ -401,11 +401,11 @@ void Occt_view::cancel(Set_parent_mode set_parent_mode)
   switch (get_mode())
   {
     case Mode::Move:
-      shp_move().cancel_move_selected();
+      shp_move().cancel();
       gui().set_mode(Mode::Normal);
       break;
     case Mode::Rotate:
-      shp_rotate().cancel_rotate_selected();
+      shp_rotate().cancel();
       gui().set_mode(Mode::Normal);
       break;
     default:

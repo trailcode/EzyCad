@@ -66,6 +66,18 @@ void Shp_operation_base::delete_operation_shps_()
   m_shps.clear();
 }
 
+void Shp_operation_base::operation_shps_finalize_()
+{
+  for (AIS_Shape_ptr& shape : m_shps)
+    view().bake_transform_into_geometry(shape);
+}
+
+void Shp_operation_base::operation_shps_cancel_()
+{
+  for (AIS_Shape_ptr& shape : m_shps)
+    shape->ResetTransformation();
+}
+
 AIS_Shape_ptr Shp_operation_base::get_shape_(const ScreenCoords& screen_coords)
 {
   return m_view.get_shape(screen_coords);

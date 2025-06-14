@@ -1,17 +1,17 @@
 #include "shp_polar_dup.h"
-
-#include <BRepBuilderAPI_MakeEdge.hxx>
-#include <BRepBuilderAPI_Transform.hxx>
-#include <BRepAlgoAPI_Fuse.hxx>
-#include <TopoDS.hxx>
-#include <TopoDS_Edge.hxx>
-
 #include "geom.h"
 #include "modes.h"
 #include "occt_view.h"
 #include "sketch.h"
 #include "sketch_nodes.h"
 #include "gui.h"
+
+#include <BRepBuilderAPI_MakeEdge.hxx>
+#include <BRepBuilderAPI_Transform.hxx>
+#include <BRepAlgoAPI_Fuse.hxx>
+#include <TopoDS.hxx>
+#include <TopoDS_Edge.hxx>
+#include <numbers>
 
 Shp_polar_dup::Shp_polar_dup(Occt_view& view)
     : Shp_operation_base(view) {}
@@ -92,7 +92,7 @@ Status Shp_polar_dup::dup()
   for (size_t i = 0; i < m_num_elms; ++i)
   {
     const double current_angle_degrees = step_angle * (i + 1); // Skip 0 since that's the original
-    const double current_angle_radians = current_angle_degrees * M_PI / 180.0; // Convert to radians
+    const double current_angle_radians = current_angle_degrees * std::numbers::pi / 180.0;  // Convert to radians
     
     for (const AIS_Shape_ptr& shape : m_shps)
     {

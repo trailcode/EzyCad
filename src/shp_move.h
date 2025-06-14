@@ -22,8 +22,8 @@ class Shp_move : private Shp_operation_base
 
   [[nodiscard]] Status move_selected(const ScreenCoords& screen_coords);
   void                 show_dist_edit(const ScreenCoords& screen_coords);
-  void                 finalize_move_selected();
-  void                 cancel_move_selected();
+  void                 finalize();
+  void                 cancel();
   Move_options&        get_opts();
 
  private:

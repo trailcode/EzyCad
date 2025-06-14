@@ -38,12 +38,6 @@ std::size_t Pair_hash::operator()(const std::pair<size_t, size_t>& p) const
   return seed;
 }
 
-// Function to convert degrees to radians
-double to_radians(double degrees)
-{
-  return degrees * std::numbers::pi_v<double> / 180.0;
-}
-
 /*
 // Function to disable highlighting for a specific AIS_Shape
 void disable_shape_highlighting(const AIS_Shape_ptr&              ais_shape,

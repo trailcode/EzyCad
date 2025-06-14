@@ -96,7 +96,4 @@ void disable_shape_highlighting(const AIS_Shape_ptr&              ais_shape,
                                 const AIS_InteractiveContext_ptr& context,
                                 Standard_Boolean                  disable_selection = Standard_False);
 
-// Function to convert degrees to radians
-double to_radians(double degrees);
-
 #include "utl.inl"
