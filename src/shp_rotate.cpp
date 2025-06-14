@@ -67,20 +67,35 @@ void Shp_rotate::update_rotation_axis_()
   DO_ASSERT(m_center.has_value());
   DO_ASSERT(m_rotate_pln.has_value());
 
+  // If View_to_object is set, remove the axis visualization
+  if (m_rotation_axis == Rotation_axis::View_to_object)
+  {
+    if (m_rotation_axis_vis)
+    {
+      ctx().Remove(m_rotation_axis_vis, false);
+      m_rotation_axis_vis = nullptr;
+    }
+    return;
+  }
+
   gp_Dir axis_dir;
+  Quantity_Color axis_color;
   switch (m_rotation_axis)
   {
     case Rotation_axis::X_axis:
       axis_dir = gp_Dir(1, 0, 0);
+      axis_color = Quantity_Color(1.0, 0.0, 0.0, Quantity_TOC_RGB);  // Red
       break;
     case Rotation_axis::Y_axis:
       axis_dir = gp_Dir(0, 1, 0);
+      axis_color = Quantity_Color(0.0, 1.0, 0.0, Quantity_TOC_RGB);  // Green
       break;
     case Rotation_axis::Z_axis:
       axis_dir = gp_Dir(0, 0, 1);
+      axis_color = Quantity_Color(0.0, 0.0, 1.0, Quantity_TOC_RGB);  // Blue
       break;
     case Rotation_axis::View_to_object:
-      return;  // No axis visualization for view-to-object rotation
+      return;  // Already handled above
   }
 
   // Create a line representing the rotation axis
@@ -96,13 +111,14 @@ void Shp_rotate::update_rotation_axis_()
   if (m_rotation_axis_vis)
   {
     m_rotation_axis_vis->Set(axis_edge);
+    m_rotation_axis_vis->SetColor(axis_color);
     ctx().Redisplay(m_rotation_axis_vis, true);
   }
   else
   {
     m_rotation_axis_vis = new AIS_Shape(axis_edge);
     m_rotation_axis_vis->SetWidth(2.0);
-    m_rotation_axis_vis->SetColor(Quantity_NOC_YELLOW);
+    m_rotation_axis_vis->SetColor(axis_color);
     ctx().Display(m_rotation_axis_vis, true);
   }
 }
