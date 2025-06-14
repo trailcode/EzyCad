@@ -676,10 +676,6 @@ void GUI::options_rotate_mode_()
   {
     m_view->shp_rotate().set_rotation_axis(Rotation_axis::Z_axis);
   }
-
-  ImGui::Text("Description:");
-  ImGui::BulletText("View to object axis: Rotate around an axis perpendicular to the view plane and through the object's center");
-  ImGui::BulletText("Around X/Y/Z axis: Rotate around the global X/Y/Z axis");
 }
 
 void GUI::on_key_rotate_mode_(int key)
@@ -704,18 +700,27 @@ void GUI::on_key_rotate_mode_(int key)
       break;
 
     case GLFW_KEY_X:
-      // Toggle X axis rotation
-      m_view->shp_rotate().set_rotation_axis(Rotation_axis::X_axis);
+      // Toggle between X axis and View_to_object
+      if (m_view->shp_rotate().get_rotation_axis() == Rotation_axis::X_axis)
+        m_view->shp_rotate().set_rotation_axis(Rotation_axis::View_to_object);
+      else
+        m_view->shp_rotate().set_rotation_axis(Rotation_axis::X_axis);
       break;
 
     case GLFW_KEY_Y:
-      // Toggle Y axis rotation
-      m_view->shp_rotate().set_rotation_axis(Rotation_axis::Y_axis);
+      // Toggle between Y axis and View_to_object
+      if (m_view->shp_rotate().get_rotation_axis() == Rotation_axis::Y_axis)
+        m_view->shp_rotate().set_rotation_axis(Rotation_axis::View_to_object);
+      else
+        m_view->shp_rotate().set_rotation_axis(Rotation_axis::Y_axis);
       break;
 
     case GLFW_KEY_Z:
-      // Toggle Z axis rotation
-      m_view->shp_rotate().set_rotation_axis(Rotation_axis::Z_axis);
+      // Toggle between Z axis and View_to_object
+      if (m_view->shp_rotate().get_rotation_axis() == Rotation_axis::Z_axis)
+        m_view->shp_rotate().set_rotation_axis(Rotation_axis::View_to_object);
+      else
+        m_view->shp_rotate().set_rotation_axis(Rotation_axis::Z_axis);
       break;
 
     case GLFW_KEY_V:
