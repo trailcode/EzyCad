@@ -68,14 +68,20 @@ void Shp_rotate::update_rotation_axis_()
   DO_ASSERT(m_rotate_pln.has_value());
 
   gp_Dir axis_dir;
-  if (m_opts.constr_axis_x)
-    axis_dir = gp_Dir(1, 0, 0);
-  else if (m_opts.constr_axis_y)
-    axis_dir = gp_Dir(0, 1, 0);
-  else if (m_opts.constr_axis_z)
-    axis_dir = gp_Dir(0, 0, 1);
-  else
-    return;
+  switch (m_rotation_axis)
+  {
+    case Rotation_axis::X_axis:
+      axis_dir = gp_Dir(1, 0, 0);
+      break;
+    case Rotation_axis::Y_axis:
+      axis_dir = gp_Dir(0, 1, 0);
+      break;
+    case Rotation_axis::Z_axis:
+      axis_dir = gp_Dir(0, 0, 1);
+      break;
+    case Rotation_axis::View_to_object:
+      return;  // No axis visualization for view-to-object rotation
+  }
 
   // Create a line representing the rotation axis
   gp_Lin axis(*m_center, axis_dir);
@@ -129,14 +135,21 @@ void Shp_rotate::preview_rotate_()
   DO_ASSERT(m_rotate_pln.has_value());
 
   gp_Dir axis_dir;
-  if (m_opts.constr_axis_x)
-    axis_dir = gp_Dir(1, 0, 0);
-  else if (m_opts.constr_axis_y)
-    axis_dir = gp_Dir(0, 1, 0);
-  else if (m_opts.constr_axis_z)
-    axis_dir = gp_Dir(0, 0, 1);
-  else
-    axis_dir = m_rotate_pln->Axis().Direction();
+  switch (m_rotation_axis)
+  {
+    case Rotation_axis::X_axis:
+      axis_dir = gp_Dir(1, 0, 0);
+      break;
+    case Rotation_axis::Y_axis:
+      axis_dir = gp_Dir(0, 1, 0);
+      break;
+    case Rotation_axis::Z_axis:
+      axis_dir = gp_Dir(0, 0, 1);
+      break;
+    case Rotation_axis::View_to_object:
+      axis_dir = m_rotate_pln->Axis().Direction();
+      break;
+  }
 
   // Create rotation transformation
   gp_Trsf rotation;
@@ -205,7 +218,8 @@ void Shp_rotate::post_opts_()
   gui().set_mode(Mode::Normal);
 }
 
-Rotate_options& Shp_rotate::get_opts()
+void Shp_rotate::set_rotation_axis(Rotation_axis axis)
 {
-  return m_opts;
+  m_rotation_axis = axis;
+  update_rotation_axis_();
 }

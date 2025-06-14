@@ -655,73 +655,72 @@ void GUI::on_key_move_mode_(int key)
 
 void GUI::options_rotate_mode_()
 {
-  ImGui::TextUnformatted("Rotation options:");
+  ImGui::Text("Rotation Options");
+  ImGui::Separator();
 
-  Rotate_options& opts = m_view->shp_rotate().get_opts();
+  // Use radio buttons for axis selection
+  int selected_axis = static_cast<int>(m_view->shp_rotate().get_rotation_axis());
+  if (ImGui::RadioButton("View to object axis", &selected_axis, static_cast<int>(Rotation_axis::View_to_object)))
+  {
+    m_view->shp_rotate().set_rotation_axis(Rotation_axis::View_to_object);
+  }
+  if (ImGui::RadioButton("Around X axis", &selected_axis, static_cast<int>(Rotation_axis::X_axis)))
+  {
+    m_view->shp_rotate().set_rotation_axis(Rotation_axis::X_axis);
+  }
+  if (ImGui::RadioButton("Around Y axis", &selected_axis, static_cast<int>(Rotation_axis::Y_axis)))
+  {
+    m_view->shp_rotate().set_rotation_axis(Rotation_axis::Y_axis);
+  }
+  if (ImGui::RadioButton("Around Z axis", &selected_axis, static_cast<int>(Rotation_axis::Z_axis)))
+  {
+    m_view->shp_rotate().set_rotation_axis(Rotation_axis::Z_axis);
+  }
 
-  int selected_axis = -1;  // -1 means no axis selected
-  if (opts.constr_axis_x) selected_axis = 0;
-  else if (opts.constr_axis_y) selected_axis = 1;
-  else if (opts.constr_axis_z) selected_axis = 2;
-
-  if (ImGui::RadioButton("View to object axis", selected_axis == -1))
-  {
-    opts.constr_axis_x = false;
-    opts.constr_axis_y = false;
-    opts.constr_axis_z = false;
-    // Force update of rotation axis visualization
-    m_view->shp_rotate().update_rotation_axis_();
-  }
-  if (ImGui::RadioButton("Around X axis", selected_axis == 0))
-  {
-    opts.constr_axis_x = true;
-    opts.constr_axis_y = false;
-    opts.constr_axis_z = false;
-    m_view->shp_rotate().update_rotation_axis_();
-  }
-  if (ImGui::RadioButton("Around Y axis", selected_axis == 1))
-  {
-    opts.constr_axis_x = false;
-    opts.constr_axis_y = true;
-    opts.constr_axis_z = false;
-    m_view->shp_rotate().update_rotation_axis_();
-  }
-  if (ImGui::RadioButton("Around Z axis", selected_axis == 2))
-  {
-    opts.constr_axis_x = false;
-    opts.constr_axis_y = false;
-    opts.constr_axis_z = true;
-    m_view->shp_rotate().update_rotation_axis_();
-  }
+  ImGui::Text("Description:");
+  ImGui::BulletText("View to object axis: Rotate around an axis perpendicular to the view plane and through the object's center");
+  ImGui::BulletText("Around X/Y/Z axis: Rotate around the global X/Y/Z axis");
 }
 
 void GUI::on_key_rotate_mode_(int key)
 {
   const ScreenCoords screen_coords(glm::dvec2(ImGui::GetIO().MousePos.x, ImGui::GetIO().MousePos.y));
-  Rotate_options& opts = m_view->shp_rotate().get_opts();
 
   switch (key)
   {
-    case GLFW_KEY_X:
-      opts.constr_axis_x ^= 1;
-      opts.constr_axis_y = false;
-      opts.constr_axis_z = false;
+    case GLFW_KEY_ESCAPE:
+      m_view->shp_rotate().cancel();
       break;
-    case GLFW_KEY_Y:
-      opts.constr_axis_y ^= 1;
-      opts.constr_axis_x = false;
-      opts.constr_axis_z = false;
+
+    case GLFW_KEY_ENTER:
+    case GLFW_KEY_KP_ENTER:
+      m_view->shp_rotate().finalize();
       break;
-    case GLFW_KEY_Z:
-      opts.constr_axis_z ^= 1;
-      opts.constr_axis_x = false;
-      opts.constr_axis_y = false;
-      break;
+
     case GLFW_KEY_TAB:
+      // Show angle input dialog
       if (Status s = m_view->shp_rotate().show_angle_edit(screen_coords); !s.is_ok())
         show_message(s.message());
       break;
-    default:
+
+    case GLFW_KEY_X:
+      // Toggle X axis rotation
+      m_view->shp_rotate().set_rotation_axis(Rotation_axis::X_axis);
+      break;
+
+    case GLFW_KEY_Y:
+      // Toggle Y axis rotation
+      m_view->shp_rotate().set_rotation_axis(Rotation_axis::Y_axis);
+      break;
+
+    case GLFW_KEY_Z:
+      // Toggle Z axis rotation
+      m_view->shp_rotate().set_rotation_axis(Rotation_axis::Z_axis);
+      break;
+
+    case GLFW_KEY_V:
+      // Toggle view-to-object rotation
+      m_view->shp_rotate().set_rotation_axis(Rotation_axis::View_to_object);
       break;
   }
 }
