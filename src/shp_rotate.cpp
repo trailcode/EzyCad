@@ -17,20 +17,6 @@ Status Shp_rotate::rotate_selected(const ScreenCoords& screen_coords)
 {
   CHK_RET(ensure_start_state_());
 
-  if (m_opts.custom_center)
-  {
-    std::optional<gp_Pnt> mouse_wc_pos = view().pt3d_on_plane(screen_coords, *m_rotate_pln);
-    if (!mouse_wc_pos)
-      return Status::user_error("Adjust view, cannot get point on plane.");
-
-    m_center = *mouse_wc_pos;
-    update_rotation_center_();
-    return Status::ok();
-  }
-
-  if (!m_center)
-    return Status::user_error("No rotation center set");
-
   std::optional<gp_Pnt> mouse_wc_pos = view().pt3d_on_plane(screen_coords, *m_rotate_pln);
   if (!mouse_wc_pos)
     return Status::user_error("Adjust view, cannot get point on plane.");
@@ -68,36 +54,7 @@ Status Shp_rotate::ensure_start_state_()
     m_center = get_shape_bbox_center(m_shps[0]->Shape());
 
   if (!m_rotate_pln.has_value())
-  {
-    if (m_opts.constr_axis_x || m_opts.constr_axis_y || m_opts.constr_axis_z)
-    {
-      // When an axis is constrained, create a rotation plane perpendicular to that axis
-      gp_Dir axis_dir;
-      if (m_opts.constr_axis_x)
-        axis_dir = gp_Dir(1, 0, 0);
-      else if (m_opts.constr_axis_y)
-        axis_dir = gp_Dir(0, 1, 0);
-      else if (m_opts.constr_axis_z)
-        axis_dir = gp_Dir(0, 0, 1);
-
-      // Create a plane perpendicular to the axis
-      // We'll use the view's up direction to help orient the plane
-      gp_Dir view_up = view().get_view_plane(*m_center).Axis().Direction();
-      gp_Dir plane_normal = axis_dir.Crossed(view_up);
-      if (plane_normal.Magnitude() < Precision::Confusion())
-      {
-        // If view up is parallel to axis, use a different reference direction
-        plane_normal = axis_dir.Crossed(gp_Dir(0, 0, 1));
-      }
-      plane_normal.Normalize();
-      
-      m_rotate_pln = gp_Pln(*m_center, plane_normal);
-    }
-    else
-    {
       m_rotate_pln = view().get_view_plane(*m_center);
-    }
-  }
 
   update_rotation_axis_();
   update_rotation_center_();

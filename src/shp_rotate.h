@@ -7,7 +7,6 @@ struct Rotate_options
   bool constr_axis_x {false};
   bool constr_axis_y {false};
   bool constr_axis_z {false};
-  bool custom_center {false};
 };
 
 class Shp_rotate : private Shp_operation_base

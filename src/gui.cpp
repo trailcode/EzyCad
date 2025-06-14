@@ -582,6 +582,7 @@ void GUI::options_()
   {
     case Mode::Normal:                options_normal_mode_();                 break;
     case Mode::Move:                  options_move_mode_();                   break;
+    case Mode::Rotate:                options_rotate_mode_();                 break;
     case Mode::Sketch_operation_axis: options_sketch_operation_axis_mode_();  break;
     case Mode::Shape_chamfer:         options_shape_chamfer_mode_();          break;
     case Mode::Shape_polar_duplicate: options_shape_polar_duplicate_mode_();  break;
@@ -663,10 +664,6 @@ void GUI::options_rotate_mode_()
   ImGui::Checkbox("Y axis", &opts.constr_axis_y);
   ImGui::SameLine();
   ImGui::Checkbox("Z axis", &opts.constr_axis_z);
-
-  ImGui::Checkbox("Custom center", &opts.custom_center);
-  if (opts.custom_center)
-    ImGui::TextUnformatted("Click to set rotation center");
 }
 
 void GUI::on_key_rotate_mode_(int key)
@@ -690,9 +687,6 @@ void GUI::on_key_rotate_mode_(int key)
       opts.constr_axis_z ^= 1;
       opts.constr_axis_x = false;
       opts.constr_axis_y = false;
-      break;
-    case GLFW_KEY_C:
-      opts.custom_center ^= 1;
       break;
     case GLFW_KEY_TAB:
       if (Status s = m_view->shp_rotate().show_angle_edit(screen_coords); !s.is_ok())
