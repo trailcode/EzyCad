@@ -139,6 +139,7 @@ class GUI
   void options_sketch_operation_axis_mode_();
   void options_shape_chamfer_mode_();
   void options_shape_polar_duplicate_mode_();
+  void options_rotate_mode_();
   void dbg_();
   void initialize_toolbar_();
   void menu_bar_();

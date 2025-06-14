@@ -652,16 +652,51 @@ void GUI::on_key_move_mode_(int key)
   }
 }
 
+void GUI::options_rotate_mode_()
+{
+  ImGui::TextUnformatted("Rotation options:");
+
+  Rotate_options& opts = m_view->shp_rotate().get_opts();
+
+  ImGui::Checkbox("X axis", &opts.constr_axis_x);
+  ImGui::SameLine();
+  ImGui::Checkbox("Y axis", &opts.constr_axis_y);
+  ImGui::SameLine();
+  ImGui::Checkbox("Z axis", &opts.constr_axis_z);
+
+  ImGui::Checkbox("Custom center", &opts.custom_center);
+  if (opts.custom_center)
+    ImGui::TextUnformatted("Click to set rotation center");
+}
+
 void GUI::on_key_rotate_mode_(int key)
 {
   const ScreenCoords screen_coords(glm::dvec2(ImGui::GetIO().MousePos.x, ImGui::GetIO().MousePos.y));
+  Rotate_options& opts = m_view->shp_rotate().get_opts();
 
   switch (key)
   {
+    case GLFW_KEY_X:
+      opts.constr_axis_x ^= 1;
+      opts.constr_axis_y = false;
+      opts.constr_axis_z = false;
+      break;
+    case GLFW_KEY_Y:
+      opts.constr_axis_y ^= 1;
+      opts.constr_axis_x = false;
+      opts.constr_axis_z = false;
+      break;
+    case GLFW_KEY_Z:
+      opts.constr_axis_z ^= 1;
+      opts.constr_axis_x = false;
+      opts.constr_axis_y = false;
+      break;
+    case GLFW_KEY_C:
+      opts.custom_center ^= 1;
+      break;
     case GLFW_KEY_TAB:
       if (Status s = m_view->shp_rotate().show_angle_edit(screen_coords); !s.is_ok())
         show_message(s.message());
-
       break;
     default:
       break;
