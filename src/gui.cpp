@@ -659,11 +659,40 @@ void GUI::options_rotate_mode_()
 
   Rotate_options& opts = m_view->shp_rotate().get_opts();
 
-  ImGui::Checkbox("X axis", &opts.constr_axis_x);
-  ImGui::SameLine();
-  ImGui::Checkbox("Y axis", &opts.constr_axis_y);
-  ImGui::SameLine();
-  ImGui::Checkbox("Z axis", &opts.constr_axis_z);
+  int selected_axis = -1;  // -1 means no axis selected
+  if (opts.constr_axis_x) selected_axis = 0;
+  else if (opts.constr_axis_y) selected_axis = 1;
+  else if (opts.constr_axis_z) selected_axis = 2;
+
+  if (ImGui::RadioButton("View to object axis", selected_axis == -1))
+  {
+    opts.constr_axis_x = false;
+    opts.constr_axis_y = false;
+    opts.constr_axis_z = false;
+    // Force update of rotation axis visualization
+    m_view->shp_rotate().update_rotation_axis_();
+  }
+  if (ImGui::RadioButton("Around X axis", selected_axis == 0))
+  {
+    opts.constr_axis_x = true;
+    opts.constr_axis_y = false;
+    opts.constr_axis_z = false;
+    m_view->shp_rotate().update_rotation_axis_();
+  }
+  if (ImGui::RadioButton("Around Y axis", selected_axis == 1))
+  {
+    opts.constr_axis_x = false;
+    opts.constr_axis_y = true;
+    opts.constr_axis_z = false;
+    m_view->shp_rotate().update_rotation_axis_();
+  }
+  if (ImGui::RadioButton("Around Z axis", selected_axis == 2))
+  {
+    opts.constr_axis_x = false;
+    opts.constr_axis_y = false;
+    opts.constr_axis_z = true;
+    m_view->shp_rotate().update_rotation_axis_();
+  }
 }
 
 void GUI::on_key_rotate_mode_(int key)
