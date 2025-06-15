@@ -661,21 +661,16 @@ void GUI::options_rotate_mode_()
   // Use radio buttons for axis selection
   int selected_axis = static_cast<int>(m_view->shp_rotate().get_rotation_axis());
   if (ImGui::RadioButton("View to object axis", &selected_axis, static_cast<int>(Rotation_axis::View_to_object)))
-  {
     m_view->shp_rotate().set_rotation_axis(Rotation_axis::View_to_object);
-  }
+  
   if (ImGui::RadioButton("Around X axis", &selected_axis, static_cast<int>(Rotation_axis::X_axis)))
-  {
     m_view->shp_rotate().set_rotation_axis(Rotation_axis::X_axis);
-  }
+  
   if (ImGui::RadioButton("Around Y axis", &selected_axis, static_cast<int>(Rotation_axis::Y_axis)))
-  {
     m_view->shp_rotate().set_rotation_axis(Rotation_axis::Y_axis);
-  }
+  
   if (ImGui::RadioButton("Around Z axis", &selected_axis, static_cast<int>(Rotation_axis::Z_axis)))
-  {
     m_view->shp_rotate().set_rotation_axis(Rotation_axis::Z_axis);
-  }
 }
 
 void GUI::on_key_rotate_mode_(int key)
@@ -721,11 +716,6 @@ void GUI::on_key_rotate_mode_(int key)
         m_view->shp_rotate().set_rotation_axis(Rotation_axis::View_to_object);
       else
         m_view->shp_rotate().set_rotation_axis(Rotation_axis::Z_axis);
-      break;
-
-    case GLFW_KEY_V:
-      // Toggle view-to-object rotation
-      m_view->shp_rotate().set_rotation_axis(Rotation_axis::View_to_object);
       break;
   }
 }

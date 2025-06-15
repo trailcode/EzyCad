@@ -199,9 +199,6 @@ Status Shp_rotate::show_angle_edit(const ScreenCoords& screen_coords)
 void Shp_rotate::finalize()
 {
   if (m_shps.empty())
-    // If the rotate tool is activated and no shapes are selected,
-    // then we do not want to call post_opts_() because they could
-    // be selected while in rotate mode.
     return;
 
   operation_shps_finalize_();
