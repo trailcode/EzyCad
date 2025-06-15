@@ -3,6 +3,7 @@
 #include <TopoDS.hxx>
 #include <TopoDS_Wire.hxx>
 #include <boost/geometry/io/wkt/wkt.hpp>
+#include <numbers>
 
 #include "geom.h"
 #include "gui.h"
@@ -359,7 +360,7 @@ TEST_F(Sketch_test, CreateCircle)
 
   // Verify the area of the circle (should be pi*r^2 = pi * 10^2 = 100pi)
   double area          = bg::area(boost_poly);
-  double expected_area = 100.0 * M_PI;  // 314.15926535897933
+  double expected_area = 100.0 * std::numbers::pi;  // 314.15926535897933
   EXPECT_NEAR(area, expected_area, 1.0) << "Circle area should be 100pi (radius = 10)";
 
   // Verify the number of points in the outer ring (should be enough points to approximate a circle)

@@ -8,6 +8,7 @@
 #include <glm/glm.hpp>
 #include <gp_Dir2d.hxx>
 #include <optional>
+#include <numbers>
 
 #include "dbg.h"
 #include "types.h"
@@ -81,7 +82,7 @@ double compute_angle(const gp_Vec2d& v1, const gp_Vec2d& v2)
   double dot   = v1.Dot(v2);
   double det   = v1.X() * v2.Y() - v1.Y() * v2.X();  // Cross product in 2D
   double angle = std::atan2(det, dot);
-  return (angle < 0) ? angle + 2 * M_PI : angle;  // Normalize to [0, 2pi]
+  return (angle < 0) ? angle + 2 * std::numbers::pi : angle;  // Normalize to [0, 2pi]
 }
 #endif
 
@@ -105,6 +106,11 @@ Plane_side side_of_plane(const gp_Pln& plane, const gp_Pnt& point);
 
 // Function to get gp_Pln from a TopoDS_Face
 std::optional<gp_Pln> plane_from_face(const TopoDS_Face& face);
+
+bool planes_equal(const gp_Pln& plane1, const gp_Pln& plane2);
+
+// Projects a vector onto a plane defined by its normal
+gp_Vec project_onto_plane(const gp_Vec& v, const gp_Pln& pln);
 
 gp_Pln xy_plane();
 
@@ -165,12 +171,16 @@ bool operator<(const gp_Pnt2d& lhs, const gp_Pnt2d& rhs);
 // Add this function declaration to geom.h
 gp_Pnt2d rotate_point(const gp_Pnt2d& origin, const gp_Pnt2d& point, double angle_degrees);
 
-bool planes_equal(const gp_Pln& plane1, const gp_Pln& plane2);
-
 // Check if a ring is clockwise using the shoelace formula
 bool is_clockwise(const boost_geom::ring_2d& ring);
 
 // Sorts a vector of gp_Pnt by x, then y, then z
 void sort_pnts(std::vector<gp_Pnt>& points);
+
+// Convert degrees to radians
+constexpr double to_radians(double degrees);
+
+// Convert radians to degrees
+constexpr double to_degrees(double radians);
 
 #include "geom.inl"

@@ -19,17 +19,66 @@ AIS_InteractiveContext& Shp_operation_base::ctx()
   return view().ctx();
 }
 
-std::vector<AIS_Shape_ptr> Shp_operation_base::get_selected() const
+std::vector<ShapeBase_ptr> Shp_operation_base::get_selected_shps_() const
 {
-  return m_view.get_selected();
+  std::vector<ShapeBase_ptr> ret;
+  for (AIS_Shape_ptr& obj : m_view.get_selected())
+    if (auto shp = ShapeBase_ptr::DownCast(obj); shp)
+      ret.push_back(shp);
+
+  return ret;
 }
 
-void Shp_operation_base::delete_selected_()
+Status Shp_operation_base::ensure_operation_shps_()
 {
-  return m_view.delete_selected();
+  if (m_shps.empty())
+  {
+    m_shps = get_selected_shps_();
+    if (m_shps.empty())
+      return Status::user_error("Select one or more shapes.");
+  }
+
+  return Status::ok();
 }
 
-AIS_Shape_ptr Shp_operation_base::get_shape(const ScreenCoords& screen_coords)
+[[nodiscard]] Status Shp_operation_base::ensure_operation_multi_shps_()
+{
+  if (m_shps.empty())
+  {
+    m_shps = get_selected_shps_();
+    if (m_shps.size() < 2)
+    {
+      m_shps.clear();
+      return Status::user_error("Select two or more shapes.");
+    }
+  }
+
+  return Status::ok();
+}
+
+void Shp_operation_base::delete_operation_shps_()
+{
+  std::vector<AIS_Shape_ptr> to_delete;
+  for (ShapeBase_ptr& shp : m_shps)
+    to_delete.push_back(shp);
+
+  m_view.delete_(to_delete);
+  m_shps.clear();
+}
+
+void Shp_operation_base::operation_shps_finalize_()
+{
+  for (AIS_Shape_ptr& shape : m_shps)
+    view().bake_transform_into_geometry(shape);
+}
+
+void Shp_operation_base::operation_shps_cancel_()
+{
+  for (AIS_Shape_ptr& shape : m_shps)
+    shape->ResetTransformation();
+}
+
+AIS_Shape_ptr Shp_operation_base::get_shape_(const ScreenCoords& screen_coords)
 {
   return m_view.get_shape(screen_coords);
 }

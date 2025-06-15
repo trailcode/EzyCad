@@ -48,3 +48,15 @@ bool equal(const T& first, Args... args)
 
   return true;
 }
+
+// Convert degrees to radians
+constexpr double to_radians(double degrees)
+{
+  return degrees * std::numbers::pi / 180.0;
+}
+
+// Convert radians to degrees
+constexpr double to_degrees(double radians)
+{
+  return radians * 180.0 / std::numbers::pi;
+}

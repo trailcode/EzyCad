@@ -8,49 +8,41 @@ Shp_move::Shp_move(Occt_view& view)
 
 Status Shp_move::move_selected(const ScreenCoords& screen_coords)
 {
-  std::vector<AIS_Shape_ptr> to_move = get_selected();
-  if (to_move.empty())
-    return Status::user_error("Select one or more shapes.");
+  CHK_RET(ensure_operation_shps_());
+
+  // Get the estimate of the center.
+  // TODO consider all shapes.
+  const gp_Pnt center = get_shape_bbox_center(m_shps[0]->Shape());
 
   if (!m_move_pln.has_value())
-  {
-    // Get the estimate of the center.
-    // TODO consider all shapes.
-    const gp_Pnt center = get_shape_bbox_center(to_move[0]->Shape());
     m_move_pln          = view().get_view_plane(center);
-  }
-
-  DO_ASSERT(m_move_pln.has_value());
 
   std::optional<gp_Pnt> mouse_wc_pos = view().pt3d_on_plane(screen_coords, *m_move_pln);
   if (!mouse_wc_pos)
     return Status::user_error("Adjust view, cannot get point on plane.");
-
-  // Use the point of the first selected object.
-  gp_Pnt center = get_shape_bbox_center(to_move.front()->Shape());
-
+  
   bool no_axis_constraints = !m_opts.constr_axis_x && !m_opts.constr_axis_y && !m_opts.constr_axis_z;
 
-  for (const AIS_Shape_ptr& shape : to_move)
+  if (m_delta.override_x.has_value())
+    m_delta.delta.SetX(*m_delta.override_x);
+  else
+    m_delta.delta.SetX(no_axis_constraints || m_opts.constr_axis_x ? mouse_wc_pos->X() - center.X() : 0);
+
+  if (m_delta.override_y.has_value())
+    m_delta.delta.SetY(*m_delta.override_y);
+  else
+    m_delta.delta.SetY(no_axis_constraints || m_opts.constr_axis_y ? mouse_wc_pos->Y() - center.Y() : 0);
+
+  if (m_delta.override_z.has_value())
+    m_delta.delta.SetZ(*m_delta.override_z);
+  else
+    m_delta.delta.SetZ(no_axis_constraints || m_opts.constr_axis_z ? mouse_wc_pos->Z() - center.Z() : 0);
+
+  gp_Trsf translation;
+  translation.SetTranslation(gp_Vec(m_delta.delta));
+
+  for (const AIS_Shape_ptr& shape : m_shps)
   {
-    if (m_delta.override_x.has_value())
-      m_delta.delta.SetX(*m_delta.override_x);
-    else
-      m_delta.delta.SetX(no_axis_constraints || m_opts.constr_axis_x ? mouse_wc_pos->X() - center.X() : 0);
-
-    if (m_delta.override_y.has_value())
-      m_delta.delta.SetY(*m_delta.override_y);
-    else
-      m_delta.delta.SetY(no_axis_constraints || m_opts.constr_axis_y ? mouse_wc_pos->Y() - center.Y() : 0);
-
-    if (m_delta.override_z.has_value())
-      m_delta.delta.SetZ(*m_delta.override_z);
-    else
-      m_delta.delta.SetZ(no_axis_constraints || m_opts.constr_axis_z ? mouse_wc_pos->Z() - center.Z() : 0);
-
-    gp_Trsf translation;
-    translation.SetTranslation(gp_Vec(m_delta.delta));
-
     shape->SetLocalTransformation(translation);
     ctx().Redisplay(shape, true);
   }
@@ -111,7 +103,7 @@ void Shp_move::check_finalize_()
   if (no_axis_constraints)
   {
     if (m_delta.override_x.has_value() && m_delta.override_y.has_value() && m_delta.override_z.has_value())
-      finalize_move_selected();
+      finalize();
   }
   else
   {
@@ -120,27 +112,25 @@ void Shp_move::check_finalize_()
     bool got_z = !m_opts.constr_axis_z || m_delta.override_z.has_value();
 
     if (got_x && got_y && got_z)
-      finalize_move_selected();
+      finalize();
   }
 }
 
-void Shp_move::finalize_move_selected()
+void Shp_move::finalize()
 {
-  std::vector<AIS_Shape_ptr> selected = get_selected();
-  if (selected.empty())
+  if (m_shps.empty())
+    // If the move tool is activated and no shapes are selected,
+    // then we do not want to call post_opts_() because they could
+    // be selected while in move mode.
     return;
 
-  for (AIS_Shape_ptr& shape : selected)
-    view().bake_transform_into_geometry(shape);
-
+  operation_shps_finalize_();
   post_opts_();
 }
 
-void Shp_move::cancel_move_selected()
+void Shp_move::cancel()
 {
-  for (AIS_Shape_ptr& shape : get_selected())
-    shape->ResetTransformation();
-
+  operation_shps_cancel_();
   post_opts_();
 }
 
@@ -149,6 +139,7 @@ void Shp_move::post_opts_()
   // Reset options
   m_opts  = {};
   m_delta = {};
+  m_shps.clear();
   gui().set_mode(Mode::Normal);
 }
 

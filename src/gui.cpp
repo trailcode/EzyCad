@@ -19,7 +19,8 @@
 #include "imgui.h"
 #include "occt_view.h"
 #include "sketch.h"
-#include "utl.h"
+//#include "utl.h"
+#include "geom.h"
 
 GUI* gui_instance = nullptr;
 
@@ -124,21 +125,28 @@ void GUI::on_key(int key, int scancode, int action, int mods)
       case GLFW_KEY_D:
         m_view->delete_selected();
         break;
+
       case GLFW_KEY_G:
         set_mode(Mode::Move);
         break;
+
+      case GLFW_KEY_R:
+        set_mode(Mode::Rotate);
+        break;
+
       case GLFW_KEY_E:
         set_mode(Mode::Sketch_face_extrude);
         break;
-      case GLFW_KEY_L:
-        break;
+
       case GLFW_KEY_TAB:
         m_view->dimension_input(screen_coords);
         break;
+
       case GLFW_KEY_ESCAPE:
         m_view->cancel(Set_parent_mode::Yes);
         hide_dist_edit();
         break;
+
       case GLFW_KEY_ENTER:
         m_view->on_enter(screen_coords);
         hide_dist_edit();
@@ -150,6 +158,9 @@ void GUI::on_key(int key, int scancode, int action, int mods)
       case Mode::Move:
         on_key_move_mode_(key);
         break;
+      case Mode::Rotate:
+        on_key_rotate_mode_(key);
+        break;
     }
   }
 }
@@ -160,7 +171,7 @@ void GUI::initialize_toolbar_()
   m_toolbar_buttons = {
       {                           load_texture("User.png"),  true,                  "Inspection mode",                         Mode::Normal},
       {             load_texture("Assembly_AxialMove.png"), false,                   "Shape move (g)",                           Mode::Move},
-      {                   load_texture("Draft_Rotate.png"), false,                     "Shape rotate",                         Mode::Rotate},
+      {                   load_texture("Draft_Rotate.png"), false,                 "Shape rotate (r)",                         Mode::Rotate},
       {                     load_texture("Part_Scale.png"), false,                      "Shape Scale",                          Mode::Scale},
       {        load_texture("Workbench_Sketcher_none.png"), false,           "Sketch inspection mode",         Mode::Sketch_inspection_mode},
       {          load_texture("Macro_FaceToSketch_48.png"), false,        "Create a sketch from face",               Mode::Sketch_from_face},
@@ -350,14 +361,14 @@ void GUI::dist_edit_()
 
   ImGui::SetNextItemWidth(80.0f);
   ImGui::SetKeyboardFocusHere();
-  
+
   // Add a small input float widget and check for changes
   if (ImGui::InputFloat("##dist_edit_float_value", &m_dist_val, 0.0f, 0.0f, "%.2f"))
     m_dist_callback(m_dist_val, false);
   else
   {
     m_dist_val = std::round(m_dist_val * 100.0f) / 100.0f;
-    int hi = 0;
+    int hi     = 0;
   }
 
   ImGui::End();
@@ -571,6 +582,7 @@ void GUI::options_()
   {
     case Mode::Normal:                options_normal_mode_();                 break;
     case Mode::Move:                  options_move_mode_();                   break;
+    case Mode::Rotate:                options_rotate_mode_();                 break;
     case Mode::Sketch_operation_axis: options_sketch_operation_axis_mode_();  break;
     case Mode::Shape_chamfer:         options_shape_chamfer_mode_();          break;
     case Mode::Shape_polar_duplicate: options_shape_polar_duplicate_mode_();  break;
@@ -637,6 +649,73 @@ void GUI::on_key_move_mode_(int key)
       m_view->shp_move().show_dist_edit(screen_coords);
       break;
     default:
+      break;
+  }
+}
+
+void GUI::options_rotate_mode_()
+{
+  ImGui::Text("Rotation Options");
+  ImGui::Separator();
+
+  // Use radio buttons for axis selection
+  int selected_axis = static_cast<int>(m_view->shp_rotate().get_rotation_axis());
+  if (ImGui::RadioButton("View to object axis", &selected_axis, static_cast<int>(Rotation_axis::View_to_object)))
+    m_view->shp_rotate().set_rotation_axis(Rotation_axis::View_to_object);
+  
+  if (ImGui::RadioButton("Around X axis", &selected_axis, static_cast<int>(Rotation_axis::X_axis)))
+    m_view->shp_rotate().set_rotation_axis(Rotation_axis::X_axis);
+  
+  if (ImGui::RadioButton("Around Y axis", &selected_axis, static_cast<int>(Rotation_axis::Y_axis)))
+    m_view->shp_rotate().set_rotation_axis(Rotation_axis::Y_axis);
+  
+  if (ImGui::RadioButton("Around Z axis", &selected_axis, static_cast<int>(Rotation_axis::Z_axis)))
+    m_view->shp_rotate().set_rotation_axis(Rotation_axis::Z_axis);
+}
+
+void GUI::on_key_rotate_mode_(int key)
+{
+  const ScreenCoords screen_coords(glm::dvec2(ImGui::GetIO().MousePos.x, ImGui::GetIO().MousePos.y));
+
+  switch (key)
+  {
+    case GLFW_KEY_ESCAPE:
+      m_view->shp_rotate().cancel();
+      break;
+
+    case GLFW_KEY_ENTER:
+    case GLFW_KEY_KP_ENTER:
+      m_view->shp_rotate().finalize();
+      break;
+
+    case GLFW_KEY_TAB:
+      // Show angle input dialog
+      if (Status s = m_view->shp_rotate().show_angle_edit(screen_coords); !s.is_ok())
+        show_message(s.message());
+      break;
+
+    case GLFW_KEY_X:
+      // Toggle between X axis and View_to_object
+      if (m_view->shp_rotate().get_rotation_axis() == Rotation_axis::X_axis)
+        m_view->shp_rotate().set_rotation_axis(Rotation_axis::View_to_object);
+      else
+        m_view->shp_rotate().set_rotation_axis(Rotation_axis::X_axis);
+      break;
+
+    case GLFW_KEY_Y:
+      // Toggle between Y axis and View_to_object
+      if (m_view->shp_rotate().get_rotation_axis() == Rotation_axis::Y_axis)
+        m_view->shp_rotate().set_rotation_axis(Rotation_axis::View_to_object);
+      else
+        m_view->shp_rotate().set_rotation_axis(Rotation_axis::Y_axis);
+      break;
+
+    case GLFW_KEY_Z:
+      // Toggle between Z axis and View_to_object
+      if (m_view->shp_rotate().get_rotation_axis() == Rotation_axis::Z_axis)
+        m_view->shp_rotate().set_rotation_axis(Rotation_axis::View_to_object);
+      else
+        m_view->shp_rotate().set_rotation_axis(Rotation_axis::Z_axis);
       break;
   }
 }
@@ -819,6 +898,12 @@ void GUI::on_mouse_pos(const ScreenCoords& screen_coords)
 
       break;
 
+    case Mode::Rotate:
+      if (Status s = m_view->shp_rotate().rotate_selected(screen_coords); !s.is_ok())
+        show_message(s.message());
+
+      break;
+
     case Mode::Shape_polar_duplicate:
       if (Status s = m_view->shp_polar_dup().move_point(screen_coords); !s.is_ok())
         show_message(s.message());
@@ -852,7 +937,11 @@ void GUI::on_mouse_button(int button, int action, int mods)
     switch (m_mode)
     {
       case Mode::Move:
-        m_view->shp_move().finalize_move_selected();
+        m_view->shp_move().finalize();
+        break;
+
+      case Mode::Rotate:
+        m_view->shp_rotate().finalize();
         break;
 
       case Mode::Sketch_add_edge:

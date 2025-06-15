@@ -1,20 +1,20 @@
 # EzyCad Usage Guide
 
 ## Table of Contents
-1. [Introduction](#introduction)
-2. [Getting Started](#getting-started)
-3. [User Interface](#user-interface)
-4. [File Operations](#file-operations)
-5. [Modeling Tools](#modeling-tools)
-6. [Keyboard Shortcuts](#keyboard-shortcuts)
-7. [View Controls](#view-controls)
-8. [Tips and Tricks](#tips-and-tricks)
-9. [Support](#support)
+1.  [Introduction](#introduction)
+2.  [Getting Started](#getting-started)
+3.  [User Interface](#user-interface)
+4.  [File Operations](#file-operations)
+5.  [Modeling Tools](#modeling-tools)
+6.  [Keyboard Shortcuts](#keyboard-shortcuts)
+7.  [View Controls](#view-controls)
+8.  [Tips and Tricks](#tips-and-tricks)
+9.  [Support](#support)
 10. [Tool Icons](#tool-icons)
 
 ## Introduction
 
-EzyCad is a modern CAD (Computer-Aided Design) application designed for creating and manipulating 2D and 3D models. It leverages OpenGL, ImGui, and Open CASCADE Technology (OCCT) to provide a robust and interactive user interface for CAD operations.
+EzyCad (Easy CAD) is a CAD application for hobbyist machinists to design and edit 2D and 3D models for machining projects. It supports creating precise parts with tools for sketching, extruding, and applying geometric operations, using OpenGL, ImGui, and Open CASCADE Technology (OCCT). Export models to formats like STEP or STL for CNC machines or 3D printers, and try it in your browser with the WebAssembly version.
 
 ## Getting Started
 
@@ -108,7 +108,7 @@ EzyCad is a modern CAD (Computer-Aided Design) application designed for creating
 ### 3D Modeling
 1. **Transform Operations**
    - Move shapes (G)
-   - Rotate objects
+   - Rotate objects (R)
    - Scale elements
    - Polar duplicate
 
@@ -139,6 +139,44 @@ While moving a shape, you can press `Tab` to activate a floating distance input 
 - Use axis constraints for straight-line moves.
 - Use interactive distance editing for precise adjustments.
 - You can always cancel and try again if the move isn't as expected.
+
+#### Shape Rotate Tool (R)
+
+The shape rotate tool enables precise rotation of selected shapes around a specified axis in the 3D viewer.
+
+**Features:**
+- **Rotation Axis Options:** Choose between view-to-object rotation or constrain rotation to X, Y, or Z axis.
+- **Interactive Angle Editing:** Enter or adjust the rotation angle for precise control with real-time preview.
+- **Visual Feedback:** The rotation axis is displayed with color-coded indicators (Red for X, Green for Y, Blue for Z).
+
+**How to Use:**
+1. **Activate Rotate Tool:** Select one or more shapes and press `R` or click the ![Draft_Rotate](icons/Draft_Rotate.png) icon. You can also activate the tool and select the shape(s) to rotate afterwards.
+2. **Select Rotation Axis: (Optional)**
+   
+   ![Rotate constrain axis example](doc/gen/rotate_constrain_axis.png)
+
+   *Example: Rotation around on the X axis.*
+   - Press `X` to rotate around the X-axis (Red)
+   - Press `Y` to rotate around the Y-axis (Green)
+   - Press `Z` to rotate around the Z-axis (Blue)
+   - Press the same axis key again to switch to view-to-object rotation
+
+3. **Edit Angle (Optional):**
+   - Press `Tab` to activate the angle input box
+   - Enter the desired rotation angle in degrees
+   - The preview updates in real-time as you adjust the angle
+   - Pressing enter finializes the rotation
+
+4. **Finalize or Cancel:**
+   - Press the `left mouse button` to confirm and apply the rotation
+   - Press `Esc` to cancel and revert to the original position
+
+**Tips:**
+- Use view-to-object rotation for intuitive free-form rotation
+- Use axis constraints for precise rotations around specific axes
+- The rotation center point is displayed as a red dot for reference
+   - Visiable in wirefame rendering of the shape(s)
+- You can combine rotation with other operations for complex transformations
 
 ## Feature Operations
 

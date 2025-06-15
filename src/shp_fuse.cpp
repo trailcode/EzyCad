@@ -1,5 +1,6 @@
 #include "shp_fuse.h"
 #include "gui.h"
+#include "utl.h"
 
 #include <BRepAlgoAPI_Fuse.hxx>
 
@@ -8,17 +9,15 @@ Shp_fuse::Shp_fuse(Occt_view& view)
 
 Status Shp_fuse::selected_fuse()
 {
-  std::vector<AIS_Shape_ptr> selected = get_selected();
-  if (selected.size() < 2)
-    return Status::user_error("Select two or more shapes.");
+  CHK_RET(ensure_operation_multi_shps_());
   
-  std::vector<AIS_Shape_ptr>::iterator itr = selected.begin();
+  std::vector<ShapeBase_ptr>::iterator itr = m_shps.begin();
 
   // Start with the first shape
   TopoDS_Shape result = (*itr)->Shape();
 
   // Union with each subsequent shape
-  for (++itr; itr != selected.end(); ++itr)
+  for (++itr; itr != m_shps.end(); ++itr)
   {
     BRepAlgoAPI_Fuse fuse_op(result, (*itr)->Shape());
 
@@ -36,7 +35,7 @@ Status Shp_fuse::selected_fuse()
   // Create a new shape from the union result
   ExtrudedShp_ptr shp = new ExtrudedShp(ctx(), result);
   shp->set_name("Fused");
-  delete_selected_();
+  delete_operation_shps_();
   add_shp_(shp);
   return Status::ok();
 }

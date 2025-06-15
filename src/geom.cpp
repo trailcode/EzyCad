@@ -180,7 +180,7 @@ std::array<gp_Pnt2d, 4> square_corners(const gp_Pnt2d& center, const gp_Pnt2d& e
   gp_Vec2d edge_dir = to_midpoint.Normalized();
 
   // Perpendicular direction (90 degrees)
-  gp_Vec2d perp_dir = edge_dir.Rotated(M_PI / 2.0);
+  gp_Vec2d perp_dir = edge_dir.Rotated(std::numbers::pi / 2.0);
 
   // Compute 2D vertices
   ret[0] = gp_Pnt2d(center.X() + half_side * (edge_dir.X() + perp_dir.X()),
@@ -205,7 +205,7 @@ std::array<gp_Pnt2d, 4> xy_stencil_pnts(const gp_Pnt2d& center, const gp_Pnt2d& 
                     edge_midpoint.Y() - center.Y());
 
   // Perpendicular direction (90 degrees)
-  gp_Vec2d perp_dir = edge_dir.Rotated(M_PI / 2.0);
+  gp_Vec2d perp_dir = edge_dir.Rotated(std::numbers::pi / 2.0);
 
   ret[0] = gp_Pnt2d(center.XY() - edge_dir.XY());
   ret[1] = gp_Pnt2d(center.XY() + edge_dir.XY());
@@ -233,7 +233,7 @@ TopoDS_Wire make_circle_wire(const gp_Pln&   pln,
   Handle(Geom_Circle) circle = new Geom_Circle(circle_axis, radius);
 
   // Make edge and wire
-  BRepBuilderAPI_MakeEdge edge_maker(circle, 0.0, 2.0 * M_PI);
+  BRepBuilderAPI_MakeEdge edge_maker(circle, 0.0, 2.0 * std::numbers::pi);
   BRepBuilderAPI_MakeWire wire_maker(edge_maker.Edge());
 
   return wire_maker.Wire();
@@ -254,7 +254,7 @@ Slot_pnts get_slot_points(const gp_Pnt2d& pt_a,
   gp_Vec2d dir = a_to_b.Normalized();
 
   // Perpendicular direction (90 degrees counterclockwise)
-  const double ninety_degrees_radians = M_PI / 2.0;
+  const double ninety_degrees_radians = std::numbers::pi / 2.0;
   gp_Vec2d     perp_dir               = dir.Rotated(ninety_degrees_radians);
 
   // Arc at pt_a: from +perp_dir (top) to -perp_dir (bottom)
@@ -433,6 +433,35 @@ std::optional<gp_Pln> plane_from_face(const TopoDS_Face& face)
 
   // Return the gp_Pln
   return plane_surface->Pln();
+}
+
+bool planes_equal(const gp_Pln& plane1, const gp_Pln& plane2)
+{
+  // Get the position and orientation of both planes
+  gp_Ax3 pos1 = plane1.Position();
+  gp_Ax3 pos2 = plane2.Position();
+
+  // Check if the origins are the same (within precision)
+  if (!pos1.Location().IsEqual(pos2.Location(), Precision::Confusion()))
+    return false;
+
+  // Check if the normal directions are parallel (within angular precision)
+  if (!pos1.Direction().IsParallel(pos2.Direction(), Precision::Angular()))
+    return false;
+
+  // Check if the X directions are parallel (within angular precision)
+  if (!pos1.XDirection().IsParallel(pos2.XDirection(), Precision::Angular()))
+    return false;
+
+  return true;
+}
+
+// Projects a vector onto a plane defined by its normal
+gp_Vec project_onto_plane(const gp_Vec& v, const gp_Pln& pln)
+{
+  gp_Dir normal = pln.Axis().Direction();
+  gp_Vec n(normal);
+  return v - n * (v.Dot(n));
 }
 
 gp_Pln xy_plane()
@@ -809,7 +838,7 @@ bool operator<(const gp_Pnt2d& lhs, const gp_Pnt2d& rhs)
 gp_Pnt2d rotate_point(const gp_Pnt2d& origin, const gp_Pnt2d& point, double angle_degrees)
 {
   // Convert angle from degrees to radians
-  const double angle_rad = angle_degrees * M_PI / 180.0;
+  const double angle_rad = angle_degrees * std::numbers::pi / 180.0;
 
   // Calculate the vector from origin to point
   const double dx = point.X() - origin.X();
@@ -827,27 +856,6 @@ gp_Pnt2d rotate_point(const gp_Pnt2d& origin, const gp_Pnt2d& point, double angl
 
   // Add back the origin offset
   return gp_Pnt2d(origin.X() + rotated_x, origin.Y() + rotated_y);
-}
-
-bool planes_equal(const gp_Pln& plane1, const gp_Pln& plane2)
-{
-  // Get the position and orientation of both planes
-  gp_Ax3 pos1 = plane1.Position();
-  gp_Ax3 pos2 = plane2.Position();
-
-  // Check if the origins are the same (within precision)
-  if (!pos1.Location().IsEqual(pos2.Location(), Precision::Confusion()))
-    return false;
-
-  // Check if the normal directions are parallel (within angular precision)
-  if (!pos1.Direction().IsParallel(pos2.Direction(), Precision::Angular()))
-    return false;
-
-  // Check if the X directions are parallel (within angular precision)
-  if (!pos1.XDirection().IsParallel(pos2.XDirection(), Precision::Angular()))
-    return false;
-
-  return true;
 }
 
 bool is_clockwise(const boost_geom::ring_2d& ring)

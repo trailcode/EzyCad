@@ -22,8 +22,8 @@ class Shp_move : private Shp_operation_base
 
   [[nodiscard]] Status move_selected(const ScreenCoords& screen_coords);
   void                 show_dist_edit(const ScreenCoords& screen_coords);
-  void                 finalize_move_selected();
-  void                 cancel_move_selected();
+  void                 finalize();
+  void                 cancel();
   Move_options&        get_opts();
 
  private:
@@ -40,10 +40,7 @@ class Shp_move : private Shp_operation_base
   void check_finalize_();
   void post_opts_();
 
-  std::optional<gp_Pln>            m_move_pln;
-  Move_options                     m_opts;
-  Deltas                           m_delta;
-  //std::function<void(float, bool)> m_dist_axis_x;
-  //std::function<void(float, bool)> m_dist_axis_y;
-  //std::function<void(float, bool)> m_dist_axis_z;
+  std::optional<gp_Pln> m_move_pln;
+  Move_options          m_opts;
+  Deltas                m_delta;
 };

@@ -1,4 +1,5 @@
 #include "shp_cut.h"
+#include "utl.h"
 
 #include <TopTools_ListOfShape.hxx>
 #include <BRepAlgoAPI_Cut.hxx>
@@ -8,16 +9,14 @@ Shp_cut::Shp_cut(Occt_view& view)
 
 Status Shp_cut::selected_cut()
 {
-  std::vector<AIS_Shape_ptr> selected = get_selected();
-  if (selected.size() < 2)
-    return Status::user_error("Select two or more shapes.");
+  CHK_RET(ensure_operation_multi_shps_());
   
-  std::vector<AIS_Shape_ptr>::iterator itr = selected.begin();
+  std::vector<ShapeBase_ptr>::iterator itr = m_shps.begin();
 
   TopTools_ListOfShape tool_list;
   TopTools_ListOfShape arguments;
   arguments.Append((*itr)->Shape());
-  for (++itr; itr != selected.end(); ++itr)
+  for (++itr; itr != m_shps.end(); ++itr)
     tool_list.Append((*itr)->Shape());
 
   BRepAlgoAPI_Cut cut_op;
@@ -35,7 +34,7 @@ Status Shp_cut::selected_cut()
 
   ExtrudedShp_ptr shp = new ExtrudedShp(ctx(), result_shape);
   shp->set_name("Cut");
-  delete_selected_();
+  delete_operation_shps_();
   add_shp_(shp);
 
   return Status::ok();
