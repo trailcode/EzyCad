@@ -333,7 +333,7 @@ std::optional<gp_Pnt> Occt_view::pt3d_on_plane(const ScreenCoords& screen_coords
     }
 
     default:
-      DO_ASSERT(false);
+      EZY_ASSERT(false);
   }
 
   // Should not get here.
@@ -444,7 +444,7 @@ void Occt_view::create_sketch_from_face_(const ScreenCoords& screen_coords)
     {
       // Get the outer wire of the face
       TopoDS_Wire outer_wire = BRepTools::OuterWire(*face);
-      DO_ASSERT(!outer_wire.IsNull());
+      EZY_ASSERT(!outer_wire.IsNull());
       m_cur_sketch = std::make_shared<Sketch>("Sketch from face", *this, *pln, outer_wire);
       m_sketches.push_back(m_cur_sketch);
       m_cur_sketch->set_current();
@@ -456,7 +456,7 @@ void Occt_view::create_sketch_from_face_(const ScreenCoords& screen_coords)
 void Occt_view::finalize_sketch_extrude_()
 {
   DBG_MSG("");
-  DO_ASSERT(m_extruded);
+  EZY_ASSERT(m_extruded);
   add_shp_(m_extruded);
   m_ctx->Remove(m_tmp_dim, false);
   clear_all(m_to_extrude_pt, m_to_extrude, m_extruded,
@@ -483,8 +483,8 @@ bool Occt_view::cancel_sketch_extrude_()
 
 void Occt_view::create_default_sketch_()
 {
-  DO_ASSERT(m_sketches.empty());
-  DO_ASSERT(!m_cur_sketch);
+  EZY_ASSERT(m_sketches.empty());
+  EZY_ASSERT(!m_cur_sketch);
   m_cur_sketch = std::make_shared<Sketch>("Sketch", *this, xy_plane());
   m_sketches.push_back(m_cur_sketch);
   m_cur_sketch->set_current();
@@ -626,7 +626,7 @@ void Occt_view::add_shp_(ShapeBase_ptr& shp)
 
 bool Occt_view::fit_face_in_view(const TopoDS_Face& face)
 {
-  DO_ASSERT(!face.IsNull());
+  EZY_ASSERT(!face.IsNull());
   auto pln = plane_from_face(face);
   if (!pln)
     return false;
@@ -849,7 +849,7 @@ void Occt_view::on_mouse_button(int theButton, int theAction, int theMods)
 
 void Occt_view::on_mouse_move(const ScreenCoords& screen_coords)
 {
-  DO_ASSERT(!m_view.IsNull());
+  EZY_ASSERT(!m_view.IsNull());
   UpdateMousePosition(Graphic3d_Vec2i(int(screen_coords.unsafe_get_x()), int(screen_coords.unsafe_get_y())),
                       PressedMouseButtons(),
                       LastMouseFlags(),
@@ -977,6 +977,7 @@ void Occt_view::on_mode()
         // clang-format off
       case Mode::Sketch_from_face: set_shp_selection_mode(TopAbs_FACE); break;
       case Mode::Shape_chamfer:    on_chamfer_mode();                   break; // Will update selection mode
+      default: break;
         // clang-format on
     }
 
@@ -1001,7 +1002,7 @@ void Occt_view::on_mode()
 
 void Occt_view::on_chamfer_mode()
 {
-  DO_ASSERT(get_mode() == Mode::Shape_chamfer);
+  EZY_ASSERT(get_mode() == Mode::Shape_chamfer);
   switch (gui().get_chamfer_mode())
   {
       // clang-format off
@@ -1011,7 +1012,7 @@ void Occt_view::on_chamfer_mode()
     case Chamfer_mode::Shape: set_shp_selection_mode(TopAbs_SHAPE); break;
      // clang-format off
       default:
-        DO_ASSERT(false);
+        EZY_ASSERT(false);
   }
 }
 
@@ -1049,6 +1050,7 @@ void Occt_view::remove_sketch(const Sketch_ptr& sketch)
 {
   m_sketches.remove(sketch);
   if (m_cur_sketch == sketch)
+  {
     if (m_sketches.empty())
     {
       m_cur_sketch = nullptr;
@@ -1056,11 +1058,12 @@ void Occt_view::remove_sketch(const Sketch_ptr& sketch)
     }
     else
       m_cur_sketch = m_sketches.front();
+  }
 }
 
 Sketch& Occt_view::curr_sketch()
 {
-  DO_ASSERT(m_cur_sketch);
+  EZY_ASSERT(m_cur_sketch);
   return *m_cur_sketch;
 }
 
@@ -1085,7 +1088,7 @@ void Occt_view::set_curr_sketch(const Sketch_ptr& to_set)
       return;
     }
 
-  DO_ASSERT(false);  // Sketch does not belong to this view.
+  EZY_ASSERT(false);  // Sketch does not belong to this view.
 }
 
 std::list<ShapeBase_ptr>& Occt_view::get_shapes()
@@ -1136,18 +1139,18 @@ void Occt_view::load(const std::string& json_str)
 
   clear_all(m_sketches, m_cur_sketch, m_shps);
   const json j = json::parse(json_str);
-  DO_ASSERT(j.contains("sketches") && j["sketches"].is_array());
+  EZY_ASSERT(j.contains("sketches") && j["sketches"].is_array());
   for (const auto& s : j["sketches"])
   {
     m_sketches.push_back(Sketch_json::from_json(*this, s));
     if (s["isCurrent"])
     {
-      DO_ASSERT(!m_cur_sketch);
+      EZY_ASSERT(!m_cur_sketch);
       m_cur_sketch = m_sketches.back();
     }
   }
   // We need at lease one sketch. TODO what if the user deletes them all?
-  DO_ASSERT(m_cur_sketch);
+  EZY_ASSERT(m_cur_sketch);
 
   for (const json& s : j["shapes"])
   {

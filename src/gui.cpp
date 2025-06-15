@@ -27,7 +27,7 @@ GUI* gui_instance = nullptr;
 GUI::GUI()
 {
   m_view = std::make_unique<Occt_view>(*this);
-  DO_ASSERT(!gui_instance);
+  EZY_ASSERT(!gui_instance);
   gui_instance = this;
 }
 
@@ -39,7 +39,7 @@ GUI::~GUI()
 #ifdef __EMSCRIPTEN__
 GUI& GUI::instance()
 {
-  DO_ASSERT(gui_instance);
+  EZY_ASSERT(gui_instance);
   return *gui_instance;
 }
 #endif
@@ -104,13 +104,13 @@ void GUI::set_parent_mode()
   {
     // Called only once.
     for (size_t idx = 0; idx < size_t(Mode::_count); ++idx)
-      DO_ASSERT(parent_modes.find(Mode(idx)) != parent_modes.end());
+      EZY_ASSERT(parent_modes.find(Mode(idx)) != parent_modes.end());
 
     return true;
   }();
 
   const auto itr = parent_modes.find(get_mode());
-  DO_ASSERT(itr != parent_modes.end());
+  EZY_ASSERT(itr != parent_modes.end());
   set_mode(itr->second);
 }
 
@@ -151,6 +151,9 @@ void GUI::on_key(int key, int scancode, int action, int mods)
         m_view->on_enter(screen_coords);
         hide_dist_edit();
         break;
+
+      default:
+        break;
     }
 
     switch (get_mode())
@@ -158,8 +161,12 @@ void GUI::on_key(int key, int scancode, int action, int mods)
       case Mode::Move:
         on_key_move_mode_(key);
         break;
+
       case Mode::Rotate:
         on_key_rotate_mode_(key);
+        break;
+
+      default:
         break;
     }
   }
@@ -289,7 +296,7 @@ void GUI::toolbar_()
             break;
 
           default:
-            DO_ASSERT(false);
+            EZY_ASSERT(false);
         }
       else
       {
@@ -384,7 +391,7 @@ void GUI::sketch_list_()
     std::shared_ptr<Sketch> sketch_to_delete;
     for (std::shared_ptr<Sketch>& sketch : m_view->get_sketches())
     {
-      DO_ASSERT(sketch);
+      EZY_ASSERT(sketch);
 
       // Buffer for editable name
 #pragma warning(push)
@@ -954,6 +961,7 @@ void GUI::on_mouse_button(int button, int action, int mods)
         hide_dist_edit();
         m_view->curr_sketch().add_sketch_pt(screen_coords);
         break;
+
       case Mode::Shape_chamfer:
         if (Status s = m_view->shp_chamfer().add_chamfer(screen_coords, m_chamfer_mode); !s.is_ok())
           show_message(s.message());
@@ -976,6 +984,7 @@ void GUI::on_mouse_button(int button, int action, int mods)
       case Mode::Sketch_add_multi_edges:
         m_view->curr_sketch().finalize_elm();
         break;
+
       default:
         break;
     }

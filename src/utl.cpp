@@ -11,9 +11,9 @@
 GLuint load_texture(const std::string& path)
 {
   int width, height, channels;
-  DO_ASSERT_MSG(std::filesystem::exists(path), "Error cannot open: " + std::string(path));
+  EZY_ASSERT_MSG(std::filesystem::exists(path), "Error cannot open: " + std::string(path));
   unsigned char* data = stbi_load(path.c_str(), &width, &height, &channels, 4);  // Force RGBA
-  DO_ASSERT_MSG(data, "l");
+  EZY_ASSERT_MSG(data, "l");
 
   GLuint texture_id;
   glGenTextures(1, &texture_id);

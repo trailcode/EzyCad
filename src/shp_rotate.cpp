@@ -64,8 +64,8 @@ Status Shp_rotate::ensure_start_state_()
 
 void Shp_rotate::update_rotation_axis_()
 {
-  DO_ASSERT(m_center.has_value());
-  DO_ASSERT(m_rotate_pln.has_value());
+  EZY_ASSERT(m_center.has_value());
+  EZY_ASSERT(m_rotate_pln.has_value());
 
   // If View_to_object is set, remove the axis visualization
   if (m_rotation_axis == Rotation_axis::View_to_object)
@@ -125,7 +125,7 @@ void Shp_rotate::update_rotation_axis_()
 
 void Shp_rotate::update_rotation_center_()
 {
-  DO_ASSERT(m_center.has_value());
+  EZY_ASSERT(m_center.has_value());
 
   // TODO cannot see the point unless the shape is rendered as wireframe
   // Create a point representing the rotation center
@@ -147,8 +147,8 @@ void Shp_rotate::update_rotation_center_()
 
 void Shp_rotate::preview_rotate_()
 {
-  DO_ASSERT(m_center.has_value());
-  DO_ASSERT(m_rotate_pln.has_value());
+  EZY_ASSERT(m_center.has_value());
+  EZY_ASSERT(m_rotate_pln.has_value());
 
   gp_Dir axis_dir;
   switch (m_rotation_axis)

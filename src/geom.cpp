@@ -167,7 +167,7 @@ TopoDS_Wire make_square_wire(const gp_Pln&   pln,
 
 std::array<gp_Pnt2d, 4> square_corners(const gp_Pnt2d& center, const gp_Pnt2d& edge_midpoint)
 {
-  DO_ASSERT(unique(center, edge_midpoint));
+  EZY_ASSERT(unique(center, edge_midpoint));
 
   std::array<gp_Pnt2d, 4> ret;
 
@@ -197,7 +197,7 @@ std::array<gp_Pnt2d, 4> square_corners(const gp_Pnt2d& center, const gp_Pnt2d& e
 
 std::array<gp_Pnt2d, 4> xy_stencil_pnts(const gp_Pnt2d& center, const gp_Pnt2d& edge_midpoint)
 {
-  DO_ASSERT(unique(center, edge_midpoint));
+  EZY_ASSERT(unique(center, edge_midpoint));
 
   std::array<gp_Pnt2d, 4> ret;
 
@@ -328,8 +328,8 @@ std::pair<gp_Vec, gp_Vec> get_start_end_tangents(const Handle(Geom_TrimmedCurve)
   curve->D1(u_end, p_end, tangent_end);
 
   // Normalize the tangent vectors to get unit directions
-  DO_ASSERT_MSG(tangent_start.Magnitude() > 1e-10, "Tangent start vector too small!");
-  DO_ASSERT_MSG(tangent_end.Magnitude() > 1e-10, "Tangent start vector too small!");
+  EZY_ASSERT_MSG(tangent_start.Magnitude() > 1e-10, "Tangent start vector too small!");
+  EZY_ASSERT_MSG(tangent_end.Magnitude() > 1e-10, "Tangent start vector too small!");
 
   tangent_start.Normalize();
   tangent_end.Normalize();
@@ -347,7 +347,7 @@ gp_Vec get_end_tangent(const Handle(Geom_TrimmedCurve) & curve)
   curve->D1(u_end, p_end, tangent_end);
 
   // Normalize the tangent vector to get unit directions
-  DO_ASSERT_MSG(tangent_end.Magnitude() > 1e-10, "Tangent start vector too small!");
+  EZY_ASSERT_MSG(tangent_end.Magnitude() > 1e-10, "Tangent start vector too small!");
   tangent_end.Normalize();
 
   return tangent_end;
@@ -364,7 +364,7 @@ std::pair<gp_Vec, gp_Pnt> get_out_dir_and_end_pt(const Handle(Geom_TrimmedCurve)
   curve->D2(u_end, p_end, unused, out_dir);
 
   // Normalize the out direction vector to get unit directions
-  DO_ASSERT_MSG(out_dir.Magnitude() > 1e-10, "Start vector too small!");
+  EZY_ASSERT_MSG(out_dir.Magnitude() > 1e-10, "Start vector too small!");
   out_dir.Normalize();
 
   return {out_dir, p_end};
@@ -377,7 +377,7 @@ std::pair<gp_Pnt, gp_Pnt> get_edge_endpoints(const TopoDS_Edge& edge)
   TopExp::Vertices(edge, start_vertex, end_vertex);
 
   // Check for null vertices
-  DO_ASSERT(!start_vertex.IsNull() && !end_vertex.IsNull());
+  EZY_ASSERT(!start_vertex.IsNull() && !end_vertex.IsNull());
 
   // Convert vertices to geometric points
   gp_Pnt start_point = BRep_Tool::Pnt(start_vertex);
@@ -488,7 +488,7 @@ gp_Dir2d get_unit_dir(const gp_Pnt2d& point1, const gp_Pnt2d& point2)
   gp_Vec2d direction_vector(point1, point2);
 
   // Check if the vector is zero-length (points are identical)
-  DO_ASSERT_MSG(direction_vector.Magnitude() > Precision::Confusion(),
+  EZY_ASSERT_MSG(direction_vector.Magnitude() > Precision::Confusion(),
                 "Error: Points are coincident");
 
   // Normalize the vector and return as gp_Dir2d
@@ -505,7 +505,7 @@ gp_Pnt2d get_midpoint(const gp_Pnt2d& p1, const gp_Pnt2d& p2)
 gp_Pnt2d mirror_point(const gp_Pnt2d& p1, const gp_Pnt2d& p2, const gp_Pnt2d& point_to_mirror)
 {
   // Check if p1 and p2 are the same (invalid line)
-  DO_ASSERT(unique(p1, p2));
+  EZY_ASSERT(unique(p1, p2));
 
   // Define the line direction and create a Geom2d_Line
   gp_Vec2d line_vec(p1, p2);
@@ -514,7 +514,7 @@ gp_Pnt2d mirror_point(const gp_Pnt2d& p1, const gp_Pnt2d& p2, const gp_Pnt2d& po
   Handle(Geom2d_Curve) line_ptr = new Geom2d_Line(p1, line_dir);
   // Project the point onto the line
   Geom2dAPI_ProjectPointOnCurve projector(point_to_mirror, line_ptr);
-  DO_ASSERT(projector.NbPoints() != 0);
+  EZY_ASSERT(projector.NbPoints() != 0);
 
   gp_Pnt2d projection = projector.NearestPoint();
 
@@ -532,7 +532,7 @@ PrsDim_LengthDimension_ptr create_distance_annotation(const gp_Pnt& p1,
                                                       const gp_Pln& pln)
 {
   // Check if points are too close (invalid for dimension)
-  DO_ASSERT(unique(p1, p2));
+  EZY_ASSERT(unique(p1, p2));
 
   // Convert gp_Pnt to TopoDS_Vertex
   TopoDS_Vertex vertex_1 = BRepBuilderAPI_MakeVertex(p1);
@@ -554,7 +554,7 @@ PrsDim_LengthDimension_ptr create_distance_annotation(const gp_Pnt2d& p1,
 
 const gp_Pnt& closest_to_camera(const V3d_View_ptr& view, const std::vector<gp_Pnt>& pnts)
 {
-  DO_ASSERT(pnts.size());
+  EZY_ASSERT(pnts.size());
   size_t        best_idx;
   Standard_Real min_distance = std::numeric_limits<Standard_Real>::max();
 
@@ -582,7 +582,7 @@ double compute_face_area(const AIS_Shape_ptr& shp)
 {
   // Ensure the shape is a face
   const TopoDS_Shape& shape = shp->Shape();
-  DO_ASSERT_MSG(shape.ShapeType() == TopAbs_FACE, "Shape is not a face.");
+  EZY_ASSERT_MSG(shape.ShapeType() == TopAbs_FACE, "Shape is not a face.");
 
   // Cast to TopoDS_Face
   TopoDS_Face face = TopoDS::Face(shape);
@@ -667,7 +667,7 @@ boost_geom::point_2d to_boost(const gp_Pnt2d& pt)
 boost_geom::polygon_2d to_boost(const TopoDS_Shape& shape, const gp_Pln& pln2)
 {
   // Check if the shape is a face
-  DO_ASSERT_MSG(shape.ShapeType() == TopAbs_FACE, "Shape must be a face");
+  EZY_ASSERT_MSG(shape.ShapeType() == TopAbs_FACE, "Shape must be a face");
 
   // Cast to TopoDS_Face
   const TopoDS_Face& face = TopoDS::Face(shape);
@@ -675,7 +675,7 @@ boost_geom::polygon_2d to_boost(const TopoDS_Shape& shape, const gp_Pln& pln2)
   // Get the surface and verify it's a plane
   Handle(Geom_Surface) surface = BRep_Tool::Surface(face);
   Handle(Geom_Plane) plane     = Handle(Geom_Plane)::DownCast(surface);
-  DO_ASSERT_MSG(!plane.IsNull(), "Face surface must be planar.");
+  EZY_ASSERT_MSG(!plane.IsNull(), "Face surface must be planar.");
 
   // Get the plane's coordinate system
   // gp_Pln pln = plane->Pln(); // Centers poly using the origin of the shape plane.
@@ -743,14 +743,14 @@ boost_geom::polygon_2d to_boost(const TopoDS_Shape& shape, const gp_Pln& pln2)
           break;
         }
         default:
-          DO_ASSERT(false);  // Implement!
+          EZY_ASSERT(false);  // Implement!
       }
       edge_explorer.Next();
     }
     if (wire.Orientation() == TopAbs_FORWARD)
       std::reverse(out.begin(), out.end());
 
-    DO_ASSERT_MSG(to_pnt2d(out.front()).IsEqual(to_pnt2d(out.back()), Precision::Confusion()),
+    EZY_ASSERT_MSG(to_pnt2d(out.front()).IsEqual(to_pnt2d(out.back()), Precision::Confusion()),
                   "Ring not closed!");
 
     out.pop_back();
@@ -775,7 +775,7 @@ boost_geom::polygon_2d to_boost(const TopoDS_Shape& shape, const gp_Pln& pln2)
 
   auto check_ring = [](boost_geom::ring_2d& ring)
   {
-    DO_ASSERT_MSG(ring.size() > 3, "Not enough points!");
+    EZY_ASSERT_MSG(ring.size() > 3, "Not enough points!");
 
     // Boost requires points to be exactly the same.
     ring.front() = ring.back();

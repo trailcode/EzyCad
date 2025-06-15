@@ -32,7 +32,7 @@ void clear_all(T& arg, Args&... args);
 template <typename Container>
 typename Container::value_type&& pop_back(Container& container)
 {
-  DO_ASSERT(container.size());               // Ensure the container isn�t empty
+  EZY_ASSERT(container.size());               // Ensure the container isn�t empty
   auto value = std::move(container.back());  // Get the last element
   container.pop_back();                      // Remove the last element
   return std::move(value);                   // Return the retrieved element

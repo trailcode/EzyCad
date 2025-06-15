@@ -114,7 +114,7 @@ void get_wire_verts(AIS_Shape_ptr& shp, std::vector<gp_Pnt>& verts_out)
 {
   verts_out.clear();
   const TopoDS_Shape& shape = shp->Shape();
-  DO_ASSERT(shape.ShapeType() == TopAbs_WIRE);
+  EZY_ASSERT(shape.ShapeType() == TopAbs_WIRE);
   const TopoDS_Wire& wire = TopoDS::Wire(shape);
   TopExp_Explorer    edgeExplorer(wire, TopAbs_EDGE);
   while (edgeExplorer.More())
@@ -128,7 +128,7 @@ void get_wire_verts(AIS_Shape_ptr& shp, std::vector<gp_Pnt>& verts_out)
     verts_out.push_back(p1);
     if (!v1.IsSame(v2))
       // Check if the edge isn't degenerate
-      // TODO This should not happen, use DO_ASSERT?
+      // TODO This should not happen, use EZY_ASSERT?
       verts_out.push_back(p2);
 
     edgeExplorer.Next();

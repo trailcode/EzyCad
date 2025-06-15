@@ -78,7 +78,7 @@ Status Shp_chamfer::add_chamfer(const ScreenCoords& screen_coords, const Chamfer
     }
 
     default:
-      DO_ASSERT(false);
+      EZY_ASSERT(false);
   }
 
   try
@@ -100,7 +100,7 @@ Status Shp_chamfer::add_chamfer(const ScreenCoords& screen_coords, const Chamfer
   catch (...)
   {
     // Investigate if this happens
-    DO_ASSERT(false);
+    EZY_ASSERT(false);
   }
 
   return Status::ok();
