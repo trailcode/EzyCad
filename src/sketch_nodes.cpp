@@ -268,27 +268,27 @@ bool Sketch_nodes::try_snap_outside_(gp_Pnt2d& pt, const double snap_dist)
 
 Sketch_nodes::Node& Sketch_nodes::operator[](size_t idx)
 {
-  DO_ASSERT(idx < size());
+  EZY_ASSERT(idx < size());
   return m_nodes[idx];
 }
 
 const Sketch_nodes::Node& Sketch_nodes::operator[](size_t idx) const
 {
-  DO_ASSERT(idx < size());
+  EZY_ASSERT(idx < size());
   return m_nodes[idx];
 }
 
 Sketch_nodes::Node& Sketch_nodes::operator[](const std::optional<size_t> idx)
 {
-  DO_ASSERT(idx.has_value());
-  DO_ASSERT(*idx < size());
+  EZY_ASSERT(idx.has_value());
+  EZY_ASSERT(*idx < size());
   return m_nodes[idx.value()];
 }
 
 const Sketch_nodes::Node& Sketch_nodes::operator[](const std::optional<size_t> idx) const
 {
-  DO_ASSERT(idx.has_value());
-  DO_ASSERT(*idx < size());
+  EZY_ASSERT(idx.has_value());
+  EZY_ASSERT(*idx < size());
   return m_nodes[idx.value()];
 }
 

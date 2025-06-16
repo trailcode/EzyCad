@@ -36,7 +36,7 @@ Shape_type Shape_base::get_type(const std::string& shp_type_name)
     if (c_ShapeType_names[i] == shp_type_name)
       return Shape_type(i);
 
-  DO_ASSERT_MSG(false, "Unknown shape type: " + shp_type_name);
+  EZY_ASSERT_MSG(false, "Unknown shape type: " + shp_type_name);
   return Shape_type::_count;
 }
 

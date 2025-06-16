@@ -31,7 +31,7 @@ Status Shp_polar_dup::move_point(const ScreenCoords& screen_coords)
     m_shps_center = get_shape_bbox_center(m_shps[0]->Shape());
   }
 
-  DO_ASSERT(m_shps.size());
+  EZY_ASSERT(m_shps.size());
 
   Sketch_nodes& nodes = view().curr_sketch().get_nodes();
 
@@ -66,7 +66,7 @@ Status Shp_polar_dup::add_point(const ScreenCoords& screen_coords)
   if (m_shps.empty())
     return Status::user_error("Select one or more shapes.");
 
-  DO_ASSERT(m_polar_arm);
+  EZY_ASSERT(m_polar_arm);
 
   const TopoDS_Edge& edge                       = TopoDS::Edge(m_polar_arm->Shape());
   std::tie(m_polar_arm_end, m_polar_arm_origin) = get_edge_endpoints(view().curr_sketch().get_plane(), edge);

@@ -35,7 +35,7 @@ nlohmann::json Sketch_json::to_json(const Sketch& sketch)
   const auto& sketch_nodes = sketch.m_nodes;
   for (const auto& edge : sketch.m_edges)
   {
-    DO_ASSERT(edge.node_idx_b.has_value());
+    EZY_ASSERT(edge.node_idx_b.has_value());
     if (!edge.circle_arc)
       edges_json.push_back({::to_json(sketch_nodes[edge.node_idx_a]),
                             ::to_json(sketch_nodes[edge.node_idx_b]),
@@ -44,7 +44,7 @@ nlohmann::json Sketch_json::to_json(const Sketch& sketch)
     {
       if (last_arc_circle_edge)
       {
-        DO_ASSERT(last_arc_circle_edge->circle_arc.get() == edge.circle_arc.get());
+        EZY_ASSERT(last_arc_circle_edge->circle_arc.get() == edge.circle_arc.get());
         arc_edges_json.push_back({::to_json(sketch_nodes[last_arc_circle_edge->node_idx_a]),
                                   ::to_json(sketch_nodes[last_arc_circle_edge->node_idx_arc]),
                                   ::to_json(sketch_nodes[edge.node_idx_b])});
@@ -53,8 +53,8 @@ nlohmann::json Sketch_json::to_json(const Sketch& sketch)
       else
       {
         // This is the first part of the circle arc.
-        DO_ASSERT(edge.node_idx_arc);
-        DO_ASSERT(*edge.node_idx_b == *edge.node_idx_arc);
+        EZY_ASSERT(edge.node_idx_arc);
+        EZY_ASSERT(*edge.node_idx_b == *edge.node_idx_arc);
         last_arc_circle_edge = &edge;
       }
     }
@@ -65,11 +65,11 @@ nlohmann::json Sketch_json::to_json(const Sketch& sketch)
 
 std::shared_ptr<Sketch> Sketch_json::from_json(Occt_view& view, const nlohmann::json& j)
 {
-  DO_ASSERT(j.contains("name") && j["name"].is_string());
-  DO_ASSERT(j.contains("edges") && j["edges"].is_array());
-  DO_ASSERT(j.contains("arc_edges") && j["arc_edges"].is_array());
-  DO_ASSERT(j.contains("plane") && j["plane"].is_object());
-  DO_ASSERT(j.contains("isCurrent") && j["isCurrent"].is_boolean());
+  EZY_ASSERT(j.contains("name") && j["name"].is_string());
+  EZY_ASSERT(j.contains("edges") && j["edges"].is_array());
+  EZY_ASSERT(j.contains("arc_edges") && j["arc_edges"].is_array());
+  EZY_ASSERT(j.contains("plane") && j["plane"].is_object());
+  EZY_ASSERT(j.contains("isCurrent") && j["isCurrent"].is_boolean());
 
   std::shared_ptr<Sketch> ret;
 
@@ -79,7 +79,7 @@ std::shared_ptr<Sketch> Sketch_json::from_json(Occt_view& view, const nlohmann::
     std::istringstream iss;
     iss.str(j["originating_face"]);
     BRepTools::Read(shape, iss, BRep_Builder());
-    DO_ASSERT(shape.ShapeType() == TopAbs_WIRE);
+    EZY_ASSERT(shape.ShapeType() == TopAbs_WIRE);
     // Cast to TopoDS_Wire
     const TopoDS_Wire& face = TopoDS::Wire(shape);
 
@@ -91,7 +91,7 @@ std::shared_ptr<Sketch> Sketch_json::from_json(Occt_view& view, const nlohmann::
   // Process each edge in the JSON array
   for (const auto& edge_json : j["edges"])
   {
-    DO_ASSERT(edge_json.is_array() && edge_json.size() == 3);
+    EZY_ASSERT(edge_json.is_array() && edge_json.size() == 3);
 
     // Extract the two points
     gp_Pnt2d pt_a = ::from_json_pnt2d(edge_json[0]);
@@ -102,7 +102,7 @@ std::shared_ptr<Sketch> Sketch_json::from_json(Occt_view& view, const nlohmann::
 
   for (const auto& edge_json : j["arc_edges"])
   {
-    DO_ASSERT(edge_json.is_array() && edge_json.size() == 3);
+    EZY_ASSERT(edge_json.is_array() && edge_json.size() == 3);
     // Extract the three points
     gp_Pnt2d pt_a = ::from_json_pnt2d(edge_json[0]);
     gp_Pnt2d pt_b = ::from_json_pnt2d(edge_json[1]);

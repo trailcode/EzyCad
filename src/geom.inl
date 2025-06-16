@@ -19,7 +19,7 @@ bool unique(const T& first, Args... args)
   std::vector<T> items;
   items.reserve(1 + sizeof...(args));
   fill_vector(items, first, args...);
-  DO_ASSERT(items.size() > 1);
+  EZY_ASSERT(items.size() > 1);
 
   // Compare each pair
   for (size_t i = 0; i < items.size() - 1; ++i)
@@ -38,7 +38,7 @@ bool equal(const T& first, Args... args)
   std::vector<T> items;
   items.reserve(1 + sizeof...(args));
   fill_vector(items, first, args...);
-  DO_ASSERT(items.size() > 1);
+  EZY_ASSERT(items.size() > 1);
 
   // Compare each pair
   for (size_t i = 0; i < items.size() - 1; ++i)

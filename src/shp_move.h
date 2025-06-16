@@ -41,6 +41,7 @@ class Shp_move : private Shp_operation_base
   void post_opts_();
 
   std::optional<gp_Pln> m_move_pln;
+  std::optional<gp_Pnt> m_center;
   Move_options          m_opts;
   Deltas                m_delta;
 };

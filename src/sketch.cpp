@@ -70,7 +70,7 @@ void Sketch::add_sketch_pt(const ScreenCoords& screen_coords)
     case Mode::Sketch_add_seg_circle_arc:       add_arc_circle_pt_   (screen_coords); break;
     case Mode::Sketch_operation_axis:           add_operation_axis_pt_  (screen_coords); break;
     default:
-      DO_ASSERT(false);
+      EZY_ASSERT(false);
       // clang-format on
   }
 }
@@ -144,7 +144,7 @@ void Sketch::update_edge_style_(AIS_Shape_ptr& shp)
       break;
 
     default:
-      DO_ASSERT(false);
+      EZY_ASSERT(false);
   }
 }
 
@@ -169,7 +169,7 @@ void Sketch::update_originating_face_style()
       break;
 
     default:
-      DO_ASSERT(false);
+      EZY_ASSERT(false);
   }
 
   m_ctx.Redisplay(m_originating_face, true);
@@ -181,7 +181,7 @@ void Sketch::update_face_style_(AIS_Shape_ptr& shp) const
 
 void Sketch::update_edge_shp_(Edge& edge, const gp_Pnt2d& pt_a, const gp_Pnt2d& pt_b)
 {
-  DO_ASSERT(unique(pt_a, pt_b));
+  EZY_ASSERT(unique(pt_a, pt_b));
   TopoDS_Shape edge_shape = BRepBuilderAPI_MakeEdge(to_3d(m_pln, pt_a), to_3d(m_pln, pt_b)).Edge();
   if (edge.shp)
   {
@@ -312,7 +312,7 @@ void Sketch::finalize_edges_()
   std::vector<size_t> split_mid_points;
   for (Edge& e : m_tmp_edges)
   {
-    DO_ASSERT(e.node_idx_b.has_value());
+    EZY_ASSERT(e.node_idx_b.has_value());
     if (m_nodes[e.node_idx_a].is_midpoint)
       split_mid_points.push_back(e.node_idx_a);
 
@@ -357,7 +357,7 @@ void Sketch::add_arc_circle_pt_(const ScreenCoords& screen_coords)
 
   if (!m_start_arc_circle_node_idx)
   {
-    DO_ASSERT(m_tmp_node_idxs.empty());
+    EZY_ASSERT(m_tmp_node_idxs.empty());
     m_start_arc_circle_node_idx = m_nodes.size();
   }
 
@@ -445,8 +445,8 @@ void Sketch::move_slot_pt_(const ScreenCoords& screen_coords)
 
 void Sketch::finalize_slot_()
 {
-  DO_ASSERT(m_tmp_edges.size() == 2);
-  DO_ASSERT(m_tmp_edges[1].node_idx_b.has_value());
+  EZY_ASSERT(m_tmp_edges.size() == 2);
+  EZY_ASSERT(m_tmp_edges[1].node_idx_b.has_value());
 
   Slot_pnts pnts = get_slot_points(
       m_nodes[m_tmp_edges[0].node_idx_a],
@@ -499,7 +499,7 @@ void Sketch::mirror_selected_edges()
     // TODO present error.
   }
 
-  DO_ASSERT(!m_operation_axis->shp.IsNull());
+  EZY_ASSERT(!m_operation_axis->shp.IsNull());
   const auto [mirror_pt_a, mirror_pt_b] = get_edge_endpoints(m_pln, TopoDS::Edge(m_operation_axis->shp->Shape()));
 
   std::map<AIS_Shape_ptr, std::set<const Edge*>> arc_circles;
@@ -526,7 +526,7 @@ void Sketch::mirror_selected_edges()
 
   for (auto& [_, arc_circle_edges] : arc_circles)
   {
-    DO_ASSERT(arc_circle_edges.size() == 2);
+    EZY_ASSERT(arc_circle_edges.size() == 2);
     const Edge* a;
     const Edge* b;
     for (const Edge* e : arc_circle_edges)
@@ -535,9 +535,9 @@ void Sketch::mirror_selected_edges()
       else
         b = e;
 
-    DO_ASSERT(a && b);
-    DO_ASSERT(a->node_idx_arc.has_value());
-    DO_ASSERT(b->node_idx_b);
+    EZY_ASSERT(a && b);
+    EZY_ASSERT(a->node_idx_arc.has_value());
+    EZY_ASSERT(b->node_idx_b);
     const gp_Pnt2d pt_a = mirror_point(mirror_pt_a, mirror_pt_b, m_nodes[a->node_idx_a]);
     const gp_Pnt2d pt_b = mirror_point(mirror_pt_a, mirror_pt_b, m_nodes[a->node_idx_arc]);
     const gp_Pnt2d pt_c = mirror_point(mirror_pt_a, mirror_pt_b, m_nodes[b->node_idx_b]);
@@ -550,7 +550,7 @@ void Sketch::mirror_selected_edges()
 
 RevolvedShp_rslt Sketch::revolve_selected(const double angle)
 {
-  DO_ASSERT_MSG(m_operation_axis.has_value(),
+  EZY_ASSERT_MSG(m_operation_axis.has_value(),
                 "No defined operation axis.");
 
   TopoDS_Compound compound;
@@ -652,7 +652,7 @@ void Sketch::check_dimension_seg_(Linestring_type linestring_type)
   if (m_entered_edge_len->len <= Precision::Confusion())
     return;
 
-  DO_ASSERT(m_tmp_edges.size());
+  EZY_ASSERT(m_tmp_edges.size());
 
   Edge&           edge = m_tmp_edges.back();
   const gp_Pnt2d& pt_a = m_nodes[edge.node_idx_a];
@@ -660,7 +660,7 @@ void Sketch::check_dimension_seg_(Linestring_type linestring_type)
 
   update_edge_end_pt_(edge, m_nodes.get_node_exact(*m_last_pt));
 
-  DO_ASSERT(edge.node_idx_b.has_value());
+  EZY_ASSERT(edge.node_idx_b.has_value());
 
   clear_all(m_entered_edge_len);
 
@@ -678,7 +678,7 @@ void Sketch::check_dimension_seg_(Linestring_type linestring_type)
         finalize_elm();
         break;
       default:
-        DO_ASSERT(false);
+        EZY_ASSERT(false);
     }
   }
   else
@@ -735,7 +735,7 @@ void Sketch::set_edge_dim_anno_visible_(Edge& e, bool visible)
 
   if (visible)
   {
-    DO_ASSERT(e.node_idx_b);
+    EZY_ASSERT(e.node_idx_b);
     e.dim       = create_distance_annotation(m_nodes[e.node_idx_a], m_nodes[e.node_idx_b], m_pln);
     double dist = m_nodes[e.node_idx_a].Distance(m_nodes[e.node_idx_b]);
     e.dim->SetCustomValue(dist / m_view.get_dimension_scale());
@@ -772,7 +772,7 @@ void Sketch::finalize_elm()
     case Mode::Sketch_operation_axis:   finalize_operation_axis_(); break;
       // clang-format on
     default:
-      DO_ASSERT(false);
+      EZY_ASSERT(false);
   }
 }
 
@@ -803,7 +803,7 @@ void Sketch::update_faces_()
 
   for (const auto& edge : m_edges)
   {
-    DO_ASSERT(edge.node_idx_b.has_value());
+    EZY_ASSERT(edge.node_idx_b.has_value());
 
     size_t a = edge.node_idx_a;
     size_t b = edge.node_idx_b.value();
@@ -843,7 +843,7 @@ void Sketch::update_faces_()
         // Base case
         if (curr_idx == start_idx)
         {
-          DO_ASSERT(face.size() > 2);
+          EZY_ASSERT(face.size() > 2);
           auto is_clock_wise = [&]()
           {
             // Compute signed area using the shoelace formula
@@ -953,17 +953,17 @@ void Sketch::update_faces_()
   for (Face_meta& face : face_metas)
     if (face.holes.size())
     {
-      DO_ASSERT(face.shp->Shape().ShapeType() == TopAbs_FACE);
+      EZY_ASSERT(face.shp->Shape().ShapeType() == TopAbs_FACE);
       BRepBuilderAPI_MakeFace face_maker(TopoDS::Face(face.shp->Shape()));
       for (const Face_meta* hole : face.holes)
       {
-        DO_ASSERT(hole->shp->Shape().ShapeType() == TopAbs_FACE);
+        EZY_ASSERT(hole->shp->Shape().ShapeType() == TopAbs_FACE);
         TopoDS_Wire hole_wire = BRepTools::OuterWire(TopoDS::Face(hole->shp->Shape()));
         // Winding order is important
         hole_wire.Reverse();
         face_maker.Add(hole_wire);
       }
-      DO_ASSERT(face_maker.IsDone());
+      EZY_ASSERT(face_maker.IsDone());
       // auto dbg_face = to_boost(face_maker.Face(), m_pln);
       face.shp->SetShape(face_maker.Face());
     }
@@ -985,7 +985,7 @@ size_t Sketch::Face_edge::start_nd_idx() const
   if (!reversed)
     return edge.node_idx_a;
 
-  DO_ASSERT(edge.node_idx_b);
+  EZY_ASSERT(edge.node_idx_b);
   return *edge.node_idx_b;
 }
 
@@ -994,13 +994,13 @@ size_t Sketch::Face_edge::end_nd_idx() const
   if (reversed)
     return edge.node_idx_a;
 
-  DO_ASSERT(edge.node_idx_b);
+  EZY_ASSERT(edge.node_idx_b);
   return *edge.node_idx_b;
 }
 
 Sketch_face_shp_ptr Sketch::create_face_shape_(const Face_edges& face)
 {
-  DO_ASSERT(face.size() > 2);
+  EZY_ASSERT(face.size() > 2);
 
   // Create edges for the wire
   BRepBuilderAPI_MakeWire wire_maker;
@@ -1019,7 +1019,7 @@ Sketch_face_shp_ptr Sketch::create_face_shape_(const Face_edges& face)
 
   for (const Face_edge& e : face)
   {
-    DO_ASSERT(e.edge.node_idx_b);
+    EZY_ASSERT(e.edge.node_idx_b);
 
     auto add_node_vert_unique = [&](const gp_Pnt& pt)
     {
@@ -1038,7 +1038,7 @@ Sketch_face_shp_ptr Sketch::create_face_shape_(const Face_edges& face)
         if (!arc.dbg_reversed.has_value())
           arc.dbg_reversed = reversed;
         else
-          DO_ASSERT(*arc.dbg_reversed == reversed);
+          EZY_ASSERT(*arc.dbg_reversed == reversed);
 
         if (arc.nd_idx_a && arc.nd_idx_b && arc.nd_idx_c)
         {
@@ -1057,7 +1057,7 @@ Sketch_face_shp_ptr Sketch::create_face_shape_(const Face_edges& face)
             arc_circle = GC_MakeArcOfCircle(a, b, c);
 
           BRepBuilderAPI_MakeEdge edge(arc_circle);
-          DO_ASSERT(edge.IsDone());
+          EZY_ASSERT(edge.IsDone());
           wire_maker.Add(edge.Edge());
         }
       };
@@ -1067,8 +1067,8 @@ Sketch_face_shp_ptr Sketch::create_face_shape_(const Face_edges& face)
       if (e.edge.node_idx_arc)
       {
         // This is the first part of the circle arc.
-        DO_ASSERT(e.edge.node_idx_arc);
-        DO_ASSERT(*e.edge.node_idx_b == *e.edge.node_idx_arc);
+        EZY_ASSERT(e.edge.node_idx_arc);
+        EZY_ASSERT(*e.edge.node_idx_b == *e.edge.node_idx_arc);
         arc.nd_idx_a = e.edge.node_idx_a;
         arc.nd_idx_b = e.edge.node_idx_arc;
         try_arc_circle(e.reversed);
@@ -1089,17 +1089,17 @@ Sketch_face_shp_ptr Sketch::create_face_shape_(const Face_edges& face)
       add_node_vert_unique(b);
 
       BRepBuilderAPI_MakeEdge edge(a, b);
-      DO_ASSERT(edge.IsDone());
+      EZY_ASSERT(edge.IsDone());
       wire_maker.Add(edge.Edge());
     }
   }
 
-  DO_ASSERT(wire_maker.IsDone());
+  EZY_ASSERT(wire_maker.IsDone());
   TopoDS_Wire wire = wire_maker.Wire();
 
   // Create a face from the wire
   BRepBuilderAPI_MakeFace face_maker(wire);
-  DO_ASSERT(face_maker.IsDone());
+  EZY_ASSERT(face_maker.IsDone());
 
   // auto dbg_face = to_boost(face_maker.Face(), m_pln);
 
@@ -1110,7 +1110,7 @@ Sketch_face_shp_ptr Sketch::create_face_shape_(const Face_edges& face)
 
 void Sketch::update_edge_end_pt_(Edge& edge, size_t end_pt_idx)
 {
-  DO_ASSERT(end_pt_idx < m_nodes.size());
+  EZY_ASSERT(end_pt_idx < m_nodes.size());
   edge.node_idx_b      = end_pt_idx;
   const gp_Pnt2d& pt_a = m_nodes[edge.node_idx_a];
   const gp_Pnt2d& pt_b = m_nodes[end_pt_idx];
@@ -1130,7 +1130,7 @@ void Sketch::add_arc_circle_(const gp_Pnt2d& pt_a, const gp_Pnt2d& pt_b, const g
 
 void Sketch::add_arc_circle_(const std::vector<size_t>& node_idxs)
 {
-  DO_ASSERT(node_idxs.size() == 3);
+  EZY_ASSERT(node_idxs.size() == 3);
   Geom_TrimmedCurve_ptr arc_of_circle = GC_MakeArcOfCircle(
       to_3d_(node_idxs[0]),
       to_3d_(node_idxs[2]),
@@ -1243,7 +1243,7 @@ void Sketch::get_originating_face_snp_pts_3d_(std::vector<gp_Pnt>& out)
 
   std::vector<gp_Pnt> snp_pts;
   const TopoDS_Shape& shape = m_originating_face->Shape();
-  DO_ASSERT(shape.ShapeType() == TopAbs_WIRE);
+  EZY_ASSERT(shape.ShapeType() == TopAbs_WIRE);
   const TopoDS_Wire& wire = TopoDS::Wire(shape);
   TopExp_Explorer    edgeExplorer(wire, TopAbs_EDGE);
   while (edgeExplorer.More())
@@ -1257,7 +1257,7 @@ void Sketch::get_originating_face_snp_pts_3d_(std::vector<gp_Pnt>& out)
 
     double         first, last;
     Geom_Curve_ptr curve = BRep_Tool::Curve(edge, first, last);
-    DO_ASSERT(curve);
+    EZY_ASSERT(curve);
 
     TopoDS_Vertex v1, v2;
     TopExp::Vertices(edge, v1, v2);
@@ -1406,7 +1406,7 @@ gp_Pnt Sketch::to_3d_(size_t node_idx) const
 
 gp_Pnt Sketch::to_3d_(const std::optional<size_t>& node_idx) const
 {
-  DO_ASSERT(node_idx.has_value());
+  EZY_ASSERT(node_idx.has_value());
   return to_3d_(*node_idx);
 }
 
@@ -1462,7 +1462,7 @@ bool Sketch::Edge::reversed(size_t idx_a, size_t idx_b) const
   if (node_idx_a == idx_b && node_idx_b == idx_a)
     return true;
 
-  DO_ASSERT(false);
+  EZY_ASSERT(false);
   return false;
 }
 

@@ -17,10 +17,10 @@ template <typename T>
 Result<T>::Result(const Result_status status, const std::string& error_msg)
     : Status(status, error_msg), m_value(std::nullopt)
 {
-  DO_ASSERT_MSG(status != Result_status::Success,
+  EZY_ASSERT_MSG(status != Result_status::Success,
                 "Success status requires a value");
 
-  DO_ASSERT_MSG(status != Result_status::Null || error_msg.empty(),
+  EZY_ASSERT_MSG(status != Result_status::Null || error_msg.empty(),
                 "Null status should not have an error message");
 }
 
@@ -37,10 +37,10 @@ T& Result<T>::value()
 {
   if (!has_value())
   {
-    DO_ASSERT_MSG(m_v != Result_status::Null,
+    EZY_ASSERT_MSG(m_v != Result_status::Null,
                   "Result is in Null state");
 
-    DO_ASSERT_MSG(false, m_msg.empty() ? "No value available" : m_msg);
+    EZY_ASSERT_MSG(false, m_msg.empty() ? "No value available" : m_msg);
   }
   return *m_value;
 }
@@ -50,10 +50,10 @@ const T& Result<T>::value() const
 {
   if (!has_value())
   {
-    DO_ASSERT_MSG(m_v != Result_status::Null,
+    EZY_ASSERT_MSG(m_v != Result_status::Null,
                   "Result is in Null state");
 
-    DO_ASSERT_MSG(false, m_msg.empty() ? "No value available" : m_msg);
+    EZY_ASSERT_MSG(false, m_msg.empty() ? "No value available" : m_msg);
   }
   return *m_value;
 }

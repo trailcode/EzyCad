@@ -12,7 +12,7 @@
 #define DEBUG_BREAK raise(SIGTRAP)
 #endif
 
-#define DO_ASSERT_MSG(condition, message)               \
+#define EZY_ASSERT_MSG(condition, message)               \
   do                                                    \
   {                                                     \
     if (!(condition))                                   \
@@ -25,7 +25,7 @@
     }                                                   \
   } while (false)
 
-#define DO_ASSERT(condition)                            \
+#define EZY_ASSERT(condition)                            \
   do                                                    \
   {                                                     \
     if (!(condition))                                   \
