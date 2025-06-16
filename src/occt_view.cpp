@@ -295,7 +295,7 @@ std::optional<gp_Pnt> Occt_view::pt3d_on_plane(const ScreenCoords& screen_coords
                   z_near);
   gp_Pnt near_point(x_near, y_near, z_near);
 
-  Graphic3d_Camera_ptr camera = m_view->Camera();
+  const Graphic3d_Camera_ptr& camera = m_view->Camera();
 
   auto get_intersection = [&](Geom_Line_ptr& ray_line) -> std::optional<gp_Pnt>
   {
@@ -497,7 +497,7 @@ AIS_Shape_ptr Occt_view::get_shape(const ScreenCoords& screen_coords)
   m_ctx->MoveTo(int(screen_coords.unsafe_get_x()), int(screen_coords.unsafe_get_y()), m_view, Standard_True);
 
   // Initialize the selection process
-  m_ctx->Select(Standard_True);
+  m_ctx->SelectDetected(AIS_SelectionScheme_Replace);
 
   // Get the selected object
   m_ctx->InitSelected();

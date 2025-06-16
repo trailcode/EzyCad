@@ -1,8 +1,3 @@
-#ifdef _WIN32
-// Suppress warning C4005: 'APIENTRY': macro redefinition
-// This occurs because windows.h defines APIENTRY which may conflict with other definitions
-#include <windows.h>
-#endif
 
 #include <array>
 #include <map>
@@ -19,8 +14,10 @@
 #include "imgui.h"
 #include "occt_view.h"
 #include "sketch.h"
-//#include "utl.h"
 #include "geom.h"
+
+// Must be here to prevent compiler warning
+#include <GLFW/glfw3.h>
 
 GUI* gui_instance = nullptr;
 

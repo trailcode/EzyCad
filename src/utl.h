@@ -1,7 +1,5 @@
 #pragma once
 
-#include <GLFW/glfw3.h>
-
 #include <optional>
 
 #include "dbg.h"
@@ -89,7 +87,7 @@ bool contains(const Container& container, const Value& value)
   return it != container.end();
 }
 
-GLuint load_texture(const std::string& path);
+uint32_t load_texture(const std::string& path);
 
 // Function to disable highlighting for a specific AIS_Shape
 void disable_shape_highlighting(const AIS_Shape_ptr&              ais_shape,

@@ -10,12 +10,14 @@ Status Shp_move::move_selected(const ScreenCoords& screen_coords)
 {
   CHK_RET(ensure_operation_shps_());
 
-  // Get the estimate of the center.
-  // TODO consider all shapes.
-  const gp_Pnt center = get_shape_bbox_center(m_shps[0]->Shape());
+  if (!m_center.has_value())
+    // Get the estimate of the center.
+    // TODO consider all shapes.
+    m_center = get_shape_bbox_center(m_shps[0]->Shape());
 
   if (!m_move_pln.has_value())
-    m_move_pln          = view().get_view_plane(center);
+    // Remember, if the user can change the view via a hot key this will be invalid.
+    m_move_pln = view().get_view_plane(*m_center);
 
   std::optional<gp_Pnt> mouse_wc_pos = view().pt3d_on_plane(screen_coords, *m_move_pln);
   if (!mouse_wc_pos)
@@ -26,17 +28,17 @@ Status Shp_move::move_selected(const ScreenCoords& screen_coords)
   if (m_delta.override_x.has_value())
     m_delta.delta.SetX(*m_delta.override_x);
   else
-    m_delta.delta.SetX(no_axis_constraints || m_opts.constr_axis_x ? mouse_wc_pos->X() - center.X() : 0);
+    m_delta.delta.SetX(no_axis_constraints || m_opts.constr_axis_x ? mouse_wc_pos->X() - m_center->X() : 0);
 
   if (m_delta.override_y.has_value())
     m_delta.delta.SetY(*m_delta.override_y);
   else
-    m_delta.delta.SetY(no_axis_constraints || m_opts.constr_axis_y ? mouse_wc_pos->Y() - center.Y() : 0);
+    m_delta.delta.SetY(no_axis_constraints || m_opts.constr_axis_y ? mouse_wc_pos->Y() - m_center->Y() : 0);
 
   if (m_delta.override_z.has_value())
     m_delta.delta.SetZ(*m_delta.override_z);
   else
-    m_delta.delta.SetZ(no_axis_constraints || m_opts.constr_axis_z ? mouse_wc_pos->Z() - center.Z() : 0);
+    m_delta.delta.SetZ(no_axis_constraints || m_opts.constr_axis_z ? mouse_wc_pos->Z() - m_center->Z() : 0);
 
   gp_Trsf translation;
   translation.SetTranslation(gp_Vec(m_delta.delta));
@@ -57,34 +59,25 @@ void Shp_move::show_dist_edit(const ScreenCoords& screen_coords)
   auto dist_edit_axis_x = [&, screen_coords](float new_dist, bool is_final)
   {
     m_delta.override_x = new_dist * view().get_dimension_scale();
-    move_selected(screen_coords);
+    EZY_ASSERT(move_selected(screen_coords).is_ok()); // Status should always be valid here
     if (is_final)
-    {
-      DBG_MSG("Dist X: " << new_dist);
       check_finalize_();
-    }
   };
 
   auto dist_edit_axis_y = [&, screen_coords](float new_dist, bool is_final)
   {
     m_delta.override_y = new_dist * view().get_dimension_scale();
-    move_selected(screen_coords);
+    EZY_ASSERT(move_selected(screen_coords).is_ok());
     if (is_final)
-    {
-      DBG_MSG("Dist Y: " << new_dist);
       check_finalize_();
-    }
   };
 
   auto dist_edit_axis_z = [&, screen_coords](float new_dist, bool is_final)
   {
     m_delta.override_z = new_dist * view().get_dimension_scale();
-    move_selected(screen_coords);
+    EZY_ASSERT(move_selected(screen_coords).is_ok());
     if (is_final)
-    {
-      DBG_MSG("Dist Z: " << new_dist);
       check_finalize_();
-    }
   };
 
   if (!m_delta.override_x.has_value() && (no_axis_constraints || m_opts.constr_axis_x))
@@ -139,7 +132,7 @@ void Shp_move::post_opts_()
   // Reset options
   m_opts  = {};
   m_delta = {};
-  m_shps.clear();
+  clear_all(m_move_pln, m_center, m_shps);
   gui().set_mode(Mode::Normal);
 }
 

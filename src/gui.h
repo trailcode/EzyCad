@@ -1,13 +1,5 @@
 #pragma once
 
-#ifdef _WIN32
-// Suppress warning C4005: 'APIENTRY': macro redefinition
-// This occurs because windows.h defines APIENTRY which may conflict with other definitions
-#include <windows.h>
-#endif
-
-#include <GLFW/glfw3.h>
-
 #include <chrono>  // For message status window (from previous request)
 #include <functional>
 #include <glm/glm.hpp>
@@ -77,7 +69,7 @@ class GUI
   // Structure to hold button state and texture
   struct Toolbar_button
   {
-    GLuint                      texture_id;
+    uint32_t                    texture_id;
     bool                        is_active;
     const char*                 tooltip;
     std::variant<Mode, Command> data;

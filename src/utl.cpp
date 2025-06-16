@@ -1,3 +1,5 @@
+#include <GLFW/glfw3.h>
+
 #include "utl.h"
 
 #include <AIS_Shape.hxx>
@@ -8,7 +10,7 @@
 #define STB_IMAGE_IMPLEMENTATION
 #include <stb_image/stb_image.h>
 
-GLuint load_texture(const std::string& path)
+uint32_t load_texture(const std::string& path)
 {
   int width, height, channels;
   EZY_ASSERT_MSG(std::filesystem::exists(path), "Error cannot open: " + std::string(path));
