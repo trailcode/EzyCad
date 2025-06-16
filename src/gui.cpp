@@ -1,4 +1,3 @@
-
 #include <array>
 #include <map>
 
@@ -113,40 +112,48 @@ void GUI::set_parent_mode()
 
 void GUI::on_key(int key, int scancode, int action, int mods)
 {
-  const ScreenCoords screen_coords(glm::dvec2(ImGui::GetIO().MousePos.x, ImGui::GetIO().MousePos.y));
-
-  if (action == 1)
+  if (action == GLFW_PRESS)
   {
+    // Check for Ctrl modifier
+    bool ctrl_pressed = (mods & GLFW_MOD_CONTROL) != 0;
+
+    // Handle file menu hotkeys
+    if (ctrl_pressed)
+    {
+      switch (key)
+      {
+        case GLFW_KEY_N:  // Ctrl+N for New
+          // TODO: Implement new file functionality
+          break;
+
+        case GLFW_KEY_O:  // Ctrl+O for Open
+          open_file_dialog_();
+          break;
+
+        case GLFW_KEY_S:  // Ctrl+S for Save
+          save_file_dialog_();
+          break;
+
+        default:
+          break;
+      }
+    }
+
+    // Handle other keys
     switch (key)
     {
-      case GLFW_KEY_D:
-        m_view->delete_selected();
-        break;
-
-      case GLFW_KEY_G:
-        set_mode(Mode::Move);
-        break;
-
-      case GLFW_KEY_R:
-        set_mode(Mode::Rotate);
-        break;
-
-      case GLFW_KEY_E:
-        set_mode(Mode::Sketch_face_extrude);
+      case GLFW_KEY_ESCAPE:
+        m_view->cancel(Set_parent_mode::Yes);
         break;
 
       case GLFW_KEY_TAB:
-        m_view->dimension_input(screen_coords);
-        break;
-
-      case GLFW_KEY_ESCAPE:
-        m_view->cancel(Set_parent_mode::Yes);
-        hide_dist_edit();
+        if (m_dist_callback)
+          hide_dist_edit();
         break;
 
       case GLFW_KEY_ENTER:
-        m_view->on_enter(screen_coords);
-        hide_dist_edit();
+        if (m_dist_callback)
+          hide_dist_edit();
         break;
 
       default:

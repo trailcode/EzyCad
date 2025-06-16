@@ -22,7 +22,7 @@ Status Shp_rotate::rotate_selected(const ScreenCoords& screen_coords)
     return Status::user_error("Adjust view, cannot get point on plane.");
 
   if (m_center->IsEqual(*mouse_wc_pos, Precision::Confusion()))
-    return Status::user_error("Move mouse, cannot get point on rotate vector.");
+    return Status::user_error("Move mouse further from rotation center to start rotation.");
 
   if (!m_initial_mouse_pos)
     m_initial_mouse_pos = mouse_wc_pos;
