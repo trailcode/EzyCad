@@ -9,7 +9,7 @@
 #include <vector>  // Added for log storage
 
 #include "modes.h"
-#include "shapes.h"
+#include "shp.h"
 #include "types.h"
 
 class Occt_view;

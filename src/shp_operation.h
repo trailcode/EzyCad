@@ -1,7 +1,7 @@
 #pragma once
 
 #include "result.h"
-#include "shapes.h"
+#include "shp.h"
 #include "types.h"
 
 class GUI;

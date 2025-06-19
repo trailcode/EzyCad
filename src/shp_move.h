@@ -24,6 +24,7 @@ class Shp_move : private Shp_operation_base
   void                 show_dist_edit(const ScreenCoords& screen_coords);
   void                 finalize();
   void                 cancel();
+  void                 reset();
   Move_options&        get_opts();
 
  private:
@@ -38,8 +39,7 @@ class Shp_move : private Shp_operation_base
   };
 
   void check_finalize_();
-  void post_opts_();
-
+  
   std::optional<gp_Pln> m_move_pln;
   std::optional<gp_Pnt> m_center;
   Move_options          m_opts;

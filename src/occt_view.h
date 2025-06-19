@@ -134,6 +134,8 @@ class Occt_view : protected AIS_ViewController
 
   bool is_headless() const;
 
+  void new_file();
+
  private:
   friend class Shp_operation_base;
   friend class Shp_chamfer;  // TODO remove
@@ -188,8 +190,11 @@ class Occt_view : protected AIS_ViewController
   Graphic3d_MaterialAspect   m_default_material;
   bool                       m_headless_view {false};
 
+  // Operations
   Shp_move      m_shp_move;
   Shp_rotate    m_shp_rotate;
+
+  // Commands
   Shp_chamfer   m_shp_chamfer;
   Shp_cut       m_shp_cut;
   Shp_fuse      m_shp_fuse;

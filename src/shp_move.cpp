@@ -113,21 +113,21 @@ void Shp_move::finalize()
 {
   if (m_shps.empty())
     // If the move tool is activated and no shapes are selected,
-    // then we do not want to call post_opts_() because they could
+    // then we do not want to call reset() because they could
     // be selected while in move mode.
     return;
 
   operation_shps_finalize_();
-  post_opts_();
+  reset();
 }
 
 void Shp_move::cancel()
 {
   operation_shps_cancel_();
-  post_opts_();
+  reset();
 }
 
-void Shp_move::post_opts_()
+void Shp_move::reset()
 {
   // Reset options
   m_opts  = {};

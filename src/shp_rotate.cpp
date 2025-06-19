@@ -54,7 +54,7 @@ Status Shp_rotate::ensure_start_state_()
     m_center = get_shape_bbox_center(m_shps[0]->Shape());
 
   if (!m_rotate_pln.has_value())
-      m_rotate_pln = view().get_view_plane(*m_center);
+    m_rotate_pln = view().get_view_plane(*m_center);
 
   update_rotation_axis_();
   update_rotation_center_();
@@ -78,20 +78,20 @@ void Shp_rotate::update_rotation_axis_()
     return;
   }
 
-  gp_Dir axis_dir;
+  gp_Dir         axis_dir;
   Quantity_Color axis_color;
   switch (m_rotation_axis)
   {
     case Rotation_axis::X_axis:
-      axis_dir = gp_Dir(1, 0, 0);
+      axis_dir   = gp_Dir(1, 0, 0);
       axis_color = Quantity_Color(1.0, 0.0, 0.0, Quantity_TOC_RGB);  // Red
       break;
     case Rotation_axis::Y_axis:
-      axis_dir = gp_Dir(0, 1, 0);
+      axis_dir   = gp_Dir(0, 1, 0);
       axis_color = Quantity_Color(0.0, 1.0, 0.0, Quantity_TOC_RGB);  // Green
       break;
     case Rotation_axis::Z_axis:
-      axis_dir = gp_Dir(0, 0, 1);
+      axis_dir   = gp_Dir(0, 0, 1);
       axis_color = Quantity_Color(0.0, 0.0, 1.0, Quantity_TOC_RGB);  // Blue
       break;
     case Rotation_axis::View_to_object:
@@ -169,7 +169,7 @@ void Shp_rotate::preview_rotate_()
 
   // Create rotation transformation
   gp_Trsf rotation;
-  gp_Ax1 rotation_axis(*m_center, axis_dir);
+  gp_Ax1  rotation_axis(*m_center, axis_dir);
   rotation.SetRotation(rotation_axis, m_angle);
 
   // Apply rotation to shapes
@@ -192,7 +192,10 @@ Status Shp_rotate::show_angle_edit(const ScreenCoords& screen_coords)
     if (is_final)
       finalize();
   };
-  gui().set_dist_edit(float(to_degrees(m_angle)), std::move(std::function<void(float, bool)>(angle_edit)));
+  gui().set_dist_edit(
+      float(to_degrees(m_angle)),
+      std::move(std::function<void(float, bool)>(angle_edit)));
+
   return Status::ok();
 }
 
@@ -202,32 +205,32 @@ void Shp_rotate::finalize()
     return;
 
   operation_shps_finalize_();
-  post_opts_();
+  reset();
 }
 
 void Shp_rotate::cancel()
 {
   operation_shps_cancel_();
-  post_opts_();
+  reset();
 }
 
-void Shp_rotate::post_opts_()
+void Shp_rotate::reset()
 {
   // Reset state
   clear_all(m_angle, m_shps, m_initial_mouse_pos, m_rotate_pln, m_center);
-  
+
   if (m_rotation_axis_vis)
   {
     ctx().Remove(m_rotation_axis_vis, false);
     m_rotation_axis_vis = nullptr;
   }
-  
+
   if (m_rotation_center_vis)
   {
     ctx().Remove(m_rotation_center_vis, false);
     m_rotation_center_vis = nullptr;
   }
-  
+
   gui().set_mode(Mode::Normal);
 }
 

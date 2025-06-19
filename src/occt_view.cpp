@@ -1237,3 +1237,11 @@ AIS_InteractiveContext& Occt_view::ctx()
 {
   return *m_ctx;
 }
+
+void Occt_view::new_file()
+{
+  clear_all(m_shps, m_sketches, m_cur_sketch);
+
+  create_default_sketch_();
+  m_gui.set_mode(Mode::Normal);
+}
