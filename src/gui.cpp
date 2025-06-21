@@ -391,13 +391,13 @@ void GUI::dist_edit_()
 
   ImGui::SetNextItemWidth(80.0f);
   ImGui::SetKeyboardFocusHere();
-
+  
   // Add a small input float widget and check for changes
   if (ImGui::InputFloat("##dist_edit_float_value", &m_dist_val, 0.0f, 0.0f, "%.2f"))
     m_dist_callback(m_dist_val, false);
   else
     m_dist_val = std::round(m_dist_val * 100.0f) / 100.0f;
-
+  
   ImGui::End();
 }
 
