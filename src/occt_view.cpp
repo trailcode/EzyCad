@@ -1240,6 +1240,7 @@ AIS_InteractiveContext& Occt_view::ctx()
 
 void Occt_view::new_file()
 {
+  remove(m_shps);
   clear_all(m_shps, m_sketches, m_cur_sketch);
 
   create_default_sketch_();

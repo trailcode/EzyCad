@@ -235,25 +235,24 @@ void GUI::menu_bar_()
 
   if (ImGui::BeginMenu("File"))
   {
-    if (ImGui::MenuItem("New"))
-    {
-    }
-    if (ImGui::MenuItem("Open", "Ctrl+O"))
+    if (ImGui::MenuItem("New", "Ctrl+N"))
+      m_view->new_file();
+    
+    else if (ImGui::MenuItem("Open", "Ctrl+O"))
       open_file_dialog_();
 
-    if (ImGui::MenuItem("Save", "Ctrl+S"))
+    else if (ImGui::MenuItem("Save", "Ctrl+S"))
       save_file_dialog_();
 
-    if (ImGui::MenuItem("Save as"))
+    else if (ImGui::MenuItem("Save as"))
     {
-      m_last_saved_path.clear();  // Force dialog
+      m_last_saved_path.clear();  // Force save as dialog
       save_file_dialog_();
     }
-
-    if (ImGui::MenuItem("Import"))
+    else if (ImGui::MenuItem("Import"))
       import_file_dialog_();
 
-    if (ImGui::MenuItem("Exit"))
+    else if (ImGui::MenuItem("Exit"))
       exit(0);
 
     ImGui::EndMenu();
