@@ -70,14 +70,15 @@ class Occt_view : protected AIS_ViewController
   void cleanup();
 
   // Delete related.
-  void                             delete_selected();
-  void                             delete_(std::vector<AIS_Shape_ptr>& to_delete);
+  void delete_selected();
+  void delete_(std::vector<AIS_Shape_ptr>& to_delete);
+
   //  Member function to delete variable arguments
   template <typename... Args> void remove(Args&&... args);
 
   void cancel(Set_parent_mode set_parent_mode);
 
-  // Sketch related.
+  // Sketch related
   Sketch_list& get_sketches();
   void         remove_sketch(const Sketch_ptr& sketch);
   Sketch&      curr_sketch();
@@ -86,6 +87,7 @@ class Occt_view : protected AIS_ViewController
 
   std::list<ShapeBase_ptr>& get_shapes();
 
+  // Shape related
   Shp_move&      shp_move();
   Shp_rotate&    shp_rotate();
   Shp_chamfer&   shp_chamfer();
@@ -170,18 +172,18 @@ class Occt_view : protected AIS_ViewController
   V3d_View_ptr               m_view;
   Occt_glfw_win_ptr          m_occt_window;
   gp_Pln                     m_curr_view_pln;
-
+  // --------------------------------------------------------------------
   // Dimension related
-  bool                  m_show_dim_input {false};
-  double                m_dimension_scale {100.0};
-  std::optional<double> m_entered_dim;
-
+  bool                       m_show_dim_input {false};
+  double                     m_dimension_scale {100.0};
+  std::optional<double>      m_entered_dim;
+  // --------------------------------------------------------------------
   // Face extrude related
-  AIS_Shape_ptr         m_to_extrude;
-  gp_Pln                m_to_extrude_pln;
-  std::optional<gp_Pnt> m_to_extrude_pt;
-  ExtrudedShp_ptr       m_extruded;
-
+  AIS_Shape_ptr              m_to_extrude;
+  gp_Pln                     m_to_extrude_pln;
+  std::optional<gp_Pnt>      m_to_extrude_pt;
+  ExtrudedShp_ptr            m_extruded;
+  // --------------------------------------------------------------------
   PrsDim_LengthDimension_ptr m_tmp_dim;
   std::list<ShapeBase_ptr>   m_shps;
   Sketch_list                m_sketches;
@@ -189,17 +191,17 @@ class Occt_view : protected AIS_ViewController
   TopAbs_ShapeEnum           m_shp_selection_mode {TopAbs_SHAPE};
   Graphic3d_MaterialAspect   m_default_material;
   bool                       m_headless_view {false};
-
+  // --------------------------------------------------------------------
   // Operations
-  Shp_move      m_shp_move;
-  Shp_rotate    m_shp_rotate;
-
+  Shp_move                   m_shp_move;
+  Shp_rotate                 m_shp_rotate;
+  // --------------------------------------------------------------------
   // Commands
-  Shp_chamfer   m_shp_chamfer;
-  Shp_cut       m_shp_cut;
-  Shp_fuse      m_shp_fuse;
-  Shp_common    m_shp_common;
-  Shp_polar_dup m_shp_polar_dup;
+  Shp_chamfer                m_shp_chamfer;
+  Shp_cut                    m_shp_cut;
+  Shp_fuse                   m_shp_fuse;
+  Shp_common                 m_shp_common;
+  Shp_polar_dup              m_shp_polar_dup;
 };
 
 template <typename Shp_ptr_t, typename T>

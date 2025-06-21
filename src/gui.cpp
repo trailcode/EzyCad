@@ -12,6 +12,7 @@
 
 #include "geom.h"
 #include "imgui.h"
+#include "log.h"
 #include "occt_view.h"
 #include "sketch.h"
 

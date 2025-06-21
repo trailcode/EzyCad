@@ -8,6 +8,7 @@
 #include <variant>
 #include <vector>  // Added for log storage
 
+#include "log.h"
 #include "modes.h"
 #include "shp.h"
 #include "types.h"
@@ -73,51 +74,6 @@ class GUI
     bool                        is_active;
     const char*                 tooltip;
     std::variant<Mode, Command> data;
-  };
-
-  // Custom stream buffer to redirect stdout/stderr to log_message
-  class Log_strm : public std::streambuf
-  {
-   public:
-    Log_strm(GUI& gui, std::streambuf* original_buf)
-        : m_gui(gui), m_original_buf(original_buf) {}
-
-   protected:
-    int overflow(int c) override
-    {
-      if (c != EOF)
-      {
-        m_buffer += static_cast<char>(c);
-        if (c == '\n')
-        {
-          // Remove trailing newline for log_message
-          if (!m_buffer.empty() && m_buffer.back() == '\n')
-            m_buffer.pop_back();
-          if (!m_buffer.empty())
-            m_gui.log_message(m_buffer);
-          m_buffer.clear();
-        }
-        // Forward to original console
-        if (m_original_buf)
-          m_original_buf->sputc(c);
-      }
-      return c;
-    }
-
-    int sync() override
-    {
-      if (!m_buffer.empty())
-      {
-        m_gui.log_message(m_buffer);
-        m_buffer.clear();
-      }
-      return m_original_buf ? m_original_buf->pubsync() : 0;
-    }
-
-   private:
-    GUI&            m_gui;
-    std::streambuf* m_original_buf;
-    std::string     m_buffer;
   };
 
   void dist_edit_();
