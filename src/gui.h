@@ -76,10 +76,10 @@ class GUI
   };
 
   // Custom stream buffer to redirect stdout/stderr to log_message
-  class LogStreamBuf : public std::streambuf
+  class Log_strm : public std::streambuf
   {
    public:
-    LogStreamBuf(GUI& gui, std::streambuf* original_buf)
+    Log_strm(GUI& gui, std::streambuf* original_buf)
         : m_gui(gui), m_original_buf(original_buf) {}
 
    protected:
@@ -170,8 +170,8 @@ class GUI
   // Stream redirection
   std::streambuf* m_original_cout_buf = nullptr;  // Original stdout buffer
   std::streambuf* m_original_cerr_buf = nullptr;  // Original stderr buffer
-  LogStreamBuf*   m_cout_log_buf      = nullptr;  // Custom stdout buffer
-  LogStreamBuf*   m_cerr_log_buf      = nullptr;  // Custom stderr buffer
+  Log_strm*   m_cout_log_buf      = nullptr;  // Custom stdout buffer
+  Log_strm*   m_cerr_log_buf      = nullptr;  // Custom stderr buffer
 
   std::string m_last_saved_path;  // Added to store last saved file path
   bool        m_show_sketch_list {true};

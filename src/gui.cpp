@@ -1029,8 +1029,8 @@ void GUI::setup_log_redirection_()
   m_original_cerr_buf = std::cerr.rdbuf();
 
   // Create custom stream buffers
-  m_cout_log_buf = new LogStreamBuf(*this, m_original_cout_buf);
-  m_cerr_log_buf = new LogStreamBuf(*this, m_original_cerr_buf);
+  m_cout_log_buf = new Log_strm(*this, m_original_cout_buf);
+  m_cerr_log_buf = new Log_strm(*this, m_original_cerr_buf);
 
   // Redirect stdout and stderr
   std::cout.rdbuf(m_cout_log_buf);
