@@ -48,6 +48,8 @@ class GUI
   // clang-format off
   Mode get_mode() const { return m_mode; }
   Chamfer_mode get_chamfer_mode() const { return m_chamfer_mode; }
+  bool get_hide_all_shapes() const { return m_hide_all_shapes; }
+  void set_hide_all_shapes(bool hide) { m_hide_all_shapes = hide; }
   void set_mode(Mode mode);
   void set_parent_mode();
   void set_dist_edit(float dist, std::function<void(float, bool)>&& callback, const std::optional<ScreenCoords> screen_coords = std::nullopt);
@@ -64,7 +66,7 @@ class GUI
   void on_file(const std::string& file_path, const std::string& json_str);
   void on_import_file(const std::string& file_path, const std::string& file_data);
 
-  // private:
+ private:
   friend class GUI_access;
 
   // Structure to hold button state and texture
