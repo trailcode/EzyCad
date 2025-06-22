@@ -1076,14 +1076,10 @@ void Occt_view::set_curr_sketch(const Sketch_ptr& to_set)
       m_cur_sketch->set_current();
 
       // If hide all shapes is enabled, hide all shapes except the current sketch
-      if (m_gui.m_hide_all_shapes)
-      {
+      if (m_gui.get_hide_all_shapes())
         // Hide all shapes
         for (const ShapeBase_ptr& shape : m_shps)
-        {
           shape->set_visible(false);
-        }
-      }
 
       return;
     }
@@ -1236,4 +1232,13 @@ GUI& Occt_view::gui()
 AIS_InteractiveContext& Occt_view::ctx()
 {
   return *m_ctx;
+}
+
+void Occt_view::new_file()
+{
+  remove(m_shps);
+  clear_all(m_shps, m_sketches, m_cur_sketch);
+
+  create_default_sketch_();
+  m_gui.set_mode(Mode::Normal);
 }

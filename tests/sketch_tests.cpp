@@ -632,7 +632,7 @@ TEST_F(Sketch_test, OriginatingFaceSnapPointsSquare)
 TEST_F(Sketch_test, OriginatingFaceSnapPointsCircle)
 {
   gp_Pln   default_plane(gp::Origin(), gp::DZ());
-  gp_Pnt2d center(0.0, 0.0);
+  gp_Pnt2d center(0.0, 0.0); 
   gp_Pnt2d edge_point(10.0, 0.0);  // Radius = 10
 
   // Create a circular wire as the originating face

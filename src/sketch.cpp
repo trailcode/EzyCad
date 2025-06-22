@@ -282,11 +282,13 @@ void Sketch::move_line_string_pt_(const ScreenCoords& screen_coords)
       gp_Dir2d     edge_dir = get_unit_dir(pt_a, pt_b);
       ScreenCoords spos     = m_view.get_screen_coords(to_3d(m_pln, center_point(pt_a, pt_b)));
 
-      auto l = [&, edge_dir](float new_dist, bool _)
+      auto l = [&, edge_dir](float new_dist, bool is_finial)
       {
         m_entered_edge_len = {
             edge_dir,
             new_dist * m_view.get_dimension_scale()};
+
+        m_show_dim_input = !is_finial;
       };
 
       m_view.gui().set_dist_edit(float(dist), std::move(std::function<void(float, bool)>(l)), spos);

@@ -29,7 +29,7 @@ class Shp_rotate : private Shp_operation_base
  private:
   [[nodiscard]] Status ensure_start_state_();
   void                 preview_rotate_();
-  void                 post_opts_();
+  void                 reset();
   void                 update_rotation_axis_();
   void                 update_rotation_center_();
 

@@ -1,4 +1,4 @@
-#include "shapes.h"
+#include "shp.h"
 
 #include <AIS_InteractiveContext.hxx>
 

@@ -14,6 +14,7 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 # Add custom CMake modules path
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}/cmake/")
 
+
 # Set binary directory paths
 # Combines CMAKE_BINARY_DIR and project-specific binary dir for flexibility
 set(BINARY_DIR ${${PROJECT_NAME}_BINARY_DIR})

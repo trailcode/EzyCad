@@ -1,8 +1,7 @@
+#include "gui.h"
 
 #include <array>
 #include <map>
-
-#include "gui.h"
 
 #ifdef __EMSCRIPTEN__
 #include <emscripten.h>
@@ -11,10 +10,11 @@
 #include "third_party/tinyfiledialogs/tinyfiledialogs.h"
 #endif
 
+#include "geom.h"
 #include "imgui.h"
+#include "log.h"
 #include "occt_view.h"
 #include "sketch.h"
-#include "geom.h"
 
 // Must be here to prevent compiler warning
 #include <GLFW/glfw3.h>
@@ -113,58 +113,86 @@ void GUI::set_parent_mode()
 
 void GUI::on_key(int key, int scancode, int action, int mods)
 {
-  const ScreenCoords screen_coords(glm::dvec2(ImGui::GetIO().MousePos.x, ImGui::GetIO().MousePos.y));
-
-  if (action == 1)
+  if (action == GLFW_PRESS)
   {
-    switch (key)
+    const ScreenCoords screen_coords(glm::dvec2(ImGui::GetIO().MousePos.x, ImGui::GetIO().MousePos.y));
+
+    // Check for Ctrl modifier
+    bool ctrl_pressed = (mods & GLFW_MOD_CONTROL) != 0;
+
+    // Handle file menu hotkeys
+    if (ctrl_pressed)
     {
-      case GLFW_KEY_D:
-        m_view->delete_selected();
-        break;
+      switch (key)
+      {
+        case GLFW_KEY_N:  // Ctrl+N for New
+          m_view->new_file();
+          break;
 
-      case GLFW_KEY_G:
-        set_mode(Mode::Move);
-        break;
+        case GLFW_KEY_O:  // Ctrl+O for Open
+          open_file_dialog_();
+          break;
 
-      case GLFW_KEY_R:
-        set_mode(Mode::Rotate);
-        break;
+        case GLFW_KEY_S:  // Ctrl+S for Save
+          save_file_dialog_();
+          break;
 
-      case GLFW_KEY_E:
-        set_mode(Mode::Sketch_face_extrude);
-        break;
-
-      case GLFW_KEY_TAB:
-        m_view->dimension_input(screen_coords);
-        break;
-
-      case GLFW_KEY_ESCAPE:
-        m_view->cancel(Set_parent_mode::Yes);
-        hide_dist_edit();
-        break;
-
-      case GLFW_KEY_ENTER:
-        m_view->on_enter(screen_coords);
-        hide_dist_edit();
-        break;
-
-      default:
-        break;
+        default:
+          break;
+      }
     }
-
-    switch (get_mode())
+    else
     {
-      case Mode::Move:
-        on_key_move_mode_(key);
-        break;
+      // Handle other keys
+      switch (key)
+      {
+        case GLFW_KEY_ESCAPE:
+          m_view->cancel(Set_parent_mode::Yes);
+          hide_dist_edit();
+          break;
 
-      case Mode::Rotate:
-        on_key_rotate_mode_(key);
-        break;
+        case GLFW_KEY_TAB:
+          m_view->dimension_input(screen_coords);
+          break;
 
-      default:
-        break;
+        case GLFW_KEY_ENTER:
+          hide_dist_edit();
+          m_view->on_enter(screen_coords);
+          break;
+
+        case GLFW_KEY_D:
+          m_view->delete_selected();
+          break;
+
+        case GLFW_KEY_G:
+          set_mode(Mode::Move);
+          break;
+
+        case GLFW_KEY_R:
+          set_mode(Mode::Rotate);
+          break;
+
+        case GLFW_KEY_E:
+          set_mode(Mode::Sketch_face_extrude);
+          break;
+
+        default:
+          break;
+      }
+
+      switch (get_mode())
+      {
+        case Mode::Move:
+          on_key_move_mode_(key);
+          break;
+
+        case Mode::Rotate:
+          on_key_rotate_mode_(key);
+          break;
+
+        default:
+          break;
+      }
     }
   }
 }
@@ -208,25 +236,24 @@ void GUI::menu_bar_()
 
   if (ImGui::BeginMenu("File"))
   {
-    if (ImGui::MenuItem("New"))
-    {
-    }
-    if (ImGui::MenuItem("Open", "Ctrl+O"))
+    if (ImGui::MenuItem("New", "Ctrl+N"))
+      m_view->new_file();
+    
+    else if (ImGui::MenuItem("Open", "Ctrl+O"))
       open_file_dialog_();
 
-    if (ImGui::MenuItem("Save", "Ctrl+S"))
+    else if (ImGui::MenuItem("Save", "Ctrl+S"))
       save_file_dialog_();
 
-    if (ImGui::MenuItem("Save as"))
+    else if (ImGui::MenuItem("Save as"))
     {
-      m_last_saved_path.clear();  // Force dialog
+      m_last_saved_path.clear();  // Force save as dialog
       save_file_dialog_();
     }
-
-    if (ImGui::MenuItem("Import"))
+    else if (ImGui::MenuItem("Import"))
       import_file_dialog_();
 
-    if (ImGui::MenuItem("Exit"))
+    else if (ImGui::MenuItem("Exit"))
       exit(0);
 
     ImGui::EndMenu();
@@ -365,16 +392,13 @@ void GUI::dist_edit_()
 
   ImGui::SetNextItemWidth(80.0f);
   ImGui::SetKeyboardFocusHere();
-
+  
   // Add a small input float widget and check for changes
   if (ImGui::InputFloat("##dist_edit_float_value", &m_dist_val, 0.0f, 0.0f, "%.2f"))
     m_dist_callback(m_dist_val, false);
   else
-  {
     m_dist_val = std::round(m_dist_val * 100.0f) / 100.0f;
-    int hi     = 0;
-  }
-
+  
   ImGui::End();
 }
 
@@ -666,13 +690,13 @@ void GUI::options_rotate_mode_()
   int selected_axis = static_cast<int>(m_view->shp_rotate().get_rotation_axis());
   if (ImGui::RadioButton("View to object axis", &selected_axis, static_cast<int>(Rotation_axis::View_to_object)))
     m_view->shp_rotate().set_rotation_axis(Rotation_axis::View_to_object);
-  
+
   if (ImGui::RadioButton("Around X axis", &selected_axis, static_cast<int>(Rotation_axis::X_axis)))
     m_view->shp_rotate().set_rotation_axis(Rotation_axis::X_axis);
-  
+
   if (ImGui::RadioButton("Around Y axis", &selected_axis, static_cast<int>(Rotation_axis::Y_axis)))
     m_view->shp_rotate().set_rotation_axis(Rotation_axis::Y_axis);
-  
+
   if (ImGui::RadioButton("Around Z axis", &selected_axis, static_cast<int>(Rotation_axis::Z_axis)))
     m_view->shp_rotate().set_rotation_axis(Rotation_axis::Z_axis);
 }
@@ -1006,8 +1030,8 @@ void GUI::setup_log_redirection_()
   m_original_cerr_buf = std::cerr.rdbuf();
 
   // Create custom stream buffers
-  m_cout_log_buf = new LogStreamBuf(*this, m_original_cout_buf);
-  m_cerr_log_buf = new LogStreamBuf(*this, m_original_cerr_buf);
+  m_cout_log_buf = new Log_strm(*this, m_original_cout_buf);
+  m_cerr_log_buf = new Log_strm(*this, m_original_cerr_buf);
 
   // Redirect stdout and stderr
   std::cout.rdbuf(m_cout_log_buf);

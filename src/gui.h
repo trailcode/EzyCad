@@ -8,8 +8,9 @@
 #include <variant>
 #include <vector>  // Added for log storage
 
+#include "log.h"
 #include "modes.h"
-#include "shapes.h"
+#include "shp.h"
 #include "types.h"
 
 class Occt_view;
@@ -47,6 +48,8 @@ class GUI
   // clang-format off
   Mode get_mode() const { return m_mode; }
   Chamfer_mode get_chamfer_mode() const { return m_chamfer_mode; }
+  bool get_hide_all_shapes() const { return m_hide_all_shapes; }
+  void set_hide_all_shapes(bool hide) { m_hide_all_shapes = hide; }
   void set_mode(Mode mode);
   void set_parent_mode();
   void set_dist_edit(float dist, std::function<void(float, bool)>&& callback, const std::optional<ScreenCoords> screen_coords = std::nullopt);
@@ -63,7 +66,7 @@ class GUI
   void on_file(const std::string& file_path, const std::string& json_str);
   void on_import_file(const std::string& file_path, const std::string& file_data);
 
-  // private:
+ private:
   friend class GUI_access;
 
   // Structure to hold button state and texture
@@ -73,51 +76,6 @@ class GUI
     bool                        is_active;
     const char*                 tooltip;
     std::variant<Mode, Command> data;
-  };
-
-  // Custom stream buffer to redirect stdout/stderr to log_message
-  class LogStreamBuf : public std::streambuf
-  {
-   public:
-    LogStreamBuf(GUI& gui, std::streambuf* original_buf)
-        : m_gui(gui), m_original_buf(original_buf) {}
-
-   protected:
-    int overflow(int c) override
-    {
-      if (c != EOF)
-      {
-        m_buffer += static_cast<char>(c);
-        if (c == '\n')
-        {
-          // Remove trailing newline for log_message
-          if (!m_buffer.empty() && m_buffer.back() == '\n')
-            m_buffer.pop_back();
-          if (!m_buffer.empty())
-            m_gui.log_message(m_buffer);
-          m_buffer.clear();
-        }
-        // Forward to original console
-        if (m_original_buf)
-          m_original_buf->sputc(c);
-      }
-      return c;
-    }
-
-    int sync() override
-    {
-      if (!m_buffer.empty())
-      {
-        m_gui.log_message(m_buffer);
-        m_buffer.clear();
-      }
-      return m_original_buf ? m_original_buf->pubsync() : 0;
-    }
-
-   private:
-    GUI&            m_gui;
-    std::streambuf* m_original_buf;
-    std::string     m_buffer;
   };
 
   void dist_edit_();
@@ -170,8 +128,8 @@ class GUI
   // Stream redirection
   std::streambuf* m_original_cout_buf = nullptr;  // Original stdout buffer
   std::streambuf* m_original_cerr_buf = nullptr;  // Original stderr buffer
-  LogStreamBuf*   m_cout_log_buf      = nullptr;  // Custom stdout buffer
-  LogStreamBuf*   m_cerr_log_buf      = nullptr;  // Custom stderr buffer
+  Log_strm*   m_cout_log_buf      = nullptr;  // Custom stdout buffer
+  Log_strm*   m_cerr_log_buf      = nullptr;  // Custom stderr buffer
 
   std::string m_last_saved_path;  // Added to store last saved file path
   bool        m_show_sketch_list {true};
