@@ -436,8 +436,17 @@ void Sketch::move_rectangle_pt_(const ScreenCoords& screen_coords)
   move_line_string_pt_(screen_coords);
   auto l = [&](Edge& e, const gp_Pnt2d& pt_a, const gp_Pnt2d& pt_b)
   {
-    TopoDS_Wire rectangle = make_rectangle_wire(m_pln, pt_a, pt_b);
-    show(m_ctx, m_tmp_shp, rectangle);
+    if (std::abs(pt_a.X() - pt_b.X()) > Precision::Confusion() &&
+        std::abs(pt_a.Y() - pt_b.Y()) > Precision::Confusion())
+    {
+      TopoDS_Wire rectangle = make_rectangle_wire(m_pln, pt_a, pt_b);
+      show(m_ctx, m_tmp_shp, rectangle);
+    }
+    else
+    {
+      m_ctx.Remove(m_tmp_shp, true);
+      m_tmp_shp.Nullify();
+    }
   };
   last_edge_(l);
 }
@@ -446,13 +455,20 @@ void Sketch::finalize_rectangle_()
 {
   auto l = [&](Edge& e, const gp_Pnt2d& pt_a, const gp_Pnt2d& pt_b)
   {
-    std::array<gp_Pnt2d, 4> corners = rectangle_corners(pt_a, pt_b);
-    add_edge_(corners[0], corners[1]);
-    add_edge_(corners[1], corners[2]);
-    add_edge_(corners[2], corners[3]);
-    add_edge_(corners[3], corners[0]);
-    clear_tmps_();
-    update_faces_();
+    if (std::abs(pt_a.X() - pt_b.X()) > Precision::Confusion() &&
+        std::abs(pt_a.Y() - pt_b.Y()) > Precision::Confusion())
+    {
+      std::array<gp_Pnt2d, 4> corners = rectangle_corners(pt_a, pt_b);
+      add_edge_(corners[0], corners[1]);
+      add_edge_(corners[1], corners[2]);
+      add_edge_(corners[2], corners[3]);
+      add_edge_(corners[3], corners[0]);
+      clear_tmps_();
+      update_faces_();
+    }
+    else
+      clear_tmps_();
+    
   };
   last_edge_(l);
 }
