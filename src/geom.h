@@ -183,4 +183,10 @@ constexpr double to_radians(double degrees);
 // Convert radians to degrees
 constexpr double to_degrees(double radians);
 
+TopoDS_Wire make_rectangle_wire(const gp_Pln&   pln,
+                                const gp_Pnt2d& corner1,
+                                const gp_Pnt2d& corner2);
+
+std::array<gp_Pnt2d, 4> rectangle_corners(const gp_Pnt2d& corner1, const gp_Pnt2d& corner2);
+
 #include "geom.inl"

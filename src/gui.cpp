@@ -976,6 +976,7 @@ void GUI::on_mouse_button(int button, int action, int mods)
       case Mode::Sketch_add_multi_edges:
       case Mode::Sketch_add_seg_circle_arc:
       case Mode::Sketch_add_square:
+      case Mode::Sketch_add_rectangle:
       case Mode::Sketch_operation_axis:
       case Mode::Sketch_add_circle:
       case Mode::Sketch_add_slot:

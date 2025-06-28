@@ -157,6 +157,10 @@ class Sketch
   void move_square_pt_(const ScreenCoords& screen_coords);
   void finalize_square_();
 
+  // Rectangle related
+  void move_rectangle_pt_(const ScreenCoords& screen_coords);
+  void finalize_rectangle_();
+
   // Slot related
   void move_slot_pt_(const ScreenCoords& screen_coords);
   void finalize_slot_();

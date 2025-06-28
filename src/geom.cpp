@@ -882,3 +882,48 @@ void sort_pnts(std::vector<gp_Pnt>& points)
               return a.Z() < b.Z();
             });
 }
+
+TopoDS_Wire make_rectangle_wire(const gp_Pln&   pln,
+                                const gp_Pnt2d& corner1,
+                                const gp_Pnt2d& corner2)
+{
+  // Assert that corners are not too close in either axis
+  EZY_ASSERT_MSG(std::abs(corner1.X() - corner2.X()) > Precision::Confusion(), 
+                "Rectangle corners too close in X axis");
+  EZY_ASSERT_MSG(std::abs(corner1.Y() - corner2.Y()) > Precision::Confusion(), 
+                "Rectangle corners too close in Y axis");
+
+  std::array<gp_Pnt2d, 4> corners = rectangle_corners(corner1, corner2);
+
+  // Convert to 3D
+  gp_Pnt p1 = to_3d(pln, corners[0]);
+  gp_Pnt p2 = to_3d(pln, corners[1]);
+  gp_Pnt p3 = to_3d(pln, corners[2]);
+  gp_Pnt p4 = to_3d(pln, corners[3]);
+
+  // Create edges and wire
+  BRepBuilderAPI_MakeWire wire_maker;
+  wire_maker.Add(BRepBuilderAPI_MakeEdge(p1, p2).Edge());
+  wire_maker.Add(BRepBuilderAPI_MakeEdge(p2, p3).Edge());
+  wire_maker.Add(BRepBuilderAPI_MakeEdge(p3, p4).Edge());
+  wire_maker.Add(BRepBuilderAPI_MakeEdge(p4, p1).Edge());
+
+  return wire_maker.Wire();
+}
+
+std::array<gp_Pnt2d, 4> rectangle_corners(const gp_Pnt2d& corner1, const gp_Pnt2d& corner2)
+{
+  EZY_ASSERT(unique(corner1, corner2));
+
+  std::array<gp_Pnt2d, 4> ret;
+
+  // Calculate the other two corners based on the diagonal
+  ret[0] = corner1;  // First corner
+  ret[2] = corner2;  // Opposite corner (diagonal)
+  
+  // Calculate the other two corners
+  ret[1] = gp_Pnt2d(corner2.X(), corner1.Y());  // Same X as corner2, same Y as corner1
+  ret[3] = gp_Pnt2d(corner1.X(), corner2.Y());  // Same X as corner1, same Y as corner2
+
+  return ret;
+}

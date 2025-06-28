@@ -85,6 +85,7 @@ void Sketch::sketch_pt_move(const ScreenCoords& screen_coords)
     case Mode::Sketch_add_multi_edges:     move_line_string_pt_ (screen_coords); break;
     case Mode::Sketch_add_seg_circle_arc:  move_arc_circle_pt_  (screen_coords); break;
     case Mode::Sketch_add_square:          move_square_pt_      (screen_coords); break;
+    case Mode::Sketch_add_rectangle:       move_rectangle_pt_   (screen_coords); break;
     case Mode::Sketch_add_circle:          move_circle_pt_      (screen_coords); break;
     case Mode::Sketch_add_slot:            move_slot_pt_        (screen_coords); break;
       // clang-format on
@@ -203,6 +204,7 @@ void Sketch::on_enter()
   {
       // clang-format off
     case Mode::Sketch_add_square:
+    case Mode::Sketch_add_rectangle:
     case Mode::Sketch_add_circle:
     case Mode::Sketch_add_edge:         check_dimension_seg_(Linestring_type::Single);    break;
     case Mode::Sketch_add_slot:         check_dimension_seg_(Linestring_type::Two);       break;
@@ -419,6 +421,32 @@ void Sketch::finalize_square_()
   auto l = [&](Edge& e, const gp_Pnt2d& pt_a, const gp_Pnt2d& pt_b)
   {
     std::array<gp_Pnt2d, 4> corners = square_corners(pt_a, pt_b);
+    add_edge_(corners[0], corners[1]);
+    add_edge_(corners[1], corners[2]);
+    add_edge_(corners[2], corners[3]);
+    add_edge_(corners[3], corners[0]);
+    clear_tmps_();
+    update_faces_();
+  };
+  last_edge_(l);
+}
+
+void Sketch::move_rectangle_pt_(const ScreenCoords& screen_coords)
+{
+  move_line_string_pt_(screen_coords);
+  auto l = [&](Edge& e, const gp_Pnt2d& pt_a, const gp_Pnt2d& pt_b)
+  {
+    TopoDS_Wire rectangle = make_rectangle_wire(m_pln, pt_a, pt_b);
+    show(m_ctx, m_tmp_shp, rectangle);
+  };
+  last_edge_(l);
+}
+
+void Sketch::finalize_rectangle_()
+{
+  auto l = [&](Edge& e, const gp_Pnt2d& pt_a, const gp_Pnt2d& pt_b)
+  {
+    std::array<gp_Pnt2d, 4> corners = rectangle_corners(pt_a, pt_b);
     add_edge_(corners[0], corners[1]);
     add_edge_(corners[1], corners[2]);
     add_edge_(corners[2], corners[3]);
@@ -769,6 +797,7 @@ void Sketch::finalize_elm()
     case Mode::Sketch_add_edge:
     case Mode::Sketch_add_multi_edges:  finalize_edges_();          break;
     case Mode::Sketch_add_square:       finalize_square_();         break;
+    case Mode::Sketch_add_rectangle:    finalize_rectangle_();      break;
     case Mode::Sketch_add_circle:       finalize_circle_();         break;
     case Mode::Sketch_add_slot:         finalize_slot_();           break;
     case Mode::Sketch_operation_axis:   finalize_operation_axis_(); break;
