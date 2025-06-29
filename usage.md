@@ -95,7 +95,7 @@ EzyCad (Easy CAD) is a CAD application for hobbyist machinists to design and edi
    - Create line edges
    - Draw multi-line edges
    - Add arc segments
-   - Create circles
+   - [Create circles](#circle-creation-tools)
    - Draw rectangles and squares
    - Add slots
 
@@ -104,6 +104,71 @@ EzyCad (Easy CAD) is a CAD application for hobbyist machinists to design and edi
    - Toggle edge dimensions
    - Mirror sketches
    - Create from face
+
+#### Circle Creation Tools
+
+EzyCad provides a method for creating circles in sketch mode using the **center-radius approach**.
+
+##### Center-Radius Circle Tool
+
+The center-radius circle tool allows you to create circles by defining a center point and a radius point.
+
+**Features:**
+- **Two-point creation**: Click to set the center, then click to set the radius
+- **Real-time preview**: See the circle shape while dragging the radius point
+- **Precise radius control**: Use the distance input dialog (Tab key) for exact radius values
+- **Snap support**: Automatically snaps to existing nodes and geometry
+
+**How to use:**
+1. Select the **Circle** tool from the toolbar (circle icon)
+2. Click to set the center point of the circle
+3. Move the mouse to see a preview of the circle
+4. Click to set the radius point, or press **Tab** to enter an exact radius value
+5. The circle will be created and added to your sketch
+
+**Keyboard shortcuts:**
+- **Tab**: Open distance input dialog for precise radius control
+- **Escape**: Cancel the current circle creation
+- **Enter**: Finalize the circle (if using distance input)
+
+**Tips:**
+- Use the snap feature to create circles that are precisely positioned relative to existing geometry
+- The circle tool works in any sketch plane
+- Circles can be used as construction geometry or as part of your final design
+
+##### Three-Point Circle Tool (Planned Feature)
+
+**Status**: Not yet implemented
+
+The three-point circle tool is planned for future development. This feature would allow creating circles by defining three points that lie on the circle's circumference.
+
+**Planned Features:**
+- **Three-point creation**: Click three points that lie on the circle's circumference
+- **Automatic center and radius calculation**: The system would compute the center and radius from the three points
+- **Geometric validation**: Ensure the three points are not collinear
+
+**Note**: The toolbar icon ![Sketcher_Create3PointCircle](icons/Sketcher_Create3PointCircle.png) exists but the functionality is not yet implemented.
+
+#### Circle Creation Workflow
+
+The circle tool follows this workflow:
+
+1. **Activate Tool**: Select the circle creation mode
+2. **Point Placement**: Click to place the center point, then click to place the radius point
+3. **Preview**: See real-time preview of the circle as you move the mouse
+4. **Finalization**: Click to complete the circle creation
+5. **Integration**: The circle becomes part of the sketch and can be used for further operations
+
+**Common Operations with Circles:**
+- **Extrusion**: Select the circle face and extrude to create cylindrical shapes
+- **Boolean Operations**: Use circles in cut, fuse, or common operations
+- **Pattern Creation**: Use circles as the basis for polar arrays or other patterns
+- **Dimensioning**: Add radius or diameter dimensions to circles
+
+**Error Handling:**
+- **Coincident Points**: The system prevents creation of circles with zero radius
+- **Invalid Geometry**: Circles that would be too small are rejected
+- **Snap Integration**: Use existing snap points for precise circle placement
 
 ### 3D Modeling
 1. **Transform Operations**
@@ -277,8 +342,8 @@ The shape rotate tool enables precise rotation of selected shapes around a speci
 - ![Sketcher_CreateSquare](icons/Sketcher_CreateSquare.png) - Add square
 - ![Sketcher_CreateRectangle](icons/Sketcher_CreateRectangle.png) - Add rectangle from two points
 - ![Sketcher_CreateRectangle_Center](icons/Sketcher_CreateRectangle_Center.png) - Add rectangle with center point
-- ![Sketcher_CreateCircle](icons/Sketcher_CreateCircle.png) - Add circle
-- ![Sketcher_Create3PointCircle](icons/Sketcher_Create3PointCircle.png) - Add circle from three points
+- ![Sketcher_CreateCircle](icons/Sketcher_CreateCircle.png) - Add circle (center and radius)
+- ![Sketcher_Create3PointCircle](icons/Sketcher_Create3PointCircle.png) - Add circle from three points *(planned feature)*
 - ![Sketcher_CreateSlot](icons/Sketcher_CreateSlot.png) - Add slot
 - ![TechDraw_LengthDimension](icons/TechDraw_LengthDimension.png) - Toggle edge dimension annotation
 
