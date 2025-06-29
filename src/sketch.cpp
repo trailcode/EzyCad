@@ -7,13 +7,11 @@
 #include <BRepTools.hxx>
 #include <GC_MakeArcOfCircle.hxx>
 #include <Graphic3d_AspectFillArea3d.hxx>
-#include <Graphic3d_PresentationAttributes.hxx>
-#include <Prs3d_Drawer.hxx>
 #include <PrsDim_LengthDimension.hxx>
 #include <TopExp_Explorer.hxx>
 #include <TopoDS_Edge.hxx>
-#include <TopoDS_Face.hxx>
 #include <TopoDS_Wire.hxx>
+#include <V3d_View.hxx>
 #include <map>
 #include <unordered_set>
 

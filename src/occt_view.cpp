@@ -19,6 +19,7 @@
 #include <TopoDS.hxx>
 #include <WNT_WClass.hxx>
 #include <WNT_Window.hxx>
+#include <V3d_View.hxx>
 
 #include "dbg.h"
 #include "geom.h"
