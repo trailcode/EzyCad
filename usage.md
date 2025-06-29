@@ -92,10 +92,10 @@ EzyCad (Easy CAD) is a CAD application for hobbyist machinists to design and edi
 ### 2D Sketching
 1. **Basic Tools**
    - Add nodes
-   - Create line edges
+   - [Create line edges](#line-edge-creation-tools) ![Line Edge Tool](icons/Sketcher_Element_Line_Edge.png)
    - Draw multi-line edges
    - Add arc segments
-   - [Create circles](#circle-creation-tools)
+   - [Create circles](#circle-creation-tools) ![Circle Tool](icons/Sketcher_CreateCircle.png)
    - Draw rectangles and squares
    - Add slots
 
@@ -105,9 +105,45 @@ EzyCad (Easy CAD) is a CAD application for hobbyist machinists to design and edi
    - Mirror sketches
    - Create from face
 
+#### Line Edge Creation Tools
+![Line Edge Tool](icons/Sketcher_Element_Line_Edge.png)
+EzyCad provides tools for creating individual line edges in sketch mode, allowing you to build complex geometries one edge at a time.
+
+##### Single Line Edge Tool
+
+The single line edge tool allows you to create straight line segments between two points.
+
+**Features:**
+- **Two-point creation**: Click to set the start point, then click to set the end point
+- **Real-time preview**: See the line shape while moving the mouse
+- **Precise length control**: Use the distance input dialog (Tab key) for exact line lengths
+- **Snap support**: Automatically snaps to existing nodes and geometry
+- **Dimension annotations**: Optional length dimensions can be displayed
+
+**How to use:**
+1. Select the **Line Edge** tool from the toolbar (line icon)
+2. Click to set the start point of the line
+3. Move the mouse to see a preview of the line
+4. Click to set the end point, or press **Tab** to enter an exact length value
+5. The line edge will be created and added to your sketch
+
+**Keyboard shortcuts:**
+- **Tab**: Open distance input dialog for precise length control
+- **Escape**: Cancel the current line creation
+- **Enter**: Finalize the line (if using distance input)
+- **Right-click**: Complete the current line and start a new one
+
+**Tips:**
+- Use the snap feature to create lines that connect precisely to existing geometry
+- Lines can be used as construction geometry or as part of your final design
+- The line tool works in any sketch plane
+- Multiple line edges can be created in sequence by right-clicking after each line
+
 #### Circle Creation Tools
 
 EzyCad provides a method for creating circles in sketch mode using the **center-radius approach**.
+
+![Circle Tool](icons/Sketcher_CreateCircle.png)
 
 ##### Center-Radius Circle Tool
 
