@@ -434,8 +434,11 @@ void Sketch::finalize_square_()
 void Sketch::move_rectangle_pt_(const ScreenCoords& screen_coords)
 {
   move_line_string_pt_(screen_coords);
+  //DBG_MSG(m_tmp_edges.size());
   auto l = [&](Edge& e, const gp_Pnt2d& pt_a, const gp_Pnt2d& pt_b)
   {
+    EZY_ASSERT(m_tmp_edges.size());
+
     if (std::abs(pt_a.X() - pt_b.X()) > Precision::Confusion() &&
         std::abs(pt_a.Y() - pt_b.Y()) > Precision::Confusion())
     {
@@ -467,8 +470,11 @@ void Sketch::finalize_rectangle_()
       update_faces_();
     }
     else
-      clear_tmps_();
-    
+    {
+      // Start a new edge
+      EZY_ASSERT(e.node_idx_b.has_value());
+      m_tmp_edges.push_back({*e.node_idx_b});
+    }
   };
   last_edge_(l);
 }
