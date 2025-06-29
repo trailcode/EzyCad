@@ -1,6 +1,7 @@
 #include "shp_move.h"
 #include "geom.h"
 #include "gui.h"
+#include "utl.h"
 #include "occt_view.h"
 
 Shp_move::Shp_move(Occt_view& view)

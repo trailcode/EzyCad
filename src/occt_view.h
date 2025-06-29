@@ -17,7 +17,6 @@
 #include "shp_move.h"
 #include "shp_polar_dup.h"
 #include "shp_rotate.h"
-#include "utl.h"
 
 class Sketch;
 class GUI;
