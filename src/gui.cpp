@@ -538,18 +538,6 @@ void GUI::shape_list_()
   }
 }
 
-constexpr std::array<std::string_view, 9> c_names_TopAbs_ShapeEnum =
-    {
-        "COMPOUND",
-        "COMPSOLID",
-        "SOLID",
-        "SHELL",
-        "FACE",
-        "WIRE",
-        "EDGE",
-        "VERTEX",
-        "SHAPE"};
-
 void GUI::options_()
 {
   ImGui::Begin("Options", nullptr, ImGuiWindowFlags_NoCollapse);
@@ -631,6 +619,18 @@ void GUI::options_()
 
 void GUI::options_normal_mode_()
 {
+  constexpr std::array<std::string_view, 9> c_names_TopAbs_ShapeEnum =
+      {
+          "COMPOUND",
+          "COMPSOLID",
+          "SOLID",
+          "SHELL",
+          "FACE",
+          "WIRE",
+          "EDGE",
+          "VERTEX",
+          "SHAPE"};
+
   // Shape type filter combo
   int current_item = static_cast<int>(m_view->get_shp_selection_mode());
   if (ImGui::BeginCombo("Selection Mode##filter", c_names_TopAbs_ShapeEnum[current_item].data(),

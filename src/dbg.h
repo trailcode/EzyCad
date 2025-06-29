@@ -1,6 +1,5 @@
 #pragma once
 
-#include <csignal>
 #include <filesystem>
 #include <iostream>
 
@@ -9,6 +8,7 @@
 #include <intrin.h>
 #define DEBUG_BREAK __debugbreak()
 #else  // Unix-like (GDB, etc.)
+#include <csignal>
 #define DEBUG_BREAK raise(SIGTRAP)
 #endif
 

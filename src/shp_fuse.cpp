@@ -1,5 +1,4 @@
 #include "shp_fuse.h"
-#include "gui.h"
 #include "utl.h"
 
 #include <BRepAlgoAPI_Fuse.hxx>

@@ -1,17 +1,18 @@
 #include "shp_polar_dup.h"
+
+#include <BRepAlgoAPI_Fuse.hxx>
+#include <BRepBuilderAPI_MakeEdge.hxx>
+#include <BRepBuilderAPI_Transform.hxx>
+#include <TopoDS.hxx>
+#include <TopoDS_Edge.hxx>
+#include <numbers>
+
 #include "geom.h"
+#include "gui.h"
 #include "modes.h"
 #include "occt_view.h"
 #include "sketch.h"
 #include "sketch_nodes.h"
-#include "gui.h"
-
-#include <BRepBuilderAPI_MakeEdge.hxx>
-#include <BRepBuilderAPI_Transform.hxx>
-#include <BRepAlgoAPI_Fuse.hxx>
-#include <TopoDS.hxx>
-#include <TopoDS_Edge.hxx>
-#include <numbers>
 
 Shp_polar_dup::Shp_polar_dup(Occt_view& view)
     : Shp_operation_base(view) {}
@@ -81,35 +82,35 @@ Status Shp_polar_dup::dup()
 
   const double  step_angle = m_polar_angle / double(m_num_elms);
   const gp_Pln& sketch_pln = view().curr_sketch().get_plane();
-  
+
   // Get the rotation center in 2D
   const gp_Pnt2d origin_2d = *m_polar_arm_origin;
-  
+
   // Vector to store all transformed shapes if combining
   std::vector<TopoDS_Shape> transformed_shapes;
-  
+
   // Create copies and rotate them
   for (size_t i = 0; i < m_num_elms; ++i)
   {
-    const double current_angle_degrees = step_angle * (i + 1); // Skip 0 since that's the original
+    const double current_angle_degrees = step_angle * (i + 1);                              // Skip 0 since that's the original
     const double current_angle_radians = current_angle_degrees * std::numbers::pi / 180.0;  // Convert to radians
-    
+
     for (const AIS_Shape_ptr& shape : m_shps)
     {
       // Get the shape's center in 2D
-      const gp_Pnt shape_center_3d = get_shape_bbox_center(shape->Shape());
+      const gp_Pnt   shape_center_3d = get_shape_bbox_center(shape->Shape());
       const gp_Pnt2d shape_center_2d = to_2d(sketch_pln, shape_center_3d);
-      
+
       // Calculate the rotated shape center point in 2D
       const gp_Pnt2d rotated_shp_center_2d = rotate_point(origin_2d, shape_center_2d, current_angle_degrees);
-      
+
       // Convert back to 3D
       const gp_Pnt rotated_shp_center_3d = to_3d(sketch_pln, rotated_shp_center_2d);
-      
+
       // Create translation transformation
       gp_Trsf translation;
       translation.SetTranslation(gp_Vec(shape_center_3d, rotated_shp_center_3d));
-      
+
       // Create rotation transformation if m_rotate_dups is true
       gp_Trsf combined;
       if (m_rotate_dups)
@@ -117,7 +118,8 @@ Status Shp_polar_dup::dup()
         gp_Trsf rotation;
         rotation.SetRotation(gp_Ax1(to_3d(sketch_pln, *m_polar_arm_end), sketch_pln.Axis().Direction()), current_angle_radians);
         combined = translation * rotation;
-      } else
+      }
+      else
         combined = translation;
 
       // Create a copy of the shape
@@ -125,8 +127,8 @@ Status Shp_polar_dup::dup()
 
       // Apply the transformation
       BRepBuilderAPI_Transform transformer(shape_copy, combined, true);
-      const TopoDS_Shape& transformed_shape = transformer.Shape();
-      
+      const TopoDS_Shape&      transformed_shape = transformer.Shape();
+
       if (m_combine_dups)
         // Store the transformed shape for later combination
         transformed_shapes.push_back(transformed_shape);
@@ -150,7 +152,7 @@ Status Shp_polar_dup::dup()
       if (fuse.IsDone())
         combined_shape = fuse.Shape();
     }
-    
+
     // Create a single shape from all the combined shapes
     ExtrudedShp_ptr new_shape = new ExtrudedShp(ctx(), combined_shape);
     new_shape->set_name("Combined polar duplicate");
@@ -158,7 +160,7 @@ Status Shp_polar_dup::dup()
   }
 
   delete_operation_shps_();
-  gui().set_mode(Mode::Normal); // Will call reset()
+  gui().set_mode(Mode::Normal);  // Will call reset()
   return Status::ok();
 }
 
@@ -174,12 +176,12 @@ void Shp_polar_dup::reset()
 
 // TODO check values
 // clang-format off
-double Shp_polar_dup::get_polar_angle() const             { return m_polar_angle; }
-void   Shp_polar_dup::set_polar_angle(const double angle) { m_polar_angle = angle; }
-size_t Shp_polar_dup::get_num_elms() const                { return m_num_elms; }
-void   Shp_polar_dup::set_num_selms(const size_t num)     { m_num_elms = num; }
-bool   Shp_polar_dup::get_rotate_dups() const             { return m_rotate_dups; }
-void   Shp_polar_dup::set_rotate_dups(const bool rotate)  { m_rotate_dups = rotate; }
-bool   Shp_polar_dup::get_combine_dups() const            { return m_combine_dups; }
+double Shp_polar_dup::get_polar_angle() const              { return m_polar_angle; }
+void   Shp_polar_dup::set_polar_angle(const double angle)  { m_polar_angle = angle; }
+size_t Shp_polar_dup::get_num_elms() const                 { return m_num_elms; }
+void   Shp_polar_dup::set_num_selms(const size_t num)      { m_num_elms = num; }
+bool   Shp_polar_dup::get_rotate_dups() const              { return m_rotate_dups; }
+void   Shp_polar_dup::set_rotate_dups(const bool rotate)   { m_rotate_dups = rotate; }
+bool   Shp_polar_dup::get_combine_dups() const             { return m_combine_dups; }
 void   Shp_polar_dup::set_combine_dups(const bool combine) { m_combine_dups = combine; }
 // clang-format on

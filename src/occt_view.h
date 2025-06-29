@@ -4,7 +4,6 @@
 #include <AIS_Shape.hxx>
 #include <AIS_ViewController.hxx>
 #include <Graphic3d_MaterialAspect.hxx>
-//#include <V3d_View.hxx>
 #include <list>
 #include <memory>
 #include <optional>

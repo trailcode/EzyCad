@@ -108,7 +108,7 @@ std::optional<size_t> Sketch_nodes::try_get_node_idx_snap(
 
   if (best_dist <= snap_dist * 0.25)
   {
-    pt = m_nodes[best_idx];
+    pt = gp_Pnt2d(m_nodes[best_idx]);
     update_node_snap_anno_(m_nodes[best_idx], sqrt(snap_dist));
     return best_idx;
   }
@@ -119,7 +119,7 @@ std::optional<size_t> Sketch_nodes::try_get_node_idx_snap(
 
   hide_snap_annos();
 
-  gp_Pnt2d pt_origional = pt;
+  gp_Pnt2d pt_original = pt;
 
   for (int i = 0; i < 2; ++i)
   {
@@ -128,7 +128,7 @@ std::optional<size_t> Sketch_nodes::try_get_node_idx_snap(
 
     auto try_nd_pt = [&](const gp_Pnt2d& nd_pt)
     {
-      double dist      = pt_origional.SquareDistance(nd_pt);
+      double dist      = pt_original.SquareDistance(nd_pt);
       // axis_dist needs to be compared against a linear snap distance in screen pixels.
       // This part becomes tricky because axis_dist is a world coordinate difference.
       // We'd ideally convert m_snap_dist_pixels * 0.5 to a world distance along the axis.
@@ -138,7 +138,7 @@ std::optional<size_t> Sketch_nodes::try_get_node_idx_snap(
       // We need a world-space equivalent for axis snapping.
       // Let's use sqrt(snap_dist_sq) * 0.5 for now.
       double axis_snap_threshold_world = sqrt(snap_dist) * 0.5;
-      double axis_dist = std::fabs(pt_origional.XY().Coord(i + 1) - nd_pt.XY().Coord(i + 1));
+      double axis_dist = std::fabs(pt_original.XY().Coord(i + 1) - nd_pt.XY().Coord(i + 1));
 
       if (dist < best_dist && axis_dist <= axis_snap_threshold_world)
       {
