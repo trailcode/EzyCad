@@ -19,13 +19,12 @@ EzyCad (Easy CAD) is a CAD application for hobbyist machinists to design and edi
 ## Getting Started
 
 ### System Requirements
-- Windows, Linux, or macOS operating system
+- Windows or, WebAssembly
+   - Not Tested: Linux, or macOS operating system
 - OpenGL-compatible graphics card
-- Minimum 4GB RAM recommended
-- 500MB free disk space
 
 ### Installation
-1. Download the latest release for your operating system
+1. Download the latest release for your operating system(TODO)
 2. Extract the archive to your preferred location
 3. Run the executable file
 
