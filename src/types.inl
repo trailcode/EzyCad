@@ -8,50 +8,19 @@ class Vector_container
  public:
   explicit Vector_container(Vec initial_value)
       : m_value(initial_value) {}
-  Vec& unsafe_get()
-  {
-    return m_value;
-  }
-  const Vec& unsafe_get() const
-  {
-    return m_value;
-  }
-  Scalar& unsafe_get_x()
-  {
-    return m_value.x;
-  }
-  const Scalar& unsafe_get_x() const
-  {
-    return m_value.x;
-  }
-  Scalar& unsafe_get_y()
-  {
-    return m_value.y;
-  }
-  const Scalar& unsafe_get_y() const
-  {
-    return m_value.y;
-  }
-  Scalar& unsafe_get_z()
-    requires(Components >= 3)
-  {
-    return m_value.z;
-  }
-  const Scalar& unsafe_get_z() const
-    requires(Components >= 3)
-  {
-    return m_value.z;
-  }
-  Scalar& unsafe_get_w()
-    requires(Components >= 4)
-  {
-    return m_value.w;
-  }
-  const Scalar& unsafe_get_w() const
-    requires(Components >= 4)
-  {
-    return m_value.w;
-  }
+  
+  // clang-format off
+  Vec&                    unsafe_get()                                   { return m_value;    }
+  const Vec&              unsafe_get()   const                           { return m_value;    }
+  Scalar&                 unsafe_get_x()                                 { return m_value.x;  }
+  const Scalar&           unsafe_get_x() const                           { return m_value.x;  }
+  Scalar&                 unsafe_get_y()                                 { return m_value.y;  }
+  const Scalar&           unsafe_get_y() const                           { return m_value.y;  }
+  Scalar&                 unsafe_get_z()       requires(Components >= 3) { return m_value.z;  }
+  const Scalar&           unsafe_get_z() const requires(Components >= 3) { return m_value.z;  }
+  Scalar&                 unsafe_get_w()       requires(Components >= 4) { return m_value.w;  }
+  const Scalar&           unsafe_get_w() const requires(Components >= 4) { return m_value.w;  }
+  // clang-format on
 };
 
 // Explicit specializations for GLM vector types
