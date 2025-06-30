@@ -177,11 +177,12 @@ void Shp_polar_dup::reset()
 // TODO check values
 // clang-format off
 double Shp_polar_dup::get_polar_angle() const              { return m_polar_angle; }
-void   Shp_polar_dup::set_polar_angle(const double angle)  { m_polar_angle = angle; }
 size_t Shp_polar_dup::get_num_elms() const                 { return m_num_elms; }
-void   Shp_polar_dup::set_num_selms(const size_t num)      { m_num_elms = num; }
 bool   Shp_polar_dup::get_rotate_dups() const              { return m_rotate_dups; }
-void   Shp_polar_dup::set_rotate_dups(const bool rotate)   { m_rotate_dups = rotate; }
 bool   Shp_polar_dup::get_combine_dups() const             { return m_combine_dups; }
+
+void   Shp_polar_dup::set_polar_angle(const double angle)  { m_polar_angle = angle; }
+void   Shp_polar_dup::set_num_elms(const size_t num)       { m_num_elms = num; }
+void   Shp_polar_dup::set_rotate_dups(const bool rotate)   { m_rotate_dups = rotate; }
 void   Shp_polar_dup::set_combine_dups(const bool combine) { m_combine_dups = combine; }
 // clang-format on

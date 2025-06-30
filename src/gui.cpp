@@ -796,7 +796,7 @@ void GUI::options_shape_polar_duplicate_mode_()
     polar_dup.set_polar_angle(polar_angle);
 
   if (ImGui::InputInt("Num Elms##int_value", &num_elms))
-    polar_dup.set_num_selms(num_elms);
+    polar_dup.set_num_elms(num_elms);
 
   if (ImGui::Checkbox("Rotate dups", &rotate_dups))
     polar_dup.set_rotate_dups(rotate_dups);

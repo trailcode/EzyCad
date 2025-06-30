@@ -13,7 +13,7 @@ class Shp_polar_dup : private Shp_operation_base
   double               get_polar_angle() const;
   void                 set_polar_angle(const double angle);
   size_t               get_num_elms() const;
-  void                 set_num_selms(const size_t num);
+  void                 set_num_elms(const size_t num);
   bool                 get_rotate_dups() const;
   void                 set_rotate_dups(const bool rotate);
   bool                 get_combine_dups() const;
