@@ -221,9 +221,11 @@ void Sketch::add_line_string_pt_(const ScreenCoords& screen_coords, Linestring_t
     if (m_tmp_edges.size())
     {
       Edge& last_edge = m_tmp_edges.back();
+      //update_edge_end_pt_(last_edge, node_idx);
       if (last_edge.node_idx_b.has_value())
       {
         // The last end edge point snapped, we are done with this line string.
+        update_edge_end_pt_(last_edge, node_idx);
         finalize_elm();
         return;
       }
@@ -237,12 +239,14 @@ void Sketch::add_line_string_pt_(const ScreenCoords& screen_coords, Linestring_t
 
         if (linestring_type == Linestring_type::Single)
         {
+          //update_edge_end_pt_(last_edge, node_idx);
           finalize_elm();
           return;
         }
         else if (linestring_type == Linestring_type::Two)
           if (m_tmp_edges.size() == 2)
           {
+            //update_edge_end_pt_(last_edge, node_idx);
             finalize_elm();
             return;
           }
@@ -315,11 +319,17 @@ void Sketch::finalize_edges_()
   for (Edge& e : m_tmp_edges)
   {
     EZY_ASSERT(e.node_idx_b.has_value());
+    EZY_ASSERT(e.node_idx_mid.has_value());
     if (m_nodes[e.node_idx_a].is_midpoint)
       split_mid_points.push_back(e.node_idx_a);
 
     if (m_nodes[e.node_idx_b].is_midpoint)
       split_mid_points.push_back(*e.node_idx_b);
+
+    if (!m_nodes[e.node_idx_mid].is_midpoint)
+    {
+      int hi = 0;
+    }
   }
 
   append(m_edges, m_tmp_edges);

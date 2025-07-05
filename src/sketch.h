@@ -93,9 +93,11 @@ class Sketch
   const gp_Pln& get_plane() const;
   Sketch_nodes& get_nodes();
 
- private:
+ //private:
   friend class Sketch_json;
   friend class Sketch_access;
+  friend class Sketch_test; // TEST_F(Sketch_test, JsonSerializationDeserialization)
+
 
   struct Edge
   {

@@ -9,6 +9,7 @@
 #include "gui.h"
 #include "occt_view.h"
 #include "sketch.h"
+#include "sketch_json.h"
 
 namespace bg = boost::geometry;
 
@@ -819,4 +820,165 @@ void Sketch_test::add_edges_from_indices_(
     Sketch_access::add_edge_(sketch, points[i], points[j]);
 
   callback(sketch);
+}
+
+// Test JSON serialization and deserialization
+TEST_F(Sketch_test, JsonSerializationDeserialization)
+{
+  gp_Pln default_plane(gp::Origin(), gp::DZ());
+  Sketch sketch("TestSketch", view(), default_plane);
+
+  // Add some edges to create a simple shape
+  std::vector<gp_Pnt2d> points = {
+    gp_Pnt2d(-42.123413069225286, 18.567557076566406),
+    gp_Pnt2d(-31.038304366797583, 18.567557076566406),
+    gp_Pnt2d(-42.123413069225286, 42.585292598493105),
+    gp_Pnt2d(-31.038304366797583, 42.585292598493105),
+    gp_Pnt2d(-42.123413069225286, -5.450178445360293),
+    gp_Pnt2d(-31.038304366797583, -5.450178445360293)
+  };
+
+  // Add edges to create a rectangle-like shape
+  for (size_t i = 0; i < points.size() - 1; i += 2)
+  {
+    Sketch_access::add_edge_(sketch, points[i], points[i + 1]);
+  }
+
+  // Serialize to JSON
+  nlohmann::json json_data = Sketch_json::to_json(sketch);
+
+  // Verify JSON structure
+  EXPECT_TRUE(json_data.contains("name"));
+  EXPECT_TRUE(json_data.contains("edges"));
+  EXPECT_TRUE(json_data.contains("arc_edges"));
+  EXPECT_TRUE(json_data.contains("plane"));
+  EXPECT_TRUE(json_data.contains("isCurrent"));
+
+  EXPECT_EQ(json_data["name"], "TestSketch");
+  EXPECT_EQ(json_data["edges"].size(), 3); // Should have 3 edges
+  EXPECT_EQ(json_data["arc_edges"].size(), 0); // No arc edges
+
+  // Deserialize from JSON
+  std::shared_ptr<Sketch> deserialized_sketch = Sketch_json::from_json(view(), json_data);
+
+  // Verify deserialized sketch
+  EXPECT_EQ(deserialized_sketch->get_name(), "TestSketch");
+  EXPECT_EQ(deserialized_sketch->get_nodes().size(), sketch.get_nodes().size());
+  
+  // Count edges in deserialized sketch
+  size_t edge_count = 0;
+  for (const auto& edge : deserialized_sketch->m_edges)
+  {
+    if (edge.node_idx_b.has_value())
+      edge_count++;
+  }
+  EXPECT_EQ(edge_count, 3); // Should have 3 edges
+}
+
+// Test JSON serialization with different edge counts (bug1 vs bug1.1 scenario)
+TEST_F(Sketch_test, JsonSerializationDifferentEdgeCounts)
+{
+  gp_Pln default_plane(gp::Origin(), gp::DZ());
+  
+  // Create first sketch with 3 edges (like bug1.ezy)
+  Sketch sketch1("Sketch1", view(), default_plane);
+  std::vector<gp_Pnt2d> points1 = {
+    gp_Pnt2d(-42.123413069225286, 18.567557076566406),
+    gp_Pnt2d(-31.038304366797583, 18.567557076566406),
+    gp_Pnt2d(-42.123413069225286, 42.585292598493105),
+    gp_Pnt2d(-31.038304366797583, 42.585292598493105),
+    gp_Pnt2d(-42.123413069225286, -5.450178445360293),
+    gp_Pnt2d(-31.038304366797583, -5.450178445360293)
+  };
+
+  // Add 3 edges
+  for (size_t i = 0; i < points1.size() - 1; i += 2)
+  {
+    Sketch_access::add_edge_(sketch1, points1[i], points1[i + 1]);
+  }
+
+  // Create second sketch with 4 edges (like bug1.1.ezy)
+  Sketch sketch2("Sketch2", view(), default_plane);
+  std::vector<gp_Pnt2d> points2 = {
+    gp_Pnt2d(-42.123413069225286, 18.567557076566406),
+    gp_Pnt2d(-31.038304366797583, 18.567557076566406),
+    gp_Pnt2d(-42.123413069225286, 42.585292598493105),
+    gp_Pnt2d(-31.038304366797583, 42.585292598493105),
+    gp_Pnt2d(-42.123413069225286, -5.450178445360293),
+    gp_Pnt2d(-31.038304366797583, -5.450178445360293),
+    gp_Pnt2d(-42.123413069225286, -5.450178445360293),
+    gp_Pnt2d(-42.123413069225286, 42.585292598493105)
+  };
+
+  // Add 4 edges (including the vertical edge)
+  for (size_t i = 0; i < points2.size() - 1; i += 2)
+  {
+    Sketch_access::add_edge_(sketch2, points2[i], points2[i + 1]);
+  }
+
+  // Serialize both sketches
+  nlohmann::json json1 = Sketch_json::to_json(sketch1);
+  nlohmann::json json2 = Sketch_json::to_json(sketch2);
+
+  // Verify different edge counts
+  EXPECT_EQ(json1["edges"].size(), 3);
+  EXPECT_EQ(json2["edges"].size(), 4);
+
+  // Deserialize and verify edge counts are preserved
+  std::shared_ptr<Sketch> deserialized1 = Sketch_json::from_json(view(), json1);
+  std::shared_ptr<Sketch> deserialized2 = Sketch_json::from_json(view(), json2);
+
+  size_t edge_count1 = 0;
+  for (const auto& edge : deserialized1->m_edges)
+  {
+    if (edge.node_idx_b.has_value())
+      edge_count1++;
+  }
+
+  size_t edge_count2 = 0;
+  for (const auto& edge : deserialized2->m_edges)
+  {
+    if (edge.node_idx_b.has_value())
+      edge_count2++;
+  }
+
+  EXPECT_EQ(edge_count1, 3);
+  EXPECT_EQ(edge_count2, 4);
+  EXPECT_NE(edge_count1, edge_count2);
+}
+
+// Test JSON serialization with edge dimensions
+TEST_F(Sketch_test, JsonSerializationWithDimensions)
+{
+  gp_Pln default_plane(gp::Origin(), gp::DZ());
+  Sketch sketch("TestSketch", view(), default_plane);
+
+  // Add an edge with dimension
+  gp_Pnt2d pt1(-42.123413069225286, 18.567557076566406);
+  gp_Pnt2d pt2(-31.038304366797583, 18.567557076566406);
+  
+  Sketch_access::add_edge_(sketch, pt1, pt2, true); // Add dimension
+
+  // Serialize to JSON
+  nlohmann::json json_data = Sketch_json::to_json(sketch);
+
+  // Verify dimension flag is set
+  EXPECT_EQ(json_data["edges"].size(), 1);
+  EXPECT_EQ(json_data["edges"][0].size(), 3);
+  EXPECT_EQ(json_data["edges"][0][2], true); // Dimension flag
+
+  // Deserialize and verify
+  std::shared_ptr<Sketch> deserialized_sketch = Sketch_json::from_json(view(), json_data);
+  
+  // Check that the edge has a dimension
+  bool has_dimension = false;
+  for (const auto& edge : deserialized_sketch->m_edges)
+  {
+    if (edge.node_idx_b.has_value() && !edge.dim.IsNull())
+    {
+      has_dimension = true;
+      break;
+    }
+  }
+  EXPECT_TRUE(has_dimension);
 }

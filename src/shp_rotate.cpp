@@ -80,19 +80,21 @@ void Shp_rotate::update_rotation_axis_()
 
   gp_Dir         axis_dir;
   Quantity_Color axis_color;
+  auto           set_axis_and_color = [&](double x, double y, double z)
+  {
+    axis_dir   = gp_Dir(x, y, z);
+    axis_color = Quantity_Color(x, y, z, Quantity_TOC_RGB);
+  };
   switch (m_rotation_axis)
   {
     case Rotation_axis::X_axis:
-      axis_dir   = gp_Dir(1, 0, 0);
-      axis_color = Quantity_Color(1.0, 0.0, 0.0, Quantity_TOC_RGB);  // Red
+      set_axis_and_color(1, 0, 0);
       break;
     case Rotation_axis::Y_axis:
-      axis_dir   = gp_Dir(0, 1, 0);
-      axis_color = Quantity_Color(0.0, 1.0, 0.0, Quantity_TOC_RGB);  // Green
+      set_axis_and_color(0, 1, 0);
       break;
     case Rotation_axis::Z_axis:
-      axis_dir   = gp_Dir(0, 0, 1);
-      axis_color = Quantity_Color(0.0, 0.0, 1.0, Quantity_TOC_RGB);  // Blue
+      set_axis_and_color(0, 0, 1);
       break;
     case Rotation_axis::View_to_object:
       return;  // Already handled above
