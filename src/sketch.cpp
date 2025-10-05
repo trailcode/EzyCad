@@ -221,7 +221,7 @@ void Sketch::add_line_string_pt_(const ScreenCoords& screen_coords, Linestring_t
     if (m_tmp_edges.size())
     {
       Edge& last_edge = m_tmp_edges.back();
-      //update_edge_end_pt_(last_edge, node_idx);
+      // update_edge_end_pt_(last_edge, node_idx);
       if (last_edge.node_idx_b.has_value())
       {
         // The last end edge point snapped, we are done with this line string.
@@ -239,14 +239,14 @@ void Sketch::add_line_string_pt_(const ScreenCoords& screen_coords, Linestring_t
 
         if (linestring_type == Linestring_type::Single)
         {
-          //update_edge_end_pt_(last_edge, node_idx);
+          // update_edge_end_pt_(last_edge, node_idx);
           finalize_elm();
           return;
         }
         else if (linestring_type == Linestring_type::Two)
           if (m_tmp_edges.size() == 2)
           {
-            //update_edge_end_pt_(last_edge, node_idx);
+            // update_edge_end_pt_(last_edge, node_idx);
             finalize_elm();
             return;
           }
@@ -442,7 +442,7 @@ void Sketch::finalize_square_()
 void Sketch::move_rectangle_pt_(const ScreenCoords& screen_coords)
 {
   move_line_string_pt_(screen_coords);
-  //DBG_MSG(m_tmp_edges.size());
+  // DBG_MSG(m_tmp_edges.size());
   auto l = [&](Edge& e, const gp_Pnt2d& pt_a, const gp_Pnt2d& pt_b)
   {
     EZY_ASSERT(m_tmp_edges.size());
@@ -611,7 +611,7 @@ void Sketch::mirror_selected_edges()
 RevolvedShp_rslt Sketch::revolve_selected(const double angle)
 {
   EZY_ASSERT_MSG(m_operation_axis.has_value(),
-                "No defined operation axis.");
+                 "No defined operation axis.");
 
   TopoDS_Compound compound;
   BRep_Builder    builder;
@@ -790,12 +790,12 @@ std::list<Sketch::Edge>::iterator Sketch::get_edge_at_(const ScreenCoords& scree
 
 void Sketch::set_edge_dim_anno_visible_(Edge& e, bool visible)
 {
-  if (e.dim.IsNull() != visible)
-    return;
-
   if (visible)
   {
     EZY_ASSERT(e.node_idx_b);
+    if (e.dim)
+      m_ctx.Remove(e.dim, false);  // Remove existing to update position
+
     e.dim       = create_distance_annotation(m_nodes[e.node_idx_a], m_nodes[e.node_idx_b], m_pln);
     double dist = m_nodes[e.node_idx_a].Distance(m_nodes[e.node_idx_b]);
     e.dim->SetCustomValue(dist / m_view.get_dimension_scale());
@@ -812,8 +812,6 @@ void Sketch::toggle_edge_dim(const ScreenCoords& screen_coords)
 {
   if (std::list<Edge>::iterator itr = get_edge_at_(screen_coords); itr != m_edges.end())
     set_edge_dim_anno_visible_(*itr, itr->dim.IsNull());
-
-  // TODO report error to user
 }
 
 void Sketch::finalize_elm()
@@ -1483,7 +1481,7 @@ void Sketch::set_name(const std::string& name)
 
 gp_Vec2d Sketch::edge_outgoing_dir_(size_t idx_a, size_t idx_b, const Edge& edge) const
 {
-  #if 0
+#if 0
   boost_geom::linestring_2d ls;
   boost_geom::linestring_2d ls2;
   ls.push_back(to_boost(m_nodes[idx_a]));
@@ -1508,7 +1506,7 @@ gp_Vec2d Sketch::edge_outgoing_dir_(size_t idx_a, size_t idx_b, const Edge& edge
     return gp_Vec2d(p.X(), p.Y());
     int i = 0;
   }
-  #endif
+#endif
 
   gp_Vec2d ret(m_nodes[idx_a], m_nodes[idx_b]);
   ret.Normalize();

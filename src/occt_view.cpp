@@ -944,10 +944,7 @@ void Occt_view::on_mode()
   {
     ortho = true;
     for (auto shp : m_shps)
-    {
-      // m_ctx->Remove(shp, false);
-      // m_ctx->Erase(shp, false);
-    }
+      shp->set_visible(false);
 
     switch (get_mode())
     {
@@ -983,9 +980,7 @@ void Occt_view::on_mode()
     }
 
     for (auto shp : m_shps)
-    {
-      // m_ctx->Redisplay(shp, false);
-    }
+      shp->set_visible(true);
   }
 
   if (!is_headless())
