@@ -71,6 +71,7 @@ class Sketch
   bool is_visible() const;
   void set_show_faces(bool show);
   void set_show_edges(bool show);
+  void set_show_dims(bool show);
 
   // Revolve related
   RevolvedShp_rslt revolve_selected(const double angle);
@@ -251,5 +252,4 @@ class Sketch
   AIS_Shape_ptr                    m_tmp_shp;
   PrsDim_LengthDimension_ptr       m_tmp_dim_anno;
   bool                             m_show_faces {true};
-  bool                             m_show_edges {true};
 };

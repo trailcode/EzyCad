@@ -1408,8 +1408,22 @@ void Sketch::set_show_edges(bool show)
   else
     for (Edge& e : m_edges)
       m_ctx.Erase(e.shp, false);
+}
 
-  m_show_edges = show;
+void Sketch::set_show_dims(bool show)
+{
+  if (show && m_visible)
+  {
+    for (Edge& e : m_edges)
+      if (e.dim)
+        m_ctx.Display(e.dim, false);
+  }
+  else
+  {
+    for (Edge& e : m_edges)
+      if (e.dim)
+        m_ctx.Erase(e.dim, false);
+  }
 }
 
 bool Sketch::is_current() const

@@ -17,9 +17,9 @@
 #include <StdSelect_BRepOwner.hxx>
 #include <TopExp_Explorer.hxx>
 #include <TopoDS.hxx>
+#include <V3d_View.hxx>
 #include <WNT_WClass.hxx>
 #include <WNT_Window.hxx>
-#include <V3d_View.hxx>
 
 #include "dbg.h"
 #include "geom.h"
@@ -927,6 +927,7 @@ void Occt_view::on_mode()
     {
       s->set_show_faces(s == m_cur_sketch);
       s->set_show_edges(s == m_cur_sketch);
+      s->set_show_dims(s == m_cur_sketch);
     }
   };
 
@@ -935,6 +936,7 @@ void Occt_view::on_mode()
     for (Sketch_ptr& s : m_sketches)
     {
       s->set_show_edges(show);
+      s->set_show_dims(show);
       s->set_show_faces(show);
     }
   };

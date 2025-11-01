@@ -13,7 +13,7 @@ AllowAllArgumentsOnNextLine: true      # Changed to true
 AllowAllParametersOfDeclarationOnNextLine: true  # Changed to true
 AllowShortBlocksOnASingleLine: Empty
 AllowShortCaseLabelsOnASingleLine: false
-AllowShortFunctionsOnASingleLine: Empty
+AllowShortFunctionsOnASingleLine: Inline
 AllowShortIfStatementsOnASingleLine: Never
 AllowShortLoopsOnASingleLine: false
 AlwaysBreakAfterReturnType: None
