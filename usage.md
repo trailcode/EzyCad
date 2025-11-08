@@ -280,7 +280,53 @@ The shape rotate tool enables precise rotation of selected shapes around a speci
 
 ## Feature Operations
 
-- Extrude sketches (E)
+### Extrude Sketch Face Tool (E)
+
+The extrude tool allows you to create 3D solid shapes by extruding 2D sketch faces along a direction perpendicular to the sketch plane.
+
+![Extrude Tool](icons/Design456_Extrude.png)
+
+**Features:**
+- **Direct face selection**: Click directly on a sketch face to select it for extrusion
+- **Automatic view adjustment**: The view automatically rotates if the face plane is parallel to the view plane (within 5 degrees), providing better visibility for the extrusion operation
+- **Real-time preview**: See the extruded shape update in real-time as you move the mouse
+- **Interactive distance control**: Drag the mouse to adjust extrusion distance, or use the distance input dialog (Tab key) for precise control
+- **Distance annotation**: A dimension annotation displays the current extrusion distance
+- **Bidirectional extrusion**: The extrusion direction is determined by which side of the face plane you move the mouse to
+
+**How to Use:**
+1. **Activate Extrude Tool**: Press `E` or click the ![Design456_Extrude](icons/Design456_Extrude.png) icon to enter extrude mode
+2. **Select Face**: Click on a sketch face that you want to extrude
+   - The face must be part of a closed sketch (forming a valid face)
+   - The system will automatically select the face closest to the camera if multiple faces overlap
+3. **Adjust Extrusion Distance**:
+   - **Mouse drag**: Move the mouse to adjust the extrusion distance in real-time
+   - **Precise input**: Press `Tab` to open the distance input dialog and enter an exact extrusion distance
+   - The distance annotation shows the current extrusion distance
+4. **Finalize**: Click the left mouse button to confirm and create the extruded shape
+5. **Cancel**: Press `Esc` at any time to cancel the extrusion operation
+
+**Keyboard Shortcuts:**
+- `E`: Activate extrude mode
+- `Tab`: Open distance input dialog for precise extrusion distance
+- `Esc`: Cancel current extrusion operation
+- `Enter`: Finalize extrusion (when using distance input)
+
+**Tips:**
+- Extrude works best when the view is not directly parallel to the sketch plane - the system will automatically rotate the view if needed
+- Use the distance input dialog for precise measurements
+- The extrusion direction depends on which side of the face plane you move the mouse to
+- Multiple faces from the same sketch can be extruded separately
+- Extruded shapes can be used in boolean operations (cut, fuse, common)
+
+**Common Use Cases:**
+- **Extrusion**: Select the circle face and extrude to create cylindrical shapes
+- **Base features**: Create the base feature of a part by extruding a profile
+- **Additive features**: Extrude additional features on existing parts
+- **Through features**: Extrude holes or cutouts by using the cut operation after extrusion
+
+### Other Feature Operations
+
 - Create chamfers
 - Add fillets
 - Boolean operations:

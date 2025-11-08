@@ -129,7 +129,7 @@ class View_access
  public:
   static void set_view_plane(Occt_view& view, const gp_Pln& pln)
   {
-    view.m_curr_view_pln = pln;
+    view.shp_extrude().set_curr_view_pln(pln);
   }
 };
 

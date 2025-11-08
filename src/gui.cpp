@@ -959,7 +959,12 @@ void GUI::on_mouse_pos(const ScreenCoords& screen_coords)
 
 void GUI::on_mouse_button(int button, int action, int mods)
 {
+  m_view->on_mouse_button(button, action, mods);
+  
   const ScreenCoords screen_coords(glm::dvec2(ImGui::GetIO().MousePos.x, ImGui::GetIO().MousePos.y));
+
+  m_view->on_mouse_move(screen_coords);
+  m_view->ctx().UpdateCurrentViewer();
 
   if (button == GLFW_MOUSE_BUTTON_LEFT && action == GLFW_PRESS && mods == 0)
     switch (m_mode)
@@ -1015,7 +1020,7 @@ void GUI::on_mouse_button(int button, int action, int mods)
         break;
     }
 
-  m_view->on_mouse_button(button, action, mods);
+  //m_view->on_mouse_button(button, action, mods);
 }
 
 void GUI::on_mouse_scroll(double xoffset, double yoffset)
