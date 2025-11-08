@@ -81,7 +81,7 @@ class Occt_view : protected AIS_ViewController
   void         remove_sketch(const Sketch_ptr& sketch);
   Sketch&      curr_sketch();
   void         set_curr_sketch(const Sketch_ptr& sketch);
-  void         sketch_face_extrude(const ScreenCoords& screen_coords);
+  void         sketch_face_extrude(const ScreenCoords& screen_coords, bool is_mouse_move);
 
   std::list<ShapeBase_ptr>& get_shapes();
 

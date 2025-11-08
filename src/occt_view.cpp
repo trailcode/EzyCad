@@ -372,13 +372,7 @@ gp_Pln Occt_view::get_view_plane(const gp_Pnt& point_on_plane) const
 {
   // Get the view vector from the camera
   Graphic3d_Camera_ptr camera = m_view->Camera();
-  gp_Pnt               eye    = camera->Eye();     // Camera position
-  gp_Pnt               at     = camera->Center();  // Focal point
-  gp_Vec               view_vector(eye, at);       // Direction from eye to focal point
-  view_vector.Normalize();
-  gp_Dir normal(view_vector);  // Plane normal
-
-  return gp_Pln(point_on_plane, normal);
+  return gp_Pln(point_on_plane, camera->Direction());
 }
 
 void Occt_view::on_enter(const ScreenCoords& screen_coords)
@@ -386,7 +380,7 @@ void Occt_view::on_enter(const ScreenCoords& screen_coords)
   switch (get_mode())
   {
     case Mode::Sketch_face_extrude:
-      sketch_face_extrude(screen_coords);  // Update in case dimension was entered
+      sketch_face_extrude(screen_coords, true);  // Update in case dimension was entered
       finalize_sketch_extrude_();
       break;
     default:
@@ -465,7 +459,7 @@ void Occt_view::finalize_sketch_extrude_()
   m_ctx->ClearSelected(true);
 
   // Switch to normal mode to prevent picking up a second mouse click and extruding again.
-  gui().set_mode(Mode::Normal);
+  //gui().set_mode(Mode::Normal);
 }
 
 bool Occt_view::cancel_sketch_extrude_()
@@ -669,7 +663,7 @@ void Occt_view::dimension_input(const ScreenCoords& screen_coords)
   {
     case Mode::Sketch_face_extrude:
       m_show_dim_input = true;
-      sketch_face_extrude(screen_coords);
+      sketch_face_extrude(screen_coords, true);
       break;
     default:
       curr_sketch().dimension_input(screen_coords);
@@ -682,23 +676,12 @@ double Occt_view::get_dimension_scale() const
   return m_dimension_scale;
 }
 
-void Occt_view::sketch_face_extrude(const ScreenCoords& screen_coords)
+void Occt_view::sketch_face_extrude(const ScreenCoords& screen_coords, bool is_mouse_move)
 {
-  if (!m_to_extrude_pt)
-  {
-    // DBG_MSG("!m_to_extrude_pt");
-    //  Find face to extrude
-    for (auto& shp : get_selected())
-      if (auto face = dynamic_cast<Sketch_face_shp*>(shp.get()); face)
-      {
-        m_to_extrude_pln = face->owner_sketch.get_plane();
-        m_to_extrude_pt  = closest_to_camera(m_view, face->verts_3d);
-        m_curr_view_pln  = get_view_plane(*m_to_extrude_pt);
-        m_to_extrude     = shp;
-      }
-  }
-  else
-  {
+  if (!is_mouse_move)
+    int hi = 0;
+
+  auto l = [&]() {
     // DBG_MSG("m_to_extrude_pt");
     //  Extrude the face
     std::optional<gp_Pnt> p = pt3d_on_plane(screen_coords, m_curr_view_pln);
@@ -716,8 +699,10 @@ void Occt_view::sketch_face_extrude(const ScreenCoords& screen_coords)
 
       if (m_show_dim_input)
       {
-        auto l = [&](float new_dist, bool _)
+        auto l = [&](float new_dist, bool finalize)
         {
+          if (finalize)
+            int hi = 0;
           m_entered_dim = new_dist * get_dimension_scale();
         };
 
@@ -750,6 +735,42 @@ void Occt_view::sketch_face_extrude(const ScreenCoords& screen_coords)
         m_ctx->Redisplay(m_extruded, true);
       }
     }
+  };
+  if (!m_to_extrude_pt)
+  {
+    // DBG_MSG("!m_to_extrude_pt");
+    //  Find face to extrude
+    for (auto& shp : get_selected())
+      if (auto face = dynamic_cast<Sketch_face_shp*>(shp.get()); face)
+      {
+        m_to_extrude_pln = face->owner_sketch.get_plane();
+        m_to_extrude_pt  = closest_to_camera(m_view, face->verts_3d);
+        m_curr_view_pln  = get_view_plane(*m_to_extrude_pt);
+        m_to_extrude     = shp;
+
+        const gp_Ax1& a = m_to_extrude_pln.Axis();
+        const gp_Ax1& b = m_curr_view_pln.Axis();
+        
+        if (a.IsParallel(b, to_radians(5.0)))
+        {
+          // Rotate view by 45 degrees (radians)
+          auto rotation_axis = gp_Vec(m_to_extrude_pln.XAxis().Direction()) + gp_Vec(m_to_extrude_pln.YAxis().Direction());
+          rotation_axis.Normalize();
+          rotation_axis *= to_radians(45.0);
+          m_view->Rotate(rotation_axis.X(), rotation_axis.Y(), rotation_axis.Z(), m_to_extrude_pt->X(), m_to_extrude_pt->Y(), m_to_extrude_pt->Z());  // rotate around arbitrary axis
+          m_view->Redraw();                                                                                          // request redraw
+          //m_ctx->UpdateCurrentViewer();                                                                              // TODO Why?
+          m_to_extrude_pt = std::nullopt;
+        }
+        else
+          l();
+
+        break;
+      }
+  }
+  else
+  {
+    l();
   }
 }
 

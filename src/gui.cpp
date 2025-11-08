@@ -238,7 +238,7 @@ void GUI::menu_bar_()
   {
     if (ImGui::MenuItem("New", "Ctrl+N"))
       m_view->new_file();
-    
+
     else if (ImGui::MenuItem("Open", "Ctrl+O"))
       open_file_dialog_();
 
@@ -392,13 +392,13 @@ void GUI::dist_edit_()
 
   ImGui::SetNextItemWidth(80.0f);
   ImGui::SetKeyboardFocusHere();
-  
+
   // Add a small input float widget and check for changes
   if (ImGui::InputFloat("##dist_edit_float_value", &m_dist_val, 0.0f, 0.0f, "%.2f"))
     m_dist_callback(m_dist_val, false);
   else
     m_dist_val = std::round(m_dist_val * 100.0f) / 100.0f;
-  
+
   ImGui::End();
 }
 
@@ -950,7 +950,7 @@ void GUI::on_mouse_pos(const ScreenCoords& screen_coords)
       m_view->curr_sketch().sketch_pt_move(screen_coords);
       break;
     case Mode::Sketch_face_extrude:
-      m_view->sketch_face_extrude(screen_coords);
+      m_view->sketch_face_extrude(screen_coords, true);
       break;
     default:
       break;
@@ -982,6 +982,10 @@ void GUI::on_mouse_button(int button, int action, int mods)
       case Mode::Sketch_add_slot:
         hide_dist_edit();
         m_view->curr_sketch().add_sketch_pt(screen_coords);
+        break;
+
+      case Mode::Sketch_face_extrude:
+        m_view->sketch_face_extrude(screen_coords, false);
         break;
 
       case Mode::Shape_chamfer:
