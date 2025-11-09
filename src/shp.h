@@ -3,7 +3,7 @@
 #include <AIS_Shape.hxx>
 #include <array>
 
-#include "result.h"
+#include "utl_result.h"
 
 class AIS_InteractiveContext;
 
