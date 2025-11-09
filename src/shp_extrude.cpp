@@ -70,8 +70,7 @@ bool Shp_extrude::cancel()
   ctx().Remove(m_extruded, true);
   ctx().Remove(m_tmp_dim, false);
   bool did_cancel = m_to_extrude_pt.has_value();
-  clear_all(m_to_extrude_pt, m_to_extrude, m_extruded,
-            m_tmp_dim, view().get_show_dim_input(), view().get_entered_dim());
+  clear_all(m_to_extrude_pt, m_to_extrude, m_extruded, m_tmp_dim);
   view().set_show_dim_input(false);
   view().set_entered_dim(std::nullopt);
 
