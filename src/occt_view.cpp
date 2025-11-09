@@ -658,6 +658,26 @@ double Occt_view::get_dimension_scale() const
   return m_dimension_scale;
 }
 
+bool Occt_view::get_show_dim_input() const
+{
+  return m_show_dim_input;
+}
+
+void Occt_view::set_show_dim_input(bool show)
+{
+  m_show_dim_input = show;
+}
+
+std::optional<double> Occt_view::get_entered_dim() const
+{
+  return m_entered_dim;
+}
+
+void Occt_view::set_entered_dim(const std::optional<double>& dim)
+{
+  m_entered_dim = dim;
+}
+
 void Occt_view::sketch_face_extrude(const ScreenCoords& screen_coords, bool is_mouse_move)
 {
   m_shp_extrude.sketch_face_extrude(screen_coords, is_mouse_move);

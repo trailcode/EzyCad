@@ -275,7 +275,7 @@ The shape rotate tool enables precise rotation of selected shapes around a speci
 - Use view-to-object rotation for intuitive free-form rotation
 - Use axis constraints for precise rotations around specific axes
 - The rotation center point is displayed as a red dot for reference
-   - Visiable in wirefame rendering of the shape(s)
+   - Visible in wirefame rendering of the shape(s)
 - You can combine rotation with other operations for complex transformations
 
 ## Feature Operations

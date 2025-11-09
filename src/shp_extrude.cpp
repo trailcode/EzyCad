@@ -57,8 +57,9 @@ void Shp_extrude::finalize()
   EZY_ASSERT(m_extruded);
   view().add_shp_(m_extruded);
   ctx().Remove(m_tmp_dim, false);
-  clear_all(m_to_extrude_pt, m_to_extrude, m_extruded,
-            m_tmp_dim, view().m_show_dim_input, view().m_entered_dim);
+  clear_all(m_to_extrude_pt, m_to_extrude, m_extruded, m_tmp_dim);
+  view().set_show_dim_input(false);
+  view().set_entered_dim(std::nullopt);
   ctx().ClearSelected(true);
 
   // gui().set_mode(Mode::Normal);
@@ -70,7 +71,9 @@ bool Shp_extrude::cancel()
   ctx().Remove(m_tmp_dim, false);
   bool did_cancel = m_to_extrude_pt.has_value();
   clear_all(m_to_extrude_pt, m_to_extrude, m_extruded,
-            m_tmp_dim, view().m_show_dim_input, view().m_entered_dim);
+            m_tmp_dim, view().get_show_dim_input(), view().get_entered_dim());
+  view().set_show_dim_input(false);
+  view().set_entered_dim(std::nullopt);
 
   ctx().ClearSelected(true);
 
@@ -95,22 +98,22 @@ void Shp_extrude::_update_extrude(const ScreenCoords& screen_coords)
   {
     auto   extrude_vec  = gp_Vec(m_to_extrude_pln.Axis().Direction());
     double extrude_dist = m_to_extrude_pln.Distance(*p);
-    if (view().m_entered_dim)
-      extrude_dist = *view().m_entered_dim;
+    if (auto entered_dim = view().get_entered_dim(); entered_dim)
+      extrude_dist = *entered_dim;
 
     if (extrude_dist <= Precision::Confusion())
       return;
 
     double scaled_dist = extrude_dist / view().get_dimension_scale();
 
-    if (view().m_show_dim_input)
+    if (view().get_show_dim_input())
     {
       auto l = [&](float new_dist, bool finalize)
       {
         if (finalize)
-          view().m_show_dim_input = false;
+          view().set_show_dim_input(false);
         else
-          view().m_entered_dim = new_dist * view().get_dimension_scale();
+          view().set_entered_dim(new_dist * view().get_dimension_scale());
       };
 
       gui().set_dist_edit(float(scaled_dist), std::move(std::function<void(float, bool)>(l)), screen_coords);

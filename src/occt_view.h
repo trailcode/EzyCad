@@ -103,8 +103,12 @@ class Occt_view : protected AIS_ViewController
   bool fit_face_in_view(const TopoDS_Face& face);
 
   // Dimension related
-  void   dimension_input(const ScreenCoords& screen_coords);
-  double get_dimension_scale() const;
+  void                    dimension_input(const ScreenCoords& screen_coords);
+  double                  get_dimension_scale() const;
+  bool                    get_show_dim_input() const;
+  void                    set_show_dim_input(bool show);
+  std::optional<double>   get_entered_dim() const;
+  void                    set_entered_dim(const std::optional<double>& dim);
 
   // Input events.
   void on_resize(int theWidth, int theHeight);
