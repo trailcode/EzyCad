@@ -9,9 +9,10 @@
 
 * For selection mode, not all of the current modes are useful.
 * Sketches should be hidden in:
-  * Chamfer mode
-  * Inspection mode
-  * Move mode(Might want for snapping purposes)
-  * Rotate mode
-  * Scale mode
+  ~* Chamfer mode~
+  ~* Inspection mode~
+  ~* Move mode(Might want for snapping purposes)~
+  ~* Rotate mode~
+  ~* Scale mode~
+* Scale mode broken.
 * Add concept of dim or dimension, use with node, a measurement, but does not participate in generating faces. 
