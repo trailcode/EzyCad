@@ -39,10 +39,15 @@ if(MSVC_VERSION)
   execute_process(COMMAND ${NUGET} install glfw                     -Version ${GLFW_VERSION}    -o thirdParty)
   execute_process(COMMAND ${NUGET} install unofficial-flayan-glew   -Version ${GLEW_VERSION}    -o thirdParty)
   execute_process(COMMAND ${NUGET} install boost                    -Version ${BOOST_VERSION}   -o thirdParty)
+  # Include Boost from NuGet installation on Windows
+  INCLUDE_DIRECTORIES(${PROJECT_NAME} ${BINARY_DIR}/thirdParty/boost.${BOOST_VERSION}/lib/native/include)
+else()
+  # On Linux, use system Boost installation
+  find_package(Boost REQUIRED)
+  if(Boost_FOUND)
+    INCLUDE_DIRECTORIES(${PROJECT_NAME} ${Boost_INCLUDE_DIRS})
+  endif()
 endif()
-
-
-INCLUDE_DIRECTORIES(${PROJECT_NAME} ${BINARY_DIR}/thirdParty/boost.${BOOST_VERSION}/lib/native/include)
 
 file(GLOB imguiSrc
   "third_party/imgui/imgui_impl_glfw.cpp"
