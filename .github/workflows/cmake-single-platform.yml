@@ -17,62 +17,96 @@ jobs:
     # The CMake configure and build commands are platform agnostic and should work equally well on Windows or Mac.
     # You can convert this to a matrix build if you need cross-platform coverage.
     # See: https://docs.github.com/en/free-pro-team@latest/actions/learn-github-actions/managing-complex-workflows#using-a-build-matrix
-    runs-on: ubuntu-latest
+    runs-on: windows-latest
 
     steps:
     - uses: actions/checkout@v4
 
-    - name: Install dependencies
-      run: |
-        sudo apt-get update
-        sudo apt-get install -y \
-          libopencascade-dev \
-          libboost-dev \
-          libgl1-mesa-dev \
-          libglfw3-dev \
-          libglew-dev \
-          libxinerama-dev \
-          libxcursor-dev \
-          libxi-dev \
-          build-essential \
-          cmake
+    - name: Install NuGet
+      uses: nuget/setup-nuget@v1
+      with:
+        nuget-version: 'latest'
 
-    - name: Find OpenCASCADE installation path
-      id: find_occt
+    - name: Install Chocolatey dependencies
+      shell: pwsh
       run: |
-        # Find OpenCASCADE CMake config file
-        OCCT_CONFIG=$(find /usr -name "OpenCASCADEConfig.cmake" -o -name "opencascade-config.cmake" 2>/dev/null | head -1)
-        if [ -n "$OCCT_CONFIG" ]; then
-          OCCT_DIR=$(dirname "$OCCT_CONFIG")
-          echo "OpenCASCADE_DIR=$OCCT_DIR" >> $GITHUB_ENV
-          echo "Found OpenCASCADE at: $OCCT_DIR"
-        else
-          # Try common installation paths
-          for path in "/usr/lib/x86_64-linux-gnu/cmake/opencascade" "/usr/lib/cmake/opencascade" "/usr/share/cmake/opencascade"; do
-            if [ -d "$path" ]; then
-              echo "OpenCASCADE_DIR=$path" >> $GITHUB_ENV
-              echo "Found OpenCASCADE at: $path"
-              exit 0
-            fi
-          done
-          echo "ERROR: Could not find OpenCASCADE installation"
-          echo "Searching for OpenCASCADE files..."
-          find /usr -name "*OpenCASCADE*" -o -name "*opencascade*" 2>/dev/null | head -20
-          exit 1
-        fi
+        choco install cmake --installargs 'ADD_CMAKE_TO_PATH=System' -y
+
+    - name: Download and extract OpenCASCADE
+      shell: pwsh
+      run: |
+        # OpenCASCADE 7.8.0 pre-built binaries for Windows
+        $OCCT_VERSION = "7.8.0"
+        $OCCT_URL = "https://dev.opencascade.org/system/files/occt/OCC-$OCCT_VERSION-VC14-64.zip"
+        $OCCT_ZIP = "$env:RUNNER_TEMP\occt.zip"
+        $OCCT_EXTRACT_DIR = "$env:RUNNER_TEMP\occt"
+        
+        Write-Host "Downloading OpenCASCADE $OCCT_VERSION from $OCCT_URL..."
+        try {
+          Invoke-WebRequest -Uri $OCCT_URL -OutFile $OCCT_ZIP -UseBasicParsing
+          Write-Host "Download completed"
+        } catch {
+          Write-Host "Failed to download from primary URL, trying alternative..."
+          # Try alternative URL format
+          $OCCT_URL = "https://github.com/Open-Cascade-SAS/OCCT/releases/download/V$OCCT_VERSION/opencascade-$OCCT_VERSION-windows-x64.zip"
+          Invoke-WebRequest -Uri $OCCT_URL -OutFile $OCCT_ZIP -UseBasicParsing
+        }
+        
+        Write-Host "Extracting OpenCASCADE..."
+        if (Test-Path $OCCT_EXTRACT_DIR) {
+          Remove-Item -Path $OCCT_EXTRACT_DIR -Recurse -Force
+        }
+        Expand-Archive -Path $OCCT_ZIP -DestinationPath $OCCT_EXTRACT_DIR -Force
+        
+        # Find OpenCASCADEConfig.cmake - it might be in various locations
+        $OCCT_CONFIG = Get-ChildItem -Path $OCCT_EXTRACT_DIR -Recurse -Filter "OpenCASCADEConfig.cmake" -ErrorAction SilentlyContinue | Select-Object -First 1
+        if ($OCCT_CONFIG) {
+          $OCCT_CMAKE_DIR = $OCCT_CONFIG.DirectoryName
+          Write-Host "Found OpenCASCADE CMake config at: $OCCT_CMAKE_DIR"
+          echo "OpenCASCADE_DIR=$OCCT_CMAKE_DIR" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
+        } else {
+          # Try to find it in common locations
+          $possiblePaths = @(
+            "$OCCT_EXTRACT_DIR\opencascade-$OCCT_VERSION\cmake",
+            "$OCCT_EXTRACT_DIR\OCC-$OCCT_VERSION-VC14-64\cmake",
+            "$OCCT_EXTRACT_DIR\cmake",
+            "$OCCT_EXTRACT_DIR\lib\cmake\opencascade"
+          )
+          $found = $false
+          foreach ($path in $possiblePaths) {
+            if (Test-Path $path) {
+              Write-Host "Using OpenCASCADE path: $path"
+              echo "OpenCASCADE_DIR=$path" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
+              $found = $true
+              break
+            }
+          }
+          if (-not $found) {
+            Write-Host "Warning: Could not find OpenCASCADE CMake config. Listing directory structure:"
+            Get-ChildItem -Path $OCCT_EXTRACT_DIR -Recurse -Directory | Select-Object -First 10 | ForEach-Object { Write-Host $_.FullName }
+            exit 1
+          }
+        }
+        
+        Write-Host "OpenCASCADE_DIR is set to: $env:OpenCASCADE_DIR"
 
     - name: Configure CMake
+      shell: pwsh
       # Configure CMake in a 'build' subdirectory. `CMAKE_BUILD_TYPE` is only required if you are using a single-configuration generator such as make.
       # See https://cmake.org/cmake/help/latest/variable/CMAKE_BUILD_TYPE.html?highlight=cmake_build_type
-      run: cmake -B ${{github.workspace}}/build -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}} -DOpenCASCADE_DIR=${{env.OpenCASCADE_DIR}}
+      run: |
+        cmake -B ${{github.workspace}}\build `
+          -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}} `
+          -DOpenCASCADE_DIR="${{env.OpenCASCADE_DIR}}"
 
     - name: Build
+      shell: pwsh
       # Build your program with the given configuration
-      run: cmake --build ${{github.workspace}}/build --config ${{env.BUILD_TYPE}}
+      run: cmake --build ${{github.workspace}}\build --config ${{env.BUILD_TYPE}}
 
     - name: Test
-      working-directory: ${{github.workspace}}/build
+      working-directory: ${{github.workspace}}\build
+      shell: pwsh
       # Execute tests defined by the CMake configuration.
       # See https://cmake.org/cmake/help/latest/manual/ctest.1.html for more detail
       run: ctest -C ${{env.BUILD_TYPE}} --output-on-failure
-
