@@ -27,64 +27,95 @@ jobs:
       with:
         nuget-version: 'latest'
 
-    - name: Install Chocolatey dependencies
-      shell: pwsh
-      run: |
-        choco install cmake --installargs 'ADD_CMAKE_TO_PATH=System' -y
+    - name: Setup vcpkg
+      uses: microsoft/setup-vcpkg@v3
 
-    - name: Download and extract OpenCASCADE
+    - name: Try to download pre-built OpenCASCADE
+      id: download_occt
+      shell: pwsh
+      continue-on-error: true
+      run: |
+        $OCCT_VERSION = "7.9.1"
+        $OCCT_EXTRACT_DIR = "$env:RUNNER_TEMP\occt"
+        $OCCT_ZIP = "$env:RUNNER_TEMP\occt.zip"
+        
+        # Try multiple possible download URLs
+        $urls = @(
+          "https://github.com/Open-Cascade-SAS/OCCT/releases/download/V7_9_1/opencascade-$OCCT_VERSION-vc14-64.zip",
+          "https://github.com/Open-Cascade-SAS/OCCT/releases/download/V7_9_1/OCC-$OCCT_VERSION-VC14-64.zip",
+          "https://dev.opencascade.org/system/files/occt/opencascade-$OCCT_VERSION-vc14-64.zip",
+          "https://dev.opencascade.org/system/files/occt/OCC-$OCCT_VERSION-VC14-64.zip"
+        )
+        
+        $downloaded = $false
+        foreach ($url in $urls) {
+          try {
+            Write-Host "Trying to download from: $url"
+            Invoke-WebRequest -Uri $url -OutFile $OCCT_ZIP -UseBasicParsing -TimeoutSec 30
+            Write-Host "Successfully downloaded from: $url"
+            $downloaded = $true
+            break
+          } catch {
+            Write-Host "Failed to download from $url : $_"
+            continue
+          }
+        }
+        
+        if ($downloaded) {
+          Write-Host "Extracting OpenCASCADE..."
+          if (Test-Path $OCCT_EXTRACT_DIR) {
+            Remove-Item -Path $OCCT_EXTRACT_DIR -Recurse -Force
+          }
+          Expand-Archive -Path $OCCT_ZIP -DestinationPath $OCCT_EXTRACT_DIR -Force
+          
+          # Find OpenCASCADEConfig.cmake
+          $OCCT_CONFIG = Get-ChildItem -Path $OCCT_EXTRACT_DIR -Recurse -Filter "OpenCASCADEConfig.cmake" -ErrorAction SilentlyContinue | Select-Object -First 1
+          if ($OCCT_CONFIG) {
+            $OCCT_CMAKE_DIR = $OCCT_CONFIG.DirectoryName
+            Write-Host "Found OpenCASCADE CMake config at: $OCCT_CMAKE_DIR"
+            echo "OpenCASCADE_DIR=$OCCT_CMAKE_DIR" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
+            echo "USE_VCPKG=false" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
+            echo "Pre-built binaries found" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
+          } else {
+            Write-Host "Warning: Downloaded but could not find OpenCASCADEConfig.cmake"
+            echo "USE_VCPKG=true" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
+          }
+        } else {
+          Write-Host "Could not download pre-built binaries, will use vcpkg"
+          echo "USE_VCPKG=true" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
+        }
+
+    - name: Install OpenCASCADE via vcpkg (if needed)
+      if: env.USE_VCPKG == 'true'
       shell: pwsh
       run: |
-        # OpenCASCADE 7.8.0 pre-built binaries for Windows
-        $OCCT_VERSION = "7.8.0"
-        $OCCT_URL = "https://dev.opencascade.org/system/files/occt/OCC-$OCCT_VERSION-VC14-64.zip"
-        $OCCT_ZIP = "$env:RUNNER_TEMP\occt.zip"
-        $OCCT_EXTRACT_DIR = "$env:RUNNER_TEMP\occt"
+        Write-Host "Installing OpenCASCADE via vcpkg (this may take several minutes)..."
+        vcpkg install opencascade:x64-windows --triplet x64-windows
+
+    - name: Find OpenCASCADE CMake config (vcpkg)
+      if: env.USE_VCPKG == 'true'
+      shell: pwsh
+      run: |
+        $VCPKG_INSTALLED = "$env:VCPKG_ROOT\installed\x64-windows"
         
-        Write-Host "Downloading OpenCASCADE $OCCT_VERSION from $OCCT_URL..."
-        try {
-          Invoke-WebRequest -Uri $OCCT_URL -OutFile $OCCT_ZIP -UseBasicParsing
-          Write-Host "Download completed"
-        } catch {
-          Write-Host "Failed to download from primary URL, trying alternative..."
-          # Try alternative URL format
-          $OCCT_URL = "https://github.com/Open-Cascade-SAS/OCCT/releases/download/V$OCCT_VERSION/opencascade-$OCCT_VERSION-windows-x64.zip"
-          Invoke-WebRequest -Uri $OCCT_URL -OutFile $OCCT_ZIP -UseBasicParsing
-        }
-        
-        Write-Host "Extracting OpenCASCADE..."
-        if (Test-Path $OCCT_EXTRACT_DIR) {
-          Remove-Item -Path $OCCT_EXTRACT_DIR -Recurse -Force
-        }
-        Expand-Archive -Path $OCCT_ZIP -DestinationPath $OCCT_EXTRACT_DIR -Force
-        
-        # Find OpenCASCADEConfig.cmake - it might be in various locations
-        $OCCT_CONFIG = Get-ChildItem -Path $OCCT_EXTRACT_DIR -Recurse -Filter "OpenCASCADEConfig.cmake" -ErrorAction SilentlyContinue | Select-Object -First 1
+        # Find OpenCASCADEConfig.cmake
+        $OCCT_CONFIG = Get-ChildItem -Path $VCPKG_INSTALLED -Recurse -Filter "OpenCASCADEConfig.cmake" -ErrorAction SilentlyContinue | Select-Object -First 1
         if ($OCCT_CONFIG) {
           $OCCT_CMAKE_DIR = $OCCT_CONFIG.DirectoryName
           Write-Host "Found OpenCASCADE CMake config at: $OCCT_CMAKE_DIR"
           echo "OpenCASCADE_DIR=$OCCT_CMAKE_DIR" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
         } else {
-          # Try to find it in common locations
+          # Try common vcpkg locations
           $possiblePaths = @(
-            "$OCCT_EXTRACT_DIR\opencascade-$OCCT_VERSION\cmake",
-            "$OCCT_EXTRACT_DIR\OCC-$OCCT_VERSION-VC14-64\cmake",
-            "$OCCT_EXTRACT_DIR\cmake",
-            "$OCCT_EXTRACT_DIR\lib\cmake\opencascade"
+            "$VCPKG_INSTALLED\share\opencascade",
+            "$VCPKG_INSTALLED\share\occt"
           )
-          $found = $false
           foreach ($path in $possiblePaths) {
             if (Test-Path $path) {
               Write-Host "Using OpenCASCADE path: $path"
               echo "OpenCASCADE_DIR=$path" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
-              $found = $true
               break
             }
-          }
-          if (-not $found) {
-            Write-Host "Warning: Could not find OpenCASCADE CMake config. Listing directory structure:"
-            Get-ChildItem -Path $OCCT_EXTRACT_DIR -Recurse -Directory | Select-Object -First 10 | ForEach-Object { Write-Host $_.FullName }
-            exit 1
           }
         }
         
@@ -95,9 +126,18 @@ jobs:
       # Configure CMake in a 'build' subdirectory. `CMAKE_BUILD_TYPE` is only required if you are using a single-configuration generator such as make.
       # See https://cmake.org/cmake/help/latest/variable/CMAKE_BUILD_TYPE.html?highlight=cmake_build_type
       run: |
-        cmake -B ${{github.workspace}}\build `
-          -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}} `
-          -DOpenCASCADE_DIR="${{env.OpenCASCADE_DIR}}"
+        $cmakeArgs = @(
+          "-B", "${{github.workspace}}\build",
+          "-DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}}",
+          "-DOpenCASCADE_DIR=`"${{env.OpenCASCADE_DIR}}`""
+        )
+        
+        if ("${{env.USE_VCPKG}}" -eq "true") {
+          $cmakeArgs += "-DCMAKE_TOOLCHAIN_FILE=`"$env:VCPKG_ROOT\scripts\buildsystems\vcpkg.cmake`""
+          $cmakeArgs += "-DVCPKG_TARGET_TRIPLET=x64-windows"
+        }
+        
+        cmake @cmakeArgs
 
     - name: Build
       shell: pwsh
