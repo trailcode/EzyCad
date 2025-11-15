@@ -28,7 +28,7 @@ jobs:
         nuget-version: 'latest'
 
     - name: Setup vcpkg
-      uses: microsoft/setup-vcpkg@v3
+      uses: friendlyanon/setup-vcpkg@v1
 
     - name: Try to download pre-built OpenCASCADE
       id: download_occt
