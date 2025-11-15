@@ -63,6 +63,9 @@ bool Shape_base::get_visible() const
 
 void Shape_base::set_visible(const bool visible)
 {
+  if (m_visible == visible)
+    return;
+
   m_visible = visible;
   if (visible)
   {
@@ -84,6 +87,9 @@ void Shape_base::update_display_()
   if (!get_visible())
     return;
 
+  // Required to update selection mode in some cases.
+  // E.G. after changing from create sketch from face to normal mode.
+  m_ctx.Erase(this, true);  
   m_ctx.Activate(this, AIS_Shape::SelectionMode(m_selection_mode));
   m_ctx.Display(this, m_disp_mode, AIS_Shape::SelectionMode(m_selection_mode), true);
 }

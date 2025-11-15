@@ -657,30 +657,6 @@ void GUI::options_move_mode_()
   ImGui::Checkbox("Z", &opts.constr_axis_z);
 }
 
-void GUI::on_key_move_mode_(int key)
-{
-  Move_options&      opts = m_view->shp_move().get_opts();
-  const ScreenCoords screen_coords(glm::dvec2(ImGui::GetIO().MousePos.x, ImGui::GetIO().MousePos.y));
-
-  switch (key)
-  {
-    case GLFW_KEY_X:
-      opts.constr_axis_x ^= 1;
-      break;
-    case GLFW_KEY_Y:
-      opts.constr_axis_y ^= 1;
-      break;
-    case GLFW_KEY_Z:
-      opts.constr_axis_z ^= 1;
-      break;
-    case GLFW_KEY_TAB:
-      m_view->shp_move().show_dist_edit(screen_coords);
-      break;
-    default:
-      break;
-  }
-}
-
 void GUI::options_rotate_mode_()
 {
   ImGui::Text("Rotation Options");
@@ -699,53 +675,6 @@ void GUI::options_rotate_mode_()
 
   if (ImGui::RadioButton("Around Z axis", &selected_axis, static_cast<int>(Rotation_axis::Z_axis)))
     m_view->shp_rotate().set_rotation_axis(Rotation_axis::Z_axis);
-}
-
-void GUI::on_key_rotate_mode_(int key)
-{
-  const ScreenCoords screen_coords(glm::dvec2(ImGui::GetIO().MousePos.x, ImGui::GetIO().MousePos.y));
-
-  switch (key)
-  {
-    case GLFW_KEY_ESCAPE:
-      m_view->shp_rotate().cancel();
-      break;
-
-    case GLFW_KEY_ENTER:
-    case GLFW_KEY_KP_ENTER:
-      m_view->shp_rotate().finalize();
-      break;
-
-    case GLFW_KEY_TAB:
-      // Show angle input dialog
-      if (Status s = m_view->shp_rotate().show_angle_edit(screen_coords); !s.is_ok())
-        show_message(s.message());
-      break;
-
-    case GLFW_KEY_X:
-      // Toggle between X axis and View_to_object
-      if (m_view->shp_rotate().get_rotation_axis() == Rotation_axis::X_axis)
-        m_view->shp_rotate().set_rotation_axis(Rotation_axis::View_to_object);
-      else
-        m_view->shp_rotate().set_rotation_axis(Rotation_axis::X_axis);
-      break;
-
-    case GLFW_KEY_Y:
-      // Toggle between Y axis and View_to_object
-      if (m_view->shp_rotate().get_rotation_axis() == Rotation_axis::Y_axis)
-        m_view->shp_rotate().set_rotation_axis(Rotation_axis::View_to_object);
-      else
-        m_view->shp_rotate().set_rotation_axis(Rotation_axis::Y_axis);
-      break;
-
-    case GLFW_KEY_Z:
-      // Toggle between Z axis and View_to_object
-      if (m_view->shp_rotate().get_rotation_axis() == Rotation_axis::Z_axis)
-        m_view->shp_rotate().set_rotation_axis(Rotation_axis::View_to_object);
-      else
-        m_view->shp_rotate().set_rotation_axis(Rotation_axis::Z_axis);
-      break;
-  }
 }
 
 void GUI::options_sketch_operation_axis_mode_()
@@ -807,6 +736,77 @@ void GUI::options_shape_polar_duplicate_mode_()
   if (ImGui::Button("Dup"))
     if (Status s = polar_dup.dup(); !s.is_ok())
       show_message(s.message());
+}
+
+void GUI::on_key_rotate_mode_(int key)
+{
+  const ScreenCoords screen_coords(glm::dvec2(ImGui::GetIO().MousePos.x, ImGui::GetIO().MousePos.y));
+
+  switch (key)
+  {
+    case GLFW_KEY_ESCAPE:
+      m_view->shp_rotate().cancel();
+      break;
+
+    case GLFW_KEY_ENTER:
+    case GLFW_KEY_KP_ENTER:
+      m_view->shp_rotate().finalize();
+      break;
+
+    case GLFW_KEY_TAB:
+      // Show angle input dialog
+      if (Status s = m_view->shp_rotate().show_angle_edit(screen_coords); !s.is_ok())
+        show_message(s.message());
+      break;
+
+    case GLFW_KEY_X:
+      // Toggle between X axis and View_to_object
+      if (m_view->shp_rotate().get_rotation_axis() == Rotation_axis::X_axis)
+        m_view->shp_rotate().set_rotation_axis(Rotation_axis::View_to_object);
+      else
+        m_view->shp_rotate().set_rotation_axis(Rotation_axis::X_axis);
+      break;
+
+    case GLFW_KEY_Y:
+      // Toggle between Y axis and View_to_object
+      if (m_view->shp_rotate().get_rotation_axis() == Rotation_axis::Y_axis)
+        m_view->shp_rotate().set_rotation_axis(Rotation_axis::View_to_object);
+      else
+        m_view->shp_rotate().set_rotation_axis(Rotation_axis::Y_axis);
+      break;
+
+    case GLFW_KEY_Z:
+      // Toggle between Z axis and View_to_object
+      if (m_view->shp_rotate().get_rotation_axis() == Rotation_axis::Z_axis)
+        m_view->shp_rotate().set_rotation_axis(Rotation_axis::View_to_object);
+      else
+        m_view->shp_rotate().set_rotation_axis(Rotation_axis::Z_axis);
+      break;
+  }
+}
+
+void GUI::on_key_move_mode_(int key)
+{
+  Move_options&      opts = m_view->shp_move().get_opts();
+  const ScreenCoords screen_coords(glm::dvec2(ImGui::GetIO().MousePos.x, ImGui::GetIO().MousePos.y));
+
+  switch (key)
+  {
+    case GLFW_KEY_X:
+      opts.constr_axis_x ^= 1;
+      break;
+    case GLFW_KEY_Y:
+      opts.constr_axis_y ^= 1;
+      break;
+    case GLFW_KEY_Z:
+      opts.constr_axis_z ^= 1;
+      break;
+    case GLFW_KEY_TAB:
+      m_view->shp_move().show_dist_edit(screen_coords);
+      break;
+    default:
+      break;
+  }
 }
 
 void GUI::dbg_()

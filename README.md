@@ -58,11 +58,11 @@ Ensure the following dependencies are installed:
   - `emcmake cmake .. -DOpenCASCADE_DIR=C:\src\OCCT-7_9_0_em_install\lib\cmake\opencascade`
   - If you have Ninja:
     - Debug:
-      1. `emcmake cmake .. -G Ninja -DOpenCASCADE_DIR=C:\src\OCCT-7_9_0_em_install\lib\cmake\opencascade -CMAKE_BUILD_TYPE=Debug`
+      1. `emcmake cmake .. -G Ninja -DOpenCASCADE_DIR=C:\src\OCCT-7_9_0_em_install\lib\cmake\opencascade -DCMAKE_BUILD_TYPE=Debug`
       2. `ninja`
       3. Approximately 50MB `EzyCad.wasm` file.
     - Release:
-      1. `emcmake cmake .. -G Ninja -DOpenCASCADE_DIR=C:\src\OCCT-7_9_0_em_install\lib\cmake\opencascade -CMAKE_BUILD_TYPE=Release`
+      1. `emcmake cmake .. -G Ninja -DOpenCASCADE_DIR=C:\src\OCCT-7_9_0_em_install\lib\cmake\opencascade -DCMAKE_BUILD_TYPE=Release`
       2. `ninja`
       3. Approximately 19MB `EzyCad.wasm` file.
 - Build the project.
