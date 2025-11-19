@@ -202,10 +202,10 @@ void GUI::initialize_toolbar_()
 {
   m_toolbar_buttons = {
       {                           load_texture("User.png"),  true,                  "Inspection mode",                         Mode::Normal},
+      {        load_texture("Workbench_Sketcher_none.png"), false,           "Sketch inspection mode",         Mode::Sketch_inspection_mode},
       {             load_texture("Assembly_AxialMove.png"), false,                   "Shape move (g)",                           Mode::Move},
       {                   load_texture("Draft_Rotate.png"), false,                 "Shape rotate (r)",                         Mode::Rotate},
       {                     load_texture("Part_Scale.png"), false,                      "Shape Scale",                          Mode::Scale},
-      {        load_texture("Workbench_Sketcher_none.png"), false,           "Sketch inspection mode",         Mode::Sketch_inspection_mode},
       {          load_texture("Macro_FaceToSketch_48.png"), false,        "Create a sketch from face",               Mode::Sketch_from_face},
       {          load_texture("Sketcher_MirrorSketch.png"), false,            "Define operation axis",          Mode::Sketch_operation_axis},
       {           load_texture("Sketcher_CreatePoint.png"), false,                         "Add node",                Mode::Sketch_add_node},
