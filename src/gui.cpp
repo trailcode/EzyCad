@@ -19,6 +19,10 @@
 // Must be here to prevent compiler warning
 #include <GLFW/glfw3.h>
 
+#ifndef __EMSCRIPTEN__
+#include <cstdlib>
+#endif
+
 GUI* gui_instance = nullptr;
 
 GUI::GUI()
@@ -269,7 +273,48 @@ void GUI::menu_bar_()
     ImGui::EndMenu();
   }
 
+  if (ImGui::BeginMenu("Help"))
+  {
+    if (ImGui::MenuItem("Usage Guide"))
+    {
+      open_url_("https://github.com/trailcode/EzyCad/blob/main/usage.md");
+    }
+
+    ImGui::EndMenu();
+  }
+
   ImGui::EndMainMenuBar();
+}
+
+void GUI::open_url_(const char* url)
+{
+#ifdef __EMSCRIPTEN__
+  // For Emscripten, use JavaScript's window.open()
+  // Use EM_ASM for safer execution
+  EM_ASM_({
+    window.open(UTF8ToString($0), '_blank');
+  }, url);
+#else
+  // For native builds, use platform-specific system commands
+  std::string cmd;
+#ifdef _WIN32
+  // Windows: Use 'start' command
+  cmd = "start \"\" \"";
+  cmd += url;
+  cmd += "\"";
+#elif defined(__APPLE__)
+  // macOS: Use 'open' command
+  cmd = "open \"";
+  cmd += url;
+  cmd += "\"";
+#else
+  // Linux and other Unix-like systems: Use 'xdg-open'
+  cmd = "xdg-open \"";
+  cmd += url;
+  cmd += "\"";
+#endif
+  system(cmd.c_str());
+#endif
 }
 
 // Render toolbar with ImGui
