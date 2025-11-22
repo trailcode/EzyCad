@@ -221,36 +221,23 @@ void Sketch::add_line_string_pt_(const ScreenCoords& screen_coords, Linestring_t
     if (m_tmp_edges.size())
     {
       Edge& last_edge = m_tmp_edges.back();
-      // update_edge_end_pt_(last_edge, node_idx);
-      if (last_edge.node_idx_b.has_value())
+      if (node_idx == last_edge.node_idx_a)
+        // We cannot have edges with zero length.
+        return;
+
+      update_edge_end_pt_(last_edge, node_idx);
+
+      if (linestring_type == Linestring_type::Single)
       {
-        // The last end edge point snapped, we are done with this line string.
-        update_edge_end_pt_(last_edge, node_idx);
         finalize_elm();
         return;
       }
-      else
-      {
-        if (node_idx == last_edge.node_idx_a)
-          // We cannot have edges with zero length.
-          return;
-
-        update_edge_end_pt_(last_edge, node_idx);
-
-        if (linestring_type == Linestring_type::Single)
+      else if (linestring_type == Linestring_type::Two)
+        if (m_tmp_edges.size() == 2)
         {
-          // update_edge_end_pt_(last_edge, node_idx);
           finalize_elm();
           return;
         }
-        else if (linestring_type == Linestring_type::Two)
-          if (m_tmp_edges.size() == 2)
-          {
-            // update_edge_end_pt_(last_edge, node_idx);
-            finalize_elm();
-            return;
-          }
-      }
     }
 
     // Start a new edge

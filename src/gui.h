@@ -102,6 +102,7 @@ class GUI
   void import_file_dialog_();
   void open_file_dialog_();
   void save_file_dialog_();
+  void open_url_(const char* url);
 
   std::unique_ptr<Occt_view> m_view;
 
