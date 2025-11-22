@@ -75,4 +75,5 @@ Ensure the following dependencies are installed:
 
 ## Support and Contributions
 - Report issues or suggest features on the GitHub repository.
+- Contribute by developing features and fixing bugs. Pull requests are welcome!
 - Additional resources, including video tutorials and online documentation, are linked in [usage.md](usage.md).

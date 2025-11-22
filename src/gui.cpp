@@ -263,6 +263,7 @@ void GUI::menu_bar_()
     ImGui::EndMenu();
   }
 
+#if 0
   if (ImGui::BeginMenu("View"))
   {
     if (ImGui::MenuItem("Geos Tests"))
@@ -272,6 +273,7 @@ void GUI::menu_bar_()
 
     ImGui::EndMenu();
   }
+#endif
 
   if (ImGui::BeginMenu("Help"))
   {
@@ -292,9 +294,7 @@ void GUI::open_url_(const char* url)
 #ifdef __EMSCRIPTEN__
   // For Emscripten, use JavaScript's window.open()
   // Use EM_ASM for safer execution
-  EM_ASM_({
-    window.open(UTF8ToString($0), '_blank');
-  }, url);
+  EM_ASM_({ window.open(UTF8ToString($0), '_blank'); }, url);
 #else
   // For native builds, use platform-specific system commands
   std::string cmd;
@@ -1008,7 +1008,7 @@ void GUI::on_mouse_pos(const ScreenCoords& screen_coords)
 void GUI::on_mouse_button(int button, int action, int mods)
 {
   m_view->on_mouse_button(button, action, mods);
-  
+
   const ScreenCoords screen_coords(glm::dvec2(ImGui::GetIO().MousePos.x, ImGui::GetIO().MousePos.y));
 
   m_view->on_mouse_move(screen_coords);
@@ -1068,7 +1068,7 @@ void GUI::on_mouse_button(int button, int action, int mods)
         break;
     }
 
-  //m_view->on_mouse_button(button, action, mods);
+  // m_view->on_mouse_button(button, action, mods);
 }
 
 void GUI::on_mouse_scroll(double xoffset, double yoffset)
