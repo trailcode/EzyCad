@@ -275,10 +275,11 @@ void GUI::menu_bar_()
 
   if (ImGui::BeginMenu("Help"))
   {
+    if (ImGui::MenuItem("About"))
+      open_url_("https://github.com/trailcode/EzyCad/blob/main/README.md");
+
     if (ImGui::MenuItem("Usage Guide"))
-    {
       open_url_("https://github.com/trailcode/EzyCad/blob/main/usage.md");
-    }
 
     ImGui::EndMenu();
   }
@@ -303,11 +304,13 @@ void GUI::open_url_(const char* url)
   cmd += url;
   cmd += "\"";
 #elif defined(__APPLE__)
+  // TODO test on macOS
   // macOS: Use 'open' command
   cmd = "open \"";
   cmd += url;
   cmd += "\"";
 #else
+  // TODO test on Linux
   // Linux and other Unix-like systems: Use 'xdg-open'
   cmd = "xdg-open \"";
   cmd += url;
