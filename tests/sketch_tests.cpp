@@ -982,3 +982,92 @@ TEST_F(Sketch_test, JsonSerializationWithDimensions)
   }
   EXPECT_TRUE(has_dimension);
 }
+
+// Test dangling edges removal - rectangle with branching edges
+TEST_F(Sketch_test, UpdateFaces_DanglingEdgesRemoval)
+{
+  gp_Pln default_plane(gp::Origin(), gp::DZ());
+  Sketch sketch("TestSketch", view(), default_plane);
+
+  // Create a closed rectangle (will form a face)
+  // Rectangle corners (similar to user's sketch, scaled to simpler coordinates)
+  gp_Pnt2d rect_top_right(50.0, 50.0);
+  gp_Pnt2d rect_bottom_right(50.0, -50.0);
+  gp_Pnt2d rect_bottom_left(-50.0, -50.0);
+  gp_Pnt2d rect_top_left(-50.0, 50.0);
+
+  // Add rectangle edges (closed loop - will form a face)
+  Sketch_access::add_edge_(sketch, rect_top_right, rect_bottom_right);
+  Sketch_access::add_edge_(sketch, rect_bottom_right, rect_bottom_left);
+  Sketch_access::add_edge_(sketch, rect_bottom_left, rect_top_left);
+  Sketch_access::add_edge_(sketch, rect_top_left, rect_top_right);
+
+  // Add dangling edges branching off from the rectangle
+  // These should be removed from face detection
+  gp_Pnt2d branch1_start = rect_top_left;  // Branch from top-left corner
+  gp_Pnt2d branch1_end(-8.0, 9.0);
+  Sketch_access::add_edge_(sketch, branch1_start, branch1_end);
+
+  gp_Pnt2d branch2_start = branch1_end;
+  gp_Pnt2d branch2_end(-21.0, -11.0);
+  Sketch_access::add_edge_(sketch, branch2_start, branch2_end);
+
+  gp_Pnt2d branch3_start = branch1_end;
+  gp_Pnt2d branch3_end(11.0, 2.0);
+  Sketch_access::add_edge_(sketch, branch3_start, branch3_end);
+
+  gp_Pnt2d branch4_start = branch3_end;
+  gp_Pnt2d branch4_end(11.0, -19.0);
+  Sketch_access::add_edge_(sketch, branch4_start, branch4_end);
+
+  gp_Pnt2d branch5_start = branch3_end;
+  gp_Pnt2d branch5_end(31.0, 4.0);
+  Sketch_access::add_edge_(sketch, branch5_start, branch5_end);
+
+  gp_Pnt2d branch6_start = rect_bottom_left;  // Branch from bottom-left corner
+  gp_Pnt2d branch6_end(-23.0, -29.0);
+  Sketch_access::add_edge_(sketch, branch6_start, branch6_end);
+
+  gp_Pnt2d branch7_start = branch6_end;
+  gp_Pnt2d branch7_end(-3.0, -33.0);
+  Sketch_access::add_edge_(sketch, branch7_start, branch7_end);
+
+  gp_Pnt2d branch8_start = branch6_end;
+  gp_Pnt2d branch8_end(-6.0, -11.0);
+  Sketch_access::add_edge_(sketch, branch8_start, branch8_end);
+
+  // Update faces - dangling edges should be removed
+  Sketch_access::update_faces_(sketch);
+
+  // Verify that only one face was created (the rectangle)
+  // Dangling edges should not create faces
+  const auto& faces = Sketch_access::get_faces(sketch);
+  EXPECT_EQ(faces.size(), 1) << "Expected exactly one face (the rectangle), dangling edges should be excluded";
+
+  // Verify the face is the rectangle
+  ASSERT_FALSE(faces.empty());
+  const auto& face = faces[0];
+  EXPECT_EQ(face->Shape().ShapeType(), TopAbs_FACE) << "Shape should be a face";
+
+  // Convert to Boost.Geometry polygon and verify it's the rectangle
+  boost_geom::polygon_2d boost_poly = to_boost(face->Shape(), default_plane);
+  EXPECT_TRUE(bg::is_valid(boost_poly)) << "Polygon should be valid";
+
+  // Verify the area is approximately correct for a 100x100 rectangle
+  double area = bg::area(boost_poly);
+  double expected_area = 100.0 * 100.0;  // 10000
+  EXPECT_NEAR(area, expected_area, 1.0) << "Rectangle area should be approximately 10000";
+
+  // Verify the polygon is clockwise (as expected for faces)
+  EXPECT_TRUE(is_clockwise(boost_poly.outer())) << "Polygon should be clockwise";
+
+  // Verify all edges are still in the sketch (they're just excluded from face detection)
+  // The edges should still exist in m_edges, but not participate in face formation
+  size_t total_edges = 0;
+  for (const auto& edge : sketch.m_edges)
+  {
+    if (edge.node_idx_b.has_value())
+      total_edges++;
+  }
+  EXPECT_EQ(total_edges, 12) << "All 12 edges (4 rectangle + 8 dangling) should still exist in the sketch";
+}
