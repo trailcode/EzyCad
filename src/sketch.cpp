@@ -842,7 +842,7 @@ void Sketch::update_faces_()
   m_faces.clear();
 
   // Used to cleanup dangling nodes;
-  std::vector<size_t> used_nodes(m_nodes.size());
+  std::vector<bool> used_nodes(m_nodes.size());
 
   // Build adjacency list
   std::unordered_map<size_t, std::vector<std::pair<size_t, const Edge*>>> adj_list;
@@ -952,7 +952,8 @@ void Sketch::update_faces_()
       }
     }
 
-  // Update used nodes
+  // Mark unused nodes as deleted so they're excluded from snapping operations.
+  // Nodes become unused when all edges that reference them are removed.
   for (size_t idx = 0, num = m_nodes.size(); idx < num; ++idx)
     m_nodes[idx].deleted = !used_nodes[idx];
 
