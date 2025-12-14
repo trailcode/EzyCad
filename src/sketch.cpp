@@ -866,6 +866,61 @@ void Sketch::update_faces_()
       used_nodes[*edge.node_idx_arc] = true;
   }
 
+  // Remove dangling edges (edges with degree-1 endpoints) iteratively.
+  // These edges cannot form closed faces, so we exclude them from face detection.
+  std::unordered_set<const Edge*> excluded_edges;
+  bool changed = true;
+  while (changed)
+  {
+    changed = false;
+    std::unordered_set<const Edge*> to_exclude;
+
+    // Find edges where at least one endpoint has degree 1 (considering only non-excluded edges)
+    for (const auto& edge : m_edges)
+    {
+      if (excluded_edges.count(&edge))
+        continue;
+
+      EZY_ASSERT(edge.node_idx_b.has_value());
+      size_t a = edge.node_idx_a;
+      size_t b = edge.node_idx_b.value();
+
+      // Count degree for each endpoint (excluding already excluded edges)
+      int degree_a = 0;
+      int degree_b = 0;
+      for (const auto& [neighbor, e] : adj_list[a])
+        if (!excluded_edges.count(e))
+          ++degree_a;
+
+      for (const auto& [neighbor, e] : adj_list[b])
+        if (!excluded_edges.count(e))
+          ++degree_b;
+
+      // If either endpoint has degree 1, this edge is dangling
+      if (degree_a == 1 || degree_b == 1)
+      {
+        to_exclude.insert(&edge);
+        changed = true;
+      }
+    }
+
+    excluded_edges.insert(to_exclude.begin(), to_exclude.end());
+  }
+
+  // Rebuild adjacency list excluding dangling edges
+  adj_list.clear();
+  for (const auto& edge : m_edges)
+  {
+    if (excluded_edges.count(&edge))
+      continue;
+
+    EZY_ASSERT(edge.node_idx_b.has_value());
+    size_t a = edge.node_idx_a;
+    size_t b = edge.node_idx_b.value();
+    adj_list[a].push_back({b, &edge});
+    adj_list[b].push_back({a, &edge});
+  }
+
   std::vector<Face> faces;
 
   std::unordered_set<std::pair<size_t, size_t>, Pair_hash> seen_edges;
