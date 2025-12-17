@@ -12,6 +12,7 @@
 #include <TopoDS_Edge.hxx>
 #include <TopoDS_Wire.hxx>
 #include <V3d_View.hxx>
+#include <functional>
 #include <map>
 #include <unordered_set>
 
@@ -906,8 +907,121 @@ void Sketch::update_faces_()
 
     excluded_edges.insert(to_exclude.begin(), to_exclude.end());
   }
+  #if 1 // TODO study AI generated, seems to work.
+  // Remove bridge edges that connect two separate cycles.
+  // A bridge edge connects two cycles and has both endpoints with degree >= 3.
+  // We detect this by checking if the edge is the only connection between two cycles.
+  std::unordered_set<const Edge*> bridge_edges;
+  for (const auto& edge : m_edges)
+  {
+    if (excluded_edges.count(&edge))
+      continue;
 
-  // Rebuild adjacency list excluding dangling edges
+    EZY_ASSERT(edge.node_idx_b.has_value());
+    size_t a = edge.node_idx_a;
+    size_t b = edge.node_idx_b.value();
+
+    // Count degree for each endpoint (excluding already excluded edges)
+    int degree_a = 0;
+    int degree_b = 0;
+    for (const auto& [neighbor, e] : adj_list[a])
+      if (!excluded_edges.count(e))
+        ++degree_a;
+    for (const auto& [neighbor, e] : adj_list[b])
+      if (!excluded_edges.count(e))
+        ++degree_b;
+
+    // Bridge edges have both endpoints with degree >= 3
+    // They connect two separate cycles. We detect this by checking if removing the edge
+    // creates two disconnected components, each containing a cycle.
+    if (degree_a >= 3 && degree_b >= 3)
+    {
+      // Check if removing this edge disconnects the graph
+      // by seeing if we can reach 'b' from 'a' without using this edge
+      std::unordered_set<size_t> visited;
+      std::vector<size_t> queue;
+      queue.push_back(a);
+      visited.insert(a);
+      bool can_reach_b = false;
+      
+      for (size_t i = 0; i < queue.size() && !can_reach_b; ++i)
+      {
+        size_t curr = queue[i];
+        for (const auto& [neighbor, e] : adj_list[curr])
+        {
+          if (excluded_edges.count(e) || e == &edge)
+            continue;
+          if (neighbor == b)
+          {
+            can_reach_b = true;
+            break;
+          }
+          if (!visited.count(neighbor))
+          {
+            visited.insert(neighbor);
+            queue.push_back(neighbor);
+          }
+        }
+      }
+      
+      // If we can't reach b from a without this edge, it's a bridge
+      // But we also need to verify both sides have cycles
+      if (!can_reach_b)
+      {
+        // Check if component containing 'a' has a cycle
+        auto has_cycle_in_component = [&](size_t start, const Edge* exclude_edge) -> bool
+        {
+          std::unordered_set<size_t> comp_visited;
+          std::function<bool(size_t, size_t)> dfs = [&](size_t curr, size_t parent) -> bool
+          {
+            comp_visited.insert(curr);
+            for (const auto& [neighbor, e] : adj_list[curr])
+            {
+              if (excluded_edges.count(e) || e == exclude_edge)
+                continue;
+              if (neighbor == parent)
+                continue;
+              if (comp_visited.count(neighbor))
+              {
+                // Found a back edge = cycle
+                return true;
+              }
+              if (dfs(neighbor, curr))
+                return true;
+            }
+            return false;
+          };
+          
+          // Try starting from each neighbor
+          for (const auto& [neighbor, e] : adj_list[start])
+          {
+            if (excluded_edges.count(e) || e == exclude_edge)
+              continue;
+            comp_visited.clear();
+            comp_visited.insert(start);
+            if (dfs(neighbor, start))
+              return true;
+          }
+          return false;
+        };
+        
+        bool a_has_cycle = has_cycle_in_component(a, &edge);
+        bool b_has_cycle = has_cycle_in_component(b, &edge);
+        
+        // If both components have cycles, this edge is a bridge
+        if (a_has_cycle && b_has_cycle)
+        {
+          bridge_edges.insert(&edge);
+        }
+      }
+    }
+  }
+
+  // Add bridge edges to excluded set
+  excluded_edges.insert(bridge_edges.begin(), bridge_edges.end());
+
+  // Rebuild adjacency list excluding dangling and bridge edges
+  #endif 
   adj_list.clear();
   for (const auto& edge : m_edges)
   {
