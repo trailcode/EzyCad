@@ -870,6 +870,33 @@ void Sketch::update_faces_()
   // Remove dangling edges (edges with degree-1 endpoints) iteratively.
   // These edges cannot form closed faces, so we exclude them from face detection.
   std::unordered_set<const Edge*> excluded_edges;
+
+  // Treat edges attached to the virtual mid-node of an arc as dangling for face detection.
+  // Circle arcs are represented using a virtual node in the middle of the arc (`node_idx_arc`).
+  // Any non-arc edge that uses this virtual node as an endpoint should not participate in faces.
+  {
+    std::unordered_set<size_t> arc_mid_nodes;
+    for (const auto& edge : m_edges)
+      if (edge.node_idx_arc.has_value())
+        arc_mid_nodes.insert(*edge.node_idx_arc);
+
+    for (const auto& edge : m_edges)
+    {
+      // Only consider non-arc edges (straight segments etc.).
+      if (edge.circle_arc)
+        continue;
+
+      if (!edge.node_idx_b.has_value())
+        continue;
+
+      const size_t a = edge.node_idx_a;
+      const size_t b = *edge.node_idx_b;
+
+      if (arc_mid_nodes.count(a) || arc_mid_nodes.count(b))
+        excluded_edges.insert(&edge);
+    }
+  }
+
   bool changed = true;
   while (changed)
   {

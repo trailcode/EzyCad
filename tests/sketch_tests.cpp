@@ -593,6 +593,61 @@ TEST_F(Sketch_test, UpdateFaces_FaceWithArcs)
   */
 }
 
+// Test case 6: Dangling edges attached to arc mid-node
+TEST_F(Sketch_test, UpdateFaces_DanglingEdgesArcMidNode)
+{
+  gp_Pln default_plane(gp::Origin(), gp::DZ());
+  Sketch sketch("test_sketch", view(), default_plane);
+
+  // Define arc points (left, top/mid, right)
+  gp_Pnt2d arc_left(-59.859586993109616, 20.045571570223434);
+  gp_Pnt2d arc_mid ( -35.102844224354406, 30.045571719235046);
+  gp_Pnt2d arc_right(-10.346101455599195, 20.045571570223434);
+
+  // Add the arc (represented internally as two edges with a virtual mid-node)
+  Sketch_access::add_arc_circle_(sketch, arc_left, arc_mid, arc_right);
+
+  // Define chord mid-point (virtual midpoint on the base line between arc endpoints)
+  gp_Pnt2d chord_mid(-35.102844224354406, 20.045571570223434);
+
+  // Add edges that attach to the arc mid-node and chord mid-node.
+  // These should be treated as dangling for face detection.
+
+  // Vertical edge from chord mid-point to arc mid-point
+  Sketch_access::add_edge_(sketch, chord_mid, arc_mid);
+
+  // Horizontal edges forming the base chord
+  Sketch_access::add_edge_(sketch, arc_left, chord_mid);
+  Sketch_access::add_edge_(sketch, chord_mid, arc_right);
+
+  // Update faces - edges attached to the arc mid-node should not participate in faces.
+  Sketch_access::update_faces_(sketch);
+
+  const auto& faces = Sketch_access::get_faces(sketch);
+
+  // We expect exactly one face: bounded by the arc and the base chord.
+  EXPECT_EQ(faces.size(), 1) << "Expected exactly one face for arc + chord; "
+                             << "edges attached to the arc mid-node should be dangling.";
+
+  // Verify the face is valid and corresponds to a region bounded by the arc and chord.
+  const auto& face = faces[0];
+  EXPECT_EQ(face->Shape().ShapeType(), TopAbs_FACE);
+
+  boost_geom::polygon_2d boost_poly = to_boost(face->Shape(), default_plane);
+  EXPECT_TRUE(bg::is_valid(boost_poly)) << "Resulting polygon should be valid";
+  EXPECT_TRUE(is_clockwise(boost_poly.outer())) << "Polygon should be clockwise";
+
+  // The dangling edges (especially the vertical one attached to arc_mid) should still exist
+  // in the sketch, but they must not affect face detection.
+  size_t total_edges = 0;
+  for (const auto& e : sketch.m_edges)
+    if (e.node_idx_b.has_value())
+      ++total_edges;
+
+  // Arc contributes 2 edges, plus 3 straight edges = 5
+  EXPECT_EQ(total_edges, 5) << "Expected 5 edges (2 arc segments + 3 straight edges)";
+}
+
 TEST_F(Sketch_test, OriginatingFaceSnapPointsSquare)
 {
   gp_Pln default_plane(gp::Origin(), gp::DZ());
