@@ -192,6 +192,7 @@ class Sketch
   // Function to extract faces from the planar graph
   void                update_faces_();
   void                update_edge_shp_(Edge& edge, const gp_Pnt2d& pt_t, const gp_Pnt2d& pt_b);
+  bool                is_face_clockwise_(const Face_edges& face) const;
   Sketch_face_shp_ptr create_face_shape_(const Face_edges& face);
   gp_Vec2d            edge_incoming_dir_(size_t idx_a, size_t idx_b, const Edge& edge) const;
   gp_Vec2d            edge_outgoing_dir_(size_t idx_a, size_t idx_b, const Edge& edge) const;

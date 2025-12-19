@@ -1086,26 +1086,18 @@ void Sketch::update_faces_()
         if (curr_idx == start_idx)
         {
           EZY_ASSERT(face.size() > 2);
-          auto is_clock_wise = [&]()
-          {
-            // Compute signed area using the shoelace formula
-            double signed_area = 0.0;
-            for (const Face_edge& e : face)
-            {
-              // `start_nd_idx` and `end_nd_idx` consider reversed edges
-              const gp_Pnt2d& p1 = m_nodes[e.start_nd_idx()];
-              const gp_Pnt2d& p2 = m_nodes[e.end_nd_idx()];
-              signed_area += (p1.X() * p2.Y()) - (p2.X() * p1.Y());
-            }
-            // signed_area *= 0.5;  // Divide by 2 for actual area
-
-            return signed_area > 0;
-          };
-          if (!is_clock_wise())
+          if (!is_face_clockwise_(face))
             break;
 
           for (const Face_edge& e : face)
-            seen_edges.insert(std::make_pair(e.start_nd_idx(), e.end_nd_idx()));
+          {
+            // Mark edge in both directions to avoid processing the same face twice
+            // when starting from different nodes
+            size_t start_idx = e.start_nd_idx();
+            size_t end_idx = e.end_nd_idx();
+            seen_edges.insert(std::make_pair(start_idx, end_idx));
+            seen_edges.insert(std::make_pair(end_idx, start_idx));
+          }
 
           auto f = create_face_shape_(face);
           f->SetColor(Quantity_NOC_GRAY7);        // Base color
@@ -1239,6 +1231,22 @@ size_t Sketch::Face_edge::end_nd_idx() const
 
   EZY_ASSERT(edge.node_idx_b);
   return *edge.node_idx_b;
+}
+
+bool Sketch::is_face_clockwise_(const Face_edges& face) const
+{
+  // Compute signed area using the shoelace formula
+  double signed_area = 0.0;
+  for (const Face_edge& e : face)
+  {
+    // `start_nd_idx` and `end_nd_idx` consider reversed edges
+    const gp_Pnt2d& p1 = m_nodes[e.start_nd_idx()];
+    const gp_Pnt2d& p2 = m_nodes[e.end_nd_idx()];
+    signed_area += (p1.X() * p2.Y()) - (p2.X() * p1.Y());
+  }
+  // signed_area *= 0.5;  // Divide by 2 for actual area
+
+  return signed_area > 0;
 }
 
 Sketch_face_shp_ptr Sketch::create_face_shape_(const Face_edges& face)
