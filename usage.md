@@ -99,7 +99,7 @@ EzyCad (Easy CAD) is a CAD application for hobbyist machinists to design and edi
    - Add slots
 
 2. **Sketch Operations**
-   - Define operation axis
+   - [Define operation axis](#operation-axis-tool) ![Operation Axis Tool](icons/Sketcher_MirrorSketch.png)
    - Toggle edge dimensions
    - Mirror sketches
    - Create from face
@@ -204,6 +204,47 @@ The circle tool follows this workflow:
 - **Coincident Points**: The system prevents creation of circles with zero radius
 - **Invalid Geometry**: Circles that would be too small are rejected
 - **Snap Integration**: Use existing snap points for precise circle placement
+
+#### Operation Axis Tool
+
+The operation axis tool allows you to define a reference line for mirroring and revolving operations in sketches.
+
+![Operation Axis Tool](icons/Sketcher_MirrorSketch.png)
+
+**Features:**
+- **Two-point definition**: Click to set the start point, then click to set the end point of the axis line
+- **Real-time preview**: See the axis line while moving the mouse
+- **Automatic redefinition**: If an axis already exists, clicking again will clear it and start defining a new one
+- **Mirror operations**: Use the defined axis to mirror selected edges
+- **Revolve operations**: Use the defined axis to revolve selected edges or faces
+
+**How to Use:**
+1. Select the **Operation Axis** tool from the toolbar ![Sketcher_MirrorSketch](icons/Sketcher_MirrorSketch.png)
+2. Click to set the start point of the axis line
+3. Move the mouse to see a preview of the axis line
+4. Click to set the end point to finalize the axis
+5. Once defined, the axis can be used for mirror or revolve operations
+
+**Redefining the Axis:**
+- If an operation axis already exists and you click again in operation axis mode, the existing axis will be automatically cleared and you can start defining a new one
+- Alternatively, use the "Clear axis" button in the options panel to manually clear the axis
+
+**Using the Operation Axis:**
+Once an axis is defined, the options panel will show:
+- **Mirror button**: Mirrors selected edges across the operation axis
+- **Revolve button**: Revolves selected edges or faces around the operation axis
+- **Revolve angle input**: Set the angle for revolve operations (default: 360 degrees)
+- **Clear axis button**: Manually clear the current operation axis
+
+**Keyboard Shortcuts:**
+- **Escape**: Cancel the current axis definition
+- **Enter**: Finalize the axis (after setting both points)
+
+**Tips:**
+- The operation axis is a reference line used for geometric transformations
+- Select edges or faces before using the Mirror or Revolve operations
+- The axis can be redefined at any time by clicking again in operation axis mode
+- Use snap points for precise axis placement relative to existing geometry
 
 ### 3D Modeling
 1. **Transform Operations**
