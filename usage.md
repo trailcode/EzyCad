@@ -93,7 +93,7 @@ EzyCad (Easy CAD) is a CAD application for hobbyist machinists to design and edi
    - Add nodes
    - [Create line edges](#line-edge-creation-tools) ![Line Edge Tool](icons/Sketcher_Element_Line_Edge.png)
    - [Draw multi-line edges](#multi-line-edge-tool) ![Multi-line Edge Tool](icons/ls.png)
-   - Add arc segments
+   - [Add arc segments](#arc-segment-creation-tool) ![Arc Segment Tool](icons/Sketcher_Element_Arc_Edge.png)
    - [Create circles](#circle-creation-tools) ![Circle Tool](icons/Sketcher_CreateCircle.png)
    - [Draw rectangles and squares](#rectangle-and-square-creation-tools) ![Rectangle Tool](icons/Sketcher_CreateRectangle.png) ![Square Tool](icons/Sketcher_CreateSquare.png)
    - Add slots
@@ -252,6 +252,56 @@ The circle tool follows this workflow:
 - **Coincident Points**: The system prevents creation of circles with zero radius
 - **Invalid Geometry**: Circles that would be too small are rejected
 - **Snap Integration**: Use existing snap points for precise circle placement
+
+#### Arc Segment Creation Tool
+
+![Arc Segment Tool](icons/Sketcher_Element_Arc_Edge.png)
+
+The arc segment tool allows you to create circular arc edges by defining three points that lie on the arc: a start point, a middle point, and an end point.
+
+**Features:**
+- **Three-point creation**: Click to set the start point, then the middle point, then the end point
+- **Real-time preview**: See the arc shape while moving the mouse after setting the first two points
+- **Automatic finalization**: The arc is automatically created and added to your sketch after the third point is clicked
+- **Circular arc**: Creates a smooth circular arc that passes through all three points
+- **Snap support**: Automatically snaps to existing nodes and geometry
+- **Unique points**: All three points must be different (cannot be coincident)
+
+**How to use:**
+1. Select the **Arc Segment** tool from the toolbar ![Sketcher_Element_Arc_Edge](icons/Sketcher_Element_Arc_Edge.png)
+2. Click to set the start point of the arc (first point)
+3. Click to set a point on the arc between start and end (middle point)
+4. Move the mouse to see a preview of the arc
+5. Click to set the end point of the arc (third point)
+6. The arc segment will be automatically created and added to your sketch
+
+**Point order:**
+- **First click**: Start point - where the arc begins
+- **Second click**: Middle point - a point that lies on the arc between start and end
+- **Third click**: End point - where the arc ends
+
+**Keyboard shortcuts:**
+- **Escape**: Cancel the current arc creation (clears all points)
+- **Note**: The arc is automatically finalized after the third point, so no manual finalization is needed
+
+**Tips:**
+- The three points define a unique circular arc that passes through all of them
+- Use the snap feature to create arcs that connect precisely to existing geometry
+- The arc tool works in any sketch plane
+- Arc segments can be used as part of closed shapes that form faces
+- The middle point helps define the arc's curvature and direction
+- All three points must be unique - clicking the same point twice will be ignored
+
+**Technical details:**
+- The arc is created using the three points to define a circle, then trimming it to the arc segment
+- Internally, the arc is represented as two connected edges for proper topology
+- Arc segments can be combined with straight edges to create complex closed shapes
+
+**Comparison with Circle Tool:**
+- **Circle Tool**: Creates a full circle from center and radius point (2 points)
+- **Arc Segment Tool**: Creates a partial arc from three points on the arc (3 points)
+- Use circles when you need a complete circular shape
+- Use arc segments when you need a curved edge that's part of a larger shape
 
 #### Rectangle and Square Creation Tools
 
