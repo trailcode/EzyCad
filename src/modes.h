@@ -9,7 +9,7 @@ enum class Mode
   Move,
   Scale,
   Rotate,
-  Sketch_inspection_mode,                     // For inspecting sketch elements
+  Sketch_inspection_mode,          // For inspecting sketch elements
   Sketch_from_face,                // For creating a sketch from a face
   Sketch_face_extrude,             // For extruding a sketch face
   Shape_chamfer,                   // For chamfering a shape

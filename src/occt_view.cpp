@@ -27,6 +27,7 @@
 #include "sketch.h"
 #include "sketch_json.h"
 #include "utl.h"
+#include "utl_json.h"
 
 #ifdef __EMSCRIPTEN__
 #include <Wasm_Window.hxx>
@@ -1036,7 +1037,15 @@ std::string Occt_view::to_json() const
   using namespace nlohmann;
   json  j;
   json& sketches = j["sketches"] = json::array();
-  json& shps = j["shapes"] = json::array();
+  json& shps     = j["shapes"]   = json::array();
+
+  const auto pnt_to_json = [](Standard_Real x, Standard_Real y, Standard_Real z)
+  {
+    return ::to_json(gp_Pnt(x, y, z));
+  };
+
+  // ---------------------------------------------------------------------------
+  // Sketches / shapes
   for (const Sketch_ptr& s : m_sketches)
     sketches.push_back(Sketch_json::to_json(*s));
 
@@ -1051,6 +1060,34 @@ std::string Occt_view::to_json() const
     shp_json["material"] = s->Material();
     shp_json["geom"]     = oss.str();
     shps.push_back(shp_json);
+  }
+
+  // ---------------------------------------------------------------------------
+  // View / camera state
+  if (!m_view.IsNull())
+  {
+    json& view_json = j["view"];
+
+    // Eye and target (At) positions
+    Standard_Real eye_x, eye_y, eye_z;
+    Standard_Real at_x, at_y, at_z;
+    m_view->Eye(eye_x, eye_y, eye_z);
+    m_view->At(at_x, at_y, at_z);
+
+    view_json["eye"] = pnt_to_json(eye_x, eye_y, eye_z);
+    view_json["at"]  = pnt_to_json(at_x, at_y, at_z);
+
+    // Up and projection directions
+    Standard_Real up_x, up_y, up_z;
+    Standard_Real proj_x, proj_y, proj_z;
+    m_view->Up(up_x, up_y, up_z);
+    m_view->Proj(proj_x, proj_y, proj_z);
+
+    view_json["up"]   = ::to_json(gp_Dir(up_x, up_y, up_z));
+    view_json["proj"] = ::to_json(gp_Dir(proj_x, proj_y, proj_z));
+
+    // View scale (zoom level)
+    view_json["scale"] = m_view->Scale();
   }
 
   return j.dump(2);
@@ -1105,6 +1142,53 @@ void Occt_view::load(const std::string& json_str)
     m_shps.push_back(shp);
     m_ctx->Display(shp, AIS_Shaded, 0, true);
   }
+
+   // ---------------------------------------------------------------------------
+   // Restore view / camera state if present
+   if (!m_view.IsNull() && j.contains("view") && j["view"].is_object())
+   {
+     const json& view_json = j["view"];
+     try
+     {
+       if (view_json.contains("eye") && view_json["eye"].is_object())
+       {
+         gp_Pnt eye = from_json_pnt(view_json["eye"]);
+         m_view->SetEye(eye.X(), eye.Y(), eye.Z());
+       }
+
+       if (view_json.contains("at") && view_json["at"].is_object())
+       {
+         gp_Pnt at = from_json_pnt(view_json["at"]);
+         m_view->SetAt(at.X(), at.Y(), at.Z());
+       }
+
+       if (view_json.contains("up") && view_json["up"].is_object())
+       {
+         gp_Dir up = from_json_dir(view_json["up"]);
+         m_view->SetUp(up.X(), up.Y(), up.Z());
+       }
+
+       if (view_json.contains("proj") && view_json["proj"].is_object())
+       {
+         gp_Dir dir = from_json_dir(view_json["proj"]);
+         m_view->SetProj(dir.X(), dir.Y(), dir.Z());
+       }
+
+       if (view_json.contains("scale") && view_json["scale"].is_number())
+       {
+         const Standard_Real scale = view_json["scale"].get<Standard_Real>();
+         if (scale > Precision::Confusion())
+           m_view->SetScale(scale);
+       }
+
+       m_view->Redraw();
+       m_ctx->UpdateCurrentViewer();
+     }
+     catch (const std::exception&)
+     {
+       // Ignore view restoration errors; project geometry has already loaded.
+     }
+   }
 
   // Ensure correct state
   gui().set_mode(Mode::Normal);

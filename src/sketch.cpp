@@ -12,6 +12,7 @@
 #include <TopoDS_Edge.hxx>
 #include <TopoDS_Wire.hxx>
 #include <V3d_View.hxx>
+#include <functional>
 #include <map>
 #include <unordered_set>
 
@@ -842,7 +843,7 @@ void Sketch::update_faces_()
   m_faces.clear();
 
   // Used to cleanup dangling nodes;
-  std::vector<size_t> used_nodes(m_nodes.size());
+  std::vector<bool> used_nodes(m_nodes.size());
 
   // Build adjacency list
   std::unordered_map<size_t, std::vector<std::pair<size_t, const Edge*>>> adj_list;
@@ -864,6 +865,201 @@ void Sketch::update_faces_()
 
     if (edge.node_idx_arc.has_value())
       used_nodes[*edge.node_idx_arc] = true;
+  }
+
+  // Remove dangling edges (edges with degree-1 endpoints) iteratively.
+  // These edges cannot form closed faces, so we exclude them from face detection.
+  std::unordered_set<const Edge*> excluded_edges;
+
+  // Treat edges attached to the virtual mid-node of an arc as dangling for face detection.
+  // Circle arcs are represented using a virtual node in the middle of the arc (`node_idx_arc`).
+  // Any non-arc edge that uses this virtual node as an endpoint should not participate in faces.
+  {
+    std::unordered_set<size_t> arc_mid_nodes;
+    for (const auto& edge : m_edges)
+      if (edge.node_idx_arc.has_value())
+        arc_mid_nodes.insert(*edge.node_idx_arc);
+
+    for (const auto& edge : m_edges)
+    {
+      // Only consider non-arc edges (straight segments etc.).
+      if (edge.circle_arc)
+        continue;
+
+      if (!edge.node_idx_b.has_value())
+        continue;
+
+      const size_t a = edge.node_idx_a;
+      const size_t b = *edge.node_idx_b;
+
+      if (arc_mid_nodes.count(a) || arc_mid_nodes.count(b))
+        excluded_edges.insert(&edge);
+    }
+  }
+
+  bool changed = true;
+  while (changed)
+  {
+    changed = false;
+    std::unordered_set<const Edge*> to_exclude;
+
+    // Find edges where at least one endpoint has degree 1 (considering only non-excluded edges)
+    for (const auto& edge : m_edges)
+    {
+      if (excluded_edges.count(&edge))
+        continue;
+
+      EZY_ASSERT(edge.node_idx_b.has_value());
+      size_t a = edge.node_idx_a;
+      size_t b = edge.node_idx_b.value();
+
+      // Count degree for each endpoint (excluding already excluded edges)
+      int degree_a = 0;
+      int degree_b = 0;
+      for (const auto& [neighbor, e] : adj_list[a])
+        if (!excluded_edges.count(e))
+          ++degree_a;
+
+      for (const auto& [neighbor, e] : adj_list[b])
+        if (!excluded_edges.count(e))
+          ++degree_b;
+
+      // If either endpoint has degree 1, this edge is dangling
+      if (degree_a == 1 || degree_b == 1)
+      {
+        to_exclude.insert(&edge);
+        changed = true;
+      }
+    }
+
+    excluded_edges.insert(to_exclude.begin(), to_exclude.end());
+  }
+  #if 1 // TODO study AI generated, seems to work.
+  // Remove bridge edges that connect two separate cycles.
+  // A bridge edge connects two cycles and has both endpoints with degree >= 3.
+  // We detect this by checking if the edge is the only connection between two cycles.
+  std::unordered_set<const Edge*> bridge_edges;
+  for (const auto& edge : m_edges)
+  {
+    if (excluded_edges.count(&edge))
+      continue;
+
+    EZY_ASSERT(edge.node_idx_b.has_value());
+    size_t a = edge.node_idx_a;
+    size_t b = edge.node_idx_b.value();
+
+    // Count degree for each endpoint (excluding already excluded edges)
+    int degree_a = 0;
+    int degree_b = 0;
+    for (const auto& [neighbor, e] : adj_list[a])
+      if (!excluded_edges.count(e))
+        ++degree_a;
+    for (const auto& [neighbor, e] : adj_list[b])
+      if (!excluded_edges.count(e))
+        ++degree_b;
+
+    // Bridge edges have both endpoints with degree >= 3
+    // They connect two separate cycles. We detect this by checking if removing the edge
+    // creates two disconnected components, each containing a cycle.
+    if (degree_a >= 3 && degree_b >= 3)
+    {
+      // Check if removing this edge disconnects the graph
+      // by seeing if we can reach 'b' from 'a' without using this edge
+      std::unordered_set<size_t> visited;
+      std::vector<size_t> queue;
+      queue.push_back(a);
+      visited.insert(a);
+      bool can_reach_b = false;
+      
+      for (size_t i = 0; i < queue.size() && !can_reach_b; ++i)
+      {
+        size_t curr = queue[i];
+        for (const auto& [neighbor, e] : adj_list[curr])
+        {
+          if (excluded_edges.count(e) || e == &edge)
+            continue;
+          if (neighbor == b)
+          {
+            can_reach_b = true;
+            break;
+          }
+          if (!visited.count(neighbor))
+          {
+            visited.insert(neighbor);
+            queue.push_back(neighbor);
+          }
+        }
+      }
+      
+      // If we can't reach b from a without this edge, it's a bridge
+      // But we also need to verify both sides have cycles
+      if (!can_reach_b)
+      {
+        // Check if component containing 'a' has a cycle
+        auto has_cycle_in_component = [&](size_t start, const Edge* exclude_edge) -> bool
+        {
+          std::unordered_set<size_t> comp_visited;
+          std::function<bool(size_t, size_t)> dfs = [&](size_t curr, size_t parent) -> bool
+          {
+            comp_visited.insert(curr);
+            for (const auto& [neighbor, e] : adj_list[curr])
+            {
+              if (excluded_edges.count(e) || e == exclude_edge)
+                continue;
+              if (neighbor == parent)
+                continue;
+              if (comp_visited.count(neighbor))
+              {
+                // Found a back edge = cycle
+                return true;
+              }
+              if (dfs(neighbor, curr))
+                return true;
+            }
+            return false;
+          };
+          
+          // Try starting from each neighbor
+          for (const auto& [neighbor, e] : adj_list[start])
+          {
+            if (excluded_edges.count(e) || e == exclude_edge)
+              continue;
+            comp_visited.clear();
+            comp_visited.insert(start);
+            if (dfs(neighbor, start))
+              return true;
+          }
+          return false;
+        };
+        
+        bool a_has_cycle = has_cycle_in_component(a, &edge);
+        bool b_has_cycle = has_cycle_in_component(b, &edge);
+        
+        // If both components have cycles, this edge is a bridge
+        if (a_has_cycle && b_has_cycle)
+        {
+          bridge_edges.insert(&edge);
+        }
+      }
+    }
+  }
+
+  // Add bridge edges to excluded set
+  excluded_edges.insert(bridge_edges.begin(), bridge_edges.end());
+
+  // Rebuild adjacency list excluding dangling and bridge edges
+  #endif 
+  adj_list.clear();
+  for (const auto& edge : m_edges)
+  {
+    if (excluded_edges.count(&edge))
+      continue;
+
+    EZY_ASSERT(edge.node_idx_b.has_value());
+    size_t a = edge.node_idx_a;
+    size_t b = edge.node_idx_b.value();
+    adj_list[a].push_back({b, &edge});
+    adj_list[b].push_back({a, &edge});
   }
 
   std::vector<Face> faces;
@@ -890,26 +1086,18 @@ void Sketch::update_faces_()
         if (curr_idx == start_idx)
         {
           EZY_ASSERT(face.size() > 2);
-          auto is_clock_wise = [&]()
-          {
-            // Compute signed area using the shoelace formula
-            double signed_area = 0.0;
-            for (const Face_edge& e : face)
-            {
-              // `start_nd_idx` and `end_nd_idx` consider reversed edges
-              const gp_Pnt2d& p1 = m_nodes[e.start_nd_idx()];
-              const gp_Pnt2d& p2 = m_nodes[e.end_nd_idx()];
-              signed_area += (p1.X() * p2.Y()) - (p2.X() * p1.Y());
-            }
-            // signed_area *= 0.5;  // Divide by 2 for actual area
-
-            return signed_area > 0;
-          };
-          if (!is_clock_wise())
+          if (!is_face_clockwise_(face))
             break;
 
           for (const Face_edge& e : face)
-            seen_edges.insert(std::make_pair(e.start_nd_idx(), e.end_nd_idx()));
+          {
+            // Mark edge in both directions to avoid processing the same face twice
+            // when starting from different nodes
+            size_t start_idx = e.start_nd_idx();
+            size_t end_idx = e.end_nd_idx();
+            seen_edges.insert(std::make_pair(start_idx, end_idx));
+            seen_edges.insert(std::make_pair(end_idx, start_idx));
+          }
 
           auto f = create_face_shape_(face);
           f->SetColor(Quantity_NOC_GRAY7);        // Base color
@@ -952,7 +1140,8 @@ void Sketch::update_faces_()
       }
     }
 
-  // Update used nodes
+  // Mark unused nodes as deleted so they're excluded from snapping operations.
+  // Nodes become unused when all edges that reference them are removed.
   for (size_t idx = 0, num = m_nodes.size(); idx < num; ++idx)
     m_nodes[idx].deleted = !used_nodes[idx];
 
@@ -1042,6 +1231,22 @@ size_t Sketch::Face_edge::end_nd_idx() const
 
   EZY_ASSERT(edge.node_idx_b);
   return *edge.node_idx_b;
+}
+
+bool Sketch::is_face_clockwise_(const Face_edges& face) const
+{
+  // Compute signed area using the shoelace formula
+  double signed_area = 0.0;
+  for (const Face_edge& e : face)
+  {
+    // `start_nd_idx` and `end_nd_idx` consider reversed edges
+    const gp_Pnt2d& p1 = m_nodes[e.start_nd_idx()];
+    const gp_Pnt2d& p2 = m_nodes[e.end_nd_idx()];
+    signed_area += (p1.X() * p2.Y()) - (p2.X() * p1.Y());
+  }
+  // signed_area *= 0.5;  // Divide by 2 for actual area
+
+  return signed_area > 0;
 }
 
 Sketch_face_shp_ptr Sketch::create_face_shape_(const Face_edges& face)
