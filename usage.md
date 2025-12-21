@@ -95,7 +95,7 @@ EzyCad (Easy CAD) is a CAD application for hobbyist machinists to design and edi
    - [Draw multi-line edges](#multi-line-edge-tool) ![Multi-line Edge Tool](icons/ls.png)
    - Add arc segments
    - [Create circles](#circle-creation-tools) ![Circle Tool](icons/Sketcher_CreateCircle.png)
-   - Draw rectangles and squares
+   - [Draw rectangles and squares](#rectangle-and-square-creation-tools) ![Rectangle Tool](icons/Sketcher_CreateRectangle.png) ![Square Tool](icons/Sketcher_CreateSquare.png)
    - Add slots
 
 2. **Sketch Operations**
@@ -252,6 +252,111 @@ The circle tool follows this workflow:
 - **Coincident Points**: The system prevents creation of circles with zero radius
 - **Invalid Geometry**: Circles that would be too small are rejected
 - **Snap Integration**: Use existing snap points for precise circle placement
+
+#### Rectangle and Square Creation Tools
+
+EzyCad provides three tools for creating rectangular shapes in sketch mode: square, rectangle from two points, and rectangle with center point.
+
+##### Square Tool
+
+![Square Tool](icons/Sketcher_CreateSquare.png)
+
+The square tool allows you to create perfect squares by defining a center point and an edge midpoint.
+
+**Features:**
+- **Two-point creation**: Click to set the center point, then click to set the midpoint of one edge
+- **Real-time preview**: See the square shape while moving the mouse
+- **Perfect square**: Automatically ensures all sides are equal length
+- **Orientation control**: The square's orientation is determined by the direction from center to edge midpoint
+- **Precise size control**: Use the distance input dialog (Tab key) for exact side lengths
+- **Snap support**: Automatically snaps to existing nodes and geometry
+
+**How to use:**
+1. Select the **Square** tool from the toolbar ![Sketcher_CreateSquare](icons/Sketcher_CreateSquare.png)
+2. Click to set the center point of the square
+3. Move the mouse to see a preview of the square
+4. Click to set the midpoint of one edge (this defines both the size and orientation), or press **Tab** to enter an exact side length value
+5. The square will be created with four edges and added to your sketch
+
+**Keyboard shortcuts:**
+- **Tab**: Open distance input dialog for precise side length control
+- **Escape**: Cancel the current square creation
+- **Enter**: Finalize the square (if using distance input)
+
+**Tips:**
+- The distance from center to edge midpoint determines half the side length
+- Use the snap feature to create squares that are precisely positioned relative to existing geometry
+- The square tool works in any sketch plane
+- Squares automatically form closed faces that can be extruded
+
+##### Rectangle Tool (Two Points)
+
+![Rectangle Tool](icons/Sketcher_CreateRectangle.png)
+
+The rectangle tool allows you to create rectangles by defining two opposite corners.
+
+**Features:**
+- **Two-point creation**: Click to set the first corner, then click to set the opposite corner
+- **Real-time preview**: See the rectangle shape while moving the mouse
+- **Precise size control**: Use the distance input dialog (Tab key) for exact dimensions
+- **Snap support**: Automatically snaps to existing nodes and geometry
+- **Automatic corner calculation**: The system automatically calculates the other two corners
+
+**How to use:**
+1. Select the **Rectangle** tool from the toolbar ![Sketcher_CreateRectangle](icons/Sketcher_CreateRectangle.png)
+2. Click to set the first corner point
+3. Move the mouse to see a preview of the rectangle
+4. Click to set the opposite corner point, or press **Tab** to enter exact distance values
+5. The rectangle will be created with four edges and added to your sketch
+
+**Keyboard shortcuts:**
+- **Tab**: Open distance input dialog for precise dimension control
+- **Escape**: Cancel the current rectangle creation
+- **Enter**: Finalize the rectangle (if using distance input)
+
+**Tips:**
+- The two points define opposite corners of the rectangle (diagonal)
+- The rectangle edges are automatically aligned with the coordinate axes
+- Use the snap feature to create rectangles that are precisely positioned relative to existing geometry
+- The rectangle tool works in any sketch plane
+- Rectangles automatically form closed faces that can be extruded
+
+##### Rectangle Tool (Center Point)
+
+![Rectangle Center Tool](icons/Sketcher_CreateRectangle_Center.png)
+
+The rectangle with center point tool allows you to create rectangles by defining a center point and a corner point.
+
+**Features:**
+- **Two-point creation**: Click to set the center point, then click to set a corner point
+- **Real-time preview**: See the rectangle shape while moving the mouse
+- **Centered creation**: The rectangle is centered on the first point
+- **Precise size control**: Use the distance input dialog (Tab key) for exact dimensions
+- **Snap support**: Automatically snaps to existing nodes and geometry
+
+**How to use:**
+1. Select the **Rectangle with Center Point** tool from the toolbar ![Sketcher_CreateRectangle_Center](icons/Sketcher_CreateRectangle_Center.png)
+2. Click to set the center point of the rectangle
+3. Move the mouse to see a preview of the rectangle
+4. Click to set a corner point (defines both size and orientation), or press **Tab** to enter exact distance values
+5. The rectangle will be created with four edges and added to your sketch
+
+**Keyboard shortcuts:**
+- **Tab**: Open distance input dialog for precise dimension control
+- **Escape**: Cancel the current rectangle creation
+- **Enter**: Finalize the rectangle (if using distance input)
+
+**Tips:**
+- The rectangle is centered on the first point you click
+- The distance from center to corner determines the rectangle's dimensions
+- Use the snap feature to create rectangles that are precisely positioned relative to existing geometry
+- The rectangle tool works in any sketch plane
+- Rectangles automatically form closed faces that can be extruded
+
+**Comparison of Rectangle Tools:**
+- **Rectangle (Two Points)**: Define opposite corners - useful when you know the corner positions
+- **Rectangle (Center Point)**: Define center and corner - useful when you want the rectangle centered on a specific point
+- **Square**: Always creates a perfect square - use when you need equal sides
 
 #### Operation Axis Tool
 
