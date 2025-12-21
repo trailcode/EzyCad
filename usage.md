@@ -96,7 +96,7 @@ EzyCad (Easy CAD) is a CAD application for hobbyist machinists to design and edi
    - [Add arc segments](#arc-segment-creation-tool) ![Arc Segment Tool](icons/Sketcher_Element_Arc_Edge.png)
    - [Create circles](#circle-creation-tools) ![Circle Tool](icons/Sketcher_CreateCircle.png)
    - [Draw rectangles and squares](#rectangle-and-square-creation-tools) ![Rectangle Tool](icons/Sketcher_CreateRectangle.png) ![Square Tool](icons/Sketcher_CreateSquare.png)
-   - Add slots
+   - [Add slots](#slot-creation-tool) ![Slot Tool](icons/Sketcher_CreateSlot.png)
 
 2. **Sketch Operations**
    - [Define operation axis](#operation-axis-tool) ![Operation Axis Tool](icons/Sketcher_MirrorSketch.png)
@@ -407,6 +407,71 @@ The rectangle with center point tool allows you to create rectangles by defining
 - **Rectangle (Two Points)**: Define opposite corners - useful when you know the corner positions
 - **Rectangle (Center Point)**: Define center and corner - useful when you want the rectangle centered on a specific point
 - **Square**: Always creates a perfect square - use when you need equal sides
+
+#### Slot Creation Tool
+
+![Slot Tool](icons/Sketcher_CreateSlot.png)
+
+The slot tool allows you to create an oblong or oval-shaped slot with rounded ends. A slot consists of two semicircular arcs connected by two straight parallel edges.
+
+**Features:**
+- **Three-point creation**: Click to set the first arc center, then the second arc center, then a point to define the radius
+- **Real-time preview**: See the slot shape while moving the mouse after setting the first two points
+- **Automatic finalization**: The slot is automatically created and added to your sketch after the third point is clicked
+- **Rounded ends**: Creates semicircular arcs at both ends with equal radius
+- **Parallel edges**: The two straight edges connecting the arcs are always parallel
+- **Precise size control**: Use the distance input dialog (Tab key) for exact dimensions
+- **Snap support**: Automatically snaps to existing nodes and geometry
+
+**How to use:**
+1. Select the **Slot** tool from the toolbar ![Sketcher_CreateSlot](icons/Sketcher_CreateSlot.png)
+2. Click to set the center point of the first arc (start of slot)
+3. Move the mouse to see a preview of the first edge
+4. Click to set the center point of the second arc (end of slot)
+5. Move the mouse to see a preview of the slot shape
+6. Click to set a point that defines the radius of the arcs, or press **Tab** to enter exact distance values
+   - **Important**: The radius is measured from the second arc center (the point you clicked in step 4) to this third point
+   - This radius determines the cross section: the slot's cross-section dimension equals 2 × radius
+7. The slot will be automatically created with two arcs and two straight edges and added to your sketch
+
+**Point order:**
+- **First click**: First arc center - the center of the arc at one end of the slot
+- **Second click**: Second arc center - the center of the arc at the other end of the slot
+- **Third click**: Radius point - defines the radius of both arcs
+  - The distance from the **second arc center** (second click) to this point determines the arc radius
+  - The slot's cross section (perpendicular to the slot length) equals twice this radius
+  - Both arcs use the same radius, creating a symmetric slot
+
+**Keyboard shortcuts:**
+- **Tab**: Open distance input dialog for precise dimension control
+- **Escape**: Cancel the current slot creation
+- **Enter**: Finalize the slot (if using distance input)
+- **Note**: The slot is automatically finalized after the third point, so no manual finalization is needed
+
+**Tips:**
+- The slot length is determined by the distance between the first and second arc centers
+- The radius of both arcs is determined by the distance from the second arc center to the radius point (third click)
+- The slot's cross section (the dimension perpendicular to the slot length) equals 2 × radius
+  - This is because each arc is a semicircle with the specified radius, extending equally in both perpendicular directions
+  - For example, if you click the radius point 3 units away from the second arc center, the slot cross section will be 6 units
+- Both arcs have the same radius, creating a symmetric slot shape
+- The slot orientation (which dimension is length vs width/height) is determined by the direction from the first to the second arc center
+- Use the snap feature to create slots that connect precisely to existing geometry
+- The slot tool works in any sketch plane
+- Slots automatically form closed faces that can be extruded
+- The slot orientation is determined by the direction from the first to the second arc center
+
+**Technical details:**
+- The slot consists of four edges: two semicircular arcs and two straight parallel edges
+- The arcs are created using the arc segment functionality
+- The straight edges connect the arcs at their endpoints
+- The slot forms a closed shape suitable for face creation and extrusion
+
+**Common use cases:**
+- Creating mounting slots for screws or bolts
+- Designing elongated holes for adjustment
+- Creating rounded-end cutouts in parts
+- Designing slots for sliding mechanisms
 
 #### Operation Axis Tool
 
