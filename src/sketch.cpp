@@ -512,8 +512,11 @@ void Sketch::finalize_slot_()
 // Operation axis related
 void Sketch::add_operation_axis_pt_(const ScreenCoords& screen_coords)
 {
-  if (!has_operation_axis())
-    add_line_string_pt_(screen_coords, Linestring_type::Single);
+  // If an axis already exists, clear it and start over
+  if (has_operation_axis())
+    clear_operation_axis();
+  
+  add_line_string_pt_(screen_coords, Linestring_type::Single);
 }
 
 void Sketch::finalize_operation_axis_()

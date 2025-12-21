@@ -83,11 +83,12 @@ GUI Sketch_test::s_gui;
 class Sketch_access
 {
  public:
-  static void                                    add_edge_(Sketch& sketch, const gp_Pnt2d& pt_a, const gp_Pnt2d& pt_b, bool add_dim_anno = false);
+  static void add_edge_(Sketch& sketch, const gp_Pnt2d& pt_a, const gp_Pnt2d& pt_b, bool add_dim_anno = false);
+  static void update_faces_(Sketch& sketch);
+  static void add_arc_circle_(Sketch& sketch, const gp_Pnt2d& pt_a, const gp_Pnt2d& pt_b, const gp_Pnt2d& pt_c);
+  static void get_originating_face_snp_pts_3d_(Sketch& sketch, std::vector<gp_Pnt>& out);
+
   static const std::vector<Sketch_face_shp_ptr>& get_faces(const Sketch& sketch);
-  static void                                    update_faces_(Sketch& sketch);
-  static void                                    add_arc_circle_(Sketch& sketch, const gp_Pnt2d& pt_a, const gp_Pnt2d& pt_b, const gp_Pnt2d& pt_c);
-  static void                                    get_originating_face_snp_pts_3d_(Sketch& sketch, std::vector<gp_Pnt>& out);
 };
 
 void Sketch_access::add_edge_(Sketch& sketch, const gp_Pnt2d& pt_a, const gp_Pnt2d& pt_b, bool add_dim_anno)
@@ -601,7 +602,7 @@ TEST_F(Sketch_test, UpdateFaces_DanglingEdgesArcMidNode)
 
   // Define arc points (left, top/mid, right)
   gp_Pnt2d arc_left(-59.859586993109616, 20.045571570223434);
-  gp_Pnt2d arc_mid ( -35.102844224354406, 30.045571719235046);
+  gp_Pnt2d arc_mid(-35.102844224354406, 30.045571719235046);
   gp_Pnt2d arc_right(-10.346101455599195, 20.045571570223434);
 
   // Add the arc (represented internally as two edges with a virtual mid-node)
@@ -689,7 +690,7 @@ TEST_F(Sketch_test, OriginatingFaceSnapPointsSquare)
 TEST_F(Sketch_test, OriginatingFaceSnapPointsCircle)
 {
   gp_Pln   default_plane(gp::Origin(), gp::DZ());
-  gp_Pnt2d center(0.0, 0.0); 
+  gp_Pnt2d center(0.0, 0.0);
   gp_Pnt2d edge_point(10.0, 0.0);  // Radius = 10
 
   // Create a circular wire as the originating face
@@ -886,13 +887,12 @@ TEST_F(Sketch_test, JsonSerializationDeserialization)
 
   // Add some edges to create a simple shape
   std::vector<gp_Pnt2d> points = {
-    gp_Pnt2d(-42.123413069225286, 18.567557076566406),
-    gp_Pnt2d(-31.038304366797583, 18.567557076566406),
-    gp_Pnt2d(-42.123413069225286, 42.585292598493105),
-    gp_Pnt2d(-31.038304366797583, 42.585292598493105),
-    gp_Pnt2d(-42.123413069225286, -5.450178445360293),
-    gp_Pnt2d(-31.038304366797583, -5.450178445360293)
-  };
+      gp_Pnt2d(-42.123413069225286, 18.567557076566406),
+      gp_Pnt2d(-31.038304366797583, 18.567557076566406),
+      gp_Pnt2d(-42.123413069225286, 42.585292598493105),
+      gp_Pnt2d(-31.038304366797583, 42.585292598493105),
+      gp_Pnt2d(-42.123413069225286, -5.450178445360293),
+      gp_Pnt2d(-31.038304366797583, -5.450178445360293)};
 
   // Add edges to create a rectangle-like shape
   for (size_t i = 0; i < points.size() - 1; i += 2)
@@ -911,8 +911,8 @@ TEST_F(Sketch_test, JsonSerializationDeserialization)
   EXPECT_TRUE(json_data.contains("isCurrent"));
 
   EXPECT_EQ(json_data["name"], "TestSketch");
-  EXPECT_EQ(json_data["edges"].size(), 3); // Should have 3 edges
-  EXPECT_EQ(json_data["arc_edges"].size(), 0); // No arc edges
+  EXPECT_EQ(json_data["edges"].size(), 3);      // Should have 3 edges
+  EXPECT_EQ(json_data["arc_edges"].size(), 0);  // No arc edges
 
   // Deserialize from JSON
   std::shared_ptr<Sketch> deserialized_sketch = Sketch_json::from_json(view(), json_data);
@@ -920,7 +920,7 @@ TEST_F(Sketch_test, JsonSerializationDeserialization)
   // Verify deserialized sketch
   EXPECT_EQ(deserialized_sketch->get_name(), "TestSketch");
   EXPECT_EQ(deserialized_sketch->get_nodes().size(), sketch.get_nodes().size());
-  
+
   // Count edges in deserialized sketch
   size_t edge_count = 0;
   for (const auto& edge : deserialized_sketch->m_edges)
@@ -928,24 +928,23 @@ TEST_F(Sketch_test, JsonSerializationDeserialization)
     if (edge.node_idx_b.has_value())
       edge_count++;
   }
-  EXPECT_EQ(edge_count, 3); // Should have 3 edges
+  EXPECT_EQ(edge_count, 3);  // Should have 3 edges
 }
 
 // Test JSON serialization with different edge counts (bug1 vs bug1.1 scenario)
 TEST_F(Sketch_test, JsonSerializationDifferentEdgeCounts)
 {
   gp_Pln default_plane(gp::Origin(), gp::DZ());
-  
+
   // Create first sketch with 3 edges (like bug1.ezy)
-  Sketch sketch1("Sketch1", view(), default_plane);
+  Sketch                sketch1("Sketch1", view(), default_plane);
   std::vector<gp_Pnt2d> points1 = {
-    gp_Pnt2d(-42.123413069225286, 18.567557076566406),
-    gp_Pnt2d(-31.038304366797583, 18.567557076566406),
-    gp_Pnt2d(-42.123413069225286, 42.585292598493105),
-    gp_Pnt2d(-31.038304366797583, 42.585292598493105),
-    gp_Pnt2d(-42.123413069225286, -5.450178445360293),
-    gp_Pnt2d(-31.038304366797583, -5.450178445360293)
-  };
+      gp_Pnt2d(-42.123413069225286, 18.567557076566406),
+      gp_Pnt2d(-31.038304366797583, 18.567557076566406),
+      gp_Pnt2d(-42.123413069225286, 42.585292598493105),
+      gp_Pnt2d(-31.038304366797583, 42.585292598493105),
+      gp_Pnt2d(-42.123413069225286, -5.450178445360293),
+      gp_Pnt2d(-31.038304366797583, -5.450178445360293)};
 
   // Add 3 edges
   for (size_t i = 0; i < points1.size() - 1; i += 2)
@@ -954,17 +953,16 @@ TEST_F(Sketch_test, JsonSerializationDifferentEdgeCounts)
   }
 
   // Create second sketch with 4 edges (like bug1.1.ezy)
-  Sketch sketch2("Sketch2", view(), default_plane);
+  Sketch                sketch2("Sketch2", view(), default_plane);
   std::vector<gp_Pnt2d> points2 = {
-    gp_Pnt2d(-42.123413069225286, 18.567557076566406),
-    gp_Pnt2d(-31.038304366797583, 18.567557076566406),
-    gp_Pnt2d(-42.123413069225286, 42.585292598493105),
-    gp_Pnt2d(-31.038304366797583, 42.585292598493105),
-    gp_Pnt2d(-42.123413069225286, -5.450178445360293),
-    gp_Pnt2d(-31.038304366797583, -5.450178445360293),
-    gp_Pnt2d(-42.123413069225286, -5.450178445360293),
-    gp_Pnt2d(-42.123413069225286, 42.585292598493105)
-  };
+      gp_Pnt2d(-42.123413069225286, 18.567557076566406),
+      gp_Pnt2d(-31.038304366797583, 18.567557076566406),
+      gp_Pnt2d(-42.123413069225286, 42.585292598493105),
+      gp_Pnt2d(-31.038304366797583, 42.585292598493105),
+      gp_Pnt2d(-42.123413069225286, -5.450178445360293),
+      gp_Pnt2d(-31.038304366797583, -5.450178445360293),
+      gp_Pnt2d(-42.123413069225286, -5.450178445360293),
+      gp_Pnt2d(-42.123413069225286, 42.585292598493105)};
 
   // Add 4 edges (including the vertical edge)
   for (size_t i = 0; i < points2.size() - 1; i += 2)
@@ -1012,8 +1010,8 @@ TEST_F(Sketch_test, JsonSerializationWithDimensions)
   // Add an edge with dimension
   gp_Pnt2d pt1(-42.123413069225286, 18.567557076566406);
   gp_Pnt2d pt2(-31.038304366797583, 18.567557076566406);
-  
-  Sketch_access::add_edge_(sketch, pt1, pt2, true); // Add dimension
+
+  Sketch_access::add_edge_(sketch, pt1, pt2, true);  // Add dimension
 
   // Serialize to JSON
   nlohmann::json json_data = Sketch_json::to_json(sketch);
@@ -1021,11 +1019,11 @@ TEST_F(Sketch_test, JsonSerializationWithDimensions)
   // Verify dimension flag is set
   EXPECT_EQ(json_data["edges"].size(), 1);
   EXPECT_EQ(json_data["edges"][0].size(), 3);
-  EXPECT_EQ(json_data["edges"][0][2], true); // Dimension flag
+  EXPECT_EQ(json_data["edges"][0][2], true);  // Dimension flag
 
   // Deserialize and verify
   std::shared_ptr<Sketch> deserialized_sketch = Sketch_json::from_json(view(), json_data);
-  
+
   // Check that the edge has a dimension
   bool has_dimension = false;
   for (const auto& edge : deserialized_sketch->m_edges)
@@ -1073,7 +1071,7 @@ TEST_F(Sketch_test, UpdateFaces_BridgeEdgeRemoval)
   // Add bridge edge connecting inner rectangle to outer rectangle
   // This edge should be removed from face detection
   gp_Pnt2d bridge_start = inner_top_right;  // From inner rectangle
-  gp_Pnt2d bridge_end = outer_top_left;      // To outer rectangle
+  gp_Pnt2d bridge_end   = outer_top_left;   // To outer rectangle
   Sketch_access::add_edge_(sketch, bridge_start, bridge_end);
 
   // Update faces - bridge edge should be removed
@@ -1081,7 +1079,7 @@ TEST_F(Sketch_test, UpdateFaces_BridgeEdgeRemoval)
 
   // Verify that faces were created correctly
   const auto& faces = Sketch_access::get_faces(sketch);
-  
+
   // Should have 2 faces initially (outer and inner), but after hole detection,
   // the inner face should become a hole in the outer face
   // So we expect either 2 faces (before hole processing) or 1 face with a hole
@@ -1089,8 +1087,8 @@ TEST_F(Sketch_test, UpdateFaces_BridgeEdgeRemoval)
   EXPECT_LE(faces.size(), 2) << "Should have at most two faces (outer + inner, or outer with hole)";
 
   // Verify the outer face exists and is valid
-  bool found_outer_face = false;
-  bool found_inner_face = false;
+  bool                   found_outer_face = false;
+  bool                   found_inner_face = false;
   boost_geom::polygon_2d outer_face_poly;
   boost_geom::polygon_2d inner_face_poly;
 
@@ -1108,7 +1106,7 @@ TEST_F(Sketch_test, UpdateFaces_BridgeEdgeRemoval)
     std::cout << "Face " << i << " area: " << bg::area(boost_poly) << std::endl;
     std::cout << "Face " << i << " outer ring size: " << boost_poly.outer().size() << std::endl;
     std::cout << "Face " << i << " inner rings: " << boost_poly.inners().size() << std::endl;
-    
+
     if (boost_poly.inners().size() > 0)
     {
       for (size_t hole_idx = 0; hole_idx < boost_poly.inners().size(); ++hole_idx)
@@ -1118,7 +1116,7 @@ TEST_F(Sketch_test, UpdateFaces_BridgeEdgeRemoval)
         // Output first few points of the hole for debugging
         if (hole_ring.size() > 0)
         {
-          std::cout << "  Hole " << hole_idx << " first point: (" 
+          std::cout << "  Hole " << hole_idx << " first point: ("
                     << bg::get<0>(hole_ring[0]) << ", " << bg::get<1>(hole_ring[0]) << ")" << std::endl;
         }
       }
@@ -1129,8 +1127,8 @@ TEST_F(Sketch_test, UpdateFaces_BridgeEdgeRemoval)
     if (area > 5000.0)  // Outer rectangle should be much larger
     {
       found_outer_face = true;
-      outer_face_poly = boost_poly;
-      
+      outer_face_poly  = boost_poly;
+
       // If the inner rectangle became a hole, it should be in the inners
       if (boost_poly.inners().size() > 0)
       {
@@ -1143,13 +1141,13 @@ TEST_F(Sketch_test, UpdateFaces_BridgeEdgeRemoval)
     else if (area < 500.0)  // Inner rectangle should be smaller
     {
       found_inner_face = true;
-      inner_face_poly = boost_poly;
+      inner_face_poly  = boost_poly;
       std::cout << "Inner rectangle detected as separate face" << std::endl;
     }
   }
 
   EXPECT_TRUE(found_outer_face) << "Should find the outer rectangle face";
-  
+
   // The inner face should either be a separate face or a hole in the outer face
   // Both are valid outcomes depending on hole processing
   if (found_inner_face && outer_face_poly.inners().empty())
@@ -1174,16 +1172,16 @@ TEST_F(Sketch_test, UpdateFaces_BridgeEdgeRemoval)
   {
     if (!edge.node_idx_b.has_value())
       continue;
-    
+
     gp_Pnt2d pt_a = sketch.get_nodes()[edge.node_idx_a];
     gp_Pnt2d pt_b = sketch.get_nodes()[edge.node_idx_b.value()];
-    
+
     // Check if this edge connects the inner and outer rectangles
-    bool connects_inner = (pt_a.IsEqual(inner_top_right, Precision::Confusion()) || 
-                          pt_b.IsEqual(inner_top_right, Precision::Confusion()));
-    bool connects_outer = (pt_a.IsEqual(outer_top_left, Precision::Confusion()) || 
-                          pt_b.IsEqual(outer_top_left, Precision::Confusion()));
-    
+    bool connects_inner = (pt_a.IsEqual(inner_top_right, Precision::Confusion()) ||
+                           pt_b.IsEqual(inner_top_right, Precision::Confusion()));
+    bool connects_outer = (pt_a.IsEqual(outer_top_left, Precision::Confusion()) ||
+                           pt_b.IsEqual(outer_top_left, Precision::Confusion()));
+
     if (connects_inner && connects_outer)
     {
       found_bridge_edge = true;
@@ -1212,7 +1210,8 @@ TEST_F(Sketch_test, UpdateFaces_BridgeEdgeRemoval)
   }
   std::cout << "Total edges in sketch: " << total_edges << std::endl;
   std::cout << "Bridge edge found: " << (found_bridge_edge ? "yes" : "no") << std::endl;
-  std::cout << "========================================\n" << std::endl;
+  std::cout << "========================================\n"
+            << std::endl;
 }
 
 // Test dangling edges removal - rectangle with branching edges
@@ -1286,7 +1285,7 @@ TEST_F(Sketch_test, UpdateFaces_DanglingEdgesRemoval)
   EXPECT_TRUE(bg::is_valid(boost_poly)) << "Polygon should be valid";
 
   // Verify the area is approximately correct for a 100x100 rectangle
-  double area = bg::area(boost_poly);
+  double area          = bg::area(boost_poly);
   double expected_area = 100.0 * 100.0;  // 10000
   EXPECT_NEAR(area, expected_area, 1.0) << "Rectangle area should be approximately 10000";
 
