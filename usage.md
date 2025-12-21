@@ -92,7 +92,7 @@ EzyCad (Easy CAD) is a CAD application for hobbyist machinists to design and edi
 1. **Basic Tools**
    - Add nodes
    - [Create line edges](#line-edge-creation-tools) ![Line Edge Tool](icons/Sketcher_Element_Line_Edge.png)
-   - Draw multi-line edges
+   - [Draw multi-line edges](#multi-line-edge-tool) ![Multi-line Edge Tool](icons/ls.png)
    - Add arc segments
    - [Create circles](#circle-creation-tools) ![Circle Tool](icons/Sketcher_CreateCircle.png)
    - Draw rectangles and squares
@@ -137,6 +137,54 @@ The single line edge tool allows you to create straight line segments between tw
 - Lines can be used as construction geometry or as part of your final design
 - The line tool works in any sketch plane
 - Multiple line edges can be created in sequence by right-clicking after each line
+
+#### Multi-Line Edge Tool
+
+![Multi-line Edge Tool](icons/ls.png)
+
+The multi-line edge tool allows you to create multiple connected line segments in a single operation, making it efficient for drawing continuous paths, polylines, or complex connected geometries.
+
+**Features:**
+- **Continuous edge creation**: Click multiple points to create a chain of connected line segments
+- **Real-time preview**: See each edge shape while moving the mouse before clicking
+- **Precise length control**: Use the distance input dialog (Tab key) for exact edge lengths
+- **Snap support**: Automatically snaps to existing nodes and geometry
+- **Distance annotations**: Real-time distance display for the current edge being drawn
+- **Flexible finalization**: Continue adding edges until you right-click to finalize the entire sequence
+
+**How to use:**
+1. Select the **Multi-line Edge** tool from the toolbar ![ls](icons/ls.png)
+2. Click to set the first point (start of the first edge)
+3. Move the mouse to see a preview of the first edge
+4. Click to set the second point (end of first edge, start of second edge), or press **Tab** to enter an exact length value
+5. Continue clicking to add more connected edges, each new click starts a new edge from the previous edge's end point
+6. Press **Right-click** to finalize the entire multi-line sequence and add all edges to your sketch
+
+**Keyboard shortcuts:**
+- **Tab**: Open distance input dialog for precise length control of the current edge
+- **Escape**: Cancel the entire multi-line creation operation
+- **Enter**: Finalize the current edge length (if using distance input) and continue to the next edge
+- **Right-click**: Finalize the entire multi-line sequence and complete the operation
+
+**Workflow details:**
+- Each click after the first creates a new edge connected to the previous edge's end point
+- After entering a distance with Tab, the tool automatically starts a new edge from the end of the previous one
+- The distance annotation shows the length of the edge currently being drawn
+- All edges in the sequence are added to the sketch together when you right-click to finalize
+
+**Tips:**
+- Use the snap feature to create multi-line edges that connect precisely to existing geometry
+- Multi-line edges are ideal for creating continuous paths, outlines, or complex connected shapes
+- The tool works in any sketch plane
+- Keep clicking to add more edges - there's no limit. For example, you can click 3 times to create 2 edges, or 10 times to create 9 edges. All edges remain temporary until you right-click, which adds all of them to your sketch at once
+- If you make a mistake, press Escape to cancel the entire sequence and start over
+- The last edge in the sequence will be removed if it hasn't been finalized (no end point set) when you right-click
+
+**Comparison with Single Line Edge Tool:**
+- **Single Line Edge**: Creates one edge at a time, finalizes automatically after two points
+- **Multi-Line Edge**: Creates multiple connected edges in sequence, requires right-click to finalize
+- Use single line edges when you need individual disconnected segments
+- Use multi-line edges when you need a continuous chain of connected segments
 
 #### Circle Creation Tools
 
