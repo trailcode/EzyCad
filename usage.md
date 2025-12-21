@@ -88,6 +88,49 @@ EzyCad (Easy CAD) is a CAD application for hobbyist machinists to design and edi
 
 ## Modeling Tools
 
+EzyCad uses a workflow-based approach to 3D modeling: start with 2D sketches, then transform them into 3D shapes using feature operations. This section covers both the sketching tools for creating 2D geometry and the 3D modeling tools for working with solid shapes.
+
+### Workflow: From 2D Sketches to 3D Shapes
+
+The typical modeling workflow in EzyCad follows these steps:
+
+1. **Create a 2D Sketch**: Use the [2D Sketching tools](#2d-sketching) to draw 2D geometry on a sketch plane. Sketches consist of edges (lines, arcs, circles) that form closed shapes called faces.
+
+2. **Extrude the Sketch**: Use the [Extrude tool](#extrude-sketch-face-tool-e) to convert 2D sketch faces into 3D solid shapes by extending them perpendicular to the sketch plane.
+
+3. **Modify 3D Shapes**: Use [3D Modeling tools](#3d-modeling) to transform shapes (move, rotate, scale) or create patterns (polar duplicate).
+
+4. **Apply Feature Operations**: Use boolean operations (cut, fuse, common) or feature operations (chamfer, fillet) to refine your 3D model.
+
+**Key Concepts:**
+- **Sketches** are 2D drawings on a plane that define the profile of your 3D shape
+- **Faces** are closed regions within a sketch that can be extruded into 3D
+- **Shapes** are 3D solid objects created from extruded sketch faces
+- **Feature Operations** transform sketches into 3D geometry or modify existing 3D shapes
+
+### Importing 3D Geometries
+
+In addition to creating 3D shapes from sketches, EzyCad supports importing existing 3D geometry from external CAD files. This allows you to:
+
+- **Work with existing designs**: Import models created in other CAD software
+- **Combine workflows**: Use imported geometry alongside sketched shapes
+- **Modify imported models**: Apply EzyCad's modeling tools to imported shapes
+
+**Supported Import Formats:**
+- **STEP** (`.step`, `.stp`): Standard format for exchanging 3D CAD data
+- **IGES** (`.iges`, `.igs`): Legacy format for CAD data exchange
+- **STL** (`.stl`): Common format for 3D printing and mesh data
+
+**How to Import:**
+1. Use the **File** menu and select **Import**
+2. Choose a supported file format (STEP, IGES, or STL)
+3. The imported 3D shapes will be added to your workspace
+4. Imported shapes can be moved, rotated, and used in boolean operations just like shapes created from sketches
+
+**Note**: Imported 3D geometries are added as solid shapes and can be combined with your sketched designs using boolean operations (cut, fuse, common) or modified using transform tools.
+
+For detailed information on creating 2D geometry, see the [2D Sketching](#2d-sketching) section. For information on working with 3D shapes, see the [3D Modeling](#3d-modeling) section.
+
 ### 2D Sketching
 1. **Basic Tools**
    - Add nodes
