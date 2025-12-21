@@ -92,11 +92,11 @@ EzyCad (Easy CAD) is a CAD application for hobbyist machinists to design and edi
 1. **Basic Tools**
    - Add nodes
    - [Create line edges](#line-edge-creation-tools) ![Line Edge Tool](icons/Sketcher_Element_Line_Edge.png)
-   - Draw multi-line edges
-   - Add arc segments
+   - [Draw multi-line edges](#multi-line-edge-tool) ![Multi-line Edge Tool](icons/ls.png)
+   - [Add arc segments](#arc-segment-creation-tool) ![Arc Segment Tool](icons/Sketcher_Element_Arc_Edge.png)
    - [Create circles](#circle-creation-tools) ![Circle Tool](icons/Sketcher_CreateCircle.png)
-   - Draw rectangles and squares
-   - Add slots
+   - [Draw rectangles and squares](#rectangle-and-square-creation-tools) ![Rectangle Tool](icons/Sketcher_CreateRectangle.png) ![Square Tool](icons/Sketcher_CreateSquare.png)
+   - [Add slots](#slot-creation-tool) ![Slot Tool](icons/Sketcher_CreateSlot.png)
 
 2. **Sketch Operations**
    - [Define operation axis](#operation-axis-tool) ![Operation Axis Tool](icons/Sketcher_MirrorSketch.png)
@@ -137,6 +137,54 @@ The single line edge tool allows you to create straight line segments between tw
 - Lines can be used as construction geometry or as part of your final design
 - The line tool works in any sketch plane
 - Multiple line edges can be created in sequence by right-clicking after each line
+
+#### Multi-Line Edge Tool
+
+![Multi-line Edge Tool](icons/ls.png)
+
+The multi-line edge tool allows you to create multiple connected line segments in a single operation, making it efficient for drawing continuous paths, polylines, or complex connected geometries.
+
+**Features:**
+- **Continuous edge creation**: Click multiple points to create a chain of connected line segments
+- **Real-time preview**: See each edge shape while moving the mouse before clicking
+- **Precise length control**: Use the distance input dialog (Tab key) for exact edge lengths
+- **Snap support**: Automatically snaps to existing nodes and geometry
+- **Distance annotations**: Real-time distance display for the current edge being drawn
+- **Flexible finalization**: Continue adding edges until you right-click to finalize the entire sequence
+
+**How to use:**
+1. Select the **Multi-line Edge** tool from the toolbar ![ls](icons/ls.png)
+2. Click to set the first point (start of the first edge)
+3. Move the mouse to see a preview of the first edge
+4. Click to set the second point (end of first edge, start of second edge), or press **Tab** to enter an exact length value
+5. Continue clicking to add more connected edges, each new click starts a new edge from the previous edge's end point
+6. Press **Right-click** to finalize the entire multi-line sequence and add all edges to your sketch
+
+**Keyboard shortcuts:**
+- **Tab**: Open distance input dialog for precise length control of the current edge
+- **Escape**: Cancel the entire multi-line creation operation
+- **Enter**: Finalize the current edge length (if using distance input) and continue to the next edge
+- **Right-click**: Finalize the entire multi-line sequence and complete the operation
+
+**Workflow details:**
+- Each click after the first creates a new edge connected to the previous edge's end point
+- After entering a distance with Tab, the tool automatically starts a new edge from the end of the previous one
+- The distance annotation shows the length of the edge currently being drawn
+- All edges in the sequence are added to the sketch together when you right-click to finalize
+
+**Tips:**
+- Use the snap feature to create multi-line edges that connect precisely to existing geometry
+- Multi-line edges are ideal for creating continuous paths, outlines, or complex connected shapes
+- The tool works in any sketch plane
+- Keep clicking to add more edges - there's no limit. For example, you can click 3 times to create 2 edges, or 10 times to create 9 edges. All edges remain temporary until you right-click, which adds all of them to your sketch at once
+- If you make a mistake, press Escape to cancel the entire sequence and start over
+- The last edge in the sequence will be removed if it hasn't been finalized (no end point set) when you right-click
+
+**Comparison with Single Line Edge Tool:**
+- **Single Line Edge**: Creates one edge at a time, finalizes automatically after two points
+- **Multi-Line Edge**: Creates multiple connected edges in sequence, requires right-click to finalize
+- Use single line edges when you need individual disconnected segments
+- Use multi-line edges when you need a continuous chain of connected segments
 
 #### Circle Creation Tools
 
@@ -204,6 +252,226 @@ The circle tool follows this workflow:
 - **Coincident Points**: The system prevents creation of circles with zero radius
 - **Invalid Geometry**: Circles that would be too small are rejected
 - **Snap Integration**: Use existing snap points for precise circle placement
+
+#### Arc Segment Creation Tool
+
+![Arc Segment Tool](icons/Sketcher_Element_Arc_Edge.png)
+
+The arc segment tool allows you to create circular arc edges by defining three points that lie on the arc: a start point, a middle point, and an end point.
+
+**Features:**
+- **Three-point creation**: Click to set the start point, then the middle point, then the end point
+- **Real-time preview**: See the arc shape while moving the mouse after setting the first two points
+- **Automatic finalization**: The arc is automatically created and added to your sketch after the third point is clicked
+- **Circular arc**: Creates a smooth circular arc that passes through all three points
+- **Snap support**: Automatically snaps to existing nodes and geometry
+- **Unique points**: All three points must be different (cannot be coincident)
+
+**How to use:**
+1. Select the **Arc Segment** tool from the toolbar ![Sketcher_Element_Arc_Edge](icons/Sketcher_Element_Arc_Edge.png)
+2. Click to set the start point of the arc (first point)
+3. Click to set a point on the arc between start and end (middle point)
+4. Move the mouse to see a preview of the arc
+5. Click to set the end point of the arc (third point)
+6. The arc segment will be automatically created and added to your sketch
+
+**Point order:**
+- **First click**: Start point - where the arc begins
+- **Second click**: Middle point - a point that lies on the arc between start and end
+- **Third click**: End point - where the arc ends
+
+**Keyboard shortcuts:**
+- **Escape**: Cancel the current arc creation (clears all points)
+- **Note**: The arc is automatically finalized after the third point, so no manual finalization is needed
+
+**Tips:**
+- The three points define a unique circular arc that passes through all of them
+- Use the snap feature to create arcs that connect precisely to existing geometry
+- The arc tool works in any sketch plane
+- Arc segments can be used as part of closed shapes that form faces
+- The middle point helps define the arc's curvature and direction
+- All three points must be unique - clicking the same point twice will be ignored
+
+**Technical details:**
+- The arc is created using the three points to define a circle, then trimming it to the arc segment
+- Internally, the arc is represented as two connected edges for proper topology
+- Arc segments can be combined with straight edges to create complex closed shapes
+
+**Comparison with Circle Tool:**
+- **Circle Tool**: Creates a full circle from center and radius point (2 points)
+- **Arc Segment Tool**: Creates a partial arc from three points on the arc (3 points)
+- Use circles when you need a complete circular shape
+- Use arc segments when you need a curved edge that's part of a larger shape
+
+#### Rectangle and Square Creation Tools
+
+EzyCad provides three tools for creating rectangular shapes in sketch mode: square, rectangle from two points, and rectangle with center point.
+
+##### Square Tool
+
+![Square Tool](icons/Sketcher_CreateSquare.png)
+
+The square tool allows you to create perfect squares by defining a center point and an edge midpoint.
+
+**Features:**
+- **Two-point creation**: Click to set the center point, then click to set the midpoint of one edge
+- **Real-time preview**: See the square shape while moving the mouse
+- **Perfect square**: Automatically ensures all sides are equal length
+- **Orientation control**: The square's orientation is determined by the direction from center to edge midpoint
+- **Precise size control**: Use the distance input dialog (Tab key) for exact side lengths
+- **Snap support**: Automatically snaps to existing nodes and geometry
+
+**How to use:**
+1. Select the **Square** tool from the toolbar ![Sketcher_CreateSquare](icons/Sketcher_CreateSquare.png)
+2. Click to set the center point of the square
+3. Move the mouse to see a preview of the square
+4. Click to set the midpoint of one edge (this defines both the size and orientation), or press **Tab** to enter an exact side length value
+5. The square will be created with four edges and added to your sketch
+
+**Keyboard shortcuts:**
+- **Tab**: Open distance input dialog for precise side length control
+- **Escape**: Cancel the current square creation
+- **Enter**: Finalize the square (if using distance input)
+
+**Tips:**
+- The distance from center to edge midpoint determines half the side length
+- Use the snap feature to create squares that are precisely positioned relative to existing geometry
+- The square tool works in any sketch plane
+- Squares automatically form closed faces that can be extruded
+
+##### Rectangle Tool (Two Points)
+
+![Rectangle Tool](icons/Sketcher_CreateRectangle.png)
+
+The rectangle tool allows you to create rectangles by defining two opposite corners.
+
+**Features:**
+- **Two-point creation**: Click to set the first corner, then click to set the opposite corner
+- **Real-time preview**: See the rectangle shape while moving the mouse
+- **Precise size control**: Use the distance input dialog (Tab key) for exact dimensions
+- **Snap support**: Automatically snaps to existing nodes and geometry
+- **Automatic corner calculation**: The system automatically calculates the other two corners
+
+**How to use:**
+1. Select the **Rectangle** tool from the toolbar ![Sketcher_CreateRectangle](icons/Sketcher_CreateRectangle.png)
+2. Click to set the first corner point
+3. Move the mouse to see a preview of the rectangle
+4. Click to set the opposite corner point, or press **Tab** to enter exact distance values
+5. The rectangle will be created with four edges and added to your sketch
+
+**Keyboard shortcuts:**
+- **Tab**: Open distance input dialog for precise dimension control
+- **Escape**: Cancel the current rectangle creation
+- **Enter**: Finalize the rectangle (if using distance input)
+
+**Tips:**
+- The two points define opposite corners of the rectangle (diagonal)
+- The rectangle edges are automatically aligned with the coordinate axes
+- Use the snap feature to create rectangles that are precisely positioned relative to existing geometry
+- The rectangle tool works in any sketch plane
+- Rectangles automatically form closed faces that can be extruded
+
+##### Rectangle Tool (Center Point)
+
+![Rectangle Center Tool](icons/Sketcher_CreateRectangle_Center.png)
+
+The rectangle with center point tool allows you to create rectangles by defining a center point and a corner point.
+
+**Features:**
+- **Two-point creation**: Click to set the center point, then click to set a corner point
+- **Real-time preview**: See the rectangle shape while moving the mouse
+- **Centered creation**: The rectangle is centered on the first point
+- **Precise size control**: Use the distance input dialog (Tab key) for exact dimensions
+- **Snap support**: Automatically snaps to existing nodes and geometry
+
+**How to use:**
+1. Select the **Rectangle with Center Point** tool from the toolbar ![Sketcher_CreateRectangle_Center](icons/Sketcher_CreateRectangle_Center.png)
+2. Click to set the center point of the rectangle
+3. Move the mouse to see a preview of the rectangle
+4. Click to set a corner point (defines both size and orientation), or press **Tab** to enter exact distance values
+5. The rectangle will be created with four edges and added to your sketch
+
+**Keyboard shortcuts:**
+- **Tab**: Open distance input dialog for precise dimension control
+- **Escape**: Cancel the current rectangle creation
+- **Enter**: Finalize the rectangle (if using distance input)
+
+**Tips:**
+- The rectangle is centered on the first point you click
+- The distance from center to corner determines the rectangle's dimensions
+- Use the snap feature to create rectangles that are precisely positioned relative to existing geometry
+- The rectangle tool works in any sketch plane
+- Rectangles automatically form closed faces that can be extruded
+
+**Comparison of Rectangle Tools:**
+- **Rectangle (Two Points)**: Define opposite corners - useful when you know the corner positions
+- **Rectangle (Center Point)**: Define center and corner - useful when you want the rectangle centered on a specific point
+- **Square**: Always creates a perfect square - use when you need equal sides
+
+#### Slot Creation Tool
+
+![Slot Tool](icons/Sketcher_CreateSlot.png)
+
+The slot tool allows you to create an oblong or oval-shaped slot with rounded ends. A slot consists of two semicircular arcs connected by two straight parallel edges.
+
+**Features:**
+- **Three-point creation**: Click to set the first arc center, then the second arc center, then a point to define the radius
+- **Real-time preview**: See the slot shape while moving the mouse after setting the first two points
+- **Automatic finalization**: The slot is automatically created and added to your sketch after the third point is clicked
+- **Rounded ends**: Creates semicircular arcs at both ends with equal radius
+- **Parallel edges**: The two straight edges connecting the arcs are always parallel
+- **Precise size control**: Use the distance input dialog (Tab key) for exact dimensions
+- **Snap support**: Automatically snaps to existing nodes and geometry
+
+**How to use:**
+1. Select the **Slot** tool from the toolbar ![Sketcher_CreateSlot](icons/Sketcher_CreateSlot.png)
+2. Click to set the center point of the first arc (start of slot)
+3. Move the mouse to see a preview of the first edge
+4. Click to set the center point of the second arc (end of slot)
+5. Move the mouse to see a preview of the slot shape
+6. Click to set a point that defines the radius of the arcs, or press **Tab** to enter exact distance values
+   - **Important**: The radius is measured from the second arc center (the point you clicked in step 4) to this third point
+   - This radius determines the cross section: the slot's cross-section dimension equals 2 × radius
+7. The slot will be automatically created with two arcs and two straight edges and added to your sketch
+
+**Point order:**
+- **First click**: First arc center - the center of the arc at one end of the slot
+- **Second click**: Second arc center - the center of the arc at the other end of the slot
+- **Third click**: Radius point - defines the radius of both arcs
+  - The distance from the **second arc center** (second click) to this point determines the arc radius
+  - The slot's cross section (perpendicular to the slot length) equals twice this radius
+  - Both arcs use the same radius, creating a symmetric slot
+
+**Keyboard shortcuts:**
+- **Tab**: Open distance input dialog for precise dimension control
+- **Escape**: Cancel the current slot creation
+- **Enter**: Finalize the slot (if using distance input)
+- **Note**: The slot is automatically finalized after the third point, so no manual finalization is needed
+
+**Tips:**
+- The slot length is determined by the distance between the first and second arc centers
+- The radius of both arcs is determined by the distance from the second arc center to the radius point (third click)
+- The slot's cross section (the dimension perpendicular to the slot length) equals 2 × radius
+  - This is because each arc is a semicircle with the specified radius, extending equally in both perpendicular directions
+  - For example, if you click the radius point 3 units away from the second arc center, the slot cross section will be 6 units
+- Both arcs have the same radius, creating a symmetric slot shape
+- The slot orientation (which dimension is length vs width/height) is determined by the direction from the first to the second arc center
+- Use the snap feature to create slots that connect precisely to existing geometry
+- The slot tool works in any sketch plane
+- Slots automatically form closed faces that can be extruded
+- The slot orientation is determined by the direction from the first to the second arc center
+
+**Technical details:**
+- The slot consists of four edges: two semicircular arcs and two straight parallel edges
+- The arcs are created using the arc segment functionality
+- The straight edges connect the arcs at their endpoints
+- The slot forms a closed shape suitable for face creation and extrusion
+
+**Common use cases:**
+- Creating mounting slots for screws or bolts
+- Designing elongated holes for adjustment
+- Creating rounded-end cutouts in parts
+- Designing slots for sliding mechanisms
 
 #### Operation Axis Tool
 
