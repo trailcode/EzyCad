@@ -518,8 +518,8 @@ Once an axis is defined, the options panel will show:
 1. **Transform Operations**
    - [Move shapes (G)](#shape-move-tool-g) ![Shape Move Tool](icons/Assembly_AxialMove.png)
    - [Rotate objects (R)](#shape-rotate-tool-r) ![Shape Rotate Tool](icons/Draft_Rotate.png)
-   - Scale elements
-   - Polar duplicate
+   - Scale elements [`To-dos` not implemented]
+   - [Polar duplicate](#shape-polar-duplicate-tool) ![Polar Duplicate Tool](icons/Draft_PolarArray.png)
 
 #### Shape Move Tool (G)
 
@@ -633,6 +633,57 @@ The extrude tool allows you to create 3D solid shapes by extruding 2D sketch fac
 - **Base features**: Create the base feature of a part by extruding a profile
 - **Additive features**: Extrude additional features on existing parts
 - **Through features**: Extrude holes or cutouts by using the cut operation after extrusion
+
+#### Shape Polar Duplicate Tool
+
+![Polar Duplicate Tool](icons/Draft_PolarArray.png)
+
+The polar duplicate tool allows you to create multiple copies of selected shapes arranged in a circular pattern around a rotation center point.
+
+**Features:**
+- **Circular array**: Creates multiple copies of shapes arranged in a circular pattern
+- **Configurable angle**: Set the total angle for the pattern (default: 360 degrees)
+- **Configurable count**: Set the number of duplicate elements to create (default: 5)
+- **Rotation option**: Choose whether duplicates are rotated as they're copied (default: enabled)
+- **Combine option**: Choose whether to combine all duplicates into a single shape (default: enabled)
+- **Polar arm definition**: Define the rotation center and direction by clicking a point
+
+**How to use:**
+1. **Select shapes**: Select one or more shapes that you want to duplicate
+2. **Activate Polar Duplicate Tool**: Click the ![Draft_PolarArray](icons/Draft_PolarArray.png) icon to enter polar duplicate mode
+3. **Define polar arm**: Move the mouse to see a preview line (polar arm) from the shape center to the mouse cursor
+4. **Set rotation center**: Click to set the end point of the polar arm
+   - The start of the polar arm is at the center of the selected shape(s)
+   - The end point you click defines the rotation center and direction
+5. **Configure options** in the options panel:
+   - **Polar angle**: Set the total angle for the pattern (e.g., 360° for full circle, 180° for half circle)
+   - **Num Elms**: Set the number of duplicate elements to create
+   - **Rotate dups**: Checkbox to rotate each duplicate as it's copied (default: enabled)
+   - **Combine dups**: Checkbox to combine all duplicates into a single shape (default: enabled)
+6. **Create duplicates**: Click the **"Dup"** button in the options panel to create the polar duplicates
+
+**Options explained:**
+- **Polar angle**: The total angular span of the pattern. 360° creates a full circle, 180° creates a half circle, etc.
+- **Num Elms**: The number of duplicate elements to create. The original shape is not counted, so 5 elements means 5 copies plus the original.
+- **Rotate dups**: When enabled, each duplicate is rotated around its own center as it's positioned. When disabled, duplicates maintain their original orientation.
+- **Combine dups**: When enabled, all duplicates are fused together into a single shape. When disabled, each duplicate remains a separate shape.
+
+**Keyboard shortcuts:**
+- **Escape**: Cancel the current polar duplicate operation
+
+**Tips:**
+- The polar arm defines both the rotation center (at the arm's end point) and the starting direction
+- Use the polar duplicate tool to create patterns like gear teeth, radial arrays, or circular arrangements
+- The rotation center is determined by where you click to set the polar arm end point
+- If "Combine dups" is enabled, all duplicates are fused into one shape, which is useful for creating complex patterns
+- If "Rotate dups" is disabled, all duplicates maintain the same orientation as the original
+- The tool works with multiple selected shapes - all selected shapes will be duplicated together
+
+**Common use cases:**
+- Creating gear teeth or radial patterns
+- Arranging objects in a circular pattern
+- Creating symmetric designs with rotational symmetry
+- Duplicating features around a center point
 
 ### Other Feature Operations
 
