@@ -517,7 +517,7 @@ Once an axis is defined, the options panel will show:
 ### 3D Modeling
 1. **Transform Operations**
    - [Move shapes (G)](#shape-move-tool-g) ![Shape Move Tool](icons/Assembly_AxialMove.png)
-   - Rotate objects (R)
+   - [Rotate objects (R)](#shape-rotate-tool-r) ![Shape Rotate Tool](icons/Draft_Rotate.png)
    - Scale elements
    - Polar duplicate
 
