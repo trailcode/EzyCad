@@ -433,7 +433,7 @@ void Occt_view::revolve_selected(const double angle)
 }
 
 // Sketch related
-void Occt_view::create_sketch_from_face_(const ScreenCoords& screen_coords)
+void Occt_view::create_sketch_from_planar_face_(const ScreenCoords& screen_coords)
 {
   if (auto face = get_face_(screen_coords); face)
     if (auto pln = plane_from_face(*face); pln)
@@ -447,6 +447,8 @@ void Occt_view::create_sketch_from_face_(const ScreenCoords& screen_coords)
       // fit_face_in_view(*face);
       m_gui.set_mode(Mode::Sketch_inspection_mode);
     }
+    else
+      gui().show_message("Error: Selected face is not planar. Please select a planar face.");
 }
 
 void Occt_view::finalize_sketch_extrude_()
@@ -764,8 +766,8 @@ void Occt_view::on_mouse_button(int theButton, int theAction, int theMods)
 
     switch (get_mode())
     {
-      case Mode::Sketch_from_face:
-        return create_sketch_from_face_(ScreenCoords(glm::dvec2(pos.x(), pos.y())));
+      case Mode::Sketch_from_planar_face:
+        return create_sketch_from_planar_face_(ScreenCoords(glm::dvec2(pos.x(), pos.y())));
       case Mode::Sketch_toggle_edge_dim:
         return curr_sketch().toggle_edge_dim(ScreenCoords(glm::dvec2(pos.x(), pos.y())));
       default:
@@ -906,7 +908,7 @@ void Occt_view::on_mode()
     switch (get_mode())
     {
         // clang-format off
-      case Mode::Sketch_from_face: set_shp_selection_mode(TopAbs_FACE); break;
+      case Mode::Sketch_from_planar_face: set_shp_selection_mode(TopAbs_FACE); break;
       case Mode::Shape_chamfer:    on_chamfer_mode();                   break; // Will update selection mode
       default: break;
         // clang-format on

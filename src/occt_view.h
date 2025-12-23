@@ -149,7 +149,7 @@ class Occt_view : protected AIS_ViewController
   friend class View_access;
 
   // Sketch related
-  void create_sketch_from_face_(const ScreenCoords& screen_coords);
+  void create_sketch_from_planar_face_(const ScreenCoords& screen_coords);
   void finalize_sketch_extrude_();
   bool cancel_sketch_extrude_();
   void create_default_sketch_();

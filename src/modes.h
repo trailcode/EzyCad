@@ -10,7 +10,7 @@ enum class Mode
   Scale,
   Rotate,
   Sketch_inspection_mode,          // For inspecting sketch elements
-  Sketch_from_face,                // For creating a sketch from a face
+  Sketch_from_planar_face,         // For creating a sketch from a planar face
   Sketch_face_extrude,             // For extruding a sketch face
   Shape_chamfer,                   // For chamfering a shape
   Shape_fillet,                    // For filleting a shape
@@ -37,7 +37,7 @@ constexpr std::array<std::string_view, int(Mode::_count)> c_mode_strs {
     "Scale",
     "Rotate",
     "Sketch_inspection_mode",
-    "Sketch_from_face",
+    "Sketch_from_planar_face",
     "Sketch_add_node",
     "Sketch_add_edge",
     "Sketch_add_multi_edges",
