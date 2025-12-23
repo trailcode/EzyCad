@@ -33,8 +33,6 @@ EzyCad (Easy CAD) is a CAD application for hobbyist machinists to design and edi
 ### Main Components
 1. **Menu Bar**
    - File operations (New, Open, Save, [Import](#importing-3d-geometries))
-   - Edit functions
-   - View controls
    - Help and settings
 
 2. **Toolbar**
