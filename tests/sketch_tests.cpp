@@ -707,29 +707,20 @@ TEST_F(Sketch_test, OriginatingFaceSnapPointsCircle)
   Sketch_access::get_originating_face_snp_pts_3d_(sketch, snap_pts);
   sort_pnts(snap_pts);
 
-  // For a circle, we expect snap points at the cardinal directions (0, 90, 180, 270 degrees)
+  // For a circle, the implementation extracts:
+  // - Start vertex (at angle 0, where the circle starts)
+  // - Midpoint (at angle π, 180 degrees)
+  // - End vertex (same as start for closed circle, so not added again)
+  // So we expect exactly 2 points: start vertex and midpoint
   std::vector<gp_Pnt> expected = {
-      gp_Pnt(10, 0, 0),   // 0 degrees (right)
-      gp_Pnt(0, 10, 0),   // 90 degrees (top)
-      gp_Pnt(-10, 0, 0),  // 180 degrees (left)
-      gp_Pnt(0, -10, 0),  // 270 degrees (bottom)
+      gp_Pnt(-10, 0, 0),  // Midpoint at 180 degrees
+      gp_Pnt(10, 0, 0),   // Start vertex at 0 degrees (edge_point)
   };
 
-  // The actual implementation may provide more points (e.g., more subdivisions).
-  // We'll check that all expected points are present in the snap_pts.
-  for (const auto& exp : expected)
-  {
-    bool found = false;
-    for (const auto& pt : snap_pts)
-    {
-      if (pt.IsEqual(exp, Precision::Confusion()))
-      {
-        found = true;
-        break;
-      }
-    }
-    EXPECT_TRUE(found) << "Expected snap point at (" << exp.X() << ", " << exp.Y() << ")";
-  }
+  ASSERT_EQ(snap_pts.size(), expected.size());
+  for (size_t i = 0; i < expected.size(); ++i)
+    EXPECT_TRUE(snap_pts[i].IsEqual(expected[i], Precision::Confusion()))
+        << "Mismatch at index " << i << ": got (" << snap_pts[i].X() << ", " << snap_pts[i].Y() << ", " << snap_pts[i].Z() << "), expected (" << expected[i].X() << ", " << expected[i].Y() << ", " << expected[i].Z() << ")";
 }
 
 TEST_F(Sketch_test, ExtrudeSketchFace_EzyCad)
