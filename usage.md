@@ -32,9 +32,7 @@ EzyCad (Easy CAD) is a CAD application for hobbyist machinists to design and edi
 
 ### Main Components
 1. **Menu Bar**
-   - File operations (New, Open, Save, Import)
-   - Edit functions
-   - View controls
+   - File operations (New, Open, Save, [Import](#importing-3d-geometries))
    - Help and settings
 
 2. **Toolbar**
@@ -66,7 +64,7 @@ EzyCad (Easy CAD) is a CAD application for hobbyist machinists to design and edi
 
 ### Supported Formats
 - Native format: `.ezy` files
-- Import formats: STEP, IGES, STL
+- [Import formats: STEP, IGES, STL](#importing-3d-geometries)
 - Export formats: STEP, IGES, STL
 
 ### Basic Operations
@@ -83,10 +81,53 @@ EzyCad (Easy CAD) is a CAD application for hobbyist machinists to design and edi
    - Auto-save feature available
 
 4. **Import/Export**
-   - Import external CAD files
+   - [Import external CAD files](#importing-3d-geometries)
    - Export to standard formats
 
 ## Modeling Tools
+
+EzyCad uses a workflow-based approach to 3D modeling: start with 2D sketches, then transform them into 3D shapes using feature operations. This section covers both the sketching tools for creating 2D geometry and the 3D modeling tools for working with solid shapes.
+
+### Workflow: From 2D Sketches to 3D Shapes
+
+The typical modeling workflow in EzyCad follows these steps:
+
+1. **Create a 2D Sketch**: Use the [2D Sketching tools](#2d-sketching) to draw 2D geometry on a sketch plane. Sketches consist of edges (lines, arcs, circles) that form closed shapes called faces.
+
+2. **Extrude the Sketch**: Use the [Extrude tool](#extrude-sketch-face-tool-e) to convert 2D sketch faces into 3D solid shapes by extending them perpendicular to the sketch plane.
+
+3. **Modify 3D Shapes**: Use [3D Modeling tools](#3d-modeling) to transform shapes (move, rotate, scale) or create patterns (polar duplicate).
+
+4. **Apply Feature Operations**: Use boolean operations (cut, fuse, common) or feature operations (chamfer, fillet) to refine your 3D model.
+
+**Key Concepts:**
+- **Sketches** are 2D drawings on a plane that define the profile of your 3D shape
+- **Faces** are closed regions within a sketch that can be extruded into 3D
+- **Shapes** are 3D solid objects created from extruded sketch faces
+- **Feature Operations** transform sketches into 3D geometry or modify existing 3D shapes
+
+### Importing 3D Geometries
+
+In addition to creating 3D shapes from sketches, EzyCad supports importing existing 3D geometry from external CAD files. This allows you to:
+
+- **Work with existing designs**: Import models created in other CAD software
+- **Combine workflows**: Use imported geometry alongside sketched shapes
+- **Modify imported models**: Apply EzyCad's modeling tools to imported shapes
+
+**Supported Import Formats:**
+- **STEP** (`.step`, `.stp`): Standard format for exchanging 3D CAD data
+- **IGES** (`.iges`, `.igs`): Legacy format for CAD data exchange
+- **STL** (`.stl`): Common format for 3D printing and mesh data
+
+**How to Import:**
+1. Use the **File** menu and select **Import**
+2. Choose a supported file format (STEP, IGES, or STL)
+3. The imported 3D shapes will be added to your workspace
+4. Imported shapes can be moved, rotated, and used in boolean operations just like shapes created from sketches
+
+**Note**: Imported 3D geometries are added as solid shapes and can be combined with your sketched designs using boolean operations (cut, fuse, common) or modified using transform tools.
+
+For detailed information on creating 2D geometry, see the [2D Sketching](#2d-sketching) section. For information on working with 3D shapes, see the [3D Modeling](#3d-modeling) section.
 
 ### 2D Sketching
 1. **Basic Tools**
@@ -516,10 +557,10 @@ Once an axis is defined, the options panel will show:
 
 ### 3D Modeling
 1. **Transform Operations**
-   - Move shapes (G)
-   - Rotate objects (R)
-   - Scale elements
-   - Polar duplicate
+   - [Move shapes (G)](#shape-move-tool-g) ![Shape Move Tool](icons/Assembly_AxialMove.png)
+   - [Rotate objects (R)](#shape-rotate-tool-r) ![Shape Rotate Tool](icons/Draft_Rotate.png)
+   - Scale elements [`To-dos` not implemented]
+   - [Polar duplicate](#shape-polar-duplicate-tool) ![Polar Duplicate Tool](icons/Draft_PolarArray.png)
 
 #### Shape Move Tool (G)
 
@@ -633,6 +674,57 @@ The extrude tool allows you to create 3D solid shapes by extruding 2D sketch fac
 - **Base features**: Create the base feature of a part by extruding a profile
 - **Additive features**: Extrude additional features on existing parts
 - **Through features**: Extrude holes or cutouts by using the cut operation after extrusion
+
+#### Shape Polar Duplicate Tool
+
+![Polar Duplicate Tool](icons/Draft_PolarArray.png)
+
+The polar duplicate tool allows you to create multiple copies of selected shapes arranged in a circular pattern around a rotation center point.
+
+**Features:**
+- **Circular array**: Creates multiple copies of shapes arranged in a circular pattern
+- **Configurable angle**: Set the total angle for the pattern (default: 360 degrees)
+- **Configurable count**: Set the number of duplicate elements to create (default: 5)
+- **Rotation option**: Choose whether duplicates are rotated as they're copied (default: enabled)
+- **Combine option**: Choose whether to combine all duplicates into a single shape (default: enabled)
+- **Polar arm definition**: Define the rotation center and direction by clicking a point
+
+**How to use:**
+1. **Select shapes**: Select one or more shapes that you want to duplicate
+2. **Activate Polar Duplicate Tool**: Click the ![Draft_PolarArray](icons/Draft_PolarArray.png) icon to enter polar duplicate mode
+3. **Define polar arm**: Move the mouse to see a preview line (polar arm) from the shape center to the mouse cursor
+4. **Set rotation center**: Click to set the end point of the polar arm
+   - The start of the polar arm is at the center of the selected shape(s)
+   - The end point you click defines the rotation center and direction
+5. **Configure options** in the options panel:
+   - **Polar angle**: Set the total angle for the pattern (e.g., 360° for full circle, 180° for half circle)
+   - **Num Elms**: Set the number of duplicate elements to create
+   - **Rotate dups**: Checkbox to rotate each duplicate as it's copied (default: enabled)
+   - **Combine dups**: Checkbox to combine all duplicates into a single shape (default: enabled)
+6. **Create duplicates**: Click the **"Dup"** button in the options panel to create the polar duplicates
+
+**Options explained:**
+- **Polar angle**: The total angular span of the pattern. 360° creates a full circle, 180° creates a half circle, etc.
+- **Num Elms**: The number of duplicate elements to create. The original shape is not counted, so 5 elements means 5 copies plus the original.
+- **Rotate dups**: When enabled, each duplicate is rotated around its own center as it's positioned. When disabled, duplicates maintain their original orientation.
+- **Combine dups**: When enabled, all duplicates are fused together into a single shape. When disabled, each duplicate remains a separate shape.
+
+**Keyboard shortcuts:**
+- **Escape**: Cancel the current polar duplicate operation
+
+**Tips:**
+- The polar arm defines both the rotation center (at the arm's end point) and the starting direction
+- Use the polar duplicate tool to create patterns like gear teeth, radial arrays, or circular arrangements
+- The rotation center is determined by where you click to set the polar arm end point
+- If "Combine dups" is enabled, all duplicates are fused into one shape, which is useful for creating complex patterns
+- If "Rotate dups" is disabled, all duplicates maintain the same orientation as the original
+- The tool works with multiple selected shapes - all selected shapes will be duplicated together
+
+**Common use cases:**
+- Creating gear teeth or radial patterns
+- Arranging objects in a circular pattern
+- Creating symmetric designs with rotational symmetry
+- Duplicating features around a center point
 
 ### Other Feature Operations
 
