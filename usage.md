@@ -143,7 +143,7 @@ For detailed information on creating 2D geometry, see the [2D Sketching](#2d-ske
    - [Define operation axis](#operation-axis-tool) ![Operation Axis Tool](icons/Sketcher_MirrorSketch.png)
    - Toggle edge dimensions
    - Mirror sketches
-   - Create from face
+   - [Create sketch from planar face](#create-sketch-from-planar-face-tool) ![Create Sketch from Planar Face Tool](icons/Macro_FaceToSketch_48.png)
 
 #### Line Edge Creation Tools
 ![Line Edge Tool](icons/Sketcher_Element_Line_Edge.png)
@@ -555,6 +555,66 @@ Once an axis is defined, the options panel will show:
 - The axis can be redefined at any time by clicking again in operation axis mode
 - Use snap points for precise axis placement relative to existing geometry
 
+#### Create Sketch from Planar Face Tool
+
+The create sketch from planar face tool allows you to extract the boundary of a planar face from an existing 3D shape and create a new 2D sketch from it. This is useful for reverse engineering, modifying existing shapes, or creating new features based on existing geometry.
+
+![Create Sketch from Planar Face Tool](icons/Macro_FaceToSketch_48.png)
+
+**Features:**
+- **Face selection**: Click directly on a planar face from an existing 3D shape
+- **Automatic boundary extraction**: Extracts the outer wire (boundary) of the selected face
+- **New sketch creation**: Creates a new sketch with the face boundary as the initial geometry
+- **Planar face requirement**: Only works with planar (flat) faces - curved or complex surfaces are not supported
+- **Error handling**: Displays an error message if a non-planar face is selected
+
+**How to Use:**
+1. **Activate Tool**: Click the **Create Sketch from Planar Face** tool from the toolbar ![Macro_FaceToSketch_48](icons/Macro_FaceToSketch_48.png)
+2. **Select Face**: Click on a planar face from an existing 3D shape
+   - The face must be planar (flat) - curved surfaces like cylinders, spheres, or complex surfaces will show an error
+   - The system will automatically extract the outer boundary of the face
+3. **Sketch Created**: A new sketch is automatically created with:
+   - The face boundary as the initial wire
+   - The sketch plane aligned with the face plane
+   - The sketch name set to "Sketch from face"
+4. **Edit Sketch**: You can now edit the sketch using standard sketch tools (add edges, modify geometry, etc.)
+
+**Requirements:**
+- **Planar face only**: The selected face must be flat (planar). Common planar faces include:
+  - Flat surfaces on boxes or rectangular shapes
+  - Flat faces on imported STEP/IGES models
+  - Top or bottom faces of extruded shapes
+  - Any face that lies in a single plane
+
+**Error Handling:**
+- If you select a non-planar face, you will see an error message: "Error: Selected face is not planar. Please select a planar face."
+- The operation will be cancelled and no sketch will be created
+- Simply select a different face that is planar
+
+**Keyboard Shortcuts:**
+- **Escape**: Cancel the operation (if activated but not yet completed)
+
+**Tips:**
+- Use this tool to extract profiles from existing 3D models for modification or reference
+- The created sketch can be edited, modified, and then extruded to create new features
+- Useful for reverse engineering or working with imported CAD models
+- The sketch plane will be automatically aligned with the face plane
+- After creating the sketch, you can add additional geometry or modify the extracted boundary
+- The original shape remains unchanged - this tool only creates a new sketch based on the face boundary
+
+**Common Use Cases:**
+- **Reverse engineering**: Extract profiles from imported 3D models
+- **Feature modification**: Create a sketch from an existing face, modify it, and extrude to create a new feature
+- **Reference geometry**: Use existing face boundaries as reference for new sketches
+- **Model editing**: Extract a face boundary, modify it, and use it in boolean operations
+- **Workflow efficiency**: Quickly create sketches from existing geometry instead of manually recreating profiles
+
+**Technical Details:**
+- The tool extracts the outer wire (boundary) of the selected face using `BRepTools::OuterWire()`
+- The sketch plane is determined from the face's underlying surface geometry
+- Only faces with `Geom_Plane` surfaces are supported - other surface types will be rejected
+- The created sketch is added to the sketch list and can be managed like any other sketch
+
 ### 3D Modeling
 1. **Transform Operations**
    - [Move shapes (G)](#shape-move-tool-g) ![Shape Move Tool](icons/Assembly_AxialMove.png)
@@ -815,7 +875,7 @@ The polar duplicate tool allows you to create multiple copies of selected shapes
 
 ### Sketch Tools
 - ![Workbench_Sketcher_none](icons/Workbench_Sketcher_none.png) - Sketch inspection mode
-- ![Macro_FaceToSketch_48](icons/Macro_FaceToSketch_48.png) - Create sketch from face
+- ![Macro_FaceToSketch_48](icons/Macro_FaceToSketch_48.png) - Create sketch from planar face
 - ![Sketcher_MirrorSketch](icons/Sketcher_MirrorSketch.png) - Define operation axis
 - ![Sketcher_CreatePoint](icons/Sketcher_CreatePoint.png) - Add node
 - ![Sketcher_Element_Line_Edge](icons/Sketcher_Element_Line_Edge.png) - Add line edge
