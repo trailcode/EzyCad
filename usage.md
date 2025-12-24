@@ -132,18 +132,18 @@ For detailed information on creating 2D geometry, see the [2D Sketching](#2d-ske
 ### 2D Sketching
 1. **Basic Tools**
    - Add nodes
-   - [Create line edges](#line-edge-creation-tools) ![Line Edge Tool](icons/Sketcher_Element_Line_Edge.png)
-   - [Draw multi-line edges](#multi-line-edge-tool) ![Multi-line Edge Tool](icons/ls.png)
-   - [Add arc segments](#arc-segment-creation-tool) ![Arc Segment Tool](icons/Sketcher_Element_Arc_Edge.png)
-   - [Create circles](#circle-creation-tools) ![Circle Tool](icons/Sketcher_CreateCircle.png)
-   - [Draw rectangles and squares](#rectangle-and-square-creation-tools) ![Rectangle Tool](icons/Sketcher_CreateRectangle.png) ![Square Tool](icons/Sketcher_CreateSquare.png)
-   - [Add slots](#slot-creation-tool) ![Slot Tool](icons/Sketcher_CreateSlot.png)
+   - [Create line edges](#line-edge-creation-tools) <img src="icons/Sketcher_Element_Line_Edge.png" alt="Line Edge Tool" width="20" height="20">
+   - [Draw multi-line edges](#multi-line-edge-tool) <img src="icons/ls.png" alt="Multi-line Edge Tool" width="20" height="20">
+   - [Add arc segments](#arc-segment-creation-tool) <img src="icons/Sketcher_Element_Arc_Edge.png" alt="Arc Segment Tool" width="20" height="20">
+   - [Create circles](#circle-creation-tools) <img src="icons/Sketcher_CreateCircle.png" alt="Circle Tool" width="20" height="20">
+   - [Draw rectangles and squares](#rectangle-and-square-creation-tools) <img src="icons/Sketcher_CreateRectangle.png" alt="Rectangle Tool" width="20" height="20"> <img src="icons/Sketcher_CreateSquare.png" alt="Square Tool" width="20" height="20">
+   - [Add slots](#slot-creation-tool) <img src="icons/Sketcher_CreateSlot.png" alt="Slot Tool" width="20" height="20">
 
 2. **Sketch Operations**
-   - [Define operation axis](#operation-axis-tool) ![Operation Axis Tool](icons/Sketcher_MirrorSketch.png)
+   - [Define operation axis](#operation-axis-tool) <img src="icons/Sketcher_MirrorSketch.png" alt="Operation Axis Tool" width="20" height="20">
    - Toggle edge dimensions
    - Mirror sketches
-   - [Create sketch from planar face](#create-sketch-from-planar-face-tool) ![Create Sketch from Planar Face Tool](icons/Macro_FaceToSketch_48.png)
+   - [Create sketch from planar face](#create-sketch-from-planar-face-tool) <img src="icons/Macro_FaceToSketch_48.png" alt="Create Sketch from Planar Face Tool" width="20" height="20">
 
 #### Line Edge Creation Tools
 ![Line Edge Tool](icons/Sketcher_Element_Line_Edge.png)
@@ -194,7 +194,7 @@ The multi-line edge tool allows you to create multiple connected line segments i
 - **Flexible finalization**: Continue adding edges until you right-click to finalize the entire sequence
 
 **How to use:**
-1. Select the **Multi-line Edge** tool from the toolbar ![ls](icons/ls.png)
+1. Select the **Multi-line Edge** tool from the toolbar <img src="icons/ls.png" alt="ls" width="20" height="20">
 2. Click to set the first point (start of the first edge)
 3. Move the mouse to see a preview of the first edge
 4. Click to set the second point (end of first edge, start of second edge), or press **Tab** to enter an exact length value
@@ -271,7 +271,7 @@ The three-point circle tool is planned for future development. This feature woul
 - **Automatic center and radius calculation**: The system would compute the center and radius from the three points
 - **Geometric validation**: Ensure the three points are not collinear
 
-**Note**: The toolbar icon ![Sketcher_Create3PointCircle](icons/Sketcher_Create3PointCircle.png) exists but the functionality is not yet implemented.
+**Note**: The toolbar icon <img src="icons/Sketcher_Create3PointCircle.png" alt="Sketcher_Create3PointCircle" width="20" height="20"> exists but the functionality is not yet implemented.
 
 #### Circle Creation Workflow
 
@@ -309,7 +309,7 @@ The arc segment tool allows you to create circular arc edges by defining three p
 - **Unique points**: All three points must be different (cannot be coincident)
 
 **How to use:**
-1. Select the **Arc Segment** tool from the toolbar ![Sketcher_Element_Arc_Edge](icons/Sketcher_Element_Arc_Edge.png)
+1. Select the **Arc Segment** tool from the toolbar <img src="icons/Sketcher_Element_Arc_Edge.png" alt="Sketcher_Element_Arc_Edge" width="20" height="20">
 2. Click to set the start point of the arc (first point)
 3. Click to set a point on the arc between start and end (middle point)
 4. Move the mouse to see a preview of the arc
@@ -363,7 +363,7 @@ The square tool allows you to create perfect squares by defining a center point 
 - **Snap support**: Automatically snaps to existing nodes and geometry
 
 **How to use:**
-1. Select the **Square** tool from the toolbar ![Sketcher_CreateSquare](icons/Sketcher_CreateSquare.png)
+1. Select the **Square** tool from the toolbar <img src="icons/Sketcher_CreateSquare.png" alt="Sketcher_CreateSquare" width="20" height="20">
 2. Click to set the center point of the square
 3. Move the mouse to see a preview of the square
 4. Click to set the midpoint of one edge (this defines both the size and orientation), or press **Tab** to enter an exact side length value
@@ -394,7 +394,7 @@ The rectangle tool allows you to create rectangles by defining two opposite corn
 - **Automatic corner calculation**: The system automatically calculates the other two corners
 
 **How to use:**
-1. Select the **Rectangle** tool from the toolbar ![Sketcher_CreateRectangle](icons/Sketcher_CreateRectangle.png)
+1. Select the **Rectangle** tool from the toolbar <img src="icons/Sketcher_CreateRectangle.png" alt="Sketcher_CreateRectangle" width="20" height="20">
 2. Click to set the first corner point
 3. Move the mouse to see a preview of the rectangle
 4. Click to set the opposite corner point, or press **Tab** to enter exact distance values
@@ -426,7 +426,7 @@ The rectangle with center point tool allows you to create rectangles by defining
 - **Snap support**: Automatically snaps to existing nodes and geometry
 
 **How to use:**
-1. Select the **Rectangle with Center Point** tool from the toolbar ![Sketcher_CreateRectangle_Center](icons/Sketcher_CreateRectangle_Center.png)
+1. Select the **Rectangle with Center Point** tool from the toolbar <img src="icons/Sketcher_CreateRectangle_Center.png" alt="Sketcher_CreateRectangle_Center" width="20" height="20">
 2. Click to set the center point of the rectangle
 3. Move the mouse to see a preview of the rectangle
 4. Click to set a corner point (defines both size and orientation), or press **Tab** to enter exact distance values
@@ -465,7 +465,7 @@ The slot tool allows you to create an oblong or oval-shaped slot with rounded en
 - **Snap support**: Automatically snaps to existing nodes and geometry
 
 **How to use:**
-1. Select the **Slot** tool from the toolbar ![Sketcher_CreateSlot](icons/Sketcher_CreateSlot.png)
+1. Select the **Slot** tool from the toolbar <img src="icons/Sketcher_CreateSlot.png" alt="Sketcher_CreateSlot" width="20" height="20">
 2. Click to set the center point of the first arc (start of slot)
 3. Move the mouse to see a preview of the first edge
 4. Click to set the center point of the second arc (end of slot)
@@ -528,7 +528,7 @@ The operation axis tool allows you to define a reference line for mirroring and 
 - **Revolve operations**: Use the defined axis to revolve selected edges or faces
 
 **How to Use:**
-1. Select the **Operation Axis** tool from the toolbar ![Sketcher_MirrorSketch](icons/Sketcher_MirrorSketch.png)
+1. Select the **Operation Axis** tool from the toolbar <img src="icons/Sketcher_MirrorSketch.png" alt="Sketcher_MirrorSketch" width="20" height="20">
 2. Click to set the start point of the axis line
 3. Move the mouse to see a preview of the axis line
 4. Click to set the end point to finalize the axis
@@ -569,7 +569,7 @@ The create sketch from planar face tool allows you to extract the boundary of a 
 - **Error handling**: Displays an error message if a non-planar face is selected
 
 **How to Use:**
-1. **Activate Tool**: Click the **Create Sketch from Planar Face** tool from the toolbar ![Macro_FaceToSketch_48](icons/Macro_FaceToSketch_48.png)
+1. **Activate Tool**: Click the **Create Sketch from Planar Face** tool from the toolbar <img src="icons/Macro_FaceToSketch_48.png" alt="Macro_FaceToSketch_48" width="20" height="20">
 2. **Select Face**: Click on a planar face from an existing 3D shape
    - The face must be planar (flat) - curved surfaces like cylinders, spheres, or complex surfaces will show an error
    - The system will automatically extract the outer boundary of the face
@@ -617,10 +617,10 @@ The create sketch from planar face tool allows you to extract the boundary of a 
 
 ### 3D Modeling
 1. **Transform Operations**
-   - [Move shapes (G)](#shape-move-tool-g) ![Shape Move Tool](icons/Assembly_AxialMove.png)
-   - [Rotate objects (R)](#shape-rotate-tool-r) ![Shape Rotate Tool](icons/Draft_Rotate.png)
+   - [Move shapes (G)](#shape-move-tool-g) <img src="icons/Assembly_AxialMove.png" alt="Shape Move Tool" width="20" height="20">
+   - [Rotate objects (R)](#shape-rotate-tool-r) <img src="icons/Draft_Rotate.png" alt="Shape Rotate Tool" width="20" height="20">
    - Scale elements [`To-dos` not implemented]
-   - [Polar duplicate](#shape-polar-duplicate-tool) ![Polar Duplicate Tool](icons/Draft_PolarArray.png)
+   - [Polar duplicate](#shape-polar-duplicate-tool) <img src="icons/Draft_PolarArray.png" alt="Polar Duplicate Tool" width="20" height="20">
 
 #### Shape Move Tool (G)
 
@@ -634,7 +634,7 @@ The shape move tool allows you to reposition selected shapes in the 3D viewer wi
 - **Reset and Cancel:** Press `Esc` to cancel and revert to the original position at any time during the move operation.
 
 **How to Use:**
-1. **Activate Move Tool:** Select one or more shapes and press `G` or click the ![Assembly_AxialMove](icons/Assembly_AxialMove.png) icon.
+1. **Activate Move Tool:** Select one or more shapes and press `G` or click the <img src="icons/Assembly_AxialMove.png" alt="Assembly_AxialMove" width="20" height="20"> icon.
 2. **Constrain Movement (Optional):** Use the options panel to lock movement to a specific axis, or use keyboard shortcuts (e.g., `X`, `Y`, `Z`).
 
    ![Move constrain axis example](doc/gen/move_constrain_axis.png)
@@ -660,7 +660,7 @@ The shape rotate tool enables precise rotation of selected shapes around a speci
 - **Visual Feedback:** The rotation axis is displayed with color-coded indicators (Red for X, Green for Y, Blue for Z).
 
 **How to Use:**
-1. **Activate Rotate Tool:** Select one or more shapes and press `R` or click the ![Draft_Rotate](icons/Draft_Rotate.png) icon. You can also activate the tool and select the shape(s) to rotate afterwards.
+1. **Activate Rotate Tool:** Select one or more shapes and press `R` or click the <img src="icons/Draft_Rotate.png" alt="Draft_Rotate" width="20" height="20"> icon. You can also activate the tool and select the shape(s) to rotate afterwards.
 2. **Select Rotation Axis: (Optional)**
    
    ![Rotate constrain axis example](doc/gen/rotate_constrain_axis.png)
@@ -705,7 +705,7 @@ The extrude tool allows you to create 3D solid shapes by extruding 2D sketch fac
 - **Bidirectional extrusion**: The extrusion direction is determined by which side of the face plane you move the mouse to
 
 **How to Use:**
-1. **Activate Extrude Tool**: Press `E` or click the ![Design456_Extrude](icons/Design456_Extrude.png) icon to enter extrude mode
+1. **Activate Extrude Tool**: Press `E` or click the <img src="icons/Design456_Extrude.png" alt="Design456_Extrude" width="20" height="20"> icon to enter extrude mode
 2. **Select Face**: Click on a sketch face that you want to extrude
    - The face must be part of a closed sketch (forming a valid face)
    - The system will automatically select the face closest to the camera if multiple faces overlap
@@ -751,7 +751,7 @@ The polar duplicate tool allows you to create multiple copies of selected shapes
 
 **How to use:**
 1. **Select shapes**: Select one or more shapes that you want to duplicate
-2. **Activate Polar Duplicate Tool**: Click the ![Draft_PolarArray](icons/Draft_PolarArray.png) icon to enter polar duplicate mode
+2. **Activate Polar Duplicate Tool**: Click the <img src="icons/Draft_PolarArray.png" alt="Draft_PolarArray" width="20" height="20"> icon to enter polar duplicate mode
 3. **Define polar arm**: Move the mouse to see a preview line (polar arm) from the shape center to the mouse cursor
 4. **Set rotation center**: Click to set the end point of the polar arm
    - The start of the polar arm is at the center of the selected shape(s)
@@ -868,37 +868,37 @@ The polar duplicate tool allows you to create multiple copies of selected shapes
 ## Tool Icons
 
 ### Basic Operations
-- ![User](icons/User.png) - Inspection mode
-- ![Assembly_AxialMove](icons/Assembly_AxialMove.png) - Shape move (G)
-- ![Draft_Rotate](icons/Draft_Rotate.png) - Shape rotate
-- ![Part_Scale](icons/Part_Scale.png) - Shape scale
+- <img src="icons/User.png" alt="User" width="20" height="20"> - Inspection mode
+- <img src="icons/Assembly_AxialMove.png" alt="Assembly_AxialMove" width="20" height="20"> - Shape move (G)
+- <img src="icons/Draft_Rotate.png" alt="Draft_Rotate" width="20" height="20"> - Shape rotate
+- <img src="icons/Part_Scale.png" alt="Part_Scale" width="20" height="20"> - Shape scale
 
 ### Sketch Tools
-- ![Workbench_Sketcher_none](icons/Workbench_Sketcher_none.png) - Sketch inspection mode
-- ![Macro_FaceToSketch_48](icons/Macro_FaceToSketch_48.png) - Create sketch from planar face
-- ![Sketcher_MirrorSketch](icons/Sketcher_MirrorSketch.png) - Define operation axis
-- ![Sketcher_CreatePoint](icons/Sketcher_CreatePoint.png) - Add node
-- ![Sketcher_Element_Line_Edge](icons/Sketcher_Element_Line_Edge.png) - Add line edge
-- ![ls](icons/ls.png) - Add multi-line edge
-- ![Sketcher_Element_Arc_Edge](icons/Sketcher_Element_Arc_Edge.png) - Add arc circle
-- ![Sketcher_CreateSquare](icons/Sketcher_CreateSquare.png) - Add square
-- ![Sketcher_CreateRectangle](icons/Sketcher_CreateRectangle.png) - Add rectangle from two points
-- ![Sketcher_CreateRectangle_Center](icons/Sketcher_CreateRectangle_Center.png) - Add rectangle with center point
-- ![Sketcher_CreateCircle](icons/Sketcher_CreateCircle.png) - Add circle (center and radius)
-- ![Sketcher_Create3PointCircle](icons/Sketcher_Create3PointCircle.png) - Add circle from three points *(planned feature)*
-- ![Sketcher_CreateSlot](icons/Sketcher_CreateSlot.png) - Add slot
-- ![TechDraw_LengthDimension](icons/TechDraw_LengthDimension.png) - Toggle edge dimension annotation
+- <img src="icons/Workbench_Sketcher_none.png" alt="Workbench_Sketcher_none" width="20" height="20"> - Sketch inspection mode
+- <img src="icons/Macro_FaceToSketch_48.png" alt="Macro_FaceToSketch_48" width="20" height="20"> - Create sketch from planar face
+- <img src="icons/Sketcher_MirrorSketch.png" alt="Sketcher_MirrorSketch" width="20" height="20"> - Define operation axis
+- <img src="icons/Sketcher_CreatePoint.png" alt="Sketcher_CreatePoint" width="20" height="20"> - Add node
+- <img src="icons/Sketcher_Element_Line_Edge.png" alt="Sketcher_Element_Line_Edge" width="20" height="20"> - Add line edge
+- <img src="icons/ls.png" alt="ls" width="20" height="20"> - Add multi-line edge
+- <img src="icons/Sketcher_Element_Arc_Edge.png" alt="Sketcher_Element_Arc_Edge" width="20" height="20"> - Add arc circle
+- <img src="icons/Sketcher_CreateSquare.png" alt="Sketcher_CreateSquare" width="20" height="20"> - Add square
+- <img src="icons/Sketcher_CreateRectangle.png" alt="Sketcher_CreateRectangle" width="20" height="20"> - Add rectangle from two points
+- <img src="icons/Sketcher_CreateRectangle_Center.png" alt="Sketcher_CreateRectangle_Center" width="20" height="20"> - Add rectangle with center point
+- <img src="icons/Sketcher_CreateCircle.png" alt="Sketcher_CreateCircle" width="20" height="20"> - Add circle (center and radius)
+- <img src="icons/Sketcher_Create3PointCircle.png" alt="Sketcher_Create3PointCircle" width="20" height="20"> - Add circle from three points *(planned feature)*
+- <img src="icons/Sketcher_CreateSlot.png" alt="Sketcher_CreateSlot" width="20" height="20"> - Add slot
+- <img src="icons/TechDraw_LengthDimension.png" alt="TechDraw_LengthDimension" width="20" height="20"> - Toggle edge dimension annotation
 
 ### 3D Operations
-- ![Design456_Extrude](icons/Design456_Extrude.png) - Extrude sketch face (E)
-- ![PartDesign_Chamfer](icons/PartDesign_Chamfer.png) - Chamfer
-- ![PartDesign_Fillet](icons/PartDesign_Fillet.png) - Fillet
-- ![Draft_PolarArray](icons/Draft_PolarArray.png) - Shape polar duplicate
+- <img src="icons/Design456_Extrude.png" alt="Design456_Extrude" width="20" height="20"> - Extrude sketch face (E)
+- <img src="icons/PartDesign_Chamfer.png" alt="PartDesign_Chamfer" width="20" height="20"> - Chamfer
+- <img src="icons/PartDesign_Fillet.png" alt="PartDesign_Fillet" width="20" height="20"> - Fillet
+- <img src="icons/Draft_PolarArray.png" alt="Draft_PolarArray" width="20" height="20"> - Shape polar duplicate
 
 ### Boolean Operations
-- ![Part_Cut](icons/Part_Cut.png) - Shape cut
-- ![Part_Fuse](icons/Part_Fuse.png) - Shape fuse
-- ![Part_Common](icons/Part_Common.png) - Shape common
+- <img src="icons/Part_Cut.png" alt="Part_Cut" width="20" height="20"> - Shape cut
+- <img src="icons/Part_Fuse.png" alt="Part_Fuse" width="20" height="20"> - Shape fuse
+- <img src="icons/Part_Common.png" alt="Part_Common" width="20" height="20"> - Shape common
 
 ---
 
