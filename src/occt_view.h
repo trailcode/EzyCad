@@ -104,6 +104,7 @@ class Occt_view : protected AIS_ViewController
 
   // Dimension related
   void                    dimension_input(const ScreenCoords& screen_coords);
+  void                    angle_input(const ScreenCoords& screen_coords);
   double                  get_dimension_scale() const;
   bool                    get_show_dim_input() const;
   void                    set_show_dim_input(bool show);

@@ -18,6 +18,7 @@
 
 #include "geom.h"
 #include "gui.h"
+#include "imgui.h"
 #include "occt_view.h"
 #include "utl.h"
 
@@ -96,6 +97,12 @@ void Sketch::sketch_pt_move(const ScreenCoords& screen_coords)
 void Sketch::dimension_input(const ScreenCoords& screen_coords)
 {
   m_show_dim_input = true;
+  sketch_pt_move(screen_coords);
+}
+
+void Sketch::angle_input(const ScreenCoords& screen_coords)
+{
+  m_show_angle_input = true;
   sketch_pt_move(screen_coords);
 }
 
@@ -261,18 +268,47 @@ void Sketch::move_line_string_pt_(const ScreenCoords& screen_coords)
       // Cannot have a edge with zero length
       return;
 
-    edge.node_idx_b = node_idx_b;
+    gp_Pnt2d final_pt_b = pt_b;
 
-    double dist = pt_a.Distance(pt_b) / m_view.get_dimension_scale();
+    // Apply angle constraint if set
+    if (m_entered_edge_angle.has_value())
+    {
+      // Calculate direction based on angle (0 degrees = positive X axis, counterclockwise)
+      double angle_rad = to_radians(*m_entered_edge_angle);
+      gp_Dir2d constrained_dir(std::cos(angle_rad), std::sin(angle_rad));
+
+      // If distance is also constrained, use that
+      if (m_entered_edge_len.has_value())
+      {
+        // Use the constrained distance
+        final_pt_b = gp_Pnt2d(pt_a).Translated(gp_Vec2d(constrained_dir) * m_entered_edge_len->len);
+      }
+      else
+      {
+        // Use the distance from the mouse position but constrain the angle
+        double dist = pt_a.Distance(pt_b);
+        final_pt_b = gp_Pnt2d(pt_a).Translated(gp_Vec2d(constrained_dir) * dist);
+      }
+    }
+    // Apply distance constraint if set (and angle is not set)
+    else if (m_entered_edge_len.has_value())
+    {
+      final_pt_b = gp_Pnt2d(pt_a).Translated(gp_Vec2d(m_entered_edge_len->dir) * m_entered_edge_len->len);
+    }
+
+    // Update node_idx_b based on the final point
+    edge.node_idx_b = m_nodes.try_get_node_idx_snap(final_pt_b);
+
+    double dist = pt_a.Distance(final_pt_b) / m_view.get_dimension_scale();
     m_ctx.Remove(m_tmp_dim_anno, true);
-    m_tmp_dim_anno = create_distance_annotation(pt_a, pt_b, m_pln);
+    m_tmp_dim_anno = create_distance_annotation(pt_a, final_pt_b, m_pln);
     m_tmp_dim_anno->SetCustomValue(dist);
     m_ctx.Display(m_tmp_dim_anno, true);
 
     if (m_show_dim_input)
     {
-      gp_Dir2d     edge_dir = get_unit_dir(pt_a, pt_b);
-      ScreenCoords spos     = m_view.get_screen_coords(to_3d(m_pln, center_point(pt_a, pt_b)));
+      gp_Dir2d     edge_dir = get_unit_dir(pt_a, final_pt_b);
+      ScreenCoords spos     = m_view.get_screen_coords(to_3d(m_pln, center_point(pt_a, final_pt_b)));
 
       auto l = [&, edge_dir](float new_dist, bool is_finial)
       {
@@ -286,7 +322,29 @@ void Sketch::move_line_string_pt_(const ScreenCoords& screen_coords)
       m_view.gui().set_dist_edit(float(dist), std::move(std::function<void(float, bool)>(l)), spos);
     }
 
-    update_edge_shp_(edge, pt_a, pt_b);
+    if (m_show_angle_input)
+    {
+      // Calculate current angle from pt_a to final_pt_b
+      gp_Vec2d vec(pt_a, final_pt_b);
+      double current_angle_rad = std::atan2(vec.Y(), vec.X());
+      double current_angle_deg = to_degrees(current_angle_rad);
+
+      ScreenCoords spos = m_view.get_screen_coords(to_3d(m_pln, center_point(pt_a, final_pt_b)));
+
+      auto l = [&](float new_angle, bool is_finial)
+      {
+        m_entered_edge_angle = new_angle;
+        m_show_angle_input = !is_finial;
+        // Recalculate the point with the new angle using current mouse position
+        // Get current mouse position from ImGui
+        ScreenCoords current_pos(glm::dvec2(ImGui::GetIO().MousePos.x, ImGui::GetIO().MousePos.y));
+        sketch_pt_move(current_pos);
+      };
+
+      m_view.gui().set_angle_edit(float(current_angle_deg), std::move(std::function<void(float, bool)>(l)), spos);
+    }
+
+    update_edge_shp_(edge, pt_a, final_pt_b);
   };
   move_sketch_pt_(screen_coords, l);
 }
@@ -808,6 +866,7 @@ void Sketch::toggle_edge_dim(const ScreenCoords& screen_coords)
 void Sketch::finalize_elm()
 {
   m_show_dim_input = false;
+  m_show_angle_input = false;
   m_ctx.Remove(m_tmp_dim_anno, true);
 
   switch (get_mode())
@@ -1457,7 +1516,7 @@ bool Sketch::clear_tmps_()
   }
 
   bool operation_canceled = m_tmp_edges.size();
-  clear_all(m_tmp_node_idxs, m_tmp_shp, m_tmp_edges, m_entered_edge_len, m_show_dim_input);
+  clear_all(m_tmp_node_idxs, m_tmp_shp, m_tmp_edges, m_entered_edge_len, m_show_dim_input, m_entered_edge_angle, m_show_angle_input);
 
   return operation_canceled;
 }
