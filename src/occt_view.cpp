@@ -138,7 +138,7 @@ void Occt_view::init_viewer()
        aLightIter.More();
        aLightIter.Next())
   {
-    const Handle(V3d_Light)& aLight = aLightIter.Value();
+    const Handle(V3d_Light) & aLight = aLightIter.Value();
     if (aLight->Type() == Graphic3d_TypeOfLightSource_Directional)
       aLight->SetCastShadows(true);
   }
@@ -436,6 +436,7 @@ void Occt_view::revolve_selected(const double angle)
 void Occt_view::create_sketch_from_planar_face_(const ScreenCoords& screen_coords)
 {
   if (auto face = get_face_(screen_coords); face)
+  {
     if (auto pln = plane_from_face(*face); pln)
     {
       // Get the outer wire of the face
@@ -449,6 +450,7 @@ void Occt_view::create_sketch_from_planar_face_(const ScreenCoords& screen_coord
     }
     else
       gui().show_message("Error: Selected face is not planar. Please select a planar face.");
+  }
 }
 
 void Occt_view::finalize_sketch_extrude_()
@@ -654,6 +656,11 @@ void Occt_view::dimension_input(const ScreenCoords& screen_coords)
       curr_sketch().dimension_input(screen_coords);
       break;
   }
+}
+
+void Occt_view::angle_input(const ScreenCoords& screen_coords)
+{
+  curr_sketch().angle_input(screen_coords);
 }
 
 double Occt_view::get_dimension_scale() const
@@ -1039,7 +1046,7 @@ std::string Occt_view::to_json() const
   using namespace nlohmann;
   json  j;
   json& sketches = j["sketches"] = json::array();
-  json& shps     = j["shapes"]   = json::array();
+  json& shps = j["shapes"] = json::array();
 
   const auto pnt_to_json = [](Standard_Real x, Standard_Real y, Standard_Real z)
   {
@@ -1145,52 +1152,52 @@ void Occt_view::load(const std::string& json_str)
     m_ctx->Display(shp, AIS_Shaded, 0, true);
   }
 
-   // ---------------------------------------------------------------------------
-   // Restore view / camera state if present
-   if (!m_view.IsNull() && j.contains("view") && j["view"].is_object())
-   {
-     const json& view_json = j["view"];
-     try
-     {
-       if (view_json.contains("eye") && view_json["eye"].is_object())
-       {
-         gp_Pnt eye = from_json_pnt(view_json["eye"]);
-         m_view->SetEye(eye.X(), eye.Y(), eye.Z());
-       }
+  // ---------------------------------------------------------------------------
+  // Restore view / camera state if present
+  if (!m_view.IsNull() && j.contains("view") && j["view"].is_object())
+  {
+    const json& view_json = j["view"];
+    try
+    {
+      if (view_json.contains("eye") && view_json["eye"].is_object())
+      {
+        gp_Pnt eye = from_json_pnt(view_json["eye"]);
+        m_view->SetEye(eye.X(), eye.Y(), eye.Z());
+      }
 
-       if (view_json.contains("at") && view_json["at"].is_object())
-       {
-         gp_Pnt at = from_json_pnt(view_json["at"]);
-         m_view->SetAt(at.X(), at.Y(), at.Z());
-       }
+      if (view_json.contains("at") && view_json["at"].is_object())
+      {
+        gp_Pnt at = from_json_pnt(view_json["at"]);
+        m_view->SetAt(at.X(), at.Y(), at.Z());
+      }
 
-       if (view_json.contains("up") && view_json["up"].is_object())
-       {
-         gp_Dir up = from_json_dir(view_json["up"]);
-         m_view->SetUp(up.X(), up.Y(), up.Z());
-       }
+      if (view_json.contains("up") && view_json["up"].is_object())
+      {
+        gp_Dir up = from_json_dir(view_json["up"]);
+        m_view->SetUp(up.X(), up.Y(), up.Z());
+      }
 
-       if (view_json.contains("proj") && view_json["proj"].is_object())
-       {
-         gp_Dir dir = from_json_dir(view_json["proj"]);
-         m_view->SetProj(dir.X(), dir.Y(), dir.Z());
-       }
+      if (view_json.contains("proj") && view_json["proj"].is_object())
+      {
+        gp_Dir dir = from_json_dir(view_json["proj"]);
+        m_view->SetProj(dir.X(), dir.Y(), dir.Z());
+      }
 
-       if (view_json.contains("scale") && view_json["scale"].is_number())
-       {
-         const Standard_Real scale = view_json["scale"].get<Standard_Real>();
-         if (scale > Precision::Confusion())
-           m_view->SetScale(scale);
-       }
+      if (view_json.contains("scale") && view_json["scale"].is_number())
+      {
+        const Standard_Real scale = view_json["scale"].get<Standard_Real>();
+        if (scale > Precision::Confusion())
+          m_view->SetScale(scale);
+      }
 
-       m_view->Redraw();
-       m_ctx->UpdateCurrentViewer();
-     }
-     catch (const std::exception&)
-     {
-       // Ignore view restoration errors; project geometry has already loaded.
-     }
-   }
+      m_view->Redraw();
+      m_ctx->UpdateCurrentViewer();
+    }
+    catch (const std::exception&)
+    {
+      // Ignore view restoration errors; project geometry has already loaded.
+    }
+  }
 
   // Ensure correct state
   gui().set_mode(Mode::Normal);

@@ -157,21 +157,33 @@ The single line edge tool allows you to create straight line segments between tw
 - **Two-point creation**: Click to set the start point, then click to set the end point
 - **Real-time preview**: See the line shape while moving the mouse
 - **Precise length control**: Use the distance input dialog (Tab key) for exact line lengths
-- **Snap support**: Automatically snaps to existing nodes and geometry
+- **Angle constraint**: Use the angle input dialog (Shift+Tab) to constrain the line to a specific angle
+- **Snap support**: Automatically snaps to existing nodes and geometry (disabled when angle constraint is active)
 - **Dimension annotations**: Optional length dimensions can be displayed
 
 **How to use:**
 1. Select the **Line Edge** tool from the toolbar (line icon)
 2. Click to set the start point of the line
 3. Move the mouse to see a preview of the line
-4. Click to set the end point, or press **Tab** to enter an exact length value
+4. Click to set the end point, or use input dialogs for precise control:
+   - Press **Tab** to enter an exact length value
+   - Press **Shift+Tab** to enter an exact angle value (in degrees)
 5. The line edge will be created and added to your sketch
 
 **Keyboard shortcuts:**
 - **Tab**: Open distance input dialog for precise length control
+- **Shift+Tab**: Open angle input dialog to constrain the line to a specific angle (after first point is set)
 - **Escape**: Cancel the current line creation
-- **Enter**: Finalize the line (if using distance input)
+- **Enter**: Finalize the line (if using distance or angle input)
 - **Right-click**: Complete the current line and start a new one
+
+**Angle Constraint:**
+- After setting the first point, press **Shift+Tab** to open the angle input dialog
+- Enter the desired angle in degrees (0° = horizontal right, 90° = vertical up, counterclockwise)
+- Once the angle is entered, the line segment is constrained to that angle
+- You can still move the mouse to adjust the length while maintaining the angle
+- The distance input (Tab) can still be used in combination with the angle constraint
+- **Note**: When an angle constraint is active, snapping to nodes is disabled to maintain the angle precision
 
 **Tips:**
 - Use the snap feature to create lines that connect precisely to existing geometry
@@ -803,7 +815,8 @@ The polar duplicate tool allows you to create multiple copies of selected shapes
 - `Ctrl+Shift+S`: Save as
 - `Esc`: Cancel current operation
 - `Enter`: Confirm current operation
-- `Tab`: Dimension input
+- `Tab`: Distance/dimension input
+- `Shift+Tab`: Angle input (for line edges with angle constraint)
 - `Delete`: Remove selected elements
 
 ### Modeling Shortcuts
@@ -833,8 +846,9 @@ The polar duplicate tool allows you to create multiple copies of selected shapes
 ### Efficient Modeling
 1. Use keyboard shortcuts for common operations
 2. Utilize the toolbar for quick access to tools
-3. Take advantage of the dimension input feature
-4. Use the log window to track operations
+3. Take advantage of the dimension input feature (`Tab` for distance, `Shift+Tab` for angle)
+4. Use angle constraints for precise angular control when creating line edges
+5. Use the log window to track operations
 
 ### Troubleshooting
 1. Check the log window for error messages

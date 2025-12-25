@@ -166,7 +166,6 @@ if(CMAKE_CXX_COMPILER_ID STREQUAL "Emscripten")
             -s USE_BOOST_HEADERS=1 \
             -fexceptions \
             -gsource-map \
-            --source-map-base http://localhost:8000/ \
             -O0"
         )
         set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} \
