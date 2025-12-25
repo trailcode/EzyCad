@@ -248,7 +248,9 @@ void Sketch::add_line_string_pt_(const ScreenCoords& screen_coords, Linestring_t
         }
     }
 
-    // Start a new edge
+    // Start a new edge - clear constraints for fresh start
+    m_entered_edge_angle = std::nullopt;
+    m_entered_edge_len = std::nullopt;
     m_tmp_edges.push_back({node_idx});
   };
   add_sketch_pt_(screen_coords, 1, l);
@@ -268,7 +270,13 @@ void Sketch::move_line_string_pt_(const ScreenCoords& screen_coords)
       // Cannot have a edge with zero length
       return;
 
-    gp_Pnt2d final_pt_b = pt_b;
+    // First, check for snap points at the mouse position
+    // This ensures snap points are honored even with angle constraints
+    gp_Pnt2d snapped_pt_b = pt_b;
+    std::optional<size_t> snapped_node_idx = m_nodes.try_get_node_idx_snap(snapped_pt_b);
+    
+    gp_Pnt2d final_pt_b = snapped_pt_b;
+    bool use_snap_point = snapped_node_idx.has_value();
 
     // Apply angle constraint if set
     if (m_entered_edge_angle.has_value())
@@ -282,22 +290,48 @@ void Sketch::move_line_string_pt_(const ScreenCoords& screen_coords)
       {
         // Use the constrained distance
         final_pt_b = gp_Pnt2d(pt_a).Translated(gp_Vec2d(constrained_dir) * m_entered_edge_len->len);
+        use_snap_point = false;  // Distance constraint takes priority
       }
       else
       {
-        // Use the distance from the mouse position but constrain the angle
-        double dist = pt_a.Distance(pt_b);
-        final_pt_b = gp_Pnt2d(pt_a).Translated(gp_Vec2d(constrained_dir) * dist);
+        // Project the snapped point onto the angle-constrained line
+        // Find the distance along the constrained direction to the snapped point
+        gp_Vec2d to_snapped(snapped_pt_b.X() - pt_a.X(), snapped_pt_b.Y() - pt_a.Y());
+        double dist_along_constrained = to_snapped.Dot(gp_Vec2d(constrained_dir));
+        
+        // Calculate the point on the constrained line at this distance
+        gp_Pnt2d constrained_pt = gp_Pnt2d(pt_a).Translated(gp_Vec2d(constrained_dir) * dist_along_constrained);
+        
+        // Check if the snapped point is close to the constrained line
+        // If so, use the snap point (snap takes priority)
+        double dist_to_constrained_line = snapped_pt_b.Distance(constrained_pt);
+        double snap_tolerance = pt_a.Distance(snapped_pt_b) * 0.05;  // 5% of distance as tolerance
+        
+        if (use_snap_point && dist_to_constrained_line < snap_tolerance)
+        {
+          // Use the snap point - it's close enough to the constrained line
+          final_pt_b = snapped_pt_b;
+        }
+        else
+        {
+          // Use the constrained point
+          final_pt_b = constrained_pt;
+          use_snap_point = false;
+        }
       }
     }
     // Apply distance constraint if set (and angle is not set)
     else if (m_entered_edge_len.has_value())
     {
       final_pt_b = gp_Pnt2d(pt_a).Translated(gp_Vec2d(m_entered_edge_len->dir) * m_entered_edge_len->len);
+      use_snap_point = false;  // Distance constraint takes priority
     }
 
-    // Update node_idx_b based on the final point
-    edge.node_idx_b = m_nodes.try_get_node_idx_snap(final_pt_b);
+    // Update node_idx_b - use snapped node if we're using the snap point
+    if (use_snap_point)
+      edge.node_idx_b = snapped_node_idx;
+    else
+      edge.node_idx_b = m_nodes.try_get_node_idx_snap(final_pt_b);
 
     double dist = pt_a.Distance(final_pt_b) / m_view.get_dimension_scale();
     m_ctx.Remove(m_tmp_dim_anno, true);
@@ -324,12 +358,13 @@ void Sketch::move_line_string_pt_(const ScreenCoords& screen_coords)
 
     if (m_show_angle_input)
     {
-      // Calculate current angle from pt_a to final_pt_b
-      gp_Vec2d vec(pt_a, final_pt_b);
+      ScreenCoords spos = m_view.get_screen_coords(to_3d(m_pln, center_point(pt_a, final_pt_b)));
+
+      // Calculate current angle from pt_a to actual mouse position (pt_b), not constrained position
+      // This ensures we show the actual angle the user is moving to
+      gp_Vec2d vec(pt_a, pt_b);
       double current_angle_rad = std::atan2(vec.Y(), vec.X());
       double current_angle_deg = to_degrees(current_angle_rad);
-
-      ScreenCoords spos = m_view.get_screen_coords(to_3d(m_pln, center_point(pt_a, final_pt_b)));
 
       auto l = [&](float new_angle, bool is_finial)
       {
@@ -341,7 +376,9 @@ void Sketch::move_line_string_pt_(const ScreenCoords& screen_coords)
         sketch_pt_move(current_pos);
       };
 
-      m_view.gui().set_angle_edit(float(current_angle_deg), std::move(std::function<void(float, bool)>(l)), spos);
+      // Use the current mouse angle if angle hasn't been set yet, otherwise use the set angle
+      float angle_to_show = m_entered_edge_angle.has_value() ? float(*m_entered_edge_angle) : float(current_angle_deg);
+      m_view.gui().set_angle_edit(angle_to_show, std::move(std::function<void(float, bool)>(l)), spos);
     }
 
     update_edge_shp_(edge, pt_a, final_pt_b);
@@ -867,6 +904,7 @@ void Sketch::finalize_elm()
 {
   m_show_dim_input = false;
   m_show_angle_input = false;
+  m_entered_edge_angle = std::nullopt;
   m_ctx.Remove(m_tmp_dim_anno, true);
 
   switch (get_mode())

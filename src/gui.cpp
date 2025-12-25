@@ -463,7 +463,10 @@ void GUI::dist_edit_()
 void GUI::set_angle_edit(float angle, std::function<void(float, bool)>&& callback, const std::optional<ScreenCoords> screen_coords)
 {
   DBG_MSG("angle " << angle);
-  m_angle_val = angle;
+  // Only update the value if the input isn't already active (to avoid overwriting user input)
+  if (!m_angle_callback)
+    m_angle_val = angle;
+  
   if (screen_coords.has_value())
     m_angle_edit_loc = *screen_coords;
   else
