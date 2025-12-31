@@ -549,7 +549,7 @@ void Sketch::mirror_selected_edges()
   const std::vector<Edge> mirror_edges = get_selected_edges_();
   if (mirror_edges.empty())
   {
-    m_view.gui().show_message("Error: No edges selected. Please select edges to mirror.");
+    m_view.gui().show_message(ERROR_NO_EDGES_SELECTED);
     return;
   }
 
