@@ -64,11 +64,11 @@ void Sketch::add_sketch_pt(const ScreenCoords& screen_coords)
     case Mode::Sketch_add_rectangle_center_pt:
     case Mode::Sketch_add_square:
     case Mode::Sketch_add_circle:
-    case Mode::Sketch_add_edge:                 add_line_string_pt_  (screen_coords, Linestring_type::Single); break;
-    case Mode::Sketch_add_slot:                 add_line_string_pt_  (screen_coords, Linestring_type::Two); break;
-    case Mode::Sketch_add_multi_edges:          add_line_string_pt_  (screen_coords, Linestring_type::Multiple); break;
-    case Mode::Sketch_add_seg_circle_arc:       add_arc_circle_pt_   (screen_coords); break;
-    case Mode::Sketch_operation_axis:           add_operation_axis_pt_  (screen_coords); break;
+    case Mode::Sketch_add_edge:           add_line_string_pt_   (screen_coords, Linestring_type::Single);   break;
+    case Mode::Sketch_add_slot:           add_line_string_pt_   (screen_coords, Linestring_type::Two);      break;
+    case Mode::Sketch_add_multi_edges:    add_line_string_pt_   (screen_coords, Linestring_type::Multiple); break;
+    case Mode::Sketch_add_seg_circle_arc: add_arc_circle_pt_    (screen_coords);                            break;
+    case Mode::Sketch_operation_axis:     add_operation_axis_pt_(screen_coords);                            break;
     default:
       EZY_ASSERT(false);
       // clang-format on
@@ -189,7 +189,9 @@ void Sketch::update_face_style_(AIS_Shape_ptr& shp) const
 void Sketch::update_edge_shp_(Edge& edge, const gp_Pnt2d& pt_a, const gp_Pnt2d& pt_b)
 {
   EZY_ASSERT(unique(pt_a, pt_b));
+
   TopoDS_Shape edge_shape = BRepBuilderAPI_MakeEdge(to_3d(m_pln, pt_a), to_3d(m_pln, pt_b)).Edge();
+  
   if (edge.shp)
   {
     edge.shp->Set(edge_shape);
@@ -224,7 +226,7 @@ void Sketch::on_enter()
 // Line string related
 void Sketch::add_line_string_pt_(const ScreenCoords& screen_coords, Linestring_type linestring_type)
 {
-  auto l = [&](size_t node_idx)
+  auto on_line_string = [&](size_t node_idx)
   {
     if (m_tmp_edges.size())
     {
@@ -253,7 +255,8 @@ void Sketch::add_line_string_pt_(const ScreenCoords& screen_coords, Linestring_t
     m_entered_edge_len = std::nullopt;
     m_tmp_edges.push_back({node_idx});
   };
-  add_sketch_pt_(screen_coords, 1, l);
+
+  add_sketch_pt_(screen_coords, 1, on_line_string);
 }
 
 void Sketch::move_line_string_pt_(const ScreenCoords& screen_coords)
@@ -365,6 +368,7 @@ void Sketch::move_line_string_pt_(const ScreenCoords& screen_coords)
 
     update_edge_shp_(edge, pt_a, final_pt_b);
   };
+
   move_sketch_pt_(screen_coords, l);
 }
 
@@ -390,11 +394,6 @@ void Sketch::finalize_edges_()
 
     if (m_nodes[e.node_idx_b].is_midpoint)
       split_mid_points.push_back(*e.node_idx_b);
-
-    if (!m_nodes[e.node_idx_mid].is_midpoint)
-    {
-      int hi = 0;
-    }
   }
 
   append(m_edges, m_tmp_edges);
@@ -481,11 +480,13 @@ void Sketch::move_arc_circle_pt_(const ScreenCoords& screen_coords)
 void Sketch::move_square_pt_(const ScreenCoords& screen_coords)
 {
   move_line_string_pt_(screen_coords);
+  
   auto l = [&](Edge& e, const gp_Pnt2d& pt_a, const gp_Pnt2d& pt_b)
   {
     TopoDS_Wire square = make_square_wire(m_pln, pt_a, *m_last_pt);
     show(m_ctx, m_tmp_shp, square);
   };
+
   last_edge_(l);
 }
 
@@ -501,13 +502,14 @@ void Sketch::finalize_square_()
     clear_tmps_();
     update_faces_();
   };
+
   last_edge_(l);
 }
 
 void Sketch::move_rectangle_pt_(const ScreenCoords& screen_coords)
 {
   move_line_string_pt_(screen_coords);
-  // DBG_MSG(m_tmp_edges.size());
+  
   auto l = [&](Edge& e, const gp_Pnt2d& pt_a, const gp_Pnt2d& pt_b)
   {
     EZY_ASSERT(m_tmp_edges.size());
@@ -524,6 +526,7 @@ void Sketch::move_rectangle_pt_(const ScreenCoords& screen_coords)
       m_tmp_shp.Nullify();
     }
   };
+
   last_edge_(l);
 }
 
@@ -549,6 +552,7 @@ void Sketch::finalize_rectangle_()
       m_tmp_edges.push_back({*e.node_idx_b});
     }
   };
+
   last_edge_(l);
 }
 
@@ -617,14 +621,13 @@ bool Sketch::has_operation_axis() const
 
 void Sketch::mirror_selected_edges()
 {
-  if (!m_operation_axis.has_value())
-    // TODO report error!
-    return;
+  EZY_ASSERT(m_operation_axis.has_value());
 
   const std::vector<Edge> mirror_edges = get_selected_edges_();
   if (mirror_edges.empty())
   {
-    // TODO present error.
+    m_view.gui().show_message(ERROR_NO_EDGES_SELECTED);
+    return;
   }
 
   EZY_ASSERT(!m_operation_axis->shp.IsNull());

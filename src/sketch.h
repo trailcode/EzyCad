@@ -86,6 +86,9 @@ class Sketch
   void toggle_edge_dim(const ScreenCoords& screen_coords);
   void dbg_append_str(std::string& out) const;
 
+  // Error messages
+  static constexpr const char* ERROR_NO_EDGES_SELECTED = "Error: No edges selected. Please select edges to mirror.";
+
   // Sketch name related.
   const std::string& get_name() const;
   void               set_name(const std::string& name);
