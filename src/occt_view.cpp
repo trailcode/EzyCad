@@ -658,6 +658,11 @@ void Occt_view::dimension_input(const ScreenCoords& screen_coords)
   }
 }
 
+void Occt_view::angle_input(const ScreenCoords& screen_coords)
+{
+  curr_sketch().angle_input(screen_coords);
+}
+
 double Occt_view::get_dimension_scale() const
 {
   return m_dimension_scale;

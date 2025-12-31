@@ -28,6 +28,7 @@ class GUI_access
  public:
   static void       set_view(GUI& gui, std::unique_ptr<Occt_view>& view);
   static Occt_view& get_view(GUI& gui);
+  static std::string get_message(const GUI& gui);
 };
 
 // Test fixture for Sketch tests
@@ -119,6 +120,11 @@ void GUI_access::set_view(GUI& gui, std::unique_ptr<Occt_view>& view)
 Occt_view& GUI_access::get_view(GUI& gui)
 {
   return *gui.m_view;
+}
+
+std::string GUI_access::get_message(const GUI& gui)
+{
+  return gui.m_message;
 }
 
 inline void Sketch_access::get_originating_face_snp_pts_3d_(Sketch& sketch, std::vector<gp_Pnt>& out)
@@ -1292,4 +1298,40 @@ TEST_F(Sketch_test, UpdateFaces_DanglingEdgesRemoval)
       total_edges++;
   }
   EXPECT_EQ(total_edges, 12) << "All 12 edges (4 rectangle + 8 dangling) should still exist in the sketch";
+}
+
+// Test mirror_selected_edges error handling when no edges are selected
+TEST_F(Sketch_test, MirrorSelectedEdges_NoEdgesSelected)
+{
+  gp_Pln default_plane(gp::Origin(), gp::DZ());
+  Sketch sketch("TestSketch", view(), default_plane);
+
+  // Set mode to operation axis
+  gui().set_mode(Mode::Sketch_operation_axis);
+
+  // Create an operation axis by adding two points
+  // Note: The second point automatically finalizes the operation axis (Single linestring type)
+  gp_Pnt2d axis_start(0.0, 0.0);
+  gp_Pnt2d axis_end(10.0, 0.0);
+  
+  ScreenCoords screen_coords_start(glm::dvec2(axis_start.X(), axis_start.Y()));
+  sketch.add_sketch_pt(screen_coords_start);
+  
+  ScreenCoords screen_coords_end(glm::dvec2(axis_end.X(), axis_end.Y()));
+  sketch.add_sketch_pt(screen_coords_end);
+  // finalize_elm() is called automatically when the second point is added for Single linestring type
+
+  // Verify operation axis was created
+  EXPECT_TRUE(sketch.has_operation_axis()) << "Operation axis should be created";
+
+  // Clear any existing message
+  gui().show_message("");
+
+  // Try to mirror without selecting any edges
+  sketch.mirror_selected_edges();
+
+  // Verify error message was shown
+  std::string message = GUI_access::get_message(gui());
+  EXPECT_EQ(message, Sketch::ERROR_NO_EDGES_SELECTED)
+      << "Error message should be displayed when no edges are selected";
 }

@@ -60,6 +60,7 @@ class Sketch
   void add_sketch_pt(const ScreenCoords& screen_coords);
   void sketch_pt_move(const ScreenCoords& screen_coords);
   void dimension_input(const ScreenCoords& screen_coords);
+  void angle_input(const ScreenCoords& screen_coords);
   void finalize_elm();
   bool cancel_elm();
   void clear_operation_axis();
@@ -84,6 +85,9 @@ class Sketch
 
   void toggle_edge_dim(const ScreenCoords& screen_coords);
   void dbg_append_str(std::string& out) const;
+
+  // Error messages
+  static constexpr const char* ERROR_NO_EDGES_SELECTED = "Error: No edges selected. Please select edges to mirror.";
 
   // Sketch name related.
   const std::string& get_name() const;
@@ -239,6 +243,8 @@ class Sketch
   // Dimensions related
   std::optional<Edge_len> m_entered_edge_len;
   bool                    m_show_dim_input {false};
+  std::optional<double>   m_entered_edge_angle;  // Angle in degrees
+  bool                    m_show_angle_input {false};
 
   // Geometry related
   AIS_Shape_ptr m_originating_face;  // If this sketch was created from a face.

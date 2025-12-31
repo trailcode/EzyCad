@@ -50,6 +50,7 @@ void GUI::render_gui()
   menu_bar_();
   toolbar_();
   dist_edit_();
+  angle_edit_();
   sketch_list_();
   shape_list_();
   options_();
@@ -153,14 +154,22 @@ void GUI::on_key(int key, int scancode, int action, int mods)
         case GLFW_KEY_ESCAPE:
           m_view->cancel(Set_parent_mode::Yes);
           hide_dist_edit();
+          hide_angle_edit();
           break;
 
         case GLFW_KEY_TAB:
-          m_view->dimension_input(screen_coords);
+        {
+          bool shift_pressed = (mods & GLFW_MOD_SHIFT) != 0;
+          if (shift_pressed)
+            m_view->angle_input(screen_coords);
+          else
+            m_view->dimension_input(screen_coords);
           break;
+        }
 
         case GLFW_KEY_ENTER:
           hide_dist_edit();
+          hide_angle_edit();
           m_view->on_enter(screen_coords);
           break;
 
@@ -446,6 +455,62 @@ void GUI::dist_edit_()
     m_dist_callback(m_dist_val, false);
   else
     m_dist_val = std::round(m_dist_val * 100.0f) / 100.0f;
+
+  ImGui::End();
+}
+
+// Angle edit related
+void GUI::set_angle_edit(float angle, std::function<void(float, bool)>&& callback, const std::optional<ScreenCoords> screen_coords)
+{
+  DBG_MSG("angle " << angle);
+  // Only update the value if the input isn't already active (to avoid overwriting user input)
+  if (!m_angle_callback)
+    m_angle_val = angle;
+  
+  if (screen_coords.has_value())
+    m_angle_edit_loc = *screen_coords;
+  else
+    m_angle_edit_loc = ScreenCoords(glm::dvec2(ImGui::GetIO().MousePos.x, ImGui::GetIO().MousePos.y));
+
+  m_angle_callback = std::move(callback);
+}
+
+void GUI::hide_angle_edit()
+{
+  if (m_angle_callback)
+  {
+    std::function<void(float, bool)> callback;
+    // In case the callback sets a new m_angle_callback
+    std::swap(callback, m_angle_callback);
+    // In case just enter was pressed, or the callback needs to finalize something
+    callback(m_angle_val, true);
+  }
+}
+
+void GUI::angle_edit_()
+{
+  if (!m_angle_callback)
+    return;
+
+  //  Set the position of the next window
+  ImGui::SetNextWindowPos(ImVec2(float(m_angle_edit_loc.unsafe_get_x()), float(m_angle_edit_loc.unsafe_get_y())), ImGuiCond_Always);
+
+  // Set a small size (optional)
+  ImGui::SetNextWindowSize(ImVec2(80.0f, 25.0f), ImGuiCond_Once);
+
+  // Begin a window with minimal flags
+  ImGui::Begin("AngleEdit##unique_id", nullptr,
+               ImGuiWindowFlags_NoTitleBar |
+                   ImGuiWindowFlags_NoResize |
+                   ImGuiWindowFlags_AlwaysAutoResize |
+                   ImGuiWindowFlags_NoSavedSettings);
+
+  ImGui::SetNextItemWidth(80.0f);
+  ImGui::SetKeyboardFocusHere();
+
+  // Add a small input float widget and check for changes
+  if (ImGui::InputFloat("##angle_edit_float_value", &m_angle_val, 0.0f, 0.0f, "%.2f"))
+    m_angle_callback(m_angle_val, false);
 
   ImGui::End();
 }

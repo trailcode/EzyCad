@@ -54,6 +54,8 @@ class GUI
   void set_parent_mode();
   void set_dist_edit(float dist, std::function<void(float, bool)>&& callback, const std::optional<ScreenCoords> screen_coords = std::nullopt);
   void hide_dist_edit();
+  void set_angle_edit(float angle, std::function<void(float, bool)>&& callback, const std::optional<ScreenCoords> screen_coords = std::nullopt);
+  void hide_angle_edit();
   void show_message(const std::string& message);
   void log_message(const std::string& message);
   // clang-format on
@@ -79,6 +81,7 @@ class GUI
   };
 
   void dist_edit_();
+  void angle_edit_();
   void sketch_list_();
   void shape_list_();
   void options_();
@@ -110,6 +113,11 @@ class GUI
   std::function<void(float, bool)> m_dist_callback;
   ScreenCoords                     m_dist_edit_loc {glm::dvec2(0, 0)};
   float                            m_dist_val;
+
+  // Sketch segment manual angle input related
+  std::function<void(float, bool)> m_angle_callback;
+  ScreenCoords                     m_angle_edit_loc {glm::dvec2(0, 0)};
+  float                            m_angle_val;
 
   // Mode related
   Mode                        m_mode         = Mode::Normal;

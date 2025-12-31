@@ -18,6 +18,7 @@
 
 #include "geom.h"
 #include "gui.h"
+#include "imgui.h"
 #include "occt_view.h"
 #include "utl.h"
 
@@ -63,11 +64,11 @@ void Sketch::add_sketch_pt(const ScreenCoords& screen_coords)
     case Mode::Sketch_add_rectangle_center_pt:
     case Mode::Sketch_add_square:
     case Mode::Sketch_add_circle:
-    case Mode::Sketch_add_edge:                 add_line_string_pt_  (screen_coords, Linestring_type::Single); break;
-    case Mode::Sketch_add_slot:                 add_line_string_pt_  (screen_coords, Linestring_type::Two); break;
-    case Mode::Sketch_add_multi_edges:          add_line_string_pt_  (screen_coords, Linestring_type::Multiple); break;
-    case Mode::Sketch_add_seg_circle_arc:       add_arc_circle_pt_   (screen_coords); break;
-    case Mode::Sketch_operation_axis:           add_operation_axis_pt_  (screen_coords); break;
+    case Mode::Sketch_add_edge:           add_line_string_pt_   (screen_coords, Linestring_type::Single);   break;
+    case Mode::Sketch_add_slot:           add_line_string_pt_   (screen_coords, Linestring_type::Two);      break;
+    case Mode::Sketch_add_multi_edges:    add_line_string_pt_   (screen_coords, Linestring_type::Multiple); break;
+    case Mode::Sketch_add_seg_circle_arc: add_arc_circle_pt_    (screen_coords);                            break;
+    case Mode::Sketch_operation_axis:     add_operation_axis_pt_(screen_coords);                            break;
     default:
       EZY_ASSERT(false);
       // clang-format on
@@ -96,6 +97,12 @@ void Sketch::sketch_pt_move(const ScreenCoords& screen_coords)
 void Sketch::dimension_input(const ScreenCoords& screen_coords)
 {
   m_show_dim_input = true;
+  sketch_pt_move(screen_coords);
+}
+
+void Sketch::angle_input(const ScreenCoords& screen_coords)
+{
+  m_show_angle_input = true;
   sketch_pt_move(screen_coords);
 }
 
@@ -182,7 +189,9 @@ void Sketch::update_face_style_(AIS_Shape_ptr& shp) const
 void Sketch::update_edge_shp_(Edge& edge, const gp_Pnt2d& pt_a, const gp_Pnt2d& pt_b)
 {
   EZY_ASSERT(unique(pt_a, pt_b));
+
   TopoDS_Shape edge_shape = BRepBuilderAPI_MakeEdge(to_3d(m_pln, pt_a), to_3d(m_pln, pt_b)).Edge();
+  
   if (edge.shp)
   {
     edge.shp->Set(edge_shape);
@@ -217,7 +226,7 @@ void Sketch::on_enter()
 // Line string related
 void Sketch::add_line_string_pt_(const ScreenCoords& screen_coords, Linestring_type linestring_type)
 {
-  auto l = [&](size_t node_idx)
+  auto on_line_string = [&](size_t node_idx)
   {
     if (m_tmp_edges.size())
     {
@@ -241,10 +250,13 @@ void Sketch::add_line_string_pt_(const ScreenCoords& screen_coords, Linestring_t
         }
     }
 
-    // Start a new edge
+    // Start a new edge - clear constraints for fresh start
+    m_entered_edge_angle = std::nullopt;
+    m_entered_edge_len = std::nullopt;
     m_tmp_edges.push_back({node_idx});
   };
-  add_sketch_pt_(screen_coords, 1, l);
+
+  add_sketch_pt_(screen_coords, 1, on_line_string);
 }
 
 void Sketch::move_line_string_pt_(const ScreenCoords& screen_coords)
@@ -261,18 +273,61 @@ void Sketch::move_line_string_pt_(const ScreenCoords& screen_coords)
       // Cannot have a edge with zero length
       return;
 
-    edge.node_idx_b = node_idx_b;
+    gp_Pnt2d final_pt_b = pt_b;
+    //std::optional<size_t> final_node_idx;
 
-    double dist = pt_a.Distance(pt_b) / m_view.get_dimension_scale();
+    // Apply angle constraint if set - this takes priority
+    if (m_entered_edge_angle.has_value())
+    {
+      // Calculate direction based on angle (0 degrees = positive X axis, counterclockwise)
+      double angle_rad = to_radians(*m_entered_edge_angle);
+      gp_Dir2d constrained_dir(std::cos(angle_rad), std::sin(angle_rad));
+
+      // If distance is also constrained, use that
+      if (m_entered_edge_len.has_value())
+      {
+        // Use the constrained distance - angle constraint is always enforced
+        final_pt_b = gp_Pnt2d(pt_a).Translated(gp_Vec2d(constrained_dir) * m_entered_edge_len->len);
+      }
+      else
+      {
+        // Project the mouse point onto the angle-constrained line
+        // Find the distance along the constrained direction from pt_a to mouse position
+        gp_Vec2d to_mouse(pt_b.X() - pt_a.X(), pt_b.Y() - pt_a.Y());
+        double dist_along_constrained = to_mouse.Dot(gp_Vec2d(constrained_dir));
+        
+        // Calculate the point on the constrained line at this distance
+        // This ensures the angle is ALWAYS maintained
+        final_pt_b = gp_Pnt2d(pt_a).Translated(gp_Vec2d(constrained_dir) * dist_along_constrained);
+      }
+      
+      // Disable snapping when angle constraint is active - angle takes priority
+      edge.node_idx_b = std::nullopt;
+    }
+    // Apply distance constraint if set (and angle is not set)
+    else if (m_entered_edge_len.has_value())
+    {
+      final_pt_b = gp_Pnt2d(pt_a).Translated(gp_Vec2d(m_entered_edge_len->dir) * m_entered_edge_len->len);
+      edge.node_idx_b = m_nodes.try_get_node_idx_snap(final_pt_b);
+    }
+    else
+    {
+      // No constraints - check for snap points at mouse position
+      edge.node_idx_b = m_nodes.try_get_node_idx_snap(final_pt_b);
+      if (edge.node_idx_b.has_value())
+        final_pt_b = m_nodes[*edge.node_idx_b];
+    }
+
+    double dist = pt_a.Distance(final_pt_b) / m_view.get_dimension_scale();
     m_ctx.Remove(m_tmp_dim_anno, true);
-    m_tmp_dim_anno = create_distance_annotation(pt_a, pt_b, m_pln);
+    m_tmp_dim_anno = create_distance_annotation(pt_a, final_pt_b, m_pln);
     m_tmp_dim_anno->SetCustomValue(dist);
     m_ctx.Display(m_tmp_dim_anno, true);
 
     if (m_show_dim_input)
     {
-      gp_Dir2d     edge_dir = get_unit_dir(pt_a, pt_b);
-      ScreenCoords spos     = m_view.get_screen_coords(to_3d(m_pln, center_point(pt_a, pt_b)));
+      gp_Dir2d     edge_dir = get_unit_dir(pt_a, final_pt_b);
+      ScreenCoords spos     = m_view.get_screen_coords(to_3d(m_pln, center_point(pt_a, final_pt_b)));
 
       auto l = [&, edge_dir](float new_dist, bool is_finial)
       {
@@ -286,8 +341,34 @@ void Sketch::move_line_string_pt_(const ScreenCoords& screen_coords)
       m_view.gui().set_dist_edit(float(dist), std::move(std::function<void(float, bool)>(l)), spos);
     }
 
-    update_edge_shp_(edge, pt_a, pt_b);
+    if (m_show_angle_input)
+    {
+      ScreenCoords spos = m_view.get_screen_coords(to_3d(m_pln, center_point(pt_a, final_pt_b)));
+
+      // Calculate current angle from pt_a to actual mouse position (pt_b), not constrained position
+      // This ensures we show the actual angle the user is moving to
+      gp_Vec2d vec(pt_a, pt_b);
+      double current_angle_rad = std::atan2(vec.Y(), vec.X());
+      double current_angle_deg = to_degrees(current_angle_rad);
+
+      auto l = [&](float new_angle, bool is_finial)
+      {
+        m_entered_edge_angle = new_angle;
+        m_show_angle_input = !is_finial;
+        // Recalculate the point with the new angle using current mouse position
+        // Get current mouse position from ImGui
+        ScreenCoords current_pos(glm::dvec2(ImGui::GetIO().MousePos.x, ImGui::GetIO().MousePos.y));
+        sketch_pt_move(current_pos);
+      };
+
+      // Use the current mouse angle if angle hasn't been set yet, otherwise use the set angle
+      float angle_to_show = m_entered_edge_angle.has_value() ? float(*m_entered_edge_angle) : float(current_angle_deg);
+      m_view.gui().set_angle_edit(angle_to_show, std::move(std::function<void(float, bool)>(l)), spos);
+    }
+
+    update_edge_shp_(edge, pt_a, final_pt_b);
   };
+
   move_sketch_pt_(screen_coords, l);
 }
 
@@ -313,11 +394,6 @@ void Sketch::finalize_edges_()
 
     if (m_nodes[e.node_idx_b].is_midpoint)
       split_mid_points.push_back(*e.node_idx_b);
-
-    if (!m_nodes[e.node_idx_mid].is_midpoint)
-    {
-      int hi = 0;
-    }
   }
 
   append(m_edges, m_tmp_edges);
@@ -404,11 +480,13 @@ void Sketch::move_arc_circle_pt_(const ScreenCoords& screen_coords)
 void Sketch::move_square_pt_(const ScreenCoords& screen_coords)
 {
   move_line_string_pt_(screen_coords);
+  
   auto l = [&](Edge& e, const gp_Pnt2d& pt_a, const gp_Pnt2d& pt_b)
   {
     TopoDS_Wire square = make_square_wire(m_pln, pt_a, *m_last_pt);
     show(m_ctx, m_tmp_shp, square);
   };
+
   last_edge_(l);
 }
 
@@ -424,13 +502,14 @@ void Sketch::finalize_square_()
     clear_tmps_();
     update_faces_();
   };
+
   last_edge_(l);
 }
 
 void Sketch::move_rectangle_pt_(const ScreenCoords& screen_coords)
 {
   move_line_string_pt_(screen_coords);
-  // DBG_MSG(m_tmp_edges.size());
+  
   auto l = [&](Edge& e, const gp_Pnt2d& pt_a, const gp_Pnt2d& pt_b)
   {
     EZY_ASSERT(m_tmp_edges.size());
@@ -447,6 +526,7 @@ void Sketch::move_rectangle_pt_(const ScreenCoords& screen_coords)
       m_tmp_shp.Nullify();
     }
   };
+
   last_edge_(l);
 }
 
@@ -472,6 +552,7 @@ void Sketch::finalize_rectangle_()
       m_tmp_edges.push_back({*e.node_idx_b});
     }
   };
+
   last_edge_(l);
 }
 
@@ -540,14 +621,13 @@ bool Sketch::has_operation_axis() const
 
 void Sketch::mirror_selected_edges()
 {
-  if (!m_operation_axis.has_value())
-    // TODO report error!
-    return;
+  EZY_ASSERT(m_operation_axis.has_value());
 
   const std::vector<Edge> mirror_edges = get_selected_edges_();
   if (mirror_edges.empty())
   {
-    // TODO present error.
+    m_view.gui().show_message(ERROR_NO_EDGES_SELECTED);
+    return;
   }
 
   EZY_ASSERT(!m_operation_axis->shp.IsNull());
@@ -808,6 +888,9 @@ void Sketch::toggle_edge_dim(const ScreenCoords& screen_coords)
 void Sketch::finalize_elm()
 {
   m_show_dim_input = false;
+  m_show_angle_input = false;
+  m_entered_edge_angle = std::nullopt;
+  m_view.gui().hide_angle_edit();
   m_ctx.Remove(m_tmp_dim_anno, true);
 
   switch (get_mode())
@@ -1457,7 +1540,7 @@ bool Sketch::clear_tmps_()
   }
 
   bool operation_canceled = m_tmp_edges.size();
-  clear_all(m_tmp_node_idxs, m_tmp_shp, m_tmp_edges, m_entered_edge_len, m_show_dim_input);
+  clear_all(m_tmp_node_idxs, m_tmp_shp, m_tmp_edges, m_entered_edge_len, m_show_dim_input, m_entered_edge_angle, m_show_angle_input);
 
   return operation_canceled;
 }
