@@ -1635,6 +1635,10 @@ void Sketch::set_visible(bool state)
 
     if (m_originating_face)
       m_ctx.Display(m_originating_face, AIS_WireFrame, 0, false);
+
+    // Show operation axis only if this sketch is current
+    if (m_operation_axis.has_value() && is_current())
+      m_ctx.Display(m_operation_axis->shp, AIS_WireFrame, 0, false);
   }
   else
   {
@@ -1650,6 +1654,10 @@ void Sketch::set_visible(bool state)
 
     if (m_originating_face)
       m_ctx.Erase(m_originating_face, false);
+
+    // Hide operation axis when sketch becomes invisible
+    if (m_operation_axis.has_value())
+      m_ctx.Erase(m_operation_axis->shp, false);
 
     m_nodes.hide_snap_annos();
     cancel_elm();
@@ -1727,6 +1735,10 @@ void Sketch::set_current()
     {
       sketch->set_edge_style(Edge_style::Background);
 
+      // Hide operation axis from other sketches
+      if (sketch->m_operation_axis.has_value())
+        m_ctx.Erase(sketch->m_operation_axis->shp, false);
+
       if (sketch->is_visible())
       {
         // Add snap points from other sketches, but only if they are visible.
@@ -1736,6 +1748,10 @@ void Sketch::set_current()
           m_nodes.add_outside_snap_pnt(pt3d);
       }
     }
+
+  // Show operation axis for current sketch if it exists and sketch is visible
+  if (m_operation_axis.has_value() && m_visible)
+    m_ctx.Display(m_operation_axis->shp, AIS_WireFrame, 0, false);
 
   // DBG_MSG("m_outside_snap_pts " << m_nodes.m_outside_snap_pts.size());
 }
