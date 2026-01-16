@@ -10,7 +10,7 @@
 
 #include "log.h"
 #include "modes.h"
-#include "shp.h"
+//#include "shp.h"
 #include "types.h"
 
 class Occt_view;
@@ -48,6 +48,7 @@ class GUI
   // clang-format off
   Mode get_mode() const { return m_mode; }
   Chamfer_mode get_chamfer_mode() const { return m_chamfer_mode; }
+  Fillet_mode get_fillet_mode() const { return m_fillet_mode; }
   bool get_hide_all_shapes() const { return m_hide_all_shapes; }
   void set_hide_all_shapes(bool hide) { m_hide_all_shapes = hide; }
   void set_mode(Mode mode);
@@ -91,6 +92,7 @@ class GUI
   void on_key_rotate_mode_(int key);
   void options_sketch_operation_axis_mode_();
   void options_shape_chamfer_mode_();
+  void options_shape_fillet_mode_();
   void options_shape_polar_duplicate_mode_();
   void options_rotate_mode_();
   void dbg_();
@@ -122,6 +124,7 @@ class GUI
   // Mode related
   Mode                        m_mode         = Mode::Normal;
   Chamfer_mode                m_chamfer_mode = Chamfer_mode::Shape;
+  Fillet_mode                 m_fillet_mode  = Fillet_mode::Shape;
   std::vector<Toolbar_button> m_toolbar_buttons;
 
   // Message status window

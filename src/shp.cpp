@@ -102,3 +102,6 @@ RevolvedShp::RevolvedShp(AIS_InteractiveContext& ctx, const TopoDS_Shape& shp)
 
 ChamferShp::ChamferShp(AIS_InteractiveContext& ctx, const TopoDS_Shape& shp)
     : Shape_base(ctx, shp, "Chamfer", Shape_type::Chamfer) {}
+
+FilletShp::FilletShp(AIS_InteractiveContext& ctx, const TopoDS_Shape& shp)
+    : Shape_base(ctx, shp, "Fillet", Shape_type::Fillet) {}

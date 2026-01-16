@@ -66,4 +66,15 @@ enum class Chamfer_mode
 // Corresponds to the above
 constexpr std::array<const char*, 4> c_chamfer_mode_strs = {"Edge", "Wire", "Face", "Shape"};
 
+enum class Fillet_mode
+{
+  Edge,
+  Wire,
+  Face,
+  Shape,
+};
+
+// Corresponds to the above
+constexpr std::array<const char*, 4> c_fillet_mode_strs = {"Edge", "Wire", "Face", "Shape"};
+
 bool is_sketch_mode(const Mode mode);

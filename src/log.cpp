@@ -1,6 +1,6 @@
 #include "log.h"
-
 #include "gui.h"
+#include "dbg.h"
 
 Log_strm::Log_strm(GUI& gui, std::streambuf* original_buf)
     : m_gui(gui), m_original_buf(original_buf)
