@@ -12,6 +12,7 @@ enum class Shape_type
   Extruded,
   Revolved,
   Chamfer,
+  Fillet,
   _count
 };
 
@@ -19,7 +20,8 @@ enum class Shape_type
 constexpr std::array<std::string_view, static_cast<size_t>(Shape_type::_count)> c_ShapeType_names = {
     "Extruded",
     "Revolved",
-    "Chamfer"};
+    "Chamfer",
+    "Fillet"};
 
 class Shape_base : public AIS_Shape
 {
@@ -76,10 +78,19 @@ class ChamferShp : public Shape_base
  private:
 };
 
+class FilletShp : public Shape_base
+{
+ public:
+  FilletShp(AIS_InteractiveContext& ctx, const TopoDS_Shape& shp);
+
+ private:
+};
+
 using ShapeBase_ptr   = opencascade::handle<Shape_base>;
 using ExtrudedShp_ptr = opencascade::handle<ExtrudedShp>;
 using RevolvedShp_ptr = opencascade::handle<RevolvedShp>;
 using ChamferShp_ptr  = opencascade::handle<ChamferShp>;
+using FilletShp_ptr   = opencascade::handle<FilletShp>;
 
 using ExtrudedShp_rslt = Result<ExtrudedShp_ptr>;
 using RevolvedShp_rslt = Result<RevolvedShp_ptr>;

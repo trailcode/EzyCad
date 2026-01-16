@@ -39,7 +39,7 @@
 #include <sstream>
 
 Occt_view::Occt_view(GUI& gui)
-    : m_gui(gui), m_shp_move(*this), m_shp_rotate(*this), m_shp_chamfer(*this), m_shp_cut(*this), m_shp_fuse(*this), m_shp_common(*this), m_shp_polar_dup(*this), m_shp_extrude(*this)
+    : m_gui(gui), m_shp_move(*this), m_shp_rotate(*this), m_shp_chamfer(*this), m_shp_fillet(*this), m_shp_cut(*this), m_shp_fuse(*this), m_shp_common(*this), m_shp_polar_dup(*this), m_shp_extrude(*this)
 {
 }
 
@@ -917,6 +917,7 @@ void Occt_view::on_mode()
         // clang-format off
       case Mode::Sketch_from_planar_face: set_shp_selection_mode(TopAbs_FACE); break;
       case Mode::Shape_chamfer:    on_chamfer_mode();                   break; // Will update selection mode
+      case Mode::Shape_fillet:     on_fillet_mode();                    break; // Will update selection mode
       default: break;
         // clang-format on
     }
@@ -948,6 +949,22 @@ void Occt_view::on_chamfer_mode()
     case Chamfer_mode::Wire:  set_shp_selection_mode(TopAbs_WIRE);  break;
     case Chamfer_mode::Face:  set_shp_selection_mode(TopAbs_FACE);  break;
     case Chamfer_mode::Shape: set_shp_selection_mode(TopAbs_SHAPE); break;
+     // clang-format off
+      default:
+        EZY_ASSERT(false);
+  }
+}
+
+void Occt_view::on_fillet_mode()
+{
+  EZY_ASSERT(get_mode() == Mode::Shape_fillet);
+  switch (gui().get_fillet_mode())
+  {
+      // clang-format off
+    case Fillet_mode::Edge:  set_shp_selection_mode(TopAbs_EDGE);  break;
+    case Fillet_mode::Wire:  set_shp_selection_mode(TopAbs_WIRE);  break;
+    case Fillet_mode::Face:  set_shp_selection_mode(TopAbs_FACE);  break;
+    case Fillet_mode::Shape: set_shp_selection_mode(TopAbs_SHAPE); break;
      // clang-format off
       default:
         EZY_ASSERT(false);
@@ -1034,6 +1051,7 @@ std::list<ShapeBase_ptr>& Occt_view::get_shapes()
 Shp_move&      Occt_view::shp_move()      { return m_shp_move;      }
 Shp_rotate&    Occt_view::shp_rotate()    { return m_shp_rotate;    }
 Shp_chamfer&   Occt_view::shp_chamfer()   { return m_shp_chamfer;   }
+Shp_fillet&    Occt_view::shp_fillet()    { return m_shp_fillet;    }
 Shp_cut&       Occt_view::shp_cut()       { return m_shp_cut;       }
 Shp_fuse&      Occt_view::shp_fuse()      { return m_shp_fuse;      }
 Shp_common&    Occt_view::shp_common()    { return m_shp_common;    }

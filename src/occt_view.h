@@ -10,6 +10,7 @@
 
 #include "occt_glfw_win.h"
 #include "shp_chamfer.h"
+#include "shp_fillet.h"
 #include "shp_common.h"
 #include "shp_cut.h"
 #include "shp_extrude.h"
@@ -64,6 +65,7 @@ class Occt_view : protected AIS_ViewController
   // Mode related.
   void on_mode();
   void on_chamfer_mode();
+  void on_fillet_mode();
   Mode get_mode() const;
 
   void cleanup();
@@ -90,6 +92,7 @@ class Occt_view : protected AIS_ViewController
   Shp_move&      shp_move();
   Shp_rotate&    shp_rotate();
   Shp_chamfer&   shp_chamfer();
+  Shp_fillet&    shp_fillet();
   Shp_cut&       shp_cut();
   Shp_fuse&      shp_fuse();
   Shp_common&    shp_common();
@@ -146,6 +149,7 @@ class Occt_view : protected AIS_ViewController
  private:
   friend class Shp_operation_base;
   friend class Shp_chamfer;  // TODO remove
+  friend class Shp_fillet;   // TODO remove
   friend class Shp_extrude;  // TODO remove
   friend class View_access;
 
@@ -195,6 +199,7 @@ class Occt_view : protected AIS_ViewController
   // --------------------------------------------------------------------
   // Commands
   Shp_chamfer                m_shp_chamfer;
+  Shp_fillet                 m_shp_fillet;
   Shp_cut                    m_shp_cut;
   Shp_fuse                   m_shp_fuse;
   Shp_common                 m_shp_common;

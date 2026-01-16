@@ -83,7 +83,7 @@ void GUI::set_parent_mode()
       {                         Mode::Scale,                 Mode::Normal},
       {                        Mode::Rotate,                 Mode::Normal},
       {        Mode::Sketch_inspection_mode,                 Mode::Normal},
-      {              Mode::Sketch_from_planar_face,                 Mode::Normal},
+      {       Mode::Sketch_from_planar_face,                 Mode::Normal},
       {           Mode::Sketch_face_extrude,                 Mode::Normal},
       {                 Mode::Shape_chamfer,                 Mode::Normal},
       {                  Mode::Shape_fillet,                 Mode::Normal},
@@ -219,7 +219,7 @@ void GUI::initialize_toolbar_()
       {             load_texture("Assembly_AxialMove.png"), false,                   "Shape move (g)",                           Mode::Move},
       {                   load_texture("Draft_Rotate.png"), false,                 "Shape rotate (r)",                         Mode::Rotate},
       {                     load_texture("Part_Scale.png"), false,                      "Shape Scale",                          Mode::Scale},
-      {          load_texture("Macro_FaceToSketch_48.png"), false,        "Create a sketch from planar face",               Mode::Sketch_from_planar_face},
+      {          load_texture("Macro_FaceToSketch_48.png"), false, "Create a sketch from planar face",        Mode::Sketch_from_planar_face},
       {          load_texture("Sketcher_MirrorSketch.png"), false,            "Define operation axis",          Mode::Sketch_operation_axis},
       {           load_texture("Sketcher_CreatePoint.png"), false,                         "Add node",                Mode::Sketch_add_node},
       {     load_texture("Sketcher_Element_Line_Edge.png"), false,                    "Add line edge",                Mode::Sketch_add_edge},
@@ -234,7 +234,7 @@ void GUI::initialize_toolbar_()
       {       load_texture("TechDraw_LengthDimension.png"), false, "Toggle edge dimension annotation",         Mode::Sketch_toggle_edge_dim},
       {              load_texture("Design456_Extrude.png"), false,          "Extrude sketch face (e)",            Mode::Sketch_face_extrude},
       {             load_texture("PartDesign_Chamfer.png"), false,                          "Chamfer",                  Mode::Shape_chamfer},
-      {              load_texture("PartDesign_Fillet.png"), false,                           "Fillet",                  Mode::Shape_chamfer},
+      {              load_texture("PartDesign_Fillet.png"), false,                           "Fillet",                   Mode::Shape_fillet},
       {               load_texture("Draft_PolarArray.png"), false,            "Shape polar duplicate",          Mode::Shape_polar_duplicate},
       {                       load_texture("Part_Cut.png"), false,                        "Shape cut",                   Command::Shape_cut},
       {                      load_texture("Part_Fuse.png"), false,                       "Shape fuse",                  Command::Shape_fuse},
@@ -466,7 +466,7 @@ void GUI::set_angle_edit(float angle, std::function<void(float, bool)>&& callbac
   // Only update the value if the input isn't already active (to avoid overwriting user input)
   if (!m_angle_callback)
     m_angle_val = angle;
-  
+
   if (screen_coords.has_value())
     m_angle_edit_loc = *screen_coords;
   else
@@ -714,6 +714,7 @@ void GUI::options_()
     case Mode::Rotate:                options_rotate_mode_();                 break;
     case Mode::Sketch_operation_axis: options_sketch_operation_axis_mode_();  break;
     case Mode::Shape_chamfer:         options_shape_chamfer_mode_();          break;
+    case Mode::Shape_fillet:          options_shape_fillet_mode_();           break;
     case Mode::Shape_polar_duplicate: options_shape_polar_duplicate_mode_();  break;
     default:
       break;
@@ -824,6 +825,21 @@ void GUI::options_shape_chamfer_mode_()
   float chamfer_dist = float(m_view->shp_chamfer().get_chamfer_dist());
   if (ImGui::InputFloat("Chamfer dist##float_value", &chamfer_dist, 0.0f, 0.0f, "%.2f"))
     m_view->shp_chamfer().set_chamfer_dist(chamfer_dist);
+}
+
+void GUI::options_shape_fillet_mode_()
+{
+  // Dropdown for Fillet_mode
+  int current_mode = static_cast<int>(m_fillet_mode);
+  if (ImGui::Combo("Fillet Mode", &current_mode, c_fillet_mode_strs.data(), (int) c_fillet_mode_strs.size()))
+  {
+    m_fillet_mode = static_cast<Fillet_mode>(current_mode);
+    m_view->on_fillet_mode();
+  }
+
+  float fillet_radius = float(m_view->shp_fillet().get_fillet_radius());
+  if (ImGui::InputFloat("Fillet radius##float_value", &fillet_radius, 0.0f, 0.0f, "%.2f"))
+    m_view->shp_fillet().set_fillet_radius(fillet_radius);
 }
 
 void GUI::options_shape_polar_duplicate_mode_()
@@ -1108,6 +1124,12 @@ void GUI::on_mouse_button(int button, int action, int mods)
 
       case Mode::Shape_chamfer:
         if (Status s = m_view->shp_chamfer().add_chamfer(screen_coords, m_chamfer_mode); !s.is_ok())
+          show_message(s.message());
+
+        break;
+
+      case Mode::Shape_fillet:
+        if (Status s = m_view->shp_fillet().add_fillet(screen_coords, m_fillet_mode); !s.is_ok())
           show_message(s.message());
 
         break;
