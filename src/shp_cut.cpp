@@ -32,7 +32,7 @@ Status Shp_cut::selected_cut()
   if (result_shape.IsNull())
     return Status::user_error("Error: Resulting shape is null");
 
-  ExtrudedShp_ptr shp = new ExtrudedShp(ctx(), result_shape);
+  extruded_shp_ptr shp = new Extruded_shp(ctx(), result_shape);
   shp->set_name("Cut");
   delete_operation_shps_();
   add_shp_(shp);

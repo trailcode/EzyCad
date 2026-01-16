@@ -135,7 +135,7 @@ Status Shp_polar_dup::dup()
       else
       {
         // Create new shape and add to view as before
-        ExtrudedShp_ptr new_shape = new ExtrudedShp(ctx(), transformed_shape);
+        extruded_shp_ptr new_shape = new Extruded_shp(ctx(), transformed_shape);
         new_shape->set_name("Polar duplicate");
         add_shp_(new_shape);
       }
@@ -154,7 +154,7 @@ Status Shp_polar_dup::dup()
     }
 
     // Create a single shape from all the combined shapes
-    ExtrudedShp_ptr new_shape = new ExtrudedShp(ctx(), combined_shape);
+    extruded_shp_ptr new_shape = new Extruded_shp(ctx(), combined_shape);
     new_shape->set_name("Combined polar duplicate");
     add_shp_(new_shape);
   }

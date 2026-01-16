@@ -32,7 +32,7 @@ Status Shp_fuse::selected_fuse()
   }
 
   // Create a new shape from the union result
-  ExtrudedShp_ptr shp = new ExtrudedShp(ctx(), result);
+  extruded_shp_ptr shp = new Extruded_shp(ctx(), result);
   shp->set_name("Fused");
   delete_operation_shps_();
   add_shp_(shp);

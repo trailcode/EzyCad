@@ -418,7 +418,7 @@ void Occt_view::cancel(Set_parent_mode set_parent_mode)
 // Revolve related
 void Occt_view::revolve_selected(const double angle)
 {
-  RevolvedShp_rslt revolved = curr_sketch().revolve_selected(angle);
+  revolved_shp_rslt revolved = curr_sketch().revolve_selected(angle);
   if (revolved.has_value())
   {
     add_shp_(*revolved);
@@ -1151,13 +1151,13 @@ void Occt_view::load(const std::string& json_str)
     switch (Shape_base::get_type(s["type"]))
     {
       case Shape_type::Extruded:
-        shp = new ExtrudedShp(*m_ctx, shape);
+        shp = new Extruded_shp(*m_ctx, shape);
         break;
       case Shape_type::Revolved:
-        shp = new RevolvedShp(*m_ctx, shape);
+        shp = new Revolved_shp(*m_ctx, shape);
         break;
       case Shape_type::Chamfer:
-        shp = new ChamferShp(*m_ctx, shape);
+        shp = new Chamfer_shp(*m_ctx, shape);
         break;
       default:
         break;
@@ -1258,7 +1258,7 @@ bool Occt_view::import_step(const std::string& step_data)
       continue;
     }
 
-    ExtrudedShp_ptr shp = new ExtrudedShp(*m_ctx, shape);
+    extruded_shp_ptr shp = new Extruded_shp(*m_ctx, shape);
     add_shp_(shp);
   }
 

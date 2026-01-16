@@ -134,7 +134,7 @@ void Shp_extrude::_update_extrude(const ScreenCoords& screen_coords)
     TopoDS_Shape       body = BRepPrimAPI_MakePrism(face, extrude_vec);
     if (!m_extruded)
     {
-      m_extruded = new ExtrudedShp(ctx(), body);
+      m_extruded = new Extruded_shp(ctx(), body);
       m_extruded->SetMaterial(view().m_default_material);
       ctx().Display(m_extruded, AIS_Shaded, -1, Standard_True);
     }

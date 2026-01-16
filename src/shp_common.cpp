@@ -32,7 +32,7 @@ Status Shp_common::selected_common()
   }
 
   // Create a new shape from the common result
-  ExtrudedShp_ptr shp = new ExtrudedShp(ctx(), result);
+  extruded_shp_ptr shp = new Extruded_shp(ctx(), result);
   shp->set_name("Common");
   delete_operation_shps_();
   add_shp_(shp);

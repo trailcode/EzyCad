@@ -679,7 +679,7 @@ void Sketch::mirror_selected_edges()
   update_faces_();
 }
 
-RevolvedShp_rslt Sketch::revolve_selected(const double angle)
+revolved_shp_rslt Sketch::revolve_selected(const double angle)
 {
   EZY_ASSERT_MSG(m_operation_axis.has_value(),
                  "No defined operation axis.");
@@ -706,7 +706,7 @@ RevolvedShp_rslt Sketch::revolve_selected(const double angle)
       builder.Add(compound, face->Shape());
 
   else
-    return RevolvedShp_rslt(Result_status::User_error, "No selected faces or edges.");
+    return revolved_shp_rslt(Result_status::User_error, "No selected faces or edges.");
 
   try
   {
@@ -716,19 +716,19 @@ RevolvedShp_rslt Sketch::revolve_selected(const double angle)
     const gp_Ax1 axis(pt_a, direction);
 
     BRepPrimAPI_MakeRevol revolMaker(compound, axis, angle);
-    return RevolvedShp_rslt(new RevolvedShp(m_ctx, revolMaker.Shape()));
+    return revolved_shp_rslt(new Revolved_shp(m_ctx, revolMaker.Shape()));
   }
   catch (const Standard_Failure& e)
   {
     // Catch OCCT exception and return error with message
     std::string error_msg = "Revolution failed: ";
     error_msg += e.GetMessageString() ? e.GetMessageString() : "Unknown OCCT error";
-    return RevolvedShp_rslt(Result_status::Topo_error, error_msg);
+    return revolved_shp_rslt(Result_status::Topo_error, error_msg);
   }
   catch (const std::exception& e)
   {
     // Catch other unexpected errors
-    return RevolvedShp_rslt(Result_status::User_error, "Unexpected error: " + std::string(e.what()));
+    return revolved_shp_rslt(Result_status::User_error, "Unexpected error: " + std::string(e.what()));
   }
 }
 

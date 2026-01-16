@@ -94,14 +94,14 @@ void Shape_base::update_display_()
   m_ctx.Display(this, m_disp_mode, AIS_Shape::SelectionMode(m_selection_mode), true);
 }
 
-ExtrudedShp::ExtrudedShp(AIS_InteractiveContext& ctx, const TopoDS_Shape& shp)
+Extruded_shp::Extruded_shp(AIS_InteractiveContext& ctx, const TopoDS_Shape& shp)
     : Shape_base(ctx, shp, "Extruded", Shape_type::Extruded) {}
 
-RevolvedShp::RevolvedShp(AIS_InteractiveContext& ctx, const TopoDS_Shape& shp)
+Revolved_shp::Revolved_shp(AIS_InteractiveContext& ctx, const TopoDS_Shape& shp)
     : Shape_base(ctx, shp, "Revolved", Shape_type::Revolved) {}
 
-ChamferShp::ChamferShp(AIS_InteractiveContext& ctx, const TopoDS_Shape& shp)
+Chamfer_shp::Chamfer_shp(AIS_InteractiveContext& ctx, const TopoDS_Shape& shp)
     : Shape_base(ctx, shp, "Chamfer", Shape_type::Chamfer) {}
 
-FilletShp::FilletShp(AIS_InteractiveContext& ctx, const TopoDS_Shape& shp)
+Fillet_shp::Fillet_shp(AIS_InteractiveContext& ctx, const TopoDS_Shape& shp)
     : Shape_base(ctx, shp, "Fillet", Shape_type::Fillet) {}

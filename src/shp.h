@@ -54,43 +54,43 @@ class Shape_base : public AIS_Shape
   TopAbs_ShapeEnum        m_selection_mode;
 };
 
-class ExtrudedShp : public Shape_base
+class Extruded_shp : public Shape_base
 {
  public:
-  ExtrudedShp(AIS_InteractiveContext& ctx, const TopoDS_Shape& shp);
+  Extruded_shp(AIS_InteractiveContext& ctx, const TopoDS_Shape& shp);
 
  private:
 };
 
-class RevolvedShp : public Shape_base
+class Revolved_shp : public Shape_base
 {
  public:
-  RevolvedShp(AIS_InteractiveContext& ctx, const TopoDS_Shape& shp);
+  Revolved_shp(AIS_InteractiveContext& ctx, const TopoDS_Shape& shp);
 
  private:
 };
 
-class ChamferShp : public Shape_base
+class Chamfer_shp : public Shape_base
 {
  public:
-  ChamferShp(AIS_InteractiveContext& ctx, const TopoDS_Shape& shp);
+  Chamfer_shp(AIS_InteractiveContext& ctx, const TopoDS_Shape& shp);
 
  private:
 };
 
-class FilletShp : public Shape_base
+class Fillet_shp : public Shape_base
 {
  public:
-  FilletShp(AIS_InteractiveContext& ctx, const TopoDS_Shape& shp);
+  Fillet_shp(AIS_InteractiveContext& ctx, const TopoDS_Shape& shp);
 
  private:
 };
 
-using ShapeBase_ptr   = opencascade::handle<Shape_base>;
-using ExtrudedShp_ptr = opencascade::handle<ExtrudedShp>;
-using RevolvedShp_ptr = opencascade::handle<RevolvedShp>;
-using ChamferShp_ptr  = opencascade::handle<ChamferShp>;
-using FilletShp_ptr   = opencascade::handle<FilletShp>;
+using ShapeBase_ptr    = opencascade::handle<Shape_base>;
+using extruded_shp_ptr = opencascade::handle<Extruded_shp>;
+using revolved_shp_ptr = opencascade::handle<Revolved_shp>;
+using chamfer_shp_ptr  = opencascade::handle<Chamfer_shp>;
+using fillet_shp_ptr   = opencascade::handle<Fillet_shp>;
 
-using ExtrudedShp_rslt = Result<ExtrudedShp_ptr>;
-using RevolvedShp_rslt = Result<RevolvedShp_ptr>;
+using extruded_shp_rslt = Result<extruded_shp_ptr>;
+using revolved_shp_rslt = Result<revolved_shp_ptr>;

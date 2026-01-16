@@ -28,7 +28,7 @@ class Shp_extrude : private Shp_operation_base
   AIS_Shape_ptr              m_to_extrude;
   gp_Pln                     m_to_extrude_pln;
   std::optional<gp_Pnt>      m_to_extrude_pt;
-  ExtrudedShp_ptr            m_extruded;
+  extruded_shp_ptr            m_extruded;
   gp_Pln                     m_curr_view_pln;
   PrsDim_LengthDimension_ptr m_tmp_dim;
 };

@@ -75,7 +75,7 @@ class Sketch
   void set_show_dims(bool show);
 
   // Revolve related
-  RevolvedShp_rslt revolve_selected(const double angle);
+  revolved_shp_rslt revolve_selected(const double angle);
 
   bool is_current() const;
   void set_current();  // Make current in m_view
