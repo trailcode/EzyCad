@@ -7,6 +7,7 @@
 #include <TopoDS.hxx>
 #include <TopoDS_Edge.hxx>
 #include <TopoDS_Wire.hxx>
+#include <cmath>
 
 Shp_chamfer::Shp_chamfer(Occt_view& view)
     : Shp_operation_base(view) {}
@@ -18,6 +19,9 @@ Status Shp_chamfer::add_chamfer(const ScreenCoords& screen_coords, const Chamfer
     return Status::user_error("Click on a shape.");
 
   BRepFilletAPI_MakeChamfer chamfer_maker(chamfer_src_shp->Shape());
+  
+  // Convert diagonal distance to setback distance (divide by √2)
+  const double setback_dist = m_chamfer_dist / std::sqrt(2.0);
 
   switch (chamfer_mode)
   {
@@ -27,7 +31,7 @@ Status Shp_chamfer::add_chamfer(const ScreenCoords& screen_coords, const Chamfer
       while (edge_explorer.More())
       {
         const TopoDS_Edge& edge = TopoDS::Edge(edge_explorer.Current());
-        chamfer_maker.Add(m_chamfer_dist, edge);
+        chamfer_maker.Add(setback_dist, edge);
         edge_explorer.Next();
       }
       break;
@@ -43,7 +47,7 @@ Status Shp_chamfer::add_chamfer(const ScreenCoords& screen_coords, const Chamfer
       while (edge_explorer.More())
       {
         const TopoDS_Edge& edge = TopoDS::Edge(edge_explorer.Current());
-        chamfer_maker.Add(m_chamfer_dist, edge);
+        chamfer_maker.Add(setback_dist, edge);
         edge_explorer.Next();
       }
       break;
@@ -60,7 +64,7 @@ Status Shp_chamfer::add_chamfer(const ScreenCoords& screen_coords, const Chamfer
       while (edge_explorer.More())
       {
         const TopoDS_Edge& wire_edge = TopoDS::Edge(edge_explorer.Current());
-        chamfer_maker.Add(m_chamfer_dist, wire_edge);
+        chamfer_maker.Add(setback_dist, wire_edge);
         edge_explorer.Next();
       }
 
@@ -73,7 +77,7 @@ Status Shp_chamfer::add_chamfer(const ScreenCoords& screen_coords, const Chamfer
       if (!edge)
         return Status::user_error("No chamfer edge detected.");
       
-      chamfer_maker.Add(m_chamfer_dist, *edge);
+      chamfer_maker.Add(setback_dist, *edge);
       break;
     }
 

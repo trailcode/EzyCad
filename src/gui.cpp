@@ -822,9 +822,13 @@ void GUI::options_shape_chamfer_mode_()
     m_view->on_chamfer_mode();
   }
 
-  float chamfer_dist = float(m_view->shp_chamfer().get_chamfer_dist());
+  // Convert from geometry units to display units for GUI
+  float chamfer_dist = float(m_view->shp_chamfer().get_chamfer_dist() / m_view->get_dimension_scale());
   if (ImGui::InputFloat("Chamfer dist##float_value", &chamfer_dist, 0.0f, 0.0f, "%.2f"))
-    m_view->shp_chamfer().set_chamfer_dist(chamfer_dist);
+  {
+    // Convert from display units to geometry units
+    m_view->shp_chamfer().set_chamfer_dist(chamfer_dist * m_view->get_dimension_scale());
+  }
 }
 
 void GUI::options_shape_fillet_mode_()
@@ -837,9 +841,13 @@ void GUI::options_shape_fillet_mode_()
     m_view->on_fillet_mode();
   }
 
-  float fillet_radius = float(m_view->shp_fillet().get_fillet_radius());
+  // Convert from geometry units to display units for GUI
+  float fillet_radius = float(m_view->shp_fillet().get_fillet_radius() / m_view->get_dimension_scale());
   if (ImGui::InputFloat("Fillet radius##float_value", &fillet_radius, 0.0f, 0.0f, "%.2f"))
-    m_view->shp_fillet().set_fillet_radius(fillet_radius);
+  {
+    // Convert from display units to geometry units
+    m_view->shp_fillet().set_fillet_radius(fillet_radius * m_view->get_dimension_scale());
+  }
 }
 
 void GUI::options_shape_polar_duplicate_mode_()
