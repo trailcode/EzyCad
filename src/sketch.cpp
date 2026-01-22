@@ -412,6 +412,9 @@ void Sketch::finalize_edges_()
           Edge edge_b {mid_pt_idx, *itr->node_idx_b};
           update_edge_shp_(edge_a, m_nodes[itr->node_idx_a], m_nodes[mid_pt_idx]);
           update_edge_shp_(edge_b, m_nodes[itr->node_idx_b], m_nodes[mid_pt_idx]);
+          // Set midpoints for the new split edges so they can be snapped to
+          edge_a.node_idx_mid = m_nodes.add_new_node(get_midpoint(m_nodes[itr->node_idx_a], m_nodes[mid_pt_idx]), true);
+          edge_b.node_idx_mid = m_nodes.add_new_node(get_midpoint(m_nodes[mid_pt_idx], m_nodes[*itr->node_idx_b]), true);
           m_ctx.Remove(itr->shp, false);
           m_edges.erase(itr);
           m_nodes[mid_pt_idx].is_midpoint = false;
