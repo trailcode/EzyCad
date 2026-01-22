@@ -1335,3 +1335,130 @@ TEST_F(Sketch_test, MirrorSelectedEdges_NoEdgesSelected)
   EXPECT_EQ(message, Sketch::ERROR_NO_EDGES_SELECTED)
       << "Error message should be displayed when no edges are selected";
 }
+
+// Test that split edges have midpoints for snapping
+// This test verifies the fix for the bug where edges split by their midpoint
+// don't have midpoints to snap to
+TEST_F(Sketch_test, SplitEdge_HasMidpoints)
+{
+  gp_Pln default_plane(gp::Origin(), gp::DZ());
+  Sketch sketch("TestSketch", view(), default_plane);
+
+  // Create a simple horizontal edge
+  gp_Pnt2d pt_left(0.0, 0.0);
+  gp_Pnt2d pt_right(20.0, 0.0);
+  
+  // Add the edge - this will automatically create a midpoint node at (10, 0)
+  Sketch_access::add_edge_(sketch, pt_left, pt_right);
+
+  // Count initial nodes and edges
+  size_t initial_node_count = sketch.get_nodes().size();
+  size_t initial_edge_count = 0;
+  for (const auto& edge : sketch.m_edges)
+    if (edge.node_idx_b.has_value())
+      initial_edge_count++;
+
+  EXPECT_EQ(initial_edge_count, 1) << "Should have 1 edge initially";
+  EXPECT_EQ(initial_node_count, 3) << "Should have 3 nodes initially (left, right, midpoint)";
+
+  // Find the midpoint of the initial edge
+  std::optional<size_t> initial_midpoint_idx;
+  for (const auto& edge : sketch.m_edges)
+  {
+    if (edge.node_idx_b.has_value() && edge.node_idx_mid.has_value())
+    {
+      initial_midpoint_idx = edge.node_idx_mid;
+      break;
+    }
+  }
+  ASSERT_TRUE(initial_midpoint_idx.has_value()) << "Initial edge should have a midpoint";
+
+  // Verify the midpoint is at (10, 0)
+  const gp_Pnt2d& midpoint = sketch.get_nodes()[*initial_midpoint_idx];
+  EXPECT_NEAR(midpoint.X(), 10.0, Precision::Confusion());
+  EXPECT_NEAR(midpoint.Y(), 0.0, Precision::Confusion());
+
+  // Set mode to add line segments
+  gui().set_mode(Mode::Sketch_add_line_segment);
+
+  // Create a new edge that snaps to the midpoint, which will split the original edge
+  // Start from the midpoint
+  ScreenCoords screen_coords_mid(glm::dvec2(10.0, 0.0));
+  sketch.add_sketch_pt(screen_coords_mid);
+
+  // Add another point above the midpoint to create a vertical edge
+  gp_Pnt2d pt_above(10.0, 10.0);
+  ScreenCoords screen_coords_above(glm::dvec2(pt_above.X(), pt_above.Y()));
+  sketch.add_sketch_pt(screen_coords_above);
+
+  // Finalize the edge - this should trigger the edge splitting
+  sketch.finalize_elm();
+
+  // Count edges after splitting
+  size_t final_edge_count = 0;
+  for (const auto& edge : sketch.m_edges)
+    if (edge.node_idx_b.has_value())
+      final_edge_count++;
+
+  // Should now have 3 edges: two from the split horizontal edge, plus the new vertical edge
+  EXPECT_EQ(final_edge_count, 3) << "Should have 3 edges after splitting (2 horizontal + 1 vertical)";
+
+  // Verify that both split edges have midpoints
+  std::vector<std::optional<size_t>> split_edge_midpoints;
+  for (const auto& edge : sketch.m_edges)
+  {
+    if (!edge.node_idx_b.has_value())
+      continue;
+
+    const gp_Pnt2d& pt_a = sketch.get_nodes()[edge.node_idx_a];
+    const gp_Pnt2d& pt_b = sketch.get_nodes()[*edge.node_idx_b];
+
+    // Check if this is one of the horizontal split edges (y = 0)
+    if (std::abs(pt_a.Y()) < Precision::Confusion() && 
+        std::abs(pt_b.Y()) < Precision::Confusion())
+    {
+      // This is a horizontal edge, verify it has a midpoint
+      EXPECT_TRUE(edge.node_idx_mid.has_value()) 
+          << "Split horizontal edge should have a midpoint";
+      
+      if (edge.node_idx_mid.has_value())
+      {
+        split_edge_midpoints.push_back(edge.node_idx_mid);
+        
+        // Verify the midpoint is correctly positioned
+        const gp_Pnt2d& edge_midpoint = sketch.get_nodes()[*edge.node_idx_mid];
+        double expected_x = (pt_a.X() + pt_b.X()) / 2.0;
+        EXPECT_NEAR(edge_midpoint.X(), expected_x, Precision::Confusion())
+            << "Midpoint should be at the center of the edge";
+        EXPECT_NEAR(edge_midpoint.Y(), 0.0, Precision::Confusion())
+            << "Midpoint should have y=0";
+        
+        // Verify the midpoint is marked as a midpoint
+        EXPECT_TRUE(sketch.get_nodes()[*edge.node_idx_mid].is_midpoint)
+            << "Midpoint node should be marked as midpoint";
+      }
+    }
+  }
+
+  // Should have found two split edges with midpoints
+  EXPECT_EQ(split_edge_midpoints.size(), 2) 
+      << "Should have found 2 horizontal split edges with midpoints";
+
+  // Verify the split edge midpoints are at (5, 0) and (15, 0)
+  std::vector<double> midpoint_x_coords;
+  for (const auto& mid_idx : split_edge_midpoints)
+  {
+    if (mid_idx.has_value())
+    {
+      const gp_Pnt2d& mp = sketch.get_nodes()[*mid_idx];
+      midpoint_x_coords.push_back(mp.X());
+    }
+  }
+  
+  std::sort(midpoint_x_coords.begin(), midpoint_x_coords.end());
+  ASSERT_EQ(midpoint_x_coords.size(), 2);
+  EXPECT_NEAR(midpoint_x_coords[0], 5.0, Precision::Confusion()) 
+      << "First split edge should have midpoint at x=5";
+  EXPECT_NEAR(midpoint_x_coords[1], 15.0, Precision::Confusion()) 
+      << "Second split edge should have midpoint at x=15";
+}

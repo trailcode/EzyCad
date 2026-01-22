@@ -9,4 +9,5 @@
 
 * For selection mode, not all of the current modes are useful.
 * Scale mode broken.
-* Add concept of dim or dimension, use with node, a measurement, but does not participate in generating faces. 
+* Add concept of dim or dimension, use with node, a measurement, but does not participate in generating faces.
+* ~~After an edge is split by its midpoint, the split edges do not have midpoints to snap to~~ - FIXED 
