@@ -141,7 +141,7 @@ For detailed information on creating 2D geometry, see the [2D Sketching](#2d-ske
 
 2. **Sketch Operations**
    - [Define operation axis](#operation-axis-tool) <img src="icons/Sketcher_MirrorSketch.png" alt="Operation Axis Tool" width="20" height="20">
-   - Toggle edge dimensions
+   - [Toggle edge dimensions](#toggle-edge-dimensions-tool) <img src="icons/TechDraw_LengthDimension.png" alt="Toggle Edge Dimensions Tool" width="20" height="20">
    - Mirror sketches
    - [Create sketch from planar face](#create-sketch-from-planar-face-tool) <img src="icons/Macro_FaceToSketch_48.png" alt="Create Sketch from Planar Face Tool" width="20" height="20">
 
@@ -566,6 +566,44 @@ Once an axis is defined, the options panel will show:
 - Select edges or faces before using the Mirror or Revolve operations
 - The axis can be redefined at any time by clicking again in operation axis mode
 - Use snap points for precise axis placement relative to existing geometry
+
+#### Toggle Edge Dimensions Tool
+
+The toggle edge dimensions tool allows you to show or hide length dimension annotations on individual sketch edges, making it easier to verify measurements and understand the geometry of your sketches.
+
+![Toggle Edge Dimensions Tool](icons/TechDraw_LengthDimension.png)
+
+**Features:**
+- **Visual dimension display**: Shows length measurements on sketch edges
+- **Per-edge toggle**: Click on individual edges to show or hide their dimensions
+- **Helpful for verification**: Quickly verify that your sketch has the correct dimensions
+
+**How to Use:**
+1. Select the **Toggle Edge Dimensions** tool from the toolbar <img src="icons/TechDraw_LengthDimension.png" alt="TechDraw_LengthDimension" width="20" height="20">
+2. Click on any edge in the current sketch to toggle its dimension annotation on or off
+3. Repeat for any other edges you want to show or hide dimensions for
+4. Click on an edge again to hide its dimension if it's currently visible
+
+**When to Use:**
+- **Design verification**: Check that your sketch dimensions match your design requirements
+- **Quality control**: Verify measurements before extruding or performing operations
+- **Learning and debugging**: Understand how your sketch geometry is sized
+- **Documentation**: Take screenshots with dimensions visible for reference
+- **Selective display**: Show dimensions only for the edges you're interested in
+
+**Tips:**
+- Each edge's dimension can be toggled independently
+- The dimensions show the actual length of each edge
+- This tool is particularly useful when working with precise measurements
+- Use in combination with the distance input feature (Tab key) when creating edges
+- Dimensions are for display only and do not constrain the geometry
+- Toggle dimensions on only the edges you need to reduce visual clutter
+
+**Technical Details:**
+- Dimensions are calculated from the actual edge geometry
+- The tool displays measurements in the current unit system
+- Dimensions update automatically when geometry is modified
+- This is a view-only feature - it does not affect the underlying geometry
 
 #### Create Sketch from Planar Face Tool
 
