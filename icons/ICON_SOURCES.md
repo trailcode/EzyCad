@@ -12,3 +12,5 @@ SVGs can be downloaded from the FreeCAD repo and converted to PNG for the toolba
 Full Draft icons: https://github.com/FreeCAD/FreeCAD/tree/main/src/Mod/Draft/Resources/icons
 
 Convert SVG → PNG at **48×48** (e.g. Inkscape, ImageMagick) and save as `Draft_Array.png`, `Draft_PathArray.png` in this folder. Toolbar buttons display at 48×48.
+
+**Build:** Icons are copied from `icons/*.png` to the build output (Debug/Release) when you build. If you add new PNGs to `icons/`, re-run CMake (e.g. from `build`: `cmake ..`) so they are included, then build again.

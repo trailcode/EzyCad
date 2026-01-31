@@ -98,6 +98,8 @@ else()
   set(OCCT_BIN_DIR)
 endif()
 
+# Icons are copied to build/Debug, build/Release etc. at build time.
+# Add new .png files to icons/ then re-run CMake (so GLOB picks them up) and build.
 file(GLOB ICON_ASSETS "${CMAKE_SOURCE_DIR}/icons/*.png")
 file(GLOB WEB_FILES "${CMAKE_SOURCE_DIR}/web/EzyCad.html")
 
