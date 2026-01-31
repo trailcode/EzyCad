@@ -88,7 +88,8 @@ void GUI::set_parent_mode()
       {                 Mode::Shape_chamfer,                 Mode::Normal},
       {                  Mode::Shape_fillet,                 Mode::Normal},
       {         Mode::Shape_polar_duplicate,                 Mode::Normal},
-      {         Mode::Shape_array_duplicate,                 Mode::Normal},
+      {          Mode::Shape_rect_duplicate,                 Mode::Normal},
+      {          Mode::Shape_path_duplicate,                 Mode::Normal},
       {               Mode::Sketch_add_node, Mode::Sketch_inspection_mode},
       {               Mode::Sketch_add_edge, Mode::Sketch_inspection_mode},
       {        Mode::Sketch_add_multi_edges, Mode::Sketch_inspection_mode},
@@ -237,7 +238,8 @@ void GUI::initialize_toolbar_()
       {             load_texture("PartDesign_Chamfer.png"), false,                          "Chamfer",                  Mode::Shape_chamfer},
       {              load_texture("PartDesign_Fillet.png"), false,                           "Fillet",                   Mode::Shape_fillet},
       {               load_texture("Draft_PolarArray.png"), false,            "Shape polar duplicate",          Mode::Shape_polar_duplicate},
-      {               load_texture("Draft_PolarArray.png"), false,            "Shape array duplicate",          Mode::Shape_array_duplicate},
+      {               load_texture("Draft_PolarArray.png"), false,        "Shape rectangle duplicate",           Mode::Shape_rect_duplicate},
+      {               load_texture("Draft_PolarArray.png"), false,             "Shape path duplicate",           Mode::Shape_path_duplicate},
       {                       load_texture("Part_Cut.png"), false,                        "Shape cut",                   Command::Shape_cut},
       {                      load_texture("Part_Fuse.png"), false,                       "Shape fuse",                  Command::Shape_fuse},
       {                    load_texture("Part_Common.png"), false,                     "Shape common",                Command::Shape_common},
@@ -718,7 +720,8 @@ void GUI::options_()
     case Mode::Shape_chamfer:         options_shape_chamfer_mode_();          break;
     case Mode::Shape_fillet:          options_shape_fillet_mode_();           break;
     case Mode::Shape_polar_duplicate: options_shape_polar_duplicate_mode_();  break;
-    case Mode::Shape_array_duplicate: options_shape_array_duplicate_mode_();  break;
+    case Mode::Shape_rect_duplicate: options_shape_rect_duplicate_mode_();  break;
+    case Mode::Shape_path_duplicate: options_shape_path_duplicate_mode_();  break;
     default:
       break;
   }
@@ -878,9 +881,14 @@ void GUI::options_shape_polar_duplicate_mode_()
       show_message(s.message());
 }
 
-void GUI::options_shape_array_duplicate_mode_()
+void GUI::options_shape_rect_duplicate_mode_()
 {
-  // TODO: Shape array duplicate options
+  // TODO: Shape rect duplicate options
+}
+
+void GUI::options_shape_path_duplicate_mode_()
+{
+  // TODO: Shape path duplicate options
 }
 
 void GUI::on_key_rotate_mode_(int key)
@@ -1083,8 +1091,12 @@ void GUI::on_mouse_pos(const ScreenCoords& screen_coords)
 
       break;
 
-    case Mode::Shape_array_duplicate:
-      // TODO: array duplicate move_point
+    case Mode::Shape_rect_duplicate:
+      // TODO: rect duplicate move_point
+      break;
+
+    case Mode::Shape_path_duplicate:
+      // TODO: path duplicate move_point
       break;
 
     case Mode::Sketch_add_edge:
@@ -1160,8 +1172,12 @@ void GUI::on_mouse_button(int button, int action, int mods)
 
         break;
 
-      case Mode::Shape_array_duplicate:
-        // TODO: array duplicate add_point
+      case Mode::Shape_rect_duplicate:
+        // TODO: rect duplicate add_point
+        break;
+
+      case Mode::Shape_path_duplicate:
+        // TODO: path duplicate add_point
         break;
 
       default:
