@@ -15,7 +15,7 @@ enum class Mode
   Shape_chamfer,                   // For chamfering a shape
   Shape_fillet,                    // For filleting a shape
   Shape_polar_duplicate,           // For polar duplicating a shape
-  Shape_rect_duplicate,            // For rect duplicating a shape
+  Shape_rect_duplicate,            // For rectangle duplicating a shape
   Shape_path_duplicate,            // For path duplicating a shape
   Sketch_add_node,                 // For adding a node to a sketch
   Sketch_add_edge,                 // For adding an edge to a sketch
