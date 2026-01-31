@@ -238,8 +238,8 @@ void GUI::initialize_toolbar_()
       {             load_texture("PartDesign_Chamfer.png"), false,                          "Chamfer",                  Mode::Shape_chamfer},
       {              load_texture("PartDesign_Fillet.png"), false,                           "Fillet",                   Mode::Shape_fillet},
       {               load_texture("Draft_PolarArray.png"), false,            "Shape polar duplicate",          Mode::Shape_polar_duplicate},
-      {               load_texture("Draft_PolarArray.png"), false,        "Shape rectangle duplicate",           Mode::Shape_rect_duplicate},
-      {               load_texture("Draft_PolarArray.png"), false,             "Shape path duplicate",           Mode::Shape_path_duplicate},
+      {                 load_texture("Draft_Array.png"), false,        "Shape rectangle duplicate",           Mode::Shape_rect_duplicate},
+      {            load_texture("Draft_PathArray.png"), false,             "Shape path duplicate",           Mode::Shape_path_duplicate},
       {                       load_texture("Part_Cut.png"), false,                        "Shape cut",                   Command::Shape_cut},
       {                      load_texture("Part_Fuse.png"), false,                       "Shape fuse",                  Command::Shape_fuse},
       {                    load_texture("Part_Common.png"), false,                     "Shape common",                Command::Shape_common},
@@ -339,7 +339,7 @@ void GUI::toolbar_()
   // ImGui::Begin("Toolbar", nullptr, ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoResize);
   ImGui::Begin("Toolbar", nullptr, ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_AlwaysAutoResize);
 
-  ImVec2 button_size(32, 32);
+  ImVec2 button_size(48, 48);
 
   for (int i = 0; i < m_toolbar_buttons.size(); i++)
   {
