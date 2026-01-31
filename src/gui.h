@@ -94,6 +94,7 @@ class GUI
   void options_shape_chamfer_mode_();
   void options_shape_fillet_mode_();
   void options_shape_polar_duplicate_mode_();
+  void options_shape_array_duplicate_mode_();
   void options_rotate_mode_();
   void dbg_();
   void initialize_toolbar_();

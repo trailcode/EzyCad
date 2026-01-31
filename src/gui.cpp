@@ -88,6 +88,7 @@ void GUI::set_parent_mode()
       {                 Mode::Shape_chamfer,                 Mode::Normal},
       {                  Mode::Shape_fillet,                 Mode::Normal},
       {         Mode::Shape_polar_duplicate,                 Mode::Normal},
+      {         Mode::Shape_array_duplicate,                 Mode::Normal},
       {               Mode::Sketch_add_node, Mode::Sketch_inspection_mode},
       {               Mode::Sketch_add_edge, Mode::Sketch_inspection_mode},
       {        Mode::Sketch_add_multi_edges, Mode::Sketch_inspection_mode},
@@ -236,6 +237,7 @@ void GUI::initialize_toolbar_()
       {             load_texture("PartDesign_Chamfer.png"), false,                          "Chamfer",                  Mode::Shape_chamfer},
       {              load_texture("PartDesign_Fillet.png"), false,                           "Fillet",                   Mode::Shape_fillet},
       {               load_texture("Draft_PolarArray.png"), false,            "Shape polar duplicate",          Mode::Shape_polar_duplicate},
+      {               load_texture("Draft_PolarArray.png"), false,            "Shape array duplicate",          Mode::Shape_array_duplicate},
       {                       load_texture("Part_Cut.png"), false,                        "Shape cut",                   Command::Shape_cut},
       {                      load_texture("Part_Fuse.png"), false,                       "Shape fuse",                  Command::Shape_fuse},
       {                    load_texture("Part_Common.png"), false,                     "Shape common",                Command::Shape_common},
@@ -716,6 +718,7 @@ void GUI::options_()
     case Mode::Shape_chamfer:         options_shape_chamfer_mode_();          break;
     case Mode::Shape_fillet:          options_shape_fillet_mode_();           break;
     case Mode::Shape_polar_duplicate: options_shape_polar_duplicate_mode_();  break;
+    case Mode::Shape_array_duplicate: options_shape_array_duplicate_mode_();  break;
     default:
       break;
   }
@@ -873,6 +876,11 @@ void GUI::options_shape_polar_duplicate_mode_()
   if (ImGui::Button("Dup"))
     if (Status s = polar_dup.dup(); !s.is_ok())
       show_message(s.message());
+}
+
+void GUI::options_shape_array_duplicate_mode_()
+{
+  // TODO: Shape array duplicate options
 }
 
 void GUI::on_key_rotate_mode_(int key)
@@ -1075,6 +1083,10 @@ void GUI::on_mouse_pos(const ScreenCoords& screen_coords)
 
       break;
 
+    case Mode::Shape_array_duplicate:
+      // TODO: array duplicate move_point
+      break;
+
     case Mode::Sketch_add_edge:
     case Mode::Sketch_add_multi_edges:
     case Mode::Sketch_operation_axis:
@@ -1146,6 +1158,10 @@ void GUI::on_mouse_button(int button, int action, int mods)
         if (Status s = m_view->shp_polar_dup().add_point(screen_coords); !s.is_ok())
           show_message(s.message());
 
+        break;
+
+      case Mode::Shape_array_duplicate:
+        // TODO: array duplicate add_point
         break;
 
       default:

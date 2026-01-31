@@ -904,6 +904,7 @@ void Occt_view::on_mode()
     switch (get_mode())
     {
       case Mode::Shape_polar_duplicate:
+      case Mode::Shape_array_duplicate:
         show_only_current_sketch();
         break;
 
