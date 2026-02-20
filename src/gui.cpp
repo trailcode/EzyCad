@@ -37,6 +37,13 @@ GUI::~GUI()
   cleanup_log_redirection_();  // Clean up stream redirection
 }
 
+ImVec4 GUI::get_clear_color() const
+{
+  if (m_dark_mode)
+    return ImVec4(0.10f, 0.10f, 0.12f, 1.00f);
+  return ImVec4(0.45f, 0.55f, 0.60f, 1.00f);
+}
+
 #ifdef __EMSCRIPTEN__
 GUI& GUI::instance()
 {
@@ -47,6 +54,11 @@ GUI& GUI::instance()
 
 void GUI::render_gui()
 {
+  if (m_dark_mode)
+    ImGui::StyleColorsDark();
+  else
+    ImGui::StyleColorsLight();
+
   menu_bar_();
   toolbar_();
   dist_edit_();
@@ -654,6 +666,40 @@ void GUI::shape_list_()
 void GUI::options_()
 {
   ImGui::Begin("Options", nullptr, ImGuiWindowFlags_NoCollapse);
+
+  ImGui::Checkbox("Dark mode", &m_dark_mode);
+
+  if (ImGui::CollapsingHeader("3D view background"))
+  {
+    float bg1[3], bg2[3];
+    m_view->get_bg_gradient_colors(bg1, bg2);
+    bool bg_changed = false;
+    if (ImGui::ColorEdit3("Background color 1", bg1, ImGuiColorEditFlags_Float))
+      bg_changed = true;
+    if (ImGui::ColorEdit3("Background color 2", bg2, ImGuiColorEditFlags_Float))
+      bg_changed = true;
+    if (bg_changed)
+      m_view->set_bg_gradient_colors(bg1[0], bg1[1], bg1[2], bg2[0], bg2[1], bg2[2]);
+
+    const char* gradient_items[] = {"Horizontal", "Vertical", "Diagonal 1", "Diagonal 2",
+                                    "Corner 1",   "Corner 2", "Corner 3",  "Corner 4"};
+    int grad = m_view->get_bg_gradient_method();
+    if (ImGui::Combo("Gradient blend", &grad, gradient_items, 8))
+      m_view->set_bg_gradient_method(grad);
+  }
+
+  if (ImGui::CollapsingHeader("3D view grid"))
+  {
+    float g1[3], g2[3];
+    m_view->get_grid_colors(g1, g2);
+    bool grid_changed = false;
+    if (ImGui::ColorEdit3("Grid color 1", g1, ImGuiColorEditFlags_Float))
+      grid_changed = true;
+    if (ImGui::ColorEdit3("Grid color 2", g2, ImGuiColorEditFlags_Float))
+      grid_changed = true;
+    if (grid_changed)
+      m_view->set_grid_colors(g1[0], g1[1], g1[2], g2[0], g2[1], g2[2]);
+  }
 
   constexpr std::array<std::string_view, 26> c_material_names = {
       "Brass",

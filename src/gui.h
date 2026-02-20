@@ -8,6 +8,7 @@
 #include <variant>
 #include <vector>  // Added for log storage
 
+#include "imgui.h"
 #include "log.h"
 #include "modes.h"
 //#include "shp.h"
@@ -51,6 +52,8 @@ class GUI
   Fillet_mode get_fillet_mode() const { return m_fillet_mode; }
   bool get_hide_all_shapes() const { return m_hide_all_shapes; }
   void set_hide_all_shapes(bool hide) { m_hide_all_shapes = hide; }
+  bool get_dark_mode() const { return m_dark_mode; }
+  ImVec4 get_clear_color() const;
   void set_mode(Mode mode);
   void set_parent_mode();
   void set_dist_edit(float dist, std::function<void(float, bool)>&& callback, const std::optional<ScreenCoords> screen_coords = std::nullopt);
@@ -147,4 +150,5 @@ class GUI
   bool        m_show_sketch_list {true};
   bool        m_hide_all_shapes {false};
   bool        m_show_tool_tips {true};
+  bool        m_dark_mode {false};
 };

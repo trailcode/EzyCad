@@ -129,8 +129,7 @@ int main(int, char**)
   io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;  // Enable Keyboard Controls
   io.ConfigFlags |= ImGuiConfigFlags_NavEnableGamepad;   // Enable Gamepad Controls
 
-  // Setup Dear ImGui style
-  //ImGui::StyleColorsDark();
+  // Setup Dear ImGui style (initial; GUI applies light/dark from option each frame)
   ImGui::StyleColorsLight();
 
   // Setup Platform/Renderer backends
@@ -142,8 +141,6 @@ int main(int, char**)
 #endif
   ImGui_ImplOpenGL3_Init(glsl_version);
   io.Fonts->AddFontFromFileTTF("DroidSans.ttf", 18.0f);
-
-  ImVec4 clear_color = ImVec4(0.45f, 0.55f, 0.60f, 1.00f);
 
   GUI gui;
   gui.init(window);
@@ -246,6 +243,7 @@ int main(int, char**)
     }
 
     glViewport(0, 0, display_w, display_h);
+    ImVec4 clear_color = gui.get_clear_color();
     glClearColor(clear_color.x * clear_color.w,
                  clear_color.y * clear_color.w,
                  clear_color.z * clear_color.w,

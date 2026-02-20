@@ -1,6 +1,7 @@
 #include "occt_view.h"
 
 #include <AIS_ViewCube.hxx>
+#include <Aspect_GradientFillMethod.hxx>
 #include <Aspect_Grid.hxx>
 #include <BRepBndLib.hxx>
 #include <BRepBuilderAPI_Transform.hxx>
@@ -167,10 +168,8 @@ void Occt_view::init_viewer()
 
   aViewer->ActivateGrid(Aspect_GT_Rectangular, Aspect_GDM_Lines);
   aViewer->SetGridEcho(false);
+  // Grid colors set in update_view_background_()
   // aViewer->SetGridEcho(true);
-  Quantity_Color cc(0.1, 0.1, 0.1, Quantity_TypeOfColor::Quantity_TOC_RGB);
-  Quantity_Color cd(0.1, 0.1, 0.3, Quantity_TypeOfColor::Quantity_TOC_RGB);
-  aViewer->Grid()->SetColors(cc, cd);
   // aViewer->Grid()->SetDrawMode(Aspect_GridDrawMode::Aspect_GDM_Points);
 
   // aViewer->SetComputedMode(false);
@@ -207,6 +206,22 @@ void Occt_view::init_viewer()
   m_ctx->SetPixelTolerance(10);  // Picking?
 
   m_ctx->UpdateCurrentViewer();
+
+  // Set initial colors to match what OCCT renders (light gradient + grid)
+  m_bg_color1[0] = 0.85f;
+  m_bg_color1[1] = 0.88f;
+  m_bg_color1[2] = 0.90f;
+  m_bg_color2[0] = 0.45f;
+  m_bg_color2[1] = 0.55f;
+  m_bg_color2[2] = 0.60f;
+  m_bg_gradient_method = 1;  // Vertical
+  m_grid_color1[0] = 0.1f;
+  m_grid_color1[1] = 0.1f;
+  m_grid_color1[2] = 0.1f;
+  m_grid_color2[0] = 0.1f;
+  m_grid_color2[1] = 0.1f;
+  m_grid_color2[2] = 0.3f;
+  update_view_background_();
 
   Handle(AIS_ViewCube) myViewCube = new AIS_ViewCube();
   myViewCube->SetTransformPersistence(
@@ -713,6 +728,88 @@ void Occt_view::delete_(std::vector<AIS_Shape_ptr>& to_delete)
       ++itr;
 
   remove(to_delete);
+}
+
+static Aspect_GradientFillMethod gradient_method_from_int(int i)
+{
+  static const Aspect_GradientFillMethod methods[] = {
+      Aspect_GFM_HOR, Aspect_GFM_VER, Aspect_GFM_DIAG1, Aspect_GFM_DIAG2,
+      Aspect_GFM_CORNER1, Aspect_GFM_CORNER2, Aspect_GFM_CORNER3, Aspect_GFM_CORNER4};
+  const int n = static_cast<int>(sizeof(methods) / sizeof(methods[0]));
+  if (i < 0 || i >= n)
+    return Aspect_GFM_VER;
+  return methods[i];
+}
+
+void Occt_view::update_view_background_()
+{
+  if (m_view.IsNull())
+    return;
+
+  m_view->SetBgGradientColors(
+      Quantity_Color(m_bg_color1[0], m_bg_color1[1], m_bg_color1[2], Quantity_TOC_RGB),
+      Quantity_Color(m_bg_color2[0], m_bg_color2[1], m_bg_color2[2], Quantity_TOC_RGB),
+      gradient_method_from_int(m_bg_gradient_method),
+      Standard_True);
+
+  Handle(V3d_Viewer) viewer = m_view->Viewer();
+  if (!viewer.IsNull() && !viewer->Grid().IsNull())
+  {
+    Quantity_Color cc(m_grid_color1[0], m_grid_color1[1], m_grid_color1[2], Quantity_TOC_RGB);
+    Quantity_Color cd(m_grid_color2[0], m_grid_color2[1], m_grid_color2[2], Quantity_TOC_RGB);
+    viewer->Grid()->SetColors(cc, cd);
+  }
+}
+
+void Occt_view::get_bg_gradient_colors(float color1[3], float color2[3]) const
+{
+  for (int i = 0; i < 3; ++i)
+  {
+    color1[i] = m_bg_color1[i];
+    color2[i] = m_bg_color2[i];
+  }
+}
+
+void Occt_view::set_bg_gradient_colors(float r1, float g1, float b1, float r2, float g2, float b2)
+{
+  m_bg_color1[0] = r1;
+  m_bg_color1[1] = g1;
+  m_bg_color1[2] = b1;
+  m_bg_color2[0] = r2;
+  m_bg_color2[1] = g2;
+  m_bg_color2[2] = b2;
+  update_view_background_();
+}
+
+int Occt_view::get_bg_gradient_method() const
+{
+  return m_bg_gradient_method;
+}
+
+void Occt_view::set_bg_gradient_method(int method)
+{
+  m_bg_gradient_method = method;
+  update_view_background_();
+}
+
+void Occt_view::get_grid_colors(float color1[3], float color2[3]) const
+{
+  for (int i = 0; i < 3; ++i)
+  {
+    color1[i] = m_grid_color1[i];
+    color2[i] = m_grid_color2[i];
+  }
+}
+
+void Occt_view::set_grid_colors(float r1, float g1, float b1, float r2, float g2, float b2)
+{
+  m_grid_color1[0] = r1;
+  m_grid_color1[1] = g1;
+  m_grid_color1[2] = b1;
+  m_grid_color2[0] = r2;
+  m_grid_color2[1] = g2;
+  m_grid_color2[2] = b2;
+  update_view_background_();
 }
 
 void Occt_view::do_frame()
