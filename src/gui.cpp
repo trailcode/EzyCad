@@ -2,6 +2,9 @@
 
 #include <array>
 #include <map>
+#include <sstream>
+
+#include "settings.h"
 
 #ifdef __EMSCRIPTEN__
 #include <emscripten.h>
@@ -339,6 +342,113 @@ void GUI::open_url_(const char* url)
 #endif
   system(cmd.c_str());
 #endif
+}
+
+static void parse_occt_view_ini(const std::string& content, Occt_view* view)
+{
+  if (!view)
+    return;
+  bool in_section = false;
+  std::istringstream ss(content);
+  std::string line;
+  float bg1[3] = {0.85f, 0.88f, 0.90f};
+  float bg2[3] = {0.45f, 0.55f, 0.60f};
+  int   method = 1;
+  float g1[3]  = {0.1f, 0.1f, 0.1f};
+  float g2[3]  = {0.1f, 0.1f, 0.3f};
+  auto  read_float = [](const std::string& v) -> float
+  {
+    float x = 0.f;
+    std::istringstream is(v);
+    is >> x;
+    return x;
+  };
+  while (std::getline(ss, line))
+  {
+    if (line.empty())
+      continue;
+    if (line[0] == '[')
+    {
+      in_section = (line == "[OCCTView]");
+      continue;
+    }
+    if (!in_section)
+      continue;
+    size_t eq = line.find('=');
+    if (eq == std::string::npos)
+      continue;
+    std::string key   = line.substr(0, eq);
+    std::string value = line.substr(eq + 1);
+    if (key == "BgR1")
+      bg1[0] = read_float(value);
+    else if (key == "BgG1")
+      bg1[1] = read_float(value);
+    else if (key == "BgB1")
+      bg1[2] = read_float(value);
+    else if (key == "BgR2")
+      bg2[0] = read_float(value);
+    else if (key == "BgG2")
+      bg2[1] = read_float(value);
+    else if (key == "BgB2")
+      bg2[2] = read_float(value);
+    else if (key == "BgMethod")
+    {
+      try
+      {
+        method = std::stoi(value);
+      }
+      catch (...)
+      {
+      }
+    }
+    else if (key == "GridR1")
+      g1[0] = read_float(value);
+    else if (key == "GridG1")
+      g1[1] = read_float(value);
+    else if (key == "GridB1")
+      g1[2] = read_float(value);
+    else if (key == "GridR2")
+      g2[0] = read_float(value);
+    else if (key == "GridG2")
+      g2[1] = read_float(value);
+    else if (key == "GridB2")
+      g2[2] = read_float(value);
+  }
+  view->set_bg_gradient_colors(bg1[0], bg1[1], bg1[2], bg2[0], bg2[1], bg2[2]);
+  view->set_bg_gradient_method(method);
+  view->set_grid_colors(g1[0], g1[1], g1[2], g2[0], g2[1], g2[2]);
+}
+
+void GUI::load_occt_view_ini()
+{
+  std::string content = settings::load();
+  if (content.empty())
+    return;
+  parse_occt_view_ini(content, m_view.get());
+}
+
+void GUI::save_occt_view_ini()
+{
+  float bg1[3], bg2[3], g1[3], g2[3];
+  m_view->get_bg_gradient_colors(bg1, bg2);
+  m_view->get_grid_colors(g1, g2);
+  int method = m_view->get_bg_gradient_method();
+  std::string content;
+  content += "[OCCTView]\n";
+  content += "BgR1=" + std::to_string(bg1[0]) + "\n";
+  content += "BgG1=" + std::to_string(bg1[1]) + "\n";
+  content += "BgB1=" + std::to_string(bg1[2]) + "\n";
+  content += "BgR2=" + std::to_string(bg2[0]) + "\n";
+  content += "BgG2=" + std::to_string(bg2[1]) + "\n";
+  content += "BgB2=" + std::to_string(bg2[2]) + "\n";
+  content += "BgMethod=" + std::to_string(method) + "\n";
+  content += "GridR1=" + std::to_string(g1[0]) + "\n";
+  content += "GridG1=" + std::to_string(g1[1]) + "\n";
+  content += "GridB1=" + std::to_string(g1[2]) + "\n";
+  content += "GridR2=" + std::to_string(g2[0]) + "\n";
+  content += "GridG2=" + std::to_string(g2[1]) + "\n";
+  content += "GridB2=" + std::to_string(g2[2]) + "\n";
+  settings::save(content);
 }
 
 // Render toolbar with ImGui

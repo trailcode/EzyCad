@@ -64,6 +64,11 @@ file(GLOB srcs "src/*.cpp" "src/*.h" "src/*.inl")
 get_filename_component(full_path_main_cpp ${CMAKE_CURRENT_SOURCE_DIR}/src/main.cpp ABSOLUTE)
 list(REMOVE_ITEM srcs ${full_path_main_cpp})
 
+# Ensure settings.cpp is always in the library (persistence for native + Emscripten)
+set(settings_cpp ${CMAKE_CURRENT_SOURCE_DIR}/src/settings.cpp)
+list(REMOVE_ITEM srcs "src/settings.cpp" ${settings_cpp})
+list(APPEND srcs ${settings_cpp})
+
 # Define source files for the application
 # Including ImGui sources and main application file
 set(App_SRCS ${imguiSrc} ${srcs})

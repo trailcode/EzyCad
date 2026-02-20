@@ -144,6 +144,7 @@ int main(int, char**)
 
   GUI gui;
   gui.init(window);
+  gui.load_occt_view_ini();
 
   keyCallback = [&](GLFWwindow* window, int key, int scancode, int action, int mods)
   {
@@ -261,6 +262,7 @@ int main(int, char**)
 #endif
 
   // Cleanup
+  gui.save_occt_view_ini();
   ImGui_ImplOpenGL3_Shutdown();
   ImGui_ImplGlfw_Shutdown();
   ImGui::DestroyContext();

@@ -72,6 +72,9 @@ class GUI
   void on_file(const std::string& file_path, const std::string& json_str);
   void on_import_file(const std::string& file_path, const std::string& file_data);
 
+  void load_occt_view_ini();
+  void save_occt_view_ini();
+
  private:
   friend class GUI_access;
 
