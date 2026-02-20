@@ -6,6 +6,8 @@
 
 #include "settings.h"
 
+#include <nlohmann/json.hpp>
+
 #ifdef __EMSCRIPTEN__
 #include <emscripten.h>
 #else
@@ -344,6 +346,63 @@ void GUI::open_url_(const char* url)
 #endif
 }
 
+static void parse_occt_view_ini(const std::string& content, Occt_view* view);
+static void parse_occt_view_json(const std::string& content, Occt_view* view);
+
+static void parse_occt_view_settings(const std::string& content, Occt_view* view)
+{
+  if (!view || content.empty())
+    return;
+  if (content[0] == '{')
+  {
+    parse_occt_view_json(content, view);
+    return;
+  }
+  if (content[0] == '[')
+    parse_occt_view_ini(content, view);
+}
+
+static void parse_occt_view_json(const std::string& content, Occt_view* view)
+{
+  if (!view)
+    return;
+  try
+  {
+    using namespace nlohmann;
+    const json j = json::parse(content);
+    if (!j.contains("occt_view") || !j["occt_view"].is_object())
+      return;
+    const json& ov = j["occt_view"];
+    float bg1[3] = {0.85f, 0.88f, 0.90f};
+    float bg2[3] = {0.45f, 0.55f, 0.60f};
+    int   method = 1;
+    float g1[3]  = {0.1f, 0.1f, 0.1f};
+    float g2[3]  = {0.1f, 0.1f, 0.3f};
+    auto  arr3   = [](const json& a, float* out) {
+      if (a.is_array() && a.size() >= 3)
+        for (size_t i = 0; i < 3; ++i)
+          if (a[i].is_number())
+            out[i] = a[i].get<float>();
+    };
+    if (ov.contains("bg_color1"))
+      arr3(ov["bg_color1"], bg1);
+    if (ov.contains("bg_color2"))
+      arr3(ov["bg_color2"], bg2);
+    if (ov.contains("bg_gradient_method") && ov["bg_gradient_method"].is_number_integer())
+      method = ov["bg_gradient_method"].get<int>();
+    if (ov.contains("grid_color1"))
+      arr3(ov["grid_color1"], g1);
+    if (ov.contains("grid_color2"))
+      arr3(ov["grid_color2"], g2);
+    view->set_bg_gradient_colors(bg1[0], bg1[1], bg1[2], bg2[0], bg2[1], bg2[2]);
+    view->set_bg_gradient_method(method);
+    view->set_grid_colors(g1[0], g1[1], g1[2], g2[0], g2[1], g2[2]);
+  }
+  catch (...)
+  {
+  }
+}
+
 static void parse_occt_view_ini(const std::string& content, Occt_view* view)
 {
   if (!view)
@@ -422,9 +481,15 @@ static void parse_occt_view_ini(const std::string& content, Occt_view* view)
 void GUI::load_occt_view_ini()
 {
   std::string content = settings::load();
+#if 1  // Set to 0 to disable logging loaded settings to the log window
+  if (!content.empty())
+    log_message("Settings loaded:\n" + content);
+  else
+    log_message("Settings loaded: (none)");
+#endif
   if (content.empty())
     return;
-  parse_occt_view_ini(content, m_view.get());
+  parse_occt_view_settings(content, m_view.get());
 }
 
 void GUI::save_occt_view_ini()
@@ -433,22 +498,16 @@ void GUI::save_occt_view_ini()
   m_view->get_bg_gradient_colors(bg1, bg2);
   m_view->get_grid_colors(g1, g2);
   int method = m_view->get_bg_gradient_method();
-  std::string content;
-  content += "[OCCTView]\n";
-  content += "BgR1=" + std::to_string(bg1[0]) + "\n";
-  content += "BgG1=" + std::to_string(bg1[1]) + "\n";
-  content += "BgB1=" + std::to_string(bg1[2]) + "\n";
-  content += "BgR2=" + std::to_string(bg2[0]) + "\n";
-  content += "BgG2=" + std::to_string(bg2[1]) + "\n";
-  content += "BgB2=" + std::to_string(bg2[2]) + "\n";
-  content += "BgMethod=" + std::to_string(method) + "\n";
-  content += "GridR1=" + std::to_string(g1[0]) + "\n";
-  content += "GridG1=" + std::to_string(g1[1]) + "\n";
-  content += "GridB1=" + std::to_string(g1[2]) + "\n";
-  content += "GridR2=" + std::to_string(g2[0]) + "\n";
-  content += "GridG2=" + std::to_string(g2[1]) + "\n";
-  content += "GridB2=" + std::to_string(g2[2]) + "\n";
-  settings::save(content);
+  using namespace nlohmann;
+  json j;
+  j["occt_view"] = {
+      {"bg_color1", {bg1[0], bg1[1], bg1[2]}},
+      {"bg_color2", {bg2[0], bg2[1], bg2[2]}},
+      {"bg_gradient_method", method},
+      {"grid_color1", {g1[0], g1[1], g1[2]}},
+      {"grid_color2", {g2[0], g2[1], g2[2]}},
+  };
+  settings::save(j.dump(2));
 }
 
 // Render toolbar with ImGui

@@ -27,7 +27,7 @@ std::string load()
   free(ptr);
   return result;
 #else
-  std::ifstream f("ezycad_settings.ini");
+  std::ifstream f("ezycad_settings.json");
   if (!f)
     return {};
   std::ostringstream os;
@@ -41,7 +41,7 @@ void save(const std::string& content)
 #ifdef __EMSCRIPTEN__
   EM_ASM_({ localStorage.setItem('ezycad_settings', UTF8ToString($0)); }, content.c_str());
 #else
-  std::ofstream f("ezycad_settings.ini");
+  std::ofstream f("ezycad_settings.json");
   if (f)
     f << content;
 #endif
