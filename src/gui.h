@@ -62,6 +62,13 @@ class GUI
   void hide_angle_edit();
   void show_message(const std::string& message);
   void log_message(const std::string& message);
+  void set_show_options(bool v) { m_show_options = v; }
+  void set_show_sketch_list(bool v) { m_show_sketch_list = v; }
+  void set_show_shape_list(bool v) { m_show_shape_list = v; }
+  void set_log_window_visible(bool v) { m_log_window_visible = v; }
+#ifndef NDEBUG
+  void set_show_dbg(bool v) { m_show_dbg = v; }
+#endif
   // clang-format on
 
 #ifdef __EMSCRIPTEN__
