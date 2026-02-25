@@ -161,6 +161,7 @@ if(CMAKE_CXX_COMPILER_ID STREQUAL "Emscripten")
             -s USE_ZLIB=1 \
             -s EXPORTED_FUNCTIONS=\"['_main', '_on_file_selected', '_on_save_file_selected']\" \
             -s EXPORTED_RUNTIME_METHODS=\"['ccall']\" \
+            -s FETCH=1 \
             --preload-file ${CMAKE_SOURCE_DIR}/third_party/imgui/fonts/DroidSans.ttf@/DroidSans.ttf \
             --preload-file ${CMAKE_SOURCE_DIR}/imgui.ini@/imgui.ini \
             --shell-file ${CMAKE_SOURCE_DIR}/web/EzyCad.html"
@@ -188,6 +189,7 @@ if(CMAKE_CXX_COMPILER_ID STREQUAL "Emscripten")
             -s USE_ZLIB=1 \
             -s EXPORTED_FUNCTIONS=\"['_main', '_on_file_selected', '_on_save_file_selected']\" \
             -s EXPORTED_RUNTIME_METHODS=\"['ccall']\" \
+            -s FETCH=1 \
             --preload-file ${CMAKE_SOURCE_DIR}/third_party/imgui/fonts/DroidSans.ttf@/DroidSans.ttf \
             --preload-file ${CMAKE_SOURCE_DIR}/imgui.ini@/imgui.ini \
             --shell-file ${CMAKE_SOURCE_DIR}/web/EzyCad.html"
@@ -209,13 +211,21 @@ if(CMAKE_CXX_COMPILER_ID STREQUAL "Emscripten")
         ${imguiImplSrcs}
         third_party/tinyfiledialogs/tinyfiledialogs.c)
 
-    # Copy EzyCad.html to the build directory for Emscripten
+    # Copy EzyCad.html and default settings to the build directory for Emscripten
     add_custom_command(
         TARGET ${PROJECT_NAME} POST_BUILD
         COMMAND ${CMAKE_COMMAND} -E copy_if_different
             ${CMAKE_SOURCE_DIR}/web/EzyCad.html
             $<TARGET_FILE_DIR:${PROJECT_NAME}>/EzyCad.html
         COMMENT "Copying EzyCad.html to build directory"
+    )
+    add_custom_command(
+        TARGET ${PROJECT_NAME} POST_BUILD
+        COMMAND ${CMAKE_COMMAND} -E make_directory $<TARGET_FILE_DIR:${PROJECT_NAME}>/res
+        COMMAND ${CMAKE_COMMAND} -E copy_if_different
+            ${CMAKE_SOURCE_DIR}/res/ezycad_settings.json
+            $<TARGET_FILE_DIR:${PROJECT_NAME}>/res/ezycad_settings.json
+        COMMENT "Copying res/ezycad_settings.json for Emscripten"
     )
 
     target_link_libraries(
@@ -249,6 +259,16 @@ else()
     find_package(glfw3  REQUIRED)
     
     add_executable(${PROJECT_NAME} "src/main.cpp")
+
+    # Copy default settings so native build finds res/ezycad_settings.json (required at runtime)
+    add_custom_command(
+        TARGET ${PROJECT_NAME} POST_BUILD
+        COMMAND ${CMAKE_COMMAND} -E make_directory $<TARGET_FILE_DIR:${PROJECT_NAME}>/res
+        COMMAND ${CMAKE_COMMAND} -E copy_if_different
+            ${CMAKE_SOURCE_DIR}/res/ezycad_settings.json
+            $<TARGET_FILE_DIR:${PROJECT_NAME}>/res/ezycad_settings.json
+        COMMENT "Copying res/ezycad_settings.json for native"
+    )
 
     target_link_libraries(${PROJECT_NAME} ${PROJECT_NAME}_lib)
     target_link_libraries(${PROJECT_NAME} ${BINARY_DIR}/thirdParty/unofficial-flayan-glew.${GLEW_VERSION}/build/native/lib/x64/dynamic/glew32.lib)

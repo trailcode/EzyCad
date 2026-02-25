@@ -533,7 +533,7 @@ static void parse_gui_panes_from_json(const std::string& content, GUI* gui)
 
 void GUI::load_occt_view_ini()
 {
-  std::string content = settings::load();
+  std::string content = settings::load_with_defaults();
 #if 1  // Set to 0 to disable logging loaded settings to the log window
   if (!content.empty())
     log_message("Settings loaded:\n" + content);
@@ -544,11 +544,28 @@ void GUI::load_occt_view_ini()
     return;
   parse_occt_view_settings(content, m_view.get());
   parse_gui_panes_from_json(content, this);
+  if (content[0] == '{')
+  {
+    try
+    {
+      using namespace nlohmann;
+      const json j = json::parse(content);
+      if (j.contains("imgui_ini") && j["imgui_ini"].is_string())
+      {
+        const std::string& ini = j["imgui_ini"].get<std::string>();
+        if (!ini.empty())
+          ImGui::LoadIniSettingsFromMemory(ini.c_str(), ini.size());
+      }
+    }
+    catch (...)
+    {
+    }
+  }
 }
 
 void GUI::save_occt_view_ini()
 {
-  std::string content = settings::load();
+  std::string content = settings::load_with_defaults();
   using namespace nlohmann;
   json j;
   if (!content.empty())
@@ -581,6 +598,9 @@ void GUI::save_occt_view_ini()
       {"show_dbg", m_show_dbg},
 #endif
   };
+  const char* imgui_ini = ImGui::SaveIniSettingsToMemory(nullptr);
+  if (imgui_ini && *imgui_ini)
+    j["imgui_ini"] = std::string(imgui_ini);
   settings::save(j.dump(2));
 }
 
@@ -1344,6 +1364,7 @@ void GUI::log_window_()
 void GUI::init(GLFWwindow* window)
 {
   initialize_toolbar_();
+  settings::set_log_callback([this](const std::string& m) { log_message(m); });
   setup_log_redirection_();  // Set up stream redirection
   m_view->init_window(window);
   m_view->init_viewer();

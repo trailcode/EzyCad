@@ -134,9 +134,8 @@ int main(int, char**)
 
   // Setup Platform/Renderer backends
   ImGui_ImplGlfw_InitForOpenGL(window, true);
+  io.IniFilename = nullptr;  // Layout persisted in ezycad_settings.json
 #ifdef __EMSCRIPTEN__
-  io.IniFilename = nullptr;  // Disable automatic saving/loading
-  ImGui::LoadIniSettingsFromDisk("/imgui.ini");
   ImGui_ImplGlfw_InstallEmscriptenCallbacks(window, "#canvas");
 #endif
   ImGui_ImplOpenGL3_Init(glsl_version);
@@ -196,10 +195,6 @@ int main(int, char**)
 
   // Main loop
 #ifdef __EMSCRIPTEN__
-  // For an Emscripten build we are disabling file-system access, so let's not
-  // attempt to do a fopen() of the imgui.ini file. You may manually call
-  // LoadIniSettingsFromMemory() to load settings from your own storage.
-  io.IniFilename = nullptr;
   EMSCRIPTEN_MAINLOOP_BEGIN
 #else
   while (!glfwWindowShouldClose(window))
@@ -256,6 +251,12 @@ int main(int, char**)
     ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
 
     glfwSwapBuffers(window);
+
+    if (io.WantSaveIniSettings)
+    {
+      gui.save_occt_view_ini();
+      io.WantSaveIniSettings = false;
+    }
   }
 #ifdef __EMSCRIPTEN__
   EMSCRIPTEN_MAINLOOP_END;
