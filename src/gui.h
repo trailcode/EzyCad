@@ -151,7 +151,12 @@ class GUI
 
   std::string m_last_saved_path;  // Added to store last saved file path
   bool        m_show_sketch_list {true};
+  bool        m_show_shape_list {true};
+  bool        m_show_options {true};
   bool        m_hide_all_shapes {false};
   bool        m_show_tool_tips {true};
   bool        m_dark_mode {false};
+#ifndef NDEBUG
+  bool        m_show_dbg {false};
+#endif
 };

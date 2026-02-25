@@ -70,11 +70,14 @@ void GUI::render_gui()
   angle_edit_();
   sketch_list_();
   shape_list_();
-  options_();
+  if (m_show_options)
+    options_();
   message_status_window_();
-  log_window_();
+  if (m_log_window_visible)
+    log_window_();
 #ifndef NDEBUG
-  dbg_();
+  if (m_show_dbg)
+    dbg_();
 #endif
 }
 
@@ -289,17 +292,22 @@ void GUI::menu_bar_()
     ImGui::EndMenu();
   }
 
-#if 0
   if (ImGui::BeginMenu("View"))
   {
-    if (ImGui::MenuItem("Geos Tests"))
-    {
-      // s_showGeosTestPanel ^= 1;
-    }
-
+    if (ImGui::MenuItem("Options", nullptr, m_show_options))
+      m_show_options = !m_show_options;
+    if (ImGui::MenuItem("Sketch List", nullptr, m_show_sketch_list))
+      m_show_sketch_list = !m_show_sketch_list;
+    if (ImGui::MenuItem("Shape List", nullptr, m_show_shape_list))
+      m_show_shape_list = !m_show_shape_list;
+    if (ImGui::MenuItem("Log", nullptr, m_log_window_visible))
+      m_log_window_visible = !m_log_window_visible;
+#ifndef NDEBUG
+    if (ImGui::MenuItem("Debug", nullptr, m_show_dbg))
+      m_show_dbg = !m_show_dbg;
+#endif
     ImGui::EndMenu();
   }
-#endif
 
   if (ImGui::BeginMenu("Help"))
   {
@@ -770,11 +778,10 @@ void GUI::sketch_list_()
 
 void GUI::shape_list_()
 {
-  int         index = 0;
-  static bool show  = true;
-  if (show)
+  int index = 0;
+  if (m_show_shape_list)
   {
-    ImGui::Begin("Shape List", &show, ImGuiWindowFlags_None);
+    ImGui::Begin("Shape List", &m_show_shape_list, ImGuiWindowFlags_None);
 
     // Add checkbox for hiding all shapes except current sketches
     if (ImGui::Checkbox("Hide all", &m_hide_all_shapes))
@@ -834,7 +841,8 @@ void GUI::shape_list_()
 
 void GUI::options_()
 {
-  ImGui::Begin("Options", nullptr, ImGuiWindowFlags_NoCollapse);
+  if (!ImGui::Begin("Options", &m_show_options, ImGuiWindowFlags_NoCollapse))
+    return;
 
   ImGui::Checkbox("Dark mode", &m_dark_mode);
 
@@ -1172,7 +1180,8 @@ void GUI::on_key_move_mode_(int key)
 
 void GUI::dbg_()
 {
-  ImGui::Begin("dbg", nullptr, ImGuiWindowFlags_NoCollapse);
+  if (!ImGui::Begin("dbg", &m_show_dbg, ImGuiWindowFlags_NoCollapse))
+    return;
   // Get the available content region width
   float available_width = ImGui::GetContentRegionAvail().x;
 
