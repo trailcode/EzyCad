@@ -6,9 +6,7 @@
 #include <sstream>
 
 #ifdef __EMSCRIPTEN__
-#include <emscripten.h>
-#include <emscripten/fetch.h>
-#include <cstdlib>
+// Defaults are loaded from preloaded file /res/ezycad_settings.json (no fetch).
 #endif
 
 namespace settings
@@ -23,19 +21,8 @@ void set_log_callback(std::function<void(const std::string&)> cb)
 std::string load()
 {
 #ifdef __EMSCRIPTEN__
-  void* ptr = (void*) (intptr_t) EM_ASM_INT(
-      {
-        var s = localStorage.getItem('ezycad_settings') || '';
-        var len = lengthBytesUTF8(s) + 1;
-        var buf = _malloc(len);
-        if (buf) stringToUTF8(s, buf, len);
-        return buf;
-      });
-  if (!ptr)
-    return {};
-  std::string result((const char*) ptr);
-  free(ptr);
-  return result;
+  // Stateless: never read from localStorage so every session uses defaults from server.
+  return {};
 #else
   std::ifstream f("ezycad_settings.json");
   if (!f)
@@ -51,19 +38,19 @@ std::string load_defaults()
   if (s_log_callback)
     s_log_callback("Settings: loading defaults from res/ezycad_settings.json");
 #ifdef __EMSCRIPTEN__
-  emscripten_fetch_attr_t attr;
-  emscripten_fetch_attr_init(&attr);
-  strcpy(attr.requestMethod, "GET");
-  attr.attributes = EMSCRIPTEN_FETCH_LOAD_TO_MEMORY | EMSCRIPTEN_FETCH_SYNCHRONOUS;
-  emscripten_fetch_t* fetch = emscripten_fetch(&attr, "res/ezycad_settings.json");
-  std::string result;
-  if (fetch && fetch->data && fetch->numBytes > 0)
-    result.assign(fetch->data, fetch->numBytes);
-  if (fetch)
-    emscripten_fetch_close(fetch);
+  // Read from preloaded file in virtual FS (--preload-file ...@/res/ezycad_settings.json).
+  std::ifstream f("/res/ezycad_settings.json");
+  if (!f)
+  {
+    if (s_log_callback)
+      s_log_callback("Settings: failed to load defaults (preloaded file not found)");
+    return {};
+  }
+  std::ostringstream os;
+  os << f.rdbuf();
+  std::string result = os.str();
   if (s_log_callback)
-    s_log_callback(result.empty() ? "Settings: failed to load defaults"
-                                  : "Settings: loaded defaults from res/ezycad_settings.json");
+    s_log_callback("Settings: loaded defaults from res/ezycad_settings.json");
   return result;
 #else
   std::ifstream f("res/ezycad_settings.json");
@@ -85,8 +72,10 @@ std::string load_with_defaults()
   if (content.empty())
   {
     content = load_defaults();
+#ifndef __EMSCRIPTEN__
     if (!content.empty())
       save(content);
+#endif
   }
   return content;
 }
@@ -94,7 +83,8 @@ std::string load_with_defaults()
 void save(const std::string& content)
 {
 #ifdef __EMSCRIPTEN__
-  EM_ASM_({ localStorage.setItem('ezycad_settings', UTF8ToString($0)); }, content.c_str());
+  // Stateless: never write to localStorage.
+  (void) content;
 #else
   std::ofstream f("ezycad_settings.json");
   if (f)

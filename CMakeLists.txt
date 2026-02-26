@@ -164,6 +164,7 @@ if(CMAKE_CXX_COMPILER_ID STREQUAL "Emscripten")
             -s FETCH=1 \
             --preload-file ${CMAKE_SOURCE_DIR}/third_party/imgui/fonts/DroidSans.ttf@/DroidSans.ttf \
             --preload-file ${CMAKE_SOURCE_DIR}/imgui.ini@/imgui.ini \
+            --preload-file ${CMAKE_SOURCE_DIR}/res/ezycad_settings.json@/res/ezycad_settings.json \
             --shell-file ${CMAKE_SOURCE_DIR}/web/EzyCad.html"
         )
     else()
@@ -192,6 +193,7 @@ if(CMAKE_CXX_COMPILER_ID STREQUAL "Emscripten")
             -s FETCH=1 \
             --preload-file ${CMAKE_SOURCE_DIR}/third_party/imgui/fonts/DroidSans.ttf@/DroidSans.ttf \
             --preload-file ${CMAKE_SOURCE_DIR}/imgui.ini@/imgui.ini \
+            --preload-file ${CMAKE_SOURCE_DIR}/res/ezycad_settings.json@/res/ezycad_settings.json \
             --shell-file ${CMAKE_SOURCE_DIR}/web/EzyCad.html"
         )
     endif()
