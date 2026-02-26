@@ -21,6 +21,9 @@
 #include "occt_view.h"
 #include "sketch.h"
 
+// Bump when settings schema or semantics change; mismatch causes defaults to be loaded.
+static const char* const k_settings_version = "1";
+
 // Must be here to prevent compiler warning
 #include <GLFW/glfw3.h>
 
@@ -550,6 +553,41 @@ static void parse_gui_panes_from_json(const std::string& content, GUI* gui)
 void GUI::load_occt_view_ini()
 {
   std::string content = settings::load_with_defaults();
+  if (!content.empty() && content[0] == '{')
+  {
+    try
+    {
+      using namespace nlohmann;
+      const json j = json::parse(content);
+      bool version_ok = j.contains("version") && j["version"].is_string() &&
+                        j["version"].get<std::string>() == k_settings_version;
+      if (!version_ok)
+      {
+        content = settings::load_defaults();
+        if (!content.empty())
+        {
+          try
+          {
+            json j_default = json::parse(content);
+            j_default["version"] = k_settings_version;
+            settings::save(j_default.dump(2));
+            content = j_default.dump(2);
+          }
+          catch (...)
+          {
+            settings::save(content);
+          }
+        }
+        log_message("Settings version mismatch or missing; loaded defaults.");
+      }
+    }
+    catch (...)
+    {
+      content = settings::load_defaults();
+      if (!content.empty())
+        settings::save(content);
+    }
+  }
 #if 1  // Set to 0 to disable logging loaded settings to the log window
   if (!content.empty())
     log_message("Settings loaded:\n" + content);
@@ -615,6 +653,7 @@ void GUI::save_occt_view_ini()
       {"show_dbg", m_show_dbg},
 #endif
   };
+  j["version"] = k_settings_version;
   const char* imgui_ini = ImGui::SaveIniSettingsToMemory(nullptr);
   if (imgui_ini && *imgui_ini)
     j["imgui_ini"] = std::string(imgui_ini);
