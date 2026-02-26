@@ -16,7 +16,16 @@
 #endif
 
 #ifdef __EMSCRIPTEN__
+#include <emscripten.h>
 #include "third_party/imgui/emscripten/emscripten_mainloop_stub.h"
+
+static GUI* s_gui_for_unload = nullptr;
+
+extern "C" void emscripten_save_settings_on_unload()
+{
+  if (s_gui_for_unload)
+    s_gui_for_unload->save_occt_view_ini();
+}
 #endif
 
 static void glfw_error_callback(int error, const char* description)
@@ -144,6 +153,16 @@ int main(int, char**)
   GUI gui;
   gui.init(window);
   gui.load_occt_view_ini();
+
+#ifdef __EMSCRIPTEN__
+  s_gui_for_unload = &gui;
+  EM_ASM(
+      {
+        window.addEventListener('beforeunload', function() {
+          Module.ccall('emscripten_save_settings_on_unload', null, [], []);
+        });
+      });
+#endif
 
   keyCallback = [&](GLFWwindow* window, int key, int scancode, int action, int mods)
   {

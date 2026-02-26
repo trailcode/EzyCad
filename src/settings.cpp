@@ -6,7 +6,8 @@
 #include <sstream>
 
 #ifdef __EMSCRIPTEN__
-// Defaults are loaded from preloaded file /res/ezycad_settings.json (no fetch).
+#include <emscripten.h>
+#include <cstdlib>
 #endif
 
 namespace settings
@@ -21,8 +22,19 @@ void set_log_callback(std::function<void(const std::string&)> cb)
 std::string load()
 {
 #ifdef __EMSCRIPTEN__
-  // Stateless: never read from localStorage so every session uses defaults from server.
-  return {};
+  void* ptr = (void*) (intptr_t) EM_ASM_INT(
+      {
+        var s = localStorage.getItem('ezycad_settings') || '';
+        var len = lengthBytesUTF8(s) + 1;
+        var buf = _malloc(len);
+        if (buf) stringToUTF8(s, buf, len);
+        return buf;
+      });
+  if (!ptr)
+    return {};
+  std::string result((const char*) ptr);
+  free(ptr);
+  return result;
 #else
   std::ifstream f("ezycad_settings.json");
   if (!f)
@@ -72,10 +84,8 @@ std::string load_with_defaults()
   if (content.empty())
   {
     content = load_defaults();
-#ifndef __EMSCRIPTEN__
     if (!content.empty())
       save(content);
-#endif
   }
   return content;
 }
@@ -83,8 +93,7 @@ std::string load_with_defaults()
 void save(const std::string& content)
 {
 #ifdef __EMSCRIPTEN__
-  // Stateless: never write to localStorage.
-  (void) content;
+  EM_ASM_({ localStorage.setItem('ezycad_settings', UTF8ToString($0)); }, content.c_str());
 #else
   std::ofstream f("ezycad_settings.json");
   if (f)

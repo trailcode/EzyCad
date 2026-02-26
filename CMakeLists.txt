@@ -159,7 +159,7 @@ if(CMAKE_CXX_COMPILER_ID STREQUAL "Emscripten")
             -s USE_WEBGL2=1 \
             -s USE_GLFW=3 \
             -s USE_ZLIB=1 \
-            -s EXPORTED_FUNCTIONS=\"['_main', '_on_file_selected', '_on_save_file_selected']\" \
+            -s EXPORTED_FUNCTIONS=\"['_main', '_on_file_selected', '_on_save_file_selected', '_emscripten_save_settings_on_unload']\" \
             -s EXPORTED_RUNTIME_METHODS=\"['ccall']\" \
             -s FETCH=1 \
             --preload-file ${CMAKE_SOURCE_DIR}/third_party/imgui/fonts/DroidSans.ttf@/DroidSans.ttf \
@@ -188,7 +188,7 @@ if(CMAKE_CXX_COMPILER_ID STREQUAL "Emscripten")
             -s USE_WEBGL2=1 \
             -s USE_GLFW=3 \
             -s USE_ZLIB=1 \
-            -s EXPORTED_FUNCTIONS=\"['_main', '_on_file_selected', '_on_save_file_selected']\" \
+            -s EXPORTED_FUNCTIONS=\"['_main', '_on_file_selected', '_on_save_file_selected', '_emscripten_save_settings_on_unload']\" \
             -s EXPORTED_RUNTIME_METHODS=\"['ccall']\" \
             -s FETCH=1 \
             --preload-file ${CMAKE_SOURCE_DIR}/third_party/imgui/fonts/DroidSans.ttf@/DroidSans.ttf \

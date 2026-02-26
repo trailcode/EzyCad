@@ -286,6 +286,14 @@ void GUI::menu_bar_()
     else if (ImGui::MenuItem("Import"))
       import_file_dialog_();
 
+#ifdef __EMSCRIPTEN__
+    else if (ImGui::MenuItem("Save settings"))
+    {
+      save_occt_view_ini();
+      show_message("Settings saved");
+    }
+#endif
+
     else if (ImGui::MenuItem("Exit"))
       exit(0);
 
