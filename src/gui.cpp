@@ -75,6 +75,8 @@ void GUI::render_gui()
   message_status_window_();
   if (m_log_window_visible)
     log_window_();
+  if (m_show_settings_dialog)
+    settings_dialog_();
 #ifndef NDEBUG
   if (m_show_dbg)
     dbg_();
@@ -303,6 +305,11 @@ void GUI::menu_bar_()
   if (ImGui::BeginMenu("View"))
   {
     bool save_panes = false;
+    if (ImGui::MenuItem("Settings", nullptr, m_show_settings_dialog))
+    {
+      m_show_settings_dialog = !m_show_settings_dialog;
+      save_panes = true;
+    }
     if (ImGui::MenuItem("Options", nullptr, m_show_options))
     {
       m_show_options = !m_show_options;
@@ -530,6 +537,7 @@ static void parse_gui_panes_from_json(const std::string& content, GUI* gui)
     gui->set_show_sketch_list(b("show_sketch_list", true));
     gui->set_show_shape_list(b("show_shape_list", true));
     gui->set_log_window_visible(b("log_window_visible", true));
+    gui->set_show_settings_dialog(b("show_settings_dialog", false));
 #ifndef NDEBUG
     gui->set_show_dbg(b("show_dbg", false));
 #endif
@@ -602,6 +610,7 @@ void GUI::save_occt_view_ini()
       {"show_sketch_list", m_show_sketch_list},
       {"show_shape_list", m_show_shape_list},
       {"log_window_visible", m_log_window_visible},
+      {"show_settings_dialog", m_show_settings_dialog},
 #ifndef NDEBUG
       {"show_dbg", m_show_dbg},
 #endif
@@ -1052,6 +1061,129 @@ void GUI::options_()
     float snap_dist = float(Sketch_nodes::get_snap_dist());
     if (ImGui::InputFloat("Snap dist##float_value", &snap_dist, 1.0f, 2.0f, "%.2f"))
       Sketch_nodes::set_snap_dist(snap_dist);
+  }
+
+  ImGui::End();
+}
+
+void GUI::settings_dialog_()
+{
+  ImGui::SetNextWindowSize(ImVec2(400, 0), ImGuiCond_FirstUseEver);  // Auto height
+  if (!ImGui::Begin("Settings", &m_show_settings_dialog, ImGuiWindowFlags_None))
+  {
+    ImGui::End();
+    save_occt_view_ini();  // Persist that dialog was closed (e.g. via X)
+    return;
+  }
+
+  if (ImGui::Checkbox("Dark mode", &m_dark_mode))
+    save_occt_view_ini();
+
+  if (ImGui::CollapsingHeader("3D view background"))
+  {
+    float bg1[3], bg2[3];
+    m_view->get_bg_gradient_colors(bg1, bg2);
+    bool bg_changed = false;
+    if (ImGui::ColorEdit3("Background color 1", bg1, ImGuiColorEditFlags_Float))
+      bg_changed = true;
+    if (ImGui::ColorEdit3("Background color 2", bg2, ImGuiColorEditFlags_Float))
+      bg_changed = true;
+    if (bg_changed)
+    {
+      m_view->set_bg_gradient_colors(bg1[0], bg1[1], bg1[2], bg2[0], bg2[1], bg2[2]);
+      save_occt_view_ini();
+    }
+    const char* gradient_items[] = {"Horizontal", "Vertical", "Diagonal 1", "Diagonal 2",
+                                    "Corner 1",   "Corner 2", "Corner 3",  "Corner 4"};
+    int grad = m_view->get_bg_gradient_method();
+    if (ImGui::Combo("Gradient blend", &grad, gradient_items, 8))
+    {
+      m_view->set_bg_gradient_method(grad);
+      save_occt_view_ini();
+    }
+  }
+
+  if (ImGui::CollapsingHeader("3D view grid"))
+  {
+    float g1[3], g2[3];
+    m_view->get_grid_colors(g1, g2);
+    bool grid_changed = false;
+    if (ImGui::ColorEdit3("Grid color 1", g1, ImGuiColorEditFlags_Float))
+      grid_changed = true;
+    if (ImGui::ColorEdit3("Grid color 2", g2, ImGuiColorEditFlags_Float))
+      grid_changed = true;
+    if (grid_changed)
+    {
+      m_view->set_grid_colors(g1[0], g1[1], g1[2], g2[0], g2[1], g2[2]);
+      save_occt_view_ini();
+    }
+  }
+
+  if (ImGui::CollapsingHeader("Appearance"))
+  {
+    static std::vector<std::string> s_dialog_material_names;
+    if (s_dialog_material_names.empty())
+      for (int i = 0; i < Graphic3d_MaterialAspect::NumberOfMaterials(); ++i)
+      {
+        Graphic3d_MaterialAspect mat(static_cast<Graphic3d_NameOfMaterial>(i));
+        s_dialog_material_names.push_back(mat.MaterialName());
+      }
+    int current_item = int(m_view->get_default_material().Name());
+    if (ImGui::BeginCombo("Default Material##settings", s_dialog_material_names[current_item].data(),
+                          ImGuiComboFlags_WidthFitPreview | ImGuiComboFlags_HeightSmall))
+    {
+      for (int i = 0; i < static_cast<int>(s_dialog_material_names.size()); i++)
+        if (ImGui::Selectable(s_dialog_material_names[i].data(), current_item == i))
+        {
+          Graphic3d_MaterialAspect mat(static_cast<Graphic3d_NameOfMaterial>(i));
+          m_view->set_default_material(mat);
+          save_occt_view_ini();
+        }
+      ImGui::EndCombo();
+    }
+
+    constexpr std::array<std::string_view, 9> c_names_TopAbs_ShapeEnum = {
+        "COMPOUND", "COMPSOLID", "SOLID", "SHELL", "FACE", "WIRE", "EDGE", "VERTEX", "SHAPE"};
+    int sel_item = static_cast<int>(m_view->get_shp_selection_mode());
+    if (ImGui::BeginCombo("Selection Mode##settings", c_names_TopAbs_ShapeEnum[sel_item].data(),
+                          ImGuiComboFlags_WidthFitPreview | ImGuiComboFlags_HeightSmall))
+    {
+      for (int i = 0; i < static_cast<int>(c_names_TopAbs_ShapeEnum.size()); i++)
+        if (ImGui::Selectable(c_names_TopAbs_ShapeEnum[i].data(), sel_item == i))
+        {
+          m_view->set_shp_selection_mode(static_cast<TopAbs_ShapeEnum>(i));
+          save_occt_view_ini();
+        }
+      ImGui::EndCombo();
+    }
+  }
+
+  if (ImGui::CollapsingHeader("Panes"))
+  {
+    bool save_panes = false;
+    if (ImGui::Checkbox("Options", &m_show_options))
+      save_panes = true;
+    if (ImGui::Checkbox("Sketch List", &m_show_sketch_list))
+      save_panes = true;
+    if (ImGui::Checkbox("Shape List", &m_show_shape_list))
+      save_panes = true;
+    if (ImGui::Checkbox("Log", &m_log_window_visible))
+      save_panes = true;
+#ifndef NDEBUG
+    if (ImGui::Checkbox("Debug", &m_show_dbg))
+      save_panes = true;
+#endif
+    if (ImGui::Checkbox("Tool tips", &m_show_tool_tips))
+      save_panes = true;
+    if (save_panes)
+      save_occt_view_ini();
+  }
+
+  ImGui::Separator();
+  if (ImGui::Button("Close"))
+  {
+    m_show_settings_dialog = false;
+    save_occt_view_ini();
   }
 
   ImGui::End();

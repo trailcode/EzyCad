@@ -66,6 +66,7 @@ class GUI
   void set_show_sketch_list(bool v) { m_show_sketch_list = v; }
   void set_show_shape_list(bool v) { m_show_shape_list = v; }
   void set_log_window_visible(bool v) { m_log_window_visible = v; }
+  void set_show_settings_dialog(bool v) { m_show_settings_dialog = v; }
 #ifndef NDEBUG
   void set_show_dbg(bool v) { m_show_dbg = v; }
 #endif
@@ -114,6 +115,7 @@ class GUI
   void toolbar_();
   void message_status_window_();
   void log_window_();
+  void settings_dialog_();
   void setup_log_redirection_();
   void cleanup_log_redirection_();
 
@@ -160,6 +162,7 @@ class GUI
   bool        m_show_sketch_list {true};
   bool        m_show_shape_list {true};
   bool        m_show_options {true};
+  bool        m_show_settings_dialog {false};
   bool        m_hide_all_shapes {false};
   bool        m_show_tool_tips {true};
   bool        m_dark_mode {false};
