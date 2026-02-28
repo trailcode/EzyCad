@@ -115,7 +115,7 @@ class GUI
   void toolbar_();
   void message_status_window_();
   void log_window_();
-  void settings_dialog_();
+  void settings_();
   void setup_log_redirection_();
   void cleanup_log_redirection_();
 

@@ -2,11 +2,10 @@
 
 #include <array>
 #include <map>
+#include <nlohmann/json.hpp>
 #include <sstream>
 
 #include "settings.h"
-
-#include <nlohmann/json.hpp>
 
 #ifdef __EMSCRIPTEN__
 #include <emscripten.h>
@@ -76,7 +75,7 @@ void GUI::render_gui()
   options_();
   message_status_window_();
   log_window_();
-  settings_dialog_();
+  settings_();
 #ifndef NDEBUG
   dbg_();
 #endif
@@ -307,27 +306,27 @@ void GUI::menu_bar_()
     if (ImGui::MenuItem("Settings", nullptr, m_show_settings_dialog))
     {
       m_show_settings_dialog = !m_show_settings_dialog;
-      save_panes = true;
+      save_panes             = true;
     }
     if (ImGui::MenuItem("Options", nullptr, m_show_options))
     {
       m_show_options = !m_show_options;
-      save_panes = true;
+      save_panes     = true;
     }
     if (ImGui::MenuItem("Sketch List", nullptr, m_show_sketch_list))
     {
       m_show_sketch_list = !m_show_sketch_list;
-      save_panes = true;
+      save_panes         = true;
     }
     if (ImGui::MenuItem("Shape List", nullptr, m_show_shape_list))
     {
       m_show_shape_list = !m_show_shape_list;
-      save_panes = true;
+      save_panes        = true;
     }
     if (ImGui::MenuItem("Log", nullptr, m_log_window_visible))
     {
       m_log_window_visible = !m_log_window_visible;
-      save_panes = true;
+      save_panes           = true;
     }
 #ifndef NDEBUG
     if (ImGui::MenuItem("Debug", nullptr, m_show_dbg))
@@ -412,13 +411,14 @@ static void parse_occt_view_json(const std::string& content, Occt_view* view)
     const json j = json::parse(content);
     if (!j.contains("occt_view") || !j["occt_view"].is_object())
       return;
-    const json& ov = j["occt_view"];
-    float bg1[3] = {0.85f, 0.88f, 0.90f};
-    float bg2[3] = {0.45f, 0.55f, 0.60f};
-    int   method = 1;
-    float g1[3]  = {0.1f, 0.1f, 0.1f};
-    float g2[3]  = {0.1f, 0.1f, 0.3f};
-    auto  arr3   = [](const json& a, float* out) {
+    const json& ov     = j["occt_view"];
+    float       bg1[3] = {0.85f, 0.88f, 0.90f};
+    float       bg2[3] = {0.45f, 0.55f, 0.60f};
+    int         method = 1;
+    float       g1[3]  = {0.1f, 0.1f, 0.1f};
+    float       g2[3]  = {0.1f, 0.1f, 0.3f};
+    auto        arr3   = [](const json& a, float* out)
+    {
       if (a.is_array() && a.size() >= 3)
         for (size_t i = 0; i < 3; ++i)
           if (a[i].is_number())
@@ -447,17 +447,17 @@ static void parse_occt_view_ini(const std::string& content, Occt_view* view)
 {
   if (!view)
     return;
-  bool in_section = false;
+  bool               in_section = false;
   std::istringstream ss(content);
-  std::string line;
-  float bg1[3] = {0.85f, 0.88f, 0.90f};
-  float bg2[3] = {0.45f, 0.55f, 0.60f};
-  int   method = 1;
-  float g1[3]  = {0.1f, 0.1f, 0.1f};
-  float g2[3]  = {0.1f, 0.1f, 0.3f};
-  auto  read_float = [](const std::string& v) -> float
+  std::string        line;
+  float              bg1[3]     = {0.85f, 0.88f, 0.90f};
+  float              bg2[3]     = {0.45f, 0.55f, 0.60f};
+  int                method     = 1;
+  float              g1[3]      = {0.1f, 0.1f, 0.1f};
+  float              g2[3]      = {0.1f, 0.1f, 0.3f};
+  auto               read_float = [](const std::string& v) -> float
   {
-    float x = 0.f;
+    float              x = 0.f;
     std::istringstream is(v);
     is >> x;
     return x;
@@ -529,7 +529,8 @@ static void parse_gui_panes_from_json(const std::string& content, GUI* gui)
     if (!j.contains("gui") || !j["gui"].is_object())
       return;
     const json& g = j["gui"];
-    auto b = [&g](const char* key, bool current) {
+    auto        b = [&g](const char* key, bool current)
+    {
       return g.contains(key) && g[key].is_boolean() ? g[key].get<bool>() : current;
     };
     gui->set_show_options(b("show_options", true));
@@ -554,8 +555,8 @@ void GUI::load_occt_view_ini()
     try
     {
       using namespace nlohmann;
-      const json j = json::parse(content);
-      bool version_ok = j.contains("version") && j["version"].is_string() &&
+      const json j          = json::parse(content);
+      bool       version_ok = j.contains("version") && j["version"].is_string() &&
                         j["version"].get<std::string>() == k_settings_version;
       if (!version_ok)
       {
@@ -564,7 +565,7 @@ void GUI::load_occt_view_ini()
         {
           try
           {
-            json j_default = json::parse(content);
+            json j_default       = json::parse(content);
             j_default["version"] = k_settings_version;
             settings::save(j_default.dump(2));
             content = j_default.dump(2);
@@ -615,6 +616,7 @@ void GUI::load_occt_view_ini()
 
 void GUI::save_occt_view_ini()
 {
+  //log_message("save_occt_view_ini");
   std::string content = settings::load_with_defaults();
   using namespace nlohmann;
   json j;
@@ -631,25 +633,25 @@ void GUI::save_occt_view_ini()
   float bg1[3], bg2[3], g1[3], g2[3];
   m_view->get_bg_gradient_colors(bg1, bg2);
   m_view->get_grid_colors(g1, g2);
-  int method = m_view->get_bg_gradient_method();
+  int method     = m_view->get_bg_gradient_method();
   j["occt_view"] = {
-      {"bg_color1", {bg1[0], bg1[1], bg1[2]}},
-      {"bg_color2", {bg2[0], bg2[1], bg2[2]}},
-      {"bg_gradient_method", method},
-      {"grid_color1", {g1[0], g1[1], g1[2]}},
-      {"grid_color2", {g2[0], g2[1], g2[2]}},
+      {         "bg_color1", {bg1[0], bg1[1], bg1[2]}},
+      {         "bg_color2", {bg2[0], bg2[1], bg2[2]}},
+      {"bg_gradient_method",                   method},
+      {       "grid_color1",    {g1[0], g1[1], g1[2]}},
+      {       "grid_color2",    {g2[0], g2[1], g2[2]}},
   };
   j["gui"] = {
-      {"show_options", m_show_options},
-      {"show_sketch_list", m_show_sketch_list},
-      {"show_shape_list", m_show_shape_list},
-      {"log_window_visible", m_log_window_visible},
+      {        "show_options",         m_show_options},
+      {    "show_sketch_list",     m_show_sketch_list},
+      {     "show_shape_list",      m_show_shape_list},
+      {  "log_window_visible",   m_log_window_visible},
       {"show_settings_dialog", m_show_settings_dialog},
 #ifndef NDEBUG
-      {"show_dbg", m_show_dbg},
+      {            "show_dbg",             m_show_dbg},
 #endif
   };
-  j["version"] = k_settings_version;
+  j["version"]          = k_settings_version;
   const char* imgui_ini = ImGui::SaveIniSettingsToMemory(nullptr);
   if (imgui_ini && *imgui_ini)
     j["imgui_ini"] = std::string(imgui_ini);
@@ -1015,8 +1017,8 @@ void GUI::options_()
     }
 
     const char* gradient_items[] = {"Horizontal", "Vertical", "Diagonal 1", "Diagonal 2",
-                                    "Corner 1",   "Corner 2", "Corner 3",  "Corner 4"};
-    int grad = m_view->get_bg_gradient_method();
+                                    "Corner 1", "Corner 2", "Corner 3", "Corner 4"};
+    int         grad             = m_view->get_bg_gradient_method();
     if (ImGui::Combo("Gradient blend", &grad, gradient_items, 8))
     {
       m_view->set_bg_gradient_method(grad);
@@ -1116,7 +1118,7 @@ void GUI::options_()
   ImGui::End();
 }
 
-void GUI::settings_dialog_()
+void GUI::settings_()
 {
   if (!m_show_settings_dialog)
     return;
@@ -1147,8 +1149,8 @@ void GUI::settings_dialog_()
       save_occt_view_ini();
     }
     const char* gradient_items[] = {"Horizontal", "Vertical", "Diagonal 1", "Diagonal 2",
-                                    "Corner 1",   "Corner 2", "Corner 3",  "Corner 4"};
-    int grad = m_view->get_bg_gradient_method();
+                                    "Corner 1", "Corner 2", "Corner 3", "Corner 4"};
+    int         grad             = m_view->get_bg_gradient_method();
     if (ImGui::Combo("Gradient blend", &grad, gradient_items, 8))
     {
       m_view->set_bg_gradient_method(grad);
@@ -1172,72 +1174,14 @@ void GUI::settings_dialog_()
     }
   }
 
-  if (ImGui::CollapsingHeader("Appearance"))
-  {
-    static std::vector<std::string> s_dialog_material_names;
-    if (s_dialog_material_names.empty())
-      for (int i = 0; i < Graphic3d_MaterialAspect::NumberOfMaterials(); ++i)
-      {
-        Graphic3d_MaterialAspect mat(static_cast<Graphic3d_NameOfMaterial>(i));
-        s_dialog_material_names.push_back(mat.MaterialName());
-      }
-    int current_item = int(m_view->get_default_material().Name());
-    if (ImGui::BeginCombo("Default Material##settings", s_dialog_material_names[current_item].data(),
-                          ImGuiComboFlags_WidthFitPreview | ImGuiComboFlags_HeightSmall))
-    {
-      for (int i = 0; i < static_cast<int>(s_dialog_material_names.size()); i++)
-        if (ImGui::Selectable(s_dialog_material_names[i].data(), current_item == i))
-        {
-          Graphic3d_MaterialAspect mat(static_cast<Graphic3d_NameOfMaterial>(i));
-          m_view->set_default_material(mat);
-          save_occt_view_ini();
-        }
-      ImGui::EndCombo();
-    }
-
-    constexpr std::array<std::string_view, 9> c_names_TopAbs_ShapeEnum = {
-        "COMPOUND", "COMPSOLID", "SOLID", "SHELL", "FACE", "WIRE", "EDGE", "VERTEX", "SHAPE"};
-    int sel_item = static_cast<int>(m_view->get_shp_selection_mode());
-    if (ImGui::BeginCombo("Selection Mode##settings", c_names_TopAbs_ShapeEnum[sel_item].data(),
-                          ImGuiComboFlags_WidthFitPreview | ImGuiComboFlags_HeightSmall))
-    {
-      for (int i = 0; i < static_cast<int>(c_names_TopAbs_ShapeEnum.size()); i++)
-        if (ImGui::Selectable(c_names_TopAbs_ShapeEnum[i].data(), sel_item == i))
-        {
-          m_view->set_shp_selection_mode(static_cast<TopAbs_ShapeEnum>(i));
-          save_occt_view_ini();
-        }
-      ImGui::EndCombo();
-    }
-  }
-
-  if (ImGui::CollapsingHeader("Panes"))
-  {
-    bool save_panes = false;
-    if (ImGui::Checkbox("Options", &m_show_options))
-      save_panes = true;
-    if (ImGui::Checkbox("Sketch List", &m_show_sketch_list))
-      save_panes = true;
-    if (ImGui::Checkbox("Shape List", &m_show_shape_list))
-      save_panes = true;
-    if (ImGui::Checkbox("Log", &m_log_window_visible))
-      save_panes = true;
-#ifndef NDEBUG
-    if (ImGui::Checkbox("Debug", &m_show_dbg))
-      save_panes = true;
-#endif
-    if (ImGui::Checkbox("Tool tips", &m_show_tool_tips))
-      save_panes = true;
-    if (save_panes)
-      save_occt_view_ini();
-  }
-
+#if 0
   ImGui::Separator();
   if (ImGui::Button("Close"))
   {
     m_show_settings_dialog = false;
     save_occt_view_ini();
   }
+#endif
 
   ImGui::End();
 }
@@ -1570,7 +1514,8 @@ void GUI::log_window_()
 void GUI::init(GLFWwindow* window)
 {
   initialize_toolbar_();
-  settings::set_log_callback([this](const std::string& m) { log_message(m); });
+  settings::set_log_callback([this](const std::string& m)
+                             { log_message(m); });
   setup_log_redirection_();  // Set up stream redirection
   m_view->init_window(window);
   m_view->init_viewer();
