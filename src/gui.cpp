@@ -73,7 +73,6 @@ void GUI::render_gui()
   angle_edit_();
   sketch_list_();
   shape_list_();
-  if (m_show_options)
     options_();
   message_status_window_();
   if (m_log_window_visible)
@@ -983,8 +982,15 @@ void GUI::shape_list_()
 
 void GUI::options_()
 {
-  if (!ImGui::Begin("Options", &m_show_options, ImGuiWindowFlags_NoCollapse))
+  if (!m_show_options)
     return;
+
+  if (!ImGui::Begin("Options", &m_show_options))
+  {
+    // Pane was collapsed, so skip rendering options to save resources
+    ImGui::End();
+    return;
+  }
 
   ImGui::Checkbox("Dark mode", &m_dark_mode);
 
