@@ -16,7 +16,16 @@
 #endif
 
 #ifdef __EMSCRIPTEN__
+#include <emscripten.h>
 #include "third_party/imgui/emscripten/emscripten_mainloop_stub.h"
+
+static GUI* s_gui_for_unload = nullptr;
+
+extern "C" void emscripten_save_settings_on_unload()
+{
+  if (s_gui_for_unload)
+    s_gui_for_unload->save_occt_view_settings();
+}
 #endif
 
 static void glfw_error_callback(int error, const char* description)
@@ -129,24 +138,30 @@ int main(int, char**)
   io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;  // Enable Keyboard Controls
   io.ConfigFlags |= ImGuiConfigFlags_NavEnableGamepad;   // Enable Gamepad Controls
 
-  // Setup Dear ImGui style
-  //ImGui::StyleColorsDark();
+  // Setup Dear ImGui style (initial; GUI applies light/dark from option each frame)
   ImGui::StyleColorsLight();
 
   // Setup Platform/Renderer backends
   ImGui_ImplGlfw_InitForOpenGL(window, true);
+  io.IniFilename = nullptr;  // Layout persisted in ezycad_settings.json
 #ifdef __EMSCRIPTEN__
-  io.IniFilename = nullptr;  // Disable automatic saving/loading
-  ImGui::LoadIniSettingsFromDisk("/imgui.ini");
   ImGui_ImplGlfw_InstallEmscriptenCallbacks(window, "#canvas");
 #endif
   ImGui_ImplOpenGL3_Init(glsl_version);
   io.Fonts->AddFontFromFileTTF("DroidSans.ttf", 18.0f);
 
-  ImVec4 clear_color = ImVec4(0.45f, 0.55f, 0.60f, 1.00f);
-
   GUI gui;
   gui.init(window);
+
+#ifdef __EMSCRIPTEN__
+  s_gui_for_unload = &gui;
+  EM_ASM(
+      {
+        window.addEventListener('beforeunload', function() {
+          Module.ccall('emscripten_save_settings_on_unload', null, [], []);
+        });
+      });
+#endif
 
   keyCallback = [&](GLFWwindow* window, int key, int scancode, int action, int mods)
   {
@@ -198,10 +213,6 @@ int main(int, char**)
 
   // Main loop
 #ifdef __EMSCRIPTEN__
-  // For an Emscripten build we are disabling file-system access, so let's not
-  // attempt to do a fopen() of the imgui.ini file. You may manually call
-  // LoadIniSettingsFromMemory() to load settings from your own storage.
-  io.IniFilename = nullptr;
   EMSCRIPTEN_MAINLOOP_BEGIN
 #else
   while (!glfwWindowShouldClose(window))
@@ -246,6 +257,7 @@ int main(int, char**)
     }
 
     glViewport(0, 0, display_w, display_h);
+    ImVec4 clear_color = gui.get_clear_color();
     glClearColor(clear_color.x * clear_color.w,
                  clear_color.y * clear_color.w,
                  clear_color.z * clear_color.w,
@@ -257,12 +269,19 @@ int main(int, char**)
     ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
 
     glfwSwapBuffers(window);
+
+    if (io.WantSaveIniSettings)
+    {
+      gui.save_occt_view_settings();
+      io.WantSaveIniSettings = false;
+    }
   }
 #ifdef __EMSCRIPTEN__
   EMSCRIPTEN_MAINLOOP_END;
 #endif
 
   // Cleanup
+  gui.save_occt_view_settings();
   ImGui_ImplOpenGL3_Shutdown();
   ImGui_ImplGlfw_Shutdown();
   ImGui::DestroyContext();

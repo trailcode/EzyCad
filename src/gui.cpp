@@ -2,6 +2,10 @@
 
 #include <array>
 #include <map>
+#include <nlohmann/json.hpp>
+#include <sstream>
+
+#include "settings.h"
 
 #ifdef __EMSCRIPTEN__
 #include <emscripten.h>
@@ -15,6 +19,9 @@
 #include "log.h"
 #include "occt_view.h"
 #include "sketch.h"
+
+// Bump when settings schema or semantics change; mismatch causes defaults to be loaded.
+static const char* const k_settings_version = "1";
 
 // Must be here to prevent compiler warning
 #include <GLFW/glfw3.h>
@@ -37,6 +44,13 @@ GUI::~GUI()
   cleanup_log_redirection_();  // Clean up stream redirection
 }
 
+ImVec4 GUI::get_clear_color() const
+{
+  if (m_dark_mode)
+    return ImVec4(0.10f, 0.10f, 0.12f, 1.00f);
+  return ImVec4(0.45f, 0.55f, 0.60f, 1.00f);
+}
+
 #ifdef __EMSCRIPTEN__
 GUI& GUI::instance()
 {
@@ -47,6 +61,11 @@ GUI& GUI::instance()
 
 void GUI::render_gui()
 {
+  if (m_dark_mode)
+    ImGui::StyleColorsDark();
+  else
+    ImGui::StyleColorsLight();
+
   menu_bar_();
   toolbar_();
   dist_edit_();
@@ -56,6 +75,7 @@ void GUI::render_gui()
   options_();
   message_status_window_();
   log_window_();
+  settings_();
 #ifndef NDEBUG
   dbg_();
 #endif
@@ -266,23 +286,60 @@ void GUI::menu_bar_()
     else if (ImGui::MenuItem("Import"))
       import_file_dialog_();
 
+#ifdef __EMSCRIPTEN__
+    else if (ImGui::MenuItem("Save settings"))
+    {
+      save_occt_view_settings();
+      show_message("Settings saved");
+    }
+#endif
+
     else if (ImGui::MenuItem("Exit"))
       exit(0);
 
     ImGui::EndMenu();
   }
 
-#if 0
   if (ImGui::BeginMenu("View"))
   {
-    if (ImGui::MenuItem("Geos Tests"))
+    bool save_panes = false;
+    if (ImGui::MenuItem("Settings", nullptr, m_show_settings_dialog))
     {
-      // s_showGeosTestPanel ^= 1;
+      m_show_settings_dialog = !m_show_settings_dialog;
+      save_panes             = true;
     }
+    if (ImGui::MenuItem("Options", nullptr, m_show_options))
+    {
+      m_show_options = !m_show_options;
+      save_panes     = true;
+    }
+    if (ImGui::MenuItem("Sketch List", nullptr, m_show_sketch_list))
+    {
+      m_show_sketch_list = !m_show_sketch_list;
+      save_panes         = true;
+    }
+    if (ImGui::MenuItem("Shape List", nullptr, m_show_shape_list))
+    {
+      m_show_shape_list = !m_show_shape_list;
+      save_panes        = true;
+    }
+    if (ImGui::MenuItem("Log", nullptr, m_log_window_visible))
+    {
+      m_log_window_visible = !m_log_window_visible;
+      save_panes           = true;
+    }
+#ifndef NDEBUG
+    if (ImGui::MenuItem("Debug", nullptr, m_show_dbg))
+    {
+      m_show_dbg = !m_show_dbg;
+      save_panes = true;
+    }
+#endif
+    if (save_panes)
+      save_occt_view_settings();
 
     ImGui::EndMenu();
   }
-#endif
 
   if (ImGui::BeginMenu("Help"))
   {
@@ -329,10 +386,262 @@ void GUI::open_url_(const char* url)
 #endif
 }
 
+// Settings related
+void GUI::parse_occt_view_settings_(const std::string& content)
+{
+  try
+  {
+    using namespace nlohmann;
+    const json j = json::parse(content);
+    if (!j.contains("occt_view") || !j["occt_view"].is_object())
+      return;
+    const json& ov     = j["occt_view"];
+    float       bg1[3] = {0.85f, 0.88f, 0.90f};
+    float       bg2[3] = {0.45f, 0.55f, 0.60f};
+    int         method = 1;
+    float       g1[3]  = {0.1f, 0.1f, 0.1f};
+    float       g2[3]  = {0.1f, 0.1f, 0.3f};
+    auto        arr3   = [](const json& a, float* out)
+    {
+      if (a.is_array() && a.size() >= 3)
+        for (size_t i = 0; i < 3; ++i)
+          if (a[i].is_number())
+            out[i] = a[i].get<float>();
+    };
+    if (ov.contains("bg_color1"))
+      arr3(ov["bg_color1"], bg1);
+    if (ov.contains("bg_color2"))
+      arr3(ov["bg_color2"], bg2);
+    if (ov.contains("bg_gradient_method") && ov["bg_gradient_method"].is_number_integer())
+      method = ov["bg_gradient_method"].get<int>();
+    if (ov.contains("grid_color1"))
+      arr3(ov["grid_color1"], g1);
+    if (ov.contains("grid_color2"))
+      arr3(ov["grid_color2"], g2);
+    m_view->set_bg_gradient_colors(bg1[0], bg1[1], bg1[2], bg2[0], bg2[1], bg2[2]);
+    m_view->set_bg_gradient_method(method);
+    m_view->set_grid_colors(g1[0], g1[1], g1[2], g2[0], g2[1], g2[2]);
+  }
+  catch (...)
+  {
+  }
+}
+
+void GUI::parse_occt_view_ini_(const std::string& content)
+{
+  bool               in_section = false;
+  std::istringstream ss(content);
+  std::string        line;
+  float              bg1[3]     = {0.85f, 0.88f, 0.90f};
+  float              bg2[3]     = {0.45f, 0.55f, 0.60f};
+  int                method     = 1;
+  float              g1[3]      = {0.1f, 0.1f, 0.1f};
+  float              g2[3]      = {0.1f, 0.1f, 0.3f};
+  auto               read_float = [](const std::string& v) -> float
+  {
+    float              x = 0.f;
+    std::istringstream is(v);
+    is >> x;
+    return x;
+  };
+  while (std::getline(ss, line))
+  {
+    if (line.empty())
+      continue;
+    if (line[0] == '[')
+    {
+      in_section = (line == "[OCCTView]");
+      continue;
+    }
+    if (!in_section)
+      continue;
+    size_t eq = line.find('=');
+    if (eq == std::string::npos)
+      continue;
+    std::string key   = line.substr(0, eq);
+    std::string value = line.substr(eq + 1);
+    if (key == "BgR1")
+      bg1[0] = read_float(value);
+    else if (key == "BgG1")
+      bg1[1] = read_float(value);
+    else if (key == "BgB1")
+      bg1[2] = read_float(value);
+    else if (key == "BgR2")
+      bg2[0] = read_float(value);
+    else if (key == "BgG2")
+      bg2[1] = read_float(value);
+    else if (key == "BgB2")
+      bg2[2] = read_float(value);
+    else if (key == "BgMethod")
+    {
+      try
+      {
+        method = std::stoi(value);
+      }
+      catch (...)
+      {
+      }
+    }
+    else if (key == "GridR1")
+      g1[0] = read_float(value);
+    else if (key == "GridG1")
+      g1[1] = read_float(value);
+    else if (key == "GridB1")
+      g1[2] = read_float(value);
+    else if (key == "GridR2")
+      g2[0] = read_float(value);
+    else if (key == "GridG2")
+      g2[1] = read_float(value);
+    else if (key == "GridB2")
+      g2[2] = read_float(value);
+  }
+  m_view->set_bg_gradient_colors(bg1[0], bg1[1], bg1[2], bg2[0], bg2[1], bg2[2]);
+  m_view->set_bg_gradient_method(method);
+  m_view->set_grid_colors(g1[0], g1[1], g1[2], g2[0], g2[1], g2[2]);
+}
+
+void GUI::parse_gui_panes_settings_(const std::string& content)
+{
+  try
+  {
+    using namespace nlohmann;
+    const json j = json::parse(content);
+    if (!j.contains("gui") || !j["gui"].is_object())
+      return;
+    const json& g = j["gui"];
+    auto        b = [&g](const char* key, bool current)
+    {
+      return g.contains(key) && g[key].is_boolean() ? g[key].get<bool>() : current;
+    };
+    set_show_options(b("show_options", true));
+    set_show_sketch_list(b("show_sketch_list", true));
+    set_show_shape_list(b("show_shape_list", true));
+    set_log_window_visible(b("log_window_visible", true));
+    set_show_settings_dialog(b("show_settings_dialog", false));
+#ifndef NDEBUG
+    set_show_dbg(b("show_dbg", false));
+#endif
+  }
+  catch (...)
+  {
+    EZY_ASSERT_MSG(false, "Error parse_gui_panes_settings!");
+  }
+}
+
+void GUI::load_occt_view_settings_()
+{
+  std::string content = settings::load_with_defaults();
+
+  try
+  {
+    using namespace nlohmann;
+    const json j          = json::parse(content);
+    bool       version_ok = j.contains("version") && j["version"].is_string() &&
+                      j["version"].get<std::string>() == k_settings_version;
+    if (!version_ok)
+    {
+      content = settings::load_defaults();
+      if (!content.empty())
+      {
+        try
+        {
+          json j_default       = json::parse(content);
+          j_default["version"] = k_settings_version;
+          settings::save(j_default.dump(2));
+          content = j_default.dump(2);
+        }
+        catch (...)
+        {
+          settings::save(content);
+        }
+      }
+      log_message("Settings version mismatch or missing; loaded defaults.");
+    }
+  }
+  catch (...)
+  {
+    content = settings::load_defaults();
+    if (!content.empty())
+      settings::save(content);
+  }
+
+#if 0  // Set to 0 to disable logging loaded settings to the log window
+  if (!content.empty())
+    log_message("Settings loaded:\n" + content);
+  else
+    log_message("Settings loaded: (none)");
+#endif
+
+  EZY_ASSERT_MSG(!content.empty(), "Settings content empty!");
+
+  parse_occt_view_settings_(content);
+  parse_gui_panes_settings_(content);
+
+  try
+  {
+    using namespace nlohmann;
+    const json j = json::parse(content);
+    if (j.contains("imgui_ini") && j["imgui_ini"].is_string())
+    {
+      const std::string& ini = j["imgui_ini"].get<std::string>();
+      if (!ini.empty())
+        ImGui::LoadIniSettingsFromMemory(ini.c_str(), ini.size());
+    }
+  }
+  catch (...)
+  {
+    // EZY_ASSERT_MSG(false, "Settings invalid!");
+  }
+}
+
+void GUI::save_occt_view_settings()
+{
+  // log_message("save_occt_view_settings");
+  std::string content = settings::load_with_defaults();
+  using namespace nlohmann;
+  json j;
+  if (!content.empty())
+  {
+    try
+    {
+      j = json::parse(content);
+    }
+    catch (...)
+    {
+    }
+  }
+  float bg1[3], bg2[3], g1[3], g2[3];
+  m_view->get_bg_gradient_colors(bg1, bg2);
+  m_view->get_grid_colors(g1, g2);
+  int method     = m_view->get_bg_gradient_method();
+  j["occt_view"] = {
+      {         "bg_color1", {bg1[0], bg1[1], bg1[2]}},
+      {         "bg_color2", {bg2[0], bg2[1], bg2[2]}},
+      {"bg_gradient_method",                   method},
+      {       "grid_color1",    {g1[0], g1[1], g1[2]}},
+      {       "grid_color2",    {g2[0], g2[1], g2[2]}},
+  };
+  j["gui"] = {
+      {        "show_options",         m_show_options},
+      {    "show_sketch_list",     m_show_sketch_list},
+      {     "show_shape_list",      m_show_shape_list},
+      {  "log_window_visible",   m_log_window_visible},
+      {"show_settings_dialog", m_show_settings_dialog},
+#ifndef NDEBUG
+      {            "show_dbg",             m_show_dbg},
+#endif
+  };
+  j["version"]          = k_settings_version;
+  const char* imgui_ini = ImGui::SaveIniSettingsToMemory(nullptr);
+  if (imgui_ini && *imgui_ini)
+    j["imgui_ini"] = std::string(imgui_ini);
+
+  settings::save(j.dump(2));
+}
+
 // Render toolbar with ImGui
 void GUI::toolbar_()
 {
-  // ImGui::Begin("Toolbar", nullptr, ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoResize);
   ImGui::Begin("Toolbar", nullptr, ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_AlwaysAutoResize);
 
   ImVec2 button_size(32, 32);
@@ -517,143 +826,159 @@ void GUI::angle_edit_()
 
 void GUI::sketch_list_()
 {
-  if (m_show_sketch_list)
+  if (!m_show_sketch_list)
+    return;
+
+  if (!ImGui::Begin("Sketch List", &m_show_sketch_list, ImGuiWindowFlags_None))
   {
-    ImGui::Begin("Sketch List", &m_show_sketch_list, ImGuiWindowFlags_None);
+    ImGui::End();
+    return;
+  }
 
-    int                     index = 0;
-    std::shared_ptr<Sketch> sketch_to_delete;
-    for (std::shared_ptr<Sketch>& sketch : m_view->get_sketches())
-    {
-      EZY_ASSERT(sketch);
+  int                     index = 0;
+  std::shared_ptr<Sketch> sketch_to_delete;
+  for (std::shared_ptr<Sketch>& sketch : m_view->get_sketches())
+  {
+    EZY_ASSERT(sketch);
 
-      // Buffer for editable name
+    // Buffer for editable name
 #pragma warning(push)
 #pragma warning(disable : 4996)
-      char name_buffer[1024];
-      strncpy(name_buffer, sketch->get_name().c_str(), sizeof(name_buffer) - 1);
-      name_buffer[sizeof(name_buffer) - 1] = '\0';  // Ensure null-terminated
+    char name_buffer[1024];
+    strncpy(name_buffer, sketch->get_name().c_str(), sizeof(name_buffer) - 1);
+    name_buffer[sizeof(name_buffer) - 1] = '\0';  // Ensure null-terminated
 #pragma warning(pop)
 
-      // Unique ID suffix using index
-      std::string id_suffix = "##" + std::to_string(index);
+    // Unique ID suffix using index
+    std::string id_suffix = "##" + std::to_string(index);
 
-      // Radio button for selection
-      ImGui::PushID(("select" + id_suffix).c_str());
-      if (ImGui::RadioButton("", &m_view->curr_sketch() == sketch.get()))
-        m_view->set_curr_sketch(sketch);
+    // Radio button for selection
+    ImGui::PushID(("select" + id_suffix).c_str());
+    if (ImGui::RadioButton("", &m_view->curr_sketch() == sketch.get()))
+      m_view->set_curr_sketch(sketch);
 
-      if (m_show_tool_tips && ImGui::IsItemHovered())
-        ImGui::SetTooltip("Sets current");
+    if (m_show_tool_tips && ImGui::IsItemHovered())
+      ImGui::SetTooltip("Sets current");
 
-      ImGui::PopID();
+    ImGui::PopID();
 
-      // Text edit for name
-      ImGui::SameLine();
-      ImGui::PushID(("name" + id_suffix).c_str());
-      if (ImGui::InputText("", name_buffer, sizeof(name_buffer)))
-      {
-        sketch->set_name(std::string(name_buffer));
-        std::cout << "Sketch " << index << " name changed to: " << sketch->get_name() << std::endl;
-      }
-      // This will open a popup when you right-click on the InputText
-      if (ImGui::BeginPopupContextItem("Sketch_InputTextContextMenu"))
-      {
-        if (ImGui::MenuItem("Delete"))
-          sketch_to_delete = sketch;
-
-        ImGui::EndPopup();
-      }
-      ImGui::PopID();
-
-      // Checkbox for visibility, same line
-      ImGui::SameLine();
-      ImGui::PushID(("visible" + id_suffix).c_str());
-      bool visible = sketch->is_visible();
-      if (ImGui::Checkbox("", &visible))
-        sketch->set_visible(visible);
-
-      if (m_show_tool_tips && ImGui::IsItemHovered())
-        ImGui::SetTooltip("Visibility");
-
-      ++index;
-      ImGui::PopID();
+    // Text edit for name
+    ImGui::SameLine();
+    ImGui::PushID(("name" + id_suffix).c_str());
+    if (ImGui::InputText("", name_buffer, sizeof(name_buffer)))
+    {
+      sketch->set_name(std::string(name_buffer));
+      std::cout << "Sketch " << index << " name changed to: " << sketch->get_name() << std::endl;
     }
+    // This will open a popup when you right-click on the InputText
+    if (ImGui::BeginPopupContextItem("Sketch_InputTextContextMenu"))
+    {
+      if (ImGui::MenuItem("Delete"))
+        sketch_to_delete = sketch;
 
-    if (sketch_to_delete)
-      m_view->remove_sketch(sketch_to_delete);
+      ImGui::EndPopup();
+    }
+    ImGui::PopID();
 
-    ImGui::End();
+    // Checkbox for visibility, same line
+    ImGui::SameLine();
+    ImGui::PushID(("visible" + id_suffix).c_str());
+    bool visible = sketch->is_visible();
+    if (ImGui::Checkbox("", &visible))
+      sketch->set_visible(visible);
+
+    if (m_show_tool_tips && ImGui::IsItemHovered())
+      ImGui::SetTooltip("Visibility");
+
+    ++index;
+    ImGui::PopID();
   }
+
+  if (sketch_to_delete)
+    m_view->remove_sketch(sketch_to_delete);
+
+  ImGui::End();
 }
 
 void GUI::shape_list_()
 {
-  int         index = 0;
-  static bool show  = true;
-  if (show)
+  if (!m_show_shape_list)
+    return;
+
+  if (!ImGui::Begin("Shape List", &m_show_shape_list, ImGuiWindowFlags_None))
   {
-    ImGui::Begin("Shape List", &show, ImGuiWindowFlags_None);
+    ImGui::End();
+    return;
+  }
 
-    // Add checkbox for hiding all shapes except current sketches
-    if (ImGui::Checkbox("Hide all", &m_hide_all_shapes))
-    {
-      // Update visibility of all shapes based on the new state
-      for (const ShapeBase_ptr& shape : m_view->get_shapes())
-      {
-        shape->set_visible(!m_hide_all_shapes);
-      }
-    }
+  int index = 0;
 
-    ImGui::Separator();
-
+  // Add checkbox for hiding all shapes except current sketches
+  if (ImGui::Checkbox("Hide all", &m_hide_all_shapes))
+  {
+    // Update visibility of all shapes based on the new state
     for (const ShapeBase_ptr& shape : m_view->get_shapes())
     {
-      // Unique ID suffix using index
-      std::string id_suffix = "##" + std::to_string(index++);
-      // Editable text box for name
+      shape->set_visible(!m_hide_all_shapes);
+    }
+  }
+
+  ImGui::Separator();
+
+  for (const ShapeBase_ptr& shape : m_view->get_shapes())
+  {
+    // Unique ID suffix using index
+    std::string id_suffix = "##" + std::to_string(index++);
+    // Editable text box for name
 #pragma warning(push)
 #pragma warning(disable : 4996)
-      char name_buffer[1024];
-      strncpy(name_buffer, shape->get_name().c_str(), sizeof(name_buffer) - 1);
-      name_buffer[sizeof(name_buffer) - 1] = '\0';  // Ensure null-terminated
+    char name_buffer[1024];
+    strncpy(name_buffer, shape->get_name().c_str(), sizeof(name_buffer) - 1);
+    name_buffer[sizeof(name_buffer) - 1] = '\0';  // Ensure null-terminated
 #pragma warning(pop)
-      ImGui::PushID(("name" + id_suffix).c_str());
-      if (ImGui::InputText("", name_buffer, sizeof(name_buffer)))
-        shape->set_name(std::string(name_buffer));
+    ImGui::PushID(("name" + id_suffix).c_str());
+    if (ImGui::InputText("", name_buffer, sizeof(name_buffer)))
+      shape->set_name(std::string(name_buffer));
 
-      ImGui::PopID();
-      // Visibility checkbox
-      ImGui::SameLine();
-      ImGui::PushID(("visible" + id_suffix).c_str());
-      bool visible = shape->get_visible();
-      if (ImGui::Checkbox("", &visible))
-        shape->set_visible(visible);
+    ImGui::PopID();
+    // Visibility checkbox
+    ImGui::SameLine();
+    ImGui::PushID(("visible" + id_suffix).c_str());
+    bool visible = shape->get_visible();
+    if (ImGui::Checkbox("", &visible))
+      shape->set_visible(visible);
 
-      if (m_show_tool_tips && ImGui::IsItemHovered())
-        ImGui::SetTooltip("visibility");
+    if (m_show_tool_tips && ImGui::IsItemHovered())
+      ImGui::SetTooltip("visibility");
 
-      ImGui::PopID();
+    ImGui::PopID();
 
-      // Shaded display mode checkbox
-      ImGui::SameLine();
-      ImGui::PushID(("shaded" + id_suffix).c_str());
-      bool shaded = shape->get_disp_mode() == AIS_Shaded;
-      if (ImGui::Checkbox("", &shaded))
-        shape->set_disp_mode(shaded ? AIS_Shaded : AIS_WireFrame);
+    // Shaded display mode checkbox
+    ImGui::SameLine();
+    ImGui::PushID(("shaded" + id_suffix).c_str());
+    bool shaded = shape->get_disp_mode() == AIS_Shaded;
+    if (ImGui::Checkbox("", &shaded))
+      shape->set_disp_mode(shaded ? AIS_Shaded : AIS_WireFrame);
 
-      if (m_show_tool_tips && ImGui::IsItemHovered())
-        ImGui::SetTooltip("solid/wire");
+    if (m_show_tool_tips && ImGui::IsItemHovered())
+      ImGui::SetTooltip("solid/wire");
 
-      ImGui::PopID();
-    }
-    ImGui::End();
+    ImGui::PopID();
   }
+  ImGui::End();
 }
 
 void GUI::options_()
 {
-  ImGui::Begin("Options", nullptr, ImGuiWindowFlags_NoCollapse);
+  if (!m_show_options)
+    return;
+
+  if (!ImGui::Begin("Options", &m_show_options))
+  {
+    // Pane was collapsed, so skip rendering options to save resources
+    ImGui::End();
+    return;
+  }
 
   constexpr std::array<std::string_view, 26> c_material_names = {
       "Brass",
@@ -726,6 +1051,97 @@ void GUI::options_()
     float snap_dist = float(Sketch_nodes::get_snap_dist());
     if (ImGui::InputFloat("Snap dist##float_value", &snap_dist, 1.0f, 2.0f, "%.2f"))
       Sketch_nodes::set_snap_dist(snap_dist);
+  }
+
+  ImGui::End();
+}
+
+void GUI::settings_()
+{
+  if (!m_show_settings_dialog)
+    return;
+
+  ImGui::SetNextWindowSize(ImVec2(400, 0), ImGuiCond_FirstUseEver);  // Auto height
+  if (!ImGui::Begin("Settings", &m_show_settings_dialog, ImGuiWindowFlags_None))
+  {
+    ImGui::End();
+    save_occt_view_settings();  // Persist that dialog was closed (e.g. via X)
+    return;
+  }
+
+  if (ImGui::Checkbox("Dark mode", &m_dark_mode))
+    save_occt_view_settings();
+
+  if (ImGui::CollapsingHeader("3D view background"))
+  {
+    float bg1[3], bg2[3];
+    m_view->get_bg_gradient_colors(bg1, bg2);
+    bool bg_changed = false;
+    if (ImGui::ColorEdit3("Background color 1", bg1, ImGuiColorEditFlags_Float))
+      bg_changed = true;
+    if (ImGui::ColorEdit3("Background color 2", bg2, ImGuiColorEditFlags_Float))
+      bg_changed = true;
+    if (bg_changed)
+    {
+      m_view->set_bg_gradient_colors(bg1[0], bg1[1], bg1[2], bg2[0], bg2[1], bg2[2]);
+      save_occt_view_settings();
+    }
+    const char* gradient_items[] = {"Horizontal", "Vertical", "Diagonal 1", "Diagonal 2",
+                                    "Corner 1", "Corner 2", "Corner 3", "Corner 4"};
+    int         grad             = m_view->get_bg_gradient_method();
+    if (ImGui::Combo("Gradient blend", &grad, gradient_items, 8))
+    {
+      m_view->set_bg_gradient_method(grad);
+      save_occt_view_settings();
+    }
+  }
+
+  if (ImGui::CollapsingHeader("3D view grid"))
+  {
+    float g1[3], g2[3];
+    m_view->get_grid_colors(g1, g2);
+    bool grid_changed = false;
+    if (ImGui::ColorEdit3("Grid color 1", g1, ImGuiColorEditFlags_Float))
+      grid_changed = true;
+    if (ImGui::ColorEdit3("Grid color 2", g2, ImGuiColorEditFlags_Float))
+      grid_changed = true;
+    if (grid_changed)
+    {
+      m_view->set_grid_colors(g1[0], g1[1], g1[2], g2[0], g2[1], g2[2]);
+      save_occt_view_settings();
+    }
+  }
+
+  ImGui::Separator();
+  if (ImGui::Button("Defaults"))
+  {
+    std::string content = settings::load_defaults();
+    if (content.empty())
+      show_message("Failed to load default settings.");
+    else
+    {
+      try
+      {
+        using namespace nlohmann;
+        json j = json::parse(content);
+        j["version"] = k_settings_version;
+        content = j.dump(2);
+        settings::save(content);
+        parse_occt_view_settings_(content);
+        parse_gui_panes_settings_(content);
+        if (j.contains("imgui_ini") && j["imgui_ini"].is_string())
+        {
+          const std::string& ini = j["imgui_ini"].get<std::string>();
+          if (!ini.empty())
+            ImGui::LoadIniSettingsFromMemory(ini.c_str(), ini.size());
+        }
+        show_message("Default settings applied.");
+      }
+      catch (...)
+      {
+        show_message("Failed to apply default settings.");
+      }
+    }
   }
 
   ImGui::End();
@@ -948,7 +1364,14 @@ void GUI::on_key_move_mode_(int key)
 
 void GUI::dbg_()
 {
-  ImGui::Begin("dbg", nullptr, ImGuiWindowFlags_NoCollapse);
+  if (!m_show_dbg)
+    return;
+
+  if (!ImGui::Begin("dbg", &m_show_dbg))
+  {
+    ImGui::End();
+    return;
+  }
   // Get the available content region width
   float available_width = ImGui::GetContentRegionAvail().x;
 
@@ -1024,7 +1447,14 @@ void GUI::log_message(const std::string& message)
 
 void GUI::log_window_()
 {
-  ImGui::Begin("Log", &m_log_window_visible, ImGuiWindowFlags_NoCollapse);
+  if (!m_log_window_visible)
+    return;
+
+  if (!ImGui::Begin("Log", &m_log_window_visible))
+  {
+    ImGui::End();
+    return;
+  }
 
   // Scrollable log area
   ImGui::BeginChild("LogContent", ImVec2(0, 0), true, ImGuiWindowFlags_HorizontalScrollbar);
@@ -1045,10 +1475,14 @@ void GUI::log_window_()
 void GUI::init(GLFWwindow* window)
 {
   initialize_toolbar_();
+  settings::set_log_callback([this](const std::string& m)
+                             { log_message(m); });
   setup_log_redirection_();  // Set up stream redirection
   m_view->init_window(window);
   m_view->init_viewer();
   m_view->init_default();
+
+  load_occt_view_settings_();
 }
 
 void GUI::on_mouse_pos(const ScreenCoords& screen_coords)

@@ -8,9 +8,9 @@
 #include <variant>
 #include <vector>  // Added for log storage
 
+#include "imgui.h"
 #include "log.h"
 #include "modes.h"
-//#include "shp.h"
 #include "types.h"
 
 class Occt_view;
@@ -51,6 +51,8 @@ class GUI
   Fillet_mode get_fillet_mode() const { return m_fillet_mode; }
   bool get_hide_all_shapes() const { return m_hide_all_shapes; }
   void set_hide_all_shapes(bool hide) { m_hide_all_shapes = hide; }
+  bool get_dark_mode() const { return m_dark_mode; }
+  ImVec4 get_clear_color() const;
   void set_mode(Mode mode);
   void set_parent_mode();
   void set_dist_edit(float dist, std::function<void(float, bool)>&& callback, const std::optional<ScreenCoords> screen_coords = std::nullopt);
@@ -59,6 +61,14 @@ class GUI
   void hide_angle_edit();
   void show_message(const std::string& message);
   void log_message(const std::string& message);
+  void set_show_options(bool v) { m_show_options = v; }
+  void set_show_sketch_list(bool v) { m_show_sketch_list = v; }
+  void set_show_shape_list(bool v) { m_show_shape_list = v; }
+  void set_log_window_visible(bool v) { m_log_window_visible = v; }
+  void set_show_settings_dialog(bool v) { m_show_settings_dialog = v; }
+#ifndef NDEBUG
+  void set_show_dbg(bool v) { m_show_dbg = v; }
+#endif
   // clang-format on
 
 #ifdef __EMSCRIPTEN__
@@ -68,6 +78,8 @@ class GUI
 
   void on_file(const std::string& file_path, const std::string& json_str);
   void on_import_file(const std::string& file_path, const std::string& file_data);
+
+  void save_occt_view_settings();
 
  private:
   friend class GUI_access;
@@ -101,6 +113,7 @@ class GUI
   void toolbar_();
   void message_status_window_();
   void log_window_();
+  void settings_();
   void setup_log_redirection_();
   void cleanup_log_redirection_();
 
@@ -108,6 +121,12 @@ class GUI
   void open_file_dialog_();
   void save_file_dialog_();
   void open_url_(const char* url);
+
+  // Settings related
+  void load_occt_view_settings_();
+  void parse_occt_view_ini_(const std::string& content);
+  void parse_occt_view_settings_(const std::string& content);
+  void parse_gui_panes_settings_(const std::string& content);
 
   std::unique_ptr<Occt_view> m_view;
 
@@ -140,11 +159,18 @@ class GUI
   // Stream redirection
   std::streambuf* m_original_cout_buf = nullptr;  // Original stdout buffer
   std::streambuf* m_original_cerr_buf = nullptr;  // Original stderr buffer
-  Log_strm*   m_cout_log_buf      = nullptr;  // Custom stdout buffer
-  Log_strm*   m_cerr_log_buf      = nullptr;  // Custom stderr buffer
+  Log_strm*       m_cout_log_buf      = nullptr;  // Custom stdout buffer
+  Log_strm*       m_cerr_log_buf      = nullptr;  // Custom stderr buffer
 
   std::string m_last_saved_path;  // Added to store last saved file path
   bool        m_show_sketch_list {true};
+  bool        m_show_shape_list {true};
+  bool        m_show_options {true};
+  bool        m_show_settings_dialog {false};
   bool        m_hide_all_shapes {false};
   bool        m_show_tool_tips {true};
+  bool        m_dark_mode {false};
+#ifndef NDEBUG
+  bool m_show_dbg {false};
+#endif
 };

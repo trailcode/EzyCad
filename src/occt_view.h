@@ -142,6 +142,14 @@ class Occt_view : protected AIS_ViewController
   const Graphic3d_MaterialAspect& get_default_material() const;
   void                            set_default_material(const Graphic3d_MaterialAspect& mat);
 
+  // 3D view background and grid colors (0–1 RGB)
+  void get_bg_gradient_colors(float color1[3], float color2[3]) const;
+  void set_bg_gradient_colors(float r1, float g1, float b1, float r2, float g2, float b2);
+  int  get_bg_gradient_method() const;
+  void set_bg_gradient_method(int method);
+  void get_grid_colors(float color1[3], float color2[3]) const;
+  void set_grid_colors(float r1, float g1, float b1, float r2, float g2, float b2);
+
   bool is_headless() const;
 
   void new_file();
@@ -172,6 +180,8 @@ class Occt_view : protected AIS_ViewController
   // TODO group in .cpp file
   void add_shp_(ShapeBase_ptr& shp);
 
+  void update_view_background_();
+
   //! GLFW callback redirecting messages into Message::DefaultMessenger().
   // static void errorCallback(int theError, const char* theDescription);
   static Aspect_VKeyMouse mouse_button_from_glfw_(int theButton);
@@ -192,6 +202,12 @@ class Occt_view : protected AIS_ViewController
   TopAbs_ShapeEnum           m_shp_selection_mode {TopAbs_SHAPE};
   Graphic3d_MaterialAspect   m_default_material;
   bool                       m_headless_view {false};
+  // OCCT view colors; defaults match what we render (set explicitly in init_viewer())
+  float m_bg_color1[3] {0.85f, 0.88f, 0.90f};
+  float m_bg_color2[3] {0.45f, 0.55f, 0.60f};
+  int   m_bg_gradient_method {1};  // 0=HOR, 1=VER, 2=DIAG1, ...
+  float m_grid_color1[3] {0.1f, 0.1f, 0.1f};
+  float m_grid_color2[3] {0.1f, 0.1f, 0.3f};
   // --------------------------------------------------------------------
   // Operations
   Shp_move                   m_shp_move;
