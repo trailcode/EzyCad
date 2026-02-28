@@ -11,7 +11,6 @@
 #include "imgui.h"
 #include "log.h"
 #include "modes.h"
-// #include "shp.h"
 #include "types.h"
 
 class Occt_view;
