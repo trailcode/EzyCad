@@ -11,7 +11,7 @@
 #include "imgui.h"
 #include "log.h"
 #include "modes.h"
-//#include "shp.h"
+// #include "shp.h"
 #include "types.h"
 
 class Occt_view;
@@ -80,8 +80,7 @@ class GUI
   void on_file(const std::string& file_path, const std::string& json_str);
   void on_import_file(const std::string& file_path, const std::string& file_data);
 
-  void load_occt_view_ini();
-  void save_occt_view_ini();
+  void save_occt_view_settings();
 
  private:
   friend class GUI_access;
@@ -124,6 +123,12 @@ class GUI
   void save_file_dialog_();
   void open_url_(const char* url);
 
+  // Settings related
+  void load_occt_view_settings_();
+  void parse_occt_view_ini_(const std::string& content);
+  void parse_occt_view_settings_(const std::string& content);
+  void parse_gui_panes_settings_(const std::string& content);
+
   std::unique_ptr<Occt_view> m_view;
 
   // Sketch segment manual length input related
@@ -155,8 +160,8 @@ class GUI
   // Stream redirection
   std::streambuf* m_original_cout_buf = nullptr;  // Original stdout buffer
   std::streambuf* m_original_cerr_buf = nullptr;  // Original stderr buffer
-  Log_strm*   m_cout_log_buf      = nullptr;  // Custom stdout buffer
-  Log_strm*   m_cerr_log_buf      = nullptr;  // Custom stderr buffer
+  Log_strm*       m_cout_log_buf      = nullptr;  // Custom stdout buffer
+  Log_strm*       m_cerr_log_buf      = nullptr;  // Custom stderr buffer
 
   std::string m_last_saved_path;  // Added to store last saved file path
   bool        m_show_sketch_list {true};
@@ -167,6 +172,6 @@ class GUI
   bool        m_show_tool_tips {true};
   bool        m_dark_mode {false};
 #ifndef NDEBUG
-  bool        m_show_dbg {false};
+  bool m_show_dbg {false};
 #endif
 };

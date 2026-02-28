@@ -289,7 +289,7 @@ void GUI::menu_bar_()
 #ifdef __EMSCRIPTEN__
     else if (ImGui::MenuItem("Save settings"))
     {
-      save_occt_view_ini();
+      save_occt_view_settings();
       show_message("Settings saved");
     }
 #endif
@@ -336,7 +336,8 @@ void GUI::menu_bar_()
     }
 #endif
     if (save_panes)
-      save_occt_view_ini();
+      save_occt_view_settings();
+
     ImGui::EndMenu();
   }
 
@@ -385,26 +386,9 @@ void GUI::open_url_(const char* url)
 #endif
 }
 
-static void parse_occt_view_ini(const std::string& content, Occt_view* view);
-static void parse_occt_view_json(const std::string& content, Occt_view* view);
-
-static void parse_occt_view_settings(const std::string& content, Occt_view* view)
+// Settings related
+void GUI::parse_occt_view_settings_(const std::string& content)
 {
-  if (!view || content.empty())
-    return;
-  if (content[0] == '{')
-  {
-    parse_occt_view_json(content, view);
-    return;
-  }
-  if (content[0] == '[')
-    parse_occt_view_ini(content, view);
-}
-
-static void parse_occt_view_json(const std::string& content, Occt_view* view)
-{
-  if (!view)
-    return;
   try
   {
     using namespace nlohmann;
@@ -434,19 +418,17 @@ static void parse_occt_view_json(const std::string& content, Occt_view* view)
       arr3(ov["grid_color1"], g1);
     if (ov.contains("grid_color2"))
       arr3(ov["grid_color2"], g2);
-    view->set_bg_gradient_colors(bg1[0], bg1[1], bg1[2], bg2[0], bg2[1], bg2[2]);
-    view->set_bg_gradient_method(method);
-    view->set_grid_colors(g1[0], g1[1], g1[2], g2[0], g2[1], g2[2]);
+    m_view->set_bg_gradient_colors(bg1[0], bg1[1], bg1[2], bg2[0], bg2[1], bg2[2]);
+    m_view->set_bg_gradient_method(method);
+    m_view->set_grid_colors(g1[0], g1[1], g1[2], g2[0], g2[1], g2[2]);
   }
   catch (...)
   {
   }
 }
 
-static void parse_occt_view_ini(const std::string& content, Occt_view* view)
+void GUI::parse_occt_view_ini_(const std::string& content)
 {
-  if (!view)
-    return;
   bool               in_section = false;
   std::istringstream ss(content);
   std::string        line;
@@ -513,15 +495,13 @@ static void parse_occt_view_ini(const std::string& content, Occt_view* view)
     else if (key == "GridB2")
       g2[2] = read_float(value);
   }
-  view->set_bg_gradient_colors(bg1[0], bg1[1], bg1[2], bg2[0], bg2[1], bg2[2]);
-  view->set_bg_gradient_method(method);
-  view->set_grid_colors(g1[0], g1[1], g1[2], g2[0], g2[1], g2[2]);
+  m_view->set_bg_gradient_colors(bg1[0], bg1[1], bg1[2], bg2[0], bg2[1], bg2[2]);
+  m_view->set_bg_gradient_method(method);
+  m_view->set_grid_colors(g1[0], g1[1], g1[2], g2[0], g2[1], g2[2]);
 }
 
-static void parse_gui_panes_from_json(const std::string& content, GUI* gui)
+void GUI::parse_gui_panes_settings_(const std::string& content)
 {
-  if (!gui || content.empty() || content[0] != '{')
-    return;
   try
   {
     using namespace nlohmann;
@@ -533,90 +513,90 @@ static void parse_gui_panes_from_json(const std::string& content, GUI* gui)
     {
       return g.contains(key) && g[key].is_boolean() ? g[key].get<bool>() : current;
     };
-    gui->set_show_options(b("show_options", true));
-    gui->set_show_sketch_list(b("show_sketch_list", true));
-    gui->set_show_shape_list(b("show_shape_list", true));
-    gui->set_log_window_visible(b("log_window_visible", true));
-    gui->set_show_settings_dialog(b("show_settings_dialog", false));
+    set_show_options(b("show_options", true));
+    set_show_sketch_list(b("show_sketch_list", true));
+    set_show_shape_list(b("show_shape_list", true));
+    set_log_window_visible(b("log_window_visible", true));
+    set_show_settings_dialog(b("show_settings_dialog", false));
 #ifndef NDEBUG
-    gui->set_show_dbg(b("show_dbg", false));
+    set_show_dbg(b("show_dbg", false));
 #endif
   }
   catch (...)
   {
+    EZY_ASSERT_MSG(false, "Error parse_gui_panes_settings!");
   }
 }
 
-void GUI::load_occt_view_ini()
+void GUI::load_occt_view_settings_()
 {
   std::string content = settings::load_with_defaults();
-  if (!content.empty() && content[0] == '{')
+
+  try
   {
-    try
-    {
-      using namespace nlohmann;
-      const json j          = json::parse(content);
-      bool       version_ok = j.contains("version") && j["version"].is_string() &&
-                        j["version"].get<std::string>() == k_settings_version;
-      if (!version_ok)
-      {
-        content = settings::load_defaults();
-        if (!content.empty())
-        {
-          try
-          {
-            json j_default       = json::parse(content);
-            j_default["version"] = k_settings_version;
-            settings::save(j_default.dump(2));
-            content = j_default.dump(2);
-          }
-          catch (...)
-          {
-            settings::save(content);
-          }
-        }
-        log_message("Settings version mismatch or missing; loaded defaults.");
-      }
-    }
-    catch (...)
+    using namespace nlohmann;
+    const json j          = json::parse(content);
+    bool       version_ok = j.contains("version") && j["version"].is_string() &&
+                      j["version"].get<std::string>() == k_settings_version;
+    if (!version_ok)
     {
       content = settings::load_defaults();
       if (!content.empty())
-        settings::save(content);
+      {
+        try
+        {
+          json j_default       = json::parse(content);
+          j_default["version"] = k_settings_version;
+          settings::save(j_default.dump(2));
+          content = j_default.dump(2);
+        }
+        catch (...)
+        {
+          settings::save(content);
+        }
+      }
+      log_message("Settings version mismatch or missing; loaded defaults.");
     }
   }
-#if 1  // Set to 0 to disable logging loaded settings to the log window
+  catch (...)
+  {
+    content = settings::load_defaults();
+    if (!content.empty())
+      settings::save(content);
+  }
+
+#if 0  // Set to 0 to disable logging loaded settings to the log window
   if (!content.empty())
     log_message("Settings loaded:\n" + content);
   else
     log_message("Settings loaded: (none)");
 #endif
-  if (content.empty())
-    return;
-  parse_occt_view_settings(content, m_view.get());
-  parse_gui_panes_from_json(content, this);
-  if (content[0] == '{')
+
+  EZY_ASSERT_MSG(!content.empty(), "Settings content empty!");
+
+  parse_occt_view_settings_(content);
+  parse_gui_panes_settings_(content);
+
+  try
   {
-    try
+    using namespace nlohmann;
+    const json j = json::parse(content);
+    if (j.contains("imgui_ini") && j["imgui_ini"].is_string())
     {
-      using namespace nlohmann;
-      const json j = json::parse(content);
-      if (j.contains("imgui_ini") && j["imgui_ini"].is_string())
-      {
-        const std::string& ini = j["imgui_ini"].get<std::string>();
-        if (!ini.empty())
-          ImGui::LoadIniSettingsFromMemory(ini.c_str(), ini.size());
-      }
+      const std::string& ini = j["imgui_ini"].get<std::string>();
+      if (!ini.empty())
+        ImGui::LoadIniSettingsFromMemory(ini.c_str(), ini.size());
     }
-    catch (...)
-    {
-    }
+  }
+  catch (...)
+  {
+    // EZY_ASSERT_MSG(false, "Settings invalid!");
   }
 }
 
-void GUI::save_occt_view_ini()
+void GUI::save_occt_view_settings()
 {
-  //log_message("save_occt_view_ini");
+  // log_message("save_occt_view_settings");
   std::string content = settings::load_with_defaults();
   using namespace nlohmann;
   json j;
@@ -655,6 +635,7 @@ void GUI::save_occt_view_ini()
   const char* imgui_ini = ImGui::SaveIniSettingsToMemory(nullptr);
   if (imgui_ini && *imgui_ini)
     j["imgui_ini"] = std::string(imgui_ini);
+
   settings::save(j.dump(2));
 }
 
@@ -1013,7 +994,7 @@ void GUI::options_()
     if (bg_changed)
     {
       m_view->set_bg_gradient_colors(bg1[0], bg1[1], bg1[2], bg2[0], bg2[1], bg2[2]);
-      save_occt_view_ini();
+      save_occt_view_settings();
     }
 
     const char* gradient_items[] = {"Horizontal", "Vertical", "Diagonal 1", "Diagonal 2",
@@ -1022,7 +1003,7 @@ void GUI::options_()
     if (ImGui::Combo("Gradient blend", &grad, gradient_items, 8))
     {
       m_view->set_bg_gradient_method(grad);
-      save_occt_view_ini();
+      save_occt_view_settings();
     }
   }
 
@@ -1038,7 +1019,7 @@ void GUI::options_()
     if (grid_changed)
     {
       m_view->set_grid_colors(g1[0], g1[1], g1[2], g2[0], g2[1], g2[2]);
-      save_occt_view_ini();
+      save_occt_view_settings();
     }
   }
 
@@ -1127,12 +1108,12 @@ void GUI::settings_()
   if (!ImGui::Begin("Settings", &m_show_settings_dialog, ImGuiWindowFlags_None))
   {
     ImGui::End();
-    save_occt_view_ini();  // Persist that dialog was closed (e.g. via X)
+    save_occt_view_settings();  // Persist that dialog was closed (e.g. via X)
     return;
   }
 
   if (ImGui::Checkbox("Dark mode", &m_dark_mode))
-    save_occt_view_ini();
+    save_occt_view_settings();
 
   if (ImGui::CollapsingHeader("3D view background"))
   {
@@ -1146,7 +1127,7 @@ void GUI::settings_()
     if (bg_changed)
     {
       m_view->set_bg_gradient_colors(bg1[0], bg1[1], bg1[2], bg2[0], bg2[1], bg2[2]);
-      save_occt_view_ini();
+      save_occt_view_settings();
     }
     const char* gradient_items[] = {"Horizontal", "Vertical", "Diagonal 1", "Diagonal 2",
                                     "Corner 1", "Corner 2", "Corner 3", "Corner 4"};
@@ -1154,7 +1135,7 @@ void GUI::settings_()
     if (ImGui::Combo("Gradient blend", &grad, gradient_items, 8))
     {
       m_view->set_bg_gradient_method(grad);
-      save_occt_view_ini();
+      save_occt_view_settings();
     }
   }
 
@@ -1170,7 +1151,7 @@ void GUI::settings_()
     if (grid_changed)
     {
       m_view->set_grid_colors(g1[0], g1[1], g1[2], g2[0], g2[1], g2[2]);
-      save_occt_view_ini();
+      save_occt_view_settings();
     }
   }
 
@@ -1179,7 +1160,7 @@ void GUI::settings_()
   if (ImGui::Button("Close"))
   {
     m_show_settings_dialog = false;
-    save_occt_view_ini();
+    save_occt_view_settings();
   }
 #endif
 
@@ -1520,6 +1501,8 @@ void GUI::init(GLFWwindow* window)
   m_view->init_window(window);
   m_view->init_viewer();
   m_view->init_default();
+
+  load_occt_view_settings_();
 }
 
 void GUI::on_mouse_pos(const ScreenCoords& screen_coords)

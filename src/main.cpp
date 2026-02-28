@@ -24,7 +24,7 @@ static GUI* s_gui_for_unload = nullptr;
 extern "C" void emscripten_save_settings_on_unload()
 {
   if (s_gui_for_unload)
-    s_gui_for_unload->save_occt_view_ini();
+    s_gui_for_unload->save_occt_view_settings();
 }
 #endif
 
@@ -152,7 +152,6 @@ int main(int, char**)
 
   GUI gui;
   gui.init(window);
-  gui.load_occt_view_ini();
 
 #ifdef __EMSCRIPTEN__
   s_gui_for_unload = &gui;
@@ -273,7 +272,7 @@ int main(int, char**)
 
     if (io.WantSaveIniSettings)
     {
-      gui.save_occt_view_ini();
+      gui.save_occt_view_settings();
       io.WantSaveIniSettings = false;
     }
   }
@@ -282,7 +281,7 @@ int main(int, char**)
 #endif
 
   // Cleanup
-  gui.save_occt_view_ini();
+  gui.save_occt_view_settings();
   ImGui_ImplOpenGL3_Shutdown();
   ImGui_ImplGlfw_Shutdown();
   ImGui::DestroyContext();
