@@ -1112,14 +1112,37 @@ void GUI::settings_()
     }
   }
 
-#if 0
   ImGui::Separator();
-  if (ImGui::Button("Close"))
+  if (ImGui::Button("Defaults"))
   {
-    m_show_settings_dialog = false;
-    save_occt_view_settings();
+    std::string content = settings::load_defaults();
+    if (content.empty())
+      show_message("Failed to load default settings.");
+    else
+    {
+      try
+      {
+        using namespace nlohmann;
+        json j = json::parse(content);
+        j["version"] = k_settings_version;
+        content = j.dump(2);
+        settings::save(content);
+        parse_occt_view_settings_(content);
+        parse_gui_panes_settings_(content);
+        if (j.contains("imgui_ini") && j["imgui_ini"].is_string())
+        {
+          const std::string& ini = j["imgui_ini"].get<std::string>();
+          if (!ini.empty())
+            ImGui::LoadIniSettingsFromMemory(ini.c_str(), ini.size());
+        }
+        show_message("Default settings applied.");
+      }
+      catch (...)
+      {
+        show_message("Failed to apply default settings.");
+      }
+    }
   }
-#endif
 
   ImGui::End();
 }
