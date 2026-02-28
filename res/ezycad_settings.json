@@ -1,13 +1,13 @@
 {
-  "version": "1",
   "gui": {
-    "log_window_visible": true,
+    "log_window_visible": false,
     "show_dbg": false,
     "show_options": true,
+    "show_settings_dialog": false,
     "show_shape_list": true,
     "show_sketch_list": true
   },
-  "imgui_ini": "[Window][Debug##Default]\nPos=60,60\nSize=400,400\n\n[Window][Toolbar]\nPos=358,23\nSize=1208,54\n\n[Window][Sketch List]\nPos=4,321\nSize=209,226\n\n[Window][Shape List]\nPos=3,549\nSize=211,312\n\n[Window][Log]\nPos=480,77\nSize=1086,174\n\n[Window][Options]\nPos=1567,25\nSize=240,177\n\n",
+  "imgui_ini": "[Window][Debug##Default]\nPos=60,60\nSize=400,400\n\n[Window][Toolbar]\nPos=249,24\nSize=1208,54\n\n[Window][Sketch List]\nPos=2,202\nSize=209,226\n\n[Window][Shape List]\nPos=2,430\nSize=210,312\n\n[Window][Log]\nPos=480,77\nSize=1086,174\n\n[Window][Options]\nPos=1457,25\nSize=366,287\n\n[Window][##MainMenuBar]\nPos=0,0\nSize=1920,24\n\n[Window][Settings]\nPos=553,306\nSize=430,222\n\n[Window][dbg]\nPos=238,325\nSize=269,150\n\n",
   "occt_view": {
     "bg_color1": [
       0.037551622837781906,
@@ -30,5 +30,6 @@
       0.11791712790727615,
       0.13513511419296265
     ]
-  }
+  },
+  "version": "1"
 }
