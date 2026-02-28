@@ -73,15 +73,12 @@ void GUI::render_gui()
   angle_edit_();
   sketch_list_();
   shape_list_();
-    options_();
+  options_();
   message_status_window_();
-  if (m_log_window_visible)
-    log_window_();
-  if (m_show_settings_dialog)
-    settings_dialog_();
+  log_window_();
+  settings_dialog_();
 #ifndef NDEBUG
-  if (m_show_dbg)
-    dbg_();
+  dbg_();
 #endif
 }
 
@@ -662,7 +659,6 @@ void GUI::save_occt_view_ini()
 // Render toolbar with ImGui
 void GUI::toolbar_()
 {
-  // ImGui::Begin("Toolbar", nullptr, ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoResize);
   ImGui::Begin("Toolbar", nullptr, ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_AlwaysAutoResize);
 
   ImVec2 button_size(32, 32);
@@ -847,137 +843,146 @@ void GUI::angle_edit_()
 
 void GUI::sketch_list_()
 {
-  if (m_show_sketch_list)
+  if (!m_show_sketch_list)
+    return;
+
+  if (!ImGui::Begin("Sketch List", &m_show_sketch_list, ImGuiWindowFlags_None))
   {
-    ImGui::Begin("Sketch List", &m_show_sketch_list, ImGuiWindowFlags_None);
+    ImGui::End();
+    return;
+  }
 
-    int                     index = 0;
-    std::shared_ptr<Sketch> sketch_to_delete;
-    for (std::shared_ptr<Sketch>& sketch : m_view->get_sketches())
-    {
-      EZY_ASSERT(sketch);
+  int                     index = 0;
+  std::shared_ptr<Sketch> sketch_to_delete;
+  for (std::shared_ptr<Sketch>& sketch : m_view->get_sketches())
+  {
+    EZY_ASSERT(sketch);
 
-      // Buffer for editable name
+    // Buffer for editable name
 #pragma warning(push)
 #pragma warning(disable : 4996)
-      char name_buffer[1024];
-      strncpy(name_buffer, sketch->get_name().c_str(), sizeof(name_buffer) - 1);
-      name_buffer[sizeof(name_buffer) - 1] = '\0';  // Ensure null-terminated
+    char name_buffer[1024];
+    strncpy(name_buffer, sketch->get_name().c_str(), sizeof(name_buffer) - 1);
+    name_buffer[sizeof(name_buffer) - 1] = '\0';  // Ensure null-terminated
 #pragma warning(pop)
 
-      // Unique ID suffix using index
-      std::string id_suffix = "##" + std::to_string(index);
+    // Unique ID suffix using index
+    std::string id_suffix = "##" + std::to_string(index);
 
-      // Radio button for selection
-      ImGui::PushID(("select" + id_suffix).c_str());
-      if (ImGui::RadioButton("", &m_view->curr_sketch() == sketch.get()))
-        m_view->set_curr_sketch(sketch);
+    // Radio button for selection
+    ImGui::PushID(("select" + id_suffix).c_str());
+    if (ImGui::RadioButton("", &m_view->curr_sketch() == sketch.get()))
+      m_view->set_curr_sketch(sketch);
 
-      if (m_show_tool_tips && ImGui::IsItemHovered())
-        ImGui::SetTooltip("Sets current");
+    if (m_show_tool_tips && ImGui::IsItemHovered())
+      ImGui::SetTooltip("Sets current");
 
-      ImGui::PopID();
+    ImGui::PopID();
 
-      // Text edit for name
-      ImGui::SameLine();
-      ImGui::PushID(("name" + id_suffix).c_str());
-      if (ImGui::InputText("", name_buffer, sizeof(name_buffer)))
-      {
-        sketch->set_name(std::string(name_buffer));
-        std::cout << "Sketch " << index << " name changed to: " << sketch->get_name() << std::endl;
-      }
-      // This will open a popup when you right-click on the InputText
-      if (ImGui::BeginPopupContextItem("Sketch_InputTextContextMenu"))
-      {
-        if (ImGui::MenuItem("Delete"))
-          sketch_to_delete = sketch;
-
-        ImGui::EndPopup();
-      }
-      ImGui::PopID();
-
-      // Checkbox for visibility, same line
-      ImGui::SameLine();
-      ImGui::PushID(("visible" + id_suffix).c_str());
-      bool visible = sketch->is_visible();
-      if (ImGui::Checkbox("", &visible))
-        sketch->set_visible(visible);
-
-      if (m_show_tool_tips && ImGui::IsItemHovered())
-        ImGui::SetTooltip("Visibility");
-
-      ++index;
-      ImGui::PopID();
+    // Text edit for name
+    ImGui::SameLine();
+    ImGui::PushID(("name" + id_suffix).c_str());
+    if (ImGui::InputText("", name_buffer, sizeof(name_buffer)))
+    {
+      sketch->set_name(std::string(name_buffer));
+      std::cout << "Sketch " << index << " name changed to: " << sketch->get_name() << std::endl;
     }
+    // This will open a popup when you right-click on the InputText
+    if (ImGui::BeginPopupContextItem("Sketch_InputTextContextMenu"))
+    {
+      if (ImGui::MenuItem("Delete"))
+        sketch_to_delete = sketch;
 
-    if (sketch_to_delete)
-      m_view->remove_sketch(sketch_to_delete);
+      ImGui::EndPopup();
+    }
+    ImGui::PopID();
 
-    ImGui::End();
+    // Checkbox for visibility, same line
+    ImGui::SameLine();
+    ImGui::PushID(("visible" + id_suffix).c_str());
+    bool visible = sketch->is_visible();
+    if (ImGui::Checkbox("", &visible))
+      sketch->set_visible(visible);
+
+    if (m_show_tool_tips && ImGui::IsItemHovered())
+      ImGui::SetTooltip("Visibility");
+
+    ++index;
+    ImGui::PopID();
   }
+
+  if (sketch_to_delete)
+    m_view->remove_sketch(sketch_to_delete);
+
+  ImGui::End();
 }
 
 void GUI::shape_list_()
 {
-  int index = 0;
-  if (m_show_shape_list)
+  if (!m_show_shape_list)
+    return;
+
+  if (!ImGui::Begin("Shape List", &m_show_shape_list, ImGuiWindowFlags_None))
   {
-    ImGui::Begin("Shape List", &m_show_shape_list, ImGuiWindowFlags_None);
+    ImGui::End();
+    return;
+  }
 
-    // Add checkbox for hiding all shapes except current sketches
-    if (ImGui::Checkbox("Hide all", &m_hide_all_shapes))
-    {
-      // Update visibility of all shapes based on the new state
-      for (const ShapeBase_ptr& shape : m_view->get_shapes())
-      {
-        shape->set_visible(!m_hide_all_shapes);
-      }
-    }
+  int index = 0;
 
-    ImGui::Separator();
-
+  // Add checkbox for hiding all shapes except current sketches
+  if (ImGui::Checkbox("Hide all", &m_hide_all_shapes))
+  {
+    // Update visibility of all shapes based on the new state
     for (const ShapeBase_ptr& shape : m_view->get_shapes())
     {
-      // Unique ID suffix using index
-      std::string id_suffix = "##" + std::to_string(index++);
-      // Editable text box for name
+      shape->set_visible(!m_hide_all_shapes);
+    }
+  }
+
+  ImGui::Separator();
+
+  for (const ShapeBase_ptr& shape : m_view->get_shapes())
+  {
+    // Unique ID suffix using index
+    std::string id_suffix = "##" + std::to_string(index++);
+    // Editable text box for name
 #pragma warning(push)
 #pragma warning(disable : 4996)
-      char name_buffer[1024];
-      strncpy(name_buffer, shape->get_name().c_str(), sizeof(name_buffer) - 1);
-      name_buffer[sizeof(name_buffer) - 1] = '\0';  // Ensure null-terminated
+    char name_buffer[1024];
+    strncpy(name_buffer, shape->get_name().c_str(), sizeof(name_buffer) - 1);
+    name_buffer[sizeof(name_buffer) - 1] = '\0';  // Ensure null-terminated
 #pragma warning(pop)
-      ImGui::PushID(("name" + id_suffix).c_str());
-      if (ImGui::InputText("", name_buffer, sizeof(name_buffer)))
-        shape->set_name(std::string(name_buffer));
+    ImGui::PushID(("name" + id_suffix).c_str());
+    if (ImGui::InputText("", name_buffer, sizeof(name_buffer)))
+      shape->set_name(std::string(name_buffer));
 
-      ImGui::PopID();
-      // Visibility checkbox
-      ImGui::SameLine();
-      ImGui::PushID(("visible" + id_suffix).c_str());
-      bool visible = shape->get_visible();
-      if (ImGui::Checkbox("", &visible))
-        shape->set_visible(visible);
+    ImGui::PopID();
+    // Visibility checkbox
+    ImGui::SameLine();
+    ImGui::PushID(("visible" + id_suffix).c_str());
+    bool visible = shape->get_visible();
+    if (ImGui::Checkbox("", &visible))
+      shape->set_visible(visible);
 
-      if (m_show_tool_tips && ImGui::IsItemHovered())
-        ImGui::SetTooltip("visibility");
+    if (m_show_tool_tips && ImGui::IsItemHovered())
+      ImGui::SetTooltip("visibility");
 
-      ImGui::PopID();
+    ImGui::PopID();
 
-      // Shaded display mode checkbox
-      ImGui::SameLine();
-      ImGui::PushID(("shaded" + id_suffix).c_str());
-      bool shaded = shape->get_disp_mode() == AIS_Shaded;
-      if (ImGui::Checkbox("", &shaded))
-        shape->set_disp_mode(shaded ? AIS_Shaded : AIS_WireFrame);
+    // Shaded display mode checkbox
+    ImGui::SameLine();
+    ImGui::PushID(("shaded" + id_suffix).c_str());
+    bool shaded = shape->get_disp_mode() == AIS_Shaded;
+    if (ImGui::Checkbox("", &shaded))
+      shape->set_disp_mode(shaded ? AIS_Shaded : AIS_WireFrame);
 
-      if (m_show_tool_tips && ImGui::IsItemHovered())
-        ImGui::SetTooltip("solid/wire");
+    if (m_show_tool_tips && ImGui::IsItemHovered())
+      ImGui::SetTooltip("solid/wire");
 
-      ImGui::PopID();
-    }
-    ImGui::End();
+    ImGui::PopID();
   }
+  ImGui::End();
 }
 
 void GUI::options_()
@@ -1113,6 +1118,9 @@ void GUI::options_()
 
 void GUI::settings_dialog_()
 {
+  if (!m_show_settings_dialog)
+    return;
+
   ImGui::SetNextWindowSize(ImVec2(400, 0), ImGuiCond_FirstUseEver);  // Auto height
   if (!ImGui::Begin("Settings", &m_show_settings_dialog, ImGuiWindowFlags_None))
   {
@@ -1451,8 +1459,14 @@ void GUI::on_key_move_mode_(int key)
 
 void GUI::dbg_()
 {
-  if (!ImGui::Begin("dbg", &m_show_dbg, ImGuiWindowFlags_NoCollapse))
+  if (!m_show_dbg)
     return;
+
+  if (!ImGui::Begin("dbg", &m_show_dbg))
+  {
+    ImGui::End();
+    return;
+  }
   // Get the available content region width
   float available_width = ImGui::GetContentRegionAvail().x;
 
@@ -1528,7 +1542,14 @@ void GUI::log_message(const std::string& message)
 
 void GUI::log_window_()
 {
-  ImGui::Begin("Log", &m_log_window_visible, ImGuiWindowFlags_NoCollapse);
+  if (!m_log_window_visible)
+    return;
+
+  if (!ImGui::Begin("Log", &m_log_window_visible))
+  {
+    ImGui::End();
+    return;
+  }
 
   // Scrollable log area
   ImGui::BeginChild("LogContent", ImVec2(0, 0), true, ImGuiWindowFlags_HorizontalScrollbar);
