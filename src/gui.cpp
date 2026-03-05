@@ -300,7 +300,6 @@ void GUI::menu_bar_()
     if (ImGui::BeginMenu("Examples"))
     {
       for (const auto& [label, path] : m_example_files)
-      {
         if (ImGui::MenuItem(label.c_str()))
         {
           std::ifstream file(path);
@@ -310,7 +309,7 @@ void GUI::menu_bar_()
           else
             show_message("Error opening example: " + label);
         }
-      }
+      
       ImGui::EndMenu();
     }
     if (ImGui::MenuItem("New", "Ctrl+N"))
