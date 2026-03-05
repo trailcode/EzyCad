@@ -18,6 +18,7 @@
 #include "shp_move.h"
 #include "shp_polar_dup.h"
 #include "shp_rotate.h"
+#include "shp_scale.h"
 
 class Sketch;
 class GUI;
@@ -92,6 +93,7 @@ class Occt_view : protected AIS_ViewController
   // Shape related
   Shp_move&      shp_move();
   Shp_rotate&    shp_rotate();
+  Shp_scale&     shp_scale();
   Shp_chamfer&   shp_chamfer();
   Shp_fillet&    shp_fillet();
   Shp_cut&       shp_cut();
@@ -213,6 +215,7 @@ class Occt_view : protected AIS_ViewController
   // Operations
   Shp_move                   m_shp_move;
   Shp_rotate                 m_shp_rotate;
+  Shp_scale                  m_shp_scale;
   // --------------------------------------------------------------------
   // Commands
   Shp_chamfer                m_shp_chamfer;

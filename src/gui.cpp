@@ -282,12 +282,13 @@ void GUI::load_examples_list_()
     const auto& p = entry.path();
     if (p.extension() != ".ezy")
       continue;
-    std::string path = p.string();
+    std::string path  = p.string();
     std::string label = p.filename().string();
     m_example_files.emplace_back(std::move(label), std::move(path));
   }
   std::sort(m_example_files.begin(), m_example_files.end(),
-            [](const auto& a, const auto& b) { return a.first < b.first; });
+            [](const auto& a, const auto& b)
+            { return a.first < b.first; });
 }
 
 void GUI::menu_bar_()
@@ -303,13 +304,13 @@ void GUI::menu_bar_()
         if (ImGui::MenuItem(label.c_str()))
         {
           std::ifstream file(path);
-          std::string   json_str{std::istreambuf_iterator<char>(file), std::istreambuf_iterator<char>()};
+          std::string   json_str {std::istreambuf_iterator<char>(file), std::istreambuf_iterator<char>()};
           if (file.good() && !json_str.empty())
             on_file(path, json_str);
           else
             show_message("Error opening example: " + label);
         }
-      
+
       ImGui::EndMenu();
     }
     if (ImGui::MenuItem("New", "Ctrl+N"))
@@ -1086,8 +1087,9 @@ void GUI::options_()
   switch (get_mode())
   {
     case Mode::Normal:                options_normal_mode_();                 break;
-    case Mode::Move:                  options_move_mode_();                   break;
+    case Mode::Move:                  options_move_mode_();                  break;
     case Mode::Rotate:                options_rotate_mode_();                 break;
+    case Mode::Scale:                 options_normal_mode_();                break;
     case Mode::Sketch_operation_axis: options_sketch_operation_axis_mode_();  break;
     case Mode::Shape_chamfer:         options_shape_chamfer_mode_();          break;
     case Mode::Shape_fillet:          options_shape_fillet_mode_();           break;
@@ -1174,9 +1176,9 @@ void GUI::settings_()
       try
       {
         using namespace nlohmann;
-        json j = json::parse(content);
+        json j       = json::parse(content);
         j["version"] = k_settings_version;
-        content = j.dump(2);
+        content      = j.dump(2);
         settings::save(content);
         parse_occt_view_settings_(content);
         parse_gui_panes_settings_(content);
@@ -1413,6 +1415,7 @@ void GUI::on_key_move_mode_(int key)
   }
 }
 
+#ifndef NDEBUG
 void GUI::dbg_()
 {
   if (!m_show_dbg)
@@ -1438,6 +1441,9 @@ void GUI::dbg_()
   ImGui::PopTextWrapPos();
   ImGui::End();
 }
+#else
+void GUI::dbg_() {}
+#endif
 
 void GUI::show_message(const std::string& message)
 {
@@ -1555,6 +1561,12 @@ void GUI::on_mouse_pos(const ScreenCoords& screen_coords)
 
       break;
 
+    case Mode::Scale:
+      if (Status s = m_view->shp_scale().scale_selected(screen_coords); !s.is_ok())
+        show_message(s.message());
+
+      break;
+
     case Mode::Shape_polar_duplicate:
       if (Status s = m_view->shp_polar_dup().move_point(screen_coords); !s.is_ok())
         show_message(s.message());
@@ -1598,6 +1610,10 @@ void GUI::on_mouse_button(int button, int action, int mods)
 
       case Mode::Rotate:
         m_view->shp_rotate().finalize();
+        break;
+
+      case Mode::Scale:
+        m_view->shp_scale().finalize();
         break;
 
       case Mode::Sketch_add_edge:

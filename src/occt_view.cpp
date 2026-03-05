@@ -41,7 +41,7 @@
 #include <sstream>
 
 Occt_view::Occt_view(GUI& gui)
-    : m_gui(gui), m_shp_move(*this), m_shp_rotate(*this), m_shp_chamfer(*this), m_shp_fillet(*this), m_shp_cut(*this), m_shp_fuse(*this), m_shp_common(*this), m_shp_polar_dup(*this), m_shp_extrude(*this)
+    : m_gui(gui), m_shp_move(*this), m_shp_rotate(*this), m_shp_scale(*this), m_shp_chamfer(*this), m_shp_fillet(*this), m_shp_cut(*this), m_shp_fuse(*this), m_shp_common(*this), m_shp_polar_dup(*this), m_shp_extrude(*this)
 {
 }
 
@@ -209,19 +209,19 @@ void Occt_view::init_viewer()
   m_ctx->UpdateCurrentViewer();
 
   // Set initial colors to match what OCCT renders (light gradient + grid)
-  m_bg_color1[0] = 0.85f;
-  m_bg_color1[1] = 0.88f;
-  m_bg_color1[2] = 0.90f;
-  m_bg_color2[0] = 0.45f;
-  m_bg_color2[1] = 0.55f;
-  m_bg_color2[2] = 0.60f;
+  m_bg_color1[0]       = 0.85f;
+  m_bg_color1[1]       = 0.88f;
+  m_bg_color1[2]       = 0.90f;
+  m_bg_color2[0]       = 0.45f;
+  m_bg_color2[1]       = 0.55f;
+  m_bg_color2[2]       = 0.60f;
   m_bg_gradient_method = 1;  // Vertical
-  m_grid_color1[0] = 0.1f;
-  m_grid_color1[1] = 0.1f;
-  m_grid_color1[2] = 0.1f;
-  m_grid_color2[0] = 0.1f;
-  m_grid_color2[1] = 0.1f;
-  m_grid_color2[2] = 0.3f;
+  m_grid_color1[0]     = 0.1f;
+  m_grid_color1[1]     = 0.1f;
+  m_grid_color1[2]     = 0.1f;
+  m_grid_color2[0]     = 0.1f;
+  m_grid_color2[1]     = 0.1f;
+  m_grid_color2[2]     = 0.3f;
   update_view_background_();
 
   Handle(AIS_ViewCube) myViewCube = new AIS_ViewCube();
@@ -418,6 +418,10 @@ void Occt_view::cancel(Set_parent_mode set_parent_mode)
       break;
     case Mode::Rotate:
       shp_rotate().cancel();
+      gui().set_mode(Mode::Normal);
+      break;
+    case Mode::Scale:
+      shp_scale().cancel();
       gui().set_mode(Mode::Normal);
       break;
     default:
@@ -625,10 +629,10 @@ void Occt_view::add_shp_(ShapeBase_ptr& shp)
 void Occt_view::add_cube()
 {
   const double side = get_dimension_scale();  // unit cube (side 1 in display units)
-  TopoDS_Shape box = BRepPrimAPI_MakeBox(side, side, side).Shape();
-  gp_Trsf trsf;
+  TopoDS_Shape box  = BRepPrimAPI_MakeBox(side, side, side).Shape();
+  gp_Trsf      trsf;
   trsf.SetTranslation(gp_Vec(-side / 2.0, -side / 2.0, -side / 2.0));
-  box = BRepBuilderAPI_Transform(box, trsf).Shape();
+  box               = BRepBuilderAPI_Transform(box, trsf).Shape();
   ShapeBase_ptr shp = new Extruded_shp(*m_ctx, box);
   // Use current Default Material and Selection Mode from Options panel
   add_shp_(shp);
@@ -969,6 +973,8 @@ void Occt_view::on_mode()
   DBG_MSG(c_mode_strs[int(get_mode())]);
 
   shp_polar_dup().reset();
+  if (get_mode() != Mode::Scale)
+    m_shp_scale.reset();
 
   for (Sketch_ptr& s : m_sketches)
     s->on_mode();
@@ -1162,6 +1168,7 @@ std::list<ShapeBase_ptr>& Occt_view::get_shapes()
 // clang-format off
 Shp_move&      Occt_view::shp_move()      { return m_shp_move;      }
 Shp_rotate&    Occt_view::shp_rotate()    { return m_shp_rotate;    }
+Shp_scale&     Occt_view::shp_scale()     { return m_shp_scale;     }
 Shp_chamfer&   Occt_view::shp_chamfer()   { return m_shp_chamfer;   }
 Shp_fillet&    Occt_view::shp_fillet()    { return m_shp_fillet;    }
 Shp_cut&       Occt_view::shp_cut()       { return m_shp_cut;       }
