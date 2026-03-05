@@ -1,6 +1,9 @@
 #include "gui.h"
 
+#include <algorithm>
 #include <array>
+#include <filesystem>
+#include <fstream>
 #include <map>
 #include <nlohmann/json.hpp>
 #include <sstream>
@@ -262,6 +265,29 @@ void GUI::initialize_toolbar_()
   };
 }
 
+void GUI::load_examples_list_()
+{
+#ifndef __EMSCRIPTEN__
+  m_example_files.clear();
+  const std::filesystem::path examples_dir("res/examples");
+  if (!std::filesystem::is_directory(examples_dir))
+    return;
+  for (const auto& entry : std::filesystem::directory_iterator(examples_dir))
+  {
+    if (!entry.is_regular_file())
+      continue;
+    const auto& p = entry.path();
+    if (p.extension() != ".ezy")
+      continue;
+    std::string path = p.string();
+    std::string label = p.filename().string();
+    m_example_files.emplace_back(std::move(label), std::move(path));
+  }
+  std::sort(m_example_files.begin(), m_example_files.end(),
+            [](const auto& a, const auto& b) { return a.first < b.first; });
+#endif
+}
+
 void GUI::menu_bar_()
 {
   if (!ImGui::BeginMainMenuBar())
@@ -269,6 +295,22 @@ void GUI::menu_bar_()
 
   if (ImGui::BeginMenu("File"))
   {
+    if (ImGui::BeginMenu("Examples"))
+    {
+      for (const auto& [label, path] : m_example_files)
+      {
+        if (ImGui::MenuItem(label.c_str()))
+        {
+          std::ifstream file(path);
+          std::string   json_str{std::istreambuf_iterator<char>(file), std::istreambuf_iterator<char>()};
+          if (file.good() && !json_str.empty())
+            on_file(path, json_str);
+          else
+            show_message("Error opening example: " + label);
+        }
+      }
+      ImGui::EndMenu();
+    }
     if (ImGui::MenuItem("New", "Ctrl+N"))
       m_view->new_file();
 
@@ -1483,6 +1525,7 @@ void GUI::init(GLFWwindow* window)
   m_view->init_default();
 
   load_occt_view_settings_();
+  load_examples_list_();
 }
 
 void GUI::on_mouse_pos(const ScreenCoords& screen_coords)

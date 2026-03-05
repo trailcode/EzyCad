@@ -5,6 +5,7 @@
 #include <glm/glm.hpp>
 #include <memory>
 #include <string>  // Added for log messages
+#include <utility>
 #include <variant>
 #include <vector>  // Added for log storage
 
@@ -109,6 +110,7 @@ class GUI
   void options_rotate_mode_();
   void dbg_();
   void initialize_toolbar_();
+  void load_examples_list_();
   void menu_bar_();
   void toolbar_();
   void message_status_window_();
@@ -163,6 +165,7 @@ class GUI
   Log_strm*       m_cerr_log_buf      = nullptr;  // Custom stderr buffer
 
   std::string m_last_saved_path;  // Added to store last saved file path
+  std::vector<std::pair<std::string, std::string>> m_example_files;  // (display_name, path) for Examples menu
   bool        m_show_sketch_list {true};
   bool        m_show_shape_list {true};
   bool        m_show_options {true};

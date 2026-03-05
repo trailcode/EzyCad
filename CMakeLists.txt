@@ -165,6 +165,7 @@ if(CMAKE_CXX_COMPILER_ID STREQUAL "Emscripten")
             --preload-file ${CMAKE_SOURCE_DIR}/third_party/imgui/fonts/DroidSans.ttf@/DroidSans.ttf \
             --preload-file ${CMAKE_SOURCE_DIR}/imgui.ini@/imgui.ini \
             --preload-file ${CMAKE_SOURCE_DIR}/res/ezycad_settings.json@/res/ezycad_settings.json \
+            --preload-file ${CMAKE_SOURCE_DIR}/res/examples@/res/examples \
             --shell-file ${CMAKE_SOURCE_DIR}/web/EzyCad.html"
         )
     else()
@@ -194,6 +195,7 @@ if(CMAKE_CXX_COMPILER_ID STREQUAL "Emscripten")
             --preload-file ${CMAKE_SOURCE_DIR}/third_party/imgui/fonts/DroidSans.ttf@/DroidSans.ttf \
             --preload-file ${CMAKE_SOURCE_DIR}/imgui.ini@/imgui.ini \
             --preload-file ${CMAKE_SOURCE_DIR}/res/ezycad_settings.json@/res/ezycad_settings.json \
+            --preload-file ${CMAKE_SOURCE_DIR}/res/examples@/res/examples \
             --shell-file ${CMAKE_SOURCE_DIR}/web/EzyCad.html"
         )
     endif()
@@ -229,6 +231,23 @@ if(CMAKE_CXX_COMPILER_ID STREQUAL "Emscripten")
             $<TARGET_FILE_DIR:${PROJECT_NAME}>/res/ezycad_settings.json
         COMMENT "Copying res/ezycad_settings.json for Emscripten"
     )
+    file(GLOB RES_EXAMPLE_FILES_EM "${CMAKE_SOURCE_DIR}/res/examples/*.ezy")
+    if(RES_EXAMPLE_FILES_EM)
+      add_custom_command(
+          TARGET ${PROJECT_NAME} POST_BUILD
+          COMMAND ${CMAKE_COMMAND} -E make_directory $<TARGET_FILE_DIR:${PROJECT_NAME}>/res/examples
+          COMMENT "Creating res/examples for Emscripten"
+      )
+      foreach(example_file ${RES_EXAMPLE_FILES_EM})
+        add_custom_command(
+            TARGET ${PROJECT_NAME} POST_BUILD
+            COMMAND ${CMAKE_COMMAND} -E copy_if_different
+                ${example_file}
+                $<TARGET_FILE_DIR:${PROJECT_NAME}>/res/examples/
+            COMMENT "Copying example for Emscripten"
+        )
+      endforeach()
+    endif()
 
     target_link_libraries(
         ${PROJECT_NAME}
@@ -262,7 +281,7 @@ else()
     
     add_executable(${PROJECT_NAME} "src/main.cpp")
 
-    # Copy default settings so native build finds res/ezycad_settings.json (required at runtime)
+    # Copy default settings and examples so native build finds res/ at runtime
     add_custom_command(
         TARGET ${PROJECT_NAME} POST_BUILD
         COMMAND ${CMAKE_COMMAND} -E make_directory $<TARGET_FILE_DIR:${PROJECT_NAME}>/res
@@ -271,6 +290,23 @@ else()
             $<TARGET_FILE_DIR:${PROJECT_NAME}>/res/ezycad_settings.json
         COMMENT "Copying res/ezycad_settings.json for native"
     )
+    file(GLOB RES_EXAMPLE_FILES "${CMAKE_SOURCE_DIR}/res/examples/*.ezy")
+    if(RES_EXAMPLE_FILES)
+      add_custom_command(
+          TARGET ${PROJECT_NAME} POST_BUILD
+          COMMAND ${CMAKE_COMMAND} -E make_directory $<TARGET_FILE_DIR:${PROJECT_NAME}>/res/examples
+          COMMENT "Creating res/examples for native"
+      )
+      foreach(example_file ${RES_EXAMPLE_FILES})
+        add_custom_command(
+            TARGET ${PROJECT_NAME} POST_BUILD
+            COMMAND ${CMAKE_COMMAND} -E copy_if_different
+                ${example_file}
+                $<TARGET_FILE_DIR:${PROJECT_NAME}>/res/examples/
+            COMMENT "Copying example ${example_file}"
+        )
+      endforeach()
+    endif()
 
     target_link_libraries(${PROJECT_NAME} ${PROJECT_NAME}_lib)
     target_link_libraries(${PROJECT_NAME} ${BINARY_DIR}/thirdParty/unofficial-flayan-glew.${GLEW_VERSION}/build/native/lib/x64/dynamic/glew32.lib)
