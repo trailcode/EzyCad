@@ -87,6 +87,7 @@ class Occt_view : protected AIS_ViewController
   void         sketch_face_extrude(const ScreenCoords& screen_coords, bool is_mouse_move);
 
   std::list<ShapeBase_ptr>& get_shapes();
+  void add_cube();
 
   // Shape related
   Shp_move&      shp_move();

@@ -343,6 +343,14 @@ void GUI::menu_bar_()
     ImGui::EndMenu();
   }
 
+  if (ImGui::BeginMenu("Edit"))
+  {
+    if (ImGui::MenuItem("Add cube"))
+      m_view->add_cube();
+
+    ImGui::EndMenu();
+  }
+
   if (ImGui::BeginMenu("View"))
   {
     bool save_panes = false;

@@ -5,6 +5,7 @@
 #include <Aspect_Grid.hxx>
 #include <BRepBndLib.hxx>
 #include <BRepBuilderAPI_Transform.hxx>
+#include <BRepPrimAPI_MakeBox.hxx>
 #include <BRepPrimAPI_MakePrism.hxx>
 #include <BRepTools.hxx>
 #include <BRep_Tool.hxx>
@@ -619,6 +620,20 @@ void Occt_view::add_shp_(ShapeBase_ptr& shp)
   shp->SetMaterial(m_default_material);
   shp->set_selection_mode(m_shp_selection_mode);  // Adds to m_ctx
   m_shps.push_back(shp);
+}
+
+void Occt_view::add_cube()
+{
+  const double side = get_dimension_scale();  // unit cube (side 1 in display units)
+  TopoDS_Shape box = BRepPrimAPI_MakeBox(side, side, side).Shape();
+  gp_Trsf trsf;
+  trsf.SetTranslation(gp_Vec(-side / 2.0, -side / 2.0, -side / 2.0));
+  box = BRepBuilderAPI_Transform(box, trsf).Shape();
+  ShapeBase_ptr shp = new Extruded_shp(*m_ctx, box);
+  // Use current Default Material and Selection Mode from Options panel
+  add_shp_(shp);
+  m_ctx->Display(shp, AIS_Shaded, AIS_Shape::SelectionMode(m_shp_selection_mode), true);
+  m_view->Redraw();
 }
 
 bool Occt_view::fit_face_in_view(const TopoDS_Face& face)
