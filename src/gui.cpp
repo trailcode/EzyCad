@@ -267,9 +267,12 @@ void GUI::initialize_toolbar_()
 
 void GUI::load_examples_list_()
 {
-#ifndef __EMSCRIPTEN__
   m_example_files.clear();
+#ifdef __EMSCRIPTEN__
+  const std::filesystem::path examples_dir("/res/examples");
+#else
   const std::filesystem::path examples_dir("res/examples");
+#endif
   if (!std::filesystem::is_directory(examples_dir))
     return;
   for (const auto& entry : std::filesystem::directory_iterator(examples_dir))
@@ -285,7 +288,6 @@ void GUI::load_examples_list_()
   }
   std::sort(m_example_files.begin(), m_example_files.end(),
             [](const auto& a, const auto& b) { return a.first < b.first; });
-#endif
 }
 
 void GUI::menu_bar_()
