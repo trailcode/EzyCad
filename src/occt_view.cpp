@@ -1099,8 +1099,6 @@ void Occt_view::on_mode()
   DBG_MSG(c_mode_strs[int(get_mode())]);
 
   shp_polar_dup().reset();
-  if (get_mode() != Mode::Scale)
-    m_shp_scale.reset();
 
   for (Sketch_ptr& s : m_sketches)
     s->on_mode();

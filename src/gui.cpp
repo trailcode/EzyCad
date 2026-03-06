@@ -1093,9 +1093,9 @@ void GUI::options_()
   switch (get_mode())
   {
     case Mode::Normal:                options_normal_mode_();                 break;
-    case Mode::Move:                  options_move_mode_();                  break;
+    case Mode::Move:                  options_move_mode_();                   break;
     case Mode::Rotate:                options_rotate_mode_();                 break;
-    case Mode::Scale:                 options_normal_mode_();                break;
+    case Mode::Scale:                 options_normal_mode_();                 break;
     case Mode::Sketch_operation_axis: options_sketch_operation_axis_mode_();  break;
     case Mode::Shape_chamfer:         options_shape_chamfer_mode_();          break;
     case Mode::Shape_fillet:          options_shape_fillet_mode_();           break;

@@ -76,16 +76,16 @@ void Shp_scale::reset()
   if (!m_shps.empty())
     operation_shps_cancel_();
 
-  m_shps.clear();
-  m_scale_pln.reset();
-  m_center.reset();
-  m_initial_distance = 0;
-  m_scale_factor     = 1.0;
+  // Reset state
+  clear_all(m_shps, m_scale_pln, m_center, m_initial_distance);
+
+  m_scale_factor = 1.0;
+
+  gui().set_mode(Mode::Normal);
 }
 
 void Shp_scale::cancel()
 {
   operation_shps_cancel_();
   reset();
-  gui().set_mode(Mode::Normal);
 }
