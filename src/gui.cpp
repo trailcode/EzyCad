@@ -348,6 +348,8 @@ void GUI::menu_bar_()
   {
     if (ImGui::MenuItem("Add cube"))
       m_view->add_cube();
+    if (ImGui::MenuItem("Add pyramid"))
+      m_view->add_pyramid();
 
     ImGui::EndMenu();
   }

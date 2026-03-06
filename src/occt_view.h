@@ -7,6 +7,8 @@
 #include <list>
 #include <memory>
 #include <optional>
+#include <set>
+#include <string>
 
 #include "occt_glfw_win.h"
 #include "shp_chamfer.h"
@@ -89,6 +91,7 @@ class Occt_view : protected AIS_ViewController
 
   std::list<ShapeBase_ptr>& get_shapes();
   void add_cube();
+  void add_pyramid();
 
   // Shape related
   Shp_move&      shp_move();
@@ -182,6 +185,7 @@ class Occt_view : protected AIS_ViewController
 
   // TODO group in .cpp file
   void add_shp_(ShapeBase_ptr& shp);
+  std::string unique_shape_name_(const char* base_name) const;
 
   void update_view_background_();
 
