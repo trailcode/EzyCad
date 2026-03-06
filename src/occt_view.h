@@ -90,6 +90,7 @@ class Occt_view : protected AIS_ViewController
   void         sketch_face_extrude(const ScreenCoords& screen_coords, bool is_mouse_move);
 
   std::list<ShapeBase_ptr>& get_shapes();
+  std::string get_unique_shape_name(const char* base_name) const;
   void add_cube();
   void add_pyramid();
 

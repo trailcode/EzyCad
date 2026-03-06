@@ -675,6 +675,11 @@ std::string Occt_view::unique_shape_name_(const char* base_name) const
   return base + buf;
 }
 
+std::string Occt_view::get_unique_shape_name(const char* base_name) const
+{
+  return unique_shape_name_(base_name);
+}
+
 void Occt_view::add_cube()
 {
   const double side = get_dimension_scale();  // unit cube (side 1 in display units)
