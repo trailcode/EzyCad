@@ -267,9 +267,22 @@ void Lua_console::render(bool* p_open)
   float height = ImGui::GetContentRegionAvail().y - ImGui::GetFrameHeightWithSpacing() - 4.f;
   if (height > 80.f)
   {
+    // Build selectable/copyable text from history (limit size for performance)
+    constexpr size_t k_max_lines = 5000;
+    constexpr size_t k_max_chars = 512 * 1024;
+    std::string      display_text;
+    display_text.reserve(m_history.size() * 32);
+    size_t start_idx = m_history.size() > k_max_lines ? m_history.size() - k_max_lines : 0;
+    for (size_t i = start_idx; i < m_history.size() && display_text.size() < k_max_chars; ++i)
+    {
+      display_text += m_history[i];
+      display_text += '\n';
+    }
+    display_text += '\0';
+
     ImGui::BeginChild("Lua_consoleScroll", ImVec2(0, height), true, ImGuiWindowFlags_HorizontalScrollbar);
-    for (const auto& line : m_history)
-      ImGui::TextUnformatted(line.c_str());
+    ImGui::InputTextMultiline("##lua_console_output", display_text.data(), display_text.size(),
+                              ImVec2(-1, -1), ImGuiInputTextFlags_ReadOnly);
     if (m_scroll_to_bottom)
     {
       ImGui::SetScrollHereY(1.0f);
