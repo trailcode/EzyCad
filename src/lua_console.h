@@ -4,21 +4,11 @@
 #include <string>
 #include <vector>
 
+struct lua_State;
 class GUI;
 
-#ifdef __EMSCRIPTEN__
-/// Stub when building for Emscripten (Lua console not available in web build).
-class Lua_console
-{
- public:
-  explicit Lua_console(GUI*) {}
-  void render(bool* = nullptr) {}
-  void append_line_from_lua(const std::string&) {}
-};
-#else
-struct lua_State;
-
 /// ImGui Lua console: run Lua snippets with bindings to EzyCad (ezy.*, view.*).
+/// Built for native and Emscripten (Lua C sources compile with emcc).
 class Lua_console
 {
  public:
@@ -43,4 +33,3 @@ class Lua_console
   char                     m_input_buf[k_input_buf_size] {};
   bool                     m_scroll_to_bottom = false;
 };
-#endif

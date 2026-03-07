@@ -19,43 +19,42 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 # Add custom CMake modules path
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}/cmake/")
 
-# Detect Emscripten early (Lua console disabled for web build)
+# Detect Emscripten early (for optional branching)
 if(CMAKE_CXX_COMPILER MATCHES "em\\+\\+")
   set(EMSCRIPTEN_BUILD TRUE)
 endif()
 
-# Lua (for script console) - not built for Emscripten; tarball has no CMake
-if(NOT EMSCRIPTEN_BUILD)
-  include(FetchContent)
-  FetchContent_Declare(
-    lua
-    URL https://www.lua.org/ftp/lua-5.4.6.tar.gz
-  )
-  FetchContent_Populate(lua)
-  set(LUA_SRC_DIR ${lua_SOURCE_DIR}/lua-5.4.6/src)
-  if(NOT EXISTS ${LUA_SRC_DIR})
-    set(LUA_SRC_DIR ${lua_SOURCE_DIR}/src)
-  endif()
-  if(NOT EXISTS ${LUA_SRC_DIR})
-    message(FATAL_ERROR "Lua source not found in ${lua_SOURCE_DIR}")
-  endif()
-  set(LUA_LIB_SOURCES
-    ${LUA_SRC_DIR}/lapi.c ${LUA_SRC_DIR}/lcode.c ${LUA_SRC_DIR}/lctype.c
-    ${LUA_SRC_DIR}/ldebug.c ${LUA_SRC_DIR}/ldo.c ${LUA_SRC_DIR}/ldump.c
-    ${LUA_SRC_DIR}/lfunc.c ${LUA_SRC_DIR}/lgc.c ${LUA_SRC_DIR}/llex.c
-    ${LUA_SRC_DIR}/lmem.c ${LUA_SRC_DIR}/lobject.c ${LUA_SRC_DIR}/lopcodes.c
-    ${LUA_SRC_DIR}/lparser.c ${LUA_SRC_DIR}/lstate.c ${LUA_SRC_DIR}/lstring.c
-    ${LUA_SRC_DIR}/ltable.c ${LUA_SRC_DIR}/ltm.c ${LUA_SRC_DIR}/lundump.c
-    ${LUA_SRC_DIR}/lvm.c ${LUA_SRC_DIR}/lzio.c
-    ${LUA_SRC_DIR}/lauxlib.c ${LUA_SRC_DIR}/lbaselib.c ${LUA_SRC_DIR}/lcorolib.c
-    ${LUA_SRC_DIR}/ldblib.c ${LUA_SRC_DIR}/liolib.c ${LUA_SRC_DIR}/lmathlib.c
-    ${LUA_SRC_DIR}/loadlib.c ${LUA_SRC_DIR}/loslib.c ${LUA_SRC_DIR}/lstrlib.c
-    ${LUA_SRC_DIR}/ltablib.c ${LUA_SRC_DIR}/lutf8lib.c ${LUA_SRC_DIR}/linit.c
-  )
-  add_library(lua STATIC ${LUA_LIB_SOURCES})
-  target_include_directories(lua PUBLIC ${LUA_SRC_DIR})
-  target_compile_features(lua PUBLIC c_std_99)
+# Lua (for script console) - built for native and Emscripten (C sources compile with emcc)
+# Tarball has no CMake; we build the lib from sources
+include(FetchContent)
+FetchContent_Declare(
+  lua
+  URL https://www.lua.org/ftp/lua-5.4.6.tar.gz
+)
+FetchContent_Populate(lua)
+set(LUA_SRC_DIR ${lua_SOURCE_DIR}/lua-5.4.6/src)
+if(NOT EXISTS ${LUA_SRC_DIR})
+  set(LUA_SRC_DIR ${lua_SOURCE_DIR}/src)
 endif()
+if(NOT EXISTS ${LUA_SRC_DIR})
+  message(FATAL_ERROR "Lua source not found in ${lua_SOURCE_DIR}")
+endif()
+set(LUA_LIB_SOURCES
+  ${LUA_SRC_DIR}/lapi.c ${LUA_SRC_DIR}/lcode.c ${LUA_SRC_DIR}/lctype.c
+  ${LUA_SRC_DIR}/ldebug.c ${LUA_SRC_DIR}/ldo.c ${LUA_SRC_DIR}/ldump.c
+  ${LUA_SRC_DIR}/lfunc.c ${LUA_SRC_DIR}/lgc.c ${LUA_SRC_DIR}/llex.c
+  ${LUA_SRC_DIR}/lmem.c ${LUA_SRC_DIR}/lobject.c ${LUA_SRC_DIR}/lopcodes.c
+  ${LUA_SRC_DIR}/lparser.c ${LUA_SRC_DIR}/lstate.c ${LUA_SRC_DIR}/lstring.c
+  ${LUA_SRC_DIR}/ltable.c ${LUA_SRC_DIR}/ltm.c ${LUA_SRC_DIR}/lundump.c
+  ${LUA_SRC_DIR}/lvm.c ${LUA_SRC_DIR}/lzio.c
+  ${LUA_SRC_DIR}/lauxlib.c ${LUA_SRC_DIR}/lbaselib.c ${LUA_SRC_DIR}/lcorolib.c
+  ${LUA_SRC_DIR}/ldblib.c ${LUA_SRC_DIR}/liolib.c ${LUA_SRC_DIR}/lmathlib.c
+  ${LUA_SRC_DIR}/loadlib.c ${LUA_SRC_DIR}/loslib.c ${LUA_SRC_DIR}/lstrlib.c
+  ${LUA_SRC_DIR}/ltablib.c ${LUA_SRC_DIR}/lutf8lib.c ${LUA_SRC_DIR}/linit.c
+)
+add_library(lua STATIC ${LUA_LIB_SOURCES})
+target_include_directories(lua PUBLIC ${LUA_SRC_DIR})
+target_compile_features(lua PUBLIC c_std_99)
 
 # Set binary directory paths
 # Combines CMAKE_BINARY_DIR and project-specific binary dir for flexibility
@@ -111,11 +110,6 @@ set(settings_cpp ${CMAKE_CURRENT_SOURCE_DIR}/src/settings.cpp)
 list(REMOVE_ITEM srcs "src/settings.cpp" ${settings_cpp})
 list(APPEND srcs ${settings_cpp})
 
-# Lua console not built for Emscripten (uses stub in header)
-if(EMSCRIPTEN_BUILD)
-  list(REMOVE_ITEM srcs "src/lua_console.cpp" ${CMAKE_CURRENT_SOURCE_DIR}/src/lua_console.cpp)
-endif()
-
 # Define source files for the application
 # Including ImGui sources and main application file
 set(App_SRCS ${imguiSrc} ${srcs})
@@ -131,9 +125,7 @@ if(APPLE)
 endif(APPLE)
 
 add_library(${PROJECT_NAME}_lib ${App_SRCS} ${imguiImplSrcs} third_party/tinyfiledialogs/tinyfiledialogs.c)
-if(NOT EMSCRIPTEN_BUILD)
-  target_link_libraries(${PROJECT_NAME}_lib PUBLIC lua)
-endif()
+target_link_libraries(${PROJECT_NAME}_lib PUBLIC lua)
 
 # Open CASCADE Technology
 find_package(OpenCASCADE REQUIRED NO_DEFAULT_PATH)
@@ -297,6 +289,7 @@ if(CMAKE_CXX_COMPILER_ID STREQUAL "Emscripten")
 
     target_link_libraries(
         ${PROJECT_NAME}
+        lua
         ${OpenCASCADE_LIBS})
 
     target_sources(${PROJECT_NAME} PRIVATE ${WEB_FILES})

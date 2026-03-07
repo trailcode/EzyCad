@@ -464,13 +464,11 @@ void GUI::menu_bar_()
       m_log_window_visible = !m_log_window_visible;
       save_panes           = true;
     }
-#ifndef __EMSCRIPTEN__
     if (ImGui::MenuItem("Lua Console", nullptr, m_show_lua_console))
     {
       m_show_lua_console = !m_show_lua_console;
       save_panes         = true;
     }
-#endif
 #ifndef NDEBUG
     if (ImGui::MenuItem("Debug", nullptr, m_show_dbg))
     {
