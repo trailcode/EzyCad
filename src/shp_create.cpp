@@ -7,8 +7,8 @@
 #include <BRepBuilderAPI_Sewing.hxx>
 #include <BRepBuilderAPI_Transform.hxx>
 #include <BRepPrimAPI_MakeBox.hxx>
-#include <BRepPrimAPI_MakeCylinder.hxx>
 #include <BRepPrimAPI_MakeCone.hxx>
+#include <BRepPrimAPI_MakeCylinder.hxx>
 #include <BRepPrimAPI_MakeSphere.hxx>
 #include <BRepPrimAPI_MakeTorus.hxx>
 #include <TopExp_Explorer.hxx>
