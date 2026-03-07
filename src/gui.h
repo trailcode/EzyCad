@@ -14,6 +14,7 @@
 #include "modes.h"
 #include "types.h"
 
+class LuaConsole;
 class Occt_view;
 struct GLFWwindow;
 
@@ -82,6 +83,9 @@ class GUI
 
   void save_occt_view_settings();
 
+  /// For scripting (Lua console): access the 3D view.
+  Occt_view* get_view() { return m_view.get(); }
+
  private:
   friend class GUI_access;
 
@@ -122,6 +126,7 @@ class GUI
   void add_cone_dialog_();
   void add_torus_dialog_();
   void log_window_();
+  void lua_console_();
   void settings_();
   void setup_log_redirection_();
   void cleanup_log_redirection_();
@@ -205,4 +210,6 @@ class GUI
 #ifndef NDEBUG
   bool m_show_dbg {false};
 #endif
+  bool                           m_show_lua_console {false};
+  std::unique_ptr<LuaConsole>     m_lua_console;
 };

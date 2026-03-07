@@ -165,14 +165,9 @@ int main(int, char**)
 
   keyCallback = [&](GLFWwindow* window, int key, int scancode, int action, int mods)
   {
-    /*
+    ImGui_ImplGlfw_KeyCallback(window, key, scancode, action, mods);
     if (!io.WantCaptureKeyboard)
       gui.on_key(key, scancode, action, mods);
-    else
-      ImGui_ImplGlfw_KeyCallback(window, key, scancode, action, mods);
-      */
-    ImGui_ImplGlfw_KeyCallback(window, key, scancode, action, mods);
-    gui.on_key(key, scancode, action, mods);
   };
 
   cursorPosCallback = [&](GLFWwindow* window, double xpos, double ypos)

@@ -20,6 +20,7 @@
 #include "geom.h"
 #include "imgui.h"
 #include "log.h"
+#include "lua_console.h"
 #include "occt_view.h"
 #include "sketch.h"
 
@@ -84,6 +85,7 @@ void GUI::render_gui()
   add_cone_dialog_();
   add_torus_dialog_();
   log_window_();
+  lua_console_();
   settings_();
   dbg_();
 }
@@ -461,6 +463,11 @@ void GUI::menu_bar_()
     {
       m_log_window_visible = !m_log_window_visible;
       save_panes           = true;
+    }
+    if (ImGui::MenuItem("Lua Console", nullptr, m_show_lua_console))
+    {
+      m_show_lua_console = !m_show_lua_console;
+      save_panes         = true;
     }
 #ifndef NDEBUG
     if (ImGui::MenuItem("Debug", nullptr, m_show_dbg))
@@ -1978,6 +1985,15 @@ void GUI::log_window_()
   ImGui::End();
 }
 
+void GUI::lua_console_()
+{
+  if (!m_show_lua_console)
+    return;
+  if (!m_lua_console)
+    m_lua_console = std::make_unique<LuaConsole>(this);
+  m_lua_console->render(&m_show_lua_console);
+}
+
 void GUI::init(GLFWwindow* window)
 {
   initialize_toolbar_();
@@ -2220,7 +2236,12 @@ void GUI::open_file_dialog_()
 
 void GUI::save_file_dialog_()
 {
-  const std::string json_str = m_view->to_json();
+  using namespace nlohmann;
+  std::string project_json = m_view->to_json();
+  json j = json::parse(project_json);
+  j["mode"] = static_cast<int>(get_mode());
+  const std::string json_str = j.dump(2);
+
 #ifndef __EMSCRIPTEN__
   std::string file;
   if (!m_last_saved_path.empty())
@@ -2258,7 +2279,14 @@ void GUI::save_file_dialog_()
 
 void GUI::on_file(const std::string& file_path, const std::string& json_str)
 {
-  // TODO update GUI title to include file name.
+  using namespace nlohmann;
+  const json j = json::parse(json_str);
+  if (j.contains("mode") && j["mode"].is_number_integer())
+  {
+    const int idx = j["mode"].get<int>();
+    if (idx >= 0 && idx < static_cast<int>(Mode::_count))
+      set_mode(static_cast<Mode>(idx));
+  }
   m_view->load(json_str);
   m_last_saved_path = file_path;
   show_message("Opened: " + std::filesystem::path(file_path).filename().string());
