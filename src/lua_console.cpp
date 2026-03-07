@@ -297,6 +297,7 @@ void Lua_console::render(bool* p_open)
   {
     execute(m_input_buf);
     m_input_buf[0] = '\0';
+    ImGui::SetKeyboardFocusHere(-1);  // Refocus the command line for the next input
   }
   ImGui::End();
 }
