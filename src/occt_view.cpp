@@ -712,6 +712,39 @@ void Occt_view::add_sphere()
   m_view->Redraw();
 }
 
+void Occt_view::add_cylinder()
+{
+  const double scale  = get_dimension_scale();
+  TopoDS_Shape shape = shp_create::create_cylinder(scale, scale);
+  ShapeBase_ptr shp  = new Extruded_shp(*m_ctx, shape);
+  shp->set_name(unique_shape_name_("Cylinder"));
+  add_shp_(shp);
+  m_ctx->Display(shp, AIS_Shaded, AIS_Shape::SelectionMode(m_shp_selection_mode), true);
+  m_view->Redraw();
+}
+
+void Occt_view::add_cone()
+{
+  const double scale  = get_dimension_scale();
+  TopoDS_Shape shape = shp_create::create_cone(scale, 0.0, scale);
+  ShapeBase_ptr shp  = new Extruded_shp(*m_ctx, shape);
+  shp->set_name(unique_shape_name_("Cone"));
+  add_shp_(shp);
+  m_ctx->Display(shp, AIS_Shaded, AIS_Shape::SelectionMode(m_shp_selection_mode), true);
+  m_view->Redraw();
+}
+
+void Occt_view::add_torus()
+{
+  const double scale  = get_dimension_scale();
+  TopoDS_Shape shape = shp_create::create_torus(scale, scale / 2.0);
+  ShapeBase_ptr shp  = new Extruded_shp(*m_ctx, shape);
+  shp->set_name(unique_shape_name_("Torus"));
+  add_shp_(shp);
+  m_ctx->Display(shp, AIS_Shaded, AIS_Shape::SelectionMode(m_shp_selection_mode), true);
+  m_view->Redraw();
+}
+
 bool Occt_view::fit_face_in_view(const TopoDS_Face& face)
 {
   EZY_ASSERT(!face.IsNull());

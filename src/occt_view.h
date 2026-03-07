@@ -94,6 +94,9 @@ class Occt_view : protected AIS_ViewController
   void add_cube();
   void add_pyramid();
   void add_sphere();
+  void add_cylinder();
+  void add_cone();
+  void add_torus();
 
   // Shape related
   Shp_move&      shp_move();

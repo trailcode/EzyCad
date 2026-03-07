@@ -359,6 +359,12 @@ void GUI::menu_bar_()
       m_view->add_pyramid();
     if (ImGui::MenuItem("Add sphere"))
       m_view->add_sphere();
+    if (ImGui::MenuItem("Add cylinder"))
+      m_view->add_cylinder();
+    if (ImGui::MenuItem("Add cone"))
+      m_view->add_cone();
+    if (ImGui::MenuItem("Add torus"))
+      m_view->add_torus();
 
     ImGui::EndMenu();
   }
