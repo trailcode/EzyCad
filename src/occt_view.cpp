@@ -4,13 +4,7 @@
 #include <Aspect_GradientFillMethod.hxx>
 #include <Aspect_Grid.hxx>
 #include <BRepBndLib.hxx>
-#include <BRepBuilderAPI_MakeEdge.hxx>
-#include <BRepBuilderAPI_MakeFace.hxx>
-#include <BRepBuilderAPI_MakeSolid.hxx>
-#include <BRepBuilderAPI_MakeWire.hxx>
-#include <BRepBuilderAPI_Sewing.hxx>
 #include <BRepBuilderAPI_Transform.hxx>
-#include <BRepPrimAPI_MakeBox.hxx>
 #include <BRepPrimAPI_MakePrism.hxx>
 #include <BRepTools.hxx>
 #include <BRep_Tool.hxx>
@@ -31,6 +25,7 @@
 #include "dbg.h"
 #include "geom.h"
 #include "gui.h"
+#include "shp_create.h"
 #include "sketch.h"
 #include "sketch_json.h"
 #include "utl.h"
@@ -684,11 +679,8 @@ std::string Occt_view::get_unique_shape_name(const char* base_name) const
 
 void Occt_view::add_cube()
 {
-  const double side = get_dimension_scale();  // unit cube (side 1 in display units)
-  TopoDS_Shape box  = BRepPrimAPI_MakeBox(side, side, side).Shape();
-  gp_Trsf      trsf;
-  trsf.SetTranslation(gp_Vec(-side / 2.0, -side / 2.0, -side / 2.0));
-  box               = BRepBuilderAPI_Transform(box, trsf).Shape();
+  const double side = get_dimension_scale();
+  TopoDS_Shape box  = shp_create::create_cube(side);
   ShapeBase_ptr shp = new Extruded_shp(*m_ctx, box);
   shp->set_name(unique_shape_name_("Cube"));
   add_shp_(shp);
@@ -698,69 +690,10 @@ void Occt_view::add_cube()
 
 void Occt_view::add_pyramid()
 {
-  const double side = get_dimension_scale();  // unit pyramid (base side 1 in display units)
-  const double h    = side;                   // height = base side
-  const double half = side / 2.0;
-
-  // Base corners (square in XY, z=0), apex at (0,0,h)
-  gp_Pnt apex(0, 0, h);
-  gp_Pnt p0(-half, -half, 0);
-  gp_Pnt p1(half, -half, 0);
-  gp_Pnt p2(half, half, 0);
-  gp_Pnt p3(-half, half, 0);
-
-  // Base face (square wire)
-  BRepBuilderAPI_MakeWire base_wire;
-  base_wire.Add(BRepBuilderAPI_MakeEdge(p0, p1).Edge());
-  base_wire.Add(BRepBuilderAPI_MakeEdge(p1, p2).Edge());
-  base_wire.Add(BRepBuilderAPI_MakeEdge(p2, p3).Edge());
-  base_wire.Add(BRepBuilderAPI_MakeEdge(p3, p0).Edge());
-  TopoDS_Face base_face = BRepBuilderAPI_MakeFace(gp_Pln(gp_Pnt(0, 0, 0), gp_Dir(0, 0, -1)), base_wire.Wire(), true).Face();
-
-  // Triangular side faces (apex, base edge i, base edge i+1)
-  auto make_triangle_face = [](const gp_Pnt& a, const gp_Pnt& b, const gp_Pnt& c) -> TopoDS_Face
-  {
-    BRepBuilderAPI_MakeWire w;
-    w.Add(BRepBuilderAPI_MakeEdge(a, b).Edge());
-    w.Add(BRepBuilderAPI_MakeEdge(b, c).Edge());
-    w.Add(BRepBuilderAPI_MakeEdge(c, a).Edge());
-    return BRepBuilderAPI_MakeFace(w.Wire(), true).Face();
-  };
-
-  TopoDS_Face f0 = make_triangle_face(apex, p0, p1);
-  TopoDS_Face f1 = make_triangle_face(apex, p1, p2);
-  TopoDS_Face f2 = make_triangle_face(apex, p2, p3);
-  TopoDS_Face f3 = make_triangle_face(apex, p3, p0);
-
-  BRepBuilderAPI_Sewing sewer(1e-6);
-  sewer.Add(base_face);
-  sewer.Add(f0);
-  sewer.Add(f1);
-  sewer.Add(f2);
-  sewer.Add(f3);
-  sewer.Perform();
-
-  TopoDS_Shape sewed = sewer.SewedShape();
-  TopoDS_Shell shell;
-  for (TopExp_Explorer exp(sewed, TopAbs_SHELL); exp.More(); exp.Next())
-  {
-    shell = TopoDS::Shell(exp.Current());
-    break;
-  }
-
-  if (shell.IsNull())
+  const double side = get_dimension_scale();
+  TopoDS_Shape pyramid = shp_create::create_pyramid(side);
+  if (pyramid.IsNull())
     return;
-
-  BRepBuilderAPI_MakeSolid solid_maker(shell);
-  if (!solid_maker.IsDone())
-    return;
-
-  TopoDS_Shape pyramid = solid_maker.Solid();
-  // Center at origin: base was z=0 with center (0,0,0), apex at (0,0,h). Center of pyramid is (0,0,h/2). Translate by (0,0,-h/2).
-  gp_Trsf trsf;
-  trsf.SetTranslation(gp_Vec(0, 0, -h / 2.0));
-  pyramid = BRepBuilderAPI_Transform(pyramid, trsf).Shape();
-
   ShapeBase_ptr shp = new Extruded_shp(*m_ctx, pyramid);
   shp->set_name(unique_shape_name_("Pyramid"));
   add_shp_(shp);
