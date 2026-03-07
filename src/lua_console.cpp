@@ -148,6 +148,31 @@ int l_view_add_sphere(lua_State* L)
   view->add_sphere(ox, oy, oz, r);
   return 0;
 }
+
+// ezy.help() / help() - print available commands
+int l_ezy_help(lua_State* L)
+{
+  lua_getfield(L, LUA_REGISTRYINDEX, "ezycad_console");
+  Lua_console* con = static_cast<Lua_console*>(lua_touserdata(L, -1));
+  lua_pop(L, 1);
+  if (!con)
+    return 0;
+  const char* help_text =
+      "ezy:\n"
+      "  ezy.log(msg)          - append message to console and log window\n"
+      "  ezy.msg(text)         - show status message\n"
+      "  ezy.get_mode()        - return current mode name\n"
+      "  ezy.set_mode(name)    - set mode by name\n"
+      "  ezy.help()            - print this help\n"
+      "view:\n"
+      "  view.sketch_count()   - number of sketches\n"
+      "  view.shape_count()    - number of shapes\n"
+      "  view.curr_sketch_name() - current sketch name\n"
+      "  view.add_box(ox,oy,oz,w,l,h) - add box\n"
+      "  view.add_sphere(ox,oy,oz,r)  - add sphere";
+  con->append_line_from_lua(help_text);
+  return 0;
+}
 }  // namespace
 
 // Called from C callback; we need to store Lua_console* in registry to get back
@@ -200,7 +225,15 @@ void Lua_console::register_bindings()
   lua_setfield(m_L, -2, "get_mode");
   lua_pushcfunction(m_L, l_ezy_set_mode);
   lua_setfield(m_L, -2, "set_mode");
+  lua_pushcfunction(m_L, l_ezy_help);
+  lua_setfield(m_L, -2, "help");
   lua_setglobal(m_L, "ezy");
+
+  // Global help() as well (same as ezy.help())
+  lua_getglobal(m_L, "ezy");
+  lua_getfield(m_L, -1, "help");
+  lua_remove(m_L, -2);
+  lua_setglobal(m_L, "help");
 
   // view table
   lua_newtable(m_L);
