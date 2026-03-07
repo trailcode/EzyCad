@@ -101,6 +101,7 @@ class GUI
   void options_();
   void options_normal_mode_();
   void options_move_mode_();
+  void options_scale_mode_();
   void on_key_move_mode_(int key);
   void on_key_rotate_mode_(int key);
   void options_sketch_operation_axis_mode_();

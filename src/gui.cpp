@@ -279,13 +279,16 @@ void GUI::load_examples_list_()
 #endif
   if (!std::filesystem::is_directory(examples_dir))
     return;
+
   for (const auto& entry : std::filesystem::directory_iterator(examples_dir))
   {
     if (!entry.is_regular_file())
       continue;
+
     const auto& p = entry.path();
     if (p.extension() != ".ezy")
       continue;
+
     std::string path  = p.string();
     std::string label = p.filename().string();
     m_example_files.emplace_back(std::move(label), std::move(path));
@@ -1095,7 +1098,7 @@ void GUI::options_()
     case Mode::Normal:                options_normal_mode_();                 break;
     case Mode::Move:                  options_move_mode_();                   break;
     case Mode::Rotate:                options_rotate_mode_();                 break;
-    case Mode::Scale:                 options_normal_mode_();                 break;
+    case Mode::Scale:                 options_scale_mode_();                  break;
     case Mode::Sketch_operation_axis: options_sketch_operation_axis_mode_();  break;
     case Mode::Shape_chamfer:         options_shape_chamfer_mode_();          break;
     case Mode::Shape_fillet:          options_shape_fillet_mode_();           break;
@@ -1244,6 +1247,10 @@ void GUI::options_move_mode_()
   ImGui::Checkbox("Y", &opts.constr_axis_y);
   ImGui::SameLine();
   ImGui::Checkbox("Z", &opts.constr_axis_z);
+}
+
+void GUI::options_scale_mode_()
+{
 }
 
 void GUI::options_rotate_mode_()

@@ -659,6 +659,7 @@ std::string Occt_view::unique_shape_name_(const char* base_name) const
         }
         catch (...)
         {
+          EZY_ASSERT(false);  // Should not happen due to the isdigit check, but just in case.
         }
       }
     }
@@ -670,6 +671,7 @@ std::string Occt_view::unique_shape_name_(const char* base_name) const
 
   if (next == 0)
     return base;
+
   char buf[32];
   snprintf(buf, sizeof(buf), ".%03d", next);
   return base + buf;
