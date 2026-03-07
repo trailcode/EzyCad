@@ -80,9 +80,7 @@ void GUI::render_gui()
   add_box_dialog_();
   log_window_();
   settings_();
-#ifndef NDEBUG
   dbg_();
-#endif
 }
 
 void GUI::render_occt()
