@@ -677,12 +677,11 @@ std::string Occt_view::get_unique_shape_name(const char* base_name) const
   return unique_shape_name_(base_name);
 }
 
-void Occt_view::add_cube()
+void Occt_view::add_box(double ox, double oy, double oz, double width, double length, double height)
 {
-  const double side = get_dimension_scale();
-  TopoDS_Shape box  = shp_create::create_cube(side);
+  TopoDS_Shape box  = shp_create::create_box(ox, oy, oz, width, length, height);
   ShapeBase_ptr shp = new Extruded_shp(*m_ctx, box);
-  shp->set_name(unique_shape_name_("Cube"));
+  shp->set_name(unique_shape_name_("Box"));
   add_shp_(shp);
   m_ctx->Display(shp, AIS_Shaded, AIS_Shape::SelectionMode(m_shp_selection_mode), true);
   m_view->Redraw();

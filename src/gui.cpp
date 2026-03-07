@@ -77,6 +77,7 @@ void GUI::render_gui()
   shape_list_();
   options_();
   message_status_window_();
+  add_box_dialog_();
   log_window_();
   settings_();
 #ifndef NDEBUG
@@ -353,8 +354,21 @@ void GUI::menu_bar_()
 
   if (ImGui::BeginMenu("Edit"))
   {
-    if (ImGui::MenuItem("Add cube"))
-      m_view->add_cube();
+    if (ImGui::MenuItem("Add box"))
+    {
+      const double scale = m_view->get_dimension_scale();
+      m_view->add_box(0, 0, 0, scale, scale, scale);
+    }
+    if (ImGui::MenuItem("Add box..."))
+    {
+      m_add_box_origin_x = 0;
+      m_add_box_origin_y = 0;
+      m_add_box_origin_z = 0;
+      m_add_box_width    = 1.0;
+      m_add_box_length   = 1.0;
+      m_add_box_height   = 1.0;
+      m_open_add_box_popup = true;
+    }
     if (ImGui::MenuItem("Add pyramid"))
       m_view->add_pyramid();
     if (ImGui::MenuItem("Add sphere"))
@@ -1514,6 +1528,85 @@ void GUI::message_status_window_()
   ImGui::PopStyleColor();
 
   ImGui::End();
+}
+
+void GUI::add_box_dialog_()
+{
+  if (m_open_add_box_popup)
+  {
+    ImGui::OpenPopup("Add box");
+    m_open_add_box_popup = false;
+  }
+  if (!ImGui::BeginPopupModal("Add box", nullptr, ImGuiWindowFlags_AlwaysAutoResize))
+    return;
+
+  ImGui::TextUnformatted("Values in display units.");
+  ImGui::Spacing();
+
+  if (ImGui::BeginTable("Add box##table", 2, ImGuiTableFlags_SizingStretchProp))
+  {
+    ImGui::TableNextRow();
+    ImGui::TableSetColumnIndex(0);
+    ImGui::TextUnformatted("Origin X");
+    ImGui::TableSetColumnIndex(1);
+    ImGui::SetNextItemWidth(-1);
+    ImGui::InputDouble("##box_origin_x", &m_add_box_origin_x, 0.0, 0.0, "%.3f");
+
+    ImGui::TableNextRow();
+    ImGui::TableSetColumnIndex(0);
+    ImGui::TextUnformatted("Origin Y");
+    ImGui::TableSetColumnIndex(1);
+    ImGui::SetNextItemWidth(-1);
+    ImGui::InputDouble("##box_origin_y", &m_add_box_origin_y, 0.0, 0.0, "%.3f");
+
+    ImGui::TableNextRow();
+    ImGui::TableSetColumnIndex(0);
+    ImGui::TextUnformatted("Origin Z");
+    ImGui::TableSetColumnIndex(1);
+    ImGui::SetNextItemWidth(-1);
+    ImGui::InputDouble("##box_origin_z", &m_add_box_origin_z, 0.0, 0.0, "%.3f");
+
+    ImGui::TableNextRow();
+    ImGui::TableSetColumnIndex(0);
+    ImGui::TextUnformatted("Width (X)");
+    ImGui::TableSetColumnIndex(1);
+    ImGui::SetNextItemWidth(-1);
+    ImGui::InputDouble("##box_width", &m_add_box_width, 0.0, 0.0, "%.3f");
+
+    ImGui::TableNextRow();
+    ImGui::TableSetColumnIndex(0);
+    ImGui::TextUnformatted("Length (Y)");
+    ImGui::TableSetColumnIndex(1);
+    ImGui::SetNextItemWidth(-1);
+    ImGui::InputDouble("##box_length", &m_add_box_length, 0.0, 0.0, "%.3f");
+
+    ImGui::TableNextRow();
+    ImGui::TableSetColumnIndex(0);
+    ImGui::TextUnformatted("Height (Z)");
+    ImGui::TableSetColumnIndex(1);
+    ImGui::SetNextItemWidth(-1);
+    ImGui::InputDouble("##box_height", &m_add_box_height, 0.0, 0.0, "%.3f");
+
+    ImGui::EndTable();
+  }
+  ImGui::Spacing();
+
+  if (ImGui::Button("Add"))
+  {
+    if (m_add_box_width > 0 && m_add_box_length > 0 && m_add_box_height > 0)
+    {
+      const double scale = m_view->get_dimension_scale();
+      m_view->add_box(
+          m_add_box_origin_x * scale, m_add_box_origin_y * scale, m_add_box_origin_z * scale,
+          m_add_box_width * scale, m_add_box_length * scale, m_add_box_height * scale);
+      ImGui::CloseCurrentPopup();
+    }
+  }
+  ImGui::SameLine();
+  if (ImGui::Button("Cancel"))
+    ImGui::CloseCurrentPopup();
+
+  ImGui::EndPopup();
 }
 
 // Log window implementation

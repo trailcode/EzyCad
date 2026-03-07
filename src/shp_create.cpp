@@ -18,11 +18,11 @@
 
 namespace shp_create
 {
-TopoDS_Shape create_cube(double side)
+TopoDS_Shape create_box(double ox, double oy, double oz, double width, double length, double height)
 {
-  TopoDS_Shape box = BRepPrimAPI_MakeBox(side, side, side).Shape();
+  TopoDS_Shape box = BRepPrimAPI_MakeBox(width, length, height).Shape();
   gp_Trsf      trsf;
-  trsf.SetTranslation(gp_Vec(-side / 2.0, -side / 2.0, -side / 2.0));
+  trsf.SetTranslation(gp_Vec(ox, oy, oz));
   return BRepBuilderAPI_Transform(box, trsf).Shape();
 }
 

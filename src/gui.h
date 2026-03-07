@@ -115,6 +115,7 @@ class GUI
   void menu_bar_();
   void toolbar_();
   void message_status_window_();
+  void add_box_dialog_();
   void log_window_();
   void settings_();
   void setup_log_redirection_();
@@ -171,6 +172,13 @@ class GUI
   bool        m_show_shape_list {true};
   bool        m_show_options {true};
   bool        m_show_settings_dialog {false};
+  bool        m_open_add_box_popup {false};
+  double      m_add_box_origin_x {0};
+  double      m_add_box_origin_y {0};
+  double      m_add_box_origin_z {0};
+  double      m_add_box_width {1};
+  double      m_add_box_length {1};
+  double      m_add_box_height {1};
   bool        m_hide_all_shapes {false};
   bool        m_show_tool_tips {true};
   bool        m_dark_mode {false};
