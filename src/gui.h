@@ -14,7 +14,7 @@
 #include "modes.h"
 #include "types.h"
 
-class LuaConsole;
+class Lua_console;
 class Occt_view;
 struct GLFWwindow;
 
@@ -211,5 +211,5 @@ class GUI
   bool m_show_dbg {false};
 #endif
   bool                           m_show_lua_console {false};
-  std::unique_ptr<LuaConsole>     m_lua_console;
+  std::unique_ptr<Lua_console>     m_lua_console;
 };

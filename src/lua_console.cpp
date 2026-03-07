@@ -35,7 +35,7 @@ int l_ezy_log(lua_State* L)
   GUI*        gui = get_gui(L);
   if (gui)
     gui->log_message(msg);
-  LuaConsole* con = static_cast<LuaConsole*>(lua_touserdata(L, lua_upvalueindex(1)));
+  Lua_console* con = static_cast<Lua_console*>(lua_touserdata(L, lua_upvalueindex(1)));
   if (con)
     con->append_line_from_lua(msg);
   return 0;
@@ -150,20 +150,20 @@ int l_view_add_sphere(lua_State* L)
 }
 }  // namespace
 
-// Called from C callback; we need to store LuaConsole* in registry to get back
-void LuaConsole::append_line_from_lua(const std::string& line)
+// Called from C callback; we need to store Lua_console* in registry to get back
+void Lua_console::append_line_from_lua(const std::string& line)
 {
   m_history.push_back(line);
   m_scroll_to_bottom = true;
 }
 
-void LuaConsole::append_line(const std::string& line, bool is_error)
+void Lua_console::append_line(const std::string& line, bool is_error)
 {
   m_history.push_back(is_error ? "[err] " + line : line);
   m_scroll_to_bottom = true;
 }
 
-LuaConsole::LuaConsole(GUI* gui)
+Lua_console::Lua_console(GUI* gui)
     : m_gui(gui)
 {
   m_L = luaL_newstate();
@@ -178,13 +178,13 @@ LuaConsole::LuaConsole(GUI* gui)
   append_line("Lua console ready. Try: ezy.log('hello'), ezy.get_mode(), view.sketch_count()");
 }
 
-LuaConsole::~LuaConsole()
+Lua_console::~Lua_console()
 {
   if (m_L)
     lua_close(m_L);
 }
 
-void LuaConsole::register_bindings()
+void Lua_console::register_bindings()
 {
   if (!m_L || !m_gui)
     return;
@@ -223,7 +223,7 @@ void LuaConsole::register_bindings()
   lua_setglobal(m_L, "print");
 }
 
-void LuaConsole::execute(const std::string& code)
+void Lua_console::execute(const std::string& code)
 {
   if (!m_L || code.empty())
     return;
@@ -256,7 +256,7 @@ void LuaConsole::execute(const std::string& code)
   }
 }
 
-void LuaConsole::render(bool* p_open)
+void Lua_console::render(bool* p_open)
 {
   if (!ImGui::Begin("Lua Console", p_open, ImGuiWindowFlags_None))
   {
@@ -267,7 +267,7 @@ void LuaConsole::render(bool* p_open)
   float height = ImGui::GetContentRegionAvail().y - ImGui::GetFrameHeightWithSpacing() - 4.f;
   if (height > 80.f)
   {
-    ImGui::BeginChild("LuaConsoleScroll", ImVec2(0, height), true, ImGuiWindowFlags_HorizontalScrollbar);
+    ImGui::BeginChild("Lua_consoleScroll", ImVec2(0, height), true, ImGuiWindowFlags_HorizontalScrollbar);
     for (const auto& line : m_history)
       ImGui::TextUnformatted(line.c_str());
     if (m_scroll_to_bottom)
