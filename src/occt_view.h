@@ -92,11 +92,11 @@ class Occt_view : protected AIS_ViewController
   std::list<ShapeBase_ptr>& get_shapes();
   std::string get_unique_shape_name(const char* base_name) const;
   void add_box(double ox, double oy, double oz, double width, double length, double height);
-  void add_pyramid();
-  void add_sphere();
-  void add_cylinder();
-  void add_cone();
-  void add_torus();
+  void add_pyramid(double ox, double oy, double oz, double side);
+  void add_sphere(double ox, double oy, double oz, double radius);
+  void add_cylinder(double ox, double oy, double oz, double radius, double height);
+  void add_cone(double ox, double oy, double oz, double R1, double R2, double height);
+  void add_torus(double ox, double oy, double oz, double R1, double R2);
 
   // Shape related
   Shp_move&      shp_move();

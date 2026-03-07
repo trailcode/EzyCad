@@ -687,58 +687,83 @@ void Occt_view::add_box(double ox, double oy, double oz, double width, double le
   m_view->Redraw();
 }
 
-void Occt_view::add_pyramid()
+void Occt_view::add_pyramid(double ox, double oy, double oz, double side)
 {
-  const double side = get_dimension_scale();
   TopoDS_Shape pyramid = shp_create::create_pyramid(side);
   if (pyramid.IsNull())
     return;
   ShapeBase_ptr shp = new Extruded_shp(*m_ctx, pyramid);
   shp->set_name(unique_shape_name_("Pyramid"));
+  if (ox != 0 || oy != 0 || oz != 0)
+  {
+    gp_Trsf trsf;
+    trsf.SetTranslation(gp_Vec(ox, oy, oz));
+    shp->SetLocalTransformation(trsf);
+  }
   add_shp_(shp);
   m_ctx->Display(shp, AIS_Shaded, AIS_Shape::SelectionMode(m_shp_selection_mode), true);
   m_view->Redraw();
 }
 
-void Occt_view::add_sphere()
+void Occt_view::add_sphere(double ox, double oy, double oz, double radius)
 {
-  const double radius = get_dimension_scale();
   TopoDS_Shape sphere = shp_create::create_sphere(radius);
   ShapeBase_ptr shp   = new Extruded_shp(*m_ctx, sphere);
   shp->set_name(unique_shape_name_("Sphere"));
+  if (ox != 0 || oy != 0 || oz != 0)
+  {
+    gp_Trsf trsf;
+    trsf.SetTranslation(gp_Vec(ox, oy, oz));
+    shp->SetLocalTransformation(trsf);
+  }
   add_shp_(shp);
   m_ctx->Display(shp, AIS_Shaded, AIS_Shape::SelectionMode(m_shp_selection_mode), true);
   m_view->Redraw();
 }
 
-void Occt_view::add_cylinder()
+void Occt_view::add_cylinder(double ox, double oy, double oz, double radius, double height)
 {
-  const double scale  = get_dimension_scale();
-  TopoDS_Shape shape = shp_create::create_cylinder(scale, scale);
+  TopoDS_Shape shape = shp_create::create_cylinder(radius, height);
   ShapeBase_ptr shp  = new Extruded_shp(*m_ctx, shape);
   shp->set_name(unique_shape_name_("Cylinder"));
+  if (ox != 0 || oy != 0 || oz != 0)
+  {
+    gp_Trsf trsf;
+    trsf.SetTranslation(gp_Vec(ox, oy, oz));
+    shp->SetLocalTransformation(trsf);
+  }
   add_shp_(shp);
   m_ctx->Display(shp, AIS_Shaded, AIS_Shape::SelectionMode(m_shp_selection_mode), true);
   m_view->Redraw();
 }
 
-void Occt_view::add_cone()
+void Occt_view::add_cone(double ox, double oy, double oz, double R1, double R2, double height)
 {
-  const double scale  = get_dimension_scale();
-  TopoDS_Shape shape = shp_create::create_cone(scale, 0.0, scale);
+  TopoDS_Shape shape = shp_create::create_cone(R1, R2, height);
   ShapeBase_ptr shp  = new Extruded_shp(*m_ctx, shape);
   shp->set_name(unique_shape_name_("Cone"));
+  if (ox != 0 || oy != 0 || oz != 0)
+  {
+    gp_Trsf trsf;
+    trsf.SetTranslation(gp_Vec(ox, oy, oz));
+    shp->SetLocalTransformation(trsf);
+  }
   add_shp_(shp);
   m_ctx->Display(shp, AIS_Shaded, AIS_Shape::SelectionMode(m_shp_selection_mode), true);
   m_view->Redraw();
 }
 
-void Occt_view::add_torus()
+void Occt_view::add_torus(double ox, double oy, double oz, double R1, double R2)
 {
-  const double scale  = get_dimension_scale();
-  TopoDS_Shape shape = shp_create::create_torus(scale, scale / 2.0);
+  TopoDS_Shape shape = shp_create::create_torus(R1, R2);
   ShapeBase_ptr shp  = new Extruded_shp(*m_ctx, shape);
   shp->set_name(unique_shape_name_("Torus"));
+  if (ox != 0 || oy != 0 || oz != 0)
+  {
+    gp_Trsf trsf;
+    trsf.SetTranslation(gp_Vec(ox, oy, oz));
+    shp->SetLocalTransformation(trsf);
+  }
   add_shp_(shp);
   m_ctx->Display(shp, AIS_Shaded, AIS_Shape::SelectionMode(m_shp_selection_mode), true);
   m_view->Redraw();
