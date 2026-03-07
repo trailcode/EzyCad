@@ -20,11 +20,7 @@ std::optional<gp_Pnt2d> Sketch_nodes::snap(const ScreenCoords& screen_coords)
   std::optional<gp_Pnt2d> pt = m_view.pt_on_plane(screen_coords, m_pln);
   if (pt)
     try_get_node_idx_snap(*pt);
-  else
-  {
-    // TODO use result
-  }
-
+  
   return pt;
 }
 

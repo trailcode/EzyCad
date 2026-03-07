@@ -1,6 +1,9 @@
 #include "gui.h"
 
+#include <algorithm>
 #include <array>
+#include <filesystem>
+#include <fstream>
 #include <map>
 #include <nlohmann/json.hpp>
 #include <sstream>
@@ -74,11 +77,15 @@ void GUI::render_gui()
   shape_list_();
   options_();
   message_status_window_();
+  add_box_dialog_();
+  add_pyramid_dialog_();
+  add_sphere_dialog_();
+  add_cylinder_dialog_();
+  add_cone_dialog_();
+  add_torus_dialog_();
   log_window_();
   settings_();
-#ifndef NDEBUG
   dbg_();
-#endif
 }
 
 void GUI::render_occt()
@@ -209,6 +216,10 @@ void GUI::on_key(int key, int scancode, int action, int mods)
           set_mode(Mode::Sketch_face_extrude);
           break;
 
+        case GLFW_KEY_S:
+          set_mode(Mode::Scale);
+          break;
+
         default:
           break;
       }
@@ -238,7 +249,7 @@ void GUI::initialize_toolbar_()
       {        load_texture("Workbench_Sketcher_none.png"), false,           "Sketch inspection mode",         Mode::Sketch_inspection_mode},
       {             load_texture("Assembly_AxialMove.png"), false,                   "Shape move (g)",                           Mode::Move},
       {                   load_texture("Draft_Rotate.png"), false,                 "Shape rotate (r)",                         Mode::Rotate},
-      {                     load_texture("Part_Scale.png"), false,                      "Shape Scale",                          Mode::Scale},
+      {                     load_texture("Part_Scale.png"), false,                      "Shape Scale (s)",                       Mode::Scale},
       {          load_texture("Macro_FaceToSketch_48.png"), false, "Create a sketch from planar face",        Mode::Sketch_from_planar_face},
       {          load_texture("Sketcher_MirrorSketch.png"), false,            "Define operation axis",          Mode::Sketch_operation_axis},
       {           load_texture("Sketcher_CreatePoint.png"), false,                         "Add node",                Mode::Sketch_add_node},
@@ -262,6 +273,35 @@ void GUI::initialize_toolbar_()
   };
 }
 
+void GUI::load_examples_list_()
+{
+  m_example_files.clear();
+#ifdef __EMSCRIPTEN__
+  const std::filesystem::path examples_dir("/res/examples");
+#else
+  const std::filesystem::path examples_dir("res/examples");
+#endif
+  if (!std::filesystem::is_directory(examples_dir))
+    return;
+
+  for (const auto& entry : std::filesystem::directory_iterator(examples_dir))
+  {
+    if (!entry.is_regular_file())
+      continue;
+
+    const auto& p = entry.path();
+    if (p.extension() != ".ezy")
+      continue;
+
+    std::string path  = p.string();
+    std::string label = p.filename().string();
+    m_example_files.emplace_back(std::move(label), std::move(path));
+  }
+  std::sort(m_example_files.begin(), m_example_files.end(),
+            [](const auto& a, const auto& b)
+            { return a.first < b.first; });
+}
+
 void GUI::menu_bar_()
 {
   if (!ImGui::BeginMainMenuBar())
@@ -269,6 +309,21 @@ void GUI::menu_bar_()
 
   if (ImGui::BeginMenu("File"))
   {
+    if (ImGui::BeginMenu("Examples"))
+    {
+      for (const auto& [label, path] : m_example_files)
+        if (ImGui::MenuItem(label.c_str()))
+        {
+          std::ifstream file(path);
+          std::string   json_str {std::istreambuf_iterator<char>(file), std::istreambuf_iterator<char>()};
+          if (file.good() && !json_str.empty())
+            on_file(path, json_str);
+          else
+            show_message("Error opening example: " + label);
+        }
+
+      ImGui::EndMenu();
+    }
     if (ImGui::MenuItem("New", "Ctrl+N"))
       m_view->new_file();
 
@@ -296,6 +351,85 @@ void GUI::menu_bar_()
 
     else if (ImGui::MenuItem("Exit"))
       exit(0);
+
+    ImGui::EndMenu();
+  }
+
+  if (ImGui::BeginMenu("Edit"))
+  {
+    if (ImGui::MenuItem("Add box"))
+    {
+      const double scale = m_view->get_dimension_scale();
+      m_view->add_box(0, 0, 0, scale, scale, scale);
+    }
+    if (ImGui::MenuItem("Add box_prms"))
+    {
+      m_add_box_origin_x = 0;
+      m_add_box_origin_y = 0;
+      m_add_box_origin_z = 0;
+      m_add_box_width    = 1.0;
+      m_add_box_length   = 1.0;
+      m_add_box_height   = 1.0;
+      m_open_add_box_popup = true;
+    }
+    if (ImGui::MenuItem("Add pyramid"))
+    {
+      const double scale = m_view->get_dimension_scale();
+      m_view->add_pyramid(0, 0, 0, scale);
+    }
+    if (ImGui::MenuItem("Add pyramid_prms"))
+    {
+      m_add_pyramid_origin_x = m_add_pyramid_origin_y = m_add_pyramid_origin_z = 0;
+      m_add_pyramid_side = 1.0;
+      m_open_add_pyramid_popup = true;
+    }
+    if (ImGui::MenuItem("Add sphere"))
+    {
+      const double scale = m_view->get_dimension_scale();
+      m_view->add_sphere(0, 0, 0, scale);
+    }
+    if (ImGui::MenuItem("Add sphere_prms"))
+    {
+      m_add_sphere_origin_x = m_add_sphere_origin_y = m_add_sphere_origin_z = 0;
+      m_add_sphere_radius = 1.0;
+      m_open_add_sphere_popup = true;
+    }
+    if (ImGui::MenuItem("Add cylinder"))
+    {
+      const double scale = m_view->get_dimension_scale();
+      m_view->add_cylinder(0, 0, 0, scale, scale);
+    }
+    if (ImGui::MenuItem("Add cylinder_prms"))
+    {
+      m_add_cylinder_origin_x = m_add_cylinder_origin_y = m_add_cylinder_origin_z = 0;
+      m_add_cylinder_radius = m_add_cylinder_height = 1.0;
+      m_open_add_cylinder_popup = true;
+    }
+    if (ImGui::MenuItem("Add cone"))
+    {
+      const double scale = m_view->get_dimension_scale();
+      m_view->add_cone(0, 0, 0, scale, 0.0, scale);
+    }
+    if (ImGui::MenuItem("Add cone_prms"))
+    {
+      m_add_cone_origin_x = m_add_cone_origin_y = m_add_cone_origin_z = 0;
+      m_add_cone_R1 = 1.0;
+      m_add_cone_R2 = 0.0;
+      m_add_cone_height = 1.0;
+      m_open_add_cone_popup = true;
+    }
+    if (ImGui::MenuItem("Add torus"))
+    {
+      const double scale = m_view->get_dimension_scale();
+      m_view->add_torus(0, 0, 0, scale, scale / 2.0);
+    }
+    if (ImGui::MenuItem("Add torus_prms"))
+    {
+      m_add_torus_origin_x = m_add_torus_origin_y = m_add_torus_origin_z = 0;
+      m_add_torus_R1 = 1.0;
+      m_add_torus_R2 = 0.5;
+      m_open_add_torus_popup = true;
+    }
 
     ImGui::EndMenu();
   }
@@ -1037,6 +1171,7 @@ void GUI::options_()
     case Mode::Normal:                options_normal_mode_();                 break;
     case Mode::Move:                  options_move_mode_();                   break;
     case Mode::Rotate:                options_rotate_mode_();                 break;
+    case Mode::Scale:                 options_scale_mode_();                  break;
     case Mode::Sketch_operation_axis: options_sketch_operation_axis_mode_();  break;
     case Mode::Shape_chamfer:         options_shape_chamfer_mode_();          break;
     case Mode::Shape_fillet:          options_shape_fillet_mode_();           break;
@@ -1123,9 +1258,9 @@ void GUI::settings_()
       try
       {
         using namespace nlohmann;
-        json j = json::parse(content);
+        json j       = json::parse(content);
         j["version"] = k_settings_version;
-        content = j.dump(2);
+        content      = j.dump(2);
         settings::save(content);
         parse_occt_view_settings_(content);
         parse_gui_panes_settings_(content);
@@ -1185,6 +1320,10 @@ void GUI::options_move_mode_()
   ImGui::Checkbox("Y", &opts.constr_axis_y);
   ImGui::SameLine();
   ImGui::Checkbox("Z", &opts.constr_axis_z);
+}
+
+void GUI::options_scale_mode_()
+{
 }
 
 void GUI::options_rotate_mode_()
@@ -1362,6 +1501,7 @@ void GUI::on_key_move_mode_(int key)
   }
 }
 
+#ifndef NDEBUG
 void GUI::dbg_()
 {
   if (!m_show_dbg)
@@ -1387,6 +1527,9 @@ void GUI::dbg_()
   ImGui::PopTextWrapPos();
   ImGui::End();
 }
+#else
+void GUI::dbg_() {}
+#endif
 
 void GUI::show_message(const std::string& message)
 {
@@ -1438,6 +1581,369 @@ void GUI::message_status_window_()
   ImGui::End();
 }
 
+void GUI::add_box_dialog_()
+{
+  if (m_open_add_box_popup)
+  {
+    ImGui::OpenPopup("Add box");
+    m_open_add_box_popup = false;
+  }
+  if (!ImGui::BeginPopupModal("Add box", nullptr, ImGuiWindowFlags_AlwaysAutoResize))
+    return;
+
+  ImGui::TextUnformatted("Values in display units.");
+  ImGui::Spacing();
+
+  if (ImGui::BeginTable("Add box##table", 2, ImGuiTableFlags_SizingStretchProp))
+  {
+    ImGui::TableNextRow();
+    ImGui::TableSetColumnIndex(0);
+    ImGui::TextUnformatted("Origin X");
+    ImGui::TableSetColumnIndex(1);
+    ImGui::SetNextItemWidth(-1);
+    ImGui::InputDouble("##box_origin_x", &m_add_box_origin_x, 0.0, 0.0, "%.3f");
+
+    ImGui::TableNextRow();
+    ImGui::TableSetColumnIndex(0);
+    ImGui::TextUnformatted("Origin Y");
+    ImGui::TableSetColumnIndex(1);
+    ImGui::SetNextItemWidth(-1);
+    ImGui::InputDouble("##box_origin_y", &m_add_box_origin_y, 0.0, 0.0, "%.3f");
+
+    ImGui::TableNextRow();
+    ImGui::TableSetColumnIndex(0);
+    ImGui::TextUnformatted("Origin Z");
+    ImGui::TableSetColumnIndex(1);
+    ImGui::SetNextItemWidth(-1);
+    ImGui::InputDouble("##box_origin_z", &m_add_box_origin_z, 0.0, 0.0, "%.3f");
+
+    ImGui::TableNextRow();
+    ImGui::TableSetColumnIndex(0);
+    ImGui::TextUnformatted("Width (X)");
+    ImGui::TableSetColumnIndex(1);
+    ImGui::SetNextItemWidth(-1);
+    ImGui::InputDouble("##box_width", &m_add_box_width, 0.0, 0.0, "%.3f");
+
+    ImGui::TableNextRow();
+    ImGui::TableSetColumnIndex(0);
+    ImGui::TextUnformatted("Length (Y)");
+    ImGui::TableSetColumnIndex(1);
+    ImGui::SetNextItemWidth(-1);
+    ImGui::InputDouble("##box_length", &m_add_box_length, 0.0, 0.0, "%.3f");
+
+    ImGui::TableNextRow();
+    ImGui::TableSetColumnIndex(0);
+    ImGui::TextUnformatted("Height (Z)");
+    ImGui::TableSetColumnIndex(1);
+    ImGui::SetNextItemWidth(-1);
+    ImGui::InputDouble("##box_height", &m_add_box_height, 0.0, 0.0, "%.3f");
+
+    ImGui::EndTable();
+  }
+  ImGui::Spacing();
+
+  if (ImGui::Button("Add"))
+  {
+    if (m_add_box_width > 0 && m_add_box_length > 0 && m_add_box_height > 0)
+    {
+      const double scale = m_view->get_dimension_scale();
+      m_view->add_box(
+          m_add_box_origin_x * scale, m_add_box_origin_y * scale, m_add_box_origin_z * scale,
+          m_add_box_width * scale, m_add_box_length * scale, m_add_box_height * scale);
+      ImGui::CloseCurrentPopup();
+    }
+  }
+  ImGui::SameLine();
+  if (ImGui::Button("Cancel"))
+    ImGui::CloseCurrentPopup();
+
+  ImGui::EndPopup();
+}
+
+void GUI::add_pyramid_dialog_()
+{
+  if (m_open_add_pyramid_popup)
+  {
+    ImGui::OpenPopup("Add pyramid");
+    m_open_add_pyramid_popup = false;
+  }
+  if (!ImGui::BeginPopupModal("Add pyramid", nullptr, ImGuiWindowFlags_AlwaysAutoResize))
+    return;
+  ImGui::TextUnformatted("Values in display units.");
+  ImGui::Spacing();
+  if (ImGui::BeginTable("Add pyramid##table", 2, ImGuiTableFlags_SizingStretchProp))
+  {
+    ImGui::TableNextRow();
+    ImGui::TableSetColumnIndex(0);
+    ImGui::TextUnformatted("Origin X");
+    ImGui::TableSetColumnIndex(1);
+    ImGui::SetNextItemWidth(-1);
+    ImGui::InputDouble("##pyramid_origin_x", &m_add_pyramid_origin_x, 0.0, 0.0, "%.3f");
+    ImGui::TableNextRow();
+    ImGui::TableSetColumnIndex(0);
+    ImGui::TextUnformatted("Origin Y");
+    ImGui::TableSetColumnIndex(1);
+    ImGui::SetNextItemWidth(-1);
+    ImGui::InputDouble("##pyramid_origin_y", &m_add_pyramid_origin_y, 0.0, 0.0, "%.3f");
+    ImGui::TableNextRow();
+    ImGui::TableSetColumnIndex(0);
+    ImGui::TextUnformatted("Origin Z");
+    ImGui::TableSetColumnIndex(1);
+    ImGui::SetNextItemWidth(-1);
+    ImGui::InputDouble("##pyramid_origin_z", &m_add_pyramid_origin_z, 0.0, 0.0, "%.3f");
+    ImGui::TableNextRow();
+    ImGui::TableSetColumnIndex(0);
+    ImGui::TextUnformatted("Side (base & height)");
+    ImGui::TableSetColumnIndex(1);
+    ImGui::SetNextItemWidth(-1);
+    ImGui::InputDouble("##pyramid_side", &m_add_pyramid_side, 0.0, 0.0, "%.3f");
+    ImGui::EndTable();
+  }
+  ImGui::Spacing();
+  if (ImGui::Button("Add") && m_add_pyramid_side > 0)
+  {
+    const double scale = m_view->get_dimension_scale();
+    m_view->add_pyramid(m_add_pyramid_origin_x * scale, m_add_pyramid_origin_y * scale, m_add_pyramid_origin_z * scale, m_add_pyramid_side * scale);
+    ImGui::CloseCurrentPopup();
+  }
+  ImGui::SameLine();
+  if (ImGui::Button("Cancel"))
+    ImGui::CloseCurrentPopup();
+  ImGui::EndPopup();
+}
+
+void GUI::add_sphere_dialog_()
+{
+  if (m_open_add_sphere_popup)
+  {
+    ImGui::OpenPopup("Add sphere");
+    m_open_add_sphere_popup = false;
+  }
+  if (!ImGui::BeginPopupModal("Add sphere", nullptr, ImGuiWindowFlags_AlwaysAutoResize))
+    return;
+  ImGui::TextUnformatted("Values in display units.");
+  ImGui::Spacing();
+  if (ImGui::BeginTable("Add sphere##table", 2, ImGuiTableFlags_SizingStretchProp))
+  {
+    ImGui::TableNextRow();
+    ImGui::TableSetColumnIndex(0);
+    ImGui::TextUnformatted("Origin X");
+    ImGui::TableSetColumnIndex(1);
+    ImGui::SetNextItemWidth(-1);
+    ImGui::InputDouble("##sphere_origin_x", &m_add_sphere_origin_x, 0.0, 0.0, "%.3f");
+    ImGui::TableNextRow();
+    ImGui::TableSetColumnIndex(0);
+    ImGui::TextUnformatted("Origin Y");
+    ImGui::TableSetColumnIndex(1);
+    ImGui::SetNextItemWidth(-1);
+    ImGui::InputDouble("##sphere_origin_y", &m_add_sphere_origin_y, 0.0, 0.0, "%.3f");
+    ImGui::TableNextRow();
+    ImGui::TableSetColumnIndex(0);
+    ImGui::TextUnformatted("Origin Z");
+    ImGui::TableSetColumnIndex(1);
+    ImGui::SetNextItemWidth(-1);
+    ImGui::InputDouble("##sphere_origin_z", &m_add_sphere_origin_z, 0.0, 0.0, "%.3f");
+    ImGui::TableNextRow();
+    ImGui::TableSetColumnIndex(0);
+    ImGui::TextUnformatted("Radius");
+    ImGui::TableSetColumnIndex(1);
+    ImGui::SetNextItemWidth(-1);
+    ImGui::InputDouble("##sphere_radius", &m_add_sphere_radius, 0.0, 0.0, "%.3f");
+    ImGui::EndTable();
+  }
+  ImGui::Spacing();
+  if (ImGui::Button("Add") && m_add_sphere_radius > 0)
+  {
+    const double scale = m_view->get_dimension_scale();
+    m_view->add_sphere(m_add_sphere_origin_x * scale, m_add_sphere_origin_y * scale, m_add_sphere_origin_z * scale, m_add_sphere_radius * scale);
+    ImGui::CloseCurrentPopup();
+  }
+  ImGui::SameLine();
+  if (ImGui::Button("Cancel"))
+    ImGui::CloseCurrentPopup();
+  ImGui::EndPopup();
+}
+
+void GUI::add_cylinder_dialog_()
+{
+  if (m_open_add_cylinder_popup)
+  {
+    ImGui::OpenPopup("Add cylinder");
+    m_open_add_cylinder_popup = false;
+  }
+  if (!ImGui::BeginPopupModal("Add cylinder", nullptr, ImGuiWindowFlags_AlwaysAutoResize))
+    return;
+  ImGui::TextUnformatted("Values in display units.");
+  ImGui::Spacing();
+  if (ImGui::BeginTable("Add cylinder##table", 2, ImGuiTableFlags_SizingStretchProp))
+  {
+    ImGui::TableNextRow();
+    ImGui::TableSetColumnIndex(0);
+    ImGui::TextUnformatted("Origin X");
+    ImGui::TableSetColumnIndex(1);
+    ImGui::SetNextItemWidth(-1);
+    ImGui::InputDouble("##cyl_origin_x", &m_add_cylinder_origin_x, 0.0, 0.0, "%.3f");
+    ImGui::TableNextRow();
+    ImGui::TableSetColumnIndex(0);
+    ImGui::TextUnformatted("Origin Y");
+    ImGui::TableSetColumnIndex(1);
+    ImGui::SetNextItemWidth(-1);
+    ImGui::InputDouble("##cyl_origin_y", &m_add_cylinder_origin_y, 0.0, 0.0, "%.3f");
+    ImGui::TableNextRow();
+    ImGui::TableSetColumnIndex(0);
+    ImGui::TextUnformatted("Origin Z");
+    ImGui::TableSetColumnIndex(1);
+    ImGui::SetNextItemWidth(-1);
+    ImGui::InputDouble("##cyl_origin_z", &m_add_cylinder_origin_z, 0.0, 0.0, "%.3f");
+    ImGui::TableNextRow();
+    ImGui::TableSetColumnIndex(0);
+    ImGui::TextUnformatted("Radius");
+    ImGui::TableSetColumnIndex(1);
+    ImGui::SetNextItemWidth(-1);
+    ImGui::InputDouble("##cyl_radius", &m_add_cylinder_radius, 0.0, 0.0, "%.3f");
+    ImGui::TableNextRow();
+    ImGui::TableSetColumnIndex(0);
+    ImGui::TextUnformatted("Height");
+    ImGui::TableSetColumnIndex(1);
+    ImGui::SetNextItemWidth(-1);
+    ImGui::InputDouble("##cyl_height", &m_add_cylinder_height, 0.0, 0.0, "%.3f");
+    ImGui::EndTable();
+  }
+  ImGui::Spacing();
+  if (ImGui::Button("Add") && m_add_cylinder_radius > 0 && m_add_cylinder_height > 0)
+  {
+    const double scale = m_view->get_dimension_scale();
+    m_view->add_cylinder(m_add_cylinder_origin_x * scale, m_add_cylinder_origin_y * scale, m_add_cylinder_origin_z * scale, m_add_cylinder_radius * scale, m_add_cylinder_height * scale);
+    ImGui::CloseCurrentPopup();
+  }
+  ImGui::SameLine();
+  if (ImGui::Button("Cancel"))
+    ImGui::CloseCurrentPopup();
+  ImGui::EndPopup();
+}
+
+void GUI::add_cone_dialog_()
+{
+  if (m_open_add_cone_popup)
+  {
+    ImGui::OpenPopup("Add cone");
+    m_open_add_cone_popup = false;
+  }
+  if (!ImGui::BeginPopupModal("Add cone", nullptr, ImGuiWindowFlags_AlwaysAutoResize))
+    return;
+  ImGui::TextUnformatted("Values in display units.");
+  ImGui::Spacing();
+  if (ImGui::BeginTable("Add cone##table", 2, ImGuiTableFlags_SizingStretchProp))
+  {
+    ImGui::TableNextRow();
+    ImGui::TableSetColumnIndex(0);
+    ImGui::TextUnformatted("Origin X");
+    ImGui::TableSetColumnIndex(1);
+    ImGui::SetNextItemWidth(-1);
+    ImGui::InputDouble("##cone_origin_x", &m_add_cone_origin_x, 0.0, 0.0, "%.3f");
+    ImGui::TableNextRow();
+    ImGui::TableSetColumnIndex(0);
+    ImGui::TextUnformatted("Origin Y");
+    ImGui::TableSetColumnIndex(1);
+    ImGui::SetNextItemWidth(-1);
+    ImGui::InputDouble("##cone_origin_y", &m_add_cone_origin_y, 0.0, 0.0, "%.3f");
+    ImGui::TableNextRow();
+    ImGui::TableSetColumnIndex(0);
+    ImGui::TextUnformatted("Origin Z");
+    ImGui::TableSetColumnIndex(1);
+    ImGui::SetNextItemWidth(-1);
+    ImGui::InputDouble("##cone_origin_z", &m_add_cone_origin_z, 0.0, 0.0, "%.3f");
+    ImGui::TableNextRow();
+    ImGui::TableSetColumnIndex(0);
+    ImGui::TextUnformatted("Base radius (R1)");
+    ImGui::TableSetColumnIndex(1);
+    ImGui::SetNextItemWidth(-1);
+    ImGui::InputDouble("##cone_R1", &m_add_cone_R1, 0.0, 0.0, "%.3f");
+    ImGui::TableNextRow();
+    ImGui::TableSetColumnIndex(0);
+    ImGui::TextUnformatted("Top radius (R2)");
+    ImGui::TableSetColumnIndex(1);
+    ImGui::SetNextItemWidth(-1);
+    ImGui::InputDouble("##cone_R2", &m_add_cone_R2, 0.0, 0.0, "%.3f");
+    ImGui::TableNextRow();
+    ImGui::TableSetColumnIndex(0);
+    ImGui::TextUnformatted("Height");
+    ImGui::TableSetColumnIndex(1);
+    ImGui::SetNextItemWidth(-1);
+    ImGui::InputDouble("##cone_height", &m_add_cone_height, 0.0, 0.0, "%.3f");
+    ImGui::EndTable();
+  }
+  ImGui::Spacing();
+  if (ImGui::Button("Add") && m_add_cone_R1 >= 0 && m_add_cone_R2 >= 0 && m_add_cone_height > 0)
+  {
+    const double scale = m_view->get_dimension_scale();
+    m_view->add_cone(m_add_cone_origin_x * scale, m_add_cone_origin_y * scale, m_add_cone_origin_z * scale, m_add_cone_R1 * scale, m_add_cone_R2 * scale, m_add_cone_height * scale);
+    ImGui::CloseCurrentPopup();
+  }
+  ImGui::SameLine();
+  if (ImGui::Button("Cancel"))
+    ImGui::CloseCurrentPopup();
+  ImGui::EndPopup();
+}
+
+void GUI::add_torus_dialog_()
+{
+  if (m_open_add_torus_popup)
+  {
+    ImGui::OpenPopup("Add torus");
+    m_open_add_torus_popup = false;
+  }
+  if (!ImGui::BeginPopupModal("Add torus", nullptr, ImGuiWindowFlags_AlwaysAutoResize))
+    return;
+  ImGui::TextUnformatted("Values in display units.");
+  ImGui::Spacing();
+  if (ImGui::BeginTable("Add torus##table", 2, ImGuiTableFlags_SizingStretchProp))
+  {
+    ImGui::TableNextRow();
+    ImGui::TableSetColumnIndex(0);
+    ImGui::TextUnformatted("Origin X");
+    ImGui::TableSetColumnIndex(1);
+    ImGui::SetNextItemWidth(-1);
+    ImGui::InputDouble("##torus_origin_x", &m_add_torus_origin_x, 0.0, 0.0, "%.3f");
+    ImGui::TableNextRow();
+    ImGui::TableSetColumnIndex(0);
+    ImGui::TextUnformatted("Origin Y");
+    ImGui::TableSetColumnIndex(1);
+    ImGui::SetNextItemWidth(-1);
+    ImGui::InputDouble("##torus_origin_y", &m_add_torus_origin_y, 0.0, 0.0, "%.3f");
+    ImGui::TableNextRow();
+    ImGui::TableSetColumnIndex(0);
+    ImGui::TextUnformatted("Origin Z");
+    ImGui::TableSetColumnIndex(1);
+    ImGui::SetNextItemWidth(-1);
+    ImGui::InputDouble("##torus_origin_z", &m_add_torus_origin_z, 0.0, 0.0, "%.3f");
+    ImGui::TableNextRow();
+    ImGui::TableSetColumnIndex(0);
+    ImGui::TextUnformatted("Major radius (R1)");
+    ImGui::TableSetColumnIndex(1);
+    ImGui::SetNextItemWidth(-1);
+    ImGui::InputDouble("##torus_R1", &m_add_torus_R1, 0.0, 0.0, "%.3f");
+    ImGui::TableNextRow();
+    ImGui::TableSetColumnIndex(0);
+    ImGui::TextUnformatted("Minor radius (R2)");
+    ImGui::TableSetColumnIndex(1);
+    ImGui::SetNextItemWidth(-1);
+    ImGui::InputDouble("##torus_R2", &m_add_torus_R2, 0.0, 0.0, "%.3f");
+    ImGui::EndTable();
+  }
+  ImGui::Spacing();
+  if (ImGui::Button("Add") && m_add_torus_R1 > 0 && m_add_torus_R2 > 0)
+  {
+    const double scale = m_view->get_dimension_scale();
+    m_view->add_torus(m_add_torus_origin_x * scale, m_add_torus_origin_y * scale, m_add_torus_origin_z * scale, m_add_torus_R1 * scale, m_add_torus_R2 * scale);
+    ImGui::CloseCurrentPopup();
+  }
+  ImGui::SameLine();
+  if (ImGui::Button("Cancel"))
+    ImGui::CloseCurrentPopup();
+  ImGui::EndPopup();
+}
+
 // Log window implementation
 void GUI::log_message(const std::string& message)
 {
@@ -1483,6 +1989,7 @@ void GUI::init(GLFWwindow* window)
   m_view->init_default();
 
   load_occt_view_settings_();
+  load_examples_list_();
 }
 
 void GUI::on_mouse_pos(const ScreenCoords& screen_coords)
@@ -1499,6 +2006,12 @@ void GUI::on_mouse_pos(const ScreenCoords& screen_coords)
 
     case Mode::Rotate:
       if (Status s = m_view->shp_rotate().rotate_selected(screen_coords); !s.is_ok())
+        show_message(s.message());
+
+      break;
+
+    case Mode::Scale:
+      if (Status s = m_view->shp_scale().scale_selected(screen_coords); !s.is_ok())
         show_message(s.message());
 
       break;
@@ -1546,6 +2059,10 @@ void GUI::on_mouse_button(int button, int action, int mods)
 
       case Mode::Rotate:
         m_view->shp_rotate().finalize();
+        break;
+
+      case Mode::Scale:
+        m_view->shp_scale().finalize();
         break;
 
       case Mode::Sketch_add_edge:

@@ -45,6 +45,7 @@ Ensure the following dependencies are installed:
 - Use Visual Studio as the IDE for debugging and building.
 
 ### Notes for Emscripten Builds
+- **Known issue:** The Emscripten build with the Ninja generator (`-G Ninja`) is currently not working. Use the default generator (e.g. `emcmake cmake ..` without `-G Ninja`, then `emmake make`) or another generator that works with your Emscripten setup.
 - Install Emscripten and activate its environment.
 - Build FreeType (2.10.1) for Emscripten using the instructions: https://stackoverflow.com/questions/61049517/build-latest-freetype-with-emscripten
   - Add exception support:
@@ -54,15 +55,18 @@ Ensure the following dependencies are installed:
     - CMAKE_CXX_FLAGS -fexceptions
     - CMAKE_EXE_LINKER_FLAGS -fexceptions
 - Configure the EzyCad project with Emscripten:
-  - `mkdir build_em`
-  - `emcmake cmake .. -DOpenCASCADE_DIR=C:\src\OCCT-7_9_0_em_install\lib\cmake\opencascade`
-  - If you have Ninja:
+  - `mkdir build_em` then `cd build_em`
+  - Add **-Wno-dev** to suppress any remaining CMake developer warnings. (CMP0167/FindBoost is already handled in CMakeLists.txt.)  
+    `emcmake cmake .. -Wno-dev -DOpenCASCADE_DIR=C:/src/OCCT-7_9_0_em_install/lib/cmake/opencascade`
+  - If configure **freezes** after that warning, the hang is often in `find_package(OpenCASCADE)` or Emscripten compiler detection. Run with `--debug-output` to see where it stops, e.g.:  
+    `emcmake cmake .. -Wno-dev -DOpenCASCADE_DIR=C:/src/OCCT-7_9_0_em_install/lib/cmake/opencascade --debug-output`
+  - If you have Ninja (see known issue above; may not work):
     - Debug:
-      1. `emcmake cmake .. -G Ninja -DOpenCASCADE_DIR=C:\src\OCCT-7_9_0_em_install\lib\cmake\opencascade -DCMAKE_BUILD_TYPE=Debug`
+      1. `emcmake cmake .. -Wno-dev -G Ninja -DOpenCASCADE_DIR=C:/src/OCCT-7_9_0_em_install/lib/cmake/opencascade -DCMAKE_BUILD_TYPE=Debug`
       2. `ninja`
       3. Approximately 50MB `EzyCad.wasm` file.
     - Release:
-      1. `emcmake cmake .. -G Ninja -DOpenCASCADE_DIR=C:\src\OCCT-7_9_0_em_install\lib\cmake\opencascade -DCMAKE_BUILD_TYPE=Release`
+      1. `emcmake cmake .. -Wno-dev -G Ninja -DOpenCASCADE_DIR=C:/src/OCCT-7_9_0_em_install/lib/cmake/opencascade -DCMAKE_BUILD_TYPE=Release`
       2. `ninja`
       3. Approximately 19MB `EzyCad.wasm` file.
 - Build the project.

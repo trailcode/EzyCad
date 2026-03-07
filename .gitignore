@@ -22,3 +22,5 @@
 /build2
 /.vs
 /.vscode/settings.json
+/thirdParty
+/build_em4

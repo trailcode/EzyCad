@@ -25,6 +25,7 @@
 #include "dbg.h"
 #include "geom.h"
 #include "gui.h"
+#include "shp_create.h"
 #include "sketch.h"
 #include "sketch_json.h"
 #include "utl.h"
@@ -36,11 +37,14 @@
 
 #include <GLFW/glfw3.h>
 
+#include <algorithm>
+#include <cctype>
+#include <cstdio>
 #include <iostream>
 #include <sstream>
 
 Occt_view::Occt_view(GUI& gui)
-    : m_gui(gui), m_shp_move(*this), m_shp_rotate(*this), m_shp_chamfer(*this), m_shp_fillet(*this), m_shp_cut(*this), m_shp_fuse(*this), m_shp_common(*this), m_shp_polar_dup(*this), m_shp_extrude(*this)
+    : m_gui(gui), m_shp_move(*this), m_shp_rotate(*this), m_shp_scale(*this), m_shp_chamfer(*this), m_shp_fillet(*this), m_shp_cut(*this), m_shp_fuse(*this), m_shp_common(*this), m_shp_polar_dup(*this), m_shp_extrude(*this)
 {
 }
 
@@ -208,19 +212,19 @@ void Occt_view::init_viewer()
   m_ctx->UpdateCurrentViewer();
 
   // Set initial colors to match what OCCT renders (light gradient + grid)
-  m_bg_color1[0] = 0.85f;
-  m_bg_color1[1] = 0.88f;
-  m_bg_color1[2] = 0.90f;
-  m_bg_color2[0] = 0.45f;
-  m_bg_color2[1] = 0.55f;
-  m_bg_color2[2] = 0.60f;
+  m_bg_color1[0]       = 0.85f;
+  m_bg_color1[1]       = 0.88f;
+  m_bg_color1[2]       = 0.90f;
+  m_bg_color2[0]       = 0.45f;
+  m_bg_color2[1]       = 0.55f;
+  m_bg_color2[2]       = 0.60f;
   m_bg_gradient_method = 1;  // Vertical
-  m_grid_color1[0] = 0.1f;
-  m_grid_color1[1] = 0.1f;
-  m_grid_color1[2] = 0.1f;
-  m_grid_color2[0] = 0.1f;
-  m_grid_color2[1] = 0.1f;
-  m_grid_color2[2] = 0.3f;
+  m_grid_color1[0]     = 0.1f;
+  m_grid_color1[1]     = 0.1f;
+  m_grid_color1[2]     = 0.1f;
+  m_grid_color2[0]     = 0.1f;
+  m_grid_color2[1]     = 0.1f;
+  m_grid_color2[2]     = 0.3f;
   update_view_background_();
 
   Handle(AIS_ViewCube) myViewCube = new AIS_ViewCube();
@@ -417,6 +421,10 @@ void Occt_view::cancel(Set_parent_mode set_parent_mode)
       break;
     case Mode::Rotate:
       shp_rotate().cancel();
+      gui().set_mode(Mode::Normal);
+      break;
+    case Mode::Scale:
+      shp_scale().cancel();
       gui().set_mode(Mode::Normal);
       break;
     default:
@@ -619,6 +627,146 @@ void Occt_view::add_shp_(ShapeBase_ptr& shp)
   shp->SetMaterial(m_default_material);
   shp->set_selection_mode(m_shp_selection_mode);  // Adds to m_ctx
   m_shps.push_back(shp);
+}
+
+std::string Occt_view::unique_shape_name_(const char* base_name) const
+{
+  std::set<int> used;
+  const std::string base(base_name);
+  const std::string prefix = base + ".";
+
+  for (const ShapeBase_ptr& s : m_shps)
+  {
+    const std::string& n = s->get_name();
+    if (n == base)
+      used.insert(0);
+    else if (n.size() > prefix.size() && n.compare(0, prefix.size(), prefix) == 0)
+    {
+      const std::string suffix = n.substr(prefix.size());
+      if (!suffix.empty() && std::all_of(suffix.begin(), suffix.end(), [](char c) { return std::isdigit(static_cast<unsigned char>(c)); }))
+      {
+        int idx = 0;
+        try
+        {
+          idx = std::stoi(suffix);
+          if (idx >= 0)
+            used.insert(idx);
+        }
+        catch (...)
+        {
+          EZY_ASSERT(false);  // Should not happen due to the isdigit check, but just in case.
+        }
+      }
+    }
+  }
+
+  int next = 0;
+  while (used.count(next))
+    ++next;
+
+  if (next == 0)
+    return base;
+
+  char buf[32];
+  snprintf(buf, sizeof(buf), ".%03d", next);
+  return base + buf;
+}
+
+std::string Occt_view::get_unique_shape_name(const char* base_name) const
+{
+  return unique_shape_name_(base_name);
+}
+
+void Occt_view::add_box(double ox, double oy, double oz, double width, double length, double height)
+{
+  TopoDS_Shape box  = shp_create::create_box(ox, oy, oz, width, length, height);
+  ShapeBase_ptr shp = new Extruded_shp(*m_ctx, box);
+  shp->set_name(unique_shape_name_("Box"));
+  add_shp_(shp);
+  m_ctx->Display(shp, AIS_Shaded, AIS_Shape::SelectionMode(m_shp_selection_mode), true);
+  m_view->Redraw();
+}
+
+void Occt_view::add_pyramid(double ox, double oy, double oz, double side)
+{
+  TopoDS_Shape pyramid = shp_create::create_pyramid(side);
+  if (pyramid.IsNull())
+    return;
+  ShapeBase_ptr shp = new Extruded_shp(*m_ctx, pyramid);
+  shp->set_name(unique_shape_name_("Pyramid"));
+  if (ox != 0 || oy != 0 || oz != 0)
+  {
+    gp_Trsf trsf;
+    trsf.SetTranslation(gp_Vec(ox, oy, oz));
+    shp->SetLocalTransformation(trsf);
+  }
+  add_shp_(shp);
+  m_ctx->Display(shp, AIS_Shaded, AIS_Shape::SelectionMode(m_shp_selection_mode), true);
+  m_view->Redraw();
+}
+
+void Occt_view::add_sphere(double ox, double oy, double oz, double radius)
+{
+  TopoDS_Shape sphere = shp_create::create_sphere(radius);
+  ShapeBase_ptr shp   = new Extruded_shp(*m_ctx, sphere);
+  shp->set_name(unique_shape_name_("Sphere"));
+  if (ox != 0 || oy != 0 || oz != 0)
+  {
+    gp_Trsf trsf;
+    trsf.SetTranslation(gp_Vec(ox, oy, oz));
+    shp->SetLocalTransformation(trsf);
+  }
+  add_shp_(shp);
+  m_ctx->Display(shp, AIS_Shaded, AIS_Shape::SelectionMode(m_shp_selection_mode), true);
+  m_view->Redraw();
+}
+
+void Occt_view::add_cylinder(double ox, double oy, double oz, double radius, double height)
+{
+  TopoDS_Shape shape = shp_create::create_cylinder(radius, height);
+  ShapeBase_ptr shp  = new Extruded_shp(*m_ctx, shape);
+  shp->set_name(unique_shape_name_("Cylinder"));
+  if (ox != 0 || oy != 0 || oz != 0)
+  {
+    gp_Trsf trsf;
+    trsf.SetTranslation(gp_Vec(ox, oy, oz));
+    shp->SetLocalTransformation(trsf);
+  }
+  add_shp_(shp);
+  m_ctx->Display(shp, AIS_Shaded, AIS_Shape::SelectionMode(m_shp_selection_mode), true);
+  m_view->Redraw();
+}
+
+void Occt_view::add_cone(double ox, double oy, double oz, double R1, double R2, double height)
+{
+  TopoDS_Shape shape = shp_create::create_cone(R1, R2, height);
+  ShapeBase_ptr shp  = new Extruded_shp(*m_ctx, shape);
+  shp->set_name(unique_shape_name_("Cone"));
+  if (ox != 0 || oy != 0 || oz != 0)
+  {
+    gp_Trsf trsf;
+    trsf.SetTranslation(gp_Vec(ox, oy, oz));
+    shp->SetLocalTransformation(trsf);
+  }
+  add_shp_(shp);
+  m_ctx->Display(shp, AIS_Shaded, AIS_Shape::SelectionMode(m_shp_selection_mode), true);
+  m_view->Redraw();
+}
+
+void Occt_view::add_torus(double ox, double oy, double oz, double R1, double R2)
+{
+  TopoDS_Shape shape = shp_create::create_torus(R1, R2);
+  ShapeBase_ptr shp  = new Extruded_shp(*m_ctx, shape);
+  shp->set_name(unique_shape_name_("Torus"));
+  if (ox != 0 || oy != 0 || oz != 0)
+  {
+    gp_Trsf trsf;
+    trsf.SetTranslation(gp_Vec(ox, oy, oz));
+    shp->SetLocalTransformation(trsf);
+  }
+  add_shp_(shp);
+  m_ctx->Display(shp, AIS_Shaded, AIS_Shape::SelectionMode(m_shp_selection_mode), true);
+  m_view->Redraw();
 }
 
 bool Occt_view::fit_face_in_view(const TopoDS_Face& face)
@@ -1147,6 +1295,7 @@ std::list<ShapeBase_ptr>& Occt_view::get_shapes()
 // clang-format off
 Shp_move&      Occt_view::shp_move()      { return m_shp_move;      }
 Shp_rotate&    Occt_view::shp_rotate()    { return m_shp_rotate;    }
+Shp_scale&     Occt_view::shp_scale()     { return m_shp_scale;     }
 Shp_chamfer&   Occt_view::shp_chamfer()   { return m_shp_chamfer;   }
 Shp_fillet&    Occt_view::shp_fillet()    { return m_shp_fillet;    }
 Shp_cut&       Occt_view::shp_cut()       { return m_shp_cut;       }

@@ -7,6 +7,8 @@
 #include <list>
 #include <memory>
 #include <optional>
+#include <set>
+#include <string>
 
 #include "occt_glfw_win.h"
 #include "shp_chamfer.h"
@@ -18,6 +20,7 @@
 #include "shp_move.h"
 #include "shp_polar_dup.h"
 #include "shp_rotate.h"
+#include "shp_scale.h"
 
 class Sketch;
 class GUI;
@@ -87,10 +90,18 @@ class Occt_view : protected AIS_ViewController
   void         sketch_face_extrude(const ScreenCoords& screen_coords, bool is_mouse_move);
 
   std::list<ShapeBase_ptr>& get_shapes();
+  std::string get_unique_shape_name(const char* base_name) const;
+  void add_box(double ox, double oy, double oz, double width, double length, double height);
+  void add_pyramid(double ox, double oy, double oz, double side);
+  void add_sphere(double ox, double oy, double oz, double radius);
+  void add_cylinder(double ox, double oy, double oz, double radius, double height);
+  void add_cone(double ox, double oy, double oz, double R1, double R2, double height);
+  void add_torus(double ox, double oy, double oz, double R1, double R2);
 
   // Shape related
   Shp_move&      shp_move();
   Shp_rotate&    shp_rotate();
+  Shp_scale&     shp_scale();
   Shp_chamfer&   shp_chamfer();
   Shp_fillet&    shp_fillet();
   Shp_cut&       shp_cut();
@@ -179,6 +190,7 @@ class Occt_view : protected AIS_ViewController
 
   // TODO group in .cpp file
   void add_shp_(ShapeBase_ptr& shp);
+  std::string unique_shape_name_(const char* base_name) const;
 
   void update_view_background_();
 
@@ -212,6 +224,7 @@ class Occt_view : protected AIS_ViewController
   // Operations
   Shp_move                   m_shp_move;
   Shp_rotate                 m_shp_rotate;
+  Shp_scale                  m_shp_scale;
   // --------------------------------------------------------------------
   // Commands
   Shp_chamfer                m_shp_chamfer;
