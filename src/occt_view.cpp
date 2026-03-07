@@ -701,6 +701,17 @@ void Occt_view::add_pyramid()
   m_view->Redraw();
 }
 
+void Occt_view::add_sphere()
+{
+  const double radius = get_dimension_scale();
+  TopoDS_Shape sphere = shp_create::create_sphere(radius);
+  ShapeBase_ptr shp   = new Extruded_shp(*m_ctx, sphere);
+  shp->set_name(unique_shape_name_("Sphere"));
+  add_shp_(shp);
+  m_ctx->Display(shp, AIS_Shaded, AIS_Shape::SelectionMode(m_shp_selection_mode), true);
+  m_view->Redraw();
+}
+
 bool Occt_view::fit_face_in_view(const TopoDS_Face& face)
 {
   EZY_ASSERT(!face.IsNull());

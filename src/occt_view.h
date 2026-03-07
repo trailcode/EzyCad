@@ -93,6 +93,7 @@ class Occt_view : protected AIS_ViewController
   std::string get_unique_shape_name(const char* base_name) const;
   void add_cube();
   void add_pyramid();
+  void add_sphere();
 
   // Shape related
   Shp_move&      shp_move();

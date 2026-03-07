@@ -357,6 +357,8 @@ void GUI::menu_bar_()
       m_view->add_cube();
     if (ImGui::MenuItem("Add pyramid"))
       m_view->add_pyramid();
+    if (ImGui::MenuItem("Add sphere"))
+      m_view->add_sphere();
 
     ImGui::EndMenu();
   }

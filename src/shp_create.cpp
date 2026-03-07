@@ -7,6 +7,7 @@
 #include <BRepBuilderAPI_Sewing.hxx>
 #include <BRepBuilderAPI_Transform.hxx>
 #include <BRepPrimAPI_MakeBox.hxx>
+#include <BRepPrimAPI_MakeSphere.hxx>
 #include <TopExp_Explorer.hxx>
 #include <TopoDS.hxx>
 #include <gp_Pln.hxx>
@@ -82,5 +83,10 @@ TopoDS_Shape create_pyramid(double side)
   gp_Trsf      trsf;
   trsf.SetTranslation(gp_Vec(0, 0, -h / 2.0));
   return BRepBuilderAPI_Transform(pyramid, trsf).Shape();
+}
+
+TopoDS_Shape create_sphere(double radius)
+{
+  return BRepPrimAPI_MakeSphere(radius).Shape();
 }
 }  // namespace shp_create
