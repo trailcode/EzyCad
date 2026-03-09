@@ -165,8 +165,11 @@ int main(int, char**)
 
   keyCallback = [&](GLFWwindow* window, int key, int scancode, int action, int mods)
   {
-    ImGui_ImplGlfw_KeyCallback(window, key, scancode, action, mods);
-    if (!io.WantCaptureKeyboard)
+    // Tab is an app hotkey (dimension/angle cycling), so don't let ImGui use it for focus navigation.
+    const bool tab_for_app_hotkey = (key == GLFW_KEY_TAB && action == GLFW_PRESS);
+    if (!tab_for_app_hotkey)
+      ImGui_ImplGlfw_KeyCallback(window, key, scancode, action, mods);
+    if (tab_for_app_hotkey || !io.WantCaptureKeyboard)
       gui.on_key(key, scancode, action, mods);
   };
 

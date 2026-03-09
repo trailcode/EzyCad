@@ -908,6 +908,13 @@ void GUI::dist_edit_()
   else
     m_dist_val = std::round(m_dist_val * 100.0f) / 100.0f;
 
+  if (ImGui::IsItemDeactivatedAfterEdit() && m_dist_callback)
+  {
+    std::function<void(float, bool)> callback;
+    std::swap(callback, m_dist_callback);
+    callback(m_dist_val, true);
+  }
+
   ImGui::End();
 }
 
@@ -937,6 +944,11 @@ void GUI::hide_angle_edit()
     // In case just enter was pressed, or the callback needs to finalize something
     callback(m_angle_val, true);
   }
+}
+
+bool GUI::is_dist_or_angle_edit_active() const
+{
+  return m_dist_callback != nullptr || m_angle_callback != nullptr;
 }
 
 void GUI::angle_edit_()

@@ -61,6 +61,8 @@ class GUI
   void hide_dist_edit();
   void set_angle_edit(float angle, std::function<void(float, bool)>&& callback, const std::optional<ScreenCoords> screen_coords = std::nullopt);
   void hide_angle_edit();
+  /// True when dist or angle edit is visible; Tab should be routed to on_key() instead of ImGui.
+  bool is_dist_or_angle_edit_active() const;
   void show_message(const std::string& message);
   void log_message(const std::string& message);
   void set_show_options(bool v) { m_show_options = v; }

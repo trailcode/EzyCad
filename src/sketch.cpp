@@ -191,7 +191,7 @@ void Sketch::update_edge_shp_(Edge& edge, const gp_Pnt2d& pt_a, const gp_Pnt2d& 
   EZY_ASSERT(unique(pt_a, pt_b));
 
   TopoDS_Shape edge_shape = BRepBuilderAPI_MakeEdge(to_3d(m_pln, pt_a), to_3d(m_pln, pt_b)).Edge();
-  
+
   if (edge.shp)
   {
     edge.shp->Set(edge_shape);
@@ -252,7 +252,7 @@ void Sketch::add_line_string_pt_(const ScreenCoords& screen_coords, Linestring_t
 
     // Start a new edge - clear constraints for fresh start
     m_entered_edge_angle = std::nullopt;
-    m_entered_edge_len = std::nullopt;
+    m_entered_edge_len   = std::nullopt;
     m_tmp_edges.push_back({node_idx});
   };
 
@@ -274,13 +274,13 @@ void Sketch::move_line_string_pt_(const ScreenCoords& screen_coords)
       return;
 
     gp_Pnt2d final_pt_b = pt_b;
-    //std::optional<size_t> final_node_idx;
+    // std::optional<size_t> final_node_idx;
 
     // Apply angle constraint if set - this takes priority
     if (m_entered_edge_angle.has_value())
     {
       // Calculate direction based on angle (0 degrees = positive X axis, counterclockwise)
-      double angle_rad = to_radians(*m_entered_edge_angle);
+      double   angle_rad = to_radians(*m_entered_edge_angle);
       gp_Dir2d constrained_dir(std::cos(angle_rad), std::sin(angle_rad));
 
       // If distance is also constrained, use that
@@ -294,20 +294,20 @@ void Sketch::move_line_string_pt_(const ScreenCoords& screen_coords)
         // Project the mouse point onto the angle-constrained line
         // Find the distance along the constrained direction from pt_a to mouse position
         gp_Vec2d to_mouse(pt_b.X() - pt_a.X(), pt_b.Y() - pt_a.Y());
-        double dist_along_constrained = to_mouse.Dot(gp_Vec2d(constrained_dir));
-        
+        double   dist_along_constrained = to_mouse.Dot(gp_Vec2d(constrained_dir));
+
         // Calculate the point on the constrained line at this distance
         // This ensures the angle is ALWAYS maintained
         final_pt_b = gp_Pnt2d(pt_a).Translated(gp_Vec2d(constrained_dir) * dist_along_constrained);
       }
-      
+
       // Disable snapping when angle constraint is active - angle takes priority
       edge.node_idx_b = std::nullopt;
     }
     // Apply distance constraint if set (and angle is not set)
     else if (m_entered_edge_len.has_value())
     {
-      final_pt_b = gp_Pnt2d(pt_a).Translated(gp_Vec2d(m_entered_edge_len->dir) * m_entered_edge_len->len);
+      final_pt_b      = gp_Pnt2d(pt_a).Translated(gp_Vec2d(m_entered_edge_len->dir) * m_entered_edge_len->len);
       edge.node_idx_b = m_nodes.try_get_node_idx_snap(final_pt_b);
     }
     else
@@ -336,6 +336,8 @@ void Sketch::move_line_string_pt_(const ScreenCoords& screen_coords)
             new_dist * m_view.get_dimension_scale()};
 
         m_show_dim_input = !is_finial;
+        if (is_finial)
+          on_enter();
       };
 
       m_view.gui().set_dist_edit(float(dist), std::move(std::function<void(float, bool)>(l)), spos);
@@ -348,13 +350,13 @@ void Sketch::move_line_string_pt_(const ScreenCoords& screen_coords)
       // Calculate current angle from pt_a to actual mouse position (pt_b), not constrained position
       // This ensures we show the actual angle the user is moving to
       gp_Vec2d vec(pt_a, pt_b);
-      double current_angle_rad = std::atan2(vec.Y(), vec.X());
-      double current_angle_deg = to_degrees(current_angle_rad);
+      double   current_angle_rad = std::atan2(vec.Y(), vec.X());
+      double   current_angle_deg = to_degrees(current_angle_rad);
 
       auto l = [&](float new_angle, bool is_finial)
       {
         m_entered_edge_angle = new_angle;
-        m_show_angle_input = !is_finial;
+        m_show_angle_input   = !is_finial;
         // Recalculate the point with the new angle using current mouse position
         // Get current mouse position from ImGui
         ScreenCoords current_pos(glm::dvec2(ImGui::GetIO().MousePos.x, ImGui::GetIO().MousePos.y));
@@ -483,7 +485,7 @@ void Sketch::move_arc_circle_pt_(const ScreenCoords& screen_coords)
 void Sketch::move_square_pt_(const ScreenCoords& screen_coords)
 {
   move_line_string_pt_(screen_coords);
-  
+
   auto l = [&](Edge& e, const gp_Pnt2d& pt_a, const gp_Pnt2d& pt_b)
   {
     TopoDS_Wire square = make_square_wire(m_pln, pt_a, *m_last_pt);
@@ -512,7 +514,7 @@ void Sketch::finalize_square_()
 void Sketch::move_rectangle_pt_(const ScreenCoords& screen_coords)
 {
   move_line_string_pt_(screen_coords);
-  
+
   auto l = [&](Edge& e, const gp_Pnt2d& pt_a, const gp_Pnt2d& pt_b)
   {
     EZY_ASSERT(m_tmp_edges.size());
@@ -599,7 +601,7 @@ void Sketch::add_operation_axis_pt_(const ScreenCoords& screen_coords)
   // If an axis already exists, clear it and start over
   if (has_operation_axis())
     clear_operation_axis();
-  
+
   add_line_string_pt_(screen_coords, Linestring_type::Single);
 }
 
@@ -890,8 +892,8 @@ void Sketch::toggle_edge_dim(const ScreenCoords& screen_coords)
 
 void Sketch::finalize_elm()
 {
-  m_show_dim_input = false;
-  m_show_angle_input = false;
+  m_show_dim_input     = false;
+  m_show_angle_input   = false;
   m_entered_edge_angle = std::nullopt;
   m_view.gui().hide_angle_edit();
   m_ctx.Remove(m_tmp_dim_anno, true);
@@ -1023,7 +1025,7 @@ void Sketch::update_faces_()
 
     excluded_edges.insert(to_exclude.begin(), to_exclude.end());
   }
-  #if 1 // TODO study AI generated, seems to work.
+#if 1  // TODO study AI generated, seems to work.
   // Remove bridge edges that connect two separate cycles.
   // A bridge edge connects two cycles and has both endpoints with degree >= 3.
   // We detect this by checking if the edge is the only connection between two cycles.
@@ -1055,11 +1057,11 @@ void Sketch::update_faces_()
       // Check if removing this edge disconnects the graph
       // by seeing if we can reach 'b' from 'a' without using this edge
       std::unordered_set<size_t> visited;
-      std::vector<size_t> queue;
+      std::vector<size_t>        queue;
       queue.push_back(a);
       visited.insert(a);
       bool can_reach_b = false;
-      
+
       for (size_t i = 0; i < queue.size() && !can_reach_b; ++i)
       {
         size_t curr = queue[i];
@@ -1079,7 +1081,7 @@ void Sketch::update_faces_()
           }
         }
       }
-      
+
       // If we can't reach b from a without this edge, it's a bridge
       // But we also need to verify both sides have cycles
       if (!can_reach_b)
@@ -1087,7 +1089,7 @@ void Sketch::update_faces_()
         // Check if component containing 'a' has a cycle
         auto has_cycle_in_component = [&](size_t start, const Edge* exclude_edge) -> bool
         {
-          std::unordered_set<size_t> comp_visited;
+          std::unordered_set<size_t>          comp_visited;
           std::function<bool(size_t, size_t)> dfs = [&](size_t curr, size_t parent) -> bool
           {
             comp_visited.insert(curr);
@@ -1107,7 +1109,7 @@ void Sketch::update_faces_()
             }
             return false;
           };
-          
+
           // Try starting from each neighbor
           for (const auto& [neighbor, e] : adj_list[start])
           {
@@ -1120,10 +1122,10 @@ void Sketch::update_faces_()
           }
           return false;
         };
-        
+
         bool a_has_cycle = has_cycle_in_component(a, &edge);
         bool b_has_cycle = has_cycle_in_component(b, &edge);
-        
+
         // If both components have cycles, this edge is a bridge
         if (a_has_cycle && b_has_cycle)
         {
@@ -1136,8 +1138,8 @@ void Sketch::update_faces_()
   // Add bridge edges to excluded set
   excluded_edges.insert(bridge_edges.begin(), bridge_edges.end());
 
-  // Rebuild adjacency list excluding dangling and bridge edges
-  #endif 
+// Rebuild adjacency list excluding dangling and bridge edges
+#endif
   adj_list.clear();
   for (const auto& edge : m_edges)
   {
@@ -1183,7 +1185,7 @@ void Sketch::update_faces_()
             // Mark edge in both directions to avoid processing the same face twice
             // when starting from different nodes
             size_t start_idx = e.start_nd_idx();
-            size_t end_idx = e.end_nd_idx();
+            size_t end_idx   = e.end_nd_idx();
             seen_edges.insert(std::make_pair(start_idx, end_idx));
             seen_edges.insert(std::make_pair(end_idx, start_idx));
           }
