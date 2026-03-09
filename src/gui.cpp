@@ -975,6 +975,15 @@ void GUI::angle_edit_()
   // Add a small input float widget and check for changes
   if (ImGui::InputFloat("##angle_edit_float_value", &m_angle_val, 0.0f, 0.0f, "%.2f"))
     m_angle_callback(m_angle_val, false);
+  else
+    m_angle_val = std::round(m_angle_val * 100.0f) / 100.0f;
+
+  if (ImGui::IsItemDeactivatedAfterEdit() && m_angle_callback)
+  {
+    std::function<void(float, bool)> callback;
+    std::swap(callback, m_angle_callback);
+    callback(m_angle_val, true);
+  }
 
   ImGui::End();
 }
