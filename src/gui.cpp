@@ -311,21 +311,6 @@ void GUI::menu_bar_()
 
   if (ImGui::BeginMenu("File"))
   {
-    if (ImGui::BeginMenu("Examples"))
-    {
-      for (const auto& [label, path] : m_example_files)
-        if (ImGui::MenuItem(label.c_str()))
-        {
-          std::ifstream file(path);
-          std::string   json_str {std::istreambuf_iterator<char>(file), std::istreambuf_iterator<char>()};
-          if (file.good() && !json_str.empty())
-            on_file(path, json_str);
-          else
-            show_message("Error opening example: " + label);
-        }
-
-      ImGui::EndMenu();
-    }
     if (ImGui::MenuItem("New", "Ctrl+N"))
       m_view->new_file();
 
@@ -342,6 +327,22 @@ void GUI::menu_bar_()
     }
     else if (ImGui::MenuItem("Import"))
       import_file_dialog_();
+
+    else if (ImGui::BeginMenu("Examples"))
+    {
+      for (const auto& [label, path] : m_example_files)
+        if (ImGui::MenuItem(label.c_str()))
+        {
+          std::ifstream file(path);
+          std::string   json_str {std::istreambuf_iterator<char>(file), std::istreambuf_iterator<char>()};
+          if (file.good() && !json_str.empty())
+            on_file(path, json_str);
+          else
+            show_message("Error opening example: " + label);
+        }
+
+      ImGui::EndMenu();
+    }
 
 #ifdef __EMSCRIPTEN__
     else if (ImGui::MenuItem("Save settings"))
