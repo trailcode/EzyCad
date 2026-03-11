@@ -65,12 +65,12 @@ EzyCad (Easy CAD) is a CAD application for hobbyist machinists to design and edi
 ### Supported Formats
 - Native format: `.ezy` files
 - [Import formats: STEP, IGES, STL](#importing-3d-geometries)
-- Export formats: STEP, IGES, STL
+- Export formats: STEP, IGES, STL (TODO)
 
 ### Basic Operations
 1. #### New Project
    - Start with a clean workspace
-   - Reset all views and settings
+   - Reset settings (view is not reset; see [Issue tracking](https://github.com/trailcode/EzyCad/issues) for known limitations)
 
 2. #### Open Project
    - Load existing `.ezy` files
