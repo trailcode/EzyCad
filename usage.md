@@ -167,6 +167,7 @@ The single line edge tool allows you to create straight line segments between tw
 4. Click to set the end point, or use input dialogs for precise control:
    - Press **Tab** to enter an exact length value
    - Press **Shift+Tab** to enter an exact angle value (in degrees)
+   - When using both: apply angle (Shift+Tab) first, then distance (Tab).
 5. The line edge will be created and added to your sketch
 
 **Keyboard shortcuts:**
@@ -182,6 +183,7 @@ The single line edge tool allows you to create straight line segments between tw
 - Once the angle is entered, the line segment is constrained to that angle
 - You can still move the mouse to adjust the length while maintaining the angle
 - The distance input (Tab) can still be used in combination with the angle constraint
+- **Order when using both**: When requiring both an angle and a distance constraint, apply the angle constraint first (Shift+Tab), then the distance constraint (Tab).
 - **Note**: When an angle constraint is active, snapping to nodes is disabled to maintain the angle precision
 
 **Tips:**
@@ -200,6 +202,7 @@ The multi-line edge tool allows you to create multiple connected line segments i
 - **Continuous edge creation**: Click multiple points to create a chain of connected line segments
 - **Real-time preview**: See each edge shape while moving the mouse before clicking
 - **Precise length control**: Use the distance input dialog (Tab key) for exact edge lengths
+- **Angle constraint**: Use the angle input dialog (Shift+Tab) to constrain the current edge to an angle (in degrees)
 - **Snap support**: Automatically snaps to existing nodes and geometry
 - **Distance annotations**: Real-time distance display for the current edge being drawn
 - **Flexible finalization**: Continue adding edges until you right-click to finalize the entire sequence
@@ -208,12 +211,16 @@ The multi-line edge tool allows you to create multiple connected line segments i
 1. Select the **Multi-line Edge** tool from the toolbar <img src="icons/ls.png" alt="ls" width="20" height="20">
 2. Click to set the first point (start of the first edge)
 3. Move the mouse to see a preview of the first edge
-4. Click to set the second point (end of first edge, start of second edge), or press **Tab** to enter an exact length value
+4. Click to set the second point (end of first edge, start of second edge), or use input for precise control:
+   - Press **Tab** to enter an exact length value
+   - Press **Shift+Tab** to enter an exact angle (in degrees) for the current edge
+   - When using both angle and distance: apply angle (Shift+Tab) first, then distance (Tab).
 5. Continue clicking to add more connected edges, each new click starts a new edge from the previous edge's end point
 6. Press **Right-click** to finalize the entire multi-line sequence and add all edges to your sketch
 
 **Keyboard shortcuts:**
 - **Tab**: Open distance input dialog for precise length control of the current edge
+- **Shift+Tab**: Open angle input dialog to constrain the current edge to an angle (after first point is set)
 - **Escape**: Cancel the entire multi-line creation operation
 - **Enter**: Finalize the current edge length (if using distance input) and continue to the next edge
 - **Right-click**: Finalize the entire multi-line sequence and complete the operation
@@ -902,14 +909,14 @@ The polar duplicate tool allows you to create multiple copies of selected shapes
 ## Support
 
 ### Documentation
-- This usage guide
-- Online documentation
-- Video tutorials
+- [This usage guide](#ezycad-usage-guide)
+- Online documentation (TODO)
+- Video tutorials (TODO)
 
 ### Community
-- User forums
-- GitHub repository
-- Issue tracking
+- [User forums](https://github.com/trailcode/EzyCad/discussions)
+- [GitHub repository](https://github.com/trailcode/EzyCad)
+- [Issue tracking](https://github.com/trailcode/EzyCad/issues)
 
 ### Updates
 - Regular feature updates
