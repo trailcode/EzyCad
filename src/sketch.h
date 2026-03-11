@@ -98,11 +98,10 @@ class Sketch
   const gp_Pln& get_plane() const;
   Sketch_nodes& get_nodes();
 
- //private:
+  // private:
   friend class Sketch_json;
   friend class Sketch_access;
-  friend class Sketch_test; // TEST_F(Sketch_test, JsonSerializationDeserialization)
-
+  friend class Sketch_test;  // TEST_F(Sketch_test, JsonSerializationDeserialization)
 
   struct Edge
   {
@@ -181,8 +180,9 @@ class Sketch
   void add_sketch_pt_(const ScreenCoords& screen_coords, size_t required_num_pts, Callback&& callback);
   template <typename Callback>
   void move_sketch_pt_(const ScreenCoords& screen_coords, Callback&& callback);
+  /// Invokes callback(e, pt_a, pt_b) with the last tmp edge only when it exists and is non-degenerate.
   template <typename Callback>
-  void last_edge_(Callback&& callback);
+  void if_edge_pt_valid_(Callback&& callback);
   void check_dimension_seg_(Linestring_type linestring_type);
   void add_edge_(const gp_Pnt2d& pt_a, const gp_Pnt2d& pt_b, bool add_dim_anno = false);
 

@@ -533,7 +533,7 @@ void Sketch::move_square_pt_(const ScreenCoords& screen_coords)
     show(m_ctx, m_tmp_shp, square);
   };
 
-  last_edge_(l);
+  if_edge_pt_valid_(l);
 }
 
 void Sketch::finalize_square_()
@@ -549,7 +549,7 @@ void Sketch::finalize_square_()
     update_faces_();
   };
 
-  last_edge_(l);
+  if_edge_pt_valid_(l);
 }
 
 void Sketch::move_rectangle_pt_(const ScreenCoords& screen_coords)
@@ -573,7 +573,7 @@ void Sketch::move_rectangle_pt_(const ScreenCoords& screen_coords)
     }
   };
 
-  last_edge_(l);
+  if_edge_pt_valid_(l);
 }
 
 void Sketch::finalize_rectangle_()
@@ -599,7 +599,7 @@ void Sketch::finalize_rectangle_()
     }
   };
 
-  last_edge_(l);
+  if_edge_pt_valid_(l);
 }
 
 // Slot related
@@ -616,7 +616,7 @@ void Sketch::move_slot_pt_(const ScreenCoords& screen_coords)
       show(m_ctx, m_tmp_shp, make_slot_wire(m_pln, pt_a, pt_b, pt_c));
 
   };
-  last_edge_(l);
+  if_edge_pt_valid_(l);
 }
 
 void Sketch::finalize_slot_()
@@ -813,8 +813,9 @@ void Sketch::move_sketch_pt_(const ScreenCoords& screen_coords, Callback&& callb
   callback(node_idx, *m_last_pt);
 }
 
+/// Invokes callback(e, pt_a, pt_b) with the last tmp edge only when it exists and is non-degenerate.
 template <typename Callback>
-void Sketch::last_edge_(Callback&& callback)
+void Sketch::if_edge_pt_valid_(Callback&& callback)
 {
   if (m_tmp_edges.empty())
     return;
@@ -824,7 +825,6 @@ void Sketch::last_edge_(Callback&& callback)
   if (m_last_pt.has_value())
     if (unique(pt_a, *m_last_pt))
       callback(e, pt_a, *m_last_pt);
-
 }
 
 void Sketch::check_dimension_seg_(Linestring_type linestring_type)
@@ -1579,7 +1579,7 @@ void Sketch::move_circle_pt_(const ScreenCoords& screen_coords)
     TopoDS_Wire circle = make_circle_wire(m_pln, pt_a, *m_last_pt);
     show(m_ctx, m_tmp_shp, circle);
   };
-  last_edge_(l);
+  if_edge_pt_valid_(l);
 }
 
 void Sketch::finalize_circle_()
@@ -1592,7 +1592,7 @@ void Sketch::finalize_circle_()
     clear_tmps_();
     update_faces_();
   };
-  last_edge_(l);
+  if_edge_pt_valid_(l);
 }
 
 bool Sketch::clear_tmps_()
