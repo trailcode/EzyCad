@@ -250,11 +250,35 @@ void Sketch::add_line_string_pt_(const ScreenCoords& screen_coords, Linestring_t
         }
     }
 
-    // Start a new edge - clear constraints for fresh start
+    // Start a new edge - clear constraints for fresh start (click path for multi-line)
     m_entered_edge_angle = std::nullopt;
     m_entered_edge_len   = std::nullopt;
+    m_show_angle_input   = false;
+    m_view.gui().hide_angle_edit();
     m_tmp_edges.push_back({node_idx});
   };
+
+  // When angle constraint is active, finalize on the constrained line (project click onto it)
+  if (m_entered_edge_angle.has_value() && m_tmp_edges.size())
+  {
+    std::optional<gp_Pnt2d> pt_opt = m_view.pt_on_plane(screen_coords, m_pln);
+    if (!pt_opt)
+      return;
+
+    const gp_Pnt2d& pt_a      = m_nodes[m_tmp_edges.back().node_idx_a];
+    double          angle_rad = to_radians(*m_entered_edge_angle);
+    gp_Dir2d        constrained_dir(std::cos(angle_rad), std::sin(angle_rad));
+    gp_Vec2d        to_click(pt_opt->X() - pt_a.X(), pt_opt->Y() - pt_a.Y());
+    double          dist_along = to_click.Dot(gp_Vec2d(constrained_dir));
+    gp_Pnt2d        final_pt   = gp_Pnt2d(pt_a).Translated(gp_Vec2d(constrained_dir) * dist_along);
+    if (!unique(pt_a, final_pt))
+      return;
+    std::optional<size_t> snap     = m_nodes.try_get_node_idx_snap(final_pt);
+    size_t                node_idx = snap ? *snap : m_nodes.add_new_node(final_pt);
+    m_tmp_node_idxs.push_back(node_idx);
+    on_line_string(node_idx);
+    return;
+  }
 
   add_sketch_pt_(screen_coords, 1, on_line_string);
 }
