@@ -24,7 +24,7 @@ EzyCad (Easy CAD) is a CAD application for hobbyist machinists to design and edi
 - OpenGL-compatible graphics card
 
 ### Installation
-1. Download the latest release for your operating system(TODO)
+1. Download the latest release for your operating system — see [README](README.md) for build instructions; automated builds and releases are not yet available (see [issue #45](https://github.com/trailcode/EzyCad/issues/45))
 2. Extract the archive to your preferred location
 3. Run the executable file
 
@@ -99,23 +99,31 @@ The typical modeling workflow in EzyCad follows these steps:
 4. **Apply Feature Operations**: Use boolean operations (cut, fuse, common) or feature operations (chamfer, fillet) to refine your 3D model.
 
 **Key Concepts:**
-- **Sketches** are 2D drawings on a plane that define the profile of your 3D shape
-- **Faces** are closed regions within a sketch that can be extruded into 3D
-- **Shapes** are 3D solid objects created from extruded sketch faces
-- **Feature Operations** transform sketches into 3D geometry or modify existing 3D shapes
+
+| | |
+| ---: | --- |
+| **Sketches** | 2D drawings on a plane that define the profile of your 3D shape |
+| **Faces** | Closed regions within a sketch that can be extruded into 3D |
+| **Shapes** | 3D solid objects created from extruded sketch faces |
+| **Feature Operations** | Transform sketches into 3D geometry or modify existing 3D shapes |
 
 ### Importing 3D Geometries
 
 In addition to creating 3D shapes from sketches, EzyCad supports importing existing 3D geometry from external CAD files. This allows you to:
 
-- **Work with existing designs**: Import models created in other CAD software
-- **Combine workflows**: Use imported geometry alongside sketched shapes
-- **Modify imported models**: Apply EzyCad's modeling tools to imported shapes
+| | |
+| ---: | --- |
+| **Work with existing designs** | Import models created in other CAD software |
+| **Combine workflows** | Use imported geometry alongside sketched shapes |
+| **Modify imported models** | Apply EzyCad's modeling tools to imported shapes |
 
 **Supported Import Formats:**
-- **STEP** (`.step`, `.stp`): Standard format for exchanging 3D CAD data
-- **IGES** (`.iges`, `.igs`): Legacy format for CAD data exchange
-- **STL** (`.stl`): Common format for 3D printing and mesh data
+
+| | |
+| ---: | --- |
+| **STEP** (`.step`, `.stp`) | Standard format for exchanging 3D CAD data |
+| **IGES** (`.iges`, `.igs`) | Legacy format for CAD data exchange |
+| **STL** (`.stl`) | Common format for 3D printing and mesh data |
 
 **How to Import:**
 1. Use the **File** menu and select **Import**
@@ -152,12 +160,15 @@ EzyCad provides tools for creating individual line edges in sketch mode, allowin
 The single line edge tool allows you to create straight line segments between two points.
 
 **Features:**
-- **Two-point creation**: Click to set the start point, then click to set the end point
-- **Real-time preview**: See the line shape while moving the mouse
-- **Precise length control**: Use the distance input dialog (Tab key) for exact line lengths
-- **Angle constraint**: Use the angle input dialog (Shift+Tab) to constrain the line to a specific angle
-- **Snap support**: Automatically snaps to existing nodes and geometry (disabled when angle constraint is active)
-- **Dimension annotations**: Optional length dimensions can be displayed
+
+| | |
+| ---: | --- |
+| **Two-point creation** | Click to set the start point, then click to set the end point |
+| **Real-time preview** | See the line shape while moving the mouse |
+| **Precise length control** | Use the distance input dialog (Tab key) for exact line lengths |
+| **Angle constraint** | Use the angle input dialog (Shift+Tab) to constrain the line to a specific angle |
+| **Snap support** | Automatically snaps to existing nodes and geometry (disabled when angle constraint is active) |
+| **Dimension annotations** | Optional length dimensions can be displayed |
 
 **How to use:**
 1. Select the **Line Edge** tool from the toolbar (line icon)
@@ -170,11 +181,14 @@ The single line edge tool allows you to create straight line segments between tw
 5. The line edge will be created and added to your sketch
 
 **Keyboard shortcuts:**
-- **Tab**: Open distance input dialog for precise length control
-- **Shift+Tab**: Open angle input dialog to constrain the line to a specific angle (after first point is set)
-- **Escape**: Cancel the current line creation
-- **Enter**: Finalize the line (if using distance or angle input)
-- **Right-click**: Complete the current line and start a new one
+
+| | |
+| ---: | --- |
+| **Tab** | Open distance input dialog for precise length control |
+| **Shift+Tab** | Open angle input dialog to constrain the line to a specific angle (after first point is set) |
+| **Escape** | Cancel the current line creation |
+| **Enter** | Finalize the line (if using distance or angle input) |
+| **Right-click** | Complete the current line and start a new one |
 
 **Angle Constraint:**
 - After setting the first point, press **Shift+Tab** to open the angle input dialog
@@ -198,13 +212,16 @@ The single line edge tool allows you to create straight line segments between tw
 The multi-line edge tool allows you to create multiple connected line segments in a single operation, making it efficient for drawing continuous paths, polylines, or complex connected geometries.
 
 **Features:**
-- **Continuous edge creation**: Click multiple points to create a chain of connected line segments
-- **Real-time preview**: See each edge shape while moving the mouse before clicking
-- **Precise length control**: Use the distance input dialog (Tab key) for exact edge lengths
-- **Angle constraint**: Use the angle input dialog (Shift+Tab) to constrain the current edge to an angle (in degrees)
-- **Snap support**: Automatically snaps to existing nodes and geometry
-- **Distance annotations**: Real-time distance display for the current edge being drawn
-- **Flexible finalization**: Continue adding edges until you right-click to finalize the entire sequence
+
+| | |
+| ---: | --- |
+| **Continuous edge creation** | Click multiple points to create a chain of connected line segments |
+| **Real-time preview** | See each edge shape while moving the mouse before clicking |
+| **Precise length control** | Use the distance input dialog (Tab key) for exact edge lengths |
+| **Angle constraint** | Use the angle input dialog (Shift+Tab) to constrain the current edge to an angle (in degrees) |
+| **Snap support** | Automatically snaps to existing nodes and geometry |
+| **Distance annotations** | Real-time distance display for the current edge being drawn |
+| **Flexible finalization** | Continue adding edges until you right-click to finalize the entire sequence |
 
 **How to use:**
 1. Select the **Multi-line Edge** tool from the toolbar <img src="icons/ls.png" alt="ls" width="20" height="20">
@@ -218,11 +235,14 @@ The multi-line edge tool allows you to create multiple connected line segments i
 6. Press **Right-click** to finalize the entire multi-line sequence and add all edges to your sketch
 
 **Keyboard shortcuts:**
-- **Tab**: Open distance input dialog for precise length control of the current edge
-- **Shift+Tab**: Open angle input dialog to constrain the current edge to an angle (after first point is set)
-- **Escape**: Cancel the entire multi-line creation operation
-- **Enter**: Finalize the current edge length (if using distance input) and continue to the next edge
-- **Right-click**: Finalize the entire multi-line sequence and complete the operation
+
+| | |
+| ---: | --- |
+| **Tab** | Open distance input dialog for precise length control of the current edge |
+| **Shift+Tab** | Open angle input dialog to constrain the current edge to an angle (after first point is set) |
+| **Escape** | Cancel the entire multi-line creation operation |
+| **Enter** | Finalize the current edge length (if using distance input) and continue to the next edge |
+| **Right-click** | Finalize the entire multi-line sequence and complete the operation |
 
 **Workflow details:**
 - Each click after the first creates a new edge connected to the previous edge's end point
@@ -255,10 +275,13 @@ EzyCad provides a method for creating circles in sketch mode using the **center-
 The center-radius circle tool allows you to create circles by defining a center point and a radius point.
 
 **Features:**
-- **Two-point creation**: Click to set the center, then click to set the radius
-- **Real-time preview**: See the circle shape while dragging the radius point
-- **Precise radius control**: Use the distance input dialog (Tab key) for exact radius values
-- **Snap support**: Automatically snaps to existing nodes and geometry
+
+| | |
+| ---: | --- |
+| **Two-point creation** | Click to set the center, then click to set the radius |
+| **Real-time preview** | See the circle shape while dragging the radius point |
+| **Precise radius control** | Use the distance input dialog (Tab key) for exact radius values |
+| **Snap support** | Automatically snaps to existing nodes and geometry |
 
 **How to use:**
 1. Select the **Circle** tool from the toolbar (circle icon)
@@ -268,9 +291,12 @@ The center-radius circle tool allows you to create circles by defining a center 
 5. The circle will be created and added to your sketch
 
 **Keyboard shortcuts:**
-- **Tab**: Open distance input dialog for precise radius control
-- **Escape**: Cancel the current circle creation
-- **Enter**: Finalize the circle (if using distance input)
+
+| | |
+| ---: | --- |
+| **Tab** | Open distance input dialog for precise radius control |
+| **Escape** | Cancel the current circle creation |
+| **Enter** | Finalize the circle (if using distance input) |
 
 **Tips:**
 - Use the snap feature to create circles that are precisely positioned relative to existing geometry
@@ -284,9 +310,12 @@ The center-radius circle tool allows you to create circles by defining a center 
 The three-point circle tool is planned for future development. This feature would allow creating circles by defining three points that lie on the circle's circumference.
 
 **Planned Features:**
-- **Three-point creation**: Click three points that lie on the circle's circumference
-- **Automatic center and radius calculation**: The system would compute the center and radius from the three points
-- **Geometric validation**: Ensure the three points are not collinear
+
+| | |
+| ---: | --- |
+| **Three-point creation** | Click three points that lie on the circle's circumference |
+| **Automatic center and radius calculation** | The system would compute the center and radius from the three points |
+| **Geometric validation** | Ensure the three points are not collinear |
 
 **Note**: The toolbar icon <img src="icons/Sketcher_Create3PointCircle.png" alt="Sketcher_Create3PointCircle" width="20" height="20"> exists but the functionality is not yet implemented.
 
@@ -301,15 +330,21 @@ The circle tool follows this workflow:
 5. **Integration**: The circle becomes part of the sketch and can be used for further operations
 
 **Common Operations with Circles:**
-- **Extrusion**: Select the circle face and extrude to create cylindrical shapes
-- **Boolean Operations**: Use circles in cut, fuse, or common operations
-- **Pattern Creation**: Use circles as the basis for polar arrays or other patterns
-- **Dimensioning**: Add radius or diameter dimensions to circles
+
+| | |
+| ---: | --- |
+| **Extrusion** | Select the circle face and extrude to create cylindrical shapes |
+| **Boolean Operations** | Use circles in cut, fuse, or common operations |
+| **Pattern Creation** | Use circles as the basis for polar arrays or other patterns |
+| **Dimensioning** | Add radius or diameter dimensions to circles |
 
 **Error Handling:**
-- **Coincident Points**: The system prevents creation of circles with zero radius
-- **Invalid Geometry**: Circles that would be too small are rejected
-- **Snap Integration**: Use existing snap points for precise circle placement
+
+| | |
+| ---: | --- |
+| **Coincident Points** | The system prevents creation of circles with zero radius |
+| **Invalid Geometry** | Circles that would be too small are rejected |
+| **Snap Integration** | Use existing snap points for precise circle placement |
 
 #### Arc Segment Creation Tool
 
@@ -318,12 +353,15 @@ The circle tool follows this workflow:
 The arc segment tool allows you to create circular arc edges by defining three points that lie on the arc: a start point, a middle point, and an end point.
 
 **Features:**
-- **Three-point creation**: Click to set the start point, then the middle point, then the end point
-- **Real-time preview**: See the arc shape while moving the mouse after setting the first two points
-- **Automatic finalization**: The arc is automatically created and added to your sketch after the third point is clicked
-- **Circular arc**: Creates a smooth circular arc that passes through all three points
-- **Snap support**: Automatically snaps to existing nodes and geometry
-- **Unique points**: All three points must be different (cannot be coincident)
+
+| | |
+| ---: | --- |
+| **Three-point creation** | Click to set the start point, then the middle point, then the end point |
+| **Real-time preview** | See the arc shape while moving the mouse after setting the first two points |
+| **Automatic finalization** | The arc is automatically created and added to your sketch after the third point is clicked |
+| **Circular arc** | Creates a smooth circular arc that passes through all three points |
+| **Snap support** | Automatically snaps to existing nodes and geometry |
+| **Unique points** | All three points must be different (cannot be coincident) |
 
 **How to use:**
 1. Select the **Arc Segment** tool from the toolbar <img src="icons/Sketcher_Element_Arc_Edge.png" alt="Sketcher_Element_Arc_Edge" width="20" height="20">
@@ -334,13 +372,19 @@ The arc segment tool allows you to create circular arc edges by defining three p
 6. The arc segment will be automatically created and added to your sketch
 
 **Point order:**
-- **First click**: Start point - where the arc begins
-- **Second click**: Middle point - a point that lies on the arc between start and end
-- **Third click**: End point - where the arc ends
+
+| | |
+| ---: | --- |
+| **First click** | Start point - where the arc begins |
+| **Second click** | Middle point - a point that lies on the arc between start and end |
+| **Third click** | End point - where the arc ends |
 
 **Keyboard shortcuts:**
-- **Escape**: Cancel the current arc creation (clears all points)
-- **Note**: The arc is automatically finalized after the third point, so no manual finalization is needed
+
+| | |
+| ---: | --- |
+| **Escape** | Cancel the current arc creation (clears all points) |
+| **Note** | The arc is automatically finalized after the third point, so no manual finalization is needed |
 
 **Tips:**
 - The three points define a unique circular arc that passes through all of them
@@ -372,12 +416,15 @@ EzyCad provides three tools for creating rectangular shapes in sketch mode: squa
 The square tool allows you to create perfect squares by defining a center point and an edge midpoint.
 
 **Features:**
-- **Two-point creation**: Click to set the center point, then click to set the midpoint of one edge
-- **Real-time preview**: See the square shape while moving the mouse
-- **Perfect square**: Automatically ensures all sides are equal length
-- **Orientation control**: The square's orientation is determined by the direction from center to edge midpoint
-- **Precise size control**: Use the distance input dialog (Tab key) for exact side lengths
-- **Snap support**: Automatically snaps to existing nodes and geometry
+
+| | |
+| ---: | --- |
+| **Two-point creation** | Click to set the center point, then click to set the midpoint of one edge |
+| **Real-time preview** | See the square shape while moving the mouse |
+| **Perfect square** | Automatically ensures all sides are equal length |
+| **Orientation control** | The square's orientation is determined by the direction from center to edge midpoint |
+| **Precise size control** | Use the distance input dialog (Tab key) for exact side lengths |
+| **Snap support** | Automatically snaps to existing nodes and geometry |
 
 **How to use:**
 1. Select the **Square** tool from the toolbar <img src="icons/Sketcher_CreateSquare.png" alt="Sketcher_CreateSquare" width="20" height="20">
@@ -387,9 +434,12 @@ The square tool allows you to create perfect squares by defining a center point 
 5. The square will be created with four edges and added to your sketch
 
 **Keyboard shortcuts:**
-- **Tab**: Open distance input dialog for precise side length control
-- **Escape**: Cancel the current square creation
-- **Enter**: Finalize the square (if using distance input)
+
+| | |
+| ---: | --- |
+| **Tab** | Open distance input dialog for precise side length control |
+| **Escape** | Cancel the current square creation |
+| **Enter** | Finalize the square (if using distance input) |
 
 **Tips:**
 - The distance from center to edge midpoint determines half the side length
@@ -404,11 +454,14 @@ The square tool allows you to create perfect squares by defining a center point 
 The rectangle tool allows you to create rectangles by defining two opposite corners.
 
 **Features:**
-- **Two-point creation**: Click to set the first corner, then click to set the opposite corner
-- **Real-time preview**: See the rectangle shape while moving the mouse
-- **Precise size control**: Use the distance input dialog (Tab key) for exact dimensions
-- **Snap support**: Automatically snaps to existing nodes and geometry
-- **Automatic corner calculation**: The system automatically calculates the other two corners
+
+| | |
+| ---: | --- |
+| **Two-point creation** | Click to set the first corner, then click to set the opposite corner |
+| **Real-time preview** | See the rectangle shape while moving the mouse |
+| **Precise size control** | Use the distance input dialog (Tab key) for exact dimensions |
+| **Snap support** | Automatically snaps to existing nodes and geometry |
+| **Automatic corner calculation** | The system automatically calculates the other two corners |
 
 **How to use:**
 1. Select the **Rectangle** tool from the toolbar <img src="icons/Sketcher_CreateRectangle.png" alt="Sketcher_CreateRectangle" width="20" height="20">
@@ -418,9 +471,12 @@ The rectangle tool allows you to create rectangles by defining two opposite corn
 5. The rectangle will be created with four edges and added to your sketch
 
 **Keyboard shortcuts:**
-- **Tab**: Open distance input dialog for precise dimension control
-- **Escape**: Cancel the current rectangle creation
-- **Enter**: Finalize the rectangle (if using distance input)
+
+| | |
+| ---: | --- |
+| **Tab** | Open distance input dialog for precise dimension control |
+| **Escape** | Cancel the current rectangle creation |
+| **Enter** | Finalize the rectangle (if using distance input) |
 
 **Tips:**
 - The two points define opposite corners of the rectangle (diagonal)
@@ -436,11 +492,14 @@ The rectangle tool allows you to create rectangles by defining two opposite corn
 The rectangle with center point tool allows you to create rectangles by defining a center point and a corner point.
 
 **Features:**
-- **Two-point creation**: Click to set the center point, then click to set a corner point
-- **Real-time preview**: See the rectangle shape while moving the mouse
-- **Centered creation**: The rectangle is centered on the first point
-- **Precise size control**: Use the distance input dialog (Tab key) for exact dimensions
-- **Snap support**: Automatically snaps to existing nodes and geometry
+
+| | |
+| ---: | --- |
+| **Two-point creation** | Click to set the center point, then click to set a corner point |
+| **Real-time preview** | See the rectangle shape while moving the mouse |
+| **Centered creation** | The rectangle is centered on the first point |
+| **Precise size control** | Use the distance input dialog (Tab key) for exact dimensions |
+| **Snap support** | Automatically snaps to existing nodes and geometry |
 
 **How to use:**
 1. Select the **Rectangle with Center Point** tool from the toolbar <img src="icons/Sketcher_CreateRectangle_Center.png" alt="Sketcher_CreateRectangle_Center" width="20" height="20">
@@ -450,9 +509,12 @@ The rectangle with center point tool allows you to create rectangles by defining
 5. The rectangle will be created with four edges and added to your sketch
 
 **Keyboard shortcuts:**
-- **Tab**: Open distance input dialog for precise dimension control
-- **Escape**: Cancel the current rectangle creation
-- **Enter**: Finalize the rectangle (if using distance input)
+
+| | |
+| ---: | --- |
+| **Tab** | Open distance input dialog for precise dimension control |
+| **Escape** | Cancel the current rectangle creation |
+| **Enter** | Finalize the rectangle (if using distance input) |
 
 **Tips:**
 - The rectangle is centered on the first point you click
@@ -462,9 +524,12 @@ The rectangle with center point tool allows you to create rectangles by defining
 - Rectangles automatically form closed faces that can be extruded
 
 **Comparison of Rectangle Tools:**
-- **Rectangle (Two Points)**: Define opposite corners - useful when you know the corner positions
-- **Rectangle (Center Point)**: Define center and corner - useful when you want the rectangle centered on a specific point
-- **Square**: Always creates a perfect square - use when you need equal sides
+
+| | |
+| ---: | --- |
+| **Rectangle (Two Points)** | Define opposite corners - useful when you know the corner positions |
+| **Rectangle (Center Point)** | Define center and corner - useful when you want the rectangle centered on a specific point |
+| **Square** | Always creates a perfect square - use when you need equal sides |
 
 #### Slot Creation Tool
 
@@ -473,13 +538,16 @@ The rectangle with center point tool allows you to create rectangles by defining
 The slot tool allows you to create an oblong or oval-shaped slot with rounded ends. A slot consists of two semicircular arcs connected by two straight parallel edges.
 
 **Features:**
-- **Three-point creation**: Click to set the first arc center, then the second arc center, then a point to define the radius
-- **Real-time preview**: See the slot shape while moving the mouse after setting the first two points
-- **Automatic finalization**: The slot is automatically created and added to your sketch after the third point is clicked
-- **Rounded ends**: Creates semicircular arcs at both ends with equal radius
-- **Parallel edges**: The two straight edges connecting the arcs are always parallel
-- **Precise size control**: Use the distance input dialog (Tab key) for exact dimensions
-- **Snap support**: Automatically snaps to existing nodes and geometry
+
+| | |
+| ---: | --- |
+| **Three-point creation** | Click to set the first arc center, then the second arc center, then a point to define the radius |
+| **Real-time preview** | See the slot shape while moving the mouse after setting the first two points |
+| **Automatic finalization** | The slot is automatically created and added to your sketch after the third point is clicked |
+| **Rounded ends** | Creates semicircular arcs at both ends with equal radius |
+| **Parallel edges** | The two straight edges connecting the arcs are always parallel |
+| **Precise size control** | Use the distance input dialog (Tab key) for exact dimensions |
+| **Snap support** | Automatically snaps to existing nodes and geometry |
 
 **How to use:**
 1. Select the **Slot** tool from the toolbar <img src="icons/Sketcher_CreateSlot.png" alt="Sketcher_CreateSlot" width="20" height="20">
@@ -501,10 +569,13 @@ The slot tool allows you to create an oblong or oval-shaped slot with rounded en
   - Both arcs use the same radius, creating a symmetric slot
 
 **Keyboard shortcuts:**
-- **Tab**: Open distance input dialog for precise dimension control
-- **Escape**: Cancel the current slot creation
-- **Enter**: Finalize the slot (if using distance input)
-- **Note**: The slot is automatically finalized after the third point, so no manual finalization is needed
+
+| | |
+| ---: | --- |
+| **Tab** | Open distance input dialog for precise dimension control |
+| **Escape** | Cancel the current slot creation |
+| **Enter** | Finalize the slot (if using distance input) |
+| **Note** | The slot is automatically finalized after the third point, so no manual finalization is needed |
 
 **Tips:**
 - The slot length is determined by the distance between the first and second arc centers
@@ -520,10 +591,13 @@ The slot tool allows you to create an oblong or oval-shaped slot with rounded en
 - The slot orientation is determined by the direction from the first to the second arc center
 
 **Technical details:**
-- The slot consists of four edges: two semicircular arcs and two straight parallel edges
-- The arcs are created using the arc segment functionality
-- The straight edges connect the arcs at their endpoints
-- The slot forms a closed shape suitable for face creation and extrusion
+
+| | |
+| ---: | --- |
+| **Slot structure** | Four edges: two semicircular arcs and two straight parallel edges |
+| **Arcs** | Created using the arc segment functionality |
+| **Straight edges** | Connect the arcs at their endpoints |
+| **Closed shape** | Suitable for face creation and extrusion |
 
 **Common use cases:**
 - Creating mounting slots for screws or bolts
@@ -538,11 +612,14 @@ The operation axis tool allows you to define a reference line for mirroring and 
 ![Operation Axis Tool](icons/Sketcher_MirrorSketch.png)
 
 **Features:**
-- **Two-point definition**: Click to set the start point, then click to set the end point of the axis line
-- **Real-time preview**: See the axis line while moving the mouse
-- **Automatic redefinition**: If an axis already exists, clicking again will clear it and start defining a new one
-- **Mirror operations**: Use the defined axis to mirror selected edges
-- **Revolve operations**: Use the defined axis to revolve selected edges or faces
+
+| | |
+| ---: | --- |
+| **Two-point definition** | Click to set the start point, then click to set the end point of the axis line |
+| **Real-time preview** | See the axis line while moving the mouse |
+| **Automatic redefinition** | If an axis already exists, clicking again will clear it and start defining a new one |
+| **Mirror operations** | Use the defined axis to mirror selected edges |
+| **Revolve operations** | Use the defined axis to revolve selected edges or faces |
 
 **How to Use:**
 1. Select the **Operation Axis** tool from the toolbar <img src="icons/Sketcher_MirrorSketch.png" alt="Sketcher_MirrorSketch" width="20" height="20">
@@ -557,14 +634,20 @@ The operation axis tool allows you to define a reference line for mirroring and 
 
 **Using the Operation Axis:**
 Once an axis is defined, the options panel will show:
-- **Mirror button**: Mirrors selected edges across the operation axis
-- **Revolve button**: Revolves selected edges or faces around the operation axis
-- **Revolve angle input**: Set the angle for revolve operations (default: 360 degrees)
-- **Clear axis button**: Manually clear the current operation axis
+
+| | |
+| ---: | --- |
+| **Mirror button** | Mirrors selected edges across the operation axis |
+| **Revolve button** | Revolves selected edges or faces around the operation axis |
+| **Revolve angle input** | Set the angle for revolve operations (default: 360 degrees) |
+| **Clear axis button** | Manually clear the current operation axis |
 
 **Keyboard Shortcuts:**
-- **Escape**: Cancel the current axis definition
-- **Enter**: Finalize the axis (after setting both points)
+
+| | |
+| ---: | --- |
+| **Escape** | Cancel the current axis definition |
+| **Enter** | Finalize the axis (after setting both points) |
 
 **Tips:**
 - The operation axis is a reference line used for geometric transformations
@@ -579,9 +662,12 @@ The toggle edge dimensions tool allows you to show or hide length dimension anno
 ![Toggle Edge Dimensions Tool](icons/TechDraw_LengthDimension.png)
 
 **Features:**
-- **Visual dimension display**: Shows length measurements on sketch edges
-- **Per-edge toggle**: Click on individual edges to show or hide their dimensions
-- **Helpful for verification**: Quickly verify that your sketch has the correct dimensions
+
+| | |
+| ---: | --- |
+| **Visual dimension display** | Shows length measurements on sketch edges |
+| **Per-edge toggle** | Click on individual edges to show or hide their dimensions |
+| **Helpful for verification** | Quickly verify that your sketch has the correct dimensions |
 
 **How to Use:**
 1. Select the **Toggle Edge Dimensions** tool from the toolbar <img src="icons/TechDraw_LengthDimension.png" alt="TechDraw_LengthDimension" width="20" height="20">
@@ -590,11 +676,14 @@ The toggle edge dimensions tool allows you to show or hide length dimension anno
 4. Click on an edge again to hide its dimension if it's currently visible
 
 **When to Use:**
-- **Design verification**: Check that your sketch dimensions match your design requirements
-- **Quality control**: Verify measurements before extruding or performing operations
-- **Learning and debugging**: Understand how your sketch geometry is sized
-- **Documentation**: Take screenshots with dimensions visible for reference
-- **Selective display**: Show dimensions only for the edges you're interested in
+
+| | |
+| ---: | --- |
+| **Design verification** | Check that your sketch dimensions match your design requirements |
+| **Quality control** | Verify measurements before extruding or performing operations |
+| **Learning and debugging** | Understand how your sketch geometry is sized |
+| **Documentation** | Take screenshots with dimensions visible for reference |
+| **Selective display** | Show dimensions only for the edges you're interested in |
 
 **Tips:**
 - Each edge's dimension can be toggled independently
@@ -605,10 +694,13 @@ The toggle edge dimensions tool allows you to show or hide length dimension anno
 - Toggle dimensions on only the edges you need to reduce visual clutter
 
 **Technical Details:**
-- Dimensions are calculated from the actual edge geometry
-- The tool displays measurements in the current unit system
-- Dimensions update automatically when geometry is modified
-- This is a view-only feature - it does not affect the underlying geometry
+
+| | |
+| ---: | --- |
+| **Dimension source** | Calculated from the actual edge geometry |
+| **Unit system** | Displays measurements in the current unit system |
+| **Auto-update** | Dimensions update automatically when geometry is modified |
+| **View-only** | Does not affect the underlying geometry |
 
 #### Create Sketch from Planar Face Tool
 
@@ -617,11 +709,14 @@ The create sketch from planar face tool allows you to extract the boundary of a 
 ![Create Sketch from Planar Face Tool](icons/Macro_FaceToSketch_48.png)
 
 **Features:**
-- **Face selection**: Click directly on a planar face from an existing 3D shape
-- **Automatic boundary extraction**: Extracts the outer wire (boundary) of the selected face
-- **New sketch creation**: Creates a new sketch with the face boundary as the initial geometry
-- **Planar face requirement**: Only works with planar (flat) faces - curved or complex surfaces are not supported
-- **Error handling**: Displays an error message if a non-planar face is selected
+
+| | |
+| ---: | --- |
+| **Face selection** | Click directly on a planar face from an existing 3D shape |
+| **Automatic boundary extraction** | Extracts the outer wire (boundary) of the selected face |
+| **New sketch creation** | Creates a new sketch with the face boundary as the initial geometry |
+| **Planar face requirement** | Only works with planar (flat) faces - curved or complex surfaces are not supported |
+| **Error handling** | Displays an error message if a non-planar face is selected |
 
 **How to Use:**
 1. **Activate Tool**: Click the **Create Sketch from Planar Face** tool from the toolbar <img src="icons/Macro_FaceToSketch_48.png" alt="Macro_FaceToSketch_48" width="20" height="20">
@@ -658,17 +753,23 @@ The create sketch from planar face tool allows you to extract the boundary of a 
 - The original shape remains unchanged - this tool only creates a new sketch based on the face boundary
 
 **Common Use Cases:**
-- **Reverse engineering**: Extract profiles from imported 3D models
-- **Feature modification**: Create a sketch from an existing face, modify it, and extrude to create a new feature
-- **Reference geometry**: Use existing face boundaries as reference for new sketches
-- **Model editing**: Extract a face boundary, modify it, and use it in boolean operations
-- **Workflow efficiency**: Quickly create sketches from existing geometry instead of manually recreating profiles
+
+| | |
+| ---: | --- |
+| **Reverse engineering** | Extract profiles from imported 3D models |
+| **Feature modification** | Create a sketch from an existing face, modify it, and extrude to create a new feature |
+| **Reference geometry** | Use existing face boundaries as reference for new sketches |
+| **Model editing** | Extract a face boundary, modify it, and use it in boolean operations |
+| **Workflow efficiency** | Quickly create sketches from existing geometry instead of manually recreating profiles |
 
 **Technical Details:**
-- The tool extracts the outer wire (boundary) of the selected face using `BRepTools::OuterWire()`
-- The sketch plane is determined from the face's underlying surface geometry
-- Only faces with `Geom_Plane` surfaces are supported - other surface types will be rejected
-- The created sketch is added to the sketch list and can be managed like any other sketch
+
+| | |
+| ---: | --- |
+| **Boundary extraction** | Uses `BRepTools::OuterWire()` on the selected face |
+| **Sketch plane** | Determined from the face's underlying surface geometry |
+| **Supported faces** | Only `Geom_Plane` surfaces - other surface types are rejected |
+| **Sketch list** | Created sketch is added and can be managed like any other sketch |
 
 ### 3D Modeling
 1. **Transform Operations**
@@ -682,11 +783,14 @@ The create sketch from planar face tool allows you to extract the boundary of a 
 The shape move tool allows you to reposition selected shapes in the 3D viewer with precision and flexibility.
 
 **Features:**
-- **Axis Constraints:** Restrict movement to the X, Y, or Z axis by toggling axis constraints in the options panel or using keyboard shortcuts.
-- **Interactive Distance Editing:** Enter or adjust the distance moved along each axis for precise control. Real-time feedback is provided in the viewer and options panel.
-- **Improved Plane Handling:** The move plane is automatically estimated based on the center of the selected shapes, making movement more intuitive.
-- **Finalization Logic:** The move operation completes when you confirm the action (e.g., `left mouse button`).
-- **Reset and Cancel:** Press `Esc` to cancel and revert to the original position at any time during the move operation.
+
+| | |
+| ---: | --- |
+| **Axis Constraints** | Restrict movement to the X, Y, or Z axis by toggling axis constraints in the options panel or using keyboard shortcuts. |
+| **Interactive Distance Editing** | Enter or adjust the distance moved along each axis for precise control. Real-time feedback is provided in the viewer and options panel. |
+| **Improved Plane Handling** | The move plane is automatically estimated based on the center of the selected shapes, making movement more intuitive. |
+| **Finalization Logic** | The move operation completes when you confirm the action (e.g., `left mouse button`). |
+| **Reset and Cancel** | Press `Esc` to cancel and revert to the original position at any time during the move operation. |
 
 **How to Use:**
 1. **Activate Move Tool:** Select one or more shapes and press `G` or click the <img src="icons/Assembly_AxialMove.png" alt="Assembly_AxialMove" width="20" height="20"> icon.
@@ -710,9 +814,12 @@ While moving a shape, you can press `Tab` to activate a floating distance input 
 The shape rotate tool enables precise rotation of selected shapes around a specified axis in the 3D viewer.
 
 **Features:**
-- **Rotation Axis Options:** Choose between view-to-object rotation or constrain rotation to X, Y, or Z axis.
-- **Interactive Angle Editing:** Enter or adjust the rotation angle for precise control with real-time preview.
-- **Visual Feedback:** The rotation axis is displayed with color-coded indicators (Red for X, Green for Y, Blue for Z).
+
+| | |
+| ---: | --- |
+| **Rotation Axis Options** | Choose between view-to-object rotation or constrain rotation to X, Y, or Z axis. |
+| **Interactive Angle Editing** | Enter or adjust the rotation angle for precise control with real-time preview. |
+| **Visual Feedback** | The rotation axis is displayed with color-coded indicators (Red for X, Green for Y, Blue for Z). |
 
 **How to Use:**
 1. **Activate Rotate Tool:** Select one or more shapes and press `R` or click the <img src="icons/Draft_Rotate.png" alt="Draft_Rotate" width="20" height="20"> icon. You can also activate the tool and select the shape(s) to rotate afterwards.
@@ -752,12 +859,15 @@ The extrude tool allows you to create 3D solid shapes by extruding 2D sketch fac
 ![Extrude Tool](icons/Design456_Extrude.png)
 
 **Features:**
-- **Direct face selection**: Click directly on a sketch face to select it for extrusion
-- **Automatic view adjustment**: The view automatically rotates if the face plane is parallel to the view plane (within 5 degrees), providing better visibility for the extrusion operation
-- **Real-time preview**: See the extruded shape update in real-time as you move the mouse
-- **Interactive distance control**: Drag the mouse to adjust extrusion distance, or use the distance input dialog (Tab key) for precise control
-- **Distance annotation**: A dimension annotation displays the current extrusion distance
-- **Bidirectional extrusion**: The extrusion direction is determined by which side of the face plane you move the mouse to
+
+| | |
+| ---: | --- |
+| **Direct face selection** | Click directly on a sketch face to select it for extrusion |
+| **Automatic view adjustment** | The view automatically rotates if the face plane is parallel to the view plane (within 5 degrees), providing better visibility for the extrusion operation |
+| **Real-time preview** | See the extruded shape update in real-time as you move the mouse |
+| **Interactive distance control** | Drag the mouse to adjust extrusion distance, or use the distance input dialog (Tab key) for precise control |
+| **Distance annotation** | A dimension annotation displays the current extrusion distance |
+| **Bidirectional extrusion** | The extrusion direction is determined by which side of the face plane you move the mouse to |
 
 **How to Use:**
 1. **Activate Extrude Tool**: Press `E` or click the <img src="icons/Design456_Extrude.png" alt="Design456_Extrude" width="20" height="20"> icon to enter extrude mode
@@ -772,10 +882,13 @@ The extrude tool allows you to create 3D solid shapes by extruding 2D sketch fac
 5. **Cancel**: Press `Esc` at any time to cancel the extrusion operation
 
 **Keyboard Shortcuts:**
-- `E`: Activate extrude mode
-- `Tab`: Open distance input dialog for precise extrusion distance
-- `Esc`: Cancel current extrusion operation
-- `Enter`: Finalize extrusion (when using distance input)
+
+| | |
+| ---: | --- |
+| **E** | Activate extrude mode |
+| **Tab** | Open distance input dialog for precise extrusion distance |
+| **Esc** | Cancel current extrusion operation |
+| **Enter** | Finalize extrusion (when using distance input) |
 
 **Tips:**
 - Extrude works best when the view is not directly parallel to the sketch plane - the system will automatically rotate the view if needed
@@ -785,10 +898,13 @@ The extrude tool allows you to create 3D solid shapes by extruding 2D sketch fac
 - Extruded shapes can be used in boolean operations (cut, fuse, common)
 
 **Common Use Cases:**
-- **Extrusion**: Select the circle face and extrude to create cylindrical shapes
-- **Base features**: Create the base feature of a part by extruding a profile
-- **Additive features**: Extrude additional features on existing parts
-- **Through features**: Extrude holes or cutouts by using the cut operation after extrusion
+
+| | |
+| ---: | --- |
+| **Extrusion** | Select the circle face and extrude to create cylindrical shapes |
+| **Base features** | Create the base feature of a part by extruding a profile |
+| **Additive features** | Extrude additional features on existing parts |
+| **Through features** | Extrude holes or cutouts by using the cut operation after extrusion |
 
 #### Shape Polar Duplicate Tool
 
@@ -797,12 +913,15 @@ The extrude tool allows you to create 3D solid shapes by extruding 2D sketch fac
 The polar duplicate tool allows you to create multiple copies of selected shapes arranged in a circular pattern around a rotation center point.
 
 **Features:**
-- **Circular array**: Creates multiple copies of shapes arranged in a circular pattern
-- **Configurable angle**: Set the total angle for the pattern (default: 360 degrees)
-- **Configurable count**: Set the number of duplicate elements to create (default: 5)
-- **Rotation option**: Choose whether duplicates are rotated as they're copied (default: enabled)
-- **Combine option**: Choose whether to combine all duplicates into a single shape (default: enabled)
-- **Polar arm definition**: Define the rotation center and direction by clicking a point
+
+| | |
+| ---: | --- |
+| **Circular array** | Creates multiple copies of shapes arranged in a circular pattern |
+| **Configurable angle** | Set the total angle for the pattern (default: 360 degrees) |
+| **Configurable count** | Set the number of duplicate elements to create (default: 5) |
+| **Rotation option** | Choose whether duplicates are rotated as they're copied (default: enabled) |
+| **Combine option** | Choose whether to combine all duplicates into a single shape (default: enabled) |
+| **Polar arm definition** | Define the rotation center and direction by clicking a point |
 
 **How to use:**
 1. **Select shapes**: Select one or more shapes that you want to duplicate
@@ -819,13 +938,19 @@ The polar duplicate tool allows you to create multiple copies of selected shapes
 6. **Create duplicates**: Click the **"Dup"** button in the options panel to create the polar duplicates
 
 **Options explained:**
-- **Polar angle**: The total angular span of the pattern. 360° creates a full circle, 180° creates a half circle, etc.
-- **Num Elms**: The number of duplicate elements to create. The original shape is not counted, so 5 elements means 5 copies plus the original.
-- **Rotate dups**: When enabled, each duplicate is rotated around its own center as it's positioned. When disabled, duplicates maintain their original orientation.
-- **Combine dups**: When enabled, all duplicates are fused together into a single shape. When disabled, each duplicate remains a separate shape.
+
+| | |
+| ---: | --- |
+| **Polar angle** | The total angular span of the pattern. 360° creates a full circle, 180° creates a half circle, etc. |
+| **Num Elms** | The number of duplicate elements to create. The original shape is not counted, so 5 elements means 5 copies plus the original. |
+| **Rotate dups** | When enabled, each duplicate is rotated around its own center as it's positioned. When disabled, duplicates maintain their original orientation. |
+| **Combine dups** | When enabled, all duplicates are fused together into a single shape. When disabled, each duplicate remains a separate shape. |
 
 **Keyboard shortcuts:**
-- **Escape**: Cancel the current polar duplicate operation
+
+| | |
+| ---: | --- |
+| **Escape** | Cancel the current polar duplicate operation |
 
 **Tips:**
 - The polar arm defines both the rotation center (at the arm's end point) and the starting direction
@@ -853,36 +978,48 @@ The polar duplicate tool allows you to create multiple copies of selected shapes
 ## Keyboard Shortcuts
 
 ### General Operations
-- `Ctrl+O`: Open file
-- `Ctrl+S`: Save file
-- `Ctrl+Shift+S`: Save as
-- `Esc`: Cancel current operation
-- `Enter`: Confirm current operation
-- `Tab`: Distance/dimension input
-- `Shift+Tab`: Angle input (for line edges with angle constraint)
-- `Delete`: Remove selected elements
+
+| | |
+| ---: | --- |
+| **Ctrl+O** | Open file |
+| **Ctrl+S** | Save file |
+| **Ctrl+Shift+S** | Save as |
+| **Esc** | Cancel current operation |
+| **Enter** | Confirm current operation |
+| **Tab** | Distance/dimension input |
+| **Shift+Tab** | Angle input (for line edges with angle constraint) |
+| **Delete** | Remove selected elements |
 
 ### Modeling Shortcuts
-- `G`: Move mode
-- `E`: Extrude mode
-- `D`: Delete selected
-- `L`: (Reserved for future use)
+
+| | |
+| ---: | --- |
+| **G** | Move mode |
+| **E** | Extrude mode |
+| **D** | Delete selected |
+| **L** | (Reserved for future use) |
 
 ## View Controls
 
 ### Mouse Controls
-- **Left Click**: Select object
-- **Left drag**: Orbit view
-- **Middle drag**: Pan view
-- **Right drag**: Zoom
-- **Scroll Wheel**: Zoom in/out
+
+| | |
+| ---: | --- |
+| **Left Click** | Select object |
+| **Left drag** | Orbit view |
+| **Middle drag** | Pan view |
+| **Right drag** | Zoom |
+| **Scroll Wheel** | Zoom in/out |
 
 ### View Options
-- Reset view
-- Fit to screen
-- Toggle wireframe
-- Change material appearance
-- Adjust lighting
+
+| | |
+| ---: | --- |
+| **Reset view** | Reset the 3D view |
+| **Fit to screen** | Fit the model to the viewport |
+| **Toggle wireframe** | Switch wireframe display |
+| **Change material appearance** | Adjust material display |
+| **Adjust lighting** | Change lighting settings |
 
 ## Tips and Tricks
 
