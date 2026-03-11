@@ -320,11 +320,18 @@ void Sketch::move_line_string_pt_(const ScreenCoords& screen_coords)
 
     double dist = pt_a.Distance(final_pt_b) / m_view.get_dimension_scale();
     m_ctx.Remove(m_tmp_dim_anno, true);
-    m_tmp_dim_anno = create_distance_annotation(pt_a, final_pt_b, m_pln);
-    m_tmp_dim_anno->SetCustomValue(dist);
-    m_ctx.Display(m_tmp_dim_anno, true);
+    // When angle constraint is active, final_pt_b is the projection of the mouse onto the constrained
+    // line; if the mouse is (nearly) perpendicular to that line, the projection coincides with pt_a.
+    if (unique(pt_a, final_pt_b))
+    {
+      m_tmp_dim_anno = create_distance_annotation(pt_a, final_pt_b, m_pln);
+      m_tmp_dim_anno->SetCustomValue(dist);
+      m_ctx.Display(m_tmp_dim_anno, true);
+    }
+    else
+      m_tmp_dim_anno.Nullify();
 
-    if (m_show_dim_input)
+    if (m_show_dim_input && unique(pt_a, final_pt_b))
     {
       gp_Dir2d     edge_dir = get_unit_dir(pt_a, final_pt_b);
       ScreenCoords spos     = m_view.get_screen_coords(to_3d(m_pln, center_point(pt_a, final_pt_b)));
@@ -368,7 +375,13 @@ void Sketch::move_line_string_pt_(const ScreenCoords& screen_coords)
       m_view.gui().set_angle_edit(angle_to_show, std::move(std::function<void(float, bool)>(l)), spos);
     }
 
-    update_edge_shp_(edge, pt_a, final_pt_b);
+    if (unique(pt_a, final_pt_b))
+      update_edge_shp_(edge, pt_a, final_pt_b);
+    else if (edge.shp)
+    {
+      m_ctx.Remove(edge.shp, true);
+      edge.shp.Nullify();
+    }
   };
 
   move_sketch_pt_(screen_coords, l);
@@ -808,6 +821,9 @@ void Sketch::check_dimension_seg_(Linestring_type linestring_type)
     switch (m_tmp_edges.size())
     {
       case 1:
+        m_entered_edge_angle = std::nullopt;
+        m_show_angle_input   = false;
+        m_view.gui().hide_angle_edit();
         m_tmp_edges.push_back({*edge.node_idx_b});
         break;
       case 2:
@@ -818,7 +834,13 @@ void Sketch::check_dimension_seg_(Linestring_type linestring_type)
     }
   }
   else
+  {
+    // Next segment must not inherit the previous angle constraint
+    m_entered_edge_angle = std::nullopt;
+    m_show_angle_input   = false;
+    m_view.gui().hide_angle_edit();
     m_tmp_edges.push_back({*edge.node_idx_b});
+  }
 }
 
 void Sketch::add_edge_(const gp_Pnt2d& pt_a, const gp_Pnt2d& pt_b, bool add_dim_anno)
