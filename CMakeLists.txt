@@ -13,11 +13,49 @@ if(POLICY CMP0167)
   cmake_policy(SET CMP0167 OLD)
 endif()
 
+
 # Set C++20 as the required standard for all targets
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 # Add custom CMake modules path
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}/cmake/")
+
+# Detect Emscripten early (for optional branching)
+if(CMAKE_CXX_COMPILER MATCHES "em\\+\\+")
+  set(EMSCRIPTEN_BUILD TRUE)
+endif()
+
+# Lua (for script console) - built for native and Emscripten (C sources compile with emcc)
+# Tarball has no CMake; we build the lib from sources
+include(FetchContent)
+FetchContent_Declare(
+  lua
+  URL https://www.lua.org/ftp/lua-5.4.6.tar.gz
+)
+FetchContent_Populate(lua)
+set(LUA_SRC_DIR ${lua_SOURCE_DIR}/lua-5.4.6/src)
+if(NOT EXISTS ${LUA_SRC_DIR})
+  set(LUA_SRC_DIR ${lua_SOURCE_DIR}/src)
+endif()
+if(NOT EXISTS ${LUA_SRC_DIR})
+  message(FATAL_ERROR "Lua source not found in ${lua_SOURCE_DIR}")
+endif()
+set(LUA_LIB_SOURCES
+  ${LUA_SRC_DIR}/lapi.c ${LUA_SRC_DIR}/lcode.c ${LUA_SRC_DIR}/lctype.c
+  ${LUA_SRC_DIR}/ldebug.c ${LUA_SRC_DIR}/ldo.c ${LUA_SRC_DIR}/ldump.c
+  ${LUA_SRC_DIR}/lfunc.c ${LUA_SRC_DIR}/lgc.c ${LUA_SRC_DIR}/llex.c
+  ${LUA_SRC_DIR}/lmem.c ${LUA_SRC_DIR}/lobject.c ${LUA_SRC_DIR}/lopcodes.c
+  ${LUA_SRC_DIR}/lparser.c ${LUA_SRC_DIR}/lstate.c ${LUA_SRC_DIR}/lstring.c
+  ${LUA_SRC_DIR}/ltable.c ${LUA_SRC_DIR}/ltm.c ${LUA_SRC_DIR}/lundump.c
+  ${LUA_SRC_DIR}/lvm.c ${LUA_SRC_DIR}/lzio.c
+  ${LUA_SRC_DIR}/lauxlib.c ${LUA_SRC_DIR}/lbaselib.c ${LUA_SRC_DIR}/lcorolib.c
+  ${LUA_SRC_DIR}/ldblib.c ${LUA_SRC_DIR}/liolib.c ${LUA_SRC_DIR}/lmathlib.c
+  ${LUA_SRC_DIR}/loadlib.c ${LUA_SRC_DIR}/loslib.c ${LUA_SRC_DIR}/lstrlib.c
+  ${LUA_SRC_DIR}/ltablib.c ${LUA_SRC_DIR}/lutf8lib.c ${LUA_SRC_DIR}/linit.c
+)
+add_library(lua STATIC ${LUA_LIB_SOURCES})
+target_include_directories(lua PUBLIC ${LUA_SRC_DIR})
+target_compile_features(lua PUBLIC c_std_99)
 
 # Set binary directory paths
 # Combines CMAKE_BINARY_DIR and project-specific binary dir for flexibility
@@ -87,12 +125,8 @@ if(APPLE)
     set(GUI_TYPE MACOSX_BUNDLE)
 endif(APPLE)
 
-#add_executable(${PROJECT_NAME} 
-#    ${App_SRCS}
-#    ${imguiImplSrcs}
-#    third_party/tinyfiledialogs/tinyfiledialogs.c)
-
 add_library(${PROJECT_NAME}_lib ${App_SRCS} ${imguiImplSrcs} third_party/tinyfiledialogs/tinyfiledialogs.c)
+target_link_libraries(${PROJECT_NAME}_lib PUBLIC lua)
 
 # Open CASCADE Technology
 find_package(OpenCASCADE REQUIRED NO_DEFAULT_PATH)
@@ -253,8 +287,10 @@ if(CMAKE_CXX_COMPILER_ID STREQUAL "Emscripten")
       endforeach()
     endif()
 
+
     target_link_libraries(
         ${PROJECT_NAME}
+        lua
         ${OpenCASCADE_LIBS})
 
     target_sources(${PROJECT_NAME} PRIVATE ${WEB_FILES})

@@ -1,5 +1,13 @@
 #include "modes.h"
 
+Mode mode_from_string(std::string_view name)
+{
+  for (int i = 0; i < static_cast<int>(Mode::_count); ++i)
+    if (c_mode_strs[i] == name)
+      return static_cast<Mode>(i);
+  return Mode::Normal;
+}
+
 bool is_sketch_mode(const Mode mode)
 {
   switch (mode)

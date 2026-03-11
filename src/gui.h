@@ -14,6 +14,7 @@
 #include "modes.h"
 #include "types.h"
 
+class Lua_console;
 class Occt_view;
 struct GLFWwindow;
 
@@ -60,6 +61,8 @@ class GUI
   void hide_dist_edit();
   void set_angle_edit(float angle, std::function<void(float, bool)>&& callback, const std::optional<ScreenCoords> screen_coords = std::nullopt);
   void hide_angle_edit();
+  /// True when dist or angle edit is visible; Tab should be routed to on_key() instead of ImGui.
+  bool is_dist_or_angle_edit_active() const;
   void show_message(const std::string& message);
   void log_message(const std::string& message);
   void set_show_options(bool v) { m_show_options = v; }
@@ -81,6 +84,9 @@ class GUI
   void on_import_file(const std::string& file_path, const std::string& file_data);
 
   void save_occt_view_settings();
+
+  /// For scripting (Lua console): access the 3D view.
+  Occt_view* get_view() { return m_view.get(); }
 
  private:
   friend class GUI_access;
@@ -122,6 +128,7 @@ class GUI
   void add_cone_dialog_();
   void add_torus_dialog_();
   void log_window_();
+  void lua_console_();
   void settings_();
   void setup_log_redirection_();
   void cleanup_log_redirection_();
@@ -205,4 +212,6 @@ class GUI
 #ifndef NDEBUG
   bool m_show_dbg {false};
 #endif
+  bool                           m_show_lua_console {false};
+  std::unique_ptr<Lua_console>     m_lua_console;
 };

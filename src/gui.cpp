@@ -20,6 +20,7 @@
 #include "geom.h"
 #include "imgui.h"
 #include "log.h"
+#include "lua_console.h"
 #include "occt_view.h"
 #include "sketch.h"
 
@@ -84,6 +85,7 @@ void GUI::render_gui()
   add_cone_dialog_();
   add_torus_dialog_();
   log_window_();
+  lua_console_();
   settings_();
   dbg_();
 }
@@ -309,21 +311,6 @@ void GUI::menu_bar_()
 
   if (ImGui::BeginMenu("File"))
   {
-    if (ImGui::BeginMenu("Examples"))
-    {
-      for (const auto& [label, path] : m_example_files)
-        if (ImGui::MenuItem(label.c_str()))
-        {
-          std::ifstream file(path);
-          std::string   json_str {std::istreambuf_iterator<char>(file), std::istreambuf_iterator<char>()};
-          if (file.good() && !json_str.empty())
-            on_file(path, json_str);
-          else
-            show_message("Error opening example: " + label);
-        }
-
-      ImGui::EndMenu();
-    }
     if (ImGui::MenuItem("New", "Ctrl+N"))
       m_view->new_file();
 
@@ -340,6 +327,22 @@ void GUI::menu_bar_()
     }
     else if (ImGui::MenuItem("Import"))
       import_file_dialog_();
+
+    else if (ImGui::BeginMenu("Examples"))
+    {
+      for (const auto& [label, path] : m_example_files)
+        if (ImGui::MenuItem(label.c_str()))
+        {
+          std::ifstream file(path);
+          std::string   json_str {std::istreambuf_iterator<char>(file), std::istreambuf_iterator<char>()};
+          if (file.good() && !json_str.empty())
+            on_file(path, json_str);
+          else
+            show_message("Error opening example: " + label);
+        }
+
+      ImGui::EndMenu();
+    }
 
 #ifdef __EMSCRIPTEN__
     else if (ImGui::MenuItem("Save settings"))
@@ -461,6 +464,11 @@ void GUI::menu_bar_()
     {
       m_log_window_visible = !m_log_window_visible;
       save_panes           = true;
+    }
+    if (ImGui::MenuItem("Lua Console", nullptr, m_show_lua_console))
+    {
+      m_show_lua_console = !m_show_lua_console;
+      save_panes         = true;
     }
 #ifndef NDEBUG
     if (ImGui::MenuItem("Debug", nullptr, m_show_dbg))
@@ -652,6 +660,7 @@ void GUI::parse_gui_panes_settings_(const std::string& content)
     set_show_shape_list(b("show_shape_list", true));
     set_log_window_visible(b("log_window_visible", true));
     set_show_settings_dialog(b("show_settings_dialog", false));
+    m_show_lua_console = b("show_lua_console", false);
 #ifndef NDEBUG
     set_show_dbg(b("show_dbg", false));
 #endif
@@ -761,6 +770,7 @@ void GUI::save_occt_view_settings()
       {     "show_shape_list",      m_show_shape_list},
       {  "log_window_visible",   m_log_window_visible},
       {"show_settings_dialog", m_show_settings_dialog},
+      {   "show_lua_console",   m_show_lua_console},
 #ifndef NDEBUG
       {            "show_dbg",             m_show_dbg},
 #endif
@@ -899,6 +909,13 @@ void GUI::dist_edit_()
   else
     m_dist_val = std::round(m_dist_val * 100.0f) / 100.0f;
 
+  if (ImGui::IsItemDeactivatedAfterEdit() && m_dist_callback)
+  {
+    std::function<void(float, bool)> callback;
+    std::swap(callback, m_dist_callback);
+    callback(m_dist_val, true);
+  }
+
   ImGui::End();
 }
 
@@ -930,6 +947,11 @@ void GUI::hide_angle_edit()
   }
 }
 
+bool GUI::is_dist_or_angle_edit_active() const
+{
+  return m_dist_callback != nullptr || m_angle_callback != nullptr;
+}
+
 void GUI::angle_edit_()
 {
   if (!m_angle_callback)
@@ -954,6 +976,15 @@ void GUI::angle_edit_()
   // Add a small input float widget and check for changes
   if (ImGui::InputFloat("##angle_edit_float_value", &m_angle_val, 0.0f, 0.0f, "%.2f"))
     m_angle_callback(m_angle_val, false);
+  else
+    m_angle_val = std::round(m_angle_val * 100.0f) / 100.0f;
+
+  if (ImGui::IsItemDeactivatedAfterEdit() && m_angle_callback)
+  {
+    std::function<void(float, bool)> callback;
+    std::swap(callback, m_angle_callback);
+    callback(m_angle_val, true);
+  }
 
   ImGui::End();
 }
@@ -1978,6 +2009,15 @@ void GUI::log_window_()
   ImGui::End();
 }
 
+void GUI::lua_console_()
+{
+  if (!m_show_lua_console)
+    return;
+  if (!m_lua_console)
+    m_lua_console = std::make_unique<Lua_console>(this);
+  m_lua_console->render(&m_show_lua_console);
+}
+
 void GUI::init(GLFWwindow* window)
 {
   initialize_toolbar_();
@@ -2220,7 +2260,12 @@ void GUI::open_file_dialog_()
 
 void GUI::save_file_dialog_()
 {
-  const std::string json_str = m_view->to_json();
+  using namespace nlohmann;
+  std::string project_json = m_view->to_json();
+  json j = json::parse(project_json);
+  j["mode"] = static_cast<int>(get_mode());
+  const std::string json_str = j.dump(2);
+
 #ifndef __EMSCRIPTEN__
   std::string file;
   if (!m_last_saved_path.empty())
@@ -2258,7 +2303,14 @@ void GUI::save_file_dialog_()
 
 void GUI::on_file(const std::string& file_path, const std::string& json_str)
 {
-  // TODO update GUI title to include file name.
+  using namespace nlohmann;
+  const json j = json::parse(json_str);
+  if (j.contains("mode") && j["mode"].is_number_integer())
+  {
+    const int idx = j["mode"].get<int>();
+    if (idx >= 0 && idx < static_cast<int>(Mode::_count))
+      set_mode(static_cast<Mode>(idx));
+  }
   m_view->load(json_str);
   m_last_saved_path = file_path;
   show_message("Opened: " + std::filesystem::path(file_path).filename().string());

@@ -78,3 +78,6 @@ enum class Fillet_mode
 constexpr std::array<const char*, 4> c_fillet_mode_strs = {"Edge", "Wire", "Face", "Shape"};
 
 bool is_sketch_mode(const Mode mode);
+
+/// Return Mode for a name (e.g. "Normal", "Sketch_add_edge"). Returns Normal if not found.
+Mode mode_from_string(std::string_view name);

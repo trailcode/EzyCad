@@ -165,14 +165,18 @@ int main(int, char**)
 
   keyCallback = [&](GLFWwindow* window, int key, int scancode, int action, int mods)
   {
-    /*
+    // Tab is an app hotkey (dimension/angle cycling): handle only on key-down and
+    // don't forward Tab press/release to ImGui focus navigation.
+    if (key == GLFW_KEY_TAB)
+    {
+      if (action == GLFW_PRESS)
+        gui.on_key(key, scancode, action, mods);
+      return;
+    }
+
+    ImGui_ImplGlfw_KeyCallback(window, key, scancode, action, mods);
     if (!io.WantCaptureKeyboard)
       gui.on_key(key, scancode, action, mods);
-    else
-      ImGui_ImplGlfw_KeyCallback(window, key, scancode, action, mods);
-      */
-    ImGui_ImplGlfw_KeyCallback(window, key, scancode, action, mods);
-    gui.on_key(key, scancode, action, mods);
   };
 
   cursorPosCallback = [&](GLFWwindow* window, double xpos, double ypos)
