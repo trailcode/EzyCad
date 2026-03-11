@@ -9,6 +9,7 @@
 #include <optional>
 #include <set>
 #include <string>
+#include <vector>
 
 #include "occt_glfw_win.h"
 #include "shp_chamfer.h"
@@ -62,6 +63,13 @@ class Occt_view : protected AIS_ViewController
   std::string to_json() const;
   void        load(const std::string& json_str);
   bool        import_step(const std::string& file_path);
+
+  // Undo / redo (document snapshot stack).
+  void push_undo_snapshot();
+  bool undo();
+  bool redo();
+  bool can_undo() const;
+  bool can_redo() const;
 
   void do_frame();
 
@@ -203,6 +211,12 @@ class Occt_view : protected AIS_ViewController
   AIS_InteractiveContext_ptr m_ctx;
   V3d_View_ptr               m_view;
   Occt_glfw_win_ptr          m_occt_window;
+  // Undo / redo
+  static constexpr size_t           k_max_undo {50};
+  std::vector<std::string>         m_undo_stack;
+  std::vector<std::string>         m_redo_stack;
+  bool                             m_restoring {false};
+
   // --------------------------------------------------------------------
   // Dimension related
   bool                       m_show_dim_input {false};

@@ -441,6 +441,7 @@ void Occt_view::cancel(Set_parent_mode set_parent_mode)
 // Revolve related
 void Occt_view::revolve_selected(const double angle)
 {
+  push_undo_snapshot();
   revolved_shp_rslt revolved = curr_sketch().revolve_selected(angle);
   if (revolved.has_value())
   {
@@ -462,6 +463,8 @@ void Occt_view::create_sketch_from_planar_face_(const ScreenCoords& screen_coord
   {
     if (auto pln = plane_from_face(*face); pln)
     {
+      // Push only when we will create a sketch (avoids no-op undo on misclick).
+      push_undo_snapshot();
       // Get the outer wire of the face
       TopoDS_Wire outer_wire = BRepTools::OuterWire(*face);
       EZY_ASSERT(!outer_wire.IsNull());
@@ -478,6 +481,7 @@ void Occt_view::create_sketch_from_planar_face_(const ScreenCoords& screen_coord
 
 void Occt_view::finalize_sketch_extrude_()
 {
+  push_undo_snapshot();
   m_shp_extrude.finalize();
 }
 
@@ -679,6 +683,7 @@ std::string Occt_view::get_unique_shape_name(const char* base_name) const
 
 void Occt_view::add_box(double ox, double oy, double oz, double width, double length, double height)
 {
+  push_undo_snapshot();
   TopoDS_Shape box  = shp_create::create_box(ox, oy, oz, width, length, height);
   ShapeBase_ptr shp = new Extruded_shp(*m_ctx, box);
   shp->set_name(unique_shape_name_("Box"));
@@ -689,6 +694,7 @@ void Occt_view::add_box(double ox, double oy, double oz, double width, double le
 
 void Occt_view::add_pyramid(double ox, double oy, double oz, double side)
 {
+  push_undo_snapshot();
   TopoDS_Shape pyramid = shp_create::create_pyramid(side);
   if (pyramid.IsNull())
     return;
@@ -707,6 +713,7 @@ void Occt_view::add_pyramid(double ox, double oy, double oz, double side)
 
 void Occt_view::add_sphere(double ox, double oy, double oz, double radius)
 {
+  push_undo_snapshot();
   TopoDS_Shape sphere = shp_create::create_sphere(radius);
   ShapeBase_ptr shp   = new Extruded_shp(*m_ctx, sphere);
   shp->set_name(unique_shape_name_("Sphere"));
@@ -723,6 +730,7 @@ void Occt_view::add_sphere(double ox, double oy, double oz, double radius)
 
 void Occt_view::add_cylinder(double ox, double oy, double oz, double radius, double height)
 {
+  push_undo_snapshot();
   TopoDS_Shape shape = shp_create::create_cylinder(radius, height);
   ShapeBase_ptr shp  = new Extruded_shp(*m_ctx, shape);
   shp->set_name(unique_shape_name_("Cylinder"));
@@ -739,6 +747,7 @@ void Occt_view::add_cylinder(double ox, double oy, double oz, double radius, dou
 
 void Occt_view::add_cone(double ox, double oy, double oz, double R1, double R2, double height)
 {
+  push_undo_snapshot();
   TopoDS_Shape shape = shp_create::create_cone(R1, R2, height);
   ShapeBase_ptr shp  = new Extruded_shp(*m_ctx, shape);
   shp->set_name(unique_shape_name_("Cone"));
@@ -755,6 +764,7 @@ void Occt_view::add_cone(double ox, double oy, double oz, double R1, double R2, 
 
 void Occt_view::add_torus(double ox, double oy, double oz, double R1, double R2)
 {
+  push_undo_snapshot();
   TopoDS_Shape shape = shp_create::create_torus(R1, R2);
   ShapeBase_ptr shp  = new Extruded_shp(*m_ctx, shape);
   shp->set_name(unique_shape_name_("Torus"));
@@ -858,6 +868,7 @@ void Occt_view::sketch_face_extrude(const ScreenCoords& screen_coords, bool is_m
 
 void Occt_view::delete_selected()
 {
+  push_undo_snapshot();
   auto selected = get_selected();
   delete_(selected);
   cancel(Set_parent_mode::No);  // In case we are in the middle of a operation.
@@ -1248,6 +1259,7 @@ Occt_view::Sketch_list& Occt_view::get_sketches()
 
 void Occt_view::remove_sketch(const Sketch_ptr& sketch)
 {
+  push_undo_snapshot();
   m_sketches.remove(sketch);
   if (m_cur_sketch == sketch)
   {
@@ -1305,6 +1317,55 @@ Shp_polar_dup& Occt_view::shp_polar_dup() { return m_shp_polar_dup; }
 Shp_extrude&   Occt_view::shp_extrude()    { return m_shp_extrude;   }
 // clang-format on
 
+// ---------------------------------------------------------------------------
+// Undo / redo
+void Occt_view::push_undo_snapshot()
+{
+  if (m_restoring)
+    return;
+  m_redo_stack.clear();
+  m_undo_stack.push_back(to_json());
+  if (m_undo_stack.size() > k_max_undo)
+    m_undo_stack.erase(m_undo_stack.begin());
+}
+
+bool Occt_view::undo()
+{
+  if (!can_undo())
+    return false;
+  m_restoring = true;
+  const std::string state = std::move(m_undo_stack.back());
+  m_undo_stack.pop_back();
+  m_redo_stack.push_back(to_json());
+  load(state);
+  m_restoring = false;
+  return true;
+}
+
+bool Occt_view::redo()
+{
+  if (!can_redo())
+    return false;
+  m_restoring = true;
+  const std::string state = std::move(m_redo_stack.back());
+  m_redo_stack.pop_back();
+  m_undo_stack.push_back(to_json());
+  load(state);
+  m_restoring = false;
+  return true;
+}
+
+bool Occt_view::can_undo() const
+{
+  return !m_undo_stack.empty();
+}
+
+bool Occt_view::can_redo() const
+{
+  return !m_redo_stack.empty();
+}
+
+// ---------------------------------------------------------------------------
 std::string Occt_view::to_json() const
 {
   using namespace nlohmann;
@@ -1469,6 +1530,7 @@ void Occt_view::load(const std::string& json_str)
 
 bool Occt_view::import_step(const std::string& step_data)
 {
+  push_undo_snapshot();
   // Initialize the STEP reader
   STEPControl_Reader reader;
 
@@ -1522,6 +1584,7 @@ AIS_InteractiveContext& Occt_view::ctx()
 
 void Occt_view::new_file()
 {
+  push_undo_snapshot();
   remove(m_shps);
   clear_all(m_shps, m_sketches, m_cur_sketch);
 

@@ -669,6 +669,7 @@ bool Sketch::has_operation_axis() const
 void Sketch::mirror_selected_edges()
 {
   EZY_ASSERT(m_operation_axis.has_value());
+  m_view.push_undo_snapshot();
 
   const std::vector<Edge> mirror_edges = get_selected_edges_();
   if (mirror_edges.empty())
@@ -950,6 +951,7 @@ void Sketch::toggle_edge_dim(const ScreenCoords& screen_coords)
 
 void Sketch::finalize_elm()
 {
+  m_view.push_undo_snapshot();
   m_show_dim_input     = false;
   m_show_angle_input   = false;
   m_entered_edge_angle = std::nullopt;
