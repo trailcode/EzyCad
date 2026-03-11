@@ -29,6 +29,7 @@ Use this style when editing or adding C/C++ code in the EzyCad project (files un
 - **Alignment**: Align member declarations in columns when it aids readability (type and name aligned across lines in the same block).
 - **Initialization**: Prefer brace-initialization for members (e.g. `bool is_midpoint {false};`, `size_t m_prev_num_nodes {0};`).
 - **Short control flow**: Single-line `if`/`for` without braces is acceptable when the body is a single statement; use braces for multi-line or nested bodies.
+- **Newline after brace-less `if`**: If an `if` (or similar) has no `{}`, put a **newline after** the single statement that follows it. Treat that newline like a period—the next line starts a new “sentence.” Likewise, **`}`** ends a “sentence”; what follows can start on the next line. This keeps control flow readable.
 - Use **`// clang-format off`** / **`// clang-format on`** only where layout must be preserved (e.g. short inline accessors, macro-like blocks).
 
 ## Code organization
