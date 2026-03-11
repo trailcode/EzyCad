@@ -70,7 +70,7 @@ EzyCad (Easy CAD) is a CAD application for hobbyist machinists to design and edi
 ### Basic Operations
 1. #### New Project
    - Start with a clean workspace
-   - Reset settings (view is not reset; see [Issue tracking](https://github.com/trailcode/EzyCad/issues) for known limitations)
+   - Reset settings (view is not reset; see [issue #43](https://github.com/trailcode/EzyCad/issues/43))
 
 2. #### Open Project
    - Load existing `.ezy` files
