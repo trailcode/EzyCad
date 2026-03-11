@@ -1,5 +1,11 @@
 #include "sketch.h"
 
+#include "geom.h"
+#include "gui.h"
+#include "imgui.h"
+#include "occt_view.h"
+#include "utl.h"
+
 #include <BRepBuilderAPI_MakeEdge.hxx>
 #include <BRepBuilderAPI_MakeFace.hxx>
 #include <BRepBuilderAPI_MakeWire.hxx>
@@ -15,12 +21,6 @@
 #include <functional>
 #include <map>
 #include <unordered_set>
-
-#include "geom.h"
-#include "gui.h"
-#include "imgui.h"
-#include "occt_view.h"
-#include "utl.h"
 
 Sketch::Sketch(const std::string& name, Occt_view& view, const gp_Pln& pln)
     : m_view(view), m_ctx(view.ctx()), m_pln(pln), m_name(name), m_nodes(view, pln)
@@ -273,6 +273,7 @@ void Sketch::add_line_string_pt_(const ScreenCoords& screen_coords, Linestring_t
     gp_Pnt2d        final_pt   = gp_Pnt2d(pt_a).Translated(gp_Vec2d(constrained_dir) * dist_along);
     if (!unique(pt_a, final_pt))
       return;
+
     std::optional<size_t> snap     = m_nodes.try_get_node_idx_snap(final_pt);
     size_t                node_idx = snap ? *snap : m_nodes.add_new_node(final_pt);
     m_tmp_node_idxs.push_back(node_idx);
@@ -340,6 +341,7 @@ void Sketch::move_line_string_pt_(const ScreenCoords& screen_coords)
       edge.node_idx_b = m_nodes.try_get_node_idx_snap(final_pt_b);
       if (edge.node_idx_b.has_value())
         final_pt_b = m_nodes[*edge.node_idx_b];
+
     }
 
     double dist = pt_a.Distance(final_pt_b) / m_view.get_dimension_scale();
@@ -369,6 +371,7 @@ void Sketch::move_line_string_pt_(const ScreenCoords& screen_coords)
         m_show_dim_input = !is_finial;
         if (is_finial)
           on_enter();
+
       };
 
       m_view.gui().set_dist_edit(float(dist), std::move(std::function<void(float, bool)>(l)), spos);
@@ -401,6 +404,7 @@ void Sketch::move_line_string_pt_(const ScreenCoords& screen_coords)
 
     if (unique(pt_a, final_pt_b))
       update_edge_shp_(edge, pt_a, final_pt_b);
+
     else if (edge.shp)
     {
       m_ctx.Remove(edge.shp, true);
@@ -610,6 +614,7 @@ void Sketch::move_slot_pt_(const ScreenCoords& screen_coords)
     const gp_Pnt2d& pt_a = m_nodes[m_tmp_edges.front().node_idx_a];
     if (unique(pt_a, pt_b, pt_c))
       show(m_ctx, m_tmp_shp, make_slot_wire(m_pln, pt_a, pt_b, pt_c));
+
   };
   last_edge_(l);
 }
@@ -705,6 +710,7 @@ void Sketch::mirror_selected_edges()
     for (const Edge* e : arc_circle_edges)
       if (e->node_idx_arc.has_value())
         a = e;
+
       else
         b = e;
 
@@ -742,6 +748,7 @@ revolved_shp_rslt Sketch::revolve_selected(const double angle)
         seen.insert(e.shp.get());
         builder.Add(compound, e.shp->Shape());
       }
+
   }
   else if (faces.size())
     for (const Sketch_face_shp_ptr& face : faces)
@@ -782,11 +789,13 @@ void Sketch::add_sketch_pt_(const ScreenCoords& screen_coords, size_t required_n
   {
     if (node_idx)
       m_tmp_node_idxs.push_back(*node_idx);
+
     else
       m_tmp_node_idxs.push_back(m_nodes.add_new_node(pt));
 
     if (m_tmp_node_idxs.size() >= required_num_pts)
       callback(m_tmp_node_idxs.back());
+
   };
   move_sketch_pt_(screen_coords, l);
 }
@@ -815,6 +824,7 @@ void Sketch::last_edge_(Callback&& callback)
   if (m_last_pt.has_value())
     if (unique(pt_a, *m_last_pt))
       callback(e, pt_a, *m_last_pt);
+
 }
 
 void Sketch::check_dimension_seg_(Linestring_type linestring_type)
@@ -910,6 +920,7 @@ std::list<Sketch::Edge>::iterator Sketch::get_edge_at_(const ScreenCoords& scree
   return m_edges.end();
 }
 
+
 void Sketch::set_edge_dim_anno_visible_(Edge& e, bool visible)
 {
   if (visible)
@@ -934,6 +945,7 @@ void Sketch::toggle_edge_dim(const ScreenCoords& screen_coords)
 {
   if (std::list<Edge>::iterator itr = get_edge_at_(screen_coords); itr != m_edges.end())
     set_edge_dim_anno_visible_(*itr, itr->dim.IsNull());
+
 }
 
 void Sketch::finalize_elm()
@@ -1091,6 +1103,7 @@ void Sketch::update_faces_()
     for (const auto& [neighbor, e] : adj_list[a])
       if (!excluded_edges.count(e))
         ++degree_a;
+
     for (const auto& [neighbor, e] : adj_list[b])
       if (!excluded_edges.count(e))
         ++degree_b;
@@ -1115,6 +1128,7 @@ void Sketch::update_faces_()
         {
           if (excluded_edges.count(e) || e == &edge)
             continue;
+
           if (neighbor == b)
           {
             can_reach_b = true;
@@ -1143,8 +1157,10 @@ void Sketch::update_faces_()
             {
               if (excluded_edges.count(e) || e == exclude_edge)
                 continue;
+
               if (neighbor == parent)
                 continue;
+
               if (comp_visited.count(neighbor))
               {
                 // Found a back edge = cycle
@@ -1161,6 +1177,7 @@ void Sketch::update_faces_()
           {
             if (excluded_edges.count(e) || e == exclude_edge)
               continue;
+
             comp_visited.clear();
             comp_visited.insert(start);
             if (dfs(neighbor, start))
