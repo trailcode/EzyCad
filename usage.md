@@ -33,7 +33,7 @@ EzyCad (Easy CAD) is a CAD application for hobbyist machinists to design and edi
 ### Main Components
 1. **Menu Bar**
    - File operations ([New](#new-project), [Open](#open-project), [Save](#save-project), [Import](#importing-3d-geometries))
-   - Help and settings
+   - [Help and settings](#help-and-settings)
 
 2. **Toolbar**
    - Quick access to commonly used tools
@@ -59,6 +59,22 @@ EzyCad (Easy CAD) is a CAD application for hobbyist machinists to design and edi
    - View operation history
    - Check for errors and warnings
    - Monitor system status
+
+### Help and Settings
+
+The **Help** and **Settings** options are available from the menu bar.
+
+**Help menu**
+- **About** — Opens the [project README](README.md).
+- **Usage Guide** — Opens [this usage guide](usage.md).
+
+**Settings**
+- **View → Settings** — Opens the Settings dialog. Use it to adjust:
+  - **Dark mode** — Toggle dark theme.
+  - **3D view background** — Background gradient colors and blend direction.
+  - **3D view grid** — Grid colors.
+  - **Defaults** — Restore default settings.
+- **File → Save settings** — Saves current settings (layout, view, and the above options) so they persist next time you run EzyCad.
 
 ## File Operations
 
@@ -1096,4 +1112,4 @@ The polar duplicate tool allows you to create multiple copies of selected shapes
 
 ---
 
-For more information, visit the official EzyCad website or GitHub repository.
+For more information, see the [README](README.md) or the [GitHub repository](https://github.com/trailcode/EzyCad).
