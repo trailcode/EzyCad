@@ -218,7 +218,7 @@ class Occt_view : protected AIS_ViewController
   struct Undo_entry
   {
     std::string json;
-    Mode        mode;
+    Mode        mode;  // Mode at time of operation; restored when navigating stacks
   };
   std::vector<Undo_entry> m_undo_stack;
   std::vector<Undo_entry> m_redo_stack;

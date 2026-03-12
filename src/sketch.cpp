@@ -1857,6 +1857,11 @@ void Sketch::set_name(const std::string& name)
   m_name = name;
 }
 
+bool Sketch::has_edges() const
+{
+  return !m_edges.empty();
+}
+
 gp_Vec2d Sketch::edge_outgoing_dir_(size_t idx_a, size_t idx_b, const Edge& edge) const
 {
 #if 0
