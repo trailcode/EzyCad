@@ -124,8 +124,16 @@ Edit operations change your model (sketches or 3D shapes) and can be navigated w
   - **Limits and notes**
     - The history keeps a fixed number of recent steps (currently 50).
 
-- **Cancel current operation**
-  - Press **Esc** to cancel the active tool (for example, while drawing or transforming) and return to the previous mode.
+### Cancel current operation (Esc)
+
+Press **Esc** to cancel the current action or step back to a broader mode.
+
+- **If something is in progress:** Esc cancels it and discards the change. Examples: cancel a line you are drawing, revert an unconfirmed move/rotate/scale, cancel extrude preview, clear the distance or angle input dialog.
+- **If nothing is in progress:** Esc steps the application to the **parent mode** (one level up):
+  - From a **sketch tool** (e.g. Add line, Add circle, Operation axis) → **Sketch inspection mode**.
+  - From **Sketch inspection**, **Normal**, or any **shape tool** (Move, Rotate, Scale, Extrude, Chamfer, Fillet, Polar duplicate, Create sketch from face) → **Normal** (inspection) mode.
+
+So repeated Esc from a sketch drawing tool first cancels the current element, then returns to Sketch inspection, then to Normal.
 
 ## Modeling Tools
 
@@ -1066,7 +1074,7 @@ The polar duplicate tool allows you to create multiple copies of selected shapes
 | **Ctrl+O** | Open file |
 | **Ctrl+S** | Save file |
 | **Ctrl+Shift+S** | Save as |
-| **Esc** | Cancel current operation |
+| **Esc** | [Cancel current operation or step to parent mode](#cancel-current-operation-esc) |
 | **Enter** | Confirm current operation |
 | **Tab** | Distance/dimension input |
 | **Shift+Tab** | Angle input (for line edges with angle constraint) |
