@@ -44,9 +44,9 @@ EzyCad (Easy CAD) is a CAD application for hobbyist machinists to design and edi
    - Operation tools
 
 3. **Sketch List**
-   - View and manage 2D sketches
-   - Select and edit sketch elements
-   - Toggle sketch visibility
+   - [View and manage 2D sketches](#sketch-list)
+   - [Select and edit sketch elements](#sketch-list)
+   - [Toggle sketch visibility](#sketch-list)
 
 4. **Shape List**
    - View and manage 3D shapes
@@ -72,7 +72,7 @@ EzyCad (Easy CAD) is a CAD application for hobbyist machinists to design and edi
   - **3D view grid** — Grid colors.
   - **Defaults** — Restore default settings.
 - **Options** — Show or hide the Options panel.
-- **Sketch List** — Show or hide the Sketch List pane.
+- **Sketch List** — Show or hide the [Sketch List](#sketch-list) pane.
 - **Shape List** — Show or hide the Shape List pane.
 - **Log** — Show or hide the Log window.
 - **Lua Console** — Show or hide the Lua console (if available).
@@ -83,6 +83,19 @@ EzyCad (Easy CAD) is a CAD application for hobbyist machinists to design and edi
 - **Usage Guide** — Opens [this usage guide](usage.md) in the browser.
 
 **Saving settings** — **File → Save settings** (Emscripten) or the application’s save-on-exit behavior saves current layout, view, and the above options so they persist next time you run EzyCad.
+
+### Sketch List
+
+The **Sketch List** pane lists all 2D sketches in the current document. Open it from **View → Sketch List**.
+
+For each sketch you can:
+
+- **Set current** — Use the radio button (○) to make this sketch the current one. The current sketch is used for editing and for operations such as [extrude](#extrude-sketch-face-tool-e).
+- **Rename** — Click the name field and type to change the sketch’s name.
+- **Visibility** — Use the checkbox to show or hide the sketch in the 3D view.
+- **Delete** — Right‑click the sketch name and choose **Delete** to remove the sketch from the document.
+
+The window can be closed with its close button; use **View → Sketch List** again to show it.
 
 ## File Operations
 
