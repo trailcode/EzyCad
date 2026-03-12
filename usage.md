@@ -193,6 +193,7 @@ For detailed information on creating 2D geometry, see the [2D Sketching](#2d-ske
 2. **Sketch Operations**
    - [Define operation axis](#operation-axis-tool) <img src="icons/Sketcher_MirrorSketch.png" alt="Operation Axis Tool" width="20" height="20">
       - Mirror sketches
+      - Revolve edges or faces
    - [Toggle edge dimensions](#toggle-edge-dimensions-tool) <img src="icons/TechDraw_LengthDimension.png" alt="Toggle Edge Dimensions Tool" width="20" height="20">
    - [Create sketch from planar face](#create-sketch-from-planar-face-tool) <img src="icons/Macro_FaceToSketch_48.png" alt="Create Sketch from Planar Face Tool" width="20" height="20">
 
