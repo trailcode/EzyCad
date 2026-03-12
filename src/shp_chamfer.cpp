@@ -14,6 +14,7 @@ Shp_chamfer::Shp_chamfer(Occt_view& view)
 
 Status Shp_chamfer::add_chamfer(const ScreenCoords& screen_coords, const Chamfer_mode chamfer_mode)
 {
+  view().push_undo_snapshot();
   ShapeBase_ptr chamfer_src_shp = ShapeBase_ptr::DownCast(get_shape_(screen_coords));
   if (chamfer_src_shp.IsNull())
     return Status::user_error("Click on a shape.");

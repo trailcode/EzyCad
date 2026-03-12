@@ -206,6 +206,7 @@ void Shp_rotate::finalize()
   if (m_shps.empty())
     return;
 
+  view().push_undo_snapshot();
   operation_shps_finalize_();
   reset();
 }
@@ -238,6 +239,9 @@ void Shp_rotate::reset()
 
 void Shp_rotate::set_rotation_axis(Rotation_axis axis)
 {
+  if (!m_center.has_value())
+    return;
+
   m_rotation_axis = axis;
   update_rotation_axis_();
 }

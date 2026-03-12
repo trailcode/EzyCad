@@ -533,7 +533,7 @@ void Sketch::move_square_pt_(const ScreenCoords& screen_coords)
     show(m_ctx, m_tmp_shp, square);
   };
 
-  last_edge_(l);
+  if_edge_pt_valid_(l);
 }
 
 void Sketch::finalize_square_()
@@ -549,7 +549,7 @@ void Sketch::finalize_square_()
     update_faces_();
   };
 
-  last_edge_(l);
+  if_edge_pt_valid_(l);
 }
 
 void Sketch::move_rectangle_pt_(const ScreenCoords& screen_coords)
@@ -573,7 +573,7 @@ void Sketch::move_rectangle_pt_(const ScreenCoords& screen_coords)
     }
   };
 
-  last_edge_(l);
+  if_edge_pt_valid_(l);
 }
 
 void Sketch::finalize_rectangle_()
@@ -599,7 +599,7 @@ void Sketch::finalize_rectangle_()
     }
   };
 
-  last_edge_(l);
+  if_edge_pt_valid_(l);
 }
 
 // Slot related
@@ -616,7 +616,7 @@ void Sketch::move_slot_pt_(const ScreenCoords& screen_coords)
       show(m_ctx, m_tmp_shp, make_slot_wire(m_pln, pt_a, pt_b, pt_c));
 
   };
-  last_edge_(l);
+  if_edge_pt_valid_(l);
 }
 
 void Sketch::finalize_slot_()
@@ -669,6 +669,7 @@ bool Sketch::has_operation_axis() const
 void Sketch::mirror_selected_edges()
 {
   EZY_ASSERT(m_operation_axis.has_value());
+  m_view.push_undo_snapshot();
 
   const std::vector<Edge> mirror_edges = get_selected_edges_();
   if (mirror_edges.empty())
@@ -813,8 +814,9 @@ void Sketch::move_sketch_pt_(const ScreenCoords& screen_coords, Callback&& callb
   callback(node_idx, *m_last_pt);
 }
 
+/// Invokes callback(e, pt_a, pt_b) with the last tmp edge only when it exists and is non-degenerate.
 template <typename Callback>
-void Sketch::last_edge_(Callback&& callback)
+void Sketch::if_edge_pt_valid_(Callback&& callback)
 {
   if (m_tmp_edges.empty())
     return;
@@ -824,7 +826,6 @@ void Sketch::last_edge_(Callback&& callback)
   if (m_last_pt.has_value())
     if (unique(pt_a, *m_last_pt))
       callback(e, pt_a, *m_last_pt);
-
 }
 
 void Sketch::check_dimension_seg_(Linestring_type linestring_type)
@@ -950,6 +951,7 @@ void Sketch::toggle_edge_dim(const ScreenCoords& screen_coords)
 
 void Sketch::finalize_elm()
 {
+  m_view.push_undo_snapshot();
   m_show_dim_input     = false;
   m_show_angle_input   = false;
   m_entered_edge_angle = std::nullopt;
@@ -1579,7 +1581,7 @@ void Sketch::move_circle_pt_(const ScreenCoords& screen_coords)
     TopoDS_Wire circle = make_circle_wire(m_pln, pt_a, *m_last_pt);
     show(m_ctx, m_tmp_shp, circle);
   };
-  last_edge_(l);
+  if_edge_pt_valid_(l);
 }
 
 void Sketch::finalize_circle_()
@@ -1592,7 +1594,7 @@ void Sketch::finalize_circle_()
     clear_tmps_();
     update_faces_();
   };
-  last_edge_(l);
+  if_edge_pt_valid_(l);
 }
 
 bool Sketch::clear_tmps_()
@@ -1853,6 +1855,11 @@ const std::string& Sketch::get_name() const
 void Sketch::set_name(const std::string& name)
 {
   m_name = name;
+}
+
+bool Sketch::has_edges() const
+{
+  return !m_edges.empty();
 }
 
 gp_Vec2d Sketch::edge_outgoing_dir_(size_t idx_a, size_t idx_b, const Edge& edge) const

@@ -9,6 +9,7 @@
 #include <optional>
 #include <set>
 #include <string>
+#include <vector>
 
 #include "occt_glfw_win.h"
 #include "shp_chamfer.h"
@@ -60,8 +61,19 @@ class Occt_view : protected AIS_ViewController
   void init_default();
 
   std::string to_json() const;
-  void        load(const std::string& json_str);
+  void        load(const std::string& json_str, bool restore_view = true);
   bool        import_step(const std::string& file_path);
+
+  // Undo / redo (document snapshot stack).
+  /// Saves current document (full JSON) and mode. A future delta-based approach would save memory
+  /// (store only changes per step) and CPU (apply/invert deltas instead of full serialize/load).
+  void   push_undo_snapshot();
+  bool   undo();
+  bool   redo();
+  bool   can_undo() const;
+  bool   can_redo() const;
+  size_t undo_stack_size() const;
+  size_t redo_stack_size() const;
 
   void do_frame();
 
@@ -203,6 +215,17 @@ class Occt_view : protected AIS_ViewController
   AIS_InteractiveContext_ptr m_ctx;
   V3d_View_ptr               m_view;
   Occt_glfw_win_ptr          m_occt_window;
+  // Undo / redo
+  static constexpr size_t k_max_undo {50};
+  struct Undo_entry
+  {
+    std::string json;
+    Mode        mode;  // Mode at time of operation; restored when navigating stacks
+  };
+  std::vector<Undo_entry> m_undo_stack;
+  std::vector<Undo_entry> m_redo_stack;
+  bool                    m_restoring {false};
+
   // --------------------------------------------------------------------
   // Dimension related
   bool                       m_show_dim_input {false};

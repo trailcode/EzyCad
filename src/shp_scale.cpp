@@ -67,6 +67,7 @@ void Shp_scale::finalize()
   if (m_shps.empty())
     return;
 
+  view().push_undo_snapshot();
   operation_shps_finalize_();
   reset();
 }

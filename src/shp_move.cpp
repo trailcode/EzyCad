@@ -118,6 +118,7 @@ void Shp_move::finalize()
     // be selected while in move mode.
     return;
 
+  view().push_undo_snapshot();
   operation_shps_finalize_();
   reset();
 }

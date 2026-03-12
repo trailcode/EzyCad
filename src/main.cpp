@@ -174,6 +174,14 @@ int main(int, char**)
       return;
     }
 
+    // Undo/redo: handle regardless of focus so they work from any pane.
+    if (action == GLFW_PRESS && (mods & GLFW_MOD_CONTROL) &&
+        (key == GLFW_KEY_Z || key == GLFW_KEY_Y))
+    {
+      gui.on_key(key, scancode, action, mods);
+      return;
+    }
+
     ImGui_ImplGlfw_KeyCallback(window, key, scancode, action, mods);
     if (!io.WantCaptureKeyboard)
       gui.on_key(key, scancode, action, mods);

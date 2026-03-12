@@ -154,7 +154,7 @@ void GUI::on_key(int key, int scancode, int action, int mods)
     // Check for Ctrl modifier
     bool ctrl_pressed = (mods & GLFW_MOD_CONTROL) != 0;
 
-    // Handle file menu hotkeys
+    // Handle file menu hotkeys and undo/redo
     if (ctrl_pressed)
     {
       switch (key)
@@ -169,6 +169,17 @@ void GUI::on_key(int key, int scancode, int action, int mods)
 
         case GLFW_KEY_S:  // Ctrl+S for Save
           save_file_dialog_();
+          break;
+
+        case GLFW_KEY_Z:  // Ctrl+Z Undo, Ctrl+Shift+Z Redo
+          if ((mods & GLFW_MOD_SHIFT) != 0)
+            m_view->redo();
+          else
+            m_view->undo();
+          break;
+
+        case GLFW_KEY_Y:  // Ctrl+Y Redo
+          m_view->redo();
           break;
 
         default:
@@ -360,6 +371,11 @@ void GUI::menu_bar_()
 
   if (ImGui::BeginMenu("Edit"))
   {
+    if (ImGui::MenuItem("Undo", "Ctrl+Z", false, m_view->can_undo()))
+      m_view->undo();
+    if (ImGui::MenuItem("Redo", "Ctrl+Y", false, m_view->can_redo()))
+      m_view->redo();
+    ImGui::Separator();
     if (ImGui::MenuItem("Add box"))
     {
       const double scale = m_view->get_dimension_scale();
@@ -1543,6 +1559,11 @@ void GUI::dbg_()
     ImGui::End();
     return;
   }
+  // Undo / redo stack
+  ImGui::Text("Undo: %zu (Ctrl+Z)  |  Redo: %zu (Ctrl+Y)  [max 50]",
+              m_view->undo_stack_size(),
+              m_view->redo_stack_size());
+  ImGui::Separator();
   // Get the available content region width
   float available_width = ImGui::GetContentRegionAvail().x;
 
@@ -2304,6 +2325,7 @@ void GUI::save_file_dialog_()
 void GUI::on_file(const std::string& file_path, const std::string& json_str)
 {
   using namespace nlohmann;
+  m_view->push_undo_snapshot();
   const json j = json::parse(json_str);
   if (j.contains("mode") && j["mode"].is_number_integer())
   {

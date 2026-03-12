@@ -1,4 +1,5 @@
 #include "shp_cut.h"
+#include "occt_view.h"
 #include "utl.h"
 
 #include <TopTools_ListOfShape.hxx>
@@ -9,6 +10,7 @@ Shp_cut::Shp_cut(Occt_view& view)
 
 Status Shp_cut::selected_cut()
 {
+  view().push_undo_snapshot();
   CHK_RET(ensure_operation_multi_shps_());
   
   std::vector<ShapeBase_ptr>::iterator itr = m_shps.begin();
