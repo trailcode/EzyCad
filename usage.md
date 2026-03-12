@@ -33,8 +33,10 @@ EzyCad (Easy CAD) is a CAD application for hobbyist machinists to design and edi
 
 ### Main Components
 1. **Menu Bar**
-   - File operations ([New](#new-project), [Open](#open-project), [Save](#save-project), [Import](#importing-3d-geometries))
-   - [Help and settings](#help-and-settings)
+   - **File** — [New](#new-project), [Open](#open-project), [Save](#save-project), Save as, [Import](#importing-3d-geometries), Examples, Exit
+   - **Edit** — [Undo](#edit-operations), [Redo](#edit-operations)
+   - **View** — [Settings, panes and options](#help-and-settings)
+   - **Help** — [About, Usage Guide](#help-and-settings)
 
 2. **Toolbar**
    - Quick access to commonly used tools
@@ -63,19 +65,24 @@ EzyCad (Easy CAD) is a CAD application for hobbyist machinists to design and edi
 
 ### Help and Settings
 
-The **Help** and **Settings** options are available from the menu bar.
-
-**Help menu**
-- **About** — Opens the [project README](README.md).
-- **Usage Guide** — Opens [this usage guide](usage.md).
-
-**Settings**
-- **View → Settings** — Opens the Settings dialog. Use it to adjust:
+**View menu** — Toggle panes and open settings:
+- **Settings** — Opens the Settings dialog. Use it to adjust:
   - **Dark mode** — Toggle dark theme.
   - **3D view background** — Background gradient colors and blend direction.
   - **3D view grid** — Grid colors.
   - **Defaults** — Restore default settings.
-- **File → Save settings** — Saves current settings (layout, view, and the above options) so they persist next time you run EzyCad.
+- **Options** — Show or hide the Options panel.
+- **Sketch List** — Show or hide the Sketch List pane.
+- **Shape List** — Show or hide the Shape List pane.
+- **Log** — Show or hide the Log window.
+- **Lua Console** — Show or hide the Lua console (if available).
+- **Debug** — Show or hide the debug pane (debug builds only).
+
+**Help menu**
+- **About** — Opens the [project README](README.md) in the browser.
+- **Usage Guide** — Opens [this usage guide](usage.md) in the browser.
+
+**Saving settings** — **File → Save settings** (Emscripten) or the application’s save-on-exit behavior saves current layout, view, and the above options so they persist next time you run EzyCad.
 
 ## File Operations
 
