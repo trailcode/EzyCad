@@ -1317,7 +1317,9 @@ Shp_extrude&   Occt_view::shp_extrude()    { return m_shp_extrude;   }
 // clang-format on
 
 // ---------------------------------------------------------------------------
-// Undo / redo
+// Undo / redo (full snapshot per step). A future delta-based approach would save
+// memory (one delta per step instead of full document) and CPU (apply/invert
+// deltas instead of to_json/load).
 void Occt_view::push_undo_snapshot()
 {
   if (m_restoring)

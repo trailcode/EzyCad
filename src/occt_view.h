@@ -65,6 +65,8 @@ class Occt_view : protected AIS_ViewController
   bool        import_step(const std::string& file_path);
 
   // Undo / redo (document snapshot stack).
+  /// Saves current document (full JSON) and mode. A future delta-based approach would save memory
+  /// (store only changes per step) and CPU (apply/invert deltas instead of full serialize/load).
   void   push_undo_snapshot();
   bool   undo();
   bool   redo();
