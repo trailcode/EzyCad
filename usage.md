@@ -5,12 +5,13 @@
 2.  [Getting Started](#getting-started)
 3.  [User Interface](#user-interface)
 4.  [File Operations](#file-operations)
-5.  [Modeling Tools](#modeling-tools)
-6.  [Keyboard Shortcuts](#keyboard-shortcuts)
-7.  [View Controls](#view-controls)
-8.  [Tips and Tricks](#tips-and-tricks)
-9.  [Support](#support)
-10. [Tool Icons](#tool-icons)
+5.  [Edit Operations](#edit-operations)
+6.  [Modeling Tools](#modeling-tools)
+7.  [Keyboard Shortcuts](#keyboard-shortcuts)
+8.  [View Controls](#view-controls)
+9.  [Tips and Tricks](#tips-and-tricks)
+10. [Support](#support)
+11. [Tool Icons](#tool-icons)
 
 ## Introduction
 
@@ -97,6 +98,34 @@ The **Help** and **Settings** options are available from the menu bar.
 4. **Import/Export**
    - [Import external CAD files](#importing-3d-geometries)
    - Export to standard formats (not implemented; see [issue #44](https://github.com/trailcode/EzyCad/issues/44))
+
+## Edit Operations
+
+Edit operations change your model (sketches or 3D shapes) and can be navigated with undo/redo.
+
+- **Delete selected**
+  - Use **D** or the **Delete** key to remove the currently selected sketch elements or shapes.
+  - Deletions are recorded in the undo history and can be undone/redone.
+
+- **Undo and Redo**
+
+  EzyCad includes document-level undo/redo for both sketches and 3D shapes.
+
+  - **What it does**
+    - Tracks modeling operations as steps in a history stack (sketch edits, extrudes, boolean operations, transforms, etc.).
+    - Undo/redo restores the **model state only**; the 3D view (camera) is intentionally not changed so you can review changes from a consistent perspective.
+    - When you undo or redo a step, the application returns to the mode that was active for that operation (e.g., sketch inspection vs normal inspection).
+
+  - **Shortcuts**
+    - **Ctrl+Z** — Undo last operation.
+    - **Ctrl+Y** or **Ctrl+Shift+Z** — Redo.
+    - These shortcuts work even when focus is in a pane such as Sketch List, Options, or Log.
+
+  - **Limits and notes**
+    - The history keeps a fixed number of recent steps (currently 50).
+
+- **Cancel current operation**
+  - Press **Esc** to cancel the active tool (for example, while drawing or transforming) and return to the previous mode.
 
 ## Modeling Tools
 
@@ -997,6 +1026,8 @@ The polar duplicate tool allows you to create multiple copies of selected shapes
 
 | | |
 | ---: | --- |
+| **Ctrl+Z** | Undo last operation |
+| **Ctrl+Y** / **Ctrl+Shift+Z** | Redo |
 | **Ctrl+O** | Open file |
 | **Ctrl+S** | Save file |
 | **Ctrl+Shift+S** | Save as |
