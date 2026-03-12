@@ -132,7 +132,7 @@ Edit operations change your model (sketches or 3D shapes) and can be navigated w
   EzyCad includes document-level undo/redo for both sketches and 3D shapes.
 
   - **What it does**
-    - Tracks modeling operations as steps in a history stack (sketch edits, extrudes, boolean operations, transforms, etc.).
+    - Tracks modeling operations as steps in a history stack (sketch edits, [extrudes](#extrude-sketch-face-tool-e), [boolean operations](#other-feature-operations), [transforms](#3d-modeling), etc.).
     - Undo/redo restores the **model state only**; the 3D view (camera) is intentionally not changed so you can review changes from a consistent perspective.
     - When you undo or redo a step, the application returns to the mode that was active for that operation (e.g., sketch inspection vs normal inspection).
 
@@ -148,10 +148,10 @@ Edit operations change your model (sketches or 3D shapes) and can be navigated w
 
 Press **Esc** to cancel the current action or step back to a broader mode.
 
-- **If something is in progress:** Esc cancels it and discards the change. Examples: cancel a line you are drawing, revert an unconfirmed move/rotate/scale, cancel extrude preview, clear the distance or angle input dialog.
+- **If something is in progress:** Esc cancels it and discards the change. Examples: cancel a line you are drawing, revert an unconfirmed [move](#shape-move-tool-g)/[rotate](#shape-rotate-tool-r)/[scale](#shape-scale-tool-s), cancel [extrude](#extrude-sketch-face-tool-e) preview, clear the distance or angle input dialog.
 - **If nothing is in progress:** Esc steps the application to the **parent mode** (one level up):
   - From a **sketch tool** (e.g. Add line, Add circle, Operation axis) → **Sketch inspection mode**.
-  - From **Sketch inspection**, **Normal**, or any **shape tool** (Move, Rotate, Scale, Extrude, Chamfer, Fillet, Polar duplicate, Create sketch from face) → **Normal** (inspection) mode.
+  - From **Sketch inspection**, **Normal**, or any **shape tool** ([Move](#shape-move-tool-g), [Rotate](#shape-rotate-tool-r), [Scale](#shape-scale-tool-s), [Extrude](#extrude-sketch-face-tool-e), [Chamfer](#other-feature-operations), [Fillet](#other-feature-operations), [Polar duplicate](#shape-polar-duplicate-tool), [Create sketch from face](#create-sketch-from-planar-face-tool)) → **Normal** (inspection) mode.
 
 So repeated Esc from a sketch drawing tool first cancels the current element, then returns to Sketch inspection, then to Normal.
 
@@ -167,17 +167,17 @@ The typical modeling workflow in EzyCad follows these steps:
 
 2. **Extrude the Sketch**: Use the [Extrude tool](#extrude-sketch-face-tool-e) to convert 2D sketch faces into 3D solid shapes by extending them perpendicular to the sketch plane.
 
-3. **Modify 3D Shapes**: Use [3D Modeling tools](#3d-modeling) to transform shapes (move, rotate, scale) or create patterns (polar duplicate).
+3. **Modify 3D Shapes**: Use [3D Modeling tools](#3d-modeling) to transform shapes ([move](#shape-move-tool-g), [rotate](#shape-rotate-tool-r), [scale](#shape-scale-tool-s)) or create patterns ([polar duplicate](#shape-polar-duplicate-tool)).
 
-4. **Apply Feature Operations**: Use boolean operations (cut, fuse, common) or feature operations (chamfer, fillet) to refine your 3D model.
+4. **Apply Feature Operations**: Use [boolean operations](#other-feature-operations) (cut, fuse, common) or [feature operations](#other-feature-operations) (chamfer, fillet) to refine your 3D model.
 
 **Key Concepts:**
 
 | | |
 | ---: | --- |
 | **Sketches** | 2D drawings on a plane that define the profile of your 3D shape |
-| **Faces** | Closed regions within a sketch that can be extruded into 3D |
-| **Shapes** | 3D solid objects created from extruded sketch faces |
+| **Faces** | Closed regions within a sketch that can be [extruded](#extrude-sketch-face-tool-e) into 3D |
+| **Shapes** | 3D solid objects created from [extruded](#extrude-sketch-face-tool-e) sketch faces |
 | **Feature Operations** | Transform sketches into 3D geometry or modify existing 3D shapes |
 
 ### Importing 3D Geometries
@@ -202,9 +202,9 @@ In addition to creating 3D shapes from sketches, EzyCad supports importing exist
 1. Use the **File** menu and select **Import**
 2. Choose a supported file format (STEP, IGES, or STL)
 3. The imported 3D shapes will be added to your workspace
-4. Imported shapes can be moved, rotated, and used in boolean operations just like shapes created from sketches
+4. Imported shapes can be moved, rotated, and used in [boolean operations](#other-feature-operations) just like shapes created from sketches
 
-**Note**: Imported 3D geometries are added as solid shapes and can be combined with your sketched designs using boolean operations (cut, fuse, common) or modified using transform tools.
+**Note**: Imported 3D geometries are added as solid shapes and can be combined with your sketched designs using [boolean operations](#other-feature-operations) (cut, fuse, common) or modified using [transform tools](#3d-modeling).
 
 For detailed information on creating 2D geometry, see the [2D Sketching](#2d-sketching) section. For information on working with 3D shapes, see the [3D Modeling](#3d-modeling) section.
 
@@ -408,8 +408,8 @@ The circle tool follows this workflow:
 
 | | |
 | ---: | --- |
-| **Extrusion** | Select the circle face and extrude to create cylindrical shapes |
-| **Boolean Operations** | Use circles in cut, fuse, or common operations |
+| **Extrusion** | Select the circle face and [extrude](#extrude-sketch-face-tool-e) to create cylindrical shapes |
+| **Boolean Operations** | Use circles in [cut, fuse, or common](#other-feature-operations) operations |
 | **Pattern Creation** | Use circles as the basis for polar arrays or other patterns |
 | **Dimensioning** | Add radius or diameter dimensions to circles |
 
@@ -520,7 +520,7 @@ The square tool allows you to create perfect squares by defining a center point 
 - The distance from center to edge midpoint determines half the side length
 - Use the snap feature to create squares that are precisely positioned relative to existing geometry
 - The square tool works in any sketch plane
-- Squares automatically form closed faces that can be extruded
+- Squares automatically form closed faces that can be [extruded](#extrude-sketch-face-tool-e)
 
 ##### Rectangle Tool (Two Points)
 
@@ -558,7 +558,7 @@ The rectangle tool allows you to create rectangles by defining two opposite corn
 - The rectangle edges are automatically aligned with the coordinate axes
 - Use the snap feature to create rectangles that are precisely positioned relative to existing geometry
 - The rectangle tool works in any sketch plane
-- Rectangles automatically form closed faces that can be extruded
+- Rectangles automatically form closed faces that can be [extruded](#extrude-sketch-face-tool-e)
 
 ##### Rectangle Tool (Center Point)
 
@@ -596,7 +596,7 @@ The rectangle with center point tool allows you to create rectangles by defining
 - The distance from center to corner determines the rectangle's dimensions
 - Use the snap feature to create rectangles that are precisely positioned relative to existing geometry
 - The rectangle tool works in any sketch plane
-- Rectangles automatically form closed faces that can be extruded
+- Rectangles automatically form closed faces that can be [extruded](#extrude-sketch-face-tool-e)
 
 **Comparison of Rectangle Tools:**
 
@@ -662,7 +662,7 @@ The slot tool allows you to create an oblong or oval-shaped slot with rounded en
 - The slot orientation (which dimension is length vs width/height) is determined by the direction from the first to the second arc center
 - Use the snap feature to create slots that connect precisely to existing geometry
 - The slot tool works in any sketch plane
-- Slots automatically form closed faces that can be extruded
+- Slots automatically form closed faces that can be [extruded](#extrude-sketch-face-tool-e)
 - The slot orientation is determined by the direction from the first to the second arc center
 
 **Technical details:**
@@ -807,7 +807,7 @@ The create sketch from planar face tool allows you to extract the boundary of a 
 - **Planar face only**: The selected face must be flat (planar). Common planar faces include:
   - Flat surfaces on boxes or rectangular shapes
   - Flat faces on imported STEP/IGES models
-  - Top or bottom faces of extruded shapes
+  - Top or bottom faces of [extruded](#extrude-sketch-face-tool-e) shapes
   - Any face that lies in a single plane
 
 **Error Handling:**
@@ -831,9 +831,9 @@ The create sketch from planar face tool allows you to extract the boundary of a 
 | | |
 | ---: | --- |
 | **Reverse engineering** | Extract profiles from imported 3D models |
-| **Feature modification** | Create a sketch from an existing face, modify it, and extrude to create a new feature |
+| **Feature modification** | Create a sketch from an existing face, modify it, and [extrude](#extrude-sketch-face-tool-e) to create a new feature |
 | **Reference geometry** | Use existing face boundaries as reference for new sketches |
-| **Model editing** | Extract a face boundary, modify it, and use it in boolean operations |
+| **Model editing** | Extract a face boundary, modify it, and use it in [boolean operations](#other-feature-operations) |
 | **Workflow efficiency** | Quickly create sketches from existing geometry instead of manually recreating profiles |
 
 **Technical Details:**
@@ -1003,16 +1003,16 @@ The extrude tool allows you to create 3D solid shapes by extruding 2D sketch fac
 - Use the distance input dialog for precise measurements
 - The extrusion direction depends on which side of the face plane you move the mouse to
 - Multiple faces from the same sketch can be extruded separately
-- Extruded shapes can be used in boolean operations (cut, fuse, common)
+- Extruded shapes can be used in [boolean operations](#other-feature-operations) (cut, fuse, common)
 
 **Common Use Cases:**
 
 | | |
 | ---: | --- |
-| **Extrusion** | Select the circle face and extrude to create cylindrical shapes |
-| **Base features** | Create the base feature of a part by extruding a profile |
-| **Additive features** | Extrude additional features on existing parts |
-| **Through features** | Extrude holes or cutouts by using the cut operation after extrusion |
+| **Extrusion** | Select the circle face and [extrude](#extrude-sketch-face-tool-e) to create cylindrical shapes |
+| **Base features** | Create the base feature of a part by [extruding](#extrude-sketch-face-tool-e) a profile |
+| **Additive features** | [Extrude](#extrude-sketch-face-tool-e) additional features on existing parts |
+| **Through features** | Extrude holes or cutouts by using the [cut](#other-feature-operations) operation after extrusion |
 
 #### Shape Polar Duplicate Tool
 
