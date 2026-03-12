@@ -1,4 +1,5 @@
 #include "shp_fuse.h"
+#include "occt_view.h"
 #include "utl.h"
 
 #include <BRepAlgoAPI_Fuse.hxx>
@@ -8,6 +9,7 @@ Shp_fuse::Shp_fuse(Occt_view& view)
 
 Status Shp_fuse::selected_fuse()
 {
+  view().push_undo_snapshot();
   CHK_RET(ensure_operation_multi_shps_());
   
   std::vector<ShapeBase_ptr>::iterator itr = m_shps.begin();

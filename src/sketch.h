@@ -93,6 +93,9 @@ class Sketch
   const std::string& get_name() const;
   void               set_name(const std::string& name);
 
+  /// True if this sketch has at least one edge (used e.g. to pick mode after undo/redo).
+  bool has_edges() const;
+
   void          on_mode();
   Mode          get_mode() const;
   const gp_Pln& get_plane() const;

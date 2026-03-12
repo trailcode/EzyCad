@@ -79,6 +79,7 @@ Status Shp_polar_dup::dup()
 {
   if (!m_polar_arm_end.has_value())
     return Status::user_error("Polar arm not set.");
+  view().push_undo_snapshot();
 
   const double  step_angle = m_polar_angle / double(m_num_elms);
   const gp_Pln& sketch_pln = view().curr_sketch().get_plane();

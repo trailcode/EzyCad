@@ -1,4 +1,5 @@
 #include "shp_common.h"
+#include "occt_view.h"
 #include "utl.h"
 
 #include <BRepAlgoAPI_Common.hxx>
@@ -8,6 +9,7 @@ Shp_common::Shp_common(Occt_view& view)
 
 Status Shp_common::selected_common()
 {
+  view().push_undo_snapshot();
   CHK_RET(ensure_operation_multi_shps_());
 
   std::vector<ShapeBase_ptr>::iterator itr = m_shps.begin();

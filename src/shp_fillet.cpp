@@ -13,6 +13,7 @@ Shp_fillet::Shp_fillet(Occt_view& view)
 
 Status Shp_fillet::add_fillet(const ScreenCoords& screen_coords, const Fillet_mode fillet_mode)
 {
+  view().push_undo_snapshot();
   ShapeBase_ptr fillet_src_shp = ShapeBase_ptr::DownCast(get_shape_(screen_coords));
   if (fillet_src_shp.IsNull())
     return Status::user_error("Click on a shape.");
