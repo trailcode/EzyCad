@@ -192,12 +192,13 @@ For detailed information on creating 2D geometry, see the [2D Sketching](#2d-ske
 
 2. **Sketch Operations**
    - [Define operation axis](#operation-axis-tool) <img src="icons/Sketcher_MirrorSketch.png" alt="Operation Axis Tool" width="20" height="20">
+      - Mirror sketches
    - [Toggle edge dimensions](#toggle-edge-dimensions-tool) <img src="icons/TechDraw_LengthDimension.png" alt="Toggle Edge Dimensions Tool" width="20" height="20">
-   - Mirror sketches
    - [Create sketch from planar face](#create-sketch-from-planar-face-tool) <img src="icons/Macro_FaceToSketch_48.png" alt="Create Sketch from Planar Face Tool" width="20" height="20">
 
 #### Line Edge Creation Tools
 ![Line Edge Tool](icons/Sketcher_Element_Line_Edge.png)
+
 EzyCad provides tools for creating individual line edges in sketch mode, allowing you to build complex geometries one edge at a time.
 
 ##### Single Line Edge Tool
@@ -311,9 +312,9 @@ The multi-line edge tool allows you to create multiple connected line segments i
 
 #### Circle Creation Tools
 
-EzyCad provides a method for creating circles in sketch mode using the **center-radius approach**.
-
 ![Circle Tool](icons/Sketcher_CreateCircle.png)
+
+EzyCad provides a method for creating circles in sketch mode using the **center-radius approach**.
 
 ##### Center-Radius Circle Tool
 
@@ -652,9 +653,9 @@ The slot tool allows you to create an oblong or oval-shaped slot with rounded en
 
 #### Operation Axis Tool
 
-The operation axis tool allows you to define a reference line for mirroring and revolving operations in sketches.
-
 ![Operation Axis Tool](icons/Sketcher_MirrorSketch.png)
+
+The operation axis tool allows you to define a reference line for mirroring and revolving operations in sketches.
 
 **Features:**
 
@@ -692,7 +693,6 @@ Once an axis is defined, the options panel will show:
 | | |
 | ---: | --- |
 | **Escape** | Cancel the current axis definition |
-| **Enter** | Finalize the axis (after setting both points) |
 
 **Tips:**
 - The operation axis is a reference line used for geometric transformations
@@ -702,9 +702,9 @@ Once an axis is defined, the options panel will show:
 
 #### Toggle Edge Dimensions Tool
 
-The toggle edge dimensions tool allows you to show or hide length dimension annotations on individual sketch edges, making it easier to verify measurements and understand the geometry of your sketches.
-
 ![Toggle Edge Dimensions Tool](icons/TechDraw_LengthDimension.png)
+
+The toggle edge dimensions tool allows you to show or hide length dimension annotations on individual sketch edges, making it easier to verify measurements and understand the geometry of your sketches.
 
 **Features:**
 
@@ -749,9 +749,9 @@ The toggle edge dimensions tool allows you to show or hide length dimension anno
 
 #### Create Sketch from Planar Face Tool
 
-The create sketch from planar face tool allows you to extract the boundary of a planar face from an existing 3D shape and create a new 2D sketch from it. This is useful for reverse engineering, modifying existing shapes, or creating new features based on existing geometry.
-
 ![Create Sketch from Planar Face Tool](icons/Macro_FaceToSketch_48.png)
+
+The create sketch from planar face tool allows you to extract the boundary of a planar face from an existing 3D shape and create a new 2D sketch from it. This is useful for reverse engineering, modifying existing shapes, or creating new features based on existing geometry.
 
 **Features:**
 
@@ -820,10 +820,12 @@ The create sketch from planar face tool allows you to extract the boundary of a 
 1. **Transform Operations**
    - [Move shapes (G)](#shape-move-tool-g) <img src="icons/Assembly_AxialMove.png" alt="Shape Move Tool" width="20" height="20">
    - [Rotate objects (R)](#shape-rotate-tool-r) <img src="icons/Draft_Rotate.png" alt="Shape Rotate Tool" width="20" height="20">
-   - Scale elements [`To-dos` not implemented]
+   - [Scale elements (S)](#shape-scale-tool) <img src="icons/Part_Scale.png" alt="Shape Scale Tool" width="20" height="20">
    - [Polar duplicate](#shape-polar-duplicate-tool) <img src="icons/Draft_PolarArray.png" alt="Polar Duplicate Tool" width="20" height="20">
 
 #### Shape Move Tool (G)
+
+![Shape Move Tool](icons/Assembly_AxialMove.png)
 
 The shape move tool allows you to reposition selected shapes in the 3D viewer with precision and flexibility.
 
@@ -855,6 +857,8 @@ While moving a shape, you can press `Tab` to activate a floating distance input 
 - You can always cancel and try again if the move isn't as expected.
 
 #### Shape Rotate Tool (R)
+
+![Shape Rotate Tool](icons/Draft_Rotate.png)
 
 The shape rotate tool enables precise rotation of selected shapes around a specified axis in the 3D viewer.
 
@@ -894,6 +898,36 @@ The shape rotate tool enables precise rotation of selected shapes around a speci
 - The rotation center point is displayed as a red dot for reference
    - Visible in wirefame rendering of the shape(s)
 - You can combine rotation with other operations for complex transformations
+
+#### Shape Scale Tool (S)
+
+![Shape Scale Tool](icons/Part_Scale.png)
+
+The shape scale tool allows you to uniformly scale selected shapes around a computed center point.
+
+**Features:**
+
+| | |
+| ---: | --- |
+| **Automatic center detection** | The scale center is estimated from the bounding box center of the selected shapes. |
+| **Screen-plane scaling** | Scaling happens in a plane derived from the current view, making the interaction intuitive. |
+| **Interactive preview** | Moving the mouse adjusts the scale factor and updates the shapes in real time. |
+| **Safe bounds** | The scale factor is clamped to a reasonable range (e.g., between very small and very large values) to avoid degenerate geometry. |
+
+**How to Use:**
+
+1. **Select shapes:** Select one or more shapes in the 3D view or Shape List.
+2. **Activate Scale Tool:** Click the *Shape scale* icon in the toolbar (or choose Scale from the Edit/Transform area if present).  
+3. **Move the mouse:**  
+   - The tool computes a scale center and a view-aligned plane.  
+   - Moving the mouse away from or toward the center changes the scale factor and previews the scaled result.
+4. **Finalize:** Confirm the operation (e.g., by clicking to complete the interaction) to apply the scale permanently.
+5. **Cancel:** Press **Esc** to cancel and revert to the original shape sizes.
+
+**Tips:**
+
+- Scale works best when the view direction makes the movement relative to the center easy to see (avoid looking exactly edge-on at the objects).
+- Because the operation is undoable, you can experiment with different scale amounts and step back with **Ctrl+Z** if needed.
 
 ## Feature Operations
 
@@ -1042,9 +1076,10 @@ The polar duplicate tool allows you to create multiple copies of selected shapes
 | | |
 | ---: | --- |
 | **G** | Move mode |
+| **R** | Rotate mode |
+| **S** | Scale mode |
 | **E** | Extrude mode |
 | **D** | Delete selected |
-| **L** | (Reserved for future use) |
 
 ## View Controls
 
@@ -1111,8 +1146,8 @@ The polar duplicate tool allows you to create multiple copies of selected shapes
 ### Basic Operations
 - <img src="icons/User.png" alt="User" width="20" height="20"> - Inspection mode
 - <img src="icons/Assembly_AxialMove.png" alt="Assembly_AxialMove" width="20" height="20"> - Shape move (G)
-- <img src="icons/Draft_Rotate.png" alt="Draft_Rotate" width="20" height="20"> - Shape rotate
-- <img src="icons/Part_Scale.png" alt="Part_Scale" width="20" height="20"> - Shape scale
+- <img src="icons/Draft_Rotate.png" alt="Draft_Rotate" width="20" height="20"> - Shape rotate (R)
+- <img src="icons/Part_Scale.png" alt="Part_Scale" width="20" height="20"> - Shape scale (S)
 
 ### Sketch Tools
 - <img src="icons/Workbench_Sketcher_none.png" alt="Workbench_Sketcher_none" width="20" height="20"> - Sketch inspection mode
