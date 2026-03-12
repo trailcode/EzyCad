@@ -269,9 +269,8 @@ void Occt_view::init_default()
          aValueIter.Next())
     {
       if (!aGlInfo.IsEmpty())
-      {
         aGlInfo += "\n";
-      }
+      
       aGlInfo += TCollection_AsciiString("  ") + aValueIter.Key() + ": " +
                  aValueIter.Value();
     }
@@ -1323,8 +1322,12 @@ void Occt_view::push_undo_snapshot()
 {
   if (m_restoring)
     return;
+
   m_redo_stack.clear();
-  m_undo_stack.push_back(to_json());
+  Undo_entry entry;
+  entry.json = to_json();
+  entry.mode = m_gui.get_mode();
+  m_undo_stack.push_back(std::move(entry));
   if (m_undo_stack.size() > k_max_undo)
     m_undo_stack.erase(m_undo_stack.begin());
 }
@@ -1333,11 +1336,19 @@ bool Occt_view::undo()
 {
   if (!can_undo())
     return false;
+
   m_restoring = true;
-  const std::string state = std::move(m_undo_stack.back());
+  const Undo_entry state = m_undo_stack.back();
   m_undo_stack.pop_back();
-  m_redo_stack.push_back(to_json());
-  load(state);
+  Undo_entry redo_entry;
+  redo_entry.json = to_json();
+  redo_entry.mode = m_gui.get_mode();
+  m_redo_stack.push_back(std::move(redo_entry));
+  load(state.json, false);  // Keep current view so undo/redo keeps a single perspective
+  m_gui.set_mode(state.mode);
+  if (state.mode == Mode::Sketch_inspection_mode)
+    m_gui.set_show_sketch_list(true);
+
   m_restoring = false;
   return true;
 }
@@ -1346,11 +1357,19 @@ bool Occt_view::redo()
 {
   if (!can_redo())
     return false;
+
   m_restoring = true;
-  const std::string state = std::move(m_redo_stack.back());
+  const Undo_entry state = m_redo_stack.back();
   m_redo_stack.pop_back();
-  m_undo_stack.push_back(to_json());
-  load(state);
+  Undo_entry undo_entry;
+  undo_entry.json = to_json();
+  undo_entry.mode = m_gui.get_mode();
+  m_undo_stack.push_back(std::move(undo_entry));
+  load(state.json, false);  // Keep current view so undo/redo keeps a single perspective
+  m_gui.set_mode(state.mode);
+  if (state.mode == Mode::Sketch_inspection_mode)
+    m_gui.set_show_sketch_list(true);
+
   m_restoring = false;
   return true;
 }
@@ -1363,6 +1382,16 @@ bool Occt_view::can_undo() const
 bool Occt_view::can_redo() const
 {
   return !m_redo_stack.empty();
+}
+
+size_t Occt_view::undo_stack_size() const
+{
+  return m_undo_stack.size();
+}
+
+size_t Occt_view::redo_stack_size() const
+{
+  return m_redo_stack.size();
 }
 
 // ---------------------------------------------------------------------------
@@ -1427,7 +1456,7 @@ std::string Occt_view::to_json() const
   return j.dump(2);
 }
 
-void Occt_view::load(const std::string& json_str)
+void Occt_view::load(const std::string& json_str, bool restore_view)
 {
   using namespace nlohmann;
   for (AIS_Shape_ptr& s : m_shps)
@@ -1478,8 +1507,8 @@ void Occt_view::load(const std::string& json_str)
   }
 
   // ---------------------------------------------------------------------------
-  // Restore view / camera state if present
-  if (!m_view.IsNull() && j.contains("view") && j["view"].is_object())
+  // Restore view / camera state if requested (e.g. File > Open; not for undo/redo)
+  if (restore_view && !m_view.IsNull() && j.contains("view") && j["view"].is_object())
   {
     const json& view_json = j["view"];
     try

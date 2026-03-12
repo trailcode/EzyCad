@@ -61,15 +61,17 @@ class Occt_view : protected AIS_ViewController
   void init_default();
 
   std::string to_json() const;
-  void        load(const std::string& json_str);
+  void        load(const std::string& json_str, bool restore_view = true);
   bool        import_step(const std::string& file_path);
 
   // Undo / redo (document snapshot stack).
-  void push_undo_snapshot();
-  bool undo();
-  bool redo();
-  bool can_undo() const;
-  bool can_redo() const;
+  void   push_undo_snapshot();
+  bool   undo();
+  bool   redo();
+  bool   can_undo() const;
+  bool   can_redo() const;
+  size_t undo_stack_size() const;
+  size_t redo_stack_size() const;
 
   void do_frame();
 
@@ -212,10 +214,15 @@ class Occt_view : protected AIS_ViewController
   V3d_View_ptr               m_view;
   Occt_glfw_win_ptr          m_occt_window;
   // Undo / redo
-  static constexpr size_t           k_max_undo {50};
-  std::vector<std::string>         m_undo_stack;
-  std::vector<std::string>         m_redo_stack;
-  bool                             m_restoring {false};
+  static constexpr size_t k_max_undo {50};
+  struct Undo_entry
+  {
+    std::string json;
+    Mode        mode;
+  };
+  std::vector<Undo_entry> m_undo_stack;
+  std::vector<Undo_entry> m_redo_stack;
+  bool                    m_restoring {false};
 
   // --------------------------------------------------------------------
   // Dimension related

@@ -1559,6 +1559,11 @@ void GUI::dbg_()
     ImGui::End();
     return;
   }
+  // Undo / redo stack
+  ImGui::Text("Undo: %zu (Ctrl+Z)  |  Redo: %zu (Ctrl+Y)  [max 50]",
+              m_view->undo_stack_size(),
+              m_view->redo_stack_size());
+  ImGui::Separator();
   // Get the available content region width
   float available_width = ImGui::GetContentRegionAvail().x;
 
