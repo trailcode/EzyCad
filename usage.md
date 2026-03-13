@@ -177,7 +177,7 @@ The typical modeling workflow in EzyCad follows these steps:
 | ---: | --- |
 | **Sketches** | 2D drawings on a plane that define the profile of your 3D shape |
 | **Faces** | Closed regions within a sketch that can be [extruded](#extrude-sketch-face-tool-e) into 3D |
-| **Shapes** | 3D solid objects created from [extruded](#extrude-sketch-face-tool-e) sketch faces |
+| **Shapes** | 3D solid objects created from extruded sketch faces |
 | **Feature Operations** | Transform sketches into 3D geometry or modify existing 3D shapes |
 
 ### Importing 3D Geometries
