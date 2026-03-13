@@ -1304,16 +1304,16 @@ std::list<ShapeBase_ptr>& Occt_view::get_shapes()
 }
 
 // clang-format off
-Shp_move&      Occt_view::shp_move()      { return m_shp_move;      }
-Shp_rotate&    Occt_view::shp_rotate()    { return m_shp_rotate;    }
-Shp_scale&     Occt_view::shp_scale()     { return m_shp_scale;     }
-Shp_chamfer&   Occt_view::shp_chamfer()   { return m_shp_chamfer;   }
-Shp_fillet&    Occt_view::shp_fillet()    { return m_shp_fillet;    }
-Shp_cut&       Occt_view::shp_cut()       { return m_shp_cut;       }
-Shp_fuse&      Occt_view::shp_fuse()      { return m_shp_fuse;      }
-Shp_common&    Occt_view::shp_common()    { return m_shp_common;    }
-Shp_polar_dup& Occt_view::shp_polar_dup() { return m_shp_polar_dup; }
-Shp_extrude&   Occt_view::shp_extrude()    { return m_shp_extrude;   }
+Shp_move&      Occt_view::shp_move()      { return m_shp_move;       }
+Shp_rotate&    Occt_view::shp_rotate()    { return m_shp_rotate;     }
+Shp_scale&     Occt_view::shp_scale()     { return m_shp_scale;      }
+Shp_chamfer&   Occt_view::shp_chamfer()   { return m_shp_chamfer;    }
+Shp_fillet&    Occt_view::shp_fillet()    { return m_shp_fillet;     }
+Shp_cut&       Occt_view::shp_cut()       { return m_shp_cut;        }
+Shp_fuse&      Occt_view::shp_fuse()      { return m_shp_fuse;       }
+Shp_common&    Occt_view::shp_common()    { return m_shp_common;     }
+Shp_polar_dup& Occt_view::shp_polar_dup() { return m_shp_polar_dup;  }
+Shp_extrude&   Occt_view::shp_extrude()   { return m_shp_extrude;    }
 // clang-format on
 
 // ---------------------------------------------------------------------------
