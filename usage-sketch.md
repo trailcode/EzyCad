@@ -28,9 +28,7 @@ This guide covers all 2D sketching tools and operations in EzyCad. For the main 
    - [Add slots](#slot-creation-tool) <img src="icons/Sketcher_CreateSlot.png" alt="Slot Tool" width="20" height="20">
 
 2. **Sketch Operations**
-   - [Define operation axis](#operation-axis-tool) <img src="icons/Sketcher_MirrorSketch.png" alt="Operation Axis Tool" width="20" height="20">
-      - Mirror sketches
-      - Revolve edges or faces
+   - [Define operation axis](#operation-axis-tool) — Mirror sketches, revolve edges or faces. <img src="icons/Sketcher_MirrorSketch.png" alt="Operation Axis Tool" width="20" height="20">
    - [Toggle edge dimensions](#toggle-edge-dimensions-tool) <img src="icons/TechDraw_LengthDimension.png" alt="Toggle Edge Dimensions Tool" width="20" height="20">
    - [Create sketch from planar face](#create-sketch-from-planar-face-tool) <img src="icons/Macro_FaceToSketch_48.png" alt="Create Sketch from Planar Face Tool" width="20" height="20">
 
