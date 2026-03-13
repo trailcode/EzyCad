@@ -214,10 +214,10 @@ See the **[2D Sketching guide](usage-sketch.md)** for full documentation of sket
 
 ### 3D Modeling
 1. **Transform Operations**
-   - [Move shapes (G)](#shape-move-tool-g) <img src="icons/Assembly_AxialMove.png" alt="Shape Move Tool" width="20" height="20">
-   - [Rotate objects (R)](#shape-rotate-tool-r) <img src="icons/Draft_Rotate.png" alt="Shape Rotate Tool" width="20" height="20">
-   - [Scale elements (S)](#shape-scale-tool) <img src="icons/Part_Scale.png" alt="Shape Scale Tool" width="20" height="20">
-   - [Polar duplicate](#shape-polar-duplicate-tool) <img src="icons/Draft_PolarArray.png" alt="Polar Duplicate Tool" width="20" height="20">
+   - <img src="icons/Assembly_AxialMove.png" alt="Shape Move Tool" width="20" height="20"> [Move shapes (G)](#shape-move-tool-g)
+   - <img src="icons/Draft_Rotate.png" alt="Shape Rotate Tool" width="20" height="20"> [Rotate objects (R)](#shape-rotate-tool-r)
+   - <img src="icons/Part_Scale.png" alt="Shape Scale Tool" width="20" height="20"> [Scale elements (S)](#shape-scale-tool)
+   - <img src="icons/Draft_PolarArray.png" alt="Polar Duplicate Tool" width="20" height="20"> [Polar duplicate](#shape-polar-duplicate-tool)
 
 #### Shape Move Tool (G)
 
@@ -236,7 +236,7 @@ The shape move tool allows you to reposition selected shapes in the 3D viewer wi
 | **Reset and Cancel** | Press <kbd>Esc</kbd> to cancel and revert to the original position at any time during the move operation. |
 
 **How to Use:**
-1. **Activate Move Tool:** Select one or more shapes and press <kbd>G</kbd> or click the <img src="icons/Assembly_AxialMove.png" alt="Assembly_AxialMove" width="20" height="20"> icon.
+1. **Activate Move Tool:** <img src="icons/Assembly_AxialMove.png" alt="Assembly_AxialMove" width="20" height="20"> Select one or more shapes and press <kbd>G</kbd> or click the icon.
 2. **Constrain Movement (Optional):** Use the options panel to lock movement to a specific axis, or use keyboard shortcuts (e.g., <kbd>X</kbd>, <kbd>Y</kbd>, <kbd>Z</kbd>).
 
    ![Move constrain axis example](doc/gen/move_constrain_axis.png)
@@ -267,7 +267,7 @@ The shape rotate tool enables precise rotation of selected shapes around a speci
 | **Visual Feedback** | The rotation axis is displayed with color-coded indicators (Red for X, Green for Y, Blue for Z). |
 
 **How to Use:**
-1. **Activate Rotate Tool:** Select one or more shapes and press <kbd>R</kbd> or click the <img src="icons/Draft_Rotate.png" alt="Draft_Rotate" width="20" height="20"> icon. You can also activate the tool and select the shape(s) to rotate afterwards.
+1. **Activate Rotate Tool:** <img src="icons/Draft_Rotate.png" alt="Draft_Rotate" width="20" height="20"> Select one or more shapes and press <kbd>R</kbd> or click the icon. You can also activate the tool and select the shape(s) to rotate afterwards.
 2. **Select Rotation Axis: (Optional)**
    
    ![Rotate constrain axis example](doc/gen/rotate_constrain_axis.png)
@@ -313,7 +313,7 @@ The shape scale tool allows you to uniformly scale selected shapes around a comp
 **How to Use:**
 
 1. **Select shapes:** Select one or more shapes in the 3D view or Shape List.
-2. **Activate Scale Tool:** Click the *Shape scale* icon in the toolbar (or choose Scale from the Edit/Transform area if present).  
+2. **Activate Scale Tool:** <img src="icons/Part_Scale.png" alt="Shape Scale Tool" width="20" height="20"> Click the *Shape scale* icon in the toolbar (or choose Scale from the Edit/Transform area if present).  
 3. **Move the mouse:**  
    - The tool computes a scale center and a view-aligned plane.  
    - Moving the mouse away from or toward the center changes the scale factor and previews the scaled result.
@@ -345,7 +345,7 @@ The extrude tool allows you to create 3D solid shapes by extruding 2D sketch fac
 | **Bidirectional extrusion** | The extrusion direction is determined by which side of the face plane you move the mouse to |
 
 **How to Use:**
-1. **Activate Extrude Tool**: Press <kbd>E</kbd> or click the <img src="icons/Design456_Extrude.png" alt="Design456_Extrude" width="20" height="20"> icon to enter extrude mode
+1. **Activate Extrude Tool**: <img src="icons/Design456_Extrude.png" alt="Design456_Extrude" width="20" height="20"> Press <kbd>E</kbd> or click the icon to enter extrude mode
 2. **Select Face**: Click on a sketch face that you want to extrude
    - The face must be part of a closed sketch (forming a valid face)
    - The system will automatically select the face closest to the camera if multiple faces overlap
@@ -400,7 +400,7 @@ The polar duplicate tool allows you to create multiple copies of selected shapes
 
 **How to use:**
 1. **Select shapes**: Select one or more shapes that you want to duplicate
-2. **Activate Polar Duplicate Tool**: Click the <img src="icons/Draft_PolarArray.png" alt="Draft_PolarArray" width="20" height="20"> icon to enter polar duplicate mode
+2. **Activate Polar Duplicate Tool**: <img src="icons/Draft_PolarArray.png" alt="Draft_PolarArray" width="20" height="20"> Click the icon to enter polar duplicate mode
 3. **Define polar arm**: Move the mouse to see a preview line (polar arm) from the shape center to the mouse cursor
 4. **Set rotation center**: Click to set the end point of the polar arm
    - The start of the polar arm is at the center of the selected shape(s)
