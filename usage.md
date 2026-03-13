@@ -124,7 +124,7 @@ The window can be closed with its close button; use **View → Sketch List** aga
 Edit operations change your model (sketches or 3D shapes) and can be navigated with undo/redo.
 
 - **Delete selected**
-  - Use **D** or the **Delete** key to remove the currently selected sketch elements or shapes.
+  - Use <kbd>D</kbd> or the <kbd>Delete</kbd> key to remove the currently selected sketch elements or shapes.
   - Deletions are recorded in the undo history and can be undone/redone.
 
 - **Undo and Redo**
@@ -137,8 +137,8 @@ Edit operations change your model (sketches or 3D shapes) and can be navigated w
     - When you undo or redo a step, the application returns to the mode that was active for that operation (e.g., sketch inspection vs normal inspection).
 
   - **Shortcuts**
-    - **Ctrl+Z** — Undo last operation.
-    - **Ctrl+Y** or **Ctrl+Shift+Z** — Redo.
+    - <kbd>Ctrl</kbd>+<kbd>Z</kbd> — Undo last operation.
+    - <kbd>Ctrl</kbd>+<kbd>Y</kbd> or <kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>Z</kbd> — Redo.
     - These shortcuts work even when focus is in a pane such as Sketch List, Options, or Log.
 
   - **Limits and notes**
@@ -146,14 +146,14 @@ Edit operations change your model (sketches or 3D shapes) and can be navigated w
 
 ### Cancel current operation (Esc)
 
-Press **Esc** to cancel the current action or step back to a broader mode.
+Press <kbd>Esc</kbd> to cancel the current action or step back to a broader mode.
 
-- **If something is in progress:** Esc cancels it and discards the change. Examples: cancel a line you are drawing, revert an unconfirmed [move](#shape-move-tool-g)/[rotate](#shape-rotate-tool-r)/[scale](#shape-scale-tool-s), cancel [extrude](#extrude-sketch-face-tool-e) preview, clear the distance or angle input dialog.
-- **If nothing is in progress:** Esc steps the application to the **parent mode** (one level up):
+- **If something is in progress:** <kbd>Esc</kbd> cancels it and discards the change. Examples: cancel a line you are drawing, revert an unconfirmed [move](#shape-move-tool-g)/[rotate](#shape-rotate-tool-r)/[scale](#shape-scale-tool-s), cancel [extrude](#extrude-sketch-face-tool-e) preview, clear the distance or angle input dialog.
+- **If nothing is in progress:** <kbd>Esc</kbd> steps the application to the **parent mode** (one level up):
   - From a **sketch tool** (e.g. Add line, Add circle, Operation axis) → **Sketch inspection mode**.
   - From **Sketch inspection**, **Normal**, or any **shape tool** ([Move](#shape-move-tool-g), [Rotate](#shape-rotate-tool-r), [Scale](#shape-scale-tool-s), [Extrude](#extrude-sketch-face-tool-e), [Chamfer](#other-feature-operations), [Fillet](#other-feature-operations), [Polar duplicate](#shape-polar-duplicate-tool), [Create sketch from face](#create-sketch-from-planar-face-tool)) → **Normal** (inspection) mode.
 
-So repeated Esc from a sketch drawing tool first cancels the current element, then returns to Sketch inspection, then to Normal.
+So repeated <kbd>Esc</kbd> from a sketch drawing tool first cancels the current element, then returns to Sketch inspection, then to Normal.
 
 ## Modeling Tools
 
@@ -240,8 +240,8 @@ The single line edge tool allows you to create straight line segments between tw
 | ---: | --- |
 | **Two-point creation** | Click to set the start point, then click to set the end point |
 | **Real-time preview** | See the line shape while moving the mouse |
-| **Precise length control** | Use the distance input dialog (Tab key) for exact line lengths |
-| **Angle constraint** | Use the angle input dialog (Shift+Tab) to constrain the line to a specific angle |
+| **Precise length control** | Use the distance input dialog (<kbd>Tab</kbd> key) for exact line lengths |
+| **Angle constraint** | Use the angle input dialog (<kbd>Shift</kbd>+<kbd>Tab</kbd>) to constrain the line to a specific angle |
 | **Snap support** | Automatically snaps to existing nodes and geometry (disabled when angle constraint is active) |
 | **Dimension annotations** | Optional length dimensions can be displayed |
 
@@ -250,28 +250,28 @@ The single line edge tool allows you to create straight line segments between tw
 2. Click to set the start point of the line
 3. Move the mouse to see a preview of the line
 4. Click to set the end point, or use input dialogs for precise control:
-   - Press **Tab** to enter an exact length value
-   - Press **Shift+Tab** to enter an exact angle value (in degrees)
-   - When using both: apply angle (Shift+Tab) first, then distance (Tab).
+   - Press <kbd>Tab</kbd> to enter an exact length value
+   - Press <kbd>Shift</kbd>+<kbd>Tab</kbd> to enter an exact angle value (in degrees)
+   - When using both: apply angle (<kbd>Shift</kbd>+<kbd>Tab</kbd>) first, then distance (<kbd>Tab</kbd>).
 5. The line edge will be created and added to your sketch
 
 **Keyboard shortcuts:**
 
 | | |
 | ---: | --- |
-| **Tab** | Open distance input dialog for precise length control |
-| **Shift+Tab** | Open angle input dialog to constrain the line to a specific angle (after first point is set) |
-| **Escape** | Cancel the current line creation |
-| **Enter** | Finalize the line (if using distance or angle input) |
-| **Right-click** | Complete the current line and start a new one |
+| <kbd>Tab</kbd> | Open distance input dialog for precise length control |
+| <kbd>Shift</kbd>+<kbd>Tab</kbd> | Open angle input dialog to constrain the line to a specific angle (after first point is set) |
+| <kbd>Escape</kbd> | Cancel the current line creation |
+| <kbd>Enter</kbd> | Finalize the line (if using distance or angle input) |
+| <kbd>Right-click</kbd> | Complete the current line and start a new one |
 
 **Angle Constraint:**
 - After setting the first point, press **Shift+Tab** to open the angle input dialog
 - Enter the desired angle in degrees (0° = horizontal right, 90° = vertical up, counterclockwise)
 - Once the angle is entered, the line segment is constrained to that angle
 - You can still move the mouse to adjust the length while maintaining the angle
-- The distance input (Tab) can still be used in combination with the angle constraint
-- **Order when using both**: When requiring both an angle and a distance constraint, apply the angle constraint first (Shift+Tab), then the distance constraint (Tab).
+- The distance input (<kbd>Tab</kbd>) can still be used in combination with the angle constraint
+- **Order when using both**: When requiring both an angle and a distance constraint, apply the angle constraint first (<kbd>Shift</kbd>+<kbd>Tab</kbd>), then the distance constraint (<kbd>Tab</kbd>).
 - **Note**: When an angle constraint is active, snapping to nodes is disabled to maintain the angle precision
 
 **Tips:**
@@ -292,8 +292,8 @@ The multi-line edge tool allows you to create multiple connected line segments i
 | ---: | --- |
 | **Continuous edge creation** | Click multiple points to create a chain of connected line segments |
 | **Real-time preview** | See each edge shape while moving the mouse before clicking |
-| **Precise length control** | Use the distance input dialog (Tab key) for exact edge lengths |
-| **Angle constraint** | Use the angle input dialog (Shift+Tab) to constrain the current edge to an angle (in degrees) |
+| **Precise length control** | Use the distance input dialog (<kbd>Tab</kbd> key) for exact edge lengths |
+| **Angle constraint** | Use the angle input dialog (<kbd>Shift</kbd>+<kbd>Tab</kbd>) to constrain the current edge to an angle (in degrees) |
 | **Snap support** | Automatically snaps to existing nodes and geometry |
 | **Distance annotations** | Real-time distance display for the current edge being drawn |
 | **Flexible finalization** | Continue adding edges until you right-click to finalize the entire sequence |
@@ -303,21 +303,21 @@ The multi-line edge tool allows you to create multiple connected line segments i
 2. Click to set the first point (start of the first edge)
 3. Move the mouse to see a preview of the first edge
 4. Click to set the second point (end of first edge, start of second edge), or use input for precise control:
-   - Press **Tab** to enter an exact length value
-   - Press **Shift+Tab** to enter an exact angle (in degrees) for the current edge
-   - When using both angle and distance: apply angle (Shift+Tab) first, then distance (Tab).
+   - Press <kbd>Tab</kbd> to enter an exact length value
+   - Press <kbd>Shift</kbd>+<kbd>Tab</kbd> to enter an exact angle (in degrees) for the current edge
+   - When using both angle and distance: apply angle (<kbd>Shift</kbd>+<kbd>Tab</kbd>) first, then distance (<kbd>Tab</kbd>).
 5. Continue clicking to add more connected edges, each new click starts a new edge from the previous edge's end point
-6. Press **Right-click** to finalize the entire multi-line sequence and add all edges to your sketch
+6. Press <kbd>Right-click</kbd> to finalize the entire multi-line sequence and add all edges to your sketch
 
 **Keyboard shortcuts:**
 
 | | |
 | ---: | --- |
-| **Tab** | Open distance input dialog for precise length control of the current edge |
-| **Shift+Tab** | Open angle input dialog to constrain the current edge to an angle (after first point is set) |
-| **Escape** | Cancel the entire multi-line creation operation |
-| **Enter** | Finalize the current edge length (if using distance input) and continue to the next edge |
-| **Right-click** | Finalize the entire multi-line sequence and complete the operation |
+| <kbd>Tab</kbd> | Open distance input dialog for precise length control of the current edge |
+| <kbd>Shift</kbd>+<kbd>Tab</kbd> | Open angle input dialog to constrain the current edge to an angle (after first point is set) |
+| <kbd>Escape</kbd> | Cancel the entire multi-line creation operation |
+| <kbd>Enter</kbd> | Finalize the current edge length (if using distance input) and continue to the next edge |
+| <kbd>Right-click</kbd> | Finalize the entire multi-line sequence and complete the operation |
 
 **Workflow details:**
 - Each click after the first creates a new edge connected to the previous edge's end point
@@ -330,7 +330,7 @@ The multi-line edge tool allows you to create multiple connected line segments i
 - Multi-line edges are ideal for creating continuous paths, outlines, or complex connected shapes
 - The tool works in any sketch plane
 - Keep clicking to add more edges - there's no limit. For example, you can click 3 times to create 2 edges, or 10 times to create 9 edges. All edges remain temporary until you right-click, which adds all of them to your sketch at once
-- If you make a mistake, press Escape to cancel the entire sequence and start over
+- If you make a mistake, press <kbd>Escape</kbd> to cancel the entire sequence and start over
 - The last edge in the sequence will be removed if it hasn't been finalized (no end point set) when you right-click
 
 **Comparison with Single Line Edge Tool:**
@@ -355,23 +355,23 @@ The center-radius circle tool allows you to create circles by defining a center 
 | ---: | --- |
 | **Two-point creation** | Click to set the center, then click to set the radius |
 | **Real-time preview** | See the circle shape while dragging the radius point |
-| **Precise radius control** | Use the distance input dialog (Tab key) for exact radius values |
+| **Precise radius control** | Use the distance input dialog (<kbd>Tab</kbd> key) for exact radius values |
 | **Snap support** | Automatically snaps to existing nodes and geometry |
 
 **How to use:**
 1. Select the **Circle** tool from the toolbar (circle icon)
 2. Click to set the center point of the circle
 3. Move the mouse to see a preview of the circle
-4. Click to set the radius point, or press **Tab** to enter an exact radius value
+4. Click to set the radius point, or press <kbd>Tab</kbd> to enter an exact radius value
 5. The circle will be created and added to your sketch
 
 **Keyboard shortcuts:**
 
 | | |
 | ---: | --- |
-| **Tab** | Open distance input dialog for precise radius control |
-| **Escape** | Cancel the current circle creation |
-| **Enter** | Finalize the circle (if using distance input) |
+| <kbd>Tab</kbd> | Open distance input dialog for precise radius control |
+| <kbd>Escape</kbd> | Cancel the current circle creation |
+| <kbd>Enter</kbd> | Finalize the circle (if using distance input) |
 
 **Tips:**
 - Use the snap feature to create circles that are precisely positioned relative to existing geometry
@@ -458,7 +458,7 @@ The arc segment tool allows you to create circular arc edges by defining three p
 
 | | |
 | ---: | --- |
-| **Escape** | Cancel the current arc creation (clears all points) |
+| <kbd>Escape</kbd> | Cancel the current arc creation (clears all points) |
 | **Note** | The arc is automatically finalized after the third point, so no manual finalization is needed |
 
 **Tips:**
@@ -498,23 +498,23 @@ The square tool allows you to create perfect squares by defining a center point 
 | **Real-time preview** | See the square shape while moving the mouse |
 | **Perfect square** | Automatically ensures all sides are equal length |
 | **Orientation control** | The square's orientation is determined by the direction from center to edge midpoint |
-| **Precise size control** | Use the distance input dialog (Tab key) for exact side lengths |
+| **Precise size control** | Use the distance input dialog (<kbd>Tab</kbd> key) for exact side lengths |
 | **Snap support** | Automatically snaps to existing nodes and geometry |
 
 **How to use:**
 1. Select the **Square** tool from the toolbar <img src="icons/Sketcher_CreateSquare.png" alt="Sketcher_CreateSquare" width="20" height="20">
 2. Click to set the center point of the square
 3. Move the mouse to see a preview of the square
-4. Click to set the midpoint of one edge (this defines both the size and orientation), or press **Tab** to enter an exact side length value
+4. Click to set the midpoint of one edge (this defines both the size and orientation), or press <kbd>Tab</kbd> to enter an exact side length value
 5. The square will be created with four edges and added to your sketch
 
 **Keyboard shortcuts:**
 
 | | |
 | ---: | --- |
-| **Tab** | Open distance input dialog for precise side length control |
-| **Escape** | Cancel the current square creation |
-| **Enter** | Finalize the square (if using distance input) |
+| <kbd>Tab</kbd> | Open distance input dialog for precise side length control |
+| <kbd>Escape</kbd> | Cancel the current square creation |
+| <kbd>Enter</kbd> | Finalize the square (if using distance input) |
 
 **Tips:**
 - The distance from center to edge midpoint determines half the side length
@@ -534,7 +534,7 @@ The rectangle tool allows you to create rectangles by defining two opposite corn
 | ---: | --- |
 | **Two-point creation** | Click to set the first corner, then click to set the opposite corner |
 | **Real-time preview** | See the rectangle shape while moving the mouse |
-| **Precise size control** | Use the distance input dialog (Tab key) for exact dimensions |
+| **Precise size control** | Use the distance input dialog (<kbd>Tab</kbd> key) for exact dimensions |
 | **Snap support** | Automatically snaps to existing nodes and geometry |
 | **Automatic corner calculation** | The system automatically calculates the other two corners |
 
@@ -542,16 +542,16 @@ The rectangle tool allows you to create rectangles by defining two opposite corn
 1. Select the **Rectangle** tool from the toolbar <img src="icons/Sketcher_CreateRectangle.png" alt="Sketcher_CreateRectangle" width="20" height="20">
 2. Click to set the first corner point
 3. Move the mouse to see a preview of the rectangle
-4. Click to set the opposite corner point, or press **Tab** to enter exact distance values
+4. Click to set the opposite corner point, or press <kbd>Tab</kbd> to enter exact distance values
 5. The rectangle will be created with four edges and added to your sketch
 
 **Keyboard shortcuts:**
 
 | | |
 | ---: | --- |
-| **Tab** | Open distance input dialog for precise dimension control |
-| **Escape** | Cancel the current rectangle creation |
-| **Enter** | Finalize the rectangle (if using distance input) |
+| <kbd>Tab</kbd> | Open distance input dialog for precise dimension control |
+| <kbd>Escape</kbd> | Cancel the current rectangle creation |
+| <kbd>Enter</kbd> | Finalize the rectangle (if using distance input) |
 
 **Tips:**
 - The two points define opposite corners of the rectangle (diagonal)
@@ -573,23 +573,23 @@ The rectangle with center point tool allows you to create rectangles by defining
 | **Two-point creation** | Click to set the center point, then click to set a corner point |
 | **Real-time preview** | See the rectangle shape while moving the mouse |
 | **Centered creation** | The rectangle is centered on the first point |
-| **Precise size control** | Use the distance input dialog (Tab key) for exact dimensions |
+| **Precise size control** | Use the distance input dialog (<kbd>Tab</kbd> key) for exact dimensions |
 | **Snap support** | Automatically snaps to existing nodes and geometry |
 
 **How to use:**
 1. Select the **Rectangle with Center Point** tool from the toolbar <img src="icons/Sketcher_CreateRectangle_Center.png" alt="Sketcher_CreateRectangle_Center" width="20" height="20">
 2. Click to set the center point of the rectangle
 3. Move the mouse to see a preview of the rectangle
-4. Click to set a corner point (defines both size and orientation), or press **Tab** to enter exact distance values
+4. Click to set a corner point (defines both size and orientation), or press <kbd>Tab</kbd> to enter exact distance values
 5. The rectangle will be created with four edges and added to your sketch
 
 **Keyboard shortcuts:**
 
 | | |
 | ---: | --- |
-| **Tab** | Open distance input dialog for precise dimension control |
-| **Escape** | Cancel the current rectangle creation |
-| **Enter** | Finalize the rectangle (if using distance input) |
+| <kbd>Tab</kbd> | Open distance input dialog for precise dimension control |
+| <kbd>Escape</kbd> | Cancel the current rectangle creation |
+| <kbd>Enter</kbd> | Finalize the rectangle (if using distance input) |
 
 **Tips:**
 - The rectangle is centered on the first point you click
@@ -621,7 +621,7 @@ The slot tool allows you to create an oblong or oval-shaped slot with rounded en
 | **Automatic finalization** | The slot is automatically created and added to your sketch after the third point is clicked |
 | **Rounded ends** | Creates semicircular arcs at both ends with equal radius |
 | **Parallel edges** | The two straight edges connecting the arcs are always parallel |
-| **Precise size control** | Use the distance input dialog (Tab key) for exact dimensions |
+| **Precise size control** | Use the distance input dialog (<kbd>Tab</kbd> key) for exact dimensions |
 | **Snap support** | Automatically snaps to existing nodes and geometry |
 
 **How to use:**
@@ -630,7 +630,7 @@ The slot tool allows you to create an oblong or oval-shaped slot with rounded en
 3. Move the mouse to see a preview of the first edge
 4. Click to set the center point of the second arc (end of slot)
 5. Move the mouse to see a preview of the slot shape
-6. Click to set a point that defines the radius of the arcs, or press **Tab** to enter exact distance values
+6. Click to set a point that defines the radius of the arcs, or press <kbd>Tab</kbd> to enter exact distance values
    - **Important**: The radius is measured from the second arc center (the point you clicked in step 4) to this third point
    - This radius determines the cross section: the slot's cross-section dimension equals 2 × radius
 7. The slot will be automatically created with two arcs and two straight edges and added to your sketch
@@ -647,9 +647,9 @@ The slot tool allows you to create an oblong or oval-shaped slot with rounded en
 
 | | |
 | ---: | --- |
-| **Tab** | Open distance input dialog for precise dimension control |
-| **Escape** | Cancel the current slot creation |
-| **Enter** | Finalize the slot (if using distance input) |
+| <kbd>Tab</kbd> | Open distance input dialog for precise dimension control |
+| <kbd>Escape</kbd> | Cancel the current slot creation |
+| <kbd>Enter</kbd> | Finalize the slot (if using distance input) |
 | **Note** | The slot is automatically finalized after the third point, so no manual finalization is needed |
 
 **Tips:**
@@ -721,7 +721,7 @@ Once an axis is defined, the options panel will show:
 
 | | |
 | ---: | --- |
-| **Escape** | Cancel the current axis definition |
+| <kbd>Escape</kbd> | Cancel the current axis definition |
 
 **Tips:**
 - The operation axis is a reference line used for geometric transformations
@@ -763,7 +763,7 @@ The toggle edge dimensions tool allows you to show or hide length dimension anno
 - Each edge's dimension can be toggled independently
 - The dimensions show the actual length of each edge
 - This tool is particularly useful when working with precise measurements
-- Use in combination with the distance input feature (Tab key) when creating edges
+- Use in combination with the distance input feature (<kbd>Tab</kbd> key) when creating edges
 - Dimensions are for display only and do not constrain the geometry
 - Toggle dimensions on only the edges you need to reduce visual clutter
 
@@ -816,7 +816,7 @@ The create sketch from planar face tool allows you to extract the boundary of a 
 - Simply select a different face that is planar
 
 **Keyboard Shortcuts:**
-- **Escape**: Cancel the operation (if activated but not yet completed)
+- <kbd>Escape</kbd>: Cancel the operation (if activated but not yet completed)
 
 **Tips:**
 - Use this tool to extract profiles from existing 3D models for modification or reference
@@ -865,20 +865,20 @@ The shape move tool allows you to reposition selected shapes in the 3D viewer wi
 | **Axis Constraints** | Restrict movement to the X, Y, or Z axis by toggling axis constraints in the options panel or using keyboard shortcuts. |
 | **Interactive Distance Editing** | Enter or adjust the distance moved along each axis for precise control. Real-time feedback is provided in the viewer and options panel. |
 | **Improved Plane Handling** | The move plane is automatically estimated based on the center of the selected shapes, making movement more intuitive. |
-| **Finalization Logic** | The move operation completes when you confirm the action (e.g., `left mouse button`). |
-| **Reset and Cancel** | Press `Esc` to cancel and revert to the original position at any time during the move operation. |
+| **Finalization Logic** | The move operation completes when you confirm the action (e.g., <kbd>left mouse button</kbd>). |
+| **Reset and Cancel** | Press <kbd>Esc</kbd> to cancel and revert to the original position at any time during the move operation. |
 
 **How to Use:**
-1. **Activate Move Tool:** Select one or more shapes and press `G` or click the <img src="icons/Assembly_AxialMove.png" alt="Assembly_AxialMove" width="20" height="20"> icon.
-2. **Constrain Movement (Optional):** Use the options panel to lock movement to a specific axis, or use keyboard shortcuts (e.g., `X`, `Y`, `Z`).
+1. **Activate Move Tool:** Select one or more shapes and press <kbd>G</kbd> or click the <img src="icons/Assembly_AxialMove.png" alt="Assembly_AxialMove" width="20" height="20"> icon.
+2. **Constrain Movement (Optional):** Use the options panel to lock movement to a specific axis, or use keyboard shortcuts (e.g., <kbd>X</kbd>, <kbd>Y</kbd>, <kbd>Z</kbd>).
 
    ![Move constrain axis example](doc/gen/move_constrain_axis.png)
    
    *Example: Movement constrained on the Y and Z axes.*
 3. **Edit Distance (Optional):**  
-While moving a shape, you can press `Tab` to activate a floating distance input box for the current axis. If no axis constraints are set, you can edit distances for X, Y, and Z in sequence. If axis constraints are enabled, only the allowed axes are available for editing. After entering a distance, that axis is locked to the specified value. Pressing `Tab` again advances to the next available axis. After the distances for all participating axises are defined, the more will be finalized.
+While moving a shape, you can press <kbd>Tab</kbd> to activate a floating distance input box for the current axis. If no axis constraints are set, you can edit distances for X, Y, and Z in sequence. If axis constraints are enabled, only the allowed axes are available for editing. After entering a distance, that axis is locked to the specified value. Pressing <kbd>Tab</kbd> again advances to the next available axis. After the distances for all participating axises are defined, the more will be finalized.
 
-4. **Finalize or Cancel:** Press the `left mouse button` to confirm and apply the move, or `Esc` to cancel and revert.
+4. **Finalize or Cancel:** Press the <kbd>left mouse button</kbd> to confirm and apply the move, or <kbd>Esc</kbd> to cancel and revert.
 
 **Tips:**
 - Use axis constraints for straight-line moves.
@@ -900,26 +900,26 @@ The shape rotate tool enables precise rotation of selected shapes around a speci
 | **Visual Feedback** | The rotation axis is displayed with color-coded indicators (Red for X, Green for Y, Blue for Z). |
 
 **How to Use:**
-1. **Activate Rotate Tool:** Select one or more shapes and press `R` or click the <img src="icons/Draft_Rotate.png" alt="Draft_Rotate" width="20" height="20"> icon. You can also activate the tool and select the shape(s) to rotate afterwards.
+1. **Activate Rotate Tool:** Select one or more shapes and press <kbd>R</kbd> or click the <img src="icons/Draft_Rotate.png" alt="Draft_Rotate" width="20" height="20"> icon. You can also activate the tool and select the shape(s) to rotate afterwards.
 2. **Select Rotation Axis: (Optional)**
    
    ![Rotate constrain axis example](doc/gen/rotate_constrain_axis.png)
 
    *Example: Rotation around on the X axis.*
-   - Press `X` to rotate around the X-axis (Red)
-   - Press `Y` to rotate around the Y-axis (Green)
-   - Press `Z` to rotate around the Z-axis (Blue)
+   - Press <kbd>X</kbd> to rotate around the X-axis (Red)
+   - Press <kbd>Y</kbd> to rotate around the Y-axis (Green)
+   - Press <kbd>Z</kbd> to rotate around the Z-axis (Blue)
    - Press the same axis key again to switch to view-to-object rotation
 
 3. **Edit Angle (Optional):**
-   - Press `Tab` to activate the angle input box
+   - Press <kbd>Tab</kbd> to activate the angle input box
    - Enter the desired rotation angle in degrees
    - The preview updates in real-time as you adjust the angle
    - Pressing enter finializes the rotation
 
 4. **Finalize or Cancel:**
-   - Press the `left mouse button` to confirm and apply the rotation
-   - Press `Esc` to cancel and revert to the original position
+   - Press the <kbd>left mouse button</kbd> to confirm and apply the rotation
+   - Press <kbd>Esc</kbd> to cancel and revert to the original position
 
 **Tips:**
 - Use view-to-object rotation for intuitive free-form rotation
@@ -951,12 +951,12 @@ The shape scale tool allows you to uniformly scale selected shapes around a comp
    - The tool computes a scale center and a view-aligned plane.  
    - Moving the mouse away from or toward the center changes the scale factor and previews the scaled result.
 4. **Finalize:** Confirm the operation (e.g., by clicking to complete the interaction) to apply the scale permanently.
-5. **Cancel:** Press **Esc** to cancel and revert to the original shape sizes.
+5. **Cancel:** Press <kbd>Esc</kbd> to cancel and revert to the original shape sizes.
 
 **Tips:**
 
 - Scale works best when the view direction makes the movement relative to the center easy to see (avoid looking exactly edge-on at the objects).
-- Because the operation is undoable, you can experiment with different scale amounts and step back with **Ctrl+Z** if needed.
+- Because the operation is undoable, you can experiment with different scale amounts and step back with <kbd>Ctrl</kbd>+<kbd>Z</kbd> if needed.
 
 ## Feature Operations
 
@@ -973,30 +973,30 @@ The extrude tool allows you to create 3D solid shapes by extruding 2D sketch fac
 | **Direct face selection** | Click directly on a sketch face to select it for extrusion |
 | **Automatic view adjustment** | The view automatically rotates if the face plane is parallel to the view plane (within 5 degrees), providing better visibility for the extrusion operation |
 | **Real-time preview** | See the extruded shape update in real-time as you move the mouse |
-| **Interactive distance control** | Drag the mouse to adjust extrusion distance, or use the distance input dialog (Tab key) for precise control |
+| **Interactive distance control** | Drag the mouse to adjust extrusion distance, or use the distance input dialog (<kbd>Tab</kbd> key) for precise control |
 | **Distance annotation** | A dimension annotation displays the current extrusion distance |
 | **Bidirectional extrusion** | The extrusion direction is determined by which side of the face plane you move the mouse to |
 
 **How to Use:**
-1. **Activate Extrude Tool**: Press `E` or click the <img src="icons/Design456_Extrude.png" alt="Design456_Extrude" width="20" height="20"> icon to enter extrude mode
+1. **Activate Extrude Tool**: Press <kbd>E</kbd> or click the <img src="icons/Design456_Extrude.png" alt="Design456_Extrude" width="20" height="20"> icon to enter extrude mode
 2. **Select Face**: Click on a sketch face that you want to extrude
    - The face must be part of a closed sketch (forming a valid face)
    - The system will automatically select the face closest to the camera if multiple faces overlap
 3. **Adjust Extrusion Distance**:
    - **Mouse drag**: Move the mouse to adjust the extrusion distance in real-time
-   - **Precise input**: Press `Tab` to open the distance input dialog and enter an exact extrusion distance
+   - **Precise input**: Press <kbd>Tab</kbd> to open the distance input dialog and enter an exact extrusion distance
    - The distance annotation shows the current extrusion distance
-4. **Finalize**: Click the left mouse button to confirm and create the extruded shape
-5. **Cancel**: Press `Esc` at any time to cancel the extrusion operation
+4. **Finalize**: Click the <kbd>left mouse button</kbd> to confirm and create the extruded shape
+5. **Cancel**: Press <kbd>Esc</kbd> at any time to cancel the extrusion operation
 
 **Keyboard Shortcuts:**
 
 | | |
 | ---: | --- |
-| **E** | Activate extrude mode |
-| **Tab** | Open distance input dialog for precise extrusion distance |
-| **Esc** | Cancel current extrusion operation |
-| **Enter** | Finalize extrusion (when using distance input) |
+| <kbd>E</kbd> | Activate extrude mode |
+| <kbd>Tab</kbd> | Open distance input dialog for precise extrusion distance |
+| <kbd>Esc</kbd> | Cancel current extrusion operation |
+| <kbd>Enter</kbd> | Finalize extrusion (when using distance input) |
 
 **Tips:**
 - Extrude works best when the view is not directly parallel to the sketch plane - the system will automatically rotate the view if needed
@@ -1058,7 +1058,7 @@ The polar duplicate tool allows you to create multiple copies of selected shapes
 
 | | |
 | ---: | --- |
-| **Escape** | Cancel the current polar duplicate operation |
+| <kbd>Escape</kbd> | Cancel the current polar duplicate operation |
 
 **Tips:**
 - The polar arm defines both the rotation center (at the arm's end point) and the starting direction
@@ -1089,26 +1089,26 @@ The polar duplicate tool allows you to create multiple copies of selected shapes
 
 | | |
 | ---: | --- |
-| **Ctrl+Z** | Undo last operation |
-| **Ctrl+Y** / **Ctrl+Shift+Z** | Redo |
-| **Ctrl+O** | Open file |
-| **Ctrl+S** | Save file |
-| **Ctrl+Shift+S** | Save as |
-| **Esc** | [Cancel current operation or step to parent mode](#cancel-current-operation-esc) |
-| **Enter** | Confirm current operation |
-| **Tab** | Distance/dimension input |
-| **Shift+Tab** | Angle input (for line edges with angle constraint) |
-| **Delete** | Remove selected elements |
+| <kbd>Ctrl</kbd>+<kbd>Z</kbd> | Undo last operation |
+| <kbd>Ctrl</kbd>+<kbd>Y</kbd> / <kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>Z</kbd> | Redo |
+| <kbd>Ctrl</kbd>+<kbd>O</kbd> | Open file |
+| <kbd>Ctrl</kbd>+<kbd>S</kbd> | Save file |
+| <kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>S</kbd> | Save as |
+| <kbd>Esc</kbd> | [Cancel current operation or step to parent mode](#cancel-current-operation-esc) |
+| <kbd>Enter</kbd> | Confirm current operation |
+| <kbd>Tab</kbd> | Distance/dimension input |
+| <kbd>Shift</kbd>+<kbd>Tab</kbd> | Angle input (for line edges with angle constraint) |
+| <kbd>Delete</kbd> | Remove selected elements |
 
 ### Modeling Shortcuts
 
 | | |
 | ---: | --- |
-| **G** | Move mode |
-| **R** | Rotate mode |
-| **S** | Scale mode |
-| **E** | Extrude mode |
-| **D** | Delete selected |
+| <kbd>G</kbd> | Move mode |
+| <kbd>R</kbd> | Rotate mode |
+| <kbd>S</kbd> | Scale mode |
+| <kbd>E</kbd> | Extrude mode |
+| <kbd>D</kbd> | Delete selected |
 
 ## View Controls
 
@@ -1137,7 +1137,7 @@ The polar duplicate tool allows you to create multiple copies of selected shapes
 ### Efficient Modeling
 1. Use keyboard shortcuts for common operations
 2. Utilize the toolbar for quick access to tools
-3. Take advantage of the dimension input feature (`Tab` for distance, `Shift+Tab` for angle)
+3. Take advantage of the dimension input feature (<kbd>Tab</kbd> for distance, <kbd>Shift</kbd>+<kbd>Tab</kbd> for angle)
 4. Use angle constraints for precise angular control when creating line edges
 5. Use the log window to track operations
 
@@ -1174,9 +1174,9 @@ The polar duplicate tool allows you to create multiple copies of selected shapes
 
 ### Basic Operations
 - <img src="icons/User.png" alt="User" width="20" height="20"> - Inspection mode
-- <img src="icons/Assembly_AxialMove.png" alt="Assembly_AxialMove" width="20" height="20"> - Shape move (G)
-- <img src="icons/Draft_Rotate.png" alt="Draft_Rotate" width="20" height="20"> - Shape rotate (R)
-- <img src="icons/Part_Scale.png" alt="Part_Scale" width="20" height="20"> - Shape scale (S)
+- <img src="icons/Assembly_AxialMove.png" alt="Assembly_AxialMove" width="20" height="20"> - Shape move (<kbd>G</kbd>)
+- <img src="icons/Draft_Rotate.png" alt="Draft_Rotate" width="20" height="20"> - Shape rotate (<kbd>R</kbd>)
+- <img src="icons/Part_Scale.png" alt="Part_Scale" width="20" height="20"> - Shape scale (<kbd>S</kbd>)
 
 ### Sketch Tools
 - <img src="icons/Workbench_Sketcher_none.png" alt="Workbench_Sketcher_none" width="20" height="20"> - Sketch inspection mode
@@ -1195,7 +1195,7 @@ The polar duplicate tool allows you to create multiple copies of selected shapes
 - <img src="icons/TechDraw_LengthDimension.png" alt="TechDraw_LengthDimension" width="20" height="20"> - Toggle edge dimension annotation
 
 ### 3D Operations
-- <img src="icons/Design456_Extrude.png" alt="Design456_Extrude" width="20" height="20"> - Extrude sketch face (E)
+- <img src="icons/Design456_Extrude.png" alt="Design456_Extrude" width="20" height="20"> - Extrude sketch face (<kbd>E</kbd>)
 - <img src="icons/PartDesign_Chamfer.png" alt="PartDesign_Chamfer" width="20" height="20"> - Chamfer
 - <img src="icons/PartDesign_Fillet.png" alt="PartDesign_Fillet" width="20" height="20"> - Fillet
 - <img src="icons/Draft_PolarArray.png" alt="Draft_PolarArray" width="20" height="20"> - Shape polar duplicate
