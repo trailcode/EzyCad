@@ -1,14 +1,13 @@
-#include <GLFW/glfw3.h>
-
 #include "utl.h"
+
+#include <GLFW/glfw3.h>
 
 #include <filesystem>
 
 #define STB_IMAGE_IMPLEMENTATION
 #include <stb_image/stb_image.h>
 
-uint32_t load_texture(const std::string& path)
-{
+uint32_t load_texture(const std::string& path) {
   int width, height, channels;
   EZY_ASSERT_MSG(std::filesystem::exists(path), "Error cannot open: " + std::string(path));
   unsigned char* data = stbi_load(path.c_str(), &width, &height, &channels, 4);  // Force RGBA
@@ -29,8 +28,7 @@ uint32_t load_texture(const std::string& path)
   return texture_id;
 }
 
-std::size_t Pair_hash::operator()(const std::pair<size_t, size_t>& p) const
-{
+std::size_t Pair_hash::operator()(const std::pair<size_t, size_t>& p) const {
   std::size_t seed = 0;
   seed ^= std::hash<size_t> {}(p.first) + 0x9e3779b9 + (seed << 6) + (seed >> 2);
   seed ^= std::hash<size_t> {}(p.second) + 0x9e3779b9 + (seed << 6) + (seed >> 2);

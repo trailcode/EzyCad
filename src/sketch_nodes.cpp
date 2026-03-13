@@ -1,31 +1,27 @@
 #include "sketch_nodes.h"
-#include "occt_view.h"
-#include "geom.h"
 
 #include <TopoDS_Wire.hxx>
 
+#include "geom.h"
+#include "occt_view.h"
+
 Sketch_nodes::Sketch_nodes(Occt_view& view, const gp_Pln& pln)
-    : m_view(view), m_ctx(m_view.ctx()), m_pln(pln)
-{
-
+    : m_view(view), m_ctx(m_view.ctx()), m_pln(pln) {
 }
 
-Sketch_nodes::~Sketch_nodes()
-{
-  hide_snap_annos(); // Deletes them from context
+Sketch_nodes::~Sketch_nodes() {
+  hide_snap_annos();  // Deletes them from context
 }
 
-std::optional<gp_Pnt2d> Sketch_nodes::snap(const ScreenCoords& screen_coords)
-{
+std::optional<gp_Pnt2d> Sketch_nodes::snap(const ScreenCoords& screen_coords) {
   std::optional<gp_Pnt2d> pt = m_view.pt_on_plane(screen_coords, m_pln);
   if (pt)
     try_get_node_idx_snap(*pt);
-  
+
   return pt;
 }
 
-size_t Sketch_nodes::get_node_exact(const gp_Pnt2d& pt)
-{
+size_t Sketch_nodes::get_node_exact(const gp_Pnt2d& pt) {
   for (size_t idx = 0, num = m_nodes.size(); idx < num; ++idx)
     if (equal(pt, gp_Pnt2d(m_nodes[idx])))
       return idx;
@@ -35,8 +31,7 @@ size_t Sketch_nodes::get_node_exact(const gp_Pnt2d& pt)
   return ret;
 }
 
-std::optional<size_t> Sketch_nodes::get_node(const ScreenCoords& screen_coords)
-{
+std::optional<size_t> Sketch_nodes::get_node(const ScreenCoords& screen_coords) {
   std::optional<gp_Pnt2d> pt = m_view.pt_on_plane(screen_coords, m_pln);
   if (!pt)
     // View plane and sketch plane must be perpendicular.
@@ -51,12 +46,10 @@ std::optional<size_t> Sketch_nodes::get_node(const ScreenCoords& screen_coords)
 
 std::optional<size_t> Sketch_nodes::try_get_node_idx_snap(
     gp_Pnt2d&                  pt,  // `pt` could be snapped to a node, an axis of another node, or an outside snap point.
-    const std::vector<size_t>& to_exclude)
-{
+    const std::vector<size_t>& to_exclude) {
   // Calculate snap_dist in world coordinates
-  double       snap_dist;
-  if (!m_view.is_headless())
-  {
+  double snap_dist;
+  if (!m_view.is_headless()) {
     gp_Pnt       pt3d_on_plane       = to_3d(m_pln, pt);
     ScreenCoords screen_coords_at_pt = m_view.get_screen_coords(pt3d_on_plane);
 
@@ -68,8 +61,7 @@ std::optional<size_t> Sketch_nodes::try_get_node_idx_snap(
     screen_coords_offset.unsafe_get().x += s_snap_dist_pixels;
 
     std::optional<gp_Pnt2d> pt_offset_on_plane_2d;
-    if (std::optional<gp_Pnt> pt_offset_on_plane_3d = m_view.pt3d_on_plane(screen_coords_offset, m_pln))
-    {
+    if (std::optional<gp_Pnt> pt_offset_on_plane_3d = m_view.pt3d_on_plane(screen_coords_offset, m_pln)) {
       pt_offset_on_plane_2d = to_2d(m_pln, *pt_offset_on_plane_3d);
     }
 
@@ -78,15 +70,13 @@ std::optional<size_t> Sketch_nodes::try_get_node_idx_snap(
     else
       // It should never get here
       snap_dist = 5.0;  // This is not ideal as a fallback
-  }
-  else
+  } else
     // Headless, probably a unit test calling, treating s_snap_dist_pixels as world units.
     snap_dist = s_snap_dist_pixels;
 
   size_t best_idx  = -1;
   double best_dist = std::numeric_limits<double>::max();
-  for (size_t idx = 0, num = m_nodes.size(); idx < num; ++idx)
-  {
+  for (size_t idx = 0, num = m_nodes.size(); idx < num; ++idx) {
     if (std::find(to_exclude.begin(), to_exclude.end(), idx) != to_exclude.end())
       continue;
 
@@ -95,15 +85,13 @@ std::optional<size_t> Sketch_nodes::try_get_node_idx_snap(
       continue;
 
     double dist = n.SquareDistance(pt);
-    if (dist < best_dist)
-    {
+    if (dist < best_dist) {
       best_dist = dist;
       best_idx  = idx;
     }
   }
 
-  if (best_dist <= snap_dist * 0.25)
-  {
+  if (best_dist <= snap_dist * 0.25) {
     pt = gp_Pnt2d(m_nodes[best_idx]);
     update_node_snap_anno_(m_nodes[best_idx], sqrt(snap_dist));
     return best_idx;
@@ -117,14 +105,12 @@ std::optional<size_t> Sketch_nodes::try_get_node_idx_snap(
 
   gp_Pnt2d pt_original = pt;
 
-  for (int i = 0; i < 2; ++i)
-  {
+  for (int i = 0; i < 2; ++i) {
     std::optional<gp_Pnt2d> snap_axis_point;
     best_dist = std::numeric_limits<double>::max();
 
-    auto try_nd_pt = [&](const gp_Pnt2d& nd_pt)
-    {
-      double dist      = pt_original.SquareDistance(nd_pt);
+    auto try_nd_pt = [&](const gp_Pnt2d& nd_pt) {
+      double dist                      = pt_original.SquareDistance(nd_pt);
       // axis_dist needs to be compared against a linear snap distance in screen pixels.
       // This part becomes tricky because axis_dist is a world coordinate difference.
       // We'd ideally convert m_snap_dist_pixels * 0.5 to a world distance along the axis.
@@ -134,10 +120,9 @@ std::optional<size_t> Sketch_nodes::try_get_node_idx_snap(
       // We need a world-space equivalent for axis snapping.
       // Let's use sqrt(snap_dist_sq) * 0.5 for now.
       double axis_snap_threshold_world = sqrt(snap_dist) * 0.5;
-      double axis_dist = std::fabs(pt_original.XY().Coord(i + 1) - nd_pt.XY().Coord(i + 1));
+      double axis_dist                 = std::fabs(pt_original.XY().Coord(i + 1) - nd_pt.XY().Coord(i + 1));
 
-      if (dist < best_dist && axis_dist <= axis_snap_threshold_world)
-      {
+      if (dist < best_dist && axis_dist <= axis_snap_threshold_world) {
         best_dist       = dist;
         snap_axis_point = nd_pt;
         if (!i)
@@ -154,25 +139,19 @@ std::optional<size_t> Sketch_nodes::try_get_node_idx_snap(
     for (const gp_Pnt2d& nd_pt : m_outside_snap_pts)
       try_nd_pt(nd_pt);
 
-    if (snap_axis_point)
-    {
+    if (snap_axis_point) {
       // create_wire_box and update_node_snap_anno_ expect linear distances.
       TopoDS_Wire box = create_wire_box(m_pln, to_3d(m_pln, *snap_axis_point), sqrt(snap_dist) * 0.5, sqrt(snap_dist) * 0.5);
-      if (m_snap_anno_axis[i].IsNull())
-      {
+      if (m_snap_anno_axis[i].IsNull()) {
         m_snap_anno_axis[i] = new AIS_Shape(box);
         m_snap_anno_axis[i]->SetWidth(3.0);
         m_snap_anno_axis[i]->SetColor(Quantity_Color(1, 0.5, 0.7, Quantity_TOC_RGB));
         m_ctx.Display(m_snap_anno_axis[i], true);
-      }
-      else
-      {
+      } else {
         m_snap_anno_axis[i]->Set(box);
         m_ctx.Redisplay(m_snap_anno_axis[i], true);
       }
-    }
-    else
-    {
+    } else {
       if (!m_snap_anno_axis[i].IsNull())
         m_ctx.Erase(m_snap_anno_axis[i], true);
     }
@@ -181,16 +160,14 @@ std::optional<size_t> Sketch_nodes::try_get_node_idx_snap(
   return {};
 }
 
-void Sketch_nodes::hide_snap_annos()
-{
+void Sketch_nodes::hide_snap_annos() {
   if (m_snap_anno)
     m_ctx.Remove(m_snap_anno, false);
 
   m_snap_anno = nullptr;
 
   for (AIS_Shape_ptr& anno : m_snap_anno_axis)
-    if (anno)
-    {
+    if (anno) {
       m_ctx.Remove(anno, false);
       anno = nullptr;
     }
@@ -199,8 +176,7 @@ void Sketch_nodes::hide_snap_annos()
   m_last_snap_pt = std::nullopt;
 }
 
-size_t Sketch_nodes::add_new_node(const gp_Pnt2d& pt, bool is_edge_mid_point)
-{
+size_t Sketch_nodes::add_new_node(const gp_Pnt2d& pt, bool is_edge_mid_point) {
   size_t ret = m_nodes.size();
   Node   n {pt};
   n.is_midpoint = is_edge_mid_point;
@@ -208,15 +184,13 @@ size_t Sketch_nodes::add_new_node(const gp_Pnt2d& pt, bool is_edge_mid_point)
   return ret;
 }
 
-void Sketch_nodes::get_snap_pts_3d(std::vector<gp_Pnt>& out)
-{
+void Sketch_nodes::get_snap_pts_3d(std::vector<gp_Pnt>& out) {
   for (const Node& n : m_nodes)
     if (!n.deleted)
       out.push_back(to_3d(m_pln, n));
 }
 
-void Sketch_nodes::update_node_snap_anno_(const gp_Pnt2d& pt, const double snap_dist)
-{
+void Sketch_nodes::update_node_snap_anno_(const gp_Pnt2d& pt, const double snap_dist) {
   if (m_last_snap_pt && equal(*m_last_snap_pt, pt))
     return;
 
@@ -224,36 +198,29 @@ void Sketch_nodes::update_node_snap_anno_(const gp_Pnt2d& pt, const double snap_
 
   TopoDS_Wire box = create_wire_box(m_pln, to_3d(m_pln, pt), snap_dist, snap_dist);
 
-  if (m_snap_anno.IsNull())
-  {
+  if (m_snap_anno.IsNull()) {
     m_snap_anno = new AIS_Shape(box);
     m_snap_anno->SetWidth(3.0);
     m_snap_anno->SetColor(Quantity_Color(0, 0.5, 0.7, Quantity_TOC_RGB));
     m_ctx.Display(m_snap_anno, true);
-  }
-  else
-  {
+  } else {
     m_snap_anno->Set(box);
     m_ctx.Redisplay(m_snap_anno, true);
   }
 }
 
-bool Sketch_nodes::try_snap_outside_(gp_Pnt2d& pt, const double snap_dist)
-{
+bool Sketch_nodes::try_snap_outside_(gp_Pnt2d& pt, const double snap_dist) {
   gp_Pnt2d snapped;
   double   best_dist = std::numeric_limits<double>::max();
-  for (const gp_Pnt2d& outside_pt : m_outside_snap_pts)
-  {
+  for (const gp_Pnt2d& outside_pt : m_outside_snap_pts) {
     double dist = outside_pt.SquareDistance(pt);
-    if (dist < best_dist)
-    {
+    if (dist < best_dist) {
       best_dist = dist;
       snapped   = outside_pt;
     }
   }
 
-  if (best_dist <= snap_dist * 0.25 * snap_dist)
-  {
+  if (best_dist <= snap_dist * 0.25 * snap_dist) {
     pt = snapped;
     update_node_snap_anno_(pt, snap_dist);
     return true;
@@ -262,71 +229,59 @@ bool Sketch_nodes::try_snap_outside_(gp_Pnt2d& pt, const double snap_dist)
   return false;
 }
 
-Sketch_nodes::Node& Sketch_nodes::operator[](size_t idx)
-{
+Sketch_nodes::Node& Sketch_nodes::operator[](size_t idx) {
   EZY_ASSERT(idx < size());
   return m_nodes[idx];
 }
 
-const Sketch_nodes::Node& Sketch_nodes::operator[](size_t idx) const
-{
+const Sketch_nodes::Node& Sketch_nodes::operator[](size_t idx) const {
   EZY_ASSERT(idx < size());
   return m_nodes[idx];
 }
 
-Sketch_nodes::Node& Sketch_nodes::operator[](const std::optional<size_t> idx)
-{
+Sketch_nodes::Node& Sketch_nodes::operator[](const std::optional<size_t> idx) {
   EZY_ASSERT(idx.has_value());
   EZY_ASSERT(*idx < size());
   return m_nodes[idx.value()];
 }
 
-const Sketch_nodes::Node& Sketch_nodes::operator[](const std::optional<size_t> idx) const
-{
+const Sketch_nodes::Node& Sketch_nodes::operator[](const std::optional<size_t> idx) const {
   EZY_ASSERT(idx.has_value());
   EZY_ASSERT(*idx < size());
   return m_nodes[idx.value()];
 }
 
-bool Sketch_nodes::empty() const
-{
+bool Sketch_nodes::empty() const {
   return m_nodes.empty();
 }
 
-size_t Sketch_nodes::size() const
-{
+size_t Sketch_nodes::size() const {
   return m_nodes.size();
 }
 
-void Sketch_nodes::finalize()
-{
+void Sketch_nodes::finalize() {
   m_prev_num_nodes = m_nodes.size();
 }
 
-void Sketch_nodes::cancel()
-{
+void Sketch_nodes::cancel() {
   m_nodes.resize(m_prev_num_nodes);
 }
 
-void Sketch_nodes::clear_outside_snap_pnts()
-{
+void Sketch_nodes::clear_outside_snap_pnts() {
   m_outside_snap_pts.clear();
 }
 
-void Sketch_nodes::add_outside_snap_pnt(const gp_Pnt& pt3d)
-{
+void Sketch_nodes::add_outside_snap_pnt(const gp_Pnt& pt3d) {
   m_outside_snap_pts.insert(to_2d(m_pln, pt3d));
 }
 
 // Snap distance related
 double Sketch_nodes::s_snap_dist_pixels = 35.0;
 
-void Sketch_nodes::set_snap_dist(double snap_dist_pixels)
-{
+void Sketch_nodes::set_snap_dist(double snap_dist_pixels) {
   s_snap_dist_pixels = snap_dist_pixels;
 }
 
-double Sketch_nodes::get_snap_dist()
-{
+double Sketch_nodes::get_snap_dist() {
   return s_snap_dist_pixels;
 }

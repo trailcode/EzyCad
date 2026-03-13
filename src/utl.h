@@ -6,8 +6,7 @@
 #include "types.h"
 
 #define CHK_RET(status)  \
-  do                     \
-  {                      \
+  do {                   \
     if (!status.is_ok()) \
       return (status);   \
   } while (0)
@@ -28,9 +27,8 @@ void clear_all(T& arg, Args&... args);
 // Templated function to pop and return the back element of a container
 // Templated function to pop and return the back element of a container
 template <typename Container>
-typename Container::value_type&& pop_back(Container& container)
-{
-  EZY_ASSERT(container.size());               // Ensure the container isn�t empty
+typename Container::value_type&& pop_back(Container& container) {
+  EZY_ASSERT(container.size());              // Ensure the container isn�t empty
   auto value = std::move(container.back());  // Get the last element
   container.pop_back();                      // Remove the last element
   return std::move(value);                   // Return the retrieved element
@@ -55,8 +53,7 @@ typename Container::value_type&& pop_back(Container& container)
  * The lambda is the first parameter and defines how each flattened element is processed.
  */
 template <typename Lambda, typename... Args>
-void for_each_flat(Lambda&& lambda, Args&&... args)
-{
+void for_each_flat(Lambda&& lambda, Args&&... args) {
   // Fold expression to process each argument
   (handle_arg(std::forward<Lambda>(lambda), std::forward<Args>(args)), ...);
 }
@@ -75,14 +72,12 @@ void append(Container& target, const T& source);
 
 // TODO find something more generic.
 // Custom hash for std::pair<size_t, size_t>
-struct Pair_hash
-{
+struct Pair_hash {
   std::size_t operator()(const std::pair<size_t, size_t>& p) const;
 };
 
 template <typename Container, typename Value>
-bool contains(const Container& container, const Value& value)
-{
+bool contains(const Container& container, const Value& value) {
   auto it = std::find(container.begin(), container.end(), value);
   return it != container.end();
 }

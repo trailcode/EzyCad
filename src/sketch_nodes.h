@@ -1,22 +1,20 @@
 #pragma once
 
-#include "types.h"
-
 #include <gp_Pln.hxx>
 #include <gp_Pnt2d.hxx>
 #include <optional>
 #include <set>
+
+#include "types.h"
 
 class gp_Pln;
 class gp_Pnt2d;
 class Occt_view;
 class AIS_InteractiveContext;
 
-class Sketch_nodes
-{
+class Sketch_nodes {
  public:
-  struct Node : public gp_Pnt2d
-  {
+  struct Node : public gp_Pnt2d {
     bool is_midpoint {false};
     bool deleted {false};
   };

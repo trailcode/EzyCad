@@ -3,8 +3,7 @@
 #include <array>
 #include <string_view>
 
-enum class Mode
-{
+enum class Mode {
   Normal,
   Move,
   Scale,
@@ -55,8 +54,7 @@ constexpr std::array<std::string_view, int(Mode::_count)> c_mode_strs {
     "Shape_fillet",
     "Shape_polar_duplicate"};
 
-enum class Chamfer_mode
-{
+enum class Chamfer_mode {
   Edge,
   Wire,
   Face,
@@ -66,8 +64,7 @@ enum class Chamfer_mode
 // Corresponds to the above
 constexpr std::array<const char*, 4> c_chamfer_mode_strs = {"Edge", "Wire", "Face", "Shape"};
 
-enum class Fillet_mode
-{
+enum class Fillet_mode {
   Edge,
   Wire,
   Face,

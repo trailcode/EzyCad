@@ -79,5 +79,10 @@ Ensure the following dependencies are installed:
 
 ## Support and Contributions
 - Report issues or suggest features on the GitHub repository.
-- Contribute by developing features and fixing bugs. Pull requests are welcome!
+- Contribute by developing features and fixing bugs. Pull requests are welcome! 💪
 - Additional resources, including video tutorials and online documentation, are linked in [usage.md](usage.md).
+
+### We need development help
+EzyCad is maintained by a small team and we would love more contributors. If you can help with features, bug fixes, documentation, or testing—please jump in. Every contribution helps move the project forward.
+
+**Code style:** When contributing, please follow the project’s style guide: [ezycad-style.md](ezycad-style.md). Both human developers and AI coding agents (e.g. Cursor, GitHub Copilot, ChatGPT) should adhere to it so that patches stay consistent and reviewable.

@@ -7,14 +7,13 @@
 
 #include "geom.h"
 #include "gui.h"
-#include "utl.h"
 #include "occt_view.h"
+#include "utl.h"
 
 Shp_rotate::Shp_rotate(Occt_view& view)
     : Shp_operation_base(view) {}
 
-Status Shp_rotate::rotate_selected(const ScreenCoords& screen_coords)
-{
+Status Shp_rotate::rotate_selected(const ScreenCoords& screen_coords) {
   CHK_RET(ensure_start_state_());
 
   std::optional<gp_Pnt> mouse_wc_pos = view().pt3d_on_plane(screen_coords, *m_rotate_pln);
@@ -43,8 +42,7 @@ Status Shp_rotate::rotate_selected(const ScreenCoords& screen_coords)
   return Status::ok();
 }
 
-Status Shp_rotate::ensure_start_state_()
-{
+Status Shp_rotate::ensure_start_state_() {
   CHK_RET(ensure_operation_shps_());
 
   // Get the estimate of the center.
@@ -62,16 +60,13 @@ Status Shp_rotate::ensure_start_state_()
   return Status::ok();
 }
 
-void Shp_rotate::update_rotation_axis_()
-{
+void Shp_rotate::update_rotation_axis_() {
   EZY_ASSERT(m_center.has_value());
   EZY_ASSERT(m_rotate_pln.has_value());
 
   // If View_to_object is set, remove the axis visualization
-  if (m_rotation_axis == Rotation_axis::View_to_object)
-  {
-    if (m_rotation_axis_vis)
-    {
+  if (m_rotation_axis == Rotation_axis::View_to_object) {
+    if (m_rotation_axis_vis) {
       ctx().Remove(m_rotation_axis_vis, false);
       m_rotation_axis_vis = nullptr;
     }
@@ -80,13 +75,11 @@ void Shp_rotate::update_rotation_axis_()
 
   gp_Dir         axis_dir;
   Quantity_Color axis_color;
-  auto           set_axis_and_color = [&](double x, double y, double z)
-  {
+  auto           set_axis_and_color = [&](double x, double y, double z) {
     axis_dir   = gp_Dir(x, y, z);
     axis_color = Quantity_Color(x, y, z, Quantity_TOC_RGB);
   };
-  switch (m_rotation_axis)
-  {
+  switch (m_rotation_axis) {
     case Rotation_axis::X_axis:
       set_axis_and_color(1, 0, 0);
       break;
@@ -110,14 +103,11 @@ void Shp_rotate::update_rotation_axis_()
 
   TopoDS_Edge axis_edge = BRepBuilderAPI_MakeEdge(p1, p2).Edge();
 
-  if (m_rotation_axis_vis)
-  {
+  if (m_rotation_axis_vis) {
     m_rotation_axis_vis->Set(axis_edge);
     m_rotation_axis_vis->SetColor(axis_color);
     ctx().Redisplay(m_rotation_axis_vis, true);
-  }
-  else
-  {
+  } else {
     m_rotation_axis_vis = new AIS_Shape(axis_edge);
     m_rotation_axis_vis->SetWidth(2.0);
     m_rotation_axis_vis->SetColor(axis_color);
@@ -125,21 +115,17 @@ void Shp_rotate::update_rotation_axis_()
   }
 }
 
-void Shp_rotate::update_rotation_center_()
-{
+void Shp_rotate::update_rotation_center_() {
   EZY_ASSERT(m_center.has_value());
 
   // TODO cannot see the point unless the shape is rendered as wireframe
   // Create a point representing the rotation center
   TopoDS_Vertex center_vertex = BRepBuilderAPI_MakeVertex(*m_center).Vertex();
 
-  if (m_rotation_center_vis)
-  {
+  if (m_rotation_center_vis) {
     m_rotation_center_vis->Set(center_vertex);
     ctx().Redisplay(m_rotation_center_vis, true);
-  }
-  else
-  {
+  } else {
     m_rotation_center_vis = new AIS_Shape(center_vertex);
     m_rotation_center_vis->SetWidth(3.0);
     m_rotation_center_vis->SetColor(Quantity_NOC_RED);
@@ -147,14 +133,12 @@ void Shp_rotate::update_rotation_center_()
   }
 }
 
-void Shp_rotate::preview_rotate_()
-{
+void Shp_rotate::preview_rotate_() {
   EZY_ASSERT(m_center.has_value());
   EZY_ASSERT(m_rotate_pln.has_value());
 
   gp_Dir axis_dir;
-  switch (m_rotation_axis)
-  {
+  switch (m_rotation_axis) {
     case Rotation_axis::X_axis:
       axis_dir = gp_Dir(1, 0, 0);
       break;
@@ -175,20 +159,17 @@ void Shp_rotate::preview_rotate_()
   rotation.SetRotation(rotation_axis, m_angle);
 
   // Apply rotation to shapes
-  for (const AIS_Shape_ptr& shape : m_shps)
-  {
+  for (const AIS_Shape_ptr& shape : m_shps) {
     shape->SetLocalTransformation(rotation);
     ctx().Redisplay(shape, true);
   }
 }
 
-Status Shp_rotate::show_angle_edit(const ScreenCoords& screen_coords)
-{
+Status Shp_rotate::show_angle_edit(const ScreenCoords& screen_coords) {
   // In case `tab` was pressed without moving the mouse
   CHK_RET(ensure_start_state_());
 
-  auto angle_edit = [&, screen_coords](float new_angle, bool is_final)
-  {
+  auto angle_edit = [&, screen_coords](float new_angle, bool is_final) {
     m_angle = to_radians(new_angle);
     preview_rotate_();
     if (is_final)
@@ -201,8 +182,7 @@ Status Shp_rotate::show_angle_edit(const ScreenCoords& screen_coords)
   return Status::ok();
 }
 
-void Shp_rotate::finalize()
-{
+void Shp_rotate::finalize() {
   if (m_shps.empty())
     return;
 
@@ -211,25 +191,21 @@ void Shp_rotate::finalize()
   reset();
 }
 
-void Shp_rotate::cancel()
-{
+void Shp_rotate::cancel() {
   operation_shps_cancel_();
   reset();
 }
 
-void Shp_rotate::reset()
-{
+void Shp_rotate::reset() {
   // Reset state
   clear_all(m_angle, m_shps, m_initial_mouse_pos, m_rotate_pln, m_center);
 
-  if (m_rotation_axis_vis)
-  {
+  if (m_rotation_axis_vis) {
     ctx().Remove(m_rotation_axis_vis, false);
     m_rotation_axis_vis = nullptr;
   }
 
-  if (m_rotation_center_vis)
-  {
+  if (m_rotation_center_vis) {
     ctx().Remove(m_rotation_center_vis, false);
     m_rotation_center_vis = nullptr;
   }
@@ -237,8 +213,7 @@ void Shp_rotate::reset()
   gui().set_mode(Mode::Normal);
 }
 
-void Shp_rotate::set_rotation_axis(Rotation_axis axis)
-{
+void Shp_rotate::set_rotation_axis(Rotation_axis axis) {
   if (!m_center.has_value())
     return;
 

@@ -9,8 +9,7 @@ class GUI;
 
 /// ImGui Lua console: run Lua snippets with bindings to EzyCad (ezy.*, view.*).
 /// Built for native and Emscripten (Lua C sources compile with emcc).
-class Lua_console
-{
+class Lua_console {
  public:
   explicit Lua_console(GUI* gui);
   ~Lua_console();
@@ -28,7 +27,7 @@ class Lua_console
   GUI*       m_gui = nullptr;
   lua_State* m_L   = nullptr;
 
-  std::vector<std::string> m_history;   // output lines (result or error)
+  std::vector<std::string> m_history;  // output lines (result or error)
   static constexpr int     k_input_buf_size = 1024;
   char                     m_input_buf[k_input_buf_size] {};
   bool                     m_scroll_to_bottom = false;

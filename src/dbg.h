@@ -13,10 +13,8 @@
 #endif
 
 #define EZY_ASSERT_MSG(condition, message)              \
-  do                                                    \
-  {                                                     \
-    if (!(condition))                                   \
-    {                                                   \
+  do {                                                  \
+    if (!(condition)) {                                 \
       std::cerr << "Assertion failed: " << #condition   \
                 << ", message: " << (message)           \
                 << ", file: " << __FILE__               \
@@ -26,10 +24,8 @@
   } while (false)
 
 #define EZY_ASSERT(condition)                           \
-  do                                                    \
-  {                                                     \
-    if (!(condition))                                   \
-    {                                                   \
+  do {                                                  \
+    if (!(condition)) {                                 \
       std::cerr << "Assertion failed: " << #condition   \
                 << ", file: " << __FILE__               \
                 << ", line: " << __LINE__ << std::endl; \
@@ -38,8 +34,7 @@
   } while (false)
 
 #define DBG_MSG(stream_expr)                                                                                                          \
-  do                                                                                                                                  \
-  {                                                                                                                                   \
+  do {                                                                                                                                \
     std::stringstream ss;                                                                                                             \
     ss << stream_expr;                                                                                                                \
     std::stringstream msg;                                                                                                            \

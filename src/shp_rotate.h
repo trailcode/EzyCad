@@ -2,16 +2,14 @@
 
 #include "shp_operation.h"
 
-enum class Rotation_axis
-{
+enum class Rotation_axis {
   View_to_object,  // Rotate around view axis through object center
   X_axis,          // Rotate around global X axis
   Y_axis,          // Rotate around global Y axis
   Z_axis           // Rotate around global Z axis
 };
 
-class Shp_rotate : private Shp_operation_base
-{
+class Shp_rotate : private Shp_operation_base {
  public:
   Shp_rotate(Occt_view& view);
 
@@ -21,8 +19,7 @@ class Shp_rotate : private Shp_operation_base
   void                 cancel();
 
   void          set_rotation_axis(Rotation_axis axis);
-  Rotation_axis get_rotation_axis() const
-  {
+  Rotation_axis get_rotation_axis() const {
     return m_rotation_axis;
   }
 

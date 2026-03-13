@@ -6,8 +6,7 @@
 #include "dbg.h"
 
 // Enum class for result status
-enum class Result_status : uint8_t
-{
+enum class Result_status : uint8_t {
   Success,
   Error,
   User_error,
@@ -15,53 +14,45 @@ enum class Result_status : uint8_t
   Null
 };
 
-class Status
-{
+class Status {
  public:
   Status(const Result_status status, const std::string& msg = "")
       : m_v(status), m_msg(msg) {}
 
-  static Status ok(const std::string& msg = "")
-  {
+  static Status ok(const std::string& msg = "") {
     return Status(Result_status::Success, msg);
   }
 
-  static Status user_error(const std::string& msg)
-  {
+  static Status user_error(const std::string& msg) {
     return Status(Result_status::User_error, msg);
   }
 
   // Get the status
-  Result_status status() const noexcept
-  {
+  Result_status status() const noexcept {
     return m_v;
   }
 
-  bool is_ok() const noexcept
-  {
+  bool is_ok() const noexcept {
     return m_v == Result_status::Success;
   }
 
   // Get the error message (if any)
-  const std::string& message() const noexcept
-  {
+  const std::string& message() const noexcept {
     return m_msg;
   }
 
-  bool operator==(const Result_status v) const noexcept
-  {
+  bool operator==(const Result_status v) const noexcept {
     return status() == v;
   }
 
- //protected:
+  // protected:
   Result_status m_v;
   std::string   m_msg;
 };
 
 // Templated Result class
 template <typename T>
-class Result : public Status
-{
+class Result : public Status {
  public:
   // Default constructor sets status to Null
   Result();

@@ -31,13 +31,12 @@
 struct GLFWwindow;
 
 //! GLFWwindow wrapper implementing Aspect_Window interface.
-class Occt_glfw_win : public Aspect_Window
-{
+class Occt_glfw_win : public Aspect_Window {
   DEFINE_STANDARD_RTTI_INLINE(Occt_glfw_win, Aspect_Window)
-public:
+ public:
   //! Main constructor.
-  Occt_glfw_win (int theWidth, int theHeight, const TCollection_AsciiString& theTitle);
-  Occt_glfw_win(GLFWwindow*      GlfwWindow);
+  Occt_glfw_win(int theWidth, int theHeight, const TCollection_AsciiString& theTitle);
+  Occt_glfw_win(GLFWwindow* GlfwWindow);
 
   //! Close the window.
   virtual ~Occt_glfw_win() { Close(); }
@@ -46,7 +45,7 @@ public:
   void Close();
 
   //! Return X Display connection.
-  const Handle(Aspect_DisplayConnection)& GetDisplay() const { return myDisplay; }
+  const Handle(Aspect_DisplayConnection) & GetDisplay() const { return myDisplay; }
 
   //! Return GLFW window.
   GLFWwindow* getGlfwWindow() { return myGlfwWindow; }
@@ -59,8 +58,7 @@ public:
   //! Return cursor position.
   Graphic3d_Vec2i CursorPosition() const;
 
-public:
-
+ public:
 #ifndef __EMSCRIPTEN__
   //! Returns native Window handle
   virtual Aspect_Drawable NativeHandle() const Standard_OVERRIDE;
@@ -84,9 +82,8 @@ public:
   //! Closes the window <me>.
   virtual void Unmap() const Standard_OVERRIDE;
 
-  virtual void Position (Standard_Integer& theX1, Standard_Integer& theY1,
-                         Standard_Integer& theX2, Standard_Integer& theY2) const Standard_OVERRIDE
-  {
+  virtual void Position(Standard_Integer& theX1, Standard_Integer& theY1,
+                        Standard_Integer& theX2, Standard_Integer& theY2) const Standard_OVERRIDE {
     theX1 = myXLeft;
     theX2 = myXRight;
     theY1 = myYTop;
@@ -94,21 +91,19 @@ public:
   }
 
   //! Returns The Window RATIO equal to the physical WIDTH/HEIGHT dimensions.
-  virtual Standard_Real Ratio() const Standard_OVERRIDE
-  {
-    return Standard_Real (myXRight - myXLeft) / Standard_Real (myYBottom - myYTop);
+  virtual Standard_Real Ratio() const Standard_OVERRIDE {
+    return Standard_Real(myXRight - myXLeft) / Standard_Real(myYBottom - myYTop);
   }
 
   //! Return window size.
-  virtual void Size (Standard_Integer& theWidth, Standard_Integer& theHeight) const Standard_OVERRIDE
-  {
+  virtual void Size(Standard_Integer& theWidth, Standard_Integer& theHeight) const Standard_OVERRIDE {
     theWidth  = myXRight - myXLeft;
     theHeight = myYBottom - myYTop;
   }
 
   virtual Aspect_FBConfig NativeFBConfig() const Standard_OVERRIDE { return NULL; }
 
-protected:
+ protected:
   Handle(Aspect_DisplayConnection) myDisplay;
   GLFWwindow*      myGlfwWindow;
   Standard_Integer myXLeft;
@@ -117,4 +112,4 @@ protected:
   Standard_Integer myYBottom;
 };
 
-#endif // _Occt_glfw_win_Header
+#endif  // _Occt_glfw_win_Header

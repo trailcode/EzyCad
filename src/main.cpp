@@ -17,19 +17,18 @@
 
 #ifdef __EMSCRIPTEN__
 #include <emscripten.h>
+
 #include "third_party/imgui/emscripten/emscripten_mainloop_stub.h"
 
 static GUI* s_gui_for_unload = nullptr;
 
-extern "C" void emscripten_save_settings_on_unload()
-{
+extern "C" void emscripten_save_settings_on_unload() {
   if (s_gui_for_unload)
     s_gui_for_unload->save_occt_view_settings();
 }
 #endif
 
-static void glfw_error_callback(int error, const char* description)
-{
+static void glfw_error_callback(int error, const char* description) {
   fprintf(stderr, "GLFW Error %d: %s\n", error, description);
 }
 
@@ -44,14 +43,12 @@ void key_callback_wrapper(GLFWwindow* window,
                           int         key,
                           int         scancode,
                           int         action,
-                          int         mods)
-{
+                          int         mods) {
   if (keyCallback)
     keyCallback(window, key, scancode, action, mods);
 }
 
-void cursor_pos_callback_wrapper(GLFWwindow* window, double xpos, double ypos)
-{
+void cursor_pos_callback_wrapper(GLFWwindow* window, double xpos, double ypos) {
   if (cursorPosCallback)
     cursorPosCallback(window, xpos, ypos);
 }
@@ -59,32 +56,28 @@ void cursor_pos_callback_wrapper(GLFWwindow* window, double xpos, double ypos)
 void mouse_button_callback_wrapper(GLFWwindow* window,
                                    int         button,
                                    int         action,
-                                   int         mods)
-{
+                                   int         mods) {
   if (mouseButtonCallback)
     mouseButtonCallback(window, button, action, mods);
 }
 
-void window_size_callback_wrapper(GLFWwindow* window, int width, int height)
-{
+void window_size_callback_wrapper(GLFWwindow* window, int width, int height) {
   if (windowSizeCallback)
     windowSizeCallback(window, width, height);
 }
 
-void scroll_callback_wrapper(GLFWwindow* window, double xoffset, double yoffset)
-{
+void scroll_callback_wrapper(GLFWwindow* window, double xoffset, double yoffset) {
   if (scroll_callback)
     scroll_callback(window, xoffset, yoffset);
 }
 
 // Main code
-int main(int, char**)
-{
+int main(int, char**) {
   glfwSetErrorCallback(glfw_error_callback);
   if (!glfwInit())
     return 1;
 
-    // Decide GL+GLSL versions
+  // Decide GL+GLSL versions
 #if defined(IMGUI_IMPL_OPENGL_ES2)
   // GL ES 2.0 + GLSL 100 (WebGL 1.0)
   const char* glsl_version = "#version 100";
@@ -128,7 +121,7 @@ int main(int, char**)
   glfwMakeContextCurrent(window);
   glfwSwapInterval(1);  // Enable vsync
 
-  //glfwSetWindowIcon()
+  // glfwSetWindowIcon()
 
   // Setup Dear ImGui context
   IMGUI_CHECKVERSION();
@@ -157,18 +150,14 @@ int main(int, char**)
   s_gui_for_unload = &gui;
   EM_ASM(
       {
-        window.addEventListener('beforeunload', function() {
-          Module.ccall('emscripten_save_settings_on_unload', null, [], []);
-        });
+        window.addEventListener('beforeunload', function() { Module.ccall('emscripten_save_settings_on_unload', null, [], []); });
       });
 #endif
 
-  keyCallback = [&](GLFWwindow* window, int key, int scancode, int action, int mods)
-  {
+  keyCallback = [&](GLFWwindow* window, int key, int scancode, int action, int mods) {
     // Tab is an app hotkey (dimension/angle cycling): handle only on key-down and
     // don't forward Tab press/release to ImGui focus navigation.
-    if (key == GLFW_KEY_TAB)
-    {
+    if (key == GLFW_KEY_TAB) {
       if (action == GLFW_PRESS)
         gui.on_key(key, scancode, action, mods);
       return;
@@ -176,8 +165,7 @@ int main(int, char**)
 
     // Undo/redo: handle regardless of focus so they work from any pane.
     if (action == GLFW_PRESS && (mods & GLFW_MOD_CONTROL) &&
-        (key == GLFW_KEY_Z || key == GLFW_KEY_Y))
-    {
+        (key == GLFW_KEY_Z || key == GLFW_KEY_Y)) {
       gui.on_key(key, scancode, action, mods);
       return;
     }
@@ -187,30 +175,26 @@ int main(int, char**)
       gui.on_key(key, scancode, action, mods);
   };
 
-  cursorPosCallback = [&](GLFWwindow* window, double xpos, double ypos)
-  {
+  cursorPosCallback = [&](GLFWwindow* window, double xpos, double ypos) {
     if (!io.WantCaptureMouse)
       gui.on_mouse_pos(ScreenCoords(glm::dvec2(xpos, ypos)));
 
     ImGui_ImplGlfw_CursorPosCallback(window, xpos, ypos);
   };
 
-  mouseButtonCallback = [&](GLFWwindow* window, int button, int action, int mods)
-  {
+  mouseButtonCallback = [&](GLFWwindow* window, int button, int action, int mods) {
     if (!io.WantCaptureMouse)
       gui.on_mouse_button(button, action, mods);
 
     ImGui_ImplGlfw_MouseButtonCallback(window, button, action, mods);
   };
 
-  windowSizeCallback = [&](GLFWwindow* window, int width, int height)
-  {
+  windowSizeCallback = [&](GLFWwindow* window, int width, int height) {
     // Update the view size
     gui.on_resize(width, height);
   };
 
-  scroll_callback = [&](GLFWwindow* window, double xoffset, double yoffset)
-  {
+  scroll_callback = [&](GLFWwindow* window, double xoffset, double yoffset) {
     if (!io.WantCaptureMouse)
       gui.on_mouse_scroll(xoffset, yoffset);
 
@@ -240,8 +224,7 @@ int main(int, char**)
     // keyboard data. Generally you may always pass all inputs to dear imgui,
     // and hide them from your application based on those two flags.
     glfwPollEvents();
-    if (glfwGetWindowAttrib(window, GLFW_ICONIFIED) != 0)
-    {
+    if (glfwGetWindowAttrib(window, GLFW_ICONIFIED) != 0) {
       ImGui_ImplGlfw_Sleep(10);
       continue;
     }
@@ -260,8 +243,7 @@ int main(int, char**)
     glfwGetFramebufferSize(window, &display_w, &display_h);
     static int last_display_w = 0;
     static int last_display_h = 0;
-    if (last_display_w != display_w || last_display_h != display_h)
-    {
+    if (last_display_w != display_w || last_display_h != display_h) {
       // TODO use glfw callback;
       last_display_w = display_w;
       last_display_h = display_h;
@@ -282,8 +264,7 @@ int main(int, char**)
 
     glfwSwapBuffers(window);
 
-    if (io.WantSaveIniSettings)
-    {
+    if (io.WantSaveIniSettings) {
       gui.save_occt_view_settings();
       io.WantSaveIniSettings = false;
     }

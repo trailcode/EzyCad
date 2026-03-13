@@ -1,19 +1,19 @@
 #include "shp_cut.h"
+
+#include <BRepAlgoAPI_Cut.hxx>
+#include <TopTools_ListOfShape.hxx>
+
 #include "occt_view.h"
 #include "utl.h"
-
-#include <TopTools_ListOfShape.hxx>
-#include <BRepAlgoAPI_Cut.hxx>
 
 Shp_cut::Shp_cut(Occt_view& view)
     : Shp_operation_base(view) {}
 
-Status Shp_cut::selected_cut()
-{
+Status Shp_cut::selected_cut() {
   view().push_undo_snapshot();
   CHK_RET(ensure_operation_multi_shps_());
-  
-  std::vector<ShapeBase_ptr>::iterator itr = m_shps.begin();
+
+  std::vector<Shp_ptr>::iterator itr = m_shps.begin();
 
   TopTools_ListOfShape tool_list;
   TopTools_ListOfShape arguments;
@@ -34,7 +34,7 @@ Status Shp_cut::selected_cut()
   if (result_shape.IsNull())
     return Status::user_error("Error: Resulting shape is null");
 
-  extruded_shp_ptr shp = new Extruded_shp(ctx(), result_shape);
+  Shp_ptr shp = new Shp(ctx(), result_shape);
   shp->set_name("Cut");
   delete_operation_shps_();
   add_shp_(shp);

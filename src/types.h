@@ -35,8 +35,7 @@ using StdSelect_BRepOwner_ptr    = opencascade::handle<StdSelect_BRepOwner>;
 
 // Primary template for non-vector types
 template <typename T>
-class SafeType
-{
+class SafeType {
  private:
   T m_value;
 

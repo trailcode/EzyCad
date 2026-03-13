@@ -16,14 +16,12 @@ class TopoDS_Wire;
 class Sketch;
 enum class Mode;
 
-struct Sketch_AIS_edge : public AIS_Shape
-{
+struct Sketch_AIS_edge : public AIS_Shape {
   Sketch_AIS_edge(Sketch& owner, const TopoDS_Shape& shp);
   Sketch& owner_sketch;
 };
 
-struct Sketch_face_shp : public AIS_Shape
-{
+struct Sketch_face_shp : public AIS_Shape {
   Sketch_face_shp(Sketch& owner, const TopoDS_Shape& face);
 
   Sketch&             owner_sketch;
@@ -38,8 +36,7 @@ using Sketch_face_shp_ptr = opencascade::handle<Sketch_face_shp>;
 // It supports adding and moving points, creating line segments, arcs, and mirror lines, and updating the sketch's
 // visibility and style. The class also includes helper methods for snapping points, updating edge shapes,
 // and extracting faces from the sketch.
-class Sketch
-{
+class Sketch {
  public:
   using Sketch_ptr = std::shared_ptr<Sketch>;
 
@@ -49,8 +46,7 @@ class Sketch
 
   ~Sketch();
 
-  enum Edge_style
-  {
+  enum Edge_style {
     Full,
     Background,
     Hidden
@@ -75,7 +71,7 @@ class Sketch
   void set_show_dims(bool show);
 
   // Revolve related
-  revolved_shp_rslt revolve_selected(const double angle);
+  Shp_rslt revolve_selected(const double angle);
 
   bool is_current() const;
   void set_current();  // Make current in m_view
@@ -106,8 +102,7 @@ class Sketch
   friend class Sketch_access;
   friend class Sketch_test;  // TEST_F(Sketch_test, JsonSerializationDeserialization)
 
-  struct Edge
-  {
+  struct Edge {
     size_t                node_idx_a;
     std::optional<size_t> node_idx_b;
     std::optional<size_t> node_idx_arc;  // Only valid for circle arc edges.
@@ -121,8 +116,7 @@ class Sketch
     bool reversed(size_t idx_a, size_t idx_b) const;
   };
 
-  struct Face_edge
-  {
+  struct Face_edge {
     const Edge& edge;
     bool        reversed;
     size_t      start_nd_idx() const;
@@ -130,8 +124,7 @@ class Sketch
   };
 
   // When user types in a edge length.
-  struct Edge_len
-  {
+  struct Edge_len {
     gp_Dir2d dir;
     double   len;
   };
@@ -140,8 +133,7 @@ class Sketch
   using Face_edges = std::vector<Face_edge>;
 
   // Line string / segment related
-  enum class Linestring_type
-  {
+  enum class Linestring_type {
     Single,
     Two,
     Multiple

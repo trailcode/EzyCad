@@ -6,8 +6,7 @@
 #include "occt_view.h"
 #include "sketch.h"
 
-extern "C"
-{
+extern "C" {
 #include "lauxlib.h"
 #include "lua.h"
 #include "lualib.h"
@@ -16,12 +15,10 @@ extern "C"
 #include <cstring>
 #include <sstream>
 
-namespace
-{
+namespace {
 const char* k_registry_gui = "ezycad_gui";
 
-GUI* get_gui(lua_State* L)
-{
+GUI* get_gui(lua_State* L) {
   lua_getfield(L, LUA_REGISTRYINDEX, k_registry_gui);
   GUI* gui = static_cast<GUI*>(lua_touserdata(L, -1));
   lua_pop(L, 1);
@@ -29,8 +26,7 @@ GUI* get_gui(lua_State* L)
 }
 
 // ezy.log(msg) -> append to console and log window
-int l_ezy_log(lua_State* L)
-{
+int l_ezy_log(lua_State* L) {
   const char* msg = luaL_checkstring(L, 1);
   GUI*        gui = get_gui(L);
   if (gui)
@@ -42,8 +38,7 @@ int l_ezy_log(lua_State* L)
 }
 
 // ezy.msg(text) -> show_message
-int l_ezy_msg(lua_State* L)
-{
+int l_ezy_msg(lua_State* L) {
   const char* text = luaL_checkstring(L, 1);
   GUI*        gui  = get_gui(L);
   if (gui)
@@ -52,11 +47,9 @@ int l_ezy_msg(lua_State* L)
 }
 
 // ezy.get_mode() -> string
-int l_ezy_get_mode(lua_State* L)
-{
+int l_ezy_get_mode(lua_State* L) {
   GUI* gui = get_gui(L);
-  if (!gui)
-  {
+  if (!gui) {
     lua_pushstring(L, "Normal");
     return 1;
   }
@@ -66,8 +59,7 @@ int l_ezy_get_mode(lua_State* L)
 }
 
 // ezy.set_mode(name)
-int l_ezy_set_mode(lua_State* L)
-{
+int l_ezy_set_mode(lua_State* L) {
   const char* name = luaL_checkstring(L, 1);
   GUI*        gui  = get_gui(L);
   if (gui)
@@ -76,12 +68,10 @@ int l_ezy_set_mode(lua_State* L)
 }
 
 // view.sketch_count() -> number
-int l_view_sketch_count(lua_State* L)
-{
+int l_view_sketch_count(lua_State* L) {
   GUI*       gui  = get_gui(L);
   Occt_view* view = gui ? gui->get_view() : nullptr;
-  if (!view)
-  {
+  if (!view) {
     lua_pushinteger(L, 0);
     return 1;
   }
@@ -90,12 +80,10 @@ int l_view_sketch_count(lua_State* L)
 }
 
 // view.shape_count() -> number
-int l_view_shape_count(lua_State* L)
-{
+int l_view_shape_count(lua_State* L) {
   GUI*       gui  = get_gui(L);
   Occt_view* view = gui ? gui->get_view() : nullptr;
-  if (!view)
-  {
+  if (!view) {
     lua_pushinteger(L, 0);
     return 1;
   }
@@ -104,12 +92,10 @@ int l_view_shape_count(lua_State* L)
 }
 
 // view.curr_sketch_name() -> string
-int l_view_curr_sketch_name(lua_State* L)
-{
+int l_view_curr_sketch_name(lua_State* L) {
   GUI*       gui  = get_gui(L);
   Occt_view* view = gui ? gui->get_view() : nullptr;
-  if (!view)
-  {
+  if (!view) {
     lua_pushstring(L, "");
     return 1;
   }
@@ -118,8 +104,7 @@ int l_view_curr_sketch_name(lua_State* L)
 }
 
 // view.add_box(ox, oy, oz, w, l, h)
-int l_view_add_box(lua_State* L)
-{
+int l_view_add_box(lua_State* L) {
   GUI*       gui  = get_gui(L);
   Occt_view* view = gui ? gui->get_view() : nullptr;
   if (!view)
@@ -135,8 +120,7 @@ int l_view_add_box(lua_State* L)
 }
 
 // view.add_sphere(ox, oy, oz, radius)
-int l_view_add_sphere(lua_State* L)
-{
+int l_view_add_sphere(lua_State* L) {
   GUI*       gui  = get_gui(L);
   Occt_view* view = gui ? gui->get_view() : nullptr;
   if (!view)
@@ -150,8 +134,7 @@ int l_view_add_sphere(lua_State* L)
 }
 
 // ezy.help() / help() - print available commands
-int l_ezy_help(lua_State* L)
-{
+int l_ezy_help(lua_State* L) {
   lua_getfield(L, LUA_REGISTRYINDEX, "ezycad_console");
   Lua_console* con = static_cast<Lua_console*>(lua_touserdata(L, -1));
   lua_pop(L, 1);
@@ -176,21 +159,18 @@ int l_ezy_help(lua_State* L)
 }  // namespace
 
 // Called from C callback; we need to store Lua_console* in registry to get back
-void Lua_console::append_line_from_lua(const std::string& line)
-{
+void Lua_console::append_line_from_lua(const std::string& line) {
   m_history.push_back(line);
   m_scroll_to_bottom = true;
 }
 
-void Lua_console::append_line(const std::string& line, bool is_error)
-{
+void Lua_console::append_line(const std::string& line, bool is_error) {
   m_history.push_back(is_error ? "[err] " + line : line);
   m_scroll_to_bottom = true;
 }
 
 Lua_console::Lua_console(GUI* gui)
-    : m_gui(gui)
-{
+    : m_gui(gui) {
   m_L = luaL_newstate();
   if (!m_L)
     return;
@@ -203,14 +183,12 @@ Lua_console::Lua_console(GUI* gui)
   append_line("Lua console ready. Try: ezy.log('hello'), ezy.get_mode(), view.sketch_count()");
 }
 
-Lua_console::~Lua_console()
-{
+Lua_console::~Lua_console() {
   if (m_L)
     lua_close(m_L);
 }
 
-void Lua_console::register_bindings()
-{
+void Lua_console::register_bindings() {
   if (!m_L || !m_gui)
     return;
 
@@ -256,29 +234,24 @@ void Lua_console::register_bindings()
   lua_setglobal(m_L, "print");
 }
 
-void Lua_console::execute(const std::string& code)
-{
+void Lua_console::execute(const std::string& code) {
   if (!m_L || code.empty())
     return;
   append_line("> " + code);
-  if (luaL_loadstring(m_L, code.c_str()) != LUA_OK)
-  {
+  if (luaL_loadstring(m_L, code.c_str()) != LUA_OK) {
     append_line(lua_tostring(m_L, -1), true);
     lua_pop(m_L, 1);
     return;
   }
-  if (lua_pcall(m_L, 0, LUA_MULTRET, 0) != LUA_OK)
-  {
+  if (lua_pcall(m_L, 0, LUA_MULTRET, 0) != LUA_OK) {
     append_line(lua_tostring(m_L, -1), true);
     lua_pop(m_L, 1);
     return;
   }
   int n = lua_gettop(m_L);
-  if (n > 0)
-  {
+  if (n > 0) {
     std::ostringstream oss;
-    for (int i = 1; i <= n; ++i)
-    {
+    for (int i = 1; i <= n; ++i) {
       if (i > 1)
         oss << "\t";
       const char* s = lua_tostring(m_L, i);
@@ -289,25 +262,21 @@ void Lua_console::execute(const std::string& code)
   }
 }
 
-void Lua_console::render(bool* p_open)
-{
-  if (!ImGui::Begin("Lua Console", p_open, ImGuiWindowFlags_None))
-  {
+void Lua_console::render(bool* p_open) {
+  if (!ImGui::Begin("Lua Console", p_open, ImGuiWindowFlags_None)) {
     ImGui::End();
     return;
   }
 
   float height = ImGui::GetContentRegionAvail().y - ImGui::GetFrameHeightWithSpacing() - 4.f;
-  if (height > 80.f)
-  {
+  if (height > 80.f) {
     // Build selectable/copyable text from history (limit size for performance)
     constexpr size_t k_max_lines = 5000;
     constexpr size_t k_max_chars = 512 * 1024;
     std::string      display_text;
     display_text.reserve(m_history.size() * 32);
     size_t start_idx = m_history.size() > k_max_lines ? m_history.size() - k_max_lines : 0;
-    for (size_t i = start_idx; i < m_history.size() && display_text.size() < k_max_chars; ++i)
-    {
+    for (size_t i = start_idx; i < m_history.size() && display_text.size() < k_max_chars; ++i) {
       display_text += m_history[i];
       display_text += '\n';
     }
@@ -316,8 +285,7 @@ void Lua_console::render(bool* p_open)
     ImGui::BeginChild("Lua_consoleScroll", ImVec2(0, height), true, ImGuiWindowFlags_HorizontalScrollbar);
     ImGui::InputTextMultiline("##lua_console_output", display_text.data(), display_text.size(),
                               ImVec2(-1, -1), ImGuiInputTextFlags_ReadOnly);
-    if (m_scroll_to_bottom)
-    {
+    if (m_scroll_to_bottom) {
       ImGui::SetScrollHereY(1.0f);
       m_scroll_to_bottom = false;
     }
@@ -326,8 +294,7 @@ void Lua_console::render(bool* p_open)
 
   ImGui::SetNextItemWidth(-1);
   bool run = ImGui::InputTextWithHint("##lua_input", "Enter Lua code (e.g. ezy.log('hi'))", m_input_buf, k_input_buf_size, ImGuiInputTextFlags_EnterReturnsTrue);
-  if (run)
-  {
+  if (run) {
     execute(m_input_buf);
     m_input_buf[0] = '\0';
     ImGui::SetKeyboardFocusHere(-1);  // Refocus the command line for the next input
