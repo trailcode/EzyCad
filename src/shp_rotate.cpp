@@ -7,8 +7,8 @@
 
 #include "geom.h"
 #include "gui.h"
-#include "utl.h"
 #include "occt_view.h"
+#include "utl.h"
 
 Shp_rotate::Shp_rotate(Occt_view& view)
     : Shp_operation_base(view) {}

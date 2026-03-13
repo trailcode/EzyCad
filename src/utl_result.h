@@ -53,7 +53,7 @@ class Status
     return status() == v;
   }
 
- //protected:
+  // protected:
   Result_status m_v;
   std::string   m_msg;
 };

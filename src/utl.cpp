@@ -1,6 +1,6 @@
-#include <GLFW/glfw3.h>
-
 #include "utl.h"
+
+#include <GLFW/glfw3.h>
 
 #include <filesystem>
 

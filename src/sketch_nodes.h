@@ -1,11 +1,11 @@
 #pragma once
 
-#include "types.h"
-
 #include <gp_Pln.hxx>
 #include <gp_Pnt2d.hxx>
 #include <optional>
 #include <set>
+
+#include "types.h"
 
 class gp_Pln;
 class gp_Pnt2d;

@@ -1,18 +1,18 @@
 #include "sketch_nodes.h"
-#include "occt_view.h"
-#include "geom.h"
 
 #include <TopoDS_Wire.hxx>
+
+#include "geom.h"
+#include "occt_view.h"
 
 Sketch_nodes::Sketch_nodes(Occt_view& view, const gp_Pln& pln)
     : m_view(view), m_ctx(m_view.ctx()), m_pln(pln)
 {
-
 }
 
 Sketch_nodes::~Sketch_nodes()
 {
-  hide_snap_annos(); // Deletes them from context
+  hide_snap_annos();  // Deletes them from context
 }
 
 std::optional<gp_Pnt2d> Sketch_nodes::snap(const ScreenCoords& screen_coords)
@@ -20,7 +20,7 @@ std::optional<gp_Pnt2d> Sketch_nodes::snap(const ScreenCoords& screen_coords)
   std::optional<gp_Pnt2d> pt = m_view.pt_on_plane(screen_coords, m_pln);
   if (pt)
     try_get_node_idx_snap(*pt);
-  
+
   return pt;
 }
 
@@ -54,7 +54,7 @@ std::optional<size_t> Sketch_nodes::try_get_node_idx_snap(
     const std::vector<size_t>& to_exclude)
 {
   // Calculate snap_dist in world coordinates
-  double       snap_dist;
+  double snap_dist;
   if (!m_view.is_headless())
   {
     gp_Pnt       pt3d_on_plane       = to_3d(m_pln, pt);
@@ -124,7 +124,7 @@ std::optional<size_t> Sketch_nodes::try_get_node_idx_snap(
 
     auto try_nd_pt = [&](const gp_Pnt2d& nd_pt)
     {
-      double dist      = pt_original.SquareDistance(nd_pt);
+      double dist                      = pt_original.SquareDistance(nd_pt);
       // axis_dist needs to be compared against a linear snap distance in screen pixels.
       // This part becomes tricky because axis_dist is a world coordinate difference.
       // We'd ideally convert m_snap_dist_pixels * 0.5 to a world distance along the axis.
@@ -134,7 +134,7 @@ std::optional<size_t> Sketch_nodes::try_get_node_idx_snap(
       // We need a world-space equivalent for axis snapping.
       // Let's use sqrt(snap_dist_sq) * 0.5 for now.
       double axis_snap_threshold_world = sqrt(snap_dist) * 0.5;
-      double axis_dist = std::fabs(pt_original.XY().Coord(i + 1) - nd_pt.XY().Coord(i + 1));
+      double axis_dist                 = std::fabs(pt_original.XY().Coord(i + 1) - nd_pt.XY().Coord(i + 1));
 
       if (dist < best_dist && axis_dist <= axis_snap_threshold_world)
       {

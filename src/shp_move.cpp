@@ -1,8 +1,9 @@
 #include "shp_move.h"
+
 #include "geom.h"
 #include "gui.h"
-#include "utl.h"
 #include "occt_view.h"
+#include "utl.h"
 
 Shp_move::Shp_move(Occt_view& view)
     : Shp_operation_base(view) {}
@@ -23,7 +24,7 @@ Status Shp_move::move_selected(const ScreenCoords& screen_coords)
   std::optional<gp_Pnt> mouse_wc_pos = view().pt3d_on_plane(screen_coords, *m_move_pln);
   if (!mouse_wc_pos)
     return Status::user_error("Adjust view, cannot get point on plane.");
-  
+
   bool no_axis_constraints = !m_opts.constr_axis_x && !m_opts.constr_axis_y && !m_opts.constr_axis_z;
 
   if (m_delta.override_x.has_value())
@@ -60,7 +61,7 @@ void Shp_move::show_dist_edit(const ScreenCoords& screen_coords)
   auto dist_edit_axis_x = [&, screen_coords](float new_dist, bool is_final)
   {
     m_delta.override_x = new_dist * view().get_dimension_scale();
-    EZY_ASSERT(move_selected(screen_coords).is_ok()); // Status should always be valid here
+    EZY_ASSERT(move_selected(screen_coords).is_ok());  // Status should always be valid here
     if (is_final)
       check_finalize_();
   };

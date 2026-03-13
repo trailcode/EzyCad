@@ -23,12 +23,12 @@ class Shp_polar_dup : private Shp_operation_base
   void                 reset();
 
  private:
-  gp_Pnt                     m_shps_center;
-  AIS_Shape_ptr              m_polar_arm;
-  std::optional<gp_Pnt2d>    m_polar_arm_end;
-  std::optional<gp_Pnt2d>    m_polar_arm_origin;
-  double                     m_polar_angle {360.0};
-  bool                       m_rotate_dups {true};
-  bool                       m_combine_dups {true};
-  size_t                     m_num_elms {5};
+  gp_Pnt                  m_shps_center;
+  AIS_Shape_ptr           m_polar_arm;
+  std::optional<gp_Pnt2d> m_polar_arm_end;
+  std::optional<gp_Pnt2d> m_polar_arm_origin;
+  double                  m_polar_angle {360.0};
+  bool                    m_rotate_dups {true};
+  bool                    m_combine_dups {true};
+  size_t                  m_num_elms {5};
 };

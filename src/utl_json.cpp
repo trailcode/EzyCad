@@ -1,7 +1,7 @@
 #include "utl_json.h"
 
-#include <gp_Pnt.hxx>
 #include <gp_Pln.hxx>
+#include <gp_Pnt.hxx>
 
 using json = nlohmann::json;  // Alias for convenience
 
@@ -29,8 +29,8 @@ json to_json(const gp_Dir& direction)
 json to_json(const gp_Pln& pln)
 {
   return {
-      {"origin",         to_json(pln.Location())}, // Plane’s origin point
-      {"normal", to_json(pln.Axis().Direction())}, // Plane’s normal direction
+      {"origin",          to_json(pln.Location())}, // Plane’s origin point
+      {"normal",  to_json(pln.Axis().Direction())}, // Plane’s normal direction
       { "xAxis", to_json(pln.XAxis().Direction())}  // Plane’s X axis
   };
 }
