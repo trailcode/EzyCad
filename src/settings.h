@@ -20,4 +20,4 @@ std::string load_with_defaults();
 
 // Save settings blob. Works on native (file) and Emscripten (localStorage).
 void save(const std::string& content);
-}
+}  // namespace settings

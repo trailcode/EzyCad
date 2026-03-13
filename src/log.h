@@ -19,4 +19,4 @@ class Log_strm : public std::streambuf
   GUI&            m_gui;
   std::streambuf* m_original_buf;
   std::string     m_buffer;
-}; 
+};

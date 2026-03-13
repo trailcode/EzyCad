@@ -178,40 +178,40 @@ class GUI
   Log_strm*       m_cout_log_buf      = nullptr;  // Custom stdout buffer
   Log_strm*       m_cerr_log_buf      = nullptr;  // Custom stderr buffer
 
-  std::string m_last_saved_path;  // Added to store last saved file path
-  std::vector<std::pair<std::string, std::string>> m_example_files;  // (display_name, path) for Examples menu
-  bool        m_show_sketch_list {true};
-  bool        m_show_shape_list {true};
-  bool        m_show_options {true};
-  bool        m_show_settings_dialog {false};
-  bool        m_open_add_box_popup {false};
-  double      m_add_box_origin_x {0};
-  double      m_add_box_origin_y {0};
-  double      m_add_box_origin_z {0};
-  double      m_add_box_width {1};
-  double      m_add_box_length {1};
-  double      m_add_box_height {1};
-  bool        m_open_add_pyramid_popup {false};
-  double      m_add_pyramid_origin_x {0}, m_add_pyramid_origin_y {0}, m_add_pyramid_origin_z {0};
-  double      m_add_pyramid_side {1};
-  bool        m_open_add_sphere_popup {false};
-  double      m_add_sphere_origin_x {0}, m_add_sphere_origin_y {0}, m_add_sphere_origin_z {0};
-  double      m_add_sphere_radius {1};
-  bool        m_open_add_cylinder_popup {false};
-  double      m_add_cylinder_origin_x {0}, m_add_cylinder_origin_y {0}, m_add_cylinder_origin_z {0};
-  double      m_add_cylinder_radius {1}, m_add_cylinder_height {1};
-  bool        m_open_add_cone_popup {false};
-  double      m_add_cone_origin_x {0}, m_add_cone_origin_y {0}, m_add_cone_origin_z {0};
-  double      m_add_cone_R1 {1}, m_add_cone_R2 {0}, m_add_cone_height {1};
-  bool        m_open_add_torus_popup {false};
-  double      m_add_torus_origin_x {0}, m_add_torus_origin_y {0}, m_add_torus_origin_z {0};
-  double      m_add_torus_R1 {1}, m_add_torus_R2 {0.5};
-  bool        m_hide_all_shapes {false};
-  bool        m_show_tool_tips {true};
-  bool        m_dark_mode {false};
+  std::string                                      m_last_saved_path;  // Added to store last saved file path
+  std::vector<std::pair<std::string, std::string>> m_example_files;    // (display_name, path) for Examples menu
+  bool                                             m_show_sketch_list {true};
+  bool                                             m_show_shape_list {true};
+  bool                                             m_show_options {true};
+  bool                                             m_show_settings_dialog {false};
+  bool                                             m_open_add_box_popup {false};
+  double                                           m_add_box_origin_x {0};
+  double                                           m_add_box_origin_y {0};
+  double                                           m_add_box_origin_z {0};
+  double                                           m_add_box_width {1};
+  double                                           m_add_box_length {1};
+  double                                           m_add_box_height {1};
+  bool                                             m_open_add_pyramid_popup {false};
+  double                                           m_add_pyramid_origin_x {0}, m_add_pyramid_origin_y {0}, m_add_pyramid_origin_z {0};
+  double                                           m_add_pyramid_side {1};
+  bool                                             m_open_add_sphere_popup {false};
+  double                                           m_add_sphere_origin_x {0}, m_add_sphere_origin_y {0}, m_add_sphere_origin_z {0};
+  double                                           m_add_sphere_radius {1};
+  bool                                             m_open_add_cylinder_popup {false};
+  double                                           m_add_cylinder_origin_x {0}, m_add_cylinder_origin_y {0}, m_add_cylinder_origin_z {0};
+  double                                           m_add_cylinder_radius {1}, m_add_cylinder_height {1};
+  bool                                             m_open_add_cone_popup {false};
+  double                                           m_add_cone_origin_x {0}, m_add_cone_origin_y {0}, m_add_cone_origin_z {0};
+  double                                           m_add_cone_R1 {1}, m_add_cone_R2 {0}, m_add_cone_height {1};
+  bool                                             m_open_add_torus_popup {false};
+  double                                           m_add_torus_origin_x {0}, m_add_torus_origin_y {0}, m_add_torus_origin_z {0};
+  double                                           m_add_torus_R1 {1}, m_add_torus_R2 {0.5};
+  bool                                             m_hide_all_shapes {false};
+  bool                                             m_show_tool_tips {true};
+  bool                                             m_dark_mode {false};
 #ifndef NDEBUG
   bool m_show_dbg {false};
 #endif
-  bool                           m_show_lua_console {false};
-  std::unique_ptr<Lua_console>     m_lua_console;
+  bool                         m_show_lua_console {false};
+  std::unique_ptr<Lua_console> m_lua_console;
 };

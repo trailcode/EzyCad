@@ -1,15 +1,16 @@
 #include "shp_extrude.h"
+
+#include <BRepPrimAPI_MakePrism.hxx>
+#include <Precision.hxx>
+#include <TopoDS.hxx>
+#include <V3d_View.hxx>
+
 #include "dbg.h"
 #include "geom.h"
 #include "gui.h"
 #include "occt_view.h"
 #include "sketch.h"
 #include "utl.h"
-
-#include <BRepPrimAPI_MakePrism.hxx>
-#include <Precision.hxx>
-#include <TopoDS.hxx>
-#include <V3d_View.hxx>
 
 Shp_extrude::Shp_extrude(Occt_view& view)
     : Shp_operation_base(view) {}

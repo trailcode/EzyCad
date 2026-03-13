@@ -143,7 +143,7 @@ void Occt_view::init_viewer()
        aLightIter.More();
        aLightIter.Next())
   {
-    const Handle(V3d_Light) & aLight = aLightIter.Value();
+    const Handle(V3d_Light)& aLight = aLightIter.Value();
     if (aLight->Type() == Graphic3d_TypeOfLightSource_Directional)
       aLight->SetCastShadows(true);
   }

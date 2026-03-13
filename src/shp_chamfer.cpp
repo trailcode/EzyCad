@@ -1,6 +1,4 @@
 #include "shp_chamfer.h"
-#include "modes.h"
-#include "occt_view.h"
 
 #include <BRepFilletAPI_MakeChamfer.hxx>
 #include <TopExp_Explorer.hxx>
@@ -8,6 +6,9 @@
 #include <TopoDS_Edge.hxx>
 #include <TopoDS_Wire.hxx>
 #include <cmath>
+
+#include "modes.h"
+#include "occt_view.h"
 
 Shp_chamfer::Shp_chamfer(Occt_view& view)
     : Shp_operation_base(view) {}

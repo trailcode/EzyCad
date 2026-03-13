@@ -7,8 +7,8 @@
 #include <boost/geometry.hpp>
 #include <glm/glm.hpp>
 #include <gp_Dir2d.hxx>
-#include <optional>
 #include <numbers>
+#include <optional>
 
 #include "dbg.h"
 #include "types.h"
@@ -89,7 +89,7 @@ double compute_angle(const gp_Vec2d& v1, const gp_Vec2d& v2)
 // Function to get the directional vectors at the start and end of a Geom_TrimmedCurve
 std::pair<gp_Vec, gp_Vec> get_start_end_tangents(const Handle(Geom_TrimmedCurve) & curve);
 
-gp_Vec get_end_tangent(const Handle(Geom_TrimmedCurve) & curve);
+gp_Vec                    get_end_tangent(const Handle(Geom_TrimmedCurve) & curve);
 std::pair<gp_Vec, gp_Pnt> get_out_dir_and_end_pt(const Handle(Geom_TrimmedCurve) & curve);
 
 std::pair<gp_Pnt, gp_Pnt>     get_edge_endpoints(const TopoDS_Edge& edge);

@@ -1,6 +1,7 @@
 #include "log.h"
-#include "gui.h"
+
 #include "dbg.h"
+#include "gui.h"
 
 Log_strm::Log_strm(GUI& gui, std::streambuf* original_buf)
     : m_gui(gui), m_original_buf(original_buf)
@@ -12,7 +13,7 @@ int Log_strm::overflow(int c)
 {
   if (c != EOF)
   {
-    if (c == '\n') // Treat as flush
+    if (c == '\n')  // Treat as flush
     {
       if (!m_buffer.empty())
         m_gui.log_message(m_buffer);

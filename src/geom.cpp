@@ -489,7 +489,7 @@ gp_Dir2d get_unit_dir(const gp_Pnt2d& point1, const gp_Pnt2d& point2)
 
   // Check if the vector is zero-length (points are identical)
   EZY_ASSERT_MSG(direction_vector.Magnitude() > Precision::Confusion(),
-                "Error: Points are coincident");
+                 "Error: Points are coincident");
 
   // Normalize the vector and return as gp_Dir2d
   return gp_Dir2d(direction_vector.Normalized());
@@ -751,7 +751,7 @@ boost_geom::polygon_2d to_boost(const TopoDS_Shape& shape, const gp_Pln& pln2)
       std::reverse(out.begin(), out.end());
 
     EZY_ASSERT_MSG(to_pnt2d(out.front()).IsEqual(to_pnt2d(out.back()), Precision::Confusion()),
-                  "Ring not closed!");
+                   "Ring not closed!");
 
     out.pop_back();
 
@@ -888,10 +888,10 @@ TopoDS_Wire make_rectangle_wire(const gp_Pln&   pln,
                                 const gp_Pnt2d& corner2)
 {
   // Assert that corners are not too close in either axis
-  EZY_ASSERT_MSG(std::abs(corner1.X() - corner2.X()) > Precision::Confusion(), 
-                "Rectangle corners too close in X axis");
-  EZY_ASSERT_MSG(std::abs(corner1.Y() - corner2.Y()) > Precision::Confusion(), 
-                "Rectangle corners too close in Y axis");
+  EZY_ASSERT_MSG(std::abs(corner1.X() - corner2.X()) > Precision::Confusion(),
+                 "Rectangle corners too close in X axis");
+  EZY_ASSERT_MSG(std::abs(corner1.Y() - corner2.Y()) > Precision::Confusion(),
+                 "Rectangle corners too close in Y axis");
 
   std::array<gp_Pnt2d, 4> corners = rectangle_corners(corner1, corner2);
 
@@ -920,7 +920,7 @@ std::array<gp_Pnt2d, 4> rectangle_corners(const gp_Pnt2d& corner1, const gp_Pnt2
   // Calculate the other two corners based on the diagonal
   ret[0] = corner1;  // First corner
   ret[2] = corner2;  // Opposite corner (diagonal)
-  
+
   // Calculate the other two corners
   ret[1] = gp_Pnt2d(corner2.X(), corner1.Y());  // Same X as corner2, same Y as corner1
   ret[3] = gp_Pnt2d(corner1.X(), corner2.Y());  // Same X as corner1, same Y as corner2

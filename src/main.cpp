@@ -17,6 +17,7 @@
 
 #ifdef __EMSCRIPTEN__
 #include <emscripten.h>
+
 #include "third_party/imgui/emscripten/emscripten_mainloop_stub.h"
 
 static GUI* s_gui_for_unload = nullptr;
@@ -84,7 +85,7 @@ int main(int, char**)
   if (!glfwInit())
     return 1;
 
-    // Decide GL+GLSL versions
+  // Decide GL+GLSL versions
 #if defined(IMGUI_IMPL_OPENGL_ES2)
   // GL ES 2.0 + GLSL 100 (WebGL 1.0)
   const char* glsl_version = "#version 100";
@@ -128,7 +129,7 @@ int main(int, char**)
   glfwMakeContextCurrent(window);
   glfwSwapInterval(1);  // Enable vsync
 
-  //glfwSetWindowIcon()
+  // glfwSetWindowIcon()
 
   // Setup Dear ImGui context
   IMGUI_CHECKVERSION();
@@ -157,9 +158,7 @@ int main(int, char**)
   s_gui_for_unload = &gui;
   EM_ASM(
       {
-        window.addEventListener('beforeunload', function() {
-          Module.ccall('emscripten_save_settings_on_unload', null, [], []);
-        });
+        window.addEventListener('beforeunload', function() { Module.ccall('emscripten_save_settings_on_unload', null, [], []); });
       });
 #endif
 

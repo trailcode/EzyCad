@@ -7,6 +7,7 @@
 
 #ifdef __EMSCRIPTEN__
 #include <emscripten.h>
+
 #include <cstdlib>
 #endif
 
@@ -24,10 +25,11 @@ std::string load()
 #ifdef __EMSCRIPTEN__
   void* ptr = (void*) (intptr_t) EM_ASM_INT(
       {
-        var s = localStorage.getItem('ezycad_settings') || '';
+        var s   = localStorage.getItem('ezycad_settings') || '';
         var len = lengthBytesUTF8(s) + 1;
         var buf = _malloc(len);
-        if (buf) stringToUTF8(s, buf, len);
+        if (buf)
+          stringToUTF8(s, buf, len);
         return buf;
       });
   if (!ptr)
@@ -100,4 +102,4 @@ void save(const std::string& content)
     f << content;
 #endif
 }
-}
+}  // namespace settings

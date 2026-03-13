@@ -28,7 +28,7 @@ class Lua_console
   GUI*       m_gui = nullptr;
   lua_State* m_L   = nullptr;
 
-  std::vector<std::string> m_history;   // output lines (result or error)
+  std::vector<std::string> m_history;  // output lines (result or error)
   static constexpr int     k_input_buf_size = 1024;
   char                     m_input_buf[k_input_buf_size] {};
   bool                     m_scroll_to_bottom = false;

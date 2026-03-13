@@ -15,7 +15,5 @@ class Shp_fillet : private Shp_operation_base
   double get_fillet_radius() const;
 
  private:
-
-   double m_fillet_radius {1.0};
+  double m_fillet_radius {1.0};
 };
-
