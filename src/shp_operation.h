@@ -11,8 +11,7 @@ class TopoDS_Face;
 class TopoDS_Wire;
 class TopoDS_Edge;
 
-class Shp_operation_base
-{
+class Shp_operation_base {
  protected:
   Shp_operation_base(Occt_view& view);
   GUI&                    gui();

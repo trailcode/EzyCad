@@ -6,8 +6,7 @@
 
 class AIS_InteractiveContext;
 
-class Shp : public AIS_Shape
-{
+class Shp : public AIS_Shape {
  public:
   Shp(AIS_InteractiveContext& ctx, const TopoDS_Shape& shp);
   virtual ~Shp();

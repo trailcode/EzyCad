@@ -5,15 +5,13 @@
 
 #include "shp_operation.h"
 
-struct Move_options
-{
+struct Move_options {
   bool constr_axis_x {false};
   bool constr_axis_y {false};
   bool constr_axis_z {false};
 };
 
-class Shp_move : private Shp_operation_base
-{
+class Shp_move : private Shp_operation_base {
   // Responsible for handling the movement of selected shapes in a 3D view.
   // It handles user interactions for moving shapes, including axis constraints, direct value entry,
   // and finalizing or canceling the move operation.
@@ -28,8 +26,7 @@ class Shp_move : private Shp_operation_base
   Move_options&        get_opts();
 
  private:
-  struct Deltas
-  {
+  struct Deltas {
     // User entered values;
     std::optional<double> override_x;
     std::optional<double> override_y;

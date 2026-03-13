@@ -2,8 +2,7 @@
 
 #include "shp_operation.h"
 
-class Shp_polar_dup : private Shp_operation_base
-{
+class Shp_polar_dup : private Shp_operation_base {
  public:
   Shp_polar_dup(Occt_view& view);
 

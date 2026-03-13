@@ -4,8 +4,7 @@
 
 enum class Chamfer_mode;
 
-class Shp_chamfer : private Shp_operation_base
-{
+class Shp_chamfer : private Shp_operation_base {
  public:
   Shp_chamfer(Occt_view& view);
 

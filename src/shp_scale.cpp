@@ -9,8 +9,7 @@
 Shp_scale::Shp_scale(Occt_view& view)
     : Shp_operation_base(view) {}
 
-Status Shp_scale::scale_selected(const ScreenCoords& screen_coords)
-{
+Status Shp_scale::scale_selected(const ScreenCoords& screen_coords) {
   CHK_RET(ensure_start_state_());
 
   std::optional<gp_Pnt> mouse_wc_pos = view().pt3d_on_plane(screen_coords, *m_scale_pln);
@@ -35,8 +34,7 @@ Status Shp_scale::scale_selected(const ScreenCoords& screen_coords)
   return Status::ok();
 }
 
-Status Shp_scale::ensure_start_state_()
-{
+Status Shp_scale::ensure_start_state_() {
   CHK_RET(ensure_operation_shps_());
 
   if (!m_center.has_value())
@@ -48,22 +46,19 @@ Status Shp_scale::ensure_start_state_()
   return Status::ok();
 }
 
-void Shp_scale::preview_scale_()
-{
+void Shp_scale::preview_scale_() {
   EZY_ASSERT(m_center.has_value());
 
   gp_Trsf scale_trsf;
   scale_trsf.SetScale(*m_center, m_scale_factor);
 
-  for (const AIS_Shape_ptr& shape : m_shps)
-  {
+  for (const AIS_Shape_ptr& shape : m_shps) {
     shape->SetLocalTransformation(scale_trsf);
     ctx().Redisplay(shape, true);
   }
 }
 
-void Shp_scale::finalize()
-{
+void Shp_scale::finalize() {
   if (m_shps.empty())
     return;
 
@@ -72,8 +67,7 @@ void Shp_scale::finalize()
   reset();
 }
 
-void Shp_scale::reset()
-{
+void Shp_scale::reset() {
   if (!m_shps.empty())
     operation_shps_cancel_();
 
@@ -85,8 +79,7 @@ void Shp_scale::reset()
   gui().set_mode(Mode::Normal);
 }
 
-void Shp_scale::cancel()
-{
+void Shp_scale::cancel() {
   operation_shps_cancel_();
   reset();
 }

@@ -31,8 +31,7 @@ class TopoDS_Edge;
 enum class Mode;
 enum class Command;
 
-struct Ray
-{
+struct Ray {
   gp_Pnt origin;
   gp_Dir direction;
 
@@ -40,14 +39,12 @@ struct Ray
       : origin(orig), direction(dir) {}
 };
 
-enum class Set_parent_mode
-{
+enum class Set_parent_mode {
   Yes,
   No
 };
 
-class Occt_view : protected AIS_ViewController
-{
+class Occt_view : protected AIS_ViewController {
  public:
   using Sketch_ptr  = std::shared_ptr<Sketch>;
   using Sketch_list = std::list<Sketch_ptr>;
@@ -217,8 +214,7 @@ class Occt_view : protected AIS_ViewController
   Occt_glfw_win_ptr          m_occt_window;
   // Undo / redo
   static constexpr size_t    k_max_undo {50};
-  struct Undo_entry
-  {
+  struct Undo_entry {
     std::string json;
     Mode        mode;  // Mode at time of operation; restored when navigating stacks
   };

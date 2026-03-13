@@ -31,8 +31,7 @@
 struct GLFWwindow;
 
 //! GLFWwindow wrapper implementing Aspect_Window interface.
-class Occt_glfw_win : public Aspect_Window
-{
+class Occt_glfw_win : public Aspect_Window {
   DEFINE_STANDARD_RTTI_INLINE(Occt_glfw_win, Aspect_Window)
  public:
   //! Main constructor.
@@ -84,8 +83,7 @@ class Occt_glfw_win : public Aspect_Window
   virtual void Unmap() const Standard_OVERRIDE;
 
   virtual void Position(Standard_Integer& theX1, Standard_Integer& theY1,
-                        Standard_Integer& theX2, Standard_Integer& theY2) const Standard_OVERRIDE
-  {
+                        Standard_Integer& theX2, Standard_Integer& theY2) const Standard_OVERRIDE {
     theX1 = myXLeft;
     theX2 = myXRight;
     theY1 = myYTop;
@@ -93,14 +91,12 @@ class Occt_glfw_win : public Aspect_Window
   }
 
   //! Returns The Window RATIO equal to the physical WIDTH/HEIGHT dimensions.
-  virtual Standard_Real Ratio() const Standard_OVERRIDE
-  {
+  virtual Standard_Real Ratio() const Standard_OVERRIDE {
     return Standard_Real(myXRight - myXLeft) / Standard_Real(myYBottom - myYTop);
   }
 
   //! Return window size.
-  virtual void Size(Standard_Integer& theWidth, Standard_Integer& theHeight) const Standard_OVERRIDE
-  {
+  virtual void Size(Standard_Integer& theWidth, Standard_Integer& theHeight) const Standard_OVERRIDE {
     theWidth  = myXRight - myXLeft;
     theHeight = myYBottom - myYTop;
   }

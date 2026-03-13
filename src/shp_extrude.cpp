@@ -15,17 +15,14 @@
 Shp_extrude::Shp_extrude(Occt_view& view)
     : Shp_operation_base(view) {}
 
-void Shp_extrude::sketch_face_extrude(const ScreenCoords& screen_coords, bool is_mouse_move)
-{
-  if (!m_to_extrude_pt)
-  {
+void Shp_extrude::sketch_face_extrude(const ScreenCoords& screen_coords, bool is_mouse_move) {
+  if (!m_to_extrude_pt) {
     if (is_mouse_move)
       return;
 
     //  Find face to extrude
     auto shp = view().get_shape(screen_coords);
-    if (auto face = dynamic_cast<Sketch_face_shp*>(shp.get()); face)
-    {
+    if (auto face = dynamic_cast<Sketch_face_shp*>(shp.get()); face) {
       m_to_extrude_pln = face->owner_sketch.get_plane();
       m_to_extrude_pt  = closest_to_camera(view().m_view, face->verts_3d);
       m_curr_view_pln  = view().get_view_plane(*m_to_extrude_pt);
@@ -34,8 +31,7 @@ void Shp_extrude::sketch_face_extrude(const ScreenCoords& screen_coords, bool is
       const gp_Ax1& a = m_to_extrude_pln.Axis();
       const gp_Ax1& b = m_curr_view_pln.Axis();
 
-      if (a.IsParallel(b, to_radians(5.0)))
-      {
+      if (a.IsParallel(b, to_radians(5.0))) {
         // Rotate view by 45 degrees (radians)
         auto rotation_axis = gp_Vec(m_to_extrude_pln.XAxis().Direction()) + gp_Vec(m_to_extrude_pln.YAxis().Direction());
         rotation_axis.Normalize();
@@ -46,13 +42,11 @@ void Shp_extrude::sketch_face_extrude(const ScreenCoords& screen_coords, bool is
       }
       _update_extrude(screen_coords);
     }
-  }
-  else
+  } else
     _update_extrude(screen_coords);
 }
 
-void Shp_extrude::finalize()
-{
+void Shp_extrude::finalize() {
   DBG_MSG("");
   EZY_ASSERT(m_extruded);
   m_extruded->set_name(view().get_unique_shape_name("Shape"));
@@ -66,8 +60,7 @@ void Shp_extrude::finalize()
   // gui().set_mode(Mode::Normal);
 }
 
-bool Shp_extrude::cancel()
-{
+bool Shp_extrude::cancel() {
   ctx().Remove(m_extruded, true);
   ctx().Remove(m_tmp_dim, false);
   bool did_cancel = m_to_extrude_pt.has_value();
@@ -80,18 +73,15 @@ bool Shp_extrude::cancel()
   return did_cancel;
 }
 
-bool Shp_extrude::has_active_extrusion() const
-{
+bool Shp_extrude::has_active_extrusion() const {
   return !m_extruded.IsNull();
 }
 
-void Shp_extrude::set_curr_view_pln(const gp_Pln& pln)
-{
+void Shp_extrude::set_curr_view_pln(const gp_Pln& pln) {
   m_curr_view_pln = pln;
 }
 
-void Shp_extrude::_update_extrude(const ScreenCoords& screen_coords)
-{
+void Shp_extrude::_update_extrude(const ScreenCoords& screen_coords) {
   //  Extrude the face
   std::optional<gp_Pnt> p = view().pt3d_on_plane(screen_coords, m_curr_view_pln);
   if (p)  // TODO report error!
@@ -106,10 +96,8 @@ void Shp_extrude::_update_extrude(const ScreenCoords& screen_coords)
 
     double scaled_dist = extrude_dist / view().get_dimension_scale();
 
-    if (view().get_show_dim_input())
-    {
-      auto l = [&](float new_dist, bool finalize)
-      {
+    if (view().get_show_dim_input()) {
+      auto l = [&](float new_dist, bool finalize) {
         if (finalize)
           view().set_show_dim_input(false);
         else
@@ -133,14 +121,11 @@ void Shp_extrude::_update_extrude(const ScreenCoords& screen_coords)
 
     const TopoDS_Face& face = TopoDS::Face(m_to_extrude->Shape());
     TopoDS_Shape       body = BRepPrimAPI_MakePrism(face, extrude_vec);
-    if (!m_extruded)
-    {
+    if (!m_extruded) {
       m_extruded = new Shp(ctx(), body);
       m_extruded->SetMaterial(view().m_default_material);
       ctx().Display(m_extruded, AIS_Shaded, -1, Standard_True);
-    }
-    else
-    {
+    } else {
       m_extruded->Set(body);
       ctx().Redisplay(m_extruded, true);
     }

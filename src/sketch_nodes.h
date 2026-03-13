@@ -12,11 +12,9 @@ class gp_Pnt2d;
 class Occt_view;
 class AIS_InteractiveContext;
 
-class Sketch_nodes
-{
+class Sketch_nodes {
  public:
-  struct Node : public gp_Pnt2d
-  {
+  struct Node : public gp_Pnt2d {
     bool is_midpoint {false};
     bool deleted {false};
   };

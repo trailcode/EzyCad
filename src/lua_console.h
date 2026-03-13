@@ -9,8 +9,7 @@ class GUI;
 
 /// ImGui Lua console: run Lua snippets with bindings to EzyCad (ezy.*, view.*).
 /// Built for native and Emscripten (Lua C sources compile with emcc).
-class Lua_console
-{
+class Lua_console {
  public:
   explicit Lua_console(GUI* gui);
   ~Lua_console();

@@ -12,8 +12,7 @@
 Shp_fillet::Shp_fillet(Occt_view& view)
     : Shp_operation_base(view) {}
 
-Status Shp_fillet::add_fillet(const ScreenCoords& screen_coords, const Fillet_mode fillet_mode)
-{
+Status Shp_fillet::add_fillet(const ScreenCoords& screen_coords, const Fillet_mode fillet_mode) {
   view().push_undo_snapshot();
   Shp_ptr fillet_src_shp = Shp_ptr::DownCast(get_shape_(screen_coords));
   if (fillet_src_shp.IsNull())
@@ -21,13 +20,10 @@ Status Shp_fillet::add_fillet(const ScreenCoords& screen_coords, const Fillet_mo
 
   BRepFilletAPI_MakeFillet fillet_maker(fillet_src_shp->Shape());
 
-  switch (fillet_mode)
-  {
-    case Fillet_mode::Shape:
-    {
+  switch (fillet_mode) {
+    case Fillet_mode::Shape: {
       TopExp_Explorer edge_explorer(fillet_src_shp->Shape(), TopAbs_EDGE);
-      while (edge_explorer.More())
-      {
+      while (edge_explorer.More()) {
         const TopoDS_Edge& edge = TopoDS::Edge(edge_explorer.Current());
         fillet_maker.Add(m_fillet_radius, edge);
         edge_explorer.Next();
@@ -35,15 +31,13 @@ Status Shp_fillet::add_fillet(const ScreenCoords& screen_coords, const Fillet_mo
       break;
     }
 
-    case Fillet_mode::Face:
-    {
+    case Fillet_mode::Face: {
       const TopoDS_Face* face = get_face_(screen_coords);
       if (!face)
         return Status::user_error("No fillet face detected.");
 
       TopExp_Explorer edge_explorer(*face, TopAbs_EDGE);
-      while (edge_explorer.More())
-      {
+      while (edge_explorer.More()) {
         const TopoDS_Edge& edge = TopoDS::Edge(edge_explorer.Current());
         fillet_maker.Add(m_fillet_radius, edge);
         edge_explorer.Next();
@@ -51,16 +45,14 @@ Status Shp_fillet::add_fillet(const ScreenCoords& screen_coords, const Fillet_mo
       break;
     }
 
-    case Fillet_mode::Wire:
-    {
+    case Fillet_mode::Wire: {
       const TopoDS_Wire* wire = get_wire_(screen_coords);
       if (!wire)
         return Status::user_error("No fillet wire detected.");
 
       // Fillet all edges in the wire
       TopExp_Explorer edge_explorer(*wire, TopAbs_EDGE);
-      while (edge_explorer.More())
-      {
+      while (edge_explorer.More()) {
         const TopoDS_Edge& wire_edge = TopoDS::Edge(edge_explorer.Current());
         fillet_maker.Add(m_fillet_radius, wire_edge);
         edge_explorer.Next();
@@ -69,8 +61,7 @@ Status Shp_fillet::add_fillet(const ScreenCoords& screen_coords, const Fillet_mo
       break;
     }
 
-    case Fillet_mode::Edge:
-    {
+    case Fillet_mode::Edge: {
       const TopoDS_Edge* edge = get_edge_(screen_coords);
       if (!edge)
         return Status::user_error("No fillet edge detected.");
@@ -83,23 +74,18 @@ Status Shp_fillet::add_fillet(const ScreenCoords& screen_coords, const Fillet_mo
       EZY_ASSERT(false);
   }
 
-  try
-  {
+  try {
     fillet_maker.Build();
     Shp_ptr fillet_shp = new Shp(ctx(), fillet_maker.Shape());
     ctx().Remove(fillet_src_shp, false);
     view().m_shps.remove(fillet_src_shp);
     fillet_shp->set_name("Filleted shape");
     add_shp_(fillet_shp);
-  }
-  catch (const Standard_Failure& e)
-  {
+  } catch (const Standard_Failure& e) {
     auto err_str = e.GetMessageString();
     DBG_MSG(err_str);
     return Status::user_error(err_str);
-  }
-  catch (...)
-  {
+  } catch (...) {
     // Investigate if this happens
     EZY_ASSERT(false);
   }
@@ -107,12 +93,10 @@ Status Shp_fillet::add_fillet(const ScreenCoords& screen_coords, const Fillet_mo
   return Status::ok();
 }
 
-void Shp_fillet::set_fillet_radius(const double radius)
-{
+void Shp_fillet::set_fillet_radius(const double radius) {
   m_fillet_radius = radius;
 }
 
-double Shp_fillet::get_fillet_radius() const
-{
+double Shp_fillet::get_fillet_radius() const {
   return m_fillet_radius;
 }

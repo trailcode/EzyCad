@@ -33,8 +33,7 @@
 #include <numbers>
 
 // Function to project a 3D point onto a plane and get its 2D (u, v) coordinates
-gp_Pnt2d to_2d(const gp_Pln& plane, const gp_Pnt& point_3d)
-{
+gp_Pnt2d to_2d(const gp_Pln& plane, const gp_Pnt& point_3d) {
   // TODO use: GeomAPI_ProjectPointOnSurface
   // Step 1: Project the 3D point onto the plane
   // Get the plane's normal direction
@@ -71,8 +70,7 @@ gp_Pnt2d to_2d(const gp_Pln& plane, const gp_Pnt& point_3d)
 }
 
 // Convert 2D (u, v) point on gp_Pln to 3D point
-gp_Pnt to_3d(const gp_Pln& plane, const gp_Pnt2d& point_2d)
-{
+gp_Pnt to_3d(const gp_Pln& plane, const gp_Pnt2d& point_2d) {
   // Get the plane's coordinate system
   gp_Ax3 axes   = plane.Position();
   gp_Pnt origin = axes.Location();    // Plane origin
@@ -88,14 +86,12 @@ gp_Pnt to_3d(const gp_Pln& plane, const gp_Pnt2d& point_2d)
   return origin.Translated(u_vec + v_vec);
 }
 
-gp_Pnt2d to_pnt2d(const boost_geom::point_2d& pt)
-{
+gp_Pnt2d to_pnt2d(const boost_geom::point_2d& pt) {
   return gp_Pnt2d(pt.x(), pt.y());
 }
 
 // Function to create a wire box centered on a point on a plane, returning a TopoDS_Wire
-TopoDS_Wire create_wire_box(const gp_Pln& plane, const gp_Pnt& center, double width, double height)
-{
+TopoDS_Wire create_wire_box(const gp_Pln& plane, const gp_Pnt& center, double width, double height) {
   // Get the plane's coordinate system
   gp_Ax3 axes  = plane.Position();
   gp_Dir x_dir = axes.XDirection();  // Width along plane's X-axis
@@ -134,8 +130,7 @@ TopoDS_Wire create_wire_box(const gp_Pln& plane, const gp_Pnt& center, double wi
   wire_maker.Add(edge3.Edge());
   wire_maker.Add(edge4.Edge());
 
-  if (!wire_maker.IsDone())
-  {
+  if (!wire_maker.IsDone()) {
     std::cerr << "Failed to create wire box\n";
     return TopoDS_Wire();  // Return empty wire on failure
   }
@@ -145,8 +140,7 @@ TopoDS_Wire create_wire_box(const gp_Pln& plane, const gp_Pnt& center, double wi
 
 TopoDS_Wire make_square_wire(const gp_Pln&   pln,
                              const gp_Pnt2d& center,
-                             const gp_Pnt2d& edge_midpoint)
-{
+                             const gp_Pnt2d& edge_midpoint) {
   std::array<gp_Pnt2d, 4> corners = square_corners(center, edge_midpoint);
 
   // Convert to 3D
@@ -165,8 +159,7 @@ TopoDS_Wire make_square_wire(const gp_Pln&   pln,
   return wire_maker.Wire();
 }
 
-std::array<gp_Pnt2d, 4> square_corners(const gp_Pnt2d& center, const gp_Pnt2d& edge_midpoint)
-{
+std::array<gp_Pnt2d, 4> square_corners(const gp_Pnt2d& center, const gp_Pnt2d& edge_midpoint) {
   EZY_ASSERT(unique(center, edge_midpoint));
 
   std::array<gp_Pnt2d, 4> ret;
@@ -195,8 +188,7 @@ std::array<gp_Pnt2d, 4> square_corners(const gp_Pnt2d& center, const gp_Pnt2d& e
   return ret;
 }
 
-std::array<gp_Pnt2d, 4> xy_stencil_pnts(const gp_Pnt2d& center, const gp_Pnt2d& edge_midpoint)
-{
+std::array<gp_Pnt2d, 4> xy_stencil_pnts(const gp_Pnt2d& center, const gp_Pnt2d& edge_midpoint) {
   EZY_ASSERT(unique(center, edge_midpoint));
 
   std::array<gp_Pnt2d, 4> ret;
@@ -217,8 +209,7 @@ std::array<gp_Pnt2d, 4> xy_stencil_pnts(const gp_Pnt2d& center, const gp_Pnt2d& 
 
 TopoDS_Wire make_circle_wire(const gp_Pln&   pln,
                              const gp_Pnt2d& center,
-                             const gp_Pnt2d& edge_point)
-{
+                             const gp_Pnt2d& edge_point) {
   // Compute radius
   gp_Vec2d      to_edge(edge_point.X() - center.X(),
                         edge_point.Y() - center.Y());
@@ -241,8 +232,7 @@ TopoDS_Wire make_circle_wire(const gp_Pln&   pln,
 
 Slot_pnts get_slot_points(const gp_Pnt2d& pt_a,
                           const gp_Pnt2d& pt_b,
-                          const gp_Pnt2d& pt_c)
-{
+                          const gp_Pnt2d& pt_c) {
   Slot_pnts ret;
 
   // Compute radius
@@ -279,8 +269,7 @@ Slot_pnts get_slot_points(const gp_Pnt2d& pt_a,
 TopoDS_Wire make_slot_wire(const gp_Pln&   plane,
                            const gp_Pnt2d& pt_a,
                            const gp_Pnt2d& pt_b,
-                           const gp_Pnt2d& pt_c)
-{
+                           const gp_Pnt2d& pt_c) {
   Slot_pnts pnts = get_slot_points(pt_a, pt_b, pt_c);
 
   // Get 3D points
@@ -313,8 +302,7 @@ TopoDS_Wire make_slot_wire(const gp_Pln&   plane,
 }
 
 // Function to get the directional vectors at the start and end of a Geom_TrimmedCurve
-std::pair<gp_Vec, gp_Vec> get_start_end_tangents(const Handle(Geom_TrimmedCurve) & curve)
-{
+std::pair<gp_Vec, gp_Vec> get_start_end_tangents(const Handle(Geom_TrimmedCurve) & curve) {
   // Get the start and end parameters
   Standard_Real u_start = curve->FirstParameter();
   Standard_Real u_end   = curve->LastParameter();
@@ -337,8 +325,7 @@ std::pair<gp_Vec, gp_Vec> get_start_end_tangents(const Handle(Geom_TrimmedCurve)
   return {tangent_start, tangent_end};
 }
 
-gp_Vec get_end_tangent(const Handle(Geom_TrimmedCurve) & curve)
-{
+gp_Vec get_end_tangent(const Handle(Geom_TrimmedCurve) & curve) {
   Standard_Real u_end = curve->LastParameter();
   gp_Vec        tangent_end;
   gp_Pnt        p_end;
@@ -353,8 +340,7 @@ gp_Vec get_end_tangent(const Handle(Geom_TrimmedCurve) & curve)
   return tangent_end;
 }
 
-std::pair<gp_Vec, gp_Pnt> get_out_dir_and_end_pt(const Handle(Geom_TrimmedCurve) & curve)
-{
+std::pair<gp_Vec, gp_Pnt> get_out_dir_and_end_pt(const Handle(Geom_TrimmedCurve) & curve) {
   Standard_Real u_end = curve->LastParameter();
   gp_Vec        out_dir;
   gp_Vec        unused;
@@ -370,8 +356,7 @@ std::pair<gp_Vec, gp_Pnt> get_out_dir_and_end_pt(const Handle(Geom_TrimmedCurve)
   return {out_dir, p_end};
 }
 
-std::pair<gp_Pnt, gp_Pnt> get_edge_endpoints(const TopoDS_Edge& edge)
-{
+std::pair<gp_Pnt, gp_Pnt> get_edge_endpoints(const TopoDS_Edge& edge) {
   // Extract start and end vertices
   TopoDS_Vertex start_vertex, end_vertex;
   TopExp::Vertices(edge, start_vertex, end_vertex);
@@ -387,14 +372,12 @@ std::pair<gp_Pnt, gp_Pnt> get_edge_endpoints(const TopoDS_Edge& edge)
   return std::make_pair(start_point, end_point);
 }
 
-std::pair<gp_Pnt2d, gp_Pnt2d> get_edge_endpoints(const gp_Pln& pln, const TopoDS_Edge& edge)
-{
+std::pair<gp_Pnt2d, gp_Pnt2d> get_edge_endpoints(const gp_Pln& pln, const TopoDS_Edge& edge) {
   const auto [pt_a, pt_b] = get_edge_endpoints(edge);
   return {to_2d(pln, pt_a), to_2d(pln, pt_b)};
 }
 
-Plane_side side_of_plane(const gp_Pln& plane, const gp_Pnt& point)
-{
+Plane_side side_of_plane(const gp_Pln& plane, const gp_Pnt& point) {
   // Get the plane's origin and normal
   gp_Pnt plane_origin = plane.Location();
   gp_Dir plane_normal = plane.Axis().Direction();
@@ -416,8 +399,7 @@ Plane_side side_of_plane(const gp_Pln& plane, const gp_Pnt& point)
 }
 
 // Function to get gp_Pln from a TopoDS_Face
-std::optional<gp_Pln> plane_from_face(const TopoDS_Face& face)
-{
+std::optional<gp_Pln> plane_from_face(const TopoDS_Face& face) {
   if (face.IsNull())
     return std::nullopt;
 
@@ -435,8 +417,7 @@ std::optional<gp_Pln> plane_from_face(const TopoDS_Face& face)
   return plane_surface->Pln();
 }
 
-bool planes_equal(const gp_Pln& plane1, const gp_Pln& plane2)
-{
+bool planes_equal(const gp_Pln& plane1, const gp_Pln& plane2) {
   // Get the position and orientation of both planes
   gp_Ax3 pos1 = plane1.Position();
   gp_Ax3 pos2 = plane2.Position();
@@ -457,22 +438,19 @@ bool planes_equal(const gp_Pln& plane1, const gp_Pln& plane2)
 }
 
 // Projects a vector onto a plane defined by its normal
-gp_Vec project_onto_plane(const gp_Vec& v, const gp_Pln& pln)
-{
+gp_Vec project_onto_plane(const gp_Vec& v, const gp_Pln& pln) {
   gp_Dir normal = pln.Axis().Direction();
   gp_Vec n(normal);
   return v - n * (v.Dot(n));
 }
 
-gp_Pln xy_plane()
-{
+gp_Pln xy_plane() {
   gp_Ax3 xy_system = gp::XOY();                                // Predefined XY coordinate system
   return gp_Pln(xy_system.Location(), xy_system.Direction());  // XY plane
 }
 
 // Function to compute the center point between two gp_Pnt2d points
-gp_Pnt2d center_point(const gp_Pnt2d& point1, const gp_Pnt2d& point2)
-{
+gp_Pnt2d center_point(const gp_Pnt2d& point1, const gp_Pnt2d& point2) {
   // Calculate midpoint coordinates
   Standard_Real center_x = (point1.X() + point2.X()) / 2.0;
   Standard_Real center_y = (point1.Y() + point2.Y()) / 2.0;
@@ -482,8 +460,7 @@ gp_Pnt2d center_point(const gp_Pnt2d& point1, const gp_Pnt2d& point2)
 }
 
 // Function to compute the normalized direction between two gp_Pnt2d points
-gp_Dir2d get_unit_dir(const gp_Pnt2d& point1, const gp_Pnt2d& point2)
-{
+gp_Dir2d get_unit_dir(const gp_Pnt2d& point1, const gp_Pnt2d& point2) {
   // Calculate the vector from point1 to point2
   gp_Vec2d direction_vector(point1, point2);
 
@@ -495,15 +472,13 @@ gp_Dir2d get_unit_dir(const gp_Pnt2d& point1, const gp_Pnt2d& point2)
   return gp_Dir2d(direction_vector.Normalized());
 }
 
-gp_Pnt2d get_midpoint(const gp_Pnt2d& p1, const gp_Pnt2d& p2)
-{
+gp_Pnt2d get_midpoint(const gp_Pnt2d& p1, const gp_Pnt2d& p2) {
   Standard_Real x = (p1.X() + p2.X()) * 0.5;
   Standard_Real y = (p1.Y() + p2.Y()) * 0.5;
   return gp_Pnt2d(x, y);
 }
 
-gp_Pnt2d mirror_point(const gp_Pnt2d& p1, const gp_Pnt2d& p2, const gp_Pnt2d& point_to_mirror)
-{
+gp_Pnt2d mirror_point(const gp_Pnt2d& p1, const gp_Pnt2d& p2, const gp_Pnt2d& point_to_mirror) {
   // Check if p1 and p2 are the same (invalid line)
   EZY_ASSERT(unique(p1, p2));
 
@@ -529,8 +504,7 @@ gp_Pnt2d mirror_point(const gp_Pnt2d& p1, const gp_Pnt2d& p2, const gp_Pnt2d& po
 
 PrsDim_LengthDimension_ptr create_distance_annotation(const gp_Pnt& p1,
                                                       const gp_Pnt& p2,
-                                                      const gp_Pln& pln)
-{
+                                                      const gp_Pln& pln) {
   // Check if points are too close (invalid for dimension)
   EZY_ASSERT(unique(p1, p2));
 
@@ -544,16 +518,14 @@ PrsDim_LengthDimension_ptr create_distance_annotation(const gp_Pnt& p1,
 
 PrsDim_LengthDimension_ptr create_distance_annotation(const gp_Pnt2d& p1,
                                                       const gp_Pnt2d& p2,
-                                                      const gp_Pln&   pln)
-{
+                                                      const gp_Pln&   pln) {
   gp_Pnt point_1 = to_3d(pln, p1);
   gp_Pnt point_2 = to_3d(pln, p2);
 
   return create_distance_annotation(point_1, point_2, pln);
 }
 
-const gp_Pnt& closest_to_camera(const V3d_View_ptr& view, const std::vector<gp_Pnt>& pnts)
-{
+const gp_Pnt& closest_to_camera(const V3d_View_ptr& view, const std::vector<gp_Pnt>& pnts) {
   EZY_ASSERT(pnts.size());
   size_t        best_idx;
   Standard_Real min_distance = std::numeric_limits<Standard_Real>::max();
@@ -561,14 +533,12 @@ const gp_Pnt& closest_to_camera(const V3d_View_ptr& view, const std::vector<gp_P
   // Get the camera's eye position (world coordinates)
   gp_Pnt camera_pos = view->Camera()->Eye();
 
-  for (size_t idx = 0, num = pnts.size(); idx < num; ++idx)
-  {
+  for (size_t idx = 0, num = pnts.size(); idx < num; ++idx) {
     // Compute Euclidean distance to camera
     Standard_Real distance = pnts[idx].Distance(camera_pos);
 
     // Update closest point if this distance is smaller
-    if (distance < min_distance)
-    {
+    if (distance < min_distance) {
       min_distance = distance;
       best_idx     = idx;
     }
@@ -578,8 +548,7 @@ const gp_Pnt& closest_to_camera(const V3d_View_ptr& view, const std::vector<gp_P
 }
 
 // Function to compute the area of a face
-double compute_face_area(const AIS_Shape_ptr& shp)
-{
+double compute_face_area(const AIS_Shape_ptr& shp) {
   // Ensure the shape is a face
   const TopoDS_Shape& shape = shp->Shape();
   EZY_ASSERT_MSG(shape.ShapeType() == TopAbs_FACE, "Shape is not a face.");
@@ -596,11 +565,9 @@ double compute_face_area(const AIS_Shape_ptr& shp)
 }
 
 // Function to check if shape_a is contained within shape_b (both must be faces, holes are not considered)
-bool is_face_contained(const TopoDS_Shape& shape_a, const TopoDS_Shape& shape_b)
-{
+bool is_face_contained(const TopoDS_Shape& shape_a, const TopoDS_Shape& shape_b) {
   // Verify both shapes are faces
-  if (shape_a.ShapeType() != TopAbs_FACE || shape_b.ShapeType() != TopAbs_FACE)
-  {
+  if (shape_a.ShapeType() != TopAbs_FACE || shape_b.ShapeType() != TopAbs_FACE) {
     throw std::runtime_error("Both shapes must be faces.");
   }
 
@@ -615,8 +582,7 @@ bool is_face_contained(const TopoDS_Shape& shape_a, const TopoDS_Shape& shape_b)
   Handle(Geom_Plane) plane_a = Handle(Geom_Plane)::DownCast(surface_a);
   Handle(Geom_Plane) plane_b = Handle(Geom_Plane)::DownCast(surface_b);
 
-  if (plane_a.IsNull() || plane_b.IsNull())
-  {
+  if (plane_a.IsNull() || plane_b.IsNull()) {
     throw std::runtime_error("Both faces must be planar.");
   }
 
@@ -624,8 +590,7 @@ bool is_face_contained(const TopoDS_Shape& shape_a, const TopoDS_Shape& shape_b)
   gp_Pln pln_b = plane_b->Pln();
 
   if (!pln_a.Position().Direction().IsParallel(pln_b.Position().Direction(), Precision::Angular()) ||
-      Abs(pln_a.Distance(pln_b.Location())) > Precision::Confusion())
-  {
+      Abs(pln_a.Distance(pln_b.Location())) > Precision::Confusion()) {
     return Standard_False;  // Not coplanar
   }
 
@@ -634,8 +599,7 @@ bool is_face_contained(const TopoDS_Shape& shape_a, const TopoDS_Shape& shape_b)
   TopExp_Explorer  vertex_explorer(wire_a, TopAbs_VERTEX);
   Standard_Boolean all_inside = Standard_True;
 
-  while (vertex_explorer.More() && all_inside)
-  {
+  while (vertex_explorer.More() && all_inside) {
     TopoDS_Vertex vertex = TopoDS::Vertex(vertex_explorer.Current());
     gp_Pnt        point  = BRep_Tool::Pnt(vertex);
 
@@ -652,20 +616,17 @@ bool is_face_contained(const TopoDS_Shape& shape_a, const TopoDS_Shape& shape_b)
 }
 
 // Function to convert a 3D point to 2D in the plane's coordinate system
-boost_geom::point_2d to_boost(const gp_Pln& plane, const gp_Pnt& point_3d)
-{
+boost_geom::point_2d to_boost(const gp_Pln& plane, const gp_Pnt& point_3d) {
   gp_Pnt2d pt = to_2d(plane, point_3d);
   return {pt.X(), pt.Y()};
 }
 
-boost_geom::point_2d to_boost(const gp_Pnt2d& pt)
-{
+boost_geom::point_2d to_boost(const gp_Pnt2d& pt) {
   return {pt.X(), pt.Y()};
 }
 
 // Convert a TopoDS_Shape to a boost_geom::polygon_2d
-boost_geom::polygon_2d to_boost(const TopoDS_Shape& shape, const gp_Pln& pln2)
-{
+boost_geom::polygon_2d to_boost(const TopoDS_Shape& shape, const gp_Pln& pln2) {
   // Check if the shape is a face
   EZY_ASSERT_MSG(shape.ShapeType() == TopAbs_FACE, "Shape must be a face");
 
@@ -687,10 +648,8 @@ boost_geom::polygon_2d to_boost(const TopoDS_Shape& shape, const gp_Pln& pln2)
   // Get the outer wire
   TopoDS_Wire outer_wire = BRepTools::OuterWire(face);
 
-  auto add_pt_unique = [](boost_geom::ring_2d& out, const gp_Pnt2d& pt)
-  {
-    if (out.empty())
-    {
+  auto add_pt_unique = [](boost_geom::ring_2d& out, const gp_Pnt2d& pt) {
+    if (out.empty()) {
       out.push_back({pt.X(), pt.Y()});
       return;
     }
@@ -700,27 +659,21 @@ boost_geom::polygon_2d to_boost(const TopoDS_Shape& shape, const gp_Pln& pln2)
     gp_Pnt2d    last_gp_pt(last_pt.x(), last_pt.y());
 
     // Only add if the point is different from the last one
-    if (!last_gp_pt.IsEqual(pt, Precision::Confusion()))
-    {
+    if (!last_gp_pt.IsEqual(pt, Precision::Confusion())) {
       out.push_back({pt.X(), pt.Y()});
     }
   };
 
-  auto get_wire_verts = [&](const TopoDS_Wire& wire, boost_geom::ring_2d& out)
-  {
+  auto get_wire_verts = [&](const TopoDS_Wire& wire, boost_geom::ring_2d& out) {
     TopExp_Explorer edge_explorer(wire, TopAbs_EDGE);
-    while (edge_explorer.More())
-    {
+    while (edge_explorer.More()) {
       const TopoDS_Edge& edge = TopoDS::Edge(edge_explorer.Current());
       BRepAdaptor_Curve  curve(edge);
       GeomAbs_CurveType  curveType = curve.GetType();
-      switch (curveType)
-      {
-        case GeomAbs_CurveType::GeomAbs_Line:
-        {
+      switch (curveType) {
+        case GeomAbs_CurveType::GeomAbs_Line: {
           TopExp_Explorer vertexExplorer(edge, TopAbs_VERTEX);
-          while (vertexExplorer.More())
-          {
+          while (vertexExplorer.More()) {
             const TopoDS_Vertex& vertex = TopoDS::Vertex(vertexExplorer.Current());
             gp_Pnt2d             pt     = to_2d(pln, BRep_Tool::Pnt(vertex));
             add_pt_unique(out, pt);
@@ -728,15 +681,13 @@ boost_geom::polygon_2d to_boost(const TopoDS_Shape& shape, const gp_Pln& pln2)
           }
           break;
         }
-        case GeomAbs_CurveType::GeomAbs_Circle:
-        {
+        case GeomAbs_CurveType::GeomAbs_Circle: {
           // Get the parameter range of the curve
           double       u_start = curve.FirstParameter();
           double       u_end   = curve.LastParameter();
           const size_t num_pts = 25;
           double       step    = (u_end - u_start) / (num_pts - 1);
-          for (size_t i = 0; i < num_pts; ++i)
-          {
+          for (size_t i = 0; i < num_pts; ++i) {
             gp_Pnt2d pt = to_2d(pln, curve.Value(u_start + i * step));
             add_pt_unique(out, pt);
           }
@@ -757,8 +708,7 @@ boost_geom::polygon_2d to_boost(const TopoDS_Shape& shape, const gp_Pln& pln2)
 
     // Find the leftmost point (lowest x, breaking ties with y)
     auto leftmost_it = std::min_element(out.begin(), out.end(),
-                                        [](const boost_geom::point_2d& a, const boost_geom::point_2d& b)
-                                        {
+                                        [](const boost_geom::point_2d& a, const boost_geom::point_2d& b) {
                                           if (std::abs(a.x() - b.x()) > Precision::Confusion())
                                             return a.x() < b.x();
 
@@ -773,8 +723,7 @@ boost_geom::polygon_2d to_boost(const TopoDS_Shape& shape, const gp_Pln& pln2)
 
   get_wire_verts(outer_wire, polygon.outer());
 
-  auto check_ring = [](boost_geom::ring_2d& ring)
-  {
+  auto check_ring = [](boost_geom::ring_2d& ring) {
     EZY_ASSERT_MSG(ring.size() > 3, "Not enough points!");
 
     // Boost requires points to be exactly the same.
@@ -785,8 +734,7 @@ boost_geom::polygon_2d to_boost(const TopoDS_Shape& shape, const gp_Pln& pln2)
 
   // Convert inner wires (holes)
   TopExp_Explorer wire_explorer(face, TopAbs_WIRE);
-  while (wire_explorer.More())
-  {
+  while (wire_explorer.More()) {
     TopoDS_Wire wire = TopoDS::Wire(wire_explorer.Current());
     if (!wire.IsSame(outer_wire))  // TODO Is this expensive? Better way?
     {
@@ -799,16 +747,14 @@ boost_geom::polygon_2d to_boost(const TopoDS_Shape& shape, const gp_Pln& pln2)
   }
 
   // Validate the polygon
-  if (!boost::geometry::is_valid(polygon))
-  {
+  if (!boost::geometry::is_valid(polygon)) {
     // throw std::runtime_error("Invalid Boost.Geometry polygon created.");
   }
 
   return polygon;
 }
 
-gp_Pnt get_shape_bbox_center(const TopoDS_Shape& shp)
-{
+gp_Pnt get_shape_bbox_center(const TopoDS_Shape& shp) {
   Bnd_Box bbox;
   BRepBndLib::Add(shp, bbox);
   Standard_Real xMin, yMin, zMin, xMax, yMax, zMax;
@@ -817,26 +763,22 @@ gp_Pnt get_shape_bbox_center(const TopoDS_Shape& shp)
 }
 
 // Define custom less-than operator for gp_Pnt2d using Precision::Confusion()
-bool operator<(const gp_Pnt2d& lhs, const gp_Pnt2d& rhs)
-{
+bool operator<(const gp_Pnt2d& lhs, const gp_Pnt2d& rhs) {
   double tolerance = Precision::Confusion();
 
   // Check if points are equal within tolerance
-  if (lhs.Distance(rhs) <= tolerance)
-  {
+  if (lhs.Distance(rhs) <= tolerance) {
     return false;  // Equal points are not less than each other
   }
 
   // Lexicographical ordering: compare X first, then Y if X is equal within tolerance
-  if (std::abs(lhs.X() - rhs.X()) > tolerance)
-  {
+  if (std::abs(lhs.X() - rhs.X()) > tolerance) {
     return lhs.X() < rhs.X();
   }
   return lhs.Y() < rhs.Y();
 }
 
-gp_Pnt2d rotate_point(const gp_Pnt2d& origin, const gp_Pnt2d& point, double angle_degrees)
-{
+gp_Pnt2d rotate_point(const gp_Pnt2d& origin, const gp_Pnt2d& point, double angle_degrees) {
   // Convert angle from degrees to radians
   const double angle_rad = angle_degrees * std::numbers::pi / 180.0;
 
@@ -858,23 +800,19 @@ gp_Pnt2d rotate_point(const gp_Pnt2d& origin, const gp_Pnt2d& point, double angl
   return gp_Pnt2d(origin.X() + rotated_x, origin.Y() + rotated_y);
 }
 
-bool is_clockwise(const boost_geom::ring_2d& ring)
-{
+bool is_clockwise(const boost_geom::ring_2d& ring) {
   double sum = 0.0;
-  for (size_t i = 0; i < ring.size() - 1; ++i)
-  {
+  for (size_t i = 0; i < ring.size() - 1; ++i) {
     sum += (ring[i + 1].x() - ring[i].x()) * (ring[i + 1].y() + ring[i].y());
   }
   return sum > 0.0;
 }
 
 // Sorts a vector of gp_Pnt by x, then y, then z
-void sort_pnts(std::vector<gp_Pnt>& points)
-{
+void sort_pnts(std::vector<gp_Pnt>& points) {
   constexpr double tol = Precision::Confusion();
   std::sort(points.begin(), points.end(),
-            [tol](const gp_Pnt& a, const gp_Pnt& b)
-            {
+            [tol](const gp_Pnt& a, const gp_Pnt& b) {
               if (std::abs(a.X() - b.X()) > tol)
                 return a.X() < b.X();
               if (std::abs(a.Y() - b.Y()) > tol)
@@ -885,8 +823,7 @@ void sort_pnts(std::vector<gp_Pnt>& points)
 
 TopoDS_Wire make_rectangle_wire(const gp_Pln&   pln,
                                 const gp_Pnt2d& corner1,
-                                const gp_Pnt2d& corner2)
-{
+                                const gp_Pnt2d& corner2) {
   // Assert that corners are not too close in either axis
   EZY_ASSERT_MSG(std::abs(corner1.X() - corner2.X()) > Precision::Confusion(),
                  "Rectangle corners too close in X axis");
@@ -911,8 +848,7 @@ TopoDS_Wire make_rectangle_wire(const gp_Pln&   pln,
   return wire_maker.Wire();
 }
 
-std::array<gp_Pnt2d, 4> rectangle_corners(const gp_Pnt2d& corner1, const gp_Pnt2d& corner2)
-{
+std::array<gp_Pnt2d, 4> rectangle_corners(const gp_Pnt2d& corner1, const gp_Pnt2d& corner2) {
   EZY_ASSERT(unique(corner1, corner2));
 
   std::array<gp_Pnt2d, 4> ret;

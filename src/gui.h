@@ -18,16 +18,14 @@ class Lua_console;
 class Occt_view;
 struct GLFWwindow;
 
-enum class Command
-{
+enum class Command {
   Shape_cut,
   Shape_fuse,
   Shape_common,
   _count
 };
 
-class GUI
-{
+class GUI {
  public:
   GUI();
   ~GUI();
@@ -92,8 +90,7 @@ class GUI
   friend class GUI_access;
 
   // Structure to hold button state and texture
-  struct Toolbar_button
-  {
+  struct Toolbar_button {
     uint32_t                    texture_id;
     bool                        is_active;
     const char*                 tooltip;
