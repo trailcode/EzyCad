@@ -236,7 +236,7 @@ The shape move tool allows you to reposition selected shapes in the 3D viewer wi
 | **Reset and Cancel** | Press <kbd>Esc</kbd> to cancel and revert to the original position at any time during the move operation. |
 
 **How to Use:**
-1. **Activate Move Tool:** <img src="icons/Assembly_AxialMove.png" alt="Assembly_AxialMove" width="20" height="20"> Select one or more shapes and press <kbd>G</kbd> or click the icon.
+1. <img src="icons/Assembly_AxialMove.png" alt="Assembly_AxialMove" width="20" height="20"> **Activate Move Tool:** Select one or more shapes and press <kbd>G</kbd> or click the icon.
 2. **Constrain Movement (Optional):** Use the options panel to lock movement to a specific axis, or use keyboard shortcuts (e.g., <kbd>X</kbd>, <kbd>Y</kbd>, <kbd>Z</kbd>).
 
    ![Move constrain axis example](doc/gen/move_constrain_axis.png)
@@ -313,7 +313,7 @@ The shape scale tool allows you to uniformly scale selected shapes around a comp
 **How to Use:**
 
 1. **Select shapes:** Select one or more shapes in the 3D view or Shape List.
-2. **Activate Scale Tool:** <img src="icons/Part_Scale.png" alt="Shape Scale Tool" width="20" height="20"> Click the *Shape scale* icon in the toolbar (or choose Scale from the Edit/Transform area if present).  
+2. <img src="icons/Part_Scale.png" alt="Shape Scale Tool" width="20" height="20"> **Activate Scale Tool:** Click the *Shape scale* icon in the toolbar (or choose Scale from the Edit/Transform area if present).  
 3. **Move the mouse:**  
    - The tool computes a scale center and a view-aligned plane.  
    - Moving the mouse away from or toward the center changes the scale factor and previews the scaled result.
@@ -345,7 +345,7 @@ The extrude tool allows you to create 3D solid shapes by extruding 2D sketch fac
 | **Bidirectional extrusion** | The extrusion direction is determined by which side of the face plane you move the mouse to |
 
 **How to Use:**
-1. **Activate Extrude Tool**: <img src="icons/Design456_Extrude.png" alt="Design456_Extrude" width="20" height="20"> Press <kbd>E</kbd> or click the icon to enter extrude mode
+1. <img src="icons/Design456_Extrude.png" alt="Design456_Extrude" width="20" height="20"> **Activate Extrude Tool**: Press <kbd>E</kbd> or click the icon to enter extrude mode
 2. **Select Face**: Click on a sketch face that you want to extrude
    - The face must be part of a closed sketch (forming a valid face)
    - The system will automatically select the face closest to the camera if multiple faces overlap
@@ -399,18 +399,15 @@ The polar duplicate tool allows you to create multiple copies of selected shapes
 | **Polar arm definition** | Define the rotation center and direction by clicking a point |
 
 **How to use:**
-1. **Select shapes**: Select one or more shapes that you want to duplicate
-2. **Activate Polar Duplicate Tool**: <img src="icons/Draft_PolarArray.png" alt="Draft_PolarArray" width="20" height="20"> Click the icon to enter polar duplicate mode
-3. **Define polar arm**: Move the mouse to see a preview line (polar arm) from the shape center to the mouse cursor
-4. **Set rotation center**: Click to set the end point of the polar arm
-   - The start of the polar arm is at the center of the selected shape(s)
-   - The end point you click defines the rotation center and direction
-5. **Configure options** in the options panel:
+1. <img src="icons/Draft_PolarArray.png" alt="Draft_PolarArray" width="20" height="20"> **Activate Polar Duplicate Tool**: Click the icon to enter polar duplicate mode
+2. **Select shape**: Select the shape that you want to duplicate
+3. **Define polar arm**: Move the mouse to see a preview line (polar arm) from the shape center to the mouse cursor. Move to the origin of the operation
+4. **Configure options** in the options panel:
    - **Polar angle**: Set the total angle for the pattern (e.g., 360° for full circle, 180° for half circle)
    - **Num Elms**: Set the number of duplicate elements to create
    - **Rotate dups**: Checkbox to rotate each duplicate as it's copied (default: enabled)
    - **Combine dups**: Checkbox to combine all duplicates into a single shape (default: enabled)
-6. **Create duplicates**: Click the **"Dup"** button in the options panel to create the polar duplicates
+5. **Create duplicates**: Click the **"Dup"** button in the options panel to create the polar duplicates
 
 **Options explained:**
 
