@@ -270,7 +270,7 @@ void Occt_view::init_default()
     {
       if (!aGlInfo.IsEmpty())
         aGlInfo += "\n";
-      
+
       aGlInfo += TCollection_AsciiString("  ") + aValueIter.Key() + ": " +
                  aValueIter.Value();
     }
@@ -441,7 +441,7 @@ void Occt_view::cancel(Set_parent_mode set_parent_mode)
 void Occt_view::revolve_selected(const double angle)
 {
   push_undo_snapshot();
-  revolved_shp_rslt revolved = curr_sketch().revolve_selected(angle);
+  Shp_rslt revolved = curr_sketch().revolve_selected(angle);
   if (revolved.has_value())
   {
     add_shp_(*revolved);
@@ -625,7 +625,7 @@ std::optional<gp_Pnt> Occt_view::get_hit_point_(const AIS_Shape_ptr& shp, const 
   return std::nullopt;
 }
 
-void Occt_view::add_shp_(ShapeBase_ptr& shp)
+void Occt_view::add_shp_(Shp_ptr& shp)
 {
   shp->SetMaterial(m_default_material);
   shp->set_selection_mode(m_shp_selection_mode);  // Adds to m_ctx
@@ -634,11 +634,11 @@ void Occt_view::add_shp_(ShapeBase_ptr& shp)
 
 std::string Occt_view::unique_shape_name_(const char* base_name) const
 {
-  std::set<int> used;
+  std::set<int>     used;
   const std::string base(base_name);
   const std::string prefix = base + ".";
 
-  for (const ShapeBase_ptr& s : m_shps)
+  for (const Shp_ptr& s : m_shps)
   {
     const std::string& n = s->get_name();
     if (n == base)
@@ -646,7 +646,8 @@ std::string Occt_view::unique_shape_name_(const char* base_name) const
     else if (n.size() > prefix.size() && n.compare(0, prefix.size(), prefix) == 0)
     {
       const std::string suffix = n.substr(prefix.size());
-      if (!suffix.empty() && std::all_of(suffix.begin(), suffix.end(), [](char c) { return std::isdigit(static_cast<unsigned char>(c)); }))
+      if (!suffix.empty() && std::all_of(suffix.begin(), suffix.end(), [](char c)
+                                         { return std::isdigit(static_cast<unsigned char>(c)); }))
       {
         int idx = 0;
         try
@@ -683,8 +684,8 @@ std::string Occt_view::get_unique_shape_name(const char* base_name) const
 void Occt_view::add_box(double ox, double oy, double oz, double width, double length, double height)
 {
   push_undo_snapshot();
-  TopoDS_Shape box  = shp_create::create_box(ox, oy, oz, width, length, height);
-  ShapeBase_ptr shp = new Extruded_shp(*m_ctx, box);
+  TopoDS_Shape box = shp_create::create_box(ox, oy, oz, width, length, height);
+  Shp_ptr      shp = new Shp(*m_ctx, box);
   shp->set_name(unique_shape_name_("Box"));
   add_shp_(shp);
   m_ctx->Display(shp, AIS_Shaded, AIS_Shape::SelectionMode(m_shp_selection_mode), true);
@@ -697,7 +698,7 @@ void Occt_view::add_pyramid(double ox, double oy, double oz, double side)
   TopoDS_Shape pyramid = shp_create::create_pyramid(side);
   if (pyramid.IsNull())
     return;
-  ShapeBase_ptr shp = new Extruded_shp(*m_ctx, pyramid);
+  Shp_ptr shp = new Shp(*m_ctx, pyramid);
   shp->set_name(unique_shape_name_("Pyramid"));
   if (ox != 0 || oy != 0 || oz != 0)
   {
@@ -714,7 +715,7 @@ void Occt_view::add_sphere(double ox, double oy, double oz, double radius)
 {
   push_undo_snapshot();
   TopoDS_Shape sphere = shp_create::create_sphere(radius);
-  ShapeBase_ptr shp   = new Extruded_shp(*m_ctx, sphere);
+  Shp_ptr      shp    = new Shp(*m_ctx, sphere);
   shp->set_name(unique_shape_name_("Sphere"));
   if (ox != 0 || oy != 0 || oz != 0)
   {
@@ -731,7 +732,7 @@ void Occt_view::add_cylinder(double ox, double oy, double oz, double radius, dou
 {
   push_undo_snapshot();
   TopoDS_Shape shape = shp_create::create_cylinder(radius, height);
-  ShapeBase_ptr shp  = new Extruded_shp(*m_ctx, shape);
+  Shp_ptr      shp   = new Shp(*m_ctx, shape);
   shp->set_name(unique_shape_name_("Cylinder"));
   if (ox != 0 || oy != 0 || oz != 0)
   {
@@ -748,7 +749,7 @@ void Occt_view::add_cone(double ox, double oy, double oz, double R1, double R2, 
 {
   push_undo_snapshot();
   TopoDS_Shape shape = shp_create::create_cone(R1, R2, height);
-  ShapeBase_ptr shp  = new Extruded_shp(*m_ctx, shape);
+  Shp_ptr      shp   = new Shp(*m_ctx, shape);
   shp->set_name(unique_shape_name_("Cone"));
   if (ox != 0 || oy != 0 || oz != 0)
   {
@@ -765,7 +766,7 @@ void Occt_view::add_torus(double ox, double oy, double oz, double R1, double R2)
 {
   push_undo_snapshot();
   TopoDS_Shape shape = shp_create::create_torus(R1, R2);
-  ShapeBase_ptr shp  = new Extruded_shp(*m_ctx, shape);
+  Shp_ptr      shp   = new Shp(*m_ctx, shape);
   shp->set_name(unique_shape_name_("Torus"));
   if (ox != 0 || oy != 0 || oz != 0)
   {
@@ -1289,7 +1290,7 @@ void Occt_view::set_curr_sketch(const Sketch_ptr& to_set)
       // If hide all shapes is enabled, hide all shapes except the current sketch
       if (m_gui.get_hide_all_shapes())
         // Hide all shapes
-        for (const ShapeBase_ptr& shape : m_shps)
+        for (const Shp_ptr& shape : m_shps)
           shape->set_visible(false);
 
       return;
@@ -1298,7 +1299,7 @@ void Occt_view::set_curr_sketch(const Sketch_ptr& to_set)
   EZY_ASSERT(false);  // Sketch does not belong to this view.
 }
 
-std::list<ShapeBase_ptr>& Occt_view::get_shapes()
+std::list<Shp_ptr>& Occt_view::get_shapes()
 {
   return m_shps;
 }
@@ -1339,7 +1340,7 @@ bool Occt_view::undo()
   if (!can_undo())
     return false;
 
-  m_restoring = true;
+  m_restoring            = true;
   const Undo_entry state = m_undo_stack.back();
   m_undo_stack.pop_back();
   Undo_entry redo_entry;
@@ -1360,7 +1361,7 @@ bool Occt_view::redo()
   if (!can_redo())
     return false;
 
-  m_restoring = true;
+  m_restoring            = true;
   const Undo_entry state = m_redo_stack.back();
   m_redo_stack.pop_back();
   Undo_entry undo_entry;
@@ -1414,14 +1415,13 @@ std::string Occt_view::to_json() const
   for (const Sketch_ptr& s : m_sketches)
     sketches.push_back(Sketch_json::to_json(*s));
 
-  for (const ShapeBase_ptr& s : m_shps)
+  for (const Shp_ptr& s : m_shps)
   {
     const TopoDS_Shape& shape = s->Shape();
     std::ostringstream  oss;
     BRepTools::Write(shape, oss, false, false, TopTools_FormatVersion_CURRENT);  // Write BREP data to the stream
     json shp_json;
     shp_json["name"]     = s->get_name();
-    shp_json["type"]     = s->get_type_str();
     shp_json["material"] = s->Material();
     shp_json["geom"]     = oss.str();
     shps.push_back(shp_json);
@@ -1485,22 +1485,7 @@ void Occt_view::load(const std::string& json_str, bool restore_view)
     std::istringstream iss;
     iss.str(s["geom"]);
     BRepTools::Read(shape, iss, BRep_Builder());
-    ShapeBase_ptr shp;
-    switch (Shape_base::get_type(s["type"]))
-    {
-      case Shape_type::Extruded:
-        shp = new Extruded_shp(*m_ctx, shape);
-        break;
-      case Shape_type::Revolved:
-        shp = new Revolved_shp(*m_ctx, shape);
-        break;
-      case Shape_type::Chamfer:
-        shp = new Chamfer_shp(*m_ctx, shape);
-        break;
-      default:
-        break;
-    }
-
+    Shp_ptr shp = new Shp(*m_ctx, shape);
     shp->set_name(s["name"]);
     // TODO improve
     shp->SetMaterial(Graphic3d_MaterialAspect(Graphic3d_NameOfMaterial(s["material"])));
@@ -1597,7 +1582,7 @@ bool Occt_view::import_step(const std::string& step_data)
       continue;
     }
 
-    extruded_shp_ptr shp = new Extruded_shp(*m_ctx, shape);
+    Shp_ptr shp = new Shp(*m_ctx, shape);
     add_shp_(shp);
   }
 

@@ -1,6 +1,6 @@
 #include "shp_chamfer.h"
-#include "occt_view.h"
 #include "modes.h"
+#include "occt_view.h"
 
 #include <BRepFilletAPI_MakeChamfer.hxx>
 #include <TopExp_Explorer.hxx>
@@ -15,12 +15,12 @@ Shp_chamfer::Shp_chamfer(Occt_view& view)
 Status Shp_chamfer::add_chamfer(const ScreenCoords& screen_coords, const Chamfer_mode chamfer_mode)
 {
   view().push_undo_snapshot();
-  ShapeBase_ptr chamfer_src_shp = ShapeBase_ptr::DownCast(get_shape_(screen_coords));
+  Shp_ptr chamfer_src_shp = Shp_ptr::DownCast(get_shape_(screen_coords));
   if (chamfer_src_shp.IsNull())
     return Status::user_error("Click on a shape.");
 
   BRepFilletAPI_MakeChamfer chamfer_maker(chamfer_src_shp->Shape());
-  
+
   // Convert diagonal distance to setback distance (divide by √2)
   const double setback_dist = m_chamfer_dist / std::sqrt(2.0);
 
@@ -59,7 +59,7 @@ Status Shp_chamfer::add_chamfer(const ScreenCoords& screen_coords, const Chamfer
       const TopoDS_Wire* wire = get_wire_(screen_coords);
       if (!wire)
         return Status::user_error("No chamfer wire detected.");
-      
+
       // Chamfer all edges in the wire
       TopExp_Explorer edge_explorer(*wire, TopAbs_EDGE);
       while (edge_explorer.More())
@@ -77,7 +77,7 @@ Status Shp_chamfer::add_chamfer(const ScreenCoords& screen_coords, const Chamfer
       const TopoDS_Edge* edge = get_edge_(screen_coords);
       if (!edge)
         return Status::user_error("No chamfer edge detected.");
-      
+
       chamfer_maker.Add(setback_dist, *edge);
       break;
     }
@@ -89,7 +89,7 @@ Status Shp_chamfer::add_chamfer(const ScreenCoords& screen_coords, const Chamfer
   try
   {
     chamfer_maker.Build();
-    chamfer_shp_ptr chamfer_shp = new Chamfer_shp(ctx(), chamfer_maker.Shape());
+    Shp_ptr chamfer_shp = new Shp(ctx(), chamfer_maker.Shape());
     ctx().Remove(chamfer_src_shp, false);
     view().m_shps.remove(chamfer_src_shp);
     chamfer_shp->set_name("Chamfered shape");
@@ -97,7 +97,6 @@ Status Shp_chamfer::add_chamfer(const ScreenCoords& screen_coords, const Chamfer
   }
   catch (const Standard_Failure& e)
   {
-
     auto err_str = e.GetMessageString();
     DBG_MSG(err_str);
     return Status::user_error(err_str);

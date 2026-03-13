@@ -262,7 +262,7 @@ void GUI::initialize_toolbar_()
       {        load_texture("Workbench_Sketcher_none.png"), false,           "Sketch inspection mode",         Mode::Sketch_inspection_mode},
       {             load_texture("Assembly_AxialMove.png"), false,                   "Shape move (g)",                           Mode::Move},
       {                   load_texture("Draft_Rotate.png"), false,                 "Shape rotate (r)",                         Mode::Rotate},
-      {                     load_texture("Part_Scale.png"), false,                      "Shape Scale (s)",                       Mode::Scale},
+      {                     load_texture("Part_Scale.png"), false,                  "Shape Scale (s)",                          Mode::Scale},
       {          load_texture("Macro_FaceToSketch_48.png"), false, "Create a sketch from planar face",        Mode::Sketch_from_planar_face},
       {          load_texture("Sketcher_MirrorSketch.png"), false,            "Define operation axis",          Mode::Sketch_operation_axis},
       {           load_texture("Sketcher_CreatePoint.png"), false,                         "Add node",                Mode::Sketch_add_node},
@@ -383,12 +383,12 @@ void GUI::menu_bar_()
     }
     if (ImGui::MenuItem("Add box_prms"))
     {
-      m_add_box_origin_x = 0;
-      m_add_box_origin_y = 0;
-      m_add_box_origin_z = 0;
-      m_add_box_width    = 1.0;
-      m_add_box_length   = 1.0;
-      m_add_box_height   = 1.0;
+      m_add_box_origin_x   = 0;
+      m_add_box_origin_y   = 0;
+      m_add_box_origin_z   = 0;
+      m_add_box_width      = 1.0;
+      m_add_box_length     = 1.0;
+      m_add_box_height     = 1.0;
       m_open_add_box_popup = true;
     }
     if (ImGui::MenuItem("Add pyramid"))
@@ -399,8 +399,8 @@ void GUI::menu_bar_()
     if (ImGui::MenuItem("Add pyramid_prms"))
     {
       m_add_pyramid_origin_x = m_add_pyramid_origin_y = m_add_pyramid_origin_z = 0;
-      m_add_pyramid_side = 1.0;
-      m_open_add_pyramid_popup = true;
+      m_add_pyramid_side                                                       = 1.0;
+      m_open_add_pyramid_popup                                                 = true;
     }
     if (ImGui::MenuItem("Add sphere"))
     {
@@ -410,8 +410,8 @@ void GUI::menu_bar_()
     if (ImGui::MenuItem("Add sphere_prms"))
     {
       m_add_sphere_origin_x = m_add_sphere_origin_y = m_add_sphere_origin_z = 0;
-      m_add_sphere_radius = 1.0;
-      m_open_add_sphere_popup = true;
+      m_add_sphere_radius                                                   = 1.0;
+      m_open_add_sphere_popup                                               = true;
     }
     if (ImGui::MenuItem("Add cylinder"))
     {
@@ -422,7 +422,7 @@ void GUI::menu_bar_()
     {
       m_add_cylinder_origin_x = m_add_cylinder_origin_y = m_add_cylinder_origin_z = 0;
       m_add_cylinder_radius = m_add_cylinder_height = 1.0;
-      m_open_add_cylinder_popup = true;
+      m_open_add_cylinder_popup                     = true;
     }
     if (ImGui::MenuItem("Add cone"))
     {
@@ -432,10 +432,10 @@ void GUI::menu_bar_()
     if (ImGui::MenuItem("Add cone_prms"))
     {
       m_add_cone_origin_x = m_add_cone_origin_y = m_add_cone_origin_z = 0;
-      m_add_cone_R1 = 1.0;
-      m_add_cone_R2 = 0.0;
-      m_add_cone_height = 1.0;
-      m_open_add_cone_popup = true;
+      m_add_cone_R1                                                   = 1.0;
+      m_add_cone_R2                                                   = 0.0;
+      m_add_cone_height                                               = 1.0;
+      m_open_add_cone_popup                                           = true;
     }
     if (ImGui::MenuItem("Add torus"))
     {
@@ -445,9 +445,9 @@ void GUI::menu_bar_()
     if (ImGui::MenuItem("Add torus_prms"))
     {
       m_add_torus_origin_x = m_add_torus_origin_y = m_add_torus_origin_z = 0;
-      m_add_torus_R1 = 1.0;
-      m_add_torus_R2 = 0.5;
-      m_open_add_torus_popup = true;
+      m_add_torus_R1                                                     = 1.0;
+      m_add_torus_R2                                                     = 0.5;
+      m_open_add_torus_popup                                             = true;
     }
 
     ImGui::EndMenu();
@@ -786,7 +786,7 @@ void GUI::save_occt_view_settings()
       {     "show_shape_list",      m_show_shape_list},
       {  "log_window_visible",   m_log_window_visible},
       {"show_settings_dialog", m_show_settings_dialog},
-      {   "show_lua_console",   m_show_lua_console},
+      {    "show_lua_console",     m_show_lua_console},
 #ifndef NDEBUG
       {            "show_dbg",             m_show_dbg},
 #endif
@@ -1098,7 +1098,7 @@ void GUI::shape_list_()
   if (ImGui::Checkbox("Hide all", &m_hide_all_shapes))
   {
     // Update visibility of all shapes based on the new state
-    for (const ShapeBase_ptr& shape : m_view->get_shapes())
+    for (const Shp_ptr& shape : m_view->get_shapes())
     {
       shape->set_visible(!m_hide_all_shapes);
     }
@@ -1106,7 +1106,7 @@ void GUI::shape_list_()
 
   ImGui::Separator();
 
-  for (const ShapeBase_ptr& shape : m_view->get_shapes())
+  for (const Shp_ptr& shape : m_view->get_shapes())
   {
     // Unique ID suffix using index
     std::string id_suffix = "##" + std::to_string(index++);
@@ -2282,9 +2282,9 @@ void GUI::open_file_dialog_()
 void GUI::save_file_dialog_()
 {
   using namespace nlohmann;
-  std::string project_json = m_view->to_json();
-  json j = json::parse(project_json);
-  j["mode"] = static_cast<int>(get_mode());
+  std::string project_json   = m_view->to_json();
+  json        j              = json::parse(project_json);
+  j["mode"]                  = static_cast<int>(get_mode());
   const std::string json_str = j.dump(2);
 
 #ifndef __EMSCRIPTEN__

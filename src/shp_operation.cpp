@@ -1,4 +1,5 @@
 #include "shp_operation.h"
+
 #include "occt_view.h"
 
 Shp_operation_base::Shp_operation_base(Occt_view& view)
@@ -19,11 +20,11 @@ AIS_InteractiveContext& Shp_operation_base::ctx()
   return view().ctx();
 }
 
-std::vector<ShapeBase_ptr> Shp_operation_base::get_selected_shps_() const
+std::vector<Shp_ptr> Shp_operation_base::get_selected_shps_() const
 {
-  std::vector<ShapeBase_ptr> ret;
+  std::vector<Shp_ptr> ret;
   for (AIS_Shape_ptr& obj : m_view.get_selected())
-    if (auto shp = ShapeBase_ptr::DownCast(obj); shp)
+    if (auto shp = Shp_ptr::DownCast(obj); shp)
       ret.push_back(shp);
 
   return ret;
@@ -59,7 +60,7 @@ Status Shp_operation_base::ensure_operation_shps_()
 void Shp_operation_base::delete_operation_shps_()
 {
   std::vector<AIS_Shape_ptr> to_delete;
-  for (ShapeBase_ptr& shp : m_shps)
+  for (Shp_ptr& shp : m_shps)
     to_delete.push_back(shp);
 
   m_view.delete_(to_delete);
@@ -68,13 +69,16 @@ void Shp_operation_base::delete_operation_shps_()
 
 void Shp_operation_base::operation_shps_finalize_()
 {
-  for (AIS_Shape_ptr& shape : m_shps)
-    view().bake_transform_into_geometry(shape);
+  for (Shp_ptr& shape : m_shps)
+  {
+    AIS_Shape_ptr s = shape;
+    view().bake_transform_into_geometry(s);
+  }
 }
 
 void Shp_operation_base::operation_shps_cancel_()
 {
-  for (AIS_Shape_ptr& shape : m_shps)
+  for (Shp_ptr& shape : m_shps)
     shape->ResetTransformation();
 }
 
@@ -98,7 +102,7 @@ const TopoDS_Edge* Shp_operation_base::get_edge_(const ScreenCoords& screen_coor
   return m_view.get_edge_(screen_coords);
 }
 
-void Shp_operation_base::add_shp_(ShapeBase_ptr& shp)
+void Shp_operation_base::add_shp_(Shp_ptr& shp)
 {
   m_view.add_shp_(shp);
 }

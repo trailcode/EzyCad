@@ -13,10 +13,10 @@
 
 #include "occt_glfw_win.h"
 #include "shp_chamfer.h"
-#include "shp_fillet.h"
 #include "shp_common.h"
 #include "shp_cut.h"
 #include "shp_extrude.h"
+#include "shp_fillet.h"
 #include "shp_fuse.h"
 #include "shp_move.h"
 #include "shp_polar_dup.h"
@@ -101,14 +101,14 @@ class Occt_view : protected AIS_ViewController
   void         set_curr_sketch(const Sketch_ptr& sketch);
   void         sketch_face_extrude(const ScreenCoords& screen_coords, bool is_mouse_move);
 
-  std::list<ShapeBase_ptr>& get_shapes();
-  std::string get_unique_shape_name(const char* base_name) const;
-  void add_box(double ox, double oy, double oz, double width, double length, double height);
-  void add_pyramid(double ox, double oy, double oz, double side);
-  void add_sphere(double ox, double oy, double oz, double radius);
-  void add_cylinder(double ox, double oy, double oz, double radius, double height);
-  void add_cone(double ox, double oy, double oz, double R1, double R2, double height);
-  void add_torus(double ox, double oy, double oz, double R1, double R2);
+  std::list<Shp_ptr>& get_shapes();
+  std::string         get_unique_shape_name(const char* base_name) const;
+  void                add_box(double ox, double oy, double oz, double width, double length, double height);
+  void                add_pyramid(double ox, double oy, double oz, double side);
+  void                add_sphere(double ox, double oy, double oz, double radius);
+  void                add_cylinder(double ox, double oy, double oz, double radius, double height);
+  void                add_cone(double ox, double oy, double oz, double R1, double R2, double height);
+  void                add_torus(double ox, double oy, double oz, double R1, double R2);
 
   // Shape related
   Shp_move&      shp_move();
@@ -129,13 +129,13 @@ class Occt_view : protected AIS_ViewController
   bool fit_face_in_view(const TopoDS_Face& face);
 
   // Dimension related
-  void                    dimension_input(const ScreenCoords& screen_coords);
-  void                    angle_input(const ScreenCoords& screen_coords);
-  double                  get_dimension_scale() const;
-  bool                    get_show_dim_input() const;
-  void                    set_show_dim_input(bool show);
-  std::optional<double>   get_entered_dim() const;
-  void                    set_entered_dim(const std::optional<double>& dim);
+  void                  dimension_input(const ScreenCoords& screen_coords);
+  void                  angle_input(const ScreenCoords& screen_coords);
+  double                get_dimension_scale() const;
+  bool                  get_show_dim_input() const;
+  void                  set_show_dim_input(bool show);
+  std::optional<double> get_entered_dim() const;
+  void                  set_entered_dim(const std::optional<double>& dim);
 
   // Input events.
   void on_resize(int theWidth, int theHeight);
@@ -201,7 +201,7 @@ class Occt_view : protected AIS_ViewController
   std::optional<gp_Pnt> get_hit_point_(const AIS_Shape_ptr& shp, const ScreenCoords& screen_coords) const;
 
   // TODO group in .cpp file
-  void add_shp_(ShapeBase_ptr& shp);
+  void        add_shp_(Shp_ptr& shp);
   std::string unique_shape_name_(const char* base_name) const;
 
   void update_view_background_();
@@ -216,7 +216,7 @@ class Occt_view : protected AIS_ViewController
   V3d_View_ptr               m_view;
   Occt_glfw_win_ptr          m_occt_window;
   // Undo / redo
-  static constexpr size_t k_max_undo {50};
+  static constexpr size_t    k_max_undo {50};
   struct Undo_entry
   {
     std::string json;
@@ -228,35 +228,35 @@ class Occt_view : protected AIS_ViewController
 
   // --------------------------------------------------------------------
   // Dimension related
-  bool                       m_show_dim_input {false};
-  double                     m_dimension_scale {100.0};
-  std::optional<double>      m_entered_dim;
-  std::list<ShapeBase_ptr>   m_shps;
-  Sketch_list                m_sketches;
-  std::shared_ptr<Sketch>    m_cur_sketch;
-  TopAbs_ShapeEnum           m_shp_selection_mode {TopAbs_SHAPE};
-  Graphic3d_MaterialAspect   m_default_material;
-  bool                       m_headless_view {false};
+  bool                     m_show_dim_input {false};
+  double                   m_dimension_scale {100.0};
+  std::optional<double>    m_entered_dim;
+  std::list<Shp_ptr>       m_shps;
+  Sketch_list              m_sketches;
+  std::shared_ptr<Sketch>  m_cur_sketch;
+  TopAbs_ShapeEnum         m_shp_selection_mode {TopAbs_SHAPE};
+  Graphic3d_MaterialAspect m_default_material;
+  bool                     m_headless_view {false};
   // OCCT view colors; defaults match what we render (set explicitly in init_viewer())
-  float m_bg_color1[3] {0.85f, 0.88f, 0.90f};
-  float m_bg_color2[3] {0.45f, 0.55f, 0.60f};
-  int   m_bg_gradient_method {1};  // 0=HOR, 1=VER, 2=DIAG1, ...
-  float m_grid_color1[3] {0.1f, 0.1f, 0.1f};
-  float m_grid_color2[3] {0.1f, 0.1f, 0.3f};
+  float                    m_bg_color1[3] {0.85f, 0.88f, 0.90f};
+  float                    m_bg_color2[3] {0.45f, 0.55f, 0.60f};
+  int                      m_bg_gradient_method {1};  // 0=HOR, 1=VER, 2=DIAG1, ...
+  float                    m_grid_color1[3] {0.1f, 0.1f, 0.1f};
+  float                    m_grid_color2[3] {0.1f, 0.1f, 0.3f};
   // --------------------------------------------------------------------
   // Operations
-  Shp_move                   m_shp_move;
-  Shp_rotate                 m_shp_rotate;
-  Shp_scale                  m_shp_scale;
+  Shp_move                 m_shp_move;
+  Shp_rotate               m_shp_rotate;
+  Shp_scale                m_shp_scale;
   // --------------------------------------------------------------------
   // Commands
-  Shp_chamfer                m_shp_chamfer;
-  Shp_fillet                 m_shp_fillet;
-  Shp_cut                    m_shp_cut;
-  Shp_fuse                   m_shp_fuse;
-  Shp_common                 m_shp_common;
-  Shp_polar_dup              m_shp_polar_dup;
-  Shp_extrude                m_shp_extrude;
+  Shp_chamfer              m_shp_chamfer;
+  Shp_fillet               m_shp_fillet;
+  Shp_cut                  m_shp_cut;
+  Shp_fuse                 m_shp_fuse;
+  Shp_common               m_shp_common;
+  Shp_polar_dup            m_shp_polar_dup;
+  Shp_extrude              m_shp_extrude;
 };
 
 template <typename Shp_ptr_t, typename T>

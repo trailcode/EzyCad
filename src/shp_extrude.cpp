@@ -1,16 +1,15 @@
 #include "shp_extrude.h"
-
-#include <BRepPrimAPI_MakePrism.hxx>
-#include <Precision.hxx>
-#include <TopoDS.hxx>
-#include <V3d_View.hxx>
-
 #include "dbg.h"
 #include "geom.h"
 #include "gui.h"
 #include "occt_view.h"
 #include "sketch.h"
 #include "utl.h"
+
+#include <BRepPrimAPI_MakePrism.hxx>
+#include <Precision.hxx>
+#include <TopoDS.hxx>
+#include <V3d_View.hxx>
 
 Shp_extrude::Shp_extrude(Occt_view& view)
     : Shp_operation_base(view) {}
@@ -55,7 +54,7 @@ void Shp_extrude::finalize()
 {
   DBG_MSG("");
   EZY_ASSERT(m_extruded);
-  m_extruded->set_name(view().get_unique_shape_name("Extruded"));
+  m_extruded->set_name(view().get_unique_shape_name("Shape"));
   view().add_shp_(m_extruded);
   ctx().Remove(m_tmp_dim, false);
   clear_all(m_to_extrude_pt, m_to_extrude, m_extruded, m_tmp_dim);
@@ -135,7 +134,7 @@ void Shp_extrude::_update_extrude(const ScreenCoords& screen_coords)
     TopoDS_Shape       body = BRepPrimAPI_MakePrism(face, extrude_vec);
     if (!m_extruded)
     {
-      m_extruded = new Extruded_shp(ctx(), body);
+      m_extruded = new Shp(ctx(), body);
       m_extruded->SetMaterial(view().m_default_material);
       ctx().Display(m_extruded, AIS_Shaded, -1, Standard_True);
     }

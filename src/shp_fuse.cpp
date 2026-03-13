@@ -1,8 +1,9 @@
 #include "shp_fuse.h"
-#include "occt_view.h"
-#include "utl.h"
 
 #include <BRepAlgoAPI_Fuse.hxx>
+
+#include "occt_view.h"
+#include "utl.h"
 
 Shp_fuse::Shp_fuse(Occt_view& view)
     : Shp_operation_base(view) {}
@@ -11,8 +12,8 @@ Status Shp_fuse::selected_fuse()
 {
   view().push_undo_snapshot();
   CHK_RET(ensure_operation_multi_shps_());
-  
-  std::vector<ShapeBase_ptr>::iterator itr = m_shps.begin();
+
+  std::vector<Shp_ptr>::iterator itr = m_shps.begin();
 
   // Start with the first shape
   TopoDS_Shape result = (*itr)->Shape();
@@ -34,7 +35,7 @@ Status Shp_fuse::selected_fuse()
   }
 
   // Create a new shape from the union result
-  extruded_shp_ptr shp = new Extruded_shp(ctx(), result);
+  Shp_ptr shp = new Shp(ctx(), result);
   shp->set_name("Fused");
   delete_operation_shps_();
   add_shp_(shp);

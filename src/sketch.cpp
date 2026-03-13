@@ -1,11 +1,5 @@
 #include "sketch.h"
 
-#include "geom.h"
-#include "gui.h"
-#include "imgui.h"
-#include "occt_view.h"
-#include "utl.h"
-
 #include <BRepBuilderAPI_MakeEdge.hxx>
 #include <BRepBuilderAPI_MakeFace.hxx>
 #include <BRepBuilderAPI_MakeWire.hxx>
@@ -21,6 +15,12 @@
 #include <functional>
 #include <map>
 #include <unordered_set>
+
+#include "geom.h"
+#include "gui.h"
+#include "imgui.h"
+#include "occt_view.h"
+#include "utl.h"
 
 Sketch::Sketch(const std::string& name, Occt_view& view, const gp_Pln& pln)
     : m_view(view), m_ctx(view.ctx()), m_pln(pln), m_name(name), m_nodes(view, pln)
@@ -341,7 +341,6 @@ void Sketch::move_line_string_pt_(const ScreenCoords& screen_coords)
       edge.node_idx_b = m_nodes.try_get_node_idx_snap(final_pt_b);
       if (edge.node_idx_b.has_value())
         final_pt_b = m_nodes[*edge.node_idx_b];
-
     }
 
     double dist = pt_a.Distance(final_pt_b) / m_view.get_dimension_scale();
@@ -371,7 +370,6 @@ void Sketch::move_line_string_pt_(const ScreenCoords& screen_coords)
         m_show_dim_input = !is_finial;
         if (is_finial)
           on_enter();
-
       };
 
       m_view.gui().set_dist_edit(float(dist), std::move(std::function<void(float, bool)>(l)), spos);
@@ -614,7 +612,6 @@ void Sketch::move_slot_pt_(const ScreenCoords& screen_coords)
     const gp_Pnt2d& pt_a = m_nodes[m_tmp_edges.front().node_idx_a];
     if (unique(pt_a, pt_b, pt_c))
       show(m_ctx, m_tmp_shp, make_slot_wire(m_pln, pt_a, pt_b, pt_c));
-
   };
   if_edge_pt_valid_(l);
 }
@@ -728,7 +725,7 @@ void Sketch::mirror_selected_edges()
   update_faces_();
 }
 
-revolved_shp_rslt Sketch::revolve_selected(const double angle)
+Shp_rslt Sketch::revolve_selected(const double angle)
 {
   EZY_ASSERT_MSG(m_operation_axis.has_value(),
                  "No defined operation axis.");
@@ -749,14 +746,13 @@ revolved_shp_rslt Sketch::revolve_selected(const double angle)
         seen.insert(e.shp.get());
         builder.Add(compound, e.shp->Shape());
       }
-
   }
   else if (faces.size())
     for (const Sketch_face_shp_ptr& face : faces)
       builder.Add(compound, face->Shape());
 
   else
-    return revolved_shp_rslt(Result_status::User_error, "No selected faces or edges.");
+    return Shp_rslt(Result_status::User_error, "No selected faces or edges.");
 
   try
   {
@@ -766,19 +762,19 @@ revolved_shp_rslt Sketch::revolve_selected(const double angle)
     const gp_Ax1 axis(pt_a, direction);
 
     BRepPrimAPI_MakeRevol revolMaker(compound, axis, angle);
-    return revolved_shp_rslt(new Revolved_shp(m_ctx, revolMaker.Shape()));
+    return Shp_rslt(new Shp(m_ctx, revolMaker.Shape()));
   }
   catch (const Standard_Failure& e)
   {
     // Catch OCCT exception and return error with message
     std::string error_msg = "Revolution failed: ";
     error_msg += e.GetMessageString() ? e.GetMessageString() : "Unknown OCCT error";
-    return revolved_shp_rslt(Result_status::Topo_error, error_msg);
+    return Shp_rslt(Result_status::Topo_error, error_msg);
   }
   catch (const std::exception& e)
   {
     // Catch other unexpected errors
-    return revolved_shp_rslt(Result_status::User_error, "Unexpected error: " + std::string(e.what()));
+    return Shp_rslt(Result_status::User_error, "Unexpected error: " + std::string(e.what()));
   }
 }
 
@@ -796,7 +792,6 @@ void Sketch::add_sketch_pt_(const ScreenCoords& screen_coords, size_t required_n
 
     if (m_tmp_node_idxs.size() >= required_num_pts)
       callback(m_tmp_node_idxs.back());
-
   };
   move_sketch_pt_(screen_coords, l);
 }
@@ -921,7 +916,6 @@ std::list<Sketch::Edge>::iterator Sketch::get_edge_at_(const ScreenCoords& scree
   return m_edges.end();
 }
 
-
 void Sketch::set_edge_dim_anno_visible_(Edge& e, bool visible)
 {
   if (visible)
@@ -946,7 +940,6 @@ void Sketch::toggle_edge_dim(const ScreenCoords& screen_coords)
 {
   if (std::list<Edge>::iterator itr = get_edge_at_(screen_coords); itr != m_edges.end())
     set_edge_dim_anno_visible_(*itr, itr->dim.IsNull());
-
 }
 
 void Sketch::finalize_elm()
