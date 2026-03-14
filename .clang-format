@@ -13,14 +13,14 @@ AllowAllArgumentsOnNextLine: true      # Changed to true
 AllowAllParametersOfDeclarationOnNextLine: true  # Changed to true
 AllowShortBlocksOnASingleLine: Empty
 AllowShortCaseLabelsOnASingleLine: false
-AllowShortFunctionsOnASingleLine: All   # Short functions (e.g. one return) on one line
+AllowShortFunctionsOnASingleLine: Empty
 AllowShortIfStatementsOnASingleLine: Never
 AllowShortLoopsOnASingleLine: false
 AlwaysBreakAfterReturnType: None
 AlwaysBreakTemplateDeclarations: No    # Changed to No
 BinPackArguments: true                 # Changed to true
 BinPackParameters: true                # Changed to true
-BreakBeforeBraces: Attach              # Attach so AllowShortFunctionsOnASingleLine can collapse to one line
+BreakBeforeBraces: Allman              # Optional: consider Attach
 IndentWidth: 2
 TabWidth: 2
 UseTab: Never

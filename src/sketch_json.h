@@ -7,7 +7,8 @@
 class Sketch;
 class Occt_view;
 
-class Sketch_json {
+class Sketch_json
+{
  public:
   static nlohmann::json to_json(const Sketch& sketch);
 

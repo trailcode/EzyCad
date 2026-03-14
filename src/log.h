@@ -6,7 +6,8 @@
 class GUI;
 
 // Custom stream buffer to redirect stdout/stderr to log_message
-class Log_strm : public std::streambuf {
+class Log_strm : public std::streambuf
+{
  public:
   Log_strm(GUI& gui, std::streambuf* original_buf);
 

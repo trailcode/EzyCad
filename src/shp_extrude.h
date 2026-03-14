@@ -10,7 +10,8 @@
 class AIS_Shape;
 class V3d_View;
 
-class Shp_extrude : private Shp_operation_base {
+class Shp_extrude : private Shp_operation_base
+{
  public:
   Shp_extrude(Occt_view& view);
 

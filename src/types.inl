@@ -8,7 +8,7 @@ class Vector_container
  public:
   explicit Vector_container(Vec initial_value)
       : m_value(initial_value) {}
-  
+
   // clang-format off
   Vec&                    unsafe_get()                                   { return m_value;    }
   const Vec&              unsafe_get()   const                           { return m_value;    }

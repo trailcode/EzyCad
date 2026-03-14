@@ -18,10 +18,10 @@ Result<T>::Result(const Result_status status, const std::string& error_msg)
     : Status(status, error_msg), m_value(std::nullopt)
 {
   EZY_ASSERT_MSG(status != Result_status::Success,
-                "Success status requires a value");
+                 "Success status requires a value");
 
   EZY_ASSERT_MSG(status != Result_status::Null || error_msg.empty(),
-                "Null status should not have an error message");
+                 "Null status should not have an error message");
 }
 
 // Check if the result contains a valid value
@@ -38,7 +38,7 @@ T& Result<T>::value()
   if (!has_value())
   {
     EZY_ASSERT_MSG(m_v != Result_status::Null,
-                  "Result is in Null state");
+                   "Result is in Null state");
 
     EZY_ASSERT_MSG(false, m_msg.empty() ? "No value available" : m_msg);
   }
@@ -51,7 +51,7 @@ const T& Result<T>::value() const
   if (!has_value())
   {
     EZY_ASSERT_MSG(m_v != Result_status::Null,
-                  "Result is in Null state");
+                   "Result is in Null state");
 
     EZY_ASSERT_MSG(false, m_msg.empty() ? "No value available" : m_msg);
   }

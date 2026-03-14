@@ -42,8 +42,10 @@ Occt_glfw_win::Occt_glfw_win(int theWidth, int theHeight, const TCollection_Asci
       myXLeft(0),
       myYTop(0),
       myXRight(0),
-      myYBottom(0) {
-  if (myGlfwWindow != nullptr) {
+      myYBottom(0)
+{
+  if (myGlfwWindow != nullptr)
+  {
     int aWidth = 0, aHeight = 0;
     glfwGetWindowPos(myGlfwWindow, &myXLeft, &myYTop);
     glfwGetWindowSize(myGlfwWindow, &aWidth, &aHeight);
@@ -56,12 +58,15 @@ Occt_glfw_win::Occt_glfw_win(int theWidth, int theHeight, const TCollection_Asci
   }
 }
 
-Occt_glfw_win::Occt_glfw_win(GLFWwindow* GlfwWindow) : myGlfwWindow(GlfwWindow),
-                                                       myXLeft(0),
-                                                       myYTop(0),
-                                                       myXRight(0),
-                                                       myYBottom(0) {
-  if (myGlfwWindow != nullptr) {
+Occt_glfw_win::Occt_glfw_win(GLFWwindow* GlfwWindow)
+    : myGlfwWindow(GlfwWindow),
+      myXLeft(0),
+      myYTop(0),
+      myXRight(0),
+      myYBottom(0)
+{
+  if (myGlfwWindow != nullptr)
+  {
     int aWidth = 0, aHeight = 0;
     glfwGetWindowPos(myGlfwWindow, &myXLeft, &myYTop);
     glfwGetWindowSize(myGlfwWindow, &aWidth, &aHeight);
@@ -75,15 +80,18 @@ Occt_glfw_win::Occt_glfw_win(GLFWwindow* GlfwWindow) : myGlfwWindow(GlfwWindow),
   }
 }
 
-void Occt_glfw_win::Close() {
-  if (myGlfwWindow != nullptr) {
+void Occt_glfw_win::Close()
+{
+  if (myGlfwWindow != nullptr)
+  {
     glfwDestroyWindow(myGlfwWindow);
     myGlfwWindow = nullptr;
   }
 }
 
 #ifndef __EMSCRIPTEN__
-Aspect_Drawable Occt_glfw_win::NativeHandle() const {
+Aspect_Drawable Occt_glfw_win::NativeHandle() const
+{
 #if defined(__APPLE__)
   return (Aspect_Drawable) glfwGetCocoaWindow(myGlfwWindow);
 #elif defined(_WIN32)
@@ -95,7 +103,8 @@ Aspect_Drawable Occt_glfw_win::NativeHandle() const {
 #endif
 
 #ifndef __EMSCRIPTEN__
-Aspect_RenderingContext Occt_glfw_win::NativeGlContext() const {
+Aspect_RenderingContext Occt_glfw_win::NativeGlContext() const
+{
 #if defined(__APPLE__)
   return (NSOpenGLContext*) glfwGetNSGLContext(myGlfwWindow);
 #elif defined(_WIN32)
@@ -106,20 +115,25 @@ Aspect_RenderingContext Occt_glfw_win::NativeGlContext() const {
 }
 #endif
 
-Standard_Boolean Occt_glfw_win::IsMapped() const {
+Standard_Boolean Occt_glfw_win::IsMapped() const
+{
   return glfwGetWindowAttrib(myGlfwWindow, GLFW_VISIBLE) != 0;
 }
 
-void Occt_glfw_win::Map() const {
+void Occt_glfw_win::Map() const
+{
   glfwShowWindow(myGlfwWindow);
 }
 
-void Occt_glfw_win::Unmap() const {
+void Occt_glfw_win::Unmap() const
+{
   glfwHideWindow(myGlfwWindow);
 }
 
-Aspect_TypeOfResize Occt_glfw_win::DoResize() {
-  if (glfwGetWindowAttrib(myGlfwWindow, GLFW_VISIBLE) == 1) {
+Aspect_TypeOfResize Occt_glfw_win::DoResize()
+{
+  if (glfwGetWindowAttrib(myGlfwWindow, GLFW_VISIBLE) == 1)
+  {
     int anXPos = 0, anYPos = 0, aWidth = 0, aHeight = 0;
     glfwGetWindowPos(myGlfwWindow, &anXPos, &anYPos);
     glfwGetWindowSize(myGlfwWindow, &aWidth, &aHeight);
@@ -131,7 +145,8 @@ Aspect_TypeOfResize Occt_glfw_win::DoResize() {
   return Aspect_TOR_UNKNOWN;
 }
 
-Graphic3d_Vec2i Occt_glfw_win::CursorPosition() const {
+Graphic3d_Vec2i Occt_glfw_win::CursorPosition() const
+{
   Graphic3d_Vec2d aPos;
   glfwGetCursorPos(myGlfwWindow, &aPos.x(), &aPos.y());
   return Graphic3d_Vec2i((int) aPos.x(), (int) aPos.y());

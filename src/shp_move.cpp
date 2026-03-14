@@ -8,7 +8,8 @@
 Shp_move::Shp_move(Occt_view& view)
     : Shp_operation_base(view) {}
 
-Status Shp_move::move_selected(const ScreenCoords& screen_coords) {
+Status Shp_move::move_selected(const ScreenCoords& screen_coords)
+{
   CHK_RET(ensure_operation_shps_());
 
   if (!m_center.has_value())
@@ -44,7 +45,8 @@ Status Shp_move::move_selected(const ScreenCoords& screen_coords) {
   gp_Trsf translation;
   translation.SetTranslation(gp_Vec(m_delta.delta));
 
-  for (const AIS_Shape_ptr& shape : m_shps) {
+  for (const AIS_Shape_ptr& shape : m_shps)
+  {
     shape->SetLocalTransformation(translation);
     ctx().Redisplay(shape, true);
   }
@@ -52,24 +54,28 @@ Status Shp_move::move_selected(const ScreenCoords& screen_coords) {
   return Status::ok();
 }
 
-void Shp_move::show_dist_edit(const ScreenCoords& screen_coords) {
+void Shp_move::show_dist_edit(const ScreenCoords& screen_coords)
+{
   bool no_axis_constraints = !m_opts.constr_axis_x && !m_opts.constr_axis_y && !m_opts.constr_axis_z;
 
-  auto dist_edit_axis_x = [&, screen_coords](float new_dist, bool is_final) {
+  auto dist_edit_axis_x = [&, screen_coords](float new_dist, bool is_final)
+  {
     m_delta.override_x = new_dist * view().get_dimension_scale();
     EZY_ASSERT(move_selected(screen_coords).is_ok());  // Status should always be valid here
     if (is_final)
       check_finalize_();
   };
 
-  auto dist_edit_axis_y = [&, screen_coords](float new_dist, bool is_final) {
+  auto dist_edit_axis_y = [&, screen_coords](float new_dist, bool is_final)
+  {
     m_delta.override_y = new_dist * view().get_dimension_scale();
     EZY_ASSERT(move_selected(screen_coords).is_ok());
     if (is_final)
       check_finalize_();
   };
 
-  auto dist_edit_axis_z = [&, screen_coords](float new_dist, bool is_final) {
+  auto dist_edit_axis_z = [&, screen_coords](float new_dist, bool is_final)
+  {
     m_delta.override_z = new_dist * view().get_dimension_scale();
     EZY_ASSERT(move_selected(screen_coords).is_ok());
     if (is_final)
@@ -86,12 +92,16 @@ void Shp_move::show_dist_edit(const ScreenCoords& screen_coords) {
     gui().set_dist_edit(float(m_delta.delta.Z() / view().get_dimension_scale()), std::move(std::function<void(float, bool)>(dist_edit_axis_z)));
 }
 
-void Shp_move::check_finalize_() {
+void Shp_move::check_finalize_()
+{
   bool no_axis_constraints = !m_opts.constr_axis_x && !m_opts.constr_axis_y && !m_opts.constr_axis_z;
-  if (no_axis_constraints) {
+  if (no_axis_constraints)
+  {
     if (m_delta.override_x.has_value() && m_delta.override_y.has_value() && m_delta.override_z.has_value())
       finalize();
-  } else {
+  }
+  else
+  {
     bool got_x = !m_opts.constr_axis_x || m_delta.override_x.has_value();
     bool got_y = !m_opts.constr_axis_y || m_delta.override_y.has_value();
     bool got_z = !m_opts.constr_axis_z || m_delta.override_z.has_value();
@@ -101,7 +111,8 @@ void Shp_move::check_finalize_() {
   }
 }
 
-void Shp_move::finalize() {
+void Shp_move::finalize()
+{
   if (m_shps.empty())
     // If the move tool is activated and no shapes are selected,
     // then we do not want to call reset() because they could
@@ -113,12 +124,14 @@ void Shp_move::finalize() {
   reset();
 }
 
-void Shp_move::cancel() {
+void Shp_move::cancel()
+{
   operation_shps_cancel_();
   reset();
 }
 
-void Shp_move::reset() {
+void Shp_move::reset()
+{
   // Reset options
   m_opts  = {};
   m_delta = {};
@@ -126,6 +139,7 @@ void Shp_move::reset() {
   gui().set_mode(Mode::Normal);
 }
 
-Move_options& Shp_move::get_opts() {
+Move_options& Shp_move::get_opts()
+{
   return m_opts;
 }

@@ -36,30 +36,35 @@ static const char* const k_settings_version = "1";
 
 GUI* gui_instance = nullptr;
 
-GUI::GUI() {
+GUI::GUI()
+{
   m_view = std::make_unique<Occt_view>(*this);
   EZY_ASSERT(!gui_instance);
   gui_instance = this;
 }
 
-GUI::~GUI() {
+GUI::~GUI()
+{
   cleanup_log_redirection_();  // Clean up stream redirection
 }
 
-ImVec4 GUI::get_clear_color() const {
+ImVec4 GUI::get_clear_color() const
+{
   if (m_dark_mode)
     return ImVec4(0.10f, 0.10f, 0.12f, 1.00f);
   return ImVec4(0.45f, 0.55f, 0.60f, 1.00f);
 }
 
 #ifdef __EMSCRIPTEN__
-GUI& GUI::instance() {
+GUI& GUI::instance()
+{
   EZY_ASSERT(gui_instance);
   return *gui_instance;
 }
 #endif
 
-void GUI::render_gui() {
+void GUI::render_gui()
+{
   if (m_dark_mode)
     ImGui::StyleColorsDark();
   else
@@ -85,11 +90,13 @@ void GUI::render_gui() {
   dbg_();
 }
 
-void GUI::render_occt() {
+void GUI::render_occt()
+{
   m_view->do_frame();
 }
 
-void GUI::set_mode(Mode mode) {
+void GUI::set_mode(Mode mode)
+{
   m_mode = mode;
   m_view->on_mode();
   for (Toolbar_button& b : m_toolbar_buttons)
@@ -97,7 +104,8 @@ void GUI::set_mode(Mode mode) {
       b.is_active = std::get<Mode>(b.data) == mode;
 }
 
-void GUI::set_parent_mode() {
+void GUI::set_parent_mode()
+{
   static std::map<Mode, Mode> parent_modes = {
       {                        Mode::Normal,                 Mode::Normal},
       {                          Mode::Move,                 Mode::Normal},
@@ -123,7 +131,8 @@ void GUI::set_parent_mode() {
       {        Mode::Sketch_toggle_edge_dim, Mode::Sketch_inspection_mode},
   };
 
-  static bool check = [&]() {
+  static bool check = [&]()
+  {
     // Called only once.
     for (size_t idx = 0; idx < size_t(Mode::_count); ++idx)
       EZY_ASSERT(parent_modes.find(Mode(idx)) != parent_modes.end());
@@ -136,16 +145,20 @@ void GUI::set_parent_mode() {
   set_mode(itr->second);
 }
 
-void GUI::on_key(int key, int scancode, int action, int mods) {
-  if (action == GLFW_PRESS) {
+void GUI::on_key(int key, int scancode, int action, int mods)
+{
+  if (action == GLFW_PRESS)
+  {
     const ScreenCoords screen_coords(glm::dvec2(ImGui::GetIO().MousePos.x, ImGui::GetIO().MousePos.y));
 
     // Check for Ctrl modifier
     bool ctrl_pressed = (mods & GLFW_MOD_CONTROL) != 0;
 
     // Handle file menu hotkeys and undo/redo
-    if (ctrl_pressed) {
-      switch (key) {
+    if (ctrl_pressed)
+    {
+      switch (key)
+      {
         case GLFW_KEY_N:  // Ctrl+N for New
           m_view->new_file();
           break;
@@ -172,16 +185,20 @@ void GUI::on_key(int key, int scancode, int action, int mods) {
         default:
           break;
       }
-    } else {
+    }
+    else
+    {
       // Handle other keys
-      switch (key) {
+      switch (key)
+      {
         case GLFW_KEY_ESCAPE:
           m_view->cancel(Set_parent_mode::Yes);
           hide_dist_edit();
           hide_angle_edit();
           break;
 
-        case GLFW_KEY_TAB: {
+        case GLFW_KEY_TAB:
+        {
           bool shift_pressed = (mods & GLFW_MOD_SHIFT) != 0;
           if (shift_pressed)
             m_view->angle_input(screen_coords);
@@ -220,7 +237,8 @@ void GUI::on_key(int key, int scancode, int action, int mods) {
           break;
       }
 
-      switch (get_mode()) {
+      switch (get_mode())
+      {
         case Mode::Move:
           on_key_move_mode_(key);
           break;
@@ -237,7 +255,8 @@ void GUI::on_key(int key, int scancode, int action, int mods) {
 }
 
 // Initialize toolbar buttons
-void GUI::initialize_toolbar_() {
+void GUI::initialize_toolbar_()
+{
   m_toolbar_buttons = {
       {                           load_texture("User.png"),  true,                  "Inspection mode",                         Mode::Normal},
       {        load_texture("Workbench_Sketcher_none.png"), false,           "Sketch inspection mode",         Mode::Sketch_inspection_mode},
@@ -267,7 +286,8 @@ void GUI::initialize_toolbar_() {
   };
 }
 
-void GUI::load_examples_list_() {
+void GUI::load_examples_list_()
+{
   m_example_files.clear();
 #ifdef __EMSCRIPTEN__
   const std::filesystem::path examples_dir("/res/examples");
@@ -277,7 +297,8 @@ void GUI::load_examples_list_() {
   if (!std::filesystem::is_directory(examples_dir))
     return;
 
-  for (const auto& entry : std::filesystem::directory_iterator(examples_dir)) {
+  for (const auto& entry : std::filesystem::directory_iterator(examples_dir))
+  {
     if (!entry.is_regular_file())
       continue;
 
@@ -290,14 +311,17 @@ void GUI::load_examples_list_() {
     m_example_files.emplace_back(std::move(label), std::move(path));
   }
   std::sort(m_example_files.begin(), m_example_files.end(),
-            [](const auto& a, const auto& b) { return a.first < b.first; });
+            [](const auto& a, const auto& b)
+            { return a.first < b.first; });
 }
 
-void GUI::menu_bar_() {
+void GUI::menu_bar_()
+{
   if (!ImGui::BeginMainMenuBar())
     return;
 
-  if (ImGui::BeginMenu("File")) {
+  if (ImGui::BeginMenu("File"))
+  {
     if (ImGui::MenuItem("New", "Ctrl+N"))
       m_view->new_file();
 
@@ -307,15 +331,19 @@ void GUI::menu_bar_() {
     else if (ImGui::MenuItem("Save", "Ctrl+S"))
       save_file_dialog_();
 
-    else if (ImGui::MenuItem("Save as")) {
+    else if (ImGui::MenuItem("Save as"))
+    {
       m_last_saved_path.clear();  // Force save as dialog
       save_file_dialog_();
-    } else if (ImGui::MenuItem("Import"))
+    }
+    else if (ImGui::MenuItem("Import"))
       import_file_dialog_();
 
-    else if (ImGui::BeginMenu("Examples")) {
+    else if (ImGui::BeginMenu("Examples"))
+    {
       for (const auto& [label, path] : m_example_files)
-        if (ImGui::MenuItem(label.c_str())) {
+        if (ImGui::MenuItem(label.c_str()))
+        {
           std::ifstream file(path);
           std::string   json_str {std::istreambuf_iterator<char>(file), std::istreambuf_iterator<char>()};
           if (file.good() && !json_str.empty())
@@ -327,7 +355,8 @@ void GUI::menu_bar_() {
       ImGui::EndMenu();
     }
 #ifdef __EMSCRIPTEN__
-    else if (ImGui::MenuItem("Save settings")) {
+    else if (ImGui::MenuItem("Save settings"))
+    {
       save_occt_view_settings();
       show_message("Settings saved");
     }
@@ -339,17 +368,20 @@ void GUI::menu_bar_() {
     ImGui::EndMenu();
   }
 
-  if (ImGui::BeginMenu("Edit")) {
+  if (ImGui::BeginMenu("Edit"))
+  {
     if (ImGui::MenuItem("Undo", "Ctrl+Z", false, m_view->can_undo()))
       m_view->undo();
     if (ImGui::MenuItem("Redo", "Ctrl+Y", false, m_view->can_redo()))
       m_view->redo();
     ImGui::Separator();
-    if (ImGui::MenuItem("Add box")) {
+    if (ImGui::MenuItem("Add box"))
+    {
       const double scale = m_view->get_dimension_scale();
       m_view->add_box(0, 0, 0, scale, scale, scale);
     }
-    if (ImGui::MenuItem("Add box_prms")) {
+    if (ImGui::MenuItem("Add box_prms"))
+    {
       m_add_box_origin_x   = 0;
       m_add_box_origin_y   = 0;
       m_add_box_origin_z   = 0;
@@ -358,49 +390,59 @@ void GUI::menu_bar_() {
       m_add_box_height     = 1.0;
       m_open_add_box_popup = true;
     }
-    if (ImGui::MenuItem("Add pyramid")) {
+    if (ImGui::MenuItem("Add pyramid"))
+    {
       const double scale = m_view->get_dimension_scale();
       m_view->add_pyramid(0, 0, 0, scale);
     }
-    if (ImGui::MenuItem("Add pyramid_prms")) {
+    if (ImGui::MenuItem("Add pyramid_prms"))
+    {
       m_add_pyramid_origin_x = m_add_pyramid_origin_y = m_add_pyramid_origin_z = 0;
       m_add_pyramid_side                                                       = 1.0;
       m_open_add_pyramid_popup                                                 = true;
     }
-    if (ImGui::MenuItem("Add sphere")) {
+    if (ImGui::MenuItem("Add sphere"))
+    {
       const double scale = m_view->get_dimension_scale();
       m_view->add_sphere(0, 0, 0, scale);
     }
-    if (ImGui::MenuItem("Add sphere_prms")) {
+    if (ImGui::MenuItem("Add sphere_prms"))
+    {
       m_add_sphere_origin_x = m_add_sphere_origin_y = m_add_sphere_origin_z = 0;
       m_add_sphere_radius                                                   = 1.0;
       m_open_add_sphere_popup                                               = true;
     }
-    if (ImGui::MenuItem("Add cylinder")) {
+    if (ImGui::MenuItem("Add cylinder"))
+    {
       const double scale = m_view->get_dimension_scale();
       m_view->add_cylinder(0, 0, 0, scale, scale);
     }
-    if (ImGui::MenuItem("Add cylinder_prms")) {
+    if (ImGui::MenuItem("Add cylinder_prms"))
+    {
       m_add_cylinder_origin_x = m_add_cylinder_origin_y = m_add_cylinder_origin_z = 0;
       m_add_cylinder_radius = m_add_cylinder_height = 1.0;
       m_open_add_cylinder_popup                     = true;
     }
-    if (ImGui::MenuItem("Add cone")) {
+    if (ImGui::MenuItem("Add cone"))
+    {
       const double scale = m_view->get_dimension_scale();
       m_view->add_cone(0, 0, 0, scale, 0.0, scale);
     }
-    if (ImGui::MenuItem("Add cone_prms")) {
+    if (ImGui::MenuItem("Add cone_prms"))
+    {
       m_add_cone_origin_x = m_add_cone_origin_y = m_add_cone_origin_z = 0;
       m_add_cone_R1                                                   = 1.0;
       m_add_cone_R2                                                   = 0.0;
       m_add_cone_height                                               = 1.0;
       m_open_add_cone_popup                                           = true;
     }
-    if (ImGui::MenuItem("Add torus")) {
+    if (ImGui::MenuItem("Add torus"))
+    {
       const double scale = m_view->get_dimension_scale();
       m_view->add_torus(0, 0, 0, scale, scale / 2.0);
     }
-    if (ImGui::MenuItem("Add torus_prms")) {
+    if (ImGui::MenuItem("Add torus_prms"))
+    {
       m_add_torus_origin_x = m_add_torus_origin_y = m_add_torus_origin_z = 0;
       m_add_torus_R1                                                     = 1.0;
       m_add_torus_R2                                                     = 0.5;
@@ -410,34 +452,42 @@ void GUI::menu_bar_() {
     ImGui::EndMenu();
   }
 
-  if (ImGui::BeginMenu("View")) {
+  if (ImGui::BeginMenu("View"))
+  {
     bool save_panes = false;
-    if (ImGui::MenuItem("Settings", nullptr, m_show_settings_dialog)) {
+    if (ImGui::MenuItem("Settings", nullptr, m_show_settings_dialog))
+    {
       m_show_settings_dialog = !m_show_settings_dialog;
       save_panes             = true;
     }
-    if (ImGui::MenuItem("Options", nullptr, m_show_options)) {
+    if (ImGui::MenuItem("Options", nullptr, m_show_options))
+    {
       m_show_options = !m_show_options;
       save_panes     = true;
     }
-    if (ImGui::MenuItem("Sketch List", nullptr, m_show_sketch_list)) {
+    if (ImGui::MenuItem("Sketch List", nullptr, m_show_sketch_list))
+    {
       m_show_sketch_list = !m_show_sketch_list;
       save_panes         = true;
     }
-    if (ImGui::MenuItem("Shape List", nullptr, m_show_shape_list)) {
+    if (ImGui::MenuItem("Shape List", nullptr, m_show_shape_list))
+    {
       m_show_shape_list = !m_show_shape_list;
       save_panes        = true;
     }
-    if (ImGui::MenuItem("Log", nullptr, m_log_window_visible)) {
+    if (ImGui::MenuItem("Log", nullptr, m_log_window_visible))
+    {
       m_log_window_visible = !m_log_window_visible;
       save_panes           = true;
     }
-    if (ImGui::MenuItem("Lua Console", nullptr, m_show_lua_console)) {
+    if (ImGui::MenuItem("Lua Console", nullptr, m_show_lua_console))
+    {
       m_show_lua_console = !m_show_lua_console;
       save_panes         = true;
     }
 #ifndef NDEBUG
-    if (ImGui::MenuItem("Debug", nullptr, m_show_dbg)) {
+    if (ImGui::MenuItem("Debug", nullptr, m_show_dbg))
+    {
       m_show_dbg = !m_show_dbg;
       save_panes = true;
     }
@@ -448,7 +498,8 @@ void GUI::menu_bar_() {
     ImGui::EndMenu();
   }
 
-  if (ImGui::BeginMenu("Help")) {
+  if (ImGui::BeginMenu("Help"))
+  {
     if (ImGui::MenuItem("About"))
       open_url_("https://github.com/trailcode/EzyCad/blob/main/README.md");
 
@@ -461,7 +512,8 @@ void GUI::menu_bar_() {
   ImGui::EndMainMenuBar();
 }
 
-void GUI::open_url_(const char* url) {
+void GUI::open_url_(const char* url)
+{
 #ifdef __EMSCRIPTEN__
   // For Emscripten, use JavaScript's window.open()
   // Use EM_ASM for safer execution
@@ -492,8 +544,10 @@ void GUI::open_url_(const char* url) {
 }
 
 // Settings related
-void GUI::parse_occt_view_settings_(const std::string& content) {
-  try {
+void GUI::parse_occt_view_settings_(const std::string& content)
+{
+  try
+  {
     using namespace nlohmann;
     const json j = json::parse(content);
     if (!j.contains("occt_view") || !j["occt_view"].is_object())
@@ -504,7 +558,8 @@ void GUI::parse_occt_view_settings_(const std::string& content) {
     int         method = 1;
     float       g1[3]  = {0.1f, 0.1f, 0.1f};
     float       g2[3]  = {0.1f, 0.1f, 0.3f};
-    auto        arr3   = [](const json& a, float* out) {
+    auto        arr3   = [](const json& a, float* out)
+    {
       if (a.is_array() && a.size() >= 3)
         for (size_t i = 0; i < 3; ++i)
           if (a[i].is_number())
@@ -523,11 +578,14 @@ void GUI::parse_occt_view_settings_(const std::string& content) {
     m_view->set_bg_gradient_colors(bg1[0], bg1[1], bg1[2], bg2[0], bg2[1], bg2[2]);
     m_view->set_bg_gradient_method(method);
     m_view->set_grid_colors(g1[0], g1[1], g1[2], g2[0], g2[1], g2[2]);
-  } catch (...) {
+  }
+  catch (...)
+  {
   }
 }
 
-void GUI::parse_occt_view_ini_(const std::string& content) {
+void GUI::parse_occt_view_ini_(const std::string& content)
+{
   bool               in_section = false;
   std::istringstream ss(content);
   std::string        line;
@@ -536,16 +594,19 @@ void GUI::parse_occt_view_ini_(const std::string& content) {
   int                method     = 1;
   float              g1[3]      = {0.1f, 0.1f, 0.1f};
   float              g2[3]      = {0.1f, 0.1f, 0.3f};
-  auto               read_float = [](const std::string& v) -> float {
+  auto               read_float = [](const std::string& v) -> float
+  {
     float              x = 0.f;
     std::istringstream is(v);
     is >> x;
     return x;
   };
-  while (std::getline(ss, line)) {
+  while (std::getline(ss, line))
+  {
     if (line.empty())
       continue;
-    if (line[0] == '[') {
+    if (line[0] == '[')
+    {
       in_section = (line == "[OCCTView]");
       continue;
     }
@@ -568,12 +629,17 @@ void GUI::parse_occt_view_ini_(const std::string& content) {
       bg2[1] = read_float(value);
     else if (key == "BgB2")
       bg2[2] = read_float(value);
-    else if (key == "BgMethod") {
-      try {
+    else if (key == "BgMethod")
+    {
+      try
+      {
         method = std::stoi(value);
-      } catch (...) {
       }
-    } else if (key == "GridR1")
+      catch (...)
+      {
+      }
+    }
+    else if (key == "GridR1")
       g1[0] = read_float(value);
     else if (key == "GridG1")
       g1[1] = read_float(value);
@@ -591,14 +657,17 @@ void GUI::parse_occt_view_ini_(const std::string& content) {
   m_view->set_grid_colors(g1[0], g1[1], g1[2], g2[0], g2[1], g2[2]);
 }
 
-void GUI::parse_gui_panes_settings_(const std::string& content) {
-  try {
+void GUI::parse_gui_panes_settings_(const std::string& content)
+{
+  try
+  {
     using namespace nlohmann;
     const json j = json::parse(content);
     if (!j.contains("gui") || !j["gui"].is_object())
       return;
     const json& g = j["gui"];
-    auto        b = [&g](const char* key, bool current) {
+    auto        b = [&g](const char* key, bool current)
+    {
       return g.contains(key) && g[key].is_boolean() ? g[key].get<bool>() : current;
     };
     set_show_options(b("show_options", true));
@@ -610,34 +679,45 @@ void GUI::parse_gui_panes_settings_(const std::string& content) {
 #ifndef NDEBUG
     set_show_dbg(b("show_dbg", false));
 #endif
-  } catch (...) {
+  }
+  catch (...)
+  {
     EZY_ASSERT_MSG(false, "Error parse_gui_panes_settings!");
   }
 }
 
-void GUI::load_occt_view_settings_() {
+void GUI::load_occt_view_settings_()
+{
   std::string content = settings::load_with_defaults();
 
-  try {
+  try
+  {
     using namespace nlohmann;
     const json j          = json::parse(content);
     bool       version_ok = j.contains("version") && j["version"].is_string() &&
                       j["version"].get<std::string>() == k_settings_version;
-    if (!version_ok) {
+    if (!version_ok)
+    {
       content = settings::load_defaults();
-      if (!content.empty()) {
-        try {
+      if (!content.empty())
+      {
+        try
+        {
           json j_default       = json::parse(content);
           j_default["version"] = k_settings_version;
           settings::save(j_default.dump(2));
           content = j_default.dump(2);
-        } catch (...) {
+        }
+        catch (...)
+        {
           settings::save(content);
         }
       }
       log_message("Settings version mismatch or missing; loaded defaults.");
     }
-  } catch (...) {
+  }
+  catch (...)
+  {
     content = settings::load_defaults();
     if (!content.empty())
       settings::save(content);
@@ -655,28 +735,37 @@ void GUI::load_occt_view_settings_() {
   parse_occt_view_settings_(content);
   parse_gui_panes_settings_(content);
 
-  try {
+  try
+  {
     using namespace nlohmann;
     const json j = json::parse(content);
-    if (j.contains("imgui_ini") && j["imgui_ini"].is_string()) {
+    if (j.contains("imgui_ini") && j["imgui_ini"].is_string())
+    {
       const std::string& ini = j["imgui_ini"].get<std::string>();
       if (!ini.empty())
         ImGui::LoadIniSettingsFromMemory(ini.c_str(), ini.size());
     }
-  } catch (...) {
+  }
+  catch (...)
+  {
     // EZY_ASSERT_MSG(false, "Settings invalid!");
   }
 }
 
-void GUI::save_occt_view_settings() {
+void GUI::save_occt_view_settings()
+{
   // log_message("save_occt_view_settings");
   std::string content = settings::load_with_defaults();
   using namespace nlohmann;
   json j;
-  if (!content.empty()) {
-    try {
+  if (!content.empty())
+  {
+    try
+    {
       j = json::parse(content);
-    } catch (...) {
+    }
+    catch (...)
+    {
     }
   }
   float bg1[3], bg2[3], g1[3], g2[3];
@@ -710,16 +799,19 @@ void GUI::save_occt_view_settings() {
 }
 
 // Render toolbar with ImGui
-void GUI::toolbar_() {
+void GUI::toolbar_()
+{
   ImGui::Begin("Toolbar", nullptr, ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_AlwaysAutoResize);
 
   ImVec2 button_size(32, 32);
 
-  for (int i = 0; i < m_toolbar_buttons.size(); i++) {
+  for (int i = 0; i < m_toolbar_buttons.size(); i++)
+  {
     ImGui::PushID(i);
 
     bool was_active = false;
-    if (m_toolbar_buttons[i].is_active) {
+    if (m_toolbar_buttons[i].is_active)
+    {
       ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.26f, 0.59f, 0.98f, 1.00f));
       ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(0.26f, 0.59f, 0.98f, 1.00f));
       ImGui::PushStyleColor(ImGuiCol_ButtonActive, ImVec4(0.06f, 0.53f, 0.98f, 1.00f));
@@ -729,9 +821,11 @@ void GUI::toolbar_() {
     // Add a unique string ID (e.g., "button0", "button1", etc.)
     char button_id[16];
     snprintf(button_id, sizeof(button_id), "button%d", i);
-    if (ImGui::ImageButton(button_id, (ImTextureID) (intptr_t) m_toolbar_buttons[i].texture_id, button_size)) {
+    if (ImGui::ImageButton(button_id, (ImTextureID) (intptr_t) m_toolbar_buttons[i].texture_id, button_size))
+    {
       if (m_toolbar_buttons[i].data.index() == 1)
-        switch (std::get<Command>(m_toolbar_buttons[i].data)) {
+        switch (std::get<Command>(m_toolbar_buttons[i].data))
+        {
           case Command::Shape_cut:
             if (Status s = m_view->shp_cut().selected_cut(); !s.is_ok())
               show_message(s.message());
@@ -753,7 +847,8 @@ void GUI::toolbar_() {
           default:
             EZY_ASSERT(false);
         }
-      else {
+      else
+      {
         m_toolbar_buttons[i].is_active = true;
         for (int j = 0; j < m_toolbar_buttons.size(); j++)
           if (i != j)
@@ -778,7 +873,8 @@ void GUI::toolbar_() {
 }
 
 // Distance edit related
-void GUI::set_dist_edit(float dist, std::function<void(float, bool)>&& callback, const std::optional<ScreenCoords> screen_coords) {
+void GUI::set_dist_edit(float dist, std::function<void(float, bool)>&& callback, const std::optional<ScreenCoords> screen_coords)
+{
   DBG_MSG("dist " << dist);
   m_dist_val = dist;
   if (screen_coords.has_value())
@@ -789,8 +885,10 @@ void GUI::set_dist_edit(float dist, std::function<void(float, bool)>&& callback,
   m_dist_callback = std::move(callback);
 }
 
-void GUI::hide_dist_edit() {
-  if (m_dist_callback) {
+void GUI::hide_dist_edit()
+{
+  if (m_dist_callback)
+  {
     std::function<void(float, bool)> callback;
     // In case the callback sets a new m_dist_callback
     std::swap(callback, m_dist_callback);
@@ -799,7 +897,8 @@ void GUI::hide_dist_edit() {
   }
 }
 
-void GUI::dist_edit_() {
+void GUI::dist_edit_()
+{
   if (!m_dist_callback)
     return;
 
@@ -825,7 +924,8 @@ void GUI::dist_edit_() {
   else
     m_dist_val = std::round(m_dist_val * 100.0f) / 100.0f;
 
-  if (ImGui::IsItemDeactivatedAfterEdit() && m_dist_callback) {
+  if (ImGui::IsItemDeactivatedAfterEdit() && m_dist_callback)
+  {
     std::function<void(float, bool)> callback;
     std::swap(callback, m_dist_callback);
     callback(m_dist_val, true);
@@ -835,7 +935,8 @@ void GUI::dist_edit_() {
 }
 
 // Angle edit related
-void GUI::set_angle_edit(float angle, std::function<void(float, bool)>&& callback, const std::optional<ScreenCoords> screen_coords) {
+void GUI::set_angle_edit(float angle, std::function<void(float, bool)>&& callback, const std::optional<ScreenCoords> screen_coords)
+{
   DBG_MSG("angle " << angle);
   // Only update the value if the input isn't already active (to avoid overwriting user input)
   if (!m_angle_callback)
@@ -849,8 +950,10 @@ void GUI::set_angle_edit(float angle, std::function<void(float, bool)>&& callbac
   m_angle_callback = std::move(callback);
 }
 
-void GUI::hide_angle_edit() {
-  if (m_angle_callback) {
+void GUI::hide_angle_edit()
+{
+  if (m_angle_callback)
+  {
     std::function<void(float, bool)> callback;
     // In case the callback sets a new m_angle_callback
     std::swap(callback, m_angle_callback);
@@ -859,11 +962,13 @@ void GUI::hide_angle_edit() {
   }
 }
 
-bool GUI::is_dist_or_angle_edit_active() const {
+bool GUI::is_dist_or_angle_edit_active() const
+{
   return m_dist_callback != nullptr || m_angle_callback != nullptr;
 }
 
-void GUI::angle_edit_() {
+void GUI::angle_edit_()
+{
   if (!m_angle_callback)
     return;
 
@@ -889,7 +994,8 @@ void GUI::angle_edit_() {
   else
     m_angle_val = std::round(m_angle_val * 100.0f) / 100.0f;
 
-  if (ImGui::IsItemDeactivatedAfterEdit() && m_angle_callback) {
+  if (ImGui::IsItemDeactivatedAfterEdit() && m_angle_callback)
+  {
     std::function<void(float, bool)> callback;
     std::swap(callback, m_angle_callback);
     callback(m_angle_val, true);
@@ -898,18 +1004,21 @@ void GUI::angle_edit_() {
   ImGui::End();
 }
 
-void GUI::sketch_list_() {
+void GUI::sketch_list_()
+{
   if (!m_show_sketch_list)
     return;
 
-  if (!ImGui::Begin("Sketch List", &m_show_sketch_list, ImGuiWindowFlags_None)) {
+  if (!ImGui::Begin("Sketch List", &m_show_sketch_list, ImGuiWindowFlags_None))
+  {
     ImGui::End();
     return;
   }
 
   int                     index = 0;
   std::shared_ptr<Sketch> sketch_to_delete;
-  for (std::shared_ptr<Sketch>& sketch : m_view->get_sketches()) {
+  for (std::shared_ptr<Sketch>& sketch : m_view->get_sketches())
+  {
     EZY_ASSERT(sketch);
 
     // Buffer for editable name
@@ -936,12 +1045,14 @@ void GUI::sketch_list_() {
     // Text edit for name
     ImGui::SameLine();
     ImGui::PushID(("name" + id_suffix).c_str());
-    if (ImGui::InputText("", name_buffer, sizeof(name_buffer))) {
+    if (ImGui::InputText("", name_buffer, sizeof(name_buffer)))
+    {
       sketch->set_name(std::string(name_buffer));
       std::cout << "Sketch " << index << " name changed to: " << sketch->get_name() << std::endl;
     }
     // This will open a popup when you right-click on the InputText
-    if (ImGui::BeginPopupContextItem("Sketch_InputTextContextMenu")) {
+    if (ImGui::BeginPopupContextItem("Sketch_InputTextContextMenu"))
+    {
       if (ImGui::MenuItem("Delete"))
         sketch_to_delete = sketch;
 
@@ -969,11 +1080,13 @@ void GUI::sketch_list_() {
   ImGui::End();
 }
 
-void GUI::shape_list_() {
+void GUI::shape_list_()
+{
   if (!m_show_shape_list)
     return;
 
-  if (!ImGui::Begin("Shape List", &m_show_shape_list, ImGuiWindowFlags_None)) {
+  if (!ImGui::Begin("Shape List", &m_show_shape_list, ImGuiWindowFlags_None))
+  {
     ImGui::End();
     return;
   }
@@ -981,16 +1094,19 @@ void GUI::shape_list_() {
   int index = 0;
 
   // Add checkbox for hiding all shapes except current sketches
-  if (ImGui::Checkbox("Hide all", &m_hide_all_shapes)) {
+  if (ImGui::Checkbox("Hide all", &m_hide_all_shapes))
+  {
     // Update visibility of all shapes based on the new state
-    for (const Shp_ptr& shape : m_view->get_shapes()) {
+    for (const Shp_ptr& shape : m_view->get_shapes())
+    {
       shape->set_visible(!m_hide_all_shapes);
     }
   }
 
   ImGui::Separator();
 
-  for (const Shp_ptr& shape : m_view->get_shapes()) {
+  for (const Shp_ptr& shape : m_view->get_shapes())
+  {
     // Unique ID suffix using index
     std::string id_suffix = "##" + std::to_string(index++);
     // Editable text box for name
@@ -1032,11 +1148,13 @@ void GUI::shape_list_() {
   ImGui::End();
 }
 
-void GUI::options_() {
+void GUI::options_()
+{
   if (!m_show_options)
     return;
 
-  if (!ImGui::Begin("Options", &m_show_options)) {
+  if (!ImGui::Begin("Options", &m_show_options))
+  {
     // Pane was collapsed, so skip rendering options to save resources
     ImGui::End();
     return;
@@ -1072,7 +1190,8 @@ void GUI::options_() {
 
   static std::vector<std::string> material_names;
   if (material_names.empty())
-    for (int i = 0; i < Graphic3d_MaterialAspect::NumberOfMaterials(); ++i) {
+    for (int i = 0; i < Graphic3d_MaterialAspect::NumberOfMaterials(); ++i)
+    {
       Graphic3d_MaterialAspect mat(static_cast<Graphic3d_NameOfMaterial>(i));
       material_names.push_back(mat.MaterialName());
     }
@@ -1083,7 +1202,8 @@ void GUI::options_() {
   // ImGuiComboFlags_HeightSmall))
   {
     for (int i = 0; i < static_cast<int>(material_names.size()); i++)
-      if (ImGui::Selectable(material_names[i].data(), current_item == i)) {
+      if (ImGui::Selectable(material_names[i].data(), current_item == i))
+      {
         Graphic3d_MaterialAspect mat(static_cast<Graphic3d_NameOfMaterial>(i));
         m_view->set_default_material(mat);
       }
@@ -1107,7 +1227,8 @@ void GUI::options_() {
   }
   // clang-format on
 
-  if (is_sketch_mode(get_mode())) {
+  if (is_sketch_mode(get_mode()))
+  {
     float snap_dist = float(Sketch_nodes::get_snap_dist());
     if (ImGui::InputFloat("Snap dist##float_value", &snap_dist, 1.0f, 2.0f, "%.2f"))
       Sketch_nodes::set_snap_dist(snap_dist);
@@ -1116,12 +1237,14 @@ void GUI::options_() {
   ImGui::End();
 }
 
-void GUI::settings_() {
+void GUI::settings_()
+{
   if (!m_show_settings_dialog)
     return;
 
   ImGui::SetNextWindowSize(ImVec2(400, 0), ImGuiCond_FirstUseEver);  // Auto height
-  if (!ImGui::Begin("Settings", &m_show_settings_dialog, ImGuiWindowFlags_None)) {
+  if (!ImGui::Begin("Settings", &m_show_settings_dialog, ImGuiWindowFlags_None))
+  {
     ImGui::End();
     save_occt_view_settings();  // Persist that dialog was closed (e.g. via X)
     return;
@@ -1130,7 +1253,8 @@ void GUI::settings_() {
   if (ImGui::Checkbox("Dark mode", &m_dark_mode))
     save_occt_view_settings();
 
-  if (ImGui::CollapsingHeader("3D view background")) {
+  if (ImGui::CollapsingHeader("3D view background"))
+  {
     float bg1[3], bg2[3];
     m_view->get_bg_gradient_colors(bg1, bg2);
     bool bg_changed = false;
@@ -1138,20 +1262,23 @@ void GUI::settings_() {
       bg_changed = true;
     if (ImGui::ColorEdit3("Background color 2", bg2, ImGuiColorEditFlags_Float))
       bg_changed = true;
-    if (bg_changed) {
+    if (bg_changed)
+    {
       m_view->set_bg_gradient_colors(bg1[0], bg1[1], bg1[2], bg2[0], bg2[1], bg2[2]);
       save_occt_view_settings();
     }
     const char* gradient_items[] = {"Horizontal", "Vertical", "Diagonal 1", "Diagonal 2",
                                     "Corner 1", "Corner 2", "Corner 3", "Corner 4"};
     int         grad             = m_view->get_bg_gradient_method();
-    if (ImGui::Combo("Gradient blend", &grad, gradient_items, 8)) {
+    if (ImGui::Combo("Gradient blend", &grad, gradient_items, 8))
+    {
       m_view->set_bg_gradient_method(grad);
       save_occt_view_settings();
     }
   }
 
-  if (ImGui::CollapsingHeader("3D view grid")) {
+  if (ImGui::CollapsingHeader("3D view grid"))
+  {
     float g1[3], g2[3];
     m_view->get_grid_colors(g1, g2);
     bool grid_changed = false;
@@ -1159,19 +1286,23 @@ void GUI::settings_() {
       grid_changed = true;
     if (ImGui::ColorEdit3("Grid color 2", g2, ImGuiColorEditFlags_Float))
       grid_changed = true;
-    if (grid_changed) {
+    if (grid_changed)
+    {
       m_view->set_grid_colors(g1[0], g1[1], g1[2], g2[0], g2[1], g2[2]);
       save_occt_view_settings();
     }
   }
 
   ImGui::Separator();
-  if (ImGui::Button("Defaults")) {
+  if (ImGui::Button("Defaults"))
+  {
     std::string content = settings::load_defaults();
     if (content.empty())
       show_message("Failed to load default settings.");
-    else {
-      try {
+    else
+    {
+      try
+      {
         using namespace nlohmann;
         json j       = json::parse(content);
         j["version"] = k_settings_version;
@@ -1179,13 +1310,16 @@ void GUI::settings_() {
         settings::save(content);
         parse_occt_view_settings_(content);
         parse_gui_panes_settings_(content);
-        if (j.contains("imgui_ini") && j["imgui_ini"].is_string()) {
+        if (j.contains("imgui_ini") && j["imgui_ini"].is_string())
+        {
           const std::string& ini = j["imgui_ini"].get<std::string>();
           if (!ini.empty())
             ImGui::LoadIniSettingsFromMemory(ini.c_str(), ini.size());
         }
         show_message("Default settings applied.");
-      } catch (...) {
+      }
+      catch (...)
+      {
         show_message("Failed to apply default settings.");
       }
     }
@@ -1194,7 +1328,8 @@ void GUI::settings_() {
   ImGui::End();
 }
 
-void GUI::options_normal_mode_() {
+void GUI::options_normal_mode_()
+{
   constexpr std::array<std::string_view, 9> c_names_TopAbs_ShapeEnum =
       {
           "COMPOUND",
@@ -1210,7 +1345,8 @@ void GUI::options_normal_mode_() {
   // Shape type filter combo
   int current_item = static_cast<int>(m_view->get_shp_selection_mode());
   if (ImGui::BeginCombo("Selection Mode##filter", c_names_TopAbs_ShapeEnum[current_item].data(),
-                        ImGuiComboFlags_WidthFitPreview | ImGuiComboFlags_HeightSmall)) {
+                        ImGuiComboFlags_WidthFitPreview | ImGuiComboFlags_HeightSmall))
+  {
     for (int i = 0; i < static_cast<int>(c_names_TopAbs_ShapeEnum.size()); i++)
       if (ImGui::Selectable(c_names_TopAbs_ShapeEnum[i].data(), current_item == i))
         m_view->set_shp_selection_mode(static_cast<TopAbs_ShapeEnum>(i));
@@ -1219,7 +1355,8 @@ void GUI::options_normal_mode_() {
   }
 }
 
-void GUI::options_move_mode_() {
+void GUI::options_move_mode_()
+{
   ImGui::TextUnformatted("Move constrain axis:");
 
   Move_options& opts = m_view->shp_move().get_opts();
@@ -1231,10 +1368,12 @@ void GUI::options_move_mode_() {
   ImGui::Checkbox("Z", &opts.constr_axis_z);
 }
 
-void GUI::options_scale_mode_() {
+void GUI::options_scale_mode_()
+{
 }
 
-void GUI::options_rotate_mode_() {
+void GUI::options_rotate_mode_()
+{
   ImGui::Text("Rotation Options");
   ImGui::Separator();
 
@@ -1253,8 +1392,10 @@ void GUI::options_rotate_mode_() {
     m_view->shp_rotate().set_rotation_axis(Rotation_axis::Z_axis);
 }
 
-void GUI::options_sketch_operation_axis_mode_() {
-  if (m_view->curr_sketch().has_operation_axis()) {
+void GUI::options_sketch_operation_axis_mode_()
+{
+  if (m_view->curr_sketch().has_operation_axis())
+  {
     if (ImGui::Button("Mirror"))
       m_view->curr_sketch().mirror_selected_edges();
 
@@ -1272,39 +1413,46 @@ void GUI::options_sketch_operation_axis_mode_() {
   }
 }
 
-void GUI::options_shape_chamfer_mode_() {
+void GUI::options_shape_chamfer_mode_()
+{
   // Dropdown for Chamfer_mode
   int current_mode = static_cast<int>(m_chamfer_mode);
-  if (ImGui::Combo("Chamfer Mode", &current_mode, c_chamfer_mode_strs.data(), (int) c_chamfer_mode_strs.size())) {
+  if (ImGui::Combo("Chamfer Mode", &current_mode, c_chamfer_mode_strs.data(), (int) c_chamfer_mode_strs.size()))
+  {
     m_chamfer_mode = static_cast<Chamfer_mode>(current_mode);
     m_view->on_chamfer_mode();
   }
 
   // Convert from geometry units to display units for GUI
   float chamfer_dist = float(m_view->shp_chamfer().get_chamfer_dist() / m_view->get_dimension_scale());
-  if (ImGui::InputFloat("Chamfer dist##float_value", &chamfer_dist, 0.0f, 0.0f, "%.2f")) {
+  if (ImGui::InputFloat("Chamfer dist##float_value", &chamfer_dist, 0.0f, 0.0f, "%.2f"))
+  {
     // Convert from display units to geometry units
     m_view->shp_chamfer().set_chamfer_dist(chamfer_dist * m_view->get_dimension_scale());
   }
 }
 
-void GUI::options_shape_fillet_mode_() {
+void GUI::options_shape_fillet_mode_()
+{
   // Dropdown for Fillet_mode
   int current_mode = static_cast<int>(m_fillet_mode);
-  if (ImGui::Combo("Fillet Mode", &current_mode, c_fillet_mode_strs.data(), (int) c_fillet_mode_strs.size())) {
+  if (ImGui::Combo("Fillet Mode", &current_mode, c_fillet_mode_strs.data(), (int) c_fillet_mode_strs.size()))
+  {
     m_fillet_mode = static_cast<Fillet_mode>(current_mode);
     m_view->on_fillet_mode();
   }
 
   // Convert from geometry units to display units for GUI
   float fillet_radius = float(m_view->shp_fillet().get_fillet_radius() / m_view->get_dimension_scale());
-  if (ImGui::InputFloat("Fillet radius##float_value", &fillet_radius, 0.0f, 0.0f, "%.2f")) {
+  if (ImGui::InputFloat("Fillet radius##float_value", &fillet_radius, 0.0f, 0.0f, "%.2f"))
+  {
     // Convert from display units to geometry units
     m_view->shp_fillet().set_fillet_radius(fillet_radius * m_view->get_dimension_scale());
   }
 }
 
-void GUI::options_shape_polar_duplicate_mode_() {
+void GUI::options_shape_polar_duplicate_mode_()
+{
   auto& polar_dup    = m_view->shp_polar_dup();
   float polar_angle  = float(polar_dup.get_polar_angle());
   int   num_elms     = int(polar_dup.get_num_elms());
@@ -1328,10 +1476,12 @@ void GUI::options_shape_polar_duplicate_mode_() {
       show_message(s.message());
 }
 
-void GUI::on_key_rotate_mode_(int key) {
+void GUI::on_key_rotate_mode_(int key)
+{
   const ScreenCoords screen_coords(glm::dvec2(ImGui::GetIO().MousePos.x, ImGui::GetIO().MousePos.y));
 
-  switch (key) {
+  switch (key)
+  {
     case GLFW_KEY_ESCAPE:
       m_view->shp_rotate().cancel();
       break;
@@ -1373,11 +1523,13 @@ void GUI::on_key_rotate_mode_(int key) {
   }
 }
 
-void GUI::on_key_move_mode_(int key) {
+void GUI::on_key_move_mode_(int key)
+{
   Move_options&      opts = m_view->shp_move().get_opts();
   const ScreenCoords screen_coords(glm::dvec2(ImGui::GetIO().MousePos.x, ImGui::GetIO().MousePos.y));
 
-  switch (key) {
+  switch (key)
+  {
     case GLFW_KEY_X:
       opts.constr_axis_x ^= 1;
       break;
@@ -1396,11 +1548,13 @@ void GUI::on_key_move_mode_(int key) {
 }
 
 #ifndef NDEBUG
-void GUI::dbg_() {
+void GUI::dbg_()
+{
   if (!m_show_dbg)
     return;
 
-  if (!ImGui::Begin("dbg", &m_show_dbg)) {
+  if (!ImGui::Begin("dbg", &m_show_dbg))
+  {
     ImGui::End();
     return;
   }
@@ -1428,13 +1582,15 @@ void GUI::dbg_() {
 void GUI::dbg_() {}
 #endif
 
-void GUI::show_message(const std::string& message) {
+void GUI::show_message(const std::string& message)
+{
   m_message            = message;
   m_message_visible    = true;
   m_message_start_time = std::chrono::steady_clock::now();
 }
 
-void GUI::message_status_window_() {
+void GUI::message_status_window_()
+{
   if (!m_message_visible || m_message.empty())
     return;
 
@@ -1476,355 +1632,20 @@ void GUI::message_status_window_() {
   ImGui::End();
 }
 
-void GUI::add_box_dialog_() {
-  if (m_open_add_box_popup) {
-    ImGui::OpenPopup("Add box");
-    m_open_add_box_popup = false;
-  }
-  if (!ImGui::BeginPopupModal("Add box", nullptr, ImGuiWindowFlags_AlwaysAutoResize))
-    return;
-
-  ImGui::TextUnformatted("Values in display units.");
-  ImGui::Spacing();
-
-  if (ImGui::BeginTable("Add box##table", 2, ImGuiTableFlags_SizingStretchProp)) {
-    ImGui::TableNextRow();
-    ImGui::TableSetColumnIndex(0);
-    ImGui::TextUnformatted("Origin X");
-    ImGui::TableSetColumnIndex(1);
-    ImGui::SetNextItemWidth(-1);
-    ImGui::InputDouble("##box_origin_x", &m_add_box_origin_x, 0.0, 0.0, "%.3f");
-
-    ImGui::TableNextRow();
-    ImGui::TableSetColumnIndex(0);
-    ImGui::TextUnformatted("Origin Y");
-    ImGui::TableSetColumnIndex(1);
-    ImGui::SetNextItemWidth(-1);
-    ImGui::InputDouble("##box_origin_y", &m_add_box_origin_y, 0.0, 0.0, "%.3f");
-
-    ImGui::TableNextRow();
-    ImGui::TableSetColumnIndex(0);
-    ImGui::TextUnformatted("Origin Z");
-    ImGui::TableSetColumnIndex(1);
-    ImGui::SetNextItemWidth(-1);
-    ImGui::InputDouble("##box_origin_z", &m_add_box_origin_z, 0.0, 0.0, "%.3f");
-
-    ImGui::TableNextRow();
-    ImGui::TableSetColumnIndex(0);
-    ImGui::TextUnformatted("Width (X)");
-    ImGui::TableSetColumnIndex(1);
-    ImGui::SetNextItemWidth(-1);
-    ImGui::InputDouble("##box_width", &m_add_box_width, 0.0, 0.0, "%.3f");
-
-    ImGui::TableNextRow();
-    ImGui::TableSetColumnIndex(0);
-    ImGui::TextUnformatted("Length (Y)");
-    ImGui::TableSetColumnIndex(1);
-    ImGui::SetNextItemWidth(-1);
-    ImGui::InputDouble("##box_length", &m_add_box_length, 0.0, 0.0, "%.3f");
-
-    ImGui::TableNextRow();
-    ImGui::TableSetColumnIndex(0);
-    ImGui::TextUnformatted("Height (Z)");
-    ImGui::TableSetColumnIndex(1);
-    ImGui::SetNextItemWidth(-1);
-    ImGui::InputDouble("##box_height", &m_add_box_height, 0.0, 0.0, "%.3f");
-
-    ImGui::EndTable();
-  }
-  ImGui::Spacing();
-
-  if (ImGui::Button("Add")) {
-    if (m_add_box_width > 0 && m_add_box_length > 0 && m_add_box_height > 0) {
-      const double scale = m_view->get_dimension_scale();
-      m_view->add_box(
-          m_add_box_origin_x * scale, m_add_box_origin_y * scale, m_add_box_origin_z * scale,
-          m_add_box_width * scale, m_add_box_length * scale, m_add_box_height * scale);
-      ImGui::CloseCurrentPopup();
-    }
-  }
-  ImGui::SameLine();
-  if (ImGui::Button("Cancel"))
-    ImGui::CloseCurrentPopup();
-
-  ImGui::EndPopup();
-}
-
-void GUI::add_pyramid_dialog_() {
-  if (m_open_add_pyramid_popup) {
-    ImGui::OpenPopup("Add pyramid");
-    m_open_add_pyramid_popup = false;
-  }
-  if (!ImGui::BeginPopupModal("Add pyramid", nullptr, ImGuiWindowFlags_AlwaysAutoResize))
-    return;
-  ImGui::TextUnformatted("Values in display units.");
-  ImGui::Spacing();
-  if (ImGui::BeginTable("Add pyramid##table", 2, ImGuiTableFlags_SizingStretchProp)) {
-    ImGui::TableNextRow();
-    ImGui::TableSetColumnIndex(0);
-    ImGui::TextUnformatted("Origin X");
-    ImGui::TableSetColumnIndex(1);
-    ImGui::SetNextItemWidth(-1);
-    ImGui::InputDouble("##pyramid_origin_x", &m_add_pyramid_origin_x, 0.0, 0.0, "%.3f");
-    ImGui::TableNextRow();
-    ImGui::TableSetColumnIndex(0);
-    ImGui::TextUnformatted("Origin Y");
-    ImGui::TableSetColumnIndex(1);
-    ImGui::SetNextItemWidth(-1);
-    ImGui::InputDouble("##pyramid_origin_y", &m_add_pyramid_origin_y, 0.0, 0.0, "%.3f");
-    ImGui::TableNextRow();
-    ImGui::TableSetColumnIndex(0);
-    ImGui::TextUnformatted("Origin Z");
-    ImGui::TableSetColumnIndex(1);
-    ImGui::SetNextItemWidth(-1);
-    ImGui::InputDouble("##pyramid_origin_z", &m_add_pyramid_origin_z, 0.0, 0.0, "%.3f");
-    ImGui::TableNextRow();
-    ImGui::TableSetColumnIndex(0);
-    ImGui::TextUnformatted("Side (base & height)");
-    ImGui::TableSetColumnIndex(1);
-    ImGui::SetNextItemWidth(-1);
-    ImGui::InputDouble("##pyramid_side", &m_add_pyramid_side, 0.0, 0.0, "%.3f");
-    ImGui::EndTable();
-  }
-  ImGui::Spacing();
-  if (ImGui::Button("Add") && m_add_pyramid_side > 0) {
-    const double scale = m_view->get_dimension_scale();
-    m_view->add_pyramid(m_add_pyramid_origin_x * scale, m_add_pyramid_origin_y * scale, m_add_pyramid_origin_z * scale, m_add_pyramid_side * scale);
-    ImGui::CloseCurrentPopup();
-  }
-  ImGui::SameLine();
-  if (ImGui::Button("Cancel"))
-    ImGui::CloseCurrentPopup();
-  ImGui::EndPopup();
-}
-
-void GUI::add_sphere_dialog_() {
-  if (m_open_add_sphere_popup) {
-    ImGui::OpenPopup("Add sphere");
-    m_open_add_sphere_popup = false;
-  }
-  if (!ImGui::BeginPopupModal("Add sphere", nullptr, ImGuiWindowFlags_AlwaysAutoResize))
-    return;
-  ImGui::TextUnformatted("Values in display units.");
-  ImGui::Spacing();
-  if (ImGui::BeginTable("Add sphere##table", 2, ImGuiTableFlags_SizingStretchProp)) {
-    ImGui::TableNextRow();
-    ImGui::TableSetColumnIndex(0);
-    ImGui::TextUnformatted("Origin X");
-    ImGui::TableSetColumnIndex(1);
-    ImGui::SetNextItemWidth(-1);
-    ImGui::InputDouble("##sphere_origin_x", &m_add_sphere_origin_x, 0.0, 0.0, "%.3f");
-    ImGui::TableNextRow();
-    ImGui::TableSetColumnIndex(0);
-    ImGui::TextUnformatted("Origin Y");
-    ImGui::TableSetColumnIndex(1);
-    ImGui::SetNextItemWidth(-1);
-    ImGui::InputDouble("##sphere_origin_y", &m_add_sphere_origin_y, 0.0, 0.0, "%.3f");
-    ImGui::TableNextRow();
-    ImGui::TableSetColumnIndex(0);
-    ImGui::TextUnformatted("Origin Z");
-    ImGui::TableSetColumnIndex(1);
-    ImGui::SetNextItemWidth(-1);
-    ImGui::InputDouble("##sphere_origin_z", &m_add_sphere_origin_z, 0.0, 0.0, "%.3f");
-    ImGui::TableNextRow();
-    ImGui::TableSetColumnIndex(0);
-    ImGui::TextUnformatted("Radius");
-    ImGui::TableSetColumnIndex(1);
-    ImGui::SetNextItemWidth(-1);
-    ImGui::InputDouble("##sphere_radius", &m_add_sphere_radius, 0.0, 0.0, "%.3f");
-    ImGui::EndTable();
-  }
-  ImGui::Spacing();
-  if (ImGui::Button("Add") && m_add_sphere_radius > 0) {
-    const double scale = m_view->get_dimension_scale();
-    m_view->add_sphere(m_add_sphere_origin_x * scale, m_add_sphere_origin_y * scale, m_add_sphere_origin_z * scale, m_add_sphere_radius * scale);
-    ImGui::CloseCurrentPopup();
-  }
-  ImGui::SameLine();
-  if (ImGui::Button("Cancel"))
-    ImGui::CloseCurrentPopup();
-  ImGui::EndPopup();
-}
-
-void GUI::add_cylinder_dialog_() {
-  if (m_open_add_cylinder_popup) {
-    ImGui::OpenPopup("Add cylinder");
-    m_open_add_cylinder_popup = false;
-  }
-  if (!ImGui::BeginPopupModal("Add cylinder", nullptr, ImGuiWindowFlags_AlwaysAutoResize))
-    return;
-  ImGui::TextUnformatted("Values in display units.");
-  ImGui::Spacing();
-  if (ImGui::BeginTable("Add cylinder##table", 2, ImGuiTableFlags_SizingStretchProp)) {
-    ImGui::TableNextRow();
-    ImGui::TableSetColumnIndex(0);
-    ImGui::TextUnformatted("Origin X");
-    ImGui::TableSetColumnIndex(1);
-    ImGui::SetNextItemWidth(-1);
-    ImGui::InputDouble("##cyl_origin_x", &m_add_cylinder_origin_x, 0.0, 0.0, "%.3f");
-    ImGui::TableNextRow();
-    ImGui::TableSetColumnIndex(0);
-    ImGui::TextUnformatted("Origin Y");
-    ImGui::TableSetColumnIndex(1);
-    ImGui::SetNextItemWidth(-1);
-    ImGui::InputDouble("##cyl_origin_y", &m_add_cylinder_origin_y, 0.0, 0.0, "%.3f");
-    ImGui::TableNextRow();
-    ImGui::TableSetColumnIndex(0);
-    ImGui::TextUnformatted("Origin Z");
-    ImGui::TableSetColumnIndex(1);
-    ImGui::SetNextItemWidth(-1);
-    ImGui::InputDouble("##cyl_origin_z", &m_add_cylinder_origin_z, 0.0, 0.0, "%.3f");
-    ImGui::TableNextRow();
-    ImGui::TableSetColumnIndex(0);
-    ImGui::TextUnformatted("Radius");
-    ImGui::TableSetColumnIndex(1);
-    ImGui::SetNextItemWidth(-1);
-    ImGui::InputDouble("##cyl_radius", &m_add_cylinder_radius, 0.0, 0.0, "%.3f");
-    ImGui::TableNextRow();
-    ImGui::TableSetColumnIndex(0);
-    ImGui::TextUnformatted("Height");
-    ImGui::TableSetColumnIndex(1);
-    ImGui::SetNextItemWidth(-1);
-    ImGui::InputDouble("##cyl_height", &m_add_cylinder_height, 0.0, 0.0, "%.3f");
-    ImGui::EndTable();
-  }
-  ImGui::Spacing();
-  if (ImGui::Button("Add") && m_add_cylinder_radius > 0 && m_add_cylinder_height > 0) {
-    const double scale = m_view->get_dimension_scale();
-    m_view->add_cylinder(m_add_cylinder_origin_x * scale, m_add_cylinder_origin_y * scale, m_add_cylinder_origin_z * scale, m_add_cylinder_radius * scale, m_add_cylinder_height * scale);
-    ImGui::CloseCurrentPopup();
-  }
-  ImGui::SameLine();
-  if (ImGui::Button("Cancel"))
-    ImGui::CloseCurrentPopup();
-  ImGui::EndPopup();
-}
-
-void GUI::add_cone_dialog_() {
-  if (m_open_add_cone_popup) {
-    ImGui::OpenPopup("Add cone");
-    m_open_add_cone_popup = false;
-  }
-  if (!ImGui::BeginPopupModal("Add cone", nullptr, ImGuiWindowFlags_AlwaysAutoResize))
-    return;
-  ImGui::TextUnformatted("Values in display units.");
-  ImGui::Spacing();
-  if (ImGui::BeginTable("Add cone##table", 2, ImGuiTableFlags_SizingStretchProp)) {
-    ImGui::TableNextRow();
-    ImGui::TableSetColumnIndex(0);
-    ImGui::TextUnformatted("Origin X");
-    ImGui::TableSetColumnIndex(1);
-    ImGui::SetNextItemWidth(-1);
-    ImGui::InputDouble("##cone_origin_x", &m_add_cone_origin_x, 0.0, 0.0, "%.3f");
-    ImGui::TableNextRow();
-    ImGui::TableSetColumnIndex(0);
-    ImGui::TextUnformatted("Origin Y");
-    ImGui::TableSetColumnIndex(1);
-    ImGui::SetNextItemWidth(-1);
-    ImGui::InputDouble("##cone_origin_y", &m_add_cone_origin_y, 0.0, 0.0, "%.3f");
-    ImGui::TableNextRow();
-    ImGui::TableSetColumnIndex(0);
-    ImGui::TextUnformatted("Origin Z");
-    ImGui::TableSetColumnIndex(1);
-    ImGui::SetNextItemWidth(-1);
-    ImGui::InputDouble("##cone_origin_z", &m_add_cone_origin_z, 0.0, 0.0, "%.3f");
-    ImGui::TableNextRow();
-    ImGui::TableSetColumnIndex(0);
-    ImGui::TextUnformatted("Base radius (R1)");
-    ImGui::TableSetColumnIndex(1);
-    ImGui::SetNextItemWidth(-1);
-    ImGui::InputDouble("##cone_R1", &m_add_cone_R1, 0.0, 0.0, "%.3f");
-    ImGui::TableNextRow();
-    ImGui::TableSetColumnIndex(0);
-    ImGui::TextUnformatted("Top radius (R2)");
-    ImGui::TableSetColumnIndex(1);
-    ImGui::SetNextItemWidth(-1);
-    ImGui::InputDouble("##cone_R2", &m_add_cone_R2, 0.0, 0.0, "%.3f");
-    ImGui::TableNextRow();
-    ImGui::TableSetColumnIndex(0);
-    ImGui::TextUnformatted("Height");
-    ImGui::TableSetColumnIndex(1);
-    ImGui::SetNextItemWidth(-1);
-    ImGui::InputDouble("##cone_height", &m_add_cone_height, 0.0, 0.0, "%.3f");
-    ImGui::EndTable();
-  }
-  ImGui::Spacing();
-  if (ImGui::Button("Add") && m_add_cone_R1 >= 0 && m_add_cone_R2 >= 0 && m_add_cone_height > 0) {
-    const double scale = m_view->get_dimension_scale();
-    m_view->add_cone(m_add_cone_origin_x * scale, m_add_cone_origin_y * scale, m_add_cone_origin_z * scale, m_add_cone_R1 * scale, m_add_cone_R2 * scale, m_add_cone_height * scale);
-    ImGui::CloseCurrentPopup();
-  }
-  ImGui::SameLine();
-  if (ImGui::Button("Cancel"))
-    ImGui::CloseCurrentPopup();
-  ImGui::EndPopup();
-}
-
-void GUI::add_torus_dialog_() {
-  if (m_open_add_torus_popup) {
-    ImGui::OpenPopup("Add torus");
-    m_open_add_torus_popup = false;
-  }
-  if (!ImGui::BeginPopupModal("Add torus", nullptr, ImGuiWindowFlags_AlwaysAutoResize))
-    return;
-  ImGui::TextUnformatted("Values in display units.");
-  ImGui::Spacing();
-  if (ImGui::BeginTable("Add torus##table", 2, ImGuiTableFlags_SizingStretchProp)) {
-    ImGui::TableNextRow();
-    ImGui::TableSetColumnIndex(0);
-    ImGui::TextUnformatted("Origin X");
-    ImGui::TableSetColumnIndex(1);
-    ImGui::SetNextItemWidth(-1);
-    ImGui::InputDouble("##torus_origin_x", &m_add_torus_origin_x, 0.0, 0.0, "%.3f");
-    ImGui::TableNextRow();
-    ImGui::TableSetColumnIndex(0);
-    ImGui::TextUnformatted("Origin Y");
-    ImGui::TableSetColumnIndex(1);
-    ImGui::SetNextItemWidth(-1);
-    ImGui::InputDouble("##torus_origin_y", &m_add_torus_origin_y, 0.0, 0.0, "%.3f");
-    ImGui::TableNextRow();
-    ImGui::TableSetColumnIndex(0);
-    ImGui::TextUnformatted("Origin Z");
-    ImGui::TableSetColumnIndex(1);
-    ImGui::SetNextItemWidth(-1);
-    ImGui::InputDouble("##torus_origin_z", &m_add_torus_origin_z, 0.0, 0.0, "%.3f");
-    ImGui::TableNextRow();
-    ImGui::TableSetColumnIndex(0);
-    ImGui::TextUnformatted("Major radius (R1)");
-    ImGui::TableSetColumnIndex(1);
-    ImGui::SetNextItemWidth(-1);
-    ImGui::InputDouble("##torus_R1", &m_add_torus_R1, 0.0, 0.0, "%.3f");
-    ImGui::TableNextRow();
-    ImGui::TableSetColumnIndex(0);
-    ImGui::TextUnformatted("Minor radius (R2)");
-    ImGui::TableSetColumnIndex(1);
-    ImGui::SetNextItemWidth(-1);
-    ImGui::InputDouble("##torus_R2", &m_add_torus_R2, 0.0, 0.0, "%.3f");
-    ImGui::EndTable();
-  }
-  ImGui::Spacing();
-  if (ImGui::Button("Add") && m_add_torus_R1 > 0 && m_add_torus_R2 > 0) {
-    const double scale = m_view->get_dimension_scale();
-    m_view->add_torus(m_add_torus_origin_x * scale, m_add_torus_origin_y * scale, m_add_torus_origin_z * scale, m_add_torus_R1 * scale, m_add_torus_R2 * scale);
-    ImGui::CloseCurrentPopup();
-  }
-  ImGui::SameLine();
-  if (ImGui::Button("Cancel"))
-    ImGui::CloseCurrentPopup();
-  ImGui::EndPopup();
-}
-
 // Log window implementation
-void GUI::log_message(const std::string& message) {
+void GUI::log_message(const std::string& message)
+{
   m_log_messages.push_back(message);
   m_log_scroll_to_bottom = true;  // Auto-scroll to new message
 }
 
-void GUI::log_window_() {
+void GUI::log_window_()
+{
   if (!m_log_window_visible)
     return;
 
-  if (!ImGui::Begin("Log", &m_log_window_visible)) {
+  if (!ImGui::Begin("Log", &m_log_window_visible))
+  {
     ImGui::End();
     return;
   }
@@ -1835,7 +1656,8 @@ void GUI::log_window_() {
     ImGui::TextWrapped("%s", message.c_str());
 
   // Auto-scroll to bottom if new messages are added
-  if (m_log_scroll_to_bottom && ImGui::GetScrollY() >= ImGui::GetScrollMaxY()) {
+  if (m_log_scroll_to_bottom && ImGui::GetScrollY() >= ImGui::GetScrollMaxY())
+  {
     ImGui::SetScrollHereY(1.0f);
     m_log_scroll_to_bottom = false;
   }
@@ -1844,7 +1666,8 @@ void GUI::log_window_() {
   ImGui::End();
 }
 
-void GUI::lua_console_() {
+void GUI::lua_console_()
+{
   if (!m_show_lua_console)
     return;
   if (!m_lua_console)
@@ -1852,9 +1675,11 @@ void GUI::lua_console_() {
   m_lua_console->render(&m_show_lua_console);
 }
 
-void GUI::init(GLFWwindow* window) {
+void GUI::init(GLFWwindow* window)
+{
   initialize_toolbar_();
-  settings::set_log_callback([this](const std::string& m) { log_message(m); });
+  settings::set_log_callback([this](const std::string& m)
+                             { log_message(m); });
   setup_log_redirection_();  // Set up stream redirection
   m_view->init_window(window);
   m_view->init_viewer();
@@ -1864,10 +1689,12 @@ void GUI::init(GLFWwindow* window) {
   load_examples_list_();
 }
 
-void GUI::on_mouse_pos(const ScreenCoords& screen_coords) {
+void GUI::on_mouse_pos(const ScreenCoords& screen_coords)
+{
   m_view->on_mouse_move(screen_coords);
 
-  switch (get_mode()) {
+  switch (get_mode())
+  {
     case Mode::Move:
       if (Status s = m_view->shp_move().move_selected(screen_coords); !s.is_ok())
         show_message(s.message());
@@ -1911,7 +1738,8 @@ void GUI::on_mouse_pos(const ScreenCoords& screen_coords) {
   }
 }
 
-void GUI::on_mouse_button(int button, int action, int mods) {
+void GUI::on_mouse_button(int button, int action, int mods)
+{
   m_view->on_mouse_button(button, action, mods);
 
   const ScreenCoords screen_coords(glm::dvec2(ImGui::GetIO().MousePos.x, ImGui::GetIO().MousePos.y));
@@ -1920,7 +1748,8 @@ void GUI::on_mouse_button(int button, int action, int mods) {
   m_view->ctx().UpdateCurrentViewer();
 
   if (button == GLFW_MOUSE_BUTTON_LEFT && action == GLFW_PRESS && mods == 0)
-    switch (m_mode) {
+    switch (m_mode)
+    {
       case Mode::Move:
         m_view->shp_move().finalize();
         break;
@@ -1971,7 +1800,8 @@ void GUI::on_mouse_button(int button, int action, int mods) {
         break;
     }
   else if (button == GLFW_MOUSE_BUTTON_RIGHT && action == GLFW_PRESS && mods == 0)
-    switch (m_mode) {
+    switch (m_mode)
+    {
       case Mode::Sketch_add_edge:
       case Mode::Sketch_add_multi_edges:
         m_view->curr_sketch().finalize_elm();
@@ -1984,15 +1814,18 @@ void GUI::on_mouse_button(int button, int action, int mods) {
   // m_view->on_mouse_button(button, action, mods);
 }
 
-void GUI::on_mouse_scroll(double xoffset, double yoffset) {
+void GUI::on_mouse_scroll(double xoffset, double yoffset)
+{
   m_view->on_mouse_scroll(xoffset, yoffset);
 }
 
-void GUI::on_resize(int width, int height) {
+void GUI::on_resize(int width, int height)
+{
   m_view->on_resize(width, height);
 }
 
-void GUI::setup_log_redirection_() {
+void GUI::setup_log_redirection_()
+{
   // Store original stream buffers
   m_original_cout_buf = std::cout.rdbuf();
   m_original_cerr_buf = std::cerr.rdbuf();
@@ -2006,7 +1839,8 @@ void GUI::setup_log_redirection_() {
   std::cerr.rdbuf(m_cerr_log_buf);
 }
 
-void GUI::cleanup_log_redirection_() {
+void GUI::cleanup_log_redirection_()
+{
   // Restore original stream buffers
   if (m_original_cout_buf)
     std::cout.rdbuf(m_original_cout_buf);
@@ -2023,7 +1857,8 @@ void GUI::cleanup_log_redirection_() {
   m_original_cerr_buf = nullptr;
 }
 
-void GUI::import_file_dialog_() {
+void GUI::import_file_dialog_()
+{
 #ifndef __EMSCRIPTEN__
   // Native: Use tinyfiledialogs
   char const* filter_patterns[1] = {"*.step"};  // Restrict to .ezy files
@@ -2035,7 +1870,8 @@ void GUI::import_file_dialog_() {
       "Step Files",        // Filter description
       0                    // Single file selection
   );
-  if (selected) {
+  if (selected)
+  {
     std::ifstream     file(selected);
     const std::string step_str {std::istreambuf_iterator<char>(file), std::istreambuf_iterator<char>()};
     if (file.good() && step_str != "")
@@ -2050,7 +1886,8 @@ void GUI::import_file_dialog_() {
 #endif
 }
 
-void GUI::open_file_dialog_() {
+void GUI::open_file_dialog_()
+{
 #ifndef __EMSCRIPTEN__
   // Native: Use tinyfiledialogs
   char const* filter_patterns[1] = {"*.ezy"};  // Restrict to .ezy files
@@ -2062,7 +1899,8 @@ void GUI::open_file_dialog_() {
       "EzyCad Files",         // Filter description
       0                       // Single file selection
   );
-  if (selected) {
+  if (selected)
+  {
     std::ifstream     file(selected);
     const std::string json_str {std::istreambuf_iterator<char>(file), std::istreambuf_iterator<char>()};
     if (file.good() && json_str != "")
@@ -2077,7 +1915,8 @@ void GUI::open_file_dialog_() {
 #endif
 }
 
-void GUI::save_file_dialog_() {
+void GUI::save_file_dialog_()
+{
   using namespace nlohmann;
   std::string project_json   = m_view->to_json();
   json        j              = json::parse(project_json);
@@ -2088,24 +1927,30 @@ void GUI::save_file_dialog_() {
   std::string file;
   if (!m_last_saved_path.empty())
     file = m_last_saved_path;  // Reuse last saved path
-  else {
+  else
+  {
     char const* filter_patterns[1] = {"*.ezy"};
     char const* selected           = tinyfd_saveFileDialog(
         "Save EzyCad Project", "project.ezy", 1, filter_patterns, "EzyCad Files");
-    if (selected) {
+    if (selected)
+    {
       file              = selected;
       m_last_saved_path = file;  // Update last saved path
     }
   }
-  if (!file.empty()) {
+  if (!file.empty())
+  {
     std::ofstream out(file, std::ios::binary);
-    if (out.is_open()) {
+    if (out.is_open())
+    {
       out.write(json_str.data(), json_str.size());
       out.close();
       show_message("Saved: " + std::filesystem::path(file).filename().string());
-    } else
+    }
+    else
       show_message("Failed to save: " + std::filesystem::path(file).filename().string());
-  } else
+  }
+  else
     show_message("Save canceled");
 #else
   std::string default_file = m_last_saved_path.empty() ? "project.ezy" : std::filesystem::path(m_last_saved_path).filename().string();
@@ -2113,11 +1958,13 @@ void GUI::save_file_dialog_() {
 #endif
 }
 
-void GUI::on_file(const std::string& file_path, const std::string& json_str) {
+void GUI::on_file(const std::string& file_path, const std::string& json_str)
+{
   using namespace nlohmann;
   m_view->push_undo_snapshot();
   const json j = json::parse(json_str);
-  if (j.contains("mode") && j["mode"].is_number_integer()) {
+  if (j.contains("mode") && j["mode"].is_number_integer())
+  {
     const int idx = j["mode"].get<int>();
     if (idx >= 0 && idx < static_cast<int>(Mode::_count))
       set_mode(static_cast<Mode>(idx));
@@ -2127,24 +1974,29 @@ void GUI::on_file(const std::string& file_path, const std::string& json_str) {
   show_message("Opened: " + std::filesystem::path(file_path).filename().string());
 }
 
-void GUI::on_import_file(const std::string& file_path, const std::string& file_data) {
+void GUI::on_import_file(const std::string& file_path, const std::string& file_data)
+{
   m_view->import_step(file_data);
   show_message("Imported: " + std::filesystem::path(file_path).filename().string());
 }
 
 #ifdef __EMSCRIPTEN__
-void GUI::open_file_dialog_async(const char* title) {
+void GUI::open_file_dialog_async(const char* title)
+{
   EM_ASM_ARGS({
     var input           = document.createElement('input');
     input.type          = 'file';
     input.accept        = '.ezy';
     input.style.display = 'none';
     document.body.appendChild(input);
-    input.onchange = function(e) {
+    input.onchange = function(e)
+    {
       var file = e.target.files[0];
-      if (file) {
+      if (file)
+      {
         var reader    = new FileReader();
-        reader.onload = function(e) {
+        reader.onload = function(e)
+        {
           var contents    = new Uint8Array(e.target.result);
           var fileName    = file.name;
           // Allocate heap memory for contents
@@ -2163,7 +2015,8 @@ void GUI::open_file_dialog_async(const char* title) {
   });
 }
 
-void GUI::save_file_dialog_async(const char* title, const std::string& default_file, const std::string& json_str) {
+void GUI::save_file_dialog_async(const char* title, const std::string& default_file, const std::string& json_str)
+{
   EM_ASM_ARGS({
       var data = HEAPU8.subarray($0, $0 + $1);
       var blob = new Blob([data], { type: 'application/octet-stream' });
@@ -2179,12 +2032,14 @@ void GUI::save_file_dialog_async(const char* title, const std::string& default_f
 }
 
 // C-style callback for Emscripten
-extern "C" void on_file_selected(const char* file_path, char* contents, int length) {
+extern "C" void on_file_selected(const char* file_path, char* contents, int length)
+{
   const std::string json_str(contents, length);
   GUI::instance().on_file(file_path, json_str);
 }
 
-extern "C" void on_save_file_selected(const char* file_name) {
+extern "C" void on_save_file_selected(const char* file_name)
+{
   GUI::instance().show_message(std::string("Saved: ") + file_name);
 }
 

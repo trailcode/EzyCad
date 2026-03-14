@@ -23,7 +23,8 @@ class TopoDS_Face;
 class TopoDS_Shape;
 class Geom_TrimmedCurve;
 
-namespace boost_geom {
+namespace boost_geom
+{
 typedef boost::geometry::model::d2::point_xy<double> point_2d;
 typedef boost::geometry::model::ring<point_2d>       ring_2d;
 typedef boost::geometry::model::polygon<point_2d>    polygon_2d;
@@ -53,7 +54,8 @@ TopoDS_Wire make_circle_wire(const gp_Pln&   pln,
                              const gp_Pnt2d& center,
                              const gp_Pnt2d& edge_point);
 
-struct Slot_pnts {
+struct Slot_pnts
+{
   gp_Pnt2d a_top_2d;
   gp_Pnt2d a_mid_2d;
   gp_Pnt2d a_bottom_2d;
@@ -93,7 +95,8 @@ std::pair<gp_Vec, gp_Pnt> get_out_dir_and_end_pt(const Handle(Geom_TrimmedCurve)
 std::pair<gp_Pnt, gp_Pnt>     get_edge_endpoints(const TopoDS_Edge& edge);
 std::pair<gp_Pnt2d, gp_Pnt2d> get_edge_endpoints(const gp_Pln& pln, const TopoDS_Edge& edge);
 
-enum class Plane_side {
+enum class Plane_side
+{
   Front,  // Positive side (normal direction)
   Back,   // Negative side (opposite normal)
   On      // On the plane
@@ -117,7 +120,8 @@ gp_Pnt2d center_point(const gp_Pnt2d& point1, const gp_Pnt2d& point2);
 // Function to compute the normalized direction between two gp_Pnt2d points
 gp_Dir2d get_unit_dir(const gp_Pnt2d& point1, const gp_Pnt2d& point2);
 
-inline glm::dvec2 to_glm(const gp_Dir2d& v) {
+inline glm::dvec2 to_glm(const gp_Dir2d& v)
+{
   return {v.X(), v.Y()};
 }
 

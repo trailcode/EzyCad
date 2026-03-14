@@ -8,7 +8,8 @@
 Shp_common::Shp_common(Occt_view& view)
     : Shp_operation_base(view) {}
 
-Status Shp_common::selected_common() {
+Status Shp_common::selected_common()
+{
   view().push_undo_snapshot();
   CHK_RET(ensure_operation_multi_shps_());
 
@@ -18,7 +19,8 @@ Status Shp_common::selected_common() {
   TopoDS_Shape result = (*itr)->Shape();
 
   // Intersect with each subsequent shape
-  for (++itr; itr != m_shps.end(); ++itr) {
+  for (++itr; itr != m_shps.end(); ++itr)
+  {
     BRepAlgoAPI_Common common_op(result, (*itr)->Shape());
 
     // Check if the operation was successful

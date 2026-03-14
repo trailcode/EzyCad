@@ -31,7 +31,8 @@
 struct GLFWwindow;
 
 //! GLFWwindow wrapper implementing Aspect_Window interface.
-class Occt_glfw_win : public Aspect_Window {
+class Occt_glfw_win : public Aspect_Window
+{
   DEFINE_STANDARD_RTTI_INLINE(Occt_glfw_win, Aspect_Window)
  public:
   //! Main constructor.
@@ -39,16 +40,25 @@ class Occt_glfw_win : public Aspect_Window {
   Occt_glfw_win(GLFWwindow* GlfwWindow);
 
   //! Close the window.
-  virtual ~Occt_glfw_win() { Close(); }
+  virtual ~Occt_glfw_win()
+  {
+    Close();
+  }
 
   //! Close the window.
   void Close();
 
   //! Return X Display connection.
-  const Handle(Aspect_DisplayConnection) & GetDisplay() const { return myDisplay; }
+  const Handle(Aspect_DisplayConnection) & GetDisplay() const
+  {
+    return myDisplay;
+  }
 
   //! Return GLFW window.
-  GLFWwindow* getGlfwWindow() { return myGlfwWindow; }
+  GLFWwindow* getGlfwWindow()
+  {
+    return myGlfwWindow;
+  }
 
 #ifndef __EMSCRIPTEN__
   //! Return native OpenGL context.
@@ -65,7 +75,10 @@ class Occt_glfw_win : public Aspect_Window {
 #endif
 
   //! Returns parent of native Window handle.
-  virtual Aspect_Drawable NativeParentHandle() const Standard_OVERRIDE { return 0; }
+  virtual Aspect_Drawable NativeParentHandle() const Standard_OVERRIDE
+  {
+    return 0;
+  }
 
   //! Applies the resizing to the window <me>
   virtual Aspect_TypeOfResize DoResize() Standard_OVERRIDE;
@@ -74,7 +87,10 @@ class Occt_glfw_win : public Aspect_Window {
   virtual Standard_Boolean IsMapped() const Standard_OVERRIDE;
 
   //! Apply the mapping change to the window <me> and returns TRUE if the window is mapped at screen.
-  virtual Standard_Boolean DoMapping() const Standard_OVERRIDE { return Standard_True; }
+  virtual Standard_Boolean DoMapping() const Standard_OVERRIDE
+  {
+    return Standard_True;
+  }
 
   //! Opens the window <me>.
   virtual void Map() const Standard_OVERRIDE;
@@ -83,7 +99,8 @@ class Occt_glfw_win : public Aspect_Window {
   virtual void Unmap() const Standard_OVERRIDE;
 
   virtual void Position(Standard_Integer& theX1, Standard_Integer& theY1,
-                        Standard_Integer& theX2, Standard_Integer& theY2) const Standard_OVERRIDE {
+                        Standard_Integer& theX2, Standard_Integer& theY2) const Standard_OVERRIDE
+  {
     theX1 = myXLeft;
     theX2 = myXRight;
     theY1 = myYTop;
@@ -91,17 +108,22 @@ class Occt_glfw_win : public Aspect_Window {
   }
 
   //! Returns The Window RATIO equal to the physical WIDTH/HEIGHT dimensions.
-  virtual Standard_Real Ratio() const Standard_OVERRIDE {
+  virtual Standard_Real Ratio() const Standard_OVERRIDE
+  {
     return Standard_Real(myXRight - myXLeft) / Standard_Real(myYBottom - myYTop);
   }
 
   //! Return window size.
-  virtual void Size(Standard_Integer& theWidth, Standard_Integer& theHeight) const Standard_OVERRIDE {
+  virtual void Size(Standard_Integer& theWidth, Standard_Integer& theHeight) const Standard_OVERRIDE
+  {
     theWidth  = myXRight - myXLeft;
     theHeight = myYBottom - myYTop;
   }
 
-  virtual Aspect_FBConfig NativeFBConfig() const Standard_OVERRIDE { return NULL; }
+  virtual Aspect_FBConfig NativeFBConfig() const Standard_OVERRIDE
+  {
+    return NULL;
+  }
 
  protected:
   Handle(Aspect_DisplayConnection) myDisplay;

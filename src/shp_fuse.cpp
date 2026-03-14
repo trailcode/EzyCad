@@ -8,7 +8,8 @@
 Shp_fuse::Shp_fuse(Occt_view& view)
     : Shp_operation_base(view) {}
 
-Status Shp_fuse::selected_fuse() {
+Status Shp_fuse::selected_fuse()
+{
   view().push_undo_snapshot();
   CHK_RET(ensure_operation_multi_shps_());
 
@@ -18,7 +19,8 @@ Status Shp_fuse::selected_fuse() {
   TopoDS_Shape result = (*itr)->Shape();
 
   // Union with each subsequent shape
-  for (++itr; itr != m_shps.end(); ++itr) {
+  for (++itr; itr != m_shps.end(); ++itr)
+  {
     BRepAlgoAPI_Fuse fuse_op(result, (*itr)->Shape());
 
     // Check if the operation was successful

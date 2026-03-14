@@ -25,7 +25,7 @@ Use this style when editing or adding C/C++ code in the EzyCad project (files un
 
 - **Indentation**: 2 spaces (no tabs).
 - **Access specifiers**: ` public:` and ` private:` (one space before `public`/`private`/`protected`).
-- **Braces**: Opening brace for class/struct on the same line. For functions, opening brace often on the next line; **short functions** (e.g. single return) may be on one line—`.clang-format` (AllowShortFunctionsOnASingleLine: All) does this automatically.
+- **Braces**: Opening brace for class/struct on the same line. For **control flow** (`if`, `for`, `while`, `switch`), put the opening brace on the **next line**. For functions, opening brace often on the next line; **short functions** (e.g. single return) may be on one line—`.clang-format` (AllowShortFunctionsOnASingleLine: All) does this automatically. `.clang-format` uses `BraceWrapping.AfterControlStatement: Always` to enforce control-statement brace placement.
 - **Alignment**: Align member declarations in columns when it aids readability (type and name aligned across lines in the same block).
 - **Initialization**: Prefer brace-initialization for members (e.g. `bool is_midpoint {false};`, `size_t m_prev_num_nodes {0};`).
 - **Short control flow**: Single-line `if`/`for` without braces is acceptable when the body is a single statement; use braces for multi-line or nested bodies.

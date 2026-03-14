@@ -23,18 +23,22 @@
 #include "utl.h"
 
 Sketch::Sketch(const std::string& name, Occt_view& view, const gp_Pln& pln)
-    : m_view(view), m_ctx(view.ctx()), m_pln(pln), m_name(name), m_nodes(view, pln) {
+    : m_view(view), m_ctx(view.ctx()), m_pln(pln), m_name(name), m_nodes(view, pln)
+{
 }
 
 Sketch::Sketch(const std::string& name, Occt_view& view, const gp_Pln& pln, const TopoDS_Wire& outer_wire)
-    : m_view(view), m_ctx(view.ctx()), m_pln(pln), m_name(name), m_nodes(view, pln) {
+    : m_view(view), m_ctx(view.ctx()), m_pln(pln), m_name(name), m_nodes(view, pln)
+{
   m_originating_face = new AIS_Shape(outer_wire);
   m_ctx.Display(m_originating_face, true);
   update_originating_face_style();
 }
 
-Sketch::~Sketch() {
-  auto remove_edge = [&](Edge& e) {
+Sketch::~Sketch()
+{
+  auto remove_edge = [&](Edge& e)
+  {
     m_ctx.Remove(e.shp, false);
     m_ctx.Remove(e.dim, false);
   };
@@ -51,8 +55,10 @@ Sketch::~Sketch() {
   m_ctx.Remove(m_originating_face, true);
 }
 
-void Sketch::add_sketch_pt(const ScreenCoords& screen_coords) {
-  switch (get_mode()) {
+void Sketch::add_sketch_pt(const ScreenCoords& screen_coords)
+{
+  switch (get_mode())
+  {
       // clang-format off
     case Mode::Sketch_add_rectangle:
     case Mode::Sketch_add_rectangle_center_pt:
@@ -69,8 +75,10 @@ void Sketch::add_sketch_pt(const ScreenCoords& screen_coords) {
   }
 }
 
-void Sketch::sketch_pt_move(const ScreenCoords& screen_coords) {
-  switch (get_mode()) {
+void Sketch::sketch_pt_move(const ScreenCoords& screen_coords)
+{
+  switch (get_mode())
+  {
       // clang-format off
     case Mode::Sketch_add_edge:
     case Mode::Sketch_operation_axis:
@@ -86,31 +94,37 @@ void Sketch::sketch_pt_move(const ScreenCoords& screen_coords) {
   }
 }
 
-void Sketch::dimension_input(const ScreenCoords& screen_coords) {
+void Sketch::dimension_input(const ScreenCoords& screen_coords)
+{
   m_show_dim_input = true;
   sketch_pt_move(screen_coords);
 }
 
-void Sketch::angle_input(const ScreenCoords& screen_coords) {
+void Sketch::angle_input(const ScreenCoords& screen_coords)
+{
   m_show_angle_input = true;
   sketch_pt_move(screen_coords);
 }
 
-void Sketch::remove_edge(const Sketch_AIS_edge& to_remove) {
+void Sketch::remove_edge(const Sketch_AIS_edge& to_remove)
+{
   // Some shapes are composed with multiple edges, so we cannot break when a edge is found.
   for (std::list<Edge>::iterator itr = m_edges.begin(); itr != m_edges.end();)
-    if (itr->shp.get() == &to_remove) {
+    if (itr->shp.get() == &to_remove)
+    {
       if (itr->dim)
         m_ctx.Remove(itr->dim, false);
 
       itr = m_edges.erase(itr);
-    } else
+    }
+    else
       ++itr;
 
   update_faces_();
 }
 
-void Sketch::dbg_append_str(std::string& out) const {
+void Sketch::dbg_append_str(std::string& out) const
+{
   out += "    Nodes: " + std::to_string(m_nodes.size()) + "\n";
   out += "    Edges: " + std::to_string(m_edges.size()) + "\n";
   out += "    Faces: " + std::to_string(m_faces.size()) + "\n";
@@ -118,8 +132,10 @@ void Sketch::dbg_append_str(std::string& out) const {
   out += "Tmp Edges: " + std::to_string(m_tmp_edges.size()) + "\n";
 }
 
-void Sketch::update_edge_style_(AIS_Shape_ptr& shp) {
-  switch (m_edge_style) {
+void Sketch::update_edge_style_(AIS_Shape_ptr& shp)
+{
+  switch (m_edge_style)
+  {
     case Edge_style::Full:
       // shp->SetWidth(1.5);
       shp->SetWidth(1.0);
@@ -139,11 +155,13 @@ void Sketch::update_edge_style_(AIS_Shape_ptr& shp) {
   }
 }
 
-void Sketch::update_originating_face_style() {
+void Sketch::update_originating_face_style()
+{
   if (!m_originating_face)
     return;
 
-  switch (m_edge_style) {
+  switch (m_edge_style)
+  {
     case Edge_style::Full:
       m_originating_face->SetWidth(1.0);
       m_originating_face->SetColor(Quantity_Color(0.3, 0.0, 0.0, Quantity_TOC_RGB));
@@ -164,27 +182,34 @@ void Sketch::update_originating_face_style() {
   m_ctx.Redisplay(m_originating_face, true);
 }
 
-void Sketch::update_face_style_(AIS_Shape_ptr& shp) const {
+void Sketch::update_face_style_(AIS_Shape_ptr& shp) const
+{
 }
 
-void Sketch::update_edge_shp_(Edge& edge, const gp_Pnt2d& pt_a, const gp_Pnt2d& pt_b) {
+void Sketch::update_edge_shp_(Edge& edge, const gp_Pnt2d& pt_a, const gp_Pnt2d& pt_b)
+{
   EZY_ASSERT(unique(pt_a, pt_b));
 
   TopoDS_Shape edge_shape = BRepBuilderAPI_MakeEdge(to_3d(m_pln, pt_a), to_3d(m_pln, pt_b)).Edge();
 
-  if (edge.shp) {
+  if (edge.shp)
+  {
     edge.shp->Set(edge_shape);
     update_edge_style_(edge.shp);
     m_ctx.Redisplay(edge.shp, true);
-  } else {
+  }
+  else
+  {
     edge.shp = new Sketch_AIS_edge(*this, edge_shape);
     update_edge_style_(edge.shp);
     m_ctx.Display(edge.shp, true);
   }
 }
 
-void Sketch::on_enter() {
-  switch (get_mode()) {
+void Sketch::on_enter()
+{
+  switch (get_mode())
+  {
       // clang-format off
     case Mode::Sketch_add_square:
     case Mode::Sketch_add_rectangle:
@@ -199,9 +224,12 @@ void Sketch::on_enter() {
 }
 
 // Line string related
-void Sketch::add_line_string_pt_(const ScreenCoords& screen_coords, Linestring_type linestring_type) {
-  auto on_line_string = [&](size_t node_idx) {
-    if (m_tmp_edges.size()) {
+void Sketch::add_line_string_pt_(const ScreenCoords& screen_coords, Linestring_type linestring_type)
+{
+  auto on_line_string = [&](size_t node_idx)
+  {
+    if (m_tmp_edges.size())
+    {
       Edge& last_edge = m_tmp_edges.back();
       if (node_idx == last_edge.node_idx_a)
         // We cannot have edges with zero length.
@@ -209,11 +237,14 @@ void Sketch::add_line_string_pt_(const ScreenCoords& screen_coords, Linestring_t
 
       update_edge_end_pt_(last_edge, node_idx);
 
-      if (linestring_type == Linestring_type::Single) {
+      if (linestring_type == Linestring_type::Single)
+      {
         finalize_elm();
         return;
-      } else if (linestring_type == Linestring_type::Two)
-        if (m_tmp_edges.size() == 2) {
+      }
+      else if (linestring_type == Linestring_type::Two)
+        if (m_tmp_edges.size() == 2)
+        {
           finalize_elm();
           return;
         }
@@ -228,7 +259,8 @@ void Sketch::add_line_string_pt_(const ScreenCoords& screen_coords, Linestring_t
   };
 
   // When angle constraint is active, finalize on the constrained line (project click onto it)
-  if (m_entered_edge_angle.has_value() && m_tmp_edges.size()) {
+  if (m_entered_edge_angle.has_value() && m_tmp_edges.size())
+  {
     std::optional<gp_Pnt2d> pt_opt = m_view.pt_on_plane(screen_coords, m_pln);
     if (!pt_opt)
       return;
@@ -252,8 +284,10 @@ void Sketch::add_line_string_pt_(const ScreenCoords& screen_coords, Linestring_t
   add_sketch_pt_(screen_coords, 1, on_line_string);
 }
 
-void Sketch::move_line_string_pt_(const ScreenCoords& screen_coords) {
-  auto l = [&](const std::optional<size_t>& node_idx_b, const gp_Pnt2d& pt_b) {
+void Sketch::move_line_string_pt_(const ScreenCoords& screen_coords)
+{
+  auto l = [&](const std::optional<size_t>& node_idx_b, const gp_Pnt2d& pt_b)
+  {
     if (m_tmp_edges.empty())
       return;
 
@@ -268,16 +302,20 @@ void Sketch::move_line_string_pt_(const ScreenCoords& screen_coords) {
     // std::optional<size_t> final_node_idx;
 
     // Apply angle constraint if set - this takes priority
-    if (m_entered_edge_angle.has_value()) {
+    if (m_entered_edge_angle.has_value())
+    {
       // Calculate direction based on angle (0 degrees = positive X axis, counterclockwise)
       double   angle_rad = to_radians(*m_entered_edge_angle);
       gp_Dir2d constrained_dir(std::cos(angle_rad), std::sin(angle_rad));
 
       // If distance is also constrained, use that
-      if (m_entered_edge_len.has_value()) {
+      if (m_entered_edge_len.has_value())
+      {
         // Use the constrained distance - angle constraint is always enforced
         final_pt_b = gp_Pnt2d(pt_a).Translated(gp_Vec2d(constrained_dir) * m_entered_edge_len->len);
-      } else {
+      }
+      else
+      {
         // Project the mouse point onto the angle-constrained line
         // Find the distance along the constrained direction from pt_a to mouse position
         gp_Vec2d to_mouse(pt_b.X() - pt_a.X(), pt_b.Y() - pt_a.Y());
@@ -292,10 +330,13 @@ void Sketch::move_line_string_pt_(const ScreenCoords& screen_coords) {
       edge.node_idx_b = std::nullopt;
     }
     // Apply distance constraint if set (and angle is not set)
-    else if (m_entered_edge_len.has_value()) {
+    else if (m_entered_edge_len.has_value())
+    {
       final_pt_b      = gp_Pnt2d(pt_a).Translated(gp_Vec2d(m_entered_edge_len->dir) * m_entered_edge_len->len);
       edge.node_idx_b = m_nodes.try_get_node_idx_snap(final_pt_b);
-    } else {
+    }
+    else
+    {
       // No constraints - check for snap points at mouse position
       edge.node_idx_b = m_nodes.try_get_node_idx_snap(final_pt_b);
       if (edge.node_idx_b.has_value())
@@ -306,18 +347,22 @@ void Sketch::move_line_string_pt_(const ScreenCoords& screen_coords) {
     m_ctx.Remove(m_tmp_dim_anno, true);
     // When angle constraint is active, final_pt_b is the projection of the mouse onto the constrained
     // line; if the mouse is (nearly) perpendicular to that line, the projection coincides with pt_a.
-    if (unique(pt_a, final_pt_b)) {
+    if (unique(pt_a, final_pt_b))
+    {
       m_tmp_dim_anno = create_distance_annotation(pt_a, final_pt_b, m_pln);
       m_tmp_dim_anno->SetCustomValue(dist);
       m_ctx.Display(m_tmp_dim_anno, true);
-    } else
+    }
+    else
       m_tmp_dim_anno.Nullify();
 
-    if (m_show_dim_input && unique(pt_a, final_pt_b)) {
+    if (m_show_dim_input && unique(pt_a, final_pt_b))
+    {
       gp_Dir2d     edge_dir = get_unit_dir(pt_a, final_pt_b);
       ScreenCoords spos     = m_view.get_screen_coords(to_3d(m_pln, center_point(pt_a, final_pt_b)));
 
-      auto l = [&, edge_dir](float new_dist, bool is_finial) {
+      auto l = [&, edge_dir](float new_dist, bool is_finial)
+      {
         m_entered_edge_len = {
             edge_dir,
             new_dist * m_view.get_dimension_scale()};
@@ -330,7 +375,8 @@ void Sketch::move_line_string_pt_(const ScreenCoords& screen_coords) {
       m_view.gui().set_dist_edit(float(dist), std::move(std::function<void(float, bool)>(l)), spos);
     }
 
-    if (m_show_angle_input) {
+    if (m_show_angle_input)
+    {
       ScreenCoords spos = m_view.get_screen_coords(to_3d(m_pln, center_point(pt_a, final_pt_b)));
 
       // Calculate current angle from pt_a to actual mouse position (pt_b), not constrained position
@@ -339,7 +385,8 @@ void Sketch::move_line_string_pt_(const ScreenCoords& screen_coords) {
       double   current_angle_rad = std::atan2(vec.Y(), vec.X());
       double   current_angle_deg = to_degrees(current_angle_rad);
 
-      auto l = [&](float new_angle, bool is_finial) {
+      auto l = [&](float new_angle, bool is_finial)
+      {
         m_entered_edge_angle = new_angle;
         m_show_angle_input   = !is_finial;
         // Recalculate the point with the new angle using current mouse position
@@ -356,7 +403,8 @@ void Sketch::move_line_string_pt_(const ScreenCoords& screen_coords) {
     if (unique(pt_a, final_pt_b))
       update_edge_shp_(edge, pt_a, final_pt_b);
 
-    else if (edge.shp) {
+    else if (edge.shp)
+    {
       m_ctx.Remove(edge.shp, true);
       edge.shp.Nullify();
     }
@@ -365,18 +413,21 @@ void Sketch::move_line_string_pt_(const ScreenCoords& screen_coords) {
   move_sketch_pt_(screen_coords, l);
 }
 
-void Sketch::finalize_edges_() {
+void Sketch::finalize_edges_()
+{
   if (m_nodes.empty() || m_tmp_edges.empty())
     return;
 
-  if (!m_tmp_edges.back().node_idx_b.has_value()) {
+  if (!m_tmp_edges.back().node_idx_b.has_value())
+  {
     // Last edge was not finalized, remove it
     m_ctx.Remove(m_tmp_edges.back().shp, false);
     m_tmp_edges.pop_back();
   }
 
   std::vector<size_t> split_mid_points;
-  for (Edge& e : m_tmp_edges) {
+  for (Edge& e : m_tmp_edges)
+  {
     EZY_ASSERT(e.node_idx_b.has_value());
     EZY_ASSERT(e.node_idx_mid.has_value());
     if (m_nodes[e.node_idx_a].is_midpoint)
@@ -395,7 +446,8 @@ void Sketch::finalize_edges_() {
     for (auto itr = m_edges.begin(), end = m_edges.end(); itr != end; ++itr)
       if (itr->node_idx_mid.has_value() && *itr->node_idx_mid == mid_pt_idx)
         // Cannot split arc circles.
-        if (!itr->node_idx_arc.has_value()) {
+        if (!itr->node_idx_arc.has_value())
+        {
           // Split the edge.
           Edge edge_a {itr->node_idx_a, mid_pt_idx};
           Edge edge_b {mid_pt_idx, *itr->node_idx_b};
@@ -417,12 +469,14 @@ void Sketch::finalize_edges_() {
 }
 
 // Arc circle related
-void Sketch::add_arc_circle_pt_(const ScreenCoords& screen_coords) {
+void Sketch::add_arc_circle_pt_(const ScreenCoords& screen_coords)
+{
   std::optional<size_t> node_idx = m_nodes.get_node(screen_coords);
   if (!node_idx)
     return;
 
-  if (!m_start_arc_circle_node_idx) {
+  if (!m_start_arc_circle_node_idx)
+  {
     EZY_ASSERT(m_tmp_node_idxs.empty());
     m_start_arc_circle_node_idx = m_nodes.size();
   }
@@ -433,14 +487,16 @@ void Sketch::add_arc_circle_pt_(const ScreenCoords& screen_coords) {
 
   m_tmp_node_idxs.push_back(*node_idx);
 
-  if (m_tmp_node_idxs.size() == 3) {
+  if (m_tmp_node_idxs.size() == 3)
+  {
     add_arc_circle_(m_tmp_node_idxs);
     m_tmp_node_idxs.clear();
     update_faces_();
   }
 }
 
-void Sketch::move_arc_circle_pt_(const ScreenCoords& screen_coords) {
+void Sketch::move_arc_circle_pt_(const ScreenCoords& screen_coords)
+{
   std::optional<gp_Pnt2d> pt = m_nodes.snap(screen_coords);
   if (!pt)
     // View plane and sketch plane must be perpendicular.
@@ -454,7 +510,8 @@ void Sketch::move_arc_circle_pt_(const ScreenCoords& screen_coords) {
   gp_Pnt c = to_3d_(m_tmp_node_idxs[1]);
 
   Handle(Geom_TrimmedCurve) arc_circle = GC_MakeArcOfCircle(a, b, c);
-  if (!arc_circle) {
+  if (!arc_circle)
+  {
     m_view.remove(m_tmp_shp);
     m_tmp_shp = nullptr;
     return;
@@ -464,10 +521,12 @@ void Sketch::move_arc_circle_pt_(const ScreenCoords& screen_coords) {
   show(m_ctx, m_tmp_shp, edge);
 }
 
-void Sketch::move_square_pt_(const ScreenCoords& screen_coords) {
+void Sketch::move_square_pt_(const ScreenCoords& screen_coords)
+{
   move_line_string_pt_(screen_coords);
 
-  auto l = [&](Edge& e, const gp_Pnt2d& pt_a, const gp_Pnt2d& pt_b) {
+  auto l = [&](Edge& e, const gp_Pnt2d& pt_a, const gp_Pnt2d& pt_b)
+  {
     TopoDS_Wire square = make_square_wire(m_pln, pt_a, *m_last_pt);
     show(m_ctx, m_tmp_shp, square);
   };
@@ -475,8 +534,10 @@ void Sketch::move_square_pt_(const ScreenCoords& screen_coords) {
   if_edge_pt_valid_(l);
 }
 
-void Sketch::finalize_square_() {
-  auto l = [&](Edge& e, const gp_Pnt2d& pt_a, const gp_Pnt2d& pt_b) {
+void Sketch::finalize_square_()
+{
+  auto l = [&](Edge& e, const gp_Pnt2d& pt_a, const gp_Pnt2d& pt_b)
+  {
     std::array<gp_Pnt2d, 4> corners = square_corners(pt_a, pt_b);
     add_edge_(corners[0], corners[1]);
     add_edge_(corners[1], corners[2]);
@@ -489,17 +550,22 @@ void Sketch::finalize_square_() {
   if_edge_pt_valid_(l);
 }
 
-void Sketch::move_rectangle_pt_(const ScreenCoords& screen_coords) {
+void Sketch::move_rectangle_pt_(const ScreenCoords& screen_coords)
+{
   move_line_string_pt_(screen_coords);
 
-  auto l = [&](Edge& e, const gp_Pnt2d& pt_a, const gp_Pnt2d& pt_b) {
+  auto l = [&](Edge& e, const gp_Pnt2d& pt_a, const gp_Pnt2d& pt_b)
+  {
     EZY_ASSERT(m_tmp_edges.size());
 
     if (std::abs(pt_a.X() - pt_b.X()) > Precision::Confusion() &&
-        std::abs(pt_a.Y() - pt_b.Y()) > Precision::Confusion()) {
+        std::abs(pt_a.Y() - pt_b.Y()) > Precision::Confusion())
+    {
       TopoDS_Wire rectangle = make_rectangle_wire(m_pln, pt_a, pt_b);
       show(m_ctx, m_tmp_shp, rectangle);
-    } else {
+    }
+    else
+    {
       m_ctx.Remove(m_tmp_shp, true);
       m_tmp_shp.Nullify();
     }
@@ -508,10 +574,13 @@ void Sketch::move_rectangle_pt_(const ScreenCoords& screen_coords) {
   if_edge_pt_valid_(l);
 }
 
-void Sketch::finalize_rectangle_() {
-  auto l = [&](Edge& e, const gp_Pnt2d& pt_a, const gp_Pnt2d& pt_b) {
+void Sketch::finalize_rectangle_()
+{
+  auto l = [&](Edge& e, const gp_Pnt2d& pt_a, const gp_Pnt2d& pt_b)
+  {
     if (std::abs(pt_a.X() - pt_b.X()) > Precision::Confusion() &&
-        std::abs(pt_a.Y() - pt_b.Y()) > Precision::Confusion()) {
+        std::abs(pt_a.Y() - pt_b.Y()) > Precision::Confusion())
+    {
       std::array<gp_Pnt2d, 4> corners = rectangle_corners(pt_a, pt_b);
       add_edge_(corners[0], corners[1]);
       add_edge_(corners[1], corners[2]);
@@ -519,7 +588,9 @@ void Sketch::finalize_rectangle_() {
       add_edge_(corners[3], corners[0]);
       clear_tmps_();
       update_faces_();
-    } else {
+    }
+    else
+    {
       // Start a new edge
       EZY_ASSERT(e.node_idx_b.has_value());
       m_tmp_edges.push_back({*e.node_idx_b});
@@ -530,9 +601,11 @@ void Sketch::finalize_rectangle_() {
 }
 
 // Slot related
-void Sketch::move_slot_pt_(const ScreenCoords& screen_coords) {
+void Sketch::move_slot_pt_(const ScreenCoords& screen_coords)
+{
   move_line_string_pt_(screen_coords);
-  auto l = [&](Edge& e, const gp_Pnt2d& pt_b, const gp_Pnt2d& pt_c) {
+  auto l = [&](Edge& e, const gp_Pnt2d& pt_b, const gp_Pnt2d& pt_c)
+  {
     if (m_tmp_edges.size() != 2)
       return;
 
@@ -543,7 +616,8 @@ void Sketch::move_slot_pt_(const ScreenCoords& screen_coords) {
   if_edge_pt_valid_(l);
 }
 
-void Sketch::finalize_slot_() {
+void Sketch::finalize_slot_()
+{
   EZY_ASSERT(m_tmp_edges.size() == 2);
   EZY_ASSERT(m_tmp_edges[1].node_idx_b.has_value());
 
@@ -561,7 +635,8 @@ void Sketch::finalize_slot_() {
 }
 
 // Operation axis related
-void Sketch::add_operation_axis_pt_(const ScreenCoords& screen_coords) {
+void Sketch::add_operation_axis_pt_(const ScreenCoords& screen_coords)
+{
   // If an axis already exists, clear it and start over
   if (has_operation_axis())
     clear_operation_axis();
@@ -569,28 +644,33 @@ void Sketch::add_operation_axis_pt_(const ScreenCoords& screen_coords) {
   add_line_string_pt_(screen_coords, Linestring_type::Single);
 }
 
-void Sketch::finalize_operation_axis_() {
+void Sketch::finalize_operation_axis_()
+{
   m_operation_axis = std::move(m_tmp_edges.back());
   cancel_elm();  // Reset state, we have the operation axis
 }
 
-void Sketch::clear_operation_axis() {
+void Sketch::clear_operation_axis()
+{
   if (m_operation_axis.has_value())
     m_ctx.Remove(m_operation_axis->shp, false);
 
   m_operation_axis = std::nullopt;
 }
 
-bool Sketch::has_operation_axis() const {
+bool Sketch::has_operation_axis() const
+{
   return m_operation_axis.has_value();
 }
 
-void Sketch::mirror_selected_edges() {
+void Sketch::mirror_selected_edges()
+{
   EZY_ASSERT(m_operation_axis.has_value());
   m_view.push_undo_snapshot();
 
   const std::vector<Edge> mirror_edges = get_selected_edges_();
-  if (mirror_edges.empty()) {
+  if (mirror_edges.empty())
+  {
     m_view.gui().show_message(ERROR_NO_EDGES_SELECTED);
     return;
   }
@@ -602,13 +682,17 @@ void Sketch::mirror_selected_edges() {
 
   for (const Edge& e : m_edges)
     for (const Edge& selected : mirror_edges)
-      if (e.shp == selected.shp) {
-        if (e.circle_arc) {
+      if (e.shp == selected.shp)
+      {
+        if (e.circle_arc)
+        {
           std::set<const Edge*>& arc_circle_edges = arc_circles[e.shp];
           arc_circle_edges.insert(&e);
           if (arc_circle_edges.size() == 2)
             break;
-        } else {
+        }
+        else
+        {
           const gp_Pnt2d a = mirror_point(mirror_pt_a, mirror_pt_b, m_nodes[e.node_idx_a]);
           const gp_Pnt2d b = mirror_point(mirror_pt_a, mirror_pt_b, m_nodes[e.node_idx_b]);
           add_edge_(a, b);
@@ -616,7 +700,8 @@ void Sketch::mirror_selected_edges() {
         }
       }
 
-  for (auto& [_, arc_circle_edges] : arc_circles) {
+  for (auto& [_, arc_circle_edges] : arc_circles)
+  {
     EZY_ASSERT(arc_circle_edges.size() == 2);
     const Edge* a;
     const Edge* b;
@@ -640,7 +725,8 @@ void Sketch::mirror_selected_edges() {
   update_faces_();
 }
 
-Shp_rslt Sketch::revolve_selected(const double angle) {
+Shp_rslt Sketch::revolve_selected(const double angle)
+{
   EZY_ASSERT_MSG(m_operation_axis.has_value(),
                  "No defined operation axis.");
 
@@ -650,22 +736,26 @@ Shp_rslt Sketch::revolve_selected(const double angle) {
 
   const std::vector<Sketch_face_shp_ptr> faces          = get_selected_faces_();
   const std::vector<Edge>                selected_edges = get_selected_edges_();
-  if (selected_edges.size()) {
+  if (selected_edges.size())
+  {
     std::set<AIS_Shape*> seen;
     for (const Edge& e : selected_edges)
       // Arc circles share the same shape
-      if (!seen.count(e.shp.get())) {
+      if (!seen.count(e.shp.get()))
+      {
         seen.insert(e.shp.get());
         builder.Add(compound, e.shp->Shape());
       }
-  } else if (faces.size())
+  }
+  else if (faces.size())
     for (const Sketch_face_shp_ptr& face : faces)
       builder.Add(compound, face->Shape());
 
   else
     return Shp_rslt(Result_status::User_error, "No selected faces or edges.");
 
-  try {
+  try
+  {
     const auto [pt_a, pt_b] = get_edge_endpoints(TopoDS::Edge(m_operation_axis->shp->Shape()));
 
     const gp_Dir direction((pt_b.XYZ() - pt_a.XYZ()).Normalized());
@@ -673,12 +763,16 @@ Shp_rslt Sketch::revolve_selected(const double angle) {
 
     BRepPrimAPI_MakeRevol revolMaker(compound, axis, angle);
     return Shp_rslt(new Shp(m_ctx, revolMaker.Shape()));
-  } catch (const Standard_Failure& e) {
+  }
+  catch (const Standard_Failure& e)
+  {
     // Catch OCCT exception and return error with message
     std::string error_msg = "Revolution failed: ";
     error_msg += e.GetMessageString() ? e.GetMessageString() : "Unknown OCCT error";
     return Shp_rslt(Result_status::Topo_error, error_msg);
-  } catch (const std::exception& e) {
+  }
+  catch (const std::exception& e)
+  {
     // Catch other unexpected errors
     return Shp_rslt(Result_status::User_error, "Unexpected error: " + std::string(e.what()));
   }
@@ -686,8 +780,10 @@ Shp_rslt Sketch::revolve_selected(const double angle) {
 
 // General sketch point related
 template <typename Callback>
-void Sketch::add_sketch_pt_(const ScreenCoords& screen_coords, size_t required_num_pts, Callback&& callback) {
-  auto l = [&](const std::optional<size_t>& node_idx, const gp_Pnt2d& pt) {
+void Sketch::add_sketch_pt_(const ScreenCoords& screen_coords, size_t required_num_pts, Callback&& callback)
+{
+  auto l = [&](const std::optional<size_t>& node_idx, const gp_Pnt2d& pt)
+  {
     if (node_idx)
       m_tmp_node_idxs.push_back(*node_idx);
 
@@ -701,7 +797,8 @@ void Sketch::add_sketch_pt_(const ScreenCoords& screen_coords, size_t required_n
 }
 
 template <typename Callback>
-void Sketch::move_sketch_pt_(const ScreenCoords& screen_coords, Callback&& callback) {
+void Sketch::move_sketch_pt_(const ScreenCoords& screen_coords, Callback&& callback)
+{
   m_last_pt = m_view.pt_on_plane(screen_coords, m_pln);
   if (!m_last_pt)
     // View plane and sketch plane must be perpendicular.
@@ -714,7 +811,8 @@ void Sketch::move_sketch_pt_(const ScreenCoords& screen_coords, Callback&& callb
 
 /// Invokes callback(e, pt_a, pt_b) with the last tmp edge only when it exists and is non-degenerate.
 template <typename Callback>
-void Sketch::if_edge_pt_valid_(Callback&& callback) {
+void Sketch::if_edge_pt_valid_(Callback&& callback)
+{
   if (m_tmp_edges.empty())
     return;
 
@@ -725,7 +823,8 @@ void Sketch::if_edge_pt_valid_(Callback&& callback) {
       callback(e, pt_a, *m_last_pt);
 }
 
-void Sketch::check_dimension_seg_(Linestring_type linestring_type) {
+void Sketch::check_dimension_seg_(Linestring_type linestring_type)
+{
   if (!m_entered_edge_len.has_value())
     return;
 
@@ -747,8 +846,10 @@ void Sketch::check_dimension_seg_(Linestring_type linestring_type) {
   if (linestring_type == Linestring_type::Single)
     finalize_elm();
 
-  else if (linestring_type == Linestring_type::Two) {
-    switch (m_tmp_edges.size()) {
+  else if (linestring_type == Linestring_type::Two)
+  {
+    switch (m_tmp_edges.size())
+    {
       case 1:
         m_entered_edge_angle = std::nullopt;
         m_show_angle_input   = false;
@@ -761,7 +862,9 @@ void Sketch::check_dimension_seg_(Linestring_type linestring_type) {
       default:
         EZY_ASSERT(false);
     }
-  } else {
+  }
+  else
+  {
     // Next segment must not inherit the previous angle constraint
     m_entered_edge_angle = std::nullopt;
     m_show_angle_input   = false;
@@ -770,7 +873,8 @@ void Sketch::check_dimension_seg_(Linestring_type linestring_type) {
   }
 }
 
-void Sketch::add_edge_(const gp_Pnt2d& pt_a, const gp_Pnt2d& pt_b, bool add_dim_anno) {
+void Sketch::add_edge_(const gp_Pnt2d& pt_a, const gp_Pnt2d& pt_b, bool add_dim_anno)
+{
   Edge edge {m_nodes.get_node_exact(pt_a)};
   update_edge_end_pt_(edge, m_nodes.get_node_exact(pt_b));
   set_edge_dim_anno_visible_(edge, add_dim_anno);
@@ -778,7 +882,8 @@ void Sketch::add_edge_(const gp_Pnt2d& pt_a, const gp_Pnt2d& pt_b, bool add_dim_
   m_nodes.finalize();
 }
 
-std::vector<Sketch::Edge> Sketch::get_selected_edges_() const {
+std::vector<Sketch::Edge> Sketch::get_selected_edges_() const
+{
   std::vector<Edge> ret;
   for (const AIS_Shape_ptr& selected : m_view.get_selected())
     for (const Edge& e : m_edges)
@@ -788,7 +893,8 @@ std::vector<Sketch::Edge> Sketch::get_selected_edges_() const {
   return ret;
 }
 
-std::vector<Sketch_face_shp_ptr> Sketch::get_selected_faces_() const {
+std::vector<Sketch_face_shp_ptr> Sketch::get_selected_faces_() const
+{
   std::vector<Sketch_face_shp_ptr> ret;
   for (const AIS_Shape_ptr& selected : m_view.get_selected())
     for (const Sketch_face_shp_ptr& face : m_faces)
@@ -798,7 +904,8 @@ std::vector<Sketch_face_shp_ptr> Sketch::get_selected_faces_() const {
   return ret;
 }
 
-std::list<Sketch::Edge>::iterator Sketch::get_edge_at_(const ScreenCoords& screen_coords) {
+std::list<Sketch::Edge>::iterator Sketch::get_edge_at_(const ScreenCoords& screen_coords)
+{
   AIS_Shape_ptr shp = m_view.get_shape(screen_coords);
   if (auto edge = dynamic_cast<Sketch_AIS_edge*>(shp.get()); edge)
     if (&edge->owner_sketch == this)
@@ -809,8 +916,10 @@ std::list<Sketch::Edge>::iterator Sketch::get_edge_at_(const ScreenCoords& scree
   return m_edges.end();
 }
 
-void Sketch::set_edge_dim_anno_visible_(Edge& e, bool visible) {
-  if (visible) {
+void Sketch::set_edge_dim_anno_visible_(Edge& e, bool visible)
+{
+  if (visible)
+  {
     EZY_ASSERT(e.node_idx_b);
     if (e.dim)
       m_ctx.Remove(e.dim, false);  // Remove existing to update position
@@ -819,18 +928,22 @@ void Sketch::set_edge_dim_anno_visible_(Edge& e, bool visible) {
     double dist = m_nodes[e.node_idx_a].Distance(m_nodes[e.node_idx_b]);
     e.dim->SetCustomValue(dist / m_view.get_dimension_scale());
     m_ctx.Display(e.dim, true);
-  } else {
+  }
+  else
+  {
     m_ctx.Remove(e.dim, true);
     e.dim.Nullify();
   }
 }
 
-void Sketch::toggle_edge_dim(const ScreenCoords& screen_coords) {
+void Sketch::toggle_edge_dim(const ScreenCoords& screen_coords)
+{
   if (std::list<Edge>::iterator itr = get_edge_at_(screen_coords); itr != m_edges.end())
     set_edge_dim_anno_visible_(*itr, itr->dim.IsNull());
 }
 
-void Sketch::finalize_elm() {
+void Sketch::finalize_elm()
+{
   m_view.push_undo_snapshot();
   m_show_dim_input     = false;
   m_show_angle_input   = false;
@@ -838,7 +951,8 @@ void Sketch::finalize_elm() {
   m_view.gui().hide_angle_edit();
   m_ctx.Remove(m_tmp_dim_anno, true);
 
-  switch (get_mode()) {
+  switch (get_mode())
+  {
       // clang-format off
     case Mode::Sketch_add_edge:
     case Mode::Sketch_add_multi_edges:  finalize_edges_();          break;
@@ -854,7 +968,8 @@ void Sketch::finalize_elm() {
 }
 
 // Cancel related
-bool Sketch::cancel_elm() {
+bool Sketch::cancel_elm()
+{
   bool operation_canceled = clear_tmps_();
   m_ctx.Remove(m_tmp_dim_anno, true);
   m_nodes.hide_snap_annos();
@@ -864,7 +979,8 @@ bool Sketch::cancel_elm() {
 }
 
 // Function to extract faces from the planar graph
-void Sketch::update_faces_() {
+void Sketch::update_faces_()
+{
   m_nodes.finalize();
 
   m_view.remove(m_faces);
@@ -876,7 +992,8 @@ void Sketch::update_faces_() {
   // Build adjacency list
   std::unordered_map<size_t, std::vector<std::pair<size_t, const Edge*>>> adj_list;
 
-  for (const auto& edge : m_edges) {
+  for (const auto& edge : m_edges)
+  {
     EZY_ASSERT(edge.node_idx_b.has_value());
 
     size_t a = edge.node_idx_a;
@@ -907,7 +1024,8 @@ void Sketch::update_faces_() {
       if (edge.node_idx_arc.has_value())
         arc_mid_nodes.insert(*edge.node_idx_arc);
 
-    for (const auto& edge : m_edges) {
+    for (const auto& edge : m_edges)
+    {
       // Only consider non-arc edges (straight segments etc.).
       if (edge.circle_arc)
         continue;
@@ -924,12 +1042,14 @@ void Sketch::update_faces_() {
   }
 
   bool changed = true;
-  while (changed) {
+  while (changed)
+  {
     changed = false;
     std::unordered_set<const Edge*> to_exclude;
 
     // Find edges where at least one endpoint has degree 1 (considering only non-excluded edges)
-    for (const auto& edge : m_edges) {
+    for (const auto& edge : m_edges)
+    {
       if (excluded_edges.count(&edge))
         continue;
 
@@ -949,7 +1069,8 @@ void Sketch::update_faces_() {
           ++degree_b;
 
       // If either endpoint has degree 1, this edge is dangling
-      if (degree_a == 1 || degree_b == 1) {
+      if (degree_a == 1 || degree_b == 1)
+      {
         to_exclude.insert(&edge);
         changed = true;
       }
@@ -962,7 +1083,8 @@ void Sketch::update_faces_() {
   // A bridge edge connects two cycles and has both endpoints with degree >= 3.
   // We detect this by checking if the edge is the only connection between two cycles.
   std::unordered_set<const Edge*> bridge_edges;
-  for (const auto& edge : m_edges) {
+  for (const auto& edge : m_edges)
+  {
     if (excluded_edges.count(&edge))
       continue;
 
@@ -984,7 +1106,8 @@ void Sketch::update_faces_() {
     // Bridge edges have both endpoints with degree >= 3
     // They connect two separate cycles. We detect this by checking if removing the edge
     // creates two disconnected components, each containing a cycle.
-    if (degree_a >= 3 && degree_b >= 3) {
+    if (degree_a >= 3 && degree_b >= 3)
+    {
       // Check if removing this edge disconnects the graph
       // by seeing if we can reach 'b' from 'a' without using this edge
       std::unordered_set<size_t> visited;
@@ -993,17 +1116,21 @@ void Sketch::update_faces_() {
       visited.insert(a);
       bool can_reach_b = false;
 
-      for (size_t i = 0; i < queue.size() && !can_reach_b; ++i) {
+      for (size_t i = 0; i < queue.size() && !can_reach_b; ++i)
+      {
         size_t curr = queue[i];
-        for (const auto& [neighbor, e] : adj_list[curr]) {
+        for (const auto& [neighbor, e] : adj_list[curr])
+        {
           if (excluded_edges.count(e) || e == &edge)
             continue;
 
-          if (neighbor == b) {
+          if (neighbor == b)
+          {
             can_reach_b = true;
             break;
           }
-          if (!visited.count(neighbor)) {
+          if (!visited.count(neighbor))
+          {
             visited.insert(neighbor);
             queue.push_back(neighbor);
           }
@@ -1012,20 +1139,25 @@ void Sketch::update_faces_() {
 
       // If we can't reach b from a without this edge, it's a bridge
       // But we also need to verify both sides have cycles
-      if (!can_reach_b) {
+      if (!can_reach_b)
+      {
         // Check if component containing 'a' has a cycle
-        auto has_cycle_in_component = [&](size_t start, const Edge* exclude_edge) -> bool {
+        auto has_cycle_in_component = [&](size_t start, const Edge* exclude_edge) -> bool
+        {
           std::unordered_set<size_t>          comp_visited;
-          std::function<bool(size_t, size_t)> dfs = [&](size_t curr, size_t parent) -> bool {
+          std::function<bool(size_t, size_t)> dfs = [&](size_t curr, size_t parent) -> bool
+          {
             comp_visited.insert(curr);
-            for (const auto& [neighbor, e] : adj_list[curr]) {
+            for (const auto& [neighbor, e] : adj_list[curr])
+            {
               if (excluded_edges.count(e) || e == exclude_edge)
                 continue;
 
               if (neighbor == parent)
                 continue;
 
-              if (comp_visited.count(neighbor)) {
+              if (comp_visited.count(neighbor))
+              {
                 // Found a back edge = cycle
                 return true;
               }
@@ -1036,7 +1168,8 @@ void Sketch::update_faces_() {
           };
 
           // Try starting from each neighbor
-          for (const auto& [neighbor, e] : adj_list[start]) {
+          for (const auto& [neighbor, e] : adj_list[start])
+          {
             if (excluded_edges.count(e) || e == exclude_edge)
               continue;
 
@@ -1052,7 +1185,8 @@ void Sketch::update_faces_() {
         bool b_has_cycle = has_cycle_in_component(b, &edge);
 
         // If both components have cycles, this edge is a bridge
-        if (a_has_cycle && b_has_cycle) {
+        if (a_has_cycle && b_has_cycle)
+        {
           bridge_edges.insert(&edge);
         }
       }
@@ -1065,7 +1199,8 @@ void Sketch::update_faces_() {
 // Rebuild adjacency list excluding dangling and bridge edges
 #endif
   adj_list.clear();
-  for (const auto& edge : m_edges) {
+  for (const auto& edge : m_edges)
+  {
     if (excluded_edges.count(&edge))
       continue;
 
@@ -1081,7 +1216,8 @@ void Sketch::update_faces_() {
   std::unordered_set<std::pair<size_t, size_t>, Pair_hash> seen_edges;
 
   for (auto& [a_idx, edges] : adj_list)
-    for (auto& [b_idx, start_edge] : edges) {
+    for (auto& [b_idx, start_edge] : edges)
+    {
       if (seen_edges.count(std::make_pair(a_idx, b_idx)))
         continue;
 
@@ -1091,16 +1227,19 @@ void Sketch::update_faces_() {
       const Edge* curr_edge = start_edge;
       Face_edges  face;
 
-      for (;;) {
+      for (;;)
+      {
         face.push_back({*curr_edge, curr_edge->reversed(prev_idx, curr_idx)});
 
         // Base case
-        if (curr_idx == start_idx) {
+        if (curr_idx == start_idx)
+        {
           EZY_ASSERT(face.size() > 2);
           if (!is_face_clockwise_(face))
             break;
 
-          for (const Face_edge& e : face) {
+          for (const Face_edge& e : face)
+          {
             // Mark edge in both directions to avoid processing the same face twice
             // when starting from different nodes
             size_t start_idx = e.start_nd_idx();
@@ -1126,13 +1265,15 @@ void Sketch::update_faces_() {
         const Edge* left_most_edge = nullptr;
         gp_Vec2d    edge_a         = edge_outgoing_dir_(prev_idx, curr_idx, *curr_edge);
 
-        for (auto& [next_idx, next_edge] : adj_list[curr_idx]) {
+        for (auto& [next_idx, next_edge] : adj_list[curr_idx])
+        {
           if (next_idx == prev_idx)
             continue;
 
           gp_Vec2d edge_b = edge_outgoing_dir_(curr_idx, next_idx, *next_edge);
           double   angle  = std::atan2(edge_b.Crossed(edge_a), edge_b.Dot(edge_a));
-          if (angle < min_angle) {
+          if (angle < min_angle)
+          {
             min_angle      = angle;
             left_most_idx  = next_idx;
             left_most_edge = next_edge;
@@ -1154,7 +1295,8 @@ void Sketch::update_faces_() {
     m_nodes[idx].deleted = !used_nodes[idx];
 
   // Book keeping
-  struct Face_meta {
+  struct Face_meta
+  {
     Sketch_face_shp_ptr           shp;
     double                        area;
     int                           parent_idx;
@@ -1167,14 +1309,17 @@ void Sketch::update_faces_() {
 
   // Sort faces by area (descending) to check larger faces first
   std::sort(face_metas.begin(), face_metas.end(),
-            [](const Face_meta& a, const Face_meta& b) {
+            [](const Face_meta& a, const Face_meta& b)
+            {
               return a.area > b.area;  // Descending by area
             });
 
   // Classify faces
-  for (size_t face_i = 0, num = face_metas.size(); face_i < num; ++face_i) {
+  for (size_t face_i = 0, num = face_metas.size(); face_i < num; ++face_i)
+  {
     Face_meta& face_a = face_metas[face_i];
-    for (size_t face_j = face_i + 1; face_j < num; ++face_j) {
+    for (size_t face_j = face_i + 1; face_j < num; ++face_j)
+    {
       Face_meta& face_b = face_metas[face_j];
       if (is_face_contained(face_b.shp->Shape(), face_a.shp->Shape()))
         // Check if face_a is better (smaller) parent than the current one
@@ -1190,10 +1335,12 @@ void Sketch::update_faces_() {
 
   // Rebuild face shapes with their holes
   for (Face_meta& face : face_metas)
-    if (face.holes.size()) {
+    if (face.holes.size())
+    {
       EZY_ASSERT(face.shp->Shape().ShapeType() == TopAbs_FACE);
       BRepBuilderAPI_MakeFace face_maker(TopoDS::Face(face.shp->Shape()));
-      for (const Face_meta* hole : face.holes) {
+      for (const Face_meta* hole : face.holes)
+      {
         EZY_ASSERT(hole->shp->Shape().ShapeType() == TopAbs_FACE);
         TopoDS_Wire hole_wire = BRepTools::OuterWire(TopoDS::Face(hole->shp->Shape()));
         // Winding order is important
@@ -1206,7 +1353,8 @@ void Sketch::update_faces_() {
     }
 
   // Use the nesting depth of the faces to define the face selection sensitivity
-  for (const Face_meta& face : face_metas) {
+  for (const Face_meta& face : face_metas)
+  {
     int              nesting_depth = 0;
     const Face_meta* curr_face     = &face;
     for (; curr_face->parent_idx != -1; ++nesting_depth)
@@ -1216,7 +1364,8 @@ void Sketch::update_faces_() {
   }
 }
 
-size_t Sketch::Face_edge::start_nd_idx() const {
+size_t Sketch::Face_edge::start_nd_idx() const
+{
   if (!reversed)
     return edge.node_idx_a;
 
@@ -1224,7 +1373,8 @@ size_t Sketch::Face_edge::start_nd_idx() const {
   return *edge.node_idx_b;
 }
 
-size_t Sketch::Face_edge::end_nd_idx() const {
+size_t Sketch::Face_edge::end_nd_idx() const
+{
   if (reversed)
     return edge.node_idx_a;
 
@@ -1232,10 +1382,12 @@ size_t Sketch::Face_edge::end_nd_idx() const {
   return *edge.node_idx_b;
 }
 
-bool Sketch::is_face_clockwise_(const Face_edges& face) const {
+bool Sketch::is_face_clockwise_(const Face_edges& face) const
+{
   // Compute signed area using the shoelace formula
   double signed_area = 0.0;
-  for (const Face_edge& e : face) {
+  for (const Face_edge& e : face)
+  {
     // `start_nd_idx` and `end_nd_idx` consider reversed edges
     const gp_Pnt2d& p1 = m_nodes[e.start_nd_idx()];
     const gp_Pnt2d& p2 = m_nodes[e.end_nd_idx()];
@@ -1246,13 +1398,15 @@ bool Sketch::is_face_clockwise_(const Face_edges& face) const {
   return signed_area > 0;
 }
 
-Sketch_face_shp_ptr Sketch::create_face_shape_(const Face_edges& face) {
+Sketch_face_shp_ptr Sketch::create_face_shape_(const Face_edges& face)
+{
   EZY_ASSERT(face.size() > 2);
 
   // Create edges for the wire
   BRepBuilderAPI_MakeWire wire_maker;
 
-  struct Circle_arc {
+  struct Circle_arc
+  {
     std::optional<size_t> nd_idx_a;
     std::optional<size_t> nd_idx_b;
     std::optional<size_t> nd_idx_c;
@@ -1263,26 +1417,31 @@ Sketch_face_shp_ptr Sketch::create_face_shape_(const Face_edges& face) {
   std::vector<gp_Pnt>                      node_verts;
   std::optional<size_t>                    dbg_last_node_idx;
 
-  for (const Face_edge& e : face) {
+  for (const Face_edge& e : face)
+  {
     EZY_ASSERT(e.edge.node_idx_b);
 
-    auto add_node_vert_unique = [&](const gp_Pnt& pt) {
+    auto add_node_vert_unique = [&](const gp_Pnt& pt)
+    {
       if (node_verts.empty())
         node_verts.push_back(pt);
       else if (!node_verts.back().IsEqual(pt, Precision::Confusion()))
         node_verts.push_back(pt);
     };
 
-    if (e.edge.circle_arc.get()) {
+    if (e.edge.circle_arc.get())
+    {
       Circle_arc& arc = circle_arcs[e.edge.circle_arc.get()];
 
-      auto try_arc_circle = [&](bool reversed) {
+      auto try_arc_circle = [&](bool reversed)
+      {
         if (!arc.dbg_reversed.has_value())
           arc.dbg_reversed = reversed;
         else
           EZY_ASSERT(*arc.dbg_reversed == reversed);
 
-        if (arc.nd_idx_a && arc.nd_idx_b && arc.nd_idx_c) {
+        if (arc.nd_idx_a && arc.nd_idx_b && arc.nd_idx_c)
+        {
           gp_Pnt a = to_3d_(arc.nd_idx_a);
           gp_Pnt b = to_3d_(arc.nd_idx_b);
           gp_Pnt c = to_3d_(arc.nd_idx_c);
@@ -1305,19 +1464,24 @@ Sketch_face_shp_ptr Sketch::create_face_shape_(const Face_edges& face) {
 
       // Depending on the order of the node indexes in face,
       // the first or second circle arc edge might come first.
-      if (e.edge.node_idx_arc) {
+      if (e.edge.node_idx_arc)
+      {
         // This is the first part of the circle arc.
         EZY_ASSERT(e.edge.node_idx_arc);
         EZY_ASSERT(*e.edge.node_idx_b == *e.edge.node_idx_arc);
         arc.nd_idx_a = e.edge.node_idx_a;
         arc.nd_idx_b = e.edge.node_idx_arc;
         try_arc_circle(e.reversed);
-      } else {
+      }
+      else
+      {
         // This is the second part of the circle arc.
         arc.nd_idx_c = *e.edge.node_idx_b;
         try_arc_circle(e.reversed);
       }
-    } else {
+    }
+    else
+    {
       gp_Pnt a = to_3d_(e.start_nd_idx());
       gp_Pnt b = to_3d_(e.end_nd_idx());
 
@@ -1344,7 +1508,8 @@ Sketch_face_shp_ptr Sketch::create_face_shape_(const Face_edges& face) {
   return ret;
 }
 
-void Sketch::update_edge_end_pt_(Edge& edge, size_t end_pt_idx) {
+void Sketch::update_edge_end_pt_(Edge& edge, size_t end_pt_idx)
+{
   EZY_ASSERT(end_pt_idx < m_nodes.size());
   edge.node_idx_b      = end_pt_idx;
   const gp_Pnt2d& pt_a = m_nodes[edge.node_idx_a];
@@ -1353,7 +1518,8 @@ void Sketch::update_edge_end_pt_(Edge& edge, size_t end_pt_idx) {
   edge.node_idx_mid = m_nodes.add_new_node(get_midpoint(pt_a, pt_b), true);
 }
 
-void Sketch::add_arc_circle_(const gp_Pnt2d& pt_a, const gp_Pnt2d& pt_b, const gp_Pnt2d& pt_c) {
+void Sketch::add_arc_circle_(const gp_Pnt2d& pt_a, const gp_Pnt2d& pt_b, const gp_Pnt2d& pt_c)
+{
   std::vector<size_t> node_idxs {
       m_nodes.get_node_exact(pt_a),
       m_nodes.get_node_exact(pt_c),
@@ -1362,7 +1528,8 @@ void Sketch::add_arc_circle_(const gp_Pnt2d& pt_a, const gp_Pnt2d& pt_b, const g
   add_arc_circle_(node_idxs);
 }
 
-void Sketch::add_arc_circle_(const std::vector<size_t>& node_idxs) {
+void Sketch::add_arc_circle_(const std::vector<size_t>& node_idxs)
+{
   EZY_ASSERT(node_idxs.size() == 3);
   Geom_TrimmedCurve_ptr arc_of_circle = GC_MakeArcOfCircle(
       to_3d_(node_idxs[0]),
@@ -1399,17 +1566,21 @@ void Sketch::add_arc_circle_(const std::vector<size_t>& node_idxs) {
 }
 
 // Circle related
-void Sketch::move_circle_pt_(const ScreenCoords& screen_coords) {
+void Sketch::move_circle_pt_(const ScreenCoords& screen_coords)
+{
   move_line_string_pt_(screen_coords);
-  auto l = [&](Edge& e, const gp_Pnt2d& pt_a, const gp_Pnt2d& pt_b) {
+  auto l = [&](Edge& e, const gp_Pnt2d& pt_a, const gp_Pnt2d& pt_b)
+  {
     TopoDS_Wire circle = make_circle_wire(m_pln, pt_a, *m_last_pt);
     show(m_ctx, m_tmp_shp, circle);
   };
   if_edge_pt_valid_(l);
 }
 
-void Sketch::finalize_circle_() {
-  auto l = [&](Edge& e, const gp_Pnt2d& center, const gp_Pnt2d& edge_pt) {
+void Sketch::finalize_circle_()
+{
+  auto l = [&](Edge& e, const gp_Pnt2d& center, const gp_Pnt2d& edge_pt)
+  {
     std::array<gp_Pnt2d, 4> points = xy_stencil_pnts(center, edge_pt);
     add_arc_circle_(points[0], points[2], points[1]);
     add_arc_circle_(points[0], points[3], points[1]);
@@ -1419,12 +1590,14 @@ void Sketch::finalize_circle_() {
   if_edge_pt_valid_(l);
 }
 
-bool Sketch::clear_tmps_() {
+bool Sketch::clear_tmps_()
+{
   m_view.remove(m_tmp_shp);
   for (Edge& e : m_tmp_edges)
     m_view.remove(e.shp);
 
-  if (m_tmp_shp) {
+  if (m_tmp_shp)
+  {
     m_ctx.Remove(m_tmp_shp, true);
     m_tmp_shp = nullptr;
   }
@@ -1435,30 +1608,36 @@ bool Sketch::clear_tmps_() {
   return operation_canceled;
 }
 
-void Sketch::on_mode() {
+void Sketch::on_mode()
+{
   // Reset state
   cancel_elm();
 }
 
-Mode Sketch::get_mode() const {
+Mode Sketch::get_mode() const
+{
   return m_view.get_mode();
 }
 
-const gp_Pln& Sketch::get_plane() const {
+const gp_Pln& Sketch::get_plane() const
+{
   return m_pln;
 }
 
-Sketch_nodes& Sketch::get_nodes() {
+Sketch_nodes& Sketch::get_nodes()
+{
   return m_nodes;
 }
 
-void Sketch::get_snap_pts_3d_(std::vector<gp_Pnt>& out) {
+void Sketch::get_snap_pts_3d_(std::vector<gp_Pnt>& out)
+{
   out.clear();
   get_originating_face_snp_pts_3d_(out);
   m_nodes.get_snap_pts_3d(out);
 }
 
-void Sketch::get_originating_face_snp_pts_3d_(std::vector<gp_Pnt>& out) {
+void Sketch::get_originating_face_snp_pts_3d_(std::vector<gp_Pnt>& out)
+{
   if (!m_originating_face)
     return;
 
@@ -1467,10 +1646,12 @@ void Sketch::get_originating_face_snp_pts_3d_(std::vector<gp_Pnt>& out) {
   EZY_ASSERT(shape.ShapeType() == TopAbs_WIRE);
   const TopoDS_Wire& wire = TopoDS::Wire(shape);
   TopExp_Explorer    edgeExplorer(wire, TopAbs_EDGE);
-  while (edgeExplorer.More()) {
+  while (edgeExplorer.More())
+  {
     const TopoDS_Edge& edge = TopoDS::Edge(edgeExplorer.Current());
 
-    if (BRep_Tool::IsClosed(edge)) {
+    if (BRep_Tool::IsClosed(edge))
+    {
       int hi = 0;
     }
 
@@ -1498,15 +1679,18 @@ void Sketch::get_originating_face_snp_pts_3d_(std::vector<gp_Pnt>& out) {
   append(out, snp_pts);
 }
 
-void Sketch::set_visible(bool state) {
+void Sketch::set_visible(bool state)
+{
   m_visible = state;
 
-  if (state) {
+  if (state)
+  {
     if (m_show_faces)
       for (AIS_Shape_ptr& face : m_faces)
         m_ctx.Display(face, AIS_Shaded, 0, false);
 
-    for (Edge& e : m_edges) {
+    for (Edge& e : m_edges)
+    {
       m_ctx.Display(e.shp, AIS_WireFrame, 0, false);
       if (e.dim)
         m_ctx.Display(e.dim, false);
@@ -1518,11 +1702,14 @@ void Sketch::set_visible(bool state) {
     // Show operation axis only if this sketch is current
     if (m_operation_axis.has_value() && is_current())
       m_ctx.Display(m_operation_axis->shp, AIS_WireFrame, 0, false);
-  } else {
+  }
+  else
+  {
     for (AIS_Shape_ptr& face : m_faces)
       m_ctx.Erase(face, false);
 
-    for (Edge& e : m_edges) {
+    for (Edge& e : m_edges)
+    {
       m_ctx.Erase(e.shp, false);
       if (e.dim)
         m_ctx.Erase(e.dim, false);
@@ -1545,11 +1732,13 @@ void Sketch::set_visible(bool state) {
   m_view.curr_sketch().set_current();
 }
 
-bool Sketch::is_visible() const {
+bool Sketch::is_visible() const
+{
   return m_visible;
 }
 
-void Sketch::set_show_faces(bool show) {
+void Sketch::set_show_faces(bool show)
+{
   if (show && m_visible)
     for (AIS_Shape_ptr& face : m_faces)
       m_ctx.Display(face, AIS_Shaded, 0, false);
@@ -1560,7 +1749,8 @@ void Sketch::set_show_faces(bool show) {
   m_show_faces = show;
 }
 
-void Sketch::set_show_edges(bool show) {
+void Sketch::set_show_edges(bool show)
+{
   if (show && m_visible)
     for (Edge& e : m_edges)
       m_ctx.Display(e.shp, AIS_WireFrame, 0, false);
@@ -1569,23 +1759,29 @@ void Sketch::set_show_edges(bool show) {
       m_ctx.Erase(e.shp, false);
 }
 
-void Sketch::set_show_dims(bool show) {
-  if (show && m_visible) {
+void Sketch::set_show_dims(bool show)
+{
+  if (show && m_visible)
+  {
     for (Edge& e : m_edges)
       if (e.dim)
         m_ctx.Display(e.dim, false);
-  } else {
+  }
+  else
+  {
     for (Edge& e : m_edges)
       if (e.dim)
         m_ctx.Erase(e.dim, false);
   }
 }
 
-bool Sketch::is_current() const {
+bool Sketch::is_current() const
+{
   return this == &m_view.curr_sketch();
 }
 
-void Sketch::set_current() {
+void Sketch::set_current()
+{
   m_ctx.CurrentViewer()->SetPrivilegedPlane(m_pln.Position());
   set_edge_style(Edge_style::Full);
   m_nodes.clear_outside_snap_pnts();
@@ -1598,14 +1794,16 @@ void Sketch::set_current() {
     m_nodes.add_outside_snap_pnt(pt3d);
 
   for (Sketch_ptr& sketch : m_view.get_sketches())
-    if (sketch.get() != this) {
+    if (sketch.get() != this)
+    {
       sketch->set_edge_style(Edge_style::Background);
 
       // Hide operation axis from other sketches
       if (sketch->m_operation_axis.has_value())
         m_ctx.Erase(sketch->m_operation_axis->shp, false);
 
-      if (sketch->is_visible()) {
+      if (sketch->is_visible())
+      {
         // Add snap points from other sketches, but only if they are visible.
         sketch->get_snap_pts_3d_(m_tmp_pts_3d);
         for (const gp_Pnt& pt3d : m_tmp_pts_3d)
@@ -1621,7 +1819,8 @@ void Sketch::set_current() {
   // DBG_MSG("m_outside_snap_pts " << m_nodes.m_outside_snap_pts.size());
 }
 
-void Sketch::set_edge_style(Edge_style style) {
+void Sketch::set_edge_style(Edge_style style)
+{
   m_edge_style = style;
 
   for (Edge& e : m_edges)
@@ -1630,28 +1829,34 @@ void Sketch::set_edge_style(Edge_style style) {
   update_originating_face_style();
 }
 
-gp_Pnt Sketch::to_3d_(size_t node_idx) const {
+gp_Pnt Sketch::to_3d_(size_t node_idx) const
+{
   return to_3d(m_pln, m_nodes[node_idx]);
 }
 
-gp_Pnt Sketch::to_3d_(const std::optional<size_t>& node_idx) const {
+gp_Pnt Sketch::to_3d_(const std::optional<size_t>& node_idx) const
+{
   EZY_ASSERT(node_idx.has_value());
   return to_3d_(*node_idx);
 }
 
-const std::string& Sketch::get_name() const {
+const std::string& Sketch::get_name() const
+{
   return m_name;
 }
 
-void Sketch::set_name(const std::string& name) {
+void Sketch::set_name(const std::string& name)
+{
   m_name = name;
 }
 
-bool Sketch::has_edges() const {
+bool Sketch::has_edges() const
+{
   return !m_edges.empty();
 }
 
-gp_Vec2d Sketch::edge_outgoing_dir_(size_t idx_a, size_t idx_b, const Edge& edge) const {
+gp_Vec2d Sketch::edge_outgoing_dir_(size_t idx_a, size_t idx_b, const Edge& edge) const
+{
 #if 0
   boost_geom::linestring_2d ls;
   boost_geom::linestring_2d ls2;
@@ -1684,7 +1889,8 @@ gp_Vec2d Sketch::edge_outgoing_dir_(size_t idx_a, size_t idx_b, const Edge& edge
   return ret;
 }
 
-bool Sketch::Edge::reversed(size_t idx_a, size_t idx_b) const {
+bool Sketch::Edge::reversed(size_t idx_a, size_t idx_b) const
+{
   if (node_idx_a == idx_a && node_idx_b == idx_b)
     return false;
 
@@ -1696,7 +1902,8 @@ bool Sketch::Edge::reversed(size_t idx_a, size_t idx_b) const {
 }
 
 Sketch_AIS_edge::Sketch_AIS_edge(Sketch& owner, const TopoDS_Shape& shp)
-    : AIS_Shape(shp), owner_sketch(owner) {
+    : AIS_Shape(shp), owner_sketch(owner)
+{
   int hi = 0;
 }
 

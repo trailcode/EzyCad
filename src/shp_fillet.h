@@ -4,7 +4,8 @@
 
 enum class Fillet_mode;
 
-class Shp_fillet : private Shp_operation_base {
+class Shp_fillet : private Shp_operation_base
+{
  public:
   Shp_fillet(Occt_view& view);
 

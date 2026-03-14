@@ -2,7 +2,8 @@
 
 class TopoDS_Shape;
 
-namespace shp_create {
+namespace shp_create
+{
 // Box with one corner at (ox, oy, oz) and dimensions width (X), length (Y), height (Z).
 TopoDS_Shape create_box(double ox, double oy, double oz, double width, double length, double height);
 

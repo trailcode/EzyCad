@@ -6,7 +6,7 @@ void handle_arg(Lambda&& lambda, T&& arg)
   if constexpr (requires { arg.begin(); arg.end(); })
     for (auto&& elem : arg)
       lambda(std::forward<decltype(elem)>(elem));
-  
+
   else
     lambda(std::forward<T>(arg));
 }
@@ -93,7 +93,7 @@ void clear_all(T& arg, Args&... args)
   else
     // Fail for unsupported types
     static_assert(false, "clear_all: Type must have clear(), be arithmetic, opencascade::handle, or be std::optional");
-  
+
   // Recursively process remaining arguments
   clear_all(args...);
 }

@@ -17,13 +17,15 @@
 Shp_polar_dup::Shp_polar_dup(Occt_view& view)
     : Shp_operation_base(view) {}
 
-Status Shp_polar_dup::move_point(const ScreenCoords& screen_coords) {
+Status Shp_polar_dup::move_point(const ScreenCoords& screen_coords)
+{
   if (m_polar_arm_origin.has_value())
     return Status::ok();
 
   const gp_Pln& sketch_pln = view().curr_sketch().get_plane();
 
-  if (m_shps.empty()) {
+  if (m_shps.empty())
+  {
     CHK_RET(ensure_operation_shps_());
 
     // TODO consider all shapes.
@@ -43,10 +45,13 @@ Status Shp_polar_dup::move_point(const ScreenCoords& screen_coords) {
     return Status::ok();
 
   TopoDS_Shape polar_arm = BRepBuilderAPI_MakeEdge(to_3d(sketch_pln, start), to_3d(sketch_pln, *origin)).Edge();
-  if (m_polar_arm) {
+  if (m_polar_arm)
+  {
     m_polar_arm->Set(polar_arm);
     ctx().Redisplay(m_polar_arm, true);
-  } else {
+  }
+  else
+  {
     m_polar_arm = new AIS_Shape(polar_arm);
     ctx().Display(m_polar_arm, true);
   }
@@ -54,7 +59,8 @@ Status Shp_polar_dup::move_point(const ScreenCoords& screen_coords) {
   return Status::ok();
 }
 
-Status Shp_polar_dup::add_point(const ScreenCoords& screen_coords) {
+Status Shp_polar_dup::add_point(const ScreenCoords& screen_coords)
+{
   if (m_polar_arm_origin.has_value())
     return Status::ok();
 
@@ -69,7 +75,8 @@ Status Shp_polar_dup::add_point(const ScreenCoords& screen_coords) {
   return Status::ok();
 }
 
-Status Shp_polar_dup::dup() {
+Status Shp_polar_dup::dup()
+{
   if (!m_polar_arm_end.has_value())
     return Status::user_error("Polar arm not set.");
   view().push_undo_snapshot();
@@ -84,11 +91,13 @@ Status Shp_polar_dup::dup() {
   std::vector<TopoDS_Shape> transformed_shapes;
 
   // Create copies and rotate them
-  for (size_t i = 0; i < m_num_elms; ++i) {
+  for (size_t i = 0; i < m_num_elms; ++i)
+  {
     const double current_angle_degrees = step_angle * (i + 1);                              // Skip 0 since that's the original
     const double current_angle_radians = current_angle_degrees * std::numbers::pi / 180.0;  // Convert to radians
 
-    for (const AIS_Shape_ptr& shape : m_shps) {
+    for (const AIS_Shape_ptr& shape : m_shps)
+    {
       // Get the shape's center in 2D
       const gp_Pnt   shape_center_3d = get_shape_bbox_center(shape->Shape());
       const gp_Pnt2d shape_center_2d = to_2d(sketch_pln, shape_center_3d);
@@ -105,11 +114,13 @@ Status Shp_polar_dup::dup() {
 
       // Create rotation transformation if m_rotate_dups is true
       gp_Trsf combined;
-      if (m_rotate_dups) {
+      if (m_rotate_dups)
+      {
         gp_Trsf rotation;
         rotation.SetRotation(gp_Ax1(to_3d(sketch_pln, *m_polar_arm_end), sketch_pln.Axis().Direction()), current_angle_radians);
         combined = translation * rotation;
-      } else
+      }
+      else
         combined = translation;
 
       // Create a copy of the shape
@@ -122,7 +133,8 @@ Status Shp_polar_dup::dup() {
       if (m_combine_dups)
         // Store the transformed shape for later combination
         transformed_shapes.push_back(transformed_shape);
-      else {
+      else
+      {
         // Create new shape and add to view as before
         Shp_ptr new_shape = new Shp(ctx(), transformed_shape);
         new_shape->set_name("Polar duplicate");
@@ -131,10 +143,12 @@ Status Shp_polar_dup::dup() {
     }
   }
 
-  if (m_combine_dups && !transformed_shapes.empty()) {
+  if (m_combine_dups && !transformed_shapes.empty())
+  {
     // Combine all transformed shapes into one
     TopoDS_Shape combined_shape = transformed_shapes[0];
-    for (size_t i = 1; i < transformed_shapes.size(); ++i) {
+    for (size_t i = 1; i < transformed_shapes.size(); ++i)
+    {
       BRepAlgoAPI_Fuse fuse(combined_shape, transformed_shapes[i]);
       if (fuse.IsDone())
         combined_shape = fuse.Shape();
@@ -151,8 +165,10 @@ Status Shp_polar_dup::dup() {
   return Status::ok();
 }
 
-void Shp_polar_dup::reset() {
-  if (m_polar_arm) {
+void Shp_polar_dup::reset()
+{
+  if (m_polar_arm)
+  {
     ctx().Remove(m_polar_arm, false);
     ctx().ClearSelected(true);
     clear_all(m_polar_arm, m_polar_arm_end, m_polar_arm_origin, m_shps);

@@ -44,22 +44,26 @@
 #include <sstream>
 
 Occt_view::Occt_view(GUI& gui)
-    : m_gui(gui), m_shp_move(*this), m_shp_rotate(*this), m_shp_scale(*this), m_shp_chamfer(*this), m_shp_fillet(*this), m_shp_cut(*this), m_shp_fuse(*this), m_shp_common(*this), m_shp_polar_dup(*this), m_shp_extrude(*this) {
+    : m_gui(gui), m_shp_move(*this), m_shp_rotate(*this), m_shp_scale(*this), m_shp_chamfer(*this), m_shp_fillet(*this), m_shp_cut(*this), m_shp_fuse(*this), m_shp_common(*this), m_shp_polar_dup(*this), m_shp_extrude(*this)
+{
 }
 
 Occt_view::~Occt_view() {}
 
 // Initialization related.
-void Occt_view::init_window(GLFWwindow* GlfwWindow) {
+void Occt_view::init_window(GLFWwindow* GlfwWindow)
+{
 #ifndef __EMSCRIPTEN__
   m_occt_window = new Occt_glfw_win(GlfwWindow);
 #endif
 }
 
-void Occt_view::init_viewer() {
+void Occt_view::init_viewer()
+{
   double myDevicePixelRatio = 1.0;  // TODO
 #ifndef __EMSCRIPTEN__
-  if (m_occt_window.IsNull() || m_occt_window->getGlfwWindow() == nullptr) {
+  if (m_occt_window.IsNull() || m_occt_window->getGlfwWindow() == nullptr)
+  {
     // create graphic driver
     Handle(Aspect_DisplayConnection) aDisp =
         new Aspect_DisplayConnection();
@@ -122,7 +126,8 @@ void Occt_view::init_viewer() {
   aDriver->ChangeOptions().buffersNoSwap = true;  // swap has no effect in WebGL
   aDriver->ChangeOptions().buffersOpaqueAlpha =
       true;  // avoid unexpected blending of canvas with page background
-  if (!aDriver->InitContext()) {
+  if (!aDriver->InitContext())
+  {
     Message::DefaultMessenger()->Send(
         TCollection_AsciiString("Error: EGL initialization failed"),
         Message_Fail);
@@ -136,7 +141,8 @@ void Occt_view::init_viewer() {
   aViewer->SetLightOn();
   for (V3d_ListOfLight::Iterator aLightIter(aViewer->ActiveLights());
        aLightIter.More();
-       aLightIter.Next()) {
+       aLightIter.Next())
+  {
     const Handle(V3d_Light)& aLight = aLightIter.Value();
     if (aLight->Type() == Graphic3d_TypeOfLightSource_Directional)
       aLight->SetCastShadows(true);
@@ -240,7 +246,8 @@ void Occt_view::init_viewer() {
   m_default_material = Graphic3d_MaterialAspect(Graphic3d_NOM_CHROME);
 }
 
-void Occt_view::init_default() {
+void Occt_view::init_default()
+{
   create_default_sketch_();
 
   if (m_ctx.IsNull())
@@ -259,7 +266,8 @@ void Occt_view::init_default() {
     m_view->DiagnosticInformation(aRendInfo, Graphic3d_DiagnosticInfo_Basic);
     for (TColStd_IndexedDataMapOfStringString::Iterator aValueIter(aRendInfo);
          aValueIter.More();
-         aValueIter.Next()) {
+         aValueIter.Next())
+    {
       if (!aGlInfo.IsEmpty())
         aGlInfo += "\n";
 
@@ -287,14 +295,16 @@ void Occt_view::init_default() {
 }
 
 // Geometry related
-ScreenCoords Occt_view::get_screen_coords(const gp_Pnt& point) {
+ScreenCoords Occt_view::get_screen_coords(const gp_Pnt& point)
+{
   Standard_Integer screen_x;
   Standard_Integer screen_y;
   m_view->Convert(point.X(), point.Y(), point.Z(), screen_x, screen_y);
   return ScreenCoords(glm::dvec2(screen_x, screen_y));
 }
 
-std::optional<gp_Pnt> Occt_view::pt3d_on_plane(const ScreenCoords& screen_coords, const gp_Pln& plane) const {
+std::optional<gp_Pnt> Occt_view::pt3d_on_plane(const ScreenCoords& screen_coords, const gp_Pln& plane) const
+{
   // TODO there must be a way to do this using the MVP matrixes.
   // Convert 2D screen coordinates to 3D world coordinates near the camera
   Standard_Real x_near, y_near, z_near;
@@ -307,7 +317,8 @@ std::optional<gp_Pnt> Occt_view::pt3d_on_plane(const ScreenCoords& screen_coords
 
   const Graphic3d_Camera_ptr& camera = m_view->Camera();
 
-  auto get_intersection = [&](Geom_Line_ptr& ray_line) -> std::optional<gp_Pnt> {
+  auto get_intersection = [&](Geom_Line_ptr& ray_line) -> std::optional<gp_Pnt>
+  {
     // Intersect the ray with the plane
     Geom_Plane_ptr geom_plane = new Geom_Plane(plane);
     GeomAPI_IntCS  intersection(ray_line, geom_plane);
@@ -319,8 +330,10 @@ std::optional<gp_Pnt> Occt_view::pt3d_on_plane(const ScreenCoords& screen_coords
     return std::nullopt;
   };
 
-  switch (camera->ProjectionType()) {
-    case Graphic3d_Camera::Projection::Projection_Orthographic: {
+  switch (camera->ProjectionType())
+  {
+    case Graphic3d_Camera::Projection::Projection_Orthographic:
+    {
       gp_Dir view_dir = camera->Direction().Reversed();  // Reverse to point into the scene
 
       // Define the ray as a line from near_point along view_dir
@@ -328,7 +341,8 @@ std::optional<gp_Pnt> Occt_view::pt3d_on_plane(const ScreenCoords& screen_coords
       return get_intersection(ray_line);
     }
 
-    case Graphic3d_Camera::Projection::Projection_Perspective: {
+    case Graphic3d_Camera::Projection::Projection_Perspective:
+    {
       gp_Pnt eye_pos = m_view->Camera()->Eye();
       // Define the ray direction from eye through the near point
       gp_Vec ray_dir(eye_pos, near_point);
@@ -346,7 +360,8 @@ std::optional<gp_Pnt> Occt_view::pt3d_on_plane(const ScreenCoords& screen_coords
   return std::nullopt;
 }
 
-void Occt_view::bake_transform_into_geometry(AIS_Shape_ptr& shape) {
+void Occt_view::bake_transform_into_geometry(AIS_Shape_ptr& shape)
+{
   // Function to bake the local transformation into the geometry
   // Get the current local transformation
   gp_Trsf current_transform = shape->LocalTransformation();
@@ -372,14 +387,17 @@ void Occt_view::bake_transform_into_geometry(AIS_Shape_ptr& shape) {
   m_ctx->Redisplay(shape, true);
 }
 
-gp_Pln Occt_view::get_view_plane(const gp_Pnt& point_on_plane) const {
+gp_Pln Occt_view::get_view_plane(const gp_Pnt& point_on_plane) const
+{
   // Get the view vector from the camera
   Graphic3d_Camera_ptr camera = m_view->Camera();
   return gp_Pln(point_on_plane, camera->Direction());
 }
 
-void Occt_view::on_enter(const ScreenCoords& screen_coords) {
-  switch (get_mode()) {
+void Occt_view::on_enter(const ScreenCoords& screen_coords)
+{
+  switch (get_mode())
+  {
     case Mode::Sketch_face_extrude:
       sketch_face_extrude(screen_coords, true);  // Update in case dimension was entered
       finalize_sketch_extrude_();
@@ -390,10 +408,12 @@ void Occt_view::on_enter(const ScreenCoords& screen_coords) {
   }
 }
 
-void Occt_view::cancel(Set_parent_mode set_parent_mode) {
+void Occt_view::cancel(Set_parent_mode set_parent_mode)
+{
   bool operation_canceled = false;
 
-  switch (get_mode()) {
+  switch (get_mode())
+  {
     case Mode::Move:
       shp_move().cancel();
       gui().set_mode(Mode::Normal);
@@ -418,23 +438,30 @@ void Occt_view::cancel(Set_parent_mode set_parent_mode) {
 }
 
 // Revolve related
-void Occt_view::revolve_selected(const double angle) {
+void Occt_view::revolve_selected(const double angle)
+{
   push_undo_snapshot();
   Shp_rslt revolved = curr_sketch().revolve_selected(angle);
-  if (revolved.has_value()) {
+  if (revolved.has_value())
+  {
     add_shp_(*revolved);
     // Switch to none mode because displaying shapes in sketch modes is disabled.
     gui().set_mode(Mode::Normal);
-  } else {
+  }
+  else
+  {
     gui().show_message("Revolve failed, ensure edges or faces on one side of operation axis.");
     DBG_MSG(revolved.message());
   }
 }
 
 // Sketch related
-void Occt_view::create_sketch_from_planar_face_(const ScreenCoords& screen_coords) {
-  if (auto face = get_face_(screen_coords); face) {
-    if (auto pln = plane_from_face(*face); pln) {
+void Occt_view::create_sketch_from_planar_face_(const ScreenCoords& screen_coords)
+{
+  if (auto face = get_face_(screen_coords); face)
+  {
+    if (auto pln = plane_from_face(*face); pln)
+    {
       // Push only when we will create a sketch (avoids no-op undo on misclick).
       push_undo_snapshot();
       // Get the outer wire of the face
@@ -445,21 +472,25 @@ void Occt_view::create_sketch_from_planar_face_(const ScreenCoords& screen_coord
       m_cur_sketch->set_current();
       // fit_face_in_view(*face);
       m_gui.set_mode(Mode::Sketch_inspection_mode);
-    } else
+    }
+    else
       gui().show_message("Error: Selected face is not planar. Please select a planar face.");
   }
 }
 
-void Occt_view::finalize_sketch_extrude_() {
+void Occt_view::finalize_sketch_extrude_()
+{
   push_undo_snapshot();
   m_shp_extrude.finalize();
 }
 
-bool Occt_view::cancel_sketch_extrude_() {
+bool Occt_view::cancel_sketch_extrude_()
+{
   return m_shp_extrude.cancel();
 }
 
-void Occt_view::create_default_sketch_() {
+void Occt_view::create_default_sketch_()
+{
   EZY_ASSERT(m_sketches.empty());
   EZY_ASSERT(!m_cur_sketch);
   m_cur_sketch = std::make_shared<Sketch>("Sketch", *this, xy_plane());
@@ -468,7 +499,8 @@ void Occt_view::create_default_sketch_() {
 }
 
 // Query related
-AIS_Shape_ptr Occt_view::get_shape(const ScreenCoords& screen_coords) {
+AIS_Shape_ptr Occt_view::get_shape(const ScreenCoords& screen_coords)
+{
   // Move the selection to the clicked point
   m_ctx->MoveTo(int(screen_coords.unsafe_get_x()), int(screen_coords.unsafe_get_y()), m_view, Standard_True);
 
@@ -489,7 +521,8 @@ AIS_Shape_ptr Occt_view::get_shape(const ScreenCoords& screen_coords) {
   return AIS_Shape_ptr::DownCast(selected_object);
 }
 
-std::optional<gp_Pnt2d> Occt_view::pt_on_plane(const ScreenCoords& screen_coords, const gp_Pln& plane) const {
+std::optional<gp_Pnt2d> Occt_view::pt_on_plane(const ScreenCoords& screen_coords, const gp_Pln& plane) const
+{
   if (is_headless())
     // In headless mode (unit tests), we bypass 3D projection and directly use screen coordinates
     // This allows testing 2D plane operations without requiring OpenGL context
@@ -502,7 +535,8 @@ std::optional<gp_Pnt2d> Occt_view::pt_on_plane(const ScreenCoords& screen_coords
   return std::nullopt;
 }
 
-const TopoDS_Shape* Occt_view::get_(const ScreenCoords& screen_coords) const {
+const TopoDS_Shape* Occt_view::get_(const ScreenCoords& screen_coords) const
+{
   AIS_StatusOfDetection detection_status = m_ctx->MoveTo(
       Standard_Integer(screen_coords.unsafe_get_x()),
       Standard_Integer(screen_coords.unsafe_get_y()), m_view, true);
@@ -523,7 +557,8 @@ const TopoDS_Shape* Occt_view::get_(const ScreenCoords& screen_coords) const {
   return &shp;
 }
 
-const TopoDS_Face* Occt_view::get_face_(const ScreenCoords& screen_coords) const {
+const TopoDS_Face* Occt_view::get_face_(const ScreenCoords& screen_coords) const
+{
   const TopoDS_Shape* shp = get_(screen_coords);
 
   if (!shp || shp->ShapeType() != TopAbs_FACE)
@@ -532,7 +567,8 @@ const TopoDS_Face* Occt_view::get_face_(const ScreenCoords& screen_coords) const
   return &TopoDS::Face(*shp);
 }
 
-const TopoDS_Wire* Occt_view::get_wire_(const ScreenCoords& screen_coords) const {
+const TopoDS_Wire* Occt_view::get_wire_(const ScreenCoords& screen_coords) const
+{
   const TopoDS_Shape* shp = get_(screen_coords);
 
   if (!shp || shp->ShapeType() != TopAbs_WIRE)
@@ -541,7 +577,8 @@ const TopoDS_Wire* Occt_view::get_wire_(const ScreenCoords& screen_coords) const
   return &TopoDS::Wire(*shp);
 }
 
-const TopoDS_Edge* Occt_view::get_edge_(const ScreenCoords& screen_coords) const {
+const TopoDS_Edge* Occt_view::get_edge_(const ScreenCoords& screen_coords) const
+{
   const TopoDS_Shape* shp = get_(screen_coords);
 
   if (!shp || shp->ShapeType() != TopAbs_EDGE)
@@ -551,7 +588,8 @@ const TopoDS_Edge* Occt_view::get_edge_(const ScreenCoords& screen_coords) const
 }
 
 // Hit point related
-Ray Occt_view::get_hit_test_ray_(const ScreenCoords& screen_coords) const {
+Ray Occt_view::get_hit_test_ray_(const ScreenCoords& screen_coords) const
+{
   Graphic3d_Camera_ptr camera  = m_view->Camera();
   gp_Pnt               eye_pos = camera->Eye();
   Standard_Real        x_near, y_near, z_near;
@@ -566,12 +604,14 @@ Ray Occt_view::get_hit_test_ray_(const ScreenCoords& screen_coords) const {
   return Ray(eye_pos, gp_Dir(ray_dir));
 }
 
-std::optional<gp_Pnt> Occt_view::get_hit_point_(const AIS_Shape_ptr& shp, const ScreenCoords& screen_coords) const {
+std::optional<gp_Pnt> Occt_view::get_hit_point_(const AIS_Shape_ptr& shp, const ScreenCoords& screen_coords) const
+{
   Ray           hit_ray  = get_hit_test_ray_(screen_coords);
   Geom_Line_ptr ray_line = new Geom_Line(hit_ray.origin, hit_ray.direction);
 
   TopExp_Explorer explorer(shp->Shape(), TopAbs_FACE);
-  while (explorer.More()) {
+  while (explorer.More())
+  {
     TopoDS_Face face             = TopoDS::Face(explorer.Current());
     Handle(Geom_Surface) surface = BRep_Tool::Surface(face);
     GeomAPI_IntCS intersection(ray_line, surface);
@@ -585,30 +625,39 @@ std::optional<gp_Pnt> Occt_view::get_hit_point_(const AIS_Shape_ptr& shp, const 
   return std::nullopt;
 }
 
-void Occt_view::add_shp_(Shp_ptr& shp) {
+void Occt_view::add_shp_(Shp_ptr& shp)
+{
   shp->SetMaterial(m_default_material);
   shp->set_selection_mode(m_shp_selection_mode);  // Adds to m_ctx
   m_shps.push_back(shp);
 }
 
-std::string Occt_view::unique_shape_name_(const char* base_name) const {
+std::string Occt_view::unique_shape_name_(const char* base_name) const
+{
   std::set<int>     used;
   const std::string base(base_name);
   const std::string prefix = base + ".";
 
-  for (const Shp_ptr& s : m_shps) {
+  for (const Shp_ptr& s : m_shps)
+  {
     const std::string& n = s->get_name();
     if (n == base)
       used.insert(0);
-    else if (n.size() > prefix.size() && n.compare(0, prefix.size(), prefix) == 0) {
+    else if (n.size() > prefix.size() && n.compare(0, prefix.size(), prefix) == 0)
+    {
       const std::string suffix = n.substr(prefix.size());
-      if (!suffix.empty() && std::all_of(suffix.begin(), suffix.end(), [](char c) { return std::isdigit(static_cast<unsigned char>(c)); })) {
+      if (!suffix.empty() && std::all_of(suffix.begin(), suffix.end(), [](char c)
+                                         { return std::isdigit(static_cast<unsigned char>(c)); }))
+      {
         int idx = 0;
-        try {
+        try
+        {
           idx = std::stoi(suffix);
           if (idx >= 0)
             used.insert(idx);
-        } catch (...) {
+        }
+        catch (...)
+        {
           EZY_ASSERT(false);  // Should not happen due to the isdigit check, but just in case.
         }
       }
@@ -627,11 +676,13 @@ std::string Occt_view::unique_shape_name_(const char* base_name) const {
   return base + buf;
 }
 
-std::string Occt_view::get_unique_shape_name(const char* base_name) const {
+std::string Occt_view::get_unique_shape_name(const char* base_name) const
+{
   return unique_shape_name_(base_name);
 }
 
-void Occt_view::add_box(double ox, double oy, double oz, double width, double length, double height) {
+void Occt_view::add_box(double ox, double oy, double oz, double width, double length, double height)
+{
   push_undo_snapshot();
   TopoDS_Shape box = shp_create::create_box(ox, oy, oz, width, length, height);
   Shp_ptr      shp = new Shp(*m_ctx, box);
@@ -641,14 +692,16 @@ void Occt_view::add_box(double ox, double oy, double oz, double width, double le
   m_view->Redraw();
 }
 
-void Occt_view::add_pyramid(double ox, double oy, double oz, double side) {
+void Occt_view::add_pyramid(double ox, double oy, double oz, double side)
+{
   push_undo_snapshot();
   TopoDS_Shape pyramid = shp_create::create_pyramid(side);
   if (pyramid.IsNull())
     return;
   Shp_ptr shp = new Shp(*m_ctx, pyramid);
   shp->set_name(unique_shape_name_("Pyramid"));
-  if (ox != 0 || oy != 0 || oz != 0) {
+  if (ox != 0 || oy != 0 || oz != 0)
+  {
     gp_Trsf trsf;
     trsf.SetTranslation(gp_Vec(ox, oy, oz));
     shp->SetLocalTransformation(trsf);
@@ -658,12 +711,14 @@ void Occt_view::add_pyramid(double ox, double oy, double oz, double side) {
   m_view->Redraw();
 }
 
-void Occt_view::add_sphere(double ox, double oy, double oz, double radius) {
+void Occt_view::add_sphere(double ox, double oy, double oz, double radius)
+{
   push_undo_snapshot();
   TopoDS_Shape sphere = shp_create::create_sphere(radius);
   Shp_ptr      shp    = new Shp(*m_ctx, sphere);
   shp->set_name(unique_shape_name_("Sphere"));
-  if (ox != 0 || oy != 0 || oz != 0) {
+  if (ox != 0 || oy != 0 || oz != 0)
+  {
     gp_Trsf trsf;
     trsf.SetTranslation(gp_Vec(ox, oy, oz));
     shp->SetLocalTransformation(trsf);
@@ -673,12 +728,14 @@ void Occt_view::add_sphere(double ox, double oy, double oz, double radius) {
   m_view->Redraw();
 }
 
-void Occt_view::add_cylinder(double ox, double oy, double oz, double radius, double height) {
+void Occt_view::add_cylinder(double ox, double oy, double oz, double radius, double height)
+{
   push_undo_snapshot();
   TopoDS_Shape shape = shp_create::create_cylinder(radius, height);
   Shp_ptr      shp   = new Shp(*m_ctx, shape);
   shp->set_name(unique_shape_name_("Cylinder"));
-  if (ox != 0 || oy != 0 || oz != 0) {
+  if (ox != 0 || oy != 0 || oz != 0)
+  {
     gp_Trsf trsf;
     trsf.SetTranslation(gp_Vec(ox, oy, oz));
     shp->SetLocalTransformation(trsf);
@@ -688,12 +745,14 @@ void Occt_view::add_cylinder(double ox, double oy, double oz, double radius, dou
   m_view->Redraw();
 }
 
-void Occt_view::add_cone(double ox, double oy, double oz, double R1, double R2, double height) {
+void Occt_view::add_cone(double ox, double oy, double oz, double R1, double R2, double height)
+{
   push_undo_snapshot();
   TopoDS_Shape shape = shp_create::create_cone(R1, R2, height);
   Shp_ptr      shp   = new Shp(*m_ctx, shape);
   shp->set_name(unique_shape_name_("Cone"));
-  if (ox != 0 || oy != 0 || oz != 0) {
+  if (ox != 0 || oy != 0 || oz != 0)
+  {
     gp_Trsf trsf;
     trsf.SetTranslation(gp_Vec(ox, oy, oz));
     shp->SetLocalTransformation(trsf);
@@ -703,12 +762,14 @@ void Occt_view::add_cone(double ox, double oy, double oz, double R1, double R2, 
   m_view->Redraw();
 }
 
-void Occt_view::add_torus(double ox, double oy, double oz, double R1, double R2) {
+void Occt_view::add_torus(double ox, double oy, double oz, double R1, double R2)
+{
   push_undo_snapshot();
   TopoDS_Shape shape = shp_create::create_torus(R1, R2);
   Shp_ptr      shp   = new Shp(*m_ctx, shape);
   shp->set_name(unique_shape_name_("Torus"));
-  if (ox != 0 || oy != 0 || oz != 0) {
+  if (ox != 0 || oy != 0 || oz != 0)
+  {
     gp_Trsf trsf;
     trsf.SetTranslation(gp_Vec(ox, oy, oz));
     shp->SetLocalTransformation(trsf);
@@ -718,7 +779,8 @@ void Occt_view::add_torus(double ox, double oy, double oz, double R1, double R2)
   m_view->Redraw();
 }
 
-bool Occt_view::fit_face_in_view(const TopoDS_Face& face) {
+bool Occt_view::fit_face_in_view(const TopoDS_Face& face)
+{
   EZY_ASSERT(!face.IsNull());
   auto pln = plane_from_face(face);
   if (!pln)
@@ -731,7 +793,8 @@ bool Occt_view::fit_face_in_view(const TopoDS_Face& face) {
   // Compute the bounding box of the face to refine the center and size
   Bnd_Box bbox;
   BRepBndLib::Add(face, bbox);
-  if (bbox.IsVoid()) {
+  if (bbox.IsVoid())
+  {
     std::cout << "Error: Bounding box is void" << std::endl;
     return false;
   }
@@ -754,8 +817,10 @@ bool Occt_view::fit_face_in_view(const TopoDS_Face& face) {
 }
 
 // Dimension related
-void Occt_view::dimension_input(const ScreenCoords& screen_coords) {
-  switch (get_mode()) {
+void Occt_view::dimension_input(const ScreenCoords& screen_coords)
+{
+  switch (get_mode())
+  {
     case Mode::Sketch_face_extrude:
       m_show_dim_input = true;
       sketch_face_extrude(screen_coords, true);
@@ -766,42 +831,51 @@ void Occt_view::dimension_input(const ScreenCoords& screen_coords) {
   }
 }
 
-void Occt_view::angle_input(const ScreenCoords& screen_coords) {
+void Occt_view::angle_input(const ScreenCoords& screen_coords)
+{
   curr_sketch().angle_input(screen_coords);
 }
 
-double Occt_view::get_dimension_scale() const {
+double Occt_view::get_dimension_scale() const
+{
   return m_dimension_scale;
 }
 
-bool Occt_view::get_show_dim_input() const {
+bool Occt_view::get_show_dim_input() const
+{
   return m_show_dim_input;
 }
 
-void Occt_view::set_show_dim_input(bool show) {
+void Occt_view::set_show_dim_input(bool show)
+{
   m_show_dim_input = show;
 }
 
-std::optional<double> Occt_view::get_entered_dim() const {
+std::optional<double> Occt_view::get_entered_dim() const
+{
   return m_entered_dim;
 }
 
-void Occt_view::set_entered_dim(const std::optional<double>& dim) {
+void Occt_view::set_entered_dim(const std::optional<double>& dim)
+{
   m_entered_dim = dim;
 }
 
-void Occt_view::sketch_face_extrude(const ScreenCoords& screen_coords, bool is_mouse_move) {
+void Occt_view::sketch_face_extrude(const ScreenCoords& screen_coords, bool is_mouse_move)
+{
   m_shp_extrude.sketch_face_extrude(screen_coords, is_mouse_move);
 }
 
-void Occt_view::delete_selected() {
+void Occt_view::delete_selected()
+{
   push_undo_snapshot();
   auto selected = get_selected();
   delete_(selected);
   cancel(Set_parent_mode::No);  // In case we are in the middle of a operation.
 }
 
-void Occt_view::delete_(std::vector<AIS_Shape_ptr>& to_delete) {
+void Occt_view::delete_(std::vector<AIS_Shape_ptr>& to_delete)
+{
   for (AIS_Shape_ptr& shp : to_delete)
     if (auto wire = dynamic_cast<Sketch_AIS_edge*>(shp.get()); wire)
       wire->owner_sketch.remove_edge(*wire);
@@ -815,7 +889,8 @@ void Occt_view::delete_(std::vector<AIS_Shape_ptr>& to_delete) {
   remove(to_delete);
 }
 
-static Aspect_GradientFillMethod gradient_method_from_int(int i) {
+static Aspect_GradientFillMethod gradient_method_from_int(int i)
+{
   static const Aspect_GradientFillMethod methods[] = {
       Aspect_GFM_HOR, Aspect_GFM_VER, Aspect_GFM_DIAG1, Aspect_GFM_DIAG2,
       Aspect_GFM_CORNER1, Aspect_GFM_CORNER2, Aspect_GFM_CORNER3, Aspect_GFM_CORNER4};
@@ -825,7 +900,8 @@ static Aspect_GradientFillMethod gradient_method_from_int(int i) {
   return methods[i];
 }
 
-void Occt_view::update_view_background_() {
+void Occt_view::update_view_background_()
+{
   if (m_view.IsNull())
     return;
 
@@ -836,21 +912,25 @@ void Occt_view::update_view_background_() {
       Standard_True);
 
   Handle(V3d_Viewer) viewer = m_view->Viewer();
-  if (!viewer.IsNull() && !viewer->Grid().IsNull()) {
+  if (!viewer.IsNull() && !viewer->Grid().IsNull())
+  {
     Quantity_Color cc(m_grid_color1[0], m_grid_color1[1], m_grid_color1[2], Quantity_TOC_RGB);
     Quantity_Color cd(m_grid_color2[0], m_grid_color2[1], m_grid_color2[2], Quantity_TOC_RGB);
     viewer->Grid()->SetColors(cc, cd);
   }
 }
 
-void Occt_view::get_bg_gradient_colors(float color1[3], float color2[3]) const {
-  for (int i = 0; i < 3; ++i) {
+void Occt_view::get_bg_gradient_colors(float color1[3], float color2[3]) const
+{
+  for (int i = 0; i < 3; ++i)
+  {
     color1[i] = m_bg_color1[i];
     color2[i] = m_bg_color2[i];
   }
 }
 
-void Occt_view::set_bg_gradient_colors(float r1, float g1, float b1, float r2, float g2, float b2) {
+void Occt_view::set_bg_gradient_colors(float r1, float g1, float b1, float r2, float g2, float b2)
+{
   m_bg_color1[0] = r1;
   m_bg_color1[1] = g1;
   m_bg_color1[2] = b1;
@@ -860,23 +940,28 @@ void Occt_view::set_bg_gradient_colors(float r1, float g1, float b1, float r2, f
   update_view_background_();
 }
 
-int Occt_view::get_bg_gradient_method() const {
+int Occt_view::get_bg_gradient_method() const
+{
   return m_bg_gradient_method;
 }
 
-void Occt_view::set_bg_gradient_method(int method) {
+void Occt_view::set_bg_gradient_method(int method)
+{
   m_bg_gradient_method = method;
   update_view_background_();
 }
 
-void Occt_view::get_grid_colors(float color1[3], float color2[3]) const {
-  for (int i = 0; i < 3; ++i) {
+void Occt_view::get_grid_colors(float color1[3], float color2[3]) const
+{
+  for (int i = 0; i < 3; ++i)
+  {
     color1[i] = m_grid_color1[i];
     color2[i] = m_grid_color2[i];
   }
 }
 
-void Occt_view::set_grid_colors(float r1, float g1, float b1, float r2, float g2, float b2) {
+void Occt_view::set_grid_colors(float r1, float g1, float b1, float r2, float g2, float b2)
+{
   m_grid_color1[0] = r1;
   m_grid_color1[1] = g1;
   m_grid_color1[2] = b1;
@@ -886,14 +971,17 @@ void Occt_view::set_grid_colors(float r1, float g1, float b1, float r2, float g2
   update_view_background_();
 }
 
-void Occt_view::do_frame() {
-  if (!m_view.IsNull()) {
+void Occt_view::do_frame()
+{
+  if (!m_view.IsNull())
+  {
     FlushViewEvents(m_ctx, m_view, true);
     m_view->Redraw();
   }
 }
 
-void Occt_view::cleanup() {
+void Occt_view::cleanup()
+{
   if (!m_view.IsNull())
     m_view->Remove();
 
@@ -903,8 +991,10 @@ void Occt_view::cleanup() {
   glfwTerminate();
 }
 
-void Occt_view::on_resize(int theWidth, int theHeight) {
-  if (theWidth != 0 && theHeight != 0 && !m_view.IsNull()) {
+void Occt_view::on_resize(int theWidth, int theHeight)
+{
+  if (theWidth != 0 && theHeight != 0 && !m_view.IsNull())
+  {
     m_view->Window()->DoResize();
     m_view->MustBeResized();
     m_view->Invalidate();
@@ -912,28 +1002,33 @@ void Occt_view::on_resize(int theWidth, int theHeight) {
   }
 }
 
-void Occt_view::on_mouse_scroll(double theOffsetX, double theOffsetY) {
+void Occt_view::on_mouse_scroll(double theOffsetX, double theOffsetY)
+{
   if (!m_view.IsNull())
     UpdateZoom(Aspect_ScrollDelta(m_occt_window->CursorPosition(), int(theOffsetY * 4.0)));
 }
 
-void Occt_view::on_mouse_button(int theButton, int theAction, int theMods) {
+void Occt_view::on_mouse_button(int theButton, int theAction, int theMods)
+{
   if (m_view.IsNull())
     return;
 
   const Graphic3d_Vec2i pos = m_occt_window->CursorPosition();
-  if (theAction == GLFW_PRESS) {
+  if (theAction == GLFW_PRESS)
+  {
     PressMouseButton(pos,
                      mouse_button_from_glfw_(theButton),
                      key_flags_from_glfw_(theMods),
                      false);
 
-    if (m_shp_extrude.has_active_extrusion()) {
+    if (m_shp_extrude.has_active_extrusion())
+    {
       finalize_sketch_extrude_();
       return;
     }
 
-    switch (get_mode()) {
+    switch (get_mode())
+    {
       case Mode::Sketch_from_planar_face:
         return create_sketch_from_planar_face_(ScreenCoords(glm::dvec2(pos.x(), pos.y())));
       case Mode::Sketch_toggle_edge_dim:
@@ -941,14 +1036,16 @@ void Occt_view::on_mouse_button(int theButton, int theAction, int theMods) {
       default:
         break;
     }
-  } else
+  }
+  else
     ReleaseMouseButton(pos,
                        mouse_button_from_glfw_(theButton),
                        key_flags_from_glfw_(theMods),
                        false);
 }
 
-void Occt_view::on_mouse_move(const ScreenCoords& screen_coords) {
+void Occt_view::on_mouse_move(const ScreenCoords& screen_coords)
+{
   EZY_ASSERT(!m_view.IsNull());
   UpdateMousePosition(Graphic3d_Vec2i(int(screen_coords.unsafe_get_x()), int(screen_coords.unsafe_get_y())),
                       PressedMouseButtons(),
@@ -957,15 +1054,18 @@ void Occt_view::on_mouse_move(const ScreenCoords& screen_coords) {
 }
 
 // Selection related
-std::vector<AIS_Shape_ptr> Occt_view::get_selected() const {
+std::vector<AIS_Shape_ptr> Occt_view::get_selected() const
+{
   // Initialize selection iteration
   m_ctx->InitSelected();
   // Iterate over selected objects
   std::vector<AIS_Shape_ptr> shapes;
-  while (m_ctx->MoreSelected()) {
+  while (m_ctx->MoreSelected())
+  {
     AIS_InteractiveObject_ptr selected_obj = m_ctx->SelectedInteractive();
     if (!selected_obj.IsNull())
-      if (selected_obj->IsKind(STANDARD_TYPE(AIS_Shape))) {
+      if (selected_obj->IsKind(STANDARD_TYPE(AIS_Shape)))
+      {
         auto selected_shape = AIS_Shape_ptr::DownCast(selected_obj);
         shapes.emplace_back(std::move(selected_shape));
       }
@@ -975,34 +1075,41 @@ std::vector<AIS_Shape_ptr> Occt_view::get_selected() const {
   return shapes;
 }
 
-TopAbs_ShapeEnum Occt_view::get_shp_selection_mode() const {
+TopAbs_ShapeEnum Occt_view::get_shp_selection_mode() const
+{
   return m_shp_selection_mode;
 }
 
-void Occt_view::set_shp_selection_mode(const TopAbs_ShapeEnum mode) {
+void Occt_view::set_shp_selection_mode(const TopAbs_ShapeEnum mode)
+{
   m_shp_selection_mode = mode;
   for (auto& shp : m_shps)
     shp->set_selection_mode(mode);
 }
 
 // Material related
-const Graphic3d_MaterialAspect& Occt_view::get_default_material() const {
+const Graphic3d_MaterialAspect& Occt_view::get_default_material() const
+{
   return m_default_material;
 }
-void Occt_view::set_default_material(const Graphic3d_MaterialAspect& mat) {
+void Occt_view::set_default_material(const Graphic3d_MaterialAspect& mat)
+{
   m_default_material = mat;
 }
 
-bool Occt_view::is_headless() const {
+bool Occt_view::is_headless() const
+{
   return m_headless_view;
 }
 
 // Mode related
-Mode Occt_view::get_mode() const {
+Mode Occt_view::get_mode() const
+{
   return m_gui.get_mode();
 }
 
-void Occt_view::on_mode() {
+void Occt_view::on_mode()
+{
   DBG_MSG(c_mode_strs[int(get_mode())]);
 
   shp_polar_dup().reset();
@@ -1010,16 +1117,20 @@ void Occt_view::on_mode() {
   for (Sketch_ptr& s : m_sketches)
     s->on_mode();
 
-  auto show_only_current_sketch = [&]() {
-    for (Sketch_ptr& s : m_sketches) {
+  auto show_only_current_sketch = [&]()
+  {
+    for (Sketch_ptr& s : m_sketches)
+    {
       s->set_show_faces(s == m_cur_sketch);
       s->set_show_edges(s == m_cur_sketch);
       s->set_show_dims(s == m_cur_sketch);
     }
   };
 
-  auto show_sketches = [&](const bool show) {
-    for (Sketch_ptr& s : m_sketches) {
+  auto show_sketches = [&](const bool show)
+  {
+    for (Sketch_ptr& s : m_sketches)
+    {
       s->set_show_edges(show);
       s->set_show_dims(show);
       s->set_show_faces(show);
@@ -1027,12 +1138,14 @@ void Occt_view::on_mode() {
   };
 
   bool ortho = false;
-  if (is_sketch_mode(get_mode())) {
+  if (is_sketch_mode(get_mode()))
+  {
     ortho = true;
     for (auto shp : m_shps)
       shp->set_visible(false);
 
-    switch (get_mode()) {
+    switch (get_mode())
+    {
       case Mode::Sketch_operation_axis:
         show_only_current_sketch();
         break;
@@ -1041,8 +1154,11 @@ void Occt_view::on_mode() {
         show_sketches(true);
         break;
     }
-  } else {
-    switch (get_mode()) {
+  }
+  else
+  {
+    switch (get_mode())
+    {
       case Mode::Shape_polar_duplicate:
         show_only_current_sketch();
         break;
@@ -1052,7 +1168,8 @@ void Occt_view::on_mode() {
         break;
     }
 
-    switch (get_mode()) {
+    switch (get_mode())
+    {
         // clang-format off
       case Mode::Sketch_from_planar_face: set_shp_selection_mode(TopAbs_FACE); break;
       case Mode::Shape_chamfer:    on_chamfer_mode();                   break; // Will update selection mode
@@ -1065,7 +1182,8 @@ void Occt_view::on_mode() {
       shp->set_visible(true);
   }
 
-  if (!is_headless()) {
+  if (!is_headless())
+  {
     Graphic3d_Camera_ptr camera = m_view->Camera();
     if (ortho)
       camera->SetProjectionType(Graphic3d_Camera::Projection_Orthographic);
@@ -1077,9 +1195,11 @@ void Occt_view::on_mode() {
   }
 }
 
-void Occt_view::on_chamfer_mode() {
+void Occt_view::on_chamfer_mode()
+{
   EZY_ASSERT(get_mode() == Mode::Shape_chamfer);
-  switch (gui().get_chamfer_mode()) {
+  switch (gui().get_chamfer_mode())
+  {
       // clang-format off
     case Chamfer_mode::Edge:  set_shp_selection_mode(TopAbs_EDGE);  break;
     case Chamfer_mode::Wire:  set_shp_selection_mode(TopAbs_WIRE);  break;
@@ -1120,7 +1240,8 @@ Aspect_VKeyMouse Occt_view::mouse_button_from_glfw_(int theButton)
   return Aspect_VKeyMouse_NONE;
 }
 
-Aspect_VKeyFlags Occt_view::key_flags_from_glfw_(int theFlags) {
+Aspect_VKeyFlags Occt_view::key_flags_from_glfw_(int theFlags)
+{
   // clang-format off
   Aspect_VKeyFlags flags = Aspect_VKeyFlags_NONE;
   if ((theFlags & GLFW_MOD_SHIFT) != 0)   flags |= Aspect_VKeyFlags_SHIFT;
@@ -1131,30 +1252,38 @@ Aspect_VKeyFlags Occt_view::key_flags_from_glfw_(int theFlags) {
   return flags;
 }
 
-Occt_view::Sketch_list& Occt_view::get_sketches() {
+Occt_view::Sketch_list& Occt_view::get_sketches()
+{
   return m_sketches;
 }
 
-void Occt_view::remove_sketch(const Sketch_ptr& sketch) {
+void Occt_view::remove_sketch(const Sketch_ptr& sketch)
+{
   push_undo_snapshot();
   m_sketches.remove(sketch);
-  if (m_cur_sketch == sketch) {
-    if (m_sketches.empty()) {
+  if (m_cur_sketch == sketch)
+  {
+    if (m_sketches.empty())
+    {
       m_cur_sketch = nullptr;
       create_default_sketch_();
-    } else
+    }
+    else
       m_cur_sketch = m_sketches.front();
   }
 }
 
-Sketch& Occt_view::curr_sketch() {
+Sketch& Occt_view::curr_sketch()
+{
   EZY_ASSERT(m_cur_sketch);
   return *m_cur_sketch;
 }
 
-void Occt_view::set_curr_sketch(const Sketch_ptr& to_set) {
+void Occt_view::set_curr_sketch(const Sketch_ptr& to_set)
+{
   for (Sketch_ptr& sketch : m_sketches)
-    if (sketch.get() == to_set.get()) {
+    if (sketch.get() == to_set.get())
+    {
       m_cur_sketch = sketch;
       m_cur_sketch->set_current();
 
@@ -1170,7 +1299,8 @@ void Occt_view::set_curr_sketch(const Sketch_ptr& to_set) {
   EZY_ASSERT(false);  // Sketch does not belong to this view.
 }
 
-std::list<Shp_ptr>& Occt_view::get_shapes() {
+std::list<Shp_ptr>& Occt_view::get_shapes()
+{
   return m_shps;
 }
 
@@ -1191,7 +1321,8 @@ Shp_extrude&   Occt_view::shp_extrude()   { return m_shp_extrude;    }
 // Undo / redo (full snapshot per step). A future delta-based approach would save
 // memory (one delta per step instead of full document) and CPU (apply/invert
 // deltas instead of to_json/load).
-void Occt_view::push_undo_snapshot() {
+void Occt_view::push_undo_snapshot()
+{
   if (m_restoring)
     return;
 
@@ -1204,7 +1335,8 @@ void Occt_view::push_undo_snapshot() {
     m_undo_stack.erase(m_undo_stack.begin());
 }
 
-bool Occt_view::undo() {
+bool Occt_view::undo()
+{
   if (!can_undo())
     return false;
 
@@ -1224,7 +1356,8 @@ bool Occt_view::undo() {
   return true;
 }
 
-bool Occt_view::redo() {
+bool Occt_view::redo()
+{
   if (!can_redo())
     return false;
 
@@ -1244,30 +1377,36 @@ bool Occt_view::redo() {
   return true;
 }
 
-bool Occt_view::can_undo() const {
+bool Occt_view::can_undo() const
+{
   return !m_undo_stack.empty();
 }
 
-bool Occt_view::can_redo() const {
+bool Occt_view::can_redo() const
+{
   return !m_redo_stack.empty();
 }
 
-size_t Occt_view::undo_stack_size() const {
+size_t Occt_view::undo_stack_size() const
+{
   return m_undo_stack.size();
 }
 
-size_t Occt_view::redo_stack_size() const {
+size_t Occt_view::redo_stack_size() const
+{
   return m_redo_stack.size();
 }
 
 // ---------------------------------------------------------------------------
-std::string Occt_view::to_json() const {
+std::string Occt_view::to_json() const
+{
   using namespace nlohmann;
   json  j;
   json& sketches = j["sketches"] = json::array();
   json& shps = j["shapes"] = json::array();
 
-  const auto pnt_to_json = [](Standard_Real x, Standard_Real y, Standard_Real z) {
+  const auto pnt_to_json = [](Standard_Real x, Standard_Real y, Standard_Real z)
+  {
     return ::to_json(gp_Pnt(x, y, z));
   };
 
@@ -1276,7 +1415,8 @@ std::string Occt_view::to_json() const {
   for (const Sketch_ptr& s : m_sketches)
     sketches.push_back(Sketch_json::to_json(*s));
 
-  for (const Shp_ptr& s : m_shps) {
+  for (const Shp_ptr& s : m_shps)
+  {
     const TopoDS_Shape& shape = s->Shape();
     std::ostringstream  oss;
     BRepTools::Write(shape, oss, false, false, TopTools_FormatVersion_CURRENT);  // Write BREP data to the stream
@@ -1289,7 +1429,8 @@ std::string Occt_view::to_json() const {
 
   // ---------------------------------------------------------------------------
   // View / camera state
-  if (!m_view.IsNull()) {
+  if (!m_view.IsNull())
+  {
     json& view_json = j["view"];
 
     // Eye and target (At) positions
@@ -1317,7 +1458,8 @@ std::string Occt_view::to_json() const {
   return j.dump(2);
 }
 
-void Occt_view::load(const std::string& json_str, bool restore_view) {
+void Occt_view::load(const std::string& json_str, bool restore_view)
+{
   using namespace nlohmann;
   for (AIS_Shape_ptr& s : m_shps)
     m_ctx->Remove(s, false);
@@ -1325,9 +1467,11 @@ void Occt_view::load(const std::string& json_str, bool restore_view) {
   clear_all(m_sketches, m_cur_sketch, m_shps);
   const json j = json::parse(json_str);
   EZY_ASSERT(j.contains("sketches") && j["sketches"].is_array());
-  for (const auto& s : j["sketches"]) {
+  for (const auto& s : j["sketches"])
+  {
     m_sketches.push_back(Sketch_json::from_json(*this, s));
-    if (s["isCurrent"]) {
+    if (s["isCurrent"])
+    {
       EZY_ASSERT(!m_cur_sketch);
       m_cur_sketch = m_sketches.back();
     }
@@ -1335,7 +1479,8 @@ void Occt_view::load(const std::string& json_str, bool restore_view) {
   // We need at lease one sketch. TODO what if the user deletes them all?
   EZY_ASSERT(m_cur_sketch);
 
-  for (const json& s : j["shapes"]) {
+  for (const json& s : j["shapes"])
+  {
     TopoDS_Shape       shape;
     std::istringstream iss;
     iss.str(s["geom"]);
@@ -1350,30 +1495,37 @@ void Occt_view::load(const std::string& json_str, bool restore_view) {
 
   // ---------------------------------------------------------------------------
   // Restore view / camera state if requested (e.g. File > Open; not for undo/redo)
-  if (restore_view && !m_view.IsNull() && j.contains("view") && j["view"].is_object()) {
+  if (restore_view && !m_view.IsNull() && j.contains("view") && j["view"].is_object())
+  {
     const json& view_json = j["view"];
-    try {
-      if (view_json.contains("eye") && view_json["eye"].is_object()) {
+    try
+    {
+      if (view_json.contains("eye") && view_json["eye"].is_object())
+      {
         gp_Pnt eye = from_json_pnt(view_json["eye"]);
         m_view->SetEye(eye.X(), eye.Y(), eye.Z());
       }
 
-      if (view_json.contains("at") && view_json["at"].is_object()) {
+      if (view_json.contains("at") && view_json["at"].is_object())
+      {
         gp_Pnt at = from_json_pnt(view_json["at"]);
         m_view->SetAt(at.X(), at.Y(), at.Z());
       }
 
-      if (view_json.contains("up") && view_json["up"].is_object()) {
+      if (view_json.contains("up") && view_json["up"].is_object())
+      {
         gp_Dir up = from_json_dir(view_json["up"]);
         m_view->SetUp(up.X(), up.Y(), up.Z());
       }
 
-      if (view_json.contains("proj") && view_json["proj"].is_object()) {
+      if (view_json.contains("proj") && view_json["proj"].is_object())
+      {
         gp_Dir dir = from_json_dir(view_json["proj"]);
         m_view->SetProj(dir.X(), dir.Y(), dir.Z());
       }
 
-      if (view_json.contains("scale") && view_json["scale"].is_number()) {
+      if (view_json.contains("scale") && view_json["scale"].is_number())
+      {
         const Standard_Real scale = view_json["scale"].get<Standard_Real>();
         if (scale > Precision::Confusion())
           m_view->SetScale(scale);
@@ -1381,7 +1533,9 @@ void Occt_view::load(const std::string& json_str, bool restore_view) {
 
       m_view->Redraw();
       m_ctx->UpdateCurrentViewer();
-    } catch (const std::exception&) {
+    }
+    catch (const std::exception&)
+    {
       // Ignore view restoration errors; project geometry has already loaded.
     }
   }
@@ -1390,7 +1544,8 @@ void Occt_view::load(const std::string& json_str, bool restore_view) {
   gui().set_mode(Mode::Normal);
 }
 
-bool Occt_view::import_step(const std::string& step_data) {
+bool Occt_view::import_step(const std::string& step_data)
+{
   push_undo_snapshot();
   // Initialize the STEP reader
   STEPControl_Reader reader;
@@ -1399,14 +1554,16 @@ bool Occt_view::import_step(const std::string& step_data) {
 
   // Read the STEP file
   IFSelect_ReturnStatus status = reader.ReadStream("", stream);
-  if (status != IFSelect_RetDone) {
+  if (status != IFSelect_RetDone)
+  {
     std::cerr << "Error: Cannot read the STEP file." << std::endl;
     return 1;
   }
 
   // Transfer all root entities
   Standard_Integer num_roots = reader.TransferRoots();
-  if (num_roots == 0) {
+  if (num_roots == 0)
+  {
     std::cerr << "Error: No shapes were transferred." << std::endl;
     return 1;
   }
@@ -1416,9 +1573,11 @@ bool Occt_view::import_step(const std::string& step_data) {
   std::cout << "Number of shapes loaded: " << num_shps << std::endl;
 
   // Iterate over each shape
-  for (Standard_Integer i = 1; i <= num_shps; ++i) {
+  for (Standard_Integer i = 1; i <= num_shps; ++i)
+  {
     TopoDS_Shape shape = reader.Shape(i);
-    if (shape.IsNull()) {
+    if (shape.IsNull())
+    {
       std::cerr << "Warning: Shape " << i << " is null." << std::endl;
       continue;
     }
@@ -1430,14 +1589,17 @@ bool Occt_view::import_step(const std::string& step_data) {
   return true;
 }
 
-GUI& Occt_view::gui() {
+GUI& Occt_view::gui()
+{
   return m_gui;
 }
-AIS_InteractiveContext& Occt_view::ctx() {
+AIS_InteractiveContext& Occt_view::ctx()
+{
   return *m_ctx;
 }
 
-void Occt_view::new_file() {
+void Occt_view::new_file()
+{
   push_undo_snapshot();
   remove(m_shps);
   clear_all(m_shps, m_sketches, m_cur_sketch);

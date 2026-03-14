@@ -13,7 +13,8 @@
 Shp_chamfer::Shp_chamfer(Occt_view& view)
     : Shp_operation_base(view) {}
 
-Status Shp_chamfer::add_chamfer(const ScreenCoords& screen_coords, const Chamfer_mode chamfer_mode) {
+Status Shp_chamfer::add_chamfer(const ScreenCoords& screen_coords, const Chamfer_mode chamfer_mode)
+{
   view().push_undo_snapshot();
   Shp_ptr chamfer_src_shp = Shp_ptr::DownCast(get_shape_(screen_coords));
   if (chamfer_src_shp.IsNull())
@@ -24,10 +25,13 @@ Status Shp_chamfer::add_chamfer(const ScreenCoords& screen_coords, const Chamfer
   // Convert diagonal distance to setback distance (divide by √2)
   const double setback_dist = m_chamfer_dist / std::sqrt(2.0);
 
-  switch (chamfer_mode) {
-    case Chamfer_mode::Shape: {
+  switch (chamfer_mode)
+  {
+    case Chamfer_mode::Shape:
+    {
       TopExp_Explorer edge_explorer(chamfer_src_shp->Shape(), TopAbs_EDGE);
-      while (edge_explorer.More()) {
+      while (edge_explorer.More())
+      {
         const TopoDS_Edge& edge = TopoDS::Edge(edge_explorer.Current());
         chamfer_maker.Add(setback_dist, edge);
         edge_explorer.Next();
@@ -35,13 +39,15 @@ Status Shp_chamfer::add_chamfer(const ScreenCoords& screen_coords, const Chamfer
       break;
     }
 
-    case Chamfer_mode::Face: {
+    case Chamfer_mode::Face:
+    {
       const TopoDS_Face* face = get_face_(screen_coords);
       if (!face)
         return Status::user_error("No chamfer face detected.");
 
       TopExp_Explorer edge_explorer(*face, TopAbs_EDGE);
-      while (edge_explorer.More()) {
+      while (edge_explorer.More())
+      {
         const TopoDS_Edge& edge = TopoDS::Edge(edge_explorer.Current());
         chamfer_maker.Add(setback_dist, edge);
         edge_explorer.Next();
@@ -49,14 +55,16 @@ Status Shp_chamfer::add_chamfer(const ScreenCoords& screen_coords, const Chamfer
       break;
     }
 
-    case Chamfer_mode::Wire: {
+    case Chamfer_mode::Wire:
+    {
       const TopoDS_Wire* wire = get_wire_(screen_coords);
       if (!wire)
         return Status::user_error("No chamfer wire detected.");
 
       // Chamfer all edges in the wire
       TopExp_Explorer edge_explorer(*wire, TopAbs_EDGE);
-      while (edge_explorer.More()) {
+      while (edge_explorer.More())
+      {
         const TopoDS_Edge& wire_edge = TopoDS::Edge(edge_explorer.Current());
         chamfer_maker.Add(setback_dist, wire_edge);
         edge_explorer.Next();
@@ -65,7 +73,8 @@ Status Shp_chamfer::add_chamfer(const ScreenCoords& screen_coords, const Chamfer
       break;
     }
 
-    case Chamfer_mode::Edge: {
+    case Chamfer_mode::Edge:
+    {
       const TopoDS_Edge* edge = get_edge_(screen_coords);
       if (!edge)
         return Status::user_error("No chamfer edge detected.");
@@ -78,18 +87,23 @@ Status Shp_chamfer::add_chamfer(const ScreenCoords& screen_coords, const Chamfer
       EZY_ASSERT(false);
   }
 
-  try {
+  try
+  {
     chamfer_maker.Build();
     Shp_ptr chamfer_shp = new Shp(ctx(), chamfer_maker.Shape());
     ctx().Remove(chamfer_src_shp, false);
     view().m_shps.remove(chamfer_src_shp);
     chamfer_shp->set_name("Chamfered shape");
     add_shp_(chamfer_shp);
-  } catch (const Standard_Failure& e) {
+  }
+  catch (const Standard_Failure& e)
+  {
     auto err_str = e.GetMessageString();
     DBG_MSG(err_str);
     return Status::user_error(err_str);
-  } catch (...) {
+  }
+  catch (...)
+  {
     // Investigate if this happens
     EZY_ASSERT(false);
   }
@@ -97,10 +111,12 @@ Status Shp_chamfer::add_chamfer(const ScreenCoords& screen_coords, const Chamfer
   return Status::ok();
 }
 
-void Shp_chamfer::set_chamfer_dist(const double dist) {
+void Shp_chamfer::set_chamfer_dist(const double dist)
+{
   m_chamfer_dist = dist;
 }
 
-double Shp_chamfer::get_chamfer_dist() const {
+double Shp_chamfer::get_chamfer_dist() const
+{
   return m_chamfer_dist;
 }

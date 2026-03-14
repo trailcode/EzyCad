@@ -3,7 +3,8 @@
 #include <functional>
 #include <string>
 
-namespace settings {
+namespace settings
+{
 // Optional: set a callback to receive log messages from load_defaults() (e.g. GUI log window).
 void set_log_callback(std::function<void(const std::string&)> cb);
 

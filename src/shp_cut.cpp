@@ -9,7 +9,8 @@
 Shp_cut::Shp_cut(Occt_view& view)
     : Shp_operation_base(view) {}
 
-Status Shp_cut::selected_cut() {
+Status Shp_cut::selected_cut()
+{
   view().push_undo_snapshot();
   CHK_RET(ensure_operation_multi_shps_());
 

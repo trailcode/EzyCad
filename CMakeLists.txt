@@ -476,7 +476,7 @@ if(NOT CMAKE_CXX_COMPILER_ID STREQUAL "Emscripten")
     target_include_directories(${PROJECT_NAME}_tests PRIVATE
         ${CMAKE_SOURCE_DIR}/src
     )
-    
+
     # Link against Google Test and your project's libraries
     target_link_libraries(${PROJECT_NAME}_tests
         GTest::gtest_main

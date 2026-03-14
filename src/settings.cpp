@@ -11,14 +11,17 @@
 #include <cstdlib>
 #endif
 
-namespace settings {
+namespace settings
+{
 static std::function<void(const std::string&)> s_log_callback;
 
-void set_log_callback(std::function<void(const std::string&)> cb) {
+void set_log_callback(std::function<void(const std::string&)> cb)
+{
   s_log_callback = std::move(cb);
 }
 
-std::string load() {
+std::string load()
+{
 #ifdef __EMSCRIPTEN__
   void* ptr = (void*) (intptr_t) EM_ASM_INT(
       {
@@ -44,13 +47,15 @@ std::string load() {
 #endif
 }
 
-std::string load_defaults() {
+std::string load_defaults()
+{
   if (s_log_callback)
     s_log_callback("Settings: loading defaults from res/ezycad_settings.json");
 #ifdef __EMSCRIPTEN__
   // Read from preloaded file in virtual FS (--preload-file ...@/res/ezycad_settings.json).
   std::ifstream f("/res/ezycad_settings.json");
-  if (!f) {
+  if (!f)
+  {
     if (s_log_callback)
       s_log_callback("Settings: failed to load defaults (preloaded file not found)");
     return {};
@@ -75,9 +80,11 @@ std::string load_defaults() {
 #endif
 }
 
-std::string load_with_defaults() {
+std::string load_with_defaults()
+{
   std::string content = load();
-  if (content.empty()) {
+  if (content.empty())
+  {
     content = load_defaults();
     if (!content.empty())
       save(content);
@@ -85,7 +92,8 @@ std::string load_with_defaults() {
   return content;
 }
 
-void save(const std::string& content) {
+void save(const std::string& content)
+{
 #ifdef __EMSCRIPTEN__
   EM_ASM_({ localStorage.setItem('ezycad_settings', UTF8ToString($0)); }, content.c_str());
 #else

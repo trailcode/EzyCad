@@ -6,7 +6,8 @@
 
 #include "shp_operation.h"
 
-class Shp_scale : private Shp_operation_base {
+class Shp_scale : private Shp_operation_base
+{
  public:
   Shp_scale(Occt_view& view);
 
