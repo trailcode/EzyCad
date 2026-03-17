@@ -4,6 +4,7 @@
 #include "imgui.h"
 #include "modes.h"
 #include "occt_view.h"
+#include "shp.h"
 #include "sketch.h"
 
 extern "C"
@@ -18,7 +19,8 @@ extern "C"
 
 namespace
 {
-const char* k_registry_gui = "ezycad_gui";
+const char* k_registry_gui       = "ezycad_gui";
+const char* k_shp_metatable     = "EzyCad_Shp";
 
 GUI* get_gui(lua_State* L)
 {
@@ -26,6 +28,18 @@ GUI* get_gui(lua_State* L)
   GUI* gui = static_cast<GUI*>(lua_touserdata(L, -1));
   lua_pop(L, 1);
   return gui;
+}
+
+void push_shp(lua_State* L, const Shp_ptr& shp)
+{
+  void* block = lua_newuserdata(L, sizeof(Shp_ptr));
+  new (block) Shp_ptr(shp);
+  luaL_setmetatable(L, k_shp_metatable);
+}
+
+Shp_ptr* to_shp(lua_State* L, int index)
+{
+  return static_cast<Shp_ptr*>(luaL_testudata(L, index, k_shp_metatable));
 }
 
 // ezy.log(msg) -> append to console and log window
@@ -149,6 +163,77 @@ int l_view_add_sphere(lua_State* L)
   return 0;
 }
 
+// view.get_shape(index) -> Shp userdata or nil (1-based index)
+int l_view_get_shape(lua_State* L)
+{
+  GUI*       gui  = get_gui(L);
+  Occt_view* view = gui ? gui->get_view() : nullptr;
+  if (!view)
+  {
+    lua_pushnil(L);
+    return 1;
+  }
+  lua_Integer idx = luaL_checkinteger(L, 1);
+  if (idx < 1)
+  {
+    lua_pushnil(L);
+    return 1;
+  }
+  std::list<Shp_ptr>& shapes = view->get_shapes();
+  auto                it    = shapes.begin();
+  for (lua_Integer i = 1; i < idx && it != shapes.end(); ++i, ++it)
+    ;
+  if (it == shapes.end())
+  {
+    lua_pushnil(L);
+    return 1;
+  }
+  push_shp(L, *it);
+  return 1;
+}
+
+// Shp userdata __gc
+int l_shp_gc(lua_State* L)
+{
+  Shp_ptr* p = to_shp(L, 1);
+  if (p)
+    p->~Shp_ptr();
+  return 0;
+}
+
+// Shp:name() -> string
+int l_shp_name(lua_State* L)
+{
+  Shp_ptr* p = static_cast<Shp_ptr*>(luaL_checkudata(L, 1, k_shp_metatable));
+  lua_pushstring(L, (*p)->get_name().c_str());
+  return 1;
+}
+
+// Shp:set_name(s)
+int l_shp_set_name(lua_State* L)
+{
+  Shp_ptr* p   = static_cast<Shp_ptr*>(luaL_checkudata(L, 1, k_shp_metatable));
+  const char* s = luaL_checkstring(L, 2);
+  (*p)->set_name(s);
+  return 0;
+}
+
+// Shp:visible() -> boolean
+int l_shp_visible(lua_State* L)
+{
+  Shp_ptr* p = static_cast<Shp_ptr*>(luaL_checkudata(L, 1, k_shp_metatable));
+  lua_pushboolean(L, (*p)->get_visible());
+  return 1;
+}
+
+// Shp:set_visible(b)
+int l_shp_set_visible(lua_State* L)
+{
+  Shp_ptr* p = static_cast<Shp_ptr*>(luaL_checkudata(L, 1, k_shp_metatable));
+  (*p)->set_visible(lua_toboolean(L, 2));
+  return 0;
+}
+
 // ezy.help() / help() - print available commands
 int l_ezy_help(lua_State* L)
 {
@@ -169,7 +254,13 @@ int l_ezy_help(lua_State* L)
       "  view.shape_count()    - number of shapes\n"
       "  view.curr_sketch_name() - current sketch name\n"
       "  view.add_box(ox,oy,oz,w,l,h) - add box\n"
-      "  view.add_sphere(ox,oy,oz,r)  - add sphere";
+      "  view.add_sphere(ox,oy,oz,r)  - add sphere\n"
+  "  view.get_shape(i)            - get shape by 1-based index (returns Shp or nil)\n"
+  "Shp (shape object):\n"
+  "  s:name()       - get shape name\n"
+  "  s:set_name(s)  - set shape name\n"
+  "  s:visible()    - get visibility\n"
+  "  s:set_visible(b) - set visibility";
   con->append_line_from_lua(help_text);
   return 0;
 }
@@ -214,6 +305,22 @@ void Lua_console::register_bindings()
   if (!m_L || !m_gui)
     return;
 
+  // Shp userdata metatable (in registry for luaL_setmetatable / luaL_checkudata)
+  luaL_newmetatable(m_L, k_shp_metatable);
+  lua_pushcfunction(m_L, l_shp_gc);
+  lua_setfield(m_L, -2, "__gc");
+  lua_newtable(m_L);  // __index
+  lua_pushcfunction(m_L, l_shp_name);
+  lua_setfield(m_L, -2, "name");
+  lua_pushcfunction(m_L, l_shp_set_name);
+  lua_setfield(m_L, -2, "set_name");
+  lua_pushcfunction(m_L, l_shp_visible);
+  lua_setfield(m_L, -2, "visible");
+  lua_pushcfunction(m_L, l_shp_set_visible);
+  lua_setfield(m_L, -2, "set_visible");
+  lua_setfield(m_L, -2, "__index");
+  lua_pop(m_L, 1);
+
   // ezy table
   lua_newtable(m_L);
   lua_pushlightuserdata(m_L, this);
@@ -247,6 +354,8 @@ void Lua_console::register_bindings()
   lua_setfield(m_L, -2, "add_box");
   lua_pushcfunction(m_L, l_view_add_sphere);
   lua_setfield(m_L, -2, "add_sphere");
+  lua_pushcfunction(m_L, l_view_get_shape);
+  lua_setfield(m_L, -2, "get_shape");
   lua_setglobal(m_L, "view");
 
   // Override print to use ezy.log
@@ -314,8 +423,9 @@ void Lua_console::render(bool* p_open)
     display_text += '\0';
 
     ImGui::BeginChild("Lua_consoleScroll", ImVec2(0, height), true, ImGuiWindowFlags_HorizontalScrollbar);
-    ImGui::InputTextMultiline("##lua_console_output", display_text.data(), display_text.size(),
-                              ImVec2(-1, -1), ImGuiInputTextFlags_ReadOnly);
+    // Draw text in the child so the child window scrolls (InputTextMultiline has its own internal scroll).
+    const char* text_end = display_text.size() > 0 ? display_text.data() + display_text.size() - 1 : display_text.data();
+    ImGui::TextUnformatted(display_text.data(), text_end);
     if (m_scroll_to_bottom)
     {
       ImGui::SetScrollHereY(1.0f);
