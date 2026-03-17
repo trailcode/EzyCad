@@ -369,6 +369,15 @@ void Lua_console::execute(const std::string& code)
 {
   if (!m_L || code.empty())
     return;
+
+  // Track command history (avoid consecutive duplicates).
+  if (!code.empty())
+  {
+    if (m_cmd_history.empty() || m_cmd_history.back() != code)
+      m_cmd_history.push_back(code);
+    m_cmd_history_pos = -1;
+  }
+
   append_line("> " + code);
   if (luaL_loadstring(m_L, code.c_str()) != LUA_OK)
   {
@@ -396,6 +405,48 @@ void Lua_console::execute(const std::string& code)
     lua_pop(m_L, n);
     append_line(oss.str());
   }
+}
+
+int Lua_console::text_edit_callback(ImGuiInputTextCallbackData* data)
+{
+  auto* console = static_cast<Lua_console*>(data->UserData);
+  if (!console)
+    return 0;
+
+  if (data->EventFlag == ImGuiInputTextFlags_CallbackHistory && !console->m_cmd_history.empty())
+  {
+    const int history_size = static_cast<int>(console->m_cmd_history.size());
+
+    if (data->EventKey == ImGuiKey_UpArrow)
+    {
+      if (console->m_cmd_history_pos == -1)
+        console->m_cmd_history_pos = history_size - 1;
+      else if (console->m_cmd_history_pos > 0)
+        --console->m_cmd_history_pos;
+    }
+    else if (data->EventKey == ImGuiKey_DownArrow)
+    {
+      if (console->m_cmd_history_pos != -1)
+      {
+        if (console->m_cmd_history_pos + 1 < history_size)
+          ++console->m_cmd_history_pos;
+        else
+          console->m_cmd_history_pos = -1;
+      }
+    }
+
+    // Apply history entry (or clear when pos == -1).
+    const char* new_buf = "";
+    if (console->m_cmd_history_pos != -1)
+      new_buf = console->m_cmd_history[console->m_cmd_history_pos].c_str();
+
+    data->DeleteChars(0, data->BufTextLen);
+    data->InsertChars(0, new_buf);
+    data->SelectionStart = 0;
+    data->SelectionEnd   = data->BufTextLen;
+  }
+
+  return 0;
 }
 
 void Lua_console::render(bool* p_open)
@@ -435,7 +486,14 @@ void Lua_console::render(bool* p_open)
   }
 
   ImGui::SetNextItemWidth(-1);
-  bool run = ImGui::InputTextWithHint("##lua_input", "Enter Lua code (e.g. ezy.log('hi'))", m_input_buf, k_input_buf_size, ImGuiInputTextFlags_EnterReturnsTrue);
+  bool run = ImGui::InputTextWithHint("##lua_input",
+                                      "Enter Lua code (e.g. ezy.log('hi'))",
+                                      m_input_buf,
+                                      k_input_buf_size,
+                                      ImGuiInputTextFlags_EnterReturnsTrue | ImGuiInputTextFlags_CallbackHistory,
+                                      &Lua_console::text_edit_callback,
+                                      this);
+
   if (run)
   {
     execute(m_input_buf);

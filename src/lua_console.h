@@ -16,6 +16,7 @@ class Lua_console
   ~Lua_console();
 
   void render(bool* p_open = nullptr);
+  static int text_edit_callback(struct ImGuiInputTextCallbackData* data);
 
   /// Called from Lua ezy.log(); appends to console history.
   void append_line_from_lua(const std::string& line);
@@ -28,8 +29,10 @@ class Lua_console
   GUI*       m_gui = nullptr;
   lua_State* m_L   = nullptr;
 
-  std::vector<std::string> m_history;  // output lines (result or error)
-  static constexpr int     k_input_buf_size = 1024;
+  std::vector<std::string> m_history;        // output lines (result or error)
+  std::vector<std::string> m_cmd_history;    // entered Lua commands
+  int                      m_cmd_history_pos = -1;  // -1 when not browsing
+  static constexpr int     k_input_buf_size  = 1024;
   char                     m_input_buf[k_input_buf_size] {};
   bool                     m_scroll_to_bottom = false;
 };
