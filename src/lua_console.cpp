@@ -15,6 +15,7 @@ extern "C"
 }
 
 #include <filesystem>
+#include <fstream>
 #include <cstring>
 #include <sstream>
 #include <vector>
@@ -392,10 +393,22 @@ void Lua_console::load_scripts()
   for (const auto& path : lua_files)
   {
     std::string path_str = path.string();
+    std::string filename = path.filename().string();
+
+    std::string content;
+    std::ifstream f(path_str);
+    if (f)
+    {
+      content.assign(std::istreambuf_iterator<char>(f), std::istreambuf_iterator<char>());
+      f.close();
+    }
+
+    m_script_editors.push_back({path_str, filename, std::move(content)});
+
     if (luaL_dofile(m_L, path_str.c_str()) != LUA_OK)
     {
       const char* err = lua_tostring(m_L, -1);
-      append_line(std::string("script ") + path.filename().string() + ": " + (err ? err : "?"), true);
+      append_line(std::string("script ") + filename + ": " + (err ? err : "?"), true);
       lua_pop(m_L, 1);
     }
   }
@@ -485,6 +498,17 @@ int Lua_console::text_edit_callback(ImGuiInputTextCallbackData* data)
   return 0;
 }
 
+int Lua_console::script_resize_callback(ImGuiInputTextCallbackData* data)
+{
+  if (data->EventFlag == ImGuiInputTextFlags_CallbackResize)
+  {
+    auto* s = static_cast<std::string*>(data->UserData);
+    s->resize(static_cast<size_t>(data->BufTextLen) + 1);
+    data->Buf = s->data();
+  }
+  return 0;
+}
+
 void Lua_console::render(bool* p_open)
 {
   if (!ImGui::Begin("Lua Console", p_open, ImGuiWindowFlags_None))
@@ -493,48 +517,99 @@ void Lua_console::render(bool* p_open)
     return;
   }
 
-  float height = ImGui::GetContentRegionAvail().y - ImGui::GetFrameHeightWithSpacing() - 4.f;
-  if (height > 80.f)
+  if (!ImGui::BeginTabBar("LuaConsoleTabs", ImGuiTabBarFlags_None))
   {
-    // Build selectable/copyable text from history (limit size for performance)
-    constexpr size_t k_max_lines = 5000;
-    constexpr size_t k_max_chars = 512 * 1024;
-    std::string      display_text;
-    display_text.reserve(m_history.size() * 32);
-    size_t start_idx = m_history.size() > k_max_lines ? m_history.size() - k_max_lines : 0;
-    for (size_t i = start_idx; i < m_history.size() && display_text.size() < k_max_chars; ++i)
-    {
-      display_text += m_history[i];
-      display_text += '\n';
-    }
-    display_text += '\0';
-
-    ImGui::BeginChild("Lua_consoleScroll", ImVec2(0, height), true, ImGuiWindowFlags_HorizontalScrollbar);
-    // Draw text in the child so the child window scrolls (InputTextMultiline has its own internal scroll).
-    const char* text_end = display_text.size() > 0 ? display_text.data() + display_text.size() - 1 : display_text.data();
-    ImGui::TextUnformatted(display_text.data(), text_end);
-    if (m_scroll_to_bottom)
-    {
-      ImGui::SetScrollHereY(1.0f);
-      m_scroll_to_bottom = false;
-    }
-    ImGui::EndChild();
+    ImGui::End();
+    return;
   }
 
-  ImGui::SetNextItemWidth(-1);
-  bool run = ImGui::InputTextWithHint("##lua_input",
-                                      "Enter Lua code (e.g. ezy.log('hi'))",
-                                      m_input_buf,
-                                      k_input_buf_size,
-                                      ImGuiInputTextFlags_EnterReturnsTrue | ImGuiInputTextFlags_CallbackHistory,
-                                      &Lua_console::text_edit_callback,
-                                      this);
-
-  if (run)
+  if (ImGui::BeginTabItem("Console"))
   {
-    execute(m_input_buf);
-    m_input_buf[0] = '\0';
-    ImGui::SetKeyboardFocusHere(-1);  // Refocus the command line for the next input
+    float height = ImGui::GetContentRegionAvail().y - ImGui::GetFrameHeightWithSpacing() - 4.f;
+    if (height > 80.f)
+    {
+      constexpr size_t k_max_lines = 5000;
+      constexpr size_t k_max_chars = 512 * 1024;
+      std::string      display_text;
+      display_text.reserve(m_history.size() * 32);
+      size_t start_idx = m_history.size() > k_max_lines ? m_history.size() - k_max_lines : 0;
+      for (size_t i = start_idx; i < m_history.size() && display_text.size() < k_max_chars; ++i)
+      {
+        display_text += m_history[i];
+        display_text += '\n';
+      }
+      display_text += '\0';
+
+      ImGui::BeginChild("Lua_consoleScroll", ImVec2(0, height), true, ImGuiWindowFlags_HorizontalScrollbar);
+      const char* text_end = display_text.size() > 0 ? display_text.data() + display_text.size() - 1 : display_text.data();
+      ImGui::TextUnformatted(display_text.data(), text_end);
+      if (m_scroll_to_bottom)
+      {
+        ImGui::SetScrollHereY(1.0f);
+        m_scroll_to_bottom = false;
+      }
+      ImGui::EndChild();
+    }
+
+    ImGui::SetNextItemWidth(-1);
+    bool run = ImGui::InputTextWithHint("##lua_input",
+                                        "Enter Lua code (e.g. ezy.log('hi'))",
+                                        m_input_buf,
+                                        k_input_buf_size,
+                                        ImGuiInputTextFlags_EnterReturnsTrue | ImGuiInputTextFlags_CallbackHistory,
+                                        &Lua_console::text_edit_callback,
+                                        this);
+
+    if (run)
+    {
+      execute(m_input_buf);
+      m_input_buf[0] = '\0';
+      ImGui::SetKeyboardFocusHere(-1);
+    }
+    ImGui::EndTabItem();
   }
+
+  for (size_t i = 0; i < m_script_editors.size(); ++i)
+  {
+    Script_editor& script = m_script_editors[i];
+    if (!ImGui::BeginTabItem(script.filename.c_str()))
+      continue;
+
+    std::string& content = script.content;
+    if (content.empty())
+      content.resize(1, '\0');
+
+    ImVec2 editor_size(-1.f, ImGui::GetContentRegionAvail().y - ImGui::GetFrameHeightWithSpacing() - 4.f);
+    if (editor_size.y > 60.f)
+    {
+      ImGui::InputTextMultiline(("##script_" + script.filename).c_str(),
+                                content.data(),
+                                content.size() + 1,
+                                editor_size,
+                                ImGuiInputTextFlags_CallbackResize,
+                                &Lua_console::script_resize_callback,
+                                &content);
+    }
+
+    if (ImGui::Button("Save"))
+    {
+      std::ofstream of(script.path);
+      if (of)
+      {
+        size_t len = content.empty() ? 0 : (content.size() - (content.back() == '\0' ? 1 : 0));
+        if (len > 0)
+          of.write(content.data(), static_cast<std::streamsize>(len));
+        if (of.good())
+          append_line("Saved " + script.filename);
+        else
+          append_line("Save failed: " + script.filename, true);
+      }
+      else
+        append_line("Could not open for write: " + script.path, true);
+    }
+    ImGui::EndTabItem();
+  }
+
+  ImGui::EndTabBar();
   ImGui::End();
 }
