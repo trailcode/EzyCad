@@ -23,6 +23,7 @@ class Lua_console
 
  private:
   void register_bindings();
+  void load_scripts();
   void execute(const std::string& code);
   void append_line(const std::string& line, bool is_error = false);
 

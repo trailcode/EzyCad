@@ -14,8 +14,10 @@ extern "C"
 #include "lualib.h"
 }
 
+#include <filesystem>
 #include <cstring>
 #include <sstream>
+#include <vector>
 
 namespace
 {
@@ -291,6 +293,7 @@ Lua_console::Lua_console(GUI* gui)
   lua_pushlightuserdata(m_L, this);
   lua_setfield(m_L, LUA_REGISTRYINDEX, "ezycad_console");
   register_bindings();
+  load_scripts();
   append_line("Lua console ready. Try: ezy.log('hello'), ezy.get_mode(), view.sketch_count()");
 }
 
@@ -363,6 +366,39 @@ void Lua_console::register_bindings()
   lua_getfield(m_L, -1, "log");
   lua_remove(m_L, -2);
   lua_setglobal(m_L, "print");
+}
+
+void Lua_console::load_scripts()
+{
+  if (!m_L)
+    return;
+#ifdef __EMSCRIPTEN__
+  const std::filesystem::path scripts_dir("/res/scripts/lua");
+#else
+  const std::filesystem::path scripts_dir("res/scripts/lua");
+#endif
+  if (!std::filesystem::is_directory(scripts_dir))
+    return;
+
+  std::vector<std::filesystem::path> lua_files;
+  for (const auto& entry : std::filesystem::directory_iterator(scripts_dir))
+  {
+    if (!entry.is_regular_file() || entry.path().extension() != ".lua")
+      continue;
+    lua_files.push_back(entry.path());
+  }
+  std::sort(lua_files.begin(), lua_files.end());
+
+  for (const auto& path : lua_files)
+  {
+    std::string path_str = path.string();
+    if (luaL_dofile(m_L, path_str.c_str()) != LUA_OK)
+    {
+      const char* err = lua_tostring(m_L, -1);
+      append_line(std::string("script ") + path.filename().string() + ": " + (err ? err : "?"), true);
+      lua_pop(m_L, 1);
+    }
+  }
 }
 
 void Lua_console::execute(const std::string& code)

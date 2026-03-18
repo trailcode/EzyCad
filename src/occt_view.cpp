@@ -158,14 +158,15 @@ void Occt_view::init_viewer()
 #endif
 
   m_view->SetImmediateUpdate(false);
-  m_view->ChangeRenderingParams().ToShowStats           = true;
-  m_view->ChangeRenderingParams().NbMsaaSamples         = 8;                              // Set MSAA samples
-  m_view->ChangeRenderingParams().RenderResolutionScale = 2.0;                            // Increase resolution scale
-  m_view->ChangeRenderingParams().IsShadowEnabled       = true;                           // Enable shadows
-  m_view->ChangeRenderingParams().ShadowMapResolution   = 1024;                           // Shadow map resolution
-  m_view->ChangeRenderingParams().TransparencyMethod    = Graphic3d_RTM_BLEND_UNORDERED;  // Better transparency
-  m_view->ChangeRenderingParams().OitDepthFactor        = 0.0;                            // Depth peeling for better transparency
-  m_view->ChangeRenderingParams().Resolution            = (unsigned int) (96.0 * myDevicePixelRatio + 0.5);
+  auto& params                 = m_view->ChangeRenderingParams();
+  params.ToShowStats           = true;
+  params.NbMsaaSamples         = 8;                              // Set MSAA samples
+  params.RenderResolutionScale = 2.0;                            // Increase resolution scale
+  params.IsShadowEnabled       = true;                           // Enable shadows
+  params.ShadowMapResolution   = 1024;                           // Shadow map resolution
+  params.TransparencyMethod    = Graphic3d_RTM_BLEND_UNORDERED;  // Better transparency
+  params.OitDepthFactor        = 0.0;                            // Depth peeling for better transparency
+  params.Resolution            = (unsigned int) (96.0 * myDevicePixelRatio + 0.5);
 
   // m_view->SetScale(1000.0); // Treat coordinates as millimeters
   // m_view->SetScale(39.3701);

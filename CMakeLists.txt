@@ -8,11 +8,11 @@
 cmake_minimum_required(VERSION 3.14.0 FATAL_ERROR)
 project(EzyCad)
 
+
 # CMP0167: Use legacy FindBoost module (avoids "FindBoost module is removed" warning in CMake 3.30+)
 if(POLICY CMP0167)
   cmake_policy(SET CMP0167 OLD)
 endif()
-
 
 # Set C++20 as the required standard for all targets
 set(CMAKE_CXX_STANDARD 20)
@@ -204,6 +204,7 @@ if(CMAKE_CXX_COMPILER_ID STREQUAL "Emscripten")
             --preload-file ${CMAKE_SOURCE_DIR}/imgui.ini@/imgui.ini \
             --preload-file ${CMAKE_SOURCE_DIR}/res/ezycad_settings.json@/res/ezycad_settings.json \
             --preload-file ${CMAKE_SOURCE_DIR}/res/examples@/res/examples \
+            --preload-file ${CMAKE_SOURCE_DIR}/res/scripts/lua@/res/scripts/lua \
             --shell-file ${CMAKE_SOURCE_DIR}/web/EzyCad.html"
         )
     else()
@@ -234,6 +235,7 @@ if(CMAKE_CXX_COMPILER_ID STREQUAL "Emscripten")
             --preload-file ${CMAKE_SOURCE_DIR}/imgui.ini@/imgui.ini \
             --preload-file ${CMAKE_SOURCE_DIR}/res/ezycad_settings.json@/res/ezycad_settings.json \
             --preload-file ${CMAKE_SOURCE_DIR}/res/examples@/res/examples \
+            --preload-file ${CMAKE_SOURCE_DIR}/res/scripts/lua@/res/scripts/lua \
             --shell-file ${CMAKE_SOURCE_DIR}/web/EzyCad.html"
         )
     endif()
@@ -344,6 +346,23 @@ else()
                 ${example_file}
                 $<TARGET_FILE_DIR:${PROJECT_NAME}>/res/examples/
             COMMENT "Copying example ${example_file}"
+        )
+      endforeach()
+    endif()
+    file(GLOB RES_LUA_SCRIPTS "${CMAKE_SOURCE_DIR}/res/scripts/lua/*.lua")
+    if(RES_LUA_SCRIPTS)
+      add_custom_command(
+          TARGET ${PROJECT_NAME} POST_BUILD
+          COMMAND ${CMAKE_COMMAND} -E make_directory $<TARGET_FILE_DIR:${PROJECT_NAME}>/res/scripts/lua
+          COMMENT "Creating res/scripts/lua for native"
+      )
+      foreach(lua_file ${RES_LUA_SCRIPTS})
+        add_custom_command(
+            TARGET ${PROJECT_NAME} POST_BUILD
+            COMMAND ${CMAKE_COMMAND} -E copy_if_different
+                ${lua_file}
+                $<TARGET_FILE_DIR:${PROJECT_NAME}>/res/scripts/lua/
+            COMMENT "Copying Lua script ${lua_file}"
         )
       endforeach()
     endif()
