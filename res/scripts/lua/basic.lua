@@ -9,12 +9,12 @@ local function log_line(line, prefix)
   end
 end
 
---- Dump keys and values of a Lua object (table). For userdata, dumps metatable __index (available methods).
+--- kv: dump keys and values of a Lua object (table). For userdata, dumps metatable __index (available methods).
 --- For other non-tables, outputs the value.
 --- Uses ezy.log() when available so output appears in the Lua console.
 --- @param obj any Lua value (table = dump keys/values; userdata = list methods; other = single line)
 --- @param prefix string optional indent prefix for nested tables
-function dump(obj, prefix)
+function kv(obj, prefix)
   prefix = prefix or ""
   if type(obj) == "userdata" then
     log_line(tostring(obj), prefix)
@@ -42,7 +42,7 @@ function dump(obj, prefix)
   for k, v in pairs(obj) do
     log_line(tostring(k) .. " = " .. tostring(v), prefix)
     if type(v) == "table" and v ~= obj then
-      dump(v, prefix .. "  ")
+      kv(v, prefix .. "  ")
     end
   end
 end
