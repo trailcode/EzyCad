@@ -80,7 +80,7 @@ class GUI
   void save_file_dialog_async(const char* title, const std::string& default_file, const std::string& json_str);
 #endif
 
-  void on_file(const std::string& file_path, const std::string& json_str);
+  void on_file(const std::string& file_path, const std::string& json_str, bool announce_load = true);
   void on_import_file(const std::string& file_path, const std::string& file_data);
 
   void save_occt_view_settings();
@@ -121,6 +121,7 @@ class GUI
   void dbg_();
   void initialize_toolbar_();
   void load_examples_list_();
+  void load_default_project_();
   void menu_bar_();
   void toolbar_();
   void message_status_window_();
@@ -139,6 +140,9 @@ class GUI
   void import_file_dialog_();
   void open_file_dialog_();
   void save_file_dialog_();
+  void save_startup_project_();
+  void clear_saved_startup_project_();
+  std::string serialized_project_json_() const;
   void open_url_(const char* url);
 
   // Settings related

@@ -34,6 +34,19 @@ static const char* const k_settings_version = "1";
 #include <cstdlib>
 #endif
 
+static bool is_valid_project_json(const std::string& s)
+{
+  try
+  {
+    const nlohmann::json j = nlohmann::json::parse(s);
+    return j.contains("sketches") && j["sketches"].is_array();
+  }
+  catch (...)
+  {
+    return false;
+  }
+}
+
 GUI* gui_instance = nullptr;
 
 GUI::GUI()
@@ -1293,6 +1306,18 @@ void GUI::settings_()
     }
   }
 
+  if (ImGui::CollapsingHeader("Startup project"))
+  {
+    ImGui::TextWrapped(
+        "Save the current document (geometry, view, and tool mode) as what loads when EzyCad starts. "
+        "If none is saved, the install default (res/default.ezy) is used.");
+    if (ImGui::Button("Save current as startup project"))
+      save_startup_project_();
+    ImGui::SameLine();
+    if (ImGui::Button("Clear saved startup"))
+      clear_saved_startup_project_();
+  }
+
   ImGui::Separator();
   if (ImGui::Button("Defaults"))
   {
@@ -1687,6 +1712,62 @@ void GUI::init(GLFWwindow* window)
 
   load_occt_view_settings_();
   load_examples_list_();
+  load_default_project_();
+}
+
+void GUI::load_default_project_()
+{
+  static constexpr char k_bundled_default[] = "res/default.ezy";
+
+  const std::string user_startup = settings::load_user_startup_project();
+  if (is_valid_project_json(user_startup))
+  {
+    on_file("(startup)", user_startup, false);
+    m_last_saved_path.clear();
+    return;
+  }
+  if (!user_startup.empty())
+    show_message("Saved startup project is invalid; loading install default.");
+
+  std::ifstream file(k_bundled_default, std::ios::binary);
+  if (!file.is_open())
+    return;
+  const std::string json_str {std::istreambuf_iterator<char>(file), std::istreambuf_iterator<char>()};
+  if (is_valid_project_json(json_str))
+  {
+    on_file(k_bundled_default, json_str, false);
+    m_last_saved_path.clear();
+  }
+}
+
+std::string GUI::serialized_project_json_() const
+{
+  using namespace nlohmann;
+  std::string project_json = m_view->to_json();
+  json        j            = json::parse(project_json);
+  j["mode"]                = static_cast<int>(get_mode());
+  return j.dump(2);
+}
+
+void GUI::save_startup_project_()
+{
+  if (!settings::save_user_startup_project(serialized_project_json_()))
+  {
+    show_message("Could not save startup project.");
+    return;
+  }
+#ifndef __EMSCRIPTEN__
+  const std::filesystem::path p = settings::user_startup_project_path();
+  if (!p.empty())
+    log_message("Startup saved to: " + p.string());
+#endif
+  show_message("Startup project saved. It will load automatically the next time you start EzyCad.");
+}
+
+void GUI::clear_saved_startup_project_()
+{
+  settings::clear_user_startup_project();
+  show_message("Saved startup cleared. Next launch uses the install default (res/default.ezy).");
 }
 
 void GUI::on_mouse_pos(const ScreenCoords& screen_coords)
@@ -1917,11 +1998,7 @@ void GUI::open_file_dialog_()
 
 void GUI::save_file_dialog_()
 {
-  using namespace nlohmann;
-  std::string project_json   = m_view->to_json();
-  json        j              = json::parse(project_json);
-  j["mode"]                  = static_cast<int>(get_mode());
-  const std::string json_str = j.dump(2);
+  const std::string json_str = serialized_project_json_();
 
 #ifndef __EMSCRIPTEN__
   std::string file;
@@ -1958,20 +2035,23 @@ void GUI::save_file_dialog_()
 #endif
 }
 
-void GUI::on_file(const std::string& file_path, const std::string& json_str)
+void GUI::on_file(const std::string& file_path, const std::string& json_str, bool announce_load)
 {
   using namespace nlohmann;
   m_view->push_undo_snapshot();
   const json j = json::parse(json_str);
+  m_view->load(json_str);
+  m_last_saved_path = file_path;
+  Mode opened_mode = Mode::Normal;
   if (j.contains("mode") && j["mode"].is_number_integer())
   {
     const int idx = j["mode"].get<int>();
     if (idx >= 0 && idx < static_cast<int>(Mode::_count))
-      set_mode(static_cast<Mode>(idx));
+      opened_mode = static_cast<Mode>(idx);
   }
-  m_view->load(json_str);
-  m_last_saved_path = file_path;
-  show_message("Opened: " + std::filesystem::path(file_path).filename().string());
+  set_mode(opened_mode);
+  if (announce_load)
+    show_message("Opened: " + std::filesystem::path(file_path).filename().string());
 }
 
 void GUI::on_import_file(const std::string& file_path, const std::string& file_data)

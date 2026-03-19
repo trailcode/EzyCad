@@ -1,5 +1,6 @@
 #pragma once
 
+#include <filesystem>
 #include <functional>
 #include <string>
 
@@ -20,4 +21,16 @@ std::string load_with_defaults();
 
 // Save settings blob. Works on native (file) and Emscripten (localStorage).
 void save(const std::string& content);
+
+// User config dir: %APPDATA%/EzyCad (Windows), ~/Library/Application Support/EzyCad (macOS),
+// $XDG_CONFIG_HOME/EzyCad or ~/.config/EzyCad (Linux). Empty if unavailable.
+std::filesystem::path user_config_directory();
+
+// Path to the user "startup" project (…/startup.ezy). Empty if user_config_directory() is empty.
+std::filesystem::path user_startup_project_path();
+
+// Optional startup project (Blender-style). Native: user_startup_project_path(); Wasm: localStorage.
+std::string load_user_startup_project();
+bool        save_user_startup_project(const std::string& json);
+void        clear_user_startup_project();
 }  // namespace settings

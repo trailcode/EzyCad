@@ -1540,9 +1540,6 @@ void Occt_view::load(const std::string& json_str, bool restore_view)
       // Ignore view restoration errors; project geometry has already loaded.
     }
   }
-
-  // Ensure correct state
-  gui().set_mode(Mode::Normal);
 }
 
 bool Occt_view::import_step(const std::string& step_data)

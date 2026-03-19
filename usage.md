@@ -119,6 +119,15 @@ The window can be closed with its close button; use **View → Sketch List** aga
    - [Import external CAD files](#importing-3d-geometries)
    - Export to standard formats (not implemented; see [issue #44](https://github.com/trailcode/EzyCad/issues/44))
 
+### Startup project (defaults)
+
+Similar to Blender’s startup file: EzyCad can load a **default document** when it starts, including geometry, camera/view (stored in the `.ezy`), and **current tool mode**.
+
+- **First launch / no custom startup** — The app loads the bundled template `res/default.ezy` from the install or build output.
+- **Save your own startup** — Set up the scene and mode the way you want, open **Settings** (menu bar), expand **Startup project**, and click **Save current as startup project**. On desktop, this writes `startup.ezy` under your user config folder (e.g. Windows: `%APPDATA%\EzyCad\`; Linux: `~/.config/EzyCad/`; macOS: `~/Library/Application Support/EzyCad/`). On the web build, it is stored in the browser (localStorage).
+- **Next runs** — If a saved startup exists, it is loaded instead of the bundled file. The session starts **untitled** (so **Save** does not overwrite your startup file until you pick a path).
+- **Clear saved startup** — In **Settings → Startup project**, click **Clear saved startup**; the next launch uses the bundled `res/default.ezy` again.
+
 ## Edit Operations
 
 Edit operations change your model (sketches or 3D shapes) and can be navigated with undo/redo.
