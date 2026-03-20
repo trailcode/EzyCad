@@ -174,9 +174,9 @@ class GUI
   bool                                  m_message_visible = false;
   std::chrono::steady_clock::time_point m_message_start_time;
 
-  // Log window
-  std::vector<std::string> m_log_messages;                  // Store log messages
-  bool                     m_log_scroll_to_bottom = false;  // Flag to auto-scroll to latest message
+  // Log window (single buffer for ImGui read-only multiline = selectable / copyable text)
+  std::vector<char> m_log_buffer {'\0'};
+  bool              m_log_scroll_to_bottom = false;  // Auto-scroll / cursor to end on new lines
   bool                     m_log_window_visible   = true;   // Control log window visibility
 
   // Stream redirection

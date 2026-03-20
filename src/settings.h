@@ -26,7 +26,7 @@ void save(const std::string& content);
 // $XDG_CONFIG_HOME/EzyCad or ~/.config/EzyCad (Linux). Empty if unavailable.
 std::filesystem::path user_config_directory();
 
-// Path to the user "startup" project (…/startup.ezy). Empty if user_config_directory() is empty.
+// Path to the user "startup" project (.../startup.ezy). Empty if user_config_directory() is empty.
 std::filesystem::path user_startup_project_path();
 
 // Optional startup project (Blender-style). Native: user_startup_project_path(); Wasm: localStorage.

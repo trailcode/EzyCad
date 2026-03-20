@@ -34,6 +34,27 @@ static const char* const k_settings_version = "1";
 #include <cstdlib>
 #endif
 
+namespace
+{
+struct Log_scroll_cb_user_data
+{
+  bool* scroll_to_bottom;
+};
+
+int log_multiline_scroll_callback(ImGuiInputTextCallbackData* data)
+{
+  auto* u = static_cast<Log_scroll_cb_user_data*>(data->UserData);
+  if (u && u->scroll_to_bottom && *u->scroll_to_bottom)
+  {
+    data->CursorPos      = data->BufTextLen;
+    data->SelectionStart = data->CursorPos;
+    data->SelectionEnd   = data->CursorPos;
+    *u->scroll_to_bottom = false;
+  }
+  return 0;
+}
+}  // namespace
+
 static bool is_valid_project_json(const std::string& s)
 {
   try
@@ -1660,8 +1681,17 @@ void GUI::message_status_window_()
 // Log window implementation
 void GUI::log_message(const std::string& message)
 {
-  m_log_messages.push_back(message);
-  m_log_scroll_to_bottom = true;  // Auto-scroll to new message
+  if (m_log_buffer.size() > 1)
+  {
+    m_log_buffer.pop_back();  // trailing '\0'
+    m_log_buffer.push_back('\n');
+  }
+  else if (!m_log_buffer.empty())
+    m_log_buffer.pop_back();
+
+  m_log_buffer.insert(m_log_buffer.end(), message.begin(), message.end());
+  m_log_buffer.push_back('\0');
+  m_log_scroll_to_bottom = true;
 }
 
 void GUI::log_window_()
@@ -1675,19 +1705,20 @@ void GUI::log_window_()
     return;
   }
 
-  // Scrollable log area
-  ImGui::BeginChild("LogContent", ImVec2(0, 0), true, ImGuiWindowFlags_HorizontalScrollbar);
-  for (const auto& message : m_log_messages)
-    ImGui::TextWrapped("%s", message.c_str());
+  if (m_log_buffer.empty())
+    m_log_buffer.push_back('\0');
 
-  // Auto-scroll to bottom if new messages are added
-  if (m_log_scroll_to_bottom && ImGui::GetScrollY() >= ImGui::GetScrollMaxY())
-  {
-    ImGui::SetScrollHereY(1.0f);
-    m_log_scroll_to_bottom = false;
-  }
-
-  ImGui::EndChild();
+  Log_scroll_cb_user_data cb_user {&m_log_scroll_to_bottom};
+  ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(4, 4));
+  ImGui::InputTextMultiline(
+      "##log",
+      m_log_buffer.data(),
+      m_log_buffer.size(),
+      ImVec2(-1.0f, -1.0f),
+      ImGuiInputTextFlags_ReadOnly | ImGuiInputTextFlags_CallbackAlways,
+      log_multiline_scroll_callback,
+      &cb_user);
+  ImGui::PopStyleVar();
   ImGui::End();
 }
 
@@ -1706,12 +1737,21 @@ void GUI::init(GLFWwindow* window)
   settings::set_log_callback([this](const std::string& m)
                              { log_message(m); });
   setup_log_redirection_();  // Set up stream redirection
+  log_message("EzyCad: initializing 3D view...");
   m_view->init_window(window);
   m_view->init_viewer();
   m_view->init_default();
+  log_message("EzyCad: 3D view ready (initial empty document).");
 
   load_occt_view_settings_();
+  log_message("EzyCad: application settings loaded.");
+
   load_examples_list_();
+  if (m_example_files.empty())
+    log_message("EzyCad: no example projects found under res/examples.");
+  else
+    log_message("EzyCad: " + std::to_string(m_example_files.size()) + " example project(s) available in File > Examples.");
+
   load_default_project_();
 }
 
@@ -1719,25 +1759,48 @@ void GUI::load_default_project_()
 {
   static constexpr char k_bundled_default[] = "res/default.ezy";
 
+  log_message("EzyCad: resolving startup document...");
+
   const std::string user_startup = settings::load_user_startup_project();
   if (is_valid_project_json(user_startup))
   {
+#ifdef __EMSCRIPTEN__
+    log_message("EzyCad: loading saved startup project (browser storage).");
+#else
+    {
+      const std::filesystem::path p = settings::user_startup_project_path();
+      log_message("EzyCad: loading saved startup project: " + (p.empty() ? std::string("(user storage)") : p.string()));
+    }
+#endif
     on_file("(startup)", user_startup, false);
     m_last_saved_path.clear();
+    log_message("EzyCad: startup document loaded (saved startup).");
     return;
   }
   if (!user_startup.empty())
+  {
+    log_message("EzyCad: saved startup project is invalid or incomplete; falling back to install default.");
     show_message("Saved startup project is invalid; loading install default.");
+  }
+  else
+    log_message("EzyCad: no saved startup project; trying bundled default.");
 
   std::ifstream file(k_bundled_default, std::ios::binary);
   if (!file.is_open())
+  {
+    log_message("EzyCad: bundled " + std::string(k_bundled_default) + " not found; keeping initial empty document.");
     return;
+  }
   const std::string json_str {std::istreambuf_iterator<char>(file), std::istreambuf_iterator<char>()};
   if (is_valid_project_json(json_str))
   {
+    log_message("EzyCad: loading bundled default project (" + std::string(k_bundled_default) + ").");
     on_file(k_bundled_default, json_str, false);
     m_last_saved_path.clear();
+    log_message("EzyCad: startup document loaded (bundled default).");
   }
+  else
+    log_message("EzyCad: bundled " + std::string(k_bundled_default) + " is invalid; keeping initial empty document.");
 }
 
 std::string GUI::serialized_project_json_() const
