@@ -356,24 +356,27 @@ void GUI::menu_bar_()
 
   if (ImGui::BeginMenu("File"))
   {
+    // Use separate `if` (not `else if`) for each entry. `BeginMenu` stays true while the submenu
+    // is open; chaining with `else if` would skip later items (e.g. Examples hidden while Export open).
     if (ImGui::MenuItem("New", "Ctrl+N"))
       m_view->new_file();
 
-    else if (ImGui::MenuItem("Open", "Ctrl+O"))
+    if (ImGui::MenuItem("Open", "Ctrl+O"))
       open_file_dialog_();
 
-    else if (ImGui::MenuItem("Save", "Ctrl+S"))
+    if (ImGui::MenuItem("Save", "Ctrl+S"))
       save_file_dialog_();
 
-    else if (ImGui::MenuItem("Save as"))
+    if (ImGui::MenuItem("Save as"))
     {
       m_last_saved_path.clear();  // Force save as dialog
       save_file_dialog_();
     }
-    else if (ImGui::MenuItem("Import"))
+
+    if (ImGui::MenuItem("Import"))
       import_file_dialog_();
 
-    else if (ImGui::BeginMenu("Export"))
+    if (ImGui::BeginMenu("Export"))
     {
       if (ImGui::MenuItem("STEP (.step)..."))
         export_file_dialog_(Export_format::Step);
@@ -387,7 +390,7 @@ void GUI::menu_bar_()
       ImGui::EndMenu();
     }
 
-    else if (ImGui::BeginMenu("Examples"))
+    if (ImGui::BeginMenu("Examples"))
     {
       for (const auto& [label, path] : m_example_files)
         if (ImGui::MenuItem(label.c_str()))
@@ -403,14 +406,14 @@ void GUI::menu_bar_()
       ImGui::EndMenu();
     }
 #ifdef __EMSCRIPTEN__
-    else if (ImGui::MenuItem("Save settings"))
+    if (ImGui::MenuItem("Save settings"))
     {
       save_occt_view_settings();
       show_message("Settings saved");
     }
 #endif
 
-    else if (ImGui::MenuItem("Exit"))
+    if (ImGui::MenuItem("Exit"))
       exit(0);
 
     ImGui::EndMenu();
@@ -420,8 +423,10 @@ void GUI::menu_bar_()
   {
     if (ImGui::MenuItem("Undo", "Ctrl+Z", false, m_view->can_undo()))
       m_view->undo();
+
     if (ImGui::MenuItem("Redo", "Ctrl+Y", false, m_view->can_redo()))
       m_view->redo();
+
     ImGui::Separator();
     if (ImGui::MenuItem("Add box"))
     {
