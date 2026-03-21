@@ -2,7 +2,6 @@
 
 #include "shp.h"
 #include "types.h"
-#include "utl_result.h"
 
 class GUI;
 class Occt_view;

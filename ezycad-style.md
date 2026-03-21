@@ -7,7 +7,7 @@ Use this style when editing or adding C/C++ code in the EzyCad project (files un
 - Use **`#pragma once`** for include guards (no `#ifndef`/`#define`/`#endif`).
 - **Include order**: Put the **closest / most direct** dependencies first.
   - In a **`.cpp`** file: include **this file's own header first** (e.g. in `sketch_nodes.cpp`, the first line is `#include "sketch_nodes.h"`). Then other project headers it needs, then external/system headers (`<...>`). Use a blank line before the `<...>` block when you have both.
-  - In a **`.h`** file: include the project headers this file directly depends on first (e.g. `sketch_nodes.h` has `#include "types.h"` before `<gp_Pln.hxx>`; `shp_operation.h` has `"utl_result.h"`, `"shp.h"`, `"types.h"` first). Then external/system headers. So **project (`"..."`) before external (`<...>`)**, with the most relevant project header at the very top when there is one.
+  - In a **`.h`** file: include the project headers this file directly depends on first (e.g. `sketch_nodes.h` has `#include "types.h"` before `<gp_Pln.hxx>`; `shp_operation.h` has `"shp.h"`, `"types.h"` first). Then external/system headers. So **project (`"..."`) before external (`<...>`)**, with the most relevant project header at the very top when there is one.
 - Prefer **forward declarations** for types used only as pointers/references (e.g. `class gp_Pln;`) when it reduces includes.
 
 ## Naming
@@ -33,9 +33,9 @@ Use this style when editing or adding C/C++ code in the EzyCad project (files un
 
 ## Code organization
 
-- **Templates**: Prefer putting template implementations in `.inl` files included from the header (e.g. `types.inl`, `utl_result.inl`).
+- **Templates**: Prefer putting template implementations in `.inl` files included from the header (e.g. `types.inl`, `utl.inl`).
 - **OCCT handles**: Use `opencascade::handle<T>` and project aliases (e.g. `AIS_Shape_ptr`, `Shp_ptr`).
-- **Result/error handling**: Use the project `Result<T>` and `Status` types from `utl_result.h` (e.g. `Status::ok()`, `Status::user_error("...")`). Use `CHK_RET(...)` from `utl.h` where a failing `Status`/`Result` should return early.
+- **Result/error handling**: Use the project `Result<T>` and `Status` types from `utl.h` (e.g. `Status::ok()`, `Status::user_error("...")`, `CHK_RET(...)` for early return on failure).
 - **Assertions / debug**: Use project macros `EZY_ASSERT` and `EZY_ASSERT_MSG` from `dbg.h`; use `DBG_MSG` for debug logging.
 
 ## Comments

@@ -2,7 +2,7 @@
 
 #include <AIS_Shape.hxx>
 
-#include "utl_result.h"
+#include "utl.h"
 
 class AIS_InteractiveContext;
 

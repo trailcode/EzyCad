@@ -35,7 +35,6 @@
 #include "shp_create.h"
 #include "sketch.h"
 #include "sketch_json.h"
-#include "utl.h"
 #include "utl_json.h"
 
 #ifdef __EMSCRIPTEN__
