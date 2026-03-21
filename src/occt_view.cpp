@@ -30,6 +30,7 @@
 
 #include "dbg.h"
 #include "geom.h"
+#include "utl.h"
 #include "gui.h"
 #include "shp_create.h"
 #include "sketch.h"
@@ -1600,9 +1601,7 @@ Status Occt_view::build_export_shape_(TopoDS_Shape& out_shape) const
 Status Occt_view::export_document(Export_format fmt, const std::string& file_path)
 {
   TopoDS_Shape shape;
-  const Status built = build_export_shape_(shape);
-  if (!built.is_ok())
-    return built;
+  CHK_RET(build_export_shape_(shape));
 
   switch (fmt)
   {

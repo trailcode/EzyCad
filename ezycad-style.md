@@ -35,7 +35,7 @@ Use this style when editing or adding C/C++ code in the EzyCad project (files un
 
 - **Templates**: Prefer putting template implementations in `.inl` files included from the header (e.g. `types.inl`, `utl_result.inl`).
 - **OCCT handles**: Use `opencascade::handle<T>` and project aliases (e.g. `AIS_Shape_ptr`, `Shp_ptr`).
-- **Result/error handling**: Use the project `Result<T>` and `Status` types from `utl_result.h` (e.g. `Status::ok()`, `Status::user_error("...")`, `CHK_RET(...)` where used).
+- **Result/error handling**: Use the project `Result<T>` and `Status` types from `utl_result.h` (e.g. `Status::ok()`, `Status::user_error("...")`). Use `CHK_RET(...)` from `utl.h` where a failing `Status`/`Result` should return early.
 - **Assertions / debug**: Use project macros `EZY_ASSERT` and `EZY_ASSERT_MSG` from `dbg.h`; use `DBG_MSG` for debug logging.
 
 ## Comments

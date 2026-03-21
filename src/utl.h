@@ -5,11 +5,13 @@
 #include "dbg.h"
 #include "types.h"
 
-#define CHK_RET(status)  \
-  do                     \
-  {                      \
-    if (!status.is_ok()) \
-      return (status);   \
+/// Early return if not ok. Binds the expression once (safe for calls like `ensure_operation_shps_()`).
+#define CHK_RET(expr)              \
+  do                               \
+  {                                \
+    auto&& _ezy_chk_ret = (expr);  \
+    if (!_ezy_chk_ret.is_ok())     \
+      return _ezy_chk_ret;         \
   } while (0)
 
 /**
