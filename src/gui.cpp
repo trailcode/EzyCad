@@ -2086,7 +2086,7 @@ void GUI::export_file_dialog_(Export_format fmt)
     show_message("Export read failed.");
     return;
   }
-  const std::string bytes(std::istreambuf_iterator<char>(in), std::istreambuf_iterator<char>());
+  const std::string bytes((std::istreambuf_iterator<char>(in)), std::istreambuf_iterator<char>());
   download_blob_async(download_name, bytes);
   show_message("Exported: " + download_name);
 #endif
