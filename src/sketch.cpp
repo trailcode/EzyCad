@@ -703,8 +703,8 @@ void Sketch::mirror_selected_edges()
   for (auto& [_, arc_circle_edges] : arc_circles)
   {
     EZY_ASSERT(arc_circle_edges.size() == 2);
-    const Edge* a;
-    const Edge* b;
+    const Edge* a = nullptr;
+    const Edge* b = nullptr;
     for (const Edge* e : arc_circle_edges)
       if (e->node_idx_arc.has_value())
         a = e;
