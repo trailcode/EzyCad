@@ -172,7 +172,9 @@ set(OpenCASCADE_LIBS
     TKLCAF
     TKCDF
     TKernel
-    TKDESTEP)
+    TKDESTEP
+    TKDEIGES
+    TKDESTL)
 
 # Configure Emscripten-specific settings if using Emscripten compiler
 if(CMAKE_CXX_COMPILER_ID STREQUAL "Emscripten")

@@ -5,19 +5,25 @@
 #include <Aspect_Grid.hxx>
 #include <BRepBndLib.hxx>
 #include <BRepBuilderAPI_Transform.hxx>
+#include <BRepMesh_IncrementalMesh.hxx>
 #include <BRepPrimAPI_MakePrism.hxx>
 #include <BRepTools.hxx>
+#include <BRep_Builder.hxx>
 #include <BRep_Tool.hxx>
 #include <GeomAPI_IntCS.hxx>
 #include <Geom_Line.hxx>
 #include <Geom_Plane.hxx>
+#include <IGESControl_Writer.hxx>
 #include <OpenGl_GraphicDriver.hxx>
 #include <Prs3d_DatumAspect.hxx>
 #include <PrsDim_LengthDimension.hxx>
 #include <STEPControl_Reader.hxx>
+#include <STEPControl_Writer.hxx>
 #include <StdSelect_BRepOwner.hxx>
+#include <StlAPI_Writer.hxx>
 #include <TopExp_Explorer.hxx>
 #include <TopoDS.hxx>
+#include <TopoDS_Compound.hxx>
 #include <V3d_View.hxx>
 #include <WNT_WClass.hxx>
 #include <WNT_Window.hxx>
@@ -143,7 +149,7 @@ void Occt_view::init_viewer()
        aLightIter.More();
        aLightIter.Next())
   {
-    const Handle(V3d_Light)& aLight = aLightIter.Value();
+    const Handle(V3d_Light) & aLight = aLightIter.Value();
     if (aLight->Type() == Graphic3d_TypeOfLightSource_Directional)
       aLight->SetCastShadows(true);
   }
@@ -1540,6 +1546,107 @@ void Occt_view::load(const std::string& json_str, bool restore_view)
       // Ignore view restoration errors; project geometry has already loaded.
     }
   }
+}
+
+TopoDS_Shape Occt_view::shape_with_local_transform_(const AIS_Shape_ptr& ais) const
+{
+  if (ais.IsNull())
+    return {};
+  const TopoDS_Shape& s = ais->Shape();
+  if (s.IsNull())
+    return {};
+  const gp_Trsf&           tr = ais->LocalTransformation();
+  BRepBuilderAPI_Transform transformer(s, tr, true);
+  return transformer.Shape();
+}
+
+bool Occt_view::build_export_shape_(TopoDS_Shape& out_shape, std::string& err_msg) const
+{
+  std::vector<TopoDS_Shape>        parts;
+  const std::vector<AIS_Shape_ptr> selected = get_selected();
+  if (!selected.empty())
+    for (const AIS_Shape_ptr& ais : selected)
+    {
+      TopoDS_Shape t = shape_with_local_transform_(ais);
+      if (!t.IsNull())
+        parts.push_back(t);
+    }
+
+  else
+    for (const Shp_ptr& shp : m_shps)
+    {
+      TopoDS_Shape t = shape_with_local_transform_(shp);
+      if (!t.IsNull())
+        parts.push_back(t);
+    }
+
+  if (parts.empty())
+  {
+    err_msg = "Nothing to export (no shapes).";
+    return false;
+  }
+  if (parts.size() == 1)
+  {
+    out_shape = parts.front();
+    return true;
+  }
+  TopoDS_Compound comp;
+  BRep_Builder    bb;
+  bb.MakeCompound(comp);
+  for (const TopoDS_Shape& p : parts)
+    bb.Add(comp, p);
+  out_shape = comp;
+  return true;
+}
+
+std::string Occt_view::export_document(Export_format fmt, const std::string& file_path)
+{
+  TopoDS_Shape shape;
+  std::string  err;
+  if (!build_export_shape_(shape, err))
+    return err;
+
+  switch (fmt)
+  {
+    case Export_format::Step:
+    {
+      STEPControl_Writer    writer;
+      IFSelect_ReturnStatus tr = writer.Transfer(shape, STEPControl_AsIs);
+      if (tr != IFSelect_RetDone)
+        return "STEP transfer failed.";
+
+      tr = writer.Write(file_path.c_str());
+      if (tr != IFSelect_RetDone)
+        return "STEP write failed.";
+
+      return {};
+    }
+    case Export_format::Iges:
+    {
+      IGESControl_Writer writer;
+      if (!writer.AddShape(shape))
+        return "IGES does not support this shape.";
+
+      if (!writer.Write(file_path.c_str()))
+        return "IGES write failed.";
+
+      return {};
+    }
+    case Export_format::Stl:
+    {
+      // Tessellate for mesh export (linear deflection in model units).
+      constexpr Standard_Real        k_lin_deflection = 0.1;
+      const BRepMesh_IncrementalMesh mesher(shape, k_lin_deflection);
+      (void) mesher;
+      StlAPI_Writer stl_writer;
+      stl_writer.ASCIIMode() = Standard_False;
+      if (!stl_writer.Write(shape, file_path.c_str()))
+        return "STL write failed.";
+
+      return {};
+    }
+  }
+  return "Unknown export format.";
 }
 
 bool Occt_view::import_step(const std::string& step_data)

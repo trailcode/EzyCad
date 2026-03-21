@@ -50,4 +50,12 @@ class SafeType
 
 using ScreenCoords = SafeType<glm::dvec2>;
 
+/// Target format for CAD/mesh export (STEP, IGES, binary STL).
+enum class Export_format
+{
+  Step,
+  Iges,
+  Stl
+};
+
 #include "types.inl"

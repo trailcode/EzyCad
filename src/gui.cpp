@@ -373,6 +373,20 @@ void GUI::menu_bar_()
     else if (ImGui::MenuItem("Import"))
       import_file_dialog_();
 
+    else if (ImGui::BeginMenu("Export"))
+    {
+      if (ImGui::MenuItem("STEP (.step)..."))
+        export_file_dialog_(Export_format::Step);
+
+      if (ImGui::MenuItem("IGES (.igs)..."))
+        export_file_dialog_(Export_format::Iges);
+
+      if (ImGui::MenuItem("STL (binary)..."))
+        export_file_dialog_(Export_format::Stl);
+
+      ImGui::EndMenu();
+    }
+
     else if (ImGui::BeginMenu("Examples"))
     {
       for (const auto& [label, path] : m_example_files)
@@ -2001,6 +2015,78 @@ void GUI::cleanup_log_redirection_()
   m_original_cerr_buf = nullptr;
 }
 
+// Import/export related
+void GUI::export_file_dialog_(Export_format fmt)
+{
+#ifndef __EMSCRIPTEN__
+  const char* title       = "Export STEP";
+  const char* def_name    = "export.step";
+  const char* filter_pat  = "*.step";
+  const char* filter_desc = "STEP files";
+  switch (fmt)
+  {
+  case Export_format::Step:
+    break;
+  case Export_format::Iges:
+    title       = "Export IGES";
+    def_name    = "export.igs";
+    filter_pat  = "*.igs";
+    filter_desc = "IGES files";
+    break;
+  case Export_format::Stl:
+    title       = "Export STL";
+    def_name    = "export.stl";
+    filter_pat  = "*.stl";
+    filter_desc = "STL files";
+    break;
+  }
+
+  char const* filter_patterns[1] = {filter_pat};
+  char const* selected            = tinyfd_saveFileDialog(title, def_name, 1, filter_patterns, filter_desc);
+  if (!selected)
+  {
+    show_message("Export canceled");
+    return;
+  }
+  const std::string err = m_view->export_document(fmt, selected);
+  if (!err.empty())
+    show_message(err);
+  else
+    show_message("Exported: " + std::filesystem::path(selected).filename().string());
+#else
+  const char*   mem_path = "/ezycad_export.step";
+  std::string   download_name {"export.step"};
+  switch (fmt)
+  {
+  case Export_format::Step:
+    break;
+  case Export_format::Iges:
+    mem_path      = "/ezycad_export.igs";
+    download_name = "export.igs";
+    break;
+  case Export_format::Stl:
+    mem_path      = "/ezycad_export.stl";
+    download_name = "export.stl";
+    break;
+  }
+  const std::string err = m_view->export_document(fmt, mem_path);
+  if (!err.empty())
+  {
+    show_message(err);
+    return;
+  }
+  std::ifstream in(mem_path, std::ios::binary);
+  if (!in)
+  {
+    show_message("Export read failed.");
+    return;
+  }
+  const std::string bytes(std::istreambuf_iterator<char>(in), std::istreambuf_iterator<char>());
+  download_blob_async(download_name, bytes);
+  show_message("Exported: " + download_name);
+#endif
+}
+
 void GUI::import_file_dialog_()
 {
 #ifndef __EMSCRIPTEN__
@@ -2030,6 +2116,7 @@ void GUI::import_file_dialog_()
 #endif
 }
 
+// Open save related
 void GUI::open_file_dialog_()
 {
 #ifndef __EMSCRIPTEN__
@@ -2172,6 +2259,22 @@ void GUI::save_file_dialog_async(const char* title, const std::string& default_f
       document.body.removeChild(a);
       URL.revokeObjectURL(url);
       Module.ccall('on_save_file_selected', null, ['string'], [UTF8ToString($2)]); }, json_str.data(), json_str.size(), default_file.c_str());
+}
+
+void GUI::download_blob_async(const std::string& default_filename, const std::string& data)
+{
+  EM_ASM_ARGS({
+      var blob = new Blob([HEAPU8.subarray($0, $0 + $1)], { type: 'application/octet-stream' });
+      var url = URL.createObjectURL(blob);
+      var a = document.createElement('a');
+      a.href = url;
+      a.download = UTF8ToString($2);
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+  },
+            data.data(), data.size(), default_filename.c_str());
 }
 
 // C-style callback for Emscripten

@@ -33,7 +33,7 @@ EzyCad (Easy CAD) is a CAD application for hobbyist machinists to design and edi
 
 ### Main Components
 1. **Menu Bar**
-   - **File** — [New](#new-project), [Open](#open-project), [Save](#save-project), Save as, [Import](#importing-3d-geometries), Examples, Exit
+   - **File** — [New](#new-project), [Open](#open-project), [Save](#save-project), Save as, [Import](#importing-3d-geometries), [Export](#exporting-3d-geometries), Examples, Exit
    - **Edit** — [Undo](#edit-operations), [Redo](#edit-operations)
    - **View** — [Settings, panes and options](#help-and-settings)
    - **Help** — [About, Usage Guide](#help-and-settings)
@@ -102,7 +102,7 @@ The window can be closed with its close button; use **View → Sketch List** aga
 ### Supported Formats
 - Native format: `.ezy` files
 - [Import formats: STEP, IGES, STL](#importing-3d-geometries)
-- Export formats: STEP, IGES, STL (not implemented; see [issue #44](https://github.com/trailcode/EzyCad/issues/44))
+- [Export formats: STEP, IGES, STL (binary)](#exporting-3d-geometries)
 
 ### Basic Operations
 1. #### New Project
@@ -117,7 +117,7 @@ The window can be closed with its close button; use **View → Sketch List** aga
 
 4. **Import/Export**
    - [Import external CAD files](#importing-3d-geometries)
-   - Export to standard formats (not implemented; see [issue #44](https://github.com/trailcode/EzyCad/issues/44))
+   - [Export to STEP, IGES, or binary STL](#exporting-3d-geometries)
 
 ### Startup project (defaults)
 
@@ -214,6 +214,20 @@ In addition to creating 3D shapes from sketches, EzyCad supports importing exist
 4. Imported shapes can be moved, rotated, and used in [boolean operations](#other-feature-operations) just like shapes created from sketches
 
 **Note**: Imported 3D geometries are added as solid shapes and can be combined with your sketched designs using [boolean operations](#other-feature-operations) (cut, fuse, common) or modified using [transform tools](#3d-modeling).
+
+### Exporting 3D geometries
+
+Use **File → Export** to save the current model for other CAD tools, CAM, or 3D printing.
+
+| | |
+| ---: | --- |
+| **STEP** (`.step`) | Precise B-rep exchange |
+| **IGES** (`.igs`) | Legacy CAD exchange |
+| **STL** | Triangle mesh; files are written in **binary** form |
+
+**Scope:** If one or more 3D shapes are selected in the viewer, only those shapes are exported (with their current move/rotate/scale applied). If nothing is selected, all shapes in the document are exported together.
+
+**How to export:** **File → Export →** choose STEP, IGES, or STL (binary), then pick a save location (desktop) or accept the browser download (WebAssembly).
 
 For detailed information on creating 2D geometry, see the [2D Sketching](usage-sketch.md) guide. For information on working with 3D shapes, see the [3D Modeling](#3d-modeling) section.
 

@@ -78,6 +78,7 @@ class GUI
 #ifdef __EMSCRIPTEN__
   void open_file_dialog_async(const char* title);  // Async for Emscripten
   void save_file_dialog_async(const char* title, const std::string& default_file, const std::string& json_str);
+  void download_blob_async(const std::string& default_filename, const std::string& data);
 #endif
 
   void on_file(const std::string& file_path, const std::string& json_str, bool announce_load = true);
@@ -137,9 +138,14 @@ class GUI
   void setup_log_redirection_();
   void cleanup_log_redirection_();
 
+  // Import/export related
   void import_file_dialog_();
+  void export_file_dialog_(Export_format fmt);
+
+  // Open/save related
   void open_file_dialog_();
   void save_file_dialog_();
+  
   void save_startup_project_();
   void clear_saved_startup_project_();
   std::string serialized_project_json_() const;
