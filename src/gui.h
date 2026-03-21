@@ -145,11 +145,11 @@ class GUI
   // Open/save related
   void open_file_dialog_();
   void save_file_dialog_();
-  
-  void save_startup_project_();
-  void clear_saved_startup_project_();
+
+  void        save_startup_project_();
+  void        clear_saved_startup_project_();
   std::string serialized_project_json_() const;
-  void open_url_(const char* url);
+  void        open_url_(const char* url);
 
   // Settings related
   void load_occt_view_settings_();
@@ -182,8 +182,8 @@ class GUI
 
   // Log window (single buffer for ImGui read-only multiline = selectable / copyable text)
   std::vector<char> m_log_buffer {'\0'};
-  bool              m_log_scroll_to_bottom = false;  // Auto-scroll / cursor to end on new lines
-  bool                     m_log_window_visible   = true;   // Control log window visibility
+  bool              m_log_scroll_to_bottom = false;  // Auto-scroll log to bottom on new lines (like Lua console)
+  bool              m_log_window_visible   = true;   // Control log window visibility
 
   // Stream redirection
   std::streambuf* m_original_cout_buf = nullptr;  // Original stdout buffer

@@ -34,27 +34,6 @@ static const char* const k_settings_version = "1";
 #include <cstdlib>
 #endif
 
-namespace
-{
-struct Log_scroll_cb_user_data
-{
-  bool* scroll_to_bottom;
-};
-
-int log_multiline_scroll_callback(ImGuiInputTextCallbackData* data)
-{
-  auto* u = static_cast<Log_scroll_cb_user_data*>(data->UserData);
-  if (u && u->scroll_to_bottom && *u->scroll_to_bottom)
-  {
-    data->CursorPos      = data->BufTextLen;
-    data->SelectionStart = data->CursorPos;
-    data->SelectionEnd   = data->CursorPos;
-    *u->scroll_to_bottom = false;
-  }
-  return 0;
-}
-}  // namespace
-
 static bool is_valid_project_json(const std::string& s)
 {
   try
@@ -1727,17 +1706,16 @@ void GUI::log_window_()
   if (m_log_buffer.empty())
     m_log_buffer.push_back('\0');
 
-  Log_scroll_cb_user_data cb_user {&m_log_scroll_to_bottom};
-  ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(4, 4));
-  ImGui::InputTextMultiline(
-      "##log",
-      m_log_buffer.data(),
-      m_log_buffer.size(),
-      ImVec2(-1.0f, -1.0f),
-      ImGuiInputTextFlags_ReadOnly | ImGuiInputTextFlags_CallbackAlways,
-      log_multiline_scroll_callback,
-      &cb_user);
-  ImGui::PopStyleVar();
+  ImGui::BeginChild("LogScroll", ImVec2(0, 0), true, ImGuiWindowFlags_HorizontalScrollbar);
+  const char* log_begin = m_log_buffer.data();
+  const char* log_end   = m_log_buffer.size() > 1 ? log_begin + m_log_buffer.size() - 1 : log_begin;
+  ImGui::TextUnformatted(log_begin, log_end);
+  if (m_log_scroll_to_bottom)
+  {
+    ImGui::SetScrollHereY(1.0f);
+    m_log_scroll_to_bottom = false;
+  }
+  ImGui::EndChild();
   ImGui::End();
 }
 
@@ -2030,24 +2008,24 @@ void GUI::export_file_dialog_(Export_format fmt)
   const char* filter_desc = "STEP files";
   switch (fmt)
   {
-  case Export_format::Step:
-    break;
-  case Export_format::Iges:
-    title       = "Export IGES";
-    def_name    = "export.igs";
-    filter_pat  = "*.igs";
-    filter_desc = "IGES files";
-    break;
-  case Export_format::Stl:
-    title       = "Export STL";
-    def_name    = "export.stl";
-    filter_pat  = "*.stl";
-    filter_desc = "STL files";
-    break;
+    case Export_format::Step:
+      break;
+    case Export_format::Iges:
+      title       = "Export IGES";
+      def_name    = "export.igs";
+      filter_pat  = "*.igs";
+      filter_desc = "IGES files";
+      break;
+    case Export_format::Stl:
+      title       = "Export STL";
+      def_name    = "export.stl";
+      filter_pat  = "*.stl";
+      filter_desc = "STL files";
+      break;
   }
 
   char const* filter_patterns[1] = {filter_pat};
-  char const* selected            = tinyfd_saveFileDialog(title, def_name, 1, filter_patterns, filter_desc);
+  char const* selected           = tinyfd_saveFileDialog(title, def_name, 1, filter_patterns, filter_desc);
   if (!selected)
   {
     show_message("Export canceled");
@@ -2059,20 +2037,20 @@ void GUI::export_file_dialog_(Export_format fmt)
   else
     show_message("Exported: " + std::filesystem::path(selected).filename().string());
 #else
-  const char*   mem_path = "/ezycad_export.step";
-  std::string   download_name {"export.step"};
+  const char* mem_path = "/ezycad_export.step";
+  std::string download_name {"export.step"};
   switch (fmt)
   {
-  case Export_format::Step:
-    break;
-  case Export_format::Iges:
-    mem_path      = "/ezycad_export.igs";
-    download_name = "export.igs";
-    break;
-  case Export_format::Stl:
-    mem_path      = "/ezycad_export.stl";
-    download_name = "export.stl";
-    break;
+    case Export_format::Step:
+      break;
+    case Export_format::Iges:
+      mem_path      = "/ezycad_export.igs";
+      download_name = "export.igs";
+      break;
+    case Export_format::Stl:
+      mem_path      = "/ezycad_export.stl";
+      download_name = "export.stl";
+      break;
   }
   const Status s = m_view->export_document(fmt, mem_path);
   if (!s.is_ok())
@@ -2197,7 +2175,7 @@ void GUI::on_file(const std::string& file_path, const std::string& json_str, boo
   const json j = json::parse(json_str);
   m_view->load(json_str);
   m_last_saved_path = file_path;
-  Mode opened_mode = Mode::Normal;
+  Mode opened_mode  = Mode::Normal;
   if (j.contains("mode") && j["mode"].is_number_integer())
   {
     const int idx = j["mode"].get<int>();
@@ -2277,9 +2255,7 @@ void GUI::download_blob_async(const std::string& default_filename, const std::st
       document.body.appendChild(a);
       a.click();
       document.body.removeChild(a);
-      URL.revokeObjectURL(url);
-  },
-            data.data(), data.size(), default_filename.c_str());
+      URL.revokeObjectURL(url); }, data.data(), data.size(), default_filename.c_str());
 }
 
 // C-style callback for Emscripten
