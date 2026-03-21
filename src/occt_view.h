@@ -67,8 +67,7 @@ class Occt_view : protected AIS_ViewController
   bool        import_step(const std::string& file_path);
 
   /// Writes STEP, IGES, or binary STL to \a file_path. Uses selected shapes if any, else all shapes.
-  /// \return Empty string on success; otherwise a short error message for the user.
-  std::string export_document(Export_format fmt, const std::string& file_path);
+  [[nodiscard]] Status export_document(Export_format fmt, const std::string& file_path);
 
   // Undo / redo (document snapshot stack).
   /// Saves current document (full JSON) and mode. A future delta-based approach would save memory
@@ -211,7 +210,7 @@ class Occt_view : protected AIS_ViewController
   std::string unique_shape_name_(const char* base_name) const;
 
   TopoDS_Shape shape_with_local_transform_(const AIS_Shape_ptr& ais) const;
-  bool         build_export_shape_(TopoDS_Shape& out_shape, std::string& err_msg) const;
+  [[nodiscard]] Status build_export_shape_(TopoDS_Shape& out_shape) const;
 
   void update_view_background_();
 

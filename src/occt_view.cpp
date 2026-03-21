@@ -1560,7 +1560,7 @@ TopoDS_Shape Occt_view::shape_with_local_transform_(const AIS_Shape_ptr& ais) co
   return transformer.Shape();
 }
 
-bool Occt_view::build_export_shape_(TopoDS_Shape& out_shape, std::string& err_msg) const
+Status Occt_view::build_export_shape_(TopoDS_Shape& out_shape) const
 {
   std::vector<TopoDS_Shape>        parts;
   const std::vector<AIS_Shape_ptr> selected = get_selected();
@@ -1581,30 +1581,28 @@ bool Occt_view::build_export_shape_(TopoDS_Shape& out_shape, std::string& err_ms
     }
 
   if (parts.empty())
-  {
-    err_msg = "Nothing to export (no shapes).";
-    return false;
-  }
+    return Status::user_error("Nothing to export (no shapes).");
+
   if (parts.size() == 1)
-  {
     out_shape = parts.front();
-    return true;
+  else
+  {
+    TopoDS_Compound comp;
+    BRep_Builder    bb;
+    bb.MakeCompound(comp);
+    for (const TopoDS_Shape& p : parts)
+      bb.Add(comp, p);
+    out_shape = comp;
   }
-  TopoDS_Compound comp;
-  BRep_Builder    bb;
-  bb.MakeCompound(comp);
-  for (const TopoDS_Shape& p : parts)
-    bb.Add(comp, p);
-  out_shape = comp;
-  return true;
+  return Status::ok();
 }
 
-std::string Occt_view::export_document(Export_format fmt, const std::string& file_path)
+Status Occt_view::export_document(Export_format fmt, const std::string& file_path)
 {
   TopoDS_Shape shape;
-  std::string  err;
-  if (!build_export_shape_(shape, err))
-    return err;
+  const Status built = build_export_shape_(shape);
+  if (!built.is_ok())
+    return built;
 
   switch (fmt)
   {
@@ -1613,24 +1611,24 @@ std::string Occt_view::export_document(Export_format fmt, const std::string& fil
       STEPControl_Writer    writer;
       IFSelect_ReturnStatus tr = writer.Transfer(shape, STEPControl_AsIs);
       if (tr != IFSelect_RetDone)
-        return "STEP transfer failed.";
+        return Status::user_error("STEP transfer failed.");
 
       tr = writer.Write(file_path.c_str());
       if (tr != IFSelect_RetDone)
-        return "STEP write failed.";
+        return Status::user_error("STEP write failed.");
 
-      return {};
+      return Status::ok();
     }
     case Export_format::Iges:
     {
       IGESControl_Writer writer;
       if (!writer.AddShape(shape))
-        return "IGES does not support this shape.";
+        return Status::user_error("IGES does not support this shape.");
 
       if (!writer.Write(file_path.c_str()))
-        return "IGES write failed.";
+        return Status::user_error("IGES write failed.");
 
-      return {};
+      return Status::ok();
     }
     case Export_format::Stl:
     {
@@ -1641,12 +1639,12 @@ std::string Occt_view::export_document(Export_format fmt, const std::string& fil
       StlAPI_Writer stl_writer;
       stl_writer.ASCIIMode() = Standard_False;
       if (!stl_writer.Write(shape, file_path.c_str()))
-        return "STL write failed.";
+        return Status::user_error("STL write failed.");
 
-      return {};
+      return Status::ok();
     }
   }
-  return "Unknown export format.";
+  return Status::user_error("Unknown export format.");
 }
 
 bool Occt_view::import_step(const std::string& step_data)

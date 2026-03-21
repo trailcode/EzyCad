@@ -2048,9 +2048,9 @@ void GUI::export_file_dialog_(Export_format fmt)
     show_message("Export canceled");
     return;
   }
-  const std::string err = m_view->export_document(fmt, selected);
-  if (!err.empty())
-    show_message(err);
+  const Status s = m_view->export_document(fmt, selected);
+  if (!s.is_ok())
+    show_message(s.message());
   else
     show_message("Exported: " + std::filesystem::path(selected).filename().string());
 #else
@@ -2069,10 +2069,10 @@ void GUI::export_file_dialog_(Export_format fmt)
     download_name = "export.stl";
     break;
   }
-  const std::string err = m_view->export_document(fmt, mem_path);
-  if (!err.empty())
+  const Status s = m_view->export_document(fmt, mem_path);
+  if (!s.is_ok())
   {
-    show_message(err);
+    show_message(s.message());
     return;
   }
   std::ifstream in(mem_path, std::ios::binary);
