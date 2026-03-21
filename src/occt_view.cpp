@@ -38,6 +38,9 @@
 #include "utl_json.h"
 
 #ifdef __EMSCRIPTEN__
+#include <Font_FontMgr.hxx>
+#include <Font_NameOfFont.hxx>
+#include <TCollection_AsciiString.hxx>
 #include <Wasm_Window.hxx>
 #endif
 
@@ -161,6 +164,26 @@ void Occt_view::init_viewer()
 
   m_view->SetWindow(aWindow);
   m_ctx = new AIS_InteractiveContext(aViewer);
+
+  // Browser/WASM has no system font directories; OCCT still needs font files for the view cube,
+  // dimensions, etc. (CSS "serif" / OS fonts are not exposed as paths to WASM.)
+  // Preload matches CMake --preload-file ... DroidSans.ttf@/DroidSans.ttf (shared with ImGui).
+  {
+    Handle(Font_FontMgr)     font_mgr = Font_FontMgr::GetInstance();
+    Handle(Font_SystemFont) sys_font  = font_mgr->CheckFont("/DroidSans.ttf");
+    if (!sys_font.IsNull())
+    {
+      font_mgr->RegisterFont(sys_font, Standard_True);
+      const TCollection_AsciiString& family = sys_font->FontName();
+      // OCCT asks for generic families (Font_NOF_*); default aliases point at missing system fonts.
+      for (const char* alias : {Font_NOF_SERIF, Font_NOF_SANS_SERIF, Font_NOF_MONOSPACE})
+      {
+        const TCollection_AsciiString alias_str(alias);
+        (void) font_mgr->RemoveFontAlias(alias_str, TCollection_AsciiString());
+        (void) font_mgr->AddFontAlias(alias_str, family);
+      }
+    }
+  }
 #endif
 
   m_view->SetImmediateUpdate(false);
