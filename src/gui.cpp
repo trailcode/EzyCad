@@ -1706,17 +1706,16 @@ void GUI::log_window_()
   if (m_log_buffer.empty())
     m_log_buffer.push_back('\0');
 
-  Log_scroll_cb_user_data cb_user {&m_log_scroll_to_bottom};
-  ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(4, 4));
-  ImGui::InputTextMultiline(
-      "##log",
-      m_log_buffer.data(),
-      m_log_buffer.size(),
-      ImVec2(-1.0f, -1.0f),
-      ImGuiInputTextFlags_ReadOnly | ImGuiInputTextFlags_CallbackAlways,
-      log_multiline_scroll_callback,
-      &cb_user);
-  ImGui::PopStyleVar();
+  ImGui::BeginChild("LogScroll", ImVec2(0, 0), true, ImGuiWindowFlags_HorizontalScrollbar);
+  const char* log_begin = m_log_buffer.data();
+  const char* log_end   = m_log_buffer.size() > 1 ? log_begin + m_log_buffer.size() - 1 : log_begin;
+  ImGui::TextUnformatted(log_begin, log_end);
+  if (m_log_scroll_to_bottom)
+  {
+    ImGui::SetScrollHereY(1.0f);
+    m_log_scroll_to_bottom = false;
+  }
+  ImGui::EndChild();
   ImGui::End();
 }
 
