@@ -140,6 +140,14 @@ else()
   set(OCCT_BIN_DIR)
 endif()
 
+# OCCT 3rd-party DLL path must not contain backticks — a common mistake is pasting
+# -DOCCT_3RD_PARTY_DIR=... from Markdown and including the closing ` of `...`.
+if(DEFINED OCCT_3RD_PARTY_DIR)
+  string(REGEX REPLACE "[`]" "" OCCT_3RD_PARTY_DIR "${OCCT_3RD_PARTY_DIR}")
+  string(STRIP "${OCCT_3RD_PARTY_DIR}" OCCT_3RD_PARTY_DIR)
+  set(OCCT_3RD_PARTY_DIR "${OCCT_3RD_PARTY_DIR}" CACHE PATH "OCCT 3rd-party DLL root (freetype, ffmpeg, …)" FORCE)
+endif()
+
 file(GLOB ICON_ASSETS "${CMAKE_SOURCE_DIR}/icons/*.png")
 file(GLOB WEB_FILES "${CMAKE_SOURCE_DIR}/web/EzyCad.html")
 
@@ -479,6 +487,7 @@ if(MSVC)
     target_sources(${PROJECT_NAME} PRIVATE ${DOC_FILES})
     set_source_files_properties(${DOC_FILES} PROPERTIES HEADER_FILE_ONLY TRUE)
 endif()
+
 
 # Add Google Test only for non-Emscripten builds
 if(NOT CMAKE_CXX_COMPILER_ID STREQUAL "Emscripten")

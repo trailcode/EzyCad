@@ -16,14 +16,10 @@
             height: 100%;
             overflow: hidden;
             display: block;
-            image-rendering: optimizeSpeed;
-            image-rendering: -moz-crisp-edges;
-            image-rendering: -o-crisp-edges;
-            image-rendering: -webkit-optimize-contrast;
-            image-rendering: optimize-contrast;
-            image-rendering: crisp-edges;
-            image-rendering: pixelated;
-            -ms-interpolation-mode: nearest-neighbor;
+            /* Default (smooth) scaling. Do NOT use image-rendering: pixelated here:
+               when the canvas backing-store size differs from CSS size (HiDPI), the
+               browser upscales the WebGL surface with nearest-neighbor and ImGui text
+               looks blocky. */
         }
     </style>
   </head>
