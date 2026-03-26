@@ -1,7 +1,8 @@
-// Dear ImGui + EzyCad GUI (OCCT wiring comes in a later step).
+// Dear ImGui + EzyCad GUI + OCCT 3D view + chained GLFW input (ImGui first, then 3D view).
 
 #define WIN32_LEAN_AND_MEAN
 #include <stdio.h>
+#include <functional>
 
 #include "gui.h"
 #include "imgui.h"
@@ -37,6 +38,49 @@ extern "C" void emscripten_save_settings_on_unload()
 static void glfw_error_callback(int error, const char* description)
 {
   fprintf(stderr, "GLFW Error %d: %s\n", error, description);
+}
+
+static std::function<void(GLFWwindow* window, int key, int scancode, int action, int mods)> keyCallback;
+static std::function<void(GLFWwindow* window, double xpos, double ypos)>                    cursorPosCallback;
+static std::function<void(GLFWwindow* window, int button, int action, int mods)>            mouseButtonCallback;
+static std::function<void(GLFWwindow* window, int width, int height)>                       windowSizeCallback;
+static std::function<void(GLFWwindow* window, double xoffset, double yoffset)>              scroll_callback;
+
+void key_callback_wrapper(GLFWwindow* window,
+                          int         key,
+                          int         scancode,
+                          int         action,
+                          int         mods)
+{
+  if (keyCallback)
+    keyCallback(window, key, scancode, action, mods);
+}
+
+void cursor_pos_callback_wrapper(GLFWwindow* window, double xpos, double ypos)
+{
+  if (cursorPosCallback)
+    cursorPosCallback(window, xpos, ypos);
+}
+
+void mouse_button_callback_wrapper(GLFWwindow* window,
+                                   int         button,
+                                   int         action,
+                                   int         mods)
+{
+  if (mouseButtonCallback)
+    mouseButtonCallback(window, button, action, mods);
+}
+
+void window_size_callback_wrapper(GLFWwindow* window, int width, int height)
+{
+  if (windowSizeCallback)
+    windowSizeCallback(window, width, height);
+}
+
+void scroll_callback_wrapper(GLFWwindow* window, double xoffset, double yoffset)
+{
+  if (scroll_callback)
+    scroll_callback(window, xoffset, yoffset);
 }
 
 // Main code
@@ -131,6 +175,59 @@ int main(int, char**)
       });
 #endif
 
+  keyCallback = [&](GLFWwindow* window, int key, int scancode, int action, int mods)
+  {
+    if (key == GLFW_KEY_TAB)
+    {
+      if (action == GLFW_PRESS)
+        gui.on_key(key, scancode, action, mods);
+      return;
+    }
+
+    if (action == GLFW_PRESS && (mods & GLFW_MOD_CONTROL) &&
+        (key == GLFW_KEY_Z || key == GLFW_KEY_Y))
+    {
+      gui.on_key(key, scancode, action, mods);
+      return;
+    }
+
+    ImGui_ImplGlfw_KeyCallback(window, key, scancode, action, mods);
+    if (!io.WantCaptureKeyboard)
+      gui.on_key(key, scancode, action, mods);
+  };
+
+  cursorPosCallback = [&](GLFWwindow* window, double xpos, double ypos)
+  {
+    ImGui_ImplGlfw_CursorPosCallback(window, xpos, ypos);
+    if (!io.WantCaptureMouse)
+      gui.on_mouse_pos(ScreenCoords(glm::dvec2(xpos, ypos)));
+  };
+
+  mouseButtonCallback = [&](GLFWwindow* window, int button, int action, int mods)
+  {
+    ImGui_ImplGlfw_MouseButtonCallback(window, button, action, mods);
+    if (!io.WantCaptureMouse)
+      gui.on_mouse_button(button, action, mods);
+  };
+
+  windowSizeCallback = [&](GLFWwindow* window, int width, int height)
+  {
+    gui.on_resize(width, height);
+  };
+
+  scroll_callback = [&](GLFWwindow* window, double xoffset, double yoffset)
+  {
+    ImGui_ImplGlfw_ScrollCallback(window, xoffset, yoffset);
+    if (!io.WantCaptureMouse)
+      gui.on_mouse_scroll(xoffset, yoffset);
+  };
+
+  glfwSetKeyCallback(window, key_callback_wrapper);
+  glfwSetCursorPosCallback(window, cursor_pos_callback_wrapper);
+  glfwSetMouseButtonCallback(window, mouse_button_callback_wrapper);
+  glfwSetWindowSizeCallback(window, window_size_callback_wrapper);
+  glfwSetScrollCallback(window, scroll_callback_wrapper);
+
   // Main loop
 #ifdef __EMSCRIPTEN__
   EMSCRIPTEN_MAINLOOP_BEGIN
@@ -165,6 +262,9 @@ int main(int, char**)
     ImVec4 clear_color = gui.get_clear_color();
     glClearColor(clear_color.x * clear_color.w, clear_color.y * clear_color.w, clear_color.z * clear_color.w, clear_color.w);
     glClear(GL_COLOR_BUFFER_BIT);
+
+    gui.render_occt();
+
     ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
 
     glfwSwapBuffers(window);
