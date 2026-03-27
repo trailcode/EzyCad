@@ -778,13 +778,6 @@ void GUI::load_occt_view_settings_()
       settings::save(content);
   }
 
-#if 0  // Set to 0 to disable logging loaded settings to the log window
-  if (!content.empty())
-    log_message("Settings loaded:\n" + content);
-  else
-    log_message("Settings loaded: (none)");
-#endif
-
   EZY_ASSERT_MSG(!content.empty(), "Settings content empty!");
 
   parse_occt_view_settings_(content);
@@ -805,6 +798,8 @@ void GUI::load_occt_view_settings_()
   {
     // EZY_ASSERT_MSG(false, "Settings invalid!");
   }
+
+  log_message("Settings: loaded.");
 }
 
 void GUI::save_occt_view_settings()
@@ -851,6 +846,7 @@ void GUI::save_occt_view_settings()
     j["imgui_ini"] = std::string(imgui_ini);
 
   settings::save(j.dump(2));
+  log_message("Settings: saved.");
 }
 
 // Render toolbar with ImGui
@@ -1301,7 +1297,7 @@ void GUI::settings_()
   if (!ImGui::Begin("Settings", &m_show_settings_dialog, ImGuiWindowFlags_None))
   {
     ImGui::End();
-    save_occt_view_settings();  // Persist that dialog was closed (e.g. via X)
+    //save_occt_view_settings();  // Persist that dialog was closed (e.g. via X)
     return;
   }
 
@@ -1764,7 +1760,6 @@ void GUI::init(GLFWwindow* window)
   log_message("EzyCad: 3D view ready (initial empty document).");
 
   load_occt_view_settings_();
-  log_message("EzyCad: application settings loaded.");
 
   load_examples_list_();
   if (m_example_files.empty())
