@@ -128,6 +128,9 @@ int main(int, char**)
     return 1;
   glfwMakeContextCurrent(window);
   glfwSwapInterval(1);  // Enable vsync
+#ifndef __EMSCRIPTEN__
+  glfwMaximizeWindow(window);
+#endif
 
 #ifdef __EMSCRIPTEN__
   // GLFW often reports content scale 1.0 on wasm while the browser uses devicePixelRatio > 1.

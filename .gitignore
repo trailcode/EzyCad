@@ -1,32 +1,5 @@
-################################################################################
-# This .gitignore file was automatically created by Microsoft(R) Visual Studio.
-################################################################################
-
-/build
-/build_em
-/build_em2
-/build_em3
-/6627T35_Stepper Motor.STEP
-/95462A029_Medium-Strength Steel Hex Nut.STEP
-/project (1).ezy
-/project (2).ezy
-/project (3).ezy
-/project (4).ezy
-/project.ezy
-/sketch.ezy
-/sketch.json
-/sketch_04_21.json
-/sketch_04_24.json
-/sketch_4_22.json
-/build2/.vs
-/build2
-/.vs
+/build*
 /.vscode/settings.json
 /thirdParty
-/build_em4
-/build_em5
 /.cursor/rules/ezycad-style.md
-/.cursor/rules/ezycad-style.md
-/usage.md
-/build_em6
-/build_em7
+/.vs

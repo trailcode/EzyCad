@@ -737,7 +737,8 @@ void GUI::parse_gui_panes_settings_(const std::string& content)
     set_show_shape_list(b("show_shape_list", true));
     set_log_window_visible(b("log_window_visible", true));
     set_show_settings_dialog(b("show_settings_dialog", false));
-    m_show_lua_console = b("show_lua_console", true);
+    m_dark_mode           = b("dark_mode", m_dark_mode);
+    m_show_lua_console    = b("show_lua_console", true);
     m_show_python_console = b("show_python_console", false);
 #ifndef NDEBUG
     set_show_dbg(b("show_dbg", false));
@@ -843,6 +844,7 @@ void GUI::save_occt_view_settings()
       {     "show_shape_list",      m_show_shape_list},
       {  "log_window_visible",   m_log_window_visible},
       {"show_settings_dialog", m_show_settings_dialog},
+      {           "dark_mode",            m_dark_mode},
       {    "show_lua_console",     m_show_lua_console},
       { "show_python_console",  m_show_python_console},
 #ifndef NDEBUG
