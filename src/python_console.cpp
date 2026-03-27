@@ -215,12 +215,12 @@ PYBIND11_EMBEDDED_MODULE(ezycad_native, m)
             "  ezy.set_mode(name)    - set mode by name\n"
             "  ezy.help()            - print this help\n"
             "view:\n"
-            "  view.sketch_count()   - number of sketches\n"
-            "  view.shape_count()    - number of shapes\n"
-            "  view.curr_sketch_name() - current sketch name\n"
+            "  view.sketch_count()          - number of sketches\n"
+            "  view.shape_count()           - number of shapes\n"
+            "  view.curr_sketch_name()      - current sketch name\n"
             "  view.add_box(ox,oy,oz,w,l,h) - add box\n"
             "  view.add_sphere(ox,oy,oz,r)  - add sphere\n"
-            "  view.get_shape(i)     - get shape by 0-based index (raises IndexError if out of range)\n"
+            "  view.get_shape(i)            - get shape by 0-based index (raises IndexError if out of range)\n"
             "Shp:\n"
             "  s.name()              - get shape name\n"
             "  s.set_name(s)         - set shape name\n"
@@ -536,6 +536,8 @@ int Python_console::log_display_resize_callback(ImGuiInputTextCallbackData* data
 
 void Python_console::render(bool* p_open)
 {
+  ImFont* console_font = m_gui ? m_gui->console_font() : nullptr;
+
   if (!ImGui::Begin("Python Console", p_open, ImGuiWindowFlags_None))
   {
     ImGui::End();
@@ -550,6 +552,9 @@ void Python_console::render(bool* p_open)
 
   if (ImGui::BeginTabItem("Console"))
   {
+    if (console_font)
+      ImGui::PushFont(console_font);
+
     float height = ImGui::GetContentRegionAvail().y - ImGui::GetFrameHeightWithSpacing() - 4.f;
     if (height > 80.f)
     {
@@ -616,6 +621,9 @@ void Python_console::render(bool* p_open)
       m_input_buf[0] = '\0';
       ImGui::SetKeyboardFocusHere(-1);
     }
+
+    if (console_font)
+      ImGui::PopFont();
     ImGui::EndTabItem();
   }
 
