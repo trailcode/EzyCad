@@ -113,6 +113,7 @@ list(APPEND srcs ${settings_cpp})
 # Define source files for the application
 # Including ImGui sources and main application file
 set(App_SRCS ${imguiSrc} ${srcs})
+list(APPEND App_SRCS "${CMAKE_SOURCE_DIR}/third_party/ImGuiColorTextEdit/TextEditor.cpp")
 
 # Configure platform-specific GUI settings
 # WIN32 for Windows GUI application
@@ -210,6 +211,7 @@ if(CMAKE_CXX_COMPILER_ID STREQUAL "Emscripten")
             -s EXPORTED_RUNTIME_METHODS=\"['ccall']\" \
             -s FETCH=1 \
             --preload-file ${CMAKE_SOURCE_DIR}/third_party/imgui/fonts/DroidSans.ttf@/DroidSans.ttf \
+            --preload-file ${CMAKE_SOURCE_DIR}/third_party/imgui/fonts/Cousine-Regular.ttf@/Cousine-Regular.ttf \
             --preload-file ${CMAKE_SOURCE_DIR}/imgui.ini@/imgui.ini \
             --preload-file ${CMAKE_SOURCE_DIR}/res/ezycad_settings.json@/res/ezycad_settings.json \
             --preload-file ${CMAKE_SOURCE_DIR}/res/default.ezy@/res/default.ezy \
@@ -242,6 +244,7 @@ if(CMAKE_CXX_COMPILER_ID STREQUAL "Emscripten")
             -s EXPORTED_RUNTIME_METHODS=\"['ccall']\" \
             -s FETCH=1 \
             --preload-file ${CMAKE_SOURCE_DIR}/third_party/imgui/fonts/DroidSans.ttf@/DroidSans.ttf \
+            --preload-file ${CMAKE_SOURCE_DIR}/third_party/imgui/fonts/Cousine-Regular.ttf@/Cousine-Regular.ttf \
             --preload-file ${CMAKE_SOURCE_DIR}/imgui.ini@/imgui.ini \
             --preload-file ${CMAKE_SOURCE_DIR}/res/ezycad_settings.json@/res/ezycad_settings.json \
             --preload-file ${CMAKE_SOURCE_DIR}/res/default.ezy@/res/default.ezy \
@@ -424,7 +427,9 @@ else()
       foreach(lib ${OpenCASCADE_LIBS})
         list(APPEND DLLS_COMMON ${OpenCASCADE_BINARY_DIR}/${lib}.dll)
       endforeach(lib)
-      set(FONT_ASSETS ${CMAKE_SOURCE_DIR}/third_party/imgui/fonts/DroidSans.ttf)
+      set(FONT_ASSETS
+          ${CMAKE_SOURCE_DIR}/third_party/imgui/fonts/DroidSans.ttf
+          ${CMAKE_SOURCE_DIR}/third_party/imgui/fonts/Cousine-Regular.ttf)
       
       set(CONFIG_ASSETS ${CMAKE_SOURCE_DIR}/imgui.ini)
 

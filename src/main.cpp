@@ -179,9 +179,21 @@ int main(int, char**)
     IM_ASSERT(font != nullptr);
   }
 
+  // Monospace for script console (bundled ImGui font: Cousine).
+  ImFont* console_font = nullptr;
+#ifdef __EMSCRIPTEN__
+  console_font = io.Fonts->AddFontFromFileTTF("/Cousine-Regular.ttf", 13.0f);
+#else
+  console_font = io.Fonts->AddFontFromFileTTF("Cousine-Regular.ttf", 13.0f);
+  if (!console_font)
+    console_font = io.Fonts->AddFontFromFileTTF("third_party/imgui/fonts/Cousine-Regular.ttf", 13.0f);
+#endif
+  IM_ASSERT(console_font != nullptr);
+
   io.IniFilename = nullptr;  // Layout persisted via ezycad_settings.json (see GUI)
 
   GUI gui;
+  gui.set_console_font(console_font);
   gui.init(window);
 
 #ifdef __EMSCRIPTEN__
@@ -200,6 +212,21 @@ int main(int, char**)
         gui.on_key(key, scancode, action, mods);
       return;
     }
+
+    // Script console toggle: always reach GUI (ImGui text fields would otherwise capture F12 / Ctrl+Shift+L).
+#ifndef __EMSCRIPTEN__
+    if (action == GLFW_PRESS && key == GLFW_KEY_F12)
+    {
+      gui.on_key(key, scancode, action, mods);
+      return;
+    }
+#else
+    if (action == GLFW_PRESS && (mods & GLFW_MOD_CONTROL) && (mods & GLFW_MOD_SHIFT) != 0 && key == GLFW_KEY_L)
+    {
+      gui.on_key(key, scancode, action, mods);
+      return;
+    }
+#endif
 
     if (action == GLFW_PRESS && (mods & GLFW_MOD_CONTROL) &&
         (key == GLFW_KEY_Z || key == GLFW_KEY_Y))

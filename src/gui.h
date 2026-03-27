@@ -38,6 +38,10 @@ class GUI
 
   void init(GLFWwindow* window);
 
+  /// Monospace font for script console (set from main after io.Fonts load). Optional.
+  void     set_console_font(ImFont* font) { m_console_font = font; }
+  ImFont*  console_font() const { return m_console_font; }
+
   void render_gui();
   void render_occt();
 
@@ -225,6 +229,7 @@ class GUI
 #ifndef NDEBUG
   bool m_show_dbg {false};
 #endif
-  bool                         m_show_lua_console {false};
+  bool                         m_show_lua_console {true};  // Script console (Lua); hidden if false in settings
   std::unique_ptr<Lua_console> m_lua_console;
+  ImFont*                      m_console_font {nullptr};  // Cousine monospace; set from main
 };

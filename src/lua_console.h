@@ -1,5 +1,7 @@
 #pragma once
 
+#include "ImGuiColorTextEdit/TextEditor.h"
+
 #include <memory>
 #include <string>
 #include <vector>
@@ -7,12 +9,12 @@
 struct lua_State;
 class GUI;
 
-/// One editable script file loaded from scripts/lua (path, filename, content).
+/// One editable script file loaded from scripts/lua (path, filename, TextEditor buffer).
 struct Script_editor
 {
-  std::string path;      // full path for load/save
-  std::string filename; // tab title (e.g. "basic.lua")
-  std::string content;   // editable source
+  std::string                    path;     // full path for load/save
+  std::string                    filename; // tab title (e.g. "basic.lua")
+  std::unique_ptr<TextEditor>    editor;   // syntax-highlighted buffer (Lua)
 };
 
 /// ImGui Lua console: run Lua snippets with bindings to EzyCad (ezy.*, view.*).
@@ -25,7 +27,6 @@ class Lua_console
 
   void render(bool* p_open = nullptr);
   static int text_edit_callback(struct ImGuiInputTextCallbackData* data);
-  static int script_resize_callback(struct ImGuiInputTextCallbackData* data);
 
   /// Called from Lua ezy.log(); appends to console history.
   void append_line_from_lua(const std::string& line);

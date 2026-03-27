@@ -403,7 +403,12 @@ void Lua_console::load_scripts()
       f.close();
     }
 
-    m_script_editors.push_back({path_str, filename, std::move(content)});
+    auto ed = std::make_unique<TextEditor>();
+    ed->SetTabSize(2);
+    ed->SetLanguage(TextEditor::Language::Lua());
+    ed->SetText(content);
+
+    m_script_editors.push_back({path_str, filename, std::move(ed)});
 
     if (luaL_dofile(m_L, path_str.c_str()) != LUA_OK)
     {
@@ -498,27 +503,23 @@ int Lua_console::text_edit_callback(ImGuiInputTextCallbackData* data)
   return 0;
 }
 
-int Lua_console::script_resize_callback(ImGuiInputTextCallbackData* data)
-{
-  if (data->EventFlag == ImGuiInputTextFlags_CallbackResize)
-  {
-    auto* s = static_cast<std::string*>(data->UserData);
-    s->resize(static_cast<size_t>(data->BufTextLen) + 1);
-    data->Buf = s->data();
-  }
-  return 0;
-}
-
 void Lua_console::render(bool* p_open)
 {
-  if (!ImGui::Begin("Lua Console", p_open, ImGuiWindowFlags_None))
+  ImFont* console_font = m_gui ? m_gui->console_font() : nullptr;
+
+  if (!ImGui::Begin("Script console (Lua)", p_open, ImGuiWindowFlags_None))
   {
     ImGui::End();
     return;
   }
 
+  if (console_font)
+    ImGui::PushFont(console_font);
+
   if (!ImGui::BeginTabBar("LuaConsoleTabs", ImGuiTabBarFlags_None))
   {
+    if (console_font)
+      ImGui::PopFont();
     ImGui::End();
     return;
   }
@@ -575,30 +576,21 @@ void Lua_console::render(bool* p_open)
     if (!ImGui::BeginTabItem(script.filename.c_str()))
       continue;
 
-    std::string& content = script.content;
-    if (content.empty())
-      content.resize(1, '\0');
-
     ImVec2 editor_size(-1.f, ImGui::GetContentRegionAvail().y - ImGui::GetFrameHeightWithSpacing() - 4.f);
-    if (editor_size.y > 60.f)
+    if (script.editor && editor_size.y > 60.f)
     {
-      ImGui::InputTextMultiline(("##script_" + script.filename).c_str(),
-                                content.data(),
-                                content.size() + 1,
-                                editor_size,
-                                ImGuiInputTextFlags_CallbackResize,
-                                &Lua_console::script_resize_callback,
-                                &content);
+      ImGui::PushID(static_cast<int>(i));
+      script.editor->Render("##script_body", editor_size, true);
+      ImGui::PopID();
     }
 
     if (ImGui::Button("Save"))
     {
       std::ofstream of(script.path);
-      if (of)
+      if (of && script.editor)
       {
-        size_t len = content.empty() ? 0 : (content.size() - (content.back() == '\0' ? 1 : 0));
-        if (len > 0)
-          of.write(content.data(), static_cast<std::streamsize>(len));
+        const std::string text = script.editor->GetText();
+        of.write(text.data(), static_cast<std::streamsize>(text.size()));
         if (of.good())
           append_line("Saved " + script.filename);
         else
@@ -611,5 +603,8 @@ void Lua_console::render(bool* p_open)
   }
 
   ImGui::EndTabBar();
+
+  if (console_font)
+    ImGui::PopFont();
   ImGui::End();
 }

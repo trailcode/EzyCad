@@ -167,6 +167,23 @@ void GUI::on_key(int key, int scancode, int action, int mods)
     // Check for Ctrl modifier
     bool ctrl_pressed = (mods & GLFW_MOD_CONTROL) != 0;
 
+    // Toggle script console (Lua): F12 on native; wasm uses Ctrl+Shift+L (see main.cpp) so F12 is not stolen by the browser.
+#ifndef __EMSCRIPTEN__
+    if (key == GLFW_KEY_F12)
+    {
+      m_show_lua_console = !m_show_lua_console;
+      save_occt_view_settings();
+      return;
+    }
+#else
+    if (ctrl_pressed && (mods & GLFW_MOD_SHIFT) != 0 && key == GLFW_KEY_L)
+    {
+      m_show_lua_console = !m_show_lua_console;
+      save_occt_view_settings();
+      return;
+    }
+#endif
+
     // Handle file menu hotkeys and undo/redo
     if (ctrl_pressed)
     {
@@ -512,11 +529,17 @@ void GUI::menu_bar_()
       m_log_window_visible = !m_log_window_visible;
       save_panes           = true;
     }
-    if (ImGui::MenuItem("Lua Console", nullptr, m_show_lua_console))
+#ifdef __EMSCRIPTEN__
+    if (ImGui::MenuItem("Script console (Lua)", "Ctrl+Shift+L", m_show_lua_console))
+#else
+    if (ImGui::MenuItem("Script console (Lua)", "F12", m_show_lua_console))
+#endif
     {
       m_show_lua_console = !m_show_lua_console;
       save_panes         = true;
     }
+    if (ImGui::IsItemHovered())
+      ImGui::SetTooltip("Lua scripting (EzyCad has no Python console). Toggle with keyboard or here.");
 #ifndef NDEBUG
     if (ImGui::MenuItem("Debug", nullptr, m_show_dbg))
     {
@@ -707,7 +730,7 @@ void GUI::parse_gui_panes_settings_(const std::string& content)
     set_show_shape_list(b("show_shape_list", true));
     set_log_window_visible(b("log_window_visible", true));
     set_show_settings_dialog(b("show_settings_dialog", false));
-    m_show_lua_console = b("show_lua_console", false);
+    m_show_lua_console = b("show_lua_console", true);
 #ifndef NDEBUG
     set_show_dbg(b("show_dbg", false));
 #endif
