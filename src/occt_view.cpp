@@ -135,6 +135,8 @@ void Occt_view::init_viewer()
   aDriver->ChangeOptions().buffersNoSwap = true;  // swap has no effect in WebGL
   aDriver->ChangeOptions().buffersOpaqueAlpha =
       true;  // avoid unexpected blending of canvas with page background
+  // Match native OpenGL path (sRGBDisable) so shading/material gamma is consistent vs desktop.
+  aDriver->ChangeOptions().sRGBDisable = true;
   if (!aDriver->InitContext())
   {
     Message::DefaultMessenger()->Send(

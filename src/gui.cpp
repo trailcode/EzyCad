@@ -1740,14 +1740,8 @@ void GUI::init(GLFWwindow* window)
   m_view->init_default();
   log_message("EzyCad: 3D view ready (initial empty document).");
 
-  // Temporary wasm workaround: skip loading persisted settings/layout at startup.
-  // This helps isolate rendering/input issues from stale localStorage state.
-#ifdef __EMSCRIPTEN__
-  log_message("EzyCad: startup settings load disabled on Emscripten (temporary).");
-#else
   load_occt_view_settings_();
   log_message("EzyCad: application settings loaded.");
-#endif
 
   load_examples_list_();
   if (m_example_files.empty())

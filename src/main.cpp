@@ -1,4 +1,6 @@
-// Dear ImGui + EzyCad GUI + OCCT 3D view + chained GLFW input (ImGui first, then 3D view).
+// Dear ImGui + EzyCad GUI + OCCT 3D view + chained GLFW input.
+// On wasm, sizing is handled by imgui_impl_glfw (OnCanvasSizeChange: CSS * DPR + canvas); do not
+// second-guess with extra glfwSetWindowSize/io overrides here — they fight that path and break input.
 
 #define WIN32_LEAN_AND_MEAN
 #include <stdio.h>
@@ -127,6 +129,22 @@ int main(int, char**)
   glfwMakeContextCurrent(window);
   glfwSwapInterval(1);  // Enable vsync
 
+#ifdef __EMSCRIPTEN__
+  // GLFW often reports content scale 1.0 on wasm while the browser uses devicePixelRatio > 1.
+  // Windows native uses monitor content scale for main_scale — align wasm so font/style size matches.
+  {
+    int ww = 0, wh = 0, fbw = 0, fbh = 0;
+    glfwGetWindowSize(window, &ww, &wh);
+    glfwGetFramebufferSize(window, &fbw, &fbh);
+    float fb_scale = 1.0f;
+    if (ww > 0 && wh > 0)
+      fb_scale = ((float)fbw / (float)ww + (float)fbh / (float)wh) * 0.5f;
+    const float dpr = emscripten_get_device_pixel_ratio();
+    if (main_scale <= 1.0f)
+      main_scale = (fb_scale > 1.01f) ? fb_scale : dpr;
+  }
+#endif
+
   // Setup Dear ImGui context
   IMGUI_CHECKVERSION();
   ImGui::CreateContext();
@@ -151,13 +169,12 @@ int main(int, char**)
 #endif
   ImGui_ImplOpenGL3_Init(glsl_version);
 
-  // DroidSans (CMake copies native; Emscripten preloads to /DroidSans.ttf). Size tracks HiDPI scale.
+  // DroidSans at logical px; do not multiply by main_scale — FontScaleDpi applies HiDPI.
   {
-    const float font_px = 18.0f * main_scale;
 #ifdef __EMSCRIPTEN__
-    ImFont* font = io.Fonts->AddFontFromFileTTF("/DroidSans.ttf", font_px);
+    ImFont* font = io.Fonts->AddFontFromFileTTF("/DroidSans.ttf", 13.0f);
 #else
-    ImFont* font = io.Fonts->AddFontFromFileTTF("DroidSans.ttf", font_px);
+    ImFont* font = io.Fonts->AddFontFromFileTTF("DroidSans.ttf", 13.0f);
 #endif
     IM_ASSERT(font != nullptr);
   }
