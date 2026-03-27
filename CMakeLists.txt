@@ -24,9 +24,38 @@ if(CMAKE_CXX_COMPILER MATCHES "em\\+\\+")
   set(EMSCRIPTEN_BUILD TRUE)
 endif()
 
+# Python (optional embedded console) — native only.
+set(EZYCAD_HAVE_PYTHON FALSE)
+set(EZYCAD_PYTHON_LINK_MODE "")
+set(EZYCAD_PYTHON_RUNTIME_DLL "")
+if(NOT EMSCRIPTEN_BUILD)
+  option(EZYCAD_ENABLE_PYTHON "Embed Python console (requires Python 3 development libraries)" ON)
+  if(EZYCAD_ENABLE_PYTHON)
+    find_package(Python3 3.8 QUIET COMPONENTS Interpreter Development)
+    if(Python3_FOUND)
+      include("${CMAKE_CURRENT_SOURCE_DIR}/cmake/EzyCadPython.cmake")
+      ezycad_configure_embedded_python()
+      if(EZYCAD_HAVE_PYTHON)
+        message(STATUS "Python console: enabled (${Python3_VERSION}, ${Python3_EXECUTABLE})")
+      endif()
+    else()
+      message(STATUS "Python console: disabled (Python 3 development libraries not found; set EZYCAD_ENABLE_PYTHON=OFF to silence)")
+    endif()
+  endif()
+endif()
+
 # Lua (for script console) - built for native and Emscripten (C sources compile with emcc)
 # Tarball has no CMake; we build the lib from sources
 include(FetchContent)
+if(EZYCAD_HAVE_PYTHON)
+  set(PYBIND11_FINDPYTHON ON)
+  FetchContent_Declare(
+    pybind11
+    GIT_REPOSITORY https://github.com/pybind/pybind11.git
+    GIT_TAG v2.13.6
+  )
+  FetchContent_MakeAvailable(pybind11)
+endif()
 FetchContent_Declare(
   lua
   URL https://www.lua.org/ftp/lua-5.4.6.tar.gz
@@ -127,6 +156,18 @@ endif(APPLE)
 
 add_library(${PROJECT_NAME}_lib ${App_SRCS} ${imguiImplSrcs} third_party/tinyfiledialogs/tinyfiledialogs.c)
 target_link_libraries(${PROJECT_NAME}_lib PUBLIC lua)
+if(EZYCAD_HAVE_PYTHON)
+  target_compile_definitions(${PROJECT_NAME}_lib PRIVATE EZYCAD_HAVE_PYTHON=1)
+  if(EZYCAD_PYTHON_LINK_MODE STREQUAL "imported_target")
+    target_link_libraries(${PROJECT_NAME}_lib PUBLIC ezycad_embed_python)
+    target_link_libraries(${PROJECT_NAME}_lib PRIVATE pybind11::pybind11)
+  elseif(EZYCAD_PYTHON_LINK_MODE STREQUAL "python3_target")
+    target_link_libraries(${PROJECT_NAME}_lib PUBLIC Python3::Python)
+    target_link_libraries(${PROJECT_NAME}_lib PRIVATE pybind11::embed)
+  else()
+    message(FATAL_ERROR "EZYCAD_HAVE_PYTHON is ON but EZYCAD_PYTHON_LINK_MODE is not set.")
+  endif()
+endif()
 
 # Open CASCADE Technology
 find_package(OpenCASCADE REQUIRED NO_DEFAULT_PATH)
@@ -386,12 +427,39 @@ else()
         )
       endforeach()
     endif()
+    file(GLOB RES_PYTHON_SCRIPTS "${CMAKE_SOURCE_DIR}/res/scripts/python/*.py")
+    if(RES_PYTHON_SCRIPTS)
+      add_custom_command(
+          TARGET ${PROJECT_NAME} POST_BUILD
+          COMMAND ${CMAKE_COMMAND} -E make_directory $<TARGET_FILE_DIR:${PROJECT_NAME}>/res/scripts/python
+          COMMENT "Creating res/scripts/python for native"
+      )
+      foreach(py_file ${RES_PYTHON_SCRIPTS})
+        add_custom_command(
+            TARGET ${PROJECT_NAME} POST_BUILD
+            COMMAND ${CMAKE_COMMAND} -E copy_if_different
+                ${py_file}
+                $<TARGET_FILE_DIR:${PROJECT_NAME}>/res/scripts/python/
+            COMMENT "Copying Python script ${py_file}"
+        )
+      endforeach()
+    endif()
 
     target_link_libraries(${PROJECT_NAME} ${PROJECT_NAME}_lib)
     target_link_libraries(${PROJECT_NAME} ${BINARY_DIR}/thirdParty/unofficial-flayan-glew.${GLEW_VERSION}/build/native/lib/x64/dynamic/glew32.lib)
     target_link_libraries(${PROJECT_NAME} ${GLFW3_LIBRARY})
     
     target_link_libraries(${PROJECT_NAME} ${OpenCASCADE_LIBS})
+
+    if(EZYCAD_HAVE_PYTHON AND EZYCAD_PYTHON_LINK_MODE STREQUAL "imported_target"
+        AND EZYCAD_PYTHON_RUNTIME_DLL AND EXISTS "${EZYCAD_PYTHON_RUNTIME_DLL}")
+      add_custom_command(
+          TARGET ${PROJECT_NAME} POST_BUILD
+          COMMAND ${CMAKE_COMMAND} -E copy_if_different
+              "${EZYCAD_PYTHON_RUNTIME_DLL}"
+              $<TARGET_FILE_DIR:${PROJECT_NAME}>
+          COMMENT "Copy Python DLL next to EzyCad.exe")
+    endif()
 
     include_directories(${BINARY_DIR}/thirdParty/unofficial-flayan-glew.${GLEW_VERSION}/build/native/include)
     include_directories(${GLFW3_INCLUDE_PATH})

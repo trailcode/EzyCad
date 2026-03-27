@@ -21,6 +21,7 @@
 #include "imgui.h"
 #include "log.h"
 #include "lua_console.h"
+#include "python_console.h"
 #include "occt_view.h"
 #include "sketch.h"
 
@@ -99,6 +100,7 @@ void GUI::render_gui()
   add_torus_dialog_();
   log_window_();
   lua_console_();
+  python_console_();
   settings_();
   dbg_();
 }
@@ -539,7 +541,12 @@ void GUI::menu_bar_()
       save_panes         = true;
     }
     if (ImGui::IsItemHovered())
-      ImGui::SetTooltip("Lua scripting (EzyCad has no Python console). Toggle with keyboard or here.");
+      ImGui::SetTooltip("Lua scripting. Toggle with keyboard or here.");
+    if (ImGui::MenuItem("Python Console", nullptr, m_show_python_console))
+    {
+      m_show_python_console = !m_show_python_console;
+      save_panes            = true;
+    }
 #ifndef NDEBUG
     if (ImGui::MenuItem("Debug", nullptr, m_show_dbg))
     {
@@ -731,6 +738,7 @@ void GUI::parse_gui_panes_settings_(const std::string& content)
     set_log_window_visible(b("log_window_visible", true));
     set_show_settings_dialog(b("show_settings_dialog", false));
     m_show_lua_console = b("show_lua_console", true);
+    m_show_python_console = b("show_python_console", false);
 #ifndef NDEBUG
     set_show_dbg(b("show_dbg", false));
 #endif
@@ -836,6 +844,7 @@ void GUI::save_occt_view_settings()
       {  "log_window_visible",   m_log_window_visible},
       {"show_settings_dialog", m_show_settings_dialog},
       {    "show_lua_console",     m_show_lua_console},
+      { "show_python_console",  m_show_python_console},
 #ifndef NDEBUG
       {            "show_dbg",             m_show_dbg},
 #endif
@@ -1745,6 +1754,15 @@ void GUI::lua_console_()
   if (!m_lua_console)
     m_lua_console = std::make_unique<Lua_console>(this);
   m_lua_console->render(&m_show_lua_console);
+}
+
+void GUI::python_console_()
+{
+  if (!m_show_python_console)
+    return;
+  if (!m_python_console)
+    m_python_console = std::make_unique<Python_console>(this);
+  m_python_console->render(&m_show_python_console);
 }
 
 void GUI::init(GLFWwindow* window)
