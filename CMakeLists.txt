@@ -139,6 +139,10 @@ set(settings_cpp ${CMAKE_CURRENT_SOURCE_DIR}/src/settings.cpp)
 list(REMOVE_ITEM srcs "src/settings.cpp" ${settings_cpp})
 list(APPEND srcs ${settings_cpp})
 
+set(gui_settings_cpp ${CMAKE_CURRENT_SOURCE_DIR}/src/gui_settings.cpp)
+list(REMOVE_ITEM srcs "src/gui_settings.cpp" ${gui_settings_cpp})
+list(APPEND srcs ${gui_settings_cpp})
+
 # Define source files for the application
 # Including ImGui sources and main application file
 set(App_SRCS ${imguiSrc} ${srcs})
