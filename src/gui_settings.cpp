@@ -7,13 +7,60 @@
 #include <nlohmann/json.hpp>
 
 #include "imgui.h"
-#include "log.h"
 #include "occt_view.h"
 #include "settings.h"
 
 namespace
 {
 const char* const k_settings_version = "1";
+}
+
+void GUI::save_occt_view_settings()
+{
+  std::string content = settings::load_with_defaults();
+  using namespace nlohmann;
+  json j;
+  if (!content.empty())
+  {
+    try
+    {
+      j = json::parse(content);
+    }
+    catch (...)
+    {
+    }
+  }
+  float bg1[3], bg2[3], g1[3], g2[3];
+  m_view->get_bg_gradient_colors(bg1, bg2);
+  m_view->get_grid_colors(g1, g2);
+  int method     = m_view->get_bg_gradient_method();
+  j["occt_view"] = {
+      {         "bg_color1", {bg1[0], bg1[1], bg1[2]}},
+      {         "bg_color2", {bg2[0], bg2[1], bg2[2]}},
+      {"bg_gradient_method",                   method},
+      {       "grid_color1",    {g1[0], g1[1], g1[2]}},
+      {       "grid_color2",    {g2[0], g2[1], g2[2]}},
+  };
+  j["gui"] = {
+      {        "show_options",         m_show_options},
+      {    "show_sketch_list",     m_show_sketch_list},
+      {     "show_shape_list",      m_show_shape_list},
+      {  "log_window_visible",   m_log_window_visible},
+      {"show_settings_dialog", m_show_settings_dialog},
+      {           "dark_mode",            m_dark_mode},
+      {    "show_lua_console",     m_show_lua_console},
+      { "show_python_console",  m_show_python_console},
+#ifndef NDEBUG
+      {            "show_dbg",             m_show_dbg},
+#endif
+  };
+  j["version"]          = k_settings_version;
+  const char* imgui_ini = ImGui::SaveIniSettingsToMemory(nullptr);
+  if (imgui_ini && *imgui_ini)
+    j["imgui_ini"] = std::string(imgui_ini);
+
+  settings::save(j.dump(2));
+  log_message("Settings: saved.");
 }
 
 void GUI::parse_occt_view_settings_(const std::string& content)
@@ -220,54 +267,6 @@ void GUI::load_occt_view_settings_()
   }
 
   log_message("Settings: loaded.");
-}
-
-void GUI::save_occt_view_settings()
-{
-  std::string content = settings::load_with_defaults();
-  using namespace nlohmann;
-  json j;
-  if (!content.empty())
-  {
-    try
-    {
-      j = json::parse(content);
-    }
-    catch (...)
-    {
-    }
-  }
-  float bg1[3], bg2[3], g1[3], g2[3];
-  m_view->get_bg_gradient_colors(bg1, bg2);
-  m_view->get_grid_colors(g1, g2);
-  int method     = m_view->get_bg_gradient_method();
-  j["occt_view"] = {
-      {         "bg_color1", {bg1[0], bg1[1], bg1[2]}},
-      {         "bg_color2", {bg2[0], bg2[1], bg2[2]}},
-      {"bg_gradient_method",                   method},
-      {       "grid_color1",    {g1[0], g1[1], g1[2]}},
-      {       "grid_color2",    {g2[0], g2[1], g2[2]}},
-  };
-  j["gui"] = {
-      {        "show_options",         m_show_options},
-      {    "show_sketch_list",     m_show_sketch_list},
-      {     "show_shape_list",      m_show_shape_list},
-      {  "log_window_visible",   m_log_window_visible},
-      {"show_settings_dialog", m_show_settings_dialog},
-      {           "dark_mode",            m_dark_mode},
-      {    "show_lua_console",     m_show_lua_console},
-      { "show_python_console",  m_show_python_console},
-#ifndef NDEBUG
-      {            "show_dbg",             m_show_dbg},
-#endif
-  };
-  j["version"]          = k_settings_version;
-  const char* imgui_ini = ImGui::SaveIniSettingsToMemory(nullptr);
-  if (imgui_ini && *imgui_ini)
-    j["imgui_ini"] = std::string(imgui_ini);
-
-  settings::save(j.dump(2));
-  log_message("Settings: saved.");
 }
 
 void GUI::settings_()

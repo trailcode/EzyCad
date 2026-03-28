@@ -114,6 +114,8 @@ class GUI
   void sketch_list_();
   void shape_list_();
   void options_();
+
+  // Mode related
   void options_normal_mode_();
   void options_move_mode_();
   void options_scale_mode_();
@@ -124,6 +126,7 @@ class GUI
   void options_shape_fillet_mode_();
   void options_shape_polar_duplicate_mode_();
   void options_rotate_mode_();
+
   void dbg_();
   void initialize_toolbar_();
   void load_examples_list_();
