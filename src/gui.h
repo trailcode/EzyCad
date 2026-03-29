@@ -46,7 +46,7 @@ class GUI
   void render_gui();
   void render_occt();
 
-  void on_key(int key, int scancode, int action, int mods);
+  void on_key(int key, int scancode, int action, int mods);  // gui_mode.cpp
   void on_mouse_pos(const ScreenCoords& screen_coords);
   void on_mouse_button(int button, int action, int mods);
   void on_mouse_scroll(double xoffset, double yoffset);
@@ -60,8 +60,8 @@ class GUI
   void set_hide_all_shapes(bool hide) { m_hide_all_shapes = hide; }
   bool get_dark_mode() const { return m_dark_mode; }
   ImVec4 get_clear_color() const;
-  void set_mode(Mode mode);
-  void set_parent_mode();
+  void set_mode(Mode mode);       // gui_mode.cpp
+  void set_parent_mode();        // gui_mode.cpp
   void set_dist_edit(float dist, std::function<void(float, bool)>&& callback, const std::optional<ScreenCoords> screen_coords = std::nullopt);
   void hide_dist_edit();
   void set_angle_edit(float angle, std::function<void(float, bool)>&& callback, const std::optional<ScreenCoords> screen_coords = std::nullopt);
@@ -113,9 +113,9 @@ class GUI
   void angle_edit_();
   void sketch_list_();
   void shape_list_();
-  void options_();
 
-  // Mode related
+  // Mode + Options panel (gui_mode.cpp)
+  void options_();
   void options_normal_mode_();
   void options_move_mode_();
   void options_scale_mode_();
@@ -160,7 +160,7 @@ class GUI
   std::string serialized_project_json_() const;
   void        open_url_(const char* url);
 
-  // Settings related
+  // Settings (gui_settings.cpp)
   void load_occt_view_settings_();
   void parse_occt_view_ini_(const std::string& content);
   void parse_occt_view_settings_(const std::string& content);

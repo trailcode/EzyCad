@@ -3122,7 +3122,7 @@ static const char* GetDefaultCompressedFontDataProggyForever(int* out_size);
 // This duplicates some of the logic in UpdateFontsNewFrame() which is a bit chicken-and-eggy/tricky to extract due to variety of codepaths and possible initialization ordering.
 static float GetExpectedContextFontSize(ImGuiContext* ctx)
 {
-    return ((ctx->Style.FontSizeBase > 0.0f) ? ctx->Style.FontSizeBase : 13.0f) * ctx->Style.FontScaleMain * ctx->Style.FontScaleDpi;
+    return ((ctx->Style.FontSizeBase > 0.0f) ? ctx->Style.FontSizeBase : 14.0f) * ctx->Style.FontScaleMain * ctx->Style.FontScaleDpi;
 }
 
 // Legacy function with heuristic to select Pixel or Vector font.
@@ -3145,11 +3145,11 @@ ImFont* ImFontAtlas::AddFontDefaultBitmap(const ImFontConfig* font_cfg_template)
     if (!font_cfg_template)
         font_cfg.PixelSnapH = true; // Prevents sub-integer scaling factors at lower-level layers.
     if (font_cfg.SizePixels <= 0.0f)
-        font_cfg.SizePixels = 13.0f; // This only serves (1) as a reference for GlyphOffset.y setting and (2) as a default for pre-1.92 backend.
+        font_cfg.SizePixels = 14.0f; // This only serves (1) as a reference for GlyphOffset.y setting and (2) as a default for pre-1.92 backend.
     if (font_cfg.Name[0] == '\0')
         ImFormatString(font_cfg.Name, IM_COUNTOF(font_cfg.Name), "ProggyClean.ttf");
     font_cfg.EllipsisChar = (ImWchar)0x0085;
-    font_cfg.GlyphOffset.y += 1.0f * (font_cfg.SizePixels / 13.0f); // Add +1 offset per 13 units
+    font_cfg.GlyphOffset.y += 1.0f * (font_cfg.SizePixels / 14.0f); // Add +1 offset per 13 units
 
     int ttf_compressed_size = 0;
     const char* ttf_compressed = GetDefaultCompressedFontDataProggyClean(&ttf_compressed_size);
@@ -3170,7 +3170,7 @@ ImFont* ImFontAtlas::AddFontDefaultVector(const ImFontConfig* font_cfg_template)
     if (!font_cfg_template)
         font_cfg.PixelSnapH = true; // Precisely match ProggyClean, but prevents sub-integer scaling factors at lower-level layers.
     if (font_cfg.SizePixels <= 0.0f)
-        font_cfg.SizePixels = 13.0f;
+        font_cfg.SizePixels = 14.0f;
     if (font_cfg.Name[0] == '\0')
         ImFormatString(font_cfg.Name, IM_COUNTOF(font_cfg.Name), "ProggyForever.ttf");
     font_cfg.ExtraSizeScale *= 1.015f; // Match ProggyClean
