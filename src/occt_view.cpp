@@ -1678,49 +1678,39 @@ Status Occt_view::export_document(Export_format fmt, const std::string& file_pat
   return Status::user_error("Unknown export format.");
 }
 
-bool Occt_view::import_step(const std::string& step_data)
+Status Occt_view::import_step(const std::string& step_data)
 {
-  push_undo_snapshot();
-  // Initialize the STEP reader
   STEPControl_Reader reader;
-
   std::istringstream stream(step_data);
 
-  // Read the STEP file
-  IFSelect_ReturnStatus status = reader.ReadStream("", stream);
-  if (status != IFSelect_RetDone)
-  {
-    std::cerr << "Error: Cannot read the STEP file." << std::endl;
-    return 1;
-  }
+  IFSelect_ReturnStatus read_st = reader.ReadStream("", stream);
+  if (read_st != IFSelect_RetDone)
+    return Status::user_error("STEP: could not read file (invalid or corrupt STEP data).");
 
-  // Transfer all root entities
-  Standard_Integer num_roots = reader.TransferRoots();
-  if (num_roots == 0)
-  {
-    std::cerr << "Error: No shapes were transferred." << std::endl;
-    return 1;
-  }
+  if (reader.TransferRoots() == 0)
+    return Status::user_error("STEP: no geometry was transferred from the file.");
 
-  // Get the number of shapes
-  Standard_Integer num_shps = reader.NbShapes();
-  std::cout << "Number of shapes loaded: " << num_shps << std::endl;
-
-  // Iterate over each shape
+  const Standard_Integer num_shps = reader.NbShapes();
+  std::vector<TopoDS_Shape> to_add;
+  to_add.reserve(static_cast<size_t>(num_shps));
   for (Standard_Integer i = 1; i <= num_shps; ++i)
   {
     TopoDS_Shape shape = reader.Shape(i);
-    if (shape.IsNull())
-    {
-      std::cerr << "Warning: Shape " << i << " is null." << std::endl;
-      continue;
-    }
+    if (!shape.IsNull())
+      to_add.push_back(shape);
+  }
 
+  if (to_add.empty())
+    return Status::user_error("STEP: no valid shapes in file.");
+
+  push_undo_snapshot();
+  for (const TopoDS_Shape& shape : to_add)
+  {
     Shp_ptr shp = new Shp(*m_ctx, shape);
     add_shp_(shp);
   }
 
-  return true;
+  return Status::ok();
 }
 
 bool Occt_view::import_ply(const std::string& ply_bytes)

@@ -89,6 +89,7 @@ void GUI::add_pyramid_dialog_()
   }
   if (!ImGui::BeginPopupModal("Add pyramid", nullptr, ImGuiWindowFlags_AlwaysAutoResize))
     return;
+
   ImGui::TextUnformatted("Values in display units.");
   ImGui::Spacing();
   if (ImGui::BeginTable("Add pyramid##table", 2, ImGuiTableFlags_SizingStretchProp))
@@ -129,6 +130,7 @@ void GUI::add_pyramid_dialog_()
   ImGui::SameLine();
   if (ImGui::Button("Cancel"))
     ImGui::CloseCurrentPopup();
+
   ImGui::EndPopup();
 }
 
@@ -141,6 +143,7 @@ void GUI::add_sphere_dialog_()
   }
   if (!ImGui::BeginPopupModal("Add sphere", nullptr, ImGuiWindowFlags_AlwaysAutoResize))
     return;
+
   ImGui::TextUnformatted("Values in display units.");
   ImGui::Spacing();
   if (ImGui::BeginTable("Add sphere##table", 2, ImGuiTableFlags_SizingStretchProp))
@@ -171,6 +174,7 @@ void GUI::add_sphere_dialog_()
     ImGui::InputDouble("##sphere_radius", &m_add_sphere_radius, 0.0, 0.0, "%.3f");
     ImGui::EndTable();
   }
+
   ImGui::Spacing();
   if (ImGui::Button("Add") && m_add_sphere_radius > 0)
   {
@@ -178,6 +182,7 @@ void GUI::add_sphere_dialog_()
     m_view->add_sphere(m_add_sphere_origin_x * scale, m_add_sphere_origin_y * scale, m_add_sphere_origin_z * scale, m_add_sphere_radius * scale);
     ImGui::CloseCurrentPopup();
   }
+
   ImGui::SameLine();
   if (ImGui::Button("Cancel"))
     ImGui::CloseCurrentPopup();

@@ -1279,11 +1279,11 @@ void GUI::import_file_dialog_()
 {
 #ifndef __EMSCRIPTEN__
   // Native: Use tinyfiledialogs
-  char const* filter_patterns[2] = {"*.step", "*.ply"};
+  char const* filter_patterns[3] = {"*.step", "*.stp", "*.ply"};
   char const* selected           = tinyfd_openFileDialog(
       "Import STEP or PLY",
       "",
-      2,
+      3,
       filter_patterns,
       "STEP / PLY files",
       0);
@@ -1411,8 +1411,10 @@ void GUI::on_import_file(const std::string& file_path, const std::string& file_d
     return;
   }
 
-  m_view->import_step(file_data);
-  show_message("Imported: " + std::filesystem::path(file_path).filename().string());
+  if (Status st = m_view->import_step(file_data); !st.is_ok())
+    show_message(st.message());
+  else
+    show_message("Imported: " + std::filesystem::path(file_path).filename().string());
 }
 
 #ifdef __EMSCRIPTEN__

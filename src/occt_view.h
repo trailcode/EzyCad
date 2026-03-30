@@ -64,7 +64,7 @@ class Occt_view : protected AIS_ViewController
 
   std::string to_json() const;
   void        load(const std::string& json_str, bool restore_view = true);
-  bool        import_step(const std::string& file_path);
+  [[nodiscard]] Status import_step(const std::string& step_data);
   bool        import_ply(const std::string& ply_bytes);
 
   /// Writes STEP, IGES, binary STL, or PLY to \a file_path. Uses selected shapes if any, else all shapes.
