@@ -45,11 +45,9 @@ Status Shp_move::move_selected(const ScreenCoords& screen_coords)
   gp_Trsf translation;
   translation.SetTranslation(gp_Vec(m_delta.delta));
 
-  for (const AIS_Shape_ptr& shape : m_shps)
-  {
+  for (const Shp_ptr& shape : m_shps)
     shape->SetLocalTransformation(translation);
-    ctx().Redisplay(shape, true);
-  }
+  redisplay_operation_shps_after_transform_();
 
   return Status::ok();
 }

@@ -58,6 +58,7 @@ Status Shp_rotate::ensure_start_state_()
 
   update_rotation_axis_();
   update_rotation_center_();
+  ctx().UpdateCurrentViewer();
 
   return Status::ok();
 }
@@ -114,14 +115,14 @@ void Shp_rotate::update_rotation_axis_()
   {
     m_rotation_axis_vis->Set(axis_edge);
     m_rotation_axis_vis->SetColor(axis_color);
-    ctx().Redisplay(m_rotation_axis_vis, true);
+    ctx().Redisplay(m_rotation_axis_vis, false);
   }
   else
   {
     m_rotation_axis_vis = new AIS_Shape(axis_edge);
     m_rotation_axis_vis->SetWidth(2.0);
     m_rotation_axis_vis->SetColor(axis_color);
-    ctx().Display(m_rotation_axis_vis, true);
+    ctx().Display(m_rotation_axis_vis, false);
   }
 }
 
@@ -136,14 +137,14 @@ void Shp_rotate::update_rotation_center_()
   if (m_rotation_center_vis)
   {
     m_rotation_center_vis->Set(center_vertex);
-    ctx().Redisplay(m_rotation_center_vis, true);
+    ctx().Redisplay(m_rotation_center_vis, false);
   }
   else
   {
     m_rotation_center_vis = new AIS_Shape(center_vertex);
     m_rotation_center_vis->SetWidth(3.0);
     m_rotation_center_vis->SetColor(Quantity_NOC_RED);
-    ctx().Display(m_rotation_center_vis, true);
+    ctx().Display(m_rotation_center_vis, false);
   }
 }
 
@@ -174,12 +175,9 @@ void Shp_rotate::preview_rotate_()
   gp_Ax1  rotation_axis(*m_center, axis_dir);
   rotation.SetRotation(rotation_axis, m_angle);
 
-  // Apply rotation to shapes
-  for (const AIS_Shape_ptr& shape : m_shps)
-  {
+  for (const Shp_ptr& shape : m_shps)
     shape->SetLocalTransformation(rotation);
-    ctx().Redisplay(shape, true);
-  }
+  redisplay_operation_shps_after_transform_();
 }
 
 Status Shp_rotate::show_angle_edit(const ScreenCoords& screen_coords)
@@ -244,4 +242,5 @@ void Shp_rotate::set_rotation_axis(Rotation_axis axis)
 
   m_rotation_axis = axis;
   update_rotation_axis_();
+  ctx().UpdateCurrentViewer();
 }

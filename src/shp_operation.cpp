@@ -106,3 +106,10 @@ void Shp_operation_base::add_shp_(Shp_ptr& shp)
 {
   m_view.add_shp_(shp);
 }
+
+void Shp_operation_base::redisplay_operation_shps_after_transform_()
+{
+  for (Shp_ptr& shape : m_shps)
+    ctx().Redisplay(shape, false);
+  ctx().UpdateCurrentViewer();
+}

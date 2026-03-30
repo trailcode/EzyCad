@@ -55,11 +55,9 @@ void Shp_scale::preview_scale_()
   gp_Trsf scale_trsf;
   scale_trsf.SetScale(*m_center, m_scale_factor);
 
-  for (const AIS_Shape_ptr& shape : m_shps)
-  {
+  for (const Shp_ptr& shape : m_shps)
     shape->SetLocalTransformation(scale_trsf);
-    ctx().Redisplay(shape, true);
-  }
+  redisplay_operation_shps_after_transform_();
 }
 
 void Shp_scale::finalize()

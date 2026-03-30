@@ -2,6 +2,7 @@
 
 #include <algorithm>
 #include <array>
+#include <cctype>
 #include <filesystem>
 #include <fstream>
 #include <nlohmann/json.hpp>
@@ -203,6 +204,9 @@ void GUI::menu_bar_()
 
       if (ImGui::MenuItem("STL (binary)..."))
         export_file_dialog_(Export_format::Stl);
+
+      if (ImGui::MenuItem("PLY (binary)..."))
+        export_file_dialog_(Export_format::Ply);
 
       ImGui::EndMenu();
     }
@@ -1213,6 +1217,12 @@ void GUI::export_file_dialog_(Export_format fmt)
       filter_pat  = "*.stl";
       filter_desc = "STL files";
       break;
+    case Export_format::Ply:
+      title       = "Export PLY";
+      def_name    = "export.ply";
+      filter_pat  = "*.ply";
+      filter_desc = "PLY files";
+      break;
   }
 
   char const* filter_patterns[1] = {filter_pat};
@@ -1242,6 +1252,10 @@ void GUI::export_file_dialog_(Export_format fmt)
       mem_path      = "/ezycad_export.stl";
       download_name = "export.stl";
       break;
+    case Export_format::Ply:
+      mem_path      = "/ezycad_export.ply";
+      download_name = "export.ply";
+      break;
   }
   const Status s = m_view->export_document(fmt, mem_path);
   if (!s.is_ok())
@@ -1265,22 +1279,26 @@ void GUI::import_file_dialog_()
 {
 #ifndef __EMSCRIPTEN__
   // Native: Use tinyfiledialogs
-  char const* filter_patterns[1] = {"*.step"};  // Restrict to .ezy files
+  char const* filter_patterns[2] = {"*.step", "*.ply"};
   char const* selected           = tinyfd_openFileDialog(
-      "Import Step file",  // Dialog title
-      "",                  // Default path (empty for OS default)
-      1,                   // Number of filter patterns
-      filter_patterns,     // Filter patterns (*.step)
-      "Step Files",        // Filter description
-      0                    // Single file selection
-  );
+      "Import STEP or PLY",
+      "",
+      2,
+      filter_patterns,
+      "STEP / PLY files",
+      0);
   if (selected)
   {
-    std::ifstream     file(selected);
-    const std::string step_str {std::istreambuf_iterator<char>(file), std::istreambuf_iterator<char>()};
-    if (file.good() && step_str != "")
-      on_import_file(selected, step_str);
-
+    // Binary mode required for PLY (mesh payload may contain 0x1A; Windows text mode treats that as EOF).
+    std::ifstream file(selected, std::ios::binary);
+    if (!file.is_open())
+    {
+      show_message("Error opening: " + std::filesystem::path(selected).filename().string());
+      return;
+    }
+    const std::string file_bytes {std::istreambuf_iterator<char>(file), std::istreambuf_iterator<char>()};
+    if (!file_bytes.empty())
+      on_import_file(selected, file_bytes);
     else
       show_message("Error opening: " + std::filesystem::path(selected).filename().string());
   }
@@ -1380,6 +1398,19 @@ void GUI::on_file(const std::string& file_path, const std::string& json_str, boo
 
 void GUI::on_import_file(const std::string& file_path, const std::string& file_data)
 {
+  std::string ext = std::filesystem::path(file_path).extension().string();
+  for (char& c : ext)
+    c = static_cast<char>(std::tolower(static_cast<unsigned char>(c)));
+
+  if (ext == ".ply")
+  {
+    if (!m_view->import_ply(file_data))
+      show_message("PLY import failed.");
+    else
+      show_message("Imported: " + std::filesystem::path(file_path).filename().string());
+    return;
+  }
+
   m_view->import_step(file_data);
   show_message("Imported: " + std::filesystem::path(file_path).filename().string());
 }

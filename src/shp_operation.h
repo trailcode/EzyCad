@@ -32,6 +32,9 @@ class Shp_operation_base
 
   void add_shp_(Shp_ptr& shp);
 
+  /// After transform-only changes on `m_shps`, refresh presentations once (avoids N× viewer updates per frame).
+  void redisplay_operation_shps_after_transform_();
+
   std::vector<Shp_ptr> m_shps;
 
  private:

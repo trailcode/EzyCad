@@ -1,4 +1,5 @@
 #include "occt_view.h"
+#include "ply_io.h"
 
 #include <AIS_ViewCube.hxx>
 #include <Aspect_GradientFillMethod.hxx>
@@ -1666,6 +1667,13 @@ Status Occt_view::export_document(Export_format fmt, const std::string& file_pat
 
       return Status::ok();
     }
+    case Export_format::Ply:
+    {
+      constexpr Standard_Real        k_lin_deflection = 0.1;
+      const BRepMesh_IncrementalMesh mesher(shape, k_lin_deflection);
+      (void) mesher;
+      return export_ply_binary_file(shape, file_path);
+    }
   }
   return Status::user_error("Unknown export format.");
 }
@@ -1712,6 +1720,23 @@ bool Occt_view::import_step(const std::string& step_data)
     add_shp_(shp);
   }
 
+  return true;
+}
+
+bool Occt_view::import_ply(const std::string& ply_bytes)
+{
+  push_undo_snapshot();
+  TopoDS_Shape shape;
+  if (Status st = import_ply_shape(ply_bytes, shape); !st.is_ok())
+  {
+    std::cerr << st.message() << std::endl;
+    return false;
+  }
+  if (shape.IsNull())
+    return false;
+
+  Shp_ptr shp = new Shp(*m_ctx, shape);
+  add_shp_(shp);
   return true;
 }
 
