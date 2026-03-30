@@ -3,17 +3,42 @@
 #include "gui.h"
 
 #include <array>
+#include <cstdio>
+#include <cstdlib>
+#include <cstring>
 #include <map>
 #include <string_view>
 #include <vector>
 
 #include "geom.h"
 #include "imgui.h"
+#include "imgui_internal.h"
 #include "modes.h"
 #include "occt_view.h"
 #include "sketch.h"
 
 #include <GLFW/glfw3.h>
+
+namespace {
+
+// Up to `max_frac` digits after the decimal, strip trailing zeros (and a trailing '.').
+void format_double_trim_fraction(char* dst, std::size_t dst_sz, double v, int max_frac)
+{
+  char tmp[64];
+  std::snprintf(tmp, sizeof tmp, "%.*f", max_frac, v);
+  std::size_t len = std::strlen(tmp);
+  while (len > 0 && tmp[len - 1] == '0')
+    --len;
+  if (len > 0 && tmp[len - 1] == '.')
+    --len;
+  tmp[len] = '\0';
+  if (std::strcmp(tmp, "-0") == 0)
+    std::snprintf(dst, dst_sz, "0");
+  else
+    std::snprintf(dst, dst_sz, "%s", tmp);
+}
+
+}  // namespace
 
 void GUI::set_mode(Mode mode)
 {
@@ -339,9 +364,34 @@ void GUI::options_shape_chamfer_mode_()
     m_view->on_chamfer_mode();
   }
 
-  float chamfer_dist = float(m_view->shp_chamfer().get_chamfer_dist() / m_view->get_dimension_scale());
-  if (ImGui::InputFloat("Chamfer dist##float_value", &chamfer_dist, 0.0f, 0.0f, "%.2f"))
-    m_view->shp_chamfer().set_chamfer_dist(chamfer_dist * m_view->get_dimension_scale());
+  static char chamfer_buf[64];
+  const double scale = m_view->get_dimension_scale();
+  const double chamfer_dist = m_view->shp_chamfer().get_chamfer_dist() / scale;
+
+  ImGui::PushID("chamfer_dist_micron");
+  const ImGuiID chamfer_input_id = ImGui::GetID("##micron");
+  ImGuiContext* ctx = ImGui::GetCurrentContext();
+  if (ctx && ctx->ActiveId != chamfer_input_id)
+    format_double_trim_fraction(chamfer_buf, sizeof chamfer_buf, chamfer_dist, 6);
+
+  ImGui::SetNextItemWidth(100.0f);
+  constexpr ImGuiInputTextFlags k_dim_flags =
+      ImGuiInputTextFlags_CharsDecimal | ImGuiInputTextFlags_CharsScientific;
+  if (ImGui::InputText("##micron", chamfer_buf, sizeof chamfer_buf, k_dim_flags))
+  {
+    char* end = nullptr;
+    const double p = std::strtod(chamfer_buf, &end);
+    if (end != chamfer_buf)
+    {
+      while (*end == ' ' || *end == '\t')
+        ++end;
+      if (*end == '\0')
+        m_view->shp_chamfer().set_chamfer_dist(p * scale);
+    }
+  }
+  ImGui::SameLine(0.0f, ImGui::GetStyle().ItemInnerSpacing.x);
+  ImGui::TextUnformatted("Chamfer dist");
+  ImGui::PopID();
 }
 
 void GUI::options_shape_fillet_mode_()
@@ -353,9 +403,34 @@ void GUI::options_shape_fillet_mode_()
     m_view->on_fillet_mode();
   }
 
-  float fillet_radius = float(m_view->shp_fillet().get_fillet_radius() / m_view->get_dimension_scale());
-  if (ImGui::InputFloat("Fillet radius##float_value", &fillet_radius, 0.0f, 0.0f, "%.2f"))
-    m_view->shp_fillet().set_fillet_radius(fillet_radius * m_view->get_dimension_scale());
+  static char fillet_buf[64];
+  const double scale = m_view->get_dimension_scale();
+  const double fillet_radius = m_view->shp_fillet().get_fillet_radius() / scale;
+
+  ImGui::PushID("fillet_rad_micron");
+  const ImGuiID fillet_input_id = ImGui::GetID("##micron");
+  ImGuiContext* ctx = ImGui::GetCurrentContext();
+  if (ctx && ctx->ActiveId != fillet_input_id)
+    format_double_trim_fraction(fillet_buf, sizeof fillet_buf, fillet_radius, 6);
+
+  ImGui::SetNextItemWidth(100.0f);
+  constexpr ImGuiInputTextFlags k_dim_flags =
+      ImGuiInputTextFlags_CharsDecimal | ImGuiInputTextFlags_CharsScientific;
+  if (ImGui::InputText("##micron", fillet_buf, sizeof fillet_buf, k_dim_flags))
+  {
+    char* end = nullptr;
+    const double p = std::strtod(fillet_buf, &end);
+    if (end != fillet_buf)
+    {
+      while (*end == ' ' || *end == '\t')
+        ++end;
+      if (*end == '\0')
+        m_view->shp_fillet().set_fillet_radius(p * scale);
+    }
+  }
+  ImGui::SameLine(0.0f, ImGui::GetStyle().ItemInnerSpacing.x);
+  ImGui::TextUnformatted("Fillet radius");
+  ImGui::PopID();
 }
 
 void GUI::options_shape_polar_duplicate_mode_()

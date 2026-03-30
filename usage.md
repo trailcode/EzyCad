@@ -10,6 +10,7 @@
 7.  [Keyboard Shortcuts](#keyboard-shortcuts)
 8.  [View Controls](#view-controls)
 9.  [Tips and Tricks](#tips-and-tricks)
+10. [Scripting](#scripting-lua-and-python)
 10. [Support](#support)
 11. [Tool Icons](#tool-icons)
 
@@ -35,7 +36,7 @@ EzyCad (Easy CAD) is a CAD application for hobbyist machinists to design and edi
 1. **Menu Bar**
    - **File** — [New](#new-project), [Open](#open-project), [Save](#save-project), Save as, [Import](#importing-3d-geometries), [Export](#exporting-3d-geometries), Examples, Exit
    - **Edit** — [Undo](#edit-operations), [Redo](#edit-operations)
-   - **View** — [Settings, panes and options](#help-and-settings)
+   - **View** — [Settings, panes, Lua/Python consoles](#help-and-settings),
    - **Help** — [About, Usage Guide](#help-and-settings)
 
 2. **Toolbar**
@@ -75,7 +76,8 @@ EzyCad (Easy CAD) is a CAD application for hobbyist machinists to design and edi
 - **Sketch List** — Show or hide the [Sketch List](#sketch-list) pane.
 - **Shape List** — Show or hide the Shape List pane.
 - **Log** — Show or hide the Log window.
-- **Lua Console** — Show or hide the Lua console (if available).
+- **Script console (Lua)** — Show or hide the Lua REPL and `res/scripts/lua` editors. Shortcut: **F12** (desktop) or **Ctrl+Shift+L** (WebAssembly). See [Scripting (Lua and Python)](#scripting-lua-and-python).
+- **Python Console** — Same for Python when the app is built with embedded Python (native only; not in the WebAssembly build).
 - **Debug** — Show or hide the debug pane (debug builds only).
 
 **Help menu**
@@ -96,6 +98,12 @@ For each sketch you can:
 - **Delete** — Right‑click the sketch name and choose **Delete** to remove the sketch from the document.
 
 The window can be closed with its close button; use **View → Sketch List** again to show it.
+
+## Scripting (Lua and Python)
+
+EzyCad can run **Lua** and (on supported desktop builds) **Python** in embedded consoles (**View** menu). You get a live **`ezy.*`** / **`view.*`** API for logging, mode changes, counts, and a few model actions; script files under **`res/scripts/lua`** and **`res/scripts/python`** open as tabs (Lua startup scripts run automatically).
+
+For shortcuts, sample scripts, binding tables, and limitations, see the **[Scripting guide](scripting.md)**.
 
 ## File Operations
 
@@ -118,15 +126,6 @@ The window can be closed with its close button; use **View → Sketch List** aga
 4. **Import/Export**
    - [Import STEP or PLY](#importing-3d-geometries)
    - [Export to STEP, IGES, binary STL, or binary PLY](#exporting-3d-geometries)
-
-### Startup project (defaults)
-
-Similar to Blender’s startup file: EzyCad can load a **default document** when it starts, including geometry, camera/view (stored in the `.ezy`), and **current tool mode**.
-
-- **First launch / no custom startup** — The app loads the bundled template `res/default.ezy` from the install or build output.
-- **Save your own startup** — Set up the scene and mode the way you want, open **Settings** (menu bar), expand **Startup project**, and click **Save current as startup project**. On desktop, this writes `startup.ezy` under your user config folder (e.g. Windows: `%APPDATA%\EzyCad\`; Linux: `~/.config/EzyCad/`; macOS: `~/Library/Application Support/EzyCad/`). On the web build, it is stored in the browser (localStorage).
-- **Next runs** — If a saved startup exists, it is loaded instead of the bundled file. The session starts **untitled** (so **Save** does not overwrite your startup file until you pick a path).
-- **Clear saved startup** — In **Settings → Startup project**, click **Clear saved startup**; the next launch uses the bundled `res/default.ezy` again.
 
 ### Startup project (defaults)
 
@@ -517,6 +516,15 @@ The polar duplicate tool allows you to create multiple copies of selected shapes
 | <kbd>E</kbd> | Extrude mode |
 | <kbd>D</kbd> | Delete selected |
 
+### Script consoles
+
+| | |
+| ---: | --- |
+| <kbd>F12</kbd> | Toggle **Lua** script console (desktop) |
+| <kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>L</kbd> | Toggle **Lua** script console (WebAssembly) |
+
+The **Python** console has no default shortcut; use **View → Python Console** when available.
+
 ## View Controls
 
 ### Mouse Controls
@@ -564,6 +572,7 @@ The polar duplicate tool allows you to create multiple copies of selected shapes
 
 ### Documentation
 - [This usage guide](#ezycad-usage-guide)
+- [Scripting (Lua / Python)](scripting.md)
 - Online documentation (TODO)
 - Video tutorials (TODO)
 
