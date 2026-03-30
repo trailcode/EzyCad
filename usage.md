@@ -15,13 +15,13 @@
 
 ## Introduction
 
-EzyCad (Easy CAD) is a CAD application for hobbyist machinists to design and edit 2D and 3D models for machining projects. It supports creating precise parts with tools for sketching, extruding, and applying geometric operations, using OpenGL, ImGui, and Open CASCADE Technology (OCCT). Export models to formats like STEP or STL for CNC machines or 3D printers, and try it in your browser with the WebAssembly version.
+EzyCad (Easy CAD) is a CAD application for hobbyist machinists to design and edit 2D and 3D models for machining projects. It supports creating precise parts with tools for sketching, extruding, and applying geometric operations, using OpenGL, ImGui, and Open CASCADE Technology (OCCT). You can exchange geometry with other CAD tools, CAM, or 3D printing using **STEP**, **IGES**, **STL**, and **PLY**.
 
 ## Getting Started
 
 ### System Requirements
-- Windows or, WebAssembly
-   - Not Tested: Linux, or macOS operating system
+- **Windows** (desktop), or **[WebAssembly](https://trailcode.github.io/EzyCad/EzyCad.html)** (run EzyCad in the browser)
+   - Not tested: Linux or macOS desktop builds
 - OpenGL-compatible graphics card
 
 ### Installation
@@ -101,8 +101,8 @@ The window can be closed with its close button; use **View → Sketch List** aga
 
 ### Supported Formats
 - Native format: `.ezy` files
-- [Import formats: STEP, IGES, STL](#importing-3d-geometries)
-- [Export formats: STEP, IGES, STL (binary)](#exporting-3d-geometries)
+- [Import formats: STEP (`.step`, `.stp`), PLY (`.ply`)](#importing-3d-geometries)
+- [Export formats: STEP, IGES, STL (binary), PLY (binary)](#exporting-3d-geometries)
 
 ### Basic Operations
 1. #### New Project
@@ -116,8 +116,8 @@ The window can be closed with its close button; use **View → Sketch List** aga
    - Save current work to `.ezy` file
 
 4. **Import/Export**
-   - [Import external CAD files](#importing-3d-geometries)
-   - [Export to STEP, IGES, or binary STL](#exporting-3d-geometries)
+   - [Import STEP or PLY](#importing-3d-geometries)
+   - [Export to STEP, IGES, binary STL, or binary PLY](#exporting-3d-geometries)
 
 ### Startup project (defaults)
 
@@ -208,21 +208,29 @@ In addition to creating 3D shapes from sketches, EzyCad supports importing exist
 | **Combine workflows** | Use imported geometry alongside sketched shapes |
 | **Modify imported models** | Apply EzyCad's modeling tools to imported shapes |
 
-**Supported Import Formats:**
+**Supported import formats:**
 
 | | |
 | ---: | --- |
-| **STEP** (`.step`, `.stp`) | Standard format for exchanging 3D CAD data |
-| **IGES** (`.iges`, `.igs`) | Legacy format for CAD data exchange |
-| **STL** (`.stl`) | Common format for 3D printing and mesh data |
+| **STEP** (`.step`, `.stp`) | Precise B-rep (boundary representation) CAD exchange |
+| **PLY** (`.ply`) | Triangle mesh; fast to load compared to heavy STEP assemblies |
 
-**How to Import:**
-1. Use the **File** menu and select **Import**
-2. Choose a supported file format (STEP, IGES, or STL)
-3. The imported 3D shapes will be added to your workspace
-4. Imported shapes can be moved, rotated, and used in [boolean operations](#other-feature-operations) just like shapes created from sketches
+**How to import:**
+1. Use **File → Import**
+2. Pick a `.step`, `.stp`, or `.ply` file (the dialog lists these types)
+3. Geometry is added as 3D shape(s) in the document
+4. You can move, rotate, scale, and use imported bodies in [boolean operations](#other-feature-operations) like native solids where the geometry allows it
 
-**Note**: Imported 3D geometries are added as solid shapes and can be combined with your sketched designs using [boolean operations](#other-feature-operations) (cut, fuse, common) or modified using [transform tools](#3d-modeling).
+**PLY import notes:**
+- Supported: **ASCII** PLY and **binary little-endian** PLY.
+- Not supported: **binary big-endian** PLY.
+- Meshes must use **triangular faces** (3 indices per face). Typical `vertex` properties **x**, **y**, **z** (and optional extra properties) are accepted; **face** elements must include a **list** property (e.g. `property list uchar int vertex_indices`) suitable for triangles.
+- Imported PLY data becomes a **mesh-style** solid (many triangular faces), not a parametric STEP solid—file size and display performance depend on triangle count.
+
+**STEP import notes:**
+- If the file cannot be read or contains no transferable geometry, a **message** explains the failure (invalid data, empty transfer, etc.).
+
+**Note:** **IGES** and **STL** are available for **export** only, not import.
 
 ### Exporting 3D geometries
 
@@ -233,10 +241,13 @@ Use **File → Export** to save the current model for other CAD tools, CAM, or 3
 | **STEP** (`.step`) | Precise B-rep exchange |
 | **IGES** (`.igs`) | Legacy CAD exchange |
 | **STL** | Triangle mesh; files are written in **binary** form |
+| **PLY** (`.ply`) | Triangle mesh in **binary little-endian** PLY (tessellated like STL) |
 
 **Scope:** If one or more 3D shapes are selected in the viewer, only those shapes are exported (with their current move/rotate/scale applied). If nothing is selected, all shapes in the document are exported together.
 
-**How to export:** **File → Export →** choose STEP, IGES, or STL (binary), then pick a save location (desktop) or accept the browser download (WebAssembly).
+**Mesh exports (STL and PLY):** Surfaces are **tessellated** with a fixed linear deflection (same idea as typical STL export). Very complex B-rep models produce large mesh files.
+
+**How to export:** **File → Export →** choose STEP, IGES, STL (binary), or **PLY (binary)**, then pick a save location (desktop) or accept the browser download (WebAssembly).
 
 For detailed information on creating 2D geometry, see the [2D Sketching](usage-sketch.md) guide. For information on working with 3D shapes, see the [3D Modeling](#3d-modeling) section.
 
