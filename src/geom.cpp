@@ -1,5 +1,8 @@
 #include "geom.h"
 
+#include <algorithm>
+#include <cmath>
+
 #include <AIS_Shape.hxx>
 #include <BRepAdaptor_Curve.hxx>
 #include <BRepBndLib.hxx>
@@ -17,6 +20,7 @@
 #include <Geom_Circle.hxx>
 #include <Geom_Plane.hxx>
 #include <Geom_TrimmedCurve.hxx>
+#include <Prs3d_DimensionAspect.hxx>
 #include <PrsDim_LengthDimension.hxx>
 #include <TopExp.hxx>
 #include <TopExp_Explorer.hxx>
@@ -30,6 +34,7 @@
 #include <gp_Dir.hxx>
 #include <gp_Pln.hxx>
 #include <gp_Pnt.hxx>
+#include <gp_Vec.hxx>
 #include <numbers>
 
 // Function to project a 3D point onto a plane and get its 2D (u, v) coordinates
@@ -527,9 +532,133 @@ gp_Pnt2d mirror_point(const gp_Pnt2d& p1, const gp_Pnt2d& p2, const gp_Pnt2d& po
   return mirrored_point;
 }
 
+Prs3d_DimensionTextHorizontalPosition edge_dim_text_h_pos_from_index(int idx)
+{
+  switch (idx)
+  {
+    case 0:
+      return Prs3d_DTHP_Left;
+    case 1:
+      return Prs3d_DTHP_Right;
+    case 2:
+      return Prs3d_DTHP_Center;
+    default:
+      return Prs3d_DTHP_Fit;
+  }
+}
+
+static void apply_length_dimension_text_h_position(const PrsDim_LengthDimension_ptr& dim,
+                                                   const Prs3d_DimensionTextHorizontalPosition text_h_pos)
+{
+  if (dim.IsNull())
+    return;
+  const Handle(Prs3d_DimensionAspect)& cur = dim->DimensionAspect();
+  Handle(Prs3d_DimensionAspect)        aspect;
+  if (!cur.IsNull())
+    aspect = new Prs3d_DimensionAspect(*cur);
+  else
+    aspect = new Prs3d_DimensionAspect();
+  aspect->SetTextHorizontalPosition(text_h_pos);
+  dim->SetDimensionAspect(aspect);
+}
+
+// OCCT draws the dimension on the side given by (plane_normal × edge_vector) for positive flyout.
+// When that side faces the sketch interior, negate flyout so the annotation sits outside the loop.
+static void orient_length_dimension_flyout_outward(const PrsDim_LengthDimension_ptr& dim,
+                                                     const gp_Pnt&                   p1,
+                                                     const gp_Pnt&                   p2,
+                                                     const gp_Pnt&                   interior_ref,
+                                                     const gp_Pln&                   pln)
+{
+  if (dim.IsNull())
+    return;
+  gp_Vec attach(p1, p2);
+  if (attach.SquareMagnitude() < Precision::SquareConfusion())
+    return;
+  gp_Vec nvec(pln.Axis().Direction());
+  gp_Vec fly_pos = nvec.Crossed(attach);
+  if (fly_pos.SquareMagnitude() < Precision::SquareConfusion())
+    return;
+
+  gp_Pnt mid = p1.Translated(attach.Multiplied(0.5));
+  gp_Vec   to_in(mid, interior_ref);
+  if (to_in.SquareMagnitude() < Precision::SquareConfusion())
+    return;
+
+  Standard_Real f = dim->GetFlyout();
+  const double  edge_len = std::sqrt(attach.SquareMagnitude());
+  if (std::abs(f) < Precision::Confusion())
+    f = std::max(15.0, edge_len * 0.12);
+
+  if (fly_pos.Dot(to_in) > 0.0)
+    dim->SetFlyout(-std::abs(f));
+  else
+    dim->SetFlyout(std::abs(f));
+}
+
+static bool point_strictly_inside_sketch_faces(const gp_Pnt& p, const std::vector<TopoDS_Face>& faces)
+{
+  for (const TopoDS_Face& face : faces)
+  {
+    BRepClass_FaceClassifier classifier(face, p, Precision::Confusion());
+    if (classifier.State() == TopAbs_IN)
+      return true;
+  }
+  return false;
+}
+
+// Returns true if flyout sign was chosen from face classification.
+static bool orient_length_dimension_flyout_clear_of_faces(const PrsDim_LengthDimension_ptr& dim,
+                                                          const gp_Pnt&                   p1,
+                                                          const gp_Pnt&                   p2,
+                                                          const gp_Pln&                   pln,
+                                                          const std::vector<TopoDS_Face>& faces)
+{
+  if (dim.IsNull() || faces.empty())
+    return false;
+  gp_Vec attach(p1, p2);
+  if (attach.SquareMagnitude() < Precision::SquareConfusion())
+    return false;
+  gp_Vec nvec(pln.Axis().Direction());
+  gp_Vec fly_pos = nvec.Crossed(attach);
+  if (fly_pos.SquareMagnitude() < Precision::SquareConfusion())
+    return false;
+  fly_pos.Normalize();
+
+  Standard_Real f = dim->GetFlyout();
+  const double  edge_len = std::sqrt(attach.SquareMagnitude());
+  if (std::abs(f) < Precision::Confusion())
+    f = std::max(15.0, edge_len * 0.12);
+
+  gp_Pnt mid = p1.Translated(attach.Multiplied(0.5));
+
+  const double base_eps = std::max(1e-3, std::min(edge_len * 0.02, edge_len * 0.15));
+  for (const double scale : {1.0, 0.35, 2.5})
+  {
+    const double eps     = base_eps * scale;
+    const gp_Pnt p_plus  = mid.Translated(fly_pos.Multiplied(eps));
+    const gp_Pnt p_minus = mid.Translated(fly_pos.Multiplied(-eps));
+    const bool   in_plus  = point_strictly_inside_sketch_faces(p_plus, faces);
+    const bool   in_minus = point_strictly_inside_sketch_faces(p_minus, faces);
+    if (in_plus != in_minus)
+    {
+      // Positive flyout moves along fly_pos; keep positive if that side is void (not inside material).
+      if (in_plus && !in_minus)
+        dim->SetFlyout(-std::abs(f));
+      else
+        dim->SetFlyout(std::abs(f));
+      return true;
+    }
+  }
+  return false;
+}
+
 PrsDim_LengthDimension_ptr create_distance_annotation(const gp_Pnt& p1,
                                                       const gp_Pnt& p2,
-                                                      const gp_Pln& pln)
+                                                      const gp_Pln& pln,
+                                                      const Prs3d_DimensionTextHorizontalPosition text_h_pos,
+                                                      const std::optional<gp_Pnt>&    interior_ref,
+                                                      const std::vector<TopoDS_Face>* sketch_faces_for_flyout)
 {
   // Check if points are too close (invalid for dimension)
   EZY_ASSERT(unique(p1, p2));
@@ -538,18 +667,27 @@ PrsDim_LengthDimension_ptr create_distance_annotation(const gp_Pnt& p1,
   TopoDS_Vertex vertex_1 = BRepBuilderAPI_MakeVertex(p1);
   TopoDS_Vertex vertex_2 = BRepBuilderAPI_MakeVertex(p2);
 
-  // Create and return the length dimension annotation
-  return new PrsDim_LengthDimension(vertex_1, vertex_2, pln);
+  PrsDim_LengthDimension_ptr dim = new PrsDim_LengthDimension(vertex_1, vertex_2, pln);
+  apply_length_dimension_text_h_position(dim, text_h_pos);
+  bool used_faces = false;
+  if (sketch_faces_for_flyout && !sketch_faces_for_flyout->empty())
+    used_faces = orient_length_dimension_flyout_clear_of_faces(dim, p1, p2, pln, *sketch_faces_for_flyout);
+  if (!used_faces && interior_ref.has_value())
+    orient_length_dimension_flyout_outward(dim, p1, p2, *interior_ref, pln);
+  return dim;
 }
 
 PrsDim_LengthDimension_ptr create_distance_annotation(const gp_Pnt2d& p1,
                                                       const gp_Pnt2d& p2,
-                                                      const gp_Pln&   pln)
+                                                      const gp_Pln&   pln,
+                                                      const Prs3d_DimensionTextHorizontalPosition text_h_pos,
+                                                      const std::optional<gp_Pnt>&    interior_ref,
+                                                      const std::vector<TopoDS_Face>* sketch_faces_for_flyout)
 {
   gp_Pnt point_1 = to_3d(pln, p1);
   gp_Pnt point_2 = to_3d(pln, p2);
 
-  return create_distance_annotation(point_1, point_2, pln);
+  return create_distance_annotation(point_1, point_2, pln, text_h_pos, interior_ref, sketch_faces_for_flyout);
 }
 
 const gp_Pnt& closest_to_camera(const V3d_View_ptr& view, const std::vector<gp_Pnt>& pnts)

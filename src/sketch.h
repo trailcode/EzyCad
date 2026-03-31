@@ -1,9 +1,13 @@
 #pragma once
 
 #include <AIS_Shape.hxx>
+#include <gp_Pnt.hxx>
 #include <gp_Pnt2d.hxx>
 #include <list>
+#include <optional>
 #include <set>
+#include <TopoDS_Face.hxx>
+#include <vector>
 
 #include "shp.h"
 #include "sketch_nodes.h"
@@ -216,6 +220,12 @@ class Sketch
   void update_face_style_(AIS_Shape_ptr& shp) const;
   void set_edge_dim_anno_visible_(Edge& e, bool visible);
 
+  /// Average of non-deleted node positions (3D on sketch plane); used to place edge dimensions outside loops.
+  std::optional<gp_Pnt> approx_sketch_interior_ref_3d_() const;
+
+  /// `m_faces` as `TopoDS_Face` for flyout tests (rebuilt in `update_faces_`).
+  void rebuild_dim_classifier_face_cache_();
+
   // Query related
   std::list<Edge>::iterator get_edge_at_(const ScreenCoords& screen_coords);
 
@@ -257,6 +267,7 @@ class Sketch
   Sketch_nodes                     m_nodes;
   std::list<Edge>                  m_edges;
   std::vector<Sketch_face_shp_ptr> m_faces;
+  std::vector<TopoDS_Face>         m_dim_classifier_faces;
   std::vector<size_t>              m_tmp_node_idxs;
   std::vector<Edge>                m_tmp_edges;
   AIS_Shape_ptr                    m_tmp_shp;

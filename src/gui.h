@@ -56,6 +56,8 @@ class GUI
   Mode get_mode() const { return m_mode; }
   Chamfer_mode get_chamfer_mode() const { return m_chamfer_mode; }
   Fillet_mode get_fillet_mode() const { return m_fillet_mode; }
+  /// Edge dimension value placement (Options panel, toggle-dimension tool): 0 first point, 1 second, 2 center, 3 auto.
+  int edge_dim_label_h() const { return m_edge_dim_label_h; }
   bool get_hide_all_shapes() const { return m_hide_all_shapes; }
   void set_hide_all_shapes(bool hide) { m_hide_all_shapes = hide; }
   bool get_dark_mode() const { return m_dark_mode; }
@@ -182,6 +184,7 @@ class GUI
   Mode                        m_mode         = Mode::Normal;
   Chamfer_mode                m_chamfer_mode = Chamfer_mode::Shape;
   Fillet_mode                 m_fillet_mode  = Fillet_mode::Shape;
+  int                         m_edge_dim_label_h {3};  // Prs3d_DTHP_Fit
   std::vector<Toolbar_button> m_toolbar_buttons;
 
   // Message status window

@@ -268,6 +268,29 @@ void GUI::options_()
     float snap_dist = float(Sketch_nodes::get_snap_dist());
     if (ImGui::InputFloat("Snap dist##float_value", &snap_dist, 1.0f, 2.0f, "%.2f"))
       Sketch_nodes::set_snap_dist(snap_dist);
+
+    if (get_mode() == Mode::Sketch_toggle_edge_dim)
+    {
+      constexpr std::array<const char*, 4> k_edge_dim_label_placement = {
+          "Near first point",
+          "Near second point",
+          "Center on dimension line",
+          "Automatic",
+      };
+      int h = m_edge_dim_label_h;
+      if (ImGui::Combo("Length value placement##edge_dim_h", &h, k_edge_dim_label_placement.data(),
+                       int(k_edge_dim_label_placement.size())))
+      {
+        m_edge_dim_label_h = h;
+        save_occt_view_settings();
+      }
+      if (ImGui::IsItemHovered())
+        ImGui::SetTooltip(
+            "Where to place the numeric value along the dimension line (near the first or second end, center, or auto).\n"
+            "This does not flip which side of the edge the dimension sits on.\n"
+            "When the sketch has filled faces, dimensions offset to the void side (point-in-face test).\n"
+            "Otherwise the average node position is used as a rough inside reference.");
+    }
   }
 
   ImGui::End();

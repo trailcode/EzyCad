@@ -7,14 +7,17 @@
 #include <boost/geometry.hpp>
 #include <glm/glm.hpp>
 #include <gp_Dir2d.hxx>
+#include <gp_Pnt.hxx>
 #include <numbers>
 #include <optional>
+#include <Prs3d_DimensionTextHorizontalPosition.hxx>
+#include <TopoDS_Face.hxx>
+#include <vector>
 
 #include "dbg.h"
 #include "types.h"
 
 class gp_Pln;
-class gp_Pnt;
 class gp_Pnt2d;
 class gp_Vec;
 class TopoDS_Edge;
@@ -129,13 +132,25 @@ gp_Pnt2d get_midpoint(const gp_Pnt2d& p1, const gp_Pnt2d& p2);
 
 gp_Pnt2d mirror_point(const gp_Pnt2d& p1, const gp_Pnt2d& p2, const gp_Pnt2d& point_to_mirror);
 
+/// Maps Options → edge length label index (0–3) to OCCT horizontal text placement.
+Prs3d_DimensionTextHorizontalPosition edge_dim_text_h_pos_from_index(int idx);
+
+/// When `sketch_faces_for_flyout` is non-null and non-empty, edge dimensions offset to the side that is
+/// void (not TopAbs_IN) relative to those faces — fixes concave / notch edges where the node centroid lies
+/// on the wrong side. Otherwise `interior_ref` (e.g. node centroid) is used as a weaker heuristic.
 PrsDim_LengthDimension_ptr create_distance_annotation(const gp_Pnt& p1,
                                                       const gp_Pnt& p2,
-                                                      const gp_Pln& pln);
+                                                      const gp_Pln& pln,
+                                                      Prs3d_DimensionTextHorizontalPosition text_h_pos = Prs3d_DTHP_Fit,
+                                                      const std::optional<gp_Pnt>&          interior_ref = std::nullopt,
+                                                      const std::vector<TopoDS_Face>* sketch_faces_for_flyout = nullptr);
 
 PrsDim_LengthDimension_ptr create_distance_annotation(const gp_Pnt2d& p1,
                                                       const gp_Pnt2d& p2,
-                                                      const gp_Pln&   pln);
+                                                      const gp_Pln&   pln,
+                                                      Prs3d_DimensionTextHorizontalPosition text_h_pos = Prs3d_DTHP_Fit,
+                                                      const std::optional<gp_Pnt>&          interior_ref = std::nullopt,
+                                                      const std::vector<TopoDS_Face>* sketch_faces_for_flyout = nullptr);
 
 const gp_Pnt& closest_to_camera(const V3d_View_ptr& view, const std::vector<gp_Pnt>& pnts);
 

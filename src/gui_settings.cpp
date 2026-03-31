@@ -50,6 +50,7 @@ void GUI::save_occt_view_settings()
       {           "dark_mode",            m_dark_mode},
       {    "show_lua_console",     m_show_lua_console},
       { "show_python_console",  m_show_python_console},
+      {   "edge_dim_label_h",     m_edge_dim_label_h},
 #ifndef NDEBUG
       {            "show_dbg",             m_show_dbg},
 #endif
@@ -198,8 +199,14 @@ void GUI::parse_gui_panes_settings_(const std::string& content)
     m_dark_mode           = b("dark_mode", m_dark_mode);
     m_show_lua_console    = b("show_lua_console", true);
     m_show_python_console = b("show_python_console", false);
+    if (g.contains("edge_dim_label_h") && g["edge_dim_label_h"].is_number_integer())
+    {
+      const int v = g["edge_dim_label_h"].get<int>();
+      if (v >= 0 && v <= 3)
+        m_edge_dim_label_h = v;
+    }
 #ifndef NDEBUG
-    set_show_dbg(b("show_dbg", false));
+      set_show_dbg(b("show_dbg", false));
 #endif
   }
   catch (...)

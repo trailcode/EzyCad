@@ -9,6 +9,7 @@
 #include <Graphic3d_AspectFillArea3d.hxx>
 #include <PrsDim_LengthDimension.hxx>
 #include <TopExp_Explorer.hxx>
+#include <TopoDS.hxx>
 #include <TopoDS_Edge.hxx>
 #include <TopoDS_Wire.hxx>
 #include <V3d_View.hxx>
@@ -349,7 +350,10 @@ void Sketch::move_line_string_pt_(const ScreenCoords& screen_coords)
     // line; if the mouse is (nearly) perpendicular to that line, the projection coincides with pt_a.
     if (unique(pt_a, final_pt_b))
     {
-      m_tmp_dim_anno = create_distance_annotation(pt_a, final_pt_b, m_pln);
+      m_tmp_dim_anno = create_distance_annotation(
+          pt_a, final_pt_b, m_pln, edge_dim_text_h_pos_from_index(m_view.gui().edge_dim_label_h()),
+          approx_sketch_interior_ref_3d_(),
+          m_dim_classifier_faces.empty() ? nullptr : &m_dim_classifier_faces);
       m_tmp_dim_anno->SetCustomValue(dist);
       m_ctx.Display(m_tmp_dim_anno, true);
     }
@@ -916,6 +920,22 @@ std::list<Sketch::Edge>::iterator Sketch::get_edge_at_(const ScreenCoords& scree
   return m_edges.end();
 }
 
+std::optional<gp_Pnt> Sketch::approx_sketch_interior_ref_3d_() const
+{
+  gp_XYZ acc(0., 0., 0.);
+  size_t n = 0;
+  for (size_t i = 0; i < m_nodes.size(); ++i)
+  {
+    if (m_nodes[i].deleted)
+      continue;
+    acc += to_3d_(i).XYZ();
+    ++n;
+  }
+  if (n == 0)
+    return std::nullopt;
+  return gp_Pnt(acc / static_cast<double>(n));
+}
+
 void Sketch::set_edge_dim_anno_visible_(Edge& e, bool visible)
 {
   if (visible)
@@ -924,7 +944,10 @@ void Sketch::set_edge_dim_anno_visible_(Edge& e, bool visible)
     if (e.dim)
       m_ctx.Remove(e.dim, false);  // Remove existing to update position
 
-    e.dim       = create_distance_annotation(m_nodes[e.node_idx_a], m_nodes[e.node_idx_b], m_pln);
+    e.dim       = create_distance_annotation(
+        m_nodes[e.node_idx_a], m_nodes[e.node_idx_b], m_pln,
+        edge_dim_text_h_pos_from_index(m_view.gui().edge_dim_label_h()), approx_sketch_interior_ref_3d_(),
+        m_dim_classifier_faces.empty() ? nullptr : &m_dim_classifier_faces);
     double dist = m_nodes[e.node_idx_a].Distance(m_nodes[e.node_idx_b]);
     e.dim->SetCustomValue(dist / m_view.get_dimension_scale());
     m_ctx.Display(e.dim, true);
@@ -985,6 +1008,7 @@ void Sketch::update_faces_()
 
   m_view.remove(m_faces);
   m_faces.clear();
+  m_dim_classifier_faces.clear();
 
   // Used to cleanup dangling nodes;
   std::vector<bool> used_nodes(m_nodes.size());
@@ -1362,6 +1386,16 @@ void Sketch::update_faces_()
 
     m_ctx.SetSelectionSensitivity(face.shp, 0, nesting_depth + 1);
   }
+
+  rebuild_dim_classifier_face_cache_();
+}
+
+void Sketch::rebuild_dim_classifier_face_cache_()
+{
+  m_dim_classifier_faces.clear();
+  m_dim_classifier_faces.reserve(m_faces.size());
+  for (const Sketch_face_shp_ptr& fp : m_faces)
+    m_dim_classifier_faces.push_back(TopoDS::Face(fp->Shape()));
 }
 
 size_t Sketch::Face_edge::start_nd_idx() const
