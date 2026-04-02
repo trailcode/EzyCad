@@ -44,6 +44,18 @@ static bool is_valid_project_json(const std::string& s)
   }
 }
 
+const std::vector<std::string>& occt_material_combo_labels()
+{
+  static std::vector<std::string> names;
+  if (names.empty())
+    for (int i = 0; i < Graphic3d_MaterialAspect::NumberOfMaterials(); ++i)
+    {
+      Graphic3d_MaterialAspect mat(static_cast<Graphic3d_NameOfMaterial>(i));
+      names.emplace_back(mat.MaterialName());
+    }
+  return names;
+}
+
 GUI* gui_instance = nullptr;
 
 GUI::GUI()
@@ -736,6 +748,19 @@ void GUI::shape_list_()
 
   ImGui::Separator();
 
+  const std::vector<std::string>& mat_names = occt_material_combo_labels();
+  const int                       nmat      = static_cast<int>(mat_names.size());
+  float                           mat_label_w_max = 0.0f;
+  for (int mi = 0; mi < nmat; ++mi)
+    mat_label_w_max =
+        std::max(mat_label_w_max, ImGui::CalcTextSize(mat_names[static_cast<size_t>(mi)].c_str()).x);
+  const ImGuiStyle& st_mat        = ImGui::GetStyle();
+  const float       mat_popup_w = std::min(
+      440.0f,
+      std::max(280.0f,
+               mat_label_w_max + st_mat.WindowPadding.x * 2.0f + st_mat.FramePadding.x * 2.0f + st_mat.ScrollbarSize
+                   + 8.0f));
+
   for (const Shp_ptr& shape : m_view->get_shapes())
   {
     // Unique ID suffix using index
@@ -747,10 +772,36 @@ void GUI::shape_list_()
     strncpy(name_buffer, shape->get_name().c_str(), sizeof(name_buffer) - 1);
     name_buffer[sizeof(name_buffer) - 1] = '\0';  // Ensure null-terminated
 #pragma warning(pop)
+
+    int mat_idx = shape->Material();
+    if (mat_idx < 0 || mat_idx >= nmat)
+      mat_idx = static_cast<int>(m_view->get_default_material().Name());
+
+    auto apply_shape_material = [&](int i)
+    {
+      if (i < 0 || i >= nmat)
+        return;
+
+      shape->SetMaterial(Graphic3d_MaterialAspect(static_cast<Graphic3d_NameOfMaterial>(i)));
+      m_view->ctx().Redisplay(shape, true);
+      m_view->ctx().UpdateCurrentViewer();
+    };
+
     ImGui::PushID(("name" + id_suffix).c_str());
     if (ImGui::InputText("", name_buffer, sizeof(name_buffer)))
       shape->set_name(std::string(name_buffer));
 
+    if (ImGui::BeginPopupContextItem("shape_name_mat"))
+    {
+      if (ImGui::BeginMenu("Material"))
+      {
+        for (int i = 0; i < nmat; ++i)
+          if (ImGui::MenuItem(mat_names[static_cast<size_t>(i)].c_str(), nullptr, i == mat_idx))
+            apply_shape_material(i);
+        ImGui::EndMenu();
+      }
+      ImGui::EndPopup();
+    }
     ImGui::PopID();
     // Visibility checkbox
     ImGui::SameLine();
@@ -774,6 +825,47 @@ void GUI::shape_list_()
     if (m_show_tool_tips && ImGui::IsItemHovered())
       ImGui::SetTooltip("solid/wire");
 
+    ImGui::PopID();
+
+    ImGui::SameLine();
+    ImGui::PushID(("matbtn" + id_suffix).c_str());
+    ImGui::PushStyleVar(ImGuiStyleVar_FramePadding,
+                        ImVec2(4.0f, ImGui::GetStyle().FramePadding.y));
+    if (ImGui::Button("M"))
+      ImGui::OpenPopup("mat_pick");
+
+    ImGui::PopStyleVar();
+    if (m_show_tool_tips && ImGui::IsItemHovered())
+      ImGui::SetTooltip("%s\n(right-click name: Material menu)", mat_names[static_cast<size_t>(mat_idx)].c_str());
+    
+    ImGui::SetNextWindowSize(ImVec2(mat_popup_w, 0.0f), ImGuiCond_Appearing);
+    if (ImGui::BeginPopup("mat_pick"))
+    {
+      ImGui::TextUnformatted("Material");
+      ImGui::Separator();
+      const float max_h = ImGui::GetTextLineHeightWithSpacing() * 12.0f;
+      const float sc_w  = std::max(1.0f, ImGui::GetContentRegionAvail().x);
+      if (ImGui::BeginChild("mat_sc", ImVec2(sc_w, max_h), ImGuiChildFlags_Borders,
+                            ImGuiWindowFlags_AlwaysVerticalScrollbar))
+      {
+        for (int i = 0; i < nmat; ++i)
+          if (ImGui::Selectable(mat_names[static_cast<size_t>(i)].c_str(), i == mat_idx))
+          {
+            apply_shape_material(i);
+            ImGui::CloseCurrentPopup();
+          }
+        ImGui::EndChild();
+      }
+      ImGui::EndPopup();
+    }
+    if (ImGui::BeginPopupContextItem("mat_btn_ctx"))
+    {
+      for (int i = 0; i < nmat; ++i)
+        if (ImGui::MenuItem(mat_names[static_cast<size_t>(i)].c_str(), nullptr, i == mat_idx))
+          apply_shape_material(i);
+      
+      ImGui::EndPopup();
+    }
     ImGui::PopID();
   }
   ImGui::End();
@@ -948,11 +1040,63 @@ void GUI::init(GLFWwindow* window)
   load_default_project_();
 }
 
+void GUI::persist_last_opened_project_path_(const std::string& path)
+{
+#ifndef __EMSCRIPTEN__
+  if (path.empty() || path == "(startup)")
+    return;
+  try
+  {
+    const std::filesystem::path p(path);
+    if (p.empty())
+      return;
+    m_last_opened_project_path = p.generic_string();
+    save_occt_view_settings();
+  }
+  catch (...)
+  {
+  }
+#endif
+}
+
 void GUI::load_default_project_()
 {
   static constexpr char k_bundled_default[] = "res/default.ezy";
 
   log_message("EzyCad: resolving startup document...");
+
+#ifndef __EMSCRIPTEN__
+  if (m_load_last_opened_on_startup && !m_last_opened_project_path.empty())
+  {
+    try
+    {
+      const std::filesystem::path p(m_last_opened_project_path);
+      if (std::filesystem::exists(p))
+      {
+        std::ifstream file(p, std::ios::binary);
+        if (file.is_open())
+        {
+          const std::string json_str {std::istreambuf_iterator<char>(file), std::istreambuf_iterator<char>()};
+          if (is_valid_project_json(json_str))
+          {
+            log_message("EzyCad: loading last opened project: " + p.string());
+            on_file(p.string(), json_str, false);
+            log_message("EzyCad: startup document loaded (last opened).");
+            return;
+          }
+          log_message("EzyCad: last opened project JSON is invalid; falling back to startup/default.");
+          show_message("Last opened project file is invalid; loading startup/default.");
+        }
+      }
+      else
+        log_message("EzyCad: last opened project path not found; falling back to startup/default.");
+    }
+    catch (...)
+    {
+      log_message("EzyCad: could not load last opened project; falling back to startup/default.");
+    }
+  }
+#endif
 
   const std::string user_startup = settings::load_user_startup_project();
   if (is_valid_project_json(user_startup))
@@ -1393,6 +1537,10 @@ void GUI::on_file(const std::string& file_path, const std::string& json_str, boo
       opened_mode = static_cast<Mode>(idx);
   }
   set_mode(opened_mode);
+#ifndef __EMSCRIPTEN__
+  if (file_path != "(startup)" && !file_path.empty() && file_path != "res/default.ezy")
+    persist_last_opened_project_path_(file_path);
+#endif
   if (announce_load)
     show_message("Opened: " + std::filesystem::path(file_path).filename().string());
 }

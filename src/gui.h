@@ -159,6 +159,8 @@ class GUI
 
   void        save_startup_project_();
   void        clear_saved_startup_project_();
+  /// Native only: store path in settings after a successful Open (for optional startup load).
+  void        persist_last_opened_project_path_(const std::string& path);
   std::string serialized_project_json_() const;
   void        open_url_(const char* url);
 
@@ -203,7 +205,9 @@ class GUI
   Log_strm*       m_cout_log_buf      = nullptr;  // Custom stdout buffer
   Log_strm*       m_cerr_log_buf      = nullptr;  // Custom stderr buffer
 
-  std::string                                      m_last_saved_path;  // Added to store last saved file path
+  std::string                                      m_last_saved_path;  // Session path for Ctrl+S / Save as
+  bool                                             m_load_last_opened_on_startup {false};
+  std::string                                      m_last_opened_project_path;  // Persisted in settings (native)
   std::vector<std::pair<std::string, std::string>> m_example_files;    // (display_name, path) for Examples menu
   bool                                             m_show_sketch_list {true};
   bool                                             m_show_shape_list {true};
@@ -243,3 +247,6 @@ class GUI
   std::unique_ptr<Python_console> m_python_console;
   ImFont*                      m_console_font {nullptr};  // Cousine monospace; set from main
 };
+
+/// OCCT standard material display names for ImGui combos (index matches \c Graphic3d_NameOfMaterial).
+const std::vector<std::string>& occt_material_combo_labels();

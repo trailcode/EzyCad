@@ -1520,8 +1520,13 @@ void Occt_view::load(const std::string& json_str, bool restore_view)
     BRepTools::Read(shape, iss, BRep_Builder());
     Shp_ptr shp = new Shp(*m_ctx, shape);
     shp->set_name(s["name"]);
-    // TODO improve
-    shp->SetMaterial(Graphic3d_MaterialAspect(Graphic3d_NameOfMaterial(s["material"])));
+    Standard_Integer mat_idx = static_cast<Standard_Integer>(m_default_material.Name());
+    if (s.contains("material") && s["material"].is_number_integer())
+      mat_idx = s["material"].get<Standard_Integer>();
+    const int nmat = Graphic3d_MaterialAspect::NumberOfMaterials();
+    if (mat_idx < 0 || mat_idx >= nmat)
+      mat_idx = static_cast<Standard_Integer>(m_default_material.Name());
+    shp->SetMaterial(Graphic3d_MaterialAspect(static_cast<Graphic3d_NameOfMaterial>(mat_idx)));
     m_shps.push_back(shp);
     m_ctx->Display(shp, AIS_Shaded, 0, true);
   }

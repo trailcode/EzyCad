@@ -1,5 +1,7 @@
 {
   "gui": {
+    "load_last_opened_on_startup": false,
+    "last_opened_project_path": "",
     "log_window_visible": false,
     "show_dbg": false,
     "show_options": true,

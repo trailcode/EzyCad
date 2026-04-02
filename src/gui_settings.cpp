@@ -51,6 +51,8 @@ void GUI::save_occt_view_settings()
       {    "show_lua_console",     m_show_lua_console},
       { "show_python_console",  m_show_python_console},
       {   "edge_dim_label_h",     m_edge_dim_label_h},
+      {"load_last_opened_on_startup", m_load_last_opened_on_startup},
+      {   "last_opened_project_path",    m_last_opened_project_path},
 #ifndef NDEBUG
       {            "show_dbg",             m_show_dbg},
 #endif
@@ -205,6 +207,11 @@ void GUI::parse_gui_panes_settings_(const std::string& content)
       if (v >= 0 && v <= 3)
         m_edge_dim_label_h = v;
     }
+    m_load_last_opened_on_startup = b("load_last_opened_on_startup", b("load_last_saved_on_startup", false));
+    if (g.contains("last_opened_project_path") && g["last_opened_project_path"].is_string())
+      m_last_opened_project_path = g["last_opened_project_path"].get<std::string>();
+    else if (g.contains("last_saved_project_path") && g["last_saved_project_path"].is_string())
+      m_last_opened_project_path = g["last_saved_project_path"].get<std::string>();
 #ifndef NDEBUG
       set_show_dbg(b("show_dbg", false));
 #endif
@@ -333,6 +340,17 @@ void GUI::settings_()
 
   if (ImGui::CollapsingHeader("Startup project"))
   {
+#ifndef __EMSCRIPTEN__
+    if (ImGui::Checkbox("Load last opened project on startup", &m_load_last_opened_on_startup))
+      save_occt_view_settings();
+    ImGui::TextWrapped(
+        "When enabled, EzyCad opens the last .ezy file you opened (path is stored in settings).");
+    if (!m_last_opened_project_path.empty())
+      ImGui::TextWrapped("Last opened path: %s", m_last_opened_project_path.c_str());
+    else
+      ImGui::TextDisabled("(No path saved yet.)");
+    ImGui::Spacing();
+#endif
     ImGui::TextWrapped(
         "Save the current document (geometry, view, and tool mode) as what loads when EzyCad starts. "
         "If none is saved, the install default (res/default.ezy) is used.");

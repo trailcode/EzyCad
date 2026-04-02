@@ -225,28 +225,6 @@ void GUI::options_()
     return;
   }
 
-  static std::vector<std::string> material_names;
-  if (material_names.empty())
-    for (int i = 0; i < Graphic3d_MaterialAspect::NumberOfMaterials(); ++i)
-    {
-      Graphic3d_MaterialAspect mat(static_cast<Graphic3d_NameOfMaterial>(i));
-      material_names.push_back(mat.MaterialName());
-    }
-
-  int current_item = int(m_view->get_default_material().Name());
-  if (ImGui::BeginCombo("Default Material##filter", material_names[current_item].data(),
-                        ImGuiComboFlags_WidthFitPreview | ImGuiComboFlags_HeightSmall))
-  {
-    for (int i = 0; i < static_cast<int>(material_names.size()); i++)
-      if (ImGui::Selectable(material_names[i].data(), current_item == i))
-      {
-        Graphic3d_MaterialAspect mat(static_cast<Graphic3d_NameOfMaterial>(i));
-        m_view->set_default_material(mat);
-      }
-
-    ImGui::EndCombo();
-  }
-
   // clang-format off
   switch (get_mode())
   {
@@ -290,6 +268,26 @@ void GUI::options_()
             "This does not flip which side of the edge the dimension sits on.\n"
             "When the sketch has filled faces, dimensions offset to the void side (point-in-face test).\n"
             "Otherwise the average node position is used as a rough inside reference.");
+    }
+  }
+  else
+  {
+    const std::vector<std::string>& material_names = occt_material_combo_labels();
+    int                             current_item   = int(m_view->get_default_material().Name());
+    if (current_item < 0 || current_item >= static_cast<int>(material_names.size()))
+      current_item = 0;
+
+    if (ImGui::BeginCombo("Default Material##filter", material_names[static_cast<size_t>(current_item)].data(),
+                          ImGuiComboFlags_WidthFitPreview | ImGuiComboFlags_HeightSmall))
+    {
+      for (int i = 0; i < static_cast<int>(material_names.size()); i++)
+        if (ImGui::Selectable(material_names[static_cast<size_t>(i)].data(), current_item == i))
+        {
+          Graphic3d_MaterialAspect mat(static_cast<Graphic3d_NameOfMaterial>(i));
+          m_view->set_default_material(mat);
+        }
+
+      ImGui::EndCombo();
     }
   }
 
