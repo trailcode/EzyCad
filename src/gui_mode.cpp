@@ -1,6 +1,6 @@
 // Tool mode switching, keyboard routing, and Options panel (mode-specific UI).
 
-#include "gui.h"
+#include <GLFW/glfw3.h>
 
 #include <array>
 #include <cstdio>
@@ -11,15 +11,15 @@
 #include <vector>
 
 #include "geom.h"
+#include "gui.h"
 #include "imgui.h"
 #include "imgui_internal.h"
 #include "modes.h"
 #include "occt_view.h"
 #include "sketch.h"
 
-#include <GLFW/glfw3.h>
-
-namespace {
+namespace
+{
 
 // Up to `max_frac` digits after the decimal, strip trailing zeros (and a trailing '.').
 void format_double_trim_fraction(char* dst, std::size_t dst_sz, double v, int max_frac)
@@ -94,122 +94,106 @@ void GUI::set_parent_mode()
 void GUI::on_key(int key, int scancode, int action, int mods)
 {
   (void) scancode;
-  if (action == GLFW_PRESS)
+  if (action != GLFW_PRESS)
+    return;
+
+  const ScreenCoords screen_coords(glm::dvec2(ImGui::GetIO().MousePos.x, ImGui::GetIO().MousePos.y));
+
+  bool ctrl_pressed = (mods & GLFW_MOD_CONTROL) != 0;
+
+  if (ctrl_pressed)
   {
-    const ScreenCoords screen_coords(glm::dvec2(ImGui::GetIO().MousePos.x, ImGui::GetIO().MousePos.y));
-
-    bool ctrl_pressed = (mods & GLFW_MOD_CONTROL) != 0;
-
-#ifndef __EMSCRIPTEN__
-    if (key == GLFW_KEY_F12)
+    switch (key)
     {
-      m_show_lua_console = !m_show_lua_console;
-      save_occt_view_settings();
-      return;
-    }
-#else
-    if (ctrl_pressed && (mods & GLFW_MOD_SHIFT) != 0 && key == GLFW_KEY_L)
-    {
-      m_show_lua_console = !m_show_lua_console;
-      save_occt_view_settings();
-      return;
-    }
-#endif
+      case GLFW_KEY_N:
+        m_view->new_file();
+        break;
 
-    if (ctrl_pressed)
-    {
-      switch (key)
-      {
-        case GLFW_KEY_N:
-          m_view->new_file();
-          break;
+      case GLFW_KEY_O:
+        open_file_dialog_();
+        break;
 
-        case GLFW_KEY_O:
-          open_file_dialog_();
-          break;
+      case GLFW_KEY_S:
+        save_file_dialog_();
+        break;
 
-        case GLFW_KEY_S:
-          save_file_dialog_();
-          break;
-
-        case GLFW_KEY_Z:
-          if ((mods & GLFW_MOD_SHIFT) != 0)
-            m_view->redo();
-          else
-            m_view->undo();
-          break;
-
-        case GLFW_KEY_Y:
+      case GLFW_KEY_Z:
+        if ((mods & GLFW_MOD_SHIFT) != 0)
           m_view->redo();
-          break;
+        else
+          m_view->undo();
+        break;
 
-        default:
-          break;
-      }
+      case GLFW_KEY_Y:
+        m_view->redo();
+        break;
+
+      default:
+        break;
     }
-    else
+  }
+  else
+  {
+    switch (key)
     {
-      switch (key)
+      case GLFW_KEY_ESCAPE:
+        m_view->cancel(Set_parent_mode::Yes);
+        hide_dist_edit();
+        hide_angle_edit();
+        break;
+
+      case GLFW_KEY_TAB:
       {
-        case GLFW_KEY_ESCAPE:
-          m_view->cancel(Set_parent_mode::Yes);
-          hide_dist_edit();
-          hide_angle_edit();
-          break;
-
-        case GLFW_KEY_TAB:
-        {
-          bool shift_pressed = (mods & GLFW_MOD_SHIFT) != 0;
-          if (shift_pressed)
-            m_view->angle_input(screen_coords);
-          else
-            m_view->dimension_input(screen_coords);
-          break;
-        }
-
-        case GLFW_KEY_ENTER:
-          hide_dist_edit();
-          hide_angle_edit();
-          m_view->on_enter(screen_coords);
-          break;
-
-        case GLFW_KEY_D:
-          m_view->delete_selected();
-          break;
-
-        case GLFW_KEY_G:
-          set_mode(Mode::Move);
-          break;
-
-        case GLFW_KEY_R:
-          set_mode(Mode::Rotate);
-          break;
-
-        case GLFW_KEY_E:
-          set_mode(Mode::Sketch_face_extrude);
-          break;
-
-        case GLFW_KEY_S:
-          set_mode(Mode::Scale);
-          break;
-
-        default:
-          break;
+        bool shift_pressed = (mods & GLFW_MOD_SHIFT) != 0;
+        if (shift_pressed)
+          m_view->angle_input(screen_coords);
+        else
+          m_view->dimension_input(screen_coords);
+        break;
       }
 
-      switch (get_mode())
-      {
-        case Mode::Move:
-          on_key_move_mode_(key);
-          break;
+      case GLFW_KEY_ENTER:
+        hide_dist_edit();
+        hide_angle_edit();
+        m_view->on_enter(screen_coords);
+        break;
 
-        case Mode::Rotate:
-          on_key_rotate_mode_(key);
-          break;
+      case GLFW_KEY_D:
+        m_view->delete_selected();
+        break;
 
-        default:
-          break;
-      }
+      case GLFW_KEY_G:
+        set_mode(Mode::Move);
+        break;
+
+      case GLFW_KEY_R:
+        set_mode(Mode::Rotate);
+        break;
+
+      case GLFW_KEY_E:
+        set_mode(Mode::Sketch_face_extrude);
+        break;
+
+      case GLFW_KEY_S:
+        set_mode(Mode::Scale);
+        break;
+
+      default:
+        break;
+    }
+
+    switch (get_mode())
+    {
+      case Mode::Move:
+        on_key_move_mode_(key);
+        break;
+
+      case Mode::Rotate:
+        on_key_rotate_mode_(key);
+        break;
+
+      default:
+        break;
     }
   }
 }
@@ -241,36 +225,7 @@ void GUI::options_()
   }
   // clang-format on
 
-  if (is_sketch_mode(get_mode()))
-  {
-    float snap_dist = float(Sketch_nodes::get_snap_dist());
-    if (ImGui::InputFloat("Snap dist##float_value", &snap_dist, 1.0f, 2.0f, "%.2f"))
-      Sketch_nodes::set_snap_dist(snap_dist);
-
-    if (get_mode() == Mode::Sketch_toggle_edge_dim)
-    {
-      constexpr std::array<const char*, 4> k_edge_dim_label_placement = {
-          "Near first point",
-          "Near second point",
-          "Center on dimension line",
-          "Automatic",
-      };
-      int h = m_edge_dim_label_h;
-      if (ImGui::Combo("Length value placement##edge_dim_h", &h, k_edge_dim_label_placement.data(),
-                       int(k_edge_dim_label_placement.size())))
-      {
-        m_edge_dim_label_h = h;
-        save_occt_view_settings();
-      }
-      if (ImGui::IsItemHovered())
-        ImGui::SetTooltip(
-            "Where to place the numeric value along the dimension line (near the first or second end, center, or auto).\n"
-            "This does not flip which side of the edge the dimension sits on.\n"
-            "When the sketch has filled faces, dimensions offset to the void side (point-in-face test).\n"
-            "Otherwise the average node position is used as a rough inside reference.");
-    }
-  }
-  else
+  auto default_material = [&]()
   {
     const std::vector<std::string>& material_names = occt_material_combo_labels();
     int                             current_item   = int(m_view->get_default_material().Name());
@@ -289,7 +244,50 @@ void GUI::options_()
 
       ImGui::EndCombo();
     }
+  };
+
+  if (is_sketch_mode(get_mode()))
+  {
+    float snap_dist = float(Sketch_nodes::get_snap_dist());
+    if (ImGui::InputFloat("Snap dist##float_value", &snap_dist, 1.0f, 2.0f, "%.2f"))
+      Sketch_nodes::set_snap_dist(snap_dist);
+
+    switch (get_mode())
+    {
+      case Mode::Sketch_toggle_edge_dim:
+      {
+        constexpr std::array<const char*, 4> k_edge_dim_label_placement = {
+            "Near first point",
+            "Near second point",
+            "Center on dimension line",
+            "Automatic",
+        };
+        int h = m_edge_dim_label_h;
+        if (ImGui::Combo("Length value placement##edge_dim_h", &h, k_edge_dim_label_placement.data(),
+                         int(k_edge_dim_label_placement.size())))
+        {
+          m_edge_dim_label_h = h;
+          save_occt_view_settings();
+        }
+        if (ImGui::IsItemHovered())
+          ImGui::SetTooltip(
+              "Where to place the numeric value along the dimension line (near the first or second end, center, or auto).\n"
+              "This does not flip which side of the edge the dimension sits on.\n"
+              "When the sketch has filled faces, dimensions offset to the void side (point-in-face test).\n"
+              "Otherwise the average node position is used as a rough inside reference.");
+        break;
+      }
+
+      case Mode::Sketch_face_extrude:
+        default_material();
+        break;
+
+      default:
+        break;
+    }
   }
+  else
+    default_material();
 
   ImGui::End();
 }
@@ -385,13 +383,13 @@ void GUI::options_shape_chamfer_mode_()
     m_view->on_chamfer_mode();
   }
 
-  static char chamfer_buf[64];
-  const double scale = m_view->get_dimension_scale();
+  static char  chamfer_buf[64];
+  const double scale        = m_view->get_dimension_scale();
   const double chamfer_dist = m_view->shp_chamfer().get_chamfer_dist() / scale;
 
   ImGui::PushID("chamfer_dist_micron");
   const ImGuiID chamfer_input_id = ImGui::GetID("##micron");
-  ImGuiContext* ctx = ImGui::GetCurrentContext();
+  ImGuiContext* ctx              = ImGui::GetCurrentContext();
   if (ctx && ctx->ActiveId != chamfer_input_id)
     format_double_trim_fraction(chamfer_buf, sizeof chamfer_buf, chamfer_dist, 6);
 
@@ -400,8 +398,8 @@ void GUI::options_shape_chamfer_mode_()
       ImGuiInputTextFlags_CharsDecimal | ImGuiInputTextFlags_CharsScientific;
   if (ImGui::InputText("##micron", chamfer_buf, sizeof chamfer_buf, k_dim_flags))
   {
-    char* end = nullptr;
-    const double p = std::strtod(chamfer_buf, &end);
+    char*        end = nullptr;
+    const double p   = std::strtod(chamfer_buf, &end);
     if (end != chamfer_buf)
     {
       while (*end == ' ' || *end == '\t')
@@ -424,13 +422,13 @@ void GUI::options_shape_fillet_mode_()
     m_view->on_fillet_mode();
   }
 
-  static char fillet_buf[64];
-  const double scale = m_view->get_dimension_scale();
+  static char  fillet_buf[64];
+  const double scale         = m_view->get_dimension_scale();
   const double fillet_radius = m_view->shp_fillet().get_fillet_radius() / scale;
 
   ImGui::PushID("fillet_rad_micron");
   const ImGuiID fillet_input_id = ImGui::GetID("##micron");
-  ImGuiContext* ctx = ImGui::GetCurrentContext();
+  ImGuiContext* ctx             = ImGui::GetCurrentContext();
   if (ctx && ctx->ActiveId != fillet_input_id)
     format_double_trim_fraction(fillet_buf, sizeof fillet_buf, fillet_radius, 6);
 
@@ -439,8 +437,8 @@ void GUI::options_shape_fillet_mode_()
       ImGuiInputTextFlags_CharsDecimal | ImGuiInputTextFlags_CharsScientific;
   if (ImGui::InputText("##micron", fillet_buf, sizeof fillet_buf, k_dim_flags))
   {
-    char* end = nullptr;
-    const double p = std::strtod(fillet_buf, &end);
+    char*        end = nullptr;
+    const double p   = std::strtod(fillet_buf, &end);
     if (end != fillet_buf)
     {
       while (*end == ' ' || *end == '\t')

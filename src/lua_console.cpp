@@ -507,7 +507,7 @@ void Lua_console::render(bool* p_open)
 {
   ImFont* console_font = m_gui ? m_gui->console_font() : nullptr;
 
-  if (!ImGui::Begin("Script console (Lua)", p_open, ImGuiWindowFlags_None))
+  if (!ImGui::Begin("Lua Console", p_open, ImGuiWindowFlags_None))
   {
     ImGui::End();
     return;

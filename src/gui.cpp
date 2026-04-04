@@ -3,6 +3,7 @@
 #include <algorithm>
 #include <array>
 #include <cctype>
+#include <unordered_set>
 #include <filesystem>
 #include <fstream>
 #include <nlohmann/json.hpp>
@@ -43,6 +44,16 @@ static bool is_valid_project_json(const std::string& s)
     return false;
   }
 }
+
+namespace {
+
+// Shape List: when a row matches OCCT selection, ImGuiCol_Text is nudged brighter (RGB only).
+constexpr float k_shape_list_selected_text_rgb_scale =
+    1.08f;  // per-channel multiplier for a modest relative lift
+constexpr float k_shape_list_selected_text_rgb_bias =
+    0.04f;  // added after scaling so very dark text still reads a bit lighter
+
+}  // namespace
 
 const std::vector<std::string>& occt_material_combo_labels()
 {
@@ -367,17 +378,13 @@ void GUI::menu_bar_()
       m_log_window_visible = !m_log_window_visible;
       save_panes           = true;
     }
-#ifdef __EMSCRIPTEN__
-    if (ImGui::MenuItem("Script console (Lua)", "Ctrl+Shift+L", m_show_lua_console))
-#else
-    if (ImGui::MenuItem("Script console (Lua)", "F12", m_show_lua_console))
-#endif
+    if (ImGui::MenuItem("Lua Console", nullptr, m_show_lua_console))
     {
       m_show_lua_console = !m_show_lua_console;
       save_panes         = true;
     }
     if (ImGui::IsItemHovered())
-      ImGui::SetTooltip("Lua scripting. Toggle with keyboard or here.");
+      ImGui::SetTooltip("Interactive Lua prompt and res/scripts/lua editors.");
     if (ImGui::MenuItem("Python Console", nullptr, m_show_python_console))
     {
       m_show_python_console = !m_show_python_console;
@@ -761,8 +768,33 @@ void GUI::shape_list_()
                mat_label_w_max + st_mat.WindowPadding.x * 2.0f + st_mat.FramePadding.x * 2.0f + st_mat.ScrollbarSize
                    + 8.0f));
 
+  std::unordered_set<const AIS_Shape*> selected_in_viewer;
+  for (const AIS_Shape_ptr& ais : m_view->get_selected())
+    if (!ais.IsNull())
+      selected_in_viewer.insert(ais.get());
+
   for (const Shp_ptr& shape : m_view->get_shapes())
   {
+    const bool row_selected = selected_in_viewer.count(shape.get()) != 0;
+
+    if (row_selected)
+    {
+      const ImVec4 header = ImGui::GetStyleColorVec4(ImGuiCol_Header);
+      ImGui::PushStyleColor(ImGuiCol_FrameBg,
+                            ImVec4(header.x, header.y, header.z, 0.40f));
+      ImGui::PushStyleColor(ImGuiCol_FrameBgHovered,
+                            ImVec4(header.x, header.y, header.z, 0.55f));
+      ImGui::PushStyleColor(ImGuiCol_FrameBgActive,
+                            ImVec4(header.x, header.y, header.z, 0.65f));
+      const ImVec4 text = ImGui::GetStyleColorVec4(ImGuiCol_Text);
+      ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(
+          std::min(1.0f, text.x * k_shape_list_selected_text_rgb_scale + k_shape_list_selected_text_rgb_bias),
+          std::min(1.0f, text.y * k_shape_list_selected_text_rgb_scale + k_shape_list_selected_text_rgb_bias),
+          std::min(1.0f, text.z * k_shape_list_selected_text_rgb_scale + k_shape_list_selected_text_rgb_bias),
+          text.w));
+      ImGui::BeginGroup();
+    }
+
     // Unique ID suffix using index
     std::string id_suffix = "##" + std::to_string(index++);
     // Editable text box for name
@@ -867,6 +899,14 @@ void GUI::shape_list_()
       ImGui::EndPopup();
     }
     ImGui::PopID();
+
+    if (row_selected)
+    {
+      ImGui::EndGroup();
+      ImGui::PopStyleColor(4);
+      if (m_show_tool_tips && ImGui::IsItemHovered())
+        ImGui::SetTooltip("Selected in 3D viewer");
+    }
   }
   ImGui::End();
 }

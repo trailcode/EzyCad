@@ -76,7 +76,7 @@ EzyCad (Easy CAD) is a CAD application for hobbyist machinists to design and edi
 - **Sketch List** — Show or hide the [Sketch List](#sketch-list) pane.
 - **Shape List** — Show or hide the Shape List pane.
 - **Log** — Show or hide the Log window.
-- **Script console (Lua)** — Show or hide the Lua REPL and `res/scripts/lua` editors. Shortcut: **F12** (desktop) or **Ctrl+Shift+L** (WebAssembly). See [Scripting (Lua and Python)](#scripting-lua-and-python).
+- **Lua Console** — Show or hide the interactive Lua prompt and `res/scripts/lua` editors. See [Scripting (Lua and Python)](#scripting-lua-and-python).
 - **Python Console** — Same for Python when the app is built with embedded Python (native only; not in the WebAssembly build).
 - **Debug** — Show or hide the debug pane (debug builds only).
 
@@ -516,14 +516,9 @@ The polar duplicate tool allows you to create multiple copies of selected shapes
 | <kbd>E</kbd> | Extrude mode |
 | <kbd>D</kbd> | Delete selected |
 
-### Script consoles
+### Lua and Python consoles
 
-| | |
-| ---: | --- |
-| <kbd>F12</kbd> | Toggle **Lua** script console (desktop) |
-| <kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>L</kbd> | Toggle **Lua** script console (WebAssembly) |
-
-The **Python** console has no default shortcut; use **View → Python Console** when available.
+Open or close the **Lua** or **Python** consoles from **View → Lua Console** or **View → Python Console** (no default keyboard shortcuts).
 
 ## View Controls
 

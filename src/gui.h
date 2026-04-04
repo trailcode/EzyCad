@@ -241,7 +241,7 @@ class GUI
 #ifndef NDEBUG
   bool m_show_dbg {false};
 #endif
-  bool                         m_show_lua_console {true};  // Script console (Lua); hidden if false in settings
+  bool                         m_show_lua_console {true};  // Lua Console pane; hidden if false in settings
   std::unique_ptr<Lua_console> m_lua_console;
   bool                         m_show_python_console {false};
   std::unique_ptr<Python_console> m_python_console;

@@ -11,9 +11,7 @@ EzyCad can embed **Lua** and (on supported builds) **Python** consoles. They sha
 
 ## Opening the consoles
 
-- **View → Script console (Lua)** — Toggles the Lua console and script editor tabs.
-  - **Desktop:** shortcut **F12**
-  - **WebAssembly:** **Ctrl+Shift+L**
+- **View → Lua Console** — Toggles the Lua console and script editor tabs.
 - **View → Python Console** — Same layout for Python when the feature is compiled in.
 
 Visibility is remembered with other panes (see **usage.md** → *Help and Settings*).
@@ -21,7 +19,7 @@ Visibility is remembered with other panes (see **usage.md** → *Help and Settin
 ## Layout
 
 - **Output / history** — Results and errors from executed lines.
-- **Input line** — Enter a fragment and run it (same as a one-off in the REPL).
+- **Input line** — Enter a fragment and run it (same as a one-off at the interactive prompt).
 - **Script tabs** — Files under **`res/scripts/lua`** (`*.lua`) or **`res/scripts/python`** (`*.py`) are loaded as editable buffers; Lua scripts are also **run on startup** so you can define helpers (see `basic.lua` / `basic.py`).
 
 Paths are relative to the app working directory on desktop; on WASM, Lua scripts are under the preloaded **`/res/scripts/lua`** tree.

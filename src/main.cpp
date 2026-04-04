@@ -4,13 +4,14 @@
 
 #define WIN32_LEAN_AND_MEAN
 #include <stdio.h>
+
 #include <functional>
 
 #include "gui.h"
 #include "imgui.h"
-#include "ui_font.h"
 #include "imgui_impl_glfw.h"
 #include "imgui_impl_opengl3.h"
+#include "ui_font.h"
 #define GL_SILENCE_DEPRECATION
 #if defined(IMGUI_IMPL_OPENGL_ES2)
 #include <GLES2/gl2.h>
@@ -27,6 +28,7 @@
 // This example can also compile and run with Emscripten! See 'Makefile.emscripten' for details.
 #ifdef __EMSCRIPTEN__
 #include <emscripten.h>
+
 #include "emscripten/emscripten_mainloop_stub.h"
 
 static GUI* s_gui_for_unload = nullptr;
@@ -142,7 +144,7 @@ int main(int, char**)
     glfwGetFramebufferSize(window, &fbw, &fbh);
     float fb_scale = 1.0f;
     if (ww > 0 && wh > 0)
-      fb_scale = ((float)fbw / (float)ww + (float)fbh / (float)wh) * 0.5f;
+      fb_scale = ((float) fbw / (float) ww + (float) fbh / (float) wh) * 0.5f;
     const float dpr = emscripten_get_device_pixel_ratio();
     if (main_scale <= 1.0f)
       main_scale = (fb_scale > 1.01f) ? fb_scale : dpr;
@@ -210,37 +212,9 @@ int main(int, char**)
 
   keyCallback = [&](GLFWwindow* window, int key, int scancode, int action, int mods)
   {
-    if (key == GLFW_KEY_TAB)
-    {
-      if (action == GLFW_PRESS)
-        gui.on_key(key, scancode, action, mods);
-      return;
-    }
-
-    // Script console toggle: always reach GUI (ImGui text fields would otherwise capture F12 / Ctrl+Shift+L).
-#ifndef __EMSCRIPTEN__
-    if (action == GLFW_PRESS && key == GLFW_KEY_F12)
-    {
-      gui.on_key(key, scancode, action, mods);
-      return;
-    }
-#else
-    if (action == GLFW_PRESS && (mods & GLFW_MOD_CONTROL) && (mods & GLFW_MOD_SHIFT) != 0 && key == GLFW_KEY_L)
-    {
-      gui.on_key(key, scancode, action, mods);
-      return;
-    }
-#endif
-
-    if (action == GLFW_PRESS && (mods & GLFW_MOD_CONTROL) &&
-        (key == GLFW_KEY_Z || key == GLFW_KEY_Y))
-    {
-      gui.on_key(key, scancode, action, mods);
-      return;
-    }
-
     ImGui_ImplGlfw_KeyCallback(window, key, scancode, action, mods);
-    if (!io.WantCaptureKeyboard)
+
+    if (!io.WantTextInput)
       gui.on_key(key, scancode, action, mods);
   };
 
