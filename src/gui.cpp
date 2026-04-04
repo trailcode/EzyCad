@@ -76,6 +76,22 @@ GUI::GUI()
   gui_instance = this;
 }
 
+ImFont* GUI::console_font() const
+{
+  ImFont* f = m_console_font;
+  if (!f || !ImGui::GetCurrentContext())
+    return nullptr;
+  ImFontAtlas* atlas = ImGui::GetIO().Fonts;
+  if (!atlas)
+    return nullptr;
+  for (int i = 0; i < atlas->Fonts.Size; ++i)
+  {
+    if (atlas->Fonts[i] == f)
+      return f;
+  }
+  return nullptr;
+}
+
 GUI::~GUI()
 {
   cleanup_log_redirection_();  // Clean up stream redirection
@@ -102,6 +118,7 @@ void GUI::render_gui()
     ImGui::StyleColorsDark();
   else
     ImGui::StyleColorsLight();
+  apply_imgui_rounding_from_members_();
 
   menu_bar_();
   toolbar_();
@@ -1057,8 +1074,9 @@ void GUI::python_console_()
   m_python_console->render(&m_show_python_console);
 }
 
-void GUI::init(GLFWwindow* window)
+void GUI::init(GLFWwindow* window, ImFont* console_font)
 {
+  m_console_font = console_font;
   initialize_toolbar_();
   settings::set_log_callback([this](const std::string& m)
                              { log_message(m); });

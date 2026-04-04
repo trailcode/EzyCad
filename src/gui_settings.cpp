@@ -53,6 +53,9 @@ void GUI::save_occt_view_settings()
       {   "edge_dim_label_h",     m_edge_dim_label_h},
       {"load_last_opened_on_startup", m_load_last_opened_on_startup},
       {   "last_opened_project_path",    m_last_opened_project_path},
+      {   "imgui_rounding_general",   m_imgui_rounding_general},
+      {      "imgui_rounding_scroll",      m_imgui_rounding_scroll},
+      {        "imgui_rounding_tabs",        m_imgui_rounding_tabs},
 #ifndef NDEBUG
       {            "show_dbg",             m_show_dbg},
 #endif
@@ -212,6 +215,23 @@ void GUI::parse_gui_panes_settings_(const std::string& content)
       m_last_opened_project_path = g["last_opened_project_path"].get<std::string>();
     else if (g.contains("last_saved_project_path") && g["last_saved_project_path"].is_string())
       m_last_opened_project_path = g["last_saved_project_path"].get<std::string>();
+
+    float fb_general = 0.f, fb_scroll = 0.f, fb_tabs = 0.f;
+    imgui_rounding_fallbacks_from_theme_(fb_general, fb_scroll, fb_tabs);
+    auto round_from_json = [&g](const char* key, float fallback) -> float
+    {
+      if (g.contains(key) && g[key].is_number())
+      {
+        const float v = g[key].get<float>();
+        if (v >= 0.f && v <= 32.f)
+          return v;
+      }
+      return fallback;
+    };
+    m_imgui_rounding_general = round_from_json("imgui_rounding_general", fb_general);
+    m_imgui_rounding_scroll  = round_from_json("imgui_rounding_scroll", fb_scroll);
+    m_imgui_rounding_tabs    = round_from_json("imgui_rounding_tabs", fb_tabs);
+
 #ifndef NDEBUG
       set_show_dbg(b("show_dbg", false));
 #endif
@@ -221,6 +241,7 @@ void GUI::parse_gui_panes_settings_(const std::string& content)
     EZY_ASSERT_MSG(false, "Error parse_gui_panes_settings!");
   }
 }
+
 
 void GUI::load_occt_view_settings_()
 {
@@ -288,36 +309,100 @@ void GUI::settings_()
   if (!m_show_settings_dialog)
     return;
 
-  ImGui::SetNextWindowSize(ImVec2(400, 0), ImGuiCond_FirstUseEver);  // Auto height
+  ImGui::SetNextWindowSize(ImVec2(520, 0), ImGuiCond_FirstUseEver);  // Auto height; width matches res defaults
   if (!ImGui::Begin("Settings", &m_show_settings_dialog, ImGuiWindowFlags_None))
   {
     ImGui::End();
     return;
   }
 
+  constexpr float k_label_col_w = 230.f;
+
   if (ImGui::Checkbox("Dark mode", &m_dark_mode))
     save_occt_view_settings();
+
+  if (ImGui::CollapsingHeader("UI corner rounding"))
+  {
+    bool r_changed = false;
+    if (ImGui::BeginTable("settings_rounding", 2, ImGuiTableFlags_SizingStretchProp))
+    {
+      ImGui::TableSetupColumn("label", ImGuiTableColumnFlags_WidthFixed, k_label_col_w);
+      ImGui::TableSetupColumn("control", ImGuiTableColumnFlags_WidthStretch);
+
+      ImGui::TableNextRow();
+      ImGui::TableSetColumnIndex(0);
+      ImGui::AlignTextToFramePadding();
+      ImGui::TextUnformatted("Windows, frames, popups");
+      ImGui::TableSetColumnIndex(1);
+      r_changed |= ImGui::SliderFloat("##round_gen", &m_imgui_rounding_general, 0.f, 16.f, "%.0f");
+
+      ImGui::TableNextRow();
+      ImGui::TableSetColumnIndex(0);
+      ImGui::AlignTextToFramePadding();
+      ImGui::TextUnformatted("Scrollbars and sliders");
+      ImGui::TableSetColumnIndex(1);
+      r_changed |= ImGui::SliderFloat("##round_scr", &m_imgui_rounding_scroll, 0.f, 16.f, "%.0f");
+
+      ImGui::TableNextRow();
+      ImGui::TableSetColumnIndex(0);
+      ImGui::AlignTextToFramePadding();
+      ImGui::TextUnformatted("Tabs");
+      ImGui::TableSetColumnIndex(1);
+      r_changed |= ImGui::SliderFloat("##round_tabs", &m_imgui_rounding_tabs, 0.f, 16.f, "%.0f");
+
+      ImGui::EndTable();
+    }
+    if (r_changed)
+      save_occt_view_settings();
+    ImGui::TextDisabled(
+        "Scrollbars and sliders applies the same radius to scrollbar tracks and slider grabs.");
+  }
 
   if (ImGui::CollapsingHeader("3D view background"))
   {
     float bg1[3], bg2[3];
     m_view->get_bg_gradient_colors(bg1, bg2);
     bool bg_changed = false;
-    if (ImGui::ColorEdit3("Background color 1", bg1, ImGuiColorEditFlags_Float))
-      bg_changed = true;
-    if (ImGui::ColorEdit3("Background color 2", bg2, ImGuiColorEditFlags_Float))
-      bg_changed = true;
+    if (ImGui::BeginTable("settings_bg", 2, ImGuiTableFlags_SizingStretchProp))
+    {
+      ImGui::TableSetupColumn("label", ImGuiTableColumnFlags_WidthFixed, k_label_col_w);
+      ImGui::TableSetupColumn("control", ImGuiTableColumnFlags_WidthStretch);
+
+      ImGui::TableNextRow();
+      ImGui::TableSetColumnIndex(0);
+      ImGui::AlignTextToFramePadding();
+      ImGui::TextUnformatted("Background color 1");
+      ImGui::TableSetColumnIndex(1);
+      if (ImGui::ColorEdit3("##bg1", bg1, ImGuiColorEditFlags_Float))
+        bg_changed = true;
+
+      ImGui::TableNextRow();
+      ImGui::TableSetColumnIndex(0);
+      ImGui::AlignTextToFramePadding();
+      ImGui::TextUnformatted("Background color 2");
+      ImGui::TableSetColumnIndex(1);
+      if (ImGui::ColorEdit3("##bg2", bg2, ImGuiColorEditFlags_Float))
+        bg_changed = true;
+
+      ImGui::TableNextRow();
+      ImGui::TableSetColumnIndex(0);
+      ImGui::AlignTextToFramePadding();
+      ImGui::TextUnformatted("Gradient blend");
+      ImGui::TableSetColumnIndex(1);
+      const char* gradient_items[] = {"Horizontal", "Vertical", "Diagonal 1", "Diagonal 2",
+                                        "Corner 1", "Corner 2", "Corner 3", "Corner 4"};
+      int         grad               = m_view->get_bg_gradient_method();
+      if (ImGui::Combo("##bg_grad", &grad, gradient_items, 8))
+      {
+        m_view->set_bg_gradient_method(grad);
+        save_occt_view_settings();
+      }
+
+      ImGui::EndTable();
+    }
     if (bg_changed)
     {
       m_view->set_bg_gradient_colors(bg1[0], bg1[1], bg1[2], bg2[0], bg2[1], bg2[2]);
-      save_occt_view_settings();
-    }
-    const char* gradient_items[] = {"Horizontal", "Vertical", "Diagonal 1", "Diagonal 2",
-                                    "Corner 1", "Corner 2", "Corner 3", "Corner 4"};
-    int         grad             = m_view->get_bg_gradient_method();
-    if (ImGui::Combo("Gradient blend", &grad, gradient_items, 8))
-    {
-      m_view->set_bg_gradient_method(grad);
       save_occt_view_settings();
     }
   }
@@ -327,10 +412,29 @@ void GUI::settings_()
     float g1[3], g2[3];
     m_view->get_grid_colors(g1, g2);
     bool grid_changed = false;
-    if (ImGui::ColorEdit3("Grid color 1", g1, ImGuiColorEditFlags_Float))
-      grid_changed = true;
-    if (ImGui::ColorEdit3("Grid color 2", g2, ImGuiColorEditFlags_Float))
-      grid_changed = true;
+    if (ImGui::BeginTable("settings_grid", 2, ImGuiTableFlags_SizingStretchProp))
+    {
+      ImGui::TableSetupColumn("label", ImGuiTableColumnFlags_WidthFixed, k_label_col_w);
+      ImGui::TableSetupColumn("control", ImGuiTableColumnFlags_WidthStretch);
+
+      ImGui::TableNextRow();
+      ImGui::TableSetColumnIndex(0);
+      ImGui::AlignTextToFramePadding();
+      ImGui::TextUnformatted("Grid color 1");
+      ImGui::TableSetColumnIndex(1);
+      if (ImGui::ColorEdit3("##g1", g1, ImGuiColorEditFlags_Float))
+        grid_changed = true;
+
+      ImGui::TableNextRow();
+      ImGui::TableSetColumnIndex(0);
+      ImGui::AlignTextToFramePadding();
+      ImGui::TextUnformatted("Grid color 2");
+      ImGui::TableSetColumnIndex(1);
+      if (ImGui::ColorEdit3("##g2", g2, ImGuiColorEditFlags_Float))
+        grid_changed = true;
+
+      ImGui::EndTable();
+    }
     if (grid_changed)
     {
       m_view->set_grid_colors(g1[0], g1[1], g1[2], g2[0], g2[1], g2[2]);
@@ -341,8 +445,19 @@ void GUI::settings_()
   if (ImGui::CollapsingHeader("Startup project"))
   {
 #ifndef __EMSCRIPTEN__
-    if (ImGui::Checkbox("Load last opened project on startup", &m_load_last_opened_on_startup))
-      save_occt_view_settings();
+    if (ImGui::BeginTable("settings_startup_native", 2, ImGuiTableFlags_SizingStretchProp))
+    {
+      ImGui::TableSetupColumn("label", ImGuiTableColumnFlags_WidthFixed, k_label_col_w);
+      ImGui::TableSetupColumn("control", ImGuiTableColumnFlags_WidthStretch);
+      ImGui::TableNextRow();
+      ImGui::TableSetColumnIndex(0);
+      ImGui::AlignTextToFramePadding();
+      ImGui::TextUnformatted("Load last opened on startup");
+      ImGui::TableSetColumnIndex(1);
+      if (ImGui::Checkbox("##load_last", &m_load_last_opened_on_startup))
+        save_occt_view_settings();
+      ImGui::EndTable();
+    }
     ImGui::TextWrapped(
         "When enabled, EzyCad opens the last .ezy file you opened (path is stored in settings).");
     if (!m_last_opened_project_path.empty())
@@ -394,4 +509,29 @@ void GUI::settings_()
   }
 
   ImGui::End();
+}
+
+void GUI::imgui_rounding_fallbacks_from_theme_(float& general, float& scroll, float& tabs) const
+{
+  ImGuiStyle s;
+  if (m_dark_mode)
+    ImGui::StyleColorsDark(&s);
+  else
+    ImGui::StyleColorsLight(&s);
+  s.ScaleAllSizes(ImGui::GetStyle().FontScaleDpi);
+  general = s.WindowRounding;
+  scroll  = s.ScrollbarRounding;
+  tabs    = s.TabRounding;
+}
+
+void GUI::apply_imgui_rounding_from_members_()
+{
+  ImGuiStyle& st        = ImGui::GetStyle();
+  st.WindowRounding     = m_imgui_rounding_general;
+  st.ChildRounding      = m_imgui_rounding_general;
+  st.FrameRounding      = m_imgui_rounding_general;
+  st.PopupRounding      = m_imgui_rounding_general;
+  st.ScrollbarRounding  = m_imgui_rounding_scroll;
+  st.GrabRounding       = m_imgui_rounding_scroll;
+  st.TabRounding        = m_imgui_rounding_tabs;
 }

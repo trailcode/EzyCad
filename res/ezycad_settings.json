@@ -1,15 +1,22 @@
 {
   "gui": {
-    "load_last_opened_on_startup": false,
+    "dark_mode": true,
+    "edge_dim_label_h": 3,
+    "imgui_rounding_general": 8.0,
+    "imgui_rounding_scroll": 11.0,
+    "imgui_rounding_tabs": 6.0,
     "last_opened_project_path": "",
-    "log_window_visible": false,
+    "load_last_opened_on_startup": false,
+    "log_window_visible": true,
     "show_dbg": false,
+    "show_lua_console": true,
     "show_options": true,
-    "show_settings_dialog": false,
+    "show_python_console": true,
+    "show_settings_dialog": true,
     "show_shape_list": true,
     "show_sketch_list": true
   },
-  "imgui_ini": "[Window][Debug##Default]\nPos=60,60\nSize=400,400\n\n[Window][Toolbar]\nPos=249,24\nSize=1208,54\n\n[Window][Sketch List]\nPos=2,202\nSize=209,226\n\n[Window][Shape List]\nPos=2,430\nSize=210,312\n\n[Window][Log]\nPos=480,77\nSize=1086,174\n\n[Window][Options]\nPos=1457,25\nSize=366,287\n\n[Window][##MainMenuBar]\nPos=0,0\nSize=1920,24\n\n[Window][Settings]\nPos=553,306\nSize=430,222\n\n[Window][dbg]\nPos=238,325\nSize=269,150\n\n",
+  "imgui_ini": "[Window][##MainMenuBar]\nPos=0,0\nSize=1920,22\n\n[Window][Toolbar]\nPos=7,24\nSize=1310,58\n\n[Window][Sketch List]\nPos=8,86\nSize=220,240\n\n[Window][Shape List]\nPos=8,332\nSize=220,360\n\n[Window][Options]\nPos=1524,24\nSize=389,277\n\n[Window][Lua Console]\nPos=230,87\nSize=1291,313\nCollapsed=1\n\n[Window][Python Console]\nPos=231,108\nSize=1290,225\nCollapsed=1\n\n[Window][Log]\nPos=3,975\nSize=1280,180\nCollapsed=1\n\n[Window][Settings]\nPos=231,130\nSize=520,560\nCollapsed=1\n\n[Window][Debug##Default]\nPos=60,60\nSize=400,400\n\n[Window][dbg]\nPos=260,420\nSize=320,200\n\n",
   "occt_view": {
     "bg_color1": [
       0.037551622837781906,

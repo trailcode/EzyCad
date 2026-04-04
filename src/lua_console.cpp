@@ -505,7 +505,9 @@ int Lua_console::text_edit_callback(ImGuiInputTextCallbackData* data)
 
 void Lua_console::render(bool* p_open)
 {
-  ImFont* console_font = m_gui ? m_gui->console_font() : nullptr;
+  EZY_ASSERT(m_gui);
+
+  ImFont* console_font = m_gui->console_font();
 
   if (!ImGui::Begin("Lua Console", p_open, ImGuiWindowFlags_None))
   {

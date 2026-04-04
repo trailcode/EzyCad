@@ -199,8 +199,7 @@ int main(int, char**)
   io.IniFilename = nullptr;  // Layout persisted via ezycad_settings.json (see GUI)
 
   GUI gui;
-  gui.set_console_font(console_font);
-  gui.init(window);
+  gui.init(window, console_font);
 
 #ifdef __EMSCRIPTEN__
   s_gui_for_unload = &gui;

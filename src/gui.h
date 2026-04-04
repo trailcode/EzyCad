@@ -37,11 +37,11 @@ class GUI
   static GUI& instance();
 #endif
 
-  void init(GLFWwindow* window);
+  void init(GLFWwindow* window, ImFont* console_font);
 
-  /// Monospace font for script console (set from main after io.Fonts load). Optional.
-  void     set_console_font(ImFont* font) { m_console_font = font; }
-  ImFont*  console_font() const { return m_console_font; }
+  /// Monospace font for script console (normally set via init() from main after io.Fonts load).
+  void    set_console_font(ImFont* font) { m_console_font = font; }
+  ImFont* console_font() const;
 
   void render_gui();
   void render_occt();
@@ -169,6 +169,8 @@ class GUI
   void parse_occt_view_ini_(const std::string& content);
   void parse_occt_view_settings_(const std::string& content);
   void parse_gui_panes_settings_(const std::string& content);
+  void apply_imgui_rounding_from_members_();
+  void imgui_rounding_fallbacks_from_theme_(float& general, float& scroll, float& tabs) const;
 
   std::unique_ptr<Occt_view> m_view;
 
@@ -242,6 +244,10 @@ class GUI
   bool m_show_dbg {false};
 #endif
   bool                         m_show_lua_console {true};  // Lua Console pane; hidden if false in settings
+  /// ImGui corner radii (applied after StyleColorsDark/Light each frame). Scroll value sets both scrollbar and grab rounding.
+  float                        m_imgui_rounding_general {0.f};
+  float                        m_imgui_rounding_scroll {0.f};
+  float                        m_imgui_rounding_tabs {0.f};
   std::unique_ptr<Lua_console> m_lua_console;
   bool                         m_show_python_console {false};
   std::unique_ptr<Python_console> m_python_console;
