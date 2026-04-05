@@ -83,7 +83,8 @@ class GUI
   // clang-format on
 
 #ifdef __EMSCRIPTEN__
-  void open_file_dialog_async(const char* title);  // Async for Emscripten
+  void open_file_dialog_async();  // Emscripten: hidden <input type="file">; no custom title (browser UI)
+  void import_file_dialog_async();                 // STEP / PLY import (routes to on_import_file)
   void save_file_dialog_async(const char* title, const std::string& default_file, const std::string& json_str);
   void download_blob_async(const std::string& default_filename, const std::string& data);
 #endif
