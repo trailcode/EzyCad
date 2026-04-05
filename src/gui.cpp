@@ -3,10 +3,10 @@
 #include <algorithm>
 #include <array>
 #include <cctype>
-#include <unordered_set>
 #include <filesystem>
 #include <fstream>
 #include <nlohmann/json.hpp>
+#include <unordered_set>
 
 #include "settings.h"
 
@@ -21,8 +21,8 @@
 #include "imgui.h"
 #include "log.h"
 #include "lua_console.h"
-#include "python_console.h"
 #include "occt_view.h"
+#include "python_console.h"
 #include "sketch.h"
 
 // Must be here to prevent compiler warning
@@ -45,7 +45,8 @@ static bool is_valid_project_json(const std::string& s)
   }
 }
 
-namespace {
+namespace
+{
 
 // Shape List: when a row matches OCCT selection, ImGuiCol_Text is nudged brighter (RGB only).
 constexpr float k_shape_list_selected_text_rgb_scale =
@@ -150,7 +151,7 @@ void GUI::render_occt()
 void GUI::initialize_toolbar_()
 {
   m_toolbar_buttons = {
-      {                           load_texture("User.png"),  true,                  "Inspection mode",                         Mode::Normal},
+      {                           load_texture("User.png"),  true,"Inspection mode",                         Mode::Normal                                                                  },
       {        load_texture("Workbench_Sketcher_none.png"), false,           "Sketch inspection mode",         Mode::Sketch_inspection_mode},
       {             load_texture("Assembly_AxialMove.png"), false,                   "Shape move (g)",                           Mode::Move},
       {                   load_texture("Draft_Rotate.png"), false,                 "Shape rotate (r)",                         Mode::Rotate},
@@ -168,7 +169,7 @@ void GUI::initialize_toolbar_()
       {    load_texture("Sketcher_Create3PointCircle.png"), false,     "Add circle from three points",        Mode::Sketch_add_circle_3_pts},
       {            load_texture("Sketcher_CreateSlot.png"), false,                         "Add slot",                Mode::Sketch_add_slot},
       {       load_texture("TechDraw_LengthDimension.png"), false,
-       "Toggle edge dimension annotation (Options: length value placement)",         Mode::Sketch_toggle_edge_dim},
+       "Toggle edge dimension annotation (Options: length value placement)",         Mode::Sketch_toggle_edge_dim                          },
       {              load_texture("Design456_Extrude.png"), false,          "Extrude sketch face (e)",            Mode::Sketch_face_extrude},
       {             load_texture("PartDesign_Chamfer.png"), false,                          "Chamfer",                  Mode::Shape_chamfer},
       {              load_texture("PartDesign_Fillet.png"), false,                           "Fillet",                   Mode::Shape_fillet},
@@ -822,13 +823,13 @@ void GUI::sketch_underlay_panel_()
     else
     {
       m_ul_cx = m_ul_cy = m_ul_hw = m_ul_hh = m_ul_rot = 0.;
-      m_ul_opacity   = 0.88f;
-      m_ul_vis       = true;
-      m_ul_key_white = true;
-      m_ul_line_tint = true;
-      m_ul_tint_col[0] = 1.f;
-      m_ul_tint_col[1] = 0.863f;
-      m_ul_tint_col[2] = 0.f;
+      m_ul_opacity                                     = 0.88f;
+      m_ul_vis                                         = true;
+      m_ul_key_white                                   = true;
+      m_ul_line_tint                                   = true;
+      m_ul_tint_col[0]                                 = 1.f;
+      m_ul_tint_col[1]                                 = 0.863f;
+      m_ul_tint_col[2]                                 = 0.f;
     }
   }
 
@@ -853,7 +854,9 @@ void GUI::sketch_underlay_panel_()
 
   if (!sk->has_underlay())
   {
+#if 0  // Perhaps a mode, for more detail. A gui slider, each tick documents a new feature. 
     ImGui::TextDisabled("No underlay. Import PNG/JPEG/BMP. Adjust half-width/height to match real dimensions.");
+#endif
     return;
   }
 
@@ -864,15 +867,17 @@ void GUI::sketch_underlay_panel_()
     sk->underlay_set_key_white_transparent(m_ul_key_white);
 
   if (m_show_tool_tips && ImGui::IsItemHovered())
-    ImGui::SetTooltip("Uses brightness: white background becomes clear; dark lines stay visible. "
-                      "Turn off for full-color photos. Inverting the image is not needed for typical scans.");
+    ImGui::SetTooltip(
+        "Uses brightness: white background becomes clear; dark lines stay visible. "
+        "Turn off for full-color photos. Inverting the image is not needed for typical scans.");
 
   if (ImGui::Checkbox("Tint visible lines", &m_ul_line_tint))
     sk->underlay_set_line_tint_enabled(m_ul_line_tint);
 
   if (m_show_tool_tips && ImGui::IsItemHovered())
-    ImGui::SetTooltip("Paints non-transparent pixels (after white key) with the line color. "
-                      "Default yellow reads well on dark backgrounds.");
+    ImGui::SetTooltip(
+        "Paints non-transparent pixels (after white key) with the line color. "
+        "Default yellow reads well on dark backgrounds.");
 
   if (m_ul_line_tint)
   {
@@ -929,18 +934,17 @@ void GUI::shape_list_()
 
   ImGui::Separator();
 
-  const std::vector<std::string>& mat_names = occt_material_combo_labels();
-  const int                       nmat      = static_cast<int>(mat_names.size());
+  const std::vector<std::string>& mat_names       = occt_material_combo_labels();
+  const int                       nmat            = static_cast<int>(mat_names.size());
   float                           mat_label_w_max = 0.0f;
   for (int mi = 0; mi < nmat; ++mi)
     mat_label_w_max =
         std::max(mat_label_w_max, ImGui::CalcTextSize(mat_names[static_cast<size_t>(mi)].c_str()).x);
-  const ImGuiStyle& st_mat        = ImGui::GetStyle();
+  const ImGuiStyle& st_mat      = ImGui::GetStyle();
   const float       mat_popup_w = std::min(
       440.0f,
       std::max(280.0f,
-               mat_label_w_max + st_mat.WindowPadding.x * 2.0f + st_mat.FramePadding.x * 2.0f + st_mat.ScrollbarSize
-                   + 8.0f));
+                     mat_label_w_max + st_mat.WindowPadding.x * 2.0f + st_mat.FramePadding.x * 2.0f + st_mat.ScrollbarSize + 8.0f));
 
   std::unordered_set<const AIS_Shape*> selected_in_viewer;
   for (const AIS_Shape_ptr& ais : m_view->get_selected())
@@ -962,10 +966,10 @@ void GUI::shape_list_()
                             ImVec4(header.x, header.y, header.z, 0.65f));
       const ImVec4 text = ImGui::GetStyleColorVec4(ImGuiCol_Text);
       ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(
-          std::min(1.0f, text.x * k_shape_list_selected_text_rgb_scale + k_shape_list_selected_text_rgb_bias),
-          std::min(1.0f, text.y * k_shape_list_selected_text_rgb_scale + k_shape_list_selected_text_rgb_bias),
-          std::min(1.0f, text.z * k_shape_list_selected_text_rgb_scale + k_shape_list_selected_text_rgb_bias),
-          text.w));
+                                               std::min(1.0f, text.x * k_shape_list_selected_text_rgb_scale + k_shape_list_selected_text_rgb_bias),
+                                               std::min(1.0f, text.y * k_shape_list_selected_text_rgb_scale + k_shape_list_selected_text_rgb_bias),
+                                               std::min(1.0f, text.z * k_shape_list_selected_text_rgb_scale + k_shape_list_selected_text_rgb_bias),
+                                               text.w));
       ImGui::BeginGroup();
     }
 
@@ -1043,7 +1047,7 @@ void GUI::shape_list_()
     ImGui::PopStyleVar();
     if (m_show_tool_tips && ImGui::IsItemHovered())
       ImGui::SetTooltip("%s\n(right-click name: Material menu)", mat_names[static_cast<size_t>(mat_idx)].c_str());
-    
+
     ImGui::SetNextWindowSize(ImVec2(mat_popup_w, 0.0f), ImGuiCond_Appearing);
     if (ImGui::BeginPopup("mat_pick"))
     {
@@ -1069,7 +1073,7 @@ void GUI::shape_list_()
       for (int i = 0; i < nmat; ++i)
         if (ImGui::MenuItem(mat_names[static_cast<size_t>(i)].c_str(), nullptr, i == mat_idx))
           apply_shape_material(i);
-      
+
       ImGui::EndPopup();
     }
     ImGui::PopID();
