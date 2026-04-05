@@ -104,6 +104,7 @@ class Occt_view : protected AIS_ViewController
   Sketch_list& get_sketches();
   void         remove_sketch(const Sketch_ptr& sketch);
   Sketch&      curr_sketch();
+  Sketch_ptr   curr_sketch_shared() const;
   void         set_curr_sketch(const Sketch_ptr& sketch);
   void         sketch_face_extrude(const ScreenCoords& screen_coords, bool is_mouse_move);
 

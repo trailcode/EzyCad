@@ -235,6 +235,9 @@ void GUI::menu_bar_()
     if (ImGui::MenuItem("Import"))
       import_file_dialog_();
 
+    if (ImGui::MenuItem("Sketch underlay image..."))
+      sketch_underlay_import_dialog_();
+
     if (ImGui::BeginMenu("Export"))
     {
       if (ImGui::MenuItem("STEP (.step)..."))
@@ -744,7 +747,120 @@ void GUI::sketch_list_()
   if (sketch_to_delete)
     m_view->remove_sketch(sketch_to_delete);
 
+  sketch_underlay_panel_();
+
   ImGui::End();
+}
+
+void GUI::sketch_underlay_import_dialog_()
+{
+#ifndef __EMSCRIPTEN__
+  char const* filter_patterns[4] = {"*.png", "*.jpg", "*.jpeg", "*.bmp"};
+  char const* selected           = tinyfd_openFileDialog(
+      "Sketch underlay image",
+      "",
+      4,
+      filter_patterns,
+      "PNG / JPEG / BMP",
+      0);
+  if (selected)
+  {
+    std::ifstream file(selected, std::ios::binary);
+    if (!file.is_open())
+    {
+      show_message("Error opening: " + std::filesystem::path(selected).filename().string());
+      return;
+    }
+    const std::string file_bytes {std::istreambuf_iterator<char>(file), std::istreambuf_iterator<char>()};
+    if (!file_bytes.empty())
+      on_sketch_underlay_file(selected, file_bytes);
+    else
+      show_message("Error opening: " + std::filesystem::path(selected).filename().string());
+  }
+#else
+  sketch_underlay_file_dialog_async();
+#endif
+}
+
+void GUI::on_sketch_underlay_file(const std::string& file_path, const std::string& file_bytes)
+{
+  std::shared_ptr<Sketch> sk = m_view->curr_sketch_shared();
+  m_view->push_undo_snapshot();
+  if (!sk->load_underlay_image(file_bytes))
+  {
+    show_message("Could not decode image: " + std::filesystem::path(file_path).filename().string());
+    return;
+  }
+  m_underlay_panel_sketch = nullptr;
+  show_message("Underlay: " + std::filesystem::path(file_path).filename().string());
+}
+
+void GUI::sketch_underlay_panel_()
+{
+  ImGui::Separator();
+  ImGui::TextUnformatted("Sketch image underlay (current sketch)");
+  std::shared_ptr<Sketch> sk = m_view->curr_sketch_shared();
+
+  if (m_underlay_panel_sketch != sk.get())
+  {
+    m_underlay_panel_sketch = sk.get();
+    if (sk->has_underlay())
+    {
+      sk->underlay_ui_params(m_ul_cx, m_ul_cy, m_ul_hw, m_ul_hh, m_ul_rot);
+      m_ul_opacity = sk->underlay_opacity();
+      m_ul_vis     = sk->underlay_visible();
+    }
+    else
+    {
+      m_ul_cx = m_ul_cy = m_ul_hw = m_ul_hh = m_ul_rot = 0.;
+      m_ul_opacity                                      = 0.88f;
+      m_ul_vis                                          = true;
+    }
+  }
+
+#ifndef __EMSCRIPTEN__
+  if (ImGui::Button("Import image..."))
+    sketch_underlay_import_dialog_();
+#else
+  if (ImGui::Button("Import image..."))
+    sketch_underlay_file_dialog_async();
+#endif
+
+  ImGui::SameLine();
+  if (ImGui::Button("Remove underlay"))
+  {
+    if (sk->has_underlay())
+    {
+      m_view->push_undo_snapshot();
+      sk->clear_underlay();
+      m_underlay_panel_sketch = nullptr;
+    }
+  }
+
+  if (!sk->has_underlay())
+  {
+    ImGui::TextDisabled("No underlay. Import PNG/JPEG/BMP. Adjust half-width/height to match real dimensions.");
+    return;
+  }
+
+  if (ImGui::Checkbox("Underlay visible", &m_ul_vis))
+    sk->underlay_set_visible(m_ul_vis);
+
+  if (ImGui::SliderFloat("Opacity", &m_ul_opacity, 0.f, 1.f, "%.2f"))
+    sk->underlay_set_opacity(m_ul_opacity);
+
+  ImGui::InputDouble("Center X", &m_ul_cx, 0.0, 0.0, "%.4f");
+  ImGui::InputDouble("Center Y", &m_ul_cy, 0.0, 0.0, "%.4f");
+  ImGui::InputDouble("Half width", &m_ul_hw, 0.0, 0.0, "%.4f");
+  ImGui::InputDouble("Half height", &m_ul_hh, 0.0, 0.0, "%.4f");
+  ImGui::InputDouble("Rotation (deg)", &m_ul_rot, 0.0, 0.0, "%.2f");
+
+  if (ImGui::Button("Apply transform"))
+  {
+    m_view->push_undo_snapshot();
+    sk->underlay_set_center_extents_rotation(m_ul_cx, m_ul_cy, m_ul_hw, m_ul_hh, m_ul_rot);
+    sk->underlay_ui_params(m_ul_cx, m_ul_cy, m_ul_hw, m_ul_hh, m_ul_rot);
+  }
 }
 
 void GUI::shape_list_()
@@ -1690,6 +1806,38 @@ void GUI::import_file_dialog_async()
   });
 }
 
+void GUI::sketch_underlay_file_dialog_async()
+{
+  EM_ASM({
+    var input           = document.createElement('input');
+    input.type          = 'file';
+    input.accept        = 'image/png,image/jpeg,image/bmp,.png,.jpg,.jpeg,.bmp';
+    input.style.display = 'none';
+    document.body.appendChild(input);
+    input.onchange = function(e)
+    {
+      var file = e.target.files[0];
+      if (file)
+      {
+        var reader    = new FileReader();
+        reader.onload = function(e)
+        {
+          var contents    = new Uint8Array(e.target.result);
+          var fileName    = file.name;
+          var length      = contents.length;
+          var contentsPtr = _malloc(length);
+          HEAPU8.set(contents, contentsPtr);
+          Module.ccall('on_sketch_underlay_selected', null, ['string', 'number', 'number'], [fileName, contentsPtr, length]);
+          _free(contentsPtr);
+        };
+        reader.readAsArrayBuffer(file);
+      }
+      document.body.removeChild(input);
+    };
+    input.click();
+  });
+}
+
 void GUI::save_file_dialog_async(const char* title, const std::string& default_file, const std::string& json_str)
 {
   EM_ASM_ARGS({
@@ -1731,6 +1879,12 @@ extern "C" void on_import_file_selected(const char* file_path, char* contents, i
 {
   const std::string file_bytes(contents, static_cast<size_t>(length));
   GUI::instance().on_import_file(file_path, file_bytes);
+}
+
+extern "C" void on_sketch_underlay_selected(const char* file_path, char* contents, int length)
+{
+  const std::string file_bytes(contents, static_cast<size_t>(length));
+  GUI::instance().on_sketch_underlay_file(file_path, file_bytes);
 }
 
 extern "C" void on_save_file_selected(const char* file_name)

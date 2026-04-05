@@ -4,6 +4,7 @@
 #include <gp_Pnt.hxx>
 #include <gp_Pnt2d.hxx>
 #include <list>
+#include <memory>
 #include <optional>
 #include <set>
 #include <TopoDS_Face.hxx>
@@ -18,6 +19,7 @@ class Occt_view;
 class gp_Pln;
 class TopoDS_Wire;
 class Sketch;
+class Sketch_underlay;
 enum class Mode;
 
 struct Sketch_AIS_edge : public AIS_Shape
@@ -104,6 +106,17 @@ class Sketch
   Mode          get_mode() const;
   const gp_Pln& get_plane() const;
   Sketch_nodes& get_nodes();
+
+  [[nodiscard]] bool  has_underlay() const;
+  [[nodiscard]] bool  load_underlay_image(const std::string& file_bytes);
+  void                clear_underlay();
+  void                underlay_set_center_extents_rotation(double cx, double cy, double half_w, double half_h, double rot_deg);
+  void                underlay_set_opacity(float opaque01);
+  void                underlay_set_visible(bool v);
+  [[nodiscard]] float underlay_opacity() const;
+  [[nodiscard]] bool  underlay_visible() const;
+  void                underlay_ui_params(double& cx, double& cy, double& half_w, double& half_h, double& rot_deg) const;
+  void                underlay_rebuild_display();
 
   // private:
   friend class Sketch_json;
@@ -273,4 +286,6 @@ class Sketch
   AIS_Shape_ptr                    m_tmp_shp;
   PrsDim_LengthDimension_ptr       m_tmp_dim_anno;
   bool                             m_show_faces {true};
+
+  std::unique_ptr<Sketch_underlay> m_underlay;
 };

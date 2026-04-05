@@ -154,6 +154,13 @@ class GUI
   void import_file_dialog_();
   void export_file_dialog_(Export_format fmt);
 
+  void sketch_underlay_import_dialog_();
+  void on_sketch_underlay_file(const std::string& file_path, const std::string& file_bytes);
+  void sketch_underlay_panel_();
+#if defined(__EMSCRIPTEN__)
+  void sketch_underlay_file_dialog_async();
+#endif
+
   // Open/save related
   void open_file_dialog_();
   void save_file_dialog_();
@@ -249,6 +256,15 @@ class GUI
   float                        m_imgui_rounding_general {0.f};
   float                        m_imgui_rounding_scroll {0.f};
   float                        m_imgui_rounding_tabs {0.f};
+  void*                        m_underlay_panel_sketch {nullptr};
+  double                       m_ul_cx {};
+  double                       m_ul_cy {};
+  double                       m_ul_hw {};
+  double                       m_ul_hh {};
+  double                       m_ul_rot {};
+  float                        m_ul_opacity {0.88f};
+  bool                         m_ul_vis {true};
+
   std::unique_ptr<Lua_console> m_lua_console;
   bool                         m_show_python_console {false};
   std::unique_ptr<Python_console> m_python_console;

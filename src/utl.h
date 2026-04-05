@@ -4,6 +4,8 @@
 #include <cstdint>
 #include <optional>
 #include <string>
+#include <tuple>
+#include <vector>
 #include <type_traits>
 #include <utility>
 
@@ -145,6 +147,9 @@ bool contains(const Container& container, const Value& value)
 }
 
 uint32_t load_texture(const std::string& path);
+
+/// Decode PNG/JPEG/BMP/etc. from memory into RGBA8 (via stb_image). Empty if unsupported or corrupt.
+std::optional<std::tuple<std::vector<uint8_t>, int, int>> decode_image_bytes(const std::string& file_bytes);
 
 void disable_shape_highlighting(const AIS_Shape_ptr&              ais_shape,
                                 const AIS_InteractiveContext_ptr& context,

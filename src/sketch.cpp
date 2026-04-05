@@ -13,14 +13,18 @@
 #include <TopoDS_Edge.hxx>
 #include <TopoDS_Wire.hxx>
 #include <V3d_View.hxx>
+#include <cmath>
 #include <functional>
 #include <map>
+#include <numbers>
+#include <tuple>
 #include <unordered_set>
 
 #include "geom.h"
 #include "gui.h"
 #include "imgui.h"
 #include "occt_view.h"
+#include "sketch_underlay.h"
 #include "utl.h"
 
 Sketch::Sketch(const std::string& name, Occt_view& view, const gp_Pln& pln)
@@ -38,6 +42,9 @@ Sketch::Sketch(const std::string& name, Occt_view& view, const gp_Pln& pln, cons
 
 Sketch::~Sketch()
 {
+  if (m_underlay)
+    m_underlay->erase(m_ctx);
+
   auto remove_edge = [&](Edge& e)
   {
     m_ctx.Remove(e.shp, false);
@@ -1733,6 +1740,9 @@ void Sketch::set_visible(bool state)
     if (m_originating_face)
       m_ctx.Display(m_originating_face, AIS_WireFrame, 0, false);
 
+    if (m_underlay && m_underlay->has_image())
+      m_underlay->rebuild_and_display(m_pln, m_ctx);
+
     // Show operation axis only if this sketch is current
     if (m_operation_axis.has_value() && is_current())
       m_ctx.Display(m_operation_axis->shp, AIS_WireFrame, 0, false);
@@ -1751,6 +1761,9 @@ void Sketch::set_visible(bool state)
 
     if (m_originating_face)
       m_ctx.Erase(m_originating_face, false);
+
+    if (m_underlay)
+      m_underlay->erase(m_ctx);
 
     // Hide operation axis when sketch becomes invisible
     if (m_operation_axis.has_value())
@@ -1887,6 +1900,116 @@ void Sketch::set_name(const std::string& name)
 bool Sketch::has_edges() const
 {
   return !m_edges.empty();
+}
+
+bool Sketch::has_underlay() const
+{
+  return m_underlay && m_underlay->has_image();
+}
+
+bool Sketch::load_underlay_image(const std::string& file_bytes)
+{
+  const auto dec = decode_image_bytes(file_bytes);
+  if (!dec)
+    return false;
+  std::vector<uint8_t> rgba = std::move(std::get<0>(*dec));
+  const int            w    = std::get<1>(*dec);
+  const int            h    = std::get<2>(*dec);
+  if (!m_underlay)
+    m_underlay = std::make_unique<Sketch_underlay>();
+  if (!m_underlay->set_image_rgba(std::move(rgba), w, h))
+    return false;
+  if (m_visible)
+    m_underlay->rebuild_and_display(m_pln, m_ctx);
+  m_ctx.UpdateCurrentViewer();
+  return true;
+}
+
+void Sketch::clear_underlay()
+{
+  if (!m_underlay)
+    return;
+  m_underlay->erase(m_ctx);
+  m_underlay.reset();
+  m_ctx.UpdateCurrentViewer();
+}
+
+void Sketch::underlay_set_center_extents_rotation(double cx, double cy, double half_w, double half_h, double rot_deg)
+{
+  if (!m_underlay || !m_underlay->has_image())
+    return;
+  constexpr double k_min = 1e-9;
+  if (half_w < k_min)
+    half_w = k_min;
+  if (half_h < k_min)
+    half_h = k_min;
+
+  const double rad = rot_deg * (std::numbers::pi / 180.0);
+  const double c   = std::cos(rad);
+  const double s   = std::sin(rad);
+  const gp_Vec2d axis_u(2.0 * half_w * c, 2.0 * half_w * s);
+  const gp_Vec2d axis_v(-2.0 * half_h * s, 2.0 * half_h * c);
+  const gp_Pnt2d base(
+      cx - 0.5 * (axis_u.X() + axis_v.X()),
+      cy - 0.5 * (axis_u.Y() + axis_v.Y()));
+
+  m_underlay->set_affine(base, axis_u, axis_v);
+  if (m_visible)
+    m_underlay->rebuild_and_display(m_pln, m_ctx);
+  m_ctx.UpdateCurrentViewer();
+}
+
+void Sketch::underlay_set_opacity(float opaque01)
+{
+  if (!m_underlay)
+    return;
+  m_underlay->set_opacity(opaque01);
+  m_ctx.UpdateCurrentViewer();
+}
+
+void Sketch::underlay_set_visible(bool v)
+{
+  if (!m_underlay)
+    return;
+  m_underlay->set_visible(v);
+  m_underlay->sync_visibility(m_pln, m_ctx);
+  m_ctx.UpdateCurrentViewer();
+}
+
+float Sketch::underlay_opacity() const
+{
+  return m_underlay ? m_underlay->opacity() : 1.f;
+}
+
+bool Sketch::underlay_visible() const
+{
+  return m_underlay && m_underlay->visible();
+}
+
+void Sketch::underlay_ui_params(double& cx, double& cy, double& half_w, double& half_h, double& rot_deg) const
+{
+  if (!m_underlay || !m_underlay->has_image())
+  {
+    cx = cy = half_w = half_h = rot_deg = 0.;
+    return;
+  }
+  const gp_Pnt2d b  = m_underlay->base();
+  const gp_Vec2d au = m_underlay->axis_u();
+  const gp_Vec2d av = m_underlay->axis_v();
+  half_w            = 0.5 * au.Magnitude();
+  half_h            = 0.5 * av.Magnitude();
+  cx                = b.X() + 0.5 * (au.X() + av.X());
+  cy                = b.Y() + 0.5 * (au.Y() + av.Y());
+  rot_deg           = std::atan2(au.Y(), au.X()) * (180.0 / std::numbers::pi);
+}
+
+void Sketch::underlay_rebuild_display()
+{
+  if (!m_underlay || !m_underlay->has_image())
+    return;
+  if (m_visible)
+    m_underlay->rebuild_and_display(m_pln, m_ctx);
+  m_ctx.UpdateCurrentViewer();
 }
 
 gp_Vec2d Sketch::edge_outgoing_dir_(size_t idx_a, size_t idx_b, const Edge& edge) const

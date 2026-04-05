@@ -1312,6 +1312,12 @@ Sketch& Occt_view::curr_sketch()
   return *m_cur_sketch;
 }
 
+Occt_view::Sketch_ptr Occt_view::curr_sketch_shared() const
+{
+  EZY_ASSERT(m_cur_sketch);
+  return m_cur_sketch;
+}
+
 void Occt_view::set_curr_sketch(const Sketch_ptr& to_set)
 {
   for (Sketch_ptr& sketch : m_sketches)
