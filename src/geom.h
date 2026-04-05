@@ -2,18 +2,16 @@
 
 #include <Precision.hxx>
 #include <Standard_Handle.hxx>
-#include <algorithm>
 #include <array>
 #include <boost/geometry.hpp>
 #include <glm/glm.hpp>
 #include <gp_Dir2d.hxx>
 #include <gp_Pnt.hxx>
-#include <numbers>
+#include <numbers> // For Pi
 #include <optional>
 #include <Prs3d_DimensionTextHorizontalPosition.hxx>
 #include <TopoDS_Face.hxx>
 #include <vector>
-
 
 #include "dbg.h"
 #include "types.h"
