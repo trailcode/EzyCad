@@ -17,11 +17,11 @@
     "show_sketch_list": true,
     "underlay_highlight_color": [
       1.0,
-      0.8627450980392157,
+      0.8627451062202454,
       0.0
     ]
   },
-  "imgui_ini": "[Window][##MainMenuBar]\nPos=0,0\nSize=1920,22\n\n[Window][Toolbar]\nPos=7,24\nSize=1310,58\n\n[Window][Sketch List]\nPos=8,86\nSize=220,240\n\n[Window][Shape List]\nPos=8,332\nSize=220,360\n\n[Window][Options]\nPos=1524,24\nSize=389,277\n\n[Window][Lua Console]\nPos=230,87\nSize=1291,313\nCollapsed=1\n\n[Window][Python Console]\nPos=231,108\nSize=1290,225\nCollapsed=1\n\n[Window][Log]\nPos=3,975\nSize=1280,180\nCollapsed=1\n\n[Window][Settings]\nPos=231,130\nSize=520,560\nCollapsed=1\n\n[Window][Debug##Default]\nPos=60,60\nSize=400,400\n\n[Window][dbg]\nPos=260,420\nSize=320,200\n\n",
+  "imgui_ini": "[Window][##MainMenuBar]\nPos=0,0\nSize=1920,22\n\n[Window][Toolbar]\nPos=7,24\nSize=1310,58\n\n[Window][Sketch List]\nPos=8,86\nSize=321,225\n\n[Window][Shape List]\nPos=8,332\nSize=220,360\n\n[Window][Options]\nPos=1322,26\nSize=389,277\n\n[Window][Lua Console]\nPos=5,855\nSize=1291,313\nCollapsed=1\n\n[Window][Python Console]\nPos=6,831\nSize=1290,225\nCollapsed=1\n\n[Window][Log]\nPos=3,975\nSize=1280,180\nCollapsed=1\n\n[Window][Settings]\nPos=796,86\nSize=520,560\nCollapsed=1\n\n[Window][Debug##Default]\nPos=60,60\nSize=400,400\n\n[Window][dbg]\nPos=260,420\nSize=320,200\n\n[Window][Sketch properties]\nPos=60,60\nSize=400,116\n\n",
   "occt_view": {
     "bg_color1": [
       0.037551622837781906,

@@ -18,6 +18,7 @@
 class Lua_console;
 class Python_console;
 class Occt_view;
+class Sketch;
 struct GLFWwindow;
 
 enum class Command
@@ -121,6 +122,7 @@ class GUI
   void dist_edit_();
   void angle_edit_();
   void sketch_list_();
+  void sketch_properties_dialog_();
   void shape_list_();
 
   // Mode + Options panel (gui_mode.cpp)
@@ -161,7 +163,7 @@ class GUI
   void export_file_dialog_(Export_format fmt);
 
   void sketch_underlay_import_dialog_();
-  void sketch_underlay_panel_();
+  void sketch_underlay_panel_(const std::shared_ptr<Sketch>& sk);
 #if defined(__EMSCRIPTEN__)
   void sketch_underlay_file_dialog_async();
 #endif
@@ -262,6 +264,10 @@ class GUI
   float                        m_imgui_rounding_scroll {0.f};
   float                        m_imgui_rounding_tabs {0.f};
   void*                        m_underlay_panel_sketch {nullptr};
+  bool                         m_sketch_properties_open {false};
+  std::weak_ptr<Sketch>        m_sketch_properties_sketch;
+  /// If set, next underlay import (menu or async) applies to this sketch; otherwise current sketch.
+  std::weak_ptr<Sketch>        m_underlay_import_sketch_target;
   double                       m_ul_cx {};
   double                       m_ul_cy {};
   double                       m_ul_hw {};
