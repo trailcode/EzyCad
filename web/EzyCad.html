@@ -21,14 +21,91 @@
                browser upscales the WebGL surface with nearest-neighbor and ImGui text
                looks blocky. */
         }
+
+        /* Loading splash (Emscripten: wasm download + preloads + first frame) */
+        #ezycad-splash {
+            position: fixed;
+            inset: 0;
+            z-index: 20;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 1.25rem;
+            background: #0a0a0c;
+            color: #e8e8ec;
+            font-family: system-ui, Segoe UI, Roboto, sans-serif;
+            transition: opacity 0.35s ease, visibility 0.35s ease;
+        }
+        #ezycad-splash.ezycad-splash--hidden {
+            opacity: 0;
+            visibility: hidden;
+            pointer-events: none;
+        }
+        #ezycad-splash h1 {
+            margin: 0;
+            font-size: 1.75rem;
+            font-weight: 600;
+            letter-spacing: 0.04em;
+        }
+        #ezycad-splash-status {
+            margin: 0;
+            min-height: 1.25em;
+            font-size: 0.85rem;
+            color: #9898a8;
+            text-align: center;
+            max-width: 90vw;
+        }
+        .ezycad-splash-spinner {
+            width: 40px;
+            height: 40px;
+            border: 3px solid #2a2a32;
+            border-top-color: #5a9fd4;
+            border-radius: 50%;
+            animation: ezycad-spin 0.85s linear infinite;
+        }
+        @keyframes ezycad-spin {
+            to { transform: rotate(360deg); }
+        }
     </style>
   </head>
   <body>
+    <div id="ezycad-splash" aria-live="polite">
+      <div class="ezycad-splash-spinner" role="status" aria-label="Loading"></div>
+      <h1>EzyCad</h1>
+      <p id="ezycad-splash-status"></p>
+    </div>
     <canvas class="emscripten" id="canvas" oncontextmenu="event.preventDefault()"></canvas>
     <script type='text/javascript'>
-      var Module = {
+      (function() {
+        var splash = document.getElementById('ezycad-splash');
+        var statusEl = document.getElementById('ezycad-splash-status');
+
+        function setSplashStatus(text) {
+          if (!statusEl) return;
+          if (text == null || text === '') {
+            statusEl.textContent = '';
+            return;
+          }
+          var s = String(text).replace(/\s+/g, ' ').trim();
+          statusEl.textContent = s;
+        }
+
+        function hideSplash() {
+          if (!splash) return;
+          splash.classList.add('ezycad-splash--hidden');
+        }
+
+        window.Module = {
         preRun: [],
-        postRun: [],
+        postRun: [
+          function() {
+            // Let WebGL + ImGui paint once before removing the overlay (avoids a black flash).
+            requestAnimationFrame(function() {
+              requestAnimationFrame(hideSplash);
+            });
+          }
+        ],
         print: (function() {
             return function(text) {
                 text = Array.prototype.slice.call(arguments).join(' ');
@@ -48,11 +125,20 @@
         })(),
         setStatus: function(text) {
             console.log("status: " + text);
+            setSplashStatus(text);
         },
         monitorRunDependencies: function(left) {
-            // no run dependencies to log
+            if (left > 0)
+              setSplashStatus('Preparing assets… (' + left + ' remaining)');
+            else
+              setSplashStatus('Starting…');
+        },
+        onAbort: function(reason) {
+            setSplashStatus(reason ? ('Load aborted: ' + reason) : 'Load aborted');
         }
       };
+      })();
+
       window.onerror = function() {
         console.log("onerror: " + event);
       };
