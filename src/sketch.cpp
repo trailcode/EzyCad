@@ -1986,6 +1986,52 @@ bool Sketch::underlay_visible() const
   return m_underlay && m_underlay->visible();
 }
 
+void Sketch::underlay_set_key_white_transparent(bool on)
+{
+  if (!m_underlay)
+    return;
+  m_underlay->set_key_white_transparent(on);
+  underlay_rebuild_display();
+}
+
+bool Sketch::underlay_key_white_transparent() const
+{
+  return m_underlay ? m_underlay->key_white_transparent() : true;
+}
+
+void Sketch::underlay_set_line_tint_enabled(bool on)
+{
+  if (!m_underlay)
+    return;
+  m_underlay->set_line_tint_enabled(on);
+  underlay_rebuild_display();
+}
+
+void Sketch::underlay_set_line_tint_rgb(uint8_t r, uint8_t g, uint8_t b)
+{
+  if (!m_underlay)
+    return;
+  m_underlay->set_line_tint_rgb(r, g, b);
+  underlay_rebuild_display();
+}
+
+bool Sketch::underlay_line_tint_enabled() const
+{
+  return m_underlay ? m_underlay->line_tint_enabled() : true;
+}
+
+void Sketch::underlay_line_tint_rgb(uint8_t& r, uint8_t& g, uint8_t& b) const
+{
+  if (m_underlay)
+    m_underlay->line_tint_rgb(r, g, b);
+  else
+  {
+    r = 255;
+    g = 220;
+    b = 0;
+  }
+}
+
 void Sketch::underlay_ui_params(double& cx, double& cy, double& half_w, double& half_h, double& rot_deg) const
 {
   if (!m_underlay || !m_underlay->has_image())

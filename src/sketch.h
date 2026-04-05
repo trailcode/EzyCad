@@ -115,6 +115,12 @@ class Sketch
   void                underlay_set_visible(bool v);
   [[nodiscard]] float underlay_opacity() const;
   [[nodiscard]] bool  underlay_visible() const;
+  void                underlay_set_key_white_transparent(bool on);
+  [[nodiscard]] bool  underlay_key_white_transparent() const;
+  void                underlay_set_line_tint_enabled(bool on);
+  void                underlay_set_line_tint_rgb(uint8_t r, uint8_t g, uint8_t b);
+  [[nodiscard]] bool  underlay_line_tint_enabled() const;
+  void                underlay_line_tint_rgb(uint8_t& r, uint8_t& g, uint8_t& b) const;
   void                underlay_ui_params(double& cx, double& cy, double& half_w, double& half_h, double& rot_deg) const;
   void                underlay_rebuild_display();
 

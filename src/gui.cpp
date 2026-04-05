@@ -807,14 +807,28 @@ void GUI::sketch_underlay_panel_()
     if (sk->has_underlay())
     {
       sk->underlay_ui_params(m_ul_cx, m_ul_cy, m_ul_hw, m_ul_hh, m_ul_rot);
-      m_ul_opacity = sk->underlay_opacity();
-      m_ul_vis     = sk->underlay_visible();
+      m_ul_opacity   = sk->underlay_opacity();
+      m_ul_vis       = sk->underlay_visible();
+      m_ul_key_white = sk->underlay_key_white_transparent();
+      m_ul_line_tint = sk->underlay_line_tint_enabled();
+      {
+        uint8_t tr, tg, tb;
+        sk->underlay_line_tint_rgb(tr, tg, tb);
+        m_ul_tint_col[0] = static_cast<float>(tr) / 255.f;
+        m_ul_tint_col[1] = static_cast<float>(tg) / 255.f;
+        m_ul_tint_col[2] = static_cast<float>(tb) / 255.f;
+      }
     }
     else
     {
       m_ul_cx = m_ul_cy = m_ul_hw = m_ul_hh = m_ul_rot = 0.;
-      m_ul_opacity                                      = 0.88f;
-      m_ul_vis                                          = true;
+      m_ul_opacity   = 0.88f;
+      m_ul_vis       = true;
+      m_ul_key_white = true;
+      m_ul_line_tint = true;
+      m_ul_tint_col[0] = 1.f;
+      m_ul_tint_col[1] = 0.863f;
+      m_ul_tint_col[2] = 0.f;
     }
   }
 
@@ -845,6 +859,33 @@ void GUI::sketch_underlay_panel_()
 
   if (ImGui::Checkbox("Underlay visible", &m_ul_vis))
     sk->underlay_set_visible(m_ul_vis);
+
+  if (ImGui::Checkbox("White paper → transparent", &m_ul_key_white))
+    sk->underlay_set_key_white_transparent(m_ul_key_white);
+
+  if (m_show_tool_tips && ImGui::IsItemHovered())
+    ImGui::SetTooltip("Uses brightness: white background becomes clear; dark lines stay visible. "
+                      "Turn off for full-color photos. Inverting the image is not needed for typical scans.");
+
+  if (ImGui::Checkbox("Tint visible lines", &m_ul_line_tint))
+    sk->underlay_set_line_tint_enabled(m_ul_line_tint);
+
+  if (m_show_tool_tips && ImGui::IsItemHovered())
+    ImGui::SetTooltip("Paints non-transparent pixels (after white key) with the line color. "
+                      "Default yellow reads well on dark backgrounds.");
+
+  if (m_ul_line_tint)
+  {
+    if (ImGui::ColorEdit3("Line color", m_ul_tint_col))
+    {
+      const auto to_u8 = [](float c) -> uint8_t
+      {
+        const float x = std::clamp(c, 0.f, 1.f) * 255.f;
+        return static_cast<uint8_t>(x + 0.5f);
+      };
+      sk->underlay_set_line_tint_rgb(to_u8(m_ul_tint_col[0]), to_u8(m_ul_tint_col[1]), to_u8(m_ul_tint_col[2]));
+    }
+  }
 
   if (ImGui::SliderFloat("Opacity", &m_ul_opacity, 0.f, 1.f, "%.2f"))
     sk->underlay_set_opacity(m_ul_opacity);

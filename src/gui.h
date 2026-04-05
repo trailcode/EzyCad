@@ -264,6 +264,9 @@ class GUI
   double                       m_ul_rot {};
   float                        m_ul_opacity {0.88f};
   bool                         m_ul_vis {true};
+  bool                         m_ul_key_white {true};
+  bool                         m_ul_line_tint {true};
+  float                        m_ul_tint_col[3] {1.f, 220.f / 255.f, 0.f};
 
   std::unique_ptr<Lua_console> m_lua_console;
   bool                         m_show_python_console {false};

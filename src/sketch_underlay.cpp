@@ -87,7 +87,20 @@ bool base64_decode(const std::string& in, std::vector<uint8_t>& out)
   return true;
 }
 
-Handle(Image_PixMap) make_pixmap_bottom_up_rgba(const uint8_t* rgba, int w, int h)
+/// Rec. 601 luma in 0..255 (integer). White → high, black → low.
+inline unsigned luminance_u8(uint8_t r, uint8_t g, uint8_t b)
+{
+  return (77u * static_cast<unsigned>(r) + 150u * static_cast<unsigned>(g) + 29u * static_cast<unsigned>(b)) >> 8;
+}
+
+Handle(Image_PixMap) make_pixmap_bottom_up_rgba(const uint8_t* rgba,
+                                                int               w,
+                                                int               h,
+                                                bool              key_white_transparent,
+                                                bool              line_tint_enabled,
+                                                uint8_t           tr,
+                                                uint8_t           tg,
+                                                uint8_t           tb)
 {
   Handle(Image_PixMap) pix = new Image_PixMap();
   if (!pix->InitTrash(Image_Format_RGBA, static_cast<Standard_Size>(w), static_cast<Standard_Size>(h)))
@@ -99,7 +112,38 @@ Handle(Image_PixMap) make_pixmap_bottom_up_rgba(const uint8_t* rgba, int w, int 
   {
     const uint8_t* srcRow = rgba + static_cast<std::size_t>(y) * rowBytes;
     uint8_t*       dstRow = dst + static_cast<std::size_t>(h - 1 - y) * rowBytes;
-    std::memcpy(dstRow, srcRow, static_cast<std::size_t>(rowBytes));
+    if (!key_white_transparent && !line_tint_enabled)
+    {
+      std::memcpy(dstRow, srcRow, static_cast<std::size_t>(rowBytes));
+      continue;
+    }
+    for (Standard_Size x = 0; x < rowBytes; x += 4)
+    {
+      uint8_t        r = srcRow[x + 0];
+      uint8_t        g = srcRow[x + 1];
+      uint8_t        b = srcRow[x + 2];
+      const uint8_t  a = srcRow[x + 3];
+      unsigned       a2;
+      if (key_white_transparent)
+      {
+        const unsigned L = luminance_u8(r, g, b);
+        a2               = (static_cast<unsigned>(a) * (255u - L)) / 255u;
+      }
+      else
+        a2 = a;
+
+      if (line_tint_enabled && a2 > 0)
+      {
+        r = tr;
+        g = tg;
+        b = tb;
+      }
+
+      dstRow[x + 0] = r;
+      dstRow[x + 1] = g;
+      dstRow[x + 2] = b;
+      dstRow[x + 3] = static_cast<uint8_t>(a2);
+    }
   }
   return pix;
 }
@@ -159,6 +203,30 @@ void Sketch_underlay::set_visible(bool v)
   m_visible = v;
 }
 
+void Sketch_underlay::set_key_white_transparent(bool on)
+{
+  m_key_white_transparent = on;
+}
+
+void Sketch_underlay::set_line_tint_enabled(bool on)
+{
+  m_line_tint_enabled = on;
+}
+
+void Sketch_underlay::set_line_tint_rgb(uint8_t r, uint8_t g, uint8_t b)
+{
+  m_tint_r = r;
+  m_tint_g = g;
+  m_tint_b = b;
+}
+
+void Sketch_underlay::line_tint_rgb(uint8_t& r, uint8_t& g, uint8_t& b) const
+{
+  r = m_tint_r;
+  g = m_tint_g;
+  b = m_tint_b;
+}
+
 void Sketch_underlay::build_ais_(const gp_Pln& pln, AIS_InteractiveContext& ctx)
 {
   remove_ais_(ctx);
@@ -185,13 +253,22 @@ void Sketch_underlay::build_ais_(const gp_Pln& pln, AIS_InteractiveContext& ctx)
   if (!faceMk.IsDone())
     return;
 
-  Handle(Image_PixMap) pix = make_pixmap_bottom_up_rgba(m_rgba.data(), m_w, m_h);
+  Handle(Image_PixMap) pix = make_pixmap_bottom_up_rgba(
+      m_rgba.data(),
+      m_w,
+      m_h,
+      m_key_white_transparent,
+      m_line_tint_enabled,
+      m_tint_r,
+      m_tint_g,
+      m_tint_b);
   if (pix.IsNull())
     return;
 
   m_ais = new AIS_TexturedShape(faceMk.Face());
   m_ais->SetTexturePixMap(pix);
   m_ais->SetTextureMapOn();
+  m_ais->DisableTextureModulate();
   m_ais->SetTextureRepeat(Standard_False, 1., 1.);
   m_ais->SetTransparency(1.0 - static_cast<double>(m_opacity));
   m_ais->SetDisplayMode(3);
@@ -238,8 +315,11 @@ nlohmann::json Sketch_underlay::to_json() const
   j["base"]     = json::object({{"x", m_base.X()}, {"y", m_base.Y()}});
   j["axis_u"]   = json::object({{"x", m_axis_u.X()}, {"y", m_axis_u.Y()}});
   j["axis_v"]   = json::object({{"x", m_axis_v.X()}, {"y", m_axis_v.Y()}});
-  j["opacity"]  = m_opacity;
-  j["visible"]  = m_visible;
+  j["opacity"]               = m_opacity;
+  j["visible"]               = m_visible;
+  j["key_white_transparent"] = m_key_white_transparent;
+  j["line_tint_enabled"]     = m_line_tint_enabled;
+  j["line_tint_rgb"]         = nlohmann::json::array({m_tint_r, m_tint_g, m_tint_b});
   return j;
 }
 
@@ -272,8 +352,16 @@ bool Sketch_underlay::from_json(const nlohmann::json& j)
   if (j.contains("axis_v"))
     m_axis_v = gp_Vec2d(j["axis_v"].at("x").get<double>(), j["axis_v"].at("y").get<double>());
 
-  m_opacity = j.value("opacity", 0.88f);
-  m_visible = j.value("visible", true);
+  m_opacity                 = j.value("opacity", 0.88f);
+  m_visible                 = j.value("visible", true);
+  m_key_white_transparent   = j.value("key_white_transparent", true);
+  m_line_tint_enabled       = j.value("line_tint_enabled", true);
+  if (j.contains("line_tint_rgb") && j["line_tint_rgb"].is_array() && j["line_tint_rgb"].size() >= 3)
+  {
+    m_tint_r = static_cast<uint8_t>(j["line_tint_rgb"][0].get<int>());
+    m_tint_g = static_cast<uint8_t>(j["line_tint_rgb"][1].get<int>());
+    m_tint_b = static_cast<uint8_t>(j["line_tint_rgb"][2].get<int>());
+  }
   if (m_opacity < 0.f)
     m_opacity = 0.f;
   if (m_opacity > 1.f)

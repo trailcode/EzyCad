@@ -37,6 +37,14 @@ class Sketch_underlay
   void set_affine(const gp_Pnt2d& base, const gp_Vec2d& axis_u, const gp_Vec2d& axis_v);
   void set_opacity(float opaque01);
   void set_visible(bool v);
+  /// When true (default), bright pixels (white paper) become transparent in the texture; dark linework stays opaque.
+  void set_key_white_transparent(bool on);
+  [[nodiscard]] bool key_white_transparent() const { return m_key_white_transparent; }
+
+  void set_line_tint_enabled(bool on);
+  void set_line_tint_rgb(uint8_t r, uint8_t g, uint8_t b);
+  [[nodiscard]] bool     line_tint_enabled() const { return m_line_tint_enabled; }
+  void                   line_tint_rgb(uint8_t& r, uint8_t& g, uint8_t& b) const;
 
   [[nodiscard]] float       opacity() const { return m_opacity; }
   [[nodiscard]] bool        visible() const { return m_visible; }
@@ -68,6 +76,13 @@ class Sketch_underlay
 
   float m_opacity {0.88f};
   bool  m_visible {true};
+  /// Luminance key applied only when building the GPU texture (stored pixels stay raw).
+  bool  m_key_white_transparent {true};
+  /// Recolor pixels that remain visible (alpha > 0 after key) for contrast on dark views.
+  bool     m_line_tint_enabled {true};
+  uint8_t  m_tint_r {255};
+  uint8_t  m_tint_g {220};
+  uint8_t  m_tint_b {0};
 
   opencascade::handle<AIS_TexturedShape> m_ais;
 };
