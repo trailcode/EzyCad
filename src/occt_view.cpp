@@ -32,6 +32,7 @@
 #include "dbg.h"
 #include "geom.h"
 #include "utl.h"
+#include "utl_occt.h"
 #include "gui.h"
 #include "shp_create.h"
 #include "sketch.h"
@@ -1115,7 +1116,14 @@ TopAbs_ShapeEnum Occt_view::get_shp_selection_mode() const
 
 void Occt_view::set_shp_selection_mode(const TopAbs_ShapeEnum mode)
 {
+  if (m_shp_selection_mode == mode)
+    return;
+
   m_shp_selection_mode = mode;
+  const std::size_t idx = static_cast<std::size_t>(mode);
+  if (idx < c_names_TopAbs_ShapeEnum.size())
+    m_gui.log_message(std::string("Selection mode: ") + std::string(c_names_TopAbs_ShapeEnum[idx]));
+
   for (auto& shp : m_shps)
     shp->set_selection_mode(mode);
 }

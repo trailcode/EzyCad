@@ -92,6 +92,8 @@ class GUI
 
   void on_file(const std::string& file_path, const std::string& json_str, bool announce_load = true);
   void on_import_file(const std::string& file_path, const std::string& file_data);
+  /// Emscripten `on_sketch_underlay_selected` routes here (must be public for C callback).
+  void on_sketch_underlay_file(const std::string& file_path, const std::string& file_bytes);
 
   void save_occt_view_settings();
 
@@ -159,7 +161,6 @@ class GUI
   void export_file_dialog_(Export_format fmt);
 
   void sketch_underlay_import_dialog_();
-  void on_sketch_underlay_file(const std::string& file_path, const std::string& file_bytes);
   void sketch_underlay_panel_();
 #if defined(__EMSCRIPTEN__)
   void sketch_underlay_file_dialog_async();

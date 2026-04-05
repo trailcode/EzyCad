@@ -17,6 +17,7 @@
 #include "modes.h"
 #include "occt_view.h"
 #include "sketch.h"
+#include "utl_occt.h"
 
 namespace
 {
@@ -134,6 +135,32 @@ void GUI::on_key(int key, int scancode, int action, int mods)
   }
   else
   {
+    // -------------------------------------------------------------------------
+    // Shape selection filter hotkeys (Options → Selection Mode combo, Normal mode only)
+    //
+    // Maps main-row 1–9 and keypad 1–9 to TopAbs_ShapeEnum values 0..8 in OCCT order
+    // (same order as c_names_TopAbs_ShapeEnum in utl_occt.h):
+    //   1 Compound, 2 CompSolid, 3 Solid, 4 Shell, 5 Face, 6 Wire, 7 Edge, 8 Vertex, 9 Shape
+    //
+    // Input routing: main.cpp calls GUI::on_key only when !io.WantTextInput, so digits go to
+    // text fields while typing. We return early so these keys are not handled again below.
+    //
+    // Other modes: chamfer/fillet/sketch may override selection mode via Occt_view::on_mode().
+    // -------------------------------------------------------------------------
+    if (get_mode() == Mode::Normal)
+    {
+      int idx = -1;
+      if (key >= GLFW_KEY_1 && key <= GLFW_KEY_9)
+        idx = key - GLFW_KEY_1;
+      else if (key >= GLFW_KEY_KP_1 && key <= GLFW_KEY_KP_9)
+        idx = key - GLFW_KEY_KP_1;
+      if (idx >= 0 && idx <= static_cast<int>(TopAbs_SHAPE))
+      {
+        m_view->set_shp_selection_mode(static_cast<TopAbs_ShapeEnum>(idx));
+        return;
+      }
+    }
+
     switch (key)
     {
       case GLFW_KEY_ESCAPE:
@@ -294,17 +321,6 @@ void GUI::options_()
 
 void GUI::options_normal_mode_()
 {
-  constexpr std::array<std::string_view, 9> c_names_TopAbs_ShapeEnum = {
-      "COMPOUND",
-      "COMPSOLID",
-      "SOLID",
-      "SHELL",
-      "FACE",
-      "WIRE",
-      "EDGE",
-      "VERTEX",
-      "SHAPE"};
-
   int current_item = static_cast<int>(m_view->get_shp_selection_mode());
   if (ImGui::BeginCombo("Selection Mode##filter", c_names_TopAbs_ShapeEnum[current_item].data(),
                         ImGuiComboFlags_WidthFitPreview | ImGuiComboFlags_HeightSmall))
@@ -315,6 +331,7 @@ void GUI::options_normal_mode_()
 
     ImGui::EndCombo();
   }
+  ImGui::TextDisabled("Hotkeys: 1–9 (Normal mode) set filter when the 3D view has focus, not while typing in UI.");
 }
 
 void GUI::options_move_mode_()

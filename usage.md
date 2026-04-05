@@ -516,6 +516,24 @@ The polar duplicate tool allows you to create multiple copies of selected shapes
 | <kbd>E</kbd> | Extrude mode |
 | <kbd>D</kbd> | Delete selected |
 
+### Shape selection filter (Normal mode only)
+
+In **Normal** mode, number keys set the **Selection Mode** filter for picking 3D shapes (same control as **Options → Selection Mode**). Main keyboard **<kbd>1</kbd>–<kbd>9</kbd>** and keypad **<kbd>1</kbd>–<kbd>9</kbd>** are supported. Order matches Open CASCADE `TopAbs_ShapeEnum` (see `utl_occt.h` / combo labels):
+
+| Key | Filter |
+| ---: | --- |
+| <kbd>1</kbd> | Compound |
+| <kbd>2</kbd> | CompSolid |
+| <kbd>3</kbd> | Solid |
+| <kbd>4</kbd> | Shell |
+| <kbd>5</kbd> | Face |
+| <kbd>6</kbd> | Wire |
+| <kbd>7</kbd> | Edge |
+| <kbd>8</kbd> | Vertex |
+| <kbd>9</kbd> | Shape |
+
+While focus is in a text field (dimension input, script console, etc.), **<kbd>1</kbd>–<kbd>9</kbd>** are left to the UI: `main.cpp` does not call the global key handler when ImGui reports `WantTextInput`. Chamfer, fillet, and sketch modes may change the filter automatically when you enter them.
+
 ### Lua and Python consoles
 
 Open or close the **Lua** or **Python** consoles from **View → Lua Console** or **View → Python Console** (no default keyboard shortcuts).
