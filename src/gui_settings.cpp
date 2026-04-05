@@ -2,6 +2,7 @@
 
 #include "gui.h"
 
+#include <algorithm>
 #include <sstream>
 
 #include <nlohmann/json.hpp>
@@ -59,6 +60,8 @@ void GUI::save_occt_view_settings()
 #ifndef NDEBUG
       {            "show_dbg",             m_show_dbg},
 #endif
+      {"underlay_highlight_color",
+       {m_underlay_highlight_color[0], m_underlay_highlight_color[1], m_underlay_highlight_color[2]}},
   };
   j["version"]          = k_settings_version;
   const char* imgui_ini = ImGui::SaveIniSettingsToMemory(nullptr);
@@ -231,6 +234,16 @@ void GUI::parse_gui_panes_settings_(const std::string& content)
     m_imgui_rounding_general = round_from_json("imgui_rounding_general", fb_general);
     m_imgui_rounding_scroll  = round_from_json("imgui_rounding_scroll", fb_scroll);
     m_imgui_rounding_tabs    = round_from_json("imgui_rounding_tabs", fb_tabs);
+
+    if (g.contains("underlay_highlight_color") && g["underlay_highlight_color"].is_array()
+        && g["underlay_highlight_color"].size() >= 3)
+    {
+      const json& a = g["underlay_highlight_color"];
+      for (size_t i = 0; i < 3; ++i)
+        if (a[static_cast<json::size_type>(i)].is_number())
+          m_underlay_highlight_color[i] =
+              std::clamp(a[static_cast<json::size_type>(i)].get<float>(), 0.f, 1.f);
+    }
 
 #ifndef NDEBUG
       set_show_dbg(b("show_dbg", false));
@@ -442,6 +455,30 @@ void GUI::settings_()
     }
   }
 
+  if (ImGui::CollapsingHeader("Sketch underlay"))
+  {
+    bool ul_changed = false;
+    if (ImGui::BeginTable("settings_underlay", 2, ImGuiTableFlags_SizingStretchProp))
+    {
+      ImGui::TableSetupColumn("label", ImGuiTableColumnFlags_WidthFixed, k_label_col_w);
+      ImGui::TableSetupColumn("control", ImGuiTableColumnFlags_WidthStretch);
+
+      ImGui::TableNextRow();
+      ImGui::TableSetColumnIndex(0);
+      ImGui::AlignTextToFramePadding();
+      ImGui::TextUnformatted("Highlight color");
+      ImGui::TableSetColumnIndex(1);
+      ul_changed |= ImGui::ColorEdit3("##underlay_hi", m_underlay_highlight_color, ImGuiColorEditFlags_Float);
+
+      ImGui::EndTable();
+    }
+    ImGui::TextDisabled(
+        "Used as the default line tint when you import a new underlay image. "
+        "Change per sketch in Sketch List if needed.");
+    if (ul_changed)
+      save_occt_view_settings();
+  }
+
   if (ImGui::CollapsingHeader("Startup project"))
   {
 #ifndef __EMSCRIPTEN__
@@ -509,6 +546,18 @@ void GUI::settings_()
   }
 
   ImGui::End();
+}
+
+void GUI::underlay_highlight_color_rgb(uint8_t& r, uint8_t& g, uint8_t& b) const
+{
+  const auto to_u8 = [](float c) -> uint8_t
+  {
+    const float x = std::clamp(c, 0.f, 1.f) * 255.f;
+    return static_cast<uint8_t>(x + 0.5f);
+  };
+  r = to_u8(m_underlay_highlight_color[0]);
+  g = to_u8(m_underlay_highlight_color[1]);
+  b = to_u8(m_underlay_highlight_color[2]);
 }
 
 void GUI::imgui_rounding_fallbacks_from_theme_(float& general, float& scroll, float& tabs) const
