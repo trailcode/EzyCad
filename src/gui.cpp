@@ -746,6 +746,29 @@ void GUI::sketch_list_()
       ImGui::SetTooltip("Visibility");
 
     ImGui::SameLine();
+    ImGui::PushID(("uldisp" + id_suffix).c_str());
+    {
+      const bool has_ul = sketch->has_underlay();
+      bool       dummy_off {false};
+      bool       ul_vis   = has_ul && sketch->underlay_visible();
+      if (!has_ul)
+        ImGui::BeginDisabled();
+      bool* const vptr = has_ul ? &ul_vis : &dummy_off;
+      if (ImGui::Checkbox("", vptr) && has_ul)
+      {
+        sketch->underlay_set_visible(ul_vis);
+        if (m_underlay_panel_sketch == sketch.get())
+          m_ul_vis = ul_vis;
+      }
+      if (!has_ul)
+        ImGui::EndDisabled();
+      if (m_show_tool_tips && ImGui::IsItemHovered(ImGuiHoveredFlags_AllowWhenDisabled))
+        ImGui::SetTooltip(
+            has_ul ? "Display underlay" : "Import an image in Sketch properties to enable the underlay.");
+    }
+    ImGui::PopID();
+
+    ImGui::SameLine();
     ImGui::PushID(("props" + id_suffix).c_str());
     if (ImGui::SmallButton("[P]"))
     {
@@ -919,9 +942,6 @@ void GUI::sketch_underlay_panel_(const std::shared_ptr<Sketch>& sk)
 
   if (!sk->has_underlay())
     return;
-
-  if (ImGui::Checkbox("Underlay visible", &m_ul_vis))
-    sk->underlay_set_visible(m_ul_vis);
 
   if (ImGui::Checkbox("White paper → transparent", &m_ul_key_white))
     sk->underlay_set_key_white_transparent(m_ul_key_white);
