@@ -331,7 +331,16 @@ void GUI::options_normal_mode_()
 
     ImGui::EndCombo();
   }
-  ImGui::TextDisabled("Hotkeys: 1–9 (Normal mode) set filter when the 3D view has focus, not while typing in UI.");
+  ImGui::SameLine(0.0f, ImGui::GetStyle().ItemInnerSpacing.x);
+  ImGui::TextDisabled("(?)");
+  if (ImGui::IsItemHovered())
+  {
+    ImGui::BeginTooltip();
+    ImGui::PushTextWrapPos(ImGui::GetFontSize() * 35.0f);
+    ImGui::TextDisabled("Hotkeys: 1–9 (Normal mode) set filter when the 3D view has focus, not while typing in UI.");
+    ImGui::PopTextWrapPos();
+    ImGui::EndTooltip();
+  }
 }
 
 void GUI::options_move_mode_()
