@@ -352,6 +352,17 @@ void GUI::settings_()
       ImGui::TextUnformatted("Scrollbars and sliders");
       ImGui::TableSetColumnIndex(1);
       r_changed |= ImGui::SliderFloat("##round_scr", &m_imgui_rounding_scroll, 0.f, 16.f, "%.0f");
+      ImGui::SameLine(0.0f, ImGui::GetStyle().ItemInnerSpacing.x);
+      ImGui::TextDisabled("(?)");
+      if (ImGui::IsItemHovered())
+      {
+        ImGui::BeginTooltip();
+        ImGui::PushTextWrapPos(ImGui::GetFontSize() * 35.0f);
+        ImGui::TextDisabled(
+            "Scrollbars and sliders applies the same radius to scrollbar tracks and slider grabs.");
+        ImGui::PopTextWrapPos();
+        ImGui::EndTooltip();
+      }
 
       ImGui::TableNextRow();
       ImGui::TableSetColumnIndex(0);
@@ -364,8 +375,6 @@ void GUI::settings_()
     }
     if (r_changed)
       save_occt_view_settings();
-    ImGui::TextDisabled(
-        "Scrollbars and sliders applies the same radius to scrollbar tracks and slider grabs.");
   }
 
   if (ImGui::CollapsingHeader("3D view background"))
@@ -466,14 +475,21 @@ void GUI::settings_()
       ImGui::TextUnformatted("Highlight color");
       ImGui::TableSetColumnIndex(1);
       ul_changed |= ImGui::ColorEdit3("##underlay_hi", m_underlay_highlight_color, ImGuiColorEditFlags_Float);
+      ImGui::SameLine(0.0f, ImGui::GetStyle().ItemInnerSpacing.x);
+      ImGui::TextDisabled("(?)");
+      if (ImGui::IsItemHovered())
+      {
+        ImGui::BeginTooltip();
+        ImGui::PushTextWrapPos(ImGui::GetFontSize() * 35.0f);
+        ImGui::TextDisabled(
+            "Updates all sketch underlays immediately. Also used as the default when you import a new image. "
+            "Per-sketch overrides in Sketch List if needed.");
+        ImGui::PopTextWrapPos();
+        ImGui::EndTooltip();
+      }
 
       ImGui::EndTable();
     }
-#if 0  // Perhaps a mode, for more detail. A gui slider, each tick documents a new feature. 
-    ImGui::TextDisabled(
-        "Updates all sketch underlays immediately. Also used as the default when you import a new image. "
-        "Per-sketch overrides in Sketch List if needed.");
-#endif
     if (ul_changed)
     {
       uint8_t hr, hg, hb;
@@ -502,24 +518,42 @@ void GUI::settings_()
       ImGui::TableSetColumnIndex(1);
       if (ImGui::Checkbox("##load_last", &m_load_last_opened_on_startup))
         save_occt_view_settings();
+      ImGui::SameLine(0.0f, ImGui::GetStyle().ItemInnerSpacing.x);
+      ImGui::TextDisabled("(?)");
+      if (ImGui::IsItemHovered())
+      {
+        ImGui::BeginTooltip();
+        ImGui::PushTextWrapPos(ImGui::GetFontSize() * 35.0f);
+        ImGui::TextDisabled(
+            "When enabled, EzyCad opens the last .ezy file you opened (path is stored in settings).");
+        ImGui::PopTextWrapPos();
+        ImGui::EndTooltip();
+      }
       ImGui::EndTable();
     }
-    ImGui::TextWrapped(
-        "When enabled, EzyCad opens the last .ezy file you opened (path is stored in settings).");
     if (!m_last_opened_project_path.empty())
       ImGui::TextWrapped("Last opened path: %s", m_last_opened_project_path.c_str());
     else
       ImGui::TextDisabled("(No path saved yet.)");
     ImGui::Spacing();
 #endif
-    ImGui::TextWrapped(
-        "Save the current document (geometry, view, and tool mode) as what loads when EzyCad starts. "
-        "If none is saved, the install default (res/default.ezy) is used.");
     if (ImGui::Button("Save current as startup project"))
       save_startup_project_();
     ImGui::SameLine();
     if (ImGui::Button("Clear saved startup"))
       clear_saved_startup_project_();
+    ImGui::SameLine(0.0f, ImGui::GetStyle().ItemInnerSpacing.x);
+    ImGui::TextDisabled("(?)");
+    if (ImGui::IsItemHovered())
+    {
+      ImGui::BeginTooltip();
+      ImGui::PushTextWrapPos(ImGui::GetFontSize() * 35.0f);
+      ImGui::TextDisabled(
+          "Save the current document (geometry, view, and tool mode) as what loads when EzyCad starts. "
+          "If none is saved, the install default (res/default.ezy) is used.");
+      ImGui::PopTextWrapPos();
+      ImGui::EndTooltip();
+    }
   }
 
   ImGui::Separator();

@@ -852,13 +852,21 @@ void GUI::sketch_underlay_panel_()
     }
   }
 
-  if (!sk->has_underlay())
+  ImGui::SameLine(0.0f, ImGui::GetStyle().ItemInnerSpacing.x);
+  ImGui::TextDisabled("(?)");
+  if (ImGui::IsItemHovered())
   {
-#if 0  // Perhaps a mode, for more detail. A gui slider, each tick documents a new feature. 
-    ImGui::TextDisabled("No underlay. Import PNG/JPEG/BMP. Adjust half-width/height to match real dimensions.");
-#endif
-    return;
+    ImGui::BeginTooltip();
+    ImGui::PushTextWrapPos(ImGui::GetFontSize() * 35.0f);
+    ImGui::TextDisabled(
+        "Import PNG/JPEG/BMP as a sketch underlay. Adjust half-width, half-height, center, and rotation "
+        "to match real dimensions, then Apply transform.");
+    ImGui::PopTextWrapPos();
+    ImGui::EndTooltip();
   }
+
+  if (!sk->has_underlay())
+    return;
 
   if (ImGui::Checkbox("Underlay visible", &m_ul_vis))
     sk->underlay_set_visible(m_ul_vis);
