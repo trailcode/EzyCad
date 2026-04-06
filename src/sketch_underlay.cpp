@@ -15,6 +15,8 @@
 #include <gp_Pln.hxx>
 #include <gp_Vec.hxx>
 
+#include <algorithm>
+
 namespace
 {
 
@@ -93,58 +95,130 @@ inline unsigned luminance_u8(uint8_t r, uint8_t g, uint8_t b)
   return (77u * static_cast<unsigned>(r) + 150u * static_cast<unsigned>(g) + 29u * static_cast<unsigned>(b)) >> 8;
 }
 
+inline void apply_key_and_tint(uint8_t& r, uint8_t& g, uint8_t& b, uint8_t& a, bool key_white_transparent,
+                               bool line_tint_enabled, uint8_t tr, uint8_t tg, uint8_t tb)
+{
+  unsigned a2;
+  if (key_white_transparent)
+  {
+    const unsigned L = luminance_u8(r, g, b);
+    a2               = (static_cast<unsigned>(a) * (255u - L)) / 255u;
+  }
+  else
+    a2 = a;
+
+  if (line_tint_enabled && a2 > 0)
+  {
+    r = tr;
+    g = tg;
+    b = tb;
+  }
+  a = static_cast<uint8_t>(a2);
+}
+
+inline void sample_rgba_bilinear(const uint8_t* rgba, int w, int h, double xf, double yf, uint8_t out[4])
+{
+  if (w <= 0 || h <= 0 || xf < 0.0 || yf < 0.0 || xf > static_cast<double>(w - 1) || yf > static_cast<double>(h - 1))
+  {
+    out[0] = out[1] = out[2] = out[3] = 0;
+    return;
+  }
+  const int x0 = static_cast<int>(std::floor(xf));
+  const int y0 = static_cast<int>(std::floor(yf));
+  const int x1 = std::min(x0 + 1, w - 1);
+  const int y1 = std::min(y0 + 1, h - 1);
+  const double tx = xf - static_cast<double>(x0);
+  const double ty = yf - static_cast<double>(y0);
+  const auto   pix = [&](int x, int y) -> const uint8_t*
+  {
+    return rgba + (static_cast<std::size_t>(y) * static_cast<std::size_t>(w) + static_cast<std::size_t>(x)) * 4u;
+  };
+  for (int c = 0; c < 4; ++c)
+  {
+    const double v00 = static_cast<double>(pix(x0, y0)[c]);
+    const double v10 = static_cast<double>(pix(x1, y0)[c]);
+    const double v01 = static_cast<double>(pix(x0, y1)[c]);
+    const double v11 = static_cast<double>(pix(x1, y1)[c]);
+    const double v0  = v00 * (1.0 - tx) + v10 * tx;
+    const double v1  = v01 * (1.0 - tx) + v11 * tx;
+    out[c]           = static_cast<uint8_t>(std::clamp(v0 * (1.0 - ty) + v1 * ty + 0.5, 0.0, 255.0));
+  }
+}
+
+/// Builds a bottom-up pixmap for AIS_TexturedShape. \a axis_u / \a axis_v span the bitmap (2·half-width × 2·half-height).
+/// Uses an axis-aligned face in the sketch plane and inverse-rotated sampling so rotation matches OCCT texture mapping
+/// (which normalizes surface UV to an axis-aligned box and would shear a parallelogram face).
 Handle(Image_PixMap) make_pixmap_bottom_up_rgba(const uint8_t* rgba,
                                                 int               w,
                                                 int               h,
+                                                const gp_Vec2d&   axis_u,
+                                                const gp_Vec2d&   axis_v,
                                                 bool              key_white_transparent,
                                                 bool              line_tint_enabled,
                                                 uint8_t           tr,
                                                 uint8_t           tg,
                                                 uint8_t           tb)
 {
-  Handle(Image_PixMap) pix = new Image_PixMap();
-  if (!pix->InitTrash(Image_Format_RGBA, static_cast<Standard_Size>(w), static_cast<Standard_Size>(h)))
+  const double hw = 0.5 * axis_u.Magnitude();
+  const double hh = 0.5 * axis_v.Magnitude();
+  if (hw <= 1e-12 || hh <= 1e-12)
     return {};
 
-  const Standard_Size rowBytes = static_cast<Standard_Size>(w) * 4u;
+  const double theta = std::atan2(axis_u.Y(), axis_u.X());
+  const double c     = std::cos(theta);
+  const double s     = std::sin(theta);
+  const double hx    = std::max(std::abs(hw * c) + std::abs(hh * s), 1e-12);
+  const double hy    = std::max(std::abs(hw * s) + std::abs(hh * c), 1e-12);
+
+  int out_w = static_cast<int>(std::lround(static_cast<double>(w) * hx / hw));
+  int out_h = static_cast<int>(std::lround(static_cast<double>(h) * hy / hh));
+  out_w     = std::clamp(out_w, 1, k_max_image_dim);
+  out_h     = std::clamp(out_h, 1, k_max_image_dim);
+
+  Handle(Image_PixMap) pix = new Image_PixMap();
+  if (!pix->InitTrash(Image_Format_RGBA, static_cast<Standard_Size>(out_w), static_cast<Standard_Size>(out_h)))
+    return {};
+
+  const Standard_Size rowBytes = static_cast<Standard_Size>(out_w) * 4u;
   uint8_t*            dst      = pix->ChangeData();
-  for (int y = 0; y < h; ++y)
+
+  constexpr double k_eps = 1e-9;
+  for (int rj = 0; rj < out_h; ++rj)
   {
-    const uint8_t* srcRow = rgba + static_cast<std::size_t>(y) * rowBytes;
-    uint8_t*       dstRow = dst + static_cast<std::size_t>(h - 1 - y) * rowBytes;
-    if (!key_white_transparent && !line_tint_enabled)
+    // Bottom row rj = 0 → bottom of texture (small plane dv).
+    const double t_b = (static_cast<double>(rj) + 0.5) / static_cast<double>(out_h);
+    const double dv  = (2.0 * t_b - 1.0) * hy;
+    uint8_t*     dstRow = dst + static_cast<std::size_t>(rj) * rowBytes;
+    for (int ox = 0; ox < out_w; ++ox)
     {
-      std::memcpy(dstRow, srcRow, static_cast<std::size_t>(rowBytes));
-      continue;
-    }
-    for (Standard_Size x = 0; x < rowBytes; x += 4)
-    {
-      uint8_t        r = srcRow[x + 0];
-      uint8_t        g = srcRow[x + 1];
-      uint8_t        b = srcRow[x + 2];
-      const uint8_t  a = srcRow[x + 3];
-      unsigned       a2;
-      if (key_white_transparent)
+      const double s01 = (static_cast<double>(ox) + 0.5) / static_cast<double>(out_w);
+      const double du  = (2.0 * s01 - 1.0) * hx;
+      // Inverse rotate from plane (du,dv) to image (u,v) offsets from quad center.
+      const double img_u = du * c + dv * s;
+      const double img_v = -du * s + dv * c;
+
+      uint8_t px[4];
+      if (std::abs(img_u) > hw + k_eps || std::abs(img_v) > hh + k_eps)
       {
-        const unsigned L = luminance_u8(r, g, b);
-        a2               = (static_cast<unsigned>(a) * (255u - L)) / 255u;
+        px[0] = px[1] = px[2] = px[3] = 0;
       }
       else
-        a2 = a;
-
-      if (line_tint_enabled && a2 > 0)
       {
-        r = tr;
-        g = tg;
-        b = tb;
+        const double sx = (img_u + hw) / (2.0 * hw) * static_cast<double>(w - 1);
+        // Match stored RGBA row order (row 0 = image top) to OCCT bottom-first pixmap / texture v.
+        const double sy = (hh - img_v) / (2.0 * hh) * static_cast<double>(h - 1);
+        sample_rgba_bilinear(rgba, w, h, sx, sy, px);
       }
-
-      dstRow[x + 0] = r;
-      dstRow[x + 1] = g;
-      dstRow[x + 2] = b;
-      dstRow[x + 3] = static_cast<uint8_t>(a2);
+      apply_key_and_tint(px[0], px[1], px[2], px[3], key_white_transparent, line_tint_enabled, tr, tg, tb);
+      const Standard_Size o = static_cast<Standard_Size>(ox) * 4u;
+      dstRow[o + 0]         = px[0];
+      dstRow[o + 1]         = px[1];
+      dstRow[o + 2]         = px[2];
+      dstRow[o + 3]         = px[3];
     }
   }
+
+  // Row rj = 0 is texture bottom (dv = -hy); Image_PixMap bottom-up uses row 0 as OpenGL texture bottom.
   return pix;
 }
 
@@ -236,10 +310,27 @@ void Sketch_underlay::build_ais_(const gp_Pln& pln, AIS_InteractiveContext& ctx)
   gp_Vec nudge(pln.Axis().Direction());
   nudge.Multiply(-10.0 * Precision::Confusion());
 
-  const gp_Pnt p00 = to_3d(pln, m_base).Translated(nudge);
-  const gp_Pnt p10 = to_3d(pln, m_base.Translated(m_axis_u)).Translated(nudge);
-  const gp_Pnt p11 = to_3d(pln, m_base.Translated(m_axis_u).Translated(m_axis_v)).Translated(nudge);
-  const gp_Pnt p01 = to_3d(pln, m_base.Translated(m_axis_v)).Translated(nudge);
+  // Axis-aligned rectangle in sketch-plane coords matching the rotated image's bounding box.
+  // (Parallelogram geometry + default AIS_TexturedShape UV mapping would shear the bitmap instead of rotating it.)
+  const double hw    = 0.5 * m_axis_u.Magnitude();
+  const double hh    = 0.5 * m_axis_v.Magnitude();
+  const double theta = std::atan2(m_axis_u.Y(), m_axis_u.X());
+  const double c     = std::cos(theta);
+  const double s     = std::sin(theta);
+  const double hx    = std::max(std::abs(hw * c) + std::abs(hh * s), 1e-12);
+  const double hy    = std::max(std::abs(hw * s) + std::abs(hh * c), 1e-12);
+  const double cx    = m_base.X() + 0.5 * (m_axis_u.X() + m_axis_v.X());
+  const double cy    = m_base.Y() + 0.5 * (m_axis_u.Y() + m_axis_v.Y());
+
+  const gp_Pnt2d c00(cx - hx, cy - hy);
+  const gp_Pnt2d c10(cx + hx, cy - hy);
+  const gp_Pnt2d c11(cx + hx, cy + hy);
+  const gp_Pnt2d c01(cx - hx, cy + hy);
+
+  const gp_Pnt p00 = to_3d(pln, c00).Translated(nudge);
+  const gp_Pnt p10 = to_3d(pln, c10).Translated(nudge);
+  const gp_Pnt p11 = to_3d(pln, c11).Translated(nudge);
+  const gp_Pnt p01 = to_3d(pln, c01).Translated(nudge);
 
   BRepBuilderAPI_MakeWire wireMk;
   wireMk.Add(BRepBuilderAPI_MakeEdge(p00, p10).Edge());
@@ -257,6 +348,8 @@ void Sketch_underlay::build_ais_(const gp_Pln& pln, AIS_InteractiveContext& ctx)
       m_rgba.data(),
       m_w,
       m_h,
+      m_axis_u,
+      m_axis_v,
       m_key_white_transparent,
       m_line_tint_enabled,
       m_tint_r,
