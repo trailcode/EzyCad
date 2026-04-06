@@ -1907,6 +1907,16 @@ bool Sketch::has_underlay() const
   return m_underlay && m_underlay->has_image();
 }
 
+int Sketch::underlay_image_w() const
+{
+  return (m_underlay && m_underlay->has_image()) ? m_underlay->image_w() : 0;
+}
+
+int Sketch::underlay_image_h() const
+{
+  return (m_underlay && m_underlay->has_image()) ? m_underlay->image_h() : 0;
+}
+
 bool Sketch::load_underlay_image(const std::string& file_bytes)
 {
   const auto dec = decode_image_bytes(file_bytes);
@@ -1935,6 +1945,108 @@ void Sketch::clear_underlay()
   m_underlay->erase(m_ctx);
   m_underlay.reset();
   m_ctx.UpdateCurrentViewer();
+}
+
+std::optional<gp_Pnt2d> Sketch::pick_point_for_underlay_calib(const ScreenCoords& screen_coords)
+{
+  std::optional<gp_Pnt2d> on_pln = m_view.pt_on_plane(screen_coords, m_pln);
+  if (!on_pln)
+    return std::nullopt;
+  if (std::optional<size_t> idx = m_nodes.try_get_node_idx_snap(*on_pln))
+    return m_nodes[*idx];
+  return *on_pln;
+}
+
+void Sketch::underlay_set_affine_plane(const gp_Pnt2d& base, const gp_Vec2d& axis_u, const gp_Vec2d& axis_v)
+{
+  if (!m_underlay || !m_underlay->has_image())
+    return;
+  constexpr double k_min2 = 1e-18;
+  if (axis_u.SquareMagnitude() < k_min2 || axis_v.SquareMagnitude() < k_min2)
+    return;
+  m_underlay->set_affine(base, axis_u, axis_v);
+  if (m_visible)
+    m_underlay->rebuild_and_display(m_pln, m_ctx);
+  m_ctx.UpdateCurrentViewer();
+}
+
+namespace
+{
+bool underlay_plane_to_uv(const gp_Pnt2d& base, const gp_Vec2d& au, const gp_Vec2d& av, const gp_Pnt2d& p,
+                          double& out_u, double& out_v)
+{
+  const double det = au.X() * av.Y() - au.Y() * av.X();
+  if (std::abs(det) < 1e-18)
+    return false;
+  const gp_Vec2d r(p.X() - base.X(), p.Y() - base.Y());
+  out_u = (r.X() * av.Y() - r.Y() * av.X()) / det;
+  out_v = (-r.X() * au.Y() + r.Y() * au.X()) / det;
+  return true;
+}
+}  // namespace
+
+bool Sketch::underlay_rescale_uv_chord_to_length(const gp_Pnt2d& p0, const gp_Pnt2d& p1, double target_len)
+{
+  if (!m_underlay || !m_underlay->has_image())
+    return false;
+  if (target_len <= 1e-12)
+    return false;
+  const gp_Pnt2d base = m_underlay->base();
+  const gp_Vec2d au   = m_underlay->axis_u();
+  const gp_Vec2d av   = m_underlay->axis_v();
+  double           u0 {};
+  double           v0 {};
+  double           u1 {};
+  double           v1 {};
+  if (!underlay_plane_to_uv(base, au, av, p0, u0, v0) || !underlay_plane_to_uv(base, au, av, p1, u1, v1))
+    return false;
+  const double L = p0.Distance(p1);
+  if (L <= 1e-12)
+    return false;
+  const double       k   = target_len / L;
+  const gp_Vec2d     au2 = au * k;
+  const gp_Vec2d     av2 = av * k;
+  const gp_Vec2d     off = au2 * u0 + av2 * v0;
+  const gp_Pnt2d     base2(p0.X() - off.X(), p0.Y() - off.Y());
+  underlay_set_affine_plane(base2, au2, av2);
+  return true;
+}
+
+bool Sketch::underlay_rescale_v_chord_to_length(const gp_Pnt2d& y0, const gp_Pnt2d& y1, double target_len)
+{
+  if (!m_underlay || !m_underlay->has_image())
+    return false;
+  if (target_len <= 1e-12)
+    return false;
+  const gp_Pnt2d base = m_underlay->base();
+  const gp_Vec2d au   = m_underlay->axis_u();
+  const gp_Vec2d av   = m_underlay->axis_v();
+  double           u0 {};
+  double           v0 {};
+  double           u1 {};
+  double           v1 {};
+  if (!underlay_plane_to_uv(base, au, av, y0, u0, v0) || !underlay_plane_to_uv(base, au, av, y1, u1, v1))
+    return false;
+  const double du = u1 - u0;
+  const double dv = v1 - v0;
+  if (std::abs(dv) < 1e-9)
+    return false;
+  const double L = y0.Distance(y1);
+  if (L <= 1e-12)
+    return false;
+  const double   r       = target_len / L;
+  const gp_Vec2d av_new  = av * r + au * (((r - 1.0) * du) / dv);
+  const gp_Vec2d anchor  = au * u0 + av_new * v0;
+  const gp_Pnt2d base2(y0.X() - anchor.X(), y0.Y() - anchor.Y());
+  underlay_set_affine_plane(base2, au, av_new);
+  return true;
+}
+
+gp_Vec2d Sketch::underlay_axis_u_vec() const
+{
+  if (!m_underlay || !m_underlay->has_image())
+    return {};
+  return m_underlay->axis_u();
 }
 
 void Sketch::underlay_set_center_extents_rotation(double cx, double cy, double half_w, double half_h, double rot_deg)

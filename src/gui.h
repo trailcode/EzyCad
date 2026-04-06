@@ -15,6 +15,9 @@
 #include "modes.h"
 #include "types.h"
 
+#include <gp_Pnt2d.hxx>
+#include <gp_Vec2d.hxx>
+
 class Lua_console;
 class Python_console;
 class Occt_view;
@@ -27,6 +30,18 @@ enum class Command
   Shape_fuse,
   Shape_common,
   _count
+};
+
+/// Two-segment picks for underlay X/Y calibration (Sketch properties pane).
+enum class Underlay_calib_phase : std::uint8_t
+{
+  None,
+  PickX1,
+  PickX2,
+  AwaitDistX,
+  PickY1,
+  PickY2,
+  AwaitDistY
 };
 
 class GUI
@@ -164,6 +179,12 @@ class GUI
 
   void sketch_underlay_import_dialog_();
   void sketch_underlay_panel_settings_(const std::shared_ptr<Sketch>& sk);
+  void cancel_underlay_calib_();
+  bool try_underlay_calib_click_(const ScreenCoords& screen_coords);
+  void begin_underlay_calib_set_x_(const std::shared_ptr<Sketch>& sk);
+  void begin_underlay_calib_set_y_(const std::shared_ptr<Sketch>& sk);
+  void underlay_calib_prompt_x_distance_(const std::shared_ptr<Sketch>& sk);
+  void underlay_calib_prompt_y_distance_(const std::shared_ptr<Sketch>& sk);
 #if defined(__EMSCRIPTEN__)
   void sketch_underlay_file_dialog_async();
 #endif
@@ -264,6 +285,14 @@ class GUI
   float                        m_imgui_rounding_scroll {0.f};
   float                        m_imgui_rounding_tabs {0.f};
   void*                        m_underlay_panel_sketch {nullptr};
+  Underlay_calib_phase         m_underlay_calib_phase {Underlay_calib_phase::None};
+  std::weak_ptr<Sketch>        m_underlay_calib_sketch_wk {};
+  bool                         m_underlay_calib_have_x {false};
+  gp_Pnt2d                     m_underlay_calib_x0 {};
+  gp_Pnt2d                     m_underlay_calib_x1 {};
+  gp_Vec2d                     m_underlay_calib_axis_u {};  // After X distance (model units)
+  gp_Pnt2d                     m_underlay_calib_y0 {};
+  gp_Pnt2d                     m_underlay_calib_y1 {};
   bool                         m_sketch_properties_open {false};
   std::weak_ptr<Sketch>        m_sketch_properties_sketch;
   /// If set, next underlay import (menu or async) applies to this sketch; otherwise current sketch.

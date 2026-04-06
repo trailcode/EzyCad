@@ -1451,6 +1451,13 @@ void Occt_view::push_undo_snapshot()
     m_undo_stack.erase(m_undo_stack.begin());
 }
 
+void Occt_view::pop_undo_snapshot()
+{
+  if (m_restoring || m_undo_stack.empty())
+    return;
+  m_undo_stack.pop_back();
+}
+
 bool Occt_view::undo()
 {
   if (!can_undo())

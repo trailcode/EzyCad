@@ -74,6 +74,8 @@ class Occt_view : protected AIS_ViewController
   /// Saves current document (full JSON) and mode. A future delta-based approach would save memory
   /// (store only changes per step) and CPU (apply/invert deltas instead of full serialize/load).
   void   push_undo_snapshot();
+  /// Removes the last snapshot without restoring (e.g. aborted edit that did not change the document).
+  void   pop_undo_snapshot();
   bool   undo();
   bool   redo();
   bool   can_undo() const;

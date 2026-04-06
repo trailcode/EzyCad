@@ -43,6 +43,7 @@ void format_double_trim_fraction(char* dst, std::size_t dst_sz, double v, int ma
 
 void GUI::set_mode(Mode mode)
 {
+  cancel_underlay_calib_();
   m_mode = mode;
   m_view->on_mode();
   for (Toolbar_button& b : m_toolbar_buttons)
@@ -164,6 +165,7 @@ void GUI::on_key(int key, int scancode, int action, int mods)
     switch (key)
     {
       case GLFW_KEY_ESCAPE:
+        cancel_underlay_calib_();
         m_view->cancel(Set_parent_mode::Yes);
         hide_dist_edit();
         hide_angle_edit();
