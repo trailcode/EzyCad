@@ -775,8 +775,10 @@ void GUI::sketch_list_()
       m_sketch_properties_sketch = sketch;
       m_sketch_properties_open   = true;
     }
+
     if (m_show_tool_tips && ImGui::IsItemHovered())
       ImGui::SetTooltip("Sketch properties");
+
     ImGui::PopID();
 
     ++index;
@@ -843,12 +845,14 @@ void GUI::sketch_properties_dialog_()
 {
   if (!m_sketch_properties_open)
     return;
+
   const auto sk = m_sketch_properties_sketch.lock();
   if (!sk)
   {
     m_sketch_properties_open = false;
     return;
   }
+
   ImGui::SetNextWindowSize(ImVec2(400, 0), ImGuiCond_FirstUseEver);
   bool open = m_sketch_properties_open;
   if (!ImGui::Begin("Sketch properties", &open, ImGuiWindowFlags_None))
@@ -857,14 +861,15 @@ void GUI::sketch_properties_dialog_()
     ImGui::End();
     return;
   }
+
   ImGui::TextUnformatted(sk->get_name().c_str());
   ImGui::Separator();
-  sketch_underlay_panel_(sk);
+  sketch_underlay_panel_settings_(sk);
   m_sketch_properties_open = open;
   ImGui::End();
 }
 
-void GUI::sketch_underlay_panel_(const std::shared_ptr<Sketch>& sk)
+void GUI::sketch_underlay_panel_settings_(const std::shared_ptr<Sketch>& sk)
 {
   EZY_ASSERT(sk);
 

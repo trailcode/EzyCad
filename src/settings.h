@@ -26,6 +26,10 @@ void save(const std::string& content);
 // $XDG_CONFIG_HOME/EzyCad or ~/.config/EzyCad (Linux). Empty if unavailable.
 std::filesystem::path user_config_directory();
 
+// Persisted GUI/settings JSON (ezycad_settings.json). Native: under user_config_directory() when set;
+// otherwise the current working directory (legacy). Emscripten: n/a (localStorage).
+std::filesystem::path user_settings_json_path();
+
 // Path to the user "startup" project (.../startup.ezy). Empty if user_config_directory() is empty.
 std::filesystem::path user_startup_project_path();
 

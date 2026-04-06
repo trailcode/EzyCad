@@ -163,7 +163,7 @@ class GUI
   void export_file_dialog_(Export_format fmt);
 
   void sketch_underlay_import_dialog_();
-  void sketch_underlay_panel_(const std::shared_ptr<Sketch>& sk);
+  void sketch_underlay_panel_settings_(const std::shared_ptr<Sketch>& sk);
 #if defined(__EMSCRIPTEN__)
   void sketch_underlay_file_dialog_async();
 #endif

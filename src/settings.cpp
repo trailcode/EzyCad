@@ -22,6 +22,18 @@ void set_log_callback(std::function<void(const std::string&)> cb)
   s_log_callback = std::move(cb);
 }
 
+std::filesystem::path user_settings_json_path()
+{
+#ifdef __EMSCRIPTEN__
+  return {};
+#else
+  const std::filesystem::path dir = user_config_directory();
+  if (dir.empty())
+    return {};
+  return dir / "ezycad_settings.json";
+#endif
+}
+
 std::string load()
 {
 #ifdef __EMSCRIPTEN__
@@ -40,12 +52,26 @@ std::string load()
   free(ptr);
   return result;
 #else
-  std::ifstream f("ezycad_settings.json");
-  if (!f)
-    return {};
-  std::ostringstream os;
-  os << f.rdbuf();
-  return os.str();
+  auto read_file = [](const std::filesystem::path& p) -> std::string
+  {
+    std::ifstream f(p, std::ios::binary);
+    if (!f)
+      return {};
+    std::ostringstream os;
+    os << f.rdbuf();
+    return os.str();
+  };
+
+  const std::filesystem::path user_p = user_settings_json_path();
+  if (!user_p.empty())
+  {
+    std::string s = read_file(user_p);
+    if (!s.empty())
+      return s;
+  }
+
+  // Legacy: cwd ezycad_settings.json (same directory as exe when launched that way).
+  return read_file(std::filesystem::path("ezycad_settings.json"));
 #endif
 }
 
@@ -99,9 +125,21 @@ void save(const std::string& content)
 #ifdef __EMSCRIPTEN__
   EM_ASM_({ localStorage.setItem('ezycad_settings', UTF8ToString($0)); }, content.c_str());
 #else
-  std::ofstream f("ezycad_settings.json");
+  const std::filesystem::path user_p = user_settings_json_path();
+  if (!user_p.empty())
+  {
+    std::error_code ec;
+    std::filesystem::create_directories(user_p.parent_path(), ec);
+    std::ofstream f(user_p, std::ios::binary);
+    if (f)
+    {
+      f.write(content.data(), static_cast<std::streamsize>(content.size()));
+      return;
+    }
+  }
+  std::ofstream f("ezycad_settings.json", std::ios::binary);
   if (f)
-    f << content;
+    f.write(content.data(), static_cast<std::streamsize>(content.size()));
 #endif
 }
 

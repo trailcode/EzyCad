@@ -196,7 +196,14 @@ void GUI::parse_gui_panes_settings_(const std::string& content)
     const json& g = j["gui"];
     auto        b = [&g](const char* key, bool current)
     {
-      return g.contains(key) && g[key].is_boolean() ? g[key].get<bool>() : current;
+      if (!g.contains(key))
+        return current;
+      const json& v = g[key];
+      if (v.is_boolean())
+        return v.get<bool>();
+      if (v.is_number_integer())
+        return v.get<int>() != 0;
+      return current;
     };
     set_show_options(b("show_options", true));
     set_show_sketch_list(b("show_sketch_list", true));
@@ -260,9 +267,19 @@ void GUI::load_occt_view_settings_()
   try
   {
     using namespace nlohmann;
-    const json j          = json::parse(content);
-    bool       version_ok = j.contains("version") && j["version"].is_string() &&
-                      j["version"].get<std::string>() == k_settings_version;
+    const json j = json::parse(content);
+    auto         settings_version_matches = [](const json& doc) -> bool
+    {
+      if (!doc.contains("version"))
+        return false;
+      const json& v = doc["version"];
+      if (v.is_string())
+        return v.get<std::string>() == k_settings_version;
+      if (v.is_number_integer())
+        return std::to_string(v.get<long long>()) == k_settings_version;
+      return false;
+    };
+    const bool version_ok = settings_version_matches(j);
     if (!version_ok)
     {
       content = settings::load_defaults();
