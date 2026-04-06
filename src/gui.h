@@ -8,9 +8,8 @@
 #include <gp_Vec2d.hxx>
 #include <memory>
 #include <string>  // Added for log messages
-#include <utility>
 #include <variant>
-#include <vector>  // Added for log storage
+//#include <vector>  // Added for log storage
 
 #include "imgui.h"
 #include "log.h"

@@ -1085,6 +1085,7 @@ void GUI::sketch_underlay_panel_settings_(const std::shared_ptr<Sketch>& sk)
     if (!have_view)
     {
       constexpr double k_fallback = 250.0;
+      // m_ul_cx / m_ul_cy stay sketch-plane gp_Pnt2d X / Y (same as underlay_ui_params).
       min_u = m_ul_cx - k_fallback;
       max_u = m_ul_cx + k_fallback;
       min_v = m_ul_cy - k_fallback;
@@ -1115,8 +1116,9 @@ void GUI::sketch_underlay_panel_settings_(const std::shared_ptr<Sketch>& sk)
         apply_ul_xform();
     };
 
-    transform_slider("Center X", ImGuiDataType_Double, &m_ul_cx, &min_u, &max_u, "%.4f", ImGuiSliderFlags_ClampOnInput);
-    transform_slider("Center Y", ImGuiDataType_Double, &m_ul_cy, &min_v, &max_v, "%.4f", ImGuiSliderFlags_ClampOnInput);
+    // Labels match typical sketch axes on screen: "Center X" drives plane Y (gp_Pnt2d::Y / view v), "Center Y" plane X (u).
+    transform_slider("Center X", ImGuiDataType_Double, &m_ul_cy, &min_v, &max_v, "%.4f", ImGuiSliderFlags_ClampOnInput);
+    transform_slider("Center Y", ImGuiDataType_Double, &m_ul_cx, &min_u, &max_u, "%.4f", ImGuiSliderFlags_ClampOnInput);
     transform_slider("Half width", ImGuiDataType_Double, &m_ul_hw, &k_min_half, &max_half_w, "%.4f",
                      ImGuiSliderFlags_ClampOnInput | ImGuiSliderFlags_Logarithmic);
     transform_slider("Half height", ImGuiDataType_Double, &m_ul_hh, &k_min_half, &max_half_h, "%.4f",
