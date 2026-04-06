@@ -562,7 +562,7 @@ static void apply_length_dimension_text_h_position(const PrsDim_LengthDimension_
   dim->SetDimensionAspect(aspect);
 }
 
-// OCCT draws the dimension on the side given by (plane_normal × edge_vector) for positive flyout.
+// OCCT draws the dimension on the side given by (plane_normal x edge_vector) for positive flyout.
 // When that side faces the sketch interior, negate flyout so the annotation sits outside the loop.
 static void orient_length_dimension_flyout_outward(const PrsDim_LengthDimension_ptr& dim,
                                                      const gp_Pnt&                   p1,
@@ -987,8 +987,8 @@ gp_Pnt2d rotate_point(const gp_Pnt2d& origin, const gp_Pnt2d& point, double angl
   const double sin_angle = sin(angle_rad);
 
   // Apply rotation matrix:
-  // [cos(θ) -sin(θ)] [x]
-  // [sin(θ)  cos(θ)] [y]
+  // [cos(theta) -sin(theta)] [x]
+  // [sin(theta)  cos(theta)] [y]
   const double rotated_x = dx * cos_angle - dy * sin_angle;
   const double rotated_y = dx * sin_angle + dy * cos_angle;
 

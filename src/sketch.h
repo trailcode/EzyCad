@@ -130,9 +130,9 @@ class Sketch
   [[nodiscard]] std::optional<gp_Pnt2d> pick_point_for_underlay_calib(const ScreenCoords& screen_coords);
   /// Set underlay from texture corner \a base, U edge vector \a axis_u, V edge vector \a axis_v (plane 2D).
   void                underlay_set_affine_plane(const gp_Pnt2d& base, const gp_Vec2d& axis_u, const gp_Vec2d& axis_v);
-  /// Uniformly scale texture axes so plane segment \a p0–\a p1 has length \a target_len; UV at \a p0 stays fixed.
+  /// Uniformly scale texture axes so plane segment \a p0-\a p1 has length \a target_len; UV at \a p0 stays fixed.
   [[nodiscard]] bool  underlay_rescale_uv_chord_to_length(const gp_Pnt2d& p0, const gp_Pnt2d& p1, double target_len);
-  /// Keep U axis; adjust V and base so segment \a y0–\a y1 has length \a target_len (after X calibration).
+  /// Keep U axis; adjust V and base so segment \a y0-\a y1 has length \a target_len (after X calibration).
   [[nodiscard]] bool  underlay_rescale_v_chord_to_length(const gp_Pnt2d& y0, const gp_Pnt2d& y1, double target_len);
   [[nodiscard]] gp_Vec2d underlay_axis_u_vec() const;
 

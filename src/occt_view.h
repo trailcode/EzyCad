@@ -182,7 +182,7 @@ class Occt_view : protected AIS_ViewController
   const Graphic3d_MaterialAspect& get_default_material() const;
   void                            set_default_material(const Graphic3d_MaterialAspect& mat);
 
-  // 3D view background and grid colors (0–1 RGB)
+  // 3D view background and grid colors (0-1 RGB)
   void get_bg_gradient_colors(float color1[3], float color2[3]) const;
   void set_bg_gradient_colors(float r1, float g1, float b1, float r2, float g2, float b2);
   int  get_bg_gradient_method() const;

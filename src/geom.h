@@ -131,11 +131,11 @@ gp_Pnt2d get_midpoint(const gp_Pnt2d& p1, const gp_Pnt2d& p2);
 
 gp_Pnt2d mirror_point(const gp_Pnt2d& p1, const gp_Pnt2d& p2, const gp_Pnt2d& point_to_mirror);
 
-/// Maps Options → edge length label index (0–3) to OCCT horizontal text placement.
+/// Maps Options -> edge length label index (0-3) to OCCT horizontal text placement.
 Prs3d_DimensionTextHorizontalPosition edge_dim_text_h_pos_from_index(int idx);
 
 /// When `sketch_faces_for_flyout` is non-null and non-empty, edge dimensions offset to the side that is
-/// void (not TopAbs_IN) relative to those faces — fixes concave / notch edges where the node centroid lies
+/// void (not TopAbs_IN) relative to those faces - fixes concave / notch edges where the node centroid lies
 /// on the wrong side. Otherwise `interior_ref` (e.g. node centroid) is used as a weaker heuristic.
 PrsDim_LengthDimension_ptr create_distance_annotation(const gp_Pnt& p1,
                                                       const gp_Pnt& p2,

@@ -44,6 +44,15 @@ Use this style when editing or adding C/C++ code in the EzyCad project (files un
 - Document non-obvious parameters or lifetime requirements (e.g. `// \`view\` must exist for the lifetime of this object`).
 - Prefer brief inline comments for non-obvious logic; keep comments in sync with code.
 
+## Source encoding (ASCII only)
+
+- **Comments, string literals, and documentation** in `src/` must be **7-bit ASCII** only (code points U+0000 through U+007F). Do not use Unicode punctuation or symbols (e.g. en dash, em dash, ellipsis, arrows, multiplication sign, middle dot, math letters like theta) or curly/smart apostrophes.
+- Use ASCII substitutes instead, for example:
+  - Ranges: `0-255`, `1-9` (hyphen), not en dash.
+  - Punctuation in prose: `-` for dash; `...` for ellipsis; `->` for “maps to” / arrows in comments; plain `'` for apostrophes.
+  - Math in comments: spell out (`sqrt(2)`, `theta`) or use ASCII operators (`x` for cross-product context, `*` for multiply).
+- Run `scripts/check-nonascii-src.ps1` (or `check-nonascii-src.cmd`) before committing when touching `src/`.
+
 ## C++ usage
 
 - Prefer **`enum class`** for enumerations.

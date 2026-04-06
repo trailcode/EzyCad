@@ -89,7 +89,7 @@ bool base64_decode(const std::string& in, std::vector<uint8_t>& out)
   return true;
 }
 
-/// Rec. 601 luma in 0..255 (integer). White → high, black → low.
+/// Rec. 601 luma in 0..255 (integer). White -> high, black -> low.
 inline unsigned luminance_u8(uint8_t r, uint8_t g, uint8_t b)
 {
   return (77u * static_cast<unsigned>(r) + 150u * static_cast<unsigned>(g) + 29u * static_cast<unsigned>(b)) >> 8;
@@ -145,7 +145,7 @@ inline void sample_rgba_bilinear(const uint8_t* rgba, int w, int h, double xf, d
   }
 }
 
-/// Builds a bottom-up pixmap for AIS_TexturedShape. \a axis_u / \a axis_v span the bitmap (2·half-width × 2·half-height).
+/// Builds a bottom-up pixmap for AIS_TexturedShape. \a axis_u / \a axis_v span the bitmap (2*half-width x 2*half-height).
 /// Uses an axis-aligned face in the sketch plane and inverse-rotated sampling so rotation matches OCCT texture mapping
 /// (which normalizes surface UV to an axis-aligned box and would shear a parallelogram face).
 Handle(Image_PixMap) make_pixmap_bottom_up_rgba(const uint8_t* rgba,
@@ -185,7 +185,7 @@ Handle(Image_PixMap) make_pixmap_bottom_up_rgba(const uint8_t* rgba,
   constexpr double k_eps = 1e-9;
   for (int rj = 0; rj < out_h; ++rj)
   {
-    // Bottom row rj = 0 → bottom of texture (small plane dv).
+    // Bottom row rj = 0 -> bottom of texture (small plane dv).
     const double t_b = (static_cast<double>(rj) + 0.5) / static_cast<double>(out_h);
     const double dv  = (2.0 * t_b - 1.0) * hy;
     uint8_t*     dstRow = dst + static_cast<std::size_t>(rj) * rowBytes;

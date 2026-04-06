@@ -29,9 +29,9 @@ json to_json(const gp_Dir& direction)
 json to_json(const gp_Pln& pln)
 {
   return {
-      {"origin",          to_json(pln.Location())}, // Plane’s origin point
-      {"normal",  to_json(pln.Axis().Direction())}, // Plane’s normal direction
-      { "xAxis", to_json(pln.XAxis().Direction())}  // Plane’s X axis
+      {"origin",          to_json(pln.Location())}, // Origin of the plane
+      {"normal",  to_json(pln.Axis().Direction())}, // Plane normal direction
+      { "xAxis", to_json(pln.XAxis().Direction())}  // Plane X axis direction
   };
 }
 

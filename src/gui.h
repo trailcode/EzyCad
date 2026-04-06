@@ -121,7 +121,7 @@ class GUI
 
   void save_occt_view_settings();
 
-  /// Default RGB (0–255) for sketch underlay line tint when importing a new image (see Settings).
+  /// Default RGB (0-255) for sketch underlay line tint when importing a new image (see Settings).
   void underlay_highlight_color_rgb(uint8_t& r, uint8_t& g, uint8_t& b) const;
 
   /// For scripting (Lua console): access the 3D view.
@@ -320,7 +320,7 @@ class GUI
   bool                  m_ul_key_white {true};
   bool                  m_ul_line_tint {true};
   float                 m_ul_tint_col[3] {1.f, 220.f / 255.f, 0.f};
-  /// Default underlay tint for new imports (0–1, persisted in ezycad_settings.json).
+  /// Default underlay tint for new imports (0-1, persisted in ezycad_settings.json).
   float                 m_underlay_highlight_color[3] {1.f, 220.f / 255.f, 0.f};
 
   std::unique_ptr<Lua_console>    m_lua_console;

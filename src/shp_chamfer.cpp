@@ -22,7 +22,7 @@ Status Shp_chamfer::add_chamfer(const ScreenCoords& screen_coords, const Chamfer
 
   BRepFilletAPI_MakeChamfer chamfer_maker(chamfer_src_shp->Shape());
 
-  // Convert diagonal distance to setback distance (divide by √2)
+  // Convert diagonal distance to setback distance (divide by sqrt(2))
   const double setback_dist = m_chamfer_dist / std::sqrt(2.0);
 
   switch (chamfer_mode)

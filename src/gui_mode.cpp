@@ -137,9 +137,9 @@ void GUI::on_key(int key, int scancode, int action, int mods)
   else
   {
     // -------------------------------------------------------------------------
-    // Shape selection filter hotkeys (Options → Selection Mode combo, Normal mode only)
+    // Shape selection filter hotkeys (Options -> Selection Mode combo, Normal mode only)
     //
-    // Maps main-row 1–9 and keypad 1–9 to TopAbs_ShapeEnum values 0..8 in OCCT order
+    // Maps main-row 1-9 and keypad 1-9 to TopAbs_ShapeEnum values 0..8 in OCCT order
     // (same order as c_names_TopAbs_ShapeEnum in utl_occt.h):
     //   1 Compound, 2 CompSolid, 3 Solid, 4 Shell, 5 Face, 6 Wire, 7 Edge, 8 Vertex, 9 Shape
     //
@@ -339,7 +339,7 @@ void GUI::options_normal_mode_()
   {
     ImGui::BeginTooltip();
     ImGui::PushTextWrapPos(ImGui::GetFontSize() * 35.0f);
-    ImGui::TextDisabled("Hotkeys: 1–9 (Normal mode) set filter when the 3D view has focus, not while typing in UI.");
+    ImGui::TextDisabled("Hotkeys: 1-9 (Normal mode) set filter when the 3D view has focus, not while typing in UI.");
     ImGui::PopTextWrapPos();
     ImGui::EndTooltip();
   }

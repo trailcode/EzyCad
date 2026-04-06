@@ -116,7 +116,7 @@ GUI& GUI::instance()
 
 void GUI::render_gui()
 {
-  // Underlay transform sliders use sketch_plane_view_aabb_2d → pt_on_plane → view projection.
+  // Underlay transform sliders use sketch_plane_view_aabb_2d -> pt_on_plane -> view projection.
   // FlushViewEvents must run before ImGui so the camera matches the latest pan/zoom/rotate (do_frame() runs later).
   m_view->flush_view_events();
 
@@ -980,7 +980,7 @@ void GUI::sketch_underlay_panel_settings_(const std::shared_ptr<Sketch>& sk)
   if (!sk->has_underlay())
     return;
 
-  if (ImGui::Checkbox("White paper → transparent", &m_ul_key_white))
+  if (ImGui::Checkbox("White paper -> transparent", &m_ul_key_white))
     sk->underlay_set_key_white_transparent(m_ul_key_white);
 
   if (m_show_tool_tips && ImGui::IsItemHovered())
@@ -1056,7 +1056,7 @@ void GUI::sketch_underlay_panel_settings_(const std::shared_ptr<Sketch>& sk)
     }
 
     ImGui::BeginDisabled(!sk_is_cur || pick_y);
-    if (ImGui::Button("Set X from edge…"))
+    if (ImGui::Button("Set X from edge..."))
       begin_underlay_calib_set_x_(sk);
     ImGui::EndDisabled();
     if (m_show_tool_tips && ImGui::IsItemHovered())
@@ -1066,7 +1066,7 @@ void GUI::sketch_underlay_panel_settings_(const std::shared_ptr<Sketch>& sk)
 
     ImGui::SameLine();
     ImGui::BeginDisabled(!sk_is_cur || !m_underlay_calib_have_x || pick_x);
-    if (ImGui::Button("Set Y from edge…"))
+    if (ImGui::Button("Set Y from edge..."))
       begin_underlay_calib_set_y_(sk);
     ImGui::EndDisabled();
     if (m_show_tool_tips && ImGui::IsItemHovered())

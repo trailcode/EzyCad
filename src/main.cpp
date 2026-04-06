@@ -1,6 +1,6 @@
 // Dear ImGui + EzyCad GUI + OCCT 3D view + chained GLFW input.
 // On wasm, sizing is handled by imgui_impl_glfw (OnCanvasSizeChange: CSS * DPR + canvas); do not
-// second-guess with extra glfwSetWindowSize/io overrides here — they fight that path and break input.
+// second-guess with extra glfwSetWindowSize/io overrides here - they fight that path and break input.
 
 #define WIN32_LEAN_AND_MEAN
 #include <stdio.h>
@@ -137,7 +137,7 @@ int main(int, char**)
 
 #ifdef __EMSCRIPTEN__
   // GLFW often reports content scale 1.0 on wasm while the browser uses devicePixelRatio > 1.
-  // Windows native uses monitor content scale for main_scale — align wasm so font/style size matches.
+  // Windows native uses monitor content scale for main_scale - align wasm so font/style size matches.
   {
     int ww = 0, wh = 0, fbw = 0, fbh = 0;
     glfwGetWindowSize(window, &ww, &wh);
@@ -175,7 +175,7 @@ int main(int, char**)
 #endif
   ImGui_ImplOpenGL3_Init(glsl_version);
 
-  // DroidSans at logical px; do not multiply by main_scale — FontScaleDpi applies HiDPI.
+  // DroidSans at logical px; do not multiply by main_scale - FontScaleDpi applies HiDPI.
   {
 #ifdef __EMSCRIPTEN__
     ImFont* font = io.Fonts->AddFontFromFileTTF("/DroidSans.ttf", k_imgui_base_font_size_px);
