@@ -213,12 +213,14 @@ class GUI
   // Sketch segment manual length input related
   std::function<void(float, bool)> m_dist_callback;
   ScreenCoords                     m_dist_edit_loc {glm::dvec2(0, 0)};
-  float                            m_dist_val;
+  float                            m_dist_val {};
+  bool                             m_dist_edit_focus_pending {false};
 
   // Sketch segment manual angle input related
   std::function<void(float, bool)> m_angle_callback;
   ScreenCoords                     m_angle_edit_loc {glm::dvec2(0, 0)};
-  float                            m_angle_val;
+  float                            m_angle_val {};
+  bool                             m_angle_edit_focus_pending {false};
 
   // Mode related
   Mode                        m_mode         = Mode::Normal;

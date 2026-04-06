@@ -116,6 +116,10 @@ GUI& GUI::instance()
 
 void GUI::render_gui()
 {
+  // Underlay transform sliders use sketch_plane_view_aabb_2d → pt_on_plane → view projection.
+  // FlushViewEvents must run before ImGui so the camera matches the latest pan/zoom/rotate (do_frame() runs later).
+  m_view->flush_view_events();
+
   if (m_dark_mode)
     ImGui::StyleColorsDark();
   else
@@ -558,7 +562,8 @@ void GUI::set_dist_edit(float dist, std::function<void(float, bool)>&& callback,
   else
     m_dist_edit_loc = ScreenCoords(glm::dvec2(ImGui::GetIO().MousePos.x, ImGui::GetIO().MousePos.y));
 
-  m_dist_callback = std::move(callback);
+  m_dist_callback           = std::move(callback);
+  m_dist_edit_focus_pending = true;
 }
 
 void GUI::hide_dist_edit()
@@ -591,8 +596,13 @@ void GUI::dist_edit_()
                    ImGuiWindowFlags_AlwaysAutoResize |
                    ImGuiWindowFlags_NoSavedSettings);
 
-  ImGui::SetNextItemWidth(80.0f);
-  ImGui::SetKeyboardFocusHere();
+  ImGui::SetNextItemWidth(72.0f);
+  // Focusing every frame prevents IsItemDeactivatedAfterEdit (click away / Tab) from ever committing.
+  if (m_dist_edit_focus_pending)
+  {
+    ImGui::SetKeyboardFocusHere(0);
+    m_dist_edit_focus_pending = false;
+  }
 
   // Add a small input float widget and check for changes
   if (ImGui::InputFloat("##dist_edit_float_value", &m_dist_val, 0.0f, 0.0f, "%.2f"))
@@ -601,6 +611,14 @@ void GUI::dist_edit_()
     m_dist_val = std::round(m_dist_val * 100.0f) / 100.0f;
 
   if (ImGui::IsItemDeactivatedAfterEdit() && m_dist_callback)
+  {
+    std::function<void(float, bool)> callback;
+    std::swap(callback, m_dist_callback);
+    callback(m_dist_val, true);
+  }
+
+  ImGui::SameLine();
+  if (ImGui::SmallButton("OK") && m_dist_callback)
   {
     std::function<void(float, bool)> callback;
     std::swap(callback, m_dist_callback);
@@ -623,7 +641,8 @@ void GUI::set_angle_edit(float angle, std::function<void(float, bool)>&& callbac
   else
     m_angle_edit_loc = ScreenCoords(glm::dvec2(ImGui::GetIO().MousePos.x, ImGui::GetIO().MousePos.y));
 
-  m_angle_callback = std::move(callback);
+  m_angle_callback           = std::move(callback);
+  m_angle_edit_focus_pending = true;
 }
 
 void GUI::hide_angle_edit()
@@ -661,8 +680,12 @@ void GUI::angle_edit_()
                    ImGuiWindowFlags_AlwaysAutoResize |
                    ImGuiWindowFlags_NoSavedSettings);
 
-  ImGui::SetNextItemWidth(80.0f);
-  ImGui::SetKeyboardFocusHere();
+  ImGui::SetNextItemWidth(72.0f);
+  if (m_angle_edit_focus_pending)
+  {
+    ImGui::SetKeyboardFocusHere(0);
+    m_angle_edit_focus_pending = false;
+  }
 
   // Add a small input float widget and check for changes
   if (ImGui::InputFloat("##angle_edit_float_value", &m_angle_val, 0.0f, 0.0f, "%.2f"))
@@ -671,6 +694,14 @@ void GUI::angle_edit_()
     m_angle_val = std::round(m_angle_val * 100.0f) / 100.0f;
 
   if (ImGui::IsItemDeactivatedAfterEdit() && m_angle_callback)
+  {
+    std::function<void(float, bool)> callback;
+    std::swap(callback, m_angle_callback);
+    callback(m_angle_val, true);
+  }
+
+  ImGui::SameLine();
+  if (ImGui::SmallButton("OK") && m_angle_callback)
   {
     std::function<void(float, bool)> callback;
     std::swap(callback, m_angle_callback);

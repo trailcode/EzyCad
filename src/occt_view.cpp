@@ -1074,13 +1074,17 @@ void Occt_view::set_grid_colors(float r1, float g1, float b1, float r2, float g2
   update_view_background_();
 }
 
-void Occt_view::do_frame()
+void Occt_view::flush_view_events()
 {
   if (!m_view.IsNull())
-  {
     FlushViewEvents(m_ctx, m_view, true);
+}
+
+void Occt_view::do_frame()
+{
+  flush_view_events();
+  if (!m_view.IsNull())
     m_view->Redraw();
-  }
 }
 
 void Occt_view::cleanup()

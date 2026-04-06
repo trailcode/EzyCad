@@ -84,6 +84,8 @@ class Occt_view : protected AIS_ViewController
   size_t redo_stack_size() const;
 
   void do_frame();
+  /// Apply pending navigation (pan/zoom/rotate) to the camera before UI uses view projection (e.g. underlay slider bounds).
+  void flush_view_events();
 
   // Mode related.
   void on_mode();
