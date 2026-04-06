@@ -3,6 +3,7 @@
 #include <algorithm>
 #include <array>
 #include <cctype>
+#include <cmath>
 #include <filesystem>
 #include <fstream>
 #include <nlohmann/json.hpp>
@@ -940,7 +941,7 @@ void GUI::sketch_underlay_panel_settings_(const std::shared_ptr<Sketch>& sk)
     ImGui::PushTextWrapPos(ImGui::GetFontSize() * 35.0f);
     ImGui::TextDisabled(
         "Import PNG/JPEG/BMP as a sketch underlay. Adjust half-width, half-height, center, and rotation "
-        "to match real dimensions, then Apply transform.");
+        "to match real dimensions; changes apply in real time.");
     ImGui::PopTextWrapPos();
     ImGui::EndTooltip();
   }
@@ -980,17 +981,55 @@ void GUI::sketch_underlay_panel_settings_(const std::shared_ptr<Sketch>& sk)
   if (ImGui::SliderFloat("Opacity", &m_ul_opacity, 0.f, 1.f, "%.2f"))
     sk->underlay_set_opacity(m_ul_opacity);
 
-  ImGui::InputDouble("Center X", &m_ul_cx, 0.0, 0.0, "%.4f");
-  ImGui::InputDouble("Center Y", &m_ul_cy, 0.0, 0.0, "%.4f");
-  ImGui::InputDouble("Half width", &m_ul_hw, 0.0, 0.0, "%.4f");
-  ImGui::InputDouble("Half height", &m_ul_hh, 0.0, 0.0, "%.4f");
-  ImGui::InputDouble("Rotation (deg)", &m_ul_rot, 0.0, 0.0, "%.2f");
-
-  if (ImGui::Button("Apply transform"))
+  ImGui::Separator();
+  ImGui::TextUnformatted("Transform (sketch plane, vs. current view)");
   {
-    m_view->push_undo_snapshot();
-    sk->underlay_set_center_extents_rotation(m_ul_cx, m_ul_cy, m_ul_hw, m_ul_hh, m_ul_rot);
-    sk->underlay_ui_params(m_ul_cx, m_ul_cy, m_ul_hw, m_ul_hh, m_ul_rot);
+    const ImGuiIO& io = ImGui::GetIO();
+    double           min_u = 0., min_v = 0., max_u = 1., max_v = 1.;
+    const bool       have_view =
+        m_view->sketch_plane_view_aabb_2d(sk->get_plane(), static_cast<double>(io.DisplaySize.x),
+                                          static_cast<double>(io.DisplaySize.y), min_u, min_v, max_u, max_v);
+    if (!have_view)
+    {
+      constexpr double k_fallback = 250.0;
+      min_u = m_ul_cx - k_fallback;
+      max_u = m_ul_cx + k_fallback;
+      min_v = m_ul_cy - k_fallback;
+      max_v = m_ul_cy + k_fallback;
+    }
+
+    const double span_u = std::max(max_u - min_u, 1e-6);
+    const double span_v = std::max(max_v - min_v, 1e-6);
+    const double half_span_u = 0.5 * span_u;
+    const double half_span_v = 0.5 * span_v;
+    // Allow underlay larger than the visible frustum (trace paper / zoomed views).
+    const double max_half_w = std::max(std::hypot(half_span_u, half_span_v) * 2.5, 1e-3);
+    const double max_half_h = max_half_w;
+    constexpr double k_min_half = 1e-6;
+    double           rot_min = -180.0;
+    double           rot_max = 180.0;
+
+    auto apply_ul_xform = [&]()
+    { sk->underlay_set_center_extents_rotation(m_ul_cx, m_ul_cy, m_ul_hw, m_ul_hh, m_ul_rot); };
+
+    auto transform_slider = [&](const char* label, ImGuiDataType type, void* p_data, const void* p_min,
+                                const void* p_max, const char* format, ImGuiSliderFlags flags = 0)
+    {
+      const bool changed = ImGui::SliderScalar(label, type, p_data, p_min, p_max, format, flags);
+      if (ImGui::IsItemActivated())
+        m_view->push_undo_snapshot();
+      if (changed)
+        apply_ul_xform();
+    };
+
+    transform_slider("Center X", ImGuiDataType_Double, &m_ul_cx, &min_u, &max_u, "%.4f", ImGuiSliderFlags_ClampOnInput);
+    transform_slider("Center Y", ImGuiDataType_Double, &m_ul_cy, &min_v, &max_v, "%.4f", ImGuiSliderFlags_ClampOnInput);
+    transform_slider("Half width", ImGuiDataType_Double, &m_ul_hw, &k_min_half, &max_half_w, "%.4f",
+                     ImGuiSliderFlags_ClampOnInput | ImGuiSliderFlags_Logarithmic);
+    transform_slider("Half height", ImGuiDataType_Double, &m_ul_hh, &k_min_half, &max_half_h, "%.4f",
+                     ImGuiSliderFlags_ClampOnInput | ImGuiSliderFlags_Logarithmic);
+    transform_slider("Rotation (deg)", ImGuiDataType_Double, &m_ul_rot, &rot_min, &rot_max, "%.1f",
+                     ImGuiSliderFlags_ClampOnInput);
   }
 }
 

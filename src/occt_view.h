@@ -160,6 +160,12 @@ class Occt_view : protected AIS_ViewController
   AIS_Shape_ptr           get_shape(const ScreenCoords& screen_coords);
   std::optional<gp_Pnt2d> pt_on_plane(const ScreenCoords& screen_coords, const gp_Pln& plane) const;
 
+  /// Axis-aligned bounds in sketch-plane 2D (gp_Pln UV) for the current view frustum intersecting \a pln.
+  /// Uses \a display_w / \a display_h in the same pixel space as ImGui / GLFW cursor (full window).
+  /// Returns false if the plane is not visible (e.g. headless or parallel view).
+  bool sketch_plane_view_aabb_2d(const gp_Pln& pln, double display_w, double display_h, double& out_min_u,
+                                 double& out_min_v, double& out_max_u, double& out_max_v) const;
+
   GUI&                    gui();
   AIS_InteractiveContext& ctx();
 

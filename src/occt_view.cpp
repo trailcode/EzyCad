@@ -31,7 +31,11 @@
 
 #include "dbg.h"
 #include "geom.h"
+#include "types.h"
 #include "utl.h"
+
+#include <algorithm>
+#include <cmath>
 #include "utl_occt.h"
 #include "gui.h"
 #include "shp_create.h"
@@ -567,6 +571,71 @@ std::optional<gp_Pnt2d> Occt_view::pt_on_plane(const ScreenCoords& screen_coords
 
   // No plane intersection.
   return std::nullopt;
+}
+
+bool Occt_view::sketch_plane_view_aabb_2d(const gp_Pln& pln, double display_w, double display_h, double& out_min_u,
+                                          double& out_min_v, double& out_max_u, double& out_max_v) const
+{
+  if (is_headless() || display_w < 4.0 || display_h < 4.0)
+    return false;
+
+  const double margin = 1.0;
+  const double x0     = margin;
+  const double y0     = margin;
+  const double x1     = display_w - 1.0 - margin;
+  const double y1     = display_h - 1.0 - margin;
+
+  struct
+  {
+    double x, y;
+  } corners[4] = {{x0, y0}, {x1, y0}, {x1, y1}, {x0, y1}};
+
+  bool        any = false;
+  double      min_u = 0., min_v = 0., max_u = 0., max_v = 0.;
+  const auto  consider = [&](const std::optional<gp_Pnt2d>& p2)
+  {
+    if (!p2)
+      return;
+    const double u = p2->X();
+    const double v = p2->Y();
+    if (!any)
+    {
+      min_u = max_u = u;
+      min_v = max_v = v;
+      any             = true;
+    }
+    else
+    {
+      min_u = std::min(min_u, u);
+      max_u = std::max(max_u, u);
+      min_v = std::min(min_v, v);
+      max_v = std::max(max_v, v);
+    }
+  };
+
+  for (const auto& c : corners)
+    consider(pt_on_plane(ScreenCoords(glm::dvec2(c.x, c.y)), pln));
+
+  if (!any)
+    return false;
+
+  constexpr double k_eps = 1e-9;
+  if (max_u - min_u < k_eps)
+  {
+    min_u -= 1.0;
+    max_u += 1.0;
+  }
+  if (max_v - min_v < k_eps)
+  {
+    min_v -= 1.0;
+    max_v += 1.0;
+  }
+
+  out_min_u = min_u;
+  out_min_v = min_v;
+  out_max_u = max_u;
+  out_max_v = max_v;
+  return true;
 }
 
 const TopoDS_Shape* Occt_view::get_(const ScreenCoords& screen_coords) const
