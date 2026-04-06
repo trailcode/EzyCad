@@ -198,7 +198,7 @@ if(DEFINED OCCT_3RD_PARTY_DIR)
   set(OCCT_3RD_PARTY_DIR "${OCCT_3RD_PARTY_DIR}" CACHE PATH "OCCT 3rd-party DLL root (freetype, ffmpeg, …)" FORCE)
 endif()
 
-file(GLOB ICON_ASSETS "${CMAKE_SOURCE_DIR}/icons/*.png")
+file(GLOB ICON_ASSETS "${CMAKE_SOURCE_DIR}/res/icons/*.png")
 file(GLOB WEB_FILES "${CMAKE_SOURCE_DIR}/web/EzyCad.html")
 
 set(OpenCASCADE_LIBS
@@ -307,7 +307,7 @@ if(CMAKE_CXX_COMPILER_ID STREQUAL "Emscripten")
     foreach(icon_file ${ICON_ASSETS})
         get_filename_component(icon_filename ${icon_file} NAME)
         set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} \
-            --preload-file ${icon_file}@/${icon_filename}")
+            --preload-file ${icon_file}@/res/icons/${icon_filename}")
     endforeach()
 
     list(APPEND OpenCASCADE_LIBS TKOpenGles)
@@ -401,6 +401,13 @@ else()
             $<TARGET_FILE_DIR:${PROJECT_NAME}>/res/default.ezy
         COMMENT "Copying res/ezycad_settings.json and res/default.ezy for native"
     )
+    add_custom_command(
+        TARGET ${PROJECT_NAME} POST_BUILD
+        COMMAND ${CMAKE_COMMAND} -E make_directory $<TARGET_FILE_DIR:${PROJECT_NAME}>/res/icons
+        COMMAND ${CMAKE_COMMAND} -E copy_directory
+            ${CMAKE_SOURCE_DIR}/res/icons
+            $<TARGET_FILE_DIR:${PROJECT_NAME}>/res/icons
+        COMMENT "Copying res/icons for native")
     file(GLOB RES_EXAMPLE_FILES "${CMAKE_SOURCE_DIR}/res/examples/*.ezy")
     if(RES_EXAMPLE_FILES)
       add_custom_command(
@@ -510,15 +517,14 @@ else()
       set(CONFIG_ASSETS ${CMAKE_SOURCE_DIR}/imgui.ini)
 
       # Copy DLLs and assets to Release configurations
-      foreach(file ${DLLS_RELEASE} ${DLLS_COMMON} ${FONT_ASSETS} ${ICON_ASSETS} ${CONFIG_ASSETS})
+      foreach(file ${DLLS_RELEASE} ${DLLS_COMMON} ${FONT_ASSETS} ${CONFIG_ASSETS})
         file(COPY "${file}" DESTINATION "${CMAKE_CURRENT_BINARY_DIR}/Release")
         file(COPY "${file}" DESTINATION "${CMAKE_CURRENT_BINARY_DIR}/RelWithDebInfo")
         file(COPY "${file}" DESTINATION "${CMAKE_CURRENT_BINARY_DIR}/MinSizeRel")
       endforeach(file)
-      
 
       # Copy DLLs and assets to Debug configuration
-      foreach(file ${DLLS_DEBUG} ${DLLS_COMMON} ${FONT_ASSETS} ${ICON_ASSETS} ${CONFIG_ASSETS})
+      foreach(file ${DLLS_DEBUG} ${DLLS_COMMON} ${FONT_ASSETS} ${CONFIG_ASSETS})
           file(COPY "${file}" DESTINATION "${CMAKE_CURRENT_BINARY_DIR}/Debug")
       endforeach(file)
 
