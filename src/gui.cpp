@@ -208,11 +208,11 @@ void GUI::load_examples_list_()
 
     std::string path  = p.string();
     std::string label = p.filename().string();
-    m_example_files.emplace_back(std::move(label), std::move(path));
+    m_example_files.push_back(Example_file{std::move(label), std::move(path)});
   }
   std::sort(m_example_files.begin(), m_example_files.end(),
-            [](const auto& a, const auto& b)
-            { return a.first < b.first; });
+            [](const Example_file& a, const Example_file& b)
+            { return a.label < b.label; });
 }
 
 void GUI::menu_bar_()
@@ -267,15 +267,15 @@ void GUI::menu_bar_()
 
     if (ImGui::BeginMenu("Examples"))
     {
-      for (const auto& [label, path] : m_example_files)
-        if (ImGui::MenuItem(label.c_str()))
+      for (const Example_file& ex : m_example_files)
+        if (ImGui::MenuItem(ex.label.c_str()))
         {
-          std::ifstream file(path);
+          std::ifstream file(ex.path);
           std::string   json_str {std::istreambuf_iterator<char>(file), std::istreambuf_iterator<char>()};
           if (file.good() && !json_str.empty())
-            on_file(path, json_str);
+            on_file(ex.path, json_str);
           else
-            show_message("Error opening example: " + label);
+            show_message("Error opening example: " + ex.label);
         }
 
       ImGui::EndMenu();
