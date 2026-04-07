@@ -70,7 +70,7 @@ Ensure the following dependencies are installed:
 - Build the project.
 - Serve the WebAssembly: `python.exe -m http.server 8000`
 - Or build and serve: `ninja && python.exe -m http.server 8000`
-- ImGui in `third_party` has been modified as explained in: https://github.com/ocornut/imgui/issues/7519#issuecomment-2629628233 to improve font rendering.
+- Dear ImGui under `third_party/imgui/` carries EzyCad-specific changes (font rendering); see [In-tree third-party libraries](#in-tree-third-party-libraries) at the end of this README.
 
 ### Artwork
 - Icons from: https://wiki.freecad.org/Artwork
@@ -84,3 +84,20 @@ Ensure the following dependencies are installed:
 EzyCad is maintained by a small team and we would love more contributors. If you can help with features, bug fixes, documentation, or testing - please jump in. Every contribution helps move the project forward.
 
 **Code style:** When contributing, please follow the project's style guide: [ezycad-style.md](ezycad-style.md). Both human developers and AI coding agents (e.g. Cursor, GitHub Copilot, ChatGPT) should adhere to it so that patches stay consistent and reviewable.
+
+## In-tree third-party libraries
+
+**Open CASCADE (OCCT) is not vendored here.** You build or install OCCT (and its binary redistributables) **outside** this tree and pass `OpenCASCADE_DIR` / `OCCT_3RD_PARTY_DIR` into CMake, as in [Building Instructions](#building-instructions) above.
+
+The **`third_party/`** folder holds other libraries **shipped inside the EzyCad repository** (typically committed as a vendored snapshot, not fetched by CMake except where noted):
+
+| Component | Location | Role |
+| --- | --- | --- |
+| **Dear ImGui** | `third_party/imgui/` | Immediate-mode UI used by the application. This tree includes **project-specific changes** for font rendering; see [imgui#7519 (comment)](https://github.com/ocornut/imgui/issues/7519#issuecomment-2629628233). |
+| **nlohmann/json** | `third_party/json/` (headers under `include/`) | JSON used by the project; CMake adds `third_party/json/include`. |
+| **tinyfiledialogs** | `third_party/tinyfiledialogs/` | Small C helper for native file dialogs on desktop. |
+| **ImGuiColorTextEdit** | `third_party/ImGuiColorTextEdit/` | Syntax-highlighted editor widget for the **Lua** and **Python** script consoles ([upstream](https://github.com/BalazsJako/ImGuiColorTextEdit)). |
+
+**ImGuiColorTextEdit:** Prefer a full checkout under `third_party/ImGuiColorTextEdit/` (see `third_party/README.md`). If that folder is missing, CMake **FetchContent** downloads upstream at a **fixed commit** (`ca2f9f1462e3b60e56351bc466acda448c5ea50d`) because the upstream repo has **no release tags**. To upgrade the editor, bump that SHA in `CMakeLists.txt` and refresh any vendored copy.
+
+**Windows note:** GLFW, GLEW, and Boost for MSVC are **not** stored under `third_party/`; NuGet installs them into **`${CMAKE_BINARY_DIR}/thirdParty`** when you configure (see [Notes for Windows Users](#notes-for-windows-users)).

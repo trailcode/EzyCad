@@ -153,10 +153,11 @@ list(APPEND srcs ${gui_mode_cpp})
 set(App_SRCS ${imguiSrc} ${srcs})
 set(EZYCAD_IMGUI_TEXT_EDITOR_CPP "${CMAKE_SOURCE_DIR}/third_party/ImGuiColorTextEdit/TextEditor.cpp")
 if(NOT EXISTS "${EZYCAD_IMGUI_TEXT_EDITOR_CPP}")
+  # Pinned commit (upstream has no release tags); bump when intentionally upgrading the editor.
   FetchContent_Declare(
     ImGuiColorTextEdit
     GIT_REPOSITORY https://github.com/BalazsJako/ImGuiColorTextEdit.git
-    GIT_TAG        master
+    GIT_TAG        ca2f9f1462e3b60e56351bc466acda448c5ea50d
     GIT_SHALLOW    TRUE)
   FetchContent_MakeAvailable(ImGuiColorTextEdit)
   set(_ige_fetch "${imguicolortextedit_SOURCE_DIR}")
