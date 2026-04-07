@@ -1,6 +1,9 @@
 /build*
 /.vscode/settings.json
+# Legacy name; some toolchains write here. Primary vendored deps live in third_party/.
 /thirdParty
-/.cursor/rules/ezycad-style.md
 /.vs
-/.cursor*
+# Cursor local UI files at repo root; track shared rules under .cursor/rules/
+/.cursor/*
+!/.cursor/rules/
+/.cursorignore

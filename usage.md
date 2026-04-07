@@ -26,7 +26,7 @@ EzyCad (Easy CAD) is a CAD application for hobbyist machinists to design and edi
 - OpenGL-compatible graphics card
 
 ### Installation
-1. Download the latest release for your operating system — see [README](README.md) for build instructions; automated builds and releases are not yet available (see [issue #45](https://github.com/trailcode/EzyCad/issues/45))
+1. Download the latest release for your operating system - see [readme](readme.md) for build instructions; automated builds and releases are not yet available (see [issue #45](https://github.com/trailcode/EzyCad/issues/45))
 2. Extract the archive to your preferred location
 3. Run the executable file
 
@@ -34,10 +34,10 @@ EzyCad (Easy CAD) is a CAD application for hobbyist machinists to design and edi
 
 ### Main Components
 1. **Menu Bar**
-   - **File** — [New](#new-project), [Open](#open-project), [Save](#save-project), Save as, [Import](#importing-3d-geometries), [Export](#exporting-3d-geometries), Examples, Exit
-   - **Edit** — [Undo](#edit-operations), [Redo](#edit-operations)
-   - **View** — [Settings, panes, Lua/Python consoles](#help-and-settings),
-   - **Help** — [About, Usage Guide](#help-and-settings)
+   - **File** - [New](#new-project), [Open](#open-project), [Save](#save-project), Save as, [Import](#importing-3d-geometries), [Export](#exporting-3d-geometries), Examples, Exit
+   - **Edit** - [Undo](#edit-operations), [Redo](#edit-operations)
+   - **View** - [Settings, panes, Lua/Python consoles](#help-and-settings),
+   - **Help** - [About, Usage Guide](#help-and-settings)
 
 2. **Toolbar**
    - Quick access to commonly used tools
@@ -66,38 +66,38 @@ EzyCad (Easy CAD) is a CAD application for hobbyist machinists to design and edi
 
 ### Help and Settings
 
-**View menu** — Toggle panes and open settings:
-- **Settings** — Opens the Settings dialog. Use it to adjust:
-  - **Dark mode** — Toggle dark theme.
-  - **3D view background** — Background gradient colors and blend direction.
-  - **3D view grid** — Grid colors.
-  - **Defaults** — Restore default settings.
-- **Options** — Show or hide the Options panel.
-- **Sketch List** — Show or hide the [Sketch List](#sketch-list) pane.
-- **Shape List** — Show or hide the Shape List pane.
-- **Log** — Show or hide the Log window.
-- **Lua Console** — Show or hide the interactive Lua prompt and `res/scripts/lua` editors. See [Scripting (Lua and Python)](#scripting-lua-and-python).
-- **Python Console** — Same for Python when the app is built with embedded Python (native only; not in the WebAssembly build).
-- **Debug** — Show or hide the debug pane (debug builds only).
+**View menu** - Toggle panes and open settings:
+- **Settings** - Opens the Settings dialog. Use it to adjust:
+  - **Dark mode** - Toggle dark theme.
+  - **3D view background** - Background gradient colors and blend direction.
+  - **3D view grid** - Grid colors.
+  - **Defaults** - Restore default settings.
+- **Options** - Show or hide the Options panel.
+- **Sketch List** - Show or hide the [Sketch List](#sketch-list) pane.
+- **Shape List** - Show or hide the Shape List pane.
+- **Log** - Show or hide the Log window.
+- **Lua Console** - Show or hide the interactive Lua prompt and `res/scripts/lua` editors. See [Scripting (Lua and Python)](#scripting-lua-and-python).
+- **Python Console** - Same for Python when the app is built with embedded Python (native only; not in the WebAssembly build).
+- **Debug** - Show or hide the debug pane (debug builds only).
 
 **Help menu**
-- **About** — Opens the [project README](README.md) in the browser.
-- **Usage Guide** — Opens [this usage guide](usage.md) in the browser.
+- **About** - Opens the [project overview](readme.md) in the browser.
+- **Usage Guide** - Opens [this usage guide](usage.md) in the browser.
 
-**Saving settings** — **File → Save settings** (Emscripten) or the application’s save-on-exit behavior saves current layout, view, and the above options so they persist next time you run EzyCad.
+**Saving settings** - **File -> Save settings** (Emscripten) or the application's save-on-exit behavior saves current layout, view, and the above options so they persist next time you run EzyCad.
 
 ### Sketch List
 
-The **Sketch List** pane lists all 2D sketches in the current document. Open it from **View → Sketch List**.
+The **Sketch List** pane lists all 2D sketches in the current document. Open it from **View -> Sketch List**.
 
 For each sketch you can:
 
-- **Set current** — Use the radio button (○) to make this sketch the current one. The current sketch is used for editing and for operations such as [extrude](#extrude-sketch-face-tool-e).
-- **Rename** — Click the name field and type to change the sketch’s name.
-- **Visibility** — Use the checkbox to show or hide the sketch in the 3D view.
-- **Delete** — Right‑click the sketch name and choose **Delete** to remove the sketch from the document.
+- **Set current** - Use the radio button (circle) to make this sketch the current one. The current sketch is used for editing and for operations such as [extrude](#extrude-sketch-face-tool-e).
+- **Rename** - Click the name field and type to change the sketch's name.
+- **Visibility** - Use the checkbox to show or hide the sketch in the 3D view.
+- **Delete** - Right-click the sketch name and choose **Delete** to remove the sketch from the document.
 
-The window can be closed with its close button; use **View → Sketch List** again to show it.
+The window can be closed with its close button; use **View -> Sketch List** again to show it.
 
 ## Scripting (Lua and Python)
 
@@ -129,12 +129,12 @@ For shortcuts, sample scripts, binding tables, and limitations, see the **[Scrip
 
 ### Startup project (defaults)
 
-Similar to Blender’s startup file: EzyCad can load a **default document** when it starts, including geometry, camera/view (stored in the `.ezy`), and **current tool mode**.
+Similar to Blender's startup file: EzyCad can load a **default document** when it starts, including geometry, camera/view (stored in the `.ezy`), and **current tool mode**.
 
-- **First launch / no custom startup** — The app loads the bundled template `res/default.ezy` from the install or build output.
-- **Save your own startup** — Set up the scene and mode the way you want, open **Settings** (menu bar), expand **Startup project**, and click **Save current as startup project**. On desktop, this writes `startup.ezy` under your user config folder (e.g. Windows: `%APPDATA%\EzyCad\`; Linux: `~/.config/EzyCad/`; macOS: `~/Library/Application Support/EzyCad/`). On the web build, it is stored in the browser (localStorage).
-- **Next runs** — If a saved startup exists, it is loaded instead of the bundled file. The session starts **untitled** (so **Save** does not overwrite your startup file until you pick a path).
-- **Clear saved startup** — In **Settings → Startup project**, click **Clear saved startup**; the next launch uses the bundled `res/default.ezy` again.
+- **First launch / no custom startup** - The app loads the bundled template `res/default.ezy` from the install or build output.
+- **Save your own startup** - Set up the scene and mode the way you want, open **Settings** (menu bar), expand **Startup project**, and click **Save current as startup project**. On desktop, this writes `startup.ezy` under your user config folder (e.g. Windows: `%APPDATA%\EzyCad\`; Linux: `~/.config/EzyCad/`; macOS: `~/Library/Application Support/EzyCad/`). On the web build, it is stored in the browser (localStorage).
+- **Next runs** - If a saved startup exists, it is loaded instead of the bundled file. The session starts **untitled** (so **Save** does not overwrite your startup file until you pick a path).
+- **Clear saved startup** - In **Settings -> Startup project**, click **Clear saved startup**; the next launch uses the bundled `res/default.ezy` again.
 
 ## Edit Operations
 
@@ -154,8 +154,8 @@ Edit operations change your model (sketches or 3D shapes) and can be navigated w
     - When you undo or redo a step, the application returns to the mode that was active for that operation (e.g., sketch inspection vs normal inspection).
 
   - **Shortcuts**
-    - <kbd>Ctrl</kbd>+<kbd>Z</kbd> — Undo last operation.
-    - <kbd>Ctrl</kbd>+<kbd>Y</kbd> or <kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>Z</kbd> — Redo.
+    - <kbd>Ctrl</kbd>+<kbd>Z</kbd> - Undo last operation.
+    - <kbd>Ctrl</kbd>+<kbd>Y</kbd> or <kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>Z</kbd> - Redo.
     - These shortcuts work even when focus is in a pane such as Sketch List, Options, or Log.
 
   - **Limits and notes**
@@ -167,8 +167,8 @@ Press <kbd>Esc</kbd> to cancel the current action or step back to a broader mode
 
 - **If something is in progress:** <kbd>Esc</kbd> cancels it and discards the change. Examples: cancel a line you are drawing, revert an unconfirmed [move](#shape-move-tool-g)/[rotate](#shape-rotate-tool-r)/[scale](#shape-scale-tool-s), cancel [extrude](#extrude-sketch-face-tool-e) preview, clear the distance or angle input dialog.
 - **If nothing is in progress:** <kbd>Esc</kbd> steps the application to the **parent mode** (one level up):
-  - From a **sketch tool** (e.g. Add line, Add circle, Operation axis) → **Sketch inspection mode**.
-  - From **Sketch inspection**, **Normal**, or any **shape tool** ([Move](#shape-move-tool-g), [Rotate](#shape-rotate-tool-r), [Scale](#shape-scale-tool-s), [Extrude](#extrude-sketch-face-tool-e), [Chamfer](#other-feature-operations), [Fillet](#other-feature-operations), [Polar duplicate](#shape-polar-duplicate-tool), [Create sketch from face](usage-sketch.md#create-sketch-from-planar-face-tool)) → **Normal** (inspection) mode.
+  - From a **sketch tool** (e.g. Add line, Add circle, Operation axis) -> **Sketch inspection mode**.
+  - From **Sketch inspection**, **Normal**, or any **shape tool** ([Move](#shape-move-tool-g), [Rotate](#shape-rotate-tool-r), [Scale](#shape-scale-tool-s), [Extrude](#extrude-sketch-face-tool-e), [Chamfer](#other-feature-operations), [Fillet](#other-feature-operations), [Polar duplicate](#shape-polar-duplicate-tool), [Create sketch from face](usage-sketch.md#create-sketch-from-planar-face-tool)) -> **Normal** (inspection) mode.
 
 So repeated <kbd>Esc</kbd> from a sketch drawing tool first cancels the current element, then returns to Sketch inspection, then to Normal.
 
@@ -215,7 +215,7 @@ In addition to creating 3D shapes from sketches, EzyCad supports importing exist
 | **PLY** (`.ply`) | Triangle mesh; fast to load compared to heavy STEP assemblies |
 
 **How to import:**
-1. Use **File → Import**
+1. Use **File -> Import**
 2. Pick a `.step`, `.stp`, or `.ply` file (the dialog lists these types)
 3. Geometry is added as 3D shape(s) in the document
 4. You can move, rotate, scale, and use imported bodies in [boolean operations](#other-feature-operations) like native solids where the geometry allows it
@@ -224,7 +224,7 @@ In addition to creating 3D shapes from sketches, EzyCad supports importing exist
 - Supported: **ASCII** PLY and **binary little-endian** PLY.
 - Not supported: **binary big-endian** PLY.
 - Meshes must use **triangular faces** (3 indices per face). Typical `vertex` properties **x**, **y**, **z** (and optional extra properties) are accepted; **face** elements must include a **list** property (e.g. `property list uchar int vertex_indices`) suitable for triangles.
-- Imported PLY data becomes a **mesh-style** solid (many triangular faces), not a parametric STEP solid—file size and display performance depend on triangle count.
+- Imported PLY data becomes a **mesh-style** solid (many triangular faces), not a parametric STEP solid - file size and display performance depend on triangle count.
 
 **STEP import notes:**
 - If the file cannot be read or contains no transferable geometry, a **message** explains the failure (invalid data, empty transfer, etc.).
@@ -233,7 +233,7 @@ In addition to creating 3D shapes from sketches, EzyCad supports importing exist
 
 ### Exporting 3D geometries
 
-Use **File → Export** to save the current model for other CAD tools, CAM, or 3D printing.
+Use **File -> Export** to save the current model for other CAD tools, CAM, or 3D printing.
 
 | | |
 | ---: | --- |
@@ -246,7 +246,7 @@ Use **File → Export** to save the current model for other CAD tools, CAM, or 3
 
 **Mesh exports (STL and PLY):** Surfaces are **tessellated** with a fixed linear deflection (same idea as typical STL export). Very complex B-rep models produce large mesh files.
 
-**How to export:** **File → Export →** choose STEP, IGES, STL (binary), or **PLY (binary)**, then pick a save location (desktop) or accept the browser download (WebAssembly).
+**How to export:** **File -> Export ->** choose STEP, IGES, STL (binary), or **PLY (binary)**, then pick a save location (desktop) or accept the browser download (WebAssembly).
 
 For detailed information on creating 2D geometry, see the [2D Sketching](usage-sketch.md) guide. For information on working with 3D shapes, see the [3D Modeling](#3d-modeling) section.
 
@@ -445,7 +445,7 @@ The polar duplicate tool allows you to create multiple copies of selected shapes
 2. **Select shape**: Select the shape that you want to duplicate
 3. **Define polar arm**: Move the mouse to see a preview line (polar arm) from the shape center to the mouse cursor. Move to the origin of the operation
 4. **Configure options** in the options panel:
-   - **Polar angle**: Set the total angle for the pattern (e.g., 360° for full circle, 180° for half circle)
+   - **Polar angle**: Set the total angle for the pattern (e.g., 360 deg for full circle, 180 deg for half circle)
    - **Num Elms**: Set the number of duplicate elements to create
    - **Rotate dups**: Checkbox to rotate each duplicate as it's copied (default: enabled)
    - **Combine dups**: Checkbox to combine all duplicates into a single shape (default: enabled)
@@ -455,7 +455,7 @@ The polar duplicate tool allows you to create multiple copies of selected shapes
 
 | | |
 | ---: | --- |
-| **Polar angle** | The total angular span of the pattern. 360° creates a full circle, 180° creates a half circle, etc. |
+| **Polar angle** | The total angular span of the pattern. 360 deg creates a full circle, 180 deg creates a half circle, etc. |
 | **Num Elms** | The number of duplicate elements to create. The original shape is not counted, so 5 elements means 5 copies plus the original. |
 | **Rotate dups** | When enabled, each duplicate is rotated around its own center as it's positioned. When disabled, duplicates maintain their original orientation. |
 | **Combine dups** | When enabled, all duplicates are fused together into a single shape. When disabled, each duplicate remains a separate shape. |
@@ -518,7 +518,7 @@ The polar duplicate tool allows you to create multiple copies of selected shapes
 
 ### Shape selection filter (Normal mode only)
 
-In **Normal** mode, number keys set the **Selection Mode** filter for picking 3D shapes (same control as **Options → Selection Mode**). Main keyboard **<kbd>1</kbd>–<kbd>9</kbd>** and keypad **<kbd>1</kbd>–<kbd>9</kbd>** are supported. Order matches Open CASCADE `TopAbs_ShapeEnum` (see `utl_occt.h` / combo labels):
+In **Normal** mode, number keys set the **Selection Mode** filter for picking 3D shapes (same control as **Options -> Selection Mode**). Main keyboard **<kbd>1</kbd>-<kbd>9</kbd>** and keypad **<kbd>1</kbd>-<kbd>9</kbd>** are supported. Order matches Open CASCADE `TopAbs_ShapeEnum` (see `utl_occt.h` / combo labels):
 
 | Key | Filter |
 | ---: | --- |
@@ -532,11 +532,11 @@ In **Normal** mode, number keys set the **Selection Mode** filter for picking 3D
 | <kbd>8</kbd> | Vertex |
 | <kbd>9</kbd> | Shape |
 
-While focus is in a text field (dimension input, script console, etc.), **<kbd>1</kbd>–<kbd>9</kbd>** are left to the UI: `main.cpp` does not call the global key handler when ImGui reports `WantTextInput`. Chamfer, fillet, and sketch modes may change the filter automatically when you enter them.
+While focus is in a text field (dimension input, script console, etc.), **<kbd>1</kbd>-<kbd>9</kbd>** are left to the UI: `main.cpp` does not call the global key handler when ImGui reports `WantTextInput`. Chamfer, fillet, and sketch modes may change the filter automatically when you enter them.
 
 ### Lua and Python consoles
 
-Open or close the **Lua** or **Python** consoles from **View → Lua Console** or **View → Python Console** (no default keyboard shortcuts).
+Open or close the **Lua** or **Python** consoles from **View -> Lua Console** or **View -> Python Console** (no default keyboard shortcuts).
 
 ## View Controls
 
@@ -636,4 +636,4 @@ Open or close the **Lua** or **Python** consoles from **View → Lua Console** o
 
 ---
 
-For more information, see the [README](README.md) or the [GitHub repository](https://github.com/trailcode/EzyCad).
+For more information, see [readme](readme.md) or the [GitHub repository](https://github.com/trailcode/EzyCad).

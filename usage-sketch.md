@@ -28,7 +28,7 @@ This guide covers all 2D sketching tools and operations in EzyCad. For the main 
    - <img src="res/icons/Sketcher_CreateSlot.png" alt="Slot Tool" width="20" height="20"> [Add slots](#slot-creation-tool)
 
 2. **Sketch Operations**
-   - <img src="res/icons/Sketcher_MirrorSketch.png" alt="Operation Axis Tool" width="20" height="20"> [Define operation axis](#operation-axis-tool) — Mirror sketches, revolve edges or faces.
+   - <img src="res/icons/Sketcher_MirrorSketch.png" alt="Operation Axis Tool" width="20" height="20"> [Define operation axis](#operation-axis-tool) - Mirror sketches, revolve edges or faces.
    - <img src="res/icons/TechDraw_LengthDimension.png" alt="Toggle Edge Dimensions Tool" width="20" height="20"> [Toggle edge dimensions](#toggle-edge-dimensions-tool)
    - <img src="res/icons/Macro_FaceToSketch_48.png" alt="Create Sketch from Planar Face Tool" width="20" height="20"> [Create sketch from planar face](#create-sketch-from-planar-face-tool)
 
@@ -439,7 +439,7 @@ The slot tool allows you to create an oblong or oval-shaped slot with rounded en
 5. Move the mouse to see a preview of the slot shape
 6. Click to set a point that defines the radius of the arcs, or press <kbd>Tab</kbd> to enter exact distance values
    - **Important**: The radius is measured from the second arc center (the point you clicked in step 4) to this third point
-   - This radius determines the cross section: the slot's cross-section dimension equals 2 Ã— radius
+   - This radius determines the cross section: the slot's cross-section dimension equals 2 * radius
 7. The slot will be automatically created with two arcs and two straight edges and added to your sketch
 
 **Point order:**
@@ -462,7 +462,7 @@ The slot tool allows you to create an oblong or oval-shaped slot with rounded en
 **Tips:**
 - The slot length is determined by the distance between the first and second arc centers
 - The radius of both arcs is determined by the distance from the second arc center to the radius point (third click)
-- The slot's cross section (the dimension perpendicular to the slot length) equals 2 Ã— radius
+- The slot's cross section (the dimension perpendicular to the slot length) equals 2 * radius
   - This is because each arc is a semicircle with the specified radius, extending equally in both perpendicular directions
   - For example, if you click the radius point 3 units away from the second arc center, the slot cross section will be 6 units
 - Both arcs have the same radius, creating a symmetric slot shape

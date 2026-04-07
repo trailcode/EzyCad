@@ -1,0 +1,18 @@
+# Lightweight checks that do not require OpenCASCADE or a full native build.
+name: Source hygiene
+
+on:
+  push:
+    branches: [main, master]
+  pull_request:
+    branches: [main, master]
+
+jobs:
+  ascii-src:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Check src/ for non-ASCII (comments and strings)
+        shell: cmd
+        run: scripts\check-nonascii-src.cmd

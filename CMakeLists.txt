@@ -129,7 +129,7 @@ file(GLOB imguiSrc
   "third_party/imgui/imgui_tables.cpp"
   "third_party/imgui/emscripten/emscripten_mainloop_stub.h")
 
-file(GLOB srcs "src/*.cpp" "src/*.h" "src/*.inl")
+file(GLOB srcs CONFIGURE_DEPENDS "src/*.cpp" "src/*.h" "src/*.inl")
 #list(FILTER srcs EXCLUDE REGEX ".*main\\.cpp$")
 get_filename_component(full_path_main_cpp ${CMAKE_CURRENT_SOURCE_DIR}/src/main.cpp ABSOLUTE)
 list(REMOVE_ITEM srcs ${full_path_main_cpp})
@@ -150,7 +150,13 @@ list(APPEND srcs ${gui_mode_cpp})
 # Define source files for the application
 # Including ImGui sources and main application file
 set(App_SRCS ${imguiSrc} ${srcs})
-list(APPEND App_SRCS "${CMAKE_SOURCE_DIR}/third_party/ImGuiColorTextEdit/TextEditor.cpp")
+set(EZYCAD_IMGUI_TEXT_EDITOR_CPP "${CMAKE_SOURCE_DIR}/third_party/ImGuiColorTextEdit/TextEditor.cpp")
+if(NOT EXISTS "${EZYCAD_IMGUI_TEXT_EDITOR_CPP}")
+  message(FATAL_ERROR
+    "Missing ImGuiColorTextEdit: \"${EZYCAD_IMGUI_TEXT_EDITOR_CPP}\". "
+    "See third_party/README.md for setup.")
+endif()
+list(APPEND App_SRCS "${EZYCAD_IMGUI_TEXT_EDITOR_CPP}")
 
 # Configure platform-specific GUI settings
 # WIN32 for Windows GUI application
@@ -198,8 +204,13 @@ if(DEFINED OCCT_3RD_PARTY_DIR)
   set(OCCT_3RD_PARTY_DIR "${OCCT_3RD_PARTY_DIR}" CACHE PATH "OCCT 3rd-party DLL root (freetype, ffmpeg, …)" FORCE)
 endif()
 
-file(GLOB ICON_ASSETS "${CMAKE_SOURCE_DIR}/res/icons/*.png")
-file(GLOB WEB_FILES "${CMAKE_SOURCE_DIR}/web/EzyCad.html")
+file(GLOB ICON_ASSETS CONFIGURE_DEPENDS "${CMAKE_SOURCE_DIR}/res/icons/*.png")
+file(GLOB WEB_FILES CONFIGURE_DEPENDS "${CMAKE_SOURCE_DIR}/web/*.html")
+set(WEB_FILES_REL)
+foreach(f ${WEB_FILES})
+  file(RELATIVE_PATH f_rel "${CMAKE_SOURCE_DIR}" "${f}")
+  list(APPEND WEB_FILES_REL "${f_rel}")
+endforeach()
 
 set(OpenCASCADE_LIBS
     TKFillet
@@ -361,19 +372,6 @@ if(CMAKE_CXX_COMPILER_ID STREQUAL "Emscripten")
         lua
         ${OpenCASCADE_LIBS})
 
-    target_sources(${PROJECT_NAME} PRIVATE ${WEB_FILES})
-
-    # Add web/EzyCad.html to a "web" filter in the IDE
-    file(GLOB WEB_FILES "${CMAKE_SOURCE_DIR}/web/EzyCad.html")
-    set(WEB_FILES_REL)
-    foreach(f ${WEB_FILES})
-        file(RELATIVE_PATH f_rel "${CMAKE_SOURCE_DIR}" "${f}")
-        list(APPEND WEB_FILES_REL "${f_rel}")
-    endforeach()
-    source_group("web" FILES ${WEB_FILES_REL})
-
-    # Add to target sources (so it appears in the IDE)
-    target_sources(${PROJECT_NAME} PRIVATE ${WEB_FILES_REL})
 else()
 
     list(APPEND OpenCASCADE_LIBS TKOpenGl)
@@ -557,14 +555,14 @@ target_link_libraries(${PROJECT_NAME} ${OPENGL_LIBRARIES} ${OPENGL_gl_LIBRARY})
 
 source_group("imgui" FILES ${imguiSrc})
 source_group("src" FILES ${srcs})
-source_group("web" FILES ${WEB_FILES})
+source_group("web" FILES ${WEB_FILES_REL})
 
 
-# Add README to VS solution
+# Add readme to VS solution
 if(MSVC)
     # Create a source group for documentation files
     set(DOC_FILES
-        ${CMAKE_CURRENT_SOURCE_DIR}/README.md
+        ${CMAKE_CURRENT_SOURCE_DIR}/readme.md
         ${CMAKE_CURRENT_SOURCE_DIR}/usage.md
         ${CMAKE_CURRENT_SOURCE_DIR}/bugs.md
     )
@@ -593,7 +591,7 @@ if(NOT CMAKE_CXX_COMPILER_ID STREQUAL "Emscripten")
     enable_testing()
     
     # Create a test executable
-    file(GLOB TEST_SRCS "tests/*.cpp" "tests/*.h")
+    file(GLOB TEST_SRCS CONFIGURE_DEPENDS "tests/*.cpp" "tests/*.h")
     add_executable(${PROJECT_NAME}_tests ${TEST_SRCS})
     
     # Add src directory to include paths for tests
@@ -617,15 +615,10 @@ if(NOT CMAKE_CXX_COMPILER_ID STREQUAL "Emscripten")
     gtest_discover_tests(${PROJECT_NAME}_tests)
 endif()
 
-# After add_executable(${PROJECT_NAME} ...)
-file(GLOB WEB_FILES "${CMAKE_SOURCE_DIR}/web/EzyCad.html")
-set(WEB_FILES_REL)
-foreach(f ${WEB_FILES})
-    file(RELATIVE_PATH f_rel "${CMAKE_SOURCE_DIR}" "${f}")
-    list(APPEND WEB_FILES_REL "${f_rel}")
-endforeach()
-source_group("web" FILES ${WEB_FILES_REL})
-target_sources(${PROJECT_NAME} PRIVATE ${WEB_FILES_REL})
+# web/*.html listed in IDE (single target_sources; Emscripten + native)
+if(WEB_FILES_REL)
+  target_sources(${PROJECT_NAME} PRIVATE ${WEB_FILES_REL})
+endif()
 
 # Runtime assets: show res/ in the IDE (matches POST_BUILD copy to output dir)
 file(GLOB_RECURSE RES_FILES CONFIGURE_DEPENDS "${CMAKE_SOURCE_DIR}/res/*")

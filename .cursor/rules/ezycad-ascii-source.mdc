@@ -1,0 +1,11 @@
+---
+description: EzyCad C/C++ sources use ASCII-only text in comments and strings
+globs: src/**/*
+alwaysApply: false
+---
+
+# ASCII-only source text
+
+In `src/`, keep **comments and string literals 7-bit ASCII** (no Unicode punctuation or symbols: smart quotes, en/em dashes, arrows, ellipsis, etc.). Use ASCII equivalents (`-`, `...`, `->`, `sqrt(2)`, plain `'`).
+
+Project style details: `ezycad-style.md` (section **Source encoding**). Verify with `scripts/check-nonascii-src.ps1`.
