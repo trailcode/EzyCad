@@ -1,0 +1,2 @@
+# Consistent LF for Markdown (diffs, GitHub, cross-platform editors)
+*.md text eol=lf
