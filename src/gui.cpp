@@ -436,7 +436,7 @@ void GUI::menu_bar_()
   if (ImGui::BeginMenu("Help"))
   {
     if (ImGui::MenuItem("About"))
-      open_url_("https://github.com/trailcode/EzyCad/blob/main/readme.md");
+      open_url_("https://github.com/trailcode/EzyCad/blob/main/README.md");
 
     if (ImGui::MenuItem("Usage Guide"))
       open_url_("https://github.com/trailcode/EzyCad/blob/main/usage.md");

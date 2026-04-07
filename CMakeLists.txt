@@ -106,9 +106,10 @@ if(MSVC_VERSION)
   if(NOT NUGET)
     message(FATAL_ERROR "Cannot find nuget command line tool.\nInstall it with e.g. choco install nuget.commandline")
   endif()
-  execute_process(COMMAND ${NUGET} install glfw                     -Version ${GLFW_VERSION}    -o thirdParty)
-  execute_process(COMMAND ${NUGET} install unofficial-flayan-glew   -Version ${GLEW_VERSION}    -o thirdParty)
-  execute_process(COMMAND ${NUGET} install boost                    -Version ${BOOST_VERSION}   -o thirdParty)
+  # Output must be under the build tree (CMAKE_BINARY_DIR), not the shell CWD, or clean out-of-source configures fail.
+  execute_process(COMMAND ${NUGET} install glfw                     -Version ${GLFW_VERSION}    -OutputDirectory "${CMAKE_BINARY_DIR}/thirdParty")
+  execute_process(COMMAND ${NUGET} install unofficial-flayan-glew   -Version ${GLEW_VERSION}    -OutputDirectory "${CMAKE_BINARY_DIR}/thirdParty")
+  execute_process(COMMAND ${NUGET} install boost                    -Version ${BOOST_VERSION}   -OutputDirectory "${CMAKE_BINARY_DIR}/thirdParty")
   # Include Boost from NuGet installation on Windows
   INCLUDE_DIRECTORIES(${PROJECT_NAME} ${BINARY_DIR}/thirdParty/boost.${BOOST_VERSION}/lib/native/include)
 else()
@@ -152,9 +153,21 @@ list(APPEND srcs ${gui_mode_cpp})
 set(App_SRCS ${imguiSrc} ${srcs})
 set(EZYCAD_IMGUI_TEXT_EDITOR_CPP "${CMAKE_SOURCE_DIR}/third_party/ImGuiColorTextEdit/TextEditor.cpp")
 if(NOT EXISTS "${EZYCAD_IMGUI_TEXT_EDITOR_CPP}")
-  message(FATAL_ERROR
-    "Missing ImGuiColorTextEdit: \"${EZYCAD_IMGUI_TEXT_EDITOR_CPP}\". "
-    "See third_party/README.md for setup.")
+  FetchContent_Declare(
+    ImGuiColorTextEdit
+    GIT_REPOSITORY https://github.com/BalazsJako/ImGuiColorTextEdit.git
+    GIT_TAG        master
+    GIT_SHALLOW    TRUE)
+  FetchContent_MakeAvailable(ImGuiColorTextEdit)
+  set(_ige_fetch "${imguicolortextedit_SOURCE_DIR}")
+  set(_ige_stage "${CMAKE_BINARY_DIR}/ImGuiColorTextEdit_fetch/ImGuiColorTextEdit")
+  file(MAKE_DIRECTORY "${CMAKE_BINARY_DIR}/ImGuiColorTextEdit_fetch")
+  file(COPY "${_ige_fetch}/" DESTINATION "${_ige_stage}")
+  set(EZYCAD_IMGUI_TEXT_EDITOR_CPP "${_ige_stage}/TextEditor.cpp")
+  include_directories("${CMAKE_BINARY_DIR}/ImGuiColorTextEdit_fetch")
+  if(NOT EXISTS "${EZYCAD_IMGUI_TEXT_EDITOR_CPP}")
+    message(FATAL_ERROR "ImGuiColorTextEdit fetch did not provide TextEditor.cpp (see third_party/README.md).")
+  endif()
 endif()
 list(APPEND App_SRCS "${EZYCAD_IMGUI_TEXT_EDITOR_CPP}")
 
@@ -558,11 +571,11 @@ source_group("src" FILES ${srcs})
 source_group("web" FILES ${WEB_FILES_REL})
 
 
-# Add readme to VS solution
+# Add README to VS solution
 if(MSVC)
     # Create a source group for documentation files
     set(DOC_FILES
-        ${CMAKE_CURRENT_SOURCE_DIR}/readme.md
+        ${CMAKE_CURRENT_SOURCE_DIR}/README.md
         ${CMAKE_CURRENT_SOURCE_DIR}/usage.md
         ${CMAKE_CURRENT_SOURCE_DIR}/bugs.md
     )

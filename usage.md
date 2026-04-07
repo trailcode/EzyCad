@@ -26,7 +26,7 @@ EzyCad (Easy CAD) is a CAD application for hobbyist machinists to design and edi
 - OpenGL-compatible graphics card
 
 ### Installation
-1. Download the latest release for your operating system - see [readme](readme.md) for build instructions; automated builds and releases are not yet available (see [issue #45](https://github.com/trailcode/EzyCad/issues/45))
+1. Download the latest release for your operating system - see [README](README.md) for build instructions; automated builds and releases are not yet available (see [issue #45](https://github.com/trailcode/EzyCad/issues/45))
 2. Extract the archive to your preferred location
 3. Run the executable file
 
@@ -81,7 +81,7 @@ EzyCad (Easy CAD) is a CAD application for hobbyist machinists to design and edi
 - **Debug** - Show or hide the debug pane (debug builds only).
 
 **Help menu**
-- **About** - Opens the [project overview](readme.md) in the browser.
+- **About** - Opens the [project README](README.md) in the browser.
 - **Usage Guide** - Opens [this usage guide](usage.md) in the browser.
 
 **Saving settings** - **File -> Save settings** (Emscripten) or the application's save-on-exit behavior saves current layout, view, and the above options so they persist next time you run EzyCad.
@@ -636,4 +636,4 @@ Open or close the **Lua** or **Python** consoles from **View -> Lua Console** or
 
 ---
 
-For more information, see [readme](readme.md) or the [GitHub repository](https://github.com/trailcode/EzyCad).
+For more information, see the [README](README.md) or the [GitHub repository](https://github.com/trailcode/EzyCad).
