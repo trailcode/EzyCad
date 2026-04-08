@@ -187,6 +187,11 @@ class Sketch
   void move_line_string_pt_(const ScreenCoords& screen_coords);
   void finalize_edges_();
 
+  /// Add a single node (no new edge); splits any linear edge the node lies on in its interior.
+  void add_node_pt_(const ScreenCoords& screen_coords);
+  void move_add_node_pt_(const ScreenCoords& screen_coords);
+  void split_linear_edges_at_node_if_interior_(size_t node_idx);
+
   // Arc circle related
   void add_arc_circle_pt_(const ScreenCoords& screen_coords);
   void move_arc_circle_pt_(const ScreenCoords& screen_coords);
@@ -222,6 +227,10 @@ class Sketch
   template <typename Callback>
   void if_edge_pt_valid_(Callback&& callback);
   void check_dimension_seg_(Linestring_type linestring_type);
+  /// Typed distance (Enter) while add-node rubber band is active — places node B, no edge.
+  void check_dimension_node_();
+  /// Right-click / finalize: drop incomplete add-node preview (same idea as incomplete line).
+  void finalize_add_node_elm_cleanup_();
   void add_edge_(const gp_Pnt2d& pt_a, const gp_Pnt2d& pt_b, bool add_dim_anno = false);
 
   // Selected related

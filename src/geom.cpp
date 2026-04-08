@@ -1065,3 +1065,23 @@ std::array<gp_Pnt2d, 4> rectangle_corners(const gp_Pnt2d& corner1, const gp_Pnt2
 
   return ret;
 }
+
+bool point_on_open_segment_2d(const gp_Pnt2d& p, const gp_Pnt2d& a, const gp_Pnt2d& b)
+{
+  const double tol = Precision::Confusion();
+  if (p.Distance(a) <= tol || p.Distance(b) <= tol)
+    return false;
+
+  gp_Vec2d     ab(a, b);
+  const double len = ab.Magnitude();
+  if (len < tol)
+    return false;
+
+  gp_Vec2d     ap(a, p);
+  const double cross = std::abs(ap.X() * ab.Y() - ap.Y() * ab.X());
+  if (cross > tol * len)
+    return false;
+
+  const double t = ap.Dot(ab) / (len * len);
+  return t > 0.0 && t < 1.0;
+}

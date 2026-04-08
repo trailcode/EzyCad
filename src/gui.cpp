@@ -1850,6 +1850,7 @@ void GUI::on_mouse_pos(const ScreenCoords& screen_coords)
 
       break;
 
+    case Mode::Sketch_add_node:
     case Mode::Sketch_add_edge:
     case Mode::Sketch_add_multi_edges:
     case Mode::Sketch_operation_axis:
@@ -1901,6 +1902,7 @@ void GUI::on_mouse_button(int button, int action, int mods)
         m_view->shp_scale().finalize();
         break;
 
+      case Mode::Sketch_add_node:
       case Mode::Sketch_add_edge:
       case Mode::Sketch_add_multi_edges:
       case Mode::Sketch_add_seg_circle_arc:
@@ -1941,6 +1943,7 @@ void GUI::on_mouse_button(int button, int action, int mods)
   else if (button == GLFW_MOUSE_BUTTON_RIGHT && action == GLFW_PRESS && mods == 0)
     switch (m_mode)
     {
+      case Mode::Sketch_add_node:
       case Mode::Sketch_add_edge:
       case Mode::Sketch_add_multi_edges:
         m_view->curr_sketch().finalize_elm();

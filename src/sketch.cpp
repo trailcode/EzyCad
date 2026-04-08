@@ -72,6 +72,7 @@ void Sketch::add_sketch_pt(const ScreenCoords& screen_coords)
     case Mode::Sketch_add_rectangle_center_pt:
     case Mode::Sketch_add_square:
     case Mode::Sketch_add_circle:
+    case Mode::Sketch_add_node:           add_node_pt_          (screen_coords);                             break;
     case Mode::Sketch_add_edge:           add_line_string_pt_   (screen_coords, Linestring_type::Single);   break;
     case Mode::Sketch_add_slot:           add_line_string_pt_   (screen_coords, Linestring_type::Two);      break;
     case Mode::Sketch_add_multi_edges:    add_line_string_pt_   (screen_coords, Linestring_type::Multiple); break;
@@ -88,6 +89,7 @@ void Sketch::sketch_pt_move(const ScreenCoords& screen_coords)
   switch (get_mode())
   {
       // clang-format off
+    case Mode::Sketch_add_node:            move_add_node_pt_    (screen_coords); break;
     case Mode::Sketch_add_edge:
     case Mode::Sketch_operation_axis:
     case Mode::Sketch_add_multi_edges:     move_line_string_pt_ (screen_coords); break;
@@ -222,6 +224,7 @@ void Sketch::on_enter()
     case Mode::Sketch_add_square:
     case Mode::Sketch_add_rectangle:
     case Mode::Sketch_add_circle:
+    case Mode::Sketch_add_node:         check_dimension_node_();                          break;
     case Mode::Sketch_add_edge:         check_dimension_seg_(Linestring_type::Single);    break;
     case Mode::Sketch_add_slot:         check_dimension_seg_(Linestring_type::Two);       break;
     case Mode::Sketch_add_multi_edges:  check_dimension_seg_(Linestring_type::Multiple);  break;
@@ -477,6 +480,136 @@ void Sketch::finalize_edges_()
 
   m_nodes.hide_snap_annos();
   update_faces_();
+}
+
+void Sketch::add_node_pt_(const ScreenCoords& screen_coords)
+{
+  auto commit_b = [this](size_t node_b) {
+    m_view.push_undo_snapshot();
+    split_linear_edges_at_node_if_interior_(node_b);
+    m_tmp_node_idxs.clear();
+    clear_tmps_();
+    m_ctx.Remove(m_tmp_dim_anno, true);
+    m_tmp_dim_anno.Nullify();
+    m_nodes.hide_snap_annos();
+    update_faces_();
+  };
+
+  auto start_rubber_from_anchor = [this](size_t idx_a) {
+    m_entered_edge_angle = std::nullopt;
+    m_entered_edge_len   = std::nullopt;
+    m_show_angle_input   = false;
+    m_show_dim_input     = false;
+    m_view.gui().hide_angle_edit();
+    m_tmp_edges.push_back({idx_a});
+  };
+
+  if (m_entered_edge_angle.has_value() && m_tmp_edges.size())
+  {
+    std::optional<gp_Pnt2d> pt_opt = m_view.pt_on_plane(screen_coords, m_pln);
+    if (!pt_opt)
+      return;
+
+    const gp_Pnt2d& pt_a      = m_nodes[m_tmp_edges.back().node_idx_a];
+    double          angle_rad = to_radians(*m_entered_edge_angle);
+    gp_Dir2d        constrained_dir(std::cos(angle_rad), std::sin(angle_rad));
+    gp_Vec2d        to_click(pt_opt->X() - pt_a.X(), pt_opt->Y() - pt_a.Y());
+    double          dist_along = to_click.Dot(gp_Vec2d(constrained_dir));
+    gp_Pnt2d        final_pt   = gp_Pnt2d(pt_a).Translated(gp_Vec2d(constrained_dir) * dist_along);
+    if (!unique(pt_a, final_pt))
+      return;
+
+    std::optional<size_t> snap     = m_nodes.try_get_node_idx_snap(final_pt);
+    size_t                node_idx = snap ? *snap : m_nodes.add_new_node(final_pt);
+    commit_b(node_idx);
+    return;
+  }
+
+  if (!m_view.pt_on_plane(screen_coords, m_pln))
+    return;
+
+  move_sketch_pt_(screen_coords, [&](const std::optional<size_t>& snap_to_node, const gp_Pnt2d& pt) {
+    if (!m_tmp_edges.empty())
+    {
+      Edge&  last   = m_tmp_edges.back();
+      size_t node_b = snap_to_node ? *snap_to_node : m_nodes.add_new_node(pt);
+      if (node_b == last.node_idx_a)
+        return;
+
+      commit_b(node_b);
+      return;
+    }
+
+    if (snap_to_node)
+    {
+      start_rubber_from_anchor(*snap_to_node);
+      return;
+    }
+
+    m_view.push_undo_snapshot();
+    const size_t ni = m_nodes.add_new_node(pt);
+    split_linear_edges_at_node_if_interior_(ni);
+    m_ctx.Remove(m_tmp_dim_anno, true);
+    m_tmp_dim_anno.Nullify();
+    m_nodes.hide_snap_annos();
+    update_faces_();
+  });
+}
+
+void Sketch::move_add_node_pt_(const ScreenCoords& screen_coords)
+{
+  if (!m_tmp_edges.empty())
+    move_line_string_pt_(screen_coords);
+  else
+    move_sketch_pt_(screen_coords, [](const std::optional<size_t>&, const gp_Pnt2d&) {});
+}
+
+void Sketch::split_linear_edges_at_node_if_interior_(size_t node_idx)
+{
+  EZY_ASSERT(node_idx < m_nodes.size());
+  const gp_Pnt2d& p = m_nodes[node_idx];
+
+  bool progress = true;
+  while (progress)
+  {
+    progress = false;
+    for (auto itr = m_edges.begin(); itr != m_edges.end(); ++itr)
+    {
+      if (itr->circle_arc)
+        continue;
+      if (itr->node_idx_arc.has_value())
+        continue;
+      if (!itr->node_idx_b.has_value())
+        continue;
+
+      const size_t    a  = itr->node_idx_a;
+      const size_t    b  = *itr->node_idx_b;
+      const gp_Pnt2d& pa = m_nodes[a];
+      const gp_Pnt2d& pb = m_nodes[b];
+
+      if (node_idx == a || node_idx == b)
+        continue;
+      if (!point_on_open_segment_2d(p, pa, pb))
+        continue;
+
+      if (itr->dim)
+        m_ctx.Remove(itr->dim, false);
+
+      Edge edge_a {a};
+      update_edge_end_pt_(edge_a, node_idx);
+      Edge edge_b {node_idx};
+      update_edge_end_pt_(edge_b, b);
+
+      m_ctx.Remove(itr->shp, false);
+      m_edges.erase(itr);
+      m_nodes[node_idx].is_midpoint = false;
+      m_edges.push_back(std::move(edge_a));
+      m_edges.push_back(std::move(edge_b));
+
+      progress = true;
+      break;
+    }
+  }
 }
 
 // Arc circle related
@@ -884,6 +1017,49 @@ void Sketch::check_dimension_seg_(Linestring_type linestring_type)
   }
 }
 
+void Sketch::check_dimension_node_()
+{
+  if (!m_entered_edge_len.has_value())
+    return;
+
+  if (m_entered_edge_len->len <= Precision::Confusion())
+    return;
+
+  if (m_tmp_edges.empty())
+    return;
+
+  Edge&           edge = m_tmp_edges.back();
+  const gp_Pnt2d& pt_a = m_nodes[edge.node_idx_a];
+  m_last_pt            = gp_Pnt2d(pt_a).Translated(gp_Vec2d(m_entered_edge_len->dir) * m_entered_edge_len->len);
+
+  if (!unique(pt_a, *m_last_pt))
+    return;
+
+  const size_t b = m_nodes.get_node_exact(*m_last_pt);
+  clear_all(m_entered_edge_len);
+
+  m_view.push_undo_snapshot();
+  split_linear_edges_at_node_if_interior_(b);
+  m_tmp_node_idxs.clear();
+  clear_tmps_();
+  m_ctx.Remove(m_tmp_dim_anno, true);
+  m_tmp_dim_anno.Nullify();
+  m_nodes.hide_snap_annos();
+  update_faces_();
+}
+
+void Sketch::finalize_add_node_elm_cleanup_()
+{
+  if (!m_tmp_edges.empty() && !m_tmp_edges.back().node_idx_b.has_value())
+  {
+    m_ctx.Remove(m_tmp_edges.back().shp, false);
+    m_tmp_edges.pop_back();
+  }
+
+  m_nodes.hide_snap_annos();
+  update_faces_();
+}
+
 void Sketch::add_edge_(const gp_Pnt2d& pt_a, const gp_Pnt2d& pt_b, bool add_dim_anno)
 {
   Edge edge {m_nodes.get_node_exact(pt_a)};
@@ -984,6 +1160,7 @@ void Sketch::finalize_elm()
   switch (get_mode())
   {
       // clang-format off
+    case Mode::Sketch_add_node:         finalize_add_node_elm_cleanup_();               break;
     case Mode::Sketch_add_edge:
     case Mode::Sketch_add_multi_edges:  finalize_edges_();          break;
     case Mode::Sketch_add_square:       finalize_square_();         break;

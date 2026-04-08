@@ -1462,3 +1462,74 @@ TEST_F(Sketch_test, SplitEdge_HasMidpoints)
   EXPECT_NEAR(midpoint_x_coords[1], 15.0, Precision::Confusion()) 
       << "Second split edge should have midpoint at x=15";
 }
+
+TEST_F(Sketch_test, AddNode_splits_linear_edge_interior)
+{
+  gp_Pln default_plane(gp::Origin(), gp::DZ());
+  Sketch sketch("TestSketch", view(), default_plane);
+
+  Sketch_access::add_edge_(sketch, gp_Pnt2d(0.0, 0.0), gp_Pnt2d(20.0, 0.0));
+  Sketch_access::update_faces_(sketch);
+
+  auto count_real_edges = [](const Sketch& s) {
+    size_t n = 0;
+    for (const auto& e : s.m_edges)
+      if (e.node_idx_b.has_value())
+        ++n;
+    return n;
+  };
+
+  ASSERT_EQ(count_real_edges(sketch), 1u);
+
+  gui().set_mode(Mode::Sketch_add_node);
+  // Snap to an existing endpoint first (rubber band), then place the new node on the edge interior.
+  ScreenCoords anchor(glm::dvec2(0.0, 0.0));
+  sketch.add_sketch_pt(anchor);
+  ScreenCoords interior(glm::dvec2(7.0, 0.0));
+  sketch.add_sketch_pt(interior);
+
+  EXPECT_EQ(count_real_edges(sketch), 2u) << "Add node on edge interior should replace one edge with two";
+
+  bool found_0_7 = false;
+  bool found_7_20 = false;
+  for (const auto& e : sketch.m_edges)
+  {
+    if (!e.node_idx_b.has_value() || e.circle_arc)
+      continue;
+    const gp_Pnt2d& pa = sketch.get_nodes()[e.node_idx_a];
+    const gp_Pnt2d& pb = sketch.get_nodes()[*e.node_idx_b];
+    if (std::abs(pa.Y()) < 1e-6 && std::abs(pb.Y()) < 1e-6)
+    {
+      double x0 = std::min(pa.X(), pb.X());
+      double x1 = std::max(pa.X(), pb.X());
+      if (std::abs(x0 - 0.0) < 1e-6 && std::abs(x1 - 7.0) < 1e-6)
+        found_0_7 = true;
+      if (std::abs(x0 - 7.0) < 1e-6 && std::abs(x1 - 20.0) < 1e-6)
+        found_7_20 = true;
+    }
+  }
+  EXPECT_TRUE(found_0_7);
+  EXPECT_TRUE(found_7_20);
+}
+
+TEST_F(Sketch_test, AddNode_off_edge_adds_node_only)
+{
+  gp_Pln default_plane(gp::Origin(), gp::DZ());
+  Sketch sketch("TestSketch", view(), default_plane);
+
+  Sketch_access::add_edge_(sketch, gp_Pnt2d(0.0, 0.0), gp_Pnt2d(20.0, 0.0));
+  Sketch_access::update_faces_(sketch);
+
+  const size_t nodes_before = sketch.get_nodes().size();
+
+  gui().set_mode(Mode::Sketch_add_node);
+  ScreenCoords away(glm::dvec2(10.0, 5.0));
+  sketch.add_sketch_pt(away);
+
+  size_t edge_count = 0;
+  for (const auto& e : sketch.m_edges)
+    if (e.node_idx_b.has_value())
+      ++edge_count;
+  EXPECT_EQ(edge_count, 1u);
+  EXPECT_EQ(sketch.get_nodes().size(), nodes_before + 1);
+}
