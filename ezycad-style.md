@@ -52,6 +52,7 @@ Use this style when editing or adding C/C++ code in the EzyCad project (files un
   - Punctuation in prose: `-` for dash; `...` for ellipsis; `->` for “maps to” / arrows in comments; plain `'` for apostrophes.
   - Math in comments: spell out (`sqrt(2)`, `theta`) or use ASCII operators (`x` for cross-product context, `*` for multiply).
 - Run `scripts/check-nonascii-src.ps1` (or `check-nonascii-src.cmd`) before committing when touching `src/`.
+- For AI tools: the same rule is summarized in `agents/ezycad-ascii-source.md` (optional; nothing under `.cursor/` is committed).
 
 ## C++ usage
 
