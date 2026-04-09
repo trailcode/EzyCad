@@ -556,14 +556,20 @@ void GUI::toolbar_()
 void GUI::set_dist_edit(float dist, std::function<void(float, bool)>&& callback, const std::optional<ScreenCoords> screen_coords)
 {
   DBG_MSG("dist " << dist);
-  m_dist_val = dist;
+  // Match set_angle_edit: sketch calls this every mousemove while TAB length mode is on; do not reset the
+  // value each frame or typed distance is replaced by the rubber-band length at the cursor.
+  const bool already_editing = m_dist_callback != nullptr;
+  if (!already_editing)
+    m_dist_val = dist;
+
   if (screen_coords.has_value())
     m_dist_edit_loc = *screen_coords;
   else
     m_dist_edit_loc = ScreenCoords(glm::dvec2(ImGui::GetIO().MousePos.x, ImGui::GetIO().MousePos.y));
 
-  m_dist_callback           = std::move(callback);
-  m_dist_edit_focus_pending = true;
+  m_dist_callback = std::move(callback);
+  if (!already_editing)
+    m_dist_edit_focus_pending = true;
 }
 
 void GUI::hide_dist_edit()

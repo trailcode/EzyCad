@@ -15,13 +15,12 @@
 #include <V3d_View.hxx>
 #include <cmath>
 #include <functional>
+#include <glm/glm.hpp>
 #include <limits>
 #include <map>
 #include <numbers>
 #include <tuple>
 #include <unordered_set>
-
-#include <glm/glm.hpp>
 
 #include "geom.h"
 #include "gui.h"
@@ -284,7 +283,7 @@ void Sketch::add_line_string_pt_(const ScreenCoords& screen_coords, Linestring_t
     gp_Dir2d        constrained_dir(std::cos(angle_rad), std::sin(angle_rad));
     gp_Vec2d        to_click(pt_opt->X() - pt_a.X(), pt_opt->Y() - pt_a.Y());
     double          dist_along = to_click.Dot(gp_Vec2d(constrained_dir));
-    gp_Pnt2d final_pt = gp_Pnt2d(pt_a).Translated(gp_Vec2d(constrained_dir) * dist_along);
+    gp_Pnt2d        final_pt   = gp_Pnt2d(pt_a).Translated(gp_Vec2d(constrained_dir) * dist_along);
     if (!unique(pt_a, final_pt))
       return;
 
@@ -447,10 +446,10 @@ void Sketch::finalize_edges_()
   {
     EZY_ASSERT(e.node_idx_b.has_value());
     EZY_ASSERT(e.node_idx_mid.has_value());
-    if (m_nodes[e.node_idx_a].is_midpoint)
+    if (m_nodes[e.node_idx_a].midpoint)
       split_mid_points.push_back(e.node_idx_a);
 
-    if (m_nodes[e.node_idx_b].is_midpoint)
+    if (m_nodes[e.node_idx_b].midpoint)
       split_mid_points.push_back(*e.node_idx_b);
   }
 
@@ -475,7 +474,7 @@ void Sketch::finalize_edges_()
           edge_b.node_idx_mid = m_nodes.add_new_node(get_midpoint(m_nodes[mid_pt_idx], m_nodes[*itr->node_idx_b]), true);
           m_ctx.Remove(itr->shp, false);
           m_edges.erase(itr);
-          m_nodes[mid_pt_idx].is_midpoint = false;
+          m_nodes[mid_pt_idx].midpoint = false;
           m_edges.emplace_back(edge_a);
           m_edges.emplace_back(edge_b);
           break;
@@ -487,24 +486,27 @@ void Sketch::finalize_edges_()
 
 void Sketch::add_node_pt_(const ScreenCoords& screen_coords)
 {
-  auto commit_b = [this](size_t node_b) {
+  auto commit_b = [this](size_t node_b)
+  {
     m_view.push_undo_snapshot();
     split_linear_edges_at_node_if_interior_(node_b);
+
+    // Same as Sketch_add_edge: turn the rubber-band segment into a real edge. Without this,
+    // clear_tmps_() below would discard the tmp edge and the segment would never appear in m_edges.
+    if (!m_tmp_edges.empty())
+    {
+      Edge& last = m_tmp_edges.back();
+      EZY_ASSERT(node_b != last.node_idx_a);
+      update_edge_end_pt_(last, node_b);
+      finalize_edges_();
+    }
+
     m_tmp_node_idxs.clear();
     clear_tmps_();
     m_ctx.Remove(m_tmp_dim_anno, true);
     m_tmp_dim_anno.Nullify();
     m_nodes.hide_snap_annos();
     update_faces_();
-  };
-
-  auto start_rubber_from_anchor = [this](size_t idx_a) {
-    m_entered_edge_angle = std::nullopt;
-    m_entered_edge_len   = std::nullopt;
-    m_show_angle_input   = false;
-    m_show_dim_input     = false;
-    m_view.gui().hide_angle_edit();
-    m_tmp_edges.push_back({idx_a});
   };
 
   if (m_entered_edge_angle.has_value() && m_tmp_edges.size())
@@ -518,7 +520,7 @@ void Sketch::add_node_pt_(const ScreenCoords& screen_coords)
     gp_Dir2d        constrained_dir(std::cos(angle_rad), std::sin(angle_rad));
     gp_Vec2d        to_click(pt_opt->X() - pt_a.X(), pt_opt->Y() - pt_a.Y());
     double          dist_along = to_click.Dot(gp_Vec2d(constrained_dir));
-    gp_Pnt2d final_pt = gp_Pnt2d(pt_a).Translated(gp_Vec2d(constrained_dir) * dist_along);
+    gp_Pnt2d        final_pt   = gp_Pnt2d(pt_a).Translated(gp_Vec2d(constrained_dir) * dist_along);
     if (!unique(pt_a, final_pt))
       return;
 
@@ -531,7 +533,8 @@ void Sketch::add_node_pt_(const ScreenCoords& screen_coords)
   if (!m_view.pt_on_plane(screen_coords, m_pln))
     return;
 
-  move_sketch_pt_(screen_coords, [&](const std::optional<size_t>& snap_to_node, const gp_Pnt2d& pt) {
+  auto check_node = [&](const std::optional<size_t>& snap_to_node, const gp_Pnt2d& pt)
+  {
     if (!m_tmp_edges.empty())
     {
       Edge&  last   = m_tmp_edges.back();
@@ -543,8 +546,20 @@ void Sketch::add_node_pt_(const ScreenCoords& screen_coords)
       return;
     }
 
+    // No tmp edge yet: snapping to an existing node starts a rubber-band segment from that anchor;
+    // the next placement finishes the edge. Clear angle/dimension UI from any prior mode.
     if (snap_to_node)
     {
+      auto start_rubber_from_anchor = [this](size_t idx_a)
+      {
+        m_entered_edge_angle = std::nullopt;
+        m_entered_edge_len   = std::nullopt;
+        m_show_angle_input   = false;
+        m_show_dim_input     = false;
+        m_view.gui().hide_angle_edit();
+        m_tmp_edges.push_back({idx_a});
+      };
+
       start_rubber_from_anchor(*snap_to_node);
       return;
     }
@@ -556,7 +571,9 @@ void Sketch::add_node_pt_(const ScreenCoords& screen_coords)
     m_tmp_dim_anno.Nullify();
     m_nodes.hide_snap_annos();
     update_faces_();
-  });
+  };
+
+  move_sketch_pt_(screen_coords, check_node);
 }
 
 void Sketch::move_add_node_pt_(const ScreenCoords& screen_coords)
@@ -574,7 +591,7 @@ double Sketch::plane_pick_snap_radius_world_() const
     return std::max(px, Precision::Confusion() * 1e9);
 
   const gp_Pnt2d          ref2(0.0, 0.0);
-  const ScreenCoords      s0 = m_view.get_screen_coords(to_3d(m_pln, ref2));
+  const ScreenCoords      s0   = m_view.get_screen_coords(to_3d(m_pln, ref2));
   const glm::dvec2        base = s0.unsafe_get();
   std::optional<gp_Pnt2d> p1 =
       m_view.pt_on_plane(ScreenCoords(glm::dvec2(base.x + px, base.y)), m_pln);
@@ -597,8 +614,10 @@ void Sketch::snap_placed_node_to_closest_linear_edge_interior_(size_t node_idx)
   {
     if (e.circle_arc)
       continue;
+
     if (e.node_idx_arc.has_value())
       continue;
+
     if (!e.node_idx_b.has_value())
       continue;
 
@@ -617,7 +636,7 @@ void Sketch::snap_placed_node_to_closest_linear_edge_interior_(size_t node_idx)
     const double err = p.Distance(*proj);
     if (err < best_err)
     {
-      best_err = err;
+      best_err  = err;
       best_proj = proj;
     }
   }
@@ -627,7 +646,7 @@ void Sketch::snap_placed_node_to_closest_linear_edge_interior_(size_t node_idx)
     Sketch_nodes::Node& n = m_nodes[node_idx];
     n.SetX(best_proj->X());
     n.SetY(best_proj->Y());
-    n.is_midpoint = false;
+    n.midpoint = false;
   }
 }
 
@@ -670,7 +689,7 @@ void Sketch::split_linear_edges_at_node_if_interior_(size_t node_idx)
 
       m_ctx.Remove(itr->shp, false);
       m_edges.erase(itr);
-      m_nodes[node_idx].is_midpoint = false;
+      m_nodes[node_idx].midpoint = false;
       m_edges.push_back(std::move(edge_a));
       m_edges.push_back(std::move(edge_b));
 
@@ -1108,6 +1127,15 @@ void Sketch::check_dimension_node_()
 
   m_view.push_undo_snapshot();
   split_linear_edges_at_node_if_interior_(b);
+
+  if (!m_tmp_edges.empty())
+  {
+    Edge& last = m_tmp_edges.back();
+    EZY_ASSERT(b != last.node_idx_a);
+    update_edge_end_pt_(last, b);
+    finalize_edges_();
+  }
+
   m_tmp_node_idxs.clear();
   clear_tmps_();
   m_ctx.Remove(m_tmp_dim_anno, true);
@@ -1195,7 +1223,7 @@ void Sketch::set_edge_dim_anno_visible_(Edge& e, bool visible)
     if (e.dim)
       m_ctx.Remove(e.dim, false);  // Remove existing to update position
 
-    e.dim       = create_distance_annotation(
+    e.dim = create_distance_annotation(
         m_nodes[e.node_idx_a], m_nodes[e.node_idx_b], m_pln,
         edge_dim_text_h_pos_from_index(m_view.gui().edge_dim_label_h()), approx_sketch_interior_ref_3d_(),
         m_dim_classifier_faces.empty() ? nullptr : &m_dim_classifier_faces);
@@ -2239,20 +2267,20 @@ bool Sketch::underlay_rescale_uv_chord_to_length(const gp_Pnt2d& p0, const gp_Pn
   const gp_Pnt2d base = m_underlay->base();
   const gp_Vec2d au   = m_underlay->axis_u();
   const gp_Vec2d av   = m_underlay->axis_v();
-  double           u0 {};
-  double           v0 {};
-  double           u1 {};
-  double           v1 {};
+  double         u0 {};
+  double         v0 {};
+  double         u1 {};
+  double         v1 {};
   if (!underlay_plane_to_uv(base, au, av, p0, u0, v0) || !underlay_plane_to_uv(base, au, av, p1, u1, v1))
     return false;
   const double L = p0.Distance(p1);
   if (L <= 1e-12)
     return false;
-  const double       k   = target_len / L;
-  const gp_Vec2d     au2 = au * k;
-  const gp_Vec2d     av2 = av * k;
-  const gp_Vec2d     off = au2 * u0 + av2 * v0;
-  const gp_Pnt2d     base2(p0.X() - off.X(), p0.Y() - off.Y());
+  const double   k   = target_len / L;
+  const gp_Vec2d au2 = au * k;
+  const gp_Vec2d av2 = av * k;
+  const gp_Vec2d off = au2 * u0 + av2 * v0;
+  const gp_Pnt2d base2(p0.X() - off.X(), p0.Y() - off.Y());
   underlay_set_affine_plane(base2, au2, av2);
   return true;
 }
@@ -2266,10 +2294,10 @@ bool Sketch::underlay_rescale_v_chord_to_length(const gp_Pnt2d& y0, const gp_Pnt
   const gp_Pnt2d base = m_underlay->base();
   const gp_Vec2d au   = m_underlay->axis_u();
   const gp_Vec2d av   = m_underlay->axis_v();
-  double           u0 {};
-  double           v0 {};
-  double           u1 {};
-  double           v1 {};
+  double         u0 {};
+  double         v0 {};
+  double         u1 {};
+  double         v1 {};
   if (!underlay_plane_to_uv(base, au, av, y0, u0, v0) || !underlay_plane_to_uv(base, au, av, y1, u1, v1))
     return false;
   const double du = u1 - u0;
@@ -2279,9 +2307,9 @@ bool Sketch::underlay_rescale_v_chord_to_length(const gp_Pnt2d& y0, const gp_Pnt
   const double L = y0.Distance(y1);
   if (L <= 1e-12)
     return false;
-  const double   r       = target_len / L;
-  const gp_Vec2d av_new  = av * r + au * (((r - 1.0) * du) / dv);
-  const gp_Vec2d anchor  = au * u0 + av_new * v0;
+  const double   r      = target_len / L;
+  const gp_Vec2d av_new = av * r + au * (((r - 1.0) * du) / dv);
+  const gp_Vec2d anchor = au * u0 + av_new * v0;
   const gp_Pnt2d base2(y0.X() - anchor.X(), y0.Y() - anchor.Y());
   underlay_set_affine_plane(base2, au, av_new);
   return true;
@@ -2304,9 +2332,9 @@ void Sketch::underlay_set_center_extents_rotation(double cx, double cy, double h
   if (half_h < k_min)
     half_h = k_min;
 
-  const double rad = rot_deg * (std::numbers::pi / 180.0);
-  const double c   = std::cos(rad);
-  const double s   = std::sin(rad);
+  const double   rad = rot_deg * (std::numbers::pi / 180.0);
+  const double   c   = std::cos(rad);
+  const double   s   = std::sin(rad);
   const gp_Vec2d axis_u(2.0 * half_w * c, 2.0 * half_w * s);
   const gp_Vec2d axis_v(-2.0 * half_h * s, 2.0 * half_h * c);
   const gp_Pnt2d base(

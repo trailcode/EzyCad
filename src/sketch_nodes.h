@@ -15,18 +15,11 @@ class AIS_InteractiveContext;
 class Sketch_nodes
 {
  public:
-  enum class Node_status
-  {
-    Deleted   = 1 << 0,
-    Midpoint  = 1 << 1,
-    permanent = 1 << 2,
-  };
-
   struct Node : public gp_Pnt2d
   {
-    bool is_midpoint {false};
-    //  bool deleted {false};
-    //Node_status status {0};
+    bool midpoint = false;
+    bool deleted     = false;
+    bool permanent   = false;
   };
 
   // `view` must exist for the lifetime of this object

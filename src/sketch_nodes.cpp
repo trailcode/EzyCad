@@ -203,8 +203,9 @@ size_t Sketch_nodes::add_new_node(const gp_Pnt2d& pt, bool is_edge_mid_point)
 {
   size_t ret = m_nodes.size();
   Node   n {pt};
-  n.is_midpoint = is_edge_mid_point;
+  n.midpoint = is_edge_mid_point;
   m_nodes.emplace_back(n);
+  DBG_MSG("Add node: " << pt.Coord().X() << "," << pt.Coord().Y() << " midpoint: " << (int) is_edge_mid_point);
   return ret;
 }
 
@@ -330,3 +331,4 @@ double Sketch_nodes::get_snap_dist()
 {
   return s_snap_dist_pixels;
 }
+

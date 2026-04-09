@@ -316,7 +316,7 @@ TEST_F(Sketch_test, CreateSquare)
   for (const Node& n : nodes)
     if (!n.deleted)
     {
-      if (n.is_midpoint)
+      if (n.midpoint)
         edge_mid_point_nodes.push_back(n);
       else
         normal_nodes.push_back(n);
@@ -324,7 +324,6 @@ TEST_F(Sketch_test, CreateSquare)
 
   EXPECT_EQ(edge_mid_point_nodes.size(), 4);
   EXPECT_EQ(normal_nodes.size(), 4);
-  int hi = 0;
 }
 
 // Test circle creation
@@ -1439,7 +1438,7 @@ TEST_F(Sketch_test, SplitEdge_HasMidpoints)
             << "Midpoint should have y=0";
         
         // Verify the midpoint is marked as a midpoint
-        EXPECT_TRUE(sketch.get_nodes()[*edge.node_idx_mid].is_midpoint)
+        EXPECT_TRUE(sketch.get_nodes()[*edge.node_idx_mid].midpoint)
             << "Midpoint node should be marked as midpoint";
       }
     }
