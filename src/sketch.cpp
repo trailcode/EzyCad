@@ -15,10 +15,13 @@
 #include <V3d_View.hxx>
 #include <cmath>
 #include <functional>
+#include <limits>
 #include <map>
 #include <numbers>
 #include <tuple>
 #include <unordered_set>
+
+#include <glm/glm.hpp>
 
 #include "geom.h"
 #include "gui.h"
@@ -281,12 +284,12 @@ void Sketch::add_line_string_pt_(const ScreenCoords& screen_coords, Linestring_t
     gp_Dir2d        constrained_dir(std::cos(angle_rad), std::sin(angle_rad));
     gp_Vec2d        to_click(pt_opt->X() - pt_a.X(), pt_opt->Y() - pt_a.Y());
     double          dist_along = to_click.Dot(gp_Vec2d(constrained_dir));
-    gp_Pnt2d        final_pt   = gp_Pnt2d(pt_a).Translated(gp_Vec2d(constrained_dir) * dist_along);
+    gp_Pnt2d final_pt = gp_Pnt2d(pt_a).Translated(gp_Vec2d(constrained_dir) * dist_along);
     if (!unique(pt_a, final_pt))
       return;
 
-    std::optional<size_t> snap     = m_nodes.try_get_node_idx_snap(final_pt);
-    size_t                node_idx = snap ? *snap : m_nodes.add_new_node(final_pt);
+    // Do not run try_get_node_idx_snap here: it can move the point off the angle ray (axis snap).
+    const size_t node_idx = m_nodes.get_node_exact(final_pt);
     m_tmp_node_idxs.push_back(node_idx);
     on_line_string(node_idx);
     return;
@@ -515,12 +518,12 @@ void Sketch::add_node_pt_(const ScreenCoords& screen_coords)
     gp_Dir2d        constrained_dir(std::cos(angle_rad), std::sin(angle_rad));
     gp_Vec2d        to_click(pt_opt->X() - pt_a.X(), pt_opt->Y() - pt_a.Y());
     double          dist_along = to_click.Dot(gp_Vec2d(constrained_dir));
-    gp_Pnt2d        final_pt   = gp_Pnt2d(pt_a).Translated(gp_Vec2d(constrained_dir) * dist_along);
+    gp_Pnt2d final_pt = gp_Pnt2d(pt_a).Translated(gp_Vec2d(constrained_dir) * dist_along);
     if (!unique(pt_a, final_pt))
       return;
 
-    std::optional<size_t> snap     = m_nodes.try_get_node_idx_snap(final_pt);
-    size_t                node_idx = snap ? *snap : m_nodes.add_new_node(final_pt);
+    // Do not run try_get_node_idx_snap here: it can move the point off the angle ray (axis snap).
+    const size_t node_idx = m_nodes.get_node_exact(final_pt);
     commit_b(node_idx);
     return;
   }
@@ -564,9 +567,74 @@ void Sketch::move_add_node_pt_(const ScreenCoords& screen_coords)
     move_sketch_pt_(screen_coords, [](const std::optional<size_t>&, const gp_Pnt2d&) {});
 }
 
+double Sketch::plane_pick_snap_radius_world_() const
+{
+  const double px = Sketch_nodes::get_snap_dist();
+  if (m_view.is_headless())
+    return std::max(px, Precision::Confusion() * 1e9);
+
+  const gp_Pnt2d          ref2(0.0, 0.0);
+  const ScreenCoords      s0 = m_view.get_screen_coords(to_3d(m_pln, ref2));
+  const glm::dvec2        base = s0.unsafe_get();
+  std::optional<gp_Pnt2d> p1 =
+      m_view.pt_on_plane(ScreenCoords(glm::dvec2(base.x + px, base.y)), m_pln);
+  if (!p1)
+    return std::max(px, Precision::Confusion() * 1e9);
+  return ref2.Distance(*p1);
+}
+
+void Sketch::snap_placed_node_to_closest_linear_edge_interior_(size_t node_idx)
+{
+  EZY_ASSERT(node_idx < m_nodes.size());
+
+  const gp_Pnt2d p(m_nodes[node_idx].X(), m_nodes[node_idx].Y());
+  const double   max_d = plane_pick_snap_radius_world_();
+
+  double                  best_err = std::numeric_limits<double>::infinity();
+  std::optional<gp_Pnt2d> best_proj;
+
+  for (const auto& e : m_edges)
+  {
+    if (e.circle_arc)
+      continue;
+    if (e.node_idx_arc.has_value())
+      continue;
+    if (!e.node_idx_b.has_value())
+      continue;
+
+    const size_t    a  = e.node_idx_a;
+    const size_t    b  = *e.node_idx_b;
+    const gp_Pnt2d& pa = m_nodes[a];
+    const gp_Pnt2d& pb = m_nodes[b];
+    if (node_idx == a || node_idx == b)
+      continue;
+
+    std::optional<gp_Pnt2d> proj =
+        snap_foot_to_open_segment_interior_if_close(p, pa, pb, max_d);
+    if (!proj)
+      continue;
+
+    const double err = p.Distance(*proj);
+    if (err < best_err)
+    {
+      best_err = err;
+      best_proj = proj;
+    }
+  }
+
+  if (best_proj)
+  {
+    Sketch_nodes::Node& n = m_nodes[node_idx];
+    n.SetX(best_proj->X());
+    n.SetY(best_proj->Y());
+    n.is_midpoint = false;
+  }
+}
+
 void Sketch::split_linear_edges_at_node_if_interior_(size_t node_idx)
 {
   EZY_ASSERT(node_idx < m_nodes.size());
+  snap_placed_node_to_closest_linear_edge_interior_(node_idx);
   const gp_Pnt2d& p = m_nodes[node_idx];
 
   bool progress = true;

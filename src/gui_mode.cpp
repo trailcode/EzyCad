@@ -311,6 +311,20 @@ void GUI::options_()
         default_material();
         break;
 
+      case Mode::Sketch_add_edge:
+      case Mode::Sketch_add_multi_edges:
+        ImGui::Separator();
+        ImGui::TextWrapped("TAB: type edge length. Shift+TAB: type angle (degrees, CCW from +X).");
+        break;
+
+      case Mode::Sketch_add_node:
+        ImGui::Separator();
+        ImGui::TextWrapped("TAB: type length along the rubber band. Shift+TAB: type angle (degrees, CCW from +X).");
+        ImGui::TextWrapped(
+            "Snap the first click to an existing sketch point to start a rubber band, then click to place the node "
+            "(or press Enter after typing a length). An unsnapped click still places a single node immediately.");
+        break;
+
       default:
         break;
     }

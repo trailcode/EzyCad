@@ -2,6 +2,7 @@
 
 #include <algorithm>
 #include <cmath>
+#include <optional>
 
 #include <AIS_Shape.hxx>
 #include <BRepAdaptor_Curve.hxx>
@@ -1084,4 +1085,27 @@ bool point_on_open_segment_2d(const gp_Pnt2d& p, const gp_Pnt2d& a, const gp_Pnt
 
   const double t = ap.Dot(ab) / (len * len);
   return t > 0.0 && t < 1.0;
+}
+
+std::optional<gp_Pnt2d> snap_foot_to_open_segment_interior_if_close(
+    const gp_Pnt2d& p, const gp_Pnt2d& a, const gp_Pnt2d& b, double max_perp_dist)
+{
+  const double tol = Precision::Confusion();
+  gp_Vec2d     ab(a, b);
+  const double len2 = ab.SquareMagnitude();
+  if (len2 < tol * tol)
+    return std::nullopt;
+
+  gp_Vec2d       ap(a, p);
+  const double   t = ap.Dot(ab) / len2;
+  const gp_Pnt2d proj = gp_Pnt2d(a).Translated(ab * t);
+  if (proj.Distance(a) <= tol || proj.Distance(b) <= tol)
+    return std::nullopt;
+  if (t <= 0.0 || t >= 1.0)
+    return std::nullopt;
+
+  if (p.Distance(proj) > max_perp_dist)
+    return std::nullopt;
+
+  return proj;
 }

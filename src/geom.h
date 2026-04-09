@@ -204,4 +204,9 @@ TopoDS_Wire make_rectangle_wire(const gp_Pln&   pln,
 std::array<gp_Pnt2d, 4> rectangle_corners(const gp_Pnt2d& corner1, const gp_Pnt2d& corner2);
 bool                    point_on_open_segment_2d(const gp_Pnt2d& p, const gp_Pnt2d& a, const gp_Pnt2d& b);
 
+/// If the shortest distance from \a p to segment `a–b` is ≤ \a max_perp_dist and the foot lies strictly
+/// inside the segment (not near endpoints), returns that foot; otherwise nullopt.
+std::optional<gp_Pnt2d> snap_foot_to_open_segment_interior_if_close(
+    const gp_Pnt2d& p, const gp_Pnt2d& a, const gp_Pnt2d& b, double max_perp_dist);
+
 #include "geom.inl"

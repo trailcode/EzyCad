@@ -139,6 +139,11 @@ class View_access
   {
     view.shp_extrude().set_curr_view_pln(pln);
   }
+
+  static void set_headless(Occt_view& view, bool headless)
+  {
+    view.m_headless_view = headless;
+  }
 };
 
 // Test basic sketch creation and initialization
@@ -1532,4 +1537,51 @@ TEST_F(Sketch_test, AddNode_off_edge_adds_node_only)
       ++edge_count;
   EXPECT_EQ(edge_count, 1u);
   EXPECT_EQ(sketch.get_nodes().size(), nodes_before + 1);
+}
+
+// Pick slightly off a segment in plane space; should snap onto the edge and split so the node stays snappable.
+TEST_F(Sketch_test, AddNode_near_edge_snaps_onto_segment_and_splits)
+{
+  struct Headless_guard
+  {
+    Occt_view& m_v;
+    explicit Headless_guard(Occt_view& v)
+        : m_v(v)
+    {
+      View_access::set_headless(m_v, true);
+    }
+    ~Headless_guard()
+    {
+      View_access::set_headless(m_v, false);
+    }
+  } guard(view());
+
+  gp_Pln default_plane(gp::Origin(), gp::DZ());
+  Sketch sketch("TestSketch", view(), default_plane);
+  Sketch_access::add_edge_(sketch, gp_Pnt2d(0.0, 0.0), gp_Pnt2d(20.0, 0.0));
+  Sketch_access::update_faces_(sketch);
+
+  gui().set_mode(Mode::Sketch_add_node);
+  ScreenCoords near_edge(glm::dvec2(7.0, 0.15));
+  sketch.add_sketch_pt(near_edge);
+
+  size_t edge_count = 0;
+  for (const auto& e : sketch.m_edges)
+    if (e.node_idx_b.has_value())
+      ++edge_count;
+  EXPECT_EQ(edge_count, 2u) << "Near-miss pick should snap to segment and replace one edge with two";
+
+  bool found_at_seven = false;
+  for (size_t i = 0; i < sketch.get_nodes().size(); ++i)
+  {
+    if (sketch.get_nodes()[i].deleted)
+      continue;
+    const gp_Pnt2d& p = sketch.get_nodes()[i];
+    if (std::abs(p.X() - 7.0) < 1e-5 && std::abs(p.Y()) < 1e-5)
+    {
+      found_at_seven = true;
+      break;
+    }
+  }
+  EXPECT_TRUE(found_at_seven);
 }

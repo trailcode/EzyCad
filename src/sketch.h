@@ -191,6 +191,9 @@ class Sketch
   void add_node_pt_(const ScreenCoords& screen_coords);
   void move_add_node_pt_(const ScreenCoords& screen_coords);
   void split_linear_edges_at_node_if_interior_(size_t node_idx);
+  /// Move a newly placed node onto the nearest linear edge within pick tolerance so split + `used_nodes` sees it.
+  void snap_placed_node_to_closest_linear_edge_interior_(size_t node_idx);
+  double plane_pick_snap_radius_world_() const;
 
   // Arc circle related
   void add_arc_circle_pt_(const ScreenCoords& screen_coords);
