@@ -1,5 +1,6 @@
 #pragma once
 
+#include <array>
 #include <chrono>  // For message status window (from previous request)
 #include <cstdint>
 #include <functional>
@@ -222,6 +223,7 @@ class GUI
   std::function<void(float, bool)> m_dist_callback;
   ScreenCoords                     m_dist_edit_loc {glm::dvec2(0, 0)};
   float                            m_dist_val {};
+  std::array<char, 64>             m_dist_text_buf {};
   bool                             m_dist_edit_focus_pending {false};
 
   // Sketch segment manual angle input related

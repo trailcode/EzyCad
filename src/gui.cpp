@@ -4,6 +4,8 @@
 #include <array>
 #include <cctype>
 #include <cmath>
+#include <cstdio>
+#include <cstdlib>
 #include <filesystem>
 #include <fstream>
 #include <nlohmann/json.hpp>
@@ -29,9 +31,26 @@
 // Must be here to prevent compiler warning
 #include <GLFW/glfw3.h>
 
-#ifndef __EMSCRIPTEN__
-#include <cstdlib>
-#endif
+static bool parse_dist_text_to_float(const char* buf, float& out)
+{
+  if (!buf)
+    return false;
+  const char* s = buf;
+  while (*s != '\0' && std::isspace(static_cast<unsigned char>(*s)))
+    ++s;
+  if (*s == '\0')
+    return false;
+  char* end = nullptr;
+  const float v = std::strtof(s, &end);
+  if (end == s)
+    return false;
+  while (*end != '\0' && std::isspace(static_cast<unsigned char>(*end)))
+    ++end;
+  if (*end != '\0')
+    return false;
+  out = v;
+  return true;
+}
 
 static bool is_valid_project_json(const std::string& s)
 {
@@ -556,16 +575,18 @@ void GUI::toolbar_()
 void GUI::set_dist_edit(float dist, std::function<void(float, bool)>&& callback, const std::optional<ScreenCoords> screen_coords)
 {
   DBG_MSG("dist " << dist);
-  // Match set_angle_edit: sketch calls this every mousemove while TAB length mode is on; do not reset the
-  // value each frame or typed distance is replaced by the rubber-band length at the cursor.
+  // Sketch calls this every mousemove while TAB length mode is on; do not reset value/position each frame
+  // or typed distance and the OK button jump away from the cursor.
   const bool already_editing = m_dist_callback != nullptr;
   if (!already_editing)
+  {
     m_dist_val = dist;
-
-  if (screen_coords.has_value())
-    m_dist_edit_loc = *screen_coords;
-  else
-    m_dist_edit_loc = ScreenCoords(glm::dvec2(ImGui::GetIO().MousePos.x, ImGui::GetIO().MousePos.y));
+    std::snprintf(m_dist_text_buf.data(), m_dist_text_buf.size(), "%.9g", static_cast<double>(dist));
+    if (screen_coords.has_value())
+      m_dist_edit_loc = *screen_coords;
+    else
+      m_dist_edit_loc = ScreenCoords(glm::dvec2(ImGui::GetIO().MousePos.x, ImGui::GetIO().MousePos.y));
+  }
 
   m_dist_callback = std::move(callback);
   if (!already_editing)
@@ -576,6 +597,9 @@ void GUI::hide_dist_edit()
 {
   if (m_dist_callback)
   {
+    float parsed {};
+    if (parse_dist_text_to_float(m_dist_text_buf.data(), parsed))
+      m_dist_val = parsed;
     std::function<void(float, bool)> callback;
     // In case the callback sets a new m_dist_callback
     std::swap(callback, m_dist_callback);
@@ -593,7 +617,7 @@ void GUI::dist_edit_()
   ImGui::SetNextWindowPos(ImVec2(float(m_dist_edit_loc.unsafe_get_x()), float(m_dist_edit_loc.unsafe_get_y())), ImGuiCond_Always);
 
   // Set a small size (optional)
-  ImGui::SetNextWindowSize(ImVec2(80.0f, 25.0f), ImGuiCond_Once);
+  ImGui::SetNextWindowSize(ImVec2(120.0f, 25.0f), ImGuiCond_Once);
 
   // Begin a window with minimal flags
   ImGui::Begin("FloatEdit##unique_id", nullptr,
@@ -602,7 +626,7 @@ void GUI::dist_edit_()
                    ImGuiWindowFlags_AlwaysAutoResize |
                    ImGuiWindowFlags_NoSavedSettings);
 
-  ImGui::SetNextItemWidth(72.0f);
+  ImGui::SetNextItemWidth(100.0f);
   // Focusing every frame prevents IsItemDeactivatedAfterEdit (click away / Tab) from ever committing.
   if (m_dist_edit_focus_pending)
   {
@@ -610,22 +634,21 @@ void GUI::dist_edit_()
     m_dist_edit_focus_pending = false;
   }
 
-  // Add a small input float widget and check for changes
-  if (ImGui::InputFloat("##dist_edit_float_value", &m_dist_val, 0.0f, 0.0f, "%.2f"))
+  // Text field: InputFloat applies printf rounding so typed digits can disagree with m_dist_val.
+  const bool text_changed = ImGui::InputText(
+      "##dist_edit_text",
+      m_dist_text_buf.data(),
+      m_dist_text_buf.size(),
+      ImGuiInputTextFlags_CharsDecimal | ImGuiInputTextFlags_CharsScientific);
+
+  if (text_changed && parse_dist_text_to_float(m_dist_text_buf.data(), m_dist_val))
     m_dist_callback(m_dist_val, false);
-  else
-    m_dist_val = std::round(m_dist_val * 100.0f) / 100.0f;
 
   if (ImGui::IsItemDeactivatedAfterEdit() && m_dist_callback)
   {
-    std::function<void(float, bool)> callback;
-    std::swap(callback, m_dist_callback);
-    callback(m_dist_val, true);
-  }
-
-  ImGui::SameLine();
-  if (ImGui::SmallButton("OK") && m_dist_callback)
-  {
+    float parsed {};
+    if (parse_dist_text_to_float(m_dist_text_buf.data(), parsed))
+      m_dist_val = parsed;
     std::function<void(float, bool)> callback;
     std::swap(callback, m_dist_callback);
     callback(m_dist_val, true);
