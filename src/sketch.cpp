@@ -491,16 +491,8 @@ void Sketch::add_node_pt_(const ScreenCoords& screen_coords)
     m_view.push_undo_snapshot();
     split_linear_edges_at_node_if_interior_(node_b);
 
-    // Same as Sketch_add_edge: turn the rubber-band segment into a real edge. Without this,
-    // clear_tmps_() below would discard the tmp edge and the segment would never appear in m_edges.
-    if (!m_tmp_edges.empty())
-    {
-      Edge& last = m_tmp_edges.back();
-      EZY_ASSERT(node_b != last.node_idx_a);
-      update_edge_end_pt_(last, node_b);
-      finalize_edges_();
-    }
-
+    // Add-node mode: the rubber band is only for placement (snap / dimension / angle). Do not create
+    // a sketch edge between the anchor and the new node — only nodes and interior splits matter.
     m_tmp_node_idxs.clear();
     clear_tmps_();
     m_ctx.Remove(m_tmp_dim_anno, true);
@@ -1127,14 +1119,6 @@ void Sketch::check_dimension_node_()
 
   m_view.push_undo_snapshot();
   split_linear_edges_at_node_if_interior_(b);
-
-  if (!m_tmp_edges.empty())
-  {
-    Edge& last = m_tmp_edges.back();
-    EZY_ASSERT(b != last.node_idx_a);
-    update_edge_end_pt_(last, b);
-    finalize_edges_();
-  }
 
   m_tmp_node_idxs.clear();
   clear_tmps_();
