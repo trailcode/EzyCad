@@ -576,7 +576,7 @@ void GUI::set_dist_edit(float dist, std::function<void(float, bool)>&& callback,
 {
   DBG_MSG("dist " << dist);
   // Sketch calls this every mousemove while TAB length mode is on; do not reset value/position each frame
-  // or typed distance and the OK button jump away from the cursor.
+  // or typed distance is replaced by the rubber-band length at the cursor.
   const bool already_editing = m_dist_callback != nullptr;
   if (!already_editing)
   {
@@ -661,27 +661,31 @@ void GUI::dist_edit_()
 void GUI::set_angle_edit(float angle, std::function<void(float, bool)>&& callback, const std::optional<ScreenCoords> screen_coords)
 {
   DBG_MSG("angle " << angle);
-  // Only update the value if the input isn't already active (to avoid overwriting user input)
-  if (!m_angle_callback)
+  const bool already_editing = m_angle_callback != nullptr;
+  if (!already_editing)
+  {
     m_angle_val = angle;
+    std::snprintf(m_angle_text_buf.data(), m_angle_text_buf.size(), "%.9g", static_cast<double>(angle));
+    if (screen_coords.has_value())
+      m_angle_edit_loc = *screen_coords;
+    else
+      m_angle_edit_loc = ScreenCoords(glm::dvec2(ImGui::GetIO().MousePos.x, ImGui::GetIO().MousePos.y));
+  }
 
-  if (screen_coords.has_value())
-    m_angle_edit_loc = *screen_coords;
-  else
-    m_angle_edit_loc = ScreenCoords(glm::dvec2(ImGui::GetIO().MousePos.x, ImGui::GetIO().MousePos.y));
-
-  m_angle_callback           = std::move(callback);
-  m_angle_edit_focus_pending = true;
+  m_angle_callback = std::move(callback);
+  if (!already_editing)
+    m_angle_edit_focus_pending = true;
 }
 
 void GUI::hide_angle_edit()
 {
   if (m_angle_callback)
   {
+    float parsed {};
+    if (parse_dist_text_to_float(m_angle_text_buf.data(), parsed))
+      m_angle_val = parsed;
     std::function<void(float, bool)> callback;
-    // In case the callback sets a new m_angle_callback
     std::swap(callback, m_angle_callback);
-    // In case just enter was pressed, or the callback needs to finalize something
     callback(m_angle_val, true);
   }
 }
@@ -700,7 +704,7 @@ void GUI::angle_edit_()
   ImGui::SetNextWindowPos(ImVec2(float(m_angle_edit_loc.unsafe_get_x()), float(m_angle_edit_loc.unsafe_get_y())), ImGuiCond_Always);
 
   // Set a small size (optional)
-  ImGui::SetNextWindowSize(ImVec2(80.0f, 25.0f), ImGuiCond_Once);
+  ImGui::SetNextWindowSize(ImVec2(120.0f, 25.0f), ImGuiCond_Once);
 
   // Begin a window with minimal flags
   ImGui::Begin("AngleEdit##unique_id", nullptr,
@@ -709,29 +713,27 @@ void GUI::angle_edit_()
                    ImGuiWindowFlags_AlwaysAutoResize |
                    ImGuiWindowFlags_NoSavedSettings);
 
-  ImGui::SetNextItemWidth(72.0f);
+  ImGui::SetNextItemWidth(100.0f);
   if (m_angle_edit_focus_pending)
   {
     ImGui::SetKeyboardFocusHere(0);
     m_angle_edit_focus_pending = false;
   }
 
-  // Add a small input float widget and check for changes
-  if (ImGui::InputFloat("##angle_edit_float_value", &m_angle_val, 0.0f, 0.0f, "%.2f"))
+  const bool text_changed = ImGui::InputText(
+      "##angle_edit_text",
+      m_angle_text_buf.data(),
+      m_angle_text_buf.size(),
+      ImGuiInputTextFlags_CharsDecimal | ImGuiInputTextFlags_CharsScientific);
+
+  if (text_changed && parse_dist_text_to_float(m_angle_text_buf.data(), m_angle_val))
     m_angle_callback(m_angle_val, false);
-  else
-    m_angle_val = std::round(m_angle_val * 100.0f) / 100.0f;
 
   if (ImGui::IsItemDeactivatedAfterEdit() && m_angle_callback)
   {
-    std::function<void(float, bool)> callback;
-    std::swap(callback, m_angle_callback);
-    callback(m_angle_val, true);
-  }
-
-  ImGui::SameLine();
-  if (ImGui::SmallButton("OK") && m_angle_callback)
-  {
+    float parsed {};
+    if (parse_dist_text_to_float(m_angle_text_buf.data(), parsed))
+      m_angle_val = parsed;
     std::function<void(float, bool)> callback;
     std::swap(callback, m_angle_callback);
     callback(m_angle_val, true);

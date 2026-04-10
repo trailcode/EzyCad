@@ -230,6 +230,7 @@ class GUI
   std::function<void(float, bool)> m_angle_callback;
   ScreenCoords                     m_angle_edit_loc {glm::dvec2(0, 0)};
   float                            m_angle_val {};
+  std::array<char, 64>             m_angle_text_buf {};
   bool                             m_angle_edit_focus_pending {false};
 
   // Mode related
