@@ -24,14 +24,16 @@ std::optional<gp_Pnt2d> Sketch_nodes::snap(const ScreenCoords& screen_coords)
   return pt;
 }
 
-size_t Sketch_nodes::get_node_exact(const gp_Pnt2d& pt)
+size_t Sketch_nodes::get_node_exact(const gp_Pnt2d& pt, bool permanent_for_new)
 {
   for (size_t idx = 0, num = m_nodes.size(); idx < num; ++idx)
     if (equal(pt, gp_Pnt2d(m_nodes[idx])))
       return idx;
 
-  size_t ret = m_nodes.size();
-  m_nodes.push_back({pt});
+  Node n(pt);
+  n.permanent = permanent_for_new;
+  const size_t ret = m_nodes.size();
+  m_nodes.push_back(n);
   return ret;
 }
 
@@ -199,11 +201,12 @@ void Sketch_nodes::hide_snap_annos()
   m_last_snap_pt = std::nullopt;
 }
 
-size_t Sketch_nodes::add_new_node(const gp_Pnt2d& pt, bool is_edge_mid_point)
+size_t Sketch_nodes::add_new_node(const gp_Pnt2d& pt, bool is_edge_mid_point, bool is_permanent)
 {
   size_t ret = m_nodes.size();
-  Node   n {pt};
-  n.midpoint = is_edge_mid_point;
+  Node   n(pt);
+  n.midpoint  = is_edge_mid_point;
+  n.permanent = is_permanent;
   m_nodes.emplace_back(n);
   DBG_MSG("Add node: " << pt.Coord().X() << "," << pt.Coord().Y() << " midpoint: " << (int) is_edge_mid_point);
   return ret;

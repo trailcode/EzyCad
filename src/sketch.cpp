@@ -70,11 +70,13 @@ void Sketch::add_sketch_pt(const ScreenCoords& screen_coords)
   switch (get_mode())
   {
       // clang-format off
-    case Mode::Sketch_add_rectangle:
-    case Mode::Sketch_add_rectangle_center_pt:
     case Mode::Sketch_add_square:
     case Mode::Sketch_add_circle:
-    case Mode::Sketch_add_node:           add_node_pt_          (screen_coords);                             break;
+    case Mode::Sketch_add_rectangle:
+    case Mode::Sketch_add_rectangle_center_pt:
+      add_line_string_pt_(screen_coords, Linestring_type::Single);
+      break;
+    case Mode::Sketch_add_node:           add_node_pt_          (screen_coords);                            break;
     case Mode::Sketch_add_edge:           add_line_string_pt_   (screen_coords, Linestring_type::Single);   break;
     case Mode::Sketch_add_slot:           add_line_string_pt_   (screen_coords, Linestring_type::Two);      break;
     case Mode::Sketch_add_multi_edges:    add_line_string_pt_   (screen_coords, Linestring_type::Multiple); break;
@@ -92,14 +94,22 @@ void Sketch::sketch_pt_move(const ScreenCoords& screen_coords)
   {
       // clang-format off
     case Mode::Sketch_add_node:            move_add_node_pt_    (screen_coords); break;
-    case Mode::Sketch_add_edge:
-    case Mode::Sketch_operation_axis:
-    case Mode::Sketch_add_multi_edges:     move_line_string_pt_ (screen_coords); break;
     case Mode::Sketch_add_seg_circle_arc:  move_arc_circle_pt_  (screen_coords); break;
     case Mode::Sketch_add_square:          move_square_pt_      (screen_coords); break;
-    case Mode::Sketch_add_rectangle:       move_rectangle_pt_   (screen_coords); break;
     case Mode::Sketch_add_circle:          move_circle_pt_      (screen_coords); break;
     case Mode::Sketch_add_slot:            move_slot_pt_        (screen_coords); break;
+
+    case Mode::Sketch_add_edge:
+    case Mode::Sketch_operation_axis:
+    case Mode::Sketch_add_multi_edges:
+      move_line_string_pt_ (screen_coords);
+      break;
+    
+    case Mode::Sketch_add_rectangle:
+    case Mode::Sketch_add_rectangle_center_pt:
+      move_rectangle_pt_(screen_coords);
+      break;
+    
       // clang-format on
     default:
       break;
@@ -225,8 +235,11 @@ void Sketch::on_enter()
       // clang-format off
     case Mode::Sketch_add_square:
     case Mode::Sketch_add_rectangle:
+    case Mode::Sketch_add_rectangle_center_pt:
     case Mode::Sketch_add_circle:
-    case Mode::Sketch_add_node:         check_dimension_node_();                          break;
+    case Mode::Sketch_add_node:
+      check_dimension_node_();
+      break;
     case Mode::Sketch_add_edge:         check_dimension_seg_(Linestring_type::Single);    break;
     case Mode::Sketch_add_slot:         check_dimension_seg_(Linestring_type::Two);       break;
     case Mode::Sketch_add_multi_edges:  check_dimension_seg_(Linestring_type::Multiple);  break;
@@ -516,8 +529,7 @@ void Sketch::add_node_pt_(const ScreenCoords& screen_coords)
     if (!unique(pt_a, final_pt))
       return;
 
-    // Do not run try_get_node_idx_snap here: it can move the point off the angle ray (axis snap).
-    const size_t node_idx = m_nodes.get_node_exact(final_pt);
+    const size_t node_idx = m_nodes.get_node_exact(final_pt, true);
     commit_b(node_idx);
     return;
   }
@@ -530,7 +542,7 @@ void Sketch::add_node_pt_(const ScreenCoords& screen_coords)
     if (!m_tmp_edges.empty())
     {
       Edge&  last   = m_tmp_edges.back();
-      size_t node_b = snap_to_node ? *snap_to_node : m_nodes.add_new_node(pt);
+      size_t node_b = snap_to_node ? *snap_to_node : m_nodes.add_new_node(pt, false, true);
       if (node_b == last.node_idx_a)
         return;
 
@@ -557,7 +569,7 @@ void Sketch::add_node_pt_(const ScreenCoords& screen_coords)
     }
 
     m_view.push_undo_snapshot();
-    const size_t ni = m_nodes.add_new_node(pt);
+    const size_t ni = m_nodes.add_new_node(pt, false, true);
     split_linear_edges_at_node_if_interior_(ni);
     m_ctx.Remove(m_tmp_dim_anno, true);
     m_tmp_dim_anno.Nullify();
@@ -1114,7 +1126,8 @@ void Sketch::check_dimension_node_()
   if (!unique(pt_a, *m_last_pt))
     return;
 
-  const size_t b = m_nodes.get_node_exact(*m_last_pt);
+  const bool permanent_placed = get_mode() == Mode::Sketch_add_node;
+  const size_t b              = m_nodes.get_node_exact(*m_last_pt, permanent_placed);
   clear_all(m_entered_edge_len);
 
   m_view.push_undo_snapshot();
@@ -1243,9 +1256,16 @@ void Sketch::finalize_elm()
     case Mode::Sketch_add_node:         finalize_add_node_elm_cleanup_();               break;
     case Mode::Sketch_add_edge:
     case Mode::Sketch_add_multi_edges:  finalize_edges_();          break;
-    case Mode::Sketch_add_square:       finalize_square_();         break;
-    case Mode::Sketch_add_rectangle:    finalize_rectangle_();      break;
-    case Mode::Sketch_add_circle:       finalize_circle_();         break;
+    case Mode::Sketch_add_square:
+      finalize_square_();
+      break;
+    case Mode::Sketch_add_rectangle:
+    case Mode::Sketch_add_rectangle_center_pt:
+      finalize_rectangle_();
+      break;
+    case Mode::Sketch_add_circle:
+      finalize_circle_();
+      break;
     case Mode::Sketch_add_slot:         finalize_slot_();           break;
     case Mode::Sketch_operation_axis:   finalize_operation_axis_(); break;
       // clang-format on
@@ -1579,8 +1599,14 @@ void Sketch::update_faces_()
 
   // Mark unused nodes as deleted so they're excluded from snapping operations.
   // Nodes become unused when all edges that reference them are removed.
+  // User-placed add-node points stay active even with no incident edges (Node::permanent).
   for (size_t idx = 0, num = m_nodes.size(); idx < num; ++idx)
-    m_nodes[idx].deleted = !used_nodes[idx];
+  {
+    if (m_nodes[idx].permanent)
+      m_nodes[idx].deleted = false;
+    else
+      m_nodes[idx].deleted = !used_nodes[idx];
+  }
 
   // Book keeping
   struct Face_meta

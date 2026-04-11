@@ -26,9 +26,10 @@ class Sketch_nodes
   Sketch_nodes(Occt_view& view, const gp_Pln& pln);
   ~Sketch_nodes();
 
-  size_t                  add_new_node(const gp_Pnt2d& pt, bool is_edge_mid_point = false);
+  size_t                  add_new_node(const gp_Pnt2d& pt, bool is_edge_mid_point = false, bool is_permanent = false);
   std::optional<gp_Pnt2d> snap(const ScreenCoords& screen_coords);
-  size_t                  get_node_exact(const gp_Pnt2d& pt);
+  // If no node exists at `pt`, appends one; `permanent_for_new` sets Node::permanent on that new node only.
+  size_t                  get_node_exact(const gp_Pnt2d& pt, bool permanent_for_new = false);
   std::optional<size_t>   get_node(const ScreenCoords& screen_coords);
   std::optional<size_t>   try_get_node_idx_snap(
         gp_Pnt2d&                  pt,  // `pt` could be snapped to a node, an axis of another node, or an outside snap point.
