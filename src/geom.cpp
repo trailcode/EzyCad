@@ -10,6 +10,8 @@
 #include <BRepBuilderAPI_MakeEdge.hxx>
 #include <BRepBuilderAPI_MakeVertex.hxx>
 #include <BRepBuilderAPI_MakeWire.hxx>
+#include <BRep_Builder.hxx>
+#include <TopoDS_Compound.hxx>
 #include <BRepClass_FaceClassifier.hxx>
 #include <BRepGProp.hxx>
 #include <BRepTools.hxx>
@@ -147,6 +149,25 @@ TopoDS_Wire create_wire_box(const gp_Pln& plane, const gp_Pnt& center, double wi
   }
 
   return wire_maker.Wire();
+}
+
+TopoDS_Shape create_plus_cross_shape(const gp_Pln& plane, const gp_Pnt& center_3d, double half_arm)
+{
+  gp_Ax3 axes  = plane.Position();
+  gp_Vec vx(axes.XDirection());
+  gp_Vec vy(axes.YDirection());
+  vx.Multiply(half_arm);
+  vy.Multiply(half_arm);
+
+  const TopoDS_Edge eh = BRepBuilderAPI_MakeEdge(center_3d.Translated(-vx), center_3d.Translated(vx)).Edge();
+  const TopoDS_Edge ev = BRepBuilderAPI_MakeEdge(center_3d.Translated(-vy), center_3d.Translated(vy)).Edge();
+
+  TopoDS_Compound comp;
+  BRep_Builder    bb;
+  bb.MakeCompound(comp);
+  bb.Add(comp, eh);
+  bb.Add(comp, ev);
+  return comp;
 }
 
 TopoDS_Wire make_square_wire(const gp_Pln&   pln,

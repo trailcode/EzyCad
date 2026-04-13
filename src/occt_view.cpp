@@ -980,6 +980,10 @@ void Occt_view::delete_selected()
 void Occt_view::delete_(std::vector<AIS_Shape_ptr>& to_delete)
 {
   for (AIS_Shape_ptr& shp : to_delete)
+    if (auto mark = dynamic_cast<Sketch_AIS_node_mark*>(shp.get()); mark)
+      mark->owner_sketch.remove_permanent_node_mark(*mark);
+
+  for (AIS_Shape_ptr& shp : to_delete)
     if (auto wire = dynamic_cast<Sketch_AIS_edge*>(shp.get()); wire)
       wire->owner_sketch.remove_edge(*wire);
 

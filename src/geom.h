@@ -44,6 +44,9 @@ gp_Pnt2d to_pnt2d(const boost_geom::point_2d& pt);
 // Function to create a wire box centered on a point on a plane, returning a TopoDS_Wire
 TopoDS_Wire create_wire_box(const gp_Pln& plane, const gp_Pnt& position, double width, double height);
 
+/// Two perpendicular segments forming a + on \a plane, centered at \a center_3d, half-length \a half_arm (model units).
+TopoDS_Shape create_plus_cross_shape(const gp_Pln& plane, const gp_Pnt& center_3d, double half_arm);
+
 TopoDS_Wire make_square_wire(const gp_Pln&   pln,
                              const gp_Pnt2d& center,
                              const gp_Pnt2d& edge_midpoint);

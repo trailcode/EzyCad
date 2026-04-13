@@ -29,6 +29,14 @@ struct Sketch_AIS_edge : public AIS_Shape
   Sketch& owner_sketch;
 };
 
+/// Selectable “+” marker for user-placed permanent sketch nodes (add-node tool).
+struct Sketch_AIS_node_mark : public AIS_Shape
+{
+  Sketch_AIS_node_mark(Sketch& owner, size_t node_idx, const TopoDS_Shape& shp);
+  Sketch& owner_sketch;
+  size_t  node_idx {};
+};
+
 struct Sketch_face_shp : public AIS_Shape
 {
   Sketch_face_shp(Sketch& owner, const TopoDS_Shape& face);
@@ -38,8 +46,9 @@ struct Sketch_face_shp : public AIS_Shape
   std::vector<size_t> vert_idxs;
 };
 
-using Sketch_AIS_edge_ptr = opencascade::handle<Sketch_AIS_edge>;
-using Sketch_face_shp_ptr = opencascade::handle<Sketch_face_shp>;
+using Sketch_AIS_edge_ptr     = opencascade::handle<Sketch_AIS_edge>;
+using Sketch_AIS_node_mark_ptr = opencascade::handle<Sketch_AIS_node_mark>;
+using Sketch_face_shp_ptr     = opencascade::handle<Sketch_face_shp>;
 
 // The Sketch class provides a comprehensive set of methods for creating and manipulating 2D sketches in a 3D environment.
 // It supports adding and moving points, creating line segments, arcs, and mirror lines, and updating the sketch's
@@ -88,6 +97,7 @@ class Sketch
   void set_current();  // Make current in m_view
   void set_edge_style(Edge_style style);
   void remove_edge(const Sketch_AIS_edge& edge);
+  void remove_permanent_node_mark(Sketch_AIS_node_mark& mark);
   void mirror_selected_edges();
 
   void toggle_edge_dim(const ScreenCoords& screen_coords);
@@ -231,7 +241,8 @@ class Sketch
   void if_edge_pt_valid_(Callback&& callback);
   void check_dimension_seg_(Linestring_type linestring_type);
   /// Typed distance (Enter) while add-node rubber band is active — places node B, no edge.
-  void check_dimension_node_();
+  /// Enter key / dist popup commit for rubber-band tmp edge (add node, square, circle, rectangle, …).
+  void check_dimension_rubber_();
   /// Right-click / finalize: drop incomplete add-node preview (same idea as incomplete line).
   void finalize_add_node_elm_cleanup_();
   void add_edge_(const gp_Pnt2d& pt_a, const gp_Pnt2d& pt_b, bool add_dim_anno = false);
@@ -259,6 +270,8 @@ class Sketch
 
   // Style related
   void update_edge_style_(AIS_Shape_ptr& shp);
+  void update_node_mark_style_(AIS_Shape_ptr& shp);
+  void sync_permanent_node_annos_();
   void update_originating_face_style();
   void update_face_style_(AIS_Shape_ptr& shp) const;
   void set_edge_dim_anno_visible_(Edge& e, bool visible);
@@ -308,6 +321,8 @@ class Sketch
 
   std::optional<gp_Pnt2d>          m_last_pt;
   Sketch_nodes                     m_nodes;
+  /// One entry per node index; only indices with permanent, non-deleted nodes hold a displayed + marker.
+  std::vector<Sketch_AIS_node_mark_ptr> m_permanent_node_marks;
   std::list<Edge>                  m_edges;
   std::vector<Sketch_face_shp_ptr> m_faces;
   std::vector<TopoDS_Face>         m_dim_classifier_faces;

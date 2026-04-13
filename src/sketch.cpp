@@ -8,6 +8,7 @@
 #include <GC_MakeArcOfCircle.hxx>
 #include <Graphic3d_AspectFillArea3d.hxx>
 #include <PrsDim_LengthDimension.hxx>
+#include <Precision.hxx>
 #include <TopExp_Explorer.hxx>
 #include <TopoDS.hxx>
 #include <TopoDS_Edge.hxx>
@@ -61,6 +62,11 @@ Sketch::~Sketch()
 
   if (m_operation_axis.has_value())
     remove_edge(*m_operation_axis);
+
+  for (Sketch_AIS_node_mark_ptr& mk : m_permanent_node_marks)
+    if (mk)
+      m_ctx.Remove(mk, false);
+  m_permanent_node_marks.clear();
 
   m_ctx.Remove(m_originating_face, true);
 }
@@ -177,6 +183,84 @@ void Sketch::update_edge_style_(AIS_Shape_ptr& shp)
   }
 }
 
+void Sketch::update_node_mark_style_(AIS_Shape_ptr& shp)
+{
+  switch (m_edge_style)
+  {
+    case Edge_style::Full:
+      shp->SetWidth(1.25);
+      shp->SetColor(Quantity_Color(0.85, 1.0, 0.85, Quantity_TOC_RGB));
+      shp->SetTransparency(0.0);
+      break;
+
+    case Edge_style::Background:
+      shp->SetWidth(1.0);
+      shp->SetColor(Quantity_Color(0.35, 0.45, 0.35, Quantity_TOC_RGB));
+      shp->SetTransparency(0.5);
+      break;
+
+    default:
+      EZY_ASSERT(false);
+  }
+}
+
+void Sketch::sync_permanent_node_annos_()
+{
+  if (m_permanent_node_marks.size() < m_nodes.size())
+    m_permanent_node_marks.resize(m_nodes.size());
+
+  const double half_arm =
+      std::max(plane_pick_snap_radius_world_() * 0.45, Precision::Confusion() * 50.0);
+
+  for (size_t i = 0, n = m_nodes.size(); i < n; ++i)
+  {
+    const Sketch_nodes::Node& node = m_nodes[i];
+    const bool                show = m_visible && node.permanent && !node.deleted;
+
+    if (!show)
+    {
+      if (m_permanent_node_marks[i])
+      {
+        m_ctx.Remove(m_permanent_node_marks[i], false);
+        m_permanent_node_marks[i].Nullify();
+      }
+      continue;
+    }
+
+    const gp_Pnt2d p2(node.X(), node.Y());
+    const gp_Pnt   c3 = to_3d(m_pln, p2);
+    const TopoDS_Shape cross = create_plus_cross_shape(m_pln, c3, half_arm);
+
+    if (m_permanent_node_marks[i])
+    {
+      m_permanent_node_marks[i]->Set(cross);
+      update_node_mark_style_(m_permanent_node_marks[i]);
+      m_ctx.Redisplay(m_permanent_node_marks[i], true);
+    }
+    else
+    {
+      Sketch_AIS_node_mark_ptr mk = new Sketch_AIS_node_mark(*this, i, cross);
+      update_node_mark_style_(mk);
+      m_permanent_node_marks[i] = mk;
+      m_ctx.Display(mk, AIS_WireFrame, 0, false);
+    }
+  }
+}
+
+void Sketch::remove_permanent_node_mark(Sketch_AIS_node_mark& mark)
+{
+  EZY_ASSERT(&mark.owner_sketch == this);
+  const size_t i = mark.node_idx;
+  EZY_ASSERT(i < m_nodes.size());
+  m_nodes[i].deleted = true;
+  if (i < m_permanent_node_marks.size() && m_permanent_node_marks[i].get() == &mark)
+  {
+    m_ctx.Remove(m_permanent_node_marks[i], false);
+    m_permanent_node_marks[i].Nullify();
+  }
+  m_ctx.UpdateCurrentViewer();
+}
+
 void Sketch::update_originating_face_style()
 {
   if (!m_originating_face)
@@ -238,7 +322,7 @@ void Sketch::on_enter()
     case Mode::Sketch_add_rectangle_center_pt:
     case Mode::Sketch_add_circle:
     case Mode::Sketch_add_node:
-      check_dimension_node_();
+      check_dimension_rubber_();
       break;
     case Mode::Sketch_add_edge:         check_dimension_seg_(Linestring_type::Single);    break;
     case Mode::Sketch_add_slot:         check_dimension_seg_(Linestring_type::Two);       break;
@@ -1108,7 +1192,7 @@ void Sketch::check_dimension_seg_(Linestring_type linestring_type)
   }
 }
 
-void Sketch::check_dimension_node_()
+void Sketch::check_dimension_rubber_()
 {
   if (!m_entered_edge_len.has_value())
     return;
@@ -1126,8 +1210,19 @@ void Sketch::check_dimension_node_()
   if (!unique(pt_a, *m_last_pt))
     return;
 
-  const bool permanent_placed = get_mode() == Mode::Sketch_add_node;
-  const size_t b              = m_nodes.get_node_exact(*m_last_pt, permanent_placed);
+  const Mode mode = get_mode();
+  if (mode == Mode::Sketch_add_square || mode == Mode::Sketch_add_circle || mode == Mode::Sketch_add_rectangle ||
+      mode == Mode::Sketch_add_rectangle_center_pt)
+  {
+    update_edge_end_pt_(edge, m_nodes.get_node_exact(*m_last_pt));
+    EZY_ASSERT(edge.node_idx_b.has_value());
+    clear_all(m_entered_edge_len);
+    finalize_elm();
+    return;
+  }
+
+  EZY_ASSERT(mode == Mode::Sketch_add_node);
+  const size_t b = m_nodes.get_node_exact(*m_last_pt, true);
   clear_all(m_entered_edge_len);
 
   m_view.push_undo_snapshot();
@@ -1281,6 +1376,14 @@ bool Sketch::cancel_elm()
   m_ctx.Remove(m_tmp_dim_anno, true);
   m_nodes.hide_snap_annos();
   m_nodes.cancel();
+
+  while (m_permanent_node_marks.size() > m_nodes.size())
+  {
+    const size_t last = m_permanent_node_marks.size() - 1;
+    if (m_permanent_node_marks[last])
+      m_ctx.Remove(m_permanent_node_marks[last], false);
+    m_permanent_node_marks.pop_back();
+  }
 
   return operation_canceled;
 }
@@ -1599,12 +1702,10 @@ void Sketch::update_faces_()
 
   // Mark unused nodes as deleted so they're excluded from snapping operations.
   // Nodes become unused when all edges that reference them are removed.
-  // User-placed add-node points stay active even with no incident edges (Node::permanent).
+  // Permanent add-node points are never auto-tombstoned when unused; user delete sets `deleted` and it stays.
   for (size_t idx = 0, num = m_nodes.size(); idx < num; ++idx)
   {
-    if (m_nodes[idx].permanent)
-      m_nodes[idx].deleted = false;
-    else
+    if (!m_nodes[idx].permanent)
       m_nodes[idx].deleted = !used_nodes[idx];
   }
 
@@ -1678,6 +1779,8 @@ void Sketch::update_faces_()
   }
 
   rebuild_dim_classifier_face_cache_();
+
+  sync_permanent_node_annos_();
 }
 
 void Sketch::rebuild_dim_classifier_face_cache_()
@@ -2029,6 +2132,8 @@ void Sketch::set_visible(bool state)
     // Show operation axis only if this sketch is current
     if (m_operation_axis.has_value() && is_current())
       m_ctx.Display(m_operation_axis->shp, AIS_WireFrame, 0, false);
+
+    sync_permanent_node_annos_();
   }
   else
   {
@@ -2054,6 +2159,10 @@ void Sketch::set_visible(bool state)
 
     m_nodes.hide_snap_annos();
     cancel_elm();
+
+    for (Sketch_AIS_node_mark_ptr& mk : m_permanent_node_marks)
+      if (mk)
+        m_ctx.Erase(mk, false);
   }
 
   m_ctx.UpdateCurrentViewer();
@@ -2156,6 +2265,7 @@ void Sketch::set_edge_style(Edge_style style)
   for (Edge& e : m_edges)
     update_edge_style_(e.shp);
 
+  sync_permanent_node_annos_();
   update_originating_face_style();
 }
 
@@ -2507,6 +2617,10 @@ Sketch_AIS_edge::Sketch_AIS_edge(Sketch& owner, const TopoDS_Shape& shp)
 {
   int hi = 0;
 }
+
+Sketch_AIS_node_mark::Sketch_AIS_node_mark(Sketch& owner, size_t node_idx, const TopoDS_Shape& shp)
+    : AIS_Shape(shp), owner_sketch(owner), node_idx(node_idx)
+{}
 
 Sketch_face_shp::Sketch_face_shp(Sketch& owner, const TopoDS_Shape& face)
     : owner_sketch(owner), AIS_Shape(face) {}
