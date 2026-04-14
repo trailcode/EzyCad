@@ -132,6 +132,10 @@ def _ezycad_bootstrap():
             return _n.ezy_get_mode()
         def set_mode(self, name):
             return _n.ezy_set_mode(name)
+        def save_occt_view_settings(self):
+            return _n.ezy_save_occt_view_settings()
+        def occt_view_settings_json(self):
+            return _n.ezy_occt_view_settings_json()
         def help(self):
             return _n.ezy_help()
     import __main__
@@ -209,10 +213,12 @@ PYBIND11_EMBEDDED_MODULE(ezycad_native, m)
           return;
         const char* help_text =
             "ezy:\n"
-            "  ezy.log(msg)          - append message to console and log window\n"
-            "  ezy.msg(text)         - show status message\n"
-            "  ezy.get_mode()        - return current mode name\n"
-            "  ezy.set_mode(name)    - set mode by name\n"
+            "  ezy.log(msg)                  - append message to console and log window\n"
+            "  ezy.msg(text)                 - show status message\n"
+            "  ezy.get_mode()                - return current mode name\n"
+            "  ezy.set_mode(name)            - set mode by name\n"
+            "  ezy.save_occt_view_settings() - write settings JSON (incl. view colors)\n"
+            "  ezy.occt_view_settings_json() - JSON: occt_view + gui edge_dim_label_h / edge_dim_line_width\n"
             "  ezy.help()            - print this help\n"
             "view:\n"
             "  view.sketch_count()          - number of sketches\n"
@@ -227,6 +233,23 @@ PYBIND11_EMBEDDED_MODULE(ezycad_native, m)
             "  s.visible()           - get visibility\n"
             "  s.set_visible(b)      - set visibility";
         g_py_console->append_line_from_python(help_text);
+      });
+
+  m.def(
+      "ezy_save_occt_view_settings",
+      []
+      {
+        if (g_py_gui)
+          g_py_gui->save_occt_view_settings();
+      });
+
+  m.def(
+      "ezy_occt_view_settings_json",
+      []
+      {
+        if (!g_py_gui)
+          return std::string("{}");
+        return g_py_gui->occt_view_settings_json();
       });
 
   m.def(

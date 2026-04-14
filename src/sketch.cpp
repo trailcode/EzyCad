@@ -189,13 +189,13 @@ void Sketch::update_node_mark_style_(AIS_Shape_ptr& shp)
   {
     case Edge_style::Full:
       shp->SetWidth(1.25);
-      shp->SetColor(Quantity_Color(0.85, 1.0, 0.85, Quantity_TOC_RGB));
+      shp->SetColor(Quantity_NOC_RED);
       shp->SetTransparency(0.0);
       break;
 
     case Edge_style::Background:
       shp->SetWidth(1.0);
-      shp->SetColor(Quantity_Color(0.35, 0.45, 0.35, Quantity_TOC_RGB));
+      shp->SetColor(Quantity_Color(0.55, 0.12, 0.12, Quantity_TOC_RGB));
       shp->SetTransparency(0.5);
       break;
 
@@ -462,7 +462,8 @@ void Sketch::move_line_string_pt_(const ScreenCoords& screen_coords)
       m_tmp_dim_anno = create_distance_annotation(
           pt_a, final_pt_b, m_pln, edge_dim_text_h_pos_from_index(m_view.gui().edge_dim_label_h()),
           approx_sketch_interior_ref_3d_(),
-          m_dim_classifier_faces.empty() ? nullptr : &m_dim_classifier_faces);
+          m_dim_classifier_faces.empty() ? nullptr : &m_dim_classifier_faces, m_view.gui().edge_dim_line_width());
+
       m_tmp_dim_anno->SetCustomValue(dist);
       m_ctx.Display(m_tmp_dim_anno, true);
     }
@@ -1318,7 +1319,8 @@ void Sketch::set_edge_dim_anno_visible_(Edge& e, bool visible)
     e.dim = create_distance_annotation(
         m_nodes[e.node_idx_a], m_nodes[e.node_idx_b], m_pln,
         edge_dim_text_h_pos_from_index(m_view.gui().edge_dim_label_h()), approx_sketch_interior_ref_3d_(),
-        m_dim_classifier_faces.empty() ? nullptr : &m_dim_classifier_faces);
+        m_dim_classifier_faces.empty() ? nullptr : &m_dim_classifier_faces, m_view.gui().edge_dim_line_width());
+
     double dist = m_nodes[e.node_idx_a].Distance(m_nodes[e.node_idx_b]);
     e.dim->SetCustomValue(dist / m_view.get_dimension_scale());
     m_ctx.Display(e.dim, true);
@@ -2211,6 +2213,22 @@ void Sketch::set_show_dims(bool show)
     for (Edge& e : m_edges)
       if (e.dim)
         m_ctx.Erase(e.dim, false);
+  }
+}
+
+void Sketch::refresh_edge_dimension_line_widths(const double line_width)
+{
+  for (Edge& e : m_edges)
+    if (!e.dim.IsNull())
+    {
+      apply_length_dimension_line_width(e.dim, line_width);
+      m_ctx.Redisplay(e.dim, true);
+    }
+
+  if (!m_tmp_dim_anno.IsNull())
+  {
+    apply_length_dimension_line_width(m_tmp_dim_anno, line_width);
+    m_ctx.Redisplay(m_tmp_dim_anno, true);
   }
 }
 

@@ -303,7 +303,8 @@ void GUI::options_()
               "Where to place the numeric value along the dimension line (near the first or second end, center, or auto).\n"
               "This does not flip which side of the edge the dimension sits on.\n"
               "When the sketch has filled faces, dimensions offset to the void side (point-in-face test).\n"
-              "Otherwise the average node position is used as a rough inside reference.");
+              "Otherwise the average node position is used as a rough inside reference.\n"
+              "Dimension line width is in Settings -> Sketch.");
         break;
       }
 

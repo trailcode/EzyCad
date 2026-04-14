@@ -1,6 +1,7 @@
 #pragma once
 
 #include <AIS_Shape.hxx>
+#include <TopoDS_Face.hxx>
 #include <gp_Pnt.hxx>
 #include <gp_Pnt2d.hxx>
 #include <gp_Vec2d.hxx>
@@ -8,7 +9,6 @@
 #include <memory>
 #include <optional>
 #include <set>
-#include <TopoDS_Face.hxx>
 #include <vector>
 
 #include "shp.h"
@@ -46,9 +46,9 @@ struct Sketch_face_shp : public AIS_Shape
   std::vector<size_t> vert_idxs;
 };
 
-using Sketch_AIS_edge_ptr     = opencascade::handle<Sketch_AIS_edge>;
+using Sketch_AIS_edge_ptr      = opencascade::handle<Sketch_AIS_edge>;
 using Sketch_AIS_node_mark_ptr = opencascade::handle<Sketch_AIS_node_mark>;
-using Sketch_face_shp_ptr     = opencascade::handle<Sketch_face_shp>;
+using Sketch_face_shp_ptr      = opencascade::handle<Sketch_face_shp>;
 
 // The Sketch class provides a comprehensive set of methods for creating and manipulating 2D sketches in a 3D environment.
 // It supports adding and moving points, creating line segments, arcs, and mirror lines, and updating the sketch's
@@ -89,6 +89,9 @@ class Sketch
   void set_show_faces(bool show);
   void set_show_edges(bool show);
   void set_show_dims(bool show);
+
+  /// Apply global dimension line width to edge annotations and in-progress rubber-band dim.
+  void refresh_edge_dimension_line_widths(double line_width);
 
   // Revolve related
   Shp_rslt revolve_selected(const double angle);
@@ -136,15 +139,16 @@ class Sketch
   void                underlay_line_tint_rgb(uint8_t& r, uint8_t& g, uint8_t& b) const;
   void                underlay_ui_params(double& cx, double& cy, double& half_w, double& half_h, double& rot_deg) const;
   void                underlay_rebuild_display();
+
   /// Same snap / plane rules as the line-edge tool (for underlay calibration clicks).
   [[nodiscard]] std::optional<gp_Pnt2d> pick_point_for_underlay_calib(const ScreenCoords& screen_coords);
   /// Set underlay from texture corner \a base, U edge vector \a axis_u, V edge vector \a axis_v (plane 2D).
-  void                underlay_set_affine_plane(const gp_Pnt2d& base, const gp_Vec2d& axis_u, const gp_Vec2d& axis_v);
+  void                                  underlay_set_affine_plane(const gp_Pnt2d& base, const gp_Vec2d& axis_u, const gp_Vec2d& axis_v);
   /// Uniformly scale texture axes so plane segment \a p0-\a p1 has length \a target_len; UV at \a p0 stays fixed.
-  [[nodiscard]] bool  underlay_rescale_uv_chord_to_length(const gp_Pnt2d& p0, const gp_Pnt2d& p1, double target_len);
+  [[nodiscard]] bool                    underlay_rescale_uv_chord_to_length(const gp_Pnt2d& p0, const gp_Pnt2d& p1, double target_len);
   /// Keep U axis; adjust V and base so segment \a y0-\a y1 has length \a target_len (after X calibration).
-  [[nodiscard]] bool  underlay_rescale_v_chord_to_length(const gp_Pnt2d& y0, const gp_Pnt2d& y1, double target_len);
-  [[nodiscard]] gp_Vec2d underlay_axis_u_vec() const;
+  [[nodiscard]] bool                    underlay_rescale_v_chord_to_length(const gp_Pnt2d& y0, const gp_Pnt2d& y1, double target_len);
+  [[nodiscard]] gp_Vec2d                underlay_axis_u_vec() const;
 
   // private:
   friend class Sketch_json;
@@ -198,11 +202,12 @@ class Sketch
   void finalize_edges_();
 
   /// Add a single node (no new edge); splits any linear edge the node lies on in its interior.
-  void add_node_pt_(const ScreenCoords& screen_coords);
-  void move_add_node_pt_(const ScreenCoords& screen_coords);
-  void split_linear_edges_at_node_if_interior_(size_t node_idx);
+  void   add_node_pt_(const ScreenCoords& screen_coords);
+  void   move_add_node_pt_(const ScreenCoords& screen_coords);
+  void   split_linear_edges_at_node_if_interior_(size_t node_idx);
+  
   /// Move a newly placed node onto the nearest linear edge within pick tolerance so split + `used_nodes` sees it.
-  void snap_placed_node_to_closest_linear_edge_interior_(size_t node_idx);
+  void   snap_placed_node_to_closest_linear_edge_interior_(size_t node_idx);
   double plane_pick_snap_radius_world_() const;
 
   // Arc circle related
@@ -319,18 +324,18 @@ class Sketch
   AIS_Shape_ptr m_originating_face;  // If this sketch was created from a face.
   gp_Pln        m_pln;               // Plane this sketch is on.
 
-  std::optional<gp_Pnt2d>          m_last_pt;
-  Sketch_nodes                     m_nodes;
+  std::optional<gp_Pnt2d>               m_last_pt;
+  Sketch_nodes                          m_nodes;
   /// One entry per node index; only indices with permanent, non-deleted nodes hold a displayed + marker.
   std::vector<Sketch_AIS_node_mark_ptr> m_permanent_node_marks;
-  std::list<Edge>                  m_edges;
-  std::vector<Sketch_face_shp_ptr> m_faces;
-  std::vector<TopoDS_Face>         m_dim_classifier_faces;
-  std::vector<size_t>              m_tmp_node_idxs;
-  std::vector<Edge>                m_tmp_edges;
-  AIS_Shape_ptr                    m_tmp_shp;
-  PrsDim_LengthDimension_ptr       m_tmp_dim_anno;
-  bool                             m_show_faces {true};
+  std::list<Edge>                       m_edges;
+  std::vector<Sketch_face_shp_ptr>      m_faces;
+  std::vector<TopoDS_Face>              m_dim_classifier_faces;
+  std::vector<size_t>                   m_tmp_node_idxs;
+  std::vector<Edge>                     m_tmp_edges;
+  AIS_Shape_ptr                         m_tmp_shp;
+  PrsDim_LengthDimension_ptr            m_tmp_dim_anno;
+  bool                                  m_show_faces {true};
 
   std::unique_ptr<Sketch_underlay> m_underlay;
 };

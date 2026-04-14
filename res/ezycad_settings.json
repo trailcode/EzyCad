@@ -1,7 +1,8 @@
 {
   "gui": {
     "dark_mode": true,
-    "edge_dim_label_h": 3,
+    "edge_dim_label_h": 10,
+    "edge_dim_line_width": 2.0,
     "imgui_rounding_general": 8.0,
     "imgui_rounding_scroll": 11.0,
     "imgui_rounding_tabs": 6.0,

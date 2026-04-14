@@ -23,7 +23,9 @@
 #include <Geom_Circle.hxx>
 #include <Geom_Plane.hxx>
 #include <Geom_TrimmedCurve.hxx>
+#include <Graphic3d_AspectLine3d.hxx>
 #include <Prs3d_DimensionAspect.hxx>
+#include <Prs3d_LineAspect.hxx>
 #include <PrsDim_LengthDimension.hxx>
 #include <TopExp.hxx>
 #include <TopExp_Explorer.hxx>
@@ -584,6 +586,31 @@ static void apply_length_dimension_text_h_position(const PrsDim_LengthDimension_
   dim->SetDimensionAspect(aspect);
 }
 
+void apply_length_dimension_line_width(const PrsDim_LengthDimension_ptr& dim, const double line_width)
+{
+  if (dim.IsNull())
+    return;
+  const Handle(Prs3d_DimensionAspect)& cur = dim->DimensionAspect();
+  Handle(Prs3d_DimensionAspect)      aspect;
+  if (!cur.IsNull())
+    aspect = new Prs3d_DimensionAspect(*cur);
+  else
+    aspect = new Prs3d_DimensionAspect();
+
+  Quantity_Color    col = Quantity_NOC_YELLOW;
+  Aspect_TypeOfLine typ = Aspect_TOL_SOLID;
+  if (const Handle(Prs3d_LineAspect)& la = aspect->LineAspect(); !la.IsNull())
+  {
+    const Handle(Graphic3d_AspectLine3d)& g = la->Aspect();
+    col = g->Color();
+    typ = g->Type();
+  }
+
+  Handle(Prs3d_LineAspect) new_line = new Prs3d_LineAspect(col, typ, static_cast<Standard_Real>(line_width));
+  aspect->SetLineAspect(new_line);
+  dim->SetDimensionAspect(aspect);
+}
+
 // OCCT draws the dimension on the side given by (plane_normal x edge_vector) for positive flyout.
 // When that side faces the sketch interior, negate flyout so the annotation sits outside the loop.
 static void orient_length_dimension_flyout_outward(const PrsDim_LengthDimension_ptr& dim,
@@ -680,7 +707,8 @@ PrsDim_LengthDimension_ptr create_distance_annotation(const gp_Pnt& p1,
                                                       const gp_Pln& pln,
                                                       const Prs3d_DimensionTextHorizontalPosition text_h_pos,
                                                       const std::optional<gp_Pnt>&    interior_ref,
-                                                      const std::vector<TopoDS_Face>* sketch_faces_for_flyout)
+                                                      const std::vector<TopoDS_Face>* sketch_faces_for_flyout,
+                                                      const double                    dimension_line_width)
 {
   // Check if points are too close (invalid for dimension)
   EZY_ASSERT(unique(p1, p2));
@@ -691,6 +719,8 @@ PrsDim_LengthDimension_ptr create_distance_annotation(const gp_Pnt& p1,
 
   PrsDim_LengthDimension_ptr dim = new PrsDim_LengthDimension(vertex_1, vertex_2, pln);
   apply_length_dimension_text_h_position(dim, text_h_pos);
+  apply_length_dimension_line_width(dim, static_cast<Standard_Real>(dimension_line_width));
+
   bool used_faces = false;
   if (sketch_faces_for_flyout && !sketch_faces_for_flyout->empty())
     used_faces = orient_length_dimension_flyout_clear_of_faces(dim, p1, p2, pln, *sketch_faces_for_flyout);
@@ -704,12 +734,14 @@ PrsDim_LengthDimension_ptr create_distance_annotation(const gp_Pnt2d& p1,
                                                       const gp_Pln&   pln,
                                                       const Prs3d_DimensionTextHorizontalPosition text_h_pos,
                                                       const std::optional<gp_Pnt>&    interior_ref,
-                                                      const std::vector<TopoDS_Face>* sketch_faces_for_flyout)
+                                                      const std::vector<TopoDS_Face>* sketch_faces_for_flyout,
+                                                      const double                    dimension_line_width)
 {
   gp_Pnt point_1 = to_3d(pln, p1);
   gp_Pnt point_2 = to_3d(pln, p2);
 
-  return create_distance_annotation(point_1, point_2, pln, text_h_pos, interior_ref, sketch_faces_for_flyout);
+  return create_distance_annotation(point_1, point_2, pln, text_h_pos, interior_ref, sketch_faces_for_flyout,
+                                    dimension_line_width);
 }
 
 const gp_Pnt& closest_to_camera(const V3d_View_ptr& view, const std::vector<gp_Pnt>& pnts)

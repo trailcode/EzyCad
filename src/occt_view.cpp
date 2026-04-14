@@ -920,6 +920,13 @@ bool Occt_view::fit_face_in_view(const TopoDS_Face& face)
 }
 
 // Dimension related
+void Occt_view::refresh_all_length_dimension_line_widths(const double line_width)
+{
+  for (const Sketch_ptr& sk : m_sketches)
+    if (sk)
+      sk->refresh_edge_dimension_line_widths(line_width);
+}
+
 void Occt_view::dimension_input(const ScreenCoords& screen_coords)
 {
   switch (get_mode())
