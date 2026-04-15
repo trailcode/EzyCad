@@ -6,4 +6,4 @@ To use a note in **Cursor**, copy or symlink the relevant file into your user or
 
 | File | Intent |
 | --- | --- |
-| [ezycad-ascii-source.md](ezycad-ascii-source.md) | ASCII-only comments and strings in `src/`; points at `ezycad-style.md` and `scripts/check-nonascii-src.ps1`. |
+| [ezycad-ascii-source.md](ezycad-ascii-source.md) | ASCII-only comments and strings in `src/`; points at `ezycad_code_style.md` and `scripts/check-nonascii-src.ps1`. |
