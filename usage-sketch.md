@@ -4,22 +4,23 @@ This guide covers all 2D sketching tools and operations in EzyCad. For the main 
 
 ## Table of Contents
 1. [2D Sketching](#2d-sketching)
-2. [Line Edge Creation Tools](#line-edge-creation-tools)
-3. [Multi-Line Edge Tool](#multi-line-edge-tool)
-4. [Circle Creation Tools](#circle-creation-tools)
-5. [Circle Creation Workflow](#circle-creation-workflow)
-6. [Arc Segment Creation Tool](#arc-segment-creation-tool)
-7. [Rectangle and Square Creation Tools](#rectangle-and-square-creation-tools)
-8. [Slot Creation Tool](#slot-creation-tool)
-9. [Operation Axis Tool](#operation-axis-tool)
-10. [Toggle Edge Dimensions Tool](#toggle-edge-dimensions-tool)
-11. [Create Sketch from Planar Face Tool](#create-sketch-from-planar-face-tool)
+2. [Add Node Tool](#add-node-tool)
+3. [Line Edge Creation Tools](#line-edge-creation-tools)
+4. [Multi-Line Edge Tool](#multi-line-edge-tool)
+5. [Circle Creation Tools](#circle-creation-tools)
+6. [Circle Creation Workflow](#circle-creation-workflow)
+7. [Arc Segment Creation Tool](#arc-segment-creation-tool)
+8. [Rectangle and Square Creation Tools](#rectangle-and-square-creation-tools)
+9. [Slot Creation Tool](#slot-creation-tool)
+10. [Operation Axis Tool](#operation-axis-tool)
+11. [Toggle Edge Dimensions Tool](#toggle-edge-dimensions-tool)
+12. [Create Sketch from Planar Face Tool](#create-sketch-from-planar-face-tool)
 
 ---
 
 ## 2D Sketching
 1. **Basic Tools**
-   - Add nodes
+   - <img src="res/icons/Sketcher_CreatePoint.png" alt="Add Node Tool" width="20" height="20"> [Add nodes](#add-node-tool)
    - <img src="res/icons/Sketcher_Element_Line_Edge.png" alt="Line Edge Tool" width="20" height="20"> [Create line edges](#line-edge-creation-tools)
    - <img src="res/icons/ls.png" alt="Multi-line Edge Tool" width="20" height="20"> [Draw multi-line edges](#multi-line-edge-tool)
    - <img src="res/icons/Sketcher_Element_Arc_Edge.png" alt="Arc Segment Tool" width="20" height="20"> [Add arc segments](#arc-segment-creation-tool)
@@ -31,6 +32,52 @@ This guide covers all 2D sketching tools and operations in EzyCad. For the main 
    - <img src="res/icons/Sketcher_MirrorSketch.png" alt="Operation Axis Tool" width="20" height="20"> [Define operation axis](#operation-axis-tool) - Mirror sketches, revolve edges or faces.
    - <img src="res/icons/TechDraw_LengthDimension.png" alt="Toggle Edge Dimensions Tool" width="20" height="20"> [Toggle edge dimensions](#toggle-edge-dimensions-tool)
    - <img src="res/icons/Macro_FaceToSketch_48.png" alt="Create Sketch from Planar Face Tool" width="20" height="20"> [Create sketch from planar face](#create-sketch-from-planar-face-tool)
+
+#### Add Node Tool
+
+![Add Node Tool](res/icons/Sketcher_CreatePoint.png)
+
+The **Add node** tool places sketch **points** (vertices). You can drop a node in empty space, split an existing straight edge by placing a node on it, or use the same **rubber-band** interaction as the line tool for **distance** and **angle** without creating a permanent edge from the anchor to the new point.
+
+**Features:**
+
+| | |
+| ---: | --- |
+| **Direct placement** | Click on the sketch plane to add a node (snapping applies when you are near existing geometry) |
+| **Split linear edges** | If you place a node on the interior of an existing **straight** edge, that edge is split at the new vertex |
+| **Rubber band from an existing node** | First click can snap to an existing node to set an **anchor**; the preview line shows direction and length for the **next** click only |
+| **No extra edge from anchor** | Unlike the line tool, the rubber band is only for placement. After you place the new node, **no** new sketch edge is created between the anchor and the new node |
+| **Precise placement** | With a rubber band active, use <kbd>Tab</kbd> for distance and <kbd>Shift</kbd>+<kbd>Tab</kbd> for angle (same conventions as [line edges](#line-edge-creation-tools)); apply angle first if you use both |
+| **Angle-along-ray click** | If an angle constraint is active, the next click places the new node along that ray (projected from the anchor) |
+
+**How to use:**
+
+1. <img src="res/icons/Sketcher_CreatePoint.png" alt="Add Node Tool" width="20" height="20"> Select **Add node** from the toolbar.
+2. **Place a free node:** Click on the sketch plane where no edge runs. A new node is created; if it lies on a straight edge segment, that edge is split.
+3. **Place using an anchor:** Click first on an **existing** node (snap). A rubber-band preview appears from that node. Click again to place the new node. The preview disappears and **only nodes** are updated (no new edge between anchor and new node).
+4. **Numeric input:** After the anchor step, press <kbd>Tab</kbd> for length and/or <kbd>Shift</kbd>+<kbd>Tab</kbd> for angle, then confirm (e.g. <kbd>Enter</kbd> where the UI expects it) or click to finish, consistent with other sketch tools.
+
+**Keyboard shortcuts:**
+
+| | |
+| ---: | --- |
+| <kbd>Tab</kbd> | Distance input for rubber-band placement (when an anchor is active) |
+| <kbd>Shift</kbd>+<kbd>Tab</kbd> | Angle input (degrees) for rubber-band placement |
+| <kbd>Escape</kbd> | Cancel the current placement or rubber-band step |
+| <kbd>Right-click</kbd> | Drop an incomplete rubber-band preview (if you started from an anchor and have not placed the second point yet) |
+
+**Tips:**
+
+- Use Add node when you need **topology** (extra vertices or edge splits) without drawing a new visible edge between two clicks.
+- For a **visible segment** between two points, use the [Line edge](#line-edge-creation-tools) or [Multi-line](#multi-line-edge-tool) tools instead.
+- When an **angle constraint** is active, snapping may be relaxed so the point stays on the constrained direction (similar to the line tool).
+
+**Comparison with the Line edge tool:**
+
+| | |
+| ---: | --- |
+| **Add node** | Rubber band is for placement only; **does not** add a permanent edge between the two clicks |
+| **Line edge** | Two clicks (or numeric input) create a **new line edge** in the sketch |
 
 #### Line Edge Creation Tools
 ![Line Edge Tool](res/icons/Sketcher_Element_Line_Edge.png)
@@ -74,7 +121,7 @@ The single line edge tool allows you to create straight line segments between tw
 
 **Angle Constraint:**
 - After setting the first point, press **Shift+Tab** to open the angle input dialog
-- Enter the desired angle in degrees (0Â° = horizontal right, 90Â° = vertical up, counterclockwise)
+- Enter the desired angle in degrees (0 deg = horizontal right, 90 deg = vertical up, counterclockwise)
 - Once the angle is entered, the line segment is constrained to that angle
 - You can still move the mouse to adjust the length while maintaining the angle
 - The distance input (<kbd>Tab</kbd>) can still be used in combination with the angle constraint
