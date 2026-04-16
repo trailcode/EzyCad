@@ -29,7 +29,7 @@ struct Sketch_AIS_edge : public AIS_Shape
   Sketch& owner_sketch;
 };
 
-/// Selectable “+” marker for user-placed permanent sketch nodes (add-node tool).
+/// Selectable "+" marker for user-placed permanent sketch nodes (add-node tool).
 struct Sketch_AIS_node_mark : public AIS_Shape
 {
   Sketch_AIS_node_mark(Sketch& owner, size_t node_idx, const TopoDS_Shape& shp);
@@ -245,8 +245,8 @@ class Sketch
   template <typename Callback>
   void if_edge_pt_valid_(Callback&& callback);
   void check_dimension_seg_(Linestring_type linestring_type);
-  /// Typed distance (Enter) while add-node rubber band is active — places node B, no edge.
-  /// Enter key / dist popup commit for rubber-band tmp edge (add node, square, circle, rectangle, …).
+  /// Typed distance (Enter) while add-node rubber band is active - places node B, no edge.
+  /// Enter key / dist popup commit for rubber-band tmp edge (add node, square, circle, rectangle, ...).
   void check_dimension_rubber_();
   /// Right-click / finalize: drop incomplete add-node preview (same idea as incomplete line).
   void finalize_add_node_elm_cleanup_();

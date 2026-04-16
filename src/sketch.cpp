@@ -590,7 +590,7 @@ void Sketch::add_node_pt_(const ScreenCoords& screen_coords)
     split_linear_edges_at_node_if_interior_(node_b);
 
     // Add-node mode: the rubber band is only for placement (snap / dimension / angle). Do not create
-    // a sketch edge between the anchor and the new node — only nodes and interior splits matter.
+    // a sketch edge between the anchor and the new node - only nodes and interior splits matter.
     m_tmp_node_idxs.clear();
     clear_tmps_();
     m_ctx.Remove(m_tmp_dim_anno, true);
