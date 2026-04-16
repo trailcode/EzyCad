@@ -251,6 +251,8 @@ class Sketch
   /// Right-click / finalize: drop incomplete add-node preview (same idea as incomplete line).
   void finalize_add_node_elm_cleanup_();
   void add_edge_(const gp_Pnt2d& pt_a, const gp_Pnt2d& pt_b, bool add_dim_anno = false);
+  /// JSON load: linear edge using existing node indices (`idx_mid` is the edge midpoint node).
+  void sketch_json_add_linear_edge_(size_t idx_a, size_t idx_b, size_t idx_mid, bool add_dim_anno);
 
   // Selected related
   std::vector<Edge>                get_selected_edges_() const;

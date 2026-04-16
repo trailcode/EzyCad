@@ -1258,6 +1258,21 @@ void Sketch::add_edge_(const gp_Pnt2d& pt_a, const gp_Pnt2d& pt_b, bool add_dim_
   m_nodes.finalize();
 }
 
+void Sketch::sketch_json_add_linear_edge_(size_t idx_a, size_t idx_b, size_t idx_mid, bool add_dim_anno)
+{
+  EZY_ASSERT(idx_a < m_nodes.size() && idx_b < m_nodes.size() && idx_mid < m_nodes.size());
+
+  Edge edge {idx_a};
+  edge.node_idx_b      = idx_b;
+  edge.node_idx_mid    = idx_mid;
+  const gp_Pnt2d& pt_a = m_nodes[idx_a];
+  const gp_Pnt2d& pt_b = m_nodes[idx_b];
+  update_edge_shp_(edge, pt_a, pt_b);
+  set_edge_dim_anno_visible_(edge, add_dim_anno);
+  m_edges.emplace_back(edge);
+  m_nodes.finalize();
+}
+
 std::vector<Sketch::Edge> Sketch::get_selected_edges_() const
 {
   std::vector<Edge> ret;

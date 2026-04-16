@@ -912,15 +912,21 @@ TEST_F(Sketch_test, JsonSerializationDeserialization)
   EXPECT_TRUE(json_data.contains("isCurrent"));
 
   EXPECT_EQ(json_data["name"], "TestSketch");
+  EXPECT_TRUE(json_data.contains("nodes"));
+  size_t live_nodes = 0;
+  for (size_t i = 0; i < sketch.get_nodes().size(); ++i)
+    if (!sketch.get_nodes()[i].deleted)
+      ++live_nodes;
+  EXPECT_EQ(json_data["nodes"].size(), live_nodes);
   EXPECT_EQ(json_data["edges"].size(), 3);      // Should have 3 edges
   EXPECT_EQ(json_data["arc_edges"].size(), 0);  // No arc edges
 
   // Deserialize from JSON
   std::shared_ptr<Sketch> deserialized_sketch = Sketch_json::from_json(view(), json_data);
 
-  // Verify deserialized sketch
+  // Verify deserialized sketch (compact save drops deleted tombstones; loaded sketch is dense)
   EXPECT_EQ(deserialized_sketch->get_name(), "TestSketch");
-  EXPECT_EQ(deserialized_sketch->get_nodes().size(), sketch.get_nodes().size());
+  EXPECT_EQ(deserialized_sketch->get_nodes().size(), live_nodes);
 
   // Count edges in deserialized sketch
   size_t edge_count = 0;
@@ -1017,10 +1023,10 @@ TEST_F(Sketch_test, JsonSerializationWithDimensions)
   // Serialize to JSON
   nlohmann::json json_data = Sketch_json::to_json(sketch);
 
-  // Verify dimension flag is set
+  // Verify dimension flag is set ([a,b,mid,dim])
   EXPECT_EQ(json_data["edges"].size(), 1);
-  EXPECT_EQ(json_data["edges"][0].size(), 3);
-  EXPECT_EQ(json_data["edges"][0][2], true);  // Dimension flag
+  EXPECT_EQ(json_data["edges"][0].size(), 4);
+  EXPECT_EQ(json_data["edges"][0][3], true);  // Dimension flag
 
   // Deserialize and verify
   std::shared_ptr<Sketch> deserialized_sketch = Sketch_json::from_json(view(), json_data);

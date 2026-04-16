@@ -7,11 +7,121 @@
 #include <TopoDS.hxx>
 #include <nlohmann/json.hpp>
 
+#include "dbg.h"
 #include "sketch.h"
+#include "sketch_nodes.h"
 #include "sketch_underlay.h"
 #include "utl_json.h"
 
-using json = nlohmann::json;  // Alias for convenience
+#include <optional>
+#include <vector>
+
+using json = nlohmann::json;
+
+namespace
+{
+/// Serializes one sketch node for `j["nodes"]`. Caller must only pass non-deleted nodes (compact save omits tombstones).
+json node_to_json_(const Sketch_nodes::Node& nd)
+{
+  EZY_ASSERT(!nd.deleted);
+  json o = ::to_json(static_cast<const gp_Pnt2d&>(nd));
+  if (nd.midpoint)
+    o["midpoint"] = true;
+  if (nd.permanent)
+    o["permanent"] = true;
+  return o;
+}
+
+bool edges_use_node_indices_(const json& j)
+{
+  const bool has_nodes = j.contains("nodes") && j["nodes"].is_array();
+  if (!j.contains("edges") || !j["edges"].is_array())
+    return false;
+
+  if (j["edges"].empty())
+    return has_nodes;
+
+  const auto& e0 = j["edges"][0];
+  if (!e0.is_array() || e0.empty())
+    return false;
+
+  return e0[0].is_number();
+}
+}  // namespace
+
+void Sketch_json::load_nodes_(Sketch& sketch, const json& nodes_json)
+{
+  EZY_ASSERT(nodes_json.is_array());
+  sketch.get_nodes().json_resize(nodes_json.size());
+  for (size_t i = 0; i < nodes_json.size(); ++i)
+  {
+    const json& el = nodes_json[i];
+    if (el.is_null())
+    {
+      sketch.get_nodes().json_set_node(i, gp_Pnt2d(0., 0.), true, false, false);
+      continue;
+    }
+    EZY_ASSERT(el.is_object());
+    const gp_Pnt2d pt = ::from_json_pnt2d(el);
+    const bool       midpoint =
+        el.contains("midpoint") && el["midpoint"].is_boolean() && el["midpoint"].get<bool>();
+    const bool permanent =
+        el.contains("permanent") && el["permanent"].is_boolean() && el["permanent"].get<bool>();
+    sketch.get_nodes().json_set_node(i, pt, false, midpoint, permanent);
+  }
+}
+
+/// Sparse index-based files (legacy): `nodes` may contain `null` tombstones; edge indices match sketch indices.
+/// Compact index-based files: `nodes` has only live entries; edge indices are dense `0..nodes.size()-1`.
+void Sketch_json::from_json_indexed_(Sketch& ret, const json& j)
+{
+  EZY_ASSERT(j.contains("nodes") && j["nodes"].is_array());
+  load_nodes_(ret, j["nodes"]);
+
+  for (const auto& edge_json : j["edges"])
+  {
+    EZY_ASSERT(edge_json.is_array() && edge_json.size() == 4);
+    const std::size_t idx_a   = edge_json[0].get<std::size_t>();
+    const std::size_t idx_b   = edge_json[1].get<std::size_t>();
+    const std::size_t idx_mid = edge_json[2].get<std::size_t>();
+    const bool        dim     = edge_json[3].get<bool>();
+    ret.sketch_json_add_linear_edge_(idx_a, idx_b, idx_mid, dim);
+  }
+
+  if (j.contains("arc_edges") && j["arc_edges"].is_array())
+  {
+    for (const auto& edge_json : j["arc_edges"])
+    {
+      EZY_ASSERT(edge_json.is_array() && edge_json.size() == 3);
+      const std::size_t ia   = edge_json[0].get<std::size_t>();
+      const std::size_t iarc = edge_json[1].get<std::size_t>();
+      const std::size_t ib   = edge_json[2].get<std::size_t>();
+      // Matches `add_arc_circle_(pt_a, pt_b, pt_c)` -> node_idxs [a, c, b] for (json0, json1, json2) = (start, arc, end).
+      ret.add_arc_circle_(std::vector<size_t> {ia, ib, iarc});
+    }
+  }
+}
+
+void Sketch_json::from_json_legacy_coords_(Sketch& ret, const json& j)
+{
+  for (const auto& edge_json : j["edges"])
+  {
+    EZY_ASSERT(edge_json.is_array() && edge_json.size() == 3);
+    const gp_Pnt2d pt_a = ::from_json_pnt2d(edge_json[0]);
+    const gp_Pnt2d pt_b = ::from_json_pnt2d(edge_json[1]);
+    ret.add_edge_(pt_a, pt_b, edge_json[2].get<bool>());
+  }
+
+  if (j.contains("arc_edges") && j["arc_edges"].is_array())
+    for (const auto& edge_json : j["arc_edges"])
+    {
+      EZY_ASSERT(edge_json.is_array() && edge_json.size() == 3);
+      const gp_Pnt2d pt_a = ::from_json_pnt2d(edge_json[0]);
+      const gp_Pnt2d pt_b = ::from_json_pnt2d(edge_json[1]);
+      const gp_Pnt2d pt_c = ::from_json_pnt2d(edge_json[2]);
+      ret.add_arc_circle_(pt_a, pt_b, pt_c);
+    }
+}
 
 nlohmann::json Sketch_json::to_json(const Sketch& sketch)
 {
@@ -24,37 +134,63 @@ nlohmann::json Sketch_json::to_json(const Sketch& sketch)
   {
     const TopoDS_Shape& shape = sketch.m_originating_face->Shape();
     std::ostringstream  oss;
-    BRepTools::Write(shape, oss, false, false, TopTools_FormatVersion_CURRENT);  // Write BREP data to the stream
+    BRepTools::Write(shape, oss, false, false, TopTools_FormatVersion_CURRENT);
     j["originating_face"] = oss.str();
   }
 
-  json& edges_json = j["edges"] = json::array();
+  json& edges_json     = j["edges"] = json::array();
   json& arc_edges_json = j["arc_edges"] = json::array();
 
   const Sketch::Edge* last_arc_circle_edge = nullptr;
 
   const auto& sketch_nodes = sketch.m_nodes;
+
+  std::vector<std::optional<size_t>> dense_of_sparse(sketch_nodes.size());
+  size_t                             dense_n = 0;
+  for (size_t i = 0, n = sketch_nodes.size(); i < n; ++i)
+  {
+    if (!sketch_nodes[i].deleted)
+      dense_of_sparse[i] = dense_n++;
+  }
+
+  auto remap = [&](size_t sparse_idx) -> size_t
+  {
+    EZY_ASSERT(sparse_idx < dense_of_sparse.size());
+    EZY_ASSERT(dense_of_sparse[sparse_idx].has_value());
+    return *dense_of_sparse[sparse_idx];
+  };
+
+  json& nodes_json = j["nodes"] = json::array();
+  for (size_t i = 0, n = sketch_nodes.size(); i < n; ++i)
+  {
+    if (sketch_nodes[i].deleted)
+      continue;
+    nodes_json.push_back(node_to_json_(sketch_nodes[i]));
+  }
+
   for (const auto& edge : sketch.m_edges)
   {
     EZY_ASSERT(edge.node_idx_b.has_value());
     if (!edge.circle_arc)
-      edges_json.push_back({::to_json(sketch_nodes[edge.node_idx_a]),
-                            ::to_json(sketch_nodes[edge.node_idx_b]),
-                            edge.dim.IsNull() ? false : true});
+    {
+      EZY_ASSERT(edge.node_idx_mid.has_value());
+      edges_json.push_back(json::array({remap(edge.node_idx_a), remap(*edge.node_idx_b), remap(*edge.node_idx_mid),
+                                        edge.dim.IsNull() ? false : true}));
+    }
     else
     {
       if (last_arc_circle_edge)
       {
         EZY_ASSERT(last_arc_circle_edge->circle_arc.get() == edge.circle_arc.get());
-        arc_edges_json.push_back({::to_json(sketch_nodes[last_arc_circle_edge->node_idx_a]),
-                                  ::to_json(sketch_nodes[last_arc_circle_edge->node_idx_arc]),
-                                  ::to_json(sketch_nodes[edge.node_idx_b])});
+        EZY_ASSERT(last_arc_circle_edge->node_idx_arc.has_value());
+        arc_edges_json.push_back(json::array({remap(last_arc_circle_edge->node_idx_a),
+                                                remap(*last_arc_circle_edge->node_idx_arc),
+                                                remap(*edge.node_idx_b)}));
         last_arc_circle_edge = nullptr;
       }
       else
       {
-        // This is the first part of the circle arc.
-        EZY_ASSERT(edge.node_idx_arc);
+        EZY_ASSERT(edge.node_idx_arc.has_value());
         EZY_ASSERT(*edge.node_idx_b == *edge.node_idx_arc);
         last_arc_circle_edge = &edge;
       }
@@ -71,7 +207,6 @@ std::shared_ptr<Sketch> Sketch_json::from_json(Occt_view& view, const nlohmann::
 {
   EZY_ASSERT(j.contains("name") && j["name"].is_string());
   EZY_ASSERT(j.contains("edges") && j["edges"].is_array());
-  EZY_ASSERT(j.contains("arc_edges") && j["arc_edges"].is_array());
   EZY_ASSERT(j.contains("plane") && j["plane"].is_object());
   EZY_ASSERT(j.contains("isCurrent") && j["isCurrent"].is_boolean());
 
@@ -81,10 +216,9 @@ std::shared_ptr<Sketch> Sketch_json::from_json(Occt_view& view, const nlohmann::
   {
     TopoDS_Shape       shape;
     std::istringstream iss;
-    iss.str(j["originating_face"]);
+    iss.str(j["originating_face"].get<std::string>());
     BRepTools::Read(shape, iss, BRep_Builder());
     EZY_ASSERT(shape.ShapeType() == TopAbs_WIRE);
-    // Cast to TopoDS_Wire
     const TopoDS_Wire& face = TopoDS::Wire(shape);
 
     ret = std::make_shared<Sketch>(j["name"], view, from_json_pln(j["plane"]), face);
@@ -92,28 +226,14 @@ std::shared_ptr<Sketch> Sketch_json::from_json(Occt_view& view, const nlohmann::
   else
     ret = std::make_shared<Sketch>(j["name"], view, from_json_pln(j["plane"]));
 
-  // Process each edge in the JSON array
-  for (const auto& edge_json : j["edges"])
+  const bool use_indices = edges_use_node_indices_(j);
+  if (use_indices)
   {
-    EZY_ASSERT(edge_json.is_array() && edge_json.size() == 3);
-
-    // Extract the two points
-    gp_Pnt2d pt_a = ::from_json_pnt2d(edge_json[0]);
-    gp_Pnt2d pt_b = ::from_json_pnt2d(edge_json[1]);
-
-    ret->add_edge_(pt_a, pt_b, edge_json[2]);
+    EZY_ASSERT(j.contains("nodes") && j["nodes"].is_array());
+    from_json_indexed_(*ret, j);
   }
-
-  for (const auto& edge_json : j["arc_edges"])
-  {
-    EZY_ASSERT(edge_json.is_array() && edge_json.size() == 3);
-    // Extract the three points
-    gp_Pnt2d pt_a = ::from_json_pnt2d(edge_json[0]);
-    gp_Pnt2d pt_b = ::from_json_pnt2d(edge_json[1]);
-    gp_Pnt2d pt_c = ::from_json_pnt2d(edge_json[2]);
-
-    ret->add_arc_circle_(pt_a, pt_b, pt_c);
-  }
+  else
+    from_json_legacy_coords_(*ret, j);
 
   ret->update_faces_();
 

@@ -11,6 +11,7 @@ class gp_Pln;
 class gp_Pnt2d;
 class Occt_view;
 class AIS_InteractiveContext;
+class Sketch_json;
 
 class Sketch_nodes
 {
@@ -46,6 +47,7 @@ class Sketch_nodes
   size_t      size() const;
   void        finalize();
   void        cancel();
+
   void        clear_outside_snap_pnts();
   void        add_outside_snap_pnt(const gp_Pnt& pt3d);
 
@@ -64,6 +66,13 @@ class Sketch_nodes
   // clang-format on
 
  private:
+  friend class Sketch_json;
+
+  /// Resize storage so indices `0..count-1` exist (JSON load).
+  void json_resize(size_t count);
+  /// Assign slot `idx` (used after `json_resize`).
+  void json_set_node(size_t idx, const gp_Pnt2d& pt, bool deleted, bool midpoint, bool permanent);
+
   void update_node_snap_anno_(const gp_Pnt2d& pt, const double snap_dist);
   bool try_snap_outside_(gp_Pnt2d& pt, const double snap_dist);  // Use points in `m_outside_snap_pts` `pt` will be modified if snapped.
 
