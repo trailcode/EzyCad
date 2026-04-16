@@ -35,8 +35,41 @@ Use this style when editing or adding C/C++ code in the EzyCad project (files un
 
 - **Templates**: Prefer putting template implementations in `.inl` files included from the header (e.g. `types.inl`, `utl.inl`).
 - **OCCT handles**: Use `opencascade::handle<T>` and project aliases (e.g. `AIS_Shape_ptr`, `Shp_ptr`).
-- **Result/error handling**: Use the project `Result<T>` and `Status` types from `utl.h` (e.g. `Status::ok()`, `Status::user_error("...")`, `CHK_RET(...)` for early return on failure).
-- **Assertions / debug**: Use project macros `EZY_ASSERT` and `EZY_ASSERT_MSG` from `dbg.h`; use `DBG_MSG` for debug logging.
+- **Result/error handling**: See **Fail fast** below. Use `Result<T>` and `Status` from `utl.h`, `CHK_RET(...)` for early return on failure.
+- **Assertions**: See **Fail fast** below. Use `EZY_ASSERT` and `EZY_ASSERT_MSG` from `dbg.h`; use `DBG_MSG` for debug logging.
+
+## Fail fast
+
+EzyCad uses **fail fast**: detect problems as early as possible. Do not hide programmer mistakes with silent fallbacks (e.g. substituting empty defaults when a required dependency is missing) unless that behavior is an explicit, documented product decision.
+
+Separate **who is responsible** for the fault:
+
+### Programmer errors (use asserts)
+
+Use **`EZY_ASSERT`** / **`EZY_ASSERT_MSG`** (`dbg.h`) for conditions that must hold if the code and call patterns are correct:
+
+- Preconditions that callers are required to satisfy (e.g. an object that is always constructed before use in normal app flow).
+- Internal invariants, impossible `else` branches after exhaustive handling, index bounds that prove from prior logic.
+- “This should never happen” after a switch or state machine where all cases were meant to be covered.
+
+These are **not** expected at runtime in correct usage; they signal a bug to fix. Do not use asserts for user input, files, or the operating system.
+
+### User mistakes and external failures (return errors or status)
+
+Use **`Status`**, **`Result<T>`**, **`CHK_RET`**, or other explicit error paths for faults that can happen in **valid** programs:
+
+- **User errors**: wrong mode, nothing selected when something must be selected, invalid input — typically `Status::user_error("...")` or an appropriate `Result_status` with a clear message.
+- **OS and I/O**: file missing, **disk full**, permission denied, read/write failures — return or propagate failure; log or surface a message as the UI already does elsewhere. **Never** assert on these.
+- **Modeling / OCCT / topology**: operation failed in the kernel — use `Status` / `Result` and existing result categories (e.g. `Topo_error`) as fits the call site.
+
+Prefer **`CHK_RET(expr)`** when a callee returns `Status` or `Result<T>` and the caller should abort on failure.
+
+### Quick reference
+
+| Kind of problem | Mechanism |
+|-----------------|-----------|
+| Bug, contract violation, impossible branch | `EZY_ASSERT` / `EZY_ASSERT_MSG` |
+| User error, I/O, OS, recoverable external failure | `Status`, `Result<T>`, `CHK_RET`, explicit error return |
 
 ## Comments
 

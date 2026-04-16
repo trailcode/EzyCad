@@ -18,6 +18,7 @@ extern "C"
 #include <fstream>
 #include <cstring>
 #include <sstream>
+#include <string>
 #include <vector>
 
 namespace
@@ -237,6 +238,29 @@ int l_shp_set_visible(lua_State* L)
   return 0;
 }
 
+// ezy.save_occt_view_settings()
+int l_ezy_save_occt_view_settings(lua_State* L)
+{
+  GUI* gui = get_gui(L);
+  if (gui)
+    gui->save_occt_view_settings();
+  return 0;
+}
+
+// ezy.occt_view_settings_json() -> string (occt_view object only)
+int l_ezy_occt_view_settings_json(lua_State* L)
+{
+  GUI* gui = get_gui(L);
+  if (!gui)
+  {
+    lua_pushstring(L, "{}");
+    return 1;
+  }
+  const std::string s = gui->occt_view_settings_json();
+  lua_pushlstring(L, s.data(), s.size());
+  return 1;
+}
+
 // ezy.help() / help() - print available commands
 int l_ezy_help(lua_State* L)
 {
@@ -247,18 +271,20 @@ int l_ezy_help(lua_State* L)
     return 0;
   const char* help_text =
       "ezy:\n"
-      "  ezy.log(msg)          - append message to console and log window\n"
-      "  ezy.msg(text)         - show status message\n"
-      "  ezy.get_mode()        - return current mode name\n"
-      "  ezy.set_mode(name)    - set mode by name\n"
-      "  ezy.help()            - print this help\n"
+      "  ezy.log(msg)                  - append message to console and log window\n"
+      "  ezy.msg(text)                 - show status message\n"
+      "  ezy.get_mode()                - return current mode name\n"
+      "  ezy.set_mode(name)            - set mode by name\n"
+      "  ezy.save_occt_view_settings() - write settings JSON (incl. view colors)\n"
+      "  ezy.occt_view_settings_json() - JSON: occt_view + gui edge_dim_label_h / edge_dim_line_width\n"
+      "  ezy.help()                    - print this help\n"
       "view:\n"
-      "  view.sketch_count()   - number of sketches\n"
-      "  view.shape_count()    - number of shapes\n"
-      "  view.curr_sketch_name() - current sketch name\n"
-      "  view.add_box(ox,oy,oz,w,l,h) - add box\n"
-      "  view.add_sphere(ox,oy,oz,r)  - add sphere\n"
-  "  view.get_shape(i)            - get shape by 1-based index (returns Shp or nil)\n"
+      "  view.sketch_count()           - number of sketches\n"
+      "  view.shape_count()            - number of shapes\n"
+      "  view.curr_sketch_name()       - current sketch name\n"
+      "  view.add_box(ox,oy,oz,w,l,h)  - add box\n"
+      "  view.add_sphere(ox,oy,oz,r)   - add sphere\n"
+  "  view.get_shape(i)                 - get shape by 1-based index (returns Shp or nil)\n"
   "Shp (shape object):\n"
   "  s:name()       - get shape name\n"
   "  s:set_name(s)  - set shape name\n"
@@ -338,6 +364,10 @@ void Lua_console::register_bindings()
   lua_setfield(m_L, -2, "set_mode");
   lua_pushcfunction(m_L, l_ezy_help);
   lua_setfield(m_L, -2, "help");
+  lua_pushcfunction(m_L, l_ezy_save_occt_view_settings);
+  lua_setfield(m_L, -2, "save_occt_view_settings");
+  lua_pushcfunction(m_L, l_ezy_occt_view_settings_json);
+  lua_setfield(m_L, -2, "occt_view_settings_json");
   lua_setglobal(m_L, "ezy");
 
   // Global help() as well (same as ezy.help())

@@ -11,23 +11,26 @@ class gp_Pln;
 class gp_Pnt2d;
 class Occt_view;
 class AIS_InteractiveContext;
+class Sketch_json;
 
 class Sketch_nodes
 {
  public:
   struct Node : public gp_Pnt2d
   {
-    bool is_midpoint {false};
-    bool deleted {false};
+    bool midpoint = false;
+    bool deleted     = false;
+    bool permanent   = false;
   };
 
   // `view` must exist for the lifetime of this object
   Sketch_nodes(Occt_view& view, const gp_Pln& pln);
   ~Sketch_nodes();
 
-  size_t                  add_new_node(const gp_Pnt2d& pt, bool is_edge_mid_point = false);
+  size_t                  add_new_node(const gp_Pnt2d& pt, bool is_edge_mid_point = false, bool is_permanent = false);
   std::optional<gp_Pnt2d> snap(const ScreenCoords& screen_coords);
-  size_t                  get_node_exact(const gp_Pnt2d& pt);
+  // If no node exists at `pt`, appends one; `permanent_for_new` sets Node::permanent on that new node only.
+  size_t                  get_node_exact(const gp_Pnt2d& pt, bool permanent_for_new = false);
   std::optional<size_t>   get_node(const ScreenCoords& screen_coords);
   std::optional<size_t>   try_get_node_idx_snap(
         gp_Pnt2d&                  pt,  // `pt` could be snapped to a node, an axis of another node, or an outside snap point.
@@ -44,6 +47,7 @@ class Sketch_nodes
   size_t      size() const;
   void        finalize();
   void        cancel();
+
   void        clear_outside_snap_pnts();
   void        add_outside_snap_pnt(const gp_Pnt& pt3d);
 
@@ -62,6 +66,13 @@ class Sketch_nodes
   // clang-format on
 
  private:
+  friend class Sketch_json;
+
+  /// Resize storage so indices `0..count-1` exist (JSON load).
+  void json_resize(size_t count);
+  /// Assign slot `idx` (used after `json_resize`).
+  void json_set_node(size_t idx, const gp_Pnt2d& pt, bool deleted, bool midpoint, bool permanent);
+
   void update_node_snap_anno_(const gp_Pnt2d& pt, const double snap_dist);
   bool try_snap_outside_(gp_Pnt2d& pt, const double snap_dist);  // Use points in `m_outside_snap_pts` `pt` will be modified if snapped.
 

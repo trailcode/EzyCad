@@ -13,31 +13,32 @@ This guide covers all 2D sketching tools and operations in EzyCad. For the main 
 8. [Slot Creation Tool](#slot-creation-tool)
 9. [Operation Axis Tool](#operation-axis-tool)
 10. [Toggle Edge Dimensions Tool](#toggle-edge-dimensions-tool)
-11. [Create Sketch from Planar Face Tool](#create-sketch-from-planar-face-tool)
+11. [Add Node Tool](#add-node-tool)
+12. [Create Sketch from Planar Face Tool](#create-sketch-from-planar-face-tool)
 
 ---
 
 ## 2D Sketching
 1. **Basic Tools**
-   - Add nodes
    - <img src="res/icons/Sketcher_Element_Line_Edge.png" alt="Line Edge Tool" width="20" height="20"> [Create line edges](#line-edge-creation-tools)
    - <img src="res/icons/ls.png" alt="Multi-line Edge Tool" width="20" height="20"> [Draw multi-line edges](#multi-line-edge-tool)
    - <img src="res/icons/Sketcher_Element_Arc_Edge.png" alt="Arc Segment Tool" width="20" height="20"> [Add arc segments](#arc-segment-creation-tool)
    - <img src="res/icons/Sketcher_CreateCircle.png" alt="Circle Tool" width="20" height="20"> [Create circles](#circle-creation-tools)
    - <img src="res/icons/Sketcher_CreateRectangle.png" alt="Rectangle Tool" width="20" height="20"> <img src="res/icons/Sketcher_CreateSquare.png" alt="Square Tool" width="20" height="20"> [Draw rectangles and squares](#rectangle-and-square-creation-tools)
    - <img src="res/icons/Sketcher_CreateSlot.png" alt="Slot Tool" width="20" height="20"> [Add slots](#slot-creation-tool)
+   - <img src="res/icons/Sketcher_CreatePoint.png" alt="Add Node Tool" width="20" height="20"> [Add nodes](#add-node-tool)
 
 2. **Sketch Operations**
    - <img src="res/icons/Sketcher_MirrorSketch.png" alt="Operation Axis Tool" width="20" height="20"> [Define operation axis](#operation-axis-tool) - Mirror sketches, revolve edges or faces.
    - <img src="res/icons/TechDraw_LengthDimension.png" alt="Toggle Edge Dimensions Tool" width="20" height="20"> [Toggle edge dimensions](#toggle-edge-dimensions-tool)
    - <img src="res/icons/Macro_FaceToSketch_48.png" alt="Create Sketch from Planar Face Tool" width="20" height="20"> [Create sketch from planar face](#create-sketch-from-planar-face-tool)
 
-#### Line Edge Creation Tools
+### Line Edge Creation Tools
 ![Line Edge Tool](res/icons/Sketcher_Element_Line_Edge.png)
 
 EzyCad provides tools for creating individual line edges in sketch mode, allowing you to build complex geometries one edge at a time.
 
-##### Single Line Edge Tool
+#### Single Line Edge Tool
 
 The single line edge tool allows you to create straight line segments between two points.
 
@@ -74,7 +75,7 @@ The single line edge tool allows you to create straight line segments between tw
 
 **Angle Constraint:**
 - After setting the first point, press **Shift+Tab** to open the angle input dialog
-- Enter the desired angle in degrees (0Â° = horizontal right, 90Â° = vertical up, counterclockwise)
+- Enter the desired angle in degrees (0 deg = horizontal right, 90 deg = vertical up, counterclockwise)
 - Once the angle is entered, the line segment is constrained to that angle
 - You can still move the mouse to adjust the length while maintaining the angle
 - The distance input (<kbd>Tab</kbd>) can still be used in combination with the angle constraint
@@ -87,7 +88,7 @@ The single line edge tool allows you to create straight line segments between tw
 - The line tool works in any sketch plane
 - Multiple line edges can be created in sequence by right-clicking after each line
 
-#### Multi-Line Edge Tool
+### Multi-Line Edge Tool
 
 ![Multi-line Edge Tool](res/icons/ls.png)
 
@@ -146,13 +147,13 @@ The multi-line edge tool allows you to create multiple connected line segments i
 - Use single line edges when you need individual disconnected segments
 - Use multi-line edges when you need a continuous chain of connected segments
 
-#### Circle Creation Tools
+### Circle Creation Tools
 
 ![Circle Tool](res/icons/Sketcher_CreateCircle.png)
 
 EzyCad provides a method for creating circles in sketch mode using the **center-radius approach**.
 
-##### Center-Radius Circle Tool
+#### Center-Radius Circle Tool
 
 The center-radius circle tool allows you to create circles by defining a center point and a radius point.
 
@@ -185,7 +186,7 @@ The center-radius circle tool allows you to create circles by defining a center 
 - The circle tool works in any sketch plane
 - Circles can be used as construction geometry or as part of your final design
 
-##### Three-Point Circle Tool (Planned Feature)
+#### Three-Point Circle Tool (Planned Feature)
 
 **Status**: Not yet implemented
 
@@ -201,7 +202,7 @@ The three-point circle tool is planned for future development. This feature woul
 
 **Note**: <img src="res/icons/Sketcher_Create3PointCircle.png" alt="Sketcher_Create3PointCircle" width="20" height="20"> The toolbar icon exists but the functionality is not yet implemented.
 
-#### Circle Creation Workflow
+### Circle Creation Workflow
 
 The circle tool follows this workflow:
 
@@ -228,7 +229,7 @@ The circle tool follows this workflow:
 | **Invalid Geometry** | Circles that would be too small are rejected |
 | **Snap Integration** | Use existing snap points for precise circle placement |
 
-#### Arc Segment Creation Tool
+### Arc Segment Creation Tool
 
 ![Arc Segment Tool](res/icons/Sketcher_Element_Arc_Edge.png)
 
@@ -287,11 +288,11 @@ The arc segment tool allows you to create circular arc edges by defining three p
 - Use circles when you need a complete circular shape
 - Use arc segments when you need a curved edge that's part of a larger shape
 
-#### Rectangle and Square Creation Tools
+### Rectangle and Square Creation Tools
 
 EzyCad provides three tools for creating rectangular shapes in sketch mode: square, rectangle from two points, and rectangle with center point.
 
-##### Square Tool
+#### Square Tool
 
 ![Square Tool](res/icons/Sketcher_CreateSquare.png)
 
@@ -329,7 +330,7 @@ The square tool allows you to create perfect squares by defining a center point 
 - The square tool works in any sketch plane
 - Squares automatically form closed faces that can be [extruded](usage.md#extrude-sketch-face-tool-e)
 
-##### Rectangle Tool (Two Points)
+#### Rectangle Tool (Two Points)
 
 ![Rectangle Tool](res/icons/Sketcher_CreateRectangle.png)
 
@@ -367,7 +368,7 @@ The rectangle tool allows you to create rectangles by defining two opposite corn
 - The rectangle tool works in any sketch plane
 - Rectangles automatically form closed faces that can be [extruded](usage.md#extrude-sketch-face-tool-e)
 
-##### Rectangle Tool (Center Point)
+#### Rectangle Tool (Center Point)
 
 ![Rectangle Center Tool](res/icons/Sketcher_CreateRectangle_Center.png)
 
@@ -413,7 +414,7 @@ The rectangle with center point tool allows you to create rectangles by defining
 | **Rectangle (Center Point)** | Define center and corner - useful when you want the rectangle centered on a specific point |
 | **Square** | Always creates a perfect square - use when you need equal sides |
 
-#### Slot Creation Tool
+### Slot Creation Tool
 
 ![Slot Tool](res/icons/Sketcher_CreateSlot.png)
 
@@ -487,7 +488,7 @@ The slot tool allows you to create an oblong or oval-shaped slot with rounded en
 - Creating rounded-end cutouts in parts
 - Designing slots for sliding mechanisms
 
-#### Operation Axis Tool
+### Operation Axis Tool
 
 ![Operation Axis Tool](res/icons/Sketcher_MirrorSketch.png)
 
@@ -536,7 +537,7 @@ Once an axis is defined, the options panel will show:
 - The axis can be redefined at any time by clicking again in operation axis mode
 - Use snap points for precise axis placement relative to existing geometry
 
-#### Toggle Edge Dimensions Tool
+### Toggle Edge Dimensions Tool
 
 ![Toggle Edge Dimensions Tool](res/icons/TechDraw_LengthDimension.png)
 
@@ -583,7 +584,58 @@ The toggle edge dimensions tool allows you to show or hide length dimension anno
 | **Auto-update** | Dimensions update automatically when geometry is modified |
 | **View-only** | Does not affect the underlying geometry |
 
-#### Create Sketch from Planar Face Tool
+### Add Node Tool
+
+![Add Node Tool](res/icons/Sketcher_CreatePoint.png)
+
+The **Add node** tool (toolbar: **Add node**) adds sketch **vertices**. What happens on each placement depends on whether you **start from an existing node**:
+
+- **First click snaps to an existing node** — The tool **acts like [Line edge](#line-edge-creation-tools)** for the next step: a **rubber-band** preview runs from that anchor, and you can enter **length** and/or **angle** (<kbd>Tab</kbd> / <kbd>Shift</kbd>+<kbd>Tab</kbd>, same order as line edge) before you place the **second** point. **No new line edge** is added to the sketch; only the new node is created at the end of that placement.
+- **First click does not snap to an existing node** — The new node is placed **at the click** on the sketch plane (usual snap rules still apply, e.g. snapping onto the interior of a **straight** edge to **split** it).
+
+In both cases, Add node never leaves a **permanent edge** between two clicks the way Line edge does.
+
+#### What else it does
+
+| | |
+| ---: | --- |
+| **Split linear edges** | If a click lands on the interior of an existing **straight** (non-arc) edge, that edge is **replaced by two** edges meeting at the new vertex. Arc edges are **not** split this way. |
+| **No stored edge from anchor** | After a two-step placement from an anchor, **no** sketch edge is created between anchor and new node (unlike Line edge). |
+| **Angle constraint** | With an angle constraint active during rubber-band placement, the next click places the new node along that ray from the anchor; snapping may be relaxed to stay on that direction (similar to the line tool). |
+
+#### Permanent “+” markers
+
+Nodes you place with **Add node** are treated as **user-placed** points. When the sketch is visible, eligible points can show a small **+** marker in the 3D view so you can see and pick them. Geometry that exists only as automatic **edge midpoints** for snapping is separate (those nodes are not shown the same way). 
+
+#### How to use
+
+1. Enter sketch mode and select **Add node** <img src="res/icons/Sketcher_CreatePoint.png" alt="Add Node Tool" width="20" height="20"> on the toolbar.
+2. **Direct node:** Click where you are **not** snapping to an existing vertex (empty sketch area, edge interior, etc.). The node is created **at that position**; if the click snaps to the interior of a **straight** edge, that edge splits.
+3. **From an existing node (line-edge–like step):** Click an **existing** vertex first so the first click **snaps** to it. A rubber-band preview runs from that anchor—use <kbd>Tab</kbd> / <kbd>Shift</kbd>+<kbd>Tab</kbd> for length/angle if you want—then click (or confirm) to place the **second** point. Only a **new node** is committed; **no** new edge is stored.
+4. Repeat as needed for more nodes.
+
+#### Keyboard shortcuts
+
+| | |
+| ---: | --- |
+| <kbd>Tab</kbd> | Distance input for rubber-band placement (when an anchor is active). |
+| <kbd>Shift</kbd>+<kbd>Tab</kbd> | Angle input (degrees) for rubber-band placement. |
+| <kbd>Escape</kbd> | Cancel the current placement or rubber-band step. |
+| <kbd>Right-click</kbd> | Drop an incomplete rubber-band preview if you started from an anchor and have not placed the second point yet. |
+
+#### Tips
+
+- Prefer **Add node** when you need **extra vertices** or **edge splits** without a new visible segment between the two clicks.
+- Use [Line edge](#line-edge-creation-tools) or [Multi-line](#multi-line-edge-tool) when you want a **new edge** between two locations.
+
+#### Add node vs. Line edge
+
+| | |
+| ---: | --- |
+| **Add node** | Rubber band is for **placement** only; **does not** add a permanent edge between the two clicks. |
+| **Line edge** | Two clicks (or numeric input) create a **new line edge** in the sketch. |
+
+### Create Sketch from Planar Face Tool
 
 ![Create Sketch from Planar Face Tool](res/icons/Macro_FaceToSketch_48.png)
 

@@ -17,4 +17,8 @@ class Sketch_json
  private:
   Sketch_json()  = default;
   ~Sketch_json() = default;
+
+  static void load_nodes_(Sketch& sketch, const nlohmann::json& nodes_json);
+  static void from_json_indexed_(Sketch& ret, const nlohmann::json& j);
+  static void from_json_legacy_coords_(Sketch& ret, const nlohmann::json& j);
 };

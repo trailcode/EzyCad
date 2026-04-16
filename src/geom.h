@@ -44,6 +44,9 @@ gp_Pnt2d to_pnt2d(const boost_geom::point_2d& pt);
 // Function to create a wire box centered on a point on a plane, returning a TopoDS_Wire
 TopoDS_Wire create_wire_box(const gp_Pln& plane, const gp_Pnt& position, double width, double height);
 
+/// Two perpendicular segments forming a + on \a plane, centered at \a center_3d, half-length \a half_arm (model units).
+TopoDS_Shape create_plus_cross_shape(const gp_Pln& plane, const gp_Pnt& center_3d, double half_arm);
+
 TopoDS_Wire make_square_wire(const gp_Pln&   pln,
                              const gp_Pnt2d& center,
                              const gp_Pnt2d& edge_midpoint);
@@ -134,22 +137,28 @@ gp_Pnt2d mirror_point(const gp_Pnt2d& p1, const gp_Pnt2d& p2, const gp_Pnt2d& po
 /// Maps Options -> edge length label index (0-3) to OCCT horizontal text placement.
 Prs3d_DimensionTextHorizontalPosition edge_dim_text_h_pos_from_index(int idx);
 
+/// Rebuild dimension line aspect with \a line_width (call `Redisplay` on the AIS object after).
+void apply_length_dimension_line_width(const PrsDim_LengthDimension_ptr& dim, double line_width);
+
 /// When `sketch_faces_for_flyout` is non-null and non-empty, edge dimensions offset to the side that is
 /// void (not TopAbs_IN) relative to those faces - fixes concave / notch edges where the node centroid lies
 /// on the wrong side. Otherwise `interior_ref` (e.g. node centroid) is used as a weaker heuristic.
+/// OCCT line width scale factor for dimension lines (1.0 = default).
 PrsDim_LengthDimension_ptr create_distance_annotation(const gp_Pnt& p1,
                                                       const gp_Pnt& p2,
                                                       const gp_Pln& pln,
                                                       Prs3d_DimensionTextHorizontalPosition text_h_pos = Prs3d_DTHP_Fit,
                                                       const std::optional<gp_Pnt>&          interior_ref = std::nullopt,
-                                                      const std::vector<TopoDS_Face>* sketch_faces_for_flyout = nullptr);
+                                                      const std::vector<TopoDS_Face>* sketch_faces_for_flyout = nullptr,
+                                                      double dimension_line_width = 1.0);
 
 PrsDim_LengthDimension_ptr create_distance_annotation(const gp_Pnt2d& p1,
                                                       const gp_Pnt2d& p2,
                                                       const gp_Pln&   pln,
                                                       Prs3d_DimensionTextHorizontalPosition text_h_pos = Prs3d_DTHP_Fit,
                                                       const std::optional<gp_Pnt>&          interior_ref = std::nullopt,
-                                                      const std::vector<TopoDS_Face>* sketch_faces_for_flyout = nullptr);
+                                                      const std::vector<TopoDS_Face>* sketch_faces_for_flyout = nullptr,
+                                                      double dimension_line_width = 1.0);
 
 const gp_Pnt& closest_to_camera(const V3d_View_ptr& view, const std::vector<gp_Pnt>& pnts);
 
@@ -202,5 +211,11 @@ TopoDS_Wire make_rectangle_wire(const gp_Pln&   pln,
                                 const gp_Pnt2d& corner2);
 
 std::array<gp_Pnt2d, 4> rectangle_corners(const gp_Pnt2d& corner1, const gp_Pnt2d& corner2);
+bool                    point_on_open_segment_2d(const gp_Pnt2d& p, const gp_Pnt2d& a, const gp_Pnt2d& b);
+
+/// If the shortest distance from \a p to segment `a-b` is <= \a max_perp_dist and the foot lies strictly
+/// inside the segment (not near endpoints), returns that foot; otherwise nullopt.
+std::optional<gp_Pnt2d> snap_foot_to_open_segment_interior_if_close(
+    const gp_Pnt2d& p, const gp_Pnt2d& a, const gp_Pnt2d& b, double max_perp_dist);
 
 #include "geom.inl"

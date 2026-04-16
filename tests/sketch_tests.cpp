@@ -139,6 +139,11 @@ class View_access
   {
     view.shp_extrude().set_curr_view_pln(pln);
   }
+
+  static void set_headless(Occt_view& view, bool headless)
+  {
+    view.m_headless_view = headless;
+  }
 };
 
 // Test basic sketch creation and initialization
@@ -311,7 +316,7 @@ TEST_F(Sketch_test, CreateSquare)
   for (const Node& n : nodes)
     if (!n.deleted)
     {
-      if (n.is_midpoint)
+      if (n.midpoint)
         edge_mid_point_nodes.push_back(n);
       else
         normal_nodes.push_back(n);
@@ -319,7 +324,6 @@ TEST_F(Sketch_test, CreateSquare)
 
   EXPECT_EQ(edge_mid_point_nodes.size(), 4);
   EXPECT_EQ(normal_nodes.size(), 4);
-  int hi = 0;
 }
 
 // Test circle creation
@@ -908,15 +912,21 @@ TEST_F(Sketch_test, JsonSerializationDeserialization)
   EXPECT_TRUE(json_data.contains("isCurrent"));
 
   EXPECT_EQ(json_data["name"], "TestSketch");
+  EXPECT_TRUE(json_data.contains("nodes"));
+  size_t live_nodes = 0;
+  for (size_t i = 0; i < sketch.get_nodes().size(); ++i)
+    if (!sketch.get_nodes()[i].deleted)
+      ++live_nodes;
+  EXPECT_EQ(json_data["nodes"].size(), live_nodes);
   EXPECT_EQ(json_data["edges"].size(), 3);      // Should have 3 edges
   EXPECT_EQ(json_data["arc_edges"].size(), 0);  // No arc edges
 
   // Deserialize from JSON
   std::shared_ptr<Sketch> deserialized_sketch = Sketch_json::from_json(view(), json_data);
 
-  // Verify deserialized sketch
+  // Verify deserialized sketch (compact save drops deleted tombstones; loaded sketch is dense)
   EXPECT_EQ(deserialized_sketch->get_name(), "TestSketch");
-  EXPECT_EQ(deserialized_sketch->get_nodes().size(), sketch.get_nodes().size());
+  EXPECT_EQ(deserialized_sketch->get_nodes().size(), live_nodes);
 
   // Count edges in deserialized sketch
   size_t edge_count = 0;
@@ -1013,10 +1023,10 @@ TEST_F(Sketch_test, JsonSerializationWithDimensions)
   // Serialize to JSON
   nlohmann::json json_data = Sketch_json::to_json(sketch);
 
-  // Verify dimension flag is set
+  // Verify dimension flag is set ([a,b,mid,dim])
   EXPECT_EQ(json_data["edges"].size(), 1);
-  EXPECT_EQ(json_data["edges"][0].size(), 3);
-  EXPECT_EQ(json_data["edges"][0][2], true);  // Dimension flag
+  EXPECT_EQ(json_data["edges"][0].size(), 4);
+  EXPECT_EQ(json_data["edges"][0][3], true);  // Dimension flag
 
   // Deserialize and verify
   std::shared_ptr<Sketch> deserialized_sketch = Sketch_json::from_json(view(), json_data);
@@ -1434,7 +1444,7 @@ TEST_F(Sketch_test, SplitEdge_HasMidpoints)
             << "Midpoint should have y=0";
         
         // Verify the midpoint is marked as a midpoint
-        EXPECT_TRUE(sketch.get_nodes()[*edge.node_idx_mid].is_midpoint)
+        EXPECT_TRUE(sketch.get_nodes()[*edge.node_idx_mid].midpoint)
             << "Midpoint node should be marked as midpoint";
       }
     }
@@ -1461,4 +1471,122 @@ TEST_F(Sketch_test, SplitEdge_HasMidpoints)
       << "First split edge should have midpoint at x=5";
   EXPECT_NEAR(midpoint_x_coords[1], 15.0, Precision::Confusion()) 
       << "Second split edge should have midpoint at x=15";
+}
+
+TEST_F(Sketch_test, AddNode_splits_linear_edge_interior)
+{
+  gp_Pln default_plane(gp::Origin(), gp::DZ());
+  Sketch sketch("TestSketch", view(), default_plane);
+
+  Sketch_access::add_edge_(sketch, gp_Pnt2d(0.0, 0.0), gp_Pnt2d(20.0, 0.0));
+  Sketch_access::update_faces_(sketch);
+
+  auto count_real_edges = [](const Sketch& s) {
+    size_t n = 0;
+    for (const auto& e : s.m_edges)
+      if (e.node_idx_b.has_value())
+        ++n;
+    return n;
+  };
+
+  ASSERT_EQ(count_real_edges(sketch), 1u);
+
+  gui().set_mode(Mode::Sketch_add_node);
+  // Snap to an existing endpoint first (rubber band), then place the new node on the edge interior.
+  ScreenCoords anchor(glm::dvec2(0.0, 0.0));
+  sketch.add_sketch_pt(anchor);
+  ScreenCoords interior(glm::dvec2(7.0, 0.0));
+  sketch.add_sketch_pt(interior);
+
+  EXPECT_EQ(count_real_edges(sketch), 2u) << "Add node on edge interior should replace one edge with two";
+
+  bool found_0_7 = false;
+  bool found_7_20 = false;
+  for (const auto& e : sketch.m_edges)
+  {
+    if (!e.node_idx_b.has_value() || e.circle_arc)
+      continue;
+    const gp_Pnt2d& pa = sketch.get_nodes()[e.node_idx_a];
+    const gp_Pnt2d& pb = sketch.get_nodes()[*e.node_idx_b];
+    if (std::abs(pa.Y()) < 1e-6 && std::abs(pb.Y()) < 1e-6)
+    {
+      double x0 = std::min(pa.X(), pb.X());
+      double x1 = std::max(pa.X(), pb.X());
+      if (std::abs(x0 - 0.0) < 1e-6 && std::abs(x1 - 7.0) < 1e-6)
+        found_0_7 = true;
+      if (std::abs(x0 - 7.0) < 1e-6 && std::abs(x1 - 20.0) < 1e-6)
+        found_7_20 = true;
+    }
+  }
+  EXPECT_TRUE(found_0_7);
+  EXPECT_TRUE(found_7_20);
+}
+
+TEST_F(Sketch_test, AddNode_off_edge_adds_node_only)
+{
+  gp_Pln default_plane(gp::Origin(), gp::DZ());
+  Sketch sketch("TestSketch", view(), default_plane);
+
+  Sketch_access::add_edge_(sketch, gp_Pnt2d(0.0, 0.0), gp_Pnt2d(20.0, 0.0));
+  Sketch_access::update_faces_(sketch);
+
+  const size_t nodes_before = sketch.get_nodes().size();
+
+  gui().set_mode(Mode::Sketch_add_node);
+  ScreenCoords away(glm::dvec2(10.0, 5.0));
+  sketch.add_sketch_pt(away);
+
+  size_t edge_count = 0;
+  for (const auto& e : sketch.m_edges)
+    if (e.node_idx_b.has_value())
+      ++edge_count;
+  EXPECT_EQ(edge_count, 1u);
+  EXPECT_EQ(sketch.get_nodes().size(), nodes_before + 1);
+}
+
+// Pick slightly off a segment in plane space; should snap onto the edge and split so the node stays snappable.
+TEST_F(Sketch_test, AddNode_near_edge_snaps_onto_segment_and_splits)
+{
+  struct Headless_guard
+  {
+    Occt_view& m_v;
+    explicit Headless_guard(Occt_view& v)
+        : m_v(v)
+    {
+      View_access::set_headless(m_v, true);
+    }
+    ~Headless_guard()
+    {
+      View_access::set_headless(m_v, false);
+    }
+  } guard(view());
+
+  gp_Pln default_plane(gp::Origin(), gp::DZ());
+  Sketch sketch("TestSketch", view(), default_plane);
+  Sketch_access::add_edge_(sketch, gp_Pnt2d(0.0, 0.0), gp_Pnt2d(20.0, 0.0));
+  Sketch_access::update_faces_(sketch);
+
+  gui().set_mode(Mode::Sketch_add_node);
+  ScreenCoords near_edge(glm::dvec2(7.0, 0.15));
+  sketch.add_sketch_pt(near_edge);
+
+  size_t edge_count = 0;
+  for (const auto& e : sketch.m_edges)
+    if (e.node_idx_b.has_value())
+      ++edge_count;
+  EXPECT_EQ(edge_count, 2u) << "Near-miss pick should snap to segment and replace one edge with two";
+
+  bool found_at_seven = false;
+  for (size_t i = 0; i < sketch.get_nodes().size(); ++i)
+  {
+    if (sketch.get_nodes()[i].deleted)
+      continue;
+    const gp_Pnt2d& p = sketch.get_nodes()[i];
+    if (std::abs(p.X() - 7.0) < 1e-5 && std::abs(p.Y()) < 1e-5)
+    {
+      found_at_seven = true;
+      break;
+    }
+  }
+  EXPECT_TRUE(found_at_seven);
 }

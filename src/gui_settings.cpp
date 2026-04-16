@@ -13,6 +13,35 @@
 namespace
 {
 const char* const k_settings_version = "1";
+
+/// `occt_view` JSON object: view background gradient and grid (shared with `save_occt_view_settings` / `occt_view_settings_json`).
+nlohmann::json build_occt_view_settings_object(const Occt_view& view)
+{
+  float bg1[3], bg2[3], g1[3], g2[3];
+  view.get_bg_gradient_colors(bg1, bg2);
+  view.get_grid_colors(g1, g2);
+  const int method = view.get_bg_gradient_method();
+  return nlohmann::json {
+      {         "bg_color1", {bg1[0], bg1[1], bg1[2]}},
+      {         "bg_color2", {bg2[0], bg2[1], bg2[2]}},
+      {"bg_gradient_method",                   method},
+      {       "grid_color1",    {g1[0], g1[1], g1[2]}},
+      {       "grid_color2",    {g2[0], g2[1], g2[2]}},
+  };
+}
+}  // namespace
+
+std::string GUI::occt_view_settings_json() const
+{
+  using nlohmann::json;
+  EZY_ASSERT(m_view);
+  json j;
+  j["occt_view"] = build_occt_view_settings_object(*m_view);
+  j["gui"]       = {
+      {           "edge_dim_label_h", m_edge_dim_label_h},
+      {        "edge_dim_line_width", m_edge_dim_line_width},
+  };
+  return j.dump(2);
 }
 
 void GUI::save_occt_view_settings()
@@ -30,17 +59,8 @@ void GUI::save_occt_view_settings()
     {
     }
   }
-  float bg1[3], bg2[3], g1[3], g2[3];
-  m_view->get_bg_gradient_colors(bg1, bg2);
-  m_view->get_grid_colors(g1, g2);
-  int method     = m_view->get_bg_gradient_method();
-  j["occt_view"] = {
-      {         "bg_color1", {bg1[0], bg1[1], bg1[2]}},
-      {         "bg_color2", {bg2[0], bg2[1], bg2[2]}},
-      {"bg_gradient_method",                   method},
-      {       "grid_color1",    {g1[0], g1[1], g1[2]}},
-      {       "grid_color2",    {g2[0], g2[1], g2[2]}},
-  };
+  EZY_ASSERT(m_view);
+  j["occt_view"] = build_occt_view_settings_object(*m_view);
   j["gui"] = {
       {               "show_options",            m_show_options                                     },
       {           "show_sketch_list",                                             m_show_sketch_list},
@@ -51,6 +71,7 @@ void GUI::save_occt_view_settings()
       {           "show_lua_console",                                             m_show_lua_console},
       {        "show_python_console",                                          m_show_python_console},
       {           "edge_dim_label_h",                                             m_edge_dim_label_h},
+      {       "edge_dim_line_width",                                           m_edge_dim_line_width},
       {"load_last_opened_on_startup",                                  m_load_last_opened_on_startup},
       {   "last_opened_project_path",                                     m_last_opened_project_path},
       {     "imgui_rounding_general",                                       m_imgui_rounding_general},
@@ -218,6 +239,13 @@ void GUI::parse_gui_panes_settings_(const std::string& content)
       const int v = g["edge_dim_label_h"].get<int>();
       if (v >= 0 && v <= 3)
         m_edge_dim_label_h = v;
+    }
+    m_edge_dim_line_width = k_gui_edge_dim_line_width_default;
+    if (g.contains("edge_dim_line_width") && g["edge_dim_line_width"].is_number())
+    {
+      const float v = g["edge_dim_line_width"].get<float>();
+      if (v >= 0.5f && v <= 8.0f)
+        m_edge_dim_line_width = v;
     }
     m_load_last_opened_on_startup = b("load_last_opened_on_startup", b("load_last_saved_on_startup", false));
     if (g.contains("last_opened_project_path") && g["last_opened_project_path"].is_string())
@@ -478,10 +506,11 @@ void GUI::settings_()
     }
   }
 
-  if (ImGui::CollapsingHeader("Sketch underlay"))
+  if (ImGui::CollapsingHeader("Sketch"))
   {
     bool ul_changed = false;
-    if (ImGui::BeginTable("settings_underlay", 2, ImGuiTableFlags_SizingStretchProp))
+    bool dim_lw_changed = false;
+    if (ImGui::BeginTable("settings_sketch", 2, ImGuiTableFlags_SizingStretchProp))
     {
       ImGui::TableSetupColumn("label", ImGuiTableColumnFlags_WidthFixed, k_label_col_w);
       ImGui::TableSetupColumn("control", ImGuiTableColumnFlags_WidthStretch);
@@ -489,7 +518,32 @@ void GUI::settings_()
       ImGui::TableNextRow();
       ImGui::TableSetColumnIndex(0);
       ImGui::AlignTextToFramePadding();
-      ImGui::TextUnformatted("Highlight color");
+      ImGui::TextUnformatted("Dimension line width");
+      ImGui::TableSetColumnIndex(1);
+      {
+        float lw = m_edge_dim_line_width;
+        if (ImGui::SliderFloat("##edge_dim_lw", &lw, 0.5f, 8.0f, "%.2f"))
+        {
+          m_edge_dim_line_width = lw;
+          dim_lw_changed        = true;
+        }
+        ImGui::SameLine(0.0f, ImGui::GetStyle().ItemInnerSpacing.x);
+        ImGui::TextDisabled("(?)");
+        if (ImGui::IsItemHovered())
+        {
+          ImGui::BeginTooltip();
+          ImGui::PushTextWrapPos(ImGui::GetFontSize() * 35.0f);
+          ImGui::TextDisabled(
+              "Thickness of sketch edge length dimensions (Open CASCADE line width scale; 1.0 = default).");
+          ImGui::PopTextWrapPos();
+          ImGui::EndTooltip();
+        }
+      }
+
+      ImGui::TableNextRow();
+      ImGui::TableSetColumnIndex(0);
+      ImGui::AlignTextToFramePadding();
+      ImGui::TextUnformatted("Underlay highlight color");
       ImGui::TableSetColumnIndex(1);
       ul_changed |= ImGui::ColorEdit3("##underlay_hi", m_underlay_highlight_color, ImGuiColorEditFlags_Float);
       ImGui::SameLine(0.0f, ImGui::GetStyle().ItemInnerSpacing.x);
@@ -506,6 +560,12 @@ void GUI::settings_()
       }
 
       ImGui::EndTable();
+    }
+    if (dim_lw_changed)
+    {
+      save_occt_view_settings();
+      if (m_view)
+        m_view->refresh_all_length_dimension_line_widths(static_cast<double>(m_edge_dim_line_width));
     }
     if (ul_changed)
     {

@@ -303,12 +303,27 @@ void GUI::options_()
               "Where to place the numeric value along the dimension line (near the first or second end, center, or auto).\n"
               "This does not flip which side of the edge the dimension sits on.\n"
               "When the sketch has filled faces, dimensions offset to the void side (point-in-face test).\n"
-              "Otherwise the average node position is used as a rough inside reference.");
+              "Otherwise the average node position is used as a rough inside reference.\n"
+              "Dimension line width is in Settings -> Sketch.");
         break;
       }
 
       case Mode::Sketch_face_extrude:
         default_material();
+        break;
+
+      case Mode::Sketch_add_edge:
+      case Mode::Sketch_add_multi_edges:
+        ImGui::Separator();
+        ImGui::TextWrapped("TAB: type edge length. Shift+TAB: type angle (degrees, CCW from +X).");
+        break;
+
+      case Mode::Sketch_add_node:
+        ImGui::Separator();
+        ImGui::TextWrapped("TAB: type length along the rubber band. Shift+TAB: type angle (degrees, CCW from +X).");
+        ImGui::TextWrapped(
+            "Snap the first click to an existing sketch point to start a rubber band, then click to place the node "
+            "(or press Enter after typing a length). An unsnapped click still places a single node immediately.");
         break;
 
       default:

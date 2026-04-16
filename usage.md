@@ -252,7 +252,7 @@ For detailed information on creating 2D geometry, see the [2D Sketching](usage-s
 
 ### 2D Sketching
 
-See the **[2D Sketching guide](usage-sketch.md)** for full documentation of sketch tools: line and multi-line edges, circles, arcs, rectangles, squares, slots, operation axis, edge dimensions, and creating a sketch from a planar face.
+See the **[2D Sketching guide](usage-sketch.md)** for full documentation of sketch tools: **add node** (points and edge splits), line and multi-line edges, circles, arcs, rectangles, squares, slots, operation axis, edge dimensions, and creating a sketch from a planar face.
 
 ### 3D Modeling
 1. **Transform Operations**
@@ -585,9 +585,13 @@ Open or close the **Lua** or **Python** consoles from **View -> Lua Console** or
 
 ### Documentation
 - [This usage guide](#ezycad-usage-guide)
+- [2D Sketching](usage-sketch.md) (including [add node](usage-sketch.md#add-node-tool))
 - [Scripting (Lua / Python)](scripting.md)
-- Online documentation (TODO)
-- Video tutorials (TODO)
+- Hosted docs and video tutorials are not published yet; this repository's markdown guides are the reference for now.
+
+### Code quality and ongoing work
+
+Contributors should follow **[ezycad_code_style.md](ezycad_code_style.md)** for C++ in `src/`. Sketching, UI, and build paths are still being refined; prefer small, focused changes and match existing patterns in the files you touch.
 
 ### Community
 - [User forums](https://github.com/trailcode/EzyCad/discussions)

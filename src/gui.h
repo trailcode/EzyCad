@@ -1,5 +1,6 @@
 #pragma once
 
+#include <array>
 #include <chrono>  // For message status window (from previous request)
 #include <cstdint>
 #include <functional>
@@ -49,6 +50,9 @@ struct Example_file
   std::string path;
 };
 
+/// Default OCCT line-width scale for length dimensions when `edge_dim_line_width` is missing from settings JSON.
+inline constexpr float k_gui_edge_dim_line_width_default = 1.0f;
+
 class GUI
 {
  public:
@@ -83,6 +87,8 @@ class GUI
   Fillet_mode get_fillet_mode() const { return m_fillet_mode; }
   /// Edge dimension value placement (Options panel, toggle-dimension tool): 0 first point, 1 second, 2 center, 3 auto.
   int edge_dim_label_h() const { return m_edge_dim_label_h; }
+  /// OCCT scale factor for sketch/extrude length dimension lines (1.0 = default thickness).
+  float edge_dim_line_width() const { return m_edge_dim_line_width; }
   bool get_hide_all_shapes() const { return m_hide_all_shapes; }
   void set_hide_all_shapes(bool hide) { m_hide_all_shapes = hide; }
   bool get_dark_mode() const { return m_dark_mode; }
@@ -120,6 +126,9 @@ class GUI
   void on_sketch_underlay_file(const std::string& file_path, const std::string& file_bytes);
 
   void save_occt_view_settings();
+
+  /// JSON for scripting: `occt_view` (background, grid) plus `gui.edge_dim_label_h` / `gui.edge_dim_line_width` (same keys as `ezycad_settings.json`). Asserts if the OCCT view is missing.
+  [[nodiscard]] std::string occt_view_settings_json() const;
 
   /// Default RGB (0-255) for sketch underlay line tint when importing a new image (see Settings).
   void underlay_highlight_color_rgb(uint8_t& r, uint8_t& g, uint8_t& b) const;
@@ -222,12 +231,14 @@ class GUI
   std::function<void(float, bool)> m_dist_callback;
   ScreenCoords                     m_dist_edit_loc {glm::dvec2(0, 0)};
   float                            m_dist_val {};
+  std::array<char, 64>             m_dist_text_buf {};
   bool                             m_dist_edit_focus_pending {false};
 
   // Sketch segment manual angle input related
   std::function<void(float, bool)> m_angle_callback;
   ScreenCoords                     m_angle_edit_loc {glm::dvec2(0, 0)};
   float                            m_angle_val {};
+  std::array<char, 64>             m_angle_text_buf {};
   bool                             m_angle_edit_focus_pending {false};
 
   // Mode related
@@ -235,6 +246,7 @@ class GUI
   Chamfer_mode                m_chamfer_mode = Chamfer_mode::Shape;
   Fillet_mode                 m_fillet_mode  = Fillet_mode::Shape;
   int                         m_edge_dim_label_h {3};  // Prs3d_DTHP_Fit
+  float                       m_edge_dim_line_width {k_gui_edge_dim_line_width_default};
   std::vector<Toolbar_button> m_toolbar_buttons;
 
   // Message status window

@@ -920,6 +920,13 @@ bool Occt_view::fit_face_in_view(const TopoDS_Face& face)
 }
 
 // Dimension related
+void Occt_view::refresh_all_length_dimension_line_widths(const double line_width)
+{
+  for (const Sketch_ptr& sk : m_sketches)
+    if (sk)
+      sk->refresh_edge_dimension_line_widths(line_width);
+}
+
 void Occt_view::dimension_input(const ScreenCoords& screen_coords)
 {
   switch (get_mode())
@@ -979,6 +986,10 @@ void Occt_view::delete_selected()
 
 void Occt_view::delete_(std::vector<AIS_Shape_ptr>& to_delete)
 {
+  for (AIS_Shape_ptr& shp : to_delete)
+    if (auto mark = dynamic_cast<Sketch_AIS_node_mark*>(shp.get()); mark)
+      mark->owner_sketch.remove_permanent_node_mark(*mark);
+
   for (AIS_Shape_ptr& shp : to_delete)
     if (auto wire = dynamic_cast<Sketch_AIS_edge*>(shp.get()); wire)
       wire->owner_sketch.remove_edge(*wire);

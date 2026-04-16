@@ -124,7 +124,12 @@ void Shp_extrude::_update_extrude(const ScreenCoords& screen_coords)
     ctx().Remove(m_tmp_dim, false);
     m_tmp_dim = create_distance_annotation(gp_Pnt(m_to_extrude_pt->XYZ() + extrude_vec.XYZ()),
                                            *m_to_extrude_pt,
-                                           m_curr_view_pln);
+                                           m_curr_view_pln,
+                                           Prs3d_DTHP_Fit,
+                                           std::nullopt,
+                                           nullptr,
+                                           gui().edge_dim_line_width());
+
     m_tmp_dim->SetCustomValue(scaled_dist);
 
     ctx().Display(m_tmp_dim, false);

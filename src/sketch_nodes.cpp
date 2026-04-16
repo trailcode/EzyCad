@@ -2,6 +2,7 @@
 
 #include <TopoDS_Wire.hxx>
 
+#include "dbg.h"
 #include "geom.h"
 #include "occt_view.h"
 
@@ -24,14 +25,16 @@ std::optional<gp_Pnt2d> Sketch_nodes::snap(const ScreenCoords& screen_coords)
   return pt;
 }
 
-size_t Sketch_nodes::get_node_exact(const gp_Pnt2d& pt)
+size_t Sketch_nodes::get_node_exact(const gp_Pnt2d& pt, bool permanent_for_new)
 {
   for (size_t idx = 0, num = m_nodes.size(); idx < num; ++idx)
     if (equal(pt, gp_Pnt2d(m_nodes[idx])))
       return idx;
 
-  size_t ret = m_nodes.size();
-  m_nodes.push_back({pt});
+  Node n(pt);
+  n.permanent = permanent_for_new;
+  const size_t ret = m_nodes.size();
+  m_nodes.push_back(n);
   return ret;
 }
 
@@ -199,12 +202,14 @@ void Sketch_nodes::hide_snap_annos()
   m_last_snap_pt = std::nullopt;
 }
 
-size_t Sketch_nodes::add_new_node(const gp_Pnt2d& pt, bool is_edge_mid_point)
+size_t Sketch_nodes::add_new_node(const gp_Pnt2d& pt, bool is_edge_mid_point, bool is_permanent)
 {
   size_t ret = m_nodes.size();
-  Node   n {pt};
-  n.is_midpoint = is_edge_mid_point;
+  Node   n(pt);
+  n.midpoint  = is_edge_mid_point;
+  n.permanent = is_permanent;
   m_nodes.emplace_back(n);
+  DBG_MSG("Add node: " << pt.Coord().X() << "," << pt.Coord().Y() << " midpoint: " << (int) is_edge_mid_point);
   return ret;
 }
 
@@ -298,6 +303,22 @@ size_t Sketch_nodes::size() const
   return m_nodes.size();
 }
 
+void Sketch_nodes::json_resize(size_t count)
+{
+  m_nodes.assign(count, Node {});
+}
+
+void Sketch_nodes::json_set_node(size_t idx, const gp_Pnt2d& pt, bool deleted, bool midpoint, bool permanent)
+{
+  EZY_ASSERT(idx < m_nodes.size());
+  Node& n = m_nodes[idx];
+  n.SetX(pt.X());
+  n.SetY(pt.Y());
+  n.deleted     = deleted;
+  n.midpoint    = midpoint;
+  n.permanent   = permanent;
+}
+
 void Sketch_nodes::finalize()
 {
   m_prev_num_nodes = m_nodes.size();
@@ -330,3 +351,4 @@ double Sketch_nodes::get_snap_dist()
 {
   return s_snap_dist_pixels;
 }
+
