@@ -51,9 +51,7 @@ EzyCad (Easy CAD) is a CAD application for hobbyist machinists to design and edi
    - [Toggle sketch visibility](#sketch-list)
 
 4. **Shape List**
-   - View and manage 3D shapes
-   - Select and edit shape properties
-   - Toggle shape visibility
+   - [List 3D solids, materials, and display options](#shape-list)
 
 5. **Options Panel**
    - Adjust tool parameters
@@ -84,6 +82,26 @@ For each sketch you can:
 - **Delete** - Right-click the sketch name and choose **Delete** to remove the sketch from the document.
 
 The window can be closed with its close button; use **View -> Sketch List** again to show it.
+
+### Shape List
+
+The **Shape List** pane lists every **3D shape** in the current document (extrudes, imports, booleans, etc.). Open it from **View -> Shape List**.
+
+At the top:
+
+- **Hide all** - When checked, hides every shape in the 3D view; when cleared, every shape is shown again (same as turning visibility back on for all rows).
+
+For each shape, one row includes:
+
+- **Name** - Editable text field; change the label stored with the shape.
+- **Right-click the name** - Opens a context menu with **Material** and the same material list as the **M** button.
+- **Visibility** - Checkbox (tooltip *visibility*) to show or hide that shape in the 3D view.
+- **Solid / wire** - Checkbox (tooltip *solid/wire*) to switch **shaded** display or **wireframe** for that shape.
+- **M** - Opens a **Material** popup to pick an Open CASCADE material preset (also shown in the tooltip). You can also use the context menu on the name.
+
+Rows that match the **current 3D selection** are drawn with a slightly brighter style so the list stays in sync with what is selected in the viewer (tooltip *Selected in 3D viewer* when you hover the highlighted row).
+
+The window can be closed with its close button; use **View -> Shape List** again to show it.
 
 ## Scripting (Lua and Python)
 
