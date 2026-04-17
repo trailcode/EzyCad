@@ -11,8 +11,9 @@
 8.  [View Controls](#view-controls)
 9.  [Tips and Tricks](#tips-and-tricks)
 10. [Scripting](#scripting-lua-and-python)
-10. [Support](#support)
-11. [Tool Icons](#tool-icons)
+11. [Support](#support)
+12. [Tool Icons](#tool-icons)
+13. [Settings](usage-settings.md)
 
 ## Introduction
 
@@ -36,8 +37,8 @@ EzyCad (Easy CAD) is a CAD application for hobbyist machinists to design and edi
 1. **Menu Bar**
    - **File** - [New](#new-project), [Open](#open-project), [Save](#save-project), Save as, [Import](#importing-3d-geometries), [Export](#exporting-3d-geometries), Examples, Exit
    - **Edit** - [Undo](#edit-operations), [Redo](#edit-operations)
-   - **View** - [Settings, panes, Lua/Python consoles](#help-and-settings),
-   - **Help** - [About, Usage Guide](#help-and-settings)
+   - **View** - [Settings, panes, Lua/Python consoles](usage-settings.md#view-menu)
+   - **Help** - [About](#help-menu), [Usage Guide](#help-menu), and the separate **[Settings guide](usage-settings.md)**
 
 2. **Toolbar**
    - Quick access to commonly used tools
@@ -57,34 +58,19 @@ EzyCad (Easy CAD) is a CAD application for hobbyist machinists to design and edi
 5. **Options Panel**
    - Adjust tool parameters
    - Set operation properties
-   - Configure view settings
+   - Sketch-related options (for example length dimension placement) are described in **[usage-settings.md](usage-settings.md#options-panel-sketch)**
 
 6. **Log Window**
    - View operation history
    - Check for errors and warnings
    - Monitor system status
 
-### Help and Settings
+### Help menu
 
-**View menu** - Toggle panes and open settings:
-- **Settings** - Opens the Settings dialog. Use it to adjust:
-  - **Dark mode** - Toggle dark theme.
-  - **3D view background** - Background gradient colors and blend direction.
-  - **3D view grid** - Grid colors.
-  - **Defaults** - Restore default settings.
-- **Options** - Show or hide the Options panel.
-- **Sketch List** - Show or hide the [Sketch List](#sketch-list) pane.
-- **Shape List** - Show or hide the Shape List pane.
-- **Log** - Show or hide the Log window.
-- **Lua Console** - Show or hide the interactive Lua prompt and `res/scripts/lua` editors. See [Scripting (Lua and Python)](#scripting-lua-and-python).
-- **Python Console** - Same for Python when the app is built with embedded Python (native only; not in the WebAssembly build).
-- **Debug** - Show or hide the debug pane (debug builds only).
-
-**Help menu**
 - **About** - Opens the [project README](README.md) in the browser.
 - **Usage Guide** - Opens [this usage guide](usage.md) in the browser.
 
-**Saving settings** - **File -> Save settings** (Emscripten) or the application's save-on-exit behavior saves current layout, view, and the above options so they persist next time you run EzyCad.
+For **View** (Settings, pane toggles, consoles), saving preferences, and the **Settings** pane sections, see **[usage-settings.md](usage-settings.md)**.
 
 ### Sketch List
 
@@ -129,12 +115,7 @@ For shortcuts, sample scripts, binding tables, and limitations, see the **[Scrip
 
 ### Startup project (defaults)
 
-Similar to Blender's startup file: EzyCad can load a **default document** when it starts, including geometry, camera/view (stored in the `.ezy`), and **current tool mode**.
-
-- **First launch / no custom startup** - The app loads the bundled template `res/default.ezy` from the install or build output.
-- **Save your own startup** - Set up the scene and mode the way you want, open **Settings** (menu bar), expand **Startup project**, and click **Save current as startup project**. On desktop, this writes `startup.ezy` under your user config folder (e.g. Windows: `%APPDATA%\EzyCad\`; Linux: `~/.config/EzyCad/`; macOS: `~/Library/Application Support/EzyCad/`). On the web build, it is stored in the browser (localStorage).
-- **Next runs** - If a saved startup exists, it is loaded instead of the bundled file. The session starts **untitled** (so **Save** does not overwrite your startup file until you pick a path).
-- **Clear saved startup** - In **Settings -> Startup project**, click **Clear saved startup**; the next launch uses the bundled `res/default.ezy` again.
+EzyCad can load a **default document** when it starts (geometry, camera, tool mode). See **[Startup project](usage-settings.md#startup-project)** in the settings guide.
 
 ## Edit Operations
 
@@ -585,6 +566,7 @@ Open or close the **Lua** or **Python** consoles from **View -> Lua Console** or
 
 ### Documentation
 - [This usage guide](#ezycad-usage-guide)
+- [Settings](usage-settings.md) (Settings pane, View menu, JSON settings file, startup project)
 - [2D Sketching](usage-sketch.md) (including [add node](usage-sketch.md#add-node-tool))
 - [Scripting (Lua / Python)](scripting.md)
 - Hosted docs and video tutorials are not published yet; this repository's markdown guides are the reference for now.
@@ -640,4 +622,4 @@ Contributors should follow **[ezycad_code_style.md](ezycad_code_style.md)** for 
 
 ---
 
-For more information, see the [README](README.md) or the [GitHub repository](https://github.com/trailcode/EzyCad).
+For more information, see the [README](README.md), **[usage-settings.md](usage-settings.md)**, or the [GitHub repository](https://github.com/trailcode/EzyCad).
