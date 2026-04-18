@@ -31,6 +31,12 @@ Use this style when editing or adding C/C++ code in the EzyCad project (files un
 - **Short control flow**: Single-line `if`/`for` without braces is acceptable when the body is a single statement; use braces for multi-line or nested bodies.
 - Use **`// clang-format off`** / **`// clang-format on`** only where layout must be preserved (e.g. macro-like blocks, tables). Prefer running clang-format; it is the source of truth for formatting.
 
+## Versioning and releases
+
+- **Product version** lives in **`src/version.h`**: `EZYCAD_VERSION_MAJOR`, `EZYCAD_VERSION_MINOR`, `EZYCAD_VERSION_PATCH`, and `EZYCAD_VERSION_STRING`. Follow [Semantic Versioning](https://semver.org/spec/v2.0.0.html) (MAJOR.MINOR.PATCH). The header is hand-maintained so it stays valid regardless of build system (CMake or otherwise).
+- **Release notes** live in **`CHANGELOG.md`** at the repo root, using [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) sections (`Added`, `Changed`, `Fixed`, etc.). Add notable work under **`[Unreleased]`** as you go; when you cut a release, rename that section to **`[x.y.z] - YYYY-MM-DD`**, bump **`version.h`** to match, and create a git tag **`vx.y.z`** consistent with `EZYCAD_VERSION_STRING`.
+- **Do not confuse** the product version with **`k_settings_version`** in `gui_settings.cpp` (and `version` in saved settings JSON): that value is the **settings file format** version, not the application version.
+
 ## Code organization
 
 - **Templates**: Prefer putting template implementations in `.inl` files included from the header (e.g. `types.inl`, `utl.inl`).
