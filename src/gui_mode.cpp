@@ -108,7 +108,7 @@ void GUI::on_key(int key, int scancode, int action, int mods)
     switch (key)
     {
       case GLFW_KEY_N:
-        m_view->new_file();
+        new_project_();
         break;
 
       case GLFW_KEY_O:

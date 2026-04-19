@@ -27,6 +27,7 @@
 #include "occt_view.h"
 #include "python_console.h"
 #include "sketch.h"
+#include "version.h"
 
 // Must be here to prevent compiler warning
 #include <GLFW/glfw3.h>
@@ -40,8 +41,8 @@ static bool parse_dist_text_to_float(const char* buf, float& out)
     ++s;
   if (*s == '\0')
     return false;
-  char* end = nullptr;
-  const float v = std::strtof(s, &end);
+  char*       end = nullptr;
+  const float v   = std::strtof(s, &end);
   if (end == s)
     return false;
   while (*end != '\0' && std::isspace(static_cast<unsigned char>(*end)))
@@ -139,6 +140,8 @@ void GUI::render_gui()
   // FlushViewEvents must run before ImGui so the camera matches the latest pan/zoom/rotate (do_frame() runs later).
   m_view->flush_view_events();
 
+  update_window_title_();
+
   if (m_dark_mode)
     ImGui::StyleColorsDark();
   else
@@ -154,6 +157,7 @@ void GUI::render_gui()
   shape_list_();
   options_();
   message_status_window_();
+  about_dialog_();
   add_box_dialog_();
   add_pyramid_dialog_();
   add_sphere_dialog_();
@@ -176,7 +180,7 @@ void GUI::render_occt()
 void GUI::initialize_toolbar_()
 {
   m_toolbar_buttons = {
-      {                           load_texture("res/icons/User.png"),  true,"Inspection mode",                         Mode::Normal                                                                  },
+      {                           load_texture("res/icons/User.png"),  true,"Inspection mode",                         Mode::Normal                                                                            },
       {        load_texture("res/icons/Workbench_Sketcher_none.png"), false,           "Sketch inspection mode",         Mode::Sketch_inspection_mode},
       {             load_texture("res/icons/Assembly_AxialMove.png"), false,                   "Shape move (g)",                           Mode::Move},
       {                   load_texture("res/icons/Draft_Rotate.png"), false,                 "Shape rotate (r)",                         Mode::Rotate},
@@ -194,7 +198,7 @@ void GUI::initialize_toolbar_()
       {    load_texture("res/icons/Sketcher_Create3PointCircle.png"), false,     "Add circle from three points",        Mode::Sketch_add_circle_3_pts},
       {            load_texture("res/icons/Sketcher_CreateSlot.png"), false,                         "Add slot",                Mode::Sketch_add_slot},
       {       load_texture("res/icons/TechDraw_LengthDimension.png"), false,
-       "Toggle edge dimension annotation (Options: length value placement)",         Mode::Sketch_toggle_edge_dim                          },
+       "Toggle edge dimension annotation (Options: length value placement)",         Mode::Sketch_toggle_edge_dim                                    },
       {              load_texture("res/icons/Design456_Extrude.png"), false,          "Extrude sketch face (e)",            Mode::Sketch_face_extrude},
       {             load_texture("res/icons/PartDesign_Chamfer.png"), false,                          "Chamfer",                  Mode::Shape_chamfer},
       {              load_texture("res/icons/PartDesign_Fillet.png"), false,                           "Fillet",                   Mode::Shape_fillet},
@@ -227,7 +231,7 @@ void GUI::load_examples_list_()
 
     std::string path  = p.string();
     std::string label = p.filename().string();
-    m_example_files.push_back(Example_file{std::move(label), std::move(path)});
+    m_example_files.push_back(Example_file {std::move(label), std::move(path)});
   }
   std::sort(m_example_files.begin(), m_example_files.end(),
             [](const Example_file& a, const Example_file& b)
@@ -244,7 +248,7 @@ void GUI::menu_bar_()
     // Use separate `if` (not `else if`) for each entry. `BeginMenu` stays true while the submenu
     // is open; chaining with `else if` would skip later items (e.g. Examples hidden while Export open).
     if (ImGui::MenuItem("New", "Ctrl+N"))
-      m_view->new_file();
+      new_project_();
 
     if (ImGui::MenuItem("Open", "Ctrl+O"))
       open_file_dialog_();
@@ -455,7 +459,7 @@ void GUI::menu_bar_()
   if (ImGui::BeginMenu("Help"))
   {
     if (ImGui::MenuItem("About"))
-      open_url_("https://github.com/trailcode/EzyCad/blob/main/README.md");
+      m_open_about_popup = true;
 
     if (ImGui::MenuItem("Usage Guide"))
       open_url_("https://github.com/trailcode/EzyCad/blob/main/usage.md");
@@ -464,6 +468,76 @@ void GUI::menu_bar_()
   }
 
   ImGui::EndMainMenuBar();
+}
+
+void GUI::about_dialog_()
+{
+  if (m_open_about_popup)
+  {
+    ImGui::SetNextWindowSize(ImVec2(520.0f, 0.0f), ImGuiCond_Appearing);
+    ImGui::OpenPopup("About");
+    m_open_about_popup = false;
+  }
+  if (!ImGui::BeginPopupModal("About", nullptr, ImGuiWindowFlags_AlwaysAutoResize))
+    return;
+
+  char title_line[96];
+  std::snprintf(title_line, sizeof(title_line), "EazyCad %s", EZYCAD_VERSION_STRING);
+  ImGui::TextUnformatted(title_line);
+  ImGui::Spacing();
+
+  ImGui::TextWrapped(
+      "EzyCad (Easy CAD) is a CAD application for hobbyist machinists to design and edit 2D and 3D models for "
+      "machining projects. It supports creating precise parts with tools for sketching, extruding, and applying "
+      "geometric operations, using OpenGL, ImGui, and Open CASCADE Technology (OCCT). Export models to formats "
+      "like STEP or STL for CNC machines or 3D printers.");
+  ImGui::Spacing();
+
+  const char* k_repo = "https://github.com/trailcode/EzyCad";
+  ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(0.26f, 0.59f, 0.98f, 1.00f));
+  ImGui::TextWrapped("%s", k_repo);
+  ImGui::PopStyleColor();
+  if (ImGui::IsItemHovered())
+  {
+    ImGui::SetTooltip("Open in browser");
+    ImGui::SetMouseCursor(ImGuiMouseCursor_Hand);
+  }
+  if (ImGui::IsItemClicked())
+    open_url_(k_repo);
+
+  ImGui::Spacing();
+  if (ImGui::Button("Close"))
+    ImGui::CloseCurrentPopup();
+
+  ImGui::EndPopup();
+}
+
+std::string GUI::project_title_segment_() const
+{
+  if (m_last_saved_path.empty() || m_last_saved_path == "(startup)")
+    return "untitled";
+  try
+  {
+    const std::string fn = std::filesystem::path(m_last_saved_path).filename().string();
+    if (fn.empty())
+      return "untitled";
+    return fn;
+  }
+  catch (...)
+  {
+    return "untitled";
+  }
+}
+
+void GUI::update_window_title_()
+{
+  if (!m_glfw_window)
+    return;
+  const std::string title = std::string("EzyCad - ") + project_title_segment_();
+  if (title == m_cached_window_title)
+    return;
+  m_cached_window_title = title;
+  glfwSetWindowTitle(m_glfw_window, m_cached_window_title.c_str());
 }
 
 void GUI::open_url_(const char* url)
@@ -813,7 +887,7 @@ void GUI::sketch_list_()
     {
       const bool has_ul = sketch->has_underlay();
       bool       dummy_off {false};
-      bool       ul_vis   = has_ul && sketch->underlay_visible();
+      bool       ul_vis = has_ul && sketch->underlay_visible();
       if (!has_ul)
         ImGui::BeginDisabled();
       bool* const vptr = has_ul ? &ul_vis : &dummy_off;
@@ -1102,37 +1176,36 @@ void GUI::sketch_underlay_panel_settings_(const std::shared_ptr<Sketch>& sk)
     ImGui::EndDisabled();
     if (m_show_tool_tips && ImGui::IsItemHovered())
       ImGui::SetTooltip("After Set X: two clicks along height (+V), then enter the drawing distance for Y.");
-
   }
 
   ImGui::Separator();
   ImGui::TextUnformatted("Transform (sketch plane, vs. current view)");
   {
-    const ImGuiIO& io = ImGui::GetIO();
-    double           min_u = 0., min_v = 0., max_u = 1., max_v = 1.;
-    const bool       have_view =
+    const ImGuiIO& io    = ImGui::GetIO();
+    double         min_u = 0., min_v = 0., max_u = 1., max_v = 1.;
+    const bool     have_view =
         m_view->sketch_plane_view_aabb_2d(sk->get_plane(), static_cast<double>(io.DisplaySize.x),
                                           static_cast<double>(io.DisplaySize.y), min_u, min_v, max_u, max_v);
     if (!have_view)
     {
       constexpr double k_fallback = 250.0;
       // m_ul_cx / m_ul_cy stay sketch-plane gp_Pnt2d X / Y (same as underlay_ui_params).
-      min_u = m_ul_cx - k_fallback;
-      max_u = m_ul_cx + k_fallback;
-      min_v = m_ul_cy - k_fallback;
-      max_v = m_ul_cy + k_fallback;
+      min_u                       = m_ul_cx - k_fallback;
+      max_u                       = m_ul_cx + k_fallback;
+      min_v                       = m_ul_cy - k_fallback;
+      max_v                       = m_ul_cy + k_fallback;
     }
 
-    const double span_u = std::max(max_u - min_u, 1e-6);
-    const double span_v = std::max(max_v - min_v, 1e-6);
-    const double half_span_u = 0.5 * span_u;
-    const double half_span_v = 0.5 * span_v;
+    const double     span_u      = std::max(max_u - min_u, 1e-6);
+    const double     span_v      = std::max(max_v - min_v, 1e-6);
+    const double     half_span_u = 0.5 * span_u;
+    const double     half_span_v = 0.5 * span_v;
     // Allow underlay larger than the visible frustum (trace paper / zoomed views).
-    const double max_half_w = std::max(std::hypot(half_span_u, half_span_v) * 2.5, 1e-3);
-    const double max_half_h = max_half_w;
-    constexpr double k_min_half = 1e-6;
-    double           rot_min = -180.0;
-    double           rot_max = 180.0;
+    const double     max_half_w  = std::max(std::hypot(half_span_u, half_span_v) * 2.5, 1e-3);
+    const double     max_half_h  = max_half_w;
+    constexpr double k_min_half  = 1e-6;
+    double           rot_min     = -180.0;
+    double           rot_max     = 180.0;
 
     auto apply_ul_xform = [&]()
     { sk->underlay_set_center_extents_rotation(m_ul_cx, m_ul_cy, m_ul_hw, m_ul_hh, m_ul_rot); };
@@ -1161,11 +1234,11 @@ void GUI::sketch_underlay_panel_settings_(const std::shared_ptr<Sketch>& sk)
 
 void GUI::cancel_underlay_calib_()
 {
-  m_dist_callback = nullptr;
-  m_underlay_calib_phase   = Underlay_calib_phase::None;
+  m_dist_callback        = nullptr;
+  m_underlay_calib_phase = Underlay_calib_phase::None;
   m_underlay_calib_sketch_wk.reset();
-  m_underlay_calib_have_x  = false;
-  m_underlay_calib_axis_u  = gp_Vec2d(0., 0.);
+  m_underlay_calib_have_x = false;
+  m_underlay_calib_axis_u = gp_Vec2d(0., 0.);
 }
 
 void GUI::begin_underlay_calib_set_x_(const std::shared_ptr<Sketch>& sk)
@@ -1205,12 +1278,12 @@ void GUI::begin_underlay_calib_set_y_(const std::shared_ptr<Sketch>& sk)
 
 void GUI::underlay_calib_prompt_x_distance_(const std::shared_ptr<Sketch>& sk)
 {
-  m_underlay_calib_phase = Underlay_calib_phase::AwaitDistX;
-  const double L_model   = m_underlay_calib_x0.Distance(m_underlay_calib_x1);
-  const float  dist_show = static_cast<float>(L_model / m_view->get_dimension_scale());
+  m_underlay_calib_phase       = Underlay_calib_phase::AwaitDistX;
+  const double       L_model   = m_underlay_calib_x0.Distance(m_underlay_calib_x1);
+  const float        dist_show = static_cast<float>(L_model / m_view->get_dimension_scale());
   const ScreenCoords spos(glm::dvec2(ImGui::GetIO().MousePos.x, ImGui::GetIO().MousePos.y));
 
-  std::weak_ptr<Sketch> wk = sk;
+  std::weak_ptr<Sketch> wk      = sk;
   auto                  on_dist = [this, wk](float new_dist, bool is_final)
   {
     if (!is_final)
@@ -1243,9 +1316,9 @@ void GUI::underlay_calib_prompt_x_distance_(const std::shared_ptr<Sketch>& sk)
     s->underlay_ui_params(m_ul_cx, m_ul_cy, m_ul_hw, m_ul_hh, m_ul_rot);
     m_underlay_panel_sketch = nullptr;
 
-    m_dist_callback          = nullptr;
-    m_underlay_calib_phase   = Underlay_calib_phase::None;
-    m_underlay_calib_have_x  = true;
+    m_dist_callback         = nullptr;
+    m_underlay_calib_phase  = Underlay_calib_phase::None;
+    m_underlay_calib_have_x = true;
     show_message("X scale applied to the picked segment. Use Set Y from edge for the vertical span and its distance.");
   };
 
@@ -1254,12 +1327,12 @@ void GUI::underlay_calib_prompt_x_distance_(const std::shared_ptr<Sketch>& sk)
 
 void GUI::underlay_calib_prompt_y_distance_(const std::shared_ptr<Sketch>& sk)
 {
-  m_underlay_calib_phase = Underlay_calib_phase::AwaitDistY;
-  const double L_model   = m_underlay_calib_y0.Distance(m_underlay_calib_y1);
-  const float  dist_show = static_cast<float>(L_model / m_view->get_dimension_scale());
+  m_underlay_calib_phase       = Underlay_calib_phase::AwaitDistY;
+  const double       L_model   = m_underlay_calib_y0.Distance(m_underlay_calib_y1);
+  const float        dist_show = static_cast<float>(L_model / m_view->get_dimension_scale());
   const ScreenCoords spos(glm::dvec2(ImGui::GetIO().MousePos.x, ImGui::GetIO().MousePos.y));
 
-  std::weak_ptr<Sketch> wk = sk;
+  std::weak_ptr<Sketch> wk      = sk;
   auto                  on_dist = [this, wk](float new_dist, bool is_final)
   {
     if (!is_final)
@@ -1337,7 +1410,7 @@ bool GUI::try_underlay_calib_click_(const ScreenCoords& screen_coords)
   switch (m_underlay_calib_phase)
   {
     case Underlay_calib_phase::PickX1:
-      m_underlay_calib_x0  = *pt;
+      m_underlay_calib_x0    = *pt;
       m_underlay_calib_phase = Underlay_calib_phase::PickX2;
       show_message("Underlay X: click second point (end of width / +U).");
       return true;
@@ -1352,7 +1425,7 @@ bool GUI::try_underlay_calib_click_(const ScreenCoords& screen_coords)
       underlay_calib_prompt_x_distance_(sk);
       return true;
     case Underlay_calib_phase::PickY1:
-      m_underlay_calib_y0  = *pt;
+      m_underlay_calib_y0    = *pt;
       m_underlay_calib_phase = Underlay_calib_phase::PickY2;
       show_message("Underlay Y: click second point (end of height / +V).");
       return true;
@@ -1699,6 +1772,7 @@ void GUI::python_console_()
 
 void GUI::init(GLFWwindow* window, ImFont* console_font)
 {
+  m_glfw_window  = window;
   m_console_font = console_font;
   initialize_toolbar_();
   settings::set_log_callback([this](const std::string& m)
@@ -2146,6 +2220,12 @@ void GUI::import_file_dialog_()
 }
 
 // Open save related
+void GUI::new_project_()
+{
+  m_last_saved_path.clear();
+  m_view->new_file();
+}
+
 void GUI::open_file_dialog_()
 {
 #ifndef __EMSCRIPTEN__
@@ -2373,6 +2453,12 @@ void GUI::save_file_dialog_async(const char* title, const std::string& default_f
       Module.ccall('on_save_file_selected', null, ['string'], [UTF8ToString($2)]); }, json_str.data(), json_str.size(), default_file.c_str());
 }
 
+void GUI::note_saved_project_filename(const std::string& filename)
+{
+  if (!filename.empty())
+    m_last_saved_path = filename;
+}
+
 void GUI::download_blob_async(const std::string& default_filename, const std::string& data)
 {
   EM_ASM_ARGS({
@@ -2408,7 +2494,10 @@ extern "C" void on_sketch_underlay_selected(const char* file_path, char* content
 
 extern "C" void on_save_file_selected(const char* file_name)
 {
-  GUI::instance().show_message(std::string("Saved: ") + file_name);
+  GUI& g = GUI::instance();
+  if (file_name)
+    g.note_saved_project_filename(file_name);
+  g.show_message(std::string("Saved: ") + (file_name ? file_name : ""));
 }
 
 #endif
