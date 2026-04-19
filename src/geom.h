@@ -1,16 +1,16 @@
 #pragma once
 
 #include <Precision.hxx>
+#include <Prs3d_DimensionTextHorizontalPosition.hxx>
 #include <Standard_Handle.hxx>
+#include <TopoDS_Face.hxx>
 #include <array>
 #include <boost/geometry.hpp>
 #include <glm/glm.hpp>
 #include <gp_Dir2d.hxx>
 #include <gp_Pnt.hxx>
-#include <numbers> // For Pi
+#include <numbers>  // For Pi
 #include <optional>
-#include <Prs3d_DimensionTextHorizontalPosition.hxx>
-#include <TopoDS_Face.hxx>
 #include <vector>
 
 #include "dbg.h"
@@ -79,20 +79,9 @@ TopoDS_Wire make_slot_wire(const gp_Pln&   plane,
                            const gp_Pnt2d& pt_b,
                            const gp_Pnt2d& pt_c);
 
-// Function to compute angle between two vectors (in radians, 0 to 2pi)
-// TODO not used, there must be a OCCT func.
-#if 0
-double compute_angle(const gp_Vec2d& v1, const gp_Vec2d& v2)
-{
-  double dot   = v1.Dot(v2);
-  double det   = v1.X() * v2.Y() - v1.Y() * v2.X();  // Cross product in 2D
-  double angle = std::atan2(det, dot);
-  return (angle < 0) ? angle + 2 * std::numbers::pi : angle;  // Normalize to [0, 2pi]
-}
-#endif
-
-// Function to get the directional vectors at the start and end of a Geom_TrimmedCurve
-std::pair<gp_Vec, gp_Vec> get_start_end_tangents(const Handle(Geom_TrimmedCurve) & curve);
+    // Function to get the directional vectors at the start and end of a Geom_TrimmedCurve
+    std::pair<gp_Vec, gp_Vec>
+    get_start_end_tangents(const Handle(Geom_TrimmedCurve) & curve);
 
 gp_Vec                    get_end_tangent(const Handle(Geom_TrimmedCurve) & curve);
 std::pair<gp_Vec, gp_Pnt> get_out_dir_and_end_pt(const Handle(Geom_TrimmedCurve) & curve);
@@ -144,21 +133,21 @@ void apply_length_dimension_line_width(const PrsDim_LengthDimension_ptr& dim, do
 /// void (not TopAbs_IN) relative to those faces - fixes concave / notch edges where the node centroid lies
 /// on the wrong side. Otherwise `interior_ref` (e.g. node centroid) is used as a weaker heuristic.
 /// OCCT line width scale factor for dimension lines (1.0 = default).
-PrsDim_LengthDimension_ptr create_distance_annotation(const gp_Pnt& p1,
-                                                      const gp_Pnt& p2,
-                                                      const gp_Pln& pln,
-                                                      Prs3d_DimensionTextHorizontalPosition text_h_pos = Prs3d_DTHP_Fit,
-                                                      const std::optional<gp_Pnt>&          interior_ref = std::nullopt,
-                                                      const std::vector<TopoDS_Face>* sketch_faces_for_flyout = nullptr,
-                                                      double dimension_line_width = 1.0);
+PrsDim_LengthDimension_ptr create_distance_annotation(const gp_Pnt&                         p1,
+                                                      const gp_Pnt&                         p2,
+                                                      const gp_Pln&                         pln,
+                                                      Prs3d_DimensionTextHorizontalPosition text_h_pos              = Prs3d_DTHP_Fit,
+                                                      const std::optional<gp_Pnt>&          interior_ref            = std::nullopt,
+                                                      const std::vector<TopoDS_Face>*       sketch_faces_for_flyout = nullptr,
+                                                      double                                dimension_line_width    = 1.0);
 
-PrsDim_LengthDimension_ptr create_distance_annotation(const gp_Pnt2d& p1,
-                                                      const gp_Pnt2d& p2,
-                                                      const gp_Pln&   pln,
-                                                      Prs3d_DimensionTextHorizontalPosition text_h_pos = Prs3d_DTHP_Fit,
-                                                      const std::optional<gp_Pnt>&          interior_ref = std::nullopt,
-                                                      const std::vector<TopoDS_Face>* sketch_faces_for_flyout = nullptr,
-                                                      double dimension_line_width = 1.0);
+PrsDim_LengthDimension_ptr create_distance_annotation(const gp_Pnt2d&                       p1,
+                                                      const gp_Pnt2d&                       p2,
+                                                      const gp_Pln&                         pln,
+                                                      Prs3d_DimensionTextHorizontalPosition text_h_pos              = Prs3d_DTHP_Fit,
+                                                      const std::optional<gp_Pnt>&          interior_ref            = std::nullopt,
+                                                      const std::vector<TopoDS_Face>*       sketch_faces_for_flyout = nullptr,
+                                                      double                                dimension_line_width    = 1.0);
 
 const gp_Pnt& closest_to_camera(const V3d_View_ptr& view, const std::vector<gp_Pnt>& pnts);
 

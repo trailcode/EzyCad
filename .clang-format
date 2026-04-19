@@ -42,3 +42,5 @@ SpacesInParentheses: false
 SpacesInSquareBrackets: false
 AlignArrayOfStructures: Right
 DerivePointerAlignment: false
+# Blank line between adjacent function/class definitions (Always | Never | Leave).
+SeparateDefinitionBlocks: Always

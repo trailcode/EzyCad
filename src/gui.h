@@ -222,6 +222,12 @@ class GUI
   void                      open_url_(const char* url);
   void                      update_window_title_();
   [[nodiscard]] std::string project_title_segment_() const;
+  /// Parses a float from manual dist/angle ImGui text fields (trimmed, full-string match).
+  static bool               parse_dist_text_to_float_(const char* buf, float& out);
+  /// True if JSON parses and looks like an EzyCad project document (`sketches` array).
+  static bool               is_valid_project_json_(const std::string& s);
+  /// OCCT standard material display names for ImGui combos (index matches \c Graphic3d_NameOfMaterial).
+  static const std::vector<std::string>& occt_material_combo_labels_();
 
   // Settings (gui_settings.cpp)
   void load_occt_view_settings_();
@@ -349,6 +355,3 @@ class GUI
   std::unique_ptr<Python_console> m_python_console;
   ImFont*                         m_console_font {nullptr};  // Cousine monospace; set from main
 };
-
-/// OCCT standard material display names for ImGui combos (index matches \c Graphic3d_NameOfMaterial).
-const std::vector<std::string>& occt_material_combo_labels();

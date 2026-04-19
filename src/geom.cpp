@@ -1,20 +1,15 @@
 #include "geom.h"
 
-#include <algorithm>
-#include <cmath>
-#include <optional>
-
 #include <AIS_Shape.hxx>
 #include <BRepAdaptor_Curve.hxx>
 #include <BRepBndLib.hxx>
 #include <BRepBuilderAPI_MakeEdge.hxx>
 #include <BRepBuilderAPI_MakeVertex.hxx>
 #include <BRepBuilderAPI_MakeWire.hxx>
-#include <BRep_Builder.hxx>
-#include <TopoDS_Compound.hxx>
 #include <BRepClass_FaceClassifier.hxx>
 #include <BRepGProp.hxx>
 #include <BRepTools.hxx>
+#include <BRep_Builder.hxx>
 #include <BRep_Tool.hxx>
 #include <GC_MakeArcOfCircle.hxx>
 #include <GProp_GProps.hxx>
@@ -30,17 +25,21 @@
 #include <TopExp.hxx>
 #include <TopExp_Explorer.hxx>
 #include <TopoDS.hxx>
+#include <TopoDS_Compound.hxx>
 #include <TopoDS_Edge.hxx>
 #include <TopoDS_Face.hxx>
 #include <TopoDS_Vertex.hxx>
 #include <TopoDS_Wire.hxx>
 #include <V3d_View.hxx>
+#include <algorithm>
+#include <cmath>
 #include <gp_Ax3.hxx>
 #include <gp_Dir.hxx>
 #include <gp_Pln.hxx>
 #include <gp_Pnt.hxx>
 #include <gp_Vec.hxx>
 #include <numbers>
+#include <optional>
 
 // Function to project a 3D point onto a plane and get its 2D (u, v) coordinates
 gp_Pnt2d to_2d(const gp_Pln& plane, const gp_Pnt& point_3d)
@@ -92,6 +91,7 @@ gp_Pnt to_3d(const gp_Pln& plane, const gp_Pnt2d& point_2d)
   // Compute 3D point: Origin + u * XDir + v * YDir
   gp_Vec u_vec(x_dir);
   u_vec.Multiply(point_2d.X());
+
   gp_Vec v_vec(y_dir);
   v_vec.Multiply(point_2d.Y());
 
@@ -118,10 +118,13 @@ TopoDS_Wire create_wire_box(const gp_Pln& plane, const gp_Pnt& center, double wi
   // Define vectors for offsets
   gp_Vec x_vec_plus(x_dir);
   x_vec_plus.Multiply(half_width);
+
   gp_Vec x_vec_minus(x_dir);
   x_vec_minus.Multiply(-half_width);
+
   gp_Vec y_vec_plus(y_dir);
   y_vec_plus.Multiply(half_height);
+
   gp_Vec y_vec_minus(y_dir);
   y_vec_minus.Multiply(-half_height);
 
@@ -155,9 +158,10 @@ TopoDS_Wire create_wire_box(const gp_Pln& plane, const gp_Pnt& center, double wi
 
 TopoDS_Shape create_plus_cross_shape(const gp_Pln& plane, const gp_Pnt& center_3d, double half_arm)
 {
-  gp_Ax3 axes  = plane.Position();
+  gp_Ax3 axes = plane.Position();
   gp_Vec vx(axes.XDirection());
   gp_Vec vy(axes.YDirection());
+
   vx.Multiply(half_arm);
   vy.Multiply(half_arm);
 
@@ -166,9 +170,11 @@ TopoDS_Shape create_plus_cross_shape(const gp_Pln& plane, const gp_Pnt& center_3
 
   TopoDS_Compound comp;
   BRep_Builder    bb;
+
   bb.MakeCompound(comp);
   bb.Add(comp, eh);
   bb.Add(comp, ev);
+
   return comp;
 }
 
@@ -201,8 +207,9 @@ std::array<gp_Pnt2d, 4> square_corners(const gp_Pnt2d& center, const gp_Pnt2d& e
   std::array<gp_Pnt2d, 4> ret;
 
   // Compute side length from center to edge midpoint
-  gp_Vec2d      to_midpoint(edge_midpoint.X() - center.X(),
-                            edge_midpoint.Y() - center.Y());
+  gp_Vec2d to_midpoint(edge_midpoint.X() - center.X(),
+                       edge_midpoint.Y() - center.Y());
+
   Standard_Real half_side = to_midpoint.Magnitude();
 
   // Direction to edge midpoint
@@ -249,8 +256,9 @@ TopoDS_Wire make_circle_wire(const gp_Pln&   pln,
                              const gp_Pnt2d& edge_point)
 {
   // Compute radius
-  gp_Vec2d      to_edge(edge_point.X() - center.X(),
-                        edge_point.Y() - center.Y());
+  gp_Vec2d to_edge(edge_point.X() - center.X(),
+                   edge_point.Y() - center.Y());
+
   Standard_Real radius = to_edge.Magnitude();
 
   // Get 3D center and plane's normal
@@ -322,8 +330,9 @@ TopoDS_Wire make_slot_wire(const gp_Pln&   plane,
   gp_Pnt b_mid_3d    = to_3d(plane, pnts.b_mid_2d);
   gp_Pnt b_top_3d    = to_3d(plane, pnts.b_top_2d);
 
-  GC_MakeArcOfCircle    arc_a_maker(a_top_3d, a_mid_3d, a_bottom_3d);
-  GC_MakeArcOfCircle    arc_b_maker(b_bottom_3d, b_mid_3d, b_top_3d);
+  GC_MakeArcOfCircle arc_a_maker(a_top_3d, a_mid_3d, a_bottom_3d);
+  GC_MakeArcOfCircle arc_b_maker(b_bottom_3d, b_mid_3d, b_top_3d);
+
   Geom_TrimmedCurve_ptr arc_a = arc_a_maker.Value();
   Geom_TrimmedCurve_ptr arc_b = arc_b_maker.Value();
 
@@ -333,8 +342,10 @@ TopoDS_Wire make_slot_wire(const gp_Pln&   plane,
 
   // Build wire
   BRepBuilderAPI_MakeWire wire_maker;
+
   wire_maker.Add(BRepBuilderAPI_MakeEdge(arc_a).Edge());
   wire_maker.Add(line_1.Edge());
+
   wire_maker.Add(BRepBuilderAPI_MakeEdge(arc_b).Edge());
   wire_maker.Add(line_2.Edge());
 
@@ -560,28 +571,28 @@ Prs3d_DimensionTextHorizontalPosition edge_dim_text_h_pos_from_index(int idx)
 {
   switch (idx)
   {
-    case 0:
-      return Prs3d_DTHP_Left;
-    case 1:
-      return Prs3d_DTHP_Right;
-    case 2:
-      return Prs3d_DTHP_Center;
-    default:
-      return Prs3d_DTHP_Fit;
+      // clang-format off
+    case 0:  return Prs3d_DTHP_Left;
+    case 1:  return Prs3d_DTHP_Right;
+    case 2:  return Prs3d_DTHP_Center;
+    default: return Prs3d_DTHP_Fit;
+      // clang-format on
   }
 }
 
-static void apply_length_dimension_text_h_position(const PrsDim_LengthDimension_ptr& dim,
+static void apply_length_dimension_text_h_position(const PrsDim_LengthDimension_ptr&           dim,
                                                    const Prs3d_DimensionTextHorizontalPosition text_h_pos)
 {
   if (dim.IsNull())
     return;
+
   const Handle(Prs3d_DimensionAspect)& cur = dim->DimensionAspect();
-  Handle(Prs3d_DimensionAspect)        aspect;
+  Handle(Prs3d_DimensionAspect) aspect;
   if (!cur.IsNull())
     aspect = new Prs3d_DimensionAspect(*cur);
   else
     aspect = new Prs3d_DimensionAspect();
+
   aspect->SetTextHorizontalPosition(text_h_pos);
   dim->SetDimensionAspect(aspect);
 }
@@ -590,8 +601,9 @@ void apply_length_dimension_line_width(const PrsDim_LengthDimension_ptr& dim, co
 {
   if (dim.IsNull())
     return;
+
   const Handle(Prs3d_DimensionAspect)& cur = dim->DimensionAspect();
-  Handle(Prs3d_DimensionAspect)      aspect;
+  Handle(Prs3d_DimensionAspect) aspect;
   if (!cur.IsNull())
     aspect = new Prs3d_DimensionAspect(*cur);
   else
@@ -602,8 +614,8 @@ void apply_length_dimension_line_width(const PrsDim_LengthDimension_ptr& dim, co
   if (const Handle(Prs3d_LineAspect)& la = aspect->LineAspect(); !la.IsNull())
   {
     const Handle(Graphic3d_AspectLine3d)& g = la->Aspect();
-    col = g->Color();
-    typ = g->Type();
+    col                                     = g->Color();
+    typ                                     = g->Type();
   }
 
   Handle(Prs3d_LineAspect) new_line = new Prs3d_LineAspect(col, typ, static_cast<Standard_Real>(line_width));
@@ -614,27 +626,29 @@ void apply_length_dimension_line_width(const PrsDim_LengthDimension_ptr& dim, co
 // OCCT draws the dimension on the side given by (plane_normal x edge_vector) for positive flyout.
 // When that side faces the sketch interior, negate flyout so the annotation sits outside the loop.
 static void orient_length_dimension_flyout_outward(const PrsDim_LengthDimension_ptr& dim,
-                                                     const gp_Pnt&                   p1,
-                                                     const gp_Pnt&                   p2,
-                                                     const gp_Pnt&                   interior_ref,
-                                                     const gp_Pln&                   pln)
+                                                   const gp_Pnt&                     p1,
+                                                   const gp_Pnt&                     p2,
+                                                   const gp_Pnt&                     interior_ref,
+                                                   const gp_Pln&                     pln)
 {
   if (dim.IsNull())
     return;
+
   gp_Vec attach(p1, p2);
   if (attach.SquareMagnitude() < Precision::SquareConfusion())
     return;
+
   gp_Vec nvec(pln.Axis().Direction());
   gp_Vec fly_pos = nvec.Crossed(attach);
   if (fly_pos.SquareMagnitude() < Precision::SquareConfusion())
     return;
 
   gp_Pnt mid = p1.Translated(attach.Multiplied(0.5));
-  gp_Vec   to_in(mid, interior_ref);
+  gp_Vec to_in(mid, interior_ref);
   if (to_in.SquareMagnitude() < Precision::SquareConfusion())
     return;
 
-  Standard_Real f = dim->GetFlyout();
+  Standard_Real f        = dim->GetFlyout();
   const double  edge_len = std::sqrt(attach.SquareMagnitude());
   if (std::abs(f) < Precision::Confusion())
     f = std::max(15.0, edge_len * 0.12);
@@ -648,33 +662,34 @@ static void orient_length_dimension_flyout_outward(const PrsDim_LengthDimension_
 static bool point_strictly_inside_sketch_faces(const gp_Pnt& p, const std::vector<TopoDS_Face>& faces)
 {
   for (const TopoDS_Face& face : faces)
-  {
-    BRepClass_FaceClassifier classifier(face, p, Precision::Confusion());
-    if (classifier.State() == TopAbs_IN)
+    if (BRepClass_FaceClassifier(face, p, Precision::Confusion()).State() == TopAbs_IN)
       return true;
-  }
+
   return false;
 }
 
 // Returns true if flyout sign was chosen from face classification.
 static bool orient_length_dimension_flyout_clear_of_faces(const PrsDim_LengthDimension_ptr& dim,
-                                                          const gp_Pnt&                   p1,
-                                                          const gp_Pnt&                   p2,
-                                                          const gp_Pln&                   pln,
-                                                          const std::vector<TopoDS_Face>& faces)
+                                                          const gp_Pnt&                     p1,
+                                                          const gp_Pnt&                     p2,
+                                                          const gp_Pln&                     pln,
+                                                          const std::vector<TopoDS_Face>&   faces)
 {
   if (dim.IsNull() || faces.empty())
     return false;
+
   gp_Vec attach(p1, p2);
   if (attach.SquareMagnitude() < Precision::SquareConfusion())
     return false;
+
   gp_Vec nvec(pln.Axis().Direction());
   gp_Vec fly_pos = nvec.Crossed(attach);
   if (fly_pos.SquareMagnitude() < Precision::SquareConfusion())
     return false;
+
   fly_pos.Normalize();
 
-  Standard_Real f = dim->GetFlyout();
+  Standard_Real f        = dim->GetFlyout();
   const double  edge_len = std::sqrt(attach.SquareMagnitude());
   if (std::abs(f) < Precision::Confusion())
     f = std::max(15.0, edge_len * 0.12);
@@ -684,9 +699,9 @@ static bool orient_length_dimension_flyout_clear_of_faces(const PrsDim_LengthDim
   const double base_eps = std::max(1e-3, std::min(edge_len * 0.02, edge_len * 0.15));
   for (const double scale : {1.0, 0.35, 2.5})
   {
-    const double eps     = base_eps * scale;
-    const gp_Pnt p_plus  = mid.Translated(fly_pos.Multiplied(eps));
-    const gp_Pnt p_minus = mid.Translated(fly_pos.Multiplied(-eps));
+    const double eps      = base_eps * scale;
+    const gp_Pnt p_plus   = mid.Translated(fly_pos.Multiplied(eps));
+    const gp_Pnt p_minus  = mid.Translated(fly_pos.Multiplied(-eps));
     const bool   in_plus  = point_strictly_inside_sketch_faces(p_plus, faces);
     const bool   in_minus = point_strictly_inside_sketch_faces(p_minus, faces);
     if (in_plus != in_minus)
@@ -699,16 +714,17 @@ static bool orient_length_dimension_flyout_clear_of_faces(const PrsDim_LengthDim
       return true;
     }
   }
+
   return false;
 }
 
-PrsDim_LengthDimension_ptr create_distance_annotation(const gp_Pnt& p1,
-                                                      const gp_Pnt& p2,
-                                                      const gp_Pln& pln,
+PrsDim_LengthDimension_ptr create_distance_annotation(const gp_Pnt&                               p1,
+                                                      const gp_Pnt&                               p2,
+                                                      const gp_Pln&                               pln,
                                                       const Prs3d_DimensionTextHorizontalPosition text_h_pos,
-                                                      const std::optional<gp_Pnt>&    interior_ref,
-                                                      const std::vector<TopoDS_Face>* sketch_faces_for_flyout,
-                                                      const double                    dimension_line_width)
+                                                      const std::optional<gp_Pnt>&                interior_ref,
+                                                      const std::vector<TopoDS_Face>*             sketch_faces_for_flyout,
+                                                      const double                                dimension_line_width)
 {
   // Check if points are too close (invalid for dimension)
   EZY_ASSERT(unique(p1, p2));
@@ -726,16 +742,17 @@ PrsDim_LengthDimension_ptr create_distance_annotation(const gp_Pnt& p1,
     used_faces = orient_length_dimension_flyout_clear_of_faces(dim, p1, p2, pln, *sketch_faces_for_flyout);
   if (!used_faces && interior_ref.has_value())
     orient_length_dimension_flyout_outward(dim, p1, p2, *interior_ref, pln);
+
   return dim;
 }
 
-PrsDim_LengthDimension_ptr create_distance_annotation(const gp_Pnt2d& p1,
-                                                      const gp_Pnt2d& p2,
-                                                      const gp_Pln&   pln,
+PrsDim_LengthDimension_ptr create_distance_annotation(const gp_Pnt2d&                             p1,
+                                                      const gp_Pnt2d&                             p2,
+                                                      const gp_Pln&                               pln,
                                                       const Prs3d_DimensionTextHorizontalPosition text_h_pos,
-                                                      const std::optional<gp_Pnt>&    interior_ref,
-                                                      const std::vector<TopoDS_Face>* sketch_faces_for_flyout,
-                                                      const double                    dimension_line_width)
+                                                      const std::optional<gp_Pnt>&                interior_ref,
+                                                      const std::vector<TopoDS_Face>*             sketch_faces_for_flyout,
+                                                      const double                                dimension_line_width)
 {
   gp_Pnt point_1 = to_3d(pln, p1);
   gp_Pnt point_2 = to_3d(pln, p2);
@@ -792,9 +809,7 @@ bool is_face_contained(const TopoDS_Shape& shape_a, const TopoDS_Shape& shape_b)
 {
   // Verify both shapes are faces
   if (shape_a.ShapeType() != TopAbs_FACE || shape_b.ShapeType() != TopAbs_FACE)
-  {
     throw std::runtime_error("Both shapes must be faces.");
-  }
 
   // Cast to TopoDS_Face
   const TopoDS_Face& face_a = TopoDS::Face(shape_a);
@@ -808,9 +823,7 @@ bool is_face_contained(const TopoDS_Shape& shape_a, const TopoDS_Shape& shape_b)
   Handle(Geom_Plane) plane_b = Handle(Geom_Plane)::DownCast(surface_b);
 
   if (plane_a.IsNull() || plane_b.IsNull())
-  {
     throw std::runtime_error("Both faces must be planar.");
-  }
 
   gp_Pln pln_a = plane_a->Pln();
   gp_Pln pln_b = plane_b->Pln();
@@ -939,6 +952,7 @@ boost_geom::polygon_2d to_boost(const TopoDS_Shape& shape, const gp_Pln& pln2)
       }
       edge_explorer.Next();
     }
+
     if (wire.Orientation() == TopAbs_FORWARD)
       std::reverse(out.begin(), out.end());
 
@@ -1015,15 +1029,12 @@ bool operator<(const gp_Pnt2d& lhs, const gp_Pnt2d& rhs)
 
   // Check if points are equal within tolerance
   if (lhs.Distance(rhs) <= tolerance)
-  {
     return false;  // Equal points are not less than each other
-  }
 
   // Lexicographical ordering: compare X first, then Y if X is equal within tolerance
   if (std::abs(lhs.X() - rhs.X()) > tolerance)
-  {
     return lhs.X() < rhs.X();
-  }
+  
   return lhs.Y() < rhs.Y();
 }
 
@@ -1054,9 +1065,8 @@ bool is_clockwise(const boost_geom::ring_2d& ring)
 {
   double sum = 0.0;
   for (size_t i = 0; i < ring.size() - 1; ++i)
-  {
     sum += (ring[i + 1].x() - ring[i].x()) * (ring[i + 1].y() + ring[i].y());
-  }
+  
   return sum > 0.0;
 }
 
@@ -1069,8 +1079,10 @@ void sort_pnts(std::vector<gp_Pnt>& points)
             {
               if (std::abs(a.X() - b.X()) > tol)
                 return a.X() < b.X();
+
               if (std::abs(a.Y() - b.Y()) > tol)
                 return a.Y() < b.Y();
+
               return a.Z() < b.Z();
             });
 }
@@ -1082,6 +1094,7 @@ TopoDS_Wire make_rectangle_wire(const gp_Pln&   pln,
   // Assert that corners are not too close in either axis
   EZY_ASSERT_MSG(std::abs(corner1.X() - corner2.X()) > Precision::Confusion(),
                  "Rectangle corners too close in X axis");
+
   EZY_ASSERT_MSG(std::abs(corner1.Y() - corner2.Y()) > Precision::Confusion(),
                  "Rectangle corners too close in Y axis");
 
@@ -1150,10 +1163,11 @@ std::optional<gp_Pnt2d> snap_foot_to_open_segment_interior_if_close(
     return std::nullopt;
 
   gp_Vec2d       ap(a, p);
-  const double   t = ap.Dot(ab) / len2;
+  const double   t    = ap.Dot(ab) / len2;
   const gp_Pnt2d proj = gp_Pnt2d(a).Translated(ab * t);
   if (proj.Distance(a) <= tol || proj.Distance(b) <= tol)
     return std::nullopt;
+
   if (t <= 0.0 || t >= 1.0)
     return std::nullopt;
 

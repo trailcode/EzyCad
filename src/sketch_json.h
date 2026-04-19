@@ -21,4 +21,5 @@ class Sketch_json
   static void load_nodes_(Sketch& sketch, const nlohmann::json& nodes_json);
   static void from_json_indexed_(Sketch& ret, const nlohmann::json& j);
   static void from_json_legacy_coords_(Sketch& ret, const nlohmann::json& j);
+  static bool edges_use_node_indices_(const nlohmann::json& j);
 };

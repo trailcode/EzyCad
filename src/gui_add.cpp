@@ -8,6 +8,7 @@ void GUI::add_box_dialog_()
     ImGui::OpenPopup("Add box");
     m_open_add_box_popup = false;
   }
+
   if (!ImGui::BeginPopupModal("Add box", nullptr, ImGuiWindowFlags_AlwaysAutoResize))
     return;
 

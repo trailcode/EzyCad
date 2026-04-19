@@ -32,21 +32,6 @@ json node_to_json_(const Sketch_nodes::Node& nd)
   return o;
 }
 
-bool edges_use_node_indices_(const json& j)
-{
-  const bool has_nodes = j.contains("nodes") && j["nodes"].is_array();
-  if (!j.contains("edges") || !j["edges"].is_array())
-    return false;
-
-  if (j["edges"].empty())
-    return has_nodes;
-
-  const auto& e0 = j["edges"][0];
-  if (!e0.is_array() || e0.empty())
-    return false;
-
-  return e0[0].is_number();
-}
 }  // namespace
 
 void Sketch_json::load_nodes_(Sketch& sketch, const json& nodes_json)
@@ -252,4 +237,20 @@ std::shared_ptr<Sketch> Sketch_json::from_json(Occt_view& view, const nlohmann::
     ret->set_current();
 
   return ret;
+}
+
+bool Sketch_json::edges_use_node_indices_(const json& j)
+{
+  const bool has_nodes = j.contains("nodes") && j["nodes"].is_array();
+  if (!j.contains("edges") || !j["edges"].is_array())
+    return false;
+
+  if (j["edges"].empty())
+    return has_nodes;
+
+  const auto& e0 = j["edges"][0];
+  if (!e0.is_array() || e0.empty())
+    return false;
+
+  return e0[0].is_number();
 }

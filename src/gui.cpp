@@ -32,85 +32,29 @@
 // Must be here to prevent compiler warning
 #include <GLFW/glfw3.h>
 
-static bool parse_dist_text_to_float(const char* buf, float& out)
-{
-  if (!buf)
-    return false;
-  const char* s = buf;
-  while (*s != '\0' && std::isspace(static_cast<unsigned char>(*s)))
-    ++s;
-  if (*s == '\0')
-    return false;
-  char*       end = nullptr;
-  const float v   = std::strtof(s, &end);
-  if (end == s)
-    return false;
-  while (*end != '\0' && std::isspace(static_cast<unsigned char>(*end)))
-    ++end;
-  if (*end != '\0')
-    return false;
-  out = v;
-  return true;
-}
-
-static bool is_valid_project_json(const std::string& s)
-{
-  try
-  {
-    const nlohmann::json j = nlohmann::json::parse(s);
-    return j.contains("sketches") && j["sketches"].is_array();
-  }
-  catch (...)
-  {
-    return false;
-  }
-}
-
-namespace
-{
-
-// Shape List: when a row matches OCCT selection, ImGuiCol_Text is nudged brighter (RGB only).
-constexpr float k_shape_list_selected_text_rgb_scale =
-    1.08f;  // per-channel multiplier for a modest relative lift
-constexpr float k_shape_list_selected_text_rgb_bias =
-    0.04f;  // added after scaling so very dark text still reads a bit lighter
-
-}  // namespace
-
-const std::vector<std::string>& occt_material_combo_labels()
-{
-  static std::vector<std::string> names;
-  if (names.empty())
-    for (int i = 0; i < Graphic3d_MaterialAspect::NumberOfMaterials(); ++i)
-    {
-      Graphic3d_MaterialAspect mat(static_cast<Graphic3d_NameOfMaterial>(i));
-      names.emplace_back(mat.MaterialName());
-    }
-  return names;
-}
-
 GUI* gui_instance = nullptr;
 
 GUI::GUI()
 {
-  m_view = std::make_unique<Occt_view>(*this);
   EZY_ASSERT(!gui_instance);
+
+  m_view       = std::make_unique<Occt_view>(*this);
   gui_instance = this;
 }
 
 ImFont* GUI::console_font() const
 {
-  ImFont* f = m_console_font;
-  if (!f || !ImGui::GetCurrentContext())
+  if (!m_console_font || !ImGui::GetCurrentContext())
     return nullptr;
+
   ImFontAtlas* atlas = ImGui::GetIO().Fonts;
   if (!atlas)
     return nullptr;
+
   for (int i = 0; i < atlas->Fonts.Size; ++i)
-  {
-    if (atlas->Fonts[i] == f)
-      return f;
-  }
+    if (atlas->Fonts[i] == m_console_font)
+      return m_console_font;
+
   return nullptr;
 }
 
@@ -123,6 +67,7 @@ ImVec4 GUI::get_clear_color() const
 {
   if (m_dark_mode)
     return ImVec4(0.10f, 0.10f, 0.12f, 1.00f);
+
   return ImVec4(0.45f, 0.55f, 0.60f, 1.00f);
 }
 
@@ -146,6 +91,7 @@ void GUI::render_gui()
     ImGui::StyleColorsDark();
   else
     ImGui::StyleColorsLight();
+
   apply_imgui_rounding_from_members_();
 
   menu_bar_();
@@ -331,6 +277,7 @@ void GUI::menu_bar_()
       const double scale = m_view->get_dimension_scale();
       m_view->add_box(0, 0, 0, scale, scale, scale);
     }
+
     if (ImGui::MenuItem("Add box_prms"))
     {
       m_add_box_origin_x   = 0;
@@ -341,44 +288,52 @@ void GUI::menu_bar_()
       m_add_box_height     = 1.0;
       m_open_add_box_popup = true;
     }
+
     if (ImGui::MenuItem("Add pyramid"))
     {
       const double scale = m_view->get_dimension_scale();
       m_view->add_pyramid(0, 0, 0, scale);
     }
+
     if (ImGui::MenuItem("Add pyramid_prms"))
     {
       m_add_pyramid_origin_x = m_add_pyramid_origin_y = m_add_pyramid_origin_z = 0;
       m_add_pyramid_side                                                       = 1.0;
       m_open_add_pyramid_popup                                                 = true;
     }
+
     if (ImGui::MenuItem("Add sphere"))
     {
       const double scale = m_view->get_dimension_scale();
       m_view->add_sphere(0, 0, 0, scale);
     }
+
     if (ImGui::MenuItem("Add sphere_prms"))
     {
       m_add_sphere_origin_x = m_add_sphere_origin_y = m_add_sphere_origin_z = 0;
       m_add_sphere_radius                                                   = 1.0;
       m_open_add_sphere_popup                                               = true;
     }
+
     if (ImGui::MenuItem("Add cylinder"))
     {
       const double scale = m_view->get_dimension_scale();
       m_view->add_cylinder(0, 0, 0, scale, scale);
     }
+
     if (ImGui::MenuItem("Add cylinder_prms"))
     {
       m_add_cylinder_origin_x = m_add_cylinder_origin_y = m_add_cylinder_origin_z = 0;
       m_add_cylinder_radius = m_add_cylinder_height = 1.0;
       m_open_add_cylinder_popup                     = true;
     }
+
     if (ImGui::MenuItem("Add cone"))
     {
       const double scale = m_view->get_dimension_scale();
       m_view->add_cone(0, 0, 0, scale, 0.0, scale);
     }
+
     if (ImGui::MenuItem("Add cone_prms"))
     {
       m_add_cone_origin_x = m_add_cone_origin_y = m_add_cone_origin_z = 0;
@@ -387,11 +342,13 @@ void GUI::menu_bar_()
       m_add_cone_height                                               = 1.0;
       m_open_add_cone_popup                                           = true;
     }
+
     if (ImGui::MenuItem("Add torus"))
     {
       const double scale = m_view->get_dimension_scale();
       m_view->add_torus(0, 0, 0, scale, scale / 2.0);
     }
+
     if (ImGui::MenuItem("Add torus_prms"))
     {
       m_add_torus_origin_x = m_add_torus_origin_y = m_add_torus_origin_z = 0;
@@ -411,33 +368,40 @@ void GUI::menu_bar_()
       m_show_settings_dialog = !m_show_settings_dialog;
       save_panes             = true;
     }
+
     if (ImGui::MenuItem("Options", nullptr, m_show_options))
     {
       m_show_options = !m_show_options;
       save_panes     = true;
     }
+
     if (ImGui::MenuItem("Sketch List", nullptr, m_show_sketch_list))
     {
       m_show_sketch_list = !m_show_sketch_list;
       save_panes         = true;
     }
+
     if (ImGui::MenuItem("Shape List", nullptr, m_show_shape_list))
     {
       m_show_shape_list = !m_show_shape_list;
       save_panes        = true;
     }
+
     if (ImGui::MenuItem("Log", nullptr, m_log_window_visible))
     {
       m_log_window_visible = !m_log_window_visible;
       save_panes           = true;
     }
+
     if (ImGui::MenuItem("Lua Console", nullptr, m_show_lua_console))
     {
       m_show_lua_console = !m_show_lua_console;
       save_panes         = true;
     }
+
     if (ImGui::IsItemHovered())
       ImGui::SetTooltip("Interactive Lua prompt and res/scripts/lua editors.");
+
     if (ImGui::MenuItem("Python Console", nullptr, m_show_python_console))
     {
       m_show_python_console = !m_show_python_console;
@@ -478,6 +442,7 @@ void GUI::about_dialog_()
     ImGui::OpenPopup("About");
     m_open_about_popup = false;
   }
+
   if (!ImGui::BeginPopupModal("About", nullptr, ImGuiWindowFlags_AlwaysAutoResize))
     return;
 
@@ -516,6 +481,7 @@ std::string GUI::project_title_segment_() const
 {
   if (m_last_saved_path.empty() || m_last_saved_path == "(startup)")
     return "untitled";
+
   try
   {
     const std::string fn = std::filesystem::path(m_last_saved_path).filename().string();
@@ -523,6 +489,7 @@ std::string GUI::project_title_segment_() const
       return "untitled";
     return fn;
   }
+
   catch (...)
   {
     return "untitled";
@@ -533,9 +500,11 @@ void GUI::update_window_title_()
 {
   if (!m_glfw_window)
     return;
+
   const std::string title = std::string("EzyCad - ") + project_title_segment_();
   if (title == m_cached_window_title)
     return;
+
   m_cached_window_title = title;
   glfwSetWindowTitle(m_glfw_window, m_cached_window_title.c_str());
 }
@@ -672,10 +641,11 @@ void GUI::hide_dist_edit()
   if (m_dist_callback)
   {
     float parsed {};
-    if (parse_dist_text_to_float(m_dist_text_buf.data(), parsed))
+    if (parse_dist_text_to_float_(m_dist_text_buf.data(), parsed))
       m_dist_val = parsed;
-    std::function<void(float, bool)> callback;
+
     // In case the callback sets a new m_dist_callback
+    std::function<void(float, bool)> callback;
     std::swap(callback, m_dist_callback);
     // In case just enter was pressed, or the callback needs to finalize something
     callback(m_dist_val, true);
@@ -715,14 +685,15 @@ void GUI::dist_edit_()
       m_dist_text_buf.size(),
       ImGuiInputTextFlags_CharsDecimal | ImGuiInputTextFlags_CharsScientific);
 
-  if (text_changed && parse_dist_text_to_float(m_dist_text_buf.data(), m_dist_val))
+  if (text_changed && parse_dist_text_to_float_(m_dist_text_buf.data(), m_dist_val))
     m_dist_callback(m_dist_val, false);
 
   if (ImGui::IsItemDeactivatedAfterEdit() && m_dist_callback)
   {
     float parsed {};
-    if (parse_dist_text_to_float(m_dist_text_buf.data(), parsed))
+    if (parse_dist_text_to_float_(m_dist_text_buf.data(), parsed))
       m_dist_val = parsed;
+
     std::function<void(float, bool)> callback;
     std::swap(callback, m_dist_callback);
     callback(m_dist_val, true);
@@ -756,7 +727,7 @@ void GUI::hide_angle_edit()
   if (m_angle_callback)
   {
     float parsed {};
-    if (parse_dist_text_to_float(m_angle_text_buf.data(), parsed))
+    if (parse_dist_text_to_float_(m_angle_text_buf.data(), parsed))
       m_angle_val = parsed;
     std::function<void(float, bool)> callback;
     std::swap(callback, m_angle_callback);
@@ -800,20 +771,72 @@ void GUI::angle_edit_()
       m_angle_text_buf.size(),
       ImGuiInputTextFlags_CharsDecimal | ImGuiInputTextFlags_CharsScientific);
 
-  if (text_changed && parse_dist_text_to_float(m_angle_text_buf.data(), m_angle_val))
+  if (text_changed && parse_dist_text_to_float_(m_angle_text_buf.data(), m_angle_val))
     m_angle_callback(m_angle_val, false);
 
   if (ImGui::IsItemDeactivatedAfterEdit() && m_angle_callback)
   {
     float parsed {};
-    if (parse_dist_text_to_float(m_angle_text_buf.data(), parsed))
+    if (parse_dist_text_to_float_(m_angle_text_buf.data(), parsed))
       m_angle_val = parsed;
+
     std::function<void(float, bool)> callback;
     std::swap(callback, m_angle_callback);
     callback(m_angle_val, true);
   }
 
   ImGui::End();
+}
+
+bool GUI::parse_dist_text_to_float_(const char* buf, float& out)
+{
+  if (!buf)
+    return false;
+
+  const char* s = buf;
+  while (*s != '\0' && std::isspace(static_cast<unsigned char>(*s)))
+    ++s;
+  if (*s == '\0')
+    return false;
+
+  char*       end = nullptr;
+  const float v   = std::strtof(s, &end);
+  if (end == s)
+    return false;
+
+  while (*end != '\0' && std::isspace(static_cast<unsigned char>(*end)))
+    ++end;
+  if (*end != '\0')
+    return false;
+
+  out = v;
+  return true;
+}
+
+bool GUI::is_valid_project_json_(const std::string& s)
+{
+  try
+  {
+    const nlohmann::json j = nlohmann::json::parse(s);
+    return j.contains("sketches") && j["sketches"].is_array();
+  }
+  catch (...)
+  {
+    return false;
+  }
+}
+
+const std::vector<std::string>& GUI::occt_material_combo_labels_()
+{
+  static std::vector<std::string> names;
+  if (names.empty())
+    for (int i = 0; i < Graphic3d_MaterialAspect::NumberOfMaterials(); ++i)
+    {
+      Graphic3d_MaterialAspect mat(static_cast<Graphic3d_NameOfMaterial>(i));
+      names.emplace_back(mat.MaterialName());
+    }
+
+  return names;
 }
 
 void GUI::sketch_list_()
@@ -890,6 +913,7 @@ void GUI::sketch_list_()
       bool       ul_vis = has_ul && sketch->underlay_visible();
       if (!has_ul)
         ImGui::BeginDisabled();
+
       bool* const vptr = has_ul ? &ul_vis : &dummy_off;
       if (ImGui::Checkbox("", vptr) && has_ul)
       {
@@ -897,8 +921,10 @@ void GUI::sketch_list_()
         if (m_underlay_panel_sketch == sketch.get())
           m_ul_vis = ul_vis;
       }
+
       if (!has_ul)
         ImGui::EndDisabled();
+
       if (m_show_tool_tips && ImGui::IsItemHovered(ImGuiHoveredFlags_AllowWhenDisabled))
         ImGui::SetTooltip(
             has_ul ? "Display underlay" : "Import an image in Sketch properties to enable the underlay.");
@@ -926,6 +952,7 @@ void GUI::sketch_list_()
   {
     if (const auto p = m_sketch_properties_sketch.lock(); p && p == sketch_to_delete)
       m_sketch_properties_open = false;
+
     m_view->remove_sketch(sketch_to_delete);
   }
 
@@ -951,6 +978,7 @@ void GUI::sketch_underlay_import_dialog_()
       show_message("Error opening: " + std::filesystem::path(selected).filename().string());
       return;
     }
+
     const std::string file_bytes {std::istreambuf_iterator<char>(file), std::istreambuf_iterator<char>()};
     if (!file_bytes.empty())
       on_sketch_underlay_file(selected, file_bytes);
@@ -968,12 +996,14 @@ void GUI::on_sketch_underlay_file(const std::string& file_path, const std::strin
   m_underlay_import_sketch_target.reset();
   if (!sk)
     sk = m_view->curr_sketch_shared();
+
   m_view->push_undo_snapshot();
   if (!sk->load_underlay_image(file_bytes))
   {
     show_message("Could not decode image: " + std::filesystem::path(file_path).filename().string());
     return;
   }
+
   m_underlay_panel_sketch = nullptr;
   show_message("Underlay: " + std::filesystem::path(file_path).filename().string());
 }
@@ -1060,14 +1090,12 @@ void GUI::sketch_underlay_panel_settings_(const std::shared_ptr<Sketch>& sk)
 
   ImGui::SameLine();
   if (ImGui::Button("Remove underlay"))
-  {
     if (sk->has_underlay())
     {
       m_view->push_undo_snapshot();
       sk->clear_underlay();
       m_underlay_panel_sketch = nullptr;
     }
-  }
 
   ImGui::SameLine(0.0f, ImGui::GetStyle().ItemInnerSpacing.x);
   ImGui::TextDisabled("(?)");
@@ -1102,7 +1130,6 @@ void GUI::sketch_underlay_panel_settings_(const std::shared_ptr<Sketch>& sk)
         "Default yellow reads well on dark backgrounds.");
 
   if (m_ul_line_tint)
-  {
     if (ImGui::ColorEdit3("Line color", m_ul_tint_col))
     {
       const auto to_u8 = [](float c) -> uint8_t
@@ -1112,7 +1139,6 @@ void GUI::sketch_underlay_panel_settings_(const std::shared_ptr<Sketch>& sk)
       };
       sk->underlay_set_line_tint_rgb(to_u8(m_ul_tint_col[0]), to_u8(m_ul_tint_col[1]), to_u8(m_ul_tint_col[2]));
     }
-  }
 
   if (ImGui::SliderFloat("Opacity", &m_ul_opacity, 0.f, 1.f, "%.2f"))
     sk->underlay_set_opacity(m_ul_opacity);
@@ -1163,6 +1189,7 @@ void GUI::sketch_underlay_panel_settings_(const std::shared_ptr<Sketch>& sk)
     ImGui::BeginDisabled(!sk_is_cur || pick_y);
     if (ImGui::Button("Set X from edge..."))
       begin_underlay_calib_set_x_(sk);
+
     ImGui::EndDisabled();
     if (m_show_tool_tips && ImGui::IsItemHovered())
       ImGui::SetTooltip(
@@ -1173,6 +1200,7 @@ void GUI::sketch_underlay_panel_settings_(const std::shared_ptr<Sketch>& sk)
     ImGui::BeginDisabled(!sk_is_cur || !m_underlay_calib_have_x || pick_x);
     if (ImGui::Button("Set Y from edge..."))
       begin_underlay_calib_set_y_(sk);
+
     ImGui::EndDisabled();
     if (m_show_tool_tips && ImGui::IsItemHovered())
       ImGui::SetTooltip("After Set X: two clicks along height (+V), then enter the drawing distance for Y.");
@@ -1216,6 +1244,7 @@ void GUI::sketch_underlay_panel_settings_(const std::shared_ptr<Sketch>& sk)
       const bool changed = ImGui::SliderScalar(label, type, p_data, p_min, p_max, format, flags);
       if (ImGui::IsItemActivated())
         m_view->push_undo_snapshot();
+
       if (changed)
         apply_ul_xform();
     };
@@ -1236,7 +1265,9 @@ void GUI::cancel_underlay_calib_()
 {
   m_dist_callback        = nullptr;
   m_underlay_calib_phase = Underlay_calib_phase::None;
+
   m_underlay_calib_sketch_wk.reset();
+
   m_underlay_calib_have_x = false;
   m_underlay_calib_axis_u = gp_Vec2d(0., 0.);
 }
@@ -1245,11 +1276,13 @@ void GUI::begin_underlay_calib_set_x_(const std::shared_ptr<Sketch>& sk)
 {
   if (!sk || !sk->has_underlay())
     return;
+
   if (m_view->curr_sketch_shared() != sk)
   {
     show_message("Make this sketch current in the sketch list, then try again.");
     return;
   }
+
   cancel_underlay_calib_();
   m_underlay_calib_sketch_wk = sk;
   m_underlay_calib_phase     = Underlay_calib_phase::PickX1;
@@ -1261,16 +1294,19 @@ void GUI::begin_underlay_calib_set_y_(const std::shared_ptr<Sketch>& sk)
 {
   if (!sk || !sk->has_underlay())
     return;
+
   if (!m_underlay_calib_have_x)
   {
     show_message("Use Set X from edge first (two points along image width).");
     return;
   }
+
   if (m_view->curr_sketch_shared() != sk)
   {
     show_message("Make this sketch current in the sketch list, then try again.");
     return;
   }
+
   m_underlay_calib_sketch_wk = sk;
   m_underlay_calib_phase     = Underlay_calib_phase::PickY1;
   show_message("Underlay Y: click two points along +V, then enter the drawing distance for that span.");
@@ -1288,6 +1324,7 @@ void GUI::underlay_calib_prompt_x_distance_(const std::shared_ptr<Sketch>& sk)
   {
     if (!is_final)
       return;
+
     const std::shared_ptr<Sketch> s = wk.lock();
     if (!s || !s->has_underlay())
     {
@@ -1295,6 +1332,7 @@ void GUI::underlay_calib_prompt_x_distance_(const std::shared_ptr<Sketch>& sk)
       cancel_underlay_calib_();
       return;
     }
+
     if (m_underlay_calib_phase != Underlay_calib_phase::AwaitDistX)
       return;
 
@@ -1312,6 +1350,7 @@ void GUI::underlay_calib_prompt_x_distance_(const std::shared_ptr<Sketch>& sk)
       show_message("Could not calibrate X (underlay axes degenerate or segment too short).");
       return;
     }
+
     m_underlay_calib_axis_u = s->underlay_axis_u_vec();
     s->underlay_ui_params(m_ul_cx, m_ul_cy, m_ul_hw, m_ul_hh, m_ul_rot);
     m_underlay_panel_sketch = nullptr;
@@ -1337,6 +1376,7 @@ void GUI::underlay_calib_prompt_y_distance_(const std::shared_ptr<Sketch>& sk)
   {
     if (!is_final)
       return;
+
     const std::shared_ptr<Sketch> s = wk.lock();
     if (!s || !s->has_underlay())
     {
@@ -1344,6 +1384,7 @@ void GUI::underlay_calib_prompt_y_distance_(const std::shared_ptr<Sketch>& sk)
       cancel_underlay_calib_();
       return;
     }
+
     if (m_underlay_calib_phase != Underlay_calib_phase::AwaitDistY)
       return;
 
@@ -1362,6 +1403,7 @@ void GUI::underlay_calib_prompt_y_distance_(const std::shared_ptr<Sketch>& sk)
           "Set Y: picks need a clear span along image height (not along the same edge as X only). Try two points further apart in V.");
       return;
     }
+
     s->underlay_ui_params(m_ul_cx, m_ul_cy, m_ul_hw, m_ul_hh, m_ul_rot);
     m_underlay_panel_sketch = nullptr;
 
@@ -1390,6 +1432,7 @@ bool GUI::try_underlay_calib_click_(const ScreenCoords& screen_coords)
     show_message("Underlay calibration canceled.");
     return true;
   }
+
   if (!sk->has_underlay())
   {
     cancel_underlay_calib_();
@@ -1414,31 +1457,37 @@ bool GUI::try_underlay_calib_click_(const ScreenCoords& screen_coords)
       m_underlay_calib_phase = Underlay_calib_phase::PickX2;
       show_message("Underlay X: click second point (end of width / +U).");
       return true;
+
     case Underlay_calib_phase::PickX2:
       if (too_short(m_underlay_calib_x0, *pt))
       {
         show_message("X segment too short.");
         return true;
       }
+
       m_underlay_calib_x1 = *pt;
       show_message("Enter drawing distance for X (same unit convention as sketch edge dimensions).");
       underlay_calib_prompt_x_distance_(sk);
       return true;
+
     case Underlay_calib_phase::PickY1:
       m_underlay_calib_y0    = *pt;
       m_underlay_calib_phase = Underlay_calib_phase::PickY2;
       show_message("Underlay Y: click second point (end of height / +V).");
       return true;
+
     case Underlay_calib_phase::PickY2:
       if (too_short(m_underlay_calib_y0, *pt))
       {
         show_message("Y segment too short.");
         return true;
       }
+
       m_underlay_calib_y1 = *pt;
       show_message("Enter drawing distance for Y.");
       underlay_calib_prompt_y_distance_(sk);
       return true;
+
     default:
       return false;
   }
@@ -1459,17 +1508,15 @@ void GUI::shape_list_()
 
   // Add checkbox for hiding all shapes except current sketches
   if (ImGui::Checkbox("Hide all", &m_hide_all_shapes))
-  {
     // Update visibility of all shapes based on the new state
     for (const Shp_ptr& shape : m_view->get_shapes())
     {
       shape->set_visible(!m_hide_all_shapes);
     }
-  }
 
   ImGui::Separator();
 
-  const std::vector<std::string>& mat_names       = occt_material_combo_labels();
+  const std::vector<std::string>& mat_names       = occt_material_combo_labels_();
   const int                       nmat            = static_cast<int>(mat_names.size());
   float                           mat_label_w_max = 0.0f;
   for (int mi = 0; mi < nmat; ++mi)
@@ -1500,6 +1547,13 @@ void GUI::shape_list_()
       ImGui::PushStyleColor(ImGuiCol_FrameBgActive,
                             ImVec4(header.x, header.y, header.z, 0.65f));
       const ImVec4 text = ImGui::GetStyleColorVec4(ImGuiCol_Text);
+
+      // Shape List: when a row matches OCCT selection, ImGuiCol_Text is nudged brighter (RGB only).
+      constexpr float k_shape_list_selected_text_rgb_scale =
+          1.08f;  // per-channel multiplier for a modest relative lift
+      constexpr float k_shape_list_selected_text_rgb_bias =
+          0.04f;  // added after scaling so very dark text still reads a bit lighter
+
       ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(
                                                std::min(1.0f, text.x * k_shape_list_selected_text_rgb_scale + k_shape_list_selected_text_rgb_bias),
                                                std::min(1.0f, text.y * k_shape_list_selected_text_rgb_scale + k_shape_list_selected_text_rgb_bias),
@@ -1547,6 +1601,7 @@ void GUI::shape_list_()
       }
       ImGui::EndPopup();
     }
+
     ImGui::PopID();
     // Visibility checkbox
     ImGui::SameLine();
@@ -1599,10 +1654,13 @@ void GUI::shape_list_()
             apply_shape_material(i);
             ImGui::CloseCurrentPopup();
           }
+
         ImGui::EndChild();
       }
+
       ImGui::EndPopup();
     }
+
     if (ImGui::BeginPopupContextItem("mat_btn_ctx"))
     {
       for (int i = 0; i < nmat; ++i)
@@ -1611,6 +1669,7 @@ void GUI::shape_list_()
 
       ImGui::EndPopup();
     }
+
     ImGui::PopID();
 
     if (row_selected)
@@ -1765,6 +1824,7 @@ void GUI::python_console_()
 {
   if (!m_show_python_console)
     return;
+
   if (!m_python_console)
     m_python_console = std::make_unique<Python_console>(this);
   m_python_console->render(&m_show_python_console);
@@ -1800,11 +1860,13 @@ void GUI::persist_last_opened_project_path_(const std::string& path)
 #ifndef __EMSCRIPTEN__
   if (path.empty() || path == "(startup)")
     return;
+
   try
   {
     const std::filesystem::path p(path);
     if (p.empty())
       return;
+
     m_last_opened_project_path = p.generic_string();
     save_occt_view_settings();
   }
@@ -1822,7 +1884,6 @@ void GUI::load_default_project_()
 
 #ifndef __EMSCRIPTEN__
   if (m_load_last_opened_on_startup && !m_last_opened_project_path.empty())
-  {
     try
     {
       const std::filesystem::path p(m_last_opened_project_path);
@@ -1832,13 +1893,14 @@ void GUI::load_default_project_()
         if (file.is_open())
         {
           const std::string json_str {std::istreambuf_iterator<char>(file), std::istreambuf_iterator<char>()};
-          if (is_valid_project_json(json_str))
+          if (is_valid_project_json_(json_str))
           {
             log_message("EzyCad: loading last opened project: " + p.string());
             on_file(p.string(), json_str, false);
             log_message("EzyCad: startup document loaded (last opened).");
             return;
           }
+
           log_message("EzyCad: last opened project JSON is invalid; falling back to startup/default.");
           show_message("Last opened project file is invalid; loading startup/default.");
         }
@@ -1850,11 +1912,10 @@ void GUI::load_default_project_()
     {
       log_message("EzyCad: could not load last opened project; falling back to startup/default.");
     }
-  }
 #endif
 
   const std::string user_startup = settings::load_user_startup_project();
-  if (is_valid_project_json(user_startup))
+  if (is_valid_project_json_(user_startup))
   {
 #ifdef __EMSCRIPTEN__
     log_message("EzyCad: loading saved startup project (browser storage).");
@@ -1883,8 +1944,9 @@ void GUI::load_default_project_()
     log_message("EzyCad: bundled " + std::string(k_bundled_default) + " not found; keeping initial empty document.");
     return;
   }
+
   const std::string json_str {std::istreambuf_iterator<char>(file), std::istreambuf_iterator<char>()};
-  if (is_valid_project_json(json_str))
+  if (is_valid_project_json_(json_str))
   {
     log_message("EzyCad: loading bundled default project (" + std::string(k_bundled_default) + ").");
     on_file(k_bundled_default, json_str, false);
@@ -1911,6 +1973,7 @@ void GUI::save_startup_project_()
     show_message("Could not save startup project.");
     return;
   }
+
 #ifndef __EMSCRIPTEN__
   const std::filesystem::path p = settings::user_startup_project_path();
   if (!p.empty())
@@ -1955,6 +2018,7 @@ void GUI::on_mouse_pos(const ScreenCoords& screen_coords)
 
       break;
 
+      // clang-format off
     case Mode::Sketch_add_node:
     case Mode::Sketch_add_edge:
     case Mode::Sketch_add_multi_edges:
@@ -1964,12 +2028,9 @@ void GUI::on_mouse_pos(const ScreenCoords& screen_coords)
     case Mode::Sketch_add_rectangle_center_pt:
     case Mode::Sketch_add_circle:
     case Mode::Sketch_add_slot:
-    case Mode::Sketch_add_seg_circle_arc:
-      m_view->curr_sketch().sketch_pt_move(screen_coords);
-      break;
-    case Mode::Sketch_face_extrude:
-      m_view->sketch_face_extrude(screen_coords, true);
-      break;
+    case Mode::Sketch_add_seg_circle_arc: m_view->curr_sketch().sketch_pt_move(screen_coords);  break;
+    case Mode::Sketch_face_extrude:       m_view->sketch_face_extrude(screen_coords, true);     break;
+      // clang-format on
     default:
       break;
   }
@@ -1995,17 +2056,12 @@ void GUI::on_mouse_button(int button, int action, int mods)
   if (button == GLFW_MOUSE_BUTTON_LEFT && action == GLFW_PRESS && mods == 0)
     switch (m_mode)
     {
-      case Mode::Move:
-        m_view->shp_move().finalize();
-        break;
-
-      case Mode::Rotate:
-        m_view->shp_rotate().finalize();
-        break;
-
-      case Mode::Scale:
-        m_view->shp_scale().finalize();
-        break;
+        // clang-format off
+      case Mode::Move:                m_view->shp_move().finalize();                      break;
+      case Mode::Rotate:              m_view->shp_rotate().finalize();                    break;
+      case Mode::Scale:               m_view->shp_scale().finalize();                     break;
+      case Mode::Sketch_face_extrude: m_view->sketch_face_extrude(screen_coords, false);  break;
+        // clang-format on
 
       case Mode::Sketch_add_node:
       case Mode::Sketch_add_edge:
@@ -2019,10 +2075,6 @@ void GUI::on_mouse_button(int button, int action, int mods)
       case Mode::Sketch_add_slot:
         hide_dist_edit();
         m_view->curr_sketch().add_sketch_pt(screen_coords);
-        break;
-
-      case Mode::Sketch_face_extrude:
-        m_view->sketch_face_extrude(screen_coords, false);
         break;
 
       case Mode::Shape_chamfer:
@@ -2046,20 +2098,20 @@ void GUI::on_mouse_button(int button, int action, int mods)
       default:
         break;
     }
+
   else if (button == GLFW_MOUSE_BUTTON_RIGHT && action == GLFW_PRESS && mods == 0)
+    // Right button is to finalize the current operation.
     switch (m_mode)
     {
+        // clang-format off
       case Mode::Sketch_add_node:
       case Mode::Sketch_add_edge:
-      case Mode::Sketch_add_multi_edges:
-        m_view->curr_sketch().finalize_elm();
-        break;
+      case Mode::Sketch_add_multi_edges: m_view->curr_sketch().finalize_elm(); break;
+        // clang-format on
 
       default:
         break;
     }
-
-  // m_view->on_mouse_button(button, action, mods);
 }
 
 void GUI::on_mouse_scroll(double xoffset, double yoffset)
@@ -2092,6 +2144,7 @@ void GUI::cleanup_log_redirection_()
   // Restore original stream buffers
   if (m_original_cout_buf)
     std::cout.rdbuf(m_original_cout_buf);
+
   if (m_original_cerr_buf)
     std::cerr.rdbuf(m_original_cerr_buf);
 
@@ -2144,6 +2197,7 @@ void GUI::export_file_dialog_(Export_format fmt)
     show_message("Export canceled");
     return;
   }
+
   const Status s = m_view->export_document(fmt, selected);
   if (!s.is_ok())
     show_message(s.message());
@@ -2199,6 +2253,7 @@ void GUI::import_file_dialog_()
       filter_patterns,
       "STEP / PLY files",
       0);
+
   if (selected)
   {
     // Binary mode required for PLY (mesh payload may contain 0x1A; Windows text mode treats that as EOF).
@@ -2208,6 +2263,7 @@ void GUI::import_file_dialog_()
       show_message("Error opening: " + std::filesystem::path(selected).filename().string());
       return;
     }
+
     const std::string file_bytes {std::istreambuf_iterator<char>(file), std::istreambuf_iterator<char>()};
     if (!file_bytes.empty())
       on_import_file(selected, file_bytes);

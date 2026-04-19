@@ -256,7 +256,7 @@ void GUI::options_()
 
   auto default_material = [&]()
   {
-    const std::vector<std::string>& material_names = occt_material_combo_labels();
+    const std::vector<std::string>& material_names = occt_material_combo_labels_();
     int                             current_item   = int(m_view->get_default_material().Name());
     if (current_item < 0 || current_item >= static_cast<int>(material_names.size()))
       current_item = 0;
