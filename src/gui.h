@@ -10,7 +10,7 @@
 #include <memory>
 #include <string>  // Added for log messages
 #include <variant>
-//#include <vector>  // Added for log storage
+// #include <vector>  // Added for log storage
 
 #include "imgui.h"
 #include "log.h"
@@ -118,6 +118,8 @@ class GUI
   void import_file_dialog_async();  // STEP / PLY import (routes to on_import_file)
   void save_file_dialog_async(const char* title, const std::string& default_file, const std::string& json_str);
   void download_blob_async(const std::string& default_filename, const std::string& data);
+  /// After browser download save, remember basename for window title and Save-as default.
+  void note_saved_project_filename(const std::string& filename);
 #endif
 
   void on_file(const std::string& file_path, const std::string& json_str, bool announce_load = true);
@@ -183,6 +185,7 @@ class GUI
   void add_cylinder_dialog_();
   void add_cone_dialog_();
   void add_torus_dialog_();
+  void about_dialog_();
   void log_window_();
   void lua_console_();
   void python_console_();
@@ -207,15 +210,18 @@ class GUI
 #endif
 
   // Open/save related
+  void new_project_();
   void open_file_dialog_();
   void save_file_dialog_();
 
-  void        save_startup_project_();
-  void        clear_saved_startup_project_();
+  void                      save_startup_project_();
+  void                      clear_saved_startup_project_();
   /// Native only: store path in settings after a successful Open (for optional startup load).
-  void        persist_last_opened_project_path_(const std::string& path);
-  std::string serialized_project_json_() const;
-  void        open_url_(const char* url);
+  void                      persist_last_opened_project_path_(const std::string& path);
+  std::string               serialized_project_json_() const;
+  void                      open_url_(const char* url);
+  void                      update_window_title_();
+  [[nodiscard]] std::string project_title_segment_() const;
 
   // Settings (gui_settings.cpp)
   void load_occt_view_settings_();
@@ -226,6 +232,8 @@ class GUI
   void imgui_rounding_fallbacks_from_theme_(float& general, float& scroll, float& tabs) const;
 
   std::unique_ptr<Occt_view> m_view;
+  GLFWwindow*                m_glfw_window {nullptr};
+  std::string                m_cached_window_title;
 
   // Sketch segment manual length input related
   std::function<void(float, bool)> m_dist_callback;
@@ -276,6 +284,7 @@ class GUI
   bool   m_show_shape_list {true};
   bool   m_show_options {true};
   bool   m_show_settings_dialog {false};
+  bool   m_open_about_popup {false};
   bool   m_open_add_box_popup {false};
   double m_add_box_origin_x {0};
   double m_add_box_origin_y {0};
