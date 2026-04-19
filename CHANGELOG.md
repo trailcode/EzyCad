@@ -9,11 +9,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- Help > About: in-app dialog with the app version, a short product description, and a link to the GitHub repository (replaces opening the README in the browser from that menu item).
+
 ### Changed
 
-### Fixed
-
-### Removed
+- Window title shows the current project file name (e.g. after Open or Save), or `untitled` when there is no path yet; **File > New** clears the name so the title matches an empty document.
 
 ## [0.1.0] - 2026-04-17
 
