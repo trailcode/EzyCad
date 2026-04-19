@@ -577,8 +577,14 @@ if(MSVC)
     # Create a source group for documentation files
     set(DOC_FILES
         ${CMAKE_CURRENT_SOURCE_DIR}/README.md
+        ${CMAKE_CURRENT_SOURCE_DIR}/ezycad_code_style.md
+        ${CMAKE_CURRENT_SOURCE_DIR}/CHANGELOG.md
         ${CMAKE_CURRENT_SOURCE_DIR}/usage.md
+        ${CMAKE_CURRENT_SOURCE_DIR}/usage-settings.md
+        ${CMAKE_CURRENT_SOURCE_DIR}/usage-sketch.md
+        ${CMAKE_CURRENT_SOURCE_DIR}/scripting.md
         ${CMAKE_CURRENT_SOURCE_DIR}/bugs.md
+        ${CMAKE_CURRENT_SOURCE_DIR}/LICENSE
     )
     #source_group("Documentation" FILES ${DOC_FILES})
     
@@ -586,7 +592,6 @@ if(MSVC)
     target_sources(${PROJECT_NAME} PRIVATE ${DOC_FILES})
     set_source_files_properties(${DOC_FILES} PROPERTIES HEADER_FILE_ONLY TRUE)
 endif()
-
 
 # Add Google Test only for non-Emscripten builds
 if(NOT CMAKE_CXX_COMPILER_ID STREQUAL "Emscripten")
