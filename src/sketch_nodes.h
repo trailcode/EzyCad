@@ -32,6 +32,9 @@ class Sketch_nodes
   // If no node exists at `pt`, appends one; `permanent_for_new` sets Node::permanent on that new node only.
   size_t                  get_node_exact(const gp_Pnt2d& pt, bool permanent_for_new = false);
   std::optional<size_t>   get_node(const ScreenCoords& screen_coords);
+  /// Projects the click onto the sketch plane and returns a node index only if within snap range of an
+  /// existing non-deleted node. Never creates nodes (unlike `get_node`).
+  std::optional<size_t>   try_pick_existing_node(const ScreenCoords& screen_coords);
   std::optional<size_t>   try_get_node_idx_snap(
         gp_Pnt2d&                  pt,  // `pt` could be snapped to a node, an axis of another node, or an outside snap point.
         const std::vector<size_t>& to_exclude = {});
@@ -74,6 +77,8 @@ class Sketch_nodes
   void json_set_node(size_t idx, const gp_Pnt2d& pt, bool deleted, bool midpoint, bool permanent);
 
   void update_node_snap_anno_(const gp_Pnt2d& pt, const double snap_dist);
+  /// World-space snap radius at `pt` (same convention as `try_get_node_idx_snap` / `try_pick_existing_node`).
+  double snap_radius_world_(const gp_Pnt2d& pt) const;
   bool try_snap_outside_(gp_Pnt2d& pt, const double snap_dist);  // Use points in `m_outside_snap_pts` `pt` will be modified if snapped.
 
   std::vector<Node>       m_nodes;

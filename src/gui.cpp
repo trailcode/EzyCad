@@ -2028,7 +2028,8 @@ void GUI::on_mouse_pos(const ScreenCoords& screen_coords)
     case Mode::Sketch_add_rectangle_center_pt:
     case Mode::Sketch_add_circle:
     case Mode::Sketch_add_slot:
-    case Mode::Sketch_add_seg_circle_arc: m_view->curr_sketch().sketch_pt_move(screen_coords);  break;
+    case Mode::Sketch_add_seg_circle_arc:
+    case Mode::Sketch_toggle_edge_dim:    m_view->curr_sketch().sketch_pt_move(screen_coords);  break;
     case Mode::Sketch_face_extrude:       m_view->sketch_face_extrude(screen_coords, true);     break;
       // clang-format on
     default:

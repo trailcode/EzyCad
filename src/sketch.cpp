@@ -112,6 +112,10 @@ void Sketch::sketch_pt_move(const ScreenCoords& screen_coords)
     case Mode::Sketch_add_multi_edges:
       move_line_string_pt_ (screen_coords);
       break;
+
+    case Mode::Sketch_toggle_edge_dim:
+      (void)m_nodes.try_pick_existing_node(screen_coords);
+      break;
     
     case Mode::Sketch_add_rectangle:
     case Mode::Sketch_add_rectangle_center_pt:
@@ -1434,15 +1438,7 @@ bool Sketch::try_remove_length_dimension(PrsDim_LengthDimension* dim)
 
 void Sketch::toggle_edge_dim(const ScreenCoords& screen_coords)
 {
-  if (std::list<Edge>::iterator itr = get_edge_at_(screen_coords); itr != m_edges.end())
-    if (!itr->circle_arc && itr->node_idx_b.has_value() && !itr->node_idx_arc.has_value())
-    {
-      add_or_toggle_length_dim_between_node_indices_(itr->node_idx_a, *itr->node_idx_b);
-      m_len_dim_pick_anchor_node.reset();
-      return;
-    }
-
-  if (std::optional<size_t> n = m_nodes.get_node(screen_coords))
+  if (std::optional<size_t> n = m_nodes.try_pick_existing_node(screen_coords))
   {
     if (!m_len_dim_pick_anchor_node.has_value())
     {
@@ -1452,7 +1448,18 @@ void Sketch::toggle_edge_dim(const ScreenCoords& screen_coords)
     if (*m_len_dim_pick_anchor_node != *n)
       add_or_toggle_length_dim_between_node_indices_(*m_len_dim_pick_anchor_node, *n);
     m_len_dim_pick_anchor_node.reset();
+    return;
   }
+
+  if (std::list<Edge>::iterator itr = get_edge_at_(screen_coords); itr != m_edges.end())
+    if (!itr->circle_arc && itr->node_idx_b.has_value() && !itr->node_idx_arc.has_value())
+    {
+      add_or_toggle_length_dim_between_node_indices_(itr->node_idx_a, *itr->node_idx_b);
+      m_len_dim_pick_anchor_node.reset();
+      return;
+    }
+
+  m_len_dim_pick_anchor_node.reset();
 }
 
 void Sketch::finalize_elm()

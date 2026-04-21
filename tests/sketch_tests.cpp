@@ -1035,6 +1035,30 @@ TEST_F(Sketch_test, JsonSerializationWithDimensions)
   EXPECT_EQ(deserialized_sketch->m_length_dimensions[0].node_idx_hi, 1u);
 }
 
+// Legacy indexed edges used a 4th boolean "dim" field; migrate to length_dimensions (node pair).
+TEST_F(Sketch_test, JsonLegacyIndexedEdgeDimFlagMigratesToLengthDimensions)
+{
+  gp_Pln default_plane(gp::Origin(), gp::DZ());
+  Sketch sketch("TestSketch", view(), default_plane);
+  Sketch_access::add_edge_(sketch, gp_Pnt2d(0.0, 0.0), gp_Pnt2d(10.0, 0.0));
+
+  nlohmann::json j = Sketch_json::to_json(sketch);
+  j["edges"][0].push_back(true);
+  j.erase("length_dimensions");
+
+  std::shared_ptr<Sketch> loaded = Sketch_json::from_json(view(), j);
+  ASSERT_EQ(loaded->m_length_dimensions.size(), 1u);
+  EXPECT_EQ(loaded->m_length_dimensions[0].node_idx_lo, 0u);
+  EXPECT_EQ(loaded->m_length_dimensions[0].node_idx_hi, 1u);
+}
+
+TEST_F(Sketch_test, EzyDocumentJsonIncludesFormatVersion)
+{
+  const nlohmann::json doc = nlohmann::json::parse(view().to_json());
+  ASSERT_TRUE(doc.contains("ezyFormat"));
+  EXPECT_EQ(doc["ezyFormat"].get<int>(), 2);
+}
+
 // Test bridge edge removal - rectangle with inner rectangle connected by bridge
 TEST_F(Sketch_test, UpdateFaces_BridgeEdgeRemoval)
 {

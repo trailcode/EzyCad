@@ -1,8 +1,11 @@
 #pragma once
 
+#include <cstddef>
 #include <memory>
 #include <nlohmann/json.hpp>
 #include <string>
+#include <utility>
+#include <vector>
 
 class Sketch;
 class Occt_view;
@@ -19,7 +22,9 @@ class Sketch_json
   ~Sketch_json() = default;
 
   static void load_nodes_(Sketch& sketch, const nlohmann::json& nodes_json);
-  static void from_json_indexed_(Sketch& ret, const nlohmann::json& j);
-  static void from_json_legacy_coords_(Sketch& ret, const nlohmann::json& j);
+  static void from_json_indexed_(Sketch& ret, const nlohmann::json& j,
+                                 std::vector<std::pair<std::size_t, std::size_t>>* out_legacy_length_dim_endpoints);
+  static void from_json_legacy_coords_(Sketch& ret, const nlohmann::json& j,
+                                       std::vector<std::pair<std::size_t, std::size_t>>* out_legacy_length_dim_endpoints);
   static bool edges_use_node_indices_(const nlohmann::json& j);
 };

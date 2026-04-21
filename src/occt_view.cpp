@@ -1558,10 +1558,18 @@ size_t Occt_view::redo_stack_size() const
 }
 
 // ---------------------------------------------------------------------------
+// Document format: 1 = legacy sketch edges could carry a 4th "dim" flag; 2 = length_dimensions array + 3-tuple edges.
+namespace
+{
+constexpr int k_ezy_file_format_version = 2;
+}
+
+// ---------------------------------------------------------------------------
 std::string Occt_view::to_json() const
 {
   using namespace nlohmann;
   json  j;
+  j["ezyFormat"] = k_ezy_file_format_version;
   json& sketches = j["sketches"] = json::array();
   json& shps = j["shapes"] = json::array();
 
@@ -1626,6 +1634,7 @@ void Occt_view::load(const std::string& json_str, bool restore_view)
 
   clear_all(m_sketches, m_cur_sketch, m_shps);
   const json j = json::parse(json_str);
+  (void)j.value("ezyFormat", 1);  // Reserved for future migrations; sketch JSON migrates per-edge dim flags in Sketch_json.
   EZY_ASSERT(j.contains("sketches") && j["sketches"].is_array());
   for (const auto& s : j["sketches"])
   {

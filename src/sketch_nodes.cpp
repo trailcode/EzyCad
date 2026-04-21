@@ -1,6 +1,7 @@
 #include "sketch_nodes.h"
 
 #include <TopoDS_Wire.hxx>
+#include <limits>
 
 #include "dbg.h"
 #include "geom.h"
@@ -52,39 +53,71 @@ std::optional<size_t> Sketch_nodes::get_node(const ScreenCoords& screen_coords)
   return add_new_node(*pt);
 }
 
-std::optional<size_t> Sketch_nodes::try_get_node_idx_snap(
-    gp_Pnt2d&                  pt,  // `pt` could be snapped to a node, an axis of another node, or an outside snap point.
-    const std::vector<size_t>& to_exclude)
+double Sketch_nodes::snap_radius_world_(const gp_Pnt2d& pt) const
 {
-  // Calculate snap_dist in world coordinates
-  double snap_dist;
   if (!m_view.is_headless())
   {
     gp_Pnt       pt3d_on_plane       = to_3d(m_pln, pt);
     ScreenCoords screen_coords_at_pt = m_view.get_screen_coords(pt3d_on_plane);
 
     ScreenCoords screen_coords_offset = screen_coords_at_pt;
-    // Offset by m_snap_dist_pixels in screen space (e.g., along X)
-    // It might be more robust to offset in both X and Y by m_snap_dist_pixels / sqrt(2)
-    // or handle cases where the offset point goes off-screen,
-    // but for simplicity, a simple X offset is shown here.
     screen_coords_offset.unsafe_get().x += s_snap_dist_pixels;
 
     std::optional<gp_Pnt2d> pt_offset_on_plane_2d;
     if (std::optional<gp_Pnt> pt_offset_on_plane_3d = m_view.pt3d_on_plane(screen_coords_offset, m_pln))
-    {
       pt_offset_on_plane_2d = to_2d(m_pln, *pt_offset_on_plane_3d);
-    }
 
     if (pt_offset_on_plane_2d)
-      snap_dist = pt.Distance(*pt_offset_on_plane_2d);
-    else
-      // It should never get here
-      snap_dist = 5.0;  // This is not ideal as a fallback
+      return pt.Distance(*pt_offset_on_plane_2d);
+    return 5.0;
   }
-  else
-    // Headless, probably a unit test calling, treating s_snap_dist_pixels as world units.
-    snap_dist = s_snap_dist_pixels;
+  return s_snap_dist_pixels;
+}
+
+std::optional<size_t> Sketch_nodes::try_pick_existing_node(const ScreenCoords& screen_coords)
+{
+  std::optional<gp_Pnt2d> pt_opt = m_view.pt_on_plane(screen_coords, m_pln);
+  if (!pt_opt)
+  {
+    hide_snap_annos();
+    return std::nullopt;
+  }
+
+  const gp_Pnt2d pt        = *pt_opt;
+  const double   snap_dist = snap_radius_world_(pt);
+  size_t         best_idx  = static_cast<size_t>(-1);
+  double         best_sq   = std::numeric_limits<double>::max();
+  for (size_t idx = 0, num = m_nodes.size(); idx < num; ++idx)
+  {
+    if (m_nodes[idx].deleted)
+      continue;
+
+    const double sq = m_nodes[idx].SquareDistance(pt);
+    if (sq < best_sq)
+    {
+      best_sq  = sq;
+      best_idx = idx;
+    }
+  }
+  if (best_idx == static_cast<size_t>(-1))
+  {
+    hide_snap_annos();
+    return std::nullopt;
+  }
+  if (best_sq <= snap_dist * 0.25 * snap_dist)
+  {
+    update_node_snap_anno_(m_nodes[best_idx], sqrt(snap_dist));
+    return best_idx;
+  }
+  hide_snap_annos();
+  return std::nullopt;
+}
+
+std::optional<size_t> Sketch_nodes::try_get_node_idx_snap(
+    gp_Pnt2d&                  pt,  // `pt` could be snapped to a node, an axis of another node, or an outside snap point.
+    const std::vector<size_t>& to_exclude)
+{
+  const double snap_dist = snap_radius_world_(pt);
 
   size_t best_idx  = -1;
   double best_dist = std::numeric_limits<double>::max();
@@ -209,7 +242,7 @@ size_t Sketch_nodes::add_new_node(const gp_Pnt2d& pt, bool is_edge_mid_point, bo
   n.midpoint  = is_edge_mid_point;
   n.permanent = is_permanent;
   m_nodes.emplace_back(n);
-  DBG_MSG("Add node: " << pt.Coord().X() << "," << pt.Coord().Y() << " midpoint: " << (int) is_edge_mid_point);
+  //DBG_MSG("Add node: " << pt.Coord().X() << "," << pt.Coord().Y() << " midpoint: " << (int) is_edge_mid_point);
   return ret;
 }
 
