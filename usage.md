@@ -625,7 +625,7 @@ Contributors should follow **[ezycad_code_style.md](ezycad_code_style.md)** for 
 - <img src="res/icons/Sketcher_CreateCircle.png" alt="Sketcher_CreateCircle" width="20" height="20"> - Add circle (center and radius)
 - <img src="res/icons/Sketcher_Create3PointCircle.png" alt="Sketcher_Create3PointCircle" width="20" height="20"> - Add circle from three points *(planned feature)*
 - <img src="res/icons/Sketcher_CreateSlot.png" alt="Sketcher_CreateSlot" width="20" height="20"> - Add slot
-- <img src="res/icons/TechDraw_LengthDimension.png" alt="TechDraw_LengthDimension" width="20" height="20"> - Toggle edge dimension annotation
+- <img src="res/icons/TechDraw_LengthDimension.png" alt="TechDraw_LengthDimension" width="20" height="20"> - Dimension tool
 
 ### 3D Operations
 - <img src="res/icons/Design456_Extrude.png" alt="Design456_Extrude" width="20" height="20"> - Extrude sketch face (<kbd>E</kbd>)

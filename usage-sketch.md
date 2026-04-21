@@ -12,7 +12,7 @@ This guide covers all 2D sketching tools and operations in EzyCad. For the main 
 7. [Rectangle and Square Creation Tools](#rectangle-and-square-creation-tools)
 8. [Slot Creation Tool](#slot-creation-tool)
 9. [Operation Axis Tool](#operation-axis-tool)
-10. [Toggle Edge Dimensions Tool](#toggle-edge-dimensions-tool)
+10. [Dimension Tool](#dimension-tool)
 11. [Add Node Tool](#add-node-tool)
 12. [Create Sketch from Planar Face Tool](#create-sketch-from-planar-face-tool)
 
@@ -30,7 +30,7 @@ This guide covers all 2D sketching tools and operations in EzyCad. For the main 
 
 2. **Sketch Operations**
    - <img src="res/icons/Sketcher_MirrorSketch.png" alt="Operation Axis Tool" width="20" height="20"> [Define operation axis](#operation-axis-tool) - Mirror sketches, revolve edges or faces.
-   - <img src="res/icons/TechDraw_LengthDimension.png" alt="Toggle Edge Dimensions Tool" width="20" height="20"> [Toggle edge dimensions](#toggle-edge-dimensions-tool)
+   - <img src="res/icons/TechDraw_LengthDimension.png" alt="Dimension Tool" width="20" height="20"> [Dimension tool](#dimension-tool)
    - <img src="res/icons/Macro_FaceToSketch_48.png" alt="Create Sketch from Planar Face Tool" width="20" height="20"> [Create sketch from planar face](#create-sketch-from-planar-face-tool)
 
 ### Line Edge Creation Tools
@@ -537,25 +537,29 @@ Once an axis is defined, the options panel will show:
 - The axis can be redefined at any time by clicking again in operation axis mode
 - Use snap points for precise axis placement relative to existing geometry
 
-### Toggle Edge Dimensions Tool
+### Dimension Tool
 
-![Toggle Edge Dimensions Tool](res/icons/TechDraw_LengthDimension.png)
+![Dimension Tool](res/icons/TechDraw_LengthDimension.png)
 
-The toggle edge dimensions tool allows you to show or hide length dimension annotations on individual sketch edges, making it easier to verify measurements and understand the geometry of your sketches.
+Edge dimension tool creates/removes **length dimensions between two sketch nodes**.
 
 **Features:**
 
 | | |
 | ---: | --- |
-| **Visual dimension display** | Shows length measurements on sketch edges |
-| **Per-edge toggle** | Click on individual edges to show or hide their dimensions |
+| **Node-pair dimensions** | Dimensions are defined by two sketch nodes |
+| **Fast edge workflow** | Click a straight edge to toggle a dimension between its two endpoint nodes |
+| **Two-node workflow** | Click one node, then a second node, to toggle a dimension between them |
+| **Selectable/deletable** | Dimension objects can be selected in sketch mode and deleted (for example with the keyboard shortcut <kbd>d</kbd>) |
 | **Helpful for verification** | Quickly verify that your sketch has the correct dimensions |
 
 **How to Use:**
 1. <img src="res/icons/TechDraw_LengthDimension.png" alt="TechDraw_LengthDimension" width="20" height="20"> Select the **Toggle Edge Dimensions** tool from the toolbar
-2. Click on any edge in the current sketch to toggle its dimension annotation on or off
-3. Repeat for any other edges you want to show or hide dimensions for
-4. Click on an edge again to hide its dimension if it's currently visible
+2. Use either input style:
+   - **Edge click:** Click a straight edge to toggle the dimension between its endpoints
+   - **Node pair:** Click node A, then click node B to toggle the dimension between A and B
+3. Click the same edge (or same node pair) again to remove that dimension
+4. To delete directly, select the dimension object and press the delet hotkey <kbd>d</kbd>
 
 **When to Use:**
 
@@ -565,21 +569,21 @@ The toggle edge dimensions tool allows you to show or hide length dimension anno
 | **Quality control** | Verify measurements before extruding or performing operations |
 | **Learning and debugging** | Understand how your sketch geometry is sized |
 | **Documentation** | Take screenshots with dimensions visible for reference |
-| **Selective display** | Show dimensions only for the edges you're interested in |
+| **Selective display** | Show dimensions only for the node pairs you care about |
 
 **Tips:**
-- Each edge's dimension can be toggled independently
-- The dimensions show the actual length of each edge
+- Dimensions display the distance between the two referenced nodes
+- Node hover/pick uses normal sketch snap distance rules
 - This tool is particularly useful when working with precise measurements
 - Use in combination with the distance input feature (<kbd>Tab</kbd> key) when creating edges
 - Dimensions are for display only and do not constrain the geometry
-- Toggle dimensions on only the edges you need to reduce visual clutter
+- Toggle dimensions on only the elements you need to reduce visual clutter
 
 **Technical Details:**
 
 | | |
 | ---: | --- |
-| **Dimension source** | Calculated from the actual edge geometry |
+| **Dimension source** | Calculated from the two referenced nodes |
 | **Unit system** | Displays measurements in the current unit system |
 | **Auto-update** | Dimensions update automatically when geometry is modified |
 | **View-only** | Does not affect the underlying geometry |
