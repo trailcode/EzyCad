@@ -144,7 +144,7 @@ void GUI::initialize_toolbar_()
       {    load_texture("res/icons/Sketcher_Create3PointCircle.png"), false,     "Add circle from three points",        Mode::Sketch_add_circle_3_pts},
       {            load_texture("res/icons/Sketcher_CreateSlot.png"), false,                         "Add slot",                Mode::Sketch_add_slot},
       {       load_texture("res/icons/TechDraw_LengthDimension.png"), false,
-       "Toggle edge dimension annotation (Options: length value placement)",         Mode::Sketch_toggle_edge_dim                                    },
+       "Length dimension between two nodes: click a straight edge, or click two nodes. Select the dimension and press Delete to remove. (Options: label placement)", Mode::Sketch_toggle_edge_dim },
       {              load_texture("res/icons/Design456_Extrude.png"), false,          "Extrude sketch face (e)",            Mode::Sketch_face_extrude},
       {             load_texture("res/icons/PartDesign_Chamfer.png"), false,                          "Chamfer",                  Mode::Shape_chamfer},
       {              load_texture("res/icons/PartDesign_Fillet.png"), false,                           "Fillet",                   Mode::Shape_fillet},

@@ -207,6 +207,7 @@ class Occt_view : protected AIS_ViewController
   void finalize_sketch_extrude_();
   bool cancel_sketch_extrude_();
   void create_default_sketch_();
+  void remove_selected_length_dimensions_from_sketches_();
 
   // Query related
   const TopoDS_Shape* get_(const ScreenCoords& screen_coords) const;

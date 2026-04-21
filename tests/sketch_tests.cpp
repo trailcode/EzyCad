@@ -84,7 +84,7 @@ GUI Sketch_test::s_gui;
 class Sketch_access
 {
  public:
-  static void add_edge_(Sketch& sketch, const gp_Pnt2d& pt_a, const gp_Pnt2d& pt_b, bool add_dim_anno = false);
+  static void add_edge_(Sketch& sketch, const gp_Pnt2d& pt_a, const gp_Pnt2d& pt_b);
   static void update_faces_(Sketch& sketch);
   static void add_arc_circle_(Sketch& sketch, const gp_Pnt2d& pt_a, const gp_Pnt2d& pt_b, const gp_Pnt2d& pt_c);
   static void get_originating_face_snp_pts_3d_(Sketch& sketch, std::vector<gp_Pnt>& out);
@@ -92,9 +92,9 @@ class Sketch_access
   static const std::vector<Sketch_face_shp_ptr>& get_faces(const Sketch& sketch);
 };
 
-void Sketch_access::add_edge_(Sketch& sketch, const gp_Pnt2d& pt_a, const gp_Pnt2d& pt_b, bool add_dim_anno)
+void Sketch_access::add_edge_(Sketch& sketch, const gp_Pnt2d& pt_a, const gp_Pnt2d& pt_b)
 {
-  sketch.add_edge_(pt_a, pt_b, add_dim_anno);
+  sketch.add_edge_(pt_a, pt_b);
 }
 
 const std::vector<Sketch_face_shp_ptr>& Sketch_access::get_faces(const Sketch& sketch)
@@ -910,6 +910,8 @@ TEST_F(Sketch_test, JsonSerializationDeserialization)
   EXPECT_TRUE(json_data.contains("arc_edges"));
   EXPECT_TRUE(json_data.contains("plane"));
   EXPECT_TRUE(json_data.contains("isCurrent"));
+  EXPECT_TRUE(json_data.contains("length_dimensions"));
+  EXPECT_EQ(json_data["length_dimensions"].size(), 0u);
 
   EXPECT_EQ(json_data["name"], "TestSketch");
   EXPECT_TRUE(json_data.contains("nodes"));
@@ -1008,40 +1010,29 @@ TEST_F(Sketch_test, JsonSerializationDifferentEdgeCounts)
   EXPECT_NE(edge_count1, edge_count2);
 }
 
-// Test JSON serialization with edge dimensions
+// Test JSON serialization with length dimensions (node pairs, not per-edge)
 TEST_F(Sketch_test, JsonSerializationWithDimensions)
 {
   gp_Pln default_plane(gp::Origin(), gp::DZ());
   Sketch sketch("TestSketch", view(), default_plane);
 
-  // Add an edge with dimension
   gp_Pnt2d pt1(-42.123413069225286, 18.567557076566406);
   gp_Pnt2d pt2(-31.038304366797583, 18.567557076566406);
 
-  Sketch_access::add_edge_(sketch, pt1, pt2, true);  // Add dimension
+  Sketch_access::add_edge_(sketch, pt1, pt2);
 
-  // Serialize to JSON
   nlohmann::json json_data = Sketch_json::to_json(sketch);
+  // Endpoints remap to dense indices 0 and 1 (midpoint is 2)
+  json_data["length_dimensions"] = nlohmann::json::array({nlohmann::json::array({0, 1})});
 
-  // Verify dimension flag is set ([a,b,mid,dim])
-  EXPECT_EQ(json_data["edges"].size(), 1);
-  EXPECT_EQ(json_data["edges"][0].size(), 4);
-  EXPECT_EQ(json_data["edges"][0][3], true);  // Dimension flag
+  EXPECT_EQ(json_data["edges"].size(), 1u);
+  EXPECT_EQ(json_data["edges"][0].size(), 3u);
 
-  // Deserialize and verify
   std::shared_ptr<Sketch> deserialized_sketch = Sketch_json::from_json(view(), json_data);
 
-  // Check that the edge has a dimension
-  bool has_dimension = false;
-  for (const auto& edge : deserialized_sketch->m_edges)
-  {
-    if (edge.node_idx_b.has_value() && !edge.dim.IsNull())
-    {
-      has_dimension = true;
-      break;
-    }
-  }
-  EXPECT_TRUE(has_dimension);
+  ASSERT_EQ(deserialized_sketch->m_length_dimensions.size(), 1u);
+  EXPECT_EQ(deserialized_sketch->m_length_dimensions[0].node_idx_lo, 0u);
+  EXPECT_EQ(deserialized_sketch->m_length_dimensions[0].node_idx_hi, 1u);
 }
 
 // Test bridge edge removal - rectangle with inner rectangle connected by bridge
@@ -1524,6 +1515,20 @@ TEST_F(Sketch_test, AddNode_splits_linear_edge_interior)
 
 TEST_F(Sketch_test, AddNode_off_edge_adds_node_only)
 {
+  struct Headless_guard
+  {
+    Occt_view& m_v;
+    explicit Headless_guard(Occt_view& v)
+        : m_v(v)
+    {
+      View_access::set_headless(m_v, true);
+    }
+    ~Headless_guard()
+    {
+      View_access::set_headless(m_v, false);
+    }
+  } guard(view());
+
   gp_Pln default_plane(gp::Origin(), gp::DZ());
   Sketch sketch("TestSketch", view(), default_plane);
 
@@ -1533,7 +1538,8 @@ TEST_F(Sketch_test, AddNode_off_edge_adds_node_only)
   const size_t nodes_before = sketch.get_nodes().size();
 
   gui().set_mode(Mode::Sketch_add_node);
-  ScreenCoords away(glm::dvec2(10.0, 5.0));
+  // Far enough from y=0 that headless snap radius (~100 plane units) does not pull onto the segment.
+  ScreenCoords away(glm::dvec2(10.0, 200.0));
   sketch.add_sketch_pt(away);
 
   size_t edge_count = 0;

@@ -48,14 +48,16 @@ Sketch::~Sketch()
   if (m_underlay)
     m_underlay->erase(m_ctx);
 
-  auto remove_edge = [&](Edge& e)
-  {
-    m_ctx.Remove(e.shp, false);
-    m_ctx.Remove(e.dim, false);
-  };
+  auto remove_edge = [&](Edge& e) { m_ctx.Remove(e.shp, false); };
 
   for (Edge& e : m_edges)
     remove_edge(e);
+
+  for (Length_dimension& ld : m_length_dimensions)
+    if (!ld.dim.IsNull())
+      m_ctx.Remove(ld.dim, false);
+
+  m_length_dimensions.clear();
 
   for (AIS_Shape_ptr& f : m_faces)
     m_ctx.Remove(f, false);
@@ -139,12 +141,7 @@ void Sketch::remove_edge(const Sketch_AIS_edge& to_remove)
   // Some shapes are composed with multiple edges, so we cannot break when a edge is found.
   for (std::list<Edge>::iterator itr = m_edges.begin(); itr != m_edges.end();)
     if (itr->shp.get() == &to_remove)
-    {
-      if (itr->dim)
-        m_ctx.Remove(itr->dim, false);
-
       itr = m_edges.erase(itr);
-    }
     else
       ++itr;
 
@@ -253,6 +250,7 @@ void Sketch::remove_permanent_node_mark(Sketch_AIS_node_mark& mark)
   const size_t i = mark.node_idx;
   EZY_ASSERT(i < m_nodes.size());
   m_nodes[i].deleted = true;
+  remove_length_dimensions_referencing_node_(i);
   if (i < m_permanent_node_marks.size() && m_permanent_node_marks[i].get() == &mark)
   {
     m_ctx.Remove(m_permanent_node_marks[i], false);
@@ -753,8 +751,10 @@ void Sketch::split_linear_edges_at_node_if_interior_(size_t node_idx)
     {
       if (itr->circle_arc)
         continue;
+
       if (itr->node_idx_arc.has_value())
         continue;
+
       if (!itr->node_idx_b.has_value())
         continue;
 
@@ -765,11 +765,9 @@ void Sketch::split_linear_edges_at_node_if_interior_(size_t node_idx)
 
       if (node_idx == a || node_idx == b)
         continue;
+
       if (!point_on_open_segment_2d(p, pa, pb))
         continue;
-
-      if (itr->dim)
-        m_ctx.Remove(itr->dim, false);
 
       Edge edge_a {a};
       update_edge_end_pt_(edge_a, node_idx);
@@ -1249,16 +1247,15 @@ void Sketch::finalize_add_node_elm_cleanup_()
   update_faces_();
 }
 
-void Sketch::add_edge_(const gp_Pnt2d& pt_a, const gp_Pnt2d& pt_b, bool add_dim_anno)
+void Sketch::add_edge_(const gp_Pnt2d& pt_a, const gp_Pnt2d& pt_b)
 {
   Edge edge {m_nodes.get_node_exact(pt_a)};
   update_edge_end_pt_(edge, m_nodes.get_node_exact(pt_b));
-  set_edge_dim_anno_visible_(edge, add_dim_anno);
   m_edges.emplace_back(edge);
   m_nodes.finalize();
 }
 
-void Sketch::sketch_json_add_linear_edge_(size_t idx_a, size_t idx_b, size_t idx_mid, bool add_dim_anno)
+void Sketch::sketch_json_add_linear_edge_(size_t idx_a, size_t idx_b, size_t idx_mid)
 {
   EZY_ASSERT(idx_a < m_nodes.size() && idx_b < m_nodes.size() && idx_mid < m_nodes.size());
 
@@ -1268,7 +1265,6 @@ void Sketch::sketch_json_add_linear_edge_(size_t idx_a, size_t idx_b, size_t idx
   const gp_Pnt2d& pt_a = m_nodes[idx_a];
   const gp_Pnt2d& pt_b = m_nodes[idx_b];
   update_edge_shp_(edge, pt_a, pt_b);
-  set_edge_dim_anno_visible_(edge, add_dim_anno);
   m_edges.emplace_back(edge);
   m_nodes.finalize();
 }
@@ -1323,34 +1319,140 @@ std::optional<gp_Pnt> Sketch::approx_sketch_interior_ref_3d_() const
   return gp_Pnt(acc / static_cast<double>(n));
 }
 
-void Sketch::set_edge_dim_anno_visible_(Edge& e, bool visible)
+void Sketch::rebuild_length_dimension_display_(Length_dimension& d)
 {
-  if (visible)
-  {
-    EZY_ASSERT(e.node_idx_b);
-    if (e.dim)
-      m_ctx.Remove(e.dim, false);  // Remove existing to update position
+  if (!d.dim.IsNull())
+    m_ctx.Remove(d.dim, false);
 
-    e.dim = create_distance_annotation(
-        m_nodes[e.node_idx_a], m_nodes[e.node_idx_b], m_pln,
-        edge_dim_text_h_pos_from_index(m_view.gui().edge_dim_label_h()), approx_sketch_interior_ref_3d_(),
-        m_dim_classifier_faces.empty() ? nullptr : &m_dim_classifier_faces, m_view.gui().edge_dim_line_width());
+  d.dim = create_distance_annotation(
+      m_nodes[d.node_idx_lo], m_nodes[d.node_idx_hi], m_pln,
+      edge_dim_text_h_pos_from_index(m_view.gui().edge_dim_label_h()), approx_sketch_interior_ref_3d_(),
+      m_dim_classifier_faces.empty() ? nullptr : &m_dim_classifier_faces, m_view.gui().edge_dim_line_width());
 
-    double dist = m_nodes[e.node_idx_a].Distance(m_nodes[e.node_idx_b]);
-    e.dim->SetCustomValue(dist / m_view.get_dimension_scale());
-    m_ctx.Display(e.dim, true);
-  }
-  else
+  const double dist = m_nodes[d.node_idx_lo].Distance(m_nodes[d.node_idx_hi]);
+  d.dim->SetCustomValue(dist / m_view.get_dimension_scale());
+  if (m_visible)
+    m_ctx.Display(d.dim, false);
+}
+
+void Sketch::purge_stale_length_dimensions_()
+{
+  for (auto it = m_length_dimensions.begin(); it != m_length_dimensions.end();)
   {
-    m_ctx.Remove(e.dim, true);
-    e.dim.Nullify();
+    const bool bad = it->node_idx_lo >= m_nodes.size() || it->node_idx_hi >= m_nodes.size() ||
+                     m_nodes[it->node_idx_lo].deleted || m_nodes[it->node_idx_hi].deleted;
+    if (bad)
+    {
+      if (!it->dim.IsNull())
+        m_ctx.Remove(it->dim, true);
+
+      it = m_length_dimensions.erase(it);
+    }
+    else
+      ++it;
   }
+}
+
+void Sketch::refresh_all_length_dimensions_()
+{
+  for (Length_dimension& d : m_length_dimensions)
+    rebuild_length_dimension_display_(d);
+}
+
+void Sketch::remove_length_dimensions_referencing_node_(size_t node_idx)
+{
+  for (auto it = m_length_dimensions.begin(); it != m_length_dimensions.end();)
+  {
+    if (it->node_idx_lo == node_idx || it->node_idx_hi == node_idx)
+    {
+      if (!it->dim.IsNull())
+        m_ctx.Remove(it->dim, true);
+      it = m_length_dimensions.erase(it);
+    }
+    else
+      ++it;
+  }
+}
+
+void Sketch::add_or_toggle_length_dim_between_node_indices_(size_t node_a, size_t node_b)
+{
+  const size_t lo = std::min(node_a, node_b);
+  const size_t hi = std::max(node_a, node_b);
+  if (lo == hi)
+    return;
+
+  for (auto it = m_length_dimensions.begin(); it != m_length_dimensions.end(); ++it)
+    if (it->node_idx_lo == lo && it->node_idx_hi == hi)
+    {
+      m_view.push_undo_snapshot();
+      if (!it->dim.IsNull())
+        m_ctx.Remove(it->dim, true);
+
+      m_length_dimensions.erase(it);
+      return;
+    }
+
+  m_view.push_undo_snapshot();
+  Length_dimension d;
+  d.node_idx_lo = lo;
+  d.node_idx_hi = hi;
+  m_length_dimensions.push_back(std::move(d));
+  rebuild_length_dimension_display_(m_length_dimensions.back());
+}
+
+void Sketch::json_add_length_dimension_(size_t node_a, size_t node_b)
+{
+  const size_t lo = std::min(node_a, node_b);
+  const size_t hi = std::max(node_a, node_b);
+  if (lo == hi)
+    return;
+  for (const Length_dimension& x : m_length_dimensions)
+    if (x.node_idx_lo == lo && x.node_idx_hi == hi)
+      return;
+  Length_dimension d;
+  d.node_idx_lo = lo;
+  d.node_idx_hi = hi;
+  m_length_dimensions.push_back(std::move(d));
+  rebuild_length_dimension_display_(m_length_dimensions.back());
+}
+
+bool Sketch::try_remove_length_dimension(PrsDim_LengthDimension* dim)
+{
+  if (!dim)
+    return false;
+
+  for (auto it = m_length_dimensions.begin(); it != m_length_dimensions.end(); ++it)
+    if (it->dim.get() == dim)
+    {
+      m_ctx.Remove(it->dim, true);
+      m_length_dimensions.erase(it);
+      return true;
+    }
+  
+  return false;
 }
 
 void Sketch::toggle_edge_dim(const ScreenCoords& screen_coords)
 {
   if (std::list<Edge>::iterator itr = get_edge_at_(screen_coords); itr != m_edges.end())
-    set_edge_dim_anno_visible_(*itr, itr->dim.IsNull());
+    if (!itr->circle_arc && itr->node_idx_b.has_value() && !itr->node_idx_arc.has_value())
+    {
+      add_or_toggle_length_dim_between_node_indices_(itr->node_idx_a, *itr->node_idx_b);
+      m_len_dim_pick_anchor_node.reset();
+      return;
+    }
+
+  if (std::optional<size_t> n = m_nodes.get_node(screen_coords))
+  {
+    if (!m_len_dim_pick_anchor_node.has_value())
+    {
+      m_len_dim_pick_anchor_node = *n;
+      return;
+    }
+    if (*m_len_dim_pick_anchor_node != *n)
+      add_or_toggle_length_dim_between_node_indices_(*m_len_dim_pick_anchor_node, *n);
+    m_len_dim_pick_anchor_node.reset();
+  }
 }
 
 void Sketch::finalize_elm()
@@ -1390,6 +1492,7 @@ void Sketch::finalize_elm()
 bool Sketch::cancel_elm()
 {
   bool operation_canceled = clear_tmps_();
+  m_len_dim_pick_anchor_node.reset();
   m_ctx.Remove(m_tmp_dim_anno, true);
   m_nodes.hide_snap_annos();
   m_nodes.cancel();
@@ -1797,7 +1900,9 @@ void Sketch::update_faces_()
 
   rebuild_dim_classifier_face_cache_();
 
+  purge_stale_length_dimensions_();
   sync_permanent_node_annos_();
+  refresh_all_length_dimensions_();
 }
 
 void Sketch::rebuild_dim_classifier_face_cache_()
@@ -2055,6 +2160,7 @@ bool Sketch::clear_tmps_()
 void Sketch::on_mode()
 {
   // Reset state
+  m_len_dim_pick_anchor_node.reset();
   cancel_elm();
 }
 
@@ -2134,11 +2240,11 @@ void Sketch::set_visible(bool state)
         m_ctx.Display(face, AIS_Shaded, 0, false);
 
     for (Edge& e : m_edges)
-    {
       m_ctx.Display(e.shp, AIS_WireFrame, 0, false);
-      if (e.dim)
-        m_ctx.Display(e.dim, false);
-    }
+
+    for (Length_dimension& ld : m_length_dimensions)
+      if (!ld.dim.IsNull())
+        m_ctx.Display(ld.dim, false);
 
     if (m_originating_face)
       m_ctx.Display(m_originating_face, AIS_WireFrame, 0, false);
@@ -2158,11 +2264,11 @@ void Sketch::set_visible(bool state)
       m_ctx.Erase(face, false);
 
     for (Edge& e : m_edges)
-    {
       m_ctx.Erase(e.shp, false);
-      if (e.dim)
-        m_ctx.Erase(e.dim, false);
-    }
+
+    for (Length_dimension& ld : m_length_dimensions)
+      if (!ld.dim.IsNull())
+        m_ctx.Erase(ld.dim, false);
 
     if (m_originating_face)
       m_ctx.Erase(m_originating_face, false);
@@ -2219,25 +2325,25 @@ void Sketch::set_show_dims(bool show)
 {
   if (show && m_visible)
   {
-    for (Edge& e : m_edges)
-      if (e.dim)
-        m_ctx.Display(e.dim, false);
+    for (Length_dimension& ld : m_length_dimensions)
+      if (!ld.dim.IsNull())
+        m_ctx.Display(ld.dim, false);
   }
   else
   {
-    for (Edge& e : m_edges)
-      if (e.dim)
-        m_ctx.Erase(e.dim, false);
+    for (Length_dimension& ld : m_length_dimensions)
+      if (!ld.dim.IsNull())
+        m_ctx.Erase(ld.dim, false);
   }
 }
 
 void Sketch::refresh_edge_dimension_line_widths(const double line_width)
 {
-  for (Edge& e : m_edges)
-    if (!e.dim.IsNull())
+  for (Length_dimension& ld : m_length_dimensions)
+    if (!ld.dim.IsNull())
     {
-      apply_length_dimension_line_width(e.dim, line_width);
-      m_ctx.Redisplay(e.dim, true);
+      apply_length_dimension_line_width(ld.dim, line_width);
+      m_ctx.Redisplay(ld.dim, true);
     }
 
   if (!m_tmp_dim_anno.IsNull())

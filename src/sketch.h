@@ -104,6 +104,8 @@ class Sketch
   void mirror_selected_edges();
 
   void toggle_edge_dim(const ScreenCoords& screen_coords);
+  /// Remove a length dimension by OCCT object (used when deleting selection).
+  bool try_remove_length_dimension(PrsDim_LengthDimension* dim);
   void dbg_append_str(std::string& out) const;
 
   // Error messages
@@ -155,6 +157,14 @@ class Sketch
   friend class Sketch_access;
   friend class Sketch_test;  // TEST_F(Sketch_test, JsonSerializationDeserialization)
 
+  /// Linear distance between two sketch nodes (independent of which edge connects them).
+  struct Length_dimension
+  {
+    size_t                     node_idx_lo {};
+    size_t                     node_idx_hi {};
+    PrsDim_LengthDimension_ptr dim;
+  };
+
   struct Edge
   {
     size_t                node_idx_a;
@@ -163,9 +173,8 @@ class Sketch
     std::optional<size_t> node_idx_mid;  // Midpoint of edge, used for snapping.
 
     //  Used to identify the two `Edges` defining a circle arc.
-    Geom_TrimmedCurve_ptr      circle_arc;
-    Sketch_AIS_edge_ptr        shp;  // Current edge annotation.
-    PrsDim_LengthDimension_ptr dim;  // Edge dimension annotation.
+    Geom_TrimmedCurve_ptr circle_arc;
+    Sketch_AIS_edge_ptr   shp;  // Current edge annotation.
 
     bool reversed(size_t idx_a, size_t idx_b) const;
   };
@@ -250,9 +259,9 @@ class Sketch
   void check_dimension_rubber_();
   /// Right-click / finalize: drop incomplete add-node preview (same idea as incomplete line).
   void finalize_add_node_elm_cleanup_();
-  void add_edge_(const gp_Pnt2d& pt_a, const gp_Pnt2d& pt_b, bool add_dim_anno = false);
+  void add_edge_(const gp_Pnt2d& pt_a, const gp_Pnt2d& pt_b);
   /// JSON load: linear edge using existing node indices (`idx_mid` is the edge midpoint node).
-  void sketch_json_add_linear_edge_(size_t idx_a, size_t idx_b, size_t idx_mid, bool add_dim_anno);
+  void sketch_json_add_linear_edge_(size_t idx_a, size_t idx_b, size_t idx_mid);
 
   // Selected related
   std::vector<Edge>                get_selected_edges_() const;
@@ -281,7 +290,14 @@ class Sketch
   void sync_permanent_node_annos_();
   void update_originating_face_style();
   void update_face_style_(AIS_Shape_ptr& shp) const;
-  void set_edge_dim_anno_visible_(Edge& e, bool visible);
+
+  void rebuild_length_dimension_display_(Length_dimension& d);
+  void purge_stale_length_dimensions_();
+  void refresh_all_length_dimensions_();
+  void remove_length_dimensions_referencing_node_(size_t node_idx);
+  /// Add if missing, remove if present (same unordered node pair).
+  void add_or_toggle_length_dim_between_node_indices_(size_t node_a, size_t node_b);
+  void json_add_length_dimension_(size_t node_a, size_t node_b);
 
   /// Average of non-deleted node positions (3D on sketch plane); used to place edge dimensions outside loops.
   std::optional<gp_Pnt> approx_sketch_interior_ref_3d_() const;
@@ -333,6 +349,8 @@ class Sketch
   std::list<Edge>                       m_edges;
   std::vector<Sketch_face_shp_ptr>      m_faces;
   std::vector<TopoDS_Face>              m_dim_classifier_faces;
+  std::vector<Length_dimension>       m_length_dimensions;
+  std::optional<size_t>                 m_len_dim_pick_anchor_node;
   std::vector<size_t>                   m_tmp_node_idxs;
   std::vector<Edge>                     m_tmp_edges;
   AIS_Shape_ptr                         m_tmp_shp;

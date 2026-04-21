@@ -979,9 +979,31 @@ void Occt_view::sketch_face_extrude(const ScreenCoords& screen_coords, bool is_m
 void Occt_view::delete_selected()
 {
   push_undo_snapshot();
+  remove_selected_length_dimensions_from_sketches_();
   auto selected = get_selected();
   delete_(selected);
   cancel(Set_parent_mode::No);  // In case we are in the middle of a operation.
+}
+
+void Occt_view::remove_selected_length_dimensions_from_sketches_()
+{
+  std::vector<PrsDim_LengthDimension_ptr> selected_dims;
+  m_ctx->InitSelected();
+  while (m_ctx->MoreSelected())
+  {
+    const AIS_InteractiveObject_ptr obj = m_ctx->SelectedInteractive();
+    if (!obj.IsNull())
+    {
+      const PrsDim_LengthDimension_ptr dim = PrsDim_LengthDimension_ptr::DownCast(obj);
+      if (!dim.IsNull())
+        selected_dims.push_back(dim);
+    }
+    m_ctx->NextSelected();
+  }
+  for (const PrsDim_LengthDimension_ptr& dim : selected_dims)
+    for (Sketch_ptr& s : m_sketches)
+      if (s->try_remove_length_dimension(dim.get()))
+        break;
 }
 
 void Occt_view::delete_(std::vector<AIS_Shape_ptr>& to_delete)

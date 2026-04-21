@@ -65,12 +65,11 @@ void Sketch_json::from_json_indexed_(Sketch& ret, const json& j)
 
   for (const auto& edge_json : j["edges"])
   {
-    EZY_ASSERT(edge_json.is_array() && edge_json.size() == 4);
+    EZY_ASSERT(edge_json.is_array() && edge_json.size() >= 3);
     const std::size_t idx_a   = edge_json[0].get<std::size_t>();
     const std::size_t idx_b   = edge_json[1].get<std::size_t>();
     const std::size_t idx_mid = edge_json[2].get<std::size_t>();
-    const bool        dim     = edge_json[3].get<bool>();
-    ret.sketch_json_add_linear_edge_(idx_a, idx_b, idx_mid, dim);
+    ret.sketch_json_add_linear_edge_(idx_a, idx_b, idx_mid);
   }
 
   if (j.contains("arc_edges") && j["arc_edges"].is_array())
@@ -91,10 +90,10 @@ void Sketch_json::from_json_legacy_coords_(Sketch& ret, const json& j)
 {
   for (const auto& edge_json : j["edges"])
   {
-    EZY_ASSERT(edge_json.is_array() && edge_json.size() == 3);
+    EZY_ASSERT(edge_json.is_array() && edge_json.size() >= 2);
     const gp_Pnt2d pt_a = ::from_json_pnt2d(edge_json[0]);
     const gp_Pnt2d pt_b = ::from_json_pnt2d(edge_json[1]);
-    ret.add_edge_(pt_a, pt_b, edge_json[2].get<bool>());
+    ret.add_edge_(pt_a, pt_b);
   }
 
   if (j.contains("arc_edges") && j["arc_edges"].is_array())
@@ -159,8 +158,8 @@ nlohmann::json Sketch_json::to_json(const Sketch& sketch)
     if (!edge.circle_arc)
     {
       EZY_ASSERT(edge.node_idx_mid.has_value());
-      edges_json.push_back(json::array({remap(edge.node_idx_a), remap(*edge.node_idx_b), remap(*edge.node_idx_mid),
-                                        edge.dim.IsNull() ? false : true}));
+      edges_json.push_back(
+          json::array({remap(edge.node_idx_a), remap(*edge.node_idx_b), remap(*edge.node_idx_mid)}));
     }
     else
     {
@@ -181,6 +180,10 @@ nlohmann::json Sketch_json::to_json(const Sketch& sketch)
       }
     }
   }
+
+  json& len_dims_json = j["length_dimensions"] = json::array();
+  for (const Sketch::Length_dimension& ld : sketch.m_length_dimensions)
+    len_dims_json.push_back(json::array({remap(ld.node_idx_lo), remap(ld.node_idx_hi)}));
 
   if (sketch.m_underlay && sketch.m_underlay->has_image())
     j["underlay"] = sketch.m_underlay->to_json();
@@ -221,6 +224,15 @@ std::shared_ptr<Sketch> Sketch_json::from_json(Occt_view& view, const nlohmann::
     from_json_legacy_coords_(*ret, j);
 
   ret->update_faces_();
+
+  if (j.contains("length_dimensions") && j["length_dimensions"].is_array())
+  {
+    for (const auto& pair_json : j["length_dimensions"])
+    {
+      EZY_ASSERT(pair_json.is_array() && pair_json.size() == 2);
+      ret->json_add_length_dimension_(pair_json[0].get<std::size_t>(), pair_json[1].get<std::size_t>());
+    }
+  }
 
   if (j.contains("underlay") && j["underlay"].is_object())
   {
