@@ -7,8 +7,8 @@
 #include <BRepTools.hxx>
 #include <GC_MakeArcOfCircle.hxx>
 #include <Graphic3d_AspectFillArea3d.hxx>
-#include <PrsDim_LengthDimension.hxx>
 #include <Precision.hxx>
+#include <PrsDim_LengthDimension.hxx>
 #include <TopExp_Explorer.hxx>
 #include <TopoDS.hxx>
 #include <TopoDS_Edge.hxx>
@@ -48,7 +48,8 @@ Sketch::~Sketch()
   if (m_underlay)
     m_underlay->erase(m_ctx);
 
-  auto remove_edge = [&](Edge& e) { m_ctx.Remove(e.shp, false); };
+  auto remove_edge = [&](Edge& e)
+  { m_ctx.Remove(e.shp, false); };
 
   for (Edge& e : m_edges)
     remove_edge(e);
@@ -126,7 +127,7 @@ void Sketch::sketch_pt_move(const ScreenCoords& screen_coords)
     case Mode::Sketch_add_rectangle_center_pt:
       move_rectangle_pt_(screen_coords);
       break;
-    
+
       // clang-format on
     default:
       break;
@@ -233,8 +234,8 @@ void Sketch::sync_permanent_node_annos_()
       continue;
     }
 
-    const gp_Pnt2d p2(node.X(), node.Y());
-    const gp_Pnt   c3 = to_3d(m_pln, p2);
+    const gp_Pnt2d     p2(node.X(), node.Y());
+    const gp_Pnt       c3    = to_3d(m_pln, p2);
     const TopoDS_Shape cross = create_plus_cross_shape(m_pln, c3, half_arm);
 
     if (m_permanent_node_marks[i])
@@ -1335,13 +1336,13 @@ void Sketch::update_len_dim_rubber_line_(const ScreenCoords& screen_coords)
     return;
   }
 
-  const gp_Pnt2d& pt_a = m_nodes[*m_len_dim_pick_anchor_node];
+  const gp_Pnt2d&         pt_a   = m_nodes[*m_len_dim_pick_anchor_node];
   std::optional<gp_Pnt2d> pt_opt = m_view.pt_on_plane(screen_coords, m_pln);
   if (!pt_opt)
     return;
 
   gp_Pnt2d pt_b = *pt_opt;
-  (void)m_nodes.try_get_node_idx_snap(pt_b);
+  (void) m_nodes.try_get_node_idx_snap(pt_b);
 
   if (!unique(pt_a, pt_b))
   {
@@ -1490,7 +1491,7 @@ bool Sketch::try_remove_length_dimension(PrsDim_LengthDimension* dim)
       m_length_dimensions.erase(it);
       return true;
     }
-  
+
   return false;
 }
 
@@ -1816,6 +1817,13 @@ void Sketch::update_faces_()
 
   std::unordered_set<std::pair<size_t, size_t>, Pair_hash> seen_edges;
 
+  const auto edge_outgoing_dir = [this](size_t idx_a, size_t idx_b) -> gp_Vec2d
+  {
+    gp_Vec2d ret(m_nodes[idx_a], m_nodes[idx_b]);
+    ret.Normalize();
+    return ret;
+  };
+
   for (auto& [a_idx, edges] : adj_list)
     for (auto& [b_idx, start_edge] : edges)
     {
@@ -1864,14 +1872,14 @@ void Sketch::update_faces_()
         size_t      left_most_idx;
         double      min_angle      = std::numeric_limits<double>::max();
         const Edge* left_most_edge = nullptr;
-        gp_Vec2d    edge_a         = edge_outgoing_dir_(prev_idx, curr_idx, *curr_edge);
+        gp_Vec2d    edge_a         = edge_outgoing_dir(prev_idx, curr_idx);
 
         for (auto& [next_idx, next_edge] : adj_list[curr_idx])
         {
           if (next_idx == prev_idx)
             continue;
 
-          gp_Vec2d edge_b = edge_outgoing_dir_(curr_idx, next_idx, *next_edge);
+          gp_Vec2d edge_b = edge_outgoing_dir(curr_idx, next_idx);
           double   angle  = std::atan2(edge_b.Crossed(edge_a), edge_b.Dot(edge_a));
           if (angle < min_angle)
           {
@@ -1907,6 +1915,7 @@ void Sketch::update_faces_()
     int                           parent_idx;
     std::vector<const Face_meta*> holes;
   };
+
   std::vector<Face_meta> face_metas;
   face_metas.reserve(m_faces.size());
   for (Sketch_face_shp_ptr& face : m_faces)
@@ -2267,15 +2276,9 @@ void Sketch::get_originating_face_snp_pts_3d_(std::vector<gp_Pnt>& out)
   TopExp_Explorer    edgeExplorer(wire, TopAbs_EDGE);
   while (edgeExplorer.More())
   {
-    const TopoDS_Edge& edge = TopoDS::Edge(edgeExplorer.Current());
-
-    if (BRep_Tool::IsClosed(edge))
-    {
-      int hi = 0;
-    }
-
-    double         first, last;
-    Geom_Curve_ptr curve = BRep_Tool::Curve(edge, first, last);
+    double             first, last;
+    const TopoDS_Edge& edge  = TopoDS::Edge(edgeExplorer.Current());
+    Geom_Curve_ptr     curve = BRep_Tool::Curve(edge, first, last);
     EZY_ASSERT(curve);
 
     TopoDS_Vertex v1, v2;
@@ -2777,40 +2780,6 @@ void Sketch::underlay_rebuild_display()
   m_ctx.UpdateCurrentViewer();
 }
 
-gp_Vec2d Sketch::edge_outgoing_dir_(size_t idx_a, size_t idx_b, const Edge& edge) const
-{
-#if 0
-  boost_geom::linestring_2d ls;
-  boost_geom::linestring_2d ls2;
-  ls.push_back(to_boost(m_nodes[idx_a]));
-  ls.push_back(to_boost(m_nodes[idx_b]));
-  if (false && edge.circle_arc)
-  {
-    // TODO this will work for some cases and fail for others.
-    // to_boost(*edge.circle_arc, m_pln);
-    auto [od, p_end] = get_out_dir_and_end_pt(edge.circle_arc);
-    auto p_end_2d    = to_2d(m_pln, {p_end.X(), p_end.Y(), p_end.Z()});
-
-    auto e = m_nodes[idx_b];
-    if (!p_end_2d.IsEqual(e, Precision::Confusion()))
-    {
-      std::tie(od, p_end) = get_out_dir_and_end_pt(Geom_TrimmedCurve_ptr::DownCast(edge.circle_arc->Reversed()));
-      int hi = 0;
-    }
-    auto p = to_2d(m_pln, {od.X(), od.Y(), od.Z()});
-    ls2.push_back(to_boost(m_nodes[idx_b]));
-    auto pp = m_nodes[idx_b].XY() + p.XY();
-    ls2.push_back({pp.X(), pp.Y()});
-    return gp_Vec2d(p.X(), p.Y());
-    int i = 0;
-  }
-#endif
-
-  gp_Vec2d ret(m_nodes[idx_a], m_nodes[idx_b]);
-  ret.Normalize();
-  return ret;
-}
-
 bool Sketch::Edge::reversed(size_t idx_a, size_t idx_b) const
 {
   if (node_idx_a == idx_a && node_idx_b == idx_b)
@@ -2826,12 +2795,12 @@ bool Sketch::Edge::reversed(size_t idx_a, size_t idx_b) const
 Sketch_AIS_edge::Sketch_AIS_edge(Sketch& owner, const TopoDS_Shape& shp)
     : AIS_Shape(shp), owner_sketch(owner)
 {
-  int hi = 0;
 }
 
 Sketch_AIS_node_mark::Sketch_AIS_node_mark(Sketch& owner, size_t node_idx, const TopoDS_Shape& shp)
     : AIS_Shape(shp), owner_sketch(owner), node_idx(node_idx)
-{}
+{
+}
 
 Sketch_face_shp::Sketch_face_shp(Sketch& owner, const TopoDS_Shape& face)
     : owner_sketch(owner), AIS_Shape(face) {}

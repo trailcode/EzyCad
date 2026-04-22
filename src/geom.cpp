@@ -377,22 +377,6 @@ std::pair<gp_Vec, gp_Vec> get_start_end_tangents(const Handle(Geom_TrimmedCurve)
   return {tangent_start, tangent_end};
 }
 
-gp_Vec get_end_tangent(const Handle(Geom_TrimmedCurve) & curve)
-{
-  Standard_Real u_end = curve->LastParameter();
-  gp_Vec        tangent_end;
-  gp_Pnt        p_end;
-
-  // D1 gives point (P) and first derivative (V1)
-  curve->D1(u_end, p_end, tangent_end);
-
-  // Normalize the tangent vector to get unit directions
-  EZY_ASSERT_MSG(tangent_end.Magnitude() > 1e-10, "Tangent start vector too small!");
-  tangent_end.Normalize();
-
-  return tangent_end;
-}
-
 std::pair<gp_Vec, gp_Pnt> get_out_dir_and_end_pt(const Handle(Geom_TrimmedCurve) & curve)
 {
   Standard_Real u_end = curve->LastParameter();

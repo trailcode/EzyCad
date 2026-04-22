@@ -83,7 +83,6 @@ TopoDS_Wire make_slot_wire(const gp_Pln&   plane,
     std::pair<gp_Vec, gp_Vec>
     get_start_end_tangents(const Handle(Geom_TrimmedCurve) & curve);
 
-gp_Vec                    get_end_tangent(const Handle(Geom_TrimmedCurve) & curve);
 std::pair<gp_Vec, gp_Pnt> get_out_dir_and_end_pt(const Handle(Geom_TrimmedCurve) & curve);
 
 std::pair<gp_Pnt, gp_Pnt>     get_edge_endpoints(const TopoDS_Edge& edge);
