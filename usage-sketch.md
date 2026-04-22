@@ -26,11 +26,11 @@ This guide covers all 2D sketching tools and operations in EzyCad. For the main 
    - <img src="res/icons/Sketcher_CreateCircle.png" alt="Circle Tool" width="20" height="20"> [Create circles](#circle-creation-tools)
    - <img src="res/icons/Sketcher_CreateRectangle.png" alt="Rectangle Tool" width="20" height="20"> <img src="res/icons/Sketcher_CreateSquare.png" alt="Square Tool" width="20" height="20"> [Draw rectangles and squares](#rectangle-and-square-creation-tools)
    - <img src="res/icons/Sketcher_CreateSlot.png" alt="Slot Tool" width="20" height="20"> [Add slots](#slot-creation-tool)
+   - <img src="res/icons/TechDraw_LengthDimension.png" alt="Dimension Tool" width="20" height="20"> [Dimension tool](#dimension-tool)
    - <img src="res/icons/Sketcher_CreatePoint.png" alt="Add Node Tool" width="20" height="20"> [Add nodes](#add-node-tool)
 
 2. **Sketch Operations**
    - <img src="res/icons/Sketcher_MirrorSketch.png" alt="Operation Axis Tool" width="20" height="20"> [Define operation axis](#operation-axis-tool) - Mirror sketches, revolve edges or faces.
-   - <img src="res/icons/TechDraw_LengthDimension.png" alt="Dimension Tool" width="20" height="20"> [Dimension tool](#dimension-tool)
    - <img src="res/icons/Macro_FaceToSketch_48.png" alt="Create Sketch from Planar Face Tool" width="20" height="20"> [Create sketch from planar face](#create-sketch-from-planar-face-tool)
 
 ### Line Edge Creation Tools
@@ -549,7 +549,7 @@ Edge dimension tool creates/removes **length dimensions between two sketch nodes
 | ---: | --- |
 | **Node-pair dimensions** | Dimensions are defined by two sketch nodes |
 | **Fast edge workflow** | Click a straight edge to toggle a dimension between its two endpoint nodes |
-| **Two-node workflow** | Click one node, then a second node, to toggle a dimension between them |
+| **Two-node workflow** | Click one node, then a second node, to toggle a dimension between them; after the first node, a **preview line** follows the cursor (same idea as the line-edge rubber band), so two-node mode is visually distinct from a single edge click |
 | **Selectable/deletable** | Dimension objects can be selected in sketch mode and deleted (for example with the keyboard shortcut <kbd>d</kbd>) |
 | **Helpful for verification** | Quickly verify that your sketch has the correct dimensions |
 

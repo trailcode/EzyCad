@@ -68,7 +68,11 @@ Sketch::~Sketch()
   for (Sketch_AIS_node_mark_ptr& mk : m_permanent_node_marks)
     if (mk)
       m_ctx.Remove(mk, false);
+
   m_permanent_node_marks.clear();
+
+  if (m_len_dim_rubber_shp)
+    m_ctx.Remove(m_len_dim_rubber_shp, false);
 
   m_ctx.Remove(m_originating_face, true);
 }
@@ -115,6 +119,7 @@ void Sketch::sketch_pt_move(const ScreenCoords& screen_coords)
 
     case Mode::Sketch_toggle_edge_dim:
       (void)m_nodes.try_pick_existing_node(screen_coords);
+      update_len_dim_rubber_line_(screen_coords);
       break;
     
     case Mode::Sketch_add_rectangle:
@@ -1307,6 +1312,59 @@ std::list<Sketch::Edge>::iterator Sketch::get_edge_at_(const ScreenCoords& scree
   return m_edges.end();
 }
 
+void Sketch::clear_len_dim_rubber_line_()
+{
+  if (m_len_dim_rubber_shp)
+  {
+    m_ctx.Remove(m_len_dim_rubber_shp, false);
+    m_len_dim_rubber_shp.Nullify();
+  }
+}
+
+void Sketch::clear_len_dim_pick_state_()
+{
+  m_len_dim_pick_anchor_node.reset();
+  clear_len_dim_rubber_line_();
+}
+
+void Sketch::update_len_dim_rubber_line_(const ScreenCoords& screen_coords)
+{
+  if (!m_len_dim_pick_anchor_node.has_value())
+  {
+    clear_len_dim_rubber_line_();
+    return;
+  }
+
+  const gp_Pnt2d& pt_a = m_nodes[*m_len_dim_pick_anchor_node];
+  std::optional<gp_Pnt2d> pt_opt = m_view.pt_on_plane(screen_coords, m_pln);
+  if (!pt_opt)
+    return;
+
+  gp_Pnt2d pt_b = *pt_opt;
+  (void)m_nodes.try_get_node_idx_snap(pt_b);
+
+  if (!unique(pt_a, pt_b))
+  {
+    clear_len_dim_rubber_line_();
+    return;
+  }
+
+  const TopoDS_Shape edge_shape = BRepBuilderAPI_MakeEdge(to_3d(m_pln, pt_a), to_3d(m_pln, pt_b)).Edge();
+
+  if (m_len_dim_rubber_shp)
+  {
+    m_len_dim_rubber_shp->Set(edge_shape);
+    update_edge_style_(m_len_dim_rubber_shp);
+    m_ctx.Redisplay(m_len_dim_rubber_shp, true);
+  }
+  else
+  {
+    m_len_dim_rubber_shp = new AIS_Shape(edge_shape);
+    update_edge_style_(m_len_dim_rubber_shp);
+    m_ctx.Display(m_len_dim_rubber_shp, AIS_WireFrame, 0, true);
+  }
+}
+
 std::optional<gp_Pnt> Sketch::approx_sketch_interior_ref_3d_() const
 {
   gp_XYZ acc(0., 0., 0.);
@@ -1443,11 +1501,13 @@ void Sketch::toggle_edge_dim(const ScreenCoords& screen_coords)
     if (!m_len_dim_pick_anchor_node.has_value())
     {
       m_len_dim_pick_anchor_node = *n;
+      update_len_dim_rubber_line_(screen_coords);
       return;
     }
     if (*m_len_dim_pick_anchor_node != *n)
       add_or_toggle_length_dim_between_node_indices_(*m_len_dim_pick_anchor_node, *n);
-    m_len_dim_pick_anchor_node.reset();
+
+    clear_len_dim_pick_state_();
     return;
   }
 
@@ -1455,11 +1515,11 @@ void Sketch::toggle_edge_dim(const ScreenCoords& screen_coords)
     if (!itr->circle_arc && itr->node_idx_b.has_value() && !itr->node_idx_arc.has_value())
     {
       add_or_toggle_length_dim_between_node_indices_(itr->node_idx_a, *itr->node_idx_b);
-      m_len_dim_pick_anchor_node.reset();
+      clear_len_dim_pick_state_();
       return;
     }
 
-  m_len_dim_pick_anchor_node.reset();
+  clear_len_dim_pick_state_();
 }
 
 void Sketch::finalize_elm()
@@ -1480,13 +1540,16 @@ void Sketch::finalize_elm()
     case Mode::Sketch_add_square:
       finalize_square_();
       break;
+
     case Mode::Sketch_add_rectangle:
     case Mode::Sketch_add_rectangle_center_pt:
       finalize_rectangle_();
       break;
+
     case Mode::Sketch_add_circle:
       finalize_circle_();
       break;
+
     case Mode::Sketch_add_slot:         finalize_slot_();           break;
     case Mode::Sketch_operation_axis:   finalize_operation_axis_(); break;
       // clang-format on
@@ -1499,7 +1562,7 @@ void Sketch::finalize_elm()
 bool Sketch::cancel_elm()
 {
   bool operation_canceled = clear_tmps_();
-  m_len_dim_pick_anchor_node.reset();
+  clear_len_dim_pick_state_();
   m_ctx.Remove(m_tmp_dim_anno, true);
   m_nodes.hide_snap_annos();
   m_nodes.cancel();
@@ -2167,7 +2230,6 @@ bool Sketch::clear_tmps_()
 void Sketch::on_mode()
 {
   // Reset state
-  m_len_dim_pick_anchor_node.reset();
   cancel_elm();
 }
 
@@ -2248,6 +2310,9 @@ void Sketch::set_visible(bool state)
 
     for (Edge& e : m_edges)
       m_ctx.Display(e.shp, AIS_WireFrame, 0, false);
+
+    if (m_len_dim_rubber_shp && m_len_dim_pick_anchor_node.has_value())
+      m_ctx.Display(m_len_dim_rubber_shp, AIS_WireFrame, 0, false);
 
     for (Length_dimension& ld : m_length_dimensions)
       if (!ld.dim.IsNull())

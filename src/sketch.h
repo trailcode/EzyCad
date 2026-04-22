@@ -307,6 +307,11 @@ class Sketch
 
   // Query related
   std::list<Edge>::iterator get_edge_at_(const ScreenCoords& screen_coords);
+  
+  // Dimension input related
+  void                      clear_len_dim_rubber_line_();
+  void                      update_len_dim_rubber_line_(const ScreenCoords& screen_coords);
+  void                      clear_len_dim_pick_state_();
 
   // Style related
   Edge_style m_edge_style {Edge_style::Full};
@@ -351,6 +356,8 @@ class Sketch
   std::vector<TopoDS_Face>              m_dim_classifier_faces;
   std::vector<Length_dimension>       m_length_dimensions;
   std::optional<size_t>                 m_len_dim_pick_anchor_node;
+  /// Preview segment from anchor node to cursor while picking the second node (dim mode).
+  AIS_Shape_ptr                         m_len_dim_rubber_shp;
   std::vector<size_t>                   m_tmp_node_idxs;
   std::vector<Edge>                     m_tmp_edges;
   AIS_Shape_ptr                         m_tmp_shp;
