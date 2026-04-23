@@ -437,8 +437,8 @@ void Occt_view::on_enter(const ScreenCoords& screen_coords)
   switch (get_mode())
   {
     case Mode::Sketch_face_extrude:
-      sketch_face_extrude(screen_coords, true);  // Update in case dimension was entered
-      finalize_sketch_extrude_();
+      // Apply typed distance (dist edit) and refresh preview only. LMB finalizes the extrusion (see on_mouse_button / GUI).
+      sketch_face_extrude(screen_coords, true);
       break;
     default:
       curr_sketch().on_enter();

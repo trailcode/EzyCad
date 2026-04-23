@@ -40,8 +40,10 @@ void Shp_extrude::sketch_face_extrude(const ScreenCoords& screen_coords, bool is
         auto rotation_axis = gp_Vec(m_to_extrude_pln.XAxis().Direction()) + gp_Vec(m_to_extrude_pln.YAxis().Direction());
         rotation_axis.Normalize();
         rotation_axis *= to_radians(45.0);
-        view().m_view->Rotate(rotation_axis.X(), rotation_axis.Y(), rotation_axis.Z(), m_to_extrude_pt->X(), m_to_extrude_pt->Y(), m_to_extrude_pt->Z());  // rotate around arbitrary axis
-        view().m_view->Redraw();                                                                                                                           // request redraw
+        // rotate around arbitrary axis
+        view().m_view->Rotate(rotation_axis.X(), rotation_axis.Y(), rotation_axis.Z(), m_to_extrude_pt->X(), m_to_extrude_pt->Y(), m_to_extrude_pt->Z());
+        // request redraw
+        view().m_view->Redraw();
         m_curr_view_pln = view().get_view_plane(*m_to_extrude_pt);
       }
       _update_extrude(screen_coords);
@@ -106,16 +108,17 @@ void Shp_extrude::_update_extrude(const ScreenCoords& screen_coords)
 
     if (view().get_show_dim_input())
     {
-      auto l = [&](float new_dist, bool finalize)
+      auto l = [&](float new_dist, bool do_finalize)
       {
-        if (finalize)
+        view().set_entered_dim(static_cast<double>(new_dist) * view().get_dimension_scale());
+        if (do_finalize)
           view().set_show_dim_input(false);
-        else
-          view().set_entered_dim(new_dist * view().get_dimension_scale());
       };
 
       gui().set_dist_edit(float(scaled_dist), std::move(std::function<void(float, bool)>(l)), screen_coords);
     }
+
+    // Apply extrusion length and direction whenever dim UI is open or not (was wrongly only in the else branch).
     if (side_of_plane(m_to_extrude_pln, *p) == Plane_side::Front)
       extrude_vec *= extrude_dist;
     else
