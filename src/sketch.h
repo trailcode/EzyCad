@@ -276,7 +276,6 @@ class Sketch
   bool                is_face_clockwise_(const Face_edges& face) const;
   Sketch_face_shp_ptr create_face_shape_(const Face_edges& face);
   gp_Vec2d            edge_incoming_dir_(size_t idx_a, size_t idx_b, const Edge& edge) const;
-  gp_Vec2d            edge_outgoing_dir_(size_t idx_a, size_t idx_b, const Edge& edge) const;
 
   // 3D point related
   void   get_snap_pts_3d_(std::vector<gp_Pnt>& out);

@@ -231,7 +231,6 @@ class GUI
 
   // Settings (gui_settings.cpp)
   void load_occt_view_settings_();
-  void parse_occt_view_ini_(const std::string& content);
   void parse_occt_view_settings_(const std::string& content);
   void parse_gui_panes_settings_(const std::string& content);
   void apply_imgui_rounding_from_members_();

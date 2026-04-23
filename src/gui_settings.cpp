@@ -38,8 +38,8 @@ std::string GUI::occt_view_settings_json() const
   json j;
   j["occt_view"] = build_occt_view_settings_object(*m_view);
   j["gui"]       = {
-      {           "edge_dim_label_h", m_edge_dim_label_h},
-      {        "edge_dim_line_width", m_edge_dim_line_width},
+      {   "edge_dim_label_h",    m_edge_dim_label_h},
+      {"edge_dim_line_width", m_edge_dim_line_width},
   };
   return j.dump(2);
 }
@@ -61,7 +61,7 @@ void GUI::save_occt_view_settings()
   }
   EZY_ASSERT(m_view);
   j["occt_view"] = build_occt_view_settings_object(*m_view);
-  j["gui"] = {
+  j["gui"]       = {
       {               "show_options",            m_show_options                                     },
       {           "show_sketch_list",                                             m_show_sketch_list},
       {            "show_shape_list",                                              m_show_shape_list},
@@ -71,7 +71,7 @@ void GUI::save_occt_view_settings()
       {           "show_lua_console",                                             m_show_lua_console},
       {        "show_python_console",                                          m_show_python_console},
       {           "edge_dim_label_h",                                             m_edge_dim_label_h},
-      {       "edge_dim_line_width",                                           m_edge_dim_line_width},
+      {        "edge_dim_line_width",                                          m_edge_dim_line_width},
       {"load_last_opened_on_startup",                                  m_load_last_opened_on_startup},
       {   "last_opened_project_path",                                     m_last_opened_project_path},
       {     "imgui_rounding_general",                                       m_imgui_rounding_general},
@@ -100,6 +100,7 @@ void GUI::parse_occt_view_settings_(const std::string& content)
     const json j = json::parse(content);
     if (!j.contains("occt_view") || !j["occt_view"].is_object())
       return;
+
     const json& ov     = j["occt_view"];
     float       bg1[3] = {0.85f, 0.88f, 0.90f};
     float       bg2[3] = {0.45f, 0.55f, 0.60f};
@@ -131,79 +132,6 @@ void GUI::parse_occt_view_settings_(const std::string& content)
   {
     // TODO: log error
   }
-}
-
-void GUI::parse_occt_view_ini_(const std::string& content)
-{
-  bool               in_section = false;
-  std::istringstream ss(content);
-  std::string        line;
-  float              bg1[3]     = {0.85f, 0.88f, 0.90f};
-  float              bg2[3]     = {0.45f, 0.55f, 0.60f};
-  int                method     = 1;
-  float              g1[3]      = {0.1f, 0.1f, 0.1f};
-  float              g2[3]      = {0.1f, 0.1f, 0.3f};
-  auto               read_float = [](const std::string& v) -> float
-  {
-    float              x = 0.f;
-    std::istringstream is(v);
-    is >> x;
-    return x;
-  };
-  while (std::getline(ss, line))
-  {
-    if (line.empty())
-      continue;
-    if (line[0] == '[')
-    {
-      in_section = (line == "[OCCTView]");
-      continue;
-    }
-    if (!in_section)
-      continue;
-    size_t eq = line.find('=');
-    if (eq == std::string::npos)
-      continue;
-    std::string key   = line.substr(0, eq);
-    std::string value = line.substr(eq + 1);
-    if (key == "BgR1")
-      bg1[0] = read_float(value);
-    else if (key == "BgG1")
-      bg1[1] = read_float(value);
-    else if (key == "BgB1")
-      bg1[2] = read_float(value);
-    else if (key == "BgR2")
-      bg2[0] = read_float(value);
-    else if (key == "BgG2")
-      bg2[1] = read_float(value);
-    else if (key == "BgB2")
-      bg2[2] = read_float(value);
-    else if (key == "BgMethod")
-    {
-      try
-      {
-        method = std::stoi(value);
-      }
-      catch (...)
-      {
-      }
-    }
-    else if (key == "GridR1")
-      g1[0] = read_float(value);
-    else if (key == "GridG1")
-      g1[1] = read_float(value);
-    else if (key == "GridB1")
-      g1[2] = read_float(value);
-    else if (key == "GridR2")
-      g2[0] = read_float(value);
-    else if (key == "GridG2")
-      g2[1] = read_float(value);
-    else if (key == "GridB2")
-      g2[2] = read_float(value);
-  }
-  m_view->set_bg_gradient_colors(bg1[0], bg1[1], bg1[2], bg2[0], bg2[1], bg2[2]);
-  m_view->set_bg_gradient_method(method);
-  m_view->set_grid_colors(g1[0], g1[1], g1[2], g2[0], g2[1], g2[2]);
 }
 
 void GUI::parse_gui_panes_settings_(const std::string& content)
@@ -295,8 +223,8 @@ void GUI::load_occt_view_settings_()
   try
   {
     using namespace nlohmann;
-    const json j = json::parse(content);
-    auto         settings_version_matches = [](const json& doc) -> bool
+    const json j                        = json::parse(content);
+    auto       settings_version_matches = [](const json& doc) -> bool
     {
       if (!doc.contains("version"))
         return false;
@@ -508,7 +436,7 @@ void GUI::settings_()
 
   if (ImGui::CollapsingHeader("Sketch"))
   {
-    bool ul_changed = false;
+    bool ul_changed     = false;
     bool dim_lw_changed = false;
     if (ImGui::BeginTable("settings_sketch", 2, ImGuiTableFlags_SizingStretchProp))
     {

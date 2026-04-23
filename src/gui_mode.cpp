@@ -102,7 +102,6 @@ void GUI::on_key(int key, int scancode, int action, int mods)
   const ScreenCoords screen_coords(glm::dvec2(ImGui::GetIO().MousePos.x, ImGui::GetIO().MousePos.y));
 
   bool ctrl_pressed = (mods & GLFW_MOD_CONTROL) != 0;
-
   if (ctrl_pressed)
   {
     switch (key)
@@ -153,8 +152,10 @@ void GUI::on_key(int key, int scancode, int action, int mods)
       int idx = -1;
       if (key >= GLFW_KEY_1 && key <= GLFW_KEY_9)
         idx = key - GLFW_KEY_1;
+
       else if (key >= GLFW_KEY_KP_1 && key <= GLFW_KEY_KP_9)
         idx = key - GLFW_KEY_KP_1;
+
       if (idx >= 0 && idx <= static_cast<int>(TopAbs_SHAPE))
       {
         m_view->set_shp_selection_mode(static_cast<TopAbs_ShapeEnum>(idx));
