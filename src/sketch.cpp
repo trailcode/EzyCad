@@ -26,6 +26,7 @@
 #include "geom.h"
 #include "gui.h"
 #include "imgui.h"
+#include "modes.h"
 #include "occt_view.h"
 #include "sketch_underlay.h"
 #include "utl.h"
@@ -219,10 +220,15 @@ void Sketch::sync_permanent_node_annos_()
   const double half_arm =
       std::max(plane_pick_snap_radius_world_() * 0.45, Precision::Confusion() * 50.0);
 
+  const Mode mode = get_mode();
+  // Hide "+" markers in global inspection (e.g. Normal) and in sketch inspection hub; show in add-node and other sketch tools.
+  const bool show_permanent_marks =
+      is_sketch_mode(mode) && mode != Mode::Sketch_inspection_mode;
+
   for (size_t i = 0, n = m_nodes.size(); i < n; ++i)
   {
     const Sketch_nodes::Node& node = m_nodes[i];
-    const bool                show = m_visible && node.permanent && !node.deleted;
+    const bool                show = m_visible && node.permanent && !node.deleted && show_permanent_marks;
 
     if (!show)
     {
@@ -2240,6 +2246,7 @@ void Sketch::on_mode()
 {
   // Reset state
   cancel_elm();
+  sync_permanent_node_annos_();
 }
 
 Mode Sketch::get_mode() const
