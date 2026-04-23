@@ -221,9 +221,8 @@ void Sketch::sync_permanent_node_annos_()
       std::max(plane_pick_snap_radius_world_() * 0.45, Precision::Confusion() * 50.0);
 
   const Mode mode = get_mode();
-  // Hide "+" markers in global inspection (e.g. Normal) and in sketch inspection hub; show in add-node and other sketch tools.
-  const bool show_permanent_marks =
-      is_sketch_mode(mode) && mode != Mode::Sketch_inspection_mode;
+  // Show "+" markers only while placing nodes; hide in inspection and all other modes (including other sketch tools).
+  const bool show_permanent_marks = mode == Mode::Sketch_add_node;
 
   for (size_t i = 0, n = m_nodes.size(); i < n; ++i)
   {

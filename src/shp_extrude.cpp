@@ -140,7 +140,7 @@ void Shp_extrude::_update_extrude(const ScreenCoords& screen_coords)
     {
       m_extruded = new Shp(ctx(), body);
       m_extruded->SetMaterial(view().m_default_material);
-      ctx().Display(m_extruded, AIS_Shaded, -1, Standard_True);
+      ctx().Display(m_extruded, m_extruded->get_disp_mode(), -1, Standard_True);
     }
     else
     {

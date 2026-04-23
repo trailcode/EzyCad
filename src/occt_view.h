@@ -259,6 +259,8 @@ class Occt_view : protected AIS_ViewController
   TopAbs_ShapeEnum         m_shp_selection_mode {TopAbs_SHAPE};
   Graphic3d_MaterialAspect m_default_material;
   bool                     m_headless_view {false};
+  /// True when LMB press was handled by planar-face sketch creation without AIS_ViewController::PressMouseButton (pair with release skip).
+  bool                     m_planar_face_lmb_skipped_view_controller {false};
   // OCCT view colors; defaults match what we render (set explicitly in init_viewer())
   float                    m_bg_color1[3] {0.85f, 0.88f, 0.90f};
   float                    m_bg_color2[3] {0.45f, 0.55f, 0.60f};

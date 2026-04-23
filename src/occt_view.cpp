@@ -791,7 +791,7 @@ void Occt_view::add_box(double ox, double oy, double oz, double width, double le
   Shp_ptr      shp = new Shp(*m_ctx, box);
   shp->set_name(unique_shape_name_("Box"));
   add_shp_(shp);
-  m_ctx->Display(shp, AIS_Shaded, AIS_Shape::SelectionMode(m_shp_selection_mode), true);
+  m_ctx->Display(shp, shp->get_disp_mode(), AIS_Shape::SelectionMode(m_shp_selection_mode), true);
   m_view->Redraw();
 }
 
@@ -810,7 +810,7 @@ void Occt_view::add_pyramid(double ox, double oy, double oz, double side)
     shp->SetLocalTransformation(trsf);
   }
   add_shp_(shp);
-  m_ctx->Display(shp, AIS_Shaded, AIS_Shape::SelectionMode(m_shp_selection_mode), true);
+  m_ctx->Display(shp, shp->get_disp_mode(), AIS_Shape::SelectionMode(m_shp_selection_mode), true);
   m_view->Redraw();
 }
 
@@ -827,7 +827,7 @@ void Occt_view::add_sphere(double ox, double oy, double oz, double radius)
     shp->SetLocalTransformation(trsf);
   }
   add_shp_(shp);
-  m_ctx->Display(shp, AIS_Shaded, AIS_Shape::SelectionMode(m_shp_selection_mode), true);
+  m_ctx->Display(shp, shp->get_disp_mode(), AIS_Shape::SelectionMode(m_shp_selection_mode), true);
   m_view->Redraw();
 }
 
@@ -844,7 +844,7 @@ void Occt_view::add_cylinder(double ox, double oy, double oz, double radius, dou
     shp->SetLocalTransformation(trsf);
   }
   add_shp_(shp);
-  m_ctx->Display(shp, AIS_Shaded, AIS_Shape::SelectionMode(m_shp_selection_mode), true);
+  m_ctx->Display(shp, shp->get_disp_mode(), AIS_Shape::SelectionMode(m_shp_selection_mode), true);
   m_view->Redraw();
 }
 
@@ -861,7 +861,7 @@ void Occt_view::add_cone(double ox, double oy, double oz, double R1, double R2, 
     shp->SetLocalTransformation(trsf);
   }
   add_shp_(shp);
-  m_ctx->Display(shp, AIS_Shaded, AIS_Shape::SelectionMode(m_shp_selection_mode), true);
+  m_ctx->Display(shp, shp->get_disp_mode(), AIS_Shape::SelectionMode(m_shp_selection_mode), true);
   m_view->Redraw();
 }
 
@@ -878,7 +878,7 @@ void Occt_view::add_torus(double ox, double oy, double oz, double R1, double R2)
     shp->SetLocalTransformation(trsf);
   }
   add_shp_(shp);
-  m_ctx->Display(shp, AIS_Shaded, AIS_Shape::SelectionMode(m_shp_selection_mode), true);
+  m_ctx->Display(shp, shp->get_disp_mode(), AIS_Shape::SelectionMode(m_shp_selection_mode), true);
   m_view->Redraw();
 }
 
@@ -1156,6 +1156,16 @@ void Occt_view::on_mouse_button(int theButton, int theAction, int theMods)
   const Graphic3d_Vec2i pos = m_occt_window->CursorPosition();
   if (theAction == GLFW_PRESS)
   {
+    // Planar-face picking uses InteractiveContext::MoveTo() in get_face_(). Run it before
+    // AIS_ViewController::PressMouseButton(), which can alter detection state and block face hits on solids.
+    if (get_mode() == Mode::Sketch_from_planar_face && theButton == GLFW_MOUSE_BUTTON_LEFT)
+    {
+      flush_view_events();
+      create_sketch_from_planar_face_(ScreenCoords(glm::dvec2(pos.x(), pos.y())));
+      m_planar_face_lmb_skipped_view_controller = true;
+      return;
+    }
+
     PressMouseButton(pos,
                      mouse_button_from_glfw_(theButton),
                      key_flags_from_glfw_(theMods),
@@ -1169,8 +1179,6 @@ void Occt_view::on_mouse_button(int theButton, int theAction, int theMods)
 
     switch (get_mode())
     {
-      case Mode::Sketch_from_planar_face:
-        return create_sketch_from_planar_face_(ScreenCoords(glm::dvec2(pos.x(), pos.y())));
       case Mode::Sketch_toggle_edge_dim:
         return curr_sketch().toggle_edge_dim(ScreenCoords(glm::dvec2(pos.x(), pos.y())));
       default:
@@ -1178,10 +1186,18 @@ void Occt_view::on_mouse_button(int theButton, int theAction, int theMods)
     }
   }
   else
+  {
+    if (m_planar_face_lmb_skipped_view_controller && theButton == GLFW_MOUSE_BUTTON_LEFT)
+    {
+      m_planar_face_lmb_skipped_view_controller = false;
+      return;
+    }
+
     ReleaseMouseButton(pos,
                        mouse_button_from_glfw_(theButton),
                        key_flags_from_glfw_(theMods),
                        false);
+  }
 }
 
 void Occt_view::on_mouse_move(const ScreenCoords& screen_coords)
@@ -1664,7 +1680,7 @@ void Occt_view::load(const std::string& json_str, bool restore_view)
       mat_idx = static_cast<Standard_Integer>(m_default_material.Name());
     shp->SetMaterial(Graphic3d_MaterialAspect(static_cast<Graphic3d_NameOfMaterial>(mat_idx)));
     m_shps.push_back(shp);
-    m_ctx->Display(shp, AIS_Shaded, 0, true);
+    m_ctx->Display(shp, shp->get_disp_mode(), 0, true);
   }
 
   // ---------------------------------------------------------------------------
