@@ -695,7 +695,7 @@ PrsDim_LengthDimension_ptr create_distance_annotation(const gp_Pnt&             
   // Check if points are too close (invalid for dimension)
   EZY_ASSERT(unique(p1, p2));
 
-  // Measure between points (not TopoDS_Vertex), so OCCT does not draw vertex attachment spheres at the ends.
+  // Measure between points (not TopoDS_Vertex), so OCCT does not draw vertex-attachment handles at the ends.
   PrsDim_LengthDimension_ptr dim = new PrsDim_LengthDimension(p1, p2, pln);
   apply_length_dimension_text_h_position(dim, text_h_pos);
   apply_length_dimension_line_width(dim, static_cast<Standard_Real>(dimension_line_width));
