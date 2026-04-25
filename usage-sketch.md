@@ -554,7 +554,7 @@ Edge dimension tool creates/removes **length dimensions between two sketch nodes
 | **Helpful for verification** | Quickly verify that your sketch has the correct dimensions |
 
 **How to Use:**
-1. <img src="res/icons/TechDraw_LengthDimension.png" alt="TechDraw_LengthDimension" width="20" height="20"> Select the **Toggle Edge Dimensions** tool from the toolbar
+1. <img src="res/icons/TechDraw_LengthDimension.png" alt="TechDraw_LengthDimension" width="20" height="20"> Select the **Edge Dimensions** tool from the toolbar
 2. Use either input style:
    - **Edge click:** Click a straight edge to toggle the dimension between its endpoints
    - **Node pair:** Click node A, then click node B to toggle the dimension between A and B

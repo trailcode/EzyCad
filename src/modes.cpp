@@ -5,6 +5,7 @@ Mode mode_from_string(std::string_view name)
   for (int i = 0; i < static_cast<int>(Mode::_count); ++i)
     if (c_mode_strs[i] == name)
       return static_cast<Mode>(i);
+
   return Mode::Normal;
 }
 
@@ -24,7 +25,7 @@ bool is_sketch_mode(const Mode mode)
     case Mode::Sketch_add_circle_3_pts:
     case Mode::Sketch_add_slot:
     case Mode::Sketch_operation_axis:
-    case Mode::Sketch_toggle_edge_dim:
+    case Mode::Sketch_dim_anno:
     case Mode::Sketch_face_extrude:
       return true;
 

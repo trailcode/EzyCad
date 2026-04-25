@@ -9,6 +9,7 @@
 
 class AIS_Shape;
 class V3d_View;
+enum class Plane_side;
 
 class Shp_extrude : private Shp_operation_base
 {
@@ -25,6 +26,7 @@ class Shp_extrude : private Shp_operation_base
 
  private:
   void                       _update_extrude(const ScreenCoords& screen_coords);
+  void                       _update_extrude_preview_(double extrude_dist, Plane_side side);
   // Face extrude related
   AIS_Shape_ptr              m_to_extrude;
   gp_Pln                     m_to_extrude_pln;
@@ -32,4 +34,5 @@ class Shp_extrude : private Shp_operation_base
   Shp_ptr                    m_extruded;
   gp_Pln                     m_curr_view_pln;
   PrsDim_LengthDimension_ptr m_tmp_dim;
+  Plane_side                 m_extrude_side;
 };

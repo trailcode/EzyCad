@@ -13,7 +13,7 @@
 #include "utl.h"
 
 Shp_extrude::Shp_extrude(Occt_view& view)
-    : Shp_operation_base(view) {}
+    : Shp_operation_base(view), m_extrude_side(Plane_side::Front) {}
 
 void Shp_extrude::sketch_face_extrude(const ScreenCoords& screen_coords, bool is_mouse_move)
 {
@@ -27,6 +27,7 @@ void Shp_extrude::sketch_face_extrude(const ScreenCoords& screen_coords, bool is
     if (auto face = dynamic_cast<Sketch_face_shp*>(shp.get()); face)
     {
       m_to_extrude_pln = face->owner_sketch.get_plane();
+      m_extrude_side   = Plane_side::Front;
       m_to_extrude_pt  = closest_to_camera(view().m_view, face->verts_3d);
       m_curr_view_pln  = view().get_view_plane(*m_to_extrude_pt);
       m_to_extrude     = shp;
@@ -40,8 +41,10 @@ void Shp_extrude::sketch_face_extrude(const ScreenCoords& screen_coords, bool is
         auto rotation_axis = gp_Vec(m_to_extrude_pln.XAxis().Direction()) + gp_Vec(m_to_extrude_pln.YAxis().Direction());
         rotation_axis.Normalize();
         rotation_axis *= to_radians(45.0);
-        view().m_view->Rotate(rotation_axis.X(), rotation_axis.Y(), rotation_axis.Z(), m_to_extrude_pt->X(), m_to_extrude_pt->Y(), m_to_extrude_pt->Z());  // rotate around arbitrary axis
-        view().m_view->Redraw();                                                                                                                           // request redraw
+        // rotate around arbitrary axis
+        view().m_view->Rotate(rotation_axis.X(), rotation_axis.Y(), rotation_axis.Z(), m_to_extrude_pt->X(), m_to_extrude_pt->Y(), m_to_extrude_pt->Z());
+        // request redraw
+        view().m_view->Redraw();
         m_curr_view_pln = view().get_view_plane(*m_to_extrude_pt);
       }
       _update_extrude(screen_coords);
@@ -94,7 +97,6 @@ void Shp_extrude::_update_extrude(const ScreenCoords& screen_coords)
   std::optional<gp_Pnt> p = view().pt3d_on_plane(screen_coords, m_curr_view_pln);
   if (p)  // TODO report error!
   {
-    auto   extrude_vec  = gp_Vec(m_to_extrude_pln.Axis().Direction());
     double extrude_dist = m_to_extrude_pln.Distance(*p);
     if (auto entered_dim = view().get_entered_dim(); entered_dim)
       extrude_dist = *entered_dim;
@@ -102,50 +104,70 @@ void Shp_extrude::_update_extrude(const ScreenCoords& screen_coords)
     if (extrude_dist <= Precision::Confusion())
       return;
 
+    const Plane_side cursor_side = side_of_plane(m_to_extrude_pln, *p);
+    if (cursor_side != Plane_side::On)
+      m_extrude_side = cursor_side;
+
     double scaled_dist = extrude_dist / view().get_dimension_scale();
 
     if (view().get_show_dim_input())
     {
-      auto l = [&](float new_dist, bool finalize)
+      auto l = [this](float new_dist, bool do_finalize)
       {
-        if (finalize)
+        const double entered_dist = static_cast<double>(new_dist) * view().get_dimension_scale();
+        view().set_entered_dim(entered_dist);
+        if (do_finalize)
+        {
           view().set_show_dim_input(false);
-        else
-          view().set_entered_dim(new_dist * view().get_dimension_scale());
+          _update_extrude_preview_(entered_dist, m_extrude_side);
+          view().finalize_sketch_extrude_();
+        }
       };
 
       gui().set_dist_edit(float(scaled_dist), std::move(std::function<void(float, bool)>(l)), screen_coords);
     }
-    if (side_of_plane(m_to_extrude_pln, *p) == Plane_side::Front)
-      extrude_vec *= extrude_dist;
-    else
-      extrude_vec *= -extrude_dist;
 
-    ctx().Remove(m_tmp_dim, false);
-    m_tmp_dim = create_distance_annotation(gp_Pnt(m_to_extrude_pt->XYZ() + extrude_vec.XYZ()),
-                                           *m_to_extrude_pt,
-                                           m_curr_view_pln,
-                                           Prs3d_DTHP_Fit,
-                                           std::nullopt,
-                                           nullptr,
-                                           gui().edge_dim_line_width());
+    _update_extrude_preview_(extrude_dist, m_extrude_side);
+  }
+}
 
-    m_tmp_dim->SetCustomValue(scaled_dist);
+void Shp_extrude::_update_extrude_preview_(const double extrude_dist, const Plane_side side)
+{
+  if (extrude_dist <= Precision::Confusion())
+    return;
 
-    ctx().Display(m_tmp_dim, false);
+  EZY_ASSERT(side != Plane_side::On);
 
-    const TopoDS_Face& face = TopoDS::Face(m_to_extrude->Shape());
-    TopoDS_Shape       body = BRepPrimAPI_MakePrism(face, extrude_vec);
-    if (!m_extruded)
-    {
-      m_extruded = new Shp(ctx(), body);
-      m_extruded->SetMaterial(view().m_default_material);
-      ctx().Display(m_extruded, AIS_Shaded, -1, Standard_True);
-    }
-    else
-    {
-      m_extruded->Set(body);
-      ctx().Redisplay(m_extruded, true);
-    }
+  auto extrude_vec = gp_Vec(m_to_extrude_pln.Axis().Direction());
+  if (side == Plane_side::Front)
+    extrude_vec *= extrude_dist;
+  else
+    extrude_vec *= -extrude_dist;
+
+  ctx().Remove(m_tmp_dim, false);
+  m_tmp_dim = create_distance_annotation(gp_Pnt(m_to_extrude_pt->XYZ() + extrude_vec.XYZ()),
+                                         *m_to_extrude_pt,
+                                         m_curr_view_pln,
+                                         Prs3d_DTHP_Fit,
+                                         std::nullopt,
+                                         nullptr,
+                                         gui().edge_dim_line_width());
+
+  m_tmp_dim->SetCustomValue(extrude_dist / view().get_dimension_scale());
+
+  ctx().Display(m_tmp_dim, false);
+
+  const TopoDS_Face& face = TopoDS::Face(m_to_extrude->Shape());
+  TopoDS_Shape       body = BRepPrimAPI_MakePrism(face, extrude_vec);
+  if (!m_extruded)
+  {
+    m_extruded = new Shp(ctx(), body);
+    m_extruded->SetMaterial(view().m_default_material);
+    ctx().Display(m_extruded, m_extruded->get_disp_mode(), -1, Standard_True);
+  }
+  else
+  {
+    m_extruded->Set(body);
+    ctx().Redisplay(m_extruded, true);
   }
 }

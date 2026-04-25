@@ -4,7 +4,6 @@
 #include <BRepAdaptor_Curve.hxx>
 #include <BRepBndLib.hxx>
 #include <BRepBuilderAPI_MakeEdge.hxx>
-#include <BRepBuilderAPI_MakeVertex.hxx>
 #include <BRepBuilderAPI_MakeWire.hxx>
 #include <BRepClass_FaceClassifier.hxx>
 #include <BRepGProp.hxx>
@@ -696,11 +695,8 @@ PrsDim_LengthDimension_ptr create_distance_annotation(const gp_Pnt&             
   // Check if points are too close (invalid for dimension)
   EZY_ASSERT(unique(p1, p2));
 
-  // Convert gp_Pnt to TopoDS_Vertex
-  TopoDS_Vertex vertex_1 = BRepBuilderAPI_MakeVertex(p1);
-  TopoDS_Vertex vertex_2 = BRepBuilderAPI_MakeVertex(p2);
-
-  PrsDim_LengthDimension_ptr dim = new PrsDim_LengthDimension(vertex_1, vertex_2, pln);
+  // Measure between points (not TopoDS_Vertex), so OCCT does not draw vertex-attachment handles at the ends.
+  PrsDim_LengthDimension_ptr dim = new PrsDim_LengthDimension(p1, p2, pln);
   apply_length_dimension_text_h_position(dim, text_h_pos);
   apply_length_dimension_line_width(dim, static_cast<Standard_Real>(dimension_line_width));
 
