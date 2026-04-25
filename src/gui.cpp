@@ -126,7 +126,7 @@ void GUI::render_occt()
 void GUI::initialize_toolbar_()
 {
   m_toolbar_buttons = {
-      {                           load_texture("res/icons/User.png"),  true,"Inspection mode",                         Mode::Normal                                                                            },
+      {                           load_texture("res/icons/User.png"),  true,                  "Inspection mode",                         Mode::Normal},
       {        load_texture("res/icons/Workbench_Sketcher_none.png"), false,           "Sketch inspection mode",         Mode::Sketch_inspection_mode},
       {             load_texture("res/icons/Assembly_AxialMove.png"), false,                   "Shape move (g)",                           Mode::Move},
       {                   load_texture("res/icons/Draft_Rotate.png"), false,                 "Shape rotate (r)",                         Mode::Rotate},
@@ -143,8 +143,7 @@ void GUI::initialize_toolbar_()
       {          load_texture("res/icons/Sketcher_CreateCircle.png"), false,                       "Add circle",              Mode::Sketch_add_circle},
       {    load_texture("res/icons/Sketcher_Create3PointCircle.png"), false,     "Add circle from three points",        Mode::Sketch_add_circle_3_pts},
       {            load_texture("res/icons/Sketcher_CreateSlot.png"), false,                         "Add slot",                Mode::Sketch_add_slot},
-      {       load_texture("res/icons/TechDraw_LengthDimension.png"), false,
-       "Length dimension between two nodes: click a straight edge, or click two nodes. Select the dimension and press Delete to remove. (Options: label placement)", Mode::Sketch_toggle_edge_dim },
+      {       load_texture("res/icons/TechDraw_LengthDimension.png"), false,                 "Length dimension",                Mode::Sketch_dim_anno},
       {              load_texture("res/icons/Design456_Extrude.png"), false,          "Extrude sketch face (e)",            Mode::Sketch_face_extrude},
       {             load_texture("res/icons/PartDesign_Chamfer.png"), false,                          "Chamfer",                  Mode::Shape_chamfer},
       {              load_texture("res/icons/PartDesign_Fillet.png"), false,                           "Fillet",                   Mode::Shape_fillet},
@@ -2029,7 +2028,7 @@ void GUI::on_mouse_pos(const ScreenCoords& screen_coords)
     case Mode::Sketch_add_circle:
     case Mode::Sketch_add_slot:
     case Mode::Sketch_add_seg_circle_arc:
-    case Mode::Sketch_toggle_edge_dim:    m_view->curr_sketch().sketch_pt_move(screen_coords);  break;
+    case Mode::Sketch_dim_anno:           m_view->curr_sketch().sketch_pt_move(screen_coords);  break;
     case Mode::Sketch_face_extrude:       m_view->sketch_face_extrude(screen_coords, true);     break;
       // clang-format on
     default:

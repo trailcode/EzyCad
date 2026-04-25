@@ -1179,8 +1179,9 @@ void Occt_view::on_mouse_button(int theButton, int theAction, int theMods)
 
     switch (get_mode())
     {
-      case Mode::Sketch_toggle_edge_dim:
-        return curr_sketch().toggle_edge_dim(ScreenCoords(glm::dvec2(pos.x(), pos.y())));
+      case Mode::Sketch_dim_anno:
+        return curr_sketch().toggle_edge_dim_anno(ScreenCoords(glm::dvec2(pos.x(), pos.y())));
+
       default:
         break;
     }

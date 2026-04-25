@@ -103,7 +103,7 @@ class Sketch
   void remove_permanent_node_mark(Sketch_AIS_node_mark& mark);
   void mirror_selected_edges();
 
-  void toggle_edge_dim(const ScreenCoords& screen_coords);
+  void toggle_edge_dim_anno(const ScreenCoords& screen_coords);
   /// Remove a length dimension by OCCT object (used when deleting selection).
   bool try_remove_length_dimension(PrsDim_LengthDimension* dim);
   void dbg_append_str(std::string& out) const;
@@ -211,10 +211,10 @@ class Sketch
   void finalize_edges_();
 
   /// Add a single node (no new edge); splits any linear edge the node lies on in its interior.
-  void   add_node_pt_(const ScreenCoords& screen_coords);
-  void   move_add_node_pt_(const ScreenCoords& screen_coords);
-  void   split_linear_edges_at_node_if_interior_(size_t node_idx);
-  
+  void add_node_pt_(const ScreenCoords& screen_coords);
+  void move_add_node_pt_(const ScreenCoords& screen_coords);
+  void split_linear_edges_at_node_if_interior_(size_t node_idx);
+
   /// Move a newly placed node onto the nearest linear edge within pick tolerance so split + `used_nodes` sees it.
   void   snap_placed_node_to_closest_linear_edge_interior_(size_t node_idx);
   double plane_pick_snap_radius_world_() const;
@@ -306,11 +306,11 @@ class Sketch
 
   // Query related
   std::list<Edge>::iterator get_edge_at_(const ScreenCoords& screen_coords);
-  
+
   // Dimension input related
-  void                      clear_len_dim_rubber_line_();
-  void                      update_len_dim_rubber_line_(const ScreenCoords& screen_coords);
-  void                      clear_len_dim_pick_state_();
+  void clear_len_dim_rubber_line_();
+  void update_len_dim_rubber_line_(const ScreenCoords& screen_coords);
+  void clear_len_dim_pick_state_();
 
   // Style related
   Edge_style m_edge_style {Edge_style::Full};
@@ -353,7 +353,7 @@ class Sketch
   std::list<Edge>                       m_edges;
   std::vector<Sketch_face_shp_ptr>      m_faces;
   std::vector<TopoDS_Face>              m_dim_classifier_faces;
-  std::vector<Length_dimension>       m_length_dimensions;
+  std::vector<Length_dimension>         m_length_dimensions;
   std::optional<size_t>                 m_len_dim_pick_anchor_node;
   /// Preview segment from anchor node to cursor while picking the second node (dim mode).
   AIS_Shape_ptr                         m_len_dim_rubber_shp;

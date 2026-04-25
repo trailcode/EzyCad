@@ -75,7 +75,7 @@ void GUI::set_parent_mode()
       {             Mode::Sketch_add_circle, Mode::Sketch_inspection_mode},
       {       Mode::Sketch_add_circle_3_pts, Mode::Sketch_inspection_mode},
       {               Mode::Sketch_add_slot, Mode::Sketch_inspection_mode},
-      {        Mode::Sketch_toggle_edge_dim, Mode::Sketch_inspection_mode},
+      {               Mode::Sketch_dim_anno, Mode::Sketch_inspection_mode},
   };
 
   static bool check = [&]()
@@ -284,7 +284,7 @@ void GUI::options_()
 
     switch (get_mode())
     {
-      case Mode::Sketch_toggle_edge_dim:
+      case Mode::Sketch_dim_anno:
       {
         constexpr std::array<const char*, 4> k_edge_dim_label_placement = {
             "Near first point",

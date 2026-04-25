@@ -119,7 +119,7 @@ void Sketch::sketch_pt_move(const ScreenCoords& screen_coords)
       move_line_string_pt_ (screen_coords);
       break;
 
-    case Mode::Sketch_toggle_edge_dim:
+    case Mode::Sketch_dim_anno:
       (void)m_nodes.try_pick_existing_node(screen_coords);
       update_len_dim_rubber_line_(screen_coords);
       break;
@@ -220,7 +220,7 @@ void Sketch::sync_permanent_node_annos_()
   const double half_arm =
       std::max(plane_pick_snap_radius_world_() * 0.45, Precision::Confusion() * 50.0);
 
-  const Mode mode = get_mode();
+  const Mode mode                 = get_mode();
   // Show "+" markers only while placing nodes; hide in inspection and all other modes (including other sketch tools).
   const bool show_permanent_marks = mode == Mode::Sketch_add_node;
 
@@ -1500,7 +1500,7 @@ bool Sketch::try_remove_length_dimension(PrsDim_LengthDimension* dim)
   return false;
 }
 
-void Sketch::toggle_edge_dim(const ScreenCoords& screen_coords)
+void Sketch::toggle_edge_dim_anno(const ScreenCoords& screen_coords)
 {
   if (std::optional<size_t> n = m_nodes.try_pick_existing_node(screen_coords))
   {
@@ -1510,6 +1510,7 @@ void Sketch::toggle_edge_dim(const ScreenCoords& screen_coords)
       update_len_dim_rubber_line_(screen_coords);
       return;
     }
+
     if (*m_len_dim_pick_anchor_node != *n)
       add_or_toggle_length_dim_between_node_indices_(*m_len_dim_pick_anchor_node, *n);
 
