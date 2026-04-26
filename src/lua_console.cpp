@@ -196,6 +196,80 @@ int l_view_get_shape(lua_State* L)
   return 1;
 }
 
+// view.get_camera() -> { eye={x,y,z}, center={x,y,z}, up={x,y,z} } or nil
+int l_view_get_camera(lua_State* L)
+{
+  GUI*       gui  = get_gui(L);
+  Occt_view* view = gui ? gui->get_view() : nullptr;
+  if (!view)
+  {
+    lua_pushnil(L);
+    return 1;
+  }
+  gp_Pnt eye;
+  gp_Pnt center;
+  gp_Dir up;
+  if (!view->get_camera(eye, center, up))
+  {
+    lua_pushnil(L);
+    return 1;
+  }
+
+  lua_newtable(L);
+
+  lua_pushstring(L, "eye");
+  lua_newtable(L);
+  lua_pushnumber(L, eye.X());
+  lua_rawseti(L, -2, 1);
+  lua_pushnumber(L, eye.Y());
+  lua_rawseti(L, -2, 2);
+  lua_pushnumber(L, eye.Z());
+  lua_rawseti(L, -2, 3);
+  lua_settable(L, -3);
+
+  lua_pushstring(L, "center");
+  lua_newtable(L);
+  lua_pushnumber(L, center.X());
+  lua_rawseti(L, -2, 1);
+  lua_pushnumber(L, center.Y());
+  lua_rawseti(L, -2, 2);
+  lua_pushnumber(L, center.Z());
+  lua_rawseti(L, -2, 3);
+  lua_settable(L, -3);
+
+  lua_pushstring(L, "up");
+  lua_newtable(L);
+  lua_pushnumber(L, up.X());
+  lua_rawseti(L, -2, 1);
+  lua_pushnumber(L, up.Y());
+  lua_rawseti(L, -2, 2);
+  lua_pushnumber(L, up.Z());
+  lua_rawseti(L, -2, 3);
+  lua_settable(L, -3);
+
+  return 1;
+}
+
+// view.set_camera(ex,ey,ez,cx,cy,cz,ux,uy,uz)
+int l_view_set_camera(lua_State* L)
+{
+  GUI*       gui  = get_gui(L);
+  Occt_view* view = gui ? gui->get_view() : nullptr;
+  if (!view)
+    return 0;
+  const double ex = luaL_checknumber(L, 1);
+  const double ey = luaL_checknumber(L, 2);
+  const double ez = luaL_checknumber(L, 3);
+  const double cx = luaL_checknumber(L, 4);
+  const double cy = luaL_checknumber(L, 5);
+  const double cz = luaL_checknumber(L, 6);
+  const double ux = luaL_checknumber(L, 7);
+  const double uy = luaL_checknumber(L, 8);
+  const double uz = luaL_checknumber(L, 9);
+  view->set_camera(gp_Pnt(ex, ey, ez), gp_Pnt(cx, cy, cz), gp_Dir(ux, uy, uz));
+  return 0;
+}
+
 // Shp userdata __gc
 int l_shp_gc(lua_State* L)
 {
@@ -284,7 +358,9 @@ int l_ezy_help(lua_State* L)
       "  view.curr_sketch_name()       - current sketch name\n"
       "  view.add_box(ox,oy,oz,w,l,h)  - add box\n"
       "  view.add_sphere(ox,oy,oz,r)   - add sphere\n"
-  "  view.get_shape(i)                 - get shape by 1-based index (returns Shp or nil)\n"
+      "  view.get_shape(i)             - get shape by 1-based index (returns Shp or nil)\n"
+      "  view.get_camera()             - get camera eye/center/up vectors\n"
+      "  view.set_camera(ex,ey,ez,cx,cy,cz,ux,uy,uz) - set camera vectors\n"
   "Shp (shape object):\n"
   "  s:name()       - get shape name\n"
   "  s:set_name(s)  - set shape name\n"
@@ -390,6 +466,10 @@ void Lua_console::register_bindings()
   lua_setfield(m_L, -2, "add_sphere");
   lua_pushcfunction(m_L, l_view_get_shape);
   lua_setfield(m_L, -2, "get_shape");
+  lua_pushcfunction(m_L, l_view_get_camera);
+  lua_setfield(m_L, -2, "get_camera");
+  lua_pushcfunction(m_L, l_view_set_camera);
+  lua_setfield(m_L, -2, "set_camera");
   lua_setglobal(m_L, "view");
 
   // Override print to use ezy.log

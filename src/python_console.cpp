@@ -123,6 +123,10 @@ def _ezycad_bootstrap():
             return _n.view_add_sphere(ox, oy, oz, r)
         def get_shape(self, i):
             return _n.view_get_shape(int(i))
+        def get_camera(self):
+            return _n.view_get_camera()
+        def set_camera(self, ex, ey, ez, cx, cy, cz, ux, uy, uz):
+            return _n.view_set_camera(ex, ey, ez, cx, cy, cz, ux, uy, uz)
     class Ezy:
         def log(self, msg):
             return _n.ezy_log(msg)
@@ -227,6 +231,8 @@ PYBIND11_EMBEDDED_MODULE(ezycad_native, m)
             "  view.add_box(ox,oy,oz,w,l,h) - add box\n"
             "  view.add_sphere(ox,oy,oz,r)  - add sphere\n"
             "  view.get_shape(i)            - get shape by 0-based index (raises IndexError if out of range)\n"
+            "  view.get_camera()            - get camera eye/center/up vectors\n"
+            "  view.set_camera(ex,ey,ez,cx,cy,cz,ux,uy,uz) - set camera vectors\n"
             "Shp:\n"
             "  s.name()              - get shape name\n"
             "  s.set_name(s)         - set shape name\n"
@@ -322,6 +328,44 @@ PYBIND11_EMBEDDED_MODULE(ezycad_native, m)
         return Ezy_shp {*it};
       },
       py::arg("i"));
+
+  m.def(
+      "view_get_camera",
+      []() -> py::dict
+      {
+        Occt_view* view = g_py_gui && g_py_gui->get_view() ? g_py_gui->get_view() : nullptr;
+        if (!view)
+          throw std::runtime_error("no 3D view available");
+        gp_Pnt eye;
+        gp_Pnt center;
+        gp_Dir up;
+        if (!view->get_camera(eye, center, up))
+          throw std::runtime_error("camera is not available");
+        py::dict out;
+        out["eye"]    = py::make_tuple(eye.X(), eye.Y(), eye.Z());
+        out["center"] = py::make_tuple(center.X(), center.Y(), center.Z());
+        out["up"]     = py::make_tuple(up.X(), up.Y(), up.Z());
+        return out;
+      });
+
+  m.def(
+      "view_set_camera",
+      [](double ex, double ey, double ez, double cx, double cy, double cz, double ux, double uy, double uz)
+      {
+        Occt_view* view = g_py_gui && g_py_gui->get_view() ? g_py_gui->get_view() : nullptr;
+        if (!view)
+          throw std::runtime_error("no 3D view available");
+        view->set_camera(gp_Pnt(ex, ey, ez), gp_Pnt(cx, cy, cz), gp_Dir(ux, uy, uz));
+      },
+      py::arg("ex"),
+      py::arg("ey"),
+      py::arg("ez"),
+      py::arg("cx"),
+      py::arg("cy"),
+      py::arg("cz"),
+      py::arg("ux"),
+      py::arg("uy"),
+      py::arg("uz"));
 }
 
 struct Python_console::Ezycad_python_runtime
