@@ -47,6 +47,8 @@ Use **`ezy.help()`** or **`help()`** in either console for the built-in reminder
 | `view.curr_sketch_name()` | Name of the current sketch |
 | `view.add_box(ox, oy, oz, w, l, h)` / `view.add_sphere(ox, oy, oz, r)` | Add primitive shapes |
 | `view.get_shape(i)` | Shape by **1-based** index: Lua userdata or `nil`; Python `Shp` with `name`, `visible`, `set_visible`, etc. |
+| `view.get_camera()` | Camera vectors: `eye`, `center`, and `up` |
+| `view.set_camera(ex, ey, ez, cx, cy, cz, ux, uy, uz)` | Set camera vectors |
 
 **Lua only:** global **`print`** is routed to **`ezy.log`**.  
 **Python only:** **`print`** is similarly redirected to **`ezy.log`** after bootstrap.

@@ -170,6 +170,8 @@ class Occt_view : protected AIS_ViewController
   /// Returns false if the plane is not visible (e.g. headless or parallel view).
   bool sketch_plane_view_aabb_2d(const gp_Pln& pln, double display_w, double display_h, double& out_min_u,
                                  double& out_min_v, double& out_max_u, double& out_max_v) const;
+  bool get_camera(gp_Pnt& out_eye, gp_Pnt& out_center, gp_Dir& out_up) const;
+  void set_camera(const gp_Pnt& eye, const gp_Pnt& center, const gp_Dir& up);
 
   GUI&                    gui();
   AIS_InteractiveContext& ctx();

@@ -638,6 +638,33 @@ bool Occt_view::sketch_plane_view_aabb_2d(const gp_Pln& pln, double display_w, d
   return true;
 }
 
+bool Occt_view::get_camera(gp_Pnt& out_eye, gp_Pnt& out_center, gp_Dir& out_up) const
+{
+  if (is_headless() || m_view.IsNull())
+    return false;
+  const Graphic3d_Camera_ptr camera = m_view->Camera();
+  if (camera.IsNull())
+    return false;
+  out_eye    = camera->Eye();
+  out_center = camera->Center();
+  out_up     = camera->Up();
+  return true;
+}
+
+void Occt_view::set_camera(const gp_Pnt& eye, const gp_Pnt& center, const gp_Dir& up)
+{
+  if (is_headless() || m_view.IsNull())
+    return;
+  const Graphic3d_Camera_ptr camera = m_view->Camera();
+  if (camera.IsNull())
+    return;
+  camera->SetEyeAndCenter(eye, center);
+  camera->SetUp(up);
+  m_view->SetCamera(camera);
+  m_view->Invalidate();
+  m_view->Redraw();
+}
+
 const TopoDS_Shape* Occt_view::get_(const ScreenCoords& screen_coords) const
 {
   AIS_StatusOfDetection detection_status = m_ctx->MoveTo(
