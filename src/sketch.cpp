@@ -2663,6 +2663,45 @@ gp_Vec2d Sketch::underlay_axis_u_vec() const
   return m_underlay->axis_u();
 }
 
+bool Sketch::underlay_set_datum_origin_and_u_direction(const gp_Pnt2d& origin, const gp_Pnt2d& along_u_point)
+{
+  if (!m_underlay || !m_underlay->has_image())
+    return false;
+
+  gp_Vec2d du(along_u_point.X() - origin.X(), along_u_point.Y() - origin.Y());
+  const double du_len = du.Magnitude();
+  const gp_Vec2d au_old = m_underlay->axis_u();
+  const gp_Vec2d av_old = m_underlay->axis_v();
+  const double     len_u = au_old.Magnitude();
+  const double     len_v = av_old.Magnitude();
+  if (len_u <= 1e-12 || len_v <= 1e-12 || du_len <= 1e-12)
+    return false;
+
+  du.Multiply(1.0 / du_len);
+  const double ux = du.X();
+  const double uy = du.Y();
+
+  const double det_old = au_old.X() * av_old.Y() - au_old.Y() * av_old.X();
+  double       px {};
+  double       py {};
+  if (det_old >= 0.0)
+  {
+    px = -uy;
+    py = ux;
+  }
+  else
+  {
+    px = uy;
+    py = -ux;
+  }
+
+  const gp_Vec2d au_new(len_u * ux, len_u * uy);
+  const gp_Vec2d av_new(len_v * px, len_v * py);
+
+  underlay_set_affine_plane(origin, au_new, av_new);
+  return true;
+}
+
 void Sketch::underlay_set_center_extents_rotation(double cx, double cy, double half_w, double half_h, double rot_deg)
 {
   if (!m_underlay || !m_underlay->has_image())

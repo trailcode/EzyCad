@@ -1155,8 +1155,10 @@ void GUI::sketch_underlay_panel_settings_(const std::shared_ptr<Sketch>& sk)
     const bool pick_y = m_underlay_calib_phase == Underlay_calib_phase::PickY1 ||
                         m_underlay_calib_phase == Underlay_calib_phase::PickY2 ||
                         m_underlay_calib_phase == Underlay_calib_phase::AwaitDistY;
+    const bool pick_datum = m_underlay_calib_phase == Underlay_calib_phase::PickDatumO ||
+                            m_underlay_calib_phase == Underlay_calib_phase::PickDatumU;
 
-    if (pick_x || pick_y)
+    if (pick_x || pick_y || pick_datum)
     {
       const char* hint = "";
       switch (m_underlay_calib_phase)
@@ -1181,13 +1183,19 @@ void GUI::sketch_underlay_panel_settings_(const std::shared_ptr<Sketch>& sk)
         case Underlay_calib_phase::AwaitDistY:
           hint = "Enter the drawing distance for Y (dimension popup).";
           break;
+        case Underlay_calib_phase::PickDatumO:
+          hint = "Datum: first click places bitmap corner (0,0) on the sketch plane (underlay origin).";
+          break;
+        case Underlay_calib_phase::PickDatumU:
+          hint = "Datum: second click sets direction along bitmap +U from that origin; half width and height are kept.";
+          break;
         default:
           break;
       }
       ImGui::TextColored(ImVec4(1.0f, 0.82f, 0.25f, 1.0f), "%s", hint);
     }
 
-    ImGui::BeginDisabled(!sk_is_cur || pick_y);
+    ImGui::BeginDisabled(!sk_is_cur || pick_y || pick_datum);
     if (ImGui::Button("Set X from edge..."))
       begin_underlay_calib_set_x_(sk);
 
@@ -1198,7 +1206,7 @@ void GUI::sketch_underlay_panel_settings_(const std::shared_ptr<Sketch>& sk)
           "You can use Set Y before or after; until both are set, the other axis still follows default aspect.");
 
     ImGui::SameLine();
-    ImGui::BeginDisabled(!sk_is_cur || pick_x);
+    ImGui::BeginDisabled(!sk_is_cur || pick_x || pick_datum);
     if (ImGui::Button("Set Y from edge..."))
       begin_underlay_calib_set_y_(sk);
 
@@ -1206,6 +1214,16 @@ void GUI::sketch_underlay_panel_settings_(const std::shared_ptr<Sketch>& sk)
     if (m_show_tool_tips && ImGui::IsItemHovered())
       ImGui::SetTooltip(
           "Two clicks along height (+V), then enter the drawing distance for Y. Order vs. Set X does not matter.");
+
+    ImGui::BeginDisabled(!sk_is_cur || pick_x || pick_y);
+    if (ImGui::Button("Define underlay datum..."))
+      begin_underlay_calib_define_datum_(sk);
+
+    ImGui::EndDisabled();
+    if (m_show_tool_tips && ImGui::IsItemHovered())
+      ImGui::SetTooltip(
+          "Two picks on the sketch plane: first sets bitmap corner (0,0); second sets the +U axis direction. "
+          "Keeps current half width and height; aligns the image to your sketch datum.");
   }
 
   ImGui::Separator();
@@ -1324,6 +1342,24 @@ void GUI::begin_underlay_calib_set_y_(const std::shared_ptr<Sketch>& sk)
   m_underlay_calib_phase     = Underlay_calib_phase::PickY1;
   show_message(
       "Underlay Y: uses the current transform. Click two points along +V; then enter the drawing distance.");
+}
+
+void GUI::begin_underlay_calib_define_datum_(const std::shared_ptr<Sketch>& sk)
+{
+  if (!sk || !sk->has_underlay())
+    return;
+
+  if (m_view->curr_sketch_shared() != sk)
+  {
+    show_message("Make this sketch current in the sketch list, then try again.");
+    return;
+  }
+
+  cancel_underlay_calib_();
+  sk->underlay_ui_params(m_ul_cx, m_ul_cy, m_ul_hw, m_ul_hh, m_ul_rot);
+  m_underlay_calib_sketch_wk = sk;
+  m_underlay_calib_phase     = Underlay_calib_phase::PickDatumO;
+  show_message("Datum: click where bitmap corner (0,0) should lie on the sketch plane.");
 }
 
 void GUI::underlay_calib_prompt_x_distance_(const std::shared_ptr<Sketch>& sk)
@@ -1503,6 +1539,34 @@ bool GUI::try_underlay_calib_click_(const ScreenCoords& screen_coords)
       m_underlay_calib_y1 = *pt;
       show_message("Enter drawing distance for Y.");
       underlay_calib_prompt_y_distance_(sk);
+      return true;
+
+    case Underlay_calib_phase::PickDatumO:
+      m_underlay_calib_datum_o = *pt;
+      m_underlay_calib_phase   = Underlay_calib_phase::PickDatumU;
+      show_message("Datum: click a second point along bitmap +U from that origin (direction only).");
+      return true;
+
+    case Underlay_calib_phase::PickDatumU:
+      if (too_short(m_underlay_calib_datum_o, *pt))
+      {
+        show_message("Datum direction segment too short.");
+        return true;
+      }
+
+      m_view->push_undo_snapshot();
+      if (!sk->underlay_set_datum_origin_and_u_direction(m_underlay_calib_datum_o, *pt))
+      {
+        m_view->pop_undo_snapshot();
+        show_message("Could not set underlay datum (degenerate direction or axes).");
+        cancel_underlay_calib_();
+        return true;
+      }
+
+      sk->underlay_ui_params(m_ul_cx, m_ul_cy, m_ul_hw, m_ul_hh, m_ul_rot);
+      m_underlay_panel_sketch = nullptr;
+      cancel_underlay_calib_();
+      show_message("Underlay datum set: origin at (0,0) and +U direction; half sizes unchanged.");
       return true;
 
     default:

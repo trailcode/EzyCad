@@ -151,6 +151,8 @@ class Sketch
   /// Keep U axis; adjust V and base so segment \a y0-\a y1 has length \a target_len (after X calibration).
   [[nodiscard]] bool                    underlay_rescale_v_chord_to_length(const gp_Pnt2d& y0, const gp_Pnt2d& y1, double target_len);
   [[nodiscard]] gp_Vec2d                underlay_axis_u_vec() const;
+  /// Datum on sketch plane: bitmap (0,0) at \a origin; +U toward \a along_u_point; keeps |axis_u|, |axis_v| and winding.
+  [[nodiscard]] bool underlay_set_datum_origin_and_u_direction(const gp_Pnt2d& origin, const gp_Pnt2d& along_u_point);
 
   // private:
   friend class Sketch_json;
