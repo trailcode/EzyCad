@@ -326,7 +326,6 @@ class GUI
   void*                 m_underlay_panel_sketch {nullptr};
   Underlay_calib_phase  m_underlay_calib_phase {Underlay_calib_phase::None};
   std::weak_ptr<Sketch> m_underlay_calib_sketch_wk {};
-  bool                  m_underlay_calib_have_x {false};
   gp_Pnt2d              m_underlay_calib_x0 {};
   gp_Pnt2d              m_underlay_calib_x1 {};
   gp_Vec2d              m_underlay_calib_axis_u {};  // After X distance (model units)

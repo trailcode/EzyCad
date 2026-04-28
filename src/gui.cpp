@@ -1162,19 +1162,21 @@ void GUI::sketch_underlay_panel_settings_(const std::shared_ptr<Sketch>& sk)
       switch (m_underlay_calib_phase)
       {
         case Underlay_calib_phase::PickX1:
-          hint = "Click first point: corner at bitmap (0,0).";
+          hint = "First click: bitmap corner (0,0) in the current underlay transform (sliders / rotation).";
           break;
         case Underlay_calib_phase::PickX2:
-          hint = "Click second point: end of width (bitmap +U), like a line edge.";
+          hint = "Second click: along bitmap +U from that corner; calibration refines scale from this placement.";
           break;
         case Underlay_calib_phase::AwaitDistX:
-          hint = "Enter the drawing distance for X (dimension popup). Y length is set from image aspect (H:W).";
+          hint =
+              "Enter the drawing distance for X (dimension popup). If Y is not calibrated yet, its scale still follows "
+              "image aspect.";
           break;
         case Underlay_calib_phase::PickY1:
-          hint = "Click first point along image height (+V).";
+          hint = "First click: along bitmap height (+V) using the current underlay transform.";
           break;
         case Underlay_calib_phase::PickY2:
-          hint = "Click second point: end of height (+V).";
+          hint = "Second click: farther along +V; calibration refines Y from this placement.";
           break;
         case Underlay_calib_phase::AwaitDistY:
           hint = "Enter the drawing distance for Y (dimension popup).";
@@ -1193,16 +1195,17 @@ void GUI::sketch_underlay_panel_settings_(const std::shared_ptr<Sketch>& sk)
     if (m_show_tool_tips && ImGui::IsItemHovered())
       ImGui::SetTooltip(
           "Two clicks along width (+U), then type the real drawing distance (same units as sketch dimensions). "
-          "Y is set from image aspect until you use Set Y.");
+          "You can use Set Y before or after; until both are set, the other axis still follows default aspect.");
 
     ImGui::SameLine();
-    ImGui::BeginDisabled(!sk_is_cur || !m_underlay_calib_have_x || pick_x);
+    ImGui::BeginDisabled(!sk_is_cur || pick_x);
     if (ImGui::Button("Set Y from edge..."))
       begin_underlay_calib_set_y_(sk);
 
     ImGui::EndDisabled();
     if (m_show_tool_tips && ImGui::IsItemHovered())
-      ImGui::SetTooltip("After Set X: two clicks along height (+V), then enter the drawing distance for Y.");
+      ImGui::SetTooltip(
+          "Two clicks along height (+V), then enter the drawing distance for Y. Order vs. Set X does not matter.");
   }
 
   ImGui::Separator();
@@ -1282,7 +1285,6 @@ void GUI::cancel_underlay_calib_()
 
   m_underlay_calib_sketch_wk.reset();
 
-  m_underlay_calib_have_x = false;
   m_underlay_calib_axis_u = gp_Vec2d(0., 0.);
 }
 
@@ -1298,10 +1300,11 @@ void GUI::begin_underlay_calib_set_x_(const std::shared_ptr<Sketch>& sk)
   }
 
   cancel_underlay_calib_();
+  sk->underlay_ui_params(m_ul_cx, m_ul_cy, m_ul_hw, m_ul_hh, m_ul_rot);
   m_underlay_calib_sketch_wk = sk;
   m_underlay_calib_phase     = Underlay_calib_phase::PickX1;
   show_message(
-      "Underlay X: click corner (0,0), then point along +U; you will enter the drawing distance for that span.");
+      "Underlay X: uses the current transform. Click bitmap corner (0,0), then along +U; then enter the distance.");
 }
 
 void GUI::begin_underlay_calib_set_y_(const std::shared_ptr<Sketch>& sk)
@@ -1309,21 +1312,18 @@ void GUI::begin_underlay_calib_set_y_(const std::shared_ptr<Sketch>& sk)
   if (!sk || !sk->has_underlay())
     return;
 
-  if (!m_underlay_calib_have_x)
-  {
-    show_message("Use Set X from edge first (two points along image width).");
-    return;
-  }
-
   if (m_view->curr_sketch_shared() != sk)
   {
     show_message("Make this sketch current in the sketch list, then try again.");
     return;
   }
 
+  cancel_underlay_calib_();
+  sk->underlay_ui_params(m_ul_cx, m_ul_cy, m_ul_hw, m_ul_hh, m_ul_rot);
   m_underlay_calib_sketch_wk = sk;
   m_underlay_calib_phase     = Underlay_calib_phase::PickY1;
-  show_message("Underlay Y: click two points along +V, then enter the drawing distance for that span.");
+  show_message(
+      "Underlay Y: uses the current transform. Click two points along +V; then enter the drawing distance.");
 }
 
 void GUI::underlay_calib_prompt_x_distance_(const std::shared_ptr<Sketch>& sk)
@@ -1370,9 +1370,10 @@ void GUI::underlay_calib_prompt_x_distance_(const std::shared_ptr<Sketch>& sk)
     m_underlay_panel_sketch = nullptr;
 
     m_dist_callback         = nullptr;
-    m_underlay_calib_phase  = Underlay_calib_phase::None;
-    m_underlay_calib_have_x = true;
-    show_message("X scale applied to the picked segment. Use Set Y from edge for the vertical span and its distance.");
+    m_underlay_calib_phase = Underlay_calib_phase::None;
+    show_message(
+        "X distance applied to the picked segment. Use Set Y from edge for the vertical span if needed, or adjust "
+        "transforms.");
   };
 
   set_dist_edit(dist_show, std::move(on_dist), spos);
@@ -1423,7 +1424,9 @@ void GUI::underlay_calib_prompt_y_distance_(const std::shared_ptr<Sketch>& sk)
 
     m_dist_callback = nullptr;
     cancel_underlay_calib_();
-    show_message("Underlay X/Y calibration complete.");
+    show_message(
+        "Y distance applied to the picked segment. Use Set X from edge for the horizontal span if needed, or adjust "
+        "transforms.");
   };
 
   set_dist_edit(dist_show, std::move(on_dist), spos);
