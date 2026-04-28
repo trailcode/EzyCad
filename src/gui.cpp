@@ -1248,6 +1248,20 @@ void GUI::sketch_underlay_panel_settings_(const std::shared_ptr<Sketch>& sk)
         apply_ul_xform();
     };
 
+    auto transform_input_double = [&](const char* label, double* p_data, double v_min, double v_max,
+                                      const char* format)
+    {
+      const bool changed = ImGui::InputDouble(label, p_data, 0.0, 0.0, format);
+      if (ImGui::IsItemActivated())
+        m_view->push_undo_snapshot();
+
+      if (changed)
+      {
+        *p_data = std::clamp(*p_data, v_min, v_max);
+        apply_ul_xform();
+      }
+    };
+
     // Labels match typical sketch axes on screen: "Center X" drives plane Y (gp_Pnt2d::Y / view v), "Center Y" plane X (u).
     transform_slider("Center X", ImGuiDataType_Double, &m_ul_cy, &min_v, &max_v, "%.4f", ImGuiSliderFlags_ClampOnInput);
     transform_slider("Center Y", ImGuiDataType_Double, &m_ul_cx, &min_u, &max_u, "%.4f", ImGuiSliderFlags_ClampOnInput);
@@ -1257,6 +1271,7 @@ void GUI::sketch_underlay_panel_settings_(const std::shared_ptr<Sketch>& sk)
                      ImGuiSliderFlags_ClampOnInput | ImGuiSliderFlags_Logarithmic);
     transform_slider("Rotation (deg)", ImGuiDataType_Double, &m_ul_rot, &rot_min, &rot_max, "%.1f",
                      ImGuiSliderFlags_ClampOnInput);
+    transform_input_double("Rotation value (deg)", &m_ul_rot, rot_min, rot_max, "%.4f");
   }
 }
 

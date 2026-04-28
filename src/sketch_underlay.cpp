@@ -9,9 +9,11 @@
 #include <BRepBuilderAPI_MakeFace.hxx>
 #include <BRepBuilderAPI_MakeWire.hxx>
 #include <Image_PixMap.hxx>
+#include <TopoDS_Face.hxx>
 #include <Precision.hxx>
 #include <cmath>
 #include <cstring>
+#include <gp_Ax3.hxx>
 #include <gp_Pln.hxx>
 #include <gp_Vec.hxx>
 
@@ -145,10 +147,56 @@ inline void sample_rgba_bilinear(const uint8_t* rgba, int w, int h, double xf, d
   }
 }
 
-/// Builds a bottom-up pixmap for AIS_TexturedShape. \a axis_u / \a axis_v span the bitmap (2*half-width x 2*half-height).
-/// Uses an axis-aligned face in the sketch plane and inverse-rotated sampling so rotation matches OCCT texture mapping
-/// (which normalizes surface UV to an axis-aligned box and would shear a parallelogram face).
-Handle(Image_PixMap) make_pixmap_bottom_up_rgba(const uint8_t* rgba,
+[[nodiscard]] bool underlay_axes_orthogonal(const gp_Vec2d& axis_u, const gp_Vec2d& axis_v)
+{
+  const double dot   = axis_u.X() * axis_v.X() + axis_u.Y() * axis_v.Y();
+  const double scale = axis_u.Magnitude() * axis_v.Magnitude();
+  if (scale < 1e-24)
+    return true;
+  return std::abs(dot) < 1e-9 * scale;
+}
+
+/// Straight copy of the image to a bottom-up pixmap (optional row flip for OCCT/OpenGL), with key + tint.
+Handle(Image_PixMap) make_pixmap_bottom_up_linear(const uint8_t* rgba,
+                                                int               w,
+                                                int               h,
+                                                bool              key_white_transparent,
+                                                bool              line_tint_enabled,
+                                                uint8_t           tr,
+                                                uint8_t           tg,
+                                                uint8_t           tb)
+{
+  if (w <= 0 || h <= 0)
+    return {};
+
+  Handle(Image_PixMap) pix = new Image_PixMap();
+  if (!pix->InitTrash(Image_Format_RGBA, static_cast<Standard_Size>(w), static_cast<Standard_Size>(h)))
+    return {};
+
+  const Standard_Size rowBytes = static_cast<Standard_Size>(w) * 4u;
+  uint8_t*            dst      = pix->ChangeData();
+
+  for (int rj = 0; rj < h; ++rj)
+  {
+    const int            src_row = h - 1 - rj;
+    const uint8_t*       srcRow  = rgba + static_cast<std::size_t>(src_row) * static_cast<std::size_t>(w) * 4u;
+    uint8_t*             dstRow  = dst + static_cast<std::size_t>(rj) * rowBytes;
+    for (int ox = 0; ox < w; ++ox)
+    {
+      uint8_t px[4] = {srcRow[ox * 4 + 0], srcRow[ox * 4 + 1], srcRow[ox * 4 + 2], srcRow[ox * 4 + 3]};
+      apply_key_and_tint(px[0], px[1], px[2], px[3], key_white_transparent, line_tint_enabled, tr, tg, tb);
+      dstRow[static_cast<std::size_t>(ox) * 4u + 0] = px[0];
+      dstRow[static_cast<std::size_t>(ox) * 4u + 1] = px[1];
+      dstRow[static_cast<std::size_t>(ox) * 4u + 2] = px[2];
+      dstRow[static_cast<std::size_t>(ox) * 4u + 3] = px[3];
+    }
+  }
+  return pix;
+}
+
+/// Builds a bottom-up pixmap for AIS_TexturedShape when the underlay axes are sheared (non-orthogonal): uses an
+/// axis-aligned face in the sketch plane and inverse-rotated sampling so the bitmap matches OCCT UV on the AABB.
+Handle(Image_PixMap) make_pixmap_bottom_up_warped(const uint8_t* rgba,
                                                 int               w,
                                                 int               h,
                                                 const gp_Vec2d&   axis_u,
@@ -310,55 +358,81 @@ void Sketch_underlay::build_ais_(const gp_Pln& pln, AIS_InteractiveContext& ctx)
   gp_Vec nudge(pln.Axis().Direction());
   nudge.Multiply(-10.0 * Precision::Confusion());
 
-  // Axis-aligned rectangle in sketch-plane coords matching the rotated image's bounding box.
-  // (Parallelogram geometry + default AIS_TexturedShape UV mapping would shear the bitmap instead of rotating it.)
-  const double hw    = 0.5 * m_axis_u.Magnitude();
-  const double hh    = 0.5 * m_axis_v.Magnitude();
-  const double theta = std::atan2(m_axis_u.Y(), m_axis_u.X());
-  const double c     = std::cos(theta);
-  const double s     = std::sin(theta);
-  const double hx    = std::max(std::abs(hw * c) + std::abs(hh * s), 1e-12);
-  const double hy    = std::max(std::abs(hw * s) + std::abs(hh * c), 1e-12);
-  const double cx    = m_base.X() + 0.5 * (m_axis_u.X() + m_axis_v.X());
-  const double cy    = m_base.Y() + 0.5 * (m_axis_u.Y() + m_axis_v.Y());
+  TopoDS_Face face;
 
-  const gp_Pnt2d c00(cx - hx, cy - hy);
-  const gp_Pnt2d c10(cx + hx, cy - hy);
-  const gp_Pnt2d c11(cx + hx, cy + hy);
-  const gp_Pnt2d c01(cx - hx, cy + hy);
-
-  const gp_Pnt p00 = to_3d(pln, c00).Translated(nudge);
-  const gp_Pnt p10 = to_3d(pln, c10).Translated(nudge);
-  const gp_Pnt p11 = to_3d(pln, c11).Translated(nudge);
-  const gp_Pnt p01 = to_3d(pln, c01).Translated(nudge);
-
-  BRepBuilderAPI_MakeWire wireMk;
-  wireMk.Add(BRepBuilderAPI_MakeEdge(p00, p10).Edge());
-  wireMk.Add(BRepBuilderAPI_MakeEdge(p10, p11).Edge());
-  wireMk.Add(BRepBuilderAPI_MakeEdge(p11, p01).Edge());
-  wireMk.Add(BRepBuilderAPI_MakeEdge(p01, p00).Edge());
-  if (!wireMk.IsDone())
+  const gp_Pnt2d               bu2(m_base.X() + m_axis_u.X(), m_base.Y() + m_axis_u.Y());
+  const gp_Pnt2d               bv2(m_base.X() + m_axis_v.X(), m_base.Y() + m_axis_v.Y());
+  const gp_Pnt                 P0  = to_3d(pln, m_base).Translated(nudge);
+  const gp_Pnt                 Pu  = to_3d(pln, bu2).Translated(nudge);
+  const gp_Pnt                 Pv  = to_3d(pln, bv2).Translated(nudge);
+  gp_Vec                       Du(P0, Pu);
+  const double                 du_len = Du.Magnitude();
+  const double                 dv_len = gp_Vec(P0, Pv).Magnitude();
+  if (du_len <= Precision::Confusion() || dv_len <= Precision::Confusion())
     return;
 
-  BRepBuilderAPI_MakeFace faceMk(wireMk.Wire(), Standard_True);
-  if (!faceMk.IsDone())
-    return;
+  Handle(Image_PixMap) pix;
 
-  Handle(Image_PixMap) pix = make_pixmap_bottom_up_rgba(
-      m_rgba.data(),
-      m_w,
-      m_h,
-      m_axis_u,
-      m_axis_v,
-      m_key_white_transparent,
-      m_line_tint_enabled,
-      m_tint_r,
-      m_tint_g,
-      m_tint_b);
+  if (underlay_axes_orthogonal(m_axis_u, m_axis_v))
+  {
+    // Rotation + uniform scale: build a rectangular face in a plane whose U/V match bitmap axes so texture is not
+    // sheared (no inverse-resample pixmap needed).
+    const gp_Dir      Zpl = pln.Position().Direction();
+    const gp_Dir      Xu(Du);
+    const gp_Ax3      ax3(P0, Zpl, Xu);
+    const gp_Pln              local_pln(ax3);
+    BRepBuilderAPI_MakeFace faceMk(local_pln, 0.0, du_len, 0.0, dv_len);
+    if (!faceMk.IsDone())
+      return;
+    face = faceMk.Face();
+
+    pix = make_pixmap_bottom_up_linear(m_rgba.data(), m_w, m_h, m_key_white_transparent, m_line_tint_enabled,
+                                       m_tint_r, m_tint_g, m_tint_b);
+  }
+  else
+  {
+    // Sheared affine (e.g. after Y-from-edge calibration): axis-aligned bbox + inverse-rotated pixmap resample.
+    const double hw    = 0.5 * m_axis_u.Magnitude();
+    const double hh    = 0.5 * m_axis_v.Magnitude();
+    const double theta = std::atan2(m_axis_u.Y(), m_axis_u.X());
+    const double c     = std::cos(theta);
+    const double s     = std::sin(theta);
+    const double hx    = std::max(std::abs(hw * c) + std::abs(hh * s), 1e-12);
+    const double hy    = std::max(std::abs(hw * s) + std::abs(hh * c), 1e-12);
+    const double cx    = m_base.X() + 0.5 * (m_axis_u.X() + m_axis_v.X());
+    const double cy    = m_base.Y() + 0.5 * (m_axis_u.Y() + m_axis_v.Y());
+
+    const gp_Pnt2d c00(cx - hx, cy - hy);
+    const gp_Pnt2d c10(cx + hx, cy - hy);
+    const gp_Pnt2d c11(cx + hx, cy + hy);
+    const gp_Pnt2d c01(cx - hx, cy + hy);
+
+    const gp_Pnt p00 = to_3d(pln, c00).Translated(nudge);
+    const gp_Pnt p10 = to_3d(pln, c10).Translated(nudge);
+    const gp_Pnt p11 = to_3d(pln, c11).Translated(nudge);
+    const gp_Pnt p01 = to_3d(pln, c01).Translated(nudge);
+
+    BRepBuilderAPI_MakeWire wireMk;
+    wireMk.Add(BRepBuilderAPI_MakeEdge(p00, p10).Edge());
+    wireMk.Add(BRepBuilderAPI_MakeEdge(p10, p11).Edge());
+    wireMk.Add(BRepBuilderAPI_MakeEdge(p11, p01).Edge());
+    wireMk.Add(BRepBuilderAPI_MakeEdge(p01, p00).Edge());
+    if (!wireMk.IsDone())
+      return;
+
+    BRepBuilderAPI_MakeFace faceMk(wireMk.Wire(), Standard_True);
+    if (!faceMk.IsDone())
+      return;
+    face = faceMk.Face();
+
+    pix = make_pixmap_bottom_up_warped(m_rgba.data(), m_w, m_h, m_axis_u, m_axis_v, m_key_white_transparent,
+                                       m_line_tint_enabled, m_tint_r, m_tint_g, m_tint_b);
+  }
+
   if (pix.IsNull())
     return;
 
-  m_ais = new AIS_TexturedShape(faceMk.Face());
+  m_ais = new AIS_TexturedShape(face);
   m_ais->SetTexturePixMap(pix);
   m_ais->SetTextureMapOn();
   m_ais->DisableTextureModulate();
