@@ -150,15 +150,6 @@ inline void sample_rgba_bilinear(const uint8_t* rgba, int w, int h, double xf, d
   }
 }
 
-[[nodiscard]] bool underlay_axes_orthogonal(const gp_Vec2d& axis_u, const gp_Vec2d& axis_v)
-{
-  const double dot   = axis_u.X() * axis_v.X() + axis_u.Y() * axis_v.Y();
-  const double scale = axis_u.Magnitude() * axis_v.Magnitude();
-  if (scale < 1e-24)
-    return true;
-  return std::abs(dot) < 1e-9 * scale;
-}
-
 /// Straight copy of the image to a bottom-up pixmap (optional row flip for OCCT/OpenGL), with key + tint.
 Handle(Image_PixMap) make_pixmap_bottom_up_linear(const uint8_t* rgba,
                                                   int            w,
@@ -401,9 +392,18 @@ void Sketch_underlay::build_ais_(const gp_Pln& pln, AIS_InteractiveContext& ctx)
   if (du_len <= Precision::Confusion() || dv_len <= Precision::Confusion())
     return;
 
+  const auto axes_orthogonal = [](const gp_Vec2d& au, const gp_Vec2d& av) -> bool
+  {
+    const double dot   = au.X() * av.X() + au.Y() * av.Y();
+    const double scale = au.Magnitude() * av.Magnitude();
+    if (scale < 1e-24)
+      return true;
+    return std::abs(dot) < 1e-9 * scale;
+  };
+
   Handle(Image_PixMap) pix;
 
-  if (underlay_axes_orthogonal(m_axis_u, m_axis_v))
+  if (axes_orthogonal(m_axis_u, m_axis_v))
   {
     // Rotation + uniform scale: build a rectangular face in a plane whose U/V match bitmap axes so texture is not
     // sheared (no inverse-resample pixmap needed).
