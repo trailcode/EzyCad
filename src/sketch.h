@@ -128,7 +128,7 @@ class Sketch
   [[nodiscard]] int   underlay_image_h() const;
   [[nodiscard]] bool  load_underlay_image(const std::string& file_bytes);
   void                clear_underlay();
-  void                underlay_set_center_extents_rotation(double cx, double cy, double half_w, double half_h, double rot_deg);
+  void underlay_set_center_extents_rotation(const glm::dvec2& center, const glm::dvec2& half_extents, double rot_deg);
   void                underlay_set_opacity(float opaque01);
   void                underlay_set_visible(bool v);
   [[nodiscard]] float underlay_opacity() const;

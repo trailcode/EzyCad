@@ -88,6 +88,8 @@ void scroll_callback_wrapper(GLFWwindow* window, double xoffset, double yoffset)
     scroll_callback(window, xoffset, yoffset);
 }
 
+using namespace glm;
+
 // Main code
 int main(int, char**)
 {
@@ -221,7 +223,7 @@ int main(int, char**)
   {
     ImGui_ImplGlfw_CursorPosCallback(window, xpos, ypos);
     if (!io.WantCaptureMouse)
-      gui.on_mouse_pos(ScreenCoords(glm::dvec2(xpos, ypos)));
+      gui.on_mouse_pos(ScreenCoords(dvec2(xpos, ypos)));
   };
 
   mouseButtonCallback = [&](GLFWwindow* window, int button, int action, int mods)

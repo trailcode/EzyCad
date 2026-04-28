@@ -32,6 +32,8 @@
 // Must be here to prevent compiler warning
 #include <GLFW/glfw3.h>
 
+using namespace glm;
+
 GUI* gui_instance = nullptr;
 
 GUI::GUI()
@@ -627,7 +629,7 @@ void GUI::set_dist_edit(float dist, std::function<void(float, bool)>&& callback,
     if (screen_coords.has_value())
       m_dist_edit_loc = *screen_coords;
     else
-      m_dist_edit_loc = ScreenCoords(glm::dvec2(ImGui::GetIO().MousePos.x, ImGui::GetIO().MousePos.y));
+      m_dist_edit_loc = ScreenCoords(dvec2(ImGui::GetIO().MousePos.x, ImGui::GetIO().MousePos.y));
   }
 
   m_dist_callback = std::move(callback);
@@ -713,7 +715,7 @@ void GUI::set_angle_edit(float angle, std::function<void(float, bool)>&& callbac
     if (screen_coords.has_value())
       m_angle_edit_loc = *screen_coords;
     else
-      m_angle_edit_loc = ScreenCoords(glm::dvec2(ImGui::GetIO().MousePos.x, ImGui::GetIO().MousePos.y));
+      m_angle_edit_loc = ScreenCoords(dvec2(ImGui::GetIO().MousePos.x, ImGui::GetIO().MousePos.y));
   }
 
   m_angle_callback = std::move(callback);
@@ -1256,7 +1258,9 @@ void GUI::sketch_underlay_panel_settings_(const std::shared_ptr<Sketch>& sk)
     double           rot_max     = 180.0;
 
     auto apply_ul_xform = [&]()
-    { sk->underlay_set_center_extents_rotation(m_ul_cx, m_ul_cy, m_ul_hw, m_ul_hh, m_ul_rot); };
+    {
+      sk->underlay_set_center_extents_rotation(dvec2(m_ul_cx, m_ul_cy), dvec2(m_ul_hw, m_ul_hh), m_ul_rot);
+    };
 
     auto transform_slider = [&](const char* label, ImGuiDataType type, void* p_data, const void* p_min,
                                 const void* p_max, const char* format, ImGuiSliderFlags flags = 0)
@@ -1367,7 +1371,7 @@ void GUI::underlay_calib_prompt_x_distance_(const std::shared_ptr<Sketch>& sk)
   m_underlay_calib_phase       = Underlay_calib_phase::AwaitDistX;
   const double       L_model   = m_underlay_calib_x0.Distance(m_underlay_calib_x1);
   const float        dist_show = static_cast<float>(L_model / m_view->get_dimension_scale());
-  const ScreenCoords spos(glm::dvec2(ImGui::GetIO().MousePos.x, ImGui::GetIO().MousePos.y));
+  const ScreenCoords spos(dvec2(ImGui::GetIO().MousePos.x, ImGui::GetIO().MousePos.y));
 
   std::weak_ptr<Sketch> wk      = sk;
   auto                  on_dist = [this, wk](float new_dist, bool is_final)
@@ -1405,7 +1409,7 @@ void GUI::underlay_calib_prompt_x_distance_(const std::shared_ptr<Sketch>& sk)
     s->underlay_ui_params(m_ul_cx, m_ul_cy, m_ul_hw, m_ul_hh, m_ul_rot);
     m_underlay_panel_sketch = nullptr;
 
-    m_dist_callback         = nullptr;
+    m_dist_callback        = nullptr;
     m_underlay_calib_phase = Underlay_calib_phase::None;
     show_message(
         "X distance applied to the picked segment. Use Set Y from edge for the vertical span if needed, or adjust "
@@ -1420,7 +1424,7 @@ void GUI::underlay_calib_prompt_y_distance_(const std::shared_ptr<Sketch>& sk)
   m_underlay_calib_phase       = Underlay_calib_phase::AwaitDistY;
   const double       L_model   = m_underlay_calib_y0.Distance(m_underlay_calib_y1);
   const float        dist_show = static_cast<float>(L_model / m_view->get_dimension_scale());
-  const ScreenCoords spos(glm::dvec2(ImGui::GetIO().MousePos.x, ImGui::GetIO().MousePos.y));
+  const ScreenCoords spos(dvec2(ImGui::GetIO().MousePos.x, ImGui::GetIO().MousePos.y));
 
   std::weak_ptr<Sketch> wk      = sk;
   auto                  on_dist = [this, wk](float new_dist, bool is_final)
@@ -2120,7 +2124,7 @@ void GUI::on_mouse_pos(const ScreenCoords& screen_coords)
 
 void GUI::on_mouse_button(int button, int action, int mods)
 {
-  const ScreenCoords screen_coords(glm::dvec2(ImGui::GetIO().MousePos.x, ImGui::GetIO().MousePos.y));
+  const ScreenCoords screen_coords(dvec2(ImGui::GetIO().MousePos.x, ImGui::GetIO().MousePos.y));
 
   if (button == GLFW_MOUSE_BUTTON_LEFT && action == GLFW_PRESS && mods == 0)
     if (try_underlay_calib_click_(screen_coords))

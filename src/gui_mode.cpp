@@ -19,6 +19,8 @@
 #include "sketch.h"
 #include "utl_occt.h"
 
+using namespace glm;
+
 namespace
 {
 
@@ -99,7 +101,7 @@ void GUI::on_key(int key, int scancode, int action, int mods)
   if (action != GLFW_PRESS)
     return;
 
-  const ScreenCoords screen_coords(glm::dvec2(ImGui::GetIO().MousePos.x, ImGui::GetIO().MousePos.y));
+  const ScreenCoords screen_coords(dvec2(ImGui::GetIO().MousePos.x, ImGui::GetIO().MousePos.y));
 
   bool ctrl_pressed = (mods & GLFW_MOD_CONTROL) != 0;
   if (ctrl_pressed)
@@ -523,7 +525,7 @@ void GUI::options_shape_polar_duplicate_mode_()
 
 void GUI::on_key_rotate_mode_(int key)
 {
-  const ScreenCoords screen_coords(glm::dvec2(ImGui::GetIO().MousePos.x, ImGui::GetIO().MousePos.y));
+  const ScreenCoords screen_coords(dvec2(ImGui::GetIO().MousePos.x, ImGui::GetIO().MousePos.y));
 
   switch (key)
   {
@@ -567,7 +569,7 @@ void GUI::on_key_rotate_mode_(int key)
 void GUI::on_key_move_mode_(int key)
 {
   Move_options&      opts = m_view->shp_move().get_opts();
-  const ScreenCoords screen_coords(glm::dvec2(ImGui::GetIO().MousePos.x, ImGui::GetIO().MousePos.y));
+  const ScreenCoords screen_coords(dvec2(ImGui::GetIO().MousePos.x, ImGui::GetIO().MousePos.y));
 
   switch (key)
   {

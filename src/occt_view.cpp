@@ -1,5 +1,4 @@
 #include "occt_view.h"
-#include "ply_io.h"
 
 #include <AIS_ViewCube.hxx>
 #include <Aspect_GradientFillMethod.hxx>
@@ -28,20 +27,20 @@
 #include <V3d_View.hxx>
 #include <WNT_WClass.hxx>
 #include <WNT_Window.hxx>
+#include <algorithm>
+#include <cmath>
 
 #include "dbg.h"
 #include "geom.h"
-#include "types.h"
-#include "utl.h"
-
-#include <algorithm>
-#include <cmath>
-#include "utl_occt.h"
 #include "gui.h"
+#include "ply_io.h"
 #include "shp_create.h"
 #include "sketch.h"
 #include "sketch_json.h"
+#include "types.h"
+#include "utl.h"
 #include "utl_json.h"
+#include "utl_occt.h"
 
 #ifdef __EMSCRIPTEN__
 #include <Font_FontMgr.hxx>
@@ -57,6 +56,8 @@
 #include <cstdio>
 #include <iostream>
 #include <sstream>
+
+using namespace glm;
 
 Occt_view::Occt_view(GUI& gui)
     : m_gui(gui), m_shp_move(*this), m_shp_rotate(*this), m_shp_scale(*this), m_shp_chamfer(*this), m_shp_fillet(*this), m_shp_cut(*this), m_shp_fuse(*this), m_shp_common(*this), m_shp_polar_dup(*this), m_shp_extrude(*this)
@@ -160,7 +161,7 @@ void Occt_view::init_viewer()
        aLightIter.More();
        aLightIter.Next())
   {
-    const Handle(V3d_Light) & aLight = aLightIter.Value();
+    const Handle(V3d_Light)& aLight = aLightIter.Value();
     if (aLight->Type() == Graphic3d_TypeOfLightSource_Directional)
       aLight->SetCastShadows(true);
   }
@@ -177,8 +178,8 @@ void Occt_view::init_viewer()
   // dimensions, etc. (CSS "serif" / OS fonts are not exposed as paths to WASM.)
   // Preload matches CMake --preload-file ... DroidSans.ttf@/DroidSans.ttf (shared with ImGui).
   {
-    Handle(Font_FontMgr)     font_mgr = Font_FontMgr::GetInstance();
-    Handle(Font_SystemFont) sys_font  = font_mgr->CheckFont("/DroidSans.ttf");
+    Handle(Font_FontMgr) font_mgr    = Font_FontMgr::GetInstance();
+    Handle(Font_SystemFont) sys_font = font_mgr->CheckFont("/DroidSans.ttf");
     if (!sys_font.IsNull())
     {
       font_mgr->RegisterFont(sys_font, Standard_True);
@@ -338,7 +339,7 @@ ScreenCoords Occt_view::get_screen_coords(const gp_Pnt& point)
   Standard_Integer screen_x;
   Standard_Integer screen_y;
   m_view->Convert(point.X(), point.Y(), point.Z(), screen_x, screen_y);
-  return ScreenCoords(glm::dvec2(screen_x, screen_y));
+  return ScreenCoords(dvec2(screen_x, screen_y));
 }
 
 std::optional<gp_Pnt> Occt_view::pt3d_on_plane(const ScreenCoords& screen_coords, const gp_Pln& plane) const
@@ -588,11 +589,16 @@ bool Occt_view::sketch_plane_view_aabb_2d(const gp_Pln& pln, double display_w, d
   struct
   {
     double x, y;
-  } corners[4] = {{x0, y0}, {x1, y0}, {x1, y1}, {x0, y1}};
+  } corners[4] = {
+      {x0, y0},
+      {x1, y0},
+      {x1, y1},
+      {x0, y1}
+  };
 
-  bool        any = false;
-  double      min_u = 0., min_v = 0., max_u = 0., max_v = 0.;
-  const auto  consider = [&](const std::optional<gp_Pnt2d>& p2)
+  bool       any   = false;
+  double     min_u = 0., min_v = 0., max_u = 0., max_v = 0.;
+  const auto consider = [&](const std::optional<gp_Pnt2d>& p2)
   {
     if (!p2)
       return;
@@ -602,7 +608,7 @@ bool Occt_view::sketch_plane_view_aabb_2d(const gp_Pln& pln, double display_w, d
     {
       min_u = max_u = u;
       min_v = max_v = v;
-      any             = true;
+      any           = true;
     }
     else
     {
@@ -614,7 +620,7 @@ bool Occt_view::sketch_plane_view_aabb_2d(const gp_Pln& pln, double display_w, d
   };
 
   for (const auto& c : corners)
-    consider(pt_on_plane(ScreenCoords(glm::dvec2(c.x, c.y)), pln));
+    consider(pt_on_plane(ScreenCoords(dvec2(c.x, c.y)), pln));
 
   if (!any)
     return false;
@@ -1188,7 +1194,7 @@ void Occt_view::on_mouse_button(int theButton, int theAction, int theMods)
     if (get_mode() == Mode::Sketch_from_planar_face && theButton == GLFW_MOUSE_BUTTON_LEFT)
     {
       flush_view_events();
-      create_sketch_from_planar_face_(ScreenCoords(glm::dvec2(pos.x(), pos.y())));
+      create_sketch_from_planar_face_(ScreenCoords(dvec2(pos.x(), pos.y())));
       m_planar_face_lmb_skipped_view_controller = true;
       return;
     }
@@ -1207,7 +1213,7 @@ void Occt_view::on_mouse_button(int theButton, int theAction, int theMods)
     switch (get_mode())
     {
       case Mode::Sketch_dim_anno:
-        return curr_sketch().toggle_edge_dim_anno(ScreenCoords(glm::dvec2(pos.x(), pos.y())));
+        return curr_sketch().toggle_edge_dim_anno(ScreenCoords(dvec2(pos.x(), pos.y())));
 
       default:
         break;
@@ -1269,7 +1275,7 @@ void Occt_view::set_shp_selection_mode(const TopAbs_ShapeEnum mode)
   if (m_shp_selection_mode == mode)
     return;
 
-  m_shp_selection_mode = mode;
+  m_shp_selection_mode  = mode;
   const std::size_t idx = static_cast<std::size_t>(mode);
   if (idx < c_names_TopAbs_ShapeEnum.size())
     m_gui.log_message(std::string("Selection mode: ") + std::string(c_names_TopAbs_ShapeEnum[idx]));
@@ -1283,6 +1289,7 @@ const Graphic3d_MaterialAspect& Occt_view::get_default_material() const
 {
   return m_default_material;
 }
+
 void Occt_view::set_default_material(const Graphic3d_MaterialAspect& mat)
 {
   m_default_material = mat;
@@ -1512,6 +1519,7 @@ Shp_fuse&      Occt_view::shp_fuse()      { return m_shp_fuse;       }
 Shp_common&    Occt_view::shp_common()    { return m_shp_common;     }
 Shp_polar_dup& Occt_view::shp_polar_dup() { return m_shp_polar_dup;  }
 Shp_extrude&   Occt_view::shp_extrude()   { return m_shp_extrude;    }
+
 // clang-format on
 
 // ---------------------------------------------------------------------------
@@ -1612,7 +1620,7 @@ constexpr int k_ezy_file_format_version = 2;
 std::string Occt_view::to_json() const
 {
   using namespace nlohmann;
-  json  j;
+  json j;
   j["ezyFormat"] = k_ezy_file_format_version;
   json& sketches = j["sketches"] = json::array();
   json& shps = j["shapes"] = json::array();
@@ -1678,7 +1686,7 @@ void Occt_view::load(const std::string& json_str, bool restore_view)
 
   clear_all(m_sketches, m_cur_sketch, m_shps);
   const json j = json::parse(json_str);
-  (void)j.value("ezyFormat", 1);  // Reserved for future migrations; sketch JSON migrates per-edge dim flags in Sketch_json.
+  (void) j.value("ezyFormat", 1);  // Reserved for future migrations; sketch JSON migrates per-edge dim flags in Sketch_json.
   EZY_ASSERT(j.contains("sketches") && j["sketches"].is_array());
   for (const auto& s : j["sketches"])
   {
@@ -1875,7 +1883,7 @@ Status Occt_view::import_step(const std::string& step_data)
   if (reader.TransferRoots() == 0)
     return Status::user_error("STEP: no geometry was transferred from the file.");
 
-  const Standard_Integer num_shps = reader.NbShapes();
+  const Standard_Integer    num_shps = reader.NbShapes();
   std::vector<TopoDS_Shape> to_add;
   to_add.reserve(static_cast<size_t>(num_shps));
   for (Standard_Integer i = 1; i <= num_shps; ++i)
@@ -1919,6 +1927,7 @@ GUI& Occt_view::gui()
 {
   return m_gui;
 }
+
 AIS_InteractiveContext& Occt_view::ctx()
 {
   return *m_ctx;

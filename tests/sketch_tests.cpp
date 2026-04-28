@@ -12,6 +12,8 @@
 #include "sketch.h"
 #include "sketch_json.h"
 
+using namespace glm;
+
 namespace bg = boost::geometry;
 
 // General templated helper for any Boost.Geometry geometry type
@@ -251,12 +253,12 @@ TEST_F(Sketch_test, CreateSquare)
 
   // First point - center of square
   gp_Pnt2d     center(0.0, 0.0);
-  ScreenCoords screen_coords(glm::dvec2(center.X(), center.Y()));
+  ScreenCoords screen_coords(dvec2(center.X(), center.Y()));
   sketch.add_sketch_pt(screen_coords);
 
   // Second point - center of right edge (defines width and orientation)
   gp_Pnt2d edge_center(10.0, 0.0);
-  screen_coords = ScreenCoords(glm::dvec2(edge_center.X(), edge_center.Y()));
+  screen_coords = ScreenCoords(dvec2(edge_center.X(), edge_center.Y()));
   sketch.add_sketch_pt(screen_coords);
 
   // Finalize the square
@@ -337,12 +339,12 @@ TEST_F(Sketch_test, CreateCircle)
 
   // First point - center of circle
   gp_Pnt2d     center(0.0, 0.0);
-  ScreenCoords screen_coords(glm::dvec2(center.X(), center.Y()));
+  ScreenCoords screen_coords(dvec2(center.X(), center.Y()));
   sketch.add_sketch_pt(screen_coords);
 
   // Second point - point on circle (defines radius)
   gp_Pnt2d edge_point(10.0, 0.0);
-  screen_coords = ScreenCoords(glm::dvec2(edge_point.X(), edge_point.Y()));
+  screen_coords = ScreenCoords(dvec2(edge_point.X(), edge_point.Y()));
   sketch.add_sketch_pt(screen_coords);
 
   // Finalize the circle
@@ -1339,10 +1341,10 @@ TEST_F(Sketch_test, MirrorSelectedEdges_NoEdgesSelected)
   gp_Pnt2d axis_start(0.0, 0.0);
   gp_Pnt2d axis_end(10.0, 0.0);
   
-  ScreenCoords screen_coords_start(glm::dvec2(axis_start.X(), axis_start.Y()));
+  ScreenCoords screen_coords_start(dvec2(axis_start.X(), axis_start.Y()));
   sketch.add_sketch_pt(screen_coords_start);
   
-  ScreenCoords screen_coords_end(glm::dvec2(axis_end.X(), axis_end.Y()));
+  ScreenCoords screen_coords_end(dvec2(axis_end.X(), axis_end.Y()));
   sketch.add_sketch_pt(screen_coords_end);
   // finalize_elm() is called automatically when the second point is added for Single linestring type
 
@@ -1408,12 +1410,12 @@ TEST_F(Sketch_test, SplitEdge_HasMidpoints)
 
   // Create a new edge that snaps to the midpoint, which will split the original edge
   // Start from the midpoint
-  ScreenCoords screen_coords_mid(glm::dvec2(10.0, 0.0));
+  ScreenCoords screen_coords_mid(dvec2(10.0, 0.0));
   sketch.add_sketch_pt(screen_coords_mid);
 
   // Add another point above the midpoint to create a vertical edge
   gp_Pnt2d pt_above(10.0, 10.0);
-  ScreenCoords screen_coords_above(glm::dvec2(pt_above.X(), pt_above.Y()));
+  ScreenCoords screen_coords_above(dvec2(pt_above.X(), pt_above.Y()));
   sketch.add_sketch_pt(screen_coords_above);
 
   // Finalize the edge - this should trigger the edge splitting
@@ -1508,9 +1510,9 @@ TEST_F(Sketch_test, AddNode_splits_linear_edge_interior)
 
   gui().set_mode(Mode::Sketch_add_node);
   // Snap to an existing endpoint first (rubber band), then place the new node on the edge interior.
-  ScreenCoords anchor(glm::dvec2(0.0, 0.0));
+  ScreenCoords anchor(dvec2(0.0, 0.0));
   sketch.add_sketch_pt(anchor);
-  ScreenCoords interior(glm::dvec2(7.0, 0.0));
+  ScreenCoords interior(dvec2(7.0, 0.0));
   sketch.add_sketch_pt(interior);
 
   EXPECT_EQ(count_real_edges(sketch), 2u) << "Add node on edge interior should replace one edge with two";
@@ -1563,7 +1565,7 @@ TEST_F(Sketch_test, AddNode_off_edge_adds_node_only)
 
   gui().set_mode(Mode::Sketch_add_node);
   // Far enough from y=0 that headless snap radius (~100 plane units) does not pull onto the segment.
-  ScreenCoords away(glm::dvec2(10.0, 200.0));
+  ScreenCoords away(dvec2(10.0, 200.0));
   sketch.add_sketch_pt(away);
 
   size_t edge_count = 0;
@@ -1597,7 +1599,7 @@ TEST_F(Sketch_test, AddNode_near_edge_snaps_onto_segment_and_splits)
   Sketch_access::update_faces_(sketch);
 
   gui().set_mode(Mode::Sketch_add_node);
-  ScreenCoords near_edge(glm::dvec2(7.0, 0.15));
+  ScreenCoords near_edge(dvec2(7.0, 0.15));
   sketch.add_sketch_pt(near_edge);
 
   size_t edge_count = 0;
