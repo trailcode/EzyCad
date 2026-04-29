@@ -5,3 +5,4 @@
 /.vs
 # Cursor IDE (local only). Shared assistant-oriented notes live in agents/.
 /.cursor/
+/scripts/__pycache__
