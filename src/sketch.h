@@ -140,6 +140,8 @@ class Sketch
   [[nodiscard]] bool  underlay_line_tint_enabled() const;
   void                underlay_line_tint_rgb(uint8_t& r, uint8_t& g, uint8_t& b) const;
   void                underlay_ui_params(double& cx, double& cy, double& half_w, double& half_h, double& rot_deg) const;
+  /// True when texture U and V directions are perpendicular (no shear). Orthogonal UI assumes this.
+  [[nodiscard]] bool underlay_axes_orthogonal() const;
   void                underlay_rebuild_display();
 
   /// Same snap / plane rules as the line-edge tool (for underlay calibration clicks).

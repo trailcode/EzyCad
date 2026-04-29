@@ -2807,6 +2807,19 @@ void Sketch::underlay_ui_params(double& cx, double& cy, double& half_w, double& 
   rot_deg           = std::atan2(au.Y(), au.X()) * (180.0 / std::numbers::pi);
 }
 
+bool Sketch::underlay_axes_orthogonal() const
+{
+  if (!m_underlay || !m_underlay->has_image())
+    return true;
+  const gp_Vec2d au = m_underlay->axis_u();
+  const gp_Vec2d av = m_underlay->axis_v();
+  const double dot  = au.X() * av.X() + au.Y() * av.Y();
+  const double scale = au.Magnitude() * av.Magnitude();
+  if (scale < 1e-24)
+    return true;
+  return std::abs(dot) < 1e-9 * scale;
+}
+
 void Sketch::underlay_rebuild_display()
 {
   if (!m_underlay || !m_underlay->has_image())

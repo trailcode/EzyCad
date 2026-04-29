@@ -1231,6 +1231,12 @@ void GUI::sketch_underlay_panel_settings_(const std::shared_ptr<Sketch>& sk)
   ImGui::Separator();
   ImGui::TextUnformatted("Transform (sketch plane, vs. current view)");
   {
+    const bool ul_ortho = sk->underlay_axes_orthogonal();
+    if (!ul_ortho)
+      ImGui::TextWrapped(
+          "Edge calibration produced shear (bitmap U and V are not perpendicular). These sliders only describe an "
+          "orthogonal transform; they stay off so they cannot overwrite your calibrated affine.");
+
     const ImGuiIO& io    = ImGui::GetIO();
     double         min_u = 0., min_v = 0., max_u = 1., max_v = 1.;
     const bool     have_view =
@@ -1259,6 +1265,9 @@ void GUI::sketch_underlay_panel_settings_(const std::shared_ptr<Sketch>& sk)
 
     auto apply_ul_xform = [&]()
     {
+      if (!sk->underlay_axes_orthogonal())
+        return;
+
       sk->underlay_set_center_extents_rotation(dvec2(m_ul_cx, m_ul_cy), dvec2(m_ul_hw, m_ul_hh), m_ul_rot);
     };
 
@@ -1273,7 +1282,7 @@ void GUI::sketch_underlay_panel_settings_(const std::shared_ptr<Sketch>& sk)
         apply_ul_xform();
     };
 
-    auto transform_input_double = [&](const char* label, double* p_data, double v_min, double v_max,
+    auto     transform_input_double = [&](const char* label, double* p_data, double v_min, double v_max,
                                       const char* format)
     {
       const bool changed = ImGui::InputDouble(label, p_data, 0.0, 0.0, format);
@@ -1287,6 +1296,7 @@ void GUI::sketch_underlay_panel_settings_(const std::shared_ptr<Sketch>& sk)
       }
     };
 
+    ImGui::BeginDisabled(!ul_ortho);
     // Labels match typical sketch axes on screen: "Center X" drives plane Y (gp_Pnt2d::Y / view v), "Center Y" plane X (u).
     transform_slider("Center X", ImGuiDataType_Double, &m_ul_cy, &min_v, &max_v, "%.4f", ImGuiSliderFlags_ClampOnInput);
     transform_slider("Center Y", ImGuiDataType_Double, &m_ul_cx, &min_u, &max_u, "%.4f", ImGuiSliderFlags_ClampOnInput);
@@ -1297,6 +1307,7 @@ void GUI::sketch_underlay_panel_settings_(const std::shared_ptr<Sketch>& sk)
     transform_slider("Rotation (deg)", ImGuiDataType_Double, &m_ul_rot, &rot_min, &rot_max, "%.1f",
                      ImGuiSliderFlags_ClampOnInput);
     transform_input_double("Rotation value (deg)", &m_ul_rot, rot_min, rot_max, "%.4f");
+    ImGui::EndDisabled();
   }
 }
 
