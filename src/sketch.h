@@ -128,7 +128,7 @@ class Sketch
   [[nodiscard]] int   underlay_image_h() const;
   [[nodiscard]] bool  load_underlay_image(const std::string& file_bytes);
   void                clear_underlay();
-  void                underlay_set_center_extents_rotation(double cx, double cy, double half_w, double half_h, double rot_deg);
+  void underlay_set_center_extents_rotation(const glm::dvec2& center, const glm::dvec2& half_extents, double rot_deg);
   void                underlay_set_opacity(float opaque01);
   void                underlay_set_visible(bool v);
   [[nodiscard]] float underlay_opacity() const;
@@ -140,6 +140,8 @@ class Sketch
   [[nodiscard]] bool  underlay_line_tint_enabled() const;
   void                underlay_line_tint_rgb(uint8_t& r, uint8_t& g, uint8_t& b) const;
   void                underlay_ui_params(double& cx, double& cy, double& half_w, double& half_h, double& rot_deg) const;
+  /// True when texture U and V directions are perpendicular (no shear). Orthogonal UI assumes this.
+  [[nodiscard]] bool underlay_axes_orthogonal() const;
   void                underlay_rebuild_display();
 
   /// Same snap / plane rules as the line-edge tool (for underlay calibration clicks).
@@ -151,6 +153,8 @@ class Sketch
   /// Keep U axis; adjust V and base so segment \a y0-\a y1 has length \a target_len (after X calibration).
   [[nodiscard]] bool                    underlay_rescale_v_chord_to_length(const gp_Pnt2d& y0, const gp_Pnt2d& y1, double target_len);
   [[nodiscard]] gp_Vec2d                underlay_axis_u_vec() const;
+  /// Datum on sketch plane: bitmap (0,0) at \a origin; +U toward \a along_u_point; keeps |axis_u|, |axis_v| and winding.
+  [[nodiscard]] bool underlay_set_datum_origin_and_u_direction(const gp_Pnt2d& origin, const gp_Pnt2d& along_u_point);
 
   // private:
   friend class Sketch_json;

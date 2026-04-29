@@ -40,7 +40,10 @@ enum class Underlay_calib_phase : std::uint8_t
   AwaitDistX,
   PickY1,
   PickY2,
-  AwaitDistY
+  AwaitDistY,
+  /// Two clicks: bitmap corner (0,0), then a point along bitmap +U (datum / origin on plane).
+  PickDatumO,
+  PickDatumU
 };
 
 /// One entry under File > Examples (menu label + path to `.ezy` on disk).
@@ -203,6 +206,7 @@ class GUI
   bool try_underlay_calib_click_(const ScreenCoords& screen_coords);
   void begin_underlay_calib_set_x_(const std::shared_ptr<Sketch>& sk);
   void begin_underlay_calib_set_y_(const std::shared_ptr<Sketch>& sk);
+  void begin_underlay_calib_define_datum_(const std::shared_ptr<Sketch>& sk);
   void underlay_calib_prompt_x_distance_(const std::shared_ptr<Sketch>& sk);
   void underlay_calib_prompt_y_distance_(const std::shared_ptr<Sketch>& sk);
 #if defined(__EMSCRIPTEN__)
@@ -326,12 +330,12 @@ class GUI
   void*                 m_underlay_panel_sketch {nullptr};
   Underlay_calib_phase  m_underlay_calib_phase {Underlay_calib_phase::None};
   std::weak_ptr<Sketch> m_underlay_calib_sketch_wk {};
-  bool                  m_underlay_calib_have_x {false};
   gp_Pnt2d              m_underlay_calib_x0 {};
   gp_Pnt2d              m_underlay_calib_x1 {};
   gp_Vec2d              m_underlay_calib_axis_u {};  // After X distance (model units)
   gp_Pnt2d              m_underlay_calib_y0 {};
   gp_Pnt2d              m_underlay_calib_y1 {};
+  gp_Pnt2d              m_underlay_calib_datum_o {};
   bool                  m_sketch_properties_open {false};
   std::weak_ptr<Sketch> m_sketch_properties_sketch;
   /// If set, next underlay import (menu or async) applies to this sketch; otherwise current sketch.

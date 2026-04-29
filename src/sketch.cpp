@@ -31,6 +31,8 @@
 #include "sketch_underlay.h"
 #include "utl.h"
 
+using namespace glm;
+
 Sketch::Sketch(const std::string& name, Occt_view& view, const gp_Pln& pln)
     : m_view(view), m_ctx(view.ctx()), m_pln(pln), m_name(name), m_nodes(view, pln)
 {
@@ -518,7 +520,7 @@ void Sketch::move_line_string_pt_(const ScreenCoords& screen_coords)
         m_show_angle_input   = !is_finial;
         // Recalculate the point with the new angle using current mouse position
         // Get current mouse position from ImGui
-        ScreenCoords current_pos(glm::dvec2(ImGui::GetIO().MousePos.x, ImGui::GetIO().MousePos.y));
+        ScreenCoords current_pos(dvec2(ImGui::GetIO().MousePos.x, ImGui::GetIO().MousePos.y));
         sketch_pt_move(current_pos);
       };
 
@@ -694,9 +696,9 @@ double Sketch::plane_pick_snap_radius_world_() const
 
   const gp_Pnt2d          ref2(0.0, 0.0);
   const ScreenCoords      s0   = m_view.get_screen_coords(to_3d(m_pln, ref2));
-  const glm::dvec2        base = s0.unsafe_get();
+  const dvec2             base = s0.unsafe_get();
   std::optional<gp_Pnt2d> p1 =
-      m_view.pt_on_plane(ScreenCoords(glm::dvec2(base.x + px, base.y)), m_pln);
+      m_view.pt_on_plane(ScreenCoords(dvec2(base.x + px, base.y)), m_pln);
   if (!p1)
     return std::max(px, Precision::Confusion() * 1e9);
   return ref2.Distance(*p1);
@@ -2663,28 +2665,55 @@ gp_Vec2d Sketch::underlay_axis_u_vec() const
   return m_underlay->axis_u();
 }
 
-void Sketch::underlay_set_center_extents_rotation(double cx, double cy, double half_w, double half_h, double rot_deg)
+bool Sketch::underlay_set_datum_origin_and_u_direction(const gp_Pnt2d& origin, const gp_Pnt2d& along_u_point)
 {
   if (!m_underlay || !m_underlay->has_image())
-    return;
-  constexpr double k_min = 1e-9;
-  if (half_w < k_min)
-    half_w = k_min;
-  if (half_h < k_min)
-    half_h = k_min;
+    return false;
 
-  const double   rad = rot_deg * (std::numbers::pi / 180.0);
-  const double   c   = std::cos(rad);
-  const double   s   = std::sin(rad);
-  const gp_Vec2d axis_u(2.0 * half_w * c, 2.0 * half_w * s);
-  const gp_Vec2d axis_v(-2.0 * half_h * s, 2.0 * half_h * c);
-  const gp_Pnt2d base(
-      cx - 0.5 * (axis_u.X() + axis_v.X()),
-      cy - 0.5 * (axis_u.Y() + axis_v.Y()));
+  gp_Vec2d       du(along_u_point.X() - origin.X(), along_u_point.Y() - origin.Y());
+  const double   du_len = du.Magnitude();
+  const gp_Vec2d au_old = m_underlay->axis_u();
+  const gp_Vec2d av_old = m_underlay->axis_v();
+  const double   len_u  = au_old.Magnitude();
+  const double   len_v  = av_old.Magnitude();
+  if (len_u <= 1e-12 || len_v <= 1e-12 || du_len <= 1e-12)
+    return false;
 
-  m_underlay->set_affine(base, axis_u, axis_v);
-  if (m_visible)
-    m_underlay->rebuild_and_display(m_pln, m_ctx);
+  du.Multiply(1.0 / du_len);
+  const double ux = du.X();
+  const double uy = du.Y();
+
+  const double det_old = au_old.X() * av_old.Y() - au_old.Y() * av_old.X();
+  double       px {};
+  double       py {};
+  if (det_old >= 0.0)
+  {
+    px = -uy;
+    py = ux;
+  }
+  else
+  {
+    px = uy;
+    py = -ux;
+  }
+
+  const gp_Vec2d au_new(len_u * ux, len_u * uy);
+  const gp_Vec2d av_new(len_v * px, len_v * py);
+
+  underlay_set_affine_plane(origin, au_new, av_new);
+  return true;
+}
+
+void Sketch::underlay_set_center_extents_rotation(const dvec2& center, const dvec2& half_extents,
+                                                  double rot_deg)
+{
+  EZY_ASSERT(m_underlay);
+  EZY_ASSERT(m_underlay->has_image());
+  EZY_ASSERT(m_visible);
+
+  m_underlay->set_center_extents_rotation(center, half_extents, rot_deg);
+  m_underlay->rebuild_and_display(m_pln, m_ctx);
+
   m_ctx.UpdateCurrentViewer();
 }
 
@@ -2776,6 +2805,19 @@ void Sketch::underlay_ui_params(double& cx, double& cy, double& half_w, double& 
   cx                = b.X() + 0.5 * (au.X() + av.X());
   cy                = b.Y() + 0.5 * (au.Y() + av.Y());
   rot_deg           = std::atan2(au.Y(), au.X()) * (180.0 / std::numbers::pi);
+}
+
+bool Sketch::underlay_axes_orthogonal() const
+{
+  if (!m_underlay || !m_underlay->has_image())
+    return true;
+  const gp_Vec2d au = m_underlay->axis_u();
+  const gp_Vec2d av = m_underlay->axis_v();
+  const double dot  = au.X() * av.X() + au.Y() * av.Y();
+  const double scale = au.Magnitude() * av.Magnitude();
+  if (scale < 1e-24)
+    return true;
+  return std::abs(dot) < 1e-9 * scale;
 }
 
 void Sketch::underlay_rebuild_display()

@@ -1,7 +1,5 @@
 #include "sketch_underlay.h"
 
-#include "geom.h"
-
 #include <AIS_InteractiveContext.hxx>
 #include <AIS_InteractiveObject.hxx>
 #include <AIS_TexturedShape.hxx>
@@ -10,32 +8,39 @@
 #include <BRepBuilderAPI_MakeWire.hxx>
 #include <Image_PixMap.hxx>
 #include <Precision.hxx>
+#include <TopoDS_Face.hxx>
+#include <algorithm>
 #include <cmath>
 #include <cstring>
+#include <glm/glm.hpp>
+#include <gp_Ax3.hxx>
 #include <gp_Pln.hxx>
 #include <gp_Vec.hxx>
+#include <numbers>
 
-#include <algorithm>
+#include "geom.h"
+
+using namespace glm;
 
 namespace
 {
 
-constexpr int k_max_image_dim = 8192;
+constexpr int         k_max_image_dim  = 8192;
 constexpr std::size_t k_max_rgba_bytes = 64u * 1024u * 1024u;  // 64 MiB safety cap
 
 std::string base64_encode(const uint8_t* data, std::size_t len)
 {
   static const char tbl[] =
       "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
-  std::string       out;
+  std::string out;
   out.reserve(((len + 2) / 3) * 4);
   for (std::size_t i = 0; i < len; i += 3)
   {
-    const std::size_t n = len - i;
-    const unsigned b0 = data[i];
-    const unsigned b1 = n > 1 ? data[i + 1] : 0u;
-    const unsigned b2 = n > 2 ? data[i + 2] : 0u;
-    const unsigned triple = (b0 << 16) | (b1 << 8) | b2;
+    const std::size_t n      = len - i;
+    const unsigned    b0     = data[i];
+    const unsigned    b1     = n > 1 ? data[i + 1] : 0u;
+    const unsigned    b2     = n > 2 ? data[i + 2] : 0u;
+    const unsigned    triple = (b0 << 16) | (b1 << 8) | b2;
     out.push_back(tbl[(triple >> 18) & 63]);
     out.push_back(tbl[(triple >> 12) & 63]);
     out.push_back(n > 1 ? tbl[(triple >> 6) & 63] : '=');
@@ -68,7 +73,7 @@ bool base64_decode(const std::string& in, std::vector<uint8_t>& out)
   while (len > 0 && (in[len - 1] == '=' || in[len - 1] == '\n' || in[len - 1] == '\r' || in[len - 1] == ' '))
     --len;
   out.reserve((len * 3) / 4);
-  unsigned buf = 0;
+  unsigned buf  = 0;
   int      bits = 0;
   for (std::size_t i = 0; i < len; ++i)
   {
@@ -123,12 +128,12 @@ inline void sample_rgba_bilinear(const uint8_t* rgba, int w, int h, double xf, d
     out[0] = out[1] = out[2] = out[3] = 0;
     return;
   }
-  const int x0 = static_cast<int>(std::floor(xf));
-  const int y0 = static_cast<int>(std::floor(yf));
-  const int x1 = std::min(x0 + 1, w - 1);
-  const int y1 = std::min(y0 + 1, h - 1);
-  const double tx = xf - static_cast<double>(x0);
-  const double ty = yf - static_cast<double>(y0);
+  const int    x0  = static_cast<int>(std::floor(xf));
+  const int    y0  = static_cast<int>(std::floor(yf));
+  const int    x1  = std::min(x0 + 1, w - 1);
+  const int    y1  = std::min(y0 + 1, h - 1);
+  const double tx  = xf - static_cast<double>(x0);
+  const double ty  = yf - static_cast<double>(y0);
   const auto   pix = [&](int x, int y) -> const uint8_t*
   {
     return rgba + (static_cast<std::size_t>(y) * static_cast<std::size_t>(w) + static_cast<std::size_t>(x)) * 4u;
@@ -145,19 +150,56 @@ inline void sample_rgba_bilinear(const uint8_t* rgba, int w, int h, double xf, d
   }
 }
 
-/// Builds a bottom-up pixmap for AIS_TexturedShape. \a axis_u / \a axis_v span the bitmap (2*half-width x 2*half-height).
-/// Uses an axis-aligned face in the sketch plane and inverse-rotated sampling so rotation matches OCCT texture mapping
-/// (which normalizes surface UV to an axis-aligned box and would shear a parallelogram face).
-Handle(Image_PixMap) make_pixmap_bottom_up_rgba(const uint8_t* rgba,
-                                                int               w,
-                                                int               h,
-                                                const gp_Vec2d&   axis_u,
-                                                const gp_Vec2d&   axis_v,
-                                                bool              key_white_transparent,
-                                                bool              line_tint_enabled,
-                                                uint8_t           tr,
-                                                uint8_t           tg,
-                                                uint8_t           tb)
+/// Straight copy of the image to a bottom-up pixmap (optional row flip for OCCT/OpenGL), with key + tint.
+Handle(Image_PixMap) make_pixmap_bottom_up_linear(const uint8_t* rgba,
+                                                  int            w,
+                                                  int            h,
+                                                  bool           key_white_transparent,
+                                                  bool           line_tint_enabled,
+                                                  uint8_t        tr,
+                                                  uint8_t        tg,
+                                                  uint8_t        tb)
+{
+  if (w <= 0 || h <= 0)
+    return {};
+
+  Handle(Image_PixMap) pix = new Image_PixMap();
+  if (!pix->InitTrash(Image_Format_RGBA, static_cast<Standard_Size>(w), static_cast<Standard_Size>(h)))
+    return {};
+
+  const Standard_Size rowBytes = static_cast<Standard_Size>(w) * 4u;
+  uint8_t*            dst      = pix->ChangeData();
+
+  for (int rj = 0; rj < h; ++rj)
+  {
+    const int      src_row = h - 1 - rj;
+    const uint8_t* srcRow  = rgba + static_cast<std::size_t>(src_row) * static_cast<std::size_t>(w) * 4u;
+    uint8_t*       dstRow  = dst + static_cast<std::size_t>(rj) * rowBytes;
+    for (int ox = 0; ox < w; ++ox)
+    {
+      uint8_t px[4] = {srcRow[ox * 4 + 0], srcRow[ox * 4 + 1], srcRow[ox * 4 + 2], srcRow[ox * 4 + 3]};
+      apply_key_and_tint(px[0], px[1], px[2], px[3], key_white_transparent, line_tint_enabled, tr, tg, tb);
+      dstRow[static_cast<std::size_t>(ox) * 4u + 0] = px[0];
+      dstRow[static_cast<std::size_t>(ox) * 4u + 1] = px[1];
+      dstRow[static_cast<std::size_t>(ox) * 4u + 2] = px[2];
+      dstRow[static_cast<std::size_t>(ox) * 4u + 3] = px[3];
+    }
+  }
+  return pix;
+}
+
+/// Builds a bottom-up pixmap for AIS_TexturedShape when the underlay axes are sheared (non-orthogonal): uses an
+/// axis-aligned face in the sketch plane and inverse-rotated sampling so the bitmap matches OCCT UV on the AABB.
+Handle(Image_PixMap) make_pixmap_bottom_up_warped(const uint8_t*  rgba,
+                                                  int             w,
+                                                  int             h,
+                                                  const gp_Vec2d& axis_u,
+                                                  const gp_Vec2d& axis_v,
+                                                  bool            key_white_transparent,
+                                                  bool            line_tint_enabled,
+                                                  uint8_t         tr,
+                                                  uint8_t         tg,
+                                                  uint8_t         tb)
 {
   const double hw = 0.5 * axis_u.Magnitude();
   const double hh = 0.5 * axis_v.Magnitude();
@@ -186,22 +228,20 @@ Handle(Image_PixMap) make_pixmap_bottom_up_rgba(const uint8_t* rgba,
   for (int rj = 0; rj < out_h; ++rj)
   {
     // Bottom row rj = 0 -> bottom of texture (small plane dv).
-    const double t_b = (static_cast<double>(rj) + 0.5) / static_cast<double>(out_h);
-    const double dv  = (2.0 * t_b - 1.0) * hy;
+    const double t_b    = (static_cast<double>(rj) + 0.5) / static_cast<double>(out_h);
+    const double dv     = (2.0 * t_b - 1.0) * hy;
     uint8_t*     dstRow = dst + static_cast<std::size_t>(rj) * rowBytes;
     for (int ox = 0; ox < out_w; ++ox)
     {
-      const double s01 = (static_cast<double>(ox) + 0.5) / static_cast<double>(out_w);
-      const double du  = (2.0 * s01 - 1.0) * hx;
+      const double s01   = (static_cast<double>(ox) + 0.5) / static_cast<double>(out_w);
+      const double du    = (2.0 * s01 - 1.0) * hx;
       // Inverse rotate from plane (du,dv) to image (u,v) offsets from quad center.
       const double img_u = du * c + dv * s;
       const double img_v = -du * s + dv * c;
 
       uint8_t px[4];
       if (std::abs(img_u) > hw + k_eps || std::abs(img_v) > hh + k_eps)
-      {
         px[0] = px[1] = px[2] = px[3] = 0;
-      }
       else
       {
         const double sx = (img_u + hw) / (2.0 * hw) * static_cast<double>(w - 1);
@@ -209,6 +249,7 @@ Handle(Image_PixMap) make_pixmap_bottom_up_rgba(const uint8_t* rgba,
         const double sy = (hh - img_v) / (2.0 * hh) * static_cast<double>(h - 1);
         sample_rgba_bilinear(rgba, w, h, sx, sy, px);
       }
+
       apply_key_and_tint(px[0], px[1], px[2], px[3], key_white_transparent, line_tint_enabled, tr, tg, tb);
       const Standard_Size o = static_cast<Standard_Size>(ox) * 4u;
       dstRow[o + 0]         = px[0];
@@ -237,8 +278,10 @@ bool Sketch_underlay::set_image_rgba(std::vector<uint8_t>&& rgba, int w, int h)
 {
   if (w <= 0 || h <= 0 || rgba.size() < static_cast<std::size_t>(w) * static_cast<std::size_t>(h) * 4u)
     return false;
+
   if (w > k_max_image_dim || h > k_max_image_dim)
     return false;
+
   if (rgba.size() > k_max_rgba_bytes)
     return false;
 
@@ -259,6 +302,32 @@ void Sketch_underlay::set_affine(const gp_Pnt2d& base, const gp_Vec2d& axis_u, c
   m_base   = base;
   m_axis_u = axis_u;
   m_axis_v = axis_v;
+}
+
+void Sketch_underlay::set_center_extents_rotation(const dvec2& center, const dvec2& half_extents, double rot_deg)
+{
+  if (!has_image())
+    return;
+
+  double half_w = half_extents.x;
+  double half_h = half_extents.y;
+
+  constexpr double k_min = 1e-9;
+  if (half_w < k_min)
+    half_w = k_min;
+  if (half_h < k_min)
+    half_h = k_min;
+
+  const double   rad = rot_deg * (std::numbers::pi / 180.0);
+  const double   c   = std::cos(rad);
+  const double   s   = std::sin(rad);
+  const gp_Vec2d axis_u(2.0 * half_w * c, 2.0 * half_w * s);
+  const gp_Vec2d axis_v(-2.0 * half_h * s, 2.0 * half_h * c);
+  const gp_Pnt2d base(
+      center.x - 0.5 * (axis_u.X() + axis_v.X()),
+      center.y - 0.5 * (axis_u.Y() + axis_v.Y()));
+
+  set_affine(base, axis_u, axis_v);
 }
 
 void Sketch_underlay::set_opacity(float opaque01)
@@ -310,55 +379,90 @@ void Sketch_underlay::build_ais_(const gp_Pln& pln, AIS_InteractiveContext& ctx)
   gp_Vec nudge(pln.Axis().Direction());
   nudge.Multiply(-10.0 * Precision::Confusion());
 
-  // Axis-aligned rectangle in sketch-plane coords matching the rotated image's bounding box.
-  // (Parallelogram geometry + default AIS_TexturedShape UV mapping would shear the bitmap instead of rotating it.)
-  const double hw    = 0.5 * m_axis_u.Magnitude();
-  const double hh    = 0.5 * m_axis_v.Magnitude();
-  const double theta = std::atan2(m_axis_u.Y(), m_axis_u.X());
-  const double c     = std::cos(theta);
-  const double s     = std::sin(theta);
-  const double hx    = std::max(std::abs(hw * c) + std::abs(hh * s), 1e-12);
-  const double hy    = std::max(std::abs(hw * s) + std::abs(hh * c), 1e-12);
-  const double cx    = m_base.X() + 0.5 * (m_axis_u.X() + m_axis_v.X());
-  const double cy    = m_base.Y() + 0.5 * (m_axis_u.Y() + m_axis_v.Y());
+  TopoDS_Face face;
 
-  const gp_Pnt2d c00(cx - hx, cy - hy);
-  const gp_Pnt2d c10(cx + hx, cy - hy);
-  const gp_Pnt2d c11(cx + hx, cy + hy);
-  const gp_Pnt2d c01(cx - hx, cy + hy);
-
-  const gp_Pnt p00 = to_3d(pln, c00).Translated(nudge);
-  const gp_Pnt p10 = to_3d(pln, c10).Translated(nudge);
-  const gp_Pnt p11 = to_3d(pln, c11).Translated(nudge);
-  const gp_Pnt p01 = to_3d(pln, c01).Translated(nudge);
-
-  BRepBuilderAPI_MakeWire wireMk;
-  wireMk.Add(BRepBuilderAPI_MakeEdge(p00, p10).Edge());
-  wireMk.Add(BRepBuilderAPI_MakeEdge(p10, p11).Edge());
-  wireMk.Add(BRepBuilderAPI_MakeEdge(p11, p01).Edge());
-  wireMk.Add(BRepBuilderAPI_MakeEdge(p01, p00).Edge());
-  if (!wireMk.IsDone())
+  const gp_Pnt2d bu2(m_base.X() + m_axis_u.X(), m_base.Y() + m_axis_u.Y());
+  const gp_Pnt2d bv2(m_base.X() + m_axis_v.X(), m_base.Y() + m_axis_v.Y());
+  const gp_Pnt   P0 = to_3d(pln, m_base).Translated(nudge);
+  const gp_Pnt   Pu = to_3d(pln, bu2).Translated(nudge);
+  const gp_Pnt   Pv = to_3d(pln, bv2).Translated(nudge);
+  gp_Vec         Du(P0, Pu);
+  const double   du_len = Du.Magnitude();
+  const double   dv_len = gp_Vec(P0, Pv).Magnitude();
+  if (du_len <= Precision::Confusion() || dv_len <= Precision::Confusion())
     return;
 
-  BRepBuilderAPI_MakeFace faceMk(wireMk.Wire(), Standard_True);
-  if (!faceMk.IsDone())
-    return;
+  const auto axes_orthogonal = [](const gp_Vec2d& au, const gp_Vec2d& av) -> bool
+  {
+    const double dot   = au.X() * av.X() + au.Y() * av.Y();
+    const double scale = au.Magnitude() * av.Magnitude();
+    if (scale < 1e-24)
+      return true;
+    return std::abs(dot) < 1e-9 * scale;
+  };
 
-  Handle(Image_PixMap) pix = make_pixmap_bottom_up_rgba(
-      m_rgba.data(),
-      m_w,
-      m_h,
-      m_axis_u,
-      m_axis_v,
-      m_key_white_transparent,
-      m_line_tint_enabled,
-      m_tint_r,
-      m_tint_g,
-      m_tint_b);
+  Handle(Image_PixMap) pix;
+
+  if (axes_orthogonal(m_axis_u, m_axis_v))
+  {
+    // Rotation + uniform scale: build a rectangular face in a plane whose U/V match bitmap axes so texture is not
+    // sheared (no inverse-resample pixmap needed).
+    const gp_Dir            Zpl = pln.Position().Direction();
+    const gp_Dir            Xu(Du);
+    const gp_Ax3            ax3(P0, Zpl, Xu);
+    const gp_Pln            local_pln(ax3);
+    BRepBuilderAPI_MakeFace faceMk(local_pln, 0.0, du_len, 0.0, dv_len);
+    if (!faceMk.IsDone())
+      return;
+    face = faceMk.Face();
+
+    pix = make_pixmap_bottom_up_linear(m_rgba.data(), m_w, m_h, m_key_white_transparent, m_line_tint_enabled,
+                                       m_tint_r, m_tint_g, m_tint_b);
+  }
+  else
+  {
+    // Sheared affine (e.g. after Y-from-edge calibration): axis-aligned bbox + inverse-rotated pixmap resample.
+    const double hw    = 0.5 * m_axis_u.Magnitude();
+    const double hh    = 0.5 * m_axis_v.Magnitude();
+    const double theta = std::atan2(m_axis_u.Y(), m_axis_u.X());
+    const double c     = std::cos(theta);
+    const double s     = std::sin(theta);
+    const double hx    = std::max(std::abs(hw * c) + std::abs(hh * s), 1e-12);
+    const double hy    = std::max(std::abs(hw * s) + std::abs(hh * c), 1e-12);
+    const double cx    = m_base.X() + 0.5 * (m_axis_u.X() + m_axis_v.X());
+    const double cy    = m_base.Y() + 0.5 * (m_axis_u.Y() + m_axis_v.Y());
+
+    const gp_Pnt2d c00(cx - hx, cy - hy);
+    const gp_Pnt2d c10(cx + hx, cy - hy);
+    const gp_Pnt2d c11(cx + hx, cy + hy);
+    const gp_Pnt2d c01(cx - hx, cy + hy);
+
+    const gp_Pnt p00 = to_3d(pln, c00).Translated(nudge);
+    const gp_Pnt p10 = to_3d(pln, c10).Translated(nudge);
+    const gp_Pnt p11 = to_3d(pln, c11).Translated(nudge);
+    const gp_Pnt p01 = to_3d(pln, c01).Translated(nudge);
+
+    BRepBuilderAPI_MakeWire wireMk;
+    wireMk.Add(BRepBuilderAPI_MakeEdge(p00, p10).Edge());
+    wireMk.Add(BRepBuilderAPI_MakeEdge(p10, p11).Edge());
+    wireMk.Add(BRepBuilderAPI_MakeEdge(p11, p01).Edge());
+    wireMk.Add(BRepBuilderAPI_MakeEdge(p01, p00).Edge());
+    if (!wireMk.IsDone())
+      return;
+
+    BRepBuilderAPI_MakeFace faceMk(wireMk.Wire(), Standard_True);
+    if (!faceMk.IsDone())
+      return;
+    face = faceMk.Face();
+
+    pix = make_pixmap_bottom_up_warped(m_rgba.data(), m_w, m_h, m_axis_u, m_axis_v, m_key_white_transparent,
+                                       m_line_tint_enabled, m_tint_r, m_tint_g, m_tint_b);
+  }
+
   if (pix.IsNull())
     return;
 
-  m_ais = new AIS_TexturedShape(faceMk.Face());
+  m_ais = new AIS_TexturedShape(face);
   m_ais->SetTexturePixMap(pix);
   m_ais->SetTextureMapOn();
   m_ais->DisableTextureModulate();
@@ -402,12 +506,21 @@ nlohmann::json Sketch_underlay::to_json() const
   json j;
   if (!has_image())
     return j;
-  j["rgba_b64"] = base64_encode(m_rgba.data(), m_rgba.size());
-  j["w"]        = m_w;
-  j["h"]        = m_h;
-  j["base"]     = json::object({{"x", m_base.X()}, {"y", m_base.Y()}});
-  j["axis_u"]   = json::object({{"x", m_axis_u.X()}, {"y", m_axis_u.Y()}});
-  j["axis_v"]   = json::object({{"x", m_axis_v.X()}, {"y", m_axis_v.Y()}});
+  j["rgba_b64"]              = base64_encode(m_rgba.data(), m_rgba.size());
+  j["w"]                     = m_w;
+  j["h"]                     = m_h;
+  j["base"]                  = json::object({
+      {"x", m_base.X()},
+      {"y", m_base.Y()}
+  });
+  j["axis_u"]                = json::object({
+      {"x", m_axis_u.X()},
+      {"y", m_axis_u.Y()}
+  });
+  j["axis_v"]                = json::object({
+      {"x", m_axis_v.X()},
+      {"y", m_axis_v.Y()}
+  });
   j["opacity"]               = m_opacity;
   j["visible"]               = m_visible;
   j["key_white_transparent"] = m_key_white_transparent;
@@ -445,10 +558,10 @@ bool Sketch_underlay::from_json(const nlohmann::json& j)
   if (j.contains("axis_v"))
     m_axis_v = gp_Vec2d(j["axis_v"].at("x").get<double>(), j["axis_v"].at("y").get<double>());
 
-  m_opacity                 = j.value("opacity", 0.88f);
-  m_visible                 = j.value("visible", true);
-  m_key_white_transparent   = j.value("key_white_transparent", true);
-  m_line_tint_enabled       = j.value("line_tint_enabled", true);
+  m_opacity               = j.value("opacity", 0.88f);
+  m_visible               = j.value("visible", true);
+  m_key_white_transparent = j.value("key_white_transparent", true);
+  m_line_tint_enabled     = j.value("line_tint_enabled", true);
   if (j.contains("line_tint_rgb") && j["line_tint_rgb"].is_array() && j["line_tint_rgb"].size() >= 3)
   {
     m_tint_r = static_cast<uint8_t>(j["line_tint_rgb"][0].get<int>());
