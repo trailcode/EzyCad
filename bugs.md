@@ -7,6 +7,7 @@
 * Create sketch from face needs a temporary face select mode. When mode is changed it should go back to the previous mode. Other tools like chamfer need to do this also.
 * Add sketch node should have the ability to allow the user to specify placement distance from another node.
 * Ability to show/hide sketch nodes
+* Underlay: edge calibration can introduce shear (non-orthogonal bitmap axes). The transform panel currently assumes center + half extents + rotation (orthogonal). Need a full six-parameter affine in the UI so users can adjust position, scale, rotation, and shear without losing calibration.
 
 * For selection mode, not all of the current modes are useful.
 * Scale mode broken.
