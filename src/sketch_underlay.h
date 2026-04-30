@@ -42,55 +42,24 @@ class Sketch_underlay
   /// When true (default), bright pixels (white paper) become transparent in the texture; dark linework stays opaque.
   void set_key_white_transparent(bool on);
 
-  [[nodiscard]] bool key_white_transparent() const
-  {
-    return m_key_white_transparent;
-  }
-
   void set_line_tint_enabled(bool on);
   void set_line_tint_rgb(uint8_t r, uint8_t g, uint8_t b);
 
-  [[nodiscard]] bool line_tint_enabled() const
-  {
-    return m_line_tint_enabled;
-  }
-
   void line_tint_rgb(uint8_t& r, uint8_t& g, uint8_t& b) const;
 
-  [[nodiscard]] float opacity() const
-  {
-    return m_opacity;
-  }
+  // clang-format off
 
-  [[nodiscard]] bool visible() const
-  {
-    return m_visible;
-  }
+  [[nodiscard]] bool     key_white_transparent() const { return m_key_white_transparent; }
+  [[nodiscard]] bool     line_tint_enabled()     const { return m_line_tint_enabled; }
+  [[nodiscard]] float    opacity()               const { return m_opacity; }
+  [[nodiscard]] bool     visible()               const { return m_visible; }
+  [[nodiscard]] gp_Pnt2d base()                  const { return m_base; }
+  [[nodiscard]] gp_Vec2d axis_u()                const { return m_axis_u; }
+  [[nodiscard]] gp_Vec2d axis_v()                const { return m_axis_v; }
+  [[nodiscard]] int      image_w()               const { return m_w; }
+  [[nodiscard]] int      image_h()               const { return m_h; }
 
-  [[nodiscard]] gp_Pnt2d base() const
-  {
-    return m_base;
-  }
-
-  [[nodiscard]] gp_Vec2d axis_u() const
-  {
-    return m_axis_u;
-  }
-
-  [[nodiscard]] gp_Vec2d axis_v() const
-  {
-    return m_axis_v;
-  }
-
-  [[nodiscard]] int image_w() const
-  {
-    return m_w;
-  }
-
-  [[nodiscard]] int image_h() const
-  {
-    return m_h;
-  }
+  // clang-format on
 
   void rebuild_and_display(const gp_Pln& pln, AIS_InteractiveContext& ctx);
   void erase(AIS_InteractiveContext& ctx);

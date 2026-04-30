@@ -8,6 +8,25 @@
 cmake_minimum_required(VERSION 3.14.0 FATAL_ERROR)
 project(EzyCad)
 
+# Markdown / license copied to res/doc/ next to the executable (offline help); Emscripten MEMFS under /res/doc/.
+set(EZYCAD_RES_DOC_FILES
+    usage.md
+    usage-settings.md
+    usage-sketch.md
+    scripting.md
+    usage-occt-view.md
+    README.md
+    CHANGELOG.md
+    ezycad_code_style.md
+    bugs.md
+    LICENSE
+)
+
+set(EZYCAD_EM_DOC_PRELOAD_FLAGS "")
+foreach(_ezd IN LISTS EZYCAD_RES_DOC_FILES)
+  string(APPEND EZYCAD_EM_DOC_PRELOAD_FLAGS " --preload-file ${CMAKE_SOURCE_DIR}/${_ezd}@/res/doc/${_ezd}")
+endforeach()
+
 # CMP0167: Use legacy FindBoost module (avoids "FindBoost module is removed" warning in CMake 3.30+)
 if(POLICY CMP0167)
   cmake_policy(SET CMP0167 OLD)
@@ -291,6 +310,7 @@ if(CMAKE_CXX_COMPILER_ID STREQUAL "Emscripten")
             --preload-file ${CMAKE_SOURCE_DIR}/res/default.ezy@/res/default.ezy \
             --preload-file ${CMAKE_SOURCE_DIR}/res/examples@/res/examples \
             --preload-file ${CMAKE_SOURCE_DIR}/res/scripts/lua@/res/scripts/lua \
+            ${EZYCAD_EM_DOC_PRELOAD_FLAGS} \
             --shell-file ${CMAKE_SOURCE_DIR}/web/EzyCad.html"
         )
     else()
@@ -324,6 +344,7 @@ if(CMAKE_CXX_COMPILER_ID STREQUAL "Emscripten")
             --preload-file ${CMAKE_SOURCE_DIR}/res/default.ezy@/res/default.ezy \
             --preload-file ${CMAKE_SOURCE_DIR}/res/examples@/res/examples \
             --preload-file ${CMAKE_SOURCE_DIR}/res/scripts/lua@/res/scripts/lua \
+            ${EZYCAD_EM_DOC_PRELOAD_FLAGS} \
             --shell-file ${CMAKE_SOURCE_DIR}/web/EzyCad.html"
         )
     endif()
@@ -471,6 +492,20 @@ else()
         )
       endforeach()
     endif()
+    add_custom_command(
+        TARGET ${PROJECT_NAME} POST_BUILD
+        COMMAND ${CMAKE_COMMAND} -E make_directory $<TARGET_FILE_DIR:${PROJECT_NAME}>/res/doc
+        COMMENT "Creating res/doc for native (packaged markdown)"
+    )
+    foreach(_doc IN LISTS EZYCAD_RES_DOC_FILES)
+      add_custom_command(
+          TARGET ${PROJECT_NAME} POST_BUILD
+          COMMAND ${CMAKE_COMMAND} -E copy_if_different
+              ${CMAKE_SOURCE_DIR}/${_doc}
+              $<TARGET_FILE_DIR:${PROJECT_NAME}>/res/doc/${_doc}
+          COMMENT "Copying res/doc/${_doc} for native"
+      )
+    endforeach()
 
     target_link_libraries(${PROJECT_NAME} ${PROJECT_NAME}_lib)
     target_link_libraries(${PROJECT_NAME} ${BINARY_DIR}/thirdParty/unofficial-flayan-glew.${GLEW_VERSION}/build/native/lib/x64/dynamic/glew32.lib)

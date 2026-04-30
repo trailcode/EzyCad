@@ -14,9 +14,6 @@
 namespace
 {
 const char* const k_settings_version = "1";
-/// usage.md on GitHub, ### View roll (same host as Help -> Usage Guide).
-const char* const k_usage_view_roll_url =
-    "https://github.com/trailcode/EzyCad/blob/main/usage.md#view-roll";
 
 /// `occt_view` JSON object: view background gradient and grid (shared with `save_occt_view_settings` / `occt_view_settings_json`).
 nlohmann::json build_occt_view_settings_object(const Occt_view& view)
@@ -345,9 +342,9 @@ void GUI::settings_()
 
       ImGui::SameLine(0.0f, ImGui::GetStyle().ItemInnerSpacing.x);
       if (ImGui::SmallButton("?##view_roll_help"))
-        open_url_(k_usage_view_roll_url);
+        open_packaged_doc_or_url_("usage.md", "view-roll", "https://github.com/trailcode/EzyCad/blob/main/usage.md#view-roll");
       if (ImGui::IsItemHovered())
-        ImGui::SetTooltip("Help: view roll (opens usage.md in your browser).");
+        ImGui::SetTooltip("Help: view roll (packaged res/doc/usage.md when available, else browser).");
 
       ImGui::EndTable();
     }
