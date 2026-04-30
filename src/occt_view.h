@@ -173,6 +173,9 @@ class Occt_view : protected AIS_ViewController
   bool get_camera(gp_Pnt& out_eye, gp_Pnt& out_center, gp_Dir& out_up) const;
   void set_camera(const gp_Pnt& eye, const gp_Pnt& center, const gp_Dir& up);
 
+  /// Roll the view about screen Z (view depth axis) by \a degrees, via \c V3d_View::Turn(\c V3d_Z, ...).
+  void roll_view_z_deg(double degrees);
+
   GUI&                    gui();
   AIS_InteractiveContext& ctx();
 

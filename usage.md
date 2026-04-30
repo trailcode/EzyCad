@@ -9,11 +9,12 @@
 6.  [Modeling Tools](#modeling-tools)
 7.  [Keyboard Shortcuts](#keyboard-shortcuts)
 8.  [View Controls](#view-controls)
-9.  [Tips and Tricks](#tips-and-tricks)
-10. [Scripting](#scripting-lua-and-python)
-11. [Support](#support)
-12. [Tool Icons](#tool-icons)
-13. [Settings](usage-settings.md)
+9.  [3D viewer (`Occt_view` / Open CASCADE)](usage-occt-view.md)
+10. [Tips and Tricks](#tips-and-tricks)
+11. [Scripting](#scripting-lua-and-python)
+12. [Support](#support)
+13. [Tool Icons](#tool-icons)
+14. [Settings](usage-settings.md)
 
 ## Introduction
 
@@ -515,6 +516,15 @@ The polar duplicate tool allows you to create multiple copies of selected shapes
 | <kbd>E</kbd> | Extrude mode |
 | <kbd>D</kbd> | Delete selected |
 
+### View navigation
+
+| | |
+| ---: | --- |
+| <kbd>Shift</kbd>+<kbd>NumPad 4</kbd> | [Roll the 3D view](#view-roll) one way (step in **Settings -> 3D view navigation**; default **45** degrees). |
+| <kbd>Shift</kbd>+<kbd>NumPad 6</kbd> | [Roll the 3D view](#view-roll) the other way. |
+
+Same idea as Blender **View Roll**. Plain **<kbd>NumPad 4</kbd>** / **<kbd>6</kbd>** without **Shift** are not view roll (in **Normal** mode, number keys set [selection filter](#shape-selection-filter-normal-mode-only)).
+
 ### Shape selection filter (Normal mode only)
 
 In **Normal** mode, number keys set the **Selection Mode** filter for picking 3D shapes (same control as **Options -> Selection Mode**). Main keyboard **<kbd>1</kbd>-<kbd>9</kbd>** and keypad **<kbd>1</kbd>-<kbd>9</kbd>** are supported. Order matches Open CASCADE `TopAbs_ShapeEnum` (see `utl_occt.h` / combo labels):
@@ -548,6 +558,14 @@ Open or close the **Lua** or **Python** consoles from **View -> Lua Console** or
 | **Middle drag** | Pan view |
 | **Right drag** | Zoom |
 | **Scroll Wheel** | Zoom in/out |
+
+### View roll
+
+Hold **Shift** and press **NumPad 4** or **NumPad 6** to rotate the view around the viewing axis (the axis pointing out of the screen), in fixed degree steps. The default step is **45** degrees per key press.
+
+To change the step, open **View -> Settings**, expand **3D view navigation**, and adjust **View roll step**. The value is saved in your settings file as **`gui.view_roll_step_deg`** (see [Settings file reference](usage-settings.md#settings-file-reference)).
+
+Implementation note: the application calls Open CASCADE `V3d_View::Turn` with `V3d_Z` for this rotation. More detail: **[3D viewer (`Occt_view`)](usage-occt-view.md)**.
 
 ### View Options
 
@@ -585,6 +603,7 @@ Open or close the **Lua** or **Python** consoles from **View -> Lua Console** or
 ### Documentation
 - [This usage guide](#ezycad-usage-guide)
 - [Settings](usage-settings.md) (Settings pane, View menu, JSON settings file, startup project)
+- [3D viewer (`Occt_view` / Open CASCADE)](usage-occt-view.md) (viewer stack, `Occt_view` role, settings keys)
 - [2D Sketching](usage-sketch.md) (including [add node](usage-sketch.md#add-node-tool))
 - [Scripting (Lua / Python)](scripting.md)
 - Hosted docs and video tutorials are not published yet; this repository's markdown guides are the reference for now.

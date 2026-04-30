@@ -13,6 +13,7 @@
     "show_lua_console": true,
     "show_options": true,
     "show_python_console": true,
+    "view_roll_step_deg": 45.0,
     "show_settings_dialog": true,
     "show_shape_list": true,
     "show_sketch_list": true,

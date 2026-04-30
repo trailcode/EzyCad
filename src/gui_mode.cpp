@@ -101,6 +101,14 @@ void GUI::on_key(int key, int scancode, int action, int mods)
   if (action != GLFW_PRESS)
     return;
 
+  // Blender-style view roll: Shift + NumPad 4 (CCW) / NumPad 6 (CW) in model-dependent sense.
+  if ((mods & GLFW_MOD_SHIFT) != 0 && (key == GLFW_KEY_KP_4 || key == GLFW_KEY_KP_6))
+  {
+    const double step = m_view_roll_step_deg;
+    m_view->roll_view_z_deg(key == GLFW_KEY_KP_4 ? -step : step);
+    return;
+  }
+
   const ScreenCoords screen_coords(dvec2(ImGui::GetIO().MousePos.x, ImGui::GetIO().MousePos.y));
 
   bool ctrl_pressed = (mods & GLFW_MOD_CONTROL) != 0;

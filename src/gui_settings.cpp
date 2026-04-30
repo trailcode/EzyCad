@@ -4,6 +4,7 @@
 #include <nlohmann/json.hpp>
 #include <sstream>
 
+#include "dbg.h"
 #include "gui.h"
 #include "imgui.h"
 #include "occt_view.h"
@@ -13,6 +14,9 @@
 namespace
 {
 const char* const k_settings_version = "1";
+/// usage.md on GitHub, ### View roll (same host as Help -> Usage Guide).
+const char* const k_usage_view_roll_url =
+    "https://github.com/trailcode/EzyCad/blob/main/usage.md#view-roll";
 
 /// `occt_view` JSON object: view background gradient and grid (shared with `save_occt_view_settings` / `occt_view_settings_json`).
 nlohmann::json build_occt_view_settings_object(const Occt_view& view)
@@ -40,6 +44,7 @@ std::string GUI::occt_view_settings_json() const
   j["gui"]       = {
       {   "edge_dim_label_h",    m_edge_dim_label_h},
       {"edge_dim_line_width", m_edge_dim_line_width},
+      {  "view_roll_step_deg",    m_view_roll_step_deg},
   };
   return j.dump(2);
 }
@@ -77,6 +82,7 @@ void GUI::save_occt_view_settings()
       {     "imgui_rounding_general",                                       m_imgui_rounding_general},
       {      "imgui_rounding_scroll",                                        m_imgui_rounding_scroll},
       {        "imgui_rounding_tabs",                                          m_imgui_rounding_tabs},
+      {        "view_roll_step_deg",                                        m_view_roll_step_deg},
 #ifndef NDEBUG
       {                   "show_dbg",                                                     m_show_dbg},
 #endif
@@ -197,6 +203,15 @@ void GUI::parse_gui_panes_settings_(const std::string& content)
     m_imgui_rounding_scroll  = round_from_json("imgui_rounding_scroll", fb_scroll);
     m_imgui_rounding_tabs    = round_from_json("imgui_rounding_tabs", fb_tabs);
 
+    m_view_roll_step_deg = k_gui_view_roll_step_deg_default;
+    if (g.contains("view_roll_step_deg") && g["view_roll_step_deg"].is_number())
+    {
+      const double v = g["view_roll_step_deg"].get<double>();
+      EZY_ASSERT_MSG(v >= k_gui_view_roll_step_deg_min && v <= k_gui_view_roll_step_deg_max,
+                     "settings gui.view_roll_step_deg out of range [0.1, 180]");
+      m_view_roll_step_deg = v;
+    }
+
     if (g.contains("underlay_highlight_color") && g["underlay_highlight_color"].is_array() && g["underlay_highlight_color"].size() >= 3)
     {
       const json& a = g["underlay_highlight_color"];
@@ -303,6 +318,43 @@ void GUI::settings_()
 
   if (ImGui::Checkbox("Dark mode", &m_dark_mode))
     save_occt_view_settings();
+
+  if (ImGui::CollapsingHeader("3D view navigation", ImGuiTreeNodeFlags_DefaultOpen))
+  {
+    if (ImGui::BeginTable("settings_view_nav", 2, ImGuiTableFlags_SizingStretchProp))
+    {
+      ImGui::TableSetupColumn("label", ImGuiTableColumnFlags_WidthFixed, k_label_col_w);
+      ImGui::TableSetupColumn("control", ImGuiTableColumnFlags_WidthStretch);
+
+      ImGui::TableNextRow();
+      ImGui::TableSetColumnIndex(0);
+      ImGui::AlignTextToFramePadding();
+      ImGui::TextUnformatted("View roll step");
+      ImGui::TableSetColumnIndex(1);
+      // SliderScalar(ImGuiDataType_Double): drag slider, or Ctrl+click for precise keyboard input (standard ImGui).
+      if (ImGui::SliderScalar("##view_roll_step", ImGuiDataType_Double, &m_view_roll_step_deg,
+                              &k_gui_view_roll_step_deg_min, &k_gui_view_roll_step_deg_max, "%.2f deg",
+                              ImGuiSliderFlags_AlwaysClamp | ImGuiSliderFlags_ClampOnInput))
+        save_occt_view_settings();
+      m_view_roll_step_deg =
+          std::clamp(m_view_roll_step_deg, k_gui_view_roll_step_deg_min, k_gui_view_roll_step_deg_max);
+
+      if (ImGui::IsItemHovered())
+        ImGui::SetTooltip(
+            "Degrees per key press (Shift+NumPad 4 / Shift+NumPad 6). Ctrl+click the slider to type a value.");
+
+      ImGui::SameLine(0.0f, ImGui::GetStyle().ItemInnerSpacing.x);
+      if (ImGui::SmallButton("?##view_roll_help"))
+        open_url_(k_usage_view_roll_url);
+      if (ImGui::IsItemHovered())
+        ImGui::SetTooltip("Help: view roll (opens usage.md in your browser).");
+
+      ImGui::EndTable();
+    }
+
+    ImGui::TextWrapped(
+        "Blender-style view roll: hold Shift and press NumPad 4 or NumPad 6 to roll the view around the screen Z axis.");
+  }
 
   if (ImGui::CollapsingHeader("UI corner rounding"))
   {

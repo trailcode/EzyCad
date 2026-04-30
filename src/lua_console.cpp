@@ -350,7 +350,7 @@ int l_ezy_help(lua_State* L)
       "  ezy.get_mode()                - return current mode name\n"
       "  ezy.set_mode(name)            - set mode by name\n"
       "  ezy.save_occt_view_settings() - write settings JSON (incl. view colors)\n"
-      "  ezy.occt_view_settings_json() - JSON: occt_view + gui edge_dim_label_h / edge_dim_line_width\n"
+      "  ezy.occt_view_settings_json() - JSON: occt_view + gui edge_dim_*, view_roll_step_deg\n"
       "  ezy.help()                    - print this help\n"
       "view:\n"
       "  view.sketch_count()           - number of sketches\n"

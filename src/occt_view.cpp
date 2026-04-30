@@ -24,6 +24,7 @@
 #include <TopExp_Explorer.hxx>
 #include <TopoDS.hxx>
 #include <TopoDS_Compound.hxx>
+#include <V3d_TypeOfAxe.hxx>
 #include <V3d_View.hxx>
 #include <WNT_WClass.hxx>
 #include <WNT_Window.hxx>
@@ -283,6 +284,15 @@ void Occt_view::init_viewer()
   // m_view->SetTextureEnv(env_map);
 
   m_default_material = Graphic3d_MaterialAspect(Graphic3d_NOM_CHROME);
+}
+
+void Occt_view::roll_view_z_deg(double degrees)
+{
+  if (m_view.IsNull())
+    return;
+
+  m_view->Turn(V3d_Z, to_radians(degrees), Standard_True);
+  m_view->Redraw();
 }
 
 void Occt_view::init_default()
