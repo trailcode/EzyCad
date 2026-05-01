@@ -342,9 +342,9 @@ void GUI::settings_()
 
       ImGui::SameLine(0.0f, ImGui::GetStyle().ItemInnerSpacing.x);
       if (ImGui::SmallButton("?##view_roll_help"))
-        open_packaged_doc_or_url_("usage.md", "view-roll", "https://github.com/trailcode/EzyCad/blob/main/usage.md#view-roll");
+        open_url_("https://github.com/trailcode/EzyCad/blob/main/usage.md#view-roll");
       if (ImGui::IsItemHovered())
-        ImGui::SetTooltip("Help: view roll (packaged res/doc/usage.md when available, else browser).");
+        ImGui::SetTooltip("Help: view roll (opens usage.md in your browser).");
 
       ImGui::EndTable();
     }

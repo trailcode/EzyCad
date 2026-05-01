@@ -1,7 +1,5 @@
 #include "gui.h"
 
-#include "paths.h"
-
 #include <algorithm>
 #include <filesystem>
 #include <array>
@@ -430,7 +428,7 @@ void GUI::menu_bar_()
       m_open_about_popup = true;
 
     if (ImGui::MenuItem("Usage Guide"))
-      open_packaged_doc_or_url_("usage.md", nullptr, "https://github.com/trailcode/EzyCad/blob/main/usage.md");
+      open_url_("https://github.com/trailcode/EzyCad/blob/main/usage.md");
 
     ImGui::EndMenu();
   }
@@ -511,55 +509,6 @@ void GUI::update_window_title_()
 
   m_cached_window_title = title;
   glfwSetWindowTitle(m_glfw_window, m_cached_window_title.c_str());
-}
-
-namespace
-{
-
-void open_local_file_default_app_(const std::filesystem::path& p)
-{
-#ifndef __EMSCRIPTEN__
-  std::error_code ec;
-  if (!std::filesystem::exists(p, ec))
-    return;
-
-#  ifdef _WIN32
-  std::string cmd = std::string("start \"\" \"") + p.string() + "\"";
-#  elif defined(__APPLE__)
-  std::string cmd = std::string("open \"") + p.string() + "\"";
-#  else
-  std::string cmd = std::string("xdg-open \"") + p.string() + "\"";
-#  endif
-  std::system(cmd.c_str());
-#else
-  (void) p;
-#endif
-}
-
-}  // namespace
-
-void GUI::open_packaged_doc_or_url_(const char* filename, const char* uri_fragment, const char* https_fallback)
-{
-#ifdef __EMSCRIPTEN__
-  (void) https_fallback;
-  std::string rel = std::string("res/doc/") + (filename ? filename : "");
-  if (uri_fragment && *uri_fragment)
-    rel += std::string("#") + uri_fragment;
-  EM_ASM({ window.open(new URL(UTF8ToString($0), window.location.href).href, '_blank'); }, rel.c_str());
-#else
-  const auto exe_dir = ezy::application_executable_directory();
-  if (exe_dir)
-  {
-    const std::filesystem::path p = *exe_dir / "res" / "doc" / filename;
-    std::error_code               ec;
-    if (std::filesystem::exists(p, ec))
-    {
-      open_local_file_default_app_(p);
-      return;
-    }
-  }
-  open_url_(https_fallback);
-#endif
 }
 
 void GUI::open_url_(const char* url)

@@ -228,9 +228,6 @@ class GUI
   void                      persist_last_opened_project_path_(const std::string& path);
   std::string               serialized_project_json_() const;
   void                      open_url_(const char* url);
-  /// Prefer \c res/doc/\a filename next to the executable (offline); else open \a https_fallback in a browser.
-  void                      open_packaged_doc_or_url_(const char* filename, const char* uri_fragment,
-                                                       const char* https_fallback);
   void                      update_window_title_();
   [[nodiscard]] std::string project_title_segment_() const;
   /// Parses a float from manual dist/angle ImGui text fields (trimmed, full-string match).

@@ -9,7 +9,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
-- **Offline documentation:** the build copies Markdown guides (`usage.md`, `usage-settings.md`, etc.) into **`res/doc/`** next to the executable. **Help -> Usage Guide** and the view-roll **?** help control open the packaged file when present; otherwise they fall back to GitHub in the browser.
 - **View roll:** **Shift+NumPad 4** and **Shift+NumPad 6** roll the 3D view (Blender-style). **Settings** has **View roll step** (degrees per key press; default 45, stored as `gui.view_roll_step_deg`).
 - Help > About: in-app dialog with the app version, a short product description, and a link to the GitHub repository (replaces opening the README in the browser from that menu item).
 - **Sketch length dimensions (Dimension tool):** dimensions are stored as an unordered pair of sketch nodes (not attached to a single edge). They can be selected in sketch mode and removed with **Delete**.
