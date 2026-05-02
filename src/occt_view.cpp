@@ -295,6 +295,64 @@ void Occt_view::roll_view_z_deg(double degrees)
   m_view->Redraw();
 }
 
+void Occt_view::snap_view_to_nearest_standard_axis()
+{
+  if (is_headless() || m_view.IsNull())
+    return;
+
+  gp_Pnt eye;
+  gp_Pnt center;
+  gp_Dir up_unused;
+  if (!get_camera(eye, center, up_unused))
+    return;
+
+  gp_Vec       to_center(eye, center);
+  const double dist = to_center.Magnitude();
+  if (dist <= Precision::Confusion())
+    return;
+
+  gp_Dir fwd(to_center);
+
+  static const gp_Dir k_axes[6] = {
+      gp_Dir(1, 0, 0),
+      gp_Dir(-1, 0, 0),
+      gp_Dir(0, 1, 0),
+      gp_Dir(0, -1, 0),
+      gp_Dir(0, 0, 1),
+      gp_Dir(0, 0, -1),
+  };
+
+  int    best_i   = 0;
+  double best_dot = -2.0;
+  for (int i = 0; i < 6; ++i)
+  {
+    const double d = fwd.X() * k_axes[i].X() + fwd.Y() * k_axes[i].Y() + fwd.Z() * k_axes[i].Z();
+    if (d > best_dot)
+    {
+      best_dot = d;
+      best_i   = i;
+    }
+  }
+
+  const gp_Dir f = k_axes[best_i];
+
+  gp_Dir new_up;
+  {
+    const double ax = std::abs(f.X());
+    const double ay = std::abs(f.Y());
+    const double az = std::abs(f.Z());
+    if (az >= ax && az >= ay)
+      new_up = gp_Dir(0, 1, 0);
+    else
+      new_up = gp_Dir(0, 0, 1);
+  }
+
+  gp_Vec offset(f);
+  offset.Multiply(-dist);
+  const gp_Pnt new_eye = center.Translated(offset);
+  set_camera(new_eye, center, new_up);
+}
+
 void Occt_view::init_default()
 {
   create_default_sketch_();

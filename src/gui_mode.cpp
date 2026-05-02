@@ -109,6 +109,13 @@ void GUI::on_key(int key, int scancode, int action, int mods)
     return;
   }
 
+  // Nearest world-axis orthographic view (roll zero). Routes before Normal-mode keypad selection filters.
+  if (key == GLFW_KEY_KP_5 && (mods & (GLFW_MOD_SHIFT | GLFW_MOD_CONTROL | GLFW_MOD_ALT)) == 0)
+  {
+    m_view->snap_view_to_nearest_standard_axis();
+    return;
+  }
+
   const ScreenCoords screen_coords(dvec2(ImGui::GetIO().MousePos.x, ImGui::GetIO().MousePos.y));
 
   bool ctrl_pressed = (mods & GLFW_MOD_CONTROL) != 0;

@@ -28,7 +28,7 @@
 #include "occt_view.h"
 #include "python_console.h"
 #include "sketch.h"
-#include "version.h"
+#include "utl.h"
 
 // Must be here to prevent compiler warning
 #include <GLFW/glfw3.h>
@@ -440,41 +440,39 @@ void GUI::about_dialog_()
 {
   if (m_open_about_popup)
   {
-    ImGui::SetNextWindowSize(ImVec2(520.0f, 0.0f), ImGuiCond_Appearing);
+    m_about_popup_open = true;
+    ImGui::SetNextWindowSize(ImVec2(520.0f, 520.0f), ImGuiCond_Appearing);
     ImGui::OpenPopup("About");
     m_open_about_popup = false;
   }
 
-  if (!ImGui::BeginPopupModal("About", nullptr, ImGuiWindowFlags_AlwaysAutoResize))
+  if (!ImGui::BeginPopupModal("About", &m_about_popup_open, ImGuiWindowFlags_None))
     return;
 
-  char title_line[96];
-  std::snprintf(title_line, sizeof(title_line), "EazyCad %s", EZYCAD_VERSION_STRING);
-  ImGui::TextUnformatted(title_line);
-  ImGui::Spacing();
+  ensure_about_assets_();
 
-  ImGui::TextWrapped(
-      "EzyCad (Easy CAD) is a CAD application for hobbyist machinists to design and edit 2D and 3D models for "
-      "machining projects. It supports creating precise parts with tools for sketching, extruding, and applying "
-      "geometric operations, using OpenGL, ImGui, and Open CASCADE Technology (OCCT). Export models to formats "
-      "like STEP or STL for CNC machines or 3D printers.");
-  ImGui::Spacing();
-
-  const char* k_repo = "https://github.com/trailcode/EzyCad";
-  ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(0.26f, 0.59f, 0.98f, 1.00f));
-  ImGui::TextWrapped("%s", k_repo);
-  ImGui::PopStyleColor();
-  if (ImGui::IsItemHovered())
+  ImFont* font = ImGui::GetFont();
+  ImGui::MarkdownConfig md;
+  md.linkCallback    = about_markdown_link_cb_;
+  md.imageCallback   = about_markdown_image_cb_;
+  md.tooltipCallback = ImGui::defaultMarkdownTooltipCallback;
+  md.linkIcon        = "";
+  md.headingFormats[0] = {font, true};
+  md.headingFormats[1] = {font, true};
+  md.headingFormats[2] = {font, false};
+#ifdef IMGUI_HAS_TEXTURES
   {
-    ImGui::SetTooltip("Open in browser");
-    ImGui::SetMouseCursor(ImGuiMouseCursor_Hand);
+    float const fs = ImGui::GetFontSize();
+    md.headingFormats[0].fontSize = fs * 1.15f;
+    md.headingFormats[1].fontSize = fs * 1.05f;
+    md.headingFormats[2].fontSize = fs;
   }
-  if (ImGui::IsItemClicked())
-    open_url_(k_repo);
+#endif
+  md.userData = this;
 
-  ImGui::Spacing();
-  if (ImGui::Button("Close"))
-    ImGui::CloseCurrentPopup();
+  ImGui::BeginChild("AboutMd", ImVec2(0.0f, 0.0f), true, ImGuiWindowFlags_HorizontalScrollbar);
+  ImGui::Markdown(m_about_markdown.c_str(), m_about_markdown.size(), md);
+  ImGui::EndChild();
 
   ImGui::EndPopup();
 }
@@ -511,12 +509,12 @@ void GUI::update_window_title_()
   glfwSetWindowTitle(m_glfw_window, m_cached_window_title.c_str());
 }
 
-void GUI::open_url_(const char* url)
+void GUI::open_url_(const std::string& url)
 {
 #ifdef __EMSCRIPTEN__
   // For Emscripten, use JavaScript's window.open()
   // Use EM_ASM for safer execution
-  EM_ASM_({ window.open(UTF8ToString($0), '_blank'); }, url);
+  EM_ASM_({ window.open(UTF8ToString($0), '_blank'); }, url.c_str());
 #else
   // For native builds, use platform-specific system commands
   std::string cmd;
@@ -540,6 +538,100 @@ void GUI::open_url_(const char* url)
 #endif
   system(cmd.c_str());
 #endif
+}
+
+void GUI::ensure_about_assets_()
+{
+  if (m_about_assets_loaded)
+    return;
+
+  m_about_assets_loaded = true;
+
+  const char* md_paths[] = {
+#ifdef __EMSCRIPTEN__
+      "/res/about.md",
+#endif
+      "res/about.md",
+  };
+
+  for (const char* p : md_paths)
+  {
+    std::ifstream f(p);
+    if (!f)
+      continue;
+
+    m_about_markdown.assign(std::istreambuf_iterator<char>(f), std::istreambuf_iterator<char>());
+    break;
+  }
+  if (m_about_markdown.empty())
+    m_about_markdown = "Could not load res/about.md.\n";
+
+  const char* png_paths[] = {
+#ifdef __EMSCRIPTEN__
+      "/res/AI-gen-splashscreen_05_01_2026_512.png",
+#endif
+      "res/AI-gen-splashscreen_05_01_2026_512.png",
+  };
+  for (const char* p : png_paths)
+  {
+    if (!std::filesystem::exists(p))
+      continue;
+
+    std::ifstream fi(p, std::ios::binary);
+    if (!fi)
+      continue;
+
+    std::string bytes((std::istreambuf_iterator<char>(fi)), std::istreambuf_iterator<char>());
+    if (auto dec = decode_image_bytes(bytes))
+    {
+      m_about_splash_w = std::get<1>(*dec);
+      m_about_splash_h = std::get<2>(*dec);
+    }
+    m_about_splash_gl = load_texture(p);
+    break;
+  }
+}
+
+ImGui::MarkdownImageData GUI::about_markdown_image_(ImGui::MarkdownLinkCallbackData data)
+{
+  ImGui::MarkdownImageData out{};
+  if (!data.isImage)
+    return out;
+
+  static constexpr char k_splash_id[] = "AI-gen-splashscreen_05_01_2026_512.png";
+  std::string id(data.link, data.linkLength);
+  if (id != k_splash_id || m_about_splash_gl == 0)
+    return out;
+
+  out.isValid           = true;
+  out.useLinkCallback   = false;
+  out.user_texture_id   = (ImTextureID)(intptr_t)m_about_splash_gl;
+  out.size              = ImVec2((float)m_about_splash_w, (float)m_about_splash_h);
+  ImVec2 const avail    = ImGui::GetContentRegionAvail();
+  if (out.size.x > avail.x && avail.x > 1.0f)
+  {
+    float const ratio = out.size.y / out.size.x;
+    out.size.x        = avail.x;
+    out.size.y        = avail.x * ratio;
+  }
+  return out;
+}
+
+void GUI::about_markdown_link_cb_(ImGui::MarkdownLinkCallbackData data)
+{
+  if (data.isImage || !data.userData)
+    return;
+
+  std::string url(data.link, data.linkLength);
+  static_cast<GUI*>(data.userData)->open_url_(url);
+}
+
+ImGui::MarkdownImageData GUI::about_markdown_image_cb_(ImGui::MarkdownLinkCallbackData data)
+{
+  if (!data.userData)
+    return {};
+
+  return static_cast<GUI*>(data.userData)->about_markdown_image_(data);
 }
 
 // Render toolbar with ImGui

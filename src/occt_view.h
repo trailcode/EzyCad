@@ -12,7 +12,6 @@
 #include <vector>
 
 #include "occt_glfw_win.h"
-#include "types.h"
 #include "shp_chamfer.h"
 #include "shp_common.h"
 #include "shp_cut.h"
@@ -23,6 +22,7 @@
 #include "shp_polar_dup.h"
 #include "shp_rotate.h"
 #include "shp_scale.h"
+#include "types.h"
 
 class Sketch;
 class GUI;
@@ -62,10 +62,10 @@ class Occt_view : protected AIS_ViewController
   void init_viewer();
   void init_default();
 
-  std::string to_json() const;
-  void        load(const std::string& json_str, bool restore_view = true);
+  std::string          to_json() const;
+  void                 load(const std::string& json_str, bool restore_view = true);
   [[nodiscard]] Status import_step(const std::string& step_data);
-  bool        import_ply(const std::string& ply_bytes);
+  bool                 import_ply(const std::string& ply_bytes);
 
   /// Writes STEP, IGES, binary STL, or PLY to \a file_path. Uses selected shapes if any, else all shapes.
   [[nodiscard]] Status export_document(Export_format fmt, const std::string& file_path);
@@ -176,6 +176,9 @@ class Occt_view : protected AIS_ViewController
   /// Roll the view about screen Z (view depth axis) by \a degrees, via \c V3d_View::Turn(\c V3d_Z, ...).
   void roll_view_z_deg(double degrees);
 
+  /// Snap orientation to the nearest world-axis orthographic view (+/-X/Y/Z), roll zero; keeps eye-center distance.
+  void snap_view_to_nearest_standard_axis();
+
   GUI&                    gui();
   AIS_InteractiveContext& ctx();
 
@@ -228,7 +231,7 @@ class Occt_view : protected AIS_ViewController
   void        add_shp_(Shp_ptr& shp);
   std::string unique_shape_name_(const char* base_name) const;
 
-  TopoDS_Shape shape_with_local_transform_(const AIS_Shape_ptr& ais) const;
+  TopoDS_Shape         shape_with_local_transform_(const AIS_Shape_ptr& ais) const;
   [[nodiscard]] Status build_export_shape_(TopoDS_Shape& out_shape) const;
 
   void update_view_background_();
@@ -244,11 +247,13 @@ class Occt_view : protected AIS_ViewController
   Occt_glfw_win_ptr          m_occt_window;
   // Undo / redo
   static constexpr size_t    k_max_undo {50};
+
   struct Undo_entry
   {
     std::string json;
     Mode        mode;  // Mode at time of operation; restored when navigating stacks
   };
+
   std::vector<Undo_entry> m_undo_stack;
   std::vector<Undo_entry> m_redo_stack;
   bool                    m_restoring {false};

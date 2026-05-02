@@ -13,6 +13,7 @@
 // #include <vector>  // Added for log storage
 
 #include "imgui.h"
+#include "imgui_markdown.h"
 #include "log.h"
 #include "modes.h"
 #include "types.h"
@@ -54,11 +55,11 @@ struct Example_file
 };
 
 /// Default OCCT line-width scale for length dimensions when `edge_dim_line_width` is missing from settings JSON.
-inline constexpr float k_gui_edge_dim_line_width_default = 1.0f;
+inline constexpr float  k_gui_edge_dim_line_width_default = 1.0f;
 /// Allowed range and default for `gui.view_roll_step_deg` (view roll hotkeys; must match Settings slider).
-inline constexpr double k_gui_view_roll_step_deg_min     = 0.1;
-inline constexpr double k_gui_view_roll_step_deg_max    = 180.0;
-inline constexpr double k_gui_view_roll_step_deg_default = 45.0;
+inline constexpr double k_gui_view_roll_step_deg_min      = 0.1;
+inline constexpr double k_gui_view_roll_step_deg_max      = 180.0;
+inline constexpr double k_gui_view_roll_step_deg_default  = 45.0;
 
 class GUI
 {
@@ -77,6 +78,7 @@ class GUI
   {
     m_console_font = font;
   }
+
   ImFont* console_font() const;
 
   void render_gui();
@@ -179,26 +181,30 @@ class GUI
   void options_shape_polar_duplicate_mode_();
   void options_rotate_mode_();
 
-  void dbg_();
-  void initialize_toolbar_();
-  void load_examples_list_();
-  void load_default_project_();
-  void menu_bar_();
-  void toolbar_();
-  void message_status_window_();
-  void add_box_dialog_();
-  void add_pyramid_dialog_();
-  void add_sphere_dialog_();
-  void add_cylinder_dialog_();
-  void add_cone_dialog_();
-  void add_torus_dialog_();
-  void about_dialog_();
-  void log_window_();
-  void lua_console_();
-  void python_console_();
-  void settings_();
-  void setup_log_redirection_();
-  void cleanup_log_redirection_();
+  void                            dbg_();
+  void                            initialize_toolbar_();
+  void                            load_examples_list_();
+  void                            load_default_project_();
+  void                            menu_bar_();
+  void                            toolbar_();
+  void                            message_status_window_();
+  void                            add_box_dialog_();
+  void                            add_pyramid_dialog_();
+  void                            add_sphere_dialog_();
+  void                            add_cylinder_dialog_();
+  void                            add_cone_dialog_();
+  void                            add_torus_dialog_();
+  void                            about_dialog_();
+  void                            ensure_about_assets_();
+  ImGui::MarkdownImageData        about_markdown_image_(ImGui::MarkdownLinkCallbackData data);
+  static void                     about_markdown_link_cb_(ImGui::MarkdownLinkCallbackData data);
+  static ImGui::MarkdownImageData about_markdown_image_cb_(ImGui::MarkdownLinkCallbackData data);
+  void                            log_window_();
+  void                            lua_console_();
+  void                            python_console_();
+  void                            settings_();
+  void                            setup_log_redirection_();
+  void                            cleanup_log_redirection_();
 
   // Import/export related
   void import_file_dialog_();
@@ -222,18 +228,18 @@ class GUI
   void open_file_dialog_();
   void save_file_dialog_();
 
-  void                      save_startup_project_();
-  void                      clear_saved_startup_project_();
+  void                                   save_startup_project_();
+  void                                   clear_saved_startup_project_();
   /// Native only: store path in settings after a successful Open (for optional startup load).
-  void                      persist_last_opened_project_path_(const std::string& path);
-  std::string               serialized_project_json_() const;
-  void                      open_url_(const char* url);
-  void                      update_window_title_();
-  [[nodiscard]] std::string project_title_segment_() const;
+  void                                   persist_last_opened_project_path_(const std::string& path);
+  std::string                            serialized_project_json_() const;
+  void                                   open_url_(const std::string& url);
+  void                                   update_window_title_();
+  [[nodiscard]] std::string              project_title_segment_() const;
   /// Parses a float from manual dist/angle ImGui text fields (trimmed, full-string match).
-  static bool               parse_dist_text_to_float_(const char* buf, float& out);
+  static bool                            parse_dist_text_to_float_(const char* buf, float& out);
   /// True if JSON parses and looks like an EzyCad project document (`sketches` array).
-  static bool               is_valid_project_json_(const std::string& s);
+  static bool                            is_valid_project_json_(const std::string& s);
   /// OCCT standard material display names for ImGui combos (index matches \c Graphic3d_NameOfMaterial).
   static const std::vector<std::string>& occt_material_combo_labels_();
 
@@ -295,36 +301,42 @@ class GUI
   using Example_file_list = std::vector<Example_file>;
   Example_file_list m_example_files;
 
-  bool   m_show_sketch_list {true};
-  bool   m_show_shape_list {true};
-  bool   m_show_options {true};
-  bool   m_show_settings_dialog {false};
-  bool   m_open_about_popup {false};
-  bool   m_open_add_box_popup {false};
-  double m_add_box_origin_x {0};
-  double m_add_box_origin_y {0};
-  double m_add_box_origin_z {0};
-  double m_add_box_width {1};
-  double m_add_box_length {1};
-  double m_add_box_height {1};
-  bool   m_open_add_pyramid_popup {false};
-  double m_add_pyramid_origin_x {0}, m_add_pyramid_origin_y {0}, m_add_pyramid_origin_z {0};
-  double m_add_pyramid_side {1};
-  bool   m_open_add_sphere_popup {false};
-  double m_add_sphere_origin_x {0}, m_add_sphere_origin_y {0}, m_add_sphere_origin_z {0};
-  double m_add_sphere_radius {1};
-  bool   m_open_add_cylinder_popup {false};
-  double m_add_cylinder_origin_x {0}, m_add_cylinder_origin_y {0}, m_add_cylinder_origin_z {0};
-  double m_add_cylinder_radius {1}, m_add_cylinder_height {1};
-  bool   m_open_add_cone_popup {false};
-  double m_add_cone_origin_x {0}, m_add_cone_origin_y {0}, m_add_cone_origin_z {0};
-  double m_add_cone_R1 {1}, m_add_cone_R2 {0}, m_add_cone_height {1};
-  bool   m_open_add_torus_popup {false};
-  double m_add_torus_origin_x {0}, m_add_torus_origin_y {0}, m_add_torus_origin_z {0};
-  double m_add_torus_R1 {1}, m_add_torus_R2 {0.5};
-  bool   m_hide_all_shapes {false};
-  bool   m_show_tool_tips {true};
-  bool   m_dark_mode {false};
+  bool        m_show_sketch_list {true};
+  bool        m_show_shape_list {true};
+  bool        m_show_options {true};
+  bool        m_show_settings_dialog {false};
+  bool        m_open_about_popup {false};
+  bool        m_about_popup_open {false};
+  std::string m_about_markdown;
+  uint32_t    m_about_splash_gl {0};
+  int         m_about_splash_w {512};
+  int         m_about_splash_h {512};
+  bool        m_about_assets_loaded {false};
+  bool        m_open_add_box_popup {false};
+  double      m_add_box_origin_x {0};
+  double      m_add_box_origin_y {0};
+  double      m_add_box_origin_z {0};
+  double      m_add_box_width {1};
+  double      m_add_box_length {1};
+  double      m_add_box_height {1};
+  bool        m_open_add_pyramid_popup {false};
+  double      m_add_pyramid_origin_x {0}, m_add_pyramid_origin_y {0}, m_add_pyramid_origin_z {0};
+  double      m_add_pyramid_side {1};
+  bool        m_open_add_sphere_popup {false};
+  double      m_add_sphere_origin_x {0}, m_add_sphere_origin_y {0}, m_add_sphere_origin_z {0};
+  double      m_add_sphere_radius {1};
+  bool        m_open_add_cylinder_popup {false};
+  double      m_add_cylinder_origin_x {0}, m_add_cylinder_origin_y {0}, m_add_cylinder_origin_z {0};
+  double      m_add_cylinder_radius {1}, m_add_cylinder_height {1};
+  bool        m_open_add_cone_popup {false};
+  double      m_add_cone_origin_x {0}, m_add_cone_origin_y {0}, m_add_cone_origin_z {0};
+  double      m_add_cone_R1 {1}, m_add_cone_R2 {0}, m_add_cone_height {1};
+  bool        m_open_add_torus_popup {false};
+  double      m_add_torus_origin_x {0}, m_add_torus_origin_y {0}, m_add_torus_origin_z {0};
+  double      m_add_torus_R1 {1}, m_add_torus_R2 {0.5};
+  bool        m_hide_all_shapes {false};
+  bool        m_show_tool_tips {true};
+  bool        m_dark_mode {false};
 #ifndef NDEBUG
   bool m_show_dbg {false};
 #endif

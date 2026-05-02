@@ -522,12 +522,13 @@ The polar duplicate tool allows you to create multiple copies of selected shapes
 | ---: | --- |
 | <kbd>Shift</kbd>+<kbd>NumPad 4</kbd> | [Roll the 3D view](#view-roll) one way (step in **Settings -> 3D view navigation**; default **45** degrees). |
 | <kbd>Shift</kbd>+<kbd>NumPad 6</kbd> | [Roll the 3D view](#view-roll) the other way. |
+| <kbd>NumPad 5</kbd> | Snap to the nearest world-axis view (top, bottom, front, back, left, or right): keeps the current eye-target distance, aligns the view direction to +/- **X** / **Y** / **Z**, and resets roll to a standard **Up** (same convention as the initial top view: **Up** is **+Y** when looking along **Z**, else **+Z** when looking along **X** or **Y**). |
 
-Same idea as Blender **View Roll**. Plain **<kbd>NumPad 4</kbd>** / **<kbd>6</kbd>** without **Shift** are not view roll (in **Normal** mode, number keys set [selection filter](#shape-selection-filter-normal-mode-only)).
+Same idea as Blender **View Roll** for **Shift**+**NumPad 4**/**6**. Plain **<kbd>NumPad 4</kbd>** / **<kbd>6</kbd>** without **Shift** are not view roll (in **Normal** mode, main keyboard **<kbd>4</kbd>**/**<kbd>6</kbd>** and keypad **<kbd>4</kbd>**/**<kbd>6</kbd>** set [selection filter](#shape-selection-filter-normal-mode-only)). **NumPad 5** is reserved for axis snap (not the Face filter); use main keyboard **<kbd>5</kbd>** for Face in **Normal** mode.
 
 ### Shape selection filter (Normal mode only)
 
-In **Normal** mode, number keys set the **Selection Mode** filter for picking 3D shapes (same control as **Options -> Selection Mode**). Main keyboard **<kbd>1</kbd>-<kbd>9</kbd>** and keypad **<kbd>1</kbd>-<kbd>9</kbd>** are supported. Order matches Open CASCADE `TopAbs_ShapeEnum` (see `utl_occt.h` / combo labels):
+In **Normal** mode, number keys set the **Selection Mode** filter for picking 3D shapes (same control as **Options -> Selection Mode**). Main keyboard **<kbd>1</kbd>-<kbd>9</kbd>** and keypad **<kbd>1</kbd>-<kbd>9</kbd>** are supported, except **keypad <kbd>5</kbd>** (see [View navigation](#view-navigation)). Order matches Open CASCADE `TopAbs_ShapeEnum` (see `utl_occt.h` / combo labels):
 
 | Key | Filter |
 | ---: | --- |

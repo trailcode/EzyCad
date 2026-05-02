@@ -9,11 +9,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **NumPad 5:** snap the 3D view to the nearest orthographic world-axis orientation (top/bottom/front/back/left/right) with roll reset; keeps eye-target distance.
 - **View roll:** **Shift+NumPad 4** and **Shift+NumPad 6** roll the 3D view (Blender-style). **Settings** has **View roll step** (degrees per key press; default 45, stored as `gui.view_roll_step_deg`).
-- Help > About: in-app dialog with the app version, a short product description, and a link to the GitHub repository (replaces opening the README in the browser from that menu item).
+- Help > About: reads bundled `res/about.md` via [imgui_markdown](https://github.com/enkisoftware/imgui_markdown), shows version text, splash image (`res/AI-gen-splashscreen_05_01_2026_512.png`), and clickable links; assets are copied next to the executable (and preloaded for Emscripten).
 - **Sketch length dimensions (Dimension tool):** dimensions are stored as an unordered pair of sketch nodes (not attached to a single edge). They can be selected in sketch mode and removed with **Delete**.
 - **Project JSON:** root-level `ezyFormat` (current value `2`) on save. Sketches serialize `length_dimensions` as dense node-index pairs alongside linear edges as `[a, b, mid]` only.
 - **Legacy load:** older sketch JSON that stored a per-edge dimension flag on indexed edges (`[a, b, mid, dim]`) or on legacy coordinate edges (`[pt_a, pt_b, dim]`) migrates those flags into `length_dimensions` when loading.
+
+### Fixed
+
+- Ship `res/default.ezy` (empty sketch template) so native copy steps and Emscripten `--preload-file` resolve the path; startup loading could already fall back if the file was absent.
 
 ### Changed
 
