@@ -60,6 +60,10 @@ inline constexpr float  k_gui_edge_dim_line_width_default = 1.0f;
 inline constexpr double k_gui_view_roll_step_deg_min      = 0.1;
 inline constexpr double k_gui_view_roll_step_deg_max      = 180.0;
 inline constexpr double k_gui_view_roll_step_deg_default  = 45.0;
+/// Allowed range and default for `gui.view_zoom_scroll_scale` (wheel/keyboard zoom units; must match Settings slider).
+inline constexpr double k_gui_view_zoom_scroll_scale_min      = 0.25;
+inline constexpr double k_gui_view_zoom_scroll_scale_max      = 64.0;
+inline constexpr double k_gui_view_zoom_scroll_scale_default  = 4.0;
 
 class GUI
 {
@@ -276,6 +280,8 @@ class GUI
   float                       m_edge_dim_line_width {k_gui_edge_dim_line_width_default};
   /// Degrees per numpad orbit (8/2/4/6) and Blender-style roll (Shift+NumPad 4/6); persisted in `gui.view_roll_step_deg`.
   double                      m_view_roll_step_deg {k_gui_view_roll_step_deg_default};
+  /// Multiplier for `UpdateZoom(Aspect_ScrollDelta(..., int(y * scale)))`; persisted in `gui.view_zoom_scroll_scale`.
+  double                      m_view_zoom_scroll_scale {k_gui_view_zoom_scroll_scale_default};
   std::vector<Toolbar_button> m_toolbar_buttons;
 
   // Message status window

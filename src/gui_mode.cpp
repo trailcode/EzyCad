@@ -98,16 +98,62 @@ void GUI::set_parent_mode()
 void GUI::on_key(int key, int scancode, int action, int mods)
 {
   (void) scancode;
+  const bool press_or_repeat = (action == GLFW_PRESS || action == GLFW_REPEAT);
+
+  // Zoom (+/-): scaled like mouse wheel; GLFW_REPEAT while held; Shift = Blender-style finer step.
+  if (press_or_repeat && (mods & (GLFW_MOD_CONTROL | GLFW_MOD_ALT)) == 0)
+  {
+    bool zoom_in  = false;
+    bool zoom_out = false;
+    switch (key)
+    {
+      case GLFW_KEY_KP_ADD:
+        zoom_in = true;
+        break;
+      case GLFW_KEY_KP_SUBTRACT:
+      case GLFW_KEY_MINUS:
+        zoom_out = true;
+        break;
+      case GLFW_KEY_EQUAL:
+        if ((mods & GLFW_MOD_SHIFT) != 0)
+          zoom_in = true;
+        break;
+      default:
+        break;
+    }
+
+    const bool shift_finer = (mods & GLFW_MOD_SHIFT) != 0;
+
+    if (zoom_in)
+    {
+      m_view->zoom_view_wheel_notches(1.0, shift_finer);
+      return;
+    }
+    else if (zoom_out)
+    {
+      m_view->zoom_view_wheel_notches(-1.0, shift_finer);
+      return;
+    }
+  }
+
+  // Blender-style view roll: Shift + NumPad 4/6, main 4/6, or Left/Right (NumLock-on numpad often maps here).
+  // Use PRESS and REPEAT (like zoom) so hold-to-repeat works; route before keypad digit -> selection filter.
+  if (press_or_repeat && (mods & GLFW_MOD_SHIFT) != 0 && (mods & (GLFW_MOD_CONTROL | GLFW_MOD_ALT)) == 0)
+  {
+    const bool roll_ccw =
+        (key == GLFW_KEY_KP_4 || key == GLFW_KEY_4 || key == GLFW_KEY_LEFT);
+    const bool roll_cw =
+        (key == GLFW_KEY_KP_6 || key == GLFW_KEY_6 || key == GLFW_KEY_RIGHT);
+    if (roll_ccw || roll_cw)
+    {
+      const double step = m_view_roll_step_deg;
+      m_view->roll_view_z_deg(roll_ccw ? -step : step);
+      return;
+    }
+  }
+
   if (action != GLFW_PRESS)
     return;
-
-  // Blender-style view roll: Shift + NumPad 4 (CCW) / NumPad 6 (CW) in model-dependent sense.
-  if ((mods & GLFW_MOD_SHIFT) != 0 && (key == GLFW_KEY_KP_4 || key == GLFW_KEY_KP_6))
-  {
-    const double step = m_view_roll_step_deg;
-    m_view->roll_view_z_deg(key == GLFW_KEY_KP_4 ? -step : step);
-    return;
-  }
 
   // Nearest world-axis orthographic view (roll zero). Routes before Normal-mode keypad selection filters.
   if (key == GLFW_KEY_KP_5 && (mods & (GLFW_MOD_SHIFT | GLFW_MOD_CONTROL | GLFW_MOD_ALT)) == 0)

@@ -151,7 +151,8 @@ class Occt_view : protected AIS_ViewController
 
   // Input events.
   void on_resize(int theWidth, int theHeight);
-  void on_mouse_scroll(double theOffsetX, double theOffsetY);
+  /// \param shift_finer_zoom If true, Blender-style x0.1 zoom step (held Shift).
+  void on_mouse_scroll(double theOffsetX, double theOffsetY, bool shift_finer_zoom = false);
   void on_mouse_button(int theButton, int theAction, int theMods);
   void on_mouse_move(const ScreenCoords& screen_coords);
 
@@ -179,6 +180,13 @@ class Occt_view : protected AIS_ViewController
   /// Orbit the view like left-drag on the trihedron: \a yaw_deg about camera up (positive = orbit left),
   /// \a pitch_deg about camera side (positive = orbit up). Matches \c AIS_ViewController orbit axes.
   void orbit_view_screen_step_deg(double yaw_deg, double pitch_deg);
+
+  /// Zoom like one mouse wheel notch at the cursor (\a wheel_notches > 0 zooms in; same units as \c on_mouse_scroll).
+  /// \param shift_finer_zoom Blender-style finer step when Shift is held (keyboard or scroll).
+  void zoom_view_wheel_notches(double wheel_notches, bool shift_finer_zoom = false);
+
+  /// Clamp and store scroll-scale used by \c on_mouse_scroll / \c zoom_view_wheel_notches (from Settings JSON).
+  void set_zoom_scroll_scale(double scale);
 
   /// Snap orientation to the nearest world-axis orthographic view (+/-X/Y/Z), roll zero; keeps eye-center distance.
   void snap_view_to_nearest_standard_axis();
@@ -245,6 +253,9 @@ class Occt_view : protected AIS_ViewController
   static Aspect_VKeyMouse mouse_button_from_glfw_(int theButton);
   static Aspect_VKeyFlags key_flags_from_glfw_(int theFlags);
 
+  /// Maps wheel delta to OCCT zoom units using \ref m_zoom_scroll_scale and optional Shift (x0.1).
+  int zoom_scroll_delta_int_(double wheel_y, bool shift_finer_zoom) const;
+
   GUI&                       m_gui;
   AIS_InteractiveContext_ptr m_ctx;
   V3d_View_ptr               m_view;
@@ -281,6 +292,8 @@ class Occt_view : protected AIS_ViewController
   int                      m_bg_gradient_method {1};  // 0=HOR, 1=VER, 2=DIAG1, ...
   float                    m_grid_color1[3] {0.1f, 0.1f, 0.1f};
   float                    m_grid_color2[3] {0.1f, 0.1f, 0.3f};
+  /// User setting: same role as former literal in `UpdateZoom(Aspect_ScrollDelta(..., int(y * scale)))`.
+  double                   m_zoom_scroll_scale {4.0};
   // --------------------------------------------------------------------
   // Operations
   Shp_move                 m_shp_move;

@@ -498,8 +498,7 @@ std::string GUI::project_title_segment_() const
 
 void GUI::update_window_title_()
 {
-  if (!m_glfw_window)
-    return;
+  EZY_ASSERT(m_glfw_window != nullptr);
 
   const std::string title = std::string("EzyCad - ") + project_title_segment_();
   if (title == m_cached_window_title)
@@ -2306,7 +2305,12 @@ void GUI::on_mouse_button(int button, int action, int mods)
 
 void GUI::on_mouse_scroll(double xoffset, double yoffset)
 {
-  m_view->on_mouse_scroll(xoffset, yoffset);
+  EZY_ASSERT(m_glfw_window != nullptr);
+
+  const bool shift_finer = glfwGetKey(m_glfw_window, GLFW_KEY_LEFT_SHIFT) == GLFW_PRESS
+                           || glfwGetKey(m_glfw_window, GLFW_KEY_RIGHT_SHIFT) == GLFW_PRESS;
+
+  m_view->on_mouse_scroll(xoffset, yoffset, shift_finer);
 }
 
 void GUI::on_resize(int width, int height)

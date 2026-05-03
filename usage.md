@@ -524,11 +524,16 @@ The polar duplicate tool allows you to create multiple copies of selected shapes
 | <kbd>NumPad 2</kbd> | Orbit [down](#view-orbit-numpad). |
 | <kbd>NumPad 4</kbd> | Orbit [left](#view-orbit-numpad). |
 | <kbd>NumPad 6</kbd> | Orbit [right](#view-orbit-numpad). |
-| <kbd>Shift</kbd>+<kbd>NumPad 4</kbd> | [Roll the 3D view](#view-roll) one way (same step setting as orbit). |
-| <kbd>Shift</kbd>+<kbd>NumPad 6</kbd> | [Roll the 3D view](#view-roll) the other way. |
+| <kbd>Shift</kbd>+<kbd>NumPad 4</kbd>, <kbd>Shift</kbd>+<kbd>4</kbd>, or <kbd>Shift</kbd>+<kbd>Left</kbd> | [Roll the 3D view](#view-roll) one way (same step setting as orbit). |
+| <kbd>Shift</kbd>+<kbd>NumPad 6</kbd>, <kbd>Shift</kbd>+<kbd>6</kbd>, or <kbd>Shift</kbd>+<kbd>Right</kbd> | [Roll the 3D view](#view-roll) the other way. |
 | <kbd>NumPad 5</kbd> | Snap to the nearest world-axis view (top, bottom, front, back, left, or right): keeps the current eye-target distance, aligns the view direction to +/- **X** / **Y** / **Z**, and resets roll to a standard **Up** (same convention as the initial top view: **Up** is **+Y** when looking along **Z**, else **+Z** when looking along **X** or **Y**). |
+| <kbd>NumPad +</kbd> / <kbd>NumPad -</kbd> | Zoom in / out at the cursor; step size uses **Settings -> 3D view navigation -> Zoom scroll scale** (default **4**, same role as the former fixed wheel multiplier). **Hold** the key for continuous zoom (system key repeat). |
+| <kbd>Shift</kbd>+<kbd>=</kbd> (often labeled **+**) | Zoom in (same as **NumPad +** on US layouts); hold for repeat. With **Shift**, Blender-style **finer** zoom (**x0.1** on the scroll delta). |
+| <kbd>-</kbd> (main keyboard) | Zoom out (same as **NumPad -**); hold for repeat. **Shift** gives finer zoom. |
 
-Same idea as Blender **View Roll** for **Shift**+**NumPad 4**/**6**. Plain **NumPad 8** / **2** / **4** / **6** (no modifiers) **orbit** instead of setting the [selection filter](#shape-selection-filter-normal-mode-only); use the main keyboard **<kbd>4</kbd>** / **<kbd>6</kbd>** / **<kbd>2</kbd>** / **<kbd>8</kbd>** for Shell, Wire, CompSolid, or Vertex in **Normal** mode. **NumPad 5** is reserved for axis snap (not the Face filter); use main keyboard **<kbd>5</kbd>** for Face in **Normal** mode.
+**Num Lock (numeric keypad):** **Num Lock off** is what we test against and recommend. The shortcuts below assume the keypad produces **NumPad** key codes (orbit, axis snap, zoom, roll, and keypad selection digits). With **Num Lock on**, Windows and other systems often remap the keypad (digits vs arrow/Home/End behavior), so numpad shortcuts may not match this document. Use the alternatives in the table (main-row <kbd>4</kbd> / <kbd>6</kbd>, <kbd>Shift</kbd>+<kbd>Left</kbd> / <kbd>Right</kbd>, main <kbd>+</kbd> / <kbd>-</kbd>, main <kbd>1</kbd>-<kbd>9</kbd> for selection) or turn **Num Lock off**.
+
+Same idea as Blender **View Roll** for <kbd>Shift</kbd>+<kbd>NumPad 4</kbd> / <kbd>NumPad 6</kbd>, <kbd>Shift</kbd>+<kbd>4</kbd> / <kbd>6</kbd>, or <kbd>Shift</kbd>+<kbd>Left</kbd> / <kbd>Right</kbd>. Plain <kbd>NumPad 8</kbd> / <kbd>NumPad 2</kbd> / <kbd>NumPad 4</kbd> / <kbd>NumPad 6</kbd> (no modifiers) **orbit** instead of setting the [selection filter](#shape-selection-filter-normal-mode-only); use the main keyboard **<kbd>4</kbd>** / **<kbd>6</kbd>** / **<kbd>2</kbd>** / **<kbd>8</kbd>** for Shell, Wire, CompSolid, or Vertex in **Normal** mode. **<kbd>NumPad 5</kbd>** is reserved for axis snap (not the Face filter); use main keyboard **<kbd>5</kbd>** for Face in **Normal** mode.
 
 ### Shape selection filter (Normal mode only)
 
@@ -562,15 +567,16 @@ Open or close the **Lua** or **Python** consoles from **View -> Lua Console** or
 | **Left drag** | Orbit view |
 | **Middle drag** | Pan view |
 | **Right drag** | Zoom |
-| **Scroll Wheel** | Zoom in/out |
+| **Scroll Wheel** | Zoom in/out (**Zoom scroll scale** in Settings; hold **Shift** for finer steps) |
+| <kbd>NumPad +</kbd> / <kbd>NumPad -</kbd>, <kbd>Shift</kbd>+<kbd>=</kbd>, <kbd>-</kbd> | Zoom in/out ([keyboard](#view-navigation); settings scale; <kbd>Shift</kbd> finer) |
 
 ### View orbit (NumPad)
 
-Press **NumPad 8**, **2**, **4**, or **6** (without Shift) to orbit the camera in steps, using the same axes as **left-drag orbit** (Open CASCADE `AIS_ViewController` convention: yaw about camera up, pitch about camera side). **8** / **2** pitch up or down; **4** / **6** yaw left or right. The default step is **45** degrees per key press.
+Press <kbd>NumPad 8</kbd>, <kbd>NumPad 2</kbd>, <kbd>NumPad 4</kbd>, or <kbd>NumPad 6</kbd> (without <kbd>Shift</kbd>) to orbit the camera in steps, using the same axes as **left-drag orbit** (Open CASCADE `AIS_ViewController` convention: yaw about camera up, pitch about camera side). <kbd>NumPad 8</kbd> / <kbd>NumPad 2</kbd> pitch up or down; <kbd>NumPad 4</kbd> / <kbd>NumPad 6</kbd> yaw left or right. The default step is **45** degrees per key press. **Num Lock off** is recommended so the keypad sends these **NumPad** codes (see [View navigation](#view-navigation) above).
 
 ### View roll
 
-Hold **Shift** and press **NumPad 4** or **NumPad 6** to rotate the view around the viewing axis (the axis pointing out of the screen), in fixed degree steps. The default step is **45** degrees per key press.
+Hold <kbd>Shift</kbd> and press <kbd>NumPad 4</kbd> or <kbd>NumPad 6</kbd>, main <kbd>4</kbd> / <kbd>6</kbd>, or <kbd>Left</kbd> / <kbd>Right</kbd> to rotate the view around the viewing axis (the axis pointing out of the screen), in fixed degree steps. **Hold** to repeat (same as zoom key repeat). The default step is **45** degrees per key press. If <kbd>Shift</kbd>+<kbd>NumPad 4</kbd> or <kbd>Shift</kbd>+<kbd>NumPad 6</kbd> misbehaves, use <kbd>Shift</kbd>+<kbd>4</kbd>, <kbd>Shift</kbd>+<kbd>6</kbd>, <kbd>Shift</kbd>+<kbd>Left</kbd>, or <kbd>Shift</kbd>+<kbd>Right</kbd>, or turn **Num Lock off** (recommended for all numpad view shortcuts).
 
 To change the step for both orbit and roll, open **View -> Settings**, expand **3D view navigation**, and adjust **View rotation step**. The value is saved in your settings file as **`gui.view_roll_step_deg`** (see [Settings file reference](usage-settings.md#settings-file-reference)).
 

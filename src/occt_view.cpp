@@ -13,8 +13,10 @@
 #include <GeomAPI_IntCS.hxx>
 #include <Geom_Line.hxx>
 #include <Geom_Plane.hxx>
+#include <Graphic3d_Camera.hxx>
 #include <IGESControl_Writer.hxx>
 #include <OpenGl_GraphicDriver.hxx>
+#include <Precision.hxx>
 #include <Prs3d_DatumAspect.hxx>
 #include <PrsDim_LengthDimension.hxx>
 #include <STEPControl_Reader.hxx>
@@ -24,16 +26,14 @@
 #include <TopExp_Explorer.hxx>
 #include <TopoDS.hxx>
 #include <TopoDS_Compound.hxx>
-#include <Graphic3d_Camera.hxx>
-#include <Precision.hxx>
-#include <gp_Ax1.hxx>
-#include <gp_Trsf.hxx>
 #include <V3d_TypeOfAxe.hxx>
 #include <V3d_View.hxx>
 #include <WNT_WClass.hxx>
 #include <WNT_Window.hxx>
 #include <algorithm>
 #include <cmath>
+#include <gp_Ax1.hxx>
+#include <gp_Trsf.hxx>
 
 #include "dbg.h"
 #include "geom.h"
@@ -1287,10 +1287,44 @@ void Occt_view::on_resize(int theWidth, int theHeight)
   }
 }
 
-void Occt_view::on_mouse_scroll(double theOffsetX, double theOffsetY)
+namespace
 {
+// Blender-style: Shift held while zooming uses a finer step (same idea as precision transforms).
+constexpr double k_zoom_shift_finer_factor = 0.1;
+}  // namespace
+
+void Occt_view::set_zoom_scroll_scale(double scale)
+{
+  m_zoom_scroll_scale =
+      std::clamp(scale, k_gui_view_zoom_scroll_scale_min, k_gui_view_zoom_scroll_scale_max);
+}
+
+int Occt_view::zoom_scroll_delta_int_(double wheel_y, bool shift_finer_zoom) const
+{
+  const double scaled =
+      wheel_y * m_zoom_scroll_scale * (shift_finer_zoom ? k_zoom_shift_finer_factor : 1.0);
+  long r = std::lround(scaled);
+  if (r == 0 && wheel_y != 0.0)
+    r = wheel_y > 0.0 ? 1L : -1L;
+
+  return static_cast<int>(r);
+}
+
+void Occt_view::on_mouse_scroll(double theOffsetX, double theOffsetY, bool shift_finer_zoom)
+{
+  (void) theOffsetX;
   if (!m_view.IsNull())
-    UpdateZoom(Aspect_ScrollDelta(m_occt_window->CursorPosition(), int(theOffsetY * 4.0)));
+    UpdateZoom(Aspect_ScrollDelta(m_occt_window->CursorPosition(),
+                                  zoom_scroll_delta_int_(theOffsetY, shift_finer_zoom)));
+}
+
+void Occt_view::zoom_view_wheel_notches(double wheel_notches, bool shift_finer_zoom)
+{
+  if (m_view.IsNull())
+    return;
+
+  UpdateZoom(Aspect_ScrollDelta(m_occt_window->CursorPosition(),
+                                zoom_scroll_delta_int_(wheel_notches, shift_finer_zoom)));
 }
 
 void Occt_view::on_mouse_button(int theButton, int theAction, int theMods)
