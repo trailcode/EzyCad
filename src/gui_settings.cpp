@@ -326,7 +326,7 @@ void GUI::settings_()
       ImGui::TableNextRow();
       ImGui::TableSetColumnIndex(0);
       ImGui::AlignTextToFramePadding();
-      ImGui::TextUnformatted("View roll step");
+      ImGui::TextUnformatted("View rotation step");
       ImGui::TableSetColumnIndex(1);
       // SliderScalar(ImGuiDataType_Double): drag slider, or Ctrl+click for precise keyboard input (standard ImGui).
       if (ImGui::SliderScalar("##view_roll_step", ImGuiDataType_Double, &m_view_roll_step_deg,
@@ -338,7 +338,8 @@ void GUI::settings_()
 
       if (ImGui::IsItemHovered())
         ImGui::SetTooltip(
-            "Degrees per key press (Shift+NumPad 4 / Shift+NumPad 6). Ctrl+click the slider to type a value.");
+            "Degrees per key press: NumPad 8/2/4/6 orbit (like LMB drag), Shift+NumPad 4/6 roll. "
+            "Ctrl+click the slider to type a value.");
 
       ImGui::SameLine(0.0f, ImGui::GetStyle().ItemInnerSpacing.x);
       if (ImGui::SmallButton("?##view_roll_help"))
@@ -350,7 +351,8 @@ void GUI::settings_()
     }
 
     ImGui::TextWrapped(
-        "Blender-style view roll: hold Shift and press NumPad 4 or NumPad 6 to roll the view around the screen Z axis.");
+        "NumPad 8 / 2 / 4 / 6 orbit the view (same axes as left-drag orbit). Hold Shift and press NumPad 4 or NumPad 6 "
+        "for Blender-style roll around the screen Z axis.");
   }
 
   if (ImGui::CollapsingHeader("UI corner rounding"))

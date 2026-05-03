@@ -116,6 +116,22 @@ void GUI::on_key(int key, int scancode, int action, int mods)
     return;
   }
 
+  // Orbit like trihedron / LMB orbit (AIS_ViewController axes); step matches Settings view rotation step.
+  if ((mods & (GLFW_MOD_SHIFT | GLFW_MOD_CONTROL | GLFW_MOD_ALT)) == 0)
+  {
+    const double step = m_view_roll_step_deg;
+    // clang-format off
+    switch (key)
+    {
+      case GLFW_KEY_KP_8: m_view->orbit_view_screen_step_deg(0.0, step);  return;
+      case GLFW_KEY_KP_2: m_view->orbit_view_screen_step_deg(0.0, -step); return;
+      case GLFW_KEY_KP_4: m_view->orbit_view_screen_step_deg(step, 0.0);  return;
+      case GLFW_KEY_KP_6: m_view->orbit_view_screen_step_deg(-step, 0.0); return;
+      default: break;
+    }
+    // clang-format on
+  }
+
   const ScreenCoords screen_coords(dvec2(ImGui::GetIO().MousePos.x, ImGui::GetIO().MousePos.y));
 
   bool ctrl_pressed = (mods & GLFW_MOD_CONTROL) != 0;

@@ -9,7 +9,7 @@
 6.  [Modeling Tools](#modeling-tools)
 7.  [Keyboard Shortcuts](#keyboard-shortcuts)
 8.  [View Controls](#view-controls)
-9.  [3D viewer (`Occt_view` / Open CASCADE)](usage-occt-view.md)
+9.  [3D viewer (Open CASCADE)](usage-occt-view.md)
 10. [Tips and Tricks](#tips-and-tricks)
 11. [Scripting](#scripting-lua-and-python)
 12. [Support](#support)
@@ -520,15 +520,19 @@ The polar duplicate tool allows you to create multiple copies of selected shapes
 
 | | |
 | ---: | --- |
-| <kbd>Shift</kbd>+<kbd>NumPad 4</kbd> | [Roll the 3D view](#view-roll) one way (step in **Settings -> 3D view navigation**; default **45** degrees). |
+| <kbd>NumPad 8</kbd> | Orbit [up](#view-orbit-numpad) (same sense as dragging the view up). Step: **Settings -> 3D view navigation -> View rotation step** (default **45** degrees). |
+| <kbd>NumPad 2</kbd> | Orbit [down](#view-orbit-numpad). |
+| <kbd>NumPad 4</kbd> | Orbit [left](#view-orbit-numpad). |
+| <kbd>NumPad 6</kbd> | Orbit [right](#view-orbit-numpad). |
+| <kbd>Shift</kbd>+<kbd>NumPad 4</kbd> | [Roll the 3D view](#view-roll) one way (same step setting as orbit). |
 | <kbd>Shift</kbd>+<kbd>NumPad 6</kbd> | [Roll the 3D view](#view-roll) the other way. |
 | <kbd>NumPad 5</kbd> | Snap to the nearest world-axis view (top, bottom, front, back, left, or right): keeps the current eye-target distance, aligns the view direction to +/- **X** / **Y** / **Z**, and resets roll to a standard **Up** (same convention as the initial top view: **Up** is **+Y** when looking along **Z**, else **+Z** when looking along **X** or **Y**). |
 
-Same idea as Blender **View Roll** for **Shift**+**NumPad 4**/**6**. Plain **<kbd>NumPad 4</kbd>** / **<kbd>6</kbd>** without **Shift** are not view roll (in **Normal** mode, main keyboard **<kbd>4</kbd>**/**<kbd>6</kbd>** and keypad **<kbd>4</kbd>**/**<kbd>6</kbd>** set [selection filter](#shape-selection-filter-normal-mode-only)). **NumPad 5** is reserved for axis snap (not the Face filter); use main keyboard **<kbd>5</kbd>** for Face in **Normal** mode.
+Same idea as Blender **View Roll** for **Shift**+**NumPad 4**/**6**. Plain **NumPad 8** / **2** / **4** / **6** (no modifiers) **orbit** instead of setting the [selection filter](#shape-selection-filter-normal-mode-only); use the main keyboard **<kbd>4</kbd>** / **<kbd>6</kbd>** / **<kbd>2</kbd>** / **<kbd>8</kbd>** for Shell, Wire, CompSolid, or Vertex in **Normal** mode. **NumPad 5** is reserved for axis snap (not the Face filter); use main keyboard **<kbd>5</kbd>** for Face in **Normal** mode.
 
 ### Shape selection filter (Normal mode only)
 
-In **Normal** mode, number keys set the **Selection Mode** filter for picking 3D shapes (same control as **Options -> Selection Mode**). Main keyboard **<kbd>1</kbd>-<kbd>9</kbd>** and keypad **<kbd>1</kbd>-<kbd>9</kbd>** are supported, except **keypad <kbd>5</kbd>** (see [View navigation](#view-navigation)). Order matches Open CASCADE `TopAbs_ShapeEnum` (see `utl_occt.h` / combo labels):
+In **Normal** mode, number keys set the **Selection Mode** filter for picking 3D shapes (same control as **Options -> Selection Mode**). Main keyboard **<kbd>1</kbd>-<kbd>9</kbd>** and keypad **<kbd>1</kbd>-<kbd>9</kbd>** are supported, except **keypad <kbd>5</kbd>** and **keypad <kbd>2</kbd>**, **<kbd>4</kbd>**, **<kbd>6</kbd>**, **<kbd>8</kbd>** (see [View navigation](#view-navigation)). The key order matches the list in the **Selection Mode** control (from compound down to whole shape):
 
 | Key | Filter |
 | ---: | --- |
@@ -560,13 +564,17 @@ Open or close the **Lua** or **Python** consoles from **View -> Lua Console** or
 | **Right drag** | Zoom |
 | **Scroll Wheel** | Zoom in/out |
 
+### View orbit (NumPad)
+
+Press **NumPad 8**, **2**, **4**, or **6** (without Shift) to orbit the camera in steps, using the same axes as **left-drag orbit** (Open CASCADE `AIS_ViewController` convention: yaw about camera up, pitch about camera side). **8** / **2** pitch up or down; **4** / **6** yaw left or right. The default step is **45** degrees per key press.
+
 ### View roll
 
 Hold **Shift** and press **NumPad 4** or **NumPad 6** to rotate the view around the viewing axis (the axis pointing out of the screen), in fixed degree steps. The default step is **45** degrees per key press.
 
-To change the step, open **View -> Settings**, expand **3D view navigation**, and adjust **View roll step**. The value is saved in your settings file as **`gui.view_roll_step_deg`** (see [Settings file reference](usage-settings.md#settings-file-reference)).
+To change the step for both orbit and roll, open **View -> Settings**, expand **3D view navigation**, and adjust **View rotation step**. The value is saved in your settings file as **`gui.view_roll_step_deg`** (see [Settings file reference](usage-settings.md#settings-file-reference)).
 
-Implementation note: the application calls Open CASCADE `V3d_View::Turn` with `V3d_Z` for this rotation. More detail: **[3D viewer (`Occt_view`)](usage-occt-view.md)**.
+More context on the 3D viewer stack: **[3D viewer (Open CASCADE)](usage-occt-view.md)**.
 
 ### View Options
 
@@ -604,7 +612,7 @@ Implementation note: the application calls Open CASCADE `V3d_View::Turn` with `V
 ### Documentation
 - [This usage guide](#ezycad-usage-guide)
 - [Settings](usage-settings.md) (Settings pane, View menu, JSON settings file, startup project)
-- [3D viewer (`Occt_view` / Open CASCADE)](usage-occt-view.md) (viewer stack, `Occt_view` role, settings keys)
+- [3D viewer (Open CASCADE)](usage-occt-view.md)
 - [2D Sketching](usage-sketch.md) (including [add node](usage-sketch.md#add-node-tool))
 - [Scripting (Lua / Python)](scripting.md)
 - Hosted docs and video tutorials are not published yet; this repository's markdown guides are the reference for now.

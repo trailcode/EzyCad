@@ -56,7 +56,7 @@ struct Example_file
 
 /// Default OCCT line-width scale for length dimensions when `edge_dim_line_width` is missing from settings JSON.
 inline constexpr float  k_gui_edge_dim_line_width_default = 1.0f;
-/// Allowed range and default for `gui.view_roll_step_deg` (view roll hotkeys; must match Settings slider).
+/// Allowed range and default for `gui.view_roll_step_deg` (view roll and numpad orbit steps; must match Settings slider).
 inline constexpr double k_gui_view_roll_step_deg_min      = 0.1;
 inline constexpr double k_gui_view_roll_step_deg_max      = 180.0;
 inline constexpr double k_gui_view_roll_step_deg_default  = 45.0;
@@ -274,7 +274,7 @@ class GUI
   Fillet_mode                 m_fillet_mode  = Fillet_mode::Shape;
   int                         m_edge_dim_label_h {3};  // Prs3d_DTHP_Fit
   float                       m_edge_dim_line_width {k_gui_edge_dim_line_width_default};
-  /// Degrees per Blender-style view roll key (Shift+NumPad 4 / 6); persisted in `gui.view_roll_step_deg`.
+  /// Degrees per numpad orbit (8/2/4/6) and Blender-style roll (Shift+NumPad 4/6); persisted in `gui.view_roll_step_deg`.
   double                      m_view_roll_step_deg {k_gui_view_roll_step_deg_default};
   std::vector<Toolbar_button> m_toolbar_buttons;
 

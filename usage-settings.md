@@ -40,7 +40,7 @@ Open **View -> Settings**. The window title is **Settings**.
 
 Between those, the pane has **six** collapsible sections. Expand a section to see its controls; when collapsed, only the section title bar is visible.
 
-1. **3D view navigation** — **View roll step** (degrees per key press for **Shift+NumPad 4** / **Shift+NumPad 6**; default **45**). Stored as **`gui.view_roll_step_deg`**. See [usage.md -> View roll](usage.md#view-roll) and **[usage-occt-view.md](usage-occt-view.md)**.
+1. **3D view navigation** — **View rotation step** (degrees per key press for **NumPad 8**/**2**/**4**/**6** orbit and **Shift+NumPad 4**/**6** roll; default **45**). Stored as **`gui.view_roll_step_deg`**. See [usage.md -> View navigation](usage.md#view-navigation) and **[usage-occt-view.md](usage-occt-view.md)**.
 
 2. **UI corner rounding** — Sliders **0** to **16** for **Windows, frames, popups**; **Scrollbars and sliders** (has `(?)`); **Tabs**.
 
@@ -132,7 +132,7 @@ String: ImGui `.ini` text for window positions and docking saved with **SaveIniS
 | `imgui_rounding_scroll` | number | Scrollbar and grab rounding (same clamp). |
 | `imgui_rounding_tabs` | number | Tab rounding (same clamp). |
 | `underlay_highlight_color` | array of 3 numbers | Default underlay tint (float RGB **0** to **1** per channel). |
-| `view_roll_step_deg` | number | Degrees per **Shift+NumPad 4** / **Shift+NumPad 6** view roll (allowed range **0.1** to **180** in code; default **45**). |
+| `view_roll_step_deg` | number | Degrees per **NumPad 8**/**2**/**4**/**6** orbit and **Shift+NumPad 4**/**6** roll (allowed range **0.1** to **180** in code; default **45**). |
 | `load_last_opened_on_startup` | boolean | Desktop: open the last `.ezy` on launch. **Legacy:** `load_last_saved_on_startup` is read as a fallback if the newer key is absent. |
 | `last_opened_project_path` | string | Path of the last opened project for the option above. **Legacy:** `last_saved_project_path` is accepted if the newer key is missing. |
 
@@ -140,4 +140,4 @@ Scripting API **`ezy.occt_view_settings_json()`** returns a JSON string with **`
 
 ---
 
-For general workflows and tools, see [usage.md](usage.md). For the OCCT viewer layer and **`Occt_view`**, see **[usage-occt-view.md](usage-occt-view.md)**. For 2D sketching, see [usage-sketch.md](usage-sketch.md).
+For general workflows and tools, see [usage.md](usage.md). For the 3D viewer (Open CASCADE), see **[usage-occt-view.md](usage-occt-view.md)**. For 2D sketching, see [usage-sketch.md](usage-sketch.md).

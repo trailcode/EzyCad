@@ -176,6 +176,10 @@ class Occt_view : protected AIS_ViewController
   /// Roll the view about screen Z (view depth axis) by \a degrees, via \c V3d_View::Turn(\c V3d_Z, ...).
   void roll_view_z_deg(double degrees);
 
+  /// Orbit the view like left-drag on the trihedron: \a yaw_deg about camera up (positive = orbit left),
+  /// \a pitch_deg about camera side (positive = orbit up). Matches \c AIS_ViewController orbit axes.
+  void orbit_view_screen_step_deg(double yaw_deg, double pitch_deg);
+
   /// Snap orientation to the nearest world-axis orthographic view (+/-X/Y/Z), roll zero; keeps eye-center distance.
   void snap_view_to_nearest_standard_axis();
 

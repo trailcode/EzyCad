@@ -24,6 +24,10 @@
 #include <TopExp_Explorer.hxx>
 #include <TopoDS.hxx>
 #include <TopoDS_Compound.hxx>
+#include <Graphic3d_Camera.hxx>
+#include <Precision.hxx>
+#include <gp_Ax1.hxx>
+#include <gp_Trsf.hxx>
 #include <V3d_TypeOfAxe.hxx>
 #include <V3d_View.hxx>
 #include <WNT_WClass.hxx>
@@ -292,6 +296,46 @@ void Occt_view::roll_view_z_deg(double degrees)
     return;
 
   m_view->Turn(V3d_Z, to_radians(degrees), Standard_True);
+  m_view->Redraw();
+}
+
+void Occt_view::orbit_view_screen_step_deg(double yaw_deg, double pitch_deg)
+{
+  if (is_headless() || m_view.IsNull())
+    return;
+
+  const Graphic3d_Camera_ptr cam = m_view->Camera();
+  if (cam.IsNull())
+    return;
+
+  const double yaw_rad   = to_radians(yaw_deg);
+  const double pitch_rad = to_radians(pitch_deg);
+  if (std::abs(yaw_rad) <= Precision::Angular() && std::abs(pitch_rad) <= Precision::Angular())
+    return;
+
+  const gp_Pnt pivot(cam->Center());
+  const gp_Dir aCamDir(cam->Direction().Reversed());
+  const gp_Dir aCamUp(cam->Up());
+  const gp_Dir aCamSide(aCamUp.Crossed(aCamDir));
+
+  gp_Trsf aTrsf;
+  if (std::abs(yaw_rad) > Precision::Angular())
+  {
+    gp_Trsf yawTrsf;
+    yawTrsf.SetRotation(gp_Ax1(pivot, aCamUp), yaw_rad);
+    aTrsf.Multiply(yawTrsf);
+  }
+
+  if (std::abs(pitch_rad) > Precision::Angular())
+  {
+    gp_Trsf pitchTrsf;
+    pitchTrsf.SetRotation(gp_Ax1(pivot, aCamSide), pitch_rad);
+    aTrsf.Multiply(pitchTrsf);
+  }
+
+  cam->Transform(aTrsf);
+  cam->OrthogonalizeUp();
+  m_view->Invalidate();
   m_view->Redraw();
 }
 
