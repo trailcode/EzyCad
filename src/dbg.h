@@ -37,6 +37,28 @@
     }                                                   \
   } while (false)
 
+/// If \a condition is false: assert (programmer error), then \c return \a ret_value so execution does not continue past \ref EZY_ASSERT_MSG.
+#define EZY_ASSERT_OR_RETURN(condition, ret_value)                         \
+  do                                                                       \
+  {                                                                        \
+    if (!(condition))                                                     \
+    {                                                                     \
+      EZY_ASSERT_MSG(false, "EZY_ASSERT_OR_RETURN failed: " #condition); \
+      return (ret_value);                                                 \
+    }                                                                     \
+  } while (false)
+
+/// Same as \ref EZY_ASSERT_OR_RETURN for \c void functions.
+#define EZY_ASSERT_OR_RETURN_VOID(condition)                                  \
+  do                                                                          \
+  {                                                                           \
+    if (!(condition))                                                       \
+    {                                                                        \
+      EZY_ASSERT_MSG(false, "EZY_ASSERT_OR_RETURN_VOID failed: " #condition); \
+      return;                                                                 \
+    }                                                                         \
+  } while (false)
+
 #define DBG_MSG(stream_expr)                                                                                                          \
   do                                                                                                                                  \
   {                                                                                                                                   \
