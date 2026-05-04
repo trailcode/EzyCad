@@ -9,16 +9,28 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
-- Help > About: in-app dialog with the app version, a short product description, and a link to the GitHub repository (replaces opening the README in the browser from that menu item).
+- **Keyboard zoom:** **NumPad +** / **NumPad -**, main **-**, and **Shift+=** (US **+**) zoom the 3D view in steps equal to **one mouse wheel tick** at the cursor (same internal scaling as scroll).
+- **NumPad 8 / 2 / 4 / 6:** orbit the 3D view in fixed steps (same axes as LMB orbit); step is **View rotation step** in Settings (shared with Shift+NumPad roll; default 45 degrees; `gui.view_roll_step_deg`).
+- **NumPad 5:** snap the 3D view to the nearest orthographic world-axis orientation (top/bottom/front/back/left/right) with roll reset; keeps eye-target distance.
+- **View roll:** **Shift+NumPad 4** and **Shift+NumPad 6** roll the 3D view (Blender-style). **Settings** has **View rotation step** (degrees per key press for orbit and roll; default 45, stored as `gui.view_roll_step_deg`).
+- Help > About: reads bundled `res/about.md` via [imgui_markdown](https://github.com/enkisoftware/imgui_markdown), shows version text, splash image (`res/AI-gen-splashscreen_05_01_2026_512.png`), and clickable links; assets are copied next to the executable (and preloaded for Emscripten).
 - **Sketch length dimensions (Dimension tool):** dimensions are stored as an unordered pair of sketch nodes (not attached to a single edge). They can be selected in sketch mode and removed with **Delete**.
 - **Project JSON:** root-level `ezyFormat` (current value `2`) on save. Sketches serialize `length_dimensions` as dense node-index pairs alongside linear edges as `[a, b, mid]` only.
 - **Legacy load:** older sketch JSON that stored a per-edge dimension flag on indexed edges (`[a, b, mid, dim]`) or on legacy coordinate edges (`[pt_a, pt_b, dim]`) migrates those flags into `length_dimensions` when loading.
 
+### Fixed
+
+- Ship `res/default.ezy` (empty sketch template) so native copy steps and Emscripten `--preload-file` resolve the path; startup loading could already fall back if the file was absent.
+
 ### Changed
 
+- **View roll** (**Shift**+**NumPad 4**/**6**, main **4**/**6**, or **Left**/**Right** arrow): same roll as **Shift**+**4**/**6**; helps when Num Lock makes the numpad send arrows. Handled on key **repeat** as well as press; **Shift**+main **4**/**6** no longer fall through to the selection filter.
+- **Keyboard zoom** (**NumPad +/-**, **Shift+=**, **-**): each repeated OS key event zooms again so holding the key zooms continuously (uses GLFW key repeat).
+- **Zoom:** **Zoom scroll scale** in Settings replaces the hard-coded wheel multiplier (**4**); stored as **`gui.view_zoom_scroll_scale`**. Hold **Shift** while scrolling or using +/- for Blender-style finer zoom (**x0.1** on the delta).
+- **View roll** default step is **45** degrees (was 15).
 - Window title shows the current project file name (e.g. after Open or Save), or `untitled` when there is no path yet; **File > New** clears the name so the title matches an empty document.
 - **Dimension tool behavior:** click a straight edge to toggle a length dimension between its endpoints, or click two nodes to toggle a dimension between them; clicks away from nodes and edges do not create spurious dimensions. Node picks take precedence over edge picks when both could apply; moving the mouse updates node snap feedback in this mode.
-- **Documentation:** `usage-sketch.md` and `usage.md` describe the tool as the **Dimension tool** and document the node-pair model.
+- **Documentation:** `usage-sketch.md` and `usage.md` describe the tool as the **Dimension tool** and document the node-pair model. **Num Lock off** is documented as recommended for numpad view shortcuts (orbit, roll, zoom, snap); **Num Lock on** may remap the keypad on Windows and other OSes (`usage.md`, `usage-occt-view.md`, `usage-settings.md`).
 
 ## [0.1.0] - 2026-04-17
 

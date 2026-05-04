@@ -14,17 +14,17 @@ extern "C"
 #include "lualib.h"
 }
 
+#include <cstring>
 #include <filesystem>
 #include <fstream>
-#include <cstring>
 #include <sstream>
 #include <string>
 #include <vector>
 
 namespace
 {
-const char* k_registry_gui       = "ezycad_gui";
-const char* k_shp_metatable     = "EzyCad_Shp";
+const char* k_registry_gui  = "ezycad_gui";
+const char* k_shp_metatable = "EzyCad_Shp";
 
 GUI* get_gui(lua_State* L)
 {
@@ -184,7 +184,7 @@ int l_view_get_shape(lua_State* L)
     return 1;
   }
   std::list<Shp_ptr>& shapes = view->get_shapes();
-  auto                it    = shapes.begin();
+  auto                it     = shapes.begin();
   for (lua_Integer i = 1; i < idx && it != shapes.end(); ++i, ++it)
     ;
   if (it == shapes.end())
@@ -290,7 +290,7 @@ int l_shp_name(lua_State* L)
 // Shp:set_name(s)
 int l_shp_set_name(lua_State* L)
 {
-  Shp_ptr* p   = static_cast<Shp_ptr*>(luaL_checkudata(L, 1, k_shp_metatable));
+  Shp_ptr*    p = static_cast<Shp_ptr*>(luaL_checkudata(L, 1, k_shp_metatable));
   const char* s = luaL_checkstring(L, 2);
   (*p)->set_name(s);
   return 0;
@@ -350,7 +350,7 @@ int l_ezy_help(lua_State* L)
       "  ezy.get_mode()                - return current mode name\n"
       "  ezy.set_mode(name)            - set mode by name\n"
       "  ezy.save_occt_view_settings() - write settings JSON (incl. view colors)\n"
-      "  ezy.occt_view_settings_json() - JSON: occt_view + gui edge_dim_label_h / edge_dim_line_width\n"
+      "  ezy.occt_view_settings_json() - JSON: occt_view + gui edge_dim_*, view_roll_step_deg, view_zoom_scroll_scale\n"
       "  ezy.help()                    - print this help\n"
       "view:\n"
       "  view.sketch_count()           - number of sketches\n"
@@ -361,11 +361,11 @@ int l_ezy_help(lua_State* L)
       "  view.get_shape(i)             - get shape by 1-based index (returns Shp or nil)\n"
       "  view.get_camera()             - get camera eye/center/up vectors\n"
       "  view.set_camera(ex,ey,ez,cx,cy,cz,ux,uy,uz) - set camera vectors\n"
-  "Shp (shape object):\n"
-  "  s:name()       - get shape name\n"
-  "  s:set_name(s)  - set shape name\n"
-  "  s:visible()    - get visibility\n"
-  "  s:set_visible(b) - set visibility";
+      "Shp (shape object):\n"
+      "  s:name()       - get shape name\n"
+      "  s:set_name(s)  - set shape name\n"
+      "  s:visible()    - get visibility\n"
+      "  s:set_visible(b) - set visibility";
   con->append_line_from_lua(help_text);
   return 0;
 }
@@ -505,7 +505,7 @@ void Lua_console::load_scripts()
     std::string path_str = path.string();
     std::string filename = path.filename().string();
 
-    std::string content;
+    std::string   content;
     std::ifstream f(path_str);
     if (f)
     {

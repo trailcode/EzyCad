@@ -12,7 +12,6 @@
 #include <vector>
 
 #include "occt_glfw_win.h"
-#include "types.h"
 #include "shp_chamfer.h"
 #include "shp_common.h"
 #include "shp_cut.h"
@@ -23,6 +22,7 @@
 #include "shp_polar_dup.h"
 #include "shp_rotate.h"
 #include "shp_scale.h"
+#include "types.h"
 
 class Sketch;
 class GUI;
@@ -62,10 +62,10 @@ class Occt_view : protected AIS_ViewController
   void init_viewer();
   void init_default();
 
-  std::string to_json() const;
-  void        load(const std::string& json_str, bool restore_view = true);
+  std::string          to_json() const;
+  void                 load(const std::string& json_str, bool restore_view = true);
   [[nodiscard]] Status import_step(const std::string& step_data);
-  bool        import_ply(const std::string& ply_bytes);
+  bool                 import_ply(const std::string& ply_bytes);
 
   /// Writes STEP, IGES, binary STL, or PLY to \a file_path. Uses selected shapes if any, else all shapes.
   [[nodiscard]] Status export_document(Export_format fmt, const std::string& file_path);
@@ -151,7 +151,8 @@ class Occt_view : protected AIS_ViewController
 
   // Input events.
   void on_resize(int theWidth, int theHeight);
-  void on_mouse_scroll(double theOffsetX, double theOffsetY);
+  /// \param shift_finer_zoom If true, Blender-style x0.1 zoom step (held Shift).
+  void on_mouse_scroll(double theOffsetX, double theOffsetY, bool shift_finer_zoom = false);
   void on_mouse_button(int theButton, int theAction, int theMods);
   void on_mouse_move(const ScreenCoords& screen_coords);
 
@@ -172,6 +173,23 @@ class Occt_view : protected AIS_ViewController
                                  double& out_min_v, double& out_max_u, double& out_max_v) const;
   bool get_camera(gp_Pnt& out_eye, gp_Pnt& out_center, gp_Dir& out_up) const;
   void set_camera(const gp_Pnt& eye, const gp_Pnt& center, const gp_Dir& up);
+
+  /// Roll the view about screen Z (view depth axis) by \a degrees, via \c V3d_View::Turn(\c V3d_Z, ...).
+  void roll_view_z_deg(double degrees);
+
+  /// Orbit the view like left-drag on the trihedron: \a yaw_deg about camera up (positive = orbit left),
+  /// \a pitch_deg about camera side (positive = orbit up). Matches \c AIS_ViewController orbit axes.
+  void orbit_view_screen_step_deg(double yaw_deg, double pitch_deg);
+
+  /// Zoom like one mouse wheel notch at the cursor (\a wheel_notches > 0 zooms in; same units as \c on_mouse_scroll).
+  /// \param shift_finer_zoom Blender-style finer step when Shift is held (keyboard or scroll).
+  void zoom_view_wheel_notches(double wheel_notches, bool shift_finer_zoom = false);
+
+  /// Clamp and store scroll-scale used by \c on_mouse_scroll / \c zoom_view_wheel_notches (from Settings JSON).
+  void set_zoom_scroll_scale(double scale);
+
+  /// Snap orientation to the nearest world-axis orthographic view (+/-X/Y/Z), roll zero; keeps eye-center distance.
+  void snap_view_to_nearest_standard_axis();
 
   GUI&                    gui();
   AIS_InteractiveContext& ctx();
@@ -225,7 +243,7 @@ class Occt_view : protected AIS_ViewController
   void        add_shp_(Shp_ptr& shp);
   std::string unique_shape_name_(const char* base_name) const;
 
-  TopoDS_Shape shape_with_local_transform_(const AIS_Shape_ptr& ais) const;
+  TopoDS_Shape         shape_with_local_transform_(const AIS_Shape_ptr& ais) const;
   [[nodiscard]] Status build_export_shape_(TopoDS_Shape& out_shape) const;
 
   void update_view_background_();
@@ -235,17 +253,22 @@ class Occt_view : protected AIS_ViewController
   static Aspect_VKeyMouse mouse_button_from_glfw_(int theButton);
   static Aspect_VKeyFlags key_flags_from_glfw_(int theFlags);
 
+  /// Maps wheel delta to OCCT zoom units using \ref m_zoom_scroll_scale and optional Shift (x0.1).
+  int zoom_scroll_delta_int_(double wheel_y, bool shift_finer_zoom) const;
+
   GUI&                       m_gui;
   AIS_InteractiveContext_ptr m_ctx;
   V3d_View_ptr               m_view;
   Occt_glfw_win_ptr          m_occt_window;
   // Undo / redo
   static constexpr size_t    k_max_undo {50};
+
   struct Undo_entry
   {
     std::string json;
     Mode        mode;  // Mode at time of operation; restored when navigating stacks
   };
+
   std::vector<Undo_entry> m_undo_stack;
   std::vector<Undo_entry> m_redo_stack;
   bool                    m_restoring {false};
@@ -269,6 +292,8 @@ class Occt_view : protected AIS_ViewController
   int                      m_bg_gradient_method {1};  // 0=HOR, 1=VER, 2=DIAG1, ...
   float                    m_grid_color1[3] {0.1f, 0.1f, 0.1f};
   float                    m_grid_color2[3] {0.1f, 0.1f, 0.3f};
+  /// User setting: same role as former literal in `UpdateZoom(Aspect_ScrollDelta(..., int(y * scale)))`.
+  double                   m_zoom_scroll_scale {4.0};
   // --------------------------------------------------------------------
   // Operations
   Shp_move                 m_shp_move;

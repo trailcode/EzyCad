@@ -3,7 +3,9 @@
 #include <algorithm>
 #include <nlohmann/json.hpp>
 #include <sstream>
+#include <string>
 
+#include "dbg.h"
 #include "gui.h"
 #include "imgui.h"
 #include "occt_view.h"
@@ -38,8 +40,10 @@ std::string GUI::occt_view_settings_json() const
   json j;
   j["occt_view"] = build_occt_view_settings_object(*m_view);
   j["gui"]       = {
-      {   "edge_dim_label_h",    m_edge_dim_label_h},
-      {"edge_dim_line_width", m_edge_dim_line_width},
+      {      "edge_dim_label_h",       m_edge_dim_label_h},
+      {   "edge_dim_line_width",    m_edge_dim_line_width},
+      {    "view_roll_step_deg",     m_view_roll_step_deg},
+      {"view_zoom_scroll_scale", m_view_zoom_scroll_scale},
   };
   return j.dump(2);
 }
@@ -77,6 +81,8 @@ void GUI::save_occt_view_settings()
       {     "imgui_rounding_general",                                       m_imgui_rounding_general},
       {      "imgui_rounding_scroll",                                        m_imgui_rounding_scroll},
       {        "imgui_rounding_tabs",                                          m_imgui_rounding_tabs},
+      {         "view_roll_step_deg",                                           m_view_roll_step_deg},
+      {     "view_zoom_scroll_scale",                                       m_view_zoom_scroll_scale},
 #ifndef NDEBUG
       {                   "show_dbg",                                                     m_show_dbg},
 #endif
@@ -197,6 +203,34 @@ void GUI::parse_gui_panes_settings_(const std::string& content)
     m_imgui_rounding_scroll  = round_from_json("imgui_rounding_scroll", fb_scroll);
     m_imgui_rounding_tabs    = round_from_json("imgui_rounding_tabs", fb_tabs);
 
+    m_view_roll_step_deg = k_gui_view_roll_step_deg_default;
+    if (g.contains("view_roll_step_deg") && g["view_roll_step_deg"].is_number())
+    {
+      const double v = g["view_roll_step_deg"].get<double>();
+      if (v >= k_gui_view_roll_step_deg_min && v <= k_gui_view_roll_step_deg_max)
+        m_view_roll_step_deg = v;
+      else
+        log_message("EzyCad: settings gui.view_roll_step_deg out of range [" +
+                    std::to_string(k_gui_view_roll_step_deg_min) + ", " +
+                    std::to_string(k_gui_view_roll_step_deg_max) + "], got " + std::to_string(v) +
+                    "; using default.");
+    }
+
+    m_view_zoom_scroll_scale = k_gui_view_zoom_scroll_scale_default;
+    if (g.contains("view_zoom_scroll_scale") && g["view_zoom_scroll_scale"].is_number())
+    {
+      const double v = g["view_zoom_scroll_scale"].get<double>();
+      if (v >= k_gui_view_zoom_scroll_scale_min && v <= k_gui_view_zoom_scroll_scale_max)
+        m_view_zoom_scroll_scale = v;
+      else
+        log_message("EzyCad: settings gui.view_zoom_scroll_scale out of range [" +
+                    std::to_string(k_gui_view_zoom_scroll_scale_min) + ", " +
+                    std::to_string(k_gui_view_zoom_scroll_scale_max) + "], got " + std::to_string(v) +
+                    "; using default.");
+    }
+    if (m_view)
+      m_view->set_zoom_scroll_scale(m_view_zoom_scroll_scale);
+
     if (g.contains("underlay_highlight_color") && g["underlay_highlight_color"].is_array() && g["underlay_highlight_color"].size() >= 3)
     {
       const json& a = g["underlay_highlight_color"];
@@ -303,6 +337,71 @@ void GUI::settings_()
 
   if (ImGui::Checkbox("Dark mode", &m_dark_mode))
     save_occt_view_settings();
+
+  if (ImGui::CollapsingHeader("3D view navigation", ImGuiTreeNodeFlags_DefaultOpen))
+  {
+    if (ImGui::BeginTable("settings_view_nav", 2, ImGuiTableFlags_SizingStretchProp))
+    {
+      ImGui::TableSetupColumn("label", ImGuiTableColumnFlags_WidthFixed, k_label_col_w);
+      ImGui::TableSetupColumn("control", ImGuiTableColumnFlags_WidthStretch);
+
+      ImGui::TableNextRow();
+      ImGui::TableSetColumnIndex(0);
+      ImGui::AlignTextToFramePadding();
+      ImGui::TextUnformatted("View rotation step");
+      ImGui::TableSetColumnIndex(1);
+      // SliderScalar(ImGuiDataType_Double): drag slider, or Ctrl+click for precise keyboard input (standard ImGui).
+      if (ImGui::SliderScalar("##view_roll_step", ImGuiDataType_Double, &m_view_roll_step_deg,
+                              &k_gui_view_roll_step_deg_min, &k_gui_view_roll_step_deg_max, "%.2f deg",
+                              ImGuiSliderFlags_AlwaysClamp | ImGuiSliderFlags_ClampOnInput))
+        save_occt_view_settings();
+      m_view_roll_step_deg =
+          std::clamp(m_view_roll_step_deg, k_gui_view_roll_step_deg_min, k_gui_view_roll_step_deg_max);
+
+      if (ImGui::IsItemHovered())
+        ImGui::SetTooltip(
+            "Degrees per key press: NumPad 8/2/4/6 orbit (like LMB drag), Shift+NumPad 4/6, Shift+4/6, or Shift+Left/Right roll. "
+            "Ctrl+click the slider to type a value.");
+
+      ImGui::SameLine(0.0f, ImGui::GetStyle().ItemInnerSpacing.x);
+      if (ImGui::SmallButton("?##view_roll_help"))
+        open_url_("https://github.com/trailcode/EzyCad/blob/main/usage.md#view-roll");
+      if (ImGui::IsItemHovered())
+        ImGui::SetTooltip("Help: view roll (opens usage.md in your browser).");
+
+      ImGui::TableNextRow();
+      ImGui::TableSetColumnIndex(0);
+      ImGui::AlignTextToFramePadding();
+      ImGui::TextUnformatted("Zoom scroll scale");
+      ImGui::TableSetColumnIndex(1);
+      if (ImGui::SliderScalar("##view_zoom_scroll_scale", ImGuiDataType_Double, &m_view_zoom_scroll_scale,
+                              &k_gui_view_zoom_scroll_scale_min, &k_gui_view_zoom_scroll_scale_max, "%.2f",
+                              ImGuiSliderFlags_AlwaysClamp | ImGuiSliderFlags_ClampOnInput))
+      {
+        m_view_zoom_scroll_scale = std::clamp(m_view_zoom_scroll_scale, k_gui_view_zoom_scroll_scale_min,
+                                              k_gui_view_zoom_scroll_scale_max);
+        if (m_view)
+          m_view->set_zoom_scroll_scale(m_view_zoom_scroll_scale);
+
+        save_occt_view_settings();
+      }
+      m_view_zoom_scroll_scale =
+          std::clamp(m_view_zoom_scroll_scale, k_gui_view_zoom_scroll_scale_min, k_gui_view_zoom_scroll_scale_max);
+
+      if (ImGui::IsItemHovered())
+        ImGui::SetTooltip(
+            "Multiplier for mouse wheel and +/- zoom (same as UpdateZoom scroll delta). "
+            "Hold Shift while zooming for Blender-style finer steps (x0.1). Ctrl+click to type a value.");
+
+      ImGui::EndTable();
+    }
+
+    ImGui::TextWrapped(
+        "NumPad 8 / 2 / 4 / 6 orbit the view (same axes as left-drag orbit). Hold Shift and press NumPad 4 or NumPad 6, "
+        "main 4 / 6, or Left / Right arrow for Blender-style roll around the screen Z axis (hold to repeat). "
+        "Num Lock off is recommended for numpad shortcuts (see usage.md View navigation). "
+        "Hold Shift while scrolling or pressing +/- for finer zoom.");
+  }
 
   if (ImGui::CollapsingHeader("UI corner rounding"))
   {

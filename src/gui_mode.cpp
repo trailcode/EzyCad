@@ -98,8 +98,91 @@ void GUI::set_parent_mode()
 void GUI::on_key(int key, int scancode, int action, int mods)
 {
   (void) scancode;
+  const bool press_or_repeat = (action == GLFW_PRESS || action == GLFW_REPEAT);
+
+  // Zoom (+/-): scaled like mouse wheel; GLFW_REPEAT while held; Shift = Blender-style finer step.
+  if (press_or_repeat && (mods & (GLFW_MOD_CONTROL | GLFW_MOD_ALT)) == 0)
+  {
+    bool zoom_in  = false;
+    bool zoom_out = false;
+    // Shift+= is the main-keyboard zoom-in path; Shift is structural (produces '+'), not "finer step" intent.
+    bool zoom_in_shift_is_structural = false;
+    switch (key)
+    {
+      case GLFW_KEY_KP_ADD:
+        zoom_in = true;
+        break;
+      case GLFW_KEY_KP_SUBTRACT:
+      case GLFW_KEY_MINUS:
+        zoom_out = true;
+        break;
+      case GLFW_KEY_EQUAL:
+        if ((mods & GLFW_MOD_SHIFT) != 0)
+        {
+          zoom_in                     = true;
+          zoom_in_shift_is_structural = true;
+        }
+        break;
+      default:
+        break;
+    }
+
+    const bool shift_finer =
+        ((mods & GLFW_MOD_SHIFT) != 0) && !zoom_in_shift_is_structural;
+
+    if (zoom_in)
+    {
+      m_view->zoom_view_wheel_notches(1.0, shift_finer);
+      return;
+    }
+    else if (zoom_out)
+    {
+      m_view->zoom_view_wheel_notches(-1.0, shift_finer);
+      return;
+    }
+  }
+
+  // Blender-style view roll: Shift + NumPad 4/6, main 4/6, or Left/Right (NumLock-on numpad often maps here).
+  // Use PRESS and REPEAT (like zoom) so hold-to-repeat works; route before keypad digit -> selection filter.
+  if (press_or_repeat && (mods & GLFW_MOD_SHIFT) != 0 && (mods & (GLFW_MOD_CONTROL | GLFW_MOD_ALT)) == 0)
+  {
+    const bool roll_ccw =
+        (key == GLFW_KEY_KP_4 || key == GLFW_KEY_4 || key == GLFW_KEY_LEFT);
+    const bool roll_cw =
+        (key == GLFW_KEY_KP_6 || key == GLFW_KEY_6 || key == GLFW_KEY_RIGHT);
+    if (roll_ccw || roll_cw)
+    {
+      const double step = m_view_roll_step_deg;
+      m_view->roll_view_z_deg(roll_ccw ? -step : step);
+      return;
+    }
+  }
+
   if (action != GLFW_PRESS)
     return;
+
+  // Nearest world-axis orthographic view (roll zero). Routes before Normal-mode keypad selection filters.
+  if (key == GLFW_KEY_KP_5 && (mods & (GLFW_MOD_SHIFT | GLFW_MOD_CONTROL | GLFW_MOD_ALT)) == 0)
+  {
+    m_view->snap_view_to_nearest_standard_axis();
+    return;
+  }
+
+  // Orbit like trihedron / LMB orbit (AIS_ViewController axes); step matches Settings view rotation step.
+  if ((mods & (GLFW_MOD_SHIFT | GLFW_MOD_CONTROL | GLFW_MOD_ALT)) == 0)
+  {
+    const double step = m_view_roll_step_deg;
+    // clang-format off
+    switch (key)
+    {
+      case GLFW_KEY_KP_8: m_view->orbit_view_screen_step_deg(0.0, step);  return;
+      case GLFW_KEY_KP_2: m_view->orbit_view_screen_step_deg(0.0, -step); return;
+      case GLFW_KEY_KP_4: m_view->orbit_view_screen_step_deg(step, 0.0);  return;
+      case GLFW_KEY_KP_6: m_view->orbit_view_screen_step_deg(-step, 0.0); return;
+      default: break;
+    }
+    // clang-format on
+  }
 
   const ScreenCoords screen_coords(dvec2(ImGui::GetIO().MousePos.x, ImGui::GetIO().MousePos.y));
 

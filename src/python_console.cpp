@@ -1,12 +1,5 @@
 #include "python_console.h"
 
-#include "gui.h"
-#include "imgui.h"
-#include "modes.h"
-#include "occt_view.h"
-#include "shp.h"
-#include "sketch.h"
-
 #include <cstring>
 #include <filesystem>
 #include <fstream>
@@ -14,21 +7,28 @@
 #include <stdexcept>
 #include <vector>
 
+#include "gui.h"
+#include "imgui.h"
+#include "modes.h"
+#include "occt_view.h"
+#include "shp.h"
+#include "sketch.h"
+
 #ifdef EZYCAD_HAVE_PYTHON
-#  ifdef _MSC_VER
+#ifdef _MSC_VER
 // pybind11 pulls in Python.h; avoid python3xx_d.lib #pragma in Debug (we link release DLL).
-#    ifdef _DEBUG
-#      pragma push_macro("_DEBUG")
-#      undef _DEBUG
-#      define EZYCAD_POP_DEBUG_AFTER_PYBIND
-#    endif
-#  endif
-#  include <pybind11/embed.h>
-#  include <pybind11/eval.h>
-#  ifdef EZYCAD_POP_DEBUG_AFTER_PYBIND
-#    pragma pop_macro("_DEBUG")
-#    undef EZYCAD_POP_DEBUG_AFTER_PYBIND
-#  endif
+#ifdef _DEBUG
+#pragma push_macro("_DEBUG")
+#undef _DEBUG
+#define EZYCAD_POP_DEBUG_AFTER_PYBIND
+#endif
+#endif
+#include <pybind11/embed.h>
+#include <pybind11/eval.h>
+#ifdef EZYCAD_POP_DEBUG_AFTER_PYBIND
+#pragma pop_macro("_DEBUG")
+#undef EZYCAD_POP_DEBUG_AFTER_PYBIND
+#endif
 
 namespace py = pybind11;
 
@@ -59,10 +59,10 @@ void append_python_exception_to_history(std::vector<std::string>& history, bool*
       PyObject* fmt = PyObject_GetAttrString(tb_mod, "format_exception");
       if (fmt && PyCallable_Check(fmt))
       {
-        PyObject* t     = type ? type : Py_None;
-        PyObject* v     = value ? value : Py_None;
-        PyObject* tb    = traceback ? traceback : Py_None;
-        PyObject* args  = PyTuple_Pack(3, t, v, tb);
+        PyObject* t    = type ? type : Py_None;
+        PyObject* v    = value ? value : Py_None;
+        PyObject* tb   = traceback ? traceback : Py_None;
+        PyObject* args = PyTuple_Pack(3, t, v, tb);
         if (args)
         {
           lines = PyObject_CallObject(fmt, args);
@@ -78,8 +78,8 @@ void append_python_exception_to_history(std::vector<std::string>& history, bool*
     Py_ssize_t n = PyList_GET_SIZE(lines);
     for (Py_ssize_t i = 0; i < n; ++i)
     {
-      PyObject* item = PyList_GET_ITEM(lines, i);
-      const char* u  = PyUnicode_AsUTF8(item);
+      PyObject*   item = PyList_GET_ITEM(lines, i);
+      const char* u    = PyUnicode_AsUTF8(item);
       if (u)
       {
         std::string line(u);
@@ -92,8 +92,8 @@ void append_python_exception_to_history(std::vector<std::string>& history, bool*
   }
   else
   {
-    PyObject* s      = value ? PyObject_Str(value) : nullptr;
-    const char* msg  = s ? PyUnicode_AsUTF8(s) : "Python error";
+    PyObject*   s   = value ? PyObject_Str(value) : nullptr;
+    const char* msg = s ? PyUnicode_AsUTF8(s) : "Python error";
     history.push_back(std::string("[err] ") + (msg ? msg : "?"));
     *scroll = true;
     Py_XDECREF(s);
@@ -158,10 +158,14 @@ del _ezycad_bootstrap
 PYBIND11_EMBEDDED_MODULE(ezycad_native, m)
 {
   py::class_<Ezy_shp>(m, "Shp")
-      .def("name", [](const Ezy_shp& s) { return s.shp->get_name(); })
-      .def("set_name", [](Ezy_shp& s, const std::string& n) { s.shp->set_name(n); })
-      .def("visible", [](const Ezy_shp& s) { return s.shp->get_visible(); })
-      .def("set_visible", [](Ezy_shp& s, bool v) { s.shp->set_visible(v); })
+      .def("name", [](const Ezy_shp& s)
+           { return s.shp->get_name(); })
+      .def("set_name", [](Ezy_shp& s, const std::string& n)
+           { s.shp->set_name(n); })
+      .def("visible", [](const Ezy_shp& s)
+           { return s.shp->get_visible(); })
+      .def("set_visible", [](Ezy_shp& s, bool v)
+           { s.shp->set_visible(v); })
       .def(
           "__repr__",
           [](const Ezy_shp& s)
@@ -222,7 +226,7 @@ PYBIND11_EMBEDDED_MODULE(ezycad_native, m)
             "  ezy.get_mode()                - return current mode name\n"
             "  ezy.set_mode(name)            - set mode by name\n"
             "  ezy.save_occt_view_settings() - write settings JSON (incl. view colors)\n"
-            "  ezy.occt_view_settings_json() - JSON: occt_view + gui edge_dim_label_h / edge_dim_line_width\n"
+            "  ezy.occt_view_settings_json() - JSON: occt_view + gui edge_dim_*, view_roll_step_deg, view_zoom_scroll_scale\n"
             "  ezy.help()            - print this help\n"
             "view:\n"
             "  view.sketch_count()          - number of sketches\n"
@@ -482,7 +486,7 @@ void Python_console::load_scripts()
     std::string path_str = path.string();
     std::string filename = path.filename().string();
 
-    std::string content;
+    std::string   content;
     std::ifstream f(path_str);
     if (f)
     {
@@ -716,7 +720,7 @@ void Python_console::render(bool* p_open)
     if (ImGui::Button("Save"))
     {
       const std::string to_save = script.editor.GetText();
-      std::ofstream of(script.path);
+      std::ofstream     of(script.path);
       if (of)
       {
         if (!to_save.empty())
@@ -737,4 +741,3 @@ void Python_console::render(bool* p_open)
   ImGui::EndTabBar();
   ImGui::End();
 }
-

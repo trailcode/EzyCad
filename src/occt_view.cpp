@@ -13,8 +13,10 @@
 #include <GeomAPI_IntCS.hxx>
 #include <Geom_Line.hxx>
 #include <Geom_Plane.hxx>
+#include <Graphic3d_Camera.hxx>
 #include <IGESControl_Writer.hxx>
 #include <OpenGl_GraphicDriver.hxx>
+#include <Precision.hxx>
 #include <Prs3d_DatumAspect.hxx>
 #include <PrsDim_LengthDimension.hxx>
 #include <STEPControl_Reader.hxx>
@@ -24,11 +26,14 @@
 #include <TopExp_Explorer.hxx>
 #include <TopoDS.hxx>
 #include <TopoDS_Compound.hxx>
+#include <V3d_TypeOfAxe.hxx>
 #include <V3d_View.hxx>
 #include <WNT_WClass.hxx>
 #include <WNT_Window.hxx>
 #include <algorithm>
 #include <cmath>
+#include <gp_Ax1.hxx>
+#include <gp_Trsf.hxx>
 
 #include "dbg.h"
 #include "geom.h"
@@ -283,6 +288,113 @@ void Occt_view::init_viewer()
   // m_view->SetTextureEnv(env_map);
 
   m_default_material = Graphic3d_MaterialAspect(Graphic3d_NOM_CHROME);
+}
+
+void Occt_view::roll_view_z_deg(double degrees)
+{
+  if (m_view.IsNull())
+    return;
+
+  m_view->Turn(V3d_Z, to_radians(degrees), Standard_True);
+  m_view->Redraw();
+}
+
+void Occt_view::orbit_view_screen_step_deg(double yaw_deg, double pitch_deg)
+{
+  if (is_headless() || m_view.IsNull())
+    return;
+
+  const Graphic3d_Camera_ptr cam = m_view->Camera();
+  if (cam.IsNull())
+    return;
+
+  const double yaw_rad   = to_radians(yaw_deg);
+  const double pitch_rad = to_radians(pitch_deg);
+  if (std::abs(yaw_rad) <= Precision::Angular() && std::abs(pitch_rad) <= Precision::Angular())
+    return;
+
+  const gp_Pnt pivot(cam->Center());
+  const gp_Dir aCamDir(cam->Direction().Reversed());
+  const gp_Dir aCamUp(cam->Up());
+  const gp_Dir aCamSide(aCamUp.Crossed(aCamDir));
+
+  gp_Trsf aTrsf;
+  if (std::abs(yaw_rad) > Precision::Angular())
+  {
+    gp_Trsf yawTrsf;
+    yawTrsf.SetRotation(gp_Ax1(pivot, aCamUp), yaw_rad);
+    aTrsf.Multiply(yawTrsf);
+  }
+
+  if (std::abs(pitch_rad) > Precision::Angular())
+  {
+    gp_Trsf pitchTrsf;
+    pitchTrsf.SetRotation(gp_Ax1(pivot, aCamSide), pitch_rad);
+    aTrsf.Multiply(pitchTrsf);
+  }
+
+  cam->Transform(aTrsf);
+  cam->OrthogonalizeUp();
+  m_view->Invalidate();
+  m_view->Redraw();
+}
+
+void Occt_view::snap_view_to_nearest_standard_axis()
+{
+  if (is_headless() || m_view.IsNull())
+    return;
+
+  gp_Pnt eye;
+  gp_Pnt center;
+  gp_Dir up_unused;
+  if (!get_camera(eye, center, up_unused))
+    return;
+
+  gp_Vec       to_center(eye, center);
+  const double dist = to_center.Magnitude();
+  if (dist <= Precision::Confusion())
+    return;
+
+  gp_Dir fwd(to_center);
+
+  static const gp_Dir k_axes[6] = {
+      gp_Dir(1, 0, 0),
+      gp_Dir(-1, 0, 0),
+      gp_Dir(0, 1, 0),
+      gp_Dir(0, -1, 0),
+      gp_Dir(0, 0, 1),
+      gp_Dir(0, 0, -1),
+  };
+
+  int    best_i   = 0;
+  double best_dot = -2.0;
+  for (int i = 0; i < 6; ++i)
+  {
+    const double d = fwd.X() * k_axes[i].X() + fwd.Y() * k_axes[i].Y() + fwd.Z() * k_axes[i].Z();
+    if (d > best_dot)
+    {
+      best_dot = d;
+      best_i   = i;
+    }
+  }
+
+  const gp_Dir f = k_axes[best_i];
+
+  gp_Dir new_up;
+  {
+    const double ax = std::abs(f.X());
+    const double ay = std::abs(f.Y());
+    const double az = std::abs(f.Z());
+    if (az >= ax && az >= ay)
+      new_up = gp_Dir(0, 1, 0);
+    else
+      new_up = gp_Dir(0, 0, 1);
+  }
+
+  gp_Vec offset(f);
+  offset.Multiply(-dist);
+  const gp_Pnt new_eye = center.Translated(offset);
+  set_camera(new_eye, center, new_up);
 }
 
 void Occt_view::init_default()
@@ -1175,10 +1287,44 @@ void Occt_view::on_resize(int theWidth, int theHeight)
   }
 }
 
-void Occt_view::on_mouse_scroll(double theOffsetX, double theOffsetY)
+namespace
 {
+// Blender-style: Shift held while zooming uses a finer step (same idea as precision transforms).
+constexpr double k_zoom_shift_finer_factor = 0.1;
+}  // namespace
+
+void Occt_view::set_zoom_scroll_scale(double scale)
+{
+  m_zoom_scroll_scale =
+      std::clamp(scale, k_gui_view_zoom_scroll_scale_min, k_gui_view_zoom_scroll_scale_max);
+}
+
+int Occt_view::zoom_scroll_delta_int_(double wheel_y, bool shift_finer_zoom) const
+{
+  const double scaled =
+      wheel_y * m_zoom_scroll_scale * (shift_finer_zoom ? k_zoom_shift_finer_factor : 1.0);
+  long r = std::lround(scaled);
+  if (r == 0 && wheel_y != 0.0)
+    r = wheel_y > 0.0 ? 1L : -1L;
+
+  return static_cast<int>(r);
+}
+
+void Occt_view::on_mouse_scroll(double theOffsetX, double theOffsetY, bool shift_finer_zoom)
+{
+  (void) theOffsetX;
   if (!m_view.IsNull())
-    UpdateZoom(Aspect_ScrollDelta(m_occt_window->CursorPosition(), int(theOffsetY * 4.0)));
+    UpdateZoom(Aspect_ScrollDelta(m_occt_window->CursorPosition(),
+                                  zoom_scroll_delta_int_(theOffsetY, shift_finer_zoom)));
+}
+
+void Occt_view::zoom_view_wheel_notches(double wheel_notches, bool shift_finer_zoom)
+{
+  if (m_view.IsNull())
+    return;
+
+  UpdateZoom(Aspect_ScrollDelta(m_occt_window->CursorPosition(),
+                                zoom_scroll_delta_int_(wheel_notches, shift_finer_zoom)));
 }
 
 void Occt_view::on_mouse_button(int theButton, int theAction, int theMods)

@@ -291,6 +291,8 @@ if(CMAKE_CXX_COMPILER_ID STREQUAL "Emscripten")
             --preload-file ${CMAKE_SOURCE_DIR}/res/default.ezy@/res/default.ezy \
             --preload-file ${CMAKE_SOURCE_DIR}/res/examples@/res/examples \
             --preload-file ${CMAKE_SOURCE_DIR}/res/scripts/lua@/res/scripts/lua \
+            --preload-file ${CMAKE_SOURCE_DIR}/res/about.md@/res/about.md \
+            --preload-file ${CMAKE_SOURCE_DIR}/res/AI-gen-splashscreen_05_01_2026_512.png@/res/AI-gen-splashscreen_05_01_2026_512.png \
             --shell-file ${CMAKE_SOURCE_DIR}/web/EzyCad.html"
         )
     else()
@@ -324,6 +326,8 @@ if(CMAKE_CXX_COMPILER_ID STREQUAL "Emscripten")
             --preload-file ${CMAKE_SOURCE_DIR}/res/default.ezy@/res/default.ezy \
             --preload-file ${CMAKE_SOURCE_DIR}/res/examples@/res/examples \
             --preload-file ${CMAKE_SOURCE_DIR}/res/scripts/lua@/res/scripts/lua \
+            --preload-file ${CMAKE_SOURCE_DIR}/res/about.md@/res/about.md \
+            --preload-file ${CMAKE_SOURCE_DIR}/res/AI-gen-splashscreen_05_01_2026_512.png@/res/AI-gen-splashscreen_05_01_2026_512.png \
             --shell-file ${CMAKE_SOURCE_DIR}/web/EzyCad.html"
         )
     endif()
@@ -360,6 +364,12 @@ if(CMAKE_CXX_COMPILER_ID STREQUAL "Emscripten")
         COMMAND ${CMAKE_COMMAND} -E copy_if_different
             ${CMAKE_SOURCE_DIR}/res/default.ezy
             $<TARGET_FILE_DIR:${PROJECT_NAME}>/res/default.ezy
+        COMMAND ${CMAKE_COMMAND} -E copy_if_different
+            ${CMAKE_SOURCE_DIR}/res/about.md
+            $<TARGET_FILE_DIR:${PROJECT_NAME}>/res/about.md
+        COMMAND ${CMAKE_COMMAND} -E copy_if_different
+            ${CMAKE_SOURCE_DIR}/res/AI-gen-splashscreen_05_01_2026_512.png
+            $<TARGET_FILE_DIR:${PROJECT_NAME}>/res/AI-gen-splashscreen_05_01_2026_512.png
         COMMENT "Copying res/ezycad_settings.json and res/default.ezy for Emscripten"
     )
     file(GLOB RES_EXAMPLE_FILES_EM "${CMAKE_SOURCE_DIR}/res/examples/*.ezy")
@@ -411,6 +421,12 @@ else()
         COMMAND ${CMAKE_COMMAND} -E copy_if_different
             ${CMAKE_SOURCE_DIR}/res/default.ezy
             $<TARGET_FILE_DIR:${PROJECT_NAME}>/res/default.ezy
+        COMMAND ${CMAKE_COMMAND} -E copy_if_different
+            ${CMAKE_SOURCE_DIR}/res/about.md
+            $<TARGET_FILE_DIR:${PROJECT_NAME}>/res/about.md
+        COMMAND ${CMAKE_COMMAND} -E copy_if_different
+            ${CMAKE_SOURCE_DIR}/res/AI-gen-splashscreen_05_01_2026_512.png
+            $<TARGET_FILE_DIR:${PROJECT_NAME}>/res/AI-gen-splashscreen_05_01_2026_512.png
         COMMENT "Copying res/ezycad_settings.json and res/default.ezy for native"
     )
     add_custom_command(
@@ -558,6 +574,7 @@ endif(APPLE)
 include_directories(.)
 include_directories("third_party")
 include_directories("third_party/imgui")
+include_directories("third_party/imgui_markdown")
 include_directories("third_party/json/include")
 
 # Define preprocessor macros for GLM
