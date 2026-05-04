@@ -3,6 +3,7 @@
 #include <algorithm>
 #include <nlohmann/json.hpp>
 #include <sstream>
+#include <string>
 
 #include "dbg.h"
 #include "gui.h"
@@ -206,18 +207,26 @@ void GUI::parse_gui_panes_settings_(const std::string& content)
     if (g.contains("view_roll_step_deg") && g["view_roll_step_deg"].is_number())
     {
       const double v = g["view_roll_step_deg"].get<double>();
-      EZY_ASSERT_MSG(v >= k_gui_view_roll_step_deg_min && v <= k_gui_view_roll_step_deg_max,
-                     "settings gui.view_roll_step_deg out of range [0.1, 180]");
-      m_view_roll_step_deg = v;
+      if (v >= k_gui_view_roll_step_deg_min && v <= k_gui_view_roll_step_deg_max)
+        m_view_roll_step_deg = v;
+      else
+        log_message("EzyCad: settings gui.view_roll_step_deg out of range [" +
+                    std::to_string(k_gui_view_roll_step_deg_min) + ", " +
+                    std::to_string(k_gui_view_roll_step_deg_max) + "], got " + std::to_string(v) +
+                    "; using default.");
     }
 
     m_view_zoom_scroll_scale = k_gui_view_zoom_scroll_scale_default;
     if (g.contains("view_zoom_scroll_scale") && g["view_zoom_scroll_scale"].is_number())
     {
       const double v = g["view_zoom_scroll_scale"].get<double>();
-      EZY_ASSERT_MSG(v >= k_gui_view_zoom_scroll_scale_min && v <= k_gui_view_zoom_scroll_scale_max,
-                     "settings gui.view_zoom_scroll_scale out of range [0.25, 64]");
-      m_view_zoom_scroll_scale = v;
+      if (v >= k_gui_view_zoom_scroll_scale_min && v <= k_gui_view_zoom_scroll_scale_max)
+        m_view_zoom_scroll_scale = v;
+      else
+        log_message("EzyCad: settings gui.view_zoom_scroll_scale out of range [" +
+                    std::to_string(k_gui_view_zoom_scroll_scale_min) + ", " +
+                    std::to_string(k_gui_view_zoom_scroll_scale_max) + "], got " + std::to_string(v) +
+                    "; using default.");
     }
     if (m_view)
       m_view->set_zoom_scroll_scale(m_view_zoom_scroll_scale);

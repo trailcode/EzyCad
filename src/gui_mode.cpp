@@ -105,6 +105,8 @@ void GUI::on_key(int key, int scancode, int action, int mods)
   {
     bool zoom_in  = false;
     bool zoom_out = false;
+    // Shift+= is the main-keyboard zoom-in path; Shift is structural (produces '+'), not "finer step" intent.
+    bool zoom_in_shift_is_structural = false;
     switch (key)
     {
       case GLFW_KEY_KP_ADD:
@@ -116,13 +118,17 @@ void GUI::on_key(int key, int scancode, int action, int mods)
         break;
       case GLFW_KEY_EQUAL:
         if ((mods & GLFW_MOD_SHIFT) != 0)
-          zoom_in = true;
+        {
+          zoom_in                     = true;
+          zoom_in_shift_is_structural = true;
+        }
         break;
       default:
         break;
     }
 
-    const bool shift_finer = (mods & GLFW_MOD_SHIFT) != 0;
+    const bool shift_finer =
+        ((mods & GLFW_MOD_SHIFT) != 0) && !zoom_in_shift_is_structural;
 
     if (zoom_in)
     {
