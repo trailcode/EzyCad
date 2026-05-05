@@ -1,15 +1,15 @@
 #include "gui.h"
 
 #include <algorithm>
-#include <filesystem>
 #include <array>
 #include <cctype>
 #include <cmath>
 #include <cstdio>
 #include <cstdlib>
+#include <filesystem>
 #include <fstream>
-#include <string>
 #include <nlohmann/json.hpp>
+#include <string>
 #include <unordered_set>
 
 #include "settings.h"
@@ -451,18 +451,18 @@ void GUI::about_dialog_()
 
   ensure_about_assets_();
 
-  ImFont* font = ImGui::GetFont();
+  ImFont*               font = ImGui::GetFont();
   ImGui::MarkdownConfig md;
-  md.linkCallback    = about_markdown_link_cb_;
-  md.imageCallback   = about_markdown_image_cb_;
-  md.tooltipCallback = ImGui::defaultMarkdownTooltipCallback;
-  md.linkIcon        = "";
+  md.linkCallback      = about_markdown_link_cb_;
+  md.imageCallback     = about_markdown_image_cb_;
+  md.tooltipCallback   = ImGui::defaultMarkdownTooltipCallback;
+  md.linkIcon          = "";
   md.headingFormats[0] = {font, true};
   md.headingFormats[1] = {font, true};
   md.headingFormats[2] = {font, false};
 #ifdef IMGUI_HAS_TEXTURES
   {
-    float const fs = ImGui::GetFontSize();
+    float const fs                = ImGui::GetFontSize();
     md.headingFormats[0].fontSize = fs * 1.15f;
     md.headingFormats[1].fontSize = fs * 1.05f;
     md.headingFormats[2].fontSize = fs;
@@ -593,20 +593,20 @@ void GUI::ensure_about_assets_()
 
 ImGui::MarkdownImageData GUI::about_markdown_image_(ImGui::MarkdownLinkCallbackData data)
 {
-  ImGui::MarkdownImageData out{};
+  ImGui::MarkdownImageData out {};
   if (!data.isImage)
     return out;
 
   static constexpr char k_splash_id[] = "AI-gen-splashscreen_05_01_2026_512.png";
-  std::string id(data.link, data.linkLength);
+  std::string           id(data.link, data.linkLength);
   if (id != k_splash_id || m_about_splash_gl == 0)
     return out;
 
-  out.isValid           = true;
-  out.useLinkCallback   = false;
-  out.user_texture_id   = (ImTextureID)(intptr_t)m_about_splash_gl;
-  out.size              = ImVec2((float)m_about_splash_w, (float)m_about_splash_h);
-  ImVec2 const avail    = ImGui::GetContentRegionAvail();
+  out.isValid         = true;
+  out.useLinkCallback = false;
+  out.user_texture_id = (ImTextureID) (intptr_t) m_about_splash_gl;
+  out.size            = ImVec2((float) m_about_splash_w, (float) m_about_splash_h);
+  ImVec2 const avail  = ImGui::GetContentRegionAvail();
   if (out.size.x > avail.x && avail.x > 1.0f)
   {
     float const ratio = out.size.y / out.size.x;
@@ -937,11 +937,38 @@ void GUI::sketch_list_()
   if (!m_show_sketch_list)
     return;
 
+  const ImGuiStyle& st              = ImGui::GetStyle();
+  float             max_name_text_w = 0.f;
+  for (const std::shared_ptr<Sketch>& s : m_view->get_sketches())
+  {
+    EZY_ASSERT(s);
+    const std::string& nm = s->get_name();
+    max_name_text_w =
+        std::max(max_name_text_w, ImGui::CalcTextSize(nm.c_str(), nm.c_str() + nm.size()).x);
+  }
+
+  constexpr float k_name_field_cap   = 480.f;
+  // Keep sketch names editable even when all names are short; also reused in row/window minimum width.
+  constexpr float k_name_field_floor = 72.f;
+  const float     name_pad_x         = st.FramePadding.x * 2.0f;
+  const float     name_field_w =
+      std::clamp(max_name_text_w + name_pad_x, k_name_field_floor, k_name_field_cap);
+
+  const float fh      = ImGui::GetFrameHeight();
+  const float props_w = ImGui::CalcTextSize("[P]").x + st.FramePadding.x * 2.0f;
+  const float row_min_w =
+      fh + st.ItemSpacing.x + k_name_field_floor + st.ItemSpacing.x + fh + st.ItemSpacing.x + fh +
+      st.ItemSpacing.x + props_w;
+  const float win_min_w = row_min_w + st.WindowPadding.x * 2.0f;
+  ImGui::SetNextWindowSizeConstraints(ImVec2(win_min_w, 0.f), ImVec2(FLT_MAX, FLT_MAX));
+
   if (!ImGui::Begin("Sketch List", &m_show_sketch_list, ImGuiWindowFlags_None))
   {
     ImGui::End();
     return;
   }
+
+  ImGui::BeginChild("##sketch_list_scroll", ImVec2(0.f, 0.f), false, ImGuiWindowFlags_HorizontalScrollbar);
 
   int                     index = 0;
   std::shared_ptr<Sketch> sketch_to_delete;
@@ -963,16 +990,20 @@ void GUI::sketch_list_()
     // Radio button for selection
     ImGui::PushID(("select" + id_suffix).c_str());
     if (ImGui::RadioButton("", &m_view->curr_sketch() == sketch.get()))
+    {
       m_view->set_curr_sketch(sketch);
+      set_mode(Mode::Sketch_inspection_mode);
+    }
 
     if (m_show_tool_tips && ImGui::IsItemHovered())
       ImGui::SetTooltip("Sets current");
 
     ImGui::PopID();
 
-    // Text edit for name
+    // Text edit for name (width fits longest sketch name across the list, capped)
     ImGui::SameLine();
     ImGui::PushID(("name" + id_suffix).c_str());
+    ImGui::SetNextItemWidth(name_field_w);
     if (ImGui::InputText("", name_buffer, sizeof(name_buffer)))
     {
       sketch->set_name(std::string(name_buffer));
@@ -997,6 +1028,8 @@ void GUI::sketch_list_()
 
     if (m_show_tool_tips && ImGui::IsItemHovered())
       ImGui::SetTooltip("Visibility");
+
+    ImGui::PopID();
 
     ImGui::SameLine();
     ImGui::PushID(("uldisp" + id_suffix).c_str());
@@ -1038,8 +1071,9 @@ void GUI::sketch_list_()
     ImGui::PopID();
 
     ++index;
-    ImGui::PopID();
   }
+
+  ImGui::EndChild();
 
   if (sketch_to_delete)
   {
@@ -1374,7 +1408,7 @@ void GUI::sketch_underlay_panel_settings_(const std::shared_ptr<Sketch>& sk)
         apply_ul_xform();
     };
 
-    auto     transform_input_double = [&](const char* label, double* p_data, double v_min, double v_max,
+    auto transform_input_double = [&](const char* label, double* p_data, double v_min, double v_max,
                                       const char* format)
     {
       const bool changed = ImGui::InputDouble(label, p_data, 0.0, 0.0, format);
@@ -2307,8 +2341,7 @@ void GUI::on_mouse_scroll(double xoffset, double yoffset)
 {
   EZY_ASSERT(m_glfw_window != nullptr);
 
-  const bool shift_finer = glfwGetKey(m_glfw_window, GLFW_KEY_LEFT_SHIFT) == GLFW_PRESS
-                           || glfwGetKey(m_glfw_window, GLFW_KEY_RIGHT_SHIFT) == GLFW_PRESS;
+  const bool shift_finer = glfwGetKey(m_glfw_window, GLFW_KEY_LEFT_SHIFT) == GLFW_PRESS || glfwGetKey(m_glfw_window, GLFW_KEY_RIGHT_SHIFT) == GLFW_PRESS;
 
   m_view->on_mouse_scroll(xoffset, yoffset, shift_finer);
 }
