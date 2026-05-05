@@ -28,6 +28,7 @@ Use this style when editing or adding C/C++ code in the EzyCad project (files un
 - **Braces**: Opening brace for class/struct on the same line. For **control flow** (`if`, `for`, `while`, `switch`), put the opening brace on the **next line**. For functions, opening brace often on the next line; **short functions** (e.g. single return) may be on one line—`.clang-format` (AllowShortFunctionsOnASingleLine: All) does this automatically. `.clang-format` uses `BraceWrapping.AfterControlStatement: Always` to enforce control-statement brace placement.
 - **Alignment**: Align member declarations in columns when it aids readability (type and name aligned across lines in the same block).
 - **Initialization**: Prefer brace-initialization for members (e.g. `bool is_midpoint {false};`, `size_t m_prev_num_nodes {0};`).
+- **Local declarations**: Prefer declaring locals close to first use for readability. For values shared by a render block, compute them once immediately before that block.
 - **Short control flow**: Single-line `if`/`for` without braces is acceptable when the body is a single statement; use braces for multi-line or nested bodies.
 - Use **`// clang-format off`** / **`// clang-format on`** only where layout must be preserved (e.g. macro-like blocks, tables). Prefer running clang-format; it is the source of truth for formatting.
 

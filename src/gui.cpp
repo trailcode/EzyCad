@@ -37,6 +37,18 @@ using namespace glm;
 
 GUI* gui_instance = nullptr;
 
+namespace
+{
+float list_name_field_width_(const ImGuiStyle& st, const float max_name_text_w)
+{
+  constexpr float k_name_field_cap   = 480.f;
+  // Keep names editable even when all names are short.
+  constexpr float k_name_field_floor = 72.f;
+  const float     name_pad_x         = st.FramePadding.x * 2.0f;
+  return std::clamp(max_name_text_w + name_pad_x, k_name_field_floor, k_name_field_cap);
+}
+}  // namespace
+
 GUI::GUI()
 {
   EZY_ASSERT(!gui_instance);
@@ -947,21 +959,6 @@ void GUI::sketch_list_()
         std::max(max_name_text_w, ImGui::CalcTextSize(nm.c_str(), nm.c_str() + nm.size()).x);
   }
 
-  constexpr float k_name_field_cap   = 480.f;
-  // Keep sketch names editable even when all names are short; also reused in row/window minimum width.
-  constexpr float k_name_field_floor = 72.f;
-  const float     name_pad_x         = st.FramePadding.x * 2.0f;
-  const float     name_field_w =
-      std::clamp(max_name_text_w + name_pad_x, k_name_field_floor, k_name_field_cap);
-
-  const float fh      = ImGui::GetFrameHeight();
-  const float props_w = ImGui::CalcTextSize("[P]").x + st.FramePadding.x * 2.0f;
-  const float row_min_w =
-      fh + st.ItemSpacing.x + k_name_field_floor + st.ItemSpacing.x + fh + st.ItemSpacing.x + fh +
-      st.ItemSpacing.x + props_w;
-  const float win_min_w = row_min_w + st.WindowPadding.x * 2.0f;
-  ImGui::SetNextWindowSizeConstraints(ImVec2(win_min_w, 0.f), ImVec2(FLT_MAX, FLT_MAX));
-
   if (!ImGui::Begin("Sketch List", &m_show_sketch_list, ImGuiWindowFlags_None))
   {
     ImGui::End();
@@ -969,6 +966,7 @@ void GUI::sketch_list_()
   }
 
   ImGui::BeginChild("##sketch_list_scroll", ImVec2(0.f, 0.f), false, ImGuiWindowFlags_HorizontalScrollbar);
+  const float name_field_w = list_name_field_width_(st, max_name_text_w);
 
   int                     index = 0;
   std::shared_ptr<Sketch> sketch_to_delete;
@@ -1005,10 +1003,8 @@ void GUI::sketch_list_()
     ImGui::PushID(("name" + id_suffix).c_str());
     ImGui::SetNextItemWidth(name_field_w);
     if (ImGui::InputText("", name_buffer, sizeof(name_buffer)))
-    {
       sketch->set_name(std::string(name_buffer));
-      std::cout << "Sketch " << index << " name changed to: " << sketch->get_name() << std::endl;
-    }
+
     // This will open a popup when you right-click on the InputText
     if (ImGui::BeginPopupContextItem("Sketch_InputTextContextMenu"))
     {
@@ -1720,21 +1716,31 @@ void GUI::shape_list_()
   if (!m_show_shape_list)
     return;
 
+  float max_name_text_w = 0.f;
+  for (const Shp_ptr& s : m_view->get_shapes())
+  {
+    EZY_ASSERT(s);
+    const std::string& nm = s->get_name();
+    max_name_text_w =
+        std::max(max_name_text_w, ImGui::CalcTextSize(nm.c_str(), nm.c_str() + nm.size()).x);
+  }
+
   if (!ImGui::Begin("Shape List", &m_show_shape_list, ImGuiWindowFlags_None))
   {
     ImGui::End();
     return;
   }
 
-  int index = 0;
+  ImGui::BeginChild("##shape_list_scroll", ImVec2(0.f, 0.f), false, ImGuiWindowFlags_HorizontalScrollbar);
+
+  const float name_field_w = list_name_field_width_(ImGui::GetStyle(), max_name_text_w);
+  int         index        = 0;
 
   // Add checkbox for hiding all shapes except current sketches
   if (ImGui::Checkbox("Hide all", &m_hide_all_shapes))
     // Update visibility of all shapes based on the new state
     for (const Shp_ptr& shape : m_view->get_shapes())
-    {
       shape->set_visible(!m_hide_all_shapes);
-    }
 
   ImGui::Separator();
 
@@ -1744,6 +1750,7 @@ void GUI::shape_list_()
   for (int mi = 0; mi < nmat; ++mi)
     mat_label_w_max =
         std::max(mat_label_w_max, ImGui::CalcTextSize(mat_names[static_cast<size_t>(mi)].c_str()).x);
+  
   const ImGuiStyle& st_mat      = ImGui::GetStyle();
   const float       mat_popup_w = std::min(
       440.0f,
@@ -1809,6 +1816,7 @@ void GUI::shape_list_()
     };
 
     ImGui::PushID(("name" + id_suffix).c_str());
+    ImGui::SetNextItemWidth(name_field_w);
     if (ImGui::InputText("", name_buffer, sizeof(name_buffer)))
       shape->set_name(std::string(name_buffer));
 
@@ -1902,6 +1910,7 @@ void GUI::shape_list_()
         ImGui::SetTooltip("Selected in 3D viewer");
     }
   }
+  ImGui::EndChild();
   ImGui::End();
 }
 
