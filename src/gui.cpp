@@ -37,18 +37,6 @@ using namespace glm;
 
 GUI* gui_instance = nullptr;
 
-namespace
-{
-float list_name_field_width_(const ImGuiStyle& st, const float max_name_text_w)
-{
-  constexpr float k_name_field_cap   = 480.f;
-  // Keep names editable even when all names are short.
-  constexpr float k_name_field_floor = 72.f;
-  const float     name_pad_x         = st.FramePadding.x * 2.0f;
-  return std::clamp(max_name_text_w + name_pad_x, k_name_field_floor, k_name_field_cap);
-}
-}  // namespace
-
 GUI::GUI()
 {
   EZY_ASSERT(!gui_instance);
@@ -1912,6 +1900,15 @@ void GUI::shape_list_()
   }
   ImGui::EndChild();
   ImGui::End();
+}
+
+float GUI::list_name_field_width_(const ImGuiStyle& st, const float max_name_text_w)
+{
+  constexpr float k_name_field_cap   = 480.f;
+  // Keep names editable even when all names are short.
+  constexpr float k_name_field_floor = 72.f;
+  const float     name_pad_x         = st.FramePadding.x * 2.0f;
+  return std::clamp(max_name_text_w + name_pad_x, k_name_field_floor, k_name_field_cap);
 }
 
 #ifndef NDEBUG

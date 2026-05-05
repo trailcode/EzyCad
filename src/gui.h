@@ -203,6 +203,7 @@ class GUI
   ImGui::MarkdownImageData        about_markdown_image_(ImGui::MarkdownLinkCallbackData data);
   static void                     about_markdown_link_cb_(ImGui::MarkdownLinkCallbackData data);
   static ImGui::MarkdownImageData about_markdown_image_cb_(ImGui::MarkdownLinkCallbackData data);
+  static float                    list_name_field_width_(const ImGuiStyle& st, float max_name_text_w);
   void                            log_window_();
   void                            lua_console_();
   void                            python_console_();

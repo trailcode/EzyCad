@@ -40,10 +40,21 @@ Use this style when editing or adding C/C++ code in the EzyCad project (files un
 
 ## Code organization
 
+- **Reader-first order** (`.cpp`): Arrange functions from high-level behavior to lower-level detail so the first screen shows the primary workflow before helper details.
+- **Helper placement**: Prefer keeping narrow file-local helpers close to the functions that use them. Avoid large top-of-file helper blocks unless helpers are broadly reused across the file.
 - **Templates**: Prefer putting template implementations in `.inl` files included from the header (e.g. `types.inl`, `utl.inl`).
 - **OCCT handles**: Use `opencascade::handle<T>` and project aliases (e.g. `AIS_Shape_ptr`, `Shp_ptr`).
 - **Result/error handling**: See **Fail fast** below. Use `Result<T>` and `Status` from `utl.h`, `CHK_RET(...)` for early return on failure.
 - **Assertions**: See **Fail fast** below. Use `EZY_ASSERT` and `EZY_ASSERT_MSG` from `dbg.h`; use `DBG_MSG` for debug logging.
+
+## Don't Repeat Yourself (DRY)
+
+- DRY is important, but it is guidance, not a strict rule.
+- Avoid hasty abstractions: do not generalize too early before patterns are stable.
+- Too much DRY can increase coupling by forcing unrelated code through one shared abstraction.
+- Prefer readability over clever reuse when repetition is small and explicit code is clearer.
+- Context matters: stronger DRY is often good in monolith/shared-library code; some duplication can be healthier in fast-changing or separated systems.
+- Balance DRY with KISS, YAGNI, and overall cognitive load.
 
 ## Fail fast
 
