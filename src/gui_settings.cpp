@@ -600,7 +600,8 @@ void GUI::settings_()
       underlay_highlight_color_rgb(hr, hg, hb);
       for (const std::shared_ptr<Sketch>& sk : m_view->get_sketches())
       {
-        if (sk && sk->has_underlay())
+        EZY_ASSERT(sk);
+        if (sk->has_underlay())
           sk->underlay_set_line_tint_rgb(hr, hg, hb);
       }
       m_underlay_panel_sketch = nullptr;
