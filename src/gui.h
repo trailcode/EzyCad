@@ -170,7 +170,7 @@ class GUI
   void dist_edit_();
   void angle_edit_();
   void sketch_list_();
-  void sketch_list_inspector_(const Sketch& sketch, int index);
+  void sketch_list_inspector_(Sketch& sketch, int index);
   void sketch_properties_dialog_();
   void shape_list_();
 

@@ -1401,7 +1401,7 @@ void Sketch::rebuild_length_dimension_display_(Length_dimension& d)
 
   const double dist = m_nodes[d.node_idx_lo].Distance(m_nodes[d.node_idx_hi]);
   d.dim->SetCustomValue(dist / m_view.get_dimension_scale());
-  if (m_visible)
+  if (m_visible && m_show_dims && d.visible)
     m_ctx.Display(d.dim, false);
 }
 
@@ -1470,7 +1470,7 @@ void Sketch::add_or_toggle_length_dim_between_node_indices_(size_t node_a, size_
   rebuild_length_dimension_display_(m_length_dimensions.back());
 }
 
-void Sketch::json_add_length_dimension_(size_t node_a, size_t node_b)
+void Sketch::json_add_length_dimension_(size_t node_a, size_t node_b, const bool visible)
 {
   const size_t lo = std::min(node_a, node_b);
   const size_t hi = std::max(node_a, node_b);
@@ -1482,6 +1482,7 @@ void Sketch::json_add_length_dimension_(size_t node_a, size_t node_b)
   Length_dimension d;
   d.node_idx_lo = lo;
   d.node_idx_hi = hi;
+  d.visible     = visible;
   m_length_dimensions.push_back(std::move(d));
   rebuild_length_dimension_display_(m_length_dimensions.back());
 }
@@ -2326,9 +2327,10 @@ void Sketch::set_visible(bool state)
     if (m_len_dim_rubber_shp && m_len_dim_pick_anchor_node.has_value())
       m_ctx.Display(m_len_dim_rubber_shp, AIS_WireFrame, 0, false);
 
-    for (Length_dimension& ld : m_length_dimensions)
-      if (!ld.dim.IsNull())
-        m_ctx.Display(ld.dim, false);
+    if (m_show_dims)
+      for (Length_dimension& ld : m_length_dimensions)
+        if (!ld.dim.IsNull() && ld.visible)
+          m_ctx.Display(ld.dim, false);
 
     if (m_originating_face)
       m_ctx.Display(m_originating_face, AIS_WireFrame, 0, false);
@@ -2407,10 +2409,11 @@ void Sketch::set_show_edges(bool show)
 
 void Sketch::set_show_dims(bool show)
 {
+  m_show_dims = show;
   if (show && m_visible)
   {
     for (Length_dimension& ld : m_length_dimensions)
-      if (!ld.dim.IsNull())
+      if (!ld.dim.IsNull() && ld.visible)
         m_ctx.Display(ld.dim, false);
   }
   else
@@ -2418,6 +2421,29 @@ void Sketch::set_show_dims(bool show)
     for (Length_dimension& ld : m_length_dimensions)
       if (!ld.dim.IsNull())
         m_ctx.Erase(ld.dim, false);
+  }
+}
+
+bool Sketch::dimension_visible(size_t dim_index) const
+{
+  EZY_ASSERT(dim_index < m_length_dimensions.size());
+  return m_length_dimensions[dim_index].visible;
+}
+
+void Sketch::set_dimension_visible(size_t dim_index, bool visible)
+{
+  EZY_ASSERT(dim_index < m_length_dimensions.size());
+  Length_dimension& d = m_length_dimensions[dim_index];
+  if (d.visible == visible)
+    return;
+
+  d.visible = visible;
+  if (!d.dim.IsNull())
+  {
+    if (visible && m_visible && m_show_dims)
+      m_ctx.Display(d.dim, false);
+    else
+      m_ctx.Erase(d.dim, false);
   }
 }
 

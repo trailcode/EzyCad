@@ -932,7 +932,7 @@ const std::vector<std::string>& GUI::occt_material_combo_labels_()
   return names;
 }
 
-void GUI::sketch_list_inspector_(const Sketch& sketch, int index)
+void GUI::sketch_list_inspector_(Sketch& sketch, int index)
 {
   ImGui::Indent();
   ImGui::PushID(index);
@@ -953,7 +953,30 @@ void GUI::sketch_list_inspector_(const Sketch& sketch, int index)
     }
   };
 
-  draw_section("Dimensions", sketch.inspector_dimension_labels());
+  {
+    const std::vector<std::string> labels = sketch.inspector_dimension_labels();
+    const size_t                   count  = labels.size();
+    ImGuiTreeNodeFlags             flags  = ImGuiTreeNodeFlags_SpanAvailWidth;
+    if (count == 0)
+      flags |= ImGuiTreeNodeFlags_Leaf | ImGuiTreeNodeFlags_NoTreePushOnOpen;
+
+    if (ImGui::TreeNodeEx("Dimensions", flags, "Dimensions (%zu)", count))
+    {
+      for (size_t i = 0; i < count; ++i)
+      {
+        bool visible = sketch.dimension_visible(i);
+        ImGui::PushID(static_cast<int>(i));
+        if (ImGui::Checkbox("##dim_visible", &visible))
+          sketch.set_dimension_visible(i, visible);
+        ImGui::SameLine();
+        ImGui::TextUnformatted(labels[i].c_str());
+        ImGui::PopID();
+      }
+      if (count > 0)
+        ImGui::TreePop();
+    }
+  }
+
   draw_section("Edges", sketch.inspector_edge_labels());
   draw_section("Faces", sketch.inspector_face_labels());
 

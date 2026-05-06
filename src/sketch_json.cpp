@@ -206,7 +206,7 @@ nlohmann::json Sketch_json::to_json(const Sketch& sketch)
 
   json& len_dims_json = j["length_dimensions"] = json::array();
   for (const Sketch::Length_dimension& ld : sketch.m_length_dimensions)
-    len_dims_json.push_back(json::array({remap(ld.node_idx_lo), remap(ld.node_idx_hi)}));
+    len_dims_json.push_back(json::array({remap(ld.node_idx_lo), remap(ld.node_idx_hi), ld.visible}));
 
   if (sketch.m_underlay && sketch.m_underlay->has_image())
     j["underlay"] = sketch.m_underlay->to_json();
@@ -256,8 +256,9 @@ std::shared_ptr<Sketch> Sketch_json::from_json(Occt_view& view, const nlohmann::
   if (j.contains("length_dimensions") && j["length_dimensions"].is_array())
     for (const auto& pair_json : j["length_dimensions"])
     {
-      EZY_ASSERT(pair_json.is_array() && pair_json.size() == 2);
-      ret->json_add_length_dimension_(pair_json[0].get<std::size_t>(), pair_json[1].get<std::size_t>());
+      EZY_ASSERT(pair_json.is_array() && (pair_json.size() == 2 || pair_json.size() == 3));
+      const bool visible = pair_json.size() == 3 ? pair_json[2].get<bool>() : true;
+      ret->json_add_length_dimension_(pair_json[0].get<std::size_t>(), pair_json[1].get<std::size_t>(), visible);
     }
 
   if (j.contains("underlay") && j["underlay"].is_object())

@@ -90,6 +90,8 @@ class Sketch
   void set_show_faces(bool show);
   void set_show_edges(bool show);
   void set_show_dims(bool show);
+  bool dimension_visible(size_t dim_index) const;
+  void set_dimension_visible(size_t dim_index, bool visible);
 
   /// Apply global dimension line width to edge annotations and in-progress rubber-band dim.
   void refresh_edge_dimension_line_widths(double line_width);
@@ -175,6 +177,7 @@ class Sketch
     size_t                     node_idx_lo {};
     size_t                     node_idx_hi {};
     PrsDim_LengthDimension_ptr dim;
+    bool                       visible {true};
   };
 
   struct Edge
@@ -308,7 +311,7 @@ class Sketch
   void remove_length_dimensions_referencing_node_(size_t node_idx);
   /// Add if missing, remove if present (same unordered node pair).
   void add_or_toggle_length_dim_between_node_indices_(size_t node_a, size_t node_b);
-  void json_add_length_dimension_(size_t node_a, size_t node_b);
+  void json_add_length_dimension_(size_t node_a, size_t node_b, bool visible = true);
 
   /// Average of non-deleted node positions (3D on sketch plane); used to place edge dimensions outside loops.
   std::optional<gp_Pnt> approx_sketch_interior_ref_3d_() const;
@@ -374,6 +377,7 @@ class Sketch
   AIS_Shape_ptr                         m_tmp_shp;
   PrsDim_LengthDimension_ptr            m_tmp_dim_anno;
   bool                                  m_show_faces {true};
+  bool                                  m_show_dims {true};
 
   std::unique_ptr<Sketch_underlay> m_underlay;
 };
