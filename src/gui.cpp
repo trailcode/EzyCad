@@ -932,6 +932,35 @@ const std::vector<std::string>& GUI::occt_material_combo_labels_()
   return names;
 }
 
+void GUI::sketch_list_inspector_(const Sketch& sketch, int index)
+{
+  ImGui::Indent();
+  ImGui::PushID(index);
+
+  const auto draw_section = [](const char* title, const std::vector<std::string>& labels)
+  {
+    const size_t count = labels.size();
+    ImGuiTreeNodeFlags flags = ImGuiTreeNodeFlags_SpanAvailWidth;
+    if (count == 0)
+      flags |= ImGuiTreeNodeFlags_Leaf | ImGuiTreeNodeFlags_NoTreePushOnOpen;
+
+    if (ImGui::TreeNodeEx(title, flags, "%s (%zu)", title, count))
+    {
+      for (const std::string& label : labels)
+        ImGui::BulletText("%s", label.c_str());
+      if (count > 0)
+        ImGui::TreePop();
+    }
+  };
+
+  draw_section("Dimensions", sketch.inspector_dimension_labels());
+  draw_section("Edges", sketch.inspector_edge_labels());
+  draw_section("Faces", sketch.inspector_face_labels());
+
+  ImGui::PopID();
+  ImGui::Unindent();
+}
+
 void GUI::sketch_list_()
 {
   if (!m_show_sketch_list)
@@ -972,6 +1001,18 @@ void GUI::sketch_list_()
 
     // Unique ID suffix using index
     std::string id_suffix = "##" + std::to_string(index);
+
+    const Sketch* sk_key    = sketch.get();
+    bool&         expanded  = m_sketch_list_expanded[sk_key];
+
+    ImGui::PushID(("expand" + id_suffix).c_str());
+    if (ImGui::SmallButton(expanded ? "v" : ">"))
+      expanded = !expanded;
+    if (m_show_tool_tips && ImGui::IsItemHovered())
+      ImGui::SetTooltip(expanded ? "Collapse details" : "Expand details");
+    ImGui::PopID();
+
+    ImGui::SameLine();
 
     // Radio button for selection
     ImGui::PushID(("select" + id_suffix).c_str());
@@ -1053,6 +1094,9 @@ void GUI::sketch_list_()
       ImGui::SetTooltip("Sketch properties");
 
     ImGui::PopID();
+
+    if (expanded)
+      sketch_list_inspector_(*sketch, index);
 
     ++index;
   }

@@ -2518,6 +2518,78 @@ bool Sketch::has_edges() const
   return !m_edges.empty();
 }
 
+size_t Sketch::edge_count() const
+{
+  return m_edges.size();
+}
+
+size_t Sketch::face_count() const
+{
+  return m_faces.size();
+}
+
+size_t Sketch::length_dimension_count() const
+{
+  return m_length_dimensions.size();
+}
+
+std::vector<std::string> Sketch::inspector_edge_labels() const
+{
+  std::vector<std::string> labels;
+  labels.reserve(m_edges.size());
+  size_t idx = 0;
+  for (const Edge& e : m_edges)
+  {
+    std::string lbl = "E" + std::to_string(idx) + ": ";
+    if (e.circle_arc)
+      lbl += "Circle arc";
+    else if (e.node_idx_arc.has_value())
+      lbl += "3pt arc";
+    else
+      lbl += "Line";
+
+    lbl += " n" + std::to_string(e.node_idx_a) + "->";
+    if (e.node_idx_b.has_value())
+      lbl += "n" + std::to_string(*e.node_idx_b);
+    else
+      lbl += "?";
+
+    if (e.node_idx_arc.has_value())
+      lbl += " (arc n" + std::to_string(*e.node_idx_arc) + ")";
+
+    labels.push_back(std::move(lbl));
+    ++idx;
+  }
+  return labels;
+}
+
+std::vector<std::string> Sketch::inspector_face_labels() const
+{
+  std::vector<std::string> labels;
+  labels.reserve(m_faces.size());
+  for (size_t i = 0; i < m_faces.size(); ++i)
+  {
+    const Sketch_face_shp_ptr& f    = m_faces[i];
+    const size_t               nv   = f ? f->verts_3d.size() : 0;
+    const std::string          text = "F" + std::to_string(i) + ": " + std::to_string(nv) + " verts";
+    labels.push_back(text);
+  }
+  return labels;
+}
+
+std::vector<std::string> Sketch::inspector_dimension_labels() const
+{
+  std::vector<std::string> labels;
+  labels.reserve(m_length_dimensions.size());
+  for (size_t i = 0; i < m_length_dimensions.size(); ++i)
+  {
+    const Length_dimension& d = m_length_dimensions[i];
+    labels.push_back("D" + std::to_string(i) + ": n" + std::to_string(d.node_idx_lo) + "<->n" +
+                     std::to_string(d.node_idx_hi));
+  }
+  return labels;
+}
+
 bool Sketch::has_underlay() const
 {
   return m_underlay && m_underlay->has_image();

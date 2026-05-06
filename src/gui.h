@@ -9,6 +9,7 @@
 #include <gp_Vec2d.hxx>
 #include <memory>
 #include <string>  // Added for log messages
+#include <unordered_map>
 #include <variant>
 // #include <vector>  // Added for log storage
 
@@ -169,6 +170,7 @@ class GUI
   void dist_edit_();
   void angle_edit_();
   void sketch_list_();
+  void sketch_list_inspector_(const Sketch& sketch, int index);
   void sketch_properties_dialog_();
   void shape_list_();
 
@@ -309,6 +311,7 @@ class GUI
   Example_file_list m_example_files;
 
   bool        m_show_sketch_list {true};
+  std::unordered_map<const Sketch*, bool> m_sketch_list_expanded;
   bool        m_show_shape_list {true};
   bool        m_show_options {true};
   bool        m_show_settings_dialog {false};

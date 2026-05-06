@@ -9,6 +9,7 @@
 #include <memory>
 #include <optional>
 #include <set>
+#include <string>
 #include <vector>
 
 #include "shp.h"
@@ -117,6 +118,13 @@ class Sketch
 
   /// True if this sketch has at least one edge (used e.g. to pick mode after undo/redo).
   bool has_edges() const;
+  size_t edge_count() const;
+  size_t face_count() const;
+  size_t length_dimension_count() const;
+
+  std::vector<std::string> inspector_edge_labels() const;
+  std::vector<std::string> inspector_face_labels() const;
+  std::vector<std::string> inspector_dimension_labels() const;
 
   void          on_mode();
   Mode          get_mode() const;
