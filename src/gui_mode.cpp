@@ -347,8 +347,12 @@ void GUI::options_()
     if (current_item < 0 || current_item >= static_cast<int>(material_names.size()))
       current_item = 0;
 
-    if (ImGui::BeginCombo("Default Material##filter", material_names[static_cast<size_t>(current_item)].data(),
-                          ImGuiComboFlags_WidthFitPreview | ImGuiComboFlags_HeightSmall))
+    ImGui::AlignTextToFramePadding();
+    ImGui::TextUnformatted("Default Material");
+    ImGui::SameLine();
+    ImGui::SetNextItemWidth(120.0f);
+    if (ImGui::BeginCombo("##default_material", material_names[static_cast<size_t>(current_item)].data(),
+                          ImGuiComboFlags_HeightSmall))
     {
       for (int i = 0; i < static_cast<int>(material_names.size()); i++)
         if (ImGui::Selectable(material_names[static_cast<size_t>(i)].data(), current_item == i))
@@ -364,12 +368,35 @@ void GUI::options_()
   if (is_sketch_mode(get_mode()))
   {
     float snap_dist = float(Sketch_nodes::get_snap_dist());
-    if (ImGui::InputFloat("Snap dist##float_value", &snap_dist, 1.0f, 2.0f, "%.2f"))
-      Sketch_nodes::set_snap_dist(snap_dist);
-
-    switch (get_mode())
+    if (ImGui::BeginTable("options_sketch_rows", 2, ImGuiTableFlags_SizingStretchProp))
     {
-      case Mode::Sketch_dim_anno:
+      const auto right_aligned_label = [](const char* text)
+      {
+        ImGui::AlignTextToFramePadding();
+        const float text_w = ImGui::CalcTextSize(text).x;
+        const float col_w  = ImGui::GetColumnWidth();
+        const float x0     = ImGui::GetCursorPosX();
+        const float right_x = x0 + std::max(0.0f, col_w - text_w - ImGui::GetStyle().CellPadding.x * 2.0f);
+        ImGui::SetCursorPosX(right_x);
+        ImGui::TextUnformatted(text);
+      };
+
+      float label_col_w = ImGui::CalcTextSize("Snap dist").x;
+      if (get_mode() == Mode::Sketch_dim_anno)
+        label_col_w = std::max(label_col_w, ImGui::CalcTextSize("Length value placement").x);
+      label_col_w += ImGui::GetStyle().CellPadding.x * 2.0f + 8.0f;
+      ImGui::TableSetupColumn("label", ImGuiTableColumnFlags_WidthFixed, label_col_w);
+      ImGui::TableSetupColumn("control", ImGuiTableColumnFlags_WidthStretch);
+
+      ImGui::TableNextRow();
+      ImGui::TableSetColumnIndex(0);
+      right_aligned_label("Snap dist");
+      ImGui::TableSetColumnIndex(1);
+      ImGui::SetNextItemWidth(140.0f);
+      if (ImGui::InputFloat("##snap_dist", &snap_dist, 1.0f, 2.0f, "%.2f"))
+        Sketch_nodes::set_snap_dist(snap_dist);
+
+      if (get_mode() == Mode::Sketch_dim_anno)
       {
         constexpr std::array<const char*, 4> k_edge_dim_label_placement = {
             "Near first point",
@@ -378,11 +405,22 @@ void GUI::options_()
             "Automatic",
         };
         int h = m_edge_dim_label_h;
-        if (ImGui::Combo("Length value placement##edge_dim_h", &h, k_edge_dim_label_placement.data(),
-                         int(k_edge_dim_label_placement.size())))
+
+        ImGui::TableNextRow();
+        ImGui::TableSetColumnIndex(0);
+        right_aligned_label("Length value placement");
+        ImGui::TableSetColumnIndex(1);
+        ImGui::SetNextItemWidth(170.0f);
+        if (ImGui::BeginCombo("##edge_dim_h", k_edge_dim_label_placement[static_cast<size_t>(h)],
+                              ImGuiComboFlags_HeightSmall))
         {
-          m_edge_dim_label_h = h;
-          save_occt_view_settings();
+          for (int i = 0; i < int(k_edge_dim_label_placement.size()); ++i)
+            if (ImGui::Selectable(k_edge_dim_label_placement[static_cast<size_t>(i)], i == h))
+            {
+              m_edge_dim_label_h = i;
+              save_occt_view_settings();
+            }
+          ImGui::EndCombo();
         }
         if (ImGui::IsItemHovered())
           ImGui::SetTooltip(
@@ -391,8 +429,15 @@ void GUI::options_()
               "When the sketch has filled faces, dimensions offset to the void side (point-in-face test).\n"
               "Otherwise the average node position is used as a rough inside reference.\n"
               "Dimension line width is in Settings -> Sketch.");
-        break;
       }
+
+      ImGui::EndTable();
+    }
+
+    switch (get_mode())
+    {
+      case Mode::Sketch_dim_anno:
+        break;
 
       case Mode::Sketch_face_extrude:
         default_material();
@@ -416,7 +461,7 @@ void GUI::options_()
         break;
     }
   }
-  else
+  else if (get_mode() != Mode::Normal)
     default_material();
 
   ImGui::End();
@@ -424,25 +469,74 @@ void GUI::options_()
 
 void GUI::options_normal_mode_()
 {
-  int current_item = static_cast<int>(m_view->get_shp_selection_mode());
-  if (ImGui::BeginCombo("Selection Mode##filter", c_names_TopAbs_ShapeEnum[current_item].data(),
-                        ImGuiComboFlags_WidthFitPreview | ImGuiComboFlags_HeightSmall))
+  if (ImGui::BeginTable("options_normal_rows", 2, ImGuiTableFlags_SizingStretchProp))
   {
-    for (int i = 0; i < static_cast<int>(c_names_TopAbs_ShapeEnum.size()); i++)
-      if (ImGui::Selectable(c_names_TopAbs_ShapeEnum[i].data(), current_item == i))
-        m_view->set_shp_selection_mode(static_cast<TopAbs_ShapeEnum>(i));
+    const auto right_aligned_label = [](const char* text)
+    {
+      ImGui::AlignTextToFramePadding();
+      const float text_w   = ImGui::CalcTextSize(text).x;
+      const float col_w    = ImGui::GetColumnWidth();
+      const float x0       = ImGui::GetCursorPosX();
+      const float right_x  = x0 + std::max(0.0f, col_w - text_w - ImGui::GetStyle().CellPadding.x * 2.0f);
+      ImGui::SetCursorPosX(right_x);
+      ImGui::TextUnformatted(text);
+    };
 
-    ImGui::EndCombo();
-  }
-  ImGui::SameLine(0.0f, ImGui::GetStyle().ItemInnerSpacing.x);
-  ImGui::TextDisabled("(?)");
-  if (ImGui::IsItemHovered())
-  {
-    ImGui::BeginTooltip();
-    ImGui::PushTextWrapPos(ImGui::GetFontSize() * 35.0f);
-    ImGui::TextDisabled("Hotkeys: 1-9 (Normal mode) set filter when the 3D view has focus, not while typing in UI.");
-    ImGui::PopTextWrapPos();
-    ImGui::EndTooltip();
+    float label_col_w = std::max(ImGui::CalcTextSize("Selection Mode").x, ImGui::CalcTextSize("Default Material").x);
+    label_col_w += ImGui::GetStyle().CellPadding.x * 2.0f + 8.0f;
+    ImGui::TableSetupColumn("label", ImGuiTableColumnFlags_WidthFixed, label_col_w);
+    ImGui::TableSetupColumn("control", ImGuiTableColumnFlags_WidthStretch);
+
+    int current_item = static_cast<int>(m_view->get_shp_selection_mode());
+    ImGui::TableNextRow();
+    ImGui::TableSetColumnIndex(0);
+    right_aligned_label("Selection Mode");
+    ImGui::TableSetColumnIndex(1);
+    ImGui::SetNextItemWidth(120.0f);
+    if (ImGui::BeginCombo("##selection_mode", c_names_TopAbs_ShapeEnum[current_item].data(),
+                          ImGuiComboFlags_HeightSmall))
+    {
+      for (int i = 0; i < static_cast<int>(c_names_TopAbs_ShapeEnum.size()); i++)
+        if (ImGui::Selectable(c_names_TopAbs_ShapeEnum[i].data(), current_item == i))
+          m_view->set_shp_selection_mode(static_cast<TopAbs_ShapeEnum>(i));
+
+      ImGui::EndCombo();
+    }
+    ImGui::SameLine(0.0f, ImGui::GetStyle().ItemInnerSpacing.x);
+    ImGui::TextDisabled("(?)");
+    if (ImGui::IsItemHovered())
+    {
+      ImGui::BeginTooltip();
+      ImGui::PushTextWrapPos(ImGui::GetFontSize() * 35.0f);
+      ImGui::TextDisabled(
+          "Hotkeys: 1-9 (Normal mode) set filter when the 3D view has focus, not while typing in UI.");
+      ImGui::PopTextWrapPos();
+      ImGui::EndTooltip();
+    }
+
+    const std::vector<std::string>& material_names = occt_material_combo_labels_();
+    int                             current_mat    = int(m_view->get_default_material().Name());
+    if (current_mat < 0 || current_mat >= static_cast<int>(material_names.size()))
+      current_mat = 0;
+
+    ImGui::TableNextRow();
+    ImGui::TableSetColumnIndex(0);
+    right_aligned_label("Default Material");
+    ImGui::TableSetColumnIndex(1);
+    ImGui::SetNextItemWidth(120.0f);
+    if (ImGui::BeginCombo("##default_material_normal", material_names[static_cast<size_t>(current_mat)].data(),
+                          ImGuiComboFlags_HeightSmall))
+    {
+      for (int i = 0; i < static_cast<int>(material_names.size()); i++)
+        if (ImGui::Selectable(material_names[static_cast<size_t>(i)].data(), current_mat == i))
+        {
+          Graphic3d_MaterialAspect mat(static_cast<Graphic3d_NameOfMaterial>(i));
+          m_view->set_default_material(mat);
+        }
+      ImGui::EndCombo();
+    }
+
+    ImGui::EndTable();
   }
 }
 
@@ -506,7 +600,11 @@ void GUI::options_sketch_operation_axis_mode_()
 void GUI::options_shape_chamfer_mode_()
 {
   int current_mode = static_cast<int>(m_chamfer_mode);
-  if (ImGui::Combo("Chamfer Mode", &current_mode, c_chamfer_mode_strs.data(), (int) c_chamfer_mode_strs.size()))
+  ImGui::AlignTextToFramePadding();
+  ImGui::TextUnformatted("Chamfer Mode");
+  ImGui::SameLine();
+  ImGui::SetNextItemWidth(120.0f);
+  if (ImGui::Combo("##chamfer_mode", &current_mode, c_chamfer_mode_strs.data(), (int) c_chamfer_mode_strs.size()))
   {
     m_chamfer_mode = static_cast<Chamfer_mode>(current_mode);
     m_view->on_chamfer_mode();
@@ -522,6 +620,9 @@ void GUI::options_shape_chamfer_mode_()
   if (ctx && ctx->ActiveId != chamfer_input_id)
     format_double_trim_fraction(chamfer_buf, sizeof chamfer_buf, chamfer_dist, 6);
 
+  ImGui::AlignTextToFramePadding();
+  ImGui::TextUnformatted("Chamfer dist");
+  ImGui::SameLine();
   ImGui::SetNextItemWidth(100.0f);
   constexpr ImGuiInputTextFlags k_dim_flags =
       ImGuiInputTextFlags_CharsDecimal | ImGuiInputTextFlags_CharsScientific;
@@ -537,15 +638,17 @@ void GUI::options_shape_chamfer_mode_()
         m_view->shp_chamfer().set_chamfer_dist(p * scale);
     }
   }
-  ImGui::SameLine(0.0f, ImGui::GetStyle().ItemInnerSpacing.x);
-  ImGui::TextUnformatted("Chamfer dist");
   ImGui::PopID();
 }
 
 void GUI::options_shape_fillet_mode_()
 {
   int current_mode = static_cast<int>(m_fillet_mode);
-  if (ImGui::Combo("Fillet Mode", &current_mode, c_fillet_mode_strs.data(), (int) c_fillet_mode_strs.size()))
+  ImGui::AlignTextToFramePadding();
+  ImGui::TextUnformatted("Fillet Mode");
+  ImGui::SameLine();
+  ImGui::SetNextItemWidth(120.0f);
+  if (ImGui::Combo("##fillet_mode", &current_mode, c_fillet_mode_strs.data(), (int) c_fillet_mode_strs.size()))
   {
     m_fillet_mode = static_cast<Fillet_mode>(current_mode);
     m_view->on_fillet_mode();
@@ -561,6 +664,9 @@ void GUI::options_shape_fillet_mode_()
   if (ctx && ctx->ActiveId != fillet_input_id)
     format_double_trim_fraction(fillet_buf, sizeof fillet_buf, fillet_radius, 6);
 
+  ImGui::AlignTextToFramePadding();
+  ImGui::TextUnformatted("Fillet radius");
+  ImGui::SameLine();
   ImGui::SetNextItemWidth(100.0f);
   constexpr ImGuiInputTextFlags k_dim_flags =
       ImGuiInputTextFlags_CharsDecimal | ImGuiInputTextFlags_CharsScientific;
@@ -576,8 +682,6 @@ void GUI::options_shape_fillet_mode_()
         m_view->shp_fillet().set_fillet_radius(p * scale);
     }
   }
-  ImGui::SameLine(0.0f, ImGui::GetStyle().ItemInnerSpacing.x);
-  ImGui::TextUnformatted("Fillet radius");
   ImGui::PopID();
 }
 
