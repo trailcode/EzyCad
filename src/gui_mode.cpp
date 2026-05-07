@@ -384,6 +384,8 @@ void GUI::options_()
       float label_col_w = ImGui::CalcTextSize("Snap dist").x;
       if (get_mode() == Mode::Sketch_dim_anno)
         label_col_w = std::max(label_col_w, ImGui::CalcTextSize("Length value placement").x);
+      if (get_mode() == Mode::Sketch_face_extrude)
+        label_col_w = std::max(label_col_w, ImGui::CalcTextSize("Default Material").x);
       label_col_w += ImGui::GetStyle().CellPadding.x * 2.0f + 8.0f;
       ImGui::TableSetupColumn("label", ImGuiTableColumnFlags_WidthFixed, label_col_w);
       ImGui::TableSetupColumn("control", ImGuiTableColumnFlags_WidthStretch);
@@ -430,6 +432,30 @@ void GUI::options_()
               "Otherwise the average node position is used as a rough inside reference.\n"
               "Dimension line width is in Settings -> Sketch.");
       }
+      else if (get_mode() == Mode::Sketch_face_extrude)
+      {
+        const std::vector<std::string>& material_names = occt_material_combo_labels_();
+        int                             current_item   = int(m_view->get_default_material().Name());
+        if (current_item < 0 || current_item >= static_cast<int>(material_names.size()))
+          current_item = 0;
+
+        ImGui::TableNextRow();
+        ImGui::TableSetColumnIndex(0);
+        right_aligned_label("Default Material");
+        ImGui::TableSetColumnIndex(1);
+        ImGui::SetNextItemWidth(120.0f);
+        if (ImGui::BeginCombo("##default_material_sketch_extrude",
+                              material_names[static_cast<size_t>(current_item)].data(), ImGuiComboFlags_HeightSmall))
+        {
+          for (int i = 0; i < static_cast<int>(material_names.size()); i++)
+            if (ImGui::Selectable(material_names[static_cast<size_t>(i)].data(), current_item == i))
+            {
+              Graphic3d_MaterialAspect mat(static_cast<Graphic3d_NameOfMaterial>(i));
+              m_view->set_default_material(mat);
+            }
+          ImGui::EndCombo();
+        }
+      }
 
       ImGui::EndTable();
     }
@@ -440,7 +466,6 @@ void GUI::options_()
         break;
 
       case Mode::Sketch_face_extrude:
-        default_material();
         break;
 
       case Mode::Sketch_add_edge:
@@ -599,90 +624,182 @@ void GUI::options_sketch_operation_axis_mode_()
 
 void GUI::options_shape_chamfer_mode_()
 {
-  int current_mode = static_cast<int>(m_chamfer_mode);
-  ImGui::AlignTextToFramePadding();
-  ImGui::TextUnformatted("Chamfer Mode");
-  ImGui::SameLine();
-  ImGui::SetNextItemWidth(120.0f);
-  if (ImGui::Combo("##chamfer_mode", &current_mode, c_chamfer_mode_strs.data(), (int) c_chamfer_mode_strs.size()))
+  if (ImGui::BeginTable("options_chamfer_rows", 2, ImGuiTableFlags_SizingStretchProp))
   {
-    m_chamfer_mode = static_cast<Chamfer_mode>(current_mode);
-    m_view->on_chamfer_mode();
-  }
-
-  static char  chamfer_buf[64];
-  const double scale        = m_view->get_dimension_scale();
-  const double chamfer_dist = m_view->shp_chamfer().get_chamfer_dist() / scale;
-
-  ImGui::PushID("chamfer_dist_micron");
-  const ImGuiID chamfer_input_id = ImGui::GetID("##micron");
-  ImGuiContext* ctx              = ImGui::GetCurrentContext();
-  if (ctx && ctx->ActiveId != chamfer_input_id)
-    format_double_trim_fraction(chamfer_buf, sizeof chamfer_buf, chamfer_dist, 6);
-
-  ImGui::AlignTextToFramePadding();
-  ImGui::TextUnformatted("Chamfer dist");
-  ImGui::SameLine();
-  ImGui::SetNextItemWidth(100.0f);
-  constexpr ImGuiInputTextFlags k_dim_flags =
-      ImGuiInputTextFlags_CharsDecimal | ImGuiInputTextFlags_CharsScientific;
-  if (ImGui::InputText("##micron", chamfer_buf, sizeof chamfer_buf, k_dim_flags))
-  {
-    char*        end = nullptr;
-    const double p   = std::strtod(chamfer_buf, &end);
-    if (end != chamfer_buf)
+    const auto right_aligned_label = [](const char* text)
     {
-      while (*end == ' ' || *end == '\t')
-        ++end;
-      if (*end == '\0')
-        m_view->shp_chamfer().set_chamfer_dist(p * scale);
+      ImGui::AlignTextToFramePadding();
+      const float text_w  = ImGui::CalcTextSize(text).x;
+      const float col_w   = ImGui::GetColumnWidth();
+      const float x0      = ImGui::GetCursorPosX();
+      const float right_x = x0 + std::max(0.0f, col_w - text_w - ImGui::GetStyle().CellPadding.x * 2.0f);
+      ImGui::SetCursorPosX(right_x);
+      ImGui::TextUnformatted(text);
+    };
+
+    float label_col_w = std::max(ImGui::CalcTextSize("Chamfer Mode").x, ImGui::CalcTextSize("Chamfer dist").x);
+    label_col_w       = std::max(label_col_w, ImGui::CalcTextSize("Default Material").x);
+    label_col_w += ImGui::GetStyle().CellPadding.x * 2.0f + 8.0f;
+    ImGui::TableSetupColumn("label", ImGuiTableColumnFlags_WidthFixed, label_col_w);
+    ImGui::TableSetupColumn("control", ImGuiTableColumnFlags_WidthStretch);
+
+    int current_mode = static_cast<int>(m_chamfer_mode);
+    ImGui::TableNextRow();
+    ImGui::TableSetColumnIndex(0);
+    right_aligned_label("Chamfer Mode");
+    ImGui::TableSetColumnIndex(1);
+    ImGui::SetNextItemWidth(120.0f);
+    if (ImGui::Combo("##chamfer_mode", &current_mode, c_chamfer_mode_strs.data(), (int) c_chamfer_mode_strs.size()))
+    {
+      m_chamfer_mode = static_cast<Chamfer_mode>(current_mode);
+      m_view->on_chamfer_mode();
     }
+
+    static char  chamfer_buf[64];
+    const double scale        = m_view->get_dimension_scale();
+    const double chamfer_dist = m_view->shp_chamfer().get_chamfer_dist() / scale;
+
+    ImGui::PushID("chamfer_dist_micron");
+    const ImGuiID chamfer_input_id = ImGui::GetID("##micron");
+    ImGuiContext* ctx              = ImGui::GetCurrentContext();
+    if (ctx && ctx->ActiveId != chamfer_input_id)
+      format_double_trim_fraction(chamfer_buf, sizeof chamfer_buf, chamfer_dist, 6);
+
+    ImGui::TableNextRow();
+    ImGui::TableSetColumnIndex(0);
+    right_aligned_label("Chamfer dist");
+    ImGui::TableSetColumnIndex(1);
+    ImGui::SetNextItemWidth(100.0f);
+    constexpr ImGuiInputTextFlags k_dim_flags =
+        ImGuiInputTextFlags_CharsDecimal | ImGuiInputTextFlags_CharsScientific;
+    if (ImGui::InputText("##micron", chamfer_buf, sizeof chamfer_buf, k_dim_flags))
+    {
+      char*        end = nullptr;
+      const double p   = std::strtod(chamfer_buf, &end);
+      if (end != chamfer_buf)
+      {
+        while (*end == ' ' || *end == '\t')
+          ++end;
+        if (*end == '\0')
+          m_view->shp_chamfer().set_chamfer_dist(p * scale);
+      }
+    }
+    ImGui::PopID();
+
+    const std::vector<std::string>& material_names = occt_material_combo_labels_();
+    int                             current_item   = int(m_view->get_default_material().Name());
+    if (current_item < 0 || current_item >= static_cast<int>(material_names.size()))
+      current_item = 0;
+
+    ImGui::TableNextRow();
+    ImGui::TableSetColumnIndex(0);
+    right_aligned_label("Default Material");
+    ImGui::TableSetColumnIndex(1);
+    ImGui::SetNextItemWidth(120.0f);
+    if (ImGui::BeginCombo("##default_material_chamfer", material_names[static_cast<size_t>(current_item)].data(),
+                          ImGuiComboFlags_HeightSmall))
+    {
+      for (int i = 0; i < static_cast<int>(material_names.size()); i++)
+        if (ImGui::Selectable(material_names[static_cast<size_t>(i)].data(), current_item == i))
+        {
+          Graphic3d_MaterialAspect mat(static_cast<Graphic3d_NameOfMaterial>(i));
+          m_view->set_default_material(mat);
+        }
+      ImGui::EndCombo();
+    }
+
+    ImGui::EndTable();
   }
-  ImGui::PopID();
 }
 
 void GUI::options_shape_fillet_mode_()
 {
-  int current_mode = static_cast<int>(m_fillet_mode);
-  ImGui::AlignTextToFramePadding();
-  ImGui::TextUnformatted("Fillet Mode");
-  ImGui::SameLine();
-  ImGui::SetNextItemWidth(120.0f);
-  if (ImGui::Combo("##fillet_mode", &current_mode, c_fillet_mode_strs.data(), (int) c_fillet_mode_strs.size()))
+  if (ImGui::BeginTable("options_fillet_rows", 2, ImGuiTableFlags_SizingStretchProp))
   {
-    m_fillet_mode = static_cast<Fillet_mode>(current_mode);
-    m_view->on_fillet_mode();
-  }
-
-  static char  fillet_buf[64];
-  const double scale         = m_view->get_dimension_scale();
-  const double fillet_radius = m_view->shp_fillet().get_fillet_radius() / scale;
-
-  ImGui::PushID("fillet_rad_micron");
-  const ImGuiID fillet_input_id = ImGui::GetID("##micron");
-  ImGuiContext* ctx             = ImGui::GetCurrentContext();
-  if (ctx && ctx->ActiveId != fillet_input_id)
-    format_double_trim_fraction(fillet_buf, sizeof fillet_buf, fillet_radius, 6);
-
-  ImGui::AlignTextToFramePadding();
-  ImGui::TextUnformatted("Fillet radius");
-  ImGui::SameLine();
-  ImGui::SetNextItemWidth(100.0f);
-  constexpr ImGuiInputTextFlags k_dim_flags =
-      ImGuiInputTextFlags_CharsDecimal | ImGuiInputTextFlags_CharsScientific;
-  if (ImGui::InputText("##micron", fillet_buf, sizeof fillet_buf, k_dim_flags))
-  {
-    char*        end = nullptr;
-    const double p   = std::strtod(fillet_buf, &end);
-    if (end != fillet_buf)
+    const auto right_aligned_label = [](const char* text)
     {
-      while (*end == ' ' || *end == '\t')
-        ++end;
-      if (*end == '\0')
-        m_view->shp_fillet().set_fillet_radius(p * scale);
+      ImGui::AlignTextToFramePadding();
+      const float text_w  = ImGui::CalcTextSize(text).x;
+      const float col_w   = ImGui::GetColumnWidth();
+      const float x0      = ImGui::GetCursorPosX();
+      const float right_x = x0 + std::max(0.0f, col_w - text_w - ImGui::GetStyle().CellPadding.x * 2.0f);
+      ImGui::SetCursorPosX(right_x);
+      ImGui::TextUnformatted(text);
+    };
+
+    float label_col_w = std::max(ImGui::CalcTextSize("Fillet Mode").x, ImGui::CalcTextSize("Fillet radius").x);
+    label_col_w       = std::max(label_col_w, ImGui::CalcTextSize("Default Material").x);
+    label_col_w += ImGui::GetStyle().CellPadding.x * 2.0f + 8.0f;
+    ImGui::TableSetupColumn("label", ImGuiTableColumnFlags_WidthFixed, label_col_w);
+    ImGui::TableSetupColumn("control", ImGuiTableColumnFlags_WidthStretch);
+
+    int current_mode = static_cast<int>(m_fillet_mode);
+    ImGui::TableNextRow();
+    ImGui::TableSetColumnIndex(0);
+    right_aligned_label("Fillet Mode");
+    ImGui::TableSetColumnIndex(1);
+    ImGui::SetNextItemWidth(120.0f);
+    if (ImGui::Combo("##fillet_mode", &current_mode, c_fillet_mode_strs.data(), (int) c_fillet_mode_strs.size()))
+    {
+      m_fillet_mode = static_cast<Fillet_mode>(current_mode);
+      m_view->on_fillet_mode();
     }
+
+    static char  fillet_buf[64];
+    const double scale         = m_view->get_dimension_scale();
+    const double fillet_radius = m_view->shp_fillet().get_fillet_radius() / scale;
+
+    ImGui::PushID("fillet_rad_micron");
+    const ImGuiID fillet_input_id = ImGui::GetID("##micron");
+    ImGuiContext* ctx             = ImGui::GetCurrentContext();
+    if (ctx && ctx->ActiveId != fillet_input_id)
+      format_double_trim_fraction(fillet_buf, sizeof fillet_buf, fillet_radius, 6);
+
+    ImGui::TableNextRow();
+    ImGui::TableSetColumnIndex(0);
+    right_aligned_label("Fillet radius");
+    ImGui::TableSetColumnIndex(1);
+    ImGui::SetNextItemWidth(100.0f);
+    constexpr ImGuiInputTextFlags k_dim_flags =
+        ImGuiInputTextFlags_CharsDecimal | ImGuiInputTextFlags_CharsScientific;
+    if (ImGui::InputText("##micron", fillet_buf, sizeof fillet_buf, k_dim_flags))
+    {
+      char*        end = nullptr;
+      const double p   = std::strtod(fillet_buf, &end);
+      if (end != fillet_buf)
+      {
+        while (*end == ' ' || *end == '\t')
+          ++end;
+        if (*end == '\0')
+          m_view->shp_fillet().set_fillet_radius(p * scale);
+      }
+    }
+    ImGui::PopID();
+
+    const std::vector<std::string>& material_names = occt_material_combo_labels_();
+    int                             current_item   = int(m_view->get_default_material().Name());
+    if (current_item < 0 || current_item >= static_cast<int>(material_names.size()))
+      current_item = 0;
+
+    ImGui::TableNextRow();
+    ImGui::TableSetColumnIndex(0);
+    right_aligned_label("Default Material");
+    ImGui::TableSetColumnIndex(1);
+    ImGui::SetNextItemWidth(120.0f);
+    if (ImGui::BeginCombo("##default_material_fillet", material_names[static_cast<size_t>(current_item)].data(),
+                          ImGuiComboFlags_HeightSmall))
+    {
+      for (int i = 0; i < static_cast<int>(material_names.size()); i++)
+        if (ImGui::Selectable(material_names[static_cast<size_t>(i)].data(), current_item == i))
+        {
+          Graphic3d_MaterialAspect mat(static_cast<Graphic3d_NameOfMaterial>(i));
+          m_view->set_default_material(mat);
+        }
+      ImGui::EndCombo();
+    }
+
+    ImGui::EndTable();
   }
-  ImGui::PopID();
 }
 
 void GUI::options_shape_polar_duplicate_mode_()
