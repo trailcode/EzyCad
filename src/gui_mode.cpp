@@ -486,7 +486,7 @@ void GUI::options_()
         break;
     }
   }
-  else if (get_mode() != Mode::Normal)
+  else if (get_mode() != Mode::Normal && get_mode() != Mode::Shape_polar_duplicate)
     default_material();
 
   ImGui::End();
@@ -810,21 +810,88 @@ void GUI::options_shape_polar_duplicate_mode_()
   bool  rotate_dups  = polar_dup.get_rotate_dups();
   bool  combine_dups = polar_dup.get_combine_dups();
 
-  if (ImGui::InputFloat("Polar angle##float_value", &polar_angle, 0.0f, 0.0f, "%.2f"))
-    polar_dup.set_polar_angle(polar_angle);
+  if (ImGui::BeginTable("options_polar_dup_rows", 2, ImGuiTableFlags_SizingStretchProp))
+  {
+    const auto right_aligned_label = [](const char* text)
+    {
+      ImGui::AlignTextToFramePadding();
+      const float text_w  = ImGui::CalcTextSize(text).x;
+      const float col_w   = ImGui::GetColumnWidth();
+      const float x0      = ImGui::GetCursorPosX();
+      const float right_x = x0 + std::max(0.0f, col_w - text_w - ImGui::GetStyle().CellPadding.x * 2.0f);
+      ImGui::SetCursorPosX(right_x);
+      ImGui::TextUnformatted(text);
+    };
 
-  if (ImGui::InputInt("Num Elms##int_value", &num_elms))
-    polar_dup.set_num_elms(num_elms);
+    float label_col_w = ImGui::CalcTextSize("Polar angle").x;
+    label_col_w       = std::max(label_col_w, ImGui::CalcTextSize("Num Elms").x);
+    label_col_w       = std::max(label_col_w, ImGui::CalcTextSize("Rotate dups").x);
+    label_col_w       = std::max(label_col_w, ImGui::CalcTextSize("Combine dups").x);
+    label_col_w       = std::max(label_col_w, ImGui::CalcTextSize("Default Material").x);
+    label_col_w += ImGui::GetStyle().CellPadding.x * 2.0f + 8.0f;
+    ImGui::TableSetupColumn("label", ImGuiTableColumnFlags_WidthFixed, label_col_w);
+    ImGui::TableSetupColumn("control", ImGuiTableColumnFlags_WidthStretch);
 
-  if (ImGui::Checkbox("Rotate dups", &rotate_dups))
-    polar_dup.set_rotate_dups(rotate_dups);
+    ImGui::TableNextRow();
+    ImGui::TableSetColumnIndex(0);
+    right_aligned_label("Polar angle");
+    ImGui::TableSetColumnIndex(1);
+    ImGui::SetNextItemWidth(120.0f);
+    if (ImGui::InputFloat("##polar_angle", &polar_angle, 0.0f, 0.0f, "%.2f"))
+      polar_dup.set_polar_angle(polar_angle);
 
-  if (ImGui::Checkbox("Combine dups", &combine_dups))
-    polar_dup.set_combine_dups(combine_dups);
+    ImGui::TableNextRow();
+    ImGui::TableSetColumnIndex(0);
+    right_aligned_label("Num Elms");
+    ImGui::TableSetColumnIndex(1);
+    ImGui::SetNextItemWidth(120.0f);
+    if (ImGui::InputInt("##num_elms", &num_elms))
+      polar_dup.set_num_elms(num_elms);
 
-  if (ImGui::Button("Dup"))
-    if (Status s = polar_dup.dup(); !s.is_ok())
-      show_message(s.message());
+    ImGui::TableNextRow();
+    ImGui::TableSetColumnIndex(0);
+    right_aligned_label("Rotate dups");
+    ImGui::TableSetColumnIndex(1);
+    if (ImGui::Checkbox("##rotate_dups", &rotate_dups))
+      polar_dup.set_rotate_dups(rotate_dups);
+
+    ImGui::TableNextRow();
+    ImGui::TableSetColumnIndex(0);
+    right_aligned_label("Combine dups");
+    ImGui::TableSetColumnIndex(1);
+    if (ImGui::Checkbox("##combine_dups", &combine_dups))
+      polar_dup.set_combine_dups(combine_dups);
+
+    ImGui::TableNextRow();
+    ImGui::TableSetColumnIndex(1);
+    if (ImGui::Button("Dup"))
+      if (Status s = polar_dup.dup(); !s.is_ok())
+        show_message(s.message());
+
+    const std::vector<std::string>& material_names = occt_material_combo_labels_();
+    int                             current_item   = int(m_view->get_default_material().Name());
+    if (current_item < 0 || current_item >= static_cast<int>(material_names.size()))
+      current_item = 0;
+
+    ImGui::TableNextRow();
+    ImGui::TableSetColumnIndex(0);
+    right_aligned_label("Default Material");
+    ImGui::TableSetColumnIndex(1);
+    ImGui::SetNextItemWidth(120.0f);
+    if (ImGui::BeginCombo("##default_material_polar_dup", material_names[static_cast<size_t>(current_item)].data(),
+                          ImGuiComboFlags_HeightSmall))
+    {
+      for (int i = 0; i < static_cast<int>(material_names.size()); i++)
+        if (ImGui::Selectable(material_names[static_cast<size_t>(i)].data(), current_item == i))
+        {
+          Graphic3d_MaterialAspect mat(static_cast<Graphic3d_NameOfMaterial>(i));
+          m_view->set_default_material(mat);
+        }
+      ImGui::EndCombo();
+    }
+
+    ImGui::EndTable();
+  }
 }
 
 void GUI::on_key_rotate_mode_(int key)
