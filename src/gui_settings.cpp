@@ -42,6 +42,7 @@ std::string GUI::occt_view_settings_json() const
   j["gui"]       = {
       {      "edge_dim_label_h",       m_edge_dim_label_h},
       {   "edge_dim_line_width",    m_edge_dim_line_width},
+      {   "edge_dim_arrow_size",    m_edge_dim_arrow_size},
       {    "view_roll_step_deg",     m_view_roll_step_deg},
       {"view_zoom_scroll_scale", m_view_zoom_scroll_scale},
   };
@@ -76,6 +77,7 @@ void GUI::save_occt_view_settings()
       {        "show_python_console",                                          m_show_python_console},
       {           "edge_dim_label_h",                                             m_edge_dim_label_h},
       {        "edge_dim_line_width",                                          m_edge_dim_line_width},
+      {        "edge_dim_arrow_size",                                          m_edge_dim_arrow_size},
       {"load_last_opened_on_startup",                                  m_load_last_opened_on_startup},
       {   "last_opened_project_path",                                     m_last_opened_project_path},
       {     "imgui_rounding_general",                                       m_imgui_rounding_general},
@@ -180,6 +182,13 @@ void GUI::parse_gui_panes_settings_(const std::string& content)
       const float v = g["edge_dim_line_width"].get<float>();
       if (v >= 0.5f && v <= 8.0f)
         m_edge_dim_line_width = v;
+    }
+    m_edge_dim_arrow_size = k_gui_edge_dim_arrow_size_default;
+    if (g.contains("edge_dim_arrow_size") && g["edge_dim_arrow_size"].is_number())
+    {
+      const float v = g["edge_dim_arrow_size"].get<float>();
+      if (v >= 1.0f && v <= 24.0f)
+        m_edge_dim_arrow_size = v;
     }
     m_load_last_opened_on_startup = b("load_last_opened_on_startup", b("load_last_saved_on_startup", false));
     if (g.contains("last_opened_project_path") && g["last_opened_project_path"].is_string())
@@ -535,8 +544,9 @@ void GUI::settings_()
 
   if (ImGui::CollapsingHeader("Sketch"))
   {
-    bool ul_changed     = false;
-    bool dim_lw_changed = false;
+    bool ul_changed        = false;
+    bool dim_lw_changed    = false;
+    bool dim_arrow_changed = false;
     if (ImGui::BeginTable("settings_sketch", 2, ImGuiTableFlags_SizingStretchProp))
     {
       ImGui::TableSetupColumn("label", ImGuiTableColumnFlags_WidthFixed, k_label_col_w);
@@ -570,6 +580,31 @@ void GUI::settings_()
       ImGui::TableNextRow();
       ImGui::TableSetColumnIndex(0);
       ImGui::AlignTextToFramePadding();
+      ImGui::TextUnformatted("Dimension arrow size");
+      ImGui::TableSetColumnIndex(1);
+      {
+        float arrow = m_edge_dim_arrow_size;
+        if (ImGui::SliderFloat("##edge_dim_arrow", &arrow, 1.0f, 24.0f, "%.2f"))
+        {
+          m_edge_dim_arrow_size = arrow;
+          dim_arrow_changed     = true;
+        }
+        ImGui::SameLine(0.0f, ImGui::GetStyle().ItemInnerSpacing.x);
+        ImGui::TextDisabled("(?)");
+        if (ImGui::IsItemHovered())
+        {
+          ImGui::BeginTooltip();
+          ImGui::PushTextWrapPos(ImGui::GetFontSize() * 35.0f);
+          ImGui::TextDisabled(
+              "Arrow head length for sketch and extrude length dimensions (Open CASCADE display units).");
+          ImGui::PopTextWrapPos();
+          ImGui::EndTooltip();
+        }
+      }
+
+      ImGui::TableNextRow();
+      ImGui::TableSetColumnIndex(0);
+      ImGui::AlignTextToFramePadding();
       ImGui::TextUnformatted("Underlay highlight color");
       ImGui::TableSetColumnIndex(1);
       ul_changed |= ImGui::ColorEdit3("##underlay_hi", m_underlay_highlight_color, ImGuiColorEditFlags_Float);
@@ -593,6 +628,12 @@ void GUI::settings_()
       save_occt_view_settings();
       if (m_view)
         m_view->refresh_all_length_dimension_line_widths(static_cast<double>(m_edge_dim_line_width));
+    }
+    if (dim_arrow_changed)
+    {
+      save_occt_view_settings();
+      if (m_view)
+        m_view->refresh_all_length_dimension_arrow_sizes(static_cast<double>(m_edge_dim_arrow_size));
     }
     if (ul_changed)
     {

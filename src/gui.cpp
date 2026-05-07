@@ -939,7 +939,7 @@ void GUI::sketch_list_inspector_(Sketch& sketch, int index)
 
   const auto draw_section = [](const char* title, const std::vector<std::string>& labels)
   {
-    const size_t count = labels.size();
+    const size_t       count = labels.size();
     ImGuiTreeNodeFlags flags = ImGuiTreeNodeFlags_SpanAvailWidth;
     if (count == 0)
       flags |= ImGuiTreeNodeFlags_Leaf | ImGuiTreeNodeFlags_NoTreePushOnOpen;
@@ -962,22 +962,39 @@ void GUI::sketch_list_inspector_(Sketch& sketch, int index)
 
     if (ImGui::TreeNodeEx("Dimensions", flags, "Dimensions (%zu)", count))
     {
-      for (size_t i = 0; i < count; ++i)
+      if (count > 0 && ImGui::BeginTable("sketch_dim_rows", 3, ImGuiTableFlags_SizingStretchProp))
       {
-        bool visible = sketch.dimension_visible(i);
-        double offset = sketch.dimension_offset(i);
-        ImGui::PushID(static_cast<int>(i));
-        if (ImGui::Checkbox("##dim_visible", &visible))
-          sketch.set_dimension_visible(i, visible);
-        ImGui::SameLine();
-        ImGui::TextUnformatted(labels[i].c_str());
-        ImGui::SameLine();
-        ImGui::SetNextItemWidth(92.f);
-        if (ImGui::InputDouble("##dim_offset", &offset, 0.5, 2.0, "%.2f"))
-          sketch.set_dimension_offset(i, offset);
-        if (m_show_tool_tips && ImGui::IsItemHovered())
-          ImGui::SetTooltip("Label offset from edge. 0 = automatic.");
-        ImGui::PopID();
+        ImGui::TableSetupColumn("show", ImGuiTableColumnFlags_WidthFixed, 28.f);
+        ImGui::TableSetupColumn("dim", ImGuiTableColumnFlags_WidthStretch);
+        ImGui::TableSetupColumn("offset", ImGuiTableColumnFlags_WidthFixed, 132.f);
+
+        for (size_t i = 0; i < count; ++i)
+        {
+          bool   visible = sketch.dimension_visible(i);
+          double offset  = sketch.dimension_offset(i);
+
+          ImGui::PushID(static_cast<int>(i));
+          ImGui::TableNextRow();
+
+          ImGui::TableSetColumnIndex(0);
+          if (ImGui::Checkbox("##dim_visible", &visible))
+            sketch.set_dimension_visible(i, visible);
+
+          ImGui::TableSetColumnIndex(1);
+          ImGui::AlignTextToFramePadding();
+          ImGui::TextUnformatted(labels[i].c_str());
+
+          ImGui::TableSetColumnIndex(2);
+          ImGui::SetNextItemWidth(86.f);
+          if (ImGui::InputDouble("##dim_offset", &offset, 0.5, 2.0, "%.2f"))
+            sketch.set_dimension_offset(i, offset);
+          if (m_show_tool_tips && ImGui::IsItemHovered())
+            ImGui::SetTooltip("Label offset from edge. 0 = automatic.");
+
+          ImGui::PopID();
+        }
+
+        ImGui::EndTable();
       }
       if (count > 0)
         ImGui::TreePop();
@@ -1032,8 +1049,8 @@ void GUI::sketch_list_()
     // Unique ID suffix using index
     std::string id_suffix = "##" + std::to_string(index);
 
-    const Sketch* sk_key    = sketch.get();
-    bool&         expanded  = m_sketch_list_expanded[sk_key];
+    const Sketch* sk_key   = sketch.get();
+    bool&         expanded = m_sketch_list_expanded[sk_key];
 
     ImGui::PushID(("expand" + id_suffix).c_str());
     if (ImGui::SmallButton(expanded ? "v" : ">"))
@@ -1812,7 +1829,7 @@ void GUI::shape_list_()
   for (int mi = 0; mi < nmat; ++mi)
     mat_label_w_max =
         std::max(mat_label_w_max, ImGui::CalcTextSize(mat_names[static_cast<size_t>(mi)].c_str()).x);
-  
+
   const ImGuiStyle& st_mat      = ImGui::GetStyle();
   const float       mat_popup_w = std::min(
       440.0f,

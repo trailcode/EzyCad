@@ -18,6 +18,7 @@
 #include <Geom_Plane.hxx>
 #include <Geom_TrimmedCurve.hxx>
 #include <Graphic3d_AspectLine3d.hxx>
+#include <Prs3d_ArrowAspect.hxx>
 #include <Prs3d_DimensionAspect.hxx>
 #include <Prs3d_LineAspect.hxx>
 #include <PrsDim_LengthDimension.hxx>
@@ -589,6 +590,29 @@ void apply_length_dimension_line_width(const PrsDim_LengthDimension_ptr& dim, co
   dim->SetDimensionAspect(aspect);
 }
 
+void apply_length_dimension_arrow_size(const PrsDim_LengthDimension_ptr& dim, const double arrow_size)
+{
+  if (dim.IsNull())
+    return;
+
+  const Handle(Prs3d_DimensionAspect)& cur = dim->DimensionAspect();
+  Handle(Prs3d_DimensionAspect) aspect;
+  if (!cur.IsNull())
+    aspect = new Prs3d_DimensionAspect(*cur);
+  else
+    aspect = new Prs3d_DimensionAspect();
+
+  Handle(Prs3d_ArrowAspect) arrow;
+  if (const Handle(Prs3d_ArrowAspect)& cur_arrow = aspect->ArrowAspect(); !cur_arrow.IsNull())
+    arrow = new Prs3d_ArrowAspect(*cur_arrow);
+  else
+    arrow = new Prs3d_ArrowAspect();
+
+  arrow->SetLength(static_cast<Standard_Real>(arrow_size));
+  aspect->SetArrowAspect(arrow);
+  dim->SetDimensionAspect(aspect);
+}
+
 // OCCT draws the dimension on the side given by (plane_normal x edge_vector) for positive flyout.
 // When that side faces the sketch interior, negate flyout so the annotation sits outside the loop.
 static void orient_length_dimension_flyout_outward(const PrsDim_LengthDimension_ptr& dim,
@@ -690,7 +714,8 @@ PrsDim_LengthDimension_ptr create_distance_annotation(const gp_Pnt&             
                                                       const Prs3d_DimensionTextHorizontalPosition text_h_pos,
                                                       const std::optional<gp_Pnt>&                interior_ref,
                                                       const std::vector<TopoDS_Face>*             sketch_faces_for_flyout,
-                                                      const double                                dimension_line_width)
+                                                      const double                                dimension_line_width,
+                                                      const double                                dimension_arrow_size)
 {
   // Check if points are too close (invalid for dimension)
   EZY_ASSERT(unique(p1, p2));
@@ -699,6 +724,7 @@ PrsDim_LengthDimension_ptr create_distance_annotation(const gp_Pnt&             
   PrsDim_LengthDimension_ptr dim = new PrsDim_LengthDimension(p1, p2, pln);
   apply_length_dimension_text_h_position(dim, text_h_pos);
   apply_length_dimension_line_width(dim, static_cast<Standard_Real>(dimension_line_width));
+  apply_length_dimension_arrow_size(dim, static_cast<Standard_Real>(dimension_arrow_size));
 
   bool used_faces = false;
   if (sketch_faces_for_flyout && !sketch_faces_for_flyout->empty())
@@ -715,13 +741,14 @@ PrsDim_LengthDimension_ptr create_distance_annotation(const gp_Pnt2d&           
                                                       const Prs3d_DimensionTextHorizontalPosition text_h_pos,
                                                       const std::optional<gp_Pnt>&                interior_ref,
                                                       const std::vector<TopoDS_Face>*             sketch_faces_for_flyout,
-                                                      const double                                dimension_line_width)
+                                                      const double                                dimension_line_width,
+                                                      const double                                dimension_arrow_size)
 {
   gp_Pnt point_1 = to_3d(pln, p1);
   gp_Pnt point_2 = to_3d(pln, p2);
 
   return create_distance_annotation(point_1, point_2, pln, text_h_pos, interior_ref, sketch_faces_for_flyout,
-                                    dimension_line_width);
+                                    dimension_line_width, dimension_arrow_size);
 }
 
 const gp_Pnt& closest_to_camera(const V3d_View_ptr& view, const std::vector<gp_Pnt>& pnts)
@@ -997,7 +1024,7 @@ bool operator<(const gp_Pnt2d& lhs, const gp_Pnt2d& rhs)
   // Lexicographical ordering: compare X first, then Y if X is equal within tolerance
   if (std::abs(lhs.X() - rhs.X()) > tolerance)
     return lhs.X() < rhs.X();
-  
+
   return lhs.Y() < rhs.Y();
 }
 
@@ -1029,7 +1056,7 @@ bool is_clockwise(const boost_geom::ring_2d& ring)
   double sum = 0.0;
   for (size_t i = 0; i < ring.size() - 1; ++i)
     sum += (ring[i + 1].x() - ring[i].x()) * (ring[i + 1].y() + ring[i].y());
-  
+
   return sum > 0.0;
 }
 
