@@ -1401,6 +1401,13 @@ void Sketch::rebuild_length_dimension_display_(Length_dimension& d)
 
   const double dist = m_nodes[d.node_idx_lo].Distance(m_nodes[d.node_idx_hi]);
   d.dim->SetCustomValue(dist / m_view.get_dimension_scale());
+  if (d.flyout_offset.has_value() && *d.flyout_offset > 0.0)
+  {
+    const Standard_Real f    = d.dim->GetFlyout();
+    const double        sign = f < 0.0 ? -1.0 : 1.0;
+    d.dim->SetFlyout(static_cast<Standard_Real>(sign * *d.flyout_offset));
+  }
+
   if (m_visible && m_show_dims && d.visible)
     m_ctx.Display(d.dim, false);
 }
@@ -1470,7 +1477,10 @@ void Sketch::add_or_toggle_length_dim_between_node_indices_(size_t node_a, size_
   rebuild_length_dimension_display_(m_length_dimensions.back());
 }
 
-void Sketch::json_add_length_dimension_(size_t node_a, size_t node_b, const bool visible)
+void Sketch::json_add_length_dimension_(size_t                     node_a,
+                                        size_t                     node_b,
+                                        const bool                 visible,
+                                        const std::optional<double> flyout_offset)
 {
   const size_t lo = std::min(node_a, node_b);
   const size_t hi = std::max(node_a, node_b);
@@ -1483,6 +1493,7 @@ void Sketch::json_add_length_dimension_(size_t node_a, size_t node_b, const bool
   d.node_idx_lo = lo;
   d.node_idx_hi = hi;
   d.visible     = visible;
+  d.flyout_offset = flyout_offset;
   m_length_dimensions.push_back(std::move(d));
   rebuild_length_dimension_display_(m_length_dimensions.back());
 }
@@ -2445,6 +2456,31 @@ void Sketch::set_dimension_visible(size_t dim_index, bool visible)
     else
       m_ctx.Erase(d.dim, false);
   }
+}
+
+double Sketch::dimension_offset(size_t dim_index) const
+{
+  EZY_ASSERT(dim_index < m_length_dimensions.size());
+  const Length_dimension& d = m_length_dimensions[dim_index];
+  if (d.flyout_offset.has_value())
+    return *d.flyout_offset;
+  if (!d.dim.IsNull())
+    return std::abs(static_cast<double>(d.dim->GetFlyout()));
+  return 0.0;
+}
+
+void Sketch::set_dimension_offset(size_t dim_index, const double offset)
+{
+  EZY_ASSERT(dim_index < m_length_dimensions.size());
+  Length_dimension& d = m_length_dimensions[dim_index];
+
+  const double off = std::max(0.0, offset);
+  if (off <= 0.0)
+    d.flyout_offset.reset();
+  else
+    d.flyout_offset = off;
+
+  rebuild_length_dimension_display_(d);
 }
 
 void Sketch::refresh_edge_dimension_line_widths(const double line_width)

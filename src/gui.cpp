@@ -965,11 +965,18 @@ void GUI::sketch_list_inspector_(Sketch& sketch, int index)
       for (size_t i = 0; i < count; ++i)
       {
         bool visible = sketch.dimension_visible(i);
+        double offset = sketch.dimension_offset(i);
         ImGui::PushID(static_cast<int>(i));
         if (ImGui::Checkbox("##dim_visible", &visible))
           sketch.set_dimension_visible(i, visible);
         ImGui::SameLine();
         ImGui::TextUnformatted(labels[i].c_str());
+        ImGui::SameLine();
+        ImGui::SetNextItemWidth(92.f);
+        if (ImGui::InputDouble("##dim_offset", &offset, 0.5, 2.0, "%.2f"))
+          sketch.set_dimension_offset(i, offset);
+        if (m_show_tool_tips && ImGui::IsItemHovered())
+          ImGui::SetTooltip("Label offset from edge. 0 = automatic.");
         ImGui::PopID();
       }
       if (count > 0)

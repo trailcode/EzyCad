@@ -92,6 +92,8 @@ class Sketch
   void set_show_dims(bool show);
   bool dimension_visible(size_t dim_index) const;
   void set_dimension_visible(size_t dim_index, bool visible);
+  double dimension_offset(size_t dim_index) const;
+  void   set_dimension_offset(size_t dim_index, double offset);
 
   /// Apply global dimension line width to edge annotations and in-progress rubber-band dim.
   void refresh_edge_dimension_line_widths(double line_width);
@@ -178,6 +180,7 @@ class Sketch
     size_t                     node_idx_hi {};
     PrsDim_LengthDimension_ptr dim;
     bool                       visible {true};
+    std::optional<double>      flyout_offset;
   };
 
   struct Edge
@@ -311,7 +314,10 @@ class Sketch
   void remove_length_dimensions_referencing_node_(size_t node_idx);
   /// Add if missing, remove if present (same unordered node pair).
   void add_or_toggle_length_dim_between_node_indices_(size_t node_a, size_t node_b);
-  void json_add_length_dimension_(size_t node_a, size_t node_b, bool visible = true);
+  void json_add_length_dimension_(size_t               node_a,
+                                  size_t               node_b,
+                                  bool                 visible = true,
+                                  std::optional<double> flyout_offset = std::nullopt);
 
   /// Average of non-deleted node positions (3D on sketch plane); used to place edge dimensions outside loops.
   std::optional<gp_Pnt> approx_sketch_interior_ref_3d_() const;
