@@ -932,6 +932,82 @@ const std::vector<std::string>& GUI::occt_material_combo_labels_()
   return names;
 }
 
+void GUI::sketch_list_inspector_(Sketch& sketch, int index)
+{
+  ImGui::Indent();
+  ImGui::PushID(index);
+
+  const auto draw_section = [](const char* title, const std::vector<std::string>& labels)
+  {
+    const size_t       count = labels.size();
+    ImGuiTreeNodeFlags flags = ImGuiTreeNodeFlags_SpanAvailWidth;
+    if (count == 0)
+      flags |= ImGuiTreeNodeFlags_Leaf | ImGuiTreeNodeFlags_NoTreePushOnOpen;
+
+    if (ImGui::TreeNodeEx(title, flags, "%s (%zu)", title, count))
+    {
+      for (const std::string& label : labels)
+        ImGui::BulletText("%s", label.c_str());
+      if (count > 0)
+        ImGui::TreePop();
+    }
+  };
+
+  {
+    const std::vector<std::string> labels = sketch.inspector_dimension_labels();
+    const size_t                   count  = labels.size();
+    ImGuiTreeNodeFlags             flags  = ImGuiTreeNodeFlags_SpanAvailWidth;
+    if (count == 0)
+      flags |= ImGuiTreeNodeFlags_Leaf | ImGuiTreeNodeFlags_NoTreePushOnOpen;
+
+    if (ImGui::TreeNodeEx("Dimensions", flags, "Dimensions (%zu)", count))
+    {
+      if (count > 0 && ImGui::BeginTable("sketch_dim_rows", 3, ImGuiTableFlags_SizingStretchProp))
+      {
+        ImGui::TableSetupColumn("show", ImGuiTableColumnFlags_WidthFixed, 28.f);
+        ImGui::TableSetupColumn("dim", ImGuiTableColumnFlags_WidthStretch);
+        ImGui::TableSetupColumn("offset", ImGuiTableColumnFlags_WidthFixed, 132.f);
+
+        for (size_t i = 0; i < count; ++i)
+        {
+          bool   visible = sketch.dimension_visible(i);
+          double offset  = sketch.dimension_offset(i);
+
+          ImGui::PushID(static_cast<int>(i));
+          ImGui::TableNextRow();
+
+          ImGui::TableSetColumnIndex(0);
+          if (ImGui::Checkbox("##dim_visible", &visible))
+            sketch.set_dimension_visible(i, visible);
+
+          ImGui::TableSetColumnIndex(1);
+          ImGui::AlignTextToFramePadding();
+          ImGui::TextUnformatted(labels[i].c_str());
+
+          ImGui::TableSetColumnIndex(2);
+          ImGui::SetNextItemWidth(86.f);
+          if (ImGui::InputDouble("##dim_offset", &offset, 0.5, 2.0, "%.2f"))
+            sketch.set_dimension_offset(i, offset);
+          if (m_show_tool_tips && ImGui::IsItemHovered())
+            ImGui::SetTooltip("Label offset from edge. 0 = automatic.");
+
+          ImGui::PopID();
+        }
+
+        ImGui::EndTable();
+      }
+      if (count > 0)
+        ImGui::TreePop();
+    }
+  }
+
+  draw_section("Edges", sketch.inspector_edge_labels());
+  draw_section("Faces", sketch.inspector_face_labels());
+
+  ImGui::PopID();
+  ImGui::Unindent();
+}
+
 void GUI::sketch_list_()
 {
   if (!m_show_sketch_list)
@@ -972,6 +1048,18 @@ void GUI::sketch_list_()
 
     // Unique ID suffix using index
     std::string id_suffix = "##" + std::to_string(index);
+
+    const Sketch* sk_key   = sketch.get();
+    bool&         expanded = m_sketch_list_expanded[sk_key];
+
+    ImGui::PushID(("expand" + id_suffix).c_str());
+    if (ImGui::SmallButton(expanded ? "v" : ">"))
+      expanded = !expanded;
+    if (m_show_tool_tips && ImGui::IsItemHovered())
+      ImGui::SetTooltip(expanded ? "Collapse details" : "Expand details");
+    ImGui::PopID();
+
+    ImGui::SameLine();
 
     // Radio button for selection
     ImGui::PushID(("select" + id_suffix).c_str());
@@ -1053,6 +1141,9 @@ void GUI::sketch_list_()
       ImGui::SetTooltip("Sketch properties");
 
     ImGui::PopID();
+
+    if (expanded)
+      sketch_list_inspector_(*sketch, index);
 
     ++index;
   }
@@ -1738,7 +1829,7 @@ void GUI::shape_list_()
   for (int mi = 0; mi < nmat; ++mi)
     mat_label_w_max =
         std::max(mat_label_w_max, ImGui::CalcTextSize(mat_names[static_cast<size_t>(mi)].c_str()).x);
-  
+
   const ImGuiStyle& st_mat      = ImGui::GetStyle();
   const float       mat_popup_w = std::min(
       440.0f,

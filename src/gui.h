@@ -9,6 +9,7 @@
 #include <gp_Vec2d.hxx>
 #include <memory>
 #include <string>  // Added for log messages
+#include <unordered_map>
 #include <variant>
 // #include <vector>  // Added for log storage
 
@@ -55,15 +56,17 @@ struct Example_file
 };
 
 /// Default OCCT line-width scale for length dimensions when `edge_dim_line_width` is missing from settings JSON.
-inline constexpr float  k_gui_edge_dim_line_width_default = 1.0f;
+inline constexpr float  k_gui_edge_dim_line_width_default    = 1.0f;
+/// Default OCCT arrow length for length dimensions when `edge_dim_arrow_size` is missing from settings JSON.
+inline constexpr float  k_gui_edge_dim_arrow_size_default    = 6.0f;
 /// Allowed range and default for `gui.view_roll_step_deg` (view roll and numpad orbit steps; must match Settings slider).
-inline constexpr double k_gui_view_roll_step_deg_min      = 0.1;
-inline constexpr double k_gui_view_roll_step_deg_max      = 180.0;
-inline constexpr double k_gui_view_roll_step_deg_default  = 45.0;
+inline constexpr double k_gui_view_roll_step_deg_min         = 0.1;
+inline constexpr double k_gui_view_roll_step_deg_max         = 180.0;
+inline constexpr double k_gui_view_roll_step_deg_default     = 45.0;
 /// Allowed range and default for `gui.view_zoom_scroll_scale` (wheel/keyboard zoom units; must match Settings slider).
-inline constexpr double k_gui_view_zoom_scroll_scale_min      = 0.25;
-inline constexpr double k_gui_view_zoom_scroll_scale_max      = 64.0;
-inline constexpr double k_gui_view_zoom_scroll_scale_default  = 4.0;
+inline constexpr double k_gui_view_zoom_scroll_scale_min     = 0.25;
+inline constexpr double k_gui_view_zoom_scroll_scale_max     = 64.0;
+inline constexpr double k_gui_view_zoom_scroll_scale_default = 4.0;
 
 class GUI
 {
@@ -102,6 +105,8 @@ class GUI
   int edge_dim_label_h() const { return m_edge_dim_label_h; }
   /// OCCT scale factor for sketch/extrude length dimension lines (1.0 = default thickness).
   float edge_dim_line_width() const { return m_edge_dim_line_width; }
+  /// OCCT arrow length for sketch/extrude length dimensions.
+  float edge_dim_arrow_size() const { return m_edge_dim_arrow_size; }
   bool get_hide_all_shapes() const { return m_hide_all_shapes; }
   void set_hide_all_shapes(bool hide) { m_hide_all_shapes = hide; }
   bool get_dark_mode() const { return m_dark_mode; }
@@ -142,7 +147,8 @@ class GUI
 
   void save_occt_view_settings();
 
-  /// JSON for scripting: `occt_view` (background, grid) plus `gui.edge_dim_label_h` / `gui.edge_dim_line_width` (same keys as `ezycad_settings.json`). Asserts if the OCCT view is missing.
+  /// JSON for scripting: `occt_view` (background, grid) plus `gui.edge_dim_label_h` / `gui.edge_dim_line_width` /
+  /// `gui.edge_dim_arrow_size` (same keys as `ezycad_settings.json`). Asserts if the OCCT view is missing.
   [[nodiscard]] std::string occt_view_settings_json() const;
 
   /// Default RGB (0-255) for sketch underlay line tint when importing a new image (see Settings).
@@ -169,6 +175,7 @@ class GUI
   void dist_edit_();
   void angle_edit_();
   void sketch_list_();
+  void sketch_list_inspector_(Sketch& sketch, int index);
   void sketch_properties_dialog_();
   void shape_list_();
 
@@ -279,6 +286,7 @@ class GUI
   Fillet_mode                 m_fillet_mode  = Fillet_mode::Shape;
   int                         m_edge_dim_label_h {3};  // Prs3d_DTHP_Fit
   float                       m_edge_dim_line_width {k_gui_edge_dim_line_width_default};
+  float                       m_edge_dim_arrow_size {k_gui_edge_dim_arrow_size_default};
   /// Degrees per numpad orbit (8/2/4/6) and Blender-style roll (Shift+NumPad 4/6); persisted in `gui.view_roll_step_deg`.
   double                      m_view_roll_step_deg {k_gui_view_roll_step_deg_default};
   /// Multiplier for `UpdateZoom(Aspect_ScrollDelta(..., int(y * scale)))`; persisted in `gui.view_zoom_scroll_scale`.
@@ -308,42 +316,43 @@ class GUI
   using Example_file_list = std::vector<Example_file>;
   Example_file_list m_example_files;
 
-  bool        m_show_sketch_list {true};
-  bool        m_show_shape_list {true};
-  bool        m_show_options {true};
-  bool        m_show_settings_dialog {false};
-  bool        m_open_about_popup {false};
-  bool        m_about_popup_open {false};
-  std::string m_about_markdown;
-  uint32_t    m_about_splash_gl {0};
-  int         m_about_splash_w {512};
-  int         m_about_splash_h {512};
-  bool        m_about_assets_loaded {false};
-  bool        m_open_add_box_popup {false};
-  double      m_add_box_origin_x {0};
-  double      m_add_box_origin_y {0};
-  double      m_add_box_origin_z {0};
-  double      m_add_box_width {1};
-  double      m_add_box_length {1};
-  double      m_add_box_height {1};
-  bool        m_open_add_pyramid_popup {false};
-  double      m_add_pyramid_origin_x {0}, m_add_pyramid_origin_y {0}, m_add_pyramid_origin_z {0};
-  double      m_add_pyramid_side {1};
-  bool        m_open_add_sphere_popup {false};
-  double      m_add_sphere_origin_x {0}, m_add_sphere_origin_y {0}, m_add_sphere_origin_z {0};
-  double      m_add_sphere_radius {1};
-  bool        m_open_add_cylinder_popup {false};
-  double      m_add_cylinder_origin_x {0}, m_add_cylinder_origin_y {0}, m_add_cylinder_origin_z {0};
-  double      m_add_cylinder_radius {1}, m_add_cylinder_height {1};
-  bool        m_open_add_cone_popup {false};
-  double      m_add_cone_origin_x {0}, m_add_cone_origin_y {0}, m_add_cone_origin_z {0};
-  double      m_add_cone_R1 {1}, m_add_cone_R2 {0}, m_add_cone_height {1};
-  bool        m_open_add_torus_popup {false};
-  double      m_add_torus_origin_x {0}, m_add_torus_origin_y {0}, m_add_torus_origin_z {0};
-  double      m_add_torus_R1 {1}, m_add_torus_R2 {0.5};
-  bool        m_hide_all_shapes {false};
-  bool        m_show_tool_tips {true};
-  bool        m_dark_mode {false};
+  bool                                    m_show_sketch_list {true};
+  std::unordered_map<const Sketch*, bool> m_sketch_list_expanded;
+  bool                                    m_show_shape_list {true};
+  bool                                    m_show_options {true};
+  bool                                    m_show_settings_dialog {false};
+  bool                                    m_open_about_popup {false};
+  bool                                    m_about_popup_open {false};
+  std::string                             m_about_markdown;
+  uint32_t                                m_about_splash_gl {0};
+  int                                     m_about_splash_w {512};
+  int                                     m_about_splash_h {512};
+  bool                                    m_about_assets_loaded {false};
+  bool                                    m_open_add_box_popup {false};
+  double                                  m_add_box_origin_x {0};
+  double                                  m_add_box_origin_y {0};
+  double                                  m_add_box_origin_z {0};
+  double                                  m_add_box_width {1};
+  double                                  m_add_box_length {1};
+  double                                  m_add_box_height {1};
+  bool                                    m_open_add_pyramid_popup {false};
+  double                                  m_add_pyramid_origin_x {0}, m_add_pyramid_origin_y {0}, m_add_pyramid_origin_z {0};
+  double                                  m_add_pyramid_side {1};
+  bool                                    m_open_add_sphere_popup {false};
+  double                                  m_add_sphere_origin_x {0}, m_add_sphere_origin_y {0}, m_add_sphere_origin_z {0};
+  double                                  m_add_sphere_radius {1};
+  bool                                    m_open_add_cylinder_popup {false};
+  double                                  m_add_cylinder_origin_x {0}, m_add_cylinder_origin_y {0}, m_add_cylinder_origin_z {0};
+  double                                  m_add_cylinder_radius {1}, m_add_cylinder_height {1};
+  bool                                    m_open_add_cone_popup {false};
+  double                                  m_add_cone_origin_x {0}, m_add_cone_origin_y {0}, m_add_cone_origin_z {0};
+  double                                  m_add_cone_R1 {1}, m_add_cone_R2 {0}, m_add_cone_height {1};
+  bool                                    m_open_add_torus_popup {false};
+  double                                  m_add_torus_origin_x {0}, m_add_torus_origin_y {0}, m_add_torus_origin_z {0};
+  double                                  m_add_torus_R1 {1}, m_add_torus_R2 {0.5};
+  bool                                    m_hide_all_shapes {false};
+  bool                                    m_show_tool_tips {true};
+  bool                                    m_dark_mode {false};
 #ifndef NDEBUG
   bool m_show_dbg {false};
 #endif

@@ -477,7 +477,8 @@ void Sketch::move_line_string_pt_(const ScreenCoords& screen_coords)
       m_tmp_dim_anno = create_distance_annotation(
           pt_a, final_pt_b, m_pln, edge_dim_text_h_pos_from_index(m_view.gui().edge_dim_label_h()),
           approx_sketch_interior_ref_3d_(),
-          m_dim_classifier_faces.empty() ? nullptr : &m_dim_classifier_faces, m_view.gui().edge_dim_line_width());
+          m_dim_classifier_faces.empty() ? nullptr : &m_dim_classifier_faces, m_view.gui().edge_dim_line_width(),
+          m_view.gui().edge_dim_arrow_size());
 
       m_tmp_dim_anno->SetCustomValue(dist);
       m_ctx.Display(m_tmp_dim_anno, true);
@@ -1397,11 +1398,19 @@ void Sketch::rebuild_length_dimension_display_(Length_dimension& d)
   d.dim = create_distance_annotation(
       m_nodes[d.node_idx_lo], m_nodes[d.node_idx_hi], m_pln,
       edge_dim_text_h_pos_from_index(m_view.gui().edge_dim_label_h()), approx_sketch_interior_ref_3d_(),
-      m_dim_classifier_faces.empty() ? nullptr : &m_dim_classifier_faces, m_view.gui().edge_dim_line_width());
+      m_dim_classifier_faces.empty() ? nullptr : &m_dim_classifier_faces, m_view.gui().edge_dim_line_width(),
+      m_view.gui().edge_dim_arrow_size());
 
   const double dist = m_nodes[d.node_idx_lo].Distance(m_nodes[d.node_idx_hi]);
   d.dim->SetCustomValue(dist / m_view.get_dimension_scale());
-  if (m_visible)
+  if (d.flyout_offset.has_value() && *d.flyout_offset > 0.0)
+  {
+    const Standard_Real f    = d.dim->GetFlyout();
+    const double        sign = f < 0.0 ? -1.0 : 1.0;
+    d.dim->SetFlyout(static_cast<Standard_Real>(sign * *d.flyout_offset));
+  }
+
+  if (m_visible && m_show_dims && d.visible)
     m_ctx.Display(d.dim, false);
 }
 
@@ -1470,7 +1479,10 @@ void Sketch::add_or_toggle_length_dim_between_node_indices_(size_t node_a, size_
   rebuild_length_dimension_display_(m_length_dimensions.back());
 }
 
-void Sketch::json_add_length_dimension_(size_t node_a, size_t node_b)
+void Sketch::json_add_length_dimension_(size_t                      node_a,
+                                        size_t                      node_b,
+                                        const bool                  visible,
+                                        const std::optional<double> flyout_offset)
 {
   const size_t lo = std::min(node_a, node_b);
   const size_t hi = std::max(node_a, node_b);
@@ -1480,8 +1492,10 @@ void Sketch::json_add_length_dimension_(size_t node_a, size_t node_b)
     if (x.node_idx_lo == lo && x.node_idx_hi == hi)
       return;
   Length_dimension d;
-  d.node_idx_lo = lo;
-  d.node_idx_hi = hi;
+  d.node_idx_lo   = lo;
+  d.node_idx_hi   = hi;
+  d.visible       = visible;
+  d.flyout_offset = flyout_offset;
   m_length_dimensions.push_back(std::move(d));
   rebuild_length_dimension_display_(m_length_dimensions.back());
 }
@@ -2326,9 +2340,10 @@ void Sketch::set_visible(bool state)
     if (m_len_dim_rubber_shp && m_len_dim_pick_anchor_node.has_value())
       m_ctx.Display(m_len_dim_rubber_shp, AIS_WireFrame, 0, false);
 
-    for (Length_dimension& ld : m_length_dimensions)
-      if (!ld.dim.IsNull())
-        m_ctx.Display(ld.dim, false);
+    if (m_show_dims)
+      for (Length_dimension& ld : m_length_dimensions)
+        if (!ld.dim.IsNull() && ld.visible)
+          m_ctx.Display(ld.dim, false);
 
     if (m_originating_face)
       m_ctx.Display(m_originating_face, AIS_WireFrame, 0, false);
@@ -2407,10 +2422,11 @@ void Sketch::set_show_edges(bool show)
 
 void Sketch::set_show_dims(bool show)
 {
+  m_show_dims = show;
   if (show && m_visible)
   {
     for (Length_dimension& ld : m_length_dimensions)
-      if (!ld.dim.IsNull())
+      if (!ld.dim.IsNull() && ld.visible)
         m_ctx.Display(ld.dim, false);
   }
   else
@@ -2419,6 +2435,54 @@ void Sketch::set_show_dims(bool show)
       if (!ld.dim.IsNull())
         m_ctx.Erase(ld.dim, false);
   }
+}
+
+bool Sketch::dimension_visible(size_t dim_index) const
+{
+  EZY_ASSERT(dim_index < m_length_dimensions.size());
+  return m_length_dimensions[dim_index].visible;
+}
+
+void Sketch::set_dimension_visible(size_t dim_index, bool visible)
+{
+  EZY_ASSERT(dim_index < m_length_dimensions.size());
+  Length_dimension& d = m_length_dimensions[dim_index];
+  if (d.visible == visible)
+    return;
+
+  d.visible = visible;
+  if (!d.dim.IsNull())
+  {
+    if (visible && m_visible && m_show_dims)
+      m_ctx.Display(d.dim, false);
+    else
+      m_ctx.Erase(d.dim, false);
+  }
+}
+
+double Sketch::dimension_offset(size_t dim_index) const
+{
+  EZY_ASSERT(dim_index < m_length_dimensions.size());
+  const Length_dimension& d = m_length_dimensions[dim_index];
+  if (d.flyout_offset.has_value())
+    return *d.flyout_offset;
+  if (!d.dim.IsNull())
+    return std::abs(static_cast<double>(d.dim->GetFlyout()));
+  return 0.0;
+}
+
+void Sketch::set_dimension_offset(size_t dim_index, const double offset)
+{
+  EZY_ASSERT(dim_index < m_length_dimensions.size());
+  Length_dimension& d = m_length_dimensions[dim_index];
+
+  const double off = std::max(0.0, offset);
+  if (off <= 0.0)
+    d.flyout_offset.reset();
+  else
+    d.flyout_offset = off;
+
+  rebuild_length_dimension_display_(d);
 }
 
 void Sketch::refresh_edge_dimension_line_widths(const double line_width)
@@ -2433,6 +2497,22 @@ void Sketch::refresh_edge_dimension_line_widths(const double line_width)
   if (!m_tmp_dim_anno.IsNull())
   {
     apply_length_dimension_line_width(m_tmp_dim_anno, line_width);
+    m_ctx.Redisplay(m_tmp_dim_anno, true);
+  }
+}
+
+void Sketch::refresh_edge_dimension_arrow_sizes(const double arrow_size)
+{
+  for (Length_dimension& ld : m_length_dimensions)
+    if (!ld.dim.IsNull())
+    {
+      apply_length_dimension_arrow_size(ld.dim, arrow_size);
+      m_ctx.Redisplay(ld.dim, true);
+    }
+
+  if (!m_tmp_dim_anno.IsNull())
+  {
+    apply_length_dimension_arrow_size(m_tmp_dim_anno, arrow_size);
     m_ctx.Redisplay(m_tmp_dim_anno, true);
   }
 }
@@ -2516,6 +2596,78 @@ void Sketch::set_name(const std::string& name)
 bool Sketch::has_edges() const
 {
   return !m_edges.empty();
+}
+
+size_t Sketch::edge_count() const
+{
+  return m_edges.size();
+}
+
+size_t Sketch::face_count() const
+{
+  return m_faces.size();
+}
+
+size_t Sketch::length_dimension_count() const
+{
+  return m_length_dimensions.size();
+}
+
+std::vector<std::string> Sketch::inspector_edge_labels() const
+{
+  std::vector<std::string> labels;
+  labels.reserve(m_edges.size());
+  size_t idx = 0;
+  for (const Edge& e : m_edges)
+  {
+    std::string lbl = "E" + std::to_string(idx) + ": ";
+    if (e.circle_arc)
+      lbl += "Circle arc";
+    else if (e.node_idx_arc.has_value())
+      lbl += "3pt arc";
+    else
+      lbl += "Line";
+
+    lbl += " n" + std::to_string(e.node_idx_a) + "->";
+    if (e.node_idx_b.has_value())
+      lbl += "n" + std::to_string(*e.node_idx_b);
+    else
+      lbl += "?";
+
+    if (e.node_idx_arc.has_value())
+      lbl += " (arc n" + std::to_string(*e.node_idx_arc) + ")";
+
+    labels.push_back(std::move(lbl));
+    ++idx;
+  }
+  return labels;
+}
+
+std::vector<std::string> Sketch::inspector_face_labels() const
+{
+  std::vector<std::string> labels;
+  labels.reserve(m_faces.size());
+  for (size_t i = 0; i < m_faces.size(); ++i)
+  {
+    const Sketch_face_shp_ptr& f    = m_faces[i];
+    const size_t               nv   = f ? f->verts_3d.size() : 0;
+    const std::string          text = "F" + std::to_string(i) + ": " + std::to_string(nv) + " verts";
+    labels.push_back(text);
+  }
+  return labels;
+}
+
+std::vector<std::string> Sketch::inspector_dimension_labels() const
+{
+  std::vector<std::string> labels;
+  labels.reserve(m_length_dimensions.size());
+  for (size_t i = 0; i < m_length_dimensions.size(); ++i)
+  {
+    const Length_dimension& d = m_length_dimensions[i];
+    labels.push_back("D" + std::to_string(i) + ": n" + std::to_string(d.node_idx_lo) + "<->n" +
+                     std::to_string(d.node_idx_hi));
+  }
+  return labels;
 }
 
 bool Sketch::has_underlay() const
@@ -2811,10 +2963,10 @@ bool Sketch::underlay_axes_orthogonal() const
 {
   if (!m_underlay || !m_underlay->has_image())
     return true;
-  const gp_Vec2d au = m_underlay->axis_u();
-  const gp_Vec2d av = m_underlay->axis_v();
-  const double dot  = au.X() * av.X() + au.Y() * av.Y();
-  const double scale = au.Magnitude() * av.Magnitude();
+  const gp_Vec2d au    = m_underlay->axis_u();
+  const gp_Vec2d av    = m_underlay->axis_v();
+  const double   dot   = au.X() * av.X() + au.Y() * av.Y();
+  const double   scale = au.Magnitude() * av.Magnitude();
   if (scale < 1e-24)
     return true;
   return std::abs(dot) < 1e-9 * scale;

@@ -9,6 +9,7 @@
 #include <memory>
 #include <optional>
 #include <set>
+#include <string>
 #include <vector>
 
 #include "shp.h"
@@ -84,14 +85,20 @@ class Sketch
   void on_enter();  // For finalizing manual distance input.
 
   // Visibility related
-  void set_visible(bool state);
-  bool is_visible() const;
-  void set_show_faces(bool show);
-  void set_show_edges(bool show);
-  void set_show_dims(bool show);
+  void   set_visible(bool state);
+  bool   is_visible() const;
+  void   set_show_faces(bool show);
+  void   set_show_edges(bool show);
+  void   set_show_dims(bool show);
+  bool   dimension_visible(size_t dim_index) const;
+  void   set_dimension_visible(size_t dim_index, bool visible);
+  double dimension_offset(size_t dim_index) const;
+  void   set_dimension_offset(size_t dim_index, double offset);
 
   /// Apply global dimension line width to edge annotations and in-progress rubber-band dim.
   void refresh_edge_dimension_line_widths(double line_width);
+  /// Apply global dimension arrow size to edge annotations and in-progress rubber-band dim.
+  void refresh_edge_dimension_arrow_sizes(double arrow_size);
 
   // Revolve related
   Shp_rslt revolve_selected(const double angle);
@@ -116,7 +123,14 @@ class Sketch
   void               set_name(const std::string& name);
 
   /// True if this sketch has at least one edge (used e.g. to pick mode after undo/redo).
-  bool has_edges() const;
+  bool   has_edges() const;
+  size_t edge_count() const;
+  size_t face_count() const;
+  size_t length_dimension_count() const;
+
+  std::vector<std::string> inspector_edge_labels() const;
+  std::vector<std::string> inspector_face_labels() const;
+  std::vector<std::string> inspector_dimension_labels() const;
 
   void          on_mode();
   Mode          get_mode() const;
@@ -128,7 +142,7 @@ class Sketch
   [[nodiscard]] int   underlay_image_h() const;
   [[nodiscard]] bool  load_underlay_image(const std::string& file_bytes);
   void                clear_underlay();
-  void underlay_set_center_extents_rotation(const glm::dvec2& center, const glm::dvec2& half_extents, double rot_deg);
+  void                underlay_set_center_extents_rotation(const glm::dvec2& center, const glm::dvec2& half_extents, double rot_deg);
   void                underlay_set_opacity(float opaque01);
   void                underlay_set_visible(bool v);
   [[nodiscard]] float underlay_opacity() const;
@@ -141,7 +155,7 @@ class Sketch
   void                underlay_line_tint_rgb(uint8_t& r, uint8_t& g, uint8_t& b) const;
   void                underlay_ui_params(double& cx, double& cy, double& half_w, double& half_h, double& rot_deg) const;
   /// True when texture U and V directions are perpendicular (no shear). Orthogonal UI assumes this.
-  [[nodiscard]] bool underlay_axes_orthogonal() const;
+  [[nodiscard]] bool  underlay_axes_orthogonal() const;
   void                underlay_rebuild_display();
 
   /// Same snap / plane rules as the line-edge tool (for underlay calibration clicks).
@@ -154,7 +168,7 @@ class Sketch
   [[nodiscard]] bool                    underlay_rescale_v_chord_to_length(const gp_Pnt2d& y0, const gp_Pnt2d& y1, double target_len);
   [[nodiscard]] gp_Vec2d                underlay_axis_u_vec() const;
   /// Datum on sketch plane: bitmap (0,0) at \a origin; +U toward \a along_u_point; keeps |axis_u|, |axis_v| and winding.
-  [[nodiscard]] bool underlay_set_datum_origin_and_u_direction(const gp_Pnt2d& origin, const gp_Pnt2d& along_u_point);
+  [[nodiscard]] bool                    underlay_set_datum_origin_and_u_direction(const gp_Pnt2d& origin, const gp_Pnt2d& along_u_point);
 
   // private:
   friend class Sketch_json;
@@ -167,6 +181,8 @@ class Sketch
     size_t                     node_idx_lo {};
     size_t                     node_idx_hi {};
     PrsDim_LengthDimension_ptr dim;
+    bool                       visible {true};
+    std::optional<double>      flyout_offset;
   };
 
   struct Edge
@@ -300,7 +316,10 @@ class Sketch
   void remove_length_dimensions_referencing_node_(size_t node_idx);
   /// Add if missing, remove if present (same unordered node pair).
   void add_or_toggle_length_dim_between_node_indices_(size_t node_a, size_t node_b);
-  void json_add_length_dimension_(size_t node_a, size_t node_b);
+  void json_add_length_dimension_(size_t                node_a,
+                                  size_t                node_b,
+                                  bool                  visible       = true,
+                                  std::optional<double> flyout_offset = std::nullopt);
 
   /// Average of non-deleted node positions (3D on sketch plane); used to place edge dimensions outside loops.
   std::optional<gp_Pnt> approx_sketch_interior_ref_3d_() const;
@@ -366,6 +385,7 @@ class Sketch
   AIS_Shape_ptr                         m_tmp_shp;
   PrsDim_LengthDimension_ptr            m_tmp_dim_anno;
   bool                                  m_show_faces {true};
+  bool                                  m_show_dims {true};
 
   std::unique_ptr<Sketch_underlay> m_underlay;
 };

@@ -151,7 +151,8 @@ void Shp_extrude::_update_extrude_preview_(const double extrude_dist, const Plan
                                          Prs3d_DTHP_Fit,
                                          std::nullopt,
                                          nullptr,
-                                         gui().edge_dim_line_width());
+                                         gui().edge_dim_line_width(),
+                                         gui().edge_dim_arrow_size());
 
   m_tmp_dim->SetCustomValue(extrude_dist / view().get_dimension_scale());
 
