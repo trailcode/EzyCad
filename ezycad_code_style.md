@@ -50,9 +50,12 @@ Use this style when editing or adding C/C++ code in the EzyCad project (files un
 ## Don't Repeat Yourself (DRY)
 
 - DRY is important, but it is guidance, not a strict rule.
+- **Reader-first pairing**: Pragmatic DRY matches **Reader-first order** in **Code organization** above. Prefer a self-contained workflow or UI pane you can read top-to-bottom over distant abstractions whose only win is deleting a few repeated lines.
 - Avoid hasty abstractions: do not generalize too early before patterns are stable.
 - Too much DRY can increase coupling by forcing unrelated code through one shared abstraction.
 - Prefer readability over clever reuse when repetition is small and explicit code is clearer.
+- **When duplication is acceptable**: a few lines repeated across nearby UI or glue code can beat a shared helper if call sites are likely to diverge (different tooltips, widths, or disabled logic) or if extracting would scatter one screen across many symbols. Prefer **locality**: keep a small block self-contained so a reader does not jump to understand one pane.
+- **Rule of thumb**: extract when the behavior is **the same and stable** (or when a bug fix must touch N copies); wait when the pattern is still moving. If you extract, prefer a **narrow file-local helper** next to its users over a generic framework.
 - Context matters: stronger DRY is often good in monolith/shared-library code; some duplication can be healthier in fast-changing or separated systems.
 - Balance DRY with KISS, YAGNI, and overall cognitive load.
 
