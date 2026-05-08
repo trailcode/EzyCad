@@ -962,11 +962,12 @@ void GUI::sketch_list_inspector_(Sketch& sketch, int index)
 
     if (ImGui::TreeNodeEx("Dimensions", flags, "Dimensions (%zu)", count))
     {
-      if (count > 0 && ImGui::BeginTable("sketch_dim_rows", 3, ImGuiTableFlags_SizingStretchProp))
+      if (count > 0 && ImGui::BeginTable("sketch_dim_rows", 3,
+                                        ImGuiTableFlags_Resizable | ImGuiTableFlags_SizingStretchProp))
       {
         ImGui::TableSetupColumn("show", ImGuiTableColumnFlags_WidthFixed, 28.f);
         ImGui::TableSetupColumn("dim", ImGuiTableColumnFlags_WidthStretch);
-        ImGui::TableSetupColumn("offset", ImGuiTableColumnFlags_WidthFixed, 132.f);
+        ImGui::TableSetupColumn("offset", ImGuiTableColumnFlags_WidthFixed, 120.f);
 
         for (size_t i = 0; i < count; ++i)
         {
@@ -985,6 +986,7 @@ void GUI::sketch_list_inspector_(Sketch& sketch, int index)
           std::string cur_name = sketch.dimension_name(i);
           strncpy(name_buf, cur_name.c_str(), sizeof(name_buf) - 1);
           name_buf[sizeof(name_buf) - 1] = '\0';
+          ImGui::SetNextItemWidth(-FLT_MIN);
           if (ImGui::InputText("##dim_name", name_buf, sizeof(name_buf)))
             sketch.set_dimension_name(i, std::string(name_buf));
 
