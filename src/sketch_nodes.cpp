@@ -341,15 +341,16 @@ void Sketch_nodes::json_resize(size_t count)
   m_nodes.assign(count, Node {});
 }
 
-void Sketch_nodes::json_set_node(size_t idx, const gp_Pnt2d& pt, bool deleted, bool midpoint, bool permanent)
+void Sketch_nodes::json_set_node(size_t idx, const gp_Pnt2d& pt, bool deleted, bool midpoint, bool permanent, const std::string& name)
 {
   EZY_ASSERT(idx < m_nodes.size());
   Node& n = m_nodes[idx];
   n.SetX(pt.X());
   n.SetY(pt.Y());
-  n.deleted     = deleted;
-  n.midpoint    = midpoint;
-  n.permanent   = permanent;
+  n.deleted   = deleted;
+  n.midpoint  = midpoint;
+  n.permanent = permanent;
+  n.name      = name;
 }
 
 void Sketch_nodes::finalize()

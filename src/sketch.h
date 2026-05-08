@@ -45,6 +45,7 @@ struct Sketch_face_shp : public AIS_Shape
   Sketch&             owner_sketch;
   std::vector<gp_Pnt> verts_3d;  // Used for extruding the face
   std::vector<size_t> vert_idxs;
+  std::string         name;
 };
 
 using Sketch_AIS_edge_ptr      = opencascade::handle<Sketch_AIS_edge>;
@@ -94,6 +95,8 @@ class Sketch
   void   set_dimension_visible(size_t dim_index, bool visible);
   double dimension_offset(size_t dim_index) const;
   void   set_dimension_offset(size_t dim_index, double offset);
+  std::string dimension_name(size_t dim_index) const;
+  void   set_dimension_name(size_t dim_index, const std::string& name);
 
   /// Apply global dimension line width to edge annotations and in-progress rubber-band dim.
   void refresh_edge_dimension_line_widths(double line_width);
@@ -131,6 +134,7 @@ class Sketch
   std::vector<std::string> inspector_edge_labels() const;
   std::vector<std::string> inspector_face_labels() const;
   std::vector<std::string> inspector_dimension_labels() const;
+  std::vector<std::string> inspector_node_labels() const;
 
   void          on_mode();
   Mode          get_mode() const;
@@ -183,6 +187,7 @@ class Sketch
     PrsDim_LengthDimension_ptr dim;
     bool                       visible {true};
     std::optional<double>      flyout_offset;
+    std::string                name;
   };
 
   struct Edge
@@ -195,6 +200,8 @@ class Sketch
     //  Used to identify the two `Edges` defining a circle arc.
     Geom_TrimmedCurve_ptr circle_arc;
     Sketch_AIS_edge_ptr   shp;  // Current edge annotation.
+
+    std::string name;
 
     bool reversed(size_t idx_a, size_t idx_b) const;
   };
@@ -319,7 +326,8 @@ class Sketch
   void json_add_length_dimension_(size_t                node_a,
                                   size_t                node_b,
                                   bool                  visible       = true,
-                                  std::optional<double> flyout_offset = std::nullopt);
+                                  std::optional<double> flyout_offset = std::nullopt,
+                                  const std::string&    name          = {});
 
   /// Average of non-deleted node positions (3D on sketch plane); used to place edge dimensions outside loops.
   std::optional<gp_Pnt> approx_sketch_interior_ref_3d_() const;

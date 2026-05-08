@@ -981,8 +981,12 @@ void GUI::sketch_list_inspector_(Sketch& sketch, int index)
             sketch.set_dimension_visible(i, visible);
 
           ImGui::TableSetColumnIndex(1);
-          ImGui::AlignTextToFramePadding();
-          ImGui::TextUnformatted(labels[i].c_str());
+          char name_buf[128];
+          std::string cur_name = sketch.dimension_name(i);
+          strncpy(name_buf, cur_name.c_str(), sizeof(name_buf) - 1);
+          name_buf[sizeof(name_buf) - 1] = '\0';
+          if (ImGui::InputText("##dim_name", name_buf, sizeof(name_buf)))
+            sketch.set_dimension_name(i, std::string(name_buf));
 
           ImGui::TableSetColumnIndex(2);
           ImGui::SetNextItemWidth(86.f);
@@ -1001,6 +1005,7 @@ void GUI::sketch_list_inspector_(Sketch& sketch, int index)
     }
   }
 
+  draw_section("Nodes", sketch.inspector_node_labels());
   draw_section("Edges", sketch.inspector_edge_labels());
   draw_section("Faces", sketch.inspector_face_labels());
 

@@ -1482,7 +1482,8 @@ void Sketch::add_or_toggle_length_dim_between_node_indices_(size_t node_a, size_
 void Sketch::json_add_length_dimension_(size_t                      node_a,
                                         size_t                      node_b,
                                         const bool                  visible,
-                                        const std::optional<double> flyout_offset)
+                                        const std::optional<double> flyout_offset,
+                                        const std::string&          name)
 {
   const size_t lo = std::min(node_a, node_b);
   const size_t hi = std::max(node_a, node_b);
@@ -1496,6 +1497,7 @@ void Sketch::json_add_length_dimension_(size_t                      node_a,
   d.node_idx_hi   = hi;
   d.visible       = visible;
   d.flyout_offset = flyout_offset;
+  d.name          = name;
   m_length_dimensions.push_back(std::move(d));
   rebuild_length_dimension_display_(m_length_dimensions.back());
 }
@@ -2485,6 +2487,22 @@ void Sketch::set_dimension_offset(size_t dim_index, const double offset)
   rebuild_length_dimension_display_(d);
 }
 
+std::string Sketch::dimension_name(size_t dim_index) const
+{
+  EZY_ASSERT(dim_index < m_length_dimensions.size());
+  return m_length_dimensions[dim_index].name;
+}
+
+void Sketch::set_dimension_name(size_t dim_index, const std::string& name)
+{
+  EZY_ASSERT(dim_index < m_length_dimensions.size());
+  Length_dimension& d = m_length_dimensions[dim_index];
+  if (d.name == name)
+    return;
+  d.name = name;
+  // name is only used in Sketch List inspector; no 3D annotation update needed
+}
+
 void Sketch::refresh_edge_dimension_line_widths(const double line_width)
 {
   for (Length_dimension& ld : m_length_dimensions)
@@ -2620,23 +2638,7 @@ std::vector<std::string> Sketch::inspector_edge_labels() const
   size_t idx = 0;
   for (const Edge& e : m_edges)
   {
-    std::string lbl = "E" + std::to_string(idx) + ": ";
-    if (e.circle_arc)
-      lbl += "Circle arc";
-    else if (e.node_idx_arc.has_value())
-      lbl += "3pt arc";
-    else
-      lbl += "Line";
-
-    lbl += " n" + std::to_string(e.node_idx_a) + "->";
-    if (e.node_idx_b.has_value())
-      lbl += "n" + std::to_string(*e.node_idx_b);
-    else
-      lbl += "?";
-
-    if (e.node_idx_arc.has_value())
-      lbl += " (arc n" + std::to_string(*e.node_idx_arc) + ")";
-
+    std::string lbl = e.name.empty() ? ("E" + std::to_string(idx)) : e.name;
     labels.push_back(std::move(lbl));
     ++idx;
   }
@@ -2649,10 +2651,9 @@ std::vector<std::string> Sketch::inspector_face_labels() const
   labels.reserve(m_faces.size());
   for (size_t i = 0; i < m_faces.size(); ++i)
   {
-    const Sketch_face_shp_ptr& f    = m_faces[i];
-    const size_t               nv   = f ? f->verts_3d.size() : 0;
-    const std::string          text = "F" + std::to_string(i) + ": " + std::to_string(nv) + " verts";
-    labels.push_back(text);
+    const Sketch_face_shp_ptr& f   = m_faces[i];
+    std::string                lbl = (f && !f->name.empty()) ? f->name : ("F" + std::to_string(i));
+    labels.push_back(std::move(lbl));
   }
   return labels;
 }
@@ -2663,9 +2664,24 @@ std::vector<std::string> Sketch::inspector_dimension_labels() const
   labels.reserve(m_length_dimensions.size());
   for (size_t i = 0; i < m_length_dimensions.size(); ++i)
   {
-    const Length_dimension& d = m_length_dimensions[i];
-    labels.push_back("D" + std::to_string(i) + ": n" + std::to_string(d.node_idx_lo) + "<->n" +
-                     std::to_string(d.node_idx_hi));
+    const Length_dimension& d   = m_length_dimensions[i];
+    std::string             lbl = d.name.empty() ? ("D" + std::to_string(i)) : d.name;
+    labels.push_back(std::move(lbl));
+  }
+  return labels;
+}
+
+std::vector<std::string> Sketch::inspector_node_labels() const
+{
+  std::vector<std::string> labels;
+  for (size_t i = 0; i < m_nodes.size(); ++i)
+  {
+    const Sketch_nodes::Node& n = m_nodes[i];
+    if (n.permanent && !n.deleted)
+    {
+      std::string lbl = n.name.empty() ? ("N" + std::to_string(i)) : n.name;
+      labels.push_back(std::move(lbl));
+    }
   }
   return labels;
 }

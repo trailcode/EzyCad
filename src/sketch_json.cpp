@@ -41,6 +41,9 @@ json node_to_json_(const Sketch_nodes::Node& nd)
   if (nd.permanent)
     o["permanent"] = true;
 
+  if (!nd.name.empty())
+    o["name"] = nd.name;
+
   return o;
 }
 
@@ -55,7 +58,7 @@ void Sketch_json::load_nodes_(Sketch& sketch, const json& nodes_json)
     const json& el = nodes_json[i];
     if (el.is_null())
     {
-      sketch.get_nodes().json_set_node(i, gp_Pnt2d(0., 0.), true, false, false);
+      sketch.get_nodes().json_set_node(i, gp_Pnt2d(0., 0.), true, false, false, "");
       continue;
     }
     EZY_ASSERT(el.is_object());
@@ -64,7 +67,7 @@ void Sketch_json::load_nodes_(Sketch& sketch, const json& nodes_json)
         el.contains("midpoint") && el["midpoint"].is_boolean() && el["midpoint"].get<bool>();
     const bool permanent =
         el.contains("permanent") && el["permanent"].is_boolean() && el["permanent"].get<bool>();
-    sketch.get_nodes().json_set_node(i, pt, false, midpoint, permanent);
+    sketch.get_nodes().json_set_node(i, pt, false, midpoint, permanent, el.contains("name") && el["name"].is_string() ? el["name"].get<std::string>() : "");
   }
 }
 
@@ -210,6 +213,8 @@ nlohmann::json Sketch_json::to_json(const Sketch& sketch)
     json e = json::array({remap(ld.node_idx_lo), remap(ld.node_idx_hi), ld.visible});
     if (ld.flyout_offset.has_value())
       e.push_back(*ld.flyout_offset);
+    if (!ld.name.empty())
+      e.push_back(ld.name);
     len_dims_json.push_back(std::move(e));
   }
 
@@ -256,22 +261,30 @@ std::shared_ptr<Sketch> Sketch_json::from_json(Occt_view& view, const nlohmann::
   ret->update_faces_();
 
   for (const auto& ab : legacy_length_dim_endpoints)
-    ret->json_add_length_dimension_(ab.first, ab.second);
+    ret->json_add_length_dimension_(ab.first, ab.second, true, std::nullopt, "");
 
   if (j.contains("length_dimensions") && j["length_dimensions"].is_array())
     for (const auto& pair_json : j["length_dimensions"])
     {
-      EZY_ASSERT(pair_json.is_array() && (pair_json.size() == 2 || pair_json.size() == 3 || pair_json.size() == 4));
+      EZY_ASSERT(pair_json.is_array() && (pair_json.size() >= 2 && pair_json.size() <= 5));
       const bool visible = pair_json.size() >= 3 ? pair_json[2].get<bool>() : true;
       std::optional<double> flyout_offset;
-      if (pair_json.size() == 4)
+      std::string           dim_name;
+      if (pair_json.size() >= 4)
       {
-        const double v = pair_json[3].get<double>();
-        if (v > 0.0)
-          flyout_offset = v;
+        if (pair_json[3].is_number())
+        {
+          const double v = pair_json[3].get<double>();
+          if (v > 0.0)
+            flyout_offset = v;
+        }
+        else if (pair_json[3].is_string())
+          dim_name = pair_json[3].get<std::string>();
       }
+      if (pair_json.size() == 5 && pair_json[4].is_string())
+        dim_name = pair_json[4].get<std::string>();
       ret->json_add_length_dimension_(pair_json[0].get<std::size_t>(), pair_json[1].get<std::size_t>(), visible,
-                                      flyout_offset);
+                                      flyout_offset, dim_name);
     }
 
   if (j.contains("underlay") && j["underlay"].is_object())

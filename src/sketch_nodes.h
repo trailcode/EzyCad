@@ -4,6 +4,7 @@
 #include <gp_Pnt2d.hxx>
 #include <optional>
 #include <set>
+#include <string>
 
 #include "types.h"
 
@@ -18,9 +19,10 @@ class Sketch_nodes
  public:
   struct Node : public gp_Pnt2d
   {
-    bool midpoint = false;
-    bool deleted     = false;
-    bool permanent   = false;
+    bool        midpoint = false;
+    bool        deleted  = false;
+    bool        permanent = false;
+    std::string name;
   };
 
   // `view` must exist for the lifetime of this object
@@ -74,7 +76,7 @@ class Sketch_nodes
   /// Resize storage so indices `0..count-1` exist (JSON load).
   void json_resize(size_t count);
   /// Assign slot `idx` (used after `json_resize`).
-  void json_set_node(size_t idx, const gp_Pnt2d& pt, bool deleted, bool midpoint, bool permanent);
+  void json_set_node(size_t idx, const gp_Pnt2d& pt, bool deleted, bool midpoint, bool permanent, const std::string& name = {});
 
   void update_node_snap_anno_(const gp_Pnt2d& pt, const double snap_dist);
   /// World-space snap radius at `pt` (same convention as `try_get_node_idx_snap` / `try_pick_existing_node`).
