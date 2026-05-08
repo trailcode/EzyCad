@@ -222,9 +222,9 @@ void Sketch::sync_permanent_node_annos_()
   const double half_arm =
       std::max(plane_pick_snap_radius_world_() * 0.45, Precision::Confusion() * 50.0);
 
-  const Mode mode                 = get_mode();
-  // Show "+" markers only while placing nodes; hide in inspection and all other modes (including other sketch tools).
-  const bool show_permanent_marks = mode == Mode::Sketch_add_node;
+  const Mode mode = get_mode();
+  // Show "+" markers for permanent user nodes in sketch modes and polar duplicate (which snaps to sketch nodes).
+  const bool show_permanent_marks = is_sketch_mode(mode) || mode == Mode::Shape_polar_duplicate;
 
   for (size_t i = 0, n = m_nodes.size(); i < n; ++i)
   {
