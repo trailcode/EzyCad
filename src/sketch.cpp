@@ -2890,6 +2890,7 @@ void Sketch::underlay_set_opacity(float opaque01)
   if (!m_underlay)
     return;
   m_underlay->set_opacity(opaque01);
+  m_underlay->redisplay(m_ctx);
   m_ctx.UpdateCurrentViewer();
 }
 

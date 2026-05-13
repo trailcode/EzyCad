@@ -1258,8 +1258,8 @@ void GUI::sketch_underlay_panel_settings_(const std::shared_ptr<Sketch>& sk)
     if (sk->has_underlay())
     {
       sk->underlay_ui_params(m_ul_cx, m_ul_cy, m_ul_hw, m_ul_hh, m_ul_rot);
-      m_ul_opacity   = sk->underlay_opacity();
-      m_ul_vis       = sk->underlay_visible();
+      m_ul_opacity     = sk->underlay_opacity();
+      m_ul_vis         = sk->underlay_visible();
       m_ul_key_white = sk->underlay_key_white_transparent();
       m_ul_line_tint = sk->underlay_line_tint_enabled();
       {
@@ -1351,6 +1351,9 @@ void GUI::sketch_underlay_panel_settings_(const std::shared_ptr<Sketch>& sk)
 
   if (ImGui::SliderFloat("Opacity", &m_ul_opacity, 0.f, 1.f, "%.2f"))
     sk->underlay_set_opacity(m_ul_opacity);
+
+  if (m_show_tool_tips && ImGui::IsItemHovered())
+    ImGui::SetTooltip("Overall opacity of the underlay image (0 = fully transparent, 1 = fully opaque).");
 
   ImGui::Separator();
   ImGui::TextUnformatted("Calibrate from sketch edges");

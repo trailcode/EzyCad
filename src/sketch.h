@@ -86,17 +86,17 @@ class Sketch
   void on_enter();  // For finalizing manual distance input.
 
   // Visibility related
-  void   set_visible(bool state);
-  bool   is_visible() const;
-  void   set_show_faces(bool show);
-  void   set_show_edges(bool show);
-  void   set_show_dims(bool show);
-  bool   dimension_visible(size_t dim_index) const;
-  void   set_dimension_visible(size_t dim_index, bool visible);
-  double dimension_offset(size_t dim_index) const;
-  void   set_dimension_offset(size_t dim_index, double offset);
+  void        set_visible(bool state);
+  bool        is_visible() const;
+  void        set_show_faces(bool show);
+  void        set_show_edges(bool show);
+  void        set_show_dims(bool show);
+  bool        dimension_visible(size_t dim_index) const;
+  void        set_dimension_visible(size_t dim_index, bool visible);
+  double      dimension_offset(size_t dim_index) const;
+  void        set_dimension_offset(size_t dim_index, double offset);
   std::string dimension_name(size_t dim_index) const;
-  void   set_dimension_name(size_t dim_index, const std::string& name);
+  void        set_dimension_name(size_t dim_index, const std::string& name);
 
   /// Apply global dimension line width to edge annotations and in-progress rubber-band dim.
   void refresh_edge_dimension_line_widths(double line_width);

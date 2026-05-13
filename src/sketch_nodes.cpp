@@ -28,9 +28,33 @@ std::optional<gp_Pnt2d> Sketch_nodes::snap(const ScreenCoords& screen_coords)
 
 size_t Sketch_nodes::get_node_exact(const gp_Pnt2d& pt, bool permanent_for_new)
 {
+  std::optional<size_t> deleted_match;
   for (size_t idx = 0, num = m_nodes.size(); idx < num; ++idx)
     if (equal(pt, gp_Pnt2d(m_nodes[idx])))
+    {
+      Node& n = m_nodes[idx];
+      // Never bind to tombstoned nodes while searching for an exact live match.
+      if (n.deleted)
+      {
+        if (!deleted_match.has_value())
+          deleted_match = idx;
+        continue;
+      }
+      // If caller requests permanence (e.g. add-node tool), preserve/promote it.
+      if (permanent_for_new)
+        n.permanent = true;
       return idx;
+    }
+
+  // If only a deleted exact match exists, revive it instead of appending a duplicate index.
+  if (deleted_match.has_value())
+  {
+    Node& n = m_nodes[*deleted_match];
+    n.deleted = false;
+    if (permanent_for_new)
+      n.permanent = true;
+    return *deleted_match;
+  }
 
   Node n(pt);
   n.permanent = permanent_for_new;

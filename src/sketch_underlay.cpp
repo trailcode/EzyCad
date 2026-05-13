@@ -500,6 +500,12 @@ void Sketch_underlay::sync_visibility(const gp_Pln& pln, AIS_InteractiveContext&
     remove_ais_(ctx);
 }
 
+void Sketch_underlay::redisplay(AIS_InteractiveContext& ctx)
+{
+  if (!m_ais.IsNull())
+    ctx.Redisplay(m_ais, true);
+}
+
 nlohmann::json Sketch_underlay::to_json() const
 {
   using nlohmann::json;
@@ -572,7 +578,6 @@ bool Sketch_underlay::from_json(const nlohmann::json& j)
     m_opacity = 0.f;
   if (m_opacity > 1.f)
     m_opacity = 1.f;
-
   m_ais.Nullify();
   return true;
 }

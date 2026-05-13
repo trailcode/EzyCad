@@ -64,6 +64,8 @@ class Sketch_underlay
   void rebuild_and_display(const gp_Pln& pln, AIS_InteractiveContext& ctx);
   void erase(AIS_InteractiveContext& ctx);
   void sync_visibility(const gp_Pln& pln, AIS_InteractiveContext& ctx);
+  /// Force viewer update after live property changes (e.g. threshold) without a full rebuild.
+  void redisplay(AIS_InteractiveContext& ctx);
 
   nlohmann::json     to_json() const;
   /// Returns false if JSON is invalid or image decode fails.
