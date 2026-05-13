@@ -107,7 +107,8 @@ void GUI::save_occt_view_settings()
       {                   "show_dbg",                                                     m_show_dbg},
 #endif
       {   "underlay_highlight_color",
-       {m_underlay_highlight_color[0], m_underlay_highlight_color[1], m_underlay_highlight_color[2]}},
+       {m_underlay_highlight_color[0], m_underlay_highlight_color[1], m_underlay_highlight_color[2],
+        m_underlay_highlight_color[3]}},
   };
   j["version"]          = k_settings_version;
   const char* imgui_ini = ImGui::SaveIniSettingsToMemory(nullptr);
@@ -263,10 +264,11 @@ void GUI::parse_gui_panes_settings_(const std::string& content)
     if (g.contains("snap_guide_color") && g["snap_guide_color"].is_array() && g["snap_guide_color"].size() >= 3)
     {
       const json& a = g["snap_guide_color"];
-      float       c[3] {0.0f, 1.0f, 0.0f};
+      glm::vec3   c(0.0f, 1.0f, 0.0f);
       for (size_t i = 0; i < 3; ++i)
         if (a[static_cast<json::size_type>(i)].is_number())
-          c[i] = std::clamp(a[static_cast<json::size_type>(i)].get<float>(), 0.f, 1.f);
+          c[static_cast<glm::vec3::length_type>(i)] =
+              std::clamp(a[static_cast<json::size_type>(i)].get<float>(), 0.f, 1.f);
       Sketch_nodes::set_snap_guide_color(c[0], c[1], c[2]);
     }
 
@@ -282,10 +284,13 @@ void GUI::parse_gui_panes_settings_(const std::string& content)
     if (g.contains("underlay_highlight_color") && g["underlay_highlight_color"].is_array() && g["underlay_highlight_color"].size() >= 3)
     {
       const json& a = g["underlay_highlight_color"];
-      for (size_t i = 0; i < 3; ++i)
+      for (int i = 0; i < 3; ++i)
         if (a[static_cast<json::size_type>(i)].is_number())
-          m_underlay_highlight_color[i] =
+          m_underlay_highlight_color[static_cast<glm::vec4::length_type>(i)] =
               std::clamp(a[static_cast<json::size_type>(i)].get<float>(), 0.f, 1.f);
+      m_underlay_highlight_color[3] = 1.f;
+      if (a.size() >= 4 && a[3].is_number())
+        m_underlay_highlight_color[3] = std::clamp(a[3].get<float>(), 0.f, 1.f);
     }
 
 #ifndef NDEBUG
@@ -646,7 +651,7 @@ void GUI::settings_()
       ImGui::AlignTextToFramePadding();
       ImGui::TextUnformatted("Underlay highlight color");
       ImGui::TableSetColumnIndex(1);
-      ul_changed |= ImGui::ColorEdit3("##underlay_hi", m_underlay_highlight_color, ImGuiColorEditFlags_Float);
+      ul_changed |= ImGui::ColorEdit4("##underlay_hi", &m_underlay_highlight_color[0], ImGuiColorEditFlags_Float);
       ImGui::SameLine(0.0f, ImGui::GetStyle().ItemInnerSpacing.x);
       ImGui::TextDisabled("(?)");
       if (ImGui::IsItemHovered())
@@ -666,9 +671,9 @@ void GUI::settings_()
       ImGui::TextUnformatted("Snap guide color");
       ImGui::TableSetColumnIndex(1);
       {
-        float snap_col[3];
+        glm::vec3 snap_col;
         Sketch_nodes::get_snap_guide_color(snap_col[0], snap_col[1], snap_col[2]);
-        if (ImGui::ColorEdit3("##snap_guide_color", snap_col, ImGuiColorEditFlags_Float))
+        if (ImGui::ColorEdit3("##snap_guide_color", &snap_col[0], ImGuiColorEditFlags_Float))
         {
           Sketch_nodes::set_snap_guide_color(snap_col[0], snap_col[1], snap_col[2]);
           save_occt_view_settings();
@@ -728,13 +733,13 @@ void GUI::settings_()
     }
     if (ul_changed)
     {
-      uint8_t hr, hg, hb;
-      underlay_highlight_color_rgb(hr, hg, hb);
+      uint8_t hr, hg, hb, ha;
+      underlay_highlight_color_rgba(hr, hg, hb, ha);
       for (const std::shared_ptr<Sketch>& sk : m_view->get_sketches())
       {
         EZY_ASSERT(sk);
         if (sk->has_underlay())
-          sk->underlay_set_line_tint_rgb(hr, hg, hb);
+          sk->underlay_set_line_tint_rgba(hr, hg, hb, ha);
       }
       m_underlay_panel_sketch = nullptr;
       save_occt_view_settings();
@@ -828,7 +833,7 @@ void GUI::settings_()
   ImGui::End();
 }
 
-void GUI::underlay_highlight_color_rgb(uint8_t& r, uint8_t& g, uint8_t& b) const
+void GUI::underlay_highlight_color_rgba(uint8_t& r, uint8_t& g, uint8_t& b, uint8_t& a) const
 {
   const auto to_u8 = [](float c) -> uint8_t
   {
@@ -838,6 +843,7 @@ void GUI::underlay_highlight_color_rgb(uint8_t& r, uint8_t& g, uint8_t& b) const
   r = to_u8(m_underlay_highlight_color[0]);
   g = to_u8(m_underlay_highlight_color[1]);
   b = to_u8(m_underlay_highlight_color[2]);
+  a = to_u8(m_underlay_highlight_color[3]);
 }
 
 void GUI::imgui_rounding_fallbacks_from_theme_(float& general, float& scroll, float& tabs) const

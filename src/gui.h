@@ -25,8 +25,7 @@ class Occt_view;
 class Sketch;
 struct GLFWwindow;
 
-enum class Command
-{
+enum class Command {
   Shape_cut,
   Shape_fuse,
   Shape_common,
@@ -34,8 +33,7 @@ enum class Command
 };
 
 /// Two-segment picks for underlay X/Y calibration (Sketch properties pane).
-enum class Underlay_calib_phase : std::uint8_t
-{
+enum class Underlay_calib_phase : std::uint8_t {
   None,
   PickX1,
   PickX2,
@@ -47,14 +45,12 @@ enum class Underlay_calib_phase : std::uint8_t
   PickDatumO,
   PickDatumU
 };
-
 /// One entry under File > Examples (menu label + path to `.ezy` on disk).
 struct Example_file
 {
   std::string label;
   std::string path;
 };
-
 /// Default OCCT line-width scale for length dimensions when `edge_dim_line_width` is missing from settings JSON.
 inline constexpr float  k_gui_edge_dim_line_width_default    = 1.0f;
 /// Default OCCT arrow length for length dimensions when `edge_dim_arrow_size` is missing from settings JSON.
@@ -67,7 +63,6 @@ inline constexpr double k_gui_view_roll_step_deg_default     = 45.0;
 inline constexpr double k_gui_view_zoom_scroll_scale_min     = 0.25;
 inline constexpr double k_gui_view_zoom_scroll_scale_max     = 64.0;
 inline constexpr double k_gui_view_zoom_scroll_scale_default = 4.0;
-
 class GUI
 {
  public:
@@ -78,58 +73,50 @@ class GUI
   static GUI& instance();
 #endif
 
-  void init(GLFWwindow* window, ImFont* console_font);
-
+  void    init(GLFWwindow* window, ImFont* console_font);
   /// Monospace font for script console (normally set via init() from main after io.Fonts load).
-  void set_console_font(ImFont* font)
-  {
-    m_console_font = font;
-  }
-
+  void    set_console_font(ImFont* font) { m_console_font = font; }
   ImFont* console_font() const;
 
   void render_gui();
   void render_occt();
 
-  void on_key(int key, int scancode, int action, int mods);  // gui_mode.cpp
-  void on_mouse_pos(const ScreenCoords& screen_coords);
-  void on_mouse_button(int button, int action, int mods);
-  void on_mouse_scroll(double xoffset, double yoffset);
-  void on_resize(int width, int height);
-
-  // clang-format off
-  Mode get_mode() const { return m_mode; }
+  void         on_key(int key, int scancode, int action, int mods);  // gui_mode.cpp
+  void         on_mouse_pos(const ScreenCoords& screen_coords);
+  void         on_mouse_button(int button, int action, int mods);
+  void         on_mouse_scroll(double xoffset, double yoffset);
+  void         on_resize(int width, int height);
+  Mode         get_mode() const { return m_mode; }
   Chamfer_mode get_chamfer_mode() const { return m_chamfer_mode; }
-  Fillet_mode get_fillet_mode() const { return m_fillet_mode; }
+  Fillet_mode  get_fillet_mode() const { return m_fillet_mode; }
   /// Edge dimension value placement (Options panel, toggle-dimension tool): 0 first point, 1 second, 2 center, 3 auto.
-  int edge_dim_label_h() const { return m_edge_dim_label_h; }
+  int          edge_dim_label_h() const { return m_edge_dim_label_h; }
   /// OCCT scale factor for sketch/extrude length dimension lines (1.0 = default thickness).
-  float edge_dim_line_width() const { return m_edge_dim_line_width; }
+  float        edge_dim_line_width() const { return m_edge_dim_line_width; }
   /// OCCT arrow length for sketch/extrude length dimensions.
-  float edge_dim_arrow_size() const { return m_edge_dim_arrow_size; }
-  bool get_hide_all_shapes() const { return m_hide_all_shapes; }
-  void set_hide_all_shapes(bool hide) { m_hide_all_shapes = hide; }
-  bool get_dark_mode() const { return m_dark_mode; }
-  ImVec4 get_clear_color() const;
-  void set_mode(Mode mode);       // gui_mode.cpp
-  void set_parent_mode();        // gui_mode.cpp
-  void set_dist_edit(float dist, std::function<void(float, bool)>&& callback, const std::optional<ScreenCoords> screen_coords = std::nullopt);
-  void hide_dist_edit();
-  void set_angle_edit(float angle, std::function<void(float, bool)>&& callback, const std::optional<ScreenCoords> screen_coords = std::nullopt);
-  void hide_angle_edit();
+  float        edge_dim_arrow_size() const { return m_edge_dim_arrow_size; }
+  bool         get_hide_all_shapes() const { return m_hide_all_shapes; }
+  void         set_hide_all_shapes(bool hide) { m_hide_all_shapes = hide; }
+  bool         get_dark_mode() const { return m_dark_mode; }
+  ImVec4       get_clear_color() const;
+  void         set_mode(Mode mode);  // gui_mode.cpp
+  void         set_parent_mode();    // gui_mode.cpp
+  void         set_dist_edit(float dist, std::function<void(float, bool)>&& callback, const std::optional<ScreenCoords> screen_coords = std::nullopt);
+  void         hide_dist_edit();
+  void         set_angle_edit(float angle, std::function<void(float, bool)>&& callback, const std::optional<ScreenCoords> screen_coords = std::nullopt);
+  void         hide_angle_edit();
   /// True when dist or angle edit is visible; Tab should be routed to on_key() instead of ImGui.
-  bool is_dist_or_angle_edit_active() const;
-  void show_message(const std::string& message);
-  void log_message(const std::string& message);
-  void set_show_options(bool v) { m_show_options = v; }
-  void set_show_sketch_list(bool v) { m_show_sketch_list = v; }
-  void set_show_shape_list(bool v) { m_show_shape_list = v; }
-  void set_log_window_visible(bool v) { m_log_window_visible = v; }
-  void set_show_settings_dialog(bool v) { m_show_settings_dialog = v; }
+  bool         is_dist_or_angle_edit_active() const;
+  void         show_message(const std::string& message);
+  void         log_message(const std::string& message);
+  void         set_show_options(bool v) { m_show_options = v; }
+  void         set_show_sketch_list(bool v) { m_show_sketch_list = v; }
+  void         set_show_shape_list(bool v) { m_show_shape_list = v; }
+  void         set_log_window_visible(bool v) { m_log_window_visible = v; }
+  void         set_show_settings_dialog(bool v) { m_show_settings_dialog = v; }
 #ifndef NDEBUG
   void set_show_dbg(bool v) { m_show_dbg = v; }
 #endif
-  // clang-format on
 
 #ifdef __EMSCRIPTEN__
   void open_file_dialog_async();    // Emscripten: hidden <input type="file">; no custom title (browser UI)
@@ -151,18 +138,15 @@ class GUI
   /// `gui.edge_dim_arrow_size` (same keys as `ezycad_settings.json`). Asserts if the OCCT view is missing.
   [[nodiscard]] std::string occt_view_settings_json() const;
 
-  /// Default RGB (0-255) for sketch underlay line tint when importing a new image (see Settings).
-  void underlay_highlight_color_rgb(uint8_t& r, uint8_t& g, uint8_t& b) const;
-
+  /// Default RGBA (0-255) for sketch underlay line tint when importing a new image (see Settings).
+  void       underlay_highlight_color_rgba(uint8_t& r, uint8_t& g, uint8_t& b, uint8_t& a) const;
   /// For scripting (Lua console): access the 3D view.
-  Occt_view* get_view()
-  {
+  Occt_view* get_view() {
     return m_view.get();
   }
 
  private:
   friend class GUI_access;
-
   // Structure to hold button state and texture
   struct Toolbar_button
   {
@@ -171,7 +155,6 @@ class GUI
     const char*                 tooltip;
     std::variant<Mode, Command> data;
   };
-
   void dist_edit_();
   void angle_edit_();
   void sketch_list_();
@@ -383,9 +366,9 @@ class GUI
   bool                  m_ul_vis {true};
   bool                  m_ul_key_white {true};
   bool                  m_ul_line_tint {true};
-  float                 m_ul_tint_col[3] {1.f, 220.f / 255.f, 0.f};
+  glm::vec4             m_ul_tint_col {1.f, 220.f / 255.f, 0.f, 1.f};
   /// Default underlay tint for new imports (0-1, persisted in ezycad_settings.json).
-  float                 m_underlay_highlight_color[3] {1.f, 220.f / 255.f, 0.f};
+  glm::vec4             m_underlay_highlight_color {1.f, 220.f / 255.f, 0.f, 1.f};
 
   std::unique_ptr<Lua_console>    m_lua_console;
   bool                            m_show_python_console {false};

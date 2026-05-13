@@ -327,7 +327,7 @@ void Sketch_nodes::update_node_snap_anno_(const gp_Pnt2d& pt, const double snap_
     m_snap_anno = new AIS_Shape(anno_shape);
     m_snap_anno->SetWidth(3.0);
     m_snap_anno->SetColor(
-        Quantity_Color(s_snap_guide_color[0], s_snap_guide_color[1], s_snap_guide_color[2], Quantity_TOC_RGB));
+        Quantity_Color(s_snap_guide_color.x, s_snap_guide_color.y, s_snap_guide_color.z, Quantity_TOC_RGB));
     m_ctx.Display(m_snap_anno, true);
   }
   else
@@ -387,7 +387,7 @@ void Sketch_nodes::update_axis_snap_anno_(int axis_index, const gp_Pnt2d& axis_p
     m_snap_anno_axis[axis_index] = new AIS_Shape(anno_shape);
     m_snap_anno_axis[axis_index]->SetWidth(3.0);
     m_snap_anno_axis[axis_index]->SetColor(
-        Quantity_Color(s_snap_guide_color[0], s_snap_guide_color[1], s_snap_guide_color[2], Quantity_TOC_RGB));
+        Quantity_Color(s_snap_guide_color.x, s_snap_guide_color.y, s_snap_guide_color.z, Quantity_TOC_RGB));
     m_ctx.Display(m_snap_anno_axis[axis_index], true);
   }
   else
@@ -497,7 +497,7 @@ void Sketch_nodes::add_outside_snap_pnt(const gp_Pnt& pt3d)
 // Snap distance related
 double                        Sketch_nodes::s_snap_dist_pixels = 35.0;
 Sketch_nodes::Snap_guide_mode Sketch_nodes::s_snap_guide_mode  = Snap_guide_mode::Traditional;
-float                         Sketch_nodes::s_snap_guide_color[3] = {0.0f, 1.0f, 0.0f};
+glm::vec3                     Sketch_nodes::s_snap_guide_color {0.0f, 1.0f, 0.0f};
 
 void Sketch_nodes::set_snap_dist(double snap_dist_pixels)
 {
@@ -521,15 +521,15 @@ Sketch_nodes::Snap_guide_mode Sketch_nodes::get_snap_guide_mode()
 
 void Sketch_nodes::set_snap_guide_color(float r, float g, float b)
 {
-  s_snap_guide_color[0] = std::clamp(r, 0.0f, 1.0f);
-  s_snap_guide_color[1] = std::clamp(g, 0.0f, 1.0f);
-  s_snap_guide_color[2] = std::clamp(b, 0.0f, 1.0f);
+  s_snap_guide_color.x = std::clamp(r, 0.0f, 1.0f);
+  s_snap_guide_color.y = std::clamp(g, 0.0f, 1.0f);
+  s_snap_guide_color.z = std::clamp(b, 0.0f, 1.0f);
 }
 
 void Sketch_nodes::get_snap_guide_color(float& r, float& g, float& b)
 {
-  r = s_snap_guide_color[0];
-  g = s_snap_guide_color[1];
-  b = s_snap_guide_color[2];
+  r = s_snap_guide_color.x;
+  g = s_snap_guide_color.y;
+  b = s_snap_guide_color.z;
 }
 

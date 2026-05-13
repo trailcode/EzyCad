@@ -4,6 +4,7 @@
 #include <AIS_Shape.hxx>
 #include <AIS_ViewController.hxx>
 #include <Graphic3d_MaterialAspect.hxx>
+#include <glm/glm.hpp>
 #include <list>
 #include <memory>
 #include <optional>
@@ -288,11 +289,11 @@ class Occt_view : protected AIS_ViewController
   /// True when LMB press was handled by planar-face sketch creation without AIS_ViewController::PressMouseButton (pair with release skip).
   bool                     m_planar_face_lmb_skipped_view_controller {false};
   // OCCT view colors; defaults match what we render (set explicitly in init_viewer())
-  float                    m_bg_color1[3] {0.85f, 0.88f, 0.90f};
-  float                    m_bg_color2[3] {0.45f, 0.55f, 0.60f};
+  glm::vec3                m_bg_color1 {0.85f, 0.88f, 0.90f};
+  glm::vec3                m_bg_color2 {0.45f, 0.55f, 0.60f};
   int                      m_bg_gradient_method {1};  // 0=HOR, 1=VER, 2=DIAG1, ...
-  float                    m_grid_color1[3] {0.1f, 0.1f, 0.1f};
-  float                    m_grid_color2[3] {0.1f, 0.1f, 0.3f};
+  glm::vec3                m_grid_color1 {0.1f, 0.1f, 0.1f};
+  glm::vec3                m_grid_color2 {0.1f, 0.1f, 0.3f};
   /// User setting: same role as former literal in `UpdateZoom(Aspect_ScrollDelta(..., int(y * scale)))`.
   double                   m_zoom_scroll_scale {4.0};
   // --------------------------------------------------------------------

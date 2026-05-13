@@ -44,8 +44,10 @@ class Sketch_underlay
 
   void set_line_tint_enabled(bool on);
   void set_line_tint_rgb(uint8_t r, uint8_t g, uint8_t b);
+  void set_line_tint_rgba(uint8_t r, uint8_t g, uint8_t b, uint8_t a);
 
   void line_tint_rgb(uint8_t& r, uint8_t& g, uint8_t& b) const;
+  void line_tint_rgba(uint8_t& r, uint8_t& g, uint8_t& b, uint8_t& a) const;
 
   // clang-format off
 
@@ -92,6 +94,7 @@ class Sketch_underlay
   uint8_t m_tint_r {255};
   uint8_t m_tint_g {220};
   uint8_t m_tint_b {0};
+  uint8_t m_tint_a {255};
 
   opencascade::handle<AIS_TexturedShape> m_ais;
 };

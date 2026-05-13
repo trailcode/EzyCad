@@ -113,4 +113,8 @@ Prefer **`CHK_RET(expr)`** when a callee returns `Status` or `Result<T>` and the
 - Prefer **`enum class`** for enumerations.
 - Use **`std::optional`** where a value may be absent.
 - Use **`const`** and **`const&`** for parameters and accessors where appropriate.
+- Prefer **glm vector types** (`glm::vec2/vec3/vec4`, `glm::dvec*`) for geometric/color-like grouped values
+  (positions, directions, extents, RGB/RGBA colors) instead of raw C arrays when storing or passing data in project
+  code. Use raw arrays only at API boundaries that require `float*`/`double*` (e.g. some ImGui or OCCT calls), and
+  convert at the boundary.
 - Keep consistent with existing file style (e.g. include order, brace placement) when editing.

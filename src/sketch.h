@@ -155,8 +155,10 @@ class Sketch
   [[nodiscard]] bool  underlay_key_white_transparent() const;
   void                underlay_set_line_tint_enabled(bool on);
   void                underlay_set_line_tint_rgb(uint8_t r, uint8_t g, uint8_t b);
+  void                underlay_set_line_tint_rgba(uint8_t r, uint8_t g, uint8_t b, uint8_t a);
   [[nodiscard]] bool  underlay_line_tint_enabled() const;
   void                underlay_line_tint_rgb(uint8_t& r, uint8_t& g, uint8_t& b) const;
+  void                underlay_line_tint_rgba(uint8_t& r, uint8_t& g, uint8_t& b, uint8_t& a) const;
   void                underlay_ui_params(double& cx, double& cy, double& half_w, double& half_h, double& rot_deg) const;
   /// True when texture U and V directions are perpendicular (no shear). Orthogonal UI assumes this.
   [[nodiscard]] bool  underlay_axes_orthogonal() const;

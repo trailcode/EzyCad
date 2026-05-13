@@ -1263,11 +1263,12 @@ void GUI::sketch_underlay_panel_settings_(const std::shared_ptr<Sketch>& sk)
       m_ul_key_white = sk->underlay_key_white_transparent();
       m_ul_line_tint = sk->underlay_line_tint_enabled();
       {
-        uint8_t tr, tg, tb;
-        sk->underlay_line_tint_rgb(tr, tg, tb);
+        uint8_t tr, tg, tb, ta;
+        sk->underlay_line_tint_rgba(tr, tg, tb, ta);
         m_ul_tint_col[0] = static_cast<float>(tr) / 255.f;
         m_ul_tint_col[1] = static_cast<float>(tg) / 255.f;
         m_ul_tint_col[2] = static_cast<float>(tb) / 255.f;
+        m_ul_tint_col[3] = static_cast<float>(ta) / 255.f;
       }
     }
     else
@@ -1277,9 +1278,7 @@ void GUI::sketch_underlay_panel_settings_(const std::shared_ptr<Sketch>& sk)
       m_ul_vis                                         = true;
       m_ul_key_white                                   = true;
       m_ul_line_tint                                   = true;
-      m_ul_tint_col[0]                                 = 1.f;
-      m_ul_tint_col[1]                                 = 0.863f;
-      m_ul_tint_col[2]                                 = 0.f;
+      m_ul_tint_col                                    = glm::vec4(1.f, 0.863f, 0.f, 1.f);
     }
   }
 
@@ -1339,14 +1338,15 @@ void GUI::sketch_underlay_panel_settings_(const std::shared_ptr<Sketch>& sk)
         "Default yellow reads well on dark backgrounds.");
 
   if (m_ul_line_tint)
-    if (ImGui::ColorEdit3("Line color", m_ul_tint_col))
+    if (ImGui::ColorEdit4("Line color", &m_ul_tint_col[0]))
     {
       const auto to_u8 = [](float c) -> uint8_t
       {
         const float x = std::clamp(c, 0.f, 1.f) * 255.f;
         return static_cast<uint8_t>(x + 0.5f);
       };
-      sk->underlay_set_line_tint_rgb(to_u8(m_ul_tint_col[0]), to_u8(m_ul_tint_col[1]), to_u8(m_ul_tint_col[2]));
+      sk->underlay_set_line_tint_rgba(
+          to_u8(m_ul_tint_col[0]), to_u8(m_ul_tint_col[1]), to_u8(m_ul_tint_col[2]), to_u8(m_ul_tint_col[3]));
     }
 
   if (ImGui::SliderFloat("Opacity", &m_ul_opacity, 0.f, 1.f, "%.2f"))

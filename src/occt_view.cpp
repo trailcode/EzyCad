@@ -256,19 +256,11 @@ void Occt_view::init_viewer()
   m_ctx->UpdateCurrentViewer();
 
   // Set initial colors to match what OCCT renders (light gradient + grid)
-  m_bg_color1[0]       = 0.85f;
-  m_bg_color1[1]       = 0.88f;
-  m_bg_color1[2]       = 0.90f;
-  m_bg_color2[0]       = 0.45f;
-  m_bg_color2[1]       = 0.55f;
-  m_bg_color2[2]       = 0.60f;
+  m_bg_color1          = glm::vec3(0.85f, 0.88f, 0.90f);
+  m_bg_color2          = glm::vec3(0.45f, 0.55f, 0.60f);
   m_bg_gradient_method = 1;  // Vertical
-  m_grid_color1[0]     = 0.1f;
-  m_grid_color1[1]     = 0.1f;
-  m_grid_color1[2]     = 0.1f;
-  m_grid_color2[0]     = 0.1f;
-  m_grid_color2[1]     = 0.1f;
-  m_grid_color2[2]     = 0.3f;
+  m_grid_color1        = glm::vec3(0.1f, 0.1f, 0.1f);
+  m_grid_color2        = glm::vec3(0.1f, 0.1f, 0.3f);
   update_view_background_();
 
   Handle(AIS_ViewCube) myViewCube = new AIS_ViewCube();
@@ -1194,16 +1186,16 @@ void Occt_view::update_view_background_()
     return;
 
   m_view->SetBgGradientColors(
-      Quantity_Color(m_bg_color1[0], m_bg_color1[1], m_bg_color1[2], Quantity_TOC_RGB),
-      Quantity_Color(m_bg_color2[0], m_bg_color2[1], m_bg_color2[2], Quantity_TOC_RGB),
+      Quantity_Color(m_bg_color1.x, m_bg_color1.y, m_bg_color1.z, Quantity_TOC_RGB),
+      Quantity_Color(m_bg_color2.x, m_bg_color2.y, m_bg_color2.z, Quantity_TOC_RGB),
       gradient_method_from_int(m_bg_gradient_method),
       Standard_True);
 
   Handle(V3d_Viewer) viewer = m_view->Viewer();
   if (!viewer.IsNull() && !viewer->Grid().IsNull())
   {
-    Quantity_Color cc(m_grid_color1[0], m_grid_color1[1], m_grid_color1[2], Quantity_TOC_RGB);
-    Quantity_Color cd(m_grid_color2[0], m_grid_color2[1], m_grid_color2[2], Quantity_TOC_RGB);
+    Quantity_Color cc(m_grid_color1.x, m_grid_color1.y, m_grid_color1.z, Quantity_TOC_RGB);
+    Quantity_Color cd(m_grid_color2.x, m_grid_color2.y, m_grid_color2.z, Quantity_TOC_RGB);
     viewer->Grid()->SetColors(cc, cd);
   }
 }
@@ -1219,12 +1211,8 @@ void Occt_view::get_bg_gradient_colors(float color1[3], float color2[3]) const
 
 void Occt_view::set_bg_gradient_colors(float r1, float g1, float b1, float r2, float g2, float b2)
 {
-  m_bg_color1[0] = r1;
-  m_bg_color1[1] = g1;
-  m_bg_color1[2] = b1;
-  m_bg_color2[0] = r2;
-  m_bg_color2[1] = g2;
-  m_bg_color2[2] = b2;
+  m_bg_color1 = glm::vec3(r1, g1, b1);
+  m_bg_color2 = glm::vec3(r2, g2, b2);
   update_view_background_();
 }
 
@@ -1250,12 +1238,8 @@ void Occt_view::get_grid_colors(float color1[3], float color2[3]) const
 
 void Occt_view::set_grid_colors(float r1, float g1, float b1, float r2, float g2, float b2)
 {
-  m_grid_color1[0] = r1;
-  m_grid_color1[1] = g1;
-  m_grid_color1[2] = b1;
-  m_grid_color2[0] = r2;
-  m_grid_color2[1] = g2;
-  m_grid_color2[2] = b2;
+  m_grid_color1 = glm::vec3(r1, g1, b1);
+  m_grid_color2 = glm::vec3(r2, g2, b2);
   update_view_background_();
 }
 

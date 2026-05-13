@@ -2,6 +2,7 @@
 
 #include <gp_Pln.hxx>
 #include <gp_Pnt2d.hxx>
+#include <glm/glm.hpp>
 #include <optional>
 #include <set>
 #include <string>
@@ -99,7 +100,7 @@ class Sketch_nodes
   std::vector<Node>       m_nodes;
   static double           s_snap_dist_pixels;  // Global to all sketches
   static Snap_guide_mode  s_snap_guide_mode;
-  static float            s_snap_guide_color[3];
+  static glm::vec3        s_snap_guide_color;
   std::set<gp_Pnt2d>      m_outside_snap_pts;  // Projected snap points from other sketches.
   AIS_Shape_ptr           m_snap_anno_axis[2];
   std::optional<gp_Pnt2d> m_last_snap_pt;  // Used for snap annotation

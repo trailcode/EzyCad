@@ -101,7 +101,7 @@ inline unsigned luminance_u8(uint8_t r, uint8_t g, uint8_t b)
 }
 
 inline void apply_key_and_tint(uint8_t& r, uint8_t& g, uint8_t& b, uint8_t& a, bool key_white_transparent,
-                               bool line_tint_enabled, uint8_t tr, uint8_t tg, uint8_t tb)
+                               bool line_tint_enabled, uint8_t tr, uint8_t tg, uint8_t tb, uint8_t ta)
 {
   unsigned a2;
   if (key_white_transparent)
@@ -117,6 +117,7 @@ inline void apply_key_and_tint(uint8_t& r, uint8_t& g, uint8_t& b, uint8_t& a, b
     r = tr;
     g = tg;
     b = tb;
+    a2 = (a2 * static_cast<unsigned>(ta)) / 255u;
   }
   a = static_cast<uint8_t>(a2);
 }
@@ -158,7 +159,8 @@ Handle(Image_PixMap) make_pixmap_bottom_up_linear(const uint8_t* rgba,
                                                   bool           line_tint_enabled,
                                                   uint8_t        tr,
                                                   uint8_t        tg,
-                                                  uint8_t        tb)
+                                                  uint8_t        tb,
+                                                  uint8_t        ta)
 {
   if (w <= 0 || h <= 0)
     return {};
@@ -178,7 +180,7 @@ Handle(Image_PixMap) make_pixmap_bottom_up_linear(const uint8_t* rgba,
     for (int ox = 0; ox < w; ++ox)
     {
       uint8_t px[4] = {srcRow[ox * 4 + 0], srcRow[ox * 4 + 1], srcRow[ox * 4 + 2], srcRow[ox * 4 + 3]};
-      apply_key_and_tint(px[0], px[1], px[2], px[3], key_white_transparent, line_tint_enabled, tr, tg, tb);
+      apply_key_and_tint(px[0], px[1], px[2], px[3], key_white_transparent, line_tint_enabled, tr, tg, tb, ta);
       dstRow[static_cast<std::size_t>(ox) * 4u + 0] = px[0];
       dstRow[static_cast<std::size_t>(ox) * 4u + 1] = px[1];
       dstRow[static_cast<std::size_t>(ox) * 4u + 2] = px[2];
@@ -199,7 +201,8 @@ Handle(Image_PixMap) make_pixmap_bottom_up_warped(const uint8_t*  rgba,
                                                   bool            line_tint_enabled,
                                                   uint8_t         tr,
                                                   uint8_t         tg,
-                                                  uint8_t         tb)
+                                                  uint8_t         tb,
+                                                  uint8_t         ta)
 {
   const double hw = 0.5 * axis_u.Magnitude();
   const double hh = 0.5 * axis_v.Magnitude();
@@ -250,7 +253,7 @@ Handle(Image_PixMap) make_pixmap_bottom_up_warped(const uint8_t*  rgba,
         sample_rgba_bilinear(rgba, w, h, sx, sy, px);
       }
 
-      apply_key_and_tint(px[0], px[1], px[2], px[3], key_white_transparent, line_tint_enabled, tr, tg, tb);
+      apply_key_and_tint(px[0], px[1], px[2], px[3], key_white_transparent, line_tint_enabled, tr, tg, tb, ta);
       const Standard_Size o = static_cast<Standard_Size>(ox) * 4u;
       dstRow[o + 0]         = px[0];
       dstRow[o + 1]         = px[1];
@@ -363,11 +366,27 @@ void Sketch_underlay::set_line_tint_rgb(uint8_t r, uint8_t g, uint8_t b)
   m_tint_b = b;
 }
 
+void Sketch_underlay::set_line_tint_rgba(uint8_t r, uint8_t g, uint8_t b, uint8_t a)
+{
+  m_tint_r = r;
+  m_tint_g = g;
+  m_tint_b = b;
+  m_tint_a = a;
+}
+
 void Sketch_underlay::line_tint_rgb(uint8_t& r, uint8_t& g, uint8_t& b) const
 {
   r = m_tint_r;
   g = m_tint_g;
   b = m_tint_b;
+}
+
+void Sketch_underlay::line_tint_rgba(uint8_t& r, uint8_t& g, uint8_t& b, uint8_t& a) const
+{
+  r = m_tint_r;
+  g = m_tint_g;
+  b = m_tint_b;
+  a = m_tint_a;
 }
 
 void Sketch_underlay::build_ais_(const gp_Pln& pln, AIS_InteractiveContext& ctx)
@@ -417,7 +436,7 @@ void Sketch_underlay::build_ais_(const gp_Pln& pln, AIS_InteractiveContext& ctx)
     face = faceMk.Face();
 
     pix = make_pixmap_bottom_up_linear(m_rgba.data(), m_w, m_h, m_key_white_transparent, m_line_tint_enabled,
-                                       m_tint_r, m_tint_g, m_tint_b);
+                                       m_tint_r, m_tint_g, m_tint_b, m_tint_a);
   }
   else
   {
@@ -456,7 +475,7 @@ void Sketch_underlay::build_ais_(const gp_Pln& pln, AIS_InteractiveContext& ctx)
     face = faceMk.Face();
 
     pix = make_pixmap_bottom_up_warped(m_rgba.data(), m_w, m_h, m_axis_u, m_axis_v, m_key_white_transparent,
-                                       m_line_tint_enabled, m_tint_r, m_tint_g, m_tint_b);
+                                       m_line_tint_enabled, m_tint_r, m_tint_g, m_tint_b, m_tint_a);
   }
 
   if (pix.IsNull())
@@ -531,7 +550,7 @@ nlohmann::json Sketch_underlay::to_json() const
   j["visible"]               = m_visible;
   j["key_white_transparent"] = m_key_white_transparent;
   j["line_tint_enabled"]     = m_line_tint_enabled;
-  j["line_tint_rgb"]         = nlohmann::json::array({m_tint_r, m_tint_g, m_tint_b});
+  j["line_tint_rgba"]        = nlohmann::json::array({m_tint_r, m_tint_g, m_tint_b, m_tint_a});
   return j;
 }
 
@@ -568,7 +587,15 @@ bool Sketch_underlay::from_json(const nlohmann::json& j)
   m_visible               = j.value("visible", true);
   m_key_white_transparent = j.value("key_white_transparent", true);
   m_line_tint_enabled     = j.value("line_tint_enabled", true);
-  if (j.contains("line_tint_rgb") && j["line_tint_rgb"].is_array() && j["line_tint_rgb"].size() >= 3)
+  m_tint_a = 255;
+  if (j.contains("line_tint_rgba") && j["line_tint_rgba"].is_array() && j["line_tint_rgba"].size() >= 4)
+  {
+    m_tint_r = static_cast<uint8_t>(j["line_tint_rgba"][0].get<int>());
+    m_tint_g = static_cast<uint8_t>(j["line_tint_rgba"][1].get<int>());
+    m_tint_b = static_cast<uint8_t>(j["line_tint_rgba"][2].get<int>());
+    m_tint_a = static_cast<uint8_t>(j["line_tint_rgba"][3].get<int>());
+  }
+  else if (j.contains("line_tint_rgb") && j["line_tint_rgb"].is_array() && j["line_tint_rgb"].size() >= 3)
   {
     m_tint_r = static_cast<uint8_t>(j["line_tint_rgb"][0].get<int>());
     m_tint_g = static_cast<uint8_t>(j["line_tint_rgb"][1].get<int>());

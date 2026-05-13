@@ -2713,9 +2713,9 @@ bool Sketch::load_underlay_image(const std::string& file_bytes)
     m_underlay = std::make_unique<Sketch_underlay>();
   if (!m_underlay->set_image_rgba(std::move(rgba), w, h))
     return false;
-  uint8_t hr, hg, hb;
-  m_view.gui().underlay_highlight_color_rgb(hr, hg, hb);
-  m_underlay->set_line_tint_rgb(hr, hg, hb);
+  uint8_t hr, hg, hb, ha;
+  m_view.gui().underlay_highlight_color_rgba(hr, hg, hb, ha);
+  m_underlay->set_line_tint_rgba(hr, hg, hb, ha);
   if (m_visible)
     m_underlay->rebuild_and_display(m_pln, m_ctx);
   m_ctx.UpdateCurrentViewer();
@@ -2942,6 +2942,14 @@ void Sketch::underlay_set_line_tint_rgb(uint8_t r, uint8_t g, uint8_t b)
   underlay_rebuild_display();
 }
 
+void Sketch::underlay_set_line_tint_rgba(uint8_t r, uint8_t g, uint8_t b, uint8_t a)
+{
+  if (!m_underlay)
+    return;
+  m_underlay->set_line_tint_rgba(r, g, b, a);
+  underlay_rebuild_display();
+}
+
 bool Sketch::underlay_line_tint_enabled() const
 {
   return m_underlay ? m_underlay->line_tint_enabled() : true;
@@ -2956,6 +2964,19 @@ void Sketch::underlay_line_tint_rgb(uint8_t& r, uint8_t& g, uint8_t& b) const
     r = 255;
     g = 220;
     b = 0;
+  }
+}
+
+void Sketch::underlay_line_tint_rgba(uint8_t& r, uint8_t& g, uint8_t& b, uint8_t& a) const
+{
+  if (m_underlay)
+    m_underlay->line_tint_rgba(r, g, b, a);
+  else
+  {
+    r = 255;
+    g = 220;
+    b = 0;
+    a = 255;
   }
 }
 
