@@ -1,6 +1,7 @@
 // Settings dialog, JSON load/save, and OCCT view appearance from ezycad_settings.json.
 
 #include <algorithm>
+#include <array>
 #include <nlohmann/json.hpp>
 #include <sstream>
 #include <string>
@@ -11,6 +12,7 @@
 #include "occt_view.h"
 #include "settings.h"
 #include "sketch.h"
+#include "sketch_nodes.h"
 
 namespace
 {
@@ -45,6 +47,14 @@ std::string GUI::occt_view_settings_json() const
       {   "edge_dim_arrow_size",    m_edge_dim_arrow_size},
       {    "view_roll_step_deg",     m_view_roll_step_deg},
       {"view_zoom_scroll_scale", m_view_zoom_scroll_scale},
+      {"snap_guide_color",
+       [&]()
+       {
+         float r {}, g {}, b {};
+         Sketch_nodes::get_snap_guide_color(r, g, b);
+         return nlohmann::json::array({r, g, b});
+       }()},
+      {"snap_guide_mode", static_cast<int>(Sketch_nodes::get_snap_guide_mode())},
   };
   return j.dump(2);
 }
@@ -85,6 +95,14 @@ void GUI::save_occt_view_settings()
       {        "imgui_rounding_tabs",                                          m_imgui_rounding_tabs},
       {         "view_roll_step_deg",                                           m_view_roll_step_deg},
       {     "view_zoom_scroll_scale",                                       m_view_zoom_scroll_scale},
+      {           "snap_guide_color",
+       [&]()
+       {
+         float r {}, g {}, b {};
+         Sketch_nodes::get_snap_guide_color(r, g, b);
+         return nlohmann::json::array({r, g, b});
+       }()},
+      {"snap_guide_mode", static_cast<int>(Sketch_nodes::get_snap_guide_mode())},
 #ifndef NDEBUG
       {                   "show_dbg",                                                     m_show_dbg},
 #endif
@@ -239,6 +257,27 @@ void GUI::parse_gui_panes_settings_(const std::string& content)
     }
     if (m_view)
       m_view->set_zoom_scroll_scale(m_view_zoom_scroll_scale);
+
+    // Default snap-guide color is green unless overridden by settings JSON.
+    Sketch_nodes::set_snap_guide_color(0.0f, 1.0f, 0.0f);
+    if (g.contains("snap_guide_color") && g["snap_guide_color"].is_array() && g["snap_guide_color"].size() >= 3)
+    {
+      const json& a = g["snap_guide_color"];
+      float       c[3] {0.0f, 1.0f, 0.0f};
+      for (size_t i = 0; i < 3; ++i)
+        if (a[static_cast<json::size_type>(i)].is_number())
+          c[i] = std::clamp(a[static_cast<json::size_type>(i)].get<float>(), 0.f, 1.f);
+      Sketch_nodes::set_snap_guide_color(c[0], c[1], c[2]);
+    }
+
+    Sketch_nodes::set_snap_guide_mode(Sketch_nodes::Snap_guide_mode::Traditional);
+    if (g.contains("snap_guide_mode") && g["snap_guide_mode"].is_number_integer())
+    {
+      const int mode = g["snap_guide_mode"].get<int>();
+      if (mode >= static_cast<int>(Sketch_nodes::Snap_guide_mode::Traditional) &&
+          mode <= static_cast<int>(Sketch_nodes::Snap_guide_mode::Both))
+        Sketch_nodes::set_snap_guide_mode(static_cast<Sketch_nodes::Snap_guide_mode>(mode));
+    }
 
     if (g.contains("underlay_highlight_color") && g["underlay_highlight_color"].is_array() && g["underlay_highlight_color"].size() >= 3)
     {
@@ -619,6 +658,58 @@ void GUI::settings_()
             "Per-sketch overrides in Sketch List if needed.");
         ImGui::PopTextWrapPos();
         ImGui::EndTooltip();
+      }
+
+      ImGui::TableNextRow();
+      ImGui::TableSetColumnIndex(0);
+      ImGui::AlignTextToFramePadding();
+      ImGui::TextUnformatted("Snap guide color");
+      ImGui::TableSetColumnIndex(1);
+      {
+        float snap_col[3];
+        Sketch_nodes::get_snap_guide_color(snap_col[0], snap_col[1], snap_col[2]);
+        if (ImGui::ColorEdit3("##snap_guide_color", snap_col, ImGuiColorEditFlags_Float))
+        {
+          Sketch_nodes::set_snap_guide_color(snap_col[0], snap_col[1], snap_col[2]);
+          save_occt_view_settings();
+        }
+        ImGui::SameLine(0.0f, ImGui::GetStyle().ItemInnerSpacing.x);
+        ImGui::TextDisabled("(?)");
+        if (ImGui::IsItemHovered())
+        {
+          ImGui::BeginTooltip();
+          ImGui::PushTextWrapPos(ImGui::GetFontSize() * 35.0f);
+          ImGui::TextDisabled(
+              "Color used by fullscreen snap guides and snap markers in sketch mode.");
+          ImGui::PopTextWrapPos();
+          ImGui::EndTooltip();
+        }
+      }
+
+      ImGui::TableNextRow();
+      ImGui::TableSetColumnIndex(0);
+      ImGui::AlignTextToFramePadding();
+      ImGui::TextUnformatted("Snap guide mode");
+      ImGui::TableSetColumnIndex(1);
+      {
+        constexpr std::array<const char*, 3> k_snap_guide_mode_labels = {
+            "Traditional",
+            "Fullscreen",
+            "Both",
+        };
+        int mode = static_cast<int>(Sketch_nodes::get_snap_guide_mode());
+        ImGui::SetNextItemWidth(160.0f);
+        if (ImGui::BeginCombo("##settings_snap_guide_mode", k_snap_guide_mode_labels[static_cast<size_t>(mode)],
+                              ImGuiComboFlags_HeightSmall))
+        {
+          for (int i = 0; i < static_cast<int>(k_snap_guide_mode_labels.size()); ++i)
+            if (ImGui::Selectable(k_snap_guide_mode_labels[static_cast<size_t>(i)], i == mode))
+            {
+              Sketch_nodes::set_snap_guide_mode(static_cast<Sketch_nodes::Snap_guide_mode>(i));
+              save_occt_view_settings();
+            }
+          ImGui::EndCombo();
+        }
       }
 
       ImGui::EndTable();

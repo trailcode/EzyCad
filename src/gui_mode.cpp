@@ -382,7 +382,7 @@ void GUI::options_()
       };
 
       float label_col_w = ImGui::CalcTextSize("Snap dist").x;
-      label_col_w       = std::max(label_col_w, ImGui::CalcTextSize("Fullscreen snap guides").x);
+      label_col_w       = std::max(label_col_w, ImGui::CalcTextSize("Snap guide mode").x);
       if (get_mode() == Mode::Sketch_dim_anno)
         label_col_w = std::max(label_col_w, ImGui::CalcTextSize("Length value placement").x);
       if (get_mode() == Mode::Sketch_face_extrude)
@@ -401,14 +401,28 @@ void GUI::options_()
 
       ImGui::TableNextRow();
       ImGui::TableSetColumnIndex(0);
-      right_aligned_label("Fullscreen snap guides");
+      right_aligned_label("Snap guide mode");
       ImGui::TableSetColumnIndex(1);
-      bool show_fullscreen_guides = Sketch_nodes::get_show_fullscreen_snap_guides();
-      if (ImGui::Checkbox("##fullscreen_snap_guides", &show_fullscreen_guides))
-        Sketch_nodes::set_show_fullscreen_snap_guides(show_fullscreen_guides);
+      constexpr std::array<const char*, 3> k_snap_guide_mode_labels = {
+          "Traditional",
+          "Fullscreen",
+          "Both",
+      };
+      int snap_mode = static_cast<int>(Sketch_nodes::get_snap_guide_mode());
+      ImGui::SetNextItemWidth(140.0f);
+      if (ImGui::BeginCombo("##snap_guide_mode", k_snap_guide_mode_labels[static_cast<size_t>(snap_mode)],
+                            ImGuiComboFlags_HeightSmall))
+      {
+        for (int i = 0; i < static_cast<int>(k_snap_guide_mode_labels.size()); ++i)
+          if (ImGui::Selectable(k_snap_guide_mode_labels[static_cast<size_t>(i)], i == snap_mode))
+            Sketch_nodes::set_snap_guide_mode(static_cast<Sketch_nodes::Snap_guide_mode>(i));
+        ImGui::EndCombo();
+      }
       if (ImGui::IsItemHovered())
         ImGui::SetTooltip(
-            "Show full-view snap guides: node snap shows full crosshair; axis-only snap shows a full X or Y guide line.");
+            "Traditional: compact local snap marker.\n"
+            "Fullscreen: full-view crosshair/axis guides.\n"
+            "Both: show compact marker and fullscreen guides together.");
 
       if (get_mode() == Mode::Sketch_dim_anno)
       {

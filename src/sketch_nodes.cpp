@@ -4,6 +4,7 @@
 #include <BRepBuilderAPI_MakeEdge.hxx>
 #include <TopoDS_Compound.hxx>
 #include <TopoDS_Wire.hxx>
+#include <algorithm>
 #include <limits>
 
 #include "dbg.h"
@@ -280,8 +281,13 @@ void Sketch_nodes::update_node_snap_anno_(const gp_Pnt2d& pt, const double snap_
 
   m_last_snap_pt = pt;
 
-  TopoDS_Shape anno_shape;
-  if (s_show_fullscreen_snap_guides)
+  const bool show_traditional =
+      s_snap_guide_mode == Snap_guide_mode::Traditional || s_snap_guide_mode == Snap_guide_mode::Both;
+  const bool show_fullscreen =
+      s_snap_guide_mode == Snap_guide_mode::Fullscreen || s_snap_guide_mode == Snap_guide_mode::Both;
+
+  TopoDS_Shape fullscreen_shape;
+  if (show_fullscreen)
   {
     double min_u {}, min_v {}, max_u {}, max_v {};
     if (view_bounds_2d_(min_u, min_v, max_u, max_v))
@@ -296,18 +302,32 @@ void Sketch_nodes::update_node_snap_anno_(const gp_Pnt2d& pt, const double snap_
       const gp_Pnt p_v1 = to_3d(m_pln, gp_Pnt2d(pt.X(), max_v));
       builder.Add(comp, BRepBuilderAPI_MakeEdge(p_h0, p_h1).Edge());
       builder.Add(comp, BRepBuilderAPI_MakeEdge(p_v0, p_v1).Edge());
-      anno_shape = comp;
+      fullscreen_shape = comp;
     }
   }
 
-  if (anno_shape.IsNull())
-    anno_shape = create_wire_box(m_pln, to_3d(m_pln, pt), snap_dist, snap_dist);
+  TopoDS_Shape anno_shape;
+  const TopoDS_Shape traditional_shape = create_wire_box(m_pln, to_3d(m_pln, pt), snap_dist, snap_dist);
+  if (show_traditional && !fullscreen_shape.IsNull())
+  {
+    BRep_Builder    builder;
+    TopoDS_Compound comp;
+    builder.MakeCompound(comp);
+    builder.Add(comp, fullscreen_shape);
+    builder.Add(comp, traditional_shape);
+    anno_shape = comp;
+  }
+  else if (!fullscreen_shape.IsNull())
+    anno_shape = fullscreen_shape;
+  else
+    anno_shape = traditional_shape;
 
   if (m_snap_anno.IsNull())
   {
     m_snap_anno = new AIS_Shape(anno_shape);
     m_snap_anno->SetWidth(3.0);
-    m_snap_anno->SetColor(Quantity_Color(0, 0.5, 0.7, Quantity_TOC_RGB));
+    m_snap_anno->SetColor(
+        Quantity_Color(s_snap_guide_color[0], s_snap_guide_color[1], s_snap_guide_color[2], Quantity_TOC_RGB));
     m_ctx.Display(m_snap_anno, true);
   }
   else
@@ -319,8 +339,13 @@ void Sketch_nodes::update_node_snap_anno_(const gp_Pnt2d& pt, const double snap_
 
 void Sketch_nodes::update_axis_snap_anno_(int axis_index, const gp_Pnt2d& axis_pt, double snap_dist)
 {
-  TopoDS_Shape anno_shape;
-  if (s_show_fullscreen_snap_guides)
+  const bool show_traditional =
+      s_snap_guide_mode == Snap_guide_mode::Traditional || s_snap_guide_mode == Snap_guide_mode::Both;
+  const bool show_fullscreen =
+      s_snap_guide_mode == Snap_guide_mode::Fullscreen || s_snap_guide_mode == Snap_guide_mode::Both;
+
+  TopoDS_Shape fullscreen_shape;
+  if (show_fullscreen)
   {
     double min_u {}, min_v {}, max_u {}, max_v {};
     if (view_bounds_2d_(min_u, min_v, max_u, max_v))
@@ -329,25 +354,40 @@ void Sketch_nodes::update_axis_snap_anno_(int axis_index, const gp_Pnt2d& axis_p
       {
         const gp_Pnt p0 = to_3d(m_pln, gp_Pnt2d(axis_pt.X(), min_v));
         const gp_Pnt p1 = to_3d(m_pln, gp_Pnt2d(axis_pt.X(), max_v));
-        anno_shape       = BRepBuilderAPI_MakeEdge(p0, p1).Edge();
+        fullscreen_shape = BRepBuilderAPI_MakeEdge(p0, p1).Edge();
       }
       else
       {
         const gp_Pnt p0 = to_3d(m_pln, gp_Pnt2d(min_u, axis_pt.Y()));
         const gp_Pnt p1 = to_3d(m_pln, gp_Pnt2d(max_u, axis_pt.Y()));
-        anno_shape       = BRepBuilderAPI_MakeEdge(p0, p1).Edge();
+        fullscreen_shape = BRepBuilderAPI_MakeEdge(p0, p1).Edge();
       }
     }
   }
 
-  if (anno_shape.IsNull())
-    anno_shape = create_wire_box(m_pln, to_3d(m_pln, axis_pt), snap_dist * 0.5, snap_dist * 0.5);
+  TopoDS_Shape anno_shape;
+  const TopoDS_Shape traditional_shape =
+      create_wire_box(m_pln, to_3d(m_pln, axis_pt), snap_dist * 0.5, snap_dist * 0.5);
+  if (show_traditional && !fullscreen_shape.IsNull())
+  {
+    BRep_Builder    builder;
+    TopoDS_Compound comp;
+    builder.MakeCompound(comp);
+    builder.Add(comp, fullscreen_shape);
+    builder.Add(comp, traditional_shape);
+    anno_shape = comp;
+  }
+  else if (!fullscreen_shape.IsNull())
+    anno_shape = fullscreen_shape;
+  else
+    anno_shape = traditional_shape;
 
   if (m_snap_anno_axis[axis_index].IsNull())
   {
     m_snap_anno_axis[axis_index] = new AIS_Shape(anno_shape);
     m_snap_anno_axis[axis_index]->SetWidth(3.0);
-    m_snap_anno_axis[axis_index]->SetColor(Quantity_Color(1, 0.5, 0.7, Quantity_TOC_RGB));
+    m_snap_anno_axis[axis_index]->SetColor(
+        Quantity_Color(s_snap_guide_color[0], s_snap_guide_color[1], s_snap_guide_color[2], Quantity_TOC_RGB));
     m_ctx.Display(m_snap_anno_axis[axis_index], true);
   }
   else
@@ -455,8 +495,9 @@ void Sketch_nodes::add_outside_snap_pnt(const gp_Pnt& pt3d)
 }
 
 // Snap distance related
-double Sketch_nodes::s_snap_dist_pixels = 35.0;
-bool   Sketch_nodes::s_show_fullscreen_snap_guides = false;
+double                        Sketch_nodes::s_snap_dist_pixels = 35.0;
+Sketch_nodes::Snap_guide_mode Sketch_nodes::s_snap_guide_mode  = Snap_guide_mode::Traditional;
+float                         Sketch_nodes::s_snap_guide_color[3] = {0.0f, 1.0f, 0.0f};
 
 void Sketch_nodes::set_snap_dist(double snap_dist_pixels)
 {
@@ -468,13 +509,27 @@ double Sketch_nodes::get_snap_dist()
   return s_snap_dist_pixels;
 }
 
-void Sketch_nodes::set_show_fullscreen_snap_guides(bool on)
+void Sketch_nodes::set_snap_guide_mode(Snap_guide_mode mode)
 {
-  s_show_fullscreen_snap_guides = on;
+  s_snap_guide_mode = mode;
 }
 
-bool Sketch_nodes::get_show_fullscreen_snap_guides()
+Sketch_nodes::Snap_guide_mode Sketch_nodes::get_snap_guide_mode()
 {
-  return s_show_fullscreen_snap_guides;
+  return s_snap_guide_mode;
+}
+
+void Sketch_nodes::set_snap_guide_color(float r, float g, float b)
+{
+  s_snap_guide_color[0] = std::clamp(r, 0.0f, 1.0f);
+  s_snap_guide_color[1] = std::clamp(g, 0.0f, 1.0f);
+  s_snap_guide_color[2] = std::clamp(b, 0.0f, 1.0f);
+}
+
+void Sketch_nodes::get_snap_guide_color(float& r, float& g, float& b)
+{
+  r = s_snap_guide_color[0];
+  g = s_snap_guide_color[1];
+  b = s_snap_guide_color[2];
 }
 

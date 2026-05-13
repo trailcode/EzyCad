@@ -17,6 +17,13 @@ class Sketch_json;
 class Sketch_nodes
 {
  public:
+  enum class Snap_guide_mode : int
+  {
+    Traditional = 0,
+    Fullscreen  = 1,
+    Both        = 2
+  };
+
   struct Node : public gp_Pnt2d
   {
     bool        midpoint = false;
@@ -59,8 +66,10 @@ class Sketch_nodes
   // Snap distance related
   static void   set_snap_dist(double snap_dist_pixels);
   static double get_snap_dist();
-  static void   set_show_fullscreen_snap_guides(bool on);
-  static bool   get_show_fullscreen_snap_guides();
+  static void   set_snap_guide_mode(Snap_guide_mode mode);
+  static Snap_guide_mode get_snap_guide_mode();
+  static void   set_snap_guide_color(float r, float g, float b);
+  static void   get_snap_guide_color(float& r, float& g, float& b);
 
   // Methods for range-based for loop support
   // clang-format off
@@ -89,7 +98,8 @@ class Sketch_nodes
 
   std::vector<Node>       m_nodes;
   static double           s_snap_dist_pixels;  // Global to all sketches
-  static bool             s_show_fullscreen_snap_guides;
+  static Snap_guide_mode  s_snap_guide_mode;
+  static float            s_snap_guide_color[3];
   std::set<gp_Pnt2d>      m_outside_snap_pts;  // Projected snap points from other sketches.
   AIS_Shape_ptr           m_snap_anno_axis[2];
   std::optional<gp_Pnt2d> m_last_snap_pt;  // Used for snap annotation
