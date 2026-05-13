@@ -382,6 +382,7 @@ void GUI::options_()
       };
 
       float label_col_w = ImGui::CalcTextSize("Snap dist").x;
+      label_col_w       = std::max(label_col_w, ImGui::CalcTextSize("Fullscreen snap guides").x);
       if (get_mode() == Mode::Sketch_dim_anno)
         label_col_w = std::max(label_col_w, ImGui::CalcTextSize("Length value placement").x);
       if (get_mode() == Mode::Sketch_face_extrude)
@@ -397,6 +398,17 @@ void GUI::options_()
       ImGui::SetNextItemWidth(140.0f);
       if (ImGui::InputFloat("##snap_dist", &snap_dist, 1.0f, 2.0f, "%.2f"))
         Sketch_nodes::set_snap_dist(snap_dist);
+
+      ImGui::TableNextRow();
+      ImGui::TableSetColumnIndex(0);
+      right_aligned_label("Fullscreen snap guides");
+      ImGui::TableSetColumnIndex(1);
+      bool show_fullscreen_guides = Sketch_nodes::get_show_fullscreen_snap_guides();
+      if (ImGui::Checkbox("##fullscreen_snap_guides", &show_fullscreen_guides))
+        Sketch_nodes::set_show_fullscreen_snap_guides(show_fullscreen_guides);
+      if (ImGui::IsItemHovered())
+        ImGui::SetTooltip(
+            "Show full-view snap guides: node snap shows full crosshair; axis-only snap shows a full X or Y guide line.");
 
       if (get_mode() == Mode::Sketch_dim_anno)
       {

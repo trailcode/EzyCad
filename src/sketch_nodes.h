@@ -59,6 +59,8 @@ class Sketch_nodes
   // Snap distance related
   static void   set_snap_dist(double snap_dist_pixels);
   static double get_snap_dist();
+  static void   set_show_fullscreen_snap_guides(bool on);
+  static bool   get_show_fullscreen_snap_guides();
 
   // Methods for range-based for loop support
   // clang-format off
@@ -79,12 +81,15 @@ class Sketch_nodes
   void json_set_node(size_t idx, const gp_Pnt2d& pt, bool deleted, bool midpoint, bool permanent, const std::string& name = {});
 
   void update_node_snap_anno_(const gp_Pnt2d& pt, const double snap_dist);
+  void update_axis_snap_anno_(int axis_index, const gp_Pnt2d& axis_pt, double snap_dist);
   /// World-space snap radius at `pt` (same convention as `try_get_node_idx_snap` / `try_pick_existing_node`).
   double snap_radius_world_(const gp_Pnt2d& pt) const;
+  bool   view_bounds_2d_(double& min_u, double& min_v, double& max_u, double& max_v) const;
   bool try_snap_outside_(gp_Pnt2d& pt, const double snap_dist);  // Use points in `m_outside_snap_pts` `pt` will be modified if snapped.
 
   std::vector<Node>       m_nodes;
   static double           s_snap_dist_pixels;  // Global to all sketches
+  static bool             s_show_fullscreen_snap_guides;
   std::set<gp_Pnt2d>      m_outside_snap_pts;  // Projected snap points from other sketches.
   AIS_Shape_ptr           m_snap_anno_axis[2];
   std::optional<gp_Pnt2d> m_last_snap_pt;  // Used for snap annotation

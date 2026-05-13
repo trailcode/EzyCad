@@ -1,10 +1,14 @@
 #include "sketch_nodes.h"
 
+#include <BRep_Builder.hxx>
+#include <BRepBuilderAPI_MakeEdge.hxx>
+#include <TopoDS_Compound.hxx>
 #include <TopoDS_Wire.hxx>
 #include <limits>
 
 #include "dbg.h"
 #include "geom.h"
+#include "imgui.h"
 #include "occt_view.h"
 
 Sketch_nodes::Sketch_nodes(Occt_view& view, const gp_Pln& pln)
@@ -96,6 +100,16 @@ double Sketch_nodes::snap_radius_world_(const gp_Pnt2d& pt) const
     return 5.0;
   }
   return s_snap_dist_pixels;
+}
+
+bool Sketch_nodes::view_bounds_2d_(double& min_u, double& min_v, double& max_u, double& max_v) const
+{
+  if (m_view.is_headless())
+    return false;
+
+  const ImGuiIO& io = ImGui::GetIO();
+  return m_view.sketch_plane_view_aabb_2d(m_pln, static_cast<double>(io.DisplaySize.x),
+                                          static_cast<double>(io.DisplaySize.y), min_u, min_v, max_u, max_v);
 }
 
 std::optional<size_t> Sketch_nodes::try_pick_existing_node(const ScreenCoords& screen_coords)
@@ -215,27 +229,9 @@ std::optional<size_t> Sketch_nodes::try_get_node_idx_snap(
       try_nd_pt(nd_pt);
 
     if (snap_axis_point)
-    {
-      // create_wire_box and update_node_snap_anno_ expect linear distances.
-      TopoDS_Wire box = create_wire_box(m_pln, to_3d(m_pln, *snap_axis_point), sqrt(snap_dist) * 0.5, sqrt(snap_dist) * 0.5);
-      if (m_snap_anno_axis[i].IsNull())
-      {
-        m_snap_anno_axis[i] = new AIS_Shape(box);
-        m_snap_anno_axis[i]->SetWidth(3.0);
-        m_snap_anno_axis[i]->SetColor(Quantity_Color(1, 0.5, 0.7, Quantity_TOC_RGB));
-        m_ctx.Display(m_snap_anno_axis[i], true);
-      }
-      else
-      {
-        m_snap_anno_axis[i]->Set(box);
-        m_ctx.Redisplay(m_snap_anno_axis[i], true);
-      }
-    }
-    else
-    {
-      if (!m_snap_anno_axis[i].IsNull())
-        m_ctx.Erase(m_snap_anno_axis[i], true);
-    }
+      update_axis_snap_anno_(i, *snap_axis_point, sqrt(snap_dist));
+    else if (!m_snap_anno_axis[i].IsNull())
+      m_ctx.Erase(m_snap_anno_axis[i], true);
   }
 
   return {};
@@ -284,19 +280,80 @@ void Sketch_nodes::update_node_snap_anno_(const gp_Pnt2d& pt, const double snap_
 
   m_last_snap_pt = pt;
 
-  TopoDS_Wire box = create_wire_box(m_pln, to_3d(m_pln, pt), snap_dist, snap_dist);
+  TopoDS_Shape anno_shape;
+  if (s_show_fullscreen_snap_guides)
+  {
+    double min_u {}, min_v {}, max_u {}, max_v {};
+    if (view_bounds_2d_(min_u, min_v, max_u, max_v))
+    {
+      BRep_Builder    builder;
+      TopoDS_Compound comp;
+      builder.MakeCompound(comp);
+
+      const gp_Pnt p_h0 = to_3d(m_pln, gp_Pnt2d(min_u, pt.Y()));
+      const gp_Pnt p_h1 = to_3d(m_pln, gp_Pnt2d(max_u, pt.Y()));
+      const gp_Pnt p_v0 = to_3d(m_pln, gp_Pnt2d(pt.X(), min_v));
+      const gp_Pnt p_v1 = to_3d(m_pln, gp_Pnt2d(pt.X(), max_v));
+      builder.Add(comp, BRepBuilderAPI_MakeEdge(p_h0, p_h1).Edge());
+      builder.Add(comp, BRepBuilderAPI_MakeEdge(p_v0, p_v1).Edge());
+      anno_shape = comp;
+    }
+  }
+
+  if (anno_shape.IsNull())
+    anno_shape = create_wire_box(m_pln, to_3d(m_pln, pt), snap_dist, snap_dist);
 
   if (m_snap_anno.IsNull())
   {
-    m_snap_anno = new AIS_Shape(box);
+    m_snap_anno = new AIS_Shape(anno_shape);
     m_snap_anno->SetWidth(3.0);
     m_snap_anno->SetColor(Quantity_Color(0, 0.5, 0.7, Quantity_TOC_RGB));
     m_ctx.Display(m_snap_anno, true);
   }
   else
   {
-    m_snap_anno->Set(box);
+    m_snap_anno->Set(anno_shape);
     m_ctx.Redisplay(m_snap_anno, true);
+  }
+}
+
+void Sketch_nodes::update_axis_snap_anno_(int axis_index, const gp_Pnt2d& axis_pt, double snap_dist)
+{
+  TopoDS_Shape anno_shape;
+  if (s_show_fullscreen_snap_guides)
+  {
+    double min_u {}, min_v {}, max_u {}, max_v {};
+    if (view_bounds_2d_(min_u, min_v, max_u, max_v))
+    {
+      if (axis_index == 0)
+      {
+        const gp_Pnt p0 = to_3d(m_pln, gp_Pnt2d(axis_pt.X(), min_v));
+        const gp_Pnt p1 = to_3d(m_pln, gp_Pnt2d(axis_pt.X(), max_v));
+        anno_shape       = BRepBuilderAPI_MakeEdge(p0, p1).Edge();
+      }
+      else
+      {
+        const gp_Pnt p0 = to_3d(m_pln, gp_Pnt2d(min_u, axis_pt.Y()));
+        const gp_Pnt p1 = to_3d(m_pln, gp_Pnt2d(max_u, axis_pt.Y()));
+        anno_shape       = BRepBuilderAPI_MakeEdge(p0, p1).Edge();
+      }
+    }
+  }
+
+  if (anno_shape.IsNull())
+    anno_shape = create_wire_box(m_pln, to_3d(m_pln, axis_pt), snap_dist * 0.5, snap_dist * 0.5);
+
+  if (m_snap_anno_axis[axis_index].IsNull())
+  {
+    m_snap_anno_axis[axis_index] = new AIS_Shape(anno_shape);
+    m_snap_anno_axis[axis_index]->SetWidth(3.0);
+    m_snap_anno_axis[axis_index]->SetColor(Quantity_Color(1, 0.5, 0.7, Quantity_TOC_RGB));
+    m_ctx.Display(m_snap_anno_axis[axis_index], true);
+  }
+  else
+  {
+    m_snap_anno_axis[axis_index]->Set(anno_shape);
+    m_ctx.Redisplay(m_snap_anno_axis[axis_index], true);
   }
 }
 
@@ -399,6 +456,7 @@ void Sketch_nodes::add_outside_snap_pnt(const gp_Pnt& pt3d)
 
 // Snap distance related
 double Sketch_nodes::s_snap_dist_pixels = 35.0;
+bool   Sketch_nodes::s_show_fullscreen_snap_guides = false;
 
 void Sketch_nodes::set_snap_dist(double snap_dist_pixels)
 {
@@ -408,5 +466,15 @@ void Sketch_nodes::set_snap_dist(double snap_dist_pixels)
 double Sketch_nodes::get_snap_dist()
 {
   return s_snap_dist_pixels;
+}
+
+void Sketch_nodes::set_show_fullscreen_snap_guides(bool on)
+{
+  s_show_fullscreen_snap_guides = on;
+}
+
+bool Sketch_nodes::get_show_fullscreen_snap_guides()
+{
+  return s_show_fullscreen_snap_guides;
 }
 
