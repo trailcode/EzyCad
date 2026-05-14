@@ -224,14 +224,14 @@ nlohmann::json Sketch_json::to_json(const Sketch& sketch)
   return j;
 }
 
-std::shared_ptr<Sketch> Sketch_json::from_json(Occt_view& view, const nlohmann::json& j)
+Sketch::sptr Sketch_json::from_json(Occt_view& view, const nlohmann::json& j)
 {
   EZY_ASSERT(j.contains("name") && j["name"].is_string());
   EZY_ASSERT(j.contains("edges") && j["edges"].is_array());
   EZY_ASSERT(j.contains("plane") && j["plane"].is_object());
   EZY_ASSERT(j.contains("isCurrent") && j["isCurrent"].is_boolean());
 
-  std::shared_ptr<Sketch> ret;
+  Sketch::sptr ret;
 
   if (j.contains("originating_face"))
   {

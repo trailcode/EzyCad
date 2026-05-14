@@ -735,7 +735,7 @@ void GUI::settings_()
     {
       uint8_t hr, hg, hb, ha;
       underlay_highlight_color_rgba(hr, hg, hb, ha);
-      for (const std::shared_ptr<Sketch>& sk : m_view->get_sketches())
+      for (const Sketch::sptr& sk : m_view->get_sketches())
       {
         EZY_ASSERT(sk);
         if (sk->has_underlay())

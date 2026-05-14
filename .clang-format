@@ -22,9 +22,13 @@ BinPackArguments: true                 # Changed to true
 BinPackParameters: true                # Changed to true
 BreakBeforeBraces: Custom
 BraceWrapping:
+  AfterControlStatement: Always
+  AfterFunction: true
   AfterClass: true
   AfterStruct: true
   AfterUnion: true
+  AfterNamespace: true
+  AfterEnum: true
 IndentWidth: 2
 TabWidth: 2
 UseTab: Never

@@ -52,6 +52,7 @@ enum class Set_parent_mode
 class Occt_view : protected AIS_ViewController
 {
  public:
+  DECL_PTR(Occt_view);
   using Sketch_ptr  = std::shared_ptr<Sketch>;
   using Sketch_list = std::list<Sketch_ptr>;
 

@@ -59,7 +59,8 @@ using Sketch_face_shp_ptr      = opencascade::handle<Sketch_face_shp>;
 class Sketch
 {
  public:
-  using Sketch_ptr = std::shared_ptr<Sketch>;
+  DECL_PTR(Sketch);
+  using Sketch_ptr = sptr;  // Compatibility alias for existing code.
 
   // `view` must exist for the lifetime of this `Sketch`
   Sketch(const std::string& name, Occt_view& view, const gp_Pln& pln);

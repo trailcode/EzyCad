@@ -2,6 +2,7 @@
 
 #include <Standard_Handle.hxx>
 #include <glm/glm.hpp>
+#include <memory>
 
 class AIS_InteractiveObject;
 class AIS_InteractiveContext;
@@ -32,6 +33,11 @@ using Geom_Surface_ptr           = opencascade::handle<Geom_Surface>;
 using PrsDim_LengthDimension_ptr = opencascade::handle<PrsDim_LengthDimension>;
 using Graphic3d_Camera_ptr       = opencascade::handle<Graphic3d_Camera>;
 using StdSelect_BRepOwner_ptr    = opencascade::handle<StdSelect_BRepOwner>;
+
+#define DECL_PTR(TypeName) \
+  using uptr = std::unique_ptr<TypeName>; \
+  using sptr = std::shared_ptr<TypeName>; \
+  using wptr = std::weak_ptr<TypeName>;
 
 // Primary template for non-vector types
 template <typename T>
