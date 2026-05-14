@@ -1,5 +1,6 @@
 #include "shp_extrude.h"
 
+#include <BRepBuilderAPI_Transform.hxx>
 #include <BRepPrimAPI_MakePrism.hxx>
 #include <Precision.hxx>
 #include <TopoDS.hxx>
@@ -86,6 +87,16 @@ bool Shp_extrude::has_active_extrusion() const
   return !m_extruded.IsNull();
 }
 
+bool Shp_extrude::get_both_sides() const
+{
+  return m_extrude_both_sides;
+}
+
+void Shp_extrude::set_both_sides(const bool both_sides)
+{
+  m_extrude_both_sides = both_sides;
+}
+
 void Shp_extrude::set_curr_view_pln(const gp_Pln& pln)
 {
   m_curr_view_pln = pln;
@@ -138,15 +149,17 @@ void Shp_extrude::_update_extrude_preview_(const double extrude_dist, const Plan
 
   EZY_ASSERT(side != Plane_side::On);
 
-  auto extrude_vec = gp_Vec(m_to_extrude_pln.Axis().Direction());
-  if (side == Plane_side::Front)
-    extrude_vec *= extrude_dist;
-  else
-    extrude_vec *= -extrude_dist;
+  const gp_Vec normal_dir(m_to_extrude_pln.Axis().Direction());
+  const double side_sign = (side == Plane_side::Front) ? 1.0 : -1.0;
+  const gp_Vec extrude_vec = normal_dir * (side_sign * extrude_dist);
+  gp_Vec       face_offset(0.0, 0.0, 0.0);
+
+  if (m_extrude_both_sides)
+    face_offset = normal_dir * (-side_sign * (extrude_dist * 0.5));
 
   ctx().Remove(m_tmp_dim, false);
-  m_tmp_dim = create_distance_annotation(gp_Pnt(m_to_extrude_pt->XYZ() + extrude_vec.XYZ()),
-                                         *m_to_extrude_pt,
+  m_tmp_dim = create_distance_annotation(gp_Pnt(m_to_extrude_pt->XYZ() + face_offset.XYZ() + extrude_vec.XYZ()),
+                                         gp_Pnt(m_to_extrude_pt->XYZ() + face_offset.XYZ()),
                                          m_curr_view_pln,
                                          Prs3d_DTHP_Fit,
                                          std::nullopt,
@@ -158,8 +171,16 @@ void Shp_extrude::_update_extrude_preview_(const double extrude_dist, const Plan
 
   ctx().Display(m_tmp_dim, false);
 
-  const TopoDS_Face& face = TopoDS::Face(m_to_extrude->Shape());
-  TopoDS_Shape       body = BRepPrimAPI_MakePrism(face, extrude_vec);
+  TopoDS_Face face = TopoDS::Face(m_to_extrude->Shape());
+  if (m_extrude_both_sides)
+  {
+    gp_Trsf trsf;
+    trsf.SetTranslation(face_offset);
+    TopoDS_Shape shifted_face = BRepBuilderAPI_Transform(face, trsf, true).Shape();
+    face = TopoDS::Face(shifted_face);
+  }
+
+  TopoDS_Shape body = BRepPrimAPI_MakePrism(face, extrude_vec);
   if (!m_extruded)
   {
     m_extruded = new Shp(ctx(), body);

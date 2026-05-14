@@ -20,6 +20,8 @@ class Shp_extrude : private Shp_operation_base
   void finalize();
   bool cancel();
   bool has_active_extrusion() const;
+  bool get_both_sides() const;
+  void set_both_sides(bool both_sides);
 
   // For testing
   void set_curr_view_pln(const gp_Pln& pln);
@@ -35,4 +37,5 @@ class Shp_extrude : private Shp_operation_base
   gp_Pln                     m_curr_view_pln;
   PrsDim_LengthDimension_ptr m_tmp_dim;
   Plane_side                 m_extrude_side;
+  bool                       m_extrude_both_sides {false};
 };

@@ -385,8 +385,13 @@ void GUI::options_()
       label_col_w       = std::max(label_col_w, ImGui::CalcTextSize("Snap guide mode").x);
       if (get_mode() == Mode::Sketch_dim_anno)
         label_col_w = std::max(label_col_w, ImGui::CalcTextSize("Length value placement").x);
+
       if (get_mode() == Mode::Sketch_face_extrude)
-        label_col_w = std::max(label_col_w, ImGui::CalcTextSize("Default Material").x);
+      {
+        const float extrude_label_w = std::max(ImGui::CalcTextSize("Both sides").x, ImGui::CalcTextSize("Default Material").x);
+        label_col_w                 = std::max(label_col_w, extrude_label_w);
+      }
+
       label_col_w += ImGui::GetStyle().CellPadding.x * 2.0f + 8.0f;
       ImGui::TableSetupColumn("label", ImGuiTableColumnFlags_WidthFixed, label_col_w);
       ImGui::TableSetupColumn("control", ImGuiTableColumnFlags_WidthStretch);
@@ -460,6 +465,14 @@ void GUI::options_()
       }
       else if (get_mode() == Mode::Sketch_face_extrude)
       {
+        bool extrude_both_sides = m_view->shp_extrude().get_both_sides();
+        ImGui::TableNextRow();
+        ImGui::TableSetColumnIndex(0);
+        right_aligned_label("Both sides");
+        ImGui::TableSetColumnIndex(1);
+        if (ImGui::Checkbox("##extrude_both_sides", &extrude_both_sides))
+          m_view->shp_extrude().set_both_sides(extrude_both_sides);
+
         const std::vector<std::string>& material_names = occt_material_combo_labels_();
         int                             current_item   = int(m_view->get_default_material().Name());
         if (current_item < 0 || current_item >= static_cast<int>(material_names.size()))
