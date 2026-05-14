@@ -15,6 +15,7 @@ Use this style when editing or adding C/C++ code in the EzyCad project (files un
 - **Classes / structs**: PascalCase with underscores, e.g. `Sketch_nodes`, `Shp`, `Sketch_AIS_edge`, `Occt_view`.
 - **Enums**: PascalCase; enum values either PascalCase or descriptive with underscores (e.g. `Full`, `Background`, `Sketch_add_node`, `_count` for sentinel).
 - **Member variables**: `m_` prefix (e.g. `m_nodes`, `m_view`). Static members: `s_` prefix (e.g. `s_snap_dist_pixels`).
+- Prefer clear domain prefixes for related member groups (e.g. `m_underlay_*`) instead of mixed short forms.
 - **Constants** (e.g. lookup arrays for enums): `c_` prefix (e.g. `c_mode_strs`, `c_chamfer_mode_strs`).
 - **Functions / methods**: snake_case (e.g. `add_new_node`, `get_node_exact`, `try_get_node_idx_snap`).
 - **Private methods**: snake_case with trailing underscore (e.g. `update_node_snap_anno_`, `try_snap_outside_`).
@@ -25,7 +26,7 @@ Use this style when editing or adding C/C++ code in the EzyCad project (files un
 
 - **Indentation**: 2 spaces (no tabs).
 - **Access specifiers**: ` public:` and ` private:` (one space before `public`/`private`/`protected`).
-- **Braces**: Opening brace for class/struct on the same line. For **control flow** (`if`, `for`, `while`, `switch`), put the opening brace on the **next line**. For functions, opening brace often on the next line; **short functions** (e.g. single return) may be on one line—`.clang-format` (AllowShortFunctionsOnASingleLine: All) does this automatically. `.clang-format` uses `BraceWrapping.AfterControlStatement: Always` to enforce control-statement brace placement.
+- **Braces**: Follow `.clang-format` (source of truth). With current settings, opening braces are on the **next line** for classes/structs/unions, functions, control statements, namespaces, and enums (`BreakBeforeBraces: Custom` with `BraceWrapping.After*` enabled). **Short functions** may still be kept on one line (`AllowShortFunctionsOnASingleLine: All`).
 - **Alignment**: Align member declarations in columns when it aids readability (type and name aligned across lines in the same block).
 - **Initialization**: Prefer brace-initialization for members (e.g. `bool is_midpoint {false};`, `size_t m_prev_num_nodes {0};`).
 - **Local declarations**: Prefer declaring locals close to first use for readability. For values shared by a render block, compute them once immediately before that block.
