@@ -271,12 +271,8 @@ void GUI::menu_bar_()
 
     if (ImGui::MenuItem("Add box_prms"))
     {
-      m_add_box_origin_x   = 0;
-      m_add_box_origin_y   = 0;
-      m_add_box_origin_z   = 0;
-      m_add_box_width      = 1.0;
-      m_add_box_length     = 1.0;
-      m_add_box_height     = 1.0;
+      m_add_box_origin     = glm::dvec3(0.0, 0.0, 0.0);
+      m_add_box_size       = glm::dvec3(1.0, 1.0, 1.0);
       m_open_add_box_popup = true;
     }
 
@@ -288,9 +284,9 @@ void GUI::menu_bar_()
 
     if (ImGui::MenuItem("Add pyramid_prms"))
     {
-      m_add_pyramid_origin_x = m_add_pyramid_origin_y = m_add_pyramid_origin_z = 0;
-      m_add_pyramid_side                                                       = 1.0;
-      m_open_add_pyramid_popup                                                 = true;
+      m_add_pyramid_origin    = glm::dvec3(0.0, 0.0, 0.0);
+      m_add_pyramid_side      = 1.0;
+      m_open_add_pyramid_popup = true;
     }
 
     if (ImGui::MenuItem("Add sphere"))
@@ -301,9 +297,9 @@ void GUI::menu_bar_()
 
     if (ImGui::MenuItem("Add sphere_prms"))
     {
-      m_add_sphere_origin_x = m_add_sphere_origin_y = m_add_sphere_origin_z = 0;
-      m_add_sphere_radius                                                   = 1.0;
-      m_open_add_sphere_popup                                               = true;
+      m_add_sphere_origin    = glm::dvec3(0.0, 0.0, 0.0);
+      m_add_sphere_radius    = 1.0;
+      m_open_add_sphere_popup = true;
     }
 
     if (ImGui::MenuItem("Add cylinder"))
@@ -314,7 +310,7 @@ void GUI::menu_bar_()
 
     if (ImGui::MenuItem("Add cylinder_prms"))
     {
-      m_add_cylinder_origin_x = m_add_cylinder_origin_y = m_add_cylinder_origin_z = 0;
+      m_add_cylinder_origin = glm::dvec3(0.0, 0.0, 0.0);
       m_add_cylinder_radius = m_add_cylinder_height = 1.0;
       m_open_add_cylinder_popup                     = true;
     }
@@ -327,11 +323,11 @@ void GUI::menu_bar_()
 
     if (ImGui::MenuItem("Add cone_prms"))
     {
-      m_add_cone_origin_x = m_add_cone_origin_y = m_add_cone_origin_z = 0;
-      m_add_cone_R1                                                   = 1.0;
-      m_add_cone_R2                                                   = 0.0;
-      m_add_cone_height                                               = 1.0;
-      m_open_add_cone_popup                                           = true;
+      m_add_cone_origin    = glm::dvec3(0.0, 0.0, 0.0);
+      m_add_cone_R1        = 1.0;
+      m_add_cone_R2        = 0.0;
+      m_add_cone_height    = 1.0;
+      m_open_add_cone_popup = true;
     }
 
     if (ImGui::MenuItem("Add torus"))
@@ -342,10 +338,10 @@ void GUI::menu_bar_()
 
     if (ImGui::MenuItem("Add torus_prms"))
     {
-      m_add_torus_origin_x = m_add_torus_origin_y = m_add_torus_origin_z = 0;
-      m_add_torus_R1                                                     = 1.0;
-      m_add_torus_R2                                                     = 0.5;
-      m_open_add_torus_popup                                             = true;
+      m_add_torus_origin    = glm::dvec3(0.0, 0.0, 0.0);
+      m_add_torus_R1        = 1.0;
+      m_add_torus_R2        = 0.5;
+      m_open_add_torus_popup = true;
     }
 
     ImGui::EndMenu();
@@ -567,8 +563,8 @@ void GUI::ensure_about_assets_()
     std::string bytes((std::istreambuf_iterator<char>(fi)), std::istreambuf_iterator<char>());
     if (auto dec = decode_image_bytes(bytes))
     {
-      m_about_splash_w = std::get<1>(*dec);
-      m_about_splash_h = std::get<2>(*dec);
+      m_about_splash_size.x = std::get<1>(*dec);
+      m_about_splash_size.y = std::get<2>(*dec);
     }
     m_about_splash_gl = load_texture(p);
     break;
@@ -588,7 +584,7 @@ ImGui::MarkdownImageData GUI::about_markdown_image_(ImGui::MarkdownLinkCallbackD
   out.isValid         = true;
   out.useLinkCallback = false;
   out.user_texture_id = (ImTextureID) (intptr_t) m_about_splash_gl;
-  out.size            = ImVec2((float) m_about_splash_w, (float) m_about_splash_h);
+  out.size            = ImVec2((float) m_about_splash_size.x, (float) m_about_splash_size.y);
   ImVec2 const avail  = ImGui::GetContentRegionAvail();
   if (out.size.x > avail.x && avail.x > 1.0f)
   {
@@ -1090,7 +1086,7 @@ void GUI::sketch_list_()
       {
         sketch->underlay_set_visible(ul_vis);
         if (m_underlay_panel_sketch == sketch.get())
-          m_ul_vis = ul_vis;
+          m_underlay_vis = ul_vis;
       }
 
       if (!has_ul)
@@ -1219,27 +1215,30 @@ void GUI::sketch_underlay_panel_settings_(const Sketch::sptr& sk)
     m_underlay_panel_sketch = sk.get();
     if (sk->has_underlay())
     {
-      sk->underlay_ui_params(m_ul_cx, m_ul_cy, m_ul_hw, m_ul_hh, m_ul_rot);
-      m_ul_opacity   = sk->underlay_opacity();
-      m_ul_vis       = sk->underlay_visible();
-      m_ul_key_white = sk->underlay_key_white_transparent();
-      m_ul_line_tint = sk->underlay_line_tint_enabled();
+      sk->underlay_ui_params(
+          m_underlay_center.x, m_underlay_center.y, m_underlay_half_extents.x, m_underlay_half_extents.y, m_underlay_rot);
+      m_underlay_opacity   = sk->underlay_opacity();
+      m_underlay_vis       = sk->underlay_visible();
+      m_underlay_key_white = sk->underlay_key_white_transparent();
+      m_underlay_line_tint = sk->underlay_line_tint_enabled();
       {
         uint8_t tr, tg, tb, ta;
         sk->underlay_line_tint_rgba(tr, tg, tb, ta);
-        m_ul_tint_col[0] = static_cast<float>(tr) / 255.f;
-        m_ul_tint_col[1] = static_cast<float>(tg) / 255.f;
-        m_ul_tint_col[2] = static_cast<float>(tb) / 255.f;
-        m_ul_tint_col[3] = static_cast<float>(ta) / 255.f;
+        m_underlay_tint_col[0] = static_cast<float>(tr) / 255.f;
+        m_underlay_tint_col[1] = static_cast<float>(tg) / 255.f;
+        m_underlay_tint_col[2] = static_cast<float>(tb) / 255.f;
+        m_underlay_tint_col[3] = static_cast<float>(ta) / 255.f;
       }
     } else
     {
-      m_ul_cx = m_ul_cy = m_ul_hw = m_ul_hh = m_ul_rot = 0.;
-      m_ul_opacity                                     = 0.88f;
-      m_ul_vis                                         = true;
-      m_ul_key_white                                   = true;
-      m_ul_line_tint                                   = true;
-      m_ul_tint_col                                    = glm::vec4(1.f, 0.863f, 0.f, 1.f);
+      m_underlay_center       = glm::dvec2(0.0, 0.0);
+      m_underlay_half_extents = glm::dvec2(0.0, 0.0);
+      m_underlay_rot          = 0.0;
+      m_underlay_opacity      = 0.88f;
+      m_underlay_vis          = true;
+      m_underlay_key_white    = true;
+      m_underlay_line_tint    = true;
+      m_underlay_tint_col     = glm::vec4(1.f, 0.863f, 0.f, 1.f);
     }
   }
 
@@ -1282,35 +1281,36 @@ void GUI::sketch_underlay_panel_settings_(const Sketch::sptr& sk)
   if (!sk->has_underlay())
     return;
 
-  if (ImGui::Checkbox("White paper -> transparent", &m_ul_key_white))
-    sk->underlay_set_key_white_transparent(m_ul_key_white);
+  if (ImGui::Checkbox("White paper -> transparent", &m_underlay_key_white))
+    sk->underlay_set_key_white_transparent(m_underlay_key_white);
 
   if (m_show_tool_tips && ImGui::IsItemHovered())
     ImGui::SetTooltip(
         "Uses brightness: white background becomes clear; dark lines stay visible. "
         "Turn off for full-color photos. Inverting the image is not needed for typical scans.");
 
-  if (ImGui::Checkbox("Tint visible lines", &m_ul_line_tint))
-    sk->underlay_set_line_tint_enabled(m_ul_line_tint);
+  if (ImGui::Checkbox("Tint visible lines", &m_underlay_line_tint))
+    sk->underlay_set_line_tint_enabled(m_underlay_line_tint);
 
   if (m_show_tool_tips && ImGui::IsItemHovered())
     ImGui::SetTooltip(
         "Paints non-transparent pixels (after white key) with the line color. "
         "Default yellow reads well on dark backgrounds.");
 
-  if (m_ul_line_tint)
-    if (ImGui::ColorEdit4("Line color", &m_ul_tint_col[0]))
+  if (m_underlay_line_tint)
+    if (ImGui::ColorEdit4("Line color", &m_underlay_tint_col[0]))
     {
       const auto to_u8 = [](float c) -> uint8_t {
         const float x = std::clamp(c, 0.f, 1.f) * 255.f;
         return static_cast<uint8_t>(x + 0.5f);
       };
       sk->underlay_set_line_tint_rgba(
-          to_u8(m_ul_tint_col[0]), to_u8(m_ul_tint_col[1]), to_u8(m_ul_tint_col[2]), to_u8(m_ul_tint_col[3]));
+          to_u8(m_underlay_tint_col[0]), to_u8(m_underlay_tint_col[1]), to_u8(m_underlay_tint_col[2]),
+          to_u8(m_underlay_tint_col[3]));
     }
 
-  if (ImGui::SliderFloat("Opacity", &m_ul_opacity, 0.f, 1.f, "%.2f"))
-    sk->underlay_set_opacity(m_ul_opacity);
+  if (ImGui::SliderFloat("Opacity", &m_underlay_opacity, 0.f, 1.f, "%.2f"))
+    sk->underlay_set_opacity(m_underlay_opacity);
 
   if (m_show_tool_tips && ImGui::IsItemHovered())
     ImGui::SetTooltip("Overall opacity of the underlay image (0 = fully transparent, 1 = fully opaque).");
@@ -1416,11 +1416,11 @@ void GUI::sketch_underlay_panel_settings_(const Sketch::sptr& sk)
     if (!have_view)
     {
       constexpr double k_fallback = 250.0;
-      // m_ul_cx / m_ul_cy stay sketch-plane gp_Pnt2d X / Y (same as underlay_ui_params).
-      min_u                       = m_ul_cx - k_fallback;
-      max_u                       = m_ul_cx + k_fallback;
-      min_v                       = m_ul_cy - k_fallback;
-      max_v                       = m_ul_cy + k_fallback;
+      // m_underlay_center stays sketch-plane gp_Pnt2d X / Y (same as underlay_ui_params).
+      min_u = m_underlay_center.x - k_fallback;
+      max_u = m_underlay_center.x + k_fallback;
+      min_v = m_underlay_center.y - k_fallback;
+      max_v = m_underlay_center.y + k_fallback;
     }
 
     const double     span_u      = std::max(max_u - min_u, 1e-6);
@@ -1438,7 +1438,9 @@ void GUI::sketch_underlay_panel_settings_(const Sketch::sptr& sk)
       if (!sk->underlay_axes_orthogonal())
         return;
 
-      sk->underlay_set_center_extents_rotation(dvec2(m_ul_cx, m_ul_cy), dvec2(m_ul_hw, m_ul_hh), m_ul_rot);
+      sk->underlay_set_center_extents_rotation(
+          dvec2(m_underlay_center.x, m_underlay_center.y),
+          dvec2(m_underlay_half_extents.x, m_underlay_half_extents.y), m_underlay_rot);
     };
 
     auto transform_slider = [&](const char* label, ImGuiDataType type, void* p_data, const void* p_min,
@@ -1466,15 +1468,19 @@ void GUI::sketch_underlay_panel_settings_(const Sketch::sptr& sk)
 
     ImGui::BeginDisabled(!ul_ortho);
     // Labels match typical sketch axes on screen: "Center X" drives plane Y (gp_Pnt2d::Y / view v), "Center Y" plane X (u).
-    transform_slider("Center X", ImGuiDataType_Double, &m_ul_cy, &min_v, &max_v, "%.4f", ImGuiSliderFlags_ClampOnInput);
-    transform_slider("Center Y", ImGuiDataType_Double, &m_ul_cx, &min_u, &max_u, "%.4f", ImGuiSliderFlags_ClampOnInput);
-    transform_slider("Half width", ImGuiDataType_Double, &m_ul_hw, &k_min_half, &max_half_w, "%.4f",
+    transform_slider(
+        "Center X", ImGuiDataType_Double, &m_underlay_center.y, &min_v, &max_v, "%.4f", ImGuiSliderFlags_ClampOnInput);
+    transform_slider(
+        "Center Y", ImGuiDataType_Double, &m_underlay_center.x, &min_u, &max_u, "%.4f", ImGuiSliderFlags_ClampOnInput);
+    transform_slider(
+        "Half width", ImGuiDataType_Double, &m_underlay_half_extents.x, &k_min_half, &max_half_w, "%.4f",
                      ImGuiSliderFlags_ClampOnInput | ImGuiSliderFlags_Logarithmic);
-    transform_slider("Half height", ImGuiDataType_Double, &m_ul_hh, &k_min_half, &max_half_h, "%.4f",
+    transform_slider("Half height", ImGuiDataType_Double, &m_underlay_half_extents.y, &k_min_half, &max_half_h,
+                     "%.4f",
                      ImGuiSliderFlags_ClampOnInput | ImGuiSliderFlags_Logarithmic);
-    transform_slider("Rotation (deg)", ImGuiDataType_Double, &m_ul_rot, &rot_min, &rot_max, "%.1f",
+    transform_slider("Rotation (deg)", ImGuiDataType_Double, &m_underlay_rot, &rot_min, &rot_max, "%.1f",
                      ImGuiSliderFlags_ClampOnInput);
-    transform_input_double("Rotation value (deg)", &m_ul_rot, rot_min, rot_max, "%.4f");
+    transform_input_double("Rotation value (deg)", &m_underlay_rot, rot_min, rot_max, "%.4f");
     ImGui::EndDisabled();
   }
 }
@@ -1499,7 +1505,8 @@ void GUI::begin_underlay_calib_set_x_(const Sketch::sptr& sk)
   }
 
   cancel_underlay_calib_();
-  sk->underlay_ui_params(m_ul_cx, m_ul_cy, m_ul_hw, m_ul_hh, m_ul_rot);
+  sk->underlay_ui_params(
+      m_underlay_center.x, m_underlay_center.y, m_underlay_half_extents.x, m_underlay_half_extents.y, m_underlay_rot);
   m_underlay_calib_sketch_wk = sk;
   m_underlay_calib_phase     = Underlay_calib_phase::PickX1;
   show_message(
@@ -1517,7 +1524,8 @@ void GUI::begin_underlay_calib_set_y_(const Sketch::sptr& sk)
   }
 
   cancel_underlay_calib_();
-  sk->underlay_ui_params(m_ul_cx, m_ul_cy, m_ul_hw, m_ul_hh, m_ul_rot);
+  sk->underlay_ui_params(
+      m_underlay_center.x, m_underlay_center.y, m_underlay_half_extents.x, m_underlay_half_extents.y, m_underlay_rot);
   m_underlay_calib_sketch_wk = sk;
   m_underlay_calib_phase     = Underlay_calib_phase::PickY1;
   show_message(
@@ -1535,7 +1543,8 @@ void GUI::begin_underlay_calib_define_datum_(const Sketch::sptr& sk)
   }
 
   cancel_underlay_calib_();
-  sk->underlay_ui_params(m_ul_cx, m_ul_cy, m_ul_hw, m_ul_hh, m_ul_rot);
+  sk->underlay_ui_params(
+      m_underlay_center.x, m_underlay_center.y, m_underlay_half_extents.x, m_underlay_half_extents.y, m_underlay_rot);
   m_underlay_calib_sketch_wk = sk;
   m_underlay_calib_phase     = Underlay_calib_phase::PickDatumO;
   show_message("Datum: click where bitmap corner (0,0) should lie on the sketch plane.");
@@ -1579,7 +1588,8 @@ void GUI::underlay_calib_prompt_x_distance_(const Sketch::sptr& sk)
     }
 
     m_underlay_calib_axis_u = s->underlay_axis_u_vec();
-    s->underlay_ui_params(m_ul_cx, m_ul_cy, m_ul_hw, m_ul_hh, m_ul_rot);
+    s->underlay_ui_params(
+        m_underlay_center.x, m_underlay_center.y, m_underlay_half_extents.x, m_underlay_half_extents.y, m_underlay_rot);
     m_underlay_panel_sketch = nullptr;
 
     m_dist_callback        = nullptr;
@@ -1630,7 +1640,8 @@ void GUI::underlay_calib_prompt_y_distance_(const Sketch::sptr& sk)
       return;
     }
 
-    s->underlay_ui_params(m_ul_cx, m_ul_cy, m_ul_hw, m_ul_hh, m_ul_rot);
+    s->underlay_ui_params(
+        m_underlay_center.x, m_underlay_center.y, m_underlay_half_extents.x, m_underlay_half_extents.y, m_underlay_rot);
     m_underlay_panel_sketch = nullptr;
 
     m_dist_callback = nullptr;
@@ -1736,7 +1747,8 @@ bool GUI::try_underlay_calib_click_(const ScreenCoords& screen_coords)
         return true;
       }
 
-      sk->underlay_ui_params(m_ul_cx, m_ul_cy, m_ul_hw, m_ul_hh, m_ul_rot);
+      sk->underlay_ui_params(
+          m_underlay_center.x, m_underlay_center.y, m_underlay_half_extents.x, m_underlay_half_extents.y, m_underlay_rot);
       m_underlay_panel_sketch = nullptr;
       cancel_underlay_calib_();
       show_message("Underlay datum set: origin at (0,0) and +U direction; half sizes unchanged.");

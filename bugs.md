@@ -12,4 +12,5 @@
 * For selection mode, not all of the current modes are useful.
 * Scale mode broken.
 * Add concept of dim or dimension, use with node, a measurement, but does not participate in generating faces.
+* Vendor and commit `third_party/ImGuiColorTextEdit/` into this repository; it has not been maintained upstream for a long time and we should pin a known-good copy.
 * ~~After an edge is split by its midpoint, the split edges do not have midpoints to snap to~~ - FIXED 

@@ -22,42 +22,42 @@ void GUI::add_box_dialog_()
     ImGui::TextUnformatted("Origin X");
     ImGui::TableSetColumnIndex(1);
     ImGui::SetNextItemWidth(-1);
-    ImGui::InputDouble("##box_origin_x", &m_add_box_origin_x, 0.0, 0.0, "%.3f");
+    ImGui::InputDouble("##box_origin_x", &m_add_box_origin.x, 0.0, 0.0, "%.3f");
 
     ImGui::TableNextRow();
     ImGui::TableSetColumnIndex(0);
     ImGui::TextUnformatted("Origin Y");
     ImGui::TableSetColumnIndex(1);
     ImGui::SetNextItemWidth(-1);
-    ImGui::InputDouble("##box_origin_y", &m_add_box_origin_y, 0.0, 0.0, "%.3f");
+    ImGui::InputDouble("##box_origin_y", &m_add_box_origin.y, 0.0, 0.0, "%.3f");
 
     ImGui::TableNextRow();
     ImGui::TableSetColumnIndex(0);
     ImGui::TextUnformatted("Origin Z");
     ImGui::TableSetColumnIndex(1);
     ImGui::SetNextItemWidth(-1);
-    ImGui::InputDouble("##box_origin_z", &m_add_box_origin_z, 0.0, 0.0, "%.3f");
+    ImGui::InputDouble("##box_origin_z", &m_add_box_origin.z, 0.0, 0.0, "%.3f");
 
     ImGui::TableNextRow();
     ImGui::TableSetColumnIndex(0);
     ImGui::TextUnformatted("Width (X)");
     ImGui::TableSetColumnIndex(1);
     ImGui::SetNextItemWidth(-1);
-    ImGui::InputDouble("##box_width", &m_add_box_width, 0.0, 0.0, "%.3f");
+    ImGui::InputDouble("##box_width", &m_add_box_size.x, 0.0, 0.0, "%.3f");
 
     ImGui::TableNextRow();
     ImGui::TableSetColumnIndex(0);
     ImGui::TextUnformatted("Length (Y)");
     ImGui::TableSetColumnIndex(1);
     ImGui::SetNextItemWidth(-1);
-    ImGui::InputDouble("##box_length", &m_add_box_length, 0.0, 0.0, "%.3f");
+    ImGui::InputDouble("##box_length", &m_add_box_size.y, 0.0, 0.0, "%.3f");
 
     ImGui::TableNextRow();
     ImGui::TableSetColumnIndex(0);
     ImGui::TextUnformatted("Height (Z)");
     ImGui::TableSetColumnIndex(1);
     ImGui::SetNextItemWidth(-1);
-    ImGui::InputDouble("##box_height", &m_add_box_height, 0.0, 0.0, "%.3f");
+    ImGui::InputDouble("##box_height", &m_add_box_size.z, 0.0, 0.0, "%.3f");
 
     ImGui::EndTable();
   }
@@ -65,12 +65,12 @@ void GUI::add_box_dialog_()
 
   if (ImGui::Button("Add"))
   {
-    if (m_add_box_width > 0 && m_add_box_length > 0 && m_add_box_height > 0)
+    if (m_add_box_size.x > 0 && m_add_box_size.y > 0 && m_add_box_size.z > 0)
     {
       const double scale = m_view->get_dimension_scale();
       m_view->add_box(
-          m_add_box_origin_x * scale, m_add_box_origin_y * scale, m_add_box_origin_z * scale,
-          m_add_box_width * scale, m_add_box_length * scale, m_add_box_height * scale);
+          m_add_box_origin.x * scale, m_add_box_origin.y * scale, m_add_box_origin.z * scale,
+          m_add_box_size.x * scale, m_add_box_size.y * scale, m_add_box_size.z * scale);
       ImGui::CloseCurrentPopup();
     }
   }
@@ -100,19 +100,19 @@ void GUI::add_pyramid_dialog_()
     ImGui::TextUnformatted("Origin X");
     ImGui::TableSetColumnIndex(1);
     ImGui::SetNextItemWidth(-1);
-    ImGui::InputDouble("##pyramid_origin_x", &m_add_pyramid_origin_x, 0.0, 0.0, "%.3f");
+    ImGui::InputDouble("##pyramid_origin_x", &m_add_pyramid_origin.x, 0.0, 0.0, "%.3f");
     ImGui::TableNextRow();
     ImGui::TableSetColumnIndex(0);
     ImGui::TextUnformatted("Origin Y");
     ImGui::TableSetColumnIndex(1);
     ImGui::SetNextItemWidth(-1);
-    ImGui::InputDouble("##pyramid_origin_y", &m_add_pyramid_origin_y, 0.0, 0.0, "%.3f");
+    ImGui::InputDouble("##pyramid_origin_y", &m_add_pyramid_origin.y, 0.0, 0.0, "%.3f");
     ImGui::TableNextRow();
     ImGui::TableSetColumnIndex(0);
     ImGui::TextUnformatted("Origin Z");
     ImGui::TableSetColumnIndex(1);
     ImGui::SetNextItemWidth(-1);
-    ImGui::InputDouble("##pyramid_origin_z", &m_add_pyramid_origin_z, 0.0, 0.0, "%.3f");
+    ImGui::InputDouble("##pyramid_origin_z", &m_add_pyramid_origin.z, 0.0, 0.0, "%.3f");
     ImGui::TableNextRow();
     ImGui::TableSetColumnIndex(0);
     ImGui::TextUnformatted("Side (base & height)");
@@ -125,7 +125,7 @@ void GUI::add_pyramid_dialog_()
   if (ImGui::Button("Add") && m_add_pyramid_side > 0)
   {
     const double scale = m_view->get_dimension_scale();
-    m_view->add_pyramid(m_add_pyramid_origin_x * scale, m_add_pyramid_origin_y * scale, m_add_pyramid_origin_z * scale, m_add_pyramid_side * scale);
+    m_view->add_pyramid(m_add_pyramid_origin.x * scale, m_add_pyramid_origin.y * scale, m_add_pyramid_origin.z * scale, m_add_pyramid_side * scale);
     ImGui::CloseCurrentPopup();
   }
   ImGui::SameLine();
@@ -154,19 +154,19 @@ void GUI::add_sphere_dialog_()
     ImGui::TextUnformatted("Origin X");
     ImGui::TableSetColumnIndex(1);
     ImGui::SetNextItemWidth(-1);
-    ImGui::InputDouble("##sphere_origin_x", &m_add_sphere_origin_x, 0.0, 0.0, "%.3f");
+    ImGui::InputDouble("##sphere_origin_x", &m_add_sphere_origin.x, 0.0, 0.0, "%.3f");
     ImGui::TableNextRow();
     ImGui::TableSetColumnIndex(0);
     ImGui::TextUnformatted("Origin Y");
     ImGui::TableSetColumnIndex(1);
     ImGui::SetNextItemWidth(-1);
-    ImGui::InputDouble("##sphere_origin_y", &m_add_sphere_origin_y, 0.0, 0.0, "%.3f");
+    ImGui::InputDouble("##sphere_origin_y", &m_add_sphere_origin.y, 0.0, 0.0, "%.3f");
     ImGui::TableNextRow();
     ImGui::TableSetColumnIndex(0);
     ImGui::TextUnformatted("Origin Z");
     ImGui::TableSetColumnIndex(1);
     ImGui::SetNextItemWidth(-1);
-    ImGui::InputDouble("##sphere_origin_z", &m_add_sphere_origin_z, 0.0, 0.0, "%.3f");
+    ImGui::InputDouble("##sphere_origin_z", &m_add_sphere_origin.z, 0.0, 0.0, "%.3f");
     ImGui::TableNextRow();
     ImGui::TableSetColumnIndex(0);
     ImGui::TextUnformatted("Radius");
@@ -180,7 +180,7 @@ void GUI::add_sphere_dialog_()
   if (ImGui::Button("Add") && m_add_sphere_radius > 0)
   {
     const double scale = m_view->get_dimension_scale();
-    m_view->add_sphere(m_add_sphere_origin_x * scale, m_add_sphere_origin_y * scale, m_add_sphere_origin_z * scale, m_add_sphere_radius * scale);
+    m_view->add_sphere(m_add_sphere_origin.x * scale, m_add_sphere_origin.y * scale, m_add_sphere_origin.z * scale, m_add_sphere_radius * scale);
     ImGui::CloseCurrentPopup();
   }
 
@@ -208,19 +208,19 @@ void GUI::add_cylinder_dialog_()
     ImGui::TextUnformatted("Origin X");
     ImGui::TableSetColumnIndex(1);
     ImGui::SetNextItemWidth(-1);
-    ImGui::InputDouble("##cyl_origin_x", &m_add_cylinder_origin_x, 0.0, 0.0, "%.3f");
+    ImGui::InputDouble("##cyl_origin_x", &m_add_cylinder_origin.x, 0.0, 0.0, "%.3f");
     ImGui::TableNextRow();
     ImGui::TableSetColumnIndex(0);
     ImGui::TextUnformatted("Origin Y");
     ImGui::TableSetColumnIndex(1);
     ImGui::SetNextItemWidth(-1);
-    ImGui::InputDouble("##cyl_origin_y", &m_add_cylinder_origin_y, 0.0, 0.0, "%.3f");
+    ImGui::InputDouble("##cyl_origin_y", &m_add_cylinder_origin.y, 0.0, 0.0, "%.3f");
     ImGui::TableNextRow();
     ImGui::TableSetColumnIndex(0);
     ImGui::TextUnformatted("Origin Z");
     ImGui::TableSetColumnIndex(1);
     ImGui::SetNextItemWidth(-1);
-    ImGui::InputDouble("##cyl_origin_z", &m_add_cylinder_origin_z, 0.0, 0.0, "%.3f");
+    ImGui::InputDouble("##cyl_origin_z", &m_add_cylinder_origin.z, 0.0, 0.0, "%.3f");
     ImGui::TableNextRow();
     ImGui::TableSetColumnIndex(0);
     ImGui::TextUnformatted("Radius");
@@ -239,7 +239,8 @@ void GUI::add_cylinder_dialog_()
   if (ImGui::Button("Add") && m_add_cylinder_radius > 0 && m_add_cylinder_height > 0)
   {
     const double scale = m_view->get_dimension_scale();
-    m_view->add_cylinder(m_add_cylinder_origin_x * scale, m_add_cylinder_origin_y * scale, m_add_cylinder_origin_z * scale, m_add_cylinder_radius * scale, m_add_cylinder_height * scale);
+    m_view->add_cylinder(m_add_cylinder_origin.x * scale, m_add_cylinder_origin.y * scale, m_add_cylinder_origin.z * scale,
+                         m_add_cylinder_radius * scale, m_add_cylinder_height * scale);
     ImGui::CloseCurrentPopup();
   }
   ImGui::SameLine();
@@ -266,19 +267,19 @@ void GUI::add_cone_dialog_()
     ImGui::TextUnformatted("Origin X");
     ImGui::TableSetColumnIndex(1);
     ImGui::SetNextItemWidth(-1);
-    ImGui::InputDouble("##cone_origin_x", &m_add_cone_origin_x, 0.0, 0.0, "%.3f");
+    ImGui::InputDouble("##cone_origin_x", &m_add_cone_origin.x, 0.0, 0.0, "%.3f");
     ImGui::TableNextRow();
     ImGui::TableSetColumnIndex(0);
     ImGui::TextUnformatted("Origin Y");
     ImGui::TableSetColumnIndex(1);
     ImGui::SetNextItemWidth(-1);
-    ImGui::InputDouble("##cone_origin_y", &m_add_cone_origin_y, 0.0, 0.0, "%.3f");
+    ImGui::InputDouble("##cone_origin_y", &m_add_cone_origin.y, 0.0, 0.0, "%.3f");
     ImGui::TableNextRow();
     ImGui::TableSetColumnIndex(0);
     ImGui::TextUnformatted("Origin Z");
     ImGui::TableSetColumnIndex(1);
     ImGui::SetNextItemWidth(-1);
-    ImGui::InputDouble("##cone_origin_z", &m_add_cone_origin_z, 0.0, 0.0, "%.3f");
+    ImGui::InputDouble("##cone_origin_z", &m_add_cone_origin.z, 0.0, 0.0, "%.3f");
     ImGui::TableNextRow();
     ImGui::TableSetColumnIndex(0);
     ImGui::TextUnformatted("Base radius (R1)");
@@ -303,7 +304,7 @@ void GUI::add_cone_dialog_()
   if (ImGui::Button("Add") && m_add_cone_R1 >= 0 && m_add_cone_R2 >= 0 && m_add_cone_height > 0)
   {
     const double scale = m_view->get_dimension_scale();
-    m_view->add_cone(m_add_cone_origin_x * scale, m_add_cone_origin_y * scale, m_add_cone_origin_z * scale, m_add_cone_R1 * scale, m_add_cone_R2 * scale, m_add_cone_height * scale);
+    m_view->add_cone(m_add_cone_origin.x * scale, m_add_cone_origin.y * scale, m_add_cone_origin.z * scale, m_add_cone_R1 * scale, m_add_cone_R2 * scale, m_add_cone_height * scale);
     ImGui::CloseCurrentPopup();
   }
   ImGui::SameLine();
@@ -330,19 +331,19 @@ void GUI::add_torus_dialog_()
     ImGui::TextUnformatted("Origin X");
     ImGui::TableSetColumnIndex(1);
     ImGui::SetNextItemWidth(-1);
-    ImGui::InputDouble("##torus_origin_x", &m_add_torus_origin_x, 0.0, 0.0, "%.3f");
+    ImGui::InputDouble("##torus_origin_x", &m_add_torus_origin.x, 0.0, 0.0, "%.3f");
     ImGui::TableNextRow();
     ImGui::TableSetColumnIndex(0);
     ImGui::TextUnformatted("Origin Y");
     ImGui::TableSetColumnIndex(1);
     ImGui::SetNextItemWidth(-1);
-    ImGui::InputDouble("##torus_origin_y", &m_add_torus_origin_y, 0.0, 0.0, "%.3f");
+    ImGui::InputDouble("##torus_origin_y", &m_add_torus_origin.y, 0.0, 0.0, "%.3f");
     ImGui::TableNextRow();
     ImGui::TableSetColumnIndex(0);
     ImGui::TextUnformatted("Origin Z");
     ImGui::TableSetColumnIndex(1);
     ImGui::SetNextItemWidth(-1);
-    ImGui::InputDouble("##torus_origin_z", &m_add_torus_origin_z, 0.0, 0.0, "%.3f");
+    ImGui::InputDouble("##torus_origin_z", &m_add_torus_origin.z, 0.0, 0.0, "%.3f");
     ImGui::TableNextRow();
     ImGui::TableSetColumnIndex(0);
     ImGui::TextUnformatted("Major radius (R1)");
@@ -361,7 +362,7 @@ void GUI::add_torus_dialog_()
   if (ImGui::Button("Add") && m_add_torus_R1 > 0 && m_add_torus_R2 > 0)
   {
     const double scale = m_view->get_dimension_scale();
-    m_view->add_torus(m_add_torus_origin_x * scale, m_add_torus_origin_y * scale, m_add_torus_origin_z * scale, m_add_torus_R1 * scale, m_add_torus_R2 * scale);
+    m_view->add_torus(m_add_torus_origin.x * scale, m_add_torus_origin.y * scale, m_add_torus_origin.z * scale, m_add_torus_R1 * scale, m_add_torus_R2 * scale);
     ImGui::CloseCurrentPopup();
   }
   ImGui::SameLine();

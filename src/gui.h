@@ -316,30 +316,25 @@ class GUI
   bool        m_about_popup_open {false};
   std::string m_about_markdown;
   uint32_t    m_about_splash_gl {0};
-  int         m_about_splash_w {512};
-  int         m_about_splash_h {512};
+  glm::ivec2  m_about_splash_size {512, 512};
   bool        m_about_assets_loaded {false};
   bool        m_open_add_box_popup {false};
-  double      m_add_box_origin_x {0};
-  double      m_add_box_origin_y {0};
-  double      m_add_box_origin_z {0};
-  double      m_add_box_width {1};
-  double      m_add_box_length {1};
-  double      m_add_box_height {1};
+  glm::dvec3  m_add_box_origin {0.0, 0.0, 0.0};
+  glm::dvec3  m_add_box_size {1.0, 1.0, 1.0};
   bool        m_open_add_pyramid_popup {false};
-  double      m_add_pyramid_origin_x {0}, m_add_pyramid_origin_y {0}, m_add_pyramid_origin_z {0};
+  glm::dvec3  m_add_pyramid_origin {0.0, 0.0, 0.0};
   double      m_add_pyramid_side {1};
   bool        m_open_add_sphere_popup {false};
-  double      m_add_sphere_origin_x {0}, m_add_sphere_origin_y {0}, m_add_sphere_origin_z {0};
+  glm::dvec3  m_add_sphere_origin {0.0, 0.0, 0.0};
   double      m_add_sphere_radius {1};
   bool        m_open_add_cylinder_popup {false};
-  double      m_add_cylinder_origin_x {0}, m_add_cylinder_origin_y {0}, m_add_cylinder_origin_z {0};
+  glm::dvec3  m_add_cylinder_origin {0.0, 0.0, 0.0};
   double      m_add_cylinder_radius {1}, m_add_cylinder_height {1};
   bool        m_open_add_cone_popup {false};
-  double      m_add_cone_origin_x {0}, m_add_cone_origin_y {0}, m_add_cone_origin_z {0};
+  glm::dvec3  m_add_cone_origin {0.0, 0.0, 0.0};
   double      m_add_cone_R1 {1}, m_add_cone_R2 {0}, m_add_cone_height {1};
   bool        m_open_add_torus_popup {false};
-  double      m_add_torus_origin_x {0}, m_add_torus_origin_y {0}, m_add_torus_origin_z {0};
+  glm::dvec3  m_add_torus_origin {0.0, 0.0, 0.0};
   double      m_add_torus_R1 {1}, m_add_torus_R2 {0.5};
   bool        m_hide_all_shapes {false};
   bool        m_show_tool_tips {true};
@@ -352,6 +347,10 @@ class GUI
   float                 m_imgui_rounding_general {0.f};
   float                 m_imgui_rounding_scroll {0.f};
   float                 m_imgui_rounding_tabs {0.f};
+  bool                  m_sketch_properties_open {false};
+  std::weak_ptr<Sketch> m_sketch_properties_sketch;
+
+  // Sketch underlay related
   void*                 m_underlay_panel_sketch {nullptr};
   Underlay_calib_phase  m_underlay_calib_phase {Underlay_calib_phase::None};
   std::weak_ptr<Sketch> m_underlay_calib_sketch_wk {};
@@ -361,20 +360,16 @@ class GUI
   gp_Pnt2d              m_underlay_calib_y0 {};
   gp_Pnt2d              m_underlay_calib_y1 {};
   gp_Pnt2d              m_underlay_calib_datum_o {};
-  bool                  m_sketch_properties_open {false};
-  std::weak_ptr<Sketch> m_sketch_properties_sketch;
   /// If set, next underlay import (menu or async) applies to this sketch; otherwise current sketch.
   std::weak_ptr<Sketch> m_underlay_import_sketch_target;
-  double                m_ul_cx {};
-  double                m_ul_cy {};
-  double                m_ul_hw {};
-  double                m_ul_hh {};
-  double                m_ul_rot {};
-  float                 m_ul_opacity {0.88f};
-  bool                  m_ul_vis {true};
-  bool                  m_ul_key_white {true};
-  bool                  m_ul_line_tint {true};
-  glm::vec4             m_ul_tint_col {1.f, 220.f / 255.f, 0.f, 1.f};
+  glm::dvec2            m_underlay_center {};
+  glm::dvec2            m_underlay_half_extents {};
+  double                m_underlay_rot {};
+  float                 m_underlay_opacity {0.88f};
+  bool                  m_underlay_vis {true};
+  bool                  m_underlay_key_white {true};
+  bool                  m_underlay_line_tint {true};
+  glm::vec4             m_underlay_tint_col {1.f, 220.f / 255.f, 0.f, 1.f};
   /// Default underlay tint for new imports (0-1, persisted in ezycad_settings.json).
   glm::vec4             m_underlay_highlight_color {1.f, 220.f / 255.f, 0.f, 1.f};
 
