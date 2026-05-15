@@ -8,7 +8,7 @@ class AIS_InteractiveContext;
 
 class Shp : public AIS_Shape
 {
- public:
+public:
   Shp(AIS_InteractiveContext& ctx, const TopoDS_Shape& shp);
   virtual ~Shp();
 
@@ -20,7 +20,7 @@ class Shp : public AIS_Shape
   void               set_visible(const bool visible);
   void               set_selection_mode(const TopAbs_ShapeEnum mode);
 
- protected:
+protected:
   void update_display_();
 
   AIS_InteractiveContext& m_ctx;

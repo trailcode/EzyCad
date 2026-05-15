@@ -12,7 +12,7 @@ class TopoDS_Edge;
 
 class Shp_operation_base
 {
- protected:
+protected:
   Shp_operation_base(Occt_view& view);
   GUI&                    gui();
   Occt_view&              view();
@@ -40,6 +40,6 @@ class Shp_operation_base
 
   std::vector<Shp_ptr> m_shps;
 
- private:
+private:
   Occt_view& m_view;
 };

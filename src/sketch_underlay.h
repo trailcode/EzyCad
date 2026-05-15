@@ -18,7 +18,7 @@ class gp_Pln;
 /// Raster image drawn in the sketch plane (below sketch edges) for tracing / digitizing.
 class Sketch_underlay
 {
- public:
+public:
   Sketch_underlay() = default;
 
   Sketch_underlay(const Sketch_underlay&)            = delete;
@@ -26,10 +26,7 @@ class Sketch_underlay
   Sketch_underlay(Sketch_underlay&&)                 = delete;
   Sketch_underlay& operator=(Sketch_underlay&&)      = delete;
 
-  [[nodiscard]] bool has_image() const
-  {
-    return !m_rgba.empty() && m_w > 0 && m_h > 0;
-  }
+  [[nodiscard]] bool has_image() const { return !m_rgba.empty() && m_w > 0 && m_h > 0; }
 
   /// Replace image (RGBA8). Sets a default axis-aligned rectangle in plane coords (0.1 unit per pixel).
   [[nodiscard]] bool set_image_rgba(std::vector<uint8_t>&& rgba, int w, int h);
@@ -69,32 +66,32 @@ class Sketch_underlay
   /// Force viewer update after live property changes (e.g. threshold) without a full rebuild.
   void redisplay(AIS_InteractiveContext& ctx);
 
-  nlohmann::json     to_json() const;
+  nlohmann::json to_json() const;
   /// Returns false if JSON is invalid or image decode fails.
   [[nodiscard]] bool from_json(const nlohmann::json& j);
 
- private:
+private:
   void remove_ais_(AIS_InteractiveContext& ctx);
   void build_ais_(const gp_Pln& pln, AIS_InteractiveContext& ctx);
 
   std::vector<uint8_t> m_rgba;
-  int                  m_w {0};
-  int                  m_h {0};
+  int                  m_w{0};
+  int                  m_h{0};
 
-  gp_Pnt2d m_base {0., 0.};
-  gp_Vec2d m_axis_u {100., 0.};
-  gp_Vec2d m_axis_v {0., 100.};
+  gp_Pnt2d m_base{0., 0.};
+  gp_Vec2d m_axis_u{100., 0.};
+  gp_Vec2d m_axis_v{0., 100.};
 
-  float   m_opacity {0.88f};
-  bool    m_visible {true};
+  float m_opacity{0.88f};
+  bool  m_visible{true};
   /// Luminance key applied only when building the GPU texture (stored pixels stay raw).
-  bool    m_key_white_transparent {true};
+  bool m_key_white_transparent{true};
   /// Recolor pixels that remain visible (alpha > 0 after key) for contrast on dark views.
-  bool    m_line_tint_enabled {true};
-  uint8_t m_tint_r {255};
-  uint8_t m_tint_g {220};
-  uint8_t m_tint_b {0};
-  uint8_t m_tint_a {255};
+  bool    m_line_tint_enabled{true};
+  uint8_t m_tint_r{255};
+  uint8_t m_tint_g{220};
+  uint8_t m_tint_b{0};
+  uint8_t m_tint_a{255};
 
   opencascade::handle<AIS_TexturedShape> m_ais;
 };

@@ -7,7 +7,9 @@
 #include "utl.h"
 
 Shp_cut::Shp_cut(Occt_view& view)
-    : Shp_operation_base(view) {}
+    : Shp_operation_base(view)
+{
+}
 
 Status Shp_cut::selected_cut()
 {
@@ -24,7 +26,7 @@ Status Shp_cut::selected_cut()
 
   BRepAlgoAPI_Cut cut_op;
   cut_op.SetArguments(arguments);
-  cut_op.SetTools(tool_list);  // Set tool shapes
+  cut_op.SetTools(tool_list); // Set tool shapes
 
   // Perform difference operation
   cut_op.Build();

@@ -40,7 +40,10 @@ struct Ray
   gp_Dir direction;
 
   Ray(const gp_Pnt& orig, const gp_Dir& dir)
-      : origin(orig), direction(dir) {}
+      : origin(orig)
+      , direction(dir)
+  {
+  }
 };
 
 enum class Set_parent_mode
@@ -51,7 +54,7 @@ enum class Set_parent_mode
 
 class Occt_view : protected AIS_ViewController
 {
- public:
+public:
   DECL_PTR(Occt_view);
   using Sketch_ptr  = std::shared_ptr<Sketch>;
   using Sketch_list = std::list<Sketch_ptr>;
@@ -75,7 +78,7 @@ class Occt_view : protected AIS_ViewController
   // Undo / redo (document snapshot stack).
   /// Saves current document (full JSON) and mode. A future delta-based approach would save memory
   /// (store only changes per step) and CPU (apply/invert deltas instead of full serialize/load).
-  void   push_undo_snapshot();
+  void push_undo_snapshot();
   /// Removes the last snapshot without restoring (e.g. aborted edit that did not change the document).
   void   pop_undo_snapshot();
   bool   undo();
@@ -138,7 +141,7 @@ class Occt_view : protected AIS_ViewController
   // Revolve related
   void revolve_selected(const double angle);
 
-  void on_enter(const ScreenCoords& screen_coords);  // For manual dimension distance keyboard input.
+  void on_enter(const ScreenCoords& screen_coords); // For manual dimension distance keyboard input.
   bool fit_face_in_view(const TopoDS_Face& face);
 
   // Dimension related
@@ -172,8 +175,8 @@ class Occt_view : protected AIS_ViewController
   /// Axis-aligned bounds in sketch-plane 2D (gp_Pln UV) for the current view frustum intersecting \a pln.
   /// Uses \a display_w / \a display_h in the same pixel space as ImGui / GLFW cursor (full window).
   /// Returns false if the plane is not visible (e.g. headless or parallel view).
-  bool sketch_plane_view_aabb_2d(const gp_Pln& pln, double display_w, double display_h, double& out_min_u,
-                                 double& out_min_v, double& out_max_u, double& out_max_v) const;
+  bool sketch_plane_view_aabb_2d(const gp_Pln& pln, double display_w, double display_h, double& out_min_u, double& out_min_v,
+                                 double& out_max_u, double& out_max_v) const;
   bool get_camera(gp_Pnt& out_eye, gp_Pnt& out_center, gp_Dir& out_up) const;
   void set_camera(const gp_Pnt& eye, const gp_Pnt& center, const gp_Dir& up);
 
@@ -218,11 +221,11 @@ class Occt_view : protected AIS_ViewController
 
   void new_file();
 
- private:
+private:
   friend class Shp_operation_base;
-  friend class Shp_chamfer;  // TODO remove
-  friend class Shp_fillet;   // TODO remove
-  friend class Shp_extrude;  // TODO remove
+  friend class Shp_chamfer; // TODO remove
+  friend class Shp_fillet;  // TODO remove
+  friend class Shp_extrude; // TODO remove
   friend class View_access;
 
   // Sketch related
@@ -264,53 +267,54 @@ class Occt_view : protected AIS_ViewController
   V3d_View_ptr               m_view;
   Occt_glfw_win_ptr          m_occt_window;
   // Undo / redo
-  static constexpr size_t    k_max_undo {50};
+  static constexpr size_t k_max_undo{50};
 
   struct Undo_entry
   {
     std::string json;
-    Mode        mode;  // Mode at time of operation; restored when navigating stacks
+    Mode        mode; // Mode at time of operation; restored when navigating stacks
   };
 
   std::vector<Undo_entry> m_undo_stack;
   std::vector<Undo_entry> m_redo_stack;
-  bool                    m_restoring {false};
+  bool                    m_restoring{false};
 
   // --------------------------------------------------------------------
   // Dimension related
-  bool                     m_show_dim_input {false};
-  double                   m_dimension_scale {100.0};
+  bool                     m_show_dim_input{false};
+  double                   m_dimension_scale{100.0};
   std::optional<double>    m_entered_dim;
   std::list<Shp_ptr>       m_shps;
   Sketch_list              m_sketches;
   std::shared_ptr<Sketch>  m_cur_sketch;
-  TopAbs_ShapeEnum         m_shp_selection_mode {TopAbs_SHAPE};
+  TopAbs_ShapeEnum         m_shp_selection_mode{TopAbs_SHAPE};
   Graphic3d_MaterialAspect m_default_material;
-  bool                     m_headless_view {false};
-  /// True when LMB press was handled by planar-face sketch creation without AIS_ViewController::PressMouseButton (pair with release skip).
-  bool                     m_planar_face_lmb_skipped_view_controller {false};
+  bool                     m_headless_view{false};
+  /// True when LMB press was handled by planar-face sketch creation without AIS_ViewController::PressMouseButton (pair with
+  /// release skip).
+  bool m_planar_face_lmb_skipped_view_controller{false};
   // OCCT view colors; defaults match what we render (set explicitly in init_viewer())
-  glm::vec3                m_bg_color1 {0.85f, 0.88f, 0.90f};
-  glm::vec3                m_bg_color2 {0.45f, 0.55f, 0.60f};
-  int                      m_bg_gradient_method {1};  // 0=HOR, 1=VER, 2=DIAG1, ...
-  glm::vec3                m_grid_color1 {0.1f, 0.1f, 0.1f};
-  glm::vec3                m_grid_color2 {0.1f, 0.1f, 0.3f};
+  glm::vec3 m_bg_color1{0.85f, 0.88f, 0.90f};
+  glm::vec3 m_bg_color2{0.45f, 0.55f, 0.60f};
+  int       m_bg_gradient_method{1}; // 0=HOR, 1=VER, 2=DIAG1, ...
+  glm::vec3 m_grid_color1{0.1f, 0.1f, 0.1f};
+  glm::vec3 m_grid_color2{0.1f, 0.1f, 0.3f};
   /// User setting: same role as former literal in `UpdateZoom(Aspect_ScrollDelta(..., int(y * scale)))`.
-  double                   m_zoom_scroll_scale {4.0};
+  double m_zoom_scroll_scale{4.0};
   // --------------------------------------------------------------------
   // Operations
-  Shp_move                 m_shp_move;
-  Shp_rotate               m_shp_rotate;
-  Shp_scale                m_shp_scale;
+  Shp_move   m_shp_move;
+  Shp_rotate m_shp_rotate;
+  Shp_scale  m_shp_scale;
   // --------------------------------------------------------------------
   // Commands
-  Shp_chamfer              m_shp_chamfer;
-  Shp_fillet               m_shp_fillet;
-  Shp_cut                  m_shp_cut;
-  Shp_fuse                 m_shp_fuse;
-  Shp_common               m_shp_common;
-  Shp_polar_dup            m_shp_polar_dup;
-  Shp_extrude              m_shp_extrude;
+  Shp_chamfer   m_shp_chamfer;
+  Shp_fillet    m_shp_fillet;
+  Shp_cut       m_shp_cut;
+  Shp_fuse      m_shp_fuse;
+  Shp_common    m_shp_common;
+  Shp_polar_dup m_shp_polar_dup;
+  Shp_extrude   m_shp_extrude;
 };
 
 template <typename Shp_ptr_t, typename T>

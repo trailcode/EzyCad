@@ -4,7 +4,7 @@
 
 class Shp_common : private Shp_operation_base
 {
- public:
+public:
   Shp_common(Occt_view& view);
 
   [[nodiscard]] Status selected_common();

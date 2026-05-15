@@ -26,11 +26,11 @@ Use this style when editing or adding C/C++ code in the EzyCad project (files un
 
 - **Indentation**: 2 spaces (no tabs).
 - **Access specifiers**: ` public:` and ` private:` (one space before `public`/`private`/`protected`).
-- **Braces**: Follow `.clang-format` (source of truth). With current settings, opening braces are on the **next line** for classes/structs/unions, functions, control statements, namespaces, and enums (`BreakBeforeBraces: Custom` with `BraceWrapping.After*` enabled). **Short functions** may still be kept on one line (`AllowShortFunctionsOnASingleLine: All`).
-- **Alignment**: Align member declarations in columns when it aids readability (type and name aligned across lines in the same block).
+- **Braces**: Follow `.clang-format` (source of truth). **`BreakBeforeBraces: Allman`** with **`BasedOnStyle: LLVM`** elsewhere: opening `{` is on the **next line** for classes/structs/unions, functions, control statements, namespaces, and enums. Constructor initializer lists break with **`BreakConstructorInitializers: BeforeComma`** (comma starts each continuation line). Lambdas use **`AllowShortLambdasOnASingleLine: Inline`**. Other “short construct” behavior inherits LLVM defaults unless overridden in `.clang-format`.
+- **Alignment**: **`AlignConsecutiveDeclarations`** / **`AlignConsecutiveAssignments`** are enabled; align member declarations and assignments in columns when it aids readability (type and name aligned across lines in the same block).
 - **Initialization**: Prefer brace-initialization for members (e.g. `bool is_midpoint {false};`, `size_t m_prev_num_nodes {0};`).
 - **Local declarations**: Prefer declaring locals close to first use for readability. For values shared by a render block, compute them once immediately before that block.
-- **Short control flow**: Single-line `if`/`for` without braces is acceptable when the body is a single statement; use braces for multi-line or nested bodies.
+- **Short control flow**: When the body is a single statement you may omit braces; **`AllowShortIfStatementsOnASingleLine: false`** means clang-format will not merge an `if` into one physical line (typically the condition on one line and the statement on the next). Use braces for multi-line or nested bodies. **`for`/`while`** (and other constructs not listed above) follow **`BasedOnStyle: LLVM`** unless overridden in `.clang-format`.
 - Use **`// clang-format off`** / **`// clang-format on`** only where layout must be preserved (e.g. macro-like blocks, tables). Prefer running clang-format; it is the source of truth for formatting.
 
 ## Versioning and releases

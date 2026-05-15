@@ -4,7 +4,7 @@
 
 class Shp_cut : private Shp_operation_base
 {
- public:
+public:
   Shp_cut(Occt_view& view);
 
   [[nodiscard]] Status selected_cut();

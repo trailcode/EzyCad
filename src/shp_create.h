@@ -21,4 +21,4 @@ TopoDS_Shape create_cone(double R1, double R2, double height);
 
 // Torus: major radius R1, minor radius R2 (display units), centered at origin.
 TopoDS_Shape create_torus(double R1, double R2);
-}  // namespace shp_create
+} // namespace shp_create

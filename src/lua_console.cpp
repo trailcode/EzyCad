@@ -41,10 +41,7 @@ void push_shp(lua_State* L, const Shp_ptr& shp)
   luaL_setmetatable(L, k_shp_metatable);
 }
 
-Shp_ptr* to_shp(lua_State* L, int index)
-{
-  return static_cast<Shp_ptr*>(luaL_testudata(L, index, k_shp_metatable));
-}
+Shp_ptr* to_shp(lua_State* L, int index) { return static_cast<Shp_ptr*>(luaL_testudata(L, index, k_shp_metatable)); }
 
 // ezy.log(msg) -> append to console and log window
 int l_ezy_log(lua_State* L)
@@ -369,7 +366,7 @@ int l_ezy_help(lua_State* L)
   con->append_line_from_lua(help_text);
   return 0;
 }
-}  // namespace
+} // namespace
 
 // Called from C callback; we need to store Lua_console* in registry to get back
 void Lua_console::append_line_from_lua(const std::string& line)
@@ -415,7 +412,7 @@ void Lua_console::register_bindings()
   luaL_newmetatable(m_L, k_shp_metatable);
   lua_pushcfunction(m_L, l_shp_gc);
   lua_setfield(m_L, -2, "__gc");
-  lua_newtable(m_L);  // __index
+  lua_newtable(m_L); // __index
   lua_pushcfunction(m_L, l_shp_name);
   lua_setfield(m_L, -2, "name");
   lua_pushcfunction(m_L, l_shp_set_name);
@@ -665,13 +662,9 @@ void Lua_console::render(bool* p_open)
     }
 
     ImGui::SetNextItemWidth(-1);
-    bool run = ImGui::InputTextWithHint("##lua_input",
-                                        "Enter Lua code (e.g. ezy.log('hi'))",
-                                        m_input_buf,
-                                        k_input_buf_size,
+    bool run = ImGui::InputTextWithHint("##lua_input", "Enter Lua code (e.g. ezy.log('hi'))", m_input_buf, k_input_buf_size,
                                         ImGuiInputTextFlags_EnterReturnsTrue | ImGuiInputTextFlags_CallbackHistory,
-                                        &Lua_console::text_edit_callback,
-                                        this);
+                                        &Lua_console::text_edit_callback, this);
 
     if (run)
     {

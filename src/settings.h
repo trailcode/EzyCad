@@ -37,4 +37,4 @@ std::filesystem::path user_startup_project_path();
 std::string load_user_startup_project();
 bool        save_user_startup_project(const std::string& json);
 void        clear_user_startup_project();
-}  // namespace settings
+} // namespace settings

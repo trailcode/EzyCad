@@ -13,7 +13,7 @@ enum class Plane_side;
 
 class Shp_extrude : private Shp_operation_base
 {
- public:
+public:
   Shp_extrude(Occt_view& view);
 
   void sketch_face_extrude(const ScreenCoords& screen_coords, bool is_mouse_move);
@@ -26,9 +26,9 @@ class Shp_extrude : private Shp_operation_base
   // For testing
   void set_curr_view_pln(const gp_Pln& pln);
 
- private:
-  void                       _update_extrude(const ScreenCoords& screen_coords);
-  void                       _update_extrude_preview_(double extrude_dist, Plane_side side);
+private:
+  void _update_extrude(const ScreenCoords& screen_coords);
+  void _update_extrude_preview_(double extrude_dist, Plane_side side);
   // Face extrude related
   AIS_Shape_ptr              m_to_extrude;
   gp_Pln                     m_to_extrude_pln;
@@ -37,5 +37,5 @@ class Shp_extrude : private Shp_operation_base
   gp_Pln                     m_curr_view_pln;
   PrsDim_LengthDimension_ptr m_tmp_dim;
   Plane_side                 m_extrude_side;
-  bool                       m_extrude_both_sides {false};
+  bool                       m_extrude_both_sides{false};
 };

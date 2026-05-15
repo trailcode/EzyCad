@@ -68,9 +68,8 @@ void GUI::add_box_dialog_()
     if (m_add_box_size.x > 0 && m_add_box_size.y > 0 && m_add_box_size.z > 0)
     {
       const double scale = m_view->get_dimension_scale();
-      m_view->add_box(
-          m_add_box_origin.x * scale, m_add_box_origin.y * scale, m_add_box_origin.z * scale,
-          m_add_box_size.x * scale, m_add_box_size.y * scale, m_add_box_size.z * scale);
+      m_view->add_box(m_add_box_origin.x * scale, m_add_box_origin.y * scale, m_add_box_origin.z * scale,
+                      m_add_box_size.x * scale, m_add_box_size.y * scale, m_add_box_size.z * scale);
       ImGui::CloseCurrentPopup();
     }
   }
@@ -125,7 +124,8 @@ void GUI::add_pyramid_dialog_()
   if (ImGui::Button("Add") && m_add_pyramid_side > 0)
   {
     const double scale = m_view->get_dimension_scale();
-    m_view->add_pyramid(m_add_pyramid_origin.x * scale, m_add_pyramid_origin.y * scale, m_add_pyramid_origin.z * scale, m_add_pyramid_side * scale);
+    m_view->add_pyramid(m_add_pyramid_origin.x * scale, m_add_pyramid_origin.y * scale, m_add_pyramid_origin.z * scale,
+                        m_add_pyramid_side * scale);
     ImGui::CloseCurrentPopup();
   }
   ImGui::SameLine();
@@ -180,7 +180,8 @@ void GUI::add_sphere_dialog_()
   if (ImGui::Button("Add") && m_add_sphere_radius > 0)
   {
     const double scale = m_view->get_dimension_scale();
-    m_view->add_sphere(m_add_sphere_origin.x * scale, m_add_sphere_origin.y * scale, m_add_sphere_origin.z * scale, m_add_sphere_radius * scale);
+    m_view->add_sphere(m_add_sphere_origin.x * scale, m_add_sphere_origin.y * scale, m_add_sphere_origin.z * scale,
+                       m_add_sphere_radius * scale);
     ImGui::CloseCurrentPopup();
   }
 
@@ -304,7 +305,8 @@ void GUI::add_cone_dialog_()
   if (ImGui::Button("Add") && m_add_cone_R1 >= 0 && m_add_cone_R2 >= 0 && m_add_cone_height > 0)
   {
     const double scale = m_view->get_dimension_scale();
-    m_view->add_cone(m_add_cone_origin.x * scale, m_add_cone_origin.y * scale, m_add_cone_origin.z * scale, m_add_cone_R1 * scale, m_add_cone_R2 * scale, m_add_cone_height * scale);
+    m_view->add_cone(m_add_cone_origin.x * scale, m_add_cone_origin.y * scale, m_add_cone_origin.z * scale,
+                     m_add_cone_R1 * scale, m_add_cone_R2 * scale, m_add_cone_height * scale);
     ImGui::CloseCurrentPopup();
   }
   ImGui::SameLine();
@@ -362,7 +364,8 @@ void GUI::add_torus_dialog_()
   if (ImGui::Button("Add") && m_add_torus_R1 > 0 && m_add_torus_R2 > 0)
   {
     const double scale = m_view->get_dimension_scale();
-    m_view->add_torus(m_add_torus_origin.x * scale, m_add_torus_origin.y * scale, m_add_torus_origin.z * scale, m_add_torus_R1 * scale, m_add_torus_R2 * scale);
+    m_view->add_torus(m_add_torus_origin.x * scale, m_add_torus_origin.y * scale, m_add_torus_origin.z * scale,
+                      m_add_torus_R1 * scale, m_add_torus_R2 * scale);
     ImGui::CloseCurrentPopup();
   }
   ImGui::SameLine();

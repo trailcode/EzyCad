@@ -5,22 +5,15 @@
 #include "occt_view.h"
 
 Shp_operation_base::Shp_operation_base(Occt_view& view)
-    : m_view(view) {}
-
-GUI& Shp_operation_base::gui()
+    : m_view(view)
 {
-  return m_view.gui();
 }
 
-Occt_view& Shp_operation_base::view()
-{
-  return m_view;
-}
+GUI& Shp_operation_base::gui() { return m_view.gui(); }
 
-AIS_InteractiveContext& Shp_operation_base::ctx()
-{
-  return view().ctx();
-}
+Occt_view& Shp_operation_base::view() { return m_view; }
+
+AIS_InteractiveContext& Shp_operation_base::ctx() { return view().ctx(); }
 
 std::vector<Shp_ptr> Shp_operation_base::get_selected_shps_() const
 {
@@ -84,10 +77,7 @@ void Shp_operation_base::operation_shps_cancel_()
     shape->ResetTransformation();
 }
 
-AIS_Shape_ptr Shp_operation_base::get_shape_(const ScreenCoords& screen_coords)
-{
-  return m_view.get_shape(screen_coords);
-}
+AIS_Shape_ptr Shp_operation_base::get_shape_(const ScreenCoords& screen_coords) { return m_view.get_shape(screen_coords); }
 
 const TopoDS_Face* Shp_operation_base::get_face_(const ScreenCoords& screen_coords) const
 {
@@ -104,10 +94,7 @@ const TopoDS_Edge* Shp_operation_base::get_edge_(const ScreenCoords& screen_coor
   return m_view.get_edge_(screen_coords);
 }
 
-void Shp_operation_base::add_shp_(Shp_ptr& shp)
-{
-  m_view.add_shp_(shp);
-}
+void Shp_operation_base::add_shp_(Shp_ptr& shp) { m_view.add_shp_(shp); }
 
 void Shp_operation_base::copy_shape_material_from_(Shp_ptr& dest, const Shp_ptr& src)
 {

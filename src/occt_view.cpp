@@ -65,7 +65,17 @@
 using namespace glm;
 
 Occt_view::Occt_view(GUI& gui)
-    : m_gui(gui), m_shp_move(*this), m_shp_rotate(*this), m_shp_scale(*this), m_shp_chamfer(*this), m_shp_fillet(*this), m_shp_cut(*this), m_shp_fuse(*this), m_shp_common(*this), m_shp_polar_dup(*this), m_shp_extrude(*this)
+    : m_gui(gui)
+    , m_shp_move(*this)
+    , m_shp_rotate(*this)
+    , m_shp_scale(*this)
+    , m_shp_chamfer(*this)
+    , m_shp_fillet(*this)
+    , m_shp_cut(*this)
+    , m_shp_fuse(*this)
+    , m_shp_common(*this)
+    , m_shp_polar_dup(*this)
+    , m_shp_extrude(*this)
 {
 }
 
@@ -81,17 +91,15 @@ void Occt_view::init_window(GLFWwindow* GlfwWindow)
 
 void Occt_view::init_viewer()
 {
-  double myDevicePixelRatio = 1.0;  // TODO
+  double myDevicePixelRatio = 1.0; // TODO
 #ifndef __EMSCRIPTEN__
   if (m_occt_window.IsNull() || m_occt_window->getGlfwWindow() == nullptr)
   {
     // create graphic driver
-    Handle(Aspect_DisplayConnection) aDisp =
-        new Aspect_DisplayConnection();
-    Handle(OpenGl_GraphicDriver) aDriver =
-        new OpenGl_GraphicDriver(aDisp, true);
-    aDriver->ChangeOptions().swapInterval = 0;  // no window, no swap
-    Handle(V3d_Viewer) myViewer           = new V3d_Viewer(aDriver);
+    Handle(Aspect_DisplayConnection) aDisp = new Aspect_DisplayConnection();
+    Handle(OpenGl_GraphicDriver) aDriver   = new OpenGl_GraphicDriver(aDisp, true);
+    aDriver->ChangeOptions().swapInterval  = 0; // no window, no swap
+    Handle(V3d_Viewer) myViewer            = new V3d_Viewer(aDriver);
 
     // create offscreen window
     const TCollection_AsciiString aWinName("OCCT offscreen window");
@@ -99,19 +107,13 @@ void Occt_view::init_viewer()
 #if defined(_WIN32)
     const TCollection_AsciiString aClassName("OffscreenClass");
     // empty callback!
-    Handle(WNT_WClass) aWinClass =
-        new WNT_WClass(aClassName.ToCString(), nullptr, 0);
-    Handle(WNT_Window) aWindow =
-        new WNT_Window(aWinName.ToCString(), aWinClass, 0x80000000,  // WS_POPUP
-                       64, 64, aWinSize.x(), aWinSize.y(),
-                       Quantity_NOC_BLACK);
+    Handle(WNT_WClass) aWinClass = new WNT_WClass(aClassName.ToCString(), nullptr, 0);
+    Handle(WNT_Window) aWindow   = new WNT_Window(aWinName.ToCString(), aWinClass, 0x80000000, // WS_POPUP
+                                                  64, 64, aWinSize.x(), aWinSize.y(), Quantity_NOC_BLACK);
 #elif defined(__APPLE__)
-    Handle(Cocoa_Window) aWindow =
-        new Cocoa_Window(aWinName.ToCString(),
-                         64, 64, aWinSize.x(), aWinSize.y());
+    Handle(Cocoa_Window) aWindow = new Cocoa_Window(aWinName.ToCString(), 64, 64, aWinSize.x(), aWinSize.y());
 #else
-    Handle(Xw_Window) aWindow = new Xw_Window(aDisp, aWinName.ToCString(),
-                                              64, 64, aWinSize.x(), aWinSize.y());
+    Handle(Xw_Window) aWindow = new Xw_Window(aDisp, aWinName.ToCString(), 64, 64, aWinSize.x(), aWinSize.y());
 #endif
     aWindow->SetVirtual(true);
     m_view          = new V3d_View(myViewer);
@@ -120,13 +122,11 @@ void Occt_view::init_viewer()
     return;
   }
 
-  Handle(OpenGl_GraphicDriver) aGraphicDriver =
-      new OpenGl_GraphicDriver(m_occt_window->GetDisplay(), false);
+  Handle(OpenGl_GraphicDriver) aGraphicDriver = new OpenGl_GraphicDriver(m_occt_window->GetDisplay(), false);
 
   aGraphicDriver->ChangeOptions().buffersNoSwap      = true;
   aGraphicDriver->ChangeOptions().buffersOpaqueAlpha = true;
-  aGraphicDriver->ChangeOptions().sRGBDisable =
-      true;  // Otherwise colors are wrong when native.
+  aGraphicDriver->ChangeOptions().sRGBDisable        = true; // Otherwise colors are wrong when native.
 
   Handle(V3d_Viewer) aViewer = new V3d_Viewer(aGraphicDriver);
 
@@ -143,28 +143,23 @@ void Occt_view::init_viewer()
   m_ctx = new AIS_InteractiveContext(aViewer);
 #else
   Handle(Aspect_DisplayConnection) aDisp;
-  Handle(OpenGl_GraphicDriver) aDriver   = new OpenGl_GraphicDriver(aDisp, false);
-  aDriver->ChangeOptions().buffersNoSwap = true;  // swap has no effect in WebGL
-  aDriver->ChangeOptions().buffersOpaqueAlpha =
-      true;  // avoid unexpected blending of canvas with page background
+  Handle(OpenGl_GraphicDriver) aDriver        = new OpenGl_GraphicDriver(aDisp, false);
+  aDriver->ChangeOptions().buffersNoSwap      = true; // swap has no effect in WebGL
+  aDriver->ChangeOptions().buffersOpaqueAlpha = true; // avoid unexpected blending of canvas with page background
   // Match native OpenGL path (sRGBDisable) so shading/material gamma is consistent vs desktop.
   aDriver->ChangeOptions().sRGBDisable = true;
   if (!aDriver->InitContext())
   {
-    Message::DefaultMessenger()->Send(
-        TCollection_AsciiString("Error: EGL initialization failed"),
-        Message_Fail);
+    Message::DefaultMessenger()->Send(TCollection_AsciiString("Error: EGL initialization failed"), Message_Fail);
     return;
   }
 
   Handle(V3d_Viewer) aViewer = new V3d_Viewer(aDriver);
-  aViewer->SetDefaultComputedMode(Standard_True);  // Enable better quality rendering
+  aViewer->SetDefaultComputedMode(Standard_True); // Enable better quality rendering
   aViewer->SetDefaultShadingModel(Graphic3d_TypeOfShadingModel_Phong);
   aViewer->SetDefaultLights();
   aViewer->SetLightOn();
-  for (V3d_ListOfLight::Iterator aLightIter(aViewer->ActiveLights());
-       aLightIter.More();
-       aLightIter.Next())
+  for (V3d_ListOfLight::Iterator aLightIter(aViewer->ActiveLights()); aLightIter.More(); aLightIter.Next())
   {
     const Handle(V3d_Light)& aLight = aLightIter.Value();
     if (aLight->Type() == Graphic3d_TypeOfLightSource_Directional)
@@ -193,8 +188,8 @@ void Occt_view::init_viewer()
       for (const char* alias : {Font_NOF_SERIF, Font_NOF_SANS_SERIF, Font_NOF_MONOSPACE})
       {
         const TCollection_AsciiString alias_str(alias);
-        (void) font_mgr->RemoveFontAlias(alias_str, TCollection_AsciiString());
-        (void) font_mgr->AddFontAlias(alias_str, family);
+        (void)font_mgr->RemoveFontAlias(alias_str, TCollection_AsciiString());
+        (void)font_mgr->AddFontAlias(alias_str, family);
       }
     }
   }
@@ -203,13 +198,13 @@ void Occt_view::init_viewer()
   m_view->SetImmediateUpdate(false);
   auto& params                 = m_view->ChangeRenderingParams();
   params.ToShowStats           = true;
-  params.NbMsaaSamples         = 8;                              // Set MSAA samples
-  params.RenderResolutionScale = 2.0;                            // Increase resolution scale
-  params.IsShadowEnabled       = true;                           // Enable shadows
-  params.ShadowMapResolution   = 1024;                           // Shadow map resolution
-  params.TransparencyMethod    = Graphic3d_RTM_BLEND_UNORDERED;  // Better transparency
-  params.OitDepthFactor        = 0.0;                            // Depth peeling for better transparency
-  params.Resolution            = (unsigned int) (96.0 * myDevicePixelRatio + 0.5);
+  params.NbMsaaSamples         = 8;                             // Set MSAA samples
+  params.RenderResolutionScale = 2.0;                           // Increase resolution scale
+  params.IsShadowEnabled       = true;                          // Enable shadows
+  params.ShadowMapResolution   = 1024;                          // Shadow map resolution
+  params.TransparencyMethod    = Graphic3d_RTM_BLEND_UNORDERED; // Better transparency
+  params.OitDepthFactor        = 0.0;                           // Depth peeling for better transparency
+  params.Resolution            = (unsigned int)(96.0 * myDevicePixelRatio + 0.5);
 
   // m_view->SetScale(1000.0); // Treat coordinates as millimeters
   // m_view->SetScale(39.3701);
@@ -227,16 +222,16 @@ void Occt_view::init_viewer()
   aViewer->SetDefaultLights();
   aViewer->SetLightOn();
 
-  m_ctx->SetAutoActivateSelection(Standard_True);  // Enable automatic selection
+  m_ctx->SetAutoActivateSelection(Standard_True); // Enable automatic selection
 
-  auto highlight_style                           = m_ctx->HighlightStyle();
+  auto highlight_style = m_ctx->HighlightStyle();
   // highlight_style->SetDisplayMode(1);
   Handle(Graphic3d_AspectFillArea3d) fill_aspect = new Graphic3d_AspectFillArea3d();
   fill_aspect->SetAlphaMode(Graphic3d_AlphaMode::Graphic3d_AlphaMode_Blend);
   fill_aspect->SetColor(Quantity_Color(0.1, 0.1, 0.1, Quantity_TOC_RGB));
   highlight_style->SetColor(Quantity_NOC_YELLOW);
   highlight_style->SetBasicFillAreaAspect(fill_aspect);
-  highlight_style->SetTransparency(0.8f);  // Seems to not do anything
+  highlight_style->SetTransparency(0.8f); // Seems to not do anything
 
   /*
   Handle(Prs3d_LineAspect) line_aspect = new Prs3d_LineAspect(
@@ -251,23 +246,21 @@ void Occt_view::init_viewer()
   m_ctx->SetHighlightStyle(highlight_style);
   // m_ctx->SetAutomaticHilight(false);
   //  m_ctx->SetSelectionStyle(highlight_style);
-  m_ctx->SetPixelTolerance(10);  // Picking?
+  m_ctx->SetPixelTolerance(10); // Picking?
 
   m_ctx->UpdateCurrentViewer();
 
   // Set initial colors to match what OCCT renders (light gradient + grid)
   m_bg_color1          = glm::vec3(0.85f, 0.88f, 0.90f);
   m_bg_color2          = glm::vec3(0.45f, 0.55f, 0.60f);
-  m_bg_gradient_method = 1;  // Vertical
+  m_bg_gradient_method = 1; // Vertical
   m_grid_color1        = glm::vec3(0.1f, 0.1f, 0.1f);
   m_grid_color2        = glm::vec3(0.1f, 0.1f, 0.3f);
   update_view_background_();
 
   Handle(AIS_ViewCube) myViewCube = new AIS_ViewCube();
   myViewCube->SetTransformPersistence(
-      new Graphic3d_TransformPers(Graphic3d_TMF_TriedronPers,
-                                  Aspect_TOTP_RIGHT_LOWER,
-                                  Graphic3d_Vec2i(100, 100)));
+      new Graphic3d_TransformPers(Graphic3d_TMF_TriedronPers, Aspect_TOTP_RIGHT_LOWER, Graphic3d_Vec2i(100, 100)));
   myViewCube->Attributes()->SetDatumAspect(new Prs3d_DatumAspect());
   // myViewCube->Attributes()->DatumAspect()->SetTextAspect(myTextStyle);
   //  animation parameters
@@ -350,12 +343,7 @@ void Occt_view::snap_view_to_nearest_standard_axis()
   gp_Dir fwd(to_center);
 
   static const gp_Dir k_axes[6] = {
-      gp_Dir(1, 0, 0),
-      gp_Dir(-1, 0, 0),
-      gp_Dir(0, 1, 0),
-      gp_Dir(0, -1, 0),
-      gp_Dir(0, 0, 1),
-      gp_Dir(0, 0, -1),
+      gp_Dir(1, 0, 0), gp_Dir(-1, 0, 0), gp_Dir(0, 1, 0), gp_Dir(0, -1, 0), gp_Dir(0, 0, 1), gp_Dir(0, 0, -1),
   };
 
   int    best_i   = 0;
@@ -396,8 +384,7 @@ void Occt_view::init_default()
   if (m_ctx.IsNull())
     return;
 
-  m_view->TriedronDisplay(Aspect_TOTP_LEFT_LOWER,
-                          Quantity_NOC_GOLD,
+  m_view->TriedronDisplay(Aspect_TOTP_LEFT_LOWER, Quantity_NOC_GOLD,
                           // 0.08,
                           0.01 / 5,
                           // 0.5,
@@ -407,27 +394,22 @@ void Occt_view::init_default()
   {
     TColStd_IndexedDataMapOfStringString aRendInfo;
     m_view->DiagnosticInformation(aRendInfo, Graphic3d_DiagnosticInfo_Basic);
-    for (TColStd_IndexedDataMapOfStringString::Iterator aValueIter(aRendInfo);
-         aValueIter.More();
-         aValueIter.Next())
+    for (TColStd_IndexedDataMapOfStringString::Iterator aValueIter(aRendInfo); aValueIter.More(); aValueIter.Next())
     {
       if (!aGlInfo.IsEmpty())
         aGlInfo += "\n";
 
-      aGlInfo += TCollection_AsciiString("  ") + aValueIter.Key() + ": " +
-                 aValueIter.Value();
+      aGlInfo += TCollection_AsciiString("  ") + aValueIter.Key() + ": " + aValueIter.Value();
     }
   }
-  Message::DefaultMessenger()->Send(
-      TCollection_AsciiString("OpenGL info:\n") + aGlInfo,
-      Message_Info);
+  Message::DefaultMessenger()->Send(TCollection_AsciiString("OpenGL info:\n") + aGlInfo, Message_Info);
 
   SetStickToRayOnRotation(true);
   SetStickToRayOnZoom(true);
   SetRotationMode(AIS_RotationMode_PickLast);
 
-  m_view->SetProj(0, 0, 1);  // Look up the Z-axis (top view)
-  m_view->SetUp(0, 1, 0);    // Up direction along Y-axis
+  m_view->SetProj(0, 0, 1); // Look up the Z-axis (top view)
+  m_view->SetUp(0, 1, 0);   // Up direction along Y-axis
 
   // Optional: Adjust zoom or fit content
   m_view->SetZoom(2.0);
@@ -451,11 +433,8 @@ std::optional<gp_Pnt> Occt_view::pt3d_on_plane(const ScreenCoords& screen_coords
   // TODO there must be a way to do this using the MVP matrixes.
   // Convert 2D screen coordinates to 3D world coordinates near the camera
   Standard_Real x_near, y_near, z_near;
-  m_view->Convert((Standard_Integer) screen_coords.unsafe_get_x(),
-                  (Standard_Integer) screen_coords.unsafe_get_y(),
-                  x_near,
-                  y_near,
-                  z_near);
+  m_view->Convert((Standard_Integer)screen_coords.unsafe_get_x(), (Standard_Integer)screen_coords.unsafe_get_y(), x_near,
+                  y_near, z_near);
   gp_Pnt near_point(x_near, y_near, z_near);
 
   const Graphic3d_Camera_ptr& camera = m_view->Camera();
@@ -467,7 +446,7 @@ std::optional<gp_Pnt> Occt_view::pt3d_on_plane(const ScreenCoords& screen_coords
     GeomAPI_IntCS  intersection(ray_line, geom_plane);
 
     if (intersection.NbPoints() > 0)
-      return intersection.Point(1);  // First intersection point
+      return intersection.Point(1); // First intersection point
 
     // No intersection with plane.
     return std::nullopt;
@@ -475,28 +454,28 @@ std::optional<gp_Pnt> Occt_view::pt3d_on_plane(const ScreenCoords& screen_coords
 
   switch (camera->ProjectionType())
   {
-    case Graphic3d_Camera::Projection::Projection_Orthographic:
-    {
-      gp_Dir view_dir = camera->Direction().Reversed();  // Reverse to point into the scene
+  case Graphic3d_Camera::Projection::Projection_Orthographic:
+  {
+    gp_Dir view_dir = camera->Direction().Reversed(); // Reverse to point into the scene
 
-      // Define the ray as a line from near_point along view_dir
-      Geom_Line_ptr ray_line = new Geom_Line(near_point, view_dir);
-      return get_intersection(ray_line);
-    }
+    // Define the ray as a line from near_point along view_dir
+    Geom_Line_ptr ray_line = new Geom_Line(near_point, view_dir);
+    return get_intersection(ray_line);
+  }
 
-    case Graphic3d_Camera::Projection::Projection_Perspective:
-    {
-      gp_Pnt eye_pos = m_view->Camera()->Eye();
-      // Define the ray direction from eye through the near point
-      gp_Vec ray_dir(eye_pos, near_point);
-      ray_dir.Normalize();
+  case Graphic3d_Camera::Projection::Projection_Perspective:
+  {
+    gp_Pnt eye_pos = m_view->Camera()->Eye();
+    // Define the ray direction from eye through the near point
+    gp_Vec ray_dir(eye_pos, near_point);
+    ray_dir.Normalize();
 
-      Geom_Line_ptr ray_line = new Geom_Line(eye_pos, gp_Dir(ray_dir));
-      return get_intersection(ray_line);
-    }
+    Geom_Line_ptr ray_line = new Geom_Line(eye_pos, gp_Dir(ray_dir));
+    return get_intersection(ray_line);
+  }
 
-    default:
-      EZY_ASSERT(false);
+  default:
+    EZY_ASSERT(false);
   }
 
   // Should not get here.
@@ -513,9 +492,7 @@ void Occt_view::bake_transform_into_geometry(AIS_Shape_ptr& shape)
   TopoDS_Shape original_shape = shape->Shape();
 
   // Apply the transformation to the geometry
-  BRepBuilderAPI_Transform transformer(original_shape,
-                                       current_transform,
-                                       true);
+  BRepBuilderAPI_Transform transformer(original_shape, current_transform, true);
 
   TopoDS_Shape transformed_shape = transformer.Shape();
 
@@ -541,13 +518,13 @@ void Occt_view::on_enter(const ScreenCoords& screen_coords)
 {
   switch (get_mode())
   {
-    case Mode::Sketch_face_extrude:
-      // Apply typed distance (dist edit) and refresh preview only. LMB finalizes the extrusion (see on_mouse_button / GUI).
-      sketch_face_extrude(screen_coords, true);
-      break;
-    default:
-      curr_sketch().on_enter();
-      break;
+  case Mode::Sketch_face_extrude:
+    // Apply typed distance (dist edit) and refresh preview only. LMB finalizes the extrusion (see on_mouse_button / GUI).
+    sketch_face_extrude(screen_coords, true);
+    break;
+  default:
+    curr_sketch().on_enter();
+    break;
   }
 }
 
@@ -557,22 +534,22 @@ void Occt_view::cancel(Set_parent_mode set_parent_mode)
 
   switch (get_mode())
   {
-    case Mode::Move:
-      shp_move().cancel();
-      gui().set_mode(Mode::Normal);
-      break;
-    case Mode::Rotate:
-      shp_rotate().cancel();
-      gui().set_mode(Mode::Normal);
-      break;
-    case Mode::Scale:
-      shp_scale().cancel();
-      gui().set_mode(Mode::Normal);
-      break;
-    default:
-      operation_canceled |= cancel_sketch_extrude_();
-      operation_canceled |= curr_sketch().cancel_elm();
-      break;
+  case Mode::Move:
+    shp_move().cancel();
+    gui().set_mode(Mode::Normal);
+    break;
+  case Mode::Rotate:
+    shp_rotate().cancel();
+    gui().set_mode(Mode::Normal);
+    break;
+  case Mode::Scale:
+    shp_scale().cancel();
+    gui().set_mode(Mode::Normal);
+    break;
+  default:
+    operation_canceled |= cancel_sketch_extrude_();
+    operation_canceled |= curr_sketch().cancel_elm();
+    break;
   }
 
   if (set_parent_mode == Set_parent_mode::Yes)
@@ -627,10 +604,7 @@ void Occt_view::finalize_sketch_extrude_()
   m_shp_extrude.finalize();
 }
 
-bool Occt_view::cancel_sketch_extrude_()
-{
-  return m_shp_extrude.cancel();
-}
+bool Occt_view::cancel_sketch_extrude_() { return m_shp_extrude.cancel(); }
 
 void Occt_view::create_default_sketch_()
 {
@@ -693,12 +667,7 @@ bool Occt_view::sketch_plane_view_aabb_2d(const gp_Pln& pln, double display_w, d
   struct
   {
     double x, y;
-  } corners[4] = {
-      {x0, y0},
-      {x1, y0},
-      {x1, y1},
-      {x0, y1}
-  };
+  } corners[4] = {{x0, y0}, {x1, y0}, {x1, y1}, {x0, y1}};
 
   bool       any   = false;
   double     min_u = 0., min_v = 0., max_u = 0., max_v = 0.;
@@ -777,9 +746,8 @@ void Occt_view::set_camera(const gp_Pnt& eye, const gp_Pnt& center, const gp_Dir
 
 const TopoDS_Shape* Occt_view::get_(const ScreenCoords& screen_coords) const
 {
-  AIS_StatusOfDetection detection_status = m_ctx->MoveTo(
-      Standard_Integer(screen_coords.unsafe_get_x()),
-      Standard_Integer(screen_coords.unsafe_get_y()), m_view, true);
+  AIS_StatusOfDetection detection_status = m_ctx->MoveTo(Standard_Integer(screen_coords.unsafe_get_x()),
+                                                         Standard_Integer(screen_coords.unsafe_get_y()), m_view, true);
 
   if (detection_status == AIS_SOD_Nothing)
     return nullptr;
@@ -833,11 +801,8 @@ Ray Occt_view::get_hit_test_ray_(const ScreenCoords& screen_coords) const
   Graphic3d_Camera_ptr camera  = m_view->Camera();
   gp_Pnt               eye_pos = camera->Eye();
   Standard_Real        x_near, y_near, z_near;
-  m_view->Convert((Standard_Integer) screen_coords.unsafe_get_x(),
-                  (Standard_Integer) screen_coords.unsafe_get_y(),
-                  x_near,
-                  y_near,
-                  z_near);
+  m_view->Convert((Standard_Integer)screen_coords.unsafe_get_x(), (Standard_Integer)screen_coords.unsafe_get_y(), x_near,
+                  y_near, z_near);
   gp_Pnt near_point(x_near, y_near, z_near);
   gp_Vec ray_dir(eye_pos, near_point);
   ray_dir.Normalize();
@@ -868,7 +833,7 @@ std::optional<gp_Pnt> Occt_view::get_hit_point_(const AIS_Shape_ptr& shp, const 
 void Occt_view::add_shp_(Shp_ptr& shp)
 {
   shp->SetMaterial(m_default_material);
-  shp->set_selection_mode(m_shp_selection_mode);  // Adds to m_ctx
+  shp->set_selection_mode(m_shp_selection_mode); // Adds to m_ctx
   m_shps.push_back(shp);
 }
 
@@ -886,8 +851,8 @@ std::string Occt_view::unique_shape_name_(const char* base_name) const
     else if (n.size() > prefix.size() && n.compare(0, prefix.size(), prefix) == 0)
     {
       const std::string suffix = n.substr(prefix.size());
-      if (!suffix.empty() && std::all_of(suffix.begin(), suffix.end(), [](char c)
-                                         { return std::isdigit(static_cast<unsigned char>(c)); }))
+      if (!suffix.empty() &&
+          std::all_of(suffix.begin(), suffix.end(), [](char c) { return std::isdigit(static_cast<unsigned char>(c)); }))
       {
         int idx = 0;
         try
@@ -898,7 +863,7 @@ std::string Occt_view::unique_shape_name_(const char* base_name) const
         }
         catch (...)
         {
-          EZY_ASSERT(false);  // Should not happen due to the isdigit check, but just in case.
+          EZY_ASSERT(false); // Should not happen due to the isdigit check, but just in case.
         }
       }
     }
@@ -916,10 +881,7 @@ std::string Occt_view::unique_shape_name_(const char* base_name) const
   return base + buf;
 }
 
-std::string Occt_view::get_unique_shape_name(const char* base_name) const
-{
-  return unique_shape_name_(base_name);
-}
+std::string Occt_view::get_unique_shape_name(const char* base_name) const { return unique_shape_name_(base_name); }
 
 void Occt_view::add_box(double ox, double oy, double oz, double width, double length, double height)
 {
@@ -1028,7 +990,7 @@ bool Occt_view::fit_face_in_view(const TopoDS_Face& face)
 
   // Set camera direction to look down the normal
   gp_Dir normal = pln->Axis().Direction();
-  gp_Pnt center = pln->Location();  // Use plane origin as initial center
+  gp_Pnt center = pln->Location(); // Use plane origin as initial center
 
   // Compute the bounding box of the face to refine the center and size
   Bnd_Box bbox;
@@ -1045,14 +1007,14 @@ bool Occt_view::fit_face_in_view(const TopoDS_Face& face)
   center.SetCoord((x_min + x_max) / 2.0, (y_min + y_max) / 2.0, (z_min + z_max) / 2.0);
 
   // Set the view direction (looking "down" means opposite to normal)
-  gp_Dir view_dir = normal.Reversed();  // Look down at the face
+  gp_Dir view_dir = normal.Reversed(); // Look down at the face
   m_view->SetAt(center.X(), center.Y(), center.Z());
-  gp_Pnt eye = center.Translated(gp_Vec(view_dir).Multiplied(100.0));  // Target point (center of face)
-  m_view->SetEye(eye.X(), eye.Y(), eye.Z());                           // Eye 100 units above
+  gp_Pnt eye = center.Translated(gp_Vec(view_dir).Multiplied(100.0)); // Target point (center of face)
+  m_view->SetEye(eye.X(), eye.Y(), eye.Z());                          // Eye 100 units above
   m_view->SetUp(0, 0, 1);
   // Fit the face in view
-  m_view->FitAll(bbox, 0.5);  // 0.5 is margin factor (50% padding)
-  m_view->Redraw();           // Update the view
+  m_view->FitAll(bbox, 0.5); // 0.5 is margin factor (50% padding)
+  m_view->Redraw();          // Update the view
   return true;
 }
 
@@ -1075,45 +1037,27 @@ void Occt_view::dimension_input(const ScreenCoords& screen_coords)
 {
   switch (get_mode())
   {
-    case Mode::Sketch_face_extrude:
-      m_show_dim_input = true;
-      sketch_face_extrude(screen_coords, true);
-      break;
-    default:
-      curr_sketch().dimension_input(screen_coords);
-      break;
+  case Mode::Sketch_face_extrude:
+    m_show_dim_input = true;
+    sketch_face_extrude(screen_coords, true);
+    break;
+  default:
+    curr_sketch().dimension_input(screen_coords);
+    break;
   }
 }
 
-void Occt_view::angle_input(const ScreenCoords& screen_coords)
-{
-  curr_sketch().angle_input(screen_coords);
-}
+void Occt_view::angle_input(const ScreenCoords& screen_coords) { curr_sketch().angle_input(screen_coords); }
 
-double Occt_view::get_dimension_scale() const
-{
-  return m_dimension_scale;
-}
+double Occt_view::get_dimension_scale() const { return m_dimension_scale; }
 
-bool Occt_view::get_show_dim_input() const
-{
-  return m_show_dim_input;
-}
+bool Occt_view::get_show_dim_input() const { return m_show_dim_input; }
 
-void Occt_view::set_show_dim_input(bool show)
-{
-  m_show_dim_input = show;
-}
+void Occt_view::set_show_dim_input(bool show) { m_show_dim_input = show; }
 
-std::optional<double> Occt_view::get_entered_dim() const
-{
-  return m_entered_dim;
-}
+std::optional<double> Occt_view::get_entered_dim() const { return m_entered_dim; }
 
-void Occt_view::set_entered_dim(const std::optional<double>& dim)
-{
-  m_entered_dim = dim;
-}
+void Occt_view::set_entered_dim(const std::optional<double>& dim) { m_entered_dim = dim; }
 
 void Occt_view::sketch_face_extrude(const ScreenCoords& screen_coords, bool is_mouse_move)
 {
@@ -1126,7 +1070,7 @@ void Occt_view::delete_selected()
   remove_selected_length_dimensions_from_sketches_();
   auto selected = get_selected();
   delete_(selected);
-  cancel(Set_parent_mode::No);  // In case we are in the middle of a operation.
+  cancel(Set_parent_mode::No); // In case we are in the middle of a operation.
 }
 
 void Occt_view::remove_selected_length_dimensions_from_sketches_()
@@ -1171,10 +1115,10 @@ void Occt_view::delete_(std::vector<AIS_Shape_ptr>& to_delete)
 
 static Aspect_GradientFillMethod gradient_method_from_int(int i)
 {
-  static const Aspect_GradientFillMethod methods[] = {
-      Aspect_GFM_HOR, Aspect_GFM_VER, Aspect_GFM_DIAG1, Aspect_GFM_DIAG2,
-      Aspect_GFM_CORNER1, Aspect_GFM_CORNER2, Aspect_GFM_CORNER3, Aspect_GFM_CORNER4};
-  const int n = static_cast<int>(sizeof(methods) / sizeof(methods[0]));
+  static const Aspect_GradientFillMethod methods[] = {Aspect_GFM_HOR,     Aspect_GFM_VER,     Aspect_GFM_DIAG1,
+                                                      Aspect_GFM_DIAG2,   Aspect_GFM_CORNER1, Aspect_GFM_CORNER2,
+                                                      Aspect_GFM_CORNER3, Aspect_GFM_CORNER4};
+  const int                              n         = static_cast<int>(sizeof(methods) / sizeof(methods[0]));
   if (i < 0 || i >= n)
     return Aspect_GFM_VER;
   return methods[i];
@@ -1185,11 +1129,9 @@ void Occt_view::update_view_background_()
   if (m_view.IsNull())
     return;
 
-  m_view->SetBgGradientColors(
-      Quantity_Color(m_bg_color1.x, m_bg_color1.y, m_bg_color1.z, Quantity_TOC_RGB),
-      Quantity_Color(m_bg_color2.x, m_bg_color2.y, m_bg_color2.z, Quantity_TOC_RGB),
-      gradient_method_from_int(m_bg_gradient_method),
-      Standard_True);
+  m_view->SetBgGradientColors(Quantity_Color(m_bg_color1.x, m_bg_color1.y, m_bg_color1.z, Quantity_TOC_RGB),
+                              Quantity_Color(m_bg_color2.x, m_bg_color2.y, m_bg_color2.z, Quantity_TOC_RGB),
+                              gradient_method_from_int(m_bg_gradient_method), Standard_True);
 
   Handle(V3d_Viewer) viewer = m_view->Viewer();
   if (!viewer.IsNull() && !viewer->Grid().IsNull())
@@ -1216,10 +1158,7 @@ void Occt_view::set_bg_gradient_colors(float r1, float g1, float b1, float r2, f
   update_view_background_();
 }
 
-int Occt_view::get_bg_gradient_method() const
-{
-  return m_bg_gradient_method;
-}
+int Occt_view::get_bg_gradient_method() const { return m_bg_gradient_method; }
 
 void Occt_view::set_bg_gradient_method(int method)
 {
@@ -1282,19 +1221,17 @@ namespace
 {
 // Blender-style: Shift held while zooming uses a finer step (same idea as precision transforms).
 constexpr double k_zoom_shift_finer_factor = 0.1;
-}  // namespace
+} // namespace
 
 void Occt_view::set_zoom_scroll_scale(double scale)
 {
-  m_zoom_scroll_scale =
-      std::clamp(scale, k_gui_view_zoom_scroll_scale_min, k_gui_view_zoom_scroll_scale_max);
+  m_zoom_scroll_scale = std::clamp(scale, k_gui_view_zoom_scroll_scale_min, k_gui_view_zoom_scroll_scale_max);
 }
 
 int Occt_view::zoom_scroll_delta_int_(double wheel_y, bool shift_finer_zoom) const
 {
-  const double scaled =
-      wheel_y * m_zoom_scroll_scale * (shift_finer_zoom ? k_zoom_shift_finer_factor : 1.0);
-  long r = std::lround(scaled);
+  const double scaled = wheel_y * m_zoom_scroll_scale * (shift_finer_zoom ? k_zoom_shift_finer_factor : 1.0);
+  long         r      = std::lround(scaled);
   if (r == 0 && wheel_y != 0.0)
     r = wheel_y > 0.0 ? 1L : -1L;
 
@@ -1303,10 +1240,9 @@ int Occt_view::zoom_scroll_delta_int_(double wheel_y, bool shift_finer_zoom) con
 
 void Occt_view::on_mouse_scroll(double theOffsetX, double theOffsetY, bool shift_finer_zoom)
 {
-  (void) theOffsetX;
+  (void)theOffsetX;
   if (!m_view.IsNull())
-    UpdateZoom(Aspect_ScrollDelta(m_occt_window->CursorPosition(),
-                                  zoom_scroll_delta_int_(theOffsetY, shift_finer_zoom)));
+    UpdateZoom(Aspect_ScrollDelta(m_occt_window->CursorPosition(), zoom_scroll_delta_int_(theOffsetY, shift_finer_zoom)));
 }
 
 void Occt_view::zoom_view_wheel_notches(double wheel_notches, bool shift_finer_zoom)
@@ -1314,8 +1250,7 @@ void Occt_view::zoom_view_wheel_notches(double wheel_notches, bool shift_finer_z
   if (m_view.IsNull())
     return;
 
-  UpdateZoom(Aspect_ScrollDelta(m_occt_window->CursorPosition(),
-                                zoom_scroll_delta_int_(wheel_notches, shift_finer_zoom)));
+  UpdateZoom(Aspect_ScrollDelta(m_occt_window->CursorPosition(), zoom_scroll_delta_int_(wheel_notches, shift_finer_zoom)));
 }
 
 void Occt_view::on_mouse_button(int theButton, int theAction, int theMods)
@@ -1336,10 +1271,7 @@ void Occt_view::on_mouse_button(int theButton, int theAction, int theMods)
       return;
     }
 
-    PressMouseButton(pos,
-                     mouse_button_from_glfw_(theButton),
-                     key_flags_from_glfw_(theMods),
-                     false);
+    PressMouseButton(pos, mouse_button_from_glfw_(theButton), key_flags_from_glfw_(theMods), false);
 
     if (m_shp_extrude.has_active_extrusion())
     {
@@ -1349,11 +1281,11 @@ void Occt_view::on_mouse_button(int theButton, int theAction, int theMods)
 
     switch (get_mode())
     {
-      case Mode::Sketch_dim_anno:
-        return curr_sketch().toggle_edge_dim_anno(ScreenCoords(dvec2(pos.x(), pos.y())));
+    case Mode::Sketch_dim_anno:
+      return curr_sketch().toggle_edge_dim_anno(ScreenCoords(dvec2(pos.x(), pos.y())));
 
-      default:
-        break;
+    default:
+      break;
     }
   }
   else
@@ -1364,10 +1296,7 @@ void Occt_view::on_mouse_button(int theButton, int theAction, int theMods)
       return;
     }
 
-    ReleaseMouseButton(pos,
-                       mouse_button_from_glfw_(theButton),
-                       key_flags_from_glfw_(theMods),
-                       false);
+    ReleaseMouseButton(pos, mouse_button_from_glfw_(theButton), key_flags_from_glfw_(theMods), false);
   }
 }
 
@@ -1375,9 +1304,7 @@ void Occt_view::on_mouse_move(const ScreenCoords& screen_coords)
 {
   EZY_ASSERT(!m_view.IsNull());
   UpdateMousePosition(Graphic3d_Vec2i(int(screen_coords.unsafe_get_x()), int(screen_coords.unsafe_get_y())),
-                      PressedMouseButtons(),
-                      LastMouseFlags(),
-                      false);
+                      PressedMouseButtons(), LastMouseFlags(), false);
 }
 
 // Selection related
@@ -1397,15 +1324,12 @@ std::vector<AIS_Shape_ptr> Occt_view::get_selected() const
         shapes.emplace_back(std::move(selected_shape));
       }
 
-    m_ctx->NextSelected();  // Move to the next selected object
+    m_ctx->NextSelected(); // Move to the next selected object
   }
   return shapes;
 }
 
-TopAbs_ShapeEnum Occt_view::get_shp_selection_mode() const
-{
-  return m_shp_selection_mode;
-}
+TopAbs_ShapeEnum Occt_view::get_shp_selection_mode() const { return m_shp_selection_mode; }
 
 void Occt_view::set_shp_selection_mode(const TopAbs_ShapeEnum mode)
 {
@@ -1422,26 +1346,14 @@ void Occt_view::set_shp_selection_mode(const TopAbs_ShapeEnum mode)
 }
 
 // Material related
-const Graphic3d_MaterialAspect& Occt_view::get_default_material() const
-{
-  return m_default_material;
-}
+const Graphic3d_MaterialAspect& Occt_view::get_default_material() const { return m_default_material; }
 
-void Occt_view::set_default_material(const Graphic3d_MaterialAspect& mat)
-{
-  m_default_material = mat;
-}
+void Occt_view::set_default_material(const Graphic3d_MaterialAspect& mat) { m_default_material = mat; }
 
-bool Occt_view::is_headless() const
-{
-  return m_headless_view;
-}
+bool Occt_view::is_headless() const { return m_headless_view; }
 
 // Mode related
-Mode Occt_view::get_mode() const
-{
-  return m_gui.get_mode();
-}
+Mode Occt_view::get_mode() const { return m_gui.get_mode(); }
 
 void Occt_view::on_mode()
 {
@@ -1481,36 +1393,36 @@ void Occt_view::on_mode()
 
     switch (get_mode())
     {
-      case Mode::Sketch_operation_axis:
-        show_only_current_sketch();
-        break;
+    case Mode::Sketch_operation_axis:
+      show_only_current_sketch();
+      break;
 
-      default:
-        show_sketches(true);
-        break;
+    default:
+      show_sketches(true);
+      break;
     }
   }
   else
   {
     switch (get_mode())
     {
-      case Mode::Shape_polar_duplicate:
-        show_only_current_sketch();
-        break;
+    case Mode::Shape_polar_duplicate:
+      show_only_current_sketch();
+      break;
 
-      default:
-        show_sketches(false);
-        break;
+    default:
+      show_sketches(false);
+      break;
     }
 
     switch (get_mode())
     {
-        // clang-format off
+      // clang-format off
       case Mode::Sketch_from_planar_face: set_shp_selection_mode(TopAbs_FACE); break;
       case Mode::Shape_chamfer:    on_chamfer_mode();                   break; // Will update selection mode
       case Mode::Shape_fillet:     on_fillet_mode();                    break; // Will update selection mode
       default: break;
-        // clang-format on
+      // clang-format on
     }
 
     for (auto shp : m_shps)
@@ -1535,7 +1447,7 @@ void Occt_view::on_chamfer_mode()
   EZY_ASSERT(get_mode() == Mode::Shape_chamfer);
   switch (gui().get_chamfer_mode())
   {
-      // clang-format off
+    // clang-format off
     case Chamfer_mode::Edge:  set_shp_selection_mode(TopAbs_EDGE);  break;
     case Chamfer_mode::Wire:  set_shp_selection_mode(TopAbs_WIRE);  break;
     case Chamfer_mode::Face:  set_shp_selection_mode(TopAbs_FACE);  break;
@@ -1587,10 +1499,7 @@ Aspect_VKeyFlags Occt_view::key_flags_from_glfw_(int theFlags)
   return flags;
 }
 
-Occt_view::Sketch_list& Occt_view::get_sketches()
-{
-  return m_sketches;
-}
+Occt_view::Sketch_list& Occt_view::get_sketches() { return m_sketches; }
 
 void Occt_view::remove_sketch(const Sketch_ptr& sketch)
 {
@@ -1637,13 +1546,10 @@ void Occt_view::set_curr_sketch(const Sketch_ptr& to_set)
       return;
     }
 
-  EZY_ASSERT(false);  // Sketch does not belong to this view.
+  EZY_ASSERT(false); // Sketch does not belong to this view.
 }
 
-std::list<Shp_ptr>& Occt_view::get_shapes()
-{
-  return m_shps;
-}
+std::list<Shp_ptr>& Occt_view::get_shapes() { return m_shps; }
 
 // clang-format off
 Shp_move&      Occt_view::shp_move()      { return m_shp_move;       }
@@ -1696,7 +1602,7 @@ bool Occt_view::undo()
   redo_entry.json = to_json();
   redo_entry.mode = m_gui.get_mode();
   m_redo_stack.push_back(std::move(redo_entry));
-  load(state.json, false);  // Keep current view so undo/redo keeps a single perspective
+  load(state.json, false); // Keep current view so undo/redo keeps a single perspective
   m_gui.set_mode(state.mode);
   if (state.mode == Mode::Sketch_inspection_mode)
     m_gui.set_show_sketch_list(true);
@@ -1717,7 +1623,7 @@ bool Occt_view::redo()
   undo_entry.json = to_json();
   undo_entry.mode = m_gui.get_mode();
   m_undo_stack.push_back(std::move(undo_entry));
-  load(state.json, false);  // Keep current view so undo/redo keeps a single perspective
+  load(state.json, false); // Keep current view so undo/redo keeps a single perspective
   m_gui.set_mode(state.mode);
   if (state.mode == Mode::Sketch_inspection_mode)
     m_gui.set_show_sketch_list(true);
@@ -1726,25 +1632,13 @@ bool Occt_view::redo()
   return true;
 }
 
-bool Occt_view::can_undo() const
-{
-  return !m_undo_stack.empty();
-}
+bool Occt_view::can_undo() const { return !m_undo_stack.empty(); }
 
-bool Occt_view::can_redo() const
-{
-  return !m_redo_stack.empty();
-}
+bool Occt_view::can_redo() const { return !m_redo_stack.empty(); }
 
-size_t Occt_view::undo_stack_size() const
-{
-  return m_undo_stack.size();
-}
+size_t Occt_view::undo_stack_size() const { return m_undo_stack.size(); }
 
-size_t Occt_view::redo_stack_size() const
-{
-  return m_redo_stack.size();
-}
+size_t Occt_view::redo_stack_size() const { return m_redo_stack.size(); }
 
 // ---------------------------------------------------------------------------
 // Document format: 1 = legacy sketch edges could carry a 4th "dim" flag; 2 = length_dimensions array + 3-tuple edges.
@@ -1776,7 +1670,7 @@ std::string Occt_view::to_json() const
   {
     const TopoDS_Shape& shape = s->Shape();
     std::ostringstream  oss;
-    BRepTools::Write(shape, oss, false, false, TopTools_FormatVersion_CURRENT);  // Write BREP data to the stream
+    BRepTools::Write(shape, oss, false, false, TopTools_FormatVersion_CURRENT); // Write BREP data to the stream
     json shp_json;
     shp_json["name"]     = s->get_name();
     shp_json["material"] = s->Material();
@@ -1823,7 +1717,7 @@ void Occt_view::load(const std::string& json_str, bool restore_view)
 
   clear_all(m_sketches, m_cur_sketch, m_shps);
   const json j = json::parse(json_str);
-  (void) j.value("ezyFormat", 1);  // Reserved for future migrations; sketch JSON migrates per-edge dim flags in Sketch_json.
+  (void)j.value("ezyFormat", 1); // Reserved for future migrations; sketch JSON migrates per-edge dim flags in Sketch_json.
   EZY_ASSERT(j.contains("sketches") && j["sketches"].is_array());
   for (const auto& s : j["sketches"])
   {
@@ -1960,50 +1854,50 @@ Status Occt_view::export_document(Export_format fmt, const std::string& file_pat
 
   switch (fmt)
   {
-    case Export_format::Step:
-    {
-      STEPControl_Writer    writer;
-      IFSelect_ReturnStatus tr = writer.Transfer(shape, STEPControl_AsIs);
-      if (tr != IFSelect_RetDone)
-        return Status::user_error("STEP transfer failed.");
+  case Export_format::Step:
+  {
+    STEPControl_Writer    writer;
+    IFSelect_ReturnStatus tr = writer.Transfer(shape, STEPControl_AsIs);
+    if (tr != IFSelect_RetDone)
+      return Status::user_error("STEP transfer failed.");
 
-      tr = writer.Write(file_path.c_str());
-      if (tr != IFSelect_RetDone)
-        return Status::user_error("STEP write failed.");
+    tr = writer.Write(file_path.c_str());
+    if (tr != IFSelect_RetDone)
+      return Status::user_error("STEP write failed.");
 
-      return Status::ok();
-    }
-    case Export_format::Iges:
-    {
-      IGESControl_Writer writer;
-      if (!writer.AddShape(shape))
-        return Status::user_error("IGES does not support this shape.");
+    return Status::ok();
+  }
+  case Export_format::Iges:
+  {
+    IGESControl_Writer writer;
+    if (!writer.AddShape(shape))
+      return Status::user_error("IGES does not support this shape.");
 
-      if (!writer.Write(file_path.c_str()))
-        return Status::user_error("IGES write failed.");
+    if (!writer.Write(file_path.c_str()))
+      return Status::user_error("IGES write failed.");
 
-      return Status::ok();
-    }
-    case Export_format::Stl:
-    {
-      // Tessellate for mesh export (linear deflection in model units).
-      constexpr Standard_Real        k_lin_deflection = 0.1;
-      const BRepMesh_IncrementalMesh mesher(shape, k_lin_deflection);
-      (void) mesher;
-      StlAPI_Writer stl_writer;
-      stl_writer.ASCIIMode() = Standard_False;
-      if (!stl_writer.Write(shape, file_path.c_str()))
-        return Status::user_error("STL write failed.");
+    return Status::ok();
+  }
+  case Export_format::Stl:
+  {
+    // Tessellate for mesh export (linear deflection in model units).
+    constexpr Standard_Real        k_lin_deflection = 0.1;
+    const BRepMesh_IncrementalMesh mesher(shape, k_lin_deflection);
+    (void)mesher;
+    StlAPI_Writer stl_writer;
+    stl_writer.ASCIIMode() = Standard_False;
+    if (!stl_writer.Write(shape, file_path.c_str()))
+      return Status::user_error("STL write failed.");
 
-      return Status::ok();
-    }
-    case Export_format::Ply:
-    {
-      constexpr Standard_Real        k_lin_deflection = 0.1;
-      const BRepMesh_IncrementalMesh mesher(shape, k_lin_deflection);
-      (void) mesher;
-      return export_ply_binary_file(shape, file_path);
-    }
+    return Status::ok();
+  }
+  case Export_format::Ply:
+  {
+    constexpr Standard_Real        k_lin_deflection = 0.1;
+    const BRepMesh_IncrementalMesh mesher(shape, k_lin_deflection);
+    (void)mesher;
+    return export_ply_binary_file(shape, file_path);
+  }
   }
   return Status::user_error("Unknown export format.");
 }
@@ -2060,15 +1954,9 @@ bool Occt_view::import_ply(const std::string& ply_bytes)
   return true;
 }
 
-GUI& Occt_view::gui()
-{
-  return m_gui;
-}
+GUI& Occt_view::gui() { return m_gui; }
 
-AIS_InteractiveContext& Occt_view::ctx()
-{
-  return *m_ctx;
-}
+AIS_InteractiveContext& Occt_view::ctx() { return *m_ctx; }
 
 void Occt_view::new_file()
 {

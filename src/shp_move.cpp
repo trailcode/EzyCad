@@ -6,7 +6,9 @@
 #include "utl.h"
 
 Shp_move::Shp_move(Occt_view& view)
-    : Shp_operation_base(view) {}
+    : Shp_operation_base(view)
+{
+}
 
 Status Shp_move::move_selected(const ScreenCoords& screen_coords)
 {
@@ -59,7 +61,7 @@ void Shp_move::show_dist_edit(const ScreenCoords& screen_coords)
   auto dist_edit_axis_x = [&, screen_coords](float new_dist, bool is_final)
   {
     m_delta.override_x = new_dist * view().get_dimension_scale();
-    EZY_ASSERT(move_selected(screen_coords).is_ok());  // Status should always be valid here
+    EZY_ASSERT(move_selected(screen_coords).is_ok()); // Status should always be valid here
     if (is_final)
       check_finalize_();
   };
@@ -81,13 +83,16 @@ void Shp_move::show_dist_edit(const ScreenCoords& screen_coords)
   };
 
   if (!m_delta.override_x.has_value() && (no_axis_constraints || m_opts.constr_axis_x))
-    gui().set_dist_edit(float(m_delta.delta.X() / view().get_dimension_scale()), std::move(std::function<void(float, bool)>(dist_edit_axis_x)));
+    gui().set_dist_edit(float(m_delta.delta.X() / view().get_dimension_scale()),
+                        std::move(std::function<void(float, bool)>(dist_edit_axis_x)));
 
   else if (!m_delta.override_y.has_value() && (no_axis_constraints || m_opts.constr_axis_y))
-    gui().set_dist_edit(float(m_delta.delta.Y() / view().get_dimension_scale()), std::move(std::function<void(float, bool)>(dist_edit_axis_y)));
+    gui().set_dist_edit(float(m_delta.delta.Y() / view().get_dimension_scale()),
+                        std::move(std::function<void(float, bool)>(dist_edit_axis_y)));
 
   else if (!m_delta.override_z.has_value() && (no_axis_constraints || m_opts.constr_axis_z))
-    gui().set_dist_edit(float(m_delta.delta.Z() / view().get_dimension_scale()), std::move(std::function<void(float, bool)>(dist_edit_axis_z)));
+    gui().set_dist_edit(float(m_delta.delta.Z() / view().get_dimension_scale()),
+                        std::move(std::function<void(float, bool)>(dist_edit_axis_z)));
 }
 
 void Shp_move::check_finalize_()
@@ -137,7 +142,4 @@ void Shp_move::reset()
   gui().set_mode(Mode::Normal);
 }
 
-Move_options& Shp_move::get_opts()
-{
-  return m_opts;
-}
+Move_options& Shp_move::get_opts() { return m_opts; }

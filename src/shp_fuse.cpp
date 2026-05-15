@@ -6,7 +6,9 @@
 #include "utl.h"
 
 Shp_fuse::Shp_fuse(Occt_view& view)
-    : Shp_operation_base(view) {}
+    : Shp_operation_base(view)
+{
+}
 
 Status Shp_fuse::selected_fuse()
 {

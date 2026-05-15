@@ -1,14 +1,14 @@
 #pragma once
 
 #include <array>
-#include <chrono>  // For message status window (from previous request)
+#include <chrono> // For message status window (from previous request)
 #include <cstdint>
 #include <functional>
 #include <glm/glm.hpp>
 #include <gp_Pnt2d.hxx>
 #include <gp_Vec2d.hxx>
 #include <memory>
-#include <string>  // Added for log messages
+#include <string> // Added for log messages
 #include <unordered_map>
 #include <variant>
 // #include <vector>  // Added for log storage
@@ -54,20 +54,20 @@ struct Example_file
   std::string path;
 };
 /// Default OCCT line-width scale for length dimensions when `edge_dim_line_width` is missing from settings JSON.
-inline constexpr float  k_gui_edge_dim_line_width_default    = 1.0f;
+inline constexpr float k_gui_edge_dim_line_width_default = 1.0f;
 /// Default OCCT arrow length for length dimensions when `edge_dim_arrow_size` is missing from settings JSON.
-inline constexpr float  k_gui_edge_dim_arrow_size_default    = 6.0f;
+inline constexpr float k_gui_edge_dim_arrow_size_default = 6.0f;
 /// Allowed range and default for `gui.view_roll_step_deg` (view roll and numpad orbit steps; must match Settings slider).
-inline constexpr double k_gui_view_roll_step_deg_min         = 0.1;
-inline constexpr double k_gui_view_roll_step_deg_max         = 180.0;
-inline constexpr double k_gui_view_roll_step_deg_default     = 45.0;
+inline constexpr double k_gui_view_roll_step_deg_min     = 0.1;
+inline constexpr double k_gui_view_roll_step_deg_max     = 180.0;
+inline constexpr double k_gui_view_roll_step_deg_default = 45.0;
 /// Allowed range and default for `gui.view_zoom_scroll_scale` (wheel/keyboard zoom units; must match Settings slider).
 inline constexpr double k_gui_view_zoom_scroll_scale_min     = 0.25;
 inline constexpr double k_gui_view_zoom_scroll_scale_max     = 64.0;
 inline constexpr double k_gui_view_zoom_scroll_scale_default = 4.0;
 class GUI
 {
- public:
+public:
   GUI();
   ~GUI();
 
@@ -75,7 +75,7 @@ class GUI
   static GUI& instance();
 #endif
 
-  void    init(GLFWwindow* window, ImFont* console_font);
+  void init(GLFWwindow* window, ImFont* console_font);
   /// Monospace font for script console (normally set via init() from main after io.Fonts load).
   void    set_console_font(ImFont* font) { m_console_font = font; }
   ImFont* console_font() const;
@@ -83,7 +83,7 @@ class GUI
   void render_gui();
   void render_occt();
 
-  void         on_key(int key, int scancode, int action, int mods);  // gui_mode.cpp
+  void         on_key(int key, int scancode, int action, int mods); // gui_mode.cpp
   void         on_mouse_pos(const ScreenCoords& screen_coords);
   void         on_mouse_button(int button, int action, int mods);
   void         on_mouse_scroll(double xoffset, double yoffset);
@@ -92,37 +92,39 @@ class GUI
   Chamfer_mode get_chamfer_mode() const { return m_chamfer_mode; }
   Fillet_mode  get_fillet_mode() const { return m_fillet_mode; }
   /// Edge dimension value placement (Options panel, toggle-dimension tool): 0 first point, 1 second, 2 center, 3 auto.
-  int          edge_dim_label_h() const { return m_edge_dim_label_h; }
+  int edge_dim_label_h() const { return m_edge_dim_label_h; }
   /// OCCT scale factor for sketch/extrude length dimension lines (1.0 = default thickness).
-  float        edge_dim_line_width() const { return m_edge_dim_line_width; }
+  float edge_dim_line_width() const { return m_edge_dim_line_width; }
   /// OCCT arrow length for sketch/extrude length dimensions.
-  float        edge_dim_arrow_size() const { return m_edge_dim_arrow_size; }
-  bool         get_hide_all_shapes() const { return m_hide_all_shapes; }
-  void         set_hide_all_shapes(bool hide) { m_hide_all_shapes = hide; }
-  bool         get_dark_mode() const { return m_dark_mode; }
-  ImVec4       get_clear_color() const;
-  void         set_mode(Mode mode);  // gui_mode.cpp
-  void         set_parent_mode();    // gui_mode.cpp
-  void         set_dist_edit(float dist, std::function<void(float, bool)>&& callback, const std::optional<ScreenCoords> screen_coords = std::nullopt);
-  void         hide_dist_edit();
-  void         set_angle_edit(float angle, std::function<void(float, bool)>&& callback, const std::optional<ScreenCoords> screen_coords = std::nullopt);
-  void         hide_angle_edit();
+  float  edge_dim_arrow_size() const { return m_edge_dim_arrow_size; }
+  bool   get_hide_all_shapes() const { return m_hide_all_shapes; }
+  void   set_hide_all_shapes(bool hide) { m_hide_all_shapes = hide; }
+  bool   get_dark_mode() const { return m_dark_mode; }
+  ImVec4 get_clear_color() const;
+  void   set_mode(Mode mode); // gui_mode.cpp
+  void   set_parent_mode();   // gui_mode.cpp
+  void   set_dist_edit(float dist, std::function<void(float, bool)>&& callback,
+                       const std::optional<ScreenCoords> screen_coords = std::nullopt);
+  void   hide_dist_edit();
+  void   set_angle_edit(float angle, std::function<void(float, bool)>&& callback,
+                        const std::optional<ScreenCoords> screen_coords = std::nullopt);
+  void   hide_angle_edit();
   /// True when dist or angle edit is visible; Tab should be routed to on_key() instead of ImGui.
-  bool         is_dist_or_angle_edit_active() const;
-  void         show_message(const std::string& message);
-  void         log_message(const std::string& message);
-  void         set_show_options(bool v) { m_show_options = v; }
-  void         set_show_sketch_list(bool v) { m_show_sketch_list = v; }
-  void         set_show_shape_list(bool v) { m_show_shape_list = v; }
-  void         set_log_window_visible(bool v) { m_log_window_visible = v; }
-  void         set_show_settings_dialog(bool v) { m_show_settings_dialog = v; }
+  bool is_dist_or_angle_edit_active() const;
+  void show_message(const std::string& message);
+  void log_message(const std::string& message);
+  void set_show_options(bool v) { m_show_options = v; }
+  void set_show_sketch_list(bool v) { m_show_sketch_list = v; }
+  void set_show_shape_list(bool v) { m_show_shape_list = v; }
+  void set_log_window_visible(bool v) { m_log_window_visible = v; }
+  void set_show_settings_dialog(bool v) { m_show_settings_dialog = v; }
 #ifndef NDEBUG
   void set_show_dbg(bool v) { m_show_dbg = v; }
 #endif
 
 #ifdef __EMSCRIPTEN__
-  void open_file_dialog_async();    // Emscripten: hidden <input type="file">; no custom title (browser UI)
-  void import_file_dialog_async();  // STEP / PLY import (routes to on_import_file)
+  void open_file_dialog_async();   // Emscripten: hidden <input type="file">; no custom title (browser UI)
+  void import_file_dialog_async(); // STEP / PLY import (routes to on_import_file)
   void save_file_dialog_async(const char* title, const std::string& default_file, const std::string& json_str);
   void download_blob_async(const std::string& default_filename, const std::string& data);
   /// After browser download save, remember basename for window title and Save-as default.
@@ -141,14 +143,11 @@ class GUI
   [[nodiscard]] std::string occt_view_settings_json() const;
 
   /// Default RGBA (0-255) for sketch underlay line tint when importing a new image (see Settings).
-  void       underlay_highlight_color_rgba(uint8_t& r, uint8_t& g, uint8_t& b, uint8_t& a) const;
+  void underlay_highlight_color_rgba(uint8_t& r, uint8_t& g, uint8_t& b, uint8_t& a) const;
   /// For scripting (Lua console): access the 3D view.
-  Occt_view* get_view()
-  {
-    return m_view.get();
-  }
+  Occt_view* get_view() { return m_view.get(); }
 
- private:
+private:
   friend class GUI_access;
   // Structure to hold button state and texture
   struct Toolbar_button
@@ -229,21 +228,21 @@ class GUI
   void open_file_dialog_();
   void save_file_dialog_();
 
-  void                      save_startup_project_();
-  void                      clear_saved_startup_project_();
+  void save_startup_project_();
+  void clear_saved_startup_project_();
   /// Native only: store path in settings after a successful Open (for optional startup load).
   void                      persist_last_opened_project_path_(const std::string& path);
-  std::string               serialized_project_json_() const;
+  [[nodiscard]] std::string serialized_project_json_() const;
   void                      open_url_(const std::string& url);
   void                      update_window_title_();
   [[nodiscard]] std::string project_title_segment_() const;
   /// Parses a float from manual dist/angle ImGui text fields (trimmed, full-string match).
-  static bool               parse_dist_text_to_float_(const char* buf, float& out);
-  /// True if JSON parses and looks like an EzyCad project document (`sketches` array).
-  static bool               is_valid_project_json_(const std::string& s);
+  [[nodiscard]] static bool parse_dist_text_to_float_(const char* buf, float& out);
+  /// True if JSON parses and looks like an EzyCad project document (`sketches` array[).
+  [[nodiscard]] static bool is_valid_project_json_(const std::string& s);
 
   /// OCCT standard material display names for ImGui combos (index matches \c Graphic3d_NameOfMaterial).
-  static const std::vector<std::string>& occt_material_combo_labels_();
+  static [[nodiscard]] const std::vector<std::string>& occt_material_combo_labels_();
 
   // Settings (gui_settings.cpp)
   void load_occt_view_settings_();
@@ -253,34 +252,34 @@ class GUI
   void imgui_rounding_fallbacks_from_theme_(float& general, float& scroll, float& tabs) const;
 
   Occt_view::uptr m_view;
-  GLFWwindow*     m_glfw_window {nullptr};
+  GLFWwindow*     m_glfw_window{nullptr};
   std::string     m_cached_window_title;
 
   // Sketch segment manual length input related
   std::function<void(float, bool)> m_dist_callback;
-  ScreenCoords                     m_dist_edit_loc {glm::dvec2(0, 0)};
-  float                            m_dist_val {};
-  std::array<char, 64>             m_dist_text_buf {};
-  bool                             m_dist_edit_focus_pending {false};
+  ScreenCoords                     m_dist_edit_loc{glm::dvec2(0, 0)};
+  float                            m_dist_val{};
+  std::array<char, 64>             m_dist_text_buf{};
+  bool                             m_dist_edit_focus_pending{false};
 
   // Sketch segment manual angle input related
   std::function<void(float, bool)> m_angle_callback;
-  ScreenCoords                     m_angle_edit_loc {glm::dvec2(0, 0)};
-  float                            m_angle_val {};
-  std::array<char, 64>             m_angle_text_buf {};
-  bool                             m_angle_edit_focus_pending {false};
+  ScreenCoords                     m_angle_edit_loc{glm::dvec2(0, 0)};
+  float                            m_angle_val{};
+  std::array<char, 64>             m_angle_text_buf{};
+  bool                             m_angle_edit_focus_pending{false};
 
   // Mode related
-  Mode                        m_mode         = Mode::Normal;
-  Chamfer_mode                m_chamfer_mode = Chamfer_mode::Shape;
-  Fillet_mode                 m_fillet_mode  = Fillet_mode::Shape;
-  int                         m_edge_dim_label_h {3};  // Prs3d_DTHP_Fit
-  float                       m_edge_dim_line_width {k_gui_edge_dim_line_width_default};
-  float                       m_edge_dim_arrow_size {k_gui_edge_dim_arrow_size_default};
+  Mode         m_mode                = Mode::Normal;
+  Chamfer_mode m_chamfer_mode        = Chamfer_mode::Shape;
+  Fillet_mode  m_fillet_mode         = Fillet_mode::Shape;
+  int          m_edge_dim_label_h    = 3; // Prs3d_DTHP_Fit
+  float        m_edge_dim_line_width = k_gui_edge_dim_line_width_default;
+  float        m_edge_dim_arrow_size = k_gui_edge_dim_arrow_size_default;
   /// Degrees per numpad orbit (8/2/4/6) and Blender-style roll (Shift+NumPad 4/6); persisted in `gui.view_roll_step_deg`.
-  double                      m_view_roll_step_deg {k_gui_view_roll_step_deg_default};
+  double m_view_roll_step_deg = k_gui_view_roll_step_deg_default;
   /// Multiplier for `UpdateZoom(Aspect_ScrollDelta(..., int(y * scale)))`; persisted in `gui.view_zoom_scroll_scale`.
-  double                      m_view_zoom_scroll_scale {k_gui_view_zoom_scroll_scale_default};
+  double                      m_view_zoom_scroll_scale = k_gui_view_zoom_scroll_scale_default;
   std::vector<Toolbar_button> m_toolbar_buttons;
 
   // Message status window
@@ -289,92 +288,92 @@ class GUI
   std::chrono::steady_clock::time_point m_message_start_time;
 
   // Log window (single buffer for ImGui read-only multiline = selectable / copyable text)
-  std::vector<char> m_log_buffer {'\0'};
-  bool              m_log_scroll_to_bottom = false;  // Auto-scroll log to bottom on new lines (like Lua console)
-  bool              m_log_window_visible   = true;   // Control log window visibility
+  std::vector<char> m_log_buffer{'\0'};
+  bool              m_log_scroll_to_bottom = false; // Auto-scroll log to bottom on new lines (like Lua console)
+  bool              m_log_window_visible   = true;  // Control log window visibility
 
   // Stream redirection
-  std::streambuf* m_original_cout_buf = nullptr;  // Original stdout buffer
-  std::streambuf* m_original_cerr_buf = nullptr;  // Original stderr buffer
-  Log_strm*       m_cout_log_buf      = nullptr;  // Custom stdout buffer
-  Log_strm*       m_cerr_log_buf      = nullptr;  // Custom stderr buffer
+  std::streambuf* m_original_cout_buf = nullptr; // Original stdout buffer
+  std::streambuf* m_original_cerr_buf = nullptr; // Original stderr buffer
+  Log_strm*       m_cout_log_buf      = nullptr; // Custom stdout buffer
+  Log_strm*       m_cerr_log_buf      = nullptr; // Custom stderr buffer
 
-  std::string m_last_saved_path;  // Session path for Ctrl+S / Save as
-  bool        m_load_last_opened_on_startup {false};
-  std::string m_last_opened_project_path;  // Persisted in settings (native)
+  std::string m_last_saved_path; // Session path for Ctrl+S / Save as
+  bool        m_load_last_opened_on_startup{false};
+  std::string m_last_opened_project_path; // Persisted in settings (native)
 
   using Example_file_list = std::vector<Example_file>;
   Example_file_list m_example_files;
 
   std::unordered_map<const Sketch*, bool> m_sketch_list_expanded;
 
-  bool        m_show_sketch_list {true};
-  bool        m_show_shape_list {true};
-  bool        m_show_options {true};
-  bool        m_show_settings_dialog {false};
-  bool        m_open_about_popup {false};
-  bool        m_about_popup_open {false};
+  bool        m_show_sketch_list{true};
+  bool        m_show_shape_list{true};
+  bool        m_show_options{true};
+  bool        m_show_settings_dialog{false};
+  bool        m_open_about_popup{false};
+  bool        m_about_popup_open{false};
   std::string m_about_markdown;
-  uint32_t    m_about_splash_gl {0};
-  glm::ivec2  m_about_splash_size {512, 512};
-  bool        m_about_assets_loaded {false};
-  bool        m_open_add_box_popup {false};
-  glm::dvec3  m_add_box_origin {0.0, 0.0, 0.0};
-  glm::dvec3  m_add_box_size {1.0, 1.0, 1.0};
-  bool        m_open_add_pyramid_popup {false};
-  glm::dvec3  m_add_pyramid_origin {0.0, 0.0, 0.0};
-  double      m_add_pyramid_side {1};
-  bool        m_open_add_sphere_popup {false};
-  glm::dvec3  m_add_sphere_origin {0.0, 0.0, 0.0};
-  double      m_add_sphere_radius {1};
-  bool        m_open_add_cylinder_popup {false};
-  glm::dvec3  m_add_cylinder_origin {0.0, 0.0, 0.0};
-  double      m_add_cylinder_radius {1}, m_add_cylinder_height {1};
-  bool        m_open_add_cone_popup {false};
-  glm::dvec3  m_add_cone_origin {0.0, 0.0, 0.0};
-  double      m_add_cone_R1 {1}, m_add_cone_R2 {0}, m_add_cone_height {1};
-  bool        m_open_add_torus_popup {false};
-  glm::dvec3  m_add_torus_origin {0.0, 0.0, 0.0};
-  double      m_add_torus_R1 {1}, m_add_torus_R2 {0.5};
-  bool        m_hide_all_shapes {false};
-  bool        m_show_tool_tips {true};
-  bool        m_dark_mode {false};
+  uint32_t    m_about_splash_gl{0};
+  glm::ivec2  m_about_splash_size{512, 512};
+  bool        m_about_assets_loaded{false};
+  bool        m_open_add_box_popup{false};
+  glm::dvec3  m_add_box_origin{0.0, 0.0, 0.0};
+  glm::dvec3  m_add_box_size{1.0, 1.0, 1.0};
+  bool        m_open_add_pyramid_popup{false};
+  glm::dvec3  m_add_pyramid_origin{0.0, 0.0, 0.0};
+  double      m_add_pyramid_side{1};
+  bool        m_open_add_sphere_popup{false};
+  glm::dvec3  m_add_sphere_origin{0.0, 0.0, 0.0};
+  double      m_add_sphere_radius{1};
+  bool        m_open_add_cylinder_popup{false};
+  glm::dvec3  m_add_cylinder_origin{0.0, 0.0, 0.0};
+  double      m_add_cylinder_radius{1}, m_add_cylinder_height{1};
+  bool        m_open_add_cone_popup{false};
+  glm::dvec3  m_add_cone_origin{0.0, 0.0, 0.0};
+  double      m_add_cone_R1{1}, m_add_cone_R2{0}, m_add_cone_height{1};
+  bool        m_open_add_torus_popup{false};
+  glm::dvec3  m_add_torus_origin{0.0, 0.0, 0.0};
+  double      m_add_torus_R1{1}, m_add_torus_R2{0.5};
+  bool        m_hide_all_shapes{false};
+  bool        m_show_tool_tips{true};
+  bool        m_dark_mode{false};
 #ifndef NDEBUG
-  bool m_show_dbg {false};
+  bool m_show_dbg{false};
 #endif
-  bool                  m_show_lua_console {true};  // Lua Console pane; hidden if false in settings
+  bool m_show_lua_console{true}; // Lua Console pane; hidden if false in settings
   /// ImGui corner radii (applied after StyleColorsDark/Light each frame). Scroll value sets both scrollbar and grab rounding.
-  float                 m_imgui_rounding_general {0.f};
-  float                 m_imgui_rounding_scroll {0.f};
-  float                 m_imgui_rounding_tabs {0.f};
-  bool                  m_sketch_properties_open {false};
+  float                 m_imgui_rounding_general{0.f};
+  float                 m_imgui_rounding_scroll{0.f};
+  float                 m_imgui_rounding_tabs{0.f};
+  bool                  m_sketch_properties_open{false};
   std::weak_ptr<Sketch> m_sketch_properties_sketch;
 
   // Sketch underlay related
-  void*                 m_underlay_panel_sketch {nullptr};
-  Underlay_calib_phase  m_underlay_calib_phase {Underlay_calib_phase::None};
-  std::weak_ptr<Sketch> m_underlay_calib_sketch_wk {};
-  gp_Pnt2d              m_underlay_calib_x0 {};
-  gp_Pnt2d              m_underlay_calib_x1 {};
-  gp_Vec2d              m_underlay_calib_axis_u {};  // After X distance (model units)
-  gp_Pnt2d              m_underlay_calib_y0 {};
-  gp_Pnt2d              m_underlay_calib_y1 {};
-  gp_Pnt2d              m_underlay_calib_datum_o {};
+  void*                 m_underlay_panel_sketch{nullptr};
+  Underlay_calib_phase  m_underlay_calib_phase{Underlay_calib_phase::None};
+  std::weak_ptr<Sketch> m_underlay_calib_sketch_wk{};
+  gp_Pnt2d              m_underlay_calib_x0{};
+  gp_Pnt2d              m_underlay_calib_x1{};
+  gp_Vec2d              m_underlay_calib_axis_u{}; // After X distance (model units)
+  gp_Pnt2d              m_underlay_calib_y0{};
+  gp_Pnt2d              m_underlay_calib_y1{};
+  gp_Pnt2d              m_underlay_calib_datum_o{};
   /// If set, next underlay import (menu or async) applies to this sketch; otherwise current sketch.
   std::weak_ptr<Sketch> m_underlay_import_sketch_target;
-  glm::dvec2            m_underlay_center {};
-  glm::dvec2            m_underlay_half_extents {};
-  double                m_underlay_rot {};
-  float                 m_underlay_opacity {0.88f};
-  bool                  m_underlay_vis {true};
-  bool                  m_underlay_key_white {true};
-  bool                  m_underlay_line_tint {true};
-  glm::vec4             m_underlay_tint_col {1.f, 220.f / 255.f, 0.f, 1.f};
+  glm::dvec2            m_underlay_center{};
+  glm::dvec2            m_underlay_half_extents{};
+  double                m_underlay_rot{};
+  float                 m_underlay_opacity{0.88f};
+  bool                  m_underlay_vis{true};
+  bool                  m_underlay_key_white{true};
+  bool                  m_underlay_line_tint{true};
+  glm::vec4             m_underlay_tint_col{1.f, 220.f / 255.f, 0.f, 1.f};
   /// Default underlay tint for new imports (0-1, persisted in ezycad_settings.json).
-  glm::vec4             m_underlay_highlight_color {1.f, 220.f / 255.f, 0.f, 1.f};
+  glm::vec4 m_underlay_highlight_color{1.f, 220.f / 255.f, 0.f, 1.f};
 
   std::unique_ptr<Lua_console>    m_lua_console;
-  bool                            m_show_python_console {false};
+  bool                            m_show_python_console{false};
   std::unique_ptr<Python_console> m_python_console;
-  ImFont*                         m_console_font {nullptr};  // Cousine monospace; set from main
+  ImFont*                         m_console_font{nullptr}; // Cousine monospace; set from main
 };

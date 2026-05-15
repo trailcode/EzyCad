@@ -668,6 +668,22 @@ if(RES_FILES)
   set_source_files_properties(${RES_FILES_REL} PROPERTIES HEADER_FILE_ONLY TRUE)
 endif()
 
+# Utility scripts: show scripts/ in the IDE (not compiled; same pattern as res/)
+file(GLOB_RECURSE EZYCAD_SCRIPT_FILES CONFIGURE_DEPENDS
+  LIST_DIRECTORIES false
+  "${CMAKE_SOURCE_DIR}/scripts/*")
+if(EZYCAD_SCRIPT_FILES)
+  source_group(TREE "${CMAKE_SOURCE_DIR}/scripts" PREFIX "scripts" FILES ${EZYCAD_SCRIPT_FILES})
+  set(EZYCAD_SCRIPT_FILES_REL)
+  foreach(f ${EZYCAD_SCRIPT_FILES})
+    file(RELATIVE_PATH f_rel "${CMAKE_SOURCE_DIR}" "${f}")
+    list(APPEND EZYCAD_SCRIPT_FILES_REL "${f_rel}")
+  endforeach()
+  target_sources(${PROJECT_NAME}_lib PRIVATE ${EZYCAD_SCRIPT_FILES_REL})
+  target_sources(${PROJECT_NAME} PRIVATE ${EZYCAD_SCRIPT_FILES_REL})
+  set_source_files_properties(${EZYCAD_SCRIPT_FILES_REL} PROPERTIES HEADER_FILE_ONLY TRUE)
+endif()
+
 # Add .clang-format and .gitignore to EzyCad and EzyCad_lib so they appear in VS and other IDEs (at project root)
 set(CLANG_FORMAT_FILE ${CMAKE_SOURCE_DIR}/.clang-format)
 if(EXISTS ${CLANG_FORMAT_FILE})

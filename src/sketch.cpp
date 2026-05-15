@@ -34,12 +34,20 @@
 using namespace glm;
 
 Sketch::Sketch(const std::string& name, Occt_view& view, const gp_Pln& pln)
-    : m_view(view), m_ctx(view.ctx()), m_pln(pln), m_name(name), m_nodes(view, pln)
+    : m_view(view)
+    , m_ctx(view.ctx())
+    , m_pln(pln)
+    , m_name(name)
+    , m_nodes(view, pln)
 {
 }
 
 Sketch::Sketch(const std::string& name, Occt_view& view, const gp_Pln& pln, const TopoDS_Wire& outer_wire)
-    : m_view(view), m_ctx(view.ctx()), m_pln(pln), m_name(name), m_nodes(view, pln)
+    : m_view(view)
+    , m_ctx(view.ctx())
+    , m_pln(pln)
+    , m_name(name)
+    , m_nodes(view, pln)
 {
   m_originating_face = new AIS_Shape(outer_wire);
   m_ctx.Display(m_originating_face, true);
@@ -52,7 +60,9 @@ Sketch::~Sketch()
     m_underlay->erase(m_ctx);
 
   auto remove_edge = [&](Edge& e)
-  { m_ctx.Remove(e.shp, false); };
+  {
+    m_ctx.Remove(e.shp, false);
+  };
 
   for (Edge& e : m_edges)
     remove_edge(e);
@@ -85,7 +95,7 @@ void Sketch::add_sketch_pt(const ScreenCoords& screen_coords)
 {
   switch (get_mode())
   {
-      // clang-format off
+    // clang-format off
     case Mode::Sketch_add_square:
     case Mode::Sketch_add_circle:
     case Mode::Sketch_add_rectangle:
@@ -100,7 +110,7 @@ void Sketch::add_sketch_pt(const ScreenCoords& screen_coords)
     case Mode::Sketch_operation_axis:     add_operation_axis_pt_(screen_coords);                            break;
     default:
       EZY_ASSERT(false);
-      // clang-format on
+    // clang-format on
   }
 }
 
@@ -108,7 +118,7 @@ void Sketch::sketch_pt_move(const ScreenCoords& screen_coords)
 {
   switch (get_mode())
   {
-      // clang-format off
+    // clang-format off
     case Mode::Sketch_add_node:            move_add_node_pt_    (screen_coords); break;
     case Mode::Sketch_add_seg_circle_arc:  move_arc_circle_pt_  (screen_coords); break;
     case Mode::Sketch_add_square:          move_square_pt_      (screen_coords); break;
@@ -131,9 +141,9 @@ void Sketch::sketch_pt_move(const ScreenCoords& screen_coords)
       move_rectangle_pt_(screen_coords);
       break;
 
-      // clang-format on
-    default:
-      break;
+    // clang-format on
+  default:
+    break;
   }
 }
 
@@ -174,22 +184,22 @@ void Sketch::update_edge_style_(AIS_Shape_ptr& shp)
 {
   switch (m_edge_style)
   {
-    case Edge_style::Full:
-      // shp->SetWidth(1.5);
-      shp->SetWidth(1.0);
-      shp->SetColor(Quantity_Color(0.0, 1.0, 0.0, Quantity_TOC_RGB));
-      shp->SetTransparency(0.0);
+  case Edge_style::Full:
+    // shp->SetWidth(1.5);
+    shp->SetWidth(1.0);
+    shp->SetColor(Quantity_Color(0.0, 1.0, 0.0, Quantity_TOC_RGB));
+    shp->SetTransparency(0.0);
 
-      break;
+    break;
 
-    case Edge_style::Background:
-      shp->SetWidth(1.0);
-      shp->SetColor(Quantity_Color(0.3, 0.3, 0.3, Quantity_TOC_RGB));
-      shp->SetTransparency(0.7);
-      break;
+  case Edge_style::Background:
+    shp->SetWidth(1.0);
+    shp->SetColor(Quantity_Color(0.3, 0.3, 0.3, Quantity_TOC_RGB));
+    shp->SetTransparency(0.7);
+    break;
 
-    default:
-      EZY_ASSERT(false);
+  default:
+    EZY_ASSERT(false);
   }
 }
 
@@ -197,20 +207,20 @@ void Sketch::update_node_mark_style_(AIS_Shape_ptr& shp)
 {
   switch (m_edge_style)
   {
-    case Edge_style::Full:
-      shp->SetWidth(1.25);
-      shp->SetColor(Quantity_NOC_RED);
-      shp->SetTransparency(0.0);
-      break;
+  case Edge_style::Full:
+    shp->SetWidth(1.25);
+    shp->SetColor(Quantity_NOC_RED);
+    shp->SetTransparency(0.0);
+    break;
 
-    case Edge_style::Background:
-      shp->SetWidth(1.0);
-      shp->SetColor(Quantity_Color(0.55, 0.12, 0.12, Quantity_TOC_RGB));
-      shp->SetTransparency(0.5);
-      break;
+  case Edge_style::Background:
+    shp->SetWidth(1.0);
+    shp->SetColor(Quantity_Color(0.55, 0.12, 0.12, Quantity_TOC_RGB));
+    shp->SetTransparency(0.5);
+    break;
 
-    default:
-      EZY_ASSERT(false);
+  default:
+    EZY_ASSERT(false);
   }
 }
 
@@ -219,8 +229,7 @@ void Sketch::sync_permanent_node_annos_()
   if (m_permanent_node_marks.size() < m_nodes.size())
     m_permanent_node_marks.resize(m_nodes.size());
 
-  const double half_arm =
-      std::max(plane_pick_snap_radius_world_() * 0.45, Precision::Confusion() * 50.0);
+  const double half_arm = std::max(plane_pick_snap_radius_world_() * 0.45, Precision::Confusion() * 50.0);
 
   const Mode mode = get_mode();
   // Show "+" markers for permanent user nodes in sketch modes and polar duplicate (which snaps to sketch nodes).
@@ -283,29 +292,27 @@ void Sketch::update_originating_face_style()
 
   switch (m_edge_style)
   {
-    case Edge_style::Full:
-      m_originating_face->SetWidth(1.0);
-      m_originating_face->SetColor(Quantity_Color(0.3, 0.0, 0.0, Quantity_TOC_RGB));
-      m_originating_face->SetTransparency(0.0);
+  case Edge_style::Full:
+    m_originating_face->SetWidth(1.0);
+    m_originating_face->SetColor(Quantity_Color(0.3, 0.0, 0.0, Quantity_TOC_RGB));
+    m_originating_face->SetTransparency(0.0);
 
-      break;
+    break;
 
-    case Edge_style::Background:
-      m_originating_face->SetWidth(1.0);
-      m_originating_face->SetColor(Quantity_Color(0.3, 0.3, 0.3, Quantity_TOC_RGB));
-      m_originating_face->SetTransparency(0.7);
-      break;
+  case Edge_style::Background:
+    m_originating_face->SetWidth(1.0);
+    m_originating_face->SetColor(Quantity_Color(0.3, 0.3, 0.3, Quantity_TOC_RGB));
+    m_originating_face->SetTransparency(0.7);
+    break;
 
-    default:
-      EZY_ASSERT(false);
+  default:
+    EZY_ASSERT(false);
   }
 
   m_ctx.Redisplay(m_originating_face, true);
 }
 
-void Sketch::update_face_style_(AIS_Shape_ptr& shp) const
-{
-}
+void Sketch::update_face_style_(AIS_Shape_ptr& shp) const {}
 
 void Sketch::update_edge_shp_(Edge& edge, const gp_Pnt2d& pt_a, const gp_Pnt2d& pt_b)
 {
@@ -331,7 +338,7 @@ void Sketch::on_enter()
 {
   switch (get_mode())
   {
-      // clang-format off
+    // clang-format off
     case Mode::Sketch_add_square:
     case Mode::Sketch_add_rectangle:
     case Mode::Sketch_add_rectangle_center_pt:
@@ -342,9 +349,9 @@ void Sketch::on_enter()
     case Mode::Sketch_add_edge:         check_dimension_seg_(Linestring_type::Single);    break;
     case Mode::Sketch_add_slot:         check_dimension_seg_(Linestring_type::Two);       break;
     case Mode::Sketch_add_multi_edges:  check_dimension_seg_(Linestring_type::Multiple);  break;
-      // clang-format on
-    default:
-      break;
+    // clang-format on
+  default:
+    break;
   }
 }
 
@@ -476,9 +483,8 @@ void Sketch::move_line_string_pt_(const ScreenCoords& screen_coords)
     {
       m_tmp_dim_anno = create_distance_annotation(
           pt_a, final_pt_b, m_pln, edge_dim_text_h_pos_from_index(m_view.gui().edge_dim_label_h()),
-          approx_sketch_interior_ref_3d_(),
-          m_dim_classifier_faces.empty() ? nullptr : &m_dim_classifier_faces, m_view.gui().edge_dim_line_width(),
-          m_view.gui().edge_dim_arrow_size());
+          approx_sketch_interior_ref_3d_(), m_dim_classifier_faces.empty() ? nullptr : &m_dim_classifier_faces,
+          m_view.gui().edge_dim_line_width(), m_view.gui().edge_dim_arrow_size());
 
       m_tmp_dim_anno->SetCustomValue(dist);
       m_ctx.Display(m_tmp_dim_anno, true);
@@ -493,9 +499,7 @@ void Sketch::move_line_string_pt_(const ScreenCoords& screen_coords)
 
       auto l = [&, edge_dir](float new_dist, bool is_finial)
       {
-        m_entered_edge_len = {
-            edge_dir,
-            new_dist * m_view.get_dimension_scale()};
+        m_entered_edge_len = {edge_dir, new_dist * m_view.get_dimension_scale()};
 
         m_show_dim_input = !is_finial;
         if (is_finial)
@@ -579,8 +583,8 @@ void Sketch::finalize_edges_()
         if (!itr->node_idx_arc.has_value())
         {
           // Split the edge.
-          Edge edge_a {itr->node_idx_a, mid_pt_idx};
-          Edge edge_b {mid_pt_idx, *itr->node_idx_b};
+          Edge edge_a{itr->node_idx_a, mid_pt_idx};
+          Edge edge_b{mid_pt_idx, *itr->node_idx_b};
           update_edge_shp_(edge_a, m_nodes[itr->node_idx_a], m_nodes[mid_pt_idx]);
           update_edge_shp_(edge_b, m_nodes[itr->node_idx_b], m_nodes[mid_pt_idx]);
           // Set midpoints for the new split edges so they can be snapped to
@@ -698,8 +702,7 @@ double Sketch::plane_pick_snap_radius_world_() const
   const gp_Pnt2d          ref2(0.0, 0.0);
   const ScreenCoords      s0   = m_view.get_screen_coords(to_3d(m_pln, ref2));
   const dvec2             base = s0.unsafe_get();
-  std::optional<gp_Pnt2d> p1 =
-      m_view.pt_on_plane(ScreenCoords(dvec2(base.x + px, base.y)), m_pln);
+  std::optional<gp_Pnt2d> p1   = m_view.pt_on_plane(ScreenCoords(dvec2(base.x + px, base.y)), m_pln);
   if (!p1)
     return std::max(px, Precision::Confusion() * 1e9);
   return ref2.Distance(*p1);
@@ -733,8 +736,7 @@ void Sketch::snap_placed_node_to_closest_linear_edge_interior_(size_t node_idx)
     if (node_idx == a || node_idx == b)
       continue;
 
-    std::optional<gp_Pnt2d> proj =
-        snap_foot_to_open_segment_interior_if_close(p, pa, pb, max_d);
+    std::optional<gp_Pnt2d> proj = snap_foot_to_open_segment_interior_if_close(p, pa, pb, max_d);
     if (!proj)
       continue;
 
@@ -787,9 +789,9 @@ void Sketch::split_linear_edges_at_node_if_interior_(size_t node_idx)
       if (!point_on_open_segment_2d(p, pa, pb))
         continue;
 
-      Edge edge_a {a};
+      Edge edge_a{a};
       update_edge_end_pt_(edge_a, node_idx);
-      Edge edge_b {node_idx};
+      Edge edge_b{node_idx};
       update_edge_end_pt_(edge_b, b);
 
       m_ctx.Remove(itr->shp, false);
@@ -894,8 +896,7 @@ void Sketch::move_rectangle_pt_(const ScreenCoords& screen_coords)
   {
     EZY_ASSERT(m_tmp_edges.size());
 
-    if (std::abs(pt_a.X() - pt_b.X()) > Precision::Confusion() &&
-        std::abs(pt_a.Y() - pt_b.Y()) > Precision::Confusion())
+    if (std::abs(pt_a.X() - pt_b.X()) > Precision::Confusion() && std::abs(pt_a.Y() - pt_b.Y()) > Precision::Confusion())
     {
       TopoDS_Wire rectangle = make_rectangle_wire(m_pln, pt_a, pt_b);
       show(m_ctx, m_tmp_shp, rectangle);
@@ -914,8 +915,7 @@ void Sketch::finalize_rectangle_()
 {
   auto l = [&](Edge& e, const gp_Pnt2d& pt_a, const gp_Pnt2d& pt_b)
   {
-    if (std::abs(pt_a.X() - pt_b.X()) > Precision::Confusion() &&
-        std::abs(pt_a.Y() - pt_b.Y()) > Precision::Confusion())
+    if (std::abs(pt_a.X() - pt_b.X()) > Precision::Confusion() && std::abs(pt_a.Y() - pt_b.Y()) > Precision::Confusion())
     {
       std::array<gp_Pnt2d, 4> corners = rectangle_corners(pt_a, pt_b);
       add_edge_(corners[0], corners[1]);
@@ -957,10 +957,8 @@ void Sketch::finalize_slot_()
   EZY_ASSERT(m_tmp_edges.size() == 2);
   EZY_ASSERT(m_tmp_edges[1].node_idx_b.has_value());
 
-  Slot_pnts pnts = get_slot_points(
-      m_nodes[m_tmp_edges[0].node_idx_a],
-      m_nodes[m_tmp_edges[1].node_idx_a],
-      m_nodes[m_tmp_edges[1].node_idx_b]);
+  Slot_pnts pnts = get_slot_points(m_nodes[m_tmp_edges[0].node_idx_a], m_nodes[m_tmp_edges[1].node_idx_a],
+                                   m_nodes[m_tmp_edges[1].node_idx_b]);
 
   add_edge_(pnts.a_top_2d, pnts.b_top_2d);
   add_edge_(pnts.a_bottom_2d, pnts.b_bottom_2d);
@@ -983,7 +981,7 @@ void Sketch::add_operation_axis_pt_(const ScreenCoords& screen_coords)
 void Sketch::finalize_operation_axis_()
 {
   m_operation_axis = std::move(m_tmp_edges.back());
-  cancel_elm();  // Reset state, we have the operation axis
+  cancel_elm(); // Reset state, we have the operation axis
 }
 
 void Sketch::clear_operation_axis()
@@ -994,10 +992,7 @@ void Sketch::clear_operation_axis()
   m_operation_axis = std::nullopt;
 }
 
-bool Sketch::has_operation_axis() const
-{
-  return m_operation_axis.has_value();
-}
+bool Sketch::has_operation_axis() const { return m_operation_axis.has_value(); }
 
 void Sketch::mirror_selected_edges()
 {
@@ -1063,8 +1058,7 @@ void Sketch::mirror_selected_edges()
 
 Shp_rslt Sketch::revolve_selected(const double angle)
 {
-  EZY_ASSERT_MSG(m_operation_axis.has_value(),
-                 "No defined operation axis.");
+  EZY_ASSERT_MSG(m_operation_axis.has_value(), "No defined operation axis.");
 
   TopoDS_Compound compound;
   BRep_Builder    builder;
@@ -1132,8 +1126,7 @@ void Sketch::add_sketch_pt_(const ScreenCoords& screen_coords, size_t required_n
   move_sketch_pt_(screen_coords, l);
 }
 
-template <typename Callback>
-void Sketch::move_sketch_pt_(const ScreenCoords& screen_coords, Callback&& callback)
+template <typename Callback> void Sketch::move_sketch_pt_(const ScreenCoords& screen_coords, Callback&& callback)
 {
   m_last_pt = m_view.pt_on_plane(screen_coords, m_pln);
   if (!m_last_pt)
@@ -1146,8 +1139,7 @@ void Sketch::move_sketch_pt_(const ScreenCoords& screen_coords, Callback&& callb
 }
 
 /// Invokes callback(e, pt_a, pt_b) with the last tmp edge only when it exists and is non-degenerate.
-template <typename Callback>
-void Sketch::if_edge_pt_valid_(Callback&& callback)
+template <typename Callback> void Sketch::if_edge_pt_valid_(Callback&& callback)
 {
   if (m_tmp_edges.empty())
     return;
@@ -1186,17 +1178,17 @@ void Sketch::check_dimension_seg_(Linestring_type linestring_type)
   {
     switch (m_tmp_edges.size())
     {
-      case 1:
-        m_entered_edge_angle = std::nullopt;
-        m_show_angle_input   = false;
-        m_view.gui().hide_angle_edit();
-        m_tmp_edges.push_back({*edge.node_idx_b});
-        break;
-      case 2:
-        finalize_elm();
-        break;
-      default:
-        EZY_ASSERT(false);
+    case 1:
+      m_entered_edge_angle = std::nullopt;
+      m_show_angle_input   = false;
+      m_view.gui().hide_angle_edit();
+      m_tmp_edges.push_back({*edge.node_idx_b});
+      break;
+    case 2:
+      finalize_elm();
+      break;
+    default:
+      EZY_ASSERT(false);
     }
   }
   else
@@ -1267,7 +1259,7 @@ void Sketch::finalize_add_node_elm_cleanup_()
 
 void Sketch::add_edge_(const gp_Pnt2d& pt_a, const gp_Pnt2d& pt_b)
 {
-  Edge edge {m_nodes.get_node_exact(pt_a)};
+  Edge edge{m_nodes.get_node_exact(pt_a)};
   update_edge_end_pt_(edge, m_nodes.get_node_exact(pt_b));
   m_edges.emplace_back(edge);
   m_nodes.finalize();
@@ -1277,7 +1269,7 @@ void Sketch::sketch_json_add_linear_edge_(size_t idx_a, size_t idx_b, size_t idx
 {
   EZY_ASSERT(idx_a < m_nodes.size() && idx_b < m_nodes.size() && idx_mid < m_nodes.size());
 
-  Edge edge {idx_a};
+  Edge edge{idx_a};
   edge.node_idx_b      = idx_b;
   edge.node_idx_mid    = idx_mid;
   const gp_Pnt2d& pt_a = m_nodes[idx_a];
@@ -1350,7 +1342,7 @@ void Sketch::update_len_dim_rubber_line_(const ScreenCoords& screen_coords)
     return;
 
   gp_Pnt2d pt_b = *pt_opt;
-  (void) m_nodes.try_get_node_idx_snap(pt_b);
+  (void)m_nodes.try_get_node_idx_snap(pt_b);
 
   if (!unique(pt_a, pt_b))
   {
@@ -1396,10 +1388,9 @@ void Sketch::rebuild_length_dimension_display_(Length_dimension& d)
     m_ctx.Remove(d.dim, false);
 
   d.dim = create_distance_annotation(
-      m_nodes[d.node_idx_lo], m_nodes[d.node_idx_hi], m_pln,
-      edge_dim_text_h_pos_from_index(m_view.gui().edge_dim_label_h()), approx_sketch_interior_ref_3d_(),
-      m_dim_classifier_faces.empty() ? nullptr : &m_dim_classifier_faces, m_view.gui().edge_dim_line_width(),
-      m_view.gui().edge_dim_arrow_size());
+      m_nodes[d.node_idx_lo], m_nodes[d.node_idx_hi], m_pln, edge_dim_text_h_pos_from_index(m_view.gui().edge_dim_label_h()),
+      approx_sketch_interior_ref_3d_(), m_dim_classifier_faces.empty() ? nullptr : &m_dim_classifier_faces,
+      m_view.gui().edge_dim_line_width(), m_view.gui().edge_dim_arrow_size());
 
   const double dist = m_nodes[d.node_idx_lo].Distance(m_nodes[d.node_idx_hi]);
   d.dim->SetCustomValue(dist / m_view.get_dimension_scale());
@@ -1479,11 +1470,8 @@ void Sketch::add_or_toggle_length_dim_between_node_indices_(size_t node_a, size_
   rebuild_length_dimension_display_(m_length_dimensions.back());
 }
 
-void Sketch::json_add_length_dimension_(size_t                      node_a,
-                                        size_t                      node_b,
-                                        const bool                  visible,
-                                        const std::optional<double> flyout_offset,
-                                        const std::string&          name)
+void Sketch::json_add_length_dimension_(size_t node_a, size_t node_b, const bool visible,
+                                        const std::optional<double> flyout_offset, const std::string& name)
 {
   const size_t lo = std::min(node_a, node_b);
   const size_t hi = std::max(node_a, node_b);
@@ -1558,7 +1546,7 @@ void Sketch::finalize_elm()
 
   switch (get_mode())
   {
-      // clang-format off
+    // clang-format off
     case Mode::Sketch_add_node:         finalize_add_node_elm_cleanup_();               break;
     case Mode::Sketch_add_edge:
     case Mode::Sketch_add_multi_edges:  finalize_edges_();          break;
@@ -1577,9 +1565,9 @@ void Sketch::finalize_elm()
 
     case Mode::Sketch_add_slot:         finalize_slot_();           break;
     case Mode::Sketch_operation_axis:   finalize_operation_axis_(); break;
-      // clang-format on
-    default:
-      EZY_ASSERT(false);
+    // clang-format on
+  default:
+    EZY_ASSERT(false);
   }
 }
 
@@ -1704,7 +1692,7 @@ void Sketch::update_faces_()
 
     excluded_edges.insert(to_exclude.begin(), to_exclude.end());
   }
-#if 1  // TODO study AI generated, seems to work.
+#if 1 // TODO study AI generated, seems to work.
   // Remove bridge edges that connect two separate cycles.
   // A bridge edge connects two cycles and has both endpoints with degree >= 3.
   // We detect this by checking if the edge is the only connection between two cycles.
@@ -1882,9 +1870,9 @@ void Sketch::update_faces_()
           }
 
           auto f = create_face_shape_(face);
-          f->SetColor(Quantity_NOC_GRAY7);        // Base color
-          f->SetTransparency(0.5);                // 0.5 = 50% transparent (0.0 = opaque, 1.0 = invisible)
-          f->SetMaterial(Graphic3d_NOM_PLASTIC);  // Optional: material for shading
+          f->SetColor(Quantity_NOC_GRAY7);       // Base color
+          f->SetTransparency(0.5);               // 0.5 = 50% transparent (0.0 = opaque, 1.0 = invisible)
+          f->SetMaterial(Graphic3d_NOM_PLASTIC); // Optional: material for shading
 
           m_ctx.Display(f, AIS_Shaded, AIS_Shape::SelectionMode(TopAbs_FACE), true);
           m_ctx.Activate(f, AIS_Shape::SelectionMode(TopAbs_FACE));
@@ -1949,7 +1937,7 @@ void Sketch::update_faces_()
   std::sort(face_metas.begin(), face_metas.end(),
             [](const Face_meta& a, const Face_meta& b)
             {
-              return a.area > b.area;  // Descending by area
+              return a.area > b.area; // Descending by area
             });
 
   // Classify faces
@@ -2172,10 +2160,7 @@ void Sketch::update_edge_end_pt_(Edge& edge, size_t end_pt_idx)
 
 void Sketch::add_arc_circle_(const gp_Pnt2d& pt_a, const gp_Pnt2d& pt_b, const gp_Pnt2d& pt_c)
 {
-  std::vector<size_t> node_idxs {
-      m_nodes.get_node_exact(pt_a),
-      m_nodes.get_node_exact(pt_c),
-      m_nodes.get_node_exact(pt_b)};
+  std::vector<size_t> node_idxs{m_nodes.get_node_exact(pt_a), m_nodes.get_node_exact(pt_c), m_nodes.get_node_exact(pt_b)};
 
   add_arc_circle_(node_idxs);
 }
@@ -2183,10 +2168,7 @@ void Sketch::add_arc_circle_(const gp_Pnt2d& pt_a, const gp_Pnt2d& pt_b, const g
 void Sketch::add_arc_circle_(const std::vector<size_t>& node_idxs)
 {
   EZY_ASSERT(node_idxs.size() == 3);
-  Geom_TrimmedCurve_ptr arc_of_circle = GC_MakeArcOfCircle(
-      to_3d_(node_idxs[0]),
-      to_3d_(node_idxs[2]),
-      to_3d_(node_idxs[1]));
+  Geom_TrimmedCurve_ptr arc_of_circle = GC_MakeArcOfCircle(to_3d_(node_idxs[0]), to_3d_(node_idxs[2]), to_3d_(node_idxs[1]));
 
   /*
   auto l = get_start_end_tangents(anArcOfCircle);
@@ -2195,17 +2177,13 @@ void Sketch::add_arc_circle_(const std::vector<size_t>& node_idxs)
   l.second *= 10.0;
 
   {
-    TopoDS_Shape edge_shape = BRepBuilderAPI_MakeEdge(anArcOfCircle->StartPoint(), anArcOfCircle->StartPoint().XYZ() + l.first.XYZ()).Edge();
-    AIS_Shape_ptr s     = new AIS_Shape(edge_shape);
-    s->SetWidth(2.0);
-    s->SetColor(Quantity_Color(1, 0.0, 0.7, Quantity_TOC_RGB));
-    m_view.display(s);
+    TopoDS_Shape edge_shape = BRepBuilderAPI_MakeEdge(anArcOfCircle->StartPoint(), anArcOfCircle->StartPoint().XYZ() +
+  l.first.XYZ()).Edge(); AIS_Shape_ptr s     = new AIS_Shape(edge_shape); s->SetWidth(2.0); s->SetColor(Quantity_Color(1, 0.0,
+  0.7, Quantity_TOC_RGB)); m_view.display(s);
   }
-  TopoDS_Shape edge_shape = BRepBuilderAPI_MakeEdge(anArcOfCircle->EndPoint(), anArcOfCircle->EndPoint().XYZ() + l.second.XYZ()).Edge();
-  AIS_Shape_ptr s     = new AIS_Shape(edge_shape);
-  s->SetWidth(2.0);
-  s->SetColor(Quantity_Color(1, 0.0, 0.7, Quantity_TOC_RGB));
-  m_view.display(s);
+  TopoDS_Shape edge_shape = BRepBuilderAPI_MakeEdge(anArcOfCircle->EndPoint(), anArcOfCircle->EndPoint().XYZ() +
+  l.second.XYZ()).Edge(); AIS_Shape_ptr s     = new AIS_Shape(edge_shape); s->SetWidth(2.0); s->SetColor(Quantity_Color(1, 0.0,
+  0.7, Quantity_TOC_RGB)); m_view.display(s);
   */
 
   Sketch_AIS_edge_ptr shp = new Sketch_AIS_edge(*this, BRepBuilderAPI_MakeEdge(arc_of_circle));
@@ -2255,7 +2233,8 @@ bool Sketch::clear_tmps_()
   }
 
   bool operation_canceled = m_tmp_edges.size();
-  clear_all(m_tmp_node_idxs, m_tmp_shp, m_tmp_edges, m_entered_edge_len, m_show_dim_input, m_entered_edge_angle, m_show_angle_input);
+  clear_all(m_tmp_node_idxs, m_tmp_shp, m_tmp_edges, m_entered_edge_len, m_show_dim_input, m_entered_edge_angle,
+            m_show_angle_input);
 
   return operation_canceled;
 }
@@ -2267,20 +2246,11 @@ void Sketch::on_mode()
   sync_permanent_node_annos_();
 }
 
-Mode Sketch::get_mode() const
-{
-  return m_view.get_mode();
-}
+Mode Sketch::get_mode() const { return m_view.get_mode(); }
 
-const gp_Pln& Sketch::get_plane() const
-{
-  return m_pln;
-}
+const gp_Pln& Sketch::get_plane() const { return m_pln; }
 
-Sketch_nodes& Sketch::get_nodes()
-{
-  return m_nodes;
-}
+Sketch_nodes& Sketch::get_nodes() { return m_nodes; }
 
 void Sketch::get_snap_pts_3d_(std::vector<gp_Pnt>& out)
 {
@@ -2395,10 +2365,7 @@ void Sketch::set_visible(bool state)
   m_view.curr_sketch().set_current();
 }
 
-bool Sketch::is_visible() const
-{
-  return m_visible;
-}
+bool Sketch::is_visible() const { return m_visible; }
 
 void Sketch::set_show_faces(bool show)
 {
@@ -2535,10 +2502,7 @@ void Sketch::refresh_edge_dimension_arrow_sizes(const double arrow_size)
   }
 }
 
-bool Sketch::is_current() const
-{
-  return this == &m_view.curr_sketch();
-}
+bool Sketch::is_current() const { return this == &m_view.curr_sketch(); }
 
 void Sketch::set_current()
 {
@@ -2590,10 +2554,7 @@ void Sketch::set_edge_style(Edge_style style)
   update_originating_face_style();
 }
 
-gp_Pnt Sketch::to_3d_(size_t node_idx) const
-{
-  return to_3d(m_pln, m_nodes[node_idx]);
-}
+gp_Pnt Sketch::to_3d_(size_t node_idx) const { return to_3d(m_pln, m_nodes[node_idx]); }
 
 gp_Pnt Sketch::to_3d_(const std::optional<size_t>& node_idx) const
 {
@@ -2601,35 +2562,17 @@ gp_Pnt Sketch::to_3d_(const std::optional<size_t>& node_idx) const
   return to_3d_(*node_idx);
 }
 
-const std::string& Sketch::get_name() const
-{
-  return m_name;
-}
+const std::string& Sketch::get_name() const { return m_name; }
 
-void Sketch::set_name(const std::string& name)
-{
-  m_name = name;
-}
+void Sketch::set_name(const std::string& name) { m_name = name; }
 
-bool Sketch::has_edges() const
-{
-  return !m_edges.empty();
-}
+bool Sketch::has_edges() const { return !m_edges.empty(); }
 
-size_t Sketch::edge_count() const
-{
-  return m_edges.size();
-}
+size_t Sketch::edge_count() const { return m_edges.size(); }
 
-size_t Sketch::face_count() const
-{
-  return m_faces.size();
-}
+size_t Sketch::face_count() const { return m_faces.size(); }
 
-size_t Sketch::length_dimension_count() const
-{
-  return m_length_dimensions.size();
-}
+size_t Sketch::length_dimension_count() const { return m_length_dimensions.size(); }
 
 std::vector<std::string> Sketch::inspector_edge_labels() const
 {
@@ -2686,20 +2629,11 @@ std::vector<std::string> Sketch::inspector_node_labels() const
   return labels;
 }
 
-bool Sketch::has_underlay() const
-{
-  return m_underlay && m_underlay->has_image();
-}
+bool Sketch::has_underlay() const { return m_underlay && m_underlay->has_image(); }
 
-int Sketch::underlay_image_w() const
-{
-  return (m_underlay && m_underlay->has_image()) ? m_underlay->image_w() : 0;
-}
+int Sketch::underlay_image_w() const { return (m_underlay && m_underlay->has_image()) ? m_underlay->image_w() : 0; }
 
-int Sketch::underlay_image_h() const
-{
-  return (m_underlay && m_underlay->has_image()) ? m_underlay->image_h() : 0;
-}
+int Sketch::underlay_image_h() const { return (m_underlay && m_underlay->has_image()) ? m_underlay->image_h() : 0; }
 
 bool Sketch::load_underlay_image(const std::string& file_bytes)
 {
@@ -2756,8 +2690,8 @@ void Sketch::underlay_set_affine_plane(const gp_Pnt2d& base, const gp_Vec2d& axi
 
 namespace
 {
-bool underlay_plane_to_uv(const gp_Pnt2d& base, const gp_Vec2d& au, const gp_Vec2d& av, const gp_Pnt2d& p,
-                          double& out_u, double& out_v)
+bool underlay_plane_to_uv(const gp_Pnt2d& base, const gp_Vec2d& au, const gp_Vec2d& av, const gp_Pnt2d& p, double& out_u,
+                          double& out_v)
 {
   const double det = au.X() * av.Y() - au.Y() * av.X();
   if (std::abs(det) < 1e-18)
@@ -2767,7 +2701,7 @@ bool underlay_plane_to_uv(const gp_Pnt2d& base, const gp_Vec2d& au, const gp_Vec
   out_v = (-r.X() * au.Y() + r.Y() * au.X()) / det;
   return true;
 }
-}  // namespace
+} // namespace
 
 bool Sketch::underlay_rescale_uv_chord_to_length(const gp_Pnt2d& p0, const gp_Pnt2d& p1, double target_len)
 {
@@ -2778,10 +2712,10 @@ bool Sketch::underlay_rescale_uv_chord_to_length(const gp_Pnt2d& p0, const gp_Pn
   const gp_Pnt2d base = m_underlay->base();
   const gp_Vec2d au   = m_underlay->axis_u();
   const gp_Vec2d av   = m_underlay->axis_v();
-  double         u0 {};
-  double         v0 {};
-  double         u1 {};
-  double         v1 {};
+  double         u0{};
+  double         v0{};
+  double         u1{};
+  double         v1{};
   if (!underlay_plane_to_uv(base, au, av, p0, u0, v0) || !underlay_plane_to_uv(base, au, av, p1, u1, v1))
     return false;
   const double L = p0.Distance(p1);
@@ -2805,10 +2739,10 @@ bool Sketch::underlay_rescale_v_chord_to_length(const gp_Pnt2d& y0, const gp_Pnt
   const gp_Pnt2d base = m_underlay->base();
   const gp_Vec2d au   = m_underlay->axis_u();
   const gp_Vec2d av   = m_underlay->axis_v();
-  double         u0 {};
-  double         v0 {};
-  double         u1 {};
-  double         v1 {};
+  double         u0{};
+  double         v0{};
+  double         u1{};
+  double         v1{};
   if (!underlay_plane_to_uv(base, au, av, y0, u0, v0) || !underlay_plane_to_uv(base, au, av, y1, u1, v1))
     return false;
   const double du = u1 - u0;
@@ -2852,8 +2786,8 @@ bool Sketch::underlay_set_datum_origin_and_u_direction(const gp_Pnt2d& origin, c
   const double uy = du.Y();
 
   const double det_old = au_old.X() * av_old.Y() - au_old.Y() * av_old.X();
-  double       px {};
-  double       py {};
+  double       px{};
+  double       py{};
   if (det_old >= 0.0)
   {
     px = -uy;
@@ -2872,8 +2806,7 @@ bool Sketch::underlay_set_datum_origin_and_u_direction(const gp_Pnt2d& origin, c
   return true;
 }
 
-void Sketch::underlay_set_center_extents_rotation(const dvec2& center, const dvec2& half_extents,
-                                                  double rot_deg)
+void Sketch::underlay_set_center_extents_rotation(const dvec2& center, const dvec2& half_extents, double rot_deg)
 {
   EZY_ASSERT(m_underlay);
   EZY_ASSERT(m_underlay->has_image());
@@ -2903,15 +2836,9 @@ void Sketch::underlay_set_visible(bool v)
   m_ctx.UpdateCurrentViewer();
 }
 
-float Sketch::underlay_opacity() const
-{
-  return m_underlay ? m_underlay->opacity() : 1.f;
-}
+float Sketch::underlay_opacity() const { return m_underlay ? m_underlay->opacity() : 1.f; }
 
-bool Sketch::underlay_visible() const
-{
-  return m_underlay && m_underlay->visible();
-}
+bool Sketch::underlay_visible() const { return m_underlay && m_underlay->visible(); }
 
 void Sketch::underlay_set_key_white_transparent(bool on)
 {
@@ -2921,10 +2848,7 @@ void Sketch::underlay_set_key_white_transparent(bool on)
   underlay_rebuild_display();
 }
 
-bool Sketch::underlay_key_white_transparent() const
-{
-  return m_underlay ? m_underlay->key_white_transparent() : true;
-}
+bool Sketch::underlay_key_white_transparent() const { return m_underlay ? m_underlay->key_white_transparent() : true; }
 
 void Sketch::underlay_set_line_tint_enabled(bool on)
 {
@@ -2950,10 +2874,7 @@ void Sketch::underlay_set_line_tint_rgba(uint8_t r, uint8_t g, uint8_t b, uint8_
   underlay_rebuild_display();
 }
 
-bool Sketch::underlay_line_tint_enabled() const
-{
-  return m_underlay ? m_underlay->line_tint_enabled() : true;
-}
+bool Sketch::underlay_line_tint_enabled() const { return m_underlay ? m_underlay->line_tint_enabled() : true; }
 
 void Sketch::underlay_line_tint_rgb(uint8_t& r, uint8_t& g, uint8_t& b) const
 {
@@ -3032,14 +2953,20 @@ bool Sketch::Edge::reversed(size_t idx_a, size_t idx_b) const
 }
 
 Sketch_AIS_edge::Sketch_AIS_edge(Sketch& owner, const TopoDS_Shape& shp)
-    : AIS_Shape(shp), owner_sketch(owner)
+    : AIS_Shape(shp)
+    , owner_sketch(owner)
 {
 }
 
 Sketch_AIS_node_mark::Sketch_AIS_node_mark(Sketch& owner, size_t node_idx, const TopoDS_Shape& shp)
-    : AIS_Shape(shp), owner_sketch(owner), node_idx(node_idx)
+    : AIS_Shape(shp)
+    , owner_sketch(owner)
+    , node_idx(node_idx)
 {
 }
 
 Sketch_face_shp::Sketch_face_shp(Sketch& owner, const TopoDS_Shape& face)
-    : owner_sketch(owner), AIS_Shape(face) {}
+    : owner_sketch(owner)
+    , AIS_Shape(face)
+{
+}

@@ -41,7 +41,7 @@ void format_double_trim_fraction(char* dst, std::size_t dst_sz, double v, int ma
     std::snprintf(dst, dst_sz, "%s", tmp);
 }
 
-}  // namespace
+} // namespace
 
 void GUI::set_mode(Mode mode)
 {
@@ -56,28 +56,28 @@ void GUI::set_mode(Mode mode)
 void GUI::set_parent_mode()
 {
   static std::map<Mode, Mode> parent_modes = {
-      {                        Mode::Normal,                 Mode::Normal},
-      {                          Mode::Move,                 Mode::Normal},
-      {                         Mode::Scale,                 Mode::Normal},
-      {                        Mode::Rotate,                 Mode::Normal},
-      {        Mode::Sketch_inspection_mode,                 Mode::Normal},
-      {       Mode::Sketch_from_planar_face,                 Mode::Normal},
-      {           Mode::Sketch_face_extrude,                 Mode::Normal},
-      {                 Mode::Shape_chamfer,                 Mode::Normal},
-      {                  Mode::Shape_fillet,                 Mode::Normal},
-      {         Mode::Shape_polar_duplicate,                 Mode::Normal},
-      {               Mode::Sketch_add_node, Mode::Sketch_inspection_mode},
-      {               Mode::Sketch_add_edge, Mode::Sketch_inspection_mode},
-      {        Mode::Sketch_add_multi_edges, Mode::Sketch_inspection_mode},
-      {     Mode::Sketch_add_seg_circle_arc, Mode::Sketch_inspection_mode},
-      {         Mode::Sketch_operation_axis, Mode::Sketch_inspection_mode},
-      {             Mode::Sketch_add_square, Mode::Sketch_inspection_mode},
-      {          Mode::Sketch_add_rectangle, Mode::Sketch_inspection_mode},
+      {Mode::Normal, Mode::Normal},
+      {Mode::Move, Mode::Normal},
+      {Mode::Scale, Mode::Normal},
+      {Mode::Rotate, Mode::Normal},
+      {Mode::Sketch_inspection_mode, Mode::Normal},
+      {Mode::Sketch_from_planar_face, Mode::Normal},
+      {Mode::Sketch_face_extrude, Mode::Normal},
+      {Mode::Shape_chamfer, Mode::Normal},
+      {Mode::Shape_fillet, Mode::Normal},
+      {Mode::Shape_polar_duplicate, Mode::Normal},
+      {Mode::Sketch_add_node, Mode::Sketch_inspection_mode},
+      {Mode::Sketch_add_edge, Mode::Sketch_inspection_mode},
+      {Mode::Sketch_add_multi_edges, Mode::Sketch_inspection_mode},
+      {Mode::Sketch_add_seg_circle_arc, Mode::Sketch_inspection_mode},
+      {Mode::Sketch_operation_axis, Mode::Sketch_inspection_mode},
+      {Mode::Sketch_add_square, Mode::Sketch_inspection_mode},
+      {Mode::Sketch_add_rectangle, Mode::Sketch_inspection_mode},
       {Mode::Sketch_add_rectangle_center_pt, Mode::Sketch_inspection_mode},
-      {             Mode::Sketch_add_circle, Mode::Sketch_inspection_mode},
-      {       Mode::Sketch_add_circle_3_pts, Mode::Sketch_inspection_mode},
-      {               Mode::Sketch_add_slot, Mode::Sketch_inspection_mode},
-      {               Mode::Sketch_dim_anno, Mode::Sketch_inspection_mode},
+      {Mode::Sketch_add_circle, Mode::Sketch_inspection_mode},
+      {Mode::Sketch_add_circle_3_pts, Mode::Sketch_inspection_mode},
+      {Mode::Sketch_add_slot, Mode::Sketch_inspection_mode},
+      {Mode::Sketch_dim_anno, Mode::Sketch_inspection_mode},
   };
 
   static bool check = [&]()
@@ -89,7 +89,7 @@ void GUI::set_parent_mode()
     return true;
   }();
 
-  (void) check;
+  (void)check;
   const auto itr = parent_modes.find(get_mode());
   EZY_ASSERT(itr != parent_modes.end());
   set_mode(itr->second);
@@ -97,7 +97,7 @@ void GUI::set_parent_mode()
 
 void GUI::on_key(int key, int scancode, int action, int mods)
 {
-  (void) scancode;
+  (void)scancode;
   const bool press_or_repeat = (action == GLFW_PRESS || action == GLFW_REPEAT);
 
   // Zoom (+/-): scaled like mouse wheel; GLFW_REPEAT while held; Shift = Blender-style finer step.
@@ -109,26 +109,25 @@ void GUI::on_key(int key, int scancode, int action, int mods)
     bool zoom_in_shift_is_structural = false;
     switch (key)
     {
-      case GLFW_KEY_KP_ADD:
-        zoom_in = true;
-        break;
-      case GLFW_KEY_KP_SUBTRACT:
-      case GLFW_KEY_MINUS:
-        zoom_out = true;
-        break;
-      case GLFW_KEY_EQUAL:
-        if ((mods & GLFW_MOD_SHIFT) != 0)
-        {
-          zoom_in                     = true;
-          zoom_in_shift_is_structural = true;
-        }
-        break;
-      default:
-        break;
+    case GLFW_KEY_KP_ADD:
+      zoom_in = true;
+      break;
+    case GLFW_KEY_KP_SUBTRACT:
+    case GLFW_KEY_MINUS:
+      zoom_out = true;
+      break;
+    case GLFW_KEY_EQUAL:
+      if ((mods & GLFW_MOD_SHIFT) != 0)
+      {
+        zoom_in                     = true;
+        zoom_in_shift_is_structural = true;
+      }
+      break;
+    default:
+      break;
     }
 
-    const bool shift_finer =
-        ((mods & GLFW_MOD_SHIFT) != 0) && !zoom_in_shift_is_structural;
+    const bool shift_finer = ((mods & GLFW_MOD_SHIFT) != 0) && !zoom_in_shift_is_structural;
 
     if (zoom_in)
     {
@@ -146,10 +145,8 @@ void GUI::on_key(int key, int scancode, int action, int mods)
   // Use PRESS and REPEAT (like zoom) so hold-to-repeat works; route before keypad digit -> selection filter.
   if (press_or_repeat && (mods & GLFW_MOD_SHIFT) != 0 && (mods & (GLFW_MOD_CONTROL | GLFW_MOD_ALT)) == 0)
   {
-    const bool roll_ccw =
-        (key == GLFW_KEY_KP_4 || key == GLFW_KEY_4 || key == GLFW_KEY_LEFT);
-    const bool roll_cw =
-        (key == GLFW_KEY_KP_6 || key == GLFW_KEY_6 || key == GLFW_KEY_RIGHT);
+    const bool roll_ccw = (key == GLFW_KEY_KP_4 || key == GLFW_KEY_4 || key == GLFW_KEY_LEFT);
+    const bool roll_cw  = (key == GLFW_KEY_KP_6 || key == GLFW_KEY_6 || key == GLFW_KEY_RIGHT);
     if (roll_ccw || roll_cw)
     {
       const double step = m_view_roll_step_deg;
@@ -191,31 +188,31 @@ void GUI::on_key(int key, int scancode, int action, int mods)
   {
     switch (key)
     {
-      case GLFW_KEY_N:
-        new_project_();
-        break;
+    case GLFW_KEY_N:
+      new_project_();
+      break;
 
-      case GLFW_KEY_O:
-        open_file_dialog_();
-        break;
+    case GLFW_KEY_O:
+      open_file_dialog_();
+      break;
 
-      case GLFW_KEY_S:
-        save_file_dialog_();
-        break;
+    case GLFW_KEY_S:
+      save_file_dialog_();
+      break;
 
-      case GLFW_KEY_Z:
-        if ((mods & GLFW_MOD_SHIFT) != 0)
-          m_view->redo();
-        else
-          m_view->undo();
-        break;
-
-      case GLFW_KEY_Y:
+    case GLFW_KEY_Z:
+      if ((mods & GLFW_MOD_SHIFT) != 0)
         m_view->redo();
-        break;
+      else
+        m_view->undo();
+      break;
 
-      default:
-        break;
+    case GLFW_KEY_Y:
+      m_view->redo();
+      break;
+
+    default:
+      break;
     }
   }
   else
@@ -250,65 +247,65 @@ void GUI::on_key(int key, int scancode, int action, int mods)
 
     switch (key)
     {
-      case GLFW_KEY_ESCAPE:
-        cancel_underlay_calib_();
-        m_view->cancel(Set_parent_mode::Yes);
-        hide_dist_edit();
-        hide_angle_edit();
-        break;
+    case GLFW_KEY_ESCAPE:
+      cancel_underlay_calib_();
+      m_view->cancel(Set_parent_mode::Yes);
+      hide_dist_edit();
+      hide_angle_edit();
+      break;
 
-      case GLFW_KEY_TAB:
-      {
-        bool shift_pressed = (mods & GLFW_MOD_SHIFT) != 0;
-        if (shift_pressed)
-          m_view->angle_input(screen_coords);
-        else
-          m_view->dimension_input(screen_coords);
-        break;
-      }
+    case GLFW_KEY_TAB:
+    {
+      bool shift_pressed = (mods & GLFW_MOD_SHIFT) != 0;
+      if (shift_pressed)
+        m_view->angle_input(screen_coords);
+      else
+        m_view->dimension_input(screen_coords);
+      break;
+    }
 
-      case GLFW_KEY_ENTER:
-        hide_dist_edit();
-        hide_angle_edit();
-        m_view->on_enter(screen_coords);
-        break;
+    case GLFW_KEY_ENTER:
+      hide_dist_edit();
+      hide_angle_edit();
+      m_view->on_enter(screen_coords);
+      break;
 
-      case GLFW_KEY_D:
-        m_view->delete_selected();
-        break;
+    case GLFW_KEY_D:
+      m_view->delete_selected();
+      break;
 
-      case GLFW_KEY_G:
-        set_mode(Mode::Move);
-        break;
+    case GLFW_KEY_G:
+      set_mode(Mode::Move);
+      break;
 
-      case GLFW_KEY_R:
-        set_mode(Mode::Rotate);
-        break;
+    case GLFW_KEY_R:
+      set_mode(Mode::Rotate);
+      break;
 
-      case GLFW_KEY_E:
-        set_mode(Mode::Sketch_face_extrude);
-        break;
+    case GLFW_KEY_E:
+      set_mode(Mode::Sketch_face_extrude);
+      break;
 
-      case GLFW_KEY_S:
-        set_mode(Mode::Scale);
-        break;
+    case GLFW_KEY_S:
+      set_mode(Mode::Scale);
+      break;
 
-      default:
-        break;
+    default:
+      break;
     }
 
     switch (get_mode())
     {
-      case Mode::Move:
-        on_key_move_mode_(key);
-        break;
+    case Mode::Move:
+      on_key_move_mode_(key);
+      break;
 
-      case Mode::Rotate:
-        on_key_rotate_mode_(key);
-        break;
+    case Mode::Rotate:
+      on_key_rotate_mode_(key);
+      break;
 
-      default:
-        break;
+    default:
+      break;
     }
   }
 }
@@ -421,10 +418,9 @@ void GUI::options_()
         ImGui::EndCombo();
       }
       if (ImGui::IsItemHovered())
-        ImGui::SetTooltip(
-            "Traditional: compact local snap marker.\n"
-            "Fullscreen: full-view crosshair/axis guides.\n"
-            "Both: show compact marker and fullscreen guides together.");
+        ImGui::SetTooltip("Traditional: compact local snap marker.\n"
+                          "Fullscreen: full-view crosshair/axis guides.\n"
+                          "Both: show compact marker and fullscreen guides together.");
 
       if (get_mode() == Mode::Sketch_dim_anno)
       {
@@ -441,8 +437,7 @@ void GUI::options_()
         right_aligned_label("Length value placement");
         ImGui::TableSetColumnIndex(1);
         ImGui::SetNextItemWidth(170.0f);
-        if (ImGui::BeginCombo("##edge_dim_h", k_edge_dim_label_placement[static_cast<size_t>(h)],
-                              ImGuiComboFlags_HeightSmall))
+        if (ImGui::BeginCombo("##edge_dim_h", k_edge_dim_label_placement[static_cast<size_t>(h)], ImGuiComboFlags_HeightSmall))
         {
           for (int i = 0; i < int(k_edge_dim_label_placement.size()); ++i)
             if (ImGui::Selectable(k_edge_dim_label_placement[static_cast<size_t>(i)], i == h))
@@ -491,8 +486,8 @@ void GUI::options_()
         right_aligned_label("Material");
         ImGui::TableSetColumnIndex(1);
         ImGui::SetNextItemWidth(120.0f);
-        if (ImGui::BeginCombo("##default_material_sketch_extrude",
-                              material_names[static_cast<size_t>(current_item)].data(), ImGuiComboFlags_HeightSmall))
+        if (ImGui::BeginCombo("##default_material_sketch_extrude", material_names[static_cast<size_t>(current_item)].data(),
+                              ImGuiComboFlags_HeightSmall))
         {
           for (int i = 0; i < static_cast<int>(material_names.size()); i++)
             if (ImGui::Selectable(material_names[static_cast<size_t>(i)].data(), current_item == i))
@@ -509,35 +504,35 @@ void GUI::options_()
 
     switch (get_mode())
     {
-      case Mode::Sketch_dim_anno:
-        break;
+    case Mode::Sketch_dim_anno:
+      break;
 
-      case Mode::Sketch_face_extrude:
-        break;
+    case Mode::Sketch_face_extrude:
+      break;
 
-      case Mode::Sketch_add_edge:
-      case Mode::Sketch_add_multi_edges:
-        ImGui::Separator();
-        ImGui::TextUnformatted("Shortcuts");
-        ImGui::TextWrapped("TAB: type edge length. Shift+TAB: type angle (degrees, CCW from +X).");
-        break;
+    case Mode::Sketch_add_edge:
+    case Mode::Sketch_add_multi_edges:
+      ImGui::Separator();
+      ImGui::TextUnformatted("Shortcuts");
+      ImGui::TextWrapped("TAB: type edge length. Shift+TAB: type angle (degrees, CCW from +X).");
+      break;
 
-      case Mode::Sketch_add_node:
-        ImGui::Separator();
-        ImGui::TextUnformatted("Shortcuts");
-        ImGui::TextWrapped("TAB: type length along the rubber band. Shift+TAB: type angle (degrees, CCW from +X).");
-        ImGui::TextWrapped(
-            "Snap the first click to an existing sketch point to start a rubber band, then click to place the node "
-            "(or press Enter after typing a length). An unsnapped click still places a single node immediately.");
-        break;
+    case Mode::Sketch_add_node:
+      ImGui::Separator();
+      ImGui::TextUnformatted("Shortcuts");
+      ImGui::TextWrapped("TAB: type length along the rubber band. Shift+TAB: type angle (degrees, CCW from +X).");
+      ImGui::TextWrapped(
+          "Snap the first click to an existing sketch point to start a rubber band, then click to place the node "
+          "(or press Enter after typing a length). An unsnapped click still places a single node immediately.");
+      break;
 
-      default:
-        break;
+    default:
+      break;
     }
   }
-  else if (get_mode() != Mode::Normal && get_mode() != Mode::Shape_polar_duplicate && get_mode() != Mode::Shape_chamfer
-           && get_mode() != Mode::Shape_fillet && get_mode() != Mode::Move && get_mode() != Mode::Rotate
-           && get_mode() != Mode::Scale)
+  else if (get_mode() != Mode::Normal && get_mode() != Mode::Shape_polar_duplicate && get_mode() != Mode::Shape_chamfer &&
+           get_mode() != Mode::Shape_fillet && get_mode() != Mode::Move && get_mode() != Mode::Rotate &&
+           get_mode() != Mode::Scale)
   {
     ImGui::Separator();
     ImGui::TextUnformatted("Material");
@@ -575,8 +570,7 @@ void GUI::options_normal_mode_()
     right_aligned_label("Selection Mode");
     ImGui::TableSetColumnIndex(1);
     ImGui::SetNextItemWidth(120.0f);
-    if (ImGui::BeginCombo("##selection_mode", c_names_TopAbs_ShapeEnum[current_item].data(),
-                          ImGuiComboFlags_HeightSmall))
+    if (ImGui::BeginCombo("##selection_mode", c_names_TopAbs_ShapeEnum[current_item].data(), ImGuiComboFlags_HeightSmall))
     {
       for (int i = 0; i < static_cast<int>(c_names_TopAbs_ShapeEnum.size()); i++)
         if (ImGui::Selectable(c_names_TopAbs_ShapeEnum[i].data(), current_item == i))
@@ -590,8 +584,7 @@ void GUI::options_normal_mode_()
     {
       ImGui::BeginTooltip();
       ImGui::PushTextWrapPos(ImGui::GetFontSize() * 35.0f);
-      ImGui::TextDisabled(
-          "Hotkeys: 1-9 (Normal mode) set filter when the 3D view has focus, not while typing in UI.");
+      ImGui::TextDisabled("Hotkeys: 1-9 (Normal mode) set filter when the 3D view has focus, not while typing in UI.");
       ImGui::PopTextWrapPos();
       ImGui::EndTooltip();
     }
@@ -634,9 +627,7 @@ void GUI::options_move_mode_()
   ImGui::Checkbox("Z", &opts.constr_axis_z);
 }
 
-void GUI::options_scale_mode_()
-{
-}
+void GUI::options_scale_mode_() {}
 
 void GUI::options_rotate_mode_()
 {
@@ -709,7 +700,7 @@ void GUI::options_shape_chamfer_mode_()
     right_aligned_label("Chamfer Mode");
     ImGui::TableSetColumnIndex(1);
     ImGui::SetNextItemWidth(120.0f);
-    if (ImGui::Combo("##chamfer_mode", &current_mode, c_chamfer_mode_strs.data(), (int) c_chamfer_mode_strs.size()))
+    if (ImGui::Combo("##chamfer_mode", &current_mode, c_chamfer_mode_strs.data(), (int)c_chamfer_mode_strs.size()))
     {
       m_chamfer_mode = static_cast<Chamfer_mode>(current_mode);
       m_view->on_chamfer_mode();
@@ -730,8 +721,7 @@ void GUI::options_shape_chamfer_mode_()
     right_aligned_label("Chamfer dist");
     ImGui::TableSetColumnIndex(1);
     ImGui::SetNextItemWidth(100.0f);
-    constexpr ImGuiInputTextFlags k_dim_flags =
-        ImGuiInputTextFlags_CharsDecimal | ImGuiInputTextFlags_CharsScientific;
+    constexpr ImGuiInputTextFlags k_dim_flags = ImGuiInputTextFlags_CharsDecimal | ImGuiInputTextFlags_CharsScientific;
     if (ImGui::InputText("##micron", chamfer_buf, sizeof chamfer_buf, k_dim_flags))
     {
       char*        end = nullptr;
@@ -778,7 +768,7 @@ void GUI::options_shape_fillet_mode_()
     right_aligned_label("Fillet Mode");
     ImGui::TableSetColumnIndex(1);
     ImGui::SetNextItemWidth(120.0f);
-    if (ImGui::Combo("##fillet_mode", &current_mode, c_fillet_mode_strs.data(), (int) c_fillet_mode_strs.size()))
+    if (ImGui::Combo("##fillet_mode", &current_mode, c_fillet_mode_strs.data(), (int)c_fillet_mode_strs.size()))
     {
       m_fillet_mode = static_cast<Fillet_mode>(current_mode);
       m_view->on_fillet_mode();
@@ -799,8 +789,7 @@ void GUI::options_shape_fillet_mode_()
     right_aligned_label("Fillet radius");
     ImGui::TableSetColumnIndex(1);
     ImGui::SetNextItemWidth(100.0f);
-    constexpr ImGuiInputTextFlags k_dim_flags =
-        ImGuiInputTextFlags_CharsDecimal | ImGuiInputTextFlags_CharsScientific;
+    constexpr ImGuiInputTextFlags k_dim_flags = ImGuiInputTextFlags_CharsDecimal | ImGuiInputTextFlags_CharsScientific;
     if (ImGui::InputText("##micron", fillet_buf, sizeof fillet_buf, k_dim_flags))
     {
       char*        end = nullptr;
@@ -918,40 +907,40 @@ void GUI::on_key_rotate_mode_(int key)
 
   switch (key)
   {
-    case GLFW_KEY_ESCAPE:
-      m_view->shp_rotate().cancel();
-      break;
+  case GLFW_KEY_ESCAPE:
+    m_view->shp_rotate().cancel();
+    break;
 
-    case GLFW_KEY_ENTER:
-    case GLFW_KEY_KP_ENTER:
-      m_view->shp_rotate().finalize();
-      break;
+  case GLFW_KEY_ENTER:
+  case GLFW_KEY_KP_ENTER:
+    m_view->shp_rotate().finalize();
+    break;
 
-    case GLFW_KEY_TAB:
-      if (Status s = m_view->shp_rotate().show_angle_edit(screen_coords); !s.is_ok())
-        show_message(s.message());
-      break;
+  case GLFW_KEY_TAB:
+    if (Status s = m_view->shp_rotate().show_angle_edit(screen_coords); !s.is_ok())
+      show_message(s.message());
+    break;
 
-    case GLFW_KEY_X:
-      if (m_view->shp_rotate().get_rotation_axis() == Rotation_axis::X_axis)
-        m_view->shp_rotate().set_rotation_axis(Rotation_axis::View_to_object);
-      else
-        m_view->shp_rotate().set_rotation_axis(Rotation_axis::X_axis);
-      break;
+  case GLFW_KEY_X:
+    if (m_view->shp_rotate().get_rotation_axis() == Rotation_axis::X_axis)
+      m_view->shp_rotate().set_rotation_axis(Rotation_axis::View_to_object);
+    else
+      m_view->shp_rotate().set_rotation_axis(Rotation_axis::X_axis);
+    break;
 
-    case GLFW_KEY_Y:
-      if (m_view->shp_rotate().get_rotation_axis() == Rotation_axis::Y_axis)
-        m_view->shp_rotate().set_rotation_axis(Rotation_axis::View_to_object);
-      else
-        m_view->shp_rotate().set_rotation_axis(Rotation_axis::Y_axis);
-      break;
+  case GLFW_KEY_Y:
+    if (m_view->shp_rotate().get_rotation_axis() == Rotation_axis::Y_axis)
+      m_view->shp_rotate().set_rotation_axis(Rotation_axis::View_to_object);
+    else
+      m_view->shp_rotate().set_rotation_axis(Rotation_axis::Y_axis);
+    break;
 
-    case GLFW_KEY_Z:
-      if (m_view->shp_rotate().get_rotation_axis() == Rotation_axis::Z_axis)
-        m_view->shp_rotate().set_rotation_axis(Rotation_axis::View_to_object);
-      else
-        m_view->shp_rotate().set_rotation_axis(Rotation_axis::Z_axis);
-      break;
+  case GLFW_KEY_Z:
+    if (m_view->shp_rotate().get_rotation_axis() == Rotation_axis::Z_axis)
+      m_view->shp_rotate().set_rotation_axis(Rotation_axis::View_to_object);
+    else
+      m_view->shp_rotate().set_rotation_axis(Rotation_axis::Z_axis);
+    break;
   }
 }
 
@@ -962,19 +951,19 @@ void GUI::on_key_move_mode_(int key)
 
   switch (key)
   {
-    case GLFW_KEY_X:
-      opts.constr_axis_x ^= 1;
-      break;
-    case GLFW_KEY_Y:
-      opts.constr_axis_y ^= 1;
-      break;
-    case GLFW_KEY_Z:
-      opts.constr_axis_z ^= 1;
-      break;
-    case GLFW_KEY_TAB:
-      m_view->shp_move().show_dist_edit(screen_coords);
-      break;
-    default:
-      break;
+  case GLFW_KEY_X:
+    opts.constr_axis_x ^= 1;
+    break;
+  case GLFW_KEY_Y:
+    opts.constr_axis_y ^= 1;
+    break;
+  case GLFW_KEY_Z:
+    opts.constr_axis_z ^= 1;
+    break;
+  case GLFW_KEY_TAB:
+    m_view->shp_move().show_dist_edit(screen_coords);
+    break;
+  default:
+    break;
   }
 }

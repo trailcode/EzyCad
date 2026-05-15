@@ -60,7 +60,7 @@ ImFont* GUI::console_font() const
 }
 GUI::~GUI()
 {
-  cleanup_log_redirection_();  // Clean up stream redirection
+  cleanup_log_redirection_(); // Clean up stream redirection
 }
 ImVec4 GUI::get_clear_color() const
 {
@@ -113,39 +113,40 @@ void GUI::render_gui()
   settings_();
   dbg_();
 }
-void GUI::render_occt()
-{
-  m_view->do_frame();
-}
+void GUI::render_occt() { m_view->do_frame(); }
 // Initialize toolbar buttons
 void GUI::initialize_toolbar_()
 {
   m_toolbar_buttons = {
-      {                           load_texture("res/icons/User.png"),  true,                  "Inspection mode",                         Mode::Normal},
-      {        load_texture("res/icons/Workbench_Sketcher_none.png"), false,           "Sketch inspection mode",         Mode::Sketch_inspection_mode},
-      {             load_texture("res/icons/Assembly_AxialMove.png"), false,                   "Shape move (g)",                           Mode::Move},
-      {                   load_texture("res/icons/Draft_Rotate.png"), false,                 "Shape rotate (r)",                         Mode::Rotate},
-      {                     load_texture("res/icons/Part_Scale.png"), false,                  "Shape Scale (s)",                          Mode::Scale},
-      {          load_texture("res/icons/Macro_FaceToSketch_48.png"), false, "Create a sketch from planar face",        Mode::Sketch_from_planar_face},
-      {          load_texture("res/icons/Sketcher_MirrorSketch.png"), false,            "Define operation axis",          Mode::Sketch_operation_axis},
-      {           load_texture("res/icons/Sketcher_CreatePoint.png"), false,                         "Add node",                Mode::Sketch_add_node},
-      {     load_texture("res/icons/Sketcher_Element_Line_Edge.png"), false,                    "Add line edge",                Mode::Sketch_add_edge},
-      {                             load_texture("res/icons/ls.png"), false,              "Add multi-line edge",         Mode::Sketch_add_multi_edges},
-      {      load_texture("res/icons/Sketcher_Element_Arc_Edge.png"), false,                   "Add arc circle",      Mode::Sketch_add_seg_circle_arc},
-      {          load_texture("res/icons/Sketcher_CreateSquare.png"), false,                       "Add square",              Mode::Sketch_add_square},
-      {       load_texture("res/icons/Sketcher_CreateRectangle.png"), false,    "Add rectangle from two points",           Mode::Sketch_add_rectangle},
-      {load_texture("res/icons/Sketcher_CreateRectangle_Center.png"), false,  "Add rectangle with center point", Mode::Sketch_add_rectangle_center_pt},
-      {          load_texture("res/icons/Sketcher_CreateCircle.png"), false,                       "Add circle",              Mode::Sketch_add_circle},
-      {    load_texture("res/icons/Sketcher_Create3PointCircle.png"), false,     "Add circle from three points",        Mode::Sketch_add_circle_3_pts},
-      {            load_texture("res/icons/Sketcher_CreateSlot.png"), false,                         "Add slot",                Mode::Sketch_add_slot},
-      {       load_texture("res/icons/TechDraw_LengthDimension.png"), false,                 "Length dimension",                Mode::Sketch_dim_anno},
-      {              load_texture("res/icons/Design456_Extrude.png"), false,          "Extrude sketch face (e)",            Mode::Sketch_face_extrude},
-      {             load_texture("res/icons/PartDesign_Chamfer.png"), false,                          "Chamfer",                  Mode::Shape_chamfer},
-      {              load_texture("res/icons/PartDesign_Fillet.png"), false,                           "Fillet",                   Mode::Shape_fillet},
-      {               load_texture("res/icons/Draft_PolarArray.png"), false,            "Shape polar duplicate",          Mode::Shape_polar_duplicate},
-      {                       load_texture("res/icons/Part_Cut.png"), false,                        "Shape cut",                   Command::Shape_cut},
-      {                      load_texture("res/icons/Part_Fuse.png"), false,                       "Shape fuse",                  Command::Shape_fuse},
-      {                    load_texture("res/icons/Part_Common.png"), false,                     "Shape common",                Command::Shape_common},
+      {load_texture("res/icons/User.png"), true, "Inspection mode", Mode::Normal},
+      {load_texture("res/icons/Workbench_Sketcher_none.png"), false, "Sketch inspection mode", Mode::Sketch_inspection_mode},
+      {load_texture("res/icons/Assembly_AxialMove.png"), false, "Shape move (g)", Mode::Move},
+      {load_texture("res/icons/Draft_Rotate.png"), false, "Shape rotate (r)", Mode::Rotate},
+      {load_texture("res/icons/Part_Scale.png"), false, "Shape Scale (s)", Mode::Scale},
+      {load_texture("res/icons/Macro_FaceToSketch_48.png"), false, "Create a sketch from planar face",
+       Mode::Sketch_from_planar_face},
+      {load_texture("res/icons/Sketcher_MirrorSketch.png"), false, "Define operation axis", Mode::Sketch_operation_axis},
+      {load_texture("res/icons/Sketcher_CreatePoint.png"), false, "Add node", Mode::Sketch_add_node},
+      {load_texture("res/icons/Sketcher_Element_Line_Edge.png"), false, "Add line edge", Mode::Sketch_add_edge},
+      {load_texture("res/icons/ls.png"), false, "Add multi-line edge", Mode::Sketch_add_multi_edges},
+      {load_texture("res/icons/Sketcher_Element_Arc_Edge.png"), false, "Add arc circle", Mode::Sketch_add_seg_circle_arc},
+      {load_texture("res/icons/Sketcher_CreateSquare.png"), false, "Add square", Mode::Sketch_add_square},
+      {load_texture("res/icons/Sketcher_CreateRectangle.png"), false, "Add rectangle from two points",
+       Mode::Sketch_add_rectangle},
+      {load_texture("res/icons/Sketcher_CreateRectangle_Center.png"), false, "Add rectangle with center point",
+       Mode::Sketch_add_rectangle_center_pt},
+      {load_texture("res/icons/Sketcher_CreateCircle.png"), false, "Add circle", Mode::Sketch_add_circle},
+      {load_texture("res/icons/Sketcher_Create3PointCircle.png"), false, "Add circle from three points",
+       Mode::Sketch_add_circle_3_pts},
+      {load_texture("res/icons/Sketcher_CreateSlot.png"), false, "Add slot", Mode::Sketch_add_slot},
+      {load_texture("res/icons/TechDraw_LengthDimension.png"), false, "Length dimension", Mode::Sketch_dim_anno},
+      {load_texture("res/icons/Design456_Extrude.png"), false, "Extrude sketch face (e)", Mode::Sketch_face_extrude},
+      {load_texture("res/icons/PartDesign_Chamfer.png"), false, "Chamfer", Mode::Shape_chamfer},
+      {load_texture("res/icons/PartDesign_Fillet.png"), false, "Fillet", Mode::Shape_fillet},
+      {load_texture("res/icons/Draft_PolarArray.png"), false, "Shape polar duplicate", Mode::Shape_polar_duplicate},
+      {load_texture("res/icons/Part_Cut.png"), false, "Shape cut", Command::Shape_cut},
+      {load_texture("res/icons/Part_Fuse.png"), false, "Shape fuse", Command::Shape_fuse},
+      {load_texture("res/icons/Part_Common.png"), false, "Shape common", Command::Shape_common},
   };
 }
 void GUI::load_examples_list_()
@@ -170,7 +171,7 @@ void GUI::load_examples_list_()
 
     std::string path  = p.string();
     std::string label = p.filename().string();
-    m_example_files.push_back(Example_file {std::move(label), std::move(path)});
+    m_example_files.push_back(Example_file{std::move(label), std::move(path)});
   }
   std::sort(m_example_files.begin(), m_example_files.end(),
             [](const Example_file& a, const Example_file& b) { return a.label < b.label; });
@@ -195,7 +196,7 @@ void GUI::menu_bar_()
 
     if (ImGui::MenuItem("Save as"))
     {
-      m_last_saved_path.clear();  // Force save as dialog
+      m_last_saved_path.clear(); // Force save as dialog
       save_file_dialog_();
     }
 
@@ -231,7 +232,7 @@ void GUI::menu_bar_()
         if (ImGui::MenuItem(ex.label.c_str()))
         {
           std::ifstream file(ex.path);
-          std::string   json_str {std::istreambuf_iterator<char>(file), std::istreambuf_iterator<char>()};
+          std::string   json_str{std::istreambuf_iterator<char>(file), std::istreambuf_iterator<char>()};
           if (file.good() && !json_str.empty())
             on_file(ex.path, json_str);
           else
@@ -284,8 +285,8 @@ void GUI::menu_bar_()
 
     if (ImGui::MenuItem("Add pyramid_prms"))
     {
-      m_add_pyramid_origin    = glm::dvec3(0.0, 0.0, 0.0);
-      m_add_pyramid_side      = 1.0;
+      m_add_pyramid_origin     = glm::dvec3(0.0, 0.0, 0.0);
+      m_add_pyramid_side       = 1.0;
       m_open_add_pyramid_popup = true;
     }
 
@@ -297,8 +298,8 @@ void GUI::menu_bar_()
 
     if (ImGui::MenuItem("Add sphere_prms"))
     {
-      m_add_sphere_origin    = glm::dvec3(0.0, 0.0, 0.0);
-      m_add_sphere_radius    = 1.0;
+      m_add_sphere_origin     = glm::dvec3(0.0, 0.0, 0.0);
+      m_add_sphere_radius     = 1.0;
       m_open_add_sphere_popup = true;
     }
 
@@ -323,10 +324,10 @@ void GUI::menu_bar_()
 
     if (ImGui::MenuItem("Add cone_prms"))
     {
-      m_add_cone_origin    = glm::dvec3(0.0, 0.0, 0.0);
-      m_add_cone_R1        = 1.0;
-      m_add_cone_R2        = 0.0;
-      m_add_cone_height    = 1.0;
+      m_add_cone_origin     = glm::dvec3(0.0, 0.0, 0.0);
+      m_add_cone_R1         = 1.0;
+      m_add_cone_R2         = 0.0;
+      m_add_cone_height     = 1.0;
       m_open_add_cone_popup = true;
     }
 
@@ -338,9 +339,9 @@ void GUI::menu_bar_()
 
     if (ImGui::MenuItem("Add torus_prms"))
     {
-      m_add_torus_origin    = glm::dvec3(0.0, 0.0, 0.0);
-      m_add_torus_R1        = 1.0;
-      m_add_torus_R2        = 0.5;
+      m_add_torus_origin     = glm::dvec3(0.0, 0.0, 0.0);
+      m_add_torus_R1         = 1.0;
+      m_add_torus_R2         = 0.5;
       m_open_add_torus_popup = true;
     }
 
@@ -572,7 +573,7 @@ void GUI::ensure_about_assets_()
 }
 ImGui::MarkdownImageData GUI::about_markdown_image_(ImGui::MarkdownLinkCallbackData data)
 {
-  ImGui::MarkdownImageData out {};
+  ImGui::MarkdownImageData out{};
   if (!data.isImage)
     return out;
 
@@ -583,8 +584,8 @@ ImGui::MarkdownImageData GUI::about_markdown_image_(ImGui::MarkdownLinkCallbackD
 
   out.isValid         = true;
   out.useLinkCallback = false;
-  out.user_texture_id = (ImTextureID) (intptr_t) m_about_splash_gl;
-  out.size            = ImVec2((float) m_about_splash_size.x, (float) m_about_splash_size.y);
+  out.user_texture_id = (ImTextureID)(intptr_t)m_about_splash_gl;
+  out.size            = ImVec2((float)m_about_splash_size.x, (float)m_about_splash_size.y);
   ImVec2 const avail  = ImGui::GetContentRegionAvail();
   if (out.size.x > avail.x && avail.x > 1.0f)
   {
@@ -632,31 +633,31 @@ void GUI::toolbar_()
     // Add a unique string ID (e.g., "button0", "button1", etc.)
     char button_id[16];
     snprintf(button_id, sizeof(button_id), "button%d", i);
-    if (ImGui::ImageButton(button_id, (ImTextureID) (intptr_t) m_toolbar_buttons[i].texture_id, button_size))
+    if (ImGui::ImageButton(button_id, (ImTextureID)(intptr_t)m_toolbar_buttons[i].texture_id, button_size))
     {
       if (m_toolbar_buttons[i].data.index() == 1)
         switch (std::get<Command>(m_toolbar_buttons[i].data))
         {
-          case Command::Shape_cut:
-            if (Status s = m_view->shp_cut().selected_cut(); !s.is_ok())
-              show_message(s.message());
+        case Command::Shape_cut:
+          if (Status s = m_view->shp_cut().selected_cut(); !s.is_ok())
+            show_message(s.message());
 
-            break;
+          break;
 
-          case Command::Shape_fuse:
-            if (Status s = m_view->shp_fuse().selected_fuse(); !s.is_ok())
-              show_message(s.message());
+        case Command::Shape_fuse:
+          if (Status s = m_view->shp_fuse().selected_fuse(); !s.is_ok())
+            show_message(s.message());
 
-            break;
+          break;
 
-          case Command::Shape_common:
-            if (Status s = m_view->shp_common().selected_common(); !s.is_ok())
-              show_message(s.message());
+        case Command::Shape_common:
+          if (Status s = m_view->shp_common().selected_common(); !s.is_ok())
+            show_message(s.message());
 
-            break;
+          break;
 
-          default:
-            EZY_ASSERT(false);
+        default:
+          EZY_ASSERT(false);
         }
       else
       {
@@ -683,7 +684,8 @@ void GUI::toolbar_()
   ImGui::End();
 }
 // Distance edit related
-void GUI::set_dist_edit(float dist, std::function<void(float, bool)>&& callback, const std::optional<ScreenCoords> screen_coords)
+void GUI::set_dist_edit(float dist, std::function<void(float, bool)>&& callback,
+                        const std::optional<ScreenCoords> screen_coords)
 {
   DBG_MSG("dist " << dist);
   // Sketch calls this every mousemove while TAB length mode is on; do not reset value/position each frame
@@ -707,7 +709,7 @@ void GUI::hide_dist_edit()
 {
   if (m_dist_callback)
   {
-    float parsed {};
+    float parsed{};
     if (parse_dist_text_to_float_(m_dist_text_buf.data(), parsed))
       m_dist_val = parsed;
 
@@ -724,16 +726,15 @@ void GUI::dist_edit_()
     return;
 
   //  Set the position of the next window
-  ImGui::SetNextWindowPos(ImVec2(float(m_dist_edit_loc.unsafe_get_x()), float(m_dist_edit_loc.unsafe_get_y())), ImGuiCond_Always);
+  ImGui::SetNextWindowPos(ImVec2(float(m_dist_edit_loc.unsafe_get_x()), float(m_dist_edit_loc.unsafe_get_y())),
+                          ImGuiCond_Always);
 
   // Set a small size (optional)
   ImGui::SetNextWindowSize(ImVec2(120.0f, 25.0f), ImGuiCond_Once);
 
   // Begin a window with minimal flags
   ImGui::Begin("FloatEdit##unique_id", nullptr,
-               ImGuiWindowFlags_NoTitleBar |
-                   ImGuiWindowFlags_NoResize |
-                   ImGuiWindowFlags_AlwaysAutoResize |
+               ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_AlwaysAutoResize |
                    ImGuiWindowFlags_NoSavedSettings);
 
   ImGui::SetNextItemWidth(100.0f);
@@ -745,18 +746,15 @@ void GUI::dist_edit_()
   }
 
   // Text field: InputFloat applies printf rounding so typed digits can disagree with m_dist_val.
-  const bool text_changed = ImGui::InputText(
-      "##dist_edit_text",
-      m_dist_text_buf.data(),
-      m_dist_text_buf.size(),
-      ImGuiInputTextFlags_CharsDecimal | ImGuiInputTextFlags_CharsScientific);
+  const bool text_changed = ImGui::InputText("##dist_edit_text", m_dist_text_buf.data(), m_dist_text_buf.size(),
+                                             ImGuiInputTextFlags_CharsDecimal | ImGuiInputTextFlags_CharsScientific);
 
   if (text_changed && parse_dist_text_to_float_(m_dist_text_buf.data(), m_dist_val))
     m_dist_callback(m_dist_val, false);
 
   if (ImGui::IsItemDeactivatedAfterEdit() && m_dist_callback)
   {
-    float parsed {};
+    float parsed{};
     if (parse_dist_text_to_float_(m_dist_text_buf.data(), parsed))
       m_dist_val = parsed;
 
@@ -768,7 +766,8 @@ void GUI::dist_edit_()
   ImGui::End();
 }
 // Angle edit related
-void GUI::set_angle_edit(float angle, std::function<void(float, bool)>&& callback, const std::optional<ScreenCoords> screen_coords)
+void GUI::set_angle_edit(float angle, std::function<void(float, bool)>&& callback,
+                         const std::optional<ScreenCoords> screen_coords)
 {
   DBG_MSG("angle " << angle);
   const bool already_editing = m_angle_callback != nullptr;
@@ -790,7 +789,7 @@ void GUI::hide_angle_edit()
 {
   if (m_angle_callback)
   {
-    float parsed {};
+    float parsed{};
     if (parse_dist_text_to_float_(m_angle_text_buf.data(), parsed))
       m_angle_val = parsed;
     std::function<void(float, bool)> callback;
@@ -798,26 +797,22 @@ void GUI::hide_angle_edit()
     callback(m_angle_val, true);
   }
 }
-bool GUI::is_dist_or_angle_edit_active() const
-{
-  return m_dist_callback != nullptr || m_angle_callback != nullptr;
-}
+bool GUI::is_dist_or_angle_edit_active() const { return m_dist_callback != nullptr || m_angle_callback != nullptr; }
 void GUI::angle_edit_()
 {
   if (!m_angle_callback)
     return;
 
   //  Set the position of the next window
-  ImGui::SetNextWindowPos(ImVec2(float(m_angle_edit_loc.unsafe_get_x()), float(m_angle_edit_loc.unsafe_get_y())), ImGuiCond_Always);
+  ImGui::SetNextWindowPos(ImVec2(float(m_angle_edit_loc.unsafe_get_x()), float(m_angle_edit_loc.unsafe_get_y())),
+                          ImGuiCond_Always);
 
   // Set a small size (optional)
   ImGui::SetNextWindowSize(ImVec2(120.0f, 25.0f), ImGuiCond_Once);
 
   // Begin a window with minimal flags
   ImGui::Begin("AngleEdit##unique_id", nullptr,
-               ImGuiWindowFlags_NoTitleBar |
-                   ImGuiWindowFlags_NoResize |
-                   ImGuiWindowFlags_AlwaysAutoResize |
+               ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_AlwaysAutoResize |
                    ImGuiWindowFlags_NoSavedSettings);
 
   ImGui::SetNextItemWidth(100.0f);
@@ -827,18 +822,15 @@ void GUI::angle_edit_()
     m_angle_edit_focus_pending = false;
   }
 
-  const bool text_changed = ImGui::InputText(
-      "##angle_edit_text",
-      m_angle_text_buf.data(),
-      m_angle_text_buf.size(),
-      ImGuiInputTextFlags_CharsDecimal | ImGuiInputTextFlags_CharsScientific);
+  const bool text_changed = ImGui::InputText("##angle_edit_text", m_angle_text_buf.data(), m_angle_text_buf.size(),
+                                             ImGuiInputTextFlags_CharsDecimal | ImGuiInputTextFlags_CharsScientific);
 
   if (text_changed && parse_dist_text_to_float_(m_angle_text_buf.data(), m_angle_val))
     m_angle_callback(m_angle_val, false);
 
   if (ImGui::IsItemDeactivatedAfterEdit() && m_angle_callback)
   {
-    float parsed {};
+    float parsed{};
     if (parse_dist_text_to_float_(m_angle_text_buf.data(), parsed))
       m_angle_val = parsed;
 
@@ -879,7 +871,8 @@ bool GUI::is_valid_project_json_(const std::string& s)
   {
     const nlohmann::json j = nlohmann::json::parse(s);
     return j.contains("sketches") && j["sketches"].is_array();
-  } catch (...)
+  }
+  catch (...)
   {
     return false;
   }
@@ -901,7 +894,8 @@ void GUI::sketch_list_inspector_(Sketch& sketch, int index)
   ImGui::Indent();
   ImGui::PushID(index);
 
-  const auto draw_section = [](const char* title, const std::vector<std::string>& labels) {
+  const auto draw_section = [](const char* title, const std::vector<std::string>& labels)
+  {
     const size_t       count = labels.size();
     ImGuiTreeNodeFlags flags = ImGuiTreeNodeFlags_SpanAvailWidth;
     if (count == 0)
@@ -925,8 +919,7 @@ void GUI::sketch_list_inspector_(Sketch& sketch, int index)
 
     if (ImGui::TreeNodeEx("Dimensions", flags, "Dimensions (%zu)", count))
     {
-      if (count > 0 && ImGui::BeginTable("sketch_dim_rows", 3,
-                                         ImGuiTableFlags_Resizable | ImGuiTableFlags_SizingStretchProp))
+      if (count > 0 && ImGui::BeginTable("sketch_dim_rows", 3, ImGuiTableFlags_Resizable | ImGuiTableFlags_SizingStretchProp))
       {
         ImGui::TableSetupColumn("show", ImGuiTableColumnFlags_WidthFixed, 28.f);
         ImGui::TableSetupColumn("dim", ImGuiTableColumnFlags_WidthStretch);
@@ -988,8 +981,7 @@ void GUI::sketch_list_()
   {
     EZY_ASSERT(s);
     const std::string& nm = s->get_name();
-    max_name_text_w =
-        std::max(max_name_text_w, ImGui::CalcTextSize(nm.c_str(), nm.c_str() + nm.size()).x);
+    max_name_text_w       = std::max(max_name_text_w, ImGui::CalcTextSize(nm.c_str(), nm.c_str() + nm.size()).x);
   }
 
   if (!ImGui::Begin("Sketch List", &m_show_sketch_list, ImGuiWindowFlags_None))
@@ -1012,7 +1004,7 @@ void GUI::sketch_list_()
 #pragma warning(disable : 4996)
     char name_buffer[1024];
     strncpy(name_buffer, sketch->get_name().c_str(), sizeof(name_buffer) - 1);
-    name_buffer[sizeof(name_buffer) - 1] = '\0';  // Ensure null-terminated
+    name_buffer[sizeof(name_buffer) - 1] = '\0'; // Ensure null-terminated
 #pragma warning(pop)
 
     // Unique ID suffix using index
@@ -1076,7 +1068,7 @@ void GUI::sketch_list_()
     ImGui::PushID(("uldisp" + id_suffix).c_str());
     {
       const bool has_ul = sketch->has_underlay();
-      bool       dummy_off {false};
+      bool       dummy_off{false};
       bool       ul_vis = has_ul && sketch->underlay_visible();
       if (!has_ul)
         ImGui::BeginDisabled();
@@ -1093,8 +1085,7 @@ void GUI::sketch_list_()
         ImGui::EndDisabled();
 
       if (m_show_tool_tips && ImGui::IsItemHovered(ImGuiHoveredFlags_AllowWhenDisabled))
-        ImGui::SetTooltip(
-            has_ul ? "Display underlay" : "Import an image in Sketch properties to enable the underlay.");
+        ImGui::SetTooltip(has_ul ? "Display underlay" : "Import an image in Sketch properties to enable the underlay.");
     }
     ImGui::PopID();
 
@@ -1133,13 +1124,7 @@ void GUI::sketch_underlay_import_dialog_()
 {
 #ifndef __EMSCRIPTEN__
   char const* filter_patterns[4] = {"*.png", "*.jpg", "*.jpeg", "*.bmp"};
-  char const* selected           = tinyfd_openFileDialog(
-      "Sketch underlay image",
-      "",
-      4,
-      filter_patterns,
-      "PNG / JPEG / BMP",
-      0);
+  char const* selected = tinyfd_openFileDialog("Sketch underlay image", "", 4, filter_patterns, "PNG / JPEG / BMP", 0);
   if (selected)
   {
     std::ifstream file(selected, std::ios::binary);
@@ -1149,7 +1134,7 @@ void GUI::sketch_underlay_import_dialog_()
       return;
     }
 
-    const std::string file_bytes {std::istreambuf_iterator<char>(file), std::istreambuf_iterator<char>()};
+    const std::string file_bytes{std::istreambuf_iterator<char>(file), std::istreambuf_iterator<char>()};
     if (!file_bytes.empty())
       on_sketch_underlay_file(selected, file_bytes);
     else
@@ -1215,8 +1200,8 @@ void GUI::sketch_underlay_panel_settings_(const Sketch::sptr& sk)
     m_underlay_panel_sketch = sk.get();
     if (sk->has_underlay())
     {
-      sk->underlay_ui_params(
-          m_underlay_center.x, m_underlay_center.y, m_underlay_half_extents.x, m_underlay_half_extents.y, m_underlay_rot);
+      sk->underlay_ui_params(m_underlay_center.x, m_underlay_center.y, m_underlay_half_extents.x, m_underlay_half_extents.y,
+                             m_underlay_rot);
       m_underlay_opacity   = sk->underlay_opacity();
       m_underlay_vis       = sk->underlay_visible();
       m_underlay_key_white = sk->underlay_key_white_transparent();
@@ -1229,7 +1214,8 @@ void GUI::sketch_underlay_panel_settings_(const Sketch::sptr& sk)
         m_underlay_tint_col[2] = static_cast<float>(tb) / 255.f;
         m_underlay_tint_col[3] = static_cast<float>(ta) / 255.f;
       }
-    } else
+    }
+    else
     {
       m_underlay_center       = glm::dvec2(0.0, 0.0);
       m_underlay_half_extents = glm::dvec2(0.0, 0.0);
@@ -1271,9 +1257,8 @@ void GUI::sketch_underlay_panel_settings_(const Sketch::sptr& sk)
   {
     ImGui::BeginTooltip();
     ImGui::PushTextWrapPos(ImGui::GetFontSize() * 35.0f);
-    ImGui::TextDisabled(
-        "Import PNG/JPEG/BMP as a sketch underlay. Adjust half-width, half-height, center, and rotation "
-        "to match real dimensions; changes apply in real time.");
+    ImGui::TextDisabled("Import PNG/JPEG/BMP as a sketch underlay. Adjust half-width, half-height, center, and rotation "
+                        "to match real dimensions; changes apply in real time.");
     ImGui::PopTextWrapPos();
     ImGui::EndTooltip();
   }
@@ -1285,28 +1270,26 @@ void GUI::sketch_underlay_panel_settings_(const Sketch::sptr& sk)
     sk->underlay_set_key_white_transparent(m_underlay_key_white);
 
   if (m_show_tool_tips && ImGui::IsItemHovered())
-    ImGui::SetTooltip(
-        "Uses brightness: white background becomes clear; dark lines stay visible. "
-        "Turn off for full-color photos. Inverting the image is not needed for typical scans.");
+    ImGui::SetTooltip("Uses brightness: white background becomes clear; dark lines stay visible. "
+                      "Turn off for full-color photos. Inverting the image is not needed for typical scans.");
 
   if (ImGui::Checkbox("Tint visible lines", &m_underlay_line_tint))
     sk->underlay_set_line_tint_enabled(m_underlay_line_tint);
 
   if (m_show_tool_tips && ImGui::IsItemHovered())
-    ImGui::SetTooltip(
-        "Paints non-transparent pixels (after white key) with the line color. "
-        "Default yellow reads well on dark backgrounds.");
+    ImGui::SetTooltip("Paints non-transparent pixels (after white key) with the line color. "
+                      "Default yellow reads well on dark backgrounds.");
 
   if (m_underlay_line_tint)
     if (ImGui::ColorEdit4("Line color", &m_underlay_tint_col[0]))
     {
-      const auto to_u8 = [](float c) -> uint8_t {
+      const auto to_u8 = [](float c) -> uint8_t
+      {
         const float x = std::clamp(c, 0.f, 1.f) * 255.f;
         return static_cast<uint8_t>(x + 0.5f);
       };
-      sk->underlay_set_line_tint_rgba(
-          to_u8(m_underlay_tint_col[0]), to_u8(m_underlay_tint_col[1]), to_u8(m_underlay_tint_col[2]),
-          to_u8(m_underlay_tint_col[3]));
+      sk->underlay_set_line_tint_rgba(to_u8(m_underlay_tint_col[0]), to_u8(m_underlay_tint_col[1]),
+                                      to_u8(m_underlay_tint_col[2]), to_u8(m_underlay_tint_col[3]));
     }
 
   if (ImGui::SliderFloat("Opacity", &m_underlay_opacity, 0.f, 1.f, "%.2f"))
@@ -1336,34 +1319,33 @@ void GUI::sketch_underlay_panel_settings_(const Sketch::sptr& sk)
       const char* hint = "";
       switch (m_underlay_calib_phase)
       {
-        case Underlay_calib_phase::PickX1:
-          hint = "First click: bitmap corner (0,0) in the current underlay transform (sliders / rotation).";
-          break;
-        case Underlay_calib_phase::PickX2:
-          hint = "Second click: along bitmap +U from that corner; calibration refines scale from this placement.";
-          break;
-        case Underlay_calib_phase::AwaitDistX:
-          hint =
-              "Enter the drawing distance for X (dimension popup). If Y is not calibrated yet, its scale still follows "
-              "image aspect.";
-          break;
-        case Underlay_calib_phase::PickY1:
-          hint = "First click: along bitmap height (+V) using the current underlay transform.";
-          break;
-        case Underlay_calib_phase::PickY2:
-          hint = "Second click: farther along +V; calibration refines Y from this placement.";
-          break;
-        case Underlay_calib_phase::AwaitDistY:
-          hint = "Enter the drawing distance for Y (dimension popup).";
-          break;
-        case Underlay_calib_phase::PickDatumO:
-          hint = "Datum: first click places bitmap corner (0,0) on the sketch plane (underlay origin).";
-          break;
-        case Underlay_calib_phase::PickDatumU:
-          hint = "Datum: second click sets direction along bitmap +U from that origin; half width and height are kept.";
-          break;
-        default:
-          break;
+      case Underlay_calib_phase::PickX1:
+        hint = "First click: bitmap corner (0,0) in the current underlay transform (sliders / rotation).";
+        break;
+      case Underlay_calib_phase::PickX2:
+        hint = "Second click: along bitmap +U from that corner; calibration refines scale from this placement.";
+        break;
+      case Underlay_calib_phase::AwaitDistX:
+        hint = "Enter the drawing distance for X (dimension popup). If Y is not calibrated yet, its scale still follows "
+               "image aspect.";
+        break;
+      case Underlay_calib_phase::PickY1:
+        hint = "First click: along bitmap height (+V) using the current underlay transform.";
+        break;
+      case Underlay_calib_phase::PickY2:
+        hint = "Second click: farther along +V; calibration refines Y from this placement.";
+        break;
+      case Underlay_calib_phase::AwaitDistY:
+        hint = "Enter the drawing distance for Y (dimension popup).";
+        break;
+      case Underlay_calib_phase::PickDatumO:
+        hint = "Datum: first click places bitmap corner (0,0) on the sketch plane (underlay origin).";
+        break;
+      case Underlay_calib_phase::PickDatumU:
+        hint = "Datum: second click sets direction along bitmap +U from that origin; half width and height are kept.";
+        break;
+      default:
+        break;
       }
       ImGui::TextColored(ImVec4(1.0f, 0.82f, 0.25f, 1.0f), "%s", hint);
     }
@@ -1374,9 +1356,8 @@ void GUI::sketch_underlay_panel_settings_(const Sketch::sptr& sk)
 
     ImGui::EndDisabled();
     if (m_show_tool_tips && ImGui::IsItemHovered())
-      ImGui::SetTooltip(
-          "Two clicks along width (+U), then type the real drawing distance (same units as sketch dimensions). "
-          "You can use Set Y before or after; until both are set, the other axis still follows default aspect.");
+      ImGui::SetTooltip("Two clicks along width (+U), then type the real drawing distance (same units as sketch dimensions). "
+                        "You can use Set Y before or after; until both are set, the other axis still follows default aspect.");
 
     ImGui::SameLine();
     ImGui::BeginDisabled(!sk_is_cur || pick_x || pick_datum);
@@ -1394,9 +1375,8 @@ void GUI::sketch_underlay_panel_settings_(const Sketch::sptr& sk)
 
     ImGui::EndDisabled();
     if (m_show_tool_tips && ImGui::IsItemHovered())
-      ImGui::SetTooltip(
-          "Two picks on the sketch plane: first sets bitmap corner (0,0); second sets the +U axis direction. "
-          "Keeps current half width and height; aligns the image to your sketch datum.");
+      ImGui::SetTooltip("Two picks on the sketch plane: first sets bitmap corner (0,0); second sets the +U axis direction. "
+                        "Keeps current half width and height; aligns the image to your sketch datum.");
   }
 
   ImGui::Separator();
@@ -1410,9 +1390,8 @@ void GUI::sketch_underlay_panel_settings_(const Sketch::sptr& sk)
 
     const ImGuiIO& io    = ImGui::GetIO();
     double         min_u = 0., min_v = 0., max_u = 1., max_v = 1.;
-    const bool     have_view =
-        m_view->sketch_plane_view_aabb_2d(sk->get_plane(), static_cast<double>(io.DisplaySize.x),
-                                          static_cast<double>(io.DisplaySize.y), min_u, min_v, max_u, max_v);
+    const bool     have_view = m_view->sketch_plane_view_aabb_2d(sk->get_plane(), static_cast<double>(io.DisplaySize.x),
+                                                                 static_cast<double>(io.DisplaySize.y), min_u, min_v, max_u, max_v);
     if (!have_view)
     {
       constexpr double k_fallback = 250.0;
@@ -1423,28 +1402,29 @@ void GUI::sketch_underlay_panel_settings_(const Sketch::sptr& sk)
       max_v = m_underlay_center.y + k_fallback;
     }
 
-    const double     span_u      = std::max(max_u - min_u, 1e-6);
-    const double     span_v      = std::max(max_v - min_v, 1e-6);
-    const double     half_span_u = 0.5 * span_u;
-    const double     half_span_v = 0.5 * span_v;
+    const double span_u      = std::max(max_u - min_u, 1e-6);
+    const double span_v      = std::max(max_v - min_v, 1e-6);
+    const double half_span_u = 0.5 * span_u;
+    const double half_span_v = 0.5 * span_v;
     // Allow underlay larger than the visible frustum (trace paper / zoomed views).
-    const double     max_half_w  = std::max(std::hypot(half_span_u, half_span_v) * 2.5, 1e-3);
-    const double     max_half_h  = max_half_w;
-    constexpr double k_min_half  = 1e-6;
-    double           rot_min     = -180.0;
-    double           rot_max     = 180.0;
+    const double     max_half_w = std::max(std::hypot(half_span_u, half_span_v) * 2.5, 1e-3);
+    const double     max_half_h = max_half_w;
+    constexpr double k_min_half = 1e-6;
+    double           rot_min    = -180.0;
+    double           rot_max    = 180.0;
 
-    auto apply_ul_xform = [&]() {
+    auto apply_ul_xform = [&]()
+    {
       if (!sk->underlay_axes_orthogonal())
         return;
 
-      sk->underlay_set_center_extents_rotation(
-          dvec2(m_underlay_center.x, m_underlay_center.y),
-          dvec2(m_underlay_half_extents.x, m_underlay_half_extents.y), m_underlay_rot);
+      sk->underlay_set_center_extents_rotation(dvec2(m_underlay_center.x, m_underlay_center.y),
+                                               dvec2(m_underlay_half_extents.x, m_underlay_half_extents.y), m_underlay_rot);
     };
 
-    auto transform_slider = [&](const char* label, ImGuiDataType type, void* p_data, const void* p_min,
-                                const void* p_max, const char* format, ImGuiSliderFlags flags = 0) {
+    auto transform_slider = [&](const char* label, ImGuiDataType type, void* p_data, const void* p_min, const void* p_max,
+                                const char* format, ImGuiSliderFlags flags = 0)
+    {
       const bool changed = ImGui::SliderScalar(label, type, p_data, p_min, p_max, format, flags);
       if (ImGui::IsItemActivated())
         m_view->push_undo_snapshot();
@@ -1453,8 +1433,8 @@ void GUI::sketch_underlay_panel_settings_(const Sketch::sptr& sk)
         apply_ul_xform();
     };
 
-    auto transform_input_double = [&](const char* label, double* p_data, double v_min, double v_max,
-                                      const char* format) {
+    auto transform_input_double = [&](const char* label, double* p_data, double v_min, double v_max, const char* format)
+    {
       const bool changed = ImGui::InputDouble(label, p_data, 0.0, 0.0, format);
       if (ImGui::IsItemActivated())
         m_view->push_undo_snapshot();
@@ -1468,15 +1448,13 @@ void GUI::sketch_underlay_panel_settings_(const Sketch::sptr& sk)
 
     ImGui::BeginDisabled(!ul_ortho);
     // Labels match typical sketch axes on screen: "Center X" drives plane Y (gp_Pnt2d::Y / view v), "Center Y" plane X (u).
-    transform_slider(
-        "Center X", ImGuiDataType_Double, &m_underlay_center.y, &min_v, &max_v, "%.4f", ImGuiSliderFlags_ClampOnInput);
-    transform_slider(
-        "Center Y", ImGuiDataType_Double, &m_underlay_center.x, &min_u, &max_u, "%.4f", ImGuiSliderFlags_ClampOnInput);
-    transform_slider(
-        "Half width", ImGuiDataType_Double, &m_underlay_half_extents.x, &k_min_half, &max_half_w, "%.4f",
+    transform_slider("Center X", ImGuiDataType_Double, &m_underlay_center.y, &min_v, &max_v, "%.4f",
+                     ImGuiSliderFlags_ClampOnInput);
+    transform_slider("Center Y", ImGuiDataType_Double, &m_underlay_center.x, &min_u, &max_u, "%.4f",
+                     ImGuiSliderFlags_ClampOnInput);
+    transform_slider("Half width", ImGuiDataType_Double, &m_underlay_half_extents.x, &k_min_half, &max_half_w, "%.4f",
                      ImGuiSliderFlags_ClampOnInput | ImGuiSliderFlags_Logarithmic);
-    transform_slider("Half height", ImGuiDataType_Double, &m_underlay_half_extents.y, &k_min_half, &max_half_h,
-                     "%.4f",
+    transform_slider("Half height", ImGuiDataType_Double, &m_underlay_half_extents.y, &k_min_half, &max_half_h, "%.4f",
                      ImGuiSliderFlags_ClampOnInput | ImGuiSliderFlags_Logarithmic);
     transform_slider("Rotation (deg)", ImGuiDataType_Double, &m_underlay_rot, &rot_min, &rot_max, "%.1f",
                      ImGuiSliderFlags_ClampOnInput);
@@ -1505,12 +1483,11 @@ void GUI::begin_underlay_calib_set_x_(const Sketch::sptr& sk)
   }
 
   cancel_underlay_calib_();
-  sk->underlay_ui_params(
-      m_underlay_center.x, m_underlay_center.y, m_underlay_half_extents.x, m_underlay_half_extents.y, m_underlay_rot);
+  sk->underlay_ui_params(m_underlay_center.x, m_underlay_center.y, m_underlay_half_extents.x, m_underlay_half_extents.y,
+                         m_underlay_rot);
   m_underlay_calib_sketch_wk = sk;
   m_underlay_calib_phase     = Underlay_calib_phase::PickX1;
-  show_message(
-      "Underlay X: uses the current transform. Click bitmap corner (0,0), then along +U; then enter the distance.");
+  show_message("Underlay X: uses the current transform. Click bitmap corner (0,0), then along +U; then enter the distance.");
 }
 void GUI::begin_underlay_calib_set_y_(const Sketch::sptr& sk)
 {
@@ -1524,12 +1501,11 @@ void GUI::begin_underlay_calib_set_y_(const Sketch::sptr& sk)
   }
 
   cancel_underlay_calib_();
-  sk->underlay_ui_params(
-      m_underlay_center.x, m_underlay_center.y, m_underlay_half_extents.x, m_underlay_half_extents.y, m_underlay_rot);
+  sk->underlay_ui_params(m_underlay_center.x, m_underlay_center.y, m_underlay_half_extents.x, m_underlay_half_extents.y,
+                         m_underlay_rot);
   m_underlay_calib_sketch_wk = sk;
   m_underlay_calib_phase     = Underlay_calib_phase::PickY1;
-  show_message(
-      "Underlay Y: uses the current transform. Click two points along +V; then enter the drawing distance.");
+  show_message("Underlay Y: uses the current transform. Click two points along +V; then enter the drawing distance.");
 }
 void GUI::begin_underlay_calib_define_datum_(const Sketch::sptr& sk)
 {
@@ -1543,8 +1519,8 @@ void GUI::begin_underlay_calib_define_datum_(const Sketch::sptr& sk)
   }
 
   cancel_underlay_calib_();
-  sk->underlay_ui_params(
-      m_underlay_center.x, m_underlay_center.y, m_underlay_half_extents.x, m_underlay_half_extents.y, m_underlay_rot);
+  sk->underlay_ui_params(m_underlay_center.x, m_underlay_center.y, m_underlay_half_extents.x, m_underlay_half_extents.y,
+                         m_underlay_rot);
   m_underlay_calib_sketch_wk = sk;
   m_underlay_calib_phase     = Underlay_calib_phase::PickDatumO;
   show_message("Datum: click where bitmap corner (0,0) should lie on the sketch plane.");
@@ -1557,7 +1533,8 @@ void GUI::underlay_calib_prompt_x_distance_(const Sketch::sptr& sk)
   const ScreenCoords spos(dvec2(ImGui::GetIO().MousePos.x, ImGui::GetIO().MousePos.y));
 
   Sketch::wptr wk      = sk;
-  auto         on_dist = [this, wk](float new_dist, bool is_final) {
+  auto         on_dist = [this, wk](float new_dist, bool is_final)
+  {
     if (!is_final)
       return;
 
@@ -1588,15 +1565,14 @@ void GUI::underlay_calib_prompt_x_distance_(const Sketch::sptr& sk)
     }
 
     m_underlay_calib_axis_u = s->underlay_axis_u_vec();
-    s->underlay_ui_params(
-        m_underlay_center.x, m_underlay_center.y, m_underlay_half_extents.x, m_underlay_half_extents.y, m_underlay_rot);
+    s->underlay_ui_params(m_underlay_center.x, m_underlay_center.y, m_underlay_half_extents.x, m_underlay_half_extents.y,
+                          m_underlay_rot);
     m_underlay_panel_sketch = nullptr;
 
     m_dist_callback        = nullptr;
     m_underlay_calib_phase = Underlay_calib_phase::None;
-    show_message(
-        "X distance applied to the picked segment. Use Set Y from edge for the vertical span if needed, or adjust "
-                "transforms.");
+    show_message("X distance applied to the picked segment. Use Set Y from edge for the vertical span if needed, or adjust "
+                 "transforms.");
   };
 
   set_dist_edit(dist_show, std::move(on_dist), spos);
@@ -1609,7 +1585,8 @@ void GUI::underlay_calib_prompt_y_distance_(const Sketch::sptr& sk)
   const ScreenCoords spos(dvec2(ImGui::GetIO().MousePos.x, ImGui::GetIO().MousePos.y));
 
   Sketch::wptr wk      = sk;
-  auto         on_dist = [this, wk](float new_dist, bool is_final) {
+  auto         on_dist = [this, wk](float new_dist, bool is_final)
+  {
     if (!is_final)
       return;
 
@@ -1635,20 +1612,19 @@ void GUI::underlay_calib_prompt_y_distance_(const Sketch::sptr& sk)
     if (!s->underlay_rescale_v_chord_to_length(m_underlay_calib_y0, m_underlay_calib_y1, Dy))
     {
       m_view->pop_undo_snapshot();
-      show_message(
-          "Set Y: picks need a clear span along image height (not along the same edge as X only). Try two points further apart in V.");
+      show_message("Set Y: picks need a clear span along image height (not along the same edge as X only). Try two points "
+                   "further apart in V.");
       return;
     }
 
-    s->underlay_ui_params(
-        m_underlay_center.x, m_underlay_center.y, m_underlay_half_extents.x, m_underlay_half_extents.y, m_underlay_rot);
+    s->underlay_ui_params(m_underlay_center.x, m_underlay_center.y, m_underlay_half_extents.x, m_underlay_half_extents.y,
+                          m_underlay_rot);
     m_underlay_panel_sketch = nullptr;
 
     m_dist_callback = nullptr;
     cancel_underlay_calib_();
-    show_message(
-        "Y distance applied to the picked segment. Use Set X from edge for the horizontal span if needed, or adjust "
-                "transforms.");
+    show_message("Y distance applied to the picked segment. Use Set X from edge for the horizontal span if needed, or adjust "
+                 "transforms.");
   };
 
   set_dist_edit(dist_show, std::move(on_dist), spos);
@@ -1658,8 +1634,7 @@ bool GUI::try_underlay_calib_click_(const ScreenCoords& screen_coords)
   if (m_underlay_calib_phase == Underlay_calib_phase::None)
     return false;
 
-  if (m_underlay_calib_phase == Underlay_calib_phase::AwaitDistX ||
-      m_underlay_calib_phase == Underlay_calib_phase::AwaitDistY)
+  if (m_underlay_calib_phase == Underlay_calib_phase::AwaitDistX || m_underlay_calib_phase == Underlay_calib_phase::AwaitDistY)
     return true;
 
   const Sketch::sptr sk     = m_underlay_calib_sketch_wk.lock();
@@ -1681,7 +1656,8 @@ bool GUI::try_underlay_calib_click_(const ScreenCoords& screen_coords)
   if (!pt)
     return true;
 
-  auto too_short = [](const gp_Pnt2d& a, const gp_Pnt2d& b) {
+  auto too_short = [](const gp_Pnt2d& a, const gp_Pnt2d& b)
+  {
     const double dx = b.X() - a.X();
     const double dy = b.Y() - a.Y();
     return dx * dx + dy * dy <= 1e-16;
@@ -1689,73 +1665,73 @@ bool GUI::try_underlay_calib_click_(const ScreenCoords& screen_coords)
 
   switch (m_underlay_calib_phase)
   {
-    case Underlay_calib_phase::PickX1:
-      m_underlay_calib_x0    = *pt;
-      m_underlay_calib_phase = Underlay_calib_phase::PickX2;
-      show_message("Underlay X: click second point (end of width / +U).");
+  case Underlay_calib_phase::PickX1:
+    m_underlay_calib_x0    = *pt;
+    m_underlay_calib_phase = Underlay_calib_phase::PickX2;
+    show_message("Underlay X: click second point (end of width / +U).");
+    return true;
+
+  case Underlay_calib_phase::PickX2:
+    if (too_short(m_underlay_calib_x0, *pt))
+    {
+      show_message("X segment too short.");
       return true;
+    }
 
-    case Underlay_calib_phase::PickX2:
-      if (too_short(m_underlay_calib_x0, *pt))
-      {
-        show_message("X segment too short.");
-        return true;
-      }
+    m_underlay_calib_x1 = *pt;
+    show_message("Enter drawing distance for X (same unit convention as sketch edge dimensions).");
+    underlay_calib_prompt_x_distance_(sk);
+    return true;
 
-      m_underlay_calib_x1 = *pt;
-      show_message("Enter drawing distance for X (same unit convention as sketch edge dimensions).");
-      underlay_calib_prompt_x_distance_(sk);
+  case Underlay_calib_phase::PickY1:
+    m_underlay_calib_y0    = *pt;
+    m_underlay_calib_phase = Underlay_calib_phase::PickY2;
+    show_message("Underlay Y: click second point (end of height / +V).");
+    return true;
+
+  case Underlay_calib_phase::PickY2:
+    if (too_short(m_underlay_calib_y0, *pt))
+    {
+      show_message("Y segment too short.");
       return true;
+    }
 
-    case Underlay_calib_phase::PickY1:
-      m_underlay_calib_y0    = *pt;
-      m_underlay_calib_phase = Underlay_calib_phase::PickY2;
-      show_message("Underlay Y: click second point (end of height / +V).");
+    m_underlay_calib_y1 = *pt;
+    show_message("Enter drawing distance for Y.");
+    underlay_calib_prompt_y_distance_(sk);
+    return true;
+
+  case Underlay_calib_phase::PickDatumO:
+    m_underlay_calib_datum_o = *pt;
+    m_underlay_calib_phase   = Underlay_calib_phase::PickDatumU;
+    show_message("Datum: click a second point along bitmap +U from that origin (direction only).");
+    return true;
+
+  case Underlay_calib_phase::PickDatumU:
+    if (too_short(m_underlay_calib_datum_o, *pt))
+    {
+      show_message("Datum direction segment too short.");
       return true;
+    }
 
-    case Underlay_calib_phase::PickY2:
-      if (too_short(m_underlay_calib_y0, *pt))
-      {
-        show_message("Y segment too short.");
-        return true;
-      }
-
-      m_underlay_calib_y1 = *pt;
-      show_message("Enter drawing distance for Y.");
-      underlay_calib_prompt_y_distance_(sk);
-      return true;
-
-    case Underlay_calib_phase::PickDatumO:
-      m_underlay_calib_datum_o = *pt;
-      m_underlay_calib_phase   = Underlay_calib_phase::PickDatumU;
-      show_message("Datum: click a second point along bitmap +U from that origin (direction only).");
-      return true;
-
-    case Underlay_calib_phase::PickDatumU:
-      if (too_short(m_underlay_calib_datum_o, *pt))
-      {
-        show_message("Datum direction segment too short.");
-        return true;
-      }
-
-      m_view->push_undo_snapshot();
-      if (!sk->underlay_set_datum_origin_and_u_direction(m_underlay_calib_datum_o, *pt))
-      {
-        m_view->pop_undo_snapshot();
-        show_message("Could not set underlay datum (degenerate direction or axes).");
-        cancel_underlay_calib_();
-        return true;
-      }
-
-      sk->underlay_ui_params(
-          m_underlay_center.x, m_underlay_center.y, m_underlay_half_extents.x, m_underlay_half_extents.y, m_underlay_rot);
-      m_underlay_panel_sketch = nullptr;
+    m_view->push_undo_snapshot();
+    if (!sk->underlay_set_datum_origin_and_u_direction(m_underlay_calib_datum_o, *pt))
+    {
+      m_view->pop_undo_snapshot();
+      show_message("Could not set underlay datum (degenerate direction or axes).");
       cancel_underlay_calib_();
-      show_message("Underlay datum set: origin at (0,0) and +U direction; half sizes unchanged.");
       return true;
+    }
 
-    default:
-      return false;
+    sk->underlay_ui_params(m_underlay_center.x, m_underlay_center.y, m_underlay_half_extents.x, m_underlay_half_extents.y,
+                           m_underlay_rot);
+    m_underlay_panel_sketch = nullptr;
+    cancel_underlay_calib_();
+    show_message("Underlay datum set: origin at (0,0) and +U direction; half sizes unchanged.");
+    return true;
+
+  default:
+    return false;
   }
 }
 void GUI::shape_list_()
@@ -1768,8 +1744,7 @@ void GUI::shape_list_()
   {
     EZY_ASSERT(s);
     const std::string& nm = s->get_name();
-    max_name_text_w =
-        std::max(max_name_text_w, ImGui::CalcTextSize(nm.c_str(), nm.c_str() + nm.size()).x);
+    max_name_text_w       = std::max(max_name_text_w, ImGui::CalcTextSize(nm.c_str(), nm.c_str() + nm.size()).x);
   }
 
   if (!ImGui::Begin("Shape List", &m_show_shape_list, ImGuiWindowFlags_None))
@@ -1795,14 +1770,11 @@ void GUI::shape_list_()
   const int                       nmat            = static_cast<int>(mat_names.size());
   float                           mat_label_w_max = 0.0f;
   for (int mi = 0; mi < nmat; ++mi)
-    mat_label_w_max =
-        std::max(mat_label_w_max, ImGui::CalcTextSize(mat_names[static_cast<size_t>(mi)].c_str()).x);
+    mat_label_w_max = std::max(mat_label_w_max, ImGui::CalcTextSize(mat_names[static_cast<size_t>(mi)].c_str()).x);
 
   const ImGuiStyle& st_mat      = ImGui::GetStyle();
-  const float       mat_popup_w = std::min(
-      440.0f,
-      std::max(280.0f,
-                     mat_label_w_max + st_mat.WindowPadding.x * 2.0f + st_mat.FramePadding.x * 2.0f + st_mat.ScrollbarSize + 8.0f));
+  const float       mat_popup_w = std::min(440.0f, std::max(280.0f, mat_label_w_max + st_mat.WindowPadding.x * 2.0f +
+                                                                        st_mat.FramePadding.x * 2.0f + st_mat.ScrollbarSize + 8.0f));
 
   std::unordered_set<const AIS_Shape*> selected_in_viewer;
   for (const AIS_Shape_ptr& ais : m_view->get_selected())
@@ -1816,25 +1788,21 @@ void GUI::shape_list_()
     if (row_selected)
     {
       const ImVec4 header = ImGui::GetStyleColorVec4(ImGuiCol_Header);
-      ImGui::PushStyleColor(ImGuiCol_FrameBg,
-                            ImVec4(header.x, header.y, header.z, 0.40f));
-      ImGui::PushStyleColor(ImGuiCol_FrameBgHovered,
-                            ImVec4(header.x, header.y, header.z, 0.55f));
-      ImGui::PushStyleColor(ImGuiCol_FrameBgActive,
-                            ImVec4(header.x, header.y, header.z, 0.65f));
+      ImGui::PushStyleColor(ImGuiCol_FrameBg, ImVec4(header.x, header.y, header.z, 0.40f));
+      ImGui::PushStyleColor(ImGuiCol_FrameBgHovered, ImVec4(header.x, header.y, header.z, 0.55f));
+      ImGui::PushStyleColor(ImGuiCol_FrameBgActive, ImVec4(header.x, header.y, header.z, 0.65f));
       const ImVec4 text = ImGui::GetStyleColorVec4(ImGuiCol_Text);
 
       // Shape List: when a row matches OCCT selection, ImGuiCol_Text is nudged brighter (RGB only).
-      constexpr float k_shape_list_selected_text_rgb_scale =
-          1.08f;  // per-channel multiplier for a modest relative lift
+      constexpr float k_shape_list_selected_text_rgb_scale = 1.08f; // per-channel multiplier for a modest relative lift
       constexpr float k_shape_list_selected_text_rgb_bias =
-          0.04f;  // added after scaling so very dark text still reads a bit lighter
+          0.04f; // added after scaling so very dark text still reads a bit lighter
 
-      ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(
-                                               std::min(1.0f, text.x * k_shape_list_selected_text_rgb_scale + k_shape_list_selected_text_rgb_bias),
-                                               std::min(1.0f, text.y * k_shape_list_selected_text_rgb_scale + k_shape_list_selected_text_rgb_bias),
-                                               std::min(1.0f, text.z * k_shape_list_selected_text_rgb_scale + k_shape_list_selected_text_rgb_bias),
-                                               text.w));
+      ImGui::PushStyleColor(
+          ImGuiCol_Text,
+          ImVec4(std::min(1.0f, text.x * k_shape_list_selected_text_rgb_scale + k_shape_list_selected_text_rgb_bias),
+                 std::min(1.0f, text.y * k_shape_list_selected_text_rgb_scale + k_shape_list_selected_text_rgb_bias),
+                 std::min(1.0f, text.z * k_shape_list_selected_text_rgb_scale + k_shape_list_selected_text_rgb_bias), text.w));
       ImGui::BeginGroup();
     }
 
@@ -1845,14 +1813,15 @@ void GUI::shape_list_()
 #pragma warning(disable : 4996)
     char name_buffer[1024];
     strncpy(name_buffer, shape->get_name().c_str(), sizeof(name_buffer) - 1);
-    name_buffer[sizeof(name_buffer) - 1] = '\0';  // Ensure null-terminated
+    name_buffer[sizeof(name_buffer) - 1] = '\0'; // Ensure null-terminated
 #pragma warning(pop)
 
     int mat_idx = shape->Material();
     if (mat_idx < 0 || mat_idx >= nmat)
       mat_idx = static_cast<int>(m_view->get_default_material().Name());
 
-    auto apply_shape_material = [&](int i) {
+    auto apply_shape_material = [&](int i)
+    {
       if (i < 0 || i >= nmat)
         return;
 
@@ -1905,8 +1874,7 @@ void GUI::shape_list_()
 
     ImGui::SameLine();
     ImGui::PushID(("matbtn" + id_suffix).c_str());
-    ImGui::PushStyleVar(ImGuiStyleVar_FramePadding,
-                        ImVec2(4.0f, ImGui::GetStyle().FramePadding.y));
+    ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(4.0f, ImGui::GetStyle().FramePadding.y));
     if (ImGui::Button("M"))
       ImGui::OpenPopup("mat_pick");
 
@@ -1921,8 +1889,7 @@ void GUI::shape_list_()
       ImGui::Separator();
       const float max_h = ImGui::GetTextLineHeightWithSpacing() * 12.0f;
       const float sc_w  = std::max(1.0f, ImGui::GetContentRegionAvail().x);
-      if (ImGui::BeginChild("mat_sc", ImVec2(sc_w, max_h), ImGuiChildFlags_Borders,
-                            ImGuiWindowFlags_AlwaysVerticalScrollbar))
+      if (ImGui::BeginChild("mat_sc", ImVec2(sc_w, max_h), ImGuiChildFlags_Borders, ImGuiWindowFlags_AlwaysVerticalScrollbar))
       {
         for (int i = 0; i < nmat; ++i)
           if (ImGui::Selectable(mat_names[static_cast<size_t>(i)].c_str(), i == mat_idx))
@@ -1961,7 +1928,7 @@ void GUI::shape_list_()
 }
 float GUI::list_name_field_width_(const ImGuiStyle& st, const float max_name_text_w)
 {
-  constexpr float k_name_field_cap   = 480.f;
+  constexpr float k_name_field_cap = 480.f;
   // Keep names editable even when all names are short.
   constexpr float k_name_field_floor = 72.f;
   const float     name_pad_x         = st.FramePadding.x * 2.0f;
@@ -1979,9 +1946,7 @@ void GUI::dbg_()
     return;
   }
   // Undo / redo stack
-  ImGui::Text("Undo: %zu (Ctrl+Z)  |  Redo: %zu (Ctrl+Y)  [max 50]",
-              m_view->undo_stack_size(),
-              m_view->redo_stack_size());
+  ImGui::Text("Undo: %zu (Ctrl+Z)  |  Redo: %zu (Ctrl+Y)  [max 50]", m_view->undo_stack_size(), m_view->redo_stack_size());
   ImGui::Separator();
   // Get the available content region width
   float available_width = ImGui::GetContentRegionAvail().x;
@@ -2015,7 +1980,7 @@ void GUI::message_status_window_()
   // Check if 3 seconds have passed
   auto now     = std::chrono::steady_clock::now();
   auto elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(now - m_message_start_time).count();
-  if (elapsed > 3000)  // 3 seconds
+  if (elapsed > 3000) // 3 seconds
   {
     m_message_visible = false;
     m_message.clear();
@@ -2024,23 +1989,19 @@ void GUI::message_status_window_()
 
   // Calculate fade effect (optional, for visual polish)
   float alpha = 1.0f;
-  if (elapsed > 2500)                             // Start fading after 2.5 seconds
-    alpha = 1.0f - (elapsed - 2500.0f) / 500.0f;  // Fade over last 0.5 seconds
+  if (elapsed > 2500)                            // Start fading after 2.5 seconds
+    alpha = 1.0f - (elapsed - 2500.0f) / 500.0f; // Fade over last 0.5 seconds
 
   // Set window position (bottom-right corner)
   ImGuiIO& io = ImGui::GetIO();
-  ImVec2   window_pos(io.DisplaySize.x - 250.0f, io.DisplaySize.y - 50.0f);  // Adjust as needed
+  ImVec2   window_pos(io.DisplaySize.x - 250.0f, io.DisplaySize.y - 50.0f); // Adjust as needed
   ImGui::SetNextWindowPos(window_pos, ImGuiCond_Always);
   ImGui::SetNextWindowSize(ImVec2(240.0f, 40.0f), ImGuiCond_Once);
 
   // Begin window with minimal flags
   ImGui::Begin("MessageStatus##unique_id", nullptr,
-               ImGuiWindowFlags_NoTitleBar |
-                   ImGuiWindowFlags_NoResize |
-                   ImGuiWindowFlags_AlwaysAutoResize |
-                   ImGuiWindowFlags_NoSavedSettings |
-                   ImGuiWindowFlags_NoFocusOnAppearing |
-                   ImGuiWindowFlags_NoNav);
+               ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_AlwaysAutoResize |
+                   ImGuiWindowFlags_NoSavedSettings | ImGuiWindowFlags_NoFocusOnAppearing | ImGuiWindowFlags_NoNav);
 
   // Set text color with alpha for fade effect
   ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(1.0f, 0.0f, 0.0f, alpha));
@@ -2054,9 +2015,10 @@ void GUI::log_message(const std::string& message)
 {
   if (m_log_buffer.size() > 1)
   {
-    m_log_buffer.pop_back();  // trailing '\0'
+    m_log_buffer.pop_back(); // trailing '\0'
     m_log_buffer.push_back('\n');
-  } else if (!m_log_buffer.empty())
+  }
+  else if (!m_log_buffer.empty())
     m_log_buffer.pop_back();
 
   m_log_buffer.insert(m_log_buffer.end(), message.begin(), message.end());
@@ -2112,7 +2074,7 @@ void GUI::init(GLFWwindow* window, ImFont* console_font)
   m_console_font = console_font;
   initialize_toolbar_();
   settings::set_log_callback([this](const std::string& m) { log_message(m); });
-  setup_log_redirection_();  // Set up stream redirection
+  setup_log_redirection_(); // Set up stream redirection
   log_message("EzyCad: initializing 3D view...");
   m_view->init_window(window);
   m_view->init_viewer();
@@ -2143,7 +2105,8 @@ void GUI::persist_last_opened_project_path_(const std::string& path)
 
     m_last_opened_project_path = p.generic_string();
     save_occt_view_settings();
-  } catch (...)
+  }
+  catch (...)
   {
   }
 #endif
@@ -2164,7 +2127,7 @@ void GUI::load_default_project_()
         std::ifstream file(p, std::ios::binary);
         if (file.is_open())
         {
-          const std::string json_str {std::istreambuf_iterator<char>(file), std::istreambuf_iterator<char>()};
+          const std::string json_str{std::istreambuf_iterator<char>(file), std::istreambuf_iterator<char>()};
           if (is_valid_project_json_(json_str))
           {
             log_message("EzyCad: loading last opened project: " + p.string());
@@ -2176,9 +2139,11 @@ void GUI::load_default_project_()
           log_message("EzyCad: last opened project JSON is invalid; falling back to startup/default.");
           show_message("Last opened project file is invalid; loading startup/default.");
         }
-      } else
+      }
+      else
         log_message("EzyCad: last opened project path not found; falling back to startup/default.");
-    } catch (...)
+    }
+    catch (...)
     {
       log_message("EzyCad: could not load last opened project; falling back to startup/default.");
     }
@@ -2204,7 +2169,8 @@ void GUI::load_default_project_()
   {
     log_message("EzyCad: saved startup project is invalid or incomplete; falling back to install default.");
     show_message("Saved startup project is invalid; loading install default.");
-  } else
+  }
+  else
     log_message("EzyCad: no saved startup project; trying bundled default.");
 
   std::ifstream file(k_bundled_default, std::ios::binary);
@@ -2214,14 +2180,15 @@ void GUI::load_default_project_()
     return;
   }
 
-  const std::string json_str {std::istreambuf_iterator<char>(file), std::istreambuf_iterator<char>()};
+  const std::string json_str{std::istreambuf_iterator<char>(file), std::istreambuf_iterator<char>()};
   if (is_valid_project_json_(json_str))
   {
     log_message("EzyCad: loading bundled default project (" + std::string(k_bundled_default) + ").");
     on_file(k_bundled_default, json_str, false);
     m_last_saved_path.clear();
     log_message("EzyCad: startup document loaded (bundled default).");
-  } else
+  }
+  else
     log_message("EzyCad: bundled " + std::string(k_bundled_default) + " is invalid; keeping initial empty document.");
 }
 std::string GUI::serialized_project_json_() const
@@ -2258,31 +2225,31 @@ void GUI::on_mouse_pos(const ScreenCoords& screen_coords)
 
   switch (get_mode())
   {
-    case Mode::Move:
-      if (Status s = m_view->shp_move().move_selected(screen_coords); !s.is_ok())
-        show_message(s.message());
+  case Mode::Move:
+    if (Status s = m_view->shp_move().move_selected(screen_coords); !s.is_ok())
+      show_message(s.message());
 
-      break;
+    break;
 
-    case Mode::Rotate:
-      if (Status s = m_view->shp_rotate().rotate_selected(screen_coords); !s.is_ok())
-        show_message(s.message());
+  case Mode::Rotate:
+    if (Status s = m_view->shp_rotate().rotate_selected(screen_coords); !s.is_ok())
+      show_message(s.message());
 
-      break;
+    break;
 
-    case Mode::Scale:
-      if (Status s = m_view->shp_scale().scale_selected(screen_coords); !s.is_ok())
-        show_message(s.message());
+  case Mode::Scale:
+    if (Status s = m_view->shp_scale().scale_selected(screen_coords); !s.is_ok())
+      show_message(s.message());
 
-      break;
+    break;
 
-    case Mode::Shape_polar_duplicate:
-      if (Status s = m_view->shp_polar_dup().move_point(screen_coords); !s.is_ok())
-        show_message(s.message());
+  case Mode::Shape_polar_duplicate:
+    if (Status s = m_view->shp_polar_dup().move_point(screen_coords); !s.is_ok())
+      show_message(s.message());
 
-      break;
+    break;
 
-      // clang-format off
+    // clang-format off
     case Mode::Sketch_add_node:
     case Mode::Sketch_add_edge:
     case Mode::Sketch_add_multi_edges:
@@ -2295,9 +2262,9 @@ void GUI::on_mouse_pos(const ScreenCoords& screen_coords)
     case Mode::Sketch_add_seg_circle_arc:
     case Mode::Sketch_dim_anno:           m_view->curr_sketch().sketch_pt_move(screen_coords);  break;
     case Mode::Sketch_face_extrude:       m_view->sketch_face_extrude(screen_coords, true);     break;
-      // clang-format on
-    default:
-      break;
+    // clang-format on
+  default:
+    break;
   }
 }
 void GUI::on_mouse_button(int button, int action, int mods)
@@ -2320,75 +2287,73 @@ void GUI::on_mouse_button(int button, int action, int mods)
   if (button == GLFW_MOUSE_BUTTON_LEFT && action == GLFW_PRESS && mods == 0)
     switch (m_mode)
     {
-        // clang-format off
+      // clang-format off
       case Mode::Move:                m_view->shp_move().finalize();                      break;
       case Mode::Rotate:              m_view->shp_rotate().finalize();                    break;
       case Mode::Scale:               m_view->shp_scale().finalize();                     break;
       case Mode::Sketch_face_extrude: m_view->sketch_face_extrude(screen_coords, false);  break;
-        // clang-format on
+      // clang-format on
 
-      case Mode::Sketch_add_node:
-      case Mode::Sketch_add_edge:
-      case Mode::Sketch_add_multi_edges:
-      case Mode::Sketch_add_seg_circle_arc:
-      case Mode::Sketch_add_square:
-      case Mode::Sketch_add_rectangle:
-      case Mode::Sketch_add_rectangle_center_pt:
-      case Mode::Sketch_operation_axis:
-      case Mode::Sketch_add_circle:
-      case Mode::Sketch_add_slot:
-        hide_dist_edit();
-        m_view->curr_sketch().add_sketch_pt(screen_coords);
-        break;
+    case Mode::Sketch_add_node:
+    case Mode::Sketch_add_edge:
+    case Mode::Sketch_add_multi_edges:
+    case Mode::Sketch_add_seg_circle_arc:
+    case Mode::Sketch_add_square:
+    case Mode::Sketch_add_rectangle:
+    case Mode::Sketch_add_rectangle_center_pt:
+    case Mode::Sketch_operation_axis:
+    case Mode::Sketch_add_circle:
+    case Mode::Sketch_add_slot:
+      hide_dist_edit();
+      m_view->curr_sketch().add_sketch_pt(screen_coords);
+      break;
 
-      case Mode::Shape_chamfer:
-        if (Status s = m_view->shp_chamfer().add_chamfer(screen_coords, m_chamfer_mode); !s.is_ok())
-          show_message(s.message());
+    case Mode::Shape_chamfer:
+      if (Status s = m_view->shp_chamfer().add_chamfer(screen_coords, m_chamfer_mode); !s.is_ok())
+        show_message(s.message());
 
-        break;
+      break;
 
-      case Mode::Shape_fillet:
-        if (Status s = m_view->shp_fillet().add_fillet(screen_coords, m_fillet_mode); !s.is_ok())
-          show_message(s.message());
+    case Mode::Shape_fillet:
+      if (Status s = m_view->shp_fillet().add_fillet(screen_coords, m_fillet_mode); !s.is_ok())
+        show_message(s.message());
 
-        break;
+      break;
 
-      case Mode::Shape_polar_duplicate:
-        if (Status s = m_view->shp_polar_dup().add_point(screen_coords); !s.is_ok())
-          show_message(s.message());
+    case Mode::Shape_polar_duplicate:
+      if (Status s = m_view->shp_polar_dup().add_point(screen_coords); !s.is_ok())
+        show_message(s.message());
 
-        break;
+      break;
 
-      default:
-        break;
+    default:
+      break;
     }
 
   else if (button == GLFW_MOUSE_BUTTON_RIGHT && action == GLFW_PRESS && mods == 0)
     // Right button is to finalize the current operation.
     switch (m_mode)
     {
-        // clang-format off
+      // clang-format off
       case Mode::Sketch_add_node:
       case Mode::Sketch_add_edge:
       case Mode::Sketch_add_multi_edges: m_view->curr_sketch().finalize_elm(); break;
-        // clang-format on
+      // clang-format on
 
-      default:
-        break;
+    default:
+      break;
     }
 }
 void GUI::on_mouse_scroll(double xoffset, double yoffset)
 {
   EZY_ASSERT(m_glfw_window != nullptr);
 
-  const bool shift_finer = glfwGetKey(m_glfw_window, GLFW_KEY_LEFT_SHIFT) == GLFW_PRESS || glfwGetKey(m_glfw_window, GLFW_KEY_RIGHT_SHIFT) == GLFW_PRESS;
+  const bool shift_finer = glfwGetKey(m_glfw_window, GLFW_KEY_LEFT_SHIFT) == GLFW_PRESS ||
+                           glfwGetKey(m_glfw_window, GLFW_KEY_RIGHT_SHIFT) == GLFW_PRESS;
 
   m_view->on_mouse_scroll(xoffset, yoffset, shift_finer);
 }
-void GUI::on_resize(int width, int height)
-{
-  m_view->on_resize(width, height);
-}
+void GUI::on_resize(int width, int height) { m_view->on_resize(width, height); }
 void GUI::setup_log_redirection_()
 {
   // Store original stream buffers
@@ -2431,26 +2396,26 @@ void GUI::export_file_dialog_(Export_format fmt)
   const char* filter_desc = "STEP files";
   switch (fmt)
   {
-    case Export_format::Step:
-      break;
-    case Export_format::Iges:
-      title       = "Export IGES";
-      def_name    = "export.igs";
-      filter_pat  = "*.igs";
-      filter_desc = "IGES files";
-      break;
-    case Export_format::Stl:
-      title       = "Export STL";
-      def_name    = "export.stl";
-      filter_pat  = "*.stl";
-      filter_desc = "STL files";
-      break;
-    case Export_format::Ply:
-      title       = "Export PLY";
-      def_name    = "export.ply";
-      filter_pat  = "*.ply";
-      filter_desc = "PLY files";
-      break;
+  case Export_format::Step:
+    break;
+  case Export_format::Iges:
+    title       = "Export IGES";
+    def_name    = "export.igs";
+    filter_pat  = "*.igs";
+    filter_desc = "IGES files";
+    break;
+  case Export_format::Stl:
+    title       = "Export STL";
+    def_name    = "export.stl";
+    filter_pat  = "*.stl";
+    filter_desc = "STL files";
+    break;
+  case Export_format::Ply:
+    title       = "Export PLY";
+    def_name    = "export.ply";
+    filter_pat  = "*.ply";
+    filter_desc = "PLY files";
+    break;
   }
 
   char const* filter_patterns[1] = {filter_pat};
@@ -2468,23 +2433,23 @@ void GUI::export_file_dialog_(Export_format fmt)
     show_message("Exported: " + std::filesystem::path(selected).filename().string());
 #else
   const char* mem_path = "/ezycad_export.step";
-  std::string download_name {"export.step"};
+  std::string download_name{"export.step"};
   switch (fmt)
   {
-    case Export_format::Step:
-      break;
-    case Export_format::Iges:
-      mem_path      = "/ezycad_export.igs";
-      download_name = "export.igs";
-      break;
-    case Export_format::Stl:
-      mem_path      = "/ezycad_export.stl";
-      download_name = "export.stl";
-      break;
-    case Export_format::Ply:
-      mem_path      = "/ezycad_export.ply";
-      download_name = "export.ply";
-      break;
+  case Export_format::Step:
+    break;
+  case Export_format::Iges:
+    mem_path      = "/ezycad_export.igs";
+    download_name = "export.igs";
+    break;
+  case Export_format::Stl:
+    mem_path      = "/ezycad_export.stl";
+    download_name = "export.stl";
+    break;
+  case Export_format::Ply:
+    mem_path      = "/ezycad_export.ply";
+    download_name = "export.ply";
+    break;
   }
   const Status s = m_view->export_document(fmt, mem_path);
   if (!s.is_ok())
@@ -2508,13 +2473,7 @@ void GUI::import_file_dialog_()
 #ifndef __EMSCRIPTEN__
   // Native: Use tinyfiledialogs
   char const* filter_patterns[3] = {"*.step", "*.stp", "*.ply"};
-  char const* selected           = tinyfd_openFileDialog(
-      "Import STEP or PLY",
-      "",
-      3,
-      filter_patterns,
-      "STEP / PLY files",
-      0);
+  char const* selected           = tinyfd_openFileDialog("Import STEP or PLY", "", 3, filter_patterns, "STEP / PLY files", 0);
 
   if (selected)
   {
@@ -2526,7 +2485,7 @@ void GUI::import_file_dialog_()
       return;
     }
 
-    const std::string file_bytes {std::istreambuf_iterator<char>(file), std::istreambuf_iterator<char>()};
+    const std::string file_bytes{std::istreambuf_iterator<char>(file), std::istreambuf_iterator<char>()};
     if (!file_bytes.empty())
       on_import_file(selected, file_bytes);
     else
@@ -2546,19 +2505,18 @@ void GUI::open_file_dialog_()
 {
 #ifndef __EMSCRIPTEN__
   // Native: Use tinyfiledialogs
-  char const* filter_patterns[1] = {"*.ezy"};  // Restrict to .ezy files
-  char const* selected           = tinyfd_openFileDialog(
-      "Open EzyCad project",  // Dialog title
-      "",                     // Default path (empty for OS default)
-      1,                      // Number of filter patterns
-      filter_patterns,        // Filter patterns (*.ezy)
-      "EzyCad Files",         // Filter description
-      0                       // Single file selection
-  );
+  char const* filter_patterns[1] = {"*.ezy"};                                   // Restrict to .ezy files
+  char const* selected           = tinyfd_openFileDialog("Open EzyCad project", // Dialog title
+                                                         "",                    // Default path (empty for OS default)
+                                                         1,                     // Number of filter patterns
+                                                         filter_patterns,       // Filter patterns (*.ezy)
+                                                         "EzyCad Files",        // Filter description
+                                                         0                      // Single file selection
+            );
   if (selected)
   {
     std::ifstream     file(selected);
-    const std::string json_str {std::istreambuf_iterator<char>(file), std::istreambuf_iterator<char>()};
+    const std::string json_str{std::istreambuf_iterator<char>(file), std::istreambuf_iterator<char>()};
     if (file.good() && json_str != "")
       on_file(selected, json_str);
 
@@ -2577,16 +2535,15 @@ void GUI::save_file_dialog_()
 #ifndef __EMSCRIPTEN__
   std::string file;
   if (!m_last_saved_path.empty())
-    file = m_last_saved_path;  // Reuse last saved path
+    file = m_last_saved_path; // Reuse last saved path
   else
   {
     char const* filter_patterns[1] = {"*.ezy"};
-    char const* selected           = tinyfd_saveFileDialog(
-        "Save EzyCad Project", "project.ezy", 1, filter_patterns, "EzyCad Files");
+    char const* selected = tinyfd_saveFileDialog("Save EzyCad Project", "project.ezy", 1, filter_patterns, "EzyCad Files");
     if (selected)
     {
       file              = selected;
-      m_last_saved_path = file;  // Update last saved path
+      m_last_saved_path = file; // Update last saved path
     }
   }
   if (!file.empty())
@@ -2597,12 +2554,15 @@ void GUI::save_file_dialog_()
       out.write(json_str.data(), json_str.size());
       out.close();
       show_message("Saved: " + std::filesystem::path(file).filename().string());
-    } else
+    }
+    else
       show_message("Failed to save: " + std::filesystem::path(file).filename().string());
-  } else
+  }
+  else
     show_message("Save canceled");
 #else
-  std::string default_file = m_last_saved_path.empty() ? "project.ezy" : std::filesystem::path(m_last_saved_path).filename().string();
+  std::string default_file =
+      m_last_saved_path.empty() ? "project.ezy" : std::filesystem::path(m_last_saved_path).filename().string();
   save_file_dialog_async("Save EzyCad project", default_file, json_str);
 #endif
 }
@@ -2665,14 +2625,14 @@ void GUI::open_file_dialog_async()
         var reader    = new FileReader();
         reader.onload = function(e)
         {
-          var contents    = new Uint8Array(e.target.result);
-          var fileName    = file.name;
+          var contents = new Uint8Array(e.target.result);
+          var fileName = file.name;
           // Allocate heap memory for contents
           var length      = contents.length;
           var contentsPtr = _malloc(length);
           HEAPU8.set(contents, contentsPtr);
           // Call C++ callback with path and contents
-          Module.ccall('on_file_selected', null, ['string', 'number', 'number'], [fileName, contentsPtr, length]);
+          Module.ccall('on_file_selected', null, [ 'string', 'number', 'number' ], [ fileName, contentsPtr, length ]);
           _free(contentsPtr);
         };
         reader.readAsArrayBuffer(file);
@@ -2703,7 +2663,7 @@ void GUI::import_file_dialog_async()
           var length      = contents.length;
           var contentsPtr = _malloc(length);
           HEAPU8.set(contents, contentsPtr);
-          Module.ccall('on_import_file_selected', null, ['string', 'number', 'number'], [fileName, contentsPtr, length]);
+          Module.ccall('on_import_file_selected', null, [ 'string', 'number', 'number' ], [ fileName, contentsPtr, length ]);
           _free(contentsPtr);
         };
         reader.readAsArrayBuffer(file);
@@ -2734,7 +2694,8 @@ void GUI::sketch_underlay_file_dialog_async()
           var length      = contents.length;
           var contentsPtr = _malloc(length);
           HEAPU8.set(contents, contentsPtr);
-          Module.ccall('on_sketch_underlay_selected', null, ['string', 'number', 'number'], [fileName, contentsPtr, length]);
+          Module.ccall('on_sketch_underlay_selected', null, [ 'string', 'number', 'number' ],
+                       [ fileName, contentsPtr, length ]);
           _free(contentsPtr);
         };
         reader.readAsArrayBuffer(file);
@@ -2746,18 +2707,25 @@ void GUI::sketch_underlay_file_dialog_async()
 }
 void GUI::save_file_dialog_async(const char* title, const std::string& default_file, const std::string& json_str)
 {
-  EM_ASM_ARGS({
-      var data = HEAPU8.subarray($0, $0 + $1);
-      var blob = new Blob([data], { type: 'application/octet-stream' });
-      var url = URL.createObjectURL(blob);
-      var a = document.createElement('a');
-      a.href = url;
-      a.download = UTF8ToString($2); // Default file name
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
-      URL.revokeObjectURL(url);
-      Module.ccall('on_save_file_selected', null, ['string'], [UTF8ToString($2)]); }, json_str.data(), json_str.size(), default_file.c_str());
+  EM_ASM_ARGS(
+      {
+        var data = HEAPU8.subarray($0, $0 + $1);
+        var blob = new Blob([data],
+                            {
+                              type:
+                                'application/octet-stream'
+                            });
+        var url    = URL.createObjectURL(blob);
+        var a      = document.createElement('a');
+        a.href     = url;
+        a.download = UTF8ToString($2); // Default file name
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+        Module.ccall('on_save_file_selected', null, ['string'], [UTF8ToString($2)]);
+      },
+      json_str.data(), json_str.size(), default_file.c_str());
 }
 void GUI::note_saved_project_filename(const std::string& filename)
 {
@@ -2766,16 +2734,23 @@ void GUI::note_saved_project_filename(const std::string& filename)
 }
 void GUI::download_blob_async(const std::string& default_filename, const std::string& data)
 {
-  EM_ASM_ARGS({
-      var blob = new Blob([HEAPU8.subarray($0, $0 + $1)], { type: 'application/octet-stream' });
-      var url = URL.createObjectURL(blob);
-      var a = document.createElement('a');
-      a.href = url;
-      a.download = UTF8ToString($2);
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
-      URL.revokeObjectURL(url); }, data.data(), data.size(), default_filename.c_str());
+  EM_ASM_ARGS(
+      {
+        var blob = new Blob([HEAPU8.subarray($0, $0 + $1)],
+                            {
+                              type:
+                                'application/octet-stream'
+                            });
+        var url    = URL.createObjectURL(blob);
+        var a      = document.createElement('a');
+        a.href     = url;
+        a.download = UTF8ToString($2);
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+      },
+      data.data(), data.size(), default_filename.c_str());
 }
 // C-style callback for Emscripten
 extern "C" void on_file_selected(const char* file_path, char* contents, int length)

@@ -18,22 +18,20 @@ namespace
 {
 const char* const k_settings_version = "1";
 
-/// `occt_view` JSON object: view background gradient and grid (shared with `save_occt_view_settings` / `occt_view_settings_json`).
+/// `occt_view` JSON object: view background gradient and grid (shared with `save_occt_view_settings` /
+/// `occt_view_settings_json`).
 nlohmann::json build_occt_view_settings_object(const Occt_view& view)
 {
   float bg1[3], bg2[3], g1[3], g2[3];
   view.get_bg_gradient_colors(bg1, bg2);
   view.get_grid_colors(g1, g2);
   const int method = view.get_bg_gradient_method();
-  return nlohmann::json {
-      {         "bg_color1", {bg1[0], bg1[1], bg1[2]}},
-      {         "bg_color2", {bg2[0], bg2[1], bg2[2]}},
-      {"bg_gradient_method",                   method},
-      {       "grid_color1",    {g1[0], g1[1], g1[2]}},
-      {       "grid_color2",    {g2[0], g2[1], g2[2]}},
+  return nlohmann::json{
+      {"bg_color1", {bg1[0], bg1[1], bg1[2]}}, {"bg_color2", {bg2[0], bg2[1], bg2[2]}}, {"bg_gradient_method", method},
+      {"grid_color1", {g1[0], g1[1], g1[2]}},  {"grid_color2", {g2[0], g2[1], g2[2]}},
   };
 }
-}  // namespace
+} // namespace
 
 std::string GUI::occt_view_settings_json() const
 {
@@ -42,15 +40,15 @@ std::string GUI::occt_view_settings_json() const
   json j;
   j["occt_view"] = build_occt_view_settings_object(*m_view);
   j["gui"]       = {
-      {      "edge_dim_label_h",       m_edge_dim_label_h},
-      {   "edge_dim_line_width",    m_edge_dim_line_width},
-      {   "edge_dim_arrow_size",    m_edge_dim_arrow_size},
-      {    "view_roll_step_deg",     m_view_roll_step_deg},
+      {"edge_dim_label_h", m_edge_dim_label_h},
+      {"edge_dim_line_width", m_edge_dim_line_width},
+      {"edge_dim_arrow_size", m_edge_dim_arrow_size},
+      {"view_roll_step_deg", m_view_roll_step_deg},
       {"view_zoom_scroll_scale", m_view_zoom_scroll_scale},
       {"snap_guide_color",
-       [&]()
-       {
-         float r {}, g {}, b {};
+             [&]()
+             {
+         float r{}, g{}, b{};
          Sketch_nodes::get_snap_guide_color(r, g, b);
          return nlohmann::json::array({r, g, b});
        }()},
@@ -77,36 +75,36 @@ void GUI::save_occt_view_settings()
   EZY_ASSERT(m_view);
   j["occt_view"] = build_occt_view_settings_object(*m_view);
   j["gui"]       = {
-      {               "show_options",            m_show_options                                     },
-      {           "show_sketch_list",                                             m_show_sketch_list},
-      {            "show_shape_list",                                              m_show_shape_list},
-      {         "log_window_visible",                                           m_log_window_visible},
-      {       "show_settings_dialog",                                         m_show_settings_dialog},
-      {                  "dark_mode",                                                    m_dark_mode},
-      {           "show_lua_console",                                             m_show_lua_console},
-      {        "show_python_console",                                          m_show_python_console},
-      {           "edge_dim_label_h",                                             m_edge_dim_label_h},
-      {        "edge_dim_line_width",                                          m_edge_dim_line_width},
-      {        "edge_dim_arrow_size",                                          m_edge_dim_arrow_size},
-      {"load_last_opened_on_startup",                                  m_load_last_opened_on_startup},
-      {   "last_opened_project_path",                                     m_last_opened_project_path},
-      {     "imgui_rounding_general",                                       m_imgui_rounding_general},
-      {      "imgui_rounding_scroll",                                        m_imgui_rounding_scroll},
-      {        "imgui_rounding_tabs",                                          m_imgui_rounding_tabs},
-      {         "view_roll_step_deg",                                           m_view_roll_step_deg},
-      {     "view_zoom_scroll_scale",                                       m_view_zoom_scroll_scale},
-      {           "snap_guide_color",
-       [&]()
-       {
-         float r {}, g {}, b {};
+      {"show_options", m_show_options},
+      {"show_sketch_list", m_show_sketch_list},
+      {"show_shape_list", m_show_shape_list},
+      {"log_window_visible", m_log_window_visible},
+      {"show_settings_dialog", m_show_settings_dialog},
+      {"dark_mode", m_dark_mode},
+      {"show_lua_console", m_show_lua_console},
+      {"show_python_console", m_show_python_console},
+      {"edge_dim_label_h", m_edge_dim_label_h},
+      {"edge_dim_line_width", m_edge_dim_line_width},
+      {"edge_dim_arrow_size", m_edge_dim_arrow_size},
+      {"load_last_opened_on_startup", m_load_last_opened_on_startup},
+      {"last_opened_project_path", m_last_opened_project_path},
+      {"imgui_rounding_general", m_imgui_rounding_general},
+      {"imgui_rounding_scroll", m_imgui_rounding_scroll},
+      {"imgui_rounding_tabs", m_imgui_rounding_tabs},
+      {"view_roll_step_deg", m_view_roll_step_deg},
+      {"view_zoom_scroll_scale", m_view_zoom_scroll_scale},
+      {"snap_guide_color",
+             [&]()
+             {
+         float r{}, g{}, b{};
          Sketch_nodes::get_snap_guide_color(r, g, b);
          return nlohmann::json::array({r, g, b});
        }()},
       {"snap_guide_mode", static_cast<int>(Sketch_nodes::get_snap_guide_mode())},
 #ifndef NDEBUG
-      {                   "show_dbg",                                                     m_show_dbg},
+      {"show_dbg", m_show_dbg},
 #endif
-      {   "underlay_highlight_color",
+      {"underlay_highlight_color",
        {m_underlay_highlight_color[0], m_underlay_highlight_color[1], m_underlay_highlight_color[2],
         m_underlay_highlight_color[3]}},
   };
@@ -238,10 +236,8 @@ void GUI::parse_gui_panes_settings_(const std::string& content)
       if (v >= k_gui_view_roll_step_deg_min && v <= k_gui_view_roll_step_deg_max)
         m_view_roll_step_deg = v;
       else
-        log_message("EzyCad: settings gui.view_roll_step_deg out of range [" +
-                    std::to_string(k_gui_view_roll_step_deg_min) + ", " +
-                    std::to_string(k_gui_view_roll_step_deg_max) + "], got " + std::to_string(v) +
-                    "; using default.");
+        log_message("EzyCad: settings gui.view_roll_step_deg out of range [" + std::to_string(k_gui_view_roll_step_deg_min) +
+                    ", " + std::to_string(k_gui_view_roll_step_deg_max) + "], got " + std::to_string(v) + "; using default.");
     }
 
     m_view_zoom_scroll_scale = k_gui_view_zoom_scroll_scale_default;
@@ -252,9 +248,8 @@ void GUI::parse_gui_panes_settings_(const std::string& content)
         m_view_zoom_scroll_scale = v;
       else
         log_message("EzyCad: settings gui.view_zoom_scroll_scale out of range [" +
-                    std::to_string(k_gui_view_zoom_scroll_scale_min) + ", " +
-                    std::to_string(k_gui_view_zoom_scroll_scale_max) + "], got " + std::to_string(v) +
-                    "; using default.");
+                    std::to_string(k_gui_view_zoom_scroll_scale_min) + ", " + std::to_string(k_gui_view_zoom_scroll_scale_max) +
+                    "], got " + std::to_string(v) + "; using default.");
     }
     if (m_view)
       m_view->set_zoom_scroll_scale(m_view_zoom_scroll_scale);
@@ -267,8 +262,7 @@ void GUI::parse_gui_panes_settings_(const std::string& content)
       glm::vec3   c(0.0f, 1.0f, 0.0f);
       for (size_t i = 0; i < 3; ++i)
         if (a[static_cast<json::size_type>(i)].is_number())
-          c[static_cast<glm::vec3::length_type>(i)] =
-              std::clamp(a[static_cast<json::size_type>(i)].get<float>(), 0.f, 1.f);
+          c[static_cast<glm::vec3::length_type>(i)] = std::clamp(a[static_cast<json::size_type>(i)].get<float>(), 0.f, 1.f);
       Sketch_nodes::set_snap_guide_color(c[0], c[1], c[2]);
     }
 
@@ -281,7 +275,8 @@ void GUI::parse_gui_panes_settings_(const std::string& content)
         Sketch_nodes::set_snap_guide_mode(static_cast<Sketch_nodes::Snap_guide_mode>(mode));
     }
 
-    if (g.contains("underlay_highlight_color") && g["underlay_highlight_color"].is_array() && g["underlay_highlight_color"].size() >= 3)
+    if (g.contains("underlay_highlight_color") && g["underlay_highlight_color"].is_array() &&
+        g["underlay_highlight_color"].size() >= 3)
     {
       const json& a = g["underlay_highlight_color"];
       for (int i = 0; i < 3; ++i)
@@ -379,7 +374,7 @@ void GUI::settings_()
   if (!m_show_settings_dialog)
     return;
 
-  ImGui::SetNextWindowSize(ImVec2(520, 0), ImGuiCond_FirstUseEver);  // Auto height; width matches res defaults
+  ImGui::SetNextWindowSize(ImVec2(520, 0), ImGuiCond_FirstUseEver); // Auto height; width matches res defaults
   if (!ImGui::Begin("Settings", &m_show_settings_dialog, ImGuiWindowFlags_None))
   {
     ImGui::End();
@@ -404,17 +399,16 @@ void GUI::settings_()
       ImGui::TextUnformatted("View rotation step");
       ImGui::TableSetColumnIndex(1);
       // SliderScalar(ImGuiDataType_Double): drag slider, or Ctrl+click for precise keyboard input (standard ImGui).
-      if (ImGui::SliderScalar("##view_roll_step", ImGuiDataType_Double, &m_view_roll_step_deg,
-                              &k_gui_view_roll_step_deg_min, &k_gui_view_roll_step_deg_max, "%.2f deg",
+      if (ImGui::SliderScalar("##view_roll_step", ImGuiDataType_Double, &m_view_roll_step_deg, &k_gui_view_roll_step_deg_min,
+                              &k_gui_view_roll_step_deg_max, "%.2f deg",
                               ImGuiSliderFlags_AlwaysClamp | ImGuiSliderFlags_ClampOnInput))
         save_occt_view_settings();
-      m_view_roll_step_deg =
-          std::clamp(m_view_roll_step_deg, k_gui_view_roll_step_deg_min, k_gui_view_roll_step_deg_max);
+      m_view_roll_step_deg = std::clamp(m_view_roll_step_deg, k_gui_view_roll_step_deg_min, k_gui_view_roll_step_deg_max);
 
       if (ImGui::IsItemHovered())
-        ImGui::SetTooltip(
-            "Degrees per key press: NumPad 8/2/4/6 orbit (like LMB drag), Shift+NumPad 4/6, Shift+4/6, or Shift+Left/Right roll. "
-            "Ctrl+click the slider to type a value.");
+        ImGui::SetTooltip("Degrees per key press: NumPad 8/2/4/6 orbit (like LMB drag), Shift+NumPad 4/6, Shift+4/6, or "
+                          "Shift+Left/Right roll. "
+                          "Ctrl+click the slider to type a value.");
 
       ImGui::SameLine(0.0f, ImGui::GetStyle().ItemInnerSpacing.x);
       if (ImGui::SmallButton("?##view_roll_help"))
@@ -431,8 +425,8 @@ void GUI::settings_()
                               &k_gui_view_zoom_scroll_scale_min, &k_gui_view_zoom_scroll_scale_max, "%.2f",
                               ImGuiSliderFlags_AlwaysClamp | ImGuiSliderFlags_ClampOnInput))
       {
-        m_view_zoom_scroll_scale = std::clamp(m_view_zoom_scroll_scale, k_gui_view_zoom_scroll_scale_min,
-                                              k_gui_view_zoom_scroll_scale_max);
+        m_view_zoom_scroll_scale =
+            std::clamp(m_view_zoom_scroll_scale, k_gui_view_zoom_scroll_scale_min, k_gui_view_zoom_scroll_scale_max);
         if (m_view)
           m_view->set_zoom_scroll_scale(m_view_zoom_scroll_scale);
 
@@ -442,9 +436,8 @@ void GUI::settings_()
           std::clamp(m_view_zoom_scroll_scale, k_gui_view_zoom_scroll_scale_min, k_gui_view_zoom_scroll_scale_max);
 
       if (ImGui::IsItemHovered())
-        ImGui::SetTooltip(
-            "Multiplier for mouse wheel and +/- zoom (same as UpdateZoom scroll delta). "
-            "Hold Shift while zooming for Blender-style finer steps (x0.1). Ctrl+click to type a value.");
+        ImGui::SetTooltip("Multiplier for mouse wheel and +/- zoom (same as UpdateZoom scroll delta). "
+                          "Hold Shift while zooming for Blender-style finer steps (x0.1). Ctrl+click to type a value.");
 
       ImGui::EndTable();
     }
@@ -483,8 +476,7 @@ void GUI::settings_()
       {
         ImGui::BeginTooltip();
         ImGui::PushTextWrapPos(ImGui::GetFontSize() * 35.0f);
-        ImGui::TextDisabled(
-            "Scrollbars and sliders applies the same radius to scrollbar tracks and slider grabs.");
+        ImGui::TextDisabled("Scrollbars and sliders applies the same radius to scrollbar tracks and slider grabs.");
         ImGui::PopTextWrapPos();
         ImGui::EndTooltip();
       }
@@ -534,7 +526,7 @@ void GUI::settings_()
       ImGui::TextUnformatted("Gradient blend");
       ImGui::TableSetColumnIndex(1);
       const char* gradient_items[] = {"Horizontal", "Vertical", "Diagonal 1", "Diagonal 2",
-                                      "Corner 1", "Corner 2", "Corner 3", "Corner 4"};
+                                      "Corner 1",   "Corner 2", "Corner 3",   "Corner 4"};
       int         grad             = m_view->get_bg_gradient_method();
       if (ImGui::Combo("##bg_grad", &grad, gradient_items, 8))
       {
@@ -614,8 +606,7 @@ void GUI::settings_()
         {
           ImGui::BeginTooltip();
           ImGui::PushTextWrapPos(ImGui::GetFontSize() * 35.0f);
-          ImGui::TextDisabled(
-              "Thickness of sketch edge length dimensions (Open CASCADE line width scale; 1.0 = default).");
+          ImGui::TextDisabled("Thickness of sketch edge length dimensions (Open CASCADE line width scale; 1.0 = default).");
           ImGui::PopTextWrapPos();
           ImGui::EndTooltip();
         }
@@ -639,8 +630,7 @@ void GUI::settings_()
         {
           ImGui::BeginTooltip();
           ImGui::PushTextWrapPos(ImGui::GetFontSize() * 35.0f);
-          ImGui::TextDisabled(
-              "Arrow head length for sketch and extrude length dimensions (Open CASCADE display units).");
+          ImGui::TextDisabled("Arrow head length for sketch and extrude length dimensions (Open CASCADE display units).");
           ImGui::PopTextWrapPos();
           ImGui::EndTooltip();
         }
@@ -658,9 +648,8 @@ void GUI::settings_()
       {
         ImGui::BeginTooltip();
         ImGui::PushTextWrapPos(ImGui::GetFontSize() * 35.0f);
-        ImGui::TextDisabled(
-            "Updates all sketch underlays immediately. Also used as the default when you import a new image. "
-            "Per-sketch overrides in Sketch List if needed.");
+        ImGui::TextDisabled("Updates all sketch underlays immediately. Also used as the default when you import a new image. "
+                            "Per-sketch overrides in Sketch List if needed.");
         ImGui::PopTextWrapPos();
         ImGui::EndTooltip();
       }
@@ -684,8 +673,7 @@ void GUI::settings_()
         {
           ImGui::BeginTooltip();
           ImGui::PushTextWrapPos(ImGui::GetFontSize() * 35.0f);
-          ImGui::TextDisabled(
-              "Color used by fullscreen snap guides and snap markers in sketch mode.");
+          ImGui::TextDisabled("Color used by fullscreen snap guides and snap markers in sketch mode.");
           ImGui::PopTextWrapPos();
           ImGui::EndTooltip();
         }
@@ -766,8 +754,7 @@ void GUI::settings_()
       {
         ImGui::BeginTooltip();
         ImGui::PushTextWrapPos(ImGui::GetFontSize() * 35.0f);
-        ImGui::TextDisabled(
-            "When enabled, EzyCad opens the last .ezy file you opened (path is stored in settings).");
+        ImGui::TextDisabled("When enabled, EzyCad opens the last .ezy file you opened (path is stored in settings).");
         ImGui::PopTextWrapPos();
         ImGui::EndTooltip();
       }
@@ -790,9 +777,8 @@ void GUI::settings_()
     {
       ImGui::BeginTooltip();
       ImGui::PushTextWrapPos(ImGui::GetFontSize() * 35.0f);
-      ImGui::TextDisabled(
-          "Save the current document (geometry, view, and tool mode) as what loads when EzyCad starts. "
-          "If none is saved, the install default (res/default.ezy) is used.");
+      ImGui::TextDisabled("Save the current document (geometry, view, and tool mode) as what loads when EzyCad starts. "
+                          "If none is saved, the install default (res/default.ezy) is used.");
       ImGui::PopTextWrapPos();
       ImGui::EndTooltip();
     }
