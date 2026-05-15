@@ -11,7 +11,9 @@
 #include "utl.h"
 
 Shp_rotate::Shp_rotate(Occt_view& view)
-    : Shp_operation_base(view) {}
+    : Shp_operation_base(view)
+{
+}
 
 Status Shp_rotate::rotate_selected(const ScreenCoords& screen_coords)
 {
@@ -88,17 +90,17 @@ void Shp_rotate::update_rotation_axis_()
   };
   switch (m_rotation_axis)
   {
-    case Rotation_axis::X_axis:
-      set_axis_and_color(1, 0, 0);
-      break;
-    case Rotation_axis::Y_axis:
-      set_axis_and_color(0, 1, 0);
-      break;
-    case Rotation_axis::Z_axis:
-      set_axis_and_color(0, 0, 1);
-      break;
-    case Rotation_axis::View_to_object:
-      return;  // Already handled above
+  case Rotation_axis::X_axis:
+    set_axis_and_color(1, 0, 0);
+    break;
+  case Rotation_axis::Y_axis:
+    set_axis_and_color(0, 1, 0);
+    break;
+  case Rotation_axis::Z_axis:
+    set_axis_and_color(0, 0, 1);
+    break;
+  case Rotation_axis::View_to_object:
+    return; // Already handled above
   }
 
   // Create a line representing the rotation axis
@@ -156,18 +158,18 @@ void Shp_rotate::preview_rotate_()
   gp_Dir axis_dir;
   switch (m_rotation_axis)
   {
-    case Rotation_axis::X_axis:
-      axis_dir = gp_Dir(1, 0, 0);
-      break;
-    case Rotation_axis::Y_axis:
-      axis_dir = gp_Dir(0, 1, 0);
-      break;
-    case Rotation_axis::Z_axis:
-      axis_dir = gp_Dir(0, 0, 1);
-      break;
-    case Rotation_axis::View_to_object:
-      axis_dir = m_rotate_pln->Axis().Direction();
-      break;
+  case Rotation_axis::X_axis:
+    axis_dir = gp_Dir(1, 0, 0);
+    break;
+  case Rotation_axis::Y_axis:
+    axis_dir = gp_Dir(0, 1, 0);
+    break;
+  case Rotation_axis::Z_axis:
+    axis_dir = gp_Dir(0, 0, 1);
+    break;
+  case Rotation_axis::View_to_object:
+    axis_dir = m_rotate_pln->Axis().Direction();
+    break;
   }
 
   // Create rotation transformation
@@ -192,9 +194,7 @@ Status Shp_rotate::show_angle_edit(const ScreenCoords& screen_coords)
     if (is_final)
       finalize();
   };
-  gui().set_dist_edit(
-      float(to_degrees(m_angle)),
-      std::move(std::function<void(float, bool)>(angle_edit)));
+  gui().set_dist_edit(float(to_degrees(m_angle)), std::move(std::function<void(float, bool)>(angle_edit)));
 
   return Status::ok();
 }

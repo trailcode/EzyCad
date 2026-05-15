@@ -13,13 +13,15 @@
 #include "occt_view.h"
 
 Sketch_nodes::Sketch_nodes(Occt_view& view, const gp_Pln& pln)
-    : m_view(view), m_ctx(m_view.ctx()), m_pln(pln)
+    : m_view(view)
+    , m_ctx(m_view.ctx())
+    , m_pln(pln)
 {
 }
 
 Sketch_nodes::~Sketch_nodes()
 {
-  hide_snap_annos();  // Deletes them from context
+  hide_snap_annos(); // Deletes them from context
 }
 
 std::optional<gp_Pnt2d> Sketch_nodes::snap(const ScreenCoords& screen_coords)
@@ -54,7 +56,7 @@ size_t Sketch_nodes::get_node_exact(const gp_Pnt2d& pt, bool permanent_for_new)
   // If only a deleted exact match exists, revive it instead of appending a duplicate index.
   if (deleted_match.has_value())
   {
-    Node& n = m_nodes[*deleted_match];
+    Node& n   = m_nodes[*deleted_match];
     n.deleted = false;
     if (permanent_for_new)
       n.permanent = true;
@@ -62,7 +64,7 @@ size_t Sketch_nodes::get_node_exact(const gp_Pnt2d& pt, bool permanent_for_new)
   }
 
   Node n(pt);
-  n.permanent = permanent_for_new;
+  n.permanent      = permanent_for_new;
   const size_t ret = m_nodes.size();
   m_nodes.push_back(n);
   return ret;
@@ -109,8 +111,8 @@ bool Sketch_nodes::view_bounds_2d_(double& min_u, double& min_v, double& max_u, 
     return false;
 
   const ImGuiIO& io = ImGui::GetIO();
-  return m_view.sketch_plane_view_aabb_2d(m_pln, static_cast<double>(io.DisplaySize.x),
-                                          static_cast<double>(io.DisplaySize.y), min_u, min_v, max_u, max_v);
+  return m_view.sketch_plane_view_aabb_2d(m_pln, static_cast<double>(io.DisplaySize.x), static_cast<double>(io.DisplaySize.y),
+                                          min_u, min_v, max_u, max_v);
 }
 
 std::optional<size_t> Sketch_nodes::try_pick_existing_node(const ScreenCoords& screen_coords)
@@ -153,7 +155,7 @@ std::optional<size_t> Sketch_nodes::try_pick_existing_node(const ScreenCoords& s
 }
 
 std::optional<size_t> Sketch_nodes::try_get_node_idx_snap(
-    gp_Pnt2d&                  pt,  // `pt` could be snapped to a node, an axis of another node, or an outside snap point.
+    gp_Pnt2d&                  pt, // `pt` could be snapped to a node, an axis of another node, or an outside snap point.
     const std::vector<size_t>& to_exclude)
 {
   const double snap_dist = snap_radius_world_(pt);
@@ -199,7 +201,7 @@ std::optional<size_t> Sketch_nodes::try_get_node_idx_snap(
 
     auto try_nd_pt = [&](const gp_Pnt2d& nd_pt)
     {
-      double dist                      = pt_original.SquareDistance(nd_pt);
+      double dist = pt_original.SquareDistance(nd_pt);
       // axis_dist needs to be compared against a linear snap distance in screen pixels.
       // This part becomes tricky because axis_dist is a world coordinate difference.
       // We'd ideally convert m_snap_dist_pixels * 0.5 to a world distance along the axis.
@@ -263,7 +265,7 @@ size_t Sketch_nodes::add_new_node(const gp_Pnt2d& pt, bool is_edge_mid_point, bo
   n.midpoint  = is_edge_mid_point;
   n.permanent = is_permanent;
   m_nodes.emplace_back(n);
-  //DBG_MSG("Add node: " << pt.Coord().X() << "," << pt.Coord().Y() << " midpoint: " << (int) is_edge_mid_point);
+  // DBG_MSG("Add node: " << pt.Coord().X() << "," << pt.Coord().Y() << " midpoint: " << (int) is_edge_mid_point);
   return ret;
 }
 
@@ -281,15 +283,13 @@ void Sketch_nodes::update_node_snap_anno_(const gp_Pnt2d& pt, const double snap_
 
   m_last_snap_pt = pt;
 
-  const bool show_traditional =
-      s_snap_guide_mode == Snap_guide_mode::Traditional || s_snap_guide_mode == Snap_guide_mode::Both;
-  const bool show_fullscreen =
-      s_snap_guide_mode == Snap_guide_mode::Fullscreen || s_snap_guide_mode == Snap_guide_mode::Both;
+  const bool show_traditional = s_snap_guide_mode == Snap_guide_mode::Traditional || s_snap_guide_mode == Snap_guide_mode::Both;
+  const bool show_fullscreen  = s_snap_guide_mode == Snap_guide_mode::Fullscreen || s_snap_guide_mode == Snap_guide_mode::Both;
 
   TopoDS_Shape fullscreen_shape;
   if (show_fullscreen)
   {
-    double min_u {}, min_v {}, max_u {}, max_v {};
+    double min_u{}, min_v{}, max_u{}, max_v{};
     if (view_bounds_2d_(min_u, min_v, max_u, max_v))
     {
       BRep_Builder    builder;
@@ -306,7 +306,7 @@ void Sketch_nodes::update_node_snap_anno_(const gp_Pnt2d& pt, const double snap_
     }
   }
 
-  TopoDS_Shape anno_shape;
+  TopoDS_Shape       anno_shape;
   const TopoDS_Shape traditional_shape = create_wire_box(m_pln, to_3d(m_pln, pt), snap_dist, snap_dist);
   if (show_traditional && !fullscreen_shape.IsNull())
   {
@@ -326,8 +326,7 @@ void Sketch_nodes::update_node_snap_anno_(const gp_Pnt2d& pt, const double snap_
   {
     m_snap_anno = new AIS_Shape(anno_shape);
     m_snap_anno->SetWidth(3.0);
-    m_snap_anno->SetColor(
-        Quantity_Color(s_snap_guide_color.x, s_snap_guide_color.y, s_snap_guide_color.z, Quantity_TOC_RGB));
+    m_snap_anno->SetColor(Quantity_Color(s_snap_guide_color.x, s_snap_guide_color.y, s_snap_guide_color.z, Quantity_TOC_RGB));
     m_ctx.Display(m_snap_anno, true);
   }
   else
@@ -339,35 +338,32 @@ void Sketch_nodes::update_node_snap_anno_(const gp_Pnt2d& pt, const double snap_
 
 void Sketch_nodes::update_axis_snap_anno_(int axis_index, const gp_Pnt2d& axis_pt, double snap_dist)
 {
-  const bool show_traditional =
-      s_snap_guide_mode == Snap_guide_mode::Traditional || s_snap_guide_mode == Snap_guide_mode::Both;
-  const bool show_fullscreen =
-      s_snap_guide_mode == Snap_guide_mode::Fullscreen || s_snap_guide_mode == Snap_guide_mode::Both;
+  const bool show_traditional = s_snap_guide_mode == Snap_guide_mode::Traditional || s_snap_guide_mode == Snap_guide_mode::Both;
+  const bool show_fullscreen  = s_snap_guide_mode == Snap_guide_mode::Fullscreen || s_snap_guide_mode == Snap_guide_mode::Both;
 
   TopoDS_Shape fullscreen_shape;
   if (show_fullscreen)
   {
-    double min_u {}, min_v {}, max_u {}, max_v {};
+    double min_u{}, min_v{}, max_u{}, max_v{};
     if (view_bounds_2d_(min_u, min_v, max_u, max_v))
     {
       if (axis_index == 0)
       {
-        const gp_Pnt p0 = to_3d(m_pln, gp_Pnt2d(axis_pt.X(), min_v));
-        const gp_Pnt p1 = to_3d(m_pln, gp_Pnt2d(axis_pt.X(), max_v));
+        const gp_Pnt p0  = to_3d(m_pln, gp_Pnt2d(axis_pt.X(), min_v));
+        const gp_Pnt p1  = to_3d(m_pln, gp_Pnt2d(axis_pt.X(), max_v));
         fullscreen_shape = BRepBuilderAPI_MakeEdge(p0, p1).Edge();
       }
       else
       {
-        const gp_Pnt p0 = to_3d(m_pln, gp_Pnt2d(min_u, axis_pt.Y()));
-        const gp_Pnt p1 = to_3d(m_pln, gp_Pnt2d(max_u, axis_pt.Y()));
+        const gp_Pnt p0  = to_3d(m_pln, gp_Pnt2d(min_u, axis_pt.Y()));
+        const gp_Pnt p1  = to_3d(m_pln, gp_Pnt2d(max_u, axis_pt.Y()));
         fullscreen_shape = BRepBuilderAPI_MakeEdge(p0, p1).Edge();
       }
     }
   }
 
-  TopoDS_Shape anno_shape;
-  const TopoDS_Shape traditional_shape =
-      create_wire_box(m_pln, to_3d(m_pln, axis_pt), snap_dist * 0.5, snap_dist * 0.5);
+  TopoDS_Shape       anno_shape;
+  const TopoDS_Shape traditional_shape = create_wire_box(m_pln, to_3d(m_pln, axis_pt), snap_dist * 0.5, snap_dist * 0.5);
   if (show_traditional && !fullscreen_shape.IsNull())
   {
     BRep_Builder    builder;
@@ -447,22 +443,14 @@ const Sketch_nodes::Node& Sketch_nodes::operator[](const std::optional<size_t> i
   return m_nodes[idx.value()];
 }
 
-bool Sketch_nodes::empty() const
-{
-  return m_nodes.empty();
-}
+bool Sketch_nodes::empty() const { return m_nodes.empty(); }
 
-size_t Sketch_nodes::size() const
-{
-  return m_nodes.size();
-}
+size_t Sketch_nodes::size() const { return m_nodes.size(); }
 
-void Sketch_nodes::json_resize(size_t count)
-{
-  m_nodes.assign(count, Node {});
-}
+void Sketch_nodes::json_resize(size_t count) { m_nodes.assign(count, Node{}); }
 
-void Sketch_nodes::json_set_node(size_t idx, const gp_Pnt2d& pt, bool deleted, bool midpoint, bool permanent, const std::string& name)
+void Sketch_nodes::json_set_node(size_t idx, const gp_Pnt2d& pt, bool deleted, bool midpoint, bool permanent,
+                                 const std::string& name)
 {
   EZY_ASSERT(idx < m_nodes.size());
   Node& n = m_nodes[idx];
@@ -474,50 +462,26 @@ void Sketch_nodes::json_set_node(size_t idx, const gp_Pnt2d& pt, bool deleted, b
   n.name      = name;
 }
 
-void Sketch_nodes::finalize()
-{
-  m_prev_num_nodes = m_nodes.size();
-}
+void Sketch_nodes::finalize() { m_prev_num_nodes = m_nodes.size(); }
 
-void Sketch_nodes::cancel()
-{
-  m_nodes.resize(m_prev_num_nodes);
-}
+void Sketch_nodes::cancel() { m_nodes.resize(m_prev_num_nodes); }
 
-void Sketch_nodes::clear_outside_snap_pnts()
-{
-  m_outside_snap_pts.clear();
-}
+void Sketch_nodes::clear_outside_snap_pnts() { m_outside_snap_pts.clear(); }
 
-void Sketch_nodes::add_outside_snap_pnt(const gp_Pnt& pt3d)
-{
-  m_outside_snap_pts.insert(to_2d(m_pln, pt3d));
-}
+void Sketch_nodes::add_outside_snap_pnt(const gp_Pnt& pt3d) { m_outside_snap_pts.insert(to_2d(m_pln, pt3d)); }
 
 // Snap distance related
 double                        Sketch_nodes::s_snap_dist_pixels = 35.0;
 Sketch_nodes::Snap_guide_mode Sketch_nodes::s_snap_guide_mode  = Snap_guide_mode::Traditional;
-glm::vec3                     Sketch_nodes::s_snap_guide_color {0.0f, 1.0f, 0.0f};
+glm::vec3                     Sketch_nodes::s_snap_guide_color{0.0f, 1.0f, 0.0f};
 
-void Sketch_nodes::set_snap_dist(double snap_dist_pixels)
-{
-  s_snap_dist_pixels = snap_dist_pixels;
-}
+void Sketch_nodes::set_snap_dist(double snap_dist_pixels) { s_snap_dist_pixels = snap_dist_pixels; }
 
-double Sketch_nodes::get_snap_dist()
-{
-  return s_snap_dist_pixels;
-}
+double Sketch_nodes::get_snap_dist() { return s_snap_dist_pixels; }
 
-void Sketch_nodes::set_snap_guide_mode(Snap_guide_mode mode)
-{
-  s_snap_guide_mode = mode;
-}
+void Sketch_nodes::set_snap_guide_mode(Snap_guide_mode mode) { s_snap_guide_mode = mode; }
 
-Sketch_nodes::Snap_guide_mode Sketch_nodes::get_snap_guide_mode()
-{
-  return s_snap_guide_mode;
-}
+Sketch_nodes::Snap_guide_mode Sketch_nodes::get_snap_guide_mode() { return s_snap_guide_mode; }
 
 void Sketch_nodes::set_snap_guide_color(float r, float g, float b)
 {
@@ -532,4 +496,3 @@ void Sketch_nodes::get_snap_guide_color(float& r, float& g, float& b)
   g = s_snap_guide_color.y;
   b = s_snap_guide_color.z;
 }
-

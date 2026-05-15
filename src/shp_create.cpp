@@ -42,8 +42,7 @@ TopoDS_Shape create_pyramid(double side)
   base_wire.Add(BRepBuilderAPI_MakeEdge(p1, p2).Edge());
   base_wire.Add(BRepBuilderAPI_MakeEdge(p2, p3).Edge());
   base_wire.Add(BRepBuilderAPI_MakeEdge(p3, p0).Edge());
-  TopoDS_Face base_face =
-      BRepBuilderAPI_MakeFace(gp_Pln(gp_Pnt(0, 0, 0), gp_Dir(0, 0, -1)), base_wire.Wire(), true).Face();
+  TopoDS_Face base_face = BRepBuilderAPI_MakeFace(gp_Pln(gp_Pnt(0, 0, 0), gp_Dir(0, 0, -1)), base_wire.Wire(), true).Face();
 
   auto make_triangle_face = [](const gp_Pnt& a, const gp_Pnt& b, const gp_Pnt& c) -> TopoDS_Face
   {
@@ -88,10 +87,7 @@ TopoDS_Shape create_pyramid(double side)
   return BRepBuilderAPI_Transform(pyramid, trsf).Shape();
 }
 
-TopoDS_Shape create_sphere(double radius)
-{
-  return BRepPrimAPI_MakeSphere(radius).Shape();
-}
+TopoDS_Shape create_sphere(double radius) { return BRepPrimAPI_MakeSphere(radius).Shape(); }
 
 TopoDS_Shape create_cylinder(double radius, double height)
 {
@@ -109,8 +105,5 @@ TopoDS_Shape create_cone(double R1, double R2, double height)
   return BRepBuilderAPI_Transform(cone, trsf).Shape();
 }
 
-TopoDS_Shape create_torus(double R1, double R2)
-{
-  return BRepPrimAPI_MakeTorus(R1, R2).Shape();
-}
-}  // namespace shp_create
+TopoDS_Shape create_torus(double R1, double R2) { return BRepPrimAPI_MakeTorus(R1, R2).Shape(); }
+} // namespace shp_create

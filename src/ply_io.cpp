@@ -81,124 +81,123 @@ int size_of_scalar(ScalarType t)
 {
   switch (t)
   {
-    case ScalarType::Int8:
-    case ScalarType::UInt8:
-      return 1;
-    case ScalarType::Int16:
-    case ScalarType::UInt16:
-      return 2;
-    case ScalarType::Int32:
-    case ScalarType::UInt32:
-    case ScalarType::Float32:
-      return 4;
-    case ScalarType::Float64:
-      return 8;
-    default:
-      return 0;
+  case ScalarType::Int8:
+  case ScalarType::UInt8:
+    return 1;
+  case ScalarType::Int16:
+  case ScalarType::UInt16:
+    return 2;
+  case ScalarType::Int32:
+  case ScalarType::UInt32:
+  case ScalarType::Float32:
+    return 4;
+  case ScalarType::Float64:
+    return 8;
+  default:
+    return 0;
   }
 }
 
 struct ScalarProp
 {
-  ScalarType  type {ScalarType::Unknown};
+  ScalarType  type{ScalarType::Unknown};
   std::string name;
 };
 
 struct ListProp
 {
-  ScalarType  count_type {ScalarType::Unknown};
-  ScalarType  value_type {ScalarType::Unknown};
+  ScalarType  count_type{ScalarType::Unknown};
+  ScalarType  value_type{ScalarType::Unknown};
   std::string name;
 };
 
 struct ElementDesc
 {
   std::string             name;
-  int                     count {0};
+  int                     count{0};
   std::vector<ScalarProp> scalars;
   std::vector<ListProp>   lists;
 };
 
-bool read_scalar_bin_at(const unsigned char* base,
-                        size_t               off,
-                        const unsigned char* endbuf,
-                        ScalarType           t,
-                        double&              out)
+bool read_scalar_bin_at(const unsigned char* base, size_t off, const unsigned char* endbuf, ScalarType t, double& out)
 {
   const unsigned char* p = base + off;
   if (p >= endbuf)
     return false;
-  auto need = [&](size_t n) -> bool { return static_cast<size_t>(endbuf - p) >= n; };
+  auto need = [&](size_t n) -> bool
+  {
+    return static_cast<size_t>(endbuf - p) >= n;
+  };
   switch (t)
   {
-    case ScalarType::Int8:
-    {
-      if (!need(1))
-        return false;
-      out = static_cast<double>(*reinterpret_cast<const std::int8_t*>(p));
-      return true;
-    }
-    case ScalarType::UInt8:
-    {
-      if (!need(1))
-        return false;
-      out = static_cast<double>(*p);
-      return true;
-    }
-    case ScalarType::Int16:
-    {
-      if (!need(2))
-        return false;
-      std::int16_t v;
-      std::memcpy(&v, p, 2);
-      out = static_cast<double>(v);
-      return true;
-    }
-    case ScalarType::UInt16:
-    {
-      if (!need(2))
-        return false;
-      std::uint16_t v;
-      std::memcpy(&v, p, 2);
-      out = static_cast<double>(v);
-      return true;
-    }
-    case ScalarType::Int32:
-    {
-      if (!need(4))
-        return false;
-      std::int32_t v;
-      std::memcpy(&v, p, 4);
-      out = static_cast<double>(v);
-      return true;
-    }
-    case ScalarType::UInt32:
-    {
-      if (!need(4))
-        return false;
-      std::uint32_t v;
-      std::memcpy(&v, p, 4);
-      out = static_cast<double>(v);
-      return true;
-    }
-    case ScalarType::Float32:
-    {
-      if (!need(4))
-        return false;
-      float v;
-      std::memcpy(&v, p, 4);
-      out = static_cast<double>(v);
-      return true;
-    }
-    case ScalarType::Float64:
-    {
-      if (!need(8))
-        return false;
-      std::memcpy(&out, p, 8);
-      return true;
-    }
-    default:
+  case ScalarType::Int8:
+  {
+    if (!need(1))
       return false;
+    out = static_cast<double>(*reinterpret_cast<const std::int8_t*>(p));
+    return true;
+  }
+  case ScalarType::UInt8:
+  {
+    if (!need(1))
+      return false;
+    out = static_cast<double>(*p);
+    return true;
+  }
+  case ScalarType::Int16:
+  {
+    if (!need(2))
+      return false;
+    std::int16_t v;
+    std::memcpy(&v, p, 2);
+    out = static_cast<double>(v);
+    return true;
+  }
+  case ScalarType::UInt16:
+  {
+    if (!need(2))
+      return false;
+    std::uint16_t v;
+    std::memcpy(&v, p, 2);
+    out = static_cast<double>(v);
+    return true;
+  }
+  case ScalarType::Int32:
+  {
+    if (!need(4))
+      return false;
+    std::int32_t v;
+    std::memcpy(&v, p, 4);
+    out = static_cast<double>(v);
+    return true;
+  }
+  case ScalarType::UInt32:
+  {
+    if (!need(4))
+      return false;
+    std::uint32_t v;
+    std::memcpy(&v, p, 4);
+    out = static_cast<double>(v);
+    return true;
+  }
+  case ScalarType::Float32:
+  {
+    if (!need(4))
+      return false;
+    float v;
+    std::memcpy(&v, p, 4);
+    out = static_cast<double>(v);
+    return true;
+  }
+  case ScalarType::Float64:
+  {
+    if (!need(8))
+      return false;
+    std::memcpy(&out, p, 8);
+    return true;
+  }
+  default:
+    return false;
   }
 }
 
@@ -206,42 +205,39 @@ std::uint32_t read_list_count_bin(const unsigned char*& p, const unsigned char* 
 {
   switch (ct)
   {
-    case ScalarType::UInt8:
-    {
-      if (static_cast<size_t>(end - p) < 1)
-        return 0;
-      std::uint32_t v = *p;
-      ++p;
-      return v;
-    }
-    case ScalarType::UInt16:
-    {
-      if (static_cast<size_t>(end - p) < 2)
-        return 0;
-      std::uint16_t v;
-      std::memcpy(&v, p, 2);
-      p += 2;
-      return v;
-    }
-    case ScalarType::UInt32:
-    {
-      if (static_cast<size_t>(end - p) < 4)
-        return 0;
-      std::uint32_t v;
-      std::memcpy(&v, p, 4);
-      p += 4;
-      return v;
-    }
-    default:
+  case ScalarType::UInt8:
+  {
+    if (static_cast<size_t>(end - p) < 1)
       return 0;
+    std::uint32_t v = *p;
+    ++p;
+    return v;
+  }
+  case ScalarType::UInt16:
+  {
+    if (static_cast<size_t>(end - p) < 2)
+      return 0;
+    std::uint16_t v;
+    std::memcpy(&v, p, 2);
+    p += 2;
+    return v;
+  }
+  case ScalarType::UInt32:
+  {
+    if (static_cast<size_t>(end - p) < 4)
+      return 0;
+    std::uint32_t v;
+    std::memcpy(&v, p, 4);
+    p += 4;
+    return v;
+  }
+  default:
+    return 0;
   }
 }
 
-bool read_face_indices_bin(const unsigned char*& p,
-                           const unsigned char* end,
-                           ScalarType           vt,
-                           std::uint32_t        n,
-                           std::vector<int>&    idx_out)
+bool read_face_indices_bin(const unsigned char*& p, const unsigned char* end, ScalarType vt, std::uint32_t n,
+                           std::vector<int>& idx_out)
 {
   idx_out.clear();
   idx_out.reserve(n);
@@ -259,12 +255,7 @@ bool read_face_indices_bin(const unsigned char*& p,
   return true;
 }
 
-bool append_triangle(TopoDS_Compound& comp,
-                     BRep_Builder&    bb,
-                     const gp_Pnt&    p0,
-                     const gp_Pnt&    p1,
-                     const gp_Pnt&    p2,
-                     int&             ntri)
+bool append_triangle(TopoDS_Compound& comp, BRep_Builder& bb, const gp_Pnt& p0, const gp_Pnt& p1, const gp_Pnt& p2, int& ntri)
 {
   if (p0.IsEqual(p1, Precision::Confusion()) || p1.IsEqual(p2, Precision::Confusion()) ||
       p2.IsEqual(p0, Precision::Confusion()))
@@ -285,7 +276,7 @@ bool append_triangle(TopoDS_Compound& comp,
   return true;
 }
 
-}  // namespace
+} // namespace
 
 Status import_ply_shape(const std::string& file_bytes, TopoDS_Shape& out_shape)
 {
@@ -345,7 +336,7 @@ Status import_ply_shape(const std::string& file_bytes, TopoDS_Shape& out_shape)
       std::string name;
       int         cnt = 0;
       iss >> name >> cnt;
-      elements.push_back(ElementDesc {});
+      elements.push_back(ElementDesc{});
       cur_el        = &elements.back();
       cur_el->name  = std::move(name);
       cur_el->count = cnt;
@@ -569,8 +560,8 @@ Status export_ply_binary_file(const TopoDS_Shape& shape, const std::string& file
 
   for (TopExp_Explorer exp(shape, TopAbs_FACE); exp.More(); exp.Next())
   {
-    const TopoDS_Face&         face = TopoDS::Face(exp.Current());
-    TopLoc_Location            loc;
+    const TopoDS_Face& face = TopoDS::Face(exp.Current());
+    TopLoc_Location    loc;
     const Handle(Poly_Triangulation)& tri = BRep_Tool::Triangulation(face, loc);
     if (tri.IsNull())
       continue;
@@ -585,7 +576,7 @@ Status export_ply_binary_file(const TopoDS_Shape& shape, const std::string& file
       const gp_Pnt p1 = tri->Node(i1).Transformed(tr);
       const gp_Pnt p2 = tri->Node(i2).Transformed(tr);
       const gp_Pnt p3 = tri->Node(i3).Transformed(tr);
-      tris.push_back(Tri {p1.X(), p1.Y(), p1.Z(), p2.X(), p2.Y(), p2.Z(), p3.X(), p3.Y(), p3.Z()});
+      tris.push_back(Tri{p1.X(), p1.Y(), p1.Z(), p2.X(), p2.Y(), p2.Z(), p3.X(), p3.Y(), p3.Z()});
     }
   }
 
@@ -620,9 +611,9 @@ Status export_ply_binary_file(const TopoDS_Shape& shape, const std::string& file
   for (size_t fi = 0; fi < nf; ++fi)
   {
     const unsigned char three = 3;
-    const std::int32_t i0 = static_cast<std::int32_t>(fi * 3);
-    const std::int32_t i1 = static_cast<std::int32_t>(fi * 3 + 1);
-    const std::int32_t i2 = static_cast<std::int32_t>(fi * 3 + 2);
+    const std::int32_t  i0    = static_cast<std::int32_t>(fi * 3);
+    const std::int32_t  i1    = static_cast<std::int32_t>(fi * 3 + 1);
+    const std::int32_t  i2    = static_cast<std::int32_t>(fi * 3 + 2);
     out.write(reinterpret_cast<const char*>(&three), 1);
     out.write(reinterpret_cast<const char*>(&i0), 4);
     out.write(reinterpret_cast<const char*>(&i1), 4);

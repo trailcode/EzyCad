@@ -26,13 +26,12 @@ namespace
 {
 
 constexpr int         k_max_image_dim  = 8192;
-constexpr std::size_t k_max_rgba_bytes = 64u * 1024u * 1024u;  // 64 MiB safety cap
+constexpr std::size_t k_max_rgba_bytes = 64u * 1024u * 1024u; // 64 MiB safety cap
 
 std::string base64_encode(const uint8_t* data, std::size_t len)
 {
-  static const char tbl[] =
-      "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
-  std::string out;
+  static const char tbl[] = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
+  std::string       out;
   out.reserve(((len + 2) / 3) * 4);
   for (std::size_t i = 0; i < len; i += 3)
   {
@@ -114,9 +113,9 @@ inline void apply_key_and_tint(uint8_t& r, uint8_t& g, uint8_t& b, uint8_t& a, b
 
   if (line_tint_enabled && a2 > 0)
   {
-    r = tr;
-    g = tg;
-    b = tb;
+    r  = tr;
+    g  = tg;
+    b  = tb;
     a2 = (a2 * static_cast<unsigned>(ta)) / 255u;
   }
   a = static_cast<uint8_t>(a2);
@@ -152,15 +151,8 @@ inline void sample_rgba_bilinear(const uint8_t* rgba, int w, int h, double xf, d
 }
 
 /// Straight copy of the image to a bottom-up pixmap (optional row flip for OCCT/OpenGL), with key + tint.
-Handle(Image_PixMap) make_pixmap_bottom_up_linear(const uint8_t* rgba,
-                                                  int            w,
-                                                  int            h,
-                                                  bool           key_white_transparent,
-                                                  bool           line_tint_enabled,
-                                                  uint8_t        tr,
-                                                  uint8_t        tg,
-                                                  uint8_t        tb,
-                                                  uint8_t        ta)
+Handle(Image_PixMap) make_pixmap_bottom_up_linear(const uint8_t* rgba, int w, int h, bool key_white_transparent,
+                                                  bool line_tint_enabled, uint8_t tr, uint8_t tg, uint8_t tb, uint8_t ta)
 {
   if (w <= 0 || h <= 0)
     return {};
@@ -192,17 +184,9 @@ Handle(Image_PixMap) make_pixmap_bottom_up_linear(const uint8_t* rgba,
 
 /// Builds a bottom-up pixmap for AIS_TexturedShape when the underlay axes are sheared (non-orthogonal): uses an
 /// axis-aligned face in the sketch plane and inverse-rotated sampling so the bitmap matches OCCT UV on the AABB.
-Handle(Image_PixMap) make_pixmap_bottom_up_warped(const uint8_t*  rgba,
-                                                  int             w,
-                                                  int             h,
-                                                  const gp_Vec2d& axis_u,
-                                                  const gp_Vec2d& axis_v,
-                                                  bool            key_white_transparent,
-                                                  bool            line_tint_enabled,
-                                                  uint8_t         tr,
-                                                  uint8_t         tg,
-                                                  uint8_t         tb,
-                                                  uint8_t         ta)
+Handle(Image_PixMap) make_pixmap_bottom_up_warped(const uint8_t* rgba, int w, int h, const gp_Vec2d& axis_u,
+                                                  const gp_Vec2d& axis_v, bool key_white_transparent, bool line_tint_enabled,
+                                                  uint8_t tr, uint8_t tg, uint8_t tb, uint8_t ta)
 {
   const double hw = 0.5 * axis_u.Magnitude();
   const double hh = 0.5 * axis_v.Magnitude();
@@ -236,8 +220,8 @@ Handle(Image_PixMap) make_pixmap_bottom_up_warped(const uint8_t*  rgba,
     uint8_t*     dstRow = dst + static_cast<std::size_t>(rj) * rowBytes;
     for (int ox = 0; ox < out_w; ++ox)
     {
-      const double s01   = (static_cast<double>(ox) + 0.5) / static_cast<double>(out_w);
-      const double du    = (2.0 * s01 - 1.0) * hx;
+      const double s01 = (static_cast<double>(ox) + 0.5) / static_cast<double>(out_w);
+      const double du  = (2.0 * s01 - 1.0) * hx;
       // Inverse rotate from plane (du,dv) to image (u,v) offsets from quad center.
       const double img_u = du * c + dv * s;
       const double img_v = -du * s + dv * c;
@@ -266,7 +250,7 @@ Handle(Image_PixMap) make_pixmap_bottom_up_warped(const uint8_t*  rgba,
   return pix;
 }
 
-}  // namespace
+} // namespace
 
 void Sketch_underlay::remove_ais_(AIS_InteractiveContext& ctx)
 {
@@ -326,9 +310,7 @@ void Sketch_underlay::set_center_extents_rotation(const dvec2& center, const dve
   const double   s   = std::sin(rad);
   const gp_Vec2d axis_u(2.0 * half_w * c, 2.0 * half_w * s);
   const gp_Vec2d axis_v(-2.0 * half_h * s, 2.0 * half_h * c);
-  const gp_Pnt2d base(
-      center.x - 0.5 * (axis_u.X() + axis_v.X()),
-      center.y - 0.5 * (axis_u.Y() + axis_v.Y()));
+  const gp_Pnt2d base(center.x - 0.5 * (axis_u.X() + axis_v.X()), center.y - 0.5 * (axis_u.Y() + axis_v.Y()));
 
   set_affine(base, axis_u, axis_v);
 }
@@ -344,20 +326,11 @@ void Sketch_underlay::set_opacity(float opaque01)
     m_ais->SetTransparency(1.0 - static_cast<double>(m_opacity));
 }
 
-void Sketch_underlay::set_visible(bool v)
-{
-  m_visible = v;
-}
+void Sketch_underlay::set_visible(bool v) { m_visible = v; }
 
-void Sketch_underlay::set_key_white_transparent(bool on)
-{
-  m_key_white_transparent = on;
-}
+void Sketch_underlay::set_key_white_transparent(bool on) { m_key_white_transparent = on; }
 
-void Sketch_underlay::set_line_tint_enabled(bool on)
-{
-  m_line_tint_enabled = on;
-}
+void Sketch_underlay::set_line_tint_enabled(bool on) { m_line_tint_enabled = on; }
 
 void Sketch_underlay::set_line_tint_rgb(uint8_t r, uint8_t g, uint8_t b)
 {
@@ -435,8 +408,8 @@ void Sketch_underlay::build_ais_(const gp_Pln& pln, AIS_InteractiveContext& ctx)
       return;
     face = faceMk.Face();
 
-    pix = make_pixmap_bottom_up_linear(m_rgba.data(), m_w, m_h, m_key_white_transparent, m_line_tint_enabled,
-                                       m_tint_r, m_tint_g, m_tint_b, m_tint_a);
+    pix = make_pixmap_bottom_up_linear(m_rgba.data(), m_w, m_h, m_key_white_transparent, m_line_tint_enabled, m_tint_r,
+                                       m_tint_g, m_tint_b, m_tint_a);
   }
   else
   {
@@ -504,10 +477,7 @@ void Sketch_underlay::rebuild_and_display(const gp_Pln& pln, AIS_InteractiveCont
   build_ais_(pln, ctx);
 }
 
-void Sketch_underlay::erase(AIS_InteractiveContext& ctx)
-{
-  remove_ais_(ctx);
-}
+void Sketch_underlay::erase(AIS_InteractiveContext& ctx) { remove_ais_(ctx); }
 
 void Sketch_underlay::sync_visibility(const gp_Pln& pln, AIS_InteractiveContext& ctx)
 {
@@ -534,18 +504,9 @@ nlohmann::json Sketch_underlay::to_json() const
   j["rgba_b64"]              = base64_encode(m_rgba.data(), m_rgba.size());
   j["w"]                     = m_w;
   j["h"]                     = m_h;
-  j["base"]                  = json::object({
-      {"x", m_base.X()},
-      {"y", m_base.Y()}
-  });
-  j["axis_u"]                = json::object({
-      {"x", m_axis_u.X()},
-      {"y", m_axis_u.Y()}
-  });
-  j["axis_v"]                = json::object({
-      {"x", m_axis_v.X()},
-      {"y", m_axis_v.Y()}
-  });
+  j["base"]                  = json::object({{"x", m_base.X()}, {"y", m_base.Y()}});
+  j["axis_u"]                = json::object({{"x", m_axis_u.X()}, {"y", m_axis_u.Y()}});
+  j["axis_v"]                = json::object({{"x", m_axis_v.X()}, {"y", m_axis_v.Y()}});
   j["opacity"]               = m_opacity;
   j["visible"]               = m_visible;
   j["key_white_transparent"] = m_key_white_transparent;
@@ -587,7 +548,7 @@ bool Sketch_underlay::from_json(const nlohmann::json& j)
   m_visible               = j.value("visible", true);
   m_key_white_transparent = j.value("key_white_transparent", true);
   m_line_tint_enabled     = j.value("line_tint_enabled", true);
-  m_tint_a = 255;
+  m_tint_a                = 255;
   if (j.contains("line_tint_rgba") && j["line_tint_rgba"].is_array() && j["line_tint_rgba"].size() >= 4)
   {
     m_tint_r = static_cast<uint8_t>(j["line_tint_rgba"][0].get<int>());

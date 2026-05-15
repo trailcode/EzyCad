@@ -4,7 +4,7 @@
 
 class Shp_fuse : private Shp_operation_base
 {
- public:
+public:
   Shp_fuse(Occt_view& view);
 
   [[nodiscard]] Status selected_fuse();

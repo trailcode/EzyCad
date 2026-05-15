@@ -7,7 +7,9 @@
 #include "utl.h"
 
 Shp_scale::Shp_scale(Occt_view& view)
-    : Shp_operation_base(view) {}
+    : Shp_operation_base(view)
+{
+}
 
 Status Shp_scale::scale_selected(const ScreenCoords& screen_coords)
 {

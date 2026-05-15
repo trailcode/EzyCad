@@ -1,10 +1,8 @@
 // Helper to fill vector (base case: no arguments)
-template <typename T>
-inline void fill_vector(std::vector<T>&) {}
+template <typename T> inline void fill_vector(std::vector<T>&) {}
 
 // Helper to fill vector (recursive case)
-template <typename T, typename... Args>
-inline void fill_vector(std::vector<T>& vec, const T& first, Args... rest)
+template <typename T, typename... Args> inline void fill_vector(std::vector<T>& vec, const T& first, Args... rest)
 {
   static_assert((std::is_same_v<T, Args> && ...), "All arguments must be of the same type");
   vec.push_back(first);
@@ -12,8 +10,7 @@ inline void fill_vector(std::vector<T>& vec, const T& first, Args... rest)
 }
 
 // Checks if elements are unique using IsEqual
-template <typename T, typename... Args>
-bool unique(const T& first, Args... args)
+template <typename T, typename... Args> bool unique(const T& first, Args... args)
 {
   // Collect arguments into vector
   std::vector<T> items;
@@ -31,8 +28,7 @@ bool unique(const T& first, Args... args)
 }
 
 // Checks if elements are equal using IsEqual
-template <typename T, typename... Args>
-bool equal(const T& first, Args... args)
+template <typename T, typename... Args> bool equal(const T& first, Args... args)
 {
   // Collect arguments into vector
   std::vector<T> items;
@@ -50,13 +46,7 @@ bool equal(const T& first, Args... args)
 }
 
 // Convert degrees to radians
-constexpr double to_radians(double degrees)
-{
-  return degrees * std::numbers::pi / 180.0;
-}
+constexpr double to_radians(double degrees) { return degrees * std::numbers::pi / 180.0; }
 
 // Convert radians to degrees
-constexpr double to_degrees(double radians)
-{
-  return radians * 180.0 / std::numbers::pi;
-}
+constexpr double to_degrees(double radians) { return radians * 180.0 / std::numbers::pi; }

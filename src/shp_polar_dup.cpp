@@ -15,7 +15,9 @@
 #include "sketch_nodes.h"
 
 Shp_polar_dup::Shp_polar_dup(Occt_view& view)
-    : Shp_operation_base(view) {}
+    : Shp_operation_base(view)
+{
+}
 
 Status Shp_polar_dup::move_point(const ScreenCoords& screen_coords)
 {
@@ -93,8 +95,8 @@ Status Shp_polar_dup::dup()
   // Create copies and rotate them
   for (size_t i = 0; i < m_num_elms; ++i)
   {
-    const double current_angle_degrees = step_angle * (i + 1);                              // Skip 0 since that's the original
-    const double current_angle_radians = current_angle_degrees * std::numbers::pi / 180.0;  // Convert to radians
+    const double current_angle_degrees = step_angle * (i + 1);                             // Skip 0 since that's the original
+    const double current_angle_radians = current_angle_degrees * std::numbers::pi / 180.0; // Convert to radians
 
     for (const AIS_Shape_ptr& shape : m_shps)
     {
@@ -161,7 +163,7 @@ Status Shp_polar_dup::dup()
   }
 
   delete_operation_shps_();
-  gui().set_mode(Mode::Normal);  // Will call reset()
+  gui().set_mode(Mode::Normal); // Will call reset()
   return Status::ok();
 }
 

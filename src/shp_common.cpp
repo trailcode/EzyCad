@@ -6,7 +6,9 @@
 #include "utl.h"
 
 Shp_common::Shp_common(Occt_view& view)
-    : Shp_operation_base(view) {}
+    : Shp_operation_base(view)
+{
+}
 
 Status Shp_common::selected_common()
 {

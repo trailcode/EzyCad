@@ -1,13 +1,14 @@
 // Base template for vectors (not a specialization of Safe_container)
-template <typename Vec, typename Scalar, int Components>
-class Vector_container
+template <typename Vec, typename Scalar, int Components> class Vector_container
 {
- private:
+private:
   Vec m_value;
 
- public:
+public:
   explicit Vector_container(Vec initial_value)
-      : m_value(initial_value) {}
+      : m_value(initial_value)
+  {
+  }
 
   // clang-format off
   Vec&                    unsafe_get()                                   { return m_value;    }
@@ -26,55 +27,73 @@ class Vector_container
 // Explicit specializations for GLM vector types
 template <> class SafeType<glm::ivec2> : public Vector_container<glm::ivec2, int, 2>
 {
- public:
+public:
   explicit SafeType(glm::ivec2 initial_value)
-      : Vector_container<glm::ivec2, int, 2>(initial_value) {}
+      : Vector_container<glm::ivec2, int, 2>(initial_value)
+  {
+  }
 };
 template <> class SafeType<glm::fvec2> : public Vector_container<glm::fvec2, float, 2>
 {
- public:
+public:
   explicit SafeType(glm::fvec2 initial_value)
-      : Vector_container<glm::fvec2, float, 2>(initial_value) {}
+      : Vector_container<glm::fvec2, float, 2>(initial_value)
+  {
+  }
 };
 template <> class SafeType<glm::dvec2> : public Vector_container<glm::dvec2, double, 2>
 {
- public:
+public:
   explicit SafeType(glm::dvec2 initial_value)
-      : Vector_container<glm::dvec2, double, 2>(initial_value) {}
+      : Vector_container<glm::dvec2, double, 2>(initial_value)
+  {
+  }
 };
 template <> class SafeType<glm::ivec3> : public Vector_container<glm::ivec3, int, 3>
 {
- public:
+public:
   explicit SafeType(glm::ivec3 initial_value)
-      : Vector_container<glm::ivec3, int, 3>(initial_value) {}
+      : Vector_container<glm::ivec3, int, 3>(initial_value)
+  {
+  }
 };
 template <> class SafeType<glm::fvec3> : public Vector_container<glm::fvec3, float, 3>
 {
- public:
+public:
   explicit SafeType(glm::fvec3 initial_value)
-      : Vector_container<glm::fvec3, float, 3>(initial_value) {}
+      : Vector_container<glm::fvec3, float, 3>(initial_value)
+  {
+  }
 };
 template <> class SafeType<glm::dvec3> : public Vector_container<glm::dvec3, double, 3>
 {
- public:
+public:
   explicit SafeType(glm::dvec3 initial_value)
-      : Vector_container<glm::dvec3, double, 3>(initial_value) {}
+      : Vector_container<glm::dvec3, double, 3>(initial_value)
+  {
+  }
 };
 template <> class SafeType<glm::ivec4> : public Vector_container<glm::ivec4, int, 4>
 {
- public:
+public:
   explicit SafeType(glm::ivec4 initial_value)
-      : Vector_container<glm::ivec4, int, 4>(initial_value) {}
+      : Vector_container<glm::ivec4, int, 4>(initial_value)
+  {
+  }
 };
 template <> class SafeType<glm::fvec4> : public Vector_container<glm::fvec4, float, 4>
 {
- public:
+public:
   explicit SafeType(glm::fvec4 initial_value)
-      : Vector_container<glm::fvec4, float, 4>(initial_value) {}
+      : Vector_container<glm::fvec4, float, 4>(initial_value)
+  {
+  }
 };
 template <> class SafeType<glm::dvec4> : public Vector_container<glm::dvec4, double, 4>
 {
- public:
+public:
   explicit SafeType(glm::dvec4 initial_value)
-      : Vector_container<glm::dvec4, double, 4>(initial_value) {}
+      : Vector_container<glm::dvec4, double, 4>(initial_value)
+  {
+  }
 };

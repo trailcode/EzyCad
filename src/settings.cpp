@@ -17,10 +17,7 @@ namespace settings
 {
 static std::function<void(const std::string&)> s_log_callback;
 
-void set_log_callback(std::function<void(const std::string&)> cb)
-{
-  s_log_callback = std::move(cb);
-}
+void set_log_callback(std::function<void(const std::string&)> cb) { s_log_callback = std::move(cb); }
 
 std::filesystem::path user_settings_json_path()
 {
@@ -37,18 +34,17 @@ std::filesystem::path user_settings_json_path()
 std::string load()
 {
 #ifdef __EMSCRIPTEN__
-  void* ptr = (void*) (intptr_t) EM_ASM_INT(
-      {
-        var s   = localStorage.getItem('ezycad_settings') || '';
-        var len = lengthBytesUTF8(s) + 1;
-        var buf = _malloc(len);
-        if (buf)
-          stringToUTF8(s, buf, len);
-        return buf;
-      });
+  void* ptr = (void*)(intptr_t)EM_ASM_INT({
+    var s   = localStorage.getItem('ezycad_settings') || '';
+    var len = lengthBytesUTF8(s) + 1;
+    var buf = _malloc(len);
+    if (buf)
+      stringToUTF8(s, buf, len);
+    return buf;
+  });
   if (!ptr)
     return {};
-  std::string result((const char*) ptr);
+  std::string result((const char*)ptr);
   free(ptr);
   return result;
 #else
@@ -146,7 +142,7 @@ void save(const std::string& content)
 std::filesystem::path user_config_directory()
 {
 #ifdef __EMSCRIPTEN__
-  (void) 0;
+  (void)0;
   return {};
 #elif defined(_WIN32)
   const char* appdata = std::getenv("APPDATA");
@@ -180,18 +176,17 @@ std::filesystem::path user_startup_project_path()
 std::string load_user_startup_project()
 {
 #ifdef __EMSCRIPTEN__
-  void* ptr = (void*) (intptr_t) EM_ASM_INT(
-      {
-        var s   = localStorage.getItem('ezycad_startup_ezy') || '';
-        var len = lengthBytesUTF8(s) + 1;
-        var buf = _malloc(len);
-        if (buf)
-          stringToUTF8(s, buf, len);
-        return buf;
-      });
+  void* ptr = (void*)(intptr_t)EM_ASM_INT({
+    var s   = localStorage.getItem('ezycad_startup_ezy') || '';
+    var len = lengthBytesUTF8(s) + 1;
+    var buf = _malloc(len);
+    if (buf)
+      stringToUTF8(s, buf, len);
+    return buf;
+  });
   if (!ptr)
     return {};
-  std::string result((const char*) ptr);
+  std::string result((const char*)ptr);
   free(ptr);
   return result;
 #else
@@ -241,4 +236,4 @@ void clear_user_startup_project()
   }
 #endif
 }
-}  // namespace settings
+} // namespace settings

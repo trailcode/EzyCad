@@ -9,7 +9,7 @@
 #include <glm/glm.hpp>
 #include <gp_Dir2d.hxx>
 #include <gp_Pnt.hxx>
-#include <numbers>  // For Pi
+#include <numbers> // For Pi
 #include <optional>
 #include <vector>
 
@@ -31,7 +31,7 @@ typedef boost::geometry::model::d2::point_xy<double> point_2d;
 typedef boost::geometry::model::ring<point_2d>       ring_2d;
 typedef boost::geometry::model::polygon<point_2d>    polygon_2d;
 typedef boost::geometry::model::linestring<point_2d> linestring_2d;
-}  // namespace boost_geom
+} // namespace boost_geom
 
 // Function to project a 3D point onto a plane and get its 2D (u, v) coordinates
 gp_Pnt2d to_2d(const gp_Pln& plane, const gp_Pnt& point_3d);
@@ -47,17 +47,13 @@ TopoDS_Wire create_wire_box(const gp_Pln& plane, const gp_Pnt& position, double 
 /// Two perpendicular segments forming a + on \a plane, centered at \a center_3d, half-length \a half_arm (model units).
 TopoDS_Shape create_plus_cross_shape(const gp_Pln& plane, const gp_Pnt& center_3d, double half_arm);
 
-TopoDS_Wire make_square_wire(const gp_Pln&   pln,
-                             const gp_Pnt2d& center,
-                             const gp_Pnt2d& edge_midpoint);
+TopoDS_Wire make_square_wire(const gp_Pln& pln, const gp_Pnt2d& center, const gp_Pnt2d& edge_midpoint);
 
 std::array<gp_Pnt2d, 4> square_corners(const gp_Pnt2d& center, const gp_Pnt2d& edge_midpoint);
 
 std::array<gp_Pnt2d, 4> xy_stencil_pnts(const gp_Pnt2d& center, const gp_Pnt2d& edge_midpoint);
 
-TopoDS_Wire make_circle_wire(const gp_Pln&   pln,
-                             const gp_Pnt2d& center,
-                             const gp_Pnt2d& edge_point);
+TopoDS_Wire make_circle_wire(const gp_Pln& pln, const gp_Pnt2d& center, const gp_Pnt2d& edge_point);
 
 struct Slot_pnts
 {
@@ -70,27 +66,21 @@ struct Slot_pnts
   gp_Pnt2d b_top_2d;
 };
 
-Slot_pnts get_slot_points(const gp_Pnt2d& pt_a,
-                          const gp_Pnt2d& pt_b,
-                          const gp_Pnt2d& pt_c);
+Slot_pnts get_slot_points(const gp_Pnt2d& pt_a, const gp_Pnt2d& pt_b, const gp_Pnt2d& pt_c);
 
-TopoDS_Wire make_slot_wire(const gp_Pln&   plane,
-                           const gp_Pnt2d& pt_a,
-                           const gp_Pnt2d& pt_b,
-                           const gp_Pnt2d& pt_c);
+TopoDS_Wire make_slot_wire(const gp_Pln& plane, const gp_Pnt2d& pt_a, const gp_Pnt2d& pt_b, const gp_Pnt2d& pt_c);
 
-    // Function to get the directional vectors at the start and end of a Geom_TrimmedCurve
-    std::pair<gp_Vec, gp_Vec>
-    get_start_end_tangents(const Handle(Geom_TrimmedCurve) & curve);
+// Function to get the directional vectors at the start and end of a Geom_TrimmedCurve
+std::pair<gp_Vec, gp_Vec> get_start_end_tangents(const Handle(Geom_TrimmedCurve) & curve);
 
 std::pair<gp_Pnt, gp_Pnt>     get_edge_endpoints(const TopoDS_Edge& edge);
 std::pair<gp_Pnt2d, gp_Pnt2d> get_edge_endpoints(const gp_Pln& pln, const TopoDS_Edge& edge);
 
 enum class Plane_side
 {
-  Front,  // Positive side (normal direction)
-  Back,   // Negative side (opposite normal)
-  On      // On the plane
+  Front, // Positive side (normal direction)
+  Back,  // Negative side (opposite normal)
+  On     // On the plane
 };
 
 Plane_side side_of_plane(const gp_Pln& plane, const gp_Pnt& point);
@@ -111,10 +101,7 @@ gp_Pnt2d center_point(const gp_Pnt2d& point1, const gp_Pnt2d& point2);
 // Function to compute the normalized direction between two gp_Pnt2d points
 gp_Dir2d get_unit_dir(const gp_Pnt2d& point1, const gp_Pnt2d& point2);
 
-inline glm::dvec2 to_glm(const gp_Dir2d& v)
-{
-  return {v.X(), v.Y()};
-}
+inline glm::dvec2 to_glm(const gp_Dir2d& v) { return {v.X(), v.Y()}; }
 
 gp_Pnt2d get_midpoint(const gp_Pnt2d& p1, const gp_Pnt2d& p2);
 
@@ -132,23 +119,17 @@ void apply_length_dimension_arrow_size(const PrsDim_LengthDimension_ptr& dim, do
 /// void (not TopAbs_IN) relative to those faces - fixes concave / notch edges where the node centroid lies
 /// on the wrong side. Otherwise `interior_ref` (e.g. node centroid) is used as a weaker heuristic.
 /// OCCT line width scale factor for dimension lines (1.0 = default).
-PrsDim_LengthDimension_ptr create_distance_annotation(const gp_Pnt&                         p1,
-                                                      const gp_Pnt&                         p2,
-                                                      const gp_Pln&                         pln,
-                                                      Prs3d_DimensionTextHorizontalPosition text_h_pos              = Prs3d_DTHP_Fit,
-                                                      const std::optional<gp_Pnt>&          interior_ref            = std::nullopt,
+PrsDim_LengthDimension_ptr create_distance_annotation(const gp_Pnt& p1, const gp_Pnt& p2, const gp_Pln& pln,
+                                                      Prs3d_DimensionTextHorizontalPosition text_h_pos   = Prs3d_DTHP_Fit,
+                                                      const std::optional<gp_Pnt>&          interior_ref = std::nullopt,
                                                       const std::vector<TopoDS_Face>*       sketch_faces_for_flyout = nullptr,
-                                                      double                                dimension_line_width    = 1.0,
-                                                      double                                dimension_arrow_size    = 6.0);
+                                                      double dimension_line_width = 1.0, double dimension_arrow_size = 6.0);
 
-PrsDim_LengthDimension_ptr create_distance_annotation(const gp_Pnt2d&                       p1,
-                                                      const gp_Pnt2d&                       p2,
-                                                      const gp_Pln&                         pln,
-                                                      Prs3d_DimensionTextHorizontalPosition text_h_pos              = Prs3d_DTHP_Fit,
-                                                      const std::optional<gp_Pnt>&          interior_ref            = std::nullopt,
+PrsDim_LengthDimension_ptr create_distance_annotation(const gp_Pnt2d& p1, const gp_Pnt2d& p2, const gp_Pln& pln,
+                                                      Prs3d_DimensionTextHorizontalPosition text_h_pos   = Prs3d_DTHP_Fit,
+                                                      const std::optional<gp_Pnt>&          interior_ref = std::nullopt,
                                                       const std::vector<TopoDS_Face>*       sketch_faces_for_flyout = nullptr,
-                                                      double                                dimension_line_width    = 1.0,
-                                                      double                                dimension_arrow_size    = 6.0);
+                                                      double dimension_line_width = 1.0, double dimension_arrow_size = 6.0);
 
 const gp_Pnt& closest_to_camera(const V3d_View_ptr& view, const std::vector<gp_Pnt>& pnts);
 
@@ -158,7 +139,7 @@ double compute_face_area(const AIS_Shape_ptr& shp);
 // Function to check if shape_a is contained within shape_b (both must be faces, holes are not considered)
 bool is_face_contained(const TopoDS_Shape& shape_a, const TopoDS_Shape& shape_b);
 
-// Boost related, usefull for debugging using
+// Boost related, useful for debugging using
 // https://marketplace.visualstudio.com/items?itemName=AdamWulkiewicz.GraphicalDebugging
 // Function to convert a 3D point to 2D in the plane's coordinate system
 boost_geom::point_2d to_boost(const gp_Pln& plane, const gp_Pnt& point_3d);
@@ -171,12 +152,10 @@ boost_geom::polygon_2d to_boost(const TopoDS_Shape& shape, const gp_Pln& pln2);
 gp_Pnt get_shape_bbox_center(const TopoDS_Shape& shp);
 
 // Checks if elements are unique using IsEqual
-template <typename T, typename... Args>
-bool unique(const T& first, Args... args);
+template <typename T, typename... Args> bool unique(const T& first, Args... args);
 
 // Checks if elements are equal using IsEqual
-template <typename T, typename... Args>
-bool equal(const T& first, Args... args);
+template <typename T, typename... Args> bool equal(const T& first, Args... args);
 
 // Define custom less-than operator for gp_Pnt2d using Precision::Confusion()
 bool operator<(const gp_Pnt2d& lhs, const gp_Pnt2d& rhs);
@@ -196,16 +175,14 @@ constexpr double to_radians(double degrees);
 // Convert radians to degrees
 constexpr double to_degrees(double radians);
 
-TopoDS_Wire make_rectangle_wire(const gp_Pln&   pln,
-                                const gp_Pnt2d& corner1,
-                                const gp_Pnt2d& corner2);
+TopoDS_Wire make_rectangle_wire(const gp_Pln& pln, const gp_Pnt2d& corner1, const gp_Pnt2d& corner2);
 
 std::array<gp_Pnt2d, 4> rectangle_corners(const gp_Pnt2d& corner1, const gp_Pnt2d& corner2);
 bool                    point_on_open_segment_2d(const gp_Pnt2d& p, const gp_Pnt2d& a, const gp_Pnt2d& b);
 
 /// If the shortest distance from \a p to segment `a-b` is <= \a max_perp_dist and the foot lies strictly
 /// inside the segment (not near endpoints), returns that foot; otherwise nullopt.
-std::optional<gp_Pnt2d> snap_foot_to_open_segment_interior_if_close(
-    const gp_Pnt2d& p, const gp_Pnt2d& a, const gp_Pnt2d& b, double max_perp_dist);
+std::optional<gp_Pnt2d> snap_foot_to_open_segment_interior_if_close(const gp_Pnt2d& p, const gp_Pnt2d& a, const gp_Pnt2d& b,
+                                                                    double max_perp_dist);
 
 #include "geom.inl"

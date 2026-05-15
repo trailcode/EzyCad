@@ -34,19 +34,18 @@ using PrsDim_LengthDimension_ptr = opencascade::handle<PrsDim_LengthDimension>;
 using Graphic3d_Camera_ptr       = opencascade::handle<Graphic3d_Camera>;
 using StdSelect_BRepOwner_ptr    = opencascade::handle<StdSelect_BRepOwner>;
 
-#define DECL_PTR(TypeName) \
-  using uptr = std::unique_ptr<TypeName>; \
-  using sptr = std::shared_ptr<TypeName>; \
+#define DECL_PTR(TypeName)                                                                                                     \
+  using uptr = std::unique_ptr<TypeName>;                                                                                      \
+  using sptr = std::shared_ptr<TypeName>;                                                                                      \
   using wptr = std::weak_ptr<TypeName>;
 
 // Primary template for non-vector types
-template <typename T>
-class SafeType
+template <typename T> class SafeType
 {
- private:
+private:
   T m_value;
 
- public:
+public:
   // clang-format off
   explicit SafeType(T initial_value) : m_value(initial_value) {}
         T& unsafe_get()       { return m_value; }

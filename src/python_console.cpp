@@ -153,25 +153,16 @@ _ezycad_bootstrap()
 del _ezycad_bootstrap
 )PY";
 
-}  // namespace
+} // namespace
 
 PYBIND11_EMBEDDED_MODULE(ezycad_native, m)
 {
   py::class_<Ezy_shp>(m, "Shp")
-      .def("name", [](const Ezy_shp& s)
-           { return s.shp->get_name(); })
-      .def("set_name", [](Ezy_shp& s, const std::string& n)
-           { s.shp->set_name(n); })
-      .def("visible", [](const Ezy_shp& s)
-           { return s.shp->get_visible(); })
-      .def("set_visible", [](Ezy_shp& s, bool v)
-           { s.shp->set_visible(v); })
-      .def(
-          "__repr__",
-          [](const Ezy_shp& s)
-          {
-            return "<ezycad.Shp name='" + s.shp->get_name() + "'>";
-          });
+      .def("name", [](const Ezy_shp& s) { return s.shp->get_name(); })
+      .def("set_name", [](Ezy_shp& s, const std::string& n) { s.shp->set_name(n); })
+      .def("visible", [](const Ezy_shp& s) { return s.shp->get_visible(); })
+      .def("set_visible", [](Ezy_shp& s, bool v) { s.shp->set_visible(v); })
+      .def("__repr__", [](const Ezy_shp& s) { return "<ezycad.Shp name='" + s.shp->get_name() + "'>"; });
 
   m.def(
       "ezy_log",
@@ -194,15 +185,14 @@ PYBIND11_EMBEDDED_MODULE(ezycad_native, m)
       },
       py::arg("text"));
 
-  m.def(
-      "ezy_get_mode",
-      []
-      {
-        if (!g_py_gui)
-          return std::string("Normal");
-        Mode mmode = g_py_gui->get_mode();
-        return std::string(c_mode_strs[static_cast<int>(mmode)]);
-      });
+  m.def("ezy_get_mode",
+        []
+        {
+          if (!g_py_gui)
+            return std::string("Normal");
+          Mode mmode = g_py_gui->get_mode();
+          return std::string(c_mode_strs[static_cast<int>(mmode)]);
+        });
 
   m.def(
       "ezy_set_mode",
@@ -213,78 +203,72 @@ PYBIND11_EMBEDDED_MODULE(ezycad_native, m)
       },
       py::arg("name"));
 
-  m.def(
-      "ezy_help",
-      []
-      {
-        if (!g_py_console)
-          return;
-        const char* help_text =
-            "ezy:\n"
-            "  ezy.log(msg)                  - append message to console and log window\n"
-            "  ezy.msg(text)                 - show status message\n"
-            "  ezy.get_mode()                - return current mode name\n"
-            "  ezy.set_mode(name)            - set mode by name\n"
-            "  ezy.save_occt_view_settings() - write settings JSON (incl. view colors)\n"
-            "  ezy.occt_view_settings_json() - JSON: occt_view + gui edge_dim_*, view_roll_step_deg, view_zoom_scroll_scale\n"
-            "  ezy.help()            - print this help\n"
-            "view:\n"
-            "  view.sketch_count()          - number of sketches\n"
-            "  view.shape_count()           - number of shapes\n"
-            "  view.curr_sketch_name()      - current sketch name\n"
-            "  view.add_box(ox,oy,oz,w,l,h) - add box\n"
-            "  view.add_sphere(ox,oy,oz,r)  - add sphere\n"
-            "  view.get_shape(i)            - get shape by 0-based index (raises IndexError if out of range)\n"
-            "  view.get_camera()            - get camera eye/center/up vectors\n"
-            "  view.set_camera(ex,ey,ez,cx,cy,cz,ux,uy,uz) - set camera vectors\n"
-            "Shp:\n"
-            "  s.name()              - get shape name\n"
-            "  s.set_name(s)         - set shape name\n"
-            "  s.visible()           - get visibility\n"
-            "  s.set_visible(b)      - set visibility";
-        g_py_console->append_line_from_python(help_text);
-      });
+  m.def("ezy_help",
+        []
+        {
+          if (!g_py_console)
+            return;
+          const char* help_text =
+              "ezy:\n"
+              "  ezy.log(msg)                  - append message to console and log window\n"
+              "  ezy.msg(text)                 - show status message\n"
+              "  ezy.get_mode()                - return current mode name\n"
+              "  ezy.set_mode(name)            - set mode by name\n"
+              "  ezy.save_occt_view_settings() - write settings JSON (incl. view colors)\n"
+              "  ezy.occt_view_settings_json() - JSON: occt_view + gui edge_dim_*, view_roll_step_deg, view_zoom_scroll_scale\n"
+              "  ezy.help()            - print this help\n"
+              "view:\n"
+              "  view.sketch_count()          - number of sketches\n"
+              "  view.shape_count()           - number of shapes\n"
+              "  view.curr_sketch_name()      - current sketch name\n"
+              "  view.add_box(ox,oy,oz,w,l,h) - add box\n"
+              "  view.add_sphere(ox,oy,oz,r)  - add sphere\n"
+              "  view.get_shape(i)            - get shape by 0-based index (raises IndexError if out of range)\n"
+              "  view.get_camera()            - get camera eye/center/up vectors\n"
+              "  view.set_camera(ex,ey,ez,cx,cy,cz,ux,uy,uz) - set camera vectors\n"
+              "Shp:\n"
+              "  s.name()              - get shape name\n"
+              "  s.set_name(s)         - set shape name\n"
+              "  s.visible()           - get visibility\n"
+              "  s.set_visible(b)      - set visibility";
+          g_py_console->append_line_from_python(help_text);
+        });
 
-  m.def(
-      "ezy_save_occt_view_settings",
-      []
-      {
-        if (g_py_gui)
-          g_py_gui->save_occt_view_settings();
-      });
+  m.def("ezy_save_occt_view_settings",
+        []
+        {
+          if (g_py_gui)
+            g_py_gui->save_occt_view_settings();
+        });
 
-  m.def(
-      "ezy_occt_view_settings_json",
-      []
-      {
-        if (!g_py_gui)
-          return std::string("{}");
-        return g_py_gui->occt_view_settings_json();
-      });
+  m.def("ezy_occt_view_settings_json",
+        []
+        {
+          if (!g_py_gui)
+            return std::string("{}");
+          return g_py_gui->occt_view_settings_json();
+        });
 
-  m.def(
-      "view_sketch_count",
-      []
-      {
-        Occt_view* view = g_py_gui && g_py_gui->get_view() ? g_py_gui->get_view() : nullptr;
-        return view ? static_cast<std::size_t>(view->get_sketches().size()) : std::size_t {0};
-      });
+  m.def("view_sketch_count",
+        []
+        {
+          Occt_view* view = g_py_gui && g_py_gui->get_view() ? g_py_gui->get_view() : nullptr;
+          return view ? static_cast<std::size_t>(view->get_sketches().size()) : std::size_t{0};
+        });
 
-  m.def(
-      "view_shape_count",
-      []
-      {
-        Occt_view* view = g_py_gui && g_py_gui->get_view() ? g_py_gui->get_view() : nullptr;
-        return view ? static_cast<std::size_t>(view->get_shapes().size()) : std::size_t {0};
-      });
+  m.def("view_shape_count",
+        []
+        {
+          Occt_view* view = g_py_gui && g_py_gui->get_view() ? g_py_gui->get_view() : nullptr;
+          return view ? static_cast<std::size_t>(view->get_shapes().size()) : std::size_t{0};
+        });
 
-  m.def(
-      "view_curr_sketch_name",
-      []
-      {
-        Occt_view* view = g_py_gui && g_py_gui->get_view() ? g_py_gui->get_view() : nullptr;
-        return view ? view->curr_sketch().get_name() : std::string {};
-      });
+  m.def("view_curr_sketch_name",
+        []
+        {
+          Occt_view* view = g_py_gui && g_py_gui->get_view() ? g_py_gui->get_view() : nullptr;
+          return view ? view->curr_sketch().get_name() : std::string{};
+        });
 
   m.def(
       "view_add_box",
@@ -294,12 +278,7 @@ PYBIND11_EMBEDDED_MODULE(ezycad_native, m)
         if (view)
           view->add_box(ox, oy, oz, w, len, h);
       },
-      py::arg("ox"),
-      py::arg("oy"),
-      py::arg("oz"),
-      py::arg("w"),
-      py::arg("l"),
-      py::arg("h"));
+      py::arg("ox"), py::arg("oy"), py::arg("oz"), py::arg("w"), py::arg("l"), py::arg("h"));
 
   m.def(
       "view_add_sphere",
@@ -309,10 +288,7 @@ PYBIND11_EMBEDDED_MODULE(ezycad_native, m)
         if (view)
           view->add_sphere(ox, oy, oz, r);
       },
-      py::arg("ox"),
-      py::arg("oy"),
-      py::arg("oz"),
-      py::arg("r"));
+      py::arg("ox"), py::arg("oy"), py::arg("oz"), py::arg("r"));
 
   m.def(
       "view_get_shape",
@@ -329,28 +305,27 @@ PYBIND11_EMBEDDED_MODULE(ezycad_native, m)
           ;
         if (it == shapes.end())
           throw py::index_error("shape index out of range");
-        return Ezy_shp {*it};
+        return Ezy_shp{*it};
       },
       py::arg("i"));
 
-  m.def(
-      "view_get_camera",
-      []() -> py::dict
-      {
-        Occt_view* view = g_py_gui && g_py_gui->get_view() ? g_py_gui->get_view() : nullptr;
-        if (!view)
-          throw std::runtime_error("no 3D view available");
-        gp_Pnt eye;
-        gp_Pnt center;
-        gp_Dir up;
-        if (!view->get_camera(eye, center, up))
-          throw std::runtime_error("camera is not available");
-        py::dict out;
-        out["eye"]    = py::make_tuple(eye.X(), eye.Y(), eye.Z());
-        out["center"] = py::make_tuple(center.X(), center.Y(), center.Z());
-        out["up"]     = py::make_tuple(up.X(), up.Y(), up.Z());
-        return out;
-      });
+  m.def("view_get_camera",
+        []() -> py::dict
+        {
+          Occt_view* view = g_py_gui && g_py_gui->get_view() ? g_py_gui->get_view() : nullptr;
+          if (!view)
+            throw std::runtime_error("no 3D view available");
+          gp_Pnt eye;
+          gp_Pnt center;
+          gp_Dir up;
+          if (!view->get_camera(eye, center, up))
+            throw std::runtime_error("camera is not available");
+          py::dict out;
+          out["eye"]    = py::make_tuple(eye.X(), eye.Y(), eye.Z());
+          out["center"] = py::make_tuple(center.X(), center.Y(), center.Z());
+          out["up"]     = py::make_tuple(up.X(), up.Y(), up.Z());
+          return out;
+        });
 
   m.def(
       "view_set_camera",
@@ -361,14 +336,7 @@ PYBIND11_EMBEDDED_MODULE(ezycad_native, m)
           throw std::runtime_error("no 3D view available");
         view->set_camera(gp_Pnt(ex, ey, ez), gp_Pnt(cx, cy, cz), gp_Dir(ux, uy, uz));
       },
-      py::arg("ex"),
-      py::arg("ey"),
-      py::arg("ez"),
-      py::arg("cx"),
-      py::arg("cy"),
-      py::arg("cz"),
-      py::arg("ux"),
-      py::arg("uy"),
+      py::arg("ex"), py::arg("ey"), py::arg("ez"), py::arg("cx"), py::arg("cy"), py::arg("cz"), py::arg("ux"), py::arg("uy"),
       py::arg("uz"));
 }
 
@@ -377,12 +345,9 @@ struct Python_console::Ezycad_python_runtime
   py::scoped_interpreter guard;
 };
 
-#endif  // EZYCAD_HAVE_PYTHON
+#endif // EZYCAD_HAVE_PYTHON
 
-void Python_console::append_line_from_python(const std::string& line)
-{
-  append_line(line, false);
-}
+void Python_console::append_line_from_python(const std::string& line) { append_line(line, false); }
 
 void Python_console::append_line(const std::string& line, bool is_error)
 {
@@ -533,8 +498,7 @@ void Python_console::execute(const std::string& code)
 
   try
   {
-    py::object result =
-        py::eval<py::eval_single_statement>(py::str(code), py::globals(), py::globals());
+    py::object result = py::eval<py::eval_single_statement>(py::str(code), py::globals(), py::globals());
     if (result.ptr() != nullptr && !result.is_none())
       append_line(py::repr(result).cast<std::string>());
   }
@@ -547,10 +511,7 @@ void Python_console::execute(const std::string& code)
 #else
 void Python_console::load_scripts() {}
 
-void Python_console::execute(const std::string& code)
-{
-  (void) code;
-}
+void Python_console::execute(const std::string& code) { (void)code; }
 #endif
 
 int Python_console::text_edit_callback(ImGuiInputTextCallbackData* data)
@@ -652,14 +613,10 @@ void Python_console::render(bool* p_open)
       ImGui::PushStyleColor(ImGuiCol_FrameBgHovered, ImVec4(0.f, 0.f, 0.f, 0.f));
       ImGui::PushStyleColor(ImGuiCol_FrameBgActive, ImVec4(0.f, 0.f, 0.f, 0.f));
       ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(0.f, 0.f));
-      ImGui::InputTextMultiline(
-          "##python_log",
-          m_log_display_buf.data(),
-          m_log_display_buf.size(),
-          ImVec2(-1.f, -1.f),
-          ImGuiInputTextFlags_ReadOnly | ImGuiInputTextFlags_CallbackResize | ImGuiInputTextFlags_NoUndoRedo,
-          &Python_console::log_display_resize_callback,
-          this);
+      ImGui::InputTextMultiline("##python_log", m_log_display_buf.data(), m_log_display_buf.size(), ImVec2(-1.f, -1.f),
+                                ImGuiInputTextFlags_ReadOnly | ImGuiInputTextFlags_CallbackResize |
+                                    ImGuiInputTextFlags_NoUndoRedo,
+                                &Python_console::log_display_resize_callback, this);
       ImGui::PopStyleVar();
       ImGui::PopStyleColor(3);
       if (m_scroll_to_bottom)
@@ -677,13 +634,9 @@ void Python_console::render(bool* p_open)
     const bool can_run = false;
 #endif
     ImGui::BeginDisabled(!can_run);
-    bool run = ImGui::InputTextWithHint("##python_input",
-                                        "Enter Python code (e.g. ezy.log('hi'))",
-                                        m_input_buf,
-                                        k_input_buf_size,
-                                        ImGuiInputTextFlags_EnterReturnsTrue | ImGuiInputTextFlags_CallbackHistory,
-                                        &Python_console::text_edit_callback,
-                                        this);
+    bool run = ImGui::InputTextWithHint(
+        "##python_input", "Enter Python code (e.g. ezy.log('hi'))", m_input_buf, k_input_buf_size,
+        ImGuiInputTextFlags_EnterReturnsTrue | ImGuiInputTextFlags_CallbackHistory, &Python_console::text_edit_callback, this);
     ImGui::EndDisabled();
 
     if (run && can_run)

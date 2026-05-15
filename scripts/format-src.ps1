@@ -6,7 +6,8 @@ if (-not (Test-Path $clang)) {
   $clang = "clang-format"
 }
 
-$root = Split-Path -Parent (Split-Path -Parent $PSScriptRoot)
+# Script lives at <repo>/scripts/format-src.ps1; repo root is one level above scripts/
+$root = Split-Path -Parent $PSScriptRoot
 $src = Join-Path $root "src"
 Get-ChildItem -Path $src -Include *.cpp,*.h,*.inl -Recurse -File |
   ForEach-Object { & $clang -i $_.FullName; Write-Host $_.Name }

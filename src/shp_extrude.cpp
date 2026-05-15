@@ -14,7 +14,10 @@
 #include "utl.h"
 
 Shp_extrude::Shp_extrude(Occt_view& view)
-    : Shp_operation_base(view), m_extrude_side(Plane_side::Front) {}
+    : Shp_operation_base(view)
+    , m_extrude_side(Plane_side::Front)
+{
+}
 
 void Shp_extrude::sketch_face_extrude(const ScreenCoords& screen_coords, bool is_mouse_move)
 {
@@ -43,7 +46,8 @@ void Shp_extrude::sketch_face_extrude(const ScreenCoords& screen_coords, bool is
         rotation_axis.Normalize();
         rotation_axis *= to_radians(45.0);
         // rotate around arbitrary axis
-        view().m_view->Rotate(rotation_axis.X(), rotation_axis.Y(), rotation_axis.Z(), m_to_extrude_pt->X(), m_to_extrude_pt->Y(), m_to_extrude_pt->Z());
+        view().m_view->Rotate(rotation_axis.X(), rotation_axis.Y(), rotation_axis.Z(), m_to_extrude_pt->X(),
+                              m_to_extrude_pt->Y(), m_to_extrude_pt->Z());
         // request redraw
         view().m_view->Redraw();
         m_curr_view_pln = view().get_view_plane(*m_to_extrude_pt);
@@ -82,31 +86,19 @@ bool Shp_extrude::cancel()
   return did_cancel;
 }
 
-bool Shp_extrude::has_active_extrusion() const
-{
-  return !m_extruded.IsNull();
-}
+bool Shp_extrude::has_active_extrusion() const { return !m_extruded.IsNull(); }
 
-bool Shp_extrude::get_both_sides() const
-{
-  return m_extrude_both_sides;
-}
+bool Shp_extrude::get_both_sides() const { return m_extrude_both_sides; }
 
-void Shp_extrude::set_both_sides(const bool both_sides)
-{
-  m_extrude_both_sides = both_sides;
-}
+void Shp_extrude::set_both_sides(const bool both_sides) { m_extrude_both_sides = both_sides; }
 
-void Shp_extrude::set_curr_view_pln(const gp_Pln& pln)
-{
-  m_curr_view_pln = pln;
-}
+void Shp_extrude::set_curr_view_pln(const gp_Pln& pln) { m_curr_view_pln = pln; }
 
 void Shp_extrude::_update_extrude(const ScreenCoords& screen_coords)
 {
   //  Extrude the face
   std::optional<gp_Pnt> p = view().pt3d_on_plane(screen_coords, m_curr_view_pln);
-  if (p)  // TODO report error!
+  if (p) // TODO report error!
   {
     double extrude_dist = m_to_extrude_pln.Distance(*p);
     if (auto entered_dim = view().get_entered_dim(); entered_dim)
@@ -150,7 +142,7 @@ void Shp_extrude::_update_extrude_preview_(const double extrude_dist, const Plan
   EZY_ASSERT(side != Plane_side::On);
 
   const gp_Vec normal_dir(m_to_extrude_pln.Axis().Direction());
-  const double side_sign = (side == Plane_side::Front) ? 1.0 : -1.0;
+  const double side_sign   = (side == Plane_side::Front) ? 1.0 : -1.0;
   const gp_Vec extrude_vec = normal_dir * (side_sign * extrude_dist);
   gp_Vec       face_offset(0.0, 0.0, 0.0);
 
@@ -159,13 +151,8 @@ void Shp_extrude::_update_extrude_preview_(const double extrude_dist, const Plan
 
   ctx().Remove(m_tmp_dim, false);
   m_tmp_dim = create_distance_annotation(gp_Pnt(m_to_extrude_pt->XYZ() + face_offset.XYZ() + extrude_vec.XYZ()),
-                                         gp_Pnt(m_to_extrude_pt->XYZ() + face_offset.XYZ()),
-                                         m_curr_view_pln,
-                                         Prs3d_DTHP_Fit,
-                                         std::nullopt,
-                                         nullptr,
-                                         gui().edge_dim_line_width(),
-                                         gui().edge_dim_arrow_size());
+                                         gp_Pnt(m_to_extrude_pt->XYZ() + face_offset.XYZ()), m_curr_view_pln, Prs3d_DTHP_Fit,
+                                         std::nullopt, nullptr, gui().edge_dim_line_width(), gui().edge_dim_arrow_size());
 
   m_tmp_dim->SetCustomValue(extrude_dist / view().get_dimension_scale());
 
@@ -177,7 +164,7 @@ void Shp_extrude::_update_extrude_preview_(const double extrude_dist, const Plan
     gp_Trsf trsf;
     trsf.SetTranslation(face_offset);
     TopoDS_Shape shifted_face = BRepBuilderAPI_Transform(face, trsf, true).Shape();
-    face = TopoDS::Face(shifted_face);
+    face                      = TopoDS::Face(shifted_face);
   }
 
   TopoDS_Shape body = BRepPrimAPI_MakePrism(face, extrude_vec);

@@ -3,31 +3,22 @@
 #include <AIS_InteractiveContext.hxx>
 
 Shp::Shp(AIS_InteractiveContext& ctx, const TopoDS_Shape& shp)
-    : AIS_Shape(shp),
-      m_ctx(ctx),
-      m_name("Shape"),
-      m_disp_mode(AIS_Shaded),
-      m_visible(true),
-      m_selection_mode(TopAbs_SHAPE)
+    : AIS_Shape(shp)
+    , m_ctx(ctx)
+    , m_name("Shape")
+    , m_disp_mode(AIS_Shaded)
+    , m_visible(true)
+    , m_selection_mode(TopAbs_SHAPE)
 {
 }
 
 Shp::~Shp() {}
 
-const std::string& Shp::get_name() const
-{
-  return m_name;
-}
+const std::string& Shp::get_name() const { return m_name; }
 
-void Shp::set_name(const std::string& name)
-{
-  m_name = name;
-}
+void Shp::set_name(const std::string& name) { m_name = name; }
 
-AIS_DisplayMode Shp::get_disp_mode() const
-{
-  return m_disp_mode;
-}
+AIS_DisplayMode Shp::get_disp_mode() const { return m_disp_mode; }
 
 void Shp::set_disp_mode(const AIS_DisplayMode mode)
 {
@@ -35,10 +26,7 @@ void Shp::set_disp_mode(const AIS_DisplayMode mode)
   update_display_();
 }
 
-bool Shp::get_visible() const
-{
-  return m_visible;
-}
+bool Shp::get_visible() const { return m_visible; }
 
 void Shp::set_visible(const bool visible)
 {

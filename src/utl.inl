@@ -1,9 +1,11 @@
 // Helper function for `for_each_flat`
-template <typename Lambda, typename T>
-void handle_arg(Lambda&& lambda, T&& arg)
+template <typename Lambda, typename T> void handle_arg(Lambda&& lambda, T&& arg)
 {
   // Check if T is a container (has begin() and end())
-  if constexpr (requires { arg.begin(); arg.end(); })
+  if constexpr (requires {
+                  arg.begin();
+                  arg.end();
+                })
     for (auto&& elem : arg)
       lambda(std::forward<decltype(elem)>(elem));
 
@@ -12,49 +14,40 @@ void handle_arg(Lambda&& lambda, T&& arg)
 }
 
 // Trait to detect if a type has a clear() method
-template <typename T, typename = void>
-struct has_clear : std::false_type
+template <typename T, typename = void> struct has_clear : std::false_type
 {
 };
 
-template <typename T>
-struct has_clear<T, std::void_t<decltype(std::declval<T>().clear())>> : std::true_type
+template <typename T> struct has_clear<T, std::void_t<decltype(std::declval<T>().clear())>> : std::true_type
 {
 };
 
-template <typename T, typename = void>
-struct has_reset : std::false_type
+template <typename T, typename = void> struct has_reset : std::false_type
 {
 };
 
-template <typename T>
-struct has_reset<T, std::void_t<decltype(std::declval<T>().reset())>> : std::true_type
+template <typename T> struct has_reset<T, std::void_t<decltype(std::declval<T>().reset())>> : std::true_type
 {
 };
 
-template <typename T, typename = void>
-struct has_nullify : std::false_type
+template <typename T, typename = void> struct has_nullify : std::false_type
 {
 };
 
-template <typename T>
-struct has_nullify<T, std::void_t<decltype(std::declval<T>().Nullify())>> : std::true_type
+template <typename T> struct has_nullify<T, std::void_t<decltype(std::declval<T>().Nullify())>> : std::true_type
 {
 };
 
 // Helper trait to check if a type is std::optional
-template <typename T>
-struct is_optional : std::false_type
+template <typename T> struct is_optional : std::false_type
 {
 };
 
-template <typename U>
-struct is_optional<std::optional<U>> : std::true_type
+template <typename U> struct is_optional<std::optional<U>> : std::true_type
 {
 };
 
-template <typename T>
-inline constexpr bool is_optional_v = is_optional<T>::value;
+template <typename T> inline constexpr bool is_optional_v = is_optional<T>::value;
 
 // Base case for recursion
 inline void clear_all() {}
@@ -71,8 +64,7 @@ inline void clear_all() {}
  *
  * Fails at compile time for unsupported types.
  */
-template <typename T, typename... Args>
-void clear_all(T& arg, Args&... args)
+template <typename T, typename... Args> void clear_all(T& arg, Args&... args)
 {
   if constexpr (std::is_pointer_v<T>)
     // Raw pointer: set to nullptr
@@ -107,21 +99,23 @@ void clear_all(T& arg, Args&... args)
  *
  * Fails at compile time for unsupported source types.
  */
-template <typename Container, typename T>
-void append(Container& target, const T& source)
+template <typename Container, typename T> void append(Container& target, const T& source)
 {
   // Extract the value_type of the target container
   using target_value_type = typename Container::value_type;
 
   // Case 1: T is the same as the container's value_type (single element)
   if constexpr (std::is_same_v<std::remove_cv_t<std::remove_reference_t<T>>, target_value_type>)
-    target.push_back(source);  // Append the single element
+    target.push_back(source); // Append the single element
   // Case 2: T is a container with the same value_type
-  else if constexpr (requires { source.begin(); source.end(); } &&
-                     std::is_same_v<typename T::value_type, target_value_type>)
-    target.insert(target.end(), source.begin(), source.end());  // Append all elements from source
+  else if constexpr (requires {
+                       source.begin();
+                       source.end();
+                     } && std::is_same_v<typename T::value_type, target_value_type>)
+    target.insert(target.end(), source.begin(), source.end()); // Append all elements from source
   else
-    static_assert(false, "Source must be either a single element of Container::value_type or a container with the same value_type");
+    static_assert(false,
+                  "Source must be either a single element of Container::value_type or a container with the same value_type");
 }
 
 // ---------------------------------------------------------------------------
@@ -130,67 +124,62 @@ void append(Container& target, const T& source)
 
 template <typename T>
 Result<T>::Result()
-    : Status(Result_status::Null), m_value(std::nullopt) {}
-
-template <typename T>
-Result<T>::Result(const T& value)
-    : Status(Result_status::Success), m_value(value) {}
-
-template <typename T>
-Result<T>::Result(T&& value)
-    : Status(Result_status::Success), m_value(std::move(value)) {}
-
-template <typename T>
-Result<T>::Result(const Result_status status, const std::string& error_msg)
-    : Status(status, error_msg), m_value(std::nullopt)
+    : Status(Result_status::Null)
+    , m_value(std::nullopt)
 {
-  EZY_ASSERT_MSG(status != Result_status::Success,
-                 "Success status requires a value");
-
-  EZY_ASSERT_MSG(status != Result_status::Null || error_msg.empty(),
-                 "Null status should not have an error message");
 }
 
 template <typename T>
-bool Result<T>::has_value() const noexcept
+Result<T>::Result(const T& value)
+    : Status(Result_status::Success)
+    , m_value(value)
+{
+}
+
+template <typename T>
+Result<T>::Result(T&& value)
+    : Status(Result_status::Success)
+    , m_value(std::move(value))
+{
+}
+
+template <typename T>
+Result<T>::Result(const Result_status status, const std::string& error_msg)
+    : Status(status, error_msg)
+    , m_value(std::nullopt)
+{
+  EZY_ASSERT_MSG(status != Result_status::Success, "Success status requires a value");
+
+  EZY_ASSERT_MSG(status != Result_status::Null || error_msg.empty(), "Null status should not have an error message");
+}
+
+template <typename T> bool Result<T>::has_value() const noexcept
 {
   return m_v == Result_status::Success && m_value.has_value();
 }
 
-template <typename T>
-T& Result<T>::value()
+template <typename T> T& Result<T>::value()
 {
   if (!has_value())
   {
-    EZY_ASSERT_MSG(m_v != Result_status::Null,
-                   "Result is in Null state");
+    EZY_ASSERT_MSG(m_v != Result_status::Null, "Result is in Null state");
 
     EZY_ASSERT_MSG(false, m_msg.empty() ? "No value available" : m_msg);
   }
   return *m_value;
 }
 
-template <typename T>
-const T& Result<T>::value() const
+template <typename T> const T& Result<T>::value() const
 {
   if (!has_value())
   {
-    EZY_ASSERT_MSG(m_v != Result_status::Null,
-                   "Result is in Null state");
+    EZY_ASSERT_MSG(m_v != Result_status::Null, "Result is in Null state");
 
     EZY_ASSERT_MSG(false, m_msg.empty() ? "No value available" : m_msg);
   }
   return *m_value;
 }
 
-template <typename T>
-T& Result<T>::operator*()
-{
-  return value();
-}
+template <typename T> T& Result<T>::operator*() { return value(); }
 
-template <typename T>
-const T& Result<T>::operator*() const
-{
-  return value();
-}
+template <typename T> const T& Result<T>::operator*() const { return value(); }

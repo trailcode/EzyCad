@@ -35,7 +35,7 @@ struct Sketch_AIS_node_mark : public AIS_Shape
 {
   Sketch_AIS_node_mark(Sketch& owner, size_t node_idx, const TopoDS_Shape& shp);
   Sketch& owner_sketch;
-  size_t  node_idx {};
+  size_t  node_idx{};
 };
 
 struct Sketch_face_shp : public AIS_Shape
@@ -43,7 +43,7 @@ struct Sketch_face_shp : public AIS_Shape
   Sketch_face_shp(Sketch& owner, const TopoDS_Shape& face);
 
   Sketch&             owner_sketch;
-  std::vector<gp_Pnt> verts_3d;  // Used for extruding the face
+  std::vector<gp_Pnt> verts_3d; // Used for extruding the face
   std::vector<size_t> vert_idxs;
   std::string         name;
 };
@@ -58,9 +58,9 @@ using Sketch_face_shp_ptr      = opencascade::handle<Sketch_face_shp>;
 // and extracting faces from the sketch.
 class Sketch
 {
- public:
+public:
   DECL_PTR(Sketch);
-  using Sketch_ptr = sptr;  // Compatibility alias for existing code.
+  using Sketch_ptr = sptr; // Compatibility alias for existing code.
 
   // `view` must exist for the lifetime of this `Sketch`
   Sketch(const std::string& name, Occt_view& view, const gp_Pln& pln);
@@ -84,7 +84,7 @@ class Sketch
   bool cancel_elm();
   void clear_operation_axis();
   bool has_operation_axis() const;
-  void on_enter();  // For finalizing manual distance input.
+  void on_enter(); // For finalizing manual distance input.
 
   // Visibility related
   void        set_visible(bool state);
@@ -108,7 +108,7 @@ class Sketch
   Shp_rslt revolve_selected(const double angle);
 
   bool is_current() const;
-  void set_current();  // Make current in m_view
+  void set_current(); // Make current in m_view
   void set_edge_style(Edge_style style);
   void remove_edge(const Sketch_AIS_edge& edge);
   void remove_permanent_node_mark(Sketch_AIS_node_mark& mark);
@@ -142,14 +142,14 @@ class Sketch
   const gp_Pln& get_plane() const;
   Sketch_nodes& get_nodes();
 
-  [[nodiscard]] bool  has_underlay() const;
-  [[nodiscard]] int   underlay_image_w() const;
-  [[nodiscard]] int   underlay_image_h() const;
-  [[nodiscard]] bool  load_underlay_image(const std::string& file_bytes);
-  void                clear_underlay();
-  void                underlay_set_center_extents_rotation(const glm::dvec2& center, const glm::dvec2& half_extents, double rot_deg);
-  void                underlay_set_opacity(float opaque01);
-  void                underlay_set_visible(bool v);
+  [[nodiscard]] bool has_underlay() const;
+  [[nodiscard]] int  underlay_image_w() const;
+  [[nodiscard]] int  underlay_image_h() const;
+  [[nodiscard]] bool load_underlay_image(const std::string& file_bytes);
+  void               clear_underlay();
+  void underlay_set_center_extents_rotation(const glm::dvec2& center, const glm::dvec2& half_extents, double rot_deg);
+  void underlay_set_opacity(float opaque01);
+  void underlay_set_visible(bool v);
   [[nodiscard]] float underlay_opacity() const;
   [[nodiscard]] bool  underlay_visible() const;
   void                underlay_set_key_white_transparent(bool on);
@@ -162,33 +162,33 @@ class Sketch
   void                underlay_line_tint_rgba(uint8_t& r, uint8_t& g, uint8_t& b, uint8_t& a) const;
   void                underlay_ui_params(double& cx, double& cy, double& half_w, double& half_h, double& rot_deg) const;
   /// True when texture U and V directions are perpendicular (no shear). Orthogonal UI assumes this.
-  [[nodiscard]] bool  underlay_axes_orthogonal() const;
-  void                underlay_rebuild_display();
+  [[nodiscard]] bool underlay_axes_orthogonal() const;
+  void               underlay_rebuild_display();
 
   /// Same snap / plane rules as the line-edge tool (for underlay calibration clicks).
   [[nodiscard]] std::optional<gp_Pnt2d> pick_point_for_underlay_calib(const ScreenCoords& screen_coords);
   /// Set underlay from texture corner \a base, U edge vector \a axis_u, V edge vector \a axis_v (plane 2D).
-  void                                  underlay_set_affine_plane(const gp_Pnt2d& base, const gp_Vec2d& axis_u, const gp_Vec2d& axis_v);
+  void underlay_set_affine_plane(const gp_Pnt2d& base, const gp_Vec2d& axis_u, const gp_Vec2d& axis_v);
   /// Uniformly scale texture axes so plane segment \a p0-\a p1 has length \a target_len; UV at \a p0 stays fixed.
-  [[nodiscard]] bool                    underlay_rescale_uv_chord_to_length(const gp_Pnt2d& p0, const gp_Pnt2d& p1, double target_len);
+  [[nodiscard]] bool underlay_rescale_uv_chord_to_length(const gp_Pnt2d& p0, const gp_Pnt2d& p1, double target_len);
   /// Keep U axis; adjust V and base so segment \a y0-\a y1 has length \a target_len (after X calibration).
-  [[nodiscard]] bool                    underlay_rescale_v_chord_to_length(const gp_Pnt2d& y0, const gp_Pnt2d& y1, double target_len);
-  [[nodiscard]] gp_Vec2d                underlay_axis_u_vec() const;
+  [[nodiscard]] bool     underlay_rescale_v_chord_to_length(const gp_Pnt2d& y0, const gp_Pnt2d& y1, double target_len);
+  [[nodiscard]] gp_Vec2d underlay_axis_u_vec() const;
   /// Datum on sketch plane: bitmap (0,0) at \a origin; +U toward \a along_u_point; keeps |axis_u|, |axis_v| and winding.
-  [[nodiscard]] bool                    underlay_set_datum_origin_and_u_direction(const gp_Pnt2d& origin, const gp_Pnt2d& along_u_point);
+  [[nodiscard]] bool underlay_set_datum_origin_and_u_direction(const gp_Pnt2d& origin, const gp_Pnt2d& along_u_point);
 
   // private:
   friend class Sketch_json;
   friend class Sketch_access;
-  friend class Sketch_test;  // TEST_F(Sketch_test, JsonSerializationDeserialization)
+  friend class Sketch_test; // TEST_F(Sketch_test, JsonSerializationDeserialization)
 
   /// Linear distance between two sketch nodes (independent of which edge connects them).
   struct Length_dimension
   {
-    size_t                     node_idx_lo {};
-    size_t                     node_idx_hi {};
+    size_t                     node_idx_lo{};
+    size_t                     node_idx_hi{};
     PrsDim_LengthDimension_ptr dim;
-    bool                       visible {true};
+    bool                       visible{true};
     std::optional<double>      flyout_offset;
     std::string                name;
   };
@@ -197,12 +197,12 @@ class Sketch
   {
     size_t                node_idx_a;
     std::optional<size_t> node_idx_b;
-    std::optional<size_t> node_idx_arc;  // Only valid for circle arc edges.
-    std::optional<size_t> node_idx_mid;  // Midpoint of edge, used for snapping.
+    std::optional<size_t> node_idx_arc; // Only valid for circle arc edges.
+    std::optional<size_t> node_idx_mid; // Midpoint of edge, used for snapping.
 
     //  Used to identify the two `Edges` defining a circle arc.
     Geom_TrimmedCurve_ptr circle_arc;
-    Sketch_AIS_edge_ptr   shp;  // Current edge annotation.
+    Sketch_AIS_edge_ptr   shp; // Current edge annotation.
 
     std::string name;
 
@@ -278,12 +278,10 @@ class Sketch
   // General sketch point related
   template <typename Callback>
   void add_sketch_pt_(const ScreenCoords& screen_coords, size_t required_num_pts, Callback&& callback);
-  template <typename Callback>
-  void move_sketch_pt_(const ScreenCoords& screen_coords, Callback&& callback);
+  template <typename Callback> void move_sketch_pt_(const ScreenCoords& screen_coords, Callback&& callback);
   /// Invokes callback(e, pt_a, pt_b) with the last tmp edge only when it exists and is non-degenerate.
-  template <typename Callback>
-  void if_edge_pt_valid_(Callback&& callback);
-  void check_dimension_seg_(Linestring_type linestring_type);
+  template <typename Callback> void if_edge_pt_valid_(Callback&& callback);
+  void                              check_dimension_seg_(Linestring_type linestring_type);
   /// Typed distance (Enter) while add-node rubber band is active - places node B, no edge.
   /// Enter key / dist popup commit for rubber-band tmp edge (add node, square, circle, rectangle, ...).
   void check_dimension_rubber_();
@@ -326,11 +324,8 @@ class Sketch
   void remove_length_dimensions_referencing_node_(size_t node_idx);
   /// Add if missing, remove if present (same unordered node pair).
   void add_or_toggle_length_dim_between_node_indices_(size_t node_a, size_t node_b);
-  void json_add_length_dimension_(size_t                node_a,
-                                  size_t                node_b,
-                                  bool                  visible       = true,
-                                  std::optional<double> flyout_offset = std::nullopt,
-                                  const std::string&    name          = {});
+  void json_add_length_dimension_(size_t node_a, size_t node_b, bool visible = true,
+                                  std::optional<double> flyout_offset = std::nullopt, const std::string& name = {});
 
   /// Average of non-deleted node positions (3D on sketch plane); used to place edge dimensions outside loops.
   std::optional<gp_Pnt> approx_sketch_interior_ref_3d_() const;
@@ -347,7 +342,7 @@ class Sketch
   void clear_len_dim_pick_state_();
 
   // Style related
-  Edge_style m_edge_style {Edge_style::Full};
+  Edge_style m_edge_style{Edge_style::Full};
 
   // Arc circle related.
   std::optional<size_t> m_start_arc_circle_node_idx;
@@ -361,7 +356,7 @@ class Sketch
 
   std::string m_dbg_str;
   std::string m_name;
-  bool        m_visible {true};
+  bool        m_visible{true};
 
   // Extrusion related.
   std::optional<gp_Pnt> m_to_extrude_pt;
@@ -372,16 +367,16 @@ class Sketch
 
   // Dimensions related
   std::optional<Edge_len> m_entered_edge_len;
-  bool                    m_show_dim_input {false};
-  std::optional<double>   m_entered_edge_angle;  // Angle in degrees
-  bool                    m_show_angle_input {false};
+  bool                    m_show_dim_input{false};
+  std::optional<double>   m_entered_edge_angle; // Angle in degrees
+  bool                    m_show_angle_input{false};
 
   // Geometry related
-  AIS_Shape_ptr m_originating_face;  // If this sketch was created from a face.
-  gp_Pln        m_pln;               // Plane this sketch is on.
+  AIS_Shape_ptr m_originating_face; // If this sketch was created from a face.
+  gp_Pln        m_pln;              // Plane this sketch is on.
 
-  std::optional<gp_Pnt2d>               m_last_pt;
-  Sketch_nodes                          m_nodes;
+  std::optional<gp_Pnt2d> m_last_pt;
+  Sketch_nodes            m_nodes;
   /// One entry per node index; only indices with permanent, non-deleted nodes hold a displayed + marker.
   std::vector<Sketch_AIS_node_mark_ptr> m_permanent_node_marks;
   std::list<Edge>                       m_edges;
@@ -390,13 +385,13 @@ class Sketch
   std::vector<Length_dimension>         m_length_dimensions;
   std::optional<size_t>                 m_len_dim_pick_anchor_node;
   /// Preview segment from anchor node to cursor while picking the second node (dim mode).
-  AIS_Shape_ptr                         m_len_dim_rubber_shp;
-  std::vector<size_t>                   m_tmp_node_idxs;
-  std::vector<Edge>                     m_tmp_edges;
-  AIS_Shape_ptr                         m_tmp_shp;
-  PrsDim_LengthDimension_ptr            m_tmp_dim_anno;
-  bool                                  m_show_faces {true};
-  bool                                  m_show_dims {true};
+  AIS_Shape_ptr              m_len_dim_rubber_shp;
+  std::vector<size_t>        m_tmp_node_idxs;
+  std::vector<Edge>          m_tmp_edges;
+  AIS_Shape_ptr              m_tmp_shp;
+  PrsDim_LengthDimension_ptr m_tmp_dim_anno;
+  bool                       m_show_faces{true};
+  bool                       m_show_dims{true};
 
   std::unique_ptr<Sketch_underlay> m_underlay;
 };
