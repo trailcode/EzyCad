@@ -61,11 +61,17 @@ Between those, the pane has **six** collapsible sections. Expand a section to se
 
 ## Options panel (sketch)
 
-Some sketch-related preferences are edited in the **Options** panel while you use a tool, not in the **Settings** pane:
+Sketch-related preferences are edited in the **Options** panel while you use a tool, not in the **Settings** pane. They appear under section headings in the panel:
 
-- **Length value placement** (shown when the mode is **Toggle edge dimension** / length dimensions) - Combo: *Near first point*, *Near second point*, *Center on dimension line*, *Automatic*. This maps to the `edge_dim_label_h` key (integers **0** through **3**). Changing it persists like other GUI flags.
+- **Sketch options** (all sketch tools): **Snap dist** and **Snap guide mode** (*Traditional*, *Fullscreen*, *Both*).
+- **Toggle edge dimension** (length dimensions): **Length value placement** - combo: *Near first point*, *Near second point*, *Center on dimension line*, *Automatic*. Maps to the `edge_dim_label_h` key (integers **0** through **3**). Changing it persists like other GUI flags.
+- **Extrude sketch face**: under **Extrude**, **Both sides** and **Material** for the new solid (same document preset as **Normal** mode Options **Material**). Other modes that still show **Material** in Options use that same preset when relevant (for example **Sketch from planar face**).
+- **Add edge** / **Add node** (and similar): a **Shortcuts** line documents TAB / Shift+TAB typing behavior.
+- **Sketch operation** (mirror / revolve axis): mirror, revolve, angle, and clear-axis actions (see [usage-sketch.md](usage-sketch.md#operation-axis-tool)).
 
-**Dimension line width** for those dimensions is in **Settings -> Sketch** (see above).
+**Dimension line width** for length dimensions is in **Settings -> Sketch** (see above).
+
+For **Normal** mode (selection and document **Material** preset), **polar duplicate**, and other non-sketch Options content, see [usage.md](usage.md#user-interface) under **User Interface** (Options Panel).
 
 ## Where settings are stored
 

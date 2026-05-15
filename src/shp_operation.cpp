@@ -1,5 +1,7 @@
 #include "shp_operation.h"
 
+#include <Graphic3d_MaterialAspect.hxx>
+
 #include "occt_view.h"
 
 Shp_operation_base::Shp_operation_base(Occt_view& view)
@@ -105,6 +107,19 @@ const TopoDS_Edge* Shp_operation_base::get_edge_(const ScreenCoords& screen_coor
 void Shp_operation_base::add_shp_(Shp_ptr& shp)
 {
   m_view.add_shp_(shp);
+}
+
+void Shp_operation_base::copy_shape_material_from_(Shp_ptr& dest, const Shp_ptr& src)
+{
+  if (dest.IsNull() || src.IsNull())
+    return;
+  const int        nmat    = Graphic3d_MaterialAspect::NumberOfMaterials();
+  Standard_Integer mat_idx = src->Material();
+  if (mat_idx < 0 || mat_idx >= nmat)
+    return;
+  dest->SetMaterial(Graphic3d_MaterialAspect(static_cast<Graphic3d_NameOfMaterial>(mat_idx)));
+  ctx().Redisplay(dest, true);
+  ctx().UpdateCurrentViewer();
 }
 
 void Shp_operation_base::redisplay_operation_shps_after_transform_()

@@ -516,7 +516,7 @@ The operation axis tool allows you to define a reference line for mirroring and 
 - Alternatively, use the "Clear axis" button in the options panel to manually clear the axis
 
 **Using the Operation Axis:**
-Once an axis is defined, the options panel will show:
+Once an axis is defined, the options panel (under the **Sketch operation** heading) shows:
 
 | | |
 | ---: | --- |

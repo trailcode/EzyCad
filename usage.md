@@ -55,9 +55,12 @@ EzyCad (Easy CAD) is a CAD application for hobbyist machinists to design and edi
    - [List 3D solids, materials, and display options](#shape-list)
 
 5. **Options Panel**
-   - Adjust tool parameters
-   - Set operation properties
-   - Sketch-related options (for example length dimension placement) are described in **[usage-settings.md](usage-settings.md#options-panel-sketch)**
+   - Adjust tool parameters; related controls are grouped by headings (for example **Sketch options**, **Extrude**, **Selection**, **Material**, **Polar duplicate**), depending on the active tool.
+   - **Normal** mode: **Selection** is the 3D pick filter. **Material** is the document preset for new solids that do not inherit from a clicked shape (for example toolbar **Box**, **polar duplicate** output). **Face extrude** reads the same preset in its Options **Material** row.
+   - To change material on a solid already in the scene, use the [Shape List](#shape-list).
+   - **Chamfer** and **Fillet**: distance and mode only; the result solid keeps the **source shape's material**.
+   - **Move**, **Rotate**, and **Scale**: transform options only (no material row there).
+   - Sketch-related options (snap, length dimension placement, face extrude, shortcuts) are summarized in **[usage-settings.md](usage-settings.md#options-panel-sketch)**.
 
 6. **Log Window**
    - View operation history
@@ -444,11 +447,12 @@ The polar duplicate tool allows you to create multiple copies of selected shapes
 1. <img src="res/icons/Draft_PolarArray.png" alt="Draft_PolarArray" width="20" height="20"> **Activate Polar Duplicate Tool**: Click the icon to enter polar duplicate mode
 2. **Select shape**: Select the shape that you want to duplicate
 3. **Define polar arm**: Move the mouse to see a preview line (polar arm) from the shape center to the mouse cursor. Move to the origin of the operation
-4. **Configure options** in the options panel:
+4. **Configure options** in the options panel (under **Polar duplicate**):
    - **Polar angle**: Set the total angle for the pattern (e.g., 360 deg for full circle, 180 deg for half circle)
    - **Num Elms**: Set the number of duplicate elements to create
    - **Rotate dups**: Checkbox to rotate each duplicate as it's copied (default: enabled)
    - **Combine dups**: Checkbox to combine all duplicates into a single shape (default: enabled)
+   - **Material**: Document preset for solids created when you click **Dup** (same setting as **Normal** mode Options **Material**)
 5. **Create duplicates**: Click the **"Dup"** button in the options panel to create the polar duplicates
 
 **Options explained:**
@@ -459,6 +463,7 @@ The polar duplicate tool allows you to create multiple copies of selected shapes
 | **Num Elms** | The number of duplicate elements to create. The original shape is not counted, so 5 elements means 5 copies plus the original. |
 | **Rotate dups** | When enabled, each duplicate is rotated around its own center as it's positioned. When disabled, duplicates maintain their original orientation. |
 | **Combine dups** | When enabled, all duplicates are fused together into a single shape. When disabled, each duplicate remains a separate shape. |
+| **Material** | Preset for new solids from **Dup**; matches **Normal** mode Options **Material**. Existing shapes: [Shape List](#shape-list). |
 
 **Keyboard shortcuts:**
 

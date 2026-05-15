@@ -32,6 +32,9 @@ class Shp_operation_base
 
   void add_shp_(Shp_ptr& shp);
 
+  /// Replace `dest` presentation material with `src` (used after add_shp_, which applies the view default).
+  void copy_shape_material_from_(Shp_ptr& dest, const Shp_ptr& src);
+
   /// After transform-only changes on `m_shps`, refresh presentations once (avoids N x viewer updates per frame).
   void redisplay_operation_shps_after_transform_();
 

@@ -95,6 +95,7 @@ Status Shp_chamfer::add_chamfer(const ScreenCoords& screen_coords, const Chamfer
     view().m_shps.remove(chamfer_src_shp);
     chamfer_shp->set_name("Chamfered shape");
     add_shp_(chamfer_shp);
+    copy_shape_material_from_(chamfer_shp, chamfer_src_shp);
   }
   catch (const Standard_Failure& e)
   {

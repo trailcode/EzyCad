@@ -340,19 +340,15 @@ void GUI::options_()
   }
   // clang-format on
 
-  auto default_material = [&]()
+  auto material_combo_only_ = [&](const char* combo_id)
   {
     const std::vector<std::string>& material_names = occt_material_combo_labels_();
     int                             current_item   = int(m_view->get_default_material().Name());
     if (current_item < 0 || current_item >= static_cast<int>(material_names.size()))
       current_item = 0;
 
-    ImGui::AlignTextToFramePadding();
-    ImGui::TextUnformatted("Default Material");
-    ImGui::SameLine();
-    ImGui::SetNextItemWidth(120.0f);
-    if (ImGui::BeginCombo("##default_material", material_names[static_cast<size_t>(current_item)].data(),
-                          ImGuiComboFlags_HeightSmall))
+    ImGui::SetNextItemWidth(ImGui::GetContentRegionAvail().x);
+    if (ImGui::BeginCombo(combo_id, material_names[static_cast<size_t>(current_item)].data(), ImGuiComboFlags_HeightSmall))
     {
       for (int i = 0; i < static_cast<int>(material_names.size()); i++)
         if (ImGui::Selectable(material_names[static_cast<size_t>(i)].data(), current_item == i))
@@ -367,33 +363,34 @@ void GUI::options_()
 
   if (is_sketch_mode(get_mode()))
   {
-    float snap_dist = float(Sketch_nodes::get_snap_dist());
-    if (ImGui::BeginTable("options_sketch_rows", 2, ImGuiTableFlags_SizingStretchProp))
+    const auto right_aligned_label = [](const char* text)
     {
-      const auto right_aligned_label = [](const char* text)
-      {
-        ImGui::AlignTextToFramePadding();
-        const float text_w = ImGui::CalcTextSize(text).x;
-        const float col_w  = ImGui::GetColumnWidth();
-        const float x0     = ImGui::GetCursorPosX();
-        const float right_x = x0 + std::max(0.0f, col_w - text_w - ImGui::GetStyle().CellPadding.x * 2.0f);
-        ImGui::SetCursorPosX(right_x);
-        ImGui::TextUnformatted(text);
-      };
+      ImGui::AlignTextToFramePadding();
+      const float text_w  = ImGui::CalcTextSize(text).x;
+      const float col_w   = ImGui::GetColumnWidth();
+      const float x0      = ImGui::GetCursorPosX();
+      const float right_x = x0 + std::max(0.0f, col_w - text_w - ImGui::GetStyle().CellPadding.x * 2.0f);
+      ImGui::SetCursorPosX(right_x);
+      ImGui::TextUnformatted(text);
+    };
 
-      float label_col_w = ImGui::CalcTextSize("Snap dist").x;
-      label_col_w       = std::max(label_col_w, ImGui::CalcTextSize("Snap guide mode").x);
-      if (get_mode() == Mode::Sketch_dim_anno)
-        label_col_w = std::max(label_col_w, ImGui::CalcTextSize("Length value placement").x);
+    float snap_dist = float(Sketch_nodes::get_snap_dist());
 
-      if (get_mode() == Mode::Sketch_face_extrude)
-      {
-        const float extrude_label_w = std::max(ImGui::CalcTextSize("Both sides").x, ImGui::CalcTextSize("Default Material").x);
-        label_col_w                 = std::max(label_col_w, extrude_label_w);
-      }
+    float sketch_label_col_w = ImGui::CalcTextSize("Snap dist").x;
+    sketch_label_col_w       = std::max(sketch_label_col_w, ImGui::CalcTextSize("Snap guide mode").x);
+    if (get_mode() == Mode::Sketch_dim_anno)
+      sketch_label_col_w = std::max(sketch_label_col_w, ImGui::CalcTextSize("Length value placement").x);
+    if (get_mode() == Mode::Sketch_face_extrude)
+    {
+      sketch_label_col_w = std::max(sketch_label_col_w, ImGui::CalcTextSize("Both sides").x);
+      sketch_label_col_w = std::max(sketch_label_col_w, ImGui::CalcTextSize("Material").x);
+    }
+    sketch_label_col_w += ImGui::GetStyle().CellPadding.x * 2.0f + 8.0f;
 
-      label_col_w += ImGui::GetStyle().CellPadding.x * 2.0f + 8.0f;
-      ImGui::TableSetupColumn("label", ImGuiTableColumnFlags_WidthFixed, label_col_w);
+    ImGui::TextUnformatted("Sketch options");
+    if (ImGui::BeginTable("options_sketch_sketch", 2, ImGuiTableFlags_SizingStretchProp))
+    {
+      ImGui::TableSetupColumn("label", ImGuiTableColumnFlags_WidthFixed, sketch_label_col_w);
       ImGui::TableSetupColumn("control", ImGuiTableColumnFlags_WidthStretch);
 
       ImGui::TableNextRow();
@@ -463,8 +460,19 @@ void GUI::options_()
               "Otherwise the average node position is used as a rough inside reference.\n"
               "Dimension line width is in Settings -> Sketch.");
       }
-      else if (get_mode() == Mode::Sketch_face_extrude)
+
+      ImGui::EndTable();
+    }
+
+    if (get_mode() == Mode::Sketch_face_extrude)
+    {
+      ImGui::Separator();
+      ImGui::TextUnformatted("Extrude");
+      if (ImGui::BeginTable("options_sketch_extrude", 2, ImGuiTableFlags_SizingStretchProp))
       {
+        ImGui::TableSetupColumn("label", ImGuiTableColumnFlags_WidthFixed, sketch_label_col_w);
+        ImGui::TableSetupColumn("control", ImGuiTableColumnFlags_WidthStretch);
+
         bool extrude_both_sides = m_view->shp_extrude().get_both_sides();
         ImGui::TableNextRow();
         ImGui::TableSetColumnIndex(0);
@@ -480,7 +488,7 @@ void GUI::options_()
 
         ImGui::TableNextRow();
         ImGui::TableSetColumnIndex(0);
-        right_aligned_label("Default Material");
+        right_aligned_label("Material");
         ImGui::TableSetColumnIndex(1);
         ImGui::SetNextItemWidth(120.0f);
         if (ImGui::BeginCombo("##default_material_sketch_extrude",
@@ -494,9 +502,9 @@ void GUI::options_()
             }
           ImGui::EndCombo();
         }
-      }
 
-      ImGui::EndTable();
+        ImGui::EndTable();
+      }
     }
 
     switch (get_mode())
@@ -510,11 +518,13 @@ void GUI::options_()
       case Mode::Sketch_add_edge:
       case Mode::Sketch_add_multi_edges:
         ImGui::Separator();
+        ImGui::TextUnformatted("Shortcuts");
         ImGui::TextWrapped("TAB: type edge length. Shift+TAB: type angle (degrees, CCW from +X).");
         break;
 
       case Mode::Sketch_add_node:
         ImGui::Separator();
+        ImGui::TextUnformatted("Shortcuts");
         ImGui::TextWrapped("TAB: type length along the rubber band. Shift+TAB: type angle (degrees, CCW from +X).");
         ImGui::TextWrapped(
             "Snap the first click to an existing sketch point to start a rubber band, then click to place the node "
@@ -525,29 +535,37 @@ void GUI::options_()
         break;
     }
   }
-  else if (get_mode() != Mode::Normal && get_mode() != Mode::Shape_polar_duplicate)
-    default_material();
+  else if (get_mode() != Mode::Normal && get_mode() != Mode::Shape_polar_duplicate && get_mode() != Mode::Shape_chamfer
+           && get_mode() != Mode::Shape_fillet && get_mode() != Mode::Move && get_mode() != Mode::Rotate
+           && get_mode() != Mode::Scale)
+  {
+    ImGui::Separator();
+    ImGui::TextUnformatted("Material");
+    material_combo_only_("##default_material");
+  }
 
   ImGui::End();
 }
 
 void GUI::options_normal_mode_()
 {
-  if (ImGui::BeginTable("options_normal_rows", 2, ImGuiTableFlags_SizingStretchProp))
+  const auto right_aligned_label = [](const char* text)
   {
-    const auto right_aligned_label = [](const char* text)
-    {
-      ImGui::AlignTextToFramePadding();
-      const float text_w   = ImGui::CalcTextSize(text).x;
-      const float col_w    = ImGui::GetColumnWidth();
-      const float x0       = ImGui::GetCursorPosX();
-      const float right_x  = x0 + std::max(0.0f, col_w - text_w - ImGui::GetStyle().CellPadding.x * 2.0f);
-      ImGui::SetCursorPosX(right_x);
-      ImGui::TextUnformatted(text);
-    };
+    ImGui::AlignTextToFramePadding();
+    const float text_w  = ImGui::CalcTextSize(text).x;
+    const float col_w   = ImGui::GetColumnWidth();
+    const float x0      = ImGui::GetCursorPosX();
+    const float right_x = x0 + std::max(0.0f, col_w - text_w - ImGui::GetStyle().CellPadding.x * 2.0f);
+    ImGui::SetCursorPosX(right_x);
+    ImGui::TextUnformatted(text);
+  };
 
-    float label_col_w = std::max(ImGui::CalcTextSize("Selection Mode").x, ImGui::CalcTextSize("Default Material").x);
-    label_col_w += ImGui::GetStyle().CellPadding.x * 2.0f + 8.0f;
+  float label_col_w = ImGui::CalcTextSize("Selection Mode").x;
+  label_col_w += ImGui::GetStyle().CellPadding.x * 2.0f + 8.0f;
+
+  ImGui::TextUnformatted("Selection");
+  if (ImGui::BeginTable("options_normal_selection", 2, ImGuiTableFlags_SizingStretchProp))
+  {
     ImGui::TableSetupColumn("label", ImGuiTableColumnFlags_WidthFixed, label_col_w);
     ImGui::TableSetupColumn("control", ImGuiTableColumnFlags_WidthStretch);
 
@@ -578,34 +596,33 @@ void GUI::options_normal_mode_()
       ImGui::EndTooltip();
     }
 
-    const std::vector<std::string>& material_names = occt_material_combo_labels_();
-    int                             current_mat    = int(m_view->get_default_material().Name());
-    if (current_mat < 0 || current_mat >= static_cast<int>(material_names.size()))
-      current_mat = 0;
-
-    ImGui::TableNextRow();
-    ImGui::TableSetColumnIndex(0);
-    right_aligned_label("Default Material");
-    ImGui::TableSetColumnIndex(1);
-    ImGui::SetNextItemWidth(120.0f);
-    if (ImGui::BeginCombo("##default_material_normal", material_names[static_cast<size_t>(current_mat)].data(),
-                          ImGuiComboFlags_HeightSmall))
-    {
-      for (int i = 0; i < static_cast<int>(material_names.size()); i++)
-        if (ImGui::Selectable(material_names[static_cast<size_t>(i)].data(), current_mat == i))
-        {
-          Graphic3d_MaterialAspect mat(static_cast<Graphic3d_NameOfMaterial>(i));
-          m_view->set_default_material(mat);
-        }
-      ImGui::EndCombo();
-    }
-
     ImGui::EndTable();
+  }
+
+  ImGui::Separator();
+  ImGui::TextUnformatted("Material");
+  const std::vector<std::string>& material_names = occt_material_combo_labels_();
+  int                             current_mat    = int(m_view->get_default_material().Name());
+  if (current_mat < 0 || current_mat >= static_cast<int>(material_names.size()))
+    current_mat = 0;
+  ImGui::SetNextItemWidth(ImGui::GetContentRegionAvail().x);
+  if (ImGui::BeginCombo("##default_material_normal", material_names[static_cast<size_t>(current_mat)].data(),
+                        ImGuiComboFlags_HeightSmall))
+  {
+    for (int i = 0; i < static_cast<int>(material_names.size()); i++)
+      if (ImGui::Selectable(material_names[static_cast<size_t>(i)].data(), current_mat == i))
+      {
+        Graphic3d_MaterialAspect mat(static_cast<Graphic3d_NameOfMaterial>(i));
+        m_view->set_default_material(mat);
+      }
+    ImGui::EndCombo();
   }
 }
 
 void GUI::options_move_mode_()
 {
+  ImGui::TextUnformatted("Move");
+  ImGui::Separator();
   ImGui::TextUnformatted("Move constrain axis:");
 
   Move_options& opts = m_view->shp_move().get_opts();
@@ -623,7 +640,7 @@ void GUI::options_scale_mode_()
 
 void GUI::options_rotate_mode_()
 {
-  ImGui::Text("Rotation Options");
+  ImGui::TextUnformatted("Rotation");
   ImGui::Separator();
 
   int selected_axis = static_cast<int>(m_view->shp_rotate().get_rotation_axis());
@@ -642,6 +659,9 @@ void GUI::options_rotate_mode_()
 
 void GUI::options_sketch_operation_axis_mode_()
 {
+  ImGui::TextUnformatted("Sketch operation");
+  ImGui::Separator();
+
   if (m_view->curr_sketch().has_operation_axis())
   {
     if (ImGui::Button("Mirror"))
@@ -663,22 +683,23 @@ void GUI::options_sketch_operation_axis_mode_()
 
 void GUI::options_shape_chamfer_mode_()
 {
-  if (ImGui::BeginTable("options_chamfer_rows", 2, ImGuiTableFlags_SizingStretchProp))
+  const auto right_aligned_label = [](const char* text)
   {
-    const auto right_aligned_label = [](const char* text)
-    {
-      ImGui::AlignTextToFramePadding();
-      const float text_w  = ImGui::CalcTextSize(text).x;
-      const float col_w   = ImGui::GetColumnWidth();
-      const float x0      = ImGui::GetCursorPosX();
-      const float right_x = x0 + std::max(0.0f, col_w - text_w - ImGui::GetStyle().CellPadding.x * 2.0f);
-      ImGui::SetCursorPosX(right_x);
-      ImGui::TextUnformatted(text);
-    };
+    ImGui::AlignTextToFramePadding();
+    const float text_w  = ImGui::CalcTextSize(text).x;
+    const float col_w   = ImGui::GetColumnWidth();
+    const float x0      = ImGui::GetCursorPosX();
+    const float right_x = x0 + std::max(0.0f, col_w - text_w - ImGui::GetStyle().CellPadding.x * 2.0f);
+    ImGui::SetCursorPosX(right_x);
+    ImGui::TextUnformatted(text);
+  };
 
-    float label_col_w = std::max(ImGui::CalcTextSize("Chamfer Mode").x, ImGui::CalcTextSize("Chamfer dist").x);
-    label_col_w       = std::max(label_col_w, ImGui::CalcTextSize("Default Material").x);
-    label_col_w += ImGui::GetStyle().CellPadding.x * 2.0f + 8.0f;
+  float label_col_w = std::max(ImGui::CalcTextSize("Chamfer Mode").x, ImGui::CalcTextSize("Chamfer dist").x);
+  label_col_w += ImGui::GetStyle().CellPadding.x * 2.0f + 8.0f;
+
+  ImGui::TextUnformatted("Chamfer");
+  if (ImGui::BeginTable("options_chamfer_tool", 2, ImGuiTableFlags_SizingStretchProp))
+  {
     ImGui::TableSetupColumn("label", ImGuiTableColumnFlags_WidthFixed, label_col_w);
     ImGui::TableSetupColumn("control", ImGuiTableColumnFlags_WidthStretch);
 
@@ -725,50 +746,29 @@ void GUI::options_shape_chamfer_mode_()
     }
     ImGui::PopID();
 
-    const std::vector<std::string>& material_names = occt_material_combo_labels_();
-    int                             current_item   = int(m_view->get_default_material().Name());
-    if (current_item < 0 || current_item >= static_cast<int>(material_names.size()))
-      current_item = 0;
-
-    ImGui::TableNextRow();
-    ImGui::TableSetColumnIndex(0);
-    right_aligned_label("Default Material");
-    ImGui::TableSetColumnIndex(1);
-    ImGui::SetNextItemWidth(120.0f);
-    if (ImGui::BeginCombo("##default_material_chamfer", material_names[static_cast<size_t>(current_item)].data(),
-                          ImGuiComboFlags_HeightSmall))
-    {
-      for (int i = 0; i < static_cast<int>(material_names.size()); i++)
-        if (ImGui::Selectable(material_names[static_cast<size_t>(i)].data(), current_item == i))
-        {
-          Graphic3d_MaterialAspect mat(static_cast<Graphic3d_NameOfMaterial>(i));
-          m_view->set_default_material(mat);
-        }
-      ImGui::EndCombo();
-    }
-
     ImGui::EndTable();
   }
 }
 
 void GUI::options_shape_fillet_mode_()
 {
-  if (ImGui::BeginTable("options_fillet_rows", 2, ImGuiTableFlags_SizingStretchProp))
+  const auto right_aligned_label = [](const char* text)
   {
-    const auto right_aligned_label = [](const char* text)
-    {
-      ImGui::AlignTextToFramePadding();
-      const float text_w  = ImGui::CalcTextSize(text).x;
-      const float col_w   = ImGui::GetColumnWidth();
-      const float x0      = ImGui::GetCursorPosX();
-      const float right_x = x0 + std::max(0.0f, col_w - text_w - ImGui::GetStyle().CellPadding.x * 2.0f);
-      ImGui::SetCursorPosX(right_x);
-      ImGui::TextUnformatted(text);
-    };
+    ImGui::AlignTextToFramePadding();
+    const float text_w  = ImGui::CalcTextSize(text).x;
+    const float col_w   = ImGui::GetColumnWidth();
+    const float x0      = ImGui::GetCursorPosX();
+    const float right_x = x0 + std::max(0.0f, col_w - text_w - ImGui::GetStyle().CellPadding.x * 2.0f);
+    ImGui::SetCursorPosX(right_x);
+    ImGui::TextUnformatted(text);
+  };
 
-    float label_col_w = std::max(ImGui::CalcTextSize("Fillet Mode").x, ImGui::CalcTextSize("Fillet radius").x);
-    label_col_w       = std::max(label_col_w, ImGui::CalcTextSize("Default Material").x);
-    label_col_w += ImGui::GetStyle().CellPadding.x * 2.0f + 8.0f;
+  float label_col_w = std::max(ImGui::CalcTextSize("Fillet Mode").x, ImGui::CalcTextSize("Fillet radius").x);
+  label_col_w += ImGui::GetStyle().CellPadding.x * 2.0f + 8.0f;
+
+  ImGui::TextUnformatted("Fillet");
+  if (ImGui::BeginTable("options_fillet_tool", 2, ImGuiTableFlags_SizingStretchProp))
+  {
     ImGui::TableSetupColumn("label", ImGuiTableColumnFlags_WidthFixed, label_col_w);
     ImGui::TableSetupColumn("control", ImGuiTableColumnFlags_WidthStretch);
 
@@ -815,28 +815,6 @@ void GUI::options_shape_fillet_mode_()
     }
     ImGui::PopID();
 
-    const std::vector<std::string>& material_names = occt_material_combo_labels_();
-    int                             current_item   = int(m_view->get_default_material().Name());
-    if (current_item < 0 || current_item >= static_cast<int>(material_names.size()))
-      current_item = 0;
-
-    ImGui::TableNextRow();
-    ImGui::TableSetColumnIndex(0);
-    right_aligned_label("Default Material");
-    ImGui::TableSetColumnIndex(1);
-    ImGui::SetNextItemWidth(120.0f);
-    if (ImGui::BeginCombo("##default_material_fillet", material_names[static_cast<size_t>(current_item)].data(),
-                          ImGuiComboFlags_HeightSmall))
-    {
-      for (int i = 0; i < static_cast<int>(material_names.size()); i++)
-        if (ImGui::Selectable(material_names[static_cast<size_t>(i)].data(), current_item == i))
-        {
-          Graphic3d_MaterialAspect mat(static_cast<Graphic3d_NameOfMaterial>(i));
-          m_view->set_default_material(mat);
-        }
-      ImGui::EndCombo();
-    }
-
     ImGui::EndTable();
   }
 }
@@ -849,25 +827,27 @@ void GUI::options_shape_polar_duplicate_mode_()
   bool  rotate_dups  = polar_dup.get_rotate_dups();
   bool  combine_dups = polar_dup.get_combine_dups();
 
-  if (ImGui::BeginTable("options_polar_dup_rows", 2, ImGuiTableFlags_SizingStretchProp))
+  const auto right_aligned_label = [](const char* text)
   {
-    const auto right_aligned_label = [](const char* text)
-    {
-      ImGui::AlignTextToFramePadding();
-      const float text_w  = ImGui::CalcTextSize(text).x;
-      const float col_w   = ImGui::GetColumnWidth();
-      const float x0      = ImGui::GetCursorPosX();
-      const float right_x = x0 + std::max(0.0f, col_w - text_w - ImGui::GetStyle().CellPadding.x * 2.0f);
-      ImGui::SetCursorPosX(right_x);
-      ImGui::TextUnformatted(text);
-    };
+    ImGui::AlignTextToFramePadding();
+    const float text_w  = ImGui::CalcTextSize(text).x;
+    const float col_w   = ImGui::GetColumnWidth();
+    const float x0      = ImGui::GetCursorPosX();
+    const float right_x = x0 + std::max(0.0f, col_w - text_w - ImGui::GetStyle().CellPadding.x * 2.0f);
+    ImGui::SetCursorPosX(right_x);
+    ImGui::TextUnformatted(text);
+  };
 
-    float label_col_w = ImGui::CalcTextSize("Polar angle").x;
-    label_col_w       = std::max(label_col_w, ImGui::CalcTextSize("Num Elms").x);
-    label_col_w       = std::max(label_col_w, ImGui::CalcTextSize("Rotate dups").x);
-    label_col_w       = std::max(label_col_w, ImGui::CalcTextSize("Combine dups").x);
-    label_col_w       = std::max(label_col_w, ImGui::CalcTextSize("Default Material").x);
-    label_col_w += ImGui::GetStyle().CellPadding.x * 2.0f + 8.0f;
+  float label_col_w = ImGui::CalcTextSize("Polar angle").x;
+  label_col_w       = std::max(label_col_w, ImGui::CalcTextSize("Num Elms").x);
+  label_col_w       = std::max(label_col_w, ImGui::CalcTextSize("Rotate dups").x);
+  label_col_w       = std::max(label_col_w, ImGui::CalcTextSize("Combine dups").x);
+  label_col_w       = std::max(label_col_w, ImGui::CalcTextSize("Material").x);
+  label_col_w += ImGui::GetStyle().CellPadding.x * 2.0f + 8.0f;
+
+  ImGui::TextUnformatted("Polar duplicate");
+  if (ImGui::BeginTable("options_polar_dup_tool", 2, ImGuiTableFlags_SizingStretchProp))
+  {
     ImGui::TableSetupColumn("label", ImGuiTableColumnFlags_WidthFixed, label_col_w);
     ImGui::TableSetupColumn("control", ImGuiTableColumnFlags_WidthStretch);
 
@@ -907,15 +887,14 @@ void GUI::options_shape_polar_duplicate_mode_()
       if (Status s = polar_dup.dup(); !s.is_ok())
         show_message(s.message());
 
+    ImGui::TableNextRow();
+    ImGui::TableSetColumnIndex(0);
+    right_aligned_label("Material");
+    ImGui::TableSetColumnIndex(1);
     const std::vector<std::string>& material_names = occt_material_combo_labels_();
     int                             current_item   = int(m_view->get_default_material().Name());
     if (current_item < 0 || current_item >= static_cast<int>(material_names.size()))
       current_item = 0;
-
-    ImGui::TableNextRow();
-    ImGui::TableSetColumnIndex(0);
-    right_aligned_label("Default Material");
-    ImGui::TableSetColumnIndex(1);
     ImGui::SetNextItemWidth(120.0f);
     if (ImGui::BeginCombo("##default_material_polar_dup", material_names[static_cast<size_t>(current_item)].data(),
                           ImGuiComboFlags_HeightSmall))

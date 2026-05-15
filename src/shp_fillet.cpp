@@ -91,6 +91,7 @@ Status Shp_fillet::add_fillet(const ScreenCoords& screen_coords, const Fillet_mo
     view().m_shps.remove(fillet_src_shp);
     fillet_shp->set_name("Filleted shape");
     add_shp_(fillet_shp);
+    copy_shape_material_from_(fillet_shp, fillet_src_shp);
   }
   catch (const Standard_Failure& e)
   {
