@@ -46,7 +46,7 @@ Between those, the pane has **six** collapsible sections. Expand a section to se
 
 3. **3D view background** — **Background color 1** and **Background color 2** (float RGB fields and swatches). **Gradient blend** — combo: **Horizontal**, **Vertical**, **Diagonal 1**, **Diagonal 2**, **Corner 1** … **Corner 4**.
 
-4. **3D view grid** — **Fine grid lines** and **Major grid lines** (passed to Open CASCADE `Aspect_Grid::SetColors`: dense lines vs every-tenth emphasis lines). **Grid plane fill** — tint for a large XY plane slightly below z=0 so the ground area can differ from the sky gradient (see `(?)` in app). This third color is not part of OCCT grid line rendering.
+4. **3D view grid** — **Fine grid lines** and **Major grid lines** (passed to Open CASCADE `Aspect_Grid::SetColors`: dense lines vs every-tenth emphasis lines). **Grid step**, **Grid extent X / Y** (full span edge-to-edge), and **Grid display Z offset** in the Settings pane use the **same length scale as sketch length dimensions** (display value = model value / internal `dimension_scale`, default **100**). Saved JSON (`occt_view`) stores **half-extent** in model units for OCCT (`grid_graphic_*`); Settings shows **full** extent (twice the stored half-extent).
 
 5. **Sketch** — **Dimension line width** — slider **0.5** to **8.0** (has `(?)`). **Underlay highlight color** — RGB (has `(?)`).
 
@@ -117,7 +117,10 @@ String: ImGui `.ini` text for window positions and docking saved with **SaveIniS
 | `bg_gradient_method` | integer | Gradient mode: 0 horizontal, 1 vertical, 2 to 3 diagonals, 4 to 7 corners (same order as the Settings pane combo). |
 | `grid_color1` | array of 3 numbers | Fine (dense) grid lines (`Aspect_Grid` main color). |
 | `grid_color2` | array of 3 numbers | Major (sparse / every-tenth) grid lines (`Aspect_Grid` tenth-line color). |
-| `grid_fill_color` | array of 3 numbers | RGB tint for the infinite XY fill plane below the scene (separate from line colors). |
+| `grid_step` | number | Grid line spacing in **model** units (`Aspect_RectangularGrid`; default **10**). Legacy `grid_x_step` / `grid_y_step` load as this value (X preferred). |
+| `grid_graphic_x_size` | number | Grid half-extent on X in **model** units (OCCT `SetGraphicValues`; default **1000**). Settings **Grid extent X** shows full span (**20** with those defaults). |
+| `grid_graphic_y_size` | number | Grid half-extent on Y in **model** units. Settings **Grid extent Y** shows full span. |
+| `grid_graphic_z_offset` | number | Grid plane offset along Z in **model** units. |
 
 ### `gui`
 

@@ -3,6 +3,8 @@
 #include <AIS_ViewCube.hxx>
 #include <Aspect_GradientFillMethod.hxx>
 #include <Aspect_Grid.hxx>
+#include <Aspect_RectangularGrid.hxx>
+#include <V3d_RectangularGrid.hxx>
 #include <BRepBndLib.hxx>
 #include <BRepBuilderAPI_Transform.hxx>
 #include <BRepMesh_IncrementalMesh.hxx>
@@ -32,6 +34,7 @@
 #include <WNT_Window.hxx>
 #include <algorithm>
 #include <cmath>
+#include <numbers>
 #include <gp_Ax1.hxx>
 #include <gp_Trsf.hxx>
 
@@ -56,7 +59,6 @@
 
 #include <GLFW/glfw3.h>
 
-#include <algorithm>
 #include <cctype>
 #include <cstdio>
 #include <iostream>
@@ -211,6 +213,7 @@ void Occt_view::init_viewer()
 
   aViewer->ActivateGrid(Aspect_GT_Rectangular, Aspect_GDM_Lines);
   aViewer->SetGridEcho(false);
+  capture_occt_grid_rect_from_viewer_(aViewer);
   // Grid colors set in update_view_background_()
   // aViewer->SetGridEcho(true);
   // aViewer->Grid()->SetDrawMode(Aspect_GridDrawMode::Aspect_GDM_Points);
@@ -1180,6 +1183,79 @@ void Occt_view::set_grid_colors(float r1, float g1, float b1, float r2, float g2
   m_grid_color1 = glm::vec3(r1, g1, b1);
   m_grid_color2 = glm::vec3(r2, g2, b2);
   update_view_background_();
+}
+
+Occt_grid_rect_params Occt_view::clamp_occt_grid_rect_params_(Occt_grid_rect_params g)
+{
+  constexpr double min_step    = 1e-9;
+  constexpr double min_graphic = 1e-6;
+  g.step = std::max(g.step, min_step);
+  g.graphic_x_size = std::max(g.graphic_x_size, min_graphic);
+  g.graphic_y_size = std::max(g.graphic_y_size, min_graphic);
+  return g;
+}
+
+void Occt_view::capture_occt_grid_rect_from_viewer_(const V3d_Viewer_ptr& viewer)
+{
+  if (viewer.IsNull() || viewer->Grid().IsNull())
+    return;
+
+  Handle(Aspect_Grid)                  ag = viewer->Grid();
+  Handle(Aspect_RectangularGrid)         rg = Handle(Aspect_RectangularGrid)::DownCast(ag);
+  Handle(V3d_RectangularGrid)          vrg = Handle(V3d_RectangularGrid)::DownCast(ag);
+  if (rg.IsNull())
+    return;
+
+  m_occt_grid_rect.step = rg->XStep();
+
+  if (!vrg.IsNull())
+  {
+    Standard_Real gx{}, gy{}, gz{};
+    vrg->GraphicValues(gx, gy, gz);
+    m_occt_grid_rect.graphic_x_size     = gx;
+    m_occt_grid_rect.graphic_y_size     = gy;
+    m_occt_grid_rect.graphic_z_offset   = gz;
+  }
+}
+
+void Occt_view::apply_occt_grid_rect_to_viewer_()
+{
+  if (is_headless() || m_view.IsNull())
+    return;
+
+  Occt_grid_rect_params g      = clamp_occt_grid_rect_params_(m_occt_grid_rect);
+  m_occt_grid_rect             = g;
+
+  Handle(V3d_Viewer) viewer = m_view->Viewer();
+  if (viewer.IsNull() || viewer->Grid().IsNull())
+    return;
+
+  Handle(Aspect_Grid)                  ag = viewer->Grid();
+  Handle(Aspect_RectangularGrid)         rg = Handle(Aspect_RectangularGrid)::DownCast(ag);
+  Handle(V3d_RectangularGrid)          vrg = Handle(V3d_RectangularGrid)::DownCast(ag);
+  if (rg.IsNull())
+    return;
+
+  rg->SetGridValues(0., 0., static_cast<Standard_Real>(m_occt_grid_rect.step),
+                   static_cast<Standard_Real>(m_occt_grid_rect.step), 0.);
+
+  if (!vrg.IsNull())
+    vrg->SetGraphicValues(static_cast<Standard_Real>(m_occt_grid_rect.graphic_x_size),
+                         static_cast<Standard_Real>(m_occt_grid_rect.graphic_y_size),
+                         static_cast<Standard_Real>(m_occt_grid_rect.graphic_z_offset));
+
+  m_view->Invalidate();
+}
+
+void Occt_view::get_occt_grid_rect_params(Occt_grid_rect_params& out) const
+{
+  out = m_occt_grid_rect;
+}
+
+void Occt_view::set_occt_grid_rect_params(const Occt_grid_rect_params& p)
+{
+  m_occt_grid_rect = clamp_occt_grid_rect_params_(p);
+  apply_occt_grid_rect_to_viewer_();
 }
 
 void Occt_view::flush_view_events()

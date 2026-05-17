@@ -52,6 +52,16 @@ enum class Set_parent_mode
   No
 };
 
+/// Persisted rectangular OCCT viewer grid geometry (same units as the model scene; uniform line step and V3d graphic
+/// half-extent on X/Y for OCCT). Settings UI edits full extent (2x these values). Origin and rotation stay at 0.
+struct Occt_grid_rect_params
+{
+  double step{10.};
+  double graphic_x_size{1000.};
+  double graphic_y_size{1000.};
+  double graphic_z_offset{};
+};
+
 class Occt_view : protected AIS_ViewController
 {
 public:
@@ -217,6 +227,9 @@ public:
   void get_grid_colors(float color1[3], float color2[3]) const;
   void set_grid_colors(float r1, float g1, float b1, float r2, float g2, float b2);
 
+  void get_occt_grid_rect_params(Occt_grid_rect_params& out) const;
+  void set_occt_grid_rect_params(const Occt_grid_rect_params& p);
+
   bool is_headless() const;
 
   void new_file();
@@ -253,6 +266,9 @@ private:
   [[nodiscard]] Status build_export_shape_(TopoDS_Shape& out_shape) const;
 
   void update_view_background_();
+  static Occt_grid_rect_params clamp_occt_grid_rect_params_(Occt_grid_rect_params g);
+  void                         capture_occt_grid_rect_from_viewer_(const V3d_Viewer_ptr& viewer);
+  void                         apply_occt_grid_rect_to_viewer_();
 
   //! GLFW callback redirecting messages into Message::DefaultMessenger().
   // static void errorCallback(int theError, const char* theDescription);
@@ -299,6 +315,7 @@ private:
   int       m_bg_gradient_method{1}; // 0=HOR, 1=VER, 2=DIAG1, ...
   glm::vec3 m_grid_color1{0.1f, 0.1f, 0.1f};
   glm::vec3 m_grid_color2{0.1f, 0.1f, 0.3f};
+  Occt_grid_rect_params m_occt_grid_rect{};
   /// User setting: same role as former literal in `UpdateZoom(Aspect_ScrollDelta(..., int(y * scale)))`.
   double m_zoom_scroll_scale{4.0};
   // --------------------------------------------------------------------

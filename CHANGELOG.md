@@ -9,6 +9,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **Settings** (3D view grid) and saved **`occt_view`** JSON: configure Open CASCADE rectangular grid **step** (uniform X/Y), plus **graphic display extent X/Y** and **Z offset** (`V3d_RectangularGrid::SetGraphicValues`). Bundled **`res/ezycad_settings.json`** includes defaults for those keys.
+
 - **Keyboard zoom:** **NumPad +** / **NumPad -**, main **-**, and **Shift+=** (US **+**) zoom the 3D view in steps equal to **one mouse wheel tick** at the cursor (same internal scaling as scroll).
 - **NumPad 8 / 2 / 4 / 6:** orbit the 3D view in fixed steps (same axes as LMB orbit); step is **View rotation step** in Settings (shared with Shift+NumPad roll; default 45 degrees; `gui.view_roll_step_deg`).
 - **NumPad 5:** snap the 3D view to the nearest orthographic world-axis orientation (top/bottom/front/back/left/right) with roll reset; keeps eye-target distance.

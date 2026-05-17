@@ -46,7 +46,11 @@
       0.11791712045669556,
       0.11791712790727615,
       0.13513511419296265
-    ]
+    ],
+    "grid_graphic_x_size": 1000,
+    "grid_graphic_y_size": 1000,
+    "grid_graphic_z_offset": 0,
+    "grid_step": 10
   },
   "version": "1"
 }

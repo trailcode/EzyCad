@@ -25,10 +25,16 @@ nlohmann::json build_occt_view_settings_object(const Occt_view& view)
   float bg1[3], bg2[3], g1[3], g2[3];
   view.get_bg_gradient_colors(bg1, bg2);
   view.get_grid_colors(g1, g2);
-  const int method = view.get_bg_gradient_method();
+  const int              method = view.get_bg_gradient_method();
+  Occt_grid_rect_params grid_rect{};
+  view.get_occt_grid_rect_params(grid_rect);
   return nlohmann::json{
       {"bg_color1", {bg1[0], bg1[1], bg1[2]}}, {"bg_color2", {bg2[0], bg2[1], bg2[2]}}, {"bg_gradient_method", method},
       {"grid_color1", {g1[0], g1[1], g1[2]}},  {"grid_color2", {g2[0], g2[1], g2[2]}},
+      {"grid_step", grid_rect.step},
+      {"grid_graphic_x_size", grid_rect.graphic_x_size},
+      {"grid_graphic_y_size", grid_rect.graphic_y_size},
+      {"grid_graphic_z_offset", grid_rect.graphic_z_offset},
   };
 }
 } // namespace
@@ -152,6 +158,29 @@ void GUI::parse_occt_view_settings_(const std::string& content)
     m_view->set_bg_gradient_colors(bg1[0], bg1[1], bg1[2], bg2[0], bg2[1], bg2[2]);
     m_view->set_bg_gradient_method(method);
     m_view->set_grid_colors(g1[0], g1[1], g1[2], g2[0], g2[1], g2[2]);
+
+    Occt_grid_rect_params grid_rect{};
+    m_view->get_occt_grid_rect_params(grid_rect);
+    auto apply_num = [&ov](const char* key, double& dst)
+    {
+      if (!ov.contains(key))
+        return;
+      const json& v = ov[key];
+      if (v.is_number())
+        dst = v.get<double>();
+    };
+    apply_num("grid_step", grid_rect.step);
+    if (!ov.contains("grid_step"))
+    {
+      if (ov.contains("grid_x_step"))
+        apply_num("grid_x_step", grid_rect.step);
+      else if (ov.contains("grid_y_step"))
+        apply_num("grid_y_step", grid_rect.step);
+    }
+    apply_num("grid_graphic_x_size", grid_rect.graphic_x_size);
+    apply_num("grid_graphic_y_size", grid_rect.graphic_y_size);
+    apply_num("grid_graphic_z_offset", grid_rect.graphic_z_offset);
+    m_view->set_occt_grid_rect_params(grid_rect);
   }
   catch (...)
   {
@@ -547,7 +576,20 @@ void GUI::settings_()
   {
     float g1[3], g2[3];
     m_view->get_grid_colors(g1, g2);
-    bool grid_changed = false;
+    Occt_grid_rect_params gr{};
+    m_view->get_occt_grid_rect_params(gr);
+    const double          dim_scale = m_view->get_dimension_scale();
+    // Settings show the same length units as sketch dimensions (model / dimension_scale).
+    // Grid extent UI is full span; OCCT SetGraphicValues uses half-extent (x0.5 on apply).
+    double step_ui          = gr.step / dim_scale;
+    double graphic_x_ui     = (gr.graphic_x_size * 2.0) / dim_scale;
+    double graphic_y_ui     = (gr.graphic_y_size * 2.0) / dim_scale;
+    double graphic_z_off_ui = gr.graphic_z_offset / dim_scale;
+    bool   grid_changed     = false;
+    bool   geom_changed     = false;
+    constexpr float spd_s       = 0.08f;
+    constexpr float spd_m       = 1.5f;
+    constexpr float spd_extent  = 0.25f;
     if (ImGui::BeginTable("settings_grid", 2, ImGuiTableFlags_SizingStretchProp))
     {
       ImGui::TableSetupColumn("label", ImGuiTableColumnFlags_WidthFixed, k_label_col_w);
@@ -569,13 +611,75 @@ void GUI::settings_()
       if (ImGui::ColorEdit3("##g2", g2, ImGuiColorEditFlags_Float))
         grid_changed = true;
 
+      ImGui::TableNextRow();
+      ImGui::TableSetColumnIndex(0);
+      ImGui::AlignTextToFramePadding();
+      ImGui::TextUnformatted("Grid step");
+      ImGui::TableSetColumnIndex(1);
+      if (ImGui::DragScalar("##gstep", ImGuiDataType_Double, &step_ui, spd_s, nullptr, nullptr, "%.8g"))
+        geom_changed = true;
+
+      ImGui::TableNextRow();
+      ImGui::TableSetColumnIndex(0);
+      ImGui::AlignTextToFramePadding();
+      ImGui::TextUnformatted("Grid extent X");
+      ImGui::SameLine(0.f, ImGui::GetStyle().ItemInnerSpacing.x);
+      ImGui::TextDisabled("(?)");
+      if (ImGui::IsItemHovered())
+      {
+        ImGui::BeginTooltip();
+        ImGui::PushTextWrapPos(ImGui::GetFontSize() * 35.0f);
+        ImGui::TextUnformatted(
+            "Full width of the drawn grid on X (edge to edge through the center). Same length scale as sketch dimensions. "
+            "OCCT uses half this value internally.");
+        ImGui::PopTextWrapPos();
+        ImGui::EndTooltip();
+      }
+      ImGui::TableSetColumnIndex(1);
+      if (ImGui::DragScalar("##ggx", ImGuiDataType_Double, &graphic_x_ui, spd_extent, nullptr, nullptr, "%.8g"))
+        geom_changed = true;
+
+      ImGui::TableNextRow();
+      ImGui::TableSetColumnIndex(0);
+      ImGui::AlignTextToFramePadding();
+      ImGui::TextUnformatted("Grid extent Y");
+      ImGui::SameLine(0.f, ImGui::GetStyle().ItemInnerSpacing.x);
+      ImGui::TextDisabled("(?)");
+      if (ImGui::IsItemHovered())
+      {
+        ImGui::BeginTooltip();
+        ImGui::PushTextWrapPos(ImGui::GetFontSize() * 35.0f);
+        ImGui::TextUnformatted(
+            "Full height of the drawn grid on Y (edge to edge through the center). OCCT uses half this value internally.");
+        ImGui::PopTextWrapPos();
+        ImGui::EndTooltip();
+      }
+      ImGui::TableSetColumnIndex(1);
+      if (ImGui::DragScalar("##ggy", ImGuiDataType_Double, &graphic_y_ui, spd_extent, nullptr, nullptr, "%.8g"))
+        geom_changed = true;
+
+      ImGui::TableNextRow();
+      ImGui::TableSetColumnIndex(0);
+      ImGui::AlignTextToFramePadding();
+      ImGui::TextUnformatted("Grid display Z offset");
+      ImGui::TableSetColumnIndex(1);
+      if (ImGui::DragScalar("##ggz", ImGuiDataType_Double, &graphic_z_off_ui, spd_m, nullptr, nullptr, "%.8g"))
+        geom_changed = true;
+
       ImGui::EndTable();
     }
     if (grid_changed)
-    {
       m_view->set_grid_colors(g1[0], g1[1], g1[2], g2[0], g2[1], g2[2]);
-      save_occt_view_settings();
+    if (geom_changed)
+    {
+      gr.step             = step_ui * dim_scale;
+      gr.graphic_x_size   = graphic_x_ui * dim_scale * 0.5;
+      gr.graphic_y_size   = graphic_y_ui * dim_scale * 0.5;
+      gr.graphic_z_offset = graphic_z_off_ui * dim_scale;
+      m_view->set_occt_grid_rect_params(gr);
     }
+    if (grid_changed || geom_changed)
+      save_occt_view_settings();
   }
 
   if (ImGui::CollapsingHeader("Sketch"))
