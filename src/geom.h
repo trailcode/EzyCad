@@ -95,6 +95,16 @@ gp_Vec project_onto_plane(const gp_Vec& v, const gp_Pln& pln);
 
 gp_Pln xy_plane();
 
+enum class Sketch_ref_plane
+{
+  XY,
+  XZ,
+  YZ,
+};
+
+/// Reference sketch plane through the origin, offset along the plane normal (\a offset in model units).
+gp_Pln sketch_reference_plane(Sketch_ref_plane plane, double offset);
+
 // Function to compute the center point between two gp_Pnt2d points
 gp_Pnt2d center_point(const gp_Pnt2d& point1, const gp_Pnt2d& point2);
 

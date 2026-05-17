@@ -618,6 +618,21 @@ void Occt_view::create_default_sketch_()
   m_cur_sketch->set_current();
 }
 
+void Occt_view::add_sketch(const gp_Pln& pln, const std::string& base_name)
+{
+  push_undo_snapshot();
+  std::vector<std::string> existing;
+  existing.reserve(m_sketches.size());
+  for (const Sketch_ptr& s : m_sketches)
+    existing.push_back(s->get_name());
+
+  const std::string name = unique_sequential_name(base_name, existing);
+  m_cur_sketch           = std::make_shared<Sketch>(name, *this, pln);
+  m_sketches.push_back(m_cur_sketch);
+  m_cur_sketch->set_current();
+  m_gui.set_mode(Mode::Sketch_inspection_mode);
+}
+
 // Query related
 AIS_Shape_ptr Occt_view::get_shape(const ScreenCoords& screen_coords)
 {
@@ -842,46 +857,12 @@ void Occt_view::add_shp_(Shp_ptr& shp)
 
 std::string Occt_view::unique_shape_name_(const char* base_name) const
 {
-  std::set<int>     used;
-  const std::string base(base_name);
-  const std::string prefix = base + ".";
-
+  std::vector<std::string> existing;
+  existing.reserve(m_shps.size());
   for (const Shp_ptr& s : m_shps)
-  {
-    const std::string& n = s->get_name();
-    if (n == base)
-      used.insert(0);
-    else if (n.size() > prefix.size() && n.compare(0, prefix.size(), prefix) == 0)
-    {
-      const std::string suffix = n.substr(prefix.size());
-      if (!suffix.empty() &&
-          std::all_of(suffix.begin(), suffix.end(), [](char c) { return std::isdigit(static_cast<unsigned char>(c)); }))
-      {
-        int idx = 0;
-        try
-        {
-          idx = std::stoi(suffix);
-          if (idx >= 0)
-            used.insert(idx);
-        }
-        catch (...)
-        {
-          EZY_ASSERT(false); // Should not happen due to the isdigit check, but just in case.
-        }
-      }
-    }
-  }
+    existing.push_back(s->get_name());
 
-  int next = 0;
-  while (used.count(next))
-    ++next;
-
-  if (next == 0)
-    return base;
-
-  char buf[32];
-  snprintf(buf, sizeof(buf), ".%03d", next);
-  return base + buf;
+  return unique_sequential_name(base_name, existing);
 }
 
 std::string Occt_view::get_unique_shape_name(const char* base_name) const { return unique_shape_name_(base_name); }

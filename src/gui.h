@@ -190,6 +190,7 @@ private:
   void         add_cylinder_dialog_();
   void         add_cone_dialog_();
   void         add_torus_dialog_();
+  void         add_sketch_dialog_();
   void         about_dialog_();
   void         ensure_about_assets_();
   static float list_name_field_width_(const ImGuiStyle& st, float max_name_text_w);
@@ -335,6 +336,9 @@ private:
   bool        m_open_add_torus_popup{false};
   glm::dvec3  m_add_torus_origin{0.0, 0.0, 0.0};
   double      m_add_torus_R1{1}, m_add_torus_R2{0.5};
+  bool        m_open_add_sketch_popup{false};
+  int         m_new_sketch_plane{0}; // 0=XY, 1=XZ, 2=YZ
+  double      m_new_sketch_offset{};
   bool        m_hide_all_shapes{false};
   bool        m_show_tool_tips{true};
   bool        m_dark_mode{false};

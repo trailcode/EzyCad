@@ -2,12 +2,58 @@
 
 #include <GLFW/glfw3.h>
 
+#include <cctype>
+#include <cstdio>
 #include <cstring>
 #include <filesystem>
+#include <set>
 #include <tuple>
 
 #define STB_IMAGE_IMPLEMENTATION
 #include <stb_image/stb_image.h>
+
+std::string unique_sequential_name(const std::string& base_name, std::span<const std::string> existing_names)
+{
+  std::set<int>     used;
+  const std::string prefix = base_name + ".";
+
+  for (const std::string& n : existing_names)
+  {
+    if (n == base_name)
+      used.insert(0);
+
+    else if (n.size() > prefix.size() && n.compare(0, prefix.size(), prefix) == 0)
+    {
+      const std::string suffix = n.substr(prefix.size());
+      if (!suffix.empty() &&
+          std::all_of(suffix.begin(), suffix.end(), [](char c) { return std::isdigit(static_cast<unsigned char>(c)); }))
+      {
+        int idx = 0;
+        try
+        {
+          idx = std::stoi(suffix);
+          if (idx >= 0)
+            used.insert(idx);
+        }
+        catch (...)
+        {
+          EZY_ASSERT(false);
+        }
+      }
+    }
+  }
+
+  int next = 0;
+  while (used.count(next))
+    ++next;
+
+  if (next == 0)
+    return base_name;
+
+  char buf[32];
+  snprintf(buf, sizeof(buf), ".%03d", next);
+  return base_name + buf;
+}
 
 uint32_t load_texture(const std::string& path)
 {

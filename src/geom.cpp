@@ -456,6 +456,20 @@ gp_Pln xy_plane()
   return gp_Pln(xy_system.Location(), xy_system.Direction()); // XY plane
 }
 
+gp_Pln sketch_reference_plane(Sketch_ref_plane plane, double offset)
+{
+  switch (plane)
+  {
+    // clang-format off
+  case Sketch_ref_plane::XY: return gp_Pln(gp_Pnt(0., 0., offset), gp_Dir(0., 0., 1.));
+  case Sketch_ref_plane::XZ: return gp_Pln(gp_Pnt(0., offset, 0.), gp_Dir(0., 1., 0.));
+  case Sketch_ref_plane::YZ: return gp_Pln(gp_Pnt(offset, 0., 0.), gp_Dir(1., 0., 0.));
+    // clang-format on
+  }
+  EZY_ASSERT_MSG(false, "Invalid sketch reference plane");
+  return xy_plane();
+}
+
 // Function to compute the center point between two gp_Pnt2d points
 gp_Pnt2d center_point(const gp_Pnt2d& point1, const gp_Pnt2d& point2)
 {

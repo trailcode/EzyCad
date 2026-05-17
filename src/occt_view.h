@@ -122,6 +122,8 @@ public:
   // Sketch related
   Sketch_list& get_sketches();
   void         remove_sketch(const Sketch_ptr& sketch);
+  /// Empty sketch on \a pln; \a base_name is uniquified (e.g. Sketch_xy, Sketch_xy.001).
+  void         add_sketch(const gp_Pln& pln, const std::string& base_name);
   Sketch&      curr_sketch();
   Sketch_ptr   curr_sketch_shared() const;
   void         set_curr_sketch(const Sketch_ptr& sketch);

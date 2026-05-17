@@ -3,6 +3,7 @@
 #include <algorithm>
 #include <cstdint>
 #include <optional>
+#include <span>
 #include <string>
 #include <tuple>
 #include <vector>
@@ -124,6 +125,9 @@ template <typename Container, typename Value> bool contains(const Container& con
   auto it = std::find(container.begin(), container.end(), value);
   return it != container.end();
 }
+
+/// Returns \a base_name or \a base_name.NNN (three-digit suffix) not used in \a existing_names.
+std::string unique_sequential_name(const std::string& base_name, std::span<const std::string> existing_names);
 
 uint32_t load_texture(const std::string& path);
 

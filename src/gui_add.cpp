@@ -1,4 +1,5 @@
 #include "gui.h"
+#include "geom.h"
 #include "occt_view.h"
 
 void GUI::add_box_dialog_()
@@ -371,5 +372,66 @@ void GUI::add_torus_dialog_()
   ImGui::SameLine();
   if (ImGui::Button("Cancel"))
     ImGui::CloseCurrentPopup();
+  ImGui::EndPopup();
+}
+
+void GUI::add_sketch_dialog_()
+{
+  if (m_open_add_sketch_popup)
+  {
+    ImGui::OpenPopup("New sketch");
+    m_open_add_sketch_popup = false;
+  }
+
+  if (!ImGui::BeginPopupModal("New sketch", nullptr, ImGuiWindowFlags_AlwaysAutoResize))
+    return;
+
+  ImGui::TextUnformatted("Plane and offset along its normal (display units).");
+  ImGui::Spacing();
+
+  ImGui::TextUnformatted("Reference plane");
+  if (ImGui::RadioButton("XY", m_new_sketch_plane == 0))
+    m_new_sketch_plane = 0;
+
+  ImGui::SameLine();
+  if (ImGui::RadioButton("XZ", m_new_sketch_plane == 1))
+    m_new_sketch_plane = 1;
+
+  ImGui::SameLine();
+  if (ImGui::RadioButton("YZ", m_new_sketch_plane == 2))
+    m_new_sketch_plane = 2;
+
+  ImGui::Spacing();
+  ImGui::SetNextItemWidth(160.f);
+  ImGui::InputDouble("Offset along normal", &m_new_sketch_offset, 0.0, 0.0, "%.6g");
+
+  ImGui::Spacing();
+  if (ImGui::Button("Create"))
+  {
+    Sketch_ref_plane plane = Sketch_ref_plane::XY;
+    const char*        base  = "Sketch_xy";
+    switch (m_new_sketch_plane)
+    {
+    case 1:
+      plane = Sketch_ref_plane::XZ;
+      base  = "Sketch_xz";
+      break;
+    case 2:
+      plane = Sketch_ref_plane::YZ;
+      base  = "Sketch_yz";
+      break;
+    default:
+      break;
+    }
+
+    const double scale = m_view->get_dimension_scale();
+    const gp_Pln pln   = sketch_reference_plane(plane, m_new_sketch_offset * scale);
+    m_view->add_sketch(pln, base);
+    ImGui::CloseCurrentPopup();
+  }
+  ImGui::SameLine();
+  if (ImGui::Button("Cancel"))
+    ImGui::CloseCurrentPopup();
+
   ImGui::EndPopup();
 }

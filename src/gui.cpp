@@ -107,6 +107,7 @@ void GUI::render_gui()
   add_cylinder_dialog_();
   add_cone_dialog_();
   add_torus_dialog_();
+  add_sketch_dialog_();
   log_window_();
   lua_console_();
   python_console_();
@@ -262,6 +263,14 @@ void GUI::menu_bar_()
 
     if (ImGui::MenuItem("Redo", "Ctrl+Y", false, m_view->can_redo()))
       m_view->redo();
+
+    ImGui::Separator();
+    if (ImGui::MenuItem("New sketch..."))
+    {
+      m_new_sketch_plane   = 0;
+      m_new_sketch_offset  = 0.0;
+      m_open_add_sketch_popup = true;
+    }
 
     ImGui::Separator();
     if (ImGui::MenuItem("Add box"))
