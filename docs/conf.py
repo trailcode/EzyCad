@@ -37,7 +37,23 @@ def _sync_user_docs() -> None:
         shutil.copytree(doc_gen_src, doc_gen_dst, dirs_exist_ok=True)
 
 
+def _verify_doc_assets() -> None:
+    """Fail the build early if synced assets are missing (catches RTD/checkout issues)."""
+    required = [
+        DOCS_DIR / "res" / "icons" / "Draft_Rotate.png",
+        DOCS_DIR / "doc" / "gen" / "rotate_constrain_axis.png",
+    ]
+    missing = [p.relative_to(DOCS_DIR) for p in required if not p.is_file()]
+    if missing:
+        raise RuntimeError(
+            "Documentation assets missing after sync from repo root: "
+            + ", ".join(str(p) for p in missing)
+            + ". Ensure res/icons/ and doc/gen/ are committed."
+        )
+
+
 _sync_user_docs()
+_verify_doc_assets()
 
 project = "EzyCad"
 copyright = "2026, trailcode"
@@ -59,6 +75,12 @@ exclude_patterns = [
     "Thumbs.db",
     ".DS_Store",
     "requirements.txt",
+    "readthedocs.md",
+]
+
+# Same-page #anchors in usage.md are not myst cross-refs; do not fail the build on them.
+suppress_warnings = [
+    "myst.xref_missing",
 ]
 
 html_theme = "sphinx_rtd_theme"
