@@ -159,25 +159,6 @@ private:
     const char*                 tooltip;
     std::variant<Mode, Command> data;
   };
-  struct Help_chunk
-  {
-    std::string title;
-    std::string anchor;
-    std::string markdown;
-  };
-  struct Help_page
-  {
-    std::string                    id;
-    std::string                    title;
-    std::string                    markdown;
-    std::vector<Help_chunk>        chunks;
-    std::unordered_map<std::string, int> anchor_to_chunk;
-  };
-  struct Help_hit
-  {
-    int page_idx{-1};
-    int chunk_idx{-1};
-  };
   void dist_edit_();
   void angle_edit_();
   void sketch_list_();
@@ -214,14 +195,6 @@ private:
   void         add_sketch_dialog_();
   void         about_dialog_();
   void         ensure_about_assets_();
-  void         help_dialog_();
-  void         ensure_help_assets_();
-  void         build_help_index_();
-  void         select_help_page_chunk_(int page_idx, int chunk_idx, bool push_history);
-  void         update_help_search_();
-  int          resolve_help_page_idx_(std::string_view file_part) const;
-  int          find_help_chunk_for_anchor_(int page_idx, std::string_view anchor) const;
-  void         help_markdown_link_(ImGui::MarkdownLinkCallbackData data);
   static float list_name_field_width_(const ImGuiStyle& st, float max_name_text_w);
   void         log_window_();
   void         lua_console_();
@@ -234,7 +207,6 @@ private:
   ImGui::MarkdownImageData        about_markdown_image_(ImGui::MarkdownLinkCallbackData data);
   static void                     about_markdown_link_cb_(ImGui::MarkdownLinkCallbackData data);
   static ImGui::MarkdownImageData about_markdown_image_cb_(ImGui::MarkdownLinkCallbackData data);
-  static void                     help_markdown_link_cb_(ImGui::MarkdownLinkCallbackData data);
 
   // Import/export related
   void import_file_dialog_();
@@ -348,14 +320,6 @@ private:
   uint32_t    m_about_splash_gl{0};
   glm::ivec2  m_about_splash_size{512, 512};
   bool        m_about_assets_loaded{false};
-  bool        m_show_help_dialog{false};
-  bool        m_help_assets_loaded{false};
-  std::vector<Help_page> m_help_pages;
-  int         m_help_curr_page{0};
-  int         m_help_curr_chunk{0};
-  std::vector<std::pair<int, int>> m_help_history;
-  std::string m_help_query;
-  std::vector<Help_hit> m_help_hits;
   bool        m_open_add_box_popup{false};
   glm::dvec3  m_add_box_origin{0.0, 0.0, 0.0};
   glm::dvec3  m_add_box_size{1.0, 1.0, 1.0};

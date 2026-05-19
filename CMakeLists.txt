@@ -292,11 +292,6 @@ if(CMAKE_CXX_COMPILER_ID STREQUAL "Emscripten")
             --preload-file ${CMAKE_SOURCE_DIR}/res/examples@/res/examples \
             --preload-file ${CMAKE_SOURCE_DIR}/res/scripts/lua@/res/scripts/lua \
             --preload-file ${CMAKE_SOURCE_DIR}/res/about.md@/res/about.md \
-            --preload-file ${CMAKE_SOURCE_DIR}/usage.md@/res/help/usage.md \
-            --preload-file ${CMAKE_SOURCE_DIR}/usage-settings.md@/res/help/usage-settings.md \
-            --preload-file ${CMAKE_SOURCE_DIR}/usage-sketch.md@/res/help/usage-sketch.md \
-            --preload-file ${CMAKE_SOURCE_DIR}/usage-occt-view.md@/res/help/usage-occt-view.md \
-            --preload-file ${CMAKE_SOURCE_DIR}/scripting.md@/res/help/scripting.md \
             --preload-file ${CMAKE_SOURCE_DIR}/res/AI-gen-splashscreen_05_01_2026_512.png@/res/AI-gen-splashscreen_05_01_2026_512.png \
             --shell-file ${CMAKE_SOURCE_DIR}/web/EzyCad.html"
         )
@@ -332,11 +327,6 @@ if(CMAKE_CXX_COMPILER_ID STREQUAL "Emscripten")
             --preload-file ${CMAKE_SOURCE_DIR}/res/examples@/res/examples \
             --preload-file ${CMAKE_SOURCE_DIR}/res/scripts/lua@/res/scripts/lua \
             --preload-file ${CMAKE_SOURCE_DIR}/res/about.md@/res/about.md \
-            --preload-file ${CMAKE_SOURCE_DIR}/usage.md@/res/help/usage.md \
-            --preload-file ${CMAKE_SOURCE_DIR}/usage-settings.md@/res/help/usage-settings.md \
-            --preload-file ${CMAKE_SOURCE_DIR}/usage-sketch.md@/res/help/usage-sketch.md \
-            --preload-file ${CMAKE_SOURCE_DIR}/usage-occt-view.md@/res/help/usage-occt-view.md \
-            --preload-file ${CMAKE_SOURCE_DIR}/scripting.md@/res/help/scripting.md \
             --preload-file ${CMAKE_SOURCE_DIR}/res/AI-gen-splashscreen_05_01_2026_512.png@/res/AI-gen-splashscreen_05_01_2026_512.png \
             --shell-file ${CMAKE_SOURCE_DIR}/web/EzyCad.html"
         )
@@ -380,22 +370,6 @@ if(CMAKE_CXX_COMPILER_ID STREQUAL "Emscripten")
         COMMAND ${CMAKE_COMMAND} -E copy_if_different
             ${CMAKE_SOURCE_DIR}/res/AI-gen-splashscreen_05_01_2026_512.png
             $<TARGET_FILE_DIR:${PROJECT_NAME}>/res/AI-gen-splashscreen_05_01_2026_512.png
-        COMMAND ${CMAKE_COMMAND} -E make_directory $<TARGET_FILE_DIR:${PROJECT_NAME}>/res/help
-        COMMAND ${CMAKE_COMMAND} -E copy_if_different
-            ${CMAKE_SOURCE_DIR}/usage.md
-            $<TARGET_FILE_DIR:${PROJECT_NAME}>/res/help/usage.md
-        COMMAND ${CMAKE_COMMAND} -E copy_if_different
-            ${CMAKE_SOURCE_DIR}/usage-settings.md
-            $<TARGET_FILE_DIR:${PROJECT_NAME}>/res/help/usage-settings.md
-        COMMAND ${CMAKE_COMMAND} -E copy_if_different
-            ${CMAKE_SOURCE_DIR}/usage-sketch.md
-            $<TARGET_FILE_DIR:${PROJECT_NAME}>/res/help/usage-sketch.md
-        COMMAND ${CMAKE_COMMAND} -E copy_if_different
-            ${CMAKE_SOURCE_DIR}/usage-occt-view.md
-            $<TARGET_FILE_DIR:${PROJECT_NAME}>/res/help/usage-occt-view.md
-        COMMAND ${CMAKE_COMMAND} -E copy_if_different
-            ${CMAKE_SOURCE_DIR}/scripting.md
-            $<TARGET_FILE_DIR:${PROJECT_NAME}>/res/help/scripting.md
         COMMENT "Copying res/ezycad_settings.json and res/default.ezy for Emscripten"
     )
     file(GLOB RES_EXAMPLE_FILES_EM "${CMAKE_SOURCE_DIR}/res/examples/*.ezy")
@@ -453,22 +427,6 @@ else()
         COMMAND ${CMAKE_COMMAND} -E copy_if_different
             ${CMAKE_SOURCE_DIR}/res/AI-gen-splashscreen_05_01_2026_512.png
             $<TARGET_FILE_DIR:${PROJECT_NAME}>/res/AI-gen-splashscreen_05_01_2026_512.png
-        COMMAND ${CMAKE_COMMAND} -E make_directory $<TARGET_FILE_DIR:${PROJECT_NAME}>/res/help
-        COMMAND ${CMAKE_COMMAND} -E copy_if_different
-            ${CMAKE_SOURCE_DIR}/usage.md
-            $<TARGET_FILE_DIR:${PROJECT_NAME}>/res/help/usage.md
-        COMMAND ${CMAKE_COMMAND} -E copy_if_different
-            ${CMAKE_SOURCE_DIR}/usage-settings.md
-            $<TARGET_FILE_DIR:${PROJECT_NAME}>/res/help/usage-settings.md
-        COMMAND ${CMAKE_COMMAND} -E copy_if_different
-            ${CMAKE_SOURCE_DIR}/usage-sketch.md
-            $<TARGET_FILE_DIR:${PROJECT_NAME}>/res/help/usage-sketch.md
-        COMMAND ${CMAKE_COMMAND} -E copy_if_different
-            ${CMAKE_SOURCE_DIR}/usage-occt-view.md
-            $<TARGET_FILE_DIR:${PROJECT_NAME}>/res/help/usage-occt-view.md
-        COMMAND ${CMAKE_COMMAND} -E copy_if_different
-            ${CMAKE_SOURCE_DIR}/scripting.md
-            $<TARGET_FILE_DIR:${PROJECT_NAME}>/res/help/scripting.md
         COMMENT "Copying res/ezycad_settings.json and res/default.ezy for native"
     )
     add_custom_command(
