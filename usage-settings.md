@@ -29,7 +29,7 @@ Visibility of these panes (and related flags) is persisted with the rest of your
 **Help menu**
 
 - **About** - Opens the [project README](README.md) in the browser.
-- **Usage Guide** - Opens the [main usage guide](usage.md) in the browser.
+- **Usage Guide** - Opens the [online usage guide](https://ezycad.readthedocs.io/en/latest/usage.html) (Read the Docs).
 
 ## Settings pane
 

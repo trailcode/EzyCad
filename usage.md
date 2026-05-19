@@ -70,7 +70,7 @@ EzyCad (Easy CAD) is a CAD application for hobbyist machinists to design and edi
 ### Help menu
 
 - **About** - Opens the [project README](README.md) in the browser.
-- **Usage Guide** - Opens [this usage guide](usage.md) in the browser.
+- **Usage Guide** - Opens the [online usage guide](https://ezycad.readthedocs.io/en/latest/usage.html) (Read the Docs; source is [usage.md](usage.md) in this repository).
 
 For **View** (Settings, pane toggles, consoles), saving preferences, and the **Settings** pane sections, see **[usage-settings.md](usage-settings.md)**.
 

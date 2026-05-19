@@ -1,0 +1,40 @@
+# Verify Sphinx docs build (same stack as Read the Docs).
+name: Documentation
+
+on:
+  push:
+    branches: [main, master]
+    paths:
+      - ".github/workflows/docs.yml"
+      - ".readthedocs.yaml"
+      - "docs/**"
+      - "usage.md"
+      - "usage-*.md"
+      - "scripting.md"
+      - "res/icons/**"
+  pull_request:
+    branches: [main, master]
+    paths:
+      - ".github/workflows/docs.yml"
+      - ".readthedocs.yaml"
+      - "docs/**"
+      - "usage.md"
+      - "usage-*.md"
+      - "scripting.md"
+      - "res/icons/**"
+
+jobs:
+  sphinx:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+
+      - name: Install doc dependencies
+        run: pip install -r docs/requirements.txt
+
+      - name: Build HTML
+        run: sphinx-build -b html docs docs/_build

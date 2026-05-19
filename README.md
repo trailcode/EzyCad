@@ -9,7 +9,9 @@ EzyCad (Easy CAD) is a CAD application for hobbyist machinists to design and edi
 - Interactive GUI built with ImGui.
 
 ## Usage Guide
-See [usage.md](usage.md) in the repository for a detailed guide on using EzyCad. It covers the user interface, modeling tools (e.g., sketching, extrusions, Boolean operations), keyboard shortcuts, and view controls. Example workflows, such as creating 2D sketches and 3D shapes, are included to help you get started.
+**Online:** [ezycad.readthedocs.io](https://ezycad.readthedocs.io/en/latest/usage.html) (built from this repo on [Read the Docs](https://readthedocs.org/)).
+
+**Source:** [usage.md](usage.md) and related guides (`usage-sketch.md`, `usage-settings.md`, etc.) at the repository root. They cover the user interface, modeling tools, keyboard shortcuts, and view controls.
 
 ## Changelog
 Release history is in [CHANGELOG.md](CHANGELOG.md) (repository root, next to this file and [usage.md](usage.md)). With the CMake Visual Studio generator, those files also appear under a Documentation folder on the EzyCad target in Solution Explorer.

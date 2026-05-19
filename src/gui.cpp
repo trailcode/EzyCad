@@ -423,7 +423,7 @@ void GUI::menu_bar_()
       m_open_about_popup = true;
 
     if (ImGui::MenuItem("Usage Guide"))
-      open_url_("https://github.com/trailcode/EzyCad/blob/main/usage.md");
+      open_url_("https://ezycad.readthedocs.io/en/latest/usage.html");
 
     ImGui::EndMenu();
   }

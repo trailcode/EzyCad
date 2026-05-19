@@ -441,9 +441,9 @@ void GUI::settings_()
 
       ImGui::SameLine(0.0f, ImGui::GetStyle().ItemInnerSpacing.x);
       if (ImGui::SmallButton("?##view_roll_help"))
-        open_url_("https://github.com/trailcode/EzyCad/blob/main/usage.md#view-roll");
+        open_url_("https://ezycad.readthedocs.io/en/latest/usage.html#view-roll");
       if (ImGui::IsItemHovered())
-        ImGui::SetTooltip("Help: view roll (opens usage.md in your browser).");
+        ImGui::SetTooltip("Help: view roll (opens the online usage guide).");
 
       ImGui::TableNextRow();
       ImGui::TableSetColumnIndex(0);
