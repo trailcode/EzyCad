@@ -1,4 +1,5 @@
 /build*
+/docs/_build
 /.vscode/settings.json
 # Legacy name; some toolchains write here. Primary vendored deps live in third_party/.
 /thirdParty

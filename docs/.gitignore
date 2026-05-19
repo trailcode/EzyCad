@@ -1,0 +1,8 @@
+_build/
+# Copied at Sphinx build time from the repository root (see conf.py).
+usage.md
+usage-sketch.md
+usage-settings.md
+usage-occt-view.md
+scripting.md
+res/

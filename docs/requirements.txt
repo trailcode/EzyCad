@@ -1,0 +1,4 @@
+sphinx>=7.4,<9
+myst-parser>=3.0,<5
+sphinx-rtd-theme>=2.0,<4
+linkify-it-py>=2.0,<3
