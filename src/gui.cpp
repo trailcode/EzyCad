@@ -9,6 +9,7 @@
 #include <filesystem>
 #include <fstream>
 #include <nlohmann/json.hpp>
+#include <sstream>
 #include <string>
 #include <unordered_set>
 
@@ -29,6 +30,7 @@
 #include "python_console.h"
 #include "sketch.h"
 #include "utl.h"
+#include "utl_str.h"
 
 // Must be here to prevent compiler warning
 #include <GLFW/glfw3.h>
@@ -101,6 +103,7 @@ void GUI::render_gui()
   options_();
   message_status_window_();
   about_dialog_();
+  help_dialog_();
   add_box_dialog_();
   add_pyramid_dialog_();
   add_sphere_dialog_();
@@ -423,7 +426,7 @@ void GUI::menu_bar_()
       m_open_about_popup = true;
 
     if (ImGui::MenuItem("Usage Guide"))
-      open_url_("https://github.com/trailcode/EzyCad/blob/main/usage.md");
+      m_show_help_dialog = true;
 
     ImGui::EndMenu();
   }
@@ -579,6 +582,430 @@ void GUI::ensure_about_assets_()
     m_about_splash_gl = load_texture(p);
     break;
   }
+}
+void GUI::select_help_page_chunk_(const int page_idx, const int chunk_idx, const bool push_history)
+{
+  if (m_help_pages.empty() || page_idx < 0 || page_idx >= static_cast<int>(m_help_pages.size()))
+    return;
+
+  const int clamped_chunk = std::clamp(chunk_idx, 0, static_cast<int>(m_help_pages[page_idx].chunks.size()) - 1);
+  if (push_history && (m_help_curr_page != page_idx || m_help_curr_chunk != clamped_chunk))
+    m_help_history.push_back({m_help_curr_page, m_help_curr_chunk});
+
+  m_help_curr_page  = page_idx;
+  m_help_curr_chunk = clamped_chunk;
+}
+int GUI::resolve_help_page_idx_(std::string_view file_part) const
+{
+  std::string name(file_part);
+  std::replace(name.begin(), name.end(), '\\', '/');
+  while (str_starts_with(name, "./"))
+    name.erase(0, 2);
+  const auto slash = name.find_last_of('/');
+  if (slash != std::string::npos)
+    name = name.substr(slash + 1);
+  name = to_lower_copy(name);
+
+  for (int i = 0; i < static_cast<int>(m_help_pages.size()); ++i)
+  {
+    const std::string page_id = to_lower_copy(m_help_pages[static_cast<size_t>(i)].id);
+    if (name == page_id || name == (page_id + ".md"))
+      return i;
+  }
+  return -1;
+}
+int GUI::find_help_chunk_for_anchor_(const int page_idx, std::string_view anchor) const
+{
+  if (page_idx < 0 || page_idx >= static_cast<int>(m_help_pages.size()))
+    return -1;
+  std::string key(anchor);
+  while (!key.empty() && key.front() == '#')
+    key.erase(key.begin());
+  key = slugify_heading(std::move(key));
+  if (key.empty())
+    return -1;
+
+  const auto& page = m_help_pages[static_cast<size_t>(page_idx)];
+  if (const auto it = page.anchor_to_chunk.find(key); it != page.anchor_to_chunk.end())
+    return it->second;
+  return -1;
+}
+void GUI::build_help_index_()
+{
+  for (Help_page& page : m_help_pages)
+  {
+    page.chunks.clear();
+    page.anchor_to_chunk.clear();
+
+    std::vector<std::string> lines;
+    {
+      std::stringstream ss(page.markdown);
+      std::string       line;
+      while (std::getline(ss, line))
+        lines.push_back(line);
+    }
+    if (lines.empty())
+      lines.push_back(page.markdown);
+
+    struct Heading_start
+    {
+      size_t      line{};
+      std::string title;
+      std::string anchor;
+      int         level{};
+    };
+    std::vector<Heading_start> starts;
+    std::vector<std::pair<size_t, size_t>> ranges;
+    bool                                 in_code = false;
+    for (size_t i = 0; i < lines.size(); ++i)
+    {
+      const std::string t = trim_copy(lines[i]);
+      if (str_starts_with(t, "```"))
+      {
+        in_code = !in_code;
+        continue;
+      }
+      if (in_code || t.empty() || t[0] != '#')
+        continue;
+
+      size_t n = 0;
+      while (n < t.size() && t[n] == '#')
+        ++n;
+      if (n < 2 || n > 3 || n >= t.size() || t[n] != ' ')
+        continue;
+
+      std::string title  = trim_copy(t.substr(n + 1));
+      std::string anchor = slugify_heading(title);
+      starts.push_back(Heading_start{i, title, anchor, static_cast<int>(n)});
+    }
+
+    auto append_chunk = [&](const size_t b, const size_t e, const std::string& title, const std::string& anchor)
+    {
+      Help_chunk ch;
+      ch.title  = title.empty() ? "Section" : title;
+      ch.anchor = anchor.empty() ? slugify_heading(ch.title) : anchor;
+      for (size_t i = b; i <= e && i < lines.size(); ++i)
+      {
+        ch.markdown += lines[i];
+        ch.markdown.push_back('\n');
+      }
+      page.chunks.push_back(std::move(ch));
+      ranges.push_back({b, e});
+    };
+
+    if (starts.empty())
+      append_chunk(0, lines.size() - 1, "Overview", "overview");
+    else
+    {
+      if (starts.front().line > 0)
+        append_chunk(0, starts.front().line - 1, "Overview", "overview");
+      for (size_t i = 0; i < starts.size(); ++i)
+      {
+        const size_t b = starts[i].line;
+        const size_t e = (i + 1 < starts.size()) ? (starts[i + 1].line - 1) : (lines.size() - 1);
+        std::string  chunk_title = starts[i].title;
+        if (starts[i].level == 3)
+          chunk_title = "  " + chunk_title;
+        append_chunk(b, e, chunk_title, starts[i].anchor);
+      }
+    }
+
+    for (int i = 0; i < static_cast<int>(page.chunks.size()); ++i)
+      if (!page.chunks[static_cast<size_t>(i)].anchor.empty())
+        page.anchor_to_chunk[page.chunks[static_cast<size_t>(i)].anchor] = i;
+
+    if (!ranges.empty())
+    {
+      size_t range_idx = 0;
+      for (size_t i = 0; i < lines.size(); ++i)
+      {
+        while (range_idx + 1 < ranges.size() && i > ranges[range_idx].second)
+          ++range_idx;
+        const int chunk_idx = static_cast<int>(range_idx);
+        const std::string t = trim_copy(lines[i]);
+        if (t.empty() || t[0] != '#')
+          continue;
+
+        size_t n = 0;
+        while (n < t.size() && t[n] == '#')
+          ++n;
+        if (n == 0 || n > 6 || n >= t.size() || t[n] != ' ')
+          continue;
+        std::string anchor = slugify_heading(t.substr(n + 1));
+        if (!anchor.empty())
+          page.anchor_to_chunk[anchor] = chunk_idx;
+      }
+    }
+  }
+}
+void GUI::ensure_help_assets_()
+{
+  if (m_help_assets_loaded)
+    return;
+  m_help_assets_loaded = true;
+
+  struct Help_doc_spec
+  {
+    const char* id;
+    const char* title;
+    const char* filename;
+  };
+  static constexpr Help_doc_spec docs[] = {
+      {"usage", "Usage", "usage.md"},
+      {"usage-settings", "Settings", "usage-settings.md"},
+      {"usage-sketch", "2D Sketching", "usage-sketch.md"},
+      {"usage-occt-view", "3D View (OCCT)", "usage-occt-view.md"},
+      {"scripting", "Scripting", "scripting.md"},
+  };
+
+  m_help_pages.clear();
+  for (const Help_doc_spec& doc : docs)
+  {
+    Help_page page;
+    page.id    = doc.id;
+    page.title = doc.title;
+    const std::string filename = doc.filename;
+    std::vector<std::string> candidates = {
+#ifdef __EMSCRIPTEN__
+        "/res/help/" + filename,
+#endif
+        "res/help/" + filename,
+        filename,
+    };
+
+    for (const std::string& p : candidates)
+    {
+      std::ifstream f(p);
+      if (!f)
+        continue;
+      page.markdown.assign(std::istreambuf_iterator<char>(f), std::istreambuf_iterator<char>());
+      break;
+    }
+
+    if (page.markdown.empty())
+      page.markdown = "Could not load " + filename + ".\n";
+    m_help_pages.push_back(std::move(page));
+  }
+
+  build_help_index_();
+  m_help_curr_page = 0;
+  m_help_curr_chunk = 0;
+  m_help_history.clear();
+  update_help_search_();
+}
+void GUI::update_help_search_()
+{
+  m_help_hits.clear();
+  const std::string q = to_lower_copy(trim_copy(m_help_query));
+  if (q.empty())
+    return;
+
+  for (int p = 0; p < static_cast<int>(m_help_pages.size()); ++p)
+  {
+    const Help_page& page = m_help_pages[static_cast<size_t>(p)];
+    for (int c = 0; c < static_cast<int>(page.chunks.size()); ++c)
+    {
+      const Help_chunk& ch = page.chunks[static_cast<size_t>(c)];
+      const std::string title_l = to_lower_copy(ch.title);
+      const std::string text_l  = to_lower_copy(ch.markdown);
+      if (title_l.find(q) != std::string::npos || text_l.find(q) != std::string::npos)
+        m_help_hits.push_back({p, c});
+    }
+  }
+}
+void GUI::help_markdown_link_(ImGui::MarkdownLinkCallbackData data)
+{
+  if (data.isImage)
+    return;
+
+  std::string url(data.link, data.linkLength);
+  url = trim_copy(url);
+  if (url.empty())
+    return;
+
+  if (str_starts_with(url, "help://"))
+    url = url.substr(7);
+
+  if (str_starts_with(url, "http://") || str_starts_with(url, "https://"))
+  {
+    open_url_(url);
+    return;
+  }
+
+  std::string file_part = url;
+  std::string anchor;
+  if (const auto hash = url.find('#'); hash != std::string::npos)
+  {
+    file_part = url.substr(0, hash);
+    anchor    = url.substr(hash + 1);
+  }
+
+  file_part = trim_copy(file_part);
+  anchor    = trim_copy(anchor);
+
+  int page_idx = m_help_curr_page;
+  if (!file_part.empty() && file_part != ".")
+  {
+    const int resolved = resolve_help_page_idx_(file_part);
+    if (resolved >= 0)
+      page_idx = resolved;
+    else
+    {
+      show_message("Help link target not found: " + url);
+      return;
+    }
+  }
+
+  if (anchor.empty())
+  {
+    select_help_page_chunk_(page_idx, 0, true);
+    return;
+  }
+
+  int chunk_idx = find_help_chunk_for_anchor_(page_idx, anchor);
+  if (chunk_idx >= 0)
+  {
+    select_help_page_chunk_(page_idx, chunk_idx, true);
+    return;
+  }
+
+  // Fallback: if only an anchor was provided, scan all pages for that anchor.
+  if (file_part.empty() || file_part == ".")
+    for (int p = 0; p < static_cast<int>(m_help_pages.size()); ++p)
+    {
+      chunk_idx = find_help_chunk_for_anchor_(p, anchor);
+      if (chunk_idx >= 0)
+      {
+        select_help_page_chunk_(p, chunk_idx, true);
+        return;
+      }
+    }
+
+  show_message("Help anchor not found: #" + anchor);
+}
+void GUI::help_markdown_link_cb_(ImGui::MarkdownLinkCallbackData data)
+{
+  if (!data.userData)
+    return;
+  static_cast<GUI*>(data.userData)->help_markdown_link_(data);
+}
+void GUI::help_dialog_()
+{
+  if (!m_show_help_dialog)
+    return;
+
+  ImGui::SetNextWindowSize(ImVec2(980.f, 680.f), ImGuiCond_FirstUseEver);
+  if (!ImGui::Begin("Usage Guide", &m_show_help_dialog, ImGuiWindowFlags_None))
+  {
+    ImGui::End();
+    return;
+  }
+
+  ensure_help_assets_();
+  if (m_help_pages.empty())
+  {
+    ImGui::TextUnformatted("No help pages loaded.");
+    ImGui::End();
+    return;
+  }
+
+  ImGui::BeginDisabled(m_help_history.empty());
+  if (ImGui::Button("Back") && !m_help_history.empty())
+  {
+    const auto [p, c] = m_help_history.back();
+    m_help_history.pop_back();
+    select_help_page_chunk_(p, c, false);
+  }
+  ImGui::EndDisabled();
+
+  ImGui::SameLine();
+  char qbuf[256];
+  std::snprintf(qbuf, sizeof(qbuf), "%s", m_help_query.c_str());
+  const bool submitted = ImGui::InputTextWithHint("##help_search", "Search headings or content...", qbuf, sizeof(qbuf),
+                                                   ImGuiInputTextFlags_EnterReturnsTrue);
+  if (std::string(qbuf) != m_help_query)
+  {
+    m_help_query = qbuf;
+    update_help_search_();
+  }
+
+  if (submitted && !m_help_hits.empty())
+    select_help_page_chunk_(m_help_hits.front().page_idx, m_help_hits.front().chunk_idx, true);
+
+  ImGui::SameLine();
+  ImGui::TextDisabled("Matches: %d", static_cast<int>(m_help_hits.size()));
+
+  if (ImGui::BeginTable("help_layout", 2, ImGuiTableFlags_SizingStretchProp))
+  {
+    ImGui::TableSetupColumn("toc", ImGuiTableColumnFlags_WidthFixed, 300.f);
+    ImGui::TableSetupColumn("body", ImGuiTableColumnFlags_WidthStretch);
+    ImGui::TableNextColumn();
+    ImGui::BeginChild("HelpToc", ImVec2(0, 0), true);
+
+    if (m_help_query.empty())
+    {
+      for (int p = 0; p < static_cast<int>(m_help_pages.size()); ++p)
+      {
+        Help_page& page   = m_help_pages[static_cast<size_t>(p)];
+        const bool opened = ImGui::TreeNodeEx(page.title.c_str(), ImGuiTreeNodeFlags_DefaultOpen);
+        if (!opened)
+          continue;
+        for (int c = 0; c < static_cast<int>(page.chunks.size()); ++c)
+        {
+          const bool selected = (p == m_help_curr_page && c == m_help_curr_chunk);
+          if (ImGui::Selectable(page.chunks[static_cast<size_t>(c)].title.c_str(), selected))
+            select_help_page_chunk_(p, c, true);
+        }
+        ImGui::TreePop();
+      }
+    }
+    else
+      for (const Help_hit& hit : m_help_hits)
+      {
+        const Help_page&  page = m_help_pages[static_cast<size_t>(hit.page_idx)];
+        const Help_chunk& ch   = page.chunks[static_cast<size_t>(hit.chunk_idx)];
+        const std::string label = page.title + " / " + ch.title;
+        const bool        selected = (hit.page_idx == m_help_curr_page && hit.chunk_idx == m_help_curr_chunk);
+        if (ImGui::Selectable(label.c_str(), selected))
+          select_help_page_chunk_(hit.page_idx, hit.chunk_idx, true);
+      }
+
+    ImGui::EndChild();
+    ImGui::TableNextColumn();
+    ImGui::BeginChild("HelpBody", ImVec2(0, 0), true, ImGuiWindowFlags_HorizontalScrollbar);
+
+    m_help_curr_page = std::clamp(m_help_curr_page, 0, static_cast<int>(m_help_pages.size()) - 1);
+    Help_page& page = m_help_pages[static_cast<size_t>(m_help_curr_page)];
+    m_help_curr_chunk = std::clamp(m_help_curr_chunk, 0, static_cast<int>(page.chunks.size()) - 1);
+    Help_chunk& chunk = page.chunks[static_cast<size_t>(m_help_curr_chunk)];
+
+    ImGui::Text("%s / %s", page.title.c_str(), chunk.title.c_str());
+    ImGui::Separator();
+
+    ImFont*               font = ImGui::GetFont();
+    ImGui::MarkdownConfig md;
+    md.linkCallback      = help_markdown_link_cb_;
+    md.imageCallback     = about_markdown_image_cb_;
+    md.tooltipCallback   = nullptr;
+    md.linkIcon          = "";
+    md.headingFormats[0] = {font, true};
+    md.headingFormats[1] = {font, true};
+    md.headingFormats[2] = {font, false};
+#ifdef IMGUI_HAS_TEXTURES
+    {
+      float const fs                = ImGui::GetFontSize();
+      md.headingFormats[0].fontSize = fs * 1.15f;
+      md.headingFormats[1].fontSize = fs * 1.05f;
+      md.headingFormats[2].fontSize = fs;
+    }
+#endif
+    md.userData = this;
+    ImGui::Markdown(chunk.markdown.c_str(), chunk.markdown.size(), md);
+    ImGui::EndChild();
+    ImGui::EndTable();
+  }
+
+  ImGui::End();
 }
 ImGui::MarkdownImageData GUI::about_markdown_image_(ImGui::MarkdownLinkCallbackData data)
 {
