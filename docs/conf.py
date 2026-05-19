@@ -31,6 +31,11 @@ def _sync_user_docs() -> None:
     if icons_src.is_dir():
         shutil.copytree(icons_src, icons_dst, dirs_exist_ok=True)
 
+    doc_gen_src = PROJECT_ROOT / "doc" / "gen"
+    doc_gen_dst = DOCS_DIR / "doc" / "gen"
+    if doc_gen_src.is_dir():
+        shutil.copytree(doc_gen_src, doc_gen_dst, dirs_exist_ok=True)
+
 
 _sync_user_docs()
 

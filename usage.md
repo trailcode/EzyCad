@@ -259,10 +259,10 @@ See the **[2D Sketching guide](usage-sketch.md)** for full documentation of sket
 
 ### 3D Modeling
 1. **Transform Operations**
-   - <img src="res/icons/Assembly_AxialMove.png" alt="Shape Move Tool" width="20" height="20"> [Move shapes (G)](#shape-move-tool-g)
-   - <img src="res/icons/Draft_Rotate.png" alt="Shape Rotate Tool" width="20" height="20"> [Rotate objects (R)](#shape-rotate-tool-r)
-   - <img src="res/icons/Part_Scale.png" alt="Shape Scale Tool" width="20" height="20"> [Scale elements (S)](#shape-scale-tool)
-   - <img src="res/icons/Draft_PolarArray.png" alt="Polar Duplicate Tool" width="20" height="20"> [Polar duplicate](#shape-polar-duplicate-tool)
+   - ![Shape Move Tool](res/icons/Assembly_AxialMove.png) [Move shapes (G)](#shape-move-tool-g)
+   - ![Shape Rotate Tool](res/icons/Draft_Rotate.png) [Rotate objects (R)](#shape-rotate-tool-r)
+   - ![Shape Scale Tool](res/icons/Part_Scale.png) [Scale elements (S)](#shape-scale-tool)
+   - ![Polar Duplicate Tool](res/icons/Draft_PolarArray.png) [Polar duplicate](#shape-polar-duplicate-tool)
 
 #### Shape Move Tool (G)
 
@@ -281,7 +281,7 @@ The shape move tool allows you to reposition selected shapes in the 3D viewer wi
 | **Reset and Cancel** | Press <kbd>Esc</kbd> to cancel and revert to the original position at any time during the move operation. |
 
 **How to Use:**
-1. <img src="res/icons/Assembly_AxialMove.png" alt="Assembly_AxialMove" width="20" height="20"> **Activate Move Tool:** Select one or more shapes and press <kbd>G</kbd> or click the icon.
+1. ![Assembly_AxialMove](res/icons/Assembly_AxialMove.png) **Activate Move Tool:** Select one or more shapes and press <kbd>G</kbd> or click the icon.
 2. **Constrain Movement (Optional):** Use the options panel to lock movement to a specific axis, or use keyboard shortcuts (e.g., <kbd>X</kbd>, <kbd>Y</kbd>, <kbd>Z</kbd>).
 
    ![Move constrain axis example](doc/gen/move_constrain_axis.png)
@@ -312,7 +312,7 @@ The shape rotate tool enables precise rotation of selected shapes around a speci
 | **Visual Feedback** | The rotation axis is displayed with color-coded indicators (Red for X, Green for Y, Blue for Z). |
 
 **How to Use:**
-1. **Activate Rotate Tool:** <img src="res/icons/Draft_Rotate.png" alt="Draft_Rotate" width="20" height="20"> Select one or more shapes and press <kbd>R</kbd> or click the icon. You can also activate the tool and select the shape(s) to rotate afterwards.
+1. **Activate Rotate Tool:** ![Draft_Rotate](res/icons/Draft_Rotate.png) Select one or more shapes and press <kbd>R</kbd> or click the icon. You can also activate the tool and select the shape(s) to rotate afterwards.
 2. **Select Rotation Axis: (Optional)**
    
    ![Rotate constrain axis example](doc/gen/rotate_constrain_axis.png)
@@ -358,7 +358,7 @@ The shape scale tool allows you to uniformly scale selected shapes around a comp
 **How to Use:**
 
 1. **Select shapes:** Select one or more shapes in the 3D view or Shape List.
-2. <img src="res/icons/Part_Scale.png" alt="Shape Scale Tool" width="20" height="20"> **Activate Scale Tool:** Click the *Shape scale* icon in the toolbar (or choose Scale from the Edit/Transform area if present).  
+2. ![Shape Scale Tool](res/icons/Part_Scale.png) **Activate Scale Tool:** Click the *Shape scale* icon in the toolbar (or choose Scale from the Edit/Transform area if present).  
 3. **Move the mouse:**  
    - The tool computes a scale center and a view-aligned plane.  
    - Moving the mouse away from or toward the center changes the scale factor and previews the scaled result.
@@ -390,7 +390,7 @@ The extrude tool allows you to create 3D solid shapes by extruding 2D sketch fac
 | **Bidirectional extrusion** | The extrusion direction is determined by which side of the face plane you move the mouse to |
 
 **How to Use:**
-1. <img src="res/icons/Design456_Extrude.png" alt="Design456_Extrude" width="20" height="20"> **Activate Extrude Tool**: Press <kbd>E</kbd> or click the icon to enter extrude mode
+1. ![Design456_Extrude](res/icons/Design456_Extrude.png) **Activate Extrude Tool**: Press <kbd>E</kbd> or click the icon to enter extrude mode
 2. **Select Face**: Click on a sketch face that you want to extrude
    - The face must be part of a closed sketch (forming a valid face)
    - The system will automatically select the face closest to the camera if multiple faces overlap
@@ -444,7 +444,7 @@ The polar duplicate tool allows you to create multiple copies of selected shapes
 | **Polar arm definition** | Define the rotation center and direction by clicking a point |
 
 **How to use:**
-1. <img src="res/icons/Draft_PolarArray.png" alt="Draft_PolarArray" width="20" height="20"> **Activate Polar Duplicate Tool**: Click the icon to enter polar duplicate mode
+1. ![Draft_PolarArray](res/icons/Draft_PolarArray.png) **Activate Polar Duplicate Tool**: Click the icon to enter polar duplicate mode
 2. **Select shape**: Select the shape that you want to duplicate
 3. **Define polar arm**: Move the mouse to see a preview line (polar arm) from the shape center to the mouse cursor. Move to the origin of the operation
 4. **Configure options** in the options panel (under **Polar duplicate**):
@@ -645,37 +645,37 @@ Contributors should follow **[ezycad_code_style.md](ezycad_code_style.md)** for 
 ## Tool Icons
 
 ### Basic Operations
-- <img src="res/icons/User.png" alt="User" width="20" height="20"> - Inspection mode
-- <img src="res/icons/Assembly_AxialMove.png" alt="Assembly_AxialMove" width="20" height="20"> - Shape move (<kbd>G</kbd>)
-- <img src="res/icons/Draft_Rotate.png" alt="Draft_Rotate" width="20" height="20"> - Shape rotate (<kbd>R</kbd>)
-- <img src="res/icons/Part_Scale.png" alt="Part_Scale" width="20" height="20"> - Shape scale (<kbd>S</kbd>)
+- ![User](res/icons/User.png) - Inspection mode
+- ![Assembly_AxialMove](res/icons/Assembly_AxialMove.png) - Shape move (<kbd>G</kbd>)
+- ![Draft_Rotate](res/icons/Draft_Rotate.png) - Shape rotate (<kbd>R</kbd>)
+- ![Part_Scale](res/icons/Part_Scale.png) - Shape scale (<kbd>S</kbd>)
 
 ### Sketch Tools
-- <img src="res/icons/Workbench_Sketcher_none.png" alt="Workbench_Sketcher_none" width="20" height="20"> - Sketch inspection mode
-- <img src="res/icons/Macro_FaceToSketch_48.png" alt="Macro_FaceToSketch_48" width="20" height="20"> - Create sketch from planar face
-- <img src="res/icons/Sketcher_MirrorSketch.png" alt="Sketcher_MirrorSketch" width="20" height="20"> - Define operation axis
-- <img src="res/icons/Sketcher_CreatePoint.png" alt="Sketcher_CreatePoint" width="20" height="20"> - Add node
-- <img src="res/icons/Sketcher_Element_Line_Edge.png" alt="Sketcher_Element_Line_Edge" width="20" height="20"> - Add line edge
-- <img src="res/icons/ls.png" alt="ls" width="20" height="20"> - Add multi-line edge
-- <img src="res/icons/Sketcher_Element_Arc_Edge.png" alt="Sketcher_Element_Arc_Edge" width="20" height="20"> - Add arc circle
-- <img src="res/icons/Sketcher_CreateSquare.png" alt="Sketcher_CreateSquare" width="20" height="20"> - Add square
-- <img src="res/icons/Sketcher_CreateRectangle.png" alt="Sketcher_CreateRectangle" width="20" height="20"> - Add rectangle from two points
-- <img src="res/icons/Sketcher_CreateRectangle_Center.png" alt="Sketcher_CreateRectangle_Center" width="20" height="20"> - Add rectangle with center point
-- <img src="res/icons/Sketcher_CreateCircle.png" alt="Sketcher_CreateCircle" width="20" height="20"> - Add circle (center and radius)
-- <img src="res/icons/Sketcher_Create3PointCircle.png" alt="Sketcher_Create3PointCircle" width="20" height="20"> - Add circle from three points *(planned feature)*
-- <img src="res/icons/Sketcher_CreateSlot.png" alt="Sketcher_CreateSlot" width="20" height="20"> - Add slot
-- <img src="res/icons/TechDraw_LengthDimension.png" alt="TechDraw_LengthDimension" width="20" height="20"> - Dimension tool
+- ![Workbench_Sketcher_none](res/icons/Workbench_Sketcher_none.png) - Sketch inspection mode
+- ![Macro_FaceToSketch_48](res/icons/Macro_FaceToSketch_48.png) - Create sketch from planar face
+- ![Sketcher_MirrorSketch](res/icons/Sketcher_MirrorSketch.png) - Define operation axis
+- ![Sketcher_CreatePoint](res/icons/Sketcher_CreatePoint.png) - Add node
+- ![Sketcher_Element_Line_Edge](res/icons/Sketcher_Element_Line_Edge.png) - Add line edge
+- ![ls](res/icons/ls.png) - Add multi-line edge
+- ![Sketcher_Element_Arc_Edge](res/icons/Sketcher_Element_Arc_Edge.png) - Add arc circle
+- ![Sketcher_CreateSquare](res/icons/Sketcher_CreateSquare.png) - Add square
+- ![Sketcher_CreateRectangle](res/icons/Sketcher_CreateRectangle.png) - Add rectangle from two points
+- ![Sketcher_CreateRectangle_Center](res/icons/Sketcher_CreateRectangle_Center.png) - Add rectangle with center point
+- ![Sketcher_CreateCircle](res/icons/Sketcher_CreateCircle.png) - Add circle (center and radius)
+- ![Sketcher_Create3PointCircle](res/icons/Sketcher_Create3PointCircle.png) - Add circle from three points *(planned feature)*
+- ![Sketcher_CreateSlot](res/icons/Sketcher_CreateSlot.png) - Add slot
+- ![TechDraw_LengthDimension](res/icons/TechDraw_LengthDimension.png) - Dimension tool
 
 ### 3D Operations
-- <img src="res/icons/Design456_Extrude.png" alt="Design456_Extrude" width="20" height="20"> - Extrude sketch face (<kbd>E</kbd>)
-- <img src="res/icons/PartDesign_Chamfer.png" alt="PartDesign_Chamfer" width="20" height="20"> - Chamfer
-- <img src="res/icons/PartDesign_Fillet.png" alt="PartDesign_Fillet" width="20" height="20"> - Fillet
-- <img src="res/icons/Draft_PolarArray.png" alt="Draft_PolarArray" width="20" height="20"> - Shape polar duplicate
+- ![Design456_Extrude](res/icons/Design456_Extrude.png) - Extrude sketch face (<kbd>E</kbd>)
+- ![PartDesign_Chamfer](res/icons/PartDesign_Chamfer.png) - Chamfer
+- ![PartDesign_Fillet](res/icons/PartDesign_Fillet.png) - Fillet
+- ![Draft_PolarArray](res/icons/Draft_PolarArray.png) - Shape polar duplicate
 
 ### Boolean Operations
-- <img src="res/icons/Part_Cut.png" alt="Part_Cut" width="20" height="20"> - Shape cut
-- <img src="res/icons/Part_Fuse.png" alt="Part_Fuse" width="20" height="20"> - Shape fuse
-- <img src="res/icons/Part_Common.png" alt="Part_Common" width="20" height="20"> - Shape common
+- ![Part_Cut](res/icons/Part_Cut.png) - Shape cut
+- ![Part_Fuse](res/icons/Part_Fuse.png) - Shape fuse
+- ![Part_Common](res/icons/Part_Common.png) - Shape common
 
 ---
 

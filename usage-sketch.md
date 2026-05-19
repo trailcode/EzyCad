@@ -20,18 +20,18 @@ This guide covers all 2D sketching tools and operations in EzyCad. For the main 
 
 ## 2D Sketching
 1. **Basic Tools**
-   - <img src="res/icons/Sketcher_Element_Line_Edge.png" alt="Line Edge Tool" width="20" height="20"> [Create line edges](#line-edge-creation-tools)
-   - <img src="res/icons/ls.png" alt="Multi-line Edge Tool" width="20" height="20"> [Draw multi-line edges](#multi-line-edge-tool)
-   - <img src="res/icons/Sketcher_Element_Arc_Edge.png" alt="Arc Segment Tool" width="20" height="20"> [Add arc segments](#arc-segment-creation-tool)
-   - <img src="res/icons/Sketcher_CreateCircle.png" alt="Circle Tool" width="20" height="20"> [Create circles](#circle-creation-tools)
-   - <img src="res/icons/Sketcher_CreateRectangle.png" alt="Rectangle Tool" width="20" height="20"> <img src="res/icons/Sketcher_CreateSquare.png" alt="Square Tool" width="20" height="20"> [Draw rectangles and squares](#rectangle-and-square-creation-tools)
-   - <img src="res/icons/Sketcher_CreateSlot.png" alt="Slot Tool" width="20" height="20"> [Add slots](#slot-creation-tool)
-   - <img src="res/icons/TechDraw_LengthDimension.png" alt="Dimension Tool" width="20" height="20"> [Dimension tool](#dimension-tool)
-   - <img src="res/icons/Sketcher_CreatePoint.png" alt="Add Node Tool" width="20" height="20"> [Add nodes](#add-node-tool)
+   - ![Line Edge Tool](res/icons/Sketcher_Element_Line_Edge.png) [Create line edges](#line-edge-creation-tools)
+   - ![Multi-line Edge Tool](res/icons/ls.png) [Draw multi-line edges](#multi-line-edge-tool)
+   - ![Arc Segment Tool](res/icons/Sketcher_Element_Arc_Edge.png) [Add arc segments](#arc-segment-creation-tool)
+   - ![Circle Tool](res/icons/Sketcher_CreateCircle.png) [Create circles](#circle-creation-tools)
+   - ![Rectangle Tool](res/icons/Sketcher_CreateRectangle.png) ![Square Tool](res/icons/Sketcher_CreateSquare.png) [Draw rectangles and squares](#rectangle-and-square-creation-tools)
+   - ![Slot Tool](res/icons/Sketcher_CreateSlot.png) [Add slots](#slot-creation-tool)
+   - ![Dimension Tool](res/icons/TechDraw_LengthDimension.png) [Dimension tool](#dimension-tool)
+   - ![Add Node Tool](res/icons/Sketcher_CreatePoint.png) [Add nodes](#add-node-tool)
 
 2. **Sketch Operations**
-   - <img src="res/icons/Sketcher_MirrorSketch.png" alt="Operation Axis Tool" width="20" height="20"> [Define operation axis](#operation-axis-tool) - Mirror sketches, revolve edges or faces.
-   - <img src="res/icons/Macro_FaceToSketch_48.png" alt="Create Sketch from Planar Face Tool" width="20" height="20"> [Create sketch from planar face](#create-sketch-from-planar-face-tool)
+   - ![Operation Axis Tool](res/icons/Sketcher_MirrorSketch.png) [Define operation axis](#operation-axis-tool) - Mirror sketches, revolve edges or faces.
+   - ![Create Sketch from Planar Face Tool](res/icons/Macro_FaceToSketch_48.png) [Create sketch from planar face](#create-sketch-from-planar-face-tool)
 
 ### Line Edge Creation Tools
 ![Line Edge Tool](res/icons/Sketcher_Element_Line_Edge.png)
@@ -54,7 +54,7 @@ The single line edge tool allows you to create straight line segments between tw
 | **Dimension annotations** | Optional length dimensions can be displayed |
 
 **How to use:**
-1. <img src="res/icons/Sketcher_Element_Line_Edge.png" alt="Line Edge Tool" width="20" height="20"> Select the **Line Edge** tool from the toolbar
+1. ![Line Edge Tool](res/icons/Sketcher_Element_Line_Edge.png) Select the **Line Edge** tool from the toolbar
 2. Click to set the start point of the line
 3. Move the mouse to see a preview of the line
 4. Click to set the end point, or use input dialogs for precise control:
@@ -107,7 +107,7 @@ The multi-line edge tool allows you to create multiple connected line segments i
 | **Flexible finalization** | Continue adding edges until you right-click to finalize the entire sequence |
 
 **How to use:**
-1. <img src="res/icons/ls.png" alt="ls" width="20" height="20"> Select the **Multi-line Edge** tool from the toolbar
+1. ![ls](res/icons/ls.png) Select the **Multi-line Edge** tool from the toolbar
 2. Click to set the first point (start of the first edge)
 3. Move the mouse to see a preview of the first edge
 4. Click to set the second point (end of first edge, start of second edge), or use input for precise control:
@@ -167,7 +167,7 @@ The center-radius circle tool allows you to create circles by defining a center 
 | **Snap support** | Automatically snaps to existing nodes and geometry |
 
 **How to use:**
-1. <img src="res/icons/Sketcher_CreateCircle.png" alt="Circle Tool" width="20" height="20"> Select the **Circle** tool from the toolbar
+1. ![Circle Tool](res/icons/Sketcher_CreateCircle.png) Select the **Circle** tool from the toolbar
 2. Click to set the center point of the circle
 3. Move the mouse to see a preview of the circle
 4. Click to set the radius point, or press <kbd>Tab</kbd> to enter an exact radius value
@@ -200,7 +200,7 @@ The three-point circle tool is planned for future development. This feature woul
 | **Automatic center and radius calculation** | The system would compute the center and radius from the three points |
 | **Geometric validation** | Ensure the three points are not collinear |
 
-**Note**: <img src="res/icons/Sketcher_Create3PointCircle.png" alt="Sketcher_Create3PointCircle" width="20" height="20"> The toolbar icon exists but the functionality is not yet implemented.
+**Note**: ![Sketcher_Create3PointCircle](res/icons/Sketcher_Create3PointCircle.png) The toolbar icon exists but the functionality is not yet implemented.
 
 ### Circle Creation Workflow
 
@@ -247,7 +247,7 @@ The arc segment tool allows you to create circular arc edges by defining three p
 | **Unique points** | All three points must be different (cannot be coincident) |
 
 **How to use:**
-1. <img src="res/icons/Sketcher_Element_Arc_Edge.png" alt="Sketcher_Element_Arc_Edge" width="20" height="20"> Select the **Arc Segment** tool from the toolbar
+1. ![Sketcher_Element_Arc_Edge](res/icons/Sketcher_Element_Arc_Edge.png) Select the **Arc Segment** tool from the toolbar
 2. Click to set the start point of the arc (first point)
 3. Click to set a point on the arc between start and end (middle point)
 4. Move the mouse to see a preview of the arc
@@ -310,7 +310,7 @@ The square tool allows you to create perfect squares by defining a center point 
 | **Snap support** | Automatically snaps to existing nodes and geometry |
 
 **How to use:**
-1. <img src="res/icons/Sketcher_CreateSquare.png" alt="Sketcher_CreateSquare" width="20" height="20"> Select the **Square** tool from the toolbar
+1. ![Sketcher_CreateSquare](res/icons/Sketcher_CreateSquare.png) Select the **Square** tool from the toolbar
 2. Click to set the center point of the square
 3. Move the mouse to see a preview of the square
 4. Click to set the midpoint of one edge (this defines both the size and orientation), or press <kbd>Tab</kbd> to enter an exact side length value
@@ -347,7 +347,7 @@ The rectangle tool allows you to create rectangles by defining two opposite corn
 | **Automatic corner calculation** | The system automatically calculates the other two corners |
 
 **How to use:**
-1. <img src="res/icons/Sketcher_CreateRectangle.png" alt="Sketcher_CreateRectangle" width="20" height="20"> Select the **Rectangle** tool from the toolbar
+1. ![Sketcher_CreateRectangle](res/icons/Sketcher_CreateRectangle.png) Select the **Rectangle** tool from the toolbar
 2. Click to set the first corner point
 3. Move the mouse to see a preview of the rectangle
 4. Click to set the opposite corner point, or press <kbd>Tab</kbd> to enter exact distance values
@@ -385,7 +385,7 @@ The rectangle with center point tool allows you to create rectangles by defining
 | **Snap support** | Automatically snaps to existing nodes and geometry |
 
 **How to use:**
-1. <img src="res/icons/Sketcher_CreateRectangle_Center.png" alt="Sketcher_CreateRectangle_Center" width="20" height="20"> Select the **Rectangle with Center Point** tool from the toolbar
+1. ![Sketcher_CreateRectangle_Center](res/icons/Sketcher_CreateRectangle_Center.png) Select the **Rectangle with Center Point** tool from the toolbar
 2. Click to set the center point of the rectangle
 3. Move the mouse to see a preview of the rectangle
 4. Click to set a corner point (defines both size and orientation), or press <kbd>Tab</kbd> to enter exact distance values
@@ -433,7 +433,7 @@ The slot tool allows you to create an oblong or oval-shaped slot with rounded en
 | **Snap support** | Automatically snaps to existing nodes and geometry |
 
 **How to use:**
-1. <img src="res/icons/Sketcher_CreateSlot.png" alt="Sketcher_CreateSlot" width="20" height="20"> Select the **Slot** tool from the toolbar
+1. ![Sketcher_CreateSlot](res/icons/Sketcher_CreateSlot.png) Select the **Slot** tool from the toolbar
 2. Click to set the center point of the first arc (start of slot)
 3. Move the mouse to see a preview of the first edge
 4. Click to set the center point of the second arc (end of slot)
@@ -505,7 +505,7 @@ The operation axis tool allows you to define a reference line for mirroring and 
 | **Revolve operations** | Use the defined axis to revolve selected edges or faces |
 
 **How to Use:**
-1. <img src="res/icons/Sketcher_MirrorSketch.png" alt="Sketcher_MirrorSketch" width="20" height="20"> Select the **Operation Axis** tool from the toolbar
+1. ![Sketcher_MirrorSketch](res/icons/Sketcher_MirrorSketch.png) Select the **Operation Axis** tool from the toolbar
 2. Click to set the start point of the axis line
 3. Move the mouse to see a preview of the axis line
 4. Click to set the end point to finalize the axis
@@ -554,7 +554,7 @@ Edge dimension tool creates/removes **length dimensions between two sketch nodes
 | **Helpful for verification** | Quickly verify that your sketch has the correct dimensions |
 
 **How to Use:**
-1. <img src="res/icons/TechDraw_LengthDimension.png" alt="TechDraw_LengthDimension" width="20" height="20"> Select the **Edge Dimensions** tool from the toolbar
+1. ![TechDraw_LengthDimension](res/icons/TechDraw_LengthDimension.png) Select the **Edge Dimensions** tool from the toolbar
 2. Use either input style:
    - **Edge click:** Click a straight edge to toggle the dimension between its endpoints
    - **Node pair:** Click node A, then click node B to toggle the dimension between A and B
@@ -613,7 +613,7 @@ Nodes you place with **Add node** are treated as **user-placed** points. When th
 
 #### How to use
 
-1. Enter sketch mode and select **Add node** <img src="res/icons/Sketcher_CreatePoint.png" alt="Add Node Tool" width="20" height="20"> on the toolbar.
+1. Enter sketch mode and select **Add node** ![Add Node Tool](res/icons/Sketcher_CreatePoint.png) on the toolbar.
 2. **Direct node:** Click where you are **not** snapping to an existing vertex (empty sketch area, edge interior, etc.). The node is created **at that position**; if the click snaps to the interior of a **straight** edge, that edge splits.
 3. **From an existing node (line-edge–like step):** Click an **existing** vertex first so the first click **snaps** to it. A rubber-band preview runs from that anchor—use <kbd>Tab</kbd> / <kbd>Shift</kbd>+<kbd>Tab</kbd> for length/angle if you want—then click (or confirm) to place the **second** point. Only a **new node** is committed; **no** new edge is stored.
 4. Repeat as needed for more nodes.
@@ -656,7 +656,7 @@ The create sketch from planar face tool allows you to extract the boundary of a 
 | **Error handling** | Displays an error message if a non-planar face is selected |
 
 **How to Use:**
-1. **Activate Tool**: <img src="res/icons/Macro_FaceToSketch_48.png" alt="Macro_FaceToSketch_48" width="20" height="20"> Click the **Create Sketch from Planar Face** tool from the toolbar
+1. **Activate Tool**: ![Macro_FaceToSketch_48](res/icons/Macro_FaceToSketch_48.png) Click the **Create Sketch from Planar Face** tool from the toolbar
 2. **Select Face**: Click on a planar face from an existing 3D shape
    - The face must be planar (flat) - curved surfaces like cylinders, spheres, or complex surfaces will show an error
    - The system will automatically extract the outer boundary of the face
