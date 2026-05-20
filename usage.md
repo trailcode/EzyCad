@@ -630,7 +630,7 @@ More context on the 3D viewer stack: **[3D viewer (Open CASCADE)](usage-occt-vie
 
 ### Code quality and ongoing work
 
-Contributors should follow **[ezycad_code_style.md](ezycad_code_style.md)** for C++ in `src/`. Sketching, UI, and build paths are still being refined; prefer small, focused changes and match existing patterns in the files you touch.
+Contributors should follow **[ezycad_code_style.md](ezycad_code_style.md)** for C++ in `src/` and **[ezycad_doc_style.md](ezycad_doc_style.md)** when editing these guides. Sketching, UI, and build paths are still being refined; prefer small, focused changes and match existing patterns in the files you touch.
 
 ### Community
 - [User forums](https://github.com/trailcode/EzyCad/discussions)

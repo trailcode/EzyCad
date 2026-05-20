@@ -88,7 +88,7 @@ Ensure the following dependencies are installed:
 ### We need development help
 EzyCad is maintained by a small team and we would love more contributors. If you can help with features, bug fixes, documentation, or testing - please jump in. Every contribution helps move the project forward.
 
-**Code style:** When contributing, please follow the project's style guide: [ezycad_code_style.md](ezycad_code_style.md). Both human developers and AI coding agents (e.g. Cursor, GitHub Copilot, ChatGPT) should adhere to it so that patches stay consistent and reviewable. Optional assistant-oriented snippets live under [agents/](agents/) (the repo does not commit `.cursor/`).
+**Style guides:** [ezycad_code_style.md](ezycad_code_style.md) for C++ in `src/`; [ezycad_doc_style.md](ezycad_doc_style.md) for user guides and [Read the Docs](https://ezycad.readthedocs.io/). Both human developers and AI coding agents should follow the relevant guide. Optional assistant-oriented snippets live under [agents/](agents/) (the repo does not commit `.cursor/`).
 
 ## In-tree third-party libraries
 

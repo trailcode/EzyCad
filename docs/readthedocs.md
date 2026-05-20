@@ -1,5 +1,7 @@
 # Read the Docs maintenance
 
+Author conventions (Markdown, images, links): **[ezycad_doc_style.md](../ezycad_doc_style.md)**.
+
 Published site: **https://ezycad.readthedocs.io/**
 
 ## Repository automation

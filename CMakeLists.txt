@@ -594,6 +594,7 @@ if(MSVC)
     set(DOC_FILES
         ${CMAKE_CURRENT_SOURCE_DIR}/README.md
         ${CMAKE_CURRENT_SOURCE_DIR}/ezycad_code_style.md
+        ${CMAKE_CURRENT_SOURCE_DIR}/ezycad_doc_style.md
         ${CMAKE_CURRENT_SOURCE_DIR}/CHANGELOG.md
         ${CMAKE_CURRENT_SOURCE_DIR}/usage.md
         ${CMAKE_CURRENT_SOURCE_DIR}/usage-settings.md
