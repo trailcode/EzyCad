@@ -1,5 +1,7 @@
 # EzyCad
 
+![EzyCad splash screen](res/AI-gen-splashscreen_05_01_2026_512.png)
+
 EzyCad (Easy CAD) is a CAD application for hobbyist machinists to design and edit 2D and 3D models for machining projects. It supports creating precise parts with tools for sketching, extruding, and applying geometric operations, using OpenGL, ImGui, and Open CASCADE Technology (OCCT). Export models to formats like STEP or STL for CNC machines or 3D printers, or [run EzyCad in your browser (WebAssembly)](https://trailcode.github.io/EzyCad/EzyCad.html).
 
 ## Features
@@ -88,7 +90,7 @@ Ensure the following dependencies are installed:
 ### We need development help
 EzyCad is maintained by a small team and we would love more contributors. If you can help with features, bug fixes, documentation, or testing - please jump in. Every contribution helps move the project forward.
 
-**Code style:** When contributing, please follow the project's style guide: [ezycad_code_style.md](ezycad_code_style.md). Both human developers and AI coding agents (e.g. Cursor, GitHub Copilot, ChatGPT) should adhere to it so that patches stay consistent and reviewable. Optional assistant-oriented snippets live under [agents/](agents/) (the repo does not commit `.cursor/`).
+**Style guides:** [ezycad_code_style.md](ezycad_code_style.md) for C++ in `src/`; [ezycad_doc_style.md](ezycad_doc_style.md) for user guides and [Read the Docs](https://ezycad.readthedocs.io/). Both human developers and AI coding agents should follow the relevant guide. Optional assistant-oriented snippets live under [agents/](agents/) (the repo does not commit `.cursor/`).
 
 ## In-tree third-party libraries
 

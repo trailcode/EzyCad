@@ -33,6 +33,10 @@ Use this style when editing or adding C/C++ code in the EzyCad project (files un
 - **Short control flow**: When the body is a single statement you may omit braces; **`AllowShortIfStatementsOnASingleLine: false`** means clang-format will not merge an `if` into one physical line (typically the condition on one line and the statement on the next). Use braces for multi-line or nested bodies. **`for`/`while`** (and other constructs not listed above) follow **`BasedOnStyle: LLVM`** unless overridden in `.clang-format`.
 - Use **`// clang-format off`** / **`// clang-format on`** only where layout must be preserved (e.g. macro-like blocks, tables). Prefer running clang-format; it is the source of truth for formatting.
 
+## Documentation
+
+User-facing Markdown (`usage.md`, `usage-*.md`, `scripting.md`, Read the Docs, images, in-app help URLs) is covered in **[ezycad_doc_style.md](ezycad_doc_style.md)**. This file is for **`src/` C++ only**.
+
 ## Versioning and releases
 
 - **Product version** lives in **`src/version.h`**: `EZYCAD_VERSION_MAJOR`, `EZYCAD_VERSION_MINOR`, `EZYCAD_VERSION_PATCH`, and `EZYCAD_VERSION_STRING`. Follow [Semantic Versioning](https://semver.org/spec/v2.0.0.html) (MAJOR.MINOR.PATCH). The header is hand-maintained so it stays valid regardless of build system (CMake or otherwise).

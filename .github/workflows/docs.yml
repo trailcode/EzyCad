@@ -7,7 +7,7 @@ on:
     paths:
       - ".github/workflows/docs.yml"
       - ".readthedocs.yaml"
-      - "docs/**"
+      - "doc/**"
       - "usage.md"
       - "usage-*.md"
       - "scripting.md"
@@ -18,7 +18,7 @@ on:
     paths:
       - ".github/workflows/docs.yml"
       - ".readthedocs.yaml"
-      - "docs/**"
+      - "doc/**"
       - "usage.md"
       - "usage-*.md"
       - "scripting.md"
@@ -36,7 +36,7 @@ jobs:
           python-version: "3.13"
 
       - name: Install doc dependencies
-        run: pip install -r docs/requirements.txt
+        run: pip install -r doc/requirements.txt
 
       - name: Build HTML (warnings are errors; matches Read the Docs)
-        run: sphinx-build -b html -W --keep-going docs docs/_build
+        run: sphinx-build -b html -W --keep-going doc doc/_build

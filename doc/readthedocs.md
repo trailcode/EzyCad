@@ -1,5 +1,7 @@
 # Read the Docs maintenance
 
+Author conventions (Markdown, images, links): **[ezycad_doc_style.md](../ezycad_doc_style.md)**.
+
 Published site: **https://ezycad.readthedocs.io/**
 
 ## Repository automation
@@ -9,7 +11,7 @@ Published site: **https://ezycad.readthedocs.io/**
 | [`.readthedocs.yaml`](../.readthedocs.yaml) | RTD build config (Sphinx, Python 3.13). |
 | [`.github/workflows/docs.yml`](../.github/workflows/docs.yml) | GitHub Actions: builds docs on push/PR when guides change. |
 
-User guides stay at the **repository root** (`usage.md`, etc.). `docs/conf.py` copies them plus `res/icons/` and `doc/gen/` into `docs/` at build time.
+User guides stay at the **repository root** (`usage.md`, etc.). `doc/conf.py` copies them plus `res/icons/` into `doc/` at build time. Screenshots in guides use paths under `doc/gen/` (committed in this folder).
 
 Use Markdown image syntax `![alt](path)` for icons and screenshots. Raw HTML `<img src="...">` is not rewritten by Sphinx and will break on Read the Docs.
 
@@ -24,8 +26,8 @@ Configure at [EzyCad admin](https://app.readthedocs.org/dashboard/ezycad/):
 ## Local build
 
 ```bash
-pip install -r docs/requirements.txt
-sphinx-build -b html docs docs/_build
+pip install -r doc/requirements.txt
+sphinx-build -b html -W doc doc/_build
 ```
 
-Open `docs/_build/index.html`.
+Open `doc/_build/index.html`.

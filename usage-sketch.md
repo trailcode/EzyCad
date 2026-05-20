@@ -15,6 +15,7 @@ This guide covers all 2D sketching tools and operations in EzyCad. For the main 
 10. [Dimension Tool](#dimension-tool)
 11. [Add Node Tool](#add-node-tool)
 12. [Create Sketch from Planar Face Tool](#create-sketch-from-planar-face-tool)
+13. [Image underlay](#image-underlay)
 
 ---
 
@@ -707,3 +708,38 @@ The create sketch from planar face tool allows you to extract the boundary of a 
 | **Sketch plane** | Determined from the face's underlying surface geometry |
 | **Supported faces** | Only `Geom_Plane` surfaces - other surface types are rejected |
 | **Sketch list** | Created sketch is added and can be managed like any other sketch |
+
+### Image underlay
+
+Import a reference image (PNG, JPEG, or BMP) behind a sketch for tracing or alignment. Open **Sketch properties** from the [Sketch List](usage.md#sketch-list) (**`[P]`** on the sketch row) or use the underlay controls there after import.
+
+**Sketch List shortcuts**
+
+| Control | Action |
+| --- | --- |
+| Underlay checkbox | Show or hide the underlay for that sketch (only when an image is loaded) |
+| **`[P]`** | Open **Sketch properties** for import, calibration, and transform |
+
+**Sketch properties — Image underlay**
+
+| Control | Action |
+| --- | --- |
+| **Import image...** | Load PNG/JPEG/BMP into the current sketch |
+| **Remove underlay** | Clear the image from the sketch |
+| **White paper -> transparent** | Treat bright pixels as clear (typical for scanned line drawings; turn off for photos) |
+| **Tint visible lines** / **Line color** | Recolor non-transparent pixels after the white key (default yellow works on dark backgrounds) |
+| **Opacity** | Overall underlay transparency (**0**–**1**) |
+
+**Calibrate from sketch edges** (sketch must be **current** in the Sketch List):
+
+| Button | Action |
+| --- | --- |
+| **Set X from edge...** | Two clicks along bitmap width (+U), then enter the real drawing distance (same units as sketch dimensions) |
+| **Set Y from edge...** | Two clicks along bitmap height (+V), then enter the drawing distance for Y |
+| **Define underlay datum...** | Two picks on the sketch plane: corner **(0,0)**, then direction along +U (keeps current half width and height) |
+
+After edge calibration, bitmap axes may be non-orthogonal (shear). The **Transform** sliders (**Center X/Y**, **Half width/height**, **Rotation**) then stay disabled so they do not overwrite that affine fit; use calibration picks or adjust before shear is introduced.
+
+**Transform** (orthogonal underlay only): sliders and **Rotation value** adjust center, half extents, and rotation on the sketch plane; changes apply in real time and support undo.
+
+Default underlay highlight tint for new imports: **Settings -> Sketch -> Underlay highlight color** (see [usage-settings.md](usage-settings.md#settings-pane)).
