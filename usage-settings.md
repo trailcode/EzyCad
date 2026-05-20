@@ -40,7 +40,7 @@ Open **View -> Settings**. The window title is **Settings**.
 
 Between those, the pane has **six** collapsible sections. Expand a section to see its controls; when collapsed, only the section title bar is visible.
 
-1. **3D view navigation** — **View rotation step** (degrees per key press for **NumPad 8**/**2**/**4**/**6** orbit and **Shift+NumPad 4**/**6** roll; default **45**). **Zoom scroll scale** (multiplier for wheel and **+**/**-** zoom; default **4**). Hold **Shift** while zooming for a Blender-style finer step (multiply by **0.1**). Numpad shortcuts are documented with **Num Lock off**; with **Num Lock on**, use main-row alternatives in [usage.md -> View navigation](usage.md#view-navigation). Stored as **`gui.view_roll_step_deg`** and **`gui.view_zoom_scroll_scale`**. See **[usage-occt-view.md](usage-occt-view.md)**.
+1. **3D view navigation** — **View rotation step** (degrees per key press for **NumPad 8**/**2**/**4**/**6** orbit and **Shift+NumPad 4**/**6** roll; default **45**; **`?`** opens [view roll](https://ezycad.readthedocs.io/en/latest/usage.html#view-roll) on Read the Docs). **Zoom scroll scale** (multiplier for wheel and **+**/**-** zoom; default **4**). Hold **Shift** while zooming for a Blender-style finer step (multiply by **0.1**). Numpad shortcuts are documented with **Num Lock off**; with **Num Lock on**, use main-row alternatives in [usage.md -> View navigation](usage.md#view-navigation). Stored as **`gui.view_roll_step_deg`** and **`gui.view_zoom_scroll_scale`**. See **[usage-occt-view.md](usage-occt-view.md)**.
 
 2. **UI corner rounding** — Sliders **0** to **16** for **Windows, frames, popups**; **Scrollbars and sliders** (has `(?)`); **Tabs**.
 

@@ -78,12 +78,20 @@ For **View** (Settings, pane toggles, consoles), saving preferences, and the **S
 
 The **Sketch List** pane lists all 2D sketches in the current document. Open it from **View -> Sketch List**.
 
-For each sketch you can:
+Each row is laid out left to right:
 
-- **Set current** - Use the radio button (circle) to make this sketch the current one. The current sketch is used for editing and for operations such as [extrude](#extrude-sketch-face-tool-e).
-- **Rename** - Click the name field and type to change the sketch's name.
-- **Visibility** - Use the checkbox to show or hide the sketch in the 3D view.
-- **Delete** - Right-click the sketch name and choose **Delete** to remove the sketch from the document.
+- **Expand** - Click **`>`** / **`v`** to show or hide details for that sketch (tooltip *Expand details* / *Collapse details*).
+- **Set current** - Radio button (circle). The current sketch is used for editing and for operations such as [extrude](#extrude-sketch-face-tool-e).
+- **Rename** - Click the name field and type a new name.
+- **Visibility** - Checkbox to show or hide the sketch in the 3D view.
+- **Underlay** - Checkbox to show or hide an [image underlay](usage-sketch.md#image-underlay) when one is imported (disabled until an underlay exists; tooltip *Display underlay*).
+- **Sketch properties** - **`[P]`** opens the **Sketch properties** window (import/remove underlay, calibration, transform). See [Image underlay](usage-sketch.md#image-underlay).
+- **Delete** - Right-click the name and choose **Delete**.
+
+When expanded, the row shows:
+
+- **Dimensions** - Table of length dimensions: visibility, editable name, and **offset** (label distance from the edge; **0** = automatic).
+- **Nodes**, **Edges**, **Faces** - Collapsible lists of element labels for inspection (read-only names).
 
 The window can be closed with its close button; use **View -> Sketch List** again to show it.
 
@@ -621,12 +629,14 @@ More context on the 3D viewer stack: **[3D viewer (Open CASCADE)](usage-occt-vie
 ## Support
 
 ### Documentation
-- [This usage guide](#ezycad-usage-guide)
+- **Online** - [ezycad.readthedocs.io](https://ezycad.readthedocs.io/en/latest/usage.html) (built from this repository; same content as the guides below). Open from **Help -> Usage Guide**.
+- [This usage guide](#ezycad-usage-guide) (source: [usage.md](usage.md))
 - [Settings](usage-settings.md) (Settings pane, View menu, JSON settings file, startup project)
 - [3D viewer (Open CASCADE)](usage-occt-view.md)
-- [2D Sketching](usage-sketch.md) (including [add node](usage-sketch.md#add-node-tool))
+- [2D Sketching](usage-sketch.md) (including [add node](usage-sketch.md#add-node-tool) and [image underlay](usage-sketch.md#image-underlay))
 - [Scripting (Lua / Python)](scripting.md)
-- Hosted docs and video tutorials are not published yet; this repository's markdown guides are the reference for now.
+
+The markdown files in the repository remain the canonical source; Read the Docs publishes them on each update. Video tutorials are not published yet.
 
 ### Code quality and ongoing work
 
