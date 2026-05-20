@@ -1,5 +1,7 @@
 # EzyCad
 
+![EzyCad splash screen](res/AI-gen-splashscreen_05_01_2026_512.png)
+
 EzyCad (Easy CAD) is a CAD application for hobbyist machinists to design and edit 2D and 3D models for machining projects. It supports creating precise parts with tools for sketching, extruding, and applying geometric operations, using OpenGL, ImGui, and Open CASCADE Technology (OCCT). Export models to formats like STEP or STL for CNC machines or 3D printers, or [run EzyCad in your browser (WebAssembly)](https://trailcode.github.io/EzyCad/EzyCad.html).
 
 ## Features

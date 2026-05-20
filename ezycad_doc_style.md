@@ -2,7 +2,7 @@
 
 Use this guide when editing **user-facing Markdown** at the repository root (`usage.md`, `usage-*.md`, `scripting.md`, `README.md`, `CHANGELOG.md`). For C++ in `src/`, see **[ezycad_code_style.md](ezycad_code_style.md)**.
 
-Published HTML: **[https://ezycad.readthedocs.io/](https://ezycad.readthedocs.io/)** (`/en/latest/` tracks `main`). Build plumbing is described in **[docs/readthedocs.md](docs/readthedocs.md)** (Read the Docs dashboard, local `sphinx-build`).
+Published HTML: **[https://ezycad.readthedocs.io/](https://ezycad.readthedocs.io/)** (`/en/latest/` tracks `main`). Build plumbing is described in **[doc/readthedocs.md](doc/readthedocs.md)** (Read the Docs dashboard, local `sphinx-build`).
 
 ## Canonical files (edit these)
 
@@ -16,7 +16,7 @@ Published HTML: **[https://ezycad.readthedocs.io/](https://ezycad.readthedocs.io
 | `README.md` | Project overview |
 | `CHANGELOG.md` | Release notes ([Keep a Changelog](https://keepachangelog.com/)) |
 
-Do **not** edit generated copies under `docs/` for content. At build time, `docs/conf.py` syncs root guides plus `res/icons/` and `doc/gen/` into `docs/` (see `docs/.gitignore`).
+Do **not** edit generated copies under `doc/` for content. At build time, `doc/conf.py` syncs root guides plus `res/icons/` into `doc/` (see `doc/.gitignore`). Screenshots stay in `doc/gen/`.
 
 ## Writing conventions
 
@@ -38,7 +38,7 @@ Rules:
 
 - Use **Markdown image syntax only**. Do **not** use raw HTML `<img src="...">` — Sphinx leaves those paths unchanged and icons **break** on Read the Docs.
 - Commit new PNGs under `res/icons/` or `doc/gen/` with the guide change.
-- After image or guide edits, run `sphinx-build -b html -W docs docs/_build` locally, or confirm the Read the Docs build is green (`fail_on_warning: true` in [`.readthedocs.yaml`](.readthedocs.yaml)).
+- After image or guide edits, run `sphinx-build -b html -W doc doc/_build` locally, or confirm the Read the Docs build is green (`fail_on_warning: true` in [`.readthedocs.yaml`](.readthedocs.yaml)).
 
 ## Links from the application
 
@@ -51,16 +51,16 @@ Rules:
 | Item | Location |
 |------|----------|
 | Read the Docs config | [`.readthedocs.yaml`](.readthedocs.yaml) |
-| Sphinx | [`docs/conf.py`](docs/conf.py), [`docs/index.rst`](docs/index.rst) |
-| Python deps | [`docs/requirements.txt`](docs/requirements.txt) |
+| Sphinx | [`doc/conf.py`](doc/conf.py), [`doc/index.rst`](doc/index.rst) |
+| Python deps | [`doc/requirements.txt`](doc/requirements.txt) |
 | GitHub Actions | [`.github/workflows/docs.yml`](.github/workflows/docs.yml) |
 
 ```bash
-pip install -r docs/requirements.txt
-sphinx-build -b html -W docs docs/_build
+pip install -r doc/requirements.txt
+sphinx-build -b html -W doc doc/_build
 ```
 
 ## Related docs
 
 - **[ezycad_code_style.md](ezycad_code_style.md)** — C++ style, versioning (`version.h`, `CHANGELOG.md`).
-- **[docs/readthedocs.md](docs/readthedocs.md)** — RTD integrations, webhooks, PR previews.
+- **[doc/readthedocs.md](doc/readthedocs.md)** — RTD integrations, webhooks, PR previews.
