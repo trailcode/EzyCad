@@ -26,14 +26,8 @@ def _sync_user_docs() -> None:
         if src.is_file():
             shutil.copy2(src, DOCS_DIR / name)
 
-    res_dst = DOCS_DIR / "res"
-    res_dst.mkdir(exist_ok=True)
-
-    splash_src = PROJECT_ROOT / "res" / "AI-gen-splashscreen_05_01_2026_512.png"
-    if splash_src.is_file():
-        shutil.copy2(splash_src, res_dst / splash_src.name)
-
     icons_src = PROJECT_ROOT / "res" / "icons"
+    res_dst = DOCS_DIR / "res"
     icons_dst = res_dst / "icons"
     if icons_src.is_dir():
         shutil.copytree(icons_src, icons_dst, dirs_exist_ok=True)
@@ -49,6 +43,7 @@ def _verify_doc_assets() -> None:
     required = [
         DOCS_DIR / "res" / "icons" / "Draft_Rotate.png",
         DOCS_DIR / "doc" / "gen" / "rotate_constrain_axis.png",
+        DOCS_DIR / "doc" / "gen" / "AI-gen-splashscreen_05_01_2026_512.png",
     ]
     missing = [p.relative_to(DOCS_DIR) for p in required if not p.is_file()]
     if missing:

@@ -1,6 +1,6 @@
 # EzyCad Usage Guide
 
-![EzyCad splash screen](res/AI-gen-splashscreen_05_01_2026_512.png)
+![EzyCad splash screen](doc/gen/AI-gen-splashscreen_05_01_2026_512.png)
 
 ## Table of Contents
 1.  [Introduction](#introduction)
