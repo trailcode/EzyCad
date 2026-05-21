@@ -201,13 +201,16 @@ void GUI::menu_bar_()
       save_file_dialog_();
     }
 
-    if (ImGui::MenuItem("Import"))
-      import_file_dialog_();
-
-    if (ImGui::MenuItem("Sketch underlay image..."))
+    if (ui_show_feature(2))
     {
-      m_underlay_import_sketch_target.reset();
-      sketch_underlay_import_dialog_();
+      if (ImGui::MenuItem("Import"))
+        import_file_dialog_();
+
+      if (ImGui::MenuItem("Sketch underlay image..."))
+      {
+        m_underlay_import_sketch_target.reset();
+        sketch_underlay_import_dialog_();
+      }
     }
 
     if (ImGui::BeginMenu("Export"))
@@ -227,7 +230,7 @@ void GUI::menu_bar_()
       ImGui::EndMenu();
     }
 
-    if (ImGui::BeginMenu("Examples"))
+    if (ui_show_feature(2) && ImGui::BeginMenu("Examples"))
     {
       for (const Example_file& ex : m_example_files)
         if (ImGui::MenuItem(ex.label.c_str()))
@@ -279,7 +282,7 @@ void GUI::menu_bar_()
       m_view->add_box(0, 0, 0, scale, scale, scale);
     }
 
-    if (ImGui::MenuItem("Add box_prms"))
+    if (ui_show_feature(3) && ImGui::MenuItem("Add box_prms"))
     {
       m_add_box_origin     = glm::dvec3(0.0, 0.0, 0.0);
       m_add_box_size       = glm::dvec3(1.0, 1.0, 1.0);
@@ -292,7 +295,7 @@ void GUI::menu_bar_()
       m_view->add_pyramid(0, 0, 0, scale);
     }
 
-    if (ImGui::MenuItem("Add pyramid_prms"))
+    if (ui_show_feature(3) && ImGui::MenuItem("Add pyramid_prms"))
     {
       m_add_pyramid_origin     = glm::dvec3(0.0, 0.0, 0.0);
       m_add_pyramid_side       = 1.0;
@@ -305,7 +308,7 @@ void GUI::menu_bar_()
       m_view->add_sphere(0, 0, 0, scale);
     }
 
-    if (ImGui::MenuItem("Add sphere_prms"))
+    if (ui_show_feature(3) && ImGui::MenuItem("Add sphere_prms"))
     {
       m_add_sphere_origin     = glm::dvec3(0.0, 0.0, 0.0);
       m_add_sphere_radius     = 1.0;
@@ -318,7 +321,7 @@ void GUI::menu_bar_()
       m_view->add_cylinder(0, 0, 0, scale, scale);
     }
 
-    if (ImGui::MenuItem("Add cylinder_prms"))
+    if (ui_show_feature(3) && ImGui::MenuItem("Add cylinder_prms"))
     {
       m_add_cylinder_origin = glm::dvec3(0.0, 0.0, 0.0);
       m_add_cylinder_radius = m_add_cylinder_height = 1.0;
@@ -331,7 +334,7 @@ void GUI::menu_bar_()
       m_view->add_cone(0, 0, 0, scale, 0.0, scale);
     }
 
-    if (ImGui::MenuItem("Add cone_prms"))
+    if (ui_show_feature(3) && ImGui::MenuItem("Add cone_prms"))
     {
       m_add_cone_origin     = glm::dvec3(0.0, 0.0, 0.0);
       m_add_cone_R1         = 1.0;
@@ -346,7 +349,7 @@ void GUI::menu_bar_()
       m_view->add_torus(0, 0, 0, scale, scale / 2.0);
     }
 
-    if (ImGui::MenuItem("Add torus_prms"))
+    if (ui_show_feature(3) && ImGui::MenuItem("Add torus_prms"))
     {
       m_add_torus_origin     = glm::dvec3(0.0, 0.0, 0.0);
       m_add_torus_R1         = 1.0;
@@ -366,43 +369,49 @@ void GUI::menu_bar_()
       save_panes             = true;
     }
 
-    if (ImGui::MenuItem("Options", nullptr, m_show_options))
+    if (ui_show_feature(1))
     {
-      m_show_options = !m_show_options;
-      save_panes     = true;
+      if (ImGui::MenuItem("Options", nullptr, m_show_options))
+      {
+        m_show_options = !m_show_options;
+        save_panes     = true;
+      }
+
+      if (ImGui::MenuItem("Sketch List", nullptr, m_show_sketch_list))
+      {
+        m_show_sketch_list = !m_show_sketch_list;
+        save_panes         = true;
+      }
+
+      if (ImGui::MenuItem("Shape List", nullptr, m_show_shape_list))
+      {
+        m_show_shape_list = !m_show_shape_list;
+        save_panes        = true;
+      }
+
+      if (ImGui::MenuItem("Log", nullptr, m_log_window_visible))
+      {
+        m_log_window_visible = !m_log_window_visible;
+        save_panes           = true;
+      }
     }
 
-    if (ImGui::MenuItem("Sketch List", nullptr, m_show_sketch_list))
+    if (ui_show_feature(2))
     {
-      m_show_sketch_list = !m_show_sketch_list;
-      save_panes         = true;
-    }
+      if (ImGui::MenuItem("Lua Console", nullptr, m_show_lua_console))
+      {
+        m_show_lua_console = !m_show_lua_console;
+        save_panes         = true;
+      }
 
-    if (ImGui::MenuItem("Shape List", nullptr, m_show_shape_list))
-    {
-      m_show_shape_list = !m_show_shape_list;
-      save_panes        = true;
-    }
+      if (ui_show_help(2) && ImGui::IsItemHovered())
+        ImGui::SetTooltip("Interactive Lua prompt and res/scripts/lua editors.");
 
-    if (ImGui::MenuItem("Log", nullptr, m_log_window_visible))
-    {
-      m_log_window_visible = !m_log_window_visible;
-      save_panes           = true;
-    }
-
-    if (ImGui::MenuItem("Lua Console", nullptr, m_show_lua_console))
-    {
-      m_show_lua_console = !m_show_lua_console;
-      save_panes         = true;
-    }
-
-    if (ImGui::IsItemHovered())
-      ImGui::SetTooltip("Interactive Lua prompt and res/scripts/lua editors.");
-
-    if (ImGui::MenuItem("Python Console", nullptr, m_show_python_console))
-    {
-      m_show_python_console = !m_show_python_console;
-      save_panes            = true;
+      if (ImGui::MenuItem("Python Console", nullptr, m_show_python_console))
+      {
+        m_show_python_console = !m_show_python_console;
+        save_panes            = true;
+      }
     }
 #ifndef NDEBUG
     if (ImGui::MenuItem("Debug", nullptr, m_show_dbg))
@@ -680,7 +689,7 @@ void GUI::toolbar_()
       }
     }
 
-    if (m_show_tool_tips && ImGui::IsItemHovered())
+    if (ui_show_help(1) && ImGui::IsItemHovered())
       ImGui::SetTooltip("%s", m_toolbar_buttons[i].tooltip);
 
     if (was_active)
@@ -959,7 +968,7 @@ void GUI::sketch_list_inspector_(Sketch& sketch, int index)
           ImGui::SetNextItemWidth(86.f);
           if (ImGui::InputDouble("##dim_offset", &offset, 0.5, 2.0, "%.2f"))
             sketch.set_dimension_offset(i, offset);
-          if (m_show_tool_tips && ImGui::IsItemHovered())
+          if (ui_show_help(2) && ImGui::IsItemHovered())
             ImGui::SetTooltip("Label offset from edge. 0 = automatic.");
 
           ImGui::PopID();
@@ -981,7 +990,7 @@ void GUI::sketch_list_inspector_(Sketch& sketch, int index)
 }
 void GUI::sketch_list_()
 {
-  if (!m_show_sketch_list)
+  if (!show_sketch_list_effective())
     return;
 
   const ImGuiStyle& st              = ImGui::GetStyle();
@@ -1022,14 +1031,17 @@ void GUI::sketch_list_()
     const Sketch* sk_key   = sketch.get();
     bool&         expanded = m_sketch_list_expanded[sk_key];
 
-    ImGui::PushID(("expand" + id_suffix).c_str());
-    if (ImGui::SmallButton(expanded ? "v" : ">"))
-      expanded = !expanded;
-    if (m_show_tool_tips && ImGui::IsItemHovered())
-      ImGui::SetTooltip(expanded ? "Collapse details" : "Expand details");
-    ImGui::PopID();
+    if (ui_show_feature(2))
+    {
+      ImGui::PushID(("expand" + id_suffix).c_str());
+      if (ImGui::SmallButton(expanded ? "v" : ">"))
+        expanded = !expanded;
+      if (ui_show_help(2) && ImGui::IsItemHovered())
+        ImGui::SetTooltip(expanded ? "Collapse details" : "Expand details");
+      ImGui::PopID();
 
-    ImGui::SameLine();
+      ImGui::SameLine();
+    }
 
     // Radio button for selection
     ImGui::PushID(("select" + id_suffix).c_str());
@@ -1039,7 +1051,7 @@ void GUI::sketch_list_()
       set_mode(Mode::Sketch_inspection_mode);
     }
 
-    if (m_show_tool_tips && ImGui::IsItemHovered())
+    if (ui_show_help(2) && ImGui::IsItemHovered())
       ImGui::SetTooltip("Sets current");
 
     ImGui::PopID();
@@ -1068,7 +1080,7 @@ void GUI::sketch_list_()
     if (ImGui::Checkbox("", &visible))
       sketch->set_visible(visible);
 
-    if (m_show_tool_tips && ImGui::IsItemHovered())
+    if (ui_show_help(2) && ImGui::IsItemHovered())
       ImGui::SetTooltip("Visibility");
 
     ImGui::PopID();
@@ -1093,25 +1105,28 @@ void GUI::sketch_list_()
       if (!has_ul)
         ImGui::EndDisabled();
 
-      if (m_show_tool_tips && ImGui::IsItemHovered(ImGuiHoveredFlags_AllowWhenDisabled))
+      if (ui_show_help(2) && ImGui::IsItemHovered(ImGuiHoveredFlags_AllowWhenDisabled))
         ImGui::SetTooltip(has_ul ? "Display underlay" : "Import an image in Sketch properties to enable the underlay.");
     }
     ImGui::PopID();
 
-    ImGui::SameLine();
-    ImGui::PushID(("props" + id_suffix).c_str());
-    if (ImGui::SmallButton("[P]"))
+    if (ui_show_feature(2))
     {
-      m_sketch_properties_sketch = sketch;
-      m_sketch_properties_open   = true;
+      ImGui::SameLine();
+      ImGui::PushID(("props" + id_suffix).c_str());
+      if (ImGui::SmallButton("[P]"))
+      {
+        m_sketch_properties_sketch = sketch;
+        m_sketch_properties_open   = true;
+      }
+
+      if (ui_show_help(2) && ImGui::IsItemHovered())
+        ImGui::SetTooltip("Sketch properties");
+
+      ImGui::PopID();
     }
 
-    if (m_show_tool_tips && ImGui::IsItemHovered())
-      ImGui::SetTooltip("Sketch properties");
-
-    ImGui::PopID();
-
-    if (expanded)
+    if (expanded && ui_show_feature(2))
       sketch_list_inspector_(*sketch, index);
 
     ++index;
@@ -1260,16 +1275,19 @@ void GUI::sketch_underlay_panel_settings_(const Sketch::sptr& sk)
       m_underlay_panel_sketch = nullptr;
     }
 
-  ImGui::SameLine(0.0f, ImGui::GetStyle().ItemInnerSpacing.x);
-  ImGui::TextDisabled("(?)");
-  if (ImGui::IsItemHovered())
+  if (ui_show_help(2))
   {
-    ImGui::BeginTooltip();
-    ImGui::PushTextWrapPos(ImGui::GetFontSize() * 35.0f);
-    ImGui::TextDisabled("Import PNG/JPEG/BMP as a sketch underlay. Adjust half-width, half-height, center, and rotation "
-                        "to match real dimensions; changes apply in real time.");
-    ImGui::PopTextWrapPos();
-    ImGui::EndTooltip();
+    ImGui::SameLine(0.0f, ImGui::GetStyle().ItemInnerSpacing.x);
+    ImGui::TextDisabled("(?)");
+    if (ImGui::IsItemHovered())
+    {
+      ImGui::BeginTooltip();
+      ImGui::PushTextWrapPos(ImGui::GetFontSize() * 35.0f);
+      ImGui::TextDisabled("Import PNG/JPEG/BMP as a sketch underlay. Adjust half-width, half-height, center, and rotation "
+                          "to match real dimensions; changes apply in real time.");
+      ImGui::PopTextWrapPos();
+      ImGui::EndTooltip();
+    }
   }
 
   if (!sk->has_underlay())
@@ -1278,14 +1296,14 @@ void GUI::sketch_underlay_panel_settings_(const Sketch::sptr& sk)
   if (ImGui::Checkbox("White paper -> transparent", &m_underlay_key_white))
     sk->underlay_set_key_white_transparent(m_underlay_key_white);
 
-  if (m_show_tool_tips && ImGui::IsItemHovered())
+  if (ui_show_help(2) && ImGui::IsItemHovered())
     ImGui::SetTooltip("Uses brightness: white background becomes clear; dark lines stay visible. "
                       "Turn off for full-color photos. Inverting the image is not needed for typical scans.");
 
   if (ImGui::Checkbox("Tint visible lines", &m_underlay_line_tint))
     sk->underlay_set_line_tint_enabled(m_underlay_line_tint);
 
-  if (m_show_tool_tips && ImGui::IsItemHovered())
+  if (ui_show_help(2) && ImGui::IsItemHovered())
     ImGui::SetTooltip("Paints non-transparent pixels (after white key) with the line color. "
                       "Default yellow reads well on dark backgrounds.");
 
@@ -1304,7 +1322,7 @@ void GUI::sketch_underlay_panel_settings_(const Sketch::sptr& sk)
   if (ImGui::SliderFloat("Opacity", &m_underlay_opacity, 0.f, 1.f, "%.2f"))
     sk->underlay_set_opacity(m_underlay_opacity);
 
-  if (m_show_tool_tips && ImGui::IsItemHovered())
+  if (ui_show_help(2) && ImGui::IsItemHovered())
     ImGui::SetTooltip("Overall opacity of the underlay image (0 = fully transparent, 1 = fully opaque).");
 
   ImGui::Separator();
@@ -1364,7 +1382,7 @@ void GUI::sketch_underlay_panel_settings_(const Sketch::sptr& sk)
       begin_underlay_calib_set_x_(sk);
 
     ImGui::EndDisabled();
-    if (m_show_tool_tips && ImGui::IsItemHovered())
+    if (ui_show_help(2) && ImGui::IsItemHovered())
       ImGui::SetTooltip("Two clicks along width (+U), then type the real drawing distance (same units as sketch dimensions). "
                         "You can use Set Y before or after; until both are set, the other axis still follows default aspect.");
 
@@ -1374,7 +1392,7 @@ void GUI::sketch_underlay_panel_settings_(const Sketch::sptr& sk)
       begin_underlay_calib_set_y_(sk);
 
     ImGui::EndDisabled();
-    if (m_show_tool_tips && ImGui::IsItemHovered())
+    if (ui_show_help(2) && ImGui::IsItemHovered())
       ImGui::SetTooltip(
           "Two clicks along height (+V), then enter the drawing distance for Y. Order vs. Set X does not matter.");
 
@@ -1383,7 +1401,7 @@ void GUI::sketch_underlay_panel_settings_(const Sketch::sptr& sk)
       begin_underlay_calib_define_datum_(sk);
 
     ImGui::EndDisabled();
-    if (m_show_tool_tips && ImGui::IsItemHovered())
+    if (ui_show_help(2) && ImGui::IsItemHovered())
       ImGui::SetTooltip("Two picks on the sketch plane: first sets bitmap corner (0,0); second sets the +U axis direction. "
                         "Keeps current half width and height; aligns the image to your sketch datum.");
   }
@@ -1392,7 +1410,7 @@ void GUI::sketch_underlay_panel_settings_(const Sketch::sptr& sk)
   ImGui::TextUnformatted("Transform (sketch plane, vs. current view)");
   {
     const bool ul_ortho = sk->underlay_axes_orthogonal();
-    if (!ul_ortho)
+    if (ui_show_help(3) && !ul_ortho)
       ImGui::TextWrapped(
           "Edge calibration produced shear (bitmap U and V are not perpendicular). These sliders only describe an "
           "orthogonal transform; they stay off so they cannot overwrite your calibrated affine.");
@@ -1745,7 +1763,7 @@ bool GUI::try_underlay_calib_click_(const ScreenCoords& screen_coords)
 }
 void GUI::shape_list_()
 {
-  if (!m_show_shape_list)
+  if (!show_shape_list_effective())
     return;
 
   float max_name_text_w = 0.f;
@@ -1862,7 +1880,7 @@ void GUI::shape_list_()
     if (ImGui::Checkbox("", &visible))
       shape->set_visible(visible);
 
-    if (m_show_tool_tips && ImGui::IsItemHovered())
+    if (ui_show_help(2) && ImGui::IsItemHovered())
       ImGui::SetTooltip("visibility");
 
     ImGui::PopID();
@@ -1874,7 +1892,7 @@ void GUI::shape_list_()
     if (ImGui::Checkbox("", &shaded))
       shape->set_disp_mode(shaded ? AIS_Shaded : AIS_WireFrame);
 
-    if (m_show_tool_tips && ImGui::IsItemHovered())
+    if (ui_show_help(2) && ImGui::IsItemHovered())
       ImGui::SetTooltip("solid/wire");
 
     ImGui::PopID();
@@ -1886,7 +1904,7 @@ void GUI::shape_list_()
       ImGui::OpenPopup("mat_pick");
 
     ImGui::PopStyleVar();
-    if (m_show_tool_tips && ImGui::IsItemHovered())
+    if (ui_show_help(2) && ImGui::IsItemHovered())
       ImGui::SetTooltip("%s\n(click: material; right-click name: Delete)", mat_names[static_cast<size_t>(mat_idx)].c_str());
 
     ImGui::SetNextWindowSize(ImVec2(mat_popup_w, 0.0f), ImGuiCond_Appearing);
@@ -1925,7 +1943,7 @@ void GUI::shape_list_()
     {
       ImGui::EndGroup();
       ImGui::PopStyleColor(4);
-      if (m_show_tool_tips && ImGui::IsItemHovered())
+      if (ui_show_help(2) && ImGui::IsItemHovered())
         ImGui::SetTooltip("Selected in 3D viewer");
     }
   }
@@ -2037,7 +2055,7 @@ void GUI::log_message(const std::string& message)
 }
 void GUI::log_window_()
 {
-  if (!m_log_window_visible)
+  if (!log_window_visible_effective())
     return;
 
   if (!ImGui::Begin("Log", &m_log_window_visible))
@@ -2063,7 +2081,7 @@ void GUI::log_window_()
 }
 void GUI::lua_console_()
 {
-  if (!m_show_lua_console)
+  if (!show_lua_console_effective())
     return;
   if (!m_lua_console)
     m_lua_console = std::make_unique<Lua_console>(this);
@@ -2071,7 +2089,7 @@ void GUI::lua_console_()
 }
 void GUI::python_console_()
 {
-  if (!m_show_python_console)
+  if (!show_python_console_effective())
     return;
 
   if (!m_python_console)

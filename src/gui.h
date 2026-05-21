@@ -67,6 +67,11 @@ inline constexpr double k_gui_view_roll_step_deg_default = 45.0;
 inline constexpr double k_gui_view_zoom_scroll_scale_min     = 0.25;
 inline constexpr double k_gui_view_zoom_scroll_scale_max     = 64.0;
 inline constexpr double k_gui_view_zoom_scroll_scale_default = 4.0;
+/// `gui.ui_verbosity`: 0 = minimal UI; odd steps unlock feature tiers; even steps unlock help tiers.
+inline constexpr int k_gui_ui_verbosity_min            = 0;
+inline constexpr int k_gui_ui_verbosity_default        = 6;
+inline constexpr int k_gui_ui_feature_tier_max         = 3;
+inline constexpr int k_gui_ui_help_tier_max            = 3;
 class GUI
 {
 public:
@@ -123,6 +128,20 @@ public:
   void set_show_shape_list(bool v) { m_show_shape_list = v; }
   void set_log_window_visible(bool v) { m_log_window_visible = v; }
   void set_show_settings_dialog(bool v) { m_show_settings_dialog = v; }
+  int  ui_verbosity() const { return m_ui_verbosity; }
+  void set_ui_verbosity(int v);
+  /// Cumulative feature depth from `gui.ui_verbosity` (F1 at verbosity >= 1).
+  int ui_feature_tier() const { return (m_ui_verbosity + 1) / 2; }
+  /// Cumulative help depth from `gui.ui_verbosity` (H1 at verbosity >= 2).
+  int ui_help_tier() const { return m_ui_verbosity / 2; }
+  bool ui_show_feature(int tier) const { return tier <= ui_feature_tier(); }
+  bool ui_show_help(int tier) const { return tier <= ui_help_tier(); }
+  bool show_options_effective() const { return m_show_options && ui_show_feature(1); }
+  bool show_sketch_list_effective() const { return m_show_sketch_list && ui_show_feature(1); }
+  bool show_shape_list_effective() const { return m_show_shape_list && ui_show_feature(1); }
+  bool log_window_visible_effective() const { return m_log_window_visible && ui_show_feature(1); }
+  bool show_lua_console_effective() const { return m_show_lua_console && ui_show_feature(2); }
+  bool show_python_console_effective() const { return m_show_python_console && ui_show_feature(2); }
 #ifndef NDEBUG
   void set_show_dbg(bool v) { m_show_dbg = v; }
 #endif
@@ -346,7 +365,7 @@ private:
   int         m_new_sketch_plane{0}; // 0=XY, 1=XZ, 2=YZ
   double      m_new_sketch_offset{};
   bool        m_hide_all_shapes{false};
-  bool        m_show_tool_tips{true};
+  int         m_ui_verbosity{k_gui_ui_verbosity_default};
   bool        m_dark_mode{false};
 #ifndef NDEBUG
   bool m_show_dbg{false};

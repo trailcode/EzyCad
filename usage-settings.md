@@ -35,22 +35,23 @@ Visibility of these panes (and related flags) is persisted with the rest of your
 
 Open **View -> Settings**. The window title is **Settings**.
 
-- **Dark mode** — checkbox at the top (not inside a collapsible section).
+- **UI verbosity** — integer at the top (default **6**, full UI). **0** keeps a minimal layout (toolbar and 3D view, core **File**/**Edit**/**Help**, essential settings only). Each **odd** step unlocks more panes and menu items; each **even** step unlocks more tooltips and inline help. Values above **6** are stored for future tiers. Persisted as **`gui.ui_verbosity`**.
+- **Dark mode** — checkbox below verbosity (not inside a collapsible section).
 - At the bottom: **Defaults** — reloads bundled defaults from the app `res/` tree (including ImGui layout from that file).
 
-Between those, the pane has **six** collapsible sections. Expand a section to see its controls; when collapsed, only the section title bar is visible.
+Between those, the pane has up to **six** collapsible sections (some appear only when **UI verbosity** is high enough). Expand a section to see its controls; when collapsed, only the section title bar is visible.
 
-1. **3D view navigation** — **View rotation step** (degrees per key press for **NumPad 8**/**2**/**4**/**6** orbit and **Shift+NumPad 4**/**6** roll; default **45**; **`?`** opens [view roll](https://ezycad.readthedocs.io/en/latest/usage.html#view-roll) on Read the Docs). **Zoom scroll scale** (multiplier for wheel and **+**/**-** zoom; default **4**). Hold **Shift** while zooming for a Blender-style finer step (multiply by **0.1**). Numpad shortcuts are documented with **Num Lock off**; with **Num Lock on**, use main-row alternatives in [usage.md -> View navigation](usage.md#view-navigation). Stored as **`gui.view_roll_step_deg`** and **`gui.view_zoom_scroll_scale`**. See **[usage-occt-view.md](usage-occt-view.md)**.
+1. **3D view navigation** (always at verbosity **0** and above) — **View rotation step** (degrees per key press for **NumPad 8**/**2**/**4**/**6** orbit and **Shift+NumPad 4**/**6** roll; default **45**; **`?`** opens [view roll](https://ezycad.readthedocs.io/en/latest/usage.html#view-roll) on Read the Docs). **Zoom scroll scale** (multiplier for wheel and **+**/**-** zoom; default **4**). Hold **Shift** while zooming for a Blender-style finer step (multiply by **0.1**). Numpad shortcuts are documented with **Num Lock off**; with **Num Lock on**, use main-row alternatives in [usage.md -> View navigation](usage.md#view-navigation). Stored as **`gui.view_roll_step_deg`** and **`gui.view_zoom_scroll_scale`**. See **[usage-occt-view.md](usage-occt-view.md)**.
 
-2. **UI corner rounding** — Sliders **0** to **16** for **Windows, frames, popups**; **Scrollbars and sliders** (has `(?)`); **Tabs**.
+2. **UI corner rounding** (verbosity **5**+) — Sliders **0** to **16** for **Windows, frames, popups**; **Scrollbars and sliders** (has `(?)` at higher help levels); **Tabs**.
 
-3. **3D view background** — **Background color 1** and **Background color 2** (float RGB fields and swatches). **Gradient blend** — combo: **Horizontal**, **Vertical**, **Diagonal 1**, **Diagonal 2**, **Corner 1** … **Corner 4**.
+3. **3D view background** (always) — **Background color 1** and **Background color 2** (float RGB fields and swatches). **Gradient blend** — combo: **Horizontal**, **Vertical**, **Diagonal 1**, **Diagonal 2**, **Corner 1** … **Corner 4**.
 
-4. **3D view grid** — **Fine grid lines** and **Major grid lines** (passed to Open CASCADE `Aspect_Grid::SetColors`: dense lines vs every-tenth emphasis lines). **Grid step**, **Grid extent X / Y** (full span edge-to-edge), and **Grid display Z offset** in the Settings pane use the **same length scale as sketch length dimensions** (display value = model value / internal `dimension_scale`, default **100**). Saved JSON (`occt_view`) stores **half-extent** in model units for OCCT (`grid_graphic_*`); Settings shows **full** extent (twice the stored half-extent).
+4. **3D view grid** (verbosity **5**+) — **Fine grid lines** and **Major grid lines** (passed to Open CASCADE `Aspect_Grid::SetColors`: dense lines vs every-tenth emphasis lines). **Grid step**, **Grid extent X / Y** (full span edge-to-edge), and **Grid display Z offset** in the Settings pane use the **same length scale as sketch length dimensions** (display value = model value / internal `dimension_scale`, default **100**). Saved JSON (`occt_view`) stores **half-extent** in model units for OCCT (`grid_graphic_*`); Settings shows **full** extent (twice the stored half-extent).
 
-5. **Sketch** — **Dimension line width** — slider **0.5** to **8.0** (has `(?)`). **Underlay highlight color** — RGB (has `(?)`).
+5. **Sketch** (always) — **Dimension line width** — slider **0.5** to **8.0** (has `(?)`). **Underlay highlight color** — RGB (has `(?)`).
 
-6. **Startup project** — **Desktop only:** **Load last opened on startup** (checkbox, with `(?)`), then **Last opened path:** … or **(No path saved yet.)** Then **Save current as startup project**, **Clear saved startup** (with `(?)`). **WebAssembly:** no load-last row; only the two buttons and `(?)`. See [Startup project](#startup-project).
+6. **Startup project** (verbosity **5**+; **Desktop only:** **Load last opened on startup** (checkbox, with `(?)`), then **Last opened path:** … or **(No path saved yet.)** Then **Save current as startup project**, **Clear saved startup** (with `(?)`). **WebAssembly:** no load-last row; only the two buttons and `(?)`. See [Startup project](#startup-project).
 
 **Not in this pane**
 
@@ -134,6 +135,7 @@ String: ImGui `.ini` text for window positions and docking saved with **SaveIniS
 | `show_settings_dialog` | boolean | Whether the Settings pane was open when last saved (usually false). |
 | `show_lua_console` | boolean | Lua console pane visible. |
 | `show_python_console` | boolean | Python console pane visible (native builds with Python). |
+| `ui_verbosity` | integer | UI depth: **0** = minimal; odd values add features (panes, menus); even values add help (tooltips, hints). Default **6**. Negative values are clamped to **0** on load. |
 | `show_dbg` | boolean | Debug pane visible (debug builds only). |
 | `edge_dim_label_h` | integer | Length dimension label placement: **0** to **3** (see [Options panel (sketch)](#options-panel-sketch)). Values outside this range are ignored. |
 | `edge_dim_line_width` | number | Sketch length dimension line width (allowed range **0.5** to **8.0** in code). |
@@ -146,7 +148,7 @@ String: ImGui `.ini` text for window positions and docking saved with **SaveIniS
 | `load_last_opened_on_startup` | boolean | Desktop: open the last `.ezy` on launch. **Legacy:** `load_last_saved_on_startup` is read as a fallback if the newer key is absent. |
 | `last_opened_project_path` | string | Path of the last opened project for the option above. **Legacy:** `last_saved_project_path` is accepted if the newer key is missing. |
 
-Scripting API **`ezy.occt_view_settings_json()`** returns a JSON string with **`occt_view`** plus selected **`gui`** keys (including **`gui.edge_dim_label_h`**, **`gui.edge_dim_line_width`**, **`gui.view_roll_step_deg`**, **`gui.view_zoom_scroll_scale`** when saved). See [scripting.md](scripting.md).
+Scripting API **`ezy.occt_view_settings_json()`** returns a JSON string with **`occt_view`** plus selected **`gui`** keys (including **`gui.ui_verbosity`**, **`gui.edge_dim_label_h`**, **`gui.edge_dim_line_width`**, **`gui.view_roll_step_deg`**, **`gui.view_zoom_scroll_scale`** when saved). See [scripting.md](scripting.md).
 
 ---
 

@@ -312,7 +312,7 @@ void GUI::on_key(int key, int scancode, int action, int mods)
 
 void GUI::options_()
 {
-  if (!m_show_options)
+  if (!show_options_effective())
     return;
 
   if (!ImGui::Begin("Options", &m_show_options))
@@ -417,7 +417,7 @@ void GUI::options_()
             Sketch_nodes::set_snap_guide_mode(static_cast<Sketch_nodes::Snap_guide_mode>(i));
         ImGui::EndCombo();
       }
-      if (ImGui::IsItemHovered())
+      if (ui_show_help(2) && ImGui::IsItemHovered())
         ImGui::SetTooltip("Traditional: compact local snap marker.\n"
                           "Fullscreen: full-view crosshair/axis guides.\n"
                           "Both: show compact marker and fullscreen guides together.");
@@ -447,7 +447,7 @@ void GUI::options_()
             }
           ImGui::EndCombo();
         }
-        if (ImGui::IsItemHovered())
+        if (ui_show_help(2) && ImGui::IsItemHovered())
           ImGui::SetTooltip(
               "Where to place the numeric value along the dimension line (near the first or second end, center, or auto).\n"
               "This does not flip which side of the edge the dimension sits on.\n"
@@ -514,16 +514,20 @@ void GUI::options_()
     case Mode::Sketch_add_multi_edges:
       ImGui::Separator();
       ImGui::TextUnformatted("Shortcuts");
-      ImGui::TextWrapped("TAB: type edge length. Shift+TAB: type angle (degrees, CCW from +X).");
+      if (ui_show_help(3))
+        ImGui::TextWrapped("TAB: type edge length. Shift+TAB: type angle (degrees, CCW from +X).");
       break;
 
     case Mode::Sketch_add_node:
       ImGui::Separator();
       ImGui::TextUnformatted("Shortcuts");
-      ImGui::TextWrapped("TAB: type length along the rubber band. Shift+TAB: type angle (degrees, CCW from +X).");
-      ImGui::TextWrapped(
-          "Snap the first click to an existing sketch point to start a rubber band, then click to place the node "
-          "(or press Enter after typing a length). An unsnapped click still places a single node immediately.");
+      if (ui_show_help(3))
+      {
+        ImGui::TextWrapped("TAB: type length along the rubber band. Shift+TAB: type angle (degrees, CCW from +X).");
+        ImGui::TextWrapped(
+            "Snap the first click to an existing sketch point to start a rubber band, then click to place the node "
+            "(or press Enter after typing a length). An unsnapped click still places a single node immediately.");
+      }
       break;
 
     default:
@@ -580,14 +584,17 @@ void GUI::options_normal_mode_()
       ImGui::EndCombo();
     }
     ImGui::SameLine(0.0f, ImGui::GetStyle().ItemInnerSpacing.x);
-    ImGui::TextDisabled("(?)");
-    if (ImGui::IsItemHovered())
+    if (ui_show_help(2))
     {
-      ImGui::BeginTooltip();
-      ImGui::PushTextWrapPos(ImGui::GetFontSize() * 35.0f);
-      ImGui::TextDisabled("Hotkeys: 1-9 (Normal mode) set filter when the 3D view has focus, not while typing in UI.");
-      ImGui::PopTextWrapPos();
-      ImGui::EndTooltip();
+      ImGui::TextDisabled("(?)");
+      if (ImGui::IsItemHovered())
+      {
+        ImGui::BeginTooltip();
+        ImGui::PushTextWrapPos(ImGui::GetFontSize() * 35.0f);
+        ImGui::TextDisabled("Hotkeys: 1-9 (Normal mode) set filter when the 3D view has focus, not while typing in UI.");
+        ImGui::PopTextWrapPos();
+        ImGui::EndTooltip();
+      }
     }
 
     bool ortho = m_inspection_orthographic;
@@ -601,7 +608,7 @@ void GUI::options_normal_mode_()
       save_occt_view_settings();
       m_view->apply_camera_projection();
     }
-    if (ImGui::IsItemHovered())
+    if (ui_show_help(2) && ImGui::IsItemHovered())
       ImGui::SetTooltip("Use an orthographic camera while in Inspection mode (no perspective foreshortening).");
 
     ImGui::EndTable();
