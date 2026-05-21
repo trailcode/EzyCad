@@ -58,11 +58,12 @@ EzyCad (Easy CAD) is a CAD application for hobbyist machinists to design and edi
 
 5. **Options Panel**
    - Adjust tool parameters; related controls are grouped by headings (for example **Sketch options**, **Extrude**, **Selection**, **Material**, **Polar duplicate**), depending on the active tool.
-   - **Normal** mode: **Selection** is the 3D pick filter. **Material** is the document preset for new solids that do not inherit from a clicked shape (for example toolbar **Box**, **polar duplicate** output). **Face extrude** reads the same preset in its Options **Material** row.
+   - If you resize the pane narrower than its controls, a **horizontal scrollbar** appears so long labels (for example **Orthographic projection**) stay readable.
+   - **Normal** mode (Inspection): **Selection** is the 3D pick filter and **Orthographic projection** toggles the camera (persisted as `gui.inspection_orthographic`). **Material** is the document preset for new solids that do not inherit from a clicked shape (for example toolbar **Box**, **polar duplicate** output). **Face extrude** reads the same preset in its Options **Material** row.
    - To change material on a solid already in the scene, use the [Shape List](#shape-list).
    - **Chamfer** and **Fillet**: distance and mode only; the result solid keeps the **source shape's material**.
    - **Move**, **Rotate**, and **Scale**: transform options only (no material row there).
-   - Sketch-related options (snap, length dimension placement, face extrude, shortcuts) are summarized in **[usage-settings.md](usage-settings.md#options-panel-sketch)**.
+   - Sketch-related options (snap, length dimension placement, face extrude, shortcuts) are summarized in **[usage-settings.md](usage-settings.md#options-panel)**.
 
 6. **Log Window**
    - View operation history
@@ -74,7 +75,7 @@ EzyCad (Easy CAD) is a CAD application for hobbyist machinists to design and edi
 - **About** - Opens the [project README](README.md) in the browser.
 - **Usage Guide** - Opens the [online usage guide](https://ezycad.readthedocs.io/en/latest/usage.html) (Read the Docs; source is [usage.md](usage.md) in this repository).
 
-For **View** (Settings, pane toggles, consoles), saving preferences, and the **Settings** pane sections, see **[usage-settings.md](usage-settings.md)**.
+For **View** (Settings, pane toggles, consoles), saving preferences, and the **Settings** pane sections, see **[usage-settings.md](usage-settings.md)**. For **Options** panel details by mode, see **[Options panel](usage-settings.md#options-panel)**.
 
 ### Sketch List
 
@@ -87,7 +88,7 @@ Each row is laid out left to right:
 - **Rename** - Click the name field and type a new name.
 - **Visibility** - Checkbox to show or hide the sketch in the 3D view.
 - **Underlay** - Checkbox to show or hide an [image underlay](usage-sketch.md#image-underlay) when one is imported (disabled until an underlay exists; tooltip *Display underlay*).
-- **Sketch properties** - **`[P]`** opens the **Sketch properties** window (import/remove underlay, calibration, transform). See [Image underlay](usage-sketch.md#image-underlay).
+- **Sketch properties** - **`[P]`** opens **Sketch properties** (import/remove underlay, calibration, transform). See [Image underlay](usage-sketch.md#image-underlay).
 - **Delete** - Right-click the name and choose **Delete**.
 
 When expanded, the row shows:
@@ -108,10 +109,10 @@ At the top:
 For each shape, one row includes:
 
 - **Name** - Editable text field; change the label stored with the shape.
-- **Right-click the name** - Opens a context menu with **Material** and the same material list as the **M** button.
+- **Right-click the name** - **Delete** removes the shape from the document.
 - **Visibility** - Checkbox (tooltip *visibility*) to show or hide that shape in the 3D view.
 - **Solid / wire** - Checkbox (tooltip *solid/wire*) to switch **shaded** display or **wireframe** for that shape.
-- **M** - Opens a **Material** popup to pick an Open CASCADE material preset (also shown in the tooltip). You can also use the context menu on the name.
+- **M** - Click to open a **Material** popup; right-click **M** for **Delete**. The tooltip on **M** also notes that right-clicking the name deletes the shape.
 
 Rows that match the **current 3D selection** are drawn with a slightly brighter style so the list stays in sync with what is selected in the viewer (tooltip *Selected in 3D viewer* when you hover the highlighted row).
 

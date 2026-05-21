@@ -13,6 +13,7 @@
     "show_lua_console": true,
     "show_options": true,
     "show_python_console": true,
+    "ui_verbosity": 6,
     "view_roll_step_deg": 45.0,
     "view_zoom_scroll_scale": 4.0,
     "show_settings_dialog": true,

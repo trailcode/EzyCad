@@ -6,7 +6,7 @@ This guide covers the **Settings** pane (what is on screen), the **View** menu (
 
 1. [View menu](#view-menu)
 2. [Settings pane](#settings-pane)
-3. [Options panel (sketch)](#options-panel-sketch)
+3. [Options panel](#options-panel)
 4. [Where settings are stored](#where-settings-are-stored)
 5. [Startup project](#startup-project)
 6. [Settings file reference](#settings-file-reference)
@@ -55,13 +55,32 @@ Between those, the pane has **six** collapsible sections. Expand a section to se
 **Not in this pane**
 
 - **View** menu items such as **Options**, **Sketch List**, **Lua Console** — they only show or hide panes; they are not rows inside **Settings**. Their visibility is still saved under `gui.*` in the settings file (see [Settings file reference](#settings-file-reference)).
-- **Length value placement** for edge dimensions — **Options** panel when the edge-dimension tool is active; see [Options panel (sketch)](#options-panel-sketch).
+- **Length value placement** for edge dimensions — **Options** panel when the edge-dimension tool is active; see [Options panel](#options-panel).
 
 **Saving** — On desktop, settings are written when you change options that save, and on exit. On **Emscripten**, use **File -> Save settings** so the browser persists (see [Where settings are stored](#where-settings-are-stored)).
 
-## Options panel (sketch)
+## Options panel
 
-Sketch-related preferences are edited in the **Options** panel while you use a tool, not in the **Settings** pane. They appear under section headings in the panel:
+Open **View -> Options**. Content depends on the active tool mode. Related controls are grouped under headings (for example **Sketch options**, **Extrude**, **Selection**, **Material**).
+
+If you resize the pane narrower than its controls, a **horizontal scrollbar** appears so long labels (for example **Orthographic projection**) stay readable.
+
+### Normal mode (Inspection)
+
+Under **Selection**:
+
+- **Selection Mode** — combo for the 3D pick filter (vertices, edges, faces, solids, and combinations). The **`(?)`** marker links to [shape selection filter hotkeys](usage.md#shape-selection-filter-normal-mode-only) in the usage guide.
+- **Orthographic projection** — checkbox toggling an orthographic camera in inspection mode (sketch modes still force orthographic as before). Persisted as **`gui.inspection_orthographic`**.
+
+Under **Material**:
+
+- Document preset for new solids that do not inherit from a clicked shape (toolbar **Box**, **polar duplicate** output, and similar). To change material on an existing solid, use the [Shape List](usage.md#shape-list).
+
+For other non-sketch Options content (for example **Polar duplicate**), see [usage.md -> User Interface](usage.md#user-interface) (Options Panel).
+
+### Sketch tools
+
+Sketch-related preferences are edited in the **Options** panel while you use a sketch tool, not in the **Settings** pane:
 
 - **Sketch options** (all sketch tools): **Snap dist** and **Snap guide mode** (*Traditional*, *Fullscreen*, *Both*).
 - **Toggle edge dimension** (length dimensions): **Length value placement** - combo: *Near first point*, *Near second point*, *Center on dimension line*, *Automatic*. Maps to the `edge_dim_label_h` key (integers **0** through **3**). Changing it persists like other GUI flags.
@@ -70,8 +89,6 @@ Sketch-related preferences are edited in the **Options** panel while you use a t
 - **Sketch operation** (mirror / revolve axis): mirror, revolve, angle, and clear-axis actions (see [usage-sketch.md](usage-sketch.md#operation-axis-tool)).
 
 **Dimension line width** for length dimensions is in **Settings -> Sketch** (see above).
-
-For **Normal** mode (selection and document **Material** preset), **polar duplicate**, and other non-sketch Options content, see [usage.md](usage.md#user-interface) under **User Interface** (Options Panel).
 
 ## Where settings are stored
 
@@ -135,7 +152,8 @@ String: ImGui `.ini` text for window positions and docking saved with **SaveIniS
 | `show_lua_console` | boolean | Lua console pane visible. |
 | `show_python_console` | boolean | Python console pane visible (native builds with Python). |
 | `show_dbg` | boolean | Debug pane visible (debug builds only). |
-| `edge_dim_label_h` | integer | Length dimension label placement: **0** to **3** (see [Options panel (sketch)](#options-panel-sketch)). Values outside this range are ignored. |
+| `inspection_orthographic` | boolean | **Normal** mode Options: orthographic camera when true (default false). |
+| `edge_dim_label_h` | integer | Length dimension label placement: **0** to **3** (see [Options panel](#options-panel)). Values outside this range are ignored. |
 | `edge_dim_line_width` | number | Sketch length dimension line width (allowed range **0.5** to **8.0** in code). |
 | `imgui_rounding_general` | number | Window/child/frame/popup rounding (**0** to **32** clamped in code; sliders stop at 16 in the UI). |
 | `imgui_rounding_scroll` | number | Scrollbar and grab rounding (same clamp). |
@@ -146,7 +164,7 @@ String: ImGui `.ini` text for window positions and docking saved with **SaveIniS
 | `load_last_opened_on_startup` | boolean | Desktop: open the last `.ezy` on launch. **Legacy:** `load_last_saved_on_startup` is read as a fallback if the newer key is absent. |
 | `last_opened_project_path` | string | Path of the last opened project for the option above. **Legacy:** `last_saved_project_path` is accepted if the newer key is missing. |
 
-Scripting API **`ezy.occt_view_settings_json()`** returns a JSON string with **`occt_view`** plus selected **`gui`** keys (including **`gui.edge_dim_label_h`**, **`gui.edge_dim_line_width`**, **`gui.view_roll_step_deg`**, **`gui.view_zoom_scroll_scale`** when saved). See [scripting.md](scripting.md).
+Scripting API **`ezy.occt_view_settings_json()`** returns a JSON string with **`occt_view`** plus selected **`gui`** keys (including **`gui.inspection_orthographic`**, **`gui.edge_dim_label_h`**, **`gui.edge_dim_line_width`**, **`gui.view_roll_step_deg`**, **`gui.view_zoom_scroll_scale`** when saved). See [scripting.md](scripting.md).
 
 ---
 

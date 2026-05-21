@@ -104,6 +104,8 @@ public:
 
   // Mode related.
   void on_mode();
+  /// Updates camera perspective/orthographic from current mode and Inspection-mode option.
+  void apply_camera_projection();
   void on_chamfer_mode();
   void on_fillet_mode();
   Mode get_mode() const;
@@ -112,6 +114,7 @@ public:
 
   // Delete related.
   void delete_selected();
+  void delete_shapes(std::vector<AIS_Shape_ptr> to_delete);
   void delete_(std::vector<AIS_Shape_ptr>& to_delete);
 
   //  Member function to delete variable arguments

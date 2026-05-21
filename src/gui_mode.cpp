@@ -24,6 +24,16 @@ using namespace glm;
 namespace
 {
 
+constexpr ImGuiTableFlags k_options_table_flags       = ImGuiTableFlags_SizingFixedFit;
+constexpr float         k_options_control_col_w     = 148.f;
+constexpr float         k_options_sketch_control_col_w = 176.f;
+
+void options_table_setup_columns_(float label_col_w, float control_col_w)
+{
+  ImGui::TableSetupColumn("label", ImGuiTableColumnFlags_WidthFixed, label_col_w);
+  ImGui::TableSetupColumn("control", ImGuiTableColumnFlags_WidthFixed, control_col_w);
+}
+
 // Up to `max_frac` digits after the decimal, strip trailing zeros (and a trailing '.').
 void format_double_trim_fraction(char* dst, std::size_t dst_sz, double v, int max_frac)
 {
@@ -312,7 +322,7 @@ void GUI::on_key(int key, int scancode, int action, int mods)
 
 void GUI::options_()
 {
-  if (!m_show_options)
+  if (!show_options_effective())
     return;
 
   if (!ImGui::Begin("Options", &m_show_options))
@@ -320,6 +330,8 @@ void GUI::options_()
     ImGui::End();
     return;
   }
+
+  ImGui::BeginChild("##options_scroll", ImVec2(0.f, 0.f), false, ImGuiWindowFlags_HorizontalScrollbar);
 
   // clang-format off
   switch (get_mode())
@@ -385,10 +397,9 @@ void GUI::options_()
     sketch_label_col_w += ImGui::GetStyle().CellPadding.x * 2.0f + 8.0f;
 
     ImGui::TextUnformatted("Sketch options");
-    if (ImGui::BeginTable("options_sketch_sketch", 2, ImGuiTableFlags_SizingStretchProp))
+    if (ImGui::BeginTable("options_sketch_sketch", 2, k_options_table_flags))
     {
-      ImGui::TableSetupColumn("label", ImGuiTableColumnFlags_WidthFixed, sketch_label_col_w);
-      ImGui::TableSetupColumn("control", ImGuiTableColumnFlags_WidthStretch);
+      options_table_setup_columns_(sketch_label_col_w, k_options_sketch_control_col_w);
 
       ImGui::TableNextRow();
       ImGui::TableSetColumnIndex(0);
@@ -417,7 +428,7 @@ void GUI::options_()
             Sketch_nodes::set_snap_guide_mode(static_cast<Sketch_nodes::Snap_guide_mode>(i));
         ImGui::EndCombo();
       }
-      if (ImGui::IsItemHovered())
+      if (ui_show_help(2) && ImGui::IsItemHovered())
         ImGui::SetTooltip("Traditional: compact local snap marker.\n"
                           "Fullscreen: full-view crosshair/axis guides.\n"
                           "Both: show compact marker and fullscreen guides together.");
@@ -447,7 +458,7 @@ void GUI::options_()
             }
           ImGui::EndCombo();
         }
-        if (ImGui::IsItemHovered())
+        if (ui_show_help(2) && ImGui::IsItemHovered())
           ImGui::SetTooltip(
               "Where to place the numeric value along the dimension line (near the first or second end, center, or auto).\n"
               "This does not flip which side of the edge the dimension sits on.\n"
@@ -463,10 +474,9 @@ void GUI::options_()
     {
       ImGui::Separator();
       ImGui::TextUnformatted("Extrude");
-      if (ImGui::BeginTable("options_sketch_extrude", 2, ImGuiTableFlags_SizingStretchProp))
+      if (ImGui::BeginTable("options_sketch_extrude", 2, k_options_table_flags))
       {
-        ImGui::TableSetupColumn("label", ImGuiTableColumnFlags_WidthFixed, sketch_label_col_w);
-        ImGui::TableSetupColumn("control", ImGuiTableColumnFlags_WidthStretch);
+        options_table_setup_columns_(sketch_label_col_w, k_options_sketch_control_col_w);
 
         bool extrude_both_sides = m_view->shp_extrude().get_both_sides();
         ImGui::TableNextRow();
@@ -514,16 +524,20 @@ void GUI::options_()
     case Mode::Sketch_add_multi_edges:
       ImGui::Separator();
       ImGui::TextUnformatted("Shortcuts");
-      ImGui::TextWrapped("TAB: type edge length. Shift+TAB: type angle (degrees, CCW from +X).");
+      if (ui_show_help(3))
+        ImGui::TextWrapped("TAB: type edge length. Shift+TAB: type angle (degrees, CCW from +X).");
       break;
 
     case Mode::Sketch_add_node:
       ImGui::Separator();
       ImGui::TextUnformatted("Shortcuts");
-      ImGui::TextWrapped("TAB: type length along the rubber band. Shift+TAB: type angle (degrees, CCW from +X).");
-      ImGui::TextWrapped(
-          "Snap the first click to an existing sketch point to start a rubber band, then click to place the node "
-          "(or press Enter after typing a length). An unsnapped click still places a single node immediately.");
+      if (ui_show_help(3))
+      {
+        ImGui::TextWrapped("TAB: type length along the rubber band. Shift+TAB: type angle (degrees, CCW from +X).");
+        ImGui::TextWrapped(
+            "Snap the first click to an existing sketch point to start a rubber band, then click to place the node "
+            "(or press Enter after typing a length). An unsnapped click still places a single node immediately.");
+      }
       break;
 
     default:
@@ -539,6 +553,7 @@ void GUI::options_()
     material_combo_only_("##default_material");
   }
 
+  ImGui::EndChild();
   ImGui::End();
 }
 
@@ -556,13 +571,13 @@ void GUI::options_normal_mode_()
   };
 
   float label_col_w = ImGui::CalcTextSize("Selection Mode").x;
+  label_col_w       = std::max(label_col_w, ImGui::CalcTextSize("Orthographic projection").x);
   label_col_w += ImGui::GetStyle().CellPadding.x * 2.0f + 8.0f;
 
   ImGui::TextUnformatted("Selection");
-  if (ImGui::BeginTable("options_normal_selection", 2, ImGuiTableFlags_SizingStretchProp))
+  if (ImGui::BeginTable("options_normal_selection", 2, k_options_table_flags))
   {
-    ImGui::TableSetupColumn("label", ImGuiTableColumnFlags_WidthFixed, label_col_w);
-    ImGui::TableSetupColumn("control", ImGuiTableColumnFlags_WidthStretch);
+    options_table_setup_columns_(label_col_w, k_options_control_col_w);
 
     int current_item = static_cast<int>(m_view->get_shp_selection_mode());
     ImGui::TableNextRow();
@@ -579,15 +594,32 @@ void GUI::options_normal_mode_()
       ImGui::EndCombo();
     }
     ImGui::SameLine(0.0f, ImGui::GetStyle().ItemInnerSpacing.x);
-    ImGui::TextDisabled("(?)");
-    if (ImGui::IsItemHovered())
+    if (ui_show_help(2))
     {
-      ImGui::BeginTooltip();
-      ImGui::PushTextWrapPos(ImGui::GetFontSize() * 35.0f);
-      ImGui::TextDisabled("Hotkeys: 1-9 (Normal mode) set filter when the 3D view has focus, not while typing in UI.");
-      ImGui::PopTextWrapPos();
-      ImGui::EndTooltip();
+      ImGui::TextDisabled("(?)");
+      if (ImGui::IsItemHovered())
+      {
+        ImGui::BeginTooltip();
+        ImGui::PushTextWrapPos(ImGui::GetFontSize() * 35.0f);
+        ImGui::TextDisabled("Hotkeys: 1-9 (Normal mode) set filter when the 3D view has focus, not while typing in UI.");
+        ImGui::PopTextWrapPos();
+        ImGui::EndTooltip();
+      }
     }
+
+    bool ortho = m_inspection_orthographic;
+    ImGui::TableNextRow();
+    ImGui::TableSetColumnIndex(0);
+    right_aligned_label("Orthographic projection");
+    ImGui::TableSetColumnIndex(1);
+    if (ImGui::Checkbox("##inspection_orthographic", &ortho))
+    {
+      m_inspection_orthographic = ortho;
+      save_occt_view_settings();
+      m_view->apply_camera_projection();
+    }
+    if (ui_show_help(2) && ImGui::IsItemHovered())
+      ImGui::SetTooltip("Use an orthographic camera while in Inspection mode (no perspective foreshortening).");
 
     ImGui::EndTable();
   }
@@ -598,7 +630,8 @@ void GUI::options_normal_mode_()
   int                             current_mat    = int(m_view->get_default_material().Name());
   if (current_mat < 0 || current_mat >= static_cast<int>(material_names.size()))
     current_mat = 0;
-  ImGui::SetNextItemWidth(ImGui::GetContentRegionAvail().x);
+  const float material_row_w = label_col_w + k_options_control_col_w;
+  ImGui::SetNextItemWidth(std::max(ImGui::GetContentRegionAvail().x, material_row_w));
   if (ImGui::BeginCombo("##default_material_normal", material_names[static_cast<size_t>(current_mat)].data(),
                         ImGuiComboFlags_HeightSmall))
   {
@@ -689,10 +722,9 @@ void GUI::options_shape_chamfer_mode_()
   label_col_w += ImGui::GetStyle().CellPadding.x * 2.0f + 8.0f;
 
   ImGui::TextUnformatted("Chamfer");
-  if (ImGui::BeginTable("options_chamfer_tool", 2, ImGuiTableFlags_SizingStretchProp))
+  if (ImGui::BeginTable("options_chamfer_tool", 2, k_options_table_flags))
   {
-    ImGui::TableSetupColumn("label", ImGuiTableColumnFlags_WidthFixed, label_col_w);
-    ImGui::TableSetupColumn("control", ImGuiTableColumnFlags_WidthStretch);
+    options_table_setup_columns_(label_col_w, k_options_control_col_w);
 
     int current_mode = static_cast<int>(m_chamfer_mode);
     ImGui::TableNextRow();
@@ -757,10 +789,9 @@ void GUI::options_shape_fillet_mode_()
   label_col_w += ImGui::GetStyle().CellPadding.x * 2.0f + 8.0f;
 
   ImGui::TextUnformatted("Fillet");
-  if (ImGui::BeginTable("options_fillet_tool", 2, ImGuiTableFlags_SizingStretchProp))
+  if (ImGui::BeginTable("options_fillet_tool", 2, k_options_table_flags))
   {
-    ImGui::TableSetupColumn("label", ImGuiTableColumnFlags_WidthFixed, label_col_w);
-    ImGui::TableSetupColumn("control", ImGuiTableColumnFlags_WidthStretch);
+    options_table_setup_columns_(label_col_w, k_options_control_col_w);
 
     int current_mode = static_cast<int>(m_fillet_mode);
     ImGui::TableNextRow();
@@ -835,10 +866,9 @@ void GUI::options_shape_polar_duplicate_mode_()
   label_col_w += ImGui::GetStyle().CellPadding.x * 2.0f + 8.0f;
 
   ImGui::TextUnformatted("Polar duplicate");
-  if (ImGui::BeginTable("options_polar_dup_tool", 2, ImGuiTableFlags_SizingStretchProp))
+  if (ImGui::BeginTable("options_polar_dup_tool", 2, k_options_table_flags))
   {
-    ImGui::TableSetupColumn("label", ImGuiTableColumnFlags_WidthFixed, label_col_w);
-    ImGui::TableSetupColumn("control", ImGuiTableColumnFlags_WidthStretch);
+    options_table_setup_columns_(label_col_w, k_options_control_col_w);
 
     ImGui::TableNextRow();
     ImGui::TableSetColumnIndex(0);

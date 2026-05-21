@@ -1048,12 +1048,16 @@ void Occt_view::sketch_face_extrude(const ScreenCoords& screen_coords, bool is_m
   m_shp_extrude.sketch_face_extrude(screen_coords, is_mouse_move);
 }
 
-void Occt_view::delete_selected()
+void Occt_view::delete_selected() { delete_shapes(get_selected()); }
+
+void Occt_view::delete_shapes(std::vector<AIS_Shape_ptr> to_delete)
 {
+  if (to_delete.empty())
+    return;
+
   push_undo_snapshot();
   remove_selected_length_dimensions_from_sketches_();
-  auto selected = get_selected();
-  delete_(selected);
+  delete_(to_delete);
   cancel(Set_parent_mode::No); // In case we are in the middle of a operation.
 }
 
@@ -1412,6 +1416,23 @@ bool Occt_view::is_headless() const { return m_headless_view; }
 // Mode related
 Mode Occt_view::get_mode() const { return m_gui.get_mode(); }
 
+void Occt_view::apply_camera_projection()
+{
+  if (is_headless())
+    return;
+
+  const bool ortho = is_sketch_mode(get_mode()) || (get_mode() == Mode::Normal && m_gui.inspection_orthographic());
+
+  Graphic3d_Camera_ptr camera = m_view->Camera();
+  if (ortho)
+    camera->SetProjectionType(Graphic3d_Camera::Projection_Orthographic);
+  else
+    camera->SetProjectionType(Graphic3d_Camera::Projection_Perspective);
+
+  m_view->Redraw();
+  m_ctx->UpdateCurrentViewer();
+}
+
 void Occt_view::on_mode()
 {
   DBG_MSG(c_mode_strs[int(get_mode())]);
@@ -1441,10 +1462,8 @@ void Occt_view::on_mode()
     }
   };
 
-  bool ortho = false;
   if (is_sketch_mode(get_mode()))
   {
-    ortho = true;
     for (auto shp : m_shps)
       shp->set_visible(false);
 
@@ -1486,17 +1505,7 @@ void Occt_view::on_mode()
       shp->set_visible(true);
   }
 
-  if (!is_headless())
-  {
-    Graphic3d_Camera_ptr camera = m_view->Camera();
-    if (ortho)
-      camera->SetProjectionType(Graphic3d_Camera::Projection_Orthographic);
-    else
-      camera->SetProjectionType(Graphic3d_Camera::Projection_Perspective);
-
-    m_view->Redraw();
-    m_ctx->UpdateCurrentViewer();
-  }
+  apply_camera_projection();
 }
 
 void Occt_view::on_chamfer_mode()
