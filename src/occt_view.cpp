@@ -20,6 +20,8 @@
 #include <OpenGl_GraphicDriver.hxx>
 #include <Precision.hxx>
 #include <Prs3d_DatumAspect.hxx>
+#include <Prs3d_Drawer.hxx>
+#include <Prs3d_LineAspect.hxx>
 #include <PrsDim_LengthDimension.hxx>
 #include <STEPControl_Reader.hxx>
 #include <STEPControl_Writer.hxx>
@@ -42,6 +44,7 @@
 #include "geom.h"
 #include "gui.h"
 #include "ply_io.h"
+#include "shp.h"
 #include "shp_create.h"
 #include "sketch.h"
 #include "sketch_json.h"
@@ -1098,6 +1101,13 @@ void Occt_view::delete_(std::vector<AIS_Shape_ptr>& to_delete)
     else
       ++itr;
 
+  for (const AIS_Shape_ptr& shp : to_delete)
+    if (m_shape_list_hover == shp)
+    {
+      set_shape_list_hover(nullptr);
+      break;
+    }
+
   remove(to_delete);
 }
 
@@ -1388,6 +1398,48 @@ std::vector<AIS_Shape_ptr> Occt_view::get_selected() const
     m_ctx->NextSelected(); // Move to the next selected object
   }
   return shapes;
+}
+
+namespace
+{
+opencascade::handle<Prs3d_Drawer> shape_list_hover_drawer_()
+{
+  static opencascade::handle<Prs3d_Drawer> drawer;
+  if (drawer.IsNull())
+  {
+    drawer = new Prs3d_Drawer();
+    drawer->SetColor(Quantity_NOC_CYAN1);
+    Handle(Graphic3d_AspectFillArea3d) fill_aspect = new Graphic3d_AspectFillArea3d();
+    fill_aspect->SetAlphaMode(Graphic3d_AlphaMode_Blend);
+    fill_aspect->SetColor(Quantity_Color(0.1, 0.1, 0.1, Quantity_TOC_RGB));
+    drawer->SetBasicFillAreaAspect(fill_aspect);
+    Handle(Prs3d_LineAspect) wire_aspect = new Prs3d_LineAspect(Quantity_NOC_CYAN1, Aspect_TOL_SOLID, 2.0);
+    drawer->SetWireAspect(wire_aspect);
+  }
+  return drawer;
+}
+} // namespace
+
+void Occt_view::set_shape_list_hover(const Shp_ptr& shp)
+{
+  if (is_headless() || m_ctx.IsNull())
+    return;
+
+  if (m_shape_list_hover == shp)
+    return;
+
+  if (!m_shape_list_hover.IsNull())
+  {
+    m_ctx->Unhilight(m_shape_list_hover, Standard_False);
+    m_shape_list_hover.Nullify();
+  }
+
+  m_shape_list_hover = shp;
+
+  if (!m_shape_list_hover.IsNull() && m_shape_list_hover->get_visible())
+    m_ctx->HilightWithColor(m_shape_list_hover, shape_list_hover_drawer_(), Standard_False);
+
+  m_ctx->UpdateCurrentViewer();
 }
 
 TopAbs_ShapeEnum Occt_view::get_shp_selection_mode() const { return m_shp_selection_mode; }

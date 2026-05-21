@@ -220,6 +220,9 @@ public:
   TopAbs_ShapeEnum           get_shp_selection_mode() const;
   void                       set_shp_selection_mode(const TopAbs_ShapeEnum mode);
 
+  /// Highlight \a shp in the 3D viewer while the Shape List row is hovered (null clears).
+  void set_shape_list_hover(const Shp_ptr& shp);
+
   // Material related
   const Graphic3d_MaterialAspect& get_default_material() const;
   void                            set_default_material(const Graphic3d_MaterialAspect& mat);
@@ -309,6 +312,7 @@ private:
   Sketch_list              m_sketches;
   std::shared_ptr<Sketch>  m_cur_sketch;
   TopAbs_ShapeEnum         m_shp_selection_mode{TopAbs_SHAPE};
+  Shp_ptr                  m_shape_list_hover;
   Graphic3d_MaterialAspect m_default_material;
   bool                     m_headless_view{false};
   /// True when LMB press was handled by planar-face sketch creation without AIS_ViewController::PressMouseButton (pair with
