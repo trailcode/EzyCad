@@ -24,6 +24,16 @@ using namespace glm;
 namespace
 {
 
+constexpr ImGuiTableFlags k_options_table_flags       = ImGuiTableFlags_SizingFixedFit;
+constexpr float         k_options_control_col_w     = 148.f;
+constexpr float         k_options_sketch_control_col_w = 176.f;
+
+void options_table_setup_columns_(float label_col_w, float control_col_w)
+{
+  ImGui::TableSetupColumn("label", ImGuiTableColumnFlags_WidthFixed, label_col_w);
+  ImGui::TableSetupColumn("control", ImGuiTableColumnFlags_WidthFixed, control_col_w);
+}
+
 // Up to `max_frac` digits after the decimal, strip trailing zeros (and a trailing '.').
 void format_double_trim_fraction(char* dst, std::size_t dst_sz, double v, int max_frac)
 {
@@ -321,6 +331,8 @@ void GUI::options_()
     return;
   }
 
+  ImGui::BeginChild("##options_scroll", ImVec2(0.f, 0.f), false, ImGuiWindowFlags_HorizontalScrollbar);
+
   // clang-format off
   switch (get_mode())
   {
@@ -385,10 +397,9 @@ void GUI::options_()
     sketch_label_col_w += ImGui::GetStyle().CellPadding.x * 2.0f + 8.0f;
 
     ImGui::TextUnformatted("Sketch options");
-    if (ImGui::BeginTable("options_sketch_sketch", 2, ImGuiTableFlags_SizingStretchProp))
+    if (ImGui::BeginTable("options_sketch_sketch", 2, k_options_table_flags))
     {
-      ImGui::TableSetupColumn("label", ImGuiTableColumnFlags_WidthFixed, sketch_label_col_w);
-      ImGui::TableSetupColumn("control", ImGuiTableColumnFlags_WidthStretch);
+      options_table_setup_columns_(sketch_label_col_w, k_options_sketch_control_col_w);
 
       ImGui::TableNextRow();
       ImGui::TableSetColumnIndex(0);
@@ -463,10 +474,9 @@ void GUI::options_()
     {
       ImGui::Separator();
       ImGui::TextUnformatted("Extrude");
-      if (ImGui::BeginTable("options_sketch_extrude", 2, ImGuiTableFlags_SizingStretchProp))
+      if (ImGui::BeginTable("options_sketch_extrude", 2, k_options_table_flags))
       {
-        ImGui::TableSetupColumn("label", ImGuiTableColumnFlags_WidthFixed, sketch_label_col_w);
-        ImGui::TableSetupColumn("control", ImGuiTableColumnFlags_WidthStretch);
+        options_table_setup_columns_(sketch_label_col_w, k_options_sketch_control_col_w);
 
         bool extrude_both_sides = m_view->shp_extrude().get_both_sides();
         ImGui::TableNextRow();
@@ -543,6 +553,7 @@ void GUI::options_()
     material_combo_only_("##default_material");
   }
 
+  ImGui::EndChild();
   ImGui::End();
 }
 
@@ -564,10 +575,9 @@ void GUI::options_normal_mode_()
   label_col_w += ImGui::GetStyle().CellPadding.x * 2.0f + 8.0f;
 
   ImGui::TextUnformatted("Selection");
-  if (ImGui::BeginTable("options_normal_selection", 2, ImGuiTableFlags_SizingStretchProp))
+  if (ImGui::BeginTable("options_normal_selection", 2, k_options_table_flags))
   {
-    ImGui::TableSetupColumn("label", ImGuiTableColumnFlags_WidthFixed, label_col_w);
-    ImGui::TableSetupColumn("control", ImGuiTableColumnFlags_WidthStretch);
+    options_table_setup_columns_(label_col_w, k_options_control_col_w);
 
     int current_item = static_cast<int>(m_view->get_shp_selection_mode());
     ImGui::TableNextRow();
@@ -620,7 +630,8 @@ void GUI::options_normal_mode_()
   int                             current_mat    = int(m_view->get_default_material().Name());
   if (current_mat < 0 || current_mat >= static_cast<int>(material_names.size()))
     current_mat = 0;
-  ImGui::SetNextItemWidth(ImGui::GetContentRegionAvail().x);
+  const float material_row_w = label_col_w + k_options_control_col_w;
+  ImGui::SetNextItemWidth(std::max(ImGui::GetContentRegionAvail().x, material_row_w));
   if (ImGui::BeginCombo("##default_material_normal", material_names[static_cast<size_t>(current_mat)].data(),
                         ImGuiComboFlags_HeightSmall))
   {
@@ -711,10 +722,9 @@ void GUI::options_shape_chamfer_mode_()
   label_col_w += ImGui::GetStyle().CellPadding.x * 2.0f + 8.0f;
 
   ImGui::TextUnformatted("Chamfer");
-  if (ImGui::BeginTable("options_chamfer_tool", 2, ImGuiTableFlags_SizingStretchProp))
+  if (ImGui::BeginTable("options_chamfer_tool", 2, k_options_table_flags))
   {
-    ImGui::TableSetupColumn("label", ImGuiTableColumnFlags_WidthFixed, label_col_w);
-    ImGui::TableSetupColumn("control", ImGuiTableColumnFlags_WidthStretch);
+    options_table_setup_columns_(label_col_w, k_options_control_col_w);
 
     int current_mode = static_cast<int>(m_chamfer_mode);
     ImGui::TableNextRow();
@@ -779,10 +789,9 @@ void GUI::options_shape_fillet_mode_()
   label_col_w += ImGui::GetStyle().CellPadding.x * 2.0f + 8.0f;
 
   ImGui::TextUnformatted("Fillet");
-  if (ImGui::BeginTable("options_fillet_tool", 2, ImGuiTableFlags_SizingStretchProp))
+  if (ImGui::BeginTable("options_fillet_tool", 2, k_options_table_flags))
   {
-    ImGui::TableSetupColumn("label", ImGuiTableColumnFlags_WidthFixed, label_col_w);
-    ImGui::TableSetupColumn("control", ImGuiTableColumnFlags_WidthStretch);
+    options_table_setup_columns_(label_col_w, k_options_control_col_w);
 
     int current_mode = static_cast<int>(m_fillet_mode);
     ImGui::TableNextRow();
@@ -857,10 +866,9 @@ void GUI::options_shape_polar_duplicate_mode_()
   label_col_w += ImGui::GetStyle().CellPadding.x * 2.0f + 8.0f;
 
   ImGui::TextUnformatted("Polar duplicate");
-  if (ImGui::BeginTable("options_polar_dup_tool", 2, ImGuiTableFlags_SizingStretchProp))
+  if (ImGui::BeginTable("options_polar_dup_tool", 2, k_options_table_flags))
   {
-    ImGui::TableSetupColumn("label", ImGuiTableColumnFlags_WidthFixed, label_col_w);
-    ImGui::TableSetupColumn("control", ImGuiTableColumnFlags_WidthStretch);
+    options_table_setup_columns_(label_col_w, k_options_control_col_w);
 
     ImGui::TableNextRow();
     ImGui::TableSetColumnIndex(0);
