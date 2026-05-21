@@ -26,6 +26,13 @@ def _sync_user_docs() -> None:
         if src.is_file():
             shutil.copy2(src, DOCS_DIR / name)
 
+    res_dst = DOCS_DIR / "res"
+    res_dst.mkdir(exist_ok=True)
+
+    splash_src = PROJECT_ROOT / "res" / "AI-gen-splashscreen_05_01_2026_512.png"
+    if splash_src.is_file():
+        shutil.copy2(splash_src, res_dst / splash_src.name)
+
     icons_src = PROJECT_ROOT / "res" / "icons"
     res_dst = DOCS_DIR / "res"
     icons_dst = res_dst / "icons"
