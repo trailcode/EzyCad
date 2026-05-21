@@ -1785,6 +1785,8 @@ void GUI::shape_list_()
   const float       mat_popup_w = std::min(440.0f, std::max(280.0f, mat_label_w_max + st_mat.WindowPadding.x * 2.0f +
                                                                         st_mat.FramePadding.x * 2.0f + st_mat.ScrollbarSize + 8.0f));
 
+  Shp_ptr shape_to_delete;
+
   std::unordered_set<const AIS_Shape*> selected_in_viewer;
   for (const AIS_Shape_ptr& ais : m_view->get_selected())
     if (!ais.IsNull())
@@ -1844,15 +1846,11 @@ void GUI::shape_list_()
     if (ImGui::InputText("", name_buffer, sizeof(name_buffer)))
       shape->set_name(std::string(name_buffer));
 
-    if (ImGui::BeginPopupContextItem("shape_name_mat"))
+    if (ImGui::BeginPopupContextItem("shape_name_ctx"))
     {
-      if (ImGui::BeginMenu("Material"))
-      {
-        for (int i = 0; i < nmat; ++i)
-          if (ImGui::MenuItem(mat_names[static_cast<size_t>(i)].c_str(), nullptr, i == mat_idx))
-            apply_shape_material(i);
-        ImGui::EndMenu();
-      }
+      if (ImGui::MenuItem("Delete"))
+        shape_to_delete = shape;
+
       ImGui::EndPopup();
     }
 
@@ -1889,7 +1887,7 @@ void GUI::shape_list_()
 
     ImGui::PopStyleVar();
     if (m_show_tool_tips && ImGui::IsItemHovered())
-      ImGui::SetTooltip("%s\n(right-click name: Material menu)", mat_names[static_cast<size_t>(mat_idx)].c_str());
+      ImGui::SetTooltip("%s\n(click: material; right-click name: Delete)", mat_names[static_cast<size_t>(mat_idx)].c_str());
 
     ImGui::SetNextWindowSize(ImVec2(mat_popup_w, 0.0f), ImGuiCond_Appearing);
     if (ImGui::BeginPopup("mat_pick"))
@@ -1915,9 +1913,8 @@ void GUI::shape_list_()
 
     if (ImGui::BeginPopupContextItem("mat_btn_ctx"))
     {
-      for (int i = 0; i < nmat; ++i)
-        if (ImGui::MenuItem(mat_names[static_cast<size_t>(i)].c_str(), nullptr, i == mat_idx))
-          apply_shape_material(i);
+      if (ImGui::MenuItem("Delete"))
+        shape_to_delete = shape;
 
       ImGui::EndPopup();
     }
@@ -1932,6 +1929,10 @@ void GUI::shape_list_()
         ImGui::SetTooltip("Selected in 3D viewer");
     }
   }
+
+  if (shape_to_delete)
+    m_view->delete_shapes({shape_to_delete});
+
   ImGui::EndChild();
   ImGui::End();
 }

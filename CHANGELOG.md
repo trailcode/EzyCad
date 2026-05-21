@@ -9,6 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **Inspection mode** (Normal): **Options -> Orthographic projection** (under **Selection**) toggles an orthographic camera (persisted as `gui.inspection_orthographic`). Sketch modes still force orthographic as before.
 - **Settings** (3D view grid) and saved **`occt_view`** JSON: configure Open CASCADE rectangular grid **step** (uniform X/Y), plus **graphic display extent X/Y** and **Z offset** (`V3d_RectangularGrid::SetGraphicValues`). Bundled **`res/ezycad_settings.json`** includes defaults for those keys.
 
 - **Keyboard zoom:** **NumPad +** / **NumPad -**, main **-**, and **Shift+=** (US **+**) zoom the 3D view in steps equal to **one mouse wheel tick** at the cursor (same internal scaling as scroll).

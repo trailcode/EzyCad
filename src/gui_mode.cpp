@@ -556,6 +556,7 @@ void GUI::options_normal_mode_()
   };
 
   float label_col_w = ImGui::CalcTextSize("Selection Mode").x;
+  label_col_w       = std::max(label_col_w, ImGui::CalcTextSize("Orthographic projection").x);
   label_col_w += ImGui::GetStyle().CellPadding.x * 2.0f + 8.0f;
 
   ImGui::TextUnformatted("Selection");
@@ -588,6 +589,20 @@ void GUI::options_normal_mode_()
       ImGui::PopTextWrapPos();
       ImGui::EndTooltip();
     }
+
+    bool ortho = m_inspection_orthographic;
+    ImGui::TableNextRow();
+    ImGui::TableSetColumnIndex(0);
+    right_aligned_label("Orthographic projection");
+    ImGui::TableSetColumnIndex(1);
+    if (ImGui::Checkbox("##inspection_orthographic", &ortho))
+    {
+      m_inspection_orthographic = ortho;
+      save_occt_view_settings();
+      m_view->apply_camera_projection();
+    }
+    if (ImGui::IsItemHovered())
+      ImGui::SetTooltip("Use an orthographic camera while in Inspection mode (no perspective foreshortening).");
 
     ImGui::EndTable();
   }

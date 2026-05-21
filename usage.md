@@ -58,7 +58,7 @@ EzyCad (Easy CAD) is a CAD application for hobbyist machinists to design and edi
 
 5. **Options Panel**
    - Adjust tool parameters; related controls are grouped by headings (for example **Sketch options**, **Extrude**, **Selection**, **Material**, **Polar duplicate**), depending on the active tool.
-   - **Normal** mode: **Selection** is the 3D pick filter. **Material** is the document preset for new solids that do not inherit from a clicked shape (for example toolbar **Box**, **polar duplicate** output). **Face extrude** reads the same preset in its Options **Material** row.
+   - **Normal** mode (Inspection): **Selection** is the 3D pick filter and **Orthographic projection** toggles the camera (saved in settings). **Material** is the document preset for new solids that do not inherit from a clicked shape (for example toolbar **Box**, **polar duplicate** output). **Face extrude** reads the same preset in its Options **Material** row.
    - To change material on a solid already in the scene, use the [Shape List](#shape-list).
    - **Chamfer** and **Fillet**: distance and mode only; the result solid keeps the **source shape's material**.
    - **Move**, **Rotate**, and **Scale**: transform options only (no material row there).

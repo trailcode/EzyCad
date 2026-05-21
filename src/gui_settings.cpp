@@ -51,6 +51,7 @@ std::string GUI::occt_view_settings_json() const
       {"edge_dim_arrow_size", m_edge_dim_arrow_size},
       {"view_roll_step_deg", m_view_roll_step_deg},
       {"view_zoom_scroll_scale", m_view_zoom_scroll_scale},
+      {"inspection_orthographic", m_inspection_orthographic},
       {"snap_guide_color",
              [&]()
              {
@@ -99,6 +100,7 @@ void GUI::save_occt_view_settings()
       {"imgui_rounding_tabs", m_imgui_rounding_tabs},
       {"view_roll_step_deg", m_view_roll_step_deg},
       {"view_zoom_scroll_scale", m_view_zoom_scroll_scale},
+      {"inspection_orthographic", m_inspection_orthographic},
       {"snap_guide_color",
              [&]()
              {
@@ -268,6 +270,10 @@ void GUI::parse_gui_panes_settings_(const std::string& content)
         log_message("EzyCad: settings gui.view_roll_step_deg out of range [" + std::to_string(k_gui_view_roll_step_deg_min) +
                     ", " + std::to_string(k_gui_view_roll_step_deg_max) + "], got " + std::to_string(v) + "; using default.");
     }
+
+    m_inspection_orthographic = b("inspection_orthographic", false);
+    if (m_view)
+      m_view->apply_camera_projection();
 
     m_view_zoom_scroll_scale = k_gui_view_zoom_scroll_scale_default;
     if (g.contains("view_zoom_scroll_scale") && g["view_zoom_scroll_scale"].is_number())
