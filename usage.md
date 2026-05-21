@@ -5,7 +5,7 @@
 ## Table of Contents
 1.  [Introduction](#introduction)
 2.  [Getting Started](#getting-started)
-3.  [User Interface](#user-interface) ([UI verbosity](#ui-verbosity))
+3.  [User Interface](#user-interface)
 4.  [File Operations](#file-operations)
 5.  [Edit Operations](#edit-operations)
 6.  [Modeling Tools](#modeling-tools)
@@ -40,7 +40,7 @@ EzyCad (Easy CAD) is a CAD application for hobbyist machinists to design and edi
 1. **Menu Bar**
    - **File** - [New](#new-project), [Open](#open-project), [Save](#save-project), Save as, [Import](#importing-3d-geometries), [Export](#exporting-3d-geometries), Examples, Exit
    - **Edit** - [Undo](#edit-operations), [Redo](#edit-operations)
-   - **View** - [Settings, panes, Lua/Python consoles](usage-settings.md#view-menu); pane depth also depends on [UI verbosity](#ui-verbosity)
+   - **View** - [Settings, panes, Lua/Python consoles](usage-settings.md#view-menu)
    - **Help** - [About](#help-menu), [Usage Guide](#help-menu), and the separate **[Settings guide](usage-settings.md)**
 
 2. **Toolbar**
@@ -58,11 +58,12 @@ EzyCad (Easy CAD) is a CAD application for hobbyist machinists to design and edi
 
 5. **Options Panel**
    - Adjust tool parameters; related controls are grouped by headings (for example **Sketch options**, **Extrude**, **Selection**, **Material**, **Polar duplicate**), depending on the active tool.
-   - **Normal** mode (Inspection): **Selection** is the 3D pick filter and **Orthographic projection** toggles the camera (saved in settings). **Material** is the document preset for new solids that do not inherit from a clicked shape (for example toolbar **Box**, **polar duplicate** output). **Face extrude** reads the same preset in its Options **Material** row.
+   - If you resize the pane narrower than its controls, a **horizontal scrollbar** appears so long labels (for example **Orthographic projection**) stay readable.
+   - **Normal** mode (Inspection): **Selection** is the 3D pick filter and **Orthographic projection** toggles the camera (persisted as `gui.inspection_orthographic`). **Material** is the document preset for new solids that do not inherit from a clicked shape (for example toolbar **Box**, **polar duplicate** output). **Face extrude** reads the same preset in its Options **Material** row.
    - To change material on a solid already in the scene, use the [Shape List](#shape-list).
    - **Chamfer** and **Fillet**: distance and mode only; the result solid keeps the **source shape's material**.
    - **Move**, **Rotate**, and **Scale**: transform options only (no material row there).
-   - Sketch-related options (snap, length dimension placement, face extrude, shortcuts) are summarized in **[usage-settings.md](usage-settings.md#options-panel-sketch)**.
+   - Sketch-related options (snap, length dimension placement, face extrude, shortcuts) are summarized in **[usage-settings.md](usage-settings.md#options-panel)**.
 
 6. **Log Window**
    - View operation history
@@ -74,61 +75,23 @@ EzyCad (Easy CAD) is a CAD application for hobbyist machinists to design and edi
 - **About** - Opens the [project README](README.md) in the browser.
 - **Usage Guide** - Opens the [online usage guide](https://ezycad.readthedocs.io/en/latest/usage.html) (Read the Docs; source is [usage.md](usage.md) in this repository).
 
-For **View** (Settings, pane toggles, consoles), saving preferences, and the **Settings** pane sections, see **[usage-settings.md](usage-settings.md)**.
-
-### UI verbosity
-
-**UI verbosity** is an integer in **View -> Settings** (stored as **`gui.ui_verbosity`**; default **6**). It controls how much chrome and guidance EzyCad shows. Use the **left** / **right** arrows next to the value to step it, or type a number directly. Negative values are treated as **0** on load; values above **6** are saved but do not unlock more until future releases add higher tiers.
-
-#### How stepping works
-
-Verbosity is **cumulative**: everything unlocked at a lower value stays available at higher values.
-
-- **Even** steps (**2**, **4**, **6**, ...) add **help**: tooltips, `(?)` hints, and short wrapped notes.
-- **Odd** steps (**1**, **3**, **5**, ...) add **features**: extra panes, menus, and controls.
-
-There is one deliberate **split between 2 and 3** in the [Sketch List](#sketch-list): at **2** the **[P]** column appears but the button is disabled (layout preview); at **3** **[P]** works and row **expand** (`>`) is enabled. That way help (step 2) can appear before the properties workflow (step 3).
-
-**Pane visibility** (Options, Sketch List, and so on) is still saved in your settings file. Lowering verbosity hides panes without clearing those flags; raising verbosity shows them again if they were on before.
-
-#### Why it exists
-
-A lower verbosity keeps the screen focused on the 3D view and core modeling actions, which helps on small displays or while learning the toolbar. Higher values expose lists, scripting consoles, import paths, and inline documentation for day-to-day work. You can raise verbosity temporarily when you need a control, then lower it again.
-
-#### What each value enables
-
-The table lists what **first becomes available** at each step (not everything repeated at every row).
-
-| Value | Step type | Newly available |
-| --- | --- | --- |
-| **0** | Minimal | **Toolbar** and **3D view**. **File**: New, Open, Save, Save as, Export, Exit. **Edit**: Undo, Redo, New sketch, quick **Add** primitives (box, pyramid, sphere, cylinder, cone, torus at default size, no `*_prms` dialogs). **View**: **Settings** only. **Help**: About, Usage Guide. **Settings**: UI verbosity, Dark mode, **3D view navigation**, **3D view background**, **Sketch** (dimension width, underlay tint, snap guides). No Options, Sketch List, Shape List, or Log panes. No toolbar tooltips. |
-| **1** | Features | **Options**, **Sketch List**, **Shape List**, and **Log** panes (when enabled under **View**). Matching **View** menu entries to toggle them. |
-| **2** | Help | **Toolbar** button tooltips. Sketch List: disabled **[P]** placeholder (column reserved, not clickable). |
-| **3** | Features | **File**: Import, Sketch underlay image, **Examples**. **Lua** / **Python** consoles (**View** menu). Sketch List: active **[P]** (sketch properties), **`>`** expand and per-sketch inspector. |
-| **4** | Help | Hover tooltips on Options, sketch/shape lists, sketch properties, and most Settings controls; `(?)` markers on Settings rows (for example grid extent, dimension width). |
-| **5** | Features | **Edit**: **Add box_prms**, **Add pyramid_prms**, and other `*_prms` entries (parameter dialogs). **Settings**: **UI corner rounding**, **3D view grid**, **Startup project**. |
-| **6** | Help | Longer wrapped hints (for example Options **Shortcuts**, Settings view-navigation paragraph). Settings **`?`** links to the online usage guide. Extra sketch-properties help (for example underlay shear note). |
-| **7+** | Reserved | Same as **6** until a future version defines more tiers. |
-
-**Always on** (at any verbosity): project save/open, toolbar modes, **Export**, and the essential **Settings** sections listed for **0**. **Import** and scripting require at least **3**.
-
-For the control itself and the JSON key, see **[usage-settings.md](usage-settings.md#settings-pane)**.
+For **View** (Settings, pane toggles, consoles), saving preferences, and the **Settings** pane sections, see **[usage-settings.md](usage-settings.md)**. For **Options** panel details by mode, see **[Options panel](usage-settings.md#options-panel)**.
 
 ### Sketch List
 
-The **Sketch List** pane lists all 2D sketches in the current document. Open it from **View -> Sketch List** (requires [UI verbosity](#ui-verbosity) **1** or higher).
+The **Sketch List** pane lists all 2D sketches in the current document. Open it from **View -> Sketch List**.
 
 Each row is laid out left to right:
 
-- **Expand** - At verbosity **3+**, click **`>`** / **`v`** to show or hide details for that sketch (tooltip *Expand details* / *Collapse details* when help tier 2+ is on). Not shown below **3**.
+- **Expand** - Click **`>`** / **`v`** to show or hide details for that sketch (tooltip *Expand details* / *Collapse details*).
 - **Set current** - Radio button (circle). The current sketch is used for editing and for operations such as [extrude](#extrude-sketch-face-tool-e).
 - **Rename** - Click the name field and type a new name.
 - **Visibility** - Checkbox to show or hide the sketch in the 3D view.
 - **Underlay** - Checkbox to show or hide an [image underlay](usage-sketch.md#image-underlay) when one is imported (disabled until an underlay exists; tooltip *Display underlay*).
-- **Sketch properties** - **`[P]`** column at verbosity **2+**; the button is active at **3+** and opens **Sketch properties** (import/remove underlay, calibration, transform). At **2** the control is visible but disabled as a preview. See [Image underlay](usage-sketch.md#image-underlay).
+- **Sketch properties** - **`[P]`** opens **Sketch properties** (import/remove underlay, calibration, transform). See [Image underlay](usage-sketch.md#image-underlay).
 - **Delete** - Right-click the name and choose **Delete**.
 
-When expanded (verbosity **3+**), the row shows:
+When expanded, the row shows:
 
 - **Dimensions** - Table of length dimensions: visibility, editable name, and **offset** (label distance from the edge; **0** = automatic).
 - **Nodes**, **Edges**, **Faces** - Collapsible lists of element labels for inspection (read-only names).
@@ -146,10 +109,10 @@ At the top:
 For each shape, one row includes:
 
 - **Name** - Editable text field; change the label stored with the shape.
-- **Right-click the name** - Opens a context menu with **Material** and the same material list as the **M** button.
+- **Right-click the name** - **Delete** removes the shape from the document.
 - **Visibility** - Checkbox (tooltip *visibility*) to show or hide that shape in the 3D view.
 - **Solid / wire** - Checkbox (tooltip *solid/wire*) to switch **shaded** display or **wireframe** for that shape.
-- **M** - Opens a **Material** popup to pick an Open CASCADE material preset (also shown in the tooltip). You can also use the context menu on the name.
+- **M** - Click to open a **Material** popup; right-click **M** for **Delete**. The tooltip on **M** also notes that right-clicking the name deletes the shape.
 
 Rows that match the **current 3D selection** are drawn with a slightly brighter style so the list stays in sync with what is selected in the viewer (tooltip *Selected in 3D viewer* when you hover the highlighted row).
 

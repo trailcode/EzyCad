@@ -9,8 +9,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
-- **Settings -> UI verbosity** (`gui.ui_verbosity`): cumulative control over optional panes/menus (odd steps) and tooltips/inline help (even steps). Default **6** matches the previous full UI; **0** is minimal.
 - **Inspection mode** (Normal): **Options -> Orthographic projection** (under **Selection**) toggles an orthographic camera (persisted as `gui.inspection_orthographic`). Sketch modes still force orthographic as before.
+- **Options** pane: horizontal scrollbar when the window is resized narrower than its controls.
+- **Shape List**: right-click a shape **name** to **Delete**; right-click the **M** button for **Delete** as well (click **M** for the material popup).
 - **Settings** (3D view grid) and saved **`occt_view`** JSON: configure Open CASCADE rectangular grid **step** (uniform X/Y), plus **graphic display extent X/Y** and **Z offset** (`V3d_RectangularGrid::SetGraphicValues`). Bundled **`res/ezycad_settings.json`** includes defaults for those keys.
 
 - **Keyboard zoom:** **NumPad +** / **NumPad -**, main **-**, and **Shift+=** (US **+**) zoom the 3D view in steps equal to **one mouse wheel tick** at the cursor (same internal scaling as scroll).

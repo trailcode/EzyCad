@@ -6,7 +6,7 @@ This guide covers the **Settings** pane (what is on screen), the **View** menu (
 
 1. [View menu](#view-menu)
 2. [Settings pane](#settings-pane)
-3. [Options panel (sketch)](#options-panel-sketch)
+3. [Options panel](#options-panel)
 4. [Where settings are stored](#where-settings-are-stored)
 5. [Startup project](#startup-project)
 6. [Settings file reference](#settings-file-reference)
@@ -35,34 +35,52 @@ Visibility of these panes (and related flags) is persisted with the rest of your
 
 Open **View -> Settings**. The window title is **Settings**.
 
-- **UI verbosity** — value at the top with **left** / **right** step buttons (default **6**, full UI); you can also type a number. **0** keeps a minimal layout (toolbar and 3D view, core **File**/**Edit**/**Help**, essential settings only). Each **odd** step unlocks more panes and menu items; each **even** step unlocks more tooltips and inline help. **2** reserves the Sketch List **[P]** column (disabled slot); **3** enables **[P]**, row expand, and other feature-tier-2 items. Values above **6** are stored for future tiers. Persisted as **`gui.ui_verbosity`**.
-- **Dark mode** — checkbox below verbosity (not inside a collapsible section).
+- **Dark mode** — checkbox at the top (not inside a collapsible section).
 - At the bottom: **Defaults** — reloads bundled defaults from the app `res/` tree (including ImGui layout from that file).
 
-Between those, the pane has up to **six** collapsible sections (some appear only when **UI verbosity** is high enough). Expand a section to see its controls; when collapsed, only the section title bar is visible.
+Between those, the pane has **six** collapsible sections. Expand a section to see its controls; when collapsed, only the section title bar is visible.
 
-1. **3D view navigation** (always at verbosity **0** and above) — **View rotation step** (degrees per key press for **NumPad 8**/**2**/**4**/**6** orbit and **Shift+NumPad 4**/**6** roll; default **45**; **`?`** opens [view roll](https://ezycad.readthedocs.io/en/latest/usage.html#view-roll) on Read the Docs). **Zoom scroll scale** (multiplier for wheel and **+**/**-** zoom; default **4**). Hold **Shift** while zooming for a Blender-style finer step (multiply by **0.1**). Numpad shortcuts are documented with **Num Lock off**; with **Num Lock on**, use main-row alternatives in [usage.md -> View navigation](usage.md#view-navigation). Stored as **`gui.view_roll_step_deg`** and **`gui.view_zoom_scroll_scale`**. See **[usage-occt-view.md](usage-occt-view.md)**.
+1. **3D view navigation** — **View rotation step** (degrees per key press for **NumPad 8**/**2**/**4**/**6** orbit and **Shift+NumPad 4**/**6** roll; default **45**; **`?`** opens [view roll](https://ezycad.readthedocs.io/en/latest/usage.html#view-roll) on Read the Docs). **Zoom scroll scale** (multiplier for wheel and **+**/**-** zoom; default **4**). Hold **Shift** while zooming for a Blender-style finer step (multiply by **0.1**). Numpad shortcuts are documented with **Num Lock off**; with **Num Lock on**, use main-row alternatives in [usage.md -> View navigation](usage.md#view-navigation). Stored as **`gui.view_roll_step_deg`** and **`gui.view_zoom_scroll_scale`**. See **[usage-occt-view.md](usage-occt-view.md)**.
 
-2. **UI corner rounding** (verbosity **5**+) — Sliders **0** to **16** for **Windows, frames, popups**; **Scrollbars and sliders** (has `(?)` at higher help levels); **Tabs**.
+2. **UI corner rounding** — Sliders **0** to **16** for **Windows, frames, popups**; **Scrollbars and sliders** (has `(?)`); **Tabs**.
 
-3. **3D view background** (always) — **Background color 1** and **Background color 2** (float RGB fields and swatches). **Gradient blend** — combo: **Horizontal**, **Vertical**, **Diagonal 1**, **Diagonal 2**, **Corner 1** … **Corner 4**.
+3. **3D view background** — **Background color 1** and **Background color 2** (float RGB fields and swatches). **Gradient blend** — combo: **Horizontal**, **Vertical**, **Diagonal 1**, **Diagonal 2**, **Corner 1** … **Corner 4**.
 
-4. **3D view grid** (verbosity **5**+) — **Fine grid lines** and **Major grid lines** (passed to Open CASCADE `Aspect_Grid::SetColors`: dense lines vs every-tenth emphasis lines). **Grid step**, **Grid extent X / Y** (full span edge-to-edge), and **Grid display Z offset** in the Settings pane use the **same length scale as sketch length dimensions** (display value = model value / internal `dimension_scale`, default **100**). Saved JSON (`occt_view`) stores **half-extent** in model units for OCCT (`grid_graphic_*`); Settings shows **full** extent (twice the stored half-extent).
+4. **3D view grid** — **Fine grid lines** and **Major grid lines** (passed to Open CASCADE `Aspect_Grid::SetColors`: dense lines vs every-tenth emphasis lines). **Grid step**, **Grid extent X / Y** (full span edge-to-edge), and **Grid display Z offset** in the Settings pane use the **same length scale as sketch length dimensions** (display value = model value / internal `dimension_scale`, default **100**). Saved JSON (`occt_view`) stores **half-extent** in model units for OCCT (`grid_graphic_*`); Settings shows **full** extent (twice the stored half-extent).
 
-5. **Sketch** (always) — **Dimension line width** — slider **0.5** to **8.0** (has `(?)`). **Underlay highlight color** — RGB (has `(?)`).
+5. **Sketch** — **Dimension line width** — slider **0.5** to **8.0** (has `(?)`). **Underlay highlight color** — RGB (has `(?)`).
 
-6. **Startup project** (verbosity **5**+; **Desktop only:** **Load last opened on startup** (checkbox, with `(?)`), then **Last opened path:** … or **(No path saved yet.)** Then **Save current as startup project**, **Clear saved startup** (with `(?)`). **WebAssembly:** no load-last row; only the two buttons and `(?)`. See [Startup project](#startup-project).
+6. **Startup project** — **Desktop only:** **Load last opened on startup** (checkbox, with `(?)`), then **Last opened path:** … or **(No path saved yet.)** Then **Save current as startup project**, **Clear saved startup** (with `(?)`). **WebAssembly:** no load-last row; only the two buttons and `(?)`. See [Startup project](#startup-project).
 
 **Not in this pane**
 
 - **View** menu items such as **Options**, **Sketch List**, **Lua Console** — they only show or hide panes; they are not rows inside **Settings**. Their visibility is still saved under `gui.*` in the settings file (see [Settings file reference](#settings-file-reference)).
-- **Length value placement** for edge dimensions — **Options** panel when the edge-dimension tool is active; see [Options panel (sketch)](#options-panel-sketch).
+- **Length value placement** for edge dimensions — **Options** panel when the edge-dimension tool is active; see [Options panel](#options-panel).
 
 **Saving** — On desktop, settings are written when you change options that save, and on exit. On **Emscripten**, use **File -> Save settings** so the browser persists (see [Where settings are stored](#where-settings-are-stored)).
 
-## Options panel (sketch)
+## Options panel
 
-Sketch-related preferences are edited in the **Options** panel while you use a tool, not in the **Settings** pane. They appear under section headings in the panel:
+Open **View -> Options**. Content depends on the active tool mode. Related controls are grouped under headings (for example **Sketch options**, **Extrude**, **Selection**, **Material**).
+
+If you resize the pane narrower than its controls, a **horizontal scrollbar** appears so long labels (for example **Orthographic projection**) stay readable.
+
+### Normal mode (Inspection)
+
+Under **Selection**:
+
+- **Selection Mode** — combo for the 3D pick filter (vertices, edges, faces, solids, and combinations). The **`(?)`** marker links to [shape selection filter hotkeys](usage.md#shape-selection-filter-normal-mode-only) in the usage guide.
+- **Orthographic projection** — checkbox toggling an orthographic camera in inspection mode (sketch modes still force orthographic as before). Persisted as **`gui.inspection_orthographic`**.
+
+Under **Material**:
+
+- Document preset for new solids that do not inherit from a clicked shape (toolbar **Box**, **polar duplicate** output, and similar). To change material on an existing solid, use the [Shape List](usage.md#shape-list).
+
+For other non-sketch Options content (for example **Polar duplicate**), see [usage.md -> User Interface](usage.md#user-interface) (Options Panel).
+
+### Sketch tools
+
+Sketch-related preferences are edited in the **Options** panel while you use a sketch tool, not in the **Settings** pane:
 
 - **Sketch options** (all sketch tools): **Snap dist** and **Snap guide mode** (*Traditional*, *Fullscreen*, *Both*).
 - **Toggle edge dimension** (length dimensions): **Length value placement** - combo: *Near first point*, *Near second point*, *Center on dimension line*, *Automatic*. Maps to the `edge_dim_label_h` key (integers **0** through **3**). Changing it persists like other GUI flags.
@@ -71,8 +89,6 @@ Sketch-related preferences are edited in the **Options** panel while you use a t
 - **Sketch operation** (mirror / revolve axis): mirror, revolve, angle, and clear-axis actions (see [usage-sketch.md](usage-sketch.md#operation-axis-tool)).
 
 **Dimension line width** for length dimensions is in **Settings -> Sketch** (see above).
-
-For **Normal** mode (selection and document **Material** preset), **polar duplicate**, and other non-sketch Options content, see [usage.md](usage.md#user-interface) under **User Interface** (Options Panel).
 
 ## Where settings are stored
 
@@ -135,9 +151,9 @@ String: ImGui `.ini` text for window positions and docking saved with **SaveIniS
 | `show_settings_dialog` | boolean | Whether the Settings pane was open when last saved (usually false). |
 | `show_lua_console` | boolean | Lua console pane visible. |
 | `show_python_console` | boolean | Python console pane visible (native builds with Python). |
-| `ui_verbosity` | integer | UI depth: **0** = minimal; odd values add features (panes, menus); even values add help (tooltips, hints). Default **6**. Negative values are clamped to **0** on load. |
 | `show_dbg` | boolean | Debug pane visible (debug builds only). |
-| `edge_dim_label_h` | integer | Length dimension label placement: **0** to **3** (see [Options panel (sketch)](#options-panel-sketch)). Values outside this range are ignored. |
+| `inspection_orthographic` | boolean | **Normal** mode Options: orthographic camera when true (default false). |
+| `edge_dim_label_h` | integer | Length dimension label placement: **0** to **3** (see [Options panel](#options-panel)). Values outside this range are ignored. |
 | `edge_dim_line_width` | number | Sketch length dimension line width (allowed range **0.5** to **8.0** in code). |
 | `imgui_rounding_general` | number | Window/child/frame/popup rounding (**0** to **32** clamped in code; sliders stop at 16 in the UI). |
 | `imgui_rounding_scroll` | number | Scrollbar and grab rounding (same clamp). |
@@ -148,7 +164,7 @@ String: ImGui `.ini` text for window positions and docking saved with **SaveIniS
 | `load_last_opened_on_startup` | boolean | Desktop: open the last `.ezy` on launch. **Legacy:** `load_last_saved_on_startup` is read as a fallback if the newer key is absent. |
 | `last_opened_project_path` | string | Path of the last opened project for the option above. **Legacy:** `last_saved_project_path` is accepted if the newer key is missing. |
 
-Scripting API **`ezy.occt_view_settings_json()`** returns a JSON string with **`occt_view`** plus selected **`gui`** keys (including **`gui.ui_verbosity`**, **`gui.edge_dim_label_h`**, **`gui.edge_dim_line_width`**, **`gui.view_roll_step_deg`**, **`gui.view_zoom_scroll_scale`** when saved). See [scripting.md](scripting.md).
+Scripting API **`ezy.occt_view_settings_json()`** returns a JSON string with **`occt_view`** plus selected **`gui`** keys (including **`gui.inspection_orthographic`**, **`gui.edge_dim_label_h`**, **`gui.edge_dim_line_width`**, **`gui.view_roll_step_deg`**, **`gui.view_zoom_scroll_scale`** when saved). See [scripting.md](scripting.md).
 
 ---
 
