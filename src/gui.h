@@ -136,6 +136,10 @@ public:
   int ui_help_tier() const { return m_ui_verbosity / 2; }
   bool ui_show_feature(int tier) const { return tier <= ui_feature_tier(); }
   bool ui_show_help(int tier) const { return tier <= ui_help_tier(); }
+  /// Sketch list: reserved [P] column at verbosity >= 2; active button at feature tier 2 (verbosity >= 3).
+  bool ui_show_sketch_list_props_slot() const { return m_ui_verbosity >= 2; }
+  bool ui_show_sketch_list_props_button() const { return ui_show_feature(2); }
+  bool ui_show_sketch_list_expand() const { return ui_show_feature(2); }
   bool show_options_effective() const { return m_show_options && ui_show_feature(1); }
   bool show_sketch_list_effective() const { return m_show_sketch_list && ui_show_feature(1); }
   bool show_shape_list_effective() const { return m_show_shape_list && ui_show_feature(1); }

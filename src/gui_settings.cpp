@@ -429,10 +429,43 @@ void GUI::settings_()
 
   constexpr float k_label_col_w = 230.f;
 
-  if (ImGui::SliderInt("UI verbosity", &m_ui_verbosity, k_gui_ui_verbosity_min, k_gui_ui_verbosity_default + 4,
-                       "%d"))
-    save_occt_view_settings();
-  m_ui_verbosity = std::max(k_gui_ui_verbosity_min, m_ui_verbosity);
+  {
+    bool verb_changed = false;
+    if (ImGui::BeginTable("settings_ui_verbosity", 2, ImGuiTableFlags_SizingStretchProp))
+    {
+      ImGui::TableSetupColumn("label", ImGuiTableColumnFlags_WidthFixed, k_label_col_w);
+      ImGui::TableSetupColumn("control", ImGuiTableColumnFlags_WidthStretch);
+      ImGui::TableNextRow();
+      ImGui::TableSetColumnIndex(0);
+      ImGui::AlignTextToFramePadding();
+      ImGui::TextUnformatted("UI verbosity");
+      ImGui::TableSetColumnIndex(1);
+      ImGui::BeginDisabled(m_ui_verbosity <= k_gui_ui_verbosity_min);
+      if (ImGui::ArrowButton("##ui_verbosity_dec", ImGuiDir_Left))
+      {
+        --m_ui_verbosity;
+        verb_changed = true;
+      }
+      ImGui::EndDisabled();
+      ImGui::SameLine(0.0f, ImGui::GetStyle().ItemInnerSpacing.x);
+      ImGui::SetNextItemWidth(56.0f);
+      int verb_edit = m_ui_verbosity;
+      if (ImGui::InputInt("##ui_verbosity_val", &verb_edit, 0, 0))
+      {
+        m_ui_verbosity = std::max(k_gui_ui_verbosity_min, verb_edit);
+        verb_changed     = true;
+      }
+      ImGui::SameLine(0.0f, ImGui::GetStyle().ItemInnerSpacing.x);
+      if (ImGui::ArrowButton("##ui_verbosity_inc", ImGuiDir_Right))
+      {
+        ++m_ui_verbosity;
+        verb_changed = true;
+      }
+      ImGui::EndTable();
+    }
+    if (verb_changed)
+      save_occt_view_settings();
+  }
   if (ui_show_help(3))
     ImGui::TextWrapped("0 = minimal UI. Odd values add more controls and panes; even values add more help (tooltips and "
                        "hints). Higher values are reserved for future tiers.");

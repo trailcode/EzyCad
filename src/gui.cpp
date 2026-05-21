@@ -1031,7 +1031,7 @@ void GUI::sketch_list_()
     const Sketch* sk_key   = sketch.get();
     bool&         expanded = m_sketch_list_expanded[sk_key];
 
-    if (ui_show_feature(2))
+    if (ui_show_sketch_list_expand())
     {
       ImGui::PushID(("expand" + id_suffix).c_str());
       if (ImGui::SmallButton(expanded ? "v" : ">"))
@@ -1110,23 +1110,34 @@ void GUI::sketch_list_()
     }
     ImGui::PopID();
 
-    if (ui_show_feature(2))
+    if (ui_show_sketch_list_props_slot())
     {
       ImGui::SameLine();
       ImGui::PushID(("props" + id_suffix).c_str());
-      if (ImGui::SmallButton("[P]"))
+      if (ui_show_sketch_list_props_button())
       {
-        m_sketch_properties_sketch = sketch;
-        m_sketch_properties_open   = true;
-      }
+        if (ImGui::SmallButton("[P]"))
+        {
+          m_sketch_properties_sketch = sketch;
+          m_sketch_properties_open   = true;
+        }
 
-      if (ui_show_help(2) && ImGui::IsItemHovered())
-        ImGui::SetTooltip("Sketch properties");
+        if (ui_show_help(2) && ImGui::IsItemHovered())
+          ImGui::SetTooltip("Sketch properties");
+      }
+      else
+      {
+        ImGui::BeginDisabled();
+        ImGui::SmallButton("[P]");
+        ImGui::EndDisabled();
+        if (ui_show_help(2) && ImGui::IsItemHovered(ImGuiHoveredFlags_AllowWhenDisabled))
+          ImGui::SetTooltip("Sketch properties ([P]) unlocks at UI verbosity 3.");
+      }
 
       ImGui::PopID();
     }
 
-    if (expanded && ui_show_feature(2))
+    if (expanded && ui_show_sketch_list_expand())
       sketch_list_inspector_(*sketch, index);
 
     ++index;

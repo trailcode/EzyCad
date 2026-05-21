@@ -35,7 +35,7 @@ Visibility of these panes (and related flags) is persisted with the rest of your
 
 Open **View -> Settings**. The window title is **Settings**.
 
-- **UI verbosity** — integer at the top (default **6**, full UI). **0** keeps a minimal layout (toolbar and 3D view, core **File**/**Edit**/**Help**, essential settings only). Each **odd** step unlocks more panes and menu items; each **even** step unlocks more tooltips and inline help. Values above **6** are stored for future tiers. Persisted as **`gui.ui_verbosity`**.
+- **UI verbosity** — value at the top with **left** / **right** step buttons (default **6**, full UI); you can also type a number. **0** keeps a minimal layout (toolbar and 3D view, core **File**/**Edit**/**Help**, essential settings only). Each **odd** step unlocks more panes and menu items; each **even** step unlocks more tooltips and inline help. **2** reserves the Sketch List **[P]** column (disabled slot); **3** enables **[P]**, row expand, and other feature-tier-2 items. Values above **6** are stored for future tiers. Persisted as **`gui.ui_verbosity`**.
 - **Dark mode** — checkbox below verbosity (not inside a collapsible section).
 - At the bottom: **Defaults** — reloads bundled defaults from the app `res/` tree (including ImGui layout from that file).
 
