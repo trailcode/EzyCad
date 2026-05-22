@@ -27,6 +27,7 @@
 
 class Sketch;
 class GUI;
+class Prs3d_Drawer;
 class TopoDS_Face;
 class TopoDS_Wire;
 class TopoDS_Edge;
@@ -222,6 +223,8 @@ public:
 
   /// Highlight \a shp in the 3D viewer while the Shape List row is hovered (null clears).
   void set_shape_list_hover(const Shp_ptr& shp);
+  /// Re-apply list-hover highlight after Settings changes the hover color.
+  void refresh_shape_list_hover_highlight();
 
   // Material related
   const Graphic3d_MaterialAspect& get_default_material() const;
@@ -312,8 +315,10 @@ private:
   Sketch_list              m_sketches;
   std::shared_ptr<Sketch>  m_cur_sketch;
   TopAbs_ShapeEnum         m_shp_selection_mode{TopAbs_SHAPE};
-  Shp_ptr                  m_shape_list_hover;
-  Graphic3d_MaterialAspect m_default_material;
+  Shp_ptr                           m_shape_list_hover;
+  opencascade::handle<Prs3d_Drawer> m_shape_list_hover_drawer;
+  void                              update_shape_list_hover_drawer_();
+  Graphic3d_MaterialAspect          m_default_material;
   bool                     m_headless_view{false};
   /// True when LMB press was handled by planar-face sketch creation without AIS_ViewController::PressMouseButton (pair with
   /// release skip).

@@ -1400,25 +1400,37 @@ std::vector<AIS_Shape_ptr> Occt_view::get_selected() const
   return shapes;
 }
 
-namespace
+void Occt_view::update_shape_list_hover_drawer_()
 {
-opencascade::handle<Prs3d_Drawer> shape_list_hover_drawer_()
-{
-  static opencascade::handle<Prs3d_Drawer> drawer;
-  if (drawer.IsNull())
-  {
-    drawer = new Prs3d_Drawer();
-    drawer->SetColor(Quantity_NOC_CYAN1);
-    Handle(Graphic3d_AspectFillArea3d) fill_aspect = new Graphic3d_AspectFillArea3d();
-    fill_aspect->SetAlphaMode(Graphic3d_AlphaMode_Blend);
-    fill_aspect->SetColor(Quantity_Color(0.1, 0.1, 0.1, Quantity_TOC_RGB));
-    drawer->SetBasicFillAreaAspect(fill_aspect);
-    Handle(Prs3d_LineAspect) wire_aspect = new Prs3d_LineAspect(Quantity_NOC_CYAN1, Aspect_TOL_SOLID, 2.0);
-    drawer->SetWireAspect(wire_aspect);
-  }
-  return drawer;
+  uint8_t r{}, g{}, b{}, a{};
+  gui().shape_list_hover_color_rgba(r, g, b, a);
+  (void)a;
+  const Quantity_Color qc(static_cast<double>(r) / 255.0, static_cast<double>(g) / 255.0,
+                          static_cast<double>(b) / 255.0, Quantity_TOC_RGB);
+
+  if (m_shape_list_hover_drawer.IsNull())
+    m_shape_list_hover_drawer = new Prs3d_Drawer();
+
+  m_shape_list_hover_drawer->SetColor(qc);
+  Handle(Graphic3d_AspectFillArea3d) fill_aspect = new Graphic3d_AspectFillArea3d();
+  fill_aspect->SetAlphaMode(Graphic3d_AlphaMode_Blend);
+  fill_aspect->SetColor(Quantity_Color(0.1, 0.1, 0.1, Quantity_TOC_RGB));
+  m_shape_list_hover_drawer->SetBasicFillAreaAspect(fill_aspect);
+  Handle(Prs3d_LineAspect) wire_aspect = new Prs3d_LineAspect(qc, Aspect_TOL_SOLID, 2.0);
+  m_shape_list_hover_drawer->SetWireAspect(wire_aspect);
 }
-} // namespace
+
+void Occt_view::refresh_shape_list_hover_highlight()
+{
+  if (is_headless() || m_ctx.IsNull() || m_shape_list_hover.IsNull())
+    return;
+
+  update_shape_list_hover_drawer_();
+  m_ctx->Unhilight(m_shape_list_hover, Standard_False);
+  if (m_shape_list_hover->get_visible())
+    m_ctx->HilightWithColor(m_shape_list_hover, m_shape_list_hover_drawer, Standard_False);
+  m_ctx->UpdateCurrentViewer();
+}
 
 void Occt_view::set_shape_list_hover(const Shp_ptr& shp)
 {
@@ -1437,7 +1449,10 @@ void Occt_view::set_shape_list_hover(const Shp_ptr& shp)
   m_shape_list_hover = shp;
 
   if (!m_shape_list_hover.IsNull() && m_shape_list_hover->get_visible())
-    m_ctx->HilightWithColor(m_shape_list_hover, shape_list_hover_drawer_(), Standard_False);
+  {
+    update_shape_list_hover_drawer_();
+    m_ctx->HilightWithColor(m_shape_list_hover, m_shape_list_hover_drawer, Standard_False);
+  }
 
   m_ctx->UpdateCurrentViewer();
 }
