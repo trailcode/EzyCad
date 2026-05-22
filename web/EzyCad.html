@@ -3,7 +3,16 @@
   <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, minimum-scale=1, user-scalable=no"/>
-    <title>EzyCad</title>
+    <title>EzyCad — run in browser (WebAssembly)</title>
+    <meta name="description" content="EzyCad — open-source hobbyist CAD using Open CASCADE (OCCT), Dear ImGui, and OpenGL. Run in your browser via WebAssembly or build from source on GitHub.">
+    <meta name="keywords" content="EzyCad, CAD, Open CASCADE, OCCT, ImGui, OpenGL, WebAssembly, CNC, machining, STEP, STL">
+    <link rel="canonical" href="https://trailcode.github.io/EzyCad/EzyCad.html">
+    <meta property="og:title" content="EzyCad — open-source hobbyist CAD">
+    <meta property="og:description" content="Design 2D and 3D parts in your browser. Built with OCCT, Dear ImGui, and OpenGL. Source: github.com/trailcode/EzyCad">
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="https://trailcode.github.io/EzyCad/EzyCad.html">
+    <meta property="og:image" content="https://raw.githubusercontent.com/trailcode/EzyCad/main/doc/gen/AI-gen-splashscreen_05_01_2026_512.png">
+    <meta name="twitter:card" content="summary_large_image">
     <style>
         body { margin: 0; background-color: black }
         .emscripten {
@@ -78,6 +87,9 @@
     <canvas class="emscripten" id="canvas" oncontextmenu="event.preventDefault()"></canvas>
     <script type='text/javascript'>
       (function() {
+        // Bump when publishing new EzyCad.js / .wasm / .data to GitHub Pages (cache bust).
+        var EZYCAD_WEB_CACHE = '0.1.0-20260522';
+
         var splash = document.getElementById('ezycad-splash');
         var statusEl = document.getElementById('ezycad-splash-status');
 
@@ -97,6 +109,11 @@
         }
 
         window.Module = {
+        locateFile: function(path) {
+          if (path.indexOf('.wasm') !== -1 || path.indexOf('.data') !== -1)
+            return path + '?v=' + EZYCAD_WEB_CACHE;
+          return path;
+        },
         preRun: [],
         postRun: [
           function() {
@@ -143,6 +160,6 @@
         console.log("onerror: " + event);
       };
     </script>
-    <script type="text/javascript" src="EzyCad.js" charset="utf-8"></script>
+    <script type="text/javascript" src="EzyCad.js?v=0.1.0-20260522" charset="utf-8"></script>
   </body>
 </html>

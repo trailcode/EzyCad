@@ -1,0 +1,171 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>EzyCad — open-source hobbyist CAD (OCCT, ImGui, OpenGL)</title>
+    <meta name="description" content="EzyCad (Easy CAD) is open-source hobbyist CAD for machining: sketch, extrude, and export STEP/STL using Open CASCADE, Dear ImGui, and OpenGL. Not EZCAD laser software.">
+    <meta name="keywords" content="EzyCad, trailcode, CAD, Open CASCADE, OCCT, ImGui, OpenGL, WebAssembly, CNC, machining, STEP, STL">
+    <link rel="canonical" href="https://trailcode.github.io/EzyCad/">
+    <meta property="og:title" content="EzyCad — open-source hobbyist CAD">
+    <meta property="og:description" content="Design 2D and 3D parts for CNC and 3D printing. Built with OCCT, Dear ImGui, and OpenGL. Run EzyCad in your browser or browse the source on GitHub.">
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="https://trailcode.github.io/EzyCad/">
+    <meta property="og:image" content="https://raw.githubusercontent.com/trailcode/EzyCad/main/doc/gen/AI-gen-splashscreen_05_01_2026_512.png">
+    <meta name="twitter:card" content="summary_large_image">
+    <style>
+      :root {
+        color-scheme: dark light;
+        --bg: #0a0a0c;
+        --surface: #141418;
+        --text: #e8e8ec;
+        --muted: #9898a8;
+        --accent: #5a9fd4;
+        --border: #2a2a32;
+      }
+      @media (prefers-color-scheme: light) {
+        :root {
+          --bg: #f4f4f6;
+          --surface: #ffffff;
+          --text: #1a1a22;
+          --muted: #5a5a68;
+          --accent: #2a6fa8;
+          --border: #d8d8e0;
+        }
+      }
+      * { box-sizing: border-box; }
+      body {
+        margin: 0;
+        font-family: system-ui, Segoe UI, Roboto, sans-serif;
+        background: var(--bg);
+        color: var(--text);
+        line-height: 1.6;
+      }
+      .wrap {
+        max-width: 52rem;
+        margin: 0 auto;
+        padding: 2rem 1.25rem 3rem;
+      }
+      header { text-align: center; margin-bottom: 2rem; }
+      header img {
+        max-width: min(100%, 28rem);
+        height: auto;
+        border-radius: 0.5rem;
+        border: 1px solid var(--border);
+      }
+      h1 {
+        margin: 1rem 0 0.25rem;
+        font-size: 2rem;
+        letter-spacing: 0.02em;
+      }
+      .tagline { color: var(--muted); margin: 0; }
+      .note {
+        margin: 1.5rem 0;
+        padding: 0.75rem 1rem;
+        background: var(--surface);
+        border: 1px solid var(--border);
+        border-radius: 0.5rem;
+        font-size: 0.95rem;
+      }
+      .actions {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.75rem;
+        margin: 1.5rem 0 2rem;
+      }
+      .actions a {
+        display: inline-block;
+        padding: 0.65rem 1.1rem;
+        border-radius: 0.4rem;
+        text-decoration: none;
+        font-weight: 600;
+      }
+      .primary {
+        background: var(--accent);
+        color: #fff;
+      }
+      .secondary {
+        background: var(--surface);
+        color: var(--text);
+        border: 1px solid var(--border);
+      }
+      section {
+        background: var(--surface);
+        border: 1px solid var(--border);
+        border-radius: 0.5rem;
+        padding: 1.25rem 1.5rem;
+        margin-bottom: 1.25rem;
+      }
+      h2 { margin-top: 0; font-size: 1.15rem; }
+      ul { padding-left: 1.25rem; }
+      a { color: var(--accent); }
+      footer {
+        margin-top: 2rem;
+        text-align: center;
+        color: var(--muted);
+        font-size: 0.9rem;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="wrap">
+      <header>
+        <img src="https://raw.githubusercontent.com/trailcode/EzyCad/main/doc/gen/AI-gen-splashscreen_05_01_2026_512.png" width="512" height="512" alt="EzyCad splash screen">
+        <h1>EzyCad</h1>
+        <p class="tagline">Easy CAD for hobbyist machinists — Open CASCADE, Dear ImGui, OpenGL</p>
+      </header>
+
+      <p>
+        <strong>EzyCad</strong> (Easy CAD) is an open-source CAD application for designing and editing
+        2D and 3D models for machining projects. Sketch, extrude, and apply geometric operations,
+        then export to <strong>STEP</strong>, <strong>STL</strong>, and other formats for CNC machines or 3D printers.
+      </p>
+
+      <div class="note">
+        <strong>Not EZCAD laser software.</strong>
+        <strong>EzyCad</strong> (with a <strong>y</strong>) is mechanical CAD built on OCCT — unrelated to
+        EZCAD2/EZCAD3 laser marking products. Search for <code>trailcode EzyCad</code> or
+        <code>site:github.com EzyCad trailcode</code>.
+      </div>
+
+      <div class="actions">
+        <a class="primary" href="EzyCad.html">Run in browser</a>
+        <a class="secondary" href="https://github.com/trailcode/EzyCad">GitHub repository</a>
+        <a class="secondary" href="https://ezycad.readthedocs.io/en/latest/usage.html">Documentation</a>
+        <a class="secondary" href="https://github.com/trailcode/EzyCad/releases">Releases</a>
+      </div>
+
+      <section>
+        <h2>Features</h2>
+        <ul>
+          <li>2D sketching and 3D solid modeling with Open CASCADE Technology (OCCT)</li>
+          <li>Interactive UI built with Dear ImGui and OpenGL</li>
+          <li>Desktop (Windows) and browser (Emscripten / WebAssembly) builds</li>
+          <li>Lua and Python scripting consoles on supported builds</li>
+          <li>Export for CAM, other CAD tools, and 3D printing</li>
+        </ul>
+      </section>
+
+      <section>
+        <h2>Tech stack</h2>
+        <p>
+          Open CASCADE (OCCT) · Dear ImGui · OpenGL · GLFW · C++20 · Emscripten (WebAssembly)
+        </p>
+      </section>
+
+      <section>
+        <h2>Find the project</h2>
+        <ul>
+          <li><a href="https://github.com/trailcode/EzyCad">https://github.com/trailcode/EzyCad</a></li>
+          <li><a href="https://ezycad.readthedocs.io/">https://ezycad.readthedocs.io/</a></li>
+          <li><a href="https://trailcode.github.io/EzyCad/EzyCad.html">Run in browser</a></li>
+          <li><a href="https://github.com/trailcode/EzyCad/discussions">Discussions and community</a></li>
+        </ul>
+      </section>
+
+      <footer>
+        MIT License · maintained by <a href="https://github.com/trailcode">trailcode</a>
+      </footer>
+    </div>
+  </body>
+</html>

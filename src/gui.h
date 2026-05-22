@@ -273,7 +273,7 @@ private:
   [[nodiscard]] static bool is_valid_project_json_(const std::string& s);
 
   /// OCCT standard material display names for ImGui combos (index matches \c Graphic3d_NameOfMaterial).
-  static [[nodiscard]] const std::vector<std::string>& occt_material_combo_labels_();
+  [[nodiscard]] static const std::vector<std::string>& occt_material_combo_labels_();
 
   // Settings (gui_settings.cpp)
   void load_occt_view_settings_();

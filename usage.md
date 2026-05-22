@@ -20,12 +20,16 @@
 
 ## Introduction
 
-EzyCad (Easy CAD) is a CAD application for hobbyist machinists to design and edit 2D and 3D models for machining projects. It supports creating precise parts with tools for sketching, extruding, and applying geometric operations, using OpenGL, ImGui, and Open CASCADE Technology (OCCT). You can exchange geometry with other CAD tools, CAM, or 3D printing using **STEP**, **IGES**, **STL**, and **PLY**.
+EzyCad (Easy CAD) is an open-source CAD application for hobbyist machinists to design and edit 2D and 3D models for machining projects. It supports creating precise parts with tools for sketching, extruding, and applying geometric operations, using OpenGL, Dear ImGui, and Open CASCADE Technology (OCCT). You can exchange geometry with other CAD tools, CAM, or 3D printing using **STEP**, **IGES**, **STL**, and **PLY**.
+
+**Source:** [github.com/trailcode/EzyCad](https://github.com/trailcode/EzyCad) · **Project home:** [trailcode.github.io/EzyCad](https://trailcode.github.io/EzyCad/)
+
+> **EzyCad** (with a **y**) is mechanical CAD — not EZCAD2/EZCAD3 laser marking software.
 
 ## Getting Started
 
 ### System Requirements
-- **Windows** (desktop), or **[WebAssembly](https://trailcode.github.io/EzyCad/EzyCad.html)** (run EzyCad in the browser)
+- **Windows** (desktop), or **[WebAssembly](https://trailcode.github.io/EzyCad/EzyCad.html)** ([project home](https://trailcode.github.io/EzyCad/))
    - Not tested: Linux or macOS desktop builds
 - OpenGL-compatible graphics card
 

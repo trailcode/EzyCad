@@ -1,8 +1,16 @@
 # EzyCad
 
+[![GitHub](https://img.shields.io/github/stars/trailcode/EzyCad?style=social)](https://github.com/trailcode/EzyCad)
+[![Documentation](https://img.shields.io/badge/docs-readthedocs-blue)](https://ezycad.readthedocs.io/en/latest/usage.html)
+[![WebAssembly](https://img.shields.io/badge/run_in-browser-WebAssembly-green)](https://trailcode.github.io/EzyCad/EzyCad.html)
+
+**Repository:** [https://github.com/trailcode/EzyCad](https://github.com/trailcode/EzyCad)
+
 ![EzyCad splash screen](doc/gen/AI-gen-splashscreen_05_01_2026_512.png)
 
-EzyCad (Easy CAD) is a CAD application for hobbyist machinists to design and edit 2D and 3D models for machining projects. It supports creating precise parts with tools for sketching, extruding, and applying geometric operations, using OpenGL, ImGui, and Open CASCADE Technology (OCCT). Export models to formats like STEP or STL for CNC machines or 3D printers, or [run EzyCad in your browser (WebAssembly)](https://trailcode.github.io/EzyCad/EzyCad.html).
+EzyCad (Easy CAD) is an open-source CAD application for hobbyist machinists to design and edit 2D and 3D models for machining projects. It supports creating precise parts with tools for sketching, extruding, and applying geometric operations, using OpenGL, Dear ImGui, and Open CASCADE Technology (OCCT). Export models to formats like STEP or STL for CNC machines or 3D printers, or [run EzyCad in your browser (WebAssembly)](https://trailcode.github.io/EzyCad/EzyCad.html). Project home: [trailcode.github.io/EzyCad](https://trailcode.github.io/EzyCad/).
+
+> **Not EZCAD laser software:** [EzyCad](https://github.com/trailcode/EzyCad) (with a **y**) is hobbyist mechanical CAD built on OCCT — unrelated to EZCAD2/EZCAD3 laser marking products.
 
 ## Features
 - 2D and 3D modeling capabilities.
@@ -77,15 +85,18 @@ Ensure the following dependencies are installed:
 - Build the project.
 - Serve the WebAssembly: `python.exe -m http.server 8000`
 - Or build and serve: `ninja && python.exe -m http.server 8000`
+- **GitHub Pages HTML:** After changing `web/index.html` or `web/EzyCad.html`, sync to [trailcode.github.io](https://github.com/trailcode/trailcode.github.io) with `scripts/sync-github-pages-html.ps1` (see script header).
 - Dear ImGui under `third_party/imgui/` carries EzyCad-specific changes (font rendering); see [In-tree third-party libraries](#in-tree-third-party-libraries) at the end of this README.
 
 ### Artwork
 - Icons from: https://wiki.freecad.org/Artwork
 
 ## Support and Contributions
-- Report issues or suggest features on the GitHub repository.
-- Contribute by developing features and fixing bugs. Pull requests are welcome! 
+- **Project home:** [trailcode.github.io/EzyCad](https://trailcode.github.io/EzyCad/)
+- Report issues or suggest features on the [GitHub repository](https://github.com/trailcode/EzyCad).
+- Contribute by developing features and fixing bugs. Pull requests are welcome!
 - Additional resources, including video tutorials and online documentation, are linked in [usage.md](usage.md).
+- Outreach draft posts (forums, Reddit, awesome lists): [agents/discoverability-outreach.md](agents/discoverability-outreach.md).
 
 ### We need development help
 EzyCad is maintained by a small team and we would love more contributors. If you can help with features, bug fixes, documentation, or testing - please jump in. Every contribution helps move the project forward.

@@ -68,6 +68,25 @@ project = "EzyCad"
 copyright = "2026, trailcode"
 author = "trailcode"
 
+# Search and social previews (Read the Docs, Google, link unfurlers).
+html_title = "EzyCad — open-source hobbyist CAD (OCCT, ImGui, OpenGL)"
+html_short_title = "EzyCad"
+html_meta = {
+    "description": (
+        "EzyCad (Easy CAD) is open-source hobbyist CAD for machining: sketch, "
+        "extrude, and export STEP/STL using Open CASCADE, Dear ImGui, and OpenGL. "
+        "Not EZCAD laser marking software."
+    ),
+    "keywords": (
+        "EzyCad, CAD, Open CASCADE, OCCT, ImGui, OpenGL, CNC, machining, "
+        "STEP, STL, WebAssembly, Emscripten, 3D modeling"
+    ),
+}
+html_theme_options = {
+    "navigation_depth": 4,
+    "collapse_navigation": False,
+}
+
 extensions = [
     "myst_parser",
 ]
