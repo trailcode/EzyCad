@@ -205,23 +205,10 @@ void Sketch::update_edge_style_(AIS_Shape_ptr& shp)
 
 void Sketch::update_node_mark_style_(AIS_Shape_ptr& shp)
 {
-  switch (m_edge_style)
-  {
-  case Edge_style::Full:
-    shp->SetWidth(1.25);
-    shp->SetColor(Quantity_NOC_RED);
-    shp->SetTransparency(0.0);
-    break;
-
-  case Edge_style::Background:
-    shp->SetWidth(1.0);
-    shp->SetColor(Quantity_Color(0.55, 0.12, 0.12, Quantity_TOC_RGB));
-    shp->SetTransparency(0.5);
-    break;
-
-  default:
-    EZY_ASSERT(false);
-  }
+  // Keep permanent node markers visually stable across sketch switching.
+  shp->SetWidth(1.25);
+  shp->SetColor(Quantity_NOC_RED);
+  shp->SetTransparency(0.0);
 }
 
 void Sketch::sync_permanent_node_annos_()
@@ -229,7 +216,8 @@ void Sketch::sync_permanent_node_annos_()
   if (m_permanent_node_marks.size() < m_nodes.size())
     m_permanent_node_marks.resize(m_nodes.size());
 
-  const double half_arm = std::max(plane_pick_snap_radius_world_() * 0.45, Precision::Confusion() * 50.0);
+  const double size_scale = std::max(static_cast<double>(m_view.gui().permanent_node_anno_scale()), 0.0);
+  const double half_arm = std::max(plane_pick_snap_radius_world_() * 0.45 * size_scale, Precision::Confusion() * 50.0);
 
   const Mode mode = get_mode();
   // Show "+" markers for permanent user nodes in sketch modes and polar duplicate (which snaps to sketch nodes).
@@ -2502,6 +2490,8 @@ void Sketch::refresh_edge_dimension_arrow_sizes(const double arrow_size)
   }
 }
 
+void Sketch::refresh_permanent_node_annotations() { sync_permanent_node_annos_(); }
+
 bool Sketch::is_current() const { return this == &m_view.curr_sketch(); }
 
 void Sketch::set_current()
@@ -2550,7 +2540,8 @@ void Sketch::set_edge_style(Edge_style style)
   for (Edge& e : m_edges)
     update_edge_style_(e.shp);
 
-  sync_permanent_node_annos_();
+  // Permanent node marker style/visibility is managed elsewhere; avoid
+  // rebuilding marker geometry during sketch switching.
   update_originating_face_style();
 }
 

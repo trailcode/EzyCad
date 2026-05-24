@@ -165,6 +165,7 @@ public:
   void                  angle_input(const ScreenCoords& screen_coords);
   void                  refresh_all_length_dimension_line_widths(double line_width);
   void                  refresh_all_length_dimension_arrow_sizes(double arrow_size);
+  void                  refresh_all_permanent_node_annotations();
   double                get_dimension_scale() const;
   bool                  get_show_dim_input() const;
   void                  set_show_dim_input(bool show);

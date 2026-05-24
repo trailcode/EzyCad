@@ -1020,6 +1020,13 @@ void Occt_view::refresh_all_length_dimension_arrow_sizes(const double arrow_size
       sk->refresh_edge_dimension_arrow_sizes(arrow_size);
 }
 
+void Occt_view::refresh_all_permanent_node_annotations()
+{
+  for (const Sketch_ptr& sk : m_sketches)
+    if (sk)
+      sk->refresh_permanent_node_annotations();
+}
+
 void Occt_view::dimension_input(const ScreenCoords& screen_coords)
 {
   switch (get_mode())

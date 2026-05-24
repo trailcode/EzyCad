@@ -103,6 +103,8 @@ public:
   void refresh_edge_dimension_line_widths(double line_width);
   /// Apply global dimension arrow size to edge annotations and in-progress rubber-band dim.
   void refresh_edge_dimension_arrow_sizes(double arrow_size);
+  /// Rebuild permanent node '+' markers (e.g. after settings changes).
+  void refresh_permanent_node_annotations();
 
   // Revolve related
   Shp_rslt revolve_selected(const double angle);

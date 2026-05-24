@@ -17,6 +17,7 @@
 namespace
 {
 const char* const k_settings_version = "1";
+const char* const k_gui_key_permanent_node_anno_scale = "permanent_node_anno_scale";
 
 /// `occt_view` JSON object: view background gradient and grid (shared with `save_occt_view_settings` /
 /// `occt_view_settings_json`).
@@ -54,6 +55,7 @@ std::string GUI::occt_view_settings_json() const
       {"edge_dim_label_h", m_edge_dim_label_h},
       {"edge_dim_line_width", m_edge_dim_line_width},
       {"edge_dim_arrow_size", m_edge_dim_arrow_size},
+      {k_gui_key_permanent_node_anno_scale, m_permanent_node_anno_scale},
       {"view_roll_step_deg", m_view_roll_step_deg},
       {"view_zoom_scroll_scale", m_view_zoom_scroll_scale},
       {"inspection_orthographic", m_inspection_orthographic},
@@ -100,6 +102,7 @@ void GUI::save_occt_view_settings()
       {"edge_dim_label_h", m_edge_dim_label_h},
       {"edge_dim_line_width", m_edge_dim_line_width},
       {"edge_dim_arrow_size", m_edge_dim_arrow_size},
+      {k_gui_key_permanent_node_anno_scale, m_permanent_node_anno_scale},
       {"load_last_opened_on_startup", m_load_last_opened_on_startup},
       {"last_opened_project_path", m_last_opened_project_path},
       {"imgui_rounding_general", m_imgui_rounding_general},
@@ -238,20 +241,22 @@ void GUI::parse_gui_panes_settings_(const std::string& content)
       if (v >= 0 && v <= 3)
         m_edge_dim_label_h = v;
     }
-    m_edge_dim_line_width = k_gui_edge_dim_line_width_default;
-    if (g.contains("edge_dim_line_width") && g["edge_dim_line_width"].is_number())
+    auto parse_bounded_float = [&g](const char* key, const float min_v, const float max_v, const float default_v) -> float
     {
-      const float v = g["edge_dim_line_width"].get<float>();
-      if (v >= 0.5f && v <= 8.0f)
-        m_edge_dim_line_width = v;
-    }
-    m_edge_dim_arrow_size = k_gui_edge_dim_arrow_size_default;
-    if (g.contains("edge_dim_arrow_size") && g["edge_dim_arrow_size"].is_number())
-    {
-      const float v = g["edge_dim_arrow_size"].get<float>();
-      if (v >= 1.0f && v <= 24.0f)
-        m_edge_dim_arrow_size = v;
-    }
+      float out = default_v;
+      if (g.contains(key) && g[key].is_number())
+      {
+        const float v = g[key].get<float>();
+        if (v >= min_v && v <= max_v)
+          out = v;
+      }
+      return out;
+    };
+    m_edge_dim_line_width = parse_bounded_float("edge_dim_line_width", 0.5f, 8.0f, k_gui_edge_dim_line_width_default);
+    m_edge_dim_arrow_size = parse_bounded_float("edge_dim_arrow_size", 1.0f, 24.0f, k_gui_edge_dim_arrow_size_default);
+    m_permanent_node_anno_scale =
+        parse_bounded_float(k_gui_key_permanent_node_anno_scale, k_gui_permanent_node_anno_scale_min,
+                            k_gui_permanent_node_anno_scale_max, k_gui_permanent_node_anno_scale_default);
     m_load_last_opened_on_startup = b("load_last_opened_on_startup", b("load_last_saved_on_startup", false));
     if (g.contains("last_opened_project_path") && g["last_opened_project_path"].is_string())
       m_last_opened_project_path = g["last_opened_project_path"].get<std::string>();
@@ -808,6 +813,7 @@ void GUI::settings_()
     bool ul_changed        = false;
     bool dim_lw_changed    = false;
     bool dim_arrow_changed = false;
+    bool node_anno_changed = false;
     if (ImGui::BeginTable("settings_sketch", 2, ImGuiTableFlags_SizingStretchProp))
     {
       ImGui::TableSetupColumn("label", ImGuiTableColumnFlags_WidthFixed, k_label_col_w);
@@ -861,6 +867,34 @@ void GUI::settings_()
             ImGui::BeginTooltip();
             ImGui::PushTextWrapPos(ImGui::GetFontSize() * 35.0f);
             ImGui::TextDisabled("Arrow head length for sketch and extrude length dimensions (Open CASCADE display units).");
+            ImGui::PopTextWrapPos();
+            ImGui::EndTooltip();
+          }
+        }
+      }
+
+      ImGui::TableNextRow();
+      ImGui::TableSetColumnIndex(0);
+      ImGui::AlignTextToFramePadding();
+      ImGui::TextUnformatted("Permanent node annotation size");
+      ImGui::TableSetColumnIndex(1);
+      {
+        float size_scale = m_permanent_node_anno_scale;
+        if (ImGui::SliderFloat("##permanent_node_anno_scale", &size_scale, k_gui_permanent_node_anno_scale_min,
+                               k_gui_permanent_node_anno_scale_max, "%.2f"))
+        {
+          m_permanent_node_anno_scale = size_scale;
+          node_anno_changed           = true;
+        }
+        if (ui_show_help(2))
+        {
+          ImGui::SameLine(0.0f, ImGui::GetStyle().ItemInnerSpacing.x);
+          ImGui::TextDisabled("(?)");
+          if (ImGui::IsItemHovered())
+          {
+            ImGui::BeginTooltip();
+            ImGui::PushTextWrapPos(ImGui::GetFontSize() * 35.0f);
+            ImGui::TextDisabled("Scale for permanent '+' node markers in sketch mode.");
             ImGui::PopTextWrapPos();
             ImGui::EndTooltip();
           }
@@ -955,6 +989,12 @@ void GUI::settings_()
       save_occt_view_settings();
       if (m_view)
         m_view->refresh_all_length_dimension_arrow_sizes(static_cast<double>(m_edge_dim_arrow_size));
+    }
+    if (node_anno_changed)
+    {
+      save_occt_view_settings();
+      if (m_view)
+        m_view->refresh_all_permanent_node_annotations();
     }
     if (ul_changed)
     {
