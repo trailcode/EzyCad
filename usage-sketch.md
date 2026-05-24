@@ -4,18 +4,19 @@ This guide covers all 2D sketching tools and operations in EzyCad. For the main 
 
 ## Table of Contents
 1. [2D Sketching](#2d-sketching)
-2. [Line Edge Creation Tools](#line-edge-creation-tools)
-3. [Multi-Line Edge Tool](#multi-line-edge-tool)
-4. [Circle Creation Tools](#circle-creation-tools)
-5. [Circle Creation Workflow](#circle-creation-workflow)
-6. [Arc Segment Creation Tool](#arc-segment-creation-tool)
-7. [Rectangle and Square Creation Tools](#rectangle-and-square-creation-tools)
-8. [Slot Creation Tool](#slot-creation-tool)
-9. [Operation Axis Tool](#operation-axis-tool)
-10. [Dimension Tool](#dimension-tool)
-11. [Add Node Tool](#add-node-tool)
-12. [Create Sketch from Planar Face Tool](#create-sketch-from-planar-face-tool)
-13. [Image underlay](#image-underlay)
+2. [Sketch snapping](#sketch-snapping)
+3. [Line Edge Creation Tools](#line-edge-creation-tools)
+4. [Multi-Line Edge Tool](#multi-line-edge-tool)
+5. [Circle Creation Tools](#circle-creation-tools)
+6. [Circle Creation Workflow](#circle-creation-workflow)
+7. [Arc Segment Creation Tool](#arc-segment-creation-tool)
+8. [Rectangle and Square Creation Tools](#rectangle-and-square-creation-tools)
+9. [Slot Creation Tool](#slot-creation-tool)
+10. [Operation Axis Tool](#operation-axis-tool)
+11. [Dimension Tool](#dimension-tool)
+12. [Add Node Tool](#add-node-tool)
+13. [Create Sketch from Planar Face Tool](#create-sketch-from-planar-face-tool)
+14. [Image underlay](#image-underlay)
 
 ---
 
@@ -33,6 +34,24 @@ This guide covers all 2D sketching tools and operations in EzyCad. For the main 
 2. **Sketch Operations**
    - ![Operation Axis Tool](res/icons/Sketcher_MirrorSketch.png) [Define operation axis](#operation-axis-tool) - Mirror sketches, revolve edges or faces.
    - ![Create Sketch from Planar Face Tool](res/icons/Macro_FaceToSketch_48.png) [Create sketch from planar face](#create-sketch-from-planar-face-tool)
+
+## Sketch snapping
+
+While you draw or place points in sketch mode, EzyCad helps you align to existing geometry. **Snap dist** and **Snap guide mode** are in the Options panel; guide color is in **Settings -> Sketch** (see [usage-settings.md](usage-settings.md#sketch-tools)).
+
+| | |
+| ---: | --- |
+| **Snap distance** | Larger **Snap dist** values let snaps engage from farther away (screen pixels, converted to the sketch plane at the cursor). |
+| **Snap guides** | **Snap guide mode**: *Traditional* (local markers at guide intersections), *Fullscreen* (view-spanning axis lines), or *Both*. |
+| **Axis alignment** | Near a snap target, the pick can align to that point's **X** or **Y** on the sketch plane; guides show which axis is active. When **both** axes align to the **same** point, the cursor **locks to that vertex**. |
+| **Mid-point snap (Add node)** | A click near a **straight** edge (not at its ends) snaps onto the segment and **splits** it at commit time (see [Add node tool](#add-node-tool)). Separate from vertex lock. |
+| **Other visible sketches** | Nodes from **other visible sketches** are projected onto the current sketch plane and act as snap targets (same distance rules). Useful for multi-sketch layouts and tools such as **polar duplicate** that pick sketch points. |
+
+**Angle constraint:** When a line or add-node rubber band has an active angle constraint, vertex and axis snap may be disabled or relaxed so the typed angle stays exact (see each tool's section).
+
+**Tips:**
+- For precise corners, approach a vertex until both horizontal and vertical guides appear, then click.
+- Automatic **edge midpoints** are snap targets but do not show **+** markers and are not listed under **Nodes** in the [Sketch List](usage.md#sketch-list) (that list is user-placed points only).
 
 ### Line Edge Creation Tools
 ![Line Edge Tool](res/icons/Sketcher_Element_Line_Edge.png)
@@ -596,7 +615,7 @@ Edge dimension tool creates/removes **length dimensions between two sketch nodes
 The **Add node** tool (toolbar: **Add node**) adds sketch **vertices**. What happens on each placement depends on whether you **start from an existing node**:
 
 - **First click snaps to an existing node** — The tool **acts like [Line edge](#line-edge-creation-tools)** for the next step: a **rubber-band** preview runs from that anchor, and you can enter **length** and/or **angle** (<kbd>Tab</kbd> / <kbd>Shift</kbd>+<kbd>Tab</kbd>, same order as line edge) before you place the **second** point. **No new line edge** is added to the sketch; only the new node is created at the end of that placement.
-- **First click does not snap to an existing node** — The new node is placed **at the click** on the sketch plane (usual snap rules still apply, e.g. snapping onto the interior of a **straight** edge to **split** it).
+- **First click does not snap to an existing node** — The new node is placed **at the click** on the sketch plane (usual snap rules still apply, e.g. **mid-point snap** onto a **straight** edge to **split** it).
 
 In both cases, Add node never leaves a **permanent edge** between two clicks the way Line edge does.
 
@@ -604,7 +623,7 @@ In both cases, Add node never leaves a **permanent edge** between two clicks the
 
 | | |
 | ---: | --- |
-| **Split linear edges** | If a click lands on the interior of an existing **straight** (non-arc) edge, that edge is **replaced by two** edges meeting at the new vertex. Arc edges are **not** split this way. |
+| **Mid-point snap / split** | If a click lands near a **straight** (non-arc) edge (not at its endpoints), the pick snaps onto the segment and that edge is **replaced by two** meeting at the new vertex. Arc edges are **not** split this way. |
 | **No stored edge from anchor** | After a two-step placement from an anchor, **no** sketch edge is created between anchor and new node (unlike Line edge). |
 | **Angle constraint** | With an angle constraint active during rubber-band placement, the next click places the new node along that ray from the anchor; snapping may be relaxed to stay on that direction (similar to the line tool). |
 
@@ -615,7 +634,7 @@ Nodes you place with **Add node** are treated as **user-placed** points. When th
 #### How to use
 
 1. Enter sketch mode and select **Add node** ![Add Node Tool](res/icons/Sketcher_CreatePoint.png) on the toolbar.
-2. **Direct node:** Click where you are **not** snapping to an existing vertex (empty sketch area, edge interior, etc.). The node is created **at that position**; if the click snaps to the interior of a **straight** edge, that edge splits.
+2. **Direct node:** Click where you are **not** snapping to an existing vertex (empty sketch area, or near a straight edge for **mid-point snap**, etc.). The node is created at the snapped position; **mid-point snap** on a **straight** edge splits that edge.
 3. **From an existing node (line-edge–like step):** Click an **existing** vertex first so the first click **snaps** to it. A rubber-band preview runs from that anchor—use <kbd>Tab</kbd> / <kbd>Shift</kbd>+<kbd>Tab</kbd> for length/angle if you want—then click (or confirm) to place the **second** point. Only a **new node** is committed; **no** new edge is stored.
 4. Repeat as needed for more nodes.
 

@@ -172,6 +172,8 @@ public:
 
   /// Default RGBA (0-255) for sketch underlay line tint when importing a new image (see Settings).
   void underlay_highlight_color_rgba(uint8_t& r, uint8_t& g, uint8_t& b, uint8_t& a) const;
+  /// RGBA (0-255) for Shape List row hover highlight in the 3D viewer (see Settings).
+  void shape_list_hover_color_rgba(uint8_t& r, uint8_t& g, uint8_t& b, uint8_t& a) const;
   /// For scripting (Lua console): access the 3D view.
   Occt_view* get_view() { return m_view.get(); }
 
@@ -271,7 +273,7 @@ private:
   [[nodiscard]] static bool is_valid_project_json_(const std::string& s);
 
   /// OCCT standard material display names for ImGui combos (index matches \c Graphic3d_NameOfMaterial).
-  static [[nodiscard]] const std::vector<std::string>& occt_material_combo_labels_();
+  [[nodiscard]] static const std::vector<std::string>& occt_material_combo_labels_();
 
   // Settings (gui_settings.cpp)
   void load_occt_view_settings_();
@@ -404,6 +406,8 @@ private:
   glm::vec4             m_underlay_tint_col{1.f, 220.f / 255.f, 0.f, 1.f};
   /// Default underlay tint for new imports (0-1, persisted in ezycad_settings.json).
   glm::vec4 m_underlay_highlight_color{1.f, 220.f / 255.f, 0.f, 1.f};
+  /// Shape List hover highlight in the OCCT view (0-1, persisted in ezycad_settings.json).
+  glm::vec4 m_shape_list_hover_color{0.f, 1.f, 0.f, 1.f};
 
   std::unique_ptr<Lua_console>    m_lua_console;
   bool                            m_show_python_console{false};

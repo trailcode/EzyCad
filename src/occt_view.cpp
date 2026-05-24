@@ -20,6 +20,8 @@
 #include <OpenGl_GraphicDriver.hxx>
 #include <Precision.hxx>
 #include <Prs3d_DatumAspect.hxx>
+#include <Prs3d_Drawer.hxx>
+#include <Prs3d_LineAspect.hxx>
 #include <PrsDim_LengthDimension.hxx>
 #include <STEPControl_Reader.hxx>
 #include <STEPControl_Writer.hxx>
@@ -42,6 +44,7 @@
 #include "geom.h"
 #include "gui.h"
 #include "ply_io.h"
+#include "shp.h"
 #include "shp_create.h"
 #include "sketch.h"
 #include "sketch_json.h"
@@ -1098,6 +1101,13 @@ void Occt_view::delete_(std::vector<AIS_Shape_ptr>& to_delete)
     else
       ++itr;
 
+  for (const AIS_Shape_ptr& shp : to_delete)
+    if (m_shape_list_hover == shp)
+    {
+      set_shape_list_hover(nullptr);
+      break;
+    }
+
   remove(to_delete);
 }
 
@@ -1388,6 +1398,63 @@ std::vector<AIS_Shape_ptr> Occt_view::get_selected() const
     m_ctx->NextSelected(); // Move to the next selected object
   }
   return shapes;
+}
+
+void Occt_view::update_shape_list_hover_drawer_()
+{
+  uint8_t r{}, g{}, b{}, a{};
+  gui().shape_list_hover_color_rgba(r, g, b, a);
+  (void)a;
+  const Quantity_Color qc(static_cast<double>(r) / 255.0, static_cast<double>(g) / 255.0,
+                          static_cast<double>(b) / 255.0, Quantity_TOC_RGB);
+
+  if (m_shape_list_hover_drawer.IsNull())
+    m_shape_list_hover_drawer = new Prs3d_Drawer();
+
+  m_shape_list_hover_drawer->SetColor(qc);
+  Handle(Graphic3d_AspectFillArea3d) fill_aspect = new Graphic3d_AspectFillArea3d();
+  fill_aspect->SetAlphaMode(Graphic3d_AlphaMode_Blend);
+  fill_aspect->SetColor(Quantity_Color(0.1, 0.1, 0.1, Quantity_TOC_RGB));
+  m_shape_list_hover_drawer->SetBasicFillAreaAspect(fill_aspect);
+  Handle(Prs3d_LineAspect) wire_aspect = new Prs3d_LineAspect(qc, Aspect_TOL_SOLID, 2.0);
+  m_shape_list_hover_drawer->SetWireAspect(wire_aspect);
+}
+
+void Occt_view::refresh_shape_list_hover_highlight()
+{
+  if (is_headless() || m_ctx.IsNull() || m_shape_list_hover.IsNull())
+    return;
+
+  update_shape_list_hover_drawer_();
+  m_ctx->Unhilight(m_shape_list_hover, Standard_False);
+  if (m_shape_list_hover->get_visible())
+    m_ctx->HilightWithColor(m_shape_list_hover, m_shape_list_hover_drawer, Standard_False);
+  m_ctx->UpdateCurrentViewer();
+}
+
+void Occt_view::set_shape_list_hover(const Shp_ptr& shp)
+{
+  if (is_headless() || m_ctx.IsNull())
+    return;
+
+  if (m_shape_list_hover == shp)
+    return;
+
+  if (!m_shape_list_hover.IsNull())
+  {
+    m_ctx->Unhilight(m_shape_list_hover, Standard_False);
+    m_shape_list_hover.Nullify();
+  }
+
+  m_shape_list_hover = shp;
+
+  if (!m_shape_list_hover.IsNull() && m_shape_list_hover->get_visible())
+  {
+    update_shape_list_hover_drawer_();
+    m_ctx->HilightWithColor(m_shape_list_hover, m_shape_list_hover_drawer, Standard_False);
+  }
+
+  m_ctx->UpdateCurrentViewer();
 }
 
 TopAbs_ShapeEnum Occt_view::get_shp_selection_mode() const { return m_shp_selection_mode; }

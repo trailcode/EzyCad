@@ -18,7 +18,7 @@ Use this style when editing or adding C/C++ code in the EzyCad project (files un
 - Prefer clear domain prefixes for related member groups (e.g. `m_underlay_*`) instead of mixed short forms.
 - **Constants** (e.g. lookup arrays for enums): `c_` prefix (e.g. `c_mode_strs`, `c_chamfer_mode_strs`).
 - **Functions / methods**: snake_case (e.g. `add_new_node`, `get_node_exact`, `try_get_node_idx_snap`).
-- **Private methods**: snake_case with trailing underscore (e.g. `update_node_snap_anno_`, `try_snap_outside_`).
+- **Private methods**: snake_case with trailing underscore (e.g. `update_axis_snap_anno_`).
 - **Type aliases**: snake_case with suffix by role, e.g. `*_ptr` for handles (`AIS_Shape_ptr`, `Shp_ptr`), `*_rslt` for result types (`Shp_rslt`). Typedefs like `ScreenCoords` are PascalCase.
 - **Macros**: UPPER_SNAKE_CASE (e.g. `EZY_ASSERT`, `EZY_ASSERT_MSG`, `DBG_MSG`).
 

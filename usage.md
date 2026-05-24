@@ -20,12 +20,16 @@
 
 ## Introduction
 
-EzyCad (Easy CAD) is a CAD application for hobbyist machinists to design and edit 2D and 3D models for machining projects. It supports creating precise parts with tools for sketching, extruding, and applying geometric operations, using OpenGL, ImGui, and Open CASCADE Technology (OCCT). You can exchange geometry with other CAD tools, CAM, or 3D printing using **STEP**, **IGES**, **STL**, and **PLY**.
+EzyCad (Easy CAD) is an open-source CAD application for hobbyist machinists to design and edit 2D and 3D models for machining projects. It supports creating precise parts with tools for sketching, extruding, and applying geometric operations, using OpenGL, Dear ImGui, and Open CASCADE Technology (OCCT). You can exchange geometry with other CAD tools, CAM, or 3D printing using **STEP**, **IGES**, **STL**, and **PLY**.
+
+**Source:** [github.com/trailcode/EzyCad](https://github.com/trailcode/EzyCad) · **Project home:** [trailcode.github.io/EzyCad](https://trailcode.github.io/EzyCad/)
+
+> **EzyCad** (with a **y**) is mechanical CAD — not EZCAD2/EZCAD3 laser marking software.
 
 ## Getting Started
 
 ### System Requirements
-- **Windows** (desktop), or **[WebAssembly](https://trailcode.github.io/EzyCad/EzyCad.html)** (run EzyCad in the browser)
+- **Windows** (desktop), or **[WebAssembly](https://trailcode.github.io/EzyCad/EzyCad.html)** ([project home](https://trailcode.github.io/EzyCad/))
    - Not tested: Linux or macOS desktop builds
 - OpenGL-compatible graphics card
 
@@ -84,7 +88,7 @@ The **Sketch List** pane lists all 2D sketches in the current document. Open it 
 Each row is laid out left to right:
 
 - **Expand** - Click **`>`** / **`v`** to show or hide details for that sketch (tooltip *Expand details* / *Collapse details*).
-- **Set current** - Radio button (circle). The current sketch is used for editing and for operations such as [extrude](#extrude-sketch-face-tool-e).
+- **Set current** - Radio button (circle). The current sketch is used for editing and for operations such as [extrude](#extrude-sketch-face-tool-e). If you are not already in a sketch tool or sketch inspection mode, choosing a sketch also switches to **Sketch inspection mode**; otherwise the active sketch tool stays selected (for example **Add line** remains active when you change sketches).
 - **Rename** - Click the name field and type a new name.
 - **Visibility** - Checkbox to show or hide the sketch in the 3D view.
 - **Underlay** - Checkbox to show or hide an [image underlay](usage-sketch.md#image-underlay) when one is imported (disabled until an underlay exists; tooltip *Display underlay*).
@@ -94,7 +98,7 @@ Each row is laid out left to right:
 When expanded, the row shows:
 
 - **Dimensions** - Table of length dimensions: visibility, editable name, and **offset** (label distance from the edge; **0** = automatic).
-- **Nodes**, **Edges**, **Faces** - Collapsible lists of element labels for inspection (read-only names).
+- **Nodes**, **Edges**, **Faces** - Collapsible lists of element labels for inspection. **Nodes** lists **user-placed** points only (the ones with **+** markers in sketch mode), not every internal topology vertex or automatic edge midpoint. **Edges** and **Faces** use default labels (`E0`, `F0`, ...) or saved names where set. Dimension names are editable in the table above; node/edge/face names in these lists are read-only labels for reference.
 
 The window can be closed with its close button; use **View -> Sketch List** again to show it.
 
@@ -267,6 +271,16 @@ For detailed information on creating 2D geometry, see the [2D Sketching](usage-s
 ### 2D Sketching
 
 See the **[2D Sketching guide](usage-sketch.md)** for full documentation of sketch tools: **add node** (points and edge splits), line and multi-line edges, circles, arcs, rectangles, squares, slots, operation axis, edge dimensions, and creating a sketch from a planar face.
+
+**Sketch snap (overview):** While drawing or using **Add node**, picks can snap to existing geometry within **Snap dist** (Options panel). The main behaviors:
+
+| | |
+| ---: | --- |
+| **Vertex snap** | Lock to an existing corner when horizontal and vertical axis guides both align to the same point. |
+| **Mid-point snap** | With **Add node**, a click near a **straight** edge (but not at its ends) snaps onto the segment; EzyCad places a new vertex there and **splits** the edge into two. You do not need to hit the line exactly. |
+| **Edge midpoint** | Straight edges often expose a geometric **midpoint** as a snap target while drawing; that is separate from mid-point snap and from user-placed **+** nodes. |
+
+More detail: [Sketch snapping](usage-sketch.md#sketch-snapping) in the sketch guide.
 
 ### 3D Modeling
 1. **Transform Operations**

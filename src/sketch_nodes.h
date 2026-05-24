@@ -95,8 +95,6 @@ private:
   /// World-space snap radius at `pt` (same convention as `try_get_node_idx_snap` / `try_pick_existing_node`).
   double snap_radius_world_(const gp_Pnt2d& pt) const;
   bool   view_bounds_2d_(double& min_u, double& min_v, double& max_u, double& max_v) const;
-  bool   try_snap_outside_(gp_Pnt2d&    pt,
-                           const double snap_dist); // Use points in `m_outside_snap_pts` `pt` will be modified if snapped.
 
   std::vector<Node>       m_nodes;
   static double           s_snap_dist_pixels; // Global to all sketches

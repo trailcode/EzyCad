@@ -1048,7 +1048,8 @@ void GUI::sketch_list_()
     if (ImGui::RadioButton("", &m_view->curr_sketch() == sketch.get()))
     {
       m_view->set_curr_sketch(sketch);
-      set_mode(Mode::Sketch_inspection_mode);
+      if (!is_sketch_mode(get_mode()))
+        set_mode(Mode::Sketch_inspection_mode);
     }
 
     if (ui_show_help(2) && ImGui::IsItemHovered())
@@ -1775,7 +1776,10 @@ bool GUI::try_underlay_calib_click_(const ScreenCoords& screen_coords)
 void GUI::shape_list_()
 {
   if (!show_shape_list_effective())
+  {
+    m_view->set_shape_list_hover(nullptr);
     return;
+  }
 
   float max_name_text_w = 0.f;
   for (const Shp_ptr& s : m_view->get_shapes())
@@ -1787,6 +1791,7 @@ void GUI::shape_list_()
 
   if (!ImGui::Begin("Shape List", &m_show_shape_list, ImGuiWindowFlags_None))
   {
+    m_view->set_shape_list_hover(nullptr);
     ImGui::End();
     return;
   }
@@ -1815,6 +1820,7 @@ void GUI::shape_list_()
                                                                         st_mat.FramePadding.x * 2.0f + st_mat.ScrollbarSize + 8.0f));
 
   Shp_ptr shape_to_delete;
+  Shp_ptr shape_list_hover;
 
   std::unordered_set<const AIS_Shape*> selected_in_viewer;
   for (const AIS_Shape_ptr& ais : m_view->get_selected())
@@ -1843,8 +1849,9 @@ void GUI::shape_list_()
           ImVec4(std::min(1.0f, text.x * k_shape_list_selected_text_rgb_scale + k_shape_list_selected_text_rgb_bias),
                  std::min(1.0f, text.y * k_shape_list_selected_text_rgb_scale + k_shape_list_selected_text_rgb_bias),
                  std::min(1.0f, text.z * k_shape_list_selected_text_rgb_scale + k_shape_list_selected_text_rgb_bias), text.w));
-      ImGui::BeginGroup();
     }
+
+    ImGui::BeginGroup();
 
     // Unique ID suffix using index
     std::string id_suffix = "##" + std::to_string(index++);
@@ -1950,14 +1957,20 @@ void GUI::shape_list_()
 
     ImGui::PopID();
 
+    ImGui::EndGroup();
+
+    if (ImGui::IsItemHovered() && shape->get_visible())
+      shape_list_hover = shape;
+
     if (row_selected)
     {
-      ImGui::EndGroup();
       ImGui::PopStyleColor(4);
       if (ui_show_help(2) && ImGui::IsItemHovered())
         ImGui::SetTooltip("Selected in 3D viewer");
     }
   }
+
+  m_view->set_shape_list_hover(shape_list_hover);
 
   if (shape_to_delete)
     m_view->delete_shapes({shape_to_delete});

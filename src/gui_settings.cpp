@@ -122,6 +122,9 @@ void GUI::save_occt_view_settings()
       {"underlay_highlight_color",
        {m_underlay_highlight_color[0], m_underlay_highlight_color[1], m_underlay_highlight_color[2],
         m_underlay_highlight_color[3]}},
+      {"shape_list_hover_color",
+       {m_shape_list_hover_color[0], m_shape_list_hover_color[1], m_shape_list_hover_color[2],
+        m_shape_list_hover_color[3]}},
   };
   j["version"]          = k_settings_version;
   const char* imgui_ini = ImGui::SaveIniSettingsToMemory(nullptr);
@@ -332,6 +335,19 @@ void GUI::parse_gui_panes_settings_(const std::string& content)
       m_underlay_highlight_color[3] = 1.f;
       if (a.size() >= 4 && a[3].is_number())
         m_underlay_highlight_color[3] = std::clamp(a[3].get<float>(), 0.f, 1.f);
+    }
+
+    if (g.contains("shape_list_hover_color") && g["shape_list_hover_color"].is_array() &&
+        g["shape_list_hover_color"].size() >= 3)
+    {
+      const json& a = g["shape_list_hover_color"];
+      for (int i = 0; i < 3; ++i)
+        if (a[static_cast<json::size_type>(i)].is_number())
+          m_shape_list_hover_color[static_cast<glm::vec4::length_type>(i)] =
+              std::clamp(a[static_cast<json::size_type>(i)].get<float>(), 0.f, 1.f);
+      m_shape_list_hover_color[3] = 1.f;
+      if (a.size() >= 4 && a[3].is_number())
+        m_shape_list_hover_color[3] = std::clamp(a[3].get<float>(), 0.f, 1.f);
     }
 
 #ifndef NDEBUG
@@ -633,6 +649,40 @@ void GUI::settings_()
     if (bg_changed)
     {
       m_view->set_bg_gradient_colors(bg1[0], bg1[1], bg1[2], bg2[0], bg2[1], bg2[2]);
+      save_occt_view_settings();
+    }
+
+    bool shape_list_hover_changed = false;
+    if (ImGui::BeginTable("settings_shape_list_hover", 2, ImGuiTableFlags_SizingStretchProp))
+    {
+      ImGui::TableSetupColumn("label", ImGuiTableColumnFlags_WidthFixed, k_label_col_w);
+      ImGui::TableSetupColumn("control", ImGuiTableColumnFlags_WidthStretch);
+      ImGui::TableNextRow();
+      ImGui::TableSetColumnIndex(0);
+      ImGui::AlignTextToFramePadding();
+      ImGui::TextUnformatted("Shape list hover color");
+      ImGui::TableSetColumnIndex(1);
+      shape_list_hover_changed |=
+          ImGui::ColorEdit4("##shape_list_hover", &m_shape_list_hover_color[0], ImGuiColorEditFlags_Float);
+      if (ui_show_help(2))
+      {
+        ImGui::SameLine(0.0f, ImGui::GetStyle().ItemInnerSpacing.x);
+        ImGui::TextDisabled("(?)");
+        if (ImGui::IsItemHovered())
+        {
+          ImGui::BeginTooltip();
+          ImGui::PushTextWrapPos(ImGui::GetFontSize() * 35.0f);
+          ImGui::TextDisabled("Highlight color when hovering a row in the Shape List pane. Updates immediately if a shape "
+                              "is hovered.");
+          ImGui::PopTextWrapPos();
+          ImGui::EndTooltip();
+        }
+      }
+      ImGui::EndTable();
+    }
+    if (shape_list_hover_changed)
+    {
+      m_view->refresh_shape_list_hover_highlight();
       save_occt_view_settings();
     }
   }
@@ -1023,6 +1073,19 @@ void GUI::underlay_highlight_color_rgba(uint8_t& r, uint8_t& g, uint8_t& b, uint
   g = to_u8(m_underlay_highlight_color[1]);
   b = to_u8(m_underlay_highlight_color[2]);
   a = to_u8(m_underlay_highlight_color[3]);
+}
+
+void GUI::shape_list_hover_color_rgba(uint8_t& r, uint8_t& g, uint8_t& b, uint8_t& a) const
+{
+  const auto to_u8 = [](float c) -> uint8_t
+  {
+    const float x = std::clamp(c, 0.f, 1.f) * 255.f;
+    return static_cast<uint8_t>(x + 0.5f);
+  };
+  r = to_u8(m_shape_list_hover_color[0]);
+  g = to_u8(m_shape_list_hover_color[1]);
+  b = to_u8(m_shape_list_hover_color[2]);
+  a = to_u8(m_shape_list_hover_color[3]);
 }
 
 void GUI::imgui_rounding_fallbacks_from_theme_(float& general, float& scroll, float& tabs) const
