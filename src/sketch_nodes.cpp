@@ -160,46 +160,16 @@ std::optional<size_t> Sketch_nodes::try_get_node_idx_snap(
 {
   const double snap_dist = snap_radius_world_(pt);
 
-  size_t best_idx  = -1;
-  double best_dist = std::numeric_limits<double>::max();
-  for (size_t idx = 0, num = m_nodes.size(); idx < num; ++idx)
-  {
-    if (std::find(to_exclude.begin(), to_exclude.end(), idx) != to_exclude.end())
-      continue;
-
-    const Node& n = m_nodes[idx];
-    if (n.deleted)
-      continue;
-
-    double dist = n.SquareDistance(pt);
-    if (dist < best_dist)
-    {
-      best_dist = dist;
-      best_idx  = idx;
-    }
-  }
-
-  if (best_dist <= snap_dist * 0.25)
-  {
-    pt = gp_Pnt2d(m_nodes[best_idx]);
-    update_node_snap_anno_(m_nodes[best_idx], sqrt(snap_dist));
-    return best_idx;
-  }
-
-  // Try to snap to outside points or do outside axis snap. `pt` might be modified.
-  if (try_snap_outside_(pt, sqrt(snap_dist)))
-    return {};
-
   hide_snap_annos();
 
   gp_Pnt2d pt_original = pt;
-
-  for (int i = 0; i < 2; ++i)
+  std::optional<size_t> snap_node_idx[2];
+  for (int axis_idx = 0; axis_idx < 2; ++axis_idx)
   {
     std::optional<gp_Pnt2d> snap_axis_point;
-    best_dist = std::numeric_limits<double>::max();
+    double best_dist = std::numeric_limits<double>::max();
 
-    auto try_nd_pt = [&](const gp_Pnt2d& nd_pt)
+    auto try_nd_pt = [&](const gp_Pnt2d& nd_pt) -> bool
     {
       double dist = pt_original.SquareDistance(nd_pt);
       // axis_dist needs to be compared against a linear snap distance in screen pixels.
@@ -211,34 +181,105 @@ std::optional<size_t> Sketch_nodes::try_get_node_idx_snap(
       // We need a world-space equivalent for axis snapping.
       // Let's use sqrt(snap_dist_sq) * 0.5 for now.
       double axis_snap_threshold_world = sqrt(snap_dist) * 0.5;
-      double axis_dist                 = std::fabs(pt_original.XY().Coord(i + 1) - nd_pt.XY().Coord(i + 1));
+      double axis_dist                 = std::fabs(pt_original.XY().Coord(axis_idx + 1) - nd_pt.XY().Coord(axis_idx + 1));
 
       if (dist < best_dist && axis_dist <= axis_snap_threshold_world)
       {
         best_dist       = dist;
         snap_axis_point = nd_pt;
-        if (!i)
+        if (!axis_idx)
           pt.SetX(nd_pt.X());
         else
           pt.SetY(nd_pt.Y());
+
+        return true;
       }
+
+      return false;
     };
 
-    for (const Node& n : m_nodes)
-      if (!n.deleted)
-        try_nd_pt(n);
+    for (size_t nd_idx = 0, num = m_nodes.size(); nd_idx < num; ++nd_idx)
+    {
+      if (m_nodes[nd_idx].deleted)
+        continue;
+
+      if (std::find(to_exclude.begin(), to_exclude.end(), nd_idx) != to_exclude.end())
+        continue;
+
+      if (try_nd_pt(m_nodes[nd_idx]))
+        snap_node_idx[axis_idx] = nd_idx;
+    }
 
     for (const gp_Pnt2d& nd_pt : m_outside_snap_pts)
       try_nd_pt(nd_pt);
 
     if (snap_axis_point)
-      update_axis_snap_anno_(i, *snap_axis_point, sqrt(snap_dist));
-    else if (!m_snap_anno_axis[i].IsNull())
-      m_ctx.Erase(m_snap_anno_axis[i], true);
+      update_axis_snap_anno_(axis_idx, *snap_axis_point, sqrt(snap_dist));
+    else if (!m_snap_anno_axis[axis_idx].IsNull())
+      m_ctx.Erase(m_snap_anno_axis[axis_idx], true);
   }
+
+  if (snap_node_idx[0] == snap_node_idx[1] && snap_node_idx[0].has_value())
+    return snap_node_idx[0];
 
   return {};
 }
+
+void Sketch_nodes::update_axis_snap_anno_(int axis_index, const gp_Pnt2d& axis_pt, double snap_dist)
+{
+  const bool show_traditional = s_snap_guide_mode == Snap_guide_mode::Traditional || s_snap_guide_mode == Snap_guide_mode::Both;
+  const bool show_fullscreen  = s_snap_guide_mode == Snap_guide_mode::Fullscreen || s_snap_guide_mode == Snap_guide_mode::Both;
+
+  TopoDS_Shape fullscreen_shape;
+  if (show_fullscreen)
+  {
+    double min_u{}, min_v{}, max_u{}, max_v{};
+    if (view_bounds_2d_(min_u, min_v, max_u, max_v))
+      if (axis_index == 0)
+      {
+        const gp_Pnt p0  = to_3d(m_pln, gp_Pnt2d(axis_pt.X(), min_v));
+        const gp_Pnt p1  = to_3d(m_pln, gp_Pnt2d(axis_pt.X(), max_v));
+        fullscreen_shape = BRepBuilderAPI_MakeEdge(p0, p1).Edge();
+      }
+      else
+      {
+        const gp_Pnt p0  = to_3d(m_pln, gp_Pnt2d(min_u, axis_pt.Y()));
+        const gp_Pnt p1  = to_3d(m_pln, gp_Pnt2d(max_u, axis_pt.Y()));
+        fullscreen_shape = BRepBuilderAPI_MakeEdge(p0, p1).Edge();
+      }
+  }
+
+  TopoDS_Shape       anno_shape;
+  const TopoDS_Shape traditional_shape = create_wire_box(m_pln, to_3d(m_pln, axis_pt), snap_dist, snap_dist);
+  if (show_traditional && !fullscreen_shape.IsNull())
+  {
+    BRep_Builder    builder;
+    TopoDS_Compound comp;
+    builder.MakeCompound(comp);
+    builder.Add(comp, fullscreen_shape);
+    builder.Add(comp, traditional_shape);
+    anno_shape = comp;
+  }
+  else if (!fullscreen_shape.IsNull())
+    anno_shape = fullscreen_shape;
+  else
+    anno_shape = traditional_shape;
+
+  if (m_snap_anno_axis[axis_index].IsNull())
+  {
+    m_snap_anno_axis[axis_index] = new AIS_Shape(anno_shape);
+    m_snap_anno_axis[axis_index]->SetWidth(1.0);
+    m_snap_anno_axis[axis_index]->SetColor(
+        Quantity_Color(s_snap_guide_color.x, s_snap_guide_color.y, s_snap_guide_color.z, Quantity_TOC_RGB));
+    m_ctx.Display(m_snap_anno_axis[axis_index], true);
+  }
+  else
+  {
+    m_snap_anno_axis[axis_index]->Set(anno_shape);
+    m_ctx.Redisplay(m_snap_anno_axis[axis_index], true);
+  }
+}
+
 
 void Sketch_nodes::hide_snap_annos()
 {
@@ -334,87 +375,6 @@ void Sketch_nodes::update_node_snap_anno_(const gp_Pnt2d& pt, const double snap_
     m_snap_anno->Set(anno_shape);
     m_ctx.Redisplay(m_snap_anno, true);
   }
-}
-
-void Sketch_nodes::update_axis_snap_anno_(int axis_index, const gp_Pnt2d& axis_pt, double snap_dist)
-{
-  const bool show_traditional = s_snap_guide_mode == Snap_guide_mode::Traditional || s_snap_guide_mode == Snap_guide_mode::Both;
-  const bool show_fullscreen  = s_snap_guide_mode == Snap_guide_mode::Fullscreen || s_snap_guide_mode == Snap_guide_mode::Both;
-
-  TopoDS_Shape fullscreen_shape;
-  if (show_fullscreen)
-  {
-    double min_u{}, min_v{}, max_u{}, max_v{};
-    if (view_bounds_2d_(min_u, min_v, max_u, max_v))
-    {
-      if (axis_index == 0)
-      {
-        const gp_Pnt p0  = to_3d(m_pln, gp_Pnt2d(axis_pt.X(), min_v));
-        const gp_Pnt p1  = to_3d(m_pln, gp_Pnt2d(axis_pt.X(), max_v));
-        fullscreen_shape = BRepBuilderAPI_MakeEdge(p0, p1).Edge();
-      }
-      else
-      {
-        const gp_Pnt p0  = to_3d(m_pln, gp_Pnt2d(min_u, axis_pt.Y()));
-        const gp_Pnt p1  = to_3d(m_pln, gp_Pnt2d(max_u, axis_pt.Y()));
-        fullscreen_shape = BRepBuilderAPI_MakeEdge(p0, p1).Edge();
-      }
-    }
-  }
-
-  TopoDS_Shape       anno_shape;
-  const TopoDS_Shape traditional_shape = create_wire_box(m_pln, to_3d(m_pln, axis_pt), snap_dist * 0.5, snap_dist * 0.5);
-  if (show_traditional && !fullscreen_shape.IsNull())
-  {
-    BRep_Builder    builder;
-    TopoDS_Compound comp;
-    builder.MakeCompound(comp);
-    builder.Add(comp, fullscreen_shape);
-    builder.Add(comp, traditional_shape);
-    anno_shape = comp;
-  }
-  else if (!fullscreen_shape.IsNull())
-    anno_shape = fullscreen_shape;
-  else
-    anno_shape = traditional_shape;
-
-  if (m_snap_anno_axis[axis_index].IsNull())
-  {
-    m_snap_anno_axis[axis_index] = new AIS_Shape(anno_shape);
-    m_snap_anno_axis[axis_index]->SetWidth(3.0);
-    m_snap_anno_axis[axis_index]->SetColor(
-        Quantity_Color(s_snap_guide_color.x, s_snap_guide_color.y, s_snap_guide_color.z, Quantity_TOC_RGB));
-    m_ctx.Display(m_snap_anno_axis[axis_index], true);
-  }
-  else
-  {
-    m_snap_anno_axis[axis_index]->Set(anno_shape);
-    m_ctx.Redisplay(m_snap_anno_axis[axis_index], true);
-  }
-}
-
-bool Sketch_nodes::try_snap_outside_(gp_Pnt2d& pt, const double snap_dist)
-{
-  gp_Pnt2d snapped;
-  double   best_dist = std::numeric_limits<double>::max();
-  for (const gp_Pnt2d& outside_pt : m_outside_snap_pts)
-  {
-    double dist = outside_pt.SquareDistance(pt);
-    if (dist < best_dist)
-    {
-      best_dist = dist;
-      snapped   = outside_pt;
-    }
-  }
-
-  if (best_dist <= snap_dist * 0.25 * snap_dist)
-  {
-    pt = snapped;
-    update_node_snap_anno_(pt, snap_dist);
-    return true;
-  }
-
-  return false;
 }
 
 Sketch_nodes::Node& Sketch_nodes::operator[](size_t idx)
