@@ -1,18 +1,16 @@
 #pragma once
 
-#include <gp_Pln.hxx>
 #include <gp_Pnt2d.hxx>
 #include <glm/glm.hpp>
+#include <memory>
 #include <optional>
-#include <set>
 #include <string>
+#include <vector>
 
 #include "types.h"
 
 class gp_Pln;
-class gp_Pnt2d;
 class Occt_view;
-class AIS_InteractiveContext;
 class Sketch_json;
 
 class Sketch_nodes
@@ -36,6 +34,11 @@ public:
   // `view` must exist for the lifetime of this object
   Sketch_nodes(Occt_view& view, const gp_Pln& pln);
   ~Sketch_nodes();
+
+  Sketch_nodes(const Sketch_nodes&)            = delete;
+  Sketch_nodes& operator=(const Sketch_nodes&) = delete;
+  Sketch_nodes(Sketch_nodes&&)                 = delete;
+  Sketch_nodes& operator=(Sketch_nodes&&)      = delete;
 
   size_t                  add_new_node(const gp_Pnt2d& pt, bool is_edge_mid_point = false, bool is_permanent = false);
   std::optional<gp_Pnt2d> snap(const ScreenCoords& screen_coords);
@@ -73,14 +76,12 @@ public:
   static void            get_snap_guide_color(float& r, float& g, float& b);
 
   // Methods for range-based for loop support
-  // clang-format off
-  auto begin()        { return m_nodes.begin();  }
-  auto end()          { return m_nodes.end();    }
-  auto begin()  const { return m_nodes.begin();  }
-  auto end()    const { return m_nodes.end();    }
-  auto cbegin() const { return m_nodes.cbegin(); }
-  auto cend()   const { return m_nodes.cend();   }
-  // clang-format on
+  std::vector<Node>::iterator       begin();
+  std::vector<Node>::iterator       end();
+  std::vector<Node>::const_iterator begin() const;
+  std::vector<Node>::const_iterator end() const;
+  std::vector<Node>::const_iterator cbegin() const;
+  std::vector<Node>::const_iterator cend() const;
 
 private:
   friend class Sketch_json;
@@ -90,24 +91,10 @@ private:
   /// Assign slot `idx` (used after `json_resize`).
   void json_set_node(size_t idx, const gp_Pnt2d& pt, bool deleted, bool midpoint, bool permanent, const std::string& name = {});
 
-  void update_node_snap_anno_(const gp_Pnt2d& pt, const double snap_dist);
-  void update_axis_snap_anno_(int axis_index, const gp_Pnt2d& axis_pt, double snap_dist);
-  /// World-space snap radius at `pt` (same convention as `try_get_node_idx_snap` / `try_pick_existing_node`).
-  double snap_radius_world_(const gp_Pnt2d& pt) const;
-  bool   view_bounds_2d_(double& min_u, double& min_v, double& max_u, double& max_v) const;
+  static double          s_snap_dist_pixels; // Global to all sketches
+  static Snap_guide_mode s_snap_guide_mode;
+  static glm::vec3       s_snap_guide_color;
 
-  std::vector<Node>       m_nodes;
-  static double           s_snap_dist_pixels; // Global to all sketches
-  static Snap_guide_mode  s_snap_guide_mode;
-  static glm::vec3        s_snap_guide_color;
-  std::set<gp_Pnt2d>      m_outside_snap_pts; // Projected snap points from other sketches.
-  AIS_Shape_ptr           m_snap_anno_axis[2];
-  std::optional<gp_Pnt2d> m_last_snap_pt; // Used for snap annotation
-  AIS_Shape_ptr           m_snap_anno;
-  size_t                  m_prev_num_nodes{0}; // Used when a operation is canceled.
-
-  // Owner related
-  Occt_view&              m_view;
-  AIS_InteractiveContext& m_ctx;
-  const gp_Pln            m_pln;
+  struct Impl;
+  std::unique_ptr<Impl> m_impl;
 };
