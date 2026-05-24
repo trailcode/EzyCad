@@ -44,7 +44,7 @@ While you draw or place points in sketch mode, EzyCad helps you align to existin
 | **Snap distance** | Larger **Snap dist** values let snaps engage from farther away (screen pixels, converted to the sketch plane at the cursor). |
 | **Snap guides** | **Snap guide mode**: *Traditional* (local markers at guide intersections), *Fullscreen* (view-spanning axis lines), or *Both*. |
 | **Axis alignment** | Near a snap target, the pick can align to that point's **X** or **Y** on the sketch plane; guides show which axis is active. When **both** axes align to the **same** point, the cursor **locks to that vertex**. |
-| **Edge interior (Add node)** | A click near the interior of a **straight** edge can snap onto the segment and **split** it at commit time (see [Add node tool](#add-node-tool)). This is separate from vertex lock. |
+| **Mid-point snap (Add node)** | A click near a **straight** edge (not at its ends) snaps onto the segment and **splits** it at commit time (see [Add node tool](#add-node-tool)). Separate from vertex lock. |
 | **Other visible sketches** | Nodes from **other visible sketches** are projected onto the current sketch plane and act as snap targets (same distance rules). Useful for multi-sketch layouts and tools such as **polar duplicate** that pick sketch points. |
 
 **Angle constraint:** When a line or add-node rubber band has an active angle constraint, vertex and axis snap may be disabled or relaxed so the typed angle stays exact (see each tool's section).
@@ -615,7 +615,7 @@ Edge dimension tool creates/removes **length dimensions between two sketch nodes
 The **Add node** tool (toolbar: **Add node**) adds sketch **vertices**. What happens on each placement depends on whether you **start from an existing node**:
 
 - **First click snaps to an existing node** — The tool **acts like [Line edge](#line-edge-creation-tools)** for the next step: a **rubber-band** preview runs from that anchor, and you can enter **length** and/or **angle** (<kbd>Tab</kbd> / <kbd>Shift</kbd>+<kbd>Tab</kbd>, same order as line edge) before you place the **second** point. **No new line edge** is added to the sketch; only the new node is created at the end of that placement.
-- **First click does not snap to an existing node** — The new node is placed **at the click** on the sketch plane (usual snap rules still apply, e.g. snapping onto the interior of a **straight** edge to **split** it).
+- **First click does not snap to an existing node** — The new node is placed **at the click** on the sketch plane (usual snap rules still apply, e.g. **mid-point snap** onto a **straight** edge to **split** it).
 
 In both cases, Add node never leaves a **permanent edge** between two clicks the way Line edge does.
 
@@ -623,7 +623,7 @@ In both cases, Add node never leaves a **permanent edge** between two clicks the
 
 | | |
 | ---: | --- |
-| **Split linear edges** | If a click lands on the interior of an existing **straight** (non-arc) edge, that edge is **replaced by two** edges meeting at the new vertex. Arc edges are **not** split this way. |
+| **Mid-point snap / split** | If a click lands near a **straight** (non-arc) edge (not at its endpoints), the pick snaps onto the segment and that edge is **replaced by two** meeting at the new vertex. Arc edges are **not** split this way. |
 | **No stored edge from anchor** | After a two-step placement from an anchor, **no** sketch edge is created between anchor and new node (unlike Line edge). |
 | **Angle constraint** | With an angle constraint active during rubber-band placement, the next click places the new node along that ray from the anchor; snapping may be relaxed to stay on that direction (similar to the line tool). |
 
@@ -634,7 +634,7 @@ Nodes you place with **Add node** are treated as **user-placed** points. When th
 #### How to use
 
 1. Enter sketch mode and select **Add node** ![Add Node Tool](res/icons/Sketcher_CreatePoint.png) on the toolbar.
-2. **Direct node:** Click where you are **not** snapping to an existing vertex (empty sketch area, edge interior, etc.). The node is created **at that position**; if the click snaps to the interior of a **straight** edge, that edge splits.
+2. **Direct node:** Click where you are **not** snapping to an existing vertex (empty sketch area, or near a straight edge for **mid-point snap**, etc.). The node is created at the snapped position; **mid-point snap** on a **straight** edge splits that edge.
 3. **From an existing node (line-edge–like step):** Click an **existing** vertex first so the first click **snaps** to it. A rubber-band preview runs from that anchor—use <kbd>Tab</kbd> / <kbd>Shift</kbd>+<kbd>Tab</kbd> for length/angle if you want—then click (or confirm) to place the **second** point. Only a **new node** is committed; **no** new edge is stored.
 4. Repeat as needed for more nodes.
 

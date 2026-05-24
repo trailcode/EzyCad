@@ -272,6 +272,16 @@ For detailed information on creating 2D geometry, see the [2D Sketching](usage-s
 
 See the **[2D Sketching guide](usage-sketch.md)** for full documentation of sketch tools: **add node** (points and edge splits), line and multi-line edges, circles, arcs, rectangles, squares, slots, operation axis, edge dimensions, and creating a sketch from a planar face.
 
+**Sketch snap (overview):** While drawing or using **Add node**, picks can snap to existing geometry within **Snap dist** (Options panel). The main behaviors:
+
+| | |
+| ---: | --- |
+| **Vertex snap** | Lock to an existing corner when horizontal and vertical axis guides both align to the same point. |
+| **Mid-point snap** | With **Add node**, a click near a **straight** edge (but not at its ends) snaps onto the segment; EzyCad places a new vertex there and **splits** the edge into two. You do not need to hit the line exactly. |
+| **Edge midpoint** | Straight edges often expose a geometric **midpoint** as a snap target while drawing; that is separate from mid-point snap and from user-placed **+** nodes. |
+
+More detail: [Sketch snapping](usage-sketch.md#sketch-snapping) in the sketch guide.
+
 ### 3D Modeling
 1. **Transform Operations**
    - ![Shape Move Tool](res/icons/Assembly_AxialMove.png) [Move shapes (G)](#shape-move-tool-g)
