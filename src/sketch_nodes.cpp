@@ -147,7 +147,7 @@ std::optional<size_t> Sketch_nodes::try_pick_existing_node(const ScreenCoords& s
   }
   if (best_sq <= snap_dist * 0.25 * snap_dist)
   {
-    update_node_snap_anno_(m_nodes[best_idx], sqrt(snap_dist));
+    try_get_node_idx_snap(m_nodes[best_idx], {});
     return best_idx;
   }
   hide_snap_annos();
@@ -279,7 +279,6 @@ void Sketch_nodes::update_axis_snap_anno_(int axis_index, const gp_Pnt2d& axis_p
     m_ctx.Redisplay(m_snap_anno_axis[axis_index], true);
   }
 }
-
 
 void Sketch_nodes::hide_snap_annos()
 {
