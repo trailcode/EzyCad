@@ -88,7 +88,7 @@ The **Sketch List** pane lists all 2D sketches in the current document. Open it 
 Each row is laid out left to right:
 
 - **Expand** - Click **`>`** / **`v`** to show or hide details for that sketch (tooltip *Expand details* / *Collapse details*).
-- **Set current** - Radio button (circle). The current sketch is used for editing and for operations such as [extrude](#extrude-sketch-face-tool-e).
+- **Set current** - Radio button (circle). The current sketch is used for editing and for operations such as [extrude](#extrude-sketch-face-tool-e). If you are not already in a sketch tool or sketch inspection mode, choosing a sketch also switches to **Sketch inspection mode**; otherwise the active sketch tool stays selected (for example **Add line** remains active when you change sketches).
 - **Rename** - Click the name field and type a new name.
 - **Visibility** - Checkbox to show or hide the sketch in the 3D view.
 - **Underlay** - Checkbox to show or hide an [image underlay](usage-sketch.md#image-underlay) when one is imported (disabled until an underlay exists; tooltip *Display underlay*).

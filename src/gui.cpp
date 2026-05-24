@@ -1048,7 +1048,8 @@ void GUI::sketch_list_()
     if (ImGui::RadioButton("", &m_view->curr_sketch() == sketch.get()))
     {
       m_view->set_curr_sketch(sketch);
-      set_mode(Mode::Sketch_inspection_mode);
+      if (!is_sketch_mode(get_mode()))
+        set_mode(Mode::Sketch_inspection_mode);
     }
 
     if (ui_show_help(2) && ImGui::IsItemHovered())
