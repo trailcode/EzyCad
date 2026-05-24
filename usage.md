@@ -98,7 +98,7 @@ Each row is laid out left to right:
 When expanded, the row shows:
 
 - **Dimensions** - Table of length dimensions: visibility, editable name, and **offset** (label distance from the edge; **0** = automatic).
-- **Nodes**, **Edges**, **Faces** - Collapsible lists of element labels for inspection (read-only names).
+- **Nodes**, **Edges**, **Faces** - Collapsible lists of element labels for inspection. **Nodes** lists **user-placed** points only (the ones with **+** markers in sketch mode), not every internal topology vertex or automatic edge midpoint. **Edges** and **Faces** use default labels (`E0`, `F0`, ...) or saved names where set. Dimension names are editable in the table above; node/edge/face names in these lists are read-only labels for reference.
 
 The window can be closed with its close button; use **View -> Sketch List** again to show it.
 

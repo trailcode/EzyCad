@@ -82,7 +82,7 @@ For other non-sketch Options content (for example **Polar duplicate**), see [usa
 
 Sketch-related preferences are edited in the **Options** panel while you use a sketch tool, not in the **Settings** pane:
 
-- **Sketch options** (all sketch tools): **Snap dist** and **Snap guide mode** (*Traditional*, *Fullscreen*, *Both*).
+- **Sketch options** (all sketch tools): **Snap dist** and **Snap guide mode** (*Traditional*, *Fullscreen*, *Both*). See [How sketch snap works](usage-sketch.md#sketch-snapping) in the sketch guide (axis guides, vertex lock, cross-sketch targets).
 - **Toggle edge dimension** (length dimensions): **Length value placement** - combo: *Near first point*, *Near second point*, *Center on dimension line*, *Automatic*. Maps to the `edge_dim_label_h` key (integers **0** through **3**). Changing it persists like other GUI flags.
 - **Extrude sketch face**: under **Extrude**, **Both sides** and **Material** for the new solid (same document preset as **Normal** mode Options **Material**). Other modes that still show **Material** in Options use that same preset when relevant (for example **Sketch from planar face**).
 - **Add edge** / **Add node** (and similar): a **Shortcuts** line documents TAB / Shift+TAB typing behavior.

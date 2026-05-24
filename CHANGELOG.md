@@ -29,6 +29,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- **Sketch snap:** unified axis-guide feedback in sketch mode; direct snap to nodes on **other visible sketches** (projected onto the current plane) restored; dimension-tool node hover no longer mutates stored node coordinates.
+- **Documentation:** [usage-sketch.md](usage-sketch.md#sketch-snapping) adds a **Sketch snapping** section (axis alignment, vertex lock, cross-sketch targets, add-node edge interior). [usage.md](usage.md#sketch-list) clarifies Sketch List **Nodes** vs topology vertices. [usage-settings.md](usage-settings.md#sketch-tools) links to the snap section.
 - **View roll** (**Shift**+**NumPad 4**/**6**, main **4**/**6**, or **Left**/**Right** arrow): same roll as **Shift**+**4**/**6**; helps when Num Lock makes the numpad send arrows. Handled on key **repeat** as well as press; **Shift**+main **4**/**6** no longer fall through to the selection filter.
 - **Keyboard zoom** (**NumPad +/-**, **Shift+=**, **-**): each repeated OS key event zooms again so holding the key zooms continuously (uses GLFW key repeat).
 - **Zoom:** **Zoom scroll scale** in Settings replaces the hard-coded wheel multiplier (**4**); stored as **`gui.view_zoom_scroll_scale`**. Hold **Shift** while scrolling or using +/- for Blender-style finer zoom (**x0.1** on the delta).

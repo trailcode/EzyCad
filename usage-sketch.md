@@ -4,18 +4,19 @@ This guide covers all 2D sketching tools and operations in EzyCad. For the main 
 
 ## Table of Contents
 1. [2D Sketching](#2d-sketching)
-2. [Line Edge Creation Tools](#line-edge-creation-tools)
-3. [Multi-Line Edge Tool](#multi-line-edge-tool)
-4. [Circle Creation Tools](#circle-creation-tools)
-5. [Circle Creation Workflow](#circle-creation-workflow)
-6. [Arc Segment Creation Tool](#arc-segment-creation-tool)
-7. [Rectangle and Square Creation Tools](#rectangle-and-square-creation-tools)
-8. [Slot Creation Tool](#slot-creation-tool)
-9. [Operation Axis Tool](#operation-axis-tool)
-10. [Dimension Tool](#dimension-tool)
-11. [Add Node Tool](#add-node-tool)
-12. [Create Sketch from Planar Face Tool](#create-sketch-from-planar-face-tool)
-13. [Image underlay](#image-underlay)
+2. [Sketch snapping](#sketch-snapping)
+3. [Line Edge Creation Tools](#line-edge-creation-tools)
+4. [Multi-Line Edge Tool](#multi-line-edge-tool)
+5. [Circle Creation Tools](#circle-creation-tools)
+6. [Circle Creation Workflow](#circle-creation-workflow)
+7. [Arc Segment Creation Tool](#arc-segment-creation-tool)
+8. [Rectangle and Square Creation Tools](#rectangle-and-square-creation-tools)
+9. [Slot Creation Tool](#slot-creation-tool)
+10. [Operation Axis Tool](#operation-axis-tool)
+11. [Dimension Tool](#dimension-tool)
+12. [Add Node Tool](#add-node-tool)
+13. [Create Sketch from Planar Face Tool](#create-sketch-from-planar-face-tool)
+14. [Image underlay](#image-underlay)
 
 ---
 
@@ -33,6 +34,24 @@ This guide covers all 2D sketching tools and operations in EzyCad. For the main 
 2. **Sketch Operations**
    - ![Operation Axis Tool](res/icons/Sketcher_MirrorSketch.png) [Define operation axis](#operation-axis-tool) - Mirror sketches, revolve edges or faces.
    - ![Create Sketch from Planar Face Tool](res/icons/Macro_FaceToSketch_48.png) [Create sketch from planar face](#create-sketch-from-planar-face-tool)
+
+## Sketch snapping
+
+While you draw or place points in sketch mode, EzyCad helps you align to existing geometry. **Snap dist** and **Snap guide mode** are in the Options panel; guide color is in **Settings -> Sketch** (see [usage-settings.md](usage-settings.md#sketch-tools)).
+
+| | |
+| ---: | --- |
+| **Snap distance** | Larger **Snap dist** values let snaps engage from farther away (screen pixels, converted to the sketch plane at the cursor). |
+| **Snap guides** | **Snap guide mode**: *Traditional* (local markers at guide intersections), *Fullscreen* (view-spanning axis lines), or *Both*. |
+| **Axis alignment** | Near a snap target, the pick can align to that point's **X** or **Y** on the sketch plane; guides show which axis is active. When **both** axes align to the **same** point, the cursor **locks to that vertex**. |
+| **Edge interior (Add node)** | A click near the interior of a **straight** edge can snap onto the segment and **split** it at commit time (see [Add node tool](#add-node-tool)). This is separate from vertex lock. |
+| **Other visible sketches** | Nodes from **other visible sketches** are projected onto the current sketch plane and act as snap targets (same distance rules). Useful for multi-sketch layouts and tools such as **polar duplicate** that pick sketch points. |
+
+**Angle constraint:** When a line or add-node rubber band has an active angle constraint, vertex and axis snap may be disabled or relaxed so the typed angle stays exact (see each tool's section).
+
+**Tips:**
+- For precise corners, approach a vertex until both horizontal and vertical guides appear, then click.
+- Automatic **edge midpoints** are snap targets but do not show **+** markers and are not listed under **Nodes** in the [Sketch List](usage.md#sketch-list) (that list is user-placed points only).
 
 ### Line Edge Creation Tools
 ![Line Edge Tool](res/icons/Sketcher_Element_Line_Edge.png)
