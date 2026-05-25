@@ -5,6 +5,7 @@
 #include <gp_Pnt.hxx>
 #include <optional>
 
+#include "geom.h"
 #include "shp_operation.h"
 
 class AIS_Shape;
@@ -22,6 +23,7 @@ public:
   bool has_active_extrusion() const;
   bool get_both_sides() const;
   void set_both_sides(bool both_sides);
+  void refresh_tmp_dimension_style(const Length_dimension_style& style);
 
   // For testing
   void set_curr_view_pln(const gp_Pln& pln);

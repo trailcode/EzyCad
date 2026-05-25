@@ -18,6 +18,7 @@
 #include "utl.h"
 
 class Occt_view;
+struct Length_dimension_style;
 class gp_Pln;
 class TopoDS_Wire;
 class Sketch;
@@ -103,6 +104,10 @@ public:
   void refresh_edge_dimension_line_widths(double line_width);
   /// Apply global dimension arrow size to edge annotations and in-progress rubber-band dim.
   void refresh_edge_dimension_arrow_sizes(double arrow_size);
+  /// Apply full global dimension style to edge annotations and in-progress rubber-band dim.
+  void refresh_edge_dimension_style(const Length_dimension_style& style);
+  /// Rebuild every length dimension (e.g. after global flyout or label placement defaults change).
+  void refresh_all_length_dimensions();
   /// Rebuild permanent node '+' markers (e.g. after settings changes).
   void refresh_permanent_node_annotations();
 

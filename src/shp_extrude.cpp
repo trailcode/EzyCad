@@ -151,8 +151,8 @@ void Shp_extrude::_update_extrude_preview_(const double extrude_dist, const Plan
 
   ctx().Remove(m_tmp_dim, false);
   m_tmp_dim = create_distance_annotation(gp_Pnt(m_to_extrude_pt->XYZ() + face_offset.XYZ() + extrude_vec.XYZ()),
-                                         gp_Pnt(m_to_extrude_pt->XYZ() + face_offset.XYZ()), m_curr_view_pln, Prs3d_DTHP_Fit,
-                                         std::nullopt, nullptr, gui().edge_dim_line_width(), gui().edge_dim_arrow_size());
+                                         gp_Pnt(m_to_extrude_pt->XYZ() + face_offset.XYZ()), m_curr_view_pln,
+                                         gui().length_dimension_style());
 
   m_tmp_dim->SetCustomValue(extrude_dist / view().get_dimension_scale());
 
@@ -179,4 +179,12 @@ void Shp_extrude::_update_extrude_preview_(const double extrude_dist, const Plan
     m_extruded->Set(body);
     ctx().Redisplay(m_extruded, true);
   }
+}
+
+void Shp_extrude::refresh_tmp_dimension_style(const Length_dimension_style& style)
+{
+  if (m_tmp_dim.IsNull())
+    return;
+  apply_length_dimension_style(m_tmp_dim, style);
+  ctx().Redisplay(m_tmp_dim, true);
 }

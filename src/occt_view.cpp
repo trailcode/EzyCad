@@ -1020,6 +1020,56 @@ void Occt_view::refresh_all_length_dimension_arrow_sizes(const double arrow_size
       sk->refresh_edge_dimension_arrow_sizes(arrow_size);
 }
 
+void Occt_view::refresh_all_length_dimension_styles(const Length_dimension_style& style)
+{
+  for (const Sketch_ptr& sk : m_sketches)
+    if (sk)
+      sk->refresh_edge_dimension_style(style);
+  m_shp_extrude.refresh_tmp_dimension_style(style);
+}
+
+void Occt_view::refresh_all_length_dimensions()
+{
+  for (const Sketch_ptr& sk : m_sketches)
+    if (sk)
+      sk->refresh_all_length_dimensions();
+  m_shp_extrude.refresh_tmp_dimension_style(m_gui.length_dimension_style());
+}
+
+void Occt_view::apply_sketch_dimensions_visibility()
+{
+  if (!m_gui.show_sketch_dimensions())
+  {
+    for (const Sketch_ptr& s : m_sketches)
+      if (s)
+        s->set_show_dims(false);
+    return;
+  }
+
+  if (is_sketch_mode(get_mode()))
+  {
+    if (get_mode() == Mode::Sketch_operation_axis)
+    {
+      for (const Sketch_ptr& s : m_sketches)
+        if (s)
+          s->set_show_dims(s == m_cur_sketch);
+    }
+    else
+    {
+      for (const Sketch_ptr& s : m_sketches)
+        if (s)
+          s->set_show_dims(true);
+    }
+  }
+  else
+  {
+    const bool show = get_mode() == Mode::Shape_polar_duplicate;
+    for (const Sketch_ptr& s : m_sketches)
+      if (s)
+        s->set_show_dims(show);
+  }
+}
+
 void Occt_view::refresh_all_permanent_node_annotations()
 {
   for (const Sketch_ptr& sk : m_sketches)
@@ -1522,7 +1572,6 @@ void Occt_view::on_mode()
     {
       s->set_show_faces(s == m_cur_sketch);
       s->set_show_edges(s == m_cur_sketch);
-      s->set_show_dims(s == m_cur_sketch);
     }
   };
 
@@ -1531,7 +1580,6 @@ void Occt_view::on_mode()
     for (Sketch_ptr& s : m_sketches)
     {
       s->set_show_edges(show);
-      s->set_show_dims(show);
       s->set_show_faces(show);
     }
   };
@@ -1579,6 +1627,7 @@ void Occt_view::on_mode()
       shp->set_visible(true);
   }
 
+  apply_sketch_dimensions_visibility();
   apply_camera_projection();
 }
 

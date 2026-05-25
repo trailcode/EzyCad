@@ -469,10 +469,9 @@ void Sketch::move_line_string_pt_(const ScreenCoords& screen_coords)
     // line; if the mouse is (nearly) perpendicular to that line, the projection coincides with pt_a.
     if (unique(pt_a, final_pt_b))
     {
-      m_tmp_dim_anno = create_distance_annotation(
-          pt_a, final_pt_b, m_pln, edge_dim_text_h_pos_from_index(m_view.gui().edge_dim_label_h()),
-          approx_sketch_interior_ref_3d_(), m_dim_classifier_faces.empty() ? nullptr : &m_dim_classifier_faces,
-          m_view.gui().edge_dim_line_width(), m_view.gui().edge_dim_arrow_size());
+      m_tmp_dim_anno = create_distance_annotation(pt_a, final_pt_b, m_pln, m_view.gui().length_dimension_style(),
+                                                  approx_sketch_interior_ref_3d_(),
+                                                  m_dim_classifier_faces.empty() ? nullptr : &m_dim_classifier_faces);
 
       m_tmp_dim_anno->SetCustomValue(dist);
       m_ctx.Display(m_tmp_dim_anno, true);
@@ -1375,10 +1374,9 @@ void Sketch::rebuild_length_dimension_display_(Length_dimension& d)
   if (!d.dim.IsNull())
     m_ctx.Remove(d.dim, false);
 
-  d.dim = create_distance_annotation(
-      m_nodes[d.node_idx_lo], m_nodes[d.node_idx_hi], m_pln, edge_dim_text_h_pos_from_index(m_view.gui().edge_dim_label_h()),
-      approx_sketch_interior_ref_3d_(), m_dim_classifier_faces.empty() ? nullptr : &m_dim_classifier_faces,
-      m_view.gui().edge_dim_line_width(), m_view.gui().edge_dim_arrow_size());
+  d.dim = create_distance_annotation(m_nodes[d.node_idx_lo], m_nodes[d.node_idx_hi], m_pln, m_view.gui().length_dimension_style(),
+                                     approx_sketch_interior_ref_3d_(),
+                                     m_dim_classifier_faces.empty() ? nullptr : &m_dim_classifier_faces);
 
   const double dist = m_nodes[d.node_idx_lo].Distance(m_nodes[d.node_idx_hi]);
   d.dim->SetCustomValue(dist / m_view.get_dimension_scale());
@@ -2486,6 +2484,24 @@ void Sketch::refresh_edge_dimension_arrow_sizes(const double arrow_size)
   if (!m_tmp_dim_anno.IsNull())
   {
     apply_length_dimension_arrow_size(m_tmp_dim_anno, arrow_size);
+    m_ctx.Redisplay(m_tmp_dim_anno, true);
+  }
+}
+
+void Sketch::refresh_all_length_dimensions() { refresh_all_length_dimensions_(); }
+
+void Sketch::refresh_edge_dimension_style(const Length_dimension_style& style)
+{
+  for (Length_dimension& ld : m_length_dimensions)
+    if (!ld.dim.IsNull())
+    {
+      apply_length_dimension_style(ld.dim, style);
+      m_ctx.Redisplay(ld.dim, true);
+    }
+
+  if (!m_tmp_dim_anno.IsNull())
+  {
+    apply_length_dimension_style(m_tmp_dim_anno, style);
     m_ctx.Redisplay(m_tmp_dim_anno, true);
   }
 }

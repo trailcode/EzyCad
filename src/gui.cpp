@@ -43,6 +43,39 @@ GUI::GUI()
   m_view       = std::make_unique<Occt_view>(*this);
   gui_instance = this;
 }
+
+Length_dimension_style GUI::length_dimension_style() const
+{
+  Length_dimension_style s{};
+  s.line_width             = m_edge_dim_line_width;
+  s.arrow_size             = m_edge_dim_arrow_size;
+  s.color_rgb[0]           = m_edge_dim_color[0];
+  s.color_rgb[1]           = m_edge_dim_color[1];
+  s.color_rgb[2]           = m_edge_dim_color[2];
+  s.text_height_scale      = m_edge_dim_text_scale;
+  s.label_h                = m_edge_dim_label_h;
+  s.default_flyout_min       = m_edge_dim_default_flyout;
+  s.flyout_edge_fraction   = m_edge_dim_flyout_edge_fraction;
+  s.arrow_style            = m_edge_dim_arrow_style;
+  s.arrow_orientation      = m_edge_dim_arrow_orientation;
+  s.extension_size         = m_edge_dim_extension_size;
+  s.extension_overshoot    = m_edge_dim_extension_overshoot;
+  return s;
+}
+
+void GUI::set_show_sketch_dimensions(const bool show)
+{
+  if (m_show_sketch_dimensions == show)
+    return;
+  m_show_sketch_dimensions = show;
+  apply_sketch_dimensions_visibility();
+}
+
+void GUI::apply_sketch_dimensions_visibility()
+{
+  if (m_view)
+    m_view->apply_sketch_dimensions_visibility();
+}
 ImFont* GUI::console_font() const
 {
   if (!m_console_font || !ImGui::GetCurrentContext())

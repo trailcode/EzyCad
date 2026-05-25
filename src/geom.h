@@ -117,8 +117,32 @@ gp_Pnt2d get_midpoint(const gp_Pnt2d& p1, const gp_Pnt2d& p2);
 
 gp_Pnt2d mirror_point(const gp_Pnt2d& p1, const gp_Pnt2d& p2, const gp_Pnt2d& point_to_mirror);
 
-/// Maps Options -> edge length label index (0-3) to OCCT horizontal text placement.
+/// Global length-dimension display settings (GUI / `ezycad_settings.json` -> `gui.*`).
+struct Length_dimension_style
+{
+  float line_width             = 1.0f;
+  float arrow_size             = 6.0f;
+  float color_rgb[3]           = {1.f, 1.f, 0.f};
+  float text_height_scale      = 1.0f;
+  int   label_h                = 3;
+  float default_flyout_min       = 15.f;
+  float flyout_edge_fraction   = 0.12f;
+  /// 0 standard, 1 sharp, 2 wide, 3 shaded 3D (see `edge_dim_arrow_style` in settings).
+  int   arrow_style            = 0;
+  /// 0 fit, 1 internal, 2 external (`Prs3d_DAO_*`).
+  int   arrow_orientation      = 0;
+  float extension_size         = 3.f;
+  float extension_overshoot    = 0.f;
+};
+
+/// Maps edge length label index (0-3) to OCCT horizontal text placement.
 Prs3d_DimensionTextHorizontalPosition edge_dim_text_h_pos_from_index(int idx);
+
+/// Automatic flyout distance from edge length and style (before per-dimension override).
+double length_dimension_auto_flyout(double edge_len, const Length_dimension_style& style);
+
+/// Apply full dimension aspect (line, text, arrows, extensions). Call `Redisplay` after.
+void apply_length_dimension_style(const PrsDim_LengthDimension_ptr& dim, const Length_dimension_style& style);
 
 /// Rebuild dimension line aspect with \a line_width (call `Redisplay` on the AIS object after).
 void apply_length_dimension_line_width(const PrsDim_LengthDimension_ptr& dim, double line_width);
@@ -128,18 +152,15 @@ void apply_length_dimension_arrow_size(const PrsDim_LengthDimension_ptr& dim, do
 /// When `sketch_faces_for_flyout` is non-null and non-empty, edge dimensions offset to the side that is
 /// void (not TopAbs_IN) relative to those faces - fixes concave / notch edges where the node centroid lies
 /// on the wrong side. Otherwise `interior_ref` (e.g. node centroid) is used as a weaker heuristic.
-/// OCCT line width scale factor for dimension lines (1.0 = default).
 PrsDim_LengthDimension_ptr create_distance_annotation(const gp_Pnt& p1, const gp_Pnt& p2, const gp_Pln& pln,
-                                                      Prs3d_DimensionTextHorizontalPosition text_h_pos   = Prs3d_DTHP_Fit,
-                                                      const std::optional<gp_Pnt>&          interior_ref = std::nullopt,
-                                                      const std::vector<TopoDS_Face>*       sketch_faces_for_flyout = nullptr,
-                                                      double dimension_line_width = 1.0, double dimension_arrow_size = 6.0);
+                                                      const Length_dimension_style&         style,
+                                                      const std::optional<gp_Pnt>&        interior_ref = std::nullopt,
+                                                      const std::vector<TopoDS_Face>*     sketch_faces_for_flyout = nullptr);
 
 PrsDim_LengthDimension_ptr create_distance_annotation(const gp_Pnt2d& p1, const gp_Pnt2d& p2, const gp_Pln& pln,
-                                                      Prs3d_DimensionTextHorizontalPosition text_h_pos   = Prs3d_DTHP_Fit,
-                                                      const std::optional<gp_Pnt>&          interior_ref = std::nullopt,
-                                                      const std::vector<TopoDS_Face>*       sketch_faces_for_flyout = nullptr,
-                                                      double dimension_line_width = 1.0, double dimension_arrow_size = 6.0);
+                                                      const Length_dimension_style&         style,
+                                                      const std::optional<gp_Pnt>&        interior_ref = std::nullopt,
+                                                      const std::vector<TopoDS_Face>*     sketch_faces_for_flyout = nullptr);
 
 const gp_Pnt& closest_to_camera(const V3d_View_ptr& view, const std::vector<gp_Pnt>& pnts);
 
