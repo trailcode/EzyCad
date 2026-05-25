@@ -91,10 +91,6 @@ private:
   /// Assign slot `idx` (used after `json_resize`).
   void json_set_node(size_t idx, const gp_Pnt2d& pt, bool deleted, bool midpoint, bool permanent, const std::string& name = {});
 
-  static double          s_snap_dist_pixels; // Global to all sketches
-  static Snap_guide_mode s_snap_guide_mode;
-  static glm::vec3       s_snap_guide_color;
-
   struct Impl;
   std::unique_ptr<Impl> m_impl;
 };

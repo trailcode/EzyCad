@@ -14,6 +14,13 @@
 #include "imgui.h"
 #include "occt_view.h"
 
+namespace
+{
+double                        s_snap_dist_pixels = 35.0;
+Sketch_nodes::Snap_guide_mode s_snap_guide_mode  = Sketch_nodes::Snap_guide_mode::Traditional;
+glm::vec3                     s_snap_guide_color{0.0f, 1.0f, 0.0f};
+} // namespace
+
 struct Sketch_nodes::Impl
 {
   Impl(Occt_view& view, const gp_Pln& pln)
@@ -334,7 +341,7 @@ double Sketch_nodes::Impl::snap_radius_world_(const gp_Pnt2d& pt) const
     ScreenCoords screen_coords_at_pt = view.get_screen_coords(pt3d_on_plane);
 
     ScreenCoords screen_coords_offset = screen_coords_at_pt;
-    screen_coords_offset.unsafe_get().x += Sketch_nodes::s_snap_dist_pixels;
+    screen_coords_offset.unsafe_get().x += s_snap_dist_pixels;
 
     std::optional<gp_Pnt2d> pt_offset_on_plane_2d;
     if (std::optional<gp_Pnt> pt_offset_on_plane_3d = view.pt3d_on_plane(screen_coords_offset, pln))
@@ -344,7 +351,7 @@ double Sketch_nodes::Impl::snap_radius_world_(const gp_Pnt2d& pt) const
       return pt.Distance(*pt_offset_on_plane_2d);
     return 5.0;
   }
-  return Sketch_nodes::s_snap_dist_pixels;
+  return s_snap_dist_pixels;
 }
 
 bool Sketch_nodes::Impl::view_bounds_2d_(double& min_u, double& min_v, double& max_u, double& max_v) const
@@ -364,7 +371,7 @@ void Sketch_nodes::Impl::update_node_snap_anno_(const gp_Pnt2d& pt, const double
 
   last_snap_pt = pt;
 
-  const auto mode = Sketch_nodes::s_snap_guide_mode;
+  const auto mode = s_snap_guide_mode;
   const bool show_traditional =
       mode == Sketch_nodes::Snap_guide_mode::Traditional || mode == Sketch_nodes::Snap_guide_mode::Both;
   const bool show_fullscreen = mode == Sketch_nodes::Snap_guide_mode::Fullscreen || mode == Sketch_nodes::Snap_guide_mode::Both;
@@ -405,7 +412,7 @@ void Sketch_nodes::Impl::update_node_snap_anno_(const gp_Pnt2d& pt, const double
   else
     anno_shape = traditional_shape;
 
-  const glm::vec3& c = Sketch_nodes::s_snap_guide_color;
+  const glm::vec3& c = s_snap_guide_color;
   if (snap_anno.IsNull())
   {
     snap_anno = new AIS_Shape(anno_shape);
@@ -422,7 +429,7 @@ void Sketch_nodes::Impl::update_node_snap_anno_(const gp_Pnt2d& pt, const double
 
 void Sketch_nodes::Impl::update_axis_snap_anno_(int axis_index, const gp_Pnt2d& axis_pt, double snap_dist)
 {
-  const auto mode = Sketch_nodes::s_snap_guide_mode;
+  const auto mode = s_snap_guide_mode;
   const bool show_traditional =
       mode == Sketch_nodes::Snap_guide_mode::Traditional || mode == Sketch_nodes::Snap_guide_mode::Both;
   const bool show_fullscreen = mode == Sketch_nodes::Snap_guide_mode::Fullscreen || mode == Sketch_nodes::Snap_guide_mode::Both;
@@ -462,7 +469,7 @@ void Sketch_nodes::Impl::update_axis_snap_anno_(int axis_index, const gp_Pnt2d& 
   else
     anno_shape = traditional_shape;
 
-  const glm::vec3& c = Sketch_nodes::s_snap_guide_color;
+  const glm::vec3& c = s_snap_guide_color;
   if (snap_anno_axis[axis_index].IsNull())
   {
     snap_anno_axis[axis_index] = new AIS_Shape(anno_shape);
@@ -477,11 +484,7 @@ void Sketch_nodes::Impl::update_axis_snap_anno_(int axis_index, const gp_Pnt2d& 
   }
 }
 
-// === Static snap settings ==================================================
-
-double                        Sketch_nodes::s_snap_dist_pixels = 35.0;
-Sketch_nodes::Snap_guide_mode Sketch_nodes::s_snap_guide_mode  = Snap_guide_mode::Traditional;
-glm::vec3                     Sketch_nodes::s_snap_guide_color{0.0f, 1.0f, 0.0f};
+// === Snap settings =========================================================
 
 void Sketch_nodes::set_snap_dist(double snap_dist_pixels) { s_snap_dist_pixels = snap_dist_pixels; }
 
