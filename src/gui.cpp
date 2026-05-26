@@ -54,12 +54,8 @@ Length_dimension_style GUI::length_dimension_style() const
   s.color_rgb[2]           = m_edge_dim_color[2];
   s.text_height_scale      = m_edge_dim_text_scale;
   s.label_h                = m_edge_dim_label_h;
-  s.default_flyout_min       = m_edge_dim_default_flyout;
-  s.flyout_edge_fraction   = m_edge_dim_flyout_edge_fraction;
   s.arrow_style            = m_edge_dim_arrow_style;
   s.arrow_orientation      = m_edge_dim_arrow_orientation;
-  s.extension_size         = m_edge_dim_extension_size;
-  s.extension_overshoot    = m_edge_dim_extension_overshoot;
   return s;
 }
 

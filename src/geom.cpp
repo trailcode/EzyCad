@@ -592,10 +592,11 @@ Prs3d_DimensionArrowOrientation arrow_orientation_from_index(const int idx)
 }
 } // namespace
 
-double length_dimension_auto_flyout(const double edge_len, const Length_dimension_style& style)
+double length_dimension_auto_flyout(const double edge_len)
 {
-  const double from_frac = edge_len * static_cast<double>(style.flyout_edge_fraction);
-  return std::max(static_cast<double>(style.default_flyout_min), from_frac);
+  constexpr double k_min_flyout  = 15.0;
+  constexpr double k_edge_fraction = 0.12;
+  return std::max(k_min_flyout, edge_len * k_edge_fraction);
 }
 
 void apply_length_dimension_style(const PrsDim_LengthDimension_ptr& dim, const Length_dimension_style& style)
@@ -639,8 +640,6 @@ void apply_length_dimension_style(const PrsDim_LengthDimension_ptr& dim, const L
   aspect->SetArrowAspect(arrow);
 
   aspect->SetTextHorizontalPosition(edge_dim_text_h_pos_from_index(style.label_h));
-  aspect->SetExtensionSize(static_cast<Standard_Real>(style.extension_size));
-  aspect->SetArrowTailSize(static_cast<Standard_Real>(style.extension_overshoot));
 
   dim->SetDimensionAspect(aspect);
 }
@@ -706,10 +705,8 @@ static void orient_length_dimension_flyout_outward(const PrsDim_LengthDimension_
   if (to_in.SquareMagnitude() < Precision::SquareConfusion())
     return;
 
-  Standard_Real f        = dim->GetFlyout();
   const double  edge_len = std::sqrt(attach.SquareMagnitude());
-  if (std::abs(f) < Precision::Confusion())
-    f = length_dimension_auto_flyout(edge_len, style);
+  const double f = length_dimension_auto_flyout(edge_len);
 
   if (fly_pos.Dot(to_in) > 0.0)
     dim->SetFlyout(-std::abs(f));
@@ -746,10 +743,8 @@ static bool orient_length_dimension_flyout_clear_of_faces(const PrsDim_LengthDim
 
   fly_pos.Normalize();
 
-  Standard_Real f        = dim->GetFlyout();
-  const double  edge_len = std::sqrt(attach.SquareMagnitude());
-  if (std::abs(f) < Precision::Confusion())
-    f = length_dimension_auto_flyout(edge_len, style);
+  const double edge_len = std::sqrt(attach.SquareMagnitude());
+  const double f = length_dimension_auto_flyout(edge_len);
 
   gp_Pnt mid = p1.Translated(attach.Multiplied(0.5));
 
@@ -790,6 +785,11 @@ PrsDim_LengthDimension_ptr create_distance_annotation(const gp_Pnt& p1, const gp
     used_faces = orient_length_dimension_flyout_clear_of_faces(dim, p1, p2, pln, *sketch_faces_for_flyout, style);
   if (!used_faces && interior_ref.has_value())
     orient_length_dimension_flyout_outward(dim, p1, p2, *interior_ref, pln, style);
+  else if (!used_faces)
+  {
+    const double f = length_dimension_auto_flyout(p1.Distance(p2));
+    dim->SetFlyout(static_cast<Standard_Real>(f));
+  }
 
   return dim;
 }

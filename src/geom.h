@@ -125,21 +125,17 @@ struct Length_dimension_style
   float color_rgb[3]           = {1.f, 1.f, 0.f};
   float text_height_scale      = 1.0f;
   int   label_h                = 3;
-  float default_flyout_min       = 15.f;
-  float flyout_edge_fraction   = 0.12f;
   /// 0 standard, 1 sharp, 2 wide, 3 shaded 3D (see `edge_dim_arrow_style` in settings).
   int   arrow_style            = 0;
   /// 0 fit, 1 internal, 2 external (`Prs3d_DAO_*`).
   int   arrow_orientation      = 0;
-  float extension_size         = 3.f;
-  float extension_overshoot    = 0.f;
 };
 
 /// Maps edge length label index (0-3) to OCCT horizontal text placement.
 Prs3d_DimensionTextHorizontalPosition edge_dim_text_h_pos_from_index(int idx);
 
-/// Automatic flyout distance from edge length and style (before per-dimension override).
-double length_dimension_auto_flyout(double edge_len, const Length_dimension_style& style);
+/// Automatic flyout distance from edge length (before per-dimension override in Sketch List).
+double length_dimension_auto_flyout(double edge_len);
 
 /// Apply full dimension aspect (line, text, arrows, extensions). Call `Redisplay` after.
 void apply_length_dimension_style(const PrsDim_LengthDimension_ptr& dim, const Length_dimension_style& style);

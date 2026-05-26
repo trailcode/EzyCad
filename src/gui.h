@@ -66,27 +66,12 @@ inline constexpr float k_gui_edge_dim_color_default[3] = {1.f, 1.f, 0.f};
 inline constexpr float k_gui_edge_dim_text_scale_min     = 0.5f;
 inline constexpr float k_gui_edge_dim_text_scale_max     = 3.0f;
 inline constexpr float k_gui_edge_dim_text_scale_default = 1.0f;
-/// Minimum automatic flyout (`gui.edge_dim_default_flyout`).
-inline constexpr float k_gui_edge_dim_default_flyout_min     = 0.f;
-inline constexpr float k_gui_edge_dim_default_flyout_max     = 100.f;
-inline constexpr float k_gui_edge_dim_default_flyout_default = 15.f;
-/// Edge-length fraction for automatic flyout (`gui.edge_dim_flyout_edge_fraction`).
-inline constexpr float k_gui_edge_dim_flyout_edge_fraction_min     = 0.f;
-inline constexpr float k_gui_edge_dim_flyout_edge_fraction_max     = 0.5f;
-inline constexpr float k_gui_edge_dim_flyout_edge_fraction_default = 0.12f;
 /// Arrow style preset index (`gui.edge_dim_arrow_style`): 0 standard, 1 sharp, 2 wide, 3 3D.
 inline constexpr int k_gui_edge_dim_arrow_style_min = 0;
 inline constexpr int k_gui_edge_dim_arrow_style_max = 3;
 /// Arrow orientation (`gui.edge_dim_arrow_orientation`): 0 fit, 1 internal, 2 external.
 inline constexpr int k_gui_edge_dim_arrow_orientation_min = 0;
 inline constexpr int k_gui_edge_dim_arrow_orientation_max = 2;
-/// Extension line size and overshoot (OCCT display units).
-inline constexpr float k_gui_edge_dim_extension_size_min     = 0.f;
-inline constexpr float k_gui_edge_dim_extension_size_max     = 50.f;
-inline constexpr float k_gui_edge_dim_extension_size_default = 3.f;
-inline constexpr float k_gui_edge_dim_extension_overshoot_min     = 0.f;
-inline constexpr float k_gui_edge_dim_extension_overshoot_max     = 50.f;
-inline constexpr float k_gui_edge_dim_extension_overshoot_default = 0.f;
 /// Scale factor for permanent sketch-node '+' annotations (`gui.permanent_node_anno_scale`).
 inline constexpr float k_gui_permanent_node_anno_scale_min     = 0.25f;
 inline constexpr float k_gui_permanent_node_anno_scale_max     = 3.0f;
@@ -351,12 +336,8 @@ private:
   float m_edge_dim_color[3]             = {k_gui_edge_dim_color_default[0], k_gui_edge_dim_color_default[1],
                              k_gui_edge_dim_color_default[2]};
   float m_edge_dim_text_scale           = k_gui_edge_dim_text_scale_default;
-  float m_edge_dim_default_flyout       = k_gui_edge_dim_default_flyout_default;
-  float m_edge_dim_flyout_edge_fraction = k_gui_edge_dim_flyout_edge_fraction_default;
   int   m_edge_dim_arrow_style          = 0;
   int   m_edge_dim_arrow_orientation    = 0;
-  float m_edge_dim_extension_size       = k_gui_edge_dim_extension_size_default;
-  float m_edge_dim_extension_overshoot  = k_gui_edge_dim_extension_overshoot_default;
   bool  m_show_sketch_dimensions        = true;
   float        m_permanent_node_anno_scale = k_gui_permanent_node_anno_scale_default;
   /// Degrees per numpad orbit (8/2/4/6) and Blender-style roll (Shift+NumPad 4/6); persisted in `gui.view_roll_step_deg`.

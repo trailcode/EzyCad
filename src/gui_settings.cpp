@@ -57,12 +57,8 @@ std::string GUI::occt_view_settings_json() const
       {"edge_dim_arrow_size", m_edge_dim_arrow_size},
       {"edge_dim_color", {m_edge_dim_color[0], m_edge_dim_color[1], m_edge_dim_color[2]}},
       {"edge_dim_text_scale", m_edge_dim_text_scale},
-      {"edge_dim_default_flyout", m_edge_dim_default_flyout},
-      {"edge_dim_flyout_edge_fraction", m_edge_dim_flyout_edge_fraction},
       {"edge_dim_arrow_style", m_edge_dim_arrow_style},
       {"edge_dim_arrow_orientation", m_edge_dim_arrow_orientation},
-      {"edge_dim_extension_size", m_edge_dim_extension_size},
-      {"edge_dim_extension_overshoot", m_edge_dim_extension_overshoot},
       {"show_sketch_dimensions", m_show_sketch_dimensions},
       {k_gui_key_permanent_node_anno_scale, m_permanent_node_anno_scale},
       {"view_roll_step_deg", m_view_roll_step_deg},
@@ -113,12 +109,8 @@ void GUI::save_occt_view_settings()
       {"edge_dim_arrow_size", m_edge_dim_arrow_size},
       {"edge_dim_color", {m_edge_dim_color[0], m_edge_dim_color[1], m_edge_dim_color[2]}},
       {"edge_dim_text_scale", m_edge_dim_text_scale},
-      {"edge_dim_default_flyout", m_edge_dim_default_flyout},
-      {"edge_dim_flyout_edge_fraction", m_edge_dim_flyout_edge_fraction},
       {"edge_dim_arrow_style", m_edge_dim_arrow_style},
       {"edge_dim_arrow_orientation", m_edge_dim_arrow_orientation},
-      {"edge_dim_extension_size", m_edge_dim_extension_size},
-      {"edge_dim_extension_overshoot", m_edge_dim_extension_overshoot},
       {"show_sketch_dimensions", m_show_sketch_dimensions},
       {k_gui_key_permanent_node_anno_scale, m_permanent_node_anno_scale},
       {"load_last_opened_on_startup", m_load_last_opened_on_startup},
@@ -275,19 +267,6 @@ void GUI::parse_gui_panes_settings_(const std::string& content)
     m_edge_dim_text_scale =
         parse_bounded_float("edge_dim_text_scale", k_gui_edge_dim_text_scale_min, k_gui_edge_dim_text_scale_max,
                             k_gui_edge_dim_text_scale_default);
-    m_edge_dim_default_flyout =
-        parse_bounded_float("edge_dim_default_flyout", k_gui_edge_dim_default_flyout_min, k_gui_edge_dim_default_flyout_max,
-                            k_gui_edge_dim_default_flyout_default);
-    m_edge_dim_flyout_edge_fraction = parse_bounded_float("edge_dim_flyout_edge_fraction",
-                                                          k_gui_edge_dim_flyout_edge_fraction_min,
-                                                          k_gui_edge_dim_flyout_edge_fraction_max,
-                                                          k_gui_edge_dim_flyout_edge_fraction_default);
-    m_edge_dim_extension_size =
-        parse_bounded_float("edge_dim_extension_size", k_gui_edge_dim_extension_size_min, k_gui_edge_dim_extension_size_max,
-                            k_gui_edge_dim_extension_size_default);
-    m_edge_dim_extension_overshoot =
-        parse_bounded_float("edge_dim_extension_overshoot", k_gui_edge_dim_extension_overshoot_min,
-                            k_gui_edge_dim_extension_overshoot_max, k_gui_edge_dim_extension_overshoot_default);
     if (g.contains("edge_dim_color") && g["edge_dim_color"].is_array() && g["edge_dim_color"].size() >= 3)
     {
       const json& a = g["edge_dim_color"];
@@ -984,41 +963,6 @@ void GUI::settings_()
       ImGui::TableNextRow();
       ImGui::TableSetColumnIndex(0);
       ImGui::AlignTextToFramePadding();
-      ImGui::TextUnformatted("Default flyout distance");
-      ImGui::TableSetColumnIndex(1);
-      {
-        float fly = m_edge_dim_default_flyout;
-        if (ImGui::SliderFloat("##edge_dim_default_flyout", &fly, k_gui_edge_dim_default_flyout_min,
-                               k_gui_edge_dim_default_flyout_max, "%.1f"))
-        {
-          m_edge_dim_default_flyout = fly;
-          dim_changed               = true;
-        }
-        if (ui_show_help(2) && ImGui::IsItemHovered())
-          ImGui::SetTooltip("Minimum offset of the dimension line from the measured edge when flyout is automatic. "
-                            "Per-dimension overrides in Sketch List still apply.");
-      }
-
-      ImGui::TableNextRow();
-      ImGui::TableSetColumnIndex(0);
-      ImGui::AlignTextToFramePadding();
-      ImGui::TextUnformatted("Flyout edge fraction");
-      ImGui::TableSetColumnIndex(1);
-      {
-        float frac = m_edge_dim_flyout_edge_fraction;
-        if (ImGui::SliderFloat("##edge_dim_flyout_frac", &frac, k_gui_edge_dim_flyout_edge_fraction_min,
-                               k_gui_edge_dim_flyout_edge_fraction_max, "%.3f"))
-        {
-          m_edge_dim_flyout_edge_fraction = frac;
-          dim_changed                     = true;
-        }
-        if (ui_show_help(2) && ImGui::IsItemHovered())
-          ImGui::SetTooltip("Automatic flyout also uses max(min distance, edge length x this fraction).");
-      }
-
-      ImGui::TableNextRow();
-      ImGui::TableSetColumnIndex(0);
-      ImGui::AlignTextToFramePadding();
       ImGui::TextUnformatted("Arrow style");
       ImGui::TableSetColumnIndex(1);
       {
@@ -1056,40 +1000,6 @@ void GUI::settings_()
             }
           ImGui::EndCombo();
         }
-      }
-
-      ImGui::TableNextRow();
-      ImGui::TableSetColumnIndex(0);
-      ImGui::AlignTextToFramePadding();
-      ImGui::TextUnformatted("Extension line gap");
-      ImGui::TableSetColumnIndex(1);
-      {
-        float ext = m_edge_dim_extension_size;
-        if (ImGui::SliderFloat("##edge_dim_extension", &ext, k_gui_edge_dim_extension_size_min,
-                               k_gui_edge_dim_extension_size_max, "%.1f"))
-        {
-          m_edge_dim_extension_size = ext;
-          dim_changed               = true;
-        }
-        if (ui_show_help(2) && ImGui::IsItemHovered())
-          ImGui::SetTooltip("Gap between measured geometry and extension lines (OCCT extension size).");
-      }
-
-      ImGui::TableNextRow();
-      ImGui::TableSetColumnIndex(0);
-      ImGui::AlignTextToFramePadding();
-      ImGui::TextUnformatted("Extension overshoot");
-      ImGui::TableSetColumnIndex(1);
-      {
-        float over = m_edge_dim_extension_overshoot;
-        if (ImGui::SliderFloat("##edge_dim_overshoot", &over, k_gui_edge_dim_extension_overshoot_min,
-                               k_gui_edge_dim_extension_overshoot_max, "%.1f"))
-        {
-          m_edge_dim_extension_overshoot = over;
-          dim_changed                    = true;
-        }
-        if (ui_show_help(2) && ImGui::IsItemHovered())
-          ImGui::SetTooltip("Extension line past the dimension line (OCCT arrow tail size).");
       }
 
       ImGui::TableNextRow();

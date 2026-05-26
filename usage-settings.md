@@ -54,12 +54,8 @@ Between those, the pane has **six** collapsible sections. Expand a section to se
    - **Dimension color** — RGB for dimension lines, arrow heads, and value text
    - **Dimension text scale** — slider **0.5** to **3.0** (multiplier on label height)
    - **Length value placement** — combo: *Near first point*, *Near second point*, *Center on dimension line*, *Automatic* (persisted as `edge_dim_label_h` **0**–**3**; updates existing dimensions live)
-   - **Default flyout distance** — minimum automatic offset of the dimension line from the measured edge (**0**–**100** display units)
-   - **Flyout edge fraction** — automatic flyout also uses edge length × this fraction (**0**–**0.5**; default **0.12**)
    - **Arrow style** — *Standard*, *Sharp*, *Wide*, or *3D shaded*
    - **Arrow orientation** — *Automatic*, *Internal*, or *External*
-   - **Extension line gap** — gap from geometry to extension lines (**0**–**50**)
-   - **Extension overshoot** — extension past the dimension line (**0**–**50**)
    - **Show sketch dimensions** — global on/off for length dimensions on all sketches (tool mode may still limit which sketch shows dims when on)
    - **Permanent node annotation size**, **Underlay highlight color**, **Snap guide color**, **Snap guide mode** (directly under **Sketch**, not inside **Dimensions**)
 
@@ -98,7 +94,7 @@ Sketch-related preferences are edited in the **Options** panel while you use a s
 - **Add edge** / **Add node** (and similar): a **Shortcuts** line documents TAB / Shift+TAB typing behavior.
 - **Sketch operation** (mirror / revolve axis): mirror, revolve, angle, and clear-axis actions (see [usage-sketch.md](usage-sketch.md#operation-axis-tool)).
 
-Global length-dimension style (line width, arrows, color, text, flyout defaults, extensions) is in **Settings -> Sketch**. Per-dimension visibility, name, and offset remain in **Sketch List -> Dimensions** (saved in the project `.ezy` file).
+Global length-dimension style (line width, arrows, color, text) is in **Settings -> Sketch**. Per-dimension visibility, name, and offset remain in **Sketch List -> Dimensions** (saved in the project `.ezy` file).
 
 ## Where settings are stored
 
@@ -168,12 +164,8 @@ String: ImGui `.ini` text for window positions and docking saved with **SaveIniS
 | `edge_dim_arrow_size` | number | Arrow head length (**1.0** to **24.0**). |
 | `edge_dim_color` | array of 3 numbers | Dimension line, arrow, and text RGB (**0** to **1** per channel; default yellow). |
 | `edge_dim_text_scale` | number | Label height multiplier (**0.5** to **3.0**; default **1.0**). |
-| `edge_dim_default_flyout` | number | Minimum automatic flyout distance (**0** to **100**; default **15**). |
-| `edge_dim_flyout_edge_fraction` | number | Automatic flyout edge-length fraction (**0** to **0.5**; default **0.12**). |
 | `edge_dim_arrow_style` | integer | **0** standard, **1** sharp, **2** wide, **3** 3D shaded. |
 | `edge_dim_arrow_orientation` | integer | **0** automatic, **1** internal, **2** external. |
-| `edge_dim_extension_size` | number | Extension line gap (**0** to **50**; default **3**). |
-| `edge_dim_extension_overshoot` | number | Extension past dimension line (**0** to **50**; default **0**). |
 | `show_sketch_dimensions` | boolean | When false, hides length dimensions on all sketches. |
 | `imgui_rounding_general` | number | Window/child/frame/popup rounding (**0** to **32** clamped in code; sliders stop at 16 in the UI). |
 | `imgui_rounding_scroll` | number | Scrollbar and grab rounding (same clamp). |
