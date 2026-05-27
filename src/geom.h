@@ -129,6 +129,8 @@ struct Length_dimension_style
   int   arrow_style            = 0;
   /// 0 fit, 1 internal, 2 external (`Prs3d_DAO_*`).
   int   arrow_orientation      = 0;
+  /// Label rendering mode (`gui.edge_dim_text_render_mode`): 0..5, default 5 (Z-layer Topmost).
+  int   text_render_mode       = 5;
 };
 
 /// Maps edge length label index (0-3) to OCCT horizontal text placement.

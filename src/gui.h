@@ -72,6 +72,15 @@ inline constexpr int k_gui_edge_dim_arrow_style_max = 3;
 /// Arrow orientation (`gui.edge_dim_arrow_orientation`): 0 fit, 1 internal, 2 external.
 inline constexpr int k_gui_edge_dim_arrow_orientation_min = 0;
 inline constexpr int k_gui_edge_dim_arrow_orientation_max = 2;
+/// `gui.edge_dim_text_render_mode` indices.
+inline constexpr int k_gui_edge_dim_text_render_opaque_2d     = 0;
+inline constexpr int k_gui_edge_dim_text_render_common_color  = 1;
+inline constexpr int k_gui_edge_dim_text_render_2d_screen     = 2;
+inline constexpr int k_gui_edge_dim_text_render_3d_text       = 3;
+inline constexpr int k_gui_edge_dim_text_render_z_top         = 4;
+inline constexpr int k_gui_edge_dim_text_render_z_topmost     = 5;
+inline constexpr int k_gui_edge_dim_text_render_mode_default = k_gui_edge_dim_text_render_z_topmost;
+inline constexpr int k_gui_edge_dim_text_render_mode_max     = k_gui_edge_dim_text_render_z_topmost;
 /// Scale factor for permanent sketch-node '+' annotations (`gui.permanent_node_anno_scale`).
 inline constexpr float k_gui_permanent_node_anno_scale_min     = 0.25f;
 inline constexpr float k_gui_permanent_node_anno_scale_max     = 3.0f;
@@ -338,6 +347,7 @@ private:
   float m_edge_dim_text_scale           = k_gui_edge_dim_text_scale_default;
   int   m_edge_dim_arrow_style          = 0;
   int   m_edge_dim_arrow_orientation    = 0;
+  int   m_edge_dim_text_render_mode     = k_gui_edge_dim_text_render_mode_default;
   bool  m_show_sketch_dimensions        = true;
   float        m_permanent_node_anno_scale = k_gui_permanent_node_anno_scale_default;
   /// Degrees per numpad orbit (8/2/4/6) and Blender-style roll (Shift+NumPad 4/6); persisted in `gui.view_roll_step_deg`.

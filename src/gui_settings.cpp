@@ -57,6 +57,7 @@ std::string GUI::occt_view_settings_json() const
       {"edge_dim_arrow_size", m_edge_dim_arrow_size},
       {"edge_dim_color", {m_edge_dim_color[0], m_edge_dim_color[1], m_edge_dim_color[2]}},
       {"edge_dim_text_scale", m_edge_dim_text_scale},
+      {"edge_dim_text_render_mode", m_edge_dim_text_render_mode},
       {"edge_dim_arrow_style", m_edge_dim_arrow_style},
       {"edge_dim_arrow_orientation", m_edge_dim_arrow_orientation},
       {"show_sketch_dimensions", m_show_sketch_dimensions},
@@ -109,6 +110,7 @@ void GUI::save_occt_view_settings()
       {"edge_dim_arrow_size", m_edge_dim_arrow_size},
       {"edge_dim_color", {m_edge_dim_color[0], m_edge_dim_color[1], m_edge_dim_color[2]}},
       {"edge_dim_text_scale", m_edge_dim_text_scale},
+      {"edge_dim_text_render_mode", m_edge_dim_text_render_mode},
       {"edge_dim_arrow_style", m_edge_dim_arrow_style},
       {"edge_dim_arrow_orientation", m_edge_dim_arrow_orientation},
       {"show_sketch_dimensions", m_show_sketch_dimensions},
@@ -267,6 +269,19 @@ void GUI::parse_gui_panes_settings_(const std::string& content)
     m_edge_dim_text_scale =
         parse_bounded_float("edge_dim_text_scale", k_gui_edge_dim_text_scale_min, k_gui_edge_dim_text_scale_max,
                             k_gui_edge_dim_text_scale_default);
+    auto parse_dim_int = [&g](const char* key, const int min_v, const int max_v, const int default_v) -> int
+    {
+      if (g.contains(key) && g[key].is_number_integer())
+      {
+        const int v = g[key].get<int>();
+        if (v >= min_v && v <= max_v)
+          return v;
+      }
+      return default_v;
+    };
+    m_edge_dim_text_render_mode =
+        parse_dim_int("edge_dim_text_render_mode", 0, k_gui_edge_dim_text_render_mode_max,
+                      k_gui_edge_dim_text_render_mode_default);
     if (g.contains("edge_dim_color") && g["edge_dim_color"].is_array() && g["edge_dim_color"].size() >= 3)
     {
       const json& a = g["edge_dim_color"];
@@ -932,6 +947,39 @@ void GUI::settings_()
           m_edge_dim_text_scale = ts;
           dim_changed           = true;
         }
+      }
+
+      ImGui::TableNextRow();
+      ImGui::TableSetColumnIndex(0);
+      ImGui::AlignTextToFramePadding();
+      ImGui::TextUnformatted("Label rendering");
+      ImGui::TableSetColumnIndex(1);
+      {
+        constexpr std::array<const char*, 6> k_labels = {
+            "Opaque 2D text",
+            "SetCommonColor",
+            "2D screen text",
+            "3D text",
+            "Z-layer Top",
+            "Z-layer Topmost",
+        };
+        int rm = m_edge_dim_text_render_mode;
+        if (rm < 0 || rm >= static_cast<int>(k_labels.size()))
+          rm = k_gui_edge_dim_text_render_mode_default;
+        ImGui::SetNextItemWidth(220.0f);
+        if (ImGui::BeginCombo("##edge_dim_text_render", k_labels[static_cast<size_t>(rm)], ImGuiComboFlags_HeightSmall))
+        {
+          for (int i = 0; i < static_cast<int>(k_labels.size()); ++i)
+            if (ImGui::Selectable(k_labels[static_cast<size_t>(i)], i == rm))
+            {
+              m_edge_dim_text_render_mode = i;
+              dim_changed                 = true;
+            }
+          ImGui::EndCombo();
+        }
+        if (ui_show_help(2) && ImGui::IsItemHovered())
+          ImGui::SetTooltip("How dimension value labels are composited. Z-layer Top and Topmost avoid ghosting "
+                            "against the grid; Topmost is the default.");
       }
 
       ImGui::TableNextRow();

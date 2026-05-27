@@ -53,6 +53,7 @@ Between those, the pane has **six** collapsible sections. Expand a section to se
    - **Dimension arrow size** — slider **1.0** to **24.0**
    - **Dimension color** — RGB for dimension lines, arrow heads, and value text
    - **Dimension text scale** — slider **0.5** to **3.0** (multiplier on label height)
+   - **Label rendering** — *Opaque 2D text*, *SetCommonColor*, *2D screen text*, *3D text*, *Z-layer Top*, *Z-layer Topmost* (default)
    - **Length value placement** — combo: *Near first point*, *Near second point*, *Center on dimension line*, *Automatic* (persisted as `edge_dim_label_h` **0**–**3**; updates existing dimensions live)
    - **Arrow style** — *Standard*, *Sharp*, *Wide*, or *3D shaded*
    - **Arrow orientation** — *Automatic*, *Internal*, or *External*
@@ -164,6 +165,7 @@ String: ImGui `.ini` text for window positions and docking saved with **SaveIniS
 | `edge_dim_arrow_size` | number | Arrow head length (**1.0** to **24.0**). |
 | `edge_dim_color` | array of 3 numbers | Dimension line, arrow, and text RGB (**0** to **1** per channel; default yellow). |
 | `edge_dim_text_scale` | number | Label height multiplier (**0.5** to **3.0**; default **1.0**). |
+| `edge_dim_text_render_mode` | integer | **0** opaque 2D, **1** SetCommonColor, **2** 2D screen, **3** 3D text, **4** Z Top, **5** Z Topmost (default). |
 | `edge_dim_arrow_style` | integer | **0** standard, **1** sharp, **2** wide, **3** 3D shaded. |
 | `edge_dim_arrow_orientation` | integer | **0** automatic, **1** internal, **2** external. |
 | `show_sketch_dimensions` | boolean | When false, hides length dimensions on all sketches. |

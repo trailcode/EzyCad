@@ -56,6 +56,7 @@ Length_dimension_style GUI::length_dimension_style() const
   s.label_h                = m_edge_dim_label_h;
   s.arrow_style            = m_edge_dim_arrow_style;
   s.arrow_orientation      = m_edge_dim_arrow_orientation;
+  s.text_render_mode       = m_edge_dim_text_render_mode;
   return s;
 }
 

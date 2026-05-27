@@ -18,6 +18,11 @@
 #include <Geom_Plane.hxx>
 #include <Geom_TrimmedCurve.hxx>
 #include <Graphic3d_AspectLine3d.hxx>
+#include <Aspect_TypeOfDisplayText.hxx>
+#include <Aspect_TypeOfStyleText.hxx>
+#include <Graphic3d_AlphaMode.hxx>
+#include <Graphic3d_AspectText3d.hxx>
+#include <Graphic3d_ZLayerId.hxx>
 #include <Prs3d_ArrowAspect.hxx>
 #include <Prs3d_DimensionArrowOrientation.hxx>
 #include <Prs3d_DimensionAspect.hxx>
@@ -590,6 +595,20 @@ Prs3d_DimensionArrowOrientation arrow_orientation_from_index(const int idx)
       return Prs3d_DAO_Fit;
   }
 }
+
+void apply_dimension_label_text_aspect(const Handle(Prs3d_TextAspect)& text, const Quantity_Color& col,
+                                       const Length_dimension_style& style)
+{
+  text->SetColor(col);
+  text->SetHeight(k_dim_text_height_base * static_cast<double>(style.text_height_scale));
+
+  Handle(Graphic3d_AspectText3d) gtext = new Graphic3d_AspectText3d();
+  gtext->SetColor(col);
+  gtext->SetDisplayType(Aspect_TODT_NORMAL);
+  gtext->SetStyle(Aspect_TOST_NORMAL);
+  gtext->SetAlphaMode(Graphic3d_AlphaMode_Opaque);
+  text->SetAspect(gtext);
+}
 } // namespace
 
 double length_dimension_auto_flyout(const double edge_len)
@@ -614,15 +633,6 @@ void apply_length_dimension_style(const PrsDim_LengthDimension_ptr& dim, const L
 
   aspect->SetLineAspect(new Prs3d_LineAspect(col, typ, static_cast<Standard_Real>(style.line_width)));
 
-  Handle(Prs3d_TextAspect) text;
-  if (const Handle(Prs3d_TextAspect)& cur_text = aspect->TextAspect(); !cur_text.IsNull())
-    text = new Prs3d_TextAspect(*cur_text);
-  else
-    text = new Prs3d_TextAspect();
-  text->SetColor(col);
-  text->SetHeight(k_dim_text_height_base * static_cast<double>(style.text_height_scale));
-  aspect->SetTextAspect(text);
-
   double angle_deg{};
   bool   arrows_3d{};
   arrow_style_preset(style.arrow_style, angle_deg, arrows_3d);
@@ -639,9 +649,41 @@ void apply_length_dimension_style(const PrsDim_LengthDimension_ptr& dim, const L
   arrow->SetAngle(angle_deg * (std::numbers::pi / 180.0));
   aspect->SetArrowAspect(arrow);
 
+  if (style.text_render_mode == 1)
+  {
+    aspect->SetCommonColor(col);
+    Handle(Prs3d_TextAspect) text = aspect->TextAspect();
+    if (text.IsNull())
+      text = new Prs3d_TextAspect();
+    text->SetHeight(k_dim_text_height_base * static_cast<double>(style.text_height_scale));
+    aspect->SetTextAspect(text);
+  }
+  else
+  {
+    Handle(Prs3d_TextAspect) text = new Prs3d_TextAspect();
+    apply_dimension_label_text_aspect(text, col, style);
+    aspect->SetTextAspect(text);
+  }
+
+  aspect->MakeText3d(style.text_render_mode == 3);
+  aspect->MakeTextShaded(false);
+
   aspect->SetTextHorizontalPosition(edge_dim_text_h_pos_from_index(style.label_h));
 
   dim->SetDimensionAspect(aspect);
+
+  switch (style.text_render_mode)
+  {
+    case 4:
+      dim->SetZLayer(Graphic3d_ZLayerId_Top);
+      break;
+    case 5:
+      dim->SetZLayer(Graphic3d_ZLayerId_Topmost);
+      break;
+    default:
+      dim->SetZLayer(Graphic3d_ZLayerId_Default);
+      break;
+  }
 }
 
 void apply_length_dimension_line_width(const PrsDim_LengthDimension_ptr& dim, const double line_width)
