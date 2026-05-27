@@ -48,15 +48,23 @@ Between those, the pane has **six** collapsible sections. Expand a section to se
 
 4. **3D view grid** — **Fine grid lines** and **Major grid lines** (passed to Open CASCADE `Aspect_Grid::SetColors`: dense lines vs every-tenth emphasis lines). **Grid step**, **Grid extent X / Y** (full span edge-to-edge), and **Grid display Z offset** in the Settings pane use the **same length scale as sketch length dimensions** (display value = model value / internal `dimension_scale`, default **100**). Saved JSON (`occt_view`) stores **half-extent** in model units for OCCT (`grid_graphic_*`); Settings shows **full** extent (twice the stored half-extent).
 
-5. **Sketch** — **Dimension line width** — slider **0.5** to **8.0** (has `(?)`). **Underlay highlight color** — RGB (has `(?)`).
+5. **Sketch** — Expand **Dimensions** (nested, open by default) for length-dimension appearance and behavior (most rows have `(?)` tooltips). Other sketch rows stay in the parent **Sketch** section:
+   - **Dimension line width** — slider **0.5** to **8.0**
+   - **Dimension arrow size** — slider **1.0** to **24.0**
+   - **Dimension color** — RGB for dimension lines, arrow heads, and value text
+   - **Dimension text scale** — slider **0.5** to **3.0** (multiplier on label height)
+   - **Label rendering** — *Opaque 2D text*, *SetCommonColor*, *2D screen text*, *3D text*, *Z-layer Top*, *Z-layer Topmost* (default)
+   - **Length value placement** — combo: *Near first point*, *Near second point*, *Center on dimension line*, *Automatic* (persisted as `edge_dim_label_h` **0**–**3**; updates existing dimensions live)
+   - **Arrow style** — *Standard*, *Sharp*, *Wide*, or *3D shaded*
+   - **Arrow orientation** — *Automatic*, *Internal*, or *External*
+   - **Show sketch dimensions** — global on/off for length dimensions on all sketches (tool mode may still limit which sketch shows dims when on)
+   - **Permanent node annotation size**, **Underlay highlight color**, **Snap guide color**, **Snap guide mode** (directly under **Sketch**, not inside **Dimensions**)
 
 6. **Startup project** — **Desktop only:** **Load last opened on startup** (checkbox, with `(?)`), then **Last opened path:** … or **(No path saved yet.)** Then **Save current as startup project**, **Clear saved startup** (with `(?)`). **WebAssembly:** no load-last row; only the two buttons and `(?)`. See [Startup project](#startup-project).
 
 **Not in this pane**
 
 - **View** menu items such as **Options**, **Sketch List**, **Lua Console** — they only show or hide panes; they are not rows inside **Settings**. Their visibility is still saved under `gui.*` in the settings file (see [Settings file reference](#settings-file-reference)).
-- **Length value placement** for edge dimensions — **Options** panel when the edge-dimension tool is active; see [Options panel](#options-panel).
-
 **Saving** — On desktop, settings are written when you change options that save, and on exit. On **Emscripten**, use **File -> Save settings** so the browser persists (see [Where settings are stored](#where-settings-are-stored)).
 
 ## Options panel
@@ -82,13 +90,12 @@ For other non-sketch Options content (for example **Polar duplicate**), see [usa
 
 Sketch-related preferences are edited in the **Options** panel while you use a sketch tool, not in the **Settings** pane:
 
-- **Sketch options** (all sketch tools): **Snap dist** and **Snap guide mode** (*Traditional*, *Fullscreen*, *Both*). See [How sketch snap works](usage-sketch.md#sketch-snapping) in the sketch guide (axis guides, vertex lock, cross-sketch targets).
-- **Toggle edge dimension** (length dimensions): **Length value placement** - combo: *Near first point*, *Near second point*, *Center on dimension line*, *Automatic*. Maps to the `edge_dim_label_h` key (integers **0** through **3**). Changing it persists like other GUI flags.
+- **Sketch options** (all sketch tools): **Snap dist** and **Snap guide mode** (*Traditional*, *Fullscreen*, *Both*). See [How sketch snap works](usage-sketch.md#sketch-snapping) in the sketch guide (axis guides, vertex lock, cross-sketch targets). Snap guide color and mode are also in **Settings -> Sketch**.
 - **Extrude sketch face**: under **Extrude**, **Both sides** and **Material** for the new solid (same document preset as **Normal** mode Options **Material**). Other modes that still show **Material** in Options use that same preset when relevant (for example **Sketch from planar face**).
 - **Add edge** / **Add node** (and similar): a **Shortcuts** line documents TAB / Shift+TAB typing behavior.
 - **Sketch operation** (mirror / revolve axis): mirror, revolve, angle, and clear-axis actions (see [usage-sketch.md](usage-sketch.md#operation-axis-tool)).
 
-**Dimension line width** for length dimensions is in **Settings -> Sketch** (see above).
+Global length-dimension style (line width, arrows, color, text) is in **Settings -> Sketch**. Per-dimension visibility, name, and offset remain in **Sketch List -> Dimensions** (saved in the project `.ezy` file).
 
 ## Where settings are stored
 
@@ -153,8 +160,15 @@ String: ImGui `.ini` text for window positions and docking saved with **SaveIniS
 | `show_python_console` | boolean | Python console pane visible (native builds with Python). |
 | `show_dbg` | boolean | Debug pane visible (debug builds only). |
 | `inspection_orthographic` | boolean | **Normal** mode Options: orthographic camera when true (default false). |
-| `edge_dim_label_h` | integer | Length dimension label placement: **0** to **3** (see [Options panel](#options-panel)). Values outside this range are ignored. |
-| `edge_dim_line_width` | number | Sketch length dimension line width (allowed range **0.5** to **8.0** in code). |
+| `edge_dim_label_h` | integer | Length dimension label placement: **0** near first point, **1** near second, **2** center, **3** automatic. |
+| `edge_dim_line_width` | number | Sketch length dimension line width (**0.5** to **8.0**). |
+| `edge_dim_arrow_size` | number | Arrow head length (**1.0** to **24.0**). |
+| `edge_dim_color` | array of 3 numbers | Dimension line, arrow, and text RGB (**0** to **1** per channel; default yellow). |
+| `edge_dim_text_scale` | number | Label height multiplier (**0.5** to **3.0**; default **1.0**). |
+| `edge_dim_text_render_mode` | integer | **0** opaque 2D, **1** SetCommonColor, **2** 2D screen, **3** 3D text, **4** Z Top, **5** Z Topmost (default). |
+| `edge_dim_arrow_style` | integer | **0** standard, **1** sharp, **2** wide, **3** 3D shaded. |
+| `edge_dim_arrow_orientation` | integer | **0** automatic, **1** internal, **2** external. |
+| `show_sketch_dimensions` | boolean | When false, hides length dimensions on all sketches. |
 | `imgui_rounding_general` | number | Window/child/frame/popup rounding (**0** to **32** clamped in code; sliders stop at 16 in the UI). |
 | `imgui_rounding_scroll` | number | Scrollbar and grab rounding (same clamp). |
 | `imgui_rounding_tabs` | number | Tab rounding (same clamp). |
@@ -164,7 +178,7 @@ String: ImGui `.ini` text for window positions and docking saved with **SaveIniS
 | `load_last_opened_on_startup` | boolean | Desktop: open the last `.ezy` on launch. **Legacy:** `load_last_saved_on_startup` is read as a fallback if the newer key is absent. |
 | `last_opened_project_path` | string | Path of the last opened project for the option above. **Legacy:** `last_saved_project_path` is accepted if the newer key is missing. |
 
-Scripting API **`ezy.occt_view_settings_json()`** returns a JSON string with **`occt_view`** plus selected **`gui`** keys (including **`gui.inspection_orthographic`**, **`gui.edge_dim_label_h`**, **`gui.edge_dim_line_width`**, **`gui.view_roll_step_deg`**, **`gui.view_zoom_scroll_scale`** when saved). See [scripting.md](scripting.md).
+Scripting API **`ezy.occt_view_settings_json()`** returns a JSON string with **`occt_view`** plus selected **`gui`** keys (including dimension keys above, **`gui.inspection_orthographic`**, **`gui.view_roll_step_deg`**, **`gui.view_zoom_scroll_scale`** when saved). See [scripting.md](scripting.md).
 
 ---
 

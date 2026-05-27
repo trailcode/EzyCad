@@ -205,23 +205,10 @@ void Sketch::update_edge_style_(AIS_Shape_ptr& shp)
 
 void Sketch::update_node_mark_style_(AIS_Shape_ptr& shp)
 {
-  switch (m_edge_style)
-  {
-  case Edge_style::Full:
-    shp->SetWidth(1.25);
-    shp->SetColor(Quantity_NOC_RED);
-    shp->SetTransparency(0.0);
-    break;
-
-  case Edge_style::Background:
-    shp->SetWidth(1.0);
-    shp->SetColor(Quantity_Color(0.55, 0.12, 0.12, Quantity_TOC_RGB));
-    shp->SetTransparency(0.5);
-    break;
-
-  default:
-    EZY_ASSERT(false);
-  }
+  // Keep permanent node markers visually stable across sketch switching.
+  shp->SetWidth(1.25);
+  shp->SetColor(Quantity_NOC_RED);
+  shp->SetTransparency(0.0);
 }
 
 void Sketch::sync_permanent_node_annos_()
@@ -229,7 +216,8 @@ void Sketch::sync_permanent_node_annos_()
   if (m_permanent_node_marks.size() < m_nodes.size())
     m_permanent_node_marks.resize(m_nodes.size());
 
-  const double half_arm = std::max(plane_pick_snap_radius_world_() * 0.45, Precision::Confusion() * 50.0);
+  const double size_scale = std::max(static_cast<double>(m_view.gui().permanent_node_anno_scale()), 0.0);
+  const double half_arm = std::max(plane_pick_snap_radius_world_() * 0.45 * size_scale, Precision::Confusion() * 50.0);
 
   const Mode mode = get_mode();
   // Show "+" markers for permanent user nodes in sketch modes and polar duplicate (which snaps to sketch nodes).
@@ -481,10 +469,9 @@ void Sketch::move_line_string_pt_(const ScreenCoords& screen_coords)
     // line; if the mouse is (nearly) perpendicular to that line, the projection coincides with pt_a.
     if (unique(pt_a, final_pt_b))
     {
-      m_tmp_dim_anno = create_distance_annotation(
-          pt_a, final_pt_b, m_pln, edge_dim_text_h_pos_from_index(m_view.gui().edge_dim_label_h()),
-          approx_sketch_interior_ref_3d_(), m_dim_classifier_faces.empty() ? nullptr : &m_dim_classifier_faces,
-          m_view.gui().edge_dim_line_width(), m_view.gui().edge_dim_arrow_size());
+      m_tmp_dim_anno = create_distance_annotation(pt_a, final_pt_b, m_pln, m_view.gui().length_dimension_style(),
+                                                  approx_sketch_interior_ref_3d_(),
+                                                  m_dim_classifier_faces.empty() ? nullptr : &m_dim_classifier_faces);
 
       m_tmp_dim_anno->SetCustomValue(dist);
       m_ctx.Display(m_tmp_dim_anno, true);
@@ -1387,10 +1374,9 @@ void Sketch::rebuild_length_dimension_display_(Length_dimension& d)
   if (!d.dim.IsNull())
     m_ctx.Remove(d.dim, false);
 
-  d.dim = create_distance_annotation(
-      m_nodes[d.node_idx_lo], m_nodes[d.node_idx_hi], m_pln, edge_dim_text_h_pos_from_index(m_view.gui().edge_dim_label_h()),
-      approx_sketch_interior_ref_3d_(), m_dim_classifier_faces.empty() ? nullptr : &m_dim_classifier_faces,
-      m_view.gui().edge_dim_line_width(), m_view.gui().edge_dim_arrow_size());
+  d.dim = create_distance_annotation(m_nodes[d.node_idx_lo], m_nodes[d.node_idx_hi], m_pln, m_view.gui().length_dimension_style(),
+                                     approx_sketch_interior_ref_3d_(),
+                                     m_dim_classifier_faces.empty() ? nullptr : &m_dim_classifier_faces);
 
   const double dist = m_nodes[d.node_idx_lo].Distance(m_nodes[d.node_idx_hi]);
   d.dim->SetCustomValue(dist / m_view.get_dimension_scale());
@@ -2502,6 +2488,26 @@ void Sketch::refresh_edge_dimension_arrow_sizes(const double arrow_size)
   }
 }
 
+void Sketch::refresh_all_length_dimensions() { refresh_all_length_dimensions_(); }
+
+void Sketch::refresh_edge_dimension_style(const Length_dimension_style& style)
+{
+  for (Length_dimension& ld : m_length_dimensions)
+    if (!ld.dim.IsNull())
+    {
+      apply_length_dimension_style(ld.dim, style);
+      m_ctx.Redisplay(ld.dim, true);
+    }
+
+  if (!m_tmp_dim_anno.IsNull())
+  {
+    apply_length_dimension_style(m_tmp_dim_anno, style);
+    m_ctx.Redisplay(m_tmp_dim_anno, true);
+  }
+}
+
+void Sketch::refresh_permanent_node_annotations() { sync_permanent_node_annos_(); }
+
 bool Sketch::is_current() const { return this == &m_view.curr_sketch(); }
 
 void Sketch::set_current()
@@ -2550,7 +2556,8 @@ void Sketch::set_edge_style(Edge_style style)
   for (Edge& e : m_edges)
     update_edge_style_(e.shp);
 
-  sync_permanent_node_annos_();
+  // Permanent node marker style/visibility is managed elsewhere; avoid
+  // rebuilding marker geometry during sketch switching.
   update_originating_face_style();
 }
 

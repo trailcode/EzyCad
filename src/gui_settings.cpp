@@ -17,6 +17,7 @@
 namespace
 {
 const char* const k_settings_version = "1";
+const char* const k_gui_key_permanent_node_anno_scale = "permanent_node_anno_scale";
 
 /// `occt_view` JSON object: view background gradient and grid (shared with `save_occt_view_settings` /
 /// `occt_view_settings_json`).
@@ -54,6 +55,13 @@ std::string GUI::occt_view_settings_json() const
       {"edge_dim_label_h", m_edge_dim_label_h},
       {"edge_dim_line_width", m_edge_dim_line_width},
       {"edge_dim_arrow_size", m_edge_dim_arrow_size},
+      {"edge_dim_color", {m_edge_dim_color[0], m_edge_dim_color[1], m_edge_dim_color[2]}},
+      {"edge_dim_text_scale", m_edge_dim_text_scale},
+      {"edge_dim_text_render_mode", m_edge_dim_text_render_mode},
+      {"edge_dim_arrow_style", m_edge_dim_arrow_style},
+      {"edge_dim_arrow_orientation", m_edge_dim_arrow_orientation},
+      {"show_sketch_dimensions", m_show_sketch_dimensions},
+      {k_gui_key_permanent_node_anno_scale, m_permanent_node_anno_scale},
       {"view_roll_step_deg", m_view_roll_step_deg},
       {"view_zoom_scroll_scale", m_view_zoom_scroll_scale},
       {"inspection_orthographic", m_inspection_orthographic},
@@ -100,6 +108,13 @@ void GUI::save_occt_view_settings()
       {"edge_dim_label_h", m_edge_dim_label_h},
       {"edge_dim_line_width", m_edge_dim_line_width},
       {"edge_dim_arrow_size", m_edge_dim_arrow_size},
+      {"edge_dim_color", {m_edge_dim_color[0], m_edge_dim_color[1], m_edge_dim_color[2]}},
+      {"edge_dim_text_scale", m_edge_dim_text_scale},
+      {"edge_dim_text_render_mode", m_edge_dim_text_render_mode},
+      {"edge_dim_arrow_style", m_edge_dim_arrow_style},
+      {"edge_dim_arrow_orientation", m_edge_dim_arrow_orientation},
+      {"show_sketch_dimensions", m_show_sketch_dimensions},
+      {k_gui_key_permanent_node_anno_scale, m_permanent_node_anno_scale},
       {"load_last_opened_on_startup", m_load_last_opened_on_startup},
       {"last_opened_project_path", m_last_opened_project_path},
       {"imgui_rounding_general", m_imgui_rounding_general},
@@ -238,20 +253,58 @@ void GUI::parse_gui_panes_settings_(const std::string& content)
       if (v >= 0 && v <= 3)
         m_edge_dim_label_h = v;
     }
-    m_edge_dim_line_width = k_gui_edge_dim_line_width_default;
-    if (g.contains("edge_dim_line_width") && g["edge_dim_line_width"].is_number())
+    auto parse_bounded_float = [&g](const char* key, const float min_v, const float max_v, const float default_v) -> float
     {
-      const float v = g["edge_dim_line_width"].get<float>();
-      if (v >= 0.5f && v <= 8.0f)
-        m_edge_dim_line_width = v;
-    }
-    m_edge_dim_arrow_size = k_gui_edge_dim_arrow_size_default;
-    if (g.contains("edge_dim_arrow_size") && g["edge_dim_arrow_size"].is_number())
+      float out = default_v;
+      if (g.contains(key) && g[key].is_number())
+      {
+        const float v = g[key].get<float>();
+        if (v >= min_v && v <= max_v)
+          out = v;
+      }
+      return out;
+    };
+    m_edge_dim_line_width = parse_bounded_float("edge_dim_line_width", 0.5f, 8.0f, k_gui_edge_dim_line_width_default);
+    m_edge_dim_arrow_size = parse_bounded_float("edge_dim_arrow_size", 1.0f, 24.0f, k_gui_edge_dim_arrow_size_default);
+    m_edge_dim_text_scale =
+        parse_bounded_float("edge_dim_text_scale", k_gui_edge_dim_text_scale_min, k_gui_edge_dim_text_scale_max,
+                            k_gui_edge_dim_text_scale_default);
+    auto parse_dim_int = [&g](const char* key, const int min_v, const int max_v, const int default_v) -> int
     {
-      const float v = g["edge_dim_arrow_size"].get<float>();
-      if (v >= 1.0f && v <= 24.0f)
-        m_edge_dim_arrow_size = v;
+      if (g.contains(key) && g[key].is_number_integer())
+      {
+        const int v = g[key].get<int>();
+        if (v >= min_v && v <= max_v)
+          return v;
+      }
+      return default_v;
+    };
+    m_edge_dim_text_render_mode =
+        parse_dim_int("edge_dim_text_render_mode", 0, k_gui_edge_dim_text_render_mode_max,
+                      k_gui_edge_dim_text_render_mode_default);
+    if (g.contains("edge_dim_color") && g["edge_dim_color"].is_array() && g["edge_dim_color"].size() >= 3)
+    {
+      const json& a = g["edge_dim_color"];
+      for (int i = 0; i < 3; ++i)
+        if (a[i].is_number())
+          m_edge_dim_color[i] = std::clamp(a[i].get<float>(), 0.f, 1.f);
     }
+    if (g.contains("edge_dim_arrow_style") && g["edge_dim_arrow_style"].is_number_integer())
+    {
+      const int v = g["edge_dim_arrow_style"].get<int>();
+      if (v >= k_gui_edge_dim_arrow_style_min && v <= k_gui_edge_dim_arrow_style_max)
+        m_edge_dim_arrow_style = v;
+    }
+    if (g.contains("edge_dim_arrow_orientation") && g["edge_dim_arrow_orientation"].is_number_integer())
+    {
+      const int v = g["edge_dim_arrow_orientation"].get<int>();
+      if (v >= k_gui_edge_dim_arrow_orientation_min && v <= k_gui_edge_dim_arrow_orientation_max)
+        m_edge_dim_arrow_orientation = v;
+    }
+    m_show_sketch_dimensions = b("show_sketch_dimensions", true);
+    m_permanent_node_anno_scale =
+        parse_bounded_float(k_gui_key_permanent_node_anno_scale, k_gui_permanent_node_anno_scale_min,
+                            k_gui_permanent_node_anno_scale_max, k_gui_permanent_node_anno_scale_default);
     m_load_last_opened_on_startup = b("load_last_opened_on_startup", b("load_last_saved_on_startup", false));
     if (g.contains("last_opened_project_path") && g["last_opened_project_path"].is_string())
       m_last_opened_project_path = g["last_opened_project_path"].get<std::string>();
@@ -411,6 +464,8 @@ void GUI::load_occt_view_settings_()
 
   parse_occt_view_settings_(content);
   parse_gui_panes_settings_(content);
+  if (m_view)
+    apply_sketch_dimensions_visibility();
 
   try
   {
@@ -806,24 +861,28 @@ void GUI::settings_()
   if (ImGui::CollapsingHeader("Sketch"))
   {
     bool ul_changed        = false;
-    bool dim_lw_changed    = false;
-    bool dim_arrow_changed = false;
-    if (ImGui::BeginTable("settings_sketch", 2, ImGuiTableFlags_SizingStretchProp))
-    {
-      ImGui::TableSetupColumn("label", ImGuiTableColumnFlags_WidthFixed, k_label_col_w);
-      ImGui::TableSetupColumn("control", ImGuiTableColumnFlags_WidthStretch);
+    bool dim_changed       = false;
+    bool node_anno_changed = false;
 
-      ImGui::TableNextRow();
-      ImGui::TableSetColumnIndex(0);
-      ImGui::AlignTextToFramePadding();
-      ImGui::TextUnformatted("Dimension line width");
+    ImGui::Indent(ImGui::GetStyle().IndentSpacing);
+    if (ImGui::CollapsingHeader("Dimensions", ImGuiTreeNodeFlags_DefaultOpen))
+    {
+      if (ImGui::BeginTable("settings_sketch_dims", 2, ImGuiTableFlags_SizingStretchProp))
+      {
+        ImGui::TableSetupColumn("label", ImGuiTableColumnFlags_WidthFixed, k_label_col_w);
+        ImGui::TableSetupColumn("control", ImGuiTableColumnFlags_WidthStretch);
+
+        ImGui::TableNextRow();
+        ImGui::TableSetColumnIndex(0);
+        ImGui::AlignTextToFramePadding();
+        ImGui::TextUnformatted("Dimension line width");
       ImGui::TableSetColumnIndex(1);
       {
         float lw = m_edge_dim_line_width;
         if (ImGui::SliderFloat("##edge_dim_lw", &lw, 0.5f, 8.0f, "%.2f"))
         {
           m_edge_dim_line_width = lw;
-          dim_lw_changed        = true;
+          dim_changed           = true;
         }
         if (ui_show_help(2))
         {
@@ -850,7 +909,7 @@ void GUI::settings_()
         if (ImGui::SliderFloat("##edge_dim_arrow", &arrow, 1.0f, 24.0f, "%.2f"))
         {
           m_edge_dim_arrow_size = arrow;
-          dim_arrow_changed     = true;
+          dim_changed           = true;
         }
         if (ui_show_help(2))
         {
@@ -861,6 +920,185 @@ void GUI::settings_()
             ImGui::BeginTooltip();
             ImGui::PushTextWrapPos(ImGui::GetFontSize() * 35.0f);
             ImGui::TextDisabled("Arrow head length for sketch and extrude length dimensions (Open CASCADE display units).");
+            ImGui::PopTextWrapPos();
+            ImGui::EndTooltip();
+          }
+        }
+      }
+
+      ImGui::TableNextRow();
+      ImGui::TableSetColumnIndex(0);
+      ImGui::AlignTextToFramePadding();
+      ImGui::TextUnformatted("Dimension color");
+      ImGui::TableSetColumnIndex(1);
+      if (ImGui::ColorEdit3("##edge_dim_color", m_edge_dim_color, ImGuiColorEditFlags_Float))
+        dim_changed = true;
+
+      ImGui::TableNextRow();
+      ImGui::TableSetColumnIndex(0);
+      ImGui::AlignTextToFramePadding();
+      ImGui::TextUnformatted("Dimension text scale");
+      ImGui::TableSetColumnIndex(1);
+      {
+        float ts = m_edge_dim_text_scale;
+        if (ImGui::SliderFloat("##edge_dim_text_scale", &ts, k_gui_edge_dim_text_scale_min, k_gui_edge_dim_text_scale_max,
+                               "%.2f"))
+        {
+          m_edge_dim_text_scale = ts;
+          dim_changed           = true;
+        }
+      }
+
+      ImGui::TableNextRow();
+      ImGui::TableSetColumnIndex(0);
+      ImGui::AlignTextToFramePadding();
+      ImGui::TextUnformatted("Label rendering");
+      ImGui::TableSetColumnIndex(1);
+      {
+        constexpr std::array<const char*, 6> k_labels = {
+            "Opaque 2D text",
+            "SetCommonColor",
+            "2D screen text",
+            "3D text",
+            "Z-layer Top",
+            "Z-layer Topmost",
+        };
+        int rm = m_edge_dim_text_render_mode;
+        if (rm < 0 || rm >= static_cast<int>(k_labels.size()))
+          rm = k_gui_edge_dim_text_render_mode_default;
+        ImGui::SetNextItemWidth(220.0f);
+        if (ImGui::BeginCombo("##edge_dim_text_render", k_labels[static_cast<size_t>(rm)], ImGuiComboFlags_HeightSmall))
+        {
+          for (int i = 0; i < static_cast<int>(k_labels.size()); ++i)
+            if (ImGui::Selectable(k_labels[static_cast<size_t>(i)], i == rm))
+            {
+              m_edge_dim_text_render_mode = i;
+              dim_changed                 = true;
+            }
+          ImGui::EndCombo();
+        }
+        if (ui_show_help(2) && ImGui::IsItemHovered())
+          ImGui::SetTooltip("How dimension value labels are composited. Z-layer Top and Topmost avoid ghosting "
+                            "against the grid; Topmost is the default.");
+      }
+
+      ImGui::TableNextRow();
+      ImGui::TableSetColumnIndex(0);
+      ImGui::AlignTextToFramePadding();
+      ImGui::TextUnformatted("Length value placement");
+      ImGui::TableSetColumnIndex(1);
+      {
+        constexpr std::array<const char*, 4> k_edge_dim_label_placement = {
+            "Near first point",
+            "Near second point",
+            "Center on dimension line",
+            "Automatic",
+        };
+        int h = m_edge_dim_label_h;
+        ImGui::SetNextItemWidth(200.0f);
+        if (ImGui::BeginCombo("##edge_dim_h", k_edge_dim_label_placement[static_cast<size_t>(h)], ImGuiComboFlags_HeightSmall))
+        {
+          for (int i = 0; i < static_cast<int>(k_edge_dim_label_placement.size()); ++i)
+            if (ImGui::Selectable(k_edge_dim_label_placement[static_cast<size_t>(i)], i == h))
+            {
+              m_edge_dim_label_h = i;
+              dim_changed        = true;
+            }
+          ImGui::EndCombo();
+        }
+      }
+
+      ImGui::TableNextRow();
+      ImGui::TableSetColumnIndex(0);
+      ImGui::AlignTextToFramePadding();
+      ImGui::TextUnformatted("Arrow style");
+      ImGui::TableSetColumnIndex(1);
+      {
+        constexpr std::array<const char*, 4> k_arrow_styles = {"Standard", "Sharp", "Wide", "3D shaded"};
+        int                                  st             = m_edge_dim_arrow_style;
+        ImGui::SetNextItemWidth(160.0f);
+        if (ImGui::BeginCombo("##edge_dim_arrow_style", k_arrow_styles[static_cast<size_t>(st)], ImGuiComboFlags_HeightSmall))
+        {
+          for (int i = 0; i < static_cast<int>(k_arrow_styles.size()); ++i)
+            if (ImGui::Selectable(k_arrow_styles[static_cast<size_t>(i)], i == st))
+            {
+              m_edge_dim_arrow_style = i;
+              dim_changed            = true;
+            }
+          ImGui::EndCombo();
+        }
+      }
+
+      ImGui::TableNextRow();
+      ImGui::TableSetColumnIndex(0);
+      ImGui::AlignTextToFramePadding();
+      ImGui::TextUnformatted("Arrow orientation");
+      ImGui::TableSetColumnIndex(1);
+      {
+        constexpr std::array<const char*, 3> k_arrow_orient = {"Automatic", "Internal", "External"};
+        int                                  ao            = m_edge_dim_arrow_orientation;
+        ImGui::SetNextItemWidth(160.0f);
+        if (ImGui::BeginCombo("##edge_dim_arrow_orient", k_arrow_orient[static_cast<size_t>(ao)], ImGuiComboFlags_HeightSmall))
+        {
+          for (int i = 0; i < static_cast<int>(k_arrow_orient.size()); ++i)
+            if (ImGui::Selectable(k_arrow_orient[static_cast<size_t>(i)], i == ao))
+            {
+              m_edge_dim_arrow_orientation = i;
+              dim_changed                  = true;
+            }
+          ImGui::EndCombo();
+        }
+      }
+
+      ImGui::TableNextRow();
+      ImGui::TableSetColumnIndex(0);
+      ImGui::AlignTextToFramePadding();
+      ImGui::TextUnformatted("Show sketch dimensions");
+      ImGui::TableSetColumnIndex(1);
+      {
+        bool show = m_show_sketch_dimensions;
+        if (ImGui::Checkbox("##show_sketch_dims", &show))
+        {
+          set_show_sketch_dimensions(show);
+          save_occt_view_settings();
+        }
+        if (ui_show_help(2) && ImGui::IsItemHovered())
+          ImGui::SetTooltip("When off, hides all sketch length dimensions. Tool mode may still limit which sketch shows "
+                            "dimensions when this is on.");
+      }
+
+        ImGui::EndTable();
+      }
+    }
+    ImGui::Unindent(ImGui::GetStyle().IndentSpacing);
+
+    if (ImGui::BeginTable("settings_sketch", 2, ImGuiTableFlags_SizingStretchProp))
+    {
+      ImGui::TableSetupColumn("label", ImGuiTableColumnFlags_WidthFixed, k_label_col_w);
+      ImGui::TableSetupColumn("control", ImGuiTableColumnFlags_WidthStretch);
+
+      ImGui::TableNextRow();
+      ImGui::TableSetColumnIndex(0);
+      ImGui::AlignTextToFramePadding();
+      ImGui::TextUnformatted("Permanent node annotation size");
+      ImGui::TableSetColumnIndex(1);
+      {
+        float size_scale = m_permanent_node_anno_scale;
+        if (ImGui::SliderFloat("##permanent_node_anno_scale", &size_scale, k_gui_permanent_node_anno_scale_min,
+                               k_gui_permanent_node_anno_scale_max, "%.2f"))
+        {
+          m_permanent_node_anno_scale = size_scale;
+          node_anno_changed           = true;
+        }
+        if (ui_show_help(2))
+        {
+          ImGui::SameLine(0.0f, ImGui::GetStyle().ItemInnerSpacing.x);
+          ImGui::TextDisabled("(?)");
+          if (ImGui::IsItemHovered())
+          {
+            ImGui::BeginTooltip();
+            ImGui::PushTextWrapPos(ImGui::GetFontSize() * 35.0f);
+            ImGui::TextDisabled("Scale for permanent '+' node markers in sketch mode.");
             ImGui::PopTextWrapPos();
             ImGui::EndTooltip();
           }
@@ -944,17 +1182,17 @@ void GUI::settings_()
 
       ImGui::EndTable();
     }
-    if (dim_lw_changed)
+    if (dim_changed)
     {
       save_occt_view_settings();
       if (m_view)
-        m_view->refresh_all_length_dimension_line_widths(static_cast<double>(m_edge_dim_line_width));
+        m_view->refresh_all_length_dimensions();
     }
-    if (dim_arrow_changed)
+    if (node_anno_changed)
     {
       save_occt_view_settings();
       if (m_view)
-        m_view->refresh_all_length_dimension_arrow_sizes(static_cast<double>(m_edge_dim_arrow_size));
+        m_view->refresh_all_permanent_node_annotations();
     }
     if (ul_changed)
     {

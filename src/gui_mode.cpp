@@ -387,8 +387,6 @@ void GUI::options_()
 
     float sketch_label_col_w = ImGui::CalcTextSize("Snap dist").x;
     sketch_label_col_w       = std::max(sketch_label_col_w, ImGui::CalcTextSize("Snap guide mode").x);
-    if (get_mode() == Mode::Sketch_dim_anno)
-      sketch_label_col_w = std::max(sketch_label_col_w, ImGui::CalcTextSize("Length value placement").x);
     if (get_mode() == Mode::Sketch_face_extrude)
     {
       sketch_label_col_w = std::max(sketch_label_col_w, ImGui::CalcTextSize("Both sides").x);
@@ -432,40 +430,6 @@ void GUI::options_()
         ImGui::SetTooltip("Traditional: compact local snap marker.\n"
                           "Fullscreen: full-view crosshair/axis guides.\n"
                           "Both: show compact marker and fullscreen guides together.");
-
-      if (get_mode() == Mode::Sketch_dim_anno)
-      {
-        constexpr std::array<const char*, 4> k_edge_dim_label_placement = {
-            "Near first point",
-            "Near second point",
-            "Center on dimension line",
-            "Automatic",
-        };
-        int h = m_edge_dim_label_h;
-
-        ImGui::TableNextRow();
-        ImGui::TableSetColumnIndex(0);
-        right_aligned_label("Length value placement");
-        ImGui::TableSetColumnIndex(1);
-        ImGui::SetNextItemWidth(170.0f);
-        if (ImGui::BeginCombo("##edge_dim_h", k_edge_dim_label_placement[static_cast<size_t>(h)], ImGuiComboFlags_HeightSmall))
-        {
-          for (int i = 0; i < int(k_edge_dim_label_placement.size()); ++i)
-            if (ImGui::Selectable(k_edge_dim_label_placement[static_cast<size_t>(i)], i == h))
-            {
-              m_edge_dim_label_h = i;
-              save_occt_view_settings();
-            }
-          ImGui::EndCombo();
-        }
-        if (ui_show_help(2) && ImGui::IsItemHovered())
-          ImGui::SetTooltip(
-              "Where to place the numeric value along the dimension line (near the first or second end, center, or auto).\n"
-              "This does not flip which side of the edge the dimension sits on.\n"
-              "When the sketch has filled faces, dimensions offset to the void side (point-in-face test).\n"
-              "Otherwise the average node position is used as a rough inside reference.\n"
-              "Dimension line width is in Settings -> Sketch.");
-      }
 
       ImGui::EndTable();
     }

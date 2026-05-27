@@ -18,9 +18,16 @@
 #include <Geom_Plane.hxx>
 #include <Geom_TrimmedCurve.hxx>
 #include <Graphic3d_AspectLine3d.hxx>
+#include <Aspect_TypeOfDisplayText.hxx>
+#include <Aspect_TypeOfStyleText.hxx>
+#include <Graphic3d_AlphaMode.hxx>
+#include <Graphic3d_AspectText3d.hxx>
+#include <Graphic3d_ZLayerId.hxx>
 #include <Prs3d_ArrowAspect.hxx>
+#include <Prs3d_DimensionArrowOrientation.hxx>
 #include <Prs3d_DimensionAspect.hxx>
 #include <Prs3d_LineAspect.hxx>
+#include <Prs3d_TextAspect.hxx>
 #include <PrsDim_LengthDimension.hxx>
 #include <TopExp.hxx>
 #include <TopExp_Explorer.hxx>
@@ -539,21 +546,144 @@ Prs3d_DimensionTextHorizontalPosition edge_dim_text_h_pos_from_index(int idx)
   }
 }
 
-static void apply_length_dimension_text_h_position(const PrsDim_LengthDimension_ptr&           dim,
-                                                   const Prs3d_DimensionTextHorizontalPosition text_h_pos)
+namespace
+{
+constexpr double k_dim_text_height_base = 16.0;
+
+Handle(Prs3d_DimensionAspect) clone_dimension_aspect(const PrsDim_LengthDimension_ptr& dim)
+{
+  if (dim.IsNull())
+    return new Prs3d_DimensionAspect();
+  const Handle(Prs3d_DimensionAspect)& cur = dim->DimensionAspect();
+  if (!cur.IsNull())
+    return new Prs3d_DimensionAspect(*cur);
+  return new Prs3d_DimensionAspect();
+}
+
+void arrow_style_preset(const int arrow_style, double& angle_deg, bool& arrows_3d)
+{
+  switch (arrow_style)
+  {
+    case 1:
+      angle_deg = 15.0;
+      arrows_3d = false;
+      break;
+    case 2:
+      angle_deg = 40.0;
+      arrows_3d = false;
+      break;
+    case 3:
+      angle_deg = 25.0;
+      arrows_3d = true;
+      break;
+    default:
+      angle_deg = 25.0;
+      arrows_3d = false;
+      break;
+  }
+}
+
+Prs3d_DimensionArrowOrientation arrow_orientation_from_index(const int idx)
+{
+  switch (idx)
+  {
+    case 1:
+      return Prs3d_DAO_Internal;
+    case 2:
+      return Prs3d_DAO_External;
+    default:
+      return Prs3d_DAO_Fit;
+  }
+}
+
+void apply_dimension_label_text_aspect(const Handle(Prs3d_TextAspect)& text, const Quantity_Color& col,
+                                       const Length_dimension_style& style)
+{
+  text->SetColor(col);
+  text->SetHeight(k_dim_text_height_base * static_cast<double>(style.text_height_scale));
+
+  Handle(Graphic3d_AspectText3d) gtext = new Graphic3d_AspectText3d();
+  gtext->SetColor(col);
+  gtext->SetDisplayType(Aspect_TODT_NORMAL);
+  gtext->SetStyle(Aspect_TOST_NORMAL);
+  gtext->SetAlphaMode(Graphic3d_AlphaMode_Opaque);
+  text->SetAspect(gtext);
+}
+} // namespace
+
+double length_dimension_auto_flyout(const double edge_len)
+{
+  constexpr double k_min_flyout  = 15.0;
+  constexpr double k_edge_fraction = 0.12;
+  return std::max(k_min_flyout, edge_len * k_edge_fraction);
+}
+
+void apply_length_dimension_style(const PrsDim_LengthDimension_ptr& dim, const Length_dimension_style& style)
 {
   if (dim.IsNull())
     return;
 
-  const Handle(Prs3d_DimensionAspect)& cur = dim->DimensionAspect();
-  Handle(Prs3d_DimensionAspect) aspect;
-  if (!cur.IsNull())
-    aspect = new Prs3d_DimensionAspect(*cur);
-  else
-    aspect = new Prs3d_DimensionAspect();
+  Handle(Prs3d_DimensionAspect) aspect = clone_dimension_aspect(dim);
 
-  aspect->SetTextHorizontalPosition(text_h_pos);
+  const Quantity_Color col(style.color_rgb[0], style.color_rgb[1], style.color_rgb[2], Quantity_TOC_RGB);
+
+  Aspect_TypeOfLine typ = Aspect_TOL_SOLID;
+  if (const Handle(Prs3d_LineAspect)& la = aspect->LineAspect(); !la.IsNull())
+    typ = la->Aspect()->Type();
+
+  aspect->SetLineAspect(new Prs3d_LineAspect(col, typ, static_cast<Standard_Real>(style.line_width)));
+
+  double angle_deg{};
+  bool   arrows_3d{};
+  arrow_style_preset(style.arrow_style, angle_deg, arrows_3d);
+  aspect->MakeArrows3d(arrows_3d);
+  aspect->SetArrowOrientation(arrow_orientation_from_index(style.arrow_orientation));
+
+  Handle(Prs3d_ArrowAspect) arrow;
+  if (const Handle(Prs3d_ArrowAspect)& cur_arrow = aspect->ArrowAspect(); !cur_arrow.IsNull())
+    arrow = new Prs3d_ArrowAspect(*cur_arrow);
+  else
+    arrow = new Prs3d_ArrowAspect();
+  arrow->SetColor(col);
+  arrow->SetLength(static_cast<Standard_Real>(style.arrow_size));
+  arrow->SetAngle(angle_deg * (std::numbers::pi / 180.0));
+  aspect->SetArrowAspect(arrow);
+
+  if (style.text_render_mode == 1)
+  {
+    aspect->SetCommonColor(col);
+    Handle(Prs3d_TextAspect) text = aspect->TextAspect();
+    if (text.IsNull())
+      text = new Prs3d_TextAspect();
+    text->SetHeight(k_dim_text_height_base * static_cast<double>(style.text_height_scale));
+    aspect->SetTextAspect(text);
+  }
+  else
+  {
+    Handle(Prs3d_TextAspect) text = new Prs3d_TextAspect();
+    apply_dimension_label_text_aspect(text, col, style);
+    aspect->SetTextAspect(text);
+  }
+
+  aspect->MakeText3d(style.text_render_mode == 3);
+  aspect->MakeTextShaded(false);
+
+  aspect->SetTextHorizontalPosition(edge_dim_text_h_pos_from_index(style.label_h));
+
   dim->SetDimensionAspect(aspect);
+
+  switch (style.text_render_mode)
+  {
+    case 4:
+      dim->SetZLayer(Graphic3d_ZLayerId_Top);
+      break;
+    case 5:
+      dim->SetZLayer(Graphic3d_ZLayerId_Topmost);
+      break;
+    default:
+      dim->SetZLayer(Graphic3d_ZLayerId_Default);
+      break;
+  }
 }
 
 void apply_length_dimension_line_width(const PrsDim_LengthDimension_ptr& dim, const double line_width)
@@ -561,12 +691,7 @@ void apply_length_dimension_line_width(const PrsDim_LengthDimension_ptr& dim, co
   if (dim.IsNull())
     return;
 
-  const Handle(Prs3d_DimensionAspect)& cur = dim->DimensionAspect();
-  Handle(Prs3d_DimensionAspect) aspect;
-  if (!cur.IsNull())
-    aspect = new Prs3d_DimensionAspect(*cur);
-  else
-    aspect = new Prs3d_DimensionAspect();
+  Handle(Prs3d_DimensionAspect) aspect = clone_dimension_aspect(dim);
 
   Quantity_Color    col = Quantity_NOC_YELLOW;
   Aspect_TypeOfLine typ = Aspect_TOL_SOLID;
@@ -577,8 +702,7 @@ void apply_length_dimension_line_width(const PrsDim_LengthDimension_ptr& dim, co
     typ                                     = g->Type();
   }
 
-  Handle(Prs3d_LineAspect) new_line = new Prs3d_LineAspect(col, typ, static_cast<Standard_Real>(line_width));
-  aspect->SetLineAspect(new_line);
+  aspect->SetLineAspect(new Prs3d_LineAspect(col, typ, static_cast<Standard_Real>(line_width)));
   dim->SetDimensionAspect(aspect);
 }
 
@@ -587,12 +711,7 @@ void apply_length_dimension_arrow_size(const PrsDim_LengthDimension_ptr& dim, co
   if (dim.IsNull())
     return;
 
-  const Handle(Prs3d_DimensionAspect)& cur = dim->DimensionAspect();
-  Handle(Prs3d_DimensionAspect) aspect;
-  if (!cur.IsNull())
-    aspect = new Prs3d_DimensionAspect(*cur);
-  else
-    aspect = new Prs3d_DimensionAspect();
+  Handle(Prs3d_DimensionAspect) aspect = clone_dimension_aspect(dim);
 
   Handle(Prs3d_ArrowAspect) arrow;
   if (const Handle(Prs3d_ArrowAspect)& cur_arrow = aspect->ArrowAspect(); !cur_arrow.IsNull())
@@ -608,7 +727,8 @@ void apply_length_dimension_arrow_size(const PrsDim_LengthDimension_ptr& dim, co
 // OCCT draws the dimension on the side given by (plane_normal x edge_vector) for positive flyout.
 // When that side faces the sketch interior, negate flyout so the annotation sits outside the loop.
 static void orient_length_dimension_flyout_outward(const PrsDim_LengthDimension_ptr& dim, const gp_Pnt& p1, const gp_Pnt& p2,
-                                                   const gp_Pnt& interior_ref, const gp_Pln& pln)
+                                                   const gp_Pnt& interior_ref, const gp_Pln& pln,
+                                                   const Length_dimension_style& style)
 {
   if (dim.IsNull())
     return;
@@ -627,10 +747,8 @@ static void orient_length_dimension_flyout_outward(const PrsDim_LengthDimension_
   if (to_in.SquareMagnitude() < Precision::SquareConfusion())
     return;
 
-  Standard_Real f        = dim->GetFlyout();
   const double  edge_len = std::sqrt(attach.SquareMagnitude());
-  if (std::abs(f) < Precision::Confusion())
-    f = std::max(15.0, edge_len * 0.12);
+  const double f = length_dimension_auto_flyout(edge_len);
 
   if (fly_pos.Dot(to_in) > 0.0)
     dim->SetFlyout(-std::abs(f));
@@ -650,7 +768,8 @@ static bool point_strictly_inside_sketch_faces(const gp_Pnt& p, const std::vecto
 // Returns true if flyout sign was chosen from face classification.
 static bool orient_length_dimension_flyout_clear_of_faces(const PrsDim_LengthDimension_ptr& dim, const gp_Pnt& p1,
                                                           const gp_Pnt& p2, const gp_Pln& pln,
-                                                          const std::vector<TopoDS_Face>& faces)
+                                                          const std::vector<TopoDS_Face>& faces,
+                                                          const Length_dimension_style& style)
 {
   if (dim.IsNull() || faces.empty())
     return false;
@@ -666,10 +785,8 @@ static bool orient_length_dimension_flyout_clear_of_faces(const PrsDim_LengthDim
 
   fly_pos.Normalize();
 
-  Standard_Real f        = dim->GetFlyout();
-  const double  edge_len = std::sqrt(attach.SquareMagnitude());
-  if (std::abs(f) < Precision::Confusion())
-    f = std::max(15.0, edge_len * 0.12);
+  const double edge_len = std::sqrt(attach.SquareMagnitude());
+  const double f = length_dimension_auto_flyout(edge_len);
 
   gp_Pnt mid = p1.Translated(attach.Multiplied(0.5));
 
@@ -696,40 +813,35 @@ static bool orient_length_dimension_flyout_clear_of_faces(const PrsDim_LengthDim
 }
 
 PrsDim_LengthDimension_ptr create_distance_annotation(const gp_Pnt& p1, const gp_Pnt& p2, const gp_Pln& pln,
-                                                      const Prs3d_DimensionTextHorizontalPosition text_h_pos,
-                                                      const std::optional<gp_Pnt>&                interior_ref,
-                                                      const std::vector<TopoDS_Face>*             sketch_faces_for_flyout,
-                                                      const double dimension_line_width, const double dimension_arrow_size)
+                                                      const Length_dimension_style&     style,
+                                                      const std::optional<gp_Pnt>&    interior_ref,
+                                                      const std::vector<TopoDS_Face>* sketch_faces_for_flyout)
 {
-  // Check if points are too close (invalid for dimension)
   EZY_ASSERT(unique(p1, p2));
 
-  // Measure between points (not TopoDS_Vertex), so OCCT does not draw vertex-attachment handles at the ends.
   PrsDim_LengthDimension_ptr dim = new PrsDim_LengthDimension(p1, p2, pln);
-  apply_length_dimension_text_h_position(dim, text_h_pos);
-  apply_length_dimension_line_width(dim, static_cast<Standard_Real>(dimension_line_width));
-  apply_length_dimension_arrow_size(dim, static_cast<Standard_Real>(dimension_arrow_size));
+  apply_length_dimension_style(dim, style);
 
   bool used_faces = false;
   if (sketch_faces_for_flyout && !sketch_faces_for_flyout->empty())
-    used_faces = orient_length_dimension_flyout_clear_of_faces(dim, p1, p2, pln, *sketch_faces_for_flyout);
+    used_faces = orient_length_dimension_flyout_clear_of_faces(dim, p1, p2, pln, *sketch_faces_for_flyout, style);
   if (!used_faces && interior_ref.has_value())
-    orient_length_dimension_flyout_outward(dim, p1, p2, *interior_ref, pln);
+    orient_length_dimension_flyout_outward(dim, p1, p2, *interior_ref, pln, style);
+  else if (!used_faces)
+  {
+    const double f = length_dimension_auto_flyout(p1.Distance(p2));
+    dim->SetFlyout(static_cast<Standard_Real>(f));
+  }
 
   return dim;
 }
 
 PrsDim_LengthDimension_ptr create_distance_annotation(const gp_Pnt2d& p1, const gp_Pnt2d& p2, const gp_Pln& pln,
-                                                      const Prs3d_DimensionTextHorizontalPosition text_h_pos,
-                                                      const std::optional<gp_Pnt>&                interior_ref,
-                                                      const std::vector<TopoDS_Face>*             sketch_faces_for_flyout,
-                                                      const double dimension_line_width, const double dimension_arrow_size)
+                                                      const Length_dimension_style&     style,
+                                                      const std::optional<gp_Pnt>&    interior_ref,
+                                                      const std::vector<TopoDS_Face>* sketch_faces_for_flyout)
 {
-  gp_Pnt point_1 = to_3d(pln, p1);
-  gp_Pnt point_2 = to_3d(pln, p2);
-
-  return create_distance_annotation(point_1, point_2, pln, text_h_pos, interior_ref, sketch_faces_for_flyout,
-                                    dimension_line_width, dimension_arrow_size);
+  return create_distance_annotation(to_3d(pln, p1), to_3d(pln, p2), pln, style, interior_ref, sketch_faces_for_flyout);
 }
 
 const gp_Pnt& closest_to_camera(const V3d_View_ptr& view, const std::vector<gp_Pnt>& pnts)

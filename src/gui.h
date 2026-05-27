@@ -15,6 +15,7 @@
 #include <variant>
 #include <vector>
 
+#include "geom.h"
 #include "imgui.h"
 #include "imgui_markdown.h"
 #include "log.h"
@@ -59,6 +60,31 @@ struct Example_file
 inline constexpr float k_gui_edge_dim_line_width_default = 1.0f;
 /// Default OCCT arrow length for length dimensions when `edge_dim_arrow_size` is missing from settings JSON.
 inline constexpr float k_gui_edge_dim_arrow_size_default = 6.0f;
+/// Default dimension line/text RGB when `edge_dim_color` is missing (yellow).
+inline constexpr float k_gui_edge_dim_color_default[3] = {1.f, 1.f, 0.f};
+/// Text height scale for length dimension labels (`gui.edge_dim_text_scale`).
+inline constexpr float k_gui_edge_dim_text_scale_min     = 0.5f;
+inline constexpr float k_gui_edge_dim_text_scale_max     = 3.0f;
+inline constexpr float k_gui_edge_dim_text_scale_default = 1.0f;
+/// Arrow style preset index (`gui.edge_dim_arrow_style`): 0 standard, 1 sharp, 2 wide, 3 3D.
+inline constexpr int k_gui_edge_dim_arrow_style_min = 0;
+inline constexpr int k_gui_edge_dim_arrow_style_max = 3;
+/// Arrow orientation (`gui.edge_dim_arrow_orientation`): 0 fit, 1 internal, 2 external.
+inline constexpr int k_gui_edge_dim_arrow_orientation_min = 0;
+inline constexpr int k_gui_edge_dim_arrow_orientation_max = 2;
+/// `gui.edge_dim_text_render_mode` indices.
+inline constexpr int k_gui_edge_dim_text_render_opaque_2d     = 0;
+inline constexpr int k_gui_edge_dim_text_render_common_color  = 1;
+inline constexpr int k_gui_edge_dim_text_render_2d_screen     = 2;
+inline constexpr int k_gui_edge_dim_text_render_3d_text       = 3;
+inline constexpr int k_gui_edge_dim_text_render_z_top         = 4;
+inline constexpr int k_gui_edge_dim_text_render_z_topmost     = 5;
+inline constexpr int k_gui_edge_dim_text_render_mode_default = k_gui_edge_dim_text_render_z_topmost;
+inline constexpr int k_gui_edge_dim_text_render_mode_max     = k_gui_edge_dim_text_render_z_topmost;
+/// Scale factor for permanent sketch-node '+' annotations (`gui.permanent_node_anno_scale`).
+inline constexpr float k_gui_permanent_node_anno_scale_min     = 0.25f;
+inline constexpr float k_gui_permanent_node_anno_scale_max     = 3.0f;
+inline constexpr float k_gui_permanent_node_anno_scale_default = 1.0f;
 /// Allowed range and default for `gui.view_roll_step_deg` (view roll and numpad orbit steps; must match Settings slider).
 inline constexpr double k_gui_view_roll_step_deg_min     = 0.1;
 inline constexpr double k_gui_view_roll_step_deg_max     = 180.0;
@@ -98,12 +124,21 @@ public:
   Mode         get_mode() const { return m_mode; }
   Chamfer_mode get_chamfer_mode() const { return m_chamfer_mode; }
   Fillet_mode  get_fillet_mode() const { return m_fillet_mode; }
-  /// Edge dimension value placement (Options panel, toggle-dimension tool): 0 first point, 1 second, 2 center, 3 auto.
+  /// Edge dimension value placement: 0 first point, 1 second, 2 center, 3 auto.
   int edge_dim_label_h() const { return m_edge_dim_label_h; }
   /// OCCT scale factor for sketch/extrude length dimension lines (1.0 = default thickness).
   float edge_dim_line_width() const { return m_edge_dim_line_width; }
   /// OCCT arrow length for sketch/extrude length dimensions.
-  float  edge_dim_arrow_size() const { return m_edge_dim_arrow_size; }
+  float edge_dim_arrow_size() const { return m_edge_dim_arrow_size; }
+  /// When false, length dimensions are hidden on all sketches until re-enabled.
+  bool show_sketch_dimensions() const { return m_show_sketch_dimensions; }
+  void set_show_sketch_dimensions(bool show);
+  /// Bundle of global length-dimension display settings for OCCT annotations.
+  [[nodiscard]] Length_dimension_style length_dimension_style() const;
+  /// Reapply dimension visibility on all sketches (global show flag + current tool mode).
+  void apply_sketch_dimensions_visibility();
+  /// Scale factor for permanent sketch-node '+' annotations.
+  float  permanent_node_anno_scale() const { return m_permanent_node_anno_scale; }
   bool   get_hide_all_shapes() const { return m_hide_all_shapes; }
   void   set_hide_all_shapes(bool hide) { m_hide_all_shapes = hide; }
   /// Orthographic camera in Inspection mode (Mode::Normal); persisted as `gui.inspection_orthographic`.
@@ -166,8 +201,8 @@ public:
 
   void save_occt_view_settings();
 
-  /// JSON for scripting: `occt_view` (background, grid) plus `gui.edge_dim_label_h` / `gui.edge_dim_line_width` /
-  /// `gui.edge_dim_arrow_size` (same keys as `ezycad_settings.json`). Asserts if the OCCT view is missing.
+  /// JSON for scripting: `occt_view` (background, grid) plus sketch dimension keys under `gui.*` (see `ezycad_settings.json`).
+  /// Asserts if the OCCT view is missing.
   [[nodiscard]] std::string occt_view_settings_json() const;
 
   /// Default RGBA (0-255) for sketch underlay line tint when importing a new image (see Settings).
@@ -304,9 +339,17 @@ private:
   Mode         m_mode                = Mode::Normal;
   Chamfer_mode m_chamfer_mode        = Chamfer_mode::Shape;
   Fillet_mode  m_fillet_mode         = Fillet_mode::Shape;
-  int          m_edge_dim_label_h    = 3; // Prs3d_DTHP_Fit
-  float        m_edge_dim_line_width = k_gui_edge_dim_line_width_default;
-  float        m_edge_dim_arrow_size = k_gui_edge_dim_arrow_size_default;
+  int   m_edge_dim_label_h              = 3;
+  float m_edge_dim_line_width           = k_gui_edge_dim_line_width_default;
+  float m_edge_dim_arrow_size           = k_gui_edge_dim_arrow_size_default;
+  float m_edge_dim_color[3]             = {k_gui_edge_dim_color_default[0], k_gui_edge_dim_color_default[1],
+                             k_gui_edge_dim_color_default[2]};
+  float m_edge_dim_text_scale           = k_gui_edge_dim_text_scale_default;
+  int   m_edge_dim_arrow_style          = 0;
+  int   m_edge_dim_arrow_orientation    = 0;
+  int   m_edge_dim_text_render_mode     = k_gui_edge_dim_text_render_mode_default;
+  bool  m_show_sketch_dimensions        = true;
+  float        m_permanent_node_anno_scale = k_gui_permanent_node_anno_scale_default;
   /// Degrees per numpad orbit (8/2/4/6) and Blender-style roll (Shift+NumPad 4/6); persisted in `gui.view_roll_step_deg`.
   double m_view_roll_step_deg = k_gui_view_roll_step_deg_default;
   /// Multiplier for `UpdateZoom(Aspect_ScrollDelta(..., int(y * scale)))`; persisted in `gui.view_zoom_scroll_scale`.

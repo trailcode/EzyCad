@@ -27,6 +27,7 @@
 
 class Sketch;
 class GUI;
+struct Length_dimension_style;
 class Prs3d_Drawer;
 class TopoDS_Face;
 class TopoDS_Wire;
@@ -165,6 +166,10 @@ public:
   void                  angle_input(const ScreenCoords& screen_coords);
   void                  refresh_all_length_dimension_line_widths(double line_width);
   void                  refresh_all_length_dimension_arrow_sizes(double arrow_size);
+  void                  refresh_all_length_dimension_styles(const Length_dimension_style& style);
+  void                  refresh_all_length_dimensions();
+  void                  apply_sketch_dimensions_visibility();
+  void                  refresh_all_permanent_node_annotations();
   double                get_dimension_scale() const;
   bool                  get_show_dim_input() const;
   void                  set_show_dim_input(bool show);
