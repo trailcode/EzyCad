@@ -32,6 +32,44 @@
 
 namespace py = pybind11;
 
+namespace {
+const TextEditor::LanguageDefinition& python_language_definition()
+{
+  static TextEditor::LanguageDefinition lang_def;
+  static bool                           initialized = false;
+  if (!initialized)
+  {
+    static const char* const keywords[] = {
+        "False",  "None",    "True",   "and",    "as",       "assert", "async",  "await", "break", "class",
+        "continue", "def",   "del",    "elif",   "else",     "except", "finally", "for",  "from",  "global",
+        "if",     "import",  "in",     "is",     "lambda",   "nonlocal", "not", "or",     "pass",  "raise",
+        "return", "try",     "while",  "with",   "yield",
+    };
+    for (const char* kw : keywords)
+      lang_def.mKeywords.insert(kw);
+
+    lang_def.mTokenRegexStrings.push_back(
+        std::make_pair<std::string, TextEditor::PaletteIndex>("L?\\\"(\\\\.|[^\\\"])*\\\"", TextEditor::PaletteIndex::String));
+    lang_def.mTokenRegexStrings.push_back(
+        std::make_pair<std::string, TextEditor::PaletteIndex>("\\\'[^\\\']*\\\'", TextEditor::PaletteIndex::String));
+    lang_def.mTokenRegexStrings.push_back(std::make_pair<std::string, TextEditor::PaletteIndex>(
+        "[+-]?([0-9]+([.][0-9]*)?|[.][0-9]+)([eE][+-]?[0-9]+)?", TextEditor::PaletteIndex::Number));
+    lang_def.mTokenRegexStrings.push_back(
+        std::make_pair<std::string, TextEditor::PaletteIndex>("[a-zA-Z_][a-zA-Z0-9_]*", TextEditor::PaletteIndex::Identifier));
+    lang_def.mTokenRegexStrings.push_back(std::make_pair<std::string, TextEditor::PaletteIndex>(
+        "[\\[\\]\\{\\}\\!\\%\\^\\&\\*\\(\\)\\-\\+\\=\\~\\|\\<\\>\\?\\/\\;\\,\\.]", TextEditor::PaletteIndex::Punctuation));
+    lang_def.mCommentStart      = "\"\"\"";
+    lang_def.mCommentEnd        = "\"\"\"";
+    lang_def.mSingleLineComment = "#";
+    lang_def.mCaseSensitive     = true;
+    lang_def.mAutoIndentation   = true;
+    lang_def.mName              = "Python";
+    initialized                 = true;
+  }
+  return lang_def;
+}
+} // namespace
+
 // Registered with py::class_; must be visible to PYBIND11_EMBEDDED_MODULE at file scope.
 struct Ezy_shp
 {
@@ -463,7 +501,7 @@ void Python_console::load_scripts()
     entry.path     = path_str;
     entry.filename = filename;
     entry.editor.SetTabSize(4);
-    entry.editor.SetLanguage(TextEditor::Language::Python());
+    entry.editor.SetLanguageDefinition(python_language_definition());
     entry.editor.SetPalette(TextEditor::GetDarkPalette());
     entry.editor.SetText(content);
 

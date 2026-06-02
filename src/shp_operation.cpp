@@ -101,7 +101,7 @@ void Shp_operation_base::copy_shape_material_from_(Shp_ptr& dest, const Shp_ptr&
   if (dest.IsNull() || src.IsNull())
     return;
   const int        nmat    = Graphic3d_MaterialAspect::NumberOfMaterials();
-  Standard_Integer mat_idx = src->Material();
+  int mat_idx = src->Material();
   if (mat_idx < 0 || mat_idx >= nmat)
     return;
   dest->SetMaterial(Graphic3d_MaterialAspect(static_cast<Graphic3d_NameOfMaterial>(mat_idx)));

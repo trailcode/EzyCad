@@ -16,6 +16,8 @@
 #include <Geom_Line.hxx>
 #include <Geom_Plane.hxx>
 #include <Graphic3d_Camera.hxx>
+#include <NCollection_IndexedDataMap.hxx>
+#include <NCollection_Vec2.hxx>
 #include <IGESControl_Writer.hxx>
 #include <OpenGl_GraphicDriver.hxx>
 #include <Precision.hxx>
@@ -108,7 +110,7 @@ void Occt_view::init_viewer()
 
     // create offscreen window
     const TCollection_AsciiString aWinName("OCCT offscreen window");
-    Graphic3d_Vec2i               aWinSize(512, 512);
+    NCollection_Vec2<int>               aWinSize(512, 512);
 #if defined(_WIN32)
     const TCollection_AsciiString aClassName("OffscreenClass");
     // empty callback!
@@ -142,7 +144,7 @@ void Occt_view::init_viewer()
   m_view->SetWindow(m_occt_window, m_occt_window->NativeGlContext());
 
   // Enable anti-aliasing through the viewer
-  aViewer->SetDefaultComputedMode(Standard_True);
+  aViewer->SetDefaultComputedMode(true);
   aViewer->SetDefaultShadingModel(Graphic3d_TypeOfShadingModel_Phong);
 
   m_ctx = new AIS_InteractiveContext(aViewer);
@@ -160,13 +162,15 @@ void Occt_view::init_viewer()
   }
 
   Handle(V3d_Viewer) aViewer = new V3d_Viewer(aDriver);
-  aViewer->SetDefaultComputedMode(Standard_True); // Enable better quality rendering
+  aViewer->SetDefaultComputedMode(true); // Enable better quality rendering
   aViewer->SetDefaultShadingModel(Graphic3d_TypeOfShadingModel_Phong);
   aViewer->SetDefaultLights();
   aViewer->SetLightOn();
-  for (V3d_ListOfLight::Iterator aLightIter(aViewer->ActiveLights()); aLightIter.More(); aLightIter.Next())
+  for (NCollection_List<Handle(Graphic3d_CLight)>::Iterator aLightIter(aViewer->ActiveLights());
+       aLightIter.More();
+       aLightIter.Next())
   {
-    const Handle(V3d_Light)& aLight = aLightIter.Value();
+    const Handle(Graphic3d_CLight)& aLight = aLightIter.Value();
     if (aLight->Type() == Graphic3d_TypeOfLightSource_Directional)
       aLight->SetCastShadows(true);
   }
@@ -187,7 +191,7 @@ void Occt_view::init_viewer()
     Handle(Font_SystemFont) sys_font = font_mgr->CheckFont("/DroidSans.ttf");
     if (!sys_font.IsNull())
     {
-      font_mgr->RegisterFont(sys_font, Standard_True);
+      font_mgr->RegisterFont(sys_font, true);
       const TCollection_AsciiString& family = sys_font->FontName();
       // OCCT asks for generic families (Font_NOF_*); default aliases point at missing system fonts.
       for (const char* alias : {Font_NOF_SERIF, Font_NOF_SANS_SERIF, Font_NOF_MONOSPACE})
@@ -223,12 +227,12 @@ void Occt_view::init_viewer()
 
   // aViewer->SetComputedMode(false);
   //   Enable anti-aliasing through the viewer
-  aViewer->SetDefaultComputedMode(Standard_True);
+  aViewer->SetDefaultComputedMode(true);
   aViewer->SetDefaultShadingModel(Graphic3d_TypeOfShadingModel_Phong);
   aViewer->SetDefaultLights();
   aViewer->SetLightOn();
 
-  m_ctx->SetAutoActivateSelection(Standard_True); // Enable automatic selection
+  m_ctx->SetAutoActivateSelection(true); // Enable automatic selection
 
   auto highlight_style = m_ctx->HighlightStyle();
   // highlight_style->SetDisplayMode(1);
@@ -266,7 +270,7 @@ void Occt_view::init_viewer()
 
   Handle(AIS_ViewCube) myViewCube = new AIS_ViewCube();
   myViewCube->SetTransformPersistence(
-      new Graphic3d_TransformPers(Graphic3d_TMF_TriedronPers, Aspect_TOTP_RIGHT_LOWER, Graphic3d_Vec2i(100, 100)));
+      new Graphic3d_TransformPers(Graphic3d_TMF_TriedronPers, Aspect_TOTP_RIGHT_LOWER, NCollection_Vec2<int>(100, 100)));
   myViewCube->Attributes()->SetDatumAspect(new Prs3d_DatumAspect());
   // myViewCube->Attributes()->DatumAspect()->SetTextAspect(myTextStyle);
   //  animation parameters
@@ -286,7 +290,7 @@ void Occt_view::roll_view_z_deg(double degrees)
   if (m_view.IsNull())
     return;
 
-  m_view->Turn(V3d_Z, to_radians(degrees), Standard_True);
+  m_view->Turn(V3d_Z, to_radians(degrees), true);
   m_view->Redraw();
 }
 
@@ -398,14 +402,14 @@ void Occt_view::init_default()
 
   TCollection_AsciiString aGlInfo;
   {
-    TColStd_IndexedDataMapOfStringString aRendInfo;
+    NCollection_IndexedDataMap<TCollection_AsciiString, TCollection_AsciiString> aRendInfo;
     m_view->DiagnosticInformation(aRendInfo, Graphic3d_DiagnosticInfo_Basic);
-    for (TColStd_IndexedDataMapOfStringString::Iterator aValueIter(aRendInfo); aValueIter.More(); aValueIter.Next())
+    for (const auto& [aKey, aValue] : aRendInfo.Items())
     {
       if (!aGlInfo.IsEmpty())
         aGlInfo += "\n";
 
-      aGlInfo += TCollection_AsciiString("  ") + aValueIter.Key() + ": " + aValueIter.Value();
+      aGlInfo += TCollection_AsciiString("  ") + aKey + ": " + aValue;
     }
   }
   Message::DefaultMessenger()->Send(TCollection_AsciiString("OpenGL info:\n") + aGlInfo, Message_Info);
@@ -428,8 +432,8 @@ void Occt_view::init_default()
 // Geometry related
 ScreenCoords Occt_view::get_screen_coords(const gp_Pnt& point)
 {
-  Standard_Integer screen_x;
-  Standard_Integer screen_y;
+  int screen_x;
+  int screen_y;
   m_view->Convert(point.X(), point.Y(), point.Z(), screen_x, screen_y);
   return ScreenCoords(dvec2(screen_x, screen_y));
 }
@@ -438,8 +442,8 @@ std::optional<gp_Pnt> Occt_view::pt3d_on_plane(const ScreenCoords& screen_coords
 {
   // TODO there must be a way to do this using the MVP matrixes.
   // Convert 2D screen coordinates to 3D world coordinates near the camera
-  Standard_Real x_near, y_near, z_near;
-  m_view->Convert((Standard_Integer)screen_coords.unsafe_get_x(), (Standard_Integer)screen_coords.unsafe_get_y(), x_near,
+  double x_near, y_near, z_near;
+  m_view->Convert((int)screen_coords.unsafe_get_x(), (int)screen_coords.unsafe_get_y(), x_near,
                   y_near, z_near);
   gp_Pnt near_point(x_near, y_near, z_near);
 
@@ -640,7 +644,7 @@ void Occt_view::add_sketch(const gp_Pln& pln, const std::string& base_name)
 AIS_Shape_ptr Occt_view::get_shape(const ScreenCoords& screen_coords)
 {
   // Move the selection to the clicked point
-  m_ctx->MoveTo(int(screen_coords.unsafe_get_x()), int(screen_coords.unsafe_get_y()), m_view, Standard_True);
+  m_ctx->MoveTo(int(screen_coords.unsafe_get_x()), int(screen_coords.unsafe_get_y()), m_view, true);
 
   // Initialize the selection process
   m_ctx->SelectDetected(AIS_SelectionScheme_Replace);
@@ -767,8 +771,8 @@ void Occt_view::set_camera(const gp_Pnt& eye, const gp_Pnt& center, const gp_Dir
 
 const TopoDS_Shape* Occt_view::get_(const ScreenCoords& screen_coords) const
 {
-  AIS_StatusOfDetection detection_status = m_ctx->MoveTo(Standard_Integer(screen_coords.unsafe_get_x()),
-                                                         Standard_Integer(screen_coords.unsafe_get_y()), m_view, true);
+  AIS_StatusOfDetection detection_status = m_ctx->MoveTo(int(screen_coords.unsafe_get_x()),
+                                                         int(screen_coords.unsafe_get_y()), m_view, true);
 
   if (detection_status == AIS_SOD_Nothing)
     return nullptr;
@@ -821,8 +825,8 @@ Ray Occt_view::get_hit_test_ray_(const ScreenCoords& screen_coords) const
 {
   Graphic3d_Camera_ptr camera  = m_view->Camera();
   gp_Pnt               eye_pos = camera->Eye();
-  Standard_Real        x_near, y_near, z_near;
-  m_view->Convert((Standard_Integer)screen_coords.unsafe_get_x(), (Standard_Integer)screen_coords.unsafe_get_y(), x_near,
+  double        x_near, y_near, z_near;
+  m_view->Convert((int)screen_coords.unsafe_get_x(), (int)screen_coords.unsafe_get_y(), x_near,
                   y_near, z_near);
   gp_Pnt near_point(x_near, y_near, z_near);
   gp_Vec ray_dir(eye_pos, near_point);
@@ -989,7 +993,7 @@ bool Occt_view::fit_face_in_view(const TopoDS_Face& face)
   }
 
   // Get the center of the bounding box
-  Standard_Real x_min, y_min, z_min, x_max, y_max, z_max;
+  double x_min, y_min, z_min, x_max, y_max, z_max;
   bbox.Get(x_min, y_min, z_min, x_max, y_max, z_max);
   center.SetCoord((x_min + x_max) / 2.0, (y_min + y_max) / 2.0, (z_min + z_max) / 2.0);
 
@@ -1186,7 +1190,7 @@ void Occt_view::update_view_background_()
 
   m_view->SetBgGradientColors(Quantity_Color(m_bg_color1.x, m_bg_color1.y, m_bg_color1.z, Quantity_TOC_RGB),
                               Quantity_Color(m_bg_color2.x, m_bg_color2.y, m_bg_color2.z, Quantity_TOC_RGB),
-                              gradient_method_from_int(m_bg_gradient_method), Standard_True);
+                              gradient_method_from_int(m_bg_gradient_method), true);
 
   Handle(V3d_Viewer) viewer = m_view->Viewer();
   if (!viewer.IsNull() && !viewer->Grid().IsNull())
@@ -1262,7 +1266,7 @@ void Occt_view::capture_occt_grid_rect_from_viewer_(const V3d_Viewer_ptr& viewer
 
   if (!vrg.IsNull())
   {
-    Standard_Real gx{}, gy{}, gz{};
+    double gx{}, gy{}, gz{};
     vrg->GraphicValues(gx, gy, gz);
     m_occt_grid_rect.graphic_x_size     = gx;
     m_occt_grid_rect.graphic_y_size     = gy;
@@ -1288,13 +1292,13 @@ void Occt_view::apply_occt_grid_rect_to_viewer_()
   if (rg.IsNull())
     return;
 
-  rg->SetGridValues(0., 0., static_cast<Standard_Real>(m_occt_grid_rect.step),
-                   static_cast<Standard_Real>(m_occt_grid_rect.step), 0.);
+  rg->SetGridValues(0., 0., static_cast<double>(m_occt_grid_rect.step),
+                   static_cast<double>(m_occt_grid_rect.step), 0.);
 
   if (!vrg.IsNull())
-    vrg->SetGraphicValues(static_cast<Standard_Real>(m_occt_grid_rect.graphic_x_size),
-                         static_cast<Standard_Real>(m_occt_grid_rect.graphic_y_size),
-                         static_cast<Standard_Real>(m_occt_grid_rect.graphic_z_offset));
+    vrg->SetGraphicValues(static_cast<double>(m_occt_grid_rect.graphic_x_size),
+                         static_cast<double>(m_occt_grid_rect.graphic_y_size),
+                         static_cast<double>(m_occt_grid_rect.graphic_z_offset));
 
   m_view->Invalidate();
 }
@@ -1386,7 +1390,7 @@ void Occt_view::on_mouse_button(int theButton, int theAction, int theMods)
   if (m_view.IsNull())
     return;
 
-  const Graphic3d_Vec2i pos = m_occt_window->CursorPosition();
+  const NCollection_Vec2<int> pos = m_occt_window->CursorPosition();
   if (theAction == GLFW_PRESS)
   {
     // Planar-face picking uses InteractiveContext::MoveTo() in get_face_(). Run it before
@@ -1431,7 +1435,7 @@ void Occt_view::on_mouse_button(int theButton, int theAction, int theMods)
 void Occt_view::on_mouse_move(const ScreenCoords& screen_coords)
 {
   EZY_ASSERT(!m_view.IsNull());
-  UpdateMousePosition(Graphic3d_Vec2i(int(screen_coords.unsafe_get_x()), int(screen_coords.unsafe_get_y())),
+  UpdateMousePosition(NCollection_Vec2<int>(int(screen_coords.unsafe_get_x()), int(screen_coords.unsafe_get_y())),
                       PressedMouseButtons(), LastMouseFlags(), false);
 }
 
@@ -1483,9 +1487,9 @@ void Occt_view::refresh_shape_list_hover_highlight()
     return;
 
   update_shape_list_hover_drawer_();
-  m_ctx->Unhilight(m_shape_list_hover, Standard_False);
+  m_ctx->Unhilight(m_shape_list_hover, false);
   if (m_shape_list_hover->get_visible())
-    m_ctx->HilightWithColor(m_shape_list_hover, m_shape_list_hover_drawer, Standard_False);
+    m_ctx->HilightWithColor(m_shape_list_hover, m_shape_list_hover_drawer, false);
   m_ctx->UpdateCurrentViewer();
 }
 
@@ -1499,7 +1503,7 @@ void Occt_view::set_shape_list_hover(const Shp_ptr& shp)
 
   if (!m_shape_list_hover.IsNull())
   {
-    m_ctx->Unhilight(m_shape_list_hover, Standard_False);
+    m_ctx->Unhilight(m_shape_list_hover, false);
     m_shape_list_hover.Nullify();
   }
 
@@ -1508,7 +1512,7 @@ void Occt_view::set_shape_list_hover(const Shp_ptr& shp)
   if (!m_shape_list_hover.IsNull() && m_shape_list_hover->get_visible())
   {
     update_shape_list_hover_drawer_();
-    m_ctx->HilightWithColor(m_shape_list_hover, m_shape_list_hover_drawer, Standard_False);
+    m_ctx->HilightWithColor(m_shape_list_hover, m_shape_list_hover_drawer, false);
   }
 
   m_ctx->UpdateCurrentViewer();
@@ -1845,7 +1849,7 @@ std::string Occt_view::to_json() const
   json& sketches = j["sketches"] = json::array();
   json& shps = j["shapes"] = json::array();
 
-  const auto pnt_to_json = [](Standard_Real x, Standard_Real y, Standard_Real z)
+  const auto pnt_to_json = [](double x, double y, double z)
   {
     return ::to_json(gp_Pnt(x, y, z));
   };
@@ -1874,8 +1878,8 @@ std::string Occt_view::to_json() const
     json& view_json = j["view"];
 
     // Eye and target (At) positions
-    Standard_Real eye_x, eye_y, eye_z;
-    Standard_Real at_x, at_y, at_z;
+    double eye_x, eye_y, eye_z;
+    double at_x, at_y, at_z;
     m_view->Eye(eye_x, eye_y, eye_z);
     m_view->At(at_x, at_y, at_z);
 
@@ -1883,8 +1887,8 @@ std::string Occt_view::to_json() const
     view_json["at"]  = pnt_to_json(at_x, at_y, at_z);
 
     // Up and projection directions
-    Standard_Real up_x, up_y, up_z;
-    Standard_Real proj_x, proj_y, proj_z;
+    double up_x, up_y, up_z;
+    double proj_x, proj_y, proj_z;
     m_view->Up(up_x, up_y, up_z);
     m_view->Proj(proj_x, proj_y, proj_z);
 
@@ -1928,12 +1932,12 @@ void Occt_view::load(const std::string& json_str, bool restore_view)
     BRepTools::Read(shape, iss, BRep_Builder());
     Shp_ptr shp = new Shp(*m_ctx, shape);
     shp->set_name(s["name"]);
-    Standard_Integer mat_idx = static_cast<Standard_Integer>(m_default_material.Name());
+    int mat_idx = static_cast<int>(m_default_material.Name());
     if (s.contains("material") && s["material"].is_number_integer())
-      mat_idx = s["material"].get<Standard_Integer>();
+      mat_idx = s["material"].get<int>();
     const int nmat = Graphic3d_MaterialAspect::NumberOfMaterials();
     if (mat_idx < 0 || mat_idx >= nmat)
-      mat_idx = static_cast<Standard_Integer>(m_default_material.Name());
+      mat_idx = static_cast<int>(m_default_material.Name());
     shp->SetMaterial(Graphic3d_MaterialAspect(static_cast<Graphic3d_NameOfMaterial>(mat_idx)));
     m_shps.push_back(shp);
     m_ctx->Display(shp, shp->get_disp_mode(), 0, true);
@@ -1972,7 +1976,7 @@ void Occt_view::load(const std::string& json_str, bool restore_view)
 
       if (view_json.contains("scale") && view_json["scale"].is_number())
       {
-        const Standard_Real scale = view_json["scale"].get<Standard_Real>();
+        const double scale = view_json["scale"].get<double>();
         if (scale > Precision::Confusion())
           m_view->SetScale(scale);
       }
@@ -2070,11 +2074,11 @@ Status Occt_view::export_document(Export_format fmt, const std::string& file_pat
   case Export_format::Stl:
   {
     // Tessellate for mesh export (linear deflection in model units).
-    constexpr Standard_Real        k_lin_deflection = 0.1;
+    constexpr double        k_lin_deflection = 0.1;
     const BRepMesh_IncrementalMesh mesher(shape, k_lin_deflection);
     (void)mesher;
     StlAPI_Writer stl_writer;
-    stl_writer.ASCIIMode() = Standard_False;
+    stl_writer.ASCIIMode() = false;
     if (!stl_writer.Write(shape, file_path.c_str()))
       return Status::user_error("STL write failed.");
 
@@ -2082,7 +2086,7 @@ Status Occt_view::export_document(Export_format fmt, const std::string& file_pat
   }
   case Export_format::Ply:
   {
-    constexpr Standard_Real        k_lin_deflection = 0.1;
+    constexpr double        k_lin_deflection = 0.1;
     const BRepMesh_IncrementalMesh mesher(shape, k_lin_deflection);
     (void)mesher;
     return export_ply_binary_file(shape, file_path);
@@ -2103,10 +2107,10 @@ Status Occt_view::import_step(const std::string& step_data)
   if (reader.TransferRoots() == 0)
     return Status::user_error("STEP: no geometry was transferred from the file.");
 
-  const Standard_Integer    num_shps = reader.NbShapes();
+  const int    num_shps = reader.NbShapes();
   std::vector<TopoDS_Shape> to_add;
   to_add.reserve(static_cast<size_t>(num_shps));
-  for (Standard_Integer i = 1; i <= num_shps; ++i)
+  for (int i = 1; i <= num_shps; ++i)
   {
     TopoDS_Shape shape = reader.Shape(i);
     if (!shape.IsNull())

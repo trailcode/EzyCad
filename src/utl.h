@@ -135,6 +135,6 @@ uint32_t load_texture(const std::string& path);
 std::optional<std::tuple<std::vector<uint8_t>, int, int>> decode_image_bytes(const std::string& file_bytes);
 
 void disable_shape_highlighting(const AIS_Shape_ptr& ais_shape, const AIS_InteractiveContext_ptr& context,
-                                Standard_Boolean disable_selection = Standard_False);
+                                bool disable_selection = false);
 
 #include "utl.inl"

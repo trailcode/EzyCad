@@ -1382,9 +1382,9 @@ void Sketch::rebuild_length_dimension_display_(Length_dimension& d)
   d.dim->SetCustomValue(dist / m_view.get_dimension_scale());
   if (d.flyout_offset.has_value() && *d.flyout_offset > 0.0)
   {
-    const Standard_Real f    = d.dim->GetFlyout();
+    const double f    = d.dim->GetFlyout();
     const double        sign = f < 0.0 ? -1.0 : 1.0;
-    d.dim->SetFlyout(static_cast<Standard_Real>(sign * *d.flyout_offset));
+    d.dim->SetFlyout(static_cast<double>(sign * *d.flyout_offset));
   }
 
   if (m_visible && m_show_dims && d.visible)

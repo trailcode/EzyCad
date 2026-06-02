@@ -115,7 +115,7 @@ Aspect_RenderingContext Occt_glfw_win::NativeGlContext() const
 }
 #endif
 
-Standard_Boolean Occt_glfw_win::IsMapped() const { return glfwGetWindowAttrib(myGlfwWindow, GLFW_VISIBLE) != 0; }
+bool Occt_glfw_win::IsMapped() const { return glfwGetWindowAttrib(myGlfwWindow, GLFW_VISIBLE) != 0; }
 
 void Occt_glfw_win::Map() const { glfwShowWindow(myGlfwWindow); }
 
@@ -136,9 +136,9 @@ Aspect_TypeOfResize Occt_glfw_win::DoResize()
   return Aspect_TOR_UNKNOWN;
 }
 
-Graphic3d_Vec2i Occt_glfw_win::CursorPosition() const
+NCollection_Vec2<int> Occt_glfw_win::CursorPosition() const
 {
-  Graphic3d_Vec2d aPos;
+  NCollection_Vec2<double> aPos;
   glfwGetCursorPos(myGlfwWindow, &aPos.x(), &aPos.y());
-  return Graphic3d_Vec2i((int)aPos.x(), (int)aPos.y());
+  return NCollection_Vec2<int>((int)aPos.x(), (int)aPos.y());
 }

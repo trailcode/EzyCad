@@ -512,7 +512,7 @@ void Lua_console::load_scripts()
 
     auto ed = std::make_unique<TextEditor>();
     ed->SetTabSize(2);
-    ed->SetLanguage(TextEditor::Language::Lua());
+    ed->SetLanguageDefinition(TextEditor::LanguageDefinition::Lua());
     ed->SetText(content);
 
     m_script_editors.push_back({path_str, filename, std::move(ed)});
