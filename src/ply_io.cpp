@@ -571,7 +571,7 @@ Status export_ply_binary_file(const TopoDS_Shape& shape, const std::string& file
     for (int ti = 1, nbt = tri->NbTriangles(); ti <= nbt; ++ti)
     {
       const Poly_Triangle& tab = tri->Triangle(ti);
-      int     i1 = 0, i2 = 0, i3 = 0;
+      int                  i1 = 0, i2 = 0, i3 = 0;
       tab.Get(i1, i2, i3);
       const gp_Pnt p1 = tri->Node(i1).Transformed(tr);
       const gp_Pnt p2 = tri->Node(i2).Transformed(tr);

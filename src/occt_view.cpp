@@ -110,7 +110,7 @@ void Occt_view::init_viewer()
 
     // create offscreen window
     const TCollection_AsciiString aWinName("OCCT offscreen window");
-    NCollection_Vec2<int>               aWinSize(512, 512);
+    NCollection_Vec2<int>         aWinSize(512, 512);
 #if defined(_WIN32)
     const TCollection_AsciiString aClassName("OffscreenClass");
     // empty callback!
@@ -166,8 +166,7 @@ void Occt_view::init_viewer()
   aViewer->SetDefaultShadingModel(Graphic3d_TypeOfShadingModel_Phong);
   aViewer->SetDefaultLights();
   aViewer->SetLightOn();
-  for (NCollection_List<Handle(Graphic3d_CLight)>::Iterator aLightIter(aViewer->ActiveLights());
-       aLightIter.More();
+  for (NCollection_List<Handle(Graphic3d_CLight)>::Iterator aLightIter(aViewer->ActiveLights()); aLightIter.More();
        aLightIter.Next())
   {
     const Handle(Graphic3d_CLight)& aLight = aLightIter.Value();
@@ -443,8 +442,7 @@ std::optional<gp_Pnt> Occt_view::pt3d_on_plane(const ScreenCoords& screen_coords
   // TODO there must be a way to do this using the MVP matrixes.
   // Convert 2D screen coordinates to 3D world coordinates near the camera
   double x_near, y_near, z_near;
-  m_view->Convert((int)screen_coords.unsafe_get_x(), (int)screen_coords.unsafe_get_y(), x_near,
-                  y_near, z_near);
+  m_view->Convert((int)screen_coords.unsafe_get_x(), (int)screen_coords.unsafe_get_y(), x_near, y_near, z_near);
   gp_Pnt near_point(x_near, y_near, z_near);
 
   const Graphic3d_Camera_ptr& camera = m_view->Camera();
@@ -771,8 +769,8 @@ void Occt_view::set_camera(const gp_Pnt& eye, const gp_Pnt& center, const gp_Dir
 
 const TopoDS_Shape* Occt_view::get_(const ScreenCoords& screen_coords) const
 {
-  AIS_StatusOfDetection detection_status = m_ctx->MoveTo(int(screen_coords.unsafe_get_x()),
-                                                         int(screen_coords.unsafe_get_y()), m_view, true);
+  AIS_StatusOfDetection detection_status =
+      m_ctx->MoveTo(int(screen_coords.unsafe_get_x()), int(screen_coords.unsafe_get_y()), m_view, true);
 
   if (detection_status == AIS_SOD_Nothing)
     return nullptr;
@@ -825,9 +823,8 @@ Ray Occt_view::get_hit_test_ray_(const ScreenCoords& screen_coords) const
 {
   Graphic3d_Camera_ptr camera  = m_view->Camera();
   gp_Pnt               eye_pos = camera->Eye();
-  double        x_near, y_near, z_near;
-  m_view->Convert((int)screen_coords.unsafe_get_x(), (int)screen_coords.unsafe_get_y(), x_near,
-                  y_near, z_near);
+  double               x_near, y_near, z_near;
+  m_view->Convert((int)screen_coords.unsafe_get_x(), (int)screen_coords.unsafe_get_y(), x_near, y_near, z_near);
   gp_Pnt near_point(x_near, y_near, z_near);
   gp_Vec ray_dir(eye_pos, near_point);
   ray_dir.Normalize();
@@ -1245,9 +1242,9 @@ Occt_grid_rect_params Occt_view::clamp_occt_grid_rect_params_(Occt_grid_rect_par
 {
   constexpr double min_step    = 1e-9;
   constexpr double min_graphic = 1e-6;
-  g.step = std::max(g.step, min_step);
-  g.graphic_x_size = std::max(g.graphic_x_size, min_graphic);
-  g.graphic_y_size = std::max(g.graphic_y_size, min_graphic);
+  g.step                       = std::max(g.step, min_step);
+  g.graphic_x_size             = std::max(g.graphic_x_size, min_graphic);
+  g.graphic_y_size             = std::max(g.graphic_y_size, min_graphic);
   return g;
 }
 
@@ -1256,9 +1253,9 @@ void Occt_view::capture_occt_grid_rect_from_viewer_(const V3d_Viewer_ptr& viewer
   if (viewer.IsNull() || viewer->Grid().IsNull())
     return;
 
-  Handle(Aspect_Grid)                  ag = viewer->Grid();
-  Handle(Aspect_RectangularGrid)         rg = Handle(Aspect_RectangularGrid)::DownCast(ag);
-  Handle(V3d_RectangularGrid)          vrg = Handle(V3d_RectangularGrid)::DownCast(ag);
+  Handle(Aspect_Grid) ag            = viewer->Grid();
+  Handle(Aspect_RectangularGrid) rg = Handle(Aspect_RectangularGrid)::DownCast(ag);
+  Handle(V3d_RectangularGrid) vrg   = Handle(V3d_RectangularGrid)::DownCast(ag);
   if (rg.IsNull())
     return;
 
@@ -1268,9 +1265,9 @@ void Occt_view::capture_occt_grid_rect_from_viewer_(const V3d_Viewer_ptr& viewer
   {
     double gx{}, gy{}, gz{};
     vrg->GraphicValues(gx, gy, gz);
-    m_occt_grid_rect.graphic_x_size     = gx;
-    m_occt_grid_rect.graphic_y_size     = gy;
-    m_occt_grid_rect.graphic_z_offset   = gz;
+    m_occt_grid_rect.graphic_x_size   = gx;
+    m_occt_grid_rect.graphic_y_size   = gy;
+    m_occt_grid_rect.graphic_z_offset = gz;
   }
 }
 
@@ -1279,34 +1276,30 @@ void Occt_view::apply_occt_grid_rect_to_viewer_()
   if (is_headless() || m_view.IsNull())
     return;
 
-  Occt_grid_rect_params g      = clamp_occt_grid_rect_params_(m_occt_grid_rect);
-  m_occt_grid_rect             = g;
+  Occt_grid_rect_params g = clamp_occt_grid_rect_params_(m_occt_grid_rect);
+  m_occt_grid_rect        = g;
 
   Handle(V3d_Viewer) viewer = m_view->Viewer();
   if (viewer.IsNull() || viewer->Grid().IsNull())
     return;
 
-  Handle(Aspect_Grid)                  ag = viewer->Grid();
-  Handle(Aspect_RectangularGrid)         rg = Handle(Aspect_RectangularGrid)::DownCast(ag);
-  Handle(V3d_RectangularGrid)          vrg = Handle(V3d_RectangularGrid)::DownCast(ag);
+  Handle(Aspect_Grid) ag            = viewer->Grid();
+  Handle(Aspect_RectangularGrid) rg = Handle(Aspect_RectangularGrid)::DownCast(ag);
+  Handle(V3d_RectangularGrid) vrg   = Handle(V3d_RectangularGrid)::DownCast(ag);
   if (rg.IsNull())
     return;
 
-  rg->SetGridValues(0., 0., static_cast<double>(m_occt_grid_rect.step),
-                   static_cast<double>(m_occt_grid_rect.step), 0.);
+  rg->SetGridValues(0., 0., static_cast<double>(m_occt_grid_rect.step), static_cast<double>(m_occt_grid_rect.step), 0.);
 
   if (!vrg.IsNull())
     vrg->SetGraphicValues(static_cast<double>(m_occt_grid_rect.graphic_x_size),
-                         static_cast<double>(m_occt_grid_rect.graphic_y_size),
-                         static_cast<double>(m_occt_grid_rect.graphic_z_offset));
+                          static_cast<double>(m_occt_grid_rect.graphic_y_size),
+                          static_cast<double>(m_occt_grid_rect.graphic_z_offset));
 
   m_view->Invalidate();
 }
 
-void Occt_view::get_occt_grid_rect_params(Occt_grid_rect_params& out) const
-{
-  out = m_occt_grid_rect;
-}
+void Occt_view::get_occt_grid_rect_params(Occt_grid_rect_params& out) const { out = m_occt_grid_rect; }
 
 void Occt_view::set_occt_grid_rect_params(const Occt_grid_rect_params& p)
 {
@@ -1466,8 +1459,8 @@ void Occt_view::update_shape_list_hover_drawer_()
   uint8_t r{}, g{}, b{}, a{};
   gui().shape_list_hover_color_rgba(r, g, b, a);
   (void)a;
-  const Quantity_Color qc(static_cast<double>(r) / 255.0, static_cast<double>(g) / 255.0,
-                          static_cast<double>(b) / 255.0, Quantity_TOC_RGB);
+  const Quantity_Color qc(static_cast<double>(r) / 255.0, static_cast<double>(g) / 255.0, static_cast<double>(b) / 255.0,
+                          Quantity_TOC_RGB);
 
   if (m_shape_list_hover_drawer.IsNull())
     m_shape_list_hover_drawer = new Prs3d_Drawer();
@@ -2074,7 +2067,7 @@ Status Occt_view::export_document(Export_format fmt, const std::string& file_pat
   case Export_format::Stl:
   {
     // Tessellate for mesh export (linear deflection in model units).
-    constexpr double        k_lin_deflection = 0.1;
+    constexpr double               k_lin_deflection = 0.1;
     const BRepMesh_IncrementalMesh mesher(shape, k_lin_deflection);
     (void)mesher;
     StlAPI_Writer stl_writer;
@@ -2086,7 +2079,7 @@ Status Occt_view::export_document(Export_format fmt, const std::string& file_pat
   }
   case Export_format::Ply:
   {
-    constexpr double        k_lin_deflection = 0.1;
+    constexpr double               k_lin_deflection = 0.1;
     const BRepMesh_IncrementalMesh mesher(shape, k_lin_deflection);
     (void)mesher;
     return export_ply_binary_file(shape, file_path);
@@ -2107,7 +2100,7 @@ Status Occt_view::import_step(const std::string& step_data)
   if (reader.TransferRoots() == 0)
     return Status::user_error("STEP: no geometry was transferred from the file.");
 
-  const int    num_shps = reader.NbShapes();
+  const int                 num_shps = reader.NbShapes();
   std::vector<TopoDS_Shape> to_add;
   to_add.reserve(static_cast<size_t>(num_shps));
   for (int i = 1; i <= num_shps; ++i)

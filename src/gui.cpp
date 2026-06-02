@@ -47,16 +47,16 @@ GUI::GUI()
 Length_dimension_style GUI::length_dimension_style() const
 {
   Length_dimension_style s{};
-  s.line_width             = m_edge_dim_line_width;
-  s.arrow_size             = m_edge_dim_arrow_size;
-  s.color_rgb[0]           = m_edge_dim_color[0];
-  s.color_rgb[1]           = m_edge_dim_color[1];
-  s.color_rgb[2]           = m_edge_dim_color[2];
-  s.text_height_scale      = m_edge_dim_text_scale;
-  s.label_h                = m_edge_dim_label_h;
-  s.arrow_style            = m_edge_dim_arrow_style;
-  s.arrow_orientation      = m_edge_dim_arrow_orientation;
-  s.text_render_mode       = m_edge_dim_text_render_mode;
+  s.line_width        = m_edge_dim_line_width;
+  s.arrow_size        = m_edge_dim_arrow_size;
+  s.color_rgb[0]      = m_edge_dim_color[0];
+  s.color_rgb[1]      = m_edge_dim_color[1];
+  s.color_rgb[2]      = m_edge_dim_color[2];
+  s.text_height_scale = m_edge_dim_text_scale;
+  s.label_h           = m_edge_dim_label_h;
+  s.arrow_style       = m_edge_dim_arrow_style;
+  s.arrow_orientation = m_edge_dim_arrow_orientation;
+  s.text_render_mode  = m_edge_dim_text_render_mode;
   return s;
 }
 
@@ -300,8 +300,8 @@ void GUI::menu_bar_()
     ImGui::Separator();
     if (ImGui::MenuItem("New sketch..."))
     {
-      m_new_sketch_plane   = 0;
-      m_new_sketch_offset  = 0.0;
+      m_new_sketch_plane      = 0;
+      m_new_sketch_offset     = 0.0;
       m_open_add_sketch_popup = true;
     }
 

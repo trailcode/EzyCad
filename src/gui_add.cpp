@@ -409,7 +409,7 @@ void GUI::add_sketch_dialog_()
   if (ImGui::Button("Create"))
   {
     Sketch_ref_plane plane = Sketch_ref_plane::XY;
-    const char*        base  = "Sketch_xy";
+    const char*      base  = "Sketch_xy";
     switch (m_new_sketch_plane)
     {
     case 1:

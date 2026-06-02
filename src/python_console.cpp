@@ -32,7 +32,8 @@
 
 namespace py = pybind11;
 
-namespace {
+namespace
+{
 const TextEditor::LanguageDefinition& python_language_definition()
 {
   static TextEditor::LanguageDefinition lang_def;
@@ -40,10 +41,9 @@ const TextEditor::LanguageDefinition& python_language_definition()
   if (!initialized)
   {
     static const char* const keywords[] = {
-        "False",  "None",    "True",   "and",    "as",       "assert", "async",  "await", "break", "class",
-        "continue", "def",   "del",    "elif",   "else",     "except", "finally", "for",  "from",  "global",
-        "if",     "import",  "in",     "is",     "lambda",   "nonlocal", "not", "or",     "pass",  "raise",
-        "return", "try",     "while",  "with",   "yield",
+        "False",  "None",     "True", "and",    "as",      "assert", "async",  "await",  "break", "class",  "continue", "def",
+        "del",    "elif",     "else", "except", "finally", "for",    "from",   "global", "if",    "import", "in",       "is",
+        "lambda", "nonlocal", "not",  "or",     "pass",    "raise",  "return", "try",    "while", "with",   "yield",
     };
     for (const char* kw : keywords)
       lang_def.mKeywords.insert(kw);

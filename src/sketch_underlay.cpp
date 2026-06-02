@@ -162,7 +162,7 @@ Handle(Image_PixMap) make_pixmap_bottom_up_linear(const uint8_t* rgba, int w, in
     return {};
 
   const size_t rowBytes = static_cast<size_t>(w) * 4u;
-  uint8_t*            dst      = pix->ChangeData();
+  uint8_t*     dst      = pix->ChangeData();
 
   for (int rj = 0; rj < h; ++rj)
   {
@@ -209,7 +209,7 @@ Handle(Image_PixMap) make_pixmap_bottom_up_warped(const uint8_t* rgba, int w, in
     return {};
 
   const size_t rowBytes = static_cast<size_t>(out_w) * 4u;
-  uint8_t*            dst      = pix->ChangeData();
+  uint8_t*     dst      = pix->ChangeData();
 
   constexpr double k_eps = 1e-9;
   for (int rj = 0; rj < out_h; ++rj)
@@ -239,10 +239,10 @@ Handle(Image_PixMap) make_pixmap_bottom_up_warped(const uint8_t* rgba, int w, in
 
       apply_key_and_tint(px[0], px[1], px[2], px[3], key_white_transparent, line_tint_enabled, tr, tg, tb, ta);
       const size_t o = static_cast<size_t>(ox) * 4u;
-      dstRow[o + 0]         = px[0];
-      dstRow[o + 1]         = px[1];
-      dstRow[o + 2]         = px[2];
-      dstRow[o + 3]         = px[3];
+      dstRow[o + 0]  = px[0];
+      dstRow[o + 1]  = px[1];
+      dstRow[o + 2]  = px[2];
+      dstRow[o + 3]  = px[3];
     }
   }
 

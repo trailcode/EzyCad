@@ -73,12 +73,12 @@ inline constexpr int k_gui_edge_dim_arrow_style_max = 3;
 inline constexpr int k_gui_edge_dim_arrow_orientation_min = 0;
 inline constexpr int k_gui_edge_dim_arrow_orientation_max = 2;
 /// `gui.edge_dim_text_render_mode` indices.
-inline constexpr int k_gui_edge_dim_text_render_opaque_2d     = 0;
-inline constexpr int k_gui_edge_dim_text_render_common_color  = 1;
-inline constexpr int k_gui_edge_dim_text_render_2d_screen     = 2;
-inline constexpr int k_gui_edge_dim_text_render_3d_text       = 3;
-inline constexpr int k_gui_edge_dim_text_render_z_top         = 4;
-inline constexpr int k_gui_edge_dim_text_render_z_topmost     = 5;
+inline constexpr int k_gui_edge_dim_text_render_opaque_2d    = 0;
+inline constexpr int k_gui_edge_dim_text_render_common_color = 1;
+inline constexpr int k_gui_edge_dim_text_render_2d_screen    = 2;
+inline constexpr int k_gui_edge_dim_text_render_3d_text      = 3;
+inline constexpr int k_gui_edge_dim_text_render_z_top        = 4;
+inline constexpr int k_gui_edge_dim_text_render_z_topmost    = 5;
 inline constexpr int k_gui_edge_dim_text_render_mode_default = k_gui_edge_dim_text_render_z_topmost;
 inline constexpr int k_gui_edge_dim_text_render_mode_max     = k_gui_edge_dim_text_render_z_topmost;
 /// Scale factor for permanent sketch-node '+' annotations (`gui.permanent_node_anno_scale`).
@@ -94,10 +94,10 @@ inline constexpr double k_gui_view_zoom_scroll_scale_min     = 0.25;
 inline constexpr double k_gui_view_zoom_scroll_scale_max     = 64.0;
 inline constexpr double k_gui_view_zoom_scroll_scale_default = 4.0;
 /// `gui.ui_verbosity`: 0 = minimal UI; odd steps unlock feature tiers; even steps unlock help tiers.
-inline constexpr int k_gui_ui_verbosity_min            = 0;
-inline constexpr int k_gui_ui_verbosity_default        = 6;
-inline constexpr int k_gui_ui_feature_tier_max         = 3;
-inline constexpr int k_gui_ui_help_tier_max            = 3;
+inline constexpr int k_gui_ui_verbosity_min     = 0;
+inline constexpr int k_gui_ui_verbosity_default = 6;
+inline constexpr int k_gui_ui_feature_tier_max  = 3;
+inline constexpr int k_gui_ui_help_tier_max     = 3;
 class GUI
 {
 public:
@@ -138,9 +138,9 @@ public:
   /// Reapply dimension visibility on all sketches (global show flag + current tool mode).
   void apply_sketch_dimensions_visibility();
   /// Scale factor for permanent sketch-node '+' annotations.
-  float  permanent_node_anno_scale() const { return m_permanent_node_anno_scale; }
-  bool   get_hide_all_shapes() const { return m_hide_all_shapes; }
-  void   set_hide_all_shapes(bool hide) { m_hide_all_shapes = hide; }
+  float permanent_node_anno_scale() const { return m_permanent_node_anno_scale; }
+  bool  get_hide_all_shapes() const { return m_hide_all_shapes; }
+  void  set_hide_all_shapes(bool hide) { m_hide_all_shapes = hide; }
   /// Orthographic camera in Inspection mode (Mode::Normal); persisted as `gui.inspection_orthographic`.
   bool   inspection_orthographic() const { return m_inspection_orthographic; }
   void   set_inspection_orthographic(bool v) { m_inspection_orthographic = v; }
@@ -168,7 +168,7 @@ public:
   /// Cumulative feature depth from `gui.ui_verbosity` (F1 at verbosity >= 1).
   int ui_feature_tier() const { return (m_ui_verbosity + 1) / 2; }
   /// Cumulative help depth from `gui.ui_verbosity` (H1 at verbosity >= 2).
-  int ui_help_tier() const { return m_ui_verbosity / 2; }
+  int  ui_help_tier() const { return m_ui_verbosity / 2; }
   bool ui_show_feature(int tier) const { return tier <= ui_feature_tier(); }
   bool ui_show_help(int tier) const { return tier <= ui_help_tier(); }
   /// Sketch list: reserved [P] column at verbosity >= 2; active button at feature tier 2 (verbosity >= 3).
@@ -336,25 +336,25 @@ private:
   bool                             m_angle_edit_focus_pending{false};
 
   // Mode related
-  Mode         m_mode                = Mode::Normal;
-  Chamfer_mode m_chamfer_mode        = Chamfer_mode::Shape;
-  Fillet_mode  m_fillet_mode         = Fillet_mode::Shape;
-  int   m_edge_dim_label_h              = 3;
-  float m_edge_dim_line_width           = k_gui_edge_dim_line_width_default;
-  float m_edge_dim_arrow_size           = k_gui_edge_dim_arrow_size_default;
-  float m_edge_dim_color[3]             = {k_gui_edge_dim_color_default[0], k_gui_edge_dim_color_default[1],
-                             k_gui_edge_dim_color_default[2]};
-  float m_edge_dim_text_scale           = k_gui_edge_dim_text_scale_default;
-  int   m_edge_dim_arrow_style          = 0;
-  int   m_edge_dim_arrow_orientation    = 0;
-  int   m_edge_dim_text_render_mode     = k_gui_edge_dim_text_render_mode_default;
-  bool  m_show_sketch_dimensions        = true;
-  float        m_permanent_node_anno_scale = k_gui_permanent_node_anno_scale_default;
+  Mode         m_mode                       = Mode::Normal;
+  Chamfer_mode m_chamfer_mode               = Chamfer_mode::Shape;
+  Fillet_mode  m_fillet_mode                = Fillet_mode::Shape;
+  int          m_edge_dim_label_h           = 3;
+  float        m_edge_dim_line_width        = k_gui_edge_dim_line_width_default;
+  float        m_edge_dim_arrow_size        = k_gui_edge_dim_arrow_size_default;
+  float        m_edge_dim_color[3]          = {k_gui_edge_dim_color_default[0], k_gui_edge_dim_color_default[1],
+                                               k_gui_edge_dim_color_default[2]};
+  float        m_edge_dim_text_scale        = k_gui_edge_dim_text_scale_default;
+  int          m_edge_dim_arrow_style       = 0;
+  int          m_edge_dim_arrow_orientation = 0;
+  int          m_edge_dim_text_render_mode  = k_gui_edge_dim_text_render_mode_default;
+  bool         m_show_sketch_dimensions     = true;
+  float        m_permanent_node_anno_scale  = k_gui_permanent_node_anno_scale_default;
   /// Degrees per numpad orbit (8/2/4/6) and Blender-style roll (Shift+NumPad 4/6); persisted in `gui.view_roll_step_deg`.
   double m_view_roll_step_deg = k_gui_view_roll_step_deg_default;
   /// Multiplier for `UpdateZoom(Aspect_ScrollDelta(..., int(y * scale)))`; persisted in `gui.view_zoom_scroll_scale`.
-  double                      m_view_zoom_scroll_scale = k_gui_view_zoom_scroll_scale_default;
-  bool                        m_inspection_orthographic  = false;
+  double                      m_view_zoom_scroll_scale  = k_gui_view_zoom_scroll_scale_default;
+  bool                        m_inspection_orthographic = false;
   std::vector<Toolbar_button> m_toolbar_buttons;
 
   // Message status window

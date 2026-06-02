@@ -217,7 +217,7 @@ void Sketch::sync_permanent_node_annos_()
     m_permanent_node_marks.resize(m_nodes.size());
 
   const double size_scale = std::max(static_cast<double>(m_view.gui().permanent_node_anno_scale()), 0.0);
-  const double half_arm = std::max(plane_pick_snap_radius_world_() * 0.45 * size_scale, Precision::Confusion() * 50.0);
+  const double half_arm   = std::max(plane_pick_snap_radius_world_() * 0.45 * size_scale, Precision::Confusion() * 50.0);
 
   const Mode mode = get_mode();
   // Show "+" markers for permanent user nodes in sketch modes and polar duplicate (which snaps to sketch nodes).
@@ -1374,8 +1374,8 @@ void Sketch::rebuild_length_dimension_display_(Length_dimension& d)
   if (!d.dim.IsNull())
     m_ctx.Remove(d.dim, false);
 
-  d.dim = create_distance_annotation(m_nodes[d.node_idx_lo], m_nodes[d.node_idx_hi], m_pln, m_view.gui().length_dimension_style(),
-                                     approx_sketch_interior_ref_3d_(),
+  d.dim = create_distance_annotation(m_nodes[d.node_idx_lo], m_nodes[d.node_idx_hi], m_pln,
+                                     m_view.gui().length_dimension_style(), approx_sketch_interior_ref_3d_(),
                                      m_dim_classifier_faces.empty() ? nullptr : &m_dim_classifier_faces);
 
   const double dist = m_nodes[d.node_idx_lo].Distance(m_nodes[d.node_idx_hi]);
@@ -1383,7 +1383,7 @@ void Sketch::rebuild_length_dimension_display_(Length_dimension& d)
   if (d.flyout_offset.has_value() && *d.flyout_offset > 0.0)
   {
     const double f    = d.dim->GetFlyout();
-    const double        sign = f < 0.0 ? -1.0 : 1.0;
+    const double sign = f < 0.0 ? -1.0 : 1.0;
     d.dim->SetFlyout(static_cast<double>(sign * *d.flyout_offset));
   }
 

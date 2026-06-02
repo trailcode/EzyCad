@@ -83,8 +83,7 @@ public:
   //! Closes the window <me>.
   virtual void Unmap() const override;
 
-  virtual void Position(int& theX1, int& theY1, int& theX2,
-                        int& theY2) const override
+  virtual void Position(int& theX1, int& theY1, int& theX2, int& theY2) const override
   {
     theX1 = myXLeft;
     theX2 = myXRight;
@@ -93,10 +92,7 @@ public:
   }
 
   //! Returns The Window RATIO equal to the physical WIDTH/HEIGHT dimensions.
-  virtual double Ratio() const override
-  {
-    return double(myXRight - myXLeft) / double(myYBottom - myYTop);
-  }
+  virtual double Ratio() const override { return double(myXRight - myXLeft) / double(myYBottom - myYTop); }
 
   //! Return window size.
   virtual void Size(int& theWidth, int& theHeight) const override
@@ -109,11 +105,11 @@ public:
 
 protected:
   Handle(Aspect_DisplayConnection) myDisplay;
-  GLFWwindow*      myGlfwWindow;
-  int myXLeft;
-  int myYTop;
-  int myXRight;
-  int myYBottom;
+  GLFWwindow* myGlfwWindow;
+  int         myXLeft;
+  int         myYTop;
+  int         myXRight;
+  int         myYBottom;
 };
 
 #endif // _Occt_glfw_win_Header

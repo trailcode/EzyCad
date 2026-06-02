@@ -24,9 +24,9 @@ using namespace glm;
 namespace
 {
 
-constexpr ImGuiTableFlags k_options_table_flags       = ImGuiTableFlags_SizingFixedFit;
-constexpr float         k_options_control_col_w     = 148.f;
-constexpr float         k_options_sketch_control_col_w = 176.f;
+constexpr ImGuiTableFlags k_options_table_flags          = ImGuiTableFlags_SizingFixedFit;
+constexpr float           k_options_control_col_w        = 148.f;
+constexpr float           k_options_sketch_control_col_w = 176.f;
 
 void options_table_setup_columns_(float label_col_w, float control_col_w)
 {

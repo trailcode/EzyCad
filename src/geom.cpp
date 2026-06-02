@@ -564,22 +564,22 @@ void arrow_style_preset(const int arrow_style, double& angle_deg, bool& arrows_3
 {
   switch (arrow_style)
   {
-    case 1:
-      angle_deg = 15.0;
-      arrows_3d = false;
-      break;
-    case 2:
-      angle_deg = 40.0;
-      arrows_3d = false;
-      break;
-    case 3:
-      angle_deg = 25.0;
-      arrows_3d = true;
-      break;
-    default:
-      angle_deg = 25.0;
-      arrows_3d = false;
-      break;
+  case 1:
+    angle_deg = 15.0;
+    arrows_3d = false;
+    break;
+  case 2:
+    angle_deg = 40.0;
+    arrows_3d = false;
+    break;
+  case 3:
+    angle_deg = 25.0;
+    arrows_3d = true;
+    break;
+  default:
+    angle_deg = 25.0;
+    arrows_3d = false;
+    break;
   }
 }
 
@@ -587,16 +587,16 @@ Prs3d_DimensionArrowOrientation arrow_orientation_from_index(const int idx)
 {
   switch (idx)
   {
-    case 1:
-      return Prs3d_DAO_Internal;
-    case 2:
-      return Prs3d_DAO_External;
-    default:
-      return Prs3d_DAO_Fit;
+  case 1:
+    return Prs3d_DAO_Internal;
+  case 2:
+    return Prs3d_DAO_External;
+  default:
+    return Prs3d_DAO_Fit;
   }
 }
 
-void apply_dimension_label_text_aspect(const Handle(Prs3d_TextAspect)& text, const Quantity_Color& col,
+void apply_dimension_label_text_aspect(const Handle(Prs3d_TextAspect) & text, const Quantity_Color& col,
                                        const Length_dimension_style& style)
 {
   text->SetColor(col);
@@ -613,7 +613,7 @@ void apply_dimension_label_text_aspect(const Handle(Prs3d_TextAspect)& text, con
 
 double length_dimension_auto_flyout(const double edge_len)
 {
-  constexpr double k_min_flyout  = 15.0;
+  constexpr double k_min_flyout    = 15.0;
   constexpr double k_edge_fraction = 0.12;
   return std::max(k_min_flyout, edge_len * k_edge_fraction);
 }
@@ -674,15 +674,15 @@ void apply_length_dimension_style(const PrsDim_LengthDimension_ptr& dim, const L
 
   switch (style.text_render_mode)
   {
-    case 4:
-      dim->SetZLayer(Graphic3d_ZLayerId_Top);
-      break;
-    case 5:
-      dim->SetZLayer(Graphic3d_ZLayerId_Topmost);
-      break;
-    default:
-      dim->SetZLayer(Graphic3d_ZLayerId_Default);
-      break;
+  case 4:
+    dim->SetZLayer(Graphic3d_ZLayerId_Top);
+    break;
+  case 5:
+    dim->SetZLayer(Graphic3d_ZLayerId_Topmost);
+    break;
+  default:
+    dim->SetZLayer(Graphic3d_ZLayerId_Default);
+    break;
   }
 }
 
@@ -747,8 +747,8 @@ static void orient_length_dimension_flyout_outward(const PrsDim_LengthDimension_
   if (to_in.SquareMagnitude() < Precision::SquareConfusion())
     return;
 
-  const double  edge_len = std::sqrt(attach.SquareMagnitude());
-  const double f = length_dimension_auto_flyout(edge_len);
+  const double edge_len = std::sqrt(attach.SquareMagnitude());
+  const double f        = length_dimension_auto_flyout(edge_len);
 
   if (fly_pos.Dot(to_in) > 0.0)
     dim->SetFlyout(-std::abs(f));
@@ -769,7 +769,7 @@ static bool point_strictly_inside_sketch_faces(const gp_Pnt& p, const std::vecto
 static bool orient_length_dimension_flyout_clear_of_faces(const PrsDim_LengthDimension_ptr& dim, const gp_Pnt& p1,
                                                           const gp_Pnt& p2, const gp_Pln& pln,
                                                           const std::vector<TopoDS_Face>& faces,
-                                                          const Length_dimension_style& style)
+                                                          const Length_dimension_style&   style)
 {
   if (dim.IsNull() || faces.empty())
     return false;
@@ -786,7 +786,7 @@ static bool orient_length_dimension_flyout_clear_of_faces(const PrsDim_LengthDim
   fly_pos.Normalize();
 
   const double edge_len = std::sqrt(attach.SquareMagnitude());
-  const double f = length_dimension_auto_flyout(edge_len);
+  const double f        = length_dimension_auto_flyout(edge_len);
 
   gp_Pnt mid = p1.Translated(attach.Multiplied(0.5));
 
@@ -813,7 +813,7 @@ static bool orient_length_dimension_flyout_clear_of_faces(const PrsDim_LengthDim
 }
 
 PrsDim_LengthDimension_ptr create_distance_annotation(const gp_Pnt& p1, const gp_Pnt& p2, const gp_Pln& pln,
-                                                      const Length_dimension_style&     style,
+                                                      const Length_dimension_style&   style,
                                                       const std::optional<gp_Pnt>&    interior_ref,
                                                       const std::vector<TopoDS_Face>* sketch_faces_for_flyout)
 {
@@ -837,7 +837,7 @@ PrsDim_LengthDimension_ptr create_distance_annotation(const gp_Pnt& p1, const gp
 }
 
 PrsDim_LengthDimension_ptr create_distance_annotation(const gp_Pnt2d& p1, const gp_Pnt2d& p2, const gp_Pln& pln,
-                                                      const Length_dimension_style&     style,
+                                                      const Length_dimension_style&   style,
                                                       const std::optional<gp_Pnt>&    interior_ref,
                                                       const std::vector<TopoDS_Face>* sketch_faces_for_flyout)
 {
@@ -847,7 +847,7 @@ PrsDim_LengthDimension_ptr create_distance_annotation(const gp_Pnt2d& p1, const 
 const gp_Pnt& closest_to_camera(const V3d_View_ptr& view, const std::vector<gp_Pnt>& pnts)
 {
   EZY_ASSERT(pnts.size());
-  size_t        best_idx;
+  size_t best_idx;
   double min_distance = std::numeric_limits<double>::max();
 
   // Get the camera's eye position (world coordinates)
@@ -918,9 +918,9 @@ bool is_face_contained(const TopoDS_Shape& shape_a, const TopoDS_Shape& shape_b)
   }
 
   // Check if face_a's outer wire is contained within face_b
-  TopoDS_Wire      wire_a = BRepTools::OuterWire(face_a);
-  TopExp_Explorer  vertex_explorer(wire_a, TopAbs_VERTEX);
-  bool all_inside = true;
+  TopoDS_Wire     wire_a = BRepTools::OuterWire(face_a);
+  TopExp_Explorer vertex_explorer(wire_a, TopAbs_VERTEX);
+  bool            all_inside = true;
 
   while (vertex_explorer.More() && all_inside)
   {
