@@ -10,9 +10,6 @@
     },
     "glfw3",
     "glew",
-    {
-      "name": "boost",
-      "features": ["geometry"]
-    }
+    "boost-geometry"
   ]
 }

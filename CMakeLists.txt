@@ -113,11 +113,14 @@ if(MSVC_VERSION AND NOT CMAKE_TOOLCHAIN_FILE)
   # Include Boost from NuGet installation on Windows
   INCLUDE_DIRECTORIES(${PROJECT_NAME} ${BINARY_DIR}/thirdParty/boost.${BOOST_VERSION}/lib/native/include)
 else()
-  # On Linux, use system Boost installation
-  find_package(Boost REQUIRED)
-  if(Boost_FOUND)
-    INCLUDE_DIRECTORIES(${PROJECT_NAME} ${Boost_INCLUDE_DIRS})
+  if(NOT CMAKE_TOOLCHAIN_FILE)
+    # On Linux (or non-vcpkg), use system Boost installation
+    find_package(Boost REQUIRED)
+    if(Boost_FOUND)
+      INCLUDE_DIRECTORIES(${PROJECT_NAME} ${Boost_INCLUDE_DIRS})
+    endif()
   endif()
+  # When CMAKE_TOOLCHAIN_FILE is set (vcpkg), boost headers from "boost-geometry" etc. are automatically on the include path.
 endif()
 
 # imgui_demo.cpp omitted: large and unused here; add back if you need ImGui::ShowDemoWindow.
