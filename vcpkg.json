@@ -1,0 +1,24 @@
+{
+  "$schema": "https://raw.githubusercontent.com/microsoft/vcpkg-tool/main/docs/vcpkg.schema.json",
+  "name": "ezycad",
+  "version": "0.1.0",
+  "dependencies": [
+    {
+      "name": "opencascade",
+      "features": [
+        "core",
+        "foundation",
+        "modeling-data",
+        "modeling-algorithms",
+        "visualization",
+        "data-exchange"
+      ]
+    },
+    "glfw3",
+    "glew",
+    {
+      "name": "boost",
+      "features": ["geometry"]
+    }
+  ]
+}

@@ -101,7 +101,7 @@ set(GLFW_VERSION  "3.3.0.1")
 set(GLEW_VERSION  "2.1.0")
 set(BOOST_VERSION "1.87.0")
 
-if(MSVC_VERSION)
+if(MSVC_VERSION AND NOT CMAKE_TOOLCHAIN_FILE)
   find_program(NUGET nuget)
   if(NOT NUGET)
     message(FATAL_ERROR "Cannot find nuget command line tool.\nInstall it with e.g. choco install nuget.commandline")
@@ -489,8 +489,10 @@ else()
     endif()
 
     target_link_libraries(${PROJECT_NAME} ${PROJECT_NAME}_lib)
-    target_link_libraries(${PROJECT_NAME} ${BINARY_DIR}/thirdParty/unofficial-flayan-glew.${GLEW_VERSION}/build/native/lib/x64/dynamic/glew32.lib)
-    target_link_libraries(${PROJECT_NAME} ${GLFW3_LIBRARY})
+    if(MSVC_VERSION AND NOT CMAKE_TOOLCHAIN_FILE)
+      target_link_libraries(${PROJECT_NAME} ${BINARY_DIR}/thirdParty/unofficial-flayan-glew.${GLEW_VERSION}/build/native/lib/x64/dynamic/glew32.lib)
+    endif()
+    target_link_libraries(${PROJECT_NAME} -Wl,--no-as-needed ${GLFW3_LIBRARY} -Wl,--as-needed)
     
     target_link_libraries(${PROJECT_NAME} ${OpenCASCADE_LIBS})
 
@@ -504,8 +506,12 @@ else()
           COMMENT "Copy Python DLL next to EzyCad.exe")
     endif()
 
-    include_directories(${BINARY_DIR}/thirdParty/unofficial-flayan-glew.${GLEW_VERSION}/build/native/include)
-    include_directories(${GLFW3_INCLUDE_PATH})
+    if(MSVC_VERSION AND NOT CMAKE_TOOLCHAIN_FILE)
+      include_directories(${BINARY_DIR}/thirdParty/unofficial-flayan-glew.${GLEW_VERSION}/build/native/include)
+    endif()
+    if(GLFW3_INCLUDE_PATH)
+      include_directories(${GLFW3_INCLUDE_PATH})
+    endif()
 
     # MSVC-specific configuration
     if(MSVC_VERSION)
@@ -639,7 +645,7 @@ if(NOT CMAKE_CXX_COMPILER_ID STREQUAL "Emscripten")
     target_link_libraries(${PROJECT_NAME}_tests
         GTest::gtest_main
         GTest::gmock_main
-        ${GLFW3_LIBRARY}
+        -Wl,--no-as-needed ${GLFW3_LIBRARY} -Wl,--as-needed
         ${PROJECT_NAME}_lib
         ${OpenCASCADE_LIBS}
         ${OPENGL_LIBRARIES}

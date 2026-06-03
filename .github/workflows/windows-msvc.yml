@@ -1,0 +1,76 @@
+name: Windows MSVC Build and Test
+
+on:
+  push:
+    branches: [main, master]
+  pull_request:
+    branches: [main, master]
+
+jobs:
+  build-and-test:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+
+      - name: Cache vcpkg binaries
+        uses: actions/cache@v4
+        with:
+          path: |
+            C:/vcpkg/installed
+            C:/vcpkg/downloads
+            ${{ github.workspace }}/vcpkg_installed
+          key: ${{ runner.os }}-vcpkg-${{ hashFiles('vcpkg.json') }}-${{ hashFiles('.github/workflows/windows-msvc.yml') }}
+          restore-keys: |
+            ${{ runner.os }}-vcpkg-${{ hashFiles('vcpkg.json') }}-
+
+      - name: Clone and bootstrap vcpkg
+        shell: pwsh
+        run: |
+          git clone --depth 1 https://github.com/microsoft/vcpkg.git C:\vcpkg
+          C:\vcpkg\bootstrap-vcpkg.bat -disableMetrics
+
+      - name: Install dependencies via vcpkg (manifest mode)
+        shell: pwsh
+        run: |
+          $env:VCPKG_ROOT = "C:\vcpkg"
+          cd $env:GITHUB_WORKSPACE
+          & "$env:VCPKG_ROOT\vcpkg.exe" install --triplet x64-windows --clean-after-build
+
+      - name: Configure (Visual Studio 2022 + vcpkg toolchain)
+        shell: pwsh
+        run: |
+          $env:VCPKG_ROOT = "C:\vcpkg"
+          cd $env:GITHUB_WORKSPACE
+
+          # Find OpenCASCADEConfig.cmake installed by vcpkg manifest (goes to vcpkg_installed)
+          $occtConfig = Get-ChildItem -Path "$env:GITHUB_WORKSPACE\vcpkg_installed" -Recurse -Filter "OpenCASCADEConfig.cmake" -ErrorAction SilentlyContinue | Select-Object -First 1
+          if (-not $occtConfig) {
+            # Fallback to classic installed location
+            $occtConfig = Get-ChildItem -Path "C:\vcpkg\installed" -Recurse -Filter "OpenCASCADEConfig.cmake" -ErrorAction SilentlyContinue | Select-Object -First 1
+          }
+          if (-not $occtConfig) {
+            Write-Error "Could not find OpenCASCADEConfig.cmake"
+            exit 1
+          }
+          $openCascadeDir = $occtConfig.DirectoryName
+          Write-Host "Using OpenCASCADE_DIR=$openCascadeDir"
+
+          cmake -S . -B build `
+            -G "Visual Studio 17 2022" -A x64 `
+            -DCMAKE_TOOLCHAIN_FILE="$env:VCPKG_ROOT\scripts\buildsystems\vcpkg.cmake" `
+            -DOpenCASCADE_DIR="$openCascadeDir" `
+            -DEZYCAD_ENABLE_PYTHON=OFF
+
+      - name: Build Release
+        shell: pwsh
+        run: |
+          cd $env:GITHUB_WORKSPACE
+          cmake --build build --config Release --parallel --target EzyCad EzyCad_tests
+
+      - name: Run unit tests
+        shell: pwsh
+        run: |
+          cd $env:GITHUB_WORKSPACE\build
+          ctest -C Release --output-on-failure -V
