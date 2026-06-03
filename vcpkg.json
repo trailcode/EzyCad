@@ -5,14 +5,8 @@
   "dependencies": [
     {
       "name": "opencascade",
-      "features": [
-        "core",
-        "foundation",
-        "modeling-data",
-        "modeling-algorithms",
-        "visualization",
-        "data-exchange"
-      ]
+      "default-features": false,
+      "features": ["freetype", "freeimage", "tbb"]
     },
     "glfw3",
     "glew",
