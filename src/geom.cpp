@@ -1152,7 +1152,7 @@ bool is_clockwise(const boost_geom::ring_2d& ring)
 // Sorts a vector of gp_Pnt by x, then y, then z
 void sort_pnts(std::vector<gp_Pnt>& points)
 {
-  constexpr double tol = Precision::Confusion();
+  const double tol = Precision::Confusion();
   std::sort(points.begin(), points.end(),
             [tol](const gp_Pnt& a, const gp_Pnt& b)
             {

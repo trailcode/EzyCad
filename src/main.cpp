@@ -2,10 +2,14 @@
 // On wasm, sizing is handled by imgui_impl_glfw (OnCanvasSizeChange: CSS * DPR + canvas); do not
 // second-guess with extra glfwSetWindowSize/io overrides here - they fight that path and break input.
 
+#ifdef _WIN32
 #define WIN32_LEAN_AND_MEAN
+#endif
 #include <stdio.h>
 
+#include <filesystem>
 #include <functional>
+#include <string>
 
 #include "gui.h"
 #include "imgui.h"
@@ -85,7 +89,7 @@ void scroll_callback_wrapper(GLFWwindow* window, double xoffset, double yoffset)
 using namespace glm;
 
 // Main code
-int main(int, char**)
+int main(int argc, char** argv)
 {
   glfwSetErrorCallback(glfw_error_callback);
   if (!glfwInit())
@@ -173,12 +177,36 @@ int main(int, char**)
 #endif
   ImGui_ImplOpenGL3_Init(glsl_version);
 
+  // Resolve font directory: prefer next to the executable (so running ./build-wsl/EzyCad works),
+  // fall back to CWD and source tree locations. This avoids "black windows" from missing ImGui fonts.
+  std::string droid_font_path = "DroidSans.ttf";
+  std::string cousine_font_path = "Cousine-Regular.ttf";
+#ifndef __EMSCRIPTEN__
+  if (argc > 0 && argv[0] != nullptr)
+  {
+    try
+    {
+      std::filesystem::path exe_dir = std::filesystem::path(argv[0]).parent_path();
+      if (!exe_dir.empty())
+      {
+        auto try_droid = (exe_dir / "DroidSans.ttf").string();
+        auto try_cousine = (exe_dir / "Cousine-Regular.ttf").string();
+        if (std::filesystem::exists(try_droid))
+          droid_font_path = try_droid;
+        if (std::filesystem::exists(try_cousine))
+          cousine_font_path = try_cousine;
+      }
+    }
+    catch (...) {}
+  }
+#endif
+
   // DroidSans at logical px; do not multiply by main_scale - FontScaleDpi applies HiDPI.
   {
 #ifdef __EMSCRIPTEN__
     ImFont* font = io.Fonts->AddFontFromFileTTF("/DroidSans.ttf", k_imgui_base_font_size_px);
 #else
-    ImFont* font = io.Fonts->AddFontFromFileTTF("DroidSans.ttf", k_imgui_base_font_size_px);
+    ImFont* font = io.Fonts->AddFontFromFileTTF(droid_font_path.c_str(), k_imgui_base_font_size_px);
 #endif
     IM_ASSERT(font != nullptr);
   }
@@ -188,7 +216,7 @@ int main(int, char**)
 #ifdef __EMSCRIPTEN__
   console_font = io.Fonts->AddFontFromFileTTF("/Cousine-Regular.ttf", k_imgui_base_font_size_px);
 #else
-  console_font = io.Fonts->AddFontFromFileTTF("Cousine-Regular.ttf", k_imgui_base_font_size_px);
+  console_font = io.Fonts->AddFontFromFileTTF(cousine_font_path.c_str(), k_imgui_base_font_size_px);
   if (!console_font)
     console_font = io.Fonts->AddFontFromFileTTF("third_party/imgui/fonts/Cousine-Regular.ttf", k_imgui_base_font_size_px);
 #endif

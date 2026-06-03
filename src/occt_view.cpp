@@ -36,6 +36,8 @@
 #include <V3d_View.hxx>
 #include <WNT_WClass.hxx>
 #include <WNT_Window.hxx>
+#include <Xw_Window.hxx>
+#include <Cocoa_Window.hxx>
 #include <algorithm>
 #include <cmath>
 #include <numbers>
@@ -401,10 +403,12 @@ void Occt_view::init_default()
 
   TCollection_AsciiString aGlInfo;
   {
-    NCollection_IndexedDataMap<TCollection_AsciiString, TCollection_AsciiString> aRendInfo;
+    TColStd_IndexedDataMapOfStringString aRendInfo;
     m_view->DiagnosticInformation(aRendInfo, Graphic3d_DiagnosticInfo_Basic);
-    for (const auto& [aKey, aValue] : aRendInfo.Items())
+    for (Standard_Integer i = 1; i <= aRendInfo.Extent(); ++i)
     {
+      const TCollection_AsciiString& aKey = aRendInfo.FindKey(i);
+      const TCollection_AsciiString& aValue = aRendInfo.FindFromIndex(i);
       if (!aGlInfo.IsEmpty())
         aGlInfo += "\n";
 

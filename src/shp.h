@@ -1,6 +1,7 @@
 #pragma once
 
 #include <AIS_Shape.hxx>
+#include <AIS_DisplayMode.hxx>
 
 #include "utl.h"
 
