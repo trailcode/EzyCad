@@ -1,6 +1,7 @@
 # EzyCad
 
 [![GitHub](https://img.shields.io/github/stars/trailcode/EzyCad?style=social)](https://github.com/trailcode/EzyCad)
+[![GitHub release (latest by date)](https://img.shields.io/github/v/release/trailcode/EzyCad)](https://github.com/trailcode/EzyCad/releases/latest)
 [![Documentation](https://img.shields.io/badge/docs-readthedocs-blue)](https://ezycad.readthedocs.io/en/latest/usage.html)
 [![WebAssembly](https://img.shields.io/badge/run_in-browser-WebAssembly-green)](https://trailcode.github.io/EzyCad/EzyCad.html)
 
@@ -11,6 +12,20 @@
 EzyCad (Easy CAD) is an open-source CAD application for hobbyist machinists to design and edit 2D and 3D models for machining projects. It supports creating precise parts with tools for sketching, extruding, and applying geometric operations, using OpenGL, Dear ImGui, and Open CASCADE Technology (OCCT). Export models to formats like STEP or STL for CNC machines or 3D printers, or [run EzyCad in your browser (WebAssembly)](https://trailcode.github.io/EzyCad/EzyCad.html). Project home: [trailcode.github.io/EzyCad](https://trailcode.github.io/EzyCad/).
 
 > **Not EZCAD laser software:** [EzyCad](https://github.com/trailcode/EzyCad) (with a **y**) is hobbyist mechanical CAD built on OCCT — unrelated to EZCAD2/EZCAD3 laser marking products.
+
+## Downloads
+
+Prebuilt **Windows** binaries (portable .zip containing `EzyCad.exe` + all required DLLs and assets) are published on the [GitHub Releases page](https://github.com/trailcode/EzyCad/releases).
+
+- Go to [Releases](https://github.com/trailcode/EzyCad/releases) → expand "Assets" under the latest version.
+- Download `EzyCad-vX.Y.Z-windows-x64.zip` (or the equivalent name), unzip, and run `EzyCad.exe`.
+- No installer is required; the zip is self-contained.
+
+This is the standard approach used by the vast majority of GitHub projects (Godot, FreeCAD, OBS, Notepad++, etc.) for making binaries easily discoverable and downloadable by end users without requiring them to build from source or navigate CI artifacts.
+
+**WebAssembly (browser) version:** [Run EzyCad directly in your browser](https://trailcode.github.io/EzyCad/EzyCad.html) (no download needed).
+
+For source builds or other platforms, see the [Building Instructions](#building-instructions) below.
 
 ## Features
 - 2D and 3D modeling capabilities.

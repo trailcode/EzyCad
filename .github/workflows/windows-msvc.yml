@@ -3,6 +3,8 @@ name: Windows MSVC Build and Test
 on:
   push:
     branches: [main, master]
+    tags:
+      - 'v*'   # trigger releases on version tags, e.g. v0.1.0
   pull_request:
     branches: [main, master]
 
@@ -197,6 +199,38 @@ jobs:
           Write-Host ""
           Write-Host "Note: the full self-contained Release tree is uploaded as artifact below."
 
+      - name: Package portable Windows build (for releases + easy download)
+        shell: pwsh
+        run: |
+          $ref = $env:GITHUB_REF
+          if ($ref -match 'refs/tags/(v?.+)') {
+            $ver = $matches[1]
+          } else {
+            $ver = 'dev-' + $env:GITHUB_SHA.Substring(0,7)
+          }
+          $zipName = "EzyCad-$ver-windows-x64.zip"
+          Write-Host "Packaging portable app into $zipName"
+
+          # Create a clean portable folder (exclude tests exe to keep user zip tidy)
+          $topDir = "EzyCad"
+          $stage = "pkg/$topDir"
+          New-Item -ItemType Directory -Force -Path $stage | Out-Null
+          Copy-Item "build/Release/*" $stage -Recurse -Exclude "*_tests*"
+
+          Compress-Archive -Path "pkg/*" -DestinationPath $zipName -Force
+          Remove-Item -Recurse -Force pkg
+
+          echo "PORTABLE_ZIP=$zipName" >> $env:GITHUB_ENV
+          Get-Item $zipName | Select Name, Length
+          Write-Host "Zip contains a top-level '$topDir' folder with the runnable app."
+
+      - name: Upload portable zip as artifact (easy single-file download)
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ env.PORTABLE_ZIP }}
+          path: ${{ env.PORTABLE_ZIP }}
+          retention-days: 30
+
       - name: Upload Release artifacts (EzyCad.exe + DLLs + assets)
         uses: actions/upload-artifact@v4
         with:
@@ -207,3 +241,19 @@ jobs:
         # Only upload if the build + tests succeeded. The folder should be
         # self-contained thanks to CMake's MSVC DLL/asset staging + the
         # vcpkg DLL discovery above.
+
+      - name: Create GitHub Release + upload portable zip (only on version tags)
+        if: startsWith(github.ref, 'refs/tags/v')
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ github.ref_name }}
+          name: EzyCad ${{ github.ref_name }}
+          draft: false
+          prerelease: false
+          generate_release_notes: true
+          files: ${{ env.PORTABLE_ZIP }}
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        # This is what most GitHub projects do for end-user downloads:
+        # attach prebuilts to a tagged GitHub Release so users can download
+        # directly from the Releases page without digging into Actions artifacts.
