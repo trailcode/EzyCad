@@ -49,7 +49,7 @@ Ensure the following dependencies are installed:
 - Nuget command line utility
 - A C++ 20 compatible compiler (e.g., MSVC, GCC, or Clang)
 - OpenGL development libraries
-- Open CASCADE Technology (OCCT 7.9.1) https://github.com/Open-Cascade-SAS/OCCT
+- Open CASCADE Technology (OCCT 8.0.0) https://github.com/Open-Cascade-SAS/OCCT
 
 ### OCCT Build
 
@@ -57,15 +57,15 @@ Full guide: **[docs/building-occt.md](docs/building-occt.md)** (Windows prebuilt
 
 #### For VS2022 (summary)
 - See: https://dev.opencascade.org/doc/overview/html/build_upgrade__building_occt.html
-- OCCT 3rd-party binaries: https://github.com/Open-Cascade-SAS/OCCT/releases/download/V7_9_1/3rdparty-vc14-64.zip
+- OCCT 3rd-party binaries: https://github.com/Open-Cascade-SAS/OCCT/releases/download/V8_0_0/3rdparty-vc14-64.zip
 - Currently building EzyCad has only been tested with the Release build of OCCT.
-- Or download pre-built binaries: https://github.com/Open-Cascade-SAS/OCCT/releases/tag/V7_9_1
+- Or download pre-built binaries: https://github.com/Open-Cascade-SAS/OCCT/releases/tag/V8_0_0
 
 ### Steps to Build
 1. Clone the repository.
 2. Create a build directory, e.g., `C:\src\EzyCad_build`.
 3. Configure the project in the build directory using CMake:
-   - E.g., `cmake C:\src\EzyCad -DOpenCASCADE_DIR=C:\bin\OCCT-7_9_1_install\cmake -DOCCT_3RD_PARTY_DIR=C:\bin\3rdparty-vc14-64`
+   - E.g., `cmake C:\src\EzyCad -DOpenCASCADE_DIR=C:\bin\OCCT-8_0_0_install\cmake -DOCCT_3RD_PARTY_DIR=C:\bin\3rdparty-vc14-64`
    - `OCCT_3RD_PARTY_DIR` should point to the OCCT 3rd-party distribution.
    - CMake will use `nuget` to download additional dependencies.
 4. Build the project.
@@ -77,7 +77,7 @@ Full guide: **[docs/building-occt.md](docs/building-occt.md)** (Windows prebuilt
 ### Notes for Emscripten Builds
 - **Known issue:** The Emscripten build with the Ninja generator (`-G Ninja`) is currently not working. Use the default generator (e.g. `emcmake cmake ..` without `-G Ninja`, then `emmake make`) or another generator that works with your Emscripten setup.
 - Install Emscripten and activate its environment.
-- **OCCT 8.0.0 for wasm:** `scripts\build-occt-v8-wasm.cmd` or `.\scripts\build-occt-v8-wasm.ps1` after `emsdk_env` — see [docs/building-occt.md](docs/building-occt.md#webassembly-emscripten). Experimental; manual 7.9.x steps below remain for reference.
+- **OCCT 8.0.0 for wasm:** `scripts\build-occt-v8-wasm.cmd` or `.\scripts\build-occt-v8-wasm.ps1` after `emsdk_env` — see [docs/building-occt.md](docs/building-occt.md#webassembly-emscripten). (Desktop CI now uses 8.0.0; 7.9.x wasm steps below remain for reference.)
 - Build FreeType (2.10.1) for Emscripten using the instructions: https://stackoverflow.com/questions/61049517/build-latest-freetype-with-emscripten
   - Add exception support:
     - `emcmake cmake .. -DCMAKE_CXX_FLAGS="-fexceptions" -DCMAKE_EXE_LINKER_FLAGS="-fexceptions" -DCMAKE_INSTALL_PREFIX=c:/src/freetype-2.10.1_em_install -DCMAKE_POLICY_VERSION_MINIMUM=3.5`

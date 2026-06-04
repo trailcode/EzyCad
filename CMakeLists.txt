@@ -727,6 +727,23 @@ if(EZYCAD_SCRIPT_FILES)
   set_source_files_properties(${EZYCAD_SCRIPT_FILES_REL} PROPERTIES HEADER_FILE_ONLY TRUE)
 endif()
 
+# GitHub workflow files: show .github/workflows/*.yml in the IDE under 'github-workflows' folder
+# (so they are visible in Visual Studio Solution Explorer etc. without being compiled)
+file(GLOB_RECURSE GITHUB_WORKFLOW_FILES CONFIGURE_DEPENDS
+  LIST_DIRECTORIES false
+  "${CMAKE_SOURCE_DIR}/.github/workflows/*.yml")
+if(GITHUB_WORKFLOW_FILES)
+  source_group(TREE "${CMAKE_SOURCE_DIR}/.github/workflows" PREFIX "github-workflows" FILES ${GITHUB_WORKFLOW_FILES})
+  set(GITHUB_WORKFLOW_FILES_REL)
+  foreach(f ${GITHUB_WORKFLOW_FILES})
+    file(RELATIVE_PATH f_rel "${CMAKE_SOURCE_DIR}" "${f}")
+    list(APPEND GITHUB_WORKFLOW_FILES_REL "${f_rel}")
+  endforeach()
+  target_sources(${PROJECT_NAME}_lib PRIVATE ${GITHUB_WORKFLOW_FILES_REL})
+  target_sources(${PROJECT_NAME} PRIVATE ${GITHUB_WORKFLOW_FILES_REL})
+  set_source_files_properties(${GITHUB_WORKFLOW_FILES_REL} PROPERTIES HEADER_FILE_ONLY TRUE)
+endif()
+
 # Add .clang-format and .gitignore to EzyCad and EzyCad_lib so they appear in VS and other IDEs (at project root)
 set(CLANG_FORMAT_FILE ${CMAKE_SOURCE_DIR}/.clang-format)
 if(EXISTS ${CLANG_FORMAT_FILE})

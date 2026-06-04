@@ -6,7 +6,7 @@ EzyCad does **not** vendor OCCT; builds live **outside** the tree. Point CMake a
 
 - [OCCT releases](https://github.com/Open-Cascade-SAS/OCCT/releases)
 - [Build OCCT (overview)](https://dev.opencascade.org/doc/overview/html/build_upgrade__building_occt.html)
-- [WebGL / wasm sample (upstream)](https://dev.opencascade.org/doc/occt-7.9.0/overview/html/occt_samples_webgl.html)
+- [WebGL / wasm sample (upstream)](https://dev.opencascade.org/doc/occt-7.9.0/overview/html/occt_samples_webgl.html) (legacy; see V8 wasm script for current)
 
 ---
 
@@ -14,10 +14,10 @@ EzyCad does **not** vendor OCCT; builds live **outside** the tree. Point CMake a
 
 | Target | Documented / tested | Experimental | CMake variables |
 | --- | --- | --- | --- |
-| **Windows desktop** | OCCT **7.9.1** prebuilt | OCCT **8.0.0** prebuilt | `OpenCASCADE_DIR`, `OCCT_3RD_PARTY_DIR` |
-| **WebAssembly** | OCCT **7.9.x** manual / [wasm-occ-demo](https://github.com/mathysyon/wasm-occ-demo) | OCCT **8.0.0** via `scripts/build-occt-v8-wasm.ps1` | `OpenCASCADE_DIR` only (static install) |
+| **Windows desktop** | OCCT **8.0.0** prebuilt | (future 9.x) | `OpenCASCADE_DIR`, `OCCT_3RD_PARTY_DIR` |
+| **WebAssembly** | OCCT **8.0.0** via `scripts/build-occt-v8-wasm.ps1` | OCCT **7.9.x** manual / [wasm-occ-demo](https://github.com/mathysyon/wasm-occ-demo) | `OpenCASCADE_DIR` only (static install) |
 
-After upgrading OCCT, retest **sketch dimensions**, **grid**, **fillet/chamfer/boolean**, and **STEP/STL** export. OCCT 8.0 changes grid rendering and many modeling paths.
+After upgrading OCCT (e.g. from 7.9 to 8.0), retest **sketch dimensions**, **grid**, **fillet/chamfer/boolean**, and **STEP/STL** export. OCCT 8.0 changes grid rendering and many modeling paths.
 
 ---
 
@@ -25,22 +25,29 @@ After upgrading OCCT, retest **sketch dimensions**, **grid**, **fillet/chamfer/b
 
 No OCCT compile. Use **Release** builds (EzyCad is tested with Release OCCT).
 
-### Download (7.9.1 — current README default)
+### Download (8.0.0 — current README default)
 
 ```text
-# Combined (OCCT + 3rd-party, simplest layout):
-https://github.com/Open-Cascade-SAS/OCCT/releases/download/V7_9_1/opencascade-7.9.1-vc14-64-combined.zip
-
-# Or separate:
-https://github.com/Open-Cascade-SAS/OCCT/releases/download/V7_9_1/3rdparty-vc14-64.zip
-# + a 7.9.1 opencascade-*-vc14-64 package from the V7_9_1 release page
+# Combined (OCCT + 3rd-party, simplest layout for desktop):
+https://github.com/Open-Cascade-SAS/OCCT/releases/download/V8_0_0/occt-combined-release-no-pch.zip
 ```
 
-### Download (8.0.0 — upgrade path)
+Note: The V8 combined release asset is a small wrapper zip containing `opencascade-8.0.0-vc14-64-combined.zip`. Extracting it yields:
+
+- `opencascade-8.0.0-vc14-64/` (contains `cmake/OpenCASCADEConfig.cmake` → use for `-DOpenCASCADE_DIR=.../opencascade-8.0.0-vc14-64/cmake`)
+- `3rdparty-vc14-64/`
 
 ```text
-https://github.com/Open-Cascade-SAS/OCCT/releases/download/V8_0_0/occt-combined-release-no-pch.zip
+# Or separate (if you prefer):
 https://github.com/Open-Cascade-SAS/OCCT/releases/download/V8_0_0/3rdparty-vc14-64.zip
+# + the opencascade-*-vc14-64 combined from the V8_0_0 release page
+```
+
+### Legacy (7.9.1)
+
+```text
+https://github.com/Open-Cascade-SAS/OCCT/releases/download/V7_9_1/opencascade-7.9.1-vc14-64-combined.zip
+# or separate 3rdparty + package from V7_9_1
 ```
 
 Unpack so `3rdparty-vc14-64` and the OCCT folder share a **parent directory** (required for DRAW; EzyCad only needs CMake paths).
@@ -201,7 +208,7 @@ powershell -NoProfile -ExecutionPolicy Bypass -File C:\src\EzyCad\scripts\build-
 curl -L -o occt-combined.zip https://github.com/Open-Cascade-SAS/OCCT/releases/download/V8_0_0/occt-combined-release-no-pch.zip
 ```
 
-**Windows desktop 7.9.1 3rdparty:**
+**Windows desktop 7.9.1 (legacy):**
 
 ```bash
 curl -L -o 3rdparty.zip https://github.com/Open-Cascade-SAS/OCCT/releases/download/V7_9_1/3rdparty-vc14-64.zip
@@ -219,6 +226,7 @@ OCCT 8 supports vcpkg (`USE_VTK=ON` only if needed). EzyCad’s `CMakeLists.txt`
 | --- | --- |
 | `README.md` | Pin version, download URLs, example `OpenCASCADE_DIR` |
 | `CMakeLists.txt` | `OCCT_3RD_PARTY_DIR` paths (freetype/tbb/ffmpeg versions in `DLLS_COMMON`) |
+| `.github/workflows/windows-msvc.yml` | Prebuilt download URL, cache key, `OpenCASCADE_DIR`/`OCCT_3RD_PARTY_DIR` in CI configure |
 | `scripts/build-occt-v8-wasm.ps1` | `$OcctTag`, `$FreeTypeVersion`, cmake flags |
 | `docs/building-occt.md` | This document |
 | `src/ply_io.cpp` | Comments if triangulation API changes |

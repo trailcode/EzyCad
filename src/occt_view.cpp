@@ -18,6 +18,7 @@
 #include <Graphic3d_Camera.hxx>
 #include <NCollection_IndexedDataMap.hxx>
 #include <NCollection_Vec2.hxx>
+#include <TColStd_IndexedDataMapOfStringString.hxx>
 #include <IGESControl_Writer.hxx>
 #include <OpenGl_GraphicDriver.hxx>
 #include <Precision.hxx>
@@ -405,7 +406,7 @@ void Occt_view::init_default()
   {
     TColStd_IndexedDataMapOfStringString aRendInfo;
     m_view->DiagnosticInformation(aRendInfo, Graphic3d_DiagnosticInfo_Basic);
-    for (Standard_Integer i = 1; i <= aRendInfo.Extent(); ++i)
+    for (int i = 1; i <= aRendInfo.Extent(); ++i)
     {
       const TCollection_AsciiString& aKey = aRendInfo.FindKey(i);
       const TCollection_AsciiString& aValue = aRendInfo.FindFromIndex(i);

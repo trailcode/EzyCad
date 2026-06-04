@@ -32,13 +32,13 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-vcpkg-${{ hashFiles('vcpkg.json') }}-
 
-      - name: Cache OCCT prebuilt (7.9.1)
+      - name: Cache OCCT prebuilt (8.0.0)
         uses: actions/cache@v4
         with:
           path: C:/occt-prebuilt
-          key: ${{ runner.os }}-occt-7.9.1-vc14-64-combined
+          key: ${{ runner.os }}-occt-8.0.0-vc14-64-combined
           restore-keys: |
-            ${{ runner.os }}-occt-7.9.1-vc14-64-combined
+            ${{ runner.os }}-occt-8.0.0-vc14-64-combined
 
       - name: Clone and bootstrap vcpkg
         shell: pwsh
@@ -87,26 +87,38 @@ jobs:
           # The cache step above should hit on re-runs for the downloads/ dir.
           & "$env:VCPKG_ROOT\vcpkg.exe" install --triplet x64-windows --clean-after-build
 
-      - name: Download and extract OCCT 7.9.1 prebuilt (combined, if cache miss)
+      - name: Download and extract OCCT 8.0.0 prebuilt (combined, if cache miss)
         shell: pwsh
         run: |
           $occtRoot = "C:\occt-prebuilt"
-          $configPath = "$occtRoot\occt_vc14-64\cmake\OpenCASCADEConfig.cmake"
+          $configPath = "$occtRoot\opencascade-8.0.0-vc14-64\cmake\OpenCASCADEConfig.cmake"
           if (Test-Path $configPath) {
             Write-Host "OCCT prebuilt found in cache at $occtRoot"
           } else {
-            Write-Host "Downloading OCCT 7.9.1 prebuilt combined package (provides OCCT + 3rdparty DLLs)..."
+            Write-Host "Downloading OCCT 8.0.0 prebuilt combined package (provides OCCT + 3rdparty DLLs)..."
             New-Item -ItemType Directory -Force -Path $occtRoot | Out-Null
-            $zip = Join-Path $env:TEMP "occt_vc14-64-combined.zip"
-            Write-Host "Using curl.exe for reliable ~240 MB download from GitHub release assets..."
-            & curl.exe -L --max-time 300 -o $zip "https://github.com/Open-Cascade-SAS/OCCT/releases/download/V7_9_1/occt_vc14-64-combined.zip"
+            $outerZip = Join-Path $env:TEMP "occt-combined-release-no-pch.zip"
+            Write-Host "Using curl.exe for reliable download of V8 combined (note: V8 release asset is a wrapper zip)..."
+            & curl.exe -L --max-time 300 -o $outerZip "https://github.com/Open-Cascade-SAS/OCCT/releases/download/V8_0_0/occt-combined-release-no-pch.zip"
             if ($LASTEXITCODE -ne 0) {
               Write-Error "curl.exe download of OCCT prebuilt failed (exit $LASTEXITCODE)"
               exit 1
             }
-            Write-Host "Extracting to $occtRoot (this may take a minute)..."
-            Expand-Archive -LiteralPath $zip -DestinationPath $occtRoot -Force
-            Remove-Item -Force $zip
+            # The V8_0_0 combined asset is itself a zip containing the real 'opencascade-8.0.0-vc14-64-combined.zip'
+            Add-Type -AssemblyName System.IO.Compression.FileSystem
+            $outer = [System.IO.Compression.ZipFile]::OpenRead($outerZip)
+            $innerEntry = $outer.Entries[0]
+            $innerZip = Join-Path $env:TEMP $innerEntry.FullName
+            $fs = New-Object System.IO.FileStream($innerZip, [System.IO.FileMode]::Create)
+            $es = $innerEntry.Open()
+            $es.CopyTo($fs)
+            $fs.Close()
+            $es.Close()
+            $outer.Dispose()
+            Remove-Item -Force $outerZip
+            Write-Host "Extracting V8 combined to $occtRoot (this may take a minute)..."
+            Expand-Archive -LiteralPath $innerZip -DestinationPath $occtRoot -Force
+            Remove-Item -Force $innerZip
             if (-not (Test-Path $configPath)) {
               Write-Error "OpenCASCADEConfig.cmake not found after extraction"
               exit 1
@@ -124,7 +136,7 @@ jobs:
           # This avoids the long source build that the vcpkg "opencascade" port performs.
           # The prebuilt matches the layout expected by the local Windows dev path in CMakeLists.txt
           # (which also relies on OCCT_3RD_PARTY_DIR for copying runtime DLLs during configure).
-          $openCascadeDir = "C:\occt-prebuilt\occt_vc14-64\cmake"
+          $openCascadeDir = "C:\occt-prebuilt\opencascade-8.0.0-vc14-64\cmake"
           $occt3rdPartyDir = "C:\occt-prebuilt\3rdparty-vc14-64"
           if (-not (Test-Path "$openCascadeDir\OpenCASCADEConfig.cmake")) {
             Write-Error "OpenCASCADEConfig.cmake not found at $openCascadeDir (OCCT prebuilt step may have failed)"
@@ -172,7 +184,7 @@ jobs:
           }
           Write-Host ""
           Write-Host "Note: vcpkg downloads (cmake, 7zip etc.) are only for the remaining small dependencies (glfw3, glew, boost-geometry)."
-          Write-Host "OCCT uses the official prebuilt binaries (cached/downloaded separately) for fast CI."
+          Write-Host "OCCT uses the official prebuilt binaries (V8, cached/downloaded separately) for fast CI."
           Write-Host "The EzyCad code itself (and the vcpkg-built deps on Windows) are compiled with the real cl.exe from Visual Studio 2022."
 
       - name: Build Release
