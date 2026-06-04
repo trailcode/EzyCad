@@ -527,8 +527,6 @@ else()
       set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /EHc /MP")
 
       set(DLLS_COMMON 
-          ${BINARY_DIR}/thirdParty/unofficial-flayan-glew.redist.${GLEW_VERSION}/build/native/bin/x64/dynamic/glew32.dll
-          ${BINARY_DIR}/thirdParty/glfw.${GLFW_VERSION}/build/native/bin/dynamic/v142/x64/glfw3.dll
           ${OpenCASCADE_BINARY_DIR}/TKBO.dll
           ${OpenCASCADE_BINARY_DIR}/TKBool.dll
           ${OpenCASCADE_BINARY_DIR}/TKXSBase.dll
@@ -543,6 +541,12 @@ else()
           ${OCCT_3RD_PARTY_DIR}/tbb-2021.13.0-x64/bin/tbb12.dll
           ${OCCT_3RD_PARTY_DIR}/jemalloc-vc14-64/bin/jemalloc.dll
       )
+      if(MSVC_VERSION AND NOT CMAKE_TOOLCHAIN_FILE)
+        list(APPEND DLLS_COMMON
+          ${BINARY_DIR}/thirdParty/unofficial-flayan-glew.redist.${GLEW_VERSION}/build/native/bin/x64/dynamic/glew32.dll
+          ${BINARY_DIR}/thirdParty/glfw.${GLFW_VERSION}/build/native/bin/dynamic/v142/x64/glfw3.dll
+        )
+      endif()
 
       foreach(lib ${OpenCASCADE_LIBS})
         list(APPEND DLLS_COMMON ${OpenCASCADE_BINARY_DIR}/${lib}.dll)
@@ -553,16 +557,24 @@ else()
       
       set(CONFIG_ASSETS ${CMAKE_SOURCE_DIR}/imgui.ini)
 
-      # Copy DLLs and assets to Release configurations
+      # Copy DLLs and assets to Release configurations.
+      # Only copy files that actually exist on disk. This prevents configure errors in
+      # the vcpkg-toolchain CI case (and prebuilt-OCCT path) where the nuget-populated
+      # thirdParty/glew/glfw redist paths are never created (the early nuget block is
+      # skipped when CMAKE_TOOLCHAIN_FILE is present).
       foreach(file ${DLLS_RELEASE} ${DLLS_COMMON} ${FONT_ASSETS} ${CONFIG_ASSETS})
-        file(COPY "${file}" DESTINATION "${CMAKE_CURRENT_BINARY_DIR}/Release")
-        file(COPY "${file}" DESTINATION "${CMAKE_CURRENT_BINARY_DIR}/RelWithDebInfo")
-        file(COPY "${file}" DESTINATION "${CMAKE_CURRENT_BINARY_DIR}/MinSizeRel")
+        if(file AND EXISTS "${file}")
+          file(COPY "${file}" DESTINATION "${CMAKE_CURRENT_BINARY_DIR}/Release")
+          file(COPY "${file}" DESTINATION "${CMAKE_CURRENT_BINARY_DIR}/RelWithDebInfo")
+          file(COPY "${file}" DESTINATION "${CMAKE_CURRENT_BINARY_DIR}/MinSizeRel")
+        endif()
       endforeach(file)
 
-      # Copy DLLs and assets to Debug configuration
+      # Copy DLLs and assets to Debug configuration (same existence guard).
       foreach(file ${DLLS_DEBUG} ${DLLS_COMMON} ${FONT_ASSETS} ${CONFIG_ASSETS})
+        if(file AND EXISTS "${file}")
           file(COPY "${file}" DESTINATION "${CMAKE_CURRENT_BINARY_DIR}/Debug")
+        endif()
       endforeach(file)
 
     endif()

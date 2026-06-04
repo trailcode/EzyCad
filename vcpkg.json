@@ -3,11 +3,6 @@
   "name": "ezycad",
   "version": "0.1.0",
   "dependencies": [
-    {
-      "name": "opencascade",
-      "default-features": false,
-      "features": ["freetype", "freeimage", "tbb"]
-    },
     "glfw3",
     "glew",
     "boost-geometry"

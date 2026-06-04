@@ -14,6 +14,11 @@ jobs:
         with:
           fetch-depth: 1
 
+      - name: Setup MSBuild (real Visual Studio 2022 toolchain)
+        uses: microsoft/setup-msbuild@v2
+        with:
+          vs-version: '17.0'   # Visual Studio 2022
+
       - name: Cache vcpkg binaries
         uses: actions/cache@v4
         with:
@@ -25,18 +30,87 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-vcpkg-${{ hashFiles('vcpkg.json') }}-
 
+      - name: Cache OCCT prebuilt (7.9.1)
+        uses: actions/cache@v4
+        with:
+          path: C:/occt-prebuilt
+          key: ${{ runner.os }}-occt-7.9.1-vc14-64-combined
+          restore-keys: |
+            ${{ runner.os }}-occt-7.9.1-vc14-64-combined
+
       - name: Clone and bootstrap vcpkg
         shell: pwsh
         run: |
-          git clone --depth 1 https://github.com/microsoft/vcpkg.git C:\vcpkg
-          C:\vcpkg\bootstrap-vcpkg.bat -disableMetrics
+          $vcpkgRoot = "C:\vcpkg"
+          $packagesDir = "$vcpkgRoot\installed"
+          $downloadsDir = "$vcpkgRoot\downloads"
+          $tempPackages = "$env:TEMP\vcpkg-packages-cache"
+          $tempDownloads = "$env:TEMP\vcpkg-downloads-cache"
+          $needsClone = -not (Test-Path "$vcpkgRoot\vcpkg.exe")
+          if ($needsClone) {
+            Write-Host "vcpkg tool not present (or only package cache dirs restored); preparing clean clone while preserving cached packages..."
+            # Stash any packages/downloads that actions/cache restored under C:/vcpkg (so this run keeps the cache benefit)
+            if (Test-Path $packagesDir) {
+              if (Test-Path $tempPackages) { Remove-Item -Recurse -Force $tempPackages }
+              Move-Item $packagesDir $tempPackages -Force
+            }
+            if (Test-Path $downloadsDir) {
+              if (Test-Path $tempDownloads) { Remove-Item -Recurse -Force $tempDownloads }
+              Move-Item $downloadsDir $tempDownloads -Force
+            }
+            if (Test-Path $vcpkgRoot) {
+              Remove-Item -Recurse -Force $vcpkgRoot
+            }
+            git clone --depth 1 https://github.com/microsoft/vcpkg.git $vcpkgRoot
+            & "$vcpkgRoot\bootstrap-vcpkg.bat" -disableMetrics
+            # Restore the stashed package cache for this run (avoids rebuilding glfw/glew/boost-geometry)
+            if (Test-Path $tempPackages) {
+              Move-Item $tempPackages $packagesDir -Force
+            }
+            if (Test-Path $tempDownloads) {
+              Move-Item $tempDownloads $downloadsDir -Force
+            }
+          } else {
+            Write-Host "vcpkg.exe already present; skipping clone/bootstrap (using cached tool + packages)"
+          }
 
       - name: Install dependencies via vcpkg (manifest mode)
         shell: pwsh
         run: |
           $env:VCPKG_ROOT = "C:\vcpkg"
           cd $env:GITHUB_WORKSPACE
+          # vcpkg will download various tools (newer cmake, 7zip, msys2-*) if the runner's versions
+          # are insufficient or if ports require Unix-like tools (e.g. perl for scripts in build).
+          # This is normal on clean windows-latest images.
+          # The cache step above should hit on re-runs for the downloads/ dir.
           & "$env:VCPKG_ROOT\vcpkg.exe" install --triplet x64-windows --clean-after-build
+
+      - name: Download and extract OCCT 7.9.1 prebuilt (combined, if cache miss)
+        shell: pwsh
+        run: |
+          $occtRoot = "C:\occt-prebuilt"
+          $configPath = "$occtRoot\occt_vc14-64\cmake\OpenCASCADEConfig.cmake"
+          if (Test-Path $configPath) {
+            Write-Host "OCCT prebuilt found in cache at $occtRoot"
+          } else {
+            Write-Host "Downloading OCCT 7.9.1 prebuilt combined package (provides OCCT + 3rdparty DLLs)..."
+            New-Item -ItemType Directory -Force -Path $occtRoot | Out-Null
+            $zip = Join-Path $env:TEMP "occt_vc14-64-combined.zip"
+            Write-Host "Using curl.exe for reliable ~240 MB download from GitHub release assets..."
+            & curl.exe -L --max-time 300 -o $zip "https://github.com/Open-Cascade-SAS/OCCT/releases/download/V7_9_1/occt_vc14-64-combined.zip"
+            if ($LASTEXITCODE -ne 0) {
+              Write-Error "curl.exe download of OCCT prebuilt failed (exit $LASTEXITCODE)"
+              exit 1
+            }
+            Write-Host "Extracting to $occtRoot (this may take a minute)..."
+            Expand-Archive -LiteralPath $zip -DestinationPath $occtRoot -Force
+            Remove-Item -Force $zip
+            if (-not (Test-Path $configPath)) {
+              Write-Error "OpenCASCADEConfig.cmake not found after extraction"
+              exit 1
+            }
+            Write-Host "OCCT prebuilt ready."
+          }
 
       - name: Configure (Visual Studio 2022 + vcpkg toolchain)
         shell: pwsh
@@ -44,29 +118,66 @@ jobs:
           $env:VCPKG_ROOT = "C:\vcpkg"
           cd $env:GITHUB_WORKSPACE
 
-          # Find OpenCASCADEConfig.cmake installed by vcpkg manifest (goes to vcpkg_installed)
-          $occtConfig = Get-ChildItem -Path "$env:GITHUB_WORKSPACE\vcpkg_installed" -Recurse -Filter "OpenCASCADEConfig.cmake" -ErrorAction SilentlyContinue | Select-Object -First 1
-          if (-not $occtConfig) {
-            # Fallback to classic installed location
-            $occtConfig = Get-ChildItem -Path "C:\vcpkg\installed" -Recurse -Filter "OpenCASCADEConfig.cmake" -ErrorAction SilentlyContinue | Select-Object -First 1
-          }
-          if (-not $occtConfig) {
-            Write-Error "Could not find OpenCASCADEConfig.cmake"
+          # Use prebuilt OCCT (downloaded in previous step from official OCCT release zips).
+          # This avoids the long source build that the vcpkg "opencascade" port performs.
+          # The prebuilt matches the layout expected by the local Windows dev path in CMakeLists.txt
+          # (which also relies on OCCT_3RD_PARTY_DIR for copying runtime DLLs during configure).
+          $openCascadeDir = "C:\occt-prebuilt\occt_vc14-64\cmake"
+          $occt3rdPartyDir = "C:\occt-prebuilt\3rdparty-vc14-64"
+          if (-not (Test-Path "$openCascadeDir\OpenCASCADEConfig.cmake")) {
+            Write-Error "OpenCASCADEConfig.cmake not found at $openCascadeDir (OCCT prebuilt step may have failed)"
             exit 1
           }
-          $openCascadeDir = $occtConfig.DirectoryName
           Write-Host "Using OpenCASCADE_DIR=$openCascadeDir"
+          Write-Host "Using OCCT_3RD_PARTY_DIR=$occt3rdPartyDir"
 
+          # The "Visual Studio 17 2022" generator + setup-msbuild action ensures we use the real
+          # Microsoft C/C++ compiler (cl.exe) and MSBuild from Visual Studio 2022.
+          # The vcpkg toolchain only affects *where* libraries are found (glfw3, glew, boost-geometry); the compiler itself is the genuine MSVC one.
           cmake -S . -B build `
             -G "Visual Studio 17 2022" -A x64 `
             -DCMAKE_TOOLCHAIN_FILE="$env:VCPKG_ROOT\scripts\buildsystems\vcpkg.cmake" `
             -DOpenCASCADE_DIR="$openCascadeDir" `
+            -DOCCT_3RD_PARTY_DIR="$occt3rdPartyDir" `
             -DEZYCAD_ENABLE_PYTHON=OFF
+
+      - name: Verify using real MS Visual Studio compiler (cl.exe / MSBuild)
+        shell: pwsh
+        run: |
+          Write-Host "=== Generator and compiler from CMake ==="
+          cmake -L build | Select-String "CMAKE_GENERATOR|CMAKE_CXX_COMPILER|CMAKE_C_COMPILER"
+          Write-Host ""
+          Write-Host "=== Visual Studio installation (should be 2022) ==="
+          & "${env:ProgramFiles(x86)}\Microsoft Visual Studio\Installer\vswhere.exe" -latest -products * -property displayName
+          Write-Host ""
+          Write-Host "=== cl.exe that will be used by the VS generator ==="
+          # The VS generator locates cl.exe via the .vcxproj / MSBuild, not necessarily in PATH yet.
+          # We can find the latest VS installation and show the cl.exe path.
+          $vsPath = & "${env:ProgramFiles(x86)}\Microsoft Visual Studio\Installer\vswhere.exe" -latest -products * -property installationPath
+          if ($vsPath) {
+            $clPath = Join-Path $vsPath "VC\Tools\MSVC"
+            if (Test-Path $clPath) {
+              Get-ChildItem $clPath -Directory | Sort-Object Name -Descending | Select-Object -First 1 | ForEach-Object {
+                $cl = Join-Path $_.FullName "bin\Hostx64\x64\cl.exe"
+                if (Test-Path $cl) {
+                  Write-Host "cl.exe: $cl"
+                  & $cl 2>&1 | Select-String "Version"
+                }
+              }
+            }
+          } else {
+            Write-Host "Could not locate VS installation for cl.exe details (but generator is set to use it)."
+          }
+          Write-Host ""
+          Write-Host "Note: vcpkg downloads (cmake, 7zip etc.) are only for the remaining small dependencies (glfw3, glew, boost-geometry)."
+          Write-Host "OCCT uses the official prebuilt binaries (cached/downloaded separately) for fast CI."
+          Write-Host "The EzyCad code itself (and the vcpkg-built deps on Windows) are compiled with the real cl.exe from Visual Studio 2022."
 
       - name: Build Release
         shell: pwsh
         run: |
           cd $env:GITHUB_WORKSPACE
+          # cmake --build with the VS generator invokes the real MSBuild + cl.exe (true Visual Studio compiler)
           cmake --build build --config Release --parallel --target EzyCad EzyCad_tests
 
       - name: Run unit tests
