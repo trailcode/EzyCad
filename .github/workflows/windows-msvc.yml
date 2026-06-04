@@ -185,3 +185,25 @@ jobs:
         run: |
           cd $env:GITHUB_WORKSPACE\build
           ctest -C Release --output-on-failure -V
+
+      - name: List produced artifacts (visible in logs)
+        shell: pwsh
+        run: |
+          Write-Host "=== EzyCad + tests exes and top-level DLLs in build/Release ==="
+          Get-ChildItem build/Release -Include *.exe,*.dll -File | Select-Object Name, Length | Format-Table -AutoSize
+          Write-Host ""
+          Write-Host "=== res/ and other assets (if staged) ==="
+          if (Test-Path build/Release/res) { Get-ChildItem build/Release/res -Recurse | Select -First 20 FullName }
+          Write-Host ""
+          Write-Host "Note: the full self-contained Release tree is uploaded as artifact below."
+
+      - name: Upload Release artifacts (EzyCad.exe + DLLs + assets)
+        uses: actions/upload-artifact@v4
+        with:
+          name: EzyCad-Windows-MSVC-Release
+          path: build/Release/
+          retention-days: 30
+          if-no-files-found: error
+        # Only upload if the build + tests succeeded. The folder should be
+        # self-contained thanks to CMake's MSVC DLL/asset staging + the
+        # vcpkg DLL discovery above.

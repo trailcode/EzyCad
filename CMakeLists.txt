@@ -548,6 +548,27 @@ else()
         )
       endif()
 
+      # When building with vcpkg toolchain (e.g. the GitHub CI), the nuget glew/glfw
+      # were never installed, so also stage the DLLs from the vcpkg manifest install
+      # (typically <source>/vcpkg_installed/x64-windows/bin or under the build tree).
+      # This ensures the Release/ folder contains a runnable EzyCad.exe.
+      if(CMAKE_TOOLCHAIN_FILE)
+        set(_vcpkg_bin "${CMAKE_SOURCE_DIR}/vcpkg_installed/x64-windows/bin")
+        if(NOT EXISTS "${_vcpkg_bin}/glfw3.dll")
+          set(_vcpkg_bin "${BINARY_DIR}/vcpkg_installed/x64-windows/bin")
+        endif()
+        if(NOT EXISTS "${_vcpkg_bin}/glfw3.dll")
+          # Fallback to common vcpkg classic location (if any packages landed there)
+          set(_vcpkg_bin "C:/vcpkg/installed/x64-windows/bin")
+        endif()
+        if(EXISTS "${_vcpkg_bin}/glfw3.dll")
+          list(APPEND DLLS_COMMON "${_vcpkg_bin}/glfw3.dll")
+        endif()
+        if(EXISTS "${_vcpkg_bin}/glew32.dll")
+          list(APPEND DLLS_COMMON "${_vcpkg_bin}/glew32.dll")
+        endif()
+      endif()
+
       foreach(lib ${OpenCASCADE_LIBS})
         list(APPEND DLLS_COMMON ${OpenCASCADE_BINARY_DIR}/${lib}.dll)
       endforeach(lib)
