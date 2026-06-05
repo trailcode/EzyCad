@@ -8,6 +8,13 @@ on:
   pull_request:
     branches: [main, master]
 
+# Grant the GITHUB_TOKEN write access so that the release step (softprops/action-gh-release)
+# can create/update releases and attach the portable zip when a version tag is pushed.
+# Without this (or the equivalent repo setting), the token defaults to "Contents: read"
+# and the step fails with 403 "Resource not accessible by integration".
+permissions:
+  contents: write
+
 jobs:
   build-and-test:
     runs-on: windows-latest
@@ -232,14 +239,19 @@ jobs:
           Compress-Archive -Path "pkg/*" -DestinationPath $zipName -Force
           Remove-Item -Recurse -Force pkg
 
+          # PORTABLE_ZIP is the actual .zip file (used by gh-release and as path for artifact)
+          # PORTABLE_ARTIFACT_NAME is the artifact container name (without trailing .zip to avoid
+          # the common "xxx.zip.zip" download name from actions/upload-artifact when the name ends in .zip)
+          $artifactName = $zipName -replace '\.zip$',''
           echo "PORTABLE_ZIP=$zipName" >> $env:GITHUB_ENV
+          echo "PORTABLE_ARTIFACT_NAME=$artifactName" >> $env:GITHUB_ENV
           Get-Item $zipName | Select Name, Length
           Write-Host "Zip contains a top-level '$topDir' folder with the runnable app."
 
       - name: Upload portable zip as artifact (easy single-file download)
         uses: actions/upload-artifact@v4
         with:
-          name: ${{ env.PORTABLE_ZIP }}
+          name: ${{ env.PORTABLE_ARTIFACT_NAME }}
           path: ${{ env.PORTABLE_ZIP }}
           retention-days: 30
 
