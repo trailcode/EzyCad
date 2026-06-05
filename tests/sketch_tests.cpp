@@ -844,6 +844,7 @@ TEST_F(Sketch_test, SquareTwoArcs)
   // Check the polygon is valid
   EXPECT_TRUE(bg::is_valid(boost_poly));
 #endif // USE_BOOST
+#endif // #if 0  -- close the disabled test block (was missing, causing EOF preprocessor error)
 }
 
 // Helper to add all permutations of edges (with both orientations) to a sketch and call a lambda
