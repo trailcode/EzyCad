@@ -276,6 +276,9 @@ jobs:
           prerelease: false
           generate_release_notes: true
           files: ${{ env.PORTABLE_ZIP }}
+          # overwrite_files allows re-attaching/updating the zip if you delete+recreate
+          # the same tag (or re-run the workflow for an existing tag) after fixes.
+          overwrite_files: true
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         # This is what most GitHub projects do for end-user downloads:
