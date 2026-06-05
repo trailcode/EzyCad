@@ -105,7 +105,9 @@ gp_Pnt to_3d(const gp_Pln& plane, const gp_Pnt2d& point_2d)
   return origin.Translated(u_vec + v_vec);
 }
 
+#if USE_BOOST
 gp_Pnt2d to_pnt2d(const boost_geom::point_2d& pt) { return gp_Pnt2d(pt.x(), pt.y()); }
+#endif
 
 // Function to create a wire box centered on a point on a plane, returning a TopoDS_Wire
 TopoDS_Wire create_wire_box(const gp_Pln& plane, const gp_Pnt& center, double width, double height)
@@ -939,6 +941,7 @@ bool is_face_contained(const TopoDS_Shape& shape_a, const TopoDS_Shape& shape_b)
   return all_inside;
 }
 
+#if USE_BOOST
 // Function to convert a 3D point to 2D in the plane's coordinate system
 boost_geom::point_2d to_boost(const gp_Pln& plane, const gp_Pnt& point_3d)
 {
@@ -1091,6 +1094,7 @@ boost_geom::polygon_2d to_boost(const TopoDS_Shape& shape, const gp_Pln& pln2)
 
   return polygon;
 }
+#endif // USE_BOOST
 
 gp_Pnt get_shape_bbox_center(const TopoDS_Shape& shp)
 {
@@ -1140,6 +1144,7 @@ gp_Pnt2d rotate_point(const gp_Pnt2d& origin, const gp_Pnt2d& point, double angl
   return gp_Pnt2d(origin.X() + rotated_x, origin.Y() + rotated_y);
 }
 
+#if USE_BOOST
 bool is_clockwise(const boost_geom::ring_2d& ring)
 {
   double sum = 0.0;
@@ -1148,6 +1153,7 @@ bool is_clockwise(const boost_geom::ring_2d& ring)
 
   return sum > 0.0;
 }
+#endif // USE_BOOST
 
 // Sorts a vector of gp_Pnt by x, then y, then z
 void sort_pnts(std::vector<gp_Pnt>& points)
@@ -1190,6 +1196,40 @@ TopoDS_Wire make_rectangle_wire(const gp_Pln& pln, const gp_Pnt2d& corner1, cons
 
   return wire_maker.Wire();
 }
+
+#if !USE_BOOST
+// Stubs for when Boost is disabled (see geom.h). These fire EZY_ASSERT if ever called,
+// satisfying the requirement: "If boost is not used, do a EZY_ASSERT."
+gp_Pnt2d to_pnt2d(const boost_geom::point_2d& pt)
+{
+  EZY_ASSERT_MSG(false, "Boost not enabled (build with -DUSE_BOOST=ON); to_pnt2d should not be reached");
+  return gp_Pnt2d();
+}
+
+boost_geom::point_2d to_boost(const gp_Pln& plane, const gp_Pnt& point_3d)
+{
+  EZY_ASSERT_MSG(false, "Boost not enabled (build with -DUSE_BOOST=ON)");
+  return {};
+}
+
+boost_geom::point_2d to_boost(const gp_Pnt2d& pt)
+{
+  EZY_ASSERT_MSG(false, "Boost not enabled (build with -DUSE_BOOST=ON)");
+  return {};
+}
+
+boost_geom::polygon_2d to_boost(const TopoDS_Shape& shape, const gp_Pln& pln2)
+{
+  EZY_ASSERT_MSG(false, "Boost not enabled (build with -DUSE_BOOST=ON)");
+  return {};
+}
+
+bool is_clockwise(const boost_geom::ring_2d& ring)
+{
+  EZY_ASSERT_MSG(false, "Boost not enabled (build with -DUSE_BOOST=ON); is_clockwise should not be reached");
+  return false;
+}
+#endif // !USE_BOOST
 
 std::array<gp_Pnt2d, 4> rectangle_corners(const gp_Pnt2d& corner1, const gp_Pnt2d& corner2)
 {

@@ -71,7 +71,7 @@ Full guide: **[docs/building-occt.md](docs/building-occt.md)** (Windows prebuilt
 4. Build the project.
 
 ### Notes for Windows Users
-- Ensure `nuget` is installed for fetching dependencies like GLFW, GLEW, and Boost.
+- Ensure `nuget` is installed for fetching dependencies like GLFW, GLEW, and (optionally) Boost when `-DUSE_BOOST=ON`.
 - Use Visual Studio as the IDE for debugging and building.
 
 ### Notes for Emscripten Builds
@@ -87,7 +87,7 @@ Full guide: **[docs/building-occt.md](docs/building-occt.md)** (Windows prebuilt
     - CMAKE_EXE_LINKER_FLAGS -fexceptions
 - Configure the EzyCad project with Emscripten:
   - `mkdir build_em` then `cd build_em`
-  - Add **-Wno-dev** to suppress any remaining CMake developer warnings. (CMP0167/FindBoost is already handled in CMakeLists.txt.)  
+  - Add **-Wno-dev** to suppress any remaining CMake developer warnings. (CMP0167/FindBoost only relevant if -DUSE_BOOST=ON.)  
     `emcmake cmake .. -Wno-dev -DOpenCASCADE_DIR=C:/src/OCCT-7_9_0_em_install/lib/cmake/opencascade`
   - If configure **freezes** after that warning, the hang is often in `find_package(OpenCASCADE)` or Emscripten compiler detection. Run with `--debug-output` to see where it stops, e.g.:  
     `emcmake cmake .. -Wno-dev -DOpenCASCADE_DIR=C:/src/OCCT-7_9_0_em_install/lib/cmake/opencascade --debug-output`
@@ -136,4 +136,4 @@ The **`third_party/`** folder holds other libraries **shipped inside the EzyCad 
 
 **ImGuiColorTextEdit:** Prefer a full checkout under `third_party/ImGuiColorTextEdit/` (see `third_party/README.md`). If that folder is missing, CMake **FetchContent** downloads upstream at a **fixed commit** (`ca2f9f1462e3b60e56351bc466acda448c5ea50d`) because the upstream repo has **no release tags**. To upgrade the editor, bump that SHA in `CMakeLists.txt` and refresh any vendored copy.
 
-**Windows note:** GLFW, GLEW, and Boost for MSVC are **not** stored under `third_party/`; NuGet installs them into **`${CMAKE_BINARY_DIR}/thirdParty`** when you configure (see [Notes for Windows Users](#notes-for-windows-users)).
+**Windows note:** GLFW, GLEW (and Boost when `-DUSE_BOOST=ON`) for MSVC are **not** stored under `third_party/`; NuGet installs them into **`${CMAKE_BINARY_DIR}/thirdParty`** when you configure (see [Notes for Windows Users](#notes-for-windows-users)).

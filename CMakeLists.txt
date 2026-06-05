@@ -44,6 +44,11 @@ if(NOT EMSCRIPTEN_BUILD)
   endif()
 endif()
 
+# Boost.Geometry (optional). Used only for polygon conversion + winding/order validation
+# in the unit tests (sketch_tests.cpp). Disable with -DUSE_BOOST=OFF to avoid pulling
+# the heavy "boost-geometry" port in vcpkg CI builds (big speedup).
+option(USE_BOOST "Enable Boost.Geometry (sketch face validation in tests; disable for faster CI)" ON)
+
 # Lua (for script console) - built for native and Emscripten (C sources compile with emcc)
 # Tarball has no CMake; we build the lib from sources
 include(FetchContent)
@@ -99,28 +104,41 @@ endif()
 
 set(GLFW_VERSION  "3.3.0.1")
 set(GLEW_VERSION  "2.1.0")
-set(BOOST_VERSION "1.87.0")
 
-if(MSVC_VERSION AND NOT CMAKE_TOOLCHAIN_FILE)
-  find_program(NUGET nuget)
-  if(NOT NUGET)
-    message(FATAL_ERROR "Cannot find nuget command line tool.\nInstall it with e.g. choco install nuget.commandline")
-  endif()
-  # Output must be under the build tree (CMAKE_BINARY_DIR), not the shell CWD, or clean out-of-source configures fail.
-  execute_process(COMMAND ${NUGET} install glfw                     -Version ${GLFW_VERSION}    -OutputDirectory "${CMAKE_BINARY_DIR}/thirdParty")
-  execute_process(COMMAND ${NUGET} install unofficial-flayan-glew   -Version ${GLEW_VERSION}    -OutputDirectory "${CMAKE_BINARY_DIR}/thirdParty")
-  execute_process(COMMAND ${NUGET} install boost                    -Version ${BOOST_VERSION}   -OutputDirectory "${CMAKE_BINARY_DIR}/thirdParty")
-  # Include Boost from NuGet installation on Windows
-  INCLUDE_DIRECTORIES(${PROJECT_NAME} ${BINARY_DIR}/thirdParty/boost.${BOOST_VERSION}/lib/native/include)
-else()
-  if(NOT CMAKE_TOOLCHAIN_FILE)
-    # On Linux (or non-vcpkg), use system Boost installation
-    find_package(Boost REQUIRED)
-    if(Boost_FOUND)
-      INCLUDE_DIRECTORIES(${PROJECT_NAME} ${Boost_INCLUDE_DIRS})
+if(USE_BOOST)
+  set(BOOST_VERSION "1.87.0")
+  if(MSVC_VERSION AND NOT CMAKE_TOOLCHAIN_FILE)
+    find_program(NUGET nuget)
+    if(NOT NUGET)
+      message(FATAL_ERROR "Cannot find nuget command line tool.\nInstall it with e.g. choco install nuget.commandline")
     endif()
+    # Output must be under the build tree (CMAKE_BINARY_DIR), not the shell CWD, or clean out-of-source configures fail.
+    execute_process(COMMAND ${NUGET} install glfw                     -Version ${GLFW_VERSION}    -OutputDirectory "${CMAKE_BINARY_DIR}/thirdParty")
+    execute_process(COMMAND ${NUGET} install unofficial-flayan-glew   -Version ${GLEW_VERSION}    -OutputDirectory "${CMAKE_BINARY_DIR}/thirdParty")
+    execute_process(COMMAND ${NUGET} install boost                    -Version ${BOOST_VERSION}   -OutputDirectory "${CMAKE_BINARY_DIR}/thirdParty")
+    # Include Boost from NuGet installation on Windows (only when USE_BOOST)
+    INCLUDE_DIRECTORIES(${PROJECT_NAME} ${BINARY_DIR}/thirdParty/boost.${BOOST_VERSION}/lib/native/include)
+  else()
+    if(NOT CMAKE_TOOLCHAIN_FILE)
+      # On Linux (or non-vcpkg), use system Boost installation
+      find_package(Boost REQUIRED)
+      if(Boost_FOUND)
+        INCLUDE_DIRECTORIES(${PROJECT_NAME} ${Boost_INCLUDE_DIRS})
+      endif()
+    endif()
+    # When CMAKE_TOOLCHAIN_FILE is set (vcpkg) + USE_BOOST, the caller must ensure boost-geometry
+    # is available (e.g. add to vcpkg.json or vcpkg install boost-geometry:x64-windows).
   endif()
-  # When CMAKE_TOOLCHAIN_FILE is set (vcpkg), boost headers from "boost-geometry" etc. are automatically on the include path.
+else()
+  if(MSVC_VERSION AND NOT CMAKE_TOOLCHAIN_FILE)
+    find_program(NUGET nuget)
+    if(NOT NUGET)
+      message(FATAL_ERROR "Cannot find nuget command line tool.\nInstall it with e.g. choco install nuget.commandline")
+    endif()
+    # Output must be under the build tree (CMAKE_BINARY_DIR), not the shell CWD, or clean out-of-source configures fail.
+    execute_process(COMMAND ${NUGET} install glfw                     -Version ${GLFW_VERSION}    -OutputDirectory "${CMAKE_BINARY_DIR}/thirdParty")
+    execute_process(COMMAND ${NUGET} install unofficial-flayan-glew   -Version ${GLEW_VERSION}    -OutputDirectory "${CMAKE_BINARY_DIR}/thirdParty")
+  endif()
 endif()
 
 # imgui_demo.cpp omitted: large and unused here; add back if you need ImGui::ShowDemoWindow.
@@ -200,6 +218,10 @@ if(EZYCAD_HAVE_PYTHON)
   endif()
 endif()
 
+if(USE_BOOST)
+  target_compile_definitions(${PROJECT_NAME}_lib PUBLIC USE_BOOST)
+endif()
+
 # Open CASCADE Technology
 find_package(OpenCASCADE REQUIRED NO_DEFAULT_PATH)
 if(OpenCASCADE_FOUND)
@@ -266,10 +288,14 @@ set(OpenCASCADE_LIBS
 if(CMAKE_CXX_COMPILER_ID STREQUAL "Emscripten")
     # Set compiler flags for Emscripten build
     message("flags " ${CMAKE_CXX_FLAGS} )
+    set(USE_BOOST_EMSCRIPTEN_FLAG "")
+    if(USE_BOOST)
+      set(USE_BOOST_EMSCRIPTEN_FLAG " -s USE_BOOST_HEADERS=1 ")
+    endif()
     if(CMAKE_BUILD_TYPE STREQUAL "Release")
         set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} \
             -s USE_SDL=2 \
-            -s USE_BOOST_HEADERS=1 \
+            ${USE_BOOST_EMSCRIPTEN_FLAG} \
             -fexceptions \
             -O3"
         )
@@ -301,7 +327,7 @@ if(CMAKE_CXX_COMPILER_ID STREQUAL "Emscripten")
     else()
         set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS_DEBUG} \
             -s USE_SDL=2 \
-            -s USE_BOOST_HEADERS=1 \
+            ${USE_BOOST_EMSCRIPTEN_FLAG} \
             -fexceptions \
             -gsource-map \
             -O0"
@@ -687,6 +713,10 @@ if(NOT CMAKE_CXX_COMPILER_ID STREQUAL "Emscripten")
         ${OPENGL_LIBRARIES}
         ${OPENGL_gl_LIBRARY}
     )
+
+    if(USE_BOOST)
+      target_compile_definitions(${PROJECT_NAME}_tests PUBLIC USE_BOOST)
+    endif()
     
     # Add tests to CTest
     include(GoogleTest)

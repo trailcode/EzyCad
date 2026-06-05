@@ -2,7 +2,6 @@
 
 #include <TopoDS.hxx>
 #include <TopoDS_Wire.hxx>
-#include <boost/geometry/io/wkt/wkt.hpp>
 #include <iostream>
 #include <numbers>
 
@@ -14,6 +13,9 @@
 
 using namespace glm;
 
+#if USE_BOOST
+#include <boost/geometry/io/wkt/wkt.hpp>
+#include <sstream>
 namespace bg = boost::geometry;
 
 // General templated helper for any Boost.Geometry geometry type
@@ -24,6 +26,7 @@ std::string to_wkt_string(const Geometry& geom)
   ss << boost::geometry::wkt(geom);
   return ss.str();
 }
+#endif // USE_BOOST
 
 class GUI_access
 {
@@ -275,7 +278,8 @@ TEST_F(Sketch_test, CreateSquare)
   // Verify the face has the correct number of vertices (5 for a closed square)
   EXPECT_EQ(face->verts_3d.size(), 5) << "Square face should have 5 vertices (4 corners + repeated first vertex)";
 
-  // Convert face to Boost.Geometry polygon and verify its properties
+  // Convert face to Boost.Geometry polygon and verify its properties (only when Boost enabled)
+#if USE_BOOST
   const TopoDS_Shape& shape = face->Shape();
   EXPECT_EQ(shape.ShapeType(), TopAbs_FACE) << "Shape should be a face";
   boost_geom::polygon_2d boost_poly = to_boost(shape, default_plane);
@@ -300,6 +304,7 @@ TEST_F(Sketch_test, CreateSquare)
 
   // Check the polygon to WKT format
   EXPECT_EQ(to_wkt_string(boost_poly), "POLYGON((-10 -10,-10 10,10 10,10 -10,-10 -10))");
+#endif // USE_BOOST
 
   // The nodes should look like:
   // #---@---#
@@ -358,7 +363,8 @@ TEST_F(Sketch_test, CreateCircle)
   const auto& face = faces[0];
   EXPECT_FALSE(face.IsNull()) << "Face shape should not be null";
 
-  // Convert face to Boost.Geometry polygon and verify its properties
+  // Convert face to Boost.Geometry polygon and verify its properties (only when Boost enabled)
+#if USE_BOOST
   const TopoDS_Shape& shape = face->Shape();
   EXPECT_EQ(shape.ShapeType(), TopAbs_FACE) << "Shape should be a face";
   boost_geom::polygon_2d boost_poly = to_boost(shape, default_plane);
@@ -380,6 +386,7 @@ TEST_F(Sketch_test, CreateCircle)
 
   // Verify the number of points in the outer ring (should be enough points to approximate a circle)
   EXPECT_GT(boost_poly.outer().size(), 20) << "Circle should have enough points to be smooth";
+#endif // USE_BOOST
 
   // Verify the points are roughly equidistant from the center
   double expected_radius = 10.0;
@@ -421,12 +428,14 @@ TEST_F(Sketch_test, UpdateFaces_SimpleRectangle)
     const auto& face = faces[0];
     EXPECT_EQ(face->Shape().ShapeType(), TopAbs_FACE);
 
+#if USE_BOOST
     boost_geom::polygon_2d boost_poly = to_boost(face->Shape(), sketch.get_plane());
     EXPECT_TRUE(is_clockwise(boost_poly.outer()));
 
     // Dump the polygon to WKT format
     std::string wkt_str = to_wkt_string(boost_poly);
     EXPECT_EQ(wkt_str, "POLYGON((0 0,0 10,10 10,10 0,0 0))");
+#endif // USE_BOOST
   };
 
   for_all_edge_permutations_(points, edge_indices, gp_Pln(gp::Origin(), gp::DZ()), check_sketch);
@@ -466,6 +475,7 @@ TEST_F(Sketch_test, UpdateFaces_FaceWithHole)
     Sketch_access::update_faces_(sketch);
     const auto& faces = Sketch_access::get_faces(sketch);
     EXPECT_EQ(faces.size(), 2);
+#if USE_BOOST
     boost_geom::polygon_2d face_with_hole;
     boost_geom::polygon_2d hole_face;
     for (auto& face : faces)
@@ -489,6 +499,7 @@ TEST_F(Sketch_test, UpdateFaces_FaceWithHole)
 
     EXPECT_EQ(to_wkt_string(hole_face), "POLYGON((5 5,5 15,15 15,15 5,5 5))");
     EXPECT_EQ(to_wkt_string(face_with_hole), "POLYGON((0 0,0 20,20 20,20 0,0 0),(5 5,15 5,15 15,5 15,5 5))");
+#endif // USE_BOOST
   };
 
   add_edges_from_indices_(points, edge_indices, gp_Pln(gp::Origin(), gp::DZ()), check_sketch);
@@ -646,9 +657,11 @@ TEST_F(Sketch_test, UpdateFaces_DanglingEdgesArcMidNode)
   const auto& face = faces[0];
   EXPECT_EQ(face->Shape().ShapeType(), TopAbs_FACE);
 
+#if USE_BOOST
   boost_geom::polygon_2d boost_poly = to_boost(face->Shape(), default_plane);
   EXPECT_TRUE(bg::is_valid(boost_poly)) << "Resulting polygon should be valid";
   EXPECT_TRUE(is_clockwise(boost_poly.outer())) << "Polygon should be clockwise";
+#endif // USE_BOOST
 
   // The dangling edges (especially the vertical one attached to arc_mid) should still exist
   // in the sketch, but they must not affect face detection.
@@ -819,6 +832,7 @@ TEST_F(Sketch_test, SquareTwoArcs)
   const auto& face = faces[0];
   EXPECT_EQ(face->Shape().ShapeType(), TopAbs_FACE);
 
+#if USE_BOOST
   // Convert to Boost.Geometry polygon for further checks
   boost_geom::polygon_2d boost_poly = to_boost(face->Shape(), default_plane);
 
@@ -829,8 +843,7 @@ TEST_F(Sketch_test, SquareTwoArcs)
 
   // Check the polygon is valid
   EXPECT_TRUE(bg::is_valid(boost_poly));
-
-#endif
+#endif // USE_BOOST
 }
 
 // Helper to add all permutations of edges (with both orientations) to a sketch and call a lambda
@@ -1113,13 +1126,16 @@ TEST_F(Sketch_test, UpdateFaces_BridgeEdgeRemoval)
   // Verify the outer face exists and is valid
   bool                   found_outer_face = false;
   bool                   found_inner_face = false;
+#if USE_BOOST
   boost_geom::polygon_2d outer_face_poly;
   boost_geom::polygon_2d inner_face_poly;
+#endif
 
   for (size_t i = 0; i < faces.size(); ++i)
   {
     const auto& face = faces[i];
     EXPECT_EQ(face->Shape().ShapeType(), TopAbs_FACE) << "Shape should be a face";
+#if USE_BOOST
     boost_geom::polygon_2d boost_poly = to_boost(face->Shape(), default_plane);
     EXPECT_TRUE(bg::is_valid(boost_poly)) << "Polygon should be valid";
     EXPECT_TRUE(is_clockwise(boost_poly.outer())) << "Polygon should be clockwise";
@@ -1180,6 +1196,7 @@ TEST_F(Sketch_test, UpdateFaces_BridgeEdgeRemoval)
     // This is still acceptable - the bridge edge removal is what we're testing
     EXPECT_TRUE(bg::is_valid(inner_face_poly)) << "Inner face should be valid";
   }
+#endif // USE_BOOST
 
   // Verify all edges still exist in the sketch (bridge edge is excluded from face detection but still exists)
   size_t total_edges = 0;
@@ -1214,7 +1231,8 @@ TEST_F(Sketch_test, UpdateFaces_BridgeEdgeRemoval)
   }
   EXPECT_TRUE(found_bridge_edge) << "Bridge edge should still exist in the sketch";
 
-  // Debug: Output summary
+#if USE_BOOST
+  // Debug: Output summary (only when boost enabled, otherwise the _poly vars don't exist)
   std::cout << "\n=== Bridge Edge Removal Test Summary ===" << std::endl;
   std::cout << "Total faces found: " << faces.size() << std::endl;
   std::cout << "Outer face found: " << (found_outer_face ? "yes" : "no") << std::endl;
@@ -1236,6 +1254,7 @@ TEST_F(Sketch_test, UpdateFaces_BridgeEdgeRemoval)
   std::cout << "Bridge edge found: " << (found_bridge_edge ? "yes" : "no") << std::endl;
   std::cout << "========================================\n"
             << std::endl;
+#endif // USE_BOOST
 }
 
 // Test dangling edges removal - rectangle with branching edges
@@ -1304,6 +1323,7 @@ TEST_F(Sketch_test, UpdateFaces_DanglingEdgesRemoval)
   const auto& face = faces[0];
   EXPECT_EQ(face->Shape().ShapeType(), TopAbs_FACE) << "Shape should be a face";
 
+#if USE_BOOST
   // Convert to Boost.Geometry polygon and verify it's the rectangle
   boost_geom::polygon_2d boost_poly = to_boost(face->Shape(), default_plane);
   EXPECT_TRUE(bg::is_valid(boost_poly)) << "Polygon should be valid";
@@ -1315,6 +1335,7 @@ TEST_F(Sketch_test, UpdateFaces_DanglingEdgesRemoval)
 
   // Verify the polygon is clockwise (as expected for faces)
   EXPECT_TRUE(is_clockwise(boost_poly.outer())) << "Polygon should be clockwise";
+#endif // USE_BOOST
 
   // Verify all edges are still in the sketch (they're just excluded from face detection)
   // The edges should still exist in m_edges, but not participate in face formation
@@ -1622,3 +1643,17 @@ TEST_F(Sketch_test, AddNode_near_edge_snaps_onto_segment_and_splits)
   }
   EXPECT_TRUE(found_at_seven);
 }
+
+// When -DUSE_BOOST=OFF (used by GitHub CI to keep builds fast), the boost
+// verification helpers are stubbed and any call hits EZY_ASSERT_MSG as required.
+#if !USE_BOOST
+TEST(Boost, DisabledShowsStubsWithAssert)
+{
+  // The real to_boost / is_clockwise etc. are not available.
+  // Their OFF stubs in geom.cpp do EZY_ASSERT_MSG(false, "... -DUSE_BOOST=ON ...").
+  // This test documents the mode; we do not invoke the stubs here (would terminate).
+  SUCCEED() << "Boost verification disabled in this build (-DUSE_BOOST=OFF). "
+               "Sketch creation tests still run; detailed polygon/winding checks are compiled out. "
+               "Rebuild with -DUSE_BOOST=ON (and boost available via nuget/vcpkg/system) for full checks.";
+}
+#endif // !USE_BOOST
