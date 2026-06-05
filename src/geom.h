@@ -120,17 +120,17 @@ gp_Pnt2d mirror_point(const gp_Pnt2d& p1, const gp_Pnt2d& p2, const gp_Pnt2d& po
 /// Global length-dimension display settings (GUI / `ezycad_settings.json` -> `gui.*`).
 struct Length_dimension_style
 {
-  float line_width             = 1.0f;
-  float arrow_size             = 6.0f;
-  float color_rgb[3]           = {1.f, 1.f, 0.f};
-  float text_height_scale      = 1.0f;
-  int   label_h                = 3;
+  float line_width        = 1.0f;
+  float arrow_size        = 6.0f;
+  float color_rgb[3]      = {1.f, 1.f, 0.f};
+  float text_height_scale = 1.0f;
+  int   label_h           = 3;
   /// 0 standard, 1 sharp, 2 wide, 3 shaded 3D (see `edge_dim_arrow_style` in settings).
-  int   arrow_style            = 0;
+  int arrow_style = 0;
   /// 0 fit, 1 internal, 2 external (`Prs3d_DAO_*`).
-  int   arrow_orientation      = 0;
+  int arrow_orientation = 0;
   /// Label rendering mode (`gui.edge_dim_text_render_mode`): 0..5, default 5 (Z-layer Topmost).
-  int   text_render_mode       = 5;
+  int text_render_mode = 5;
 };
 
 /// Maps edge length label index (0-3) to OCCT horizontal text placement.
@@ -151,14 +151,14 @@ void apply_length_dimension_arrow_size(const PrsDim_LengthDimension_ptr& dim, do
 /// void (not TopAbs_IN) relative to those faces - fixes concave / notch edges where the node centroid lies
 /// on the wrong side. Otherwise `interior_ref` (e.g. node centroid) is used as a weaker heuristic.
 PrsDim_LengthDimension_ptr create_distance_annotation(const gp_Pnt& p1, const gp_Pnt& p2, const gp_Pln& pln,
-                                                      const Length_dimension_style&         style,
-                                                      const std::optional<gp_Pnt>&        interior_ref = std::nullopt,
-                                                      const std::vector<TopoDS_Face>*     sketch_faces_for_flyout = nullptr);
+                                                      const Length_dimension_style&   style,
+                                                      const std::optional<gp_Pnt>&    interior_ref            = std::nullopt,
+                                                      const std::vector<TopoDS_Face>* sketch_faces_for_flyout = nullptr);
 
 PrsDim_LengthDimension_ptr create_distance_annotation(const gp_Pnt2d& p1, const gp_Pnt2d& p2, const gp_Pln& pln,
-                                                      const Length_dimension_style&         style,
-                                                      const std::optional<gp_Pnt>&        interior_ref = std::nullopt,
-                                                      const std::vector<TopoDS_Face>*     sketch_faces_for_flyout = nullptr);
+                                                      const Length_dimension_style&   style,
+                                                      const std::optional<gp_Pnt>&    interior_ref            = std::nullopt,
+                                                      const std::vector<TopoDS_Face>* sketch_faces_for_flyout = nullptr);
 
 const gp_Pnt& closest_to_camera(const V3d_View_ptr& view, const std::vector<gp_Pnt>& pnts);
 

@@ -172,7 +172,7 @@ void Shp_extrude::_update_extrude_preview_(const double extrude_dist, const Plan
   {
     m_extruded = new Shp(ctx(), body);
     m_extruded->SetMaterial(view().m_default_material);
-    ctx().Display(m_extruded, m_extruded->get_disp_mode(), -1, Standard_True);
+    ctx().Display(m_extruded, m_extruded->get_disp_mode(), -1, true);
   }
   else
   {

@@ -25,7 +25,7 @@
 #include <Aspect_DisplayConnection.hxx>
 #include <Aspect_RenderingContext.hxx>
 #include <Aspect_Window.hxx>
-#include <Graphic3d_Vec.hxx>
+#include <NCollection_Vec2.hxx>
 #include <TCollection_AsciiString.hxx>
 
 struct GLFWwindow;
@@ -57,34 +57,33 @@ public:
 #endif
 
   //! Return cursor position.
-  Graphic3d_Vec2i CursorPosition() const;
+  NCollection_Vec2<int> CursorPosition() const;
 
 public:
 #ifndef __EMSCRIPTEN__
   //! Returns native Window handle
-  virtual Aspect_Drawable NativeHandle() const Standard_OVERRIDE;
+  virtual Aspect_Drawable NativeHandle() const override;
 #endif
 
   //! Returns parent of native Window handle.
-  virtual Aspect_Drawable NativeParentHandle() const Standard_OVERRIDE { return 0; }
+  virtual Aspect_Drawable NativeParentHandle() const override { return 0; }
 
   //! Applies the resizing to the window <me>
-  virtual Aspect_TypeOfResize DoResize() Standard_OVERRIDE;
+  virtual Aspect_TypeOfResize DoResize() override;
 
   //! Returns True if the window <me> is opened and False if the window is closed.
-  virtual Standard_Boolean IsMapped() const Standard_OVERRIDE;
+  virtual bool IsMapped() const override;
 
   //! Apply the mapping change to the window <me> and returns TRUE if the window is mapped at screen.
-  virtual Standard_Boolean DoMapping() const Standard_OVERRIDE { return Standard_True; }
+  virtual bool DoMapping() const override { return true; }
 
   //! Opens the window <me>.
-  virtual void Map() const Standard_OVERRIDE;
+  virtual void Map() const override;
 
   //! Closes the window <me>.
-  virtual void Unmap() const Standard_OVERRIDE;
+  virtual void Unmap() const override;
 
-  virtual void Position(Standard_Integer& theX1, Standard_Integer& theY1, Standard_Integer& theX2,
-                        Standard_Integer& theY2) const Standard_OVERRIDE
+  virtual void Position(int& theX1, int& theY1, int& theX2, int& theY2) const override
   {
     theX1 = myXLeft;
     theX2 = myXRight;
@@ -93,27 +92,24 @@ public:
   }
 
   //! Returns The Window RATIO equal to the physical WIDTH/HEIGHT dimensions.
-  virtual Standard_Real Ratio() const Standard_OVERRIDE
-  {
-    return Standard_Real(myXRight - myXLeft) / Standard_Real(myYBottom - myYTop);
-  }
+  virtual double Ratio() const override { return double(myXRight - myXLeft) / double(myYBottom - myYTop); }
 
   //! Return window size.
-  virtual void Size(Standard_Integer& theWidth, Standard_Integer& theHeight) const Standard_OVERRIDE
+  virtual void Size(int& theWidth, int& theHeight) const override
   {
     theWidth  = myXRight - myXLeft;
     theHeight = myYBottom - myYTop;
   }
 
-  virtual Aspect_FBConfig NativeFBConfig() const Standard_OVERRIDE { return NULL; }
+  virtual Aspect_FBConfig NativeFBConfig() const override { return NULL; }
 
 protected:
   Handle(Aspect_DisplayConnection) myDisplay;
-  GLFWwindow*      myGlfwWindow;
-  Standard_Integer myXLeft;
-  Standard_Integer myYTop;
-  Standard_Integer myXRight;
-  Standard_Integer myYBottom;
+  GLFWwindow* myGlfwWindow;
+  int         myXLeft;
+  int         myYTop;
+  int         myXRight;
+  int         myYBottom;
 };
 
 #endif // _Occt_glfw_win_Header

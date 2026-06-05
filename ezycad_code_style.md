@@ -24,14 +24,25 @@ Use this style when editing or adding C/C++ code in the EzyCad project (files un
 
 ## Formatting
 
-- **Indentation**: 2 spaces (no tabs).
-- **Access specifiers**: ` public:` and ` private:` (one space before `public`/`private`/`protected`).
-- **Braces**: Follow `.clang-format` (source of truth). **`BreakBeforeBraces: Allman`** with **`BasedOnStyle: LLVM`** elsewhere: opening `{` is on the **next line** for classes/structs/unions, functions, control statements, namespaces, and enums. Constructor initializer lists break with **`BreakConstructorInitializers: BeforeComma`** (comma starts each continuation line). Lambdas use **`AllowShortLambdasOnASingleLine: Inline`**. Other “short construct” behavior inherits LLVM defaults unless overridden in `.clang-format`.
-- **Alignment**: **`AlignConsecutiveDeclarations`** / **`AlignConsecutiveAssignments`** are enabled; align member declarations and assignments in columns when it aids readability (type and name aligned across lines in the same block).
-- **Initialization**: Prefer brace-initialization for members (e.g. `bool is_midpoint {false};`, `size_t m_prev_num_nodes {0};`).
-- **Local declarations**: Prefer declaring locals close to first use for readability. For values shared by a render block, compute them once immediately before that block.
-- **Short control flow**: When the body is a single statement you may omit braces; **`AllowShortIfStatementsOnASingleLine: false`** means clang-format will not merge an `if` into one physical line (typically the condition on one line and the statement on the next). Use braces for multi-line or nested bodies. **`for`/`while`** (and other constructs not listed above) follow **`BasedOnStyle: LLVM`** unless overridden in `.clang-format`.
-- Use **`// clang-format off`** / **`// clang-format on`** only where layout must be preserved (e.g. macro-like blocks, tables). Prefer running clang-format; it is the source of truth for formatting.
+Run **`scripts/format-src.ps1`** (or `clang-format -i` on individual files) before committing C++ changes. **`.clang-format`** at the repo root is the source of truth; the settings below match that file. Anything not listed inherits **`BasedOnStyle: LLVM`** (e.g. spaces not tabs, short loops not collapsed to one line).
+
+- **`BasedOnStyle: LLVM`** — Start from the LLVM preset; only the options below override it.
+- **`IndentWidth: 2`** / **`TabWidth: 2`** — Indent with **2 spaces**; do not use tab characters.
+- **`ColumnLimit: 128`** — Prefer wrapping before column 128.
+- **`BreakBeforeBraces: Allman`** — Opening `{` on the **next line** for classes, structs, functions, control statements, namespaces, and enums.
+- **`BreakConstructorInitializers: BeforeComma`** — Constructor initializer lists break **before** each comma (comma starts the continuation line).
+- **`AccessModifierOffset: -1`** — Access specifiers are outdented one space: `` ` public:` ``, `` ` private:` ``, `` ` protected:` `` (one leading space).
+- **`PointerAlignment: Left`** — Attach `*` / `&` to the type: `int* p`, `const Shp& shp`.
+- **`AlignConsecutiveDeclarations: true`** — Align types and names across consecutive declarations in the same block when it helps readability.
+- **`AlignConsecutiveAssignments: true`** — Align `=` across consecutive assignments in the same block when it helps readability.
+- **`AllowShortIfStatementsOnASingleLine: false`** — Do not put an entire `if` (condition + body) on one line; condition and statement stay on separate lines. You may still omit braces for a single-statement body.
+- **`AllowShortLambdasOnASingleLine: Inline`** — Very short **inline** lambdas may stay on one line; longer lambdas break across lines.
+- **`IndentCaseLabels: false`** — `case` / `default` labels align with the surrounding `switch`, not extra-indented under it.
+- **`SortIncludes: false`** — clang-format does **not** reorder `#include` lines. Follow **Headers** above manually (own header first in `.cpp`, project `"..."` before `<...>`).
+
+Use **`// clang-format off`** / **`// clang-format on`** only where layout must be preserved (e.g. macro-like tables). Prefer formatting the file normally.
+
+**Not enforced by clang-format** (project convention): brace-initialize members (`bool ok {false};`); declare locals close to first use; omit braces on single-statement `if`/`for`/`while` bodies when clear.
 
 ## Documentation
 

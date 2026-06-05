@@ -101,7 +101,7 @@ set(GLFW_VERSION  "3.3.0.1")
 set(GLEW_VERSION  "2.1.0")
 set(BOOST_VERSION "1.87.0")
 
-if(MSVC_VERSION)
+if(MSVC_VERSION AND NOT CMAKE_TOOLCHAIN_FILE)
   find_program(NUGET nuget)
   if(NOT NUGET)
     message(FATAL_ERROR "Cannot find nuget command line tool.\nInstall it with e.g. choco install nuget.commandline")
@@ -113,11 +113,14 @@ if(MSVC_VERSION)
   # Include Boost from NuGet installation on Windows
   INCLUDE_DIRECTORIES(${PROJECT_NAME} ${BINARY_DIR}/thirdParty/boost.${BOOST_VERSION}/lib/native/include)
 else()
-  # On Linux, use system Boost installation
-  find_package(Boost REQUIRED)
-  if(Boost_FOUND)
-    INCLUDE_DIRECTORIES(${PROJECT_NAME} ${Boost_INCLUDE_DIRS})
+  if(NOT CMAKE_TOOLCHAIN_FILE)
+    # On Linux (or non-vcpkg), use system Boost installation
+    find_package(Boost REQUIRED)
+    if(Boost_FOUND)
+      INCLUDE_DIRECTORIES(${PROJECT_NAME} ${Boost_INCLUDE_DIRS})
+    endif()
   endif()
+  # When CMAKE_TOOLCHAIN_FILE is set (vcpkg), boost headers from "boost-geometry" etc. are automatically on the include path.
 endif()
 
 # imgui_demo.cpp omitted: large and unused here; add back if you need ImGui::ShowDemoWindow.
@@ -489,8 +492,10 @@ else()
     endif()
 
     target_link_libraries(${PROJECT_NAME} ${PROJECT_NAME}_lib)
-    target_link_libraries(${PROJECT_NAME} ${BINARY_DIR}/thirdParty/unofficial-flayan-glew.${GLEW_VERSION}/build/native/lib/x64/dynamic/glew32.lib)
-    target_link_libraries(${PROJECT_NAME} ${GLFW3_LIBRARY})
+    if(MSVC_VERSION AND NOT CMAKE_TOOLCHAIN_FILE)
+      target_link_libraries(${PROJECT_NAME} ${BINARY_DIR}/thirdParty/unofficial-flayan-glew.${GLEW_VERSION}/build/native/lib/x64/dynamic/glew32.lib)
+    endif()
+    target_link_libraries(${PROJECT_NAME} -Wl,--no-as-needed ${GLFW3_LIBRARY} -Wl,--as-needed)
     
     target_link_libraries(${PROJECT_NAME} ${OpenCASCADE_LIBS})
 
@@ -504,8 +509,12 @@ else()
           COMMENT "Copy Python DLL next to EzyCad.exe")
     endif()
 
-    include_directories(${BINARY_DIR}/thirdParty/unofficial-flayan-glew.${GLEW_VERSION}/build/native/include)
-    include_directories(${GLFW3_INCLUDE_PATH})
+    if(MSVC_VERSION AND NOT CMAKE_TOOLCHAIN_FILE)
+      include_directories(${BINARY_DIR}/thirdParty/unofficial-flayan-glew.${GLEW_VERSION}/build/native/include)
+    endif()
+    if(GLFW3_INCLUDE_PATH)
+      include_directories(${GLFW3_INCLUDE_PATH})
+    endif()
 
     # MSVC-specific configuration
     if(MSVC_VERSION)
@@ -518,8 +527,6 @@ else()
       set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /EHc /MP")
 
       set(DLLS_COMMON 
-          ${BINARY_DIR}/thirdParty/unofficial-flayan-glew.redist.${GLEW_VERSION}/build/native/bin/x64/dynamic/glew32.dll
-          ${BINARY_DIR}/thirdParty/glfw.${GLFW_VERSION}/build/native/bin/dynamic/v142/x64/glfw3.dll
           ${OpenCASCADE_BINARY_DIR}/TKBO.dll
           ${OpenCASCADE_BINARY_DIR}/TKBool.dll
           ${OpenCASCADE_BINARY_DIR}/TKXSBase.dll
@@ -534,6 +541,33 @@ else()
           ${OCCT_3RD_PARTY_DIR}/tbb-2021.13.0-x64/bin/tbb12.dll
           ${OCCT_3RD_PARTY_DIR}/jemalloc-vc14-64/bin/jemalloc.dll
       )
+      if(MSVC_VERSION AND NOT CMAKE_TOOLCHAIN_FILE)
+        list(APPEND DLLS_COMMON
+          ${BINARY_DIR}/thirdParty/unofficial-flayan-glew.redist.${GLEW_VERSION}/build/native/bin/x64/dynamic/glew32.dll
+          ${BINARY_DIR}/thirdParty/glfw.${GLFW_VERSION}/build/native/bin/dynamic/v142/x64/glfw3.dll
+        )
+      endif()
+
+      # When building with vcpkg toolchain (e.g. the GitHub CI), the nuget glew/glfw
+      # were never installed, so also stage the DLLs from the vcpkg manifest install
+      # (typically <source>/vcpkg_installed/x64-windows/bin or under the build tree).
+      # This ensures the Release/ folder contains a runnable EzyCad.exe.
+      if(CMAKE_TOOLCHAIN_FILE)
+        set(_vcpkg_bin "${CMAKE_SOURCE_DIR}/vcpkg_installed/x64-windows/bin")
+        if(NOT EXISTS "${_vcpkg_bin}/glfw3.dll")
+          set(_vcpkg_bin "${BINARY_DIR}/vcpkg_installed/x64-windows/bin")
+        endif()
+        if(NOT EXISTS "${_vcpkg_bin}/glfw3.dll")
+          # Fallback to common vcpkg classic location (if any packages landed there)
+          set(_vcpkg_bin "C:/vcpkg/installed/x64-windows/bin")
+        endif()
+        if(EXISTS "${_vcpkg_bin}/glfw3.dll")
+          list(APPEND DLLS_COMMON "${_vcpkg_bin}/glfw3.dll")
+        endif()
+        if(EXISTS "${_vcpkg_bin}/glew32.dll")
+          list(APPEND DLLS_COMMON "${_vcpkg_bin}/glew32.dll")
+        endif()
+      endif()
 
       foreach(lib ${OpenCASCADE_LIBS})
         list(APPEND DLLS_COMMON ${OpenCASCADE_BINARY_DIR}/${lib}.dll)
@@ -544,16 +578,24 @@ else()
       
       set(CONFIG_ASSETS ${CMAKE_SOURCE_DIR}/imgui.ini)
 
-      # Copy DLLs and assets to Release configurations
+      # Copy DLLs and assets to Release configurations.
+      # Only copy files that actually exist on disk. This prevents configure errors in
+      # the vcpkg-toolchain CI case (and prebuilt-OCCT path) where the nuget-populated
+      # thirdParty/glew/glfw redist paths are never created (the early nuget block is
+      # skipped when CMAKE_TOOLCHAIN_FILE is present).
       foreach(file ${DLLS_RELEASE} ${DLLS_COMMON} ${FONT_ASSETS} ${CONFIG_ASSETS})
-        file(COPY "${file}" DESTINATION "${CMAKE_CURRENT_BINARY_DIR}/Release")
-        file(COPY "${file}" DESTINATION "${CMAKE_CURRENT_BINARY_DIR}/RelWithDebInfo")
-        file(COPY "${file}" DESTINATION "${CMAKE_CURRENT_BINARY_DIR}/MinSizeRel")
+        if(file AND EXISTS "${file}")
+          file(COPY "${file}" DESTINATION "${CMAKE_CURRENT_BINARY_DIR}/Release")
+          file(COPY "${file}" DESTINATION "${CMAKE_CURRENT_BINARY_DIR}/RelWithDebInfo")
+          file(COPY "${file}" DESTINATION "${CMAKE_CURRENT_BINARY_DIR}/MinSizeRel")
+        endif()
       endforeach(file)
 
-      # Copy DLLs and assets to Debug configuration
+      # Copy DLLs and assets to Debug configuration (same existence guard).
       foreach(file ${DLLS_DEBUG} ${DLLS_COMMON} ${FONT_ASSETS} ${CONFIG_ASSETS})
+        if(file AND EXISTS "${file}")
           file(COPY "${file}" DESTINATION "${CMAKE_CURRENT_BINARY_DIR}/Debug")
+        endif()
       endforeach(file)
 
     endif()
@@ -639,7 +681,7 @@ if(NOT CMAKE_CXX_COMPILER_ID STREQUAL "Emscripten")
     target_link_libraries(${PROJECT_NAME}_tests
         GTest::gtest_main
         GTest::gmock_main
-        ${GLFW3_LIBRARY}
+        -Wl,--no-as-needed ${GLFW3_LIBRARY} -Wl,--as-needed
         ${PROJECT_NAME}_lib
         ${OpenCASCADE_LIBS}
         ${OPENGL_LIBRARIES}
@@ -683,6 +725,23 @@ if(EZYCAD_SCRIPT_FILES)
   target_sources(${PROJECT_NAME}_lib PRIVATE ${EZYCAD_SCRIPT_FILES_REL})
   target_sources(${PROJECT_NAME} PRIVATE ${EZYCAD_SCRIPT_FILES_REL})
   set_source_files_properties(${EZYCAD_SCRIPT_FILES_REL} PROPERTIES HEADER_FILE_ONLY TRUE)
+endif()
+
+# GitHub workflow files: show .github/workflows/*.yml in the IDE under 'github-workflows' folder
+# (so they are visible in Visual Studio Solution Explorer etc. without being compiled)
+file(GLOB_RECURSE GITHUB_WORKFLOW_FILES CONFIGURE_DEPENDS
+  LIST_DIRECTORIES false
+  "${CMAKE_SOURCE_DIR}/.github/workflows/*.yml")
+if(GITHUB_WORKFLOW_FILES)
+  source_group(TREE "${CMAKE_SOURCE_DIR}/.github/workflows" PREFIX "github-workflows" FILES ${GITHUB_WORKFLOW_FILES})
+  set(GITHUB_WORKFLOW_FILES_REL)
+  foreach(f ${GITHUB_WORKFLOW_FILES})
+    file(RELATIVE_PATH f_rel "${CMAKE_SOURCE_DIR}" "${f}")
+    list(APPEND GITHUB_WORKFLOW_FILES_REL "${f_rel}")
+  endforeach()
+  target_sources(${PROJECT_NAME}_lib PRIVATE ${GITHUB_WORKFLOW_FILES_REL})
+  target_sources(${PROJECT_NAME} PRIVATE ${GITHUB_WORKFLOW_FILES_REL})
+  set_source_files_properties(${GITHUB_WORKFLOW_FILES_REL} PROPERTIES HEADER_FILE_ONLY TRUE)
 endif()
 
 # Add .clang-format and .gitignore to EzyCad and EzyCad_lib so they appear in VS and other IDEs (at project root)

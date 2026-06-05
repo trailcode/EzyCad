@@ -128,11 +128,11 @@ public:
   Sketch_list& get_sketches();
   void         remove_sketch(const Sketch_ptr& sketch);
   /// Empty sketch on \a pln; \a base_name is uniquified (e.g. Sketch_xy, Sketch_xy.001).
-  void         add_sketch(const gp_Pln& pln, const std::string& base_name);
-  Sketch&      curr_sketch();
-  Sketch_ptr   curr_sketch_shared() const;
-  void         set_curr_sketch(const Sketch_ptr& sketch);
-  void         sketch_face_extrude(const ScreenCoords& screen_coords, bool is_mouse_move);
+  void       add_sketch(const gp_Pln& pln, const std::string& base_name);
+  Sketch&    curr_sketch();
+  Sketch_ptr curr_sketch_shared() const;
+  void       set_curr_sketch(const Sketch_ptr& sketch);
+  void       sketch_face_extrude(const ScreenCoords& screen_coords, bool is_mouse_move);
 
   std::list<Shp_ptr>& get_shapes();
   std::string         get_unique_shape_name(const char* base_name) const;
@@ -281,7 +281,7 @@ private:
   TopoDS_Shape         shape_with_local_transform_(const AIS_Shape_ptr& ais) const;
   [[nodiscard]] Status build_export_shape_(TopoDS_Shape& out_shape) const;
 
-  void update_view_background_();
+  void                         update_view_background_();
   static Occt_grid_rect_params clamp_occt_grid_rect_params_(Occt_grid_rect_params g);
   void                         capture_occt_grid_rect_from_viewer_(const V3d_Viewer_ptr& viewer);
   void                         apply_occt_grid_rect_to_viewer_();
@@ -313,27 +313,27 @@ private:
 
   // --------------------------------------------------------------------
   // Dimension related
-  bool                     m_show_dim_input{false};
-  double                   m_dimension_scale{100.0};
-  std::optional<double>    m_entered_dim;
-  std::list<Shp_ptr>       m_shps;
-  Sketch_list              m_sketches;
-  std::shared_ptr<Sketch>  m_cur_sketch;
-  TopAbs_ShapeEnum         m_shp_selection_mode{TopAbs_SHAPE};
+  bool                              m_show_dim_input{false};
+  double                            m_dimension_scale{100.0};
+  std::optional<double>             m_entered_dim;
+  std::list<Shp_ptr>                m_shps;
+  Sketch_list                       m_sketches;
+  std::shared_ptr<Sketch>           m_cur_sketch;
+  TopAbs_ShapeEnum                  m_shp_selection_mode{TopAbs_SHAPE};
   Shp_ptr                           m_shape_list_hover;
   opencascade::handle<Prs3d_Drawer> m_shape_list_hover_drawer;
   void                              update_shape_list_hover_drawer_();
   Graphic3d_MaterialAspect          m_default_material;
-  bool                     m_headless_view{false};
+  bool                              m_headless_view{false};
   /// True when LMB press was handled by planar-face sketch creation without AIS_ViewController::PressMouseButton (pair with
   /// release skip).
   bool m_planar_face_lmb_skipped_view_controller{false};
   // OCCT view colors; defaults match what we render (set explicitly in init_viewer())
-  glm::vec3 m_bg_color1{0.85f, 0.88f, 0.90f};
-  glm::vec3 m_bg_color2{0.45f, 0.55f, 0.60f};
-  int       m_bg_gradient_method{1}; // 0=HOR, 1=VER, 2=DIAG1, ...
-  glm::vec3 m_grid_color1{0.1f, 0.1f, 0.1f};
-  glm::vec3 m_grid_color2{0.1f, 0.1f, 0.3f};
+  glm::vec3             m_bg_color1{0.85f, 0.88f, 0.90f};
+  glm::vec3             m_bg_color2{0.45f, 0.55f, 0.60f};
+  int                   m_bg_gradient_method{1}; // 0=HOR, 1=VER, 2=DIAG1, ...
+  glm::vec3             m_grid_color1{0.1f, 0.1f, 0.1f};
+  glm::vec3             m_grid_color2{0.1f, 0.1f, 0.3f};
   Occt_grid_rect_params m_occt_grid_rect{};
   /// User setting: same role as former literal in `UpdateZoom(Aspect_ScrollDelta(..., int(y * scale)))`.
   double m_zoom_scroll_scale{4.0};

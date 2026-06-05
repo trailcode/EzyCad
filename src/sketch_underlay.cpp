@@ -158,11 +158,11 @@ Handle(Image_PixMap) make_pixmap_bottom_up_linear(const uint8_t* rgba, int w, in
     return {};
 
   Handle(Image_PixMap) pix = new Image_PixMap();
-  if (!pix->InitTrash(Image_Format_RGBA, static_cast<Standard_Size>(w), static_cast<Standard_Size>(h)))
+  if (!pix->InitTrash(Image_Format_RGBA, static_cast<size_t>(w), static_cast<size_t>(h)))
     return {};
 
-  const Standard_Size rowBytes = static_cast<Standard_Size>(w) * 4u;
-  uint8_t*            dst      = pix->ChangeData();
+  const size_t rowBytes = static_cast<size_t>(w) * 4u;
+  uint8_t*     dst      = pix->ChangeData();
 
   for (int rj = 0; rj < h; ++rj)
   {
@@ -205,11 +205,11 @@ Handle(Image_PixMap) make_pixmap_bottom_up_warped(const uint8_t* rgba, int w, in
   out_h     = std::clamp(out_h, 1, k_max_image_dim);
 
   Handle(Image_PixMap) pix = new Image_PixMap();
-  if (!pix->InitTrash(Image_Format_RGBA, static_cast<Standard_Size>(out_w), static_cast<Standard_Size>(out_h)))
+  if (!pix->InitTrash(Image_Format_RGBA, static_cast<size_t>(out_w), static_cast<size_t>(out_h)))
     return {};
 
-  const Standard_Size rowBytes = static_cast<Standard_Size>(out_w) * 4u;
-  uint8_t*            dst      = pix->ChangeData();
+  const size_t rowBytes = static_cast<size_t>(out_w) * 4u;
+  uint8_t*     dst      = pix->ChangeData();
 
   constexpr double k_eps = 1e-9;
   for (int rj = 0; rj < out_h; ++rj)
@@ -238,11 +238,11 @@ Handle(Image_PixMap) make_pixmap_bottom_up_warped(const uint8_t* rgba, int w, in
       }
 
       apply_key_and_tint(px[0], px[1], px[2], px[3], key_white_transparent, line_tint_enabled, tr, tg, tb, ta);
-      const Standard_Size o = static_cast<Standard_Size>(ox) * 4u;
-      dstRow[o + 0]         = px[0];
-      dstRow[o + 1]         = px[1];
-      dstRow[o + 2]         = px[2];
-      dstRow[o + 3]         = px[3];
+      const size_t o = static_cast<size_t>(ox) * 4u;
+      dstRow[o + 0]  = px[0];
+      dstRow[o + 1]  = px[1];
+      dstRow[o + 2]  = px[2];
+      dstRow[o + 3]  = px[3];
     }
   }
 
@@ -442,7 +442,7 @@ void Sketch_underlay::build_ais_(const gp_Pln& pln, AIS_InteractiveContext& ctx)
     if (!wireMk.IsDone())
       return;
 
-    BRepBuilderAPI_MakeFace faceMk(wireMk.Wire(), Standard_True);
+    BRepBuilderAPI_MakeFace faceMk(wireMk.Wire(), true);
     if (!faceMk.IsDone())
       return;
     face = faceMk.Face();
@@ -458,7 +458,7 @@ void Sketch_underlay::build_ais_(const gp_Pln& pln, AIS_InteractiveContext& ctx)
   m_ais->SetTexturePixMap(pix);
   m_ais->SetTextureMapOn();
   m_ais->DisableTextureModulate();
-  m_ais->SetTextureRepeat(Standard_False, 1., 1.);
+  m_ais->SetTextureRepeat(false, 1., 1.);
   m_ais->SetTransparency(1.0 - static_cast<double>(m_opacity));
   m_ais->SetDisplayMode(3);
 

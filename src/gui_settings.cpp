@@ -16,7 +16,7 @@
 
 namespace
 {
-const char* const k_settings_version = "1";
+const char* const k_settings_version                  = "1";
 const char* const k_gui_key_permanent_node_anno_scale = "permanent_node_anno_scale";
 
 /// `occt_view` JSON object: view background gradient and grid (shared with `save_occt_view_settings` /
@@ -26,12 +26,15 @@ nlohmann::json build_occt_view_settings_object(const Occt_view& view)
   float bg1[3], bg2[3], g1[3], g2[3];
   view.get_bg_gradient_colors(bg1, bg2);
   view.get_grid_colors(g1, g2);
-  const int              method = view.get_bg_gradient_method();
+  const int             method = view.get_bg_gradient_method();
   Occt_grid_rect_params grid_rect{};
   view.get_occt_grid_rect_params(grid_rect);
   return nlohmann::json{
-      {"bg_color1", {bg1[0], bg1[1], bg1[2]}}, {"bg_color2", {bg2[0], bg2[1], bg2[2]}}, {"bg_gradient_method", method},
-      {"grid_color1", {g1[0], g1[1], g1[2]}},  {"grid_color2", {g2[0], g2[1], g2[2]}},
+      {"bg_color1", {bg1[0], bg1[1], bg1[2]}},
+      {"bg_color2", {bg2[0], bg2[1], bg2[2]}},
+      {"bg_gradient_method", method},
+      {"grid_color1", {g1[0], g1[1], g1[2]}},
+      {"grid_color2", {g2[0], g2[1], g2[2]}},
       {"grid_step", grid_rect.step},
       {"grid_graphic_x_size", grid_rect.graphic_x_size},
       {"grid_graphic_y_size", grid_rect.graphic_y_size},
@@ -40,10 +43,7 @@ nlohmann::json build_occt_view_settings_object(const Occt_view& view)
 }
 } // namespace
 
-void GUI::set_ui_verbosity(int v)
-{
-  m_ui_verbosity = std::max(k_gui_ui_verbosity_min, v);
-}
+void GUI::set_ui_verbosity(int v) { m_ui_verbosity = std::max(k_gui_ui_verbosity_min, v); }
 
 std::string GUI::occt_view_settings_json() const
 {
@@ -138,8 +138,7 @@ void GUI::save_occt_view_settings()
        {m_underlay_highlight_color[0], m_underlay_highlight_color[1], m_underlay_highlight_color[2],
         m_underlay_highlight_color[3]}},
       {"shape_list_hover_color",
-       {m_shape_list_hover_color[0], m_shape_list_hover_color[1], m_shape_list_hover_color[2],
-        m_shape_list_hover_color[3]}},
+       {m_shape_list_hover_color[0], m_shape_list_hover_color[1], m_shape_list_hover_color[2], m_shape_list_hover_color[3]}},
   };
   j["version"]          = k_settings_version;
   const char* imgui_ini = ImGui::SaveIniSettingsToMemory(nullptr);
@@ -266,10 +265,9 @@ void GUI::parse_gui_panes_settings_(const std::string& content)
     };
     m_edge_dim_line_width = parse_bounded_float("edge_dim_line_width", 0.5f, 8.0f, k_gui_edge_dim_line_width_default);
     m_edge_dim_arrow_size = parse_bounded_float("edge_dim_arrow_size", 1.0f, 24.0f, k_gui_edge_dim_arrow_size_default);
-    m_edge_dim_text_scale =
-        parse_bounded_float("edge_dim_text_scale", k_gui_edge_dim_text_scale_min, k_gui_edge_dim_text_scale_max,
-                            k_gui_edge_dim_text_scale_default);
-    auto parse_dim_int = [&g](const char* key, const int min_v, const int max_v, const int default_v) -> int
+    m_edge_dim_text_scale = parse_bounded_float("edge_dim_text_scale", k_gui_edge_dim_text_scale_min,
+                                                k_gui_edge_dim_text_scale_max, k_gui_edge_dim_text_scale_default);
+    auto parse_dim_int    = [&g](const char* key, const int min_v, const int max_v, const int default_v) -> int
     {
       if (g.contains(key) && g[key].is_number_integer())
       {
@@ -279,9 +277,8 @@ void GUI::parse_gui_panes_settings_(const std::string& content)
       }
       return default_v;
     };
-    m_edge_dim_text_render_mode =
-        parse_dim_int("edge_dim_text_render_mode", 0, k_gui_edge_dim_text_render_mode_max,
-                      k_gui_edge_dim_text_render_mode_default);
+    m_edge_dim_text_render_mode = parse_dim_int("edge_dim_text_render_mode", 0, k_gui_edge_dim_text_render_mode_max,
+                                                k_gui_edge_dim_text_render_mode_default);
     if (g.contains("edge_dim_color") && g["edge_dim_color"].is_array() && g["edge_dim_color"].size() >= 3)
     {
       const json& a = g["edge_dim_color"];
@@ -524,7 +521,7 @@ void GUI::settings_()
       if (ImGui::InputInt("##ui_verbosity_val", &verb_edit, 0, 0))
       {
         m_ui_verbosity = std::max(k_gui_ui_verbosity_min, verb_edit);
-        verb_changed     = true;
+        verb_changed   = true;
       }
       ImGui::SameLine(0.0f, ImGui::GetStyle().ItemInnerSpacing.x);
       if (ImGui::ArrowButton("##ui_verbosity_inc", ImGuiDir_Right))
@@ -748,18 +745,18 @@ void GUI::settings_()
     m_view->get_grid_colors(g1, g2);
     Occt_grid_rect_params gr{};
     m_view->get_occt_grid_rect_params(gr);
-    const double          dim_scale = m_view->get_dimension_scale();
+    const double dim_scale = m_view->get_dimension_scale();
     // Settings show the same length units as sketch dimensions (model / dimension_scale).
     // Grid extent UI is full span; OCCT SetGraphicValues uses half-extent (x0.5 on apply).
-    double step_ui          = gr.step / dim_scale;
-    double graphic_x_ui     = (gr.graphic_x_size * 2.0) / dim_scale;
-    double graphic_y_ui     = (gr.graphic_y_size * 2.0) / dim_scale;
-    double graphic_z_off_ui = gr.graphic_z_offset / dim_scale;
-    bool   grid_changed     = false;
-    bool   geom_changed     = false;
-    constexpr float spd_s       = 0.08f;
-    constexpr float spd_m       = 1.5f;
-    constexpr float spd_extent  = 0.25f;
+    double          step_ui          = gr.step / dim_scale;
+    double          graphic_x_ui     = (gr.graphic_x_size * 2.0) / dim_scale;
+    double          graphic_y_ui     = (gr.graphic_y_size * 2.0) / dim_scale;
+    double          graphic_z_off_ui = gr.graphic_z_offset / dim_scale;
+    bool            grid_changed     = false;
+    bool            geom_changed     = false;
+    constexpr float spd_s            = 0.08f;
+    constexpr float spd_m            = 1.5f;
+    constexpr float spd_extent       = 0.25f;
     if (ImGui::BeginTable("settings_grid", 2, ImGuiTableFlags_SizingStretchProp))
     {
       ImGui::TableSetupColumn("label", ImGuiTableColumnFlags_WidthFixed, k_label_col_w);
@@ -876,196 +873,193 @@ void GUI::settings_()
         ImGui::TableSetColumnIndex(0);
         ImGui::AlignTextToFramePadding();
         ImGui::TextUnformatted("Dimension line width");
-      ImGui::TableSetColumnIndex(1);
-      {
-        float lw = m_edge_dim_line_width;
-        if (ImGui::SliderFloat("##edge_dim_lw", &lw, 0.5f, 8.0f, "%.2f"))
+        ImGui::TableSetColumnIndex(1);
         {
-          m_edge_dim_line_width = lw;
-          dim_changed           = true;
-        }
-        if (ui_show_help(2))
-        {
-          ImGui::SameLine(0.0f, ImGui::GetStyle().ItemInnerSpacing.x);
-          ImGui::TextDisabled("(?)");
-          if (ImGui::IsItemHovered())
+          float lw = m_edge_dim_line_width;
+          if (ImGui::SliderFloat("##edge_dim_lw", &lw, 0.5f, 8.0f, "%.2f"))
           {
-            ImGui::BeginTooltip();
-            ImGui::PushTextWrapPos(ImGui::GetFontSize() * 35.0f);
-            ImGui::TextDisabled("Thickness of sketch edge length dimensions (Open CASCADE line width scale; 1.0 = default).");
-            ImGui::PopTextWrapPos();
-            ImGui::EndTooltip();
+            m_edge_dim_line_width = lw;
+            dim_changed           = true;
+          }
+          if (ui_show_help(2))
+          {
+            ImGui::SameLine(0.0f, ImGui::GetStyle().ItemInnerSpacing.x);
+            ImGui::TextDisabled("(?)");
+            if (ImGui::IsItemHovered())
+            {
+              ImGui::BeginTooltip();
+              ImGui::PushTextWrapPos(ImGui::GetFontSize() * 35.0f);
+              ImGui::TextDisabled("Thickness of sketch edge length dimensions (Open CASCADE line width scale; 1.0 = default).");
+              ImGui::PopTextWrapPos();
+              ImGui::EndTooltip();
+            }
           }
         }
-      }
 
-      ImGui::TableNextRow();
-      ImGui::TableSetColumnIndex(0);
-      ImGui::AlignTextToFramePadding();
-      ImGui::TextUnformatted("Dimension arrow size");
-      ImGui::TableSetColumnIndex(1);
-      {
-        float arrow = m_edge_dim_arrow_size;
-        if (ImGui::SliderFloat("##edge_dim_arrow", &arrow, 1.0f, 24.0f, "%.2f"))
+        ImGui::TableNextRow();
+        ImGui::TableSetColumnIndex(0);
+        ImGui::AlignTextToFramePadding();
+        ImGui::TextUnformatted("Dimension arrow size");
+        ImGui::TableSetColumnIndex(1);
         {
-          m_edge_dim_arrow_size = arrow;
-          dim_changed           = true;
-        }
-        if (ui_show_help(2))
-        {
-          ImGui::SameLine(0.0f, ImGui::GetStyle().ItemInnerSpacing.x);
-          ImGui::TextDisabled("(?)");
-          if (ImGui::IsItemHovered())
+          float arrow = m_edge_dim_arrow_size;
+          if (ImGui::SliderFloat("##edge_dim_arrow", &arrow, 1.0f, 24.0f, "%.2f"))
           {
-            ImGui::BeginTooltip();
-            ImGui::PushTextWrapPos(ImGui::GetFontSize() * 35.0f);
-            ImGui::TextDisabled("Arrow head length for sketch and extrude length dimensions (Open CASCADE display units).");
-            ImGui::PopTextWrapPos();
-            ImGui::EndTooltip();
+            m_edge_dim_arrow_size = arrow;
+            dim_changed           = true;
+          }
+          if (ui_show_help(2))
+          {
+            ImGui::SameLine(0.0f, ImGui::GetStyle().ItemInnerSpacing.x);
+            ImGui::TextDisabled("(?)");
+            if (ImGui::IsItemHovered())
+            {
+              ImGui::BeginTooltip();
+              ImGui::PushTextWrapPos(ImGui::GetFontSize() * 35.0f);
+              ImGui::TextDisabled("Arrow head length for sketch and extrude length dimensions (Open CASCADE display units).");
+              ImGui::PopTextWrapPos();
+              ImGui::EndTooltip();
+            }
           }
         }
-      }
 
-      ImGui::TableNextRow();
-      ImGui::TableSetColumnIndex(0);
-      ImGui::AlignTextToFramePadding();
-      ImGui::TextUnformatted("Dimension color");
-      ImGui::TableSetColumnIndex(1);
-      if (ImGui::ColorEdit3("##edge_dim_color", m_edge_dim_color, ImGuiColorEditFlags_Float))
-        dim_changed = true;
+        ImGui::TableNextRow();
+        ImGui::TableSetColumnIndex(0);
+        ImGui::AlignTextToFramePadding();
+        ImGui::TextUnformatted("Dimension color");
+        ImGui::TableSetColumnIndex(1);
+        if (ImGui::ColorEdit3("##edge_dim_color", m_edge_dim_color, ImGuiColorEditFlags_Float))
+          dim_changed = true;
 
-      ImGui::TableNextRow();
-      ImGui::TableSetColumnIndex(0);
-      ImGui::AlignTextToFramePadding();
-      ImGui::TextUnformatted("Dimension text scale");
-      ImGui::TableSetColumnIndex(1);
-      {
-        float ts = m_edge_dim_text_scale;
-        if (ImGui::SliderFloat("##edge_dim_text_scale", &ts, k_gui_edge_dim_text_scale_min, k_gui_edge_dim_text_scale_max,
-                               "%.2f"))
+        ImGui::TableNextRow();
+        ImGui::TableSetColumnIndex(0);
+        ImGui::AlignTextToFramePadding();
+        ImGui::TextUnformatted("Dimension text scale");
+        ImGui::TableSetColumnIndex(1);
         {
-          m_edge_dim_text_scale = ts;
-          dim_changed           = true;
+          float ts = m_edge_dim_text_scale;
+          if (ImGui::SliderFloat("##edge_dim_text_scale", &ts, k_gui_edge_dim_text_scale_min, k_gui_edge_dim_text_scale_max,
+                                 "%.2f"))
+          {
+            m_edge_dim_text_scale = ts;
+            dim_changed           = true;
+          }
         }
-      }
 
-      ImGui::TableNextRow();
-      ImGui::TableSetColumnIndex(0);
-      ImGui::AlignTextToFramePadding();
-      ImGui::TextUnformatted("Label rendering");
-      ImGui::TableSetColumnIndex(1);
-      {
-        constexpr std::array<const char*, 6> k_labels = {
-            "Opaque 2D text",
-            "SetCommonColor",
-            "2D screen text",
-            "3D text",
-            "Z-layer Top",
-            "Z-layer Topmost",
-        };
-        int rm = m_edge_dim_text_render_mode;
-        if (rm < 0 || rm >= static_cast<int>(k_labels.size()))
-          rm = k_gui_edge_dim_text_render_mode_default;
-        ImGui::SetNextItemWidth(220.0f);
-        if (ImGui::BeginCombo("##edge_dim_text_render", k_labels[static_cast<size_t>(rm)], ImGuiComboFlags_HeightSmall))
+        ImGui::TableNextRow();
+        ImGui::TableSetColumnIndex(0);
+        ImGui::AlignTextToFramePadding();
+        ImGui::TextUnformatted("Label rendering");
+        ImGui::TableSetColumnIndex(1);
         {
-          for (int i = 0; i < static_cast<int>(k_labels.size()); ++i)
-            if (ImGui::Selectable(k_labels[static_cast<size_t>(i)], i == rm))
-            {
-              m_edge_dim_text_render_mode = i;
-              dim_changed                 = true;
-            }
-          ImGui::EndCombo();
+          constexpr std::array<const char*, 6> k_labels = {
+              "Opaque 2D text", "SetCommonColor", "2D screen text", "3D text", "Z-layer Top", "Z-layer Topmost",
+          };
+          int rm = m_edge_dim_text_render_mode;
+          if (rm < 0 || rm >= static_cast<int>(k_labels.size()))
+            rm = k_gui_edge_dim_text_render_mode_default;
+          ImGui::SetNextItemWidth(220.0f);
+          if (ImGui::BeginCombo("##edge_dim_text_render", k_labels[static_cast<size_t>(rm)], ImGuiComboFlags_HeightSmall))
+          {
+            for (int i = 0; i < static_cast<int>(k_labels.size()); ++i)
+              if (ImGui::Selectable(k_labels[static_cast<size_t>(i)], i == rm))
+              {
+                m_edge_dim_text_render_mode = i;
+                dim_changed                 = true;
+              }
+            ImGui::EndCombo();
+          }
+          if (ui_show_help(2) && ImGui::IsItemHovered())
+            ImGui::SetTooltip("How dimension value labels are composited. Z-layer Top and Topmost avoid ghosting "
+                              "against the grid; Topmost is the default.");
         }
-        if (ui_show_help(2) && ImGui::IsItemHovered())
-          ImGui::SetTooltip("How dimension value labels are composited. Z-layer Top and Topmost avoid ghosting "
-                            "against the grid; Topmost is the default.");
-      }
 
-      ImGui::TableNextRow();
-      ImGui::TableSetColumnIndex(0);
-      ImGui::AlignTextToFramePadding();
-      ImGui::TextUnformatted("Length value placement");
-      ImGui::TableSetColumnIndex(1);
-      {
-        constexpr std::array<const char*, 4> k_edge_dim_label_placement = {
-            "Near first point",
-            "Near second point",
-            "Center on dimension line",
-            "Automatic",
-        };
-        int h = m_edge_dim_label_h;
-        ImGui::SetNextItemWidth(200.0f);
-        if (ImGui::BeginCombo("##edge_dim_h", k_edge_dim_label_placement[static_cast<size_t>(h)], ImGuiComboFlags_HeightSmall))
+        ImGui::TableNextRow();
+        ImGui::TableSetColumnIndex(0);
+        ImGui::AlignTextToFramePadding();
+        ImGui::TextUnformatted("Length value placement");
+        ImGui::TableSetColumnIndex(1);
         {
-          for (int i = 0; i < static_cast<int>(k_edge_dim_label_placement.size()); ++i)
-            if (ImGui::Selectable(k_edge_dim_label_placement[static_cast<size_t>(i)], i == h))
-            {
-              m_edge_dim_label_h = i;
-              dim_changed        = true;
-            }
-          ImGui::EndCombo();
+          constexpr std::array<const char*, 4> k_edge_dim_label_placement = {
+              "Near first point",
+              "Near second point",
+              "Center on dimension line",
+              "Automatic",
+          };
+          int h = m_edge_dim_label_h;
+          ImGui::SetNextItemWidth(200.0f);
+          if (ImGui::BeginCombo("##edge_dim_h", k_edge_dim_label_placement[static_cast<size_t>(h)],
+                                ImGuiComboFlags_HeightSmall))
+          {
+            for (int i = 0; i < static_cast<int>(k_edge_dim_label_placement.size()); ++i)
+              if (ImGui::Selectable(k_edge_dim_label_placement[static_cast<size_t>(i)], i == h))
+              {
+                m_edge_dim_label_h = i;
+                dim_changed        = true;
+              }
+            ImGui::EndCombo();
+          }
         }
-      }
 
-      ImGui::TableNextRow();
-      ImGui::TableSetColumnIndex(0);
-      ImGui::AlignTextToFramePadding();
-      ImGui::TextUnformatted("Arrow style");
-      ImGui::TableSetColumnIndex(1);
-      {
-        constexpr std::array<const char*, 4> k_arrow_styles = {"Standard", "Sharp", "Wide", "3D shaded"};
-        int                                  st             = m_edge_dim_arrow_style;
-        ImGui::SetNextItemWidth(160.0f);
-        if (ImGui::BeginCombo("##edge_dim_arrow_style", k_arrow_styles[static_cast<size_t>(st)], ImGuiComboFlags_HeightSmall))
+        ImGui::TableNextRow();
+        ImGui::TableSetColumnIndex(0);
+        ImGui::AlignTextToFramePadding();
+        ImGui::TextUnformatted("Arrow style");
+        ImGui::TableSetColumnIndex(1);
         {
-          for (int i = 0; i < static_cast<int>(k_arrow_styles.size()); ++i)
-            if (ImGui::Selectable(k_arrow_styles[static_cast<size_t>(i)], i == st))
-            {
-              m_edge_dim_arrow_style = i;
-              dim_changed            = true;
-            }
-          ImGui::EndCombo();
+          constexpr std::array<const char*, 4> k_arrow_styles = {"Standard", "Sharp", "Wide", "3D shaded"};
+          int                                  st             = m_edge_dim_arrow_style;
+          ImGui::SetNextItemWidth(160.0f);
+          if (ImGui::BeginCombo("##edge_dim_arrow_style", k_arrow_styles[static_cast<size_t>(st)], ImGuiComboFlags_HeightSmall))
+          {
+            for (int i = 0; i < static_cast<int>(k_arrow_styles.size()); ++i)
+              if (ImGui::Selectable(k_arrow_styles[static_cast<size_t>(i)], i == st))
+              {
+                m_edge_dim_arrow_style = i;
+                dim_changed            = true;
+              }
+            ImGui::EndCombo();
+          }
         }
-      }
 
-      ImGui::TableNextRow();
-      ImGui::TableSetColumnIndex(0);
-      ImGui::AlignTextToFramePadding();
-      ImGui::TextUnformatted("Arrow orientation");
-      ImGui::TableSetColumnIndex(1);
-      {
-        constexpr std::array<const char*, 3> k_arrow_orient = {"Automatic", "Internal", "External"};
-        int                                  ao            = m_edge_dim_arrow_orientation;
-        ImGui::SetNextItemWidth(160.0f);
-        if (ImGui::BeginCombo("##edge_dim_arrow_orient", k_arrow_orient[static_cast<size_t>(ao)], ImGuiComboFlags_HeightSmall))
+        ImGui::TableNextRow();
+        ImGui::TableSetColumnIndex(0);
+        ImGui::AlignTextToFramePadding();
+        ImGui::TextUnformatted("Arrow orientation");
+        ImGui::TableSetColumnIndex(1);
         {
-          for (int i = 0; i < static_cast<int>(k_arrow_orient.size()); ++i)
-            if (ImGui::Selectable(k_arrow_orient[static_cast<size_t>(i)], i == ao))
-            {
-              m_edge_dim_arrow_orientation = i;
-              dim_changed                  = true;
-            }
-          ImGui::EndCombo();
+          constexpr std::array<const char*, 3> k_arrow_orient = {"Automatic", "Internal", "External"};
+          int                                  ao             = m_edge_dim_arrow_orientation;
+          ImGui::SetNextItemWidth(160.0f);
+          if (ImGui::BeginCombo("##edge_dim_arrow_orient", k_arrow_orient[static_cast<size_t>(ao)],
+                                ImGuiComboFlags_HeightSmall))
+          {
+            for (int i = 0; i < static_cast<int>(k_arrow_orient.size()); ++i)
+              if (ImGui::Selectable(k_arrow_orient[static_cast<size_t>(i)], i == ao))
+              {
+                m_edge_dim_arrow_orientation = i;
+                dim_changed                  = true;
+              }
+            ImGui::EndCombo();
+          }
         }
-      }
 
-      ImGui::TableNextRow();
-      ImGui::TableSetColumnIndex(0);
-      ImGui::AlignTextToFramePadding();
-      ImGui::TextUnformatted("Show sketch dimensions");
-      ImGui::TableSetColumnIndex(1);
-      {
-        bool show = m_show_sketch_dimensions;
-        if (ImGui::Checkbox("##show_sketch_dims", &show))
+        ImGui::TableNextRow();
+        ImGui::TableSetColumnIndex(0);
+        ImGui::AlignTextToFramePadding();
+        ImGui::TextUnformatted("Show sketch dimensions");
+        ImGui::TableSetColumnIndex(1);
         {
-          set_show_sketch_dimensions(show);
-          save_occt_view_settings();
+          bool show = m_show_sketch_dimensions;
+          if (ImGui::Checkbox("##show_sketch_dims", &show))
+          {
+            set_show_sketch_dimensions(show);
+            save_occt_view_settings();
+          }
+          if (ui_show_help(2) && ImGui::IsItemHovered())
+            ImGui::SetTooltip("When off, hides all sketch length dimensions. Tool mode may still limit which sketch shows "
+                              "dimensions when this is on.");
         }
-        if (ui_show_help(2) && ImGui::IsItemHovered())
-          ImGui::SetTooltip("When off, hides all sketch length dimensions. Tool mode may still limit which sketch shows "
-                            "dimensions when this is on.");
-      }
 
         ImGui::EndTable();
       }

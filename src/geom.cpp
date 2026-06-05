@@ -63,7 +63,7 @@ gp_Pnt2d to_2d(const gp_Pln& plane, const gp_Pnt& point_3d)
   gp_Vec vec_to_point(origin, point_3d);
 
   // Distance from point to plane along normal (signed distance)
-  Standard_Real distance = vec_to_point.Dot(normal);
+  double distance = vec_to_point.Dot(normal);
 
   // Projected point = 3D point - (distance * normal)
   gp_Vec normal_vec(normal);
@@ -80,8 +80,8 @@ gp_Pnt2d to_2d(const gp_Pln& plane, const gp_Pnt& point_3d)
   gp_Vec vec_projected(origin, projected_point);
 
   // Compute u, v as projections onto X and Y directions
-  Standard_Real u = vec_projected.Dot(x_dir);
-  Standard_Real v = vec_projected.Dot(y_dir);
+  double u = vec_projected.Dot(x_dir);
+  double v = vec_projected.Dot(y_dir);
 
   return gp_Pnt2d(u, v);
 }
@@ -211,7 +211,7 @@ std::array<gp_Pnt2d, 4> square_corners(const gp_Pnt2d& center, const gp_Pnt2d& e
   // Compute side length from center to edge midpoint
   gp_Vec2d to_midpoint(edge_midpoint.X() - center.X(), edge_midpoint.Y() - center.Y());
 
-  Standard_Real half_side = to_midpoint.Magnitude();
+  double half_side = to_midpoint.Magnitude();
 
   // Direction to edge midpoint
   gp_Vec2d edge_dir = to_midpoint.Normalized();
@@ -256,7 +256,7 @@ TopoDS_Wire make_circle_wire(const gp_Pln& pln, const gp_Pnt2d& center, const gp
   // Compute radius
   gp_Vec2d to_edge(edge_point.X() - center.X(), edge_point.Y() - center.Y());
 
-  Standard_Real radius = to_edge.Magnitude();
+  double radius = to_edge.Magnitude();
 
   // Get 3D center and plane's normal
   gp_Pnt center_3d = to_3d(pln, center);
@@ -342,8 +342,8 @@ TopoDS_Wire make_slot_wire(const gp_Pln& plane, const gp_Pnt2d& pt_a, const gp_P
 std::pair<gp_Vec, gp_Vec> get_start_end_tangents(const Handle(Geom_TrimmedCurve) & curve)
 {
   // Get the start and end parameters
-  Standard_Real u_start = curve->FirstParameter();
-  Standard_Real u_end   = curve->LastParameter();
+  double u_start = curve->FirstParameter();
+  double u_end   = curve->LastParameter();
 
   // Evaluate the curve at start and end points to get points and tangents
   gp_Pnt p_start, p_end;
@@ -481,8 +481,8 @@ gp_Pln sketch_reference_plane(Sketch_ref_plane plane, double offset)
 gp_Pnt2d center_point(const gp_Pnt2d& point1, const gp_Pnt2d& point2)
 {
   // Calculate midpoint coordinates
-  Standard_Real center_x = (point1.X() + point2.X()) / 2.0;
-  Standard_Real center_y = (point1.Y() + point2.Y()) / 2.0;
+  double center_x = (point1.X() + point2.X()) / 2.0;
+  double center_y = (point1.Y() + point2.Y()) / 2.0;
 
   // Return the new center point
   return gp_Pnt2d(center_x, center_y);
@@ -503,8 +503,8 @@ gp_Dir2d get_unit_dir(const gp_Pnt2d& point1, const gp_Pnt2d& point2)
 
 gp_Pnt2d get_midpoint(const gp_Pnt2d& p1, const gp_Pnt2d& p2)
 {
-  Standard_Real x = (p1.X() + p2.X()) * 0.5;
-  Standard_Real y = (p1.Y() + p2.Y()) * 0.5;
+  double x = (p1.X() + p2.X()) * 0.5;
+  double y = (p1.Y() + p2.Y()) * 0.5;
   return gp_Pnt2d(x, y);
 }
 
@@ -564,22 +564,22 @@ void arrow_style_preset(const int arrow_style, double& angle_deg, bool& arrows_3
 {
   switch (arrow_style)
   {
-    case 1:
-      angle_deg = 15.0;
-      arrows_3d = false;
-      break;
-    case 2:
-      angle_deg = 40.0;
-      arrows_3d = false;
-      break;
-    case 3:
-      angle_deg = 25.0;
-      arrows_3d = true;
-      break;
-    default:
-      angle_deg = 25.0;
-      arrows_3d = false;
-      break;
+  case 1:
+    angle_deg = 15.0;
+    arrows_3d = false;
+    break;
+  case 2:
+    angle_deg = 40.0;
+    arrows_3d = false;
+    break;
+  case 3:
+    angle_deg = 25.0;
+    arrows_3d = true;
+    break;
+  default:
+    angle_deg = 25.0;
+    arrows_3d = false;
+    break;
   }
 }
 
@@ -587,16 +587,16 @@ Prs3d_DimensionArrowOrientation arrow_orientation_from_index(const int idx)
 {
   switch (idx)
   {
-    case 1:
-      return Prs3d_DAO_Internal;
-    case 2:
-      return Prs3d_DAO_External;
-    default:
-      return Prs3d_DAO_Fit;
+  case 1:
+    return Prs3d_DAO_Internal;
+  case 2:
+    return Prs3d_DAO_External;
+  default:
+    return Prs3d_DAO_Fit;
   }
 }
 
-void apply_dimension_label_text_aspect(const Handle(Prs3d_TextAspect)& text, const Quantity_Color& col,
+void apply_dimension_label_text_aspect(const Handle(Prs3d_TextAspect) & text, const Quantity_Color& col,
                                        const Length_dimension_style& style)
 {
   text->SetColor(col);
@@ -613,7 +613,7 @@ void apply_dimension_label_text_aspect(const Handle(Prs3d_TextAspect)& text, con
 
 double length_dimension_auto_flyout(const double edge_len)
 {
-  constexpr double k_min_flyout  = 15.0;
+  constexpr double k_min_flyout    = 15.0;
   constexpr double k_edge_fraction = 0.12;
   return std::max(k_min_flyout, edge_len * k_edge_fraction);
 }
@@ -631,7 +631,7 @@ void apply_length_dimension_style(const PrsDim_LengthDimension_ptr& dim, const L
   if (const Handle(Prs3d_LineAspect)& la = aspect->LineAspect(); !la.IsNull())
     typ = la->Aspect()->Type();
 
-  aspect->SetLineAspect(new Prs3d_LineAspect(col, typ, static_cast<Standard_Real>(style.line_width)));
+  aspect->SetLineAspect(new Prs3d_LineAspect(col, typ, static_cast<double>(style.line_width)));
 
   double angle_deg{};
   bool   arrows_3d{};
@@ -645,7 +645,7 @@ void apply_length_dimension_style(const PrsDim_LengthDimension_ptr& dim, const L
   else
     arrow = new Prs3d_ArrowAspect();
   arrow->SetColor(col);
-  arrow->SetLength(static_cast<Standard_Real>(style.arrow_size));
+  arrow->SetLength(static_cast<double>(style.arrow_size));
   arrow->SetAngle(angle_deg * (std::numbers::pi / 180.0));
   aspect->SetArrowAspect(arrow);
 
@@ -674,15 +674,15 @@ void apply_length_dimension_style(const PrsDim_LengthDimension_ptr& dim, const L
 
   switch (style.text_render_mode)
   {
-    case 4:
-      dim->SetZLayer(Graphic3d_ZLayerId_Top);
-      break;
-    case 5:
-      dim->SetZLayer(Graphic3d_ZLayerId_Topmost);
-      break;
-    default:
-      dim->SetZLayer(Graphic3d_ZLayerId_Default);
-      break;
+  case 4:
+    dim->SetZLayer(Graphic3d_ZLayerId_Top);
+    break;
+  case 5:
+    dim->SetZLayer(Graphic3d_ZLayerId_Topmost);
+    break;
+  default:
+    dim->SetZLayer(Graphic3d_ZLayerId_Default);
+    break;
   }
 }
 
@@ -702,7 +702,7 @@ void apply_length_dimension_line_width(const PrsDim_LengthDimension_ptr& dim, co
     typ                                     = g->Type();
   }
 
-  aspect->SetLineAspect(new Prs3d_LineAspect(col, typ, static_cast<Standard_Real>(line_width)));
+  aspect->SetLineAspect(new Prs3d_LineAspect(col, typ, static_cast<double>(line_width)));
   dim->SetDimensionAspect(aspect);
 }
 
@@ -719,7 +719,7 @@ void apply_length_dimension_arrow_size(const PrsDim_LengthDimension_ptr& dim, co
   else
     arrow = new Prs3d_ArrowAspect();
 
-  arrow->SetLength(static_cast<Standard_Real>(arrow_size));
+  arrow->SetLength(static_cast<double>(arrow_size));
   aspect->SetArrowAspect(arrow);
   dim->SetDimensionAspect(aspect);
 }
@@ -747,8 +747,8 @@ static void orient_length_dimension_flyout_outward(const PrsDim_LengthDimension_
   if (to_in.SquareMagnitude() < Precision::SquareConfusion())
     return;
 
-  const double  edge_len = std::sqrt(attach.SquareMagnitude());
-  const double f = length_dimension_auto_flyout(edge_len);
+  const double edge_len = std::sqrt(attach.SquareMagnitude());
+  const double f        = length_dimension_auto_flyout(edge_len);
 
   if (fly_pos.Dot(to_in) > 0.0)
     dim->SetFlyout(-std::abs(f));
@@ -769,7 +769,7 @@ static bool point_strictly_inside_sketch_faces(const gp_Pnt& p, const std::vecto
 static bool orient_length_dimension_flyout_clear_of_faces(const PrsDim_LengthDimension_ptr& dim, const gp_Pnt& p1,
                                                           const gp_Pnt& p2, const gp_Pln& pln,
                                                           const std::vector<TopoDS_Face>& faces,
-                                                          const Length_dimension_style& style)
+                                                          const Length_dimension_style&   style)
 {
   if (dim.IsNull() || faces.empty())
     return false;
@@ -786,7 +786,7 @@ static bool orient_length_dimension_flyout_clear_of_faces(const PrsDim_LengthDim
   fly_pos.Normalize();
 
   const double edge_len = std::sqrt(attach.SquareMagnitude());
-  const double f = length_dimension_auto_flyout(edge_len);
+  const double f        = length_dimension_auto_flyout(edge_len);
 
   gp_Pnt mid = p1.Translated(attach.Multiplied(0.5));
 
@@ -813,7 +813,7 @@ static bool orient_length_dimension_flyout_clear_of_faces(const PrsDim_LengthDim
 }
 
 PrsDim_LengthDimension_ptr create_distance_annotation(const gp_Pnt& p1, const gp_Pnt& p2, const gp_Pln& pln,
-                                                      const Length_dimension_style&     style,
+                                                      const Length_dimension_style&   style,
                                                       const std::optional<gp_Pnt>&    interior_ref,
                                                       const std::vector<TopoDS_Face>* sketch_faces_for_flyout)
 {
@@ -830,14 +830,14 @@ PrsDim_LengthDimension_ptr create_distance_annotation(const gp_Pnt& p1, const gp
   else if (!used_faces)
   {
     const double f = length_dimension_auto_flyout(p1.Distance(p2));
-    dim->SetFlyout(static_cast<Standard_Real>(f));
+    dim->SetFlyout(static_cast<double>(f));
   }
 
   return dim;
 }
 
 PrsDim_LengthDimension_ptr create_distance_annotation(const gp_Pnt2d& p1, const gp_Pnt2d& p2, const gp_Pln& pln,
-                                                      const Length_dimension_style&     style,
+                                                      const Length_dimension_style&   style,
                                                       const std::optional<gp_Pnt>&    interior_ref,
                                                       const std::vector<TopoDS_Face>* sketch_faces_for_flyout)
 {
@@ -847,8 +847,8 @@ PrsDim_LengthDimension_ptr create_distance_annotation(const gp_Pnt2d& p1, const 
 const gp_Pnt& closest_to_camera(const V3d_View_ptr& view, const std::vector<gp_Pnt>& pnts)
 {
   EZY_ASSERT(pnts.size());
-  size_t        best_idx;
-  Standard_Real min_distance = std::numeric_limits<Standard_Real>::max();
+  size_t best_idx;
+  double min_distance = std::numeric_limits<double>::max();
 
   // Get the camera's eye position (world coordinates)
   gp_Pnt camera_pos = view->Camera()->Eye();
@@ -856,7 +856,7 @@ const gp_Pnt& closest_to_camera(const V3d_View_ptr& view, const std::vector<gp_P
   for (size_t idx = 0, num = pnts.size(); idx < num; ++idx)
   {
     // Compute Euclidean distance to camera
-    Standard_Real distance = pnts[idx].Distance(camera_pos);
+    double distance = pnts[idx].Distance(camera_pos);
 
     // Update closest point if this distance is smaller
     if (distance < min_distance)
@@ -914,13 +914,13 @@ bool is_face_contained(const TopoDS_Shape& shape_a, const TopoDS_Shape& shape_b)
   if (!pln_a.Position().Direction().IsParallel(pln_b.Position().Direction(), Precision::Angular()) ||
       Abs(pln_a.Distance(pln_b.Location())) > Precision::Confusion())
   {
-    return Standard_False; // Not coplanar
+    return false; // Not coplanar
   }
 
   // Check if face_a's outer wire is contained within face_b
-  TopoDS_Wire      wire_a = BRepTools::OuterWire(face_a);
-  TopExp_Explorer  vertex_explorer(wire_a, TopAbs_VERTEX);
-  Standard_Boolean all_inside = Standard_True;
+  TopoDS_Wire     wire_a = BRepTools::OuterWire(face_a);
+  TopExp_Explorer vertex_explorer(wire_a, TopAbs_VERTEX);
+  bool            all_inside = true;
 
   while (vertex_explorer.More() && all_inside)
   {
@@ -931,7 +931,7 @@ bool is_face_contained(const TopoDS_Shape& shape_a, const TopoDS_Shape& shape_b)
     TopAbs_State             state = classifier.State();
 
     if (state != TopAbs_IN)
-      all_inside = Standard_False;
+      all_inside = false;
 
     vertex_explorer.Next();
   }
@@ -1096,7 +1096,7 @@ gp_Pnt get_shape_bbox_center(const TopoDS_Shape& shp)
 {
   Bnd_Box bbox;
   BRepBndLib::Add(shp, bbox);
-  Standard_Real xMin, yMin, zMin, xMax, yMax, zMax;
+  double xMin, yMin, zMin, xMax, yMax, zMax;
   bbox.Get(xMin, yMin, zMin, xMax, yMax, zMax);
   return gp_Pnt((xMin + xMax) / 2.0, (yMin + yMax) / 2.0, (zMin + zMax) / 2.0);
 }
@@ -1152,7 +1152,7 @@ bool is_clockwise(const boost_geom::ring_2d& ring)
 // Sorts a vector of gp_Pnt by x, then y, then z
 void sort_pnts(std::vector<gp_Pnt>& points)
 {
-  constexpr double tol = Precision::Confusion();
+  const double tol = Precision::Confusion();
   std::sort(points.begin(), points.end(),
             [tol](const gp_Pnt& a, const gp_Pnt& b)
             {
