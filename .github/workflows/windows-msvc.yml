@@ -8,6 +8,10 @@ on:
   pull_request:
     branches: [main, master]
 
+  # Allows manual triggering from the Actions tab (very handy for testing the CI
+  # or forcing a build/release without pushing code or creating a tag).
+  workflow_dispatch:
+
 # Grant the GITHUB_TOKEN write access so that the release step (softprops/action-gh-release)
 # can create/update releases and attach the portable zip when a version tag is pushed.
 # Without this (or the equivalent repo setting), the token defaults to "Contents: read"
