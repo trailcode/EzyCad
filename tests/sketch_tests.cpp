@@ -386,9 +386,8 @@ TEST_F(Sketch_test, CreateCircle)
 
   // Verify the number of points in the outer ring (should be enough points to approximate a circle)
   EXPECT_GT(boost_poly.outer().size(), 20) << "Circle should have enough points to be smooth";
-#endif // USE_BOOST
 
-  // Verify the points are roughly equidistant from the center
+  // Verify the points are roughly equidistant from the center (boost validation)
   double expected_radius = 10.0;
   double tolerance       = 0.1;  // Allow for some approximation error
   for (const auto& point : boost_poly.outer())
@@ -398,6 +397,7 @@ TEST_F(Sketch_test, CreateCircle)
     double radius = std::sqrt(dx * dx + dy * dy);
     EXPECT_NEAR(radius, expected_radius, tolerance) << "Point should be on the circle";
   }
+#endif // USE_BOOST
 }
 
 // Test case 1: Simple rectangle face
