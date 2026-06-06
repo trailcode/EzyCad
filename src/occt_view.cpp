@@ -407,7 +407,7 @@ void Occt_view::init_default()
     m_view->DiagnosticInformation(aRendInfo, Graphic3d_DiagnosticInfo_Basic);
     for (int i = 1; i <= aRendInfo.Extent(); ++i)
     {
-      const TCollection_AsciiString& aKey = aRendInfo.FindKey(i);
+      const TCollection_AsciiString& aKey   = aRendInfo.FindKey(i);
       const TCollection_AsciiString& aValue = aRendInfo.FindFromIndex(i);
       if (!aGlInfo.IsEmpty())
         aGlInfo += "\n";

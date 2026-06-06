@@ -179,7 +179,7 @@ int main(int argc, char** argv)
 
   // Resolve font directory: prefer next to the executable (so running ./build-wsl/EzyCad works),
   // fall back to CWD and source tree locations. This avoids "black windows" from missing ImGui fonts.
-  std::string droid_font_path = "DroidSans.ttf";
+  std::string droid_font_path   = "DroidSans.ttf";
   std::string cousine_font_path = "Cousine-Regular.ttf";
 #ifndef __EMSCRIPTEN__
   if (argc > 0 && argv[0] != nullptr)
@@ -189,7 +189,7 @@ int main(int argc, char** argv)
       std::filesystem::path exe_dir = std::filesystem::path(argv[0]).parent_path();
       if (!exe_dir.empty())
       {
-        auto try_droid = (exe_dir / "DroidSans.ttf").string();
+        auto try_droid   = (exe_dir / "DroidSans.ttf").string();
         auto try_cousine = (exe_dir / "Cousine-Regular.ttf").string();
         if (std::filesystem::exists(try_droid))
           droid_font_path = try_droid;
@@ -197,7 +197,9 @@ int main(int argc, char** argv)
           cousine_font_path = try_cousine;
       }
     }
-    catch (...) {}
+    catch (...)
+    {
+    }
   }
 #endif
 

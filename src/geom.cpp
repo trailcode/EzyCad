@@ -1197,7 +1197,8 @@ TopoDS_Wire make_rectangle_wire(const gp_Pln& pln, const gp_Pnt2d& corner1, cons
 
 bool ezy_geom::is_valid(const polygon_2d& poly)
 {
-  if (poly.outer_.size() < 3) return false;
+  if (poly.outer_.size() < 3)
+    return false;
   // The construction logic in to_boost already guarantees closed, oriented rings.
   // This is intentionally lightweight.
   return true;
@@ -1205,11 +1206,14 @@ bool ezy_geom::is_valid(const polygon_2d& poly)
 
 double ezy_geom::area(const polygon_2d& poly)
 {
-  auto ring_area = [](const ring_2d& ring) -> double {
-    if (ring.size() < 3) return 0.0;
+  auto ring_area = [](const ring_2d& ring) -> double
+  {
+    if (ring.size() < 3)
+      return 0.0;
     double a = 0.0;
     size_t n = ring.size();
-    for (size_t i = 0; i < n; ++i) {
+    for (size_t i = 0; i < n; ++i)
+    {
       size_t j = (i + 1) % n;
       a += ring[i].x() * ring[j].y() - ring[j].x() * ring[i].y();
     }
@@ -1217,7 +1221,8 @@ double ezy_geom::area(const polygon_2d& poly)
   };
 
   double a = ring_area(poly.outer());
-  for (const auto& h : poly.inners()) {
+  for (const auto& h : poly.inners())
+  {
     a -= ring_area(h);
   }
   return std::abs(a);
@@ -1225,8 +1230,10 @@ double ezy_geom::area(const polygon_2d& poly)
 
 std::string to_wkt_string(const ezy_geom::polygon_2d& poly)
 {
-  auto fmt_num = [](double v) -> std::string {
-    if (std::abs(v - std::round(v)) < 1e-9) {
+  auto fmt_num = [](double v) -> std::string
+  {
+    if (std::abs(v - std::round(v)) < 1e-9)
+    {
       // whole number
       return std::to_string(static_cast<long long>(std::round(v)));
     }
@@ -1237,11 +1244,15 @@ std::string to_wkt_string(const ezy_geom::polygon_2d& poly)
 
   std::ostringstream ss;
 
-  auto write_ring = [&](const ezy_geom::ring_2d& r, bool first_ring) {
-    if (!first_ring) ss << ",";
+  auto write_ring = [&](const ezy_geom::ring_2d& r, bool first_ring)
+  {
+    if (!first_ring)
+      ss << ",";
     ss << "(";
-    for (size_t i = 0; i < r.size(); ++i) {
-      if (i > 0) ss << ",";
+    for (size_t i = 0; i < r.size(); ++i)
+    {
+      if (i > 0)
+        ss << ",";
       ss << fmt_num(r[i].x()) << " " << fmt_num(r[i].y());
     }
     ss << ")";
@@ -1249,7 +1260,8 @@ std::string to_wkt_string(const ezy_geom::polygon_2d& poly)
 
   ss << "POLYGON(";
   write_ring(poly.outer_, true);
-  for (const auto& inner : poly.inners_) {
+  for (const auto& inner : poly.inners_)
+  {
     write_ring(inner, false);
   }
   ss << ")";
