@@ -165,7 +165,7 @@ jobs:
             -DOpenCASCADE_DIR="$openCascadeDir" `
             -DOCCT_3RD_PARTY_DIR="$occt3rdPartyDir" `
             -DEZYCAD_ENABLE_PYTHON=OFF `
-            -DUSE_BOOST=OFF   # skip heavy boost-geometry in vcpkg for fast CI; full validation still runs locally with -DUSE_BOOST=ON (uses nuget/system)
+            # (No Boost dependency - pure C++ geometry helpers are used for tests)
 
       - name: Verify using real MS Visual Studio compiler (cl.exe / MSBuild)
         shell: pwsh
@@ -197,7 +197,7 @@ jobs:
           Write-Host ""
           Write-Host "Note: vcpkg downloads (cmake, 7zip etc.) are only for the remaining small dependencies (glfw3, glew)."
           Write-Host "OCCT uses the official prebuilt binaries (V8, cached/downloaded separately) for fast CI."
-          Write-Host "Boost is disabled in CI via -DUSE_BOOST=OFF (avoids long boost-geometry build); re-enable locally for full test coverage of sketch winding/hole checks."
+          Write-Host "Pure C++ re-implementations are used for polygon/winding/area checks in tests (no Boost dependency)."
           Write-Host "The EzyCad code itself (and the vcpkg-built deps on Windows) are compiled with the real cl.exe from Visual Studio 2022."
 
       - name: Build Release

@@ -6,18 +6,18 @@ EzyCad does **not** vendor OCCT; builds live **outside** the tree. Point CMake a
 
 - [OCCT releases](https://github.com/Open-Cascade-SAS/OCCT/releases)
 - [Build OCCT (overview)](https://dev.opencascade.org/doc/overview/html/build_upgrade__building_occt.html)
-- [WebGL / wasm sample (upstream)](https://dev.opencascade.org/doc/occt-7.9.0/overview/html/occt_samples_webgl.html) (legacy; see V8 wasm script for current)
+- Upstream WebGL/wasm samples exist but are outdated; use the V8 script documented below for current EzyCad WASM support.
 
 ---
 
 ## Version matrix (EzyCad)
 
-| Target | Documented / tested | Experimental | CMake variables |
-| --- | --- | --- | --- |
-| **Windows desktop** | OCCT **8.0.0** prebuilt | (future 9.x) | `OpenCASCADE_DIR`, `OCCT_3RD_PARTY_DIR` |
-| **WebAssembly** | OCCT **8.0.0** via `scripts/build-occt-v8-wasm.ps1` | OCCT **7.9.x** manual / [wasm-occ-demo](https://github.com/mathysyon/wasm-occ-demo) | `OpenCASCADE_DIR` only (static install) |
+| Target | Documented / tested | CMake variables |
+| --- | --- | --- |
+| **Windows desktop** | OCCT **8.0.0** prebuilt | `OpenCASCADE_DIR`, `OCCT_3RD_PARTY_DIR` |
+| **WebAssembly** | OCCT **8.0.0** via `scripts/build-occt-v8-wasm.ps1` | `OpenCASCADE_DIR` only (static install) |
 
-After upgrading OCCT (e.g. from 7.9 to 8.0), retest **sketch dimensions**, **grid**, **fillet/chamfer/boolean**, and **STEP/STL** export. OCCT 8.0 changes grid rendering and many modeling paths.
+After upgrading OCCT, retest **sketch dimensions**, **grid**, **fillet/chamfer/boolean**, and **STEP/STL** export. OCCT 8.0 changes grid rendering and many modeling paths.
 
 ---
 
@@ -42,15 +42,6 @@ Note: The V8 combined release asset is a small wrapper zip containing `opencasca
 https://github.com/Open-Cascade-SAS/OCCT/releases/download/V8_0_0/3rdparty-vc14-64.zip
 # + the opencascade-*-vc14-64 combined from the V8_0_0 release page
 ```
-
-### Legacy (7.9.1)
-
-```text
-https://github.com/Open-Cascade-SAS/OCCT/releases/download/V7_9_1/opencascade-7.9.1-vc14-64-combined.zip
-# or separate 3rdparty + package from V7_9_1
-```
-
-Unpack so `3rdparty-vc14-64` and the OCCT folder share a **parent directory** (required for DRAW; EzyCad only needs CMake paths).
 
 ### Configure EzyCad
 
@@ -104,7 +95,7 @@ occt-wasm-build/
 **PowerShell (repo root, after `emsdk_env`):**
 
 ```powershell
-.\scripts\build-occt-v8-wasm.ps1 -RootDir C:\src\occt-wasm-build
+.\scripts\build-occt-v8-wasm.ps1 -RootDir C:\bin\occt-wasm-build
 ```
 
 Or use `scripts\build-occt-v8-wasm.cmd` if PowerShell script execution is restricted.
@@ -113,16 +104,16 @@ Or use `scripts\build-occt-v8-wasm.cmd` if PowerShell script execution is restri
 
 **Expect:** 1–3+ hours compile, large disk use. Success prints `OpenCASCADE_DIR=...`.
 
-**Configure EzyCad wasm** (do **not** use `-G Ninja` for EzyCad — known issue in README):
+**Configure EzyCad wasm** (Ninja generator works well with OCCT V8):
 
 ```text
 mkdir build_em
 cd build_em
-emcmake cmake C:\src\EzyCad -Wno-dev -DOpenCASCADE_DIR=C:\src\occt-wasm-build\install\lib\cmake\opencascade
-emmake cmake --build . --config Release
+emcmake cmake C:\src\EzyCad -Wno-dev -G Ninja -DOpenCASCADE_DIR=C:\src\occt-wasm-build\install\lib\cmake\opencascade -DCMAKE_BUILD_TYPE=Release
+ninja
 ```
 
-Serve: `python -m http.server 8000` from the build output directory.
+Serve: `python -m http.server 8000` from the build output directory (the `.html` + `.wasm` + `.data` files).
 
 ### OCCT wasm CMake flags (reference)
 
@@ -152,11 +143,9 @@ FreeType wasm configure also disables optional zlib/png/harfbuzz finds to simpli
 | EzyCad configure hangs on `find_package(OpenCASCADE)` | `emcmake cmake ... --debug-output`; verify `OpenCASCADE_DIR` path |
 | OCCT 8 + ghosted dimension labels | Retest `gui.edge_dim_text_render_mode` (Z-layer Topmost); grid compositing changed in 8.0 |
 
-### Legacy wasm path (7.9.x)
-
-Manual FreeType 2.10.1 + OCCT 7.9.0 per [wasm-occ-demo](https://github.com/mathysyon/wasm-occ-demo). Prefer the V8 script for new wasm OCCT work; keep 7.9.x until EzyCad wasm is verified on 8.0.
-
 ---
+
+**Note:** Older OCCT builds (prior to 8.0) are no longer supported or documented. Use the V8 script above for WebAssembly.
 
 ## Wrapper scripts and automation
 
@@ -206,12 +195,6 @@ powershell -NoProfile -ExecutionPolicy Bypass -File C:\src\EzyCad\scripts\build-
 
 ```bash
 curl -L -o occt-combined.zip https://github.com/Open-Cascade-SAS/OCCT/releases/download/V8_0_0/occt-combined-release-no-pch.zip
-```
-
-**Windows desktop 7.9.1 (legacy):**
-
-```bash
-curl -L -o 3rdparty.zip https://github.com/Open-Cascade-SAS/OCCT/releases/download/V7_9_1/3rdparty-vc14-64.zip
 ```
 
 ### vcpkg (alternative desktop path)
