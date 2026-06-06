@@ -485,7 +485,11 @@ else()
     if(MSVC_VERSION AND NOT CMAKE_TOOLCHAIN_FILE)
       target_link_libraries(${PROJECT_NAME} ${BINARY_DIR}/thirdParty/unofficial-flayan-glew.${GLEW_VERSION}/build/native/lib/x64/dynamic/glew32.lib)
     endif()
-    target_link_libraries(${PROJECT_NAME} -Wl,--no-as-needed ${GLFW3_LIBRARY} -Wl,--as-needed)
+    if(NOT MSVC)
+      target_link_libraries(${PROJECT_NAME} -Wl,--no-as-needed ${GLFW3_LIBRARY} -Wl,--as-needed)
+    else()
+      target_link_libraries(${PROJECT_NAME} ${GLFW3_LIBRARY})
+    endif()
     
     target_link_libraries(${PROJECT_NAME} ${OpenCASCADE_LIBS})
 
@@ -671,12 +675,16 @@ if(NOT CMAKE_CXX_COMPILER_ID STREQUAL "Emscripten")
     target_link_libraries(${PROJECT_NAME}_tests
         GTest::gtest_main
         GTest::gmock_main
-        -Wl,--no-as-needed ${GLFW3_LIBRARY} -Wl,--as-needed
         ${PROJECT_NAME}_lib
         ${OpenCASCADE_LIBS}
         ${OPENGL_LIBRARIES}
         ${OPENGL_gl_LIBRARY}
     )
+    if(NOT MSVC)
+      target_link_libraries(${PROJECT_NAME}_tests -Wl,--no-as-needed ${GLFW3_LIBRARY} -Wl,--as-needed)
+    else()
+      target_link_libraries(${PROJECT_NAME}_tests ${GLFW3_LIBRARY})
+    endif()
 
 
     

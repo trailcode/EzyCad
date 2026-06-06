@@ -6,6 +6,7 @@
 #include <cmath>
 #include <cstdio>
 #include <cstdlib>
+#include <cstring>
 #include <filesystem>
 #include <fstream>
 #include <nlohmann/json.hpp>
@@ -36,6 +37,19 @@
 using namespace glm;
 
 GUI* gui_instance = nullptr;
+
+// Portable safe copy for fixed-size char buffers used with ImGui::InputText.
+// Uses strncpy_s (with _TRUNCATE) on MSVC to avoid C4996; falls back elsewhere.
+static void safe_cstr_copy(char* dest, size_t dest_size, const char* src)
+{
+#ifdef _MSC_VER
+  strncpy_s(dest, dest_size, src, _TRUNCATE);
+#else
+  std::strncpy(dest, src, dest_size - 1);
+  dest[dest_size - 1] = '\0';
+#endif
+}
+
 GUI::GUI()
 {
   EZY_ASSERT(!gui_instance);
@@ -988,8 +1002,7 @@ void GUI::sketch_list_inspector_(Sketch& sketch, int index)
           ImGui::TableSetColumnIndex(1);
           char        name_buf[128];
           std::string cur_name = sketch.dimension_name(i);
-          strncpy(name_buf, cur_name.c_str(), sizeof(name_buf) - 1);
-          name_buf[sizeof(name_buf) - 1] = '\0';
+          safe_cstr_copy(name_buf, sizeof(name_buf), cur_name.c_str());
           ImGui::SetNextItemWidth(-FLT_MIN);
           if (ImGui::InputText("##dim_name", name_buf, sizeof(name_buf)))
             sketch.set_dimension_name(i, std::string(name_buf));
@@ -1048,12 +1061,8 @@ void GUI::sketch_list_()
     EZY_ASSERT(sketch);
 
     // Buffer for editable name
-#pragma warning(push)
-#pragma warning(disable : 4996)
     char name_buffer[1024];
-    strncpy(name_buffer, sketch->get_name().c_str(), sizeof(name_buffer) - 1);
-    name_buffer[sizeof(name_buffer) - 1] = '\0'; // Ensure null-terminated
-#pragma warning(pop)
+    safe_cstr_copy(name_buffer, sizeof(name_buffer), sketch->get_name().c_str());
 
     // Unique ID suffix using index
     std::string id_suffix = "##" + std::to_string(index);
@@ -1886,12 +1895,8 @@ void GUI::shape_list_()
     // Unique ID suffix using index
     std::string id_suffix = "##" + std::to_string(index++);
     // Editable text box for name
-#pragma warning(push)
-#pragma warning(disable : 4996)
     char name_buffer[1024];
-    strncpy(name_buffer, shape->get_name().c_str(), sizeof(name_buffer) - 1);
-    name_buffer[sizeof(name_buffer) - 1] = '\0'; // Ensure null-terminated
-#pragma warning(pop)
+    safe_cstr_copy(name_buffer, sizeof(name_buffer), shape->get_name().c_str());
 
     int mat_idx = shape->Material();
     if (mat_idx < 0 || mat_idx >= nmat)

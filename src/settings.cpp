@@ -19,6 +19,26 @@ static std::function<void(const std::string&)> s_log_callback;
 
 void set_log_callback(std::function<void(const std::string&)> cb) { s_log_callback = std::move(cb); }
 
+// Portable getenv wrapper: uses _dupenv_s on MSVC to avoid C4996 deprecation;
+// falls back to std::getenv elsewhere. Returns empty string on failure/missing.
+static std::string get_env_var(const char* name)
+{
+#ifdef _MSC_VER
+  char*  buf = nullptr;
+  size_t sz  = 0;
+  if (_dupenv_s(&buf, &sz, name) == 0 && buf != nullptr)
+  {
+    std::string val(buf);
+    free(buf);
+    return val;
+  }
+  return {};
+#else
+  const char* v = std::getenv(name);
+  return v ? std::string(v) : std::string{};
+#endif
+}
+
 std::filesystem::path user_settings_json_path()
 {
 #ifdef __EMSCRIPTEN__
@@ -145,21 +165,21 @@ std::filesystem::path user_config_directory()
   (void)0;
   return {};
 #elif defined(_WIN32)
-  const char* appdata = std::getenv("APPDATA");
-  if (!appdata || !*appdata)
+  std::string appdata = get_env_var("APPDATA");
+  if (appdata.empty())
     return {};
   return std::filesystem::path(appdata) / "EzyCad";
 #elif defined(__APPLE__)
-  const char* home = std::getenv("HOME");
-  if (!home || !*home)
+  std::string home = get_env_var("HOME");
+  if (home.empty())
     return {};
   return std::filesystem::path(home) / "Library" / "Application Support" / "EzyCad";
 #else
-  const char* xdg = std::getenv("XDG_CONFIG_HOME");
-  if (xdg && *xdg)
+  std::string xdg = get_env_var("XDG_CONFIG_HOME");
+  if (!xdg.empty())
     return std::filesystem::path(xdg) / "EzyCad";
-  const char* home = std::getenv("HOME");
-  if (!home || !*home)
+  std::string home = get_env_var("HOME");
+  if (home.empty())
     return {};
   return std::filesystem::path(home) / ".config" / "EzyCad";
 #endif
