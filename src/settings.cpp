@@ -35,7 +35,7 @@ std::string load()
 {
 #ifdef __EMSCRIPTEN__
   void* ptr = (void*)(intptr_t)EM_ASM_INT({
-    var s   = localStorage.getItem('ezycad_settings') || '';
+    var s   = localStorage.getItem("ezycad_settings") || "";
     var len = lengthBytesUTF8(s) + 1;
     var buf = _malloc(len);
     if (buf)
@@ -177,7 +177,7 @@ std::string load_user_startup_project()
 {
 #ifdef __EMSCRIPTEN__
   void* ptr = (void*)(intptr_t)EM_ASM_INT({
-    var s   = localStorage.getItem('ezycad_startup_ezy') || '';
+    var s   = localStorage.getItem("ezycad_startup_ezy") || "";
     var len = lengthBytesUTF8(s) + 1;
     var buf = _malloc(len);
     if (buf)

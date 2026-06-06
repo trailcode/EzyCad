@@ -1,7 +1,7 @@
 #include "shp_cut.h"
 
 #include <BRepAlgoAPI_Cut.hxx>
-#include <TopTools_ListOfShape.hxx>
+#include <NCollection_List.hxx>
 
 #include "occt_view.h"
 #include "utl.h"
@@ -18,8 +18,8 @@ Status Shp_cut::selected_cut()
 
   std::vector<Shp_ptr>::iterator itr = m_shps.begin();
 
-  TopTools_ListOfShape tool_list;
-  TopTools_ListOfShape arguments;
+  NCollection_List<TopoDS_Shape> tool_list;
+  NCollection_List<TopoDS_Shape> arguments;
   arguments.Append((*itr)->Shape());
   for (++itr; itr != m_shps.end(); ++itr)
     tool_list.Append((*itr)->Shape());

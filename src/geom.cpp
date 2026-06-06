@@ -912,7 +912,7 @@ bool is_face_contained(const TopoDS_Shape& shape_a, const TopoDS_Shape& shape_b)
   gp_Pln pln_b = plane_b->Pln();
 
   if (!pln_a.Position().Direction().IsParallel(pln_b.Position().Direction(), Precision::Angular()) ||
-      Abs(pln_a.Distance(pln_b.Location())) > Precision::Confusion())
+      std::abs(pln_a.Distance(pln_b.Location())) > Precision::Confusion())
   {
     return false; // Not coplanar
   }
