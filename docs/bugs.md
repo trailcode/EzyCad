@@ -1,6 +1,6 @@
 * All operational axes must be persisted.
 * Create a hole in a solid, try and create a face on a curved face. No error is presented to the user. 
-* For curved surfaces, snapping needs to be computed at runtime, annotate snapping on actual curve and apply results. [![Screenshot](./doc/gen/scr1.png)](./doc/gen/scr.png)
+* For curved surfaces, snapping needs to be computed at runtime, annotate snapping on actual curve and apply results. [![Screenshot](./images/scr1.png)](./images/scr.png)
 * Subdivision for shapes should be based on zoom or dist of object to camera. 
 * Shp list should have a field for selected, and the field should reflect what is selected in the viewer.
 * Extrude should be in projection mode.

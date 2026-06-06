@@ -1,7 +1,7 @@
 EzyCad documentation
 ======================
 
-.. image:: doc/gen/AI-gen-splashscreen_05_01_2026_512.png
+.. image:: images/AI-gen-splashscreen_05_01_2026_512.png
    :alt: EzyCad splash screen
    :align: center
 

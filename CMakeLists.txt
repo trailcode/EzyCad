@@ -624,27 +624,9 @@ source_group("imgui" FILES ${imguiSrc})
 source_group("src" FILES ${srcs})
 source_group("web" FILES ${WEB_FILES_REL})
 
-# Add README to VS solution
-if(MSVC)
-    # Create a source group for documentation files
-    set(DOC_FILES
-        ${CMAKE_CURRENT_SOURCE_DIR}/README.md
-        ${CMAKE_CURRENT_SOURCE_DIR}/ezycad_code_style.md
-        ${CMAKE_CURRENT_SOURCE_DIR}/ezycad_doc_style.md
-        ${CMAKE_CURRENT_SOURCE_DIR}/CHANGELOG.md
-        ${CMAKE_CURRENT_SOURCE_DIR}/usage.md
-        ${CMAKE_CURRENT_SOURCE_DIR}/usage-settings.md
-        ${CMAKE_CURRENT_SOURCE_DIR}/usage-sketch.md
-        ${CMAKE_CURRENT_SOURCE_DIR}/scripting.md
-        ${CMAKE_CURRENT_SOURCE_DIR}/bugs.md
-        ${CMAKE_CURRENT_SOURCE_DIR}/LICENSE
-    )
-    #source_group("Documentation" FILES ${DOC_FILES})
-    
-    # Add to project but exclude from build
-    target_sources(${PROJECT_NAME} PRIVATE ${DOC_FILES})
-    set_source_files_properties(${DOC_FILES} PROPERTIES HEADER_FILE_ONLY TRUE)
-endif()
+# Root documentation (README.md, CHANGELOG.md) and docs/ folder contents are made
+# visible in the IDE via the modern glob + source_group block near the end of this
+# file (consistent with agents/, github-workflows, res/, scripts/). See below.
 
 # Add Google Test only for non-Emscripten builds
 if(NOT CMAKE_CXX_COMPILER_ID STREQUAL "Emscripten")
@@ -760,6 +742,40 @@ if(EZYCAD_AGENTS_FILES)
   target_sources(${PROJECT_NAME}_lib PRIVATE ${EZYCAD_AGENTS_FILES_REL})
   target_sources(${PROJECT_NAME} PRIVATE ${EZYCAD_AGENTS_FILES_REL})
   set_source_files_properties(${EZYCAD_AGENTS_FILES_REL} PROPERTIES HEADER_FILE_ONLY TRUE)
+endif()
+
+# Documentation folder: show docs/ (and the moved usage guides, style guides, building-occt.md etc.)
+# in the IDE under a 'docs' folder for both the library and executable targets.
+# (non-compiled; uses the same pattern as agents/, github-workflows, res/, scripts/)
+file(GLOB_RECURSE EZYCAD_DOCS_FILES CONFIGURE_DEPENDS
+  LIST_DIRECTORIES false
+  "${CMAKE_SOURCE_DIR}/docs/*")
+if(EZYCAD_DOCS_FILES)
+  source_group(TREE "${CMAKE_SOURCE_DIR}/docs" PREFIX "docs" FILES ${EZYCAD_DOCS_FILES})
+  set(EZYCAD_DOCS_FILES_REL)
+  foreach(f ${EZYCAD_DOCS_FILES})
+    file(RELATIVE_PATH f_rel "${CMAKE_SOURCE_DIR}" "${f}")
+    list(APPEND EZYCAD_DOCS_FILES_REL "${f_rel}")
+  endforeach()
+  target_sources(${PROJECT_NAME}_lib PRIVATE ${EZYCAD_DOCS_FILES_REL})
+  target_sources(${PROJECT_NAME} PRIVATE ${EZYCAD_DOCS_FILES_REL})
+  set_source_files_properties(${EZYCAD_DOCS_FILES_REL} PROPERTIES HEADER_FILE_ONLY TRUE)
+endif()
+
+# Also surface the two main root docs (README + CHANGELOG) at the project root in IDEs
+set(README_FILE ${CMAKE_SOURCE_DIR}/README.md)
+if(EXISTS ${README_FILE})
+    source_group("" FILES ${README_FILE})
+    target_sources(${PROJECT_NAME}_lib PRIVATE ${README_FILE})
+    target_sources(${PROJECT_NAME} PRIVATE ${README_FILE})
+    set_source_files_properties(${README_FILE} PROPERTIES HEADER_FILE_ONLY TRUE)
+endif()
+set(CHANGELOG_FILE ${CMAKE_SOURCE_DIR}/CHANGELOG.md)
+if(EXISTS ${CHANGELOG_FILE})
+    source_group("" FILES ${CHANGELOG_FILE})
+    target_sources(${PROJECT_NAME}_lib PRIVATE ${CHANGELOG_FILE})
+    target_sources(${PROJECT_NAME} PRIVATE ${CHANGELOG_FILE})
+    set_source_files_properties(${CHANGELOG_FILE} PROPERTIES HEADER_FILE_ONLY TRUE)
 endif()
 
 # Add .clang-format and .gitignore to EzyCad and EzyCad_lib so they appear in VS and other IDEs (at project root)

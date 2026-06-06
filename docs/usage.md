@@ -1,6 +1,6 @@
 # EzyCad Usage Guide
 
-![EzyCad splash screen](doc/gen/AI-gen-splashscreen_05_01_2026_512.png)
+![EzyCad splash screen](images/AI-gen-splashscreen_05_01_2026_512.png)
 
 ## Table of Contents
 1.  [Introduction](#introduction)
@@ -309,7 +309,7 @@ The shape move tool allows you to reposition selected shapes in the 3D viewer wi
 1. ![Assembly_AxialMove](res/icons/Assembly_AxialMove.png) **Activate Move Tool:** Select one or more shapes and press <kbd>G</kbd> or click the icon.
 2. **Constrain Movement (Optional):** Use the options panel to lock movement to a specific axis, or use keyboard shortcuts (e.g., <kbd>X</kbd>, <kbd>Y</kbd>, <kbd>Z</kbd>).
 
-   ![Move constrain axis example](doc/gen/move_constrain_axis.png)
+   ![Move constrain axis example](images/move_constrain_axis.png)
    
    *Example: Movement constrained on the Y and Z axes.*
 3. **Edit Distance (Optional):**  
@@ -340,7 +340,7 @@ The shape rotate tool enables precise rotation of selected shapes around a speci
 1. **Activate Rotate Tool:** ![Draft_Rotate](res/icons/Draft_Rotate.png) Select one or more shapes and press <kbd>R</kbd> or click the icon. You can also activate the tool and select the shape(s) to rotate afterwards.
 2. **Select Rotation Axis: (Optional)**
    
-   ![Rotate constrain axis example](doc/gen/rotate_constrain_axis.png)
+   ![Rotate constrain axis example](images/rotate_constrain_axis.png)
 
    *Example: Rotation around on the X axis.*
    - Press <kbd>X</kbd> to rotate around the X-axis (Red)
@@ -706,4 +706,4 @@ Contributors should follow **[ezycad_code_style.md](ezycad_code_style.md)** for 
 
 ---
 
-For more information, see the [README](README.md), **[usage-settings.md](usage-settings.md)**, or the [GitHub repository](https://github.com/trailcode/EzyCad).
+For more information, see the [README](../README.md), **[usage-settings.md](usage-settings.md)**, or the [GitHub repository](https://github.com/trailcode/EzyCad).

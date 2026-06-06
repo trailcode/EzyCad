@@ -1,67 +1,48 @@
 # Sphinx configuration for EzyCad user documentation (Read the Docs).
-# User guides live at the repository root; they are synced into doc/ at build time
-# so cross-links (usage.md, usage-sketch.md, ...) and res/icons/ paths keep working.
+# Everything lives under the single top-level docs/ directory for clarity.
+# Markdown content (usage*.md etc.) lives as siblings to this conf.py.
 
 from __future__ import annotations
 
 import shutil
 from pathlib import Path
 
-PROJECT_ROOT = Path(__file__).resolve().parent.parent
 DOCS_DIR = Path(__file__).resolve().parent
-
-# Markdown guides published on Read the Docs (canonical copies stay at repo root).
-_USER_MD = (
-    "usage.md",
-    "usage-sketch.md",
-    "usage-settings.md",
-    "usage-occt-view.md",
-    "scripting.md",
-)
+PROJECT_ROOT = DOCS_DIR.parent
 
 
-def _sync_user_docs() -> None:
-    for name in _USER_MD:
-        src = PROJECT_ROOT / name
-        if src.is_file():
-            shutil.copy2(src, DOCS_DIR / name)
-
+def _prepare_assets() -> None:
+    """Copy supporting assets (icons + splash) so relative paths in the guides work."""
+    # Icons referenced from the style guide and some usage pages as res/icons/...
     res_dst = DOCS_DIR / "res"
     res_dst.mkdir(exist_ok=True)
+    icons_src = PROJECT_ROOT / "res" / "icons"
+    if icons_src.is_dir():
+        shutil.copytree(icons_src, res_dst / "icons", dirs_exist_ok=True)
 
+    # Splash screen (used in index and README)
     splash_src = PROJECT_ROOT / "res" / "AI-gen-splashscreen_05_01_2026_512.png"
     if splash_src.is_file():
+        (res_dst / splash_src.name).parent.mkdir(exist_ok=True)
         shutil.copy2(splash_src, res_dst / splash_src.name)
-
-    icons_src = PROJECT_ROOT / "res" / "icons"
-    res_dst = DOCS_DIR / "res"
-    icons_dst = res_dst / "icons"
-    if icons_src.is_dir():
-        shutil.copytree(icons_src, icons_dst, dirs_exist_ok=True)
-
-    doc_gen_src = PROJECT_ROOT / "doc" / "gen"
-    doc_gen_dst = DOCS_DIR / "doc" / "gen"
-    if doc_gen_src.is_dir():
-        shutil.copytree(doc_gen_src, doc_gen_dst, dirs_exist_ok=True)
 
 
 def _verify_doc_assets() -> None:
-    """Fail the build early if synced assets are missing (catches RTD/checkout issues)."""
+    """Fail fast on CI/RTD if required assets are missing."""
     required = [
         DOCS_DIR / "res" / "icons" / "Draft_Rotate.png",
-        DOCS_DIR / "doc" / "gen" / "rotate_constrain_axis.png",
-        DOCS_DIR / "doc" / "gen" / "AI-gen-splashscreen_05_01_2026_512.png",
+        DOCS_DIR / "images" / "rotate_constrain_axis.png",
+        DOCS_DIR / "images" / "AI-gen-splashscreen_05_01_2026_512.png",
     ]
     missing = [p.relative_to(DOCS_DIR) for p in required if not p.is_file()]
     if missing:
         raise RuntimeError(
-            "Documentation assets missing after sync from repo root: "
-            + ", ".join(str(p) for p in missing)
-            + ". Ensure res/icons/ and doc/gen/ are committed."
+            "Documentation assets missing: " + ", ".join(str(p) for p in missing) +
+            ". Make sure res/icons/ and docs/images/ are committed."
         )
 
 
-_sync_user_docs()
+_prepare_assets()
 _verify_doc_assets()
 
 project = "EzyCad"
