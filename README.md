@@ -3,7 +3,7 @@
 [![GitHub](https://img.shields.io/github/stars/trailcode/EzyCad?style=social)](https://github.com/trailcode/EzyCad)
 [![GitHub release (latest by date)](https://img.shields.io/github/v/release/trailcode/EzyCad)](https://github.com/trailcode/EzyCad/releases/latest)
 [![Documentation](https://img.shields.io/badge/docs-readthedocs-blue)](https://ezycad.readthedocs.io/en/latest/usage.html)
-[![WebAssembly](https://img.shields.io/badge/run_in-browser-wasm-green)](https://trailcode.github.io/EzyCad/EzyCad.html)
+[![WebAssembly](https://img.shields.io/badge/run%20in%20browser-wasm-green)](https://trailcode.github.io/EzyCad/EzyCad.html)
 
 **Repository:** [https://github.com/trailcode/EzyCad](https://github.com/trailcode/EzyCad)
 
