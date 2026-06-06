@@ -744,6 +744,24 @@ if(GITHUB_WORKFLOW_FILES)
   set_source_files_properties(${GITHUB_WORKFLOW_FILES_REL} PROPERTIES HEADER_FILE_ONLY TRUE)
 endif()
 
+# Agent / design / issue tracking files: show agents/ in the IDE under 'agents' folder
+# (markdown docs, issues/, prs/ subfolders etc. visible in Visual Studio Solution Explorer
+# and other IDEs without participating in the build)
+file(GLOB_RECURSE EZYCAD_AGENTS_FILES CONFIGURE_DEPENDS
+  LIST_DIRECTORIES false
+  "${CMAKE_SOURCE_DIR}/agents/*")
+if(EZYCAD_AGENTS_FILES)
+  source_group(TREE "${CMAKE_SOURCE_DIR}/agents" PREFIX "agents" FILES ${EZYCAD_AGENTS_FILES})
+  set(EZYCAD_AGENTS_FILES_REL)
+  foreach(f ${EZYCAD_AGENTS_FILES})
+    file(RELATIVE_PATH f_rel "${CMAKE_SOURCE_DIR}" "${f}")
+    list(APPEND EZYCAD_AGENTS_FILES_REL "${f_rel}")
+  endforeach()
+  target_sources(${PROJECT_NAME}_lib PRIVATE ${EZYCAD_AGENTS_FILES_REL})
+  target_sources(${PROJECT_NAME} PRIVATE ${EZYCAD_AGENTS_FILES_REL})
+  set_source_files_properties(${EZYCAD_AGENTS_FILES_REL} PROPERTIES HEADER_FILE_ONLY TRUE)
+endif()
+
 # Add .clang-format and .gitignore to EzyCad and EzyCad_lib so they appear in VS and other IDEs (at project root)
 set(CLANG_FORMAT_FILE ${CMAKE_SOURCE_DIR}/.clang-format)
 if(EXISTS ${CLANG_FORMAT_FILE})
