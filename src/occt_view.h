@@ -9,6 +9,7 @@
 #include <memory>
 #include <optional>
 #include <set>
+#include <map>
 #include <string>
 #include <vector>
 
@@ -224,7 +225,7 @@ public:
   // Selection related
   std::vector<AIS_Shape_ptr> get_selected() const;
   TopAbs_ShapeEnum           get_shp_selection_mode() const;
-  void                       set_shp_selection_mode(const TopAbs_ShapeEnum mode);
+  void                       set_shp_selection_mode(const TopAbs_ShapeEnum selection_mode);
 
   /// Highlight \a shp in the 3D viewer while the Shape List row is hovered (null clears).
   void set_shape_list_hover(const Shp_ptr& shp);
@@ -351,6 +352,9 @@ private:
   Shp_common    m_shp_common;
   Shp_polar_dup m_shp_polar_dup;
   Shp_extrude   m_shp_extrude;
+  // --------------------------------------------------------------------
+  // Selection related
+  std::map<Mode, TopAbs_ShapeEnum> m_modes_selection_mode_map;
 };
 
 template <typename Shp_ptr_t, typename T>
