@@ -47,7 +47,7 @@ The branch improves list-pane usability in the GUI and clarifies coding-style gu
 - [ ] Sketch and Shape list panes behave consistently when resized narrow.
 - [ ] Shared name-width logic remains centralized in one helper.
 - [ ] Coding-style doc clearly captures reader-first ordering and pragmatic DRY guidance.
-- [ ] `.cursor` rule mirrors the updated style guidance on contributor machines.
+- [ ] Local AI assistant rule file mirrors the updated style guidance on contributor machines (these files are not committed).
 
 ### Links
 

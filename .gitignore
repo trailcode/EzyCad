@@ -4,8 +4,10 @@
 # Legacy name; some toolchains write here. Primary vendored deps live in third_party/.
 /thirdParty
 /.vs
-# Cursor IDE (local only). Shared assistant-oriented notes live in agents/.
+# AI/IDE local rule directories (Cursor, Claude, etc.). Shared repo-wide assistant notes live in agents/.
 /.cursor/
+# Other common AI tool local dirs (add more as needed):
+# /.claude/
 /scripts/__pycache__
 
 /docs/_build

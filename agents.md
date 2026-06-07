@@ -1,4 +1,4 @@
-# Agent Instructions (agents.md)
+# Agent Instructions
 
 This file serves as a root-level marker for AI coding assistants. It points to the dedicated `agents/` directory for short, repo-local notes, conventions, and guidance.
 
