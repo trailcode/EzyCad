@@ -18,7 +18,7 @@ UI improvements for sketch/shape lists and coding style guidance
 - `src/gui.h`
 - `src/gui_settings.cpp`
 - `ezycad_code_style.md`
-- `.cursor/rules/ezycad_code_style.mdc`
+- local AI assistant rule file (not committed to the repo)
 - `agents/issues/003-ui-improvements-sketch-shape-lists-and-style.md`
 
 ## Related
