@@ -523,6 +523,8 @@ void GUI::options_()
 
 void GUI::options_normal_mode_()
 {
+  EZY_ASSERT(get_mode() == Mode::Normal);
+
   const auto right_aligned_label = [](const char* text)
   {
     ImGui::AlignTextToFramePadding();

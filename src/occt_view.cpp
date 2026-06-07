@@ -1517,18 +1517,20 @@ void Occt_view::set_shape_list_hover(const Shp_ptr& shp)
 
 TopAbs_ShapeEnum Occt_view::get_shp_selection_mode() const { return m_shp_selection_mode; }
 
-void Occt_view::set_shp_selection_mode(const TopAbs_ShapeEnum mode)
+void Occt_view::set_shp_selection_mode(const TopAbs_ShapeEnum selection_mode)
 {
-  if (m_shp_selection_mode == mode)
+  m_modes_selection_mode_map[get_mode()] = selection_mode;
+
+  if (m_shp_selection_mode == selection_mode)
     return;
 
-  m_shp_selection_mode  = mode;
-  const std::size_t idx = static_cast<std::size_t>(mode);
+  m_shp_selection_mode  = selection_mode;
+  const std::size_t idx = static_cast<std::size_t>(selection_mode);
   EZY_ASSERT(idx < c_names_TopAbs_ShapeEnum.size());
   m_gui.log_message(std::string("Selection mode: ") + std::string(c_names_TopAbs_ShapeEnum[idx]));
 
   for (auto& shp : m_shps)
-    shp->set_selection_mode(mode);
+    shp->set_selection_mode(selection_mode);
 }
 
 // Material related
@@ -1617,10 +1619,17 @@ void Occt_view::on_mode()
     switch (get_mode())
     {
       // clang-format off
-      case Mode::Sketch_from_planar_face: set_shp_selection_mode(TopAbs_FACE); break;
-      case Mode::Shape_chamfer:           on_chamfer_mode();                   break; // Will update selection mode
-      case Mode::Shape_fillet:            on_fillet_mode();                    break; // Will update selection mode
-      default: break;
+      case Mode::Sketch_from_planar_face: set_shp_selection_mode(TopAbs_FACE);      break;
+      case Mode::Shape_chamfer:           on_chamfer_mode();                        break; // Will update selection mode
+      case Mode::Shape_fillet:            on_fillet_mode();                         break; // Will update selection mode
+      case Mode::Move:                    set_shp_selection_mode(TopAbs_COMPOUND);  break;
+      case Mode::Rotate:                  set_shp_selection_mode(TopAbs_COMPOUND);  break;
+      case Mode::Scale:                   set_shp_selection_mode(TopAbs_COMPOUND);  break;
+      default:
+        if(m_modes_selection_mode_map.count(get_mode()))
+          set_shp_selection_mode(m_modes_selection_mode_map.at(get_mode()));
+        
+        break;
       // clang-format on
     }
 

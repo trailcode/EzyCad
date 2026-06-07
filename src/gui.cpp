@@ -1277,6 +1277,7 @@ void GUI::sketch_properties_dialog_()
   m_sketch_properties_open = open;
   ImGui::End();
 }
+
 void GUI::sketch_underlay_panel_settings_(const Sketch::sptr& sk)
 {
   EZY_ASSERT(sk);
