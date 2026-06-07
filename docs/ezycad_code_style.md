@@ -122,7 +122,7 @@ Prefer **`CHK_RET(expr)`** when a callee returns `Status` or `Result<T>` and the
   - Punctuation in prose: `-` for dash; `...` for ellipsis; `->` for “maps to” / arrows in comments; plain `'` for apostrophes.
   - Math in comments: spell out (`sqrt(2)`, `theta`) or use ASCII operators (`x` for cross-product context, `*` for multiply).
 - Run `scripts/check-nonascii-src.ps1` (or `check-nonascii-src.cmd`) before committing when touching `src/`.
-- For AI tools: the same rule is summarized in `agents/ezycad-ascii-source.md` (optional; nothing under `.cursor/` is committed).
+- For AI tools: the same rule is summarized in `agents/ezycad-ascii-source.md`.
 
 ## C++ usage
 

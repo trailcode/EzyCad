@@ -101,7 +101,7 @@ Full guide: **[docs/building-occt.md](docs/building-occt.md)** (Windows prebuilt
 ### We need development help
 EzyCad is maintained by a small team and we would love more contributors. If you can help with features, bug fixes, documentation, or testing - please jump in. Every contribution helps move the project forward.
 
-**Style guides:** [ezycad_code_style.md](docs/ezycad_code_style.md) for C++ in `src/`; [ezycad_doc_style.md](docs/ezycad_doc_style.md) for user guides and [Read the Docs](https://ezycad.readthedocs.io/). Both human developers and AI coding agents should follow the relevant guide. Optional assistant-oriented snippets live under [agents/](agents/) (the repo does not commit `.cursor/`).
+**Style guides:** [ezycad_code_style.md](docs/ezycad_code_style.md) for C++ in `src/`; [ezycad_doc_style.md](docs/ezycad_doc_style.md) for user guides and [Read the Docs](https://ezycad.readthedocs.io/). Both human developers and AI coding agents should follow the relevant guide. Optional assistant-oriented snippets live under [agents/](agents/).
 
 ## In-tree third-party libraries
 
