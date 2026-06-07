@@ -7,3 +7,6 @@
 # Cursor IDE (local only). Shared assistant-oriented notes live in agents/.
 /.cursor/
 /scripts/__pycache__
+
+/docs/_build
+/docs/res

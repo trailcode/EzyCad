@@ -8,11 +8,6 @@
 cmake_minimum_required(VERSION 3.14.0 FATAL_ERROR)
 project(EzyCad)
 
-# CMP0167: Use legacy FindBoost module (avoids "FindBoost module is removed" warning in CMake 3.30+)
-if(POLICY CMP0167)
-  cmake_policy(SET CMP0167 OLD)
-endif()
-
 # Set C++20 as the required standard for all targets
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
@@ -99,7 +94,6 @@ endif()
 
 set(GLFW_VERSION  "3.3.0.1")
 set(GLEW_VERSION  "2.1.0")
-set(BOOST_VERSION "1.87.0")
 
 if(MSVC_VERSION AND NOT CMAKE_TOOLCHAIN_FILE)
   find_program(NUGET nuget)
@@ -109,18 +103,6 @@ if(MSVC_VERSION AND NOT CMAKE_TOOLCHAIN_FILE)
   # Output must be under the build tree (CMAKE_BINARY_DIR), not the shell CWD, or clean out-of-source configures fail.
   execute_process(COMMAND ${NUGET} install glfw                     -Version ${GLFW_VERSION}    -OutputDirectory "${CMAKE_BINARY_DIR}/thirdParty")
   execute_process(COMMAND ${NUGET} install unofficial-flayan-glew   -Version ${GLEW_VERSION}    -OutputDirectory "${CMAKE_BINARY_DIR}/thirdParty")
-  execute_process(COMMAND ${NUGET} install boost                    -Version ${BOOST_VERSION}   -OutputDirectory "${CMAKE_BINARY_DIR}/thirdParty")
-  # Include Boost from NuGet installation on Windows
-  INCLUDE_DIRECTORIES(${PROJECT_NAME} ${BINARY_DIR}/thirdParty/boost.${BOOST_VERSION}/lib/native/include)
-else()
-  if(NOT CMAKE_TOOLCHAIN_FILE)
-    # On Linux (or non-vcpkg), use system Boost installation
-    find_package(Boost REQUIRED)
-    if(Boost_FOUND)
-      INCLUDE_DIRECTORIES(${PROJECT_NAME} ${Boost_INCLUDE_DIRS})
-    endif()
-  endif()
-  # When CMAKE_TOOLCHAIN_FILE is set (vcpkg), boost headers from "boost-geometry" etc. are automatically on the include path.
 endif()
 
 # imgui_demo.cpp omitted: large and unused here; add back if you need ImGui::ShowDemoWindow.
@@ -200,6 +182,8 @@ if(EZYCAD_HAVE_PYTHON)
   endif()
 endif()
 
+
+
 # Open CASCADE Technology
 find_package(OpenCASCADE REQUIRED NO_DEFAULT_PATH)
 if(OpenCASCADE_FOUND)
@@ -233,7 +217,6 @@ set(OpenCASCADE_LIBS
     TKFillet
     TKOffset
     TKRWMesh
-    TKDEGLTF
     TKDEOBJ
     TKDEPLY
     TKBinXCAF
@@ -262,6 +245,15 @@ set(OpenCASCADE_LIBS
     TKDEIGES
     TKDESTL)
 
+if(NOT CMAKE_CXX_COMPILER_ID STREQUAL "Emscripten")
+    # Advanced DataExchange modules (STEP, IGES, GLTF, etc.) are only linked for
+    # native/desktop builds. The minimal WASM OCCT build from
+    # scripts/build-occt-v8-wasm.ps1 does not include them (to avoid Emscripten
+    # incompatibilities with full DE + 3rd-party parsers). If you need them in WASM,
+    # rebuild OCCT with more modules and add the missing TKDE* libs here conditionally.
+    list(APPEND OpenCASCADE_LIBS TKDEGLTF)
+endif()
+
 # Configure Emscripten-specific settings if using Emscripten compiler
 if(CMAKE_CXX_COMPILER_ID STREQUAL "Emscripten")
     # Set compiler flags for Emscripten build
@@ -269,7 +261,6 @@ if(CMAKE_CXX_COMPILER_ID STREQUAL "Emscripten")
     if(CMAKE_BUILD_TYPE STREQUAL "Release")
         set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} \
             -s USE_SDL=2 \
-            -s USE_BOOST_HEADERS=1 \
             -fexceptions \
             -O3"
         )
@@ -301,7 +292,6 @@ if(CMAKE_CXX_COMPILER_ID STREQUAL "Emscripten")
     else()
         set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS_DEBUG} \
             -s USE_SDL=2 \
-            -s USE_BOOST_HEADERS=1 \
             -fexceptions \
             -gsource-map \
             -O0"
@@ -495,7 +485,11 @@ else()
     if(MSVC_VERSION AND NOT CMAKE_TOOLCHAIN_FILE)
       target_link_libraries(${PROJECT_NAME} ${BINARY_DIR}/thirdParty/unofficial-flayan-glew.${GLEW_VERSION}/build/native/lib/x64/dynamic/glew32.lib)
     endif()
-    target_link_libraries(${PROJECT_NAME} -Wl,--no-as-needed ${GLFW3_LIBRARY} -Wl,--as-needed)
+    if(NOT MSVC)
+      target_link_libraries(${PROJECT_NAME} -Wl,--no-as-needed ${GLFW3_LIBRARY} -Wl,--as-needed)
+    else()
+      target_link_libraries(${PROJECT_NAME} ${GLFW3_LIBRARY})
+    endif()
     
     target_link_libraries(${PROJECT_NAME} ${OpenCASCADE_LIBS})
 
@@ -630,27 +624,9 @@ source_group("imgui" FILES ${imguiSrc})
 source_group("src" FILES ${srcs})
 source_group("web" FILES ${WEB_FILES_REL})
 
-# Add README to VS solution
-if(MSVC)
-    # Create a source group for documentation files
-    set(DOC_FILES
-        ${CMAKE_CURRENT_SOURCE_DIR}/README.md
-        ${CMAKE_CURRENT_SOURCE_DIR}/ezycad_code_style.md
-        ${CMAKE_CURRENT_SOURCE_DIR}/ezycad_doc_style.md
-        ${CMAKE_CURRENT_SOURCE_DIR}/CHANGELOG.md
-        ${CMAKE_CURRENT_SOURCE_DIR}/usage.md
-        ${CMAKE_CURRENT_SOURCE_DIR}/usage-settings.md
-        ${CMAKE_CURRENT_SOURCE_DIR}/usage-sketch.md
-        ${CMAKE_CURRENT_SOURCE_DIR}/scripting.md
-        ${CMAKE_CURRENT_SOURCE_DIR}/bugs.md
-        ${CMAKE_CURRENT_SOURCE_DIR}/LICENSE
-    )
-    #source_group("Documentation" FILES ${DOC_FILES})
-    
-    # Add to project but exclude from build
-    target_sources(${PROJECT_NAME} PRIVATE ${DOC_FILES})
-    set_source_files_properties(${DOC_FILES} PROPERTIES HEADER_FILE_ONLY TRUE)
-endif()
+# Root documentation (README.md, CHANGELOG.md) and docs/ folder contents are made
+# visible in the IDE via the modern glob + source_group block near the end of this
+# file (consistent with agents/, github-workflows, res/, scripts/). See below.
 
 # Add Google Test only for non-Emscripten builds
 if(NOT CMAKE_CXX_COMPILER_ID STREQUAL "Emscripten")
@@ -681,12 +657,18 @@ if(NOT CMAKE_CXX_COMPILER_ID STREQUAL "Emscripten")
     target_link_libraries(${PROJECT_NAME}_tests
         GTest::gtest_main
         GTest::gmock_main
-        -Wl,--no-as-needed ${GLFW3_LIBRARY} -Wl,--as-needed
         ${PROJECT_NAME}_lib
         ${OpenCASCADE_LIBS}
         ${OPENGL_LIBRARIES}
         ${OPENGL_gl_LIBRARY}
     )
+    if(NOT MSVC)
+      target_link_libraries(${PROJECT_NAME}_tests -Wl,--no-as-needed ${GLFW3_LIBRARY} -Wl,--as-needed)
+    else()
+      target_link_libraries(${PROJECT_NAME}_tests ${GLFW3_LIBRARY})
+    endif()
+
+
     
     # Add tests to CTest
     include(GoogleTest)
@@ -742,6 +724,58 @@ if(GITHUB_WORKFLOW_FILES)
   target_sources(${PROJECT_NAME}_lib PRIVATE ${GITHUB_WORKFLOW_FILES_REL})
   target_sources(${PROJECT_NAME} PRIVATE ${GITHUB_WORKFLOW_FILES_REL})
   set_source_files_properties(${GITHUB_WORKFLOW_FILES_REL} PROPERTIES HEADER_FILE_ONLY TRUE)
+endif()
+
+# Agent / design / issue tracking files: show agents/ in the IDE under 'agents' folder
+# (markdown docs, issues/, prs/ subfolders etc. visible in Visual Studio Solution Explorer
+# and other IDEs without participating in the build)
+file(GLOB_RECURSE EZYCAD_AGENTS_FILES CONFIGURE_DEPENDS
+  LIST_DIRECTORIES false
+  "${CMAKE_SOURCE_DIR}/agents/*")
+if(EZYCAD_AGENTS_FILES)
+  source_group(TREE "${CMAKE_SOURCE_DIR}/agents" PREFIX "agents" FILES ${EZYCAD_AGENTS_FILES})
+  set(EZYCAD_AGENTS_FILES_REL)
+  foreach(f ${EZYCAD_AGENTS_FILES})
+    file(RELATIVE_PATH f_rel "${CMAKE_SOURCE_DIR}" "${f}")
+    list(APPEND EZYCAD_AGENTS_FILES_REL "${f_rel}")
+  endforeach()
+  target_sources(${PROJECT_NAME}_lib PRIVATE ${EZYCAD_AGENTS_FILES_REL})
+  target_sources(${PROJECT_NAME} PRIVATE ${EZYCAD_AGENTS_FILES_REL})
+  set_source_files_properties(${EZYCAD_AGENTS_FILES_REL} PROPERTIES HEADER_FILE_ONLY TRUE)
+endif()
+
+# Documentation folder: show docs/ (and the moved usage guides, style guides, building-occt.md etc.)
+# in the IDE under a 'docs' folder for both the library and executable targets.
+# (non-compiled; uses the same pattern as agents/, github-workflows, res/, scripts/)
+file(GLOB_RECURSE EZYCAD_DOCS_FILES CONFIGURE_DEPENDS
+  LIST_DIRECTORIES false
+  "${CMAKE_SOURCE_DIR}/docs/*")
+if(EZYCAD_DOCS_FILES)
+  source_group(TREE "${CMAKE_SOURCE_DIR}/docs" PREFIX "docs" FILES ${EZYCAD_DOCS_FILES})
+  set(EZYCAD_DOCS_FILES_REL)
+  foreach(f ${EZYCAD_DOCS_FILES})
+    file(RELATIVE_PATH f_rel "${CMAKE_SOURCE_DIR}" "${f}")
+    list(APPEND EZYCAD_DOCS_FILES_REL "${f_rel}")
+  endforeach()
+  target_sources(${PROJECT_NAME}_lib PRIVATE ${EZYCAD_DOCS_FILES_REL})
+  target_sources(${PROJECT_NAME} PRIVATE ${EZYCAD_DOCS_FILES_REL})
+  set_source_files_properties(${EZYCAD_DOCS_FILES_REL} PROPERTIES HEADER_FILE_ONLY TRUE)
+endif()
+
+# Also surface the two main root docs (README + CHANGELOG) at the project root in IDEs
+set(README_FILE ${CMAKE_SOURCE_DIR}/README.md)
+if(EXISTS ${README_FILE})
+    source_group("" FILES ${README_FILE})
+    target_sources(${PROJECT_NAME}_lib PRIVATE ${README_FILE})
+    target_sources(${PROJECT_NAME} PRIVATE ${README_FILE})
+    set_source_files_properties(${README_FILE} PROPERTIES HEADER_FILE_ONLY TRUE)
+endif()
+set(CHANGELOG_FILE ${CMAKE_SOURCE_DIR}/CHANGELOG.md)
+if(EXISTS ${CHANGELOG_FILE})
+    source_group("" FILES ${CHANGELOG_FILE})
+    target_sources(${PROJECT_NAME}_lib PRIVATE ${CHANGELOG_FILE})
+    target_sources(${PROJECT_NAME} PRIVATE ${CHANGELOG_FILE})
+    set_source_files_properties(${CHANGELOG_FILE} PROPERTIES HEADER_FILE_ONLY TRUE)
 endif()
 
 # Add .clang-format and .gitignore to EzyCad and EzyCad_lib so they appear in VS and other IDEs (at project root)

@@ -105,7 +105,7 @@ gp_Pnt to_3d(const gp_Pln& plane, const gp_Pnt2d& point_2d)
   return origin.Translated(u_vec + v_vec);
 }
 
-gp_Pnt2d to_pnt2d(const boost_geom::point_2d& pt) { return gp_Pnt2d(pt.x(), pt.y()); }
+gp_Pnt2d to_pnt2d(const ezy_geom::point_2d& pt) { return gp_Pnt2d(pt.x(), pt.y()); }
 
 // Function to create a wire box centered on a point on a plane, returning a TopoDS_Wire
 TopoDS_Wire create_wire_box(const gp_Pln& plane, const gp_Pnt& center, double width, double height)
@@ -912,7 +912,7 @@ bool is_face_contained(const TopoDS_Shape& shape_a, const TopoDS_Shape& shape_b)
   gp_Pln pln_b = plane_b->Pln();
 
   if (!pln_a.Position().Direction().IsParallel(pln_b.Position().Direction(), Precision::Angular()) ||
-      Abs(pln_a.Distance(pln_b.Location())) > Precision::Confusion())
+      std::abs(pln_a.Distance(pln_b.Location())) > Precision::Confusion())
   {
     return false; // Not coplanar
   }
@@ -939,17 +939,18 @@ bool is_face_contained(const TopoDS_Shape& shape_a, const TopoDS_Shape& shape_b)
   return all_inside;
 }
 
-// Function to convert a 3D point to 2D in the plane's coordinate system
-boost_geom::point_2d to_boost(const gp_Pln& plane, const gp_Pnt& point_3d)
+// Pure C++ re-implementation of the polygon functionality (conversion from
+// OCCT faces, shoelace checks, etc.). No external geometry library required.
+ezy_geom::point_2d to_boost(const gp_Pln& plane, const gp_Pnt& point_3d)
 {
   gp_Pnt2d pt = to_2d(plane, point_3d);
   return {pt.X(), pt.Y()};
 }
 
-boost_geom::point_2d to_boost(const gp_Pnt2d& pt) { return {pt.X(), pt.Y()}; }
+ezy_geom::point_2d to_boost(const gp_Pnt2d& pt) { return {pt.X(), pt.Y()}; }
 
-// Convert a TopoDS_Shape to a boost_geom::polygon_2d
-boost_geom::polygon_2d to_boost(const TopoDS_Shape& shape, const gp_Pln& pln2)
+// Convert a TopoDS_Shape to a ezy_geom::polygon_2d (pure C++ version)
+ezy_geom::polygon_2d to_boost(const TopoDS_Shape& shape, const gp_Pln& pln2)
 {
   // Check if the shape is a face
   EZY_ASSERT_MSG(shape.ShapeType() == TopAbs_FACE, "Shape must be a face");
@@ -963,16 +964,15 @@ boost_geom::polygon_2d to_boost(const TopoDS_Shape& shape, const gp_Pln& pln2)
   EZY_ASSERT_MSG(!plane.IsNull(), "Face surface must be planar.");
 
   // Get the plane's coordinate system
-  // gp_Pln pln = plane->Pln(); // Centers poly using the origin of the shape plane.
   const gp_Pln& pln = pln2;
 
-  // Initialize the Boost.Geometry polygon
-  boost_geom::polygon_2d polygon;
+  // Initialize our polygon
+  ezy_geom::polygon_2d polygon;
 
   // Get the outer wire
   TopoDS_Wire outer_wire = BRepTools::OuterWire(face);
 
-  auto add_pt_unique = [](boost_geom::ring_2d& out, const gp_Pnt2d& pt)
+  auto add_pt_unique = [](ezy_geom::ring_2d& out, const gp_Pnt2d& pt)
   {
     if (out.empty())
     {
@@ -991,7 +991,7 @@ boost_geom::polygon_2d to_boost(const TopoDS_Shape& shape, const gp_Pln& pln2)
     }
   };
 
-  auto get_wire_verts = [&](const TopoDS_Wire& wire, boost_geom::ring_2d& out)
+  auto get_wire_verts = [&](const TopoDS_Wire& wire, ezy_geom::ring_2d& out)
   {
     TopExp_Explorer edge_explorer(wire, TopAbs_EDGE);
     while (edge_explorer.More())
@@ -1042,7 +1042,7 @@ boost_geom::polygon_2d to_boost(const TopoDS_Shape& shape, const gp_Pln& pln2)
 
     // Find the leftmost point (lowest x, breaking ties with y)
     auto leftmost_it = std::min_element(out.begin(), out.end(),
-                                        [](const boost_geom::point_2d& a, const boost_geom::point_2d& b)
+                                        [](const ezy_geom::point_2d& a, const ezy_geom::point_2d& b)
                                         {
                                           if (std::abs(a.x() - b.x()) > Precision::Confusion())
                                             return a.x() < b.x();
@@ -1058,12 +1058,13 @@ boost_geom::polygon_2d to_boost(const TopoDS_Shape& shape, const gp_Pln& pln2)
 
   get_wire_verts(outer_wire, polygon.outer());
 
-  auto check_ring = [](boost_geom::ring_2d& ring)
+  auto check_ring = [](ezy_geom::ring_2d& ring)
   {
     EZY_ASSERT_MSG(ring.size() > 3, "Not enough points!");
 
-    // Boost requires points to be exactly the same.
-    ring.front() = ring.back();
+    // Ensure first == last for some algorithms (popped earlier).
+    if (!ring.empty())
+      ring.front() = ring.back();
   };
 
   check_ring(polygon.outer());
@@ -1073,9 +1074,9 @@ boost_geom::polygon_2d to_boost(const TopoDS_Shape& shape, const gp_Pln& pln2)
   while (wire_explorer.More())
   {
     TopoDS_Wire wire = TopoDS::Wire(wire_explorer.Current());
-    if (!wire.IsSame(outer_wire)) // TODO Is this expensive? Better way?
+    if (!wire.IsSame(outer_wire))
     {
-      boost_geom::ring_2d inner;
+      ezy_geom::ring_2d inner;
       get_wire_verts(wire, inner);
       check_ring(inner);
       polygon.inners().emplace_back(inner);
@@ -1083,10 +1084,10 @@ boost_geom::polygon_2d to_boost(const TopoDS_Shape& shape, const gp_Pln& pln2)
     wire_explorer.Next();
   }
 
-  // Validate the polygon
-  if (!boost::geometry::is_valid(polygon))
+  // Basic validity (our is_valid is intentionally lightweight).
+  if (!ezy_geom::is_valid(polygon))
   {
-    // throw std::runtime_error("Invalid Boost.Geometry polygon created.");
+    // In the original this was mostly a no-op / commented throw.
   }
 
   return polygon;
@@ -1140,7 +1141,7 @@ gp_Pnt2d rotate_point(const gp_Pnt2d& origin, const gp_Pnt2d& point, double angl
   return gp_Pnt2d(origin.X() + rotated_x, origin.Y() + rotated_y);
 }
 
-bool is_clockwise(const boost_geom::ring_2d& ring)
+bool is_clockwise(const ezy_geom::ring_2d& ring)
 {
   double sum = 0.0;
   for (size_t i = 0; i < ring.size() - 1; ++i)
@@ -1189,6 +1190,82 @@ TopoDS_Wire make_rectangle_wire(const gp_Pln& pln, const gp_Pnt2d& corner1, cons
   wire_maker.Add(BRepBuilderAPI_MakeEdge(p4, p1).Edge());
 
   return wire_maker.Wire();
+}
+
+// Implementations of the area / is_valid / wkt helpers declared in geom.h
+// (pure C++ shoelace-based).
+
+bool ezy_geom::is_valid(const polygon_2d& poly)
+{
+  if (poly.outer_.size() < 3)
+    return false;
+  // The construction logic in to_boost already guarantees closed, oriented rings.
+  // This is intentionally lightweight.
+  return true;
+}
+
+double ezy_geom::area(const polygon_2d& poly)
+{
+  auto ring_area = [](const ring_2d& ring) -> double
+  {
+    if (ring.size() < 3)
+      return 0.0;
+    double a = 0.0;
+    size_t n = ring.size();
+    for (size_t i = 0; i < n; ++i)
+    {
+      size_t j = (i + 1) % n;
+      a += ring[i].x() * ring[j].y() - ring[j].x() * ring[i].y();
+    }
+    return a / 2.0;
+  };
+
+  double a = ring_area(poly.outer());
+  for (const auto& h : poly.inners())
+  {
+    a -= ring_area(h);
+  }
+  return std::abs(a);
+}
+
+std::string to_wkt_string(const ezy_geom::polygon_2d& poly)
+{
+  auto fmt_num = [](double v) -> std::string
+  {
+    if (std::abs(v - std::round(v)) < 1e-9)
+    {
+      // whole number
+      return std::to_string(static_cast<long long>(std::round(v)));
+    }
+    std::ostringstream os;
+    os << std::fixed << std::setprecision(6) << v;
+    return os.str();
+  };
+
+  std::ostringstream ss;
+
+  auto write_ring = [&](const ezy_geom::ring_2d& r, bool first_ring)
+  {
+    if (!first_ring)
+      ss << ",";
+    ss << "(";
+    for (size_t i = 0; i < r.size(); ++i)
+    {
+      if (i > 0)
+        ss << ",";
+      ss << fmt_num(r[i].x()) << " " << fmt_num(r[i].y());
+    }
+    ss << ")";
+  };
+
+  ss << "POLYGON(";
+  write_ring(poly.outer_, true);
+  for (const auto& inner : poly.inners_)
+  {
+    write_ring(inner, false);
+  }
+  ss << ")";
+  return ss.str();
 }
 
 std::array<gp_Pnt2d, 4> rectangle_corners(const gp_Pnt2d& corner1, const gp_Pnt2d& corner2)

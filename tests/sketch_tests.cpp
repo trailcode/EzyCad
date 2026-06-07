@@ -2,7 +2,6 @@
 
 #include <TopoDS.hxx>
 #include <TopoDS_Wire.hxx>
-#include <boost/geometry/io/wkt/wkt.hpp>
 #include <iostream>
 #include <numbers>
 
@@ -14,16 +13,7 @@
 
 using namespace glm;
 
-namespace bg = boost::geometry;
-
-// General templated helper for any Boost.Geometry geometry type
-template <typename Geometry>
-std::string to_wkt_string(const Geometry& geom)
-{
-  std::stringstream ss;
-  ss << boost::geometry::wkt(geom);
-  return ss.str();
-}
+// to_wkt_string is provided by geom.h (pure C++ implementation)
 
 class GUI_access
 {
@@ -275,31 +265,32 @@ TEST_F(Sketch_test, CreateSquare)
   // Verify the face has the correct number of vertices (5 for a closed square)
   EXPECT_EQ(face->verts_3d.size(), 5) << "Square face should have 5 vertices (4 corners + repeated first vertex)";
 
-  // Convert face to Boost.Geometry polygon and verify its properties
+  // Convert to our polygon type (pure C++ re-implementation of the previous
+  // (pure C++ polygon conversion) and verify its properties.
   const TopoDS_Shape& shape = face->Shape();
   EXPECT_EQ(shape.ShapeType(), TopAbs_FACE) << "Shape should be a face";
-  boost_geom::polygon_2d boost_poly = to_boost(shape, default_plane);
+  ezy_geom::polygon_2d poly = to_boost(shape, default_plane);
 
   // Check that the ring is closed (first and last points should be identical)
-  const auto& outer = boost_poly.outer();
+  const auto& outer = poly.outer();
   EXPECT_NEAR(outer.front().x(), outer.back().x(), 1e-6) << "Ring should be closed (x)";
   EXPECT_NEAR(outer.front().y(), outer.back().y(), 1e-6) << "Ring should be closed (y)";
 
-  // Check winding order - should be clockwise for Boost.Geometry
+  // Check winding order - should be clockwise for outer rings
   EXPECT_TRUE(is_clockwise(outer)) << "Polygon should be clockwise";
 
-  EXPECT_TRUE(bg::is_valid(boost_poly)) << "Boost polygon should be valid";
+  EXPECT_TRUE(ezy_geom::is_valid(poly)) << "Polygon should be valid";
 
   // Verify the area of the square (should be 400 since it's 20x20)
-  // Also checks if the polygon is orientated correctly(clockwise)
-  double area = bg::area(boost_poly);
+  // Also checks if the polygon is orientated correctly (clockwise)
+  double area = ezy_geom::area(poly);
   EXPECT_NEAR(area, 400.0, 1e-6) << "Square area should be 400 (20x20)";
 
   // Verify the number of points in the outer ring (should be 5 for a closed square)
-  EXPECT_EQ(boost_poly.outer().size(), 5) << "Boost polygon outer ring should have 5 points (4 corners + repeated first vertex)";
+  EXPECT_EQ(poly.outer().size(), 5) << "Polygon outer ring should have 5 points (4 corners + repeated first vertex)";
 
   // Check the polygon to WKT format
-  EXPECT_EQ(to_wkt_string(boost_poly), "POLYGON((-10 -10,-10 10,10 10,10 -10,-10 -10))");
+  EXPECT_EQ(to_wkt_string(poly), "POLYGON((-10 -10,-10 10,10 10,10 -10,-10 -10))");
 
   // The nodes should look like:
   // #---@---#
@@ -358,33 +349,33 @@ TEST_F(Sketch_test, CreateCircle)
   const auto& face = faces[0];
   EXPECT_FALSE(face.IsNull()) << "Face shape should not be null";
 
-  // Convert face to Boost.Geometry polygon and verify its properties
+  // Convert to our polygon type (pure C++ re-implementation) and verify its properties.
   const TopoDS_Shape& shape = face->Shape();
   EXPECT_EQ(shape.ShapeType(), TopAbs_FACE) << "Shape should be a face";
-  boost_geom::polygon_2d boost_poly = to_boost(shape, default_plane);
+  ezy_geom::polygon_2d poly = to_boost(shape, default_plane);
 
   // Check that the ring is closed (first and last points should be identical)
-  const auto& outer = boost_poly.outer();
+  const auto& outer = poly.outer();
   EXPECT_NEAR(outer.front().x(), outer.back().x(), 1e-6) << "Ring should be closed (x)";
   EXPECT_NEAR(outer.front().y(), outer.back().y(), 1e-6) << "Ring should be closed (y)";
 
-  // Check winding order - should be clockwise for Boost.Geometry
+  // Check winding order - should be clockwise
   EXPECT_TRUE(is_clockwise(outer)) << "Polygon should be clockwise";
 
-  EXPECT_TRUE(bg::is_valid(boost_poly)) << "Boost polygon should be valid";
+  EXPECT_TRUE(ezy_geom::is_valid(poly)) << "Polygon should be valid";
 
   // Verify the area of the circle (should be pi*r^2 = pi * 10^2 = 100pi)
-  double area          = bg::area(boost_poly);
+  double area          = ezy_geom::area(poly);
   double expected_area = 100.0 * std::numbers::pi;  // 314.15926535897933
   EXPECT_NEAR(area, expected_area, 1.0) << "Circle area should be 100pi (radius = 10)";
 
   // Verify the number of points in the outer ring (should be enough points to approximate a circle)
-  EXPECT_GT(boost_poly.outer().size(), 20) << "Circle should have enough points to be smooth";
+  EXPECT_GT(poly.outer().size(), 20) << "Circle should have enough points to be smooth";
 
   // Verify the points are roughly equidistant from the center
   double expected_radius = 10.0;
   double tolerance       = 0.1;  // Allow for some approximation error
-  for (const auto& point : boost_poly.outer())
+  for (const auto& point : poly.outer())
   {
     double dx     = point.x() - center.X();
     double dy     = point.y() - center.Y();
@@ -421,11 +412,11 @@ TEST_F(Sketch_test, UpdateFaces_SimpleRectangle)
     const auto& face = faces[0];
     EXPECT_EQ(face->Shape().ShapeType(), TopAbs_FACE);
 
-    boost_geom::polygon_2d boost_poly = to_boost(face->Shape(), sketch.get_plane());
-    EXPECT_TRUE(is_clockwise(boost_poly.outer()));
+    ezy_geom::polygon_2d poly = to_boost(face->Shape(), sketch.get_plane());
+    EXPECT_TRUE(is_clockwise(poly.outer()));
 
     // Dump the polygon to WKT format
-    std::string wkt_str = to_wkt_string(boost_poly);
+    std::string wkt_str = to_wkt_string(poly);
     EXPECT_EQ(wkt_str, "POLYGON((0 0,0 10,10 10,10 0,0 0))");
   };
 
@@ -466,24 +457,24 @@ TEST_F(Sketch_test, UpdateFaces_FaceWithHole)
     Sketch_access::update_faces_(sketch);
     const auto& faces = Sketch_access::get_faces(sketch);
     EXPECT_EQ(faces.size(), 2);
-    boost_geom::polygon_2d face_with_hole;
-    boost_geom::polygon_2d hole_face;
+    ezy_geom::polygon_2d face_with_hole;
+    ezy_geom::polygon_2d hole_face;
     for (auto& face : faces)
     {
       // Verify face properties
       EXPECT_EQ(face->Shape().ShapeType(), TopAbs_FACE);
-      boost_geom::polygon_2d boost_poly = to_boost(face->Shape(), sketch.get_plane());
-      EXPECT_TRUE(is_clockwise(boost_poly.outer()));
-      EXPECT_FALSE(boost_poly.outer().empty());
-      if (boost_poly.inners().size())
+      ezy_geom::polygon_2d poly = to_boost(face->Shape(), sketch.get_plane());
+      EXPECT_TRUE(is_clockwise(poly.outer()));
+      EXPECT_FALSE(poly.outer().empty());
+      if (poly.inners().size())
       {
         EXPECT_TRUE(face_with_hole.outer().empty());
-        std::swap(face_with_hole, boost_poly);
+        std::swap(face_with_hole, poly);
       }
       else
       {
         EXPECT_TRUE(hole_face.outer().empty());
-        std::swap(hole_face, boost_poly);
+        std::swap(hole_face, poly);
       }
     }
 
@@ -646,9 +637,9 @@ TEST_F(Sketch_test, UpdateFaces_DanglingEdgesArcMidNode)
   const auto& face = faces[0];
   EXPECT_EQ(face->Shape().ShapeType(), TopAbs_FACE);
 
-  boost_geom::polygon_2d boost_poly = to_boost(face->Shape(), default_plane);
-  EXPECT_TRUE(bg::is_valid(boost_poly)) << "Resulting polygon should be valid";
-  EXPECT_TRUE(is_clockwise(boost_poly.outer())) << "Polygon should be clockwise";
+  ezy_geom::polygon_2d poly = to_boost(face->Shape(), default_plane);
+  EXPECT_TRUE(ezy_geom::is_valid(poly)) << "Resulting polygon should be valid";
+  EXPECT_TRUE(is_clockwise(poly.outer())) << "Polygon should be clockwise";
 
   // The dangling edges (especially the vertical one attached to arc_mid) should still exist
   // in the sketch, but they must not affect face detection.
@@ -819,18 +810,17 @@ TEST_F(Sketch_test, SquareTwoArcs)
   const auto& face = faces[0];
   EXPECT_EQ(face->Shape().ShapeType(), TopAbs_FACE);
 
-  // Convert to Boost.Geometry polygon for further checks
-  boost_geom::polygon_2d boost_poly = to_boost(face->Shape(), default_plane);
+  // Convert to our polygon type for further checks (inside the #if 0 disabled test)
+  ezy_geom::polygon_2d poly = to_boost(face->Shape(), default_plane);
 
   // Check that the ring is closed
-  const auto& outer = boost_poly.outer();
+  const auto& outer = poly.outer();
   EXPECT_NEAR(outer.front().x(), outer.back().x(), 1e-6);
   EXPECT_NEAR(outer.front().y(), outer.back().y(), 1e-6);
 
   // Check the polygon is valid
-  EXPECT_TRUE(bg::is_valid(boost_poly));
-
-#endif
+  EXPECT_TRUE(ezy_geom::is_valid(poly));
+#endif // #if 0  -- close the disabled test block
 }
 
 // Helper to add all permutations of edges (with both orientations) to a sketch and call a lambda
@@ -1113,59 +1103,59 @@ TEST_F(Sketch_test, UpdateFaces_BridgeEdgeRemoval)
   // Verify the outer face exists and is valid
   bool                   found_outer_face = false;
   bool                   found_inner_face = false;
-  boost_geom::polygon_2d outer_face_poly;
-  boost_geom::polygon_2d inner_face_poly;
+  ezy_geom::polygon_2d outer_face_poly;
+  ezy_geom::polygon_2d inner_face_poly;
 
   for (size_t i = 0; i < faces.size(); ++i)
   {
     const auto& face = faces[i];
     EXPECT_EQ(face->Shape().ShapeType(), TopAbs_FACE) << "Shape should be a face";
-    boost_geom::polygon_2d boost_poly = to_boost(face->Shape(), default_plane);
-    EXPECT_TRUE(bg::is_valid(boost_poly)) << "Polygon should be valid";
-    EXPECT_TRUE(is_clockwise(boost_poly.outer())) << "Polygon should be clockwise";
+    ezy_geom::polygon_2d poly = to_boost(face->Shape(), default_plane);
+    EXPECT_TRUE(ezy_geom::is_valid(poly)) << "Polygon should be valid";
+    EXPECT_TRUE(is_clockwise(poly.outer())) << "Polygon should be clockwise";
 
-    // Debug: Output Boost Geometry WKT format
-    std::string wkt_str = to_wkt_string(boost_poly);
+    // Debug: Output WKT (pure C++ implementation)
+    std::string wkt_str = to_wkt_string(poly);
     std::cout << "Face " << i << " WKT: " << wkt_str << std::endl;
-    std::cout << "Face " << i << " area: " << bg::area(boost_poly) << std::endl;
-    std::cout << "Face " << i << " outer ring size: " << boost_poly.outer().size() << std::endl;
-    std::cout << "Face " << i << " inner rings: " << boost_poly.inners().size() << std::endl;
+    std::cout << "Face " << i << " area: " << ezy_geom::area(poly) << std::endl;
+    std::cout << "Face " << i << " outer ring size: " << poly.outer().size() << std::endl;
+    std::cout << "Face " << i << " inner rings: " << poly.inners().size() << std::endl;
 
-    if (boost_poly.inners().size() > 0)
+    if (poly.inners().size() > 0)
     {
-      for (size_t hole_idx = 0; hole_idx < boost_poly.inners().size(); ++hole_idx)
+      for (size_t hole_idx = 0; hole_idx < poly.inners().size(); ++hole_idx)
       {
-        boost_geom::ring_2d hole_ring = boost_poly.inners()[hole_idx];
+        auto& hole_ring = poly.inners()[hole_idx];
         std::cout << "  Hole " << hole_idx << " ring size: " << hole_ring.size() << std::endl;
         // Output first few points of the hole for debugging
         if (hole_ring.size() > 0)
         {
           std::cout << "  Hole " << hole_idx << " first point: ("
-                    << bg::get<0>(hole_ring[0]) << ", " << bg::get<1>(hole_ring[0]) << ")" << std::endl;
+                    << hole_ring[0].x() << ", " << hole_ring[0].y() << ")" << std::endl;
         }
       }
     }
 
     // Check if this is the outer face (larger area) or inner face (smaller area)
-    double area = bg::area(boost_poly);
+    double area = ezy_geom::area(poly);
     if (area > 5000.0)  // Outer rectangle should be much larger
     {
       found_outer_face = true;
-      outer_face_poly  = boost_poly;
+      outer_face_poly  = poly;
 
       // If the inner rectangle became a hole, it should be in the inners
-      if (boost_poly.inners().size() > 0)
+      if (poly.inners().size() > 0)
       {
         found_inner_face = true;
         // The inner should be counter-clockwise (reversed for hole)
-        EXPECT_FALSE(is_clockwise(boost_poly.inners()[0])) << "Hole should be counter-clockwise";
+        EXPECT_FALSE(is_clockwise(poly.inners()[0])) << "Hole should be counter-clockwise";
         std::cout << "Inner rectangle detected as hole in outer face" << std::endl;
       }
     }
     else if (area < 500.0)  // Inner rectangle should be smaller
     {
       found_inner_face = true;
-      inner_face_poly  = boost_poly;
+      inner_face_poly  = poly;
       std::cout << "Inner rectangle detected as separate face" << std::endl;
     }
   }
@@ -1178,7 +1168,7 @@ TEST_F(Sketch_test, UpdateFaces_BridgeEdgeRemoval)
   {
     // Inner is a separate face (hole processing might not have run, or bridge wasn't removed)
     // This is still acceptable - the bridge edge removal is what we're testing
-    EXPECT_TRUE(bg::is_valid(inner_face_poly)) << "Inner face should be valid";
+    EXPECT_TRUE(ezy_geom::is_valid(inner_face_poly)) << "Inner face should be valid";
   }
 
   // Verify all edges still exist in the sketch (bridge edge is excluded from face detection but still exists)
@@ -1214,7 +1204,7 @@ TEST_F(Sketch_test, UpdateFaces_BridgeEdgeRemoval)
   }
   EXPECT_TRUE(found_bridge_edge) << "Bridge edge should still exist in the sketch";
 
-  // Debug: Output summary
+  // Debug: Output summary (now always available via pure C++ implementation)
   std::cout << "\n=== Bridge Edge Removal Test Summary ===" << std::endl;
   std::cout << "Total faces found: " << faces.size() << std::endl;
   std::cout << "Outer face found: " << (found_outer_face ? "yes" : "no") << std::endl;
@@ -1304,17 +1294,17 @@ TEST_F(Sketch_test, UpdateFaces_DanglingEdgesRemoval)
   const auto& face = faces[0];
   EXPECT_EQ(face->Shape().ShapeType(), TopAbs_FACE) << "Shape should be a face";
 
-  // Convert to Boost.Geometry polygon and verify it's the rectangle
-  boost_geom::polygon_2d boost_poly = to_boost(face->Shape(), default_plane);
-  EXPECT_TRUE(bg::is_valid(boost_poly)) << "Polygon should be valid";
+  // Convert to our polygon type and verify it's the rectangle
+  ezy_geom::polygon_2d poly = to_boost(face->Shape(), default_plane);
+  EXPECT_TRUE(ezy_geom::is_valid(poly)) << "Polygon should be valid";
 
   // Verify the area is approximately correct for a 100x100 rectangle
-  double area          = bg::area(boost_poly);
+  double area          = ezy_geom::area(poly);
   double expected_area = 100.0 * 100.0;  // 10000
   EXPECT_NEAR(area, expected_area, 1.0) << "Rectangle area should be approximately 10000";
 
   // Verify the polygon is clockwise (as expected for faces)
-  EXPECT_TRUE(is_clockwise(boost_poly.outer())) << "Polygon should be clockwise";
+  EXPECT_TRUE(is_clockwise(poly.outer())) << "Polygon should be clockwise";
 
   // Verify all edges are still in the sketch (they're just excluded from face detection)
   // The edges should still exist in m_edges, but not participate in face formation

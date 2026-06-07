@@ -5,7 +5,6 @@
 #include <Standard_Handle.hxx>
 #include <TopoDS_Face.hxx>
 #include <array>
-#include <boost/geometry.hpp>
 #include <glm/glm.hpp>
 #include <gp_Dir2d.hxx>
 #include <gp_Pnt.hxx>
@@ -25,21 +24,57 @@ class TopoDS_Face;
 class TopoDS_Shape;
 class Geom_TrimmedCurve;
 
-namespace boost_geom
+// Pure C++ implementation of the polygon/ring functionality (for OCCT face to
+// 2D polygon conversion, shoelace-based clockwise/area checks, and basic WKT
+// output for tests). No external geometry library dependency.
+namespace ezy_geom
 {
-typedef boost::geometry::model::d2::point_xy<double> point_2d;
-typedef boost::geometry::model::ring<point_2d>       ring_2d;
-typedef boost::geometry::model::polygon<point_2d>    polygon_2d;
-typedef boost::geometry::model::linestring<point_2d> linestring_2d;
-} // namespace boost_geom
+struct point_2d
+{
+  double x_ = 0.0, y_ = 0.0;
+  double x() const { return x_; }
+  double y() const { return y_; }
+  point_2d() = default;
+  point_2d(double xx, double yy)
+      : x_(xx)
+      , y_(yy)
+  {
+  }
+};
+
+using ring_2d = std::vector<point_2d>;
+
+struct polygon_2d
+{
+  ring_2d                     outer_;
+  std::vector<ring_2d>        inners_;
+  ring_2d&                    outer() { return outer_; }
+  const ring_2d&              outer() const { return outer_; }
+  std::vector<ring_2d>&       inners() { return inners_; }
+  const std::vector<ring_2d>& inners() const { return inners_; }
+};
+
+// Basic validity (the OCCT construction code ensures well-formed polygons).
+bool is_valid(const polygon_2d& poly);
+
+// Shoelace area (outer minus holes).
+double area(const polygon_2d& poly);
+} // namespace ezy_geom
+
+gp_Pnt2d             to_pnt2d(const ezy_geom::point_2d& pt);
+ezy_geom::point_2d   to_boost(const gp_Pln& plane, const gp_Pnt& point_3d);
+ezy_geom::point_2d   to_boost(const gp_Pnt2d& point);
+ezy_geom::polygon_2d to_boost(const TopoDS_Shape& shape, const gp_Pln& pln2);
+bool                 is_clockwise(const ezy_geom::ring_2d& ring);
+
+// Simple WKT writer for our polygon type (used by tests).
+std::string to_wkt_string(const ezy_geom::polygon_2d& poly);
 
 // Function to project a 3D point onto a plane and get its 2D (u, v) coordinates
 gp_Pnt2d to_2d(const gp_Pln& plane, const gp_Pnt& point_3d);
 
 // Convert 2D (u, v) point on gp_Pln to 3D point
 gp_Pnt to_3d(const gp_Pln& plane, const gp_Pnt2d& point_2d);
-
-gp_Pnt2d to_pnt2d(const boost_geom::point_2d& pt);
 
 // Function to create a wire box centered on a point on a plane, returning a TopoDS_Wire
 TopoDS_Wire create_wire_box(const gp_Pln& plane, const gp_Pnt& position, double width, double height);
@@ -168,15 +203,14 @@ double compute_face_area(const AIS_Shape_ptr& shp);
 // Function to check if shape_a is contained within shape_b (both must be faces, holes are not considered)
 bool is_face_contained(const TopoDS_Shape& shape_a, const TopoDS_Shape& shape_b);
 
-// Boost related, useful for debugging using
-// https://marketplace.visualstudio.com/items?itemName=AdamWulkiewicz.GraphicalDebugging
-// Function to convert a 3D point to 2D in the plane's coordinate system
-boost_geom::point_2d to_boost(const gp_Pln& plane, const gp_Pnt& point_3d);
+// Pure C++ geometry helpers (polygon from OCCT face, etc.), useful for debugging
+// and for test validation of face winding/order/area.
+ezy_geom::point_2d to_boost(const gp_Pln& plane, const gp_Pnt& point_3d);
 
-boost_geom::point_2d to_boost(const gp_Pnt2d& point);
+ezy_geom::point_2d to_boost(const gp_Pnt2d& point);
 
-// Convert a TopoDS_Shape to a boost_geom::polygon_2d
-boost_geom::polygon_2d to_boost(const TopoDS_Shape& shape, const gp_Pln& pln2);
+// Convert a TopoDS_Shape to a ezy_geom::polygon_2d
+ezy_geom::polygon_2d to_boost(const TopoDS_Shape& shape, const gp_Pln& pln2);
 
 gp_Pnt get_shape_bbox_center(const TopoDS_Shape& shp);
 
@@ -193,7 +227,7 @@ bool operator<(const gp_Pnt2d& lhs, const gp_Pnt2d& rhs);
 gp_Pnt2d rotate_point(const gp_Pnt2d& origin, const gp_Pnt2d& point, double angle_degrees);
 
 // Check if a ring is clockwise using the shoelace formula
-bool is_clockwise(const boost_geom::ring_2d& ring);
+bool is_clockwise(const ezy_geom::ring_2d& ring);
 
 // Sorts a vector of gp_Pnt by x, then y, then z
 void sort_pnts(std::vector<gp_Pnt>& points);

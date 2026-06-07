@@ -46,7 +46,7 @@ Use **`// clang-format off`** / **`// clang-format on`** only where layout must 
 
 ## Documentation
 
-User-facing Markdown (`usage.md`, `usage-*.md`, `scripting.md`, Read the Docs, images, in-app help URLs) is covered in **[ezycad_doc_style.md](ezycad_doc_style.md)**. This file is for **`src/` C++ only**.
+User-facing Markdown (now in `docs/`: `usage.md`, `usage-*.md`, `scripting.md`, `building-occt.md` etc., plus Read the Docs, images, in-app help URLs) is covered in **[ezycad_doc_style.md](ezycad_doc_style.md)**. This file is for **`src/` C++ only**.
 
 ## Versioning and releases
 

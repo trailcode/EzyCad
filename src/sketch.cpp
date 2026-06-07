@@ -1085,7 +1085,8 @@ Shp_rslt Sketch::revolve_selected(const double angle)
   {
     // Catch OCCT exception and return error with message
     std::string error_msg = "Revolution failed: ";
-    error_msg += e.GetMessageString() ? e.GetMessageString() : "Unknown OCCT error";
+    const char* msg       = e.what();
+    error_msg += msg ? msg : "Unknown OCCT error";
     return Shp_rslt(Result_status::Topo_error, error_msg);
   }
   catch (const std::exception& e)

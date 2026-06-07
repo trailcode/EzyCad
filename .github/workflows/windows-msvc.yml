@@ -76,7 +76,7 @@ jobs:
             }
             git clone --depth 1 https://github.com/microsoft/vcpkg.git $vcpkgRoot
             & "$vcpkgRoot\bootstrap-vcpkg.bat" -disableMetrics
-            # Restore the stashed package cache for this run (avoids rebuilding glfw/glew/boost-geometry)
+            # Restore the stashed package cache for this run (avoids rebuilding glfw/glew)
             if (Test-Path $tempPackages) {
               Move-Item $tempPackages $packagesDir -Force
             }
@@ -158,13 +158,14 @@ jobs:
 
           # The "Visual Studio 17 2022" generator + setup-msbuild action ensures we use the real
           # Microsoft C/C++ compiler (cl.exe) and MSBuild from Visual Studio 2022.
-          # The vcpkg toolchain only affects *where* libraries are found (glfw3, glew, boost-geometry); the compiler itself is the genuine MSVC one.
+          # The vcpkg toolchain only affects *where* libraries are found (glfw3, glew); the compiler itself is the genuine MSVC one.
           cmake -S . -B build `
             -G "Visual Studio 17 2022" -A x64 `
             -DCMAKE_TOOLCHAIN_FILE="$env:VCPKG_ROOT\scripts\buildsystems\vcpkg.cmake" `
             -DOpenCASCADE_DIR="$openCascadeDir" `
             -DOCCT_3RD_PARTY_DIR="$occt3rdPartyDir" `
-            -DEZYCAD_ENABLE_PYTHON=OFF
+            -DEZYCAD_ENABLE_PYTHON=OFF `
+            # (No Boost dependency - pure C++ geometry helpers are used for tests)
 
       - name: Verify using real MS Visual Studio compiler (cl.exe / MSBuild)
         shell: pwsh
@@ -194,8 +195,9 @@ jobs:
             Write-Host "Could not locate VS installation for cl.exe details (but generator is set to use it)."
           }
           Write-Host ""
-          Write-Host "Note: vcpkg downloads (cmake, 7zip etc.) are only for the remaining small dependencies (glfw3, glew, boost-geometry)."
+          Write-Host "Note: vcpkg downloads (cmake, 7zip etc.) are only for the remaining small dependencies (glfw3, glew)."
           Write-Host "OCCT uses the official prebuilt binaries (V8, cached/downloaded separately) for fast CI."
+          Write-Host "Pure C++ re-implementations are used for polygon/winding/area checks in tests (no Boost dependency)."
           Write-Host "The EzyCad code itself (and the vcpkg-built deps on Windows) are compiled with the real cl.exe from Visual Studio 2022."
 
       - name: Build Release

@@ -439,6 +439,7 @@ void Sketch_nodes::Impl::update_axis_snap_anno_(int axis_index, const gp_Pnt2d& 
   {
     double min_u{}, min_v{}, max_u{}, max_v{};
     if (view_bounds_2d_(min_u, min_v, max_u, max_v))
+    {
       if (axis_index == 0)
       {
         const gp_Pnt p0  = to_3d(pln, gp_Pnt2d(axis_pt.X(), min_v));
@@ -451,6 +452,7 @@ void Sketch_nodes::Impl::update_axis_snap_anno_(int axis_index, const gp_Pnt2d& 
         const gp_Pnt p1  = to_3d(pln, gp_Pnt2d(max_u, axis_pt.Y()));
         fullscreen_shape = BRepBuilderAPI_MakeEdge(p0, p1).Edge();
       }
+    }
   }
 
   TopoDS_Shape       anno_shape;

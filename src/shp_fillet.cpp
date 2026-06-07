@@ -97,7 +97,8 @@ Status Shp_fillet::add_fillet(const ScreenCoords& screen_coords, const Fillet_mo
   }
   catch (const Standard_Failure& e)
   {
-    auto err_str = e.GetMessageString();
+    const char* msg     = e.what();
+    std::string err_str = msg ? msg : "Unknown OCCT error";
     DBG_MSG(err_str);
     return Status::user_error(err_str);
   }

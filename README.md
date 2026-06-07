@@ -7,7 +7,7 @@
 
 **Repository:** [https://github.com/trailcode/EzyCad](https://github.com/trailcode/EzyCad)
 
-![EzyCad splash screen](doc/gen/AI-gen-splashscreen_05_01_2026_512.png)
+![EzyCad splash screen](docs/images/AI-gen-splashscreen_05_01_2026_512.png)
 
 EzyCad (Easy CAD) is an open-source CAD application for hobbyist machinists to design and edit 2D and 3D models for machining projects. It supports creating precise parts with tools for sketching, extruding, and applying geometric operations, using OpenGL, Dear ImGui, and Open CASCADE Technology (OCCT). Export models to formats like STEP or STL for CNC machines or 3D printers, or [run EzyCad in your browser (WebAssembly)](https://trailcode.github.io/EzyCad/EzyCad.html). Project home: [trailcode.github.io/EzyCad](https://trailcode.github.io/EzyCad/).
 
@@ -20,8 +20,6 @@ Prebuilt **Windows** binaries (portable .zip containing `EzyCad.exe` + all requi
 - Go to [Releases](https://github.com/trailcode/EzyCad/releases) → expand "Assets" under the latest version.
 - Download `EzyCad-vX.Y.Z-windows-x64.zip` (or the equivalent name), unzip, and run `EzyCad.exe`.
 - No installer is required; the zip is self-contained.
-
-This is the standard approach used by the vast majority of GitHub projects (Godot, FreeCAD, OBS, Notepad++, etc.) for making binaries easily discoverable and downloadable by end users without requiring them to build from source or navigate CI artifacts.
 
 **WebAssembly (browser) version:** [Run EzyCad directly in your browser](https://trailcode.github.io/EzyCad/EzyCad.html) (no download needed).
 
@@ -36,10 +34,10 @@ For source builds or other platforms, see the [Building Instructions](#building-
 ## Usage Guide
 **Online:** [ezycad.readthedocs.io](https://ezycad.readthedocs.io/en/latest/usage.html) (built from this repo on [Read the Docs](https://readthedocs.org/)).
 
-**Source:** [usage.md](usage.md) and related guides (`usage-sketch.md`, `usage-settings.md`, etc.) at the repository root. They cover the user interface, modeling tools, keyboard shortcuts, and view controls.
+**Source:** [usage.md](docs/usage.md) and related guides in `docs/` (`usage-sketch.md`, `usage-settings.md`, `usage-occt-view.md`, etc.). They cover the user interface, modeling tools, keyboard shortcuts, and view controls.
 
 ## Changelog
-Release history is in [CHANGELOG.md](CHANGELOG.md) (repository root, next to this file and [usage.md](usage.md)). With the CMake Visual Studio generator, those files also appear under a Documentation folder on the EzyCad target in Solution Explorer.
+Release history is in [CHANGELOG.md](CHANGELOG.md) (repository root). The user guides now live in the `docs/` folder (together with `building-occt.md`, style guides, etc.). With the CMake Visual Studio generator, documentation files appear under a `docs` folder (and the two root docs at project root) on the EzyCad / EzyCad_lib targets in Solution Explorer.
 
 ## Building Instructions
 
@@ -71,37 +69,21 @@ Full guide: **[docs/building-occt.md](docs/building-occt.md)** (Windows prebuilt
 4. Build the project.
 
 ### Notes for Windows Users
-- Ensure `nuget` is installed for fetching dependencies like GLFW, GLEW, and Boost.
+- Ensure `nuget` is installed for fetching dependencies like GLFW and GLEW.
 - Use Visual Studio as the IDE for debugging and building.
 
 ### Notes for Emscripten Builds
-- **Known issue:** The Emscripten build with the Ninja generator (`-G Ninja`) is currently not working. Use the default generator (e.g. `emcmake cmake ..` without `-G Ninja`, then `emmake make`) or another generator that works with your Emscripten setup.
-- Install Emscripten and activate its environment.
-- **OCCT 8.0.0 for wasm:** `scripts\build-occt-v8-wasm.cmd` or `.\scripts\build-occt-v8-wasm.ps1` after `emsdk_env` — see [docs/building-occt.md](docs/building-occt.md#webassembly-emscripten). (Desktop CI now uses 8.0.0; 7.9.x wasm steps below remain for reference.)
-- Build FreeType (2.10.1) for Emscripten using the instructions: https://stackoverflow.com/questions/61049517/build-latest-freetype-with-emscripten
-  - Add exception support:
-    - `emcmake cmake .. -DCMAKE_CXX_FLAGS="-fexceptions" -DCMAKE_EXE_LINKER_FLAGS="-fexceptions" -DCMAKE_INSTALL_PREFIX=c:/src/freetype-2.10.1_em_install -DCMAKE_POLICY_VERSION_MINIMUM=3.5`
-- Build OCCT (7.9.0) for Emscripten using the instructions: https://github.com/mathysyon/wasm-occ-demo
-  - Add exception support:
-    - CMAKE_CXX_FLAGS -fexceptions
-    - CMAKE_EXE_LINKER_FLAGS -fexceptions
-- Configure the EzyCad project with Emscripten:
+- Install Emscripten and activate its environment (`emsdk_env`).
+- **OCCT 8.0.0 for wasm (recommended, current default):** Use the automated script `scripts\build-occt-v8-wasm.ps1` (or .cmd) after `emsdk_env` — see [docs/building-occt.md](docs/building-occt.md#webassembly-emscripten). 
+- Configure the EzyCad project with Emscripten (Ninja recommended now):
   - `mkdir build_em` then `cd build_em`
-  - Add **-Wno-dev** to suppress any remaining CMake developer warnings. (CMP0167/FindBoost is already handled in CMakeLists.txt.)  
-    `emcmake cmake .. -Wno-dev -DOpenCASCADE_DIR=C:/src/OCCT-7_9_0_em_install/lib/cmake/opencascade`
-  - If configure **freezes** after that warning, the hang is often in `find_package(OpenCASCADE)` or Emscripten compiler detection. Run with `--debug-output` to see where it stops, e.g.:  
-    `emcmake cmake .. -Wno-dev -DOpenCASCADE_DIR=C:/src/OCCT-7_9_0_em_install/lib/cmake/opencascade --debug-output`
-  - If you have Ninja (see known issue above; may not work):
-    - Debug:
-      1. `emcmake cmake .. -Wno-dev -G Ninja -DOpenCASCADE_DIR=C:/src/OCCT-7_9_0_em_install/lib/cmake/opencascade -DCMAKE_BUILD_TYPE=Debug`
-      2. `ninja`
-      3. Approximately 50MB `EzyCad.wasm` file.
-    - Release:
-      1. `emcmake cmake .. -Wno-dev -G Ninja -DOpenCASCADE_DIR=C:/src/OCCT-7_9_0_em_install/lib/cmake/opencascade -DCMAKE_BUILD_TYPE=Release`
-      2. `ninja`
-      3. Approximately 19MB `EzyCad.wasm` file.
+  - Add **-Wno-dev** to suppress any remaining CMake developer warnings.  
+    `emcmake cmake .. -Wno-dev -G Ninja -DOpenCASCADE_DIR=C:/path/to/occt-wasm-build/install/lib/cmake/opencascade -DCMAKE_BUILD_TYPE=Release`
+  - If configure **freezes** after that warning, the hang is often in `find_package(OpenCASCADE)` or Emscripten compiler detection. Run with `--debug-output` to see where it stops.
+  - Build:
+    - `ninja` (or `emmake cmake --build . --config Release`)
 - Build the project.
-- Serve the WebAssembly: `python.exe -m http.server 8000`
+- Serve the WebAssembly: `python.exe -m http.server 8000` from the build output directory (look for `EzyCad.html` + `EzyCad.wasm` + `EzyCad.data`).
 - Or build and serve: `ninja && python.exe -m http.server 8000`
 - **GitHub Pages HTML:** After changing `web/index.html` or `web/EzyCad.html`, sync to [trailcode.github.io](https://github.com/trailcode/trailcode.github.io) with `scripts/sync-github-pages-html.ps1` (see script header).
 - Dear ImGui under `third_party/imgui/` carries EzyCad-specific changes (font rendering); see [In-tree third-party libraries](#in-tree-third-party-libraries) at the end of this README.
@@ -113,13 +95,13 @@ Full guide: **[docs/building-occt.md](docs/building-occt.md)** (Windows prebuilt
 - **Project home:** [trailcode.github.io/EzyCad](https://trailcode.github.io/EzyCad/)
 - Report issues or suggest features on the [GitHub repository](https://github.com/trailcode/EzyCad).
 - Contribute by developing features and fixing bugs. Pull requests are welcome!
-- Additional resources, including video tutorials and online documentation, are linked in [usage.md](usage.md).
+- Additional resources, including video tutorials and online documentation, are linked in [usage.md](docs/usage.md).
 - Outreach draft posts (forums, Reddit, awesome lists): [agents/discoverability-outreach.md](agents/discoverability-outreach.md).
 
 ### We need development help
 EzyCad is maintained by a small team and we would love more contributors. If you can help with features, bug fixes, documentation, or testing - please jump in. Every contribution helps move the project forward.
 
-**Style guides:** [ezycad_code_style.md](ezycad_code_style.md) for C++ in `src/`; [ezycad_doc_style.md](ezycad_doc_style.md) for user guides and [Read the Docs](https://ezycad.readthedocs.io/). Both human developers and AI coding agents should follow the relevant guide. Optional assistant-oriented snippets live under [agents/](agents/) (the repo does not commit `.cursor/`).
+**Style guides:** [ezycad_code_style.md](docs/ezycad_code_style.md) for C++ in `src/`; [ezycad_doc_style.md](docs/ezycad_doc_style.md) for user guides and [Read the Docs](https://ezycad.readthedocs.io/). Both human developers and AI coding agents should follow the relevant guide. Optional assistant-oriented snippets live under [agents/](agents/) (the repo does not commit `.cursor/`).
 
 ## In-tree third-party libraries
 
@@ -136,4 +118,4 @@ The **`third_party/`** folder holds other libraries **shipped inside the EzyCad 
 
 **ImGuiColorTextEdit:** Prefer a full checkout under `third_party/ImGuiColorTextEdit/` (see `third_party/README.md`). If that folder is missing, CMake **FetchContent** downloads upstream at a **fixed commit** (`ca2f9f1462e3b60e56351bc466acda448c5ea50d`) because the upstream repo has **no release tags**. To upgrade the editor, bump that SHA in `CMakeLists.txt` and refresh any vendored copy.
 
-**Windows note:** GLFW, GLEW, and Boost for MSVC are **not** stored under `third_party/`; NuGet installs them into **`${CMAKE_BINARY_DIR}/thirdParty`** when you configure (see [Notes for Windows Users](#notes-for-windows-users)).
+**Windows note:** GLFW and GLEW for MSVC are **not** stored under `third_party/`; NuGet installs them into **`${CMAKE_BINARY_DIR}/thirdParty`** when you configure (see [Notes for Windows Users](#notes-for-windows-users)).
