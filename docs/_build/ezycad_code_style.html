@@ -1,0 +1,492 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="./">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>EzyCad coding style &mdash; EzyCad — open-source hobbyist CAD (OCCT, ImGui, OpenGL)</title>
+      <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=b86133f3" />
+      <link rel="stylesheet" type="text/css" href="_static/css/theme.css?v=9edc463e" />
+
+  
+      <script src="_static/jquery.js?v=5d32c60e"></script>
+      <script src="_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="_static/documentation_options.js?v=5929fcd5"></script>
+      <script src="_static/doctools.js?v=9bcbadda"></script>
+      <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="EzyCad documentation style" href="ezycad_doc_style.html" />
+    <link rel="prev" title="Building Open CASCADE (OCCT) for EzyCad" href="building-occt.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="index.html" class="icon icon-home">
+            EzyCad
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">User Guide</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="usage.html">EzyCad Usage Guide</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="usage.html#table-of-contents">Table of Contents</a></li>
+<li class="toctree-l2"><a class="reference internal" href="usage.html#introduction">Introduction</a></li>
+<li class="toctree-l2"><a class="reference internal" href="usage.html#getting-started">Getting Started</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="usage.html#system-requirements">System Requirements</a></li>
+<li class="toctree-l3"><a class="reference internal" href="usage.html#installation">Installation</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="usage.html#user-interface">User Interface</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="usage.html#main-components">Main Components</a></li>
+<li class="toctree-l3"><a class="reference internal" href="usage.html#help-menu">Help menu</a></li>
+<li class="toctree-l3"><a class="reference internal" href="usage.html#sketch-list">Sketch List</a></li>
+<li class="toctree-l3"><a class="reference internal" href="usage.html#shape-list">Shape List</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="usage.html#scripting-lua-and-python">Scripting (Lua and Python)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="usage.html#file-operations">File Operations</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="usage.html#supported-formats">Supported Formats</a></li>
+<li class="toctree-l3"><a class="reference internal" href="usage.html#basic-operations">Basic Operations</a></li>
+<li class="toctree-l3"><a class="reference internal" href="usage.html#startup-project-defaults">Startup project (defaults)</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="usage.html#edit-operations">Edit Operations</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="usage.html#cancel-current-operation-esc">Cancel current operation (Esc)</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="usage.html#modeling-tools">Modeling Tools</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="usage.html#workflow-from-2d-sketches-to-3d-shapes">Workflow: From 2D Sketches to 3D Shapes</a></li>
+<li class="toctree-l3"><a class="reference internal" href="usage.html#importing-3d-geometries">Importing 3D Geometries</a></li>
+<li class="toctree-l3"><a class="reference internal" href="usage.html#exporting-3d-geometries">Exporting 3D geometries</a></li>
+<li class="toctree-l3"><a class="reference internal" href="usage.html#d-sketching">2D Sketching</a></li>
+<li class="toctree-l3"><a class="reference internal" href="usage.html#d-modeling">3D Modeling</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="usage.html#shape-move-tool-g">Shape Move Tool (G)</a></li>
+<li class="toctree-l4"><a class="reference internal" href="usage.html#shape-rotate-tool-r">Shape Rotate Tool (R)</a></li>
+<li class="toctree-l4"><a class="reference internal" href="usage.html#shape-scale-tool-s">Shape Scale Tool (S)</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="usage.html#feature-operations">Feature Operations</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="usage.html#extrude-sketch-face-tool-e">Extrude Sketch Face Tool (E)</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="usage.html#shape-polar-duplicate-tool">Shape Polar Duplicate Tool</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="usage.html#other-feature-operations">Other Feature Operations</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="usage.html#keyboard-shortcuts">Keyboard Shortcuts</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="usage.html#general-operations">General Operations</a></li>
+<li class="toctree-l3"><a class="reference internal" href="usage.html#modeling-shortcuts">Modeling Shortcuts</a></li>
+<li class="toctree-l3"><a class="reference internal" href="usage.html#view-navigation">View navigation</a></li>
+<li class="toctree-l3"><a class="reference internal" href="usage.html#shape-selection-filter-normal-mode-only">Shape selection filter (Normal mode only)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="usage.html#lua-and-python-consoles">Lua and Python consoles</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="usage.html#view-controls">View Controls</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="usage.html#mouse-controls">Mouse Controls</a></li>
+<li class="toctree-l3"><a class="reference internal" href="usage.html#view-orbit-numpad">View orbit (NumPad)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="usage.html#view-roll">View roll</a></li>
+<li class="toctree-l3"><a class="reference internal" href="usage.html#view-options">View Options</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="usage.html#tips-and-tricks">Tips and Tricks</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="usage.html#efficient-modeling">Efficient Modeling</a></li>
+<li class="toctree-l3"><a class="reference internal" href="usage.html#troubleshooting">Troubleshooting</a></li>
+<li class="toctree-l3"><a class="reference internal" href="usage.html#performance-optimization">Performance Optimization</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="usage.html#support">Support</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="usage.html#documentation">Documentation</a></li>
+<li class="toctree-l3"><a class="reference internal" href="usage.html#code-quality-and-ongoing-work">Code quality and ongoing work</a></li>
+<li class="toctree-l3"><a class="reference internal" href="usage.html#community">Community</a></li>
+<li class="toctree-l3"><a class="reference internal" href="usage.html#updates">Updates</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="usage.html#tool-icons">Tool Icons</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="usage.html#id1">Basic Operations</a></li>
+<li class="toctree-l3"><a class="reference internal" href="usage.html#sketch-tools">Sketch Tools</a></li>
+<li class="toctree-l3"><a class="reference internal" href="usage.html#d-operations">3D Operations</a></li>
+<li class="toctree-l3"><a class="reference internal" href="usage.html#boolean-operations">Boolean Operations</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="usage-sketch.html">EzyCad 2D Sketching Guide</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="usage-sketch.html#table-of-contents">Table of Contents</a></li>
+<li class="toctree-l2"><a class="reference internal" href="usage-sketch.html#d-sketching">2D Sketching</a></li>
+<li class="toctree-l2"><a class="reference internal" href="usage-sketch.html#sketch-snapping">Sketch snapping</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="usage-sketch.html#line-edge-creation-tools">Line Edge Creation Tools</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="usage-sketch.html#single-line-edge-tool">Single Line Edge Tool</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="usage-sketch.html#multi-line-edge-tool">Multi-Line Edge Tool</a></li>
+<li class="toctree-l3"><a class="reference internal" href="usage-sketch.html#circle-creation-tools">Circle Creation Tools</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="usage-sketch.html#center-radius-circle-tool">Center-Radius Circle Tool</a></li>
+<li class="toctree-l4"><a class="reference internal" href="usage-sketch.html#three-point-circle-tool-planned-feature">Three-Point Circle Tool (Planned Feature)</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="usage-sketch.html#circle-creation-workflow">Circle Creation Workflow</a></li>
+<li class="toctree-l3"><a class="reference internal" href="usage-sketch.html#arc-segment-creation-tool">Arc Segment Creation Tool</a></li>
+<li class="toctree-l3"><a class="reference internal" href="usage-sketch.html#rectangle-and-square-creation-tools">Rectangle and Square Creation Tools</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="usage-sketch.html#square-tool">Square Tool</a></li>
+<li class="toctree-l4"><a class="reference internal" href="usage-sketch.html#rectangle-tool-two-points">Rectangle Tool (Two Points)</a></li>
+<li class="toctree-l4"><a class="reference internal" href="usage-sketch.html#rectangle-tool-center-point">Rectangle Tool (Center Point)</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="usage-sketch.html#slot-creation-tool">Slot Creation Tool</a></li>
+<li class="toctree-l3"><a class="reference internal" href="usage-sketch.html#operation-axis-tool">Operation Axis Tool</a></li>
+<li class="toctree-l3"><a class="reference internal" href="usage-sketch.html#dimension-tool">Dimension Tool</a></li>
+<li class="toctree-l3"><a class="reference internal" href="usage-sketch.html#add-node-tool">Add Node Tool</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="usage-sketch.html#what-else-it-does">What else it does</a></li>
+<li class="toctree-l4"><a class="reference internal" href="usage-sketch.html#permanent-markers">Permanent “+” markers</a></li>
+<li class="toctree-l4"><a class="reference internal" href="usage-sketch.html#how-to-use">How to use</a></li>
+<li class="toctree-l4"><a class="reference internal" href="usage-sketch.html#keyboard-shortcuts">Keyboard shortcuts</a></li>
+<li class="toctree-l4"><a class="reference internal" href="usage-sketch.html#tips">Tips</a></li>
+<li class="toctree-l4"><a class="reference internal" href="usage-sketch.html#add-node-vs-line-edge">Add node vs. Line edge</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="usage-sketch.html#create-sketch-from-planar-face-tool">Create Sketch from Planar Face Tool</a></li>
+<li class="toctree-l3"><a class="reference internal" href="usage-sketch.html#image-underlay">Image underlay</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="usage-settings.html">EzyCad settings</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="usage-settings.html#table-of-contents">Table of contents</a></li>
+<li class="toctree-l2"><a class="reference internal" href="usage-settings.html#view-menu">View menu</a></li>
+<li class="toctree-l2"><a class="reference internal" href="usage-settings.html#settings-pane">Settings pane</a></li>
+<li class="toctree-l2"><a class="reference internal" href="usage-settings.html#options-panel">Options panel</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="usage-settings.html#normal-mode-inspection">Normal mode (Inspection)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="usage-settings.html#sketch-tools">Sketch tools</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="usage-settings.html#where-settings-are-stored">Where settings are stored</a></li>
+<li class="toctree-l2"><a class="reference internal" href="usage-settings.html#startup-project">Startup project</a></li>
+<li class="toctree-l2"><a class="reference internal" href="usage-settings.html#settings-file-reference">Settings file reference</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="usage-settings.html#version"><code class="docutils literal notranslate"><span class="pre">version</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="usage-settings.html#imgui-ini"><code class="docutils literal notranslate"><span class="pre">imgui_ini</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="usage-settings.html#occt-view"><code class="docutils literal notranslate"><span class="pre">occt_view</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="usage-settings.html#gui"><code class="docutils literal notranslate"><span class="pre">gui</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="usage-occt-view.html">3D viewer (Open CASCADE)</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="usage-occt-view.html#navigation">Navigation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="usage-occt-view.html#on-screen-aids">On-screen aids</a></li>
+<li class="toctree-l2"><a class="reference internal" href="usage-occt-view.html#settings-file">Settings file</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="scripting.html">EzyCad scripting (Lua and Python)</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="scripting.html#availability">Availability</a></li>
+<li class="toctree-l2"><a class="reference internal" href="scripting.html#opening-the-consoles">Opening the consoles</a></li>
+<li class="toctree-l2"><a class="reference internal" href="scripting.html#layout">Layout</a></li>
+<li class="toctree-l2"><a class="reference internal" href="scripting.html#bindings-overview">Bindings overview</a></li>
+<li class="toctree-l2"><a class="reference internal" href="scripting.html#sample-scripts">Sample scripts</a></li>
+<li class="toctree-l2"><a class="reference internal" href="scripting.html#limitations">Limitations</a></li>
+</ul>
+</li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Building</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="building-occt.html">Building Open CASCADE (OCCT) for EzyCad</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="building-occt.html#version-matrix-ezycad">Version matrix (EzyCad)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="building-occt.html#windows-desktop-easiest-prebuilt-binaries">Windows desktop (easiest): prebuilt binaries</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="building-occt.html#download-8-0-0-current-readme-default">Download (8.0.0 — current README default)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="building-occt.html#configure-ezycad">Configure EzyCad</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="building-occt.html#windows-desktop-build-from-source">Windows desktop: build from source</a></li>
+<li class="toctree-l2"><a class="reference internal" href="building-occt.html#webassembly-emscripten">WebAssembly (Emscripten)</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="building-occt.html#automated-scripts-build-occt-v8-wasm-ps1">Automated: <code class="docutils literal notranslate"><span class="pre">scripts/build-occt-v8-wasm.ps1</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="building-occt.html#occt-wasm-cmake-flags-reference">OCCT wasm CMake flags (reference)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="building-occt.html#wasm-troubleshooting">Wasm troubleshooting</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="building-occt.html#wrapper-scripts-and-automation">Wrapper scripts and automation</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="building-occt.html#windows-cmd-executionpolicy-bypass">Windows <code class="docutils literal notranslate"><span class="pre">.cmd</span></code> (ExecutionPolicy bypass)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="building-occt.html#unix-sh">Unix <code class="docutils literal notranslate"><span class="pre">.sh</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="building-occt.html#powershell-one-liner-no-policy-change">PowerShell one-liner (no policy change)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="building-occt.html#curl-downloads-ci">curl downloads (CI)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="building-occt.html#vcpkg-alternative-desktop-path">vcpkg (alternative desktop path)</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="building-occt.html#maintaining-occt-version-pins">Maintaining OCCT version pins</a></li>
+<li class="toctree-l2"><a class="reference internal" href="building-occt.html#quick-reference-ezycad-cmake-variables">Quick reference: EzyCad CMake variables</a></li>
+</ul>
+</li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Contributing &amp; Style Guides</span></p>
+<ul class="current">
+<li class="toctree-l1 current"><a class="current reference internal" href="#">EzyCad coding style</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#headers">Headers</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#naming">Naming</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#formatting">Formatting</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#documentation">Documentation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#versioning-and-releases">Versioning and releases</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#code-organization">Code organization</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#don-t-repeat-yourself-dry">Don’t Repeat Yourself (DRY)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#fail-fast">Fail fast</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#programmer-errors-use-asserts">Programmer errors (use asserts)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#user-mistakes-and-external-failures-return-errors-or-status">User mistakes and external failures (return errors or status)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#quick-reference">Quick reference</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#comments">Comments</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#source-encoding-ascii-only">Source encoding (ASCII only)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#c-usage">C++ usage</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="ezycad_doc_style.html">EzyCad documentation style</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="ezycad_doc_style.html#canonical-files-edit-these">Canonical files (edit these)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="ezycad_doc_style.html#writing-conventions">Writing conventions</a></li>
+<li class="toctree-l2"><a class="reference internal" href="ezycad_doc_style.html#images">Images</a></li>
+<li class="toctree-l2"><a class="reference internal" href="ezycad_doc_style.html#links-from-the-application">Links from the application</a></li>
+<li class="toctree-l2"><a class="reference internal" href="ezycad_doc_style.html#build-and-ci-reference">Build and CI (reference)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="ezycad_doc_style.html#related-docs">Related docs</a></li>
+</ul>
+</li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">EzyCad</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="index.html" class="icon icon-home" aria-label="Home"></a></li>
+      <li class="breadcrumb-item active">EzyCad coding style</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="_sources/ezycad_code_style.md.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="ezycad-coding-style">
+<h1>EzyCad coding style<a class="headerlink" href="#ezycad-coding-style" title="Link to this heading"></a></h1>
+<p>Use this style when editing or adding C/C++ code in the EzyCad project (files under <code class="docutils literal notranslate"><span class="pre">src/</span></code>, not third_party or build output).</p>
+<section id="headers">
+<h2>Headers<a class="headerlink" href="#headers" title="Link to this heading"></a></h2>
+<ul class="simple">
+<li><p>Use <strong><code class="docutils literal notranslate"><span class="pre">#pragma</span> <span class="pre">once</span></code></strong> for include guards (no <code class="docutils literal notranslate"><span class="pre">#ifndef</span></code>/<code class="docutils literal notranslate"><span class="pre">#define</span></code>/<code class="docutils literal notranslate"><span class="pre">#endif</span></code>).</p></li>
+<li><p><strong>Include order</strong>: Put the <strong>closest / most direct</strong> dependencies first.</p>
+<ul>
+<li><p>In a <strong><code class="docutils literal notranslate"><span class="pre">.cpp</span></code></strong> file: include <strong>this file’s own header first</strong> (e.g. in <code class="docutils literal notranslate"><span class="pre">sketch_nodes.cpp</span></code>, the first line is <code class="docutils literal notranslate"><span class="pre">#include</span> <span class="pre">&quot;sketch_nodes.h&quot;</span></code>). Then other project headers it needs, then external/system headers (<code class="docutils literal notranslate"><span class="pre">&lt;...&gt;</span></code>). Use a blank line before the <code class="docutils literal notranslate"><span class="pre">&lt;...&gt;</span></code> block when you have both.</p></li>
+<li><p>In a <strong><code class="docutils literal notranslate"><span class="pre">.h</span></code></strong> file: include the project headers this file directly depends on first (e.g. <code class="docutils literal notranslate"><span class="pre">sketch_nodes.h</span></code> has <code class="docutils literal notranslate"><span class="pre">#include</span> <span class="pre">&quot;types.h&quot;</span></code> before <code class="docutils literal notranslate"><span class="pre">&lt;gp_Pln.hxx&gt;</span></code>; <code class="docutils literal notranslate"><span class="pre">shp_operation.h</span></code> has <code class="docutils literal notranslate"><span class="pre">&quot;shp.h&quot;</span></code>, <code class="docutils literal notranslate"><span class="pre">&quot;types.h&quot;</span></code> first). Then external/system headers. So <strong>project (<code class="docutils literal notranslate"><span class="pre">&quot;...&quot;</span></code>) before external (<code class="docutils literal notranslate"><span class="pre">&lt;...&gt;</span></code>)</strong>, with the most relevant project header at the very top when there is one.</p></li>
+</ul>
+</li>
+<li><p>Prefer <strong>forward declarations</strong> for types used only as pointers/references (e.g. <code class="docutils literal notranslate"><span class="pre">class</span> <span class="pre">gp_Pln;</span></code>) when it reduces includes.</p></li>
+</ul>
+</section>
+<section id="naming">
+<h2>Naming<a class="headerlink" href="#naming" title="Link to this heading"></a></h2>
+<ul class="simple">
+<li><p><strong>Classes / structs</strong>: PascalCase with underscores, e.g. <code class="docutils literal notranslate"><span class="pre">Sketch_nodes</span></code>, <code class="docutils literal notranslate"><span class="pre">Shp</span></code>, <code class="docutils literal notranslate"><span class="pre">Sketch_AIS_edge</span></code>, <code class="docutils literal notranslate"><span class="pre">Occt_view</span></code>.</p></li>
+<li><p><strong>Enums</strong>: PascalCase; enum values either PascalCase or descriptive with underscores (e.g. <code class="docutils literal notranslate"><span class="pre">Full</span></code>, <code class="docutils literal notranslate"><span class="pre">Background</span></code>, <code class="docutils literal notranslate"><span class="pre">Sketch_add_node</span></code>, <code class="docutils literal notranslate"><span class="pre">_count</span></code> for sentinel).</p></li>
+<li><p><strong>Member variables</strong>: <code class="docutils literal notranslate"><span class="pre">m_</span></code> prefix (e.g. <code class="docutils literal notranslate"><span class="pre">m_nodes</span></code>, <code class="docutils literal notranslate"><span class="pre">m_view</span></code>). Static members: <code class="docutils literal notranslate"><span class="pre">s_</span></code> prefix (e.g. <code class="docutils literal notranslate"><span class="pre">s_snap_dist_pixels</span></code>).</p></li>
+<li><p>Prefer clear domain prefixes for related member groups (e.g. <code class="docutils literal notranslate"><span class="pre">m_underlay_*</span></code>) instead of mixed short forms.</p></li>
+<li><p><strong>Constants</strong> (e.g. lookup arrays for enums): <code class="docutils literal notranslate"><span class="pre">c_</span></code> prefix (e.g. <code class="docutils literal notranslate"><span class="pre">c_mode_strs</span></code>, <code class="docutils literal notranslate"><span class="pre">c_chamfer_mode_strs</span></code>).</p></li>
+<li><p><strong>Functions / methods</strong>: snake_case (e.g. <code class="docutils literal notranslate"><span class="pre">add_new_node</span></code>, <code class="docutils literal notranslate"><span class="pre">get_node_exact</span></code>, <code class="docutils literal notranslate"><span class="pre">try_get_node_idx_snap</span></code>).</p></li>
+<li><p><strong>Private methods</strong>: snake_case with trailing underscore (e.g. <code class="docutils literal notranslate"><span class="pre">update_axis_snap_anno_</span></code>).</p></li>
+<li><p><strong>Type aliases</strong>: snake_case with suffix by role, e.g. <code class="docutils literal notranslate"><span class="pre">*_ptr</span></code> for handles (<code class="docutils literal notranslate"><span class="pre">AIS_Shape_ptr</span></code>, <code class="docutils literal notranslate"><span class="pre">Shp_ptr</span></code>), <code class="docutils literal notranslate"><span class="pre">*_rslt</span></code> for result types (<code class="docutils literal notranslate"><span class="pre">Shp_rslt</span></code>). Typedefs like <code class="docutils literal notranslate"><span class="pre">ScreenCoords</span></code> are PascalCase.</p></li>
+<li><p><strong>Macros</strong>: UPPER_SNAKE_CASE (e.g. <code class="docutils literal notranslate"><span class="pre">EZY_ASSERT</span></code>, <code class="docutils literal notranslate"><span class="pre">EZY_ASSERT_MSG</span></code>, <code class="docutils literal notranslate"><span class="pre">DBG_MSG</span></code>).</p></li>
+</ul>
+</section>
+<section id="formatting">
+<h2>Formatting<a class="headerlink" href="#formatting" title="Link to this heading"></a></h2>
+<p>Run <strong><code class="docutils literal notranslate"><span class="pre">scripts/format-src.ps1</span></code></strong> (or <code class="docutils literal notranslate"><span class="pre">clang-format</span> <span class="pre">-i</span></code> on individual files) before committing C++ changes. <strong><code class="docutils literal notranslate"><span class="pre">.clang-format</span></code></strong> at the repo root is the source of truth; the settings below match that file. Anything not listed inherits <strong><code class="docutils literal notranslate"><span class="pre">BasedOnStyle:</span> <span class="pre">LLVM</span></code></strong> (e.g. spaces not tabs, short loops not collapsed to one line).</p>
+<ul class="simple">
+<li><p><strong><code class="docutils literal notranslate"><span class="pre">BasedOnStyle:</span> <span class="pre">LLVM</span></code></strong> — Start from the LLVM preset; only the options below override it.</p></li>
+<li><p><strong><code class="docutils literal notranslate"><span class="pre">IndentWidth:</span> <span class="pre">2</span></code></strong> / <strong><code class="docutils literal notranslate"><span class="pre">TabWidth:</span> <span class="pre">2</span></code></strong> — Indent with <strong>2 spaces</strong>; do not use tab characters.</p></li>
+<li><p><strong><code class="docutils literal notranslate"><span class="pre">ColumnLimit:</span> <span class="pre">128</span></code></strong> — Prefer wrapping before column 128.</p></li>
+<li><p><strong><code class="docutils literal notranslate"><span class="pre">BreakBeforeBraces:</span> <span class="pre">Allman</span></code></strong> — Opening <code class="docutils literal notranslate"><span class="pre">{</span></code> on the <strong>next line</strong> for classes, structs, functions, control statements, namespaces, and enums.</p></li>
+<li><p><strong><code class="docutils literal notranslate"><span class="pre">BreakConstructorInitializers:</span> <span class="pre">BeforeComma</span></code></strong> — Constructor initializer lists break <strong>before</strong> each comma (comma starts the continuation line).</p></li>
+<li><p><strong><code class="docutils literal notranslate"><span class="pre">AccessModifierOffset:</span> <span class="pre">-1</span></code></strong> — Access specifiers are outdented one space: <code class="docutils literal notranslate"><span class="pre">`</span> <span class="pre">public:`</span></code>, <code class="docutils literal notranslate"><span class="pre">`</span> <span class="pre">private:`</span></code>, <code class="docutils literal notranslate"><span class="pre">`</span> <span class="pre">protected:`</span></code> (one leading space).</p></li>
+<li><p><strong><code class="docutils literal notranslate"><span class="pre">PointerAlignment:</span> <span class="pre">Left</span></code></strong> — Attach <code class="docutils literal notranslate"><span class="pre">*</span></code> / <code class="docutils literal notranslate"><span class="pre">&amp;</span></code> to the type: <code class="docutils literal notranslate"><span class="pre">int*</span> <span class="pre">p</span></code>, <code class="docutils literal notranslate"><span class="pre">const</span> <span class="pre">Shp&amp;</span> <span class="pre">shp</span></code>.</p></li>
+<li><p><strong><code class="docutils literal notranslate"><span class="pre">AlignConsecutiveDeclarations:</span> <span class="pre">true</span></code></strong> — Align types and names across consecutive declarations in the same block when it helps readability.</p></li>
+<li><p><strong><code class="docutils literal notranslate"><span class="pre">AlignConsecutiveAssignments:</span> <span class="pre">true</span></code></strong> — Align <code class="docutils literal notranslate"><span class="pre">=</span></code> across consecutive assignments in the same block when it helps readability.</p></li>
+<li><p><strong><code class="docutils literal notranslate"><span class="pre">AllowShortIfStatementsOnASingleLine:</span> <span class="pre">false</span></code></strong> — Do not put an entire <code class="docutils literal notranslate"><span class="pre">if</span></code> (condition + body) on one line; condition and statement stay on separate lines. You may still omit braces for a single-statement body.</p></li>
+<li><p><strong><code class="docutils literal notranslate"><span class="pre">AllowShortLambdasOnASingleLine:</span> <span class="pre">Inline</span></code></strong> — Very short <strong>inline</strong> lambdas may stay on one line; longer lambdas break across lines.</p></li>
+<li><p><strong><code class="docutils literal notranslate"><span class="pre">IndentCaseLabels:</span> <span class="pre">false</span></code></strong> — <code class="docutils literal notranslate"><span class="pre">case</span></code> / <code class="docutils literal notranslate"><span class="pre">default</span></code> labels align with the surrounding <code class="docutils literal notranslate"><span class="pre">switch</span></code>, not extra-indented under it.</p></li>
+<li><p><strong><code class="docutils literal notranslate"><span class="pre">SortIncludes:</span> <span class="pre">false</span></code></strong> — clang-format does <strong>not</strong> reorder <code class="docutils literal notranslate"><span class="pre">#include</span></code> lines. Follow <strong>Headers</strong> above manually (own header first in <code class="docutils literal notranslate"><span class="pre">.cpp</span></code>, project <code class="docutils literal notranslate"><span class="pre">&quot;...&quot;</span></code> before <code class="docutils literal notranslate"><span class="pre">&lt;...&gt;</span></code>).</p></li>
+</ul>
+<p>Use <strong><code class="docutils literal notranslate"><span class="pre">//</span> <span class="pre">clang-format</span> <span class="pre">off</span></code></strong> / <strong><code class="docutils literal notranslate"><span class="pre">//</span> <span class="pre">clang-format</span> <span class="pre">on</span></code></strong> only where layout must be preserved (e.g. macro-like tables). Prefer formatting the file normally.</p>
+<p><strong>Not enforced by clang-format</strong> (project convention): brace-initialize members (<code class="docutils literal notranslate"><span class="pre">bool</span> <span class="pre">ok</span> <span class="pre">{false};</span></code>); declare locals close to first use; omit braces on single-statement <code class="docutils literal notranslate"><span class="pre">if</span></code>/<code class="docutils literal notranslate"><span class="pre">for</span></code>/<code class="docutils literal notranslate"><span class="pre">while</span></code> bodies when clear.</p>
+</section>
+<section id="documentation">
+<h2>Documentation<a class="headerlink" href="#documentation" title="Link to this heading"></a></h2>
+<p>User-facing Markdown (now in <code class="docutils literal notranslate"><span class="pre">docs/</span></code>: <code class="docutils literal notranslate"><span class="pre">usage.md</span></code>, <code class="docutils literal notranslate"><span class="pre">usage-*.md</span></code>, <code class="docutils literal notranslate"><span class="pre">scripting.md</span></code>, <code class="docutils literal notranslate"><span class="pre">building-occt.md</span></code> etc., plus Read the Docs, images, in-app help URLs) is covered in <strong><a class="reference internal" href="ezycad_doc_style.html"><span class="std std-doc">ezycad_doc_style.md</span></a></strong>. This file is for <strong><code class="docutils literal notranslate"><span class="pre">src/</span></code> C++ only</strong>.</p>
+</section>
+<section id="versioning-and-releases">
+<h2>Versioning and releases<a class="headerlink" href="#versioning-and-releases" title="Link to this heading"></a></h2>
+<ul class="simple">
+<li><p><strong>Product version</strong> lives in <strong><code class="docutils literal notranslate"><span class="pre">src/version.h</span></code></strong>: <code class="docutils literal notranslate"><span class="pre">EZYCAD_VERSION_MAJOR</span></code>, <code class="docutils literal notranslate"><span class="pre">EZYCAD_VERSION_MINOR</span></code>, <code class="docutils literal notranslate"><span class="pre">EZYCAD_VERSION_PATCH</span></code>, and <code class="docutils literal notranslate"><span class="pre">EZYCAD_VERSION_STRING</span></code>. Follow <a class="reference external" href="https://semver.org/spec/v2.0.0.html">Semantic Versioning</a> (MAJOR.MINOR.PATCH). The header is hand-maintained so it stays valid regardless of build system (CMake or otherwise).</p></li>
+<li><p><strong>Release notes</strong> live in <strong><code class="docutils literal notranslate"><span class="pre">CHANGELOG.md</span></code></strong> at the repo root, using <a class="reference external" href="https://keepachangelog.com/en/1.1.0/">Keep a Changelog</a> sections (<code class="docutils literal notranslate"><span class="pre">Added</span></code>, <code class="docutils literal notranslate"><span class="pre">Changed</span></code>, <code class="docutils literal notranslate"><span class="pre">Fixed</span></code>, etc.). Add notable work under <strong><code class="docutils literal notranslate"><span class="pre">[Unreleased]</span></code></strong> as you go; when you cut a release, rename that section to <strong><code class="docutils literal notranslate"><span class="pre">[x.y.z]</span> <span class="pre">-</span> <span class="pre">YYYY-MM-DD</span></code></strong>, bump <strong><code class="docutils literal notranslate"><span class="pre">version.h</span></code></strong> to match, and create a git tag <strong><code class="docutils literal notranslate"><span class="pre">vx.y.z</span></code></strong> consistent with <code class="docutils literal notranslate"><span class="pre">EZYCAD_VERSION_STRING</span></code>.</p></li>
+<li><p><strong>Do not confuse</strong> the product version with <strong><code class="docutils literal notranslate"><span class="pre">k_settings_version</span></code></strong> in <code class="docutils literal notranslate"><span class="pre">gui_settings.cpp</span></code> (and <code class="docutils literal notranslate"><span class="pre">version</span></code> in saved settings JSON): that value is the <strong>settings file format</strong> version, not the application version.</p></li>
+</ul>
+</section>
+<section id="code-organization">
+<h2>Code organization<a class="headerlink" href="#code-organization" title="Link to this heading"></a></h2>
+<ul class="simple">
+<li><p><strong>Reader-first order</strong> (<code class="docutils literal notranslate"><span class="pre">.cpp</span></code>): Arrange functions from high-level behavior to lower-level detail so the first screen shows the primary workflow before helper details.</p></li>
+<li><p><strong>Helper placement</strong>: Prefer keeping narrow file-local helpers close to the functions that use them. Avoid large top-of-file helper blocks unless helpers are broadly reused across the file.</p></li>
+<li><p><strong>Templates</strong>: Prefer putting template implementations in <code class="docutils literal notranslate"><span class="pre">.inl</span></code> files included from the header (e.g. <code class="docutils literal notranslate"><span class="pre">types.inl</span></code>, <code class="docutils literal notranslate"><span class="pre">utl.inl</span></code>).</p></li>
+<li><p><strong>OCCT handles</strong>: Use <code class="docutils literal notranslate"><span class="pre">opencascade::handle&lt;T&gt;</span></code> and project aliases (e.g. <code class="docutils literal notranslate"><span class="pre">AIS_Shape_ptr</span></code>, <code class="docutils literal notranslate"><span class="pre">Shp_ptr</span></code>).</p></li>
+<li><p><strong>Result/error handling</strong>: See <strong>Fail fast</strong> below. Use <code class="docutils literal notranslate"><span class="pre">Result&lt;T&gt;</span></code> and <code class="docutils literal notranslate"><span class="pre">Status</span></code> from <code class="docutils literal notranslate"><span class="pre">utl.h</span></code>, <code class="docutils literal notranslate"><span class="pre">CHK_RET(...)</span></code> for early return on failure.</p></li>
+<li><p><strong>Assertions</strong>: See <strong>Fail fast</strong> below. Use <code class="docutils literal notranslate"><span class="pre">EZY_ASSERT</span></code> and <code class="docutils literal notranslate"><span class="pre">EZY_ASSERT_MSG</span></code> from <code class="docutils literal notranslate"><span class="pre">dbg.h</span></code>; use <code class="docutils literal notranslate"><span class="pre">DBG_MSG</span></code> for debug logging.</p></li>
+</ul>
+</section>
+<section id="don-t-repeat-yourself-dry">
+<h2>Don’t Repeat Yourself (DRY)<a class="headerlink" href="#don-t-repeat-yourself-dry" title="Link to this heading"></a></h2>
+<ul class="simple">
+<li><p>DRY is important, but it is guidance, not a strict rule.</p></li>
+<li><p><strong>Reader-first pairing</strong>: Pragmatic DRY matches <strong>Reader-first order</strong> in <strong>Code organization</strong> above. Prefer a self-contained workflow or UI pane you can read top-to-bottom over distant abstractions whose only win is deleting a few repeated lines.</p></li>
+<li><p>Avoid hasty abstractions: do not generalize too early before patterns are stable.</p></li>
+<li><p>Too much DRY can increase coupling by forcing unrelated code through one shared abstraction.</p></li>
+<li><p>Prefer readability over clever reuse when repetition is small and explicit code is clearer.</p></li>
+<li><p><strong>When duplication is acceptable</strong>: a few lines repeated across nearby UI or glue code can beat a shared helper if call sites are likely to diverge (different tooltips, widths, or disabled logic) or if extracting would scatter one screen across many symbols. Prefer <strong>locality</strong>: keep a small block self-contained so a reader does not jump to understand one pane.</p></li>
+<li><p><strong>Rule of thumb</strong>: extract when the behavior is <strong>the same and stable</strong> (or when a bug fix must touch N copies); wait when the pattern is still moving. If you extract, prefer a <strong>narrow file-local helper</strong> next to its users over a generic framework.</p></li>
+<li><p>Context matters: stronger DRY is often good in monolith/shared-library code; some duplication can be healthier in fast-changing or separated systems.</p></li>
+<li><p>Balance DRY with KISS, YAGNI, and overall cognitive load.</p></li>
+</ul>
+</section>
+<section id="fail-fast">
+<h2>Fail fast<a class="headerlink" href="#fail-fast" title="Link to this heading"></a></h2>
+<p>EzyCad uses <strong>fail fast</strong>: detect problems as early as possible. Do not hide programmer mistakes with silent fallbacks (e.g. substituting empty defaults when a required dependency is missing) unless that behavior is an explicit, documented product decision.</p>
+<p>Separate <strong>who is responsible</strong> for the fault:</p>
+<section id="programmer-errors-use-asserts">
+<h3>Programmer errors (use asserts)<a class="headerlink" href="#programmer-errors-use-asserts" title="Link to this heading"></a></h3>
+<p>Use <strong><code class="docutils literal notranslate"><span class="pre">EZY_ASSERT</span></code></strong> / <strong><code class="docutils literal notranslate"><span class="pre">EZY_ASSERT_MSG</span></code></strong> (<code class="docutils literal notranslate"><span class="pre">dbg.h</span></code>) for conditions that must hold if the code and call patterns are correct:</p>
+<ul class="simple">
+<li><p>Preconditions that callers are required to satisfy (e.g. an object that is always constructed before use in normal app flow).</p></li>
+<li><p>Internal invariants, impossible <code class="docutils literal notranslate"><span class="pre">else</span></code> branches after exhaustive handling, index bounds that prove from prior logic.</p></li>
+<li><p>“This should never happen” after a switch or state machine where all cases were meant to be covered.</p></li>
+</ul>
+<p>These are <strong>not</strong> expected at runtime in correct usage; they signal a bug to fix. Do not use asserts for user input, files, or the operating system.</p>
+</section>
+<section id="user-mistakes-and-external-failures-return-errors-or-status">
+<h3>User mistakes and external failures (return errors or status)<a class="headerlink" href="#user-mistakes-and-external-failures-return-errors-or-status" title="Link to this heading"></a></h3>
+<p>Use <strong><code class="docutils literal notranslate"><span class="pre">Status</span></code></strong>, <strong><code class="docutils literal notranslate"><span class="pre">Result&lt;T&gt;</span></code></strong>, <strong><code class="docutils literal notranslate"><span class="pre">CHK_RET</span></code></strong>, or other explicit error paths for faults that can happen in <strong>valid</strong> programs:</p>
+<ul class="simple">
+<li><p><strong>User errors</strong>: wrong mode, nothing selected when something must be selected, invalid input — typically <code class="docutils literal notranslate"><span class="pre">Status::user_error(&quot;...&quot;)</span></code> or an appropriate <code class="docutils literal notranslate"><span class="pre">Result_status</span></code> with a clear message.</p></li>
+<li><p><strong>OS and I/O</strong>: file missing, <strong>disk full</strong>, permission denied, read/write failures — return or propagate failure; log or surface a message as the UI already does elsewhere. <strong>Never</strong> assert on these.</p></li>
+<li><p><strong>Modeling / OCCT / topology</strong>: operation failed in the kernel — use <code class="docutils literal notranslate"><span class="pre">Status</span></code> / <code class="docutils literal notranslate"><span class="pre">Result</span></code> and existing result categories (e.g. <code class="docutils literal notranslate"><span class="pre">Topo_error</span></code>) as fits the call site.</p></li>
+</ul>
+<p>Prefer <strong><code class="docutils literal notranslate"><span class="pre">CHK_RET(expr)</span></code></strong> when a callee returns <code class="docutils literal notranslate"><span class="pre">Status</span></code> or <code class="docutils literal notranslate"><span class="pre">Result&lt;T&gt;</span></code> and the caller should abort on failure.</p>
+</section>
+<section id="quick-reference">
+<h3>Quick reference<a class="headerlink" href="#quick-reference" title="Link to this heading"></a></h3>
+<table class="docutils align-default">
+<thead>
+<tr class="row-odd"><th class="head"><p>Kind of problem</p></th>
+<th class="head"><p>Mechanism</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>Bug, contract violation, impossible branch</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">EZY_ASSERT</span></code> / <code class="docutils literal notranslate"><span class="pre">EZY_ASSERT_MSG</span></code></p></td>
+</tr>
+<tr class="row-odd"><td><p>User error, I/O, OS, recoverable external failure</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">Status</span></code>, <code class="docutils literal notranslate"><span class="pre">Result&lt;T&gt;</span></code>, <code class="docutils literal notranslate"><span class="pre">CHK_RET</span></code>, explicit error return</p></td>
+</tr>
+</tbody>
+</table>
+</section>
+</section>
+<section id="comments">
+<h2>Comments<a class="headerlink" href="#comments" title="Link to this heading"></a></h2>
+<ul class="simple">
+<li><p>Use <code class="docutils literal notranslate"><span class="pre">//</span></code> for line comments.</p></li>
+<li><p>Document non-obvious parameters or lifetime requirements (e.g. <code class="docutils literal notranslate"><span class="pre">//</span> <span class="pre">\</span></code>view` must exist for the lifetime of this object`).</p></li>
+<li><p>Prefer brief inline comments for non-obvious logic; keep comments in sync with code.</p></li>
+</ul>
+</section>
+<section id="source-encoding-ascii-only">
+<h2>Source encoding (ASCII only)<a class="headerlink" href="#source-encoding-ascii-only" title="Link to this heading"></a></h2>
+<ul class="simple">
+<li><p><strong>Comments, string literals, and documentation</strong> in <code class="docutils literal notranslate"><span class="pre">src/</span></code> must be <strong>7-bit ASCII</strong> only (code points U+0000 through U+007F). Do not use Unicode punctuation or symbols (e.g. en dash, em dash, ellipsis, arrows, multiplication sign, middle dot, math letters like theta) or curly/smart apostrophes.</p></li>
+<li><p>Use ASCII substitutes instead, for example:</p>
+<ul>
+<li><p>Ranges: <code class="docutils literal notranslate"><span class="pre">0-255</span></code>, <code class="docutils literal notranslate"><span class="pre">1-9</span></code> (hyphen), not en dash.</p></li>
+<li><p>Punctuation in prose: <code class="docutils literal notranslate"><span class="pre">-</span></code> for dash; <code class="docutils literal notranslate"><span class="pre">...</span></code> for ellipsis; <code class="docutils literal notranslate"><span class="pre">-&gt;</span></code> for “maps to” / arrows in comments; plain <code class="docutils literal notranslate"><span class="pre">'</span></code> for apostrophes.</p></li>
+<li><p>Math in comments: spell out (<code class="docutils literal notranslate"><span class="pre">sqrt(2)</span></code>, <code class="docutils literal notranslate"><span class="pre">theta</span></code>) or use ASCII operators (<code class="docutils literal notranslate"><span class="pre">x</span></code> for cross-product context, <code class="docutils literal notranslate"><span class="pre">*</span></code> for multiply).</p></li>
+</ul>
+</li>
+<li><p>Run <code class="docutils literal notranslate"><span class="pre">scripts/check-nonascii-src.ps1</span></code> (or <code class="docutils literal notranslate"><span class="pre">check-nonascii-src.cmd</span></code>) before committing when touching <code class="docutils literal notranslate"><span class="pre">src/</span></code>.</p></li>
+<li><p>For AI tools: the same rule is summarized in <code class="docutils literal notranslate"><span class="pre">agents/ezycad-ascii-source.md</span></code> (optional; nothing under <code class="docutils literal notranslate"><span class="pre">.cursor/</span></code> is committed).</p></li>
+</ul>
+</section>
+<section id="c-usage">
+<h2>C++ usage<a class="headerlink" href="#c-usage" title="Link to this heading"></a></h2>
+<ul class="simple">
+<li><p>Prefer <strong><code class="docutils literal notranslate"><span class="pre">enum</span> <span class="pre">class</span></code></strong> for enumerations.</p></li>
+<li><p>Use <strong><code class="docutils literal notranslate"><span class="pre">std::optional</span></code></strong> where a value may be absent.</p></li>
+<li><p>Use <strong><code class="docutils literal notranslate"><span class="pre">const</span></code></strong> and <strong><code class="docutils literal notranslate"><span class="pre">const&amp;</span></code></strong> for parameters and accessors where appropriate.</p></li>
+<li><p>Prefer <strong>glm vector types</strong> (<code class="docutils literal notranslate"><span class="pre">glm::vec2/vec3/vec4</span></code>, <code class="docutils literal notranslate"><span class="pre">glm::dvec*</span></code>) for geometric/color-like grouped values
+(positions, directions, extents, RGB/RGBA colors) instead of raw C arrays when storing or passing data in project
+code. Use raw arrays only at API boundaries that require <code class="docutils literal notranslate"><span class="pre">float*</span></code>/<code class="docutils literal notranslate"><span class="pre">double*</span></code> (e.g. some ImGui or OCCT calls), and
+convert at the boundary.</p></li>
+<li><p>Keep consistent with existing file style (e.g. include order, brace placement) when editing.</p></li>
+</ul>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="building-occt.html" class="btn btn-neutral float-left" title="Building Open CASCADE (OCCT) for EzyCad" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="ezycad_doc_style.html" class="btn btn-neutral float-right" title="EzyCad documentation style" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2026, trailcode.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

@@ -1,0 +1,625 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="./">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Building Open CASCADE (OCCT) for EzyCad &mdash; EzyCad — open-source hobbyist CAD (OCCT, ImGui, OpenGL)</title>
+      <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=b86133f3" />
+      <link rel="stylesheet" type="text/css" href="_static/css/theme.css?v=9edc463e" />
+
+  
+      <script src="_static/jquery.js?v=5d32c60e"></script>
+      <script src="_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="_static/documentation_options.js?v=5929fcd5"></script>
+      <script src="_static/doctools.js?v=9bcbadda"></script>
+      <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="EzyCad coding style" href="ezycad_code_style.html" />
+    <link rel="prev" title="EzyCad scripting (Lua and Python)" href="scripting.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="index.html" class="icon icon-home">
+            EzyCad
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">User Guide</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="usage.html">EzyCad Usage Guide</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="usage.html#table-of-contents">Table of Contents</a></li>
+<li class="toctree-l2"><a class="reference internal" href="usage.html#introduction">Introduction</a></li>
+<li class="toctree-l2"><a class="reference internal" href="usage.html#getting-started">Getting Started</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="usage.html#system-requirements">System Requirements</a></li>
+<li class="toctree-l3"><a class="reference internal" href="usage.html#installation">Installation</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="usage.html#user-interface">User Interface</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="usage.html#main-components">Main Components</a></li>
+<li class="toctree-l3"><a class="reference internal" href="usage.html#help-menu">Help menu</a></li>
+<li class="toctree-l3"><a class="reference internal" href="usage.html#sketch-list">Sketch List</a></li>
+<li class="toctree-l3"><a class="reference internal" href="usage.html#shape-list">Shape List</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="usage.html#scripting-lua-and-python">Scripting (Lua and Python)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="usage.html#file-operations">File Operations</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="usage.html#supported-formats">Supported Formats</a></li>
+<li class="toctree-l3"><a class="reference internal" href="usage.html#basic-operations">Basic Operations</a></li>
+<li class="toctree-l3"><a class="reference internal" href="usage.html#startup-project-defaults">Startup project (defaults)</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="usage.html#edit-operations">Edit Operations</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="usage.html#cancel-current-operation-esc">Cancel current operation (Esc)</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="usage.html#modeling-tools">Modeling Tools</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="usage.html#workflow-from-2d-sketches-to-3d-shapes">Workflow: From 2D Sketches to 3D Shapes</a></li>
+<li class="toctree-l3"><a class="reference internal" href="usage.html#importing-3d-geometries">Importing 3D Geometries</a></li>
+<li class="toctree-l3"><a class="reference internal" href="usage.html#exporting-3d-geometries">Exporting 3D geometries</a></li>
+<li class="toctree-l3"><a class="reference internal" href="usage.html#d-sketching">2D Sketching</a></li>
+<li class="toctree-l3"><a class="reference internal" href="usage.html#d-modeling">3D Modeling</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="usage.html#shape-move-tool-g">Shape Move Tool (G)</a></li>
+<li class="toctree-l4"><a class="reference internal" href="usage.html#shape-rotate-tool-r">Shape Rotate Tool (R)</a></li>
+<li class="toctree-l4"><a class="reference internal" href="usage.html#shape-scale-tool-s">Shape Scale Tool (S)</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="usage.html#feature-operations">Feature Operations</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="usage.html#extrude-sketch-face-tool-e">Extrude Sketch Face Tool (E)</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="usage.html#shape-polar-duplicate-tool">Shape Polar Duplicate Tool</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="usage.html#other-feature-operations">Other Feature Operations</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="usage.html#keyboard-shortcuts">Keyboard Shortcuts</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="usage.html#general-operations">General Operations</a></li>
+<li class="toctree-l3"><a class="reference internal" href="usage.html#modeling-shortcuts">Modeling Shortcuts</a></li>
+<li class="toctree-l3"><a class="reference internal" href="usage.html#view-navigation">View navigation</a></li>
+<li class="toctree-l3"><a class="reference internal" href="usage.html#shape-selection-filter-normal-mode-only">Shape selection filter (Normal mode only)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="usage.html#lua-and-python-consoles">Lua and Python consoles</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="usage.html#view-controls">View Controls</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="usage.html#mouse-controls">Mouse Controls</a></li>
+<li class="toctree-l3"><a class="reference internal" href="usage.html#view-orbit-numpad">View orbit (NumPad)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="usage.html#view-roll">View roll</a></li>
+<li class="toctree-l3"><a class="reference internal" href="usage.html#view-options">View Options</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="usage.html#tips-and-tricks">Tips and Tricks</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="usage.html#efficient-modeling">Efficient Modeling</a></li>
+<li class="toctree-l3"><a class="reference internal" href="usage.html#troubleshooting">Troubleshooting</a></li>
+<li class="toctree-l3"><a class="reference internal" href="usage.html#performance-optimization">Performance Optimization</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="usage.html#support">Support</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="usage.html#documentation">Documentation</a></li>
+<li class="toctree-l3"><a class="reference internal" href="usage.html#code-quality-and-ongoing-work">Code quality and ongoing work</a></li>
+<li class="toctree-l3"><a class="reference internal" href="usage.html#community">Community</a></li>
+<li class="toctree-l3"><a class="reference internal" href="usage.html#updates">Updates</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="usage.html#tool-icons">Tool Icons</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="usage.html#id1">Basic Operations</a></li>
+<li class="toctree-l3"><a class="reference internal" href="usage.html#sketch-tools">Sketch Tools</a></li>
+<li class="toctree-l3"><a class="reference internal" href="usage.html#d-operations">3D Operations</a></li>
+<li class="toctree-l3"><a class="reference internal" href="usage.html#boolean-operations">Boolean Operations</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="usage-sketch.html">EzyCad 2D Sketching Guide</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="usage-sketch.html#table-of-contents">Table of Contents</a></li>
+<li class="toctree-l2"><a class="reference internal" href="usage-sketch.html#d-sketching">2D Sketching</a></li>
+<li class="toctree-l2"><a class="reference internal" href="usage-sketch.html#sketch-snapping">Sketch snapping</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="usage-sketch.html#line-edge-creation-tools">Line Edge Creation Tools</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="usage-sketch.html#single-line-edge-tool">Single Line Edge Tool</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="usage-sketch.html#multi-line-edge-tool">Multi-Line Edge Tool</a></li>
+<li class="toctree-l3"><a class="reference internal" href="usage-sketch.html#circle-creation-tools">Circle Creation Tools</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="usage-sketch.html#center-radius-circle-tool">Center-Radius Circle Tool</a></li>
+<li class="toctree-l4"><a class="reference internal" href="usage-sketch.html#three-point-circle-tool-planned-feature">Three-Point Circle Tool (Planned Feature)</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="usage-sketch.html#circle-creation-workflow">Circle Creation Workflow</a></li>
+<li class="toctree-l3"><a class="reference internal" href="usage-sketch.html#arc-segment-creation-tool">Arc Segment Creation Tool</a></li>
+<li class="toctree-l3"><a class="reference internal" href="usage-sketch.html#rectangle-and-square-creation-tools">Rectangle and Square Creation Tools</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="usage-sketch.html#square-tool">Square Tool</a></li>
+<li class="toctree-l4"><a class="reference internal" href="usage-sketch.html#rectangle-tool-two-points">Rectangle Tool (Two Points)</a></li>
+<li class="toctree-l4"><a class="reference internal" href="usage-sketch.html#rectangle-tool-center-point">Rectangle Tool (Center Point)</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="usage-sketch.html#slot-creation-tool">Slot Creation Tool</a></li>
+<li class="toctree-l3"><a class="reference internal" href="usage-sketch.html#operation-axis-tool">Operation Axis Tool</a></li>
+<li class="toctree-l3"><a class="reference internal" href="usage-sketch.html#dimension-tool">Dimension Tool</a></li>
+<li class="toctree-l3"><a class="reference internal" href="usage-sketch.html#add-node-tool">Add Node Tool</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="usage-sketch.html#what-else-it-does">What else it does</a></li>
+<li class="toctree-l4"><a class="reference internal" href="usage-sketch.html#permanent-markers">Permanent “+” markers</a></li>
+<li class="toctree-l4"><a class="reference internal" href="usage-sketch.html#how-to-use">How to use</a></li>
+<li class="toctree-l4"><a class="reference internal" href="usage-sketch.html#keyboard-shortcuts">Keyboard shortcuts</a></li>
+<li class="toctree-l4"><a class="reference internal" href="usage-sketch.html#tips">Tips</a></li>
+<li class="toctree-l4"><a class="reference internal" href="usage-sketch.html#add-node-vs-line-edge">Add node vs. Line edge</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="usage-sketch.html#create-sketch-from-planar-face-tool">Create Sketch from Planar Face Tool</a></li>
+<li class="toctree-l3"><a class="reference internal" href="usage-sketch.html#image-underlay">Image underlay</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="usage-settings.html">EzyCad settings</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="usage-settings.html#table-of-contents">Table of contents</a></li>
+<li class="toctree-l2"><a class="reference internal" href="usage-settings.html#view-menu">View menu</a></li>
+<li class="toctree-l2"><a class="reference internal" href="usage-settings.html#settings-pane">Settings pane</a></li>
+<li class="toctree-l2"><a class="reference internal" href="usage-settings.html#options-panel">Options panel</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="usage-settings.html#normal-mode-inspection">Normal mode (Inspection)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="usage-settings.html#sketch-tools">Sketch tools</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="usage-settings.html#where-settings-are-stored">Where settings are stored</a></li>
+<li class="toctree-l2"><a class="reference internal" href="usage-settings.html#startup-project">Startup project</a></li>
+<li class="toctree-l2"><a class="reference internal" href="usage-settings.html#settings-file-reference">Settings file reference</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="usage-settings.html#version"><code class="docutils literal notranslate"><span class="pre">version</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="usage-settings.html#imgui-ini"><code class="docutils literal notranslate"><span class="pre">imgui_ini</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="usage-settings.html#occt-view"><code class="docutils literal notranslate"><span class="pre">occt_view</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="usage-settings.html#gui"><code class="docutils literal notranslate"><span class="pre">gui</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="usage-occt-view.html">3D viewer (Open CASCADE)</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="usage-occt-view.html#navigation">Navigation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="usage-occt-view.html#on-screen-aids">On-screen aids</a></li>
+<li class="toctree-l2"><a class="reference internal" href="usage-occt-view.html#settings-file">Settings file</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="scripting.html">EzyCad scripting (Lua and Python)</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="scripting.html#availability">Availability</a></li>
+<li class="toctree-l2"><a class="reference internal" href="scripting.html#opening-the-consoles">Opening the consoles</a></li>
+<li class="toctree-l2"><a class="reference internal" href="scripting.html#layout">Layout</a></li>
+<li class="toctree-l2"><a class="reference internal" href="scripting.html#bindings-overview">Bindings overview</a></li>
+<li class="toctree-l2"><a class="reference internal" href="scripting.html#sample-scripts">Sample scripts</a></li>
+<li class="toctree-l2"><a class="reference internal" href="scripting.html#limitations">Limitations</a></li>
+</ul>
+</li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Building</span></p>
+<ul class="current">
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Building Open CASCADE (OCCT) for EzyCad</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#version-matrix-ezycad">Version matrix (EzyCad)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#windows-desktop-easiest-prebuilt-binaries">Windows desktop (easiest): prebuilt binaries</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#download-8-0-0-current-readme-default">Download (8.0.0 — current README default)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#configure-ezycad">Configure EzyCad</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#windows-desktop-build-from-source">Windows desktop: build from source</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#webassembly-emscripten">WebAssembly (Emscripten)</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#automated-scripts-build-occt-v8-wasm-ps1">Automated: <code class="docutils literal notranslate"><span class="pre">scripts/build-occt-v8-wasm.ps1</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#occt-wasm-cmake-flags-reference">OCCT wasm CMake flags (reference)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#wasm-troubleshooting">Wasm troubleshooting</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#wrapper-scripts-and-automation">Wrapper scripts and automation</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#windows-cmd-executionpolicy-bypass">Windows <code class="docutils literal notranslate"><span class="pre">.cmd</span></code> (ExecutionPolicy bypass)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#unix-sh">Unix <code class="docutils literal notranslate"><span class="pre">.sh</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#powershell-one-liner-no-policy-change">PowerShell one-liner (no policy change)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#curl-downloads-ci">curl downloads (CI)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#vcpkg-alternative-desktop-path">vcpkg (alternative desktop path)</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#maintaining-occt-version-pins">Maintaining OCCT version pins</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#quick-reference-ezycad-cmake-variables">Quick reference: EzyCad CMake variables</a></li>
+</ul>
+</li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Contributing &amp; Style Guides</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="ezycad_code_style.html">EzyCad coding style</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="ezycad_code_style.html#headers">Headers</a></li>
+<li class="toctree-l2"><a class="reference internal" href="ezycad_code_style.html#naming">Naming</a></li>
+<li class="toctree-l2"><a class="reference internal" href="ezycad_code_style.html#formatting">Formatting</a></li>
+<li class="toctree-l2"><a class="reference internal" href="ezycad_code_style.html#documentation">Documentation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="ezycad_code_style.html#versioning-and-releases">Versioning and releases</a></li>
+<li class="toctree-l2"><a class="reference internal" href="ezycad_code_style.html#code-organization">Code organization</a></li>
+<li class="toctree-l2"><a class="reference internal" href="ezycad_code_style.html#don-t-repeat-yourself-dry">Don’t Repeat Yourself (DRY)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="ezycad_code_style.html#fail-fast">Fail fast</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="ezycad_code_style.html#programmer-errors-use-asserts">Programmer errors (use asserts)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="ezycad_code_style.html#user-mistakes-and-external-failures-return-errors-or-status">User mistakes and external failures (return errors or status)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="ezycad_code_style.html#quick-reference">Quick reference</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="ezycad_code_style.html#comments">Comments</a></li>
+<li class="toctree-l2"><a class="reference internal" href="ezycad_code_style.html#source-encoding-ascii-only">Source encoding (ASCII only)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="ezycad_code_style.html#c-usage">C++ usage</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="ezycad_doc_style.html">EzyCad documentation style</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="ezycad_doc_style.html#canonical-files-edit-these">Canonical files (edit these)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="ezycad_doc_style.html#writing-conventions">Writing conventions</a></li>
+<li class="toctree-l2"><a class="reference internal" href="ezycad_doc_style.html#images">Images</a></li>
+<li class="toctree-l2"><a class="reference internal" href="ezycad_doc_style.html#links-from-the-application">Links from the application</a></li>
+<li class="toctree-l2"><a class="reference internal" href="ezycad_doc_style.html#build-and-ci-reference">Build and CI (reference)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="ezycad_doc_style.html#related-docs">Related docs</a></li>
+</ul>
+</li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">EzyCad</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="index.html" class="icon icon-home" aria-label="Home"></a></li>
+      <li class="breadcrumb-item active">Building Open CASCADE (OCCT) for EzyCad</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="_sources/building-occt.md.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="building-open-cascade-occt-for-ezycad">
+<h1>Building Open CASCADE (OCCT) for EzyCad<a class="headerlink" href="#building-open-cascade-occt-for-ezycad" title="Link to this heading"></a></h1>
+<p>EzyCad does <strong>not</strong> vendor OCCT; builds live <strong>outside</strong> the tree. Point CMake at an install via <code class="docutils literal notranslate"><span class="pre">OpenCASCADE_DIR</span></code> (and on Windows desktop, <code class="docutils literal notranslate"><span class="pre">OCCT_3RD_PARTY_DIR</span></code>).</p>
+<p><strong>Official references</strong></p>
+<ul class="simple">
+<li><p><a class="reference external" href="https://github.com/Open-Cascade-SAS/OCCT/releases">OCCT releases</a></p></li>
+<li><p><a class="reference external" href="https://dev.opencascade.org/doc/overview/html/build_upgrade__building_occt.html">Build OCCT (overview)</a></p></li>
+<li><p>Upstream WebGL/wasm samples exist but are outdated; use the V8 script documented below for current EzyCad WASM support.</p></li>
+</ul>
+<hr class="docutils" />
+<section id="version-matrix-ezycad">
+<h2>Version matrix (EzyCad)<a class="headerlink" href="#version-matrix-ezycad" title="Link to this heading"></a></h2>
+<table class="docutils align-default">
+<thead>
+<tr class="row-odd"><th class="head"><p>Target</p></th>
+<th class="head"><p>Documented / tested</p></th>
+<th class="head"><p>CMake variables</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p><strong>Windows desktop</strong></p></td>
+<td><p>OCCT <strong>8.0.0</strong> prebuilt</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">OpenCASCADE_DIR</span></code>, <code class="docutils literal notranslate"><span class="pre">OCCT_3RD_PARTY_DIR</span></code></p></td>
+</tr>
+<tr class="row-odd"><td><p><strong>WebAssembly</strong></p></td>
+<td><p>OCCT <strong>8.0.0</strong> via <code class="docutils literal notranslate"><span class="pre">scripts/build-occt-v8-wasm.ps1</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">OpenCASCADE_DIR</span></code> only (static install)</p></td>
+</tr>
+</tbody>
+</table>
+<p>After upgrading OCCT, retest <strong>sketch dimensions</strong>, <strong>grid</strong>, <strong>fillet/chamfer/boolean</strong>, and <strong>STEP/STL</strong> export. OCCT 8.0 changes grid rendering and many modeling paths.</p>
+</section>
+<hr class="docutils" />
+<section id="windows-desktop-easiest-prebuilt-binaries">
+<h2>Windows desktop (easiest): prebuilt binaries<a class="headerlink" href="#windows-desktop-easiest-prebuilt-binaries" title="Link to this heading"></a></h2>
+<p>No OCCT compile. Use <strong>Release</strong> builds (EzyCad is tested with Release OCCT).</p>
+<section id="download-8-0-0-current-readme-default">
+<h3>Download (8.0.0 — current README default)<a class="headerlink" href="#download-8-0-0-current-readme-default" title="Link to this heading"></a></h3>
+<div class="highlight-text notranslate"><div class="highlight"><pre><span></span># Combined (OCCT + 3rd-party, simplest layout for desktop):
+https://github.com/Open-Cascade-SAS/OCCT/releases/download/V8_0_0/occt-combined-release-no-pch.zip
+</pre></div>
+</div>
+<p>Note: The V8 combined release asset is a small wrapper zip containing <code class="docutils literal notranslate"><span class="pre">opencascade-8.0.0-vc14-64-combined.zip</span></code>. Extracting it yields:</p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">opencascade-8.0.0-vc14-64/</span></code> (contains <code class="docutils literal notranslate"><span class="pre">cmake/OpenCASCADEConfig.cmake</span></code> → use for <code class="docutils literal notranslate"><span class="pre">-DOpenCASCADE_DIR=.../opencascade-8.0.0-vc14-64/cmake</span></code>)</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">3rdparty-vc14-64/</span></code></p></li>
+</ul>
+<div class="highlight-text notranslate"><div class="highlight"><pre><span></span># Or separate (if you prefer):
+https://github.com/Open-Cascade-SAS/OCCT/releases/download/V8_0_0/3rdparty-vc14-64.zip
+# + the opencascade-*-vc14-64 combined from the V8_0_0 release page
+</pre></div>
+</div>
+</section>
+<section id="configure-ezycad">
+<h3>Configure EzyCad<a class="headerlink" href="#configure-ezycad" title="Link to this heading"></a></h3>
+<div class="highlight-text notranslate"><div class="highlight"><pre><span></span>cmake C:\src\EzyCad -DOpenCASCADE_DIR=C:\bin\OCCT-install\cmake -DOCCT_3RD_PARTY_DIR=C:\bin\3rdparty-vc14-64
+</pre></div>
+</div>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">OpenCASCADE_DIR</span></code> — directory containing <code class="docutils literal notranslate"><span class="pre">OpenCASCADEConfig.cmake</span></code> (often <code class="docutils literal notranslate"><span class="pre">...\cmake</span></code> or <code class="docutils literal notranslate"><span class="pre">...\lib\cmake\opencascade</span></code> depending on package layout; <strong>verify on disk</strong>).</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">OCCT_3RD_PARTY_DIR</span></code> — root of <code class="docutils literal notranslate"><span class="pre">3rdparty-vc14-64</span></code> (FreeType, TBB, FFmpeg DLLs copied next to <code class="docutils literal notranslate"><span class="pre">EzyCad.exe</span></code> per <code class="docutils literal notranslate"><span class="pre">CMakeLists.txt</span></code>).</p></li>
+</ul>
+<p>Use <strong>Visual Studio</strong> generator, <strong>x64</strong>, <strong>Release</strong> for the app.</p>
+</section>
+</section>
+<hr class="docutils" />
+<section id="windows-desktop-build-from-source">
+<h2>Windows desktop: build from source<a class="headerlink" href="#windows-desktop-build-from-source" title="Link to this heading"></a></h2>
+<p>Only when prebuilts are insufficient (custom flags, Debug OCCT, patches).</p>
+<ol class="arabic simple">
+<li><p>Install <strong>VS 2022</strong> (C++), <strong>CMake 3.16+</strong>, <strong>Git</strong>.</p></li>
+<li><p>Download <a class="reference external" href="https://github.com/Open-Cascade-SAS/OCCT/releases">3rdparty-vc14-64.zip</a> matching the OCCT tag.</p></li>
+<li><p>Clone OCCT, configure with CMake GUI or CLI, <code class="docutils literal notranslate"><span class="pre">BUILD_LIBRARY_TYPE=Shared</span></code> or <code class="docutils literal notranslate"><span class="pre">Static</span></code> as needed, enable <code class="docutils literal notranslate"><span class="pre">USE_OPENGL</span></code>, <code class="docutils literal notranslate"><span class="pre">USE_FREETYPE</span></code>, etc. per <a class="reference external" href="https://dev.opencascade.org/doc/overview/html/build_upgrade__building_occt.html">build guide</a>.</p></li>
+<li><p>Build <strong>INSTALL</strong> target; set <code class="docutils literal notranslate"><span class="pre">OpenCASCADE_DIR</span></code> to the install prefix’s cmake package path.</p></li>
+</ol>
+<p>Prefer <strong>prebuilt</strong> packages unless you need a custom source build.</p>
+</section>
+<hr class="docutils" />
+<section id="webassembly-emscripten">
+<h2>WebAssembly (Emscripten)<a class="headerlink" href="#webassembly-emscripten" title="Link to this heading"></a></h2>
+<p>EzyCad’s wasm target links <strong><code class="docutils literal notranslate"><span class="pre">TKOpenGles</span></code></strong> (not <code class="docutils literal notranslate"><span class="pre">TKOpenGl</span></code>), static OCCT, and <strong><code class="docutils literal notranslate"><span class="pre">-fexceptions</span></code></strong> (see <code class="docutils literal notranslate"><span class="pre">CMakeLists.txt</span></code> Emscripten block).</p>
+<section id="automated-scripts-build-occt-v8-wasm-ps1">
+<h3>Automated: <code class="docutils literal notranslate"><span class="pre">scripts/build-occt-v8-wasm.ps1</span></code><a class="headerlink" href="#automated-scripts-build-occt-v8-wasm-ps1" title="Link to this heading"></a></h3>
+<p>Builds <strong>FreeType 2.13.3</strong> + <strong>OCCT <code class="docutils literal notranslate"><span class="pre">V8_0_0</span></code></strong> static with GLES2 into a single install prefix.</p>
+<p><strong>Prerequisites:</strong> Git, CMake 3.16+, <a class="reference external" href="https://emscripten.org/docs/getting_started/downloads.html">Emscripten emsdk</a> 3.0+ with <code class="docutils literal notranslate"><span class="pre">emsdk_env</span></code> active (<code class="docutils literal notranslate"><span class="pre">emcc</span></code>, <code class="docutils literal notranslate"><span class="pre">emcmake</span></code>, <code class="docutils literal notranslate"><span class="pre">emmake</span></code> on <code class="docutils literal notranslate"><span class="pre">PATH</span></code>).</p>
+<p><strong>Layout created</strong> (default <code class="docutils literal notranslate"><span class="pre">RootDir</span></code> = <code class="docutils literal notranslate"><span class="pre">%USERPROFILE%\occt-wasm-build</span></code>):</p>
+<div class="highlight-text notranslate"><div class="highlight"><pre><span></span>occt-wasm-build/
+  src/OCCT/                    git clone V8_0_0
+  src/freetype-2.13.3/         from .tar.gz (not .tar.xz on Windows)
+  build/freetype/
+  build/occt/
+  install/                     CMAKE_INSTALL_PREFIX
+    lib/cmake/opencascade/     → OpenCASCADE_DIR
+    freetype/                  FreeType install (used at OCCT configure time)
+</pre></div>
+</div>
+<p><strong>PowerShell (repo root, after <code class="docutils literal notranslate"><span class="pre">emsdk_env</span></code>):</strong></p>
+<div class="highlight-powershell notranslate"><div class="highlight"><pre><span></span><span class="p">.\</span><span class="n">scripts</span><span class="p">\</span><span class="n">build-occt-v8-wasm</span><span class="p">.</span><span class="n">ps1</span> <span class="n">-RootDir</span> <span class="n">C</span><span class="p">:\</span><span class="n">bin</span><span class="p">\</span><span class="n">occt-wasm-build</span>
+</pre></div>
+</div>
+<p>Or use <code class="docutils literal notranslate"><span class="pre">scripts\build-occt-v8-wasm.cmd</span></code> if PowerShell script execution is restricted.</p>
+<p><strong>Script flags:</strong> <code class="docutils literal notranslate"><span class="pre">-SkipDownload</span></code>, <code class="docutils literal notranslate"><span class="pre">-SkipFreeType</span></code>, <code class="docutils literal notranslate"><span class="pre">-SkipOcct</span></code>, <code class="docutils literal notranslate"><span class="pre">-ReconfigureOnly</span></code>, <code class="docutils literal notranslate"><span class="pre">-Jobs</span> <span class="pre">8</span></code>, <code class="docutils literal notranslate"><span class="pre">-OcctTag</span> <span class="pre">V8_0_0</span></code>, <code class="docutils literal notranslate"><span class="pre">-BuildType</span> <span class="pre">Release</span></code>.</p>
+<p><strong>Expect:</strong> 1–3+ hours compile, large disk use. Success prints <code class="docutils literal notranslate"><span class="pre">OpenCASCADE_DIR=...</span></code>.</p>
+<p><strong>Configure EzyCad wasm</strong> (Ninja generator works well with OCCT V8):</p>
+<div class="highlight-text notranslate"><div class="highlight"><pre><span></span>mkdir build_em
+cd build_em
+emcmake cmake C:\src\EzyCad -Wno-dev -G Ninja -DOpenCASCADE_DIR=C:\src\occt-wasm-build\install\lib\cmake\opencascade -DCMAKE_BUILD_TYPE=Release
+ninja
+</pre></div>
+</div>
+<p>Serve: <code class="docutils literal notranslate"><span class="pre">python</span> <span class="pre">-m</span> <span class="pre">http.server</span> <span class="pre">8000</span></code> from the build output directory (the <code class="docutils literal notranslate"><span class="pre">.html</span></code> + <code class="docutils literal notranslate"><span class="pre">.wasm</span></code> + <code class="docutils literal notranslate"><span class="pre">.data</span></code> files).</p>
+</section>
+<section id="occt-wasm-cmake-flags-reference">
+<h3>OCCT wasm CMake flags (reference)<a class="headerlink" href="#occt-wasm-cmake-flags-reference" title="Link to this heading"></a></h3>
+<p>Used by <code class="docutils literal notranslate"><span class="pre">build-occt-v8-wasm.ps1</span></code> — keep in sync if editing the script:</p>
+<table class="docutils align-default">
+<thead>
+<tr class="row-odd"><th class="head"><p>Variable</p></th>
+<th class="head"><p>Value</p></th>
+<th class="head"><p>Why</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">BUILD_LIBRARY_TYPE</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">Static</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">.a</span></code> archives linked into EzyCad.wasm</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">BUILD_MODULE_Draw</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">OFF</span></code></p></td>
+<td><p>No Tcl/Tk harness</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">USE_OPENGL</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">OFF</span></code></p></td>
+<td><p>Desktop GL driver</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">USE_GLES2</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">ON</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">TKOpenGles</span></code> for WebGL2</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">USE_VTK</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">OFF</span></code></p></td>
+<td><p>Default in 8.0; avoids GLES VTK issues</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">USE_FREETYPE</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">ON</span></code></p></td>
+<td><p>Dimension / text rendering</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">USE_TBB</span></code>, <code class="docutils literal notranslate"><span class="pre">USE_FFMPEG</span></code>, <code class="docutils literal notranslate"><span class="pre">USE_FREEIMAGE</span></code>, <code class="docutils literal notranslate"><span class="pre">USE_OPENVR</span></code>, <code class="docutils literal notranslate"><span class="pre">USE_TK</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">OFF</span></code></p></td>
+<td><p>Reduce deps and build time</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">CMAKE_*_FLAGS</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">-fexceptions</span></code></p></td>
+<td><p>Match EzyCad emscripten link flags</p></td>
+</tr>
+</tbody>
+</table>
+<p>FreeType wasm configure also disables optional zlib/png/harfbuzz finds to simplify the emscripten build.</p>
+</section>
+<section id="wasm-troubleshooting">
+<h3>Wasm troubleshooting<a class="headerlink" href="#wasm-troubleshooting" title="Link to this heading"></a></h3>
+<table class="docutils align-default">
+<thead>
+<tr class="row-odd"><th class="head"><p>Symptom</p></th>
+<th class="head"><p>Fix</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">running</span> <span class="pre">scripts</span> <span class="pre">is</span> <span class="pre">disabled</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">Set-ExecutionPolicy</span> <span class="pre">-Scope</span> <span class="pre">CurrentUser</span> <span class="pre">RemoteSigned</span></code> <strong>or</strong> use <code class="docutils literal notranslate"><span class="pre">build-occt-v8-wasm.cmd</span></code> <strong>or</strong> <code class="docutils literal notranslate"><span class="pre">powershell</span> <span class="pre">-ExecutionPolicy</span> <span class="pre">Bypass</span> <span class="pre">-File</span> <span class="pre">...</span></code></p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">Can't</span> <span class="pre">initialize</span> <span class="pre">filter;</span> <span class="pre">xz</span></code></p></td>
+<td><p>Script uses <code class="docutils literal notranslate"><span class="pre">.tar.gz</span></code> for FreeType; delete stale <code class="docutils literal notranslate"><span class="pre">*.tar.xz</span></code> under <code class="docutils literal notranslate"><span class="pre">src/</span></code> and re-run</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">source</span> <span class="pre">directory</span> <span class="pre">.../build/freetype</span> <span class="pre">does</span> <span class="pre">not</span> <span class="pre">contain</span> <span class="pre">CMakeLists.txt</span></code></p></td>
+<td><p>Fixed: do not name a PowerShell function parameter <code class="docutils literal notranslate"><span class="pre">$Args</span></code> (shadows automatic <code class="docutils literal notranslate"><span class="pre">$Args</span></code>)</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">emcc</span></code> not found</p></td>
+<td><p>Run <code class="docutils literal notranslate"><span class="pre">emsdk_env.bat</span></code> / <code class="docutils literal notranslate"><span class="pre">emsdk_env.ps1</span></code> in the same shell</p></td>
+</tr>
+<tr class="row-even"><td><p>EzyCad configure hangs on <code class="docutils literal notranslate"><span class="pre">find_package(OpenCASCADE)</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">emcmake</span> <span class="pre">cmake</span> <span class="pre">...</span> <span class="pre">--debug-output</span></code>; verify <code class="docutils literal notranslate"><span class="pre">OpenCASCADE_DIR</span></code> path</p></td>
+</tr>
+<tr class="row-odd"><td><p>OCCT 8 + ghosted dimension labels</p></td>
+<td><p>Retest <code class="docutils literal notranslate"><span class="pre">gui.edge_dim_text_render_mode</span></code> (Z-layer Topmost); grid compositing changed in 8.0</p></td>
+</tr>
+</tbody>
+</table>
+<hr class="docutils" />
+<p><strong>Note:</strong> Older OCCT builds (prior to 8.0) are no longer supported or documented. Use the V8 script above for WebAssembly.</p>
+</section>
+</section>
+<section id="wrapper-scripts-and-automation">
+<h2>Wrapper scripts and automation<a class="headerlink" href="#wrapper-scripts-and-automation" title="Link to this heading"></a></h2>
+<p>When adding helper scripts under <code class="docutils literal notranslate"><span class="pre">scripts/</span></code>, follow existing repo conventions.</p>
+<section id="windows-cmd-executionpolicy-bypass">
+<h3>Windows <code class="docutils literal notranslate"><span class="pre">.cmd</span></code> (ExecutionPolicy bypass)<a class="headerlink" href="#windows-cmd-executionpolicy-bypass" title="Link to this heading"></a></h3>
+<p><code class="docutils literal notranslate"><span class="pre">scripts/build-occt-v8-wasm.cmd</span></code> wraps the PowerShell script (same pattern as <code class="docutils literal notranslate"><span class="pre">check-nonascii-src.cmd</span></code>):</p>
+<div class="highlight-bat notranslate"><div class="highlight"><pre><span></span><span class="p">@</span><span class="k">echo</span> off
+powershell -NoProfile -ExecutionPolicy Bypass -File <span class="s2">&quot;</span><span class="nv">%~dp0</span><span class="s2">build-occt-v8-wasm.ps1&quot;</span> <span class="nv">%*</span>
+<span class="k">if</span> <span class="k">errorlevel</span> <span class="mi">1</span> <span class="k">exit</span> /b 1
+</pre></div>
+</div>
+<p><strong>Batch + emsdk:</strong></p>
+<div class="highlight-bat notranslate"><div class="highlight"><pre><span></span><span class="k">call</span> C:\src\emsdk\emsdk_env.bat
+<span class="k">cd</span> /d C:\src\EzyCad
+scripts\build-occt-v8-wasm.cmd -RootDir C:\src\occt-wasm-build
+</pre></div>
+</div>
+</section>
+<section id="unix-sh">
+<h3>Unix <code class="docutils literal notranslate"><span class="pre">.sh</span></code><a class="headerlink" href="#unix-sh" title="Link to this heading"></a></h3>
+<p>No first-party wasm shell script yet; a <code class="docutils literal notranslate"><span class="pre">scripts/build-occt-v8-wasm.sh</span></code> may mirror the PowerShell logic:</p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">set</span> <span class="pre">-euo</span> <span class="pre">pipefail</span></code></p></li>
+<li><p>Require <code class="docutils literal notranslate"><span class="pre">emcc</span></code>, <code class="docutils literal notranslate"><span class="pre">git</span></code>, <code class="docutils literal notranslate"><span class="pre">cmake</span></code></p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">ROOT=&quot;${ROOT:-$HOME/occt-wasm-build}&quot;</span></code></p></li>
+<li><p>Download <code class="docutils literal notranslate"><span class="pre">freetype-$VER.tar.gz</span></code> (gzip portable; avoid <code class="docutils literal notranslate"><span class="pre">.tar.xz</span></code> if <code class="docutils literal notranslate"><span class="pre">xz</span></code> missing)</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">emcmake</span> <span class="pre">cmake</span> <span class="pre">-S</span> <span class="pre">...</span> <span class="pre">-B</span> <span class="pre">...</span></code> with the same <code class="docutils literal notranslate"><span class="pre">-D</span></code> flags as the <code class="docutils literal notranslate"><span class="pre">.ps1</span></code></p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">emmake</span> <span class="pre">cmake</span> <span class="pre">--build</span> <span class="pre">...</span> <span class="pre">--target</span> <span class="pre">install</span> <span class="pre">-j&quot;$(nproc)&quot;</span></code></p></li>
+<li><p>Print <code class="docutils literal notranslate"><span class="pre">OpenCASCADE_DIR=$ROOT/install/lib/cmake/opencascade</span></code></p></li>
+</ul>
+<p>Use forward slashes in cmake paths on Unix.</p>
+</section>
+<section id="powershell-one-liner-no-policy-change">
+<h3>PowerShell one-liner (no policy change)<a class="headerlink" href="#powershell-one-liner-no-policy-change" title="Link to this heading"></a></h3>
+<div class="highlight-powershell notranslate"><div class="highlight"><pre><span></span><span class="n">powershell</span> <span class="n">-NoProfile</span> <span class="n">-ExecutionPolicy</span> <span class="n">Bypass</span> <span class="o">-File</span> <span class="n">C</span><span class="p">:\</span><span class="n">src</span><span class="p">\</span><span class="n">EzyCad</span><span class="p">\</span><span class="n">scripts</span><span class="p">\</span><span class="n">build-occt-v8-wasm</span><span class="p">.</span><span class="n">ps1</span> <span class="n">-RootDir</span> <span class="n">C</span><span class="p">:\</span><span class="n">src</span><span class="p">\</span><span class="n">occt-wasm-build</span>
+</pre></div>
+</div>
+</section>
+<section id="curl-downloads-ci">
+<h3>curl downloads (CI)<a class="headerlink" href="#curl-downloads-ci" title="Link to this heading"></a></h3>
+<p><strong>Windows desktop 8.0 combined:</strong></p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>curl<span class="w"> </span>-L<span class="w"> </span>-o<span class="w"> </span>occt-combined.zip<span class="w"> </span>https://github.com/Open-Cascade-SAS/OCCT/releases/download/V8_0_0/occt-combined-release-no-pch.zip
+</pre></div>
+</div>
+</section>
+<section id="vcpkg-alternative-desktop-path">
+<h3>vcpkg (alternative desktop path)<a class="headerlink" href="#vcpkg-alternative-desktop-path" title="Link to this heading"></a></h3>
+<p>OCCT 8 supports vcpkg (<code class="docutils literal notranslate"><span class="pre">USE_VTK=ON</span></code> only if needed). EzyCad’s <code class="docutils literal notranslate"><span class="pre">CMakeLists.txt</span></code> is written for <code class="docutils literal notranslate"><span class="pre">find_package(OpenCASCADE)</span></code> + manual <code class="docutils literal notranslate"><span class="pre">OCCT_3RD_PARTY_DIR</span></code> DLL copies — vcpkg integration is <strong>not</strong> wired in-tree.</p>
+</section>
+</section>
+<hr class="docutils" />
+<section id="maintaining-occt-version-pins">
+<h2>Maintaining OCCT version pins<a class="headerlink" href="#maintaining-occt-version-pins" title="Link to this heading"></a></h2>
+<table class="docutils align-default">
+<thead>
+<tr class="row-odd"><th class="head"><p>File</p></th>
+<th class="head"><p>What to update</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">README.md</span></code></p></td>
+<td><p>Pin version, download URLs, example <code class="docutils literal notranslate"><span class="pre">OpenCASCADE_DIR</span></code></p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">CMakeLists.txt</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">OCCT_3RD_PARTY_DIR</span></code> paths (freetype/tbb/ffmpeg versions in <code class="docutils literal notranslate"><span class="pre">DLLS_COMMON</span></code>)</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">.github/workflows/windows-msvc.yml</span></code></p></td>
+<td><p>Prebuilt download URL, cache key, <code class="docutils literal notranslate"><span class="pre">OpenCASCADE_DIR</span></code>/<code class="docutils literal notranslate"><span class="pre">OCCT_3RD_PARTY_DIR</span></code> in CI configure</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">scripts/build-occt-v8-wasm.ps1</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">$OcctTag</span></code>, <code class="docutils literal notranslate"><span class="pre">$FreeTypeVersion</span></code>, cmake flags</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">docs/building-occt.md</span></code></p></td>
+<td><p>This document</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">src/ply_io.cpp</span></code></p></td>
+<td><p>Comments if triangulation API changes</p></td>
+</tr>
+</tbody>
+</table>
+</section>
+<hr class="docutils" />
+<section id="quick-reference-ezycad-cmake-variables">
+<h2>Quick reference: EzyCad CMake variables<a class="headerlink" href="#quick-reference-ezycad-cmake-variables" title="Link to this heading"></a></h2>
+<table class="docutils align-default">
+<thead>
+<tr class="row-odd"><th class="head"><p>Variable</p></th>
+<th class="head"><p>Platform</p></th>
+<th class="head"><p>Purpose</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">OpenCASCADE_DIR</span></code></p></td>
+<td><p>All</p></td>
+<td><p>Path to <code class="docutils literal notranslate"><span class="pre">OpenCASCADEConfig.cmake</span></code> directory</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">OCCT_3RD_PARTY_DIR</span></code></p></td>
+<td><p>Windows desktop</p></td>
+<td><p>Root of 3rdparty bundle for runtime DLLs</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">CMAKE_BUILD_TYPE</span></code></p></td>
+<td><p>Native / wasm</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">Release</span></code> recommended</p></td>
+</tr>
+</tbody>
+</table>
+<p>EzyCad wasm also sets <code class="docutils literal notranslate"><span class="pre">TKOpenGles</span></code> in <code class="docutils literal notranslate"><span class="pre">OpenCASCADE_LIBS</span></code> when <code class="docutils literal notranslate"><span class="pre">CMAKE_CXX_COMPILER_ID</span></code> is <code class="docutils literal notranslate"><span class="pre">Emscripten</span></code>.</p>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="scripting.html" class="btn btn-neutral float-left" title="EzyCad scripting (Lua and Python)" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="ezycad_code_style.html" class="btn btn-neutral float-right" title="EzyCad coding style" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2026, trailcode.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>
