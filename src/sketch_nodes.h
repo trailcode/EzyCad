@@ -97,6 +97,6 @@ private:
   /// Assign slot `idx` (used after `json_resize`).
   void json_set_node(size_t idx, const gp_Pnt2d& pt, bool deleted, bool midpoint, bool permanent, const std::string& name = {});
 
-  struct Impl;
+  class Impl;
   std::unique_ptr<Impl> m_impl;
 };
