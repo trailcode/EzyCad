@@ -25,19 +25,21 @@ bool                          s_annotate_all_coaxial_nodes = false;
 
 struct Sketch_nodes::Impl
 {
-  Impl(Occt_view& view, const gp_Pln& pln)
-      : view(view)
+  Impl(Sketch_nodes* owner, Occt_view& view, const gp_Pln& pln)
+      : owner(owner)
+      , view(view)
       , ctx(view.ctx())
       , pln(pln)
   {
   }
 
+  Sketch_nodes*           owner;
   std::vector<Node>       nodes;
   std::set<gp_Pnt2d>      outside_snap_pts; // Projected snap points from other sketches.
   AIS_Shape_ptr           snap_anno_axis[2];
   std::optional<gp_Pnt2d> last_snap_pt; // Used for snap annotation
   AIS_Shape_ptr           snap_anno;
-  AIS_Shape_ptr           global_coax_anno; // Used when "All co-axial nodes" is on for global alignments
+  AIS_Shape_ptr           global_coax_anno;  // Used when "All co-axial nodes" is on for global alignments
   size_t                  prev_num_nodes{0}; // Used when an operation is canceled.
 
   // Owner related
@@ -51,10 +53,172 @@ struct Sketch_nodes::Impl
   void   update_node_snap_anno_(const gp_Pnt2d& pt, const double snap_dist);
   void   update_axis_snap_anno_(int axis_index, const std::vector<gp_Pnt2d>& axis_pts, double snap_dist);
   void   update_global_coaxial_annotations_(double snap_dist);
+
+  std::optional<size_t> try_pick_existing_node(const ScreenCoords& screen_coords);
+
+  // PIMPL implementations for the remaining public API methods
+  std::optional<gp_Pnt2d> snap(const ScreenCoords& screen_coords);
+  size_t                  get_node_exact(const gp_Pnt2d& pt, bool permanent_for_new);
+  std::optional<size_t>   get_node(const ScreenCoords& screen_coords);
+  std::optional<size_t>   try_get_node_idx_snap(gp_Pnt2d& pt, const std::vector<size_t>& to_exclude = {});
+  void                    get_snap_pts_3d(std::vector<gp_Pnt>& out);
+  void                    hide_snap_annos();
+  size_t                  add_new_node(const gp_Pnt2d& pt, bool is_edge_mid_point = false, bool is_permanent = false);
 };
 
+std::optional<size_t> Sketch_nodes::Impl::try_get_node_idx_snap(
+    gp_Pnt2d&                  pt, // `pt` could be snapped to a node, an axis of another node, or an outside snap point.
+    const std::vector<size_t>& to_exclude)
+{
+  const double snap_dist = snap_radius_world_(pt);
+
+  if (!s_annotate_all_coaxial_nodes && global_coax_anno)
+  {
+    ctx.Remove(global_coax_anno, false);
+    global_coax_anno = nullptr;
+  }
+
+  owner->hide_snap_annos();
+
+  gp_Pnt2d              pt_original = pt;
+  std::optional<size_t> snap_node_idx[2];
+  for (int axis_idx = 0; axis_idx < 2; ++axis_idx)
+  {
+    std::optional<gp_Pnt2d> snap_axis_point;
+    double                  best_dist = std::numeric_limits<double>::max();
+
+    // For "all coaxial" annotation we collect every node (current sketch + outside)
+    // whose coordinate on this axis is within tolerance. The *closest* one is still
+    // used for the actual snap of `pt` and for the main guide line.
+    std::vector<gp_Pnt2d> axis_anno_points;
+
+    auto try_nd_pt = [&](const gp_Pnt2d& nd_pt) -> bool
+    {
+      double dist                      = pt_original.SquareDistance(nd_pt);
+      double axis_snap_threshold_world = sqrt(snap_dist) * 0.5;
+      double axis_dist                 = std::fabs(pt_original.XY().Coord(axis_idx + 1) - nd_pt.XY().Coord(axis_idx + 1));
+
+      const bool axis_matches = axis_dist <= axis_snap_threshold_world;
+
+      if (axis_matches)
+        axis_anno_points.push_back(nd_pt);
+
+      if (dist < best_dist && axis_matches)
+      {
+        best_dist       = dist;
+        snap_axis_point = nd_pt;
+        if (!axis_idx)
+          pt.SetX(nd_pt.X());
+        else
+          pt.SetY(nd_pt.Y());
+
+        return true;
+      }
+
+      return false;
+    };
+
+    for (size_t nd_idx = 0, num = nodes.size(); nd_idx < num; ++nd_idx)
+    {
+      if (nodes[nd_idx].deleted)
+        continue;
+
+      if (std::find(to_exclude.begin(), to_exclude.end(), nd_idx) != to_exclude.end())
+        continue;
+
+      if (try_nd_pt(nodes[nd_idx]))
+        snap_node_idx[axis_idx] = nd_idx;
+    }
+
+    for (const gp_Pnt2d& nd_pt : outside_snap_pts)
+      try_nd_pt(nd_pt);
+
+    // If the "annotate all coaxial" option is on we keep the full list (dedup later if wanted).
+    // Otherwise we only annotate the single closest one that drove the snap.
+    if (!s_annotate_all_coaxial_nodes && snap_axis_point)
+      axis_anno_points = {*snap_axis_point};
+
+    if (!axis_anno_points.empty())
+    {
+      // Dedup points that are essentially identical on the axis (floating point tolerance)
+      std::vector<gp_Pnt2d> unique_pts;
+      for (const auto& p : axis_anno_points)
+      {
+        bool dup = false;
+        for (const auto& u : unique_pts)
+          if (std::fabs(p.XY().Coord(axis_idx + 1) - u.XY().Coord(axis_idx + 1)) < 1e-9)
+          {
+            dup = true;
+            break;
+          }
+
+        if (!dup)
+          unique_pts.push_back(p);
+      }
+      update_axis_snap_anno_(axis_idx, unique_pts, sqrt(snap_dist));
+    }
+    else if (!snap_anno_axis[axis_idx].IsNull())
+      ctx.Erase(snap_anno_axis[axis_idx], true);
+  }
+
+  if (s_annotate_all_coaxial_nodes)
+  {
+    // For the active axes (those for which we have a guide from the current snap),
+    // collect ALL nodes (current sketch + other visible sketches) whose coordinate
+    // on the axis matches the final guide value exactly or within Precision::Confusion().
+    // Then draw the small annotation markers at all of them.
+    for (int axis_idx = 0; axis_idx < 2; ++axis_idx)
+    {
+      double guide_val = (axis_idx == 0 ? pt.X() : pt.Y());
+
+      std::vector<gp_Pnt2d> matches;
+      for (const auto& n : nodes)
+      {
+        if (n.deleted)
+          continue;
+        
+        double axis_diff = std::fabs(guide_val - n.XY().Coord(axis_idx + 1));
+        if (axis_diff <= Precision::Confusion())
+          matches.push_back(n);
+      }
+      for (const auto& p : outside_snap_pts)
+      {
+        double axis_diff = std::fabs(guide_val - p.XY().Coord(axis_idx + 1));
+        if (axis_diff <= Precision::Confusion())
+          matches.push_back(p);
+      }
+
+      if (!matches.empty())
+      {
+        // dedup by position
+        std::vector<gp_Pnt2d> unique;
+        for (const auto& p : matches)
+        {
+          bool seen = false;
+          for (const auto& u : unique)
+            if (p.Distance(u) < Precision::Confusion())
+            {
+              seen = true;
+              break;
+            }
+
+          if (!seen)
+            unique.push_back(p);
+        }
+
+        update_axis_snap_anno_(axis_idx, unique, sqrt(snap_dist));
+      }
+    }
+  }
+
+  if (snap_node_idx[0].has_value() && snap_node_idx[0] == snap_node_idx[1])
+    return snap_node_idx[0];
+
+  return {};
+}
+
 Sketch_nodes::Sketch_nodes(Occt_view& view, const gp_Pln& pln)
-    : m_impl(std::make_unique<Impl>(view, pln))
+    : m_impl(std::make_unique<Impl>(this, view, pln))
 {
 }
 
@@ -72,319 +236,35 @@ std::vector<Sketch_nodes::Node>::const_iterator Sketch_nodes::end() const { retu
 std::vector<Sketch_nodes::Node>::const_iterator Sketch_nodes::cbegin() const { return m_impl->nodes.cbegin(); }
 std::vector<Sketch_nodes::Node>::const_iterator Sketch_nodes::cend() const { return m_impl->nodes.cend(); }
 
-// === Public API ============================================================
-
-std::optional<gp_Pnt2d> Sketch_nodes::snap(const ScreenCoords& screen_coords)
-{
-  std::optional<gp_Pnt2d> pt = m_impl->view.pt_on_plane(screen_coords, m_impl->pln);
-  if (pt)
-    try_get_node_idx_snap(*pt);
-
-  return pt;
-}
+std::optional<gp_Pnt2d> Sketch_nodes::snap(const ScreenCoords& screen_coords) { return m_impl->snap(screen_coords); }
 
 size_t Sketch_nodes::get_node_exact(const gp_Pnt2d& pt, bool permanent_for_new)
 {
-  std::optional<size_t> deleted_match;
-  for (size_t idx = 0, num = m_impl->nodes.size(); idx < num; ++idx)
-    if (equal(pt, gp_Pnt2d(m_impl->nodes[idx])))
-    {
-      Node& n = m_impl->nodes[idx];
-      // Never bind to tombstoned nodes while searching for an exact live match.
-      if (n.deleted)
-      {
-        if (!deleted_match.has_value())
-          deleted_match = idx;
-        continue;
-      }
-      // If caller requests permanence (e.g. add-node tool), preserve/promote it.
-      if (permanent_for_new)
-        n.permanent = true;
-      return idx;
-    }
-
-  // If only a deleted exact match exists, revive it instead of appending a duplicate index.
-  if (deleted_match.has_value())
-  {
-    Node& n   = m_impl->nodes[*deleted_match];
-    n.deleted = false;
-    if (permanent_for_new)
-      n.permanent = true;
-    return *deleted_match;
-  }
-
-  Node n(pt);
-  n.permanent      = permanent_for_new;
-  const size_t ret = m_impl->nodes.size();
-  m_impl->nodes.push_back(n);
-  return ret;
+  return m_impl->get_node_exact(pt, permanent_for_new);
 }
 
-std::optional<size_t> Sketch_nodes::get_node(const ScreenCoords& screen_coords)
-{
-  std::optional<gp_Pnt2d> pt = m_impl->view.pt_on_plane(screen_coords, m_impl->pln);
-  if (!pt)
-    // View plane and sketch plane must be perpendicular.
-    return std::nullopt;
-
-  std::optional<size_t> idx = try_get_node_idx_snap(*pt);
-  if (idx.has_value())
-    return *idx;
-
-  return add_new_node(*pt);
-}
+std::optional<size_t> Sketch_nodes::get_node(const ScreenCoords& screen_coords) { return m_impl->get_node(screen_coords); }
 
 std::optional<size_t> Sketch_nodes::try_pick_existing_node(const ScreenCoords& screen_coords)
 {
-  std::optional<gp_Pnt2d> pt_opt = m_impl->view.pt_on_plane(screen_coords, m_impl->pln);
-  if (!pt_opt)
-  {
-    hide_snap_annos();
-    return std::nullopt;
-  }
-
-  const gp_Pnt2d pt        = *pt_opt;
-  const double   snap_dist = m_impl->snap_radius_world_(pt);
-  size_t         best_idx  = static_cast<size_t>(-1);
-  double         best_sq   = std::numeric_limits<double>::max();
-  for (size_t idx = 0, num = m_impl->nodes.size(); idx < num; ++idx)
-  {
-    if (m_impl->nodes[idx].deleted)
-      continue;
-
-    const double sq = m_impl->nodes[idx].SquareDistance(pt);
-    if (sq < best_sq)
-    {
-      best_sq  = sq;
-      best_idx = idx;
-    }
-  }
-  if (best_idx == static_cast<size_t>(-1))
-  {
-    hide_snap_annos();
-    return std::nullopt;
-  }
-  if (best_sq <= snap_dist * 0.25 * snap_dist)
-  {
-    // `try_get_node_idx_snap` can modify the input `pt`, we call this function to display snapping annotations.
-    gp_Pnt2d pt_snapped = m_impl->nodes[best_idx];
-    try_get_node_idx_snap(pt_snapped, {});
-    return best_idx;
-  }
-  hide_snap_annos();
-  return std::nullopt;
+  return m_impl->try_pick_existing_node(screen_coords);
 }
 
 std::optional<size_t> Sketch_nodes::try_get_node_idx_snap(
     gp_Pnt2d&                  pt, // `pt` could be snapped to a node, an axis of another node, or an outside snap point.
     const std::vector<size_t>& to_exclude)
 {
-  const double snap_dist = m_impl->snap_radius_world_(pt);
-
-  DBG_MSG("try_get_node_idx_snap: input_pt=(" << pt.X() << "," << pt.Y() << ") snap_dist_world=" << snap_dist << " all_coaxial=" << s_annotate_all_coaxial_nodes);
-
-  if (!s_annotate_all_coaxial_nodes && m_impl->global_coax_anno)
-  {
-    m_impl->ctx.Remove(m_impl->global_coax_anno, false);
-    m_impl->global_coax_anno = nullptr;
-  }
-
-  hide_snap_annos();
-
-  gp_Pnt2d              pt_original = pt;
-  std::optional<size_t> snap_node_idx[2];
-  for (int axis_idx = 0; axis_idx < 2; ++axis_idx)
-  {
-    std::optional<gp_Pnt2d> snap_axis_point;
-    double                  best_dist = std::numeric_limits<double>::max();
-
-    // For "all coaxial" annotation we collect every node (current sketch + outside)
-    // whose coordinate on this axis is within tolerance. The *closest* one is still
-    // used for the actual snap of `pt` and for the main guide line.
-    std::vector<gp_Pnt2d> axis_anno_points;
-
-    auto try_nd_pt = [&](const gp_Pnt2d& nd_pt) -> bool
-    {
-      double dist = pt_original.SquareDistance(nd_pt);
-      double axis_snap_threshold_world = sqrt(snap_dist) * 0.5;
-      double axis_dist                 = std::fabs(pt_original.XY().Coord(axis_idx + 1) - nd_pt.XY().Coord(axis_idx + 1));
-
-      const bool axis_matches = (axis_dist <= axis_snap_threshold_world);
-
-      if (axis_matches)
-      {
-        axis_anno_points.push_back(nd_pt);
-      }
-
-      if (dist < best_dist && axis_matches)
-      {
-        best_dist       = dist;
-        snap_axis_point = nd_pt;
-        if (!axis_idx)
-          pt.SetX(nd_pt.X());
-        else
-          pt.SetY(nd_pt.Y());
-
-        return true;
-      }
-
-      return false;
-    };
-
-    for (size_t nd_idx = 0, num = m_impl->nodes.size(); nd_idx < num; ++nd_idx)
-    {
-      if (m_impl->nodes[nd_idx].deleted)
-        continue;
-
-      if (std::find(to_exclude.begin(), to_exclude.end(), nd_idx) != to_exclude.end())
-        continue;
-
-      if (try_nd_pt(m_impl->nodes[nd_idx]))
-        snap_node_idx[axis_idx] = nd_idx;
-    }
-
-    for (const gp_Pnt2d& nd_pt : m_impl->outside_snap_pts)
-      try_nd_pt(nd_pt);
-
-    // If the "annotate all coaxial" option is on we keep the full list (dedup later if wanted).
-    // Otherwise we only annotate the single closest one that drove the snap.
-    if (!s_annotate_all_coaxial_nodes && snap_axis_point)
-    {
-      axis_anno_points = { *snap_axis_point };
-    }
-
-    if (!axis_anno_points.empty())
-    {
-      // Dedup points that are essentially identical on the axis (floating point tolerance)
-      std::vector<gp_Pnt2d> unique_pts;
-      for (const auto& p : axis_anno_points)
-      {
-        bool dup = false;
-        for (const auto& u : unique_pts)
-        {
-          if (std::fabs(p.XY().Coord(axis_idx + 1) - u.XY().Coord(axis_idx + 1)) < 1e-9)
-          {
-            dup = true;
-            break;
-          }
-        }
-        if (!dup)
-          unique_pts.push_back(p);
-      }
-      m_impl->update_axis_snap_anno_(axis_idx, unique_pts, sqrt(snap_dist));
-    }
-    else if (!m_impl->snap_anno_axis[axis_idx].IsNull())
-    {
-      m_impl->ctx.Erase(m_impl->snap_anno_axis[axis_idx], true);
-    }
-  }
-
-  if (snap_node_idx[0] == snap_node_idx[1] && snap_node_idx[0].has_value())
-  {
-    DBG_MSG("Vertex snap to node idx=" << *snap_node_idx[0] << " at (" << pt.X() << "," << pt.Y() << ")");
-    return snap_node_idx[0];
-  }
-
-  if (s_annotate_all_coaxial_nodes)
-  {
-    DBG_MSG("All co-axial mode active for snap pt=(" << pt.X() << "," << pt.Y() << ")");
-    // For the active axes (those for which we have a guide from the current snap),
-    // collect ALL nodes (current sketch + other visible sketches) whose coordinate
-    // on the axis matches the final guide value exactly or within Precision::Confusion().
-    // Then draw the small annotation markers at all of them.
-    for (int axis_idx = 0; axis_idx < 2; ++axis_idx)
-    {
-      double guide_val = (axis_idx == 0 ? pt.X() : pt.Y());
-
-      DBG_MSG("  Active axis " << axis_idx << " guide_val=" << guide_val);
-
-      std::vector<gp_Pnt2d> matches;
-      for (const auto& n : m_impl->nodes)
-      {
-        if (n.deleted) continue;
-        double axis_diff = std::fabs(guide_val - n.XY().Coord(axis_idx + 1));
-        if (axis_diff <= Precision::Confusion())
-        {
-          DBG_MSG("    Co-axial current node (" << n.X() << "," << n.Y() << ") diff=" << axis_diff);
-          matches.push_back(n);
-        }
-      }
-      for (const auto& p : m_impl->outside_snap_pts)
-      {
-        double axis_diff = std::fabs(guide_val - p.XY().Coord(axis_idx + 1));
-        if (axis_diff <= Precision::Confusion())
-        {
-          DBG_MSG("    Co-axial outside pt (" << p.X() << "," << p.Y() << ") diff=" << axis_diff);
-          matches.push_back(p);
-        }
-      }
-
-      if (!matches.empty())
-      {
-        // dedup by position
-        std::vector<gp_Pnt2d> unique;
-        for (const auto& p : matches)
-        {
-          bool seen = false;
-          for (const auto& u : unique)
-            if (p.Distance(u) < Precision::Confusion())
-            { seen = true; break; }
-          if (!seen) unique.push_back(p);
-        }
-        DBG_MSG("    Updating axis anno for " << unique.size() << " unique co-axial points");
-        m_impl->update_axis_snap_anno_(axis_idx, unique, sqrt(snap_dist));
-      }
-      else
-      {
-        DBG_MSG("    No co-axial matches for axis " << axis_idx);
-      }
-    }
-  }
-
-  return {};
+  return m_impl->try_get_node_idx_snap(pt, to_exclude);
 }
 
-void Sketch_nodes::hide_snap_annos()
-{
-  if (m_impl->snap_anno)
-    m_impl->ctx.Remove(m_impl->snap_anno, false);
-
-  m_impl->snap_anno = nullptr;
-
-  for (AIS_Shape_ptr& anno : m_impl->snap_anno_axis)
-    if (anno)
-    {
-      m_impl->ctx.Remove(anno, false);
-      anno = nullptr;
-    }
-
-  if (m_impl->global_coax_anno)
-  {
-    m_impl->ctx.Remove(m_impl->global_coax_anno, false);
-    m_impl->global_coax_anno = nullptr;
-  }
-
-  m_impl->ctx.UpdateCurrentViewer();
-  m_impl->last_snap_pt = std::nullopt;
-}
+void Sketch_nodes::hide_snap_annos() { m_impl->hide_snap_annos(); }
 
 size_t Sketch_nodes::add_new_node(const gp_Pnt2d& pt, bool is_edge_mid_point, bool is_permanent)
 {
-  size_t ret = m_impl->nodes.size();
-  Node   n(pt);
-  n.midpoint  = is_edge_mid_point;
-  n.permanent = is_permanent;
-  m_impl->nodes.emplace_back(n);
-  // DBG_MSG("Add node: " << pt.Coord().X() << "," << pt.Coord().Y() << " midpoint: " << (int) is_edge_mid_point);
-  return ret;
+  return m_impl->add_new_node(pt, is_edge_mid_point, is_permanent);
 }
 
-void Sketch_nodes::get_snap_pts_3d(std::vector<gp_Pnt>& out)
-{
-  for (const Node& n : m_impl->nodes)
-    if (!n.deleted)
-      out.push_back(to_3d(m_impl->pln, n));
-}
+void Sketch_nodes::get_snap_pts_3d(std::vector<gp_Pnt>& out) { m_impl->get_snap_pts_3d(out); }
 
 Sketch_nodes::Node& Sketch_nodes::operator[](size_t idx)
 {
@@ -470,6 +350,149 @@ bool Sketch_nodes::Impl::view_bounds_2d_(double& min_u, double& min_v, double& m
   const ImGuiIO& io = ImGui::GetIO();
   return view.sketch_plane_view_aabb_2d(pln, static_cast<double>(io.DisplaySize.x), static_cast<double>(io.DisplaySize.y),
                                         min_u, min_v, max_u, max_v);
+}
+
+std::optional<size_t> Sketch_nodes::Impl::try_pick_existing_node(const ScreenCoords& screen_coords)
+{
+  std::optional<gp_Pnt2d> pt_opt = view.pt_on_plane(screen_coords, pln);
+  if (!pt_opt)
+  {
+    owner->hide_snap_annos();
+    return std::nullopt;
+  }
+
+  const gp_Pnt2d pt        = *pt_opt;
+  const double   snap_dist = snap_radius_world_(pt);
+  size_t         best_idx  = static_cast<size_t>(-1);
+  double         best_sq   = std::numeric_limits<double>::max();
+  for (size_t idx = 0, num = nodes.size(); idx < num; ++idx)
+  {
+    if (nodes[idx].deleted)
+      continue;
+
+    const double sq = nodes[idx].SquareDistance(pt);
+    if (sq < best_sq)
+    {
+      best_sq  = sq;
+      best_idx = idx;
+    }
+  }
+  if (best_idx == static_cast<size_t>(-1))
+  {
+    owner->hide_snap_annos();
+    return std::nullopt;
+  }
+  if (best_sq <= snap_dist * 0.25 * snap_dist)
+  {
+    // `try_get_node_idx_snap` can modify the input `pt`, we call this function to display snapping annotations.
+    gp_Pnt2d pt_snapped = nodes[best_idx];
+    owner->try_get_node_idx_snap(pt_snapped, {});
+    return best_idx;
+  }
+  owner->hide_snap_annos();
+  return std::nullopt;
+}
+
+std::optional<gp_Pnt2d> Sketch_nodes::Impl::snap(const ScreenCoords& screen_coords)
+{
+  std::optional<gp_Pnt2d> pt = view.pt_on_plane(screen_coords, pln);
+  if (pt)
+    owner->try_get_node_idx_snap(*pt);
+
+  return pt;
+}
+
+size_t Sketch_nodes::Impl::get_node_exact(const gp_Pnt2d& pt, bool permanent_for_new)
+{
+  std::optional<size_t> deleted_match;
+  for (size_t idx = 0, num = nodes.size(); idx < num; ++idx)
+    if (equal(pt, gp_Pnt2d(nodes[idx])))
+    {
+      Node& n = nodes[idx];
+      // Never bind to tombstoned nodes while searching for an exact live match.
+      if (n.deleted)
+      {
+        if (!deleted_match.has_value())
+          deleted_match = idx;
+        continue;
+      }
+      // If caller requests permanence (e.g. add-node tool), preserve/promote it.
+      if (permanent_for_new)
+        n.permanent = true;
+      return idx;
+    }
+
+  // If only a deleted exact match exists, revive it instead of appending a duplicate index.
+  if (deleted_match.has_value())
+  {
+    Node& n   = nodes[*deleted_match];
+    n.deleted = false;
+    if (permanent_for_new)
+      n.permanent = true;
+    return *deleted_match;
+  }
+
+  Node n(pt);
+  n.permanent      = permanent_for_new;
+  const size_t ret = nodes.size();
+  nodes.push_back(n);
+  return ret;
+}
+
+std::optional<size_t> Sketch_nodes::Impl::get_node(const ScreenCoords& screen_coords)
+{
+  std::optional<gp_Pnt2d> pt = view.pt_on_plane(screen_coords, pln);
+  if (!pt)
+    // View plane and sketch plane must be perpendicular.
+    return std::nullopt;
+
+  std::optional<size_t> idx = owner->try_get_node_idx_snap(*pt);
+  if (idx.has_value())
+    return *idx;
+
+  return owner->add_new_node(*pt);
+}
+
+void Sketch_nodes::Impl::get_snap_pts_3d(std::vector<gp_Pnt>& out)
+{
+  for (const Node& n : nodes)
+    if (!n.deleted)
+      out.push_back(to_3d(pln, n));
+}
+
+void Sketch_nodes::Impl::hide_snap_annos()
+{
+  if (snap_anno)
+    ctx.Remove(snap_anno, false);
+
+  snap_anno = nullptr;
+
+  for (AIS_Shape_ptr& anno : snap_anno_axis)
+    if (anno)
+    {
+      ctx.Remove(anno, false);
+      anno = nullptr;
+    }
+
+  if (global_coax_anno)
+  {
+    ctx.Remove(global_coax_anno, false);
+    global_coax_anno = nullptr;
+  }
+
+  ctx.UpdateCurrentViewer();
+  last_snap_pt = std::nullopt;
+}
+
+size_t Sketch_nodes::Impl::add_new_node(const gp_Pnt2d& pt, bool is_edge_mid_point, bool is_permanent)
+{
+  size_t ret = nodes.size();
+  Node   n(pt);
+  n.midpoint  = is_edge_mid_point;
+  n.permanent = is_permanent;
+  nodes.emplace_back(n);
+  // DBG_MSG("Add node: " << pt.Coord().X() << "," << pt.Coord().Y() << " midpoint: " << (int) is_edge_mid_point);
+  return ret;
 }
 
 void Sketch_nodes::Impl::update_node_snap_anno_(const gp_Pnt2d& pt, const double snap_dist)
@@ -624,11 +647,13 @@ void Sketch_nodes::Impl::update_global_coaxial_annotations_(double snap_dist)
   }
 
   // Canonicalize unique values within Precision::Confusion() (as per requirement for co-axial alignments)
-  auto canonicalize = [](std::vector<double>& vals) {
-    if (vals.empty()) return;
+  auto canonicalize = [](std::vector<double>& vals)
+  {
+    if (vals.empty())
+      return;
     std::sort(vals.begin(), vals.end());
     std::vector<double> unique;
-    double tol = Precision::Confusion();
+    double              tol = Precision::Confusion();
     for (double v : vals)
     {
       if (unique.empty() || std::fabs(v - unique.back()) > tol)
@@ -648,7 +673,7 @@ void Sketch_nodes::Impl::update_global_coaxial_annotations_(double snap_dist)
 
   // Add vertical lines for every unique (canonicalized) X
   double min_u{}, min_v{}, max_u{}, max_v{};
-  bool have_bounds = view_bounds_2d_(min_u, min_v, max_u, max_v);
+  bool   have_bounds = view_bounds_2d_(min_u, min_v, max_u, max_v);
 
   for (double x : all_xs)
   {
@@ -657,13 +682,13 @@ void Sketch_nodes::Impl::update_global_coaxial_annotations_(double snap_dist)
     {
       gp_Pnt p0 = to_3d(pln, gp_Pnt2d(x, min_v));
       gp_Pnt p1 = to_3d(pln, gp_Pnt2d(x, max_v));
-      line = BRepBuilderAPI_MakeEdge(p0, p1).Edge();
+      line      = BRepBuilderAPI_MakeEdge(p0, p1).Edge();
     }
     else
     {
       gp_Pnt p0 = to_3d(pln, gp_Pnt2d(x, all_pts[0].Y() - 100));
       gp_Pnt p1 = to_3d(pln, gp_Pnt2d(x, all_pts[0].Y() + 100));
-      line = BRepBuilderAPI_MakeEdge(p0, p1).Edge();
+      line      = BRepBuilderAPI_MakeEdge(p0, p1).Edge();
     }
     builder.Add(comp, line);
   }
@@ -676,13 +701,13 @@ void Sketch_nodes::Impl::update_global_coaxial_annotations_(double snap_dist)
     {
       gp_Pnt p0 = to_3d(pln, gp_Pnt2d(min_u, y));
       gp_Pnt p1 = to_3d(pln, gp_Pnt2d(max_u, y));
-      line = BRepBuilderAPI_MakeEdge(p0, p1).Edge();
+      line      = BRepBuilderAPI_MakeEdge(p0, p1).Edge();
     }
     else
     {
       gp_Pnt p0 = to_3d(pln, gp_Pnt2d(all_pts[0].X() - 100, y));
       gp_Pnt p1 = to_3d(pln, gp_Pnt2d(all_pts[0].X() + 100, y));
-      line = BRepBuilderAPI_MakeEdge(p0, p1).Edge();
+      line      = BRepBuilderAPI_MakeEdge(p0, p1).Edge();
     }
     builder.Add(comp, line);
   }
@@ -734,12 +759,6 @@ void Sketch_nodes::get_snap_guide_color(float& r, float& g, float& b)
   b = s_snap_guide_color.z;
 }
 
-void Sketch_nodes::set_annotate_all_coaxial_nodes(bool enable)
-{
-  s_annotate_all_coaxial_nodes = enable;
-}
+void Sketch_nodes::set_annotate_all_coaxial_nodes(bool enable) { s_annotate_all_coaxial_nodes = enable; }
 
-bool Sketch_nodes::get_annotate_all_coaxial_nodes()
-{
-  return s_annotate_all_coaxial_nodes;
-}
+bool Sketch_nodes::get_annotate_all_coaxial_nodes() { return s_annotate_all_coaxial_nodes; }

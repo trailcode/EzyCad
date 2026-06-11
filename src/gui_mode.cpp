@@ -19,6 +19,8 @@
 #include "sketch.h"
 #include "utl_occt.h"
 
+#include <gp_Pnt2d.hxx>
+
 using namespace glm;
 
 namespace
@@ -439,6 +441,7 @@ void GUI::options_()
       bool annotate_all = Sketch_nodes::get_annotate_all_coaxial_nodes();
       if (ImGui::Checkbox("##annotate_all_coaxial", &annotate_all))
         Sketch_nodes::set_annotate_all_coaxial_nodes(annotate_all);
+      
       if (ui_show_help(2) && ImGui::IsItemHovered())
         ImGui::SetTooltip("When on (global mode): axis guide lines + markers for *all* nodes in the current\n"
                           "sketch and all other visible sketches (shows the full set of horizontal and\n"

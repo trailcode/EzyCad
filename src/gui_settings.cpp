@@ -14,6 +14,8 @@
 #include "sketch.h"
 #include "sketch_nodes.h"
 
+#include <gp_Pnt2d.hxx>
+
 namespace
 {
 const char* const k_settings_version                  = "1";
@@ -1194,6 +1196,7 @@ void GUI::settings_()
           Sketch_nodes::set_annotate_all_coaxial_nodes(annotate_all);
           save_occt_view_settings();
         }
+
         if (ImGui::IsItemHovered())
         {
           ImGui::BeginTooltip();
@@ -1208,18 +1211,21 @@ void GUI::settings_()
 
       ImGui::EndTable();
     }
+
     if (dim_changed)
     {
       save_occt_view_settings();
       if (m_view)
         m_view->refresh_all_length_dimensions();
     }
+
     if (node_anno_changed)
     {
       save_occt_view_settings();
       if (m_view)
         m_view->refresh_all_permanent_node_annotations();
     }
+
     if (ul_changed)
     {
       uint8_t hr, hg, hb, ha;
