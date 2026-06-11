@@ -34,6 +34,36 @@ public:
   {
   }
 
+  std::optional<gp_Pnt2d> snap(const ScreenCoords& screen_coords);
+  size_t                  get_node_exact(const gp_Pnt2d& pt, bool permanent_for_new);
+  std::optional<size_t>   get_node(const ScreenCoords& screen_coords);
+  std::optional<size_t>   try_pick_existing_node(const ScreenCoords& screen_coords);
+  std::optional<size_t>   try_get_node_idx_snap(gp_Pnt2d& pt, const std::vector<size_t>& to_exclude = {});
+  void                    get_snap_pts_3d(std::vector<gp_Pnt>& out);
+  void                    hide_snap_annos();
+  size_t                  add_new_node(const gp_Pnt2d& pt, bool is_edge_mid_point = false, bool is_permanent = false);
+
+  std::vector<Node>::iterator       begin();
+  std::vector<Node>::iterator       end();
+  std::vector<Node>::const_iterator begin() const;
+  std::vector<Node>::const_iterator end() const;
+  std::vector<Node>::const_iterator cbegin() const;
+  std::vector<Node>::const_iterator cend() const;
+
+  Node&       node_at(size_t idx);
+  const Node& node_at(size_t idx) const;
+  bool        empty() const;
+  size_t      size() const;
+
+  void json_resize(size_t count);
+  void json_set_node(size_t idx, const gp_Pnt2d& pt, bool deleted, bool midpoint, bool permanent, const std::string& name);
+
+  void finalize();
+  void cancel();
+
+  void clear_outside_snap_pnts();
+  void add_outside_snap_pnt(const gp_Pnt& pt3d);
+
 private:
   Sketch_nodes*           m_owner;
   std::vector<Node>       m_nodes;
@@ -55,17 +85,6 @@ private:
   void   update_node_snap_anno_(const gp_Pnt2d& pt, const double snap_dist);
   void   update_axis_snap_anno_(int axis_index, const std::vector<gp_Pnt2d>& axis_pts, double snap_dist);
   void   update_global_coaxial_annotations_(double snap_dist);
-
-  std::optional<size_t> try_pick_existing_node(const ScreenCoords& screen_coords);
-
-  // PIMPL implementations for the remaining public API methods
-  std::optional<gp_Pnt2d> snap(const ScreenCoords& screen_coords);
-  size_t                  get_node_exact(const gp_Pnt2d& pt, bool permanent_for_new);
-  std::optional<size_t>   get_node(const ScreenCoords& screen_coords);
-  std::optional<size_t>   try_get_node_idx_snap(gp_Pnt2d& pt, const std::vector<size_t>& to_exclude = {});
-  void                    get_snap_pts_3d(std::vector<gp_Pnt>& out);
-  void                    hide_snap_annos();
-  size_t                  add_new_node(const gp_Pnt2d& pt, bool is_edge_mid_point = false, bool is_permanent = false);
 };
 
 // === Impl helpers ==========================================================
@@ -351,13 +370,11 @@ void Sketch_nodes::Impl::update_axis_snap_anno_(int axis_index, const std::vecto
     builder.Add(comp, fullscreen_shape);
 
   if (show_traditional)
-  {
     for (const gp_Pnt2d& p : axis_pts)
     {
       const TopoDS_Shape small = create_wire_box(m_pln, to_3d(m_pln, p), snap_dist, snap_dist);
       builder.Add(comp, small);
     }
-  }
 
   TopoDS_Shape anno_shape = comp;
 
@@ -639,6 +656,52 @@ std::optional<size_t> Sketch_nodes::Impl::try_get_node_idx_snap(
   return {};
 }
 
+// === Impl data access ======================================================
+
+// clang-format off
+std::vector<Sketch_nodes::Node>::iterator Sketch_nodes::Impl::begin()               { return m_nodes.begin(); }
+std::vector<Sketch_nodes::Node>::iterator Sketch_nodes::Impl::end()                 { return m_nodes.end(); }
+std::vector<Sketch_nodes::Node>::const_iterator Sketch_nodes::Impl::begin()   const { return m_nodes.begin(); }
+std::vector<Sketch_nodes::Node>::const_iterator Sketch_nodes::Impl::end()     const { return m_nodes.end(); }
+std::vector<Sketch_nodes::Node>::const_iterator Sketch_nodes::Impl::cbegin()  const { return m_nodes.cbegin(); }
+std::vector<Sketch_nodes::Node>::const_iterator Sketch_nodes::Impl::cend()    const { return m_nodes.cend(); }
+// clang-format on
+
+Sketch_nodes::Node& Sketch_nodes::Impl::node_at(size_t idx)
+{
+  EZY_ASSERT(idx < size());
+  return m_nodes[idx];
+}
+
+const Sketch_nodes::Node& Sketch_nodes::Impl::node_at(size_t idx) const { return m_nodes[idx]; }
+
+bool Sketch_nodes::Impl::empty() const { return m_nodes.empty(); }
+
+size_t Sketch_nodes::Impl::size() const { return m_nodes.size(); }
+
+void Sketch_nodes::Impl::json_resize(size_t count) { m_nodes.assign(count, Node{}); }
+
+void Sketch_nodes::Impl::json_set_node(size_t idx, const gp_Pnt2d& pt, bool deleted, bool midpoint, bool permanent,
+                                       const std::string& name)
+{
+  EZY_ASSERT(idx < m_nodes.size());
+  Node& n = m_nodes[idx];
+  n.SetX(pt.X());
+  n.SetY(pt.Y());
+  n.deleted   = deleted;
+  n.midpoint  = midpoint;
+  n.permanent = permanent;
+  n.name      = name;
+}
+
+void Sketch_nodes::Impl::finalize() { m_prev_num_nodes = m_nodes.size(); }
+
+void Sketch_nodes::Impl::cancel() { m_nodes.resize(m_prev_num_nodes); }
+
+void Sketch_nodes::Impl::clear_outside_snap_pnts() { m_outside_snap_pts.clear(); }
+
+void Sketch_nodes::Impl::add_outside_snap_pnt(const gp_Pnt& pt3d) { m_outside_snap_pts.insert(to_2d(m_pln, pt3d)); }
+
 Sketch_nodes::Sketch_nodes(Occt_view& view, const gp_Pln& pln)
     : m_impl(std::make_unique<Impl>(this, view, pln))
 {
@@ -652,12 +715,12 @@ Sketch_nodes::~Sketch_nodes()
 // === Iteration =============================================================
 
 // clang-format off
-std::vector<Sketch_nodes::Node>::iterator       Sketch_nodes::begin()         { return m_impl->m_nodes.begin();   }
-std::vector<Sketch_nodes::Node>::iterator       Sketch_nodes::end()           { return m_impl->m_nodes.end();     }
-std::vector<Sketch_nodes::Node>::const_iterator Sketch_nodes::begin()   const { return m_impl->m_nodes.begin();   }
-std::vector<Sketch_nodes::Node>::const_iterator Sketch_nodes::end()     const { return m_impl->m_nodes.end();     }
-std::vector<Sketch_nodes::Node>::const_iterator Sketch_nodes::cbegin()  const { return m_impl->m_nodes.cbegin();  }
-std::vector<Sketch_nodes::Node>::const_iterator Sketch_nodes::cend()    const { return m_impl->m_nodes.cend();    }
+std::vector<Sketch_nodes::Node>::iterator       Sketch_nodes::begin()         { return m_impl->begin();   }
+std::vector<Sketch_nodes::Node>::iterator       Sketch_nodes::end()           { return m_impl->end();     }
+std::vector<Sketch_nodes::Node>::const_iterator Sketch_nodes::begin()   const { return m_impl->begin();   }
+std::vector<Sketch_nodes::Node>::const_iterator Sketch_nodes::end()     const { return m_impl->end();     }
+std::vector<Sketch_nodes::Node>::const_iterator Sketch_nodes::cbegin()  const { return m_impl->cbegin();  }
+std::vector<Sketch_nodes::Node>::const_iterator Sketch_nodes::cend()    const { return m_impl->cend();    }
 // clang-format on
 
 std::optional<gp_Pnt2d> Sketch_nodes::snap(const ScreenCoords& screen_coords) { return m_impl->snap(screen_coords); }
@@ -690,57 +753,41 @@ size_t Sketch_nodes::add_new_node(const gp_Pnt2d& pt, bool is_edge_mid_point, bo
 
 void Sketch_nodes::get_snap_pts_3d(std::vector<gp_Pnt>& out) { m_impl->get_snap_pts_3d(out); }
 
-Sketch_nodes::Node& Sketch_nodes::operator[](size_t idx)
-{
-  EZY_ASSERT(idx < size());
-  return m_impl->m_nodes[idx];
-}
+Sketch_nodes::Node& Sketch_nodes::operator[](size_t idx) { return m_impl->node_at(idx); }
 
-const Sketch_nodes::Node& Sketch_nodes::operator[](size_t idx) const
-{
-  EZY_ASSERT(idx < size());
-  return m_impl->m_nodes[idx];
-}
+const Sketch_nodes::Node& Sketch_nodes::operator[](size_t idx) const { return m_impl->node_at(idx); }
 
 Sketch_nodes::Node& Sketch_nodes::operator[](const std::optional<size_t> idx)
 {
   EZY_ASSERT(idx.has_value());
-  EZY_ASSERT(*idx < size());
-  return m_impl->m_nodes[idx.value()];
+  return m_impl->node_at(idx.value());
 }
 
 const Sketch_nodes::Node& Sketch_nodes::operator[](const std::optional<size_t> idx) const
 {
   EZY_ASSERT(idx.has_value());
-  EZY_ASSERT(*idx < size());
-  return m_impl->m_nodes[idx.value()];
+  return m_impl->node_at(idx.value());
 }
 
-bool Sketch_nodes::empty() const { return m_impl->m_nodes.empty(); }
+bool Sketch_nodes::empty() const { return m_impl->empty(); }
 
-size_t Sketch_nodes::size() const { return m_impl->m_nodes.size(); }
+size_t Sketch_nodes::size() const { return m_impl->size(); }
 
-void Sketch_nodes::json_resize(size_t count) { m_impl->m_nodes.assign(count, Node{}); }
+void Sketch_nodes::json_resize(size_t count) { m_impl->json_resize(count); }
+
 void Sketch_nodes::json_set_node(size_t idx, const gp_Pnt2d& pt, bool deleted, bool midpoint, bool permanent,
                                  const std::string& name)
 {
-  EZY_ASSERT(idx < m_impl->m_nodes.size());
-  Node& n = m_impl->m_nodes[idx];
-  n.SetX(pt.X());
-  n.SetY(pt.Y());
-  n.deleted   = deleted;
-  n.midpoint  = midpoint;
-  n.permanent = permanent;
-  n.name      = name;
+  m_impl->json_set_node(idx, pt, deleted, midpoint, permanent, name);
 }
 
-void Sketch_nodes::finalize() { m_impl->m_prev_num_nodes = m_impl->m_nodes.size(); }
+void Sketch_nodes::finalize() { m_impl->finalize(); }
 
-void Sketch_nodes::cancel() { m_impl->m_nodes.resize(m_impl->m_prev_num_nodes); }
+void Sketch_nodes::cancel() { m_impl->cancel(); }
 
-void Sketch_nodes::clear_outside_snap_pnts() { m_impl->m_outside_snap_pts.clear(); }
+void Sketch_nodes::clear_outside_snap_pnts() { m_impl->clear_outside_snap_pnts(); }
 
-void Sketch_nodes::add_outside_snap_pnt(const gp_Pnt& pt3d) { m_impl->m_outside_snap_pts.insert(to_2d(m_impl->m_pln, pt3d)); }
+void Sketch_nodes::add_outside_snap_pnt(const gp_Pnt& pt3d) { m_impl->add_outside_snap_pnt(pt3d); }
 
 // === Snap settings =========================================================
 
