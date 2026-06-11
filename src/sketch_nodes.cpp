@@ -2,6 +2,7 @@
 
 #include <BRep_Builder.hxx>
 #include <BRepBuilderAPI_MakeEdge.hxx>
+#include <Precision.hxx>
 #include <TopoDS_Compound.hxx>
 #include <TopoDS_Wire.hxx>
 #include <algorithm>
@@ -19,136 +20,125 @@ namespace
 double                        s_snap_dist_pixels = 35.0;
 Sketch_nodes::Snap_guide_mode s_snap_guide_mode  = Sketch_nodes::Snap_guide_mode::Traditional;
 glm::vec3                     s_snap_guide_color{0.0f, 1.0f, 0.0f};
+bool                          s_annotate_all_coaxial_nodes = false;
 } // namespace
 
-struct Sketch_nodes::Impl
+class Sketch_nodes::Impl
 {
-  Impl(Occt_view& view, const gp_Pln& pln)
-      : view(view)
-      , ctx(view.ctx())
-      , pln(pln)
+public:
+  Impl(Sketch_nodes* owner, Occt_view& view, const gp_Pln& pln)
+      : m_owner(owner)
+      , m_view(view)
+      , m_ctx(view.ctx())
+      , m_pln(pln)
   {
   }
 
-  std::vector<Node>       nodes;
-  std::set<gp_Pnt2d>      outside_snap_pts; // Projected snap points from other sketches.
-  AIS_Shape_ptr           snap_anno_axis[2];
-  std::optional<gp_Pnt2d> last_snap_pt; // Used for snap annotation
-  AIS_Shape_ptr           snap_anno;
-  size_t                  prev_num_nodes{0}; // Used when an operation is canceled.
+  std::optional<gp_Pnt2d> snap(const ScreenCoords& screen_coords);
+  size_t                  get_node_exact(const gp_Pnt2d& pt, bool permanent_for_new);
+  std::optional<size_t>   get_node(const ScreenCoords& screen_coords);
+  std::optional<size_t>   try_pick_existing_node(const ScreenCoords& screen_coords);
+  std::optional<size_t>   try_get_node_idx_snap(gp_Pnt2d& pt, const std::vector<size_t>& to_exclude = {});
+  void                    get_snap_pts_3d(std::vector<gp_Pnt>& out);
+  void                    hide_snap_annos();
+  size_t                  add_new_node(const gp_Pnt2d& pt, bool is_edge_mid_point = false, bool is_permanent = false);
+
+  std::vector<Node>::iterator       begin();
+  std::vector<Node>::iterator       end();
+  std::vector<Node>::const_iterator begin() const;
+  std::vector<Node>::const_iterator end() const;
+  std::vector<Node>::const_iterator cbegin() const;
+  std::vector<Node>::const_iterator cend() const;
+
+  Node&       node_at(size_t idx);
+  const Node& node_at(size_t idx) const;
+  bool        empty() const;
+  size_t      size() const;
+
+  void json_resize(size_t count);
+  void json_set_node(size_t idx, const gp_Pnt2d& pt, bool deleted, bool midpoint, bool permanent, const std::string& name);
+
+  void finalize();
+  void cancel();
+
+  void clear_outside_snap_pnts();
+  void add_outside_snap_pnt(const gp_Pnt& pt3d);
+
+private:
+  Sketch_nodes*           m_owner;
+  std::vector<Node>       m_nodes;
+  std::set<gp_Pnt2d>      m_outside_snap_pts; // Projected snap points from other sketches.
+  AIS_Shape_ptr           m_snap_anno_axis[2];
+  std::optional<gp_Pnt2d> m_last_snap_pt; // Used for snap annotation
+  AIS_Shape_ptr           m_snap_anno;
+  AIS_Shape_ptr           m_global_coax_anno;  // Used when "All co-axial nodes" is on for global alignments
+  size_t                  m_prev_num_nodes{0}; // Used when an operation is canceled.
 
   // Owner related
-  Occt_view&              view;
-  AIS_InteractiveContext& ctx;
-  const gp_Pln            pln;
+  Occt_view&              m_view;
+  AIS_InteractiveContext& m_ctx;
+  const gp_Pln            m_pln;
 
   /// World-space snap radius at `pt` (same convention as `try_get_node_idx_snap` / `try_pick_existing_node`).
   double snap_radius_world_(const gp_Pnt2d& pt) const;
   bool   view_bounds_2d_(double& min_u, double& min_v, double& max_u, double& max_v) const;
   void   update_node_snap_anno_(const gp_Pnt2d& pt, const double snap_dist);
-  void   update_axis_snap_anno_(int axis_index, const gp_Pnt2d& axis_pt, double snap_dist);
+  void   update_axis_snap_anno_(int axis_index, const std::vector<gp_Pnt2d>& axis_pts, double snap_dist);
+  void   update_global_coaxial_annotations_(double snap_dist);
 };
 
-Sketch_nodes::Sketch_nodes(Occt_view& view, const gp_Pln& pln)
-    : m_impl(std::make_unique<Impl>(view, pln))
+// === Impl helpers ==========================================================
+
+double Sketch_nodes::Impl::snap_radius_world_(const gp_Pnt2d& pt) const
 {
+  if (m_view.is_headless())
+    return s_snap_dist_pixels;
+
+  gp_Pnt       pt3d_on_plane       = to_3d(m_pln, pt);
+  ScreenCoords screen_coords_at_pt = m_view.get_screen_coords(pt3d_on_plane);
+
+  ScreenCoords screen_coords_offset = screen_coords_at_pt;
+  screen_coords_offset.unsafe_get().x += s_snap_dist_pixels;
+
+  std::optional<gp_Pnt2d> pt_offset_on_plane_2d;
+  if (std::optional<gp_Pnt> pt_offset_on_plane_3d = m_view.pt3d_on_plane(screen_coords_offset, m_pln))
+    pt_offset_on_plane_2d = to_2d(m_pln, *pt_offset_on_plane_3d);
+
+  if (pt_offset_on_plane_2d)
+    return pt.Distance(*pt_offset_on_plane_2d);
+
+  return 5.0;
 }
 
-Sketch_nodes::~Sketch_nodes()
+bool Sketch_nodes::Impl::view_bounds_2d_(double& min_u, double& min_v, double& max_u, double& max_v) const
 {
-  hide_snap_annos(); // Deletes them from context
+  if (m_view.is_headless())
+    return false;
+
+  const ImGuiIO& io = ImGui::GetIO();
+  return m_view.sketch_plane_view_aabb_2d(m_pln, static_cast<double>(io.DisplaySize.x), static_cast<double>(io.DisplaySize.y),
+                                          min_u, min_v, max_u, max_v);
 }
 
-// === Iteration =============================================================
-
-std::vector<Sketch_nodes::Node>::iterator       Sketch_nodes::begin() { return m_impl->nodes.begin(); }
-std::vector<Sketch_nodes::Node>::iterator       Sketch_nodes::end() { return m_impl->nodes.end(); }
-std::vector<Sketch_nodes::Node>::const_iterator Sketch_nodes::begin() const { return m_impl->nodes.begin(); }
-std::vector<Sketch_nodes::Node>::const_iterator Sketch_nodes::end() const { return m_impl->nodes.end(); }
-std::vector<Sketch_nodes::Node>::const_iterator Sketch_nodes::cbegin() const { return m_impl->nodes.cbegin(); }
-std::vector<Sketch_nodes::Node>::const_iterator Sketch_nodes::cend() const { return m_impl->nodes.cend(); }
-
-// === Public API ============================================================
-
-std::optional<gp_Pnt2d> Sketch_nodes::snap(const ScreenCoords& screen_coords)
+std::optional<size_t> Sketch_nodes::Impl::try_pick_existing_node(const ScreenCoords& screen_coords)
 {
-  std::optional<gp_Pnt2d> pt = m_impl->view.pt_on_plane(screen_coords, m_impl->pln);
-  if (pt)
-    try_get_node_idx_snap(*pt);
-
-  return pt;
-}
-
-size_t Sketch_nodes::get_node_exact(const gp_Pnt2d& pt, bool permanent_for_new)
-{
-  std::optional<size_t> deleted_match;
-  for (size_t idx = 0, num = m_impl->nodes.size(); idx < num; ++idx)
-    if (equal(pt, gp_Pnt2d(m_impl->nodes[idx])))
-    {
-      Node& n = m_impl->nodes[idx];
-      // Never bind to tombstoned nodes while searching for an exact live match.
-      if (n.deleted)
-      {
-        if (!deleted_match.has_value())
-          deleted_match = idx;
-        continue;
-      }
-      // If caller requests permanence (e.g. add-node tool), preserve/promote it.
-      if (permanent_for_new)
-        n.permanent = true;
-      return idx;
-    }
-
-  // If only a deleted exact match exists, revive it instead of appending a duplicate index.
-  if (deleted_match.has_value())
-  {
-    Node& n   = m_impl->nodes[*deleted_match];
-    n.deleted = false;
-    if (permanent_for_new)
-      n.permanent = true;
-    return *deleted_match;
-  }
-
-  Node n(pt);
-  n.permanent      = permanent_for_new;
-  const size_t ret = m_impl->nodes.size();
-  m_impl->nodes.push_back(n);
-  return ret;
-}
-
-std::optional<size_t> Sketch_nodes::get_node(const ScreenCoords& screen_coords)
-{
-  std::optional<gp_Pnt2d> pt = m_impl->view.pt_on_plane(screen_coords, m_impl->pln);
-  if (!pt)
-    // View plane and sketch plane must be perpendicular.
-    return std::nullopt;
-
-  std::optional<size_t> idx = try_get_node_idx_snap(*pt);
-  if (idx.has_value())
-    return *idx;
-
-  return add_new_node(*pt);
-}
-
-std::optional<size_t> Sketch_nodes::try_pick_existing_node(const ScreenCoords& screen_coords)
-{
-  std::optional<gp_Pnt2d> pt_opt = m_impl->view.pt_on_plane(screen_coords, m_impl->pln);
+  std::optional<gp_Pnt2d> pt_opt = m_view.pt_on_plane(screen_coords, m_pln);
   if (!pt_opt)
   {
-    hide_snap_annos();
+    m_owner->hide_snap_annos();
     return std::nullopt;
   }
 
   const gp_Pnt2d pt        = *pt_opt;
-  const double   snap_dist = m_impl->snap_radius_world_(pt);
+  const double   snap_dist = snap_radius_world_(pt);
   size_t         best_idx  = static_cast<size_t>(-1);
   double         best_sq   = std::numeric_limits<double>::max();
-  for (size_t idx = 0, num = m_impl->nodes.size(); idx < num; ++idx)
+  for (size_t idx = 0, num = m_nodes.size(); idx < num; ++idx)
   {
-    if (m_impl->nodes[idx].deleted)
+    if (m_nodes[idx].deleted)
       continue;
 
-    const double sq = m_impl->nodes[idx].SquareDistance(pt);
+    const double sq = m_nodes[idx].SquareDistance(pt);
     if (sq < best_sq)
     {
       best_sq  = sq;
@@ -157,219 +147,130 @@ std::optional<size_t> Sketch_nodes::try_pick_existing_node(const ScreenCoords& s
   }
   if (best_idx == static_cast<size_t>(-1))
   {
-    hide_snap_annos();
+    m_owner->hide_snap_annos();
     return std::nullopt;
   }
   if (best_sq <= snap_dist * 0.25 * snap_dist)
   {
     // `try_get_node_idx_snap` can modify the input `pt`, we call this function to display snapping annotations.
-    gp_Pnt2d pt_snapped = m_impl->nodes[best_idx];
-    try_get_node_idx_snap(pt_snapped, {});
+    gp_Pnt2d pt_snapped = m_nodes[best_idx];
+    m_owner->try_get_node_idx_snap(pt_snapped, {});
     return best_idx;
   }
-  hide_snap_annos();
+  m_owner->hide_snap_annos();
   return std::nullopt;
 }
 
-std::optional<size_t> Sketch_nodes::try_get_node_idx_snap(
-    gp_Pnt2d&                  pt, // `pt` could be snapped to a node, an axis of another node, or an outside snap point.
-    const std::vector<size_t>& to_exclude)
+std::optional<gp_Pnt2d> Sketch_nodes::Impl::snap(const ScreenCoords& screen_coords)
 {
-  const double snap_dist = m_impl->snap_radius_world_(pt);
+  std::optional<gp_Pnt2d> pt = m_view.pt_on_plane(screen_coords, m_pln);
+  if (pt)
+    m_owner->try_get_node_idx_snap(*pt);
 
-  hide_snap_annos();
+  return pt;
+}
 
-  gp_Pnt2d              pt_original = pt;
-  std::optional<size_t> snap_node_idx[2];
-  for (int axis_idx = 0; axis_idx < 2; ++axis_idx)
-  {
-    std::optional<gp_Pnt2d> snap_axis_point;
-    double                  best_dist = std::numeric_limits<double>::max();
-
-    auto try_nd_pt = [&](const gp_Pnt2d& nd_pt) -> bool
+size_t Sketch_nodes::Impl::get_node_exact(const gp_Pnt2d& pt, bool permanent_for_new)
+{
+  std::optional<size_t> deleted_match;
+  for (size_t idx = 0, num = m_nodes.size(); idx < num; ++idx)
+    if (equal(pt, gp_Pnt2d(m_nodes[idx])))
     {
-      double dist = pt_original.SquareDistance(nd_pt);
-      // axis_dist needs to be compared against a linear snap distance in screen pixels.
-      // This part becomes tricky because axis_dist is a world coordinate difference.
-      // We'd ideally convert m_snap_dist_pixels * 0.5 to a world distance along the axis.
-      // For simplicity here, we'll continue using a fraction of the calculated world snap_dist_sq,
-      // but this might need refinement for axis snapping to feel right.
-      // The original logic used snap_dist (linear pixels) * 0.5 for axis snapping.
-      // We need a world-space equivalent for axis snapping.
-      // Let's use sqrt(snap_dist_sq) * 0.5 for now.
-      double axis_snap_threshold_world = sqrt(snap_dist) * 0.5;
-      double axis_dist                 = std::fabs(pt_original.XY().Coord(axis_idx + 1) - nd_pt.XY().Coord(axis_idx + 1));
-
-      if (dist < best_dist && axis_dist <= axis_snap_threshold_world)
+      Node& n = m_nodes[idx];
+      // Never bind to tombstoned nodes while searching for an exact live match.
+      if (n.deleted)
       {
-        best_dist       = dist;
-        snap_axis_point = nd_pt;
-        if (!axis_idx)
-          pt.SetX(nd_pt.X());
-        else
-          pt.SetY(nd_pt.Y());
+        if (!deleted_match.has_value())
+          deleted_match = idx;
 
-        return true;
+        continue;
       }
+      // If caller requests permanence (e.g. add-node tool), preserve/promote it.
+      if (permanent_for_new)
+        n.permanent = true;
 
-      return false;
-    };
-
-    for (size_t nd_idx = 0, num = m_impl->nodes.size(); nd_idx < num; ++nd_idx)
-    {
-      if (m_impl->nodes[nd_idx].deleted)
-        continue;
-
-      if (std::find(to_exclude.begin(), to_exclude.end(), nd_idx) != to_exclude.end())
-        continue;
-
-      if (try_nd_pt(m_impl->nodes[nd_idx]))
-        snap_node_idx[axis_idx] = nd_idx;
+      return idx;
     }
 
-    for (const gp_Pnt2d& nd_pt : m_impl->outside_snap_pts)
-      try_nd_pt(nd_pt);
+  // If only a deleted exact match exists, revive it instead of appending a duplicate index.
+  if (deleted_match.has_value())
+  {
+    Node& n   = m_nodes[*deleted_match];
+    n.deleted = false;
+    if (permanent_for_new)
+      n.permanent = true;
 
-    if (snap_axis_point)
-      m_impl->update_axis_snap_anno_(axis_idx, *snap_axis_point, sqrt(snap_dist));
-    else if (!m_impl->snap_anno_axis[axis_idx].IsNull())
-      m_impl->ctx.Erase(m_impl->snap_anno_axis[axis_idx], true);
+    return *deleted_match;
   }
 
-  if (snap_node_idx[0] == snap_node_idx[1] && snap_node_idx[0].has_value())
-    return snap_node_idx[0];
-
-  return {};
-}
-
-void Sketch_nodes::hide_snap_annos()
-{
-  if (m_impl->snap_anno)
-    m_impl->ctx.Remove(m_impl->snap_anno, false);
-
-  m_impl->snap_anno = nullptr;
-
-  for (AIS_Shape_ptr& anno : m_impl->snap_anno_axis)
-    if (anno)
-    {
-      m_impl->ctx.Remove(anno, false);
-      anno = nullptr;
-    }
-
-  m_impl->ctx.UpdateCurrentViewer();
-  m_impl->last_snap_pt = std::nullopt;
-}
-
-size_t Sketch_nodes::add_new_node(const gp_Pnt2d& pt, bool is_edge_mid_point, bool is_permanent)
-{
-  size_t ret = m_impl->nodes.size();
-  Node   n(pt);
-  n.midpoint  = is_edge_mid_point;
-  n.permanent = is_permanent;
-  m_impl->nodes.emplace_back(n);
-  // DBG_MSG("Add node: " << pt.Coord().X() << "," << pt.Coord().Y() << " midpoint: " << (int) is_edge_mid_point);
+  Node n(pt);
+  n.permanent      = permanent_for_new;
+  const size_t ret = m_nodes.size();
+  m_nodes.push_back(n);
   return ret;
 }
 
-void Sketch_nodes::get_snap_pts_3d(std::vector<gp_Pnt>& out)
+std::optional<size_t> Sketch_nodes::Impl::get_node(const ScreenCoords& screen_coords)
 {
-  for (const Node& n : m_impl->nodes)
+  std::optional<gp_Pnt2d> pt = m_view.pt_on_plane(screen_coords, m_pln);
+  if (!pt)
+    // View plane and sketch plane must be perpendicular.
+    return std::nullopt;
+
+  std::optional<size_t> idx = m_owner->try_get_node_idx_snap(*pt);
+  if (idx.has_value())
+    return *idx;
+
+  return m_owner->add_new_node(*pt);
+}
+
+void Sketch_nodes::Impl::get_snap_pts_3d(std::vector<gp_Pnt>& out)
+{
+  for (const Node& n : m_nodes)
     if (!n.deleted)
-      out.push_back(to_3d(m_impl->pln, n));
+      out.push_back(to_3d(m_pln, n));
 }
 
-Sketch_nodes::Node& Sketch_nodes::operator[](size_t idx)
+void Sketch_nodes::Impl::hide_snap_annos()
 {
-  EZY_ASSERT(idx < size());
-  return m_impl->nodes[idx];
-}
+  if (m_snap_anno)
+    m_ctx.Remove(m_snap_anno, false);
 
-const Sketch_nodes::Node& Sketch_nodes::operator[](size_t idx) const
-{
-  EZY_ASSERT(idx < size());
-  return m_impl->nodes[idx];
-}
+  m_snap_anno = nullptr;
 
-Sketch_nodes::Node& Sketch_nodes::operator[](const std::optional<size_t> idx)
-{
-  EZY_ASSERT(idx.has_value());
-  EZY_ASSERT(*idx < size());
-  return m_impl->nodes[idx.value()];
-}
+  for (AIS_Shape_ptr& anno : m_snap_anno_axis)
+    if (anno)
+    {
+      m_ctx.Remove(anno, false);
+      anno = nullptr;
+    }
 
-const Sketch_nodes::Node& Sketch_nodes::operator[](const std::optional<size_t> idx) const
-{
-  EZY_ASSERT(idx.has_value());
-  EZY_ASSERT(*idx < size());
-  return m_impl->nodes[idx.value()];
-}
-
-bool Sketch_nodes::empty() const { return m_impl->nodes.empty(); }
-
-size_t Sketch_nodes::size() const { return m_impl->nodes.size(); }
-
-void Sketch_nodes::json_resize(size_t count) { m_impl->nodes.assign(count, Node{}); }
-
-void Sketch_nodes::json_set_node(size_t idx, const gp_Pnt2d& pt, bool deleted, bool midpoint, bool permanent,
-                                 const std::string& name)
-{
-  EZY_ASSERT(idx < m_impl->nodes.size());
-  Node& n = m_impl->nodes[idx];
-  n.SetX(pt.X());
-  n.SetY(pt.Y());
-  n.deleted   = deleted;
-  n.midpoint  = midpoint;
-  n.permanent = permanent;
-  n.name      = name;
-}
-
-void Sketch_nodes::finalize() { m_impl->prev_num_nodes = m_impl->nodes.size(); }
-
-void Sketch_nodes::cancel() { m_impl->nodes.resize(m_impl->prev_num_nodes); }
-
-void Sketch_nodes::clear_outside_snap_pnts() { m_impl->outside_snap_pts.clear(); }
-
-void Sketch_nodes::add_outside_snap_pnt(const gp_Pnt& pt3d) { m_impl->outside_snap_pts.insert(to_2d(m_impl->pln, pt3d)); }
-
-// === Impl helpers ==========================================================
-
-double Sketch_nodes::Impl::snap_radius_world_(const gp_Pnt2d& pt) const
-{
-  if (!view.is_headless())
+  if (m_global_coax_anno)
   {
-    gp_Pnt       pt3d_on_plane       = to_3d(pln, pt);
-    ScreenCoords screen_coords_at_pt = view.get_screen_coords(pt3d_on_plane);
-
-    ScreenCoords screen_coords_offset = screen_coords_at_pt;
-    screen_coords_offset.unsafe_get().x += s_snap_dist_pixels;
-
-    std::optional<gp_Pnt2d> pt_offset_on_plane_2d;
-    if (std::optional<gp_Pnt> pt_offset_on_plane_3d = view.pt3d_on_plane(screen_coords_offset, pln))
-      pt_offset_on_plane_2d = to_2d(pln, *pt_offset_on_plane_3d);
-
-    if (pt_offset_on_plane_2d)
-      return pt.Distance(*pt_offset_on_plane_2d);
-    return 5.0;
+    m_ctx.Remove(m_global_coax_anno, false);
+    m_global_coax_anno = nullptr;
   }
-  return s_snap_dist_pixels;
+
+  m_ctx.UpdateCurrentViewer();
+  m_last_snap_pt = std::nullopt;
 }
 
-bool Sketch_nodes::Impl::view_bounds_2d_(double& min_u, double& min_v, double& max_u, double& max_v) const
+size_t Sketch_nodes::Impl::add_new_node(const gp_Pnt2d& pt, bool is_edge_mid_point, bool is_permanent)
 {
-  if (view.is_headless())
-    return false;
-
-  const ImGuiIO& io = ImGui::GetIO();
-  return view.sketch_plane_view_aabb_2d(pln, static_cast<double>(io.DisplaySize.x), static_cast<double>(io.DisplaySize.y),
-                                        min_u, min_v, max_u, max_v);
+  size_t ret = m_nodes.size();
+  Node   n(pt);
+  n.midpoint  = is_edge_mid_point;
+  n.permanent = is_permanent;
+  m_nodes.emplace_back(n);
+  return ret;
 }
 
 void Sketch_nodes::Impl::update_node_snap_anno_(const gp_Pnt2d& pt, const double snap_dist)
 {
-  if (last_snap_pt && equal(*last_snap_pt, pt))
+  if (m_last_snap_pt && equal(*m_last_snap_pt, pt))
     return;
 
-  last_snap_pt = pt;
+  m_last_snap_pt = pt;
 
   const auto mode = s_snap_guide_mode;
   const bool show_traditional =
@@ -386,10 +287,10 @@ void Sketch_nodes::Impl::update_node_snap_anno_(const gp_Pnt2d& pt, const double
       TopoDS_Compound comp;
       builder.MakeCompound(comp);
 
-      const gp_Pnt p_h0 = to_3d(pln, gp_Pnt2d(min_u, pt.Y()));
-      const gp_Pnt p_h1 = to_3d(pln, gp_Pnt2d(max_u, pt.Y()));
-      const gp_Pnt p_v0 = to_3d(pln, gp_Pnt2d(pt.X(), min_v));
-      const gp_Pnt p_v1 = to_3d(pln, gp_Pnt2d(pt.X(), max_v));
+      const gp_Pnt p_h0 = to_3d(m_pln, gp_Pnt2d(min_u, pt.Y()));
+      const gp_Pnt p_h1 = to_3d(m_pln, gp_Pnt2d(max_u, pt.Y()));
+      const gp_Pnt p_v0 = to_3d(m_pln, gp_Pnt2d(pt.X(), min_v));
+      const gp_Pnt p_v1 = to_3d(m_pln, gp_Pnt2d(pt.X(), max_v));
       builder.Add(comp, BRepBuilderAPI_MakeEdge(p_h0, p_h1).Edge());
       builder.Add(comp, BRepBuilderAPI_MakeEdge(p_v0, p_v1).Edge());
       fullscreen_shape = comp;
@@ -397,7 +298,7 @@ void Sketch_nodes::Impl::update_node_snap_anno_(const gp_Pnt2d& pt, const double
   }
 
   TopoDS_Shape       anno_shape;
-  const TopoDS_Shape traditional_shape = create_wire_box(pln, to_3d(pln, pt), snap_dist, snap_dist);
+  const TopoDS_Shape traditional_shape = create_wire_box(m_pln, to_3d(m_pln, pt), snap_dist, snap_dist);
   if (show_traditional && !fullscreen_shape.IsNull())
   {
     BRep_Builder    builder;
@@ -413,26 +314,32 @@ void Sketch_nodes::Impl::update_node_snap_anno_(const gp_Pnt2d& pt, const double
     anno_shape = traditional_shape;
 
   const glm::vec3& c = s_snap_guide_color;
-  if (snap_anno.IsNull())
+  if (m_snap_anno.IsNull())
   {
-    snap_anno = new AIS_Shape(anno_shape);
-    snap_anno->SetWidth(3.0);
-    snap_anno->SetColor(Quantity_Color(c.x, c.y, c.z, Quantity_TOC_RGB));
-    ctx.Display(snap_anno, true);
+    m_snap_anno = new AIS_Shape(anno_shape);
+    m_snap_anno->SetWidth(3.0);
+    m_snap_anno->SetColor(Quantity_Color(c.x, c.y, c.z, Quantity_TOC_RGB));
+    m_ctx.Display(m_snap_anno, true);
   }
   else
   {
-    snap_anno->Set(anno_shape);
-    ctx.Redisplay(snap_anno, true);
+    m_snap_anno->Set(anno_shape);
+    m_ctx.Redisplay(m_snap_anno, true);
   }
 }
 
-void Sketch_nodes::Impl::update_axis_snap_anno_(int axis_index, const gp_Pnt2d& axis_pt, double snap_dist)
+void Sketch_nodes::Impl::update_axis_snap_anno_(int axis_index, const std::vector<gp_Pnt2d>& axis_pts, double snap_dist)
 {
+  if (axis_pts.empty())
+    return;
+
   const auto mode = s_snap_guide_mode;
   const bool show_traditional =
       mode == Sketch_nodes::Snap_guide_mode::Traditional || mode == Sketch_nodes::Snap_guide_mode::Both;
   const bool show_fullscreen = mode == Sketch_nodes::Snap_guide_mode::Fullscreen || mode == Sketch_nodes::Snap_guide_mode::Both;
+
+  // Use the first point as representative for the fullscreen guide line (all should share the axis coord)
+  const gp_Pnt2d& rep_pt = axis_pts.front();
 
   TopoDS_Shape fullscreen_shape;
   if (show_fullscreen)
@@ -442,49 +349,445 @@ void Sketch_nodes::Impl::update_axis_snap_anno_(int axis_index, const gp_Pnt2d& 
     {
       if (axis_index == 0)
       {
-        const gp_Pnt p0  = to_3d(pln, gp_Pnt2d(axis_pt.X(), min_v));
-        const gp_Pnt p1  = to_3d(pln, gp_Pnt2d(axis_pt.X(), max_v));
+        const gp_Pnt p0  = to_3d(m_pln, gp_Pnt2d(rep_pt.X(), min_v));
+        const gp_Pnt p1  = to_3d(m_pln, gp_Pnt2d(rep_pt.X(), max_v));
         fullscreen_shape = BRepBuilderAPI_MakeEdge(p0, p1).Edge();
       }
       else
       {
-        const gp_Pnt p0  = to_3d(pln, gp_Pnt2d(min_u, axis_pt.Y()));
-        const gp_Pnt p1  = to_3d(pln, gp_Pnt2d(max_u, axis_pt.Y()));
+        const gp_Pnt p0  = to_3d(m_pln, gp_Pnt2d(min_u, rep_pt.Y()));
+        const gp_Pnt p1  = to_3d(m_pln, gp_Pnt2d(max_u, rep_pt.Y()));
         fullscreen_shape = BRepBuilderAPI_MakeEdge(p0, p1).Edge();
       }
     }
   }
 
-  TopoDS_Shape       anno_shape;
-  const TopoDS_Shape traditional_shape = create_wire_box(pln, to_3d(pln, axis_pt), snap_dist, snap_dist);
-  if (show_traditional && !fullscreen_shape.IsNull())
-  {
-    BRep_Builder    builder;
-    TopoDS_Compound comp;
-    builder.MakeCompound(comp);
+  BRep_Builder    builder;
+  TopoDS_Compound comp;
+  builder.MakeCompound(comp);
+
+  if (!fullscreen_shape.IsNull())
     builder.Add(comp, fullscreen_shape);
-    builder.Add(comp, traditional_shape);
-    anno_shape = comp;
-  }
-  else if (!fullscreen_shape.IsNull())
-    anno_shape = fullscreen_shape;
-  else
-    anno_shape = traditional_shape;
+
+  if (show_traditional)
+    for (const gp_Pnt2d& p : axis_pts)
+    {
+      const TopoDS_Shape small = create_wire_box(m_pln, to_3d(m_pln, p), snap_dist, snap_dist);
+      builder.Add(comp, small);
+    }
+
+  TopoDS_Shape anno_shape = comp;
 
   const glm::vec3& c = s_snap_guide_color;
-  if (snap_anno_axis[axis_index].IsNull())
+  if (m_snap_anno_axis[axis_index].IsNull())
   {
-    snap_anno_axis[axis_index] = new AIS_Shape(anno_shape);
-    snap_anno_axis[axis_index]->SetWidth(1.0);
-    snap_anno_axis[axis_index]->SetColor(Quantity_Color(c.x, c.y, c.z, Quantity_TOC_RGB));
-    ctx.Display(snap_anno_axis[axis_index], true);
+    m_snap_anno_axis[axis_index] = new AIS_Shape(anno_shape);
+    m_snap_anno_axis[axis_index]->SetWidth(1.0);
+    m_snap_anno_axis[axis_index]->SetColor(Quantity_Color(c.x, c.y, c.z, Quantity_TOC_RGB));
+    m_ctx.Display(m_snap_anno_axis[axis_index], true);
   }
   else
   {
-    snap_anno_axis[axis_index]->Set(anno_shape);
-    ctx.Redisplay(snap_anno_axis[axis_index], true);
+    m_snap_anno_axis[axis_index]->Set(anno_shape);
+    m_ctx.Redisplay(m_snap_anno_axis[axis_index], true);
   }
 }
+
+void Sketch_nodes::Impl::update_global_coaxial_annotations_(double snap_dist)
+{
+  // Collect all current nodes + outside points (from other visible sketches)
+  std::vector<gp_Pnt2d> all_pts;
+  for (const auto& n : m_nodes)
+    if (!n.deleted)
+      all_pts.push_back(n);
+
+  for (const auto& p : m_outside_snap_pts)
+    all_pts.push_back(p);
+
+  if (all_pts.empty())
+    return;
+
+  // Collect all X and Y values
+  std::vector<double> all_xs, all_ys;
+  for (const auto& p : all_pts)
+  {
+    all_xs.push_back(p.X());
+    all_ys.push_back(p.Y());
+  }
+
+  // Canonicalize unique values within Precision::Confusion() (as per requirement for co-axial alignments)
+  auto canonicalize = [](std::vector<double>& vals)
+  {
+    if (vals.empty())
+      return;
+    std::sort(vals.begin(), vals.end());
+    std::vector<double> unique;
+    double              tol = Precision::Confusion();
+    for (double v : vals)
+    {
+      if (unique.empty() || std::fabs(v - unique.back()) > tol)
+      {
+        unique.push_back(v);
+      }
+    }
+    vals = std::move(unique);
+  };
+
+  canonicalize(all_xs);
+  canonicalize(all_ys);
+
+  BRep_Builder    builder;
+  TopoDS_Compound comp;
+  builder.MakeCompound(comp);
+
+  // Add vertical lines for every unique (canonicalized) X
+  double min_u{}, min_v{}, max_u{}, max_v{};
+  bool   have_bounds = view_bounds_2d_(min_u, min_v, max_u, max_v);
+
+  for (double x : all_xs)
+  {
+    TopoDS_Shape line;
+    if (have_bounds)
+    {
+      gp_Pnt p0 = to_3d(m_pln, gp_Pnt2d(x, min_v));
+      gp_Pnt p1 = to_3d(m_pln, gp_Pnt2d(x, max_v));
+      line      = BRepBuilderAPI_MakeEdge(p0, p1).Edge();
+    }
+    else
+    {
+      gp_Pnt p0 = to_3d(m_pln, gp_Pnt2d(x, all_pts[0].Y() - 100));
+      gp_Pnt p1 = to_3d(m_pln, gp_Pnt2d(x, all_pts[0].Y() + 100));
+      line      = BRepBuilderAPI_MakeEdge(p0, p1).Edge();
+    }
+    builder.Add(comp, line);
+  }
+
+  // Add horizontal lines for every unique (canonicalized) Y
+  for (double y : all_ys)
+  {
+    TopoDS_Shape line;
+    if (have_bounds)
+    {
+      gp_Pnt p0 = to_3d(m_pln, gp_Pnt2d(min_u, y));
+      gp_Pnt p1 = to_3d(m_pln, gp_Pnt2d(max_u, y));
+      line      = BRepBuilderAPI_MakeEdge(p0, p1).Edge();
+    }
+    else
+    {
+      gp_Pnt p0 = to_3d(m_pln, gp_Pnt2d(all_pts[0].X() - 100, y));
+      gp_Pnt p1 = to_3d(m_pln, gp_Pnt2d(all_pts[0].X() + 100, y));
+      line      = BRepBuilderAPI_MakeEdge(p0, p1).Edge();
+    }
+    builder.Add(comp, line);
+  }
+
+  // Add small boxes at every node position (the "annotate" part)
+  // Nodes whose axis value is within Confusion() of a line will visually align on it.
+  for (const auto& p : all_pts)
+  {
+    const TopoDS_Shape small = create_wire_box(m_pln, to_3d(m_pln, p), snap_dist, snap_dist);
+    builder.Add(comp, small);
+  }
+
+  const glm::vec3& c = s_snap_guide_color;
+  if (m_global_coax_anno.IsNull())
+  {
+    m_global_coax_anno = new AIS_Shape(comp);
+    m_global_coax_anno->SetWidth(1.0);
+    m_global_coax_anno->SetColor(Quantity_Color(c.x, c.y, c.z, Quantity_TOC_RGB));
+    m_ctx.Display(m_global_coax_anno, true);
+  }
+  else
+  {
+    m_global_coax_anno->Set(comp);
+    m_ctx.Redisplay(m_global_coax_anno, true);
+  }
+}
+
+std::optional<size_t> Sketch_nodes::Impl::try_get_node_idx_snap(
+    gp_Pnt2d&                  pt, // `pt` could be snapped to a node, an axis of another node, or an outside snap point.
+    const std::vector<size_t>& to_exclude)
+{
+  const double snap_dist = snap_radius_world_(pt);
+
+  if (!s_annotate_all_coaxial_nodes && m_global_coax_anno)
+  {
+    m_ctx.Remove(m_global_coax_anno, false);
+    m_global_coax_anno = nullptr;
+  }
+
+  m_owner->hide_snap_annos();
+
+  gp_Pnt2d              pt_original = pt;
+  std::optional<size_t> snap_node_idx[2];
+  for (int axis_idx = 0; axis_idx < 2; ++axis_idx)
+  {
+    std::optional<gp_Pnt2d> snap_axis_point;
+    double                  best_dist = std::numeric_limits<double>::max();
+
+    // For "all coaxial" annotation we collect every node (current sketch + outside)
+    // whose coordinate on this axis is within tolerance. The *closest* one is still
+    // used for the actual snap of `pt` and for the main guide line.
+    std::vector<gp_Pnt2d> axis_anno_points;
+
+    auto try_nd_pt = [&](const gp_Pnt2d& nd_pt) -> bool
+    {
+      double dist                      = pt_original.SquareDistance(nd_pt);
+      double axis_snap_threshold_world = sqrt(snap_dist) * 0.5;
+      double axis_dist                 = std::fabs(pt_original.XY().Coord(axis_idx + 1) - nd_pt.XY().Coord(axis_idx + 1));
+
+      const bool axis_matches = axis_dist <= axis_snap_threshold_world;
+
+      if (axis_matches)
+        axis_anno_points.push_back(nd_pt);
+
+      if (dist < best_dist && axis_matches)
+      {
+        best_dist       = dist;
+        snap_axis_point = nd_pt;
+        if (!axis_idx)
+          pt.SetX(nd_pt.X());
+        else
+          pt.SetY(nd_pt.Y());
+
+        return true;
+      }
+
+      return false;
+    };
+
+    for (size_t nd_idx = 0, num = m_nodes.size(); nd_idx < num; ++nd_idx)
+    {
+      if (m_nodes[nd_idx].deleted)
+        continue;
+
+      if (std::find(to_exclude.begin(), to_exclude.end(), nd_idx) != to_exclude.end())
+        continue;
+
+      if (try_nd_pt(m_nodes[nd_idx]))
+        snap_node_idx[axis_idx] = nd_idx;
+    }
+
+    for (const gp_Pnt2d& nd_pt : m_outside_snap_pts)
+      try_nd_pt(nd_pt);
+
+    // If the "annotate all coaxial" option is on we keep the full list (dedup later if wanted).
+    // Otherwise we only annotate the single closest one that drove the snap.
+    if (!s_annotate_all_coaxial_nodes && snap_axis_point)
+      axis_anno_points = {*snap_axis_point};
+
+    if (!axis_anno_points.empty())
+    {
+      // Dedup points that are essentially identical on the axis (floating point tolerance)
+      std::vector<gp_Pnt2d> unique_pts;
+      for (const auto& p : axis_anno_points)
+      {
+        bool dup = false;
+        for (const auto& u : unique_pts)
+          if (std::fabs(p.XY().Coord(axis_idx + 1) - u.XY().Coord(axis_idx + 1)) < 1e-9)
+          {
+            dup = true;
+            break;
+          }
+
+        if (!dup)
+          unique_pts.push_back(p);
+      }
+
+      update_axis_snap_anno_(axis_idx, unique_pts, sqrt(snap_dist));
+    }
+    else if (!m_snap_anno_axis[axis_idx].IsNull())
+      m_ctx.Erase(m_snap_anno_axis[axis_idx], true);
+  }
+
+  if (s_annotate_all_coaxial_nodes)
+  {
+    // For the active axes (those for which we have a guide from the current snap),
+    // collect ALL nodes (current sketch + other visible sketches) whose coordinate
+    // on the axis matches the final guide value exactly or within Precision::Confusion().
+    // Then draw the small annotation markers at all of them.
+    for (int axis_idx = 0; axis_idx < 2; ++axis_idx)
+    {
+      double guide_val = (axis_idx == 0 ? pt.X() : pt.Y());
+
+      std::vector<gp_Pnt2d> matches;
+      for (const auto& n : m_nodes)
+      {
+        if (n.deleted)
+          continue;
+
+        double axis_diff = std::fabs(guide_val - n.XY().Coord(axis_idx + 1));
+        if (axis_diff <= Precision::Confusion())
+          matches.push_back(n);
+      }
+      for (const auto& p : m_outside_snap_pts)
+      {
+        double axis_diff = std::fabs(guide_val - p.XY().Coord(axis_idx + 1));
+        if (axis_diff <= Precision::Confusion())
+          matches.push_back(p);
+      }
+
+      if (!matches.empty())
+      {
+        // dedup by position
+        std::vector<gp_Pnt2d> unique;
+        for (const auto& p : matches)
+        {
+          bool seen = false;
+          for (const auto& u : unique)
+            if (p.Distance(u) < Precision::Confusion())
+            {
+              seen = true;
+              break;
+            }
+
+          if (!seen)
+            unique.push_back(p);
+        }
+
+        update_axis_snap_anno_(axis_idx, unique, sqrt(snap_dist));
+      }
+    }
+  }
+
+  if (snap_node_idx[0].has_value() && snap_node_idx[0] == snap_node_idx[1])
+    return snap_node_idx[0];
+
+  return {};
+}
+
+// === Impl data access ======================================================
+
+// clang-format off
+std::vector<Sketch_nodes::Node>::iterator Sketch_nodes::Impl::begin()               { return m_nodes.begin(); }
+std::vector<Sketch_nodes::Node>::iterator Sketch_nodes::Impl::end()                 { return m_nodes.end(); }
+std::vector<Sketch_nodes::Node>::const_iterator Sketch_nodes::Impl::begin()   const { return m_nodes.begin(); }
+std::vector<Sketch_nodes::Node>::const_iterator Sketch_nodes::Impl::end()     const { return m_nodes.end(); }
+std::vector<Sketch_nodes::Node>::const_iterator Sketch_nodes::Impl::cbegin()  const { return m_nodes.cbegin(); }
+std::vector<Sketch_nodes::Node>::const_iterator Sketch_nodes::Impl::cend()    const { return m_nodes.cend(); }
+// clang-format on
+
+Sketch_nodes::Node& Sketch_nodes::Impl::node_at(size_t idx)
+{
+  EZY_ASSERT(idx < size());
+  return m_nodes[idx];
+}
+
+const Sketch_nodes::Node& Sketch_nodes::Impl::node_at(size_t idx) const { return m_nodes[idx]; }
+
+bool Sketch_nodes::Impl::empty() const { return m_nodes.empty(); }
+
+size_t Sketch_nodes::Impl::size() const { return m_nodes.size(); }
+
+void Sketch_nodes::Impl::json_resize(size_t count) { m_nodes.assign(count, Node{}); }
+
+void Sketch_nodes::Impl::json_set_node(size_t idx, const gp_Pnt2d& pt, bool deleted, bool midpoint, bool permanent,
+                                       const std::string& name)
+{
+  EZY_ASSERT(idx < m_nodes.size());
+  Node& n = m_nodes[idx];
+  n.SetX(pt.X());
+  n.SetY(pt.Y());
+  n.deleted   = deleted;
+  n.midpoint  = midpoint;
+  n.permanent = permanent;
+  n.name      = name;
+}
+
+void Sketch_nodes::Impl::finalize() { m_prev_num_nodes = m_nodes.size(); }
+
+void Sketch_nodes::Impl::cancel() { m_nodes.resize(m_prev_num_nodes); }
+
+void Sketch_nodes::Impl::clear_outside_snap_pnts() { m_outside_snap_pts.clear(); }
+
+void Sketch_nodes::Impl::add_outside_snap_pnt(const gp_Pnt& pt3d) { m_outside_snap_pts.insert(to_2d(m_pln, pt3d)); }
+
+Sketch_nodes::Sketch_nodes(Occt_view& view, const gp_Pln& pln)
+    : m_impl(std::make_unique<Impl>(this, view, pln))
+{
+}
+
+Sketch_nodes::~Sketch_nodes()
+{
+  hide_snap_annos(); // Deletes them from context
+}
+
+// === Iteration =============================================================
+
+// clang-format off
+std::vector<Sketch_nodes::Node>::iterator       Sketch_nodes::begin()         { return m_impl->begin();   }
+std::vector<Sketch_nodes::Node>::iterator       Sketch_nodes::end()           { return m_impl->end();     }
+std::vector<Sketch_nodes::Node>::const_iterator Sketch_nodes::begin()   const { return m_impl->begin();   }
+std::vector<Sketch_nodes::Node>::const_iterator Sketch_nodes::end()     const { return m_impl->end();     }
+std::vector<Sketch_nodes::Node>::const_iterator Sketch_nodes::cbegin()  const { return m_impl->cbegin();  }
+std::vector<Sketch_nodes::Node>::const_iterator Sketch_nodes::cend()    const { return m_impl->cend();    }
+// clang-format on
+
+std::optional<gp_Pnt2d> Sketch_nodes::snap(const ScreenCoords& screen_coords) { return m_impl->snap(screen_coords); }
+
+size_t Sketch_nodes::get_node_exact(const gp_Pnt2d& pt, bool permanent_for_new)
+{
+  return m_impl->get_node_exact(pt, permanent_for_new);
+}
+
+std::optional<size_t> Sketch_nodes::get_node(const ScreenCoords& screen_coords) { return m_impl->get_node(screen_coords); }
+
+std::optional<size_t> Sketch_nodes::try_pick_existing_node(const ScreenCoords& screen_coords)
+{
+  return m_impl->try_pick_existing_node(screen_coords);
+}
+
+std::optional<size_t> Sketch_nodes::try_get_node_idx_snap(
+    gp_Pnt2d&                  pt, // `pt` could be snapped to a node, an axis of another node, or an outside snap point.
+    const std::vector<size_t>& to_exclude)
+{
+  return m_impl->try_get_node_idx_snap(pt, to_exclude);
+}
+
+void Sketch_nodes::hide_snap_annos() { m_impl->hide_snap_annos(); }
+
+size_t Sketch_nodes::add_new_node(const gp_Pnt2d& pt, bool is_edge_mid_point, bool is_permanent)
+{
+  return m_impl->add_new_node(pt, is_edge_mid_point, is_permanent);
+}
+
+void Sketch_nodes::get_snap_pts_3d(std::vector<gp_Pnt>& out) { m_impl->get_snap_pts_3d(out); }
+
+Sketch_nodes::Node& Sketch_nodes::operator[](size_t idx) { return m_impl->node_at(idx); }
+
+const Sketch_nodes::Node& Sketch_nodes::operator[](size_t idx) const { return m_impl->node_at(idx); }
+
+Sketch_nodes::Node& Sketch_nodes::operator[](const std::optional<size_t> idx)
+{
+  EZY_ASSERT(idx.has_value());
+  return m_impl->node_at(idx.value());
+}
+
+const Sketch_nodes::Node& Sketch_nodes::operator[](const std::optional<size_t> idx) const
+{
+  EZY_ASSERT(idx.has_value());
+  return m_impl->node_at(idx.value());
+}
+
+bool Sketch_nodes::empty() const { return m_impl->empty(); }
+
+size_t Sketch_nodes::size() const { return m_impl->size(); }
+
+void Sketch_nodes::json_resize(size_t count) { m_impl->json_resize(count); }
+
+void Sketch_nodes::json_set_node(size_t idx, const gp_Pnt2d& pt, bool deleted, bool midpoint, bool permanent,
+                                 const std::string& name)
+{
+  m_impl->json_set_node(idx, pt, deleted, midpoint, permanent, name);
+}
+
+void Sketch_nodes::finalize() { m_impl->finalize(); }
+
+void Sketch_nodes::cancel() { m_impl->cancel(); }
+
+void Sketch_nodes::clear_outside_snap_pnts() { m_impl->clear_outside_snap_pnts(); }
+
+void Sketch_nodes::add_outside_snap_pnt(const gp_Pnt& pt3d) { m_impl->add_outside_snap_pnt(pt3d); }
 
 // === Snap settings =========================================================
 
@@ -509,3 +812,7 @@ void Sketch_nodes::get_snap_guide_color(float& r, float& g, float& b)
   g = s_snap_guide_color.y;
   b = s_snap_guide_color.z;
 }
+
+void Sketch_nodes::set_annotate_all_coaxial_nodes(bool enable) { s_annotate_all_coaxial_nodes = enable; }
+
+bool Sketch_nodes::get_annotate_all_coaxial_nodes() { return s_annotate_all_coaxial_nodes; }

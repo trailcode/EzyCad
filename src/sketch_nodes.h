@@ -75,6 +75,12 @@ public:
   static void            set_snap_guide_color(float r, float g, float b);
   static void            get_snap_guide_color(float& r, float& g, float& b);
 
+  // When true, axis snap annotations (small markers) are shown for *all* nodes sharing the
+  // same X or Y (within snap tolerance) in the current sketch (and outside points from other
+  // visible sketches). When false (default), only the closest node per axis is annotated.
+  static void set_annotate_all_coaxial_nodes(bool enable);
+  static bool get_annotate_all_coaxial_nodes();
+
   // Methods for range-based for loop support
   std::vector<Node>::iterator       begin();
   std::vector<Node>::iterator       end();
@@ -91,6 +97,6 @@ private:
   /// Assign slot `idx` (used after `json_resize`).
   void json_set_node(size_t idx, const gp_Pnt2d& pt, bool deleted, bool midpoint, bool permanent, const std::string& name = {});
 
-  struct Impl;
+  class Impl;
   std::unique_ptr<Impl> m_impl;
 };

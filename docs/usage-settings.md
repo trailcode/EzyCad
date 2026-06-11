@@ -90,7 +90,7 @@ For other non-sketch Options content (for example **Polar duplicate**), see [usa
 
 Sketch-related preferences are edited in the **Options** panel while you use a sketch tool, not in the **Settings** pane:
 
-- **Sketch options** (all sketch tools): **Snap dist** and **Snap guide mode** (*Traditional*, *Fullscreen*, *Both*). See [How sketch snap works](usage-sketch.md#sketch-snapping) in the sketch guide (axis guides, vertex lock, cross-sketch targets). Snap guide color and mode are also in **Settings -> Sketch**.
+- **Sketch options** (all sketch tools): **Snap dist** and **Snap guide mode** (*Traditional*, *Fullscreen*, *Both*). A checkbox **All co-axial nodes** enables global mode (when on): axis guide lines + markers for *all* nodes in the current and other visible sketches (full co-axial grid). Off = classic closest-per-axis only. See [How sketch snap works](usage-sketch.md#sketch-snapping) in the sketch guide (axis guides, vertex lock, cross-sketch targets). Snap guide color and mode are also in **Settings -> Sketch**.
 - **Extrude sketch face**: under **Extrude**, **Both sides** and **Material** for the new solid (same document preset as **Normal** mode Options **Material**). Other modes that still show **Material** in Options use that same preset when relevant (for example **Sketch from planar face**).
 - **Add edge** / **Add node** (and similar): a **Shortcuts** line documents TAB / Shift+TAB typing behavior.
 - **Sketch operation** (mirror / revolve axis): mirror, revolve, angle, and clear-axis actions (see [usage-sketch.md](usage-sketch.md#operation-axis-tool)).

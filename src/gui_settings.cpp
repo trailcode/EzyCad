@@ -14,6 +14,8 @@
 #include "sketch.h"
 #include "sketch_nodes.h"
 
+#include <gp_Pnt2d.hxx>
+
 namespace
 {
 const char* const k_settings_version                  = "1";
@@ -73,6 +75,7 @@ std::string GUI::occt_view_settings_json() const
          return nlohmann::json::array({r, g, b});
        }()},
       {"snap_guide_mode", static_cast<int>(Sketch_nodes::get_snap_guide_mode())},
+      {"annotate_all_coaxial_nodes", Sketch_nodes::get_annotate_all_coaxial_nodes()},
       {"ui_verbosity", m_ui_verbosity},
   };
   return j.dump(2);
@@ -131,6 +134,7 @@ void GUI::save_occt_view_settings()
          return nlohmann::json::array({r, g, b});
        }()},
       {"snap_guide_mode", static_cast<int>(Sketch_nodes::get_snap_guide_mode())},
+      {"annotate_all_coaxial_nodes", Sketch_nodes::get_annotate_all_coaxial_nodes()},
 #ifndef NDEBUG
       {"show_dbg", m_show_dbg},
 #endif
@@ -372,6 +376,12 @@ void GUI::parse_gui_panes_settings_(const std::string& content)
       if (mode >= static_cast<int>(Sketch_nodes::Snap_guide_mode::Traditional) &&
           mode <= static_cast<int>(Sketch_nodes::Snap_guide_mode::Both))
         Sketch_nodes::set_snap_guide_mode(static_cast<Sketch_nodes::Snap_guide_mode>(mode));
+    }
+
+    Sketch_nodes::set_annotate_all_coaxial_nodes(false);
+    if (g.contains("annotate_all_coaxial_nodes") && g["annotate_all_coaxial_nodes"].is_boolean())
+    {
+      Sketch_nodes::set_annotate_all_coaxial_nodes(g["annotate_all_coaxial_nodes"].get<bool>());
     }
 
     if (g.contains("underlay_highlight_color") && g["underlay_highlight_color"].is_array() &&
@@ -1174,20 +1184,48 @@ void GUI::settings_()
         }
       }
 
+      ImGui::TableNextRow();
+      ImGui::TableSetColumnIndex(0);
+      ImGui::AlignTextToFramePadding();
+      ImGui::TextUnformatted("All co-axial nodes");
+      ImGui::TableSetColumnIndex(1);
+      {
+        bool annotate_all = Sketch_nodes::get_annotate_all_coaxial_nodes();
+        if (ImGui::Checkbox("##settings_annotate_all_coaxial", &annotate_all))
+        {
+          Sketch_nodes::set_annotate_all_coaxial_nodes(annotate_all);
+          save_occt_view_settings();
+        }
+
+        if (ImGui::IsItemHovered())
+        {
+          ImGui::BeginTooltip();
+          ImGui::PushTextWrapPos(ImGui::GetFontSize() * 35.0f);
+          ImGui::TextDisabled("When enabled (global mode): axis guide lines + markers for *all* nodes in the\n"
+                              "current sketch and all other visible sketches (full co-axial alignments).\n"
+                              "Disabled = only the closest node per active axis is marked (classic behavior).");
+          ImGui::PopTextWrapPos();
+          ImGui::EndTooltip();
+        }
+      }
+
       ImGui::EndTable();
     }
+
     if (dim_changed)
     {
       save_occt_view_settings();
       if (m_view)
         m_view->refresh_all_length_dimensions();
     }
+
     if (node_anno_changed)
     {
       save_occt_view_settings();
       if (m_view)
         m_view->refresh_all_permanent_node_annotations();
     }
+
     if (ul_changed)
     {
       uint8_t hr, hg, hb, ha;
