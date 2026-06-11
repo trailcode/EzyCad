@@ -42,7 +42,7 @@ While you draw or place points in sketch mode, EzyCad helps you align to existin
 | | |
 | ---: | --- |
 | **Snap distance** | Larger **Snap dist** values let snaps engage from farther away (screen pixels, converted to the sketch plane at the cursor). |
-| **Snap guides** | **Snap guide mode**: *Traditional* (local markers at guide intersections), *Fullscreen* (view-spanning axis lines), or *Both*. |
+| **Snap guides** | **Snap guide mode**: *Traditional* (local markers at guide intersections), *Fullscreen* (view-spanning axis lines), or *Both*. A separate checkbox **All co-axial nodes** (in the sketch Options panel and in Settings) enables *global* mode: when on, full horizontal and vertical guide lines + markers are shown for *all* nodes in the current sketch and all other visible sketches (the complete set of co-axial alignments). When off (default), only the closest node per active axis is annotated (classic closest-relative behavior). |
 | **Axis alignment** | Near a snap target, the pick can align to that point's **X** or **Y** on the sketch plane; guides show which axis is active. When **both** axes align to the **same** point, the cursor **locks to that vertex**. |
 | **Mid-point snap (Add node)** | A click near a **straight** edge (not at its ends) snaps onto the segment and **splits** it at commit time (see [Add node tool](#add-node-tool)). Separate from vertex lock. |
 | **Other visible sketches** | Nodes from **other visible sketches** are projected onto the current sketch plane and act as snap targets (same distance rules). Useful for multi-sketch layouts and tools such as **polar duplicate** that pick sketch points. |

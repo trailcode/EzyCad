@@ -2,6 +2,7 @@
 
 #include <BRep_Builder.hxx>
 #include <BRepBuilderAPI_MakeEdge.hxx>
+#include <Precision.hxx>
 #include <TopoDS_Compound.hxx>
 #include <TopoDS_Wire.hxx>
 #include <algorithm>
@@ -19,6 +20,7 @@ namespace
 double                        s_snap_dist_pixels = 35.0;
 Sketch_nodes::Snap_guide_mode s_snap_guide_mode  = Sketch_nodes::Snap_guide_mode::Traditional;
 glm::vec3                     s_snap_guide_color{0.0f, 1.0f, 0.0f};
+bool                          s_annotate_all_coaxial_nodes = false;
 } // namespace
 
 struct Sketch_nodes::Impl
@@ -35,6 +37,7 @@ struct Sketch_nodes::Impl
   AIS_Shape_ptr           snap_anno_axis[2];
   std::optional<gp_Pnt2d> last_snap_pt; // Used for snap annotation
   AIS_Shape_ptr           snap_anno;
+  AIS_Shape_ptr           global_coax_anno; // Used when "All co-axial nodes" is on for global alignments
   size_t                  prev_num_nodes{0}; // Used when an operation is canceled.
 
   // Owner related
@@ -46,7 +49,8 @@ struct Sketch_nodes::Impl
   double snap_radius_world_(const gp_Pnt2d& pt) const;
   bool   view_bounds_2d_(double& min_u, double& min_v, double& max_u, double& max_v) const;
   void   update_node_snap_anno_(const gp_Pnt2d& pt, const double snap_dist);
-  void   update_axis_snap_anno_(int axis_index, const gp_Pnt2d& axis_pt, double snap_dist);
+  void   update_axis_snap_anno_(int axis_index, const std::vector<gp_Pnt2d>& axis_pts, double snap_dist);
+  void   update_global_coaxial_annotations_(double snap_dist);
 };
 
 Sketch_nodes::Sketch_nodes(Occt_view& view, const gp_Pln& pln)
@@ -177,6 +181,14 @@ std::optional<size_t> Sketch_nodes::try_get_node_idx_snap(
 {
   const double snap_dist = m_impl->snap_radius_world_(pt);
 
+  DBG_MSG("try_get_node_idx_snap: input_pt=(" << pt.X() << "," << pt.Y() << ") snap_dist_world=" << snap_dist << " all_coaxial=" << s_annotate_all_coaxial_nodes);
+
+  if (!s_annotate_all_coaxial_nodes && m_impl->global_coax_anno)
+  {
+    m_impl->ctx.Remove(m_impl->global_coax_anno, false);
+    m_impl->global_coax_anno = nullptr;
+  }
+
   hide_snap_annos();
 
   gp_Pnt2d              pt_original = pt;
@@ -186,21 +198,25 @@ std::optional<size_t> Sketch_nodes::try_get_node_idx_snap(
     std::optional<gp_Pnt2d> snap_axis_point;
     double                  best_dist = std::numeric_limits<double>::max();
 
+    // For "all coaxial" annotation we collect every node (current sketch + outside)
+    // whose coordinate on this axis is within tolerance. The *closest* one is still
+    // used for the actual snap of `pt` and for the main guide line.
+    std::vector<gp_Pnt2d> axis_anno_points;
+
     auto try_nd_pt = [&](const gp_Pnt2d& nd_pt) -> bool
     {
       double dist = pt_original.SquareDistance(nd_pt);
-      // axis_dist needs to be compared against a linear snap distance in screen pixels.
-      // This part becomes tricky because axis_dist is a world coordinate difference.
-      // We'd ideally convert m_snap_dist_pixels * 0.5 to a world distance along the axis.
-      // For simplicity here, we'll continue using a fraction of the calculated world snap_dist_sq,
-      // but this might need refinement for axis snapping to feel right.
-      // The original logic used snap_dist (linear pixels) * 0.5 for axis snapping.
-      // We need a world-space equivalent for axis snapping.
-      // Let's use sqrt(snap_dist_sq) * 0.5 for now.
       double axis_snap_threshold_world = sqrt(snap_dist) * 0.5;
       double axis_dist                 = std::fabs(pt_original.XY().Coord(axis_idx + 1) - nd_pt.XY().Coord(axis_idx + 1));
 
-      if (dist < best_dist && axis_dist <= axis_snap_threshold_world)
+      const bool axis_matches = (axis_dist <= axis_snap_threshold_world);
+
+      if (axis_matches)
+      {
+        axis_anno_points.push_back(nd_pt);
+      }
+
+      if (dist < best_dist && axis_matches)
       {
         best_dist       = dist;
         snap_axis_point = nd_pt;
@@ -230,14 +246,100 @@ std::optional<size_t> Sketch_nodes::try_get_node_idx_snap(
     for (const gp_Pnt2d& nd_pt : m_impl->outside_snap_pts)
       try_nd_pt(nd_pt);
 
-    if (snap_axis_point)
-      m_impl->update_axis_snap_anno_(axis_idx, *snap_axis_point, sqrt(snap_dist));
+    // If the "annotate all coaxial" option is on we keep the full list (dedup later if wanted).
+    // Otherwise we only annotate the single closest one that drove the snap.
+    if (!s_annotate_all_coaxial_nodes && snap_axis_point)
+    {
+      axis_anno_points = { *snap_axis_point };
+    }
+
+    if (!axis_anno_points.empty())
+    {
+      // Dedup points that are essentially identical on the axis (floating point tolerance)
+      std::vector<gp_Pnt2d> unique_pts;
+      for (const auto& p : axis_anno_points)
+      {
+        bool dup = false;
+        for (const auto& u : unique_pts)
+        {
+          if (std::fabs(p.XY().Coord(axis_idx + 1) - u.XY().Coord(axis_idx + 1)) < 1e-9)
+          {
+            dup = true;
+            break;
+          }
+        }
+        if (!dup)
+          unique_pts.push_back(p);
+      }
+      m_impl->update_axis_snap_anno_(axis_idx, unique_pts, sqrt(snap_dist));
+    }
     else if (!m_impl->snap_anno_axis[axis_idx].IsNull())
+    {
       m_impl->ctx.Erase(m_impl->snap_anno_axis[axis_idx], true);
+    }
   }
 
   if (snap_node_idx[0] == snap_node_idx[1] && snap_node_idx[0].has_value())
+  {
+    DBG_MSG("Vertex snap to node idx=" << *snap_node_idx[0] << " at (" << pt.X() << "," << pt.Y() << ")");
     return snap_node_idx[0];
+  }
+
+  if (s_annotate_all_coaxial_nodes)
+  {
+    DBG_MSG("All co-axial mode active for snap pt=(" << pt.X() << "," << pt.Y() << ")");
+    // For the active axes (those for which we have a guide from the current snap),
+    // collect ALL nodes (current sketch + other visible sketches) whose coordinate
+    // on the axis matches the final guide value exactly or within Precision::Confusion().
+    // Then draw the small annotation markers at all of them.
+    for (int axis_idx = 0; axis_idx < 2; ++axis_idx)
+    {
+      double guide_val = (axis_idx == 0 ? pt.X() : pt.Y());
+
+      DBG_MSG("  Active axis " << axis_idx << " guide_val=" << guide_val);
+
+      std::vector<gp_Pnt2d> matches;
+      for (const auto& n : m_impl->nodes)
+      {
+        if (n.deleted) continue;
+        double axis_diff = std::fabs(guide_val - n.XY().Coord(axis_idx + 1));
+        if (axis_diff <= Precision::Confusion())
+        {
+          DBG_MSG("    Co-axial current node (" << n.X() << "," << n.Y() << ") diff=" << axis_diff);
+          matches.push_back(n);
+        }
+      }
+      for (const auto& p : m_impl->outside_snap_pts)
+      {
+        double axis_diff = std::fabs(guide_val - p.XY().Coord(axis_idx + 1));
+        if (axis_diff <= Precision::Confusion())
+        {
+          DBG_MSG("    Co-axial outside pt (" << p.X() << "," << p.Y() << ") diff=" << axis_diff);
+          matches.push_back(p);
+        }
+      }
+
+      if (!matches.empty())
+      {
+        // dedup by position
+        std::vector<gp_Pnt2d> unique;
+        for (const auto& p : matches)
+        {
+          bool seen = false;
+          for (const auto& u : unique)
+            if (p.Distance(u) < Precision::Confusion())
+            { seen = true; break; }
+          if (!seen) unique.push_back(p);
+        }
+        DBG_MSG("    Updating axis anno for " << unique.size() << " unique co-axial points");
+        m_impl->update_axis_snap_anno_(axis_idx, unique, sqrt(snap_dist));
+      }
+      else
+      {
+        DBG_MSG("    No co-axial matches for axis " << axis_idx);
+      }
+    }
+  }
 
   return {};
 }
@@ -255,6 +357,12 @@ void Sketch_nodes::hide_snap_annos()
       m_impl->ctx.Remove(anno, false);
       anno = nullptr;
     }
+
+  if (m_impl->global_coax_anno)
+  {
+    m_impl->ctx.Remove(m_impl->global_coax_anno, false);
+    m_impl->global_coax_anno = nullptr;
+  }
 
   m_impl->ctx.UpdateCurrentViewer();
   m_impl->last_snap_pt = std::nullopt;
@@ -427,12 +535,18 @@ void Sketch_nodes::Impl::update_node_snap_anno_(const gp_Pnt2d& pt, const double
   }
 }
 
-void Sketch_nodes::Impl::update_axis_snap_anno_(int axis_index, const gp_Pnt2d& axis_pt, double snap_dist)
+void Sketch_nodes::Impl::update_axis_snap_anno_(int axis_index, const std::vector<gp_Pnt2d>& axis_pts, double snap_dist)
 {
+  if (axis_pts.empty())
+    return;
+
   const auto mode = s_snap_guide_mode;
   const bool show_traditional =
       mode == Sketch_nodes::Snap_guide_mode::Traditional || mode == Sketch_nodes::Snap_guide_mode::Both;
   const bool show_fullscreen = mode == Sketch_nodes::Snap_guide_mode::Fullscreen || mode == Sketch_nodes::Snap_guide_mode::Both;
+
+  // Use the first point as representative for the fullscreen guide line (all should share the axis coord)
+  const gp_Pnt2d& rep_pt = axis_pts.front();
 
   TopoDS_Shape fullscreen_shape;
   if (show_fullscreen)
@@ -442,34 +556,36 @@ void Sketch_nodes::Impl::update_axis_snap_anno_(int axis_index, const gp_Pnt2d& 
     {
       if (axis_index == 0)
       {
-        const gp_Pnt p0  = to_3d(pln, gp_Pnt2d(axis_pt.X(), min_v));
-        const gp_Pnt p1  = to_3d(pln, gp_Pnt2d(axis_pt.X(), max_v));
+        const gp_Pnt p0  = to_3d(pln, gp_Pnt2d(rep_pt.X(), min_v));
+        const gp_Pnt p1  = to_3d(pln, gp_Pnt2d(rep_pt.X(), max_v));
         fullscreen_shape = BRepBuilderAPI_MakeEdge(p0, p1).Edge();
       }
       else
       {
-        const gp_Pnt p0  = to_3d(pln, gp_Pnt2d(min_u, axis_pt.Y()));
-        const gp_Pnt p1  = to_3d(pln, gp_Pnt2d(max_u, axis_pt.Y()));
+        const gp_Pnt p0  = to_3d(pln, gp_Pnt2d(min_u, rep_pt.Y()));
+        const gp_Pnt p1  = to_3d(pln, gp_Pnt2d(max_u, rep_pt.Y()));
         fullscreen_shape = BRepBuilderAPI_MakeEdge(p0, p1).Edge();
       }
     }
   }
 
-  TopoDS_Shape       anno_shape;
-  const TopoDS_Shape traditional_shape = create_wire_box(pln, to_3d(pln, axis_pt), snap_dist, snap_dist);
-  if (show_traditional && !fullscreen_shape.IsNull())
-  {
-    BRep_Builder    builder;
-    TopoDS_Compound comp;
-    builder.MakeCompound(comp);
+  BRep_Builder    builder;
+  TopoDS_Compound comp;
+  builder.MakeCompound(comp);
+
+  if (!fullscreen_shape.IsNull())
     builder.Add(comp, fullscreen_shape);
-    builder.Add(comp, traditional_shape);
-    anno_shape = comp;
+
+  if (show_traditional)
+  {
+    for (const gp_Pnt2d& p : axis_pts)
+    {
+      const TopoDS_Shape small = create_wire_box(pln, to_3d(pln, p), snap_dist, snap_dist);
+      builder.Add(comp, small);
+    }
   }
-  else if (!fullscreen_shape.IsNull())
-    anno_shape = fullscreen_shape;
-  else
-    anno_shape = traditional_shape;
+
+  TopoDS_Shape anno_shape = comp;
 
   const glm::vec3& c = s_snap_guide_color;
   if (snap_anno_axis[axis_index].IsNull())
@@ -483,6 +599,114 @@ void Sketch_nodes::Impl::update_axis_snap_anno_(int axis_index, const gp_Pnt2d& 
   {
     snap_anno_axis[axis_index]->Set(anno_shape);
     ctx.Redisplay(snap_anno_axis[axis_index], true);
+  }
+}
+
+void Sketch_nodes::Impl::update_global_coaxial_annotations_(double snap_dist)
+{
+  // Collect all current nodes + outside points (from other visible sketches)
+  std::vector<gp_Pnt2d> all_pts;
+  for (const auto& n : nodes)
+    if (!n.deleted)
+      all_pts.push_back(n);
+  for (const auto& p : outside_snap_pts)
+    all_pts.push_back(p);
+
+  if (all_pts.empty())
+    return;
+
+  // Collect all X and Y values
+  std::vector<double> all_xs, all_ys;
+  for (const auto& p : all_pts)
+  {
+    all_xs.push_back(p.X());
+    all_ys.push_back(p.Y());
+  }
+
+  // Canonicalize unique values within Precision::Confusion() (as per requirement for co-axial alignments)
+  auto canonicalize = [](std::vector<double>& vals) {
+    if (vals.empty()) return;
+    std::sort(vals.begin(), vals.end());
+    std::vector<double> unique;
+    double tol = Precision::Confusion();
+    for (double v : vals)
+    {
+      if (unique.empty() || std::fabs(v - unique.back()) > tol)
+      {
+        unique.push_back(v);
+      }
+    }
+    vals = std::move(unique);
+  };
+
+  canonicalize(all_xs);
+  canonicalize(all_ys);
+
+  BRep_Builder    builder;
+  TopoDS_Compound comp;
+  builder.MakeCompound(comp);
+
+  // Add vertical lines for every unique (canonicalized) X
+  double min_u{}, min_v{}, max_u{}, max_v{};
+  bool have_bounds = view_bounds_2d_(min_u, min_v, max_u, max_v);
+
+  for (double x : all_xs)
+  {
+    TopoDS_Shape line;
+    if (have_bounds)
+    {
+      gp_Pnt p0 = to_3d(pln, gp_Pnt2d(x, min_v));
+      gp_Pnt p1 = to_3d(pln, gp_Pnt2d(x, max_v));
+      line = BRepBuilderAPI_MakeEdge(p0, p1).Edge();
+    }
+    else
+    {
+      gp_Pnt p0 = to_3d(pln, gp_Pnt2d(x, all_pts[0].Y() - 100));
+      gp_Pnt p1 = to_3d(pln, gp_Pnt2d(x, all_pts[0].Y() + 100));
+      line = BRepBuilderAPI_MakeEdge(p0, p1).Edge();
+    }
+    builder.Add(comp, line);
+  }
+
+  // Add horizontal lines for every unique (canonicalized) Y
+  for (double y : all_ys)
+  {
+    TopoDS_Shape line;
+    if (have_bounds)
+    {
+      gp_Pnt p0 = to_3d(pln, gp_Pnt2d(min_u, y));
+      gp_Pnt p1 = to_3d(pln, gp_Pnt2d(max_u, y));
+      line = BRepBuilderAPI_MakeEdge(p0, p1).Edge();
+    }
+    else
+    {
+      gp_Pnt p0 = to_3d(pln, gp_Pnt2d(all_pts[0].X() - 100, y));
+      gp_Pnt p1 = to_3d(pln, gp_Pnt2d(all_pts[0].X() + 100, y));
+      line = BRepBuilderAPI_MakeEdge(p0, p1).Edge();
+    }
+    builder.Add(comp, line);
+  }
+
+  // Add small boxes at every node position (the "annotate" part)
+  // Nodes whose axis value is within Confusion() of a line will visually align on it.
+  for (const auto& p : all_pts)
+  {
+    const TopoDS_Shape small = create_wire_box(pln, to_3d(pln, p), snap_dist, snap_dist);
+    builder.Add(comp, small);
+  }
+
+  const glm::vec3& c = s_snap_guide_color;
+  if (global_coax_anno.IsNull())
+  {
+    global_coax_anno = new AIS_Shape(comp);
+    global_coax_anno->SetWidth(1.0);
+    global_coax_anno->SetColor(Quantity_Color(c.x, c.y, c.z, Quantity_TOC_RGB));
+    ctx.Display(global_coax_anno, true);
+  }
+  else
+  {
+    global_coax_anno->Set(comp);
+    ctx.Redisplay(global_coax_anno, true);
   }
 }
 
@@ -508,4 +732,14 @@ void Sketch_nodes::get_snap_guide_color(float& r, float& g, float& b)
   r = s_snap_guide_color.x;
   g = s_snap_guide_color.y;
   b = s_snap_guide_color.z;
+}
+
+void Sketch_nodes::set_annotate_all_coaxial_nodes(bool enable)
+{
+  s_annotate_all_coaxial_nodes = enable;
+}
+
+bool Sketch_nodes::get_annotate_all_coaxial_nodes()
+{
+  return s_annotate_all_coaxial_nodes;
 }

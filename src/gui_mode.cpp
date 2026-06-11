@@ -387,6 +387,7 @@ void GUI::options_()
 
     float sketch_label_col_w = ImGui::CalcTextSize("Snap dist").x;
     sketch_label_col_w       = std::max(sketch_label_col_w, ImGui::CalcTextSize("Snap guide mode").x);
+    sketch_label_col_w       = std::max(sketch_label_col_w, ImGui::CalcTextSize("All co-axial nodes").x);
     if (get_mode() == Mode::Sketch_face_extrude)
     {
       sketch_label_col_w = std::max(sketch_label_col_w, ImGui::CalcTextSize("Both sides").x);
@@ -430,6 +431,19 @@ void GUI::options_()
         ImGui::SetTooltip("Traditional: compact local snap marker.\n"
                           "Fullscreen: full-view crosshair/axis guides.\n"
                           "Both: show compact marker and fullscreen guides together.");
+
+      ImGui::TableNextRow();
+      ImGui::TableSetColumnIndex(0);
+      right_aligned_label("All co-axial nodes");
+      ImGui::TableSetColumnIndex(1);
+      bool annotate_all = Sketch_nodes::get_annotate_all_coaxial_nodes();
+      if (ImGui::Checkbox("##annotate_all_coaxial", &annotate_all))
+        Sketch_nodes::set_annotate_all_coaxial_nodes(annotate_all);
+      if (ui_show_help(2) && ImGui::IsItemHovered())
+        ImGui::SetTooltip("When on (global mode): axis guide lines + markers for *all* nodes in the current\n"
+                          "sketch and all other visible sketches (shows the full set of horizontal and\n"
+                          "vertical co-axial alignments). When off (default): only closest node per active\n"
+                          "axis is annotated (classic closest-relative behavior).");
 
       ImGui::EndTable();
     }
