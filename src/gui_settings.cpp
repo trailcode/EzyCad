@@ -794,7 +794,8 @@ void GUI::settings_()
         save_occt_view_settings();
       }
       if (ui_show_help(2) && ImGui::IsItemHovered())
-        ImGui::SetTooltip("Show or hide the OCCT reference grid in the 3D view.");
+        ImGui::SetTooltip("Show or hide the OCCT reference grid in the 3D view.\n"
+                          "When shown, the grid lies on the active sketch plane.");
 
       ImGui::TableNextRow();
       ImGui::TableSetColumnIndex(0);

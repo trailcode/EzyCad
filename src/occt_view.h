@@ -287,6 +287,8 @@ private:
   void                         update_view_background_();
   static Occt_grid_rect_params clamp_occt_grid_rect_params_(Occt_grid_rect_params g);
   void                         capture_occt_grid_rect_from_viewer_(const V3d_Viewer_ptr& viewer);
+  void                         sync_grid_plane_to_active_sketch_();
+  void                         refresh_viewer_grid_();
   void                         apply_occt_grid_rect_to_viewer_();
   void                         apply_grid_visibility_();
 
