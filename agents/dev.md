@@ -116,6 +116,7 @@ When using an AI assistant (Grok Build, Cursor, Claude, Copilot, etc.) on this c
 
 - Start here: `agents/README.md` (table of contents) + this file (`dev.md`).
 - Follow the style guides in `docs/ezycad_code_style.md` (C++) and `docs/ezycad_doc_style.md`.
+- When you add or change user-visible functionality (UI, settings, workflows, shortcuts, persisted keys), sync user docs per [user-docs-sync.md](user-docs-sync.md) (same branch/PR as the code).
 - Check `agents/issues/` and `agents/prs/` for context on specific work items.
 - Root-level markers `AGENTS.md` and `agents.md` point AIs at the `agents/` directory.
 - Deeper-nested instruction files take precedence.
