@@ -74,6 +74,8 @@ public:
   static Snap_guide_mode get_snap_guide_mode();
   static void            set_snap_guide_color(float r, float g, float b);
   static void            get_snap_guide_color(float& r, float& g, float& b);
+  static void            set_snap_guide_line_width(float width);
+  static float           get_snap_guide_line_width();
 
   // When true, axis snap annotations (small markers) are shown for *all* nodes sharing the
   // same X or Y (within snap tolerance) in the current sketch (and outside points from other

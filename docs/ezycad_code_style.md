@@ -24,6 +24,15 @@ Use this style when editing or adding C/C++ code in the EzyCad project (files un
 
 ## Formatting
 
+### Line endings
+
+- Use **LF** (`\n`) for all EzyCad-owned text files: `src/`, `tests/`, `scripts/`, `cmake/`, `docs/`, `agents/`, and other project paths listed in **`.gitattributes`**.
+- Do **not** mix CRLF and LF in the same file; mixed endings trigger editor warnings and noisy diffs.
+- **`third_party/`** is vendored upstream code and is not normalized by this rule.
+- On Windows, configure your editor to **LF** for C++ (Visual Studio: *File → Advanced Save Options*, or normalize when prompted). In this repo, run `git config core.autocrlf false` so Git does not reintroduce CRLF on checkout. Git applies the rules in `.gitattributes` on commit.
+
+### clang-format
+
 Run **`scripts/format-src.ps1`** (or `clang-format -i` on individual files) before committing C++ changes. **`.clang-format`** at the repo root is the source of truth; the settings below match that file. Anything not listed inherits **`BasedOnStyle: LLVM`** (e.g. spaces not tabs, short loops not collapsed to one line).
 
 - **`BasedOnStyle: LLVM`** — Start from the LLVM preset; only the options below override it.
