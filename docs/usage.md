@@ -186,7 +186,7 @@ Press <kbd>Esc</kbd> to cancel the current action or step back to a broader mode
 - **If something is in progress:** <kbd>Esc</kbd> cancels it and discards the change. Examples: cancel a line you are drawing, revert an unconfirmed [move](#shape-move-tool-g)/[rotate](#shape-rotate-tool-r)/[scale](#shape-scale-tool-s), cancel [extrude](#extrude-sketch-face-tool-e) preview, clear the distance or angle input dialog.
 - **If nothing is in progress:** <kbd>Esc</kbd> steps the application to the **parent mode** (one level up):
   - From a **sketch tool** (e.g. Add line, Add circle, Operation axis) -> **Sketch inspection mode**.
-  - From **Sketch inspection**, **Normal**, or any **shape tool** ([Move](#shape-move-tool-g), [Rotate](#shape-rotate-tool-r), [Scale](#shape-scale-tool-s), [Extrude](#extrude-sketch-face-tool-e), [Chamfer](#other-feature-operations), [Fillet](#other-feature-operations), [Polar duplicate](#shape-polar-duplicate-tool), [Create sketch from face](usage-sketch.md#create-sketch-from-planar-face-tool)) -> **Normal** (inspection) mode.
+  - From **Sketch inspection**, **Normal**, or any **shape tool** ([Move](#shape-move-tool-g), [Rotate](#shape-rotate-tool-r), [Scale](#shape-scale-tool-s), [Extrude](#extrude-sketch-face-tool-e), [Chamfer](#other-feature-operations) (<kbd>C</kbd>), [Fillet](#other-feature-operations) (<kbd>F</kbd>), [Polar duplicate](#shape-polar-duplicate-tool), [Create sketch from face](usage-sketch.md#create-sketch-from-planar-face-tool)) -> **Normal** (inspection) mode.
 
 So repeated <kbd>Esc</kbd> from a sketch drawing tool first cancels the current element, then returns to Sketch inspection, then to Normal.
 
@@ -512,8 +512,8 @@ The polar duplicate tool allows you to create multiple copies of selected shapes
 
 ### Other Feature Operations
 
-- Create chamfers
-- Add fillets
+- Create chamfers (<kbd>C</kbd>)
+- Add fillets (<kbd>F</kbd>)
 - Boolean operations:
   - Cut
   - Fuse
@@ -544,6 +544,8 @@ The polar duplicate tool allows you to create multiple copies of selected shapes
 | <kbd>R</kbd> | Rotate mode |
 | <kbd>S</kbd> | Scale mode |
 | <kbd>E</kbd> | Extrude mode |
+| <kbd>C</kbd> | Chamfer mode |
+| <kbd>F</kbd> | Fillet mode |
 | <kbd>D</kbd> | Delete selected |
 
 ### View navigation
@@ -695,8 +697,8 @@ Contributors should follow **[ezycad_code_style.md](ezycad_code_style.md)** for 
 
 ### 3D Operations
 - ![Design456_Extrude](res/icons/Design456_Extrude.png) - Extrude sketch face (<kbd>E</kbd>)
-- ![PartDesign_Chamfer](res/icons/PartDesign_Chamfer.png) - Chamfer
-- ![PartDesign_Fillet](res/icons/PartDesign_Fillet.png) - Fillet
+- ![PartDesign_Chamfer](res/icons/PartDesign_Chamfer.png) - Chamfer (<kbd>C</kbd>)
+- ![PartDesign_Fillet](res/icons/PartDesign_Fillet.png) - Fillet (<kbd>F</kbd>)
 - ![Draft_PolarArray](res/icons/Draft_PolarArray.png) - Shape polar duplicate
 
 ### Boolean Operations
