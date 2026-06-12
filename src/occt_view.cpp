@@ -219,10 +219,8 @@ void Occt_view::init_viewer()
   // m_view->SetScale(1000.0); // Treat coordinates as millimeters
   // m_view->SetScale(39.3701);
 
-  aViewer->ActivateGrid(Aspect_GT_Rectangular, Aspect_GDM_Lines);
-  aViewer->SetGridEcho(false);
   capture_occt_grid_rect_from_viewer_(aViewer);
-  // Grid colors set in update_view_background_()
+  // Grid visibility/colors set in apply_grid_visibility_() / update_view_background_()
   // aViewer->SetGridEcho(true);
   // aViewer->Grid()->SetDrawMode(Aspect_GridDrawMode::Aspect_GDM_Points);
 
@@ -428,6 +426,8 @@ void Occt_view::init_default()
   m_view->SetZoom(2.0);
   //
 
+  refresh_viewer_grid_();
+
   // load();
   //  m_view->FitAll();
 }
@@ -602,6 +602,7 @@ void Occt_view::create_sketch_from_planar_face_(const ScreenCoords& screen_coord
       m_cur_sketch = std::make_shared<Sketch>("Sketch from face", *this, *pln, outer_wire);
       m_sketches.push_back(m_cur_sketch);
       m_cur_sketch->set_current();
+      refresh_viewer_grid_();
       // fit_face_in_view(*face);
       m_gui.set_mode(Mode::Sketch_inspection_mode);
     }
@@ -639,6 +640,7 @@ void Occt_view::add_sketch(const gp_Pln& pln, const std::string& base_name)
   m_cur_sketch           = std::make_shared<Sketch>(name, *this, pln);
   m_sketches.push_back(m_cur_sketch);
   m_cur_sketch->set_current();
+  refresh_viewer_grid_();
   m_gui.set_mode(Mode::Sketch_inspection_mode);
 }
 
@@ -1240,6 +1242,7 @@ void Occt_view::set_grid_colors(float r1, float g1, float b1, float r2, float g2
   m_grid_color1 = glm::vec3(r1, g1, b1);
   m_grid_color2 = glm::vec3(r2, g2, b2);
   update_view_background_();
+  refresh_viewer_grid_();
 }
 
 Occt_grid_rect_params Occt_view::clamp_occt_grid_rect_params_(Occt_grid_rect_params g)
@@ -1275,10 +1278,93 @@ void Occt_view::capture_occt_grid_rect_from_viewer_(const V3d_Viewer_ptr& viewer
   }
 }
 
-void Occt_view::apply_occt_grid_rect_to_viewer_()
+bool Occt_view::get_grid_visible() const { return m_grid_visible; }
+
+void Occt_view::set_grid_visible(const bool visible)
+{
+  if (m_grid_visible == visible)
+    return;
+  m_grid_visible = visible;
+  apply_grid_visibility_();
+}
+
+void Occt_view::sync_grid_plane_to_active_sketch_()
+{
+  if (is_headless() || m_ctx.IsNull() || !m_cur_sketch)
+    return;
+
+  Handle(V3d_Viewer) viewer = m_ctx->CurrentViewer();
+  if (viewer.IsNull())
+    return;
+
+  viewer->SetPrivilegedPlane(m_cur_sketch->get_plane().Position());
+}
+
+void Occt_view::refresh_viewer_grid_()
 {
   if (is_headless() || m_view.IsNull())
     return;
+
+  sync_grid_plane_to_active_sketch_();
+  if (!m_grid_visible)
+    return;
+
+  Handle(V3d_Viewer) viewer = m_view->Viewer();
+  if (viewer.IsNull() || !viewer->IsGridActive())
+    return;
+
+  apply_occt_grid_rect_to_viewer_();
+  if (!viewer->Grid().IsNull())
+  {
+    Quantity_Color cc(m_grid_color1.x, m_grid_color1.y, m_grid_color1.z, Quantity_TOC_RGB);
+    Quantity_Color cd(m_grid_color2.x, m_grid_color2.y, m_grid_color2.z, Quantity_TOC_RGB);
+    viewer->Grid()->SetColors(cc, cd);
+  }
+
+  m_view->Invalidate();
+  m_view->Redraw();
+}
+
+void Occt_view::apply_grid_visibility_()
+{
+  if (is_headless() || m_view.IsNull())
+    return;
+
+  Handle(V3d_Viewer) viewer = m_view->Viewer();
+  if (viewer.IsNull())
+    return;
+
+  if (m_grid_visible)
+  {
+    sync_grid_plane_to_active_sketch_();
+    if (!viewer->IsGridActive())
+    {
+      viewer->ActivateGrid(Aspect_GT_Rectangular, Aspect_GDM_Lines);
+      viewer->SetGridEcho(false);
+    }
+
+    apply_occt_grid_rect_to_viewer_();
+
+    if (!viewer->Grid().IsNull())
+    {
+      Quantity_Color cc(m_grid_color1.x, m_grid_color1.y, m_grid_color1.z, Quantity_TOC_RGB);
+      Quantity_Color cd(m_grid_color2.x, m_grid_color2.y, m_grid_color2.z, Quantity_TOC_RGB);
+      viewer->Grid()->SetColors(cc, cd);
+    }
+  }
+  else if (viewer->IsGridActive())
+    viewer->DeactivateGrid();
+
+  m_view->Invalidate();
+  m_view->Redraw();
+}
+
+void Occt_view::apply_occt_grid_rect_to_viewer_()
+{
+  if (is_headless() || m_view.IsNull() || !m_grid_visible)
+    return;
+
+  sync_grid_plane_to_active_sketch_();
 
   Occt_grid_rect_params g = clamp_occt_grid_rect_params_(m_occt_grid_rect);
   m_occt_grid_rect        = g;
@@ -1735,6 +1821,7 @@ void Occt_view::set_curr_sketch(const Sketch_ptr& to_set)
     {
       m_cur_sketch = sketch;
       m_cur_sketch->set_current();
+      refresh_viewer_grid_();
 
       // If hide all shapes is enabled, hide all shapes except the current sketch
       if (m_gui.get_hide_all_shapes())
@@ -1992,6 +2079,12 @@ void Occt_view::load(const std::string& json_str, bool restore_view)
     {
       // Ignore view restoration errors; project geometry has already loaded.
     }
+  }
+
+  if (m_cur_sketch)
+  {
+    m_cur_sketch->set_current();
+    refresh_viewer_grid_();
   }
 }
 
