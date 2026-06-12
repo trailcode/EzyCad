@@ -246,6 +246,8 @@ public:
 
   void get_occt_grid_rect_params(Occt_grid_rect_params& out) const;
   void set_occt_grid_rect_params(const Occt_grid_rect_params& p);
+  bool get_grid_visible() const;
+  void set_grid_visible(bool visible);
 
   bool is_headless() const;
 
@@ -286,6 +288,7 @@ private:
   static Occt_grid_rect_params clamp_occt_grid_rect_params_(Occt_grid_rect_params g);
   void                         capture_occt_grid_rect_from_viewer_(const V3d_Viewer_ptr& viewer);
   void                         apply_occt_grid_rect_to_viewer_();
+  void                         apply_grid_visibility_();
 
   //! GLFW callback redirecting messages into Message::DefaultMessenger().
   // static void errorCallback(int theError, const char* theDescription);
@@ -336,6 +339,7 @@ private:
   glm::vec3             m_grid_color1{0.1f, 0.1f, 0.1f};
   glm::vec3             m_grid_color2{0.1f, 0.1f, 0.3f};
   Occt_grid_rect_params m_occt_grid_rect{};
+  bool                  m_grid_visible{true};
   /// User setting: same role as former literal in `UpdateZoom(Aspect_ScrollDelta(..., int(y * scale)))`.
   double m_zoom_scroll_scale{4.0};
   // --------------------------------------------------------------------

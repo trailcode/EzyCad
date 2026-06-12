@@ -219,10 +219,8 @@ void Occt_view::init_viewer()
   // m_view->SetScale(1000.0); // Treat coordinates as millimeters
   // m_view->SetScale(39.3701);
 
-  aViewer->ActivateGrid(Aspect_GT_Rectangular, Aspect_GDM_Lines);
-  aViewer->SetGridEcho(false);
   capture_occt_grid_rect_from_viewer_(aViewer);
-  // Grid colors set in update_view_background_()
+  // Grid visibility/colors set in apply_grid_visibility_() / update_view_background_()
   // aViewer->SetGridEcho(true);
   // aViewer->Grid()->SetDrawMode(Aspect_GridDrawMode::Aspect_GDM_Points);
 
@@ -268,6 +266,7 @@ void Occt_view::init_viewer()
   m_grid_color1        = glm::vec3(0.1f, 0.1f, 0.1f);
   m_grid_color2        = glm::vec3(0.1f, 0.1f, 0.3f);
   update_view_background_();
+  apply_grid_visibility_();
 
   Handle(AIS_ViewCube) myViewCube = new AIS_ViewCube();
   myViewCube->SetTransformPersistence(
@@ -1275,9 +1274,50 @@ void Occt_view::capture_occt_grid_rect_from_viewer_(const V3d_Viewer_ptr& viewer
   }
 }
 
-void Occt_view::apply_occt_grid_rect_to_viewer_()
+bool Occt_view::get_grid_visible() const { return m_grid_visible; }
+
+void Occt_view::set_grid_visible(const bool visible)
+{
+  if (m_grid_visible == visible)
+    return;
+  m_grid_visible = visible;
+  apply_grid_visibility_();
+}
+
+void Occt_view::apply_grid_visibility_()
 {
   if (is_headless() || m_view.IsNull())
+    return;
+
+  Handle(V3d_Viewer) viewer = m_view->Viewer();
+  if (viewer.IsNull())
+    return;
+
+  if (m_grid_visible)
+  {
+    if (!viewer->IsGridActive())
+    {
+      viewer->ActivateGrid(Aspect_GT_Rectangular, Aspect_GDM_Lines);
+      viewer->SetGridEcho(false);
+    }
+    apply_occt_grid_rect_to_viewer_();
+    if (!viewer->Grid().IsNull())
+    {
+      Quantity_Color cc(m_grid_color1.x, m_grid_color1.y, m_grid_color1.z, Quantity_TOC_RGB);
+      Quantity_Color cd(m_grid_color2.x, m_grid_color2.y, m_grid_color2.z, Quantity_TOC_RGB);
+      viewer->Grid()->SetColors(cc, cd);
+    }
+  }
+  else if (viewer->IsGridActive())
+    viewer->DeactivateGrid();
+
+  m_view->Invalidate();
+  m_view->Redraw();
+}
+
+void Occt_view::apply_occt_grid_rect_to_viewer_()
+{
+  if (is_headless() || m_view.IsNull() || !m_grid_visible)
     return;
 
   Occt_grid_rect_params g = clamp_occt_grid_rect_params_(m_occt_grid_rect);

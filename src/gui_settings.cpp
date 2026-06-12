@@ -41,6 +41,7 @@ nlohmann::json build_occt_view_settings_object(const Occt_view& view)
       {"grid_graphic_x_size", grid_rect.graphic_x_size},
       {"grid_graphic_y_size", grid_rect.graphic_y_size},
       {"grid_graphic_z_offset", grid_rect.graphic_z_offset},
+      {"grid_visible", view.get_grid_visible()},
   };
 }
 } // namespace
@@ -213,6 +214,9 @@ void GUI::parse_occt_view_settings_(const std::string& content)
     apply_num("grid_graphic_y_size", grid_rect.graphic_y_size);
     apply_num("grid_graphic_z_offset", grid_rect.graphic_z_offset);
     m_view->set_occt_grid_rect_params(grid_rect);
+
+    if (ov.contains("grid_visible") && ov["grid_visible"].is_boolean())
+      m_view->set_grid_visible(ov["grid_visible"].get<bool>());
   }
   catch (...)
   {
@@ -777,6 +781,20 @@ void GUI::settings_()
     {
       ImGui::TableSetupColumn("label", ImGuiTableColumnFlags_WidthFixed, k_label_col_w);
       ImGui::TableSetupColumn("control", ImGuiTableColumnFlags_WidthStretch);
+
+      ImGui::TableNextRow();
+      ImGui::TableSetColumnIndex(0);
+      ImGui::AlignTextToFramePadding();
+      ImGui::TextUnformatted("Show grid");
+      ImGui::TableSetColumnIndex(1);
+      bool grid_visible = m_view->get_grid_visible();
+      if (ImGui::Checkbox("##grid_visible", &grid_visible))
+      {
+        m_view->set_grid_visible(grid_visible);
+        save_occt_view_settings();
+      }
+      if (ui_show_help(2) && ImGui::IsItemHovered())
+        ImGui::SetTooltip("Show or hide the OCCT reference grid in the 3D view.");
 
       ImGui::TableNextRow();
       ImGui::TableSetColumnIndex(0);
