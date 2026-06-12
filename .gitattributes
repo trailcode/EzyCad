@@ -1,2 +1,29 @@
-# Consistent LF for Markdown (diffs, GitHub, cross-platform editors)
+# Cross-platform line endings: LF in the repository (see docs/ezycad_code_style.md).
+* text=auto
+
+# Markdown
 *.md text eol=lf
+
+# EzyCad-owned source (not third_party)
+src/** text eol=lf
+tests/** text eol=lf
+scripts/** text eol=lf
+cmake/** text eol=lf
+agents/** text eol=lf
+docs/** text eol=lf
+tools/** text eol=lf
+.github/** text eol=lf
+web/** text eol=lf
+res/scripts/** text eol=lf
+
+CMakeLists.txt text eol=lf
+.clang-format text eol=lf
+.gitattributes text eol=lf
+
+# Binary assets (override path-based text rules above)
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.webp binary
+*.ico binary

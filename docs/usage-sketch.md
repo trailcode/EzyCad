@@ -37,7 +37,7 @@ This guide covers all 2D sketching tools and operations in EzyCad. For the main 
 
 ## Sketch snapping
 
-While you draw or place points in sketch mode, EzyCad helps you align to existing geometry. **Snap dist** and **Snap guide mode** are in the Options panel; guide color is in **Settings -> Sketch** (see [usage-settings.md](usage-settings.md#sketch-tools)).
+While you draw or place points in sketch mode, EzyCad helps you align to existing geometry. **Snap dist**, **Snap guide mode**, and **All co-axial nodes** are in the Options panel; **Snap guide color**, **Snap guide line width**, and the same mode/co-axial toggles are in **Settings -> Sketch** (see [usage-settings.md](usage-settings.md#sketch-tools)).
 
 | | |
 | ---: | --- |

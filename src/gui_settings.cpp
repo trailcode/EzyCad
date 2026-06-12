@@ -75,6 +75,7 @@ std::string GUI::occt_view_settings_json() const
          return nlohmann::json::array({r, g, b});
        }()},
       {"snap_guide_mode", static_cast<int>(Sketch_nodes::get_snap_guide_mode())},
+      {"snap_guide_line_width", Sketch_nodes::get_snap_guide_line_width()},
       {"annotate_all_coaxial_nodes", Sketch_nodes::get_annotate_all_coaxial_nodes()},
       {"ui_verbosity", m_ui_verbosity},
   };
@@ -134,6 +135,7 @@ void GUI::save_occt_view_settings()
          return nlohmann::json::array({r, g, b});
        }()},
       {"snap_guide_mode", static_cast<int>(Sketch_nodes::get_snap_guide_mode())},
+      {"snap_guide_line_width", Sketch_nodes::get_snap_guide_line_width()},
       {"annotate_all_coaxial_nodes", Sketch_nodes::get_annotate_all_coaxial_nodes()},
 #ifndef NDEBUG
       {"show_dbg", m_show_dbg},
@@ -377,6 +379,10 @@ void GUI::parse_gui_panes_settings_(const std::string& content)
           mode <= static_cast<int>(Sketch_nodes::Snap_guide_mode::Both))
         Sketch_nodes::set_snap_guide_mode(static_cast<Sketch_nodes::Snap_guide_mode>(mode));
     }
+
+    Sketch_nodes::set_snap_guide_line_width(1.0f);
+    if (g.contains("snap_guide_line_width") && g["snap_guide_line_width"].is_number())
+      Sketch_nodes::set_snap_guide_line_width(g["snap_guide_line_width"].get<float>());
 
     Sketch_nodes::set_annotate_all_coaxial_nodes(false);
     if (g.contains("annotate_all_coaxial_nodes") && g["annotate_all_coaxial_nodes"].is_boolean())
@@ -1152,6 +1158,33 @@ void GUI::settings_()
             ImGui::BeginTooltip();
             ImGui::PushTextWrapPos(ImGui::GetFontSize() * 35.0f);
             ImGui::TextDisabled("Color used by fullscreen snap guides and snap markers in sketch mode.");
+            ImGui::PopTextWrapPos();
+            ImGui::EndTooltip();
+          }
+        }
+      }
+
+      ImGui::TableNextRow();
+      ImGui::TableSetColumnIndex(0);
+      ImGui::AlignTextToFramePadding();
+      ImGui::TextUnformatted("Snap guide line width");
+      ImGui::TableSetColumnIndex(1);
+      {
+        float line_width = Sketch_nodes::get_snap_guide_line_width();
+        if (ImGui::SliderFloat("##snap_guide_line_width", &line_width, 0.5f, 8.0f, "%.2f"))
+        {
+          Sketch_nodes::set_snap_guide_line_width(line_width);
+          save_occt_view_settings();
+        }
+        if (ui_show_help(2))
+        {
+          ImGui::SameLine(0.0f, ImGui::GetStyle().ItemInnerSpacing.x);
+          ImGui::TextDisabled("(?)");
+          if (ImGui::IsItemHovered())
+          {
+            ImGui::BeginTooltip();
+            ImGui::PushTextWrapPos(ImGui::GetFontSize() * 35.0f);
+            ImGui::TextDisabled("Line width for sketch snap guides (axis lines, markers, and co-axial overlay).");
             ImGui::PopTextWrapPos();
             ImGui::EndTooltip();
           }

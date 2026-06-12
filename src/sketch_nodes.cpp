@@ -17,9 +17,10 @@
 
 namespace
 {
-double                        s_snap_dist_pixels = 35.0;
-Sketch_nodes::Snap_guide_mode s_snap_guide_mode  = Sketch_nodes::Snap_guide_mode::Traditional;
-glm::vec3                     s_snap_guide_color{0.0f, 1.0f, 0.0f};
+double                        s_snap_dist_pixels         = 35.0;
+Sketch_nodes::Snap_guide_mode s_snap_guide_mode          = Sketch_nodes::Snap_guide_mode::Traditional;
+glm::vec3                     s_snap_guide_color         {0.0f, 1.0f, 0.0f};
+float                         s_snap_guide_line_width    = 1.0f;
 bool                          s_annotate_all_coaxial_nodes = false;
 } // namespace
 
@@ -313,17 +314,17 @@ void Sketch_nodes::Impl::update_node_snap_anno_(const gp_Pnt2d& pt, const double
   else
     anno_shape = traditional_shape;
 
-  const glm::vec3& c = s_snap_guide_color;
   if (m_snap_anno.IsNull())
   {
     m_snap_anno = new AIS_Shape(anno_shape);
-    m_snap_anno->SetWidth(3.0);
-    m_snap_anno->SetColor(Quantity_Color(c.x, c.y, c.z, Quantity_TOC_RGB));
+    m_snap_anno->SetWidth(s_snap_guide_line_width);
+    m_snap_anno->SetColor(Quantity_Color(s_snap_guide_color.x, s_snap_guide_color.y, s_snap_guide_color.z, Quantity_TOC_RGB));
     m_ctx.Display(m_snap_anno, true);
   }
   else
   {
     m_snap_anno->Set(anno_shape);
+    m_snap_anno->SetWidth(s_snap_guide_line_width);
     m_ctx.Redisplay(m_snap_anno, true);
   }
 }
@@ -378,17 +379,18 @@ void Sketch_nodes::Impl::update_axis_snap_anno_(int axis_index, const std::vecto
 
   TopoDS_Shape anno_shape = comp;
 
-  const glm::vec3& c = s_snap_guide_color;
   if (m_snap_anno_axis[axis_index].IsNull())
   {
     m_snap_anno_axis[axis_index] = new AIS_Shape(anno_shape);
-    m_snap_anno_axis[axis_index]->SetWidth(1.0);
-    m_snap_anno_axis[axis_index]->SetColor(Quantity_Color(c.x, c.y, c.z, Quantity_TOC_RGB));
+    m_snap_anno_axis[axis_index]->SetWidth(s_snap_guide_line_width);
+    m_snap_anno_axis[axis_index]->SetColor(
+        Quantity_Color(s_snap_guide_color.x, s_snap_guide_color.y, s_snap_guide_color.z, Quantity_TOC_RGB));
     m_ctx.Display(m_snap_anno_axis[axis_index], true);
   }
   else
   {
     m_snap_anno_axis[axis_index]->Set(anno_shape);
+    m_snap_anno_axis[axis_index]->SetWidth(s_snap_guide_line_width);
     m_ctx.Redisplay(m_snap_anno_axis[axis_index], true);
   }
 }
@@ -489,17 +491,18 @@ void Sketch_nodes::Impl::update_global_coaxial_annotations_(double snap_dist)
     builder.Add(comp, small);
   }
 
-  const glm::vec3& c = s_snap_guide_color;
   if (m_global_coax_anno.IsNull())
   {
     m_global_coax_anno = new AIS_Shape(comp);
-    m_global_coax_anno->SetWidth(1.0);
-    m_global_coax_anno->SetColor(Quantity_Color(c.x, c.y, c.z, Quantity_TOC_RGB));
+    m_global_coax_anno->SetWidth(s_snap_guide_line_width);
+    m_global_coax_anno->SetColor(
+        Quantity_Color(s_snap_guide_color.x, s_snap_guide_color.y, s_snap_guide_color.z, Quantity_TOC_RGB));
     m_ctx.Display(m_global_coax_anno, true);
   }
   else
   {
     m_global_coax_anno->Set(comp);
+    m_global_coax_anno->SetWidth(s_snap_guide_line_width);
     m_ctx.Redisplay(m_global_coax_anno, true);
   }
 }
@@ -812,6 +815,10 @@ void Sketch_nodes::get_snap_guide_color(float& r, float& g, float& b)
   g = s_snap_guide_color.y;
   b = s_snap_guide_color.z;
 }
+
+void Sketch_nodes::set_snap_guide_line_width(float width) { s_snap_guide_line_width = std::clamp(width, 0.5f, 8.0f); }
+
+float Sketch_nodes::get_snap_guide_line_width() { return s_snap_guide_line_width; }
 
 void Sketch_nodes::set_annotate_all_coaxial_nodes(bool enable) { s_annotate_all_coaxial_nodes = enable; }
 

@@ -58,7 +58,7 @@ Between those, the pane has **six** collapsible sections. Expand a section to se
    - **Arrow style** — *Standard*, *Sharp*, *Wide*, or *3D shaded*
    - **Arrow orientation** — *Automatic*, *Internal*, or *External*
    - **Show sketch dimensions** — global on/off for length dimensions on all sketches (tool mode may still limit which sketch shows dims when on)
-   - **Permanent node annotation size**, **Underlay highlight color**, **Snap guide color**, **Snap guide mode** (directly under **Sketch**, not inside **Dimensions**)
+   - **Permanent node annotation size**, **Underlay highlight color**, **Snap guide color**, **Snap guide line width** (slider **0.5** to **8.0**; default **1.0**), **Snap guide mode**, **All co-axial nodes** (directly under **Sketch**, not inside **Dimensions**)
 
 6. **Startup project** — **Desktop only:** **Load last opened on startup** (checkbox, with `(?)`), then **Last opened path:** … or **(No path saved yet.)** Then **Save current as startup project**, **Clear saved startup** (with `(?)`). **WebAssembly:** no load-last row; only the two buttons and `(?)`. See [Startup project](#startup-project).
 
@@ -90,7 +90,7 @@ For other non-sketch Options content (for example **Polar duplicate**), see [usa
 
 Sketch-related preferences are edited in the **Options** panel while you use a sketch tool, not in the **Settings** pane:
 
-- **Sketch options** (all sketch tools): **Snap dist** and **Snap guide mode** (*Traditional*, *Fullscreen*, *Both*). A checkbox **All co-axial nodes** enables global mode (when on): axis guide lines + markers for *all* nodes in the current and other visible sketches (full co-axial grid). Off = classic closest-per-axis only. See [How sketch snap works](usage-sketch.md#sketch-snapping) in the sketch guide (axis guides, vertex lock, cross-sketch targets). Snap guide color and mode are also in **Settings -> Sketch**.
+- **Sketch options** (all sketch tools): **Snap dist**, **Snap guide mode** (*Traditional*, *Fullscreen*, *Both*), and **All co-axial nodes** (global co-axial grid vs closest-per-axis only). See [How sketch snap works](usage-sketch.md#sketch-snapping). **Snap guide color**, **Snap guide line width**, **Snap guide mode**, and **All co-axial nodes** are also in **Settings -> Sketch** (persisted in `gui.*` keys below).
 - **Extrude sketch face**: under **Extrude**, **Both sides** and **Material** for the new solid (same document preset as **Normal** mode Options **Material**). Other modes that still show **Material** in Options use that same preset when relevant (for example **Sketch from planar face**).
 - **Add edge** / **Add node** (and similar): a **Shortcuts** line documents TAB / Shift+TAB typing behavior.
 - **Sketch operation** (mirror / revolve axis): mirror, revolve, angle, and clear-axis actions (see [usage-sketch.md](usage-sketch.md#operation-axis-tool)).
@@ -169,6 +169,11 @@ String: ImGui `.ini` text for window positions and docking saved with **SaveIniS
 | `edge_dim_arrow_style` | integer | **0** standard, **1** sharp, **2** wide, **3** 3D shaded. |
 | `edge_dim_arrow_orientation` | integer | **0** automatic, **1** internal, **2** external. |
 | `show_sketch_dimensions` | boolean | When false, hides length dimensions on all sketches. |
+| `permanent_node_anno_scale` | number | Scale for permanent **+** node markers in sketch mode (**0.25** to **3.0**; default **1.0**). |
+| `snap_guide_color` | array of 3 numbers | RGB for sketch snap guides and markers (float **0** to **1** per channel; default green **0**, **1**, **0**). |
+| `snap_guide_mode` | integer | **0** *Traditional* (local markers), **1** *Fullscreen* (view-spanning axis lines), **2** *Both* (default **0**). |
+| `snap_guide_line_width` | number | Open CASCADE line width for snap guides (axis lines, markers, co-axial overlay; **0.5** to **8.0**; default **1.0**). |
+| `annotate_all_coaxial_nodes` | boolean | When true, show axis guides and markers for *all* co-axial nodes (current sketch plus other visible sketches). When false (default), only the closest node per active axis is annotated. Also in sketch **Options**. |
 | `imgui_rounding_general` | number | Window/child/frame/popup rounding (**0** to **32** clamped in code; sliders stop at 16 in the UI). |
 | `imgui_rounding_scroll` | number | Scrollbar and grab rounding (same clamp). |
 | `imgui_rounding_tabs` | number | Tab rounding (same clamp). |
@@ -178,7 +183,7 @@ String: ImGui `.ini` text for window positions and docking saved with **SaveIniS
 | `load_last_opened_on_startup` | boolean | Desktop: open the last `.ezy` on launch. **Legacy:** `load_last_saved_on_startup` is read as a fallback if the newer key is absent. |
 | `last_opened_project_path` | string | Path of the last opened project for the option above. **Legacy:** `last_saved_project_path` is accepted if the newer key is missing. |
 
-Scripting API **`ezy.occt_view_settings_json()`** returns a JSON string with **`occt_view`** plus selected **`gui`** keys (including dimension keys above, **`gui.inspection_orthographic`**, **`gui.view_roll_step_deg`**, **`gui.view_zoom_scroll_scale`** when saved). See [scripting.md](scripting.md).
+Scripting API **`ezy.occt_view_settings_json()`** returns a JSON string with **`occt_view`** plus selected **`gui`** keys (including dimension and snap keys above, **`gui.permanent_node_anno_scale`**, **`gui.inspection_orthographic`**, **`gui.view_roll_step_deg`**, **`gui.view_zoom_scroll_scale`** when saved). See [scripting.md](scripting.md).
 
 ---
 
