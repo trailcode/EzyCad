@@ -215,8 +215,12 @@ void GUI::parse_occt_view_settings_(const std::string& content)
     apply_num("grid_graphic_z_offset", grid_rect.graphic_z_offset);
     m_view->set_occt_grid_rect_params(grid_rect);
 
+    bool grid_visible = m_view->get_grid_visible();
     if (ov.contains("grid_visible") && ov["grid_visible"].is_boolean())
-      m_view->set_grid_visible(ov["grid_visible"].get<bool>());
+      grid_visible = ov["grid_visible"].get<bool>();
+    // Always apply: default m_grid_visible may already match JSON, but the OCCT grid
+    // is not activated until apply_grid_visibility_() runs.
+    m_view->set_grid_visible(grid_visible);
   }
   catch (...)
   {

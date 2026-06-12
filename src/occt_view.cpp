@@ -426,7 +426,7 @@ void Occt_view::init_default()
   m_view->SetZoom(2.0);
   //
 
-  refresh_viewer_grid_();
+  apply_grid_visibility_();
 
   // load();
   //  m_view->FitAll();
@@ -1282,8 +1282,6 @@ bool Occt_view::get_grid_visible() const { return m_grid_visible; }
 
 void Occt_view::set_grid_visible(const bool visible)
 {
-  if (m_grid_visible == visible)
-    return;
   m_grid_visible = visible;
   apply_grid_visibility_();
 }
