@@ -10,4 +10,4 @@ Project home: [https://trailcode.github.io/EzyCad/](https://trailcode.github.io/
 
 ---
 
-Product version appears in the application window title. MIT License; see the `LICENSE` file in the distribution.
+Product version appears in the application window title (e.g. "EzyCad 0.2.0 - ...") and at the top of the Help > About dialog. MIT License; see the `LICENSE` file in the distribution.

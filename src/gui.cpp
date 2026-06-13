@@ -30,6 +30,7 @@
 #include "python_console.h"
 #include "sketch.h"
 #include "utl.h"
+#include "version.h"
 
 // Must be here to prevent compiler warning
 #include <GLFW/glfw3.h>
@@ -569,7 +570,7 @@ void GUI::update_window_title_()
 {
   EZY_ASSERT(m_glfw_window != nullptr);
 
-  const std::string title = std::string("EzyCad - ") + project_title_segment_();
+  const std::string title = std::string("EzyCad ") + EZYCAD_VERSION_STRING + " - " + project_title_segment_();
   if (title == m_cached_window_title)
     return;
 
@@ -633,6 +634,8 @@ void GUI::ensure_about_assets_()
   }
   if (m_about_markdown.empty())
     m_about_markdown = "Could not load res/about.md.\n";
+  else
+    m_about_markdown = std::string("**EzyCad ") + EZYCAD_VERSION_STRING + "**\n\n" + m_about_markdown;
 
   const char* png_paths[] = {
 #ifdef __EMSCRIPTEN__

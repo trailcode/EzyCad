@@ -124,3 +124,37 @@ When using an AI assistant (Grok Build, Cursor, Claude, Copilot, etc.) on this c
 Users who maintain personal/global instruction sets (e.g. in `C:\agents\` or `~/.grok/`) should also consult those alongside this repo's `agents/` notes.
 
 Update this file as new common workflows or commands appear.
+
+## Releasing a New Version (x.y.z Semantic Versioning)
+
+See also the comment in `src/version.h` and the project declaration in `CHANGELOG.md`.
+
+1. Ensure all user-visible changes (UI, shortcuts, Options/Settings, docs, persisted data) have corresponding updates (follow `agents/user-docs-sync.md`).
+2. In `CHANGELOG.md`:
+   - Move the content from the top `## [Unreleased]` section into a new dated release section: `## [X.Y.Z] - YYYY-MM-DD`.
+   - Leave a fresh empty `## [Unreleased]` at the very top.
+   - Update the bottom reference links (`[Unreleased]` compare URL and the new `[X.Y.Z]` tag link).
+3. Bump the version in `src/version.h`:
+   ```c
+   #define EZYCAD_VERSION_MAJOR x
+   #define EZYCAD_VERSION_MINOR y
+   #define EZYCAD_VERSION_PATCH z
+   #define EZYCAD_VERSION_STRING "x.y.z"
+   ```
+   (Keep MAJOR/MINOR/PATCH decisions per [SemVer](https://semver.org/): MAJOR for breaking, MINOR for new backwards-compatible features, PATCH for fixes.)
+4. Verify the version is visible to users:
+   - Window title should read `EzyCad X.Y.Z - <filename or untitled>`.
+   - Help > About should start with a bold **EzyCad X.Y.Z** header (pulled from `EZYCAD_VERSION_STRING`).
+5. Run pre-commit checks:
+   - `.\scripts\format-src.ps1`
+   - `.\scripts\check-nonascii-src.ps1`
+6. Commit the release prep changes (version bump + changelog + any doc tweaks).
+7. Create and push the tag:
+   ```powershell
+   git tag vX.Y.Z
+   git push origin main --tags
+   ```
+8. On GitHub, a release will be associated with the new tag. Optionally edit the release notes on the web UI using the text from the dated CHANGELOG section.
+9. The live docs and binaries for the new version will pick up the tag on the next build/deploy.
+
+On `0.x` versions (current series), minor bumps (`0.1.0` → `0.2.0`) are still allowed to contain breaking changes because the public API is not yet declared stable.

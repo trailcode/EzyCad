@@ -7,12 +7,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.2.0] - 2026-06-13
+
 ### Added
 
 - Consistent **Options pane header** (the current tool/mode name from the toolbar) followed immediately by a small **"?"** contextual documentation button for every mode that renders an Options pane. This includes pure Normal (Inspection) and Sketch inspection modes (previously only active tool modes had the header + button).
 - Centralized `get_doc_url_for_mode(Mode)` map (with `EZY_ASSERT_MSG` ensuring its size matches `Mode::_count`) that drives the "?" help buttons to open the exact user-guide section for the active tool (e.g. `#operation-axis-tool`, `#slot-creation-tool`, `#add-node-tool`, `#rectangle-tool-center-point`, etc.).
 - Unit test (`tests/doc_link_tests.cpp`) that validates the per-mode documentation URLs (including fragment anchors where present) are reachable on the live docs site.
 - Generic issue and PR drafting templates (`agents/issues/issue.md`, `agents/prs/PR.md`) plus updates to `agents/README.md` to list them.
+- Version is now displayed in the application window title (`EzyCad 0.2.0 - filename`) and at the top of the Help > About dialog.
 
 ### Changed
 
@@ -27,6 +30,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Documentation** (`usage.md`, `usage-settings.md`, `ezycad_doc_style.md`): the Options Panel description now explicitly calls out the new tool/mode-name header + "?" documentation button that appears after the header in every Options pane. Cross-references and "Links from the application" guidance were expanded to cover the new in-app help buttons.
 - **Agent / AI documentation** (`agents/ezycad-ascii-source.md`, `agents/README.md`, `agents/dev.md`, `agents.md`): the ASCII-only source rules now explicitly state they apply to `tests/` (EzyCad_tests sources) in addition to `src/`.
 - Various minor cross-references, consistency fixes, and agent template improvements tied to the options-pane and documentation work.
+- Window title and About now surface the product version from `src/version.h`.
 
 ## [0.1.0] - 2026-04-17
 
@@ -66,5 +70,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Initial version tracking: `src/version.h` and this changelog.
 
-[Unreleased]: https://github.com/trailcode/EzyCad/compare/v0.1.0...HEAD
+[Unreleased]: https://github.com/trailcode/EzyCad/compare/v0.2.0...HEAD
+[0.2.0]: https://github.com/trailcode/EzyCad/releases/tag/v0.2.0
 [0.1.0]: https://github.com/trailcode/EzyCad/releases/tag/v0.1.0
