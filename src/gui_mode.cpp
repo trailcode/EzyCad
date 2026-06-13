@@ -36,6 +36,17 @@ void options_table_setup_columns_(float label_col_w, float control_col_w)
   ImGui::TableSetupColumn("control", ImGuiTableColumnFlags_WidthFixed, control_col_w);
 }
 
+void options_right_aligned_label_(const char* text)
+{
+  ImGui::AlignTextToFramePadding();
+  const float text_w  = ImGui::CalcTextSize(text).x;
+  const float col_w   = ImGui::GetColumnWidth();
+  const float x0      = ImGui::GetCursorPosX();
+  const float right_x = x0 + std::max(0.0f, col_w - text_w - ImGui::GetStyle().CellPadding.x * 2.0f);
+  ImGui::SetCursorPosX(right_x);
+  ImGui::TextUnformatted(text);
+}
+
 // Up to `max_frac` digits after the decimal, strip trailing zeros (and a trailing '.').
 void format_double_trim_fraction(char* dst, std::size_t dst_sz, double v, int max_frac)
 {
@@ -338,201 +349,33 @@ void GUI::options_()
   // clang-format off
   switch (get_mode())
   {
-    case Mode::Normal:                options_normal_mode_();                 break;
-    case Mode::Move:                  options_move_mode_();                   break;
-    case Mode::Rotate:                options_rotate_mode_();                 break;
-    case Mode::Scale:                 options_scale_mode_();                  break;
-    case Mode::Sketch_operation_axis: options_sketch_operation_axis_mode_();  break;
-    case Mode::Shape_chamfer:         options_shape_chamfer_mode_();          break;
-    case Mode::Shape_fillet:          options_shape_fillet_mode_();           break;
-    case Mode::Shape_polar_duplicate: options_shape_polar_duplicate_mode_();  break;
+    case Mode::Normal:                          options_normal_mode_();                       break;
+    case Mode::Move:                            options_move_mode_();                         break;
+    case Mode::Rotate:                          options_rotate_mode_();                       break;
+    case Mode::Scale:                           options_scale_mode_();                        break;
+    case Mode::Shape_chamfer:                   options_shape_chamfer_mode_();                break;
+    case Mode::Shape_fillet:                    options_shape_fillet_mode_();                 break;
+    case Mode::Shape_polar_duplicate:           options_shape_polar_duplicate_mode_();        break;
+    
+      // Sketch related modes:
+    case Mode::Sketch_from_planar_face:         options_sketch_from_planer_face_mode_();      break;
+    case Mode::Sketch_operation_axis:           options_sketch_operation_axis_mode_();        break;
+    case Mode::Sketch_face_extrude:             options_sketch_face_extrude_mode_();          break;
+    case Mode::Sketch_dim_anno:                 options_sketch_dim_anno_mode_();              break;
+    case Mode::Sketch_add_node:                 options_sketch_add_node_mode_();              break;
+    case Mode::Sketch_add_edge:                 options_sketch_add_edge_mode_();              break;
+    case Mode::Sketch_add_multi_edges:          options_sketch_add_multi_line_edge_mode_();   break;
+    case Mode::Sketch_add_seg_circle_arc:       options_sketch_add_arc_circle_mode_();        break;
+    case Mode::Sketch_add_square:               options_sketch_add_square_mode_();            break;
+    case Mode::Sketch_add_rectangle:            options_sketch_add_rectangle_mode_();         break;
+    case Mode::Sketch_add_rectangle_center_pt:  options_sketch_add_rectangle_center_mode_();  break;
+    case Mode::Sketch_add_circle:               options_sketch_add_circle_mode_();            break;
+    case Mode::Sketch_add_circle_3_pts:         options_sketch_add_circle_three_pts_mode_();  break;
+    case Mode::Sketch_add_slot:                 options_sketch_add_slot_mode_();              break;
     default:
       break;
   }
   // clang-format on
-
-  auto material_combo_only_ = [&](const char* combo_id)
-  {
-    const std::vector<std::string>& material_names = occt_material_combo_labels_();
-    int                             current_item   = int(m_view->get_default_material().Name());
-    if (current_item < 0 || current_item >= static_cast<int>(material_names.size()))
-      current_item = 0;
-
-    ImGui::SetNextItemWidth(ImGui::GetContentRegionAvail().x);
-    if (ImGui::BeginCombo(combo_id, material_names[static_cast<size_t>(current_item)].data(), ImGuiComboFlags_HeightSmall))
-    {
-      for (int i = 0; i < static_cast<int>(material_names.size()); i++)
-        if (ImGui::Selectable(material_names[static_cast<size_t>(i)].data(), current_item == i))
-        {
-          Graphic3d_MaterialAspect mat(static_cast<Graphic3d_NameOfMaterial>(i));
-          m_view->set_default_material(mat);
-        }
-
-      ImGui::EndCombo();
-    }
-  };
-
-  if (is_sketch_mode(get_mode()))
-  {
-    const auto right_aligned_label = [](const char* text)
-    {
-      ImGui::AlignTextToFramePadding();
-      const float text_w  = ImGui::CalcTextSize(text).x;
-      const float col_w   = ImGui::GetColumnWidth();
-      const float x0      = ImGui::GetCursorPosX();
-      const float right_x = x0 + std::max(0.0f, col_w - text_w - ImGui::GetStyle().CellPadding.x * 2.0f);
-      ImGui::SetCursorPosX(right_x);
-      ImGui::TextUnformatted(text);
-    };
-
-    float snap_dist = float(Sketch_nodes::get_snap_dist());
-
-    float sketch_label_col_w = ImGui::CalcTextSize("Snap dist").x;
-    sketch_label_col_w       = std::max(sketch_label_col_w, ImGui::CalcTextSize("Snap guide mode").x);
-    sketch_label_col_w       = std::max(sketch_label_col_w, ImGui::CalcTextSize("All co-axial nodes").x);
-    if (get_mode() == Mode::Sketch_face_extrude)
-    {
-      sketch_label_col_w = std::max(sketch_label_col_w, ImGui::CalcTextSize("Both sides").x);
-      sketch_label_col_w = std::max(sketch_label_col_w, ImGui::CalcTextSize("Material").x);
-    }
-    sketch_label_col_w += ImGui::GetStyle().CellPadding.x * 2.0f + 8.0f;
-
-    ImGui::TextUnformatted("Sketch options");
-    if (ImGui::BeginTable("options_sketch_sketch", 2, k_options_table_flags))
-    {
-      options_table_setup_columns_(sketch_label_col_w, k_options_sketch_control_col_w);
-
-      ImGui::TableNextRow();
-      ImGui::TableSetColumnIndex(0);
-      right_aligned_label("Snap dist");
-      ImGui::TableSetColumnIndex(1);
-      ImGui::SetNextItemWidth(140.0f);
-      if (ImGui::InputFloat("##snap_dist", &snap_dist, 1.0f, 2.0f, "%.2f"))
-        Sketch_nodes::set_snap_dist(snap_dist);
-
-      ImGui::TableNextRow();
-      ImGui::TableSetColumnIndex(0);
-      right_aligned_label("Snap guide mode");
-      ImGui::TableSetColumnIndex(1);
-      constexpr std::array<const char*, 3> k_snap_guide_mode_labels = {
-          "Traditional",
-          "Fullscreen",
-          "Both",
-      };
-      int snap_mode = static_cast<int>(Sketch_nodes::get_snap_guide_mode());
-      ImGui::SetNextItemWidth(140.0f);
-      if (ImGui::BeginCombo("##snap_guide_mode", k_snap_guide_mode_labels[static_cast<size_t>(snap_mode)],
-                            ImGuiComboFlags_HeightSmall))
-      {
-        for (int i = 0; i < static_cast<int>(k_snap_guide_mode_labels.size()); ++i)
-          if (ImGui::Selectable(k_snap_guide_mode_labels[static_cast<size_t>(i)], i == snap_mode))
-            Sketch_nodes::set_snap_guide_mode(static_cast<Sketch_nodes::Snap_guide_mode>(i));
-        ImGui::EndCombo();
-      }
-      if (ui_show_help(2) && ImGui::IsItemHovered())
-        ImGui::SetTooltip("Traditional: compact local snap marker.\n"
-                          "Fullscreen: full-view crosshair/axis guides.\n"
-                          "Both: show compact marker and fullscreen guides together.");
-
-      ImGui::TableNextRow();
-      ImGui::TableSetColumnIndex(0);
-      right_aligned_label("All co-axial nodes");
-      ImGui::TableSetColumnIndex(1);
-      bool annotate_all = Sketch_nodes::get_annotate_all_coaxial_nodes();
-      if (ImGui::Checkbox("##annotate_all_coaxial", &annotate_all))
-        Sketch_nodes::set_annotate_all_coaxial_nodes(annotate_all);
-      
-      if (ui_show_help(2) && ImGui::IsItemHovered())
-        ImGui::SetTooltip("When on (global mode): axis guide lines + markers for *all* nodes in the current\n"
-                          "sketch and all other visible sketches (shows the full set of horizontal and\n"
-                          "vertical co-axial alignments). When off (default): only closest node per active\n"
-                          "axis is annotated (classic closest-relative behavior).");
-
-      ImGui::EndTable();
-    }
-
-    if (get_mode() == Mode::Sketch_face_extrude)
-    {
-      ImGui::Separator();
-      ImGui::TextUnformatted("Extrude");
-      if (ImGui::BeginTable("options_sketch_extrude", 2, k_options_table_flags))
-      {
-        options_table_setup_columns_(sketch_label_col_w, k_options_sketch_control_col_w);
-
-        bool extrude_both_sides = m_view->shp_extrude().get_both_sides();
-        ImGui::TableNextRow();
-        ImGui::TableSetColumnIndex(0);
-        right_aligned_label("Both sides");
-        ImGui::TableSetColumnIndex(1);
-        if (ImGui::Checkbox("##extrude_both_sides", &extrude_both_sides))
-          m_view->shp_extrude().set_both_sides(extrude_both_sides);
-
-        const std::vector<std::string>& material_names = occt_material_combo_labels_();
-        int                             current_item   = int(m_view->get_default_material().Name());
-        if (current_item < 0 || current_item >= static_cast<int>(material_names.size()))
-          current_item = 0;
-
-        ImGui::TableNextRow();
-        ImGui::TableSetColumnIndex(0);
-        right_aligned_label("Material");
-        ImGui::TableSetColumnIndex(1);
-        ImGui::SetNextItemWidth(120.0f);
-        if (ImGui::BeginCombo("##default_material_sketch_extrude", material_names[static_cast<size_t>(current_item)].data(),
-                              ImGuiComboFlags_HeightSmall))
-        {
-          for (int i = 0; i < static_cast<int>(material_names.size()); i++)
-            if (ImGui::Selectable(material_names[static_cast<size_t>(i)].data(), current_item == i))
-            {
-              Graphic3d_MaterialAspect mat(static_cast<Graphic3d_NameOfMaterial>(i));
-              m_view->set_default_material(mat);
-            }
-          ImGui::EndCombo();
-        }
-
-        ImGui::EndTable();
-      }
-    }
-
-    switch (get_mode())
-    {
-    case Mode::Sketch_dim_anno:
-      break;
-
-    case Mode::Sketch_face_extrude:
-      break;
-
-    case Mode::Sketch_add_edge:
-    case Mode::Sketch_add_multi_edges:
-      ImGui::Separator();
-      ImGui::TextUnformatted("Shortcuts");
-      if (ui_show_help(3))
-        ImGui::TextWrapped("TAB: type edge length. Shift+TAB: type angle (degrees, CCW from +X).");
-      break;
-
-    case Mode::Sketch_add_node:
-      ImGui::Separator();
-      ImGui::TextUnformatted("Shortcuts");
-      if (ui_show_help(3))
-      {
-        ImGui::TextWrapped("TAB: type length along the rubber band. Shift+TAB: type angle (degrees, CCW from +X).");
-        ImGui::TextWrapped(
-            "Snap the first click to an existing sketch point to start a rubber band, then click to place the node "
-            "(or press Enter after typing a length). An unsnapped click still places a single node immediately.");
-      }
-      break;
-
-    default:
-      break;
-    }
-  }
-  else if (get_mode() != Mode::Normal && get_mode() != Mode::Shape_polar_duplicate && get_mode() != Mode::Shape_chamfer &&
-           get_mode() != Mode::Shape_fillet && get_mode() != Mode::Move && get_mode() != Mode::Rotate &&
-           get_mode() != Mode::Scale)
-  {
-    ImGui::Separator();
-    ImGui::TextUnformatted("Material");
-    material_combo_only_("##default_material");
-  }
 
   ImGui::EndChild();
   ImGui::End();
@@ -542,19 +385,7 @@ void GUI::options_normal_mode_()
 {
   EZY_ASSERT(get_mode() == Mode::Normal);
 
-  const auto right_aligned_label = [](const char* text)
-  {
-    ImGui::AlignTextToFramePadding();
-    const float text_w  = ImGui::CalcTextSize(text).x;
-    const float col_w   = ImGui::GetColumnWidth();
-    const float x0      = ImGui::GetCursorPosX();
-    const float right_x = x0 + std::max(0.0f, col_w - text_w - ImGui::GetStyle().CellPadding.x * 2.0f);
-    ImGui::SetCursorPosX(right_x);
-    ImGui::TextUnformatted(text);
-  };
-
   float label_col_w = ImGui::CalcTextSize("Selection Mode").x;
-  label_col_w       = std::max(label_col_w, ImGui::CalcTextSize("Orthographic projection").x);
   label_col_w += ImGui::GetStyle().CellPadding.x * 2.0f + 8.0f;
 
   ImGui::TextUnformatted("Selection");
@@ -565,7 +396,7 @@ void GUI::options_normal_mode_()
     int current_item = static_cast<int>(m_view->get_shp_selection_mode());
     ImGui::TableNextRow();
     ImGui::TableSetColumnIndex(0);
-    right_aligned_label("Selection Mode");
+    options_right_aligned_label_("Selection Mode");
     ImGui::TableSetColumnIndex(1);
     ImGui::SetNextItemWidth(120.0f);
     if (ImGui::BeginCombo("##selection_mode", c_names_TopAbs_ShapeEnum[current_item].data(), ImGuiComboFlags_HeightSmall))
@@ -590,20 +421,6 @@ void GUI::options_normal_mode_()
       }
     }
 
-    bool ortho = m_inspection_orthographic;
-    ImGui::TableNextRow();
-    ImGui::TableSetColumnIndex(0);
-    right_aligned_label("Orthographic projection");
-    ImGui::TableSetColumnIndex(1);
-    if (ImGui::Checkbox("##inspection_orthographic", &ortho))
-    {
-      m_inspection_orthographic = ortho;
-      save_occt_view_settings();
-      m_view->apply_camera_projection();
-    }
-    if (ui_show_help(2) && ImGui::IsItemHovered())
-      ImGui::SetTooltip("Use an orthographic camera while in Inspection mode (no perspective foreshortening).");
-
     ImGui::EndTable();
   }
 
@@ -626,13 +443,17 @@ void GUI::options_normal_mode_()
       }
     ImGui::EndCombo();
   }
+
+  options_orthographic_projection_();
 }
 
 void GUI::options_move_mode_()
 {
-  ImGui::TextUnformatted("Move");
+  EZY_ASSERT(get_mode() == Mode::Move);
+
+  ImGui::TextUnformatted("Shape Move");
   ImGui::Separator();
-  ImGui::TextUnformatted("Move constrain axis:");
+  ImGui::TextUnformatted("Constrain axis:");
 
   Move_options& opts = m_view->shp_move().get_opts();
 
@@ -641,13 +462,25 @@ void GUI::options_move_mode_()
   ImGui::Checkbox("Y", &opts.constr_axis_y);
   ImGui::SameLine();
   ImGui::Checkbox("Z", &opts.constr_axis_z);
+
+  options_orthographic_projection_();
 }
 
-void GUI::options_scale_mode_() {}
+void GUI::options_scale_mode_()
+{
+  EZY_ASSERT(get_mode() == Mode::Scale);
+
+  ImGui::TextUnformatted("Shape scale");
+  ImGui::Separator();
+
+  options_orthographic_projection_();
+}
 
 void GUI::options_rotate_mode_()
 {
-  ImGui::TextUnformatted("Rotation");
+  EZY_ASSERT(get_mode() == Mode::Rotate);
+
+  ImGui::TextUnformatted("Shape rotate");
   ImGui::Separator();
 
   int selected_axis = static_cast<int>(m_view->shp_rotate().get_rotation_axis());
@@ -662,49 +495,20 @@ void GUI::options_rotate_mode_()
 
   if (ImGui::RadioButton("Around Z axis", &selected_axis, static_cast<int>(Rotation_axis::Z_axis)))
     m_view->shp_rotate().set_rotation_axis(Rotation_axis::Z_axis);
-}
 
-void GUI::options_sketch_operation_axis_mode_()
-{
-  ImGui::TextUnformatted("Sketch operation");
-  ImGui::Separator();
-
-  if (m_view->curr_sketch().has_operation_axis())
-  {
-    if (ImGui::Button("Mirror"))
-      m_view->curr_sketch().mirror_selected_edges();
-
-    static float revolve_angle = 360.0f;
-
-    if (ImGui::Button("Revolve"))
-      m_view->revolve_selected(to_radians(revolve_angle));
-
-    ImGui::SetNextItemWidth(80.0f);
-    ImGui::SameLine();
-    ImGui::InputFloat("##float_value", &revolve_angle, 0.0f, 0.0f, "%.2f");
-
-    if (ImGui::Button("Clear axis"))
-      m_view->curr_sketch().clear_operation_axis();
-  }
+  options_orthographic_projection_();
 }
 
 void GUI::options_shape_chamfer_mode_()
 {
-  const auto right_aligned_label = [](const char* text)
-  {
-    ImGui::AlignTextToFramePadding();
-    const float text_w  = ImGui::CalcTextSize(text).x;
-    const float col_w   = ImGui::GetColumnWidth();
-    const float x0      = ImGui::GetCursorPosX();
-    const float right_x = x0 + std::max(0.0f, col_w - text_w - ImGui::GetStyle().CellPadding.x * 2.0f);
-    ImGui::SetCursorPosX(right_x);
-    ImGui::TextUnformatted(text);
-  };
+  EZY_ASSERT(get_mode() == Mode::Shape_chamfer);
 
   float label_col_w = std::max(ImGui::CalcTextSize("Chamfer Mode").x, ImGui::CalcTextSize("Chamfer dist").x);
   label_col_w += ImGui::GetStyle().CellPadding.x * 2.0f + 8.0f;
 
   ImGui::TextUnformatted("Chamfer");
+  ImGui::Separator();
+
   if (ImGui::BeginTable("options_chamfer_tool", 2, k_options_table_flags))
   {
     options_table_setup_columns_(label_col_w, k_options_control_col_w);
@@ -712,7 +516,7 @@ void GUI::options_shape_chamfer_mode_()
     int current_mode = static_cast<int>(m_chamfer_mode);
     ImGui::TableNextRow();
     ImGui::TableSetColumnIndex(0);
-    right_aligned_label("Chamfer Mode");
+    options_right_aligned_label_("Chamfer Mode");
     ImGui::TableSetColumnIndex(1);
     ImGui::SetNextItemWidth(120.0f);
     if (ImGui::Combo("##chamfer_mode", &current_mode, c_chamfer_mode_strs.data(), (int)c_chamfer_mode_strs.size()))
@@ -733,7 +537,7 @@ void GUI::options_shape_chamfer_mode_()
 
     ImGui::TableNextRow();
     ImGui::TableSetColumnIndex(0);
-    right_aligned_label("Chamfer dist");
+    options_right_aligned_label_("Chamfer dist");
     ImGui::TableSetColumnIndex(1);
     ImGui::SetNextItemWidth(100.0f);
     constexpr ImGuiInputTextFlags k_dim_flags = ImGuiInputTextFlags_CharsDecimal | ImGuiInputTextFlags_CharsScientific;
@@ -750,28 +554,22 @@ void GUI::options_shape_chamfer_mode_()
       }
     }
     ImGui::PopID();
-
     ImGui::EndTable();
   }
+
+  options_orthographic_projection_();
 }
 
 void GUI::options_shape_fillet_mode_()
 {
-  const auto right_aligned_label = [](const char* text)
-  {
-    ImGui::AlignTextToFramePadding();
-    const float text_w  = ImGui::CalcTextSize(text).x;
-    const float col_w   = ImGui::GetColumnWidth();
-    const float x0      = ImGui::GetCursorPosX();
-    const float right_x = x0 + std::max(0.0f, col_w - text_w - ImGui::GetStyle().CellPadding.x * 2.0f);
-    ImGui::SetCursorPosX(right_x);
-    ImGui::TextUnformatted(text);
-  };
+  EZY_ASSERT(get_mode() == Mode::Shape_fillet);
 
   float label_col_w = std::max(ImGui::CalcTextSize("Fillet Mode").x, ImGui::CalcTextSize("Fillet radius").x);
   label_col_w += ImGui::GetStyle().CellPadding.x * 2.0f + 8.0f;
 
   ImGui::TextUnformatted("Fillet");
+  ImGui::Separator();
+
   if (ImGui::BeginTable("options_fillet_tool", 2, k_options_table_flags))
   {
     options_table_setup_columns_(label_col_w, k_options_control_col_w);
@@ -779,7 +577,7 @@ void GUI::options_shape_fillet_mode_()
     int current_mode = static_cast<int>(m_fillet_mode);
     ImGui::TableNextRow();
     ImGui::TableSetColumnIndex(0);
-    right_aligned_label("Fillet Mode");
+    options_right_aligned_label_("Fillet Mode");
     ImGui::TableSetColumnIndex(1);
     ImGui::SetNextItemWidth(120.0f);
     if (ImGui::Combo("##fillet_mode", &current_mode, c_fillet_mode_strs.data(), (int)c_fillet_mode_strs.size()))
@@ -800,7 +598,7 @@ void GUI::options_shape_fillet_mode_()
 
     ImGui::TableNextRow();
     ImGui::TableSetColumnIndex(0);
-    right_aligned_label("Fillet radius");
+    options_right_aligned_label_("Fillet radius");
     ImGui::TableSetColumnIndex(1);
     ImGui::SetNextItemWidth(100.0f);
     constexpr ImGuiInputTextFlags k_dim_flags = ImGuiInputTextFlags_CharsDecimal | ImGuiInputTextFlags_CharsScientific;
@@ -812,6 +610,7 @@ void GUI::options_shape_fillet_mode_()
       {
         while (*end == ' ' || *end == '\t')
           ++end;
+
         if (*end == '\0')
           m_view->shp_fillet().set_fillet_radius(p * scale);
       }
@@ -820,26 +619,19 @@ void GUI::options_shape_fillet_mode_()
 
     ImGui::EndTable();
   }
+
+  options_orthographic_projection_();
 }
 
 void GUI::options_shape_polar_duplicate_mode_()
 {
+  EZY_ASSERT(get_mode() == Mode::Shape_polar_duplicate);
+
   auto& polar_dup    = m_view->shp_polar_dup();
   float polar_angle  = float(polar_dup.get_polar_angle());
   int   num_elms     = int(polar_dup.get_num_elms());
   bool  rotate_dups  = polar_dup.get_rotate_dups();
   bool  combine_dups = polar_dup.get_combine_dups();
-
-  const auto right_aligned_label = [](const char* text)
-  {
-    ImGui::AlignTextToFramePadding();
-    const float text_w  = ImGui::CalcTextSize(text).x;
-    const float col_w   = ImGui::GetColumnWidth();
-    const float x0      = ImGui::GetCursorPosX();
-    const float right_x = x0 + std::max(0.0f, col_w - text_w - ImGui::GetStyle().CellPadding.x * 2.0f);
-    ImGui::SetCursorPosX(right_x);
-    ImGui::TextUnformatted(text);
-  };
 
   float label_col_w = ImGui::CalcTextSize("Polar angle").x;
   label_col_w       = std::max(label_col_w, ImGui::CalcTextSize("Num Elms").x);
@@ -849,13 +641,15 @@ void GUI::options_shape_polar_duplicate_mode_()
   label_col_w += ImGui::GetStyle().CellPadding.x * 2.0f + 8.0f;
 
   ImGui::TextUnformatted("Polar duplicate");
+  ImGui::Separator();
+
   if (ImGui::BeginTable("options_polar_dup_tool", 2, k_options_table_flags))
   {
     options_table_setup_columns_(label_col_w, k_options_control_col_w);
 
     ImGui::TableNextRow();
     ImGui::TableSetColumnIndex(0);
-    right_aligned_label("Polar angle");
+    options_right_aligned_label_("Polar angle");
     ImGui::TableSetColumnIndex(1);
     ImGui::SetNextItemWidth(120.0f);
     if (ImGui::InputFloat("##polar_angle", &polar_angle, 0.0f, 0.0f, "%.2f"))
@@ -863,7 +657,7 @@ void GUI::options_shape_polar_duplicate_mode_()
 
     ImGui::TableNextRow();
     ImGui::TableSetColumnIndex(0);
-    right_aligned_label("Num Elms");
+    options_right_aligned_label_("Num Elms");
     ImGui::TableSetColumnIndex(1);
     ImGui::SetNextItemWidth(120.0f);
     if (ImGui::InputInt("##num_elms", &num_elms))
@@ -871,14 +665,14 @@ void GUI::options_shape_polar_duplicate_mode_()
 
     ImGui::TableNextRow();
     ImGui::TableSetColumnIndex(0);
-    right_aligned_label("Rotate dups");
+    options_right_aligned_label_("Rotate dups");
     ImGui::TableSetColumnIndex(1);
     if (ImGui::Checkbox("##rotate_dups", &rotate_dups))
       polar_dup.set_rotate_dups(rotate_dups);
 
     ImGui::TableNextRow();
     ImGui::TableSetColumnIndex(0);
-    right_aligned_label("Combine dups");
+    options_right_aligned_label_("Combine dups");
     ImGui::TableSetColumnIndex(1);
     if (ImGui::Checkbox("##combine_dups", &combine_dups))
       polar_dup.set_combine_dups(combine_dups);
@@ -891,12 +685,13 @@ void GUI::options_shape_polar_duplicate_mode_()
 
     ImGui::TableNextRow();
     ImGui::TableSetColumnIndex(0);
-    right_aligned_label("Material");
+    options_right_aligned_label_("Material");
     ImGui::TableSetColumnIndex(1);
     const std::vector<std::string>& material_names = occt_material_combo_labels_();
     int                             current_item   = int(m_view->get_default_material().Name());
     if (current_item < 0 || current_item >= static_cast<int>(material_names.size()))
       current_item = 0;
+
     ImGui::SetNextItemWidth(120.0f);
     if (ImGui::BeginCombo("##default_material_polar_dup", material_names[static_cast<size_t>(current_item)].data(),
                           ImGuiComboFlags_HeightSmall))
@@ -912,6 +707,287 @@ void GUI::options_shape_polar_duplicate_mode_()
 
     ImGui::EndTable();
   }
+
+  options_orthographic_projection_();
+}
+
+void GUI::options_sketch_from_planer_face_mode_()
+{
+  EZY_ASSERT(get_mode() == Mode::Sketch_from_planar_face);
+
+  ImGui::TextUnformatted("Sketch from planar face");
+  ImGui::Separator();
+
+  options_orthographic_projection_();
+}
+
+void GUI::options_sketch_operation_axis_mode_()
+{
+  EZY_ASSERT(get_mode() == Mode::Sketch_operation_axis);
+
+  options_sketch_common_("Define operation axis");
+
+  if (m_view->curr_sketch().has_operation_axis())
+  {
+    if (ImGui::Button("Mirror"))
+      m_view->curr_sketch().mirror_selected_edges();
+
+    static float revolve_angle = 360.0f;
+
+    if (ImGui::Button("Revolve"))
+      m_view->revolve_selected(to_radians(revolve_angle));
+
+    ImGui::SetNextItemWidth(80.0f);
+    ImGui::SameLine();
+    ImGui::InputFloat("##float_value", &revolve_angle, 0.0f, 0.0f, "%.2f");
+
+    if (ImGui::Button("Clear axis"))
+      m_view->curr_sketch().clear_operation_axis();
+  }
+}
+
+void GUI::options_sketch_face_extrude_mode_()
+{
+  EZY_ASSERT(get_mode() == Mode::Sketch_face_extrude);
+
+  options_sketch_common_("Extrude");
+
+  if (ImGui::BeginTable("options_sketch_extrude", 2, k_options_table_flags))
+  {
+    options_table_setup_columns_(options_sketch_label_col_w_(), k_options_sketch_control_col_w);
+
+    bool extrude_both_sides = m_view->shp_extrude().get_both_sides();
+    ImGui::TableNextRow();
+    ImGui::TableSetColumnIndex(0);
+    options_right_aligned_label_("Both sides");
+    ImGui::TableSetColumnIndex(1);
+    if (ImGui::Checkbox("##extrude_both_sides", &extrude_both_sides))
+      m_view->shp_extrude().set_both_sides(extrude_both_sides);
+
+    const std::vector<std::string>& material_names = occt_material_combo_labels_();
+    int                             current_item   = int(m_view->get_default_material().Name());
+    if (current_item < 0 || current_item >= static_cast<int>(material_names.size()))
+      current_item = 0;
+
+    ImGui::TableNextRow();
+    ImGui::TableSetColumnIndex(0);
+    options_right_aligned_label_("Material");
+    ImGui::TableSetColumnIndex(1);
+    ImGui::SetNextItemWidth(120.0f);
+    if (ImGui::BeginCombo("##default_material_sketch_extrude", material_names[static_cast<size_t>(current_item)].data(),
+                          ImGuiComboFlags_HeightSmall))
+    {
+      for (int i = 0; i < static_cast<int>(material_names.size()); i++)
+        if (ImGui::Selectable(material_names[static_cast<size_t>(i)].data(), current_item == i))
+        {
+          Graphic3d_MaterialAspect mat(static_cast<Graphic3d_NameOfMaterial>(i));
+          m_view->set_default_material(mat);
+        }
+      ImGui::EndCombo();
+    }
+
+    ImGui::EndTable();
+  }
+}
+
+void GUI::options_sketch_dim_anno_mode_()
+{
+  EZY_ASSERT(get_mode() == Mode::Sketch_dim_anno);
+  
+  options_sketch_common_("Dimension");
+}
+
+void GUI::options_sketch_add_node_mode_()
+{
+  EZY_ASSERT(get_mode() == Mode::Sketch_add_node);
+  
+  options_sketch_common_("Add node");
+
+  if (ui_show_help(3))
+  {
+    ImGui::Separator();
+    ImGui::TextUnformatted("Shortcuts");
+
+    ImGui::TextWrapped("TAB: type length along the rubber band. Shift+TAB: type angle (degrees, CCW from +X).");
+    ImGui::TextWrapped("Snap the first click to an existing sketch point to start a rubber band, then click to place the node "
+                       "(or press Enter after typing a length). An unsnapped click still places a single node immediately.");
+  }
+}
+
+void GUI::options_sketch_add_edge_mode_()
+{
+  EZY_ASSERT(get_mode() == Mode::Sketch_add_edge);
+
+  options_sketch_common_("Add edge");
+  options_sketch_add_edges_common_();
+}
+
+void GUI::options_sketch_add_multi_line_edge_mode_()
+{
+  EZY_ASSERT(get_mode() == Mode::Sketch_add_multi_edges);
+
+  options_sketch_common_("Add multi-line edge");
+  options_sketch_add_edges_common_();
+}
+
+void GUI::options_sketch_add_edges_common_()
+{
+  EZY_ASSERT(get_mode() == Mode::Sketch_add_edge || get_mode() == Mode::Sketch_add_multi_edges);
+
+  ImGui::Separator();
+  ImGui::TextUnformatted("Shortcuts");
+  if (ui_show_help(3))
+    ImGui::TextWrapped("TAB: type edge length. Shift+TAB: type angle (degrees, CCW from +X).");
+}
+
+void GUI::options_sketch_add_arc_circle_mode_()
+{
+  EZY_ASSERT(get_mode() == Mode::Sketch_add_seg_circle_arc);
+
+  options_sketch_common_("");
+}
+
+void GUI::options_sketch_add_square_mode_()
+{
+  EZY_ASSERT(get_mode() == Mode::Sketch_add_square);
+
+  options_sketch_common_("");
+}
+
+void GUI::options_sketch_add_rectangle_mode_()
+{
+  EZY_ASSERT(get_mode() == Mode::Sketch_add_rectangle);
+  
+  options_sketch_common_("");
+}
+
+void GUI::options_sketch_add_rectangle_center_mode_()
+{
+  EZY_ASSERT(get_mode() == Mode::Sketch_add_rectangle_center_pt);
+
+  options_sketch_common_("");
+}
+
+void GUI::options_sketch_add_circle_mode_()
+{
+  EZY_ASSERT(get_mode() == Mode::Sketch_add_circle);
+
+  options_sketch_common_("");
+}
+
+void GUI::options_sketch_add_circle_three_pts_mode_()
+{
+  EZY_ASSERT(get_mode() == Mode::Sketch_add_circle_3_pts);
+
+  options_sketch_common_("");
+}
+
+void GUI::options_sketch_add_slot_mode_()
+{
+  EZY_ASSERT(get_mode() == Mode::Sketch_add_slot);
+
+  options_sketch_common_("");
+}
+
+void GUI::options_orthographic_projection_()
+{
+  ImGui::Separator();
+  ImGui::TextUnformatted("View");
+  bool ortho = m_inspection_orthographic;
+  if (ImGui::Checkbox("Orthographic projection", &ortho))
+  {
+    m_inspection_orthographic = ortho;
+    save_occt_view_settings();
+    m_view->apply_camera_projection();
+  }
+  if (ui_show_help(2))
+  {
+    ImGui::SameLine(0.0f, ImGui::GetStyle().ItemInnerSpacing.x);
+    ImGui::TextDisabled("(?)");
+    if (ImGui::IsItemHovered())
+    {
+      ImGui::BeginTooltip();
+      ImGui::PushTextWrapPos(ImGui::GetFontSize() * 35.0f);
+      ImGui::TextDisabled("Use an orthographic camera in non-sketch modes (no perspective foreshortening).");
+      ImGui::PopTextWrapPos();
+      ImGui::EndTooltip();
+    }
+  }
+}
+
+void GUI::options_sketch_common_(const std::string& hdr_str)
+{
+  ImGui::TextUnformatted(hdr_str.c_str());
+  ImGui::Separator();
+
+  ImGui::TextUnformatted("Sketch options");
+  if (ImGui::BeginTable("options_sketch_sketch", 2, k_options_table_flags))
+  {
+    options_table_setup_columns_(options_sketch_label_col_w_(), k_options_sketch_control_col_w);
+
+    ImGui::TableNextRow();
+    ImGui::TableSetColumnIndex(0);
+    options_right_aligned_label_("Snap dist");
+    ImGui::TableSetColumnIndex(1);
+    ImGui::SetNextItemWidth(140.0f);
+    float snap_dist = float(Sketch_nodes::get_snap_dist());
+    if (ImGui::InputFloat("##snap_dist", &snap_dist, 1.0f, 2.0f, "%.2f"))
+      Sketch_nodes::set_snap_dist(snap_dist);
+
+    ImGui::TableNextRow();
+    ImGui::TableSetColumnIndex(0);
+    options_right_aligned_label_("Snap guide mode");
+    ImGui::TableSetColumnIndex(1);
+    constexpr std::array<const char*, 3> k_snap_guide_mode_labels = {
+        "Traditional",
+        "Fullscreen",
+        "Both",
+    };
+    int snap_mode = static_cast<int>(Sketch_nodes::get_snap_guide_mode());
+    ImGui::SetNextItemWidth(140.0f);
+    if (ImGui::BeginCombo("##snap_guide_mode", k_snap_guide_mode_labels[static_cast<size_t>(snap_mode)],
+                          ImGuiComboFlags_HeightSmall))
+    {
+      for (int i = 0; i < static_cast<int>(k_snap_guide_mode_labels.size()); ++i)
+        if (ImGui::Selectable(k_snap_guide_mode_labels[static_cast<size_t>(i)], i == snap_mode))
+          Sketch_nodes::set_snap_guide_mode(static_cast<Sketch_nodes::Snap_guide_mode>(i));
+      ImGui::EndCombo();
+    }
+    if (ui_show_help(2) && ImGui::IsItemHovered())
+      ImGui::SetTooltip("Traditional: compact local snap marker.\n"
+                        "Fullscreen: full-view crosshair/axis guides.\n"
+                        "Both: show compact marker and fullscreen guides together.");
+
+    ImGui::TableNextRow();
+    ImGui::TableSetColumnIndex(0);
+    options_right_aligned_label_("All co-axial nodes");
+    ImGui::TableSetColumnIndex(1);
+    bool annotate_all = Sketch_nodes::get_annotate_all_coaxial_nodes();
+    if (ImGui::Checkbox("##annotate_all_coaxial", &annotate_all))
+      Sketch_nodes::set_annotate_all_coaxial_nodes(annotate_all);
+
+    if (ui_show_help(2) && ImGui::IsItemHovered())
+      ImGui::SetTooltip("When on (global mode): axis guide lines + markers for *all* nodes in the current\n"
+                        "sketch and all other visible sketches (shows the full set of horizontal and\n"
+                        "vertical co-axial alignments). When off (default): only closest node per active\n"
+                        "axis is annotated (classic closest-relative behavior).");
+
+    ImGui::EndTable();
+  }
+}
+
+float GUI::options_sketch_label_col_w_() const
+{
+  float sketch_label_col_w = ImGui::CalcTextSize("Snap dist").x;
+  sketch_label_col_w       = std::max(sketch_label_col_w, ImGui::CalcTextSize("Snap guide mode").x);
+  sketch_label_col_w       = std::max(sketch_label_col_w, ImGui::CalcTextSize("All co-axial nodes").x);
+  if (get_mode() == Mode::Sketch_face_extrude)
+  {
+    sketch_label_col_w = std::max(sketch_label_col_w, ImGui::CalcTextSize("Both sides").x);
+    sketch_label_col_w = std::max(sketch_label_col_w, ImGui::CalcTextSize("Material").x);
+  }
+  sketch_label_col_w += ImGui::GetStyle().CellPadding.x * 2.0f + 8.0f;
+  return sketch_label_col_w;
 }
 
 void GUI::on_key_rotate_mode_(int key)

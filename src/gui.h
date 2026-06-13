@@ -141,7 +141,8 @@ public:
   float permanent_node_anno_scale() const { return m_permanent_node_anno_scale; }
   bool  get_hide_all_shapes() const { return m_hide_all_shapes; }
   void  set_hide_all_shapes(bool hide) { m_hide_all_shapes = hide; }
-  /// Orthographic camera in Inspection mode (Mode::Normal); persisted as `gui.inspection_orthographic`.
+  /// Orthographic camera toggle for non-sketch modes (forces ortho in sketch modes); persisted as
+  /// `gui.inspection_orthographic`.
   bool   inspection_orthographic() const { return m_inspection_orthographic; }
   void   set_inspection_orthographic(bool v) { m_inspection_orthographic = v; }
   bool   get_dark_mode() const { return m_dark_mode; }
@@ -234,13 +235,33 @@ private:
   void options_normal_mode_();
   void options_move_mode_();
   void options_scale_mode_();
-  void on_key_move_mode_(int key);
-  void on_key_rotate_mode_(int key);
-  void options_sketch_operation_axis_mode_();
+  void options_rotate_mode_();
   void options_shape_chamfer_mode_();
   void options_shape_fillet_mode_();
   void options_shape_polar_duplicate_mode_();
-  void options_rotate_mode_();
+  void options_sketch_from_planer_face_mode_();
+  void options_sketch_operation_axis_mode_();
+  void options_sketch_face_extrude_mode_();
+  void options_sketch_dim_anno_mode_();
+  void options_sketch_add_node_mode_();
+  void options_sketch_add_edge_mode_();
+  void options_sketch_add_multi_line_edge_mode_();
+  void options_sketch_add_edges_common_();
+  void options_sketch_add_arc_circle_mode_();
+  void options_sketch_add_square_mode_();
+  void options_sketch_add_rectangle_mode_();
+  void options_sketch_add_rectangle_center_mode_();
+  void options_sketch_add_circle_mode_();
+  void options_sketch_add_circle_three_pts_mode_();
+  void options_sketch_add_slot_mode_();
+
+  // Options related helpers
+  void  options_orthographic_projection_();
+  void  options_sketch_common_(const std::string& hdr_str);
+  float options_sketch_label_col_w_() const;
+
+  void on_key_move_mode_(int key);
+  void on_key_rotate_mode_(int key);
 
   void         dbg_();
   void         initialize_toolbar_();

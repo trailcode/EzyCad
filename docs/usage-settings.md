@@ -78,7 +78,7 @@ If you resize the pane narrower than its controls, a **horizontal scrollbar** ap
 Under **Selection**:
 
 - **Selection Mode** — combo for the 3D pick filter (vertices, edges, faces, solids, and combinations). The **`(?)`** marker links to [shape selection filter hotkeys](usage.md#shape-selection-filter-normal-mode-only) in the usage guide.
-- **Orthographic projection** — checkbox toggling an orthographic camera in inspection mode (sketch modes still force orthographic as before). Persisted as **`gui.inspection_orthographic`**.
+- **Orthographic projection** — checkbox (appears in the Options panel for all non-sketch modes) toggling an orthographic camera (sketch modes still force orthographic). Persisted as **`gui.inspection_orthographic`**.
 
 Under **Material**:
 
@@ -160,7 +160,7 @@ String: ImGui `.ini` text for window positions and docking saved with **SaveIniS
 | `show_lua_console` | boolean | Lua console pane visible. |
 | `show_python_console` | boolean | Python console pane visible (native builds with Python). |
 | `show_dbg` | boolean | Debug pane visible (debug builds only). |
-| `inspection_orthographic` | boolean | **Normal** mode Options: orthographic camera when true (default false). |
+| `inspection_orthographic` | boolean | Non-sketch modes Options: orthographic camera when true (default false). Sketch modes always use orthographic. |
 | `edge_dim_label_h` | integer | Length dimension label placement: **0** near first point, **1** near second, **2** center, **3** automatic. |
 | `edge_dim_line_width` | number | Sketch length dimension line width (**0.5** to **8.0**). |
 | `edge_dim_arrow_size` | number | Arrow head length (**1.0** to **24.0**). |

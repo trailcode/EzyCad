@@ -63,7 +63,7 @@ EzyCad (Easy CAD) is an open-source CAD application for hobbyist machinists to d
 5. **Options Panel**
    - Adjust tool parameters; related controls are grouped by headings (for example **Sketch options**, **Extrude**, **Selection**, **Material**, **Polar duplicate**), depending on the active tool.
    - If you resize the pane narrower than its controls, a **horizontal scrollbar** appears so long labels (for example **Orthographic projection**) stay readable.
-   - **Normal** mode (Inspection): **Selection** is the 3D pick filter and **Orthographic projection** toggles the camera (persisted as `gui.inspection_orthographic`). **Material** is the document preset for new solids that do not inherit from a clicked shape (for example toolbar **Box**, **polar duplicate** output). **Face extrude** reads the same preset in its Options **Material** row.
+   - In non-sketch modes the Options panel shows **Selection** (in Normal/Inspection), tool-specific controls, **Orthographic projection** (toggles the camera; persisted as `gui.inspection_orthographic`), and **Material**. Sketch modes force orthographic projection and show sketch-specific options instead. **Face extrude** reads the same preset in its Options **Material** row.
    - To change material on a solid already in the scene, use the [Shape List](#shape-list).
    - **Chamfer** and **Fillet**: distance and mode only; the result solid keeps the **source shape's material**.
    - **Move**, **Rotate**, and **Scale**: transform options only (no material row there).
