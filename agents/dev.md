@@ -95,7 +95,7 @@ See `scripts/build-occt-v8-wasm.ps1` (and .cmd wrapper) for script options.
 
   Requires `clang-format` (either in PATH or at the default LLVM location).
 
-- **Check ASCII-only in src/** (must pass before commits; also enforced in CI):
+- **Check ASCII-only in src/ and tests/** (EzyCad_tests sources; must pass before commits; also enforced in CI):
 
   ```powershell
   .\scripts\check-nonascii-src.ps1

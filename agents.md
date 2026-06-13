@@ -10,7 +10,7 @@ This file serves as a root-level marker for AI coding assistants. It points to t
 
 ## Key Resources in agents/
 - `agents/dev.md`: Local development and testing commands (e.g. Sphinx documentation builds).
-- `agents/ezycad-ascii-source.md`: ASCII-only rules for files under `src/`.
+- `agents/ezycad-ascii-source.md`: ASCII-only rules for files under `src/` and `tests/` (EzyCad_tests sources).
 - `agents/discoverability-outreach.md`: Notes for posts, discoverability, and outreach.
 - Style guides (in `docs/`): `ezycad_code_style.md` (C++ code) and `ezycad_doc_style.md` (user-facing documentation).
 - `agents/issues/` and `agents/prs/`: Per-issue and per-PR working notes and templates.

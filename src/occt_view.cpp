@@ -1632,7 +1632,7 @@ void Occt_view::apply_camera_projection()
   if (is_headless())
     return;
 
-  const bool ortho = is_sketch_mode(get_mode()) || (get_mode() == Mode::Normal && m_gui.inspection_orthographic());
+  const bool ortho = is_sketch_mode(get_mode()) || m_gui.inspection_orthographic();
 
   Graphic3d_Camera_ptr camera = m_view->Camera();
   if (ortho)

@@ -69,7 +69,11 @@ Between those, the pane has **six** collapsible sections. Expand a section to se
 
 ## Options panel
 
-Open **View -> Options**. Content depends on the active tool mode. Related controls are grouped under headings (for example **Sketch options**, **Extrude**, **Selection**, **Material**).
+Open **View -> Options**. 
+
+The top of the panel shows the name of the current tool/mode followed by a small **"?"** button. The "?" provides a direct link to the relevant section of the user guide for that tool (matching the contextual help added for Options panes).
+
+Content depends on the active tool mode. Related controls are grouped under headings (for example **Sketch options**, **Extrude**, **Selection**, **Material**).
 
 If you resize the pane narrower than its controls, a **horizontal scrollbar** appears so long labels (for example **Orthographic projection**) stay readable.
 
@@ -78,7 +82,7 @@ If you resize the pane narrower than its controls, a **horizontal scrollbar** ap
 Under **Selection**:
 
 - **Selection Mode** — combo for the 3D pick filter (vertices, edges, faces, solids, and combinations). The **`(?)`** marker links to [shape selection filter hotkeys](usage.md#shape-selection-filter-normal-mode-only) in the usage guide.
-- **Orthographic projection** — checkbox toggling an orthographic camera in inspection mode (sketch modes still force orthographic as before). Persisted as **`gui.inspection_orthographic`**.
+- **Orthographic projection** — checkbox (appears in the Options panel for all non-sketch modes) toggling an orthographic camera (sketch modes still force orthographic). Persisted as **`gui.inspection_orthographic`**.
 
 Under **Material**:
 
@@ -160,7 +164,7 @@ String: ImGui `.ini` text for window positions and docking saved with **SaveIniS
 | `show_lua_console` | boolean | Lua console pane visible. |
 | `show_python_console` | boolean | Python console pane visible (native builds with Python). |
 | `show_dbg` | boolean | Debug pane visible (debug builds only). |
-| `inspection_orthographic` | boolean | **Normal** mode Options: orthographic camera when true (default false). |
+| `inspection_orthographic` | boolean | Non-sketch modes Options: orthographic camera when true (default false). Sketch modes always use orthographic. |
 | `edge_dim_label_h` | integer | Length dimension label placement: **0** near first point, **1** near second, **2** center, **3** automatic. |
 | `edge_dim_line_width` | number | Sketch length dimension line width (**0.5** to **8.0**). |
 | `edge_dim_arrow_size` | number | Arrow head length (**1.0** to **24.0**). |

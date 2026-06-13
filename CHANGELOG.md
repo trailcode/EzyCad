@@ -9,7 +9,30 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
-- **Inspection mode** (Normal): **Options -> Orthographic projection** (under **Selection**) toggles an orthographic camera (persisted as `gui.inspection_orthographic`). Sketch modes still force orthographic as before.
+- Consistent **Options pane header** (the current tool/mode name from the toolbar) followed immediately by a small **"?"** contextual documentation button for every mode that renders an Options pane. This includes pure Normal (Inspection) and Sketch inspection modes (previously only active tool modes had the header + button).
+- Centralized `get_doc_url_for_mode(Mode)` map (with `EZY_ASSERT_MSG` ensuring its size matches `Mode::_count`) that drives the "?" help buttons to open the exact user-guide section for the active tool (e.g. `#operation-axis-tool`, `#slot-creation-tool`, `#add-node-tool`, `#rectangle-tool-center-point`, etc.).
+- Unit test (`tests/doc_link_tests.cpp`) that validates the per-mode documentation URLs (including fragment anchors where present) are reachable on the live docs site.
+- Generic issue and PR drafting templates (`agents/issues/issue.md`, `agents/prs/PR.md`) plus updates to `agents/README.md` to list them.
+
+### Changed
+
+- **Documentation** (`usage-sketch.md`): every sketch creation tool now fully documents both Tab (distance / length / radius / dimension) and Shift+Tab (angle / orientation) during placement rubber-bands:
+  - Circle (Center-Radius)
+  - Square Tool
+  - Rectangle Tool (Two Points)
+  - Rectangle Tool (Center Point)
+  - Slot Creation Tool (with explicit note that the first edge defines slot length/orientation while the radius point defines the arc radius / "second edge dim")
+  - Operation Axis Tool
+  Each tool received updates to its Features table, "How to use" steps (with ordering notes), Shortcuts table, a dedicated **Angle Constraint:** subsection, Tips, and (where relevant) workflow or point-order notes. The general "Hotkeys" summary and common sketch hotkeys table were kept in sync.
+- **Documentation** (`usage.md`, `usage-settings.md`, `ezycad_doc_style.md`): the Options Panel description now explicitly calls out the new tool/mode-name header + "?" documentation button that appears after the header in every Options pane. Cross-references and "Links from the application" guidance were expanded to cover the new in-app help buttons.
+- **Agent / AI documentation** (`agents/ezycad-ascii-source.md`, `agents/README.md`, `agents/dev.md`, `agents.md`): the ASCII-only source rules now explicitly state they apply to `tests/` (EzyCad_tests sources) in addition to `src/`.
+- Various minor cross-references, consistency fixes, and agent template improvements tied to the options-pane and documentation work.
+
+## [0.1.0] - 2026-04-17
+
+### Added
+
+- **Orthographic projection** checkbox is now visible in the Options panel for all non-sketch modes (not just pure Normal/Inspection). The setting controls the camera projection for any non-sketch mode (persisted as `gui.inspection_orthographic`). Sketch modes still force orthographic.
 - **Options** pane: horizontal scrollbar when the window is resized narrower than its controls.
 - **Shape List**: right-click a shape **name** to **Delete**; right-click the **M** button for **Delete** as well (click **M** for the material popup).
 - **Settings** (3D view grid) and saved **`occt_view`** JSON: configure Open CASCADE rectangular grid **step** (uniform X/Y), plus **graphic display extent X/Y** and **Z offset** (`V3d_RectangularGrid::SetGraphicValues`). Bundled **`res/ezycad_settings.json`** includes defaults for those keys.
@@ -38,8 +61,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Window title shows the current project file name (e.g. after Open or Save), or `untitled` when there is no path yet; **File > New** clears the name so the title matches an empty document.
 - **Dimension tool behavior:** click a straight edge to toggle a length dimension between its endpoints, or click two nodes to toggle a dimension between them; clicks away from nodes and edges do not create spurious dimensions. Node picks take precedence over edge picks when both could apply; moving the mouse updates node snap feedback in this mode.
 - **Documentation:** `usage-sketch.md` and `usage.md` describe the tool as the **Dimension tool** and document the node-pair model. **Num Lock off** is documented as recommended for numpad view shortcuts (orbit, roll, zoom, snap); **Num Lock on** may remap the keypad on Windows and other OSes (`usage.md`, `usage-occt-view.md`, `usage-settings.md`).
-
-## [0.1.0] - 2026-04-17
 
 ### Added
 

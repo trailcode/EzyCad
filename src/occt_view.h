@@ -107,7 +107,7 @@ public:
 
   // Mode related.
   void on_mode();
-  /// Updates camera perspective/orthographic from current mode and Inspection-mode option.
+  /// Updates camera perspective/orthographic from current mode and the non-sketch orthographic toggle.
   void apply_camera_projection();
   void on_chamfer_mode();
   void on_fillet_mode();

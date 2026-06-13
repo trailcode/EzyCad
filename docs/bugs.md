@@ -16,3 +16,8 @@
 * Add concept of dim or dimension, use with node, a measurement, but does not participate in generating faces.
 * Vendor and commit `third_party/ImGuiColorTextEdit/` into this repository; it has not been maintained upstream for a long time and we should pin a known-good copy.
 * ~~After an edge is split by its midpoint, the split edges do not have midpoints to snap to~~ - FIXED 
+* Operation axis, after adding undo does not work correctly.
+* Add rectangle two points, with angle constraint, preview does not honor it.
+* Add rectangle with center point behaves like the two point version.
+* Add circle from three points is broken.
+* For slot tool, there is no need for the second edge to have a angle constraint. 

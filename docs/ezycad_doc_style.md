@@ -48,7 +48,7 @@ Rules:
 ## Links from the application
 
 - **Help → Usage Guide** should open Read the Docs, e.g. `https://ezycad.readthedocs.io/en/latest/usage.html`, not a GitHub blob URL.
-- In-app help tooltips (Settings **?** buttons, etc.) should use the same base URL and heading anchors (e.g. `#view-roll`).
+- In-app help (Settings **?** buttons, and the **?** button that appears right after the tool/mode name header in every Options pane) should use the same base URL and heading anchors (e.g. `#shape-move-tool-g`, `#add-node-tool`). The per-mode links are defined in the `get_doc_url_for_mode` map (see `src/gui_mode.cpp` and the Options pane header + help button implementation).
 - When you rename a heading, check for broken anchors in `src/` (grep for `readthedocs.io` and old `#fragments`).
 
 ## Build and CI (reference)

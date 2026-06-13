@@ -9,7 +9,7 @@
 4.  [File Operations](#file-operations)
 5.  [Edit Operations](#edit-operations)
 6.  [Modeling Tools](#modeling-tools)
-7.  [Keyboard Shortcuts](#keyboard-shortcuts)
+7.  [Hotkeys](#hotkeys)
 8.  [View Controls](#view-controls)
 9.  [3D viewer (Open CASCADE)](usage-occt-view.md)
 10. [Tips and Tricks](#tips-and-tricks)
@@ -61,11 +61,10 @@ EzyCad (Easy CAD) is an open-source CAD application for hobbyist machinists to d
    - [List 3D solids, materials, and display options](#shape-list)
 
 5. **Options Panel**
-   - Adjust tool parameters; related controls are grouped by headings (for example **Sketch options**, **Extrude**, **Selection**, **Material**, **Polar duplicate**), depending on the active tool.
-   - If you resize the pane narrower than its controls, a **horizontal scrollbar** appears so long labels (for example **Orthographic projection**) stay readable.
-   - **Normal** mode (Inspection): **Selection** is the 3D pick filter and **Orthographic projection** toggles the camera (persisted as `gui.inspection_orthographic`). **Material** is the document preset for new solids that do not inherit from a clicked shape (for example toolbar **Box**, **polar duplicate** output). **Face extrude** reads the same preset in its Options **Material** row.
+   - The top of the panel always shows the name of the current tool/mode (matching the toolbar tooltip), followed immediately by a small **"?"** button. Clicking the "?" opens the online user guide directly to the section describing that specific tool (contextual help; see the per-mode links in the source `get_doc_url_for_mode` map).
+   - Related controls are grouped by headings (for example **Sketch options**, **Extrude**, **Selection**, **Material**, **Polar duplicate**), depending on the active tool.
+   - In non-sketch modes the Options panel shows **Selection** (in Normal/Inspection), tool-specific controls, **Orthographic projection** (toggles the camera mode, and **Material**. Sketch modes force orthographic projection and show sketch-specific options instead. **Face extrude** reads the same preset in its Options **Material** row.
    - To change material on a solid already in the scene, use the [Shape List](#shape-list).
-   - **Chamfer** and **Fillet**: distance and mode only; the result solid keeps the **source shape's material**.
    - **Move**, **Rotate**, and **Scale**: transform options only (no material row there).
    - Sketch-related options (snap, length dimension placement, face extrude, shortcuts) are summarized in **[usage-settings.md](usage-settings.md#options-panel)**.
 
@@ -159,7 +158,7 @@ EzyCad can load a **default document** when it starts (geometry, camera, tool mo
 Edit operations change your model (sketches or 3D shapes) and can be navigated with undo/redo.
 
 - **Delete selected**
-  - Use <kbd>D</kbd> or the <kbd>Delete</kbd> key to remove the currently selected sketch elements or shapes.
+  - Use <kbd>Shift</kbd>+<kbd>D</kbd>, <kbd>Delete</kbd>, or <kbd>Backspace</kbd> to remove the currently selected sketch elements or shapes.
   - Deletions are recorded in the undo history and can be undone/redone.
 
 - **Undo and Redo**
@@ -186,7 +185,7 @@ Press <kbd>Esc</kbd> to cancel the current action or step back to a broader mode
 - **If something is in progress:** <kbd>Esc</kbd> cancels it and discards the change. Examples: cancel a line you are drawing, revert an unconfirmed [move](#shape-move-tool-g)/[rotate](#shape-rotate-tool-r)/[scale](#shape-scale-tool-s), cancel [extrude](#extrude-sketch-face-tool-e) preview, clear the distance or angle input dialog.
 - **If nothing is in progress:** <kbd>Esc</kbd> steps the application to the **parent mode** (one level up):
   - From a **sketch tool** (e.g. Add line, Add circle, Operation axis) -> **Sketch inspection mode**.
-  - From **Sketch inspection**, **Normal**, or any **shape tool** ([Move](#shape-move-tool-g), [Rotate](#shape-rotate-tool-r), [Scale](#shape-scale-tool-s), [Extrude](#extrude-sketch-face-tool-e), [Chamfer](#other-feature-operations), [Fillet](#other-feature-operations), [Polar duplicate](#shape-polar-duplicate-tool), [Create sketch from face](usage-sketch.md#create-sketch-from-planar-face-tool)) -> **Normal** (inspection) mode.
+  - From **Sketch inspection**, **Normal**, or any **shape tool** ([Move](#shape-move-tool-g), [Rotate](#shape-rotate-tool-r), [Scale](#shape-scale-tool-s), [Extrude](#extrude-sketch-face-tool-e), [Chamfer](#other-feature-operations) (<kbd>C</kbd>), [Fillet](#other-feature-operations) (<kbd>F</kbd>), [Polar duplicate](#shape-polar-duplicate-tool), [Create sketch from face](usage-sketch.md#create-sketch-from-planar-face-tool)) -> **Normal** (inspection) mode.
 
 So repeated <kbd>Esc</kbd> from a sketch drawing tool first cancels the current element, then returns to Sketch inspection, then to Normal.
 
@@ -512,14 +511,14 @@ The polar duplicate tool allows you to create multiple copies of selected shapes
 
 ### Other Feature Operations
 
-- Create chamfers
-- Add fillets
+- Create chamfers (<kbd>C</kbd>)
+- Add fillets (<kbd>F</kbd>)
 - Boolean operations:
   - Cut
   - Fuse
   - Common
 
-## Keyboard Shortcuts
+## Hotkeys
 
 ### General Operations
 
@@ -534,7 +533,7 @@ The polar duplicate tool allows you to create multiple copies of selected shapes
 | <kbd>Enter</kbd> | Confirm current operation |
 | <kbd>Tab</kbd> | Distance/dimension input |
 | <kbd>Shift</kbd>+<kbd>Tab</kbd> | Angle input (for line edges with angle constraint) |
-| <kbd>Delete</kbd> | Remove selected elements |
+| <kbd>Shift</kbd>+<kbd>D</kbd>, <kbd>Delete</kbd>, or <kbd>Backspace</kbd> | Remove selected elements |
 
 ### Modeling Shortcuts
 
@@ -544,7 +543,10 @@ The polar duplicate tool allows you to create multiple copies of selected shapes
 | <kbd>R</kbd> | Rotate mode |
 | <kbd>S</kbd> | Scale mode |
 | <kbd>E</kbd> | Extrude mode |
-| <kbd>D</kbd> | Delete selected |
+| <kbd>C</kbd> | Chamfer mode |
+| <kbd>F</kbd> | Fillet mode |
+| <kbd>D</kbd> | Dimension tool (sketch) |
+
 
 ### View navigation
 
@@ -691,12 +693,12 @@ Contributors should follow **[ezycad_code_style.md](ezycad_code_style.md)** for 
 - ![Sketcher_CreateCircle](res/icons/Sketcher_CreateCircle.png) - Add circle (center and radius)
 - ![Sketcher_Create3PointCircle](res/icons/Sketcher_Create3PointCircle.png) - Add circle from three points *(planned feature)*
 - ![Sketcher_CreateSlot](res/icons/Sketcher_CreateSlot.png) - Add slot
-- ![TechDraw_LengthDimension](res/icons/TechDraw_LengthDimension.png) - Dimension tool
+- ![TechDraw_LengthDimension](res/icons/TechDraw_LengthDimension.png) - Dimension tool (<kbd>D</kbd>)
 
 ### 3D Operations
 - ![Design456_Extrude](res/icons/Design456_Extrude.png) - Extrude sketch face (<kbd>E</kbd>)
-- ![PartDesign_Chamfer](res/icons/PartDesign_Chamfer.png) - Chamfer
-- ![PartDesign_Fillet](res/icons/PartDesign_Fillet.png) - Fillet
+- ![PartDesign_Chamfer](res/icons/PartDesign_Chamfer.png) - Chamfer (<kbd>C</kbd>)
+- ![PartDesign_Fillet](res/icons/PartDesign_Fillet.png) - Fillet (<kbd>F</kbd>)
 - ![Draft_PolarArray](res/icons/Draft_PolarArray.png) - Shape polar duplicate
 
 ### Boolean Operations
