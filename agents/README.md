@@ -12,6 +12,8 @@ Root markers `AGENTS.md` and `agents.md` (at the repository root) exist for bett
 | [ezycad-ascii-source.md](ezycad-ascii-source.md) | ASCII-only comments and strings in `src/` and `tests/` (EzyCad_tests sources); points at `ezycad_code_style.md` and `scripts/check-nonascii-src.ps1`. |
 | [user-docs-sync.md](user-docs-sync.md) | When user-visible features are added or changed, which `docs/` files and JSON tables to update (Settings, Options, CHANGELOG). |
 | [discoverability-outreach.md](discoverability-outreach.md) | Draft posts for forums, Reddit, awesome lists (SEO / backlinks). |
+| [issues/issue.md](issues/issue.md) | Template for drafting GitHub issues (copy, fill, rename to NNN-descriptive.md). |
+| [prs/PR.md](prs/PR.md) | Template for drafting GitHub pull requests (copy, fill, rename with branch context). |
 | *(repo root)* [docs/building-occt.md](../docs/building-occt.md) | Download/build OCCT for Windows desktop and wasm. |
 | *(now in docs/)* [ezycad_doc_style.md](../docs/ezycad_doc_style.md) | User guides, Read the Docs, images, in-app doc URLs. |
 | *(now in docs/)* [ezycad_code_style.md](../docs/ezycad_code_style.md) | Coding style, conventions, and best practices. |
