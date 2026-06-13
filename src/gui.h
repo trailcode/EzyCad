@@ -257,7 +257,7 @@ private:
 
   // Options related helpers
   void  options_orthographic_projection_();
-  void  options_sketch_common_(const std::string& hdr_str);
+  void  options_sketch_common_();
   float options_sketch_label_col_w_() const;
 
   void on_key_move_mode_(int key);

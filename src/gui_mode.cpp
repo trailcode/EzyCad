@@ -725,7 +725,7 @@ void GUI::options_sketch_operation_axis_mode_()
 {
   EZY_ASSERT(get_mode() == Mode::Sketch_operation_axis);
 
-  options_sketch_common_("Define operation axis");
+  options_sketch_common_();
 
   if (m_view->curr_sketch().has_operation_axis())
   {
@@ -750,7 +750,7 @@ void GUI::options_sketch_face_extrude_mode_()
 {
   EZY_ASSERT(get_mode() == Mode::Sketch_face_extrude);
 
-  options_sketch_common_("Extrude");
+  options_sketch_common_();
 
   if (ImGui::BeginTable("options_sketch_extrude", 2, k_options_table_flags))
   {
@@ -794,14 +794,14 @@ void GUI::options_sketch_dim_anno_mode_()
 {
   EZY_ASSERT(get_mode() == Mode::Sketch_dim_anno);
   
-  options_sketch_common_("Dimension");
+  options_sketch_common_();
 }
 
 void GUI::options_sketch_add_node_mode_()
 {
   EZY_ASSERT(get_mode() == Mode::Sketch_add_node);
   
-  options_sketch_common_("Add node");
+  options_sketch_common_();
 
   if (ui_show_help(3))
   {
@@ -818,7 +818,7 @@ void GUI::options_sketch_add_edge_mode_()
 {
   EZY_ASSERT(get_mode() == Mode::Sketch_add_edge);
 
-  options_sketch_common_("Add edge");
+  options_sketch_common_();
   options_sketch_add_edges_common_();
 }
 
@@ -826,7 +826,7 @@ void GUI::options_sketch_add_multi_line_edge_mode_()
 {
   EZY_ASSERT(get_mode() == Mode::Sketch_add_multi_edges);
 
-  options_sketch_common_("Add multi-line edge");
+  options_sketch_common_();
   options_sketch_add_edges_common_();
 }
 
@@ -844,49 +844,49 @@ void GUI::options_sketch_add_arc_circle_mode_()
 {
   EZY_ASSERT(get_mode() == Mode::Sketch_add_seg_circle_arc);
 
-  options_sketch_common_("");
+  options_sketch_common_();
 }
 
 void GUI::options_sketch_add_square_mode_()
 {
   EZY_ASSERT(get_mode() == Mode::Sketch_add_square);
 
-  options_sketch_common_("");
+  options_sketch_common_();
 }
 
 void GUI::options_sketch_add_rectangle_mode_()
 {
   EZY_ASSERT(get_mode() == Mode::Sketch_add_rectangle);
   
-  options_sketch_common_("");
+  options_sketch_common_();
 }
 
 void GUI::options_sketch_add_rectangle_center_mode_()
 {
   EZY_ASSERT(get_mode() == Mode::Sketch_add_rectangle_center_pt);
 
-  options_sketch_common_("");
+  options_sketch_common_();
 }
 
 void GUI::options_sketch_add_circle_mode_()
 {
   EZY_ASSERT(get_mode() == Mode::Sketch_add_circle);
 
-  options_sketch_common_("");
+  options_sketch_common_();
 }
 
 void GUI::options_sketch_add_circle_three_pts_mode_()
 {
   EZY_ASSERT(get_mode() == Mode::Sketch_add_circle_3_pts);
 
-  options_sketch_common_("");
+  options_sketch_common_();
 }
 
 void GUI::options_sketch_add_slot_mode_()
 {
   EZY_ASSERT(get_mode() == Mode::Sketch_add_slot);
 
-  options_sketch_common_("");
+  options_sketch_common_();
 }
 
 void GUI::options_orthographic_projection_()
@@ -915,9 +915,9 @@ void GUI::options_orthographic_projection_()
   }
 }
 
-void GUI::options_sketch_common_(const std::string& hdr_str)
+void GUI::options_sketch_common_()
 {
-  ImGui::TextUnformatted(hdr_str.c_str());
+  ImGui::TextUnformatted(c_mode_strs[static_cast<size_t>(get_mode())].data());
   ImGui::Separator();
 
   ImGui::TextUnformatted("Sketch options");
