@@ -254,6 +254,18 @@ jobs:
           Get-Item $zipName | Select Name, Length
           Write-Host "Zip contains a top-level '$topDir' folder with the runnable app."
 
+          # Also produce a direct "EzyCad-Windows-MSVC-Release.zip" for the raw build tree
+          # (the full Release/ folder with EzyCad.exe + all runtime DLLs + res/ etc.).
+          # This is attached to the GitHub Release page (in addition to being an Actions artifact)
+          # so users see a "build msvc" style download link directly on Releases.
+          if ($ref -match 'refs/tags/') {
+            $msvcZip = "EzyCad-Windows-MSVC-Release.zip"
+            Write-Host "Also packaging raw MSVC build tree into $msvcZip (for release asset)"
+            Compress-Archive -Path "build/Release/*" -DestinationPath $msvcZip -Force
+            echo "MSVC_ZIP=$msvcZip" >> $env:GITHUB_ENV
+            Get-Item $msvcZip | Select Name, Length
+          }
+
       - name: Upload portable zip as artifact (easy single-file download)
         uses: actions/upload-artifact@v4
         with:
@@ -281,7 +293,9 @@ jobs:
           draft: false
           prerelease: false
           generate_release_notes: true
-          files: ${{ env.PORTABLE_ZIP }}
+          files: |
+            ${{ env.PORTABLE_ZIP }}
+            ${{ env.MSVC_ZIP }}
           # overwrite_files allows re-attaching/updating the zip if you delete+recreate
           # the same tag (or re-run the workflow for an existing tag) after fixes.
           overwrite_files: true

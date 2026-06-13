@@ -127,7 +127,7 @@ Update this file as new common workflows or commands appear.
 
 ## Releasing a New Version (x.y.z Semantic Versioning)
 
-See also the comment in `src/version.h` and the project declaration in `CHANGELOG.md`.
+See also the comment in `src/version.h`, the project declaration in `CHANGELOG.md`, and `.github/workflows/windows-msvc.yml`.
 
 1. Ensure all user-visible changes (UI, shortcuts, Options/Settings, docs, persisted data) have corresponding updates (follow `agents/user-docs-sync.md`).
 2. In `CHANGELOG.md`:
@@ -149,12 +149,25 @@ See also the comment in `src/version.h` and the project declaration in `CHANGELO
    - `.\scripts\format-src.ps1`
    - `.\scripts\check-nonascii-src.ps1`
 6. Commit the release prep changes (version bump + changelog + any doc tweaks).
-7. Create and push the tag:
+7. **Create and push only the annotated tag** (this is the trigger):
    ```powershell
-   git tag vX.Y.Z
+   git tag -a vX.Y.Z -m "EzyCad X.Y.Z"
    git push origin main --tags
    ```
-8. On GitHub, a release will be associated with the new tag. Optionally edit the release notes on the web UI using the text from the dated CHANGELOG section.
-9. The live docs and binaries for the new version will pick up the tag on the next build/deploy.
+   **Do not** pre-create the GitHub Release with `gh release create`. The CI will create/update the release and attach assets.
+8. Monitor the build: go to the **Actions** tab and watch the "Windows MSVC Build and Test" workflow run for your tag.
+   - The job runs on GitHub's windows-2022 runner (full VS2022 + OCCT prebuilt + vcpkg).
+   - It builds Release, runs tests, and packages artifacts.
+9. When the tag build succeeds:
+   - The GitHub Release page will automatically get:
+     - The portable user download: `EzyCad-X.Y.Z-windows-x64.zip` (self-contained, top-level `EzyCad/` folder, tests exe excluded). This is attached directly to the release assets.
+     - Release notes (from the action + you can edit to paste the detailed dated section from CHANGELOG).
+   - Additionally, under the specific workflow run → "Artifacts", you will find:
+     - `EzyCad-X.Y.Z-windows-x64` (same portable zip).
+     - `EzyCad-Windows-MSVC-Release` (raw `build/Release/` tree containing EzyCad.exe + all DLLs + res/ + everything from the MSVC build; useful for "build" inspection or advanced users). This is **not** automatically a direct release asset; download it from the Actions artifacts list.
+10. (Optional) If you want the raw MSVC build tree as a direct `.zip` asset on the Releases page too, the workflow can be extended (see the packaging step). For now the portable x64 zip is the primary end-user download.
+11. The live docs (Read the Docs) and any GitHub Pages wasm will update on the next scheduled/sync build after the tag.
 
 On `0.x` versions (current series), minor bumps (`0.1.0` → `0.2.0`) are still allowed to contain breaking changes because the public API is not yet declared stable.
+
+**Why the "build msvc download link" appears later:** The MSVC (and portable) artifacts are produced by CI after the (slow) build completes on the GitHub runner. Refresh the Releases page and the Actions run after the workflow finishes. The tag push is what starts everything.
