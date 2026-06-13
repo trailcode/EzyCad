@@ -201,6 +201,19 @@ void GUI::initialize_toolbar_()
   };
 }
 
+const char* GUI::current_mode_description() const
+{
+  for (const auto& b : m_toolbar_buttons)
+  {
+    if (b.data.index() == 0) // holds a Mode
+    {
+      if (std::get<Mode>(b.data) == m_mode)
+        return b.tooltip;
+    }
+  }
+  return "";
+}
+
 void GUI::load_examples_list_()
 {
   m_example_files.clear();

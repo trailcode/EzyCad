@@ -122,6 +122,8 @@ public:
   void         on_mouse_scroll(double xoffset, double yoffset);
   void         on_resize(int width, int height);
   Mode         get_mode() const { return m_mode; }
+  const char*  current_mode_description() const;
+  void         options_doc_help_button_();
   Chamfer_mode get_chamfer_mode() const { return m_chamfer_mode; }
   Fillet_mode  get_fillet_mode() const { return m_fillet_mode; }
   /// Edge dimension value placement: 0 first point, 1 second, 2 center, 3 auto.

@@ -8,6 +8,7 @@
 #include <cstring>
 #include <map>
 #include <string_view>
+#include <unordered_map>
 #include <vector>
 
 #include "geom.h"
@@ -47,6 +48,41 @@ void options_right_aligned_label_(const char* text)
   ImGui::TextUnformatted(text);
 }
 
+std::string get_doc_url_for_mode(Mode mode)
+{
+  static const std::unordered_map<Mode, std::string> doc_urls = {
+      {Mode::Normal, "https://ezycad.readthedocs.io/en/latest/usage.html#user-interface"},
+      {Mode::Move, "https://ezycad.readthedocs.io/en/latest/usage.html#shape-move-tool-g"},
+      {Mode::Rotate, "https://ezycad.readthedocs.io/en/latest/usage.html#shape-rotate-tool-r"},
+      {Mode::Scale, "https://ezycad.readthedocs.io/en/latest/usage.html#shape-scale-tool-s"},
+      {Mode::Sketch_inspection_mode, "https://ezycad.readthedocs.io/en/latest/usage-sketch.html#2d-sketching"}, // general entry point for sketch tools; no narrower section currently
+      {Mode::Sketch_from_planar_face, "https://ezycad.readthedocs.io/en/latest/usage-sketch.html#create-sketch-from-planar-face-tool"},
+      {Mode::Sketch_face_extrude, "https://ezycad.readthedocs.io/en/latest/usage.html#extrude-sketch-face-tool-e"},
+      {Mode::Shape_chamfer, "https://ezycad.readthedocs.io/en/latest/usage.html#other-feature-operations"},
+      {Mode::Shape_fillet, "https://ezycad.readthedocs.io/en/latest/usage.html#other-feature-operations"},
+      {Mode::Shape_polar_duplicate, "https://ezycad.readthedocs.io/en/latest/usage.html#shape-polar-duplicate-tool"},
+      {Mode::Sketch_add_node, "https://ezycad.readthedocs.io/en/latest/usage-sketch.html#add-node-tool"},
+      {Mode::Sketch_add_edge, "https://ezycad.readthedocs.io/en/latest/usage-sketch.html#single-line-edge-tool"},
+      {Mode::Sketch_add_multi_edges, "https://ezycad.readthedocs.io/en/latest/usage-sketch.html#multi-line-edge-tool"},
+      {Mode::Sketch_add_seg_circle_arc, "https://ezycad.readthedocs.io/en/latest/usage-sketch.html#arc-segment-creation-tool"},
+      {Mode::Sketch_operation_axis, "https://ezycad.readthedocs.io/en/latest/usage-sketch.html#operation-axis-tool"},
+      {Mode::Sketch_add_square, "https://ezycad.readthedocs.io/en/latest/usage-sketch.html#square-tool"},
+      {Mode::Sketch_add_rectangle, "https://ezycad.readthedocs.io/en/latest/usage-sketch.html#rectangle-tool-two-points"},
+      {Mode::Sketch_add_rectangle_center_pt, "https://ezycad.readthedocs.io/en/latest/usage-sketch.html#rectangle-tool-center-point"},
+      {Mode::Sketch_add_circle, "https://ezycad.readthedocs.io/en/latest/usage-sketch.html#circle-creation-tools"},
+      {Mode::Sketch_add_circle_3_pts, ""}, // planned feature - no specific section in the docs yet; falls back to main guide
+      {Mode::Sketch_add_slot, "https://ezycad.readthedocs.io/en/latest/usage-sketch.html#slot-creation-tool"},
+      {Mode::Sketch_dim_anno, "https://ezycad.readthedocs.io/en/latest/usage-sketch.html#dimension-tool"},
+  };
+
+  auto it = doc_urls.find(mode);
+  if (it != doc_urls.end() && !it->second.empty()) {
+    return it->second;
+  }
+  // fallback to main guide
+  return "https://ezycad.readthedocs.io/en/latest/usage.html";
+}
+
 // Up to `max_frac` digits after the decimal, strip trailing zeros (and a trailing '.').
 void format_double_trim_fraction(char* dst, std::size_t dst_sz, double v, int max_frac)
 {
@@ -65,6 +101,15 @@ void format_double_trim_fraction(char* dst, std::size_t dst_sz, double v, int ma
 }
 
 } // namespace
+
+void GUI::options_doc_help_button_()
+{
+  ImGui::SameLine(0.0f, ImGui::GetStyle().ItemInnerSpacing.x);
+  if (ImGui::SmallButton("?##options_pane_help"))
+    open_url_(get_doc_url_for_mode(get_mode()));
+  if (ImGui::IsItemHovered())
+    ImGui::SetTooltip("Open the relevant section of the online user guide.");
+}
 
 void GUI::set_mode(Mode mode)
 {
@@ -451,7 +496,8 @@ void GUI::options_move_mode_()
 {
   EZY_ASSERT(get_mode() == Mode::Move);
 
-  ImGui::TextUnformatted("Shape Move");
+  ImGui::TextUnformatted(current_mode_description());
+  options_doc_help_button_();
   ImGui::Separator();
   ImGui::TextUnformatted("Constrain axis:");
 
@@ -470,7 +516,8 @@ void GUI::options_scale_mode_()
 {
   EZY_ASSERT(get_mode() == Mode::Scale);
 
-  ImGui::TextUnformatted("Shape scale");
+  ImGui::TextUnformatted(current_mode_description());
+  options_doc_help_button_();
   ImGui::Separator();
 
   options_orthographic_projection_();
@@ -480,7 +527,8 @@ void GUI::options_rotate_mode_()
 {
   EZY_ASSERT(get_mode() == Mode::Rotate);
 
-  ImGui::TextUnformatted("Shape rotate");
+  ImGui::TextUnformatted(current_mode_description());
+  options_doc_help_button_();
   ImGui::Separator();
 
   int selected_axis = static_cast<int>(m_view->shp_rotate().get_rotation_axis());
@@ -506,7 +554,8 @@ void GUI::options_shape_chamfer_mode_()
   float label_col_w = std::max(ImGui::CalcTextSize("Chamfer Mode").x, ImGui::CalcTextSize("Chamfer dist").x);
   label_col_w += ImGui::GetStyle().CellPadding.x * 2.0f + 8.0f;
 
-  ImGui::TextUnformatted("Chamfer");
+  ImGui::TextUnformatted(current_mode_description());
+  options_doc_help_button_();
   ImGui::Separator();
 
   if (ImGui::BeginTable("options_chamfer_tool", 2, k_options_table_flags))
@@ -567,7 +616,8 @@ void GUI::options_shape_fillet_mode_()
   float label_col_w = std::max(ImGui::CalcTextSize("Fillet Mode").x, ImGui::CalcTextSize("Fillet radius").x);
   label_col_w += ImGui::GetStyle().CellPadding.x * 2.0f + 8.0f;
 
-  ImGui::TextUnformatted("Fillet");
+  ImGui::TextUnformatted(current_mode_description());
+  options_doc_help_button_();
   ImGui::Separator();
 
   if (ImGui::BeginTable("options_fillet_tool", 2, k_options_table_flags))
@@ -640,7 +690,8 @@ void GUI::options_shape_polar_duplicate_mode_()
   label_col_w       = std::max(label_col_w, ImGui::CalcTextSize("Material").x);
   label_col_w += ImGui::GetStyle().CellPadding.x * 2.0f + 8.0f;
 
-  ImGui::TextUnformatted("Polar duplicate");
+  ImGui::TextUnformatted(current_mode_description());
+  options_doc_help_button_();
   ImGui::Separator();
 
   if (ImGui::BeginTable("options_polar_dup_tool", 2, k_options_table_flags))
@@ -715,7 +766,8 @@ void GUI::options_sketch_from_planer_face_mode_()
 {
   EZY_ASSERT(get_mode() == Mode::Sketch_from_planar_face);
 
-  ImGui::TextUnformatted("Sketch from planar face");
+  ImGui::TextUnformatted(current_mode_description());
+  options_doc_help_button_();
   ImGui::Separator();
 
   options_orthographic_projection_();
@@ -917,7 +969,9 @@ void GUI::options_orthographic_projection_()
 
 void GUI::options_sketch_common_()
 {
-  ImGui::TextUnformatted(c_mode_strs[static_cast<size_t>(get_mode())].data());
+  ImGui::TextUnformatted(current_mode_description());
+  options_doc_help_button_();
+
   ImGui::Separator();
 
   ImGui::TextUnformatted("Sketch options");
