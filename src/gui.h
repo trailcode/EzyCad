@@ -251,7 +251,6 @@ private:
   void options_sketch_add_node_mode_();
   void options_sketch_add_edge_mode_();
   void options_sketch_add_multi_line_edge_mode_();
-  void options_sketch_add_edges_common_();
   void options_sketch_add_arc_circle_mode_();
   void options_sketch_add_square_mode_();
   void options_sketch_add_rectangle_mode_();
@@ -263,6 +262,7 @@ private:
   // Options related helpers
   void  options_orthographic_projection_();
   void  options_sketch_common_();
+  void  options_sketch_len_angle_hotkeys_();
   float options_sketch_label_col_w_() const;
 
   void on_key_move_mode_(int key);

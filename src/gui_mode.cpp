@@ -813,6 +813,8 @@ void GUI::options_sketch_operation_axis_mode_()
     if (ImGui::Button("Clear axis"))
       m_view->curr_sketch().clear_operation_axis();
   }
+
+  options_sketch_len_angle_hotkeys_();
 }
 
 void GUI::options_sketch_face_extrude_mode_()
@@ -888,7 +890,7 @@ void GUI::options_sketch_add_edge_mode_()
   EZY_ASSERT(get_mode() == Mode::Sketch_add_edge);
 
   options_sketch_common_();
-  options_sketch_add_edges_common_();
+  options_sketch_len_angle_hotkeys_();
 }
 
 void GUI::options_sketch_add_multi_line_edge_mode_()
@@ -896,17 +898,7 @@ void GUI::options_sketch_add_multi_line_edge_mode_()
   EZY_ASSERT(get_mode() == Mode::Sketch_add_multi_edges);
 
   options_sketch_common_();
-  options_sketch_add_edges_common_();
-}
-
-void GUI::options_sketch_add_edges_common_()
-{
-  EZY_ASSERT(get_mode() == Mode::Sketch_add_edge || get_mode() == Mode::Sketch_add_multi_edges);
-
-  ImGui::Separator();
-  ImGui::TextUnformatted("Shortcuts");
-  if (ui_show_help(3))
-    ImGui::TextWrapped("TAB: type edge length. Shift+TAB: type angle (degrees, CCW from +X).");
+  options_sketch_len_angle_hotkeys_();
 }
 
 void GUI::options_sketch_add_arc_circle_mode_()
@@ -921,6 +913,7 @@ void GUI::options_sketch_add_square_mode_()
   EZY_ASSERT(get_mode() == Mode::Sketch_add_square);
 
   options_sketch_common_();
+  options_sketch_len_angle_hotkeys_();
 }
 
 void GUI::options_sketch_add_rectangle_mode_()
@@ -928,6 +921,7 @@ void GUI::options_sketch_add_rectangle_mode_()
   EZY_ASSERT(get_mode() == Mode::Sketch_add_rectangle);
   
   options_sketch_common_();
+  options_sketch_len_angle_hotkeys_();
 }
 
 void GUI::options_sketch_add_rectangle_center_mode_()
@@ -935,6 +929,7 @@ void GUI::options_sketch_add_rectangle_center_mode_()
   EZY_ASSERT(get_mode() == Mode::Sketch_add_rectangle_center_pt);
 
   options_sketch_common_();
+  options_sketch_len_angle_hotkeys_();
 }
 
 void GUI::options_sketch_add_circle_mode_()
@@ -942,6 +937,7 @@ void GUI::options_sketch_add_circle_mode_()
   EZY_ASSERT(get_mode() == Mode::Sketch_add_circle);
 
   options_sketch_common_();
+  options_sketch_len_angle_hotkeys_();
 }
 
 void GUI::options_sketch_add_circle_three_pts_mode_()
@@ -956,6 +952,7 @@ void GUI::options_sketch_add_slot_mode_()
   EZY_ASSERT(get_mode() == Mode::Sketch_add_slot);
 
   options_sketch_common_();
+  options_sketch_len_angle_hotkeys_();
 }
 
 void GUI::options_orthographic_projection_()
@@ -1044,6 +1041,16 @@ void GUI::options_sketch_common_()
                         "axis is annotated (classic closest-relative behavior).");
 
     ImGui::EndTable();
+  }
+}
+
+void GUI::options_sketch_len_angle_hotkeys_()
+{
+  if (ui_show_help(3))
+  {
+    ImGui::Separator();
+    ImGui::TextUnformatted("Shortcuts");
+    ImGui::TextWrapped("TAB: type edge length. Shift+TAB: type angle (degrees, CCW from +X).");
   }
 }
 
