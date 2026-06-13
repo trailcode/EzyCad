@@ -48,41 +48,6 @@ void options_right_aligned_label_(const char* text)
   ImGui::TextUnformatted(text);
 }
 
-std::string get_doc_url_for_mode(Mode mode)
-{
-  static const std::unordered_map<Mode, std::string> doc_urls = {
-      {Mode::Normal, "https://ezycad.readthedocs.io/en/latest/usage.html#user-interface"},
-      {Mode::Move, "https://ezycad.readthedocs.io/en/latest/usage.html#shape-move-tool-g"},
-      {Mode::Rotate, "https://ezycad.readthedocs.io/en/latest/usage.html#shape-rotate-tool-r"},
-      {Mode::Scale, "https://ezycad.readthedocs.io/en/latest/usage.html#shape-scale-tool-s"},
-      {Mode::Sketch_inspection_mode, "https://ezycad.readthedocs.io/en/latest/usage-sketch.html#2d-sketching"}, // general entry point for sketch tools; no narrower section currently
-      {Mode::Sketch_from_planar_face, "https://ezycad.readthedocs.io/en/latest/usage-sketch.html#create-sketch-from-planar-face-tool"},
-      {Mode::Sketch_face_extrude, "https://ezycad.readthedocs.io/en/latest/usage.html#extrude-sketch-face-tool-e"},
-      {Mode::Shape_chamfer, "https://ezycad.readthedocs.io/en/latest/usage.html#other-feature-operations"},
-      {Mode::Shape_fillet, "https://ezycad.readthedocs.io/en/latest/usage.html#other-feature-operations"},
-      {Mode::Shape_polar_duplicate, "https://ezycad.readthedocs.io/en/latest/usage.html#shape-polar-duplicate-tool"},
-      {Mode::Sketch_add_node, "https://ezycad.readthedocs.io/en/latest/usage-sketch.html#add-node-tool"},
-      {Mode::Sketch_add_edge, "https://ezycad.readthedocs.io/en/latest/usage-sketch.html#single-line-edge-tool"},
-      {Mode::Sketch_add_multi_edges, "https://ezycad.readthedocs.io/en/latest/usage-sketch.html#multi-line-edge-tool"},
-      {Mode::Sketch_add_seg_circle_arc, "https://ezycad.readthedocs.io/en/latest/usage-sketch.html#arc-segment-creation-tool"},
-      {Mode::Sketch_operation_axis, "https://ezycad.readthedocs.io/en/latest/usage-sketch.html#operation-axis-tool"},
-      {Mode::Sketch_add_square, "https://ezycad.readthedocs.io/en/latest/usage-sketch.html#square-tool"},
-      {Mode::Sketch_add_rectangle, "https://ezycad.readthedocs.io/en/latest/usage-sketch.html#rectangle-tool-two-points"},
-      {Mode::Sketch_add_rectangle_center_pt, "https://ezycad.readthedocs.io/en/latest/usage-sketch.html#rectangle-tool-center-point"},
-      {Mode::Sketch_add_circle, "https://ezycad.readthedocs.io/en/latest/usage-sketch.html#circle-creation-tools"},
-      {Mode::Sketch_add_circle_3_pts, ""}, // planned feature - no specific section in the docs yet; falls back to main guide
-      {Mode::Sketch_add_slot, "https://ezycad.readthedocs.io/en/latest/usage-sketch.html#slot-creation-tool"},
-      {Mode::Sketch_dim_anno, "https://ezycad.readthedocs.io/en/latest/usage-sketch.html#dimension-tool"},
-  };
-
-  auto it = doc_urls.find(mode);
-  if (it != doc_urls.end() && !it->second.empty()) {
-    return it->second;
-  }
-  // fallback to main guide
-  return "https://ezycad.readthedocs.io/en/latest/usage.html";
-}
-
 // Up to `max_frac` digits after the decimal, strip trailing zeros (and a trailing '.').
 void format_double_trim_fraction(char* dst, std::size_t dst_sz, double v, int max_frac)
 {
@@ -102,11 +67,51 @@ void format_double_trim_fraction(char* dst, std::size_t dst_sz, double v, int ma
 
 } // namespace
 
+std::string GUI::get_doc_url_for_mode(Mode mode)
+{
+  static const std::unordered_map<Mode, std::string> doc_urls = {
+      // clang-format off
+      {Mode::Normal,                          "https://ezycad.readthedocs.io/en/latest/usage.html#user-interface"},
+      {Mode::Move,                            "https://ezycad.readthedocs.io/en/latest/usage.html#shape-move-tool-g"},
+      {Mode::Rotate,                          "https://ezycad.readthedocs.io/en/latest/usage.html#shape-rotate-tool-r"},
+      {Mode::Scale,                           "https://ezycad.readthedocs.io/en/latest/usage.html#shape-scale-tool-s"},
+      {Mode::Sketch_inspection_mode,          "https://ezycad.readthedocs.io/en/latest/usage-sketch.html#2d-sketching"}, // general entry point for sketch tools; no narrower section currently
+      {Mode::Sketch_from_planar_face,         "https://ezycad.readthedocs.io/en/latest/usage-sketch.html#create-sketch-from-planar-face-tool"},
+      {Mode::Sketch_face_extrude,             "https://ezycad.readthedocs.io/en/latest/usage.html#extrude-sketch-face-tool-e"},
+      {Mode::Shape_chamfer,                   "https://ezycad.readthedocs.io/en/latest/usage.html#other-feature-operations"},
+      {Mode::Shape_fillet,                    "https://ezycad.readthedocs.io/en/latest/usage.html#other-feature-operations"},
+      {Mode::Shape_polar_duplicate,           "https://ezycad.readthedocs.io/en/latest/usage.html#shape-polar-duplicate-tool"},
+      {Mode::Sketch_add_node,                 "https://ezycad.readthedocs.io/en/latest/usage-sketch.html#add-node-tool"},
+      {Mode::Sketch_add_edge,                 "https://ezycad.readthedocs.io/en/latest/usage-sketch.html#single-line-edge-tool"},
+      {Mode::Sketch_add_multi_edges,          "https://ezycad.readthedocs.io/en/latest/usage-sketch.html#multi-line-edge-tool"},
+      {Mode::Sketch_add_seg_circle_arc,       "https://ezycad.readthedocs.io/en/latest/usage-sketch.html#arc-segment-creation-tool"},
+      {Mode::Sketch_operation_axis,           "https://ezycad.readthedocs.io/en/latest/usage-sketch.html#operation-axis-tool"},
+      {Mode::Sketch_add_square,               "https://ezycad.readthedocs.io/en/latest/usage-sketch.html#square-tool"},
+      {Mode::Sketch_add_rectangle,            "https://ezycad.readthedocs.io/en/latest/usage-sketch.html#rectangle-tool-two-points"},
+      {Mode::Sketch_add_rectangle_center_pt,  "https://ezycad.readthedocs.io/en/latest/usage-sketch.html#rectangle-tool-center-point"},
+      {Mode::Sketch_add_circle,               "https://ezycad.readthedocs.io/en/latest/usage-sketch.html#circle-creation-tools"},
+      {Mode::Sketch_add_circle_3_pts,         ""}, // planned feature - no specific section in the docs yet; falls back to main guide
+      {Mode::Sketch_add_slot,                 "https://ezycad.readthedocs.io/en/latest/usage-sketch.html#slot-creation-tool"},
+      {Mode::Sketch_dim_anno,                 "https://ezycad.readthedocs.io/en/latest/usage-sketch.html#dimension-tool"},
+      // clang-format on
+  };
+
+  EZY_ASSERT_MSG(doc_urls.size() == static_cast<std::size_t>(Mode::_count),
+                 "get_doc_url_for_mode: doc_urls map size does not match Mode::_count");
+
+  auto it = doc_urls.find(mode);
+  if (it != doc_urls.end() && !it->second.empty()) {
+    return it->second;
+  }
+  // fallback to main guide
+  return "https://ezycad.readthedocs.io/en/latest/usage.html";
+}
+
 void GUI::options_doc_help_button_()
 {
   ImGui::SameLine(0.0f, ImGui::GetStyle().ItemInnerSpacing.x);
   if (ImGui::SmallButton("?##options_pane_help"))
-    open_url_(get_doc_url_for_mode(get_mode()));
+    open_url_(GUI::get_doc_url_for_mode(get_mode()));
   if (ImGui::IsItemHovered())
     ImGui::SetTooltip("Open the relevant section of the online user guide.");
 }
