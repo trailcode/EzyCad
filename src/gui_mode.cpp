@@ -408,6 +408,7 @@ void GUI::options_()
     case Mode::Shape_polar_duplicate:           options_shape_polar_duplicate_mode_();        break;
     
       // Sketch related modes:
+    case Mode::Sketch_inspection_mode:          options_sketch_inspection_mode_();            break;
     case Mode::Sketch_from_planar_face:         options_sketch_from_planer_face_mode_();      break;
     case Mode::Sketch_operation_axis:           options_sketch_operation_axis_mode_();        break;
     case Mode::Sketch_face_extrude:             options_sketch_face_extrude_mode_();          break;
@@ -431,9 +432,20 @@ void GUI::options_()
   ImGui::End();
 }
 
+void GUI::options_sketch_inspection_mode_()
+{
+  EZY_ASSERT(get_mode() == Mode::Sketch_inspection_mode);
+
+  options_sketch_common_();
+}
+
 void GUI::options_normal_mode_()
 {
   EZY_ASSERT(get_mode() == Mode::Normal);
+
+  ImGui::TextUnformatted(current_mode_description());
+  options_doc_help_button_();
+  ImGui::Separator();
 
   float label_col_w = ImGui::CalcTextSize("Selection Mode").x;
   label_col_w += ImGui::GetStyle().CellPadding.x * 2.0f + 8.0f;

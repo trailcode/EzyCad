@@ -237,6 +237,7 @@ private:
   // Mode + Options panel (gui_mode.cpp)
   void options_();
   void options_normal_mode_();
+  void options_sketch_inspection_mode_();
   void options_move_mode_();
   void options_scale_mode_();
   void options_rotate_mode_();
