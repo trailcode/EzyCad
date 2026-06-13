@@ -69,7 +69,11 @@ Between those, the pane has **six** collapsible sections. Expand a section to se
 
 ## Options panel
 
-Open **View -> Options**. Content depends on the active tool mode. Related controls are grouped under headings (for example **Sketch options**, **Extrude**, **Selection**, **Material**).
+Open **View -> Options**. 
+
+The top of the panel shows the name of the current tool/mode followed by a small **"?"** button. The "?" provides a direct link to the relevant section of the user guide for that tool (matching the contextual help added for Options panes).
+
+Content depends on the active tool mode. Related controls are grouped under headings (for example **Sketch options**, **Extrude**, **Selection**, **Material**).
 
 If you resize the pane narrower than its controls, a **horizontal scrollbar** appears so long labels (for example **Orthographic projection**) stay readable.
 

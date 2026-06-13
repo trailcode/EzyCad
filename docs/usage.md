@@ -61,11 +61,10 @@ EzyCad (Easy CAD) is an open-source CAD application for hobbyist machinists to d
    - [List 3D solids, materials, and display options](#shape-list)
 
 5. **Options Panel**
-   - Adjust tool parameters; related controls are grouped by headings (for example **Sketch options**, **Extrude**, **Selection**, **Material**, **Polar duplicate**), depending on the active tool.
-   - If you resize the pane narrower than its controls, a **horizontal scrollbar** appears so long labels (for example **Orthographic projection**) stay readable.
-   - In non-sketch modes the Options panel shows **Selection** (in Normal/Inspection), tool-specific controls, **Orthographic projection** (toggles the camera; persisted as `gui.inspection_orthographic`), and **Material**. Sketch modes force orthographic projection and show sketch-specific options instead. **Face extrude** reads the same preset in its Options **Material** row.
+   - The top of the panel always shows the name of the current tool/mode (matching the toolbar tooltip), followed immediately by a small **"?"** button. Clicking the "?" opens the online user guide directly to the section describing that specific tool (contextual help; see the per-mode links in the source `get_doc_url_for_mode` map).
+   - Related controls are grouped by headings (for example **Sketch options**, **Extrude**, **Selection**, **Material**, **Polar duplicate**), depending on the active tool.
+   - In non-sketch modes the Options panel shows **Selection** (in Normal/Inspection), tool-specific controls, **Orthographic projection** (toggles the camera mode, and **Material**. Sketch modes force orthographic projection and show sketch-specific options instead. **Face extrude** reads the same preset in its Options **Material** row.
    - To change material on a solid already in the scene, use the [Shape List](#shape-list).
-   - **Chamfer** and **Fillet**: distance and mode only; the result solid keeps the **source shape's material**.
    - **Move**, **Rotate**, and **Scale**: transform options only (no material row there).
    - Sketch-related options (snap, length dimension placement, face extrude, shortcuts) are summarized in **[usage-settings.md](usage-settings.md#options-panel)**.
 

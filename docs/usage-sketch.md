@@ -213,16 +213,20 @@ The center-radius circle tool allows you to create circles by defining a center 
 
 | | |
 | ---: | --- |
-| **Two-point creation** | Click to set the center, then click to set the radius |
+| **Two-point creation** | Click to set the center, then click to set the radius point |
 | **Real-time preview** | See the circle shape while dragging the radius point |
 | **Precise radius control** | Use the distance input dialog (<kbd>Tab</kbd> key) for exact radius values |
-| **Snap support** | Automatically snaps to existing nodes and geometry |
+| **Angle constraint** | Use the angle input dialog (<kbd>Shift</kbd>+<kbd>Tab</kbd>) to constrain the direction from the center to the radius point |
+| **Snap support** | Automatically snaps to existing nodes and geometry (disabled when angle constraint is active) |
 
 **How to use:**
 1. ![Circle Tool](res/icons/Sketcher_CreateCircle.png) Select the **Circle** tool from the toolbar
 2. Click to set the center point of the circle
 3. Move the mouse to see a preview of the circle
-4. Click to set the radius point, or press <kbd>Tab</kbd> to enter an exact radius value
+4. Click to set the radius point, or use input dialogs for precise control:
+   - Press <kbd>Tab</kbd> to enter an exact radius value
+   - Press <kbd>Shift</kbd>+<kbd>Tab</kbd> to enter an exact angle value (in degrees, CCW from +X) to constrain the direction from the center
+   - When using both: apply angle (<kbd>Shift</kbd>+<kbd>Tab</kbd>) first, then radius (<kbd>Tab</kbd>).
 5. The circle will be created and added to your sketch
 
 **Shortcuts:**
@@ -230,13 +234,24 @@ The center-radius circle tool allows you to create circles by defining a center 
 | | |
 | ---: | --- |
 | <kbd>Tab</kbd> | Open distance input dialog for precise radius control |
+| <kbd>Shift</kbd>+<kbd>Tab</kbd> | Open angle input dialog to constrain the radius direction from the center (after center point is set) |
 | <kbd>Escape</kbd> | Cancel the current circle creation |
 | <kbd>Enter</kbd> | Finalize the circle (if using distance input) |
+
+**Angle Constraint:**
+- After setting the center point, press **Shift+Tab** to open the angle input dialog
+- Enter the desired angle in degrees (0 deg = horizontal right from center, 90 deg = vertical up, counterclockwise)
+- Once the angle is entered, the radius point placement is constrained to that direction from the center
+- You can still move the mouse to adjust the radius (distance from center) while maintaining the direction, or use <kbd>Tab</kbd> for an exact radius value
+- The distance input (<kbd>Tab</kbd>) can still be used in combination with the angle constraint
+- **Order when using both**: When requiring both an angle and a radius constraint, apply the angle constraint first (<kbd>Shift</kbd>+<kbd>Tab</kbd>), then the radius constraint (<kbd>Tab</kbd>).
+- **Note**: When an angle constraint is active, snapping to nodes is disabled to maintain the angle precision
 
 **Tips:**
 - Use the snap feature to create circles that are precisely positioned relative to existing geometry
 - The circle tool works in any sketch plane
 - Circles can be used as construction geometry or as part of your final design
+- Constraining the angle when placing the radius point is useful for precise directional placement (e.g. for future snapping operations involving circle nodes)
 
 #### Three-Point Circle Tool (Planned Feature)
 
@@ -259,10 +274,11 @@ The three-point circle tool is planned for future development. This feature woul
 The circle tool follows this workflow:
 
 1. **Activate Tool**: Select the circle creation mode
-2. **Point Placement**: Click to place the center point, then click to place the radius point
+2. **Point Placement**: Click to place the center point, then click to place the radius point (use <kbd>Tab</kbd> for exact radius or <kbd>Shift</kbd>+<kbd>Tab</kbd> for angle constraint on the direction from center)
 3. **Preview**: See real-time preview of the circle as you move the mouse
 4. **Finalization**: Click to complete the circle creation
 5. **Integration**: The circle becomes part of the sketch and can be used for further operations
+- Precise control with <kbd>Tab</kbd> / <kbd>Shift</kbd>+<kbd>Tab</kbd> works the same as for line edges (see [Line Edge Creation Tools](#line-edge-creation-tools))
 
 **Common Operations with Circles:**
 
@@ -359,13 +375,17 @@ The square tool allows you to create perfect squares by defining a center point 
 | **Perfect square** | Automatically ensures all sides are equal length |
 | **Orientation control** | The square's orientation is determined by the direction from center to edge midpoint |
 | **Precise size control** | Use the distance input dialog (<kbd>Tab</kbd> key) for exact side lengths |
-| **Snap support** | Automatically snaps to existing nodes and geometry |
+| **Angle constraint** | Use the angle input dialog (<kbd>Shift</kbd>+<kbd>Tab</kbd>) to constrain the orientation (direction from center to edge midpoint) |
+| **Snap support** | Automatically snaps to existing nodes and geometry (disabled when angle constraint is active) |
 
 **How to use:**
 1. ![Sketcher_CreateSquare](res/icons/Sketcher_CreateSquare.png) Select the **Square** tool from the toolbar
 2. Click to set the center point of the square
 3. Move the mouse to see a preview of the square
-4. Click to set the midpoint of one edge (this defines both the size and orientation), or press <kbd>Tab</kbd> to enter an exact side length value
+4. Click to set the midpoint of one edge (this defines both the size and orientation), or use input dialogs for precise control:
+   - Press <kbd>Tab</kbd> to enter an exact side length value
+   - Press <kbd>Shift</kbd>+<kbd>Tab</kbd> to enter an exact angle value (in degrees, CCW from +X) to constrain the orientation (direction from center)
+   - When using both: apply angle (<kbd>Shift</kbd>+<kbd>Tab</kbd>) first, then size (<kbd>Tab</kbd>).
 5. The square will be created with four edges and added to your sketch
 
 **Shortcuts:**
@@ -373,14 +393,25 @@ The square tool allows you to create perfect squares by defining a center point 
 | | |
 | ---: | --- |
 | <kbd>Tab</kbd> | Open distance input dialog for precise side length control |
+| <kbd>Shift</kbd>+<kbd>Tab</kbd> | Open angle input dialog to constrain the orientation (direction from center to edge midpoint; after center point is set) |
 | <kbd>Escape</kbd> | Cancel the current square creation |
 | <kbd>Enter</kbd> | Finalize the square (if using distance input) |
+
+**Angle Constraint:**
+- After setting the center point, press **Shift+Tab** to open the angle input dialog
+- Enter the desired angle in degrees (0 deg = horizontal right from center, 90 deg = vertical up, counterclockwise)
+- Once the angle is entered, the edge midpoint placement is constrained to that direction from the center (fixing the square's orientation)
+- You can still move the mouse to adjust the size (distance from center to midpoint) while maintaining the orientation, or use <kbd>Tab</kbd> for an exact side length
+- The distance input (<kbd>Tab</kbd>) can still be used in combination with the angle constraint
+- **Order when using both**: When requiring both an angle and a size constraint, apply the angle constraint first (<kbd>Shift</kbd>+<kbd>Tab</kbd>), then the size constraint (<kbd>Tab</kbd>).
+- **Note**: When an angle constraint is active, snapping to nodes is disabled to maintain the angle precision
 
 **Tips:**
 - The distance from center to edge midpoint determines half the side length
 - Use the snap feature to create squares that are precisely positioned relative to existing geometry
 - The square tool works in any sketch plane
 - Squares automatically form closed faces that can be [extruded](usage.md#extrude-sketch-face-tool-e)
+- Constraining the angle/orientation when placing the edge midpoint is useful for precise rotated squares (e.g. for future snapping operations)
 
 #### Rectangle Tool (Two Points)
 
@@ -395,14 +426,18 @@ The rectangle tool allows you to create rectangles by defining two opposite corn
 | **Two-point creation** | Click to set the first corner, then click to set the opposite corner |
 | **Real-time preview** | See the rectangle shape while moving the mouse |
 | **Precise size control** | Use the distance input dialog (<kbd>Tab</kbd> key) for exact dimensions |
-| **Snap support** | Automatically snaps to existing nodes and geometry |
+| **Angle constraint** | Use the angle input dialog (<kbd>Shift</kbd>+<kbd>Tab</kbd>) to constrain the direction from the first to the opposite corner |
+| **Snap support** | Automatically snaps to existing nodes and geometry (disabled when angle constraint is active) |
 | **Automatic corner calculation** | The system automatically calculates the other two corners |
 
 **How to use:**
 1. ![Sketcher_CreateRectangle](res/icons/Sketcher_CreateRectangle.png) Select the **Rectangle** tool from the toolbar
 2. Click to set the first corner point
 3. Move the mouse to see a preview of the rectangle
-4. Click to set the opposite corner point, or press <kbd>Tab</kbd> to enter exact distance values
+4. Click to set the opposite corner point, or use input dialogs for precise control:
+   - Press <kbd>Tab</kbd> to enter exact distance values
+   - Press <kbd>Shift</kbd>+<kbd>Tab</kbd> to enter an exact angle value (in degrees, CCW from +X) to constrain the direction from the first corner
+   - When using both: apply angle (<kbd>Shift</kbd>+<kbd>Tab</kbd>) first, then distances (<kbd>Tab</kbd>).
 5. The rectangle will be created with four edges and added to your sketch
 
 **Shortcuts:**
@@ -410,8 +445,18 @@ The rectangle tool allows you to create rectangles by defining two opposite corn
 | | |
 | ---: | --- |
 | <kbd>Tab</kbd> | Open distance input dialog for precise dimension control |
+| <kbd>Shift</kbd>+<kbd>Tab</kbd> | Open angle input dialog to constrain the direction from the first to the opposite corner (after first corner is set) |
 | <kbd>Escape</kbd> | Cancel the current rectangle creation |
 | <kbd>Enter</kbd> | Finalize the rectangle (if using distance input) |
+
+**Angle Constraint:**
+- After setting the first corner point, press **Shift+Tab** to open the angle input dialog
+- Enter the desired angle in degrees (0 deg = horizontal right, 90 deg = vertical up, counterclockwise)
+- Once the angle is entered, the placement of the opposite corner is constrained to that direction from the first corner (affecting the temporary diagonal/rubber-band during placement)
+- You can still move the mouse to adjust the dimensions while maintaining the direction, or use <kbd>Tab</kbd> for exact distance values
+- The distance input (<kbd>Tab</kbd>) can still be used in combination with the angle constraint
+- **Order when using both**: When requiring both an angle and distance constraints, apply the angle constraint first (<kbd>Shift</kbd>+<kbd>Tab</kbd>), then the distances (<kbd>Tab</kbd>).
+- **Note**: When an angle constraint is active, snapping to nodes is disabled to maintain the angle precision
 
 **Tips:**
 - The two points define opposite corners of the rectangle (diagonal)
@@ -419,6 +464,7 @@ The rectangle tool allows you to create rectangles by defining two opposite corn
 - Use the snap feature to create rectangles that are precisely positioned relative to existing geometry
 - The rectangle tool works in any sketch plane
 - Rectangles automatically form closed faces that can be [extruded](usage.md#extrude-sketch-face-tool-e)
+- Constraining the angle/direction when placing the opposite corner is useful for precise placement during the rubber-band phase (e.g. for future snapping operations)
 
 #### Rectangle Tool (Center Point)
 
@@ -434,13 +480,17 @@ The rectangle with center point tool allows you to create rectangles by defining
 | **Real-time preview** | See the rectangle shape while moving the mouse |
 | **Centered creation** | The rectangle is centered on the first point |
 | **Precise size control** | Use the distance input dialog (<kbd>Tab</kbd> key) for exact dimensions |
-| **Snap support** | Automatically snaps to existing nodes and geometry |
+| **Angle constraint** | Use the angle input dialog (<kbd>Shift</kbd>+<kbd>Tab</kbd>) to constrain the orientation (direction from center to corner point) |
+| **Snap support** | Automatically snaps to existing nodes and geometry (disabled when angle constraint is active) |
 
 **How to use:**
 1. ![Sketcher_CreateRectangle_Center](res/icons/Sketcher_CreateRectangle_Center.png) Select the **Rectangle with Center Point** tool from the toolbar
 2. Click to set the center point of the rectangle
 3. Move the mouse to see a preview of the rectangle
-4. Click to set a corner point (defines both size and orientation), or press <kbd>Tab</kbd> to enter exact distance values
+4. Click to set a corner point (defines both size and orientation), or use input dialogs for precise control:
+   - Press <kbd>Tab</kbd> to enter exact distance values
+   - Press <kbd>Shift</kbd>+<kbd>Tab</kbd> to enter an exact angle value (in degrees, CCW from +X) to constrain the orientation (direction from center)
+   - When using both: apply angle (<kbd>Shift</kbd>+<kbd>Tab</kbd>) first, then distances (<kbd>Tab</kbd>).
 5. The rectangle will be created with four edges and added to your sketch
 
 **Shortcuts:**
@@ -448,8 +498,18 @@ The rectangle with center point tool allows you to create rectangles by defining
 | | |
 | ---: | --- |
 | <kbd>Tab</kbd> | Open distance input dialog for precise dimension control |
+| <kbd>Shift</kbd>+<kbd>Tab</kbd> | Open angle input dialog to constrain the orientation (direction from center to corner point; after center point is set) |
 | <kbd>Escape</kbd> | Cancel the current rectangle creation |
 | <kbd>Enter</kbd> | Finalize the rectangle (if using distance input) |
+
+**Angle Constraint:**
+- After setting the center point, press **Shift+Tab** to open the angle input dialog
+- Enter the desired angle in degrees (0 deg = horizontal right from center, 90 deg = vertical up, counterclockwise)
+- Once the angle is entered, the corner point placement is constrained to that direction from the center (fixing the rectangle's orientation)
+- You can still move the mouse to adjust the size (distance from center to corner) while maintaining the orientation, or use <kbd>Tab</kbd> for exact distance values
+- The distance input (<kbd>Tab</kbd>) can still be used in combination with the angle constraint
+- **Order when using both**: When requiring both an angle and a size constraint, apply the angle constraint first (<kbd>Shift</kbd>+<kbd>Tab</kbd>), then the size constraint (<kbd>Tab</kbd>).
+- **Note**: When an angle constraint is active, snapping to nodes is disabled to maintain the angle precision
 
 **Tips:**
 - The rectangle is centered on the first point you click
@@ -457,6 +517,7 @@ The rectangle with center point tool allows you to create rectangles by defining
 - Use the snap feature to create rectangles that are precisely positioned relative to existing geometry
 - The rectangle tool works in any sketch plane
 - Rectangles automatically form closed faces that can be [extruded](usage.md#extrude-sketch-face-tool-e)
+- Constraining the angle/orientation when placing the corner point is useful for precise rotated rectangles (e.g. for future snapping operations)
 
 **Comparison of Rectangle Tools:**
 
@@ -482,18 +543,22 @@ The slot tool allows you to create an oblong or oval-shaped slot with rounded en
 | **Rounded ends** | Creates semicircular arcs at both ends with equal radius |
 | **Parallel edges** | The two straight edges connecting the arcs are always parallel |
 | **Precise size control** | Use the distance input dialog (<kbd>Tab</kbd> key) for exact dimensions |
-| **Snap support** | Automatically snaps to existing nodes and geometry |
+| **Angle constraint** | Use the angle input dialog (<kbd>Shift</kbd>+<kbd>Tab</kbd>) to constrain the orientation (direction of the slot length between arc centers, or radius direction) |
+| **Snap support** | Automatically snaps to existing nodes and geometry (disabled when angle constraint is active) |
 
 **How to use:**
 1. ![Sketcher_CreateSlot](res/icons/Sketcher_CreateSlot.png) Select the **Slot** tool from the toolbar
 2. Click to set the center point of the first arc (start of slot)
-3. Move the mouse to see a preview of the first edge
-4. Click to set the center point of the second arc (end of slot)
+3. Move the mouse to see a preview of the first edge (this will define the length and orientation of the slot)
+4. Click to set the center point of the second arc (end of slot), or use input for precise control on the first edge (length/orientation of slot):
+   - Press <kbd>Tab</kbd> to enter exact length value for the slot
+   - Press <kbd>Shift</kbd>+<kbd>Tab</kbd> to enter exact angle (in degrees) for the slot direction
 5. Move the mouse to see a preview of the slot shape
-6. Click to set a point that defines the radius of the arcs, or press <kbd>Tab</kbd> to enter exact distance values
+6. Click to set a point that defines the radius of the arcs, or press <kbd>Tab</kbd> to enter exact distance values (this second dimension defines the radius of the rounded ends)
    - **Important**: The radius is measured from the second arc center (the point you clicked in step 4) to this third point
    - This radius determines the cross section: the slot's cross-section dimension equals 2 * radius
 7. The slot will be automatically created with two arcs and two straight edges and added to your sketch
+   - When using both angle and distance on a rubber-band step: apply angle (<kbd>Shift</kbd>+<kbd>Tab</kbd>) first, then distance (<kbd>Tab</kbd>).
 
 **Point order:**
 - **First click**: First arc center - the center of the arc at one end of the slot
@@ -507,10 +572,22 @@ The slot tool allows you to create an oblong or oval-shaped slot with rounded en
 
 | | |
 | ---: | --- |
-| <kbd>Tab</kbd> | Open distance input dialog for precise dimension control |
+| <kbd>Tab</kbd> | Open distance input dialog for precise dimension control (length of slot on first edge, or radius on third point) |
+| <kbd>Shift</kbd>+<kbd>Tab</kbd> | Open angle input dialog to constrain the orientation (direction of the slot on first edge, or radius direction on third point; after previous point set) |
 | <kbd>Escape</kbd> | Cancel the current slot creation |
 | <kbd>Enter</kbd> | Finalize the slot (if using distance input) |
 | **Note** | The slot is automatically finalized after the third point, so no manual finalization is needed |
+
+**Angle Constraint:**
+- The tool has two main rubber-band stages where angle/distance apply:
+  - After the first arc center: the rubber-band to the second arc center defines the slot length and orientation (direction of the parallel edges).
+  - After the second arc center: the rubber-band (or point) for the radius defines the arc radius (cross-section width = 2 * radius); angle here can constrain the radius direction if useful.
+- Press **Shift+Tab** to open the angle input dialog at the relevant rubber-band stage.
+- Enter the desired angle in degrees (0 deg = horizontal right, 90 deg = vertical up, counterclockwise). This constrains the direction for that edge/dim.
+- You can still adjust the corresponding distance (Tab for length or radius) while the angle is locked.
+- The distance input (<kbd>Tab</kbd>) can still be used in combination with the angle constraint.
+- **Order when using both**: When requiring both an angle and a distance constraint on a rubber-band step, apply the angle constraint first (<kbd>Shift</kbd>+<kbd>Tab</kbd>), then the distance constraint (<kbd>Tab</kbd>).
+- **Note**: When an angle constraint is active, snapping to nodes is disabled to maintain the angle precision. The first edge primarily controls slot length/orientation; the radius point controls the rounded ends' size.
 
 **Tips:**
 - The slot length is determined by the distance between the first and second arc centers
@@ -524,6 +601,7 @@ The slot tool allows you to create an oblong or oval-shaped slot with rounded en
 - The slot tool works in any sketch plane
 - Slots automatically form closed faces that can be [extruded](usage.md#extrude-sketch-face-tool-e)
 - The slot orientation is determined by the direction from the first to the second arc center
+- Constraining angle on the first edge (for slot direction) or radius point is useful for precise placement (e.g. for future snapping operations)
 
 **Technical details:**
 
@@ -552,6 +630,8 @@ The operation axis tool allows you to define a reference line for mirroring and 
 | ---: | --- |
 | **Two-point definition** | Click to set the start point, then click to set the end point of the axis line |
 | **Real-time preview** | See the axis line while moving the mouse |
+| **Precise length control** | Use the distance input dialog (<kbd>Tab</kbd> key) for exact axis length |
+| **Angle constraint** | Use the angle input dialog (<kbd>Shift</kbd>+<kbd>Tab</kbd>) to constrain the direction of the axis line |
 | **Automatic redefinition** | If an axis already exists, clicking again will clear it and start defining a new one |
 | **Mirror operations** | Use the defined axis to mirror selected edges |
 | **Revolve operations** | Use the defined axis to revolve selected edges or faces |
@@ -560,7 +640,10 @@ The operation axis tool allows you to define a reference line for mirroring and 
 1. ![Sketcher_MirrorSketch](res/icons/Sketcher_MirrorSketch.png) Select the **Operation Axis** tool from the toolbar
 2. Click to set the start point of the axis line
 3. Move the mouse to see a preview of the axis line
-4. Click to set the end point to finalize the axis
+4. Click to set the end point to finalize the axis, or use input dialogs for precise control:
+   - Press <kbd>Tab</kbd> to enter an exact length value for the axis line
+   - Press <kbd>Shift</kbd>+<kbd>Tab</kbd> to enter an exact angle value (in degrees, CCW from +X) to constrain the direction of the axis
+   - When using both: apply angle (<kbd>Shift</kbd>+<kbd>Tab</kbd>) first, then length (<kbd>Tab</kbd>).
 5. Once defined, the axis can be used for mirror or revolve operations
 
 **Redefining the Axis:**
@@ -581,13 +664,25 @@ Once an axis is defined, the options panel (under the **Sketch operation** headi
 
 | | |
 | ---: | --- |
+| <kbd>Tab</kbd> | Open distance input dialog for precise axis length control |
+| <kbd>Shift</kbd>+<kbd>Tab</kbd> | Open angle input dialog to constrain the direction of the axis (after first point is set) |
 | <kbd>Escape</kbd> | Cancel the current axis definition |
+
+**Angle Constraint:**
+- After setting the first point, press **Shift+Tab** to open the angle input dialog
+- Enter the desired angle in degrees (0 deg = horizontal right, 90 deg = vertical up, counterclockwise)
+- Once the angle is entered, the axis line is constrained to that direction from the start point
+- You can still move the mouse to adjust the length of the axis while maintaining the direction, or use <kbd>Tab</kbd> for an exact length value
+- The distance input (<kbd>Tab</kbd>) can still be used in combination with the angle constraint
+- **Order when using both**: When requiring both an angle and a length constraint, apply the angle constraint first (<kbd>Shift</kbd>+<kbd>Tab</kbd>), then the length constraint (<kbd>Tab</kbd>).
+- **Note**: When an angle constraint is active, snapping to nodes is disabled to maintain the angle precision
 
 **Tips:**
 - The operation axis is a reference line used for geometric transformations
 - Select edges or faces before using the Mirror or Revolve operations
 - The axis can be redefined at any time by clicking again in operation axis mode
 - Use snap points for precise axis placement relative to existing geometry
+- Constraining the angle when placing the axis is useful for precise directional reference lines (e.g. for future snapping operations)
 
 ### Dimension Tool
 
