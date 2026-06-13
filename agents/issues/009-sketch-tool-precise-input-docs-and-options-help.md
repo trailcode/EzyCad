@@ -2,6 +2,8 @@
 
 **Suggested labels:** `enhancement`, `docs`, `sketch`, `ui`
 
+**Merged as:** https://github.com/trailcode/EzyCad/pull/132 (closes #131)
+
 ---
 
 ## Title (GitHub)

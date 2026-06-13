@@ -1,5 +1,7 @@
 # PR - sketch-tool-input-docs-options-pane-help
 
+**Merged:** https://github.com/trailcode/EzyCad/pull/132
+
 ## Title
 
 Docs + UI: document Tab + Shift+Tab for Operation Axis / Rectangles / Slot / Circle + add consistent Options pane headers + contextual "?" help buttons (incl. for Inspection modes)
