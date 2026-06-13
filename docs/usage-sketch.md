@@ -5,18 +5,19 @@ This guide covers all 2D sketching tools and operations in EzyCad. For the main 
 ## Table of Contents
 1. [2D Sketching](#2d-sketching)
 2. [Sketch snapping](#sketch-snapping)
-3. [Line Edge Creation Tools](#line-edge-creation-tools)
-4. [Multi-Line Edge Tool](#multi-line-edge-tool)
-5. [Circle Creation Tools](#circle-creation-tools)
-6. [Circle Creation Workflow](#circle-creation-workflow)
-7. [Arc Segment Creation Tool](#arc-segment-creation-tool)
-8. [Rectangle and Square Creation Tools](#rectangle-and-square-creation-tools)
-9. [Slot Creation Tool](#slot-creation-tool)
-10. [Operation Axis Tool](#operation-axis-tool)
-11. [Dimension Tool](#dimension-tool)
-12. [Add Node Tool](#add-node-tool)
-13. [Create Sketch from Planar Face Tool](#create-sketch-from-planar-face-tool)
-14. [Image underlay](#image-underlay)
+3. [Hotkeys](#hotkeys)
+4. [Line Edge Creation Tools](#line-edge-creation-tools)
+5. [Multi-Line Edge Tool](#multi-line-edge-tool)
+6. [Circle Creation Tools](#circle-creation-tools)
+7. [Circle Creation Workflow](#circle-creation-workflow)
+8. [Arc Segment Creation Tool](#arc-segment-creation-tool)
+9. [Rectangle and Square Creation Tools](#rectangle-and-square-creation-tools)
+10. [Slot Creation Tool](#slot-creation-tool)
+11. [Operation Axis Tool](#operation-axis-tool)
+12. [Dimension Tool](#dimension-tool)
+13. [Add Node Tool](#add-node-tool)
+14. [Create Sketch from Planar Face Tool](#create-sketch-from-planar-face-tool)
+15. [Image underlay](#image-underlay)
 
 ---
 
@@ -53,6 +54,37 @@ While you draw or place points in sketch mode, EzyCad helps you align to existin
 - For precise corners, approach a vertex until both horizontal and vertical guides appear, then click.
 - Automatic **edge midpoints** are snap targets but do not show **+** markers and are not listed under **Nodes** in the [Sketch List](usage.md#sketch-list) (that list is user-placed points only).
 
+## Hotkeys
+
+Common keyboard shortcuts (hotkeys) while working in 2D sketch mode or with sketch tools. Tool-specific shortcuts are also listed in each tool's section below for quick reference during that workflow.
+
+### Common sketch hotkeys
+
+| Hotkey                        | Action |
+| ---                           | --- |
+| <kbd>Tab</kbd>                | Open precise distance / length / radius / size input dialog (most creation tools) |
+| <kbd>Shift</kbd>+<kbd>Tab</kbd> | Open angle (degrees) input dialog for constrained line / multi-line / add-node placement |
+| <kbd>Esc</kbd>                | Cancel the current tool, step, or rubber-band preview |
+| <kbd>Enter</kbd>              | Confirm current numeric input or finalize the step |
+| <kbd>D</kbd>                  | Activate the Dimension tool |
+| <kbd>Shift</kbd>+<kbd>D</kbd> / <kbd>Delete</kbd> / <kbd>Backspace</kbd> | Delete the selected sketch element(s) or dimension |
+| <kbd>Right-click</kbd>        | In multi-line / sequences: complete current item and continue, or finish the whole operation |
+
+**Notes:**
+- <kbd>Tab</kbd> / <kbd>Shift+Tab</kbd> work even when focus is in the 3D view (they are routed to the active sketch tool for precise entry).
+- When an angle constraint is active, node snapping is typically relaxed or disabled to preserve the exact angle.
+- Global hotkeys (mode switches like <kbd>G</kbd> Move, undo, view navigation, selection filters) are in the main [Hotkeys](usage.md#hotkeys) section.
+
+### Move / rotate / polar axis constraints (when those options are active)
+
+| Hotkey   | Action |
+| ---      | --- |
+| <kbd>X</kbd> | Toggle / cycle X axis constraint (move) or rotation axis (rotate / polar) |
+| <kbd>Y</kbd> | Toggle / cycle Y |
+| <kbd>Z</kbd> | Toggle / cycle Z |
+
+See the individual tool sections (and [usage.md#hotkeys](usage.md#hotkeys)) for full context and additional view / general hotkeys.
+
 ### Line Edge Creation Tools
 ![Line Edge Tool](res/icons/Sketcher_Element_Line_Edge.png)
 
@@ -83,7 +115,7 @@ The single line edge tool allows you to create straight line segments between tw
    - When using both: apply angle (<kbd>Shift</kbd>+<kbd>Tab</kbd>) first, then distance (<kbd>Tab</kbd>).
 5. The line edge will be created and added to your sketch
 
-**Keyboard shortcuts:**
+**Shortcuts:**
 
 | | |
 | ---: | --- |
@@ -137,7 +169,7 @@ The multi-line edge tool allows you to create multiple connected line segments i
 5. Continue clicking to add more connected edges, each new click starts a new edge from the previous edge's end point
 6. Press <kbd>Right-click</kbd> to finalize the entire multi-line sequence and add all edges to your sketch
 
-**Keyboard shortcuts:**
+**Shortcuts:**
 
 | | |
 | ---: | --- |
@@ -193,7 +225,7 @@ The center-radius circle tool allows you to create circles by defining a center 
 4. Click to set the radius point, or press <kbd>Tab</kbd> to enter an exact radius value
 5. The circle will be created and added to your sketch
 
-**Keyboard shortcuts:**
+**Shortcuts:**
 
 | | |
 | ---: | --- |
@@ -282,7 +314,7 @@ The arc segment tool allows you to create circular arc edges by defining three p
 | **Second click** | Middle point - a point that lies on the arc between start and end |
 | **Third click** | End point - where the arc ends |
 
-**Keyboard shortcuts:**
+**Shortcuts:**
 
 | | |
 | ---: | --- |
@@ -336,7 +368,7 @@ The square tool allows you to create perfect squares by defining a center point 
 4. Click to set the midpoint of one edge (this defines both the size and orientation), or press <kbd>Tab</kbd> to enter an exact side length value
 5. The square will be created with four edges and added to your sketch
 
-**Keyboard shortcuts:**
+**Shortcuts:**
 
 | | |
 | ---: | --- |
@@ -373,7 +405,7 @@ The rectangle tool allows you to create rectangles by defining two opposite corn
 4. Click to set the opposite corner point, or press <kbd>Tab</kbd> to enter exact distance values
 5. The rectangle will be created with four edges and added to your sketch
 
-**Keyboard shortcuts:**
+**Shortcuts:**
 
 | | |
 | ---: | --- |
@@ -411,7 +443,7 @@ The rectangle with center point tool allows you to create rectangles by defining
 4. Click to set a corner point (defines both size and orientation), or press <kbd>Tab</kbd> to enter exact distance values
 5. The rectangle will be created with four edges and added to your sketch
 
-**Keyboard shortcuts:**
+**Shortcuts:**
 
 | | |
 | ---: | --- |
@@ -471,7 +503,7 @@ The slot tool allows you to create an oblong or oval-shaped slot with rounded en
   - The slot's cross section (perpendicular to the slot length) equals twice this radius
   - Both arcs use the same radius, creating a symmetric slot
 
-**Keyboard shortcuts:**
+**Shortcuts:**
 
 | | |
 | ---: | --- |
@@ -545,7 +577,7 @@ Once an axis is defined, the options panel (under the **Sketch operation** headi
 | **Revolve angle input** | Set the angle for revolve operations (default: 360 degrees) |
 | **Clear axis button** | Manually clear the current operation axis |
 
-**Keyboard Shortcuts:**
+**Shortcuts:**
 
 | | |
 | ---: | --- |
@@ -570,16 +602,23 @@ Edge dimension tool creates/removes **length dimensions between two sketch nodes
 | **Node-pair dimensions** | Dimensions are defined by two sketch nodes |
 | **Fast edge workflow** | Click a straight edge to toggle a dimension between its two endpoint nodes |
 | **Two-node workflow** | Click one node, then a second node, to toggle a dimension between them; after the first node, a **preview line** follows the cursor (same idea as the line-edge rubber band), so two-node mode is visually distinct from a single edge click |
-| **Selectable/deletable** | Dimension objects can be selected in sketch mode and deleted (for example with the keyboard shortcut <kbd>d</kbd>) |
+| **Selectable/deletable** | Dimension objects can be selected in sketch mode and deleted (for example with <kbd>Shift</kbd>+<kbd>D</kbd>, <kbd>Delete</kbd>, or <kbd>Backspace</kbd>) |
 | **Helpful for verification** | Quickly verify that your sketch has the correct dimensions |
 
+**Shortcuts:**
+
+| | |
+| ---: | --- |
+| <kbd>D</kbd> | Activate dimension tool |
+| <kbd>Shift</kbd>+<kbd>D</kbd>, <kbd>Delete</kbd>, or <kbd>Backspace</kbd> | Delete selected dimension (or other selection) |
+
 **How to Use:**
-1. ![TechDraw_LengthDimension](res/icons/TechDraw_LengthDimension.png) Select the **Edge Dimensions** tool from the toolbar
+1. ![TechDraw_LengthDimension](res/icons/TechDraw_LengthDimension.png) Press <kbd>D</kbd> or select the **Edge Dimensions** tool from the toolbar
 2. Use either input style:
    - **Edge click:** Click a straight edge to toggle the dimension between its endpoints
    - **Node pair:** Click node A, then click node B to toggle the dimension between A and B
 3. Click the same edge (or same node pair) again to remove that dimension
-4. To delete directly, select the dimension object and press the delet hotkey <kbd>d</kbd>
+4. To delete directly, select the dimension object and press <kbd>Shift</kbd>+<kbd>D</kbd>, <kbd>Delete</kbd>, or <kbd>Backspace</kbd>
 
 **When to Use:**
 
@@ -638,7 +677,7 @@ Nodes you place with **Add node** are treated as **user-placed** points. When th
 3. **From an existing node (line-edge–like step):** Click an **existing** vertex first so the first click **snaps** to it. A rubber-band preview runs from that anchor—use <kbd>Tab</kbd> / <kbd>Shift</kbd>+<kbd>Tab</kbd> for length/angle if you want—then click (or confirm) to place the **second** point. Only a **new node** is committed; **no** new edge is stored.
 4. Repeat as needed for more nodes.
 
-#### Keyboard shortcuts
+#### Shortcuts
 
 | | |
 | ---: | --- |
@@ -698,7 +737,7 @@ The create sketch from planar face tool allows you to extract the boundary of a 
 - The operation will be cancelled and no sketch will be created
 - Simply select a different face that is planar
 
-**Keyboard Shortcuts:**
+**Shortcuts:**
 - <kbd>Escape</kbd>: Cancel the operation (if activated but not yet completed)
 
 **Tips:**

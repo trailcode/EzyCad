@@ -190,7 +190,7 @@ void GUI::initialize_toolbar_()
       {load_texture("res/icons/Sketcher_Create3PointCircle.png"), false, "Add circle from three points",
        Mode::Sketch_add_circle_3_pts},
       {load_texture("res/icons/Sketcher_CreateSlot.png"), false, "Add slot", Mode::Sketch_add_slot},
-      {load_texture("res/icons/TechDraw_LengthDimension.png"), false, "Length dimension", Mode::Sketch_dim_anno},
+      {load_texture("res/icons/TechDraw_LengthDimension.png"), false, "Length dimension (d)", Mode::Sketch_dim_anno},
       {load_texture("res/icons/Design456_Extrude.png"), false, "Extrude sketch face (e)", Mode::Sketch_face_extrude},
       {load_texture("res/icons/PartDesign_Chamfer.png"), false, "Chamfer (c)", Mode::Shape_chamfer},
       {load_texture("res/icons/PartDesign_Fillet.png"), false, "Fillet (f)", Mode::Shape_fillet},

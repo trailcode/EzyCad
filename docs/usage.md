@@ -9,7 +9,7 @@
 4.  [File Operations](#file-operations)
 5.  [Edit Operations](#edit-operations)
 6.  [Modeling Tools](#modeling-tools)
-7.  [Keyboard Shortcuts](#keyboard-shortcuts)
+7.  [Hotkeys](#hotkeys)
 8.  [View Controls](#view-controls)
 9.  [3D viewer (Open CASCADE)](usage-occt-view.md)
 10. [Tips and Tricks](#tips-and-tricks)
@@ -159,7 +159,7 @@ EzyCad can load a **default document** when it starts (geometry, camera, tool mo
 Edit operations change your model (sketches or 3D shapes) and can be navigated with undo/redo.
 
 - **Delete selected**
-  - Use <kbd>D</kbd> or the <kbd>Delete</kbd> key to remove the currently selected sketch elements or shapes.
+  - Use <kbd>Shift</kbd>+<kbd>D</kbd>, <kbd>Delete</kbd>, or <kbd>Backspace</kbd> to remove the currently selected sketch elements or shapes.
   - Deletions are recorded in the undo history and can be undone/redone.
 
 - **Undo and Redo**
@@ -519,7 +519,7 @@ The polar duplicate tool allows you to create multiple copies of selected shapes
   - Fuse
   - Common
 
-## Keyboard Shortcuts
+## Hotkeys
 
 ### General Operations
 
@@ -534,7 +534,7 @@ The polar duplicate tool allows you to create multiple copies of selected shapes
 | <kbd>Enter</kbd> | Confirm current operation |
 | <kbd>Tab</kbd> | Distance/dimension input |
 | <kbd>Shift</kbd>+<kbd>Tab</kbd> | Angle input (for line edges with angle constraint) |
-| <kbd>Delete</kbd> | Remove selected elements |
+| <kbd>Shift</kbd>+<kbd>D</kbd>, <kbd>Delete</kbd>, or <kbd>Backspace</kbd> | Remove selected elements |
 
 ### Modeling Shortcuts
 
@@ -546,7 +546,8 @@ The polar duplicate tool allows you to create multiple copies of selected shapes
 | <kbd>E</kbd> | Extrude mode |
 | <kbd>C</kbd> | Chamfer mode |
 | <kbd>F</kbd> | Fillet mode |
-| <kbd>D</kbd> | Delete selected |
+| <kbd>D</kbd> | Dimension tool (sketch) |
+
 
 ### View navigation
 
@@ -693,7 +694,7 @@ Contributors should follow **[ezycad_code_style.md](ezycad_code_style.md)** for 
 - ![Sketcher_CreateCircle](res/icons/Sketcher_CreateCircle.png) - Add circle (center and radius)
 - ![Sketcher_Create3PointCircle](res/icons/Sketcher_Create3PointCircle.png) - Add circle from three points *(planned feature)*
 - ![Sketcher_CreateSlot](res/icons/Sketcher_CreateSlot.png) - Add slot
-- ![TechDraw_LengthDimension](res/icons/TechDraw_LengthDimension.png) - Dimension tool
+- ![TechDraw_LengthDimension](res/icons/TechDraw_LengthDimension.png) - Dimension tool (<kbd>D</kbd>)
 
 ### 3D Operations
 - ![Design456_Extrude](res/icons/Design456_Extrude.png) - Extrude sketch face (<kbd>E</kbd>)

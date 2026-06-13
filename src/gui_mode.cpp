@@ -283,7 +283,18 @@ void GUI::on_key(int key, int scancode, int action, int mods)
       break;
 
       // clang-format off
-    case GLFW_KEY_D: m_view->delete_selected(); break;
+    case GLFW_KEY_D:
+      if ((mods & GLFW_MOD_SHIFT) != 0)
+        m_view->delete_selected();
+      else
+        set_mode(Mode::Sketch_dim_anno);
+      break;
+
+    case GLFW_KEY_DELETE:
+    case GLFW_KEY_BACKSPACE:
+      m_view->delete_selected();
+      break;
+
     case GLFW_KEY_G: set_mode(Mode::Move); break;
     case GLFW_KEY_R: set_mode(Mode::Rotate); break;
     case GLFW_KEY_E: set_mode(Mode::Sketch_face_extrude); break;
