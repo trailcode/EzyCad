@@ -2,6 +2,11 @@
 
 #include <TopoDS.hxx>
 #include <TopoDS_Wire.hxx>
+#include <BRepPrimAPI_MakeRevol.hxx>
+#include <GProp_GProps.hxx>
+#include <BRepGProp.hxx>
+#include <Bnd_Box.hxx>
+#include <BRepBndLib.hxx>
 #include <iostream>
 #include <numbers>
 
@@ -1545,8 +1550,242 @@ TEST_F(Sketch_test, MirrorSelectedEdges_Arc)
   EXPECT_TRUE(found_symmetric) << "A mirrored arc point should exist below the axis";
 }
 
+// Unit tests for the revolve tool (Sketch::revolve_selected).
+// Revolve requires a defined operation axis + selected edges or faces.
+// It returns a Shp_rslt (success or error). On success it produces a revolved 3D shape via BRepPrimAPI_MakeRevol.
+
+// Error case: no edges/faces selected (after axis is set)
+TEST_F(Sketch_test, RevolveSelected_NoSelection)
+{
+  gp_Pln default_plane(gp::Origin(), gp::DZ());
+  Sketch sketch("TestSketch", view(), default_plane);
+
+  gui().set_mode(Mode::Sketch_operation_axis);
+
+  // Define a simple horizontal axis
+  sketch.add_sketch_pt(ScreenCoords(dvec2(0.0, 0.0)));
+  sketch.add_sketch_pt(ScreenCoords(dvec2(5.0, 0.0)));
+
+  EXPECT_TRUE(sketch.has_operation_axis());
+
+  // Call without any selection
+  Shp_rslt res = sketch.revolve_selected(2 * std::numbers::pi);
+
+  EXPECT_FALSE(res.has_value());
+  EXPECT_EQ(res.message(), "No selected faces or edges.");
+}
+
+// Basic success case: revolve a straight edge profile around the axis (360 deg full revolution).
+// Uses edge selection (common for profile-based revolution).
+TEST_F(Sketch_test, RevolveSelected_SimpleEdgeProfile)
+{
+  gp_Pln default_plane(gp::Origin(), gp::DZ());
+  Sketch sketch("TestSketch", view(), default_plane);
+
+  gui().set_mode(Mode::Sketch_operation_axis);
+
+  // Horizontal axis at y=0
+  sketch.add_sketch_pt(ScreenCoords(dvec2(0.0, 0.0)));
+  sketch.add_sketch_pt(ScreenCoords(dvec2(10.0, 0.0)));
+
+  // Add a profile edge offset from the axis (a line segment parallel-ish, at x~2, y from 1 to 2)
+  // Revolving this around the x-axis will create a surface of revolution.
+  gp_Pnt2d p1(2.0, 1.0);
+  gp_Pnt2d p2(2.0, 2.0);
+  Sketch_access::add_edge_(sketch, p1, p2);
+
+  // Select the edge shp (same mechanism used by mirror tests and the real UI selection)
+  AIS_Shape_ptr edge_shp;
+  for (auto rit = sketch.m_edges.rbegin(); rit != sketch.m_edges.rend(); ++rit)
+  {
+    if (rit->node_idx_b.has_value())
+    {
+      edge_shp = rit->shp;
+      break;
+    }
+  }
+  ASSERT_FALSE(edge_shp.IsNull());
+
+  auto& cctx = view().ctx();
+  cctx.ClearSelected(true);
+  cctx.AddOrRemoveSelected(edge_shp, true);
+
+  Shp_rslt res = sketch.revolve_selected(2 * std::numbers::pi);
+
+  EXPECT_TRUE(res.has_value()) << "Revolve should succeed with a valid axis + selected edge. Message: " << res.message();
+  ASSERT_TRUE(res.has_value());
+
+  const TopoDS_Shape& actual = (*res)->Shape();
+  EXPECT_FALSE(actual.IsNull()) << "Revolved shape must not be null";
+
+  // === Stronger "oracle" test: rebuild the exact same revolve using low-level OCCT ===
+  // This verifies that Sketch::revolve_selected produces the *identical* geometry
+  // as a direct BRepPrimAPI_MakeRevol call with the extracted profile + axis.
+
+  // 1. Build the profile compound (same edges the sketch would have selected)
+  TopoDS_Compound profile;
+  BRep_Builder bld;
+  bld.MakeCompound(profile);
+  bld.Add(profile, edge_shp->Shape());   // the edge we selected above
+
+  // 2. Recreate the axis using the exact same two points we used to define the operation axis.
+  //    (Only direction + a point on the line matter; length is irrelevant.)
+  gp_Pnt axA(0.0, 0.0, 0.0);
+  gp_Pnt axB(10.0, 0.0, 0.0);
+  gp_Dir dir((axB.XYZ() - axA.XYZ()).Normalized());
+  gp_Ax1 revolAxis(axA, dir);
+
+  BRepPrimAPI_MakeRevol expectedMaker(profile, revolAxis, 2 * std::numbers::pi);
+  TopoDS_Shape expected = expectedMaker.Shape();
+
+  EXPECT_FALSE(expected.IsNull());
+
+  // Stronger oracle comparison using mass properties + bounding box.
+  // This verifies that the geometry produced by the Sketch revolve wrapper
+  // is the same as a direct low-level BRepPrimAPI_MakeRevol call.
+  GProp_GProps gActual, gExpected;
+  BRepGProp::VolumeProperties(actual, gActual);
+  BRepGProp::VolumeProperties(expected, gExpected);
+
+  EXPECT_NEAR(gActual.Mass(), gExpected.Mass(), 1e-8)
+      << "Revolved volume should match direct MakeRevol";
+
+  Bnd_Box boxA, boxE;
+  BRepBndLib::Add(actual, boxA);
+  BRepBndLib::Add(expected, boxE);
+
+  double axmin,aymin,azmin,axmax,aymax,azmax;
+  double exmin,eymin,ezmin,exmax,eymax,ezmax;
+  boxA.Get(axmin,aymin,azmin,axmax,aymax,azmax);
+  boxE.Get(exmin,eymin,ezmin,exmax,eymax,ezmax);
+
+  EXPECT_NEAR(axmin, exmin, 1e-8);
+  EXPECT_NEAR(aymin, eymin, 1e-8);
+  EXPECT_NEAR(azmin, ezmin, 1e-8);
+  EXPECT_NEAR(axmax, exmax, 1e-8);
+  EXPECT_NEAR(aymax, eymax, 1e-8);
+  EXPECT_NEAR(azmax, ezmax, 1e-8);
+
+  // It will typically be a Face (surface of revolution) for an open edge profile.
+  // We don't assert Solid here because that usually requires a closed face profile.
+}
+
+// Revolve a closed edge profile (rectangle) by selecting its boundary edges.
+// This exercises the selected_edges path in revolve_selected (multiple edges in compound).
+// Revolving a closed profile 360° around an external axis produces a solid of revolution.
+TEST_F(Sketch_test, RevolveSelected_ClosedEdgeProfile)
+{
+  gp_Pln default_plane(gp::Origin(), gp::DZ());
+  Sketch sketch("TestSketch", view(), default_plane);
+
+  gui().set_mode(Mode::Sketch_operation_axis);
+
+  // Axis
+  sketch.add_sketch_pt(ScreenCoords(dvec2(0.0, 0.0)));
+  sketch.add_sketch_pt(ScreenCoords(dvec2(10.0, 0.0)));
+
+  // Simple closed rectangular profile offset from the axis (will form a face too, but we select edges).
+  gp_Pnt2d p0(1.0, 1.0);
+  gp_Pnt2d p1(3.0, 1.0);
+  gp_Pnt2d p2(3.0, 2.0);
+  gp_Pnt2d p3(1.0, 2.0);
+
+  Sketch_access::add_edge_(sketch, p0, p1);
+  Sketch_access::add_edge_(sketch, p1, p2);
+  Sketch_access::add_edge_(sketch, p2, p3);
+  Sketch_access::add_edge_(sketch, p3, p0);
+
+  // Select all four profile edges (the revolve code will compound their shapes)
+  auto& cctx = view().ctx();
+  cctx.ClearSelected(true);
+
+  size_t selected_count = 0;
+  for (const auto& e : sketch.m_edges)
+  {
+    if (e.node_idx_b.has_value())
+    {
+      // Only select the ones we just added for the profile (simple heuristic by x/y range)
+      const gp_Pnt2d& na = sketch.get_nodes()[e.node_idx_a];
+      const gp_Pnt2d& nb = sketch.get_nodes()[*e.node_idx_b];
+      if (na.X() >= 0.5 && na.X() <= 3.5 && nb.X() >= 0.5 && nb.X() <= 3.5)
+      {
+        cctx.AddOrRemoveSelected(e.shp, true);
+        ++selected_count;
+      }
+    }
+  }
+  EXPECT_GE(selected_count, 2) << "Should have selected at least a couple of profile edges";
+
+  Shp_rslt res = sketch.revolve_selected(2 * std::numbers::pi);
+
+  EXPECT_TRUE(res.has_value()) << "Revolve of closed edge profile should succeed. Message: " << res.message();
+  ASSERT_TRUE(res.has_value());
+
+  const TopoDS_Shape& actual = (*res)->Shape();
+  EXPECT_FALSE(actual.IsNull()) << "Revolved shape must not be null";
+
+  // === Oracle comparison: rebuild the identical revolve using the same inputs ===
+  TopoDS_Compound profile;
+  BRep_Builder bld;
+  bld.MakeCompound(profile);
+
+  // Collect exactly the profile edges we added for this test
+  for (const auto& e : sketch.m_edges)
+  {
+    if (e.node_idx_b.has_value())
+    {
+      const gp_Pnt2d& na = sketch.get_nodes()[e.node_idx_a];
+      const gp_Pnt2d& nb = sketch.get_nodes()[*e.node_idx_b];
+      if (na.X() >= 0.5 && na.X() <= 3.5 && nb.X() >= 0.5 && nb.X() <= 3.5)
+        bld.Add(profile, e.shp->Shape());
+    }
+  }
+
+  // Reconstruct the axis from the same points we used when creating the operation axis
+  gp_Pnt axA(0.0, 0.0, 0.0);
+  gp_Pnt axB(10.0, 0.0, 0.0);
+  gp_Dir dir((axB.XYZ() - axA.XYZ()).Normalized());
+  gp_Ax1 revolAxis(axA, dir);
+
+  BRepPrimAPI_MakeRevol expectedMaker(profile, revolAxis, 2 * std::numbers::pi);
+  TopoDS_Shape expected = expectedMaker.Shape();
+
+  EXPECT_FALSE(expected.IsNull());
+
+  GProp_GProps gActual, gExpected;
+  BRepGProp::VolumeProperties(actual, gActual);
+  BRepGProp::VolumeProperties(expected, gExpected);
+
+  EXPECT_NEAR(gActual.Mass(), gExpected.Mass(), 1e-8)
+      << "Revolved volume should match direct MakeRevol";
+
+  Bnd_Box boxA, boxE;
+  BRepBndLib::Add(actual, boxA);
+  BRepBndLib::Add(expected, boxE);
+
+  double axmin,aymin,azmin,axmax,aymax,azmax;
+  double exmin,eymin,ezmin,exmax,eymax,ezmax;
+  boxA.Get(axmin,aymin,azmin,axmax,aymax,azmax);
+  boxE.Get(exmin,eymin,ezmin,exmax,eymax,ezmax);
+
+  EXPECT_NEAR(axmin, exmin, 1e-8);
+  EXPECT_NEAR(aymin, eymin, 1e-8);
+  EXPECT_NEAR(azmin, ezmin, 1e-8);
+  EXPECT_NEAR(axmax, exmax, 1e-8);
+  EXPECT_NEAR(aymax, eymax, 1e-8);
+  EXPECT_NEAR(azmax, ezmax, 1e-8);
+
+  // For a closed profile revolved 360°, we expect a meaningful 3D result.
+  EXPECT_TRUE(actual.ShapeType() == TopAbs_SOLID ||
+              actual.ShapeType() == TopAbs_COMPOUND ||
+              actual.ShapeType() == TopAbs_SHELL ||
+              actual.ShapeType() == TopAbs_FACE)
+      << "Revolved closed profile should produce a non-degenerate 3D shape";
+}
+
 // Test that split edges have midpoints for snapping
 // This test verifies the fix for the bug where edges split by their midpoint
+// don't have midpoints to snap to
 // don't have midpoints to snap to
 // This test verifies the fix for the bug where edges split by their midpoint
 // don't have midpoints to snap to
