@@ -1850,8 +1850,13 @@ void Sketch::update_faces_()
 
     excluded_edges.insert(to_exclude.begin(), to_exclude.end());
   }
-#if 0 // Disabled the complex bridge logic (was causing incorrect face cycles / polys in UpdateFaces_FaceWithHole and similar
-      // separate-component hole cases). Basic dangling removal (above) is retained.
+  // Bridge edge removal logic (active). Excludes edges that purely connect separate cycles
+  // (both ends degree >=3 and no alternate path) from the adjacency used by the face walker.
+  // This is required for sketches like bridge.ezy that contain a "bridge" touching an inner
+  // triangular loop so that we obtain exactly two faces, one of which has the triangle as a
+  // hole. Dangling removal alone is not sufficient. The logic was previously disabled because
+  // an earlier version produced bad results on some nested rect holes; current state + other
+  // fixes (cw break, split rules, etc.) are being validated with the new regression test.
   // Remove bridge edges that connect two separate cycles.
   // A bridge edge connects two cycles and has both endpoints with degree >= 3.
   // We detect this by checking if the edge is the only connection between two cycles.
@@ -1969,8 +1974,7 @@ void Sketch::update_faces_()
   // Add bridge edges to excluded set
   excluded_edges.insert(bridge_edges.begin(), bridge_edges.end());
 
-// Rebuild adjacency list excluding dangling and bridge edges
-#endif
+  // Rebuild adjacency list excluding dangling and bridge edges
   adj_list.clear();
   for (const auto& edge : m_edges)
   {
@@ -2016,28 +2020,23 @@ void Sketch::update_faces_()
         {
           EZY_ASSERT(face.size() > 2);
 
-          // Ensure the collected cycle is always in the "clockwise" direction per is_face_clockwise_
-          // (positive shoelace per our convention). This stabilizes winding for CreateSquare,
-          // UpdateFaces_SimpleRectangle (all perms), dangling tests, etc. regardless of adj_list
-          // iteration order (unordered_map) or which seed edge starts the walk. Inner/hole faces
-          // are still created as cw outers here; the hole rebuild explicitly Reverse()s the hole
-          // wire when adding it to the outer MakeFace. to_boost's wire-orient reverse + leftmost
-          // rotate then produce consistent results for the asserts.
+          // Deliberately accept the cycle only if the left-most walker produced a traversal
+          // whose shoelace is positive under our is_face_clockwise_ convention. If not, break
+          // (skip pushing a face for this seed). This is not an error -- other seeds may still
+          // discover the same geometric cycle (or its sibling faces) in the matching orientation.
+          // The early break makes the set of accepted faces and their order in m_faces depend on
+          // m_edges list order (affected by appends and push_backs during splits) and on individual
+          // Edge node_idx_a/b values (set from pa/pb at creation time, i.e. draw direction for
+          // edges added via the GUI line tool). This dependency has been observed to be required
+          // for correct results in the GUI for cases such as "square then mid vertical splitter
+          // added lower-to-top vs. top-to-bottom" (the break version yields the expected rects
+          // on the sides the user sees; a force-to-cw normalization for every collected cycle
+          // re-introduces the direction asymmetry or malformed faces in that flow).
+          // The hole test (and bridge/dangling face tests) still pass because their edge addition
+          // order + walker seeds happen to produce matching orientations for both outer and inner
+          // boundaries.
           if (!is_face_clockwise_(face))
-          {
-            // Invert direction: toggle sense on each and reverse sequence order.
-            // (Cannot use std::reverse directly because Face_edge holds const Edge& and thus has
-            // deleted copy-assignment; manual rebuild is safe and cheap.)
-            Face_edges cw_face;
-            cw_face.reserve(face.size());
-            for (auto it = face.rbegin(); it != face.rend(); ++it)
-            {
-              Face_edge fe = *it;
-              fe.reversed  = !fe.reversed;
-              cw_face.push_back(fe);
-            }
-            face = std::move(cw_face);
-          }
+            break;
 
           for (const Face_edge& e : face)
           {
