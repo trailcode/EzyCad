@@ -296,6 +296,8 @@ public:
   void finalize_add_node_elm_cleanup_();
   void add_edge_(const gp_Pnt2d& pt_a, const gp_Pnt2d& pt_b);
   void add_edge_raw_(const gp_Pnt2d& pt_a, const gp_Pnt2d& pt_b);
+  /// Helper used when walking edges for splitting / intersection logic.
+  static bool is_linear_edge_(const Edge& e);
   /// JSON load: linear edge using existing node indices (`idx_mid` is the edge midpoint node).
   void sketch_json_add_linear_edge_(size_t idx_a, size_t idx_b, size_t idx_mid);
 
@@ -324,7 +326,6 @@ public:
   void update_node_mark_style_(AIS_Shape_ptr& shp);
   void sync_permanent_node_annos_();
   void update_originating_face_style();
-  void update_face_style_(AIS_Shape_ptr& shp) const;
 
   void rebuild_length_dimension_display_(Length_dimension& d);
   void purge_stale_length_dimensions_();

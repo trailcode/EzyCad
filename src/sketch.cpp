@@ -300,8 +300,6 @@ void Sketch::update_originating_face_style()
   m_ctx.Redisplay(m_originating_face, true);
 }
 
-void Sketch::update_face_style_(AIS_Shape_ptr& shp) const {}
-
 void Sketch::update_edge_shp_(Edge& edge, const gp_Pnt2d& pt_a, const gp_Pnt2d& pt_b)
 {
   EZY_ASSERT(unique(pt_a, pt_b));
@@ -419,7 +417,6 @@ void Sketch::move_line_string_pt_(const ScreenCoords& screen_coords)
       return;
 
     gp_Pnt2d final_pt_b = pt_b;
-    // std::optional<size_t> final_node_idx;
 
     // Apply angle constraint if set - this takes priority
     if (m_entered_edge_angle.has_value())
@@ -460,7 +457,7 @@ void Sketch::move_line_string_pt_(const ScreenCoords& screen_coords)
       // No constraints - check for snap points at mouse position
       edge.node_idx_b = m_nodes.try_get_node_idx_snap(final_pt_b);
       if (edge.node_idx_b.has_value())
-        final_pt_b = m_nodes[*edge.node_idx_b];
+        final_pt_b = m_nodes[edge.node_idx_b];
     }
 
     double dist = pt_a.Distance(final_pt_b) / m_view.get_dimension_scale();
@@ -565,48 +562,33 @@ void Sketch::finalize_edges_()
   {
     for (const Edge& te : m_tmp_edges)
     {
-      if (!te.node_idx_b.has_value())
-        continue;
+      // All remaining tmp edges must be complete at this point:
+      // - The code above already popped any trailing incomplete one.
+      // - The split_mid_points loop immediately before this used EZY_ASSERT on every te.
+      // Therefore we can (and should) assert rather than silently continue.
+      // (A defensive "if (!...) continue" would be appropriate for filtering *old* edges
+      // in m_edges, which may contain arcs or other non-linear things, but not here.)
+      EZY_ASSERT(te.node_idx_b.has_value());
+
       gp_Pnt2d pa = m_nodes[te.node_idx_a];
-      gp_Pnt2d pb = m_nodes[*te.node_idx_b];
+      gp_Pnt2d pb = m_nodes[te.node_idx_b];
       for (const Edge& oe : m_edges) // pre-batch olds only
       {
-        if (oe.circle_arc || !oe.node_idx_b.has_value())
+        if (!is_linear_edge_(oe))
           continue;
+
         gp_Pnt2d qa = m_nodes[oe.node_idx_a];
-        gp_Pnt2d qb = m_nodes[*oe.node_idx_b];
-        if (auto inter = segment_intersection_2d(pa, pb, qa, qb))
+        gp_Pnt2d qb = m_nodes[oe.node_idx_b];
+        if (auto inter = segment_intersection_2d(pa, pb, qa, qb, Segment_inclusion::Closed))
         {
-          auto on_seg_closed = [](const gp_Pnt2d& p, const gp_Pnt2d& a, const gp_Pnt2d& b) -> bool
-          {
-            const double tol = Precision::Confusion();
-            if (p.Distance(a) <= tol || p.Distance(b) <= tol)
-              return true;
-            gp_Vec2d ab(a, b);
-            double   len = ab.Magnitude();
-            if (len < tol)
-              return false;
-            gp_Vec2d ap(a, p);
-            double   cross = std::abs(ap.X() * ab.Y() - ap.Y() * ab.X());
-            if (cross > tol * len)
-              return false;
-            double t = ap.Dot(ab) / (len * len);
-            return t >= 0.0 && t <= 1.0;
-          };
-          if (!on_seg_closed(*inter, pa, pb) || !on_seg_closed(*inter, qa, qb))
-            continue;
-          bool dup = false;
-          for (const auto& ip : batch_inters)
-            if (ip.Distance(*inter) <= Precision::Confusion())
-            {
-              dup = true;
-              break;
-            }
-          if (!dup)
-            batch_inters.push_back(*inter);
+          // The intersection point is now guaranteed (by the inclusion parameter)
+          // to lie on both finite closed segments. The previous custom verification
+          // has been moved into segment_intersection_2d for consistency.
+          add_unique_point(batch_inters, *inter);
         }
       }
     }
+
     // Only split olds at interior hits (avoid snap on endpoint-touch inters from the batch, same reason as add_edge_).
     std::vector<gp_Pnt2d> batch_to_split;
     for (const auto& ip : batch_inters)
@@ -614,34 +596,24 @@ void Sketch::finalize_edges_()
       bool is_old_interior = false;
       for (const Edge& e : m_edges)
       {
-        if (e.circle_arc || !e.node_idx_b.has_value())
+        if (!is_linear_edge_(e))
           continue;
+
         gp_Pnt2d qa = m_nodes[e.node_idx_a];
-        gp_Pnt2d qb = m_nodes[*e.node_idx_b];
+        gp_Pnt2d qb = m_nodes[e.node_idx_b];
         if (point_on_open_segment_2d(ip, qa, qb))
         {
           is_old_interior = true;
           break;
         }
       }
+
       if (is_old_interior)
-      {
-        bool dup = false;
-        for (const auto& sp : batch_to_split)
-          if (sp.Distance(ip) <= Precision::Confusion())
-          {
-            dup = true;
-            break;
-          }
-        if (!dup)
-          batch_to_split.push_back(ip);
-      }
+        add_unique_point(batch_to_split, ip);
     }
+
     for (const auto& ip : batch_to_split)
-    {
-      size_t nidx = m_nodes.get_node_exact(ip);
-      split_linear_edges_at_node_if_interior_(nidx);
-    }
+      split_linear_edges_at_node_if_interior_(m_nodes.get_node_exact(ip));
   }
 
   append(m_edges, m_tmp_edges);
@@ -662,7 +634,7 @@ void Sketch::finalize_edges_()
           update_edge_shp_(edge_b, m_nodes[itr->node_idx_b], m_nodes[mid_pt_idx]);
           // Set midpoints for the new split edges so they can be snapped to
           edge_a.node_idx_mid = m_nodes.add_new_node(get_midpoint(m_nodes[itr->node_idx_a], m_nodes[mid_pt_idx]), true);
-          edge_b.node_idx_mid = m_nodes.add_new_node(get_midpoint(m_nodes[mid_pt_idx], m_nodes[*itr->node_idx_b]), true);
+          edge_b.node_idx_mid = m_nodes.add_new_node(get_midpoint(m_nodes[mid_pt_idx], m_nodes[itr->node_idx_b]), true);
           m_ctx.Remove(itr->shp, false);
           m_edges.erase(itr);
           m_nodes[mid_pt_idx].midpoint = false;
@@ -677,10 +649,7 @@ void Sketch::finalize_edges_()
   // GUI finalize path produces the same atomic edge count as direct add_edge_ (e.g. 4
   // edges for a cross, whether or not the cross is at an existing mid).
   for (const auto& ip : batch_inters)
-  {
-    size_t nidx = m_nodes.get_node_exact(ip);
-    split_linear_edges_at_node_if_interior_(nidx);
-  }
+    split_linear_edges_at_node_if_interior_(m_nodes.get_node_exact(ip));
 
   m_nodes.hide_snap_annos();
   update_faces_();
@@ -789,6 +758,7 @@ double Sketch::plane_pick_snap_radius_world_() const
   std::optional<gp_Pnt2d> p1   = m_view.pt_on_plane(ScreenCoords(dvec2(base.x + px, base.y)), m_pln);
   if (!p1)
     return std::max(px, Precision::Confusion() * 1e9);
+
   return ref2.Distance(*p1);
 }
 
@@ -1363,41 +1333,18 @@ void Sketch::add_edge_(const gp_Pnt2d& pt_a, const gp_Pnt2d& pt_b)
   std::vector<gp_Pnt2d> inters;
   for (const Edge& e : m_edges)
   {
-    if (e.circle_arc || !e.node_idx_b.has_value())
+    if (!is_linear_edge_(e))
       continue;
     gp_Pnt2d qa = m_nodes[e.node_idx_a];
-    gp_Pnt2d qb = m_nodes[*e.node_idx_b];
+    gp_Pnt2d qb = m_nodes[e.node_idx_b];
 
-    if (auto inter = segment_intersection_2d(pt_a, pt_b, qa, qb))
+    if (auto inter = segment_intersection_2d(pt_a, pt_b, qa, qb, Segment_inclusion::Closed))
     {
-      // Strict closed on-segment verification to reject FP artifacts
-      auto on_seg_closed = [](const gp_Pnt2d& p, const gp_Pnt2d& a, const gp_Pnt2d& b) -> bool
-      {
-        const double tol = Precision::Confusion();
-        if (p.Distance(a) <= tol || p.Distance(b) <= tol)
-          return true;
-        gp_Vec2d ab(a, b);
-        double   len = ab.Magnitude();
-        if (len < tol)
-          return false;
-        gp_Vec2d ap(a, p);
-        double   cross = std::abs(ap.X() * ab.Y() - ap.Y() * ab.X());
-        if (cross > tol * len)
-          return false;
-        double t = ap.Dot(ab) / (len * len);
-        return t >= 0.0 && t <= 1.0;
-      };
-      if (!on_seg_closed(*inter, pt_a, pt_b) || !on_seg_closed(*inter, qa, qb))
-        continue;
-      bool dup = false;
-      for (const auto& ip : inters)
-        if (ip.Distance(*inter) <= Precision::Confusion())
-        {
-          dup = true;
-          break;
-        }
-      if (!dup)
-        inters.push_back(*inter);
+      // The intersection point is guaranteed to lie on both finite closed segments
+      // (the new logic is now handled inside segment_intersection_2d).
+      // We still collect it for later splitting of existing edges and subdividing the new one.
+
+      add_unique_point(inters, *inter);
     }
   }
 
@@ -1413,10 +1360,10 @@ void Sketch::add_edge_(const gp_Pnt2d& pt_a, const gp_Pnt2d& pt_b)
     bool is_old_interior = false;
     for (const Edge& e : m_edges)
     {
-      if (e.circle_arc || !e.node_idx_b.has_value())
+      if (!is_linear_edge_(e))
         continue;
       gp_Pnt2d qa = m_nodes[e.node_idx_a];
-      gp_Pnt2d qb = m_nodes[*e.node_idx_b];
+      gp_Pnt2d qb = m_nodes[e.node_idx_b];
       if (point_on_open_segment_2d(ip, qa, qb))
       {
         is_old_interior = true;
@@ -1425,15 +1372,7 @@ void Sketch::add_edge_(const gp_Pnt2d& pt_a, const gp_Pnt2d& pt_b)
     }
     if (is_old_interior)
     {
-      bool dup = false;
-      for (const auto& sp : inters_to_split)
-        if (sp.Distance(ip) <= Precision::Confusion())
-        {
-          dup = true;
-          break;
-        }
-      if (!dup)
-        inters_to_split.push_back(ip);
+      add_unique_point(inters_to_split, ip);
     }
   }
 
@@ -3213,6 +3152,8 @@ bool Sketch::Edge::reversed(size_t idx_a, size_t idx_b) const
   EZY_ASSERT(false);
   return false;
 }
+
+bool Sketch::is_linear_edge_(const Edge& e) { return !e.circle_arc && e.node_idx_b.has_value(); }
 
 Sketch_AIS_edge::Sketch_AIS_edge(Sketch& owner, const TopoDS_Shape& shp)
     : AIS_Shape(shp)
