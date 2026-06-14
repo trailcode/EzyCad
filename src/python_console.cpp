@@ -155,6 +155,10 @@ def _ezycad_bootstrap():
             return _n.view_shape_count()
         def curr_sketch_name(self):
             return _n.view_curr_sketch_name()
+        def curr_sketch_node_count(self):
+            return _n.view_curr_sketch_node_count()
+        def curr_sketch_node(self, i):
+            return _n.view_curr_sketch_node(int(i))  # returns (x, y) tuple
         def add_box(self, ox, oy, oz, w, l, h):
             return _n.view_add_box(ox, oy, oz, w, l, h)
         def add_sphere(self, ox, oy, oz, r):
@@ -259,6 +263,8 @@ PYBIND11_EMBEDDED_MODULE(ezycad_native, m)
               "  view.sketch_count()          - number of sketches\n"
               "  view.shape_count()           - number of shapes\n"
               "  view.curr_sketch_name()      - current sketch name\n"
+              "  view.curr_sketch_node_count()- number of nodes in current sketch\n"
+              "  view.curr_sketch_node(i)     - (x, y) of node i in current sketch (raises IndexError if out of range)\n"
               "  view.add_box(ox,oy,oz,w,l,h) - add box\n"
               "  view.add_sphere(ox,oy,oz,r)  - add sphere\n"
               "  view.get_shape(i)            - get shape by 0-based index (raises IndexError if out of range)\n"
@@ -307,6 +313,32 @@ PYBIND11_EMBEDDED_MODULE(ezycad_native, m)
           Occt_view* view = g_py_gui && g_py_gui->get_view() ? g_py_gui->get_view() : nullptr;
           return view ? view->curr_sketch().get_name() : std::string{};
         });
+
+  m.def("view_curr_sketch_node_count",
+        []
+        {
+          Occt_view* view = g_py_gui && g_py_gui->get_view() ? g_py_gui->get_view() : nullptr;
+          if (!view)
+            return std::size_t{0};
+          return view->curr_sketch().get_nodes().size();
+        });
+
+  m.def(
+      "view_curr_sketch_node",
+      [](std::ptrdiff_t idx) -> py::tuple
+      {
+        Occt_view* view = g_py_gui && g_py_gui->get_view() ? g_py_gui->get_view() : nullptr;
+        if (!view)
+          throw std::runtime_error("no 3D view available");
+        if (idx < 0)
+          throw py::index_error("node index must be >= 0");
+        Sketch_nodes& nodes = view->curr_sketch().get_nodes();
+        if (static_cast<std::size_t>(idx) >= nodes.size())
+          throw py::index_error("node index out of range");
+        const Sketch_nodes::Node& n = nodes[static_cast<std::size_t>(idx)];
+        return py::make_tuple(n.X(), n.Y());
+      },
+      py::arg("i"));
 
   m.def(
       "view_add_box",

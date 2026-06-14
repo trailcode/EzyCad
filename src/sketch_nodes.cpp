@@ -17,10 +17,10 @@
 
 namespace
 {
-double                        s_snap_dist_pixels         = 35.0;
-Sketch_nodes::Snap_guide_mode s_snap_guide_mode          = Sketch_nodes::Snap_guide_mode::Traditional;
-glm::vec3                     s_snap_guide_color         {0.0f, 1.0f, 0.0f};
-float                         s_snap_guide_line_width    = 1.0f;
+double                        s_snap_dist_pixels = 35.0;
+Sketch_nodes::Snap_guide_mode s_snap_guide_mode  = Sketch_nodes::Snap_guide_mode::Traditional;
+glm::vec3                     s_snap_guide_color{0.0f, 1.0f, 0.0f};
+float                         s_snap_guide_line_width      = 1.0f;
 bool                          s_annotate_all_coaxial_nodes = false;
 } // namespace
 

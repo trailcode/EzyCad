@@ -100,7 +100,8 @@ std::string GUI::get_doc_url_for_mode(Mode mode)
                  "get_doc_url_for_mode: doc_urls map size does not match Mode::_count");
 
   auto it = doc_urls.find(mode);
-  if (it != doc_urls.end() && !it->second.empty()) {
+  if (it != doc_urls.end() && !it->second.empty())
+  {
     return it->second;
   }
   // fallback to main guide
@@ -864,14 +865,14 @@ void GUI::options_sketch_face_extrude_mode_()
 void GUI::options_sketch_dim_anno_mode_()
 {
   EZY_ASSERT(get_mode() == Mode::Sketch_dim_anno);
-  
+
   options_sketch_common_();
 }
 
 void GUI::options_sketch_add_node_mode_()
 {
   EZY_ASSERT(get_mode() == Mode::Sketch_add_node);
-  
+
   options_sketch_common_();
 
   if (ui_show_help(3))
@@ -919,7 +920,7 @@ void GUI::options_sketch_add_square_mode_()
 void GUI::options_sketch_add_rectangle_mode_()
 {
   EZY_ASSERT(get_mode() == Mode::Sketch_add_rectangle);
-  
+
   options_sketch_common_();
   options_sketch_len_angle_hotkeys_();
 }

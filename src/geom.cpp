@@ -1305,6 +1305,30 @@ bool point_on_open_segment_2d(const gp_Pnt2d& p, const gp_Pnt2d& a, const gp_Pnt
   return t > 0.0 && t < 1.0;
 }
 
+std::optional<gp_Pnt2d> segment_intersection_2d(const gp_Pnt2d& a1, const gp_Pnt2d& a2, const gp_Pnt2d& b1, const gp_Pnt2d& b2)
+{
+  const double tol = Precision::Confusion();
+  double       x1 = a1.X(), y1 = a1.Y();
+  double       x2 = a2.X(), y2 = a2.Y();
+  double       x3 = b1.X(), y3 = b1.Y();
+  double       x4 = b2.X(), y4 = b2.Y();
+
+  double den = (x1 - x2) * (y3 - y4) - (y1 - y2) * (x3 - x4);
+  if (std::abs(den) < tol)
+    return std::nullopt; // parallel/collinear (overlap not handled)
+
+  double t = ((x1 - x3) * (y3 - y4) - (y1 - y3) * (x3 - x4)) / den;
+  double u = -((x1 - x2) * (y1 - y3) - (y1 - y2) * (x1 - x3)) / den;
+
+  if (t >= -tol && t <= (1.0 + tol) && u >= -tol && u <= (1.0 + tol))
+  {
+    double px = x1 + t * (x2 - x1);
+    double py = y1 + t * (y2 - y1);
+    return gp_Pnt2d(px, py);
+  }
+  return std::nullopt;
+}
+
 std::optional<gp_Pnt2d> snap_foot_to_open_segment_interior_if_close(const gp_Pnt2d& p, const gp_Pnt2d& a, const gp_Pnt2d& b,
                                                                     double max_perp_dist)
 {

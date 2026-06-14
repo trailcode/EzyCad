@@ -243,6 +243,11 @@ TopoDS_Wire make_rectangle_wire(const gp_Pln& pln, const gp_Pnt2d& corner1, cons
 std::array<gp_Pnt2d, 4> rectangle_corners(const gp_Pnt2d& corner1, const gp_Pnt2d& corner2);
 bool                    point_on_open_segment_2d(const gp_Pnt2d& p, const gp_Pnt2d& a, const gp_Pnt2d& b);
 
+/// Returns the intersection point of the two line *segments* [a1-a2] and [b1-b2] if they intersect
+/// (including at endpoints / T-junctions), using a tolerance. Returns nullopt if no intersection
+/// or if they are (nearly) parallel/collinear (overlaps not supported here).
+std::optional<gp_Pnt2d> segment_intersection_2d(const gp_Pnt2d& a1, const gp_Pnt2d& a2, const gp_Pnt2d& b1, const gp_Pnt2d& b2);
+
 /// If the shortest distance from \a p to segment `a-b` is <= \a max_perp_dist and the foot lies strictly
 /// inside the segment (not near endpoints), returns that foot; otherwise nullopt.
 std::optional<gp_Pnt2d> snap_foot_to_open_segment_interior_if_close(const gp_Pnt2d& p, const gp_Pnt2d& a, const gp_Pnt2d& b,

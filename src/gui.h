@@ -116,18 +116,18 @@ public:
   void render_gui();
   void render_occt();
 
-  void         on_key(int key, int scancode, int action, int mods); // gui_mode.cpp
-  void         on_mouse_pos(const ScreenCoords& screen_coords);
-  void         on_mouse_button(int button, int action, int mods);
-  void         on_mouse_scroll(double xoffset, double yoffset);
-  void         on_resize(int width, int height);
-  Mode         get_mode() const { return m_mode; }
-  const char*  current_mode_description() const;
-  void         options_doc_help_button_();
+  void        on_key(int key, int scancode, int action, int mods); // gui_mode.cpp
+  void        on_mouse_pos(const ScreenCoords& screen_coords);
+  void        on_mouse_button(int button, int action, int mods);
+  void        on_mouse_scroll(double xoffset, double yoffset);
+  void        on_resize(int width, int height);
+  Mode        get_mode() const { return m_mode; }
+  const char* current_mode_description() const;
+  void        options_doc_help_button_();
 
   static std::string get_doc_url_for_mode(Mode mode);
-  Chamfer_mode get_chamfer_mode() const { return m_chamfer_mode; }
-  Fillet_mode  get_fillet_mode() const { return m_fillet_mode; }
+  Chamfer_mode       get_chamfer_mode() const { return m_chamfer_mode; }
+  Fillet_mode        get_fillet_mode() const { return m_fillet_mode; }
   /// Edge dimension value placement: 0 first point, 1 second, 2 center, 3 auto.
   int edge_dim_label_h() const { return m_edge_dim_label_h; }
   /// OCCT scale factor for sketch/extrude length dimension lines (1.0 = default thickness).
