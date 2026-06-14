@@ -20,4 +20,5 @@
 * Add rectangle two points, with angle constraint, preview does not honor it.
 * Add rectangle with center point behaves like the two point version.
 * Add circle from three points is broken.
-* For slot tool, there is no need for the second edge to have a angle constraint. 
+* For slot tool, there is no need for the second edge to have a angle constraint.
+* If the exact same arc circle or edge is added twice, unneeded edges are added. The mirror tool does this.

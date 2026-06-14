@@ -958,10 +958,8 @@ void Sketch::finalize_slot_()
 // Operation axis related
 void Sketch::add_operation_axis_pt_(const ScreenCoords& screen_coords)
 {
-  // If an axis already exists, clear it and start over
-  if (has_operation_axis())
-    clear_operation_axis();
-
+  // Axis definition only happens when !has_operation_axis() (guarded at the call site in GUI).
+  // To redefine, the caller must first clear via the Options "Clear axis" button.
   add_line_string_pt_(screen_coords, Linestring_type::Single);
 }
 
@@ -996,11 +994,12 @@ void Sketch::mirror_selected_edges()
   EZY_ASSERT(!m_operation_axis->shp.IsNull());
   const auto [mirror_pt_a, mirror_pt_b] = get_edge_endpoints(m_pln, TopoDS::Edge(m_operation_axis->shp->Shape()));
 
+  std::vector<std::pair<gp_Pnt2d, gp_Pnt2d>>     mirrored_edges;
   std::map<AIS_Shape_ptr, std::set<const Edge*>> arc_circles;
-
+  
   for (const Edge& e : m_edges)
     for (const Edge& selected : mirror_edges)
-      if (e.shp == selected.shp)
+      if (e.shp == selected.shp || e.circle_arc == selected.circle_arc)
       {
         if (e.circle_arc)
         {
@@ -1013,10 +1012,14 @@ void Sketch::mirror_selected_edges()
         {
           const gp_Pnt2d a = mirror_point(mirror_pt_a, mirror_pt_b, m_nodes[e.node_idx_a]);
           const gp_Pnt2d b = mirror_point(mirror_pt_a, mirror_pt_b, m_nodes[e.node_idx_b]);
-          add_edge_(a, b);
+          //add_edge_(a, b);
+          mirrored_edges.push_back({a, b});
           break;
         }
       }
+
+  for (const auto& [a, b] : mirrored_edges)
+    add_edge_(a, b);
 
   for (auto& [_, arc_circle_edges] : arc_circles)
   {

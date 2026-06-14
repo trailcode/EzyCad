@@ -632,7 +632,6 @@ The operation axis tool allows you to define a reference line for mirroring and 
 | **Real-time preview** | See the axis line while moving the mouse |
 | **Precise length control** | Use the distance input dialog (<kbd>Tab</kbd> key) for exact axis length |
 | **Angle constraint** | Use the angle input dialog (<kbd>Shift</kbd>+<kbd>Tab</kbd>) to constrain the direction of the axis line |
-| **Automatic redefinition** | If an axis already exists, clicking again will clear it and start defining a new one |
 | **Mirror operations** | Use the defined axis to mirror selected edges |
 | **Revolve operations** | Use the defined axis to revolve selected edges or faces |
 
@@ -647,8 +646,8 @@ The operation axis tool allows you to define a reference line for mirroring and 
 5. Once defined, the axis can be used for mirror or revolve operations
 
 **Redefining the Axis:**
-- If an operation axis already exists and you click again in operation axis mode, the existing axis will be automatically cleared and you can start defining a new one
-- Alternatively, use the "Clear axis" button in the options panel to manually clear the axis
+- While an operation axis exists, clicks in the viewport are used to select edges or faces for Mirror/Revolve (the axis definition mode remains active so the Options panel buttons are available).
+- To redefine the axis: click the **Clear axis** button in the options panel first (this removes the current axis), then click in the viewport to place the first point of the new axis, followed by the second point.
 
 **Using the Operation Axis:**
 Once an axis is defined, the options panel (under the **Sketch operation** heading) shows:
@@ -679,8 +678,8 @@ Once an axis is defined, the options panel (under the **Sketch operation** headi
 
 **Tips:**
 - The operation axis is a reference line used for geometric transformations
-- Select edges or faces before using the Mirror or Revolve operations
-- The axis can be redefined at any time by clicking again in operation axis mode
+- Select edges or faces (while the Operation Axis tool is active) before using the Mirror or Revolve buttons in the options panel
+- To redefine the axis, first use the **Clear axis** button, then click to place the new axis points
 - Use snap points for precise axis placement relative to existing geometry
 - Constraining the angle when placing the axis is useful for precise directional reference lines (e.g. for future snapping operations)
 
