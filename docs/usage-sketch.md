@@ -285,7 +285,7 @@ The circle tool follows this workflow:
 | | |
 | ---: | --- |
 | **Extrusion** | Select the circle face and [extrude](usage.md#extrude-sketch-face-tool-e) to create cylindrical shapes |
-| **Boolean Operations** | Use circles in [cut, fuse, or common](usage.md#other-feature-operations) operations |
+| **Boolean Operations** | Use circles in [cut, fuse, or common](usage.md#boolean-operations) operations |
 | **Pattern Creation** | Use circles as the basis for polar arrays or other patterns |
 | **Dimensioning** | Add radius or diameter dimensions to circles |
 
@@ -850,7 +850,7 @@ The create sketch from planar face tool allows you to extract the boundary of a 
 | **Reverse engineering** | Extract profiles from imported 3D models |
 | **Feature modification** | Create a sketch from an existing face, modify it, and [extrude](usage.md#extrude-sketch-face-tool-e) to create a new feature |
 | **Reference geometry** | Use existing face boundaries as reference for new sketches |
-| **Model editing** | Extract a face boundary, modify it, and use it in [boolean operations](usage.md#other-feature-operations) |
+| **Model editing** | Extract a face boundary, modify it, and use it in [boolean operations](usage.md#boolean-operations) |
 | **Workflow efficiency** | Quickly create sketches from existing geometry instead of manually recreating profiles |
 
 **Technical Details:**

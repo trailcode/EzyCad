@@ -166,7 +166,7 @@ Edit operations change your model (sketches or 3D shapes) and can be navigated w
   EzyCad includes document-level undo/redo for both sketches and 3D shapes.
 
   - **What it does**
-    - Tracks modeling operations as steps in a history stack (sketch edits, [extrudes](#extrude-sketch-face-tool-e), [boolean operations](#other-feature-operations), [transforms](#3d-modeling), etc.).
+    - Tracks modeling operations as steps in a history stack (sketch edits, [extrudes](#extrude-sketch-face-tool-e), [boolean operations](#boolean-operations), [transforms](#3d-modeling), etc.).
     - Undo/redo restores the **model state only**; the 3D view (camera) is intentionally not changed so you can review changes from a consistent perspective.
     - When you undo or redo a step, the application returns to the mode that was active for that operation (e.g., sketch inspection vs normal inspection).
 
@@ -203,7 +203,7 @@ The typical modeling workflow in EzyCad follows these steps:
 
 3. **Modify 3D Shapes**: Use [3D Modeling tools](#3d-modeling) to transform shapes ([move](#shape-move-tool-g), [rotate](#shape-rotate-tool-r), [scale](#shape-scale-tool-s)) or create patterns ([polar duplicate](#shape-polar-duplicate-tool)).
 
-4. **Apply Feature Operations**: Use [boolean operations](#other-feature-operations) (cut, fuse, common) or [feature operations](#other-feature-operations) (chamfer, fillet) to refine your 3D model.
+4. **Apply Feature Operations**: Use [boolean operations](#boolean-operations) (cut, fuse, common) or edge-based feature operations (chamfer with <kbd>C</kbd>, fillet with <kbd>F</kbd>) to refine your 3D model.
 
 **Key Concepts:**
 
@@ -235,7 +235,7 @@ In addition to creating 3D shapes from sketches, EzyCad supports importing exist
 1. Use **File -> Import**
 2. Pick a `.step`, `.stp`, or `.ply` file (the dialog lists these types)
 3. Geometry is added as 3D shape(s) in the document
-4. You can move, rotate, scale, and use imported bodies in [boolean operations](#other-feature-operations) like native solids where the geometry allows it
+4. You can move, rotate, scale, and use imported bodies in [boolean operations](#boolean-operations) like native solids where the geometry allows it
 
 **PLY import notes:**
 - Supported: **ASCII** PLY and **binary little-endian** PLY.
@@ -439,7 +439,7 @@ The extrude tool allows you to create 3D solid shapes by extruding 2D sketch fac
 - Use the distance input dialog for precise measurements
 - The extrusion direction depends on which side of the face plane you move the mouse to
 - Multiple faces from the same sketch can be extruded separately
-- Extruded shapes can be used in [boolean operations](#other-feature-operations) (cut, fuse, common)
+- Extruded shapes can be used in [boolean operations](#boolean-operations) (cut, fuse, common)
 
 **Common Use Cases:**
 
@@ -448,7 +448,7 @@ The extrude tool allows you to create 3D solid shapes by extruding 2D sketch fac
 | **Extrusion** | Select the circle face and [extrude](#extrude-sketch-face-tool-e) to create cylindrical shapes |
 | **Base features** | Create the base feature of a part by [extruding](#extrude-sketch-face-tool-e) a profile |
 | **Additive features** | [Extrude](#extrude-sketch-face-tool-e) additional features on existing parts |
-| **Through features** | Extrude holes or cutouts by using the [cut](#other-feature-operations) operation after extrusion |
+| **Through features** | Extrude holes or cutouts by using the [Cut](#boolean-operations) operation after extrusion |
 
 #### Shape Polar Duplicate Tool
 
@@ -513,10 +513,74 @@ The polar duplicate tool allows you to create multiple copies of selected shapes
 
 - Create chamfers (<kbd>C</kbd>)
 - Add fillets (<kbd>F</kbd>)
-- Boolean operations:
-  - Cut
-  - Fuse
-  - Common
+- [Boolean operations](#boolean-operations) (Cut, Fuse, Common)
+
+### Boolean Operations
+
+Boolean operations (also called CSG or boolean tools) combine or modify 3D solids. EzyCad provides the three classic operations using Open CASCADE:
+
+![Shape Cut](res/icons/Part_Cut.png) **Cut** — subtract the tool bodies from the first (target) body.
+
+![Shape Fuse](res/icons/Part_Fuse.png) **Fuse** — union (merge) all selected bodies into one.
+
+![Shape Common](res/icons/Part_Common.png) **Common** — keep only the overlapping volume (intersection) of the selected bodies.
+
+These tools are in the main toolbar (after the polar duplicate button). They are **immediate commands**, not persistent modes like Move (G) or Extrude (E).
+
+**Features:**
+
+| | |
+| ---: | --- |
+| **Multi-select input** | Select any two or more solids in Normal/Inspection mode, then activate the desired boolean |
+| **Order matters for Cut** | The first selected shape is the base body; all others are used as cutters (subtracted) |
+| **Inputs are consumed** | The original selected shapes are removed and replaced by a single result shape (destructive / non-parametric) |
+| **Result naming** | New shape is named "Cut", "Fused", or "Common". Rename it in the **Shape List** pane for clarity |
+| **Material** | The result receives the current document default material (the one shown in Normal mode Options → Material, or last chosen preset) |
+| **Undoable** | Every boolean pushes an undo snapshot. Use <kbd>Ctrl</kbd>+<kbd>Z</kbd> (or Edit → Undo) to restore the input shapes |
+| **Broad compatibility** | Works with extruded solids, imported STEP/IGES/PLY bodies, previous boolean results, and shapes produced by polar duplicate (especially with "Combine dups" enabled) |
+| **Selection filter aware** | Use the **Selection Mode** filter (Options panel or <kbd>1</kbd>–<kbd>9</kbd> keys) to pick only Solids, Compounds, etc. |
+
+**How to Use:**
+
+1. Make sure you are in **Normal** (inspection) mode.
+2. **Select two or more shapes** in the 3D viewer. Hold <kbd>Ctrl</kbd> (or the platform equivalent) to multi-select, or drag a selection box. Use the selection filter if you only want to pick whole solids.
+3. Click the appropriate toolbar button:
+   - ![Part_Cut](res/icons/Part_Cut.png) **Shape cut** for difference/subtract
+   - ![Part_Fuse](res/icons/Part_Fuse.png) **Shape fuse** for union
+   - ![Part_Common](res/icons/Part_Common.png) **Shape common** for intersection
+4. The selected shapes disappear and the boolean result appears in their place (with a default name and material).
+5. (Recommended) Open **View → Shape List**, rename the result, and adjust its material or visibility if desired.
+6. The result is now a regular solid and can be moved, rotated, scaled, used in further booleans, exported, etc.
+
+If fewer than two shapes are selected you will see an error message and nothing changes.
+
+**Tips:**
+
+- For **Cut**, always select the main body you want to keep first, then the cutters (holes, slots, trimming pieces) second.
+- Fuse and Common are associative in the sense that more than two bodies are processed left-to-right, but geometric order rarely matters.
+- Booleans can fail when the operands only touch at faces/edges without proper volume overlap, have coplanar faces, or contain non-manifold / self-intersecting geometry. In case of failure the original shapes are left untouched.
+- After a successful boolean the result is a new independent B-rep solid (no history link back to the inputs).
+- Imported STEP assemblies or multiple polar-duplicated parts are common candidates for Fuse to simplify the model.
+- Use **Cut** after extruding a profile all the way through a body (or past it) to create holes or pockets.
+- The **Shape List** is your friend — booleans appear there exactly like any other solid. You can hide, rename, or delete them independently.
+- All booleans respect the current **Material** preset for new shapes (see Options panel in Normal mode or the **Startup project** / Defaults in Settings).
+
+**Common Use Cases:**
+
+| Goal | Typical workflow |
+|------|------------------|
+| Create a hole or pocket | Sketch and extrude a closed profile through (or into) the target body, then **Cut** the extrusion from the main solid |
+| Merge separate parts into one | Position solids so they overlap or adjoin, multi-select them, and **Fuse** |
+| Compute intersection volume | Overlap two or more bodies and use **Common** to extract the shared region |
+| Clean up or simplify imports | Fuse multiple imported bodies; cut away unwanted protrusions |
+| Build complex machined parts | Repeated extrude + boolean sequence (base block → cuts for pockets → fuses for bosses) |
+| Radial patterns with merging | Use polar duplicate with **Combine dups** checked, then boolean the result with other geometry |
+
+**Keyboard notes:**
+
+There are no single-letter hotkeys for the boolean tools (unlike <kbd>E</kbd> extrude, <kbd>C</kbd> chamfer, <kbd>F</kbd> fillet, <kbd>G</kbd>/<kbd>R</kbd>/<kbd>S</kbd> transforms). Activate them from the toolbar after multi-selecting in Normal mode. General selection and view hotkeys still apply.
+
+For more on 3D solids and the viewer, see [3D viewer (Open CASCADE)](usage-occt-view.md).
 
 ## Hotkeys
 
@@ -701,7 +765,7 @@ Contributors should follow **[ezycad_code_style.md](ezycad_code_style.md)** for 
 - ![PartDesign_Fillet](res/icons/PartDesign_Fillet.png) - Fillet (<kbd>F</kbd>)
 - ![Draft_PolarArray](res/icons/Draft_PolarArray.png) - Shape polar duplicate
 
-### Boolean Operations
+### Boolean Operation Icons
 - ![Part_Cut](res/icons/Part_Cut.png) - Shape cut
 - ![Part_Fuse](res/icons/Part_Fuse.png) - Shape fuse
 - ![Part_Common](res/icons/Part_Common.png) - Shape common

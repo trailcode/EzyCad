@@ -7,6 +7,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Documentation
+
+- Added substantial user-guide coverage for **Boolean Operations** (Cut, Fuse, Common) under Feature Operations in `usage.md`:
+  - Clear explanation of the three tools, toolbar invocation, and multi-select workflow in Normal mode.
+  - Features table (order sensitivity for Cut, input consumption, undo, material handling, compatibility with extrudes/imports/prior results).
+  - Step-by-step "How to Use", practical Tips (including common OCCT boolean failure causes), and a Common Use Cases table.
+  - Updated cross-references from the workflow overview, Extrude section, importing notes, and `usage-sketch.md` (circle and underlay sections) to point to the new detailed `#boolean-operations` anchor.
+  - Chamfer and Fillet remain lightly documented for now (hotkeys + icons only).
+
 ## [0.2.0] - 2026-06-13
 
 ### Added
