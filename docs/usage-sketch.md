@@ -46,6 +46,7 @@ While you draw or place points in sketch mode, EzyCad helps you align to existin
 | **Snap guides** | **Snap guide mode**: *Traditional* (local markers at guide intersections), *Fullscreen* (view-spanning axis lines), or *Both*. A separate checkbox **All co-axial nodes** (in the sketch Options panel and in Settings) enables *global* mode: when on, full horizontal and vertical guide lines + markers are shown for *all* nodes in the current sketch and all other visible sketches (the complete set of co-axial alignments). When off (default), only the closest node per active axis is annotated (classic closest-relative behavior). |
 | **Axis alignment** | Near a snap target, the pick can align to that point's **X** or **Y** on the sketch plane; guides show which axis is active. When **both** axes align to the **same** point, the cursor **locks to that vertex**. |
 | **Mid-point snap (Add node)** | A click near a **straight** edge (not at its ends) snaps onto the segment and **splits** it at commit time (see [Add node tool](#add-node-tool)). Separate from vertex lock. |
+| **Automatic splitting on edge intersections** | When you add a new straight (linear) edge using the Line Edge tool or Multi-Line Edge tool, if it crosses or touches the interior of any existing straight edge, the existing edge is automatically split at the intersection point. The new edge is also subdivided into atomic segments where needed. The same splitting occurs when an endpoint of the new edge snaps to the midpoint of an existing edge. This produces correct T-junctions (3 edges), crossings (4 edges), and cleanly divided faces from a single sketch. Arcs have special internal handling and do not trigger the same linear splits. |
 | **Other visible sketches** | Nodes from **other visible sketches** are projected onto the current sketch plane and act as snap targets (same distance rules). Useful for multi-sketch layouts and tools such as **polar duplicate** that pick sketch points. |
 
 **Angle constraint:** When a line or add-node rubber band has an active angle constraint, vertex and axis snap may be disabled or relaxed so the typed angle stays exact (see each tool's section).
@@ -53,6 +54,7 @@ While you draw or place points in sketch mode, EzyCad helps you align to existin
 **Tips:**
 - For precise corners, approach a vertex until both horizontal and vertical guides appear, then click.
 - Automatic **edge midpoints** are snap targets but do not show **+** markers and are not listed under **Nodes** in the [Sketch List](usage.md#sketch-list) (that list is user-placed points only).
+- Adding a new straight edge that intersects existing straight edges (or snaps to their midpoints) automatically splits the intersected edges. This is the main way to divide a closed shape (rectangle, square, slot, or freehand closed profile) into multiple separate faces for individual extrusion or other operations. No manual "split" command is needed. The resulting faces remain valid even if you add the splitting edge before or after the outer shape.
 
 ## Hotkeys
 
@@ -139,6 +141,7 @@ The single line edge tool allows you to create straight line segments between tw
 - Lines can be used as construction geometry or as part of your final design
 - The line tool works in any sketch plane
 - Multiple line edges can be created in sequence by right-clicking after each line
+- **New straight edges automatically split existing straight edges** at interior intersection points (or when snapping to an existing midpoint). This is how you divide a closed profile into multiple faces (for separate extrusions, etc.) — just draw the crossing or connecting line; no extra "split" step is required. The same logic applies to multi-line sequences.
 
 ### Multi-Line Edge Tool
 
