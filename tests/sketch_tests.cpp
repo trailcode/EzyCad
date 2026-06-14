@@ -376,6 +376,256 @@ TEST_F(Sketch_test, VisibilitySettings)
   // Note: We can't directly test the visual state, but we can verify the settings were applied
 }
 
+// Test for splitting a square with a vertical edge at the midpoints (T-junction at mid, not crossing).
+// Result must be two proper rectangles in *both* addition orders.
+// (Image shows the geometry: square split vertically down the middle into two rects.)
+TEST_F(Sketch_test, AddSquareThenMidEdge_ProducesTwoRectangles_BothOrders)
+{
+  gp_Pln default_plane(gp::Origin(), gp::DZ());
+
+  // Square: side 10 (will be split into two 5x10 rectangles)
+  gp_Pnt2d bl(0.0, 0.0);
+  gp_Pnt2d br(10.0, 0.0);
+  gp_Pnt2d tr(10.0, 10.0);
+  gp_Pnt2d tl(0.0, 10.0);
+
+  // Mid vertical edge
+  gp_Pnt2d m_bottom(5.0, 0.0);
+  gp_Pnt2d m_top(5.0, 10.0);
+
+  // Order 1: square (4 edges) first, then the mid edge
+  {
+    Sketch sketch("square_then_mid", view(), default_plane);
+
+    // Add square (order doesn't matter much for the square itself, but we add sequentially)
+    Sketch_access::add_edge_(sketch, bl, br);
+    Sketch_access::add_edge_(sketch, br, tr);
+    Sketch_access::add_edge_(sketch, tr, tl);
+    Sketch_access::add_edge_(sketch, tl, bl);
+
+    // Add the splitting edge at midpoints
+    Sketch_access::add_edge_(sketch, m_bottom, m_top);
+
+    Sketch_access::update_faces_(sketch);
+    const auto& faces = Sketch_access::get_faces(sketch);
+
+    EXPECT_EQ(faces.size(), 2) << "Square + mid vertical must produce exactly two faces";
+
+    // Check both faces are proper 5x10 rectangles (not squares)
+    bool found_left = false, found_right = false;
+    for (const auto& f : faces)
+    {
+      EXPECT_EQ(f->Shape().ShapeType(), TopAbs_FACE);
+      auto poly = to_boost(f->Shape(), default_plane);
+      EXPECT_TRUE(is_clockwise(poly.outer()));
+      EXPECT_EQ(poly.outer().size(), 5); // closed ring
+
+      // Compute bbox deltas
+      double minx = 1e9, maxx = -1e9, miny = 1e9, maxy = -1e9;
+      for (const auto& pt : poly.outer())
+      {
+        minx = std::min(minx, pt.x());
+        maxx = std::max(maxx, pt.x());
+        miny = std::min(miny, pt.y());
+        maxy = std::max(maxy, pt.y());
+      }
+      double dx = maxx - minx;
+      double dy = maxy - miny;
+
+      if (std::abs(dx - 5.0) < 1e-6 && std::abs(dy - 10.0) < 1e-6)
+      {
+        // left or right rect
+        if (minx < 2.5) found_left = true;
+        else found_right = true;
+      }
+      else
+      {
+        ADD_FAILURE() << "Face is not a 5x10 rectangle (dx=" << dx << " dy=" << dy << ")";
+      }
+    }
+    EXPECT_TRUE(found_left) << "Missing left 5x10 rect";
+    EXPECT_TRUE(found_right) << "Missing right 5x10 rect";
+  }
+
+  // Order 2: mid edge first, then the square edges
+  {
+    Sketch sketch("mid_then_square", view(), default_plane);
+
+    // Add mid vertical first
+    Sketch_access::add_edge_(sketch, m_bottom, m_top);
+
+    // Add square (the square edges will attach to the existing mid edge)
+    Sketch_access::add_edge_(sketch, bl, br);
+    Sketch_access::add_edge_(sketch, br, tr);
+    Sketch_access::add_edge_(sketch, tr, tl);
+    Sketch_access::add_edge_(sketch, tl, bl);
+
+    Sketch_access::update_faces_(sketch);
+    const auto& faces = Sketch_access::get_faces(sketch);
+
+    EXPECT_EQ(faces.size(), 2) << "Mid vertical + square must produce exactly two faces";
+
+    bool found_left = false, found_right = false;
+    for (const auto& f : faces)
+    {
+      EXPECT_EQ(f->Shape().ShapeType(), TopAbs_FACE);
+      auto poly = to_boost(f->Shape(), default_plane);
+      EXPECT_TRUE(is_clockwise(poly.outer()));
+      EXPECT_EQ(poly.outer().size(), 5);
+
+      double minx = 1e9, maxx = -1e9, miny = 1e9, maxy = -1e9;
+      for (const auto& pt : poly.outer())
+      {
+        minx = std::min(minx, pt.x());
+        maxx = std::max(maxx, pt.x());
+        miny = std::min(miny, pt.y());
+        maxy = std::max(maxy, pt.y());
+      }
+      double dx = maxx - minx;
+      double dy = maxy - miny;
+
+      if (std::abs(dx - 5.0) < 1e-6 && std::abs(dy - 10.0) < 1e-6)
+      {
+        if (minx < 2.5) found_left = true;
+        else found_right = true;
+      }
+      else
+      {
+        ADD_FAILURE() << "Face is not a 5x10 rectangle (dx=" << dx << " dy=" << dy << ")";
+      }
+    }
+    EXPECT_TRUE(found_left) << "Missing left 5x10 rect (mid first)";
+    EXPECT_TRUE(found_right) << "Missing right 5x10 rect (mid first)";
+  }
+}
+
+// GUI path coverage for the mid edge: the vertical mid is added via the finalize_edges_
+// (line string tmp, pre-pass batch inters to split olds, append, post re-subdivide news,
+// plus mid snap handling). Exercise both draw directions for the vertical (lower midpoint
+// first then top; top first then lower). Must still produce exactly two 5x10 rect faces
+// (not squares) in either case. This addresses order/direction sensitivity that can appear
+// only in the GUI finalize path vs controlled direct add_edge_.
+TEST_F(Sketch_test, AddSquareThenMidEdge_GUIPath_BothDrawDirections_ProducesTwoRectangles)
+{
+  gp_Pln default_plane(gp::Origin(), gp::DZ());
+
+  // Square: side 10 (will be split into two 5x10 rectangles)
+  gp_Pnt2d bl(0.0, 0.0);
+  gp_Pnt2d br(10.0, 0.0);
+  gp_Pnt2d tr(10.0, 10.0);
+  gp_Pnt2d tl(0.0, 10.0);
+
+  // Mid vertical edge
+  gp_Pnt2d m_bottom(5.0, 0.0);
+  gp_Pnt2d m_top(5.0, 10.0);
+
+  // Draw square via direct (its finalize uses direct add_edge_ for the 4 sides), then
+  // add the mid vertical using the GUI single-edge finalize path, lower to top.
+  {
+    Sketch sketch("gui_square_then_mid_lower_first", view(), default_plane);
+
+    Sketch_access::add_edge_(sketch, bl, br);
+    Sketch_access::add_edge_(sketch, br, tr);
+    Sketch_access::add_edge_(sketch, tr, tl);
+    Sketch_access::add_edge_(sketch, tl, bl);
+
+    // Simulate GUI draw of vertical: click lower mid first, then top.
+    gui().set_mode(Mode::Sketch_add_edge);
+    sketch.add_sketch_pt(ScreenCoords(dvec2(m_bottom.X(), m_bottom.Y())));
+    sketch.add_sketch_pt(ScreenCoords(dvec2(m_top.X(), m_top.Y())));
+    sketch.finalize_elm();
+
+    Sketch_access::update_faces_(sketch);
+    const auto& faces = Sketch_access::get_faces(sketch);
+
+    EXPECT_EQ(faces.size(), 2) << "GUI mid vertical (lower first) must produce exactly two faces";
+
+    bool found_left = false, found_right = false;
+    for (const auto& f : faces)
+    {
+      EXPECT_EQ(f->Shape().ShapeType(), TopAbs_FACE);
+      auto poly = to_boost(f->Shape(), default_plane);
+      EXPECT_TRUE(is_clockwise(poly.outer()));
+      EXPECT_EQ(poly.outer().size(), 5);
+
+      double minx = 1e9, maxx = -1e9, miny = 1e9, maxy = -1e9;
+      for (const auto& pt : poly.outer())
+      {
+        minx = std::min(minx, pt.x());
+        maxx = std::max(maxx, pt.x());
+        miny = std::min(miny, pt.y());
+        maxy = std::max(maxy, pt.y());
+      }
+      double dx = maxx - minx;
+      double dy = maxy - miny;
+
+      if (std::abs(dx - 5.0) < 1e-6 && std::abs(dy - 10.0) < 1e-6)
+      {
+        if (minx < 2.5) found_left = true;
+        else found_right = true;
+      }
+      else
+      {
+        ADD_FAILURE() << "GUI (lower first): Face is not a 5x10 rectangle (dx=" << dx << " dy=" << dy << ")";
+      }
+    }
+    EXPECT_TRUE(found_left) << "GUI (lower first): Missing left 5x10 rect";
+    EXPECT_TRUE(found_right) << "GUI (lower first): Missing right 5x10 rect";
+  }
+
+  // Same square, but draw the mid vertical top to bottom (reverse dir).
+  {
+    Sketch sketch("gui_square_then_mid_top_first", view(), default_plane);
+
+    Sketch_access::add_edge_(sketch, bl, br);
+    Sketch_access::add_edge_(sketch, br, tr);
+    Sketch_access::add_edge_(sketch, tr, tl);
+    Sketch_access::add_edge_(sketch, tl, bl);
+
+    gui().set_mode(Mode::Sketch_add_edge);
+    sketch.add_sketch_pt(ScreenCoords(dvec2(m_top.X(), m_top.Y())));
+    sketch.add_sketch_pt(ScreenCoords(dvec2(m_bottom.X(), m_bottom.Y())));
+    sketch.finalize_elm();
+
+    Sketch_access::update_faces_(sketch);
+    const auto& faces = Sketch_access::get_faces(sketch);
+
+    EXPECT_EQ(faces.size(), 2) << "GUI mid vertical (top first) must produce exactly two faces";
+
+    bool found_left = false, found_right = false;
+    for (const auto& f : faces)
+    {
+      EXPECT_EQ(f->Shape().ShapeType(), TopAbs_FACE);
+      auto poly = to_boost(f->Shape(), default_plane);
+      EXPECT_TRUE(is_clockwise(poly.outer()));
+      EXPECT_EQ(poly.outer().size(), 5);
+
+      double minx = 1e9, maxx = -1e9, miny = 1e9, maxy = -1e9;
+      for (const auto& pt : poly.outer())
+      {
+        minx = std::min(minx, pt.x());
+        maxx = std::max(maxx, pt.x());
+        miny = std::min(miny, pt.y());
+        maxy = std::max(maxy, pt.y());
+      }
+      double dx = maxx - minx;
+      double dy = maxy - miny;
+
+      if (std::abs(dx - 5.0) < 1e-6 && std::abs(dy - 10.0) < 1e-6)
+      {
+        if (minx < 2.5) found_left = true;
+        else found_right = true;
+      }
+      else
+      {
+        ADD_FAILURE() << "GUI (top first): Face is not a 5x10 rectangle (dx=" << dx << " dy=" << dy << ")";
+      }
+    }
+    EXPECT_TRUE(found_left) << "GUI (top first): Missing left 5x10 rect";
+    EXPECT_TRUE(found_right) << "GUI (top first): Missing right 5x10 rect";
+  }
+}
+
 // Test edge style settings
 TEST_F(Sketch_test, EdgeStyleSettings)
 {
