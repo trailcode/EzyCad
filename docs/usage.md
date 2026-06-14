@@ -269,7 +269,7 @@ For detailed information on creating 2D geometry, see the [2D Sketching](usage-s
 
 ### 2D Sketching
 
-See the **[2D Sketching guide](usage-sketch.md)** for full documentation of sketch tools: **add node** (points and edge splits), line and multi-line edges, circles, arcs, rectangles, squares, slots, operation axis, edge dimensions, and creating a sketch from a planar face.
+See the **[2D Sketching guide](usage-sketch.md)** for full documentation of sketch tools: **add node** (points and edge splits), line and multi-line edges, circles, arcs, rectangles, squares, slots, **operation axis** (with Mirror and Revolve actions in the Options panel), edge dimensions, and creating a sketch from a planar face. Revolve (via an operation axis) is one way to generate 3D solids directly from sketch geometry.
 
 **Sketch snap (overview):** While drawing or using **Add node**, picks can snap to existing geometry within **Snap dist** (Options panel). The main behaviors:
 
@@ -746,7 +746,7 @@ Contributors should follow **[ezycad_code_style.md](ezycad_code_style.md)** for 
 ### Sketch Tools
 - ![Workbench_Sketcher_none](res/icons/Workbench_Sketcher_none.png) - Sketch inspection mode
 - ![Macro_FaceToSketch_48](res/icons/Macro_FaceToSketch_48.png) - Create sketch from planar face
-- ![Sketcher_MirrorSketch](res/icons/Sketcher_MirrorSketch.png) - Define operation axis
+- ![Sketcher_MirrorSketch](res/icons/Sketcher_MirrorSketch.png) - Define operation axis (then use Mirror/Revolve buttons + angle field in the Options panel; Clear axis)
 - ![Sketcher_CreatePoint](res/icons/Sketcher_CreatePoint.png) - Add node
 - ![Sketcher_Element_Line_Edge](res/icons/Sketcher_Element_Line_Edge.png) - Add line edge
 - ![ls](res/icons/ls.png) - Add multi-line edge

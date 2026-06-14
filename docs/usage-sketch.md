@@ -33,7 +33,7 @@ This guide covers all 2D sketching tools and operations in EzyCad. For the main 
    - ![Add Node Tool](res/icons/Sketcher_CreatePoint.png) [Add nodes](#add-node-tool)
 
 2. **Sketch Operations**
-   - ![Operation Axis Tool](res/icons/Sketcher_MirrorSketch.png) [Define operation axis](#operation-axis-tool) - Mirror sketches, revolve edges or faces.
+   - ![Operation Axis Tool](res/icons/Sketcher_MirrorSketch.png) [Define operation axis](#operation-axis-tool) - Define a reference axis, then use the **Mirror** and **Revolve** controls (in the Options panel) to mirror selected sketch edges or revolve edges/faces into 3D solids.
    - ![Create Sketch from Planar Face Tool](res/icons/Macro_FaceToSketch_48.png) [Create sketch from planar face](#create-sketch-from-planar-face-tool)
 
 ## Sketch snapping
@@ -622,7 +622,7 @@ The slot tool allows you to create an oblong or oval-shaped slot with rounded en
 
 ![Operation Axis Tool](res/icons/Sketcher_MirrorSketch.png)
 
-The operation axis tool allows you to define a reference line for mirroring and revolving operations in sketches.
+The operation axis tool allows you to define a reference *line* (a direction and a point it passes through) for mirroring and revolving operations in sketches. Only the direction and position matter; the length of the drawn helper segment is visual only and has no effect on the results.
 
 **Features:**
 
@@ -630,40 +630,67 @@ The operation axis tool allows you to define a reference line for mirroring and 
 | ---: | --- |
 | **Two-point definition** | Click to set the start point, then click to set the end point of the axis line |
 | **Real-time preview** | See the axis line while moving the mouse |
-| **Precise length control** | Use the distance input dialog (<kbd>Tab</kbd> key) for exact axis length |
+| **Visual length control (Tab)** | Use the distance input dialog (<kbd>Tab</kbd> key) to set the length of the *drawn helper segment* (purely visual/reference; the length has no effect on mirror or revolve results) |
 | **Angle constraint** | Use the angle input dialog (<kbd>Shift</kbd>+<kbd>Tab</kbd>) to constrain the direction of the axis line |
 | **Mirror operations** | Use the defined axis to mirror selected edges |
 | **Revolve operations** | Use the defined axis to revolve selected edges or faces |
 
 **How to Use:**
-1. ![Sketcher_MirrorSketch](res/icons/Sketcher_MirrorSketch.png) Select the **Operation Axis** tool from the toolbar
-2. Click to set the start point of the axis line
-3. Move the mouse to see a preview of the axis line
-4. Click to set the end point to finalize the axis, or use input dialogs for precise control:
-   - Press <kbd>Tab</kbd> to enter an exact length value for the axis line
-   - Press <kbd>Shift</kbd>+<kbd>Tab</kbd> to enter an exact angle value (in degrees, CCW from +X) to constrain the direction of the axis
-   - When using both: apply angle (<kbd>Shift</kbd>+<kbd>Tab</kbd>) first, then length (<kbd>Tab</kbd>).
-5. Once defined, the axis can be used for mirror or revolve operations
+
+**Phase 1: Define the operation axis**
+1. ![Sketcher_MirrorSketch](res/icons/Sketcher_MirrorSketch.png) Select the **Operation Axis** tool from the toolbar.
+2. Click to set the start point of the axis line on the sketch plane.
+3. Move the mouse — a live preview of the axis line follows the cursor.
+4. Click a second point (or use the input dialogs) to finalize the axis:
+   - <kbd>Tab</kbd>: open distance dialog to set the length of the *drawn axis helper segment* (visual only — this length does not affect mirror or revolve operations).
+   - <kbd>Shift</kbd>+<kbd>Tab</kbd>: open angle (degrees, CCW from +X) dialog to constrain direction.
+   - Apply angle constraint first if using both, then length.
+5. The axis is now defined. You remain in the Operation Axis tool (this keeps the Options panel available for the Mirror/Revolve controls).
+
+**Phase 2: Use Mirror or Revolve (the controls shown in the Options panel)**
+
+Once the axis exists, the Options panel (under the **Sketch operation** heading) displays these controls (matching the UI):
+
+- **Mirror** button — Mirrors the currently selected sketch edges across the axis.
+- **Revolve** button (with adjacent numeric input, default **360.00**) — Revolves the selected edges or faces around the axis by the given angle (in degrees). 360° produces a full solid of revolution.
+- **Clear axis** button — Removes the current operation axis (required before you can define a new one).
+
+**How to Mirror:**
+1. With the Operation Axis tool active and an axis defined, select the edges you want to mirror (click them or use a selection box; the mode stays active so normal sketch selection works for the subject geometry).
+2. In the Options panel, click the **Mirror** button.
+3. Selected straight edges are duplicated and mirrored. Arc/circle edges are handled as pairs to preserve the geometry.
+4. The mirrored elements are added to the current sketch (the original selection remains until you change it).
+
+**How to Revolve (create 3D):**
+1. With the Operation Axis tool active and an axis defined, select the edges or closed faces you want to revolve.
+2. (Optional) Adjust the angle in the input field next to the Revolve button (default 360.00 for a full closed revolution).
+3. Click the **Revolve** button.
+4. EzyCad creates a 3D solid by revolving the selected sketch geometry around the axis. The new 3D shape is added to the document and you are switched out of sketch mode into Normal (inspection) mode.
+5. If the operation fails you will see a message such as "Revolve failed, ensure edges or faces on one side of operation axis."
 
 **Redefining the Axis:**
 - While an operation axis exists, clicks in the viewport are used to select edges or faces for Mirror/Revolve (the axis definition mode remains active so the Options panel buttons are available).
-- To redefine the axis: click the **Clear axis** button in the options panel first (this removes the current axis), then click in the viewport to place the first point of the new axis, followed by the second point.
+- To redefine the axis: click the **Clear axis** button in the options panel first (this removes the current axis), then click in the viewport to place the first point of the new axis, followed by the second point (as in Phase 1 above).
 
-**Using the Operation Axis:**
-Once an axis is defined, the options panel (under the **Sketch operation** heading) shows:
+**Using the Operation Axis (UI reference):**
+The controls that appear in the Options panel once an axis is defined are:
 
-| | |
-| ---: | --- |
-| **Mirror button** | Mirrors selected edges across the operation axis |
-| **Revolve button** | Revolves selected edges or faces around the operation axis |
-| **Revolve angle input** | Set the angle for revolve operations (default: 360 degrees) |
-| **Clear axis button** | Manually clear the current operation axis |
+| Control | Purpose |
+| --- | --- |
+| **Mirror** button | Mirrors selected edges across the operation axis (stays in 2D sketch). |
+| **Revolve** button + numeric field (e.g. 360.00) | Revolves selected edges or faces around the axis by the entered angle to produce a 3D solid. |
+| **Clear axis** button | Manually removes the current operation axis reference. |
+
+The Revolve numeric field accepts any float angle (in degrees); 360 is the most common for closed solids.
+
+**Important note on axis length:**
+The two points you pick define a *direction* and a point the axis passes through. The length of the drawn segment between those points is purely visual (it determines how long the reference line appears in the sketch for your convenience). It has **no effect** on the results of Mirror or Revolve. The operations always treat the axis as an infinite line in the computed direction.
 
 **Shortcuts:**
 
 | | |
 | ---: | --- |
-| <kbd>Tab</kbd> | Open distance input dialog for precise axis length control |
+| <kbd>Tab</kbd> | Open distance input dialog to set the length of the drawn axis helper segment (visual only; length has no functional effect on mirror/revolve) |
 | <kbd>Shift</kbd>+<kbd>Tab</kbd> | Open angle input dialog to constrain the direction of the axis (after first point is set) |
 | <kbd>Escape</kbd> | Cancel the current axis definition |
 
@@ -671,17 +698,18 @@ Once an axis is defined, the options panel (under the **Sketch operation** headi
 - After setting the first point, press **Shift+Tab** to open the angle input dialog
 - Enter the desired angle in degrees (0 deg = horizontal right, 90 deg = vertical up, counterclockwise)
 - Once the angle is entered, the axis line is constrained to that direction from the start point
-- You can still move the mouse to adjust the length of the axis while maintaining the direction, or use <kbd>Tab</kbd> for an exact length value
-- The distance input (<kbd>Tab</kbd>) can still be used in combination with the angle constraint
-- **Order when using both**: When requiring both an angle and a length constraint, apply the angle constraint first (<kbd>Shift</kbd>+<kbd>Tab</kbd>), then the length constraint (<kbd>Tab</kbd>).
+- You can still move the mouse to adjust the length of the *drawn helper segment* while maintaining the direction, or use <kbd>Tab</kbd> to set an exact visual length (note: the length of the operation axis segment has no effect on mirror or revolve results — only the direction and a point on the line matter)
+- The distance input (<kbd>Tab</kbd>) can still be used in combination with the angle constraint for the visual helper
+- **Order when using both**: When requiring both an angle and a length (for the helper), apply the angle constraint first (<kbd>Shift</kbd>+<kbd>Tab</kbd>), then the length (<kbd>Tab</kbd>).
 - **Note**: When an angle constraint is active, snapping to nodes is disabled to maintain the angle precision
 
 **Tips:**
-- The operation axis is a reference line used for geometric transformations
+- The operation axis is a reference *line* (direction + any point it passes through). Its drawn length is visual only and has no effect on mirror or revolve results.
 - Select edges or faces (while the Operation Axis tool is active) before using the Mirror or Revolve buttons in the options panel
 - To redefine the axis, first use the **Clear axis** button, then click to place the new axis points
 - Use snap points for precise axis placement relative to existing geometry
 - Constraining the angle when placing the axis is useful for precise directional reference lines (e.g. for future snapping operations)
+- You can make the drawn axis segment long or short via <kbd>Tab</kbd> purely for visibility/clarity — it does not change the behavior of the operations
 
 ### Dimension Tool
 

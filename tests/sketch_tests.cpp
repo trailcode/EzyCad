@@ -1353,7 +1353,201 @@ TEST_F(Sketch_test, MirrorSelectedEdges_NoEdgesSelected)
       << "Error message should be displayed when no edges are selected";
 }
 
+// Positive test: mirror a simple straight edge across a horizontal axis.
+// The length of the operation axis itself has no effect; only its direction and position matter.
+TEST_F(Sketch_test, MirrorSelectedEdges_SimpleStraightEdge)
+{
+  gp_Pln default_plane(gp::Origin(), gp::DZ());
+  Sketch sketch("TestSketch", view(), default_plane);
+
+  // Activate operation axis mode and define a horizontal axis (y=0)
+  gui().set_mode(Mode::Sketch_operation_axis);
+
+  gp_Pnt2d axis_p1(0.0, 0.0);
+  gp_Pnt2d axis_p2(5.0, 0.0);  // length is arbitrary / visual only
+  sketch.add_sketch_pt(ScreenCoords(dvec2(axis_p1.X(), axis_p1.Y())));
+  sketch.add_sketch_pt(ScreenCoords(dvec2(axis_p2.X(), axis_p2.Y())));
+
+  EXPECT_TRUE(sketch.has_operation_axis()) << "Operation axis must be defined for mirror";
+
+  // Add a horizontal edge above the axis to be mirrored
+  gp_Pnt2d e1(1.0, 2.0);
+  gp_Pnt2d e2(4.0, 2.0);
+  Sketch_access::add_edge_(sketch, e1, e2);
+
+  // Find the shp of the edge we just added (last one with b node)
+  AIS_Shape_ptr edge_to_mirror;
+  for (auto rit = sketch.m_edges.rbegin(); rit != sketch.m_edges.rend(); ++rit)
+  {
+    if (rit->node_idx_b.has_value())
+    {
+      edge_to_mirror = rit->shp;
+      break;
+    }
+  }
+  ASSERT_FALSE(edge_to_mirror.IsNull()) << "Expected to find a selectable edge shp";
+
+  // Simulate selection via the interactive context (mirror/revolve use get_selected_edges_ which reads from view selection)
+  auto& cctx = view().ctx();
+  cctx.ClearSelected(true);
+  cctx.AddOrRemoveSelected(edge_to_mirror, true);
+
+  // Count drawable edges before
+  auto count_drawable_edges = [&](const Sketch& s) -> size_t {
+    size_t n = 0;
+    for (const auto& e : s.m_edges)
+      if (e.node_idx_b.has_value()) ++n;
+    return n;
+  };
+
+  size_t before = count_drawable_edges(sketch);
+
+  // Execute mirror
+  sketch.mirror_selected_edges();
+
+  size_t after = count_drawable_edges(sketch);
+  EXPECT_EQ(after, before + 1) << "Exactly one mirrored edge should be added";
+
+  // Verify a mirrored edge now exists at y = -2 with matching x coords
+  bool found_mirrored = false;
+  for (const auto& e : sketch.m_edges)
+  {
+    if (!e.node_idx_b.has_value()) continue;
+    const gp_Pnt2d& na = sketch.get_nodes()[e.node_idx_a];
+    const gp_Pnt2d& nb = sketch.get_nodes()[*e.node_idx_b];
+    if (std::abs(na.Y() + 2.0) < Precision::Confusion() &&
+        std::abs(nb.Y() + 2.0) < Precision::Confusion() &&
+        std::abs(na.X() - 1.0) < Precision::Confusion() &&
+        std::abs(nb.X() - 4.0) < Precision::Confusion())
+    {
+      found_mirrored = true;
+      break;
+    }
+  }
+  EXPECT_TRUE(found_mirrored) << "Mirrored edge (1,-2) to (4,-2) should have been created";
+}
+
+// Test mirroring works across a vertical axis as well
+TEST_F(Sketch_test, MirrorSelectedEdges_VerticalAxis)
+{
+  gp_Pln default_plane(gp::Origin(), gp::DZ());
+  Sketch sketch("TestSketch", view(), default_plane);
+
+  gui().set_mode(Mode::Sketch_operation_axis);
+
+  // Vertical axis at x=0
+  sketch.add_sketch_pt(ScreenCoords(dvec2(0.0, 0.0)));
+  sketch.add_sketch_pt(ScreenCoords(dvec2(0.0, 5.0)));
+
+  // Edge to the right of the axis
+  gp_Pnt2d e1(2.0, 1.0);
+  gp_Pnt2d e2(2.0, 3.0);
+  Sketch_access::add_edge_(sketch, e1, e2);
+
+  // Select it
+  AIS_Shape_ptr shp;
+  for (auto rit = sketch.m_edges.rbegin(); rit != sketch.m_edges.rend(); ++rit)
+  {
+    if (rit->node_idx_b.has_value()) { shp = rit->shp; break; }
+  }
+  ASSERT_FALSE(shp.IsNull());
+
+  auto& cctx = view().ctx();
+  cctx.ClearSelected(true);
+  cctx.AddOrRemoveSelected(shp, true);
+
+  size_t before = 0;
+  for (const auto& e : sketch.m_edges) if (e.node_idx_b.has_value()) ++before;
+
+  sketch.mirror_selected_edges();
+
+  size_t after = 0;
+  for (const auto& e : sketch.m_edges) if (e.node_idx_b.has_value()) ++after;
+  EXPECT_EQ(after, before + 1);
+
+  // Expect mirrored edge at x=-2
+  bool found = false;
+  for (const auto& e : sketch.m_edges)
+  {
+    if (!e.node_idx_b.has_value()) continue;
+    const gp_Pnt2d& na = sketch.get_nodes()[e.node_idx_a];
+    const gp_Pnt2d& nb = sketch.get_nodes()[*e.node_idx_b];
+    if (std::abs(na.X() + 2.0) < Precision::Confusion() &&
+        std::abs(nb.X() + 2.0) < Precision::Confusion() &&
+        std::abs(na.Y() - 1.0) < Precision::Confusion() &&
+        std::abs(nb.Y() - 3.0) < Precision::Confusion())
+    {
+      found = true;
+      break;
+    }
+  }
+  EXPECT_TRUE(found) << "Mirrored edge should appear on the left of vertical axis";
+}
+
+// Test that mirroring an arc (circle arc pair) works
+TEST_F(Sketch_test, MirrorSelectedEdges_Arc)
+{
+  gp_Pln default_plane(gp::Origin(), gp::DZ());
+  Sketch sketch("TestSketch", view(), default_plane);
+
+  gui().set_mode(Mode::Sketch_operation_axis);
+
+  // Horizontal axis
+  sketch.add_sketch_pt(ScreenCoords(dvec2(0.0, 0.0)));
+  sketch.add_sketch_pt(ScreenCoords(dvec2(10.0, 0.0)));
+
+  // Add a simple arc above the axis (using three points)
+  // Arc from (-1,1) through (0,2) to (1,1) — a bump above x axis
+  gp_Pnt2d a(-1.0, 1.0);
+  gp_Pnt2d b(0.0, 2.0);
+  gp_Pnt2d c(1.0, 1.0);
+  Sketch_access::add_arc_circle_(sketch, a, b, c);
+
+  // For arcs, the shp is shared; select the shp of one of the arc edges
+  AIS_Shape_ptr arc_shp;
+  for (const auto& e : sketch.m_edges)
+  {
+    if (e.circle_arc)
+    {
+      arc_shp = e.shp;
+      break;
+    }
+  }
+  ASSERT_FALSE(arc_shp.IsNull()) << "Arc should have been added with a shp";
+
+  auto& cctx = view().ctx();
+  cctx.ClearSelected(true);
+  cctx.AddOrRemoveSelected(arc_shp, true);
+
+  size_t before = 0;
+  for (const auto& e : sketch.m_edges) if (e.node_idx_b.has_value()) ++before;
+
+  sketch.mirror_selected_edges();
+
+  // Mirroring an arc pair should add another arc pair below
+  size_t after = 0;
+  for (const auto& e : sketch.m_edges) if (e.node_idx_b.has_value()) ++after;
+  // Expect +2 edges for the mirrored arc (the pair)
+  EXPECT_EQ(after, before + 2) << "Mirroring an arc should add two new arc edges";
+
+  // Spot-check that a mirrored point exists below the axis (e.g. around y=-1 or so)
+  bool found_symmetric = false;
+  for (const auto& e : sketch.m_edges)
+  {
+    if (!e.node_idx_b.has_value() || !e.circle_arc) continue;
+    const gp_Pnt2d& pa = sketch.get_nodes()[e.node_idx_a];
+    if (std::abs(pa.Y() + 1.0) < 0.5)  // rough, symmetric to +1
+    {
+      found_symmetric = true;
+      break;
+    }
+  }
+  EXPECT_TRUE(found_symmetric) << "A mirrored arc point should exist below the axis";
+}
+
 // Test that split edges have midpoints for snapping
+// This test verifies the fix for the bug where edges split by their midpoint
+// don't have midpoints to snap to
 // This test verifies the fix for the bug where edges split by their midpoint
 // don't have midpoints to snap to
 TEST_F(Sketch_test, SplitEdge_HasMidpoints)
