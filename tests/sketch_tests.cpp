@@ -312,6 +312,51 @@ TEST_F(Sketch_test, AddTwoCrossingEdges_ThroughMidpoint_ProducesFourEdges)
       << "Vertical through existing horizontal's midpoint (GUI finalize path) must still cause splits on both, yielding four edges";
 }
 
+// Test T-junction case (one edge's endpoint touches the interior of another).
+// Initially two edges are added; the touched edge is split at the junction point,
+// resulting in three edges total. Test both addition orders.
+TEST_F(Sketch_test, AddTwoEdges_TJunction_ProducesThreeEdges)
+{
+  gp_Pln default_plane(gp::Origin(), gp::DZ());
+
+  // Horizontal first, then vertical T-junction (attach point is interior to horizontal, not its midpoint).
+  //   0--------10   (horizontal)
+  //          |
+  //          |      (vertical attaches at x=3)
+  //          |
+  {
+    Sketch sketch("TestSketch", view(), default_plane);
+
+    gp_Pnt2d h1(0.0, 0.0);
+    gp_Pnt2d h2(10.0, 0.0);
+    Sketch_access::add_edge_(sketch, h1, h2);
+
+    gp_Pnt2d v1(3.0, 0.0);  // attaches to interior of horizontal (3 != 5 midpoint)
+    gp_Pnt2d v2(3.0, -5.0);
+    Sketch_access::add_edge_(sketch, v1, v2);
+
+    EXPECT_EQ(Sketch_access::get_linear_edge_count(sketch), 3)
+        << "T-junction (horiz first): existing edge split at interior attach point -> 3 edges total";
+  }
+
+  // Vertical first, then horizontal (the horizontal's interior will touch the vertical's endpoint).
+  // Same geometry, different add order.
+  {
+    Sketch sketch("TestSketch", view(), default_plane);
+
+    gp_Pnt2d v1(3.0, 0.0);
+    gp_Pnt2d v2(3.0, -5.0);
+    Sketch_access::add_edge_(sketch, v1, v2);
+
+    gp_Pnt2d h1(0.0, 0.0);
+    gp_Pnt2d h2(10.0, 0.0);
+    Sketch_access::add_edge_(sketch, h1, h2);
+
+    EXPECT_EQ(Sketch_access::get_linear_edge_count(sketch), 3)
+        << "T-junction (vert first): new edge split at interior attach point on it -> 3 edges total";
+  }
+}
+
 // Test visibility settings
 TEST_F(Sketch_test, VisibilitySettings)
 {
