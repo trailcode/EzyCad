@@ -94,6 +94,7 @@ suppress_warnings = [
 
 html_theme = "sphinx_rtd_theme"
 html_static_path = ["_static"]
+html_css_files = ["custom.css"]
 
 # usage.md and related pages are the main entry; index.rst wires the toctree.
 master_doc = "index"

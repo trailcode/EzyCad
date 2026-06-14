@@ -166,7 +166,24 @@ See also the comment in `src/version.h`, the project declaration in `CHANGELOG.m
      - `EzyCad-X.Y.Z-windows-x64` (same portable zip).
      - `EzyCad-Windows-MSVC-Release` (raw `build/Release/` tree containing EzyCad.exe + all DLLs + res/ + everything from the MSVC build; useful for "build" inspection or advanced users). This is **not** automatically a direct release asset; download it from the Actions artifacts list.
 10. (Optional) If you want the raw MSVC build tree as a direct `.zip` asset on the Releases page too, the workflow can be extended (see the packaging step). For now the portable x64 zip is the primary end-user download.
-11. The live docs (Read the Docs) and any GitHub Pages wasm will update on the next scheduled/sync build after the tag.
+11. **Rebuild and publish the public WebAssembly demo** (critical after any C++ change or release):
+    - Activate Emscripten: run the emsdk_env (see docs/building-occt.md).
+    - (Re)build OCCT wasm if needed: `.\scripts\build-occt-v8-wasm.ps1 -RootDir C:\bin\occt-wasm-build`
+    - Configure + build (from repo root):
+      ```powershell
+      # Use a dir like build-em (or clean it)
+      emcmake cmake -S . -B build-em -G Ninja -Wno-dev `
+        -DOpenCASCADE_DIR=C:\bin\occt-wasm-build\install\lib\cmake\opencascade `
+        -DCMAKE_BUILD_TYPE=Release
+      ninja -C build-em
+      ```
+    - This produces (in build-em/): `EzyCad.html`, `EzyCad.js`, `EzyCad.wasm`, `EzyCad.data`.
+    - **Bump cache** (already done in this release prep for 0.2.0): edit `web/EzyCad.html` (var EZYCAD_WEB_CACHE) — the build-em/ copy will be updated on next full build.
+    - Copy the four files above into your local clone of `trailcode/trailcode.github.io/EzyCad/`.
+    - Sync the HTMLs: `.\scripts\sync-github-pages-html.ps1 -PagesRepo C:\src\trailcode.github.io` (updates index.html + EzyCad.html with the new cache value).
+    - In the pages repo: `git add EzyCad/ ; git commit -m "Update wasm demo to vX.Y.Z" ; git push`
+    - The public demo (https://trailcode.github.io/EzyCad/EzyCad.html) now serves the new build (cache bust ensures clients get the fresh .wasm/.data).
+    - Test locally first with `python -m http.server` from the build-em dir.
 
 On `0.x` versions (current series), minor bumps (`0.1.0` → `0.2.0`) are still allowed to contain breaking changes because the public API is not yet declared stable.
 

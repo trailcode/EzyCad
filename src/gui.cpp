@@ -2461,11 +2461,23 @@ void GUI::on_mouse_button(int button, int action, int mods)
     case Mode::Sketch_add_square:
     case Mode::Sketch_add_rectangle:
     case Mode::Sketch_add_rectangle_center_pt:
-    case Mode::Sketch_operation_axis:
     case Mode::Sketch_add_circle:
     case Mode::Sketch_add_slot:
       hide_dist_edit();
       m_view->curr_sketch().add_sketch_pt(screen_coords);
+      break;
+
+    case Mode::Sketch_operation_axis:
+      // Only treat LMB as "place axis point" while *defining* the axis.
+      // Once an axis exists, we stay in this mode so the Options panel can show
+      // the Mirror/Revolve/Clear buttons. Further clicks must be allowed to
+      // select sketch edges/faces (via AIS selection) without redefining the axis.
+      // To redefine, the user must first use the "Clear axis" button.
+      if (!m_view->curr_sketch().has_operation_axis())
+      {
+        hide_dist_edit();
+        m_view->curr_sketch().add_sketch_pt(screen_coords);
+      }
       break;
 
     case Mode::Shape_chamfer:

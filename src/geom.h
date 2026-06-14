@@ -243,6 +243,25 @@ TopoDS_Wire make_rectangle_wire(const gp_Pln& pln, const gp_Pnt2d& corner1, cons
 std::array<gp_Pnt2d, 4> rectangle_corners(const gp_Pnt2d& corner1, const gp_Pnt2d& corner2);
 bool                    point_on_open_segment_2d(const gp_Pnt2d& p, const gp_Pnt2d& a, const gp_Pnt2d& b);
 
+/// Controls whether segment endpoints are considered part of the segment
+/// for intersection tests.
+enum class Segment_inclusion
+{
+  Open,  // Intersection must be strictly interior to the segment (excludes endpoints)
+  Closed // Intersection may occur at the endpoints (includes T-junctions and touches)
+};
+
+/// Returns the intersection point of the two line *segments* [a1-a2] and [b1-b2] if they intersect,
+/// according to the given \a inclusion mode. Uses a tolerance for floating-point robustness.
+/// Returns nullopt if the lines are (nearly) parallel/collinear (overlaps not supported) or if the
+/// intersection point does not lie on the segments per the inclusion mode.
+std::optional<gp_Pnt2d> segment_intersection_2d(const gp_Pnt2d& a1, const gp_Pnt2d& a2, const gp_Pnt2d& b1, const gp_Pnt2d& b2,
+                                                Segment_inclusion inclusion = Segment_inclusion::Closed);
+
+/// Adds \a p to the vector only if no existing point is within Precision::Confusion() distance.
+/// Used to collect unique intersection points without duplicates.
+void add_unique_point(std::vector<gp_Pnt2d>& points, const gp_Pnt2d& p);
+
 /// If the shortest distance from \a p to segment `a-b` is <= \a max_perp_dist and the foot lies strictly
 /// inside the segment (not near endpoints), returns that foot; otherwise nullopt.
 std::optional<gp_Pnt2d> snap_foot_to_open_segment_interior_if_close(const gp_Pnt2d& p, const gp_Pnt2d& a, const gp_Pnt2d& b,

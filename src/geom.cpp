@@ -1305,6 +1305,69 @@ bool point_on_open_segment_2d(const gp_Pnt2d& p, const gp_Pnt2d& a, const gp_Pnt
   return t > 0.0 && t < 1.0;
 }
 
+std::optional<gp_Pnt2d> segment_intersection_2d(const gp_Pnt2d& a1, const gp_Pnt2d& a2, const gp_Pnt2d& b1, const gp_Pnt2d& b2,
+                                                Segment_inclusion inclusion)
+{
+  const double tol = Precision::Confusion();
+  double       x1 = a1.X(), y1 = a1.Y();
+  double       x2 = a2.X(), y2 = a2.Y();
+  double       x3 = b1.X(), y3 = b1.Y();
+  double       x4 = b2.X(), y4 = b2.Y();
+
+  double den = (x1 - x2) * (y3 - y4) - (y1 - y2) * (x3 - x4);
+  if (std::abs(den) < tol)
+    return std::nullopt; // parallel/collinear (overlap not handled)
+
+  double t = ((x1 - x3) * (y3 - y4) - (y1 - y3) * (x3 - x4)) / den;
+  double u = -((x1 - x2) * (y1 - y3) - (y1 - y2) * (x1 - x3)) / den;
+
+  double   px = x1 + t * (x2 - x1);
+  double   py = y1 + t * (y2 - y1);
+  gp_Pnt2d inter(px, py);
+
+  // Verify the point lies on both segments according to the requested inclusion mode.
+  // Uses a geometric test (cross product for collinearity + projection) rather than
+  // relying only on the raw parametric t/u, for better floating-point robustness.
+  auto on_segment = [&](const gp_Pnt2d& p, const gp_Pnt2d& a, const gp_Pnt2d& b) -> bool
+  {
+    if (p.Distance(a) <= tol || p.Distance(b) <= tol)
+      return inclusion == Segment_inclusion::Closed;
+
+    gp_Vec2d ab(a, b);
+    double   len = ab.Magnitude();
+    if (len < tol)
+      return false;
+
+    gp_Vec2d ap(a, p);
+    double   cross = std::abs(ap.X() * ab.Y() - ap.Y() * ab.X());
+    if (cross > tol * len)
+      return false;
+
+    double param = ap.Dot(ab) / (len * len);
+    if (inclusion == Segment_inclusion::Closed)
+      return param >= 0.0 && param <= 1.0;
+    else
+      return param > 0.0 && param < 1.0;
+  };
+
+  if (on_segment(inter, a1, a2) && on_segment(inter, b1, b2))
+    return inter;
+
+  return std::nullopt;
+}
+
+/// Adds \a p to \a points only if it is not already present (within Precision::Confusion()).
+/// This avoids duplicate intersection points when collecting from multiple edges.
+void add_unique_point(std::vector<gp_Pnt2d>& points, const gp_Pnt2d& p)
+{
+  for (const auto& existing : points)
+  {
+    if (existing.Distance(p) <= Precision::Confusion())
+      return;
+  }
+  points.push_back(p);
+}
+
 std::optional<gp_Pnt2d> snap_foot_to_open_segment_interior_if_close(const gp_Pnt2d& p, const gp_Pnt2d& a, const gp_Pnt2d& b,
                                                                     double max_perp_dist)
 {

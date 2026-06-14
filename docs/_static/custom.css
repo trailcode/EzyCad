@@ -1,0 +1,35 @@
+/* EzyCad docs: improve table cell text wrapping.
+
+   GFM pipe tables (endorsed in ezycad_doc_style.md) are used for reference tables
+   (settings JSON, hotkeys, tool Features, snap explanations, etc.). By default the
+   sphinx_rtd_theme + docutils rendering can produce very wide columns or clipped
+   text when cells contain long descriptions, parentheticals, or identifiers.
+
+   These rules force normal wrapping + break opportunities inside table cells
+   while preserving the RTD responsive horizontal scroll wrapper for narrow viewports.
+*/
+
+.rst-content table.docutils td,
+.rst-content table.docutils th,
+table.docutils td,
+table.docutils th,
+.wy-table-responsive table td,
+.wy-table-responsive table th {
+  white-space: normal !important;
+  overflow-wrap: break-word;
+}
+
+/* Long technical identifiers / JSON keys / code in cells (e.g. gui.imgui_rounding_general,
+   long snake_case names) benefit from aggressive breaking so they don't dominate width. */
+.rst-content table.docutils code,
+table.docutils code {
+  white-space: normal;
+  word-break: break-all;
+}
+
+/* Keep the familiar RTD table responsive behavior (scroll the table block if truly needed)
+   but ensure it never forces the whole page wider. */
+.wy-table-responsive {
+  overflow-x: auto;
+  max-width: 100%;
+}

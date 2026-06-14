@@ -300,8 +300,6 @@ void Sketch::update_originating_face_style()
   m_ctx.Redisplay(m_originating_face, true);
 }
 
-void Sketch::update_face_style_(AIS_Shape_ptr& shp) const {}
-
 void Sketch::update_edge_shp_(Edge& edge, const gp_Pnt2d& pt_a, const gp_Pnt2d& pt_b)
 {
   EZY_ASSERT(unique(pt_a, pt_b));
@@ -419,7 +417,6 @@ void Sketch::move_line_string_pt_(const ScreenCoords& screen_coords)
       return;
 
     gp_Pnt2d final_pt_b = pt_b;
-    // std::optional<size_t> final_node_idx;
 
     // Apply angle constraint if set - this takes priority
     if (m_entered_edge_angle.has_value())
@@ -460,7 +457,7 @@ void Sketch::move_line_string_pt_(const ScreenCoords& screen_coords)
       // No constraints - check for snap points at mouse position
       edge.node_idx_b = m_nodes.try_get_node_idx_snap(final_pt_b);
       if (edge.node_idx_b.has_value())
-        final_pt_b = m_nodes[*edge.node_idx_b];
+        final_pt_b = m_nodes[edge.node_idx_b];
     }
 
     double dist = pt_a.Distance(final_pt_b) / m_view.get_dimension_scale();
@@ -558,11 +555,72 @@ void Sketch::finalize_edges_()
       split_mid_points.push_back(*e.node_idx_b);
   }
 
+  // Split any *existing* (pre this batch) linear edges that intersect or touch the
+  // new segments being committed (the tmp ones). This fulfills the requirement that
+  // adding edges from the GUI splits existing intersecting/touching edges.
+  std::vector<gp_Pnt2d> batch_inters;
+  {
+    for (const Edge& te : m_tmp_edges)
+    {
+      // All remaining tmp edges must be complete at this point:
+      // - The code above already popped any trailing incomplete one.
+      // - The split_mid_points loop immediately before this used EZY_ASSERT on every te.
+      // Therefore we can (and should) assert rather than silently continue.
+      // (A defensive "if (!...) continue" would be appropriate for filtering *old* edges
+      // in m_edges, which may contain arcs or other non-linear things, but not here.)
+      EZY_ASSERT(te.node_idx_b.has_value());
+
+      gp_Pnt2d pa = m_nodes[te.node_idx_a];
+      gp_Pnt2d pb = m_nodes[te.node_idx_b];
+      for (const Edge& oe : m_edges) // pre-batch olds only
+      {
+        if (!is_linear_edge_(oe))
+          continue;
+
+        gp_Pnt2d qa = m_nodes[oe.node_idx_a];
+        gp_Pnt2d qb = m_nodes[oe.node_idx_b];
+        if (auto inter = segment_intersection_2d(pa, pb, qa, qb, Segment_inclusion::Closed))
+        {
+          // The intersection point is now guaranteed (by the inclusion parameter)
+          // to lie on both finite closed segments. The previous custom verification
+          // has been moved into segment_intersection_2d for consistency.
+          add_unique_point(batch_inters, *inter);
+        }
+      }
+    }
+
+    // Only split olds at interior hits (avoid snap on endpoint-touch inters from the batch, same reason as add_edge_).
+    std::vector<gp_Pnt2d> batch_to_split;
+    for (const auto& ip : batch_inters)
+    {
+      bool is_old_interior = false;
+      for (const Edge& e : m_edges)
+      {
+        if (!is_linear_edge_(e))
+          continue;
+
+        gp_Pnt2d qa = m_nodes[e.node_idx_a];
+        gp_Pnt2d qb = m_nodes[e.node_idx_b];
+        if (point_on_open_segment_2d(ip, qa, qb))
+        {
+          is_old_interior = true;
+          break;
+        }
+      }
+
+      if (is_old_interior)
+        add_unique_point(batch_to_split, ip);
+    }
+
+    for (const auto& ip : batch_to_split)
+      split_linear_edges_at_node_if_interior_(m_nodes.get_node_exact(ip));
+  }
+
   append(m_edges, m_tmp_edges);
   m_tmp_edges.clear();
 
   // Ensure topology is correct if snapping on a midpoint happened.
-  // These edges need to be split.
+  // These edges need to be split. (Kept for compatibility with current midpoint marking during draw.)
   for (size_t mid_pt_idx : split_mid_points)
     for (auto itr = m_edges.begin(), end = m_edges.end(); itr != end; ++itr)
       if (itr->node_idx_mid.has_value() && *itr->node_idx_mid == mid_pt_idx)
@@ -576,7 +634,7 @@ void Sketch::finalize_edges_()
           update_edge_shp_(edge_b, m_nodes[itr->node_idx_b], m_nodes[mid_pt_idx]);
           // Set midpoints for the new split edges so they can be snapped to
           edge_a.node_idx_mid = m_nodes.add_new_node(get_midpoint(m_nodes[itr->node_idx_a], m_nodes[mid_pt_idx]), true);
-          edge_b.node_idx_mid = m_nodes.add_new_node(get_midpoint(m_nodes[mid_pt_idx], m_nodes[*itr->node_idx_b]), true);
+          edge_b.node_idx_mid = m_nodes.add_new_node(get_midpoint(m_nodes[mid_pt_idx], m_nodes[itr->node_idx_b]), true);
           m_ctx.Remove(itr->shp, false);
           m_edges.erase(itr);
           m_nodes[mid_pt_idx].midpoint = false;
@@ -584,6 +642,14 @@ void Sketch::finalize_edges_()
           m_edges.emplace_back(edge_b);
           break;
         }
+
+  // Subdivide any *newly committed* edges (the ones from m_tmp) at interior intersections
+  // discovered in the pre-pass. The pre-pass already handled olds; re-calling split here
+  // will target the news (olds' original long edges no longer exist). This ensures the
+  // GUI finalize path produces the same atomic edge count as direct add_edge_ (e.g. 4
+  // edges for a cross, whether or not the cross is at an existing mid).
+  for (const auto& ip : batch_inters)
+    split_linear_edges_at_node_if_interior_(m_nodes.get_node_exact(ip));
 
   m_nodes.hide_snap_annos();
   update_faces_();
@@ -692,6 +758,7 @@ double Sketch::plane_pick_snap_radius_world_() const
   std::optional<gp_Pnt2d> p1   = m_view.pt_on_plane(ScreenCoords(dvec2(base.x + px, base.y)), m_pln);
   if (!p1)
     return std::max(px, Precision::Confusion() * 1e9);
+
   return ref2.Distance(*p1);
 }
 
@@ -958,10 +1025,8 @@ void Sketch::finalize_slot_()
 // Operation axis related
 void Sketch::add_operation_axis_pt_(const ScreenCoords& screen_coords)
 {
-  // If an axis already exists, clear it and start over
-  if (has_operation_axis())
-    clear_operation_axis();
-
+  // Axis definition only happens when !has_operation_axis() (guarded at the call site in GUI).
+  // To redefine, the caller must first clear via the Options "Clear axis" button.
   add_line_string_pt_(screen_coords, Linestring_type::Single);
 }
 
@@ -996,11 +1061,12 @@ void Sketch::mirror_selected_edges()
   EZY_ASSERT(!m_operation_axis->shp.IsNull());
   const auto [mirror_pt_a, mirror_pt_b] = get_edge_endpoints(m_pln, TopoDS::Edge(m_operation_axis->shp->Shape()));
 
+  std::vector<std::pair<gp_Pnt2d, gp_Pnt2d>>     mirrored_edges;
   std::map<AIS_Shape_ptr, std::set<const Edge*>> arc_circles;
 
   for (const Edge& e : m_edges)
     for (const Edge& selected : mirror_edges)
-      if (e.shp == selected.shp)
+      if (e.shp == selected.shp || e.circle_arc == selected.circle_arc)
       {
         if (e.circle_arc)
         {
@@ -1013,10 +1079,14 @@ void Sketch::mirror_selected_edges()
         {
           const gp_Pnt2d a = mirror_point(mirror_pt_a, mirror_pt_b, m_nodes[e.node_idx_a]);
           const gp_Pnt2d b = mirror_point(mirror_pt_a, mirror_pt_b, m_nodes[e.node_idx_b]);
-          add_edge_(a, b);
+          // add_edge_(a, b);
+          mirrored_edges.push_back({a, b});
           break;
         }
       }
+
+  for (const auto& [a, b] : mirrored_edges)
+    add_edge_(a, b);
 
   for (auto& [_, arc_circle_edges] : arc_circles)
   {
@@ -1245,12 +1315,113 @@ void Sketch::finalize_add_node_elm_cleanup_()
   update_faces_();
 }
 
-void Sketch::add_edge_(const gp_Pnt2d& pt_a, const gp_Pnt2d& pt_b)
+void Sketch::add_edge_raw_(const gp_Pnt2d& pt_a, const gp_Pnt2d& pt_b)
 {
   Edge edge{m_nodes.get_node_exact(pt_a)};
   update_edge_end_pt_(edge, m_nodes.get_node_exact(pt_b));
   m_edges.emplace_back(edge);
   m_nodes.finalize();
+}
+
+void Sketch::add_edge_(const gp_Pnt2d& pt_a, const gp_Pnt2d& pt_b)
+{
+  if (!unique(pt_a, pt_b))
+    return;
+
+  // Find intersections (crossings or T-touches) between this new segment and all *currently existing* linear edges.
+  // We will split the existing ones at interior intersections, and subdivide this new one as needed.
+  std::vector<gp_Pnt2d> inters;
+  for (const Edge& e : m_edges)
+  {
+    if (!is_linear_edge_(e))
+      continue;
+    gp_Pnt2d qa = m_nodes[e.node_idx_a];
+    gp_Pnt2d qb = m_nodes[e.node_idx_b];
+
+    if (auto inter = segment_intersection_2d(pt_a, pt_b, qa, qb, Segment_inclusion::Closed))
+    {
+      // The intersection point is guaranteed to lie on both finite closed segments
+      // (the new logic is now handled inside segment_intersection_2d).
+      // We still collect it for later splitting of existing edges and subdividing the new one.
+
+      add_unique_point(inters, *inter);
+    }
+  }
+
+  // Collect only the *interior* hits on existing edges for splitting.
+  // We must not call split (which does snap) on endpoint-touch "inters" (shared corners),
+  // otherwise in headless tests (giant snap radius) corners get projected onto unrelated edges,
+  // and in general we don't want to move known join points.
+  std::vector<gp_Pnt2d> inters_to_split;
+  for (const auto& ip : inters)
+  {
+    // Need to re-find which old edge (or any) this ip lies on interior; check against all current
+    // for safety (a point could in theory be interior hit for the collect).
+    bool is_old_interior = false;
+    for (const Edge& e : m_edges)
+    {
+      if (!is_linear_edge_(e))
+        continue;
+      gp_Pnt2d qa = m_nodes[e.node_idx_a];
+      gp_Pnt2d qb = m_nodes[e.node_idx_b];
+      if (point_on_open_segment_2d(ip, qa, qb))
+      {
+        is_old_interior = true;
+        break;
+      }
+    }
+    if (is_old_interior)
+    {
+      add_unique_point(inters_to_split, ip);
+    }
+  }
+
+  // All division points on this new edge: its own ends + any intersections
+  std::vector<gp_Pnt2d> div_pts{pt_a, pt_b};
+  div_pts.insert(div_pts.end(), inters.begin(), inters.end());
+
+  // Sort along the edge direction
+  gp_Vec2d dir(pt_a, pt_b);
+  double   len2 = dir.SquareMagnitude();
+  if (len2 < Precision::Confusion() * Precision::Confusion())
+    return;
+
+  std::sort(div_pts.begin(), div_pts.end(),
+            [&](const gp_Pnt2d& u, const gp_Pnt2d& v) { return gp_Vec2d(pt_a, u).Dot(dir) < gp_Vec2d(pt_a, v).Dot(dir); });
+
+  // Dedup after sort
+  std::vector<gp_Pnt2d> pts;
+  for (const auto& p : div_pts)
+  {
+    if (pts.empty() || pts.back().Distance(p) > Precision::Confusion())
+      pts.push_back(p);
+  }
+  if (pts.size() < 2)
+    return;
+
+  // Create nodes for all division points (for subdividing the new edge)
+  std::vector<size_t> div_node_idxs;
+  for (const auto& p : pts)
+  {
+    div_node_idxs.push_back(m_nodes.get_node_exact(p));
+  }
+
+  // Only split *existing* linear edges at the true *interior* intersection points we found on olds.
+  // Endpoint touches (shared corners) are excluded here so we do not invoke snap on known vertices.
+  for (const auto& inter_p : inters_to_split)
+  {
+    size_t nidx = m_nodes.get_node_exact(inter_p);
+    split_linear_edges_at_node_if_interior_(nidx);
+  }
+
+  // Now insert the (subdivided) pieces of this new edge using the raw adder.
+  // Use the (possibly adjusted by split snap) node positions.
+  for (size_t i = 0; i + 1 < div_node_idxs.size(); ++i)
+  {
+    const gp_Pnt2d& pa = m_nodes[div_node_idxs[i]];
+    const gp_Pnt2d& pb = m_nodes[div_node_idxs[i + 1]];
+    add_edge_raw_(pa, pb);
+  }
 }
 
 void Sketch::sketch_json_add_linear_edge_(size_t idx_a, size_t idx_b, size_t idx_mid)
@@ -1679,7 +1850,13 @@ void Sketch::update_faces_()
 
     excluded_edges.insert(to_exclude.begin(), to_exclude.end());
   }
-#if 1 // TODO study AI generated, seems to work.
+  // Bridge edge removal logic (active). Excludes edges that purely connect separate cycles
+  // (both ends degree >=3 and no alternate path) from the adjacency used by the face walker.
+  // This is required for sketches like bridge.ezy that contain a "bridge" touching an inner
+  // triangular loop so that we obtain exactly two faces, one of which has the triangle as a
+  // hole. Dangling removal alone is not sufficient. The logic was previously disabled because
+  // an earlier version produced bad results on some nested rect holes; current state + other
+  // fixes (cw break, split rules, etc.) are being validated with the new regression test.
   // Remove bridge edges that connect two separate cycles.
   // A bridge edge connects two cycles and has both endpoints with degree >= 3.
   // We detect this by checking if the edge is the only connection between two cycles.
@@ -1797,8 +1974,7 @@ void Sketch::update_faces_()
   // Add bridge edges to excluded set
   excluded_edges.insert(bridge_edges.begin(), bridge_edges.end());
 
-// Rebuild adjacency list excluding dangling and bridge edges
-#endif
+  // Rebuild adjacency list excluding dangling and bridge edges
   adj_list.clear();
   for (const auto& edge : m_edges)
   {
@@ -1843,6 +2019,22 @@ void Sketch::update_faces_()
         if (curr_idx == start_idx)
         {
           EZY_ASSERT(face.size() > 2);
+
+          // Deliberately accept the cycle only if the left-most walker produced a traversal
+          // whose shoelace is positive under our is_face_clockwise_ convention. If not, break
+          // (skip pushing a face for this seed). This is not an error -- other seeds may still
+          // discover the same geometric cycle (or its sibling faces) in the matching orientation.
+          // The early break makes the set of accepted faces and their order in m_faces depend on
+          // m_edges list order (affected by appends and push_backs during splits) and on individual
+          // Edge node_idx_a/b values (set from pa/pb at creation time, i.e. draw direction for
+          // edges added via the GUI line tool). This dependency has been observed to be required
+          // for correct results in the GUI for cases such as "square then mid vertical splitter
+          // added lower-to-top vs. top-to-bottom" (the break version yields the expected rects
+          // on the sides the user sees; a force-to-cw normalization for every collected cycle
+          // re-introduces the direction asymmetry or malformed faces in that flow).
+          // The hole test (and bridge/dangling face tests) still pass because their edge addition
+          // order + walker seeds happen to produce matching orientations for both outer and inner
+          // boundaries.
           if (!is_face_clockwise_(face))
             break;
 
@@ -2959,6 +3151,8 @@ bool Sketch::Edge::reversed(size_t idx_a, size_t idx_b) const
   EZY_ASSERT(false);
   return false;
 }
+
+bool Sketch::is_linear_edge_(const Edge& e) { return !e.circle_arc && e.node_idx_b.has_value(); }
 
 Sketch_AIS_edge::Sketch_AIS_edge(Sketch& owner, const TopoDS_Shape& shp)
     : AIS_Shape(shp)

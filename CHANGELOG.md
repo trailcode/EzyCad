@@ -7,6 +7,35 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Sketch / 2D Topology
+
+- Documented the automatic splitting of linear edges when they intersect other edges (the core user-visible topology behavior). When a new straight edge crosses or touches the interior of an existing straight edge, or when its endpoint snaps to an existing midpoint, the intersected edge(s) are split at the intersection and the new edge is subdivided as needed. This enables T-junctions, clean crossings (4 edges), and divided faces (e.g. square + exact mid vertical produces two rectangles) without any manual steps. See the new table row "Automatic splitting on edge intersections" and the Tips under [Sketch snapping](docs/usage-sketch.md#sketch-snapping) in the user guide.
+- Added/expanded unit tests for the above (mid vertical splitter in both orders + full GUI draw-direction cases for the splitter; bridge + hole reproduction from user `bridge.ezy`).
+- An internal rewrite attempt to reduce order/draw-direction sensitivity (angular sorting of adjacency, always-normalize instead of the orientation filter, etc.) was reverted after it was found to hang in some sketches. The new user documentation above reflects the stable current behavior (no internal dev details are exposed to users).
+
+(The previous long dev-oriented bullets under this heading were condensed for user focus.)
+
+- Added/expanded unit test coverage for mid-line splitters (square/rectangle + exact midpoint vertical in both addition orders via direct `add_edge_`, and full GUI `Sketch_add_edge` + `add_sketch_pt`/`finalize_elm` path in **both draw directions** — lower-mid-first vs top-first). Ensures two proper 5×10 rectangular faces (never a square + rect, and bbox checks for left/right halves). New tests: `AddSquareThenMidEdge_ProducesTwoRectangles_BothOrders` and `AddSquareThenMidEdge_GUIPath_BothDrawDirections_ProducesTwoRectangles`.
+- Added regression test `UpdateFaces_BridgeEzy_ProducesTwoFaces_OneWithHole` reproducing the user-provided `bridge.ezy` (bridge edge + triangular inner loop) and asserting the desired structure (two faces, one with hole). Includes debug dump of current walker output (currently produces 3 faces; documents the gap).
+- Experimented with a substantial rewrite of `Sketch::update_faces_()` (the core planar-graph face extractor):
+  - Wrapped the prior body in `#if 0` for preservation.
+  - Angular sorting of every node's adjacency "fan" by polar angle (atan2) immediately after the final adj rebuild — makes the geometric embedding explicit instead of depending on `m_edges` list order (splits, `finalize_edges_` appends, GUI line-tool `pa`/`pb` → Edge `a`/`b`, etc.).
+  - Always normalize collected cycles to our CW convention (reverse list + toggle `reversed` flags on `Face_edge`) instead of the early `if (!is_face_clockwise_(face)) break;`. No cycles are discarded.
+  - Two-neighbor "immediate successor in the sorted fan" left-most choice (with bias toward sharper |dot| turns over 180° straights at colinear mids) — more robust than full min-angle scan over order-dependent vectors.
+  - Final geometric sort of `m_faces` (by leftmost vertex x, then y, using `verts_3d` populated at creation time) so that presentation/inspector/"first face" order is stable and independent of addition order or the direction the last internal edge was drawn.
+  - The rewrite made the code significantly cleaner and resolved the "draw mid vertical bottom-to-top vs top-to-bottom swaps which side is the rectangle (or produces square vs rect)" symptom for the common square+mid case, plus improved some bridge rect attachment. However, it was found to **hang** (likely walker loop or bad state with certain bridge/colinear-mid configurations in real sketches) and was reverted by the author. The orientation filter + existing dangling/bridge exclusion logic remains the stable implementation for now.
+- Added detailed documentation in `usage-sketch.md` (new section "Sketch faces, internal edges (splitters), holes, and bridges") covering current behavior, the role of the orientation filter, known sensitivities, tips for reliable split faces, and references to the new tests + ongoing work. Updated TOC.
+- Updated `CHANGELOG.md` (this entry) and cross-references. See GitHub issue and PR for the full rewrite attempt, the hanging report, and the preserved `#if 0` original body for future iteration.
+
+### Documentation
+
+- Added substantial user-guide coverage for **Boolean Operations** (Cut, Fuse, Common) under Feature Operations in `usage.md`:
+  - Clear explanation of the three tools, toolbar invocation, and multi-select workflow in Normal mode.
+  - Features table (order sensitivity for Cut, input consumption, undo, material handling, compatibility with extrudes/imports/prior results).
+  - Step-by-step "How to Use", practical Tips (including common OCCT boolean failure causes), and a Common Use Cases table.
+  - Updated cross-references from the workflow overview, Extrude section, importing notes, and `usage-sketch.md` (circle and underlay sections) to point to the new detailed `#boolean-operations` anchor.
+  - Chamfer and Fillet remain lightly documented for now (hotkeys + icons only).
+
 ## [0.2.0] - 2026-06-13
 
 ### Added
