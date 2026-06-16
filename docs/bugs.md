@@ -9,7 +9,12 @@
 * Create sketch from face needs a temporary face select mode. When mode is changed it should go back to the previous mode. Other tools like chamfer need to do this also.
 * Add sketch node should have the ability to allow the user to specify placement distance from another node.
 * Ability to show/hide sketch nodes
-* Underlay: edge calibration can introduce shear (non-orthogonal bitmap axes). The transform panel currently assumes center + half extents + rotation (orthogonal). Need a full six-parameter affine in the UI so users can adjust position, scale, rotation, and shear without losing calibration.
+* Underlay calibration ("Set X from edge..." / "Set Y from edge...") can (and frequently does) introduce shear because the picks are measured against the basis present at click time. Full affine support exists (6-DOF editor + raw distortion toggle + per-axis flips for corner mapping), and both axes now auto-apply "Make orthogonal (keep lengths + U)" on completion. The "Define underlay datum..." tool that forced a clean perpendicular V has been removed. Rough edges that remain:
+  - The raw 6-DOF editor exposes low-level numbers (Base + U/V) rather than higher-level controls (e.g. a direct shear-angle slider).
+  - In raw mode you sometimes need the "Reverse image U/V" flips to get source (0,0) at the exact parallelogram corner you expect (due to OCCT face parametrization on sheared quads created from a wire).
+  - The two render paths (default "preserve" resampling vs. raw/direct) have deliberately different visual results for the same affine; this can be surprising until you understand the toggle.
+  - Calibration always affects the *entire* source image; there is no built-in crop/region-of-interest inside the underlay itself.
+  - The cyan frame always shows the precise current full-image parallelogram (never a simple rectangle once shear exists).
 
 * For selection mode, not all of the current modes are useful.
 * Scale mode broken.

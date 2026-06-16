@@ -45,10 +45,7 @@ enum class Underlay_calib_phase : std::uint8_t
   AwaitDistX,
   PickY1,
   PickY2,
-  AwaitDistY,
-  /// Two clicks: bitmap corner (0,0), then a point along bitmap +U (datum / origin on plane).
-  PickDatumO,
-  PickDatumU
+  AwaitDistY
 };
 /// One entry under File > Examples (menu label + path to `.ezy` on disk).
 struct Example_file
@@ -308,8 +305,8 @@ private:
   bool try_underlay_calib_click_(const ScreenCoords& screen_coords);
   void begin_underlay_calib_set_x_(const std::shared_ptr<Sketch>& sk);
   void begin_underlay_calib_set_y_(const std::shared_ptr<Sketch>& sk);
-  void begin_underlay_calib_define_datum_(const std::shared_ptr<Sketch>& sk);
   void underlay_calib_prompt_x_distance_(const std::shared_ptr<Sketch>& sk);
+  void force_underlay_orthogonal_(const std::shared_ptr<Sketch>& sk);
   void underlay_calib_prompt_y_distance_(const std::shared_ptr<Sketch>& sk);
 #if defined(__EMSCRIPTEN__)
   void sketch_underlay_file_dialog_async();
@@ -462,17 +459,25 @@ private:
   gp_Vec2d              m_underlay_calib_axis_u{}; // After X distance (model units)
   gp_Pnt2d              m_underlay_calib_y0{};
   gp_Pnt2d              m_underlay_calib_y1{};
-  gp_Pnt2d              m_underlay_calib_datum_o{};
   /// If set, next underlay import (menu or async) applies to this sketch; otherwise current sketch.
   std::weak_ptr<Sketch> m_underlay_import_sketch_target;
   glm::dvec2            m_underlay_center{};
   glm::dvec2            m_underlay_half_extents{};
   double                m_underlay_rot{};
-  float                 m_underlay_opacity{0.88f};
-  bool                  m_underlay_vis{true};
-  bool                  m_underlay_key_white{true};
-  bool                  m_underlay_line_tint{true};
-  glm::vec4             m_underlay_tint_col{1.f, 220.f / 255.f, 0.f, 1.f};
+  // Raw 6-DOF affine state for the sheared underlay editor (base + U + V). Refreshed from model when panel is active.
+  glm::dvec2 m_underlay_base{};
+  glm::dvec2 m_underlay_u{};
+  glm::dvec2 m_underlay_v{};
+  bool       m_underlay_raw_shear{false};
+  bool       m_underlay_flip_u{false};
+  bool       m_underlay_flip_v{false};
+  bool       m_underlay_calib_x_done{false};
+  bool       m_underlay_calib_y_done{false};
+  float      m_underlay_opacity{0.88f};
+  bool       m_underlay_vis{true};
+  bool       m_underlay_key_white{true};
+  bool       m_underlay_line_tint{true};
+  glm::vec4  m_underlay_tint_col{1.f, 220.f / 255.f, 0.f, 1.f};
   /// Default underlay tint for new imports (0-1, persisted in ezycad_settings.json).
   glm::vec4 m_underlay_highlight_color{1.f, 220.f / 255.f, 0.f, 1.f};
   /// Shape List hover highlight in the OCCT view (0-1, persisted in ezycad_settings.json).

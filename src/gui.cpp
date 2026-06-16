@@ -1308,6 +1308,20 @@ void GUI::sketch_underlay_panel_settings_(const Sketch::sptr& sk)
     {
       sk->underlay_ui_params(m_underlay_center.x, m_underlay_center.y, m_underlay_half_extents.x, m_underlay_half_extents.y,
                              m_underlay_rot);
+      // Also seed raw 6-DOF for sheared editor (will be refreshed live in the transform section too).
+      {
+        gp_Pnt2d b;
+        gp_Vec2d au, av;
+        sk->underlay_get_affine(b, au, av);
+        m_underlay_base = dvec2(b.X(), b.Y());
+        m_underlay_u    = dvec2(au.X(), au.Y());
+        m_underlay_v    = dvec2(av.X(), av.Y());
+      }
+      m_underlay_raw_shear = sk->underlay_raw_shear_display();
+      m_underlay_flip_u    = sk->underlay_flip_image_u();
+      m_underlay_flip_v    = sk->underlay_flip_image_v();
+      m_underlay_calib_x_done = false;
+      m_underlay_calib_y_done = false;
       m_underlay_opacity   = sk->underlay_opacity();
       m_underlay_vis       = sk->underlay_visible();
       m_underlay_key_white = sk->underlay_key_white_transparent();
@@ -1326,6 +1340,11 @@ void GUI::sketch_underlay_panel_settings_(const Sketch::sptr& sk)
       m_underlay_center       = glm::dvec2(0.0, 0.0);
       m_underlay_half_extents = glm::dvec2(0.0, 0.0);
       m_underlay_rot          = 0.0;
+      m_underlay_raw_shear    = false;
+      m_underlay_flip_u       = false;
+      m_underlay_flip_v       = false;
+      m_underlay_calib_x_done = false;
+      m_underlay_calib_y_done = false;
       m_underlay_opacity      = 0.88f;
       m_underlay_vis          = true;
       m_underlay_key_white    = true;
@@ -1420,10 +1439,8 @@ void GUI::sketch_underlay_panel_settings_(const Sketch::sptr& sk)
     const bool pick_y = m_underlay_calib_phase == Underlay_calib_phase::PickY1 ||
                         m_underlay_calib_phase == Underlay_calib_phase::PickY2 ||
                         m_underlay_calib_phase == Underlay_calib_phase::AwaitDistY;
-    const bool pick_datum = m_underlay_calib_phase == Underlay_calib_phase::PickDatumO ||
-                            m_underlay_calib_phase == Underlay_calib_phase::PickDatumU;
 
-    if (pick_x || pick_y || pick_datum)
+    if (pick_x || pick_y)
     {
       const char* hint = "";
       switch (m_underlay_calib_phase)
@@ -1447,19 +1464,13 @@ void GUI::sketch_underlay_panel_settings_(const Sketch::sptr& sk)
       case Underlay_calib_phase::AwaitDistY:
         hint = "Enter the drawing distance for Y (dimension popup).";
         break;
-      case Underlay_calib_phase::PickDatumO:
-        hint = "Datum: first click places bitmap corner (0,0) on the sketch plane (underlay origin).";
-        break;
-      case Underlay_calib_phase::PickDatumU:
-        hint = "Datum: second click sets direction along bitmap +U from that origin; half width and height are kept.";
-        break;
       default:
         break;
       }
       ImGui::TextColored(ImVec4(1.0f, 0.82f, 0.25f, 1.0f), "%s", hint);
     }
 
-    ImGui::BeginDisabled(!sk_is_cur || pick_y || pick_datum);
+    ImGui::BeginDisabled(!sk_is_cur || pick_y);
     if (ImGui::Button("Set X from edge..."))
       begin_underlay_calib_set_x_(sk);
 
@@ -1469,7 +1480,7 @@ void GUI::sketch_underlay_panel_settings_(const Sketch::sptr& sk)
                         "You can use Set Y before or after; until both are set, the other axis still follows default aspect.");
 
     ImGui::SameLine();
-    ImGui::BeginDisabled(!sk_is_cur || pick_x || pick_datum);
+    ImGui::BeginDisabled(!sk_is_cur || pick_x);
     if (ImGui::Button("Set Y from edge..."))
       begin_underlay_calib_set_y_(sk);
 
@@ -1477,98 +1488,225 @@ void GUI::sketch_underlay_panel_settings_(const Sketch::sptr& sk)
     if (ui_show_help(2) && ImGui::IsItemHovered())
       ImGui::SetTooltip(
           "Two clicks along height (+V), then enter the drawing distance for Y. Order vs. Set X does not matter.");
-
-    ImGui::BeginDisabled(!sk_is_cur || pick_x || pick_y);
-    if (ImGui::Button("Define underlay datum..."))
-      begin_underlay_calib_define_datum_(sk);
-
-    ImGui::EndDisabled();
-    if (ui_show_help(2) && ImGui::IsItemHovered())
-      ImGui::SetTooltip("Two picks on the sketch plane: first sets bitmap corner (0,0); second sets the +U axis direction. "
-                        "Keeps current half width and height; aligns the image to your sketch datum.");
   }
 
   ImGui::Separator();
   ImGui::TextUnformatted("Transform (sketch plane, vs. current view)");
   {
-    const bool ul_ortho = sk->underlay_axes_orthogonal();
-    if (ui_show_help(3) && !ul_ortho)
-      ImGui::TextWrapped(
-          "Edge calibration produced shear (bitmap U and V are not perpendicular). These sliders only describe an "
-          "orthogonal transform; they stay off so they cannot overwrite your calibrated affine.");
+    // Refresh raw affine every time this pane renders for the active underlay sketch.
+    // This keeps the 6-DOF editor in sync after calibration, external changes, or when an edit
+    // causes the basis to become (or stop being) orthogonal.
+    gp_Pnt2d b;
+    gp_Vec2d au, av;
+    sk->underlay_get_affine(b, au, av);
+    m_underlay_base = dvec2(b.X(), b.Y());
+    m_underlay_u    = dvec2(au.X(), au.Y());
+    m_underlay_v    = dvec2(av.X(), av.Y());
 
-    const ImGuiIO& io    = ImGui::GetIO();
-    double         min_u = 0., min_v = 0., max_u = 1., max_v = 1.;
-    const bool     have_view = m_view->sketch_plane_view_aabb_2d(sk->get_plane(), static_cast<double>(io.DisplaySize.x),
-                                                                 static_cast<double>(io.DisplaySize.y), min_u, min_v, max_u, max_v);
-    if (!have_view)
+    const bool ul_ortho = sk->underlay_axes_orthogonal();
+
+    if (!ul_ortho)
     {
-      constexpr double k_fallback = 250.0;
-      // m_underlay_center stays sketch-plane gp_Pnt2d X / Y (same as underlay_ui_params).
-      min_u = m_underlay_center.x - k_fallback;
-      max_u = m_underlay_center.x + k_fallback;
-      min_v = m_underlay_center.y - k_fallback;
-      max_v = m_underlay_center.y + k_fallback;
+      ImGui::TextWrapped(
+          "Edge calibration produced shear (bitmap U and V are not perpendicular). The fields below directly edit the "
+          "raw affine basis (origin + U and V vectors). The orthogonal sliders are unavailable so they cannot overwrite "
+          "the calibrated fit. You can still use the calibration buttons or the Make orthogonal button below.");
     }
 
-    const double span_u      = std::max(max_u - min_u, 1e-6);
-    const double span_v      = std::max(max_v - min_v, 1e-6);
-    const double half_span_u = 0.5 * span_u;
-    const double half_span_v = 0.5 * span_v;
-    // Allow underlay larger than the visible frustum (trace paper / zoomed views).
-    const double     max_half_w = std::max(std::hypot(half_span_u, half_span_v) * 2.5, 1e-3);
-    const double     max_half_h = max_half_w;
-    constexpr double k_min_half = 1e-6;
-    double           rot_min    = -180.0;
-    double           rot_max    = 180.0;
-
-    auto apply_ul_xform = [&]()
+    if (ul_ortho)
     {
-      if (!sk->underlay_axes_orthogonal())
-        return;
-
-      sk->underlay_set_center_extents_rotation(dvec2(m_underlay_center.x, m_underlay_center.y),
-                                               dvec2(m_underlay_half_extents.x, m_underlay_half_extents.y), m_underlay_rot);
-    };
-
-    auto transform_slider = [&](const char* label, ImGuiDataType type, void* p_data, const void* p_min, const void* p_max,
-                                const char* format, ImGuiSliderFlags flags = 0)
-    {
-      const bool changed = ImGui::SliderScalar(label, type, p_data, p_min, p_max, format, flags);
-      if (ImGui::IsItemActivated())
-        m_view->push_undo_snapshot();
-
-      if (changed)
-        apply_ul_xform();
-    };
-
-    auto transform_input_double = [&](const char* label, double* p_data, double v_min, double v_max, const char* format)
-    {
-      const bool changed = ImGui::InputDouble(label, p_data, 0.0, 0.0, format);
-      if (ImGui::IsItemActivated())
-        m_view->push_undo_snapshot();
-
-      if (changed)
+      // Orthogonal case: original friendly Center / Half extents / Rotation controls (unchanged behavior).
+      const ImGuiIO& io    = ImGui::GetIO();
+      double         min_u = 0., min_v = 0., max_u = 1., max_v = 1.;
+      const bool     have_view =
+          m_view->sketch_plane_view_aabb_2d(sk->get_plane(), static_cast<double>(io.DisplaySize.x),
+                                            static_cast<double>(io.DisplaySize.y), min_u, min_v, max_u, max_v);
+      if (!have_view)
       {
-        *p_data = std::clamp(*p_data, v_min, v_max);
-        apply_ul_xform();
+        constexpr double k_fallback = 250.0;
+        // m_underlay_center stays sketch-plane gp_Pnt2d X / Y (same as underlay_ui_params).
+        min_u = m_underlay_center.x - k_fallback;
+        max_u = m_underlay_center.x + k_fallback;
+        min_v = m_underlay_center.y - k_fallback;
+        max_v = m_underlay_center.y + k_fallback;
       }
-    };
 
-    ImGui::BeginDisabled(!ul_ortho);
-    // Labels match typical sketch axes on screen: "Center X" drives plane Y (gp_Pnt2d::Y / view v), "Center Y" plane X (u).
-    transform_slider("Center X", ImGuiDataType_Double, &m_underlay_center.y, &min_v, &max_v, "%.4f",
-                     ImGuiSliderFlags_ClampOnInput);
-    transform_slider("Center Y", ImGuiDataType_Double, &m_underlay_center.x, &min_u, &max_u, "%.4f",
-                     ImGuiSliderFlags_ClampOnInput);
-    transform_slider("Half width", ImGuiDataType_Double, &m_underlay_half_extents.x, &k_min_half, &max_half_w, "%.4f",
-                     ImGuiSliderFlags_ClampOnInput | ImGuiSliderFlags_Logarithmic);
-    transform_slider("Half height", ImGuiDataType_Double, &m_underlay_half_extents.y, &k_min_half, &max_half_h, "%.4f",
-                     ImGuiSliderFlags_ClampOnInput | ImGuiSliderFlags_Logarithmic);
-    transform_slider("Rotation (deg)", ImGuiDataType_Double, &m_underlay_rot, &rot_min, &rot_max, "%.1f",
-                     ImGuiSliderFlags_ClampOnInput);
-    transform_input_double("Rotation value (deg)", &m_underlay_rot, rot_min, rot_max, "%.4f");
-    ImGui::EndDisabled();
+      const double span_u      = std::max(max_u - min_u, 1e-6);
+      const double span_v      = std::max(max_v - min_v, 1e-6);
+      const double half_span_u = 0.5 * span_u;
+      const double half_span_v = 0.5 * span_v;
+      // Allow underlay larger than the visible frustum (trace paper / zoomed views).
+      const double     max_half_w = std::max(std::hypot(half_span_u, half_span_v) * 2.5, 1e-3);
+      const double     max_half_h = max_half_w;
+      constexpr double k_min_half = 1e-6;
+      double           rot_min    = -180.0;
+      double           rot_max    = 180.0;
+
+      auto apply_ul_xform = [&]()
+      {
+        if (!sk->underlay_axes_orthogonal())
+          return;
+
+        sk->underlay_set_center_extents_rotation(dvec2(m_underlay_center.x, m_underlay_center.y),
+                                                 dvec2(m_underlay_half_extents.x, m_underlay_half_extents.y), m_underlay_rot);
+      };
+
+      auto transform_slider = [&](const char* label, ImGuiDataType type, void* p_data, const void* p_min, const void* p_max,
+                                  const char* format, ImGuiSliderFlags flags = 0)
+      {
+        const bool changed = ImGui::SliderScalar(label, type, p_data, p_min, p_max, format, flags);
+        if (ImGui::IsItemActivated())
+          m_view->push_undo_snapshot();
+
+        if (changed)
+          apply_ul_xform();
+      };
+
+      auto transform_input_double = [&](const char* label, double* p_data, double v_min, double v_max, const char* format)
+      {
+        const bool changed = ImGui::InputDouble(label, p_data, 0.0, 0.0, format);
+        if (ImGui::IsItemActivated())
+          m_view->push_undo_snapshot();
+
+        if (changed)
+        {
+          *p_data = std::clamp(*p_data, v_min, v_max);
+          apply_ul_xform();
+        }
+      };
+
+      // Labels match typical sketch axes on screen: "Center X" drives plane Y (gp_Pnt2d::Y / view v), "Center Y" plane X (u).
+      transform_slider("Center X", ImGuiDataType_Double, &m_underlay_center.y, &min_v, &max_v, "%.4f",
+                       ImGuiSliderFlags_ClampOnInput);
+      transform_slider("Center Y", ImGuiDataType_Double, &m_underlay_center.x, &min_u, &max_u, "%.4f",
+                       ImGuiSliderFlags_ClampOnInput);
+      transform_slider("Half width", ImGuiDataType_Double, &m_underlay_half_extents.x, &k_min_half, &max_half_w, "%.4f",
+                       ImGuiSliderFlags_ClampOnInput | ImGuiSliderFlags_Logarithmic);
+      transform_slider("Half height", ImGuiDataType_Double, &m_underlay_half_extents.y, &k_min_half, &max_half_h, "%.4f",
+                       ImGuiSliderFlags_ClampOnInput | ImGuiSliderFlags_Logarithmic);
+      transform_slider("Rotation (deg)", ImGuiDataType_Double, &m_underlay_rot, &rot_min, &rot_max, "%.1f",
+                       ImGuiSliderFlags_ClampOnInput);
+      transform_input_double("Rotation value (deg)", &m_underlay_rot, rot_min, rot_max, "%.4f");
+    }
+    else
+    {
+      // Sheared (non-orthogonal) case: 6-DOF raw affine editor.
+      // Base = bitmap (0,0) location in sketch plane.
+      // U and V are the full edge vectors (their magnitudes are the half-extents in those directions).
+      // Base X/Y use viewport-relative sliders (matching the previous Center X/Y behavior for position).
+
+      m_underlay_raw_shear = sk->underlay_raw_shear_display();
+      if (ImGui::Checkbox("Show raw shear distortion in image (makes bad Y-axis or other calibration mistakes visible as skew "
+                          "in the raster)",
+                          &m_underlay_raw_shear))
+      {
+        sk->underlay_set_raw_shear_display(m_underlay_raw_shear);
+        sk->underlay_rebuild_display();
+      }
+
+      if (m_underlay_raw_shear)
+      {
+        m_underlay_flip_u = sk->underlay_flip_image_u();
+        m_underlay_flip_v = sk->underlay_flip_image_v();
+
+        if (ImGui::Checkbox("Reverse image U (flip horizontal in source)", &m_underlay_flip_u))
+        {
+          sk->underlay_set_flip_image_u(m_underlay_flip_u);
+          sk->underlay_rebuild_display();
+        }
+        if (ImGui::Checkbox("Reverse image V (flip vertical in source)", &m_underlay_flip_v))
+        {
+          sk->underlay_set_flip_image_v(m_underlay_flip_v);
+          sk->underlay_rebuild_display();
+        }
+        ImGui::TextDisabled("(Cycle these to put raster (0,0) at the 'top left' corner of the parallelogram)");
+      }
+
+      const ImGuiIO& io    = ImGui::GetIO();
+      double         min_u = 0., min_v = 0., max_u = 1., max_v = 1.;
+      const bool     have_view =
+          m_view->sketch_plane_view_aabb_2d(sk->get_plane(), static_cast<double>(io.DisplaySize.x),
+                                            static_cast<double>(io.DisplaySize.y), min_u, min_v, max_u, max_v);
+      if (!have_view)
+      {
+        constexpr double k_fallback = 250.0;
+        min_u                       = m_underlay_base.x - k_fallback;
+        max_u                       = m_underlay_base.x + k_fallback;
+        min_v                       = m_underlay_base.y - k_fallback;
+        max_v                       = m_underlay_base.y + k_fallback;
+      }
+
+      auto apply_affine = [&]()
+      {
+        sk->underlay_set_affine_plane(gp_Pnt2d(m_underlay_base.x, m_underlay_base.y), gp_Vec2d(m_underlay_u.x, m_underlay_u.y),
+                                      gp_Vec2d(m_underlay_v.x, m_underlay_v.y));
+      };
+
+      // Base position sliders (viewport frustum bounds + fallback, direct plane X/Y).
+      {
+        const bool changed = ImGui::SliderScalar("Base X", ImGuiDataType_Double, &m_underlay_base.x, &min_u, &max_u, "%.4f",
+                                                 ImGuiSliderFlags_ClampOnInput);
+        if (ImGui::IsItemActivated())
+          m_view->push_undo_snapshot();
+        if (changed)
+          apply_affine();
+      }
+      {
+        const bool changed = ImGui::SliderScalar("Base Y", ImGuiDataType_Double, &m_underlay_base.y, &min_v, &max_v, "%.4f",
+                                                 ImGuiSliderFlags_ClampOnInput);
+        if (ImGui::IsItemActivated())
+          m_view->push_undo_snapshot();
+        if (changed)
+          apply_affine();
+      }
+
+      auto vector_component = [&](const char* label, double* p_data)
+      {
+        const bool changed = ImGui::InputDouble(label, p_data, 0.0, 0.0, "%.4f");
+        if (ImGui::IsItemActivated())
+          m_view->push_undo_snapshot();
+        if (changed)
+          apply_affine();
+      };
+
+      ImGui::TextUnformatted("+U vector");
+      if (ImGui::IsItemHovered())
+        ImGui::SetTooltip("Maps the horizontal (width / columns) of the source bitmap. From the Base, this vector reaches the "
+                          "right edge of the full image. Set X from edge and datum tools primarily affect +U.");
+      vector_component("U X", &m_underlay_u.x);
+      vector_component("U Y", &m_underlay_u.y);
+
+      ImGui::TextUnformatted("+V vector");
+      if (ImGui::IsItemHovered())
+        ImGui::SetTooltip(
+            "Maps the vertical (height / rows) of the source bitmap. From the Base, this vector reaches the bottom edge of the "
+            "full image. 'Set Y from edge...' and y-axis calibration adjust +V (this is what you set for the Y-axis).");
+      vector_component("V X", &m_underlay_v.x);
+      vector_component("V Y", &m_underlay_v.y);
+
+      // Live derived metrics (useful while tweaking shear cases).
+      {
+        const double lu        = std::hypot(m_underlay_u.x, m_underlay_u.y);
+        const double lv        = std::hypot(m_underlay_v.x, m_underlay_v.y);
+        double       shear_deg = 0.0;
+        if (lu > 1e-12 && lv > 1e-12)
+        {
+          const double dot = m_underlay_u.x * m_underlay_v.x + m_underlay_u.y * m_underlay_v.y;
+          const double c   = std::clamp(dot / (lu * lv), -1.0, 1.0);
+          shear_deg        = std::acos(c) * (180.0 / std::acos(-1.0));
+        }
+        ImGui::Text("U len: %.4f   V len: %.4f   Angle U-V: %.2f deg", lu, lv, shear_deg);
+      }
+
+      if (ImGui::Button("Make orthogonal (keep lengths + U direction)"))
+      {
+        m_view->push_undo_snapshot();
+        force_underlay_orthogonal_(sk);
+      }
+      if (ui_show_help(3) && ImGui::IsItemHovered())
+        ImGui::SetTooltip("Project V to be perpendicular to U. Keeps the current lengths of both axes and the original "
+                          "orientation (sign of U cross V). After this the Center / Half / Rotation sliders return.");
+    }
   }
 }
 
@@ -1586,6 +1724,8 @@ void GUI::on_sketch_underlay_file(const std::string& file_path, const std::strin
     return;
   }
 
+  m_underlay_calib_x_done = false;
+  m_underlay_calib_y_done = false;
   m_underlay_panel_sketch = nullptr;
   show_message("Underlay: " + std::filesystem::path(file_path).filename().string());
 }
@@ -1598,6 +1738,41 @@ void GUI::cancel_underlay_calib_()
   m_underlay_calib_sketch_wk.reset();
 
   m_underlay_calib_axis_u = gp_Vec2d(0., 0.);
+}
+
+void GUI::force_underlay_orthogonal_(const Sketch::sptr& sk)
+{
+  if (!sk || !sk->has_underlay())
+    return;
+
+  gp_Pnt2d b;
+  gp_Vec2d au, av;
+  sk->underlay_get_affine(b, au, av);
+  const double lu = au.Magnitude();
+  const double lv = av.Magnitude();
+  if (lu > 1e-12 && lv > 1e-12)
+  {
+    gp_Vec2d au_n = au;
+    au_n.Normalize();
+    const double det = au.X() * av.Y() - au.Y() * av.X();
+    gp_Vec2d     av_perp;
+    if (det >= 0.0)
+    {
+      av_perp = gp_Vec2d(-au_n.Y() * lv, au_n.X() * lv);
+    }
+    else
+    {
+      av_perp = gp_Vec2d(au_n.Y() * lv, -au_n.X() * lv);
+    }
+    const gp_Vec2d au_final = au_n * lu;
+    sk->underlay_set_affine_plane(b, au_final, av_perp);
+    // Refresh locals for this frame and any immediate follow-up UI.
+    m_underlay_u = dvec2(au_final.X(), au_final.Y());
+    m_underlay_v = dvec2(av_perp.X(), av_perp.Y());
+  }
+  sk->underlay_ui_params(m_underlay_center.x, m_underlay_center.y, m_underlay_half_extents.x, m_underlay_half_extents.y,
+                         m_underlay_rot);
+  m_underlay_panel_sketch = nullptr;
 }
 
 void GUI::begin_underlay_calib_set_x_(const Sketch::sptr& sk)
@@ -1636,25 +1811,6 @@ void GUI::begin_underlay_calib_set_y_(const Sketch::sptr& sk)
   m_underlay_calib_sketch_wk = sk;
   m_underlay_calib_phase     = Underlay_calib_phase::PickY1;
   show_message("Underlay Y: uses the current transform. Click two points along +V; then enter the drawing distance.");
-}
-
-void GUI::begin_underlay_calib_define_datum_(const Sketch::sptr& sk)
-{
-  if (!sk || !sk->has_underlay())
-    return;
-
-  if (m_view->curr_sketch_shared() != sk)
-  {
-    show_message("Make this sketch current in the sketch list, then try again.");
-    return;
-  }
-
-  cancel_underlay_calib_();
-  sk->underlay_ui_params(m_underlay_center.x, m_underlay_center.y, m_underlay_half_extents.x, m_underlay_half_extents.y,
-                         m_underlay_rot);
-  m_underlay_calib_sketch_wk = sk;
-  m_underlay_calib_phase     = Underlay_calib_phase::PickDatumO;
-  show_message("Datum: click where bitmap corner (0,0) should lie on the sketch plane.");
 }
 
 void GUI::underlay_calib_prompt_x_distance_(const Sketch::sptr& sk)
@@ -1699,7 +1855,13 @@ void GUI::underlay_calib_prompt_x_distance_(const Sketch::sptr& sk)
     m_underlay_calib_axis_u = s->underlay_axis_u_vec();
     s->underlay_ui_params(m_underlay_center.x, m_underlay_center.y, m_underlay_half_extents.x, m_underlay_half_extents.y,
                           m_underlay_rot);
+    m_underlay_calib_x_done = true;
     m_underlay_panel_sketch = nullptr;
+
+    if (m_underlay_calib_x_done && m_underlay_calib_y_done)
+    {
+      force_underlay_orthogonal_(s);
+    }
 
     m_dist_callback        = nullptr;
     m_underlay_calib_phase = Underlay_calib_phase::None;
@@ -1752,7 +1914,13 @@ void GUI::underlay_calib_prompt_y_distance_(const Sketch::sptr& sk)
 
     s->underlay_ui_params(m_underlay_center.x, m_underlay_center.y, m_underlay_half_extents.x, m_underlay_half_extents.y,
                           m_underlay_rot);
+    m_underlay_calib_y_done = true;
     m_underlay_panel_sketch = nullptr;
+
+    if (m_underlay_calib_x_done && m_underlay_calib_y_done)
+    {
+      force_underlay_orthogonal_(s);
+    }
 
     m_dist_callback = nullptr;
     cancel_underlay_calib_();
@@ -1833,35 +2001,6 @@ bool GUI::try_underlay_calib_click_(const ScreenCoords& screen_coords)
     m_underlay_calib_y1 = *pt;
     show_message("Enter drawing distance for Y.");
     underlay_calib_prompt_y_distance_(sk);
-    return true;
-
-  case Underlay_calib_phase::PickDatumO:
-    m_underlay_calib_datum_o = *pt;
-    m_underlay_calib_phase   = Underlay_calib_phase::PickDatumU;
-    show_message("Datum: click a second point along bitmap +U from that origin (direction only).");
-    return true;
-
-  case Underlay_calib_phase::PickDatumU:
-    if (too_short(m_underlay_calib_datum_o, *pt))
-    {
-      show_message("Datum direction segment too short.");
-      return true;
-    }
-
-    m_view->push_undo_snapshot();
-    if (!sk->underlay_set_datum_origin_and_u_direction(m_underlay_calib_datum_o, *pt))
-    {
-      m_view->pop_undo_snapshot();
-      show_message("Could not set underlay datum (degenerate direction or axes).");
-      cancel_underlay_calib_();
-      return true;
-    }
-
-    sk->underlay_ui_params(m_underlay_center.x, m_underlay_center.y, m_underlay_half_extents.x, m_underlay_half_extents.y,
-                           m_underlay_rot);
-    m_underlay_panel_sketch = nullptr;
-    cancel_underlay_calib_();
-    show_message("Underlay datum set: origin at (0,0) and +U direction; half sizes unchanged.");
     return true;
 
   default:
