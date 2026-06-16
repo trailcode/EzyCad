@@ -919,10 +919,28 @@ Import a reference image (PNG, JPEG, or BMP) behind a sketch for tracing or alig
 | --- | --- |
 | **Set X from edge...** | Two clicks along bitmap width (+U), then enter the real drawing distance (same units as sketch dimensions) |
 | **Set Y from edge...** | Two clicks along bitmap height (+V), then enter the drawing distance for Y |
-| **Define underlay datum...** | Two picks on the sketch plane: corner **(0,0)**, then direction along +U (keeps current half width and height) |
 
-After edge calibration, bitmap axes may be non-orthogonal (shear). The **Transform** sliders (**Center X/Y**, **Half width/height**, **Rotation**) then stay disabled so they do not overwrite that affine fit; use calibration picks or adjust before shear is introduced.
+After edge calibration, bitmap axes may be non-orthogonal (shear). In that case the **Transform** section switches to a 6-DOF affine editor instead of the sliders:
 
-**Transform** (orthogonal underlay only): sliders and **Rotation value** adjust center, half extents, and rotation on the sketch plane; changes apply in real time and support undo.
+- **Base X / Base Y** — location of the bitmap corner (0,0) in sketch-plane coordinates.
+- **U X / U Y** and **V X / V Y** — the two edge vectors defining the image parallelogram (+U is width direction, +V height). Their lengths and the angle between them are shown below the inputs for reference.
+- When shear is present, a checkbox **"Show raw shear distortion in image"** appears. Turn it on to make calibration mistakes (such as an incorrect Y-axis pick) visible directly as skew and distortion in the raster image pixels themselves. This complements the cyan bounds, which always show the exact current parallelogram. The default (off) uses special resampling so the source image content looks clean relative to your U/V axes.
+- Two additional checkboxes (**Reverse image U** / **Reverse image V**) appear in raw mode. These flip the source raster data so that raster (0,0) lands at the corner of the parallelogram you expect. They exist because exact texture UV ordering on a sheared OCCT face created from a wire can vary.
+
+**Auto-orthogonal after calibration**: once you have successfully set *both* X and Y (via the edge tools), the system automatically applies the equivalent of "Make orthogonal (keep lengths + U direction)". This forces V perpendicular to U while preserving the two calibrated lengths, so the friendly sliders usually become available again. You can still re-introduce shear manually in the 6-DOF editor or via the button.
+
+**Transform** (orthogonal underlay): sliders and **Rotation value** adjust center, half extents, and rotation on the sketch plane; changes apply in real time and support undo. When shear is present the sliders are replaced by the raw basis editor above so the calibrated fit is not lost.
+
+**Known limitations with image underlays** (as of the current version):
+- "Set X from edge..." and "Set Y from edge..." measure along the *current* basis at the time of the pick. If the two features you pick are not perfectly perpendicular in the source image (or your clicks are slightly off), the resulting U and V will not be orthogonal. This is supported (full affine), but it disables the simple sliders and can make the image content appear skewed until you use the raw editor or the Make orthogonal button.
+- The "Define underlay datum..." tool (which forced a clean perpendicular V) has been removed.
+- The entire source image (including margins, title block, etc.) is always mapped to the current parallelogram. If you only care about part of the image you may need to pre-crop the file.
+- In raw shear mode the visible textured region follows the exact parallelogram (cyan frame), but achieving pixel-precise "raster (0,0) at this exact corner" can require the Reverse U/V flips because of how OCCT parametrizes faces created from a general wire.
+- The two renderer paths (default "preserve" vs. raw) produce visibly different results for the same affine. The preserve path counteracts texture shear for a cleaner look; raw lets the affine act directly on the pixels (deliberately for calibration debugging).
+- The cyan frame is always the exact geometric bounds of the full mapped source image. It is *not* a crop rectangle.
+
+Changes apply live and support undo. A **Make orthogonal (keep lengths + U direction)** button (and the automatic version after both axes are set) projects V to be perpendicular to U (preserving lengths and winding) and returns you to the friendly Center / Half / Rotation sliders.
 
 Default underlay highlight tint for new imports: **Settings -> Sketch -> Underlay highlight color** (see [usage-settings.md](usage-settings.md#settings-pane)).
+
+A thin cyan frame (parallelogram when the underlay has been calibrated with shear) is always rendered around the exact bounds of each visible image underlay. This makes the placement and extent clear for new imports and in cases where most of the bitmap content keys to transparent.

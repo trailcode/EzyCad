@@ -2967,45 +2967,6 @@ gp_Vec2d Sketch::underlay_axis_u_vec() const
   return m_underlay->axis_u();
 }
 
-bool Sketch::underlay_set_datum_origin_and_u_direction(const gp_Pnt2d& origin, const gp_Pnt2d& along_u_point)
-{
-  if (!m_underlay || !m_underlay->has_image())
-    return false;
-
-  gp_Vec2d       du(along_u_point.X() - origin.X(), along_u_point.Y() - origin.Y());
-  const double   du_len = du.Magnitude();
-  const gp_Vec2d au_old = m_underlay->axis_u();
-  const gp_Vec2d av_old = m_underlay->axis_v();
-  const double   len_u  = au_old.Magnitude();
-  const double   len_v  = av_old.Magnitude();
-  if (len_u <= 1e-12 || len_v <= 1e-12 || du_len <= 1e-12)
-    return false;
-
-  du.Multiply(1.0 / du_len);
-  const double ux = du.X();
-  const double uy = du.Y();
-
-  const double det_old = au_old.X() * av_old.Y() - au_old.Y() * av_old.X();
-  double       px{};
-  double       py{};
-  if (det_old >= 0.0)
-  {
-    px = -uy;
-    py = ux;
-  }
-  else
-  {
-    px = uy;
-    py = -ux;
-  }
-
-  const gp_Vec2d au_new(len_u * ux, len_u * uy);
-  const gp_Vec2d av_new(len_v * px, len_v * py);
-
-  underlay_set_affine_plane(origin, au_new, av_new);
-  return true;
-}
-
 void Sketch::underlay_set_center_extents_rotation(const dvec2& center, const dvec2& half_extents, double rot_deg)
 {
   EZY_ASSERT(m_underlay);
@@ -3074,6 +3035,51 @@ void Sketch::underlay_set_line_tint_rgba(uint8_t r, uint8_t g, uint8_t b, uint8_
   underlay_rebuild_display();
 }
 
+void Sketch::underlay_set_raw_shear_display(bool on)
+{
+  if (!m_underlay)
+    return;
+  m_underlay->set_raw_shear_display(on);
+  underlay_rebuild_display();
+}
+
+bool Sketch::underlay_raw_shear_display() const
+{
+  if (!m_underlay)
+    return false;
+  return m_underlay->raw_shear_display();
+}
+
+void Sketch::underlay_set_flip_image_u(bool on)
+{
+  if (!m_underlay)
+    return;
+  m_underlay->set_flip_image_u(on);
+  underlay_rebuild_display();
+}
+
+void Sketch::underlay_set_flip_image_v(bool on)
+{
+  if (!m_underlay)
+    return;
+  m_underlay->set_flip_image_v(on);
+  underlay_rebuild_display();
+}
+
+bool Sketch::underlay_flip_image_u() const
+{
+  if (!m_underlay)
+    return false;
+  return m_underlay->flip_image_u();
+}
+
+bool Sketch::underlay_flip_image_v() const
+{
+  if (!m_underlay)
+    return false;
+  return m_underlay->flip_image_v();
+}
+
 bool Sketch::underlay_line_tint_enabled() const { return m_underlay ? m_underlay->line_tint_enabled() : true; }
 
 void Sketch::underlay_line_tint_rgb(uint8_t& r, uint8_t& g, uint8_t& b) const
@@ -3116,6 +3122,20 @@ void Sketch::underlay_ui_params(double& cx, double& cy, double& half_w, double& 
   cx                = b.X() + 0.5 * (au.X() + av.X());
   cy                = b.Y() + 0.5 * (au.Y() + av.Y());
   rot_deg           = std::atan2(au.Y(), au.X()) * (180.0 / std::numbers::pi);
+}
+
+void Sketch::underlay_get_affine(gp_Pnt2d& base, gp_Vec2d& axis_u, gp_Vec2d& axis_v) const
+{
+  if (!m_underlay || !m_underlay->has_image())
+  {
+    base   = gp_Pnt2d(0., 0.);
+    axis_u = gp_Vec2d(0., 0.);
+    axis_v = gp_Vec2d(0., 0.);
+    return;
+  }
+  base   = m_underlay->base();
+  axis_u = m_underlay->axis_u();
+  axis_v = m_underlay->axis_v();
 }
 
 bool Sketch::underlay_axes_orthogonal() const

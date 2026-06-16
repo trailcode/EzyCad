@@ -164,10 +164,19 @@ public:
   void                underlay_set_line_tint_enabled(bool on);
   void                underlay_set_line_tint_rgb(uint8_t r, uint8_t g, uint8_t b);
   void                underlay_set_line_tint_rgba(uint8_t r, uint8_t g, uint8_t b, uint8_t a);
+  void                underlay_set_raw_shear_display(bool on);
+  [[nodiscard]] bool  underlay_raw_shear_display() const;
+  void                underlay_set_flip_image_u(bool on);
+  void                underlay_set_flip_image_v(bool on);
+  [[nodiscard]] bool  underlay_flip_image_u() const;
+  [[nodiscard]] bool  underlay_flip_image_v() const;
   [[nodiscard]] bool  underlay_line_tint_enabled() const;
   void                underlay_line_tint_rgb(uint8_t& r, uint8_t& g, uint8_t& b) const;
   void                underlay_line_tint_rgba(uint8_t& r, uint8_t& g, uint8_t& b, uint8_t& a) const;
   void                underlay_ui_params(double& cx, double& cy, double& half_w, double& half_h, double& rot_deg) const;
+  /// Retrieve the raw affine basis (bitmap origin + U and V edge vectors in sketch plane 2D coords).
+  /// Used by the 6-DOF editor for sheared (non-orthogonal) underlays.
+  void underlay_get_affine(gp_Pnt2d& base, gp_Vec2d& axis_u, gp_Vec2d& axis_v) const;
   /// True when texture U and V directions are perpendicular (no shear). Orthogonal UI assumes this.
   [[nodiscard]] bool underlay_axes_orthogonal() const;
   void               underlay_rebuild_display();
@@ -181,8 +190,6 @@ public:
   /// Keep U axis; adjust V and base so segment \a y0-\a y1 has length \a target_len (after X calibration).
   [[nodiscard]] bool     underlay_rescale_v_chord_to_length(const gp_Pnt2d& y0, const gp_Pnt2d& y1, double target_len);
   [[nodiscard]] gp_Vec2d underlay_axis_u_vec() const;
-  /// Datum on sketch plane: bitmap (0,0) at \a origin; +U toward \a along_u_point; keeps |axis_u|, |axis_v| and winding.
-  [[nodiscard]] bool underlay_set_datum_origin_and_u_direction(const gp_Pnt2d& origin, const gp_Pnt2d& along_u_point);
 
   // private:
   friend class Sketch_json;

@@ -12,6 +12,7 @@
 #include <vector>
 
 class AIS_TexturedShape;
+class AIS_Shape;
 class AIS_InteractiveContext;
 class gp_Pln;
 
@@ -58,6 +59,14 @@ public:
   [[nodiscard]] int      image_w()               const { return m_w; }
   [[nodiscard]] int      image_h()               const { return m_h; }
 
+  void                set_raw_shear_display(bool on);
+  [[nodiscard]] bool  raw_shear_display() const { return m_raw_shear_display; }
+
+  void set_flip_image_u(bool on) { m_flip_image_u = on; }
+  void set_flip_image_v(bool on) { m_flip_image_v = on; }
+  [[nodiscard]] bool flip_image_u() const { return m_flip_image_u; }
+  [[nodiscard]] bool flip_image_v() const { return m_flip_image_v; }
+
   // clang-format on
 
   void rebuild_and_display(const gp_Pln& pln, AIS_InteractiveContext& ctx);
@@ -93,5 +102,15 @@ private:
   uint8_t m_tint_b{0};
   uint8_t m_tint_a{255};
 
+  /// When true and the axes are sheared, the source image is textured directly onto the
+  /// sheared parallelogram quad (raw affine applied to pixels). This makes calibration
+  /// mistakes (e.g. incorrect Y-axis) visible as skew/distortion in the raster image itself.
+  /// Default false uses special resampling to preserve source image appearance relative to U/V.
+  bool m_raw_shear_display{false};
+
+  bool m_flip_image_u{false}; // for raw mode: flip source along U (horizontal in image)
+  bool m_flip_image_v{false}; // for raw mode: flip source along V (vertical in image)
+
   opencascade::handle<AIS_TexturedShape> m_ais;
+  opencascade::handle<AIS_Shape>         m_border;
 };

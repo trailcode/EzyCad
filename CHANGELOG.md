@@ -7,8 +7,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Sketch underlay
+
+- When an image underlay has shear from edge calibration ("Set X from edge..." or "Set Y from edge..."), the **Transform** section in Sketch properties now provides a full 6-DOF editor: Base X/Y (bitmap 0,0 origin) + direct Ux/Uy and Vx/Vy vector components. Derived U/V lengths and the angle between them are displayed live. Edits apply immediately with undo support.
+- A **Make orthogonal (keep lengths + U direction)** button projects the V vector to be perpendicular while preserving magnitudes and orientation sign; after use the familiar Center / Half width/height / Rotation sliders return.
+- The original orthogonal sliders remain for the common (non-sheared) case. The cyan underlay frame continues to show the true (possibly sheared) parallelogram extent.
+- Addresses the long-standing limitation noted in docs/bugs.md and usage-sketch.md. The raw basis editor lets users fine-tune or correct after calibration without losing the affine fit.
+
 ### Sketch / 2D Topology
 
+- Image underlays now render with a thin cyan bounding parallelogram (frame) around the full image region in the sketch plane. This makes newly added or low-contrast underlays (heavy white-key transparency, faint scans, dark view backgrounds) easy to locate and see their exact extent. The frame follows the current affine placement (including non-orthogonal after edge calibration) and is drawn for every visible underlay.
 - Documented the automatic splitting of linear edges when they intersect other edges (the core user-visible topology behavior). When a new straight edge crosses or touches the interior of an existing straight edge, or when its endpoint snaps to an existing midpoint, the intersected edge(s) are split at the intersection and the new edge is subdivided as needed. This enables T-junctions, clean crossings (4 edges), and divided faces (e.g. square + exact mid vertical produces two rectangles) without any manual steps. See the new table row "Automatic splitting on edge intersections" and the Tips under [Sketch snapping](docs/usage-sketch.md#sketch-snapping) in the user guide.
 - Added/expanded unit tests for the above (mid vertical splitter in both orders + full GUI draw-direction cases for the splitter; bridge + hole reproduction from user `bridge.ezy`).
 - An internal rewrite attempt to reduce order/draw-direction sensitivity (angular sorting of adjacency, always-normalize instead of the orientation filter, etc.) was reverted after it was found to hang in some sketches. The new user documentation above reflects the stable current behavior (no internal dev details are exposed to users).
