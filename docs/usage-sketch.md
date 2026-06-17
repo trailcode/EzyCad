@@ -53,7 +53,7 @@ While you draw or place points in sketch mode, EzyCad helps you align to existin
 
 **Tips:**
 - For precise corners, approach a vertex until both horizontal and vertical guides appear, then click.
-- Automatic **edge midpoints** are snap targets but do not show **+** markers and are not listed under **Nodes** in the [Sketch List](usage.md#sketch-list) (that list is user-placed points only).
+- **Edge midpoints** (for straight edges) are optional snap targets. By default (see Settings > Sketch), no midpoint nodes are created for new linear edges from the Line or Multi-Line tools. When enabled, they are snap targets but do not show **+** markers and are not listed under **Nodes** in the [Sketch List](usage.md#sketch-list) (that list is user-placed points only).
 - Adding a new straight edge that intersects existing straight edges (or snaps to their midpoints) automatically splits the intersected edges. This is the main way to divide a closed shape (rectangle, square, slot, or freehand closed profile) into multiple separate faces for individual extrusion or other operations. No manual "split" command is needed. The resulting faces remain valid even if you add the splitting edge before or after the outer shape.
 
 ## Hotkeys
@@ -141,7 +141,7 @@ The single line edge tool allows you to create straight line segments between tw
 - Lines can be used as construction geometry or as part of your final design
 - The line tool works in any sketch plane
 - Multiple line edges can be created in sequence by right-clicking after each line
-- **New straight edges automatically split existing straight edges** at interior intersection points (or when snapping to an existing midpoint). This is how you divide a closed profile into multiple faces (for separate extrusions, etc.) — just draw the crossing or connecting line; no extra "split" step is required. The same logic applies to multi-line sequences.
+- **New straight edges automatically split existing straight edges** at interior intersection points (or when snapping to an existing midpoint, if midpoints were created). This is how you divide a closed profile into multiple faces (for separate extrusions, etc.) — just draw the crossing or connecting line; no extra "split" step is required. The same logic applies to multi-line sequences. Midpoint creation for new edges is controlled by **Settings > Sketch > Add midpoints to new linear edges** (default off).
 
 ### Multi-Line Edge Tool
 
@@ -793,7 +793,7 @@ In both cases, Add node never leaves a **permanent edge** between two clicks the
 
 #### Permanent “+” markers
 
-Nodes you place with **Add node** are treated as **user-placed** points. When the sketch is visible, eligible points can show a small **+** marker in the 3D view so you can see and pick them. Geometry that exists only as automatic **edge midpoints** for snapping is separate (those nodes are not shown the same way). 
+Nodes you place with **Add node** are treated as **user-placed** points. When the sketch is visible, eligible points can show a small **+** marker in the 3D view so you can see and pick them. Geometry that exists only as automatic **edge midpoints** for snapping is separate (those nodes are not shown the same way; controlled by the **Add midpoints to new linear edges** setting in Settings > Sketch, default off). 
 
 #### How to use
 

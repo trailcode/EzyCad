@@ -39,6 +39,10 @@ class Sketch_test : public ::testing::Test
     view->init_viewer();
     view->init_default();
     GUI_access::set_view(s_gui, view);
+
+    // Force midpoint creation on for tests (they were written assuming auto mids on linear edges).
+    // Production default is off (see user's request); specific tests can override with set_... (false).
+    Sketch::set_add_mid_pt_edges(true);
   }
 
   void TearDown() override
@@ -92,7 +96,7 @@ class Sketch_access
 
   /// Exact replay of a saved linear edge (with its pre-existing midpoint node index).
   /// Used for regression tests of specific .ezy cases (e.g. bridge + hole topologies).
-  static void sketch_json_add_linear_edge_(Sketch& sketch, size_t idx_a, size_t idx_b, size_t idx_mid);
+  static void sketch_json_add_linear_edge_(Sketch& sketch, size_t idx_a, size_t idx_b, std::optional<size_t> idx_mid = std::nullopt);
 };
 
 void Sketch_access::add_edge_(Sketch& sketch, const gp_Pnt2d& pt_a, const gp_Pnt2d& pt_b)
@@ -151,7 +155,7 @@ inline void Sketch_access::get_originating_face_snp_pts_3d_(Sketch& sketch, std:
   sketch.get_originating_face_snp_pts_3d_(out);
 }
 
-void Sketch_access::sketch_json_add_linear_edge_(Sketch& sketch, size_t idx_a, size_t idx_b, size_t idx_mid)
+void Sketch_access::sketch_json_add_linear_edge_(Sketch& sketch, size_t idx_a, size_t idx_b, std::optional<size_t> idx_mid)
 {
   sketch.sketch_json_add_linear_edge_(idx_a, idx_b, idx_mid);
 }
@@ -220,7 +224,7 @@ TEST_F(Sketch_test, EdgeManagement)
 
   // Verify edge was created
   EXPECT_FALSE(sketch.get_nodes().empty());
-  // Expect 3 nodes because a edge center node is added for snapping purposes.
+  // With midpoints enabled in fixture (for test compatibility), 2 endpoints + 1 mid = 3 nodes.
   EXPECT_EQ(sketch.get_nodes().size(), 3);
 }
 
@@ -231,6 +235,9 @@ TEST_F(Sketch_test, AddSingleEdge_CreatesThreeCorrectNodes)
 {
   gp_Pln default_plane(gp::Origin(), gp::DZ());
   Sketch sketch("TestSketch", view(), default_plane);
+
+  // Enable midpoint creation for this test (tests the "add midpoints" behavior)
+  sketch.set_add_mid_pt_edges(true);
 
   gp_Pnt2d p1(0.0, 0.0);
   gp_Pnt2d p2(10.0, 5.0);
@@ -254,6 +261,72 @@ TEST_F(Sketch_test, AddSingleEdge_CreatesThreeCorrectNodes)
   gp_Pnt2d expected_mid((p1.X() + p2.X()) * 0.5, (p1.Y() + p2.Y()) * 0.5);
   EXPECT_TRUE(nodes[2].IsEqual(expected_mid, Precision::Confusion())) << "Node 2 should be the exact midpoint";
   EXPECT_TRUE(nodes[2].midpoint) << "The auto-created center node must be marked as midpoint for snapping";
+}
+
+// Test the new "add midpoints to linear edges" option (default off).
+// Verifies that linear edges do not get auto midpoints by default,
+// and that the static setter controls it for add_edge_ (used by line/multi-line tools).
+TEST_F(Sketch_test, AddLinearEdge_MidpointOption)
+{
+  gp_Pln default_plane(gp::Origin(), gp::DZ());
+  Sketch sketch("TestSketch", view(), default_plane);
+
+  gp_Pnt2d p1(0.0, 0.0);
+  gp_Pnt2d p2(10.0, 0.0);
+
+  // Force off to test no-mid default behavior (fixture forces on for other tests)
+  Sketch::set_add_mid_pt_edges(false);
+  EXPECT_FALSE(Sketch::get_add_mid_pt_edges()) << "Should be false right before add";
+
+  Sketch_access::add_edge_(sketch, p1, p2);
+
+  size_t nodes_after_first = sketch.get_nodes().size();
+  EXPECT_EQ(nodes_after_first, 2) << "Default (off): only endpoints, no auto midpoint";
+  EXPECT_EQ(Sketch_access::get_linear_edge_count(sketch), 1);
+
+  // Check the (only) edge has no mid
+  bool has_mid = false;
+  for (const auto& e : sketch.m_edges) {
+    if (e.node_idx_mid.has_value()) has_mid = true;
+  }
+  EXPECT_FALSE(has_mid);
+
+  // Turn the option on
+  Sketch::set_add_mid_pt_edges(true);
+  EXPECT_TRUE(Sketch::get_add_mid_pt_edges());
+
+  gp_Pnt2d p3(0.0, 10.0);
+  gp_Pnt2d p4(10.0, 10.0);
+  Sketch_access::add_edge_(sketch, p3, p4);
+
+  // Should add 2 endpoints + 1 mid = +3
+  EXPECT_EQ(sketch.get_nodes().size(), nodes_after_first + 3);
+
+  // Find the second edge and verify it has a mid
+  auto it = sketch.m_edges.begin();
+  std::advance(it, 1);  // second edge
+  EXPECT_TRUE(it->node_idx_mid.has_value());
+  const gp_Pnt2d& mid = sketch.get_nodes()[*it->node_idx_mid];
+  gp_Pnt2d expected_mid(5.0, 10.0);
+  EXPECT_TRUE(mid.IsEqual(expected_mid, Precision::Confusion()));
+  EXPECT_TRUE(sketch.get_nodes()[*it->node_idx_mid].midpoint);
+
+  // Verify JSON shape: no mid => 2-element edge array; with mid => 3 elements
+  nlohmann::json j_no_mid = Sketch_json::to_json(sketch);  // current state has one with mid
+  // To test no-mid JSON, recreate a sketch with flag off
+  Sketch sketch2("TestSketch2", view(), default_plane);
+  Sketch::set_add_mid_pt_edges(false);
+  Sketch_access::add_edge_(sketch2, p1, p2);
+  nlohmann::json j2 = Sketch_json::to_json(sketch2);
+  EXPECT_EQ(j2["edges"][0].size(), 2u) << "Edge without mid should serialize as 2-element array [a,b]";
+
+  Sketch::set_add_mid_pt_edges(true);
+  Sketch_access::add_edge_(sketch2, p3, p4);
+  nlohmann::json j3 = Sketch_json::to_json(sketch2);
+  EXPECT_EQ(j3["edges"][1].size(), 3u) << "Edge with mid should serialize as 3-element array [a,b,mid]";
+
+  // Turn off again for subsequent tests (though fixture resets)
+  Sketch::set_add_mid_pt_edges(false);
 }
 
 // Test that adding two edges that cross (intersect interior to both) but *not* at either edge's
@@ -2350,6 +2423,9 @@ TEST_F(Sketch_test, SplitEdge_HasMidpoints)
 {
   gp_Pln default_plane(gp::Origin(), gp::DZ());
   Sketch sketch("TestSketch", view(), default_plane);
+
+  // Enable midpoints for this test (it verifies midpoint creation and split-mid behavior)
+  sketch.set_add_mid_pt_edges(true);
 
   // Create a simple horizontal edge
   gp_Pnt2d pt_left(0.0, 0.0);

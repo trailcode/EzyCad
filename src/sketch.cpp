@@ -547,7 +547,6 @@ void Sketch::finalize_edges_()
   for (Edge& e : m_tmp_edges)
   {
     EZY_ASSERT(e.node_idx_b.has_value());
-    EZY_ASSERT(e.node_idx_mid.has_value());
     if (m_nodes[e.node_idx_a].midpoint)
       split_mid_points.push_back(e.node_idx_a);
 
@@ -1424,9 +1423,11 @@ void Sketch::add_edge_(const gp_Pnt2d& pt_a, const gp_Pnt2d& pt_b)
   }
 }
 
-void Sketch::sketch_json_add_linear_edge_(size_t idx_a, size_t idx_b, size_t idx_mid)
+void Sketch::sketch_json_add_linear_edge_(size_t idx_a, size_t idx_b, std::optional<size_t> idx_mid)
 {
-  EZY_ASSERT(idx_a < m_nodes.size() && idx_b < m_nodes.size() && idx_mid < m_nodes.size());
+  EZY_ASSERT(idx_a < m_nodes.size() && idx_b < m_nodes.size());
+  if (idx_mid.has_value())
+    EZY_ASSERT(*idx_mid < m_nodes.size());
 
   Edge edge{idx_a};
   edge.node_idx_b      = idx_b;
@@ -2327,6 +2328,12 @@ Sketch_face_shp_ptr Sketch::create_face_shape_(const Face_edges& face)
   return ret;
 }
 
+bool Sketch::s_add_mid_pt_edges = false;
+
+void Sketch::set_add_mid_pt_edges(bool on) { s_add_mid_pt_edges = on; }
+
+bool Sketch::get_add_mid_pt_edges() { return s_add_mid_pt_edges; }
+
 void Sketch::update_edge_end_pt_(Edge& edge, size_t end_pt_idx)
 {
   EZY_ASSERT(end_pt_idx < m_nodes.size());
@@ -2334,7 +2341,10 @@ void Sketch::update_edge_end_pt_(Edge& edge, size_t end_pt_idx)
   const gp_Pnt2d& pt_a = m_nodes[edge.node_idx_a];
   const gp_Pnt2d& pt_b = m_nodes[end_pt_idx];
   update_edge_shp_(edge, pt_a, pt_b);
-  edge.node_idx_mid = m_nodes.add_new_node(get_midpoint(pt_a, pt_b), true);
+  if (s_add_mid_pt_edges)
+    edge.node_idx_mid = m_nodes.add_new_node(get_midpoint(pt_a, pt_b), true);
+  else
+    edge.node_idx_mid = std::nullopt;
 }
 
 void Sketch::add_arc_circle_(const gp_Pnt2d& pt_a, const gp_Pnt2d& pt_b, const gp_Pnt2d& pt_c)

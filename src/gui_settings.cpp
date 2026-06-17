@@ -65,6 +65,7 @@ std::string GUI::occt_view_settings_json() const
       {"edge_dim_arrow_orientation", m_edge_dim_arrow_orientation},
       {"show_sketch_dimensions", m_show_sketch_dimensions},
       {k_gui_key_permanent_node_anno_scale, m_permanent_node_anno_scale},
+      {"add_mid_pt_edges", m_add_mid_pt_edges},
       {"view_roll_step_deg", m_view_roll_step_deg},
       {"view_zoom_scroll_scale", m_view_zoom_scroll_scale},
       {"inspection_orthographic", m_inspection_orthographic},
@@ -120,6 +121,7 @@ void GUI::save_occt_view_settings()
       {"edge_dim_arrow_orientation", m_edge_dim_arrow_orientation},
       {"show_sketch_dimensions", m_show_sketch_dimensions},
       {k_gui_key_permanent_node_anno_scale, m_permanent_node_anno_scale},
+      {"add_mid_pt_edges", m_add_mid_pt_edges},
       {"load_last_opened_on_startup", m_load_last_opened_on_startup},
       {"last_opened_project_path", m_last_opened_project_path},
       {"imgui_rounding_general", m_imgui_rounding_general},
@@ -316,7 +318,10 @@ void GUI::parse_gui_panes_settings_(const std::string& content)
     m_permanent_node_anno_scale =
         parse_bounded_float(k_gui_key_permanent_node_anno_scale, k_gui_permanent_node_anno_scale_min,
                             k_gui_permanent_node_anno_scale_max, k_gui_permanent_node_anno_scale_default);
-    m_load_last_opened_on_startup = b("load_last_opened_on_startup", b("load_last_saved_on_startup", false));
+    m_add_mid_pt_edges = b("add_mid_pt_edges", false);
+    if (g.contains("add_midpoints_to_linear_edges") && !g.contains("add_mid_pt_edges") && g["add_midpoints_to_linear_edges"].is_boolean())
+      m_add_mid_pt_edges = g["add_midpoints_to_linear_edges"].get<bool>();
+    m_load_last_opened_on_startup       = b("load_last_opened_on_startup", b("load_last_saved_on_startup", false));
     if (g.contains("last_opened_project_path") && g["last_opened_project_path"].is_string())
       m_last_opened_project_path = g["last_opened_project_path"].get<std::string>();
     else if (g.contains("last_saved_project_path") && g["last_saved_project_path"].is_string())
@@ -487,6 +492,8 @@ void GUI::load_occt_view_settings_()
   parse_gui_panes_settings_(content);
   if (m_view)
     apply_sketch_dimensions_visibility();
+
+  Sketch::set_add_mid_pt_edges(m_add_mid_pt_edges);
 
   try
   {
@@ -1136,6 +1143,25 @@ void GUI::settings_()
             ImGui::EndTooltip();
           }
         }
+      }
+
+      ImGui::TableNextRow();
+      ImGui::TableSetColumnIndex(0);
+      ImGui::AlignTextToFramePadding();
+      ImGui::TextUnformatted("Add midpoints to new linear edges");
+      ImGui::TableSetColumnIndex(1);
+      {
+        bool add = m_add_mid_pt_edges;
+        if (ImGui::Checkbox("##add_mids", &add))
+        {
+          m_add_mid_pt_edges = add;
+          Sketch::set_add_mid_pt_edges(add);
+          save_occt_view_settings();
+        }
+        if (ui_show_help(2) && ImGui::IsItemHovered())
+          ImGui::SetTooltip("When checked, the Add line edge and Add multi-line edge tools will automatically create a "
+                            "midpoint node on each new straight edge (for center snapping). Default is unchecked (no "
+                            "midpoints). Affects only future edges created with those tools.");
       }
 
       ImGui::TableNextRow();
