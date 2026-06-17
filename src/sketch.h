@@ -181,6 +181,9 @@ public:
   [[nodiscard]] bool underlay_axes_orthogonal() const;
   void               underlay_rebuild_display();
 
+  static void set_add_mid_pt_edges(bool on);
+  static bool get_add_mid_pt_edges();
+
   /// Same snap / plane rules as the line-edge tool (for underlay calibration clicks).
   [[nodiscard]] std::optional<gp_Pnt2d> pick_point_for_underlay_calib(const ScreenCoords& screen_coords);
   /// Set underlay from texture corner \a base, U edge vector \a axis_u, V edge vector \a axis_v (plane 2D).
@@ -195,6 +198,8 @@ public:
   friend class Sketch_json;
   friend class Sketch_access;
   friend class Sketch_test; // TEST_F(Sketch_test, JsonSerializationDeserialization)
+
+  static bool s_add_mid_pt_edges;
 
   /// Linear distance between two sketch nodes (independent of which edge connects them).
   struct Length_dimension
@@ -306,7 +311,7 @@ public:
   /// Helper used when walking edges for splitting / intersection logic.
   static bool is_linear_edge_(const Edge& e);
   /// JSON load: linear edge using existing node indices (`idx_mid` is the edge midpoint node).
-  void sketch_json_add_linear_edge_(size_t idx_a, size_t idx_b, size_t idx_mid);
+  void sketch_json_add_linear_edge_(size_t idx_a, size_t idx_b, std::optional<size_t> idx_mid);
 
   // Selected related
   std::vector<Edge>                get_selected_edges_() const;

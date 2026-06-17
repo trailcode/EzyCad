@@ -140,6 +140,7 @@ public:
   void apply_sketch_dimensions_visibility();
   /// Scale factor for permanent sketch-node '+' annotations.
   float permanent_node_anno_scale() const { return m_permanent_node_anno_scale; }
+  bool  get_add_mid_pt_edges() const { return m_add_mid_pt_edges; }
   bool  get_hide_all_shapes() const { return m_hide_all_shapes; }
   void  set_hide_all_shapes(bool hide) { m_hide_all_shapes = hide; }
   /// Orthographic camera toggle for non-sketch modes (forces ortho in sketch modes); persisted as
@@ -359,20 +360,21 @@ private:
   bool                             m_angle_edit_focus_pending{false};
 
   // Mode related
-  Mode         m_mode                       = Mode::Normal;
-  Chamfer_mode m_chamfer_mode               = Chamfer_mode::Shape;
-  Fillet_mode  m_fillet_mode                = Fillet_mode::Shape;
-  int          m_edge_dim_label_h           = 3;
-  float        m_edge_dim_line_width        = k_gui_edge_dim_line_width_default;
-  float        m_edge_dim_arrow_size        = k_gui_edge_dim_arrow_size_default;
-  float        m_edge_dim_color[3]          = {k_gui_edge_dim_color_default[0], k_gui_edge_dim_color_default[1],
-                                               k_gui_edge_dim_color_default[2]};
-  float        m_edge_dim_text_scale        = k_gui_edge_dim_text_scale_default;
-  int          m_edge_dim_arrow_style       = 0;
-  int          m_edge_dim_arrow_orientation = 0;
-  int          m_edge_dim_text_render_mode  = k_gui_edge_dim_text_render_mode_default;
-  bool         m_show_sketch_dimensions     = true;
-  float        m_permanent_node_anno_scale  = k_gui_permanent_node_anno_scale_default;
+  Mode         m_mode                              = Mode::Normal;
+  Chamfer_mode m_chamfer_mode                      = Chamfer_mode::Shape;
+  Fillet_mode  m_fillet_mode                       = Fillet_mode::Shape;
+  int          m_edge_dim_label_h                  = 3;
+  float        m_edge_dim_line_width               = k_gui_edge_dim_line_width_default;
+  float        m_edge_dim_arrow_size               = k_gui_edge_dim_arrow_size_default;
+  float        m_edge_dim_color[3]                 = {k_gui_edge_dim_color_default[0], k_gui_edge_dim_color_default[1],
+                                                      k_gui_edge_dim_color_default[2]};
+  float        m_edge_dim_text_scale               = k_gui_edge_dim_text_scale_default;
+  int          m_edge_dim_arrow_style              = 0;
+  int          m_edge_dim_arrow_orientation        = 0;
+  int          m_edge_dim_text_render_mode         = k_gui_edge_dim_text_render_mode_default;
+  bool         m_show_sketch_dimensions            = true;
+  float        m_permanent_node_anno_scale         = k_gui_permanent_node_anno_scale_default;
+  bool         m_add_mid_pt_edges = false;
   /// Degrees per numpad orbit (8/2/4/6) and Blender-style roll (Shift+NumPad 4/6); persisted in `gui.view_roll_step_deg`.
   double m_view_roll_step_deg = k_gui_view_roll_step_deg_default;
   /// Multiplier for `UpdateZoom(Aspect_ScrollDelta(..., int(y * scale)))`; persisted in `gui.view_zoom_scroll_scale`.

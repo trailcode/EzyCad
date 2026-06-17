@@ -890,16 +890,52 @@ void GUI::options_sketch_add_edge_mode_()
 {
   EZY_ASSERT(get_mode() == Mode::Sketch_add_edge);
 
+  Sketch::set_add_mid_pt_edges(m_add_mid_pt_edges);
+
   options_sketch_common_();
   options_sketch_len_angle_hotkeys_();
+
+  ImGui::Separator();
+  ImGui::TextUnformatted("Options");
+  {
+    bool add_mids = m_add_mid_pt_edges;
+    if (ImGui::Checkbox("Add midpoint nodes", &add_mids))
+    {
+      m_add_mid_pt_edges = add_mids;
+      Sketch::set_add_mid_pt_edges(add_mids);
+    }
+
+    if (ui_show_help(2) && ImGui::IsItemHovered())
+      ImGui::SetTooltip("When on, new linear edges get an automatic midpoint node (used for snapping to edge centers). Default "
+                        "is off (no midpoints added).");
+  }
 }
 
 void GUI::options_sketch_add_multi_line_edge_mode_()
 {
   EZY_ASSERT(get_mode() == Mode::Sketch_add_multi_edges);
 
+  Sketch::set_add_mid_pt_edges(m_add_mid_pt_edges);
+
   options_sketch_common_();
   options_sketch_len_angle_hotkeys_();
+
+  Sketch::set_add_mid_pt_edges(m_add_mid_pt_edges);
+
+  ImGui::Separator();
+  ImGui::TextUnformatted("Options");
+  {
+    bool add_mids = m_add_mid_pt_edges;
+    if (ImGui::Checkbox("Add midpoint nodes", &add_mids))
+    {
+      m_add_mid_pt_edges = add_mids;
+      Sketch::set_add_mid_pt_edges(add_mids);
+    }
+
+    if (ui_show_help(2) && ImGui::IsItemHovered())
+      ImGui::SetTooltip("When on, new linear edges get an automatic midpoint node (used for snapping to edge centers). Default "
+                        "is off (no midpoints added).");
+  }
 }
 
 void GUI::options_sketch_add_arc_circle_mode_()

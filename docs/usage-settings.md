@@ -58,7 +58,7 @@ Between those, the pane has **six** collapsible sections. Expand a section to se
    - **Arrow style** — *Standard*, *Sharp*, *Wide*, or *3D shaded*
    - **Arrow orientation** — *Automatic*, *Internal*, or *External*
    - **Show sketch dimensions** — global on/off for length dimensions on all sketches (tool mode may still limit which sketch shows dims when on)
-   - **Permanent node annotation size**, **Underlay highlight color**, **Snap guide color**, **Snap guide line width** (slider **0.5** to **8.0**; default **1.0**), **Snap guide mode**, **All co-axial nodes** (directly under **Sketch**, not inside **Dimensions**)
+   - **Permanent node annotation size**, **Add midpoints to new linear edges** (default off; only affects Line Edge and Multi-Line Edge tools), **Underlay highlight color**, **Snap guide color**, **Snap guide line width** (slider **0.5** to **8.0**; default **1.0**), **Snap guide mode**, **All co-axial nodes** (directly under **Sketch**, not inside **Dimensions**)
 
 6. **Startup project** — **Desktop only:** **Load last opened on startup** (checkbox, with `(?)`), then **Last opened path:** … or **(No path saved yet.)** Then **Save current as startup project**, **Clear saved startup** (with `(?)`). **WebAssembly:** no load-last row; only the two buttons and `(?)`. See [Startup project](#startup-project).
 

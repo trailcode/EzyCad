@@ -80,10 +80,13 @@ void Sketch_json::from_json_indexed_(Sketch& ret, const json& j,
 
   for (const auto& edge_json : j["edges"])
   {
-    EZY_ASSERT(edge_json.is_array() && edge_json.size() >= 3);
-    const std::size_t idx_a   = edge_json[0].get<std::size_t>();
-    const std::size_t idx_b   = edge_json[1].get<std::size_t>();
-    const std::size_t idx_mid = edge_json[2].get<std::size_t>();
+    EZY_ASSERT(edge_json.is_array() && edge_json.size() >= 2);
+    const std::size_t          idx_a = edge_json[0].get<std::size_t>();
+    const std::size_t          idx_b = edge_json[1].get<std::size_t>();
+    std::optional<std::size_t> idx_mid;
+    if (edge_json.size() >= 3)
+      idx_mid = edge_json[2].get<std::size_t>();
+
     ret.sketch_json_add_linear_edge_(idx_a, idx_b, idx_mid);
     if (out_legacy_length_dim_endpoints && edge_json.size() >= 4)
       if (edge_json[3].is_boolean())
@@ -182,8 +185,10 @@ nlohmann::json Sketch_json::to_json(const Sketch& sketch)
 
     if (!edge.circle_arc)
     {
-      EZY_ASSERT(edge.node_idx_mid.has_value());
-      edges_json.push_back(json::array({remap(edge.node_idx_a), remap(*edge.node_idx_b), remap(*edge.node_idx_mid)}));
+      if (edge.node_idx_mid.has_value())
+        edges_json.push_back(json::array({remap(edge.node_idx_a), remap(*edge.node_idx_b), remap(*edge.node_idx_mid)}));
+      else
+        edges_json.push_back(json::array({remap(edge.node_idx_a), remap(*edge.node_idx_b)}));
     }
     else
     {

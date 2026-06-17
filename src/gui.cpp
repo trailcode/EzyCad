@@ -1317,15 +1317,15 @@ void GUI::sketch_underlay_panel_settings_(const Sketch::sptr& sk)
         m_underlay_u    = dvec2(au.X(), au.Y());
         m_underlay_v    = dvec2(av.X(), av.Y());
       }
-      m_underlay_raw_shear = sk->underlay_raw_shear_display();
-      m_underlay_flip_u    = sk->underlay_flip_image_u();
-      m_underlay_flip_v    = sk->underlay_flip_image_v();
+      m_underlay_raw_shear    = sk->underlay_raw_shear_display();
+      m_underlay_flip_u       = sk->underlay_flip_image_u();
+      m_underlay_flip_v       = sk->underlay_flip_image_v();
       m_underlay_calib_x_done = false;
       m_underlay_calib_y_done = false;
-      m_underlay_opacity   = sk->underlay_opacity();
-      m_underlay_vis       = sk->underlay_visible();
-      m_underlay_key_white = sk->underlay_key_white_transparent();
-      m_underlay_line_tint = sk->underlay_line_tint_enabled();
+      m_underlay_opacity      = sk->underlay_opacity();
+      m_underlay_vis          = sk->underlay_visible();
+      m_underlay_key_white    = sk->underlay_key_white_transparent();
+      m_underlay_line_tint    = sk->underlay_line_tint_enabled();
       {
         uint8_t tr, tg, tb, ta;
         sk->underlay_line_tint_rgba(tr, tg, tb, ta);
@@ -2648,7 +2648,9 @@ void GUI::on_mouse_button(int button, int action, int mods)
       // clang-format off
       case Mode::Sketch_add_node:
       case Mode::Sketch_add_edge:
-      case Mode::Sketch_add_multi_edges: m_view->curr_sketch().finalize_elm(); break;
+      case Mode::Sketch_add_multi_edges:
+        Sketch::set_add_mid_pt_edges(m_add_mid_pt_edges);
+        m_view->curr_sketch().finalize_elm(); break;
       // clang-format on
 
     default:
