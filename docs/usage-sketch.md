@@ -95,7 +95,7 @@ See the individual tool sections (and [usage.md#hotkeys](usage.md#hotkeys)) for 
 EzyCad provides tools for creating individual line edges in sketch mode, allowing you to build complex geometries one edge at a time.
 
 (single-line-edge-tool)=
-#### Single Line Edge Tool
+### Single Line Edge Tool
 
 The single line edge tool allows you to create straight line segments between two points.
 
@@ -112,12 +112,12 @@ The single line edge tool allows you to create straight line segments between tw
 | **Tool Options** | **Add midpoint nodes** and **Place from center** checkboxes (see [Line edge Options](#line-edge-options) below); each has a **?** help button |
 
 (line-edge-options)=
-#### Line edge Options
+### Line edge Options
 
 While the **Line Edge** tool is active, the Options panel (under the **Options** heading, below **Sketch options** and **Shortcuts**) shows two tool-specific checkboxes. Each row has a small **?** button on the right: hover for a short summary, click to open the matching section on Read the Docs.
 
 (line-edge-option-add-midpoint-nodes)=
-##### Line edge option: Add midpoint nodes
+#### Line edge option: Add midpoint nodes
 
 When checked, each new straight edge created with this tool (and with **Add multi-line edge**) gets an automatic **midpoint node** at the center of the segment. That node is a snap target but does not show a **+** marker and is not listed under **Nodes** in the [Sketch List](usage.md#sketch-list).
 
@@ -127,7 +127,7 @@ When checked, each new straight edge created with this tool (and with **Add mult
 - Midpoint snapping on **intersection splits** (when a new edge crosses an existing one) is separate topology behavior; see [Automatic splitting on edge intersections](#sketch-snapping).
 
 (line-edge-option-place-from-center)=
-##### Line edge option: Place from center
+#### Line edge option: Place from center
 
 When checked, the **first click** sets the **midpoint** of the new edge (not an endpoint). The **second click** sets the direction; the distance from the center to that click is **half** the edge length, so the finished segment is symmetric about the first point.
 
@@ -239,7 +239,7 @@ The multi-line edge tool allows you to create multiple connected line segments i
 
 EzyCad provides a method for creating circles in sketch mode using the **center-radius approach**.
 
-#### Center-Radius Circle Tool
+### Center-Radius Circle Tool
 
 The center-radius circle tool allows you to create circles by defining a center point and a radius point.
 
@@ -287,7 +287,7 @@ The center-radius circle tool allows you to create circles by defining a center 
 - Circles can be used as construction geometry or as part of your final design
 - Constraining the angle when placing the radius point is useful for precise directional placement (e.g. for future snapping operations involving circle nodes)
 
-#### Three-Point Circle Tool (Planned Feature)
+### Three-Point Circle Tool (Planned Feature)
 
 **Status**: Not yet implemented
 
@@ -394,7 +394,7 @@ The arc segment tool allows you to create circular arc edges by defining three p
 
 EzyCad provides three tools for creating rectangular shapes in sketch mode: square, rectangle from two points, and rectangle with center point.
 
-#### Square Tool
+### Square Tool
 
 ![Square Tool](res/icons/Sketcher_CreateSquare.png)
 
@@ -447,7 +447,7 @@ The square tool allows you to create perfect squares by defining a center point 
 - Squares automatically form closed faces that can be [extruded](usage.md#extrude-sketch-face-tool-e)
 - Constraining the angle/orientation when placing the edge midpoint is useful for precise rotated squares (e.g. for future snapping operations)
 
-#### Rectangle Tool (Two Points)
+### Rectangle Tool (Two Points)
 
 ![Rectangle Tool](res/icons/Sketcher_CreateRectangle.png)
 
@@ -500,7 +500,7 @@ The rectangle tool allows you to create rectangles by defining two opposite corn
 - Rectangles automatically form closed faces that can be [extruded](usage.md#extrude-sketch-face-tool-e)
 - Constraining the angle/direction when placing the opposite corner is useful for precise placement during the rubber-band phase (e.g. for future snapping operations)
 
-#### Rectangle Tool (Center Point)
+### Rectangle Tool (Center Point)
 
 ![Rectangle Center Tool](res/icons/Sketcher_CreateRectangle_Center.png)
 
@@ -814,7 +814,7 @@ The **Add node** tool (toolbar: **Add node**) adds sketch **vertices**. What hap
 
 In both cases, Add node never leaves a **permanent edge** between two clicks the way Line edge does.
 
-#### What else it does
+### What else it does
 
 | | |
 | ---: | --- |
@@ -822,18 +822,18 @@ In both cases, Add node never leaves a **permanent edge** between two clicks the
 | **No stored edge from anchor** | After a two-step placement from an anchor, **no** sketch edge is created between anchor and new node (unlike Line edge). |
 | **Angle constraint** | With an angle constraint active during rubber-band placement, the next click places the new node along that ray from the anchor; snapping may be relaxed to stay on that direction (similar to the line tool). |
 
-#### Permanent “+” markers
+### Permanent “+” markers
 
 Nodes you place with **Add node** are treated as **user-placed** points. When the sketch is visible, eligible points can show a small **+** marker in the 3D view so you can see and pick them. Geometry that exists only as automatic **edge midpoints** for snapping is separate (those nodes are not shown the same way; controlled by the **Add midpoints to new linear edges** setting in Settings > Sketch, default off). 
 
-#### How to use
+### How to use
 
 1. Enter sketch mode and select **Add node** ![Add Node Tool](res/icons/Sketcher_CreatePoint.png) on the toolbar.
 2. **Direct node:** Click where you are **not** snapping to an existing vertex (empty sketch area, or near a straight edge for **mid-point snap**, etc.). The node is created at the snapped position; **mid-point snap** on a **straight** edge splits that edge.
 3. **From an existing node (line-edge–like step):** Click an **existing** vertex first so the first click **snaps** to it. A rubber-band preview runs from that anchor—use <kbd>Tab</kbd> / <kbd>Shift</kbd>+<kbd>Tab</kbd> for length/angle if you want—then click (or confirm) to place the **second** point. Only a **new node** is committed; **no** new edge is stored.
 4. Repeat as needed for more nodes.
 
-#### Shortcuts
+### Shortcuts
 
 | | |
 | ---: | --- |
@@ -842,12 +842,12 @@ Nodes you place with **Add node** are treated as **user-placed** points. When th
 | <kbd>Escape</kbd> | Cancel the current placement or rubber-band step. |
 | <kbd>Right-click</kbd> | Drop an incomplete rubber-band preview if you started from an anchor and have not placed the second point yet. |
 
-#### Tips
+### Tips
 
 - Prefer **Add node** when you need **extra vertices** or **edge splits** without a new visible segment between the two clicks.
 - Use [Line edge](#line-edge-creation-tools) or [Multi-line](#multi-line-edge-tool) when you want a **new edge** between two locations.
 
-#### Add node vs. Line edge
+### Add node vs. Line edge
 
 | | |
 | ---: | --- |
