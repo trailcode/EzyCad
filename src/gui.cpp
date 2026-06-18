@@ -470,7 +470,7 @@ void GUI::menu_bar_()
         save_panes         = true;
       }
 
-      if (ui_show_help(2) && ImGui::IsItemHovered())
+      if (ui_show_contextual_help() && ImGui::IsItemHovered())
         ImGui::SetTooltip("Interactive Lua prompt and res/scripts/lua editors.");
 
       if (ImGui::MenuItem("Python Console", nullptr, m_show_python_console))
@@ -607,6 +607,24 @@ void GUI::open_url_(const std::string& url)
 #endif
   system(cmd.c_str());
 #endif
+}
+
+void GUI::doc_help_button_(const char* id, const char* tooltip, const char* doc_url, bool trailing_same_line)
+{
+  if (!ui_show_contextual_help())
+    return;
+
+  if (ImGui::SmallButton(id))
+  {
+    if (doc_url && doc_url[0] != '\0')
+      open_url_(doc_url);
+  }
+
+  if (ImGui::IsItemHovered())
+    ImGui::SetTooltip("%s", tooltip);
+
+  if (trailing_same_line)
+    ImGui::SameLine(0.0f, ImGui::GetStyle().ItemInnerSpacing.x);
 }
 
 void GUI::ensure_about_assets_()
@@ -1055,7 +1073,8 @@ void GUI::sketch_list_inspector_(Sketch& sketch, int index)
           ImGui::SetNextItemWidth(86.f);
           if (ImGui::InputDouble("##dim_offset", &offset, 0.5, 2.0, "%.2f"))
             sketch.set_dimension_offset(i, offset);
-          if (ui_show_help(2) && ImGui::IsItemHovered())
+
+          if (ui_show_contextual_help() && ImGui::IsItemHovered())
             ImGui::SetTooltip("Label offset from edge. 0 = automatic.");
 
           ImGui::PopID();
@@ -1120,8 +1139,10 @@ void GUI::sketch_list_()
       ImGui::PushID(("expand" + id_suffix).c_str());
       if (ImGui::SmallButton(expanded ? "v" : ">"))
         expanded = !expanded;
-      if (ui_show_help(2) && ImGui::IsItemHovered())
+
+      if (ui_show_contextual_help() && ImGui::IsItemHovered())
         ImGui::SetTooltip(expanded ? "Collapse details" : "Expand details");
+      
       ImGui::PopID();
 
       ImGui::SameLine();
@@ -1136,7 +1157,7 @@ void GUI::sketch_list_()
         set_mode(Mode::Sketch_inspection_mode);
     }
 
-    if (ui_show_help(2) && ImGui::IsItemHovered())
+    if (ui_show_contextual_help() && ImGui::IsItemHovered())
       ImGui::SetTooltip("Sets current");
 
     ImGui::PopID();
@@ -1165,7 +1186,7 @@ void GUI::sketch_list_()
     if (ImGui::Checkbox("", &visible))
       sketch->set_visible(visible);
 
-    if (ui_show_help(2) && ImGui::IsItemHovered())
+    if (ui_show_contextual_help() && ImGui::IsItemHovered())
       ImGui::SetTooltip("Visibility");
 
     ImGui::PopID();
@@ -1190,7 +1211,7 @@ void GUI::sketch_list_()
       if (!has_ul)
         ImGui::EndDisabled();
 
-      if (ui_show_help(2) && ImGui::IsItemHovered(ImGuiHoveredFlags_AllowWhenDisabled))
+      if (ui_show_contextual_help() && ImGui::IsItemHovered(ImGuiHoveredFlags_AllowWhenDisabled))
         ImGui::SetTooltip(has_ul ? "Display underlay" : "Import an image in Sketch properties to enable the underlay.");
     }
     ImGui::PopID();
@@ -1207,7 +1228,7 @@ void GUI::sketch_list_()
           m_sketch_properties_open   = true;
         }
 
-        if (ui_show_help(2) && ImGui::IsItemHovered())
+        if (ui_show_contextual_help() && ImGui::IsItemHovered())
           ImGui::SetTooltip("Sketch properties");
       }
       else
@@ -1215,7 +1236,7 @@ void GUI::sketch_list_()
         ImGui::BeginDisabled();
         ImGui::SmallButton("[P]");
         ImGui::EndDisabled();
-        if (ui_show_help(2) && ImGui::IsItemHovered(ImGuiHoveredFlags_AllowWhenDisabled))
+        if (ui_show_contextual_help() && ImGui::IsItemHovered(ImGuiHoveredFlags_AllowWhenDisabled))
           ImGui::SetTooltip("Sketch properties ([P]) unlocks at UI verbosity 3.");
       }
 
@@ -1376,20 +1397,11 @@ void GUI::sketch_underlay_panel_settings_(const Sketch::sptr& sk)
       m_underlay_panel_sketch = nullptr;
     }
 
-  if (ui_show_help(2))
-  {
-    ImGui::SameLine(0.0f, ImGui::GetStyle().ItemInnerSpacing.x);
-    ImGui::TextDisabled("(?)");
-    if (ImGui::IsItemHovered())
-    {
-      ImGui::BeginTooltip();
-      ImGui::PushTextWrapPos(ImGui::GetFontSize() * 35.0f);
-      ImGui::TextDisabled("Import PNG/JPEG/BMP as a sketch underlay. Adjust half-width, half-height, center, and rotation "
-                          "to match real dimensions; changes apply in real time.");
-      ImGui::PopTextWrapPos();
-      ImGui::EndTooltip();
-    }
-  }
+  ImGui::SameLine(0.0f, ImGui::GetStyle().ItemInnerSpacing.x);
+  doc_help_button_("?##underlay_import_help",
+                   "Import PNG/JPEG/BMP as a sketch underlay. Adjust half-width, half-height, center, and rotation to match "
+                   "real dimensions; changes apply in real time. Click ? to open the user guide.",
+                   doc_urls::k_image_underlay, false);
 
   if (!sk->has_underlay())
     return;
@@ -1397,14 +1409,14 @@ void GUI::sketch_underlay_panel_settings_(const Sketch::sptr& sk)
   if (ImGui::Checkbox("White paper -> transparent", &m_underlay_key_white))
     sk->underlay_set_key_white_transparent(m_underlay_key_white);
 
-  if (ui_show_help(2) && ImGui::IsItemHovered())
+  if (ui_show_contextual_help() && ImGui::IsItemHovered())
     ImGui::SetTooltip("Uses brightness: white background becomes clear; dark lines stay visible. "
                       "Turn off for full-color photos. Inverting the image is not needed for typical scans.");
 
   if (ImGui::Checkbox("Tint visible lines", &m_underlay_line_tint))
     sk->underlay_set_line_tint_enabled(m_underlay_line_tint);
 
-  if (ui_show_help(2) && ImGui::IsItemHovered())
+  if (ui_show_contextual_help() && ImGui::IsItemHovered())
     ImGui::SetTooltip("Paints non-transparent pixels (after white key) with the line color. "
                       "Default yellow reads well on dark backgrounds.");
 
@@ -1423,7 +1435,7 @@ void GUI::sketch_underlay_panel_settings_(const Sketch::sptr& sk)
   if (ImGui::SliderFloat("Opacity", &m_underlay_opacity, 0.f, 1.f, "%.2f"))
     sk->underlay_set_opacity(m_underlay_opacity);
 
-  if (ui_show_help(2) && ImGui::IsItemHovered())
+  if (ui_show_contextual_help() && ImGui::IsItemHovered())
     ImGui::SetTooltip("Overall opacity of the underlay image (0 = fully transparent, 1 = fully opaque).");
 
   ImGui::Separator();
@@ -1475,7 +1487,7 @@ void GUI::sketch_underlay_panel_settings_(const Sketch::sptr& sk)
       begin_underlay_calib_set_x_(sk);
 
     ImGui::EndDisabled();
-    if (ui_show_help(2) && ImGui::IsItemHovered())
+    if (ui_show_contextual_help() && ImGui::IsItemHovered())
       ImGui::SetTooltip("Two clicks along width (+U), then type the real drawing distance (same units as sketch dimensions). "
                         "You can use Set Y before or after; until both are set, the other axis still follows default aspect.");
 
@@ -1485,7 +1497,7 @@ void GUI::sketch_underlay_panel_settings_(const Sketch::sptr& sk)
       begin_underlay_calib_set_y_(sk);
 
     ImGui::EndDisabled();
-    if (ui_show_help(2) && ImGui::IsItemHovered())
+    if (ui_show_contextual_help() && ImGui::IsItemHovered())
       ImGui::SetTooltip(
           "Two clicks along height (+V), then enter the drawing distance for Y. Order vs. Set X does not matter.");
   }
@@ -1703,7 +1715,7 @@ void GUI::sketch_underlay_panel_settings_(const Sketch::sptr& sk)
         m_view->push_undo_snapshot();
         force_underlay_orthogonal_(sk);
       }
-      if (ui_show_help(3) && ImGui::IsItemHovered())
+      if (ui_show_contextual_help() && ImGui::IsItemHovered())
         ImGui::SetTooltip("Project V to be perpendicular to U. Keeps the current lengths of both axes and the original "
                           "orientation (sign of U cross V). After this the Center / Half / Rotation sliders return.");
     }
@@ -2129,7 +2141,7 @@ void GUI::shape_list_()
     if (ImGui::Checkbox("", &visible))
       shape->set_visible(visible);
 
-    if (ui_show_help(2) && ImGui::IsItemHovered())
+    if (ui_show_contextual_help() && ImGui::IsItemHovered())
       ImGui::SetTooltip("visibility");
 
     ImGui::PopID();
@@ -2141,7 +2153,7 @@ void GUI::shape_list_()
     if (ImGui::Checkbox("", &shaded))
       shape->set_disp_mode(shaded ? AIS_Shaded : AIS_WireFrame);
 
-    if (ui_show_help(2) && ImGui::IsItemHovered())
+    if (ui_show_contextual_help() && ImGui::IsItemHovered())
       ImGui::SetTooltip("solid/wire");
 
     ImGui::PopID();
@@ -2153,7 +2165,7 @@ void GUI::shape_list_()
       ImGui::OpenPopup("mat_pick");
 
     ImGui::PopStyleVar();
-    if (ui_show_help(2) && ImGui::IsItemHovered())
+    if (ui_show_contextual_help() && ImGui::IsItemHovered())
       ImGui::SetTooltip("%s\n(click: material; right-click name: Delete)", mat_names[static_cast<size_t>(mat_idx)].c_str());
 
     ImGui::SetNextWindowSize(ImVec2(mat_popup_w, 0.0f), ImGuiCond_Appearing);
@@ -2196,7 +2208,7 @@ void GUI::shape_list_()
     if (row_selected)
     {
       ImGui::PopStyleColor(4);
-      if (ui_show_help(2) && ImGui::IsItemHovered())
+      if (ui_show_contextual_help() && ImGui::IsItemHovered())
         ImGui::SetTooltip("Selected in 3D viewer");
     }
   }

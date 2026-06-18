@@ -106,16 +106,40 @@ The single line edge tool allows you to create straight line segments between tw
 | **Angle constraint** | Use the angle input dialog (<kbd>Shift</kbd>+<kbd>Tab</kbd>) to constrain the line to a specific angle |
 | **Snap support** | Automatically snaps to existing nodes and geometry (disabled when angle constraint is active) |
 | **Dimension annotations** | Optional length dimensions can be displayed |
+| **Tool Options** | **Add midpoint nodes** and **Place from center** checkboxes (see [Line edge Options](#line-edge-options) below); each has a **?** help button |
+
+#### Line edge Options
+
+While the **Line Edge** tool is active, the Options panel (under the **Options** heading, below **Sketch options** and **Shortcuts**) shows two tool-specific checkboxes. Each row has a small **?** button on the left: hover for a short summary, click to open this section on Read the Docs.
+
+##### Line edge option: Add midpoint nodes
+
+When checked, each new straight edge created with this tool (and with **Add multi-line edge**) gets an automatic **midpoint node** at the center of the segment. That node is a snap target but does not show a **+** marker and is not listed under **Nodes** in the [Sketch List](usage.md#sketch-list).
+
+- Default is **off** (no midpoint nodes on new edges).
+- The same preference is available globally and persistently in **Settings -> Sketch -> Add midpoints to new linear edges** (saved as `gui.add_mid_pt_edges`). The Options checkbox mirrors that setting for the current session while you use line tools.
+- Only affects **future** edges from the Line and Multi-line tools. Existing edges and midpoints loaded from a project are unchanged.
+- Midpoint snapping on **intersection splits** (when a new edge crosses an existing one) is separate topology behavior; see [Automatic splitting on edge intersections](#sketch-snapping).
+
+##### Line edge option: Place from center
+
+When checked, the **first click** sets the **midpoint** of the new edge (not an endpoint). The **second click** sets the direction; the distance from the center to that click is **half** the edge length, so the finished segment is symmetric about the first point.
+
+- **Tab** (distance input) uses the **full edge length**, not half. Example: center at the origin, direction along +X, Tab → `10` produces an edge from (-5, 0) to (5, 0).
+- **Shift+Tab** (angle) works as usual after the center is placed; combine with Tab for a fixed length and angle.
+- Default is **off** (classic two-endpoint placement: first click = start, second click = end).
+- This option applies only to **Add line edge**, not Multi-line edge.
 
 **How to use:**
 1. ![Line Edge Tool](res/icons/Sketcher_Element_Line_Edge.png) Select the **Line Edge** tool from the toolbar
-2. Click to set the start point of the line
-3. Move the mouse to see a preview of the line
-4. Click to set the end point, or use input dialogs for precise control:
-   - Press <kbd>Tab</kbd> to enter an exact length value
+2. Optionally enable **Add midpoint nodes** or **Place from center** in the Options panel (see [Line edge Options](#line-edge-options))
+3. Click to set the start point of the line (or the **center** when **Place from center** is on)
+4. Move the mouse to see a preview of the line
+5. Click to set the end point (or direction when placing from center), or use input dialogs for precise control:
+   - Press <kbd>Tab</kbd> to enter an exact length value (full edge length when **Place from center** is on)
    - Press <kbd>Shift</kbd>+<kbd>Tab</kbd> to enter an exact angle value (in degrees)
    - When using both: apply angle (<kbd>Shift</kbd>+<kbd>Tab</kbd>) first, then distance (<kbd>Tab</kbd>).
-5. The line edge will be created and added to your sketch
+6. The line edge will be created and added to your sketch
 
 **Shortcuts:**
 
@@ -141,7 +165,8 @@ The single line edge tool allows you to create straight line segments between tw
 - Lines can be used as construction geometry or as part of your final design
 - The line tool works in any sketch plane
 - Multiple line edges can be created in sequence by right-clicking after each line
-- **New straight edges automatically split existing straight edges** at interior intersection points (or when snapping to an existing midpoint, if midpoints were created). This is how you divide a closed profile into multiple faces (for separate extrusions, etc.) — just draw the crossing or connecting line; no extra "split" step is required. The same logic applies to multi-line sequences. Midpoint creation for new edges is controlled by **Settings > Sketch > Add midpoints to new linear edges** (default off).
+- **New straight edges automatically split existing straight edges** at interior intersection points (or when snapping to an existing midpoint, if midpoints were created). This is how you divide a closed profile into multiple faces (for separate extrusions, etc.) — just draw the crossing or connecting line; no extra "split" step is required. The same logic applies to multi-line sequences. Midpoint creation for new edges is controlled by **Add midpoint nodes** in the Line Edge Options panel or **Settings > Sketch > Add midpoints to new linear edges** (default off).
+- **Place from center** is useful for symmetric segments (e.g. a divider through the middle of a rectangle) without measuring half-lengths manually.
 
 ### Multi-Line Edge Tool
 

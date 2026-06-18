@@ -565,7 +565,8 @@ void GUI::settings_()
     if (verb_changed)
       save_occt_view_settings();
   }
-  if (ui_show_help(3))
+
+  if (ui_show_contextual_help())
     ImGui::TextWrapped("0 = minimal UI. Odd values add more controls and panes; even values add more help (tooltips and "
                        "hints). Higher values are reserved for future tiers.");
 
@@ -591,19 +592,11 @@ void GUI::settings_()
         save_occt_view_settings();
       m_view_roll_step_deg = std::clamp(m_view_roll_step_deg, k_gui_view_roll_step_deg_min, k_gui_view_roll_step_deg_max);
 
-      if (ui_show_help(2) && ImGui::IsItemHovered())
-        ImGui::SetTooltip("Degrees per key press: NumPad 8/2/4/6 orbit (like LMB drag), Shift+NumPad 4/6, Shift+4/6, or "
-                          "Shift+Left/Right roll. "
-                          "Ctrl+click the slider to type a value.");
-
-      if (ui_show_help(3))
-      {
-        ImGui::SameLine(0.0f, ImGui::GetStyle().ItemInnerSpacing.x);
-        if (ImGui::SmallButton("?##view_roll_help"))
-          open_url_("https://ezycad.readthedocs.io/en/latest/usage.html#view-roll");
-        if (ImGui::IsItemHovered())
-          ImGui::SetTooltip("Help: view roll (opens the online usage guide).");
-      }
+      ImGui::SameLine(0.0f, ImGui::GetStyle().ItemInnerSpacing.x);
+      doc_help_button_("?##view_roll_help",
+                       "Degrees per key press: NumPad 8/2/4/6 orbit (like LMB drag), Shift+NumPad 4/6, Shift+4/6, or "
+                       "Shift+Left/Right roll. Ctrl+click the slider to type a value. Click ? to open the user guide.",
+                       doc_urls::k_view_roll, false);
 
       ImGui::TableNextRow();
       ImGui::TableSetColumnIndex(0);
@@ -624,14 +617,17 @@ void GUI::settings_()
       m_view_zoom_scroll_scale =
           std::clamp(m_view_zoom_scroll_scale, k_gui_view_zoom_scroll_scale_min, k_gui_view_zoom_scroll_scale_max);
 
-      if (ui_show_help(2) && ImGui::IsItemHovered())
-        ImGui::SetTooltip("Multiplier for mouse wheel and +/- zoom (same as UpdateZoom scroll delta). "
-                          "Hold Shift while zooming for Blender-style finer steps (x0.1). Ctrl+click to type a value.");
+      ImGui::SameLine(0.0f, ImGui::GetStyle().ItemInnerSpacing.x);
+      doc_help_button_("?##zoom_scroll_help",
+                       "Multiplier for mouse wheel and +/- zoom (same as UpdateZoom scroll delta). Hold Shift while "
+                       "zooming for Blender-style finer steps (x0.1). Ctrl+click to type a value. Click ? to open the "
+                       "user guide.",
+                       doc_urls::k_view_navigation, false);
 
       ImGui::EndTable();
     }
 
-    if (ui_show_help(3))
+    if (ui_show_contextual_help())
       ImGui::TextWrapped(
           "NumPad 8 / 2 / 4 / 6 orbit the view (same axes as left-drag orbit). Hold Shift and press NumPad 4 or NumPad 6, "
           "main 4 / 6, or Left / Right arrow for Blender-style roll around the screen Z axis (hold to repeat). "
@@ -661,18 +657,9 @@ void GUI::settings_()
       ImGui::TableSetColumnIndex(1);
       r_changed |= ImGui::SliderFloat("##round_scr", &m_imgui_rounding_scroll, 0.f, 16.f, "%.0f");
       ImGui::SameLine(0.0f, ImGui::GetStyle().ItemInnerSpacing.x);
-      if (ui_show_help(2))
-      {
-        ImGui::TextDisabled("(?)");
-        if (ImGui::IsItemHovered())
-        {
-          ImGui::BeginTooltip();
-          ImGui::PushTextWrapPos(ImGui::GetFontSize() * 35.0f);
-          ImGui::TextDisabled("Scrollbars and sliders applies the same radius to scrollbar tracks and slider grabs.");
-          ImGui::PopTextWrapPos();
-          ImGui::EndTooltip();
-        }
-      }
+      doc_help_button_("?##round_scr_help",
+                       "Scrollbars and sliders applies the same radius to scrollbar tracks and slider grabs.",
+                       nullptr, false);
 
       ImGui::TableNextRow();
       ImGui::TableSetColumnIndex(0);
@@ -747,20 +734,11 @@ void GUI::settings_()
       ImGui::TableSetColumnIndex(1);
       shape_list_hover_changed |=
           ImGui::ColorEdit4("##shape_list_hover", &m_shape_list_hover_color[0], ImGuiColorEditFlags_Float);
-      if (ui_show_help(2))
-      {
-        ImGui::SameLine(0.0f, ImGui::GetStyle().ItemInnerSpacing.x);
-        ImGui::TextDisabled("(?)");
-        if (ImGui::IsItemHovered())
-        {
-          ImGui::BeginTooltip();
-          ImGui::PushTextWrapPos(ImGui::GetFontSize() * 35.0f);
-          ImGui::TextDisabled("Highlight color when hovering a row in the Shape List pane. Updates immediately if a shape "
-                              "is hovered.");
-          ImGui::PopTextWrapPos();
-          ImGui::EndTooltip();
-        }
-      }
+      ImGui::SameLine(0.0f, ImGui::GetStyle().ItemInnerSpacing.x);
+      doc_help_button_("?##shape_list_hover_help",
+                       "Highlight color when hovering a row in the Shape List pane. Updates immediately if a shape is "
+                       "hovered.",
+                       doc_urls::k_occt_view, false);
       ImGui::EndTable();
     }
     if (shape_list_hover_changed)
@@ -804,9 +782,11 @@ void GUI::settings_()
         m_view->set_grid_visible(grid_visible);
         save_occt_view_settings();
       }
-      if (ui_show_help(2) && ImGui::IsItemHovered())
-        ImGui::SetTooltip("Show or hide the OCCT reference grid in the 3D view.\n"
-                          "When shown, the grid lies on the active sketch plane.");
+      ImGui::SameLine(0.0f, ImGui::GetStyle().ItemInnerSpacing.x);
+      doc_help_button_("?##grid_visible_help",
+                       "Show or hide the OCCT reference grid in the 3D view. When shown, the grid lies on the active "
+                       "sketch plane. Click ? to open the user guide.",
+                       doc_urls::k_occt_view, false);
 
       ImGui::TableNextRow();
       ImGui::TableSetColumnIndex(0);
@@ -836,46 +816,27 @@ void GUI::settings_()
       ImGui::TableSetColumnIndex(0);
       ImGui::AlignTextToFramePadding();
       ImGui::TextUnformatted("Grid extent X");
-      ImGui::SameLine(0.f, ImGui::GetStyle().ItemInnerSpacing.x);
-      if (ui_show_help(2))
-      {
-        ImGui::TextDisabled("(?)");
-        if (ImGui::IsItemHovered())
-        {
-          ImGui::BeginTooltip();
-          ImGui::PushTextWrapPos(ImGui::GetFontSize() * 35.0f);
-          ImGui::TextUnformatted(
-              "Full width of the drawn grid on X (edge to edge through the center). Same length scale as sketch dimensions. "
-              "OCCT uses half this value internally.");
-          ImGui::PopTextWrapPos();
-          ImGui::EndTooltip();
-        }
-      }
       ImGui::TableSetColumnIndex(1);
       if (ImGui::DragScalar("##ggx", ImGuiDataType_Double, &graphic_x_ui, spd_extent, nullptr, nullptr, "%.8g"))
         geom_changed = true;
+      ImGui::SameLine(0.f, ImGui::GetStyle().ItemInnerSpacing.x);
+      doc_help_button_("?##grid_extent_x_help",
+                       "Full width of the drawn grid on X (edge to edge through the center). Same length scale as sketch "
+                       "dimensions. OCCT uses half this value internally. Click ? to open the user guide.",
+                       doc_urls::k_occt_view, false);
 
       ImGui::TableNextRow();
       ImGui::TableSetColumnIndex(0);
       ImGui::AlignTextToFramePadding();
       ImGui::TextUnformatted("Grid extent Y");
-      if (ui_show_help(2))
-      {
-        ImGui::SameLine(0.f, ImGui::GetStyle().ItemInnerSpacing.x);
-        ImGui::TextDisabled("(?)");
-        if (ImGui::IsItemHovered())
-        {
-          ImGui::BeginTooltip();
-          ImGui::PushTextWrapPos(ImGui::GetFontSize() * 35.0f);
-          ImGui::TextUnformatted(
-              "Full height of the drawn grid on Y (edge to edge through the center). OCCT uses half this value internally.");
-          ImGui::PopTextWrapPos();
-          ImGui::EndTooltip();
-        }
-      }
       ImGui::TableSetColumnIndex(1);
       if (ImGui::DragScalar("##ggy", ImGuiDataType_Double, &graphic_y_ui, spd_extent, nullptr, nullptr, "%.8g"))
         geom_changed = true;
+      ImGui::SameLine(0.f, ImGui::GetStyle().ItemInnerSpacing.x);
+      doc_help_button_("?##grid_extent_y_help",
+                       "Full height of the drawn grid on Y (edge to edge through the center). OCCT uses half this value "
+                       "internally. Click ? to open the user guide.",
+                       doc_urls::k_occt_view, false);
 
       ImGui::TableNextRow();
       ImGui::TableSetColumnIndex(0);
@@ -927,19 +888,10 @@ void GUI::settings_()
             m_edge_dim_line_width = lw;
             dim_changed           = true;
           }
-          if (ui_show_help(2))
-          {
-            ImGui::SameLine(0.0f, ImGui::GetStyle().ItemInnerSpacing.x);
-            ImGui::TextDisabled("(?)");
-            if (ImGui::IsItemHovered())
-            {
-              ImGui::BeginTooltip();
-              ImGui::PushTextWrapPos(ImGui::GetFontSize() * 35.0f);
-              ImGui::TextDisabled("Thickness of sketch edge length dimensions (Open CASCADE line width scale; 1.0 = default).");
-              ImGui::PopTextWrapPos();
-              ImGui::EndTooltip();
-            }
-          }
+          ImGui::SameLine(0.0f, ImGui::GetStyle().ItemInnerSpacing.x);
+          doc_help_button_("?##edge_dim_lw_help",
+                           "Thickness of sketch edge length dimensions (Open CASCADE line width scale; 1.0 = default).",
+                           nullptr, false);
         }
 
         ImGui::TableNextRow();
@@ -954,19 +906,10 @@ void GUI::settings_()
             m_edge_dim_arrow_size = arrow;
             dim_changed           = true;
           }
-          if (ui_show_help(2))
-          {
-            ImGui::SameLine(0.0f, ImGui::GetStyle().ItemInnerSpacing.x);
-            ImGui::TextDisabled("(?)");
-            if (ImGui::IsItemHovered())
-            {
-              ImGui::BeginTooltip();
-              ImGui::PushTextWrapPos(ImGui::GetFontSize() * 35.0f);
-              ImGui::TextDisabled("Arrow head length for sketch and extrude length dimensions (Open CASCADE display units).");
-              ImGui::PopTextWrapPos();
-              ImGui::EndTooltip();
-            }
-          }
+          ImGui::SameLine(0.0f, ImGui::GetStyle().ItemInnerSpacing.x);
+          doc_help_button_("?##edge_dim_arrow_help",
+                           "Arrow head length for sketch and extrude length dimensions (Open CASCADE display units).",
+                           nullptr, false);
         }
 
         ImGui::TableNextRow();
@@ -1015,9 +958,11 @@ void GUI::settings_()
               }
             ImGui::EndCombo();
           }
-          if (ui_show_help(2) && ImGui::IsItemHovered())
-            ImGui::SetTooltip("How dimension value labels are composited. Z-layer Top and Topmost avoid ghosting "
-                              "against the grid; Topmost is the default.");
+          ImGui::SameLine(0.0f, ImGui::GetStyle().ItemInnerSpacing.x);
+          doc_help_button_("?##edge_dim_text_render_help",
+                           "How dimension value labels are composited. Z-layer Top and Topmost avoid ghosting against the "
+                           "grid; Topmost is the default.",
+                           nullptr, false);
         }
 
         ImGui::TableNextRow();
@@ -1102,9 +1047,11 @@ void GUI::settings_()
             set_show_sketch_dimensions(show);
             save_occt_view_settings();
           }
-          if (ui_show_help(2) && ImGui::IsItemHovered())
-            ImGui::SetTooltip("When off, hides all sketch length dimensions. Tool mode may still limit which sketch shows "
-                              "dimensions when this is on.");
+          ImGui::SameLine(0.0f, ImGui::GetStyle().ItemInnerSpacing.x);
+          doc_help_button_("?##show_sketch_dims_help",
+                           "When off, hides all sketch length dimensions. Tool mode may still limit which sketch shows "
+                           "dimensions when this is on.",
+                           nullptr, false);
         }
 
         ImGui::EndTable();
@@ -1130,19 +1077,10 @@ void GUI::settings_()
           m_permanent_node_anno_scale = size_scale;
           node_anno_changed           = true;
         }
-        if (ui_show_help(2))
-        {
-          ImGui::SameLine(0.0f, ImGui::GetStyle().ItemInnerSpacing.x);
-          ImGui::TextDisabled("(?)");
-          if (ImGui::IsItemHovered())
-          {
-            ImGui::BeginTooltip();
-            ImGui::PushTextWrapPos(ImGui::GetFontSize() * 35.0f);
-            ImGui::TextDisabled("Scale for permanent '+' node markers in sketch mode.");
-            ImGui::PopTextWrapPos();
-            ImGui::EndTooltip();
-          }
-        }
+        ImGui::SameLine(0.0f, ImGui::GetStyle().ItemInnerSpacing.x);
+        doc_help_button_("?##perm_node_anno_help",
+                         "Scale for permanent '+' node markers in sketch mode. Click ? to open the user guide.",
+                         doc_urls::k_add_node_tool, false);
       }
 
       ImGui::TableNextRow();
@@ -1158,10 +1096,11 @@ void GUI::settings_()
           Sketch::set_add_mid_pt_edges(add);
           save_occt_view_settings();
         }
-        if (ui_show_help(2) && ImGui::IsItemHovered())
-          ImGui::SetTooltip("When checked, the Add line edge and Add multi-line edge tools will automatically create a "
-                            "midpoint node on each new straight edge (for center snapping). Default is unchecked (no "
-                            "midpoints). Affects only future edges created with those tools.");
+        ImGui::SameLine(0.0f, ImGui::GetStyle().ItemInnerSpacing.x);
+        doc_help_button_("?##settings_add_mids_help",
+                         "When checked, the Add line edge and Add multi-line edge tools create a midpoint node on each "
+                         "new straight edge (for center snapping). Default is unchecked. Click ? to open the user guide.",
+                         doc_urls::k_line_edge_midpoint_nodes, false);
       }
 
       ImGui::TableNextRow();
@@ -1170,20 +1109,11 @@ void GUI::settings_()
       ImGui::TextUnformatted("Underlay highlight color");
       ImGui::TableSetColumnIndex(1);
       ul_changed |= ImGui::ColorEdit4("##underlay_hi", &m_underlay_highlight_color[0], ImGuiColorEditFlags_Float);
-      if (ui_show_help(2))
-      {
-        ImGui::SameLine(0.0f, ImGui::GetStyle().ItemInnerSpacing.x);
-        ImGui::TextDisabled("(?)");
-        if (ImGui::IsItemHovered())
-        {
-          ImGui::BeginTooltip();
-          ImGui::PushTextWrapPos(ImGui::GetFontSize() * 35.0f);
-          ImGui::TextDisabled("Updates all sketch underlays immediately. Also used as the default when you import a new image. "
-                              "Per-sketch overrides in Sketch List if needed.");
-          ImGui::PopTextWrapPos();
-          ImGui::EndTooltip();
-        }
-      }
+      ImGui::SameLine(0.0f, ImGui::GetStyle().ItemInnerSpacing.x);
+      doc_help_button_("?##underlay_hi_help",
+                       "Updates all sketch underlays immediately. Also used as the default when you import a new image. "
+                       "Per-sketch overrides in Sketch List if needed. Click ? to open the user guide.",
+                       doc_urls::k_image_underlay, false);
 
       ImGui::TableNextRow();
       ImGui::TableSetColumnIndex(0);
@@ -1198,19 +1128,11 @@ void GUI::settings_()
           Sketch_nodes::set_snap_guide_color(snap_col[0], snap_col[1], snap_col[2]);
           save_occt_view_settings();
         }
-        if (ui_show_help(2))
-        {
-          ImGui::SameLine(0.0f, ImGui::GetStyle().ItemInnerSpacing.x);
-          ImGui::TextDisabled("(?)");
-          if (ImGui::IsItemHovered())
-          {
-            ImGui::BeginTooltip();
-            ImGui::PushTextWrapPos(ImGui::GetFontSize() * 35.0f);
-            ImGui::TextDisabled("Color used by fullscreen snap guides and snap markers in sketch mode.");
-            ImGui::PopTextWrapPos();
-            ImGui::EndTooltip();
-          }
-        }
+        ImGui::SameLine(0.0f, ImGui::GetStyle().ItemInnerSpacing.x);
+        doc_help_button_("?##snap_guide_color_help",
+                         "Color used by fullscreen snap guides and snap markers in sketch mode. Click ? to open the user "
+                         "guide.",
+                         doc_urls::k_sketch_snapping, false);
       }
 
       ImGui::TableNextRow();
@@ -1225,19 +1147,11 @@ void GUI::settings_()
           Sketch_nodes::set_snap_guide_line_width(line_width);
           save_occt_view_settings();
         }
-        if (ui_show_help(2))
-        {
-          ImGui::SameLine(0.0f, ImGui::GetStyle().ItemInnerSpacing.x);
-          ImGui::TextDisabled("(?)");
-          if (ImGui::IsItemHovered())
-          {
-            ImGui::BeginTooltip();
-            ImGui::PushTextWrapPos(ImGui::GetFontSize() * 35.0f);
-            ImGui::TextDisabled("Line width for sketch snap guides (axis lines, markers, and co-axial overlay).");
-            ImGui::PopTextWrapPos();
-            ImGui::EndTooltip();
-          }
-        }
+        ImGui::SameLine(0.0f, ImGui::GetStyle().ItemInnerSpacing.x);
+        doc_help_button_("?##snap_guide_line_width_help",
+                         "Line width for sketch snap guides (axis lines, markers, and co-axial overlay). Click ? to open "
+                         "the user guide.",
+                         doc_urls::k_sketch_snapping, false);
       }
 
       ImGui::TableNextRow();
@@ -1264,6 +1178,11 @@ void GUI::settings_()
             }
           ImGui::EndCombo();
         }
+        ImGui::SameLine(0.0f, ImGui::GetStyle().ItemInnerSpacing.x);
+        doc_help_button_("?##settings_snap_guide_mode_help",
+                         "Traditional: compact local snap marker.\nFullscreen: full-view crosshair/axis guides.\nBoth: show "
+                         "compact marker and fullscreen guides together. Click ? to open the user guide.",
+                         doc_urls::k_sketch_snapping, false);
       }
 
       ImGui::TableNextRow();
@@ -1278,17 +1197,12 @@ void GUI::settings_()
           Sketch_nodes::set_annotate_all_coaxial_nodes(annotate_all);
           save_occt_view_settings();
         }
-
-        if (ImGui::IsItemHovered())
-        {
-          ImGui::BeginTooltip();
-          ImGui::PushTextWrapPos(ImGui::GetFontSize() * 35.0f);
-          ImGui::TextDisabled("When enabled (global mode): axis guide lines + markers for *all* nodes in the\n"
-                              "current sketch and all other visible sketches (full co-axial alignments).\n"
-                              "Disabled = only the closest node per active axis is marked (classic behavior).");
-          ImGui::PopTextWrapPos();
-          ImGui::EndTooltip();
-        }
+        ImGui::SameLine(0.0f, ImGui::GetStyle().ItemInnerSpacing.x);
+        doc_help_button_("?##settings_coaxial_help",
+                         "When on (global mode): axis guide lines + markers for *all* nodes in the current sketch and all "
+                         "other visible sketches. When off (default): only closest node per active axis is annotated. Click ? "
+                         "to open the user guide.",
+                         doc_urls::k_sketch_snapping, false);
       }
 
       ImGui::EndTable();
@@ -1337,22 +1251,14 @@ void GUI::settings_()
       ImGui::TableSetColumnIndex(1);
       if (ImGui::Checkbox("##load_last", &m_load_last_opened_on_startup))
         save_occt_view_settings();
-      if (ui_show_help(2))
-      {
-        ImGui::SameLine(0.0f, ImGui::GetStyle().ItemInnerSpacing.x);
-        ImGui::TextDisabled("(?)");
-        if (ImGui::IsItemHovered())
-        {
-          ImGui::BeginTooltip();
-          ImGui::PushTextWrapPos(ImGui::GetFontSize() * 35.0f);
-          ImGui::TextDisabled("When enabled, EzyCad opens the last .ezy file you opened (path is stored in settings).");
-          ImGui::PopTextWrapPos();
-          ImGui::EndTooltip();
-        }
-      }
+      ImGui::SameLine(0.0f, ImGui::GetStyle().ItemInnerSpacing.x);
+      doc_help_button_("?##load_last_startup_help",
+                       "When enabled, EzyCad opens the last .ezy file you opened (path is stored in settings). Click ? to "
+                       "open the user guide.",
+                       doc_urls::k_startup_project, false);
       ImGui::EndTable();
     }
-    if (ui_show_help(3) && !m_last_opened_project_path.empty())
+    if (ui_show_contextual_help() && !m_last_opened_project_path.empty())
       ImGui::TextWrapped("Last opened path: %s", m_last_opened_project_path.c_str());
     else
       ImGui::TextDisabled("(No path saved yet.)");
@@ -1363,20 +1269,11 @@ void GUI::settings_()
     ImGui::SameLine();
     if (ImGui::Button("Clear saved startup"))
       clear_saved_startup_project_();
-    if (ui_show_help(2))
-    {
-      ImGui::SameLine(0.0f, ImGui::GetStyle().ItemInnerSpacing.x);
-      ImGui::TextDisabled("(?)");
-      if (ImGui::IsItemHovered())
-      {
-        ImGui::BeginTooltip();
-        ImGui::PushTextWrapPos(ImGui::GetFontSize() * 35.0f);
-        ImGui::TextDisabled("Save the current document (geometry, view, and tool mode) as what loads when EzyCad starts. "
-                            "If none is saved, the install default (res/default.ezy) is used.");
-        ImGui::PopTextWrapPos();
-        ImGui::EndTooltip();
-      }
-    }
+    ImGui::SameLine(0.0f, ImGui::GetStyle().ItemInnerSpacing.x);
+    doc_help_button_("?##startup_project_help",
+                     "Save the current document (geometry, view, and tool mode) as what loads when EzyCad starts. If none is "
+                     "saved, the install default (res/default.ezy) is used. Click ? to open the user guide.",
+                     doc_urls::k_startup_project, false);
   }
 
   ImGui::Separator();

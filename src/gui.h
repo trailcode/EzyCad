@@ -95,6 +95,25 @@ inline constexpr int k_gui_ui_verbosity_min     = 0;
 inline constexpr int k_gui_ui_verbosity_default = 6;
 inline constexpr int k_gui_ui_feature_tier_max  = 3;
 inline constexpr int k_gui_ui_help_tier_max     = 3;
+/// Minimum `gui.ui_verbosity` for contextual help (? buttons, control tooltips, doc links). Default verbosity 6 qualifies.
+inline constexpr int k_gui_ui_contextual_help_min_verbosity = 5;
+
+namespace doc_urls
+{
+inline constexpr const char* k_view_roll                 = "https://ezycad.readthedocs.io/en/latest/usage.html#view-roll";
+inline constexpr const char* k_view_navigation           = "https://ezycad.readthedocs.io/en/latest/usage.html#view-navigation";
+inline constexpr const char* k_sketch_snapping           = "https://ezycad.readthedocs.io/en/latest/usage-sketch.html#sketch-snapping";
+inline constexpr const char* k_line_edge_midpoint_nodes  = "https://ezycad.readthedocs.io/en/latest/usage-sketch.html#line-edge-option-add-midpoint-nodes";
+inline constexpr const char* k_line_edge_place_from_center =
+    "https://ezycad.readthedocs.io/en/latest/usage-sketch.html#line-edge-option-place-from-center";
+inline constexpr const char* k_shape_selection_filter    = "https://ezycad.readthedocs.io/en/latest/usage.html#shape-selection-filter-normal-mode-only";
+inline constexpr const char* k_add_node_tool             = "https://ezycad.readthedocs.io/en/latest/usage-sketch.html#add-node-tool";
+inline constexpr const char* k_image_underlay            = "https://ezycad.readthedocs.io/en/latest/usage-sketch.html#image-underlay";
+inline constexpr const char* k_usage_settings_options      = "https://ezycad.readthedocs.io/en/latest/usage-settings.html#options-panel";
+inline constexpr const char* k_occt_view                   = "https://ezycad.readthedocs.io/en/latest/usage-occt-view.html";
+inline constexpr const char* k_startup_project             = "https://ezycad.readthedocs.io/en/latest/usage-settings.html#startup-project";
+} // namespace doc_urls
+
 class GUI
 {
 public:
@@ -121,6 +140,8 @@ public:
   Mode        get_mode() const { return m_mode; }
   const char* current_mode_description() const;
   void        options_doc_help_button_();
+  void        doc_help_button_(const char* id, const char* tooltip, const char* doc_url = nullptr,
+                               bool trailing_same_line = false);
 
   static std::string get_doc_url_for_mode(Mode mode);
   Chamfer_mode       get_chamfer_mode() const { return m_chamfer_mode; }
@@ -175,6 +196,7 @@ public:
   int  ui_help_tier() const { return m_ui_verbosity / 2; }
   bool ui_show_feature(int tier) const { return tier <= ui_feature_tier(); }
   bool ui_show_help(int tier) const { return tier <= ui_help_tier(); }
+  bool ui_show_contextual_help() const { return m_ui_verbosity >= k_gui_ui_contextual_help_min_verbosity; }
   /// Sketch list: reserved [P] column at verbosity >= 2; active button at feature tier 2 (verbosity >= 3).
   bool ui_show_sketch_list_props_slot() const { return m_ui_verbosity >= 2; }
   bool ui_show_sketch_list_props_button() const { return ui_show_feature(2); }
