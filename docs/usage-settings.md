@@ -36,19 +36,20 @@ Visibility of these panes (and related flags) is persisted with the rest of your
 Open **View -> Settings**. The window title is **Settings**.
 
 - **Dark mode** — checkbox at the top (not inside a collapsible section).
+- **UI verbosity** — stepper at the top (default **6**). Values **5** and **6** show contextual **?** help buttons (hover for tooltip, click to open Read the Docs where linked). Lower values hide those buttons and some explanatory text.
 - At the bottom: **Defaults** — reloads bundled defaults from the app `res/` tree (including ImGui layout from that file).
 
 Between those, the pane has **six** collapsible sections. Expand a section to see its controls; when collapsed, only the section title bar is visible.
 
 1. **3D view navigation** — **View rotation step** (degrees per key press for <kbd>NumPad 8</kbd>/<kbd>2</kbd>/<kbd>4</kbd>/<kbd>6</kbd> orbit and <kbd>Shift</kbd>+<kbd>NumPad 4</kbd>/<kbd>6</kbd> roll; default **45**; **`?`** opens [view roll](https://ezycad.readthedocs.io/en/latest/usage.html#view-roll) on Read the Docs). **Zoom scroll scale** (multiplier for wheel and **+**/**-** zoom; default **4**). Hold <kbd>Shift</kbd> while zooming for a Blender-style finer step (multiply by **0.1**). Numpad shortcuts are documented with <kbd>Num Lock</kbd> off; with <kbd>Num Lock</kbd> on, use main-row alternatives in [usage.md -> View navigation](usage.md#view-navigation). Stored as **`gui.view_roll_step_deg`** and **`gui.view_zoom_scroll_scale`**. See **[usage-occt-view.md](usage-occt-view.md)**.
 
-2. **UI corner rounding** — Sliders **0** to **16** for **Windows, frames, popups**; **Scrollbars and sliders** (has `(?)`); **Tabs**.
+2. **UI corner rounding** — Sliders **0** to **16** for **Windows, frames, popups**; **Scrollbars and sliders** (has **?**); **Tabs**.
 
 3. **3D view background** — **Background color 1** and **Background color 2** (float RGB fields and swatches). **Gradient blend** — combo: **Horizontal**, **Vertical**, **Diagonal 1**, **Diagonal 2**, **Corner 1** … **Corner 4**.
 
 4. **3D view grid** — **Show grid** (checkbox; grid is drawn on the **active sketch** plane). **Fine grid lines** and **Major grid lines** (passed to Open CASCADE `Aspect_Grid::SetColors`: dense lines vs every-tenth emphasis lines). **Grid step**, **Grid extent X / Y** (full span edge-to-edge), and **Grid display Z offset** in the Settings pane use the **same length scale as sketch length dimensions** (display value = model value / internal `dimension_scale`, default **100**). Saved JSON (`occt_view`) stores **half-extent** in model units for OCCT (`grid_graphic_*`); Settings shows **full** extent (twice the stored half-extent).
 
-5. **Sketch** — Expand **Dimensions** (nested, open by default) for length-dimension appearance and behavior (most rows have `(?)` tooltips). Other sketch rows stay in the parent **Sketch** section:
+5. **Sketch** — Expand **Dimensions** (nested, open by default) for length-dimension appearance and behavior (most rows have **?** help). Other sketch rows stay in the parent **Sketch** section:
    - **Dimension line width** — slider **0.5** to **8.0**
    - **Dimension arrow size** — slider **1.0** to **24.0**
    - **Dimension color** — RGB for dimension lines, arrow heads, and value text
@@ -60,7 +61,7 @@ Between those, the pane has **six** collapsible sections. Expand a section to se
    - **Show sketch dimensions** — global on/off for length dimensions on all sketches (tool mode may still limit which sketch shows dims when on)
    - **Permanent node annotation size**, **Add midpoints to new linear edges** (default off; only affects Line Edge and Multi-Line Edge tools), **Underlay highlight color**, **Snap guide color**, **Snap guide line width** (slider **0.5** to **8.0**; default **1.0**), **Snap guide mode**, **All co-axial nodes** (directly under **Sketch**, not inside **Dimensions**)
 
-6. **Startup project** — **Desktop only:** **Load last opened on startup** (checkbox, with `(?)`), then **Last opened path:** … or **(No path saved yet.)** Then **Save current as startup project**, **Clear saved startup** (with `(?)`). **WebAssembly:** no load-last row; only the two buttons and `(?)`. See [Startup project](#startup-project).
+6. **Startup project** — **Desktop only:** **Load last opened on startup** (checkbox, with **?**), then **Last opened path:** … or **(No path saved yet.)** Then **Save current as startup project**, **Clear saved startup** (with **?**). **WebAssembly:** no load-last row; only the two buttons and **?**. See [Startup project](#startup-project).
 
 **Not in this pane**
 
@@ -81,7 +82,7 @@ If you resize the pane narrower than its controls, a **horizontal scrollbar** ap
 
 Under **Selection**:
 
-- **Selection Mode** — combo for the 3D pick filter (vertices, edges, faces, solids, and combinations). The **`(?)`** marker links to [shape selection filter hotkeys](usage.md#shape-selection-filter-normal-mode-only) in the usage guide.
+- **Selection Mode** — combo for the 3D pick filter (vertices, edges, faces, solids, and combinations). The **?** button links to [shape selection filter hotkeys](usage.md#shape-selection-filter-normal-mode-only) in the usage guide.
 - **Orthographic projection** — checkbox (appears in the Options panel for all non-sketch modes) toggling an orthographic camera (sketch modes still force orthographic). Persisted as **`gui.inspection_orthographic`**.
 
 Under **Material**:
@@ -97,6 +98,7 @@ Sketch-related preferences are edited in the **Options** panel while you use a s
 - **Sketch options** (all sketch tools): **Snap dist**, **Snap guide mode** (*Traditional*, *Fullscreen*, *Both*), and **All co-axial nodes** (global co-axial grid vs closest-per-axis only). See [How sketch snap works](usage-sketch.md#sketch-snapping). **Snap guide color**, **Snap guide line width**, **Snap guide mode**, and **All co-axial nodes** are also in **Settings -> Sketch** (persisted in `gui.*` keys below).
 - **Extrude sketch face**: under **Extrude**, **Both sides** and **Material** for the new solid (same document preset as **Normal** mode Options **Material**). Other modes that still show **Material** in Options use that same preset when relevant (for example **Sketch from planar face**).
 - **Add edge** / **Add node** (and similar): a **Shortcuts** line documents TAB / Shift+TAB typing behavior.
+- **Add line edge**: under **Options**, **Add midpoint nodes** and **Place from center** (each with a **?** link to [usage-sketch.md](usage-sketch.md#line-edge-options)). The midpoint setting is also in **Settings -> Sketch** (persisted).
 - **Sketch operation** (mirror / revolve axis): mirror, revolve, angle, and clear-axis actions (see [usage-sketch.md](usage-sketch.md#operation-axis-tool)).
 
 Global length-dimension style (line width, arrows, color, text) is in **Settings -> Sketch**. Per-dimension visibility, name, and offset remain in **Sketch List -> Dimensions** (saved in the project `.ezy` file).

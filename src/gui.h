@@ -95,6 +95,25 @@ inline constexpr int k_gui_ui_verbosity_min     = 0;
 inline constexpr int k_gui_ui_verbosity_default = 6;
 inline constexpr int k_gui_ui_feature_tier_max  = 3;
 inline constexpr int k_gui_ui_help_tier_max     = 3;
+/// Minimum `gui.ui_verbosity` for contextual help (? buttons, control tooltips, doc links). Default verbosity 6 qualifies.
+inline constexpr int k_gui_ui_contextual_help_min_verbosity = 5;
+
+namespace doc_urls
+{
+inline constexpr const char* k_view_roll                 = "https://ezycad.readthedocs.io/en/latest/usage.html#view-roll";
+inline constexpr const char* k_view_navigation           = "https://ezycad.readthedocs.io/en/latest/usage.html#view-navigation";
+inline constexpr const char* k_sketch_snapping           = "https://ezycad.readthedocs.io/en/latest/usage-sketch.html#sketch-snapping";
+inline constexpr const char* k_line_edge_midpoint_nodes  = "https://ezycad.readthedocs.io/en/latest/usage-sketch.html#line-edge-option-add-midpoint-nodes";
+inline constexpr const char* k_line_edge_place_from_center =
+    "https://ezycad.readthedocs.io/en/latest/usage-sketch.html#line-edge-option-place-from-center";
+inline constexpr const char* k_shape_selection_filter    = "https://ezycad.readthedocs.io/en/latest/usage.html#shape-selection-filter-normal-mode-only";
+inline constexpr const char* k_add_node_tool             = "https://ezycad.readthedocs.io/en/latest/usage-sketch.html#add-node-tool";
+inline constexpr const char* k_image_underlay            = "https://ezycad.readthedocs.io/en/latest/usage-sketch.html#image-underlay";
+inline constexpr const char* k_usage_settings_options      = "https://ezycad.readthedocs.io/en/latest/usage-settings.html#options-panel";
+inline constexpr const char* k_occt_view                   = "https://ezycad.readthedocs.io/en/latest/usage-occt-view.html";
+inline constexpr const char* k_startup_project             = "https://ezycad.readthedocs.io/en/latest/usage-settings.html#startup-project";
+} // namespace doc_urls
+
 class GUI
 {
 public:
@@ -120,7 +139,6 @@ public:
   void        on_resize(int width, int height);
   Mode        get_mode() const { return m_mode; }
   const char* current_mode_description() const;
-  void        options_doc_help_button_();
 
   static std::string get_doc_url_for_mode(Mode mode);
   Chamfer_mode       get_chamfer_mode() const { return m_chamfer_mode; }
@@ -141,6 +159,7 @@ public:
   /// Scale factor for permanent sketch-node '+' annotations.
   float permanent_node_anno_scale() const { return m_permanent_node_anno_scale; }
   bool  get_add_mid_pt_edges() const { return m_add_mid_pt_edges; }
+  bool  get_edge_from_center() const { return m_edge_from_center; }
   bool  get_hide_all_shapes() const { return m_hide_all_shapes; }
   void  set_hide_all_shapes(bool hide) { m_hide_all_shapes = hide; }
   /// Orthographic camera toggle for non-sketch modes (forces ortho in sketch modes); persisted as
@@ -174,6 +193,7 @@ public:
   int  ui_help_tier() const { return m_ui_verbosity / 2; }
   bool ui_show_feature(int tier) const { return tier <= ui_feature_tier(); }
   bool ui_show_help(int tier) const { return tier <= ui_help_tier(); }
+  bool ui_show_contextual_help() const { return m_ui_verbosity >= k_gui_ui_contextual_help_min_verbosity; }
   /// Sketch list: reserved [P] column at verbosity >= 2; active button at feature tier 2 (verbosity >= 3).
   bool ui_show_sketch_list_props_slot() const { return m_ui_verbosity >= 2; }
   bool ui_show_sketch_list_props_button() const { return ui_show_feature(2); }
@@ -258,6 +278,9 @@ private:
   void options_sketch_add_slot_mode_();
 
   // Options related helpers
+  void  options_doc_help_button_();
+  void  doc_help_button_(const char* scope, int line, const char* tooltip, const char* doc_url,
+                         bool trailing_same_line = false);
   void  options_orthographic_projection_();
   void  options_sketch_common_();
   void  options_sketch_len_angle_hotkeys_();
@@ -375,6 +398,7 @@ private:
   bool         m_show_sketch_dimensions            = true;
   float        m_permanent_node_anno_scale         = k_gui_permanent_node_anno_scale_default;
   bool         m_add_mid_pt_edges = false;
+  bool         m_edge_from_center = false;
   /// Degrees per numpad orbit (8/2/4/6) and Blender-style roll (Shift+NumPad 4/6); persisted in `gui.view_roll_step_deg`.
   double m_view_roll_step_deg = k_gui_view_roll_step_deg_default;
   /// Multiplier for `UpdateZoom(Aspect_ScrollDelta(..., int(y * scale)))`; persisted in `gui.view_zoom_scroll_scale`.
@@ -490,3 +514,8 @@ private:
   std::unique_ptr<Python_console> m_python_console;
   ImFont*                         m_console_font{nullptr}; // Cousine monospace; set from main
 };
+
+/// Contextual ? help (tooltip + optional Read the Docs link). ImGui ID from `__func__` and `__LINE__` at the call site.
+/// Use only inside `GUI` member functions.
+#define GUI_DOC_HELP_(tooltip, doc_url) doc_help_button_(__func__, __LINE__, tooltip, doc_url, false)
+#define GUI_DOC_HELP_SAME_LINE_(tooltip, doc_url) doc_help_button_(__func__, __LINE__, tooltip, doc_url, true)
