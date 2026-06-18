@@ -609,16 +609,20 @@ void GUI::open_url_(const std::string& url)
 #endif
 }
 
-void GUI::doc_help_button_(const char* id, const char* tooltip, const char* doc_url, bool trailing_same_line)
+void GUI::doc_help_button_(const char* scope, int line, const char* tooltip, const char* doc_url, bool trailing_same_line)
 {
   if (!ui_show_contextual_help())
     return;
 
-  if (ImGui::SmallButton(id))
+  ImGui::PushID(scope);
+  ImGui::PushID(line);
+  if (ImGui::SmallButton("?"))
   {
     if (doc_url && doc_url[0] != '\0')
       open_url_(doc_url);
   }
+  ImGui::PopID();
+  ImGui::PopID();
 
   if (ImGui::IsItemHovered())
     ImGui::SetTooltip("%s", tooltip);
@@ -1398,10 +1402,9 @@ void GUI::sketch_underlay_panel_settings_(const Sketch::sptr& sk)
     }
 
   ImGui::SameLine(0.0f, ImGui::GetStyle().ItemInnerSpacing.x);
-  doc_help_button_("?##underlay_import_help",
-                   "Import PNG/JPEG/BMP as a sketch underlay. Adjust half-width, half-height, center, and rotation to match "
+  GUI_DOC_HELP_("Import PNG/JPEG/BMP as a sketch underlay. Adjust half-width, half-height, center, and rotation to match "
                    "real dimensions; changes apply in real time. Click ? to open the user guide.",
-                   doc_urls::k_image_underlay, false);
+                   doc_urls::k_image_underlay);
 
   if (!sk->has_underlay())
     return;

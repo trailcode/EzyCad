@@ -139,9 +139,6 @@ public:
   void        on_resize(int width, int height);
   Mode        get_mode() const { return m_mode; }
   const char* current_mode_description() const;
-  void        options_doc_help_button_();
-  void        doc_help_button_(const char* id, const char* tooltip, const char* doc_url = nullptr,
-                               bool trailing_same_line = false);
 
   static std::string get_doc_url_for_mode(Mode mode);
   Chamfer_mode       get_chamfer_mode() const { return m_chamfer_mode; }
@@ -281,6 +278,9 @@ private:
   void options_sketch_add_slot_mode_();
 
   // Options related helpers
+  void  options_doc_help_button_();
+  void  doc_help_button_(const char* scope, int line, const char* tooltip, const char* doc_url,
+                         bool trailing_same_line = false);
   void  options_orthographic_projection_();
   void  options_sketch_common_();
   void  options_sketch_len_angle_hotkeys_();
@@ -514,3 +514,8 @@ private:
   std::unique_ptr<Python_console> m_python_console;
   ImFont*                         m_console_font{nullptr}; // Cousine monospace; set from main
 };
+
+/// Contextual ? help (tooltip + optional Read the Docs link). ImGui ID from `__func__` and `__LINE__` at the call site.
+/// Use only inside `GUI` member functions.
+#define GUI_DOC_HELP_(tooltip, doc_url) doc_help_button_(__func__, __LINE__, tooltip, doc_url, false)
+#define GUI_DOC_HELP_SAME_LINE_(tooltip, doc_url) doc_help_button_(__func__, __LINE__, tooltip, doc_url, true)

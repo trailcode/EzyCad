@@ -111,8 +111,8 @@ std::string GUI::get_doc_url_for_mode(Mode mode)
 void GUI::options_doc_help_button_()
 {
   ImGui::SameLine(0.0f, ImGui::GetStyle().ItemInnerSpacing.x);
-  doc_help_button_("?##options_pane_help", "Open the relevant section of the online user guide.",
-                   get_doc_url_for_mode(get_mode()).c_str(), false);
+  GUI_DOC_HELP_("Open the relevant section of the online user guide.",
+                   get_doc_url_for_mode(get_mode()).c_str());
 }
 
 void GUI::set_mode(Mode mode)
@@ -469,10 +469,9 @@ void GUI::options_normal_mode_()
       ImGui::EndCombo();
     }
     ImGui::SameLine(0.0f, ImGui::GetStyle().ItemInnerSpacing.x);
-    doc_help_button_("?##selection_mode_help",
-                     "Hotkeys: 1-9 (Normal mode) set filter when the 3D view has focus, not while typing in UI. Click ? to "
+    GUI_DOC_HELP_("Hotkeys: 1-9 (Normal mode) set filter when the 3D view has focus, not while typing in UI. Click ? to "
                      "open the user guide.",
-                     doc_urls::k_shape_selection_filter, false);
+                     doc_urls::k_shape_selection_filter);
 
     ImGui::EndTable();
   }
@@ -896,10 +895,9 @@ void GUI::options_sketch_add_edge_mode_()
       Sketch::set_add_mid_pt_edges(add_mids);
     }
     ImGui::SameLine(0.0f, ImGui::GetStyle().ItemInnerSpacing.x);
-    doc_help_button_("?##line_edge_add_mids_help",
-                     "When on, new linear edges get an automatic midpoint node (used for snapping to edge centers). "
+    GUI_DOC_HELP_("When on, new linear edges get an automatic midpoint node (used for snapping to edge centers). "
                      "Default is off. Click ? to open the user guide.",
-                     doc_urls::k_line_edge_midpoint_nodes, false);
+                     doc_urls::k_line_edge_midpoint_nodes);
 
     bool from_center = m_edge_from_center;
     if (ImGui::Checkbox("Place from center", &from_center))
@@ -908,10 +906,9 @@ void GUI::options_sketch_add_edge_mode_()
       Sketch::set_edge_from_center(from_center);
     }
     ImGui::SameLine(0.0f, ImGui::GetStyle().ItemInnerSpacing.x);
-    doc_help_button_("?##line_edge_from_center_help",
-                     "First click sets the edge midpoint. The second click or Tab length input uses the full edge "
+    GUI_DOC_HELP_("First click sets the edge midpoint. The second click or Tab length input uses the full edge "
                      "length. Click ? to open the user guide.",
-                     doc_urls::k_line_edge_place_from_center, false);
+                     doc_urls::k_line_edge_place_from_center);
   }
 }
 
@@ -936,10 +933,9 @@ void GUI::options_sketch_add_multi_line_edge_mode_()
       Sketch::set_add_mid_pt_edges(add_mids);
     }
     ImGui::SameLine(0.0f, ImGui::GetStyle().ItemInnerSpacing.x);
-    doc_help_button_("?##multi_line_add_mids_help",
-                     "When on, new linear edges get an automatic midpoint node (used for snapping to edge centers). "
+    GUI_DOC_HELP_("When on, new linear edges get an automatic midpoint node (used for snapping to edge centers). "
                      "Default is off. Click ? to open the user guide.",
-                     doc_urls::k_line_edge_midpoint_nodes, false);
+                     doc_urls::k_line_edge_midpoint_nodes);
   }
 }
 
@@ -1009,10 +1005,9 @@ void GUI::options_orthographic_projection_()
     m_view->apply_camera_projection();
   }
   ImGui::SameLine(0.0f, ImGui::GetStyle().ItemInnerSpacing.x);
-  doc_help_button_("?##ortho_help",
-                   "Use an orthographic camera in non-sketch modes (no perspective foreshortening). Click ? to open the user "
+  GUI_DOC_HELP_("Use an orthographic camera in non-sketch modes (no perspective foreshortening). Click ? to open the user "
                    "guide.",
-                   doc_urls::k_usage_settings_options, false);
+                   doc_urls::k_usage_settings_options);
 }
 
 void GUI::options_sketch_common_()
@@ -1057,10 +1052,9 @@ void GUI::options_sketch_common_()
     }
 
     ImGui::SameLine(0.0f, ImGui::GetStyle().ItemInnerSpacing.x);
-    doc_help_button_("?##options_snap_guide_mode_help",
-                     "Traditional: compact local snap marker.\nFullscreen: full-view crosshair/axis guides.\nBoth: show "
+    GUI_DOC_HELP_("Traditional: compact local snap marker.\nFullscreen: full-view crosshair/axis guides.\nBoth: show "
                      "compact marker and fullscreen guides together. Click ? to open the user guide.",
-                     doc_urls::k_sketch_snapping, false);
+                     doc_urls::k_sketch_snapping);
 
     ImGui::TableNextRow();
     ImGui::TableSetColumnIndex(0);
@@ -1071,11 +1065,10 @@ void GUI::options_sketch_common_()
       Sketch_nodes::set_annotate_all_coaxial_nodes(annotate_all);
 
     ImGui::SameLine(0.0f, ImGui::GetStyle().ItemInnerSpacing.x);
-    doc_help_button_("?##options_coaxial_help",
-                     "When on (global mode): axis guide lines + markers for *all* nodes in the current sketch and all "
+    GUI_DOC_HELP_("When on (global mode): axis guide lines + markers for *all* nodes in the current sketch and all "
                      "other visible sketches. When off (default): only closest node per active axis is annotated. Click ? "
                      "to open the user guide.",
-                     doc_urls::k_sketch_snapping, false);
+                     doc_urls::k_sketch_snapping);
 
     ImGui::EndTable();
   }
