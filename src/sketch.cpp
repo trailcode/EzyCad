@@ -33,6 +33,36 @@
 
 using namespace glm;
 
+namespace
+{
+struct Symmetric_edge_span
+{
+  gp_Pnt2d pt_a;
+  gp_Pnt2d pt_b;
+  double   full_len;
+};
+
+std::optional<Symmetric_edge_span> symmetric_edge_from_center(const gp_Pnt2d& center, const gp_Dir2d& dir, double full_len)
+{
+  if (full_len <= Precision::Confusion())
+    return std::nullopt;
+
+  const double half = full_len * 0.5;
+  const gp_Vec2d v(dir);
+  return Symmetric_edge_span{center.Translated(-v * half), center.Translated(v * half), full_len};
+}
+
+std::optional<Symmetric_edge_span> symmetric_edge_from_center_and_hint(const gp_Pnt2d& center, const gp_Pnt2d& dir_hint_pt)
+{
+  gp_Vec2d v(center, dir_hint_pt);
+  const double half = v.Magnitude();
+  if (half <= Precision::Confusion())
+    return std::nullopt;
+
+  return symmetric_edge_from_center(center, gp_Dir2d(v), half * 2.0);
+}
+} // namespace
+
 Sketch::Sketch(const std::string& name, Occt_view& view, const gp_Pln& pln)
     : m_view(view)
     , m_ctx(view.ctx())
@@ -342,8 +372,67 @@ void Sketch::on_enter()
 }
 
 // Line string related
+bool Sketch::edge_from_center_active_() const
+{
+  return s_edge_from_center && get_mode() == Mode::Sketch_add_edge && !m_tmp_edges.empty() &&
+         !m_tmp_edges.back().node_idx_b.has_value();
+}
+
+bool Sketch::complete_edge_from_center_(const ScreenCoords& screen_coords)
+{
+  if (!edge_from_center_active_())
+    return false;
+
+  Edge&           edge   = m_tmp_edges.back();
+  const gp_Pnt2d& center = m_nodes[edge.node_idx_a];
+
+  std::optional<Symmetric_edge_span> span;
+  if (m_entered_edge_len.has_value())
+    span = symmetric_edge_from_center(center, m_entered_edge_len->dir, m_entered_edge_len->len);
+
+  else if (m_entered_edge_angle.has_value())
+  {
+    std::optional<gp_Pnt2d> pt_opt = m_view.pt_on_plane(screen_coords, m_pln);
+    if (!pt_opt)
+      return true;
+
+    const double angle_rad = to_radians(*m_entered_edge_angle);
+    gp_Dir2d     dir(std::cos(angle_rad), std::sin(angle_rad));
+    gp_Vec2d     to_click(center, *pt_opt);
+    const double half = std::abs(to_click.Dot(gp_Vec2d(dir)));
+    span              = symmetric_edge_from_center(center, dir, half * 2.0);
+  }
+  else
+  {
+    std::optional<gp_Pnt2d> pt_opt = m_view.pt_on_plane(screen_coords, m_pln);
+    if (!pt_opt)
+      return true;
+
+    span = symmetric_edge_from_center_and_hint(center, *pt_opt);
+  }
+
+  if (!span)
+    return true;
+
+  edge.node_idx_a = m_nodes.get_node_exact(span->pt_a);
+  update_edge_end_pt_(edge, m_nodes.get_node_exact(span->pt_b));
+  m_entered_edge_angle = std::nullopt;
+  m_entered_edge_len   = std::nullopt;
+  m_show_angle_input   = false;
+  m_show_dim_input     = false;
+  m_view.gui().hide_angle_edit();
+  finalize_elm();
+  return true;
+}
+
 void Sketch::add_line_string_pt_(const ScreenCoords& screen_coords, Linestring_type linestring_type)
 {
+  if (edge_from_center_active_() && linestring_type == Linestring_type::Single)
+  {
+    complete_edge_from_center_(screen_coords);
+    return;
+  }
+
   auto on_line_string = [&](size_t node_idx)
   {
     if (m_tmp_edges.size())
@@ -379,6 +468,12 @@ void Sketch::add_line_string_pt_(const ScreenCoords& screen_coords, Linestring_t
   // When angle constraint is active, finalize on the constrained line (project click onto it)
   if (m_entered_edge_angle.has_value() && m_tmp_edges.size())
   {
+    if (edge_from_center_active_())
+    {
+      complete_edge_from_center_(screen_coords);
+      return;
+    }
+
     std::optional<gp_Pnt2d> pt_opt = m_view.pt_on_plane(screen_coords, m_pln);
     if (!pt_opt)
       return;
@@ -404,6 +499,92 @@ void Sketch::add_line_string_pt_(const ScreenCoords& screen_coords, Linestring_t
 
 void Sketch::move_line_string_pt_(const ScreenCoords& screen_coords)
 {
+  if (edge_from_center_active_())
+  {
+    auto l = [&](const std::optional<size_t>&, const gp_Pnt2d& pt_b)
+    {
+      Edge&           edge   = m_tmp_edges.back();
+      const gp_Pnt2d& center = m_nodes[edge.node_idx_a];
+
+      std::optional<Symmetric_edge_span> span;
+      if (m_entered_edge_angle.has_value())
+      {
+        const double angle_rad = to_radians(*m_entered_edge_angle);
+        gp_Dir2d     dir(std::cos(angle_rad), std::sin(angle_rad));
+        if (m_entered_edge_len.has_value())
+          span = symmetric_edge_from_center(center, dir, m_entered_edge_len->len);
+        else
+        {
+          gp_Vec2d     to_mouse(center, pt_b);
+          const double half = std::abs(to_mouse.Dot(gp_Vec2d(dir)));
+          span              = symmetric_edge_from_center(center, dir, half * 2.0);
+        }
+      }
+      else if (m_entered_edge_len.has_value())
+        span = symmetric_edge_from_center(center, m_entered_edge_len->dir, m_entered_edge_len->len);
+      else
+        span = symmetric_edge_from_center_and_hint(center, pt_b);
+
+      if (!span)
+      {
+        if (edge.shp)
+        {
+          m_ctx.Remove(edge.shp, true);
+          edge.shp.Nullify();
+        }
+        m_ctx.Remove(m_tmp_dim_anno, true);
+        m_tmp_dim_anno.Nullify();
+        return;
+      }
+
+      const gp_Pnt2d& span_a = span->pt_a;
+      const gp_Pnt2d& span_b = span->pt_b;
+      update_edge_shp_(edge, span_a, span_b);
+
+      const double dist = span->full_len / m_view.get_dimension_scale();
+      m_ctx.Remove(m_tmp_dim_anno, true);
+      m_tmp_dim_anno = create_distance_annotation(span_a, span_b, m_pln, m_view.gui().length_dimension_style(),
+                                                  approx_sketch_interior_ref_3d_(),
+                                                  m_dim_classifier_faces.empty() ? nullptr : &m_dim_classifier_faces);
+      m_tmp_dim_anno->SetCustomValue(dist);
+      m_ctx.Display(m_tmp_dim_anno, true);
+
+      if (m_show_dim_input)
+      {
+        gp_Dir2d       edge_dir = get_unit_dir(span_a, span_b);
+        ScreenCoords   spos     = m_view.get_screen_coords(to_3d(m_pln, center_point(span_a, span_b)));
+        auto           cb       = [&, edge_dir](float new_dist, bool is_finial)
+        {
+          m_entered_edge_len = {edge_dir, new_dist * m_view.get_dimension_scale()};
+          m_show_dim_input   = !is_finial;
+          if (is_finial)
+            on_enter();
+        };
+        m_view.gui().set_dist_edit(float(dist), std::move(std::function<void(float, bool)>(cb)), spos);
+      }
+
+      if (m_show_angle_input)
+      {
+        ScreenCoords spos = m_view.get_screen_coords(to_3d(m_pln, center_point(span_a, span_b)));
+        gp_Vec2d     vec(center, pt_b);
+        double       current_angle_deg = to_degrees(std::atan2(vec.Y(), vec.X()));
+        auto         cb                = [&](float new_angle, bool is_finial)
+        {
+          m_entered_edge_angle = new_angle;
+          m_show_angle_input   = !is_finial;
+          ScreenCoords current_pos(dvec2(ImGui::GetIO().MousePos.x, ImGui::GetIO().MousePos.y));
+          sketch_pt_move(current_pos);
+        };
+        float angle_to_show =
+            m_entered_edge_angle.has_value() ? float(*m_entered_edge_angle) : float(current_angle_deg);
+        m_view.gui().set_angle_edit(angle_to_show, std::move(std::function<void(float, bool)>(cb)), spos);
+      }
+    };
+
+    move_sketch_pt_(screen_coords, l);
+    return;
+  }
+
   auto l = [&](const std::optional<size_t>& node_idx_b, const gp_Pnt2d& pt_b)
   {
     if (m_tmp_edges.empty())
@@ -1218,7 +1399,22 @@ void Sketch::check_dimension_seg_(Linestring_type linestring_type)
 
   EZY_ASSERT(m_tmp_edges.size());
 
-  Edge&           edge = m_tmp_edges.back();
+  Edge& edge = m_tmp_edges.back();
+  if (edge_from_center_active_() && linestring_type == Linestring_type::Single)
+  {
+    const gp_Pnt2d&                  center = m_nodes[edge.node_idx_a];
+    std::optional<Symmetric_edge_span> span =
+        symmetric_edge_from_center(center, m_entered_edge_len->dir, m_entered_edge_len->len);
+    if (!span)
+      return;
+
+    edge.node_idx_a = m_nodes.get_node_exact(span->pt_a);
+    update_edge_end_pt_(edge, m_nodes.get_node_exact(span->pt_b));
+    clear_all(m_entered_edge_len);
+    finalize_elm();
+    return;
+  }
+
   const gp_Pnt2d& pt_a = m_nodes[edge.node_idx_a];
   m_last_pt            = gp_Pnt2d(pt_a).Translated(gp_Vec2d(m_entered_edge_len->dir) * m_entered_edge_len->len);
 
@@ -2329,10 +2525,15 @@ Sketch_face_shp_ptr Sketch::create_face_shape_(const Face_edges& face)
 }
 
 bool Sketch::s_add_mid_pt_edges = false;
+bool Sketch::s_edge_from_center = false;
 
 void Sketch::set_add_mid_pt_edges(bool on) { s_add_mid_pt_edges = on; }
 
 bool Sketch::get_add_mid_pt_edges() { return s_add_mid_pt_edges; }
+
+void Sketch::set_edge_from_center(bool on) { s_edge_from_center = on; }
+
+bool Sketch::get_edge_from_center() { return s_edge_from_center; }
 
 void Sketch::update_edge_end_pt_(Edge& edge, size_t end_pt_idx)
 {

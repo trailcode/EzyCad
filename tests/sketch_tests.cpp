@@ -358,6 +358,82 @@ TEST_F(Sketch_test, AddTwoCrossingEdges_NotAtMidpoints_ProducesFourEdges)
       << "Two edges crossing interiorly (but not at midpoints) must each be split, producing four edges total";
 }
 
+// Test add line edge with "place from center": Tab length is the full edge span.
+TEST_F(Sketch_test, AddEdgeFromCenter_SecondClickFullSpan)
+{
+  gp_Pln default_plane(gp::Origin(), gp::DZ());
+  Sketch sketch("TestSketch", view(), default_plane);
+
+  Sketch::set_add_mid_pt_edges(false);
+  Sketch::set_edge_from_center(true);
+  gui().set_mode(Mode::Sketch_add_edge);
+
+  sketch.add_sketch_pt(ScreenCoords(dvec2(0.0, 0.0)));
+  sketch.add_sketch_pt(ScreenCoords(dvec2(5.0, 0.0)));
+
+  EXPECT_EQ(Sketch_access::get_linear_edge_count(sketch), 1);
+
+  bool found = false;
+  for (const auto& e : sketch.m_edges)
+  {
+    if (!e.node_idx_b.has_value() || e.circle_arc)
+      continue;
+
+    const gp_Pnt2d& a = sketch.get_nodes()[e.node_idx_a];
+    const gp_Pnt2d& b = sketch.get_nodes()[*e.node_idx_b];
+    const double    xmin = std::min(a.X(), b.X());
+    const double    xmax = std::max(a.X(), b.X());
+    if (std::abs(a.Y()) < Precision::Confusion() && std::abs(b.Y()) < Precision::Confusion() &&
+        std::abs(xmin + 5.0) < Precision::Confusion() && std::abs(xmax - 5.0) < Precision::Confusion())
+    {
+      found = true;
+      break;
+    }
+  }
+  EXPECT_TRUE(found) << "Center (0,0) + direction click (5,0) should create edge (-5,0) to (5,0)";
+
+  Sketch::set_edge_from_center(false);
+}
+
+TEST_F(Sketch_test, AddEdgeFromCenter_DimensionUsesFullLength)
+{
+  gp_Pln default_plane(gp::Origin(), gp::DZ());
+  Sketch sketch("TestSketch", view(), default_plane);
+
+  Sketch::set_add_mid_pt_edges(false);
+  Sketch::set_edge_from_center(true);
+  gui().set_mode(Mode::Sketch_add_edge);
+
+  sketch.add_sketch_pt(ScreenCoords(dvec2(0.0, 0.0)));
+  sketch.sketch_pt_move(ScreenCoords(dvec2(1.0, 0.0)));
+
+  sketch.m_entered_edge_len = Sketch::Edge_len{gp_Dir2d(1.0, 0.0), 10.0};
+  sketch.on_enter();
+
+  EXPECT_EQ(Sketch_access::get_linear_edge_count(sketch), 1);
+
+  bool found = false;
+  for (const auto& e : sketch.m_edges)
+  {
+    if (!e.node_idx_b.has_value() || e.circle_arc)
+      continue;
+
+    const gp_Pnt2d& a = sketch.get_nodes()[e.node_idx_a];
+    const gp_Pnt2d& b = sketch.get_nodes()[*e.node_idx_b];
+    const double    xmin = std::min(a.X(), b.X());
+    const double    xmax = std::max(a.X(), b.X());
+    if (std::abs(a.Y()) < Precision::Confusion() && std::abs(b.Y()) < Precision::Confusion() &&
+        std::abs(xmin + 5.0) < Precision::Confusion() && std::abs(xmax - 5.0) < Precision::Confusion())
+    {
+      found = true;
+      break;
+    }
+  }
+  EXPECT_TRUE(found) << "Full length 10 from center (0,0) along +X should create edge (-5,0) to (5,0)";
+
+  Sketch::set_edge_from_center(false);
+}
+
 // Test the case where the second (vertical) edge is added after the first (horizontal) and passes
 // *exactly through the midpoint* of the first (and not the midpoint of the second).
 // The split logic must still split the horizontal at its (former) mid node and subdivide the

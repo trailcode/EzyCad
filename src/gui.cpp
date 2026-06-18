@@ -2645,13 +2645,16 @@ void GUI::on_mouse_button(int button, int action, int mods)
     // Right button is to finalize the current operation.
     switch (m_mode)
     {
-      // clang-format off
-      case Mode::Sketch_add_node:
-      case Mode::Sketch_add_edge:
-      case Mode::Sketch_add_multi_edges:
-        Sketch::set_add_mid_pt_edges(m_add_mid_pt_edges);
-        m_view->curr_sketch().finalize_elm(); break;
-      // clang-format on
+    case Mode::Sketch_add_edge:
+      Sketch::set_edge_from_center(m_edge_from_center);
+      Sketch::set_add_mid_pt_edges(m_add_mid_pt_edges);
+      m_view->curr_sketch().finalize_elm();
+      break;
+
+    case Mode::Sketch_add_multi_edges:
+      Sketch::set_add_mid_pt_edges(m_add_mid_pt_edges);
+      m_view->curr_sketch().finalize_elm();
+      break;
 
     default:
       break;

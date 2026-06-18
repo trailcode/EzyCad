@@ -28,8 +28,8 @@
 * For slot tool, there is no need for the second edge to have a angle constraint.
 * If the exact same arc circle or edge is added twice, unneeded edges are added. The mirror tool does this.
 * Need a option to specify circle by diameter. 
-* Need a mirror option for edge. First specify center.
-* ~Need a option to not add edge midpoint nodes.~
+* ~~Need a mirror option for edge. First specify center.~~
+* ~~Need a option to not add edge midpoint nodes.~~
 * Need a option to split a edge.
 * If the operational axis is defined. Do not render snap points and perminate nodes.
 * Need a hotkey for face inspection mode.

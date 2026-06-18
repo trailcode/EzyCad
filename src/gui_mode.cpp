@@ -891,6 +891,7 @@ void GUI::options_sketch_add_edge_mode_()
   EZY_ASSERT(get_mode() == Mode::Sketch_add_edge);
 
   Sketch::set_add_mid_pt_edges(m_add_mid_pt_edges);
+  Sketch::set_edge_from_center(m_edge_from_center);
 
   options_sketch_common_();
   options_sketch_len_angle_hotkeys_();
@@ -908,6 +909,16 @@ void GUI::options_sketch_add_edge_mode_()
     if (ui_show_help(2) && ImGui::IsItemHovered())
       ImGui::SetTooltip("When on, new linear edges get an automatic midpoint node (used for snapping to edge centers). Default "
                         "is off (no midpoints added).");
+
+    bool from_center = m_edge_from_center;
+    if (ImGui::Checkbox("Place from center", &from_center))
+    {
+      m_edge_from_center = from_center;
+      Sketch::set_edge_from_center(from_center);
+    }
+
+    if (ui_show_help(2) && ImGui::IsItemHovered())
+      ImGui::SetTooltip("First click sets the edge midpoint. The second click or Tab length input uses the full edge length.");
   }
 }
 

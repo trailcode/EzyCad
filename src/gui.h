@@ -141,6 +141,7 @@ public:
   /// Scale factor for permanent sketch-node '+' annotations.
   float permanent_node_anno_scale() const { return m_permanent_node_anno_scale; }
   bool  get_add_mid_pt_edges() const { return m_add_mid_pt_edges; }
+  bool  get_edge_from_center() const { return m_edge_from_center; }
   bool  get_hide_all_shapes() const { return m_hide_all_shapes; }
   void  set_hide_all_shapes(bool hide) { m_hide_all_shapes = hide; }
   /// Orthographic camera toggle for non-sketch modes (forces ortho in sketch modes); persisted as
@@ -375,6 +376,7 @@ private:
   bool         m_show_sketch_dimensions            = true;
   float        m_permanent_node_anno_scale         = k_gui_permanent_node_anno_scale_default;
   bool         m_add_mid_pt_edges = false;
+  bool         m_edge_from_center = false;
   /// Degrees per numpad orbit (8/2/4/6) and Blender-style roll (Shift+NumPad 4/6); persisted in `gui.view_roll_step_deg`.
   double m_view_roll_step_deg = k_gui_view_roll_step_deg_default;
   /// Multiplier for `UpdateZoom(Aspect_ScrollDelta(..., int(y * scale)))`; persisted in `gui.view_zoom_scroll_scale`.

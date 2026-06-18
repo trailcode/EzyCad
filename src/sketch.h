@@ -183,6 +183,8 @@ public:
 
   static void set_add_mid_pt_edges(bool on);
   static bool get_add_mid_pt_edges();
+  static void set_edge_from_center(bool on);
+  static bool get_edge_from_center();
 
   /// Same snap / plane rules as the line-edge tool (for underlay calibration clicks).
   [[nodiscard]] std::optional<gp_Pnt2d> pick_point_for_underlay_calib(const ScreenCoords& screen_coords);
@@ -200,6 +202,7 @@ public:
   friend class Sketch_test; // TEST_F(Sketch_test, JsonSerializationDeserialization)
 
   static bool s_add_mid_pt_edges;
+  static bool s_edge_from_center;
 
   /// Linear distance between two sketch nodes (independent of which edge connects them).
   struct Length_dimension
@@ -257,6 +260,8 @@ public:
   // Line string related
   void add_line_string_pt_(const ScreenCoords& screen_coords, Linestring_type linestring_type);
   void move_line_string_pt_(const ScreenCoords& screen_coords);
+  bool edge_from_center_active_() const;
+  bool complete_edge_from_center_(const ScreenCoords& screen_coords);
   void finalize_edges_();
 
   /// Add a single node (no new edge); splits any linear edge the node lies on in its interior.
