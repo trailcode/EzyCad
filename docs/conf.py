@@ -11,6 +11,30 @@ DOCS_DIR = Path(__file__).resolve().parent
 PROJECT_ROOT = DOCS_DIR.parent
 
 
+def _copy_file_resilient(src: Path, dst: Path) -> None:
+    """Copy one file; if dst exists but is locked (Windows), keep the existing copy."""
+    dst.parent.mkdir(parents=True, exist_ok=True)
+    try:
+        shutil.copy2(src, dst)
+    except OSError:
+        if dst.is_file():
+            return
+        raise
+
+
+def _sync_tree_resilient(src: Path, dst: Path) -> None:
+    """Mirror src into dst file-by-file (avoids copytree failing on locked targets)."""
+    if not src.is_dir():
+        return
+    for item in src.rglob("*"):
+        rel = item.relative_to(src)
+        target = dst / rel
+        if item.is_dir():
+            target.mkdir(parents=True, exist_ok=True)
+        else:
+            _copy_file_resilient(item, target)
+
+
 def _prepare_assets() -> None:
     """Copy supporting assets (icons + splash) so relative paths in the guides work."""
     # Icons referenced from the style guide and some usage pages as res/icons/...
@@ -18,13 +42,12 @@ def _prepare_assets() -> None:
     res_dst.mkdir(exist_ok=True)
     icons_src = PROJECT_ROOT / "res" / "icons"
     if icons_src.is_dir():
-        shutil.copytree(icons_src, res_dst / "icons", dirs_exist_ok=True)
+        _sync_tree_resilient(icons_src, res_dst / "icons")
 
     # Splash screen (used in index and README)
     splash_src = PROJECT_ROOT / "res" / "AI-gen-splashscreen_05_01_2026_512.png"
     if splash_src.is_file():
-        (res_dst / splash_src.name).parent.mkdir(exist_ok=True)
-        shutil.copy2(splash_src, res_dst / splash_src.name)
+        _copy_file_resilient(splash_src, res_dst / splash_src.name)
 
 
 def _verify_doc_assets() -> None:
@@ -72,7 +95,7 @@ extensions = [
     "myst_parser",
 ]
 
-myst_heading_anchors = 3
+myst_heading_anchors = 5
 myst_enable_extensions = [
     "colon_fence",
     "linkify",

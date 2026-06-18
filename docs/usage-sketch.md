@@ -3,7 +3,7 @@
 This guide covers all 2D sketching tools and operations in EzyCad. For the main usage guide (workflow, 3D modeling, file operations, etc.), see [usage.md](usage.md).
 
 ## Table of Contents
-1. [2D Sketching](#2d-sketching)
+1. [Sketching (2D)](#sketching-2d)
 2. [Sketch snapping](#sketch-snapping)
 3. [Hotkeys](#hotkeys)
 4. [Line Edge Creation Tools](#line-edge-creation-tools)
@@ -21,7 +21,8 @@ This guide covers all 2D sketching tools and operations in EzyCad. For the main 
 
 ---
 
-## 2D Sketching
+(sketching-2d)=
+## Sketching (2D)
 1. **Basic Tools**
    - ![Line Edge Tool](res/icons/Sketcher_Element_Line_Edge.png) [Create line edges](#line-edge-creation-tools)
    - ![Multi-line Edge Tool](res/icons/ls.png) [Draw multi-line edges](#multi-line-edge-tool)
@@ -58,7 +59,7 @@ While you draw or place points in sketch mode, EzyCad helps you align to existin
 
 ## Hotkeys
 
-Common keyboard shortcuts (hotkeys) while working in 2D sketch mode or with sketch tools. Tool-specific shortcuts are also listed in each tool's section below for quick reference during that workflow.
+Common keyboard shortcuts (hotkeys) while working in 2D sketch mode or with sketch tools. Tool-specific shortcuts are also listed in each tool section later in this guide.
 
 ### Common sketch hotkeys
 
@@ -87,11 +88,13 @@ Common keyboard shortcuts (hotkeys) while working in 2D sketch mode or with sket
 
 See the individual tool sections (and [usage.md#hotkeys](usage.md#hotkeys)) for full context and additional view / general hotkeys.
 
-### Line Edge Creation Tools
+(line-edge-creation-tools)=
+## Line Edge Creation Tools
 ![Line Edge Tool](res/icons/Sketcher_Element_Line_Edge.png)
 
 EzyCad provides tools for creating individual line edges in sketch mode, allowing you to build complex geometries one edge at a time.
 
+(single-line-edge-tool)=
 #### Single Line Edge Tool
 
 The single line edge tool allows you to create straight line segments between two points.
@@ -108,10 +111,12 @@ The single line edge tool allows you to create straight line segments between tw
 | **Dimension annotations** | Optional length dimensions can be displayed |
 | **Tool Options** | **Add midpoint nodes** and **Place from center** checkboxes (see [Line edge Options](#line-edge-options) below); each has a **?** help button |
 
+(line-edge-options)=
 #### Line edge Options
 
-While the **Line Edge** tool is active, the Options panel (under the **Options** heading, below **Sketch options** and **Shortcuts**) shows two tool-specific checkboxes. Each row has a small **?** button on the left: hover for a short summary, click to open this section on Read the Docs.
+While the **Line Edge** tool is active, the Options panel (under the **Options** heading, below **Sketch options** and **Shortcuts**) shows two tool-specific checkboxes. Each row has a small **?** button on the right: hover for a short summary, click to open the matching section on Read the Docs.
 
+(line-edge-option-add-midpoint-nodes)=
 ##### Line edge option: Add midpoint nodes
 
 When checked, each new straight edge created with this tool (and with **Add multi-line edge**) gets an automatic **midpoint node** at the center of the segment. That node is a snap target but does not show a **+** marker and is not listed under **Nodes** in the [Sketch List](usage.md#sketch-list).
@@ -121,6 +126,7 @@ When checked, each new straight edge created with this tool (and with **Add mult
 - Only affects **future** edges from the Line and Multi-line tools. Existing edges and midpoints loaded from a project are unchanged.
 - Midpoint snapping on **intersection splits** (when a new edge crosses an existing one) is separate topology behavior; see [Automatic splitting on edge intersections](#sketch-snapping).
 
+(line-edge-option-place-from-center)=
 ##### Line edge option: Place from center
 
 When checked, the **first click** sets the **midpoint** of the new edge (not an endpoint). The **second click** sets the direction; the distance from the center to that click is **half** the edge length, so the finished segment is symmetric about the first point.
@@ -168,7 +174,7 @@ When checked, the **first click** sets the **midpoint** of the new edge (not an 
 - **New straight edges automatically split existing straight edges** at interior intersection points (or when snapping to an existing midpoint, if midpoints were created). This is how you divide a closed profile into multiple faces (for separate extrusions, etc.) — just draw the crossing or connecting line; no extra "split" step is required. The same logic applies to multi-line sequences. Midpoint creation for new edges is controlled by **Add midpoint nodes** in the Line Edge Options panel or **Settings > Sketch > Add midpoints to new linear edges** (default off).
 - **Place from center** is useful for symmetric segments (e.g. a divider through the middle of a rectangle) without measuring half-lengths manually.
 
-### Multi-Line Edge Tool
+## Multi-Line Edge Tool
 
 ![Multi-line Edge Tool](res/icons/ls.png)
 
@@ -227,7 +233,7 @@ The multi-line edge tool allows you to create multiple connected line segments i
 - Use single line edges when you need individual disconnected segments
 - Use multi-line edges when you need a continuous chain of connected segments
 
-### Circle Creation Tools
+## Circle Creation Tools
 
 ![Circle Tool](res/icons/Sketcher_CreateCircle.png)
 
@@ -297,7 +303,7 @@ The three-point circle tool is planned for future development. This feature woul
 
 **Note**: ![Sketcher_Create3PointCircle](res/icons/Sketcher_Create3PointCircle.png) The toolbar icon exists but the functionality is not yet implemented.
 
-### Circle Creation Workflow
+## Circle Creation Workflow
 
 The circle tool follows this workflow:
 
@@ -325,7 +331,7 @@ The circle tool follows this workflow:
 | **Invalid Geometry** | Circles that would be too small are rejected |
 | **Snap Integration** | Use existing snap points for precise circle placement |
 
-### Arc Segment Creation Tool
+## Arc Segment Creation Tool
 
 ![Arc Segment Tool](res/icons/Sketcher_Element_Arc_Edge.png)
 
@@ -384,7 +390,7 @@ The arc segment tool allows you to create circular arc edges by defining three p
 - Use circles when you need a complete circular shape
 - Use arc segments when you need a curved edge that's part of a larger shape
 
-### Rectangle and Square Creation Tools
+## Rectangle and Square Creation Tools
 
 EzyCad provides three tools for creating rectangular shapes in sketch mode: square, rectangle from two points, and rectangle with center point.
 
@@ -555,7 +561,7 @@ The rectangle with center point tool allows you to create rectangles by defining
 | **Rectangle (Center Point)** | Define center and corner - useful when you want the rectangle centered on a specific point |
 | **Square** | Always creates a perfect square - use when you need equal sides |
 
-### Slot Creation Tool
+## Slot Creation Tool
 
 ![Slot Tool](res/icons/Sketcher_CreateSlot.png)
 
@@ -646,7 +652,7 @@ The slot tool allows you to create an oblong or oval-shaped slot with rounded en
 - Creating rounded-end cutouts in parts
 - Designing slots for sliding mechanisms
 
-### Operation Axis Tool
+## Operation Axis Tool
 
 ![Operation Axis Tool](res/icons/Sketcher_MirrorSketch.png)
 
@@ -739,7 +745,7 @@ The two points you pick define a *direction* and a point the axis passes through
 - Constraining the angle when placing the axis is useful for precise directional reference lines (e.g. for future snapping operations)
 - You can make the drawn axis segment long or short via <kbd>Tab</kbd> purely for visibility/clarity — it does not change the behavior of the operations
 
-### Dimension Tool
+## Dimension Tool
 
 ![Dimension Tool](res/icons/TechDraw_LengthDimension.png)
 
@@ -797,7 +803,7 @@ Edge dimension tool creates/removes **length dimensions between two sketch nodes
 | **Auto-update** | Dimensions update automatically when geometry is modified |
 | **View-only** | Does not affect the underlying geometry |
 
-### Add Node Tool
+## Add Node Tool
 
 ![Add Node Tool](res/icons/Sketcher_CreatePoint.png)
 
@@ -848,7 +854,7 @@ Nodes you place with **Add node** are treated as **user-placed** points. When th
 | **Add node** | Rubber band is for **placement** only; **does not** add a permanent edge between the two clicks. |
 | **Line edge** | Two clicks (or numeric input) create a **new line edge** in the sketch. |
 
-### Create Sketch from Planar Face Tool
+## Create Sketch from Planar Face Tool
 
 ![Create Sketch from Planar Face Tool](res/icons/Macro_FaceToSketch_48.png)
 
@@ -917,7 +923,7 @@ The create sketch from planar face tool allows you to extract the boundary of a 
 | **Supported faces** | Only `Geom_Plane` surfaces - other surface types are rejected |
 | **Sketch list** | Created sketch is added and can be managed like any other sketch |
 
-### Image underlay
+## Image underlay
 
 Import a reference image (PNG, JPEG, or BMP) behind a sketch for tracing or alignment. Open **Sketch properties** from the [Sketch List](usage.md#sketch-list) (**`[P]`** on the sketch row) or use the underlay controls there after import.
 
