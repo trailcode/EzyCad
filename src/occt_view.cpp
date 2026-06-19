@@ -628,6 +628,21 @@ void Occt_view::create_default_sketch_()
   m_cur_sketch->set_current();
 }
 
+void Occt_view::ensure_current_sketch_()
+{
+  if (m_cur_sketch)
+    return;
+
+  if (!m_sketches.empty())
+  {
+    m_cur_sketch = m_sketches.front();
+    m_cur_sketch->set_current();
+    return;
+  }
+
+  create_default_sketch_();
+}
+
 void Occt_view::add_sketch(const gp_Pln& pln, const std::string& base_name)
 {
   push_undo_snapshot();
@@ -1802,13 +1817,14 @@ void Occt_view::remove_sketch(const Sketch_ptr& sketch)
 
 Sketch& Occt_view::curr_sketch()
 {
-  EZY_ASSERT(m_cur_sketch);
+  ensure_current_sketch_();
   return *m_cur_sketch;
 }
 
 Occt_view::Sketch_ptr Occt_view::curr_sketch_shared() const
 {
-  EZY_ASSERT(m_cur_sketch);
+  if (!m_cur_sketch)
+    const_cast<Occt_view*>(this)->ensure_current_sketch_();
   return m_cur_sketch;
 }
 
@@ -2006,12 +2022,14 @@ void Occt_view::load(const std::string& json_str, bool restore_view)
     m_sketches.push_back(Sketch_json::from_json(*this, s));
     if (s["isCurrent"])
     {
-      EZY_ASSERT(!m_cur_sketch);
+      //if(m_cur_sketch)
+        //MSG("Multiple sketches marked as current in JSON; using the last one.");
+
       m_cur_sketch = m_sketches.back();
     }
   }
-  // We need at lease one sketch. TODO what if the user deletes them all?
-  EZY_ASSERT(m_cur_sketch);
+
+  ensure_current_sketch_();
 
   for (const json& s : j["shapes"])
   {
