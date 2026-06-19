@@ -59,6 +59,7 @@ EzyCad (Easy CAD) is an open-source CAD application for hobbyist machinists to d
 
 4. **Shape List**
    - [List 3D solids, materials, and display options](#shape-list)
+   - [Inspect shape topology and properties](#shape-info)
 
 5. **Options Panel**
    - The top of the panel always shows the name of the current tool/mode (matching the toolbar tooltip), followed immediately by a small **"?"** button. Clicking the "?" opens the online user guide directly to the section describing that specific tool (contextual help; see the per-mode links in the source `get_doc_url_for_mode` map).
@@ -112,14 +113,29 @@ At the top:
 For each shape, one row includes:
 
 - **Name** - Editable text field; change the label stored with the shape.
-- **Right-click the name** - **Delete** removes the shape from the document.
+- **Right-click the name** - **Shape info...** opens a dialog with topology and property details for that shape (see [Shape info](#shape-info) below). **Delete** removes the shape from the document.
 - **Visibility** - Checkbox (tooltip *visibility*) to show or hide that shape in the 3D view.
 - **Solid / wire** - Checkbox (tooltip *solid/wire*) to switch **shaded** display or **wireframe** for that shape.
-- **M** - Click to open a **Material** popup; right-click **M** for **Delete**. The tooltip on **M** also notes that right-clicking the name deletes the shape.
+- **M** - Click to open a **Material** popup; right-click **M** for **Shape info...** or **Delete**. The tooltip on **M** also notes that right-clicking the name deletes the shape.
 
 Rows that match the **current 3D selection** are drawn with a slightly brighter style so the list stays in sync with what is selected in the viewer (tooltip *Selected in 3D viewer* when you hover the highlighted row).
 
 The window can be closed with its close button; use **View -> Shape List** again to show it.
+
+#### Shape info
+
+Right-click a shape **name** or the **M** button in the Shape List and choose **Shape info...** to open a property dialog for that 3D shape. Use **Refresh** to recompute the values after the geometry changes.
+
+The dialog reports document fields (name, material, shaded vs wireframe display, visibility) and Open CASCADE (OCCT) topology and measurements, including:
+
+| Category | Examples |
+| --- | --- |
+| **Topology** | Root type (Solid, Shell, Face, Compound, etc.), validity, whether the shape has a location transform, closed-shell flag when the root is a shell |
+| **Counts** | Compounds, CompSolids, Solids, Shells, Faces, Wires, Edges, Vertices (nested sub-shapes included) |
+| **Bounds** | Axis-aligned bounding box min/max and overall size |
+| **Mass properties** | Volume and center of mass (when the shape encloses volume), surface area, length (for wire-like geometry) |
+
+This is useful after **Revolve**, **Extrude**, booleans, or imports when you need to confirm whether a result is a closed **Solid** or an open **Shell** / surface, or to check face and edge counts and overall size. The dialog closes automatically if the shape is deleted from the document.
 
 ## Scripting (Lua and Python)
 
@@ -746,7 +762,7 @@ Contributors should follow **[ezycad_code_style.md](ezycad_code_style.md)** for 
 ### Sketch Tools
 - ![Workbench_Sketcher_none](res/icons/Workbench_Sketcher_none.png) - Sketch inspection mode
 - ![Macro_FaceToSketch_48](res/icons/Macro_FaceToSketch_48.png) - Create sketch from planar face
-- ![Sketcher_MirrorSketch](res/icons/Sketcher_MirrorSketch.png) - Define operation axis (then use Mirror/Revolve buttons + angle field in the Options panel; Clear axis)
+- ![Sketcher_MirrorSketch](res/icons/Sketcher_MirrorSketch.png) - Operational axis (then use Mirror/Revolve buttons + angle field in the Options panel; Clear axis)
 - ![Sketcher_CreatePoint](res/icons/Sketcher_CreatePoint.png) - Add node
 - ![Sketcher_Element_Line_Edge](res/icons/Sketcher_Element_Line_Edge.png) - Add line edge
 - ![ls](res/icons/ls.png) - Add multi-line edge

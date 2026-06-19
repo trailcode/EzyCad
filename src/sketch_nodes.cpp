@@ -123,6 +123,12 @@ bool Sketch_nodes::Impl::view_bounds_2d_(double& min_u, double& min_v, double& m
 
 std::optional<size_t> Sketch_nodes::Impl::try_pick_existing_node(const ScreenCoords& screen_coords)
 {
+  if (m_view.sketch_snap_suppressed())
+  {
+    m_owner->hide_snap_annos();
+    return std::nullopt;
+  }
+
   std::optional<gp_Pnt2d> pt_opt = m_view.pt_on_plane(screen_coords, m_pln);
   if (!pt_opt)
   {
@@ -165,7 +171,7 @@ std::optional<size_t> Sketch_nodes::Impl::try_pick_existing_node(const ScreenCoo
 std::optional<gp_Pnt2d> Sketch_nodes::Impl::snap(const ScreenCoords& screen_coords)
 {
   std::optional<gp_Pnt2d> pt = m_view.pt_on_plane(screen_coords, m_pln);
-  if (pt)
+  if (pt && !m_view.sketch_snap_suppressed())
     m_owner->try_get_node_idx_snap(*pt);
 
   return pt;
@@ -511,6 +517,12 @@ std::optional<size_t> Sketch_nodes::Impl::try_get_node_idx_snap(
     gp_Pnt2d&                  pt, // `pt` could be snapped to a node, an axis of another node, or an outside snap point.
     const std::vector<size_t>& to_exclude)
 {
+  if (m_view.sketch_snap_suppressed())
+  {
+    m_owner->hide_snap_annos();
+    return std::nullopt;
+  }
+
   const double snap_dist = snap_radius_world_(pt);
 
   if (!s_annotate_all_coaxial_nodes && m_global_coax_anno)

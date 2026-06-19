@@ -1,4 +1,5 @@
 #include "sketch.h"
+#include "utl_occt.h"
 
 #include <BRepBuilderAPI_MakeEdge.hxx>
 #include <BRepBuilderAPI_MakeFace.hxx>
@@ -47,14 +48,14 @@ std::optional<Symmetric_edge_span> symmetric_edge_from_center(const gp_Pnt2d& ce
   if (full_len <= Precision::Confusion())
     return std::nullopt;
 
-  const double half = full_len * 0.5;
+  const double   half = full_len * 0.5;
   const gp_Vec2d v(dir);
   return Symmetric_edge_span{center.Translated(-v * half), center.Translated(v * half), full_len};
 }
 
 std::optional<Symmetric_edge_span> symmetric_edge_from_center_and_hint(const gp_Pnt2d& center, const gp_Pnt2d& dir_hint_pt)
 {
-  gp_Vec2d v(center, dir_hint_pt);
+  gp_Vec2d     v(center, dir_hint_pt);
   const double half = v.Magnitude();
   if (half <= Precision::Confusion())
     return std::nullopt;
@@ -251,12 +252,13 @@ void Sketch::sync_permanent_node_annos_()
 
   const Mode mode = get_mode();
   // Show "+" markers for permanent user nodes in sketch modes and polar duplicate (which snaps to sketch nodes).
-  const bool show_permanent_marks = is_sketch_mode(mode) || mode == Mode::Shape_polar_duplicate;
+  const bool show_permanent_marks    = is_sketch_mode(mode) || mode == Mode::Shape_polar_duplicate;
+  const bool hide_for_operation_axis = operation_axis_suppresses_sketch_snap_();
 
   for (size_t i = 0, n = m_nodes.size(); i < n; ++i)
   {
     const Sketch_nodes::Node& node = m_nodes[i];
-    const bool                show = m_visible && node.permanent && !node.deleted && show_permanent_marks;
+    const bool show = m_visible && node.permanent && !node.deleted && show_permanent_marks && !hide_for_operation_axis;
 
     if (!show)
     {
@@ -551,9 +553,9 @@ void Sketch::move_line_string_pt_(const ScreenCoords& screen_coords)
 
       if (m_show_dim_input)
       {
-        gp_Dir2d       edge_dir = get_unit_dir(span_a, span_b);
-        ScreenCoords   spos     = m_view.get_screen_coords(to_3d(m_pln, center_point(span_a, span_b)));
-        auto           cb       = [&, edge_dir](float new_dist, bool is_finial)
+        gp_Dir2d     edge_dir = get_unit_dir(span_a, span_b);
+        ScreenCoords spos     = m_view.get_screen_coords(to_3d(m_pln, center_point(span_a, span_b)));
+        auto         cb       = [&, edge_dir](float new_dist, bool is_finial)
         {
           m_entered_edge_len = {edge_dir, new_dist * m_view.get_dimension_scale()};
           m_show_dim_input   = !is_finial;
@@ -575,8 +577,7 @@ void Sketch::move_line_string_pt_(const ScreenCoords& screen_coords)
           ScreenCoords current_pos(dvec2(ImGui::GetIO().MousePos.x, ImGui::GetIO().MousePos.y));
           sketch_pt_move(current_pos);
         };
-        float angle_to_show =
-            m_entered_edge_angle.has_value() ? float(*m_entered_edge_angle) : float(current_angle_deg);
+        float angle_to_show = m_entered_edge_angle.has_value() ? float(*m_entered_edge_angle) : float(current_angle_deg);
         m_view.gui().set_angle_edit(angle_to_show, std::move(std::function<void(float, bool)>(cb)), spos);
       }
     };
@@ -1214,6 +1215,9 @@ void Sketch::finalize_operation_axis_()
 {
   m_operation_axis = std::move(m_tmp_edges.back());
   cancel_elm(); // Reset state, we have the operation axis
+  sync_operation_axis_display_();
+  sync_permanent_node_annos_();
+  m_nodes.hide_snap_annos();
 }
 
 void Sketch::clear_operation_axis()
@@ -1222,6 +1226,8 @@ void Sketch::clear_operation_axis()
     m_ctx.Remove(m_operation_axis->shp, false);
 
   m_operation_axis = std::nullopt;
+  sync_permanent_node_annos_();
+  m_nodes.hide_snap_annos();
 }
 
 bool Sketch::has_operation_axis() const { return m_operation_axis.has_value(); }
@@ -1329,7 +1335,7 @@ Shp_rslt Sketch::revolve_selected(const double angle)
     const gp_Ax1 axis(pt_a, direction);
 
     BRepPrimAPI_MakeRevol revolMaker(compound, axis, angle);
-    return Shp_rslt(new Shp(m_ctx, revolMaker.Shape()));
+    return Shp_rslt(new Shp(m_ctx, try_make_solid(revolMaker.Shape())));
   }
   catch (const Standard_Failure& e)
   {
@@ -1402,7 +1408,7 @@ void Sketch::check_dimension_seg_(Linestring_type linestring_type)
   Edge& edge = m_tmp_edges.back();
   if (edge_from_center_active_() && linestring_type == Linestring_type::Single)
   {
-    const gp_Pnt2d&                  center = m_nodes[edge.node_idx_a];
+    const gp_Pnt2d&                    center = m_nodes[edge.node_idx_a];
     std::optional<Symmetric_edge_span> span =
         symmetric_edge_from_center(center, m_entered_edge_len->dir, m_entered_edge_len->len);
     if (!span)
@@ -1633,6 +1639,21 @@ void Sketch::sketch_json_add_linear_edge_(size_t idx_a, size_t idx_b, std::optio
   update_edge_shp_(edge, pt_a, pt_b);
   m_edges.emplace_back(edge);
   m_nodes.finalize();
+}
+
+void Sketch::sketch_json_set_operation_axis_(const gp_Pnt2d& pt_a, const gp_Pnt2d& pt_b)
+{
+  if (!unique(pt_a, pt_b))
+    return;
+
+  clear_operation_axis();
+
+  Edge axis{m_nodes.get_node_exact(pt_a)};
+  axis.node_idx_b = m_nodes.get_node_exact(pt_b);
+  update_edge_shp_(axis, pt_a, pt_b);
+  m_operation_axis = std::move(axis);
+
+  sync_operation_axis_display_();
 }
 
 std::vector<Sketch::Edge> Sketch::get_selected_edges_() const
@@ -1978,6 +1999,13 @@ void Sketch::update_faces_()
 
     if (edge.node_idx_arc.has_value())
       used_nodes[*edge.node_idx_arc] = true;
+  }
+
+  if (m_operation_axis.has_value())
+  {
+    used_nodes[m_operation_axis->node_idx_a] = true;
+    if (m_operation_axis->node_idx_b.has_value())
+      used_nodes[*m_operation_axis->node_idx_b] = true;
   }
 
   // Remove dangling edges (edges with degree-1 endpoints) iteratively.
@@ -2633,7 +2661,29 @@ void Sketch::on_mode()
 {
   // Reset state
   cancel_elm();
+  sync_operation_axis_display_();
   sync_permanent_node_annos_();
+}
+
+bool Sketch::show_operation_axis_() const
+{
+  return m_operation_axis.has_value() && m_visible && is_current() && get_mode() == Mode::Sketch_operation_axis;
+}
+
+bool Sketch::operation_axis_suppresses_sketch_snap_() const
+{
+  return get_mode() == Mode::Sketch_operation_axis && m_operation_axis.has_value();
+}
+
+void Sketch::sync_operation_axis_display_()
+{
+  if (!m_operation_axis.has_value())
+    return;
+
+  if (show_operation_axis_())
+    m_ctx.Display(m_operation_axis->shp, AIS_WireFrame, 0, false);
+  else
+    m_ctx.Erase(m_operation_axis->shp, false);
 }
 
 Mode Sketch::get_mode() const { return m_view.get_mode(); }
@@ -2713,10 +2763,7 @@ void Sketch::set_visible(bool state)
     if (m_underlay && m_underlay->has_image())
       m_underlay->rebuild_and_display(m_pln, m_ctx);
 
-    // Show operation axis only if this sketch is current
-    if (m_operation_axis.has_value() && is_current())
-      m_ctx.Display(m_operation_axis->shp, AIS_WireFrame, 0, false);
-
+    sync_operation_axis_display_();
     sync_permanent_node_annos_();
   }
   else
@@ -2946,9 +2993,7 @@ void Sketch::set_current()
       }
     }
 
-  // Show operation axis for current sketch if it exists and sketch is visible
-  if (m_operation_axis.has_value() && m_visible)
-    m_ctx.Display(m_operation_axis->shp, AIS_WireFrame, 0, false);
+  sync_operation_axis_display_();
 
   // DBG_MSG("m_outside_snap_pts " << m_nodes.m_outside_snap_pts.size());
 }

@@ -112,6 +112,8 @@ public:
   void on_chamfer_mode();
   void on_fillet_mode();
   Mode get_mode() const;
+  /// True while the operational axis is defined and mirror/revolve selection is active.
+  bool sketch_snap_suppressed() const;
 
   void cleanup();
 
@@ -228,7 +230,8 @@ public:
   void                       set_shp_selection_mode(const TopAbs_ShapeEnum selection_mode);
 
   /// Highlight \a shp in the 3D viewer while the Shape List row is hovered (null clears).
-  void set_shape_list_hover(const Shp_ptr& shp);
+  void           set_shape_list_hover(const Shp_ptr& shp);
+  const Shp_ptr& shape_list_hover() const { return m_shape_list_hover; }
   /// Re-apply list-hover highlight after Settings changes the hover color.
   void refresh_shape_list_hover_highlight();
 
@@ -265,6 +268,7 @@ private:
   void finalize_sketch_extrude_();
   bool cancel_sketch_extrude_();
   void create_default_sketch_();
+  void ensure_current_sketch_();
   void remove_selected_length_dimensions_from_sketches_();
 
   // Query related

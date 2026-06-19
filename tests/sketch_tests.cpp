@@ -15,6 +15,7 @@
 #include "occt_view.h"
 #include "sketch.h"
 #include "sketch_json.h"
+#include "utl_occt.h"
 
 using namespace glm;
 
@@ -2028,6 +2029,40 @@ TEST_F(Sketch_test, UpdateFaces_DanglingEdgesRemoval)
   EXPECT_EQ(total_edges, 12) << "All 12 edges (4 rectangle + 8 dangling) should still exist in the sketch";
 }
 
+// Test operation axis persistence in sketch JSON save/load.
+TEST_F(Sketch_test, OperationAxis_JSON_RoundTrip)
+{
+  gp_Pln default_plane(gp::Origin(), gp::DZ());
+  Sketch sketch("TestSketch", view(), default_plane);
+
+  gui().set_mode(Mode::Sketch_operation_axis);
+
+  const gp_Pnt2d axis_start(0.0, 0.0);
+  const gp_Pnt2d axis_end(10.0, 3.0);
+  sketch.add_sketch_pt(ScreenCoords(dvec2(axis_start.X(), axis_start.Y())));
+  sketch.add_sketch_pt(ScreenCoords(dvec2(axis_end.X(), axis_end.Y())));
+  ASSERT_TRUE(sketch.has_operation_axis());
+
+  const nlohmann::json j = Sketch_json::to_json(sketch);
+  ASSERT_TRUE(j.contains("operation_axis"));
+  ASSERT_TRUE(j["operation_axis"].is_array());
+  EXPECT_EQ(j["operation_axis"].size(), 2u);
+  EXPECT_NEAR(j["operation_axis"][0]["x"].get<double>(), axis_start.X(), 1e-8);
+  EXPECT_NEAR(j["operation_axis"][0]["y"].get<double>(), axis_start.Y(), 1e-8);
+  EXPECT_NEAR(j["operation_axis"][1]["x"].get<double>(), axis_end.X(), 1e-8);
+  EXPECT_NEAR(j["operation_axis"][1]["y"].get<double>(), axis_end.Y(), 1e-8);
+
+  const std::shared_ptr<Sketch> loaded = Sketch_json::from_json(view(), j);
+  ASSERT_TRUE(loaded->has_operation_axis());
+
+  const nlohmann::json j2 = Sketch_json::to_json(*loaded);
+  ASSERT_TRUE(j2.contains("operation_axis"));
+  EXPECT_NEAR(j2["operation_axis"][0]["x"].get<double>(), axis_start.X(), 1e-8);
+  EXPECT_NEAR(j2["operation_axis"][0]["y"].get<double>(), axis_start.Y(), 1e-8);
+  EXPECT_NEAR(j2["operation_axis"][1]["x"].get<double>(), axis_end.X(), 1e-8);
+  EXPECT_NEAR(j2["operation_axis"][1]["y"].get<double>(), axis_end.Y(), 1e-8);
+}
+
 // Test mirror_selected_edges error handling when no edges are selected
 TEST_F(Sketch_test, MirrorSelectedEdges_NoEdgesSelected)
 {
@@ -2342,7 +2377,7 @@ TEST_F(Sketch_test, RevolveSelected_SimpleEdgeProfile)
   gp_Ax1 revolAxis(axA, dir);
 
   BRepPrimAPI_MakeRevol expectedMaker(profile, revolAxis, 2 * std::numbers::pi);
-  TopoDS_Shape expected = expectedMaker.Shape();
+  TopoDS_Shape expected = try_make_solid(expectedMaker.Shape());
 
   EXPECT_FALSE(expected.IsNull());
 
@@ -2454,7 +2489,7 @@ TEST_F(Sketch_test, RevolveSelected_ClosedEdgeProfile)
   gp_Ax1 revolAxis(axA, dir);
 
   BRepPrimAPI_MakeRevol expectedMaker(profile, revolAxis, 2 * std::numbers::pi);
-  TopoDS_Shape expected = expectedMaker.Shape();
+  TopoDS_Shape expected = try_make_solid(expectedMaker.Shape());
 
   EXPECT_FALSE(expected.IsNull());
 
@@ -2481,12 +2516,8 @@ TEST_F(Sketch_test, RevolveSelected_ClosedEdgeProfile)
   EXPECT_NEAR(aymax, eymax, 1e-8);
   EXPECT_NEAR(azmax, ezmax, 1e-8);
 
-  // For a closed profile revolved 360°, we expect a meaningful 3D result.
-  EXPECT_TRUE(actual.ShapeType() == TopAbs_SOLID ||
-              actual.ShapeType() == TopAbs_COMPOUND ||
-              actual.ShapeType() == TopAbs_SHELL ||
-              actual.ShapeType() == TopAbs_FACE)
-      << "Revolved closed profile should produce a non-degenerate 3D shape";
+  // For a closed profile revolved 360°, we expect a solid of revolution.
+  EXPECT_EQ(actual.ShapeType(), TopAbs_SOLID) << "Closed edge profile revolved 360 deg should be a solid";
 }
 
 // Test that split edges have midpoints for snapping

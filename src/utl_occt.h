@@ -1,6 +1,7 @@
 #pragma once
 
 #include <TopAbs_ShapeEnum.hxx>
+#include <TopoDS_Shape.hxx>
 #include <array>
 #include <cstddef>
 #include <string_view>
@@ -26,3 +27,7 @@ constexpr std::array<std::string_view, static_cast<std::size_t>(TopAbs_SHAPE) + 
 static_assert(c_names_TopAbs_ShapeEnum.size() == static_cast<std::size_t>(TopAbs_SHAPE) + 1u);
 
 #undef EZY_TOPABS_SHAPE_ENUM_LIST
+
+/// When \a shape is a closed shell (or compound of closed shells), wrap it as a solid.
+/// Otherwise returns \a shape unchanged.
+TopoDS_Shape try_make_solid(const TopoDS_Shape& shape);

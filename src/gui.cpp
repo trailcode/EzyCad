@@ -28,6 +28,7 @@
 #include "lua_console.h"
 #include "occt_view.h"
 #include "python_console.h"
+#include "shp_info.h"
 #include "sketch.h"
 #include "utl.h"
 #include "version.h"
@@ -148,6 +149,7 @@ void GUI::render_gui()
   sketch_list_();
   sketch_properties_dialog_();
   shape_list_();
+  shape_info_dialog_();
   options_();
   message_status_window_();
   about_dialog_();
@@ -177,7 +179,7 @@ void GUI::initialize_toolbar_()
       {load_texture("res/icons/Part_Scale.png"), false, "Shape Scale (s)", Mode::Scale},
       {load_texture("res/icons/Macro_FaceToSketch_48.png"), false, "Create a sketch from planar face",
        Mode::Sketch_from_planar_face},
-      {load_texture("res/icons/Sketcher_MirrorSketch.png"), false, "Define operation axis", Mode::Sketch_operation_axis},
+      {load_texture("res/icons/Sketcher_MirrorSketch.png"), false, "Operational axis", Mode::Sketch_operation_axis},
       {load_texture("res/icons/Sketcher_CreatePoint.png"), false, "Add node", Mode::Sketch_add_node},
       {load_texture("res/icons/Sketcher_Element_Line_Edge.png"), false, "Add line edge", Mode::Sketch_add_edge},
       {load_texture("res/icons/ls.png"), false, "Add multi-line edge", Mode::Sketch_add_multi_edges},
@@ -1146,7 +1148,7 @@ void GUI::sketch_list_()
 
       if (ui_show_contextual_help() && ImGui::IsItemHovered())
         ImGui::SetTooltip(expanded ? "Collapse details" : "Expand details");
-      
+
       ImGui::PopID();
 
       ImGui::SameLine();
@@ -1374,7 +1376,7 @@ void GUI::sketch_underlay_panel_settings_(const Sketch::sptr& sk)
       m_underlay_vis          = true;
       m_underlay_key_white    = true;
       m_underlay_line_tint    = true;
-      m_underlay_tint_col     = glm::vec4(1.f, 0.863f, 0.f, 1.f);
+      m_underlay_tint_col     = glm::vec4(1.f, 220.f / 255.f, 0.f, 1.f);
     }
   }
 
@@ -1403,8 +1405,8 @@ void GUI::sketch_underlay_panel_settings_(const Sketch::sptr& sk)
 
   ImGui::SameLine(0.0f, ImGui::GetStyle().ItemInnerSpacing.x);
   GUI_DOC_HELP_("Import PNG/JPEG/BMP as a sketch underlay. Adjust half-width, half-height, center, and rotation to match "
-                   "real dimensions; changes apply in real time. Click ? to open the user guide.",
-                   doc_urls::k_image_underlay);
+                "real dimensions; changes apply in real time. Click ? to open the user guide.",
+                doc_urls::k_image_underlay);
 
   if (!sk->has_underlay())
     return;
@@ -1421,7 +1423,7 @@ void GUI::sketch_underlay_panel_settings_(const Sketch::sptr& sk)
 
   if (ui_show_contextual_help() && ImGui::IsItemHovered())
     ImGui::SetTooltip("Paints non-transparent pixels (after white key) with the line color. "
-                      "Default yellow reads well on dark backgrounds.");
+                      "Default amber/gold contrasts with the dark view and cyan frame.");
 
   if (m_underlay_line_tint)
     if (ImGui::ColorEdit4("Line color", &m_underlay_tint_col[0]))
@@ -2053,9 +2055,13 @@ void GUI::shape_list_()
 
   // Add checkbox for hiding all shapes except current sketches
   if (ImGui::Checkbox("Hide all", &m_hide_all_shapes))
+  {
+    if (m_hide_all_shapes)
+      m_view->set_shape_list_hover(nullptr);
     // Update visibility of all shapes based on the new state
     for (const Shp_ptr& shape : m_view->get_shapes())
       shape->set_visible(!m_hide_all_shapes);
+  }
 
   ImGui::Separator();
 
@@ -2130,6 +2136,9 @@ void GUI::shape_list_()
 
     if (ImGui::BeginPopupContextItem("shape_name_ctx"))
     {
+      if (ImGui::MenuItem("Shape info..."))
+        open_shape_info_(shape);
+
       if (ImGui::MenuItem("Delete"))
         shape_to_delete = shape;
 
@@ -2142,7 +2151,11 @@ void GUI::shape_list_()
     ImGui::PushID(("visible" + id_suffix).c_str());
     bool visible = shape->get_visible();
     if (ImGui::Checkbox("", &visible))
+    {
+      if (!visible && m_view->shape_list_hover() == shape)
+        m_view->set_shape_list_hover(nullptr);
       shape->set_visible(visible);
+    }
 
     if (ui_show_contextual_help() && ImGui::IsItemHovered())
       ImGui::SetTooltip("visibility");
@@ -2195,6 +2208,9 @@ void GUI::shape_list_()
 
     if (ImGui::BeginPopupContextItem("mat_btn_ctx"))
     {
+      if (ImGui::MenuItem("Shape info..."))
+        open_shape_info_(shape);
+
       if (ImGui::MenuItem("Delete"))
         shape_to_delete = shape;
 
@@ -2222,6 +2238,112 @@ void GUI::shape_list_()
     m_view->delete_shapes({shape_to_delete});
 
   ImGui::EndChild();
+  ImGui::End();
+}
+
+void GUI::open_shape_info_(const Shp_ptr& shape)
+{
+  if (shape.IsNull())
+    return;
+
+  const std::vector<std::string>& mat_names = occt_material_combo_labels_();
+  int                             mat_idx   = shape->Material();
+  if (mat_idx < 0 || mat_idx >= static_cast<int>(mat_names.size()))
+    mat_idx = static_cast<int>(m_view->get_default_material().Name());
+
+  shp_info::Display_meta meta;
+  meta.name         = shape->get_name();
+  meta.material     = mat_names[static_cast<size_t>(mat_idx)];
+  meta.display_mode = shape->get_disp_mode() == AIS_Shaded ? "Shaded" : "Wireframe";
+  meta.visible      = shape->get_visible();
+
+  m_shape_info_shp   = shape;
+  m_shape_info_lines = shp_info::collect(shape->Shape(), &meta);
+  m_shape_info_open  = true;
+}
+
+void GUI::shape_info_dialog_()
+{
+  if (!m_shape_info_open)
+    return;
+
+  if (m_shape_info_shp.IsNull())
+  {
+    m_shape_info_open = false;
+    return;
+  }
+
+  bool shape_still_exists = false;
+  for (const Shp_ptr& s : m_view->get_shapes())
+  {
+    if (s == m_shape_info_shp)
+    {
+      shape_still_exists = true;
+      break;
+    }
+  }
+
+  if (!shape_still_exists)
+  {
+    m_shape_info_open = false;
+    m_shape_info_shp.Nullify();
+    m_shape_info_lines.clear();
+    return;
+  }
+
+  const std::string title = "Shape info: " + m_shape_info_shp->get_name();
+  ImGui::SetNextWindowSize(ImVec2(440.0f, 0.0f), ImGuiCond_FirstUseEver);
+  bool open = m_shape_info_open;
+  if (!ImGui::Begin(title.c_str(), &open, ImGuiWindowFlags_None))
+  {
+    m_shape_info_open = open;
+    ImGui::End();
+    return;
+  }
+
+  if (ImGui::Button("Refresh"))
+    open_shape_info_(m_shape_info_shp);
+
+  ImGui::Separator();
+
+  const float max_h = ImGui::GetTextLineHeightWithSpacing() * 18.0f;
+  if (ImGui::BeginChild("shape_info_scroll", ImVec2(0.0f, max_h), ImGuiChildFlags_Borders,
+                        ImGuiWindowFlags_AlwaysVerticalScrollbar))
+  {
+    if (ImGui::BeginTable("shape_info_tbl", 2, ImGuiTableFlags_SizingStretchProp | ImGuiTableFlags_RowBg))
+    {
+      ImGui::TableSetupColumn("label", ImGuiTableColumnFlags_WidthFixed, 120.0f);
+      ImGui::TableSetupColumn("value", ImGuiTableColumnFlags_WidthStretch);
+
+      for (const shp_info::Line& line : m_shape_info_lines)
+      {
+        if (line.label.empty() && line.value.empty())
+        {
+          ImGui::TableNextRow();
+          ImGui::TableSetColumnIndex(0);
+          ImGui::Separator();
+          ImGui::TableSetColumnIndex(1);
+          ImGui::Separator();
+          continue;
+        }
+
+        ImGui::TableNextRow();
+        ImGui::TableSetColumnIndex(0);
+        ImGui::TextUnformatted(line.label.c_str());
+        ImGui::TableSetColumnIndex(1);
+        ImGui::TextUnformatted(line.value.c_str());
+      }
+
+      ImGui::EndTable();
+    }
+
+    ImGui::EndChild();
+  }
+
+  m_shape_info_open = open;
+  if (!open)
+    m_shape_info_shp.Nullify();
+
   ImGui::End();
 }
 

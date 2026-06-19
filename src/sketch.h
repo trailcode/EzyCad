@@ -317,6 +317,8 @@ public:
   static bool is_linear_edge_(const Edge& e);
   /// JSON load: linear edge using existing node indices (`idx_mid` is the edge midpoint node).
   void sketch_json_add_linear_edge_(size_t idx_a, size_t idx_b, std::optional<size_t> idx_mid);
+  /// JSON load: restore the sketch operation axis from two plane points.
+  void sketch_json_set_operation_axis_(const gp_Pnt2d& pt_a, const gp_Pnt2d& pt_b);
 
   // Selected related
   std::vector<Edge>                get_selected_edges_() const;
@@ -342,6 +344,9 @@ public:
   void update_edge_style_(AIS_Shape_ptr& shp);
   void update_node_mark_style_(AIS_Shape_ptr& shp);
   void sync_permanent_node_annos_();
+  void sync_operation_axis_display_();
+  bool show_operation_axis_() const;
+  bool operation_axis_suppresses_sketch_snap_() const;
   void update_originating_face_style();
 
   void rebuild_length_dimension_display_(Length_dimension& d);

@@ -184,7 +184,7 @@ String: ImGui `.ini` text for window positions and docking saved with **SaveIniS
 | `imgui_rounding_general` | number | Window/child/frame/popup rounding (**0** to **32** clamped in code; sliders stop at 16 in the UI). |
 | `imgui_rounding_scroll` | number | Scrollbar and grab rounding (same clamp). |
 | `imgui_rounding_tabs` | number | Tab rounding (same clamp). |
-| `underlay_highlight_color` | array of 3 numbers | Default underlay tint (float RGB **0** to **1** per channel). |
+| `underlay_highlight_color` | array of 3 numbers | Default underlay tint (float RGB **0** to **1** per channel; default **amber/gold** **1**, **0.86**, **0**). |
 | `view_roll_step_deg` | number | Degrees per **NumPad 8**/**2**/**4**/**6** orbit and **Shift+NumPad 4**/**6** roll (allowed range **0.1** to **180** in code; default **45**). |
 | `view_zoom_scroll_scale` | number | Multiplier for `UpdateZoom` scroll delta from wheel and keyboard zoom (allowed range **0.25** to **64** in code; default **4**). With **Shift** held, the effective step is multiplied by **0.1** (Blender-style finer zoom). |
 | `load_last_opened_on_startup` | boolean | Desktop: open the last `.ezy` on launch. **Legacy:** `load_last_saved_on_startup` is read as a fallback if the newer key is absent. |

@@ -7,6 +7,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Shape List
+
+- **Shape info...** on the right-click menu for a shape name or **M** button. Opens a dialog with OCCT topology and property details: root type (Solid, Shell, Face, etc.), validity, sub-shape counts, bounding box, volume, center of mass, surface area, and length where applicable. Includes document fields (name, material, display mode, visibility) and a **Refresh** button. Documented in the user guide under [Shape info](docs/usage.md#shape-info).
+
+### Operation axis / Revolve
+
+- Toolbar tooltip renamed to **Operational axis** (was "Define operation axis").
+- The operational axis line is shown only while **Operational axis** mode is active; switching to another sketch mode hides it even if the axis remains defined for Mirror/Revolve.
+- After the axis is defined (mirror/revolve phase), **permanent + node markers** and **sketch snap** (axis guides, vertex lock, snap annotations) are temporarily suppressed so edge/face selection is unobstructed. Snapping and markers return when you **Clear axis** or leave Operational axis mode. Axis placement (Phase 1) still uses normal snap.
+- Operational axes are **saved and loaded** with the sketch in project JSON (`operation_axis` array of two plane points).
+- After **Revolve**, when the selection is **edges** (not a face), EzyCad does its best to convert the revolved result from a shell or faces into a **solid** so chamfer, fillet, and booleans work on closed 360° profiles. Open or partial revolutions are unchanged.
+- **?** help button next to the revolve angle field in the Options panel (tooltip + link to [Revolve solid conversion](docs/usage-sketch.md#revolve-solid-conversion) in the user guide).
+
 ### Sketch underlay
 
 - When an image underlay has shear from edge calibration ("Set X from edge..." or "Set Y from edge..."), the **Transform** section in Sketch properties now provides a full 6-DOF editor: Base X/Y (bitmap 0,0 origin) + direct Ux/Uy and Vx/Vy vector components. Derived U/V lengths and the angle between them are displayed live. Edits apply immediately with undo support.

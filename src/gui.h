@@ -21,6 +21,7 @@
 #include "log.h"
 #include "modes.h"
 #include "occt_view.h"
+#include "shp_info.h"
 #include "types.h"
 
 class Lua_console;
@@ -100,18 +101,23 @@ inline constexpr int k_gui_ui_contextual_help_min_verbosity = 5;
 
 namespace doc_urls
 {
-inline constexpr const char* k_view_roll                 = "https://ezycad.readthedocs.io/en/latest/usage.html#view-roll";
-inline constexpr const char* k_view_navigation           = "https://ezycad.readthedocs.io/en/latest/usage.html#view-navigation";
-inline constexpr const char* k_sketch_snapping           = "https://ezycad.readthedocs.io/en/latest/usage-sketch.html#sketch-snapping";
-inline constexpr const char* k_line_edge_midpoint_nodes  = "https://ezycad.readthedocs.io/en/latest/usage-sketch.html#line-edge-option-add-midpoint-nodes";
+inline constexpr const char* k_view_roll       = "https://ezycad.readthedocs.io/en/latest/usage.html#view-roll";
+inline constexpr const char* k_view_navigation = "https://ezycad.readthedocs.io/en/latest/usage.html#view-navigation";
+inline constexpr const char* k_sketch_snapping = "https://ezycad.readthedocs.io/en/latest/usage-sketch.html#sketch-snapping";
+inline constexpr const char* k_line_edge_midpoint_nodes =
+    "https://ezycad.readthedocs.io/en/latest/usage-sketch.html#line-edge-option-add-midpoint-nodes";
 inline constexpr const char* k_line_edge_place_from_center =
     "https://ezycad.readthedocs.io/en/latest/usage-sketch.html#line-edge-option-place-from-center";
-inline constexpr const char* k_shape_selection_filter    = "https://ezycad.readthedocs.io/en/latest/usage.html#shape-selection-filter-normal-mode-only";
-inline constexpr const char* k_add_node_tool             = "https://ezycad.readthedocs.io/en/latest/usage-sketch.html#add-node-tool";
-inline constexpr const char* k_image_underlay            = "https://ezycad.readthedocs.io/en/latest/usage-sketch.html#image-underlay";
-inline constexpr const char* k_usage_settings_options      = "https://ezycad.readthedocs.io/en/latest/usage-settings.html#options-panel";
-inline constexpr const char* k_occt_view                   = "https://ezycad.readthedocs.io/en/latest/usage-occt-view.html";
-inline constexpr const char* k_startup_project             = "https://ezycad.readthedocs.io/en/latest/usage-settings.html#startup-project";
+inline constexpr const char* k_revolve_solid_conversion =
+    "https://ezycad.readthedocs.io/en/latest/usage-sketch.html#revolve-solid-conversion";
+inline constexpr const char* k_shape_selection_filter =
+    "https://ezycad.readthedocs.io/en/latest/usage.html#shape-selection-filter-normal-mode-only";
+inline constexpr const char* k_add_node_tool  = "https://ezycad.readthedocs.io/en/latest/usage-sketch.html#add-node-tool";
+inline constexpr const char* k_image_underlay = "https://ezycad.readthedocs.io/en/latest/usage-sketch.html#image-underlay";
+inline constexpr const char* k_usage_settings_options =
+    "https://ezycad.readthedocs.io/en/latest/usage-settings.html#options-panel";
+inline constexpr const char* k_occt_view       = "https://ezycad.readthedocs.io/en/latest/usage-occt-view.html";
+inline constexpr const char* k_startup_project = "https://ezycad.readthedocs.io/en/latest/usage-settings.html#startup-project";
 } // namespace doc_urls
 
 class GUI
@@ -251,6 +257,8 @@ private:
   void sketch_list_inspector_(Sketch& sketch, int index);
   void sketch_properties_dialog_();
   void shape_list_();
+  void shape_info_dialog_();
+  void open_shape_info_(const Shp_ptr& shape);
 
   // Mode + Options panel (gui_mode.cpp)
   void options_();
@@ -278,12 +286,11 @@ private:
   void options_sketch_add_slot_mode_();
 
   // Options related helpers
-  void  options_doc_help_button_();
-  void  doc_help_button_(const char* scope, int line, const char* tooltip, const char* doc_url,
-                         bool trailing_same_line = false);
-  void  options_orthographic_projection_();
-  void  options_sketch_common_();
-  void  options_sketch_len_angle_hotkeys_();
+  void options_doc_help_button_();
+  void doc_help_button_(const char* scope, int line, const char* tooltip, const char* doc_url, bool trailing_same_line = false);
+  void options_orthographic_projection_();
+  void options_sketch_common_();
+  void options_sketch_len_angle_hotkeys_();
   float options_sketch_label_col_w_() const;
 
   void on_key_move_mode_(int key);
@@ -383,22 +390,22 @@ private:
   bool                             m_angle_edit_focus_pending{false};
 
   // Mode related
-  Mode         m_mode                              = Mode::Normal;
-  Chamfer_mode m_chamfer_mode                      = Chamfer_mode::Shape;
-  Fillet_mode  m_fillet_mode                       = Fillet_mode::Shape;
-  int          m_edge_dim_label_h                  = 3;
-  float        m_edge_dim_line_width               = k_gui_edge_dim_line_width_default;
-  float        m_edge_dim_arrow_size               = k_gui_edge_dim_arrow_size_default;
-  float        m_edge_dim_color[3]                 = {k_gui_edge_dim_color_default[0], k_gui_edge_dim_color_default[1],
-                                                      k_gui_edge_dim_color_default[2]};
-  float        m_edge_dim_text_scale               = k_gui_edge_dim_text_scale_default;
-  int          m_edge_dim_arrow_style              = 0;
-  int          m_edge_dim_arrow_orientation        = 0;
-  int          m_edge_dim_text_render_mode         = k_gui_edge_dim_text_render_mode_default;
-  bool         m_show_sketch_dimensions            = true;
-  float        m_permanent_node_anno_scale         = k_gui_permanent_node_anno_scale_default;
-  bool         m_add_mid_pt_edges = false;
-  bool         m_edge_from_center = false;
+  Mode         m_mode                       = Mode::Normal;
+  Chamfer_mode m_chamfer_mode               = Chamfer_mode::Shape;
+  Fillet_mode  m_fillet_mode                = Fillet_mode::Shape;
+  int          m_edge_dim_label_h           = 3;
+  float        m_edge_dim_line_width        = k_gui_edge_dim_line_width_default;
+  float        m_edge_dim_arrow_size        = k_gui_edge_dim_arrow_size_default;
+  float        m_edge_dim_color[3]          = {k_gui_edge_dim_color_default[0], k_gui_edge_dim_color_default[1],
+                                               k_gui_edge_dim_color_default[2]};
+  float        m_edge_dim_text_scale        = k_gui_edge_dim_text_scale_default;
+  int          m_edge_dim_arrow_style       = 0;
+  int          m_edge_dim_arrow_orientation = 0;
+  int          m_edge_dim_text_render_mode  = k_gui_edge_dim_text_render_mode_default;
+  bool         m_show_sketch_dimensions     = true;
+  float        m_permanent_node_anno_scale  = k_gui_permanent_node_anno_scale_default;
+  bool         m_add_mid_pt_edges           = false;
+  bool         m_edge_from_center           = false;
   /// Degrees per numpad orbit (8/2/4/6) and Blender-style roll (Shift+NumPad 4/6); persisted in `gui.view_roll_step_deg`.
   double m_view_roll_step_deg = k_gui_view_roll_step_deg_default;
   /// Multiplier for `UpdateZoom(Aspect_ScrollDelta(..., int(y * scale)))`; persisted in `gui.view_zoom_scroll_scale`.
@@ -431,40 +438,43 @@ private:
 
   std::unordered_map<const Sketch*, bool> m_sketch_list_expanded;
 
-  bool        m_show_sketch_list{true};
-  bool        m_show_shape_list{true};
-  bool        m_show_options{true};
-  bool        m_show_settings_dialog{false};
-  bool        m_open_about_popup{false};
-  bool        m_about_popup_open{false};
-  std::string m_about_markdown;
-  uint32_t    m_about_splash_gl{0};
-  glm::ivec2  m_about_splash_size{512, 512};
-  bool        m_about_assets_loaded{false};
-  bool        m_open_add_box_popup{false};
-  glm::dvec3  m_add_box_origin{0.0, 0.0, 0.0};
-  glm::dvec3  m_add_box_size{1.0, 1.0, 1.0};
-  bool        m_open_add_pyramid_popup{false};
-  glm::dvec3  m_add_pyramid_origin{0.0, 0.0, 0.0};
-  double      m_add_pyramid_side{1};
-  bool        m_open_add_sphere_popup{false};
-  glm::dvec3  m_add_sphere_origin{0.0, 0.0, 0.0};
-  double      m_add_sphere_radius{1};
-  bool        m_open_add_cylinder_popup{false};
-  glm::dvec3  m_add_cylinder_origin{0.0, 0.0, 0.0};
-  double      m_add_cylinder_radius{1}, m_add_cylinder_height{1};
-  bool        m_open_add_cone_popup{false};
-  glm::dvec3  m_add_cone_origin{0.0, 0.0, 0.0};
-  double      m_add_cone_R1{1}, m_add_cone_R2{0}, m_add_cone_height{1};
-  bool        m_open_add_torus_popup{false};
-  glm::dvec3  m_add_torus_origin{0.0, 0.0, 0.0};
-  double      m_add_torus_R1{1}, m_add_torus_R2{0.5};
-  bool        m_open_add_sketch_popup{false};
-  int         m_new_sketch_plane{0}; // 0=XY, 1=XZ, 2=YZ
-  double      m_new_sketch_offset{};
-  bool        m_hide_all_shapes{false};
-  int         m_ui_verbosity{k_gui_ui_verbosity_default};
-  bool        m_dark_mode{false};
+  bool                        m_show_sketch_list{true};
+  bool                        m_show_shape_list{true};
+  bool                        m_show_options{true};
+  bool                        m_show_settings_dialog{false};
+  bool                        m_open_about_popup{false};
+  bool                        m_about_popup_open{false};
+  bool                        m_shape_info_open{false};
+  Shp_ptr                     m_shape_info_shp;
+  std::vector<shp_info::Line> m_shape_info_lines;
+  std::string                 m_about_markdown;
+  uint32_t                    m_about_splash_gl{0};
+  glm::ivec2                  m_about_splash_size{512, 512};
+  bool                        m_about_assets_loaded{false};
+  bool                        m_open_add_box_popup{false};
+  glm::dvec3                  m_add_box_origin{0.0, 0.0, 0.0};
+  glm::dvec3                  m_add_box_size{1.0, 1.0, 1.0};
+  bool                        m_open_add_pyramid_popup{false};
+  glm::dvec3                  m_add_pyramid_origin{0.0, 0.0, 0.0};
+  double                      m_add_pyramid_side{1};
+  bool                        m_open_add_sphere_popup{false};
+  glm::dvec3                  m_add_sphere_origin{0.0, 0.0, 0.0};
+  double                      m_add_sphere_radius{1};
+  bool                        m_open_add_cylinder_popup{false};
+  glm::dvec3                  m_add_cylinder_origin{0.0, 0.0, 0.0};
+  double                      m_add_cylinder_radius{1}, m_add_cylinder_height{1};
+  bool                        m_open_add_cone_popup{false};
+  glm::dvec3                  m_add_cone_origin{0.0, 0.0, 0.0};
+  double                      m_add_cone_R1{1}, m_add_cone_R2{0}, m_add_cone_height{1};
+  bool                        m_open_add_torus_popup{false};
+  glm::dvec3                  m_add_torus_origin{0.0, 0.0, 0.0};
+  double                      m_add_torus_R1{1}, m_add_torus_R2{0.5};
+  bool                        m_open_add_sketch_popup{false};
+  int                         m_new_sketch_plane{0}; // 0=XY, 1=XZ, 2=YZ
+  double                      m_new_sketch_offset{};
+  bool                        m_hide_all_shapes{false};
+  int                         m_ui_verbosity{k_gui_ui_verbosity_default};
+  bool                        m_dark_mode{false};
 #ifndef NDEBUG
   bool m_show_dbg{false};
 #endif
