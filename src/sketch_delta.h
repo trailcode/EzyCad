@@ -7,70 +7,17 @@
 #include <cstddef>
 #include <memory>
 #include <optional>
-#include <set>
 #include <string>
-#include <vector>
 
 class Occt_view;
 class Sketch;
-
-/// One sketch undo step: `prev_*` is restored on undo; `curr_*` is re-applied on redo.
-/// Node indices are never compacted; undo tombstones `curr_node_idxs` and redo revives them
-/// through the normal node lookup when edges are added again.
-class Sketch_delta : public Delta
-{
-public:
-  struct Prev_edge_rec
-  {
-    size_t                node_idx_a{};
-    size_t                node_idx_b{};
-    std::optional<size_t> node_idx_mid;
-    std::string           name;
-  };
-
-  struct Curr_linear_edge_record
-  {
-    gp_Pnt2d pt_a;
-    gp_Pnt2d pt_b;
-  };
-
-  struct Arc_edge_record
-  {
-    gp_Pnt2d pt_a;
-    gp_Pnt2d pt_b;
-    gp_Pnt2d pt_c;
-  };
-
-  struct Length_dim_record
-  {
-    size_t                node_idx_lo{};
-    size_t                node_idx_hi{};
-    bool                  visible{true};
-    std::optional<double> flyout_offset;
-    std::string           name;
-  };
-
-  Sketch_delta(Sketch& sketch, std::string sketch_name);
-  ~Sketch_delta() override;
-
-  Sketch_delta(const Sketch_delta&)            = delete;
-  Sketch_delta& operator=(const Sketch_delta&) = delete;
-
-  void                   apply_forward(Occt_view& view) override;
-  void                   apply_reverse(Occt_view& view) override;
-  std::unique_ptr<Delta> clone() const override;
-
-private:
-  friend class Sketch_op_recorder;
-
-  class Impl;
-  std::unique_ptr<Impl> m_impl;
-};
 
 /// Records `prev`/`curr` lists during one sketch edit; pushes a `Sketch_delta` on commit.
 class Sketch_op_recorder
 {
 public:
+  class Impl;
+
   Sketch_op_recorder(Occt_view& view, Sketch& sketch);
   ~Sketch_op_recorder();
 
@@ -91,15 +38,28 @@ public:
   void cancel();
 
 private:
-  friend class Sketch;
+  std::unique_ptr<Impl> m_impl;
+};
 
-  bool empty_() const;
+/// One sketch undo step: `prev_*` is restored on undo; `curr_*` is re-applied on redo.
+/// Node indices are never compacted; undo tombstones `curr_node_idxs` and redo revives them
+/// through the normal node lookup when edges are added again.
+class Sketch_delta : public Delta
+{
+public:
+  Sketch_delta(Sketch& sketch, std::string sketch_name);
+  ~Sketch_delta() override;
 
-  Occt_view&                               m_view;
-  Sketch&                                  m_sketch;
-  bool                                     m_active{true};
-  bool                                     m_committed{false};
-  std::set<size_t>                         m_live_nodes_at_start;
-  std::vector<Sketch_delta::Prev_edge_rec> m_linear_edges_at_start;
-  std::unique_ptr<Sketch_delta>            m_delta;
+  Sketch_delta(const Sketch_delta&)            = delete;
+  Sketch_delta& operator=(const Sketch_delta&) = delete;
+
+  void                   apply_forward(Occt_view& view) override;
+  void                   apply_reverse(Occt_view& view) override;
+  std::unique_ptr<Delta> clone() const override;
+
+private:
+  friend class Sketch_op_recorder::Impl;
+
+  class Impl;
+  std::unique_ptr<Impl> m_impl;
 };

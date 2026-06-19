@@ -2,6 +2,7 @@
 
 #include <Precision.hxx>
 #include <algorithm>
+#include <set>
 #include <utility>
 
 #include "dbg.h"
@@ -13,49 +14,114 @@
 namespace
 {
 
-// Forward declarations; definitions are at the bottom of this file (reader-first order).
 bool on_closed_segment_2d_(const gp_Pnt2d& p, const gp_Pnt2d& a, const gp_Pnt2d& b);
-bool prev_linear_equal_(const Sketch_delta::Prev_edge_rec& x, const Sketch_delta::Prev_edge_rec& y);
-bool curr_linear_equal_(const Sketch_delta::Curr_linear_edge_record& x, const Sketch_delta::Curr_linear_edge_record& y);
-bool arc_equal_(const Sketch_delta::Arc_edge_record& x, const Sketch_delta::Arc_edge_record& y);
-bool length_dim_equal_(const Sketch_delta::Length_dim_record& x, const Sketch_delta::Length_dim_record& y);
-void remove_linear_edges_on_segment_(Sketch& sketch, const gp_Pnt2d& seg_a, const gp_Pnt2d& seg_b);
-void remove_linear_edges_on_node_segment_(Sketch& sketch, size_t node_a, size_t node_b);
-void remove_arc_edge_(Sketch& sketch, const Sketch_delta::Arc_edge_record& rec);
-void remove_length_dim_(Sketch& sketch, const Sketch_delta::Length_dim_record& rec);
-void tombstone_node_(Sketch& sketch, size_t node_idx);
-void restore_prev_linear_edge_(Sketch& sketch, const Sketch_delta::Prev_edge_rec& rec);
-void restore_length_dim_(Sketch& sketch, const Sketch_delta::Length_dim_record& rec);
-void restore_prev_operation_axis_(Sketch& sketch, const Sketch_delta::Prev_edge_rec& rec);
 bool is_linear_sketch_edge_(const Sketch::Edge& e);
-void capture_linear_edges_at_start_(Sketch& sketch, std::vector<Sketch_delta::Prev_edge_rec>& out);
-bool linear_edge_at_op_start_(const std::vector<Sketch_delta::Prev_edge_rec>& at_start, const Sketch_delta::Prev_edge_rec& rec);
 
 } // namespace
 
 class Sketch_delta::Impl
 {
 public:
-  friend class Sketch_op_recorder;
+  friend class Sketch_op_recorder::Impl;
 
-  Sketch*                                        m_sketch{nullptr};
-  std::string                                    m_sketch_name;
-  std::vector<Sketch_delta::Prev_edge_rec>       prev_linear_edges;
-  std::vector<Sketch_delta::Curr_linear_edge_record> curr_linear_edges;
-  std::vector<Sketch_delta::Arc_edge_record>     prev_arc_edges;
-  std::vector<Sketch_delta::Arc_edge_record>     curr_arc_edges;
-  std::vector<size_t>                            curr_node_idxs;
-  std::vector<Sketch_delta::Length_dim_record>   prev_length_dims;
-  std::vector<Sketch_delta::Length_dim_record>   curr_length_dims;
-  std::optional<Sketch_delta::Prev_edge_rec>     prev_operation_axis;
-  std::optional<Sketch_delta::Curr_linear_edge_record> curr_operation_axis;
+  struct Prev_edge_rec
+  {
+    size_t                node_idx_a{};
+    size_t                node_idx_b{};
+    std::optional<size_t> node_idx_mid;
+    std::string           name;
+  };
+
+  struct Curr_linear_edge_record
+  {
+    gp_Pnt2d pt_a;
+    gp_Pnt2d pt_b;
+  };
+
+  struct Arc_edge_record
+  {
+    gp_Pnt2d pt_a;
+    gp_Pnt2d pt_b;
+    gp_Pnt2d pt_c;
+  };
+
+  struct Length_dim_record
+  {
+    size_t                node_idx_lo{};
+    size_t                node_idx_hi{};
+    bool                  visible{true};
+    std::optional<double> flyout_offset;
+    std::string           name;
+  };
+
+  Sketch*                                m_sketch{nullptr};
+  std::string                            m_sketch_name;
+  std::vector<Prev_edge_rec>             prev_linear_edges;
+  std::vector<Curr_linear_edge_record>   curr_linear_edges;
+  std::vector<Arc_edge_record>           prev_arc_edges;
+  std::vector<Arc_edge_record>           curr_arc_edges;
+  std::vector<size_t>                    curr_node_idxs;
+  std::vector<Length_dim_record>         prev_length_dims;
+  std::vector<Length_dim_record>         curr_length_dims;
+  std::optional<Prev_edge_rec>           prev_operation_axis;
+  std::optional<Curr_linear_edge_record> curr_operation_axis;
 
   Impl(Sketch& sketch, std::string sketch_name);
 
-  Sketch* resolve_sketch_(Occt_view& view) const;
-  void    apply_forward_(Sketch& sketch) const;
-  void    apply_reverse_(Sketch& sketch) const;
+  Sketch*                       resolve_sketch_(Occt_view& view) const;
+  void                          apply_forward_(Sketch& sketch) const;
+  void                          apply_reverse_(Sketch& sketch) const;
   std::unique_ptr<Sketch_delta> clone() const;
+
+  static bool prev_linear_equal_(const Prev_edge_rec& x, const Prev_edge_rec& y);
+  static bool curr_linear_equal_(const Curr_linear_edge_record& x, const Curr_linear_edge_record& y);
+  static bool arc_equal_(const Arc_edge_record& x, const Arc_edge_record& y);
+  static bool length_dim_equal_(const Length_dim_record& x, const Length_dim_record& y);
+  static void remove_linear_edges_on_segment_(Sketch& sketch, const gp_Pnt2d& seg_a, const gp_Pnt2d& seg_b);
+  static void remove_linear_edges_on_node_segment_(Sketch& sketch, size_t node_a, size_t node_b);
+  static void remove_arc_edge_(Sketch& sketch, const Arc_edge_record& rec);
+  static void remove_length_dim_(Sketch& sketch, const Length_dim_record& rec);
+  static void tombstone_node_(Sketch& sketch, size_t node_idx);
+  static void restore_prev_linear_edge_(Sketch& sketch, const Prev_edge_rec& rec);
+  static void restore_length_dim_(Sketch& sketch, const Length_dim_record& rec);
+  static void restore_prev_operation_axis_(Sketch& sketch, const Prev_edge_rec& rec);
+  static void capture_linear_edges_at_start_(Sketch& sketch, std::vector<Prev_edge_rec>& out);
+  static bool linear_edge_at_op_start_(const std::vector<Prev_edge_rec>& at_start, const Prev_edge_rec& rec);
+};
+
+class Sketch_op_recorder::Impl
+{
+public:
+  Occt_view&                                     m_view;
+  Sketch&                                        m_sketch;
+  Sketch_op_recorder*                            m_owner{nullptr};
+  bool                                           m_active{true};
+  bool                                           m_committed{false};
+  std::set<size_t>                               m_live_nodes_at_start;
+  std::vector<Sketch_delta::Impl::Prev_edge_rec> m_linear_edges_at_start;
+  std::unique_ptr<Sketch_delta>                  m_delta;
+
+  Impl(Occt_view& view, Sketch& sketch);
+
+  void register_owner_(Sketch_op_recorder& owner);
+  void on_destroy_();
+
+  void note_prev_linear_edge(size_t node_idx_a, size_t node_idx_b, std::optional<size_t> node_idx_mid, const std::string& name);
+  void note_curr_linear_edge(const gp_Pnt2d& pt_a, const gp_Pnt2d& pt_b);
+  void note_prev_arc_edge(const gp_Pnt2d& pt_a, const gp_Pnt2d& pt_b, const gp_Pnt2d& pt_c);
+  void note_curr_arc_edge(const gp_Pnt2d& pt_a, const gp_Pnt2d& pt_b, const gp_Pnt2d& pt_c);
+  void note_curr_node(size_t node_idx);
+  void note_prev_length_dim(size_t lo, size_t hi, bool visible, std::optional<double> flyout, const std::string& name);
+  void note_curr_length_dim(size_t lo, size_t hi, bool visible, std::optional<double> flyout, const std::string& name);
+  void note_prev_operation_axis(size_t node_idx_a, size_t node_idx_b);
+  void note_curr_operation_axis(const gp_Pnt2d& pt_a, const gp_Pnt2d& pt_b);
+
+  void commit();
+  void cancel();
+
+private:
+  bool empty_() const;
+  void unregister_owner_();
 };
 
 Sketch_delta::Sketch_delta(Sketch& sketch, std::string sketch_name)
@@ -82,6 +148,67 @@ void Sketch_delta::apply_reverse(Occt_view& view)
 std::unique_ptr<Delta> Sketch_delta::clone() const { return m_impl->clone(); }
 
 Sketch_op_recorder::Sketch_op_recorder(Occt_view& view, Sketch& sketch)
+    : m_impl(std::make_unique<Impl>(view, sketch))
+{
+  m_impl->register_owner_(*this);
+}
+
+Sketch_op_recorder::~Sketch_op_recorder()
+{
+  if (m_impl)
+    m_impl->on_destroy_();
+}
+
+void Sketch_op_recorder::note_prev_linear_edge(size_t node_idx_a, size_t node_idx_b, std::optional<size_t> node_idx_mid,
+                                               const std::string& name)
+{
+  m_impl->note_prev_linear_edge(node_idx_a, node_idx_b, node_idx_mid, name);
+}
+
+void Sketch_op_recorder::note_curr_linear_edge(const gp_Pnt2d& pt_a, const gp_Pnt2d& pt_b)
+{
+  m_impl->note_curr_linear_edge(pt_a, pt_b);
+}
+
+void Sketch_op_recorder::note_prev_arc_edge(const gp_Pnt2d& pt_a, const gp_Pnt2d& pt_b, const gp_Pnt2d& pt_c)
+{
+  m_impl->note_prev_arc_edge(pt_a, pt_b, pt_c);
+}
+
+void Sketch_op_recorder::note_curr_arc_edge(const gp_Pnt2d& pt_a, const gp_Pnt2d& pt_b, const gp_Pnt2d& pt_c)
+{
+  m_impl->note_curr_arc_edge(pt_a, pt_b, pt_c);
+}
+
+void Sketch_op_recorder::note_curr_node(size_t node_idx) { m_impl->note_curr_node(node_idx); }
+
+void Sketch_op_recorder::note_prev_length_dim(size_t lo, size_t hi, bool visible, std::optional<double> flyout,
+                                              const std::string& name)
+{
+  m_impl->note_prev_length_dim(lo, hi, visible, flyout, name);
+}
+
+void Sketch_op_recorder::note_curr_length_dim(size_t lo, size_t hi, bool visible, std::optional<double> flyout,
+                                              const std::string& name)
+{
+  m_impl->note_curr_length_dim(lo, hi, visible, flyout, name);
+}
+
+void Sketch_op_recorder::note_prev_operation_axis(size_t node_idx_a, size_t node_idx_b)
+{
+  m_impl->note_prev_operation_axis(node_idx_a, node_idx_b);
+}
+
+void Sketch_op_recorder::note_curr_operation_axis(const gp_Pnt2d& pt_a, const gp_Pnt2d& pt_b)
+{
+  m_impl->note_curr_operation_axis(pt_a, pt_b);
+}
+
+void Sketch_op_recorder::commit() { m_impl->commit(); }
+
+void Sketch_op_recorder::cancel() { m_impl->cancel(); }
+
+Sketch_op_recorder::Impl::Impl(Occt_view& view, Sketch& sketch)
     : m_view(view)
     , m_sketch(sketch)
 {
@@ -89,79 +216,87 @@ Sketch_op_recorder::Sketch_op_recorder(Occt_view& view, Sketch& sketch)
     if (!sketch.m_nodes[i].deleted)
       m_live_nodes_at_start.insert(i);
 
-  capture_linear_edges_at_start_(sketch, m_linear_edges_at_start);
-
-  m_delta                = std::make_unique<Sketch_delta>(sketch, sketch.get_name());
-  sketch.m_undo_recorder = this;
+  Sketch_delta::Impl::capture_linear_edges_at_start_(sketch, m_linear_edges_at_start);
+  m_delta = std::make_unique<Sketch_delta>(sketch, sketch.get_name());
 }
 
-Sketch_op_recorder::~Sketch_op_recorder()
+void Sketch_op_recorder::Impl::register_owner_(Sketch_op_recorder& owner)
 {
-  if (m_sketch.m_undo_recorder == this)
-    m_sketch.m_undo_recorder = nullptr;
+  m_owner                  = &owner;
+  m_sketch.m_undo_recorder = &owner;
+}
 
+void Sketch_op_recorder::Impl::unregister_owner_()
+{
+  if (m_sketch.m_undo_recorder == m_owner)
+    m_sketch.m_undo_recorder = nullptr;
+}
+
+void Sketch_op_recorder::Impl::on_destroy_()
+{
+  unregister_owner_();
   if (m_active && !m_committed)
     cancel();
 }
 
-void Sketch_op_recorder::note_prev_linear_edge(size_t node_idx_a, size_t node_idx_b, std::optional<size_t> node_idx_mid,
-                                               const std::string& name)
+void Sketch_op_recorder::Impl::note_prev_linear_edge(size_t node_idx_a, size_t node_idx_b, std::optional<size_t> node_idx_mid,
+                                                     const std::string& name)
 {
   if (!m_active || !m_delta)
     return;
 
-  Sketch_delta::Prev_edge_rec rec{node_idx_a, node_idx_b, node_idx_mid, name};
-  if (!linear_edge_at_op_start_(m_linear_edges_at_start, rec))
+  Sketch_delta::Impl::Prev_edge_rec rec{node_idx_a, node_idx_b, node_idx_mid, name};
+  if (!Sketch_delta::Impl::linear_edge_at_op_start_(m_linear_edges_at_start, rec))
     return;
 
   Sketch_delta::Impl& d = *m_delta->m_impl;
-  for (const Sketch_delta::Prev_edge_rec& x : d.prev_linear_edges)
-    if (prev_linear_equal_(x, rec))
+  for (const Sketch_delta::Impl::Prev_edge_rec& x : d.prev_linear_edges)
+    if (Sketch_delta::Impl::prev_linear_equal_(x, rec))
       return;
 
   d.prev_linear_edges.push_back(std::move(rec));
 }
 
-void Sketch_op_recorder::note_curr_linear_edge(const gp_Pnt2d& pt_a, const gp_Pnt2d& pt_b)
+void Sketch_op_recorder::Impl::note_curr_linear_edge(const gp_Pnt2d& pt_a, const gp_Pnt2d& pt_b)
 {
   if (!m_active || !m_delta)
     return;
 
-  Sketch_delta::Curr_linear_edge_record rec{pt_a, pt_b};
-  for (const Sketch_delta::Curr_linear_edge_record& x : m_delta->m_impl->curr_linear_edges)
-    if (curr_linear_equal_(x, rec))
+  Sketch_delta::Impl::Curr_linear_edge_record rec{pt_a, pt_b};
+  for (const Sketch_delta::Impl::Curr_linear_edge_record& x : m_delta->m_impl->curr_linear_edges)
+    if (Sketch_delta::Impl::curr_linear_equal_(x, rec))
       return;
 
   m_delta->m_impl->curr_linear_edges.push_back(rec);
 }
 
-void Sketch_op_recorder::note_prev_arc_edge(const gp_Pnt2d& pt_a, const gp_Pnt2d& pt_b, const gp_Pnt2d& pt_c)
+void Sketch_op_recorder::Impl::note_prev_arc_edge(const gp_Pnt2d& pt_a, const gp_Pnt2d& pt_b, const gp_Pnt2d& pt_c)
 {
   if (!m_active || !m_delta)
     return;
 
-  Sketch_delta::Arc_edge_record rec{pt_a, pt_b, pt_c};
-  for (const Sketch_delta::Arc_edge_record& x : m_delta->m_impl->prev_arc_edges)
-    if (arc_equal_(x, rec))
+  Sketch_delta::Impl::Arc_edge_record rec{pt_a, pt_b, pt_c};
+  for (const Sketch_delta::Impl::Arc_edge_record& x : m_delta->m_impl->prev_arc_edges)
+    if (Sketch_delta::Impl::arc_equal_(x, rec))
       return;
 
   m_delta->m_impl->prev_arc_edges.push_back(rec);
 }
 
-void Sketch_op_recorder::note_curr_arc_edge(const gp_Pnt2d& pt_a, const gp_Pnt2d& pt_b, const gp_Pnt2d& pt_c)
+void Sketch_op_recorder::Impl::note_curr_arc_edge(const gp_Pnt2d& pt_a, const gp_Pnt2d& pt_b, const gp_Pnt2d& pt_c)
 {
   if (!m_active || !m_delta)
     return;
 
-  Sketch_delta::Arc_edge_record rec{pt_a, pt_b, pt_c};
-  for (const Sketch_delta::Arc_edge_record& x : m_delta->m_impl->curr_arc_edges)
-    if (arc_equal_(x, rec))
+  Sketch_delta::Impl::Arc_edge_record rec{pt_a, pt_b, pt_c};
+  for (const Sketch_delta::Impl::Arc_edge_record& x : m_delta->m_impl->curr_arc_edges)
+    if (Sketch_delta::Impl::arc_equal_(x, rec))
       return;
 
   m_delta->m_impl->curr_arc_edges.push_back(rec);
 }
 
-void Sketch_op_recorder::note_curr_node(size_t node_idx)
+void Sketch_op_recorder::Impl::note_curr_node(size_t node_idx)
 {
   if (!m_active || !m_delta)
     return;
@@ -176,62 +311,62 @@ void Sketch_op_recorder::note_curr_node(size_t node_idx)
   nodes.push_back(node_idx);
 }
 
-void Sketch_op_recorder::note_prev_length_dim(size_t lo, size_t hi, bool visible, std::optional<double> flyout,
-                                              const std::string& name)
+void Sketch_op_recorder::Impl::note_prev_length_dim(size_t lo, size_t hi, bool visible, std::optional<double> flyout,
+                                                    const std::string& name)
 {
   if (!m_active || !m_delta)
     return;
 
-  Sketch_delta::Length_dim_record rec{lo, hi, visible, flyout, name};
-  for (const Sketch_delta::Length_dim_record& x : m_delta->m_impl->prev_length_dims)
-    if (length_dim_equal_(x, rec))
+  Sketch_delta::Impl::Length_dim_record rec{lo, hi, visible, flyout, name};
+  for (const Sketch_delta::Impl::Length_dim_record& x : m_delta->m_impl->prev_length_dims)
+    if (Sketch_delta::Impl::length_dim_equal_(x, rec))
       return;
 
   m_delta->m_impl->prev_length_dims.push_back(std::move(rec));
 }
 
-void Sketch_op_recorder::note_curr_length_dim(size_t lo, size_t hi, bool visible, std::optional<double> flyout,
-                                              const std::string& name)
+void Sketch_op_recorder::Impl::note_curr_length_dim(size_t lo, size_t hi, bool visible, std::optional<double> flyout,
+                                                    const std::string& name)
 {
   if (!m_active || !m_delta)
     return;
 
-  Sketch_delta::Length_dim_record rec{lo, hi, visible, flyout, name};
-  for (const Sketch_delta::Length_dim_record& x : m_delta->m_impl->curr_length_dims)
-    if (length_dim_equal_(x, rec))
+  Sketch_delta::Impl::Length_dim_record rec{lo, hi, visible, flyout, name};
+  for (const Sketch_delta::Impl::Length_dim_record& x : m_delta->m_impl->curr_length_dims)
+    if (Sketch_delta::Impl::length_dim_equal_(x, rec))
       return;
 
   m_delta->m_impl->curr_length_dims.push_back(std::move(rec));
 }
 
-void Sketch_op_recorder::note_prev_operation_axis(size_t node_idx_a, size_t node_idx_b)
+void Sketch_op_recorder::Impl::note_prev_operation_axis(size_t node_idx_a, size_t node_idx_b)
 {
   if (!m_active || !m_delta)
     return;
 
-  m_delta->m_impl->prev_operation_axis = Sketch_delta::Prev_edge_rec{node_idx_a, node_idx_b, std::nullopt, {}};
+  m_delta->m_impl->prev_operation_axis = Sketch_delta::Impl::Prev_edge_rec{node_idx_a, node_idx_b, std::nullopt, {}};
 }
 
-void Sketch_op_recorder::note_curr_operation_axis(const gp_Pnt2d& pt_a, const gp_Pnt2d& pt_b)
+void Sketch_op_recorder::Impl::note_curr_operation_axis(const gp_Pnt2d& pt_a, const gp_Pnt2d& pt_b)
 {
   if (!m_active || !m_delta)
     return;
 
-  m_delta->m_impl->curr_operation_axis = Sketch_delta::Curr_linear_edge_record{pt_a, pt_b};
+  m_delta->m_impl->curr_operation_axis = Sketch_delta::Impl::Curr_linear_edge_record{pt_a, pt_b};
 }
 
-bool Sketch_op_recorder::empty_() const
+bool Sketch_op_recorder::Impl::empty_() const
 {
   if (!m_delta)
     return true;
 
   const Sketch_delta::Impl& d = *m_delta->m_impl;
-  return d.prev_linear_edges.empty() && d.curr_linear_edges.empty() && d.prev_arc_edges.empty() &&
-         d.curr_arc_edges.empty() && d.curr_node_idxs.empty() && d.prev_length_dims.empty() &&
-         d.curr_length_dims.empty() && !d.prev_operation_axis.has_value() && !d.curr_operation_axis.has_value();
+  return d.prev_linear_edges.empty() && d.curr_linear_edges.empty() && d.prev_arc_edges.empty() && d.curr_arc_edges.empty() &&
+         d.curr_node_idxs.empty() && d.prev_length_dims.empty() && d.curr_length_dims.empty() &&
+         !d.prev_operation_axis.has_value() && !d.curr_operation_axis.has_value();
 }
 
-void Sketch_op_recorder::commit()
+void Sketch_op_recorder::Impl::commit()
 {
   if (!m_active || m_committed)
     return;
@@ -239,20 +374,18 @@ void Sketch_op_recorder::commit()
   m_committed = true;
   m_active    = false;
 
-  if (m_sketch.m_undo_recorder == this)
-    m_sketch.m_undo_recorder = nullptr;
+  unregister_owner_();
 
   if (!empty_())
     m_view.push_undo_delta(std::move(m_delta));
 }
 
-void Sketch_op_recorder::cancel()
+void Sketch_op_recorder::Impl::cancel()
 {
   m_active    = false;
   m_committed = true;
 
-  if (m_sketch.m_undo_recorder == this)
-    m_sketch.m_undo_recorder = nullptr;
+  unregister_owner_();
 }
 
 Sketch_delta::Impl::Impl(Sketch& sketch, std::string sketch_name)
@@ -275,13 +408,13 @@ Sketch* Sketch_delta::Impl::resolve_sketch_(Occt_view& view) const
 
 void Sketch_delta::Impl::apply_forward_(Sketch& sketch) const
 {
-  for (const Sketch_delta::Curr_linear_edge_record& e : curr_linear_edges)
+  for (const Curr_linear_edge_record& e : curr_linear_edges)
     sketch.add_edge_(e.pt_a, e.pt_b);
 
-  for (const Sketch_delta::Arc_edge_record& e : curr_arc_edges)
+  for (const Arc_edge_record& e : curr_arc_edges)
     sketch.add_arc_circle_(e.pt_a, e.pt_b, e.pt_c);
 
-  for (const Sketch_delta::Length_dim_record& d : curr_length_dims)
+  for (const Length_dim_record& d : curr_length_dims)
     restore_length_dim_(sketch, d);
 
   if (curr_operation_axis.has_value())
@@ -296,25 +429,25 @@ void Sketch_delta::Impl::apply_reverse_(Sketch& sketch) const
   if (curr_operation_axis.has_value())
     sketch.clear_operation_axis();
 
-  for (const Sketch_delta::Length_dim_record& d : curr_length_dims)
+  for (const Length_dim_record& d : curr_length_dims)
     remove_length_dim_(sketch, d);
 
-  for (const Sketch_delta::Arc_edge_record& e : curr_arc_edges)
+  for (const Arc_edge_record& e : curr_arc_edges)
     remove_arc_edge_(sketch, e);
 
-  for (const Sketch_delta::Curr_linear_edge_record& e : curr_linear_edges)
+  for (const Curr_linear_edge_record& e : curr_linear_edges)
     remove_linear_edges_on_segment_(sketch, e.pt_a, e.pt_b);
 
-  for (const Sketch_delta::Prev_edge_rec& e : prev_linear_edges)
+  for (const Prev_edge_rec& e : prev_linear_edges)
     restore_prev_linear_edge_(sketch, e);
 
-  for (const Sketch_delta::Arc_edge_record& e : prev_arc_edges)
+  for (const Arc_edge_record& e : prev_arc_edges)
     sketch.add_arc_circle_(e.pt_a, e.pt_b, e.pt_c);
 
   if (prev_operation_axis.has_value())
     restore_prev_operation_axis_(sketch, *prev_operation_axis);
 
-  for (const Sketch_delta::Length_dim_record& d : prev_length_dims)
+  for (const Length_dim_record& d : prev_length_dims)
     restore_length_dim_(sketch, d);
 
   for (size_t node_idx : curr_node_idxs)
@@ -326,8 +459,8 @@ void Sketch_delta::Impl::apply_reverse_(Sketch& sketch) const
 
 std::unique_ptr<Sketch_delta> Sketch_delta::Impl::clone() const
 {
-  auto copy     = std::make_unique<Sketch_delta>(*m_sketch, m_sketch_name);
-  Impl& copy_impl = *copy->m_impl;
+  auto  copy                    = std::make_unique<Sketch_delta>(*m_sketch, m_sketch_name);
+  Impl& copy_impl               = *copy->m_impl;
   copy_impl.m_sketch            = m_sketch;
   copy_impl.prev_linear_edges   = prev_linear_edges;
   copy_impl.curr_linear_edges   = curr_linear_edges;
@@ -341,44 +474,30 @@ std::unique_ptr<Sketch_delta> Sketch_delta::Impl::clone() const
   return copy;
 }
 
-namespace
-{
-
-bool on_closed_segment_2d_(const gp_Pnt2d& p, const gp_Pnt2d& a, const gp_Pnt2d& b)
-{
-  if (p.SquareDistance(a) <= Precision::SquareConfusion())
-    return true;
-
-  if (p.SquareDistance(b) <= Precision::SquareConfusion())
-    return true;
-
-  return point_on_open_segment_2d(p, a, b);
-}
-
-bool prev_linear_equal_(const Sketch_delta::Prev_edge_rec& x, const Sketch_delta::Prev_edge_rec& y)
+bool Sketch_delta::Impl::prev_linear_equal_(const Prev_edge_rec& x, const Prev_edge_rec& y)
 {
   return x.node_idx_a == y.node_idx_a && x.node_idx_b == y.node_idx_b && x.node_idx_mid == y.node_idx_mid;
 }
 
-bool curr_linear_equal_(const Sketch_delta::Curr_linear_edge_record& x, const Sketch_delta::Curr_linear_edge_record& y)
+bool Sketch_delta::Impl::curr_linear_equal_(const Curr_linear_edge_record& x, const Curr_linear_edge_record& y)
 {
   return x.pt_a.SquareDistance(y.pt_a) <= Precision::SquareConfusion() &&
          x.pt_b.SquareDistance(y.pt_b) <= Precision::SquareConfusion();
 }
 
-bool arc_equal_(const Sketch_delta::Arc_edge_record& x, const Sketch_delta::Arc_edge_record& y)
+bool Sketch_delta::Impl::arc_equal_(const Arc_edge_record& x, const Arc_edge_record& y)
 {
   return x.pt_a.SquareDistance(y.pt_a) <= Precision::SquareConfusion() &&
          x.pt_b.SquareDistance(y.pt_b) <= Precision::SquareConfusion() &&
          x.pt_c.SquareDistance(y.pt_c) <= Precision::SquareConfusion();
 }
 
-bool length_dim_equal_(const Sketch_delta::Length_dim_record& x, const Sketch_delta::Length_dim_record& y)
+bool Sketch_delta::Impl::length_dim_equal_(const Length_dim_record& x, const Length_dim_record& y)
 {
   return x.node_idx_lo == y.node_idx_lo && x.node_idx_hi == y.node_idx_hi;
 }
 
-void remove_linear_edges_on_segment_(Sketch& sketch, const gp_Pnt2d& seg_a, const gp_Pnt2d& seg_b)
+void Sketch_delta::Impl::remove_linear_edges_on_segment_(Sketch& sketch, const gp_Pnt2d& seg_a, const gp_Pnt2d& seg_b)
 {
   for (auto itr = sketch.m_edges.begin(); itr != sketch.m_edges.end();)
   {
@@ -400,12 +519,12 @@ void remove_linear_edges_on_segment_(Sketch& sketch, const gp_Pnt2d& seg_a, cons
   }
 }
 
-void remove_linear_edges_on_node_segment_(Sketch& sketch, size_t node_a, size_t node_b)
+void Sketch_delta::Impl::remove_linear_edges_on_node_segment_(Sketch& sketch, size_t node_a, size_t node_b)
 {
   remove_linear_edges_on_segment_(sketch, sketch.m_nodes[node_a], sketch.m_nodes[node_b]);
 }
 
-void remove_arc_edge_(Sketch& sketch, const Sketch_delta::Arc_edge_record& rec)
+void Sketch_delta::Impl::remove_arc_edge_(Sketch& sketch, const Arc_edge_record& rec)
 {
   std::vector<Sketch_AIS_edge_ptr> shps_to_remove;
 
@@ -455,7 +574,7 @@ void remove_arc_edge_(Sketch& sketch, const Sketch_delta::Arc_edge_record& rec)
   }
 }
 
-void remove_length_dim_(Sketch& sketch, const Sketch_delta::Length_dim_record& rec)
+void Sketch_delta::Impl::remove_length_dim_(Sketch& sketch, const Length_dim_record& rec)
 {
   for (auto it = sketch.m_length_dimensions.begin(); it != sketch.m_length_dimensions.end(); ++it)
     if (it->node_idx_lo == rec.node_idx_lo && it->node_idx_hi == rec.node_idx_hi)
@@ -468,7 +587,7 @@ void remove_length_dim_(Sketch& sketch, const Sketch_delta::Length_dim_record& r
     }
 }
 
-void tombstone_node_(Sketch& sketch, size_t node_idx)
+void Sketch_delta::Impl::tombstone_node_(Sketch& sketch, size_t node_idx)
 {
   EZY_ASSERT(node_idx < sketch.m_nodes.size());
   sketch.m_nodes[node_idx].deleted = true;
@@ -480,7 +599,7 @@ void tombstone_node_(Sketch& sketch, size_t node_idx)
   }
 }
 
-void restore_prev_linear_edge_(Sketch& sketch, const Sketch_delta::Prev_edge_rec& rec)
+void Sketch_delta::Impl::restore_prev_linear_edge_(Sketch& sketch, const Prev_edge_rec& rec)
 {
   remove_linear_edges_on_node_segment_(sketch, rec.node_idx_a, rec.node_idx_b);
   sketch.sketch_json_add_linear_edge_(rec.node_idx_a, rec.node_idx_b, rec.node_idx_mid);
@@ -494,41 +613,54 @@ void restore_prev_linear_edge_(Sketch& sketch, const Sketch_delta::Prev_edge_rec
       }
 }
 
-void restore_length_dim_(Sketch& sketch, const Sketch_delta::Length_dim_record& rec)
+void Sketch_delta::Impl::restore_length_dim_(Sketch& sketch, const Length_dim_record& rec)
 {
   sketch.json_add_length_dimension_(rec.node_idx_lo, rec.node_idx_hi, rec.visible, rec.flyout_offset, rec.name);
 }
 
-void restore_prev_operation_axis_(Sketch& sketch, const Sketch_delta::Prev_edge_rec& rec)
+void Sketch_delta::Impl::restore_prev_operation_axis_(Sketch& sketch, const Prev_edge_rec& rec)
 {
   const gp_Pnt2d pt_a = sketch.m_nodes[rec.node_idx_a];
   const gp_Pnt2d pt_b = sketch.m_nodes[rec.node_idx_b];
   sketch.sketch_json_set_operation_axis_(pt_a, pt_b);
 }
 
-bool is_linear_sketch_edge_(const Sketch::Edge& e)
-{
-  return !e.circle_arc && e.node_idx_b.has_value() && !e.node_idx_arc.has_value();
-}
-
-void capture_linear_edges_at_start_(Sketch& sketch, std::vector<Sketch_delta::Prev_edge_rec>& out)
+void Sketch_delta::Impl::capture_linear_edges_at_start_(Sketch& sketch, std::vector<Prev_edge_rec>& out)
 {
   for (const Sketch::Edge& e : sketch.m_edges)
   {
     if (!is_linear_sketch_edge_(e))
       continue;
 
-    Sketch_delta::Prev_edge_rec rec{e.node_idx_a, *e.node_idx_b, e.node_idx_mid, e.name};
-    if (std::find_if(out.begin(), out.end(),
-                     [&](const Sketch_delta::Prev_edge_rec& x) { return prev_linear_equal_(x, rec); }) == out.end())
+    Prev_edge_rec rec{e.node_idx_a, *e.node_idx_b, e.node_idx_mid, e.name};
+    if (std::find_if(out.begin(), out.end(), [&](const Prev_edge_rec& x) { return prev_linear_equal_(x, rec); }) == out.end())
       out.push_back(std::move(rec));
   }
 }
 
-bool linear_edge_at_op_start_(const std::vector<Sketch_delta::Prev_edge_rec>& at_start, const Sketch_delta::Prev_edge_rec& rec)
+bool Sketch_delta::Impl::linear_edge_at_op_start_(const std::vector<Prev_edge_rec>& at_start, const Prev_edge_rec& rec)
 {
-  return std::find_if(at_start.begin(), at_start.end(),
-                      [&](const Sketch_delta::Prev_edge_rec& x) { return prev_linear_equal_(x, rec); }) != at_start.end();
+  return std::find_if(at_start.begin(), at_start.end(), [&](const Prev_edge_rec& x) { return prev_linear_equal_(x, rec); }) !=
+         at_start.end();
+}
+
+namespace
+{
+
+bool on_closed_segment_2d_(const gp_Pnt2d& p, const gp_Pnt2d& a, const gp_Pnt2d& b)
+{
+  if (p.SquareDistance(a) <= Precision::SquareConfusion())
+    return true;
+
+  if (p.SquareDistance(b) <= Precision::SquareConfusion())
+    return true;
+
+  return point_on_open_segment_2d(p, a, b);
+}
+
+bool is_linear_sketch_edge_(const Sketch::Edge& e)
+{
+  return !e.circle_arc && e.node_idx_b.has_value() && !e.node_idx_arc.has_value();
 }
 
 } // namespace
