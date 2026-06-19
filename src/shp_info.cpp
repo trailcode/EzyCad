@@ -105,8 +105,7 @@ std::vector<Line> collect(const TopoDS_Shape& shape, const Display_meta* display
     add_line(lines, "BBox X", fmt_double(xmin) + " .. " + fmt_double(xmax));
     add_line(lines, "BBox Y", fmt_double(ymin) + " .. " + fmt_double(ymax));
     add_line(lines, "BBox Z", fmt_double(zmin) + " .. " + fmt_double(zmax));
-    add_line(lines, "BBox size", fmt_double(xmax - xmin) + " x " + fmt_double(ymax - ymin) + " x " +
-                                fmt_double(zmax - zmin));
+    add_line(lines, "BBox size", fmt_double(xmax - xmin) + " x " + fmt_double(ymax - ymin) + " x " + fmt_double(zmax - zmin));
   }
 
   GProp_GProps vol_props;
@@ -116,8 +115,7 @@ std::vector<Line> collect(const TopoDS_Shape& shape, const Display_meta* display
     const gp_Pnt com = vol_props.CentreOfMass();
     lines.push_back({"", ""});
     add_line(lines, "Volume", fmt_double(vol_props.Mass()));
-    add_line(lines, "Center of mass",
-             fmt_double(com.X()) + ", " + fmt_double(com.Y()) + ", " + fmt_double(com.Z()));
+    add_line(lines, "Center of mass", fmt_double(com.X()) + ", " + fmt_double(com.Y()) + ", " + fmt_double(com.Z()));
   }
 
   GProp_GProps surf_props;

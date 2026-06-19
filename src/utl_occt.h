@@ -31,4 +31,3 @@ static_assert(c_names_TopAbs_ShapeEnum.size() == static_cast<std::size_t>(TopAbs
 /// When \a shape is a closed shell (or compound of closed shells), wrap it as a solid.
 /// Otherwise returns \a shape unchanged.
 TopoDS_Shape try_make_solid(const TopoDS_Shape& shape);
-

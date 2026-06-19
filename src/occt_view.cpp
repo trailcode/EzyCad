@@ -1642,6 +1642,11 @@ bool Occt_view::is_headless() const { return m_headless_view; }
 // Mode related
 Mode Occt_view::get_mode() const { return m_gui.get_mode(); }
 
+bool Occt_view::sketch_snap_suppressed() const
+{
+  return m_cur_sketch && get_mode() == Mode::Sketch_operation_axis && m_cur_sketch->has_operation_axis();
+}
+
 void Occt_view::apply_camera_projection()
 {
   if (is_headless())
@@ -2022,8 +2027,8 @@ void Occt_view::load(const std::string& json_str, bool restore_view)
     m_sketches.push_back(Sketch_json::from_json(*this, s));
     if (s["isCurrent"])
     {
-      //if(m_cur_sketch)
-        //MSG("Multiple sketches marked as current in JSON; using the last one.");
+      // if(m_cur_sketch)
+      // MSG("Multiple sketches marked as current in JSON; using the last one.");
 
       m_cur_sketch = m_sketches.back();
     }

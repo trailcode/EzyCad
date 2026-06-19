@@ -97,8 +97,8 @@ TopoDS_Shape try_make_solid(const TopoDS_Shape& shape)
 
   case TopAbs_COMPOUND:
   {
-    int           solid_count = 0;
-    TopoDS_Shape  lone_solid;
+    int          solid_count = 0;
+    TopoDS_Shape lone_solid;
     for (TopExp_Explorer exp(shape, TopAbs_SOLID); exp.More(); exp.Next())
     {
       lone_solid = exp.Current();

@@ -179,7 +179,7 @@ void GUI::initialize_toolbar_()
       {load_texture("res/icons/Part_Scale.png"), false, "Shape Scale (s)", Mode::Scale},
       {load_texture("res/icons/Macro_FaceToSketch_48.png"), false, "Create a sketch from planar face",
        Mode::Sketch_from_planar_face},
-      {load_texture("res/icons/Sketcher_MirrorSketch.png"), false, "Define operation axis", Mode::Sketch_operation_axis},
+      {load_texture("res/icons/Sketcher_MirrorSketch.png"), false, "Operational axis", Mode::Sketch_operation_axis},
       {load_texture("res/icons/Sketcher_CreatePoint.png"), false, "Add node", Mode::Sketch_add_node},
       {load_texture("res/icons/Sketcher_Element_Line_Edge.png"), false, "Add line edge", Mode::Sketch_add_edge},
       {load_texture("res/icons/ls.png"), false, "Add multi-line edge", Mode::Sketch_add_multi_edges},
@@ -1148,7 +1148,7 @@ void GUI::sketch_list_()
 
       if (ui_show_contextual_help() && ImGui::IsItemHovered())
         ImGui::SetTooltip(expanded ? "Collapse details" : "Expand details");
-      
+
       ImGui::PopID();
 
       ImGui::SameLine();
@@ -1405,8 +1405,8 @@ void GUI::sketch_underlay_panel_settings_(const Sketch::sptr& sk)
 
   ImGui::SameLine(0.0f, ImGui::GetStyle().ItemInnerSpacing.x);
   GUI_DOC_HELP_("Import PNG/JPEG/BMP as a sketch underlay. Adjust half-width, half-height, center, and rotation to match "
-                   "real dimensions; changes apply in real time. Click ? to open the user guide.",
-                   doc_urls::k_image_underlay);
+                "real dimensions; changes apply in real time. Click ? to open the user guide.",
+                doc_urls::k_image_underlay);
 
   if (!sk->has_underlay())
     return;

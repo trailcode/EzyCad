@@ -319,9 +319,10 @@ void GUI::parse_gui_panes_settings_(const std::string& content)
         parse_bounded_float(k_gui_key_permanent_node_anno_scale, k_gui_permanent_node_anno_scale_min,
                             k_gui_permanent_node_anno_scale_max, k_gui_permanent_node_anno_scale_default);
     m_add_mid_pt_edges = b("add_mid_pt_edges", false);
-    if (g.contains("add_midpoints_to_linear_edges") && !g.contains("add_mid_pt_edges") && g["add_midpoints_to_linear_edges"].is_boolean())
+    if (g.contains("add_midpoints_to_linear_edges") && !g.contains("add_mid_pt_edges") &&
+        g["add_midpoints_to_linear_edges"].is_boolean())
       m_add_mid_pt_edges = g["add_midpoints_to_linear_edges"].get<bool>();
-    m_load_last_opened_on_startup       = b("load_last_opened_on_startup", b("load_last_saved_on_startup", false));
+    m_load_last_opened_on_startup = b("load_last_opened_on_startup", b("load_last_saved_on_startup", false));
     if (g.contains("last_opened_project_path") && g["last_opened_project_path"].is_string())
       m_last_opened_project_path = g["last_opened_project_path"].get<std::string>();
     else if (g.contains("last_saved_project_path") && g["last_saved_project_path"].is_string())
@@ -594,8 +595,8 @@ void GUI::settings_()
 
       ImGui::SameLine(0.0f, ImGui::GetStyle().ItemInnerSpacing.x);
       GUI_DOC_HELP_("Degrees per key press: NumPad 8/2/4/6 orbit (like LMB drag), Shift+NumPad 4/6, Shift+4/6, or "
-                       "Shift+Left/Right roll. Ctrl+click the slider to type a value. Click ? to open the user guide.",
-                       doc_urls::k_view_roll);
+                    "Shift+Left/Right roll. Ctrl+click the slider to type a value. Click ? to open the user guide.",
+                    doc_urls::k_view_roll);
 
       ImGui::TableNextRow();
       ImGui::TableSetColumnIndex(0);
@@ -618,9 +619,9 @@ void GUI::settings_()
 
       ImGui::SameLine(0.0f, ImGui::GetStyle().ItemInnerSpacing.x);
       GUI_DOC_HELP_("Multiplier for mouse wheel and +/- zoom (same as UpdateZoom scroll delta). Hold Shift while "
-                       "zooming for Blender-style finer steps (x0.1). Ctrl+click to type a value. Click ? to open the "
-                       "user guide.",
-                       doc_urls::k_view_navigation);
+                    "zooming for Blender-style finer steps (x0.1). Ctrl+click to type a value. Click ? to open the "
+                    "user guide.",
+                    doc_urls::k_view_navigation);
 
       ImGui::EndTable();
     }
@@ -655,8 +656,7 @@ void GUI::settings_()
       ImGui::TableSetColumnIndex(1);
       r_changed |= ImGui::SliderFloat("##round_scr", &m_imgui_rounding_scroll, 0.f, 16.f, "%.0f");
       ImGui::SameLine(0.0f, ImGui::GetStyle().ItemInnerSpacing.x);
-      GUI_DOC_HELP_("Scrollbars and sliders applies the same radius to scrollbar tracks and slider grabs.",
-                       nullptr);
+      GUI_DOC_HELP_("Scrollbars and sliders applies the same radius to scrollbar tracks and slider grabs.", nullptr);
 
       ImGui::TableNextRow();
       ImGui::TableSetColumnIndex(0);
@@ -733,8 +733,8 @@ void GUI::settings_()
           ImGui::ColorEdit4("##shape_list_hover", &m_shape_list_hover_color[0], ImGuiColorEditFlags_Float);
       ImGui::SameLine(0.0f, ImGui::GetStyle().ItemInnerSpacing.x);
       GUI_DOC_HELP_("Highlight color when hovering a row in the Shape List pane. Updates immediately if a shape is "
-                       "hovered.",
-                       doc_urls::k_occt_view);
+                    "hovered.",
+                    doc_urls::k_occt_view);
       ImGui::EndTable();
     }
     if (shape_list_hover_changed)
@@ -780,8 +780,8 @@ void GUI::settings_()
       }
       ImGui::SameLine(0.0f, ImGui::GetStyle().ItemInnerSpacing.x);
       GUI_DOC_HELP_("Show or hide the OCCT reference grid in the 3D view. When shown, the grid lies on the active "
-                       "sketch plane. Click ? to open the user guide.",
-                       doc_urls::k_occt_view);
+                    "sketch plane. Click ? to open the user guide.",
+                    doc_urls::k_occt_view);
 
       ImGui::TableNextRow();
       ImGui::TableSetColumnIndex(0);
@@ -816,8 +816,8 @@ void GUI::settings_()
         geom_changed = true;
       ImGui::SameLine(0.f, ImGui::GetStyle().ItemInnerSpacing.x);
       GUI_DOC_HELP_("Full width of the drawn grid on X (edge to edge through the center). Same length scale as sketch "
-                       "dimensions. OCCT uses half this value internally. Click ? to open the user guide.",
-                       doc_urls::k_occt_view);
+                    "dimensions. OCCT uses half this value internally. Click ? to open the user guide.",
+                    doc_urls::k_occt_view);
 
       ImGui::TableNextRow();
       ImGui::TableSetColumnIndex(0);
@@ -828,8 +828,8 @@ void GUI::settings_()
         geom_changed = true;
       ImGui::SameLine(0.f, ImGui::GetStyle().ItemInnerSpacing.x);
       GUI_DOC_HELP_("Full height of the drawn grid on Y (edge to edge through the center). OCCT uses half this value "
-                       "internally. Click ? to open the user guide.",
-                       doc_urls::k_occt_view);
+                    "internally. Click ? to open the user guide.",
+                    doc_urls::k_occt_view);
 
       ImGui::TableNextRow();
       ImGui::TableSetColumnIndex(0);
@@ -882,8 +882,7 @@ void GUI::settings_()
             dim_changed           = true;
           }
           ImGui::SameLine(0.0f, ImGui::GetStyle().ItemInnerSpacing.x);
-          GUI_DOC_HELP_("Thickness of sketch edge length dimensions (Open CASCADE line width scale; 1.0 = default).",
-                           nullptr);
+          GUI_DOC_HELP_("Thickness of sketch edge length dimensions (Open CASCADE line width scale; 1.0 = default).", nullptr);
         }
 
         ImGui::TableNextRow();
@@ -899,8 +898,7 @@ void GUI::settings_()
             dim_changed           = true;
           }
           ImGui::SameLine(0.0f, ImGui::GetStyle().ItemInnerSpacing.x);
-          GUI_DOC_HELP_("Arrow head length for sketch and extrude length dimensions (Open CASCADE display units).",
-                           nullptr);
+          GUI_DOC_HELP_("Arrow head length for sketch and extrude length dimensions (Open CASCADE display units).", nullptr);
         }
 
         ImGui::TableNextRow();
@@ -951,8 +949,8 @@ void GUI::settings_()
           }
           ImGui::SameLine(0.0f, ImGui::GetStyle().ItemInnerSpacing.x);
           GUI_DOC_HELP_("How dimension value labels are composited. Z-layer Top and Topmost avoid ghosting against the "
-                           "grid; Topmost is the default.",
-                           nullptr);
+                        "grid; Topmost is the default.",
+                        nullptr);
         }
 
         ImGui::TableNextRow();
@@ -1039,8 +1037,8 @@ void GUI::settings_()
           }
           ImGui::SameLine(0.0f, ImGui::GetStyle().ItemInnerSpacing.x);
           GUI_DOC_HELP_("When off, hides all sketch length dimensions. Tool mode may still limit which sketch shows "
-                           "dimensions when this is on.",
-                           nullptr);
+                        "dimensions when this is on.",
+                        nullptr);
         }
 
         ImGui::EndTable();
@@ -1068,7 +1066,7 @@ void GUI::settings_()
         }
         ImGui::SameLine(0.0f, ImGui::GetStyle().ItemInnerSpacing.x);
         GUI_DOC_HELP_("Scale for permanent '+' node markers in sketch mode. Click ? to open the user guide.",
-                         doc_urls::k_add_node_tool);
+                      doc_urls::k_add_node_tool);
       }
 
       ImGui::TableNextRow();
@@ -1086,8 +1084,8 @@ void GUI::settings_()
         }
         ImGui::SameLine(0.0f, ImGui::GetStyle().ItemInnerSpacing.x);
         GUI_DOC_HELP_("When checked, the Add line edge and Add multi-line edge tools create a midpoint node on each "
-                         "new straight edge (for center snapping). Default is unchecked. Click ? to open the user guide.",
-                         doc_urls::k_line_edge_midpoint_nodes);
+                      "new straight edge (for center snapping). Default is unchecked. Click ? to open the user guide.",
+                      doc_urls::k_line_edge_midpoint_nodes);
       }
 
       ImGui::TableNextRow();
@@ -1098,8 +1096,8 @@ void GUI::settings_()
       ul_changed |= ImGui::ColorEdit4("##underlay_hi", &m_underlay_highlight_color[0], ImGuiColorEditFlags_Float);
       ImGui::SameLine(0.0f, ImGui::GetStyle().ItemInnerSpacing.x);
       GUI_DOC_HELP_("Updates all sketch underlays immediately. Also used as the default when you import a new image. "
-                       "Per-sketch overrides in Sketch List if needed. Click ? to open the user guide.",
-                       doc_urls::k_image_underlay);
+                    "Per-sketch overrides in Sketch List if needed. Click ? to open the user guide.",
+                    doc_urls::k_image_underlay);
 
       ImGui::TableNextRow();
       ImGui::TableSetColumnIndex(0);
@@ -1116,8 +1114,8 @@ void GUI::settings_()
         }
         ImGui::SameLine(0.0f, ImGui::GetStyle().ItemInnerSpacing.x);
         GUI_DOC_HELP_("Color used by fullscreen snap guides and snap markers in sketch mode. Click ? to open the user "
-                         "guide.",
-                         doc_urls::k_sketch_snapping);
+                      "guide.",
+                      doc_urls::k_sketch_snapping);
       }
 
       ImGui::TableNextRow();
@@ -1134,8 +1132,8 @@ void GUI::settings_()
         }
         ImGui::SameLine(0.0f, ImGui::GetStyle().ItemInnerSpacing.x);
         GUI_DOC_HELP_("Line width for sketch snap guides (axis lines, markers, and co-axial overlay). Click ? to open "
-                         "the user guide.",
-                         doc_urls::k_sketch_snapping);
+                      "the user guide.",
+                      doc_urls::k_sketch_snapping);
       }
 
       ImGui::TableNextRow();
@@ -1164,8 +1162,8 @@ void GUI::settings_()
         }
         ImGui::SameLine(0.0f, ImGui::GetStyle().ItemInnerSpacing.x);
         GUI_DOC_HELP_("Traditional: compact local snap marker.\nFullscreen: full-view crosshair/axis guides.\nBoth: show "
-                         "compact marker and fullscreen guides together. Click ? to open the user guide.",
-                         doc_urls::k_sketch_snapping);
+                      "compact marker and fullscreen guides together. Click ? to open the user guide.",
+                      doc_urls::k_sketch_snapping);
       }
 
       ImGui::TableNextRow();
@@ -1182,9 +1180,9 @@ void GUI::settings_()
         }
         ImGui::SameLine(0.0f, ImGui::GetStyle().ItemInnerSpacing.x);
         GUI_DOC_HELP_("When on (global mode): axis guide lines + markers for *all* nodes in the current sketch and all "
-                         "other visible sketches. When off (default): only closest node per active axis is annotated. Click ? "
-                         "to open the user guide.",
-                         doc_urls::k_sketch_snapping);
+                      "other visible sketches. When off (default): only closest node per active axis is annotated. Click ? "
+                      "to open the user guide.",
+                      doc_urls::k_sketch_snapping);
       }
 
       ImGui::EndTable();
@@ -1235,8 +1233,8 @@ void GUI::settings_()
         save_occt_view_settings();
       ImGui::SameLine(0.0f, ImGui::GetStyle().ItemInnerSpacing.x);
       GUI_DOC_HELP_("When enabled, EzyCad opens the last .ezy file you opened (path is stored in settings). Click ? to "
-                       "open the user guide.",
-                       doc_urls::k_startup_project);
+                    "open the user guide.",
+                    doc_urls::k_startup_project);
       ImGui::EndTable();
     }
     if (ui_show_contextual_help() && !m_last_opened_project_path.empty())
@@ -1252,8 +1250,8 @@ void GUI::settings_()
       clear_saved_startup_project_();
     ImGui::SameLine(0.0f, ImGui::GetStyle().ItemInnerSpacing.x);
     GUI_DOC_HELP_("Save the current document (geometry, view, and tool mode) as what loads when EzyCad starts. If none is "
-                     "saved, the install default (res/default.ezy) is used. Click ? to open the user guide.",
-                     doc_urls::k_startup_project);
+                  "saved, the install default (res/default.ezy) is used. Click ? to open the user guide.",
+                  doc_urls::k_startup_project);
   }
 
   ImGui::Separator();
