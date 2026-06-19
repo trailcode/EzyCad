@@ -788,7 +788,7 @@ void GUI::options_sketch_operation_axis_mode_()
   if (m_view->curr_sketch().has_operation_axis())
   {
     if (ImGui::Button("Mirror"))
-      m_view->curr_sketch().mirror_selected_edges();
+      mirror_selected_sketch_edges();
 
     static float revolve_angle = 360.0f;
 

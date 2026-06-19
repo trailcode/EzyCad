@@ -29,6 +29,7 @@
 #include "imgui.h"
 #include "modes.h"
 #include "occt_view.h"
+#include "sketch_delta.h"
 #include "sketch_underlay.h"
 #include "utl.h"
 
@@ -725,6 +726,17 @@ void Sketch::finalize_edges_()
     m_tmp_edges.pop_back();
   }
 
+  if (m_tmp_edges.empty())
+    return;
+
+  // Record user-intent edges before any split/append side effects.
+  for (const Edge& te : m_tmp_edges)
+  {
+    EZY_ASSERT(te.node_idx_b.has_value());
+    if (m_undo_recorder)
+      m_undo_recorder->note_curr_linear_edge(m_nodes[te.node_idx_a], m_nodes[*te.node_idx_b]);
+  }
+
   std::vector<size_t> split_mid_points;
   for (Edge& e : m_tmp_edges)
   {
@@ -813,9 +825,16 @@ void Sketch::finalize_edges_()
           Edge edge_b{mid_pt_idx, *itr->node_idx_b};
           update_edge_shp_(edge_a, m_nodes[itr->node_idx_a], m_nodes[mid_pt_idx]);
           update_edge_shp_(edge_b, m_nodes[itr->node_idx_b], m_nodes[mid_pt_idx]);
+          if (m_undo_recorder)
+            m_undo_recorder->note_prev_linear_edge(itr->node_idx_a, *itr->node_idx_b, itr->node_idx_mid, itr->name);
           // Set midpoints for the new split edges so they can be snapped to
           edge_a.node_idx_mid = m_nodes.add_new_node(get_midpoint(m_nodes[itr->node_idx_a], m_nodes[mid_pt_idx]), true);
           edge_b.node_idx_mid = m_nodes.add_new_node(get_midpoint(m_nodes[mid_pt_idx], m_nodes[itr->node_idx_b]), true);
+          if (m_undo_recorder)
+          {
+            m_undo_recorder->note_curr_node(edge_a.node_idx_mid.value());
+            m_undo_recorder->note_curr_node(edge_b.node_idx_mid.value());
+          }
           m_ctx.Remove(itr->shp, false);
           m_edges.erase(itr);
           m_nodes[mid_pt_idx].midpoint = false;
@@ -830,7 +849,12 @@ void Sketch::finalize_edges_()
   // GUI finalize path produces the same atomic edge count as direct add_edge_ (e.g. 4
   // edges for a cross, whether or not the cross is at an existing mid).
   for (const auto& ip : batch_inters)
-    split_linear_edges_at_node_if_interior_(m_nodes.get_node_exact(ip));
+  {
+    const size_t nidx = m_nodes.get_node_exact(ip);
+    if (m_undo_recorder)
+      m_undo_recorder->note_curr_node(nidx);
+    split_linear_edges_at_node_if_interior_(nidx);
+  }
 
   m_nodes.hide_snap_annos();
   update_faces_();
@@ -840,7 +864,9 @@ void Sketch::add_node_pt_(const ScreenCoords& screen_coords)
 {
   auto commit_b = [this](size_t node_b)
   {
-    m_view.push_undo_snapshot();
+    Sketch_op_recorder rec(m_view, *this);
+    if (m_undo_recorder)
+      m_undo_recorder->note_curr_node(node_b);
     split_linear_edges_at_node_if_interior_(node_b);
 
     // Add-node mode: the rubber band is only for placement (snap / dimension / angle). Do not create
@@ -851,6 +877,7 @@ void Sketch::add_node_pt_(const ScreenCoords& screen_coords)
     m_tmp_dim_anno.Nullify();
     m_nodes.hide_snap_annos();
     update_faces_();
+    rec.commit();
   };
 
   if (m_entered_edge_angle.has_value() && m_tmp_edges.size())
@@ -907,13 +934,16 @@ void Sketch::add_node_pt_(const ScreenCoords& screen_coords)
       return;
     }
 
-    m_view.push_undo_snapshot();
-    const size_t ni = m_nodes.add_new_node(pt, false, true);
+    Sketch_op_recorder rec(m_view, *this);
+    const size_t       ni = m_nodes.add_new_node(pt, false, true);
+    if (m_undo_recorder)
+      m_undo_recorder->note_curr_node(ni);
     split_linear_edges_at_node_if_interior_(ni);
     m_ctx.Remove(m_tmp_dim_anno, true);
     m_tmp_dim_anno.Nullify();
     m_nodes.hide_snap_annos();
     update_faces_();
+    rec.commit();
   };
 
   move_sketch_pt_(screen_coords, check_node);
@@ -1029,6 +1059,9 @@ void Sketch::split_linear_edges_at_node_if_interior_(size_t node_idx)
       Edge edge_b{node_idx};
       update_edge_end_pt_(edge_b, b);
 
+      if (m_undo_recorder)
+        m_undo_recorder->note_prev_linear_edge(itr->node_idx_a, *itr->node_idx_b, itr->node_idx_mid, itr->name);
+
       m_ctx.Remove(itr->shp, false);
       m_edges.erase(itr);
       m_nodes[node_idx].midpoint = false;
@@ -1062,9 +1095,14 @@ void Sketch::add_arc_circle_pt_(const ScreenCoords& screen_coords)
 
   if (m_tmp_node_idxs.size() == 3)
   {
-    add_arc_circle_(m_tmp_node_idxs);
+    Sketch_op_recorder rec(m_view, *this);
+    const gp_Pnt2d&    pt_a = m_nodes[m_tmp_node_idxs[0]];
+    const gp_Pnt2d&    pt_c = m_nodes[m_tmp_node_idxs[1]];
+    const gp_Pnt2d&    pt_b = m_nodes[m_tmp_node_idxs[2]];
+    add_arc_circle_(pt_a, pt_b, pt_c);
     m_tmp_node_idxs.clear();
     update_faces_();
+    rec.commit();
   }
 }
 
@@ -1214,6 +1252,9 @@ void Sketch::add_operation_axis_pt_(const ScreenCoords& screen_coords)
 void Sketch::finalize_operation_axis_()
 {
   m_operation_axis = std::move(m_tmp_edges.back());
+  if (m_undo_recorder && m_operation_axis->node_idx_b.has_value())
+    m_undo_recorder->note_curr_operation_axis(m_nodes[m_operation_axis->node_idx_a], m_nodes[*m_operation_axis->node_idx_b]);
+
   cancel_elm(); // Reset state, we have the operation axis
   sync_operation_axis_display_();
   sync_permanent_node_annos_();
@@ -1235,11 +1276,12 @@ bool Sketch::has_operation_axis() const { return m_operation_axis.has_value(); }
 void Sketch::mirror_selected_edges()
 {
   EZY_ASSERT(m_operation_axis.has_value());
-  m_view.push_undo_snapshot();
+  Sketch_op_recorder rec(m_view, *this);
 
   const std::vector<Edge> mirror_edges = get_selected_edges_();
   if (mirror_edges.empty())
   {
+    rec.cancel();
     m_view.gui().show_message(ERROR_NO_EDGES_SELECTED);
     return;
   }
@@ -1297,6 +1339,7 @@ void Sketch::mirror_selected_edges()
 
   m_nodes.hide_snap_annos();
   update_faces_();
+  rec.commit();
 }
 
 Shp_rslt Sketch::revolve_selected(const double angle)
@@ -1493,8 +1536,10 @@ void Sketch::check_dimension_rubber_()
   const size_t b = m_nodes.get_node_exact(*m_last_pt, true);
   clear_all(m_entered_edge_len);
 
-  m_view.push_undo_snapshot();
+  Sketch_op_recorder rec(m_view, *this);
   split_linear_edges_at_node_if_interior_(b);
+  if (m_undo_recorder)
+    m_undo_recorder->note_curr_node(b);
 
   m_tmp_node_idxs.clear();
   clear_tmps_();
@@ -1502,6 +1547,7 @@ void Sketch::check_dimension_rubber_()
   m_tmp_dim_anno.Nullify();
   m_nodes.hide_snap_annos();
   update_faces_();
+  rec.commit();
 }
 
 void Sketch::finalize_add_node_elm_cleanup_()
@@ -1528,6 +1574,9 @@ void Sketch::add_edge_(const gp_Pnt2d& pt_a, const gp_Pnt2d& pt_b)
 {
   if (!unique(pt_a, pt_b))
     return;
+
+  if (m_undo_recorder)
+    m_undo_recorder->note_curr_linear_edge(pt_a, pt_b);
 
   // Find intersections (crossings or T-touches) between this new segment and all *currently existing* linear edges.
   // We will split the existing ones at interior intersections, and subdivide this new one as needed.
@@ -1611,7 +1660,9 @@ void Sketch::add_edge_(const gp_Pnt2d& pt_a, const gp_Pnt2d& pt_b)
   // Endpoint touches (shared corners) are excluded here so we do not invoke snap on known vertices.
   for (const auto& inter_p : inters_to_split)
   {
-    size_t nidx = m_nodes.get_node_exact(inter_p);
+    const size_t nidx = m_nodes.get_node_exact(inter_p);
+    if (m_undo_recorder)
+      m_undo_recorder->note_curr_node(nidx);
     split_linear_edges_at_node_if_interior_(nidx);
   }
 
@@ -1830,20 +1881,25 @@ void Sketch::add_or_toggle_length_dim_between_node_indices_(size_t node_a, size_
   for (auto it = m_length_dimensions.begin(); it != m_length_dimensions.end(); ++it)
     if (it->node_idx_lo == lo && it->node_idx_hi == hi)
     {
-      m_view.push_undo_snapshot();
+      Sketch_op_recorder rec(m_view, *this);
+      rec.note_prev_length_dim(lo, hi, it->visible, it->flyout_offset, it->name);
       if (!it->dim.IsNull())
         m_ctx.Remove(it->dim, true);
 
       m_length_dimensions.erase(it);
+      rec.commit();
       return;
     }
 
-  m_view.push_undo_snapshot();
-  Length_dimension d;
+  Sketch_op_recorder rec(m_view, *this);
+  Length_dimension   d;
   d.node_idx_lo = lo;
   d.node_idx_hi = hi;
   m_length_dimensions.push_back(std::move(d));
   rebuild_length_dimension_display_(m_length_dimensions.back());
+  rec.note_curr_length_dim(lo, hi, m_length_dimensions.back().visible, m_length_dimensions.back().flyout_offset,
+                           m_length_dimensions.back().name);
+  rec.commit();
 }
 
 void Sketch::json_add_length_dimension_(size_t node_a, size_t node_b, const bool visible,
@@ -1913,7 +1969,7 @@ void Sketch::toggle_edge_dim_anno(const ScreenCoords& screen_coords)
 
 void Sketch::finalize_elm()
 {
-  m_view.push_undo_snapshot();
+  Sketch_op_recorder rec(m_view, *this);
   m_show_dim_input     = false;
   m_show_angle_input   = false;
   m_entered_edge_angle = std::nullopt;
@@ -1945,6 +2001,8 @@ void Sketch::finalize_elm()
   default:
     EZY_ASSERT(false);
   }
+
+  rec.commit();
 }
 
 // Cancel related
@@ -2578,9 +2636,19 @@ void Sketch::update_edge_end_pt_(Edge& edge, size_t end_pt_idx)
 
 void Sketch::add_arc_circle_(const gp_Pnt2d& pt_a, const gp_Pnt2d& pt_b, const gp_Pnt2d& pt_c)
 {
-  std::vector<size_t> node_idxs{m_nodes.get_node_exact(pt_a), m_nodes.get_node_exact(pt_c), m_nodes.get_node_exact(pt_b)};
+  const size_t node_idx_a = m_nodes.get_node_exact(pt_a);
+  const size_t node_idx_c = m_nodes.get_node_exact(pt_c);
+  const size_t node_idx_b = m_nodes.get_node_exact(pt_b);
 
-  add_arc_circle_(node_idxs);
+  if (m_undo_recorder)
+  {
+    m_undo_recorder->note_curr_arc_edge(pt_a, pt_b, pt_c);
+    m_undo_recorder->note_curr_node(node_idx_a);
+    m_undo_recorder->note_curr_node(node_idx_c);
+    m_undo_recorder->note_curr_node(node_idx_b);
+  }
+
+  add_arc_circle_(std::vector<size_t>{node_idx_a, node_idx_c, node_idx_b});
 }
 
 void Sketch::add_arc_circle_(const std::vector<size_t>& node_idxs)

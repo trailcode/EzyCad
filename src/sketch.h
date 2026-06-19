@@ -20,6 +20,7 @@
 class Occt_view;
 struct Length_dimension_style;
 class gp_Pln;
+class Sketch_op_recorder;
 class TopoDS_Wire;
 class Sketch;
 class Sketch_underlay;
@@ -199,6 +200,8 @@ public:
   // private:
   friend class Sketch_json;
   friend class Sketch_access;
+  friend class Sketch_delta;
+  friend class Sketch_op_recorder;
   friend class Sketch_test; // TEST_F(Sketch_test, JsonSerializationDeserialization)
 
   static bool s_add_mid_pt_edges;
@@ -425,4 +428,6 @@ public:
   bool                       m_show_dims{true};
 
   std::unique_ptr<Sketch_underlay> m_underlay;
+
+  Sketch_op_recorder* m_undo_recorder{nullptr};
 };

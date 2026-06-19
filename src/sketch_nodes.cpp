@@ -56,8 +56,9 @@ public:
   bool        empty() const;
   size_t      size() const;
 
-  void json_resize(size_t count);
-  void json_set_node(size_t idx, const gp_Pnt2d& pt, bool deleted, bool midpoint, bool permanent, const std::string& name);
+  void resize(size_t count);
+  void set_node(size_t idx, const gp_Pnt2d& pt, bool deleted, bool midpoint, bool permanent, const std::string& name);
+  void restore_node_at(size_t idx, const gp_Pnt2d& pt, bool deleted, bool midpoint, bool permanent, const std::string& name);
 
   void finalize();
   void cancel();
@@ -694,10 +695,10 @@ bool Sketch_nodes::Impl::empty() const { return m_nodes.empty(); }
 
 size_t Sketch_nodes::Impl::size() const { return m_nodes.size(); }
 
-void Sketch_nodes::Impl::json_resize(size_t count) { m_nodes.assign(count, Node{}); }
+void Sketch_nodes::Impl::resize(size_t count) { m_nodes.assign(count, Node{}); }
 
-void Sketch_nodes::Impl::json_set_node(size_t idx, const gp_Pnt2d& pt, bool deleted, bool midpoint, bool permanent,
-                                       const std::string& name)
+void Sketch_nodes::Impl::set_node(size_t idx, const gp_Pnt2d& pt, bool deleted, bool midpoint, bool permanent,
+                                  const std::string& name)
 {
   EZY_ASSERT(idx < m_nodes.size());
   Node& n = m_nodes[idx];
@@ -707,6 +708,15 @@ void Sketch_nodes::Impl::json_set_node(size_t idx, const gp_Pnt2d& pt, bool dele
   n.midpoint  = midpoint;
   n.permanent = permanent;
   n.name      = name;
+}
+
+void Sketch_nodes::Impl::restore_node_at(size_t idx, const gp_Pnt2d& pt, bool deleted, bool midpoint, bool permanent,
+                                         const std::string& name)
+{
+  if (idx >= size())
+    resize(idx + 1);
+
+  set_node(idx, pt, deleted, midpoint, permanent, name);
 }
 
 void Sketch_nodes::Impl::finalize() { m_prev_num_nodes = m_nodes.size(); }
@@ -788,17 +798,23 @@ bool Sketch_nodes::empty() const { return m_impl->empty(); }
 
 size_t Sketch_nodes::size() const { return m_impl->size(); }
 
-void Sketch_nodes::json_resize(size_t count) { m_impl->json_resize(count); }
+void Sketch_nodes::resize(size_t count) { m_impl->resize(count); }
 
-void Sketch_nodes::json_set_node(size_t idx, const gp_Pnt2d& pt, bool deleted, bool midpoint, bool permanent,
-                                 const std::string& name)
+void Sketch_nodes::set_node(size_t idx, const gp_Pnt2d& pt, bool deleted, bool midpoint, bool permanent,
+                            const std::string& name)
 {
-  m_impl->json_set_node(idx, pt, deleted, midpoint, permanent, name);
+  m_impl->set_node(idx, pt, deleted, midpoint, permanent, name);
 }
 
 void Sketch_nodes::finalize() { m_impl->finalize(); }
 
 void Sketch_nodes::cancel() { m_impl->cancel(); }
+
+void Sketch_nodes::restore_node_at(size_t idx, const gp_Pnt2d& pt, bool deleted, bool midpoint, bool permanent,
+                                   const std::string& name)
+{
+  m_impl->restore_node_at(idx, pt, deleted, midpoint, permanent, name);
+}
 
 void Sketch_nodes::clear_outside_snap_pnts() { m_impl->clear_outside_snap_pnts(); }
 

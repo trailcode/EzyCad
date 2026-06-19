@@ -138,9 +138,13 @@ public:
   void render_gui();
   void render_occt();
 
-  void        on_key(int key, int scancode, int action, int mods); // gui_mode.cpp
-  void        on_mouse_pos(const ScreenCoords& screen_coords);
-  void        on_mouse_button(int button, int action, int mods);
+  void on_key(int key, int scancode, int action, int mods); // gui_mode.cpp
+  void on_mouse_pos(const ScreenCoords& screen_coords);
+  void on_mouse_button(int button, int action, int mods);
+  /// Headless/tests: same sketch LMB placement as on_mouse_button (does not require ImGui mouse pos).
+  void sketch_left_click(const ScreenCoords& screen_coords);
+  /// Options panel **Mirror** button action (operation axis mode).
+  void        mirror_selected_sketch_edges();
   void        on_mouse_scroll(double xoffset, double yoffset);
   void        on_resize(int width, int height);
   Mode        get_mode() const { return m_mode; }
@@ -253,6 +257,7 @@ private:
   };
   void dist_edit_();
   void angle_edit_();
+  void on_left_click_(const ScreenCoords& screen_coords);
   void sketch_list_();
   void sketch_list_inspector_(Sketch& sketch, int index);
   void sketch_properties_dialog_();

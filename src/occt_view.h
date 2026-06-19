@@ -26,8 +26,9 @@
 #include "shp_scale.h"
 #include "types.h"
 
-class Sketch;
+class Delta;
 class GUI;
+class Sketch;
 struct Length_dimension_style;
 class Prs3d_Drawer;
 class TopoDS_Face;
@@ -88,10 +89,11 @@ public:
   /// Writes STEP, IGES, binary STL, or PLY to \a file_path. Uses selected shapes if any, else all shapes.
   [[nodiscard]] Status export_document(Export_format fmt, const std::string& file_path);
 
-  // Undo / redo (document snapshot stack).
-  /// Saves current document (full JSON) and mode. A future delta-based approach would save memory
-  /// (store only changes per step) and CPU (apply/invert deltas instead of full serialize/load).
+  // Undo / redo (delta steps for sketch edits; full JSON snapshot for other operations).
+  /// Saves current document (full JSON) and mode.
   void push_undo_snapshot();
+  /// Records a sketch element delta (added/removed nodes and edges).
+  void push_undo_delta(std::unique_ptr<Delta> delta);
   /// Removes the last snapshot without restoring (e.g. aborted edit that did not change the document).
   void   pop_undo_snapshot();
   bool   undo();
@@ -313,8 +315,9 @@ private:
 
   struct Undo_entry
   {
-    std::string json;
-    Mode        mode; // Mode at time of operation; restored when navigating stacks
+    std::unique_ptr<Delta> delta;
+    std::string            json; // Full-document snapshot when `delta` is null
+    Mode                   mode; // Mode at time of operation; restored when navigating stacks
   };
 
   std::vector<Undo_entry> m_undo_stack;
