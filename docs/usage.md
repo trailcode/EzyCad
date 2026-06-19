@@ -762,7 +762,7 @@ Contributors should follow **[ezycad_code_style.md](ezycad_code_style.md)** for 
 ### Sketch Tools
 - ![Workbench_Sketcher_none](res/icons/Workbench_Sketcher_none.png) - Sketch inspection mode
 - ![Macro_FaceToSketch_48](res/icons/Macro_FaceToSketch_48.png) - Create sketch from planar face
-- ![Sketcher_MirrorSketch](res/icons/Sketcher_MirrorSketch.png) - Define operation axis (then use Mirror/Revolve buttons + angle field in the Options panel; Clear axis)
+- ![Sketcher_MirrorSketch](res/icons/Sketcher_MirrorSketch.png) - Operational axis (then use Mirror/Revolve buttons + angle field in the Options panel; Clear axis)
 - ![Sketcher_CreatePoint](res/icons/Sketcher_CreatePoint.png) - Add node
 - ![Sketcher_Element_Line_Edge](res/icons/Sketcher_Element_Line_Edge.png) - Add line edge
 - ![ls](res/icons/ls.png) - Add multi-line edge

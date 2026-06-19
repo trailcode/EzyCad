@@ -34,7 +34,7 @@ This guide covers all 2D sketching tools and operations in EzyCad. For the main 
    - ![Add Node Tool](res/icons/Sketcher_CreatePoint.png) [Add nodes](#add-node-tool)
 
 2. **Sketch Operations**
-   - ![Operation Axis Tool](res/icons/Sketcher_MirrorSketch.png) [Define operation axis](#operation-axis-tool) - Define a reference axis, then use the **Mirror** and **Revolve** controls (in the Options panel) to mirror selected sketch edges or revolve edges/faces into 3D solids.
+   - ![Operation Axis Tool](res/icons/Sketcher_MirrorSketch.png) [Operational axis](#operation-axis-tool) - Define a reference axis, then use the **Mirror** and **Revolve** controls (in the Options panel) to mirror selected sketch edges or revolve edges/faces into 3D solids.
    - ![Create Sketch from Planar Face Tool](res/icons/Macro_FaceToSketch_48.png) [Create sketch from planar face](#create-sketch-from-planar-face-tool)
 
 ## Sketch snapping
@@ -49,6 +49,7 @@ While you draw or place points in sketch mode, EzyCad helps you align to existin
 | **Mid-point snap (Add node)** | A click near a **straight** edge (not at its ends) snaps onto the segment and **splits** it at commit time (see [Add node tool](#add-node-tool)). Separate from vertex lock. |
 | **Automatic splitting on edge intersections** | When you add a new straight (linear) edge using the Line Edge tool or Multi-Line Edge tool, if it crosses or touches the interior of any existing straight edge, the existing edge is automatically split at the intersection point. The new edge is also subdivided into atomic segments where needed. The same splitting occurs when an endpoint of the new edge snaps to the midpoint of an existing edge. This produces correct T-junctions (3 edges), crossings (4 edges), and cleanly divided faces from a single sketch. Arcs have special internal handling and do not trigger the same linear splits. |
 | **Other visible sketches** | Nodes from **other visible sketches** are projected onto the current sketch plane and act as snap targets (same distance rules). Useful for multi-sketch layouts and tools such as **polar duplicate** that pick sketch points. |
+| **Operational axis mode** | While an operational axis is **defined** and **Operational axis** mode is active (mirror/revolve phase), sketch snap and permanent **+** node markers are **suppressed** so edge and face selection stays clear. Normal snapping applies again after **Clear axis** or when you leave the tool. Axis placement (before the axis exists) still uses snap. |
 
 **Angle constraint:** When a line or add-node rubber band has an active angle constraint, vertex and axis snap may be disabled or relaxed so the typed angle stays exact (see each tool's section).
 
@@ -656,7 +657,9 @@ The slot tool allows you to create an oblong or oval-shaped slot with rounded en
 
 ![Operation Axis Tool](res/icons/Sketcher_MirrorSketch.png)
 
-The operation axis tool allows you to define a reference *line* (a direction and a point it passes through) for mirroring and revolving operations in sketches. Only the direction and position matter; the length of the drawn helper segment is visual only and has no effect on the results.
+The **Operational axis** tool (toolbar tooltip: **Operational axis**) lets you define a reference *line* (a direction and a point it passes through) for mirroring and revolving operations in sketches. Only the direction and position matter; the length of the drawn helper segment is visual only and has no effect on the results.
+
+The axis reference line is **visible only while Operational axis mode is active**. If you switch to another sketch tool, the axis is hidden in the view but remains defined until you **Clear axis** or reload without it. Operational axes are **saved** in the sketch JSON when you save the project.
 
 **Features:**
 
@@ -668,18 +671,19 @@ The operation axis tool allows you to define a reference *line* (a direction and
 | **Angle constraint** | Use the angle input dialog (<kbd>Shift</kbd>+<kbd>Tab</kbd>) to constrain the direction of the axis line |
 | **Mirror operations** | Use the defined axis to mirror selected edges |
 | **Revolve operations** | Use the defined axis to revolve selected edges or faces |
+| **Selection-friendly mirror/revolve** | After the axis is defined, permanent **+** markers and sketch snap are hidden so you can select edges and faces without snap clutter |
 
 **How to Use:**
 
 **Phase 1: Define the operation axis**
-1. ![Sketcher_MirrorSketch](res/icons/Sketcher_MirrorSketch.png) Select the **Operation Axis** tool from the toolbar.
+1. ![Sketcher_MirrorSketch](res/icons/Sketcher_MirrorSketch.png) Select **Operational axis** from the toolbar.
 2. Click to set the start point of the axis line on the sketch plane.
 3. Move the mouse — a live preview of the axis line follows the cursor.
 4. Click a second point (or use the input dialogs) to finalize the axis:
    - <kbd>Tab</kbd>: open distance dialog to set the length of the *drawn axis helper segment* (visual only — this length does not affect mirror or revolve operations).
    - <kbd>Shift</kbd>+<kbd>Tab</kbd>: open angle (degrees, CCW from +X) dialog to constrain direction.
    - Apply angle constraint first if using both, then length.
-5. The axis is now defined. You remain in the Operation Axis tool (this keeps the Options panel available for the Mirror/Revolve controls).
+5. The axis is now defined. You remain in Operational axis mode (this keeps the Options panel available for the Mirror/Revolve controls). Permanent **+** node markers and sketch snap are suppressed until you clear the axis or leave the tool.
 
 **Phase 2: Use Mirror or Revolve (the controls shown in the Options panel)**
 
@@ -687,24 +691,24 @@ Once the axis exists, the Options panel (under the **Sketch operation** heading)
 
 - **Mirror** button — Mirrors the currently selected sketch edges across the axis.
 - **Revolve** button (with adjacent numeric input, default **360.00**, and **?** help) — Revolves the selected edges or faces around the axis by the given angle (in degrees). 360° on a closed profile produces a full solid of revolution.
-- **Clear axis** button — Removes the current operation axis (required before you can define a new one).
+- **Clear axis** button — Removes the current operational axis (required before you can define a new one). Restores permanent node markers and sketch snap.
 
 **How to Mirror:**
-1. With the Operation Axis tool active and an axis defined, select the edges you want to mirror (click them or use a selection box; the mode stays active so normal sketch selection works for the subject geometry).
+1. With Operational axis mode active and an axis defined, select the edges you want to mirror (click them or use a selection box; snap guides and **+** markers stay hidden so selection is unobstructed).
 2. In the Options panel, click the **Mirror** button.
 3. Selected straight edges are duplicated and mirrored. Arc/circle edges are handled as pairs to preserve the geometry.
 4. The mirrored elements are added to the current sketch (the original selection remains until you change it).
 
 **How to Revolve (create 3D):**
-1. With the Operation Axis tool active and an axis defined, select the edges or closed faces you want to revolve.
+1. With Operational axis mode active and an axis defined, select the edges or closed faces you want to revolve.
 2. (Optional) Adjust the angle in the input field next to the Revolve button (default 360.00 for a full closed revolution).
 3. Click the **Revolve** button.
 4. EzyCad creates a 3D body by revolving the selected sketch geometry around the axis. When you select **edges** rather than a **face**, it does its best to convert the result into a **solid** (see [Revolve solid conversion](#revolve-solid-conversion)). The new shape is added to the document and you are switched out of sketch mode into Normal (inspection) mode.
 5. If the operation fails you will see a message such as "Revolve failed, ensure edges or faces on one side of operation axis."
 
 **Redefining the Axis:**
-- While an operation axis exists, clicks in the viewport are used to select edges or faces for Mirror/Revolve (the axis definition mode remains active so the Options panel buttons are available).
-- To redefine the axis: click the **Clear axis** button in the options panel first (this removes the current axis), then click in the viewport to place the first point of the new axis, followed by the second point (as in Phase 1 above).
+- While an operational axis exists, clicks in the viewport select edges or faces for Mirror/Revolve (Operational axis mode stays active so the Options panel buttons are available). Snap and **+** markers remain off during this phase.
+- To redefine the axis: click **Clear axis** in the options panel first (this removes the current axis and restores snap/markers), then click in the viewport to place the first point of the new axis, followed by the second point (as in Phase 1 above).
 
 **Using the Operation Axis (UI reference):**
 The controls that appear in the Options panel once an axis is defined are:
@@ -755,11 +759,12 @@ The two points you pick define a *direction* and a point the axis passes through
 - **Note**: When an angle constraint is active, snapping to nodes is disabled to maintain the angle precision
 
 **Tips:**
-- The operation axis is a reference *line* (direction + any point it passes through). Its drawn length is visual only and has no effect on mirror or revolve results.
-- Select edges or faces (while the Operation Axis tool is active) before using the Mirror or Revolve buttons in the options panel
-- To redefine the axis, first use the **Clear axis** button, then click to place the new axis points
-- Use snap points for precise axis placement relative to existing geometry
-- Constraining the angle when placing the axis is useful for precise directional reference lines (e.g. for future snapping operations)
+- The operational axis is a reference *line* (direction + any point it passes through). Its drawn length is visual only and has no effect on mirror or revolve results.
+- The axis line is drawn only while **Operational axis** mode is active; other sketch tools hide it from the view without clearing the stored axis.
+- Select edges or faces (while Operational axis mode is active) before using the Mirror or Revolve buttons in the options panel
+- To redefine the axis, first use **Clear axis**, then place the new axis points (snap works again during placement)
+- Use snap points for precise axis placement relative to existing geometry (Phase 1 only)
+- Constraining the angle when placing the axis is useful for precise directional reference lines
 - You can make the drawn axis segment long or short via <kbd>Tab</kbd> purely for visibility/clarity — it does not change the behavior of the operations
 
 ## Dimension Tool
