@@ -2055,9 +2055,13 @@ void GUI::shape_list_()
 
   // Add checkbox for hiding all shapes except current sketches
   if (ImGui::Checkbox("Hide all", &m_hide_all_shapes))
+  {
+    if (m_hide_all_shapes)
+      m_view->set_shape_list_hover(nullptr);
     // Update visibility of all shapes based on the new state
     for (const Shp_ptr& shape : m_view->get_shapes())
       shape->set_visible(!m_hide_all_shapes);
+  }
 
   ImGui::Separator();
 
@@ -2147,7 +2151,11 @@ void GUI::shape_list_()
     ImGui::PushID(("visible" + id_suffix).c_str());
     bool visible = shape->get_visible();
     if (ImGui::Checkbox("", &visible))
+    {
+      if (!visible && m_view->shape_list_hover() == shape)
+        m_view->set_shape_list_hover(nullptr);
       shape->set_visible(visible);
+    }
 
     if (ui_show_contextual_help() && ImGui::IsItemHovered())
       ImGui::SetTooltip("visibility");

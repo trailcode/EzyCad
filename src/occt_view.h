@@ -229,6 +229,7 @@ public:
 
   /// Highlight \a shp in the 3D viewer while the Shape List row is hovered (null clears).
   void set_shape_list_hover(const Shp_ptr& shp);
+  const Shp_ptr&             shape_list_hover() const { return m_shape_list_hover; }
   /// Re-apply list-hover highlight after Settings changes the hover color.
   void refresh_shape_list_hover_highlight();
 

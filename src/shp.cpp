@@ -40,7 +40,10 @@ void Shp::set_visible(const bool visible)
     m_ctx.Display(this, m_disp_mode, AIS_Shape::SelectionMode(m_selection_mode), true);
   }
   else
+  {
+    m_ctx.Unhilight(this, false);
     m_ctx.Erase(this, true);
+  }
 }
 
 void Shp::set_selection_mode(const TopAbs_ShapeEnum mode)
