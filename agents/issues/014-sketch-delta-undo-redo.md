@@ -61,8 +61,8 @@ Sketch edits previously pushed full JSON undo snapshots, which was heavy and mad
 
 - Branch: `Trailcode/better_undo_redo`
 - Draft PR: `agents/prs/009-sketch-delta-undo-redo.md`
-- GitHub issue: (fill after opening)
-- GitHub PR: (fill after opening)
+- GitHub issue: https://github.com/trailcode/EzyCad/issues/144
+- GitHub PR: https://github.com/trailcode/EzyCad/pull/145
 
 ### Test plan
 

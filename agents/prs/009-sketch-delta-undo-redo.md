@@ -29,7 +29,8 @@ Closes sketch delta undo work tracked in `agents/issues/014-sketch-delta-undo-re
 
 ## Related
 
-- Issue: (fill after opening — link to GitHub issue from `agents/issues/014-sketch-delta-undo-redo.md`)
+- Issue: https://github.com/trailcode/EzyCad/issues/144
+- PR: https://github.com/trailcode/EzyCad/pull/145
 - Compare / branch: `Trailcode/better_undo_redo`
 - Draft: `agents/issues/014-sketch-delta-undo-redo.md`
 
@@ -52,6 +53,6 @@ Closes sketch delta undo work tracked in `agents/issues/014-sketch-delta-undo-re
 
 ## Post-merge (checklist for the author)
 
-- [ ] Open GitHub issue from `agents/issues/014-sketch-delta-undo-redo.md` and link PR.
-- [ ] Fill issue/PR URLs in both agent drafts.
+- [x] Open GitHub issue from `agents/issues/014-sketch-delta-undo-redo.md` and link PR.
+- [x] Fill issue/PR URLs in both agent drafts.
 - [ ] Consider `[Unreleased]` CHANGELOG entry if sketch undo behavior is user-visible enough to mention.
