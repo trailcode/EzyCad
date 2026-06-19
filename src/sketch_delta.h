@@ -75,8 +75,6 @@ private:
   std::string m_sketch_name;
 };
 
-class Sketch_op_recorder;
-
 /// Records `prev`/`curr` lists during one sketch edit; pushes a `Sketch_delta` on commit.
 class Sketch_op_recorder
 {

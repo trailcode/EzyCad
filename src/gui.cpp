@@ -2703,6 +2703,74 @@ void GUI::on_mouse_pos(const ScreenCoords& screen_coords)
   }
 }
 
+void GUI::mirror_selected_sketch_edges() { m_view->curr_sketch().mirror_selected_edges(); }
+
+void GUI::on_left_click_(const ScreenCoords& screen_coords)
+{
+  switch (m_mode)
+  {
+    // clang-format off
+    case Mode::Move:                m_view->shp_move().finalize();                      break;
+    case Mode::Rotate:              m_view->shp_rotate().finalize();                    break;
+    case Mode::Scale:               m_view->shp_scale().finalize();                     break;
+    case Mode::Sketch_face_extrude: m_view->sketch_face_extrude(screen_coords, false);  break;
+    // clang-format on
+
+  case Mode::Sketch_add_node:
+  case Mode::Sketch_add_edge:
+  case Mode::Sketch_add_multi_edges:
+  case Mode::Sketch_add_seg_circle_arc:
+  case Mode::Sketch_add_square:
+  case Mode::Sketch_add_rectangle:
+  case Mode::Sketch_add_rectangle_center_pt:
+  case Mode::Sketch_add_circle:
+  case Mode::Sketch_add_slot:
+    hide_dist_edit();
+    m_view->curr_sketch().add_sketch_pt(screen_coords);
+    break;
+
+  case Mode::Sketch_operation_axis:
+    // Only treat LMB as "place axis point" while *defining* the axis.
+    // Once an axis exists, we stay in this mode so the Options panel can show
+    // the Mirror/Revolve/Clear buttons. Further clicks must be allowed to
+    // select sketch edges/faces (via AIS selection) without redefining the axis.
+    // To redefine, the user must first use the "Clear axis" button.
+    if (!m_view->curr_sketch().has_operation_axis())
+    {
+      hide_dist_edit();
+      m_view->curr_sketch().add_sketch_pt(screen_coords);
+    }
+    break;
+
+  case Mode::Shape_chamfer:
+    if (Status s = m_view->shp_chamfer().add_chamfer(screen_coords, m_chamfer_mode); !s.is_ok())
+      show_message(s.message());
+
+    break;
+
+  case Mode::Shape_fillet:
+    if (Status s = m_view->shp_fillet().add_fillet(screen_coords, m_fillet_mode); !s.is_ok())
+      show_message(s.message());
+
+    break;
+
+  case Mode::Shape_polar_duplicate:
+    if (Status s = m_view->shp_polar_dup().add_point(screen_coords); !s.is_ok())
+      show_message(s.message());
+
+    break;
+
+  default:
+    break;
+  }
+}
+
+void GUI::sketch_left_click(const ScreenCoords& screen_coords)
+{
+  m_view->on_mouse_move(screen_coords);
+  on_left_click_(screen_coords);
+}
+
 void GUI::on_mouse_button(int button, int action, int mods)
 {
   const ScreenCoords screen_coords(dvec2(ImGui::GetIO().MousePos.x, ImGui::GetIO().MousePos.y));
@@ -2721,62 +2789,7 @@ void GUI::on_mouse_button(int button, int action, int mods)
   m_view->ctx().UpdateCurrentViewer();
 
   if (button == GLFW_MOUSE_BUTTON_LEFT && action == GLFW_PRESS && mods == 0)
-    switch (m_mode)
-    {
-      // clang-format off
-      case Mode::Move:                m_view->shp_move().finalize();                      break;
-      case Mode::Rotate:              m_view->shp_rotate().finalize();                    break;
-      case Mode::Scale:               m_view->shp_scale().finalize();                     break;
-      case Mode::Sketch_face_extrude: m_view->sketch_face_extrude(screen_coords, false);  break;
-      // clang-format on
-
-    case Mode::Sketch_add_node:
-    case Mode::Sketch_add_edge:
-    case Mode::Sketch_add_multi_edges:
-    case Mode::Sketch_add_seg_circle_arc:
-    case Mode::Sketch_add_square:
-    case Mode::Sketch_add_rectangle:
-    case Mode::Sketch_add_rectangle_center_pt:
-    case Mode::Sketch_add_circle:
-    case Mode::Sketch_add_slot:
-      hide_dist_edit();
-      m_view->curr_sketch().add_sketch_pt(screen_coords);
-      break;
-
-    case Mode::Sketch_operation_axis:
-      // Only treat LMB as "place axis point" while *defining* the axis.
-      // Once an axis exists, we stay in this mode so the Options panel can show
-      // the Mirror/Revolve/Clear buttons. Further clicks must be allowed to
-      // select sketch edges/faces (via AIS selection) without redefining the axis.
-      // To redefine, the user must first use the "Clear axis" button.
-      if (!m_view->curr_sketch().has_operation_axis())
-      {
-        hide_dist_edit();
-        m_view->curr_sketch().add_sketch_pt(screen_coords);
-      }
-      break;
-
-    case Mode::Shape_chamfer:
-      if (Status s = m_view->shp_chamfer().add_chamfer(screen_coords, m_chamfer_mode); !s.is_ok())
-        show_message(s.message());
-
-      break;
-
-    case Mode::Shape_fillet:
-      if (Status s = m_view->shp_fillet().add_fillet(screen_coords, m_fillet_mode); !s.is_ok())
-        show_message(s.message());
-
-      break;
-
-    case Mode::Shape_polar_duplicate:
-      if (Status s = m_view->shp_polar_dup().add_point(screen_coords); !s.is_ok())
-        show_message(s.message());
-
-      break;
-
-    default:
-      break;
-    }
+    on_left_click_(screen_coords);
 
   else if (button == GLFW_MOUSE_BUTTON_RIGHT && action == GLFW_PRESS && mods == 0)
     // Right button is to finalize the current operation.

@@ -25,9 +25,11 @@ using namespace glm;
 class GUI_access
 {
  public:
-  static void       set_view(GUI& gui, std::unique_ptr<Occt_view>& view);
-  static Occt_view& get_view(GUI& gui);
+  static void        set_view(GUI& gui, std::unique_ptr<Occt_view>& view);
+  static Occt_view&  get_view(GUI& gui);
   static std::string get_message(const GUI& gui);
+  static void        sketch_left_click(GUI& gui, const ScreenCoords& screen_coords);
+  static void        mirror_selected_edges(GUI& gui);
 };
 
 // Test fixture for Sketch tests
@@ -162,6 +164,16 @@ Occt_view& GUI_access::get_view(GUI& gui)
 std::string GUI_access::get_message(const GUI& gui)
 {
   return gui.m_message;
+}
+
+void GUI_access::sketch_left_click(GUI& gui, const ScreenCoords& screen_coords)
+{
+  gui.sketch_left_click(screen_coords);
+}
+
+void GUI_access::mirror_selected_edges(GUI& gui)
+{
+  gui.mirror_selected_sketch_edges();
 }
 
 inline void Sketch_access::get_originating_face_snp_pts_3d_(Sketch& sketch, std::vector<gp_Pnt>& out)
@@ -2157,40 +2169,41 @@ TEST_F(Sketch_test, OperationAxis_JSON_RoundTrip)
   EXPECT_NEAR(j2["operation_axis"][1]["y"].get<double>(), axis_end.Y(), 1e-8);
 }
 
-// Test mirror_selected_edges error handling when no edges are selected
+// Mirror with no selection: error message and Sketch_op_recorder::cancel() via headless GUI
+// (operation axis clicks + Options panel Mirror button).
 TEST_F(Sketch_test, MirrorSelectedEdges_NoEdgesSelected)
 {
-  gp_Pln default_plane(gp::Origin(), gp::DZ());
-  Sketch sketch("TestSketch", view(), default_plane);
+  struct Headless_guard
+  {
+    Occt_view& m_v;
+    explicit Headless_guard(Occt_view& v)
+        : m_v(v)
+    {
+      View_access::set_headless(m_v, true);
+    }
+    ~Headless_guard()
+    {
+      View_access::set_headless(m_v, false);
+    }
+  } guard(view());
 
-  // Set mode to operation axis
+  Sketch& sketch = view().curr_sketch();
+
   gui().set_mode(Mode::Sketch_operation_axis);
+  GUI_access::sketch_left_click(gui(), ScreenCoords(dvec2(0.0, 0.0)));
+  GUI_access::sketch_left_click(gui(), ScreenCoords(dvec2(10.0, 0.0)));
 
-  // Create an operation axis by adding two points
-  // Note: The second point automatically finalizes the operation axis (Single linestring type)
-  gp_Pnt2d axis_start(0.0, 0.0);
-  gp_Pnt2d axis_end(10.0, 0.0);
-  
-  ScreenCoords screen_coords_start(dvec2(axis_start.X(), axis_start.Y()));
-  sketch.add_sketch_pt(screen_coords_start);
-  
-  ScreenCoords screen_coords_end(dvec2(axis_end.X(), axis_end.Y()));
-  sketch.add_sketch_pt(screen_coords_end);
-  // finalize_elm() is called automatically when the second point is added for Single linestring type
-
-  // Verify operation axis was created
   EXPECT_TRUE(sketch.has_operation_axis()) << "Operation axis should be created";
 
-  // Clear any existing message
   gui().show_message("");
+  const size_t undo_steps_before = view().undo_stack_size();
 
-  // Try to mirror without selecting any edges
-  sketch.mirror_selected_edges();
+  GUI_access::mirror_selected_edges(gui());
 
-  // Verify error message was shown
-  std::string message = GUI_access::get_message(gui());
-  EXPECT_EQ(message, Sketch::ERROR_NO_EDGES_SELECTED)
+  EXPECT_EQ(GUI_access::get_message(gui()), Sketch::ERROR_NO_EDGES_SELECTED)
       << "Error message should be displayed when no edges are selected";
+  EXPECT_EQ(view().undo_stack_size(), undo_steps_before)
+      << "Mirror with no selection must not push an undo step";
 }
 
 // Positive test: mirror a simple straight edge across a horizontal axis.
