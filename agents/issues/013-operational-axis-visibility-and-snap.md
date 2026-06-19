@@ -61,8 +61,8 @@ Improve the **Operational axis** sketch tool so the axis line is visible only wh
 
 - `docs/bugs.md` items (now struck through).
 - Branch also includes revolve solid conversion, shape info dialog — see PR for full branch scope.
-- GitHub issue: _(fill after create)_
-- GitHub PR: _(fill after create)_
+- GitHub issue: https://github.com/trailcode/EzyCad/issues/142
+- GitHub PR: https://github.com/trailcode/EzyCad/pull/143
 
 ### Test plan
 

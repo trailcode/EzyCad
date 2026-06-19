@@ -26,7 +26,8 @@ Closes operational-axis visibility/snap/persistence work tracked in `agents/issu
 
 ## Related
 
-- Issue: _(fill after create)_
+- Issue: https://github.com/trailcode/EzyCad/issues/142
+- PR: https://github.com/trailcode/EzyCad/pull/143
 - Draft: `agents/issues/013-operational-axis-visibility-and-snap.md`
 
 ## Test Plan
