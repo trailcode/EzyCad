@@ -317,6 +317,8 @@ public:
   static bool is_linear_edge_(const Edge& e);
   /// JSON load: linear edge using existing node indices (`idx_mid` is the edge midpoint node).
   void sketch_json_add_linear_edge_(size_t idx_a, size_t idx_b, std::optional<size_t> idx_mid);
+  /// JSON load: restore the sketch operation axis from two plane points.
+  void sketch_json_set_operation_axis_(const gp_Pnt2d& pt_a, const gp_Pnt2d& pt_b);
 
   // Selected related
   std::vector<Edge>                get_selected_edges_() const;

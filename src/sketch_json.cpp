@@ -6,11 +6,13 @@
 #include <Geom_TrimmedCurve.hxx>
 #include <Precision.hxx>
 #include <TopoDS.hxx>
+#include <TopoDS_Edge.hxx>
 #include <nlohmann/json.hpp>
 #include <optional>
 #include <vector>
 
 #include "dbg.h"
+#include "geom.h"
 #include "sketch.h"
 #include "sketch_nodes.h"
 #include "sketch_underlay.h"
@@ -223,6 +225,15 @@ nlohmann::json Sketch_json::to_json(const Sketch& sketch)
   if (sketch.m_underlay && sketch.m_underlay->has_image())
     j["underlay"] = sketch.m_underlay->to_json();
 
+  if (sketch.m_operation_axis.has_value())
+  {
+    const Sketch::Edge& axis = *sketch.m_operation_axis;
+    EZY_ASSERT(axis.node_idx_b.has_value());
+    EZY_ASSERT(!axis.shp.IsNull());
+    const auto [pt_a, pt_b] = get_edge_endpoints(sketch.m_pln, TopoDS::Edge(axis.shp->Shape()));
+    j["operation_axis"]     = json::array({::to_json(pt_a), ::to_json(pt_b)});
+  }
+
   return j;
 }
 
@@ -298,6 +309,13 @@ Sketch::sptr Sketch_json::from_json(Occt_view& view, const nlohmann::json& j)
       if (ret->m_visible && ret->m_underlay->has_image())
         ret->m_underlay->rebuild_and_display(ret->m_pln, ret->m_ctx);
     }
+  }
+
+  if (j.contains("operation_axis") && j["operation_axis"].is_array() && j["operation_axis"].size() >= 2)
+  {
+    const gp_Pnt2d pt_a = ::from_json_pnt2d(j["operation_axis"][0]);
+    const gp_Pnt2d pt_b = ::from_json_pnt2d(j["operation_axis"][1]);
+    ret->sketch_json_set_operation_axis_(pt_a, pt_b);
   }
 
   if (j["isCurrent"])

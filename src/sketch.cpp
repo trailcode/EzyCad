@@ -1636,6 +1636,22 @@ void Sketch::sketch_json_add_linear_edge_(size_t idx_a, size_t idx_b, std::optio
   m_nodes.finalize();
 }
 
+void Sketch::sketch_json_set_operation_axis_(const gp_Pnt2d& pt_a, const gp_Pnt2d& pt_b)
+{
+  if (!unique(pt_a, pt_b))
+    return;
+
+  clear_operation_axis();
+
+  Edge axis{m_nodes.get_node_exact(pt_a)};
+  axis.node_idx_b = m_nodes.get_node_exact(pt_b);
+  update_edge_shp_(axis, pt_a, pt_b);
+  m_operation_axis = std::move(axis);
+
+  if (m_visible && is_current())
+    m_ctx.Display(m_operation_axis->shp, AIS_WireFrame, 0, false);
+}
+
 std::vector<Sketch::Edge> Sketch::get_selected_edges_() const
 {
   std::vector<Edge> ret;
@@ -1979,6 +1995,13 @@ void Sketch::update_faces_()
 
     if (edge.node_idx_arc.has_value())
       used_nodes[*edge.node_idx_arc] = true;
+  }
+
+  if (m_operation_axis.has_value())
+  {
+    used_nodes[m_operation_axis->node_idx_a] = true;
+    if (m_operation_axis->node_idx_b.has_value())
+      used_nodes[*m_operation_axis->node_idx_b] = true;
   }
 
   // Remove dangling edges (edges with degree-1 endpoints) iteratively.
