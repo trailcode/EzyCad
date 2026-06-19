@@ -65,8 +65,9 @@ User-facing Markdown (now in `docs/`: `usage.md`, `usage-*.md`, `scripting.md`, 
 
 ## Code organization
 
-- **Reader-first order** (`.cpp`): Arrange functions from high-level behavior to lower-level detail so the first screen shows the primary workflow before helper details.
-- **Helper placement**: Prefer keeping narrow file-local helpers close to the functions that use them. Avoid large top-of-file helper blocks unless helpers are broadly reused across the file.
+- **Reader-first order** (`.cpp`): Put **public API and high-level workflow** at the top of the file (constructors, main entry points, orchestration). Put **lower-level details** below so the first screen shows what the module does before how it does it.
+- **Helper functions** (`.cpp`): Prefer **file-local static helpers** in an anonymous namespace at the **bottom** of the implementing `.cpp` file. Forward-declare them near the top (or above their first use) when needed. Avoid large helper blocks at the top of the file; the goal is high-level code first, helpers last for readability.
+- **PIMPL** (`class Foo; class Foo::Impl`): Use when hiding implementation details or when you want to swap implementations (e.g. `Sketch_nodes`, `Sketch_delta`). Keep record types and the public surface in the header; put data members and apply/clone logic in `Impl` inside the `.cpp`.
 - **Templates**: Prefer putting template implementations in `.inl` files included from the header (e.g. `types.inl`, `utl.inl`).
 - **OCCT handles**: Use `opencascade::handle<T>` and project aliases (e.g. `AIS_Shape_ptr`, `Shp_ptr`).
 - **Result/error handling**: See **Fail fast** below. Use `Result<T>` and `Status` from `utl.h`, `CHK_RET(...)` for early return on failure.
@@ -80,7 +81,7 @@ User-facing Markdown (now in `docs/`: `usage.md`, `usage-*.md`, `scripting.md`, 
 - Too much DRY can increase coupling by forcing unrelated code through one shared abstraction.
 - Prefer readability over clever reuse when repetition is small and explicit code is clearer.
 - **When duplication is acceptable**: a few lines repeated across nearby UI or glue code can beat a shared helper if call sites are likely to diverge (different tooltips, widths, or disabled logic) or if extracting would scatter one screen across many symbols. Prefer **locality**: keep a small block self-contained so a reader does not jump to understand one pane.
-- **Rule of thumb**: extract when the behavior is **the same and stable** (or when a bug fix must touch N copies); wait when the pattern is still moving. If you extract, prefer a **narrow file-local helper** next to its users over a generic framework.
+- **Rule of thumb**: extract when the behavior is **the same and stable** (or when a bug fix must touch N copies); wait when the pattern is still moving. If you extract, prefer a **file-local static helper at the bottom of the `.cpp`** (see **Code organization**) over a generic framework.
 - Context matters: stronger DRY is often good in monolith/shared-library code; some duplication can be healthier in fast-changing or separated systems.
 - Balance DRY with KISS, YAGNI, and overall cognitive load.
 

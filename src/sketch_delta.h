@@ -51,28 +51,20 @@ public:
   };
 
   Sketch_delta(Sketch& sketch, std::string sketch_name);
+  ~Sketch_delta() override;
+
+  Sketch_delta(const Sketch_delta&)            = delete;
+  Sketch_delta& operator=(const Sketch_delta&) = delete;
 
   void                   apply_forward(Occt_view& view) override;
   void                   apply_reverse(Occt_view& view) override;
   std::unique_ptr<Delta> clone() const override;
 
-  std::vector<Prev_edge_rec>             prev_linear_edges;
-  std::vector<Curr_linear_edge_record>   curr_linear_edges;
-  std::vector<Arc_edge_record>           prev_arc_edges;
-  std::vector<Arc_edge_record>           curr_arc_edges;
-  std::vector<size_t>                    curr_node_idxs;
-  std::vector<Length_dim_record>         prev_length_dims;
-  std::vector<Length_dim_record>         curr_length_dims;
-  std::optional<Prev_edge_rec>           prev_operation_axis;
-  std::optional<Curr_linear_edge_record> curr_operation_axis;
-
 private:
-  Sketch* resolve_sketch_(Occt_view& view) const;
-  void    apply_forward_(Sketch& sketch) const;
-  void    apply_reverse_(Sketch& sketch) const;
+  friend class Sketch_op_recorder;
 
-  Sketch*     m_sketch{nullptr};
-  std::string m_sketch_name;
+  class Impl;
+  std::unique_ptr<Impl> m_impl;
 };
 
 /// Records `prev`/`curr` lists during one sketch edit; pushes a `Sketch_delta` on commit.
