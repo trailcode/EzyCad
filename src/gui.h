@@ -21,6 +21,7 @@
 #include "log.h"
 #include "modes.h"
 #include "occt_view.h"
+#include "shp_info.h"
 #include "types.h"
 
 class Lua_console;
@@ -251,6 +252,8 @@ private:
   void sketch_list_inspector_(Sketch& sketch, int index);
   void sketch_properties_dialog_();
   void shape_list_();
+  void shape_info_dialog_();
+  void open_shape_info_(const Shp_ptr& shape);
 
   // Mode + Options panel (gui_mode.cpp)
   void options_();
@@ -437,6 +440,9 @@ private:
   bool        m_show_settings_dialog{false};
   bool        m_open_about_popup{false};
   bool        m_about_popup_open{false};
+  bool        m_shape_info_open{false};
+  Shp_ptr     m_shape_info_shp;
+  std::vector<shp_info::Line> m_shape_info_lines;
   std::string m_about_markdown;
   uint32_t    m_about_splash_gl{0};
   glm::ivec2  m_about_splash_size{512, 512};

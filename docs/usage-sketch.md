@@ -941,7 +941,7 @@ Import a reference image (PNG, JPEG, or BMP) behind a sketch for tracing or alig
 | **Import image...** | Load PNG/JPEG/BMP into the current sketch |
 | **Remove underlay** | Clear the image from the sketch |
 | **White paper -> transparent** | Treat bright pixels as clear (typical for scanned line drawings; turn off for photos) |
-| **Tint visible lines** / **Line color** | Recolor non-transparent pixels after the white key (default yellow works on dark backgrounds) |
+| **Tint visible lines** / **Line color** | Recolor non-transparent pixels after the white key (default **amber/gold** for contrast on dark backgrounds) |
 | **Opacity** | Overall underlay transparency (**0**–**1**) |
 
 **Calibrate from sketch edges** (sketch must be **current** in the Sketch List):

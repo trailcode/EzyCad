@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Shape List
+
+- **Shape info...** on the right-click menu for a shape name or **M** button. Opens a dialog with OCCT topology and property details: root type (Solid, Shell, Face, etc.), validity, sub-shape counts, bounding box, volume, center of mass, surface area, and length where applicable. Includes document fields (name, material, display mode, visibility) and a **Refresh** button. Documented in the user guide under [Shape info](docs/usage.md#shape-info).
+
 ### Sketch underlay
 
 - When an image underlay has shear from edge calibration ("Set X from edge..." or "Set Y from edge..."), the **Transform** section in Sketch properties now provides a full 6-DOF editor: Base X/Y (bitmap 0,0 origin) + direct Ux/Uy and Vx/Vy vector components. Derived U/V lengths and the angle between them are displayed live. Edits apply immediately with undo support.
