@@ -686,7 +686,7 @@ The operation axis tool allows you to define a reference *line* (a direction and
 Once the axis exists, the Options panel (under the **Sketch operation** heading) displays these controls (matching the UI):
 
 - **Mirror** button — Mirrors the currently selected sketch edges across the axis.
-- **Revolve** button (with adjacent numeric input, default **360.00**) — Revolves the selected edges or faces around the axis by the given angle (in degrees). 360° produces a full solid of revolution.
+- **Revolve** button (with adjacent numeric input, default **360.00**, and **?** help) — Revolves the selected edges or faces around the axis by the given angle (in degrees). 360° on a closed profile produces a full solid of revolution.
 - **Clear axis** button — Removes the current operation axis (required before you can define a new one).
 
 **How to Mirror:**
@@ -699,7 +699,7 @@ Once the axis exists, the Options panel (under the **Sketch operation** heading)
 1. With the Operation Axis tool active and an axis defined, select the edges or closed faces you want to revolve.
 2. (Optional) Adjust the angle in the input field next to the Revolve button (default 360.00 for a full closed revolution).
 3. Click the **Revolve** button.
-4. EzyCad creates a 3D solid by revolving the selected sketch geometry around the axis. The new 3D shape is added to the document and you are switched out of sketch mode into Normal (inspection) mode.
+4. EzyCad creates a 3D body by revolving the selected sketch geometry around the axis. When you select **edges** rather than a **face**, it does its best to convert the result into a **solid** (see [Revolve solid conversion](#revolve-solid-conversion)). The new shape is added to the document and you are switched out of sketch mode into Normal (inspection) mode.
 5. If the operation fails you will see a message such as "Revolve failed, ensure edges or faces on one side of operation axis."
 
 **Redefining the Axis:**
@@ -712,10 +712,27 @@ The controls that appear in the Options panel once an axis is defined are:
 | Control | Purpose |
 | --- | --- |
 | **Mirror** button | Mirrors selected edges across the operation axis (stays in 2D sketch). |
-| **Revolve** button + numeric field (e.g. 360.00) | Revolves selected edges or faces around the axis by the entered angle to produce a 3D solid. |
+| **Revolve** button + numeric field (e.g. 360.00) + **?** | Revolves selected edges or faces around the axis by the entered angle. Use **?** next to the angle field for solid-conversion notes. |
 | **Clear axis** button | Manually removes the current operation axis reference. |
 
 The Revolve numeric field accepts any float angle (in degrees); 360 is the most common for closed solids.
+
+### Revolve solid conversion
+
+Open CASCADE often returns a **shell** or separate **faces** when you revolve a **closed loop of edges** rather than selecting a **face**. EzyCad then does its best to convert that result into a **solid** (sewing faces when needed, then wrapping a closed shell with `MakeSolid`) so downstream tools such as **chamfer**, **fillet**, and **booleans** can work.
+
+| Selection | Typical OCCT output | After conversion |
+| --- | --- | --- |
+| Closed **face** | Solid | Unchanged (already a solid) |
+| Closed **edges** (360°) | Shell or compound of faces | Converted to solid when possible |
+| Open edge or partial angle | Surface / open shape | Left as-is (cannot close into a solid) |
+
+Use **View → Shape List → Shape info...** on the new body to confirm the root type is **Solid**. If conversion fails, try selecting the enclosed **face** instead of individual edges, or check that the profile is closed, does not cross the axis, and uses a **360°** angle.
+
+**Tips:**
+- Prefer selecting a **face** when one is available; that path usually produces a solid directly.
+- When using **edges**, select the full closed boundary of the profile.
+- Partial revolutions (angle &lt; 360°) intentionally remain open surfaces.
 
 **Important note on axis length:**
 The two points you pick define a *direction* and a point the axis passes through. The length of the drawn segment between those points is purely visual (it determines how long the reference line appears in the sketch for your convenience). It has **no effect** on the results of Mirror or Revolve. The operations always treat the axis as an infinite line in the computed direction.

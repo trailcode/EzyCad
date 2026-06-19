@@ -107,6 +107,8 @@ inline constexpr const char* k_sketch_snapping           = "https://ezycad.readt
 inline constexpr const char* k_line_edge_midpoint_nodes  = "https://ezycad.readthedocs.io/en/latest/usage-sketch.html#line-edge-option-add-midpoint-nodes";
 inline constexpr const char* k_line_edge_place_from_center =
     "https://ezycad.readthedocs.io/en/latest/usage-sketch.html#line-edge-option-place-from-center";
+inline constexpr const char* k_revolve_solid_conversion =
+    "https://ezycad.readthedocs.io/en/latest/usage-sketch.html#revolve-solid-conversion";
 inline constexpr const char* k_shape_selection_filter    = "https://ezycad.readthedocs.io/en/latest/usage.html#shape-selection-filter-normal-mode-only";
 inline constexpr const char* k_add_node_tool             = "https://ezycad.readthedocs.io/en/latest/usage-sketch.html#add-node-tool";
 inline constexpr const char* k_image_underlay            = "https://ezycad.readthedocs.io/en/latest/usage-sketch.html#image-underlay";

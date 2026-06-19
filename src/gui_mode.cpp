@@ -799,6 +799,11 @@ void GUI::options_sketch_operation_axis_mode_()
     ImGui::SetNextItemWidth(80.0f);
     ImGui::SameLine();
     ImGui::InputFloat("##float_value", &revolve_angle, 0.0f, 0.0f, "%.2f");
+    ImGui::SameLine(0.0f, ImGui::GetStyle().ItemInnerSpacing.x);
+    GUI_DOC_HELP_("Revolve angle in degrees (360 for a full revolution). When edges are selected instead of a face, "
+                     "EzyCad does its best to convert the result from a shell or faces into a solid. Open profiles or "
+                     "partial angles may remain surfaces. Click ? to open the user guide.",
+                     doc_urls::k_revolve_solid_conversion);
 
     if (ImGui::Button("Clear axis"))
       m_view->curr_sketch().clear_operation_axis();
