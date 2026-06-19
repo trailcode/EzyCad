@@ -15,6 +15,7 @@
 #include "occt_view.h"
 #include "sketch.h"
 #include "sketch_json.h"
+#include "utl_occt.h"
 
 using namespace glm;
 
@@ -2342,7 +2343,7 @@ TEST_F(Sketch_test, RevolveSelected_SimpleEdgeProfile)
   gp_Ax1 revolAxis(axA, dir);
 
   BRepPrimAPI_MakeRevol expectedMaker(profile, revolAxis, 2 * std::numbers::pi);
-  TopoDS_Shape expected = expectedMaker.Shape();
+  TopoDS_Shape expected = try_make_solid(expectedMaker.Shape());
 
   EXPECT_FALSE(expected.IsNull());
 
@@ -2454,7 +2455,7 @@ TEST_F(Sketch_test, RevolveSelected_ClosedEdgeProfile)
   gp_Ax1 revolAxis(axA, dir);
 
   BRepPrimAPI_MakeRevol expectedMaker(profile, revolAxis, 2 * std::numbers::pi);
-  TopoDS_Shape expected = expectedMaker.Shape();
+  TopoDS_Shape expected = try_make_solid(expectedMaker.Shape());
 
   EXPECT_FALSE(expected.IsNull());
 
@@ -2481,12 +2482,8 @@ TEST_F(Sketch_test, RevolveSelected_ClosedEdgeProfile)
   EXPECT_NEAR(aymax, eymax, 1e-8);
   EXPECT_NEAR(azmax, ezmax, 1e-8);
 
-  // For a closed profile revolved 360°, we expect a meaningful 3D result.
-  EXPECT_TRUE(actual.ShapeType() == TopAbs_SOLID ||
-              actual.ShapeType() == TopAbs_COMPOUND ||
-              actual.ShapeType() == TopAbs_SHELL ||
-              actual.ShapeType() == TopAbs_FACE)
-      << "Revolved closed profile should produce a non-degenerate 3D shape";
+  // For a closed profile revolved 360°, we expect a solid of revolution.
+  EXPECT_EQ(actual.ShapeType(), TopAbs_SOLID) << "Closed edge profile revolved 360 deg should be a solid";
 }
 
 // Test that split edges have midpoints for snapping

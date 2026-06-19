@@ -1,4 +1,5 @@
 #include "sketch.h"
+#include "utl_occt.h"
 
 #include <BRepBuilderAPI_MakeEdge.hxx>
 #include <BRepBuilderAPI_MakeFace.hxx>
@@ -1329,7 +1330,7 @@ Shp_rslt Sketch::revolve_selected(const double angle)
     const gp_Ax1 axis(pt_a, direction);
 
     BRepPrimAPI_MakeRevol revolMaker(compound, axis, angle);
-    return Shp_rslt(new Shp(m_ctx, revolMaker.Shape()));
+    return Shp_rslt(new Shp(m_ctx, try_make_solid(revolMaker.Shape())));
   }
   catch (const Standard_Failure& e)
   {
