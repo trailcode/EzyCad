@@ -64,6 +64,10 @@ public:
   void        finalize();
   void        cancel();
 
+  /// Restores node slot `idx` for undo/redo (appends tombstone slots as needed).
+  void restore_node_at(size_t idx, const gp_Pnt2d& pt, bool deleted, bool midpoint, bool permanent,
+                       const std::string& name = {});
+
   void clear_outside_snap_pnts();
   void add_outside_snap_pnt(const gp_Pnt& pt3d);
 
@@ -95,9 +99,9 @@ private:
   friend class Sketch_json;
 
   /// Resize storage so indices `0..count-1` exist (JSON load).
-  void json_resize(size_t count);
-  /// Assign slot `idx` (used after `json_resize`).
-  void json_set_node(size_t idx, const gp_Pnt2d& pt, bool deleted, bool midpoint, bool permanent, const std::string& name = {});
+  void resize(size_t count);
+  /// Assign slot `idx` (used after `resize`).
+  void set_node(size_t idx, const gp_Pnt2d& pt, bool deleted, bool midpoint, bool permanent, const std::string& name = {});
 
   class Impl;
   std::unique_ptr<Impl> m_impl;

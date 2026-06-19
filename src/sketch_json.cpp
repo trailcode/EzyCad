@@ -54,21 +54,21 @@ json node_to_json_(const Sketch_nodes::Node& nd)
 void Sketch_json::load_nodes_(Sketch& sketch, const json& nodes_json)
 {
   EZY_ASSERT(nodes_json.is_array());
-  sketch.get_nodes().json_resize(nodes_json.size());
+  sketch.get_nodes().resize(nodes_json.size());
   for (size_t i = 0; i < nodes_json.size(); ++i)
   {
     const json& el = nodes_json[i];
     if (el.is_null())
     {
-      sketch.get_nodes().json_set_node(i, gp_Pnt2d(0., 0.), true, false, false, "");
+      sketch.get_nodes().set_node(i, gp_Pnt2d(0., 0.), true, false, false, "");
       continue;
     }
     EZY_ASSERT(el.is_object());
     const gp_Pnt2d pt        = ::from_json_pnt2d(el);
     const bool     midpoint  = el.contains("midpoint") && el["midpoint"].is_boolean() && el["midpoint"].get<bool>();
     const bool     permanent = el.contains("permanent") && el["permanent"].is_boolean() && el["permanent"].get<bool>();
-    sketch.get_nodes().json_set_node(i, pt, false, midpoint, permanent,
-                                     el.contains("name") && el["name"].is_string() ? el["name"].get<std::string>() : "");
+    sketch.get_nodes().set_node(i, pt, false, midpoint, permanent,
+                                el.contains("name") && el["name"].is_string() ? el["name"].get<std::string>() : "");
   }
 }
 

@@ -14,6 +14,7 @@
 #include "gui.h"
 #include "occt_view.h"
 #include "sketch.h"
+#include "sketch_delta.h"
 #include "sketch_json.h"
 #include "utl_occt.h"
 
@@ -94,6 +95,7 @@ class Sketch_access
 
   static const std::vector<Sketch_face_shp_ptr>& get_faces(const Sketch& sketch);
   static size_t                                 get_linear_edge_count(const Sketch& sketch);
+  static size_t                                 get_arc_internal_edge_count(const Sketch& sketch);
 
   /// Exact replay of a saved linear edge (with its pre-existing midpoint node index).
   /// Used for regression tests of specific .ezy cases (e.g. bridge + hole topologies).
@@ -116,6 +118,17 @@ size_t Sketch_access::get_linear_edge_count(const Sketch& sketch)
   for (const auto& edge : sketch.m_edges)
   {
     if (edge.node_idx_b.has_value() && !edge.circle_arc)
+      ++count;
+  }
+  return count;
+}
+
+size_t Sketch_access::get_arc_internal_edge_count(const Sketch& sketch)
+{
+  size_t count = 0;
+  for (const auto& edge : sketch.m_edges)
+  {
+    if (edge.circle_arc)
       ++count;
   }
   return count;
@@ -469,6 +482,87 @@ TEST_F(Sketch_test, AddTwoCrossingEdges_ThroughMidpoint_ProducesFourEdges)
 
   EXPECT_EQ(Sketch_access::get_linear_edge_count(sketch), 4)
       << "Vertical through existing horizontal's midpoint (GUI finalize path) must still cause splits on both, yielding four edges";
+}
+
+TEST_F(Sketch_test, Undo_single_arc_via_recorder)
+{
+  gp_Pln default_plane(gp::Origin(), gp::DZ());
+  Sketch sketch("TestSketch", view(), default_plane);
+
+  const gp_Pnt2d start(0.0, 0.0);
+  const gp_Pnt2d end(10.0, 0.0);
+  const gp_Pnt2d arc_mid(5.0, 5.0);
+
+  {
+    Sketch_op_recorder rec(view(), sketch);
+    Sketch_access::add_arc_circle_(sketch, start, arc_mid, end);
+    rec.commit();
+  }
+
+  EXPECT_EQ(Sketch_access::get_arc_internal_edge_count(sketch), 2);
+
+  EXPECT_TRUE(view().undo());
+  EXPECT_EQ(Sketch_access::get_arc_internal_edge_count(sketch), 0)
+      << "Undo should remove both internal arc edges";
+
+  EXPECT_TRUE(view().redo());
+  EXPECT_EQ(Sketch_access::get_arc_internal_edge_count(sketch), 2)
+      << "Redo should restore the arc";
+}
+
+TEST_F(Sketch_test, Undo_circle_via_recorder)
+{
+  gp_Pln default_plane(gp::Origin(), gp::DZ());
+  Sketch sketch("TestSketch", view(), default_plane);
+
+  const gp_Pnt2d center(0.0, 0.0);
+  const gp_Pnt2d edge_pt(5.0, 0.0);
+  const std::array<gp_Pnt2d, 4> points = xy_stencil_pnts(center, edge_pt);
+
+  {
+    Sketch_op_recorder rec(view(), sketch);
+    Sketch_access::add_arc_circle_(sketch, points[0], points[2], points[1]);
+    Sketch_access::add_arc_circle_(sketch, points[0], points[3], points[1]);
+    rec.commit();
+  }
+
+  EXPECT_EQ(Sketch_access::get_arc_internal_edge_count(sketch), 4);
+
+  EXPECT_TRUE(view().undo());
+  EXPECT_EQ(Sketch_access::get_arc_internal_edge_count(sketch), 0)
+      << "Undo should remove both semicircles (four internal edges)";
+
+  EXPECT_TRUE(view().redo());
+  EXPECT_EQ(Sketch_access::get_arc_internal_edge_count(sketch), 4)
+      << "Redo should restore the circle";
+}
+
+TEST_F(Sketch_test, Undo_two_crossing_edges_via_finalize)
+{
+  gp_Pln default_plane(gp::Origin(), gp::DZ());
+  Sketch sketch("TestSketch", view(), default_plane);
+
+  {
+    Sketch_op_recorder rec(view(), sketch);
+    Sketch_access::add_edge_(sketch, gp_Pnt2d(0.0, 0.0), gp_Pnt2d(10.0, 0.0));
+    rec.commit();
+  }
+
+  {
+    Sketch_op_recorder rec(view(), sketch);
+    Sketch_access::add_edge_(sketch, gp_Pnt2d(3.0, -2.0), gp_Pnt2d(3.0, 4.0));
+    rec.commit();
+  }
+
+  EXPECT_EQ(Sketch_access::get_linear_edge_count(sketch), 4);
+
+  EXPECT_TRUE(view().undo());
+  EXPECT_EQ(Sketch_access::get_linear_edge_count(sketch), 1)
+      << "Undo of the second edge should remove it and restore the unsplit first edge";
+
+  EXPECT_TRUE(view().undo());
+  EXPECT_EQ(Sketch_access::get_linear_edge_count(sketch), 0)
+      << "Undo of the first edge should remove it";
 }
 
 // Test T-junction case (one edge's endpoint touches the interior of another).

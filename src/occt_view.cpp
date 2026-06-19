@@ -45,6 +45,7 @@
 #include <gp_Trsf.hxx>
 
 #include "dbg.h"
+#include "delta.h"
 #include "geom.h"
 #include "gui.h"
 #include "ply_io.h"
@@ -1870,9 +1871,7 @@ Shp_extrude&   Occt_view::shp_extrude()   { return m_shp_extrude;    }
 // clang-format on
 
 // ---------------------------------------------------------------------------
-// Undo / redo (full snapshot per step). A future delta-based approach would save
-// memory (one delta per step instead of full document) and CPU (apply/invert
-// deltas instead of to_json/load).
+// Undo / redo: sketch edits use element deltas; other operations use full JSON snapshots.
 void Occt_view::push_undo_snapshot()
 {
   if (m_restoring)
@@ -1882,6 +1881,20 @@ void Occt_view::push_undo_snapshot()
   Undo_entry entry;
   entry.json = to_json();
   entry.mode = m_gui.get_mode();
+  m_undo_stack.push_back(std::move(entry));
+  if (m_undo_stack.size() > k_max_undo)
+    m_undo_stack.erase(m_undo_stack.begin());
+}
+
+void Occt_view::push_undo_delta(std::unique_ptr<Delta> delta)
+{
+  if (m_restoring || !delta)
+    return;
+
+  m_redo_stack.clear();
+  Undo_entry entry;
+  entry.delta = std::move(delta);
+  entry.mode  = m_gui.get_mode();
   m_undo_stack.push_back(std::move(entry));
   if (m_undo_stack.size() > k_max_undo)
     m_undo_stack.erase(m_undo_stack.begin());
@@ -1900,14 +1913,25 @@ bool Occt_view::undo()
   if (!can_undo())
     return false;
 
-  m_restoring            = true;
-  const Undo_entry state = m_undo_stack.back();
+  m_restoring      = true;
+  Undo_entry state = std::move(m_undo_stack.back());
   m_undo_stack.pop_back();
+
   Undo_entry redo_entry;
-  redo_entry.json = to_json();
   redo_entry.mode = m_gui.get_mode();
+
+  if (state.delta)
+  {
+    redo_entry.delta = state.delta->clone();
+    state.delta->apply_reverse(*this);
+  }
+  else
+  {
+    redo_entry.json = to_json();
+    load(state.json, false); // Keep current view so undo/redo keeps a single perspective
+  }
+
   m_redo_stack.push_back(std::move(redo_entry));
-  load(state.json, false); // Keep current view so undo/redo keeps a single perspective
   m_gui.set_mode(state.mode);
   if (state.mode == Mode::Sketch_inspection_mode)
     m_gui.set_show_sketch_list(true);
@@ -1921,14 +1945,25 @@ bool Occt_view::redo()
   if (!can_redo())
     return false;
 
-  m_restoring            = true;
-  const Undo_entry state = m_redo_stack.back();
+  m_restoring      = true;
+  Undo_entry state = std::move(m_redo_stack.back());
   m_redo_stack.pop_back();
+
   Undo_entry undo_entry;
-  undo_entry.json = to_json();
   undo_entry.mode = m_gui.get_mode();
+
+  if (state.delta)
+  {
+    undo_entry.delta = state.delta->clone();
+    state.delta->apply_forward(*this);
+  }
+  else
+  {
+    undo_entry.json = to_json();
+    load(state.json, false); // Keep current view so undo/redo keeps a single perspective
+  }
+
   m_undo_stack.push_back(std::move(undo_entry));
-  load(state.json, false); // Keep current view so undo/redo keeps a single perspective
   m_gui.set_mode(state.mode);
   if (state.mode == Mode::Sketch_inspection_mode)
     m_gui.set_show_sketch_list(true);
