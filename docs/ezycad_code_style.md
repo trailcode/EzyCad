@@ -71,7 +71,7 @@ User-facing Markdown (now in `docs/`: `usage.md`, `usage-*.md`, `scripting.md`, 
 - **Templates**: Prefer putting template implementations in `.inl` files included from the header (e.g. `types.inl`, `utl.inl`).
 - **OCCT handles**: Use `opencascade::handle<T>` and project aliases (e.g. `AIS_Shape_ptr`, `Shp_ptr`).
 - **Result/error handling**: See **Fail fast** below. Use `Result<T>` and `Status` from `utl.h`, `CHK_RET(...)` for early return on failure.
-- **Assertions**: See **Fail fast** below. Use `EZY_ASSERT` and `EZY_ASSERT_MSG` from `dbg.h`; use `DBG_MSG` for debug logging.
+- **Assertions**: See **Fail fast** below. Use `EZY_ASSERT` and `EZY_ASSERT_MSG` from `utl_dbg.h`; use `DBG_MSG` for debug logging.
 
 ## Don't Repeat Yourself (DRY)
 
@@ -93,7 +93,7 @@ Separate **who is responsible** for the fault:
 
 ### Programmer errors (use asserts)
 
-Use **`EZY_ASSERT`** / **`EZY_ASSERT_MSG`** (`dbg.h`) for conditions that must hold if the code and call patterns are correct:
+Use **`EZY_ASSERT`** / **`EZY_ASSERT_MSG`** (`utl_dbg.h`) for conditions that must hold if the code and call patterns are correct:
 
 - Preconditions that callers are required to satisfy (e.g. an object that is always constructed before use in normal app flow).
 - Internal invariants, impossible `else` branches after exhaustive handling, index bounds that prove from prior logic.

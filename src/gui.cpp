@@ -22,9 +22,9 @@
 #include "third_party/tinyfiledialogs/tinyfiledialogs.h"
 #endif
 
-#include "geom.h"
+#include "utl_geom.h"
 #include "imgui.h"
-#include "log.h"
+#include "utl_log.h"
 #include "lua_console.h"
 #include "occt_view.h"
 #include "python_console.h"

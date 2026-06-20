@@ -1,8 +1,8 @@
 #include "shp_scale.h"
 
-#include "geom.h"
+#include "utl_geom.h"
 #include "gui.h"
-#include "modes.h"
+#include "gui_modes.h"
 #include "occt_view.h"
 #include "utl.h"
 

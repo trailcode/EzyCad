@@ -44,11 +44,11 @@
 #include <gp_Ax1.hxx>
 #include <gp_Trsf.hxx>
 
-#include "dbg.h"
+#include "utl_dbg.h"
 #include "delta.h"
-#include "geom.h"
+#include "utl_geom.h"
 #include "gui.h"
-#include "ply_io.h"
+#include "utl_ply_io.h"
 #include "shp.h"
 #include "shp_create.h"
 #include "sketch.h"

@@ -6,8 +6,8 @@
 #include <TopoDS.hxx>
 #include <V3d_View.hxx>
 
-#include "dbg.h"
-#include "geom.h"
+#include "utl_dbg.h"
+#include "utl_geom.h"
 #include "gui.h"
 #include "occt_view.h"
 #include "sketch.h"

@@ -10,8 +10,8 @@
 #include <limits>
 #include <set>
 
-#include "dbg.h"
-#include "geom.h"
+#include "utl_dbg.h"
+#include "utl_geom.h"
 #include "imgui.h"
 #include "occt_view.h"
 

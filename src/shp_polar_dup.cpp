@@ -7,9 +7,9 @@
 #include <TopoDS_Edge.hxx>
 #include <numbers>
 
-#include "geom.h"
+#include "utl_geom.h"
 #include "gui.h"
-#include "modes.h"
+#include "gui_modes.h"
 #include "occt_view.h"
 #include "sketch.h"
 #include "sketch_nodes.h"

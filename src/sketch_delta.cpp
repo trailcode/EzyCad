@@ -5,8 +5,8 @@
 #include <set>
 #include <utility>
 
-#include "dbg.h"
-#include "geom.h"
+#include "utl_dbg.h"
+#include "utl_geom.h"
 #include "occt_view.h"
 #include "sketch.h"
 #include "sketch_nodes.h"
@@ -222,14 +222,12 @@ Sketch_op_recorder::Impl::Impl(Occt_view& view, Sketch& sketch)
 
 void Sketch_op_recorder::Impl::register_owner_(Sketch_op_recorder& owner)
 {
-  m_owner                  = &owner;
-  m_sketch.m_undo_recorder = &owner;
+  m_owner = &owner;
 }
 
 void Sketch_op_recorder::Impl::unregister_owner_()
 {
-  if (m_sketch.m_undo_recorder == m_owner)
-    m_sketch.m_undo_recorder = nullptr;
+  m_owner = nullptr;
 }
 
 void Sketch_op_recorder::Impl::on_destroy_()

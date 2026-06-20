@@ -10,7 +10,7 @@
 #include <iostream>
 #include <numbers>
 
-#include "geom.h"
+#include "utl_geom.h"
 #include "gui.h"
 #include "occt_view.h"
 #include "sketch.h"
@@ -90,9 +90,12 @@ class Sketch_access
 {
  public:
   static void add_edge_(Sketch& sketch, const gp_Pnt2d& pt_a, const gp_Pnt2d& pt_b);
+  static void add_edge_(Sketch& sketch, const gp_Pnt2d& pt_a, const gp_Pnt2d& pt_b, Sketch_op_recorder& rec);
   static void add_edge_raw_(Sketch& sketch, const gp_Pnt2d& pt_a, const gp_Pnt2d& pt_b);
   static void update_faces_(Sketch& sketch);
   static void add_arc_circle_(Sketch& sketch, const gp_Pnt2d& pt_a, const gp_Pnt2d& pt_b, const gp_Pnt2d& pt_c);
+  static void add_arc_circle_(Sketch& sketch, const gp_Pnt2d& pt_a, const gp_Pnt2d& pt_b, const gp_Pnt2d& pt_c,
+                              Sketch_op_recorder& rec);
   static void get_originating_face_snp_pts_3d_(Sketch& sketch, std::vector<gp_Pnt>& out);
 
   static const std::vector<Sketch_face_shp_ptr>& get_faces(const Sketch& sketch);
@@ -107,6 +110,11 @@ class Sketch_access
 void Sketch_access::add_edge_(Sketch& sketch, const gp_Pnt2d& pt_a, const gp_Pnt2d& pt_b)
 {
   sketch.add_edge_(pt_a, pt_b);
+}
+
+void Sketch_access::add_edge_(Sketch& sketch, const gp_Pnt2d& pt_a, const gp_Pnt2d& pt_b, Sketch_op_recorder& rec)
+{
+  sketch.add_edge_(pt_a, pt_b, rec);
 }
 
 void Sketch_access::add_edge_raw_(Sketch& sketch, const gp_Pnt2d& pt_a, const gp_Pnt2d& pt_b)
@@ -149,6 +157,12 @@ void Sketch_access::update_faces_(Sketch& sketch)
 void Sketch_access::add_arc_circle_(Sketch& sketch, const gp_Pnt2d& pt_a, const gp_Pnt2d& pt_b, const gp_Pnt2d& pt_c)
 {
   sketch.add_arc_circle_(pt_a, pt_b, pt_c);
+}
+
+void Sketch_access::add_arc_circle_(Sketch& sketch, const gp_Pnt2d& pt_a, const gp_Pnt2d& pt_b, const gp_Pnt2d& pt_c,
+                                    Sketch_op_recorder& rec)
+{
+  sketch.add_arc_circle_(pt_a, pt_b, pt_c, rec);
 }
 
 void GUI_access::set_view(GUI& gui, std::unique_ptr<Occt_view>& view)
@@ -507,7 +521,7 @@ TEST_F(Sketch_test, Undo_single_arc_via_recorder)
 
   {
     Sketch_op_recorder rec(view(), sketch);
-    Sketch_access::add_arc_circle_(sketch, start, arc_mid, end);
+    Sketch_access::add_arc_circle_(sketch, start, arc_mid, end, rec);
     rec.commit();
   }
 
@@ -533,8 +547,8 @@ TEST_F(Sketch_test, Undo_circle_via_recorder)
 
   {
     Sketch_op_recorder rec(view(), sketch);
-    Sketch_access::add_arc_circle_(sketch, points[0], points[2], points[1]);
-    Sketch_access::add_arc_circle_(sketch, points[0], points[3], points[1]);
+    Sketch_access::add_arc_circle_(sketch, points[0], points[2], points[1], rec);
+    Sketch_access::add_arc_circle_(sketch, points[0], points[3], points[1], rec);
     rec.commit();
   }
 
@@ -556,13 +570,13 @@ TEST_F(Sketch_test, Undo_two_crossing_edges_via_finalize)
 
   {
     Sketch_op_recorder rec(view(), sketch);
-    Sketch_access::add_edge_(sketch, gp_Pnt2d(0.0, 0.0), gp_Pnt2d(10.0, 0.0));
+    Sketch_access::add_edge_(sketch, gp_Pnt2d(0.0, 0.0), gp_Pnt2d(10.0, 0.0), rec);
     rec.commit();
   }
 
   {
     Sketch_op_recorder rec(view(), sketch);
-    Sketch_access::add_edge_(sketch, gp_Pnt2d(3.0, -2.0), gp_Pnt2d(3.0, 4.0));
+    Sketch_access::add_edge_(sketch, gp_Pnt2d(3.0, -2.0), gp_Pnt2d(3.0, 4.0), rec);
     rec.commit();
   }
 
