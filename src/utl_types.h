@@ -18,6 +18,9 @@ class Geom_Surface;
 class PrsDim_LengthDimension;
 class Graphic3d_Camera;
 class StdSelect_BRepOwner;
+struct Sketch_AIS_edge;
+struct Sketch_AIS_node_mark;
+struct Sketch_face_shp;
 
 using AIS_InteractiveObject_ptr  = opencascade::handle<AIS_InteractiveObject>;
 using AIS_InteractiveContext_ptr = opencascade::handle<AIS_InteractiveContext>;
@@ -33,6 +36,9 @@ using Geom_Surface_ptr           = opencascade::handle<Geom_Surface>;
 using PrsDim_LengthDimension_ptr = opencascade::handle<PrsDim_LengthDimension>;
 using Graphic3d_Camera_ptr       = opencascade::handle<Graphic3d_Camera>;
 using StdSelect_BRepOwner_ptr    = opencascade::handle<StdSelect_BRepOwner>;
+using Sketch_AIS_edge_ptr        = opencascade::handle<Sketch_AIS_edge>;
+using Sketch_AIS_node_mark_ptr   = opencascade::handle<Sketch_AIS_node_mark>;
+using Sketch_face_shp_ptr        = opencascade::handle<Sketch_face_shp>;
 
 #define DECL_PTR(TypeName)                                                                                                     \
   using uptr = std::unique_ptr<TypeName>;                                                                                      \
@@ -64,4 +70,4 @@ enum class Export_format
   Ply
 };
 
-#include "types.inl"
+#include "utl_types.inl"

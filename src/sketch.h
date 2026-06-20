@@ -8,17 +8,15 @@
 #include <list>
 #include <memory>
 #include <optional>
-#include <set>
 #include <string>
 #include <vector>
 
 #include "shp.h"
 #include "sketch_nodes.h"
-#include "types.h"
-#include "utl.h"
+#include "utl_types.h"
 
-class Occt_view;
 struct Length_dimension_style;
+class Occt_view;
 class gp_Pln;
 class Sketch_op_recorder;
 class TopoDS_Wire;
@@ -49,10 +47,6 @@ struct Sketch_face_shp : public AIS_Shape
   std::vector<size_t> vert_idxs;
   std::string         name;
 };
-
-using Sketch_AIS_edge_ptr      = opencascade::handle<Sketch_AIS_edge>;
-using Sketch_AIS_node_mark_ptr = opencascade::handle<Sketch_AIS_node_mark>;
-using Sketch_face_shp_ptr      = opencascade::handle<Sketch_face_shp>;
 
 // The Sketch class provides a comprehensive set of methods for creating and manipulating 2D sketches in a 3D environment.
 // It supports adding and moving points, creating line segments, arcs, and mirror lines, and updating the sketch's
@@ -265,12 +259,14 @@ public:
   void move_line_string_pt_(const ScreenCoords& screen_coords);
   bool edge_from_center_active_() const;
   bool complete_edge_from_center_(const ScreenCoords& screen_coords);
-  void finalize_edges_();
+  void finalize_edges_(Sketch_op_recorder& rec);
 
   /// Add a single node (no new edge); splits any linear edge the node lies on in its interior.
   void add_node_pt_(const ScreenCoords& screen_coords);
   void move_add_node_pt_(const ScreenCoords& screen_coords);
   void split_linear_edges_at_node_if_interior_(size_t node_idx);
+  void split_linear_edges_at_node_if_interior_(size_t node_idx, Sketch_op_recorder& rec);
+  void split_linear_edges_at_node_if_interior_(size_t node_idx, Sketch_op_recorder* rec);
 
   /// Move a newly placed node onto the nearest linear edge within pick tolerance so split + `used_nodes` sees it.
   void   snap_placed_node_to_closest_linear_edge_interior_(size_t node_idx);
@@ -281,26 +277,27 @@ public:
   void move_arc_circle_pt_(const ScreenCoords& screen_coords);
   void add_arc_circle_(const std::vector<size_t>& node_idxs);
   void add_arc_circle_(const gp_Pnt2d& pt_a, const gp_Pnt2d& pt_b, const gp_Pnt2d& pt_c);
+  void add_arc_circle_(const gp_Pnt2d& pt_a, const gp_Pnt2d& pt_b, const gp_Pnt2d& pt_c, Sketch_op_recorder& rec);
 
   // Circle related
   void move_circle_pt_(const ScreenCoords& screen_coords);
-  void finalize_circle_();
+  void finalize_circle_(Sketch_op_recorder& rec);
 
   // Square related
   void move_square_pt_(const ScreenCoords& screen_coords);
-  void finalize_square_();
+  void finalize_square_(Sketch_op_recorder& rec);
 
   // Rectangle related
   void move_rectangle_pt_(const ScreenCoords& screen_coords);
-  void finalize_rectangle_();
+  void finalize_rectangle_(Sketch_op_recorder& rec);
 
   // Slot related
   void move_slot_pt_(const ScreenCoords& screen_coords);
-  void finalize_slot_();
+  void finalize_slot_(Sketch_op_recorder& rec);
 
   // Operation axis related
   void add_operation_axis_pt_(const ScreenCoords& screen_coords);
-  void finalize_operation_axis_();
+  void finalize_operation_axis_(Sketch_op_recorder& rec);
 
   // General sketch point related
   template <typename Callback>
@@ -315,6 +312,8 @@ public:
   /// Right-click / finalize: drop incomplete add-node preview (same idea as incomplete line).
   void finalize_add_node_elm_cleanup_();
   void add_edge_(const gp_Pnt2d& pt_a, const gp_Pnt2d& pt_b);
+  void add_edge_(const gp_Pnt2d& pt_a, const gp_Pnt2d& pt_b, Sketch_op_recorder& rec);
+  void add_edge_impl_(const gp_Pnt2d& pt_a, const gp_Pnt2d& pt_b, Sketch_op_recorder* rec);
   void add_edge_raw_(const gp_Pnt2d& pt_a, const gp_Pnt2d& pt_b);
   /// Helper used when walking edges for splitting / intersection logic.
   static bool is_linear_edge_(const Edge& e);
@@ -429,5 +428,4 @@ public:
 
   std::unique_ptr<Sketch_underlay> m_underlay;
 
-  Sketch_op_recorder* m_undo_recorder{nullptr};
 };

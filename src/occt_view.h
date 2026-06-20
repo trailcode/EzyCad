@@ -24,7 +24,7 @@
 #include "shp_polar_dup.h"
 #include "shp_rotate.h"
 #include "shp_scale.h"
-#include "types.h"
+#include "utl_types.h"
 
 class Delta;
 class GUI;

@@ -1,4 +1,4 @@
-#include "modes.h"
+#include "gui_modes.h"
 
 Mode mode_from_string(std::string_view name)
 {

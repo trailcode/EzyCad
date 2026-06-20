@@ -44,16 +44,16 @@
 #include <gp_Ax1.hxx>
 #include <gp_Trsf.hxx>
 
-#include "dbg.h"
+#include "utl_dbg.h"
 #include "delta.h"
-#include "geom.h"
+#include "utl_geom.h"
 #include "gui.h"
-#include "ply_io.h"
+#include "utl_ply_io.h"
 #include "shp.h"
 #include "shp_create.h"
 #include "sketch.h"
 #include "sketch_json.h"
-#include "types.h"
+#include "utl_types.h"
 #include "utl.h"
 #include "utl_json.h"
 #include "utl_occt.h"

@@ -1,8 +1,8 @@
-#include "lua_console.h"
+#include "scr_lua_console.h"
 
 #include "gui.h"
 #include "imgui.h"
-#include "modes.h"
+#include "gui_modes.h"
 #include "occt_view.h"
 #include "shp.h"
 #include "sketch.h"

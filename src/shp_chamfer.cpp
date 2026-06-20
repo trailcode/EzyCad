@@ -7,7 +7,7 @@
 #include <TopoDS_Wire.hxx>
 #include <cmath>
 
-#include "modes.h"
+#include "gui_modes.h"
 #include "occt_view.h"
 
 Shp_chamfer::Shp_chamfer(Occt_view& view)

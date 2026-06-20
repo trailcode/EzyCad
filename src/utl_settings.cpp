@@ -1,4 +1,4 @@
-#include "settings.h"
+#include "utl_settings.h"
 
 #include <cassert>
 #include <cstdlib>
@@ -51,8 +51,9 @@ std::filesystem::path user_settings_json_path()
 #endif
 }
 
-std::string load()
+std::string load_with_defaults()
 {
+  std::string content;
 #ifdef __EMSCRIPTEN__
   void* ptr = (void*)(intptr_t)EM_ASM_INT({
     var s   = localStorage.getItem("ezycad_settings") || "";
@@ -62,11 +63,11 @@ std::string load()
       stringToUTF8(s, buf, len);
     return buf;
   });
-  if (!ptr)
-    return {};
-  std::string result((const char*)ptr);
-  free(ptr);
-  return result;
+  if (ptr)
+  {
+    content = (const char*)ptr;
+    free(ptr);
+  }
 #else
   auto read_file = [](const std::filesystem::path& p) -> std::string
   {
@@ -80,15 +81,20 @@ std::string load()
 
   const std::filesystem::path user_p = user_settings_json_path();
   if (!user_p.empty())
+    content = read_file(user_p);
+  if (content.empty())
   {
-    std::string s = read_file(user_p);
-    if (!s.empty())
-      return s;
+    // Legacy: cwd ezycad_settings.json (same directory as exe when launched that way).
+    content = read_file(std::filesystem::path("ezycad_settings.json"));
   }
-
-  // Legacy: cwd ezycad_settings.json (same directory as exe when launched that way).
-  return read_file(std::filesystem::path("ezycad_settings.json"));
 #endif
+  if (content.empty())
+  {
+    content = load_defaults();
+    if (!content.empty())
+      save(content);
+  }
+  return content;
 }
 
 std::string load_defaults()
@@ -122,18 +128,6 @@ std::string load_defaults()
     s_log_callback("Settings: loaded defaults from res/ezycad_settings.json");
   return result;
 #endif
-}
-
-std::string load_with_defaults()
-{
-  std::string content = load();
-  if (content.empty())
-  {
-    content = load_defaults();
-    if (!content.empty())
-      save(content);
-  }
-  return content;
 }
 
 void save(const std::string& content)

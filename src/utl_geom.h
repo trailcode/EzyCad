@@ -12,8 +12,8 @@
 #include <optional>
 #include <vector>
 
-#include "dbg.h"
-#include "types.h"
+#include "utl_dbg.h"
+#include "utl_types.h"
 
 class gp_Pln;
 class gp_Pnt2d;
@@ -267,4 +267,4 @@ void add_unique_point(std::vector<gp_Pnt2d>& points, const gp_Pnt2d& p);
 std::optional<gp_Pnt2d> snap_foot_to_open_segment_interior_if_close(const gp_Pnt2d& p, const gp_Pnt2d& a, const gp_Pnt2d& b,
                                                                     double max_perp_dist);
 
-#include "geom.inl"
+#include "utl_geom.inl"

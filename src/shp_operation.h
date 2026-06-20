@@ -1,7 +1,7 @@
 #pragma once
 
 #include "shp.h"
-#include "types.h"
+#include "utl_types.h"
 
 class GUI;
 class Occt_view;

@@ -15,14 +15,14 @@
 #include <variant>
 #include <vector>
 
-#include "geom.h"
+#include "utl_geom.h"
 #include "imgui.h"
 #include "imgui_markdown.h"
-#include "log.h"
-#include "modes.h"
+#include "utl_log.h"
+#include "gui_modes.h"
 #include "occt_view.h"
 #include "shp_info.h"
-#include "types.h"
+#include "utl_types.h"
 
 class Lua_console;
 class Python_console;

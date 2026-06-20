@@ -5,7 +5,7 @@
 #include <gp_Pnt.hxx>
 #include <optional>
 
-#include "geom.h"
+#include "utl_geom.h"
 #include "shp_operation.h"
 
 class AIS_Shape;

@@ -7,7 +7,7 @@ Use this style when editing or adding C/C++ code in the EzyCad project (files un
 - Use **`#pragma once`** for include guards (no `#ifndef`/`#define`/`#endif`).
 - **Include order**: Put the **closest / most direct** dependencies first.
   - In a **`.cpp`** file: include **this file's own header first** (e.g. in `sketch_nodes.cpp`, the first line is `#include "sketch_nodes.h"`). Then other project headers it needs, then external/system headers (`<...>`). Use a blank line before the `<...>` block when you have both.
-  - In a **`.h`** file: include the project headers this file directly depends on first (e.g. `sketch_nodes.h` has `#include "types.h"` before `<gp_Pln.hxx>`; `shp_operation.h` has `"shp.h"`, `"types.h"` first). Then external/system headers. So **project (`"..."`) before external (`<...>`)**, with the most relevant project header at the very top when there is one.
+  - In a **`.h`** file: include the project headers this file directly depends on first (e.g. `sketch_nodes.h` has `#include "utl_types.h"` before `<gp_Pln.hxx>`; `shp_operation.h` has `"shp.h"`, `"utl_types.h"` first). Then external/system headers. So **project (`"..."`) before external (`<...>`)**, with the most relevant project header at the very top when there is one.
 - Prefer **forward declarations** for types used only as pointers/references (e.g. `class gp_Pln;`) when it reduces includes.
 
 ## Naming
@@ -68,10 +68,10 @@ User-facing Markdown (now in `docs/`: `usage.md`, `usage-*.md`, `scripting.md`, 
 - **Reader-first order** (`.cpp`): Put **public API and high-level workflow** at the top of the file (constructors, main entry points, orchestration). Put **lower-level details** below so the first screen shows what the module does before how it does it.
 - **Helper functions** (`.cpp`): Prefer **file-local static helpers** in an anonymous namespace at the **bottom** of the implementing `.cpp` file. Forward-declare them near the top (or above their first use) when needed. Avoid large helper blocks at the top of the file; the goal is high-level code first, helpers last for readability.
 - **PIMPL** (`class Foo; class Foo::Impl`): Use when hiding implementation details or when you want to swap implementations (e.g. `Sketch_nodes`, `Sketch_delta`). Keep the public surface in the header; put data members, private record types, and apply/clone logic in `Impl` inside the `.cpp`.
-- **Templates**: Prefer putting template implementations in `.inl` files included from the header (e.g. `types.inl`, `utl.inl`).
+- **Templates**: Prefer putting template implementations in `.inl` files included from the header (e.g. `utl_types.inl`, `utl.inl`).
 - **OCCT handles**: Use `opencascade::handle<T>` and project aliases (e.g. `AIS_Shape_ptr`, `Shp_ptr`).
 - **Result/error handling**: See **Fail fast** below. Use `Result<T>` and `Status` from `utl.h`, `CHK_RET(...)` for early return on failure.
-- **Assertions**: See **Fail fast** below. Use `EZY_ASSERT` and `EZY_ASSERT_MSG` from `dbg.h`; use `DBG_MSG` for debug logging.
+- **Assertions**: See **Fail fast** below. Use `EZY_ASSERT` and `EZY_ASSERT_MSG` from `utl_dbg.h`; use `DBG_MSG` for debug logging.
 
 ## Don't Repeat Yourself (DRY)
 
@@ -93,7 +93,7 @@ Separate **who is responsible** for the fault:
 
 ### Programmer errors (use asserts)
 
-Use **`EZY_ASSERT`** / **`EZY_ASSERT_MSG`** (`dbg.h`) for conditions that must hold if the code and call patterns are correct:
+Use **`EZY_ASSERT`** / **`EZY_ASSERT_MSG`** (`utl_dbg.h`) for conditions that must hold if the code and call patterns are correct:
 
 - Preconditions that callers are required to satisfy (e.g. an object that is always constructed before use in normal app flow).
 - Internal invariants, impossible `else` branches after exhaustive handling, index bounds that prove from prior logic.

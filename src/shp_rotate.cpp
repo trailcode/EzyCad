@@ -5,7 +5,7 @@
 #include <TopoDS_Edge.hxx>
 #include <TopoDS_Vertex.hxx>
 
-#include "geom.h"
+#include "utl_geom.h"
 #include "gui.h"
 #include "occt_view.h"
 #include "utl.h"

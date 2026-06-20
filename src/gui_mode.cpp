@@ -11,11 +11,11 @@
 #include <unordered_map>
 #include <vector>
 
-#include "geom.h"
+#include "utl_geom.h"
 #include "gui.h"
 #include "imgui.h"
 #include "imgui_internal.h"
-#include "modes.h"
+#include "gui_modes.h"
 #include "occt_view.h"
 #include "sketch.h"
 #include "utl_occt.h"

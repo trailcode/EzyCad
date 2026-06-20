@@ -1,4 +1,4 @@
-#include "python_console.h"
+#include "scr_python_console.h"
 
 #include <cstring>
 #include <filesystem>
@@ -9,7 +9,7 @@
 
 #include "gui.h"
 #include "imgui.h"
-#include "modes.h"
+#include "gui_modes.h"
 #include "occt_view.h"
 #include "shp.h"
 #include "sketch.h"
