@@ -13,7 +13,7 @@
 #include <string>
 #include <unordered_set>
 
-#include "settings.h"
+#include "utl_settings.h"
 
 #ifdef __EMSCRIPTEN__
 #include <emscripten.h>
