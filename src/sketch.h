@@ -8,17 +8,15 @@
 #include <list>
 #include <memory>
 #include <optional>
-#include <set>
 #include <string>
 #include <vector>
 
 #include "shp.h"
 #include "sketch_nodes.h"
 #include "utl_types.h"
-#include "utl.h"
 
-class Occt_view;
 struct Length_dimension_style;
+class Occt_view;
 class gp_Pln;
 class Sketch_op_recorder;
 class TopoDS_Wire;
@@ -49,10 +47,6 @@ struct Sketch_face_shp : public AIS_Shape
   std::vector<size_t> vert_idxs;
   std::string         name;
 };
-
-using Sketch_AIS_edge_ptr      = opencascade::handle<Sketch_AIS_edge>;
-using Sketch_AIS_node_mark_ptr = opencascade::handle<Sketch_AIS_node_mark>;
-using Sketch_face_shp_ptr      = opencascade::handle<Sketch_face_shp>;
 
 // The Sketch class provides a comprehensive set of methods for creating and manipulating 2D sketches in a 3D environment.
 // It supports adding and moving points, creating line segments, arcs, and mirror lines, and updating the sketch's
