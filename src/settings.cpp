@@ -51,46 +51,6 @@ std::filesystem::path user_settings_json_path()
 #endif
 }
 
-std::string load()
-{
-#ifdef __EMSCRIPTEN__
-  void* ptr = (void*)(intptr_t)EM_ASM_INT({
-    var s   = localStorage.getItem("ezycad_settings") || "";
-    var len = lengthBytesUTF8(s) + 1;
-    var buf = _malloc(len);
-    if (buf)
-      stringToUTF8(s, buf, len);
-    return buf;
-  });
-  if (!ptr)
-    return {};
-  std::string result((const char*)ptr);
-  free(ptr);
-  return result;
-#else
-  auto read_file = [](const std::filesystem::path& p) -> std::string
-  {
-    std::ifstream f(p, std::ios::binary);
-    if (!f)
-      return {};
-    std::ostringstream os;
-    os << f.rdbuf();
-    return os.str();
-  };
-
-  const std::filesystem::path user_p = user_settings_json_path();
-  if (!user_p.empty())
-  {
-    std::string s = read_file(user_p);
-    if (!s.empty())
-      return s;
-  }
-
-  // Legacy: cwd ezycad_settings.json (same directory as exe when launched that way).
-  return read_file(std::filesystem::path("ezycad_settings.json"));
-#endif
-}
-
 std::string load_defaults()
 {
   if (s_log_callback)
