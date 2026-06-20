@@ -1,4 +1,4 @@
-#include "lua_console.h"
+#include "scr_lua_console.h"
 
 #include "gui.h"
 #include "imgui.h"

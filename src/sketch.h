@@ -14,7 +14,7 @@
 
 #include "shp.h"
 #include "sketch_nodes.h"
-#include "types.h"
+#include "utl_types.h"
 #include "utl.h"
 
 class Occt_view;

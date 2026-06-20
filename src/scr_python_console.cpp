@@ -1,4 +1,4 @@
-#include "python_console.h"
+#include "scr_python_console.h"
 
 #include <cstring>
 #include <filesystem>

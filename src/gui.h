@@ -22,7 +22,7 @@
 #include "gui_modes.h"
 #include "occt_view.h"
 #include "shp_info.h"
-#include "types.h"
+#include "utl_types.h"
 
 class Lua_console;
 class Python_console;

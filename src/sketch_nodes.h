@@ -7,7 +7,7 @@
 #include <string>
 #include <vector>
 
-#include "types.h"
+#include "utl_types.h"
 
 class gp_Pln;
 class Occt_view;
