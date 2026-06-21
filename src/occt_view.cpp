@@ -1561,7 +1561,7 @@ std::vector<AIS_Shape_ptr> Occt_view::get_selected() const
 void Occt_view::update_shape_list_hover_drawer_()
 {
   uint8_t r{}, g{}, b{}, a{};
-  gui().shape_list_hover_color_rgba(r, g, b, a);
+  gui().elm_list_hover_color_rgba(r, g, b, a);
   (void)a;
   const Quantity_Color qc(static_cast<double>(r) / 255.0, static_cast<double>(g) / 255.0, static_cast<double>(b) / 255.0,
                           Quantity_TOC_RGB);
@@ -1578,15 +1578,83 @@ void Occt_view::update_shape_list_hover_drawer_()
   m_shape_list_hover_drawer->SetWireAspect(wire_aspect);
 }
 
+void Occt_view::restore_sketch_list_measurement_hover_style_()
+{
+  if (m_sketch_list_measurement_hover.IsNull())
+    return;
+
+  apply_length_dimension_style(m_sketch_list_measurement_hover, gui().length_dimension_style());
+  m_ctx->Redisplay(m_sketch_list_measurement_hover, false);
+}
+
+void Occt_view::apply_sketch_list_measurement_hover_style_()
+{
+  if (m_sketch_list_measurement_hover.IsNull())
+    return;
+
+  uint8_t r{}, g{}, b{}, a{};
+  gui().elm_list_hover_color_rgba(r, g, b, a);
+  (void)a;
+  const float hover_rgb[3] = {static_cast<float>(r) / 255.f, static_cast<float>(g) / 255.f,
+                              static_cast<float>(b) / 255.f};
+
+  const Length_dimension_style& style   = gui().length_dimension_style();
+  const double                  base_w  = static_cast<double>(style.line_width);
+  const double                  hover_w = std::max(3.0, base_w * 3.0);
+
+  apply_length_dimension_list_hover_style(m_sketch_list_measurement_hover, hover_rgb, hover_w);
+  m_ctx->Redisplay(m_sketch_list_measurement_hover, false);
+}
+
+void Occt_view::refresh_sketch_list_measurement_hover_highlight_()
+{
+  apply_sketch_list_measurement_hover_style_();
+}
+
 void Occt_view::refresh_shape_list_hover_highlight()
 {
-  if (is_headless() || m_ctx.IsNull() || m_shape_list_hover.IsNull())
+  if (is_headless() || m_ctx.IsNull())
     return;
 
   update_shape_list_hover_drawer_();
-  m_ctx->Unhilight(m_shape_list_hover, false);
-  if (m_shape_list_hover->get_visible())
-    m_ctx->HilightWithColor(m_shape_list_hover, m_shape_list_hover_drawer, false);
+
+  if (!m_shape_list_hover.IsNull())
+  {
+    m_ctx->Unhilight(m_shape_list_hover, false);
+    if (m_shape_list_hover->get_visible())
+      m_ctx->HilightWithColor(m_shape_list_hover, m_shape_list_hover_drawer, false);
+  }
+
+  if (!m_sketch_list_measurement_hover.IsNull())
+    apply_sketch_list_measurement_hover_style_();
+
+  m_ctx->UpdateCurrentViewer();
+}
+
+void Occt_view::set_sketch_list_measurement_hover(const Sketch_ptr& sketch, const size_t dim_index)
+{
+  if (is_headless() || m_ctx.IsNull())
+    return;
+
+  PrsDim_LengthDimension_ptr dim;
+  if (sketch && dim_index != SIZE_MAX && dim_index < sketch->length_dimension_count())
+  {
+    dim = sketch->length_dimension_handle(dim_index);
+    if (dim.IsNull() || !sketch->is_visible() || !sketch->shows_dimensions() || !sketch->dimension_visible(dim_index))
+      dim.Nullify();
+  }
+
+  if (m_sketch_list_measurement_hover == dim)
+    return;
+
+  if (!m_sketch_list_measurement_hover.IsNull())
+    restore_sketch_list_measurement_hover_style_();
+
+  m_sketch_list_measurement_hover = dim;
+
+  if (!m_sketch_list_measurement_hover.IsNull())
+    apply_sketch_list_measurement_hover_style_();
+
   m_ctx->UpdateCurrentViewer();
 }
 

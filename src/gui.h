@@ -241,7 +241,7 @@ public:
   /// Default RGBA (0-255) for sketch underlay line tint when importing a new image (see Settings).
   void underlay_highlight_color_rgba(uint8_t& r, uint8_t& g, uint8_t& b, uint8_t& a) const;
   /// RGBA (0-255) for Shape List row hover highlight in the 3D viewer (see Settings).
-  void shape_list_hover_color_rgba(uint8_t& r, uint8_t& g, uint8_t& b, uint8_t& a) const;
+  void elm_list_hover_color_rgba(uint8_t& r, uint8_t& g, uint8_t& b, uint8_t& a) const;
   /// For scripting (Lua console): access the 3D view.
   Occt_view* get_view() { return m_view.get(); }
 
@@ -259,7 +259,8 @@ private:
   void angle_edit_();
   void on_left_click_(const ScreenCoords& screen_coords);
   void sketch_list_();
-  void sketch_list_inspector_(Sketch& sketch, int index);
+  void sketch_list_inspector_(const std::shared_ptr<Sketch>& sketch, int index, std::shared_ptr<Sketch>& hover_sketch,
+                                 size_t& hover_dim_index);
   void sketch_properties_dialog_();
   void shape_list_();
   void shape_info_dialog_();
@@ -522,7 +523,7 @@ private:
   /// Default underlay tint for new imports (0-1, persisted in ezycad_settings.json).
   glm::vec4 m_underlay_highlight_color{1.f, 220.f / 255.f, 0.f, 1.f};
   /// Shape List hover highlight in the OCCT view (0-1, persisted in ezycad_settings.json).
-  glm::vec4 m_shape_list_hover_color{0.f, 1.f, 0.f, 1.f};
+  glm::vec4 m_elm_list_hover_color{0.f, 1.f, 0.f, 1.f};
 
   std::unique_ptr<Lua_console>    m_lua_console;
   bool                            m_show_python_console{false};

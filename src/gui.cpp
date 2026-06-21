@@ -1019,7 +1019,8 @@ const std::vector<std::string>& GUI::occt_material_combo_labels_()
   return names;
 }
 
-void GUI::sketch_list_inspector_(Sketch& sketch, int index)
+void GUI::sketch_list_inspector_(const Sketch::sptr& sketch, int index, Sketch::sptr& hover_sketch,
+                                 size_t& hover_dim_index)
 {
   ImGui::Indent();
   ImGui::PushID(index);
@@ -1041,7 +1042,7 @@ void GUI::sketch_list_inspector_(Sketch& sketch, int index)
   };
 
   {
-    const std::vector<std::string> labels = sketch.inspector_dimension_labels();
+    const std::vector<std::string> labels = sketch->inspector_dimension_labels();
     const size_t                   count  = labels.size();
     ImGuiTreeNodeFlags             flags  = ImGuiTreeNodeFlags_SpanAvailWidth;
     if (count == 0)
@@ -1057,31 +1058,42 @@ void GUI::sketch_list_inspector_(Sketch& sketch, int index)
 
         for (size_t i = 0; i < count; ++i)
         {
-          bool   visible = sketch.dimension_visible(i);
-          double offset  = sketch.dimension_offset(i);
+          bool   visible = sketch->dimension_visible(i);
+          double offset  = sketch->dimension_offset(i);
+          bool   row_hovered = false;
 
           ImGui::PushID(static_cast<int>(i));
           ImGui::TableNextRow();
 
           ImGui::TableSetColumnIndex(0);
           if (ImGui::Checkbox("##dim_visible", &visible))
-            sketch.set_dimension_visible(i, visible);
+            sketch->set_dimension_visible(i, visible);
+          row_hovered |= ImGui::IsItemHovered();
 
           ImGui::TableSetColumnIndex(1);
           char        name_buf[128];
-          std::string cur_name = sketch.dimension_name(i);
+          std::string cur_name = sketch->dimension_name(i);
           safe_cstr_copy(name_buf, sizeof(name_buf), cur_name.c_str());
           ImGui::SetNextItemWidth(-FLT_MIN);
           if (ImGui::InputText("##dim_name", name_buf, sizeof(name_buf)))
-            sketch.set_dimension_name(i, std::string(name_buf));
+            sketch->set_dimension_name(i, std::string(name_buf));
+          row_hovered |= ImGui::IsItemHovered();
 
           ImGui::TableSetColumnIndex(2);
           ImGui::SetNextItemWidth(86.f);
           if (ImGui::InputDouble("##dim_offset", &offset, 0.5, 2.0, "%.2f"))
-            sketch.set_dimension_offset(i, offset);
+            sketch->set_dimension_offset(i, offset);
+          row_hovered |= ImGui::IsItemHovered();
 
           if (ui_show_contextual_help() && ImGui::IsItemHovered())
             ImGui::SetTooltip("Label offset from edge. 0 = automatic.");
+
+          if (row_hovered && sketch->is_visible() && sketch->shows_dimensions() && visible &&
+              !sketch->length_dimension_handle(i).IsNull())
+          {
+            hover_sketch    = sketch;
+            hover_dim_index = i;
+          }
 
           ImGui::PopID();
         }
@@ -1093,9 +1105,9 @@ void GUI::sketch_list_inspector_(Sketch& sketch, int index)
     }
   }
 
-  draw_section("Nodes", sketch.inspector_node_labels());
-  draw_section("Edges", sketch.inspector_edge_labels());
-  draw_section("Faces", sketch.inspector_face_labels());
+  draw_section("Nodes", sketch->inspector_node_labels());
+  draw_section("Edges", sketch->inspector_edge_labels());
+  draw_section("Faces", sketch->inspector_face_labels());
 
   ImGui::PopID();
   ImGui::Unindent();
@@ -1104,7 +1116,10 @@ void GUI::sketch_list_inspector_(Sketch& sketch, int index)
 void GUI::sketch_list_()
 {
   if (!show_sketch_list_effective())
+  {
+    m_view->set_sketch_list_measurement_hover(nullptr, SIZE_MAX);
     return;
+  }
 
   const ImGuiStyle& st              = ImGui::GetStyle();
   float             max_name_text_w = 0.f;
@@ -1117,6 +1132,7 @@ void GUI::sketch_list_()
 
   if (!ImGui::Begin("Sketch List", &m_show_sketch_list, ImGuiWindowFlags_None))
   {
+    m_view->set_sketch_list_measurement_hover(nullptr, SIZE_MAX);
     ImGui::End();
     return;
   }
@@ -1126,6 +1142,8 @@ void GUI::sketch_list_()
 
   int          index = 0;
   Sketch::sptr sketch_to_delete;
+  Sketch::sptr sketch_list_measurement_hover_sketch;
+  size_t       sketch_list_measurement_hover_index = SIZE_MAX;
   for (Sketch::sptr& sketch : m_view->get_sketches())
   {
     EZY_ASSERT(sketch);
@@ -1250,10 +1268,12 @@ void GUI::sketch_list_()
     }
 
     if (expanded && ui_show_sketch_list_expand())
-      sketch_list_inspector_(*sketch, index);
+      sketch_list_inspector_(sketch, index, sketch_list_measurement_hover_sketch, sketch_list_measurement_hover_index);
 
     ++index;
   }
+
+  m_view->set_sketch_list_measurement_hover(sketch_list_measurement_hover_sketch, sketch_list_measurement_hover_index);
 
   ImGui::EndChild();
 

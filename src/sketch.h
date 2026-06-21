@@ -88,12 +88,17 @@ public:
   void        set_show_faces(bool show);
   void        set_show_edges(bool show);
   void        set_show_dims(bool show);
+  bool        shows_dimensions() const;
   bool        dimension_visible(size_t dim_index) const;
   void        set_dimension_visible(size_t dim_index, bool visible);
+  size_t      dimension_node_lo(size_t dim_index) const;
+  size_t      dimension_node_hi(size_t dim_index) const;
   double      dimension_offset(size_t dim_index) const;
   void        set_dimension_offset(size_t dim_index, double offset);
   std::string dimension_name(size_t dim_index) const;
   void        set_dimension_name(size_t dim_index, const std::string& name);
+  /// OCCT length-dimension object for list hover / viewer highlight (may be null while rebuilding).
+  PrsDim_LengthDimension_ptr length_dimension_handle(size_t dim_index) const;
 
   /// Apply global dimension line width to edge annotations and in-progress rubber-band dim.
   void refresh_edge_dimension_line_widths(double line_width);

@@ -2937,6 +2937,8 @@ void Sketch::set_show_dims(bool show)
   }
 }
 
+bool Sketch::shows_dimensions() const { return m_show_dims; }
+
 bool Sketch::dimension_visible(size_t dim_index) const
 {
   EZY_ASSERT(dim_index < m_length_dimensions.size());
@@ -2958,6 +2960,18 @@ void Sketch::set_dimension_visible(size_t dim_index, bool visible)
     else
       m_ctx.Erase(d.dim, false);
   }
+}
+
+size_t Sketch::dimension_node_lo(size_t dim_index) const
+{
+  EZY_ASSERT(dim_index < m_length_dimensions.size());
+  return m_length_dimensions[dim_index].node_idx_lo;
+}
+
+size_t Sketch::dimension_node_hi(size_t dim_index) const
+{
+  EZY_ASSERT(dim_index < m_length_dimensions.size());
+  return m_length_dimensions[dim_index].node_idx_hi;
 }
 
 double Sketch::dimension_offset(size_t dim_index) const
@@ -2989,6 +3003,12 @@ std::string Sketch::dimension_name(size_t dim_index) const
 {
   EZY_ASSERT(dim_index < m_length_dimensions.size());
   return m_length_dimensions[dim_index].name;
+}
+
+PrsDim_LengthDimension_ptr Sketch::length_dimension_handle(const size_t dim_index) const
+{
+  EZY_ASSERT(dim_index < m_length_dimensions.size());
+  return m_length_dimensions[dim_index].dim;
 }
 
 void Sketch::set_dimension_name(size_t dim_index, const std::string& name)
