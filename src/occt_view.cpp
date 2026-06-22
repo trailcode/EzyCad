@@ -1168,8 +1168,7 @@ void Occt_view::remove_selected_length_dimensions_from_sketches_()
 void Occt_view::delete_(std::vector<AIS_Shape_ptr>& to_delete)
 {
   for (AIS_Shape_ptr& shp : to_delete)
-    if (auto mark = dynamic_cast<Sketch_AIS_node_mark*>(shp.get()); mark)
-      mark->owner_sketch.remove_permanent_node_mark(*mark);
+    try_remove_sketch_permanent_node_mark(shp.get());
 
   for (AIS_Shape_ptr& shp : to_delete)
     if (auto wire = dynamic_cast<Sketch_AIS_edge*>(shp.get()); wire)

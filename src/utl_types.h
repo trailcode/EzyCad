@@ -1,8 +1,32 @@
 #pragma once
 
+#include <AIS_Shape.hxx>
 #include <Standard_Handle.hxx>
+#include <gp_Pnt.hxx>
 #include <glm/glm.hpp>
 #include <memory>
+#include <string>
+#include <vector>
+
+class TopoDS_Shape;
+class Sketch;
+struct Sketch_AIS_node_mark;
+
+struct Sketch_AIS_edge : public AIS_Shape
+{
+  Sketch_AIS_edge(Sketch& owner, const TopoDS_Shape& shp);
+  Sketch& owner_sketch;
+};
+
+struct Sketch_face_shp : public AIS_Shape
+{
+  Sketch_face_shp(Sketch& owner, const TopoDS_Shape& face);
+
+  Sketch&             owner_sketch;
+  std::vector<gp_Pnt> verts_3d; // Used for extruding the face
+  std::vector<size_t> vert_idxs;
+  std::string         name;
+};
 
 class AIS_InteractiveObject;
 class AIS_InteractiveContext;
@@ -18,9 +42,7 @@ class Geom_Surface;
 class PrsDim_LengthDimension;
 class Graphic3d_Camera;
 class StdSelect_BRepOwner;
-struct Sketch_AIS_edge;
 struct Sketch_AIS_node_mark;
-struct Sketch_face_shp;
 
 using AIS_InteractiveObject_ptr  = opencascade::handle<AIS_InteractiveObject>;
 using AIS_InteractiveContext_ptr = opencascade::handle<AIS_InteractiveContext>;

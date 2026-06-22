@@ -1,6 +1,5 @@
 #pragma once
 
-#include <AIS_Shape.hxx>
 #include <TopoDS_Face.hxx>
 #include <gp_Pnt.hxx>
 #include <gp_Pnt2d.hxx>
@@ -24,29 +23,10 @@ class Sketch;
 class Sketch_underlay;
 enum class Mode;
 
-struct Sketch_AIS_edge : public AIS_Shape
-{
-  Sketch_AIS_edge(Sketch& owner, const TopoDS_Shape& shp);
-  Sketch& owner_sketch;
-};
+struct Sketch_AIS_node_mark;
 
-/// Selectable "+" marker for user-placed permanent sketch nodes (add-node tool).
-struct Sketch_AIS_node_mark : public AIS_Shape
-{
-  Sketch_AIS_node_mark(Sketch& owner, size_t node_idx, const TopoDS_Shape& shp);
-  Sketch& owner_sketch;
-  size_t  node_idx{};
-};
-
-struct Sketch_face_shp : public AIS_Shape
-{
-  Sketch_face_shp(Sketch& owner, const TopoDS_Shape& face);
-
-  Sketch&             owner_sketch;
-  std::vector<gp_Pnt> verts_3d; // Used for extruding the face
-  std::vector<size_t> vert_idxs;
-  std::string         name;
-};
+/// If `shp` is a permanent sketch node mark, removes it from its owner sketch.
+bool try_remove_sketch_permanent_node_mark(AIS_Shape* shp);
 
 // The Sketch class provides a comprehensive set of methods for creating and manipulating 2D sketches in a 3D environment.
 // It supports adding and moving points, creating line segments, arcs, and mirror lines, and updating the sketch's
@@ -360,6 +340,10 @@ public:
   void purge_stale_length_dimensions_();
   void refresh_all_length_dimensions_();
   void remove_length_dimensions_referencing_node_(size_t node_idx);
+  void remove_permanent_node_mark_ais_at_(size_t node_idx);
+  void remove_all_permanent_node_marks_();
+  void erase_permanent_node_marks_();
+  void trim_trailing_permanent_node_marks_();
   /// Add if missing, remove if present (same unordered node pair).
   void add_or_toggle_length_dim_between_node_indices_(size_t node_a, size_t node_b);
   void json_add_length_dimension_(size_t node_a, size_t node_b, bool visible = true,

@@ -590,11 +590,7 @@ void Sketch_delta::Impl::tombstone_node_(Sketch& sketch, size_t node_idx)
   EZY_ASSERT(node_idx < sketch.m_nodes.size());
   sketch.m_nodes[node_idx].deleted = true;
   sketch.remove_length_dimensions_referencing_node_(node_idx);
-  if (node_idx < sketch.m_permanent_node_marks.size() && sketch.m_permanent_node_marks[node_idx])
-  {
-    sketch.m_ctx.Remove(sketch.m_permanent_node_marks[node_idx], false);
-    sketch.m_permanent_node_marks[node_idx].Nullify();
-  }
+  sketch.remove_permanent_node_mark_ais_at_(node_idx);
 }
 
 void Sketch_delta::Impl::restore_prev_linear_edge_(Sketch& sketch, const Prev_edge_rec& rec)
