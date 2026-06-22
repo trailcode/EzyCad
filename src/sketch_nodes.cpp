@@ -877,12 +877,7 @@ void Sketch_nodes::set_snap_guide_color_axis(float r, float g, float b)
   s_snap_guide_color_axis.z = std::clamp(b, 0.0f, 1.0f);
 }
 
-void Sketch_nodes::get_snap_guide_color_axis(float& r, float& g, float& b)
-{
-  r = s_snap_guide_color_axis.x;
-  g = s_snap_guide_color_axis.y;
-  b = s_snap_guide_color_axis.z;
-}
+glm::vec3 Sketch_nodes::get_snap_guide_color_axis() { return s_snap_guide_color_axis; }
 
 void Sketch_nodes::set_snap_guide_line_width(float width) { s_snap_guide_line_width = std::clamp(width, 0.5f, 8.0f); }
 

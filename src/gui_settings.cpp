@@ -79,9 +79,8 @@ std::string GUI::occt_view_settings_json() const
       {"snap_guide_color_axis",
              [&]()
              {
-         float r{}, g{}, b{};
-         Sketch_nodes::get_snap_guide_color_axis(r, g, b);
-         return nlohmann::json::array({r, g, b});
+         const glm::vec3 c = Sketch_nodes::get_snap_guide_color_axis();
+         return nlohmann::json::array({c.x, c.y, c.z});
        }()},
       {"snap_guide_mode", static_cast<int>(Sketch_nodes::get_snap_guide_mode())},
       {"snap_guide_line_width", Sketch_nodes::get_snap_guide_line_width()},
@@ -147,9 +146,8 @@ void GUI::save_occt_view_settings()
       {"snap_guide_color_axis",
              [&]()
              {
-         float r{}, g{}, b{};
-         Sketch_nodes::get_snap_guide_color_axis(r, g, b);
-         return nlohmann::json::array({r, g, b});
+         const glm::vec3 c = Sketch_nodes::get_snap_guide_color_axis();
+         return nlohmann::json::array({c.x, c.y, c.z});
        }()},
       {"snap_guide_mode", static_cast<int>(Sketch_nodes::get_snap_guide_mode())},
       {"snap_guide_line_width", Sketch_nodes::get_snap_guide_line_width()},
@@ -1163,8 +1161,7 @@ void GUI::settings_()
       ImGui::TextUnformatted("Snap guide color (axis)");
       ImGui::TableSetColumnIndex(1);
       {
-        glm::vec3 snap_col;
-        Sketch_nodes::get_snap_guide_color_axis(snap_col[0], snap_col[1], snap_col[2]);
+        glm::vec3 snap_col = Sketch_nodes::get_snap_guide_color_axis();
         if (ImGui::ColorEdit3("##snap_guide_color_axis", &snap_col[0], ImGuiColorEditFlags_Float))
         {
           Sketch_nodes::set_snap_guide_color_axis(snap_col[0], snap_col[1], snap_col[2]);

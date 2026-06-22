@@ -78,8 +78,8 @@ public:
   static Snap_guide_mode get_snap_guide_mode();
   static void            set_snap_guide_color_node(float r, float g, float b);
   static void            get_snap_guide_color_node(float& r, float& g, float& b);
-  static void            set_snap_guide_color_axis(float r, float g, float b);
-  static void            get_snap_guide_color_axis(float& r, float& g, float& b);
+  static void     set_snap_guide_color_axis(float r, float g, float b);
+  static glm::vec3 get_snap_guide_color_axis();
   static void            set_snap_guide_line_width(float width);
   static float           get_snap_guide_line_width();
 
