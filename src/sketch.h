@@ -25,6 +25,13 @@ enum class Mode;
 
 struct Sketch_AIS_node_mark;
 
+/// Selective refresh of sketch annotations after global settings or geometry changes.
+struct Sketch_annotation_refresh
+{
+  bool length_dimensions    = false;
+  bool permanent_node_marks = false;
+};
+
 /// If `shp` is a permanent sketch node mark, removes it from its owner sketch.
 bool try_remove_sketch_permanent_node_mark(AIS_Shape* shp);
 
@@ -80,16 +87,8 @@ public:
   /// OCCT length-dimension object for list hover / viewer highlight (may be null while rebuilding).
   PrsDim_LengthDimension_ptr length_dimension_handle(size_t dim_index) const;
 
-  /// Apply global dimension line width to edge annotations and in-progress rubber-band dim.
-  void refresh_edge_dimension_line_widths(double line_width);
-  /// Apply global dimension arrow size to edge annotations and in-progress rubber-band dim.
-  void refresh_edge_dimension_arrow_sizes(double arrow_size);
-  /// Apply full global dimension style to edge annotations and in-progress rubber-band dim.
-  void refresh_edge_dimension_style(const Length_dimension_style& style);
-  /// Rebuild every length dimension (e.g. after global flyout or label placement defaults change).
-  void refresh_all_length_dimensions();
-  /// Rebuild permanent node '+' markers (e.g. after settings changes).
-  void refresh_permanent_node_annotations();
+  /// Rebuild length dimensions and/or permanent node '+' markers (e.g. after settings changes).
+  void refresh_annotations(const Sketch_annotation_refresh& refresh);
 
   // Revolve related
   Shp_rslt revolve_selected(const double angle);

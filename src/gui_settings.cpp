@@ -1247,14 +1247,14 @@ void GUI::settings_()
     {
       save_occt_view_settings();
       if (m_view)
-        m_view->refresh_all_length_dimensions();
+        m_view->refresh_sketch_annotations({.length_dimensions = true});
     }
 
     if (node_anno_changed)
     {
       save_occt_view_settings();
       if (m_view)
-        m_view->refresh_all_permanent_node_annotations();
+        m_view->refresh_sketch_annotations({.permanent_node_marks = true});
     }
 
     if (ul_changed)

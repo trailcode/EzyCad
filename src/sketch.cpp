@@ -2948,57 +2948,13 @@ void Sketch::set_dimension_name(size_t dim_index, const std::string& name)
   // name is only used in Sketch List inspector; no 3D annotation update needed
 }
 
-void Sketch::refresh_edge_dimension_line_widths(const double line_width)
+void Sketch::refresh_annotations(const Sketch_annotation_refresh& refresh)
 {
-  for (Length_dimension& ld : m_length_dimensions)
-    if (!ld.dim.IsNull())
-    {
-      apply_length_dimension_line_width(ld.dim, line_width);
-      m_ctx.Redisplay(ld.dim, true);
-    }
-
-  if (!m_tmp_dim_anno.IsNull())
-  {
-    apply_length_dimension_line_width(m_tmp_dim_anno, line_width);
-    m_ctx.Redisplay(m_tmp_dim_anno, true);
-  }
+  if (refresh.length_dimensions)
+    refresh_all_length_dimensions_();
+  if (refresh.permanent_node_marks)
+    sync_permanent_node_annos_();
 }
-
-void Sketch::refresh_edge_dimension_arrow_sizes(const double arrow_size)
-{
-  for (Length_dimension& ld : m_length_dimensions)
-    if (!ld.dim.IsNull())
-    {
-      apply_length_dimension_arrow_size(ld.dim, arrow_size);
-      m_ctx.Redisplay(ld.dim, true);
-    }
-
-  if (!m_tmp_dim_anno.IsNull())
-  {
-    apply_length_dimension_arrow_size(m_tmp_dim_anno, arrow_size);
-    m_ctx.Redisplay(m_tmp_dim_anno, true);
-  }
-}
-
-void Sketch::refresh_all_length_dimensions() { refresh_all_length_dimensions_(); }
-
-void Sketch::refresh_edge_dimension_style(const Length_dimension_style& style)
-{
-  for (Length_dimension& ld : m_length_dimensions)
-    if (!ld.dim.IsNull())
-    {
-      apply_length_dimension_style(ld.dim, style);
-      m_ctx.Redisplay(ld.dim, true);
-    }
-
-  if (!m_tmp_dim_anno.IsNull())
-  {
-    apply_length_dimension_style(m_tmp_dim_anno, style);
-    m_ctx.Redisplay(m_tmp_dim_anno, true);
-  }
-}
-
-void Sketch::refresh_permanent_node_annotations() { sync_permanent_node_annos_(); }
 
 bool Sketch::is_current() const { return this == &m_view.curr_sketch(); }
 

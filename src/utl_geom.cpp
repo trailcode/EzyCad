@@ -720,44 +720,6 @@ void apply_length_dimension_list_hover_style(const PrsDim_LengthDimension_ptr& d
   dim->SetDimensionAspect(aspect);
 }
 
-void apply_length_dimension_line_width(const PrsDim_LengthDimension_ptr& dim, const double line_width)
-{
-  if (dim.IsNull())
-    return;
-
-  Handle(Prs3d_DimensionAspect) aspect = clone_dimension_aspect(dim);
-
-  Quantity_Color    col = Quantity_NOC_YELLOW;
-  Aspect_TypeOfLine typ = Aspect_TOL_SOLID;
-  if (const Handle(Prs3d_LineAspect)& la = aspect->LineAspect(); !la.IsNull())
-  {
-    const Handle(Graphic3d_AspectLine3d)& g = la->Aspect();
-    col                                     = g->Color();
-    typ                                     = g->Type();
-  }
-
-  aspect->SetLineAspect(new Prs3d_LineAspect(col, typ, static_cast<double>(line_width)));
-  dim->SetDimensionAspect(aspect);
-}
-
-void apply_length_dimension_arrow_size(const PrsDim_LengthDimension_ptr& dim, const double arrow_size)
-{
-  if (dim.IsNull())
-    return;
-
-  Handle(Prs3d_DimensionAspect) aspect = clone_dimension_aspect(dim);
-
-  Handle(Prs3d_ArrowAspect) arrow;
-  if (const Handle(Prs3d_ArrowAspect)& cur_arrow = aspect->ArrowAspect(); !cur_arrow.IsNull())
-    arrow = new Prs3d_ArrowAspect(*cur_arrow);
-  else
-    arrow = new Prs3d_ArrowAspect();
-
-  arrow->SetLength(static_cast<double>(arrow_size));
-  aspect->SetArrowAspect(arrow);
-  dim->SetDimensionAspect(aspect);
-}
-
 // OCCT draws the dimension on the side given by (plane_normal x edge_vector) for positive flyout.
 // When that side faces the sketch interior, negate flyout so the annotation sits outside the loop.
 static void orient_length_dimension_flyout_outward(const PrsDim_LengthDimension_ptr& dim, const gp_Pnt& p1, const gp_Pnt& p2,

@@ -181,11 +181,6 @@ void apply_length_dimension_style(const PrsDim_LengthDimension_ptr& dim, const L
 void apply_length_dimension_list_hover_style(const PrsDim_LengthDimension_ptr& dim, const float hover_rgb[3],
                                              double hover_line_width);
 
-/// Rebuild dimension line aspect with \a line_width (call `Redisplay` on the AIS object after).
-void apply_length_dimension_line_width(const PrsDim_LengthDimension_ptr& dim, double line_width);
-/// Rebuild dimension arrow aspect with \a arrow_size (call `Redisplay` on the AIS object after).
-void apply_length_dimension_arrow_size(const PrsDim_LengthDimension_ptr& dim, double arrow_size);
-
 /// When `sketch_faces_for_flyout` is non-null and non-empty, edge dimensions offset to the side that is
 /// void (not TopAbs_IN) relative to those faces - fixes concave / notch edges where the node centroid lies
 /// on the wrong side. Otherwise `interior_ref` (e.g. node centroid) is used as a weaker heuristic.

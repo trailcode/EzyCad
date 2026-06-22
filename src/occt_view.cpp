@@ -1029,34 +1029,13 @@ bool Occt_view::fit_face_in_view(const TopoDS_Face& face)
 }
 
 // Dimension related
-void Occt_view::refresh_all_length_dimension_line_widths(const double line_width)
+void Occt_view::refresh_sketch_annotations(const Sketch_annotation_refresh& refresh)
 {
   for (const Sketch_ptr& sk : m_sketches)
     if (sk)
-      sk->refresh_edge_dimension_line_widths(line_width);
-}
-
-void Occt_view::refresh_all_length_dimension_arrow_sizes(const double arrow_size)
-{
-  for (const Sketch_ptr& sk : m_sketches)
-    if (sk)
-      sk->refresh_edge_dimension_arrow_sizes(arrow_size);
-}
-
-void Occt_view::refresh_all_length_dimension_styles(const Length_dimension_style& style)
-{
-  for (const Sketch_ptr& sk : m_sketches)
-    if (sk)
-      sk->refresh_edge_dimension_style(style);
-  m_shp_extrude.refresh_tmp_dimension_style(style);
-}
-
-void Occt_view::refresh_all_length_dimensions()
-{
-  for (const Sketch_ptr& sk : m_sketches)
-    if (sk)
-      sk->refresh_all_length_dimensions();
-  m_shp_extrude.refresh_tmp_dimension_style(m_gui.length_dimension_style());
+      sk->refresh_annotations(refresh);
+  if (refresh.length_dimensions)
+    m_shp_extrude.refresh_tmp_dimension_style(m_gui.length_dimension_style());
 }
 
 void Occt_view::apply_sketch_dimensions_visibility()
@@ -1091,13 +1070,6 @@ void Occt_view::apply_sketch_dimensions_visibility()
       if (s)
         s->set_show_dims(show);
   }
-}
-
-void Occt_view::refresh_all_permanent_node_annotations()
-{
-  for (const Sketch_ptr& sk : m_sketches)
-    if (sk)
-      sk->refresh_permanent_node_annotations();
 }
 
 void Occt_view::dimension_input(const ScreenCoords& screen_coords)
