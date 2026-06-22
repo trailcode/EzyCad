@@ -243,7 +243,7 @@ public:
   const Graphic3d_MaterialAspect& get_default_material() const;
   void                            set_default_material(const Graphic3d_MaterialAspect& mat);
 
-  // 3D view background and grid colors (0-1 RGB)
+  // View presentation (background gradient) and grid colors (0-1 RGB)
   void get_bg_gradient_colors(float color1[3], float color2[3]) const;
   void set_bg_gradient_colors(float r1, float g1, float b1, float r2, float g2, float b2);
   int  get_bg_gradient_method() const;
@@ -348,11 +348,11 @@ private:
   /// release skip).
   bool m_planar_face_lmb_skipped_view_controller{false};
   // OCCT view colors; defaults match what we render (set explicitly in init_viewer())
-  glm::vec3             m_bg_color1{0.85f, 0.88f, 0.90f};
-  glm::vec3             m_bg_color2{0.45f, 0.55f, 0.60f};
+  glm::vec3             m_bg_color1{0.037552f, 0.040503f, 0.042471f};
+  glm::vec3             m_bg_color2{0.043440f, 0.174068f, 0.239382f};
   int                   m_bg_gradient_method{1}; // 0=HOR, 1=VER, 2=DIAG1, ...
-  glm::vec3             m_grid_color1{0.1f, 0.1f, 0.1f};
-  glm::vec3             m_grid_color2{0.1f, 0.1f, 0.3f};
+  glm::vec3             m_grid_color1{0.112683f, 0.056886f, 0.138996f};
+  glm::vec3             m_grid_color2{0.117917f, 0.117917f, 0.135135f};
   Occt_grid_rect_params m_occt_grid_rect{};
   bool                  m_grid_visible{true};
   /// User setting: same role as former literal in `UpdateZoom(Aspect_ScrollDelta(..., int(y * scale)))`.

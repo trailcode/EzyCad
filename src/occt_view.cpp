@@ -260,12 +260,12 @@ void Occt_view::init_viewer()
 
   m_ctx->UpdateCurrentViewer();
 
-  // Set initial colors to match what OCCT renders (light gradient + grid)
-  m_bg_color1          = glm::vec3(0.85f, 0.88f, 0.90f);
-  m_bg_color2          = glm::vec3(0.45f, 0.55f, 0.60f);
+  // Set initial colors to match bundled defaults (dark gradient + grid)
+  m_bg_color1          = glm::vec3(0.037552f, 0.040503f, 0.042471f);
+  m_bg_color2          = glm::vec3(0.043440f, 0.174068f, 0.239382f);
   m_bg_gradient_method = 1; // Vertical
-  m_grid_color1        = glm::vec3(0.1f, 0.1f, 0.1f);
-  m_grid_color2        = glm::vec3(0.1f, 0.1f, 0.3f);
+  m_grid_color1        = glm::vec3(0.112683f, 0.056886f, 0.138996f);
+  m_grid_color2        = glm::vec3(0.117917f, 0.117917f, 0.135135f);
   update_view_background_();
 
   Handle(AIS_ViewCube) myViewCube = new AIS_ViewCube();

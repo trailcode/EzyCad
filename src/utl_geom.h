@@ -157,7 +157,7 @@ struct Length_dimension_style
 {
   float line_width        = 1.0f;
   float arrow_size        = 6.0f;
-  float color_rgb[3]      = {1.f, 1.f, 0.f};
+  float color_rgb[3]      = {0.542373f, 0.542373f, 0.213732f};
   float text_height_scale = 1.0f;
   int   label_h           = 3;
   /// 0 standard, 1 sharp, 2 wide, 3 shaded 3D (see `edge_dim_arrow_style` in settings).

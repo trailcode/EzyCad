@@ -58,8 +58,8 @@ struct Example_file
 inline constexpr float k_gui_edge_dim_line_width_default = 1.0f;
 /// Default OCCT arrow length for length dimensions when `edge_dim_arrow_size` is missing from settings JSON.
 inline constexpr float k_gui_edge_dim_arrow_size_default = 6.0f;
-/// Default dimension line/text RGB when `edge_dim_color` is missing (yellow).
-inline constexpr float k_gui_edge_dim_color_default[3] = {1.f, 1.f, 0.f};
+/// Default dimension line/text RGB when `edge_dim_color` is missing.
+inline constexpr float k_gui_edge_dim_color_default[3] = {0.542373f, 0.542373f, 0.213732f};
 /// Text height scale for length dimension labels (`gui.edge_dim_text_scale`).
 inline constexpr float k_gui_edge_dim_text_scale_min     = 0.5f;
 inline constexpr float k_gui_edge_dim_text_scale_max     = 3.0f;
@@ -521,9 +521,9 @@ private:
   bool       m_underlay_line_tint{true};
   glm::vec4  m_underlay_tint_col{1.f, 220.f / 255.f, 0.f, 1.f};
   /// Default underlay tint for new imports (0-1, persisted in ezycad_settings.json).
-  glm::vec4 m_underlay_highlight_color{1.f, 220.f / 255.f, 0.f, 1.f};
+  glm::vec4 m_underlay_highlight_color{0.639830f, 0.561988f, 0.311782f, 1.f};
   /// Shape List hover highlight in the OCCT view (0-1, persisted in ezycad_settings.json).
-  glm::vec4 m_elm_list_hover_color{0.f, 1.f, 0.f, 1.f};
+  glm::vec4 m_elm_list_hover_color{0.402064f, 0.102557f, 0.474576f, 1.f};
 
   std::unique_ptr<Lua_console>    m_lua_console;
   bool                            m_show_python_console{false};

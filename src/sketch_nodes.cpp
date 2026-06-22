@@ -18,10 +18,67 @@
 namespace
 {
 double                        s_snap_dist_pixels = 35.0;
-Sketch_nodes::Snap_guide_mode s_snap_guide_mode  = Sketch_nodes::Snap_guide_mode::Traditional;
-glm::vec3                     s_snap_guide_color{0.0f, 1.0f, 0.0f};
+Sketch_nodes::Snap_guide_mode s_snap_guide_mode  = Sketch_nodes::Snap_guide_mode::Both;
+glm::vec3                     s_snap_guide_color_node{0.823295f, 0.549411f, 0.953390f};
+glm::vec3                     s_snap_guide_color_axis{0.957627f, 0.064924f, 0.541537f};
 float                         s_snap_guide_line_width      = 1.0f;
-bool                          s_annotate_all_coaxial_nodes = false;
+bool                          s_annotate_all_coaxial_nodes = true;
+
+static Quantity_Color snap_guide_qc(const glm::vec3& c)
+{
+  return Quantity_Color(c.x, c.y, c.z, Quantity_TOC_RGB);
+}
+
+static void prepare_snap_ais_(AIS_InteractiveContext& ctx, const AIS_Shape_ptr& ais)
+{
+  if (ais.IsNull())
+    return;
+
+  ctx.Unhilight(ais, false);
+  ctx.Deactivate(ais);
+}
+
+static void update_snap_ais_shape_(AIS_InteractiveContext& ctx, AIS_Shape_ptr& ais, const TopoDS_Shape& shape,
+                                   const glm::vec3& color)
+{
+  if (shape.IsNull())
+  {
+    if (!ais.IsNull())
+    {
+      ctx.Remove(ais, false);
+      ais.Nullify();
+    }
+    return;
+  }
+
+  const Quantity_Color qc = snap_guide_qc(color);
+  if (ais.IsNull())
+  {
+    ais = new AIS_Shape(shape);
+    ais->SetWidth(s_snap_guide_line_width);
+    ais->SetColor(qc);
+    ctx.Display(ais, false);
+    prepare_snap_ais_(ctx, ais);
+  }
+  else
+  {
+    prepare_snap_ais_(ctx, ais);
+    ais->Set(shape);
+    ais->SetWidth(s_snap_guide_line_width);
+    ais->SetColor(qc);
+    ctx.Redisplay(ais, false);
+    prepare_snap_ais_(ctx, ais);
+  }
+}
+
+static void clear_snap_ais_(AIS_InteractiveContext& ctx, AIS_Shape_ptr& ais)
+{
+  if (!ais.IsNull())
+  {
+    ctx.Remove(ais, false);
+    ais.Nullify();
+  }
+}
 } // namespace
 
 class Sketch_nodes::Impl
@@ -71,9 +128,13 @@ private:
   std::vector<Node>       m_nodes;
   std::set<gp_Pnt2d>      m_outside_snap_pts; // Projected snap points from other sketches.
   AIS_Shape_ptr           m_snap_anno_axis[2];
+  AIS_Shape_ptr           m_snap_anno_axis_fs[2];
   std::optional<gp_Pnt2d> m_last_snap_pt; // Used for snap annotation
   AIS_Shape_ptr           m_snap_anno;
-  AIS_Shape_ptr           m_global_coax_anno;  // Used when "All co-axial nodes" is on for global alignments
+  AIS_Shape_ptr           m_snap_anno_fs[2];
+  AIS_Shape_ptr           m_global_coax_fs_v;
+  AIS_Shape_ptr           m_global_coax_fs_h;
+  AIS_Shape_ptr           m_global_coax_markers;
   size_t                  m_prev_num_nodes{0}; // Used when an operation is canceled.
 
   // Owner related
@@ -241,23 +302,20 @@ void Sketch_nodes::Impl::get_snap_pts_3d(std::vector<gp_Pnt>& out)
 
 void Sketch_nodes::Impl::hide_snap_annos()
 {
-  if (m_snap_anno)
-    m_ctx.Remove(m_snap_anno, false);
+  clear_snap_ais_(m_ctx, m_snap_anno);
 
-  m_snap_anno = nullptr;
+  for (AIS_Shape_ptr& anno : m_snap_anno_fs)
+    clear_snap_ais_(m_ctx, anno);
 
   for (AIS_Shape_ptr& anno : m_snap_anno_axis)
-    if (anno)
-    {
-      m_ctx.Remove(anno, false);
-      anno = nullptr;
-    }
+    clear_snap_ais_(m_ctx, anno);
 
-  if (m_global_coax_anno)
-  {
-    m_ctx.Remove(m_global_coax_anno, false);
-    m_global_coax_anno = nullptr;
-  }
+  for (AIS_Shape_ptr& anno : m_snap_anno_axis_fs)
+    clear_snap_ais_(m_ctx, anno);
+
+  clear_snap_ais_(m_ctx, m_global_coax_fs_v);
+  clear_snap_ais_(m_ctx, m_global_coax_fs_h);
+  clear_snap_ais_(m_ctx, m_global_coax_markers);
 
   m_ctx.UpdateCurrentViewer();
   m_last_snap_pt = std::nullopt;
@@ -285,55 +343,26 @@ void Sketch_nodes::Impl::update_node_snap_anno_(const gp_Pnt2d& pt, const double
       mode == Sketch_nodes::Snap_guide_mode::Traditional || mode == Sketch_nodes::Snap_guide_mode::Both;
   const bool show_fullscreen = mode == Sketch_nodes::Snap_guide_mode::Fullscreen || mode == Sketch_nodes::Snap_guide_mode::Both;
 
-  TopoDS_Shape fullscreen_shape;
+  TopoDS_Shape fs_h;
+  TopoDS_Shape fs_v;
   if (show_fullscreen)
   {
     double min_u{}, min_v{}, max_u{}, max_v{};
     if (view_bounds_2d_(min_u, min_v, max_u, max_v))
     {
-      BRep_Builder    builder;
-      TopoDS_Compound comp;
-      builder.MakeCompound(comp);
-
       const gp_Pnt p_h0 = to_3d(m_pln, gp_Pnt2d(min_u, pt.Y()));
       const gp_Pnt p_h1 = to_3d(m_pln, gp_Pnt2d(max_u, pt.Y()));
       const gp_Pnt p_v0 = to_3d(m_pln, gp_Pnt2d(pt.X(), min_v));
       const gp_Pnt p_v1 = to_3d(m_pln, gp_Pnt2d(pt.X(), max_v));
-      builder.Add(comp, BRepBuilderAPI_MakeEdge(p_h0, p_h1).Edge());
-      builder.Add(comp, BRepBuilderAPI_MakeEdge(p_v0, p_v1).Edge());
-      fullscreen_shape = comp;
+      fs_h                = BRepBuilderAPI_MakeEdge(p_h0, p_h1).Edge();
+      fs_v                = BRepBuilderAPI_MakeEdge(p_v0, p_v1).Edge();
     }
   }
 
-  TopoDS_Shape       anno_shape;
   const TopoDS_Shape traditional_shape = create_wire_box(m_pln, to_3d(m_pln, pt), snap_dist, snap_dist);
-  if (show_traditional && !fullscreen_shape.IsNull())
-  {
-    BRep_Builder    builder;
-    TopoDS_Compound comp;
-    builder.MakeCompound(comp);
-    builder.Add(comp, fullscreen_shape);
-    builder.Add(comp, traditional_shape);
-    anno_shape = comp;
-  }
-  else if (!fullscreen_shape.IsNull())
-    anno_shape = fullscreen_shape;
-  else
-    anno_shape = traditional_shape;
-
-  if (m_snap_anno.IsNull())
-  {
-    m_snap_anno = new AIS_Shape(anno_shape);
-    m_snap_anno->SetWidth(s_snap_guide_line_width);
-    m_snap_anno->SetColor(Quantity_Color(s_snap_guide_color.x, s_snap_guide_color.y, s_snap_guide_color.z, Quantity_TOC_RGB));
-    m_ctx.Display(m_snap_anno, true);
-  }
-  else
-  {
-    m_snap_anno->Set(anno_shape);
-    m_snap_anno->SetWidth(s_snap_guide_line_width);
-    m_ctx.Redisplay(m_snap_anno, true);
-  }
+  update_snap_ais_shape_(m_ctx, m_snap_anno, show_traditional ? traditional_shape : TopoDS_Shape(), s_snap_guide_color_node);
+  update_snap_ais_shape_(m_ctx, m_snap_anno_fs[0], fs_v, s_snap_guide_color_node);
+  update_snap_ais_shape_(m_ctx, m_snap_anno_fs[1], fs_h, s_snap_guide_color_node);
 }
 
 void Sketch_nodes::Impl::update_axis_snap_anno_(int axis_index, const std::vector<gp_Pnt2d>& axis_pts, double snap_dist)
@@ -357,49 +386,35 @@ void Sketch_nodes::Impl::update_axis_snap_anno_(int axis_index, const std::vecto
     {
       if (axis_index == 0)
       {
-        const gp_Pnt p0  = to_3d(m_pln, gp_Pnt2d(rep_pt.X(), min_v));
-        const gp_Pnt p1  = to_3d(m_pln, gp_Pnt2d(rep_pt.X(), max_v));
+        const gp_Pnt p0 = to_3d(m_pln, gp_Pnt2d(rep_pt.X(), min_v));
+        const gp_Pnt p1 = to_3d(m_pln, gp_Pnt2d(rep_pt.X(), max_v));
         fullscreen_shape = BRepBuilderAPI_MakeEdge(p0, p1).Edge();
       }
       else
       {
-        const gp_Pnt p0  = to_3d(m_pln, gp_Pnt2d(min_u, rep_pt.Y()));
-        const gp_Pnt p1  = to_3d(m_pln, gp_Pnt2d(max_u, rep_pt.Y()));
+        const gp_Pnt p0 = to_3d(m_pln, gp_Pnt2d(min_u, rep_pt.Y()));
+        const gp_Pnt p1 = to_3d(m_pln, gp_Pnt2d(max_u, rep_pt.Y()));
         fullscreen_shape = BRepBuilderAPI_MakeEdge(p0, p1).Edge();
       }
     }
   }
 
-  BRep_Builder    builder;
-  TopoDS_Compound comp;
-  builder.MakeCompound(comp);
-
-  if (!fullscreen_shape.IsNull())
-    builder.Add(comp, fullscreen_shape);
-
+  TopoDS_Shape marker_shape;
   if (show_traditional)
+  {
+    BRep_Builder    builder;
+    TopoDS_Compound comp;
+    builder.MakeCompound(comp);
     for (const gp_Pnt2d& p : axis_pts)
     {
       const TopoDS_Shape small = create_wire_box(m_pln, to_3d(m_pln, p), snap_dist, snap_dist);
       builder.Add(comp, small);
     }
-
-  TopoDS_Shape anno_shape = comp;
-
-  if (m_snap_anno_axis[axis_index].IsNull())
-  {
-    m_snap_anno_axis[axis_index] = new AIS_Shape(anno_shape);
-    m_snap_anno_axis[axis_index]->SetWidth(s_snap_guide_line_width);
-    m_snap_anno_axis[axis_index]->SetColor(
-        Quantity_Color(s_snap_guide_color.x, s_snap_guide_color.y, s_snap_guide_color.z, Quantity_TOC_RGB));
-    m_ctx.Display(m_snap_anno_axis[axis_index], true);
+    marker_shape = comp;
   }
-  else
-  {
-    m_snap_anno_axis[axis_index]->Set(anno_shape);
-    m_snap_anno_axis[axis_index]->SetWidth(s_snap_guide_line_width);
-    m_ctx.Redisplay(m_snap_anno_axis[axis_index], true);
-  }
+
+  update_snap_ais_shape_(m_ctx, m_snap_anno_axis_fs[axis_index], fullscreen_shape, s_snap_guide_color_axis);
+  update_snap_ais_shape_(m_ctx, m_snap_anno_axis[axis_index], marker_shape, s_snap_guide_color_axis);
 }
 
 void Sketch_nodes::Impl::update_global_coaxial_annotations_(double snap_dist)
@@ -445,9 +460,17 @@ void Sketch_nodes::Impl::update_global_coaxial_annotations_(double snap_dist)
   canonicalize(all_xs);
   canonicalize(all_ys);
 
-  BRep_Builder    builder;
-  TopoDS_Compound comp;
-  builder.MakeCompound(comp);
+  BRep_Builder    builder_v;
+  TopoDS_Compound comp_v;
+  builder_v.MakeCompound(comp_v);
+
+  BRep_Builder    builder_h;
+  TopoDS_Compound comp_h;
+  builder_h.MakeCompound(comp_h);
+
+  BRep_Builder    builder_m;
+  TopoDS_Compound comp_m;
+  builder_m.MakeCompound(comp_m);
 
   // Add vertical lines for every unique (canonicalized) X
   double min_u{}, min_v{}, max_u{}, max_v{};
@@ -468,7 +491,7 @@ void Sketch_nodes::Impl::update_global_coaxial_annotations_(double snap_dist)
       gp_Pnt p1 = to_3d(m_pln, gp_Pnt2d(x, all_pts[0].Y() + 100));
       line      = BRepBuilderAPI_MakeEdge(p0, p1).Edge();
     }
-    builder.Add(comp, line);
+    builder_v.Add(comp_v, line);
   }
 
   // Add horizontal lines for every unique (canonicalized) Y
@@ -487,31 +510,19 @@ void Sketch_nodes::Impl::update_global_coaxial_annotations_(double snap_dist)
       gp_Pnt p1 = to_3d(m_pln, gp_Pnt2d(all_pts[0].X() + 100, y));
       line      = BRepBuilderAPI_MakeEdge(p0, p1).Edge();
     }
-    builder.Add(comp, line);
+    builder_h.Add(comp_h, line);
   }
 
   // Add small boxes at every node position (the "annotate" part)
-  // Nodes whose axis value is within Confusion() of a line will visually align on it.
   for (const auto& p : all_pts)
   {
     const TopoDS_Shape small = create_wire_box(m_pln, to_3d(m_pln, p), snap_dist, snap_dist);
-    builder.Add(comp, small);
+    builder_m.Add(comp_m, small);
   }
 
-  if (m_global_coax_anno.IsNull())
-  {
-    m_global_coax_anno = new AIS_Shape(comp);
-    m_global_coax_anno->SetWidth(s_snap_guide_line_width);
-    m_global_coax_anno->SetColor(
-        Quantity_Color(s_snap_guide_color.x, s_snap_guide_color.y, s_snap_guide_color.z, Quantity_TOC_RGB));
-    m_ctx.Display(m_global_coax_anno, true);
-  }
-  else
-  {
-    m_global_coax_anno->Set(comp);
-    m_global_coax_anno->SetWidth(s_snap_guide_line_width);
-    m_ctx.Redisplay(m_global_coax_anno, true);
-  }
+  update_snap_ais_shape_(m_ctx, m_global_coax_fs_v, comp_v, s_snap_guide_color_axis);
+  update_snap_ais_shape_(m_ctx, m_global_coax_fs_h, comp_h, s_snap_guide_color_axis);
+  update_snap_ais_shape_(m_ctx, m_global_coax_markers, comp_m, s_snap_guide_color_axis);
 }
 
 std::optional<size_t> Sketch_nodes::Impl::try_get_node_idx_snap(
@@ -526,10 +537,12 @@ std::optional<size_t> Sketch_nodes::Impl::try_get_node_idx_snap(
 
   const double snap_dist = snap_radius_world_(pt);
 
-  if (!s_annotate_all_coaxial_nodes && m_global_coax_anno)
+  if (!s_annotate_all_coaxial_nodes &&
+      (!m_global_coax_fs_v.IsNull() || !m_global_coax_fs_h.IsNull() || !m_global_coax_markers.IsNull()))
   {
-    m_ctx.Remove(m_global_coax_anno, false);
-    m_global_coax_anno = nullptr;
+    clear_snap_ais_(m_ctx, m_global_coax_fs_v);
+    clear_snap_ais_(m_ctx, m_global_coax_fs_h);
+    clear_snap_ais_(m_ctx, m_global_coax_markers);
   }
 
   m_owner->hide_snap_annos();
@@ -612,8 +625,11 @@ std::optional<size_t> Sketch_nodes::Impl::try_get_node_idx_snap(
 
       update_axis_snap_anno_(axis_idx, unique_pts, sqrt(snap_dist));
     }
-    else if (!m_snap_anno_axis[axis_idx].IsNull())
-      m_ctx.Erase(m_snap_anno_axis[axis_idx], true);
+    else
+    {
+      clear_snap_ais_(m_ctx, m_snap_anno_axis[axis_idx]);
+      clear_snap_ais_(m_ctx, m_snap_anno_axis_fs[axis_idx]);
+    }
   }
 
   if (s_annotate_all_coaxial_nodes)
@@ -667,8 +683,18 @@ std::optional<size_t> Sketch_nodes::Impl::try_get_node_idx_snap(
   }
 
   if (snap_node_idx[0].has_value() && snap_node_idx[0] == snap_node_idx[1])
+  {
+    for (int i = 0; i < 2; ++i)
+    {
+      clear_snap_ais_(m_ctx, m_snap_anno_axis[i]);
+      clear_snap_ais_(m_ctx, m_snap_anno_axis_fs[i]);
+    }
+    update_node_snap_anno_(pt, sqrt(snap_dist));
+    m_ctx.UpdateCurrentViewer();
     return snap_node_idx[0];
+  }
 
+  m_ctx.UpdateCurrentViewer();
   return {};
 }
 
@@ -830,18 +856,32 @@ void Sketch_nodes::set_snap_guide_mode(Snap_guide_mode mode) { s_snap_guide_mode
 
 Sketch_nodes::Snap_guide_mode Sketch_nodes::get_snap_guide_mode() { return s_snap_guide_mode; }
 
-void Sketch_nodes::set_snap_guide_color(float r, float g, float b)
+void Sketch_nodes::set_snap_guide_color_node(float r, float g, float b)
 {
-  s_snap_guide_color.x = std::clamp(r, 0.0f, 1.0f);
-  s_snap_guide_color.y = std::clamp(g, 0.0f, 1.0f);
-  s_snap_guide_color.z = std::clamp(b, 0.0f, 1.0f);
+  s_snap_guide_color_node.x = std::clamp(r, 0.0f, 1.0f);
+  s_snap_guide_color_node.y = std::clamp(g, 0.0f, 1.0f);
+  s_snap_guide_color_node.z = std::clamp(b, 0.0f, 1.0f);
 }
 
-void Sketch_nodes::get_snap_guide_color(float& r, float& g, float& b)
+void Sketch_nodes::get_snap_guide_color_node(float& r, float& g, float& b)
 {
-  r = s_snap_guide_color.x;
-  g = s_snap_guide_color.y;
-  b = s_snap_guide_color.z;
+  r = s_snap_guide_color_node.x;
+  g = s_snap_guide_color_node.y;
+  b = s_snap_guide_color_node.z;
+}
+
+void Sketch_nodes::set_snap_guide_color_axis(float r, float g, float b)
+{
+  s_snap_guide_color_axis.x = std::clamp(r, 0.0f, 1.0f);
+  s_snap_guide_color_axis.y = std::clamp(g, 0.0f, 1.0f);
+  s_snap_guide_color_axis.z = std::clamp(b, 0.0f, 1.0f);
+}
+
+void Sketch_nodes::get_snap_guide_color_axis(float& r, float& g, float& b)
+{
+  r = s_snap_guide_color_axis.x;
+  g = s_snap_guide_color_axis.y;
+  b = s_snap_guide_color_axis.z;
 }
 
 void Sketch_nodes::set_snap_guide_line_width(float width) { s_snap_guide_line_width = std::clamp(width, 0.5f, 8.0f); }

@@ -76,8 +76,10 @@ public:
   static double          get_snap_dist();
   static void            set_snap_guide_mode(Snap_guide_mode mode);
   static Snap_guide_mode get_snap_guide_mode();
-  static void            set_snap_guide_color(float r, float g, float b);
-  static void            get_snap_guide_color(float& r, float& g, float& b);
+  static void            set_snap_guide_color_node(float r, float g, float b);
+  static void            get_snap_guide_color_node(float& r, float& g, float& b);
+  static void            set_snap_guide_color_axis(float r, float g, float b);
+  static void            get_snap_guide_color_axis(float& r, float& g, float& b);
   static void            set_snap_guide_line_width(float width);
   static float           get_snap_guide_line_width();
 
