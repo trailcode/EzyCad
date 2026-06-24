@@ -65,7 +65,9 @@ std::string GUI::occt_view_settings_json() const
       {"edge_dim_arrow_orientation", m_edge_dim_arrow_orientation},
       {"show_sketch_dimensions", m_show_sketch_dimensions},
       {k_gui_key_permanent_node_anno_scale, m_permanent_node_anno_scale},
-      {"add_mid_pt_edges", m_add_mid_pt_edges},
+      {"add_mid_pt_edges", m_add_mid_pt_line_edges},
+      {"add_mid_pt_rect_edges", m_add_mid_pt_rect_edges},
+      {"add_mid_pt_slot_edges", m_add_mid_pt_slot_edges},
       {"view_roll_step_deg", m_view_roll_step_deg},
       {"view_zoom_scroll_scale", m_view_zoom_scroll_scale},
       {"inspection_orthographic", m_inspection_orthographic},
@@ -127,7 +129,9 @@ void GUI::save_occt_view_settings()
       {"edge_dim_arrow_orientation", m_edge_dim_arrow_orientation},
       {"show_sketch_dimensions", m_show_sketch_dimensions},
       {k_gui_key_permanent_node_anno_scale, m_permanent_node_anno_scale},
-      {"add_mid_pt_edges", m_add_mid_pt_edges},
+      {"add_mid_pt_edges", m_add_mid_pt_line_edges},
+      {"add_mid_pt_rect_edges", m_add_mid_pt_rect_edges},
+      {"add_mid_pt_slot_edges", m_add_mid_pt_slot_edges},
       {"load_last_opened_on_startup", m_load_last_opened_on_startup},
       {"last_opened_project_path", m_last_opened_project_path},
       {"imgui_rounding_general", m_imgui_rounding_general},
@@ -330,10 +334,12 @@ void GUI::parse_gui_panes_settings_(const std::string& content)
     m_permanent_node_anno_scale =
         parse_bounded_float(k_gui_key_permanent_node_anno_scale, k_gui_permanent_node_anno_scale_min,
                             k_gui_permanent_node_anno_scale_max, k_gui_permanent_node_anno_scale_default);
-    m_add_mid_pt_edges = b("add_mid_pt_edges", false);
+    m_add_mid_pt_line_edges = b("add_mid_pt_edges", false);
     if (g.contains("add_midpoints_to_linear_edges") && !g.contains("add_mid_pt_edges") &&
         g["add_midpoints_to_linear_edges"].is_boolean())
-      m_add_mid_pt_edges = g["add_midpoints_to_linear_edges"].get<bool>();
+      m_add_mid_pt_line_edges = g["add_midpoints_to_linear_edges"].get<bool>();
+    m_add_mid_pt_rect_edges = b("add_mid_pt_rect_edges", true);
+    m_add_mid_pt_slot_edges = b("add_mid_pt_slot_edges", false);
     m_load_last_opened_on_startup = b("load_last_opened_on_startup", b("load_last_saved_on_startup", false));
     if (g.contains("last_opened_project_path") && g["last_opened_project_path"].is_string())
       m_last_opened_project_path = g["last_opened_project_path"].get<std::string>();
@@ -532,7 +538,7 @@ void GUI::load_occt_view_settings_()
   if (m_view)
     apply_sketch_dimensions_visibility();
 
-  Sketch::set_add_mid_pt_edges(m_add_mid_pt_edges);
+  sync_sketch_add_mid_pt_edges_if_applicable_();
 
   try
   {
@@ -1110,19 +1116,54 @@ void GUI::settings_()
       ImGui::TableNextRow();
       ImGui::TableSetColumnIndex(0);
       ImGui::AlignTextToFramePadding();
-      ImGui::TextUnformatted("Add midpoints to new linear edges");
+      ImGui::TextUnformatted("Add midpoints to line edges");
       ImGui::TableSetColumnIndex(1);
       {
-        bool add = m_add_mid_pt_edges;
-        if (ImGui::Checkbox("##add_mids", &add))
+        bool add = m_add_mid_pt_line_edges;
+        if (ImGui::Checkbox("##add_mids_line", &add))
         {
-          m_add_mid_pt_edges = add;
-          Sketch::set_add_mid_pt_edges(add);
+          m_add_mid_pt_line_edges = add;
+          sync_sketch_add_mid_pt_edges_if_applicable_();
           save_occt_view_settings();
         }
         ImGui::SameLine(0.0f, ImGui::GetStyle().ItemInnerSpacing.x);
-        GUI_DOC_HELP_("When checked, the Add line edge and Add multi-line edge tools create a midpoint node on each "
-                      "new straight edge (for center snapping). Default is unchecked. Click ? to open the user guide.",
+        GUI_DOC_HELP_("Line edge and multi-line edge tools (default off). Click ? to open the user guide.",
+                      doc_urls::k_line_edge_midpoint_nodes);
+      }
+
+      ImGui::TableNextRow();
+      ImGui::TableSetColumnIndex(0);
+      ImGui::AlignTextToFramePadding();
+      ImGui::TextUnformatted("Add midpoints to square/rectangle");
+      ImGui::TableSetColumnIndex(1);
+      {
+        bool add = m_add_mid_pt_rect_edges;
+        if (ImGui::Checkbox("##add_mids_rect", &add))
+        {
+          m_add_mid_pt_rect_edges = add;
+          sync_sketch_add_mid_pt_edges_if_applicable_();
+          save_occt_view_settings();
+        }
+        ImGui::SameLine(0.0f, ImGui::GetStyle().ItemInnerSpacing.x);
+        GUI_DOC_HELP_("Square and rectangle tools (default on). Click ? to open the user guide.",
+                      doc_urls::k_line_edge_midpoint_nodes);
+      }
+
+      ImGui::TableNextRow();
+      ImGui::TableSetColumnIndex(0);
+      ImGui::AlignTextToFramePadding();
+      ImGui::TextUnformatted("Add midpoints to slot edges");
+      ImGui::TableSetColumnIndex(1);
+      {
+        bool add = m_add_mid_pt_slot_edges;
+        if (ImGui::Checkbox("##add_mids_slot", &add))
+        {
+          m_add_mid_pt_slot_edges = add;
+          sync_sketch_add_mid_pt_edges_if_applicable_();
+          save_occt_view_settings();
+        }
+        ImGui::SameLine(0.0f, ImGui::GetStyle().ItemInnerSpacing.x);
+        GUI_DOC_HELP_("Slot tool straight edges only (default off). Click ? to open the user guide.",
                       doc_urls::k_line_edge_midpoint_nodes);
       }
 

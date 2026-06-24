@@ -1034,6 +1034,7 @@ void Occt_view::refresh_sketch_annotations(const Sketch_annotation_refresh& refr
   for (const Sketch_ptr& sk : m_sketches)
     if (sk)
       sk->refresh_annotations(refresh);
+
   if (refresh.length_dimensions)
     m_shp_extrude.refresh_tmp_dimension_style(m_gui.length_dimension_style());
 }
@@ -1676,6 +1677,20 @@ void Occt_view::set_shp_selection_mode(const TopAbs_ShapeEnum selection_mode)
 const Graphic3d_MaterialAspect& Occt_view::get_default_material() const { return m_default_material; }
 
 void Occt_view::set_default_material(const Graphic3d_MaterialAspect& mat) { m_default_material = mat; }
+
+void Occt_view::rotate_view(const gp_Vec& axis, const gp_Pnt& center)
+{
+  if (m_view)
+    m_view->Rotate(axis.X(), axis.Y(), axis.Z(), center.X(), center.Y(), center.Z());
+}
+
+void Occt_view::redraw_view()
+{
+  if (m_view)
+    m_view->Redraw();
+}
+
+V3d_View_ptr Occt_view::view_handle() const { return m_view; }
 
 bool Occt_view::is_headless() const { return m_headless_view; }
 

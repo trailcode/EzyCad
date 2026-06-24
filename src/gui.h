@@ -168,7 +168,9 @@ public:
   void apply_sketch_dimensions_visibility();
   /// Scale factor for permanent sketch-node '+' annotations.
   float permanent_node_anno_scale() const { return m_permanent_node_anno_scale; }
-  bool  get_add_mid_pt_edges() const { return m_add_mid_pt_edges; }
+  bool  get_add_mid_pt_line_edges() const { return m_add_mid_pt_line_edges; }
+  bool  get_add_mid_pt_rect_edges() const { return m_add_mid_pt_rect_edges; }
+  bool  get_add_mid_pt_slot_edges() const { return m_add_mid_pt_slot_edges; }
   bool  get_edge_from_center() const { return m_edge_from_center; }
   bool  get_hide_all_shapes() const { return m_hide_all_shapes; }
   void  set_hide_all_shapes(bool hide) { m_hide_all_shapes = hide; }
@@ -297,6 +299,10 @@ private:
   void options_orthographic_projection_();
   void options_sketch_common_();
   void options_sketch_len_angle_hotkeys_();
+  void sync_sketch_add_mid_pt_edges_if_applicable_();
+  bool add_mid_pt_edges_for_mode_(Mode mode) const;
+  void options_sketch_add_midpoint_nodes_checkbox_(bool& setting);
+  void options_sketch_add_midpoint_nodes_(bool& setting);
   float options_sketch_label_col_w_() const;
 
   void on_key_move_mode_(int key);
@@ -410,7 +416,9 @@ private:
   int          m_edge_dim_text_render_mode  = k_gui_edge_dim_text_render_mode_default;
   bool         m_show_sketch_dimensions     = true;
   float        m_permanent_node_anno_scale  = k_gui_permanent_node_anno_scale_default;
-  bool         m_add_mid_pt_edges           = false;
+  bool         m_add_mid_pt_line_edges      = false;
+  bool         m_add_mid_pt_rect_edges      = true;
+  bool         m_add_mid_pt_slot_edges      = false;
   bool         m_edge_from_center           = false;
   /// Degrees per numpad orbit (8/2/4/6) and Blender-style roll (Shift+NumPad 4/6); persisted in `gui.view_roll_step_deg`.
   double m_view_roll_step_deg = k_gui_view_roll_step_deg_default;

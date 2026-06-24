@@ -164,6 +164,13 @@ public:
   // Revolve related
   void revolve_selected(const double angle);
 
+  // View manipulation helpers (used by shape operations for UX; keep interface clean)
+  void rotate_view(const gp_Vec& axis, const gp_Pnt& center);
+  void redraw_view();
+
+  /// Underlying OCCT view handle (for limited internal helpers such as closest_to_camera).
+  V3d_View_ptr view_handle() const;
+
   void on_enter(const ScreenCoords& screen_coords); // For manual dimension distance keyboard input.
   bool fit_face_in_view(const TopoDS_Face& face);
 
@@ -259,9 +266,6 @@ public:
 
 private:
   friend class Shp_operation_base;
-  friend class Shp_chamfer; // TODO remove
-  friend class Shp_fillet;  // TODO remove
-  friend class Shp_extrude; // TODO remove
   friend class View_access;
 
   // Sketch related
@@ -282,7 +286,6 @@ private:
   Ray                   get_hit_test_ray_(const ScreenCoords& screen_coords) const;
   std::optional<gp_Pnt> get_hit_point_(const AIS_Shape_ptr& shp, const ScreenCoords& screen_coords) const;
 
-  // TODO group in .cpp file
   void        add_shp_(Shp_ptr& shp);
   std::string unique_shape_name_(const char* base_name) const;
 

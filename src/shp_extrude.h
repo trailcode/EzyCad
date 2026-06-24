@@ -30,7 +30,7 @@ public:
 
 private:
   void _update_extrude(const ScreenCoords& screen_coords);
-  void _update_extrude_preview_(double extrude_dist, Plane_side side);
+  void update_extrude_preview_(double extrude_dist, Plane_side side);
   // Face extrude related
   AIS_Shape_ptr              m_to_extrude;
   gp_Pln                     m_to_extrude_pln;

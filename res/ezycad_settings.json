@@ -25,6 +25,8 @@
     "show_shape_list": true,
     "show_sketch_list": true,
     "add_mid_pt_edges": false,
+    "add_mid_pt_rect_edges": true,
+    "add_mid_pt_slot_edges": false,
     "snap_guide_mode": 2,
     "annotate_all_coaxial_nodes": true,
     "snap_guide_color_node": [

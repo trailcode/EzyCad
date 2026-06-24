@@ -779,15 +779,7 @@ void GUI::toolbar_()
           EZY_ASSERT(false);
         }
       else
-      {
-        m_toolbar_buttons[i].is_active = true;
-        for (int j = 0; j < m_toolbar_buttons.size(); j++)
-          if (i != j)
-            m_toolbar_buttons[j].is_active = false;
-
-        m_mode = std::get<Mode>(m_toolbar_buttons[i].data);
-        m_view->on_mode();
-      }
+        set_mode(std::get<Mode>(m_toolbar_buttons[i].data));
     }
 
     if (ui_show_help(1) && ImGui::IsItemHovered())
@@ -2817,12 +2809,12 @@ void GUI::on_mouse_button(int button, int action, int mods)
     {
     case Mode::Sketch_add_edge:
       Sketch::set_edge_from_center(m_edge_from_center);
-      Sketch::set_add_mid_pt_edges(m_add_mid_pt_edges);
+      Sketch::set_add_mid_pt_edges(m_add_mid_pt_line_edges);
       m_view->curr_sketch().finalize_elm();
       break;
 
     case Mode::Sketch_add_multi_edges:
-      Sketch::set_add_mid_pt_edges(m_add_mid_pt_edges);
+      Sketch::set_add_mid_pt_edges(m_add_mid_pt_line_edges);
       m_view->curr_sketch().finalize_elm();
       break;
 
