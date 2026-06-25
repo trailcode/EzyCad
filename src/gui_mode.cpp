@@ -1108,6 +1108,7 @@ void GUI::options_sketch_add_midpoint_nodes_checkbox_(bool& setting)
   {
     setting = add_mids;
     Sketch::set_add_mid_pt_edges(add_mids);
+    save_occt_view_settings();
   }
   ImGui::SameLine(0.0f, ImGui::GetStyle().ItemInnerSpacing.x);
   GUI_DOC_HELP_("When on, new straight edges from this tool get an automatic midpoint node (for center snapping). "
