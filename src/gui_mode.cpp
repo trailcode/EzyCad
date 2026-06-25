@@ -119,6 +119,7 @@ void GUI::set_mode(Mode mode)
   cancel_underlay_calib_();
   m_mode = mode;
   m_view->on_mode();
+  sync_sketch_add_mid_pt_edges_if_applicable_();
   for (Toolbar_button& b : m_toolbar_buttons)
     if (b.data.index() == 0)
       b.is_active = std::get<Mode>(b.data) == mode;
@@ -883,8 +884,8 @@ void GUI::options_sketch_add_edge_mode_()
 {
   EZY_ASSERT(get_mode() == Mode::Sketch_add_edge);
 
-  Sketch::set_add_mid_pt_edges(m_add_mid_pt_edges);
   Sketch::set_edge_from_center(m_edge_from_center);
+  sync_sketch_add_mid_pt_edges_if_applicable_();
 
   options_sketch_common_();
   options_sketch_len_angle_hotkeys_();
@@ -892,16 +893,7 @@ void GUI::options_sketch_add_edge_mode_()
   ImGui::Separator();
   ImGui::TextUnformatted("Options");
   {
-    bool add_mids = m_add_mid_pt_edges;
-    if (ImGui::Checkbox("Add midpoint nodes", &add_mids))
-    {
-      m_add_mid_pt_edges = add_mids;
-      Sketch::set_add_mid_pt_edges(add_mids);
-    }
-    ImGui::SameLine(0.0f, ImGui::GetStyle().ItemInnerSpacing.x);
-    GUI_DOC_HELP_("When on, new linear edges get an automatic midpoint node (used for snapping to edge centers). "
-                  "Default is off. Click ? to open the user guide.",
-                  doc_urls::k_line_edge_midpoint_nodes);
+    options_sketch_add_midpoint_nodes_checkbox_(m_add_mid_pt_line_edges);
 
     bool from_center = m_edge_from_center;
     if (ImGui::Checkbox("Place from center", &from_center))
@@ -920,27 +912,9 @@ void GUI::options_sketch_add_multi_line_edge_mode_()
 {
   EZY_ASSERT(get_mode() == Mode::Sketch_add_multi_edges);
 
-  Sketch::set_add_mid_pt_edges(m_add_mid_pt_edges);
-
   options_sketch_common_();
   options_sketch_len_angle_hotkeys_();
-
-  Sketch::set_add_mid_pt_edges(m_add_mid_pt_edges);
-
-  ImGui::Separator();
-  ImGui::TextUnformatted("Options");
-  {
-    bool add_mids = m_add_mid_pt_edges;
-    if (ImGui::Checkbox("Add midpoint nodes", &add_mids))
-    {
-      m_add_mid_pt_edges = add_mids;
-      Sketch::set_add_mid_pt_edges(add_mids);
-    }
-    ImGui::SameLine(0.0f, ImGui::GetStyle().ItemInnerSpacing.x);
-    GUI_DOC_HELP_("When on, new linear edges get an automatic midpoint node (used for snapping to edge centers). "
-                  "Default is off. Click ? to open the user guide.",
-                  doc_urls::k_line_edge_midpoint_nodes);
-  }
+  options_sketch_add_midpoint_nodes_(m_add_mid_pt_line_edges);
 }
 
 void GUI::options_sketch_add_arc_circle_mode_()
@@ -956,6 +930,7 @@ void GUI::options_sketch_add_square_mode_()
 
   options_sketch_common_();
   options_sketch_len_angle_hotkeys_();
+  options_sketch_add_midpoint_nodes_(m_add_mid_pt_rect_edges);
 }
 
 void GUI::options_sketch_add_rectangle_mode_()
@@ -964,6 +939,7 @@ void GUI::options_sketch_add_rectangle_mode_()
 
   options_sketch_common_();
   options_sketch_len_angle_hotkeys_();
+  options_sketch_add_midpoint_nodes_(m_add_mid_pt_rect_edges);
 }
 
 void GUI::options_sketch_add_rectangle_center_mode_()
@@ -972,6 +948,7 @@ void GUI::options_sketch_add_rectangle_center_mode_()
 
   options_sketch_common_();
   options_sketch_len_angle_hotkeys_();
+  options_sketch_add_midpoint_nodes_(m_add_mid_pt_rect_edges);
 }
 
 void GUI::options_sketch_add_circle_mode_()
@@ -995,6 +972,7 @@ void GUI::options_sketch_add_slot_mode_()
 
   options_sketch_common_();
   options_sketch_len_angle_hotkeys_();
+  options_sketch_add_midpoint_nodes_(m_add_mid_pt_slot_edges);
 }
 
 void GUI::options_orthographic_projection_()
@@ -1086,6 +1064,64 @@ void GUI::options_sketch_len_angle_hotkeys_()
     ImGui::TextUnformatted("Shortcuts");
     ImGui::TextWrapped("TAB: type edge length. Shift+TAB: type angle (degrees, CCW from +X).");
   }
+}
+
+void GUI::sync_sketch_add_mid_pt_edges_if_applicable_()
+{
+  switch (m_mode)
+  {
+  case Mode::Sketch_add_edge:
+  case Mode::Sketch_add_multi_edges:
+  case Mode::Sketch_add_square:
+  case Mode::Sketch_add_rectangle:
+  case Mode::Sketch_add_rectangle_center_pt:
+  case Mode::Sketch_add_slot:
+    Sketch::set_add_mid_pt_edges(add_mid_pt_edges_for_mode_(m_mode));
+    break;
+  default:
+    break;
+  }
+}
+
+bool GUI::add_mid_pt_edges_for_mode_(const Mode mode) const
+{
+  switch (mode)
+  {
+  case Mode::Sketch_add_edge:
+  case Mode::Sketch_add_multi_edges:
+    return m_add_mid_pt_line_edges;
+  case Mode::Sketch_add_square:
+  case Mode::Sketch_add_rectangle:
+  case Mode::Sketch_add_rectangle_center_pt:
+    return m_add_mid_pt_rect_edges;
+  case Mode::Sketch_add_slot:
+    return m_add_mid_pt_slot_edges;
+  default:
+    return false;
+  }
+}
+
+void GUI::options_sketch_add_midpoint_nodes_checkbox_(bool& setting)
+{
+  bool add_mids = setting;
+  if (ImGui::Checkbox("Add midpoint nodes", &add_mids))
+  {
+    setting = add_mids;
+    Sketch::set_add_mid_pt_edges(add_mids);
+    save_occt_view_settings();
+  }
+  ImGui::SameLine(0.0f, ImGui::GetStyle().ItemInnerSpacing.x);
+  GUI_DOC_HELP_("When on, new straight edges from this tool get an automatic midpoint node (for center snapping). "
+                "Saved per tool group in Settings. Click ? to open the user guide.",
+                doc_urls::k_line_edge_midpoint_nodes);
+}
+
+void GUI::options_sketch_add_midpoint_nodes_(bool& setting)
+{
+  sync_sketch_add_mid_pt_edges_if_applicable_();
+  ImGui::Separator();
+  ImGui::TextUnformatted("Options");
+  options_sketch_add_midpoint_nodes_checkbox_(setting);
 }
 
 float GUI::options_sketch_label_col_w_() const

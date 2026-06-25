@@ -33,4 +33,7 @@
 * Need a option to split a edge.
 * ~~If the operational axis is defined. Do not render snap points and perminate nodes.~~
 * Need a hotkey for face inspection mode.
-* Dist and angle input should accept basic algeraic functions, e.g. /, +, etc
+* Dist and angle input should accept basic algebraic functions, e.g. /, +, etc
+* Arc function needs to accept tab for radius. 
+* Dist tab dialog should state if it is a radius or diameter for arc.*
+* Dist tab dialog should state if it is a 1/2 dist or full, for edge tool.

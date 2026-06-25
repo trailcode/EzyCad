@@ -94,7 +94,7 @@ Status Shp_chamfer::add_chamfer(const ScreenCoords& screen_coords, const Chamfer
     chamfer_maker.Build();
     Shp_ptr chamfer_shp = new Shp(ctx(), chamfer_maker.Shape());
     ctx().Remove(chamfer_src_shp, false);
-    view().m_shps.remove(chamfer_src_shp);
+    view().get_shapes().remove(chamfer_src_shp);
     chamfer_shp->set_name("Chamfered shape");
     add_shp_(chamfer_shp);
     copy_shape_material_from_(chamfer_shp, chamfer_src_shp);

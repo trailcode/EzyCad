@@ -686,41 +686,37 @@ void apply_length_dimension_style(const PrsDim_LengthDimension_ptr& dim, const L
   }
 }
 
-void apply_length_dimension_line_width(const PrsDim_LengthDimension_ptr& dim, const double line_width)
+void apply_length_dimension_list_hover_style(const PrsDim_LengthDimension_ptr& dim, const float hover_rgb[3],
+                                             const double hover_line_width)
 {
   if (dim.IsNull())
     return;
 
   Handle(Prs3d_DimensionAspect) aspect = clone_dimension_aspect(dim);
+  const Quantity_Color            qc(hover_rgb[0], hover_rgb[1], hover_rgb[2], Quantity_TOC_RGB);
 
-  Quantity_Color    col = Quantity_NOC_YELLOW;
   Aspect_TypeOfLine typ = Aspect_TOL_SOLID;
   if (const Handle(Prs3d_LineAspect)& la = aspect->LineAspect(); !la.IsNull())
+    typ = la->Aspect()->Type();
+
+  aspect->SetLineAspect(new Prs3d_LineAspect(qc, typ, hover_line_width));
+
+  if (const Handle(Prs3d_ArrowAspect)& cur_arrow = aspect->ArrowAspect(); !cur_arrow.IsNull())
   {
-    const Handle(Graphic3d_AspectLine3d)& g = la->Aspect();
-    col                                     = g->Color();
-    typ                                     = g->Type();
+    Handle(Prs3d_ArrowAspect) arrow = new Prs3d_ArrowAspect(*cur_arrow);
+    arrow->SetColor(qc);
+    aspect->SetArrowAspect(arrow);
   }
 
-  aspect->SetLineAspect(new Prs3d_LineAspect(col, typ, static_cast<double>(line_width)));
-  dim->SetDimensionAspect(aspect);
-}
+  aspect->SetCommonColor(qc);
 
-void apply_length_dimension_arrow_size(const PrsDim_LengthDimension_ptr& dim, const double arrow_size)
-{
-  if (dim.IsNull())
-    return;
+  if (const Handle(Prs3d_TextAspect)& text = aspect->TextAspect(); !text.IsNull())
+  {
+    Handle(Prs3d_TextAspect) t = new Prs3d_TextAspect(*text);
+    t->SetColor(qc);
+    aspect->SetTextAspect(t);
+  }
 
-  Handle(Prs3d_DimensionAspect) aspect = clone_dimension_aspect(dim);
-
-  Handle(Prs3d_ArrowAspect) arrow;
-  if (const Handle(Prs3d_ArrowAspect)& cur_arrow = aspect->ArrowAspect(); !cur_arrow.IsNull())
-    arrow = new Prs3d_ArrowAspect(*cur_arrow);
-  else
-    arrow = new Prs3d_ArrowAspect();
-
-  arrow->SetLength(static_cast<double>(arrow_size));
-  aspect->SetArrowAspect(arrow);
   dim->SetDimensionAspect(aspect);
 }
 

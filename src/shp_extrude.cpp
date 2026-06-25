@@ -32,7 +32,7 @@ void Shp_extrude::sketch_face_extrude(const ScreenCoords& screen_coords, bool is
     {
       m_to_extrude_pln = face->owner_sketch.get_plane();
       m_extrude_side   = Plane_side::Front;
-      m_to_extrude_pt  = closest_to_camera(view().m_view, face->verts_3d);
+      m_to_extrude_pt  = closest_to_camera(view().view_handle(), face->verts_3d);
       m_curr_view_pln  = view().get_view_plane(*m_to_extrude_pt);
       m_to_extrude     = shp;
 
@@ -45,11 +45,9 @@ void Shp_extrude::sketch_face_extrude(const ScreenCoords& screen_coords, bool is
         auto rotation_axis = gp_Vec(m_to_extrude_pln.XAxis().Direction()) + gp_Vec(m_to_extrude_pln.YAxis().Direction());
         rotation_axis.Normalize();
         rotation_axis *= to_radians(45.0);
-        // rotate around arbitrary axis
-        view().m_view->Rotate(rotation_axis.X(), rotation_axis.Y(), rotation_axis.Z(), m_to_extrude_pt->X(),
-                              m_to_extrude_pt->Y(), m_to_extrude_pt->Z());
-        // request redraw
-        view().m_view->Redraw();
+        // rotate around arbitrary axis (use clean view API)
+        view().rotate_view(rotation_axis, *m_to_extrude_pt);
+        view().redraw_view();
         m_curr_view_pln = view().get_view_plane(*m_to_extrude_pt);
       }
       _update_extrude(screen_coords);
@@ -64,7 +62,7 @@ void Shp_extrude::finalize()
   DBG_MSG("");
   EZY_ASSERT(m_extruded);
   m_extruded->set_name(view().get_unique_shape_name("Shape"));
-  view().add_shp_(m_extruded);
+  add_shp_(m_extruded);
   ctx().Remove(m_tmp_dim, false);
   clear_all(m_to_extrude_pt, m_to_extrude, m_extruded, m_tmp_dim);
   view().set_show_dim_input(false);
@@ -122,19 +120,20 @@ void Shp_extrude::_update_extrude(const ScreenCoords& screen_coords)
         if (do_finalize)
         {
           view().set_show_dim_input(false);
-          _update_extrude_preview_(entered_dist, m_extrude_side);
-          view().finalize_sketch_extrude_();
+          update_extrude_preview_(entered_dist, m_extrude_side);
+          view().push_undo_snapshot();
+          finalize();
         }
       };
 
       gui().set_dist_edit(float(scaled_dist), std::move(std::function<void(float, bool)>(l)), screen_coords);
     }
 
-    _update_extrude_preview_(extrude_dist, m_extrude_side);
+    update_extrude_preview_(extrude_dist, m_extrude_side);
   }
 }
 
-void Shp_extrude::_update_extrude_preview_(const double extrude_dist, const Plane_side side)
+void Shp_extrude::update_extrude_preview_(const double extrude_dist, const Plane_side side)
 {
   if (extrude_dist <= Precision::Confusion())
     return;
@@ -171,7 +170,7 @@ void Shp_extrude::_update_extrude_preview_(const double extrude_dist, const Plan
   if (!m_extruded)
   {
     m_extruded = new Shp(ctx(), body);
-    m_extruded->SetMaterial(view().m_default_material);
+    m_extruded->SetMaterial(view().get_default_material());
     ctx().Display(m_extruded, m_extruded->get_disp_mode(), -1, true);
   }
   else

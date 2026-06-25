@@ -2689,8 +2689,9 @@ TEST_F(Sketch_test, SplitEdge_HasMidpoints)
   EXPECT_NEAR(midpoint.X(), 10.0, Precision::Confusion());
   EXPECT_NEAR(midpoint.Y(), 0.0, Precision::Confusion());
 
-  // Set mode to add edges
+  // Set mode to add edges (set_mode syncs mids from GUI prefs; re-enable for this test)
   gui().set_mode(Mode::Sketch_add_edge);
+  Sketch::set_add_mid_pt_edges(true);
 
   // Create a new edge that snaps to the midpoint, which will split the original edge
   // Start from the midpoint

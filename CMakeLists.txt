@@ -182,8 +182,6 @@ if(EZYCAD_HAVE_PYTHON)
   endif()
 endif()
 
-
-
 # Open CASCADE Technology
 find_package(OpenCASCADE REQUIRED NO_DEFAULT_PATH)
 if(OpenCASCADE_FOUND)

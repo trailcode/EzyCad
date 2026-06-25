@@ -157,7 +157,7 @@ struct Length_dimension_style
 {
   float line_width        = 1.0f;
   float arrow_size        = 6.0f;
-  float color_rgb[3]      = {1.f, 1.f, 0.f};
+  float color_rgb[3]      = {0.542373f, 0.542373f, 0.213732f};
   float text_height_scale = 1.0f;
   int   label_h           = 3;
   /// 0 standard, 1 sharp, 2 wide, 3 shaded 3D (see `edge_dim_arrow_style` in settings).
@@ -177,10 +177,9 @@ double length_dimension_auto_flyout(double edge_len);
 /// Apply full dimension aspect (line, text, arrows, extensions). Call `Redisplay` after.
 void apply_length_dimension_style(const PrsDim_LengthDimension_ptr& dim, const Length_dimension_style& style);
 
-/// Rebuild dimension line aspect with \a line_width (call `Redisplay` on the AIS object after).
-void apply_length_dimension_line_width(const PrsDim_LengthDimension_ptr& dim, double line_width);
-/// Rebuild dimension arrow aspect with \a arrow_size (call `Redisplay` on the AIS object after).
-void apply_length_dimension_arrow_size(const PrsDim_LengthDimension_ptr& dim, double arrow_size);
+/// Sketch-list row hover: recolor and thicken the dimension line (call `Redisplay` after).
+void apply_length_dimension_list_hover_style(const PrsDim_LengthDimension_ptr& dim, const float hover_rgb[3],
+                                             double hover_line_width);
 
 /// When `sketch_faces_for_flyout` is non-null and non-empty, edge dimensions offset to the side that is
 /// void (not TopAbs_IN) relative to those faces - fixes concave / notch edges where the node centroid lies

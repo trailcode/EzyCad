@@ -35,6 +35,8 @@
 
 using namespace glm;
 
+struct Sketch_AIS_node_mark;
+
 namespace
 {
 struct Symmetric_edge_span
@@ -111,11 +113,7 @@ Sketch::~Sketch()
   if (m_operation_axis.has_value())
     remove_edge(*m_operation_axis);
 
-  for (Sketch_AIS_node_mark_ptr& mk : m_permanent_node_marks)
-    if (mk)
-      m_ctx.Remove(mk, false);
-
-  m_permanent_node_marks.clear();
+  remove_all_permanent_node_marks_();
 
   if (m_len_dim_rubber_shp)
     m_ctx.Remove(m_len_dim_rubber_shp, false);
@@ -241,69 +239,6 @@ void Sketch::update_node_mark_style_(AIS_Shape_ptr& shp)
   shp->SetWidth(1.25);
   shp->SetColor(Quantity_NOC_RED);
   shp->SetTransparency(0.0);
-}
-
-void Sketch::sync_permanent_node_annos_()
-{
-  if (m_permanent_node_marks.size() < m_nodes.size())
-    m_permanent_node_marks.resize(m_nodes.size());
-
-  const double size_scale = std::max(static_cast<double>(m_view.gui().permanent_node_anno_scale()), 0.0);
-  const double half_arm   = std::max(plane_pick_snap_radius_world_() * 0.45 * size_scale, Precision::Confusion() * 50.0);
-
-  const Mode mode = get_mode();
-  // Show "+" markers for permanent user nodes in sketch modes and polar duplicate (which snaps to sketch nodes).
-  const bool show_permanent_marks    = is_sketch_mode(mode) || mode == Mode::Shape_polar_duplicate;
-  const bool hide_for_operation_axis = operation_axis_suppresses_sketch_snap_();
-
-  for (size_t i = 0, n = m_nodes.size(); i < n; ++i)
-  {
-    const Sketch_nodes::Node& node = m_nodes[i];
-    const bool show = m_visible && node.permanent && !node.deleted && show_permanent_marks && !hide_for_operation_axis;
-
-    if (!show)
-    {
-      if (m_permanent_node_marks[i])
-      {
-        m_ctx.Remove(m_permanent_node_marks[i], false);
-        m_permanent_node_marks[i].Nullify();
-      }
-      continue;
-    }
-
-    const gp_Pnt2d     p2(node.X(), node.Y());
-    const gp_Pnt       c3    = to_3d(m_pln, p2);
-    const TopoDS_Shape cross = create_plus_cross_shape(m_pln, c3, half_arm);
-
-    if (m_permanent_node_marks[i])
-    {
-      m_permanent_node_marks[i]->Set(cross);
-      update_node_mark_style_(m_permanent_node_marks[i]);
-      m_ctx.Redisplay(m_permanent_node_marks[i], true);
-    }
-    else
-    {
-      Sketch_AIS_node_mark_ptr mk = new Sketch_AIS_node_mark(*this, i, cross);
-      update_node_mark_style_(mk);
-      m_permanent_node_marks[i] = mk;
-      m_ctx.Display(mk, AIS_WireFrame, 0, false);
-    }
-  }
-}
-
-void Sketch::remove_permanent_node_mark(Sketch_AIS_node_mark& mark)
-{
-  EZY_ASSERT(&mark.owner_sketch == this);
-  const size_t i = mark.node_idx;
-  EZY_ASSERT(i < m_nodes.size());
-  m_nodes[i].deleted = true;
-  remove_length_dimensions_referencing_node_(i);
-  if (i < m_permanent_node_marks.size() && m_permanent_node_marks[i].get() == &mark)
-  {
-    m_ctx.Remove(m_permanent_node_marks[i], false);
-    m_permanent_node_marks[i].Nullify();
-  }
-  m_ctx.UpdateCurrentViewer();
 }
 
 void Sketch::update_originating_face_style()
@@ -2035,13 +1970,7 @@ bool Sketch::cancel_elm()
   m_nodes.hide_snap_annos();
   m_nodes.cancel();
 
-  while (m_permanent_node_marks.size() > m_nodes.size())
-  {
-    const size_t last = m_permanent_node_marks.size() - 1;
-    if (m_permanent_node_marks[last])
-      m_ctx.Remove(m_permanent_node_marks[last], false);
-    m_permanent_node_marks.pop_back();
-  }
+  trim_trailing_permanent_node_marks_();
 
   return operation_canceled;
 }
@@ -2885,9 +2814,7 @@ void Sketch::set_visible(bool state)
     m_nodes.hide_snap_annos();
     cancel_elm();
 
-    for (Sketch_AIS_node_mark_ptr& mk : m_permanent_node_marks)
-      if (mk)
-        m_ctx.Erase(mk, false);
+    erase_permanent_node_marks_();
   }
 
   m_ctx.UpdateCurrentViewer();
@@ -2937,6 +2864,8 @@ void Sketch::set_show_dims(bool show)
   }
 }
 
+bool Sketch::shows_dimensions() const { return m_show_dims; }
+
 bool Sketch::dimension_visible(size_t dim_index) const
 {
   EZY_ASSERT(dim_index < m_length_dimensions.size());
@@ -2958,6 +2887,18 @@ void Sketch::set_dimension_visible(size_t dim_index, bool visible)
     else
       m_ctx.Erase(d.dim, false);
   }
+}
+
+size_t Sketch::dimension_node_lo(size_t dim_index) const
+{
+  EZY_ASSERT(dim_index < m_length_dimensions.size());
+  return m_length_dimensions[dim_index].node_idx_lo;
+}
+
+size_t Sketch::dimension_node_hi(size_t dim_index) const
+{
+  EZY_ASSERT(dim_index < m_length_dimensions.size());
+  return m_length_dimensions[dim_index].node_idx_hi;
 }
 
 double Sketch::dimension_offset(size_t dim_index) const
@@ -2991,6 +2932,12 @@ std::string Sketch::dimension_name(size_t dim_index) const
   return m_length_dimensions[dim_index].name;
 }
 
+PrsDim_LengthDimension_ptr Sketch::length_dimension_handle(const size_t dim_index) const
+{
+  EZY_ASSERT(dim_index < m_length_dimensions.size());
+  return m_length_dimensions[dim_index].dim;
+}
+
 void Sketch::set_dimension_name(size_t dim_index, const std::string& name)
 {
   EZY_ASSERT(dim_index < m_length_dimensions.size());
@@ -3001,57 +2948,13 @@ void Sketch::set_dimension_name(size_t dim_index, const std::string& name)
   // name is only used in Sketch List inspector; no 3D annotation update needed
 }
 
-void Sketch::refresh_edge_dimension_line_widths(const double line_width)
+void Sketch::refresh_annotations(const Sketch_annotation_refresh& refresh)
 {
-  for (Length_dimension& ld : m_length_dimensions)
-    if (!ld.dim.IsNull())
-    {
-      apply_length_dimension_line_width(ld.dim, line_width);
-      m_ctx.Redisplay(ld.dim, true);
-    }
-
-  if (!m_tmp_dim_anno.IsNull())
-  {
-    apply_length_dimension_line_width(m_tmp_dim_anno, line_width);
-    m_ctx.Redisplay(m_tmp_dim_anno, true);
-  }
+  if (refresh.length_dimensions)
+    refresh_all_length_dimensions_();
+  if (refresh.permanent_node_marks)
+    sync_permanent_node_annos_();
 }
-
-void Sketch::refresh_edge_dimension_arrow_sizes(const double arrow_size)
-{
-  for (Length_dimension& ld : m_length_dimensions)
-    if (!ld.dim.IsNull())
-    {
-      apply_length_dimension_arrow_size(ld.dim, arrow_size);
-      m_ctx.Redisplay(ld.dim, true);
-    }
-
-  if (!m_tmp_dim_anno.IsNull())
-  {
-    apply_length_dimension_arrow_size(m_tmp_dim_anno, arrow_size);
-    m_ctx.Redisplay(m_tmp_dim_anno, true);
-  }
-}
-
-void Sketch::refresh_all_length_dimensions() { refresh_all_length_dimensions_(); }
-
-void Sketch::refresh_edge_dimension_style(const Length_dimension_style& style)
-{
-  for (Length_dimension& ld : m_length_dimensions)
-    if (!ld.dim.IsNull())
-    {
-      apply_length_dimension_style(ld.dim, style);
-      m_ctx.Redisplay(ld.dim, true);
-    }
-
-  if (!m_tmp_dim_anno.IsNull())
-  {
-    apply_length_dimension_style(m_tmp_dim_anno, style);
-    m_ctx.Redisplay(m_tmp_dim_anno, true);
-  }
-}
-
-void Sketch::refresh_permanent_node_annotations() { sync_permanent_node_annos_(); }
 
 bool Sketch::is_current() const { return this == &m_view.curr_sketch(); }
 
@@ -3523,6 +3426,123 @@ bool Sketch::Edge::reversed(size_t idx_a, size_t idx_b) const
 }
 
 bool Sketch::is_linear_edge_(const Edge& e) { return !e.circle_arc && e.node_idx_b.has_value(); }
+
+/// Selectable "+" marker for user-placed permanent sketch nodes (add-node tool).
+struct Sketch_AIS_node_mark : public AIS_Shape
+{
+  Sketch_AIS_node_mark(Sketch& owner, size_t node_idx, const TopoDS_Shape& shp);
+  Sketch& owner_sketch;
+  size_t  node_idx{};
+};
+
+bool try_remove_sketch_permanent_node_mark(AIS_Shape* shp)
+{
+  if (!shp)
+    return false;
+  if (auto* mark = dynamic_cast<Sketch_AIS_node_mark*>(shp))
+  {
+    mark->owner_sketch.remove_permanent_node_mark(*mark);
+    return true;
+  }
+  return false;
+}
+
+void Sketch::sync_permanent_node_annos_()
+{
+  if (m_permanent_node_marks.size() < m_nodes.size())
+    m_permanent_node_marks.resize(m_nodes.size());
+
+  const double size_scale = std::max(static_cast<double>(m_view.gui().permanent_node_anno_scale()), 0.0);
+  const double half_arm   = std::max(plane_pick_snap_radius_world_() * 0.45 * size_scale, Precision::Confusion() * 50.0);
+
+  const Mode mode = get_mode();
+  // Show "+" markers for permanent user nodes in sketch modes and polar duplicate (which snaps to sketch nodes).
+  const bool show_permanent_marks    = is_sketch_mode(mode) || mode == Mode::Shape_polar_duplicate;
+  const bool hide_for_operation_axis = operation_axis_suppresses_sketch_snap_();
+
+  for (size_t i = 0, n = m_nodes.size(); i < n; ++i)
+  {
+    const Sketch_nodes::Node& node = m_nodes[i];
+    const bool show = m_visible && node.permanent && !node.deleted && show_permanent_marks && !hide_for_operation_axis;
+
+    if (!show)
+    {
+      if (m_permanent_node_marks[i])
+      {
+        m_ctx.Remove(m_permanent_node_marks[i], false);
+        m_permanent_node_marks[i].Nullify();
+      }
+      continue;
+    }
+
+    const gp_Pnt2d     p2(node.X(), node.Y());
+    const gp_Pnt       c3    = to_3d(m_pln, p2);
+    const TopoDS_Shape cross = create_plus_cross_shape(m_pln, c3, half_arm);
+
+    if (m_permanent_node_marks[i])
+    {
+      m_permanent_node_marks[i]->Set(cross);
+      update_node_mark_style_(m_permanent_node_marks[i]);
+      m_ctx.Redisplay(m_permanent_node_marks[i], true);
+    }
+    else
+    {
+      Sketch_AIS_node_mark_ptr mk = new Sketch_AIS_node_mark(*this, i, cross);
+      update_node_mark_style_(mk);
+      m_permanent_node_marks[i] = mk;
+      m_ctx.Display(mk, AIS_WireFrame, 0, false);
+    }
+  }
+}
+
+void Sketch::remove_permanent_node_mark(Sketch_AIS_node_mark& mark)
+{
+  EZY_ASSERT(&mark.owner_sketch == this);
+  const size_t i = mark.node_idx;
+  EZY_ASSERT(i < m_nodes.size());
+  m_nodes[i].deleted = true;
+  remove_length_dimensions_referencing_node_(i);
+  if (i < m_permanent_node_marks.size() && m_permanent_node_marks[i].get() == &mark)
+  {
+    m_ctx.Remove(m_permanent_node_marks[i], false);
+    m_permanent_node_marks[i].Nullify();
+  }
+  m_ctx.UpdateCurrentViewer();
+}
+
+void Sketch::remove_permanent_node_mark_ais_at_(size_t node_idx)
+{
+  if (node_idx >= m_permanent_node_marks.size() || m_permanent_node_marks[node_idx].IsNull())
+    return;
+  m_ctx.Remove(m_permanent_node_marks[node_idx], false);
+  m_permanent_node_marks[node_idx].Nullify();
+}
+
+void Sketch::remove_all_permanent_node_marks_()
+{
+  for (Sketch_AIS_node_mark_ptr& mk : m_permanent_node_marks)
+    if (mk)
+      m_ctx.Remove(mk, false);
+  m_permanent_node_marks.clear();
+}
+
+void Sketch::erase_permanent_node_marks_()
+{
+  for (Sketch_AIS_node_mark_ptr& mk : m_permanent_node_marks)
+    if (mk)
+      m_ctx.Erase(mk, false);
+}
+
+void Sketch::trim_trailing_permanent_node_marks_()
+{
+  while (m_permanent_node_marks.size() > m_nodes.size())
+  {
+    const size_t last = m_permanent_node_marks.size() - 1;
+    if (m_permanent_node_marks[last])
+      m_ctx.Remove(m_permanent_node_marks[last], false);
+    m_permanent_node_marks.pop_back();
+  }
+}
 
 Sketch_AIS_edge::Sketch_AIS_edge(Sketch& owner, const TopoDS_Shape& shp)
     : AIS_Shape(shp)

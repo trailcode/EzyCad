@@ -159,6 +159,10 @@ def _ezycad_bootstrap():
             return _n.view_curr_sketch_node_count()
         def curr_sketch_node(self, i):
             return _n.view_curr_sketch_node(int(i))  # returns (x, y) tuple
+        def curr_sketch_dim_count(self):
+            return _n.view_curr_sketch_dim_count()
+        def curr_sketch_dim(self, i):
+            return _n.view_curr_sketch_dim(int(i))  # (lo, hi, visible, offset, name, distance)
         def add_box(self, ox, oy, oz, w, l, h):
             return _n.view_add_box(ox, oy, oz, w, l, h)
         def add_sphere(self, ox, oy, oz, r):
@@ -265,6 +269,8 @@ PYBIND11_EMBEDDED_MODULE(ezycad_native, m)
               "  view.curr_sketch_name()      - current sketch name\n"
               "  view.curr_sketch_node_count()- number of nodes in current sketch\n"
               "  view.curr_sketch_node(i)     - (x, y) of node i in current sketch (raises IndexError if out of range)\n"
+              "  view.curr_sketch_dim_count() - number of length dimensions in current sketch\n"
+              "  view.curr_sketch_dim(i)      - (lo, hi, visible, offset, name, distance) for dimension i\n"
               "  view.add_box(ox,oy,oz,w,l,h) - add box\n"
               "  view.add_sphere(ox,oy,oz,r)  - add sphere\n"
               "  view.get_shape(i)            - get shape by 0-based index (raises IndexError if out of range)\n"
@@ -337,6 +343,37 @@ PYBIND11_EMBEDDED_MODULE(ezycad_native, m)
           throw py::index_error("node index out of range");
         const Sketch_nodes::Node& n = nodes[static_cast<std::size_t>(idx)];
         return py::make_tuple(n.X(), n.Y());
+      },
+      py::arg("i"));
+
+  m.def("view_curr_sketch_dim_count",
+        []
+        {
+          Occt_view* view = g_py_gui && g_py_gui->get_view() ? g_py_gui->get_view() : nullptr;
+          if (!view)
+            return std::size_t{0};
+          return view->curr_sketch().length_dimension_count();
+        });
+
+  m.def(
+      "view_curr_sketch_dim",
+      [](std::ptrdiff_t idx) -> py::tuple
+      {
+        Occt_view* view = g_py_gui && g_py_gui->get_view() ? g_py_gui->get_view() : nullptr;
+        if (!view)
+          throw std::runtime_error("no 3D view available");
+        if (idx < 0)
+          throw py::index_error("dimension index must be >= 0");
+        Sketch& sketch = view->curr_sketch();
+        if (static_cast<std::size_t>(idx) >= sketch.length_dimension_count())
+          throw py::index_error("dimension index out of range");
+        const std::size_t i  = static_cast<std::size_t>(idx);
+        const std::size_t lo = sketch.dimension_node_lo(i);
+        const std::size_t hi = sketch.dimension_node_hi(i);
+        const Sketch_nodes& nodes = sketch.get_nodes();
+        const double        dist  = nodes[lo].Distance(nodes[hi]) / view->get_dimension_scale();
+        return py::make_tuple(lo, hi, sketch.dimension_visible(i), sketch.dimension_offset(i),
+                              sketch.dimension_name(i), dist);
       },
       py::arg("i"));
 

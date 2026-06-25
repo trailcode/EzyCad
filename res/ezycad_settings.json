@@ -1,6 +1,11 @@
 {
   "gui": {
     "dark_mode": true,
+    "edge_dim_color": [
+      0.5423728823661804,
+      0.5423728823661804,
+      0.21373170614242554
+    ],
     "edge_dim_label_h": 10,
     "edge_dim_line_width": 2.0,
     "imgui_rounding_general": 8.0,
@@ -20,15 +25,29 @@
     "show_shape_list": true,
     "show_sketch_list": true,
     "add_mid_pt_edges": false,
-    "underlay_highlight_color": [
-      1.0,
-      0.8627450980392157,
-      0.0
+    "add_mid_pt_rect_edges": true,
+    "add_mid_pt_slot_edges": false,
+    "snap_guide_mode": 2,
+    "annotate_all_coaxial_nodes": true,
+    "snap_guide_color_node": [
+      0.8232946395874023,
+      0.5494110584259033,
+      0.9533898234367371
     ],
-    "shape_list_hover_color": [
-      0.0,
-      1.0,
-      0.0,
+    "snap_guide_color_axis": [
+      0.9576271176338196,
+      0.06492385268211365,
+      0.5415366888046265
+    ],
+    "underlay_highlight_color": [
+      0.639830470085144,
+      0.5619884133338928,
+      0.31178179383277893
+    ],
+    "elm_list_hover_color": [
+      0.4020639955997467,
+      0.1025567501783371,
+      0.47457629442214966,
       1.0
     ]
   },

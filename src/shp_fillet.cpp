@@ -90,7 +90,7 @@ Status Shp_fillet::add_fillet(const ScreenCoords& screen_coords, const Fillet_mo
     fillet_maker.Build();
     Shp_ptr fillet_shp = new Shp(ctx(), fillet_maker.Shape());
     ctx().Remove(fillet_src_shp, false);
-    view().m_shps.remove(fillet_src_shp);
+    view().get_shapes().remove(fillet_src_shp);
     fillet_shp->set_name("Filleted shape");
     add_shp_(fillet_shp);
     copy_shape_material_from_(fillet_shp, fillet_src_shp);

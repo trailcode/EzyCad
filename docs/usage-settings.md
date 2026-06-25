@@ -45,7 +45,7 @@ Between those, the pane has **six** collapsible sections. Expand a section to se
 
 2. **UI corner rounding** — Sliders **0** to **16** for **Windows, frames, popups**; **Scrollbars and sliders** (has **?**); **Tabs**.
 
-3. **3D view background** — **Background color 1** and **Background color 2** (float RGB fields and swatches). **Gradient blend** — combo: **Horizontal**, **Vertical**, **Diagonal 1**, **Diagonal 2**, **Corner 1** … **Corner 4**.
+3. **View presentation** — **Background color 1** and **Background color 2** (float RGB fields and swatches). **Gradient blend** — combo: **Horizontal**, **Vertical**, **Diagonal 1**, **Diagonal 2**, **Corner 1** … **Corner 4**. **Element hover color** — highlight for rows hovered in the **Shape List** or **Sketch List** (**Dimensions** table); stored as **`gui.elm_list_hover_color`**.
 
 4. **3D view grid** — **Show grid** (checkbox; grid is drawn on the **active sketch** plane). **Fine grid lines** and **Major grid lines** (passed to Open CASCADE `Aspect_Grid::SetColors`: dense lines vs every-tenth emphasis lines). **Grid step**, **Grid extent X / Y** (full span edge-to-edge), and **Grid display Z offset** in the Settings pane use the **same length scale as sketch length dimensions** (display value = model value / internal `dimension_scale`, default **100**). Saved JSON (`occt_view`) stores **half-extent** in model units for OCCT (`grid_graphic_*`); Settings shows **full** extent (twice the stored half-extent).
 
@@ -59,7 +59,7 @@ Between those, the pane has **six** collapsible sections. Expand a section to se
    - **Arrow style** — *Standard*, *Sharp*, *Wide*, or *3D shaded*
    - **Arrow orientation** — *Automatic*, *Internal*, or *External*
    - **Show sketch dimensions** — global on/off for length dimensions on all sketches (tool mode may still limit which sketch shows dims when on)
-   - **Permanent node annotation size**, **Add midpoints to new linear edges** (default off; only affects Line Edge and Multi-Line Edge tools), **Underlay highlight color**, **Snap guide color**, **Snap guide line width** (slider **0.5** to **8.0**; default **1.0**), **Snap guide mode**, **All co-axial nodes** (directly under **Sketch**, not inside **Dimensions**)
+   - **Permanent node annotation size**, **Add midpoints to new linear edges** (default off; only affects Line Edge and Multi-Line Edge tools), **Underlay highlight color**, **Snap guide color (node)**, **Snap guide color (axis)**, **Snap guide line width** (slider **0.5** to **8.0**; default **1.0**), **Snap guide mode**, **All co-axial nodes** (directly under **Sketch**, not inside **Dimensions**)
 
 6. **Startup project** — **Desktop only:** **Load last opened on startup** (checkbox, with **?**), then **Last opened path:** … or **(No path saved yet.)** Then **Save current as startup project**, **Clear saved startup** (with **?**). **WebAssembly:** no load-last row; only the two buttons and **?**. See [Startup project](#startup-project).
 
@@ -95,7 +95,7 @@ For other non-sketch Options content (for example **Polar duplicate**), see [usa
 
 Sketch-related preferences are edited in the **Options** panel while you use a sketch tool, not in the **Settings** pane:
 
-- **Sketch options** (all sketch tools): **Snap dist**, **Snap guide mode** (*Traditional*, *Fullscreen*, *Both*), and **All co-axial nodes** (global co-axial grid vs closest-per-axis only). See [How sketch snap works](usage-sketch.md#sketch-snapping). **Snap guide color**, **Snap guide line width**, **Snap guide mode**, and **All co-axial nodes** are also in **Settings -> Sketch** (persisted in `gui.*` keys below).
+- **Sketch options** (all sketch tools): **Snap dist**, **Snap guide mode** (*Traditional*, *Fullscreen*, *Both*), and **All co-axial nodes** (global co-axial grid vs closest-per-axis only). See [How sketch snap works](usage-sketch.md#sketch-snapping). **Snap guide color (node)**, **Snap guide color (axis)**, **Snap guide line width**, **Snap guide mode**, and **All co-axial nodes** are also in **Settings -> Sketch** (persisted in `gui.*` keys below).
 - **Extrude sketch face**: under **Extrude**, **Both sides** and **Material** for the new solid (same document preset as **Normal** mode Options **Material**). Other modes that still show **Material** in Options use that same preset when relevant (for example **Sketch from planar face**).
 - **Add edge** / **Add node** (and similar): a **Shortcuts** line documents TAB / Shift+TAB typing behavior.
 - **Add line edge**: under **Options**, **Add midpoint nodes** ([usage-sketch.md#line-edge-option-add-midpoint-nodes](usage-sketch.md#line-edge-option-add-midpoint-nodes)) and **Place from center** ([usage-sketch.md#line-edge-option-place-from-center](usage-sketch.md#line-edge-option-place-from-center)); each has a **?** link. See also [Line edge Options](usage-sketch.md#line-edge-options). The midpoint setting is also in **Settings -> Sketch** (persisted).
@@ -170,21 +170,23 @@ String: ImGui `.ini` text for window positions and docking saved with **SaveIniS
 | `edge_dim_label_h` | integer | Length dimension label placement: **0** near first point, **1** near second, **2** center, **3** automatic. |
 | `edge_dim_line_width` | number | Sketch length dimension line width (**0.5** to **8.0**). |
 | `edge_dim_arrow_size` | number | Arrow head length (**1.0** to **24.0**). |
-| `edge_dim_color` | array of 3 numbers | Dimension line, arrow, and text RGB (**0** to **1** per channel; default yellow). |
+| `edge_dim_color` | array of 3 numbers | Dimension line, arrow, and text RGB (**0** to **1** per channel; default olive **0.54**, **0.54**, **0.21**). |
 | `edge_dim_text_scale` | number | Label height multiplier (**0.5** to **3.0**; default **1.0**). |
 | `edge_dim_text_render_mode` | integer | **0** opaque 2D, **1** SetCommonColor, **2** 2D screen, **3** 3D text, **4** Z Top, **5** Z Topmost (default). |
 | `edge_dim_arrow_style` | integer | **0** standard, **1** sharp, **2** wide, **3** 3D shaded. |
 | `edge_dim_arrow_orientation` | integer | **0** automatic, **1** internal, **2** external. |
 | `show_sketch_dimensions` | boolean | When false, hides length dimensions on all sketches. |
 | `permanent_node_anno_scale` | number | Scale for permanent **+** node markers in sketch mode (**0.25** to **3.0**; default **1.0**). |
-| `snap_guide_color` | array of 3 numbers | RGB for sketch snap guides and markers (float **0** to **1** per channel; default green **0**, **1**, **0**). |
-| `snap_guide_mode` | integer | **0** *Traditional* (local markers), **1** *Fullscreen* (view-spanning axis lines), **2** *Both* (default **0**). |
+| `snap_guide_color_node` | array of 3 numbers | RGB for snap guides when both axes lock to the same node (float **0** to **1**; default lavender **0.82**, **0.55**, **0.95**). Legacy `snap_guide_color` loads here when `snap_guide_color_node` is absent. |
+| `snap_guide_color_axis` | array of 3 numbers | RGB for snap guides when aligned on X or Y only (float **0** to **1**; default magenta **0.96**, **0.06**, **0.54**). Legacy `snap_guide_color` sets both node and axis colors. |
+| `snap_guide_mode` | integer | **0** *Traditional* (local markers), **1** *Fullscreen* (view-spanning axis lines), **2** *Both* (default **2**). |
 | `snap_guide_line_width` | number | Open CASCADE line width for snap guides (axis lines, markers, co-axial overlay; **0.5** to **8.0**; default **1.0**). |
-| `annotate_all_coaxial_nodes` | boolean | When true, show axis guides and markers for *all* co-axial nodes (current sketch plus other visible sketches). When false (default), only the closest node per active axis is annotated. Also in sketch **Options**. |
+| `annotate_all_coaxial_nodes` | boolean | When true (default), show axis guides and markers for *all* co-axial nodes (current sketch plus other visible sketches). When false, only the closest node per active axis is annotated. Also in sketch **Options**. |
 | `imgui_rounding_general` | number | Window/child/frame/popup rounding (**0** to **32** clamped in code; sliders stop at 16 in the UI). |
 | `imgui_rounding_scroll` | number | Scrollbar and grab rounding (same clamp). |
 | `imgui_rounding_tabs` | number | Tab rounding (same clamp). |
-| `underlay_highlight_color` | array of 3 numbers | Default underlay tint (float RGB **0** to **1** per channel; default **amber/gold** **1**, **0.86**, **0**). |
+| `underlay_highlight_color` | array of 3 numbers | Default underlay tint (float RGB **0** to **1** per channel; default **0.64**, **0.56**, **0.31**). |
+| `elm_list_hover_color` | array of 4 numbers | RGBA highlight for rows hovered in the **Shape List** or **Sketch List** dimensions table (float **0** to **1** per channel; default purple **0.40**, **0.10**, **0.47**, **1**). |
 | `view_roll_step_deg` | number | Degrees per **NumPad 8**/**2**/**4**/**6** orbit and **Shift+NumPad 4**/**6** roll (allowed range **0.1** to **180** in code; default **45**). |
 | `view_zoom_scroll_scale` | number | Multiplier for `UpdateZoom` scroll delta from wheel and keyboard zoom (allowed range **0.25** to **64** in code; default **4**). With **Shift** held, the effective step is multiplied by **0.1** (Blender-style finer zoom). |
 | `load_last_opened_on_startup` | boolean | Desktop: open the last `.ezy` on launch. **Legacy:** `load_last_saved_on_startup` is read as a fallback if the newer key is absent. |

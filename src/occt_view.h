@@ -29,6 +29,7 @@
 class Delta;
 class GUI;
 class Sketch;
+struct Sketch_annotation_refresh;
 struct Length_dimension_style;
 class Prs3d_Drawer;
 class TopoDS_Face;
@@ -163,18 +164,21 @@ public:
   // Revolve related
   void revolve_selected(const double angle);
 
+  // View manipulation helpers (used by shape operations for UX; keep interface clean)
+  void rotate_view(const gp_Vec& axis, const gp_Pnt& center);
+  void redraw_view();
+
+  /// Underlying OCCT view handle (for limited internal helpers such as closest_to_camera).
+  V3d_View_ptr view_handle() const;
+
   void on_enter(const ScreenCoords& screen_coords); // For manual dimension distance keyboard input.
   bool fit_face_in_view(const TopoDS_Face& face);
 
   // Dimension related
   void                  dimension_input(const ScreenCoords& screen_coords);
   void                  angle_input(const ScreenCoords& screen_coords);
-  void                  refresh_all_length_dimension_line_widths(double line_width);
-  void                  refresh_all_length_dimension_arrow_sizes(double arrow_size);
-  void                  refresh_all_length_dimension_styles(const Length_dimension_style& style);
-  void                  refresh_all_length_dimensions();
+  void                  refresh_sketch_annotations(const Sketch_annotation_refresh& refresh);
   void                  apply_sketch_dimensions_visibility();
-  void                  refresh_all_permanent_node_annotations();
   double                get_dimension_scale() const;
   bool                  get_show_dim_input() const;
   void                  set_show_dim_input(bool show);
@@ -234,6 +238,8 @@ public:
   /// Highlight \a shp in the 3D viewer while the Shape List row is hovered (null clears).
   void           set_shape_list_hover(const Shp_ptr& shp);
   const Shp_ptr& shape_list_hover() const { return m_shape_list_hover; }
+  /// Highlight a sketch length dimension while its Sketch List row is hovered (\a dim_index == SIZE_MAX clears).
+  void set_sketch_list_measurement_hover(const Sketch_ptr& sketch, size_t dim_index);
   /// Re-apply list-hover highlight after Settings changes the hover color.
   void refresh_shape_list_hover_highlight();
 
@@ -241,7 +247,7 @@ public:
   const Graphic3d_MaterialAspect& get_default_material() const;
   void                            set_default_material(const Graphic3d_MaterialAspect& mat);
 
-  // 3D view background and grid colors (0-1 RGB)
+  // View presentation (background gradient) and grid colors (0-1 RGB)
   void get_bg_gradient_colors(float color1[3], float color2[3]) const;
   void set_bg_gradient_colors(float r1, float g1, float b1, float r2, float g2, float b2);
   int  get_bg_gradient_method() const;
@@ -260,9 +266,6 @@ public:
 
 private:
   friend class Shp_operation_base;
-  friend class Shp_chamfer; // TODO remove
-  friend class Shp_fillet;  // TODO remove
-  friend class Shp_extrude; // TODO remove
   friend class View_access;
 
   // Sketch related
@@ -283,7 +286,6 @@ private:
   Ray                   get_hit_test_ray_(const ScreenCoords& screen_coords) const;
   std::optional<gp_Pnt> get_hit_point_(const AIS_Shape_ptr& shp, const ScreenCoords& screen_coords) const;
 
-  // TODO group in .cpp file
   void        add_shp_(Shp_ptr& shp);
   std::string unique_shape_name_(const char* base_name) const;
 
@@ -334,19 +336,23 @@ private:
   std::shared_ptr<Sketch>           m_cur_sketch;
   TopAbs_ShapeEnum                  m_shp_selection_mode{TopAbs_SHAPE};
   Shp_ptr                           m_shape_list_hover;
+  PrsDim_LengthDimension_ptr        m_sketch_list_measurement_hover;
   opencascade::handle<Prs3d_Drawer> m_shape_list_hover_drawer;
   void                              update_shape_list_hover_drawer_();
+  void                              apply_sketch_list_measurement_hover_style_();
+  void                              restore_sketch_list_measurement_hover_style_();
+  void                              refresh_sketch_list_measurement_hover_highlight_();
   Graphic3d_MaterialAspect          m_default_material;
   bool                              m_headless_view{false};
   /// True when LMB press was handled by planar-face sketch creation without AIS_ViewController::PressMouseButton (pair with
   /// release skip).
   bool m_planar_face_lmb_skipped_view_controller{false};
   // OCCT view colors; defaults match what we render (set explicitly in init_viewer())
-  glm::vec3             m_bg_color1{0.85f, 0.88f, 0.90f};
-  glm::vec3             m_bg_color2{0.45f, 0.55f, 0.60f};
+  glm::vec3             m_bg_color1{0.037552f, 0.040503f, 0.042471f};
+  glm::vec3             m_bg_color2{0.043440f, 0.174068f, 0.239382f};
   int                   m_bg_gradient_method{1}; // 0=HOR, 1=VER, 2=DIAG1, ...
-  glm::vec3             m_grid_color1{0.1f, 0.1f, 0.1f};
-  glm::vec3             m_grid_color2{0.1f, 0.1f, 0.3f};
+  glm::vec3             m_grid_color1{0.112683f, 0.056886f, 0.138996f};
+  glm::vec3             m_grid_color2{0.117917f, 0.117917f, 0.135135f};
   Occt_grid_rect_params m_occt_grid_rect{};
   bool                  m_grid_visible{true};
   /// User setting: same role as former literal in `UpdateZoom(Aspect_ScrollDelta(..., int(y * scale)))`.

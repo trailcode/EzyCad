@@ -65,16 +65,24 @@ std::string GUI::occt_view_settings_json() const
       {"edge_dim_arrow_orientation", m_edge_dim_arrow_orientation},
       {"show_sketch_dimensions", m_show_sketch_dimensions},
       {k_gui_key_permanent_node_anno_scale, m_permanent_node_anno_scale},
-      {"add_mid_pt_edges", m_add_mid_pt_edges},
+      {"add_mid_pt_edges", m_add_mid_pt_line_edges},
+      {"add_mid_pt_rect_edges", m_add_mid_pt_rect_edges},
+      {"add_mid_pt_slot_edges", m_add_mid_pt_slot_edges},
       {"view_roll_step_deg", m_view_roll_step_deg},
       {"view_zoom_scroll_scale", m_view_zoom_scroll_scale},
       {"inspection_orthographic", m_inspection_orthographic},
-      {"snap_guide_color",
+      {"snap_guide_color_node",
              [&]()
              {
          float r{}, g{}, b{};
-         Sketch_nodes::get_snap_guide_color(r, g, b);
+         Sketch_nodes::get_snap_guide_color_node(r, g, b);
          return nlohmann::json::array({r, g, b});
+       }()},
+      {"snap_guide_color_axis",
+             [&]()
+             {
+         const glm::vec3 c = Sketch_nodes::get_snap_guide_color_axis();
+         return nlohmann::json::array({c.x, c.y, c.z});
        }()},
       {"snap_guide_mode", static_cast<int>(Sketch_nodes::get_snap_guide_mode())},
       {"snap_guide_line_width", Sketch_nodes::get_snap_guide_line_width()},
@@ -121,7 +129,9 @@ void GUI::save_occt_view_settings()
       {"edge_dim_arrow_orientation", m_edge_dim_arrow_orientation},
       {"show_sketch_dimensions", m_show_sketch_dimensions},
       {k_gui_key_permanent_node_anno_scale, m_permanent_node_anno_scale},
-      {"add_mid_pt_edges", m_add_mid_pt_edges},
+      {"add_mid_pt_edges", m_add_mid_pt_line_edges},
+      {"add_mid_pt_rect_edges", m_add_mid_pt_rect_edges},
+      {"add_mid_pt_slot_edges", m_add_mid_pt_slot_edges},
       {"load_last_opened_on_startup", m_load_last_opened_on_startup},
       {"last_opened_project_path", m_last_opened_project_path},
       {"imgui_rounding_general", m_imgui_rounding_general},
@@ -130,12 +140,18 @@ void GUI::save_occt_view_settings()
       {"view_roll_step_deg", m_view_roll_step_deg},
       {"view_zoom_scroll_scale", m_view_zoom_scroll_scale},
       {"inspection_orthographic", m_inspection_orthographic},
-      {"snap_guide_color",
+      {"snap_guide_color_node",
              [&]()
              {
          float r{}, g{}, b{};
-         Sketch_nodes::get_snap_guide_color(r, g, b);
+         Sketch_nodes::get_snap_guide_color_node(r, g, b);
          return nlohmann::json::array({r, g, b});
+       }()},
+      {"snap_guide_color_axis",
+             [&]()
+             {
+         const glm::vec3 c = Sketch_nodes::get_snap_guide_color_axis();
+         return nlohmann::json::array({c.x, c.y, c.z});
        }()},
       {"snap_guide_mode", static_cast<int>(Sketch_nodes::get_snap_guide_mode())},
       {"snap_guide_line_width", Sketch_nodes::get_snap_guide_line_width()},
@@ -146,8 +162,8 @@ void GUI::save_occt_view_settings()
       {"underlay_highlight_color",
        {m_underlay_highlight_color[0], m_underlay_highlight_color[1], m_underlay_highlight_color[2],
         m_underlay_highlight_color[3]}},
-      {"shape_list_hover_color",
-       {m_shape_list_hover_color[0], m_shape_list_hover_color[1], m_shape_list_hover_color[2], m_shape_list_hover_color[3]}},
+      {"elm_list_hover_color",
+       {m_elm_list_hover_color[0], m_elm_list_hover_color[1], m_elm_list_hover_color[2], m_elm_list_hover_color[3]}},
   };
   j["version"]          = k_settings_version;
   const char* imgui_ini = ImGui::SaveIniSettingsToMemory(nullptr);
@@ -168,11 +184,11 @@ void GUI::parse_occt_view_settings_(const std::string& content)
       return;
 
     const json& ov     = j["occt_view"];
-    float       bg1[3] = {0.85f, 0.88f, 0.90f};
-    float       bg2[3] = {0.45f, 0.55f, 0.60f};
+    float       bg1[3] = {0.037552f, 0.040503f, 0.042471f};
+    float       bg2[3] = {0.043440f, 0.174068f, 0.239382f};
     int         method = 1;
-    float       g1[3]  = {0.1f, 0.1f, 0.1f};
-    float       g2[3]  = {0.1f, 0.1f, 0.3f};
+    float       g1[3]  = {0.112683f, 0.056886f, 0.138996f};
+    float       g2[3]  = {0.117917f, 0.117917f, 0.135135f};
     auto        arr3   = [](const json& a, float* out)
     {
       if (a.is_array() && a.size() >= 3)
@@ -318,10 +334,12 @@ void GUI::parse_gui_panes_settings_(const std::string& content)
     m_permanent_node_anno_scale =
         parse_bounded_float(k_gui_key_permanent_node_anno_scale, k_gui_permanent_node_anno_scale_min,
                             k_gui_permanent_node_anno_scale_max, k_gui_permanent_node_anno_scale_default);
-    m_add_mid_pt_edges = b("add_mid_pt_edges", false);
+    m_add_mid_pt_line_edges = b("add_mid_pt_edges", false);
     if (g.contains("add_midpoints_to_linear_edges") && !g.contains("add_mid_pt_edges") &&
         g["add_midpoints_to_linear_edges"].is_boolean())
-      m_add_mid_pt_edges = g["add_midpoints_to_linear_edges"].get<bool>();
+      m_add_mid_pt_line_edges = g["add_midpoints_to_linear_edges"].get<bool>();
+    m_add_mid_pt_rect_edges = b("add_mid_pt_rect_edges", true);
+    m_add_mid_pt_slot_edges = b("add_mid_pt_slot_edges", false);
     m_load_last_opened_on_startup = b("load_last_opened_on_startup", b("load_last_saved_on_startup", false));
     if (g.contains("last_opened_project_path") && g["last_opened_project_path"].is_string())
       m_last_opened_project_path = g["last_opened_project_path"].get<std::string>();
@@ -373,19 +391,46 @@ void GUI::parse_gui_panes_settings_(const std::string& content)
     if (m_view)
       m_view->set_zoom_scroll_scale(m_view_zoom_scroll_scale);
 
-    // Default snap-guide color is green unless overridden by settings JSON.
-    Sketch_nodes::set_snap_guide_color(0.0f, 1.0f, 0.0f);
-    if (g.contains("snap_guide_color") && g["snap_guide_color"].is_array() && g["snap_guide_color"].size() >= 3)
+    Sketch_nodes::set_snap_guide_color_node(0.823295f, 0.549411f, 0.953390f);
+    Sketch_nodes::set_snap_guide_color_axis(0.957627f, 0.064924f, 0.541537f);
+    if (g.contains("snap_guide_color_node") && g["snap_guide_color_node"].is_array() && g["snap_guide_color_node"].size() >= 3)
     {
-      const json& a = g["snap_guide_color"];
-      glm::vec3   c(0.0f, 1.0f, 0.0f);
+      const json& a = g["snap_guide_color_node"];
+      glm::vec3   c(0.823295f, 0.549411f, 0.953390f);
       for (size_t i = 0; i < 3; ++i)
         if (a[static_cast<json::size_type>(i)].is_number())
           c[static_cast<glm::vec3::length_type>(i)] = std::clamp(a[static_cast<json::size_type>(i)].get<float>(), 0.f, 1.f);
-      Sketch_nodes::set_snap_guide_color(c[0], c[1], c[2]);
+      Sketch_nodes::set_snap_guide_color_node(c[0], c[1], c[2]);
+    }
+    else if (g.contains("snap_guide_color") && g["snap_guide_color"].is_array() && g["snap_guide_color"].size() >= 3)
+    {
+      const json& a = g["snap_guide_color"];
+      glm::vec3   c(0.823295f, 0.549411f, 0.953390f);
+      for (size_t i = 0; i < 3; ++i)
+        if (a[static_cast<json::size_type>(i)].is_number())
+          c[static_cast<glm::vec3::length_type>(i)] = std::clamp(a[static_cast<json::size_type>(i)].get<float>(), 0.f, 1.f);
+      Sketch_nodes::set_snap_guide_color_node(c[0], c[1], c[2]);
+      Sketch_nodes::set_snap_guide_color_axis(c[0], c[1], c[2]);
     }
 
-    Sketch_nodes::set_snap_guide_mode(Sketch_nodes::Snap_guide_mode::Traditional);
+    if (g.contains("snap_guide_color_axis") && g["snap_guide_color_axis"].is_array() && g["snap_guide_color_axis"].size() >= 3)
+    {
+      const json& a = g["snap_guide_color_axis"];
+      glm::vec3   c(0.957627f, 0.064924f, 0.541537f);
+      for (size_t i = 0; i < 3; ++i)
+        if (a[static_cast<json::size_type>(i)].is_number())
+          c[static_cast<glm::vec3::length_type>(i)] = std::clamp(a[static_cast<json::size_type>(i)].get<float>(), 0.f, 1.f);
+      Sketch_nodes::set_snap_guide_color_axis(c[0], c[1], c[2]);
+    }
+    else if (g.contains("snap_guide_color_node") && g["snap_guide_color_node"].is_array() &&
+             g["snap_guide_color_node"].size() >= 3)
+    {
+      float r{}, g_c{}, b{};
+      Sketch_nodes::get_snap_guide_color_node(r, g_c, b);
+      Sketch_nodes::set_snap_guide_color_axis(r, g_c, b);
+    }
+
+    Sketch_nodes::set_snap_guide_mode(Sketch_nodes::Snap_guide_mode::Both);
     if (g.contains("snap_guide_mode") && g["snap_guide_mode"].is_number_integer())
     {
       const int mode = g["snap_guide_mode"].get<int>();
@@ -398,7 +443,7 @@ void GUI::parse_gui_panes_settings_(const std::string& content)
     if (g.contains("snap_guide_line_width") && g["snap_guide_line_width"].is_number())
       Sketch_nodes::set_snap_guide_line_width(g["snap_guide_line_width"].get<float>());
 
-    Sketch_nodes::set_annotate_all_coaxial_nodes(false);
+    Sketch_nodes::set_annotate_all_coaxial_nodes(true);
     if (g.contains("annotate_all_coaxial_nodes") && g["annotate_all_coaxial_nodes"].is_boolean())
     {
       Sketch_nodes::set_annotate_all_coaxial_nodes(g["annotate_all_coaxial_nodes"].get<bool>());
@@ -417,17 +462,16 @@ void GUI::parse_gui_panes_settings_(const std::string& content)
         m_underlay_highlight_color[3] = std::clamp(a[3].get<float>(), 0.f, 1.f);
     }
 
-    if (g.contains("shape_list_hover_color") && g["shape_list_hover_color"].is_array() &&
-        g["shape_list_hover_color"].size() >= 3)
+    if (g.contains("elm_list_hover_color") && g["elm_list_hover_color"].is_array() && g["elm_list_hover_color"].size() >= 3)
     {
-      const json& a = g["shape_list_hover_color"];
+      const json& a = g["elm_list_hover_color"];
       for (int i = 0; i < 3; ++i)
         if (a[static_cast<json::size_type>(i)].is_number())
-          m_shape_list_hover_color[static_cast<glm::vec4::length_type>(i)] =
+          m_elm_list_hover_color[static_cast<glm::vec4::length_type>(i)] =
               std::clamp(a[static_cast<json::size_type>(i)].get<float>(), 0.f, 1.f);
-      m_shape_list_hover_color[3] = 1.f;
+      m_elm_list_hover_color[3] = 1.f;
       if (a.size() >= 4 && a[3].is_number())
-        m_shape_list_hover_color[3] = std::clamp(a[3].get<float>(), 0.f, 1.f);
+        m_elm_list_hover_color[3] = std::clamp(a[3].get<float>(), 0.f, 1.f);
     }
 
 #ifndef NDEBUG
@@ -494,7 +538,7 @@ void GUI::load_occt_view_settings_()
   if (m_view)
     apply_sketch_dimensions_visibility();
 
-  Sketch::set_add_mid_pt_edges(m_add_mid_pt_edges);
+  sync_sketch_add_mid_pt_edges_if_applicable_();
 
   try
   {
@@ -671,7 +715,7 @@ void GUI::settings_()
       save_occt_view_settings();
   }
 
-  if (ImGui::CollapsingHeader("3D view background"))
+  if (ImGui::CollapsingHeader("View presentation"))
   {
     float bg1[3], bg2[3];
     m_view->get_bg_gradient_colors(bg1, bg2);
@@ -719,25 +763,25 @@ void GUI::settings_()
       save_occt_view_settings();
     }
 
-    bool shape_list_hover_changed = false;
-    if (ImGui::BeginTable("settings_shape_list_hover", 2, ImGuiTableFlags_SizingStretchProp))
+    bool element_hover_changed = false;
+    if (ImGui::BeginTable("settings_element_hover", 2, ImGuiTableFlags_SizingStretchProp))
     {
       ImGui::TableSetupColumn("label", ImGuiTableColumnFlags_WidthFixed, k_label_col_w);
       ImGui::TableSetupColumn("control", ImGuiTableColumnFlags_WidthStretch);
       ImGui::TableNextRow();
       ImGui::TableSetColumnIndex(0);
       ImGui::AlignTextToFramePadding();
-      ImGui::TextUnformatted("Shape list hover color");
+      ImGui::TextUnformatted("Element hover color");
       ImGui::TableSetColumnIndex(1);
-      shape_list_hover_changed |=
-          ImGui::ColorEdit4("##shape_list_hover", &m_shape_list_hover_color[0], ImGuiColorEditFlags_Float);
+      element_hover_changed |=
+          ImGui::ColorEdit4("##element_hover", &m_elm_list_hover_color[0], ImGuiColorEditFlags_Float);
       ImGui::SameLine(0.0f, ImGui::GetStyle().ItemInnerSpacing.x);
-      GUI_DOC_HELP_("Highlight color when hovering a row in the Shape List pane. Updates immediately if a shape is "
-                    "hovered.",
+      GUI_DOC_HELP_("Highlight color when hovering a row in the Shape List or a dimension row in the Sketch List. "
+                    "Updates immediately when a row is hovered.",
                     doc_urls::k_occt_view);
       ImGui::EndTable();
     }
-    if (shape_list_hover_changed)
+    if (element_hover_changed)
     {
       m_view->refresh_shape_list_hover_highlight();
       save_occt_view_settings();
@@ -1072,19 +1116,54 @@ void GUI::settings_()
       ImGui::TableNextRow();
       ImGui::TableSetColumnIndex(0);
       ImGui::AlignTextToFramePadding();
-      ImGui::TextUnformatted("Add midpoints to new linear edges");
+      ImGui::TextUnformatted("Add midpoints to line edges");
       ImGui::TableSetColumnIndex(1);
       {
-        bool add = m_add_mid_pt_edges;
-        if (ImGui::Checkbox("##add_mids", &add))
+        bool add = m_add_mid_pt_line_edges;
+        if (ImGui::Checkbox("##add_mids_line", &add))
         {
-          m_add_mid_pt_edges = add;
-          Sketch::set_add_mid_pt_edges(add);
+          m_add_mid_pt_line_edges = add;
+          sync_sketch_add_mid_pt_edges_if_applicable_();
           save_occt_view_settings();
         }
         ImGui::SameLine(0.0f, ImGui::GetStyle().ItemInnerSpacing.x);
-        GUI_DOC_HELP_("When checked, the Add line edge and Add multi-line edge tools create a midpoint node on each "
-                      "new straight edge (for center snapping). Default is unchecked. Click ? to open the user guide.",
+        GUI_DOC_HELP_("Line edge and multi-line edge tools (default off). Click ? to open the user guide.",
+                      doc_urls::k_line_edge_midpoint_nodes);
+      }
+
+      ImGui::TableNextRow();
+      ImGui::TableSetColumnIndex(0);
+      ImGui::AlignTextToFramePadding();
+      ImGui::TextUnformatted("Add midpoints to square/rectangle");
+      ImGui::TableSetColumnIndex(1);
+      {
+        bool add = m_add_mid_pt_rect_edges;
+        if (ImGui::Checkbox("##add_mids_rect", &add))
+        {
+          m_add_mid_pt_rect_edges = add;
+          sync_sketch_add_mid_pt_edges_if_applicable_();
+          save_occt_view_settings();
+        }
+        ImGui::SameLine(0.0f, ImGui::GetStyle().ItemInnerSpacing.x);
+        GUI_DOC_HELP_("Square and rectangle tools (default on). Click ? to open the user guide.",
+                      doc_urls::k_line_edge_midpoint_nodes);
+      }
+
+      ImGui::TableNextRow();
+      ImGui::TableSetColumnIndex(0);
+      ImGui::AlignTextToFramePadding();
+      ImGui::TextUnformatted("Add midpoints to slot edges");
+      ImGui::TableSetColumnIndex(1);
+      {
+        bool add = m_add_mid_pt_slot_edges;
+        if (ImGui::Checkbox("##add_mids_slot", &add))
+        {
+          m_add_mid_pt_slot_edges = add;
+          sync_sketch_add_mid_pt_edges_if_applicable_();
+          save_occt_view_settings();
+        }
+        ImGui::SameLine(0.0f, ImGui::GetStyle().ItemInnerSpacing.x);
+        GUI_DOC_HELP_("Slot tool straight edges only (default off). Click ? to open the user guide.",
                       doc_urls::k_line_edge_midpoint_nodes);
       }
 
@@ -1102,18 +1181,35 @@ void GUI::settings_()
       ImGui::TableNextRow();
       ImGui::TableSetColumnIndex(0);
       ImGui::AlignTextToFramePadding();
-      ImGui::TextUnformatted("Snap guide color");
+      ImGui::TextUnformatted("Snap guide color (node)");
       ImGui::TableSetColumnIndex(1);
       {
         glm::vec3 snap_col;
-        Sketch_nodes::get_snap_guide_color(snap_col[0], snap_col[1], snap_col[2]);
-        if (ImGui::ColorEdit3("##snap_guide_color", &snap_col[0], ImGuiColorEditFlags_Float))
+        Sketch_nodes::get_snap_guide_color_node(snap_col[0], snap_col[1], snap_col[2]);
+        if (ImGui::ColorEdit3("##snap_guide_color_node", &snap_col[0], ImGuiColorEditFlags_Float))
         {
-          Sketch_nodes::set_snap_guide_color(snap_col[0], snap_col[1], snap_col[2]);
+          Sketch_nodes::set_snap_guide_color_node(snap_col[0], snap_col[1], snap_col[2]);
           save_occt_view_settings();
         }
         ImGui::SameLine(0.0f, ImGui::GetStyle().ItemInnerSpacing.x);
-        GUI_DOC_HELP_("Color used by fullscreen snap guides and snap markers in sketch mode. Click ? to open the user "
+        GUI_DOC_HELP_("Guides when both X and Y snap to the same node (vertex lock). Click ? to open the user guide.",
+                      doc_urls::k_sketch_snapping);
+      }
+
+      ImGui::TableNextRow();
+      ImGui::TableSetColumnIndex(0);
+      ImGui::AlignTextToFramePadding();
+      ImGui::TextUnformatted("Snap guide color (axis)");
+      ImGui::TableSetColumnIndex(1);
+      {
+        glm::vec3 snap_col = Sketch_nodes::get_snap_guide_color_axis();
+        if (ImGui::ColorEdit3("##snap_guide_color_axis", &snap_col[0], ImGuiColorEditFlags_Float))
+        {
+          Sketch_nodes::set_snap_guide_color_axis(snap_col[0], snap_col[1], snap_col[2]);
+          save_occt_view_settings();
+        }
+        ImGui::SameLine(0.0f, ImGui::GetStyle().ItemInnerSpacing.x);
+        GUI_DOC_HELP_("Guides when the cursor aligns to a node on X or Y only (axis snap). Click ? to open the user "
                       "guide.",
                       doc_urls::k_sketch_snapping);
       }
@@ -1192,14 +1288,14 @@ void GUI::settings_()
     {
       save_occt_view_settings();
       if (m_view)
-        m_view->refresh_all_length_dimensions();
+        m_view->refresh_sketch_annotations({.length_dimensions = true});
     }
 
     if (node_anno_changed)
     {
       save_occt_view_settings();
       if (m_view)
-        m_view->refresh_all_permanent_node_annotations();
+        m_view->refresh_sketch_annotations({.permanent_node_marks = true});
     }
 
     if (ul_changed)
@@ -1302,17 +1398,17 @@ void GUI::underlay_highlight_color_rgba(uint8_t& r, uint8_t& g, uint8_t& b, uint
   a = to_u8(m_underlay_highlight_color[3]);
 }
 
-void GUI::shape_list_hover_color_rgba(uint8_t& r, uint8_t& g, uint8_t& b, uint8_t& a) const
+void GUI::elm_list_hover_color_rgba(uint8_t& r, uint8_t& g, uint8_t& b, uint8_t& a) const
 {
   const auto to_u8 = [](float c) -> uint8_t
   {
     const float x = std::clamp(c, 0.f, 1.f) * 255.f;
     return static_cast<uint8_t>(x + 0.5f);
   };
-  r = to_u8(m_shape_list_hover_color[0]);
-  g = to_u8(m_shape_list_hover_color[1]);
-  b = to_u8(m_shape_list_hover_color[2]);
-  a = to_u8(m_shape_list_hover_color[3]);
+  r = to_u8(m_elm_list_hover_color[0]);
+  g = to_u8(m_elm_list_hover_color[1]);
+  b = to_u8(m_elm_list_hover_color[2]);
+  a = to_u8(m_elm_list_hover_color[3]);
 }
 
 void GUI::imgui_rounding_fallbacks_from_theme_(float& general, float& scroll, float& tabs) const

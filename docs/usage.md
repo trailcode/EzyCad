@@ -97,7 +97,7 @@ Each row is laid out left to right:
 
 When expanded, the row shows:
 
-- **Dimensions** - Table of length dimensions: visibility, editable name, and **offset** (label distance from the edge; **0** = automatic).
+- **Dimensions** - Table of length dimensions: visibility, editable name, and **offset** (label distance from the edge; **0** = automatic). Hovering a row highlights that dimension in the 3D view (color from **Settings -> View presentation -> Element hover color**).
 - **Nodes**, **Edges**, **Faces** - Collapsible lists of element labels for inspection. **Nodes** lists **user-placed** points only (the ones with **+** markers in sketch mode), not every internal topology vertex or automatic edge midpoint. **Edges** and **Faces** use default labels (`E0`, `F0`, ...) or saved names where set. Dimension names are editable in the table above; node/edge/face names in these lists are read-only labels for reference.
 
 The window can be closed with its close button; use **View -> Sketch List** again to show it.
@@ -118,7 +118,7 @@ For each shape, one row includes:
 - **Solid / wire** - Checkbox (tooltip *solid/wire*) to switch **shaded** display or **wireframe** for that shape.
 - **M** - Click to open a **Material** popup; right-click **M** for **Shape info...** or **Delete**. The tooltip on **M** also notes that right-clicking the name deletes the shape.
 
-Rows that match the **current 3D selection** are drawn with a slightly brighter style so the list stays in sync with what is selected in the viewer (tooltip *Selected in 3D viewer* when you hover the highlighted row).
+Rows that match the **current 3D selection** are drawn with a slightly brighter style so the list stays in sync with what is selected in the viewer (tooltip *Selected in 3D viewer* when you hover the highlighted row). Hovering any visible row also highlights that shape in the 3D view (**Settings -> View presentation -> Element hover color**).
 
 The window can be closed with its close button; use **View -> Shape List** again to show it.
 

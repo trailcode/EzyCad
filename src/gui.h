@@ -58,8 +58,8 @@ struct Example_file
 inline constexpr float k_gui_edge_dim_line_width_default = 1.0f;
 /// Default OCCT arrow length for length dimensions when `edge_dim_arrow_size` is missing from settings JSON.
 inline constexpr float k_gui_edge_dim_arrow_size_default = 6.0f;
-/// Default dimension line/text RGB when `edge_dim_color` is missing (yellow).
-inline constexpr float k_gui_edge_dim_color_default[3] = {1.f, 1.f, 0.f};
+/// Default dimension line/text RGB when `edge_dim_color` is missing.
+inline constexpr float k_gui_edge_dim_color_default[3] = {0.542373f, 0.542373f, 0.213732f};
 /// Text height scale for length dimension labels (`gui.edge_dim_text_scale`).
 inline constexpr float k_gui_edge_dim_text_scale_min     = 0.5f;
 inline constexpr float k_gui_edge_dim_text_scale_max     = 3.0f;
@@ -168,7 +168,9 @@ public:
   void apply_sketch_dimensions_visibility();
   /// Scale factor for permanent sketch-node '+' annotations.
   float permanent_node_anno_scale() const { return m_permanent_node_anno_scale; }
-  bool  get_add_mid_pt_edges() const { return m_add_mid_pt_edges; }
+  bool  get_add_mid_pt_line_edges() const { return m_add_mid_pt_line_edges; }
+  bool  get_add_mid_pt_rect_edges() const { return m_add_mid_pt_rect_edges; }
+  bool  get_add_mid_pt_slot_edges() const { return m_add_mid_pt_slot_edges; }
   bool  get_edge_from_center() const { return m_edge_from_center; }
   bool  get_hide_all_shapes() const { return m_hide_all_shapes; }
   void  set_hide_all_shapes(bool hide) { m_hide_all_shapes = hide; }
@@ -241,7 +243,7 @@ public:
   /// Default RGBA (0-255) for sketch underlay line tint when importing a new image (see Settings).
   void underlay_highlight_color_rgba(uint8_t& r, uint8_t& g, uint8_t& b, uint8_t& a) const;
   /// RGBA (0-255) for Shape List row hover highlight in the 3D viewer (see Settings).
-  void shape_list_hover_color_rgba(uint8_t& r, uint8_t& g, uint8_t& b, uint8_t& a) const;
+  void elm_list_hover_color_rgba(uint8_t& r, uint8_t& g, uint8_t& b, uint8_t& a) const;
   /// For scripting (Lua console): access the 3D view.
   Occt_view* get_view() { return m_view.get(); }
 
@@ -259,7 +261,8 @@ private:
   void angle_edit_();
   void on_left_click_(const ScreenCoords& screen_coords);
   void sketch_list_();
-  void sketch_list_inspector_(Sketch& sketch, int index);
+  void sketch_list_inspector_(const std::shared_ptr<Sketch>& sketch, int index, std::shared_ptr<Sketch>& hover_sketch,
+                                 size_t& hover_dim_index);
   void sketch_properties_dialog_();
   void shape_list_();
   void shape_info_dialog_();
@@ -296,6 +299,10 @@ private:
   void options_orthographic_projection_();
   void options_sketch_common_();
   void options_sketch_len_angle_hotkeys_();
+  void sync_sketch_add_mid_pt_edges_if_applicable_();
+  bool add_mid_pt_edges_for_mode_(Mode mode) const;
+  void options_sketch_add_midpoint_nodes_checkbox_(bool& setting);
+  void options_sketch_add_midpoint_nodes_(bool& setting);
   float options_sketch_label_col_w_() const;
 
   void on_key_move_mode_(int key);
@@ -409,7 +416,9 @@ private:
   int          m_edge_dim_text_render_mode  = k_gui_edge_dim_text_render_mode_default;
   bool         m_show_sketch_dimensions     = true;
   float        m_permanent_node_anno_scale  = k_gui_permanent_node_anno_scale_default;
-  bool         m_add_mid_pt_edges           = false;
+  bool         m_add_mid_pt_line_edges      = false;
+  bool         m_add_mid_pt_rect_edges      = true;
+  bool         m_add_mid_pt_slot_edges      = false;
   bool         m_edge_from_center           = false;
   /// Degrees per numpad orbit (8/2/4/6) and Blender-style roll (Shift+NumPad 4/6); persisted in `gui.view_roll_step_deg`.
   double m_view_roll_step_deg = k_gui_view_roll_step_deg_default;
@@ -520,9 +529,9 @@ private:
   bool       m_underlay_line_tint{true};
   glm::vec4  m_underlay_tint_col{1.f, 220.f / 255.f, 0.f, 1.f};
   /// Default underlay tint for new imports (0-1, persisted in ezycad_settings.json).
-  glm::vec4 m_underlay_highlight_color{1.f, 220.f / 255.f, 0.f, 1.f};
+  glm::vec4 m_underlay_highlight_color{0.639830f, 0.561988f, 0.311782f, 1.f};
   /// Shape List hover highlight in the OCCT view (0-1, persisted in ezycad_settings.json).
-  glm::vec4 m_shape_list_hover_color{0.f, 1.f, 0.f, 1.f};
+  glm::vec4 m_elm_list_hover_color{0.402064f, 0.102557f, 0.474576f, 1.f};
 
   std::unique_ptr<Lua_console>    m_lua_console;
   bool                            m_show_python_console{false};

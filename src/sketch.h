@@ -1,6 +1,5 @@
 #pragma once
 
-#include <AIS_Shape.hxx>
 #include <TopoDS_Face.hxx>
 #include <gp_Pnt.hxx>
 #include <gp_Pnt2d.hxx>
@@ -24,29 +23,17 @@ class Sketch;
 class Sketch_underlay;
 enum class Mode;
 
-struct Sketch_AIS_edge : public AIS_Shape
+struct Sketch_AIS_node_mark;
+
+/// Selective refresh of sketch annotations after global settings or geometry changes.
+struct Sketch_annotation_refresh
 {
-  Sketch_AIS_edge(Sketch& owner, const TopoDS_Shape& shp);
-  Sketch& owner_sketch;
+  bool length_dimensions    = false;
+  bool permanent_node_marks = false;
 };
 
-/// Selectable "+" marker for user-placed permanent sketch nodes (add-node tool).
-struct Sketch_AIS_node_mark : public AIS_Shape
-{
-  Sketch_AIS_node_mark(Sketch& owner, size_t node_idx, const TopoDS_Shape& shp);
-  Sketch& owner_sketch;
-  size_t  node_idx{};
-};
-
-struct Sketch_face_shp : public AIS_Shape
-{
-  Sketch_face_shp(Sketch& owner, const TopoDS_Shape& face);
-
-  Sketch&             owner_sketch;
-  std::vector<gp_Pnt> verts_3d; // Used for extruding the face
-  std::vector<size_t> vert_idxs;
-  std::string         name;
-};
+/// If `shp` is a permanent sketch node mark, removes it from its owner sketch.
+bool try_remove_sketch_permanent_node_mark(AIS_Shape* shp);
 
 // The Sketch class provides a comprehensive set of methods for creating and manipulating 2D sketches in a 3D environment.
 // It supports adding and moving points, creating line segments, arcs, and mirror lines, and updating the sketch's
@@ -88,23 +75,20 @@ public:
   void        set_show_faces(bool show);
   void        set_show_edges(bool show);
   void        set_show_dims(bool show);
+  bool        shows_dimensions() const;
   bool        dimension_visible(size_t dim_index) const;
   void        set_dimension_visible(size_t dim_index, bool visible);
+  size_t      dimension_node_lo(size_t dim_index) const;
+  size_t      dimension_node_hi(size_t dim_index) const;
   double      dimension_offset(size_t dim_index) const;
   void        set_dimension_offset(size_t dim_index, double offset);
   std::string dimension_name(size_t dim_index) const;
   void        set_dimension_name(size_t dim_index, const std::string& name);
+  /// OCCT length-dimension object for list hover / viewer highlight (may be null while rebuilding).
+  PrsDim_LengthDimension_ptr length_dimension_handle(size_t dim_index) const;
 
-  /// Apply global dimension line width to edge annotations and in-progress rubber-band dim.
-  void refresh_edge_dimension_line_widths(double line_width);
-  /// Apply global dimension arrow size to edge annotations and in-progress rubber-band dim.
-  void refresh_edge_dimension_arrow_sizes(double arrow_size);
-  /// Apply full global dimension style to edge annotations and in-progress rubber-band dim.
-  void refresh_edge_dimension_style(const Length_dimension_style& style);
-  /// Rebuild every length dimension (e.g. after global flyout or label placement defaults change).
-  void refresh_all_length_dimensions();
-  /// Rebuild permanent node '+' markers (e.g. after settings changes).
-  void refresh_permanent_node_annotations();
+  /// Rebuild length dimensions and/or permanent node '+' markers (e.g. after settings changes).
+  void refresh_annotations(const Sketch_annotation_refresh& refresh);
 
   // Revolve related
   Shp_rslt revolve_selected(const double angle);
@@ -355,6 +339,10 @@ public:
   void purge_stale_length_dimensions_();
   void refresh_all_length_dimensions_();
   void remove_length_dimensions_referencing_node_(size_t node_idx);
+  void remove_permanent_node_mark_ais_at_(size_t node_idx);
+  void remove_all_permanent_node_marks_();
+  void erase_permanent_node_marks_();
+  void trim_trailing_permanent_node_marks_();
   /// Add if missing, remove if present (same unordered node pair).
   void add_or_toggle_length_dim_between_node_indices_(size_t node_a, size_t node_b);
   void json_add_length_dimension_(size_t node_a, size_t node_b, bool visible = true,
