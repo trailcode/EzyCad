@@ -67,22 +67,30 @@ std::optional<Symmetric_edge_span> symmetric_edge_from_center_and_hint(const gp_
 }
 } // namespace
 
-Sketch::Sketch(const std::string& name, Occt_view& view, const gp_Pln& pln)
+Sketch::Sketch(const std::string& name, Occt_view& view, const gp_Pln& pln, std::optional<uint64_t> id)
     : m_view(view)
     , m_ctx(view.ctx())
     , m_pln(pln)
     , m_name(name)
+    , m_id(id ? *id : view.allocate_sketch_id())
     , m_nodes(view, pln)
 {
+  if (id)
+    view.note_loaded_sketch_id(*id);
 }
 
-Sketch::Sketch(const std::string& name, Occt_view& view, const gp_Pln& pln, const TopoDS_Wire& outer_wire)
+Sketch::Sketch(const std::string& name, Occt_view& view, const gp_Pln& pln, const TopoDS_Wire& outer_wire,
+               std::optional<uint64_t> id)
     : m_view(view)
     , m_ctx(view.ctx())
     , m_pln(pln)
     , m_name(name)
+    , m_id(id ? *id : view.allocate_sketch_id())
     , m_nodes(view, pln)
 {
+  if (id)
+    view.note_loaded_sketch_id(*id);
+
   m_originating_face = new AIS_Shape(outer_wire);
   m_ctx.Display(m_originating_face, true);
   update_originating_face_style();
@@ -111,7 +119,11 @@ Sketch::~Sketch()
     m_ctx.Remove(f, false);
 
   if (m_operation_axis.has_value())
-    remove_edge(*m_operation_axis);
+    if (!m_operation_axis->shp.IsNull())
+    {
+      m_ctx.Remove(m_operation_axis->shp, false);
+      m_operation_axis->shp.Nullify();
+    }
 
   remove_all_permanent_node_marks_();
 
@@ -1196,7 +1208,11 @@ void Sketch::finalize_operation_axis_(Sketch_op_recorder& rec)
 {
   m_operation_axis = std::move(m_tmp_edges.back());
   if (m_operation_axis->node_idx_b.has_value())
+  {
     rec.note_curr_operation_axis(m_nodes[m_operation_axis->node_idx_a], m_nodes[*m_operation_axis->node_idx_b]);
+    rec.note_curr_node(m_operation_axis->node_idx_a);
+    rec.note_curr_node(*m_operation_axis->node_idx_b);
+  }
 
   cancel_elm(); // Reset state, we have the operation axis
   sync_operation_axis_display_();
@@ -1207,11 +1223,31 @@ void Sketch::finalize_operation_axis_(Sketch_op_recorder& rec)
 void Sketch::clear_operation_axis()
 {
   if (m_operation_axis.has_value())
-    m_ctx.Remove(m_operation_axis->shp, false);
+  {
+    if (!m_operation_axis->shp.IsNull())
+    {
+      m_ctx.Remove(m_operation_axis->shp, false);
+      m_operation_axis->shp.Nullify();
+    }
+  }
 
-  m_operation_axis = std::nullopt;
+  m_operation_axis.reset();
   sync_permanent_node_annos_();
   m_nodes.hide_snap_annos();
+}
+
+void Sketch::clear_operation_axis_undoable()
+{
+  if (!m_operation_axis.has_value())
+    return;
+
+  Sketch_op_recorder rec(m_view, *this);
+  {
+    EZY_ASSERT(m_operation_axis->node_idx_b.has_value());
+    rec.note_prev_operation_axis(m_operation_axis->node_idx_a, *m_operation_axis->node_idx_b);
+    clear_operation_axis();
+    rec.commit();
+  }
 }
 
 bool Sketch::has_operation_axis() const { return m_operation_axis.has_value(); }
@@ -3018,6 +3054,8 @@ gp_Pnt Sketch::to_3d_(const std::optional<size_t>& node_idx) const
 const std::string& Sketch::get_name() const { return m_name; }
 
 void Sketch::set_name(const std::string& name) { m_name = name; }
+
+uint64_t Sketch::get_id() const { return m_id; }
 
 bool Sketch::has_edges() const { return !m_edges.empty(); }
 

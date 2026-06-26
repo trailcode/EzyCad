@@ -4,6 +4,7 @@
 #include <gp_Pnt.hxx>
 #include <gp_Pnt2d.hxx>
 #include <gp_Vec2d.hxx>
+#include <cstdint>
 #include <list>
 #include <memory>
 #include <optional>
@@ -45,9 +46,11 @@ public:
   DECL_PTR(Sketch);
   using Sketch_ptr = sptr; // Compatibility alias for existing code.
 
-  // `view` must exist for the lifetime of this `Sketch`
-  Sketch(const std::string& name, Occt_view& view, const gp_Pln& pln);
-  Sketch(const std::string& name, Occt_view& view, const gp_Pln& pln, const TopoDS_Wire& outer_wire);
+  // `view` must exist for the lifetime of this `Sketch`.
+  // Pass `id` when restoring from JSON; omit to allocate a new stable id from `view`.
+  Sketch(const std::string& name, Occt_view& view, const gp_Pln& pln, std::optional<uint64_t> id = std::nullopt);
+  Sketch(const std::string& name, Occt_view& view, const gp_Pln& pln, const TopoDS_Wire& outer_wire,
+         std::optional<uint64_t> id = std::nullopt);
 
   ~Sketch();
 
@@ -66,6 +69,8 @@ public:
   void finalize_elm();
   bool cancel_elm();
   void clear_operation_axis();
+  /// Clears the operation axis and pushes an undo step (Options "Clear axis").
+  void clear_operation_axis_undoable();
   bool has_operation_axis() const;
   void on_enter(); // For finalizing manual distance input.
 
@@ -111,6 +116,7 @@ public:
   // Sketch name related.
   const std::string& get_name() const;
   void               set_name(const std::string& name);
+  uint64_t           get_id() const;
 
   /// True if this sketch has at least one edge (used e.g. to pick mode after undo/redo).
   bool   has_edges() const;
@@ -377,6 +383,7 @@ public:
 
   std::string m_dbg_str;
   std::string m_name;
+  uint64_t    m_id{};
   bool        m_visible{true};
 
   // Extrusion related.

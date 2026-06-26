@@ -512,8 +512,7 @@ TEST_F(Sketch_test, AddTwoCrossingEdges_ThroughMidpoint_ProducesFourEdges)
 
 TEST_F(Sketch_test, Undo_single_arc_via_recorder)
 {
-  gp_Pln default_plane(gp::Origin(), gp::DZ());
-  Sketch sketch("TestSketch", view(), default_plane);
+  Sketch& sketch = view().curr_sketch();
 
   const gp_Pnt2d start(0.0, 0.0);
   const gp_Pnt2d end(10.0, 0.0);
@@ -538,8 +537,7 @@ TEST_F(Sketch_test, Undo_single_arc_via_recorder)
 
 TEST_F(Sketch_test, Undo_circle_via_recorder)
 {
-  gp_Pln default_plane(gp::Origin(), gp::DZ());
-  Sketch sketch("TestSketch", view(), default_plane);
+  Sketch& sketch = view().curr_sketch();
 
   const gp_Pnt2d center(0.0, 0.0);
   const gp_Pnt2d edge_pt(5.0, 0.0);
@@ -565,8 +563,7 @@ TEST_F(Sketch_test, Undo_circle_via_recorder)
 
 TEST_F(Sketch_test, Undo_two_crossing_edges_via_finalize)
 {
-  gp_Pln default_plane(gp::Origin(), gp::DZ());
-  Sketch sketch("TestSketch", view(), default_plane);
+  Sketch& sketch = view().curr_sketch();
 
   {
     Sketch_op_recorder rec(view(), sketch);
@@ -589,6 +586,100 @@ TEST_F(Sketch_test, Undo_two_crossing_edges_via_finalize)
   EXPECT_TRUE(view().undo());
   EXPECT_EQ(Sketch_access::get_linear_edge_count(sketch), 0)
       << "Undo of the first edge should remove it";
+}
+
+TEST_F(Sketch_test, Undo_operation_axis_add_clear_redo)
+{
+  Sketch& sketch = view().curr_sketch();
+
+  gui().set_mode(Mode::Sketch_operation_axis);
+  sketch.add_sketch_pt(ScreenCoords(dvec2(0.0, 0.0)));
+  sketch.add_sketch_pt(ScreenCoords(dvec2(10.0, 0.0)));
+  EXPECT_TRUE(sketch.has_operation_axis()) << "Operation axis should be created";
+
+  EXPECT_TRUE(view().undo());
+  EXPECT_FALSE(sketch.has_operation_axis()) << "Undo add should remove axis";
+
+  EXPECT_TRUE(view().redo());
+  EXPECT_TRUE(sketch.has_operation_axis()) << "Redo add should restore axis";
+
+  sketch.clear_operation_axis_undoable();
+  EXPECT_FALSE(sketch.has_operation_axis()) << "Clear should remove axis";
+
+  EXPECT_TRUE(view().undo());
+  EXPECT_TRUE(sketch.has_operation_axis()) << "Undo clear should restore axis";
+
+  EXPECT_TRUE(view().redo());
+  EXPECT_FALSE(sketch.has_operation_axis()) << "Redo clear should remove axis again";
+}
+
+// GUI path: add edge, define operation axis, undo four times, redo twice.
+// Regression: redo must resolve the live sketch by name (not a stale raw pointer).
+TEST_F(Sketch_test, Gui_UndoRedo_edge_then_operation_axis_four_undo_two_redo)
+{
+  struct Headless_guard
+  {
+    Occt_view& m_v;
+    explicit Headless_guard(Occt_view& v)
+        : m_v(v)
+    {
+      View_access::set_headless(m_v, true);
+    }
+    ~Headless_guard()
+    {
+      View_access::set_headless(m_v, false);
+    }
+  } guard(view());
+
+  Sketch& sketch = view().curr_sketch();
+
+  gui().set_mode(Mode::Sketch_add_edge);
+  GUI_access::sketch_left_click(gui(), ScreenCoords(dvec2(0.0, 0.0)));
+  GUI_access::sketch_left_click(gui(), ScreenCoords(dvec2(10.0, 0.0)));
+  EXPECT_GE(Sketch_access::get_linear_edge_count(sketch), 1u) << "Edge should be added via GUI";
+
+  gui().set_mode(Mode::Sketch_operation_axis);
+  GUI_access::sketch_left_click(gui(), ScreenCoords(dvec2(0.0, 0.0)));
+  GUI_access::sketch_left_click(gui(), ScreenCoords(dvec2(10.0, 3.0)));
+  EXPECT_TRUE(sketch.has_operation_axis()) << "Operation axis should be defined via GUI";
+
+  const size_t undo_steps_after_setup = view().undo_stack_size();
+  EXPECT_GE(undo_steps_after_setup, 2u) << "Edge and axis should each push an undo step";
+
+  for (int i = 0; i < 4; ++i)
+    view().undo();
+
+  for (int i = 0; i < 2; ++i)
+    view().redo();
+
+  EXPECT_TRUE(sketch.has_operation_axis()) << "Second redo should restore the operation axis";
+  EXPECT_GE(Sketch_access::get_linear_edge_count(sketch), 1u) << "First redo should restore the edge";
+}
+
+TEST_F(Sketch_test, Undo_delta_resolves_sketch_by_id_after_reload)
+{
+  Sketch& sketch = view().curr_sketch();
+
+  {
+    Sketch_op_recorder rec(view(), sketch);
+    Sketch_access::add_edge_(sketch, gp_Pnt2d(0.0, 0.0), gp_Pnt2d(10.0, 0.0), rec);
+    rec.commit();
+  }
+
+  EXPECT_TRUE(view().undo());
+  EXPECT_EQ(Sketch_access::get_linear_edge_count(sketch), 0u);
+
+  const uint64_t    sketch_id    = sketch.get_id();
+  const std::string saved_json   = view().to_json();
+  view().load(saved_json, false);
+
+  Sketch& reloaded = view().curr_sketch();
+  EXPECT_EQ(reloaded.get_id(), sketch_id);
+  EXPECT_EQ(Sketch_access::get_linear_edge_count(reloaded), 0u);
+
+  EXPECT_TRUE(view().redo());
+  EXPECT_GE(Sketch_access::get_linear_edge_count(reloaded), 1u)
+      << "Redo after JSON reload must apply to the sketch with the same id";
 }
 
 // Test T-junction case (one edge's endpoint touches the interior of another).
@@ -1596,6 +1687,7 @@ TEST_F(Sketch_test, JsonSerializationDeserialization)
 
   // Verify JSON structure
   EXPECT_TRUE(json_data.contains("name"));
+  EXPECT_TRUE(json_data.contains("id"));
   EXPECT_TRUE(json_data.contains("edges"));
   EXPECT_TRUE(json_data.contains("arc_edges"));
   EXPECT_TRUE(json_data.contains("plane"));
@@ -1604,6 +1696,7 @@ TEST_F(Sketch_test, JsonSerializationDeserialization)
   EXPECT_EQ(json_data["length_dimensions"].size(), 0u);
 
   EXPECT_EQ(json_data["name"], "TestSketch");
+  EXPECT_EQ(json_data["id"].get<uint64_t>(), sketch.get_id());
   EXPECT_TRUE(json_data.contains("nodes"));
   size_t live_nodes = 0;
   for (size_t i = 0; i < sketch.get_nodes().size(); ++i)
@@ -1618,6 +1711,7 @@ TEST_F(Sketch_test, JsonSerializationDeserialization)
 
   // Verify deserialized sketch (compact save drops deleted tombstones; loaded sketch is dense)
   EXPECT_EQ(deserialized_sketch->get_name(), "TestSketch");
+  EXPECT_EQ(deserialized_sketch->get_id(), sketch.get_id());
   EXPECT_EQ(deserialized_sketch->get_nodes().size(), live_nodes);
 
   // Count edges in deserialized sketch

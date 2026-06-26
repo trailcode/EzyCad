@@ -2380,7 +2380,13 @@ void GUI::dbg_()
     return;
   }
   // Undo / redo stack
-  ImGui::Text("Undo: %zu (Ctrl+Z)  |  Redo: %zu (Ctrl+Y)  [max 50]", m_view->undo_stack_size(), m_view->redo_stack_size());
+  ImGui::Text("Undo: %zu (%.2f MB)  |  Redo: %zu (%.2f MB)  [%zu steps max, %zu MB cap]",
+              m_view->undo_stack_size(),
+              static_cast<double>(m_view->undo_stack_footprint_bytes()) / (1024.0 * 1024.0),
+              m_view->redo_stack_size(),
+              static_cast<double>(m_view->redo_stack_footprint_bytes()) / (1024.0 * 1024.0),
+              Occt_view::k_max_undo,
+              Occt_view::k_max_undo_bytes / (1024u * 1024u));
   ImGui::Separator();
   // Get the available content region width
   float available_width = ImGui::GetContentRegionAvail().x;

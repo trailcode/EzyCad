@@ -139,6 +139,7 @@ nlohmann::json Sketch_json::to_json(const Sketch& sketch)
 {
   json j;
   j["isCurrent"] = sketch.is_current();
+  j["id"]        = sketch.get_id();
   j["name"]      = sketch.get_name();
   j["plane"]     = ::to_json(sketch.m_pln);
 
@@ -246,6 +247,10 @@ Sketch::sptr Sketch_json::from_json(Occt_view& view, const nlohmann::json& j)
 
   Sketch::sptr ret;
 
+  std::optional<uint64_t> sketch_id;
+  if (j.contains("id") && j["id"].is_number_unsigned())
+    sketch_id = j["id"].get<uint64_t>();
+
   if (j.contains("originating_face"))
   {
     TopoDS_Shape       shape;
@@ -255,10 +260,10 @@ Sketch::sptr Sketch_json::from_json(Occt_view& view, const nlohmann::json& j)
     EZY_ASSERT(shape.ShapeType() == TopAbs_WIRE);
     const TopoDS_Wire& face = TopoDS::Wire(shape);
 
-    ret = std::make_shared<Sketch>(j["name"], view, from_json_pln(j["plane"]), face);
+    ret = std::make_shared<Sketch>(j["name"], view, from_json_pln(j["plane"]), face, sketch_id);
   }
   else
-    ret = std::make_shared<Sketch>(j["name"], view, from_json_pln(j["plane"]));
+    ret = std::make_shared<Sketch>(j["name"], view, from_json_pln(j["plane"]), sketch_id);
 
   std::vector<std::pair<std::size_t, std::size_t>> legacy_length_dim_endpoints;
 

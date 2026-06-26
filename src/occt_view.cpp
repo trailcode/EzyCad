@@ -1859,6 +1859,14 @@ Aspect_VKeyFlags Occt_view::key_flags_from_glfw_(int theFlags)
 
 Occt_view::Sketch_list& Occt_view::get_sketches() { return m_sketches; }
 
+uint64_t Occt_view::allocate_sketch_id() { return m_next_sketch_id++; }
+
+void Occt_view::note_loaded_sketch_id(uint64_t id)
+{
+  if (id >= m_next_sketch_id)
+    m_next_sketch_id = id + 1;
+}
+
 void Occt_view::remove_sketch(const Sketch_ptr& sketch)
 {
   push_undo_snapshot();
@@ -1926,6 +1934,48 @@ Shp_extrude&   Occt_view::shp_extrude()   { return m_shp_extrude;    }
 
 // ---------------------------------------------------------------------------
 // Undo / redo: sketch edits use element deltas; other operations use full JSON snapshots.
+size_t Occt_view::stack_footprint_bytes_(const std::vector<Undo_entry>& stack)
+{
+  size_t total = 0;
+  for (const Undo_entry& entry : stack)
+    total += entry.footprint_bytes;
+  return total;
+}
+
+void Occt_view::trim_undo_stack_()
+{
+  while (m_undo_stack.size() > k_max_undo)
+    m_undo_stack.erase(m_undo_stack.begin());
+
+  while (m_undo_stack.size() > 1 && stack_footprint_bytes_(m_undo_stack) > k_max_undo_bytes)
+  {
+    auto snapshot_it =
+        std::find_if(m_undo_stack.begin(), m_undo_stack.end(),
+                     [](const Undo_entry& entry) { return entry.kind == Undo_entry_kind::Document_snapshot; });
+    if (snapshot_it != m_undo_stack.end())
+      m_undo_stack.erase(snapshot_it);
+    else
+      m_undo_stack.erase(m_undo_stack.begin());
+  }
+}
+
+void Occt_view::trim_redo_stack_()
+{
+  while (m_redo_stack.size() > k_max_undo)
+    m_redo_stack.erase(m_redo_stack.begin());
+
+  while (m_redo_stack.size() > 1 && stack_footprint_bytes_(m_redo_stack) > k_max_undo_bytes)
+  {
+    auto snapshot_it =
+        std::find_if(m_redo_stack.begin(), m_redo_stack.end(),
+                     [](const Undo_entry& entry) { return entry.kind == Undo_entry_kind::Document_snapshot; });
+    if (snapshot_it != m_redo_stack.end())
+      m_redo_stack.erase(snapshot_it);
+    else
+      m_redo_stack.erase(m_redo_stack.begin());
+  }
+}
+
 void Occt_view::push_undo_snapshot()
 {
   if (m_restoring)
@@ -1933,11 +1983,12 @@ void Occt_view::push_undo_snapshot()
 
   m_redo_stack.clear();
   Undo_entry entry;
-  entry.json = to_json();
-  entry.mode = m_gui.get_mode();
+  entry.kind   = Undo_entry_kind::Document_snapshot;
+  entry.json   = to_json();
+  entry.mode   = m_gui.get_mode();
+  entry.footprint_bytes = entry.json.size();
   m_undo_stack.push_back(std::move(entry));
-  if (m_undo_stack.size() > k_max_undo)
-    m_undo_stack.erase(m_undo_stack.begin());
+  trim_undo_stack_();
 }
 
 void Occt_view::push_undo_delta(std::unique_ptr<Delta> delta)
@@ -1947,11 +1998,12 @@ void Occt_view::push_undo_delta(std::unique_ptr<Delta> delta)
 
   m_redo_stack.clear();
   Undo_entry entry;
-  entry.delta = std::move(delta);
-  entry.mode  = m_gui.get_mode();
+  entry.kind            = Undo_entry_kind::Sketch_delta;
+  entry.delta           = std::move(delta);
+  entry.mode            = m_gui.get_mode();
+  entry.footprint_bytes = entry.delta->approximate_undo_bytes();
   m_undo_stack.push_back(std::move(entry));
-  if (m_undo_stack.size() > k_max_undo)
-    m_undo_stack.erase(m_undo_stack.begin());
+  trim_undo_stack_();
 }
 
 void Occt_view::pop_undo_snapshot()
@@ -1974,18 +2026,23 @@ bool Occt_view::undo()
   Undo_entry redo_entry;
   redo_entry.mode = m_gui.get_mode();
 
-  if (state.delta)
+  if (state.kind == Undo_entry_kind::Sketch_delta && state.delta)
   {
-    redo_entry.delta = state.delta->clone();
+    redo_entry.kind            = Undo_entry_kind::Sketch_delta;
+    redo_entry.delta           = state.delta->clone();
+    redo_entry.footprint_bytes = redo_entry.delta->approximate_undo_bytes();
     state.delta->apply_reverse(*this);
   }
   else
   {
-    redo_entry.json = to_json();
+    redo_entry.kind            = Undo_entry_kind::Document_snapshot;
+    redo_entry.json            = to_json();
+    redo_entry.footprint_bytes = redo_entry.json.size();
     load(state.json, false); // Keep current view so undo/redo keeps a single perspective
   }
 
   m_redo_stack.push_back(std::move(redo_entry));
+  trim_redo_stack_();
   m_gui.set_mode(state.mode);
   if (state.mode == Mode::Sketch_inspection_mode)
     m_gui.set_show_sketch_list(true);
@@ -2006,18 +2063,23 @@ bool Occt_view::redo()
   Undo_entry undo_entry;
   undo_entry.mode = m_gui.get_mode();
 
-  if (state.delta)
+  if (state.kind == Undo_entry_kind::Sketch_delta && state.delta)
   {
-    undo_entry.delta = state.delta->clone();
+    undo_entry.kind            = Undo_entry_kind::Sketch_delta;
+    undo_entry.delta           = state.delta->clone();
+    undo_entry.footprint_bytes = undo_entry.delta->approximate_undo_bytes();
     state.delta->apply_forward(*this);
   }
   else
   {
-    undo_entry.json = to_json();
+    undo_entry.kind            = Undo_entry_kind::Document_snapshot;
+    undo_entry.json            = to_json();
+    undo_entry.footprint_bytes = undo_entry.json.size();
     load(state.json, false); // Keep current view so undo/redo keeps a single perspective
   }
 
   m_undo_stack.push_back(std::move(undo_entry));
+  trim_undo_stack_();
   m_gui.set_mode(state.mode);
   if (state.mode == Mode::Sketch_inspection_mode)
     m_gui.set_show_sketch_list(true);
@@ -2031,6 +2093,10 @@ bool Occt_view::can_redo() const { return !m_redo_stack.empty(); }
 
 size_t Occt_view::undo_stack_size() const { return m_undo_stack.size(); }
 size_t Occt_view::redo_stack_size() const { return m_redo_stack.size(); }
+
+size_t Occt_view::undo_stack_footprint_bytes() const { return stack_footprint_bytes_(m_undo_stack); }
+
+size_t Occt_view::redo_stack_footprint_bytes() const { return stack_footprint_bytes_(m_redo_stack); }
 
 // ---------------------------------------------------------------------------
 // Document format: 1 = legacy sketch edges could carry a 4th "dim" flag; 2 = length_dimensions array + 3-tuple edges.

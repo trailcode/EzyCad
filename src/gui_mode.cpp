@@ -806,7 +806,7 @@ void GUI::options_sketch_operation_axis_mode_()
                   doc_urls::k_revolve_solid_conversion);
 
     if (ImGui::Button("Clear axis"))
-      m_view->curr_sketch().clear_operation_axis();
+      m_view->curr_sketch().clear_operation_axis_undoable();
   }
 
   options_sketch_len_angle_hotkeys_();
