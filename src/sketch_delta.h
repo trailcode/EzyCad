@@ -44,10 +44,11 @@ private:
 /// One sketch undo step: `prev_*` is restored on undo; `curr_*` is re-applied on redo.
 /// Node indices are never compacted; undo tombstones `curr_node_idxs` and redo revives them
 /// through the normal node lookup when edges are added again.
+/// Target sketch is resolved by stable id (not display name).
 class Sketch_delta : public Delta
 {
 public:
-  Sketch_delta(Sketch& sketch, std::string sketch_name);
+  explicit Sketch_delta(uint64_t sketch_id, std::string sketch_name = {});
   ~Sketch_delta() override;
 
   Sketch_delta(const Sketch_delta&)            = delete;
@@ -56,6 +57,7 @@ public:
   void                   apply_forward(Occt_view& view) override;
   void                   apply_reverse(Occt_view& view) override;
   std::unique_ptr<Delta> clone() const override;
+  size_t                 approximate_undo_bytes() const override;
 
 private:
   friend class Sketch_op_recorder::Impl;

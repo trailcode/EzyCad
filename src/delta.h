@@ -14,4 +14,6 @@ public:
   virtual void                   apply_forward(Occt_view& view) = 0;
   virtual void                   apply_reverse(Occt_view& view) = 0;
   virtual std::unique_ptr<Delta> clone() const                  = 0;
+  /// Rough stored size for undo-stack byte budgeting (not exact).
+  virtual size_t approximate_undo_bytes() const { return 256; }
 };

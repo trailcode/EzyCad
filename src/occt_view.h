@@ -5,6 +5,7 @@
 #include <AIS_ViewController.hxx>
 #include <Graphic3d_MaterialAspect.hxx>
 #include <glm/glm.hpp>
+#include <cstdint>
 #include <list>
 #include <memory>
 #include <optional>
@@ -103,6 +104,13 @@ public:
   bool   can_redo() const;
   size_t undo_stack_size() const;
   size_t redo_stack_size() const;
+  /// Approximate total bytes retained by undo / redo entries (for debug and budgeting).
+  size_t undo_stack_footprint_bytes() const;
+  size_t redo_stack_footprint_bytes() const;
+
+  static constexpr size_t k_max_undo{50};
+  /// Drop oldest document snapshots first when total retained undo data exceeds this budget.
+  static constexpr size_t k_max_undo_bytes{32 * 1024 * 1024};
 
   void do_frame();
   /// Apply pending navigation (pan/zoom/rotate) to the camera before UI uses view projection (e.g. underlay slider bounds).
@@ -133,21 +141,26 @@ public:
   // Sketch related
   Sketch_list& get_sketches();
   void         remove_sketch(const Sketch_ptr& sketch);
-  /// Empty sketch on \a pln; \a base_name is uniquified (e.g. Sketch_xy, Sketch_xy.001).
-  void       add_sketch(const gp_Pln& pln, const std::string& base_name);
-  Sketch&    curr_sketch();
-  Sketch_ptr curr_sketch_shared() const;
-  void       set_curr_sketch(const Sketch_ptr& sketch);
-  void       sketch_face_extrude(const ScreenCoords& screen_coords, bool is_mouse_move);
+  void         add_sketch(const gp_Pln& pln, const std::string& base_name);
+  /// Allocates a new stable sketch id (monotonic for this view session / document).
+  uint64_t     allocate_sketch_id();
+  /// After loading a sketch with a persisted id, keep the allocator above all loaded ids.
+  void         note_loaded_sketch_id(uint64_t id);
+  Sketch&      curr_sketch();
+  Sketch_ptr   curr_sketch_shared() const;
+  void         set_curr_sketch(const Sketch_ptr& sketch);
+  void         sketch_face_extrude(const ScreenCoords& screen_coords, bool is_mouse_move);
 
   std::list<Shp_ptr>& get_shapes();
   std::string         get_unique_shape_name(const char* base_name) const;
-  void                add_box(double ox, double oy, double oz, double width, double length, double height);
-  void                add_pyramid(double ox, double oy, double oz, double side);
-  void                add_sphere(double ox, double oy, double oz, double radius);
-  void                add_cylinder(double ox, double oy, double oz, double radius, double height);
-  void                add_cone(double ox, double oy, double oz, double R1, double R2, double height);
-  void                add_torus(double ox, double oy, double oz, double R1, double R2);
+
+  // Basic shape creation
+  void add_box(double ox, double oy, double oz, double width, double length, double height);
+  void add_pyramid(double ox, double oy, double oz, double side);
+  void add_sphere(double ox, double oy, double oz, double radius);
+  void add_cylinder(double ox, double oy, double oz, double radius, double height);
+  void add_cone(double ox, double oy, double oz, double R1, double R2, double height);
+  void add_torus(double ox, double oy, double oz, double R1, double R2);
 
   // Shape related
   Shp_move&      shp_move();
@@ -313,18 +326,28 @@ private:
   V3d_View_ptr               m_view;
   Occt_glfw_win_ptr          m_occt_window;
   // Undo / redo
-  static constexpr size_t k_max_undo{50};
+  enum class Undo_entry_kind
+  {
+    Sketch_delta,
+    Document_snapshot,
+  };
 
   struct Undo_entry
   {
+    Undo_entry_kind        kind{Undo_entry_kind::Document_snapshot};
     std::unique_ptr<Delta> delta;
-    std::string            json; // Full-document snapshot when `delta` is null
+    std::string            json; // Full-document snapshot when `kind` is Document_snapshot
     Mode                   mode; // Mode at time of operation; restored when navigating stacks
+    size_t                 footprint_bytes{};
   };
 
   std::vector<Undo_entry> m_undo_stack;
   std::vector<Undo_entry> m_redo_stack;
   bool                    m_restoring{false};
+
+  static size_t stack_footprint_bytes_(const std::vector<Undo_entry>& stack);
+  void          trim_undo_stack_();
+  void          trim_redo_stack_();
 
   // --------------------------------------------------------------------
   // Dimension related
@@ -334,6 +357,7 @@ private:
   std::list<Shp_ptr>                m_shps;
   Sketch_list                       m_sketches;
   std::shared_ptr<Sketch>           m_cur_sketch;
+  uint64_t                          m_next_sketch_id{1};
   TopAbs_ShapeEnum                  m_shp_selection_mode{TopAbs_SHAPE};
   Shp_ptr                           m_shape_list_hover;
   PrsDim_LengthDimension_ptr        m_sketch_list_measurement_hover;

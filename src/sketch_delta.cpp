@@ -54,8 +54,8 @@ public:
     std::string           name;
   };
 
-  Sketch*                                m_sketch{nullptr};
-  std::string                            m_sketch_name;
+  std::string                            m_sketch_name; // debug / legacy only; not used for resolve
+  uint64_t                               m_sketch_id{};
   std::vector<Prev_edge_rec>             prev_linear_edges;
   std::vector<Curr_linear_edge_record>   curr_linear_edges;
   std::vector<Arc_edge_record>           prev_arc_edges;
@@ -66,7 +66,7 @@ public:
   std::optional<Prev_edge_rec>           prev_operation_axis;
   std::optional<Curr_linear_edge_record> curr_operation_axis;
 
-  Impl(Sketch& sketch, std::string sketch_name);
+  Impl(uint64_t sketch_id, std::string sketch_name);
 
   Sketch*                       resolve_sketch_(Occt_view& view) const;
   void                          apply_forward_(Sketch& sketch) const;
@@ -124,8 +124,8 @@ private:
   void unregister_owner_();
 };
 
-Sketch_delta::Sketch_delta(Sketch& sketch, std::string sketch_name)
-    : m_impl(std::make_unique<Impl>(sketch, std::move(sketch_name)))
+Sketch_delta::Sketch_delta(uint64_t sketch_id, std::string sketch_name)
+    : m_impl(std::make_unique<Impl>(sketch_id, std::move(sketch_name)))
 {
 }
 
@@ -146,6 +146,24 @@ void Sketch_delta::apply_reverse(Occt_view& view)
 }
 
 std::unique_ptr<Delta> Sketch_delta::clone() const { return m_impl->clone(); }
+
+size_t Sketch_delta::approximate_undo_bytes() const
+{
+  const Impl& d = *m_impl;
+  size_t      n = 264;
+  n += d.prev_linear_edges.size() * 80;
+  n += d.curr_linear_edges.size() * 48;
+  n += d.prev_arc_edges.size() * 72;
+  n += d.curr_arc_edges.size() * 72;
+  n += d.curr_node_idxs.size() * 8;
+  n += d.prev_length_dims.size() * 96;
+  n += d.curr_length_dims.size() * 96;
+  if (d.prev_operation_axis.has_value())
+    n += 80;
+  if (d.curr_operation_axis.has_value())
+    n += 48;
+  return n;
+}
 
 Sketch_op_recorder::Sketch_op_recorder(Occt_view& view, Sketch& sketch)
     : m_impl(std::make_unique<Impl>(view, sketch))
@@ -217,7 +235,7 @@ Sketch_op_recorder::Impl::Impl(Occt_view& view, Sketch& sketch)
       m_live_nodes_at_start.insert(i);
 
   Sketch_delta::Impl::capture_linear_edges_at_start_(sketch, m_linear_edges_at_start);
-  m_delta = std::make_unique<Sketch_delta>(sketch, sketch.get_name());
+  m_delta = std::make_unique<Sketch_delta>(sketch.get_id(), sketch.get_name());
 }
 
 void Sketch_op_recorder::Impl::register_owner_(Sketch_op_recorder& owner)
@@ -386,19 +404,16 @@ void Sketch_op_recorder::Impl::cancel()
   unregister_owner_();
 }
 
-Sketch_delta::Impl::Impl(Sketch& sketch, std::string sketch_name)
-    : m_sketch(&sketch)
-    , m_sketch_name(std::move(sketch_name))
+Sketch_delta::Impl::Impl(uint64_t sketch_id, std::string sketch_name)
+    : m_sketch_name(std::move(sketch_name))
+    , m_sketch_id(sketch_id)
 {
 }
 
 Sketch* Sketch_delta::Impl::resolve_sketch_(Occt_view& view) const
 {
-  if (m_sketch)
-    return m_sketch;
-
   for (const Sketch::sptr& s : view.get_sketches())
-    if (s->get_name() == m_sketch_name)
+    if (s->get_id() == m_sketch_id)
       return s.get();
 
   return nullptr;
@@ -417,6 +432,9 @@ void Sketch_delta::Impl::apply_forward_(Sketch& sketch) const
 
   if (curr_operation_axis.has_value())
     sketch.sketch_json_set_operation_axis_(curr_operation_axis->pt_a, curr_operation_axis->pt_b);
+
+  else if (prev_operation_axis.has_value() && !curr_operation_axis.has_value())
+    sketch.clear_operation_axis();
 
   sketch.m_nodes.hide_snap_annos();
   sketch.update_faces_();
@@ -457,9 +475,8 @@ void Sketch_delta::Impl::apply_reverse_(Sketch& sketch) const
 
 std::unique_ptr<Sketch_delta> Sketch_delta::Impl::clone() const
 {
-  auto  copy                    = std::make_unique<Sketch_delta>(*m_sketch, m_sketch_name);
-  Impl& copy_impl               = *copy->m_impl;
-  copy_impl.m_sketch            = m_sketch;
+  auto  copy              = std::make_unique<Sketch_delta>(m_sketch_id, m_sketch_name);
+  Impl& copy_impl         = *copy->m_impl;
   copy_impl.prev_linear_edges   = prev_linear_edges;
   copy_impl.curr_linear_edges   = curr_linear_edges;
   copy_impl.prev_arc_edges      = prev_arc_edges;
