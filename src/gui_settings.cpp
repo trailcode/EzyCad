@@ -848,7 +848,9 @@ void GUI::settings_()
       ImGui::AlignTextToFramePadding();
       ImGui::TextUnformatted("Grid step");
       ImGui::TableSetColumnIndex(1);
-      if (ImGui::DragScalar("##gstep", ImGuiDataType_Double, &step_ui, spd_s, nullptr, nullptr, "%.8g"))
+      const double step_min_ui =
+          (std::max(gr.graphic_x_size, gr.graphic_y_size) * 2.0 / 512.0) / dim_scale;
+      if (ImGui::DragScalar("##gstep", ImGuiDataType_Double, &step_ui, spd_s, &step_min_ui, nullptr, "%.8g"))
         geom_changed = true;
 
       ImGui::TableNextRow();
@@ -894,6 +896,11 @@ void GUI::settings_()
       gr.graphic_y_size   = graphic_y_ui * dim_scale * 0.5;
       gr.graphic_z_offset = graphic_z_off_ui * dim_scale;
       m_view->set_occt_grid_rect_params(gr);
+      m_view->get_occt_grid_rect_params(gr);
+      step_ui          = gr.step / dim_scale;
+      graphic_x_ui     = (gr.graphic_x_size * 2.0) / dim_scale;
+      graphic_y_ui     = (gr.graphic_y_size * 2.0) / dim_scale;
+      graphic_z_off_ui = gr.graphic_z_offset / dim_scale;
     }
     if (grid_changed || geom_changed)
       save_occt_view_settings();

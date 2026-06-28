@@ -1235,11 +1235,31 @@ void Occt_view::set_grid_colors(float r1, float g1, float b1, float r2, float g2
 
 Occt_grid_rect_params Occt_view::clamp_occt_grid_rect_params_(Occt_grid_rect_params g)
 {
-  constexpr double min_step    = 1e-9;
-  constexpr double min_graphic = 1e-6;
-  g.step                       = std::max(g.step, min_step);
-  g.graphic_x_size             = std::max(g.graphic_x_size, min_graphic);
-  g.graphic_y_size             = std::max(g.graphic_y_size, min_graphic);
+  // OCCT CPU grid rebuilds O(extent/step) line segments; tiny step crashes UpdateDisplay().
+  constexpr int    max_lines_per_axis = 512;
+  constexpr double min_graphic        = 1e-6;
+  constexpr double default_step       = 10.0;
+  constexpr double default_half_ext   = 1000.0;
+
+  if (!std::isfinite(g.graphic_x_size) || g.graphic_x_size <= 0.0)
+    g.graphic_x_size = default_half_ext;
+  if (!std::isfinite(g.graphic_y_size) || g.graphic_y_size <= 0.0)
+    g.graphic_y_size = default_half_ext;
+  if (!std::isfinite(g.graphic_z_offset))
+    g.graphic_z_offset = 0.0;
+
+  g.graphic_x_size = std::max(g.graphic_x_size, min_graphic);
+  g.graphic_y_size = std::max(g.graphic_y_size, min_graphic);
+
+  if (!std::isfinite(g.step) || g.step <= 0.0)
+    g.step = default_step;
+
+  const double full_x     = g.graphic_x_size * 2.0;
+  const double full_y     = g.graphic_y_size * 2.0;
+  const double min_step_x = full_x / static_cast<double>(max_lines_per_axis);
+  const double min_step_y = full_y / static_cast<double>(max_lines_per_axis);
+  g.step                  = std::max(g.step, std::max(min_step_x, min_step_y));
+
   return g;
 }
 
@@ -1356,7 +1376,7 @@ void Occt_view::apply_occt_grid_rect_to_viewer_()
   m_occt_grid_rect        = g;
 
   Handle(V3d_Viewer) viewer = m_view->Viewer();
-  if (viewer.IsNull() || viewer->Grid().IsNull())
+  if (viewer.IsNull() || !viewer->IsGridActive() || viewer->Grid().IsNull())
     return;
 
   Handle(Aspect_Grid) ag            = viewer->Grid();
