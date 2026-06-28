@@ -38,8 +38,7 @@ nlohmann::json build_occt_view_settings_object(const Occt_view& view)
       {"grid_color1", {g1[0], g1[1], g1[2]}},
       {"grid_color2", {g2[0], g2[1], g2[2]}},
       {"grid_step", grid_rect.step},
-      {"grid_graphic_x_size", grid_rect.graphic_x_size},
-      {"grid_graphic_y_size", grid_rect.graphic_y_size},
+      {"grid_padding", grid_rect.grid_padding},
       {"grid_graphic_z_offset", grid_rect.graphic_z_offset},
       {"grid_visible", view.get_grid_visible()},
   };
@@ -228,16 +227,20 @@ void GUI::parse_occt_view_settings_(const std::string& content)
       else if (ov.contains("grid_y_step"))
         apply_num("grid_y_step", grid_rect.step);
     }
-    apply_num("grid_graphic_x_size", grid_rect.graphic_x_size);
-    apply_num("grid_graphic_y_size", grid_rect.graphic_y_size);
+    apply_num("grid_padding", grid_rect.grid_padding);
+    if (!ov.contains("grid_padding") && ov.contains("grid_graphic_x_size"))
+    {
+      // Legacy: treat old half-extent as padding margin around sketch content.
+      apply_num("grid_graphic_x_size", grid_rect.grid_padding);
+    }
     apply_num("grid_graphic_z_offset", grid_rect.graphic_z_offset);
     m_view->set_occt_grid_rect_params(grid_rect);
 
     bool grid_visible = m_view->get_grid_visible();
     if (ov.contains("grid_visible") && ov["grid_visible"].is_boolean())
       grid_visible = ov["grid_visible"].get<bool>();
-    // Always apply: default m_grid_visible may already match JSON, but the OCCT grid
-    // is not activated until apply_grid_visibility_() runs.
+    // Always apply: default m_grid_visible may already match JSON, but the shader grid
+    // is not displayed until apply_grid_visibility_() runs.
     m_view->set_grid_visible(grid_visible);
   }
   catch (...)
@@ -796,10 +799,8 @@ void GUI::settings_()
     m_view->get_occt_grid_rect_params(gr);
     const double dim_scale = m_view->get_dimension_scale();
     // Settings show the same length units as sketch dimensions (model / dimension_scale).
-    // Grid extent UI is full span; OCCT SetGraphicValues uses half-extent (x0.5 on apply).
     double          step_ui          = gr.step / dim_scale;
-    double          graphic_x_ui     = (gr.graphic_x_size * 2.0) / dim_scale;
-    double          graphic_y_ui     = (gr.graphic_y_size * 2.0) / dim_scale;
+    double          padding_ui       = gr.grid_padding / dim_scale;
     double          graphic_z_off_ui = gr.graphic_z_offset / dim_scale;
     bool            grid_changed     = false;
     bool            geom_changed     = false;
@@ -848,33 +849,23 @@ void GUI::settings_()
       ImGui::AlignTextToFramePadding();
       ImGui::TextUnformatted("Grid step");
       ImGui::TableSetColumnIndex(1);
-      const double step_min_ui =
-          (std::max(gr.graphic_x_size, gr.graphic_y_size) * 2.0 / 512.0) / dim_scale;
+      // Step must stay positive; grid extent is derived from sketch bounds + padding.
+      const double step_min_ui = 1e-6;
       if (ImGui::DragScalar("##gstep", ImGuiDataType_Double, &step_ui, spd_s, &step_min_ui, nullptr, "%.8g"))
         geom_changed = true;
 
       ImGui::TableNextRow();
       ImGui::TableSetColumnIndex(0);
       ImGui::AlignTextToFramePadding();
-      ImGui::TextUnformatted("Grid extent X");
+      ImGui::TextUnformatted("Grid padding");
       ImGui::TableSetColumnIndex(1);
-      if (ImGui::DragScalar("##ggx", ImGuiDataType_Double, &graphic_x_ui, spd_extent, nullptr, nullptr, "%.8g"))
+      const double padding_min_ui = 0.0;
+      if (ImGui::DragScalar("##gpad", ImGuiDataType_Double, &padding_ui, spd_extent, &padding_min_ui, nullptr, "%.8g"))
         geom_changed = true;
       ImGui::SameLine(0.f, ImGui::GetStyle().ItemInnerSpacing.x);
-      GUI_DOC_HELP_("Full width of the drawn grid on X (edge to edge through the center). Same length scale as sketch "
-                    "dimensions. OCCT uses half this value internally. Click ? to open the user guide.",
-                    doc_urls::k_occt_view);
-
-      ImGui::TableNextRow();
-      ImGui::TableSetColumnIndex(0);
-      ImGui::AlignTextToFramePadding();
-      ImGui::TextUnformatted("Grid extent Y");
-      ImGui::TableSetColumnIndex(1);
-      if (ImGui::DragScalar("##ggy", ImGuiDataType_Double, &graphic_y_ui, spd_extent, nullptr, nullptr, "%.8g"))
-        geom_changed = true;
-      ImGui::SameLine(0.f, ImGui::GetStyle().ItemInnerSpacing.x);
-      GUI_DOC_HELP_("Full height of the drawn grid on Y (edge to edge through the center). OCCT uses half this value "
-                    "internally. Click ? to open the user guide.",
+      GUI_DOC_HELP_("Margin added around the active sketch when sizing the grid (same length scale as sketch "
+                    "dimensions). The grid extent follows sketch geometry plus this padding. Click ? to open the user "
+                    "guide.",
                     doc_urls::k_occt_view);
 
       ImGui::TableNextRow();
@@ -892,14 +883,12 @@ void GUI::settings_()
     if (geom_changed)
     {
       gr.step             = step_ui * dim_scale;
-      gr.graphic_x_size   = graphic_x_ui * dim_scale * 0.5;
-      gr.graphic_y_size   = graphic_y_ui * dim_scale * 0.5;
+      gr.grid_padding     = padding_ui * dim_scale;
       gr.graphic_z_offset = graphic_z_off_ui * dim_scale;
       m_view->set_occt_grid_rect_params(gr);
       m_view->get_occt_grid_rect_params(gr);
       step_ui          = gr.step / dim_scale;
-      graphic_x_ui     = (gr.graphic_x_size * 2.0) / dim_scale;
-      graphic_y_ui     = (gr.graphic_y_size * 2.0) / dim_scale;
+      padding_ui       = gr.grid_padding / dim_scale;
       graphic_z_off_ui = gr.graphic_z_offset / dim_scale;
     }
     if (grid_changed || geom_changed)

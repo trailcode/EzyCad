@@ -2406,6 +2406,9 @@ void Sketch::update_faces_()
   purge_stale_length_dimensions_();
   sync_permanent_node_annos_();
   refresh_all_length_dimensions_();
+
+  if (is_current())
+    m_view.refresh_active_sketch_grid();
 }
 
 void Sketch::rebuild_dim_classifier_face_cache_()

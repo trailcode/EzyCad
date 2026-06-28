@@ -4,6 +4,7 @@
 #include <AIS_Shape.hxx>
 #include <AIS_ViewController.hxx>
 #include <Graphic3d_MaterialAspect.hxx>
+#include <gp_Ax3.hxx>
 #include <glm/glm.hpp>
 #include <list>
 #include <memory>
@@ -57,13 +58,12 @@ enum class Set_parent_mode
   No
 };
 
-/// Persisted rectangular OCCT viewer grid geometry (same units as the model scene; uniform line step and V3d graphic
-/// half-extent on X/Y for OCCT). Settings UI edits full extent (2x these values). Origin and rotation stay at 0.
+/// Persisted OCCT viewer grid geometry (model units). The drawn grid is sized to the active sketch bounds plus
+/// `grid_padding`; extent is not stored manually.
 struct Occt_grid_rect_params
 {
   double step{10.};
-  double graphic_x_size{1000.};
-  double graphic_y_size{1000.};
+  double grid_padding{1000.};
   double graphic_z_offset{};
 };
 
@@ -259,6 +259,8 @@ public:
   void set_occt_grid_rect_params(const Occt_grid_rect_params& p);
   bool get_grid_visible() const;
   void set_grid_visible(bool visible);
+  /// Recompute grid bounds from the active sketch (call after sketch geometry changes).
+  void refresh_active_sketch_grid();
 
   bool is_headless() const;
 
@@ -298,7 +300,16 @@ private:
   void                         sync_grid_plane_to_active_sketch_();
   void                         refresh_viewer_grid_();
   void                         apply_occt_grid_rect_to_viewer_();
+  void                         apply_shader_grid_display_();
   void                         apply_grid_visibility_();
+  struct Shader_grid_layout
+  {
+    gp_Ax3 plane;
+    double size_x{0.};
+    double size_y{0.};
+  };
+  [[nodiscard]] Shader_grid_layout compute_shader_grid_layout_() const;
+  [[nodiscard]] gp_Ax3             grid_display_plane_() const;
 
   //! GLFW callback redirecting messages into Message::DefaultMessenger().
   // static void errorCallback(int theError, const char* theDescription);
