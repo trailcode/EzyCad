@@ -7,3 +7,6 @@
 #define EZYCAD_VERSION_PATCH 0
 
 #define EZYCAD_VERSION_STRING "0.2.0"
+
+// Pinned ImGuiColorTextEdit ref when fetched by CMake (see CMakeLists.txt GIT_TAG).
+#define EZYCAD_IMGUI_COLOR_TEXT_EDIT_REF "ca2f9f1"

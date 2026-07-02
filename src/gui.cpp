@@ -17,10 +17,9 @@
 
 #ifdef __EMSCRIPTEN__
 #include <emscripten.h>
-#else
+#endif
 
 #include "third_party/tinyfiledialogs/tinyfiledialogs.h"
-#endif
 
 #include "utl_geom.h"
 #include "imgui.h"
@@ -32,6 +31,8 @@
 #include "sketch.h"
 #include "utl.h"
 #include "version.h"
+
+#include <Standard_Version.hxx>
 
 // Must be here to prevent compiler warning
 #include <GLFW/glfw3.h>
@@ -660,6 +661,22 @@ void GUI::ensure_about_assets_()
     m_about_markdown = "Could not load res/about.md.\n";
   else
     m_about_markdown = std::string("**EzyCad ") + EZYCAD_VERSION_STRING + "**\n\n" + m_about_markdown;
+
+  m_about_markdown += "\n\nOpen CASCADE ";
+  m_about_markdown += OCC_VERSION_STRING_EXT;
+  m_about_markdown += "\nDear ImGui ";
+  m_about_markdown += IMGUI_VERSION;
+  m_about_markdown += "\nnlohmann/json ";
+  m_about_markdown += std::to_string(NLOHMANN_JSON_VERSION_MAJOR);
+  m_about_markdown += '.';
+  m_about_markdown += std::to_string(NLOHMANN_JSON_VERSION_MINOR);
+  m_about_markdown += '.';
+  m_about_markdown += std::to_string(NLOHMANN_JSON_VERSION_PATCH);
+  m_about_markdown += "\ntinyfiledialogs ";
+  m_about_markdown += tinyfd_version;
+  m_about_markdown += "\nImGuiColorTextEdit ";
+  m_about_markdown += EZYCAD_IMGUI_COLOR_TEXT_EDIT_REF;
+  m_about_markdown += "\n";
 
   const char* png_paths[] = {
 #ifdef __EMSCRIPTEN__
