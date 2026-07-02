@@ -37,3 +37,4 @@
 * Arc function needs to accept tab for radius. 
 * Dist tab dialog should state if it is a radius or diameter for arc.*
 * Dist tab dialog should state if it is a 1/2 dist or full, for edge tool.
+* **Wasm / OCCT 8.x GLES shading regression:** With OCCT **8.0.0.p1** (`V8_0_0_p1`) and `TKOpenGles`, new solids and extrude previews often render wireframe-only or with partial face shading in the browser. Native desktop (OCCT 8 + `TKOpenGl`) is unaffected. Rebuilding against **7.9.3** (`scripts/build-occt-793-wasm.ps1`) restores correct shading. Workarounds in EzyCad (`SetMaterial` + `Redisplay`, `refresh_shape_shading_`, bisect toggles in `occt_view_wasm_bisect.h`) do not fix the root cause on OCCT 8. Use 7.9.3 for wasm builds and demo publishing until upstream fixes GLES presentation.

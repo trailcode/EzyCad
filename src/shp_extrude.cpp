@@ -5,6 +5,7 @@
 #include <Precision.hxx>
 #include <TopoDS.hxx>
 #include <V3d_View.hxx>
+#include <V3d_View.hxx>
 
 #include "utl_dbg.h"
 #include "utl_geom.h"
@@ -167,17 +168,18 @@ void Shp_extrude::update_extrude_preview_(const double extrude_dist, const Plane
   }
 
   TopoDS_Shape body = BRepPrimAPI_MakePrism(face, extrude_vec);
-  if (!m_extruded)
+  if (m_extruded.IsNull())
   {
     m_extruded = new Shp(ctx(), body);
-    m_extruded->SetMaterial(view().get_default_material());
-    ctx().Display(m_extruded, m_extruded->get_disp_mode(), -1, true);
+    ctx().Display(m_extruded, AIS_Shaded, AIS_Shape::SelectionMode(TopAbs_SHAPE), true);
   }
   else
-  {
     m_extruded->Set(body);
-    ctx().Redisplay(m_extruded, true);
-  }
+
+  m_extruded->SetMaterial(view().get_default_material());
+  view().refresh_shape_shading_(m_extruded);
+  ctx().Redisplay(m_extruded, true);
+  ctx().UpdateCurrentViewer();
 }
 
 void Shp_extrude::refresh_tmp_dimension_style(const Length_dimension_style& style)

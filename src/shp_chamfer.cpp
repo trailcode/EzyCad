@@ -101,7 +101,7 @@ Status Shp_chamfer::add_chamfer(const ScreenCoords& screen_coords, const Chamfer
   }
   catch (const Standard_Failure& e)
   {
-    const char* msg     = e.what();
+    const char* msg     = e.GetMessageString();
     std::string err_str = msg ? msg : "Unknown OCCT error";
     DBG_MSG(err_str);
     return Status::user_error(err_str);

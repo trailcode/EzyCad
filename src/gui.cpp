@@ -2137,6 +2137,7 @@ void GUI::shape_list_()
         return;
 
       shape->SetMaterial(Graphic3d_MaterialAspect(static_cast<Graphic3d_NameOfMaterial>(i)));
+      m_view->refresh_shape_shading_(shape);
       m_view->ctx().Redisplay(shape, true);
       m_view->ctx().UpdateCurrentViewer();
     };
