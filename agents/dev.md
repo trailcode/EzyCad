@@ -58,22 +58,28 @@ Full OCCT + EzyCad wasm instructions live in [docs/building-occt.md](../docs/bui
 
 High-level flow (after `emsdk_env`):
 
-1. Build the OCCT 8.0.0 wasm package (if not already done):
+1. Build the OCCT wasm package (if not already done):
 
    ```powershell
-   .\scripts\build-occt-v8-wasm.ps1 -RootDir C:\bin\occt-wasm-build
+   # Recommended (7.9.3)
+   .\scripts\build-occt-793-wasm.ps1
+
+   # OCCT 8.0.0.p1 (upstream regression compare)
+   .\scripts\build-occt-v8-wasm.ps1
    ```
+
+   Default install trees: `%USERPROFILE%\occt-wasm-build\V7_9_3\install` and `...\V8_0_0_p1\install`.
 
 2. Configure + build EzyCad (Ninja generator recommended):
 
    ```powershell
-   mkdir build-em
-   cd build-em
-   emcmake cmake .. -G Ninja -Wno-dev `
-     -DOpenCASCADE_DIR=C:\bin\occt-wasm-build\install\lib\cmake\opencascade `
+   emcmake cmake -S . -B build-em-7-9-3 -G Ninja -Wno-dev `
+     -DOpenCASCADE_DIR=$env:USERPROFILE\occt-wasm-build\V7_9_3\install\lib\cmake\opencascade `
      -DCMAKE_BUILD_TYPE=Release
-   ninja
+   ninja -C build-em-7-9-3
    ```
+
+   **Wasm GLES bisection:** uncomment one toggle in `src/occt_view_wasm_bisect.h`, then `ninja`.
 
 3. Serve locally:
 
@@ -83,7 +89,7 @@ High-level flow (after `emsdk_env`):
 
    Load `EzyCad.html` (or the copy under `web/`) in a browser.
 
-See `scripts/build-occt-v8-wasm.ps1` (and .cmd wrapper) for script options.
+See `scripts/build-occt-793-wasm.ps1`, `scripts/build-occt-v8-wasm.ps1`, and shared `scripts/build-occt-wasm.ps1` (with `.cmd` wrappers) for script options.
 
 ## Code Quality & Pre-commit Checks
 
@@ -108,7 +114,9 @@ See `scripts/build-occt-v8-wasm.ps1` (and .cmd wrapper) for script options.
 
 - `scripts/sync-github-pages-html.ps1` — Sync `web/` changes (EzyCad.html etc.) to the GitHub Pages wasm demo site.
 - `scripts/pbf-to-png.ps1` / `.py` — Icon / asset conversion helpers.
-- `scripts/build-occt-v8-wasm.ps1` — As shown above.
+- `scripts/build-occt-793-wasm.ps1` — OCCT 7.9.3 wasm (recommended).
+- `scripts/build-occt-v8-wasm.ps1` — OCCT 8.0.0.p1 wasm.
+- `scripts/build-occt-wasm.ps1` — Shared implementation (advanced `-OcctTag` use).
 
 ## Working with AI Coding Assistants
 
@@ -168,14 +176,13 @@ See also the comment in `src/version.h`, the project declaration in `CHANGELOG.m
 10. (Optional) If you want the raw MSVC build tree as a direct `.zip` asset on the Releases page too, the workflow can be extended (see the packaging step). For now the portable x64 zip is the primary end-user download.
 11. **Rebuild and publish the public WebAssembly demo** (critical after any C++ change or release):
     - Activate Emscripten: run the emsdk_env (see docs/building-occt.md).
-    - (Re)build OCCT wasm if needed: `.\scripts\build-occt-v8-wasm.ps1 -RootDir C:\bin\occt-wasm-build`
+    - (Re)build OCCT wasm if needed: `.\scripts\build-occt-793-wasm.ps1`
     - Configure + build (from repo root):
       ```powershell
-      # Use a dir like build-em (or clean it)
-      emcmake cmake -S . -B build-em -G Ninja -Wno-dev `
-        -DOpenCASCADE_DIR=C:\bin\occt-wasm-build\install\lib\cmake\opencascade `
+      emcmake cmake -S . -B build-em-7-9-3 -G Ninja -Wno-dev `
+        -DOpenCASCADE_DIR=$env:USERPROFILE\occt-wasm-build\V7_9_3\install\lib\cmake\opencascade `
         -DCMAKE_BUILD_TYPE=Release
-      ninja -C build-em
+      ninja -C build-em-7-9-3
       ```
     - This produces (in build-em/): `EzyCad.html`, `EzyCad.js`, `EzyCad.wasm`, `EzyCad.data`.
     - **Bump cache** (already done in this release prep for 0.2.0): edit `web/EzyCad.html` (var EZYCAD_WEB_CACHE) — the build-em/ copy will be updated on next full build.

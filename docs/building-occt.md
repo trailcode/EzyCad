@@ -15,9 +15,7 @@ EzyCad does **not** vendor OCCT; builds live **outside** the tree. Point CMake a
 | Target | Documented / tested | CMake variables |
 | --- | --- | --- |
 | **Windows desktop** | OCCT **8.0.0** prebuilt | `OpenCASCADE_DIR`, `OCCT_3RD_PARTY_DIR` |
-| **WebAssembly** | OCCT **8.0.0** via `scripts/build-occt-v8-wasm.ps1` | `OpenCASCADE_DIR` only (static install) |
-
-After upgrading OCCT, retest **sketch dimensions**, **grid**, **fillet/chamfer/boolean**, and **STEP/STL** export. OCCT 8.0 changes grid rendering and many modeling paths.
+| **WebAssembly** | OCCT **7.9.3** (`V7_9_3`) recommended; **8.0.0.p1** (`V8_0_0_p1`) has regressions | `OpenCASCADE_DIR` only (static install) |
 
 ---
 
@@ -73,51 +71,51 @@ Prefer **prebuilt** packages unless you need a custom source build.
 
 EzyCad’s wasm target links **`TKOpenGles`** (not `TKOpenGl`), static OCCT, and **`-fexceptions`** (see `CMakeLists.txt` Emscripten block).
 
-### Automated: `scripts/build-occt-v8-wasm.ps1`
+### Automated wasm scripts
 
-Builds **FreeType 2.13.3** + **OCCT `V8_0_0`** static with GLES2 into a single install prefix.
+EzyCad links **`TKOpenGles`** (not `TKOpenGl`), static OCCT, and **`-fexceptions`** (see `CMakeLists.txt` Emscripten block).
+
+| Script | OCCT tag | Default tree root |
+| --- | --- | --- |
+| `scripts/build-occt-793-wasm.ps1` (`.cmd`) | **V7_9_3** (recommended) | `%USERPROFILE%\occt-wasm-build\V7_9_3` |
+| `scripts/build-occt-v8-wasm.ps1` (`.cmd`) | V8_0_0_p1 | `%USERPROFILE%\occt-wasm-build\V8_0_0_p1` |
+
+Both wrap the shared implementation `scripts/build-occt-wasm.ps1`. Each version gets its own `src/`, `build/`, and `install/` under the versioned root (flat layout).
 
 **Prerequisites:** Git, CMake 3.16+, [Emscripten emsdk](https://emscripten.org/docs/getting_started/downloads.html) 3.0+ with `emsdk_env` active (`emcc`, `emcmake`, `emmake` on `PATH`).
-
-**Layout created** (default `RootDir` = `%USERPROFILE%\occt-wasm-build`):
-
-```text
-occt-wasm-build/
-  src/OCCT/                    git clone V8_0_0
-  src/freetype-2.13.3/         from .tar.gz (not .tar.xz on Windows)
-  build/freetype/
-  build/occt/
-  install/                     CMAKE_INSTALL_PREFIX
-    lib/cmake/opencascade/     → OpenCASCADE_DIR
-    freetype/                  FreeType install (used at OCCT configure time)
-```
 
 **PowerShell (repo root, after `emsdk_env`):**
 
 ```powershell
-.\scripts\build-occt-v8-wasm.ps1 -RootDir C:\bin\occt-wasm-build
+# Recommended for wasm (7.9.3)
+.\scripts\build-occt-793-wasm.ps1
+
+# OCCT 8.0.0.p1 (for upstream regression testing)
+.\scripts\build-occt-v8-wasm.ps1
 ```
 
-Or use `scripts\build-occt-v8-wasm.cmd` if PowerShell script execution is restricted.
+Or use the matching `.cmd` wrappers if PowerShell script execution is restricted.
 
-**Script flags:** `-SkipDownload`, `-SkipFreeType`, `-SkipOcct`, `-ReconfigureOnly`, `-Jobs 8`, `-OcctTag V8_0_0`, `-BuildType Release`.
+**Script flags** (both wrappers): `-SkipDownload`, `-SkipFreeType`, `-SkipOcct`, `-ReconfigureOnly`, `-Jobs 8`, `-BuildType Release`, `-RootDir` (override versioned default).
 
-**Expect:** 1–3+ hours compile, large disk use. Success prints `OpenCASCADE_DIR=...`.
+**Advanced:** call `build-occt-wasm.ps1` directly with `-OcctTag` and optional `-VersionDir` (defaults to tag name under `-RootDir` for side-by-side trees under one parent).
 
-**Configure EzyCad wasm** (Ninja generator works well with OCCT V8):
+**Expect:** 1-3+ hours compile, large disk use. Success prints `OpenCASCADE_DIR=...`.
+
+**Configure EzyCad wasm** (match OCCT version in path and build dir):
 
 ```text
-mkdir build_em
-cd build_em
-emcmake cmake C:\src\EzyCad -Wno-dev -G Ninja -DOpenCASCADE_DIR=C:\src\occt-wasm-build\install\lib\cmake\opencascade -DCMAKE_BUILD_TYPE=Release
-ninja
+emcmake cmake C:\src\EzyCad -Wno-dev -G Ninja -B build-em-7-9-3 ^
+  -DOpenCASCADE_DIR=%USERPROFILE%\occt-wasm-build\V7_9_3\install\lib\cmake\opencascade ^
+  -DCMAKE_BUILD_TYPE=Release
+ninja -C build-em-7-9-3
 ```
 
 Serve: `python -m http.server 8000` from the build output directory (the `.html` + `.wasm` + `.data` files).
 
 ### OCCT wasm CMake flags (reference)
 
-Used by `build-occt-v8-wasm.ps1` — keep in sync if editing the script:
+Used by `build-occt-wasm.ps1` — keep in sync if editing the script:
 
 | Variable | Value | Why |
 | --- | --- | --- |
@@ -136,16 +134,17 @@ FreeType wasm configure also disables optional zlib/png/harfbuzz finds to simpli
 
 | Symptom | Fix |
 | --- | --- |
-| `running scripts is disabled` | `Set-ExecutionPolicy -Scope CurrentUser RemoteSigned` **or** use `build-occt-v8-wasm.cmd` **or** `powershell -ExecutionPolicy Bypass -File ...` |
+| `running scripts is disabled` | `Set-ExecutionPolicy -Scope CurrentUser RemoteSigned` **or** use `build-occt-793-wasm.cmd` / `build-occt-v8-wasm.cmd` **or** `powershell -ExecutionPolicy Bypass -File ...` |
 | `Can't initialize filter; xz` | Script uses `.tar.gz` for FreeType; delete stale `*.tar.xz` under `src/` and re-run |
 | `source directory .../build/freetype does not contain CMakeLists.txt` | Fixed: do not name a PowerShell function parameter `$Args` (shadows automatic `$Args`) |
 | `emcc` not found | Run `emsdk_env.bat` / `emsdk_env.ps1` in the same shell |
 | EzyCad configure hangs on `find_package(OpenCASCADE)` | `emcmake cmake ... --debug-output`; verify `OpenCASCADE_DIR` path |
 | OCCT 8 + ghosted dimension labels | Retest `gui.edge_dim_text_render_mode` (Z-layer Topmost); grid compositing changed in 8.0 |
+| Shaded faces missing / wireframe-only solids (wasm, OCCT 8.x) | Use **7.9.3** (`build-occt-793-wasm.ps1`); see [bugs.md](bugs.md). Bisect toggles in `src/occt_view_wasm_bisect.h` do not fix the OCCT 8 GLES regression |
 
 ---
 
-**Note:** Older OCCT builds (prior to 8.0) are no longer supported or documented. Use the V8 script above for WebAssembly.
+**Note:** Desktop builds remain on OCCT **8.0.0**. Wasm currently targets **7.9.3** until OCCT 8.x GLES shading is fixed upstream.
 
 ## Wrapper scripts and automation
 
@@ -153,11 +152,11 @@ When adding helper scripts under `scripts/`, follow existing repo conventions.
 
 ### Windows `.cmd` (ExecutionPolicy bypass)
 
-`scripts/build-occt-v8-wasm.cmd` wraps the PowerShell script (same pattern as `check-nonascii-src.cmd`):
+`scripts/build-occt-793-wasm.cmd` and `scripts/build-occt-v8-wasm.cmd` wrap the PowerShell scripts (same pattern as `check-nonascii-src.cmd`):
 
 ```bat
 @echo off
-powershell -NoProfile -ExecutionPolicy Bypass -File "%~dp0build-occt-v8-wasm.ps1" %*
+powershell -NoProfile -ExecutionPolicy Bypass -File "%~dp0build-occt-793-wasm.ps1" %*
 if errorlevel 1 exit /b 1
 ```
 
@@ -166,16 +165,16 @@ if errorlevel 1 exit /b 1
 ```bat
 call C:\src\emsdk\emsdk_env.bat
 cd /d C:\src\EzyCad
-scripts\build-occt-v8-wasm.cmd -RootDir C:\src\occt-wasm-build
+scripts\build-occt-793-wasm.cmd
 ```
 
 ### Unix `.sh`
 
-No first-party wasm shell script yet; a `scripts/build-occt-v8-wasm.sh` may mirror the PowerShell logic:
+No first-party wasm shell script yet; a `scripts/build-occt-wasm.sh` may mirror `build-occt-wasm.ps1`:
 
 - `set -euo pipefail`
 - Require `emcc`, `git`, `cmake`
-- `ROOT="${ROOT:-$HOME/occt-wasm-build}"`
+- `ROOT="${ROOT:-$HOME/occt-wasm-build/V7_9_3}"`
 - Download `freetype-$VER.tar.gz` (gzip portable; avoid `.tar.xz` if `xz` missing)
 - `emcmake cmake -S ... -B ...` with the same `-D` flags as the `.ps1`
 - `emmake cmake --build ... --target install -j"$(nproc)"`
@@ -186,7 +185,7 @@ Use forward slashes in cmake paths on Unix.
 ### PowerShell one-liner (no policy change)
 
 ```powershell
-powershell -NoProfile -ExecutionPolicy Bypass -File C:\src\EzyCad\scripts\build-occt-v8-wasm.ps1 -RootDir C:\src\occt-wasm-build
+powershell -NoProfile -ExecutionPolicy Bypass -File C:\src\EzyCad\scripts\build-occt-793-wasm.ps1
 ```
 
 ### curl downloads (CI)
@@ -210,7 +209,9 @@ OCCT 8 supports vcpkg (`USE_VTK=ON` only if needed). EzyCad’s `CMakeLists.txt`
 | `README.md` | Pin version, download URLs, example `OpenCASCADE_DIR` |
 | `CMakeLists.txt` | `OCCT_3RD_PARTY_DIR` paths (freetype/tbb/ffmpeg versions in `DLLS_COMMON`) |
 | `.github/workflows/windows-msvc.yml` | Prebuilt download URL, cache key, `OpenCASCADE_DIR`/`OCCT_3RD_PARTY_DIR` in CI configure |
-| `scripts/build-occt-v8-wasm.ps1` | `$OcctTag`, `$FreeTypeVersion`, cmake flags |
+| `scripts/build-occt-wasm.ps1` | Shared wasm build; `$OcctTag`, `$FreeTypeVersion`, cmake flags |
+| `scripts/build-occt-793-wasm.ps1` | Wrapper defaulting to `V7_9_3` |
+| `scripts/build-occt-v8-wasm.ps1` | Wrapper defaulting to `V8_0_0_p1` |
 | `docs/building-occt.md` | This document |
 | `src/ply_io.cpp` | Comments if triangulation API changes |
 

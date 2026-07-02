@@ -23,6 +23,9 @@
 #include <Precision.hxx>
 #include <Prs3d_DatumAspect.hxx>
 #include <Prs3d_Drawer.hxx>
+#include <Prs3d_ShadingAspect.hxx>
+#include <Graphic3d_AspectFillArea3d.hxx>
+#include <Standard_Version.hxx>
 #include <Prs3d_LineAspect.hxx>
 #include <PrsDim_LengthDimension.hxx>
 #include <STEPControl_Reader.hxx>
@@ -63,6 +66,7 @@
 #include <Font_NameOfFont.hxx>
 #include <TCollection_AsciiString.hxx>
 #include <Wasm_Window.hxx>
+#include "occt_view_wasm_bisect.h"
 #endif
 
 #include <GLFW/glfw3.h>
@@ -155,7 +159,11 @@ void Occt_view::init_viewer()
   Handle(Aspect_DisplayConnection) aDisp;
   Handle(OpenGl_GraphicDriver) aDriver        = new OpenGl_GraphicDriver(aDisp, false);
   aDriver->ChangeOptions().buffersNoSwap      = true; // swap has no effect in WebGL
+#if defined(WASM_BISECT_DISABLE_OPAQUE_ALPHA)
+  aDriver->ChangeOptions().buffersOpaqueAlpha = false;
+#else
   aDriver->ChangeOptions().buffersOpaqueAlpha = true; // avoid unexpected blending of canvas with page background
+#endif
   // Match native OpenGL path (sRGBDisable) so shading/material gamma is consistent vs desktop.
   aDriver->ChangeOptions().sRGBDisable = true;
   if (!aDriver->InitContext())
@@ -169,6 +177,7 @@ void Occt_view::init_viewer()
   aViewer->SetDefaultShadingModel(Graphic3d_TypeOfShadingModel_Phong);
   aViewer->SetDefaultLights();
   aViewer->SetLightOn();
+#ifndef WASM_BISECT_DISABLE_LIGHT_CAST_SHADOWS
   for (NCollection_List<Handle(Graphic3d_CLight)>::Iterator aLightIter(aViewer->ActiveLights()); aLightIter.More();
        aLightIter.Next())
   {
@@ -176,6 +185,7 @@ void Occt_view::init_viewer()
     if (aLight->Type() == Graphic3d_TypeOfLightSource_Directional)
       aLight->SetCastShadows(true);
   }
+#endif
 
   Handle(Wasm_Window) aWindow = new Wasm_Window("#canvas");
 
@@ -207,15 +217,38 @@ void Occt_view::init_viewer()
 #endif
 
   m_view->SetImmediateUpdate(false);
-  auto& params                 = m_view->ChangeRenderingParams();
+  auto& params = m_view->ChangeRenderingParams();
   params.ToShowStats           = true;
-  params.NbMsaaSamples         = 8;                             // Set MSAA samples
-  params.RenderResolutionScale = 2.0;                           // Increase resolution scale
-  params.IsShadowEnabled       = true;                          // Enable shadows
-  params.ShadowMapResolution   = 1024;                          // Shadow map resolution
-  params.TransparencyMethod    = Graphic3d_RTM_BLEND_UNORDERED; // Better transparency
-  params.OitDepthFactor        = 0.0;                           // Depth peeling for better transparency
+  params.ShadowMapResolution   = 1024;
+  params.OitDepthFactor        = 0.0;
   params.Resolution            = (unsigned int)(96.0 * myDevicePixelRatio + 0.5);
+#ifdef __EMSCRIPTEN__
+#if defined(WASM_BISECT_DISABLE_MSAA)
+  params.NbMsaaSamples = 0;
+#else
+  params.NbMsaaSamples = 8;
+#endif
+#if defined(WASM_BISECT_DISABLE_RESOLUTION_SCALE)
+  params.RenderResolutionScale = 1.0;
+#else
+  params.RenderResolutionScale = 2.0;
+#endif
+#if defined(WASM_BISECT_DISABLE_VIEW_SHADOWS)
+  params.IsShadowEnabled = false;
+#else
+  params.IsShadowEnabled = true;
+#endif
+#if defined(WASM_BISECT_DEPTH_PEELING_OIT)
+  params.TransparencyMethod = Graphic3d_RTM_DEPTH_PEELING_OIT;
+#else
+  params.TransparencyMethod = Graphic3d_RTM_BLEND_UNORDERED;
+#endif
+#else
+  params.NbMsaaSamples         = 8;
+  params.RenderResolutionScale = 2.0;
+  params.IsShadowEnabled       = true;
+  params.TransparencyMethod    = Graphic3d_RTM_BLEND_UNORDERED;
+#endif
 
   // m_view->SetScale(1000.0); // Treat coordinates as millimeters
   // m_view->SetScale(39.3701);
@@ -874,10 +907,41 @@ std::optional<gp_Pnt> Occt_view::get_hit_point_(const AIS_Shape_ptr& shp, const 
   return std::nullopt;
 }
 
+void Occt_view::refresh_shape_shading_(const Shp_ptr& shp)
+{
+  if (shp.IsNull())
+    return;
+
+#ifdef __EMSCRIPTEN__
+  // OCCT 8 GLES: Phong needs explicit color; UNLIT fallback was removed in 8.0.
+  shp->SetColor(Quantity_Color(0.78, 0.78, 0.80, Quantity_TOC_RGB));
+
+  const Handle(Prs3d_Drawer)& drawer = shp->Attributes();
+  if (!drawer.IsNull())
+  {
+    drawer->SetFaceBoundaryDraw(false);
+    const Handle(Prs3d_ShadingAspect)& shading = drawer->ShadingAspect();
+    if (!shading.IsNull())
+    {
+      const Handle(Graphic3d_AspectFillArea3d)& aspect = shading->Aspect();
+      if (!aspect.IsNull())
+      {
+#if OCC_VERSION_HEX >= 0x080000
+        aspect->SetUseVertexColorForBackFaces(false);
+#endif
+      }
+    }
+  }
+#endif
+}
+
 void Occt_view::add_shp_(Shp_ptr& shp)
 {
   shp->SetMaterial(m_default_material);
-  shp->set_selection_mode(m_shp_selection_mode); // Adds to m_ctx
+  refresh_shape_shading_(shp);
+  shp->set_selection_mode(m_shp_selection_mode);
+  m_ctx->Redisplay(shp, true);
+  m_ctx->UpdateCurrentViewer();
   m_shps.push_back(shp);
 }
 
@@ -2206,8 +2270,10 @@ void Occt_view::load(const std::string& json_str, bool restore_view)
     if (mat_idx < 0 || mat_idx >= nmat)
       mat_idx = static_cast<int>(m_default_material.Name());
     shp->SetMaterial(Graphic3d_MaterialAspect(static_cast<Graphic3d_NameOfMaterial>(mat_idx)));
+    refresh_shape_shading_(shp);
     m_shps.push_back(shp);
     m_ctx->Display(shp, shp->get_disp_mode(), 0, true);
+    m_ctx->Redisplay(shp, true);
   }
 
   // ---------------------------------------------------------------------------

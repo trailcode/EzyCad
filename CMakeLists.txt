@@ -246,7 +246,7 @@ set(OpenCASCADE_LIBS
 if(NOT CMAKE_CXX_COMPILER_ID STREQUAL "Emscripten")
     # Advanced DataExchange modules (STEP, IGES, GLTF, etc.) are only linked for
     # native/desktop builds. The minimal WASM OCCT build from
-    # scripts/build-occt-v8-wasm.ps1 does not include them (to avoid Emscripten
+    # scripts/build-occt-793-wasm.ps1 / build-occt-wasm.ps1 does not include them (to avoid Emscripten
     # incompatibilities with full DE + 3rd-party parsers). If you need them in WASM,
     # rebuild OCCT with more modules and add the missing TKDE* libs here conditionally.
     list(APPEND OpenCASCADE_LIBS TKDEGLTF)

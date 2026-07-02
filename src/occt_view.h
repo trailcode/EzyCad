@@ -259,6 +259,8 @@ public:
   // Material related
   const Graphic3d_MaterialAspect& get_default_material() const;
   void                            set_default_material(const Graphic3d_MaterialAspect& mat);
+  /// Apply default material/color and wasm GLES presentation fixes; call before Redisplay.
+  void refresh_shape_shading_(const Shp_ptr& shp);
 
   // View presentation (background gradient) and grid colors (0-1 RGB)
   void get_bg_gradient_colors(float color1[3], float color2[3]) const;
