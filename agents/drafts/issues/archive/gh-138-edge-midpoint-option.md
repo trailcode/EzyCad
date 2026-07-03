@@ -69,13 +69,13 @@ Add a user preference **"Add midpoints to new linear edges"** (default **off**) 
 - `tests/sketch_tests.cpp`
 - `docs/usage-settings.md`, `docs/usage-sketch.md`
 - `CHANGELOG.md`, `docs/bugs.md`
-- `agents/issues/011-edge-midpoint-option.md` (this draft)
+- `agents/drafts/issues/archive/gh-138-edge-midpoint-option.md` (this draft)
 
 ### Related
 
 - `docs/bugs.md` wish list item (now struck through).
-- Prior sketch/topology docs: `agents/issues/010-document-linear-edge-automatic-splitting.md`, issue #134 / PR #133 (2D topology thread).
-- `agents/user-docs-sync.md` — settings + persisted key checklist.
+- Prior sketch/topology docs: `agents/drafts/issues/active/gh-134-linear-edge-automatic-splitting.md`, issue #134 / PR #133 (2D topology thread).
+- `agents/conventions/user-docs-sync.md` — settings + persisted key checklist.
 - GitHub issue: https://github.com/trailcode/EzyCad/issues/138
 - GitHub PR: https://github.com/trailcode/EzyCad/pull/139
 
@@ -89,7 +89,7 @@ Add a user preference **"Add midpoints to new linear edges"** (default **off**) 
   - Toggle **Add midpoint nodes** in Options while in Line / Multi-Line mode — behavior matches Settings.
   - Save/reload `.ezy` with edges that have and lack mids.
 - [ ] `sphinx-build -b html -W docs docs/_build` and spot-check usage-sketch / usage-settings.
-- [ ] Optional pre-merge doc gap: add `gui.add_mid_pt_edges` row to the JSON table in `usage-settings.md` and mention the Options checkbox under the sketch Options section (per `agents/user-docs-sync.md`).
+- [ ] Optional pre-merge doc gap: add `gui.add_mid_pt_edges` row to the JSON table in `usage-settings.md` and mention the Options checkbox under the sketch Options section (per `agents/conventions/user-docs-sync.md`).
 
 ---
 

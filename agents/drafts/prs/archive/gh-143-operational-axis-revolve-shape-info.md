@@ -11,7 +11,7 @@ Operational axis UX, revolve solid conversion, shape info dialog, and related fi
 - **Shape info:** right-click shape name or **M** button opens topology/property dialog.
 - **Fixes:** shape highlight in sketch operation-axis mode; related GUI/settings refactors on the branch.
 
-Closes operational-axis visibility/snap/persistence work tracked in `agents/issues/013-operational-axis-visibility-and-snap.md`.
+Closes operational-axis visibility/snap/persistence work tracked in `agents/drafts/issues/archive/gh-142-operational-axis-visibility-and-snap.md`.
 
 ## Files Changed
 
@@ -22,13 +22,13 @@ Closes operational-axis visibility/snap/persistence work tracked in `agents/issu
 - `tests/sketch_tests.cpp`
 - `CHANGELOG.md`, `docs/usage-sketch.md`, `docs/usage.md`, `docs/usage-settings.md`, `docs/bugs.md`
 - `res/ezycad_settings.json`
-- `agents/issues/013-operational-axis-visibility-and-snap.md`, `agents/prs/008-operational-axis-revolve-shape-info.md`
+- `agents/drafts/issues/archive/gh-142-operational-axis-visibility-and-snap.md`, `agents/drafts/prs/archive/gh-143-operational-axis-revolve-shape-info.md`
 
 ## Related
 
 - Issue: https://github.com/trailcode/EzyCad/issues/142
 - PR: https://github.com/trailcode/EzyCad/pull/143
-- Draft: `agents/issues/013-operational-axis-visibility-and-snap.md`
+- Draft: `agents/drafts/issues/archive/gh-142-operational-axis-visibility-and-snap.md`
 
 ## Test Plan
 

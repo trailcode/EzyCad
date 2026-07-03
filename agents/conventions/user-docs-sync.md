@@ -2,7 +2,7 @@
 
 Use this when you add or change **user-visible** behavior (UI, settings, shortcuts, sketch/shape workflows, persisted JSON keys).
 
-Style rules live in **[docs/ezycad_doc_style.md](../docs/ezycad_doc_style.md)**. This file is the **what to update** checklist for agents and contributors.
+Style rules live in **[docs/ezycad_doc_style.md](../../docs/ezycad_doc_style.md)**. This file is the **what to update** checklist for agents and contributors.
 
 ## When to update docs
 
@@ -37,7 +37,7 @@ When adding or renaming a **Settings -> Sketch** (or other pane) control:
 - [ ] **`gui` JSON reference table** in `usage-settings.md` lists every new/changed key (type, range, default)
 - [ ] Cross-link from the feature guide (e.g. `usage-sketch.md#sketch-snapping`) if users need context
 - [ ] `CHANGELOG.md` `[Unreleased]` entry when the change is user-visible
-- [ ] Optional: `agents/issues/` or `agents/prs/` draft lists doc files in **Test plan** / **Files touched**
+- [ ] Optional: `agents/drafts/issues/` or `agents/drafts/prs/` draft lists doc files in **Test plan** / **Files touched**
 
 ## Verify
 
@@ -46,9 +46,9 @@ pip install -r docs/requirements.txt
 sphinx-build -b html -W docs docs/_build
 ```
 
-Or rely on CI [`.github/workflows/docs.yml`](../.github/workflows/docs.yml).
+Or rely on CI [`.github/workflows/docs.yml`](../../.github/workflows/docs.yml).
 
 ## Related
 
-- Issue draft example with doc acceptance criteria: `agents/issues/006-sketch-snap-unification-and-docs.md`
-- Local doc build: `agents/dev.md`
+- Issue draft example with doc acceptance criteria: [gh-111-sketch-snap-unification-and-docs.md](../drafts/issues/archive/gh-111-sketch-snap-unification-and-docs.md)
+- Local doc build: [workflows/docs-build.md](../workflows/docs-build.md)

@@ -36,5 +36,5 @@ Related code: `src/gui_settings.cpp` (3D view navigation section). The experimen
 
 ## Metadata (do not paste)
 
-- Created for agent/local drafting under `agents/issues/`.
+- Created for agent/local drafting under `agents/drafts/issues/`.
 - Repo: `trailcode/EzyCad`.

@@ -55,7 +55,7 @@ Improve the **Operational axis** sketch tool so the axis line is visible only wh
 - `src/occt_view.cpp`, `src/occt_view.h`, `src/gui.cpp`
 - `tests/sketch_tests.cpp`
 - `CHANGELOG.md`, `docs/usage-sketch.md`, `docs/usage.md`, `docs/bugs.md`
-- `agents/issues/013-operational-axis-visibility-and-snap.md` (this draft)
+- `agents/drafts/issues/archive/gh-142-operational-axis-visibility-and-snap.md` (this draft)
 
 ### Related
 

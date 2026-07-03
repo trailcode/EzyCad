@@ -57,5 +57,5 @@ The branch improves list-pane usability in the GUI and clarifies coding-style gu
 
 ## Metadata (do not paste into GitHub)
 
-- Draft path: `agents/issues/003-ui-improvements-sketch-shape-lists-and-style.md`
+- Draft path: `agents/drafts/issues/archive/gh-98-ui-improvements-sketch-shape-lists-and-style.md`
 - Repo: `trailcode/EzyCad`

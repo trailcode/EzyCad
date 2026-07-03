@@ -47,7 +47,7 @@ Added clear, user-facing documentation explaining the automatic splitting behavi
 
 - `docs/usage-sketch.md`
 - `CHANGELOG.md`
-- `agents/issues/010-document-linear-edge-automatic-splitting.md` (this draft)
+- `agents/drafts/issues/active/gh-134-linear-edge-automatic-splitting.md` (this draft)
 
 ### Related
 
@@ -55,8 +55,8 @@ Added clear, user-facing documentation explaining the automatic splitting behavi
 - PR for this docs work will reference the above.
 - Branch: `Trailcode/2D-topology`
 - Earlier agents issues on sketch snapping, topology, and docs (e.g. 006-sketch-snap-unification-and-docs.md, 009-sketch-tool-precise-input-docs-and-options-help.md).
-- `agents/issues/issue.md` and `agents/prs/PR.md` templates.
-- `agents/user-docs-sync.md` (not strictly required as this is clarification of long-standing behavior rather than a brand-new user-visible feature).
+- `agents/drafts/issues/_template.md` and `agents/drafts/prs/_template.md` templates.
+- `agents/conventions/user-docs-sync.md` (not strictly required as this is clarification of long-standing behavior rather than a brand-new user-visible feature).
 
 ### Test plan (for implementation drafts)
 

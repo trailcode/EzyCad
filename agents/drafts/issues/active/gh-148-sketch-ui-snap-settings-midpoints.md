@@ -81,8 +81,8 @@ Polish sketch-related UI and settings on branch **`Trailcode/ui_improvements`**:
 
 ### Related
 
-- Prior UI branch context: `agents/issues/003-ui-improvements-sketch-shape-lists-and-style.md`
-- Midpoint option baseline: `agents/issues/011-edge-midpoint-option.md`
+- Prior UI branch context: `agents/drafts/issues/archive/gh-98-ui-improvements-sketch-shape-lists-and-style.md`
+- Midpoint option baseline: `agents/drafts/issues/archive/gh-138-edge-midpoint-option.md`
 - Compare: https://github.com/trailcode/EzyCad/compare/main...Trailcode/ui_improvements
 
 ---

@@ -13,7 +13,7 @@ Sketch delta-based undo/redo with `Sketch_op_recorder` and PIMPL `Sketch_delta`
 - **Tests / GUI hooks:** Headless tests for undo (arc, circle, crossing edges) and mirror-with-no-selection cancel path; `GUI::sketch_left_click()` and `GUI::mirror_selected_sketch_edges()` for testability.
 - **Code style doc:** Reader-first `.cpp` order, helpers at file bottom, PIMPL examples.
 
-Closes sketch delta undo work tracked in `agents/issues/014-sketch-delta-undo-redo.md`.
+Closes sketch delta undo work tracked in `agents/drafts/issues/archive/gh-144-sketch-delta-undo-redo.md`.
 
 ## Files Changed
 
@@ -25,14 +25,14 @@ Closes sketch delta undo work tracked in `agents/issues/014-sketch-delta-undo-re
 - `src/gui.h`, `src/gui.cpp`, `src/gui_mode.cpp`
 - `tests/sketch_tests.cpp`
 - `docs/ezycad_code_style.md`
-- `agents/issues/014-sketch-delta-undo-redo.md`, `agents/prs/009-sketch-delta-undo-redo.md`
+- `agents/drafts/issues/archive/gh-144-sketch-delta-undo-redo.md`, `agents/drafts/prs/archive/gh-145-sketch-delta-undo-redo.md`
 
 ## Related
 
 - Issue: https://github.com/trailcode/EzyCad/issues/144
 - PR: https://github.com/trailcode/EzyCad/pull/145
 - Compare / branch: `Trailcode/better_undo_redo`
-- Draft: `agents/issues/014-sketch-delta-undo-redo.md`
+- Draft: `agents/drafts/issues/archive/gh-144-sketch-delta-undo-redo.md`
 
 ## Test Plan
 
@@ -53,6 +53,6 @@ Closes sketch delta undo work tracked in `agents/issues/014-sketch-delta-undo-re
 
 ## Post-merge (checklist for the author)
 
-- [x] Open GitHub issue from `agents/issues/014-sketch-delta-undo-redo.md` and link PR.
+- [x] Open GitHub issue from `agents/drafts/issues/archive/gh-144-sketch-delta-undo-redo.md` and link PR.
 - [x] Fill issue/PR URLs in both agent drafts.
 - [ ] Consider `[Unreleased]` CHANGELOG entry if sketch undo behavior is user-visible enough to mention.

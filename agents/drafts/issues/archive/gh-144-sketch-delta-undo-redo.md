@@ -55,12 +55,12 @@ Sketch edits previously pushed full JSON undo snapshots, which was heavy and mad
 - `src/gui.h`, `src/gui.cpp`, `src/gui_mode.cpp`
 - `tests/sketch_tests.cpp`
 - `docs/ezycad_code_style.md`
-- `agents/issues/014-sketch-delta-undo-redo.md` (this draft)
+- `agents/drafts/issues/archive/gh-144-sketch-delta-undo-redo.md` (this draft)
 
 ### Related
 
 - Branch: `Trailcode/better_undo_redo`
-- Draft PR: `agents/prs/009-sketch-delta-undo-redo.md`
+- Draft PR: `agents/drafts/prs/archive/gh-145-sketch-delta-undo-redo.md`
 - GitHub issue: https://github.com/trailcode/EzyCad/issues/144
 - GitHub PR: https://github.com/trailcode/EzyCad/pull/145
 

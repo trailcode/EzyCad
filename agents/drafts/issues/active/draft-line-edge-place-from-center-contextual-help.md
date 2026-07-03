@@ -60,13 +60,13 @@ Extend the **Add line edge** tool with a **Place from center** Options checkbox:
 - `tests/sketch_tests.cpp`
 - `docs/usage-sketch.md`, `docs/usage-settings.md`
 - `CHANGELOG.md`
-- `agents/issues/012-line-edge-place-from-center-and-contextual-help.md` (this draft)
+- `agents/drafts/issues/active/draft-line-edge-place-from-center-contextual-help.md` (this draft)
 
 ### Related
 
-- Midpoint option (merged): issue #138, PR #139 — `agents/issues/011-edge-midpoint-option.md`, `agents/prs/006-edge-midpoint-option.md`
-- Prior Options ? help pattern: issue #131, PR #132 — `agents/issues/009-sketch-tool-precise-input-docs-and-options-help.md`
-- `agents/user-docs-sync.md`
+- Midpoint option (merged): issue #138, PR #139 — `agents/drafts/issues/archive/gh-138-edge-midpoint-option.md`, `agents/drafts/prs/archive/gh-139-edge-midpoint-option.md`
+- Prior Options ? help pattern: issue #131, PR #132 — `agents/drafts/issues/archive/gh-131-sketch-tool-precise-input-docs-and-options-help.md`
+- `agents/conventions/user-docs-sync.md`
 - GitHub issue: _(fill after creation)_
 - GitHub PR: _(fill after creation)_
 

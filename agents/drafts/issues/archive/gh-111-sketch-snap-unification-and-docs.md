@@ -61,4 +61,4 @@ Simplify sketch node snapping around a single axis-guide model, fix a dimension-
 ### Related
 
 - Prior simplification commits: axis-only snap model in `try_get_node_idx_snap`.
-- `agents/issues/004-polar-dup-sketch-based-reference.md` — polar duplicate sketch snap expectations.
+- `agents/drafts/issues/active/gh-102-polar-dup-sketch-based-reference.md` — polar duplicate sketch snap expectations.

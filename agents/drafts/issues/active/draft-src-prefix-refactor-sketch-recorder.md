@@ -93,13 +93,13 @@ Existing prefixes unchanged: `shp_*`, `sketch*`, `gui*`, `occt_*`, `utl_*` (json
 - Renamed: `src/utl_*`, `src/gui_modes.*`, `src/scr_*`
 - Updated includes: `src/gui*`, `src/occt_view.*`, `src/shp_*`, `src/sketch*`, `src/utl.h`
 - `tests/doc_link_tests.cpp`, `tests/sketch_tests.cpp`
-- `agents/issues/015-src-prefix-refactor-sketch-recorder.md` (this draft)
+- `agents/drafts/issues/active/draft-src-prefix-refactor-sketch-recorder.md` (this draft)
 
 ### Related
 
-- Builds on sketch delta undo: `agents/issues/014-sketch-delta-undo-redo.md`, `agents/prs/009-sketch-delta-undo-redo.md`
+- Builds on sketch delta undo: `agents/drafts/issues/archive/gh-144-sketch-delta-undo-redo.md`, `agents/drafts/prs/archive/gh-145-sketch-delta-undo-redo.md`
 - Branch: `Trailcode/refactor`
-- PR draft: `agents/prs/010-src-prefix-refactor-sketch-recorder.md`
+- PR draft: `agents/drafts/prs/active/draft-src-prefix-refactor-sketch-recorder.md`
 - GitHub issue / PR links once created.
 
 ### Test plan

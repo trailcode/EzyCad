@@ -44,5 +44,5 @@ This issue tracks **making Web behavior correct and documented**, not blocking t
 
 ## Metadata (do not paste into GitHub)
 
-- Draft path: `agents/issues/002-emscripten-pr97-web-hotkeys.md`
+- Draft path: `agents/drafts/issues/active/gh-93-emscripten-web-hotkeys-followup.md`
 - Repo: `trailcode/EzyCad`

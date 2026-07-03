@@ -22,17 +22,17 @@ Notable design decisions:
 
 - `docs/usage-sketch.md` (new table row "Automatic splitting on edge intersections" + Tips bullets under Sketch snapping and the single Line Edge tool)
 - `CHANGELOG.md` (user-focused entry under Sketch / 2D Topology)
-- `agents/issues/010-document-linear-edge-automatic-splitting.md` (this issue draft)
-- `agents/prs/005-document-sketch-edge-splitting-behavior.md` (this PR draft)
+- `agents/drafts/issues/active/gh-134-linear-edge-automatic-splitting.md` (this issue draft)
+- `agents/drafts/prs/active/gh-133-document-sketch-edge-splitting-behavior.md` (this PR draft)
 
 ## Related
 
 - Issue: https://github.com/trailcode/EzyCad/issues/134 (the broader 2D topology / face extraction thread that includes square+mid direction sensitivity, the bridge.ezy case, the reverted internal rewrite of update_faces_, and the GH artifacts created earlier)
 - Branch: `Trailcode/2D-topology`
 - Existing PR on the branch (#133) — this docs work can be folded in or referenced there.
-- Other drafts: `agents/issues/009-...`, `agents/prs/004-...` (prior sketch docs work)
-- Templates: `agents/issues/issue.md` and `agents/prs/PR.md`
-- `agents/user-docs-sync.md` — reviewed; this is clarification of existing long-standing behavior (no brand-new feature), so no additional sync steps required beyond the changelog + guide update.
+- Other drafts: `agents/drafts/issues/009-...`, `agents/drafts/prs/004-...` (prior sketch docs work)
+- Templates: `agents/drafts/issues/_template.md` and `agents/drafts/prs/_template.md`
+- `agents/conventions/user-docs-sync.md` — reviewed; this is clarification of existing long-standing behavior (no brand-new feature), so no additional sync steps required beyond the changelog + guide update.
 
 ## Test Plan
 
@@ -45,7 +45,7 @@ Notable design decisions:
 - [ ] Docs build (`sphinx-build -b html -W docs docs/_build`) and review rendered pages — no warnings, formatting consistent with surrounding content.
 - [ ] Check in-app behavior (no changes; the documented splitting is already active in the Line/Multi-line tools and when tools internally create edges).
 - [ ] Verify no regressions in related areas (snapping, face creation for extrusion/boolean, rectangle/square/slot tools, Add Node mid splits).
-- [ ] (User-visible docs change) cross-check `agents/user-docs-sync.md` — satisfied by the changelog entry and the fact that this documents pre-existing behavior.
+- [ ] (User-visible docs change) cross-check `agents/conventions/user-docs-sync.md` — satisfied by the changelog entry and the fact that this documents pre-existing behavior.
 
 ## Notes
 

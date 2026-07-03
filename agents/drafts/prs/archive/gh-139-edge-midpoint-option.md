@@ -31,8 +31,8 @@ Notable design decisions:
 - `docs/usage-settings.md`, `docs/usage-sketch.md` — document optional mids (default off)
 - `CHANGELOG.md` — [Unreleased] entry
 - `docs/bugs.md` — strike through implemented wish
-- `agents/issues/011-edge-midpoint-option.md` (issue draft)
-- `agents/prs/006-edge-midpoint-option.md` (this PR draft)
+- `agents/drafts/issues/archive/gh-138-edge-midpoint-option.md` (issue draft)
+- `agents/drafts/prs/archive/gh-139-edge-midpoint-option.md` (this PR draft)
 
 ## Related
 
@@ -40,8 +40,8 @@ Notable design decisions:
 - PR: https://github.com/trailcode/EzyCad/pull/139
 - Branch: `Trailcode/edge_mid_pt_option`
 - Compare: https://github.com/trailcode/EzyCad/compare/main...Trailcode/edge_mid_pt_option
-- Related topology docs thread: issue #134, PR #133 (`agents/issues/010-...`, `agents/prs/005-...`)
-- `agents/user-docs-sync.md`
+- Related topology docs thread: issue #134, PR #133 (`agents/drafts/issues/active/gh-134-linear-edge-automatic-splitting.md`, `agents/drafts/prs/active/gh-133-document-sketch-edge-splitting-behavior.md`)
+- `agents/conventions/user-docs-sync.md`
 
 ## Test Plan
 
@@ -56,7 +56,7 @@ Notable design decisions:
 - [ ] Docs build (`sphinx-build -b html -W docs docs/_build`); review usage-sketch snapping/line sections and usage-settings Sketch bullet.
 - [ ] Check in-app tooltips for Settings and Options checkboxes.
 - [ ] Verify no regressions in snap, face splitting, or extrusion from divided sketches.
-- [ ] (User-visible) cross-check `agents/user-docs-sync.md` — consider adding `gui.add_mid_pt_edges` to the JSON table and Options-panel sketch bullet if not done in this PR.
+- [ ] (User-visible) cross-check `agents/conventions/user-docs-sync.md` — consider adding `gui.add_mid_pt_edges` to the JSON table and Options-panel sketch bullet if not done in this PR.
 
 ## Notes
 
@@ -68,7 +68,7 @@ Notable design decisions:
 
 ## Post-merge (checklist for the author)
 
-- [ ] Update `agents/issues/011-edge-midpoint-option.md` with GitHub issue/PR numbers.
+- [ ] Update `agents/drafts/issues/archive/gh-138-edge-midpoint-option.md` with GitHub issue/PR numbers.
 - [ ] Close linked GitHub issue if fully addressed.
 - [ ] Confirm `CHANGELOG.md` [Unreleased] entry is accurate.
 - [ ] Optional follow-up: complete JSON table + Options section entries in `usage-settings.md` per user-docs-sync checklist.

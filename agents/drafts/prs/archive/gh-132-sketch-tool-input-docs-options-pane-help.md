@@ -12,7 +12,7 @@ Docs + UI: document Tab + Shift+Tab for Operation Axis / Rectangles / Slot / Cir
 - Special handling for Slot (first edge = length/orientation of the slot, radius point = the "second edge dim" / arc radius) and for tools that auto-align (e.g. Rectangle Two Points).
 - Add (or ensure) a top-level tool/mode header using `current_mode_description()` followed by a small "?" button in the Options pane for *all* modes that render options content, including pure Normal (Inspection) and Sketch_inspection_mode.
 - The "?" buttons use a central `get_doc_url_for_mode(Mode)` map (with runtime size assert vs Mode::_count) so future tools automatically get correct contextual links (e.g. #operation-axis-tool, #slot-creation-tool, #rectangle-tool-center-point, etc.).
-- Added the generic `agents/issues/issue.md` and `agents/prs/PR.md` templates and referenced them from agents/README.md (for future drafts).
+- Added the generic `agents/drafts/issues/_template.md` and `agents/drafts/prs/_template.md` templates and referenced them from agents/README.md (for future drafts).
 - Minor supporting changes: doc style guide note about the new ? buttons, unit test for link existence, etc.
 
 This makes the in-app Options experience (headers + help) and the written user guide consistent, and gives users (and future agents) an easy way to jump from the UI to the exact docs for the active tool.
@@ -23,8 +23,8 @@ This makes the in-app Options experience (headers + help) and the written user g
 - `src/gui_mode.cpp` (header+button calls for Normal + new Sketch_inspection_mode handler, map + assert, options_doc_help_button_ helper)
 - `src/gui.h` (declarations)
 - `src/gui.cpp` (current_mode_description lookup from toolbar data)
-- `agents/issues/009-sketch-tool-precise-input-docs-and-options-help.md` (this issue draft)
-- `agents/prs/004-sketch-tool-input-docs-options-pane-help.md` (this PR draft)
+- `agents/drafts/issues/archive/gh-131-sketch-tool-precise-input-docs-and-options-help.md` (this issue draft)
+- `agents/drafts/prs/archive/gh-132-sketch-tool-input-docs-options-pane-help.md` (this PR draft)
 - `agents/README.md` (added references to the new generic templates)
 - `docs/ezycad_doc_style.md` (note about Options-pane ? buttons + links)
 - `CHANGELOG.md` (under [Unreleased])
@@ -34,8 +34,8 @@ This makes the in-app Options experience (headers + help) and the written user g
 
 - Issue: https://github.com/trailcode/EzyCad/issues/ (to be created from the draft)
 - Branch compare (once pushed)
-- Prior related drafts: agents/issues/003-..., agents/prs/001-..., 002-..., agents/issues/006-..., and the earlier "Hot keys" / "Options pane help links" commits on this branch.
-- `agents/user-docs-sync.md` (user-visible docs + in-app UI change)
+- Prior related drafts: agents/drafts/issues/003-..., agents/drafts/prs/001-..., 002-..., agents/drafts/issues/006-..., and the earlier "Hot keys" / "Options pane help links" commits on this branch.
+- `agents/conventions/user-docs-sync.md` (user-visible docs + in-app UI change)
 
 ## Test Plan
 
@@ -48,7 +48,7 @@ This makes the in-app Options experience (headers + help) and the written user g
 - [ ] For each tool, verify that Tab and Shift+Tab work during placement as described (and that the in-app "Shortcuts" text under the tool's Options section matches the user guide).
 - [ ] Check the assert in get_doc_url_for_mode (temporarily remove one map entry and confirm it fires on first call).
 - [ ] Build (native Debug + Release) succeeds; no regressions in other Options content or hotkey routing.
-- [ ] Cross-check `agents/user-docs-sync.md` and that CHANGELOG has an entry.
+- [ ] Cross-check `agents/conventions/user-docs-sync.md` and that CHANGELOG has an entry.
 - [ ] Review the new agents/ templates and the updates to agents/README.md.
 
 ## Notes

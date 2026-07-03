@@ -25,13 +25,13 @@ Refactors on top of delta-based sketch undo (#144 / #145). No intended user-visi
 - `src/sketch.cpp`, `src/sketch.h`, `src/sketch_delta.cpp`, `src/sketch_json.cpp`, `src/sketch_nodes.cpp`, `src/sketch_nodes.h`, `src/sketch_underlay.cpp`
 - `src/utl.h`
 - `tests/doc_link_tests.cpp`, `tests/sketch_tests.cpp`
-- `agents/issues/015-src-prefix-refactor-sketch-recorder.md`, `agents/prs/010-src-prefix-refactor-sketch-recorder.md`
+- `agents/drafts/issues/active/draft-src-prefix-refactor-sketch-recorder.md`, `agents/drafts/prs/active/draft-src-prefix-refactor-sketch-recorder.md`
 
 ## Related
 
-- Issue: (fill after opening from `agents/issues/015-src-prefix-refactor-sketch-recorder.md`)
+- Issue: (fill after opening from `agents/drafts/issues/active/draft-src-prefix-refactor-sketch-recorder.md`)
 - Compare: https://github.com/trailcode/EzyCad/compare/main...Trailcode/refactor
-- Prior undo work: `agents/issues/014-sketch-delta-undo-redo.md`, `agents/prs/009-sketch-delta-undo-redo.md`
+- Prior undo work: `agents/drafts/issues/archive/gh-144-sketch-delta-undo-redo.md`, `agents/drafts/prs/archive/gh-145-sketch-delta-undo-redo.md`
 
 ## Test Plan
 
@@ -51,7 +51,7 @@ Refactors on top of delta-based sketch undo (#144 / #145). No intended user-visi
 
 ## Post-merge (checklist for the author)
 
-- [ ] Open GitHub issue from `agents/issues/015-src-prefix-refactor-sketch-recorder.md` and link this PR.
+- [ ] Open GitHub issue from `agents/drafts/issues/active/draft-src-prefix-refactor-sketch-recorder.md` and link this PR.
 - [ ] Fill issue/PR URLs in both agent drafts.
 - [ ] Notify fork maintainers of header renames if any external consumers exist.
 - [ ] Consider `[Unreleased]` CHANGELOG entry only if treating contributor-facing renames as notable.

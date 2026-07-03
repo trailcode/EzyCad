@@ -49,7 +49,7 @@ Improve discoverability and accuracy of the user guide by ensuring every sketch 
 
 **Other:**
 
-- `agents/issues/009-...md` and `agents/prs/004-...md` (these drafts).
+- `agents/drafts/issues/009-...md` and `agents/drafts/prs/004-...md` (these drafts).
 - `agents/README.md` table now lists the new generic issue.md / PR.md templates.
 - Minor supporting updates (unit test for link existence, doc style guide mention of the new ? buttons, etc.).
 - `CHANGELOG.md` entry under [Unreleased] (docs + UI).
@@ -70,8 +70,8 @@ Improve discoverability and accuracy of the user guide by ensuring every sketch 
 - `src/gui_mode.cpp`
 - `src/gui.h`
 - `src/gui.cpp` (minor, for current_mode_description)
-- `agents/issues/009-sketch-tool-precise-input-docs-and-options-help.md` (this draft)
-- `agents/prs/004-sketch-tool-input-docs-options-pane-help.md`
+- `agents/drafts/issues/archive/gh-131-sketch-tool-precise-input-docs-and-options-help.md` (this draft)
+- `agents/drafts/prs/archive/gh-132-sketch-tool-input-docs-options-pane-help.md`
 - `agents/README.md`
 - `docs/ezycad_doc_style.md` (optional cross-ref)
 - `CHANGELOG.md`
@@ -79,8 +79,8 @@ Improve discoverability and accuracy of the user guide by ensuring every sketch 
 
 ### Related
 
-- Prior options pane work: `agents/issues/003-ui-improvements-sketch-shape-lists-and-style.md`, `agents/prs/001-...md`
-- `agents/user-docs-sync.md` (this is a user-visible docs + in-app UI change)
+- Prior options pane work: `agents/drafts/issues/archive/gh-98-ui-improvements-sketch-shape-lists-and-style.md`, `agents/drafts/prs/001-...md`
+- `agents/conventions/user-docs-sync.md` (this is a user-visible docs + in-app UI change)
 - Earlier hotkeys / Tab+Shift+Tab docs work on the branch
 - GitHub issue (to be created)
 
@@ -91,5 +91,5 @@ Improve discoverability and accuracy of the user guide by ensuring every sketch 
 - [ ] Manual: switch to each updated tool (incl. pure Inspection and Sketch inspection), verify Options header + "?" appears and opens the right page.
 - [ ] Verify in-app "Shortcuts" text under Options for these tools matches the updated user guide.
 - [ ] Check that angle-constrained placement works for Operation Axis (first edge length + direction) and Slot (first edge = length/orientation, radius point = radius).
-- [ ] Cross-check `agents/user-docs-sync.md` and add to CHANGELOG.
+- [ ] Cross-check `agents/conventions/user-docs-sync.md` and add to CHANGELOG.
 - [ ] Build (native Debug/Release) and run relevant manual tests.

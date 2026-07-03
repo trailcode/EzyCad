@@ -49,5 +49,5 @@ Confirm `clang-format` runs on files under **`(repo)/src`** (requires LLVM `clan
 
 ## Metadata (do not paste)
 
-- Draft lives under **`agents/issues/`** (repo-local companion to GitHub).
+- Draft lives under **`agents/drafts/issues/`** (repo-local companion to GitHub).
 - Repo: `trailcode/EzyCad`.

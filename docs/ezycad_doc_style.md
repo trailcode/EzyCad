@@ -71,4 +71,4 @@ sphinx-build -b html -W docs docs/_build
 
 - **[ezycad_code_style.md](ezycad_code_style.md)** — C++ style, versioning (`version.h`, `CHANGELOG.md`).
 - **[readthedocs.md](readthedocs.md)** — RTD integrations, webhooks, PR previews, local build instructions.
-- **[../agents/user-docs-sync.md](../agents/user-docs-sync.md)** — Checklist for which user guides and JSON tables to update when features change (for agents and contributors).
+- **[../agents/conventions/user-docs-sync.md](../agents/conventions/user-docs-sync.md)** — Checklist for which user guides and JSON tables to update when features change (for agents and contributors).

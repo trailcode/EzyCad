@@ -22,7 +22,7 @@ Sketch UI: snap colors, dimension list hover, per-tool midpoint settings, and bu
 - Issue: https://github.com/trailcode/EzyCad/issues/148
 - PR: https://github.com/trailcode/EzyCad/pull/149
 - Compare: https://github.com/trailcode/EzyCad/compare/main...Trailcode/ui_improvements
-- Builds on earlier `Trailcode/ui_improvements` list-pane work (`agents/issues/003-ui-improvements-sketch-shape-lists-and-style.md`)
+- Builds on earlier `Trailcode/ui_improvements` list-pane work (`agents/drafts/issues/archive/gh-98-ui-improvements-sketch-shape-lists-and-style.md`)
 
 ## Test Plan
 

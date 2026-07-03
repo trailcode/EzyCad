@@ -43,4 +43,4 @@ Polar duplicate today builds its polar arm and rotation using the **current sket
 
 ## Metadata (do not paste into GitHub)
 
-- Draft path: `agents/issues/004-polar-dup-sketch-based-reference.md`
+- Draft path: `agents/drafts/issues/active/gh-102-polar-dup-sketch-based-reference.md`

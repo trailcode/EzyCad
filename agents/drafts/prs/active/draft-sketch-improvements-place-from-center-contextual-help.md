@@ -26,10 +26,10 @@ Builds on the optional midpoint-nodes work merged in PR #139 (#138).
 - `docs/usage-sketch.md` — Line edge Options section and workflow updates
 - `docs/usage-settings.md` — UI verbosity + **?** button documentation
 - `CHANGELOG.md` — [Unreleased] Place from center entry
-- `agents/issues/012-line-edge-place-from-center-and-contextual-help.md` (issue draft)
-- `agents/prs/007-sketch-improvements-place-from-center-contextual-help.md` (this PR draft)
+- `agents/drafts/issues/active/draft-line-edge-place-from-center-contextual-help.md` (issue draft)
+- `agents/drafts/prs/active/draft-sketch-improvements-place-from-center-contextual-help.md` (this PR draft)
 
-Also on branch (agent notes from prior work, already merged separately): `agents/issues/011-edge-midpoint-option.md`, `agents/prs/006-edge-midpoint-option.md`.
+Also on branch (agent notes from prior work, already merged separately): `agents/drafts/issues/archive/gh-138-edge-midpoint-option.md`, `agents/drafts/prs/archive/gh-139-edge-midpoint-option.md`.
 
 ## Related
 
@@ -38,7 +38,7 @@ Also on branch (agent notes from prior work, already merged separately): `agents
 - Compare: https://github.com/trailcode/EzyCad/compare/main...Trailcode/sketch_improvements
 - Depends on / follows: #138 / PR #139 (optional midpoint nodes)
 - Related help UI: #131 / PR #132
-- `agents/user-docs-sync.md`
+- `agents/conventions/user-docs-sync.md`
 
 ## Test Plan
 
@@ -64,7 +64,7 @@ Also on branch (agent notes from prior work, already merged separately): `agents
 
 ## Post-merge (checklist for the author)
 
-- [ ] Fill GitHub issue/PR URLs in `agents/issues/012-....md` and this file.
+- [ ] Fill GitHub issue/PR URLs in `agents/drafts/issues/active/draft-line-edge-place-from-center-contextual-help.md` and this file.
 - [ ] Close linked GitHub issue if fully addressed.
 - [ ] Confirm `CHANGELOG.md` [Unreleased] entry is complete.
 - [ ] Optional follow-up: persist `edge_from_center` in settings if users want it sticky across sessions.
