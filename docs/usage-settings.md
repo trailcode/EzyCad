@@ -47,7 +47,7 @@ Between those, the pane has **six** collapsible sections. Expand a section to se
 
 3. **View presentation** — **Background color 1** and **Background color 2** (float RGB fields and swatches). **Gradient blend** — combo: **Horizontal**, **Vertical**, **Diagonal 1**, **Diagonal 2**, **Corner 1** … **Corner 4**. **Element hover color** — highlight for rows hovered in the **Shape List** or **Sketch List** (**Dimensions** table); stored as **`gui.elm_list_hover_color`**.
 
-4. **3D view grid** — **Show grid** (checkbox; grid is drawn on the **active sketch** plane). **Fine grid lines** and **Major grid lines** (passed to Open CASCADE `Aspect_Grid::SetColors`: dense lines vs every-tenth emphasis lines). **Grid step**, **Grid extent X / Y** (full span edge-to-edge), and **Grid display Z offset** in the Settings pane use the **same length scale as sketch length dimensions** (display value = model value / internal `dimension_scale`, default **100**). Saved JSON (`occt_view`) stores **half-extent** in model units for OCCT (`grid_graphic_*`); Settings shows **full** extent (twice the stored half-extent).
+4. **3D view grid** — **Show grid** (checkbox; grid is drawn on the **active sketch** plane, behind coplanar geometry). **Fine grid lines** and **Major grid lines** (dense lines vs every-tenth emphasis). **Grid step**, **Grid padding** (margin around sketch content when sizing the grid), and **Grid display Z offset** in the Settings pane use the **same length scale as sketch length dimensions** (display value = model value / internal `dimension_scale`, default **100**). Saved JSON (`occt_view`) stores padding in model units (`grid_padding`).
 
 5. **Sketch** — Expand **Dimensions** (nested, open by default) for length-dimension appearance and behavior (most rows have **?** help). Other sketch rows stay in the parent **Sketch** section:
    - **Dimension line width** — slider **0.5** to **8.0**
@@ -148,9 +148,8 @@ String: ImGui `.ini` text for window positions and docking saved with **SaveIniS
 | `grid_color1` | array of 3 numbers | Fine (dense) grid lines (`Aspect_Grid` main color). |
 | `grid_color2` | array of 3 numbers | Major (sparse / every-tenth) grid lines (`Aspect_Grid` tenth-line color). |
 | `grid_visible` | boolean | When **true**, the OCCT reference grid is drawn in the 3D view (default **true**). |
-| `grid_step` | number | Grid line spacing in **model** units (`Aspect_RectangularGrid`; default **10**). Legacy `grid_x_step` / `grid_y_step` load as this value (X preferred). |
-| `grid_graphic_x_size` | number | Grid half-extent on X in **model** units (OCCT `SetGraphicValues`; default **1000**). Settings **Grid extent X** shows full span (**20** with those defaults). |
-| `grid_graphic_y_size` | number | Grid half-extent on Y in **model** units. Settings **Grid extent Y** shows full span. |
+| `grid_step` | number | Grid line spacing in **model** units (default **10**). Legacy `grid_x_step` / `grid_y_step` load as this value (X preferred). |
+| `grid_padding` | number | Margin around active sketch content when sizing the grid, in **model** units (default **1000**; Settings shows display units). Legacy `grid_graphic_x_size` loads as padding if `grid_padding` is absent. |
 | `grid_graphic_z_offset` | number | Grid plane offset along Z in **model** units. |
 
 ### `gui`
