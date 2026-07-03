@@ -41,14 +41,8 @@ When adding or renaming a **Settings -> Sketch** (or other pane) control:
 
 ## Verify
 
-```bash
-pip install -r docs/requirements.txt
-sphinx-build -b html -W docs docs/_build
-```
-
-Or rely on CI [`.github/workflows/docs.yml`](../../.github/workflows/docs.yml).
+See [workflows/docs-build.md](../workflows/docs-build.md) or CI [`.github/workflows/docs.yml`](../../.github/workflows/docs.yml).
 
 ## Related
 
-- Issue draft example with doc acceptance criteria: [gh-111-sketch-snap-unification-and-docs.md](../drafts/issues/archive/gh-111-sketch-snap-unification-and-docs.md)
-- Local doc build: [workflows/docs-build.md](../workflows/docs-build.md)
+- Example: [gh-111-sketch-snap-unification-and-docs.md](../drafts/issues/archive/gh-111-sketch-snap-unification-and-docs.md)

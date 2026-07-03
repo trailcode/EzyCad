@@ -4,6 +4,8 @@ Repo-local markdown drafts for [trailcode/EzyCad](https://github.com/trailcode/E
 
 ## Layout
 
+Use **`agents/drafts/` only** (not legacy `agents/issues/` or `agents/prs/` at repo root).
+
 ```
 agents/drafts/
   issues/
@@ -58,5 +60,5 @@ paired_draft: ../prs/active/gh-145-sketch-delta-undo-redo.md
 
 ## Related
 
+- [token-lean.md](token-lean.md) — what agents should load vs skip
 - User-visible changes: [user-docs-sync.md](user-docs-sync.md)
-- Local dev and docs build: [workflows/local-dev.md](../workflows/local-dev.md), [workflows/docs-build.md](../workflows/docs-build.md)

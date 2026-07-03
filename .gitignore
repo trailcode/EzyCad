@@ -9,6 +9,9 @@
 # Other common AI tool local dirs (add more as needed):
 # /.claude/
 /scripts/__pycache__
+/tools/__pycache__
+**/__pycache__/
+*.py[cod]
 
 /docs/_build
 /docs/res

@@ -107,15 +107,4 @@ See `scripts/build-occt-793-wasm.ps1`, `scripts/build-occt-v8-wasm.ps1`, and sha
 - `scripts/build-occt-v8-wasm.ps1` — OCCT 8.0.0.p1 wasm.
 - `scripts/build-occt-wasm.ps1` — Shared implementation (advanced `-OcctTag` use).
 
-## Working with AI coding assistants
-
-When using an AI assistant (Grok Build, Cursor, Claude, Copilot, etc.) on this codebase:
-
-- Start here: [agents/README.md](../README.md) (index) + this file.
-- Follow the style guides in [docs/ezycad_code_style.md](../../docs/ezycad_code_style.md) (C++) and [docs/ezycad_doc_style.md](../../docs/ezycad_doc_style.md).
-- When you add or change user-visible functionality (UI, settings, workflows, shortcuts, persisted keys), sync user docs per [user-docs-sync.md](../conventions/user-docs-sync.md) (same branch/PR as the code).
-- Check [agents/drafts/](../drafts/) for context on specific work items.
-- Root-level markers `AGENTS.md` and `agents.md` point AIs at the `agents/` directory.
-- Deeper-nested instruction files take precedence.
-
-Users who maintain personal/global instruction sets (e.g. in `C:\agents\` or `~/.grok/`) should also consult those alongside this repo's `agents/` notes.
+Agent pointers: [agents/README.md](../README.md). Token budget: [conventions/token-lean.md](../conventions/token-lean.md).
