@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Project format (`.ezy`)
+
+- **Format v3:** Saved projects are a ZIP archive (`manifest.json` plus deduplicated `assets/*.rgba` underlay blobs). Sketch underlays reference assets by content hash instead of inline base64. Legacy plain-JSON `.ezy` files (v1/v2, including `rgba_b64` underlays) still load. Document snapshots for undo/redo reference shared assets rather than re-embedding pixel data.
+
 ### Shape List
 
 - **Shape info...** on the right-click menu for a shape name or **M** button. Opens a dialog with OCCT topology and property details: root type (Solid, Shell, Face, etc.), validity, sub-shape counts, bounding box, volume, center of mass, surface area, and length where applicable. Includes document fields (name, material, display mode, visibility) and a **Refresh** button. Documented in the user guide under [Shape info](docs/usage.md#shape-info).

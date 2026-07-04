@@ -2220,7 +2220,7 @@ size_t Occt_view::redo_stack_size() const { return m_redo_stack.size(); }
 // Document format: 1 = legacy sketch edges could carry a 4th "dim" flag; 2 = length_dimensions array + 3-tuple edges.
 namespace
 {
-constexpr int k_ezy_file_format_version = 2;
+constexpr int k_ezy_file_format_version = 3;
 }
 
 // ---------------------------------------------------------------------------
@@ -2240,7 +2240,7 @@ std::string Occt_view::to_json() const
   // ---------------------------------------------------------------------------
   // Sketches / shapes
   for (const Sketch_ptr& s : m_sketches)
-    sketches.push_back(Sketch_json::to_json(*s));
+    sketches.push_back(Sketch_json::to_json(*s, m_assets));
 
   for (const Shp_ptr& s : m_shps)
   {
@@ -2549,6 +2549,7 @@ void Occt_view::new_file()
   push_undo_snapshot();
   remove(m_shps);
   clear_all(m_shps, m_sketches, m_cur_sketch);
+  m_assets.clear();
 
   create_default_sketch_();
   refresh_viewer_grid_();

@@ -3,6 +3,7 @@
 #include <filesystem>
 #include <functional>
 #include <string>
+#include <vector>
 
 namespace settings
 {
@@ -32,6 +33,6 @@ std::filesystem::path user_startup_project_path();
 
 // Optional startup project (Blender-style). Native: user_startup_project_path(); Wasm: localStorage.
 std::string load_user_startup_project();
-bool        save_user_startup_project(const std::string& json);
+bool        save_user_startup_project(const std::vector<uint8_t>& ezy_bytes);
 void        clear_user_startup_project();
 } // namespace settings

@@ -26,6 +26,7 @@
 #include "utl_log.h"
 #include "scr_lua_console.h"
 #include "occt_view.h"
+#include "ezy_io.h"
 #include "scr_python_console.h"
 #include "shp_info.h"
 #include "sketch.h"
@@ -304,10 +305,10 @@ void GUI::menu_bar_()
       for (const Example_file& ex : m_example_files)
         if (ImGui::MenuItem(ex.label.c_str()))
         {
-          std::ifstream file(ex.path);
-          std::string   json_str{std::istreambuf_iterator<char>(file), std::istreambuf_iterator<char>()};
-          if (file.good() && !json_str.empty())
-            on_file(ex.path, json_str);
+          std::ifstream file(ex.path, std::ios::binary);
+          const std::string file_bytes{std::istreambuf_iterator<char>(file), std::istreambuf_iterator<char>()};
+          if (file.good() && !file_bytes.empty())
+            on_file(ex.path, file_bytes);
           else
             show_message("Error opening example: " + ex.label);
         }
@@ -1002,7 +1003,7 @@ bool GUI::parse_dist_text_to_float_(const char* buf, float& out)
   return true;
 }
 
-bool GUI::is_valid_project_json_(const std::string& s)
+bool GUI::is_valid_project_manifest_(const std::string& s)
 {
   try
   {
@@ -1013,6 +1014,37 @@ bool GUI::is_valid_project_json_(const std::string& s)
   {
     return false;
   }
+}
+
+bool GUI::is_valid_project_file_(const std::string& bytes)
+{
+  if (is_ezy_zip(bytes))
+  {
+    const auto unpacked = unpack_ezy(bytes);
+    return unpacked && is_valid_project_manifest_(unpacked->manifest_json);
+  }
+  return is_ezy_json(bytes) && is_valid_project_manifest_(bytes);
+}
+
+std::optional<std::string> GUI::manifest_from_project_file_(const std::string& file_bytes, Occt_view& view,
+                                                            bool replace_assets)
+{
+  if (is_ezy_zip(file_bytes))
+  {
+    auto unpacked = unpack_ezy(file_bytes);
+    if (!unpacked)
+      return std::nullopt;
+    if (replace_assets)
+      view.asset_store().clear();
+    for (auto& [id, data] : unpacked->assets)
+      view.asset_store().import_asset(id, std::move(data));
+    return unpacked->manifest_json;
+  }
+
+  if (is_ezy_json(file_bytes))
+    return file_bytes;
+
+  return std::nullopt;
 }
 
 const std::vector<std::string>& GUI::occt_material_combo_labels_()
@@ -2588,11 +2620,11 @@ void GUI::load_default_project_()
         std::ifstream file(p, std::ios::binary);
         if (file.is_open())
         {
-          const std::string json_str{std::istreambuf_iterator<char>(file), std::istreambuf_iterator<char>()};
-          if (is_valid_project_json_(json_str))
+          const std::string file_bytes{std::istreambuf_iterator<char>(file), std::istreambuf_iterator<char>()};
+          if (is_valid_project_file_(file_bytes))
           {
             log_message("EzyCad: loading last opened project: " + p.string());
-            on_file(p.string(), json_str, false);
+            on_file(p.string(), file_bytes, false);
             log_message("EzyCad: startup document loaded (last opened).");
             return;
           }
@@ -2611,7 +2643,7 @@ void GUI::load_default_project_()
 #endif
 
   const std::string user_startup = settings::load_user_startup_project();
-  if (is_valid_project_json_(user_startup))
+  if (is_valid_project_file_(user_startup))
   {
 #ifdef __EMSCRIPTEN__
     log_message("EzyCad: loading saved startup project (browser storage).");
@@ -2641,11 +2673,11 @@ void GUI::load_default_project_()
     return;
   }
 
-  const std::string json_str{std::istreambuf_iterator<char>(file), std::istreambuf_iterator<char>()};
-  if (is_valid_project_json_(json_str))
+  const std::string file_bytes{std::istreambuf_iterator<char>(file), std::istreambuf_iterator<char>()};
+  if (is_valid_project_file_(file_bytes))
   {
     log_message("EzyCad: loading bundled default project (" + std::string(k_bundled_default) + ").");
-    on_file(k_bundled_default, json_str, false);
+    on_file(k_bundled_default, file_bytes, false);
     m_last_saved_path.clear();
     log_message("EzyCad: startup document loaded (bundled default).");
   }
@@ -2662,9 +2694,16 @@ std::string GUI::serialized_project_json_() const
   return j.dump(2);
 }
 
+std::vector<uint8_t> GUI::serialized_project_ezy_() const
+{
+  const std::string manifest = serialized_project_json_();
+  return pack_ezy(manifest, m_view->asset_store());
+}
+
 void GUI::save_startup_project_()
 {
-  if (!settings::save_user_startup_project(serialized_project_json_()))
+  const std::vector<uint8_t> ezy_bytes = serialized_project_ezy_();
+  if (!settings::save_user_startup_project(ezy_bytes))
   {
     show_message("Could not save startup project.");
     return;
@@ -3019,10 +3058,10 @@ void GUI::open_file_dialog_()
             );
   if (selected)
   {
-    std::ifstream     file(selected);
-    const std::string json_str{std::istreambuf_iterator<char>(file), std::istreambuf_iterator<char>()};
-    if (file.good() && json_str != "")
-      on_file(selected, json_str);
+    std::ifstream     file(selected, std::ios::binary);
+    const std::string file_bytes{std::istreambuf_iterator<char>(file), std::istreambuf_iterator<char>()};
+    if (file.good() && !file_bytes.empty())
+      on_file(selected, file_bytes);
 
     else
       show_message("Error opening: " + std::filesystem::path(selected).filename().string());
@@ -3035,7 +3074,7 @@ void GUI::open_file_dialog_()
 
 void GUI::save_file_dialog_()
 {
-  const std::string json_str = serialized_project_json_();
+  const std::vector<uint8_t> ezy_bytes = serialized_project_ezy_();
 
 #ifndef __EMSCRIPTEN__
   std::string file;
@@ -3056,7 +3095,7 @@ void GUI::save_file_dialog_()
     std::ofstream out(file, std::ios::binary);
     if (out.is_open())
     {
-      out.write(json_str.data(), json_str.size());
+      out.write(reinterpret_cast<const char*>(ezy_bytes.data()), static_cast<std::streamsize>(ezy_bytes.size()));
       out.close();
       show_message("Saved: " + std::filesystem::path(file).filename().string());
     }
@@ -3068,16 +3107,25 @@ void GUI::save_file_dialog_()
 #else
   std::string default_file =
       m_last_saved_path.empty() ? "project.ezy" : std::filesystem::path(m_last_saved_path).filename().string();
-  save_file_dialog_async("Save EzyCad project", default_file, json_str);
+  save_file_dialog_async("Save EzyCad project", default_file, ezy_bytes);
 #endif
 }
 
-void GUI::on_file(const std::string& file_path, const std::string& json_str, bool announce_load)
+void GUI::on_file(const std::string& file_path, const std::string& file_bytes, bool announce_load)
 {
   using namespace nlohmann;
+
   m_view->push_undo_snapshot();
-  const json j = json::parse(json_str);
-  m_view->load(json_str);
+  const std::optional<std::string> manifest = manifest_from_project_file_(file_bytes, *m_view, true);
+  if (!manifest || !is_valid_project_manifest_(*manifest))
+  {
+    m_view->pop_undo_snapshot();
+    show_message("Invalid EzyCad project: " + std::filesystem::path(file_path).filename().string());
+    return;
+  }
+
+  const json j = json::parse(*manifest);
+  m_view->load(*manifest);
   m_last_saved_path = file_path;
   Mode opened_mode  = Mode::Normal;
   if (j.contains("mode") && j["mode"].is_number_integer())
@@ -3213,8 +3261,9 @@ void GUI::sketch_underlay_file_dialog_async()
     input.click();
   });
 }
-void GUI::save_file_dialog_async(const char* title, const std::string& default_file, const std::string& json_str)
+void GUI::save_file_dialog_async(const char* title, const std::string& default_file, const std::vector<uint8_t>& ezy_bytes)
 {
+  (void)title;
   EM_ASM_ARGS(
       {
         var data = HEAPU8.subarray($0, $0 + $1);
@@ -3233,7 +3282,7 @@ void GUI::save_file_dialog_async(const char* title, const std::string& default_f
         URL.revokeObjectURL(url);
         Module.ccall('on_save_file_selected', null, ['string'], [UTF8ToString($2)]);
       },
-      json_str.data(), json_str.size(), default_file.c_str());
+      ezy_bytes.data(), ezy_bytes.size(), default_file.c_str());
 }
 void GUI::note_saved_project_filename(const std::string& filename)
 {
@@ -3263,8 +3312,8 @@ void GUI::download_blob_async(const std::string& default_filename, const std::st
 // C-style callback for Emscripten
 extern "C" void on_file_selected(const char* file_path, char* contents, int length)
 {
-  const std::string json_str(contents, length);
-  GUI::instance().on_file(file_path, json_str);
+  const std::string file_bytes(contents, static_cast<size_t>(length));
+  GUI::instance().on_file(file_path, file_bytes);
 }
 extern "C" void on_import_file_selected(const char* file_path, char* contents, int length)
 {

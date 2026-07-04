@@ -3101,7 +3101,7 @@ bool Sketch::load_underlay_image(const std::string& file_bytes)
   const int            h    = std::get<2>(*dec);
   if (!m_underlay)
     m_underlay = std::make_unique<Sketch_underlay>();
-  if (!m_underlay->set_image_rgba(std::move(rgba), w, h))
+  if (!m_underlay->set_image_rgba(std::move(rgba), w, h, m_view.asset_store()))
     return false;
   uint8_t hr, hg, hb, ha;
   m_view.gui().underlay_highlight_color_rgba(hr, hg, hb, ha);
