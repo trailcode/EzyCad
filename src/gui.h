@@ -317,6 +317,8 @@ private:
   void         menu_bar_();
   void         toolbar_();
   void         message_status_window_();
+
+  // Add related
   void         add_box_dialog_();
   void         add_pyramid_dialog_();
   void         add_sphere_dialog_();
@@ -324,6 +326,8 @@ private:
   void         add_cone_dialog_();
   void         add_torus_dialog_();
   void         add_sketch_dialog_();
+  void         add_menu_items_();
+
   void         about_dialog_();
   void         ensure_about_assets_();
   static float list_name_field_width_(const ImGuiStyle& st, float max_name_text_w);

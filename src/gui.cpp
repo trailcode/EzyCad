@@ -157,6 +157,7 @@ void GUI::render_gui()
 }
 
 void GUI::render_occt() { m_view->do_frame(); }
+
 // Initialize toolbar buttons
 void GUI::initialize_toolbar_()
 {
@@ -215,6 +216,7 @@ void GUI::load_examples_list_()
     std::string label = p.filename().string();
     m_example_files.push_back(Example_file{std::move(label), std::move(path)});
   }
+
   std::sort(m_example_files.begin(), m_example_files.end(),
             [](const Example_file& a, const Example_file& b) { return a.label < b.label; });
 }
@@ -309,95 +311,7 @@ void GUI::menu_bar_()
     if (ImGui::MenuItem("Redo", "Ctrl+Y", false, m_view->can_redo()))
       m_view->redo();
 
-    ImGui::Separator();
-    if (ImGui::MenuItem("New sketch..."))
-    {
-      m_new_sketch_plane      = 0;
-      m_new_sketch_offset     = 0.0;
-      m_open_add_sketch_popup = true;
-    }
-
-    ImGui::Separator();
-    if (ImGui::MenuItem("Add box"))
-    {
-      const double scale = m_view->get_dimension_scale();
-      m_view->add_box(0, 0, 0, scale, scale, scale);
-    }
-
-    if (ui_show_feature(3) && ImGui::MenuItem("Add box_prms"))
-    {
-      m_add_box_origin     = glm::dvec3(0.0, 0.0, 0.0);
-      m_add_box_size       = glm::dvec3(1.0, 1.0, 1.0);
-      m_open_add_box_popup = true;
-    }
-
-    if (ImGui::MenuItem("Add pyramid"))
-    {
-      const double scale = m_view->get_dimension_scale();
-      m_view->add_pyramid(0, 0, 0, scale);
-    }
-
-    if (ui_show_feature(3) && ImGui::MenuItem("Add pyramid_prms"))
-    {
-      m_add_pyramid_origin     = glm::dvec3(0.0, 0.0, 0.0);
-      m_add_pyramid_side       = 1.0;
-      m_open_add_pyramid_popup = true;
-    }
-
-    if (ImGui::MenuItem("Add sphere"))
-    {
-      const double scale = m_view->get_dimension_scale();
-      m_view->add_sphere(0, 0, 0, scale);
-    }
-
-    if (ui_show_feature(3) && ImGui::MenuItem("Add sphere_prms"))
-    {
-      m_add_sphere_origin     = glm::dvec3(0.0, 0.0, 0.0);
-      m_add_sphere_radius     = 1.0;
-      m_open_add_sphere_popup = true;
-    }
-
-    if (ImGui::MenuItem("Add cylinder"))
-    {
-      const double scale = m_view->get_dimension_scale();
-      m_view->add_cylinder(0, 0, 0, scale, scale);
-    }
-
-    if (ui_show_feature(3) && ImGui::MenuItem("Add cylinder_prms"))
-    {
-      m_add_cylinder_origin = glm::dvec3(0.0, 0.0, 0.0);
-      m_add_cylinder_radius = m_add_cylinder_height = 1.0;
-      m_open_add_cylinder_popup                     = true;
-    }
-
-    if (ImGui::MenuItem("Add cone"))
-    {
-      const double scale = m_view->get_dimension_scale();
-      m_view->add_cone(0, 0, 0, scale, 0.0, scale);
-    }
-
-    if (ui_show_feature(3) && ImGui::MenuItem("Add cone_prms"))
-    {
-      m_add_cone_origin     = glm::dvec3(0.0, 0.0, 0.0);
-      m_add_cone_R1         = 1.0;
-      m_add_cone_R2         = 0.0;
-      m_add_cone_height     = 1.0;
-      m_open_add_cone_popup = true;
-    }
-
-    if (ImGui::MenuItem("Add torus"))
-    {
-      const double scale = m_view->get_dimension_scale();
-      m_view->add_torus(0, 0, 0, scale, scale / 2.0);
-    }
-
-    if (ui_show_feature(3) && ImGui::MenuItem("Add torus_prms"))
-    {
-      m_add_torus_origin     = glm::dvec3(0.0, 0.0, 0.0);
-      m_add_torus_R1         = 1.0;
-      m_add_torus_R2         = 0.5;
-      m_open_add_torus_popup = true;
-    }
+    add_menu_items_();
 
     ImGui::EndMenu();
   }
@@ -499,6 +413,7 @@ void GUI::about_dialog_()
 
   ImFont*               font = ImGui::GetFont();
   ImGui::MarkdownConfig md;
+
   md.linkCallback      = about_markdown_link_cb_;
   md.imageCallback     = about_markdown_image_cb_;
   md.tooltipCallback   = ImGui::defaultMarkdownTooltipCallback;
@@ -506,15 +421,12 @@ void GUI::about_dialog_()
   md.headingFormats[0] = {font, true};
   md.headingFormats[1] = {font, true};
   md.headingFormats[2] = {font, false};
-#ifdef IMGUI_HAS_TEXTURES
-  {
-    float const fs                = ImGui::GetFontSize();
-    md.headingFormats[0].fontSize = fs * 1.15f;
-    md.headingFormats[1].fontSize = fs * 1.05f;
-    md.headingFormats[2].fontSize = fs;
-  }
-#endif
-  md.userData = this;
+  md.userData          = this;
+
+  float const fs                = ImGui::GetFontSize();
+  md.headingFormats[0].fontSize = fs * 1.15f;
+  md.headingFormats[1].fontSize = fs * 1.05f;
+  md.headingFormats[2].fontSize = fs;
 
   ImGui::BeginChild("AboutMd", ImVec2(0.0f, 0.0f), true, ImGuiWindowFlags_HorizontalScrollbar);
   ImGui::Markdown(m_about_markdown.c_str(), m_about_markdown.size(), md);
@@ -533,6 +445,7 @@ std::string GUI::project_title_segment_() const
     const std::string fn = std::filesystem::path(m_last_saved_path).filename().string();
     if (fn.empty())
       return "untitled";
+
     return fn;
   }
 
@@ -593,10 +506,9 @@ void GUI::doc_help_button_(const char* scope, int line, const char* tooltip, con
   ImGui::PushID(scope);
   ImGui::PushID(line);
   if (ImGui::SmallButton("?"))
-  {
     if (doc_url && doc_url[0] != '\0')
       open_url_(doc_url);
-  }
+  
   ImGui::PopID();
   ImGui::PopID();
 
@@ -789,7 +701,6 @@ void GUI::toolbar_()
 void GUI::set_dist_edit(float dist, std::function<void(float, bool)>&& callback,
                         const std::optional<ScreenCoords> screen_coords)
 {
-  DBG_MSG("dist " << dist);
   // Sketch calls this every mousemove while TAB length mode is on; do not reset value/position each frame
   // or typed distance is replaced by the rubber-band length at the cursor.
   const bool already_editing = m_dist_callback != nullptr;
@@ -874,7 +785,6 @@ void GUI::dist_edit_()
 void GUI::set_angle_edit(float angle, std::function<void(float, bool)>&& callback,
                          const std::optional<ScreenCoords> screen_coords)
 {
-  DBG_MSG("angle " << angle);
   const bool already_editing = m_angle_callback != nullptr;
   if (!already_editing)
   {
@@ -898,6 +808,7 @@ void GUI::hide_angle_edit()
     float parsed{};
     if (parse_dist_text_to_float_(m_angle_text_buf.data(), parsed))
       m_angle_val = parsed;
+
     std::function<void(float, bool)> callback;
     std::swap(callback, m_angle_callback);
     callback(m_angle_val, true);
@@ -995,6 +906,7 @@ bool GUI::is_valid_project_file_(const std::string& bytes)
     const auto unpacked = unpack_ezy(bytes);
     return unpacked && is_valid_project_manifest_(unpacked->manifest_json);
   }
+
   return is_ezy_json(bytes) && is_valid_project_manifest_(bytes);
 }
 
@@ -1005,10 +917,13 @@ std::optional<std::string> GUI::manifest_from_project_file_(const std::string& f
     auto unpacked = unpack_ezy(file_bytes);
     if (!unpacked)
       return std::nullopt;
+
     if (replace_assets)
       view.asset_store().clear();
+
     for (auto& [id, data] : unpacked->assets)
       view.asset_store().import_asset(id, std::move(data));
+
     return unpacked->manifest_json;
   }
 
@@ -1047,6 +962,7 @@ void GUI::sketch_list_inspector_(const Sketch::sptr& sketch, int index, Sketch::
     {
       for (const std::string& label : labels)
         ImGui::BulletText("%s", label.c_str());
+
       if (count > 0)
         ImGui::TreePop();
     }
@@ -1079,6 +995,7 @@ void GUI::sketch_list_inspector_(const Sketch::sptr& sketch, int index, Sketch::
           ImGui::TableSetColumnIndex(0);
           if (ImGui::Checkbox("##dim_visible", &visible))
             sketch->set_dimension_visible(i, visible);
+
           row_hovered |= ImGui::IsItemHovered();
 
           ImGui::TableSetColumnIndex(1);
@@ -1088,12 +1005,14 @@ void GUI::sketch_list_inspector_(const Sketch::sptr& sketch, int index, Sketch::
           ImGui::SetNextItemWidth(-FLT_MIN);
           if (ImGui::InputText("##dim_name", name_buf, sizeof(name_buf)))
             sketch->set_dimension_name(i, std::string(name_buf));
+
           row_hovered |= ImGui::IsItemHovered();
 
           ImGui::TableSetColumnIndex(2);
           ImGui::SetNextItemWidth(86.f);
           if (ImGui::InputDouble("##dim_offset", &offset, 0.5, 2.0, "%.2f"))
             sketch->set_dimension_offset(i, offset);
+
           row_hovered |= ImGui::IsItemHovered();
 
           if (ui_show_contextual_help() && ImGui::IsItemHovered())
@@ -1111,6 +1030,7 @@ void GUI::sketch_list_inspector_(const Sketch::sptr& sketch, int index, Sketch::
 
         ImGui::EndTable();
       }
+
       if (count > 0)
         ImGui::TreePop();
     }
@@ -1699,6 +1619,7 @@ void GUI::sketch_underlay_panel_settings_(const Sketch::sptr& sk)
         if (changed)
           apply_affine();
       }
+
       {
         const bool changed = ImGui::SliderScalar("Base Y", ImGuiDataType_Double, &m_underlay_base.y, &min_v, &max_v, "%.4f",
                                                  ImGuiSliderFlags_ClampOnInput);
@@ -1713,6 +1634,7 @@ void GUI::sketch_underlay_panel_settings_(const Sketch::sptr& sk)
         const bool changed = ImGui::InputDouble(label, p_data, 0.0, 0.0, "%.4f");
         if (ImGui::IsItemActivated())
           m_view->push_undo_snapshot();
+
         if (changed)
           apply_affine();
       };
@@ -1729,6 +1651,7 @@ void GUI::sketch_underlay_panel_settings_(const Sketch::sptr& sk)
         ImGui::SetTooltip(
             "Maps the vertical (height / rows) of the source bitmap. From the Base, this vector reaches the bottom edge of the "
             "full image. 'Set Y from edge...' and y-axis calibration adjust +V (this is what you set for the Y-axis).");
+
       vector_component("V X", &m_underlay_v.x);
       vector_component("V Y", &m_underlay_v.y);
 
@@ -1743,6 +1666,7 @@ void GUI::sketch_underlay_panel_settings_(const Sketch::sptr& sk)
           const double c   = std::clamp(dot / (lu * lv), -1.0, 1.0);
           shear_deg        = std::acos(c) * (180.0 / std::acos(-1.0));
         }
+
         ImGui::Text("U len: %.4f   V len: %.4f   Angle U-V: %.2f deg", lu, lv, shear_deg);
       }
 
@@ -1751,6 +1675,7 @@ void GUI::sketch_underlay_panel_settings_(const Sketch::sptr& sk)
         m_view->push_undo_snapshot();
         force_underlay_orthogonal_(sk);
       }
+
       if (ui_show_contextual_help() && ImGui::IsItemHovered())
         ImGui::SetTooltip("Project V to be perpendicular to U. Keeps the current lengths of both axes and the original "
                           "orientation (sign of U cross V). After this the Center / Half / Rotation sliders return.");
@@ -1805,13 +1730,10 @@ void GUI::force_underlay_orthogonal_(const Sketch::sptr& sk)
     const double det = au.X() * av.Y() - au.Y() * av.X();
     gp_Vec2d     av_perp;
     if (det >= 0.0)
-    {
       av_perp = gp_Vec2d(-au_n.Y() * lv, au_n.X() * lv);
-    }
     else
-    {
       av_perp = gp_Vec2d(au_n.Y() * lv, -au_n.X() * lv);
-    }
+
     const gp_Vec2d au_final = au_n * lu;
     sk->underlay_set_affine_plane(b, au_final, av_perp);
     // Refresh locals for this frame and any immediate follow-up UI.
@@ -1856,6 +1778,7 @@ void GUI::begin_underlay_calib_set_y_(const Sketch::sptr& sk)
   cancel_underlay_calib_();
   sk->underlay_ui_params(m_underlay_center.x, m_underlay_center.y, m_underlay_half_extents.x, m_underlay_half_extents.y,
                          m_underlay_rot);
+
   m_underlay_calib_sketch_wk = sk;
   m_underlay_calib_phase     = Underlay_calib_phase::PickY1;
   show_message("Underlay Y: uses the current transform. Click two points along +V; then enter the drawing distance.");
@@ -1903,13 +1826,12 @@ void GUI::underlay_calib_prompt_x_distance_(const Sketch::sptr& sk)
     m_underlay_calib_axis_u = s->underlay_axis_u_vec();
     s->underlay_ui_params(m_underlay_center.x, m_underlay_center.y, m_underlay_half_extents.x, m_underlay_half_extents.y,
                           m_underlay_rot);
+
     m_underlay_calib_x_done = true;
     m_underlay_panel_sketch = nullptr;
 
     if (m_underlay_calib_x_done && m_underlay_calib_y_done)
-    {
       force_underlay_orthogonal_(s);
-    }
 
     m_dist_callback        = nullptr;
     m_underlay_calib_phase = Underlay_calib_phase::None;
@@ -1962,13 +1884,12 @@ void GUI::underlay_calib_prompt_y_distance_(const Sketch::sptr& sk)
 
     s->underlay_ui_params(m_underlay_center.x, m_underlay_center.y, m_underlay_half_extents.x, m_underlay_half_extents.y,
                           m_underlay_rot);
+
     m_underlay_calib_y_done = true;
     m_underlay_panel_sketch = nullptr;
 
     if (m_underlay_calib_x_done && m_underlay_calib_y_done)
-    {
       force_underlay_orthogonal_(s);
-    }
 
     m_dist_callback = nullptr;
     cancel_underlay_calib_();
@@ -2186,6 +2107,7 @@ void GUI::shape_list_()
     {
       if (!visible && m_view->shape_list_hover() == shape)
         m_view->set_shape_list_hover(nullptr);
+
       shape->set_visible(visible);
     }
 
@@ -2307,13 +2229,11 @@ void GUI::shape_info_dialog_()
 
   bool shape_still_exists = false;
   for (const Shp_ptr& s : m_view->get_shapes())
-  {
     if (s == m_shape_info_shp)
     {
       shape_still_exists = true;
       break;
     }
-  }
 
   if (!shape_still_exists)
   {
@@ -2436,7 +2356,7 @@ void GUI::message_status_window_()
   // Check if 3 seconds have passed
   auto now     = std::chrono::steady_clock::now();
   auto elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(now - m_message_start_time).count();
-  if (elapsed > 3000) // 3 seconds
+  if (elapsed > 6000) // 6 seconds
   {
     m_message_visible = false;
     m_message.clear();
@@ -2506,6 +2426,7 @@ void GUI::log_window_()
     ImGui::SetScrollHereY(1.0f);
     m_log_scroll_to_bottom = false;
   }
+
   ImGui::EndChild();
   ImGui::End();
 }
@@ -2748,12 +2669,12 @@ void GUI::on_left_click_(const ScreenCoords& screen_coords)
 {
   switch (m_mode)
   {
-    // clang-format off
-    case Mode::Move:                m_view->shp_move().finalize();                      break;
-    case Mode::Rotate:              m_view->shp_rotate().finalize();                    break;
-    case Mode::Scale:               m_view->shp_scale().finalize();                     break;
-    case Mode::Sketch_face_extrude: m_view->sketch_face_extrude(screen_coords, false);  break;
-    // clang-format on
+  // clang-format off
+  case Mode::Move:                m_view->shp_move().finalize();                      break;
+  case Mode::Rotate:              m_view->shp_rotate().finalize();                    break;
+  case Mode::Scale:               m_view->shp_scale().finalize();                     break;
+  case Mode::Sketch_face_extrude: m_view->sketch_face_extrude(screen_coords, false);  break;
+  // clang-format on
 
   case Mode::Sketch_add_node:
   case Mode::Sketch_add_edge:
@@ -3310,6 +3231,7 @@ extern "C" void on_save_file_selected(const char* file_name)
   GUI& g = GUI::instance();
   if (file_name)
     g.note_saved_project_filename(file_name);
+
   g.show_message(std::string("Saved: ") + (file_name ? file_name : ""));
 }
 #endif

@@ -435,3 +435,96 @@ void GUI::add_sketch_dialog_()
 
   ImGui::EndPopup();
 }
+
+void GUI::add_menu_items_()
+{
+  ImGui::Separator();
+  if (ImGui::MenuItem("New sketch..."))
+  {
+    m_new_sketch_plane      = 0;
+    m_new_sketch_offset     = 0.0;
+    m_open_add_sketch_popup = true;
+  }
+
+  ImGui::Separator();
+  if (ImGui::MenuItem("Add box"))
+  {
+    const double scale = m_view->get_dimension_scale();
+    m_view->add_box(0, 0, 0, scale, scale, scale);
+  }
+
+  if (ui_show_feature(3) && ImGui::MenuItem("Add box_prms"))
+  {
+    m_add_box_origin     = glm::dvec3(0.0, 0.0, 0.0);
+    m_add_box_size       = glm::dvec3(1.0, 1.0, 1.0);
+    m_open_add_box_popup = true;
+  }
+
+  if (ImGui::MenuItem("Add pyramid"))
+  {
+    const double scale = m_view->get_dimension_scale();
+    m_view->add_pyramid(0, 0, 0, scale);
+  }
+
+  if (ui_show_feature(3) && ImGui::MenuItem("Add pyramid_prms"))
+  {
+    m_add_pyramid_origin     = glm::dvec3(0.0, 0.0, 0.0);
+    m_add_pyramid_side       = 1.0;
+    m_open_add_pyramid_popup = true;
+  }
+
+  if (ImGui::MenuItem("Add sphere"))
+  {
+    const double scale = m_view->get_dimension_scale();
+    m_view->add_sphere(0, 0, 0, scale);
+  }
+
+  if (ui_show_feature(3) && ImGui::MenuItem("Add sphere_prms"))
+  {
+    m_add_sphere_origin     = glm::dvec3(0.0, 0.0, 0.0);
+    m_add_sphere_radius     = 1.0;
+    m_open_add_sphere_popup = true;
+  }
+
+  if (ImGui::MenuItem("Add cylinder"))
+  {
+    const double scale = m_view->get_dimension_scale();
+    m_view->add_cylinder(0, 0, 0, scale, scale);
+  }
+
+  if (ui_show_feature(3) && ImGui::MenuItem("Add cylinder_prms"))
+  {
+    m_add_cylinder_origin = glm::dvec3(0.0, 0.0, 0.0);
+    m_add_cylinder_radius = m_add_cylinder_height = 1.0;
+    m_open_add_cylinder_popup                     = true;
+  }
+
+  if (ImGui::MenuItem("Add cone"))
+  {
+    const double scale = m_view->get_dimension_scale();
+    m_view->add_cone(0, 0, 0, scale, 0.0, scale);
+  }
+
+  if (ui_show_feature(3) && ImGui::MenuItem("Add cone_prms"))
+  {
+    m_add_cone_origin     = glm::dvec3(0.0, 0.0, 0.0);
+    m_add_cone_R1         = 1.0;
+    m_add_cone_R2         = 0.0;
+    m_add_cone_height     = 1.0;
+    m_open_add_cone_popup = true;
+  }
+
+  if (ImGui::MenuItem("Add torus"))
+  {
+    const double scale = m_view->get_dimension_scale();
+    m_view->add_torus(0, 0, 0, scale, scale / 2.0);
+  }
+
+  if (ui_show_feature(3) && ImGui::MenuItem("Add torus_prms"))
+  {
+    m_add_torus_origin     = glm::dvec3(0.0, 0.0, 0.0);
+    m_add_torus_R1         = 1.0;
+    m_add_torus_R2         = 0.5;
+    m_open_add_torus_popup = true;
+  }
+}
