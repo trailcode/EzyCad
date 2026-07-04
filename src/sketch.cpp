@@ -3460,7 +3460,9 @@ void Sketch::sync_permanent_node_annos_()
 
   const Mode mode = get_mode();
   // Show "+" markers for permanent user nodes in sketch modes and polar duplicate (which snaps to sketch nodes).
-  const bool show_permanent_marks    = is_sketch_mode(mode) || mode == Mode::Shape_polar_duplicate;
+  // Hide during face extrude so face selection is unobstructed.
+  const bool show_permanent_marks =
+      mode != Mode::Sketch_face_extrude && (is_sketch_mode(mode) || mode == Mode::Shape_polar_duplicate);
   const bool hide_for_operation_axis = operation_axis_suppresses_sketch_snap_();
 
   for (size_t i = 0, n = m_nodes.size(); i < n; ++i)

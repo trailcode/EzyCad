@@ -6,7 +6,7 @@
 #include <unordered_map>
 #include <vector>
 
-/// Session-lifetime deduplicated RGBA blobs referenced from sketch underlay JSON.
+/// Session-lifetime deduplicated  RGBA blobs referenced from sketch underlay JSON.
 class Ezy_asset_store
 {
 public:
