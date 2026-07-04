@@ -1423,11 +1423,21 @@ void Occt_view::capture_occt_grid_rect_from_viewer_(const V3d_Viewer_ptr& viewer
 
   Handle(Aspect_Grid) ag            = viewer->Grid();
   Handle(Aspect_RectangularGrid) rg = Handle(Aspect_RectangularGrid)::DownCast(ag);
+  Handle(V3d_RectangularGrid) vrg   = Handle(V3d_RectangularGrid)::DownCast(ag);
   if (rg.IsNull())
     return;
 
   m_occt_grid_rect.step = rg->XStep();
-  m_occt_grid_rect.graphic_z_offset = rg->ZOffset();
+
+  // OCCT 7.x wasm: Z offset comes from V3d_RectangularGrid::GraphicValues, not Aspect_RectangularGrid::ZOffset().
+  if (!vrg.IsNull())
+  {
+    double gx{}, gy{}, gz{};
+    vrg->GraphicValues(gx, gy, gz);
+    (void)gx;
+    (void)gy;
+    m_occt_grid_rect.graphic_z_offset = gz;
+  }
 }
 
 gp_Ax3 Occt_view::grid_display_plane_() const
