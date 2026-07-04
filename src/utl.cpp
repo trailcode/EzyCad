@@ -104,3 +104,15 @@ std::size_t Pair_hash::operator()(const std::pair<size_t, size_t>& p) const
   seed ^= std::hash<size_t>{}(p.second) + 0x9e3779b9 + (seed << 6) + (seed >> 2);
   return seed;
 }
+
+// Portable safe copy for fixed-size char buffers used with ImGui::InputText.
+// Uses strncpy_s (with _TRUNCATE) on MSVC to avoid C4996; falls back elsewhere.
+void safe_cstr_copy(char* dest, size_t dest_size, const char* src)
+{
+#ifdef _MSC_VER
+  strncpy_s(dest, dest_size, src, _TRUNCATE);
+#else
+  std::strncpy(dest, src, dest_size - 1);
+  dest[dest_size - 1] = '\0';
+#endif
+}

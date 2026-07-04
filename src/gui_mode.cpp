@@ -101,11 +101,21 @@ std::string GUI::get_doc_url_for_mode(Mode mode)
 
   auto it = doc_urls.find(mode);
   if (it != doc_urls.end() && !it->second.empty())
-  {
     return it->second;
-  }
+  
   // fallback to main guide
   return "https://ezycad.readthedocs.io/en/latest/usage.html";
+}
+
+const char* GUI::current_mode_description_() const
+{
+  for (const auto& b : m_toolbar_buttons)
+    if (b.data.index() == 0) // holds a Mode
+      if (std::get<Mode>(b.data) == m_mode)
+        return b.tooltip;
+
+  EZY_ASSERT_MSG(false, "Current mode not found in toolbar buttons");
+  return "";
 }
 
 void GUI::options_doc_help_button_()
@@ -442,7 +452,7 @@ void GUI::options_normal_mode_()
 {
   EZY_ASSERT(get_mode() == Mode::Normal);
 
-  ImGui::TextUnformatted(current_mode_description());
+  ImGui::TextUnformatted(current_mode_description_());
   options_doc_help_button_();
   ImGui::Separator();
 
@@ -503,7 +513,7 @@ void GUI::options_move_mode_()
 {
   EZY_ASSERT(get_mode() == Mode::Move);
 
-  ImGui::TextUnformatted(current_mode_description());
+  ImGui::TextUnformatted(current_mode_description_());
   options_doc_help_button_();
   ImGui::Separator();
   ImGui::TextUnformatted("Constrain axis:");
@@ -523,7 +533,7 @@ void GUI::options_scale_mode_()
 {
   EZY_ASSERT(get_mode() == Mode::Scale);
 
-  ImGui::TextUnformatted(current_mode_description());
+  ImGui::TextUnformatted(current_mode_description_());
   options_doc_help_button_();
   ImGui::Separator();
 
@@ -534,7 +544,7 @@ void GUI::options_rotate_mode_()
 {
   EZY_ASSERT(get_mode() == Mode::Rotate);
 
-  ImGui::TextUnformatted(current_mode_description());
+  ImGui::TextUnformatted(current_mode_description_());
   options_doc_help_button_();
   ImGui::Separator();
 
@@ -561,7 +571,7 @@ void GUI::options_shape_chamfer_mode_()
   float label_col_w = std::max(ImGui::CalcTextSize("Chamfer Mode").x, ImGui::CalcTextSize("Chamfer dist").x);
   label_col_w += ImGui::GetStyle().CellPadding.x * 2.0f + 8.0f;
 
-  ImGui::TextUnformatted(current_mode_description());
+  ImGui::TextUnformatted(current_mode_description_());
   options_doc_help_button_();
   ImGui::Separator();
 
@@ -623,7 +633,7 @@ void GUI::options_shape_fillet_mode_()
   float label_col_w = std::max(ImGui::CalcTextSize("Fillet Mode").x, ImGui::CalcTextSize("Fillet radius").x);
   label_col_w += ImGui::GetStyle().CellPadding.x * 2.0f + 8.0f;
 
-  ImGui::TextUnformatted(current_mode_description());
+  ImGui::TextUnformatted(current_mode_description_());
   options_doc_help_button_();
   ImGui::Separator();
 
@@ -697,7 +707,7 @@ void GUI::options_shape_polar_duplicate_mode_()
   label_col_w       = std::max(label_col_w, ImGui::CalcTextSize("Material").x);
   label_col_w += ImGui::GetStyle().CellPadding.x * 2.0f + 8.0f;
 
-  ImGui::TextUnformatted(current_mode_description());
+  ImGui::TextUnformatted(current_mode_description_());
   options_doc_help_button_();
   ImGui::Separator();
 
@@ -773,7 +783,7 @@ void GUI::options_sketch_from_planer_face_mode_()
 {
   EZY_ASSERT(get_mode() == Mode::Sketch_from_planar_face);
 
-  ImGui::TextUnformatted(current_mode_description());
+  ImGui::TextUnformatted(current_mode_description_());
   options_doc_help_button_();
   ImGui::Separator();
 
@@ -994,7 +1004,7 @@ void GUI::options_orthographic_projection_()
 
 void GUI::options_sketch_common_()
 {
-  ImGui::TextUnformatted(current_mode_description());
+  ImGui::TextUnformatted(current_mode_description_());
   options_doc_help_button_();
 
   ImGui::Separator();

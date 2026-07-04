@@ -34,25 +34,11 @@
 #include "version.h"
 
 #include <Standard_Version.hxx>
-
-// Must be here to prevent compiler warning
 #include <GLFW/glfw3.h>
 
 using namespace glm;
 
 GUI* gui_instance = nullptr;
-
-// Portable safe copy for fixed-size char buffers used with ImGui::InputText.
-// Uses strncpy_s (with _TRUNCATE) on MSVC to avoid C4996; falls back elsewhere.
-static void safe_cstr_copy(char* dest, size_t dest_size, const char* src)
-{
-#ifdef _MSC_VER
-  strncpy_s(dest, dest_size, src, _TRUNCATE);
-#else
-  std::strncpy(dest, src, dest_size - 1);
-  dest[dest_size - 1] = '\0';
-#endif
-}
 
 GUI::GUI()
 {
@@ -82,6 +68,7 @@ void GUI::set_show_sketch_dimensions(const bool show)
 {
   if (m_show_sketch_dimensions == show)
     return;
+
   m_show_sketch_dimensions = show;
   apply_sketch_dimensions_visibility();
 }
@@ -174,49 +161,34 @@ void GUI::render_occt() { m_view->do_frame(); }
 void GUI::initialize_toolbar_()
 {
   m_toolbar_buttons = {
-      {load_texture("res/icons/User.png"), true, "Inspection mode", Mode::Normal},
-      {load_texture("res/icons/Workbench_Sketcher_none.png"), false, "Sketch inspection mode", Mode::Sketch_inspection_mode},
-      {load_texture("res/icons/Assembly_AxialMove.png"), false, "Shape move (g)", Mode::Move},
-      {load_texture("res/icons/Draft_Rotate.png"), false, "Shape rotate (r)", Mode::Rotate},
-      {load_texture("res/icons/Part_Scale.png"), false, "Shape Scale (s)", Mode::Scale},
-      {load_texture("res/icons/Macro_FaceToSketch_48.png"), false, "Create a sketch from planar face",
-       Mode::Sketch_from_planar_face},
-      {load_texture("res/icons/Sketcher_MirrorSketch.png"), false, "Operational axis", Mode::Sketch_operation_axis},
-      {load_texture("res/icons/Sketcher_CreatePoint.png"), false, "Add node", Mode::Sketch_add_node},
-      {load_texture("res/icons/Sketcher_Element_Line_Edge.png"), false, "Add line edge", Mode::Sketch_add_edge},
-      {load_texture("res/icons/ls.png"), false, "Add multi-line edge", Mode::Sketch_add_multi_edges},
-      {load_texture("res/icons/Sketcher_Element_Arc_Edge.png"), false, "Add arc circle", Mode::Sketch_add_seg_circle_arc},
-      {load_texture("res/icons/Sketcher_CreateSquare.png"), false, "Add square", Mode::Sketch_add_square},
-      {load_texture("res/icons/Sketcher_CreateRectangle.png"), false, "Add rectangle from two points",
-       Mode::Sketch_add_rectangle},
-      {load_texture("res/icons/Sketcher_CreateRectangle_Center.png"), false, "Add rectangle with center point",
-       Mode::Sketch_add_rectangle_center_pt},
-      {load_texture("res/icons/Sketcher_CreateCircle.png"), false, "Add circle", Mode::Sketch_add_circle},
-      {load_texture("res/icons/Sketcher_Create3PointCircle.png"), false, "Add circle from three points",
-       Mode::Sketch_add_circle_3_pts},
-      {load_texture("res/icons/Sketcher_CreateSlot.png"), false, "Add slot", Mode::Sketch_add_slot},
-      {load_texture("res/icons/TechDraw_LengthDimension.png"), false, "Length dimension (d)", Mode::Sketch_dim_anno},
-      {load_texture("res/icons/Design456_Extrude.png"), false, "Extrude sketch face (e)", Mode::Sketch_face_extrude},
-      {load_texture("res/icons/PartDesign_Chamfer.png"), false, "Chamfer (c)", Mode::Shape_chamfer},
-      {load_texture("res/icons/PartDesign_Fillet.png"), false, "Fillet (f)", Mode::Shape_fillet},
-      {load_texture("res/icons/Draft_PolarArray.png"), false, "Shape polar duplicate", Mode::Shape_polar_duplicate},
-      {load_texture("res/icons/Part_Cut.png"), false, "Shape cut", Command::Shape_cut},
-      {load_texture("res/icons/Part_Fuse.png"), false, "Shape fuse", Command::Shape_fuse},
-      {load_texture("res/icons/Part_Common.png"), false, "Shape common", Command::Shape_common},
+      // clang-format off
+      {load_texture("res/icons/User.png"),                            true,  "Inspection mode",                   Mode::Normal},
+      {load_texture("res/icons/Workbench_Sketcher_none.png"),         false, "Sketch inspection mode",            Mode::Sketch_inspection_mode},
+      {load_texture("res/icons/Assembly_AxialMove.png"),              false, "Shape move (g)",                    Mode::Move},
+      {load_texture("res/icons/Draft_Rotate.png"),                    false, "Shape rotate (r)",                  Mode::Rotate},
+      {load_texture("res/icons/Part_Scale.png"),                      false, "Shape Scale (s)",                   Mode::Scale},
+      {load_texture("res/icons/Macro_FaceToSketch_48.png"),           false, "Create a sketch from planar face",  Mode::Sketch_from_planar_face},
+      {load_texture("res/icons/Sketcher_MirrorSketch.png"),           false, "Operational axis",                  Mode::Sketch_operation_axis},
+      {load_texture("res/icons/Sketcher_CreatePoint.png"),            false, "Add node",                          Mode::Sketch_add_node},
+      {load_texture("res/icons/Sketcher_Element_Line_Edge.png"),      false, "Add line edge",                     Mode::Sketch_add_edge},
+      {load_texture("res/icons/ls.png"),                              false, "Add multi-line edge",               Mode::Sketch_add_multi_edges},
+      {load_texture("res/icons/Sketcher_Element_Arc_Edge.png"),       false, "Add arc circle",                    Mode::Sketch_add_seg_circle_arc},
+      {load_texture("res/icons/Sketcher_CreateSquare.png"),           false, "Add square",                        Mode::Sketch_add_square},
+      {load_texture("res/icons/Sketcher_CreateRectangle.png"),        false, "Add rectangle from two points",     Mode::Sketch_add_rectangle},
+      {load_texture("res/icons/Sketcher_CreateRectangle_Center.png"), false, "Add rectangle with center point",   Mode::Sketch_add_rectangle_center_pt},
+      {load_texture("res/icons/Sketcher_CreateCircle.png"),           false, "Add circle",                        Mode::Sketch_add_circle},
+      {load_texture("res/icons/Sketcher_Create3PointCircle.png"),     false, "Add circle from three points",      Mode::Sketch_add_circle_3_pts},
+      {load_texture("res/icons/Sketcher_CreateSlot.png"),             false, "Add slot",                          Mode::Sketch_add_slot},
+      {load_texture("res/icons/TechDraw_LengthDimension.png"),        false, "Length dimension (d)",              Mode::Sketch_dim_anno},
+      {load_texture("res/icons/Design456_Extrude.png"),               false, "Extrude sketch face (e)",           Mode::Sketch_face_extrude},
+      {load_texture("res/icons/PartDesign_Chamfer.png"),              false, "Chamfer (c)",                       Mode::Shape_chamfer},
+      {load_texture("res/icons/PartDesign_Fillet.png"),               false, "Fillet (f)",                        Mode::Shape_fillet},
+      {load_texture("res/icons/Draft_PolarArray.png"),                false, "Shape polar duplicate",             Mode::Shape_polar_duplicate},
+      {load_texture("res/icons/Part_Cut.png"),                        false, "Shape cut",                         Command::Shape_cut},
+      {load_texture("res/icons/Part_Fuse.png"),                       false, "Shape fuse",                        Command::Shape_fuse},
+      {load_texture("res/icons/Part_Common.png"),                     false, "Shape common",                      Command::Shape_common},
+      // clang-format on
   };
-}
-
-const char* GUI::current_mode_description() const
-{
-  for (const auto& b : m_toolbar_buttons)
-  {
-    if (b.data.index() == 0) // holds a Mode
-    {
-      if (std::get<Mode>(b.data) == m_mode)
-        return b.tooltip;
-    }
-  }
-  return "";
 }
 
 void GUI::load_examples_list_()
@@ -305,7 +277,7 @@ void GUI::menu_bar_()
       for (const Example_file& ex : m_example_files)
         if (ImGui::MenuItem(ex.label.c_str()))
         {
-          std::ifstream file(ex.path, std::ios::binary);
+          std::ifstream     file(ex.path, std::ios::binary);
           const std::string file_bytes{std::istreambuf_iterator<char>(file), std::istreambuf_iterator<char>()};
           if (file.good() && !file_bytes.empty())
             on_file(ex.path, file_bytes);
@@ -1026,8 +998,7 @@ bool GUI::is_valid_project_file_(const std::string& bytes)
   return is_ezy_json(bytes) && is_valid_project_manifest_(bytes);
 }
 
-std::optional<std::string> GUI::manifest_from_project_file_(const std::string& file_bytes, Occt_view& view,
-                                                            bool replace_assets)
+std::optional<std::string> GUI::manifest_from_project_file_(const std::string& file_bytes, Occt_view& view, bool replace_assets)
 {
   if (is_ezy_zip(file_bytes))
   {
@@ -1060,8 +1031,7 @@ const std::vector<std::string>& GUI::occt_material_combo_labels_()
   return names;
 }
 
-void GUI::sketch_list_inspector_(const Sketch::sptr& sketch, int index, Sketch::sptr& hover_sketch,
-                                 size_t& hover_dim_index)
+void GUI::sketch_list_inspector_(const Sketch::sptr& sketch, int index, Sketch::sptr& hover_sketch, size_t& hover_dim_index)
 {
   ImGui::Indent();
   ImGui::PushID(index);
@@ -1099,8 +1069,8 @@ void GUI::sketch_list_inspector_(const Sketch::sptr& sketch, int index, Sketch::
 
         for (size_t i = 0; i < count; ++i)
         {
-          bool   visible = sketch->dimension_visible(i);
-          double offset  = sketch->dimension_offset(i);
+          bool   visible     = sketch->dimension_visible(i);
+          double offset      = sketch->dimension_offset(i);
           bool   row_hovered = false;
 
           ImGui::PushID(static_cast<int>(i));
@@ -3115,8 +3085,17 @@ void GUI::on_file(const std::string& file_path, const std::string& file_bytes, b
 {
   using namespace nlohmann;
 
+  log_message("on_file: path=" + file_path + " bytes=" + std::to_string(file_bytes.size()) +
+              " zip=" + (is_ezy_zip(file_bytes) ? "yes" : "no") + " json=" + (is_ezy_json(file_bytes) ? "yes" : "no"));
+
   m_view->push_undo_snapshot();
   const std::optional<std::string> manifest = manifest_from_project_file_(file_bytes, *m_view, true);
+  if (!manifest)
+    log_message("on_file: manifest_from_project_file_ FAILED");
+  else
+    log_message("on_file: manifest ok, len=" + std::to_string(manifest->size()) +
+                " valid=" + (is_valid_project_manifest_(*manifest) ? "yes" : "no"));
+
   if (!manifest || !is_valid_project_manifest_(*manifest))
   {
     m_view->pop_undo_snapshot();
@@ -3126,6 +3105,7 @@ void GUI::on_file(const std::string& file_path, const std::string& file_bytes, b
 
   const json j = json::parse(*manifest);
   m_view->load(*manifest);
+  log_message("on_file: load complete");
   m_last_saved_path = file_path;
   Mode opened_mode  = Mode::Normal;
   if (j.contains("mode") && j["mode"].is_number_integer())

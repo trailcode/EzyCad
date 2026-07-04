@@ -137,4 +137,8 @@ std::optional<std::tuple<std::vector<uint8_t>, int, int>> decode_image_bytes(con
 void disable_shape_highlighting(const AIS_Shape_ptr& ais_shape, const AIS_InteractiveContext_ptr& context,
                                 bool disable_selection = false);
 
+// Portable safe copy for fixed-size char buffers used with ImGui::InputText.
+// Uses strncpy_s (with _TRUNCATE) on MSVC to avoid C4996; falls back elsewhere.
+void safe_cstr_copy(char* dest, size_t dest_size, const char* src);
+
 #include "utl.inl"

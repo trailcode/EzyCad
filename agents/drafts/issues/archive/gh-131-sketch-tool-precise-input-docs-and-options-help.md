@@ -39,7 +39,7 @@ Improve discoverability and accuracy of the user guide by ensuring every sketch 
 **Options pane UI + help links (src/):**
 
 - Ensured *every* mode that renders an Options pane (including Normal/Inspection and Sketch_inspection_mode) now starts with:
-  - `current_mode_description()` (pulled from m_toolbar_buttons tooltip data, or c_mode_strs as fallback).
+  - `current_mode_description_()` (pulled from m_toolbar_buttons tooltip data, or c_mode_strs as fallback).
   - `options_doc_help_button_()` — a small "?" that calls `open_url_(get_doc_url_for_mode(get_mode()))`.
 - Added `get_doc_url_for_mode(Mode)` static map with one entry per Mode (asserted to match Mode::_count at runtime).
 - Specific anchors: e.g. Sketch_add_node → usage-sketch.html#add-node-tool, Operation Axis → #operation-axis-tool, Slot (with note on its semantics), etc.
@@ -69,7 +69,7 @@ Improve discoverability and accuracy of the user guide by ensuring every sketch 
 - `docs/usage-sketch.md`
 - `src/gui_mode.cpp`
 - `src/gui.h`
-- `src/gui.cpp` (minor, for current_mode_description)
+- `src/gui.cpp` (minor, for current_mode_description_)
 - `agents/drafts/issues/archive/gh-131-sketch-tool-precise-input-docs-and-options-help.md` (this draft)
 - `agents/drafts/prs/archive/gh-132-sketch-tool-input-docs-options-pane-help.md`
 - `agents/README.md`

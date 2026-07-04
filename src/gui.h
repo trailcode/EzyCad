@@ -149,8 +149,7 @@ public:
   void        on_mouse_scroll(double xoffset, double yoffset);
   void        on_resize(int width, int height);
   Mode        get_mode() const { return m_mode; }
-  const char* current_mode_description() const;
-
+  
   static std::string get_doc_url_for_mode(Mode mode);
   Chamfer_mode       get_chamfer_mode() const { return m_chamfer_mode; }
   Fillet_mode        get_fillet_mode() const { return m_fillet_mode; }
@@ -293,6 +292,8 @@ private:
   void options_sketch_add_circle_mode_();
   void options_sketch_add_circle_three_pts_mode_();
   void options_sketch_add_slot_mode_();
+
+  const char* current_mode_description_() const;
 
   // Options related helpers
   void options_doc_help_button_();
