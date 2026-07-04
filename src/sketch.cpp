@@ -27,7 +27,7 @@
 #include "utl_geom.h"
 #include "gui.h"
 #include "imgui.h"
-#include "gui_modes.h"
+#include "mode.h"
 #include "occt_view.h"
 #include "sketch_delta.h"
 #include "sketch_underlay.h"

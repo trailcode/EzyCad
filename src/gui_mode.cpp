@@ -15,7 +15,7 @@
 #include "gui.h"
 #include "imgui.h"
 #include "imgui_internal.h"
-#include "gui_modes.h"
+#include "mode.h"
 #include "occt_view.h"
 #include "sketch.h"
 #include "utl_occt.h"
@@ -26,17 +26,14 @@ using namespace glm;
 
 namespace
 {
-
 constexpr ImGuiTableFlags k_options_table_flags          = ImGuiTableFlags_SizingFixedFit;
 constexpr float           k_options_control_col_w        = 148.f;
 constexpr float           k_options_sketch_control_col_w = 176.f;
 
 void options_table_setup_columns_(float label_col_w, float control_col_w);
 void options_right_aligned_label_(const char* text);
-// Up to `max_frac` digits after the decimal, strip trailing zeros (and a trailing '.').
-void format_double_trim_fraction(char* dst, std::size_t dst_sz, double v, int max_frac);
+void format_double_trim_fraction_(char* dst, std::size_t dst_sz, double v, int max_frac);
 void set_default_material_(const std::vector<std::string>& material_names, int current_mat, Occt_view::uptr& view);
-
 } // namespace
 
 std::string GUI::get_doc_url_for_mode(Mode mode)
@@ -574,7 +571,7 @@ void GUI::options_shape_chamfer_mode_()
     const ImGuiID chamfer_input_id = ImGui::GetID("##micron");
     ImGuiContext* ctx              = ImGui::GetCurrentContext();
     if (ctx && ctx->ActiveId != chamfer_input_id)
-      format_double_trim_fraction(chamfer_buf, sizeof chamfer_buf, chamfer_dist, 6);
+      format_double_trim_fraction_(chamfer_buf, sizeof chamfer_buf, chamfer_dist, 6);
 
     ImGui::TableNextRow();
     ImGui::TableSetColumnIndex(0);
@@ -637,7 +634,7 @@ void GUI::options_shape_fillet_mode_()
     const ImGuiID fillet_input_id = ImGui::GetID("##micron");
     ImGuiContext* ctx             = ImGui::GetCurrentContext();
     if (ctx && ctx->ActiveId != fillet_input_id)
-      format_double_trim_fraction(fillet_buf, sizeof fillet_buf, fillet_radius, 6);
+      format_double_trim_fraction_(fillet_buf, sizeof fillet_buf, fillet_radius, 6);
 
     ImGui::TableNextRow();
     ImGui::TableSetColumnIndex(0);
@@ -1209,7 +1206,7 @@ void options_right_aligned_label_(const char* text)
 }
 
 // Up to `max_frac` digits after the decimal, strip trailing zeros (and a trailing '.').
-void format_double_trim_fraction(char* dst, std::size_t dst_sz, double v, int max_frac)
+void format_double_trim_fraction_(char* dst, std::size_t dst_sz, double v, int max_frac)
 {
   char tmp[64];
   std::snprintf(tmp, sizeof tmp, "%.*f", max_frac, v);
@@ -1236,5 +1233,4 @@ void set_default_material_(const std::vector<std::string>& material_names, int c
       view->set_default_material(mat);
     }
 }
-
 } // namespace

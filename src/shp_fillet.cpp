@@ -6,7 +6,7 @@
 #include <TopoDS_Edge.hxx>
 #include <TopoDS_Wire.hxx>
 
-#include "gui_modes.h"
+#include "mode.h"
 #include "occt_view.h"
 
 Shp_fillet::Shp_fillet(Occt_view& view)

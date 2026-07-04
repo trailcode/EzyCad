@@ -9,7 +9,7 @@
 
 #include "utl_geom.h"
 #include "gui.h"
-#include "gui_modes.h"
+#include "mode.h"
 #include "occt_view.h"
 #include "sketch.h"
 #include "sketch_nodes.h"
