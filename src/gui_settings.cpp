@@ -3,7 +3,6 @@
 #include <algorithm>
 #include <array>
 #include <nlohmann/json.hpp>
-#include <sstream>
 #include <string>
 
 #include "utl_dbg.h"
@@ -14,35 +13,12 @@
 #include "sketch.h"
 #include "sketch_nodes.h"
 
-#include <gp_Pnt2d.hxx>
-
 namespace
 {
 const char* const k_settings_version                  = "1";
 const char* const k_gui_key_permanent_node_anno_scale = "permanent_node_anno_scale";
 
-/// `occt_view` JSON object: view background gradient and grid (shared with `save_occt_view_settings` /
-/// `occt_view_settings_json`).
-nlohmann::json build_occt_view_settings_object(const Occt_view& view)
-{
-  float bg1[3], bg2[3], g1[3], g2[3];
-  view.get_bg_gradient_colors(bg1, bg2);
-  view.get_grid_colors(g1, g2);
-  const int             method = view.get_bg_gradient_method();
-  Occt_grid_rect_params grid_rect{};
-  view.get_occt_grid_rect_params(grid_rect);
-  return nlohmann::json{
-      {"bg_color1", {bg1[0], bg1[1], bg1[2]}},
-      {"bg_color2", {bg2[0], bg2[1], bg2[2]}},
-      {"bg_gradient_method", method},
-      {"grid_color1", {g1[0], g1[1], g1[2]}},
-      {"grid_color2", {g2[0], g2[1], g2[2]}},
-      {"grid_step", grid_rect.step},
-      {"grid_padding", grid_rect.grid_padding},
-      {"grid_graphic_z_offset", grid_rect.graphic_z_offset},
-      {"grid_visible", view.get_grid_visible()},
-  };
-}
+nlohmann::json build_occt_view_settings_object_(const Occt_view& view);
 } // namespace
 
 void GUI::set_ui_verbosity(int v) { m_ui_verbosity = std::max(k_gui_ui_verbosity_min, v); }
@@ -52,7 +28,7 @@ std::string GUI::occt_view_settings_json() const
   using nlohmann::json;
   EZY_ASSERT(m_view);
   json j;
-  j["occt_view"] = build_occt_view_settings_object(*m_view);
+  j["occt_view"] = build_occt_view_settings_object_(*m_view);
   j["gui"]       = {
       {"edge_dim_label_h", m_edge_dim_label_h},
       {"edge_dim_line_width", m_edge_dim_line_width},
@@ -106,8 +82,9 @@ void GUI::save_occt_view_settings()
     {
     }
   }
+
   EZY_ASSERT(m_view);
-  j["occt_view"] = build_occt_view_settings_object(*m_view);
+  j["occt_view"] = build_occt_view_settings_object_(*m_view);
   j["gui"]       = {
       {"show_options", m_show_options},
       {"show_sketch_list", m_show_sketch_list},
@@ -197,14 +174,19 @@ void GUI::parse_occt_view_settings_(const std::string& content)
     };
     if (ov.contains("bg_color1"))
       arr3(ov["bg_color1"], bg1);
+
     if (ov.contains("bg_color2"))
       arr3(ov["bg_color2"], bg2);
+
     if (ov.contains("bg_gradient_method") && ov["bg_gradient_method"].is_number_integer())
       method = ov["bg_gradient_method"].get<int>();
+
     if (ov.contains("grid_color1"))
       arr3(ov["grid_color1"], g1);
+
     if (ov.contains("grid_color2"))
       arr3(ov["grid_color2"], g2);
+
     m_view->set_bg_gradient_colors(bg1[0], bg1[1], bg1[2], bg2[0], bg2[1], bg2[2]);
     m_view->set_bg_gradient_method(method);
     m_view->set_grid_colors(g1[0], g1[1], g1[2], g2[0], g2[1], g2[2]);
@@ -215,6 +197,7 @@ void GUI::parse_occt_view_settings_(const std::string& content)
     {
       if (!ov.contains(key))
         return;
+
       const json& v = ov[key];
       if (v.is_number())
         dst = v.get<double>();
@@ -224,21 +207,22 @@ void GUI::parse_occt_view_settings_(const std::string& content)
     {
       if (ov.contains("grid_x_step"))
         apply_num("grid_x_step", grid_rect.step);
+
       else if (ov.contains("grid_y_step"))
         apply_num("grid_y_step", grid_rect.step);
     }
     apply_num("grid_padding", grid_rect.grid_padding);
     if (!ov.contains("grid_padding") && ov.contains("grid_graphic_x_size"))
-    {
       // Legacy: treat old half-extent as padding margin around sketch content.
       apply_num("grid_graphic_x_size", grid_rect.grid_padding);
-    }
+
     apply_num("grid_graphic_z_offset", grid_rect.graphic_z_offset);
     m_view->set_occt_grid_rect_params(grid_rect);
 
     bool grid_visible = m_view->get_grid_visible();
     if (ov.contains("grid_visible") && ov["grid_visible"].is_boolean())
       grid_visible = ov["grid_visible"].get<bool>();
+
     // Always apply: default m_grid_visible may already match JSON, but the shader grid
     // is not displayed until apply_grid_visibility_() runs.
     m_view->set_grid_visible(grid_visible);
@@ -257,18 +241,23 @@ void GUI::parse_gui_panes_settings_(const std::string& content)
     const json j = json::parse(content);
     if (!j.contains("gui") || !j["gui"].is_object())
       return;
+
     const json& g = j["gui"];
     auto        b = [&g](const char* key, bool current)
     {
       if (!g.contains(key))
         return current;
+
       const json& v = g[key];
       if (v.is_boolean())
         return v.get<bool>();
+
       if (v.is_number_integer())
         return v.get<int>() != 0;
+
       return current;
     };
+
     m_ui_verbosity = k_gui_ui_verbosity_default;
     if (g.contains("ui_verbosity") && g["ui_verbosity"].is_number_integer())
       m_ui_verbosity = std::max(k_gui_ui_verbosity_min, g["ui_verbosity"].get<int>());
@@ -287,6 +276,7 @@ void GUI::parse_gui_panes_settings_(const std::string& content)
       if (v >= 0 && v <= 3)
         m_edge_dim_label_h = v;
     }
+
     auto parse_bounded_float = [&g](const char* key, const float min_v, const float max_v, const float default_v) -> float
     {
       float out = default_v;
@@ -296,6 +286,7 @@ void GUI::parse_gui_panes_settings_(const std::string& content)
         if (v >= min_v && v <= max_v)
           out = v;
       }
+
       return out;
     };
     m_edge_dim_line_width = parse_bounded_float("edge_dim_line_width", 0.5f, 8.0f, k_gui_edge_dim_line_width_default);
@@ -310,6 +301,7 @@ void GUI::parse_gui_panes_settings_(const std::string& content)
         if (v >= min_v && v <= max_v)
           return v;
       }
+
       return default_v;
     };
     m_edge_dim_text_render_mode = parse_dim_int("edge_dim_text_render_mode", 0, k_gui_edge_dim_text_render_mode_max,
@@ -321,29 +313,35 @@ void GUI::parse_gui_panes_settings_(const std::string& content)
         if (a[i].is_number())
           m_edge_dim_color[i] = std::clamp(a[i].get<float>(), 0.f, 1.f);
     }
+
     if (g.contains("edge_dim_arrow_style") && g["edge_dim_arrow_style"].is_number_integer())
     {
       const int v = g["edge_dim_arrow_style"].get<int>();
       if (v >= k_gui_edge_dim_arrow_style_min && v <= k_gui_edge_dim_arrow_style_max)
         m_edge_dim_arrow_style = v;
     }
+
     if (g.contains("edge_dim_arrow_orientation") && g["edge_dim_arrow_orientation"].is_number_integer())
     {
       const int v = g["edge_dim_arrow_orientation"].get<int>();
       if (v >= k_gui_edge_dim_arrow_orientation_min && v <= k_gui_edge_dim_arrow_orientation_max)
         m_edge_dim_arrow_orientation = v;
     }
+
     m_show_sketch_dimensions = b("show_sketch_dimensions", true);
     m_permanent_node_anno_scale =
         parse_bounded_float(k_gui_key_permanent_node_anno_scale, k_gui_permanent_node_anno_scale_min,
                             k_gui_permanent_node_anno_scale_max, k_gui_permanent_node_anno_scale_default);
+
     m_add_mid_pt_line_edges = b("add_mid_pt_edges", false);
     if (g.contains("add_midpoints_to_linear_edges") && !g.contains("add_mid_pt_edges") &&
         g["add_midpoints_to_linear_edges"].is_boolean())
       m_add_mid_pt_line_edges = g["add_midpoints_to_linear_edges"].get<bool>();
-    m_add_mid_pt_rect_edges = b("add_mid_pt_rect_edges", true);
-    m_add_mid_pt_slot_edges = b("add_mid_pt_slot_edges", false);
+
+    m_add_mid_pt_rect_edges       = b("add_mid_pt_rect_edges", true);
+    m_add_mid_pt_slot_edges       = b("add_mid_pt_slot_edges", false);
     m_load_last_opened_on_startup = b("load_last_opened_on_startup", b("load_last_saved_on_startup", false));
+
     if (g.contains("last_opened_project_path") && g["last_opened_project_path"].is_string())
       m_last_opened_project_path = g["last_opened_project_path"].get<std::string>();
     else if (g.contains("last_saved_project_path") && g["last_saved_project_path"].is_string())
@@ -361,6 +359,7 @@ void GUI::parse_gui_panes_settings_(const std::string& content)
       }
       return fallback;
     };
+
     m_imgui_rounding_general = round_from_json("imgui_rounding_general", fb_general);
     m_imgui_rounding_scroll  = round_from_json("imgui_rounding_scroll", fb_scroll);
     m_imgui_rounding_tabs    = round_from_json("imgui_rounding_tabs", fb_tabs);
@@ -391,6 +390,7 @@ void GUI::parse_gui_panes_settings_(const std::string& content)
                     std::to_string(k_gui_view_zoom_scroll_scale_min) + ", " + std::to_string(k_gui_view_zoom_scroll_scale_max) +
                     "], got " + std::to_string(v) + "; using default.");
     }
+
     if (m_view)
       m_view->set_zoom_scroll_scale(m_view_zoom_scroll_scale);
 
@@ -412,6 +412,7 @@ void GUI::parse_gui_panes_settings_(const std::string& content)
       for (size_t i = 0; i < 3; ++i)
         if (a[static_cast<json::size_type>(i)].is_number())
           c[static_cast<glm::vec3::length_type>(i)] = std::clamp(a[static_cast<json::size_type>(i)].get<float>(), 0.f, 1.f);
+
       Sketch_nodes::set_snap_guide_color_node(c[0], c[1], c[2]);
       Sketch_nodes::set_snap_guide_color_axis(c[0], c[1], c[2]);
     }
@@ -423,6 +424,7 @@ void GUI::parse_gui_panes_settings_(const std::string& content)
       for (size_t i = 0; i < 3; ++i)
         if (a[static_cast<json::size_type>(i)].is_number())
           c[static_cast<glm::vec3::length_type>(i)] = std::clamp(a[static_cast<json::size_type>(i)].get<float>(), 0.f, 1.f);
+
       Sketch_nodes::set_snap_guide_color_axis(c[0], c[1], c[2]);
     }
     else if (g.contains("snap_guide_color_node") && g["snap_guide_color_node"].is_array() &&
@@ -448,9 +450,7 @@ void GUI::parse_gui_panes_settings_(const std::string& content)
 
     Sketch_nodes::set_annotate_all_coaxial_nodes(true);
     if (g.contains("annotate_all_coaxial_nodes") && g["annotate_all_coaxial_nodes"].is_boolean())
-    {
       Sketch_nodes::set_annotate_all_coaxial_nodes(g["annotate_all_coaxial_nodes"].get<bool>());
-    }
 
     if (g.contains("underlay_highlight_color") && g["underlay_highlight_color"].is_array() &&
         g["underlay_highlight_color"].size() >= 3)
@@ -460,6 +460,7 @@ void GUI::parse_gui_panes_settings_(const std::string& content)
         if (a[static_cast<json::size_type>(i)].is_number())
           m_underlay_highlight_color[static_cast<glm::vec4::length_type>(i)] =
               std::clamp(a[static_cast<json::size_type>(i)].get<float>(), 0.f, 1.f);
+
       m_underlay_highlight_color[3] = 1.f;
       if (a.size() >= 4 && a[3].is_number())
         m_underlay_highlight_color[3] = std::clamp(a[3].get<float>(), 0.f, 1.f);
@@ -472,6 +473,7 @@ void GUI::parse_gui_panes_settings_(const std::string& content)
         if (a[static_cast<json::size_type>(i)].is_number())
           m_elm_list_hover_color[static_cast<glm::vec4::length_type>(i)] =
               std::clamp(a[static_cast<json::size_type>(i)].get<float>(), 0.f, 1.f);
+
       m_elm_list_hover_color[3] = 1.f;
       if (a.size() >= 4 && a[3].is_number())
         m_elm_list_hover_color[3] = std::clamp(a[3].get<float>(), 0.f, 1.f);
@@ -499,11 +501,14 @@ void GUI::load_occt_view_settings_()
     {
       if (!doc.contains("version"))
         return false;
+
       const json& v = doc["version"];
       if (v.is_string())
         return v.get<std::string>() == k_settings_version;
+
       if (v.is_number_integer())
         return std::to_string(v.get<long long>()) == k_settings_version;
+
       return false;
     };
     const bool version_ok = settings_version_matches(j);
@@ -593,6 +598,7 @@ void GUI::settings_()
         --m_ui_verbosity;
         verb_changed = true;
       }
+
       ImGui::EndDisabled();
       ImGui::SameLine(0.0f, ImGui::GetStyle().ItemInnerSpacing.x);
       ImGui::SetNextItemWidth(56.0f);
@@ -602,12 +608,14 @@ void GUI::settings_()
         m_ui_verbosity = std::max(k_gui_ui_verbosity_min, verb_edit);
         verb_changed   = true;
       }
+
       ImGui::SameLine(0.0f, ImGui::GetStyle().ItemInnerSpacing.x);
       if (ImGui::ArrowButton("##ui_verbosity_inc", ImGuiDir_Right))
       {
         ++m_ui_verbosity;
         verb_changed = true;
       }
+
       ImGui::EndTable();
     }
     if (verb_changed)
@@ -638,6 +646,7 @@ void GUI::settings_()
                               &k_gui_view_roll_step_deg_max, "%.2f deg",
                               ImGuiSliderFlags_AlwaysClamp | ImGuiSliderFlags_ClampOnInput))
         save_occt_view_settings();
+
       m_view_roll_step_deg = std::clamp(m_view_roll_step_deg, k_gui_view_roll_step_deg_min, k_gui_view_roll_step_deg_max);
 
       ImGui::SameLine(0.0f, ImGui::GetStyle().ItemInnerSpacing.x);
@@ -661,6 +670,7 @@ void GUI::settings_()
 
         save_occt_view_settings();
       }
+
       m_view_zoom_scroll_scale =
           std::clamp(m_view_zoom_scroll_scale, k_gui_view_zoom_scroll_scale_min, k_gui_view_zoom_scroll_scale_max);
 
@@ -714,6 +724,7 @@ void GUI::settings_()
 
       ImGui::EndTable();
     }
+
     if (r_changed)
       save_occt_view_settings();
   }
@@ -760,6 +771,7 @@ void GUI::settings_()
 
       ImGui::EndTable();
     }
+
     if (bg_changed)
     {
       m_view->set_bg_gradient_colors(bg1[0], bg1[1], bg1[2], bg2[0], bg2[1], bg2[2]);
@@ -776,14 +788,14 @@ void GUI::settings_()
       ImGui::AlignTextToFramePadding();
       ImGui::TextUnformatted("Element hover color");
       ImGui::TableSetColumnIndex(1);
-      element_hover_changed |=
-          ImGui::ColorEdit4("##element_hover", &m_elm_list_hover_color[0], ImGuiColorEditFlags_Float);
+      element_hover_changed |= ImGui::ColorEdit4("##element_hover", &m_elm_list_hover_color[0], ImGuiColorEditFlags_Float);
       ImGui::SameLine(0.0f, ImGui::GetStyle().ItemInnerSpacing.x);
       GUI_DOC_HELP_("Highlight color when hovering a row in the Shape List or a dimension row in the Sketch List. "
                     "Updates immediately when a row is hovered.",
                     doc_urls::k_occt_view);
       ImGui::EndTable();
     }
+
     if (element_hover_changed)
     {
       m_view->refresh_shape_list_hover_highlight();
@@ -862,6 +874,7 @@ void GUI::settings_()
       const double padding_min_ui = 0.0;
       if (ImGui::DragScalar("##gpad", ImGuiDataType_Double, &padding_ui, spd_extent, &padding_min_ui, nullptr, "%.8g"))
         geom_changed = true;
+
       ImGui::SameLine(0.f, ImGui::GetStyle().ItemInnerSpacing.x);
       GUI_DOC_HELP_("Margin added around the active sketch when sizing the grid (same length scale as sketch "
                     "dimensions). The grid extent follows sketch geometry plus this padding. Click ? to open the user "
@@ -880,6 +893,7 @@ void GUI::settings_()
     }
     if (grid_changed)
       m_view->set_grid_colors(g1[0], g1[1], g1[2], g2[0], g2[1], g2[2]);
+
     if (geom_changed)
     {
       gr.step             = step_ui * dim_scale;
@@ -891,6 +905,7 @@ void GUI::settings_()
       padding_ui       = gr.grid_padding / dim_scale;
       graphic_z_off_ui = gr.graphic_z_offset / dim_scale;
     }
+
     if (grid_changed || geom_changed)
       save_occt_view_settings();
   }
@@ -903,7 +918,6 @@ void GUI::settings_()
 
     ImGui::Indent(ImGui::GetStyle().IndentSpacing);
     if (ImGui::CollapsingHeader("Dimensions", ImGuiTreeNodeFlags_DefaultOpen))
-    {
       if (ImGui::BeginTable("settings_sketch_dims", 2, ImGuiTableFlags_SizingStretchProp))
       {
         ImGui::TableSetupColumn("label", ImGuiTableColumnFlags_WidthFixed, k_label_col_w);
@@ -921,6 +935,7 @@ void GUI::settings_()
             m_edge_dim_line_width = lw;
             dim_changed           = true;
           }
+
           ImGui::SameLine(0.0f, ImGui::GetStyle().ItemInnerSpacing.x);
           GUI_DOC_HELP_("Thickness of sketch edge length dimensions (Open CASCADE line width scale; 1.0 = default).", nullptr);
         }
@@ -937,6 +952,7 @@ void GUI::settings_()
             m_edge_dim_arrow_size = arrow;
             dim_changed           = true;
           }
+
           ImGui::SameLine(0.0f, ImGui::GetStyle().ItemInnerSpacing.x);
           GUI_DOC_HELP_("Arrow head length for sketch and extrude length dimensions (Open CASCADE display units).", nullptr);
         }
@@ -976,6 +992,7 @@ void GUI::settings_()
           int rm = m_edge_dim_text_render_mode;
           if (rm < 0 || rm >= static_cast<int>(k_labels.size()))
             rm = k_gui_edge_dim_text_render_mode_default;
+
           ImGui::SetNextItemWidth(220.0f);
           if (ImGui::BeginCombo("##edge_dim_text_render", k_labels[static_cast<size_t>(rm)], ImGuiComboFlags_HeightSmall))
           {
@@ -985,8 +1002,10 @@ void GUI::settings_()
                 m_edge_dim_text_render_mode = i;
                 dim_changed                 = true;
               }
+
             ImGui::EndCombo();
           }
+
           ImGui::SameLine(0.0f, ImGui::GetStyle().ItemInnerSpacing.x);
           GUI_DOC_HELP_("How dimension value labels are composited. Z-layer Top and Topmost avoid ghosting against the "
                         "grid; Topmost is the default.",
@@ -1037,6 +1056,7 @@ void GUI::settings_()
                 m_edge_dim_arrow_style = i;
                 dim_changed            = true;
               }
+
             ImGui::EndCombo();
           }
         }
@@ -1059,6 +1079,7 @@ void GUI::settings_()
                 m_edge_dim_arrow_orientation = i;
                 dim_changed                  = true;
               }
+
             ImGui::EndCombo();
           }
         }
@@ -1075,6 +1096,7 @@ void GUI::settings_()
             set_show_sketch_dimensions(show);
             save_occt_view_settings();
           }
+
           ImGui::SameLine(0.0f, ImGui::GetStyle().ItemInnerSpacing.x);
           GUI_DOC_HELP_("When off, hides all sketch length dimensions. Tool mode may still limit which sketch shows "
                         "dimensions when this is on.",
@@ -1083,7 +1105,7 @@ void GUI::settings_()
 
         ImGui::EndTable();
       }
-    }
+    
     ImGui::Unindent(ImGui::GetStyle().IndentSpacing);
 
     if (ImGui::BeginTable("settings_sketch", 2, ImGuiTableFlags_SizingStretchProp))
@@ -1104,6 +1126,7 @@ void GUI::settings_()
           m_permanent_node_anno_scale = size_scale;
           node_anno_changed           = true;
         }
+
         ImGui::SameLine(0.0f, ImGui::GetStyle().ItemInnerSpacing.x);
         GUI_DOC_HELP_("Scale for permanent '+' node markers in sketch mode. Click ? to open the user guide.",
                       doc_urls::k_add_node_tool);
@@ -1122,6 +1145,7 @@ void GUI::settings_()
           sync_sketch_add_mid_pt_edges_if_applicable_();
           save_occt_view_settings();
         }
+
         ImGui::SameLine(0.0f, ImGui::GetStyle().ItemInnerSpacing.x);
         GUI_DOC_HELP_("Line edge and multi-line edge tools (default off). Click ? to open the user guide.",
                       doc_urls::k_line_edge_midpoint_nodes);
@@ -1140,6 +1164,7 @@ void GUI::settings_()
           sync_sketch_add_mid_pt_edges_if_applicable_();
           save_occt_view_settings();
         }
+
         ImGui::SameLine(0.0f, ImGui::GetStyle().ItemInnerSpacing.x);
         GUI_DOC_HELP_("Square and rectangle tools (default on). Click ? to open the user guide.",
                       doc_urls::k_line_edge_midpoint_nodes);
@@ -1158,6 +1183,7 @@ void GUI::settings_()
           sync_sketch_add_mid_pt_edges_if_applicable_();
           save_occt_view_settings();
         }
+
         ImGui::SameLine(0.0f, ImGui::GetStyle().ItemInnerSpacing.x);
         GUI_DOC_HELP_("Slot tool straight edges only (default off). Click ? to open the user guide.",
                       doc_urls::k_line_edge_midpoint_nodes);
@@ -1187,6 +1213,7 @@ void GUI::settings_()
           Sketch_nodes::set_snap_guide_color_node(snap_col[0], snap_col[1], snap_col[2]);
           save_occt_view_settings();
         }
+
         ImGui::SameLine(0.0f, ImGui::GetStyle().ItemInnerSpacing.x);
         GUI_DOC_HELP_("Guides when both X and Y snap to the same node (vertex lock). Click ? to open the user guide.",
                       doc_urls::k_sketch_snapping);
@@ -1204,6 +1231,7 @@ void GUI::settings_()
           Sketch_nodes::set_snap_guide_color_axis(snap_col[0], snap_col[1], snap_col[2]);
           save_occt_view_settings();
         }
+
         ImGui::SameLine(0.0f, ImGui::GetStyle().ItemInnerSpacing.x);
         GUI_DOC_HELP_("Guides when the cursor aligns to a node on X or Y only (axis snap). Click ? to open the user "
                       "guide.",
@@ -1222,6 +1250,7 @@ void GUI::settings_()
           Sketch_nodes::set_snap_guide_line_width(line_width);
           save_occt_view_settings();
         }
+
         ImGui::SameLine(0.0f, ImGui::GetStyle().ItemInnerSpacing.x);
         GUI_DOC_HELP_("Line width for sketch snap guides (axis lines, markers, and co-axial overlay). Click ? to open "
                       "the user guide.",
@@ -1250,6 +1279,7 @@ void GUI::settings_()
               Sketch_nodes::set_snap_guide_mode(static_cast<Sketch_nodes::Snap_guide_mode>(i));
               save_occt_view_settings();
             }
+
           ImGui::EndCombo();
         }
         ImGui::SameLine(0.0f, ImGui::GetStyle().ItemInnerSpacing.x);
@@ -1270,6 +1300,7 @@ void GUI::settings_()
           Sketch_nodes::set_annotate_all_coaxial_nodes(annotate_all);
           save_occt_view_settings();
         }
+
         ImGui::SameLine(0.0f, ImGui::GetStyle().ItemInnerSpacing.x);
         GUI_DOC_HELP_("When on (global mode): axis guide lines + markers for *all* nodes in the current sketch and all "
                       "other visible sketches. When off (default): only closest node per active axis is annotated. Click ? "
@@ -1304,6 +1335,7 @@ void GUI::settings_()
         if (sk->has_underlay())
           sk->underlay_set_line_tint_rgba(hr, hg, hb, ha);
       }
+
       m_underlay_panel_sketch = nullptr;
       save_occt_view_settings();
     }
@@ -1323,6 +1355,7 @@ void GUI::settings_()
       ImGui::TableSetColumnIndex(1);
       if (ImGui::Checkbox("##load_last", &m_load_last_opened_on_startup))
         save_occt_view_settings();
+
       ImGui::SameLine(0.0f, ImGui::GetStyle().ItemInnerSpacing.x);
       GUI_DOC_HELP_("When enabled, EzyCad opens the last .ezy file you opened (path is stored in settings). Click ? to "
                     "open the user guide.",
@@ -1340,6 +1373,7 @@ void GUI::settings_()
     ImGui::SameLine();
     if (ImGui::Button("Clear saved startup"))
       clear_saved_startup_project_();
+
     ImGui::SameLine(0.0f, ImGui::GetStyle().ItemInnerSpacing.x);
     GUI_DOC_HELP_("Save the current document (geometry, view, and tool mode) as what loads when EzyCad starts. If none is "
                   "saved, the install default (res/default.ezy) is used. Click ? to open the user guide.",
@@ -1369,6 +1403,7 @@ void GUI::settings_()
           if (!ini.empty())
             ImGui::LoadIniSettingsFromMemory(ini.c_str(), ini.size());
         }
+
         show_message("Default settings applied.");
       }
       catch (...)
@@ -1388,6 +1423,7 @@ void GUI::underlay_highlight_color_rgba(uint8_t& r, uint8_t& g, uint8_t& b, uint
     const float x = std::clamp(c, 0.f, 1.f) * 255.f;
     return static_cast<uint8_t>(x + 0.5f);
   };
+
   r = to_u8(m_underlay_highlight_color[0]);
   g = to_u8(m_underlay_highlight_color[1]);
   b = to_u8(m_underlay_highlight_color[2]);
@@ -1401,6 +1437,7 @@ void GUI::elm_list_hover_color_rgba(uint8_t& r, uint8_t& g, uint8_t& b, uint8_t&
     const float x = std::clamp(c, 0.f, 1.f) * 255.f;
     return static_cast<uint8_t>(x + 0.5f);
   };
+
   r = to_u8(m_elm_list_hover_color[0]);
   g = to_u8(m_elm_list_hover_color[1]);
   b = to_u8(m_elm_list_hover_color[2]);
@@ -1414,6 +1451,7 @@ void GUI::imgui_rounding_fallbacks_from_theme_(float& general, float& scroll, fl
     ImGui::StyleColorsDark(&s);
   else
     ImGui::StyleColorsLight(&s);
+
   s.ScaleAllSizes(ImGui::GetStyle().FontScaleDpi);
   general = s.WindowRounding;
   scroll  = s.ScrollbarRounding;
@@ -1431,3 +1469,29 @@ void GUI::apply_imgui_rounding_from_members_()
   st.GrabRounding      = m_imgui_rounding_scroll;
   st.TabRounding       = m_imgui_rounding_tabs;
 }
+
+namespace
+{
+/// `occt_view` JSON object: view background gradient and grid (shared with `save_occt_view_settings` /
+/// `occt_view_settings_json`).
+nlohmann::json build_occt_view_settings_object_(const Occt_view& view)
+{
+  float bg1[3], bg2[3], g1[3], g2[3];
+  view.get_bg_gradient_colors(bg1, bg2);
+  view.get_grid_colors(g1, g2);
+  const int             method = view.get_bg_gradient_method();
+  Occt_grid_rect_params grid_rect{};
+  view.get_occt_grid_rect_params(grid_rect);
+  return nlohmann::json{
+      {"bg_color1", {bg1[0], bg1[1], bg1[2]}},
+      {"bg_color2", {bg2[0], bg2[1], bg2[2]}},
+      {"bg_gradient_method", method},
+      {"grid_color1", {g1[0], g1[1], g1[2]}},
+      {"grid_color2", {g2[0], g2[1], g2[2]}},
+      {"grid_step", grid_rect.step},
+      {"grid_padding", grid_rect.grid_padding},
+      {"grid_graphic_z_offset", grid_rect.graphic_z_offset},
+      {"grid_visible", view.get_grid_visible()},
+  };
+}
+} // namespace

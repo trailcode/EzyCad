@@ -9,7 +9,7 @@
 
 #include "gui.h"
 #include "imgui.h"
-#include "gui_modes.h"
+#include "mode.h"
 #include "occt_view.h"
 #include "shp.h"
 #include "sketch.h"

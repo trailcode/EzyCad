@@ -146,7 +146,7 @@ For shortcuts, sample scripts, binding tables, and limitations, see the **[Scrip
 ## File Operations
 
 ### Supported Formats
-- Native format: `.ezy` files
+- Native format: `.ezy` files (v3: ZIP archive with `manifest.json` and externalized underlay images; older plain-JSON `.ezy` files still open)
 - [Import formats: STEP (`.step`, `.stp`), PLY (`.ply`)](#importing-3d-geometries)
 - [Export formats: STEP, IGES, STL (binary), PLY (binary)](#exporting-3d-geometries)
 

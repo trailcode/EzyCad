@@ -23,9 +23,7 @@
 #include <Precision.hxx>
 #include <Prs3d_DatumAspect.hxx>
 #include <Prs3d_Drawer.hxx>
-#include <Prs3d_ShadingAspect.hxx>
 #include <Graphic3d_AspectFillArea3d.hxx>
-#include <Standard_Version.hxx>
 #include <Prs3d_LineAspect.hxx>
 #include <PrsDim_LengthDimension.hxx>
 #include <STEPControl_Reader.hxx>
@@ -39,11 +37,8 @@
 #include <V3d_View.hxx>
 #include <WNT_WClass.hxx>
 #include <WNT_Window.hxx>
-#include <Xw_Window.hxx>
-#include <Cocoa_Window.hxx>
 #include <algorithm>
 #include <cmath>
-#include <numbers>
 #include <gp_Ax1.hxx>
 #include <gp_Trsf.hxx>
 
@@ -71,8 +66,6 @@
 
 #include <GLFW/glfw3.h>
 
-#include <cctype>
-#include <cstdio>
 #include <iostream>
 #include <sstream>
 
@@ -155,10 +148,10 @@ void Occt_view::init_viewer()
   aViewer->SetDefaultShadingModel(Graphic3d_TypeOfShadingModel_Phong);
 
   m_ctx = new AIS_InteractiveContext(aViewer);
-#else
+#else // __EMSCRIPTEN__
   Handle(Aspect_DisplayConnection) aDisp;
-  Handle(OpenGl_GraphicDriver) aDriver        = new OpenGl_GraphicDriver(aDisp, false);
-  aDriver->ChangeOptions().buffersNoSwap      = true; // swap has no effect in WebGL
+  Handle(OpenGl_GraphicDriver) aDriver   = new OpenGl_GraphicDriver(aDisp, false);
+  aDriver->ChangeOptions().buffersNoSwap = true; // swap has no effect in WebGL
 #if defined(WASM_BISECT_DISABLE_OPAQUE_ALPHA)
   aDriver->ChangeOptions().buffersOpaqueAlpha = false;
 #else
@@ -217,11 +210,11 @@ void Occt_view::init_viewer()
 #endif
 
   m_view->SetImmediateUpdate(false);
-  auto& params = m_view->ChangeRenderingParams();
-  params.ToShowStats           = true;
-  params.ShadowMapResolution   = 1024;
-  params.OitDepthFactor        = 0.0;
-  params.Resolution            = (unsigned int)(96.0 * myDevicePixelRatio + 0.5);
+  auto& params               = m_view->ChangeRenderingParams();
+  params.ToShowStats         = true;
+  params.ShadowMapResolution = 1024;
+  params.OitDepthFactor      = 0.0;
+  params.Resolution          = (unsigned int)(96.0 * myDevicePixelRatio + 0.5);
 #ifdef __EMSCRIPTEN__
 #if defined(WASM_BISECT_DISABLE_MSAA)
   params.NbMsaaSamples = 0;
@@ -250,16 +243,8 @@ void Occt_view::init_viewer()
   params.TransparencyMethod    = Graphic3d_RTM_BLEND_UNORDERED;
 #endif
 
-  // m_view->SetScale(1000.0); // Treat coordinates as millimeters
-  // m_view->SetScale(39.3701);
-
   capture_occt_grid_rect_from_viewer_(aViewer);
-  // Grid visibility/colors set in apply_grid_visibility_() / refresh_viewer_grid_()
-  // aViewer->SetGridEcho(true);
-  // aViewer->Grid()->SetDrawMode(Aspect_GridDrawMode::Aspect_GDM_Points);
-
-  // aViewer->SetComputedMode(false);
-  //   Enable anti-aliasing through the viewer
+  
   aViewer->SetDefaultComputedMode(true);
   aViewer->SetDefaultShadingModel(Graphic3d_TypeOfShadingModel_Phong);
   aViewer->SetDefaultLights();
@@ -268,7 +253,6 @@ void Occt_view::init_viewer()
   m_ctx->SetAutoActivateSelection(true); // Enable automatic selection
 
   auto highlight_style = m_ctx->HighlightStyle();
-  // highlight_style->SetDisplayMode(1);
   Handle(Graphic3d_AspectFillArea3d) fill_aspect = new Graphic3d_AspectFillArea3d();
   fill_aspect->SetAlphaMode(Graphic3d_AlphaMode::Graphic3d_AlphaMode_Blend);
   fill_aspect->SetColor(Quantity_Color(0.1, 0.1, 0.1, Quantity_TOC_RGB));
@@ -276,19 +260,7 @@ void Occt_view::init_viewer()
   highlight_style->SetBasicFillAreaAspect(fill_aspect);
   highlight_style->SetTransparency(0.8f); // Seems to not do anything
 
-  /*
-  Handle(Prs3d_LineAspect) line_aspect = new Prs3d_LineAspect(
-      Quantity_NOC_GREEN,  // Color
-      Aspect_TOL_SOLID,     // Line type
-      5.0                   // Width
-  );
-  //highlight_style->SetLineAspect(line_aspect);
-  highlight_style->SetWireAspect(line_aspect);
-  */
-
   m_ctx->SetHighlightStyle(highlight_style);
-  // m_ctx->SetAutomaticHilight(false);
-  //  m_ctx->SetSelectionStyle(highlight_style);
   m_ctx->SetPixelTolerance(10); // Picking?
 
   m_ctx->UpdateCurrentViewer();
@@ -304,16 +276,14 @@ void Occt_view::init_viewer()
   Handle(AIS_ViewCube) myViewCube = new AIS_ViewCube();
   myViewCube->SetTransformPersistence(
       new Graphic3d_TransformPers(Graphic3d_TMF_TriedronPers, Aspect_TOTP_RIGHT_LOWER, NCollection_Vec2<int>(100, 100)));
+
   myViewCube->Attributes()->SetDatumAspect(new Prs3d_DatumAspect());
-  // myViewCube->Attributes()->DatumAspect()->SetTextAspect(myTextStyle);
-  //  animation parameters
+  
+  // Animation parameters
   myViewCube->SetViewAnimation(myViewAnimation);
   myViewCube->SetFixedAnimationLoop(false);
   myViewCube->SetAutoStartAnimation(true);
   m_ctx->Display(myViewCube, false);
-
-  // opencascade::handle<Graphic3d_TextureEnv> env_map = new Graphic3d_TextureEnv("c:/src/pngwing.com.png");
-  // m_view->SetTextureEnv(env_map);
 
   m_default_material = Graphic3d_MaterialAspect(Graphic3d_NOM_CHROME);
 }
@@ -447,6 +417,7 @@ void Occt_view::init_default()
       aGlInfo += TCollection_AsciiString("  ") + aKey + ": " + aValue;
     }
   }
+
   Message::DefaultMessenger()->Send(TCollection_AsciiString("OpenGL info:\n") + aGlInfo, Message_Info);
 
   SetStickToRayOnRotation(true);
@@ -455,15 +426,9 @@ void Occt_view::init_default()
 
   m_view->SetProj(0, 0, 1); // Look up the Z-axis (top view)
   m_view->SetUp(0, 1, 0);   // Up direction along Y-axis
-
-  // Optional: Adjust zoom or fit content
   m_view->SetZoom(2.0);
-  //
 
   apply_grid_visibility_();
-
-  // load();
-  //  m_view->FitAll();
 }
 
 // Geometry related
@@ -472,6 +437,7 @@ ScreenCoords Occt_view::get_screen_coords(const gp_Pnt& point)
   int screen_x;
   int screen_y;
   m_view->Convert(point.X(), point.Y(), point.Z(), screen_x, screen_y);
+
   return ScreenCoords(dvec2(screen_x, screen_y));
 }
 
@@ -584,14 +550,17 @@ void Occt_view::cancel(Set_parent_mode set_parent_mode)
     shp_move().cancel();
     gui().set_mode(Mode::Normal);
     break;
+
   case Mode::Rotate:
     shp_rotate().cancel();
     gui().set_mode(Mode::Normal);
     break;
+
   case Mode::Scale:
     shp_scale().cancel();
     gui().set_mode(Mode::Normal);
     break;
+
   default:
     operation_canceled |= cancel_sketch_extrude_();
     operation_canceled |= curr_sketch().cancel_elm();
@@ -625,7 +594,6 @@ void Occt_view::revolve_selected(const double angle)
 void Occt_view::create_sketch_from_planar_face_(const ScreenCoords& screen_coords)
 {
   if (auto face = get_face_(screen_coords); face)
-  {
     if (auto pln = plane_from_face(*face); pln)
     {
       // Push only when we will create a sketch (avoids no-op undo on misclick).
@@ -642,7 +610,6 @@ void Occt_view::create_sketch_from_planar_face_(const ScreenCoords& screen_coord
     }
     else
       gui().show_message("Error: Selected face is not planar. Please select a planar face.");
-  }
 }
 
 void Occt_view::finalize_sketch_extrude_()
@@ -1243,9 +1210,9 @@ void set_grid_colors_on_viewer_(const V3d_Viewer_ptr& viewer, const glm::vec3& c
 
 Occt_view::Grid_layout Occt_view::compute_grid_layout_() const
 {
-  Grid_layout layout{};
-  const gp_Pln       ref_pln = m_cur_sketch ? m_cur_sketch->get_plane() : gp_Pln(grid_display_plane_());
-  const gp_Ax3       base_ax = ref_pln.Position();
+  Grid_layout  layout{};
+  const gp_Pln ref_pln = m_cur_sketch ? m_cur_sketch->get_plane() : gp_Pln(grid_display_plane_());
+  const gp_Ax3 base_ax = ref_pln.Position();
 
   const double step = m_occt_grid_rect.step > 0.0 ? m_occt_grid_rect.step : 10.0;
   const double pad  = m_occt_grid_rect.grid_padding >= 0.0 ? m_occt_grid_rect.grid_padding : 0.0;
@@ -1285,8 +1252,8 @@ Occt_view::Grid_layout Occt_view::compute_grid_layout_() const
   if (!has_bounds && !is_headless())
   {
     const ImGuiIO& io = ImGui::GetIO();
-    if (sketch_plane_view_aabb_2d(ref_pln, static_cast<double>(io.DisplaySize.x), static_cast<double>(io.DisplaySize.y),
-                                  min_u, min_v, max_u, max_v))
+    if (sketch_plane_view_aabb_2d(ref_pln, static_cast<double>(io.DisplaySize.x), static_cast<double>(io.DisplaySize.y), min_u,
+                                  min_v, max_u, max_v))
       has_bounds = true;
   }
 
@@ -1396,10 +1363,10 @@ void Occt_view::set_grid_colors(float r1, float g1, float b1, float r2, float g2
 
 Occt_grid_rect_params Occt_view::clamp_occt_grid_rect_params_(Occt_grid_rect_params g)
 {
-  constexpr double min_padding      = 0.0;
-  constexpr double min_step         = 1e-6;
-  constexpr double default_step     = 10.0;
-  constexpr double default_padding  = 1000.0;
+  constexpr double min_padding     = 0.0;
+  constexpr double min_step        = 1e-6;
+  constexpr double default_step    = 10.0;
+  constexpr double default_padding = 1000.0;
 
   if (!std::isfinite(g.grid_padding) || g.grid_padding < 0.0)
     g.grid_padding = default_padding;
@@ -1751,8 +1718,7 @@ void Occt_view::apply_sketch_list_measurement_hover_style_()
   uint8_t r{}, g{}, b{}, a{};
   gui().elm_list_hover_color_rgba(r, g, b, a);
   (void)a;
-  const float hover_rgb[3] = {static_cast<float>(r) / 255.f, static_cast<float>(g) / 255.f,
-                              static_cast<float>(b) / 255.f};
+  const float hover_rgb[3] = {static_cast<float>(r) / 255.f, static_cast<float>(g) / 255.f, static_cast<float>(b) / 255.f};
 
   const Length_dimension_style& style   = gui().length_dimension_style();
   const double                  base_w  = static_cast<double>(style.line_width);
@@ -1762,10 +1728,7 @@ void Occt_view::apply_sketch_list_measurement_hover_style_()
   m_ctx->Redisplay(m_sketch_list_measurement_hover, false);
 }
 
-void Occt_view::refresh_sketch_list_measurement_hover_highlight_()
-{
-  apply_sketch_list_measurement_hover_style_();
-}
+void Occt_view::refresh_sketch_list_measurement_hover_highlight_() { apply_sketch_list_measurement_hover_style_(); }
 
 void Occt_view::refresh_shape_list_hover_highlight()
 {
@@ -2220,7 +2183,7 @@ size_t Occt_view::redo_stack_size() const { return m_redo_stack.size(); }
 // Document format: 1 = legacy sketch edges could carry a 4th "dim" flag; 2 = length_dimensions array + 3-tuple edges.
 namespace
 {
-constexpr int k_ezy_file_format_version = 2;
+constexpr int k_ezy_file_format_version = 3;
 }
 
 // ---------------------------------------------------------------------------
@@ -2240,7 +2203,7 @@ std::string Occt_view::to_json() const
   // ---------------------------------------------------------------------------
   // Sketches / shapes
   for (const Sketch_ptr& s : m_sketches)
-    sketches.push_back(Sketch_json::to_json(*s));
+    sketches.push_back(Sketch_json::to_json(*s, m_assets));
 
   for (const Shp_ptr& s : m_shps)
   {
@@ -2549,6 +2512,7 @@ void Occt_view::new_file()
   push_undo_snapshot();
   remove(m_shps);
   clear_all(m_shps, m_sketches, m_cur_sketch);
+  m_assets.clear();
 
   create_default_sketch_();
   refresh_viewer_grid_();

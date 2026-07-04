@@ -27,7 +27,7 @@
 #include "utl_geom.h"
 #include "gui.h"
 #include "imgui.h"
-#include "gui_modes.h"
+#include "mode.h"
 #include "occt_view.h"
 #include "sketch_delta.h"
 #include "sketch_underlay.h"
@@ -3101,7 +3101,7 @@ bool Sketch::load_underlay_image(const std::string& file_bytes)
   const int            h    = std::get<2>(*dec);
   if (!m_underlay)
     m_underlay = std::make_unique<Sketch_underlay>();
-  if (!m_underlay->set_image_rgba(std::move(rgba), w, h))
+  if (!m_underlay->set_image_rgba(std::move(rgba), w, h, m_view.asset_store()))
     return false;
   uint8_t hr, hg, hb, ha;
   m_view.gui().underlay_highlight_color_rgba(hr, hg, hb, ha);
@@ -3460,7 +3460,9 @@ void Sketch::sync_permanent_node_annos_()
 
   const Mode mode = get_mode();
   // Show "+" markers for permanent user nodes in sketch modes and polar duplicate (which snaps to sketch nodes).
-  const bool show_permanent_marks    = is_sketch_mode(mode) || mode == Mode::Shape_polar_duplicate;
+  // Hide during face extrude so face selection is unobstructed.
+  const bool show_permanent_marks =
+      mode != Mode::Sketch_face_extrude && (is_sketch_mode(mode) || mode == Mode::Shape_polar_duplicate);
   const bool hide_for_operation_axis = operation_axis_suppresses_sketch_snap_();
 
   for (size_t i = 0, n = m_nodes.size(); i < n; ++i)

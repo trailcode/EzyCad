@@ -23,6 +23,7 @@
 #include <numbers>
 
 #include "utl_geom.h"
+#include "ezy_asset_store.h"
 
 using namespace glm;
 
@@ -270,7 +271,7 @@ void Sketch_underlay::remove_ais_(AIS_InteractiveContext& ctx)
   }
 }
 
-bool Sketch_underlay::set_image_rgba(std::vector<uint8_t>&& rgba, int w, int h)
+bool Sketch_underlay::set_image_rgba(std::vector<uint8_t>&& rgba, int w, int h, Ezy_asset_store& store)
 {
   if (w <= 0 || h <= 0 || rgba.size() < static_cast<std::size_t>(w) * static_cast<std::size_t>(h) * 4u)
     return false;
@@ -281,9 +282,10 @@ bool Sketch_underlay::set_image_rgba(std::vector<uint8_t>&& rgba, int w, int h)
   if (rgba.size() > k_max_rgba_bytes)
     return false;
 
-  m_rgba = std::move(rgba);
-  m_w    = w;
-  m_h    = h;
+  m_asset_id = store.register_rgba(rgba, w, h);
+  m_rgba     = store.get(m_asset_id);
+  m_w        = w;
+  m_h        = h;
 
   // Default: centered at plane origin, 0.1 model units per image pixel (adjust in UI).
   const double s = 0.1;
@@ -440,7 +442,7 @@ void Sketch_underlay::build_ais_(const gp_Pln& pln, AIS_InteractiveContext& ctx)
         return;
       face = faceMk.Face();
 
-      pix = make_pixmap_bottom_up_linear(m_rgba.data(), m_w, m_h, m_key_white_transparent, m_line_tint_enabled, m_tint_r,
+      pix = make_pixmap_bottom_up_linear(m_rgba->data(), m_w, m_h, m_key_white_transparent, m_line_tint_enabled, m_tint_r,
                                          m_tint_g, m_tint_b, m_tint_a);
     }
     else
@@ -480,7 +482,7 @@ void Sketch_underlay::build_ais_(const gp_Pln& pln, AIS_InteractiveContext& ctx)
         return;
       face = faceMk.Face();
 
-      pix = make_pixmap_bottom_up_warped(m_rgba.data(), m_w, m_h, m_axis_u, m_axis_v, m_key_white_transparent,
+      pix = make_pixmap_bottom_up_warped(m_rgba->data(), m_w, m_h, m_axis_u, m_axis_v, m_key_white_transparent,
                                          m_line_tint_enabled, m_tint_r, m_tint_g, m_tint_b, m_tint_a);
     }
   }
@@ -506,7 +508,7 @@ void Sketch_underlay::build_ais_(const gp_Pln& pln, AIS_InteractiveContext& ctx)
       return;
     face = faceMk.Face();
 
-    pix = make_pixmap_bottom_up_linear(m_rgba.data(), m_w, m_h, m_key_white_transparent, m_line_tint_enabled, m_tint_r,
+    pix = make_pixmap_bottom_up_linear(m_rgba->data(), m_w, m_h, m_key_white_transparent, m_line_tint_enabled, m_tint_r,
                                        m_tint_g, m_tint_b, m_tint_a);
 
     if (!pix.IsNull())
@@ -608,13 +610,16 @@ void Sketch_underlay::redisplay(AIS_InteractiveContext& ctx)
     ctx.Redisplay(m_ais, true);
 }
 
-nlohmann::json Sketch_underlay::to_json() const
+nlohmann::json Sketch_underlay::to_json(const Ezy_asset_store& store) const
 {
   using nlohmann::json;
   json j;
   if (!has_image())
     return j;
-  j["rgba_b64"]              = base64_encode(m_rgba.data(), m_rgba.size());
+  if (m_asset_id.empty())
+    return j;
+  (void)store;
+  j["asset"]                 = m_asset_id;
   j["w"]                     = m_w;
   j["h"]                     = m_h;
   j["base"]                  = json::object({{"x", m_base.X()}, {"y", m_base.Y()}});
@@ -629,27 +634,40 @@ nlohmann::json Sketch_underlay::to_json() const
   return j;
 }
 
-bool Sketch_underlay::from_json(const nlohmann::json& j)
+bool Sketch_underlay::from_json(const nlohmann::json& j, Ezy_asset_store& store)
 {
   using nlohmann::json;
-  if (!j.is_object() || !j.contains("rgba_b64") || !j.contains("w") || !j.contains("h"))
+  if (!j.is_object() || !j.contains("w") || !j.contains("h"))
     return false;
   const int w = j.at("w").get<int>();
   const int h = j.at("h").get<int>();
   if (w <= 0 || h <= 0 || w > k_max_image_dim || h > k_max_image_dim)
     return false;
 
-  std::vector<uint8_t> decoded;
-  if (!base64_decode(j.at("rgba_b64").get<std::string>(), decoded))
-    return false;
-  if (decoded.size() < static_cast<std::size_t>(w) * static_cast<std::size_t>(h) * 4u)
-    return false;
-  if (decoded.size() > k_max_rgba_bytes)
+  if (j.contains("asset") && j["asset"].is_string())
+  {
+    m_asset_id = j["asset"].get<std::string>();
+    m_rgba     = store.get(m_asset_id);
+    if (!m_rgba || m_rgba->size() < static_cast<std::size_t>(w) * static_cast<std::size_t>(h) * 4u)
+      return false;
+  }
+  else if (j.contains("rgba_b64"))
+  {
+    std::vector<uint8_t> decoded;
+    if (!base64_decode(j.at("rgba_b64").get<std::string>(), decoded))
+      return false;
+    if (decoded.size() < static_cast<std::size_t>(w) * static_cast<std::size_t>(h) * 4u)
+      return false;
+    if (decoded.size() > k_max_rgba_bytes)
+      return false;
+    m_asset_id = store.register_rgba(decoded, w, h);
+    m_rgba     = store.get(m_asset_id);
+  }
+  else
     return false;
 
-  m_rgba = std::move(decoded);
-  m_w    = w;
-  m_h    = h;
+  m_w = w;
+  m_h = h;
 
   if (j.contains("base"))
     m_base = gp_Pnt2d(j["base"].at("x").get<double>(), j["base"].at("y").get<double>());

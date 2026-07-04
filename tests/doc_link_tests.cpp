@@ -1,7 +1,7 @@
 #include <gtest/gtest.h>
 
 #include "gui.h"
-#include "gui_modes.h"
+#include "mode.h"
 
 #include <string>
 #include <vector>

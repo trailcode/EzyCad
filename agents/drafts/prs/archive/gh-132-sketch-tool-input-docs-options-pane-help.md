@@ -10,7 +10,7 @@ Docs + UI: document Tab + Shift+Tab for Operation Axis / Rectangles / Slot / Cir
 
 - Bring the user guide (usage-sketch.md) up to date for every remaining sketch creation tool so it documents both precise distance (Tab) and angle (Shift+Tab) during placement, with full "Angle Constraint" subsections, updated Features/How-to/Shortcuts/Tips, and notes on use cases (future snapping, etc.).
 - Special handling for Slot (first edge = length/orientation of the slot, radius point = the "second edge dim" / arc radius) and for tools that auto-align (e.g. Rectangle Two Points).
-- Add (or ensure) a top-level tool/mode header using `current_mode_description()` followed by a small "?" button in the Options pane for *all* modes that render options content, including pure Normal (Inspection) and Sketch_inspection_mode.
+- Add (or ensure) a top-level tool/mode header using `current_mode_description_()` followed by a small "?" button in the Options pane for *all* modes that render options content, including pure Normal (Inspection) and Sketch_inspection_mode.
 - The "?" buttons use a central `get_doc_url_for_mode(Mode)` map (with runtime size assert vs Mode::_count) so future tools automatically get correct contextual links (e.g. #operation-axis-tool, #slot-creation-tool, #rectangle-tool-center-point, etc.).
 - Added the generic `agents/drafts/issues/_template.md` and `agents/drafts/prs/_template.md` templates and referenced them from agents/README.md (for future drafts).
 - Minor supporting changes: doc style guide note about the new ? buttons, unit test for link existence, etc.
@@ -22,7 +22,7 @@ This makes the in-app Options experience (headers + help) and the written user g
 - `docs/usage-sketch.md` (main user-guide updates for the listed tools)
 - `src/gui_mode.cpp` (header+button calls for Normal + new Sketch_inspection_mode handler, map + assert, options_doc_help_button_ helper)
 - `src/gui.h` (declarations)
-- `src/gui.cpp` (current_mode_description lookup from toolbar data)
+- `src/gui.cpp` (current_mode_description_ lookup from toolbar data)
 - `agents/drafts/issues/archive/gh-131-sketch-tool-precise-input-docs-and-options-help.md` (this issue draft)
 - `agents/drafts/prs/archive/gh-132-sketch-tool-input-docs-options-pane-help.md` (this PR draft)
 - `agents/README.md` (added references to the new generic templates)

@@ -26,6 +26,7 @@
 #include "shp_rotate.h"
 #include "shp_scale.h"
 #include "utl_types.h"
+#include "ezy_asset_store.h"
 
 class Delta;
 class GUI;
@@ -84,6 +85,8 @@ public:
 
   std::string          to_json() const;
   void                 load(const std::string& json_str, bool restore_view = true);
+  Ezy_asset_store&     asset_store() { return m_assets; }
+  const Ezy_asset_store& asset_store() const { return m_assets; }
   [[nodiscard]] Status import_step(const std::string& step_data);
   bool                 import_ply(const std::string& ply_bytes);
 
@@ -337,6 +340,7 @@ private:
   std::vector<Undo_entry> m_undo_stack;
   std::vector<Undo_entry> m_redo_stack;
   bool                    m_restoring{false};
+  Ezy_asset_store         m_assets;
 
   // --------------------------------------------------------------------
   // Dimension related

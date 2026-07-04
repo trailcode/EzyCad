@@ -16,6 +16,8 @@
 #include "sketch.h"
 #include "sketch_nodes.h"
 #include "sketch_underlay.h"
+#include "ezy_asset_store.h"
+#include "occt_view.h"
 #include "utl_json.h"
 
 using json = nlohmann::json;
@@ -135,7 +137,7 @@ void Sketch_json::from_json_legacy_coords_(Sketch& ret, const json& j,
     }
 }
 
-nlohmann::json Sketch_json::to_json(const Sketch& sketch)
+nlohmann::json Sketch_json::to_json(const Sketch& sketch, const Ezy_asset_store& assets)
 {
   json j;
   j["isCurrent"] = sketch.is_current();
@@ -223,7 +225,7 @@ nlohmann::json Sketch_json::to_json(const Sketch& sketch)
   }
 
   if (sketch.m_underlay && sketch.m_underlay->has_image())
-    j["underlay"] = sketch.m_underlay->to_json();
+    j["underlay"] = sketch.m_underlay->to_json(assets);
 
   if (sketch.m_operation_axis.has_value())
   {
@@ -303,7 +305,7 @@ Sketch::sptr Sketch_json::from_json(Occt_view& view, const nlohmann::json& j)
   if (j.contains("underlay") && j["underlay"].is_object())
   {
     auto ul = std::make_unique<Sketch_underlay>();
-    if (ul->from_json(j["underlay"]))
+    if (ul->from_json(j["underlay"], view.asset_store()))
     {
       ret->m_underlay = std::move(ul);
       if (ret->m_visible && ret->m_underlay->has_image())

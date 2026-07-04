@@ -8,6 +8,7 @@
 #include <gp_Pnt2d.hxx>
 #include <gp_Vec2d.hxx>
 #include <memory>
+#include <optional>
 #include <string> // Added for log messages
 #include <string_view>
 #include <unordered_map>
@@ -19,7 +20,7 @@
 #include "imgui.h"
 #include "imgui_markdown.h"
 #include "utl_log.h"
-#include "gui_modes.h"
+#include "mode.h"
 #include "occt_view.h"
 #include "shp_info.h"
 #include "utl_types.h"
@@ -148,8 +149,7 @@ public:
   void        on_mouse_scroll(double xoffset, double yoffset);
   void        on_resize(int width, int height);
   Mode        get_mode() const { return m_mode; }
-  const char* current_mode_description() const;
-
+  
   static std::string get_doc_url_for_mode(Mode mode);
   Chamfer_mode       get_chamfer_mode() const { return m_chamfer_mode; }
   Fillet_mode        get_fillet_mode() const { return m_fillet_mode; }
@@ -223,13 +223,13 @@ public:
 #ifdef __EMSCRIPTEN__
   void open_file_dialog_async();   // Emscripten: hidden <input type="file">; no custom title (browser UI)
   void import_file_dialog_async(); // STEP / PLY import (routes to on_import_file)
-  void save_file_dialog_async(const char* title, const std::string& default_file, const std::string& json_str);
+  void save_file_dialog_async(const char* title, const std::string& default_file, const std::vector<uint8_t>& ezy_bytes);
   void download_blob_async(const std::string& default_filename, const std::string& data);
   /// After browser download save, remember basename for window title and Save-as default.
   void note_saved_project_filename(const std::string& filename);
 #endif
 
-  void on_file(const std::string& file_path, const std::string& json_str, bool announce_load = true);
+  void on_file(const std::string& file_path, const std::string& file_bytes, bool announce_load = true);
   void on_import_file(const std::string& file_path, const std::string& file_data);
   /// Emscripten `on_sketch_underlay_selected` routes here (must be public for C callback).
   void on_sketch_underlay_file(const std::string& file_path, const std::string& file_bytes);
@@ -293,6 +293,8 @@ private:
   void options_sketch_add_circle_three_pts_mode_();
   void options_sketch_add_slot_mode_();
 
+  const char* current_mode_description_() const;
+
   // Options related helpers
   void options_doc_help_button_();
   void doc_help_button_(const char* scope, int line, const char* tooltip, const char* doc_url, bool trailing_same_line = false);
@@ -315,6 +317,8 @@ private:
   void         menu_bar_();
   void         toolbar_();
   void         message_status_window_();
+
+  // Add related
   void         add_box_dialog_();
   void         add_pyramid_dialog_();
   void         add_sphere_dialog_();
@@ -322,6 +326,8 @@ private:
   void         add_cone_dialog_();
   void         add_torus_dialog_();
   void         add_sketch_dialog_();
+  void         add_menu_items_();
+
   void         about_dialog_();
   void         ensure_about_assets_();
   static float list_name_field_width_(const ImGuiStyle& st, float max_name_text_w);
@@ -365,13 +371,17 @@ private:
   /// Native only: store path in settings after a successful Open (for optional startup load).
   void                      persist_last_opened_project_path_(const std::string& path);
   [[nodiscard]] std::string serialized_project_json_() const;
+  [[nodiscard]] std::vector<uint8_t> serialized_project_ezy_() const;
   void                      open_url_(const std::string& url);
   void                      update_window_title_();
   [[nodiscard]] std::string project_title_segment_() const;
   /// Parses a float from manual dist/angle ImGui text fields (trimmed, full-string match).
   [[nodiscard]] static bool parse_dist_text_to_float_(const char* buf, float& out);
-  /// True if JSON parses and looks like an EzyCad project document (`sketches` array[).
-  [[nodiscard]] static bool is_valid_project_json_(const std::string& s);
+  /// True if bytes are a valid v3 zip or legacy JSON EzyCad project.
+  [[nodiscard]] static bool is_valid_project_file_(const std::string& bytes);
+  [[nodiscard]] static bool is_valid_project_manifest_(const std::string& manifest_json);
+  [[nodiscard]] static std::optional<std::string> manifest_from_project_file_(const std::string& file_bytes,
+                                                                               Occt_view& view, bool replace_assets);
 
   /// OCCT standard material display names for ImGui combos (index matches \c Graphic3d_NameOfMaterial).
   [[nodiscard]] static const std::vector<std::string>& occt_material_combo_labels_();

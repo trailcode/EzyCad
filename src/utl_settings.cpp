@@ -1,5 +1,7 @@
 #include "utl_settings.h"
 
+#include "ezy_io.h"
+
 #include <cassert>
 #include <cstdlib>
 #include <filesystem>
@@ -200,9 +202,14 @@ std::string load_user_startup_project()
   });
   if (!ptr)
     return {};
-  std::string result((const char*)ptr);
+  std::string stored((const char*)ptr);
   free(ptr);
-  return result;
+  if (stored.rfind("B64:", 0) == 0)
+  {
+    const std::vector<uint8_t> decoded = ezy_base64_decode(stored.substr(4));
+    return std::string(reinterpret_cast<const char*>(decoded.data()), decoded.size());
+  }
+  return stored;
 #else
   const std::filesystem::path p = user_startup_project_path();
   if (p.empty())
@@ -216,10 +223,11 @@ std::string load_user_startup_project()
 #endif
 }
 
-bool save_user_startup_project(const std::string& json)
+bool save_user_startup_project(const std::vector<uint8_t>& ezy_bytes)
 {
 #ifdef __EMSCRIPTEN__
-  EM_ASM_({ localStorage.setItem('ezycad_startup_ezy', UTF8ToString($0)); }, json.c_str());
+  const std::string b64 = std::string("B64:") + ezy_base64_encode(ezy_bytes);
+  EM_ASM_({ localStorage.setItem('ezycad_startup_ezy', UTF8ToString($0)); }, b64.c_str());
   return true;
 #else
   const std::filesystem::path p = user_startup_project_path();
@@ -232,7 +240,7 @@ bool save_user_startup_project(const std::string& json)
   std::ofstream f(p, std::ios::binary);
   if (!f)
     return false;
-  f.write(json.data(), static_cast<std::streamsize>(json.size()));
+  f.write(reinterpret_cast<const char*>(ezy_bytes.data()), static_cast<std::streamsize>(ezy_bytes.size()));
   return true;
 #endif
 }

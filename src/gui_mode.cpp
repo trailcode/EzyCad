@@ -15,7 +15,7 @@
 #include "gui.h"
 #include "imgui.h"
 #include "imgui_internal.h"
-#include "gui_modes.h"
+#include "mode.h"
 #include "occt_view.h"
 #include "sketch.h"
 #include "utl_occt.h"
@@ -26,45 +26,14 @@ using namespace glm;
 
 namespace
 {
-
 constexpr ImGuiTableFlags k_options_table_flags          = ImGuiTableFlags_SizingFixedFit;
 constexpr float           k_options_control_col_w        = 148.f;
 constexpr float           k_options_sketch_control_col_w = 176.f;
 
-void options_table_setup_columns_(float label_col_w, float control_col_w)
-{
-  ImGui::TableSetupColumn("label", ImGuiTableColumnFlags_WidthFixed, label_col_w);
-  ImGui::TableSetupColumn("control", ImGuiTableColumnFlags_WidthFixed, control_col_w);
-}
-
-void options_right_aligned_label_(const char* text)
-{
-  ImGui::AlignTextToFramePadding();
-  const float text_w  = ImGui::CalcTextSize(text).x;
-  const float col_w   = ImGui::GetColumnWidth();
-  const float x0      = ImGui::GetCursorPosX();
-  const float right_x = x0 + std::max(0.0f, col_w - text_w - ImGui::GetStyle().CellPadding.x * 2.0f);
-  ImGui::SetCursorPosX(right_x);
-  ImGui::TextUnformatted(text);
-}
-
-// Up to `max_frac` digits after the decimal, strip trailing zeros (and a trailing '.').
-void format_double_trim_fraction(char* dst, std::size_t dst_sz, double v, int max_frac)
-{
-  char tmp[64];
-  std::snprintf(tmp, sizeof tmp, "%.*f", max_frac, v);
-  std::size_t len = std::strlen(tmp);
-  while (len > 0 && tmp[len - 1] == '0')
-    --len;
-  if (len > 0 && tmp[len - 1] == '.')
-    --len;
-  tmp[len] = '\0';
-  if (std::strcmp(tmp, "-0") == 0)
-    std::snprintf(dst, dst_sz, "0");
-  else
-    std::snprintf(dst, dst_sz, "%s", tmp);
-}
-
+void options_table_setup_columns_(float label_col_w, float control_col_w);
+void options_right_aligned_label_(const char* text);
+void format_double_trim_fraction_(char* dst, std::size_t dst_sz, double v, int max_frac);
+void set_default_material_(const std::vector<std::string>& material_names, int current_mat, Occt_view::uptr& view);
 } // namespace
 
 std::string GUI::get_doc_url_for_mode(Mode mode)
@@ -101,11 +70,21 @@ std::string GUI::get_doc_url_for_mode(Mode mode)
 
   auto it = doc_urls.find(mode);
   if (it != doc_urls.end() && !it->second.empty())
-  {
     return it->second;
-  }
+
   // fallback to main guide
   return "https://ezycad.readthedocs.io/en/latest/usage.html";
+}
+
+const char* GUI::current_mode_description_() const
+{
+  for (const auto& b : m_toolbar_buttons)
+    if (b.data.index() == 0) // holds a Mode
+      if (std::get<Mode>(b.data) == m_mode)
+        return b.tooltip;
+
+  EZY_ASSERT_MSG(false, "Current mode not found in toolbar buttons");
+  return "";
 }
 
 void GUI::options_doc_help_button_()
@@ -128,28 +107,30 @@ void GUI::set_mode(Mode mode)
 void GUI::set_parent_mode()
 {
   static std::map<Mode, Mode> parent_modes = {
-      {Mode::Normal, Mode::Normal},
-      {Mode::Move, Mode::Normal},
-      {Mode::Scale, Mode::Normal},
-      {Mode::Rotate, Mode::Normal},
-      {Mode::Sketch_inspection_mode, Mode::Normal},
-      {Mode::Sketch_from_planar_face, Mode::Normal},
-      {Mode::Sketch_face_extrude, Mode::Normal},
-      {Mode::Shape_chamfer, Mode::Normal},
-      {Mode::Shape_fillet, Mode::Normal},
-      {Mode::Shape_polar_duplicate, Mode::Normal},
-      {Mode::Sketch_add_node, Mode::Sketch_inspection_mode},
-      {Mode::Sketch_add_edge, Mode::Sketch_inspection_mode},
-      {Mode::Sketch_add_multi_edges, Mode::Sketch_inspection_mode},
-      {Mode::Sketch_add_seg_circle_arc, Mode::Sketch_inspection_mode},
-      {Mode::Sketch_operation_axis, Mode::Sketch_inspection_mode},
-      {Mode::Sketch_add_square, Mode::Sketch_inspection_mode},
-      {Mode::Sketch_add_rectangle, Mode::Sketch_inspection_mode},
-      {Mode::Sketch_add_rectangle_center_pt, Mode::Sketch_inspection_mode},
-      {Mode::Sketch_add_circle, Mode::Sketch_inspection_mode},
-      {Mode::Sketch_add_circle_3_pts, Mode::Sketch_inspection_mode},
-      {Mode::Sketch_add_slot, Mode::Sketch_inspection_mode},
-      {Mode::Sketch_dim_anno, Mode::Sketch_inspection_mode},
+      // clang-format off
+      {Mode::Normal,                          Mode::Normal},
+      {Mode::Move,                            Mode::Normal},
+      {Mode::Scale,                           Mode::Normal},
+      {Mode::Rotate,                          Mode::Normal},
+      {Mode::Sketch_inspection_mode,          Mode::Normal},
+      {Mode::Sketch_from_planar_face,         Mode::Normal},
+      {Mode::Sketch_face_extrude,             Mode::Normal},
+      {Mode::Shape_chamfer,                   Mode::Normal},
+      {Mode::Shape_fillet,                    Mode::Normal},
+      {Mode::Shape_polar_duplicate,           Mode::Normal},
+      {Mode::Sketch_add_node,                 Mode::Sketch_inspection_mode},
+      {Mode::Sketch_add_edge,                 Mode::Sketch_inspection_mode},
+      {Mode::Sketch_add_multi_edges,          Mode::Sketch_inspection_mode},
+      {Mode::Sketch_add_seg_circle_arc,       Mode::Sketch_inspection_mode},
+      {Mode::Sketch_operation_axis,           Mode::Sketch_inspection_mode},
+      {Mode::Sketch_add_square,               Mode::Sketch_inspection_mode},
+      {Mode::Sketch_add_rectangle,            Mode::Sketch_inspection_mode},
+      {Mode::Sketch_add_rectangle_center_pt,  Mode::Sketch_inspection_mode},
+      {Mode::Sketch_add_circle,               Mode::Sketch_inspection_mode},
+      {Mode::Sketch_add_circle_3_pts,         Mode::Sketch_inspection_mode},
+      {Mode::Sketch_add_slot,                 Mode::Sketch_inspection_mode},
+      {Mode::Sketch_dim_anno,                 Mode::Sketch_inspection_mode},
+      // clang-format on
   };
 
   static bool check = [&]()
@@ -184,10 +165,12 @@ void GUI::on_key(int key, int scancode, int action, int mods)
     case GLFW_KEY_KP_ADD:
       zoom_in = true;
       break;
+
     case GLFW_KEY_KP_SUBTRACT:
     case GLFW_KEY_MINUS:
       zoom_out = true;
       break;
+
     case GLFW_KEY_EQUAL:
       if ((mods & GLFW_MOD_SHIFT) != 0)
       {
@@ -195,6 +178,7 @@ void GUI::on_key(int key, int scancode, int action, int mods)
         zoom_in_shift_is_structural = true;
       }
       break;
+
     default:
       break;
     }
@@ -333,6 +317,7 @@ void GUI::on_key(int key, int scancode, int action, int mods)
         m_view->angle_input(screen_coords);
       else
         m_view->dimension_input(screen_coords);
+
       break;
     }
 
@@ -355,12 +340,12 @@ void GUI::on_key(int key, int scancode, int action, int mods)
       m_view->delete_selected();
       break;
 
-    case GLFW_KEY_G: set_mode(Mode::Move); break;
-    case GLFW_KEY_R: set_mode(Mode::Rotate); break;
+    case GLFW_KEY_G: set_mode(Mode::Move);                break;
+    case GLFW_KEY_R: set_mode(Mode::Rotate);              break;
     case GLFW_KEY_E: set_mode(Mode::Sketch_face_extrude); break;
-    case GLFW_KEY_S: set_mode(Mode::Scale); break;
-    case GLFW_KEY_C: set_mode(Mode::Shape_chamfer); break;
-    case GLFW_KEY_F: set_mode(Mode::Shape_fillet); break;
+    case GLFW_KEY_S: set_mode(Mode::Scale);               break;
+    case GLFW_KEY_C: set_mode(Mode::Shape_chamfer);       break;
+    case GLFW_KEY_F: set_mode(Mode::Shape_fillet);        break;
       // clang-format on
     default:
       break;
@@ -442,7 +427,7 @@ void GUI::options_normal_mode_()
 {
   EZY_ASSERT(get_mode() == Mode::Normal);
 
-  ImGui::TextUnformatted(current_mode_description());
+  ImGui::TextUnformatted(current_mode_description_());
   options_doc_help_button_();
   ImGui::Separator();
 
@@ -468,6 +453,7 @@ void GUI::options_normal_mode_()
 
       ImGui::EndCombo();
     }
+
     ImGui::SameLine(0.0f, ImGui::GetStyle().ItemInnerSpacing.x);
     GUI_DOC_HELP_("Hotkeys: 1-9 (Normal mode) set filter when the 3D view has focus, not while typing in UI. Click ? to "
                   "open the user guide.",
@@ -482,17 +468,13 @@ void GUI::options_normal_mode_()
   int                             current_mat    = int(m_view->get_default_material().Name());
   if (current_mat < 0 || current_mat >= static_cast<int>(material_names.size()))
     current_mat = 0;
+
   const float material_row_w = label_col_w + k_options_control_col_w;
   ImGui::SetNextItemWidth(std::max(ImGui::GetContentRegionAvail().x, material_row_w));
   if (ImGui::BeginCombo("##default_material_normal", material_names[static_cast<size_t>(current_mat)].data(),
                         ImGuiComboFlags_HeightSmall))
   {
-    for (int i = 0; i < static_cast<int>(material_names.size()); i++)
-      if (ImGui::Selectable(material_names[static_cast<size_t>(i)].data(), current_mat == i))
-      {
-        Graphic3d_MaterialAspect mat(static_cast<Graphic3d_NameOfMaterial>(i));
-        m_view->set_default_material(mat);
-      }
+    set_default_material_(material_names, current_mat, m_view);
     ImGui::EndCombo();
   }
 
@@ -503,7 +485,7 @@ void GUI::options_move_mode_()
 {
   EZY_ASSERT(get_mode() == Mode::Move);
 
-  ImGui::TextUnformatted(current_mode_description());
+  ImGui::TextUnformatted(current_mode_description_());
   options_doc_help_button_();
   ImGui::Separator();
   ImGui::TextUnformatted("Constrain axis:");
@@ -523,7 +505,7 @@ void GUI::options_scale_mode_()
 {
   EZY_ASSERT(get_mode() == Mode::Scale);
 
-  ImGui::TextUnformatted(current_mode_description());
+  ImGui::TextUnformatted(current_mode_description_());
   options_doc_help_button_();
   ImGui::Separator();
 
@@ -534,7 +516,7 @@ void GUI::options_rotate_mode_()
 {
   EZY_ASSERT(get_mode() == Mode::Rotate);
 
-  ImGui::TextUnformatted(current_mode_description());
+  ImGui::TextUnformatted(current_mode_description_());
   options_doc_help_button_();
   ImGui::Separator();
 
@@ -561,7 +543,7 @@ void GUI::options_shape_chamfer_mode_()
   float label_col_w = std::max(ImGui::CalcTextSize("Chamfer Mode").x, ImGui::CalcTextSize("Chamfer dist").x);
   label_col_w += ImGui::GetStyle().CellPadding.x * 2.0f + 8.0f;
 
-  ImGui::TextUnformatted(current_mode_description());
+  ImGui::TextUnformatted(current_mode_description_());
   options_doc_help_button_();
   ImGui::Separator();
 
@@ -589,7 +571,7 @@ void GUI::options_shape_chamfer_mode_()
     const ImGuiID chamfer_input_id = ImGui::GetID("##micron");
     ImGuiContext* ctx              = ImGui::GetCurrentContext();
     if (ctx && ctx->ActiveId != chamfer_input_id)
-      format_double_trim_fraction(chamfer_buf, sizeof chamfer_buf, chamfer_dist, 6);
+      format_double_trim_fraction_(chamfer_buf, sizeof chamfer_buf, chamfer_dist, 6);
 
     ImGui::TableNextRow();
     ImGui::TableSetColumnIndex(0);
@@ -605,6 +587,7 @@ void GUI::options_shape_chamfer_mode_()
       {
         while (*end == ' ' || *end == '\t')
           ++end;
+
         if (*end == '\0')
           m_view->shp_chamfer().set_chamfer_dist(p * scale);
       }
@@ -623,7 +606,7 @@ void GUI::options_shape_fillet_mode_()
   float label_col_w = std::max(ImGui::CalcTextSize("Fillet Mode").x, ImGui::CalcTextSize("Fillet radius").x);
   label_col_w += ImGui::GetStyle().CellPadding.x * 2.0f + 8.0f;
 
-  ImGui::TextUnformatted(current_mode_description());
+  ImGui::TextUnformatted(current_mode_description_());
   options_doc_help_button_();
   ImGui::Separator();
 
@@ -651,7 +634,7 @@ void GUI::options_shape_fillet_mode_()
     const ImGuiID fillet_input_id = ImGui::GetID("##micron");
     ImGuiContext* ctx             = ImGui::GetCurrentContext();
     if (ctx && ctx->ActiveId != fillet_input_id)
-      format_double_trim_fraction(fillet_buf, sizeof fillet_buf, fillet_radius, 6);
+      format_double_trim_fraction_(fillet_buf, sizeof fillet_buf, fillet_radius, 6);
 
     ImGui::TableNextRow();
     ImGui::TableSetColumnIndex(0);
@@ -697,7 +680,7 @@ void GUI::options_shape_polar_duplicate_mode_()
   label_col_w       = std::max(label_col_w, ImGui::CalcTextSize("Material").x);
   label_col_w += ImGui::GetStyle().CellPadding.x * 2.0f + 8.0f;
 
-  ImGui::TextUnformatted(current_mode_description());
+  ImGui::TextUnformatted(current_mode_description_());
   options_doc_help_button_();
   ImGui::Separator();
 
@@ -754,12 +737,7 @@ void GUI::options_shape_polar_duplicate_mode_()
     if (ImGui::BeginCombo("##default_material_polar_dup", material_names[static_cast<size_t>(current_item)].data(),
                           ImGuiComboFlags_HeightSmall))
     {
-      for (int i = 0; i < static_cast<int>(material_names.size()); i++)
-        if (ImGui::Selectable(material_names[static_cast<size_t>(i)].data(), current_item == i))
-        {
-          Graphic3d_MaterialAspect mat(static_cast<Graphic3d_NameOfMaterial>(i));
-          m_view->set_default_material(mat);
-        }
+      set_default_material_(material_names, current_item, m_view);
       ImGui::EndCombo();
     }
 
@@ -773,7 +751,7 @@ void GUI::options_sketch_from_planer_face_mode_()
 {
   EZY_ASSERT(get_mode() == Mode::Sketch_from_planar_face);
 
-  ImGui::TextUnformatted(current_mode_description());
+  ImGui::TextUnformatted(current_mode_description_());
   options_doc_help_button_();
   ImGui::Separator();
 
@@ -843,12 +821,7 @@ void GUI::options_sketch_face_extrude_mode_()
     if (ImGui::BeginCombo("##default_material_sketch_extrude", material_names[static_cast<size_t>(current_item)].data(),
                           ImGuiComboFlags_HeightSmall))
     {
-      for (int i = 0; i < static_cast<int>(material_names.size()); i++)
-        if (ImGui::Selectable(material_names[static_cast<size_t>(i)].data(), current_item == i))
-        {
-          Graphic3d_MaterialAspect mat(static_cast<Graphic3d_NameOfMaterial>(i));
-          m_view->set_default_material(mat);
-        }
+      set_default_material_(material_names, current_item, m_view);
       ImGui::EndCombo();
     }
 
@@ -986,6 +959,7 @@ void GUI::options_orthographic_projection_()
     save_occt_view_settings();
     m_view->apply_camera_projection();
   }
+
   ImGui::SameLine(0.0f, ImGui::GetStyle().ItemInnerSpacing.x);
   GUI_DOC_HELP_("Use an orthographic camera in non-sketch modes (no perspective foreshortening). Click ? to open the user "
                 "guide.",
@@ -994,7 +968,7 @@ void GUI::options_orthographic_projection_()
 
 void GUI::options_sketch_common_()
 {
-  ImGui::TextUnformatted(current_mode_description());
+  ImGui::TextUnformatted(current_mode_description_());
   options_doc_help_button_();
 
   ImGui::Separator();
@@ -1030,6 +1004,7 @@ void GUI::options_sketch_common_()
       for (int i = 0; i < static_cast<int>(k_snap_guide_mode_labels.size()); ++i)
         if (ImGui::Selectable(k_snap_guide_mode_labels[static_cast<size_t>(i)], i == snap_mode))
           Sketch_nodes::set_snap_guide_mode(static_cast<Sketch_nodes::Snap_guide_mode>(i));
+
       ImGui::EndCombo();
     }
 
@@ -1078,6 +1053,7 @@ void GUI::sync_sketch_add_mid_pt_edges_if_applicable_()
   case Mode::Sketch_add_slot:
     Sketch::set_add_mid_pt_edges(add_mid_pt_edges_for_mode_(m_mode));
     break;
+
   default:
     break;
   }
@@ -1090,12 +1066,15 @@ bool GUI::add_mid_pt_edges_for_mode_(const Mode mode) const
   case Mode::Sketch_add_edge:
   case Mode::Sketch_add_multi_edges:
     return m_add_mid_pt_line_edges;
+
   case Mode::Sketch_add_square:
   case Mode::Sketch_add_rectangle:
   case Mode::Sketch_add_rectangle_center_pt:
     return m_add_mid_pt_rect_edges;
+
   case Mode::Sketch_add_slot:
     return m_add_mid_pt_slot_edges;
+
   default:
     return false;
   }
@@ -1110,6 +1089,7 @@ void GUI::options_sketch_add_midpoint_nodes_checkbox_(bool& setting)
     Sketch::set_add_mid_pt_edges(add_mids);
     save_occt_view_settings();
   }
+
   ImGui::SameLine(0.0f, ImGui::GetStyle().ItemInnerSpacing.x);
   GUI_DOC_HELP_("When on, new straight edges from this tool get an automatic midpoint node (for center snapping). "
                 "Saved per tool group in Settings. Click ? to open the user guide.",
@@ -1134,6 +1114,7 @@ float GUI::options_sketch_label_col_w_() const
     sketch_label_col_w = std::max(sketch_label_col_w, ImGui::CalcTextSize("Both sides").x);
     sketch_label_col_w = std::max(sketch_label_col_w, ImGui::CalcTextSize("Material").x);
   }
+
   sketch_label_col_w += ImGui::GetStyle().CellPadding.x * 2.0f + 8.0f;
   return sketch_label_col_w;
 }
@@ -1163,6 +1144,7 @@ void GUI::on_key_rotate_mode_(int key)
       m_view->shp_rotate().set_rotation_axis(Rotation_axis::View_to_object);
     else
       m_view->shp_rotate().set_rotation_axis(Rotation_axis::X_axis);
+
     break;
 
   case GLFW_KEY_Y:
@@ -1170,6 +1152,7 @@ void GUI::on_key_rotate_mode_(int key)
       m_view->shp_rotate().set_rotation_axis(Rotation_axis::View_to_object);
     else
       m_view->shp_rotate().set_rotation_axis(Rotation_axis::Y_axis);
+
     break;
 
   case GLFW_KEY_Z:
@@ -1177,6 +1160,7 @@ void GUI::on_key_rotate_mode_(int key)
       m_view->shp_rotate().set_rotation_axis(Rotation_axis::View_to_object);
     else
       m_view->shp_rotate().set_rotation_axis(Rotation_axis::Z_axis);
+
     break;
   }
 }
@@ -1188,19 +1172,65 @@ void GUI::on_key_move_mode_(int key)
 
   switch (key)
   {
-  case GLFW_KEY_X:
-    opts.constr_axis_x ^= 1;
-    break;
-  case GLFW_KEY_Y:
-    opts.constr_axis_y ^= 1;
-    break;
-  case GLFW_KEY_Z:
-    opts.constr_axis_z ^= 1;
-    break;
+    // clang-format off
+  case GLFW_KEY_X: opts.constr_axis_x ^= 1; break;
+  case GLFW_KEY_Y: opts.constr_axis_y ^= 1; break;
+  case GLFW_KEY_Z: opts.constr_axis_z ^= 1; break;
+    // clang-format on
   case GLFW_KEY_TAB:
     m_view->shp_move().show_dist_edit(screen_coords);
     break;
+
   default:
     break;
   }
 }
+
+namespace
+{
+void options_table_setup_columns_(float label_col_w, float control_col_w)
+{
+  ImGui::TableSetupColumn("label", ImGuiTableColumnFlags_WidthFixed, label_col_w);
+  ImGui::TableSetupColumn("control", ImGuiTableColumnFlags_WidthFixed, control_col_w);
+}
+
+void options_right_aligned_label_(const char* text)
+{
+  ImGui::AlignTextToFramePadding();
+  const float text_w  = ImGui::CalcTextSize(text).x;
+  const float col_w   = ImGui::GetColumnWidth();
+  const float x0      = ImGui::GetCursorPosX();
+  const float right_x = x0 + std::max(0.0f, col_w - text_w - ImGui::GetStyle().CellPadding.x * 2.0f);
+  ImGui::SetCursorPosX(right_x);
+  ImGui::TextUnformatted(text);
+}
+
+// Up to `max_frac` digits after the decimal, strip trailing zeros (and a trailing '.').
+void format_double_trim_fraction_(char* dst, std::size_t dst_sz, double v, int max_frac)
+{
+  char tmp[64];
+  std::snprintf(tmp, sizeof tmp, "%.*f", max_frac, v);
+  std::size_t len = std::strlen(tmp);
+  while (len > 0 && tmp[len - 1] == '0')
+    --len;
+
+  if (len > 0 && tmp[len - 1] == '.')
+    --len;
+
+  tmp[len] = '\0';
+  if (std::strcmp(tmp, "-0") == 0)
+    std::snprintf(dst, dst_sz, "0");
+  else
+    std::snprintf(dst, dst_sz, "%s", tmp);
+}
+
+void set_default_material_(const std::vector<std::string>& material_names, int current_mat, Occt_view::uptr& view)
+{
+  for (int i = 0; i < static_cast<int>(material_names.size()); i++)
+    if (ImGui::Selectable(material_names[static_cast<size_t>(i)].data(), current_mat == i))
+    {
+      Graphic3d_MaterialAspect mat(static_cast<Graphic3d_NameOfMaterial>(i));
+      view->set_default_material(mat);
+    }
+}
+} // namespace
