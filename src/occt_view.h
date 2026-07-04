@@ -302,15 +302,14 @@ private:
   void                         sync_grid_plane_to_active_sketch_();
   void                         refresh_viewer_grid_();
   void                         apply_occt_grid_rect_to_viewer_();
-  void                         apply_shader_grid_display_();
   void                         apply_grid_visibility_();
-  struct Shader_grid_layout
+  struct Grid_layout
   {
     gp_Ax3 plane;
     double size_x{0.};
     double size_y{0.};
   };
-  [[nodiscard]] Shader_grid_layout compute_shader_grid_layout_() const;
+  [[nodiscard]] Grid_layout compute_grid_layout_() const;
   [[nodiscard]] gp_Ax3             grid_display_plane_() const;
 
   //! GLFW callback redirecting messages into Message::DefaultMessenger().

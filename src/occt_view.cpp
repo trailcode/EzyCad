@@ -3,8 +3,8 @@
 #include <AIS_ViewCube.hxx>
 #include <Aspect_GradientFillMethod.hxx>
 #include <Aspect_Grid.hxx>
-#include <Aspect_GridParams.hxx>
 #include <Aspect_RectangularGrid.hxx>
+#include <V3d_RectangularGrid.hxx>
 #include <BRepBndLib.hxx>
 #include <BRepBuilderAPI_Transform.hxx>
 #include <BRepMesh_IncrementalMesh.hxx>
@@ -254,7 +254,7 @@ void Occt_view::init_viewer()
   // m_view->SetScale(39.3701);
 
   capture_occt_grid_rect_from_viewer_(aViewer);
-  // Grid visibility/colors: shader background grid via apply_grid_visibility_() / apply_shader_grid_display_()
+  // Grid visibility/colors set in apply_grid_visibility_() / refresh_viewer_grid_()
   // aViewer->SetGridEcho(true);
   // aViewer->Grid()->SetDrawMode(Aspect_GridDrawMode::Aspect_GDM_Points);
 
@@ -1230,39 +1230,20 @@ void Occt_view::delete_(std::vector<AIS_Shape_ptr>& to_delete)
 namespace
 {
 
-Aspect_GridParams build_shader_grid_params_(const Occt_grid_rect_params& g, const glm::vec3& color1, const glm::vec3& color2,
-                                            const double size_x, const double size_y)
+void set_grid_colors_on_viewer_(const V3d_Viewer_ptr& viewer, const glm::vec3& color1, const glm::vec3& color2)
 {
-  Aspect_GridParams params;
-  const double      step = g.step > 0.0 ? g.step : 10.0;
-  params.SetColor(Quantity_Color(color1.x, color1.y, color1.z, Quantity_TOC_RGB));
-  params.SetAccentColor(Quantity_Color(color2.x, color2.y, color2.z, Quantity_TOC_RGB));
-
-  // Fixed metric spacing (cells per model unit). Every 10th line uses the accent color.
-  params.SetScale(1.0 / step);
-  params.SetScaleY(0.0); // isotropic (mirror Scale)
-  params.SetAccentScaleX(1.0 / (step * 10.0));
-  params.SetAccentScaleY(1.0 / (step * 10.0));
-
-  // Bounded grid on the sketch plane (full extent along each axis; OCCT uses half in the shader).
-  params.SetSizeX(size_x);
-  params.SetSizeY(size_y);
-
-  // Overlay on the sketch plane (not view-space background). Slight negative offset along the
-  // plane normal so coplanar sketch geometry wins the depth test (OCCT default is step / 50).
-  params.SetZOffset(g.graphic_z_offset - step / 50.0);
-  params.SetDrawMode(Aspect_GDM_Lines);
-  params.SetIsBackground(false);
-  params.SetIsDrawAxis(false);
-  params.SetIsViewAdaptive(false);
-  return params;
+  if (viewer.IsNull() || viewer->Grid().IsNull())
+    return;
+  Quantity_Color cc(color1.x, color1.y, color1.z, Quantity_TOC_RGB);
+  Quantity_Color cd(color2.x, color2.y, color2.z, Quantity_TOC_RGB);
+  viewer->Grid()->SetColors(cc, cd);
 }
 
 } // namespace
 
-Occt_view::Shader_grid_layout Occt_view::compute_shader_grid_layout_() const
+Occt_view::Grid_layout Occt_view::compute_grid_layout_() const
 {
-  Shader_grid_layout layout{};
+  Grid_layout layout{};
   const gp_Pln       ref_pln = m_cur_sketch ? m_cur_sketch->get_plane() : gp_Pln(grid_display_plane_());
   const gp_Ax3       base_ax = ref_pln.Position();
 
@@ -1464,18 +1445,6 @@ gp_Ax3 Occt_view::grid_display_plane_() const
   return gp_Ax3(gp_Pnt(0.0, 0.0, 0.0), gp_Dir(0.0, 0.0, 1.0));
 }
 
-void Occt_view::apply_shader_grid_display_()
-{
-  if (is_headless() || m_view.IsNull() || !m_grid_visible)
-    return;
-
-  const Shader_grid_layout layout = compute_shader_grid_layout_();
-  const Aspect_GridParams  params =
-      build_shader_grid_params_(m_occt_grid_rect, m_grid_color1, m_grid_color2, layout.size_x, layout.size_y);
-  m_view->GridDisplay(params, layout.plane);
-  m_view->Invalidate();
-}
-
 void Occt_view::refresh_active_sketch_grid() { refresh_viewer_grid_(); }
 
 bool Occt_view::get_grid_visible() const { return m_grid_visible; }
@@ -1503,8 +1472,16 @@ void Occt_view::refresh_viewer_grid_()
   if (is_headless() || m_view.IsNull())
     return;
 
-  sync_grid_plane_to_active_sketch_();
+  if (!m_grid_visible)
+    return;
+
+  Handle(V3d_Viewer) viewer = m_view->Viewer();
+  if (viewer.IsNull() || !viewer->IsGridActive())
+    return;
+
   apply_occt_grid_rect_to_viewer_();
+  set_grid_colors_on_viewer_(viewer, m_grid_color1, m_grid_color2);
+  m_view->Invalidate();
   m_view->Redraw();
 }
 
@@ -1513,14 +1490,24 @@ void Occt_view::apply_grid_visibility_()
   if (is_headless() || m_view.IsNull())
     return;
 
+  Handle(V3d_Viewer) viewer = m_view->Viewer();
+  if (viewer.IsNull())
+    return;
+
   if (m_grid_visible)
   {
-    sync_grid_plane_to_active_sketch_();
-    apply_shader_grid_display_();
+    if (!viewer->IsGridActive())
+    {
+      viewer->ActivateGrid(Aspect_GT_Rectangular, Aspect_GDM_Lines);
+      viewer->SetGridEcho(false);
+    }
+
+    apply_occt_grid_rect_to_viewer_();
+    set_grid_colors_on_viewer_(viewer, m_grid_color1, m_grid_color2);
   }
-  else
+  else if (viewer->IsGridActive())
   {
-    m_view->GridErase();
+    viewer->DeactivateGrid();
   }
 
   m_view->Invalidate();
@@ -1532,13 +1519,34 @@ void Occt_view::apply_occt_grid_rect_to_viewer_()
   if (is_headless() || m_view.IsNull() || !m_grid_visible)
     return;
 
-  sync_grid_plane_to_active_sketch_();
-
   m_occt_grid_rect = clamp_occt_grid_rect_params_(m_occt_grid_rect);
 
-  // EzyCad does its own sketch snapping, so the legacy CPU grid (V3d_Viewer::ActivateGrid) is not
-  // needed. Drive the GL shader grid directly from our params - this is the OCCT 8 GPU grid path.
-  apply_shader_grid_display_();
+  Handle(V3d_Viewer) viewer = m_view->Viewer();
+  if (viewer.IsNull() || viewer->Grid().IsNull())
+    return;
+
+  const Grid_layout layout = compute_grid_layout_();
+  viewer->SetPrivilegedPlane(layout.plane);
+
+  Handle(Aspect_Grid) ag            = viewer->Grid();
+  Handle(Aspect_RectangularGrid) rg = Handle(Aspect_RectangularGrid)::DownCast(ag);
+  Handle(V3d_RectangularGrid) vrg   = Handle(V3d_RectangularGrid)::DownCast(ag);
+  if (rg.IsNull())
+    return;
+
+  rg->SetGridValues(0., 0., m_occt_grid_rect.step, m_occt_grid_rect.step, 0.);
+
+  if (!vrg.IsNull())
+  {
+    const double step   = m_occt_grid_rect.step > 0.0 ? m_occt_grid_rect.step : 10.0;
+    const double half_x = layout.size_x * 0.5;
+    const double half_y = layout.size_y * 0.5;
+    const double z_off  = m_occt_grid_rect.graphic_z_offset - step / 50.0;
+    vrg->SetGraphicValues(half_x, half_y, z_off);
+  }
+
+  set_grid_colors_on_viewer_(viewer, m_grid_color1, m_grid_color2);
+  m_view->Invalidate();
 }
 
 void Occt_view::get_occt_grid_rect_params(Occt_grid_rect_params& out) const { out = m_occt_grid_rect; }
