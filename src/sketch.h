@@ -21,7 +21,6 @@ class gp_Pln;
 class Sketch_op_recorder;
 class TopoDS_Wire;
 class Sketch;
-// class Sketch_underlay;
 enum class Mode;
 
 struct Sketch_AIS_node_mark;
@@ -390,6 +389,5 @@ public:
   bool                       m_show_faces{true};
   bool                       m_show_dims{true};
 
-  // std::unique_ptr<Sketch_underlay> m_underlay;
   Sketch_underlay m_underlay;
 };

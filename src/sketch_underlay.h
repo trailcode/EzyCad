@@ -11,8 +11,6 @@
 #include <vector>
 
 class AIS_InteractiveObject;
-class AIS_TexturedShape;
-class AIS_Shape;
 class AIS_InteractiveContext;
 class gp_Pln;
 class Ezy_asset_store;
@@ -23,13 +21,14 @@ class Sketch_underlay
 public:
   Sketch_underlay() = delete;
   Sketch_underlay(AIS_InteractiveContext& ctx);
+  ~Sketch_underlay();
 
   Sketch_underlay(const Sketch_underlay&)            = delete;
   Sketch_underlay& operator=(const Sketch_underlay&) = delete;
   Sketch_underlay(Sketch_underlay&&)                 = delete;
   Sketch_underlay& operator=(Sketch_underlay&&)      = delete;
 
-  [[nodiscard]] bool has_image() const { return m_rgba && !m_rgba->empty() && m_w > 0 && m_h > 0; }
+  [[nodiscard]] bool has_image() const;
 
   /// Replace image (RGBA8). Registers pixels in \a store. Sets default axis-aligned rectangle (0.1 unit per pixel).
   [[nodiscard]] bool set_image_rgba(std::vector<uint8_t>&& rgba, int w, int h, Ezy_asset_store& store);
@@ -51,23 +50,23 @@ public:
 
   // clang-format off
 
-  [[nodiscard]] bool     key_white_transparent() const { return m_key_white_transparent; }
-  [[nodiscard]] bool     line_tint_enabled()     const { return m_line_tint_enabled; }
-  [[nodiscard]] float    opacity()               const { return m_opacity; }
-  [[nodiscard]] bool     visible()               const { return m_visible; }
-  [[nodiscard]] gp_Pnt2d base()                  const { return m_base; }
-  [[nodiscard]] gp_Vec2d axis_u()                const { return m_axis_u; }
-  [[nodiscard]] gp_Vec2d axis_v()                const { return m_axis_v; }
-  [[nodiscard]] int      image_w()               const { return m_w; }
-  [[nodiscard]] int      image_h()               const { return m_h; }
+  [[nodiscard]] bool     key_white_transparent() const;
+  [[nodiscard]] bool     line_tint_enabled()     const;
+  [[nodiscard]] float    opacity()               const;
+  [[nodiscard]] bool     visible()               const;
+  [[nodiscard]] gp_Pnt2d base()                  const;
+  [[nodiscard]] gp_Vec2d axis_u()                const;
+  [[nodiscard]] gp_Vec2d axis_v()                const;
+  [[nodiscard]] int      image_w()               const;
+  [[nodiscard]] int      image_h()               const;
 
   void                set_raw_shear_display(bool on);
-  [[nodiscard]] bool  raw_shear_display() const { return m_raw_shear_display; }
+  [[nodiscard]] bool  raw_shear_display() const;
 
-  void set_flip_image_u(bool on) { m_flip_image_u = on; }
-  void set_flip_image_v(bool on) { m_flip_image_v = on; }
-  [[nodiscard]] bool flip_image_u() const { return m_flip_image_u; }
-  [[nodiscard]] bool flip_image_v() const { return m_flip_image_v; }
+  void set_flip_image_u(bool on);
+  void set_flip_image_v(bool on);
+  [[nodiscard]] bool flip_image_u() const;
+  [[nodiscard]] bool flip_image_v() const;
 
   // clang-format on
 
@@ -103,38 +102,6 @@ public:
   [[nodiscard]] bool from_json(const nlohmann::json& j, Ezy_asset_store& store);
 
 private:
-  void build_ais_(const gp_Pln& pln);
-
-  AIS_InteractiveContext&                     m_ctx;
-  std::shared_ptr<const std::vector<uint8_t>> m_rgba;
-  std::string                                 m_asset_id;
-  int                                         m_w{0};
-  int                                         m_h{0};
-
-  gp_Pnt2d m_base{0., 0.};
-  gp_Vec2d m_axis_u{100., 0.};
-  gp_Vec2d m_axis_v{0., 100.};
-
-  float m_opacity{0.88f};
-  bool  m_visible{true};
-  /// Luminance key applied only when building the GPU texture (stored pixels stay raw).
-  bool m_key_white_transparent{true};
-  /// Recolor pixels that remain visible (alpha > 0 after key) for contrast on dark views.
-  bool    m_line_tint_enabled{true};
-  uint8_t m_tint_r{255};
-  uint8_t m_tint_g{220};
-  uint8_t m_tint_b{0};
-  uint8_t m_tint_a{255};
-
-  /// When true and the axes are sheared, the source image is textured directly onto the
-  /// sheared parallelogram quad (raw affine applied to pixels). This makes calibration
-  /// mistakes (e.g. incorrect Y-axis) visible as skew/distortion in the raster image itself.
-  /// Default false uses special resampling to preserve source image appearance relative to U/V.
-  bool m_raw_shear_display{false};
-
-  bool m_flip_image_u{false}; // for raw mode: flip source along U (horizontal in image)
-  bool m_flip_image_v{false}; // for raw mode: flip source along V (vertical in image)
-
-  opencascade::handle<AIS_TexturedShape> m_ais;
-  opencascade::handle<AIS_Shape>         m_border;
+  class Impl;
+  std::unique_ptr<Impl> m_impl;
 };
