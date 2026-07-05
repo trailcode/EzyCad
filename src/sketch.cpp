@@ -1,11 +1,7 @@
 #include "sketch.h"
-#include "utl_occt.h"
 
 #include <BRepBuilderAPI_MakeEdge.hxx>
-#include <BRepBuilderAPI_MakeFace.hxx>
-#include <BRepBuilderAPI_MakeWire.hxx>
 #include <BRepPrimAPI_MakeRevol.hxx>
-#include <BRepTools.hxx>
 #include <GC_MakeArcOfCircle.hxx>
 #include <Graphic3d_AspectFillArea3d.hxx>
 #include <Precision.hxx>
@@ -17,19 +13,14 @@
 #include <V3d_View.hxx>
 #include <cmath>
 #include <functional>
-#include <glm/glm.hpp>
-#include <limits>
 #include <map>
-#include <numbers>
-#include <tuple>
-#include <unordered_set>
 
 #include "utl_geom.h"
 #include "gui.h"
-#include "imgui.h"
 #include "mode.h"
 #include "occt_view.h"
 #include "sketch_delta.h"
+#include "utl_occt.h"
 #include "utl.h"
 
 using namespace glm;
