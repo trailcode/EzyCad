@@ -7,13 +7,18 @@
 #include <gp_Vec2d.hxx>
 #include <memory>
 #include <nlohmann/json.hpp>
+#include <optional>
 #include <string>
 #include <vector>
+
+#include "utl_types.h"
 
 class AIS_InteractiveObject;
 class AIS_InteractiveContext;
 class gp_Pln;
 class Ezy_asset_store;
+class Occt_view;
+class Sketch_nodes;
 
 /// Raster image drawn in the sketch plane (below sketch edges) for tracing / digitizing.
 class Sketch_underlay
@@ -74,6 +79,20 @@ public:
   void get_affine(gp_Pnt2d& base, gp_Vec2d& axis_u, gp_Vec2d& axis_v) const;
   /// True when texture U and V directions are perpendicular (no shear). Orthogonal UI assumes this.
   [[nodiscard]] bool axes_orthogonal() const;
+
+  /// Same snap / plane rules as the line-edge tool (for underlay calibration clicks).
+  [[nodiscard]] static std::optional<gp_Pnt2d> pick_point_for_calib(Occt_view& view, const gp_Pln& pln, Sketch_nodes& nodes,
+                                                                    const ScreenCoords& screen_coords);
+  /// Set from texture corner \a base, U edge vector \a axis_u, V edge vector \a axis_v (plane 2D); rebuild display.
+  void set_affine_plane(const gp_Pnt2d& base, const gp_Vec2d& axis_u, const gp_Vec2d& axis_v, const gp_Pln& pln,
+                        bool sketch_shown);
+  /// Uniformly scale texture axes so plane segment \a p0-\a p1 has length \a target_len; UV at \a p0 stays fixed.
+  [[nodiscard]] bool rescale_uv_chord_to_length(const gp_Pnt2d& p0, const gp_Pnt2d& p1, double target_len, const gp_Pln& pln,
+                                                bool sketch_shown);
+  /// Keep U axis; adjust V and base so segment \a y0-\a y1 has length \a target_len (after X calibration).
+  [[nodiscard]] bool     rescale_v_chord_to_length(const gp_Pnt2d& y0, const gp_Pnt2d& y1, double target_len, const gp_Pln& pln,
+                                                   bool sketch_shown);
+  [[nodiscard]] gp_Vec2d axis_u_vec() const;
 
   /// Decode PNG/JPEG/BMP bytes, register in \a store, apply line tint, and display when \a sketch_shown.
   [[nodiscard]] bool load_from_file_bytes(const std::string& file_bytes, Ezy_asset_store& store, uint8_t tint_r, uint8_t tint_g,

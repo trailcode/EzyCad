@@ -3,7 +3,6 @@
 #include <AIS_InteractiveObject.hxx>
 
 #include <AIS_InteractiveContext.hxx>
-#include <AIS_InteractiveObject.hxx>
 #include <AIS_Shape.hxx>
 #include <AIS_TexturedShape.hxx>
 #include <Quantity_NameOfColor.hxx>
@@ -17,7 +16,6 @@
 #include <TopoDS_Wire.hxx>
 #include <algorithm>
 #include <cmath>
-#include <cstring>
 #include <glm/glm.hpp>
 #include <gp_Ax3.hxx>
 #include <gp_Pln.hxx>
@@ -26,6 +24,8 @@
 
 #include "utl_geom.h"
 #include "ezy_asset_store.h"
+#include "occt_view.h"
+#include "sketch_nodes.h"
 #include "utl.h"
 
 using namespace glm;
@@ -74,6 +74,14 @@ public:
   void               get_affine(gp_Pnt2d& base, gp_Vec2d& axis_u, gp_Vec2d& axis_v) const;
   [[nodiscard]] bool axes_orthogonal() const;
 
+  void               set_affine_plane_(const gp_Pnt2d& base, const gp_Vec2d& axis_u, const gp_Vec2d& axis_v, const gp_Pln& pln,
+                                       bool sketch_shown);
+  [[nodiscard]] bool rescale_uv_chord_to_length_(const gp_Pnt2d& p0, const gp_Pnt2d& p1, double target_len, const gp_Pln& pln,
+                                                 bool sketch_shown);
+  [[nodiscard]] bool rescale_v_chord_to_length_(const gp_Pnt2d& y0, const gp_Pnt2d& y1, double target_len, const gp_Pln& pln,
+                                                bool sketch_shown);
+  [[nodiscard]] gp_Vec2d axis_u_vec_() const;
+
   [[nodiscard]] bool load_from_file_bytes(const std::string& file_bytes, Ezy_asset_store& store, uint8_t tint_r, uint8_t tint_g,
                                           uint8_t tint_b, uint8_t tint_a, const gp_Pln& pln, bool sketch_shown);
 
@@ -114,6 +122,8 @@ private:
                                     bool key_white_transparent, bool line_tint_enabled, uint8_t tr, uint8_t tg, uint8_t tb,
                                     uint8_t ta);
   static bool underlay_axes_orthogonal_(const gp_Vec2d& au, const gp_Vec2d& av);
+  static bool plane_to_uv_(const gp_Pnt2d& base, const gp_Vec2d& au, const gp_Vec2d& av, const gp_Pnt2d& p, double& out_u,
+                           double& out_v);
 
   void build_ais_(const gp_Pln& pln);
 
@@ -161,6 +171,7 @@ std::string Sketch_underlay::Impl::base64_encode_(const uint8_t* data, std::size
     out.push_back(n > 1 ? tbl[(triple >> 6) & 63] : '=');
     out.push_back(n > 2 ? tbl[triple & 63] : '=');
   }
+
   return out;
 }
 
@@ -392,6 +403,19 @@ bool Sketch_underlay::Impl::underlay_axes_orthogonal_(const gp_Vec2d& au, const 
   return std::abs(dot) < 1e-9 * scale;
 }
 
+bool Sketch_underlay::Impl::plane_to_uv_(const gp_Pnt2d& base, const gp_Vec2d& au, const gp_Vec2d& av, const gp_Pnt2d& p,
+                                         double& out_u, double& out_v)
+{
+  const double det = au.X() * av.Y() - au.Y() * av.X();
+  if (std::abs(det) < 1e-18)
+    return false;
+
+  const gp_Vec2d r(p.X() - base.X(), p.Y() - base.Y());
+  out_u = (r.X() * av.Y() - r.Y() * av.X()) / det;
+  out_v = (-r.X() * au.Y() + r.Y() * au.X()) / det;
+  return true;
+}
+
 Sketch_underlay::Impl::Impl(AIS_InteractiveContext& ctx)
     : m_ctx(ctx)
 {
@@ -562,6 +586,96 @@ bool Sketch_underlay::Impl::axes_orthogonal() const
     return true;
 
   return underlay_axes_orthogonal_(m_axis_u, m_axis_v);
+}
+
+void Sketch_underlay::Impl::set_affine_plane_(const gp_Pnt2d& base, const gp_Vec2d& axis_u, const gp_Vec2d& axis_v,
+                                              const gp_Pln& pln, bool sketch_shown)
+{
+  if (!has_image())
+    return;
+
+  constexpr double k_min2 = 1e-18;
+  if (axis_u.SquareMagnitude() < k_min2 || axis_v.SquareMagnitude() < k_min2)
+    return;
+
+  set_affine(base, axis_u, axis_v);
+  rebuild_display(pln, sketch_shown);
+}
+
+bool Sketch_underlay::Impl::rescale_uv_chord_to_length_(const gp_Pnt2d& p0, const gp_Pnt2d& p1, double target_len,
+                                                        const gp_Pln& pln, bool sketch_shown)
+{
+  if (!has_image())
+    return false;
+
+  if (target_len <= 1e-12)
+    return false;
+
+  const gp_Pnt2d base = m_base;
+  const gp_Vec2d au   = m_axis_u;
+  const gp_Vec2d av   = m_axis_v;
+  double         u0{};
+  double         v0{};
+  double         u1{};
+  double         v1{};
+  if (!plane_to_uv_(base, au, av, p0, u0, v0) || !plane_to_uv_(base, au, av, p1, u1, v1))
+    return false;
+
+  const double L = p0.Distance(p1);
+  if (L <= 1e-12)
+    return false;
+
+  const double   k   = target_len / L;
+  const gp_Vec2d au2 = au * k;
+  const gp_Vec2d av2 = av * k;
+  const gp_Vec2d off = au2 * u0 + av2 * v0;
+  const gp_Pnt2d base2(p0.X() - off.X(), p0.Y() - off.Y());
+  set_affine_plane_(base2, au2, av2, pln, sketch_shown);
+  return true;
+}
+
+bool Sketch_underlay::Impl::rescale_v_chord_to_length_(const gp_Pnt2d& y0, const gp_Pnt2d& y1, double target_len,
+                                                       const gp_Pln& pln, bool sketch_shown)
+{
+  if (!has_image())
+    return false;
+
+  if (target_len <= 1e-12)
+    return false;
+
+  const gp_Pnt2d base = m_base;
+  const gp_Vec2d au   = m_axis_u;
+  const gp_Vec2d av   = m_axis_v;
+  double         u0{};
+  double         v0{};
+  double         u1{};
+  double         v1{};
+  if (!plane_to_uv_(base, au, av, y0, u0, v0) || !plane_to_uv_(base, au, av, y1, u1, v1))
+    return false;
+
+  const double du = u1 - u0;
+  const double dv = v1 - v0;
+  if (std::abs(dv) < 1e-9)
+    return false;
+
+  const double L = y0.Distance(y1);
+  if (L <= 1e-12)
+    return false;
+
+  const double   r      = target_len / L;
+  const gp_Vec2d av_new = av * r + au * (((r - 1.0) * du) / dv);
+  const gp_Vec2d anchor = au * u0 + av_new * v0;
+  const gp_Pnt2d base2(y0.X() - anchor.X(), y0.Y() - anchor.Y());
+  set_affine_plane_(base2, au, av_new, pln, sketch_shown);
+  return true;
+}
+
+gp_Vec2d Sketch_underlay::Impl::axis_u_vec_() const
+{
+  if (!has_image())
+    return {};
+
+  return m_axis_u;
 }
 
 bool Sketch_underlay::Impl::load_from_file_bytes(const std::string& file_bytes, Ezy_asset_store& store, uint8_t tint_r,
@@ -1078,6 +1192,39 @@ void Sketch_underlay::get_affine(gp_Pnt2d& base, gp_Vec2d& axis_u, gp_Vec2d& axi
 }
 
 bool Sketch_underlay::axes_orthogonal() const { return m_impl->axes_orthogonal(); }
+
+std::optional<gp_Pnt2d> Sketch_underlay::pick_point_for_calib(Occt_view& view, const gp_Pln& pln, Sketch_nodes& nodes,
+                                                              const ScreenCoords& screen_coords)
+{
+  std::optional<gp_Pnt2d> on_pln = view.pt_on_plane(screen_coords, pln);
+  if (!on_pln)
+    return std::nullopt;
+
+  if (std::optional<size_t> idx = nodes.try_get_node_idx_snap(*on_pln))
+    return nodes[*idx];
+
+  return *on_pln;
+}
+
+void Sketch_underlay::set_affine_plane(const gp_Pnt2d& base, const gp_Vec2d& axis_u, const gp_Vec2d& axis_v, const gp_Pln& pln,
+                                       bool sketch_shown)
+{
+  m_impl->set_affine_plane_(base, axis_u, axis_v, pln, sketch_shown);
+}
+
+bool Sketch_underlay::rescale_uv_chord_to_length(const gp_Pnt2d& p0, const gp_Pnt2d& p1, double target_len, const gp_Pln& pln,
+                                                 bool sketch_shown)
+{
+  return m_impl->rescale_uv_chord_to_length_(p0, p1, target_len, pln, sketch_shown);
+}
+
+bool Sketch_underlay::rescale_v_chord_to_length(const gp_Pnt2d& y0, const gp_Pnt2d& y1, double target_len, const gp_Pln& pln,
+                                                bool sketch_shown)
+{
+  return m_impl->rescale_v_chord_to_length_(y0, y1, target_len, pln, sketch_shown);
+}
+
+gp_Vec2d Sketch_underlay::axis_u_vec() const { return m_impl->axis_u_vec_(); }
 
 bool Sketch_underlay::load_from_file_bytes(const std::string& file_bytes, Ezy_asset_store& store, uint8_t tint_r,
                                            uint8_t tint_g, uint8_t tint_b, uint8_t tint_a, const gp_Pln& pln, bool sketch_shown)

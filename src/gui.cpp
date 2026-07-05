@@ -1639,8 +1639,9 @@ void GUI::sketch_underlay_panel_settings_(const Sketch::sptr& sk)
 
       auto apply_affine = [&]()
       {
-        sk->underlay_set_affine_plane(gp_Pnt2d(m_underlay_base.x, m_underlay_base.y), gp_Vec2d(m_underlay_u.x, m_underlay_u.y),
-                                      gp_Vec2d(m_underlay_v.x, m_underlay_v.y));
+        sk->underlay().set_affine_plane(gp_Pnt2d(m_underlay_base.x, m_underlay_base.y),
+                                        gp_Vec2d(m_underlay_u.x, m_underlay_u.y), gp_Vec2d(m_underlay_v.x, m_underlay_v.y),
+                                        sk->get_plane(), sk->is_visible());
       };
 
       // Base position sliders (viewport frustum bounds + fallback, direct plane X/Y).
@@ -1772,7 +1773,7 @@ void GUI::force_underlay_orthogonal_(const Sketch::sptr& sk)
       av_perp = gp_Vec2d(au_n.Y() * lv, -au_n.X() * lv);
 
     const gp_Vec2d au_final = au_n * lu;
-    sk->underlay_set_affine_plane(b, au_final, av_perp);
+    ul.set_affine_plane(b, au_final, av_perp, sk->get_plane(), sk->is_visible());
     // Refresh locals for this frame and any immediate follow-up UI.
     m_underlay_u = dvec2(au_final.X(), au_final.Y());
     m_underlay_v = dvec2(av_perp.X(), av_perp.Y());
@@ -1852,14 +1853,15 @@ void GUI::underlay_calib_prompt_x_distance_(const Sketch::sptr& sk)
     }
 
     m_view->push_undo_snapshot();
-    if (!s->underlay_rescale_uv_chord_to_length(m_underlay_calib_x0, m_underlay_calib_x1, Dx))
+    if (!s->underlay().rescale_uv_chord_to_length(m_underlay_calib_x0, m_underlay_calib_x1, Dx, s->get_plane(),
+                                                  s->is_visible()))
     {
       m_view->pop_undo_snapshot();
       show_message("Could not calibrate X (underlay axes degenerate or segment too short).");
       return;
     }
 
-    m_underlay_calib_axis_u = s->underlay_axis_u_vec();
+    m_underlay_calib_axis_u = s->underlay().axis_u_vec();
     s->underlay().ui_params(m_underlay_center.x, m_underlay_center.y, m_underlay_half_extents.x, m_underlay_half_extents.y,
                             m_underlay_rot);
 
@@ -1910,7 +1912,7 @@ void GUI::underlay_calib_prompt_y_distance_(const Sketch::sptr& sk)
     }
 
     m_view->push_undo_snapshot();
-    if (!s->underlay_rescale_v_chord_to_length(m_underlay_calib_y0, m_underlay_calib_y1, Dy))
+    if (!s->underlay().rescale_v_chord_to_length(m_underlay_calib_y0, m_underlay_calib_y1, Dy, s->get_plane(), s->is_visible()))
     {
       m_view->pop_undo_snapshot();
       show_message("Set Y: picks need a clear span along image height (not along the same edge as X only). Try two points "
@@ -1959,7 +1961,8 @@ bool GUI::try_underlay_calib_click_(const ScreenCoords& screen_coords)
     return true;
   }
 
-  const std::optional<gp_Pnt2d> pt = sk->pick_point_for_underlay_calib(screen_coords);
+  const std::optional<gp_Pnt2d> pt =
+      Sketch_underlay::pick_point_for_calib(*m_view, sk->get_plane(), sk->get_nodes(), screen_coords);
   if (!pt)
     return true;
 
