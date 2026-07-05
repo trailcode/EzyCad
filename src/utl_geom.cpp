@@ -11,6 +11,9 @@
 #include <BRep_Builder.hxx>
 #include <BRep_Tool.hxx>
 #include <GC_MakeArcOfCircle.hxx>
+#include <GC_MakeSegment.hxx>
+#include <GeomAPI_ExtremaCurveCurve.hxx>
+#include <GeomAPI_ProjectPointOnCurve.hxx>
 #include <GProp_GProps.hxx>
 #include <Geom2dAPI_ProjectPointOnCurve.hxx>
 #include <Geom2d_Line.hxx>
@@ -32,6 +35,7 @@
 #include <TopExp.hxx>
 #include <TopExp_Explorer.hxx>
 #include <TopoDS.hxx>
+#include <TopoDS_Edge.hxx>
 #include <TopoDS_Compound.hxx>
 #include <TopoDS_Edge.hxx>
 #include <TopoDS_Face.hxx>
@@ -1395,4 +1399,115 @@ std::optional<gp_Pnt2d> snap_foot_to_open_segment_interior_if_close(const gp_Pnt
     return std::nullopt;
 
   return proj;
+}
+
+namespace
+{
+Handle(Geom_TrimmedCurve) edge_trimmed_curve_(const TopoDS_Edge& edge)
+{
+  Standard_Real        f = 0.0;
+  Standard_Real        l = 0.0;
+  Handle(Geom_Curve)   c = BRep_Tool::Curve(edge, f, l);
+  Handle(Geom_TrimmedCurve) ret = new Geom_TrimmedCurve(c, f, l);
+  if (edge.Orientation() == TopAbs_REVERSED)
+    ret->Reverse();
+  return ret;
+}
+
+bool on_segment_for_inclusion_(const gp_Pnt2d& p, const gp_Pnt2d& a, const gp_Pnt2d& b, Segment_inclusion inclusion)
+{
+  const double tol = Precision::Confusion();
+  if (p.Distance(a) <= tol || p.Distance(b) <= tol)
+    return inclusion == Segment_inclusion::Closed;
+
+  return point_on_open_segment_2d(p, a, b);
+}
+
+bool on_open_arc_parameter_(double u, double u_first, double u_last)
+{
+  const double span   = u_last - u_first;
+  const double margin = std::max(Precision::Confusion(), std::abs(span) * 1e-9);
+  return u > u_first + margin && u < u_last - margin;
+}
+} // namespace
+
+bool point_on_open_arc_interior_2d(const gp_Pnt2d& p, const TopoDS_Edge& arc_edge, const gp_Pln& pln)
+{
+  const BRepAdaptor_Curve curve(arc_edge);
+  const Handle(Geom_Curve) geom = curve.Curve().Curve();
+  const double             u_first = curve.FirstParameter();
+  const double             u_last  = curve.LastParameter();
+
+  GeomAPI_ProjectPointOnCurve proj(to_3d(pln, p), geom, u_first, u_last);
+  if (proj.NbPoints() == 0 || proj.LowerDistance() > Precision::Confusion())
+    return false;
+
+  return on_open_arc_parameter_(proj.LowerDistanceParameter(), u_first, u_last);
+}
+
+std::vector<gp_Pnt2d> segment_arc_intersections_2d(const gp_Pnt2d& seg_a, const gp_Pnt2d& seg_b, const TopoDS_Edge& arc_edge,
+                                                   const gp_Pln& pln, Segment_inclusion inclusion)
+{
+  std::vector<gp_Pnt2d> ret;
+  const gp_Pnt          a3 = to_3d(pln, seg_a);
+  const gp_Pnt          b3 = to_3d(pln, seg_b);
+  if (a3.Distance(b3) <= Precision::Confusion())
+    return ret;
+
+  Handle(Geom_TrimmedCurve) seg   = GC_MakeSegment(a3, b3);
+  Handle(Geom_TrimmedCurve) arc_c = edge_trimmed_curve_(arc_edge);
+  GeomAPI_ExtremaCurveCurve ext(seg, arc_c);
+
+  for (int i = 1; i <= ext.NbExtrema(); ++i)
+  {
+    if (ext.Distance(i) > Precision::Confusion())
+      continue;
+
+    gp_Pnt p_on_seg;
+    gp_Pnt p_on_arc;
+    ext.Points(i, p_on_seg, p_on_arc);
+    const gp_Pnt2d p2d = to_2d(pln, p_on_seg);
+    if (!on_segment_for_inclusion_(p2d, seg_a, seg_b, inclusion))
+      continue;
+
+    const BRepAdaptor_Curve curve(arc_edge);
+    GeomAPI_ProjectPointOnCurve proj(p_on_arc, curve.Curve().Curve(), curve.FirstParameter(), curve.LastParameter());
+    if (proj.NbPoints() == 0)
+      continue;
+
+    if (!on_open_arc_parameter_(proj.LowerDistanceParameter(), curve.FirstParameter(), curve.LastParameter()))
+      continue;
+
+    add_unique_point(ret, p2d);
+  }
+
+  return ret;
+}
+
+std::vector<gp_Pnt2d> arc_arc_intersections_2d(const TopoDS_Edge& arc_a, const TopoDS_Edge& arc_b, const gp_Pln& pln)
+{
+  std::vector<gp_Pnt2d> ret;
+  Handle(Geom_TrimmedCurve) curve_a = edge_trimmed_curve_(arc_a);
+  Handle(Geom_TrimmedCurve) curve_b = edge_trimmed_curve_(arc_b);
+  GeomAPI_ExtremaCurveCurve ext(curve_a, curve_b);
+
+  for (int i = 1; i <= ext.NbExtrema(); ++i)
+  {
+    if (ext.Distance(i) > Precision::Confusion())
+      continue;
+
+    gp_Pnt p_a;
+    gp_Pnt p_b;
+    ext.Points(i, p_a, p_b);
+    const gp_Pnt2d p2d = to_2d(pln, p_a);
+
+    if (!point_on_open_arc_interior_2d(p2d, arc_a, pln))
+      continue;
+    if (!point_on_open_arc_interior_2d(p2d, arc_b, pln))
+      continue;
+
+    add_unique_point(ret, p2d);
+  }
+
+  return ret;
 }

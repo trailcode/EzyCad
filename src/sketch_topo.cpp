@@ -3,8 +3,8 @@
 #include <BRepBuilderAPI_MakeEdge.hxx>
 #include <BRepBuilderAPI_MakeFace.hxx>
 #include <BRepBuilderAPI_MakeWire.hxx>
+#include <BRepAdaptor_Curve.hxx>
 #include <BRepTools.hxx>
-#include <GC_MakeArcOfCircle.hxx>
 #include <Graphic3d_AspectFillArea3d.hxx>
 #include <Precision.hxx>
 #include <Quantity_Color.hxx>
@@ -22,6 +22,7 @@
 #include "occt_view.h"
 #include "sketch.h"
 #include "sketch_delta.h"
+#include "sketch_edge.h"
 #include "utl.h"
 #include "utl_geom.h"
 
@@ -78,10 +79,7 @@ void Sketch_topo::snap_placed_node_to_closest_linear_edge_interior_(size_t node_
 
   for (const auto& e : m_sketch.m_edges.edges())
   {
-    if (e.circle_arc)
-      continue;
-
-    if (e.node_idx_arc.has_value())
+    if (!sketch_edge_is_linear(e))
       continue;
 
     if (!e.node_idx_b.has_value())
@@ -137,10 +135,7 @@ void Sketch_topo::split_linear_edges_at_node_if_interior(size_t node_idx, Sketch
     progress = false;
     for (auto itr = m_sketch.m_edges.edges().begin(); itr != m_sketch.m_edges.edges().end(); ++itr)
     {
-      if (itr->circle_arc)
-        continue;
-
-      if (itr->node_idx_arc.has_value())
+      if (!sketch_edge_is_linear(*itr))
         continue;
 
       if (!itr->node_idx_b.has_value())
@@ -177,6 +172,47 @@ void Sketch_topo::split_linear_edges_at_node_if_interior(size_t node_idx, Sketch
   }
 }
 
+void Sketch_topo::split_arcs_at_node_if_interior(size_t node_idx)
+{
+  split_arcs_at_node_if_interior(node_idx, static_cast<Sketch_op_recorder*>(nullptr));
+}
+
+void Sketch_topo::split_arcs_at_node_if_interior(size_t node_idx, Sketch_op_recorder& rec)
+{
+  split_arcs_at_node_if_interior(node_idx, &rec);
+}
+
+void Sketch_topo::split_arcs_at_node_if_interior(size_t node_idx, Sketch_op_recorder* rec)
+{
+  EZY_ASSERT(node_idx < m_sketch.m_nodes.size());
+  const gp_Pnt2d& p = m_sketch.m_nodes[node_idx];
+
+  bool progress = true;
+  while (progress)
+  {
+    progress = false;
+    for (auto itr = m_sketch.m_edges.edges().begin(); itr != m_sketch.m_edges.edges().end(); ++itr)
+    {
+      if (!sketch_edge_is_arc(*itr))
+        continue;
+
+      EZY_ASSERT(itr->node_idx_b.has_value());
+      const size_t idx_a = itr->node_idx_a;
+      const size_t idx_b = *itr->node_idx_b;
+      if (node_idx == idx_a || node_idx == idx_b)
+        continue;
+
+      if (!point_on_open_arc_interior_2d(p, TopoDS::Edge(itr->shp->Shape()), m_sketch.m_pln))
+        continue;
+
+      m_sketch.m_edges.split_arc_at_node_(itr, node_idx, rec);
+      m_sketch.m_nodes[node_idx].midpoint = false;
+      progress                            = true;
+      break;
+    }
+  }
+}
+
 // Function to extract faces from the planar graph
 void Sketch_topo::update_faces()
 {
@@ -207,8 +243,8 @@ void Sketch_topo::update_faces()
     if (edge.node_idx_mid.has_value())
       used_nodes[*edge.node_idx_mid] = true;
 
-    if (edge.node_idx_arc.has_value())
-      used_nodes[*edge.node_idx_arc] = true;
+    if (edge.node_idx_arc_pt.has_value())
+      used_nodes[*edge.node_idx_arc_pt] = true;
   }
 
   if (m_sketch.m_operation_axis.has_value())
@@ -221,32 +257,6 @@ void Sketch_topo::update_faces()
   // Remove dangling edges (edges with degree-1 endpoints) iteratively.
   // These edges cannot form closed faces, so we exclude them from face detection.
   std::unordered_set<const Sketch::Edge*> excluded_edges;
-
-  // Treat edges attached to the virtual mid-node of an arc as dangling for face detection.
-  // Circle arcs are represented using a virtual node in the middle of the arc (`node_idx_arc`).
-  // Any non-arc edge that uses this virtual node as an endpoint should not participate in faces.
-  {
-    std::unordered_set<size_t> arc_mid_nodes;
-    for (const auto& edge : m_sketch.m_edges.edges())
-      if (edge.node_idx_arc.has_value())
-        arc_mid_nodes.insert(*edge.node_idx_arc);
-
-    for (const auto& edge : m_sketch.m_edges.edges())
-    {
-      // Only consider non-arc edges (straight segments etc.).
-      if (edge.circle_arc)
-        continue;
-
-      if (!edge.node_idx_b.has_value())
-        continue;
-
-      const size_t a = edge.node_idx_a;
-      const size_t b = *edge.node_idx_b;
-
-      if (arc_mid_nodes.count(a) || arc_mid_nodes.count(b))
-        excluded_edges.insert(&edge);
-    }
-  }
 
   bool changed = true;
   while (changed)
@@ -423,13 +433,6 @@ void Sketch_topo::update_faces()
 
   std::unordered_set<std::pair<size_t, size_t>, Pair_hash> seen_edges;
 
-  const auto edge_outgoing_dir = [this](size_t idx_a, size_t idx_b) -> gp_Vec2d
-  {
-    gp_Vec2d ret(m_sketch.m_nodes[idx_a], m_sketch.m_nodes[idx_b]);
-    ret.Normalize();
-    return ret;
-  };
-
   for (auto& [a_idx, edges] : adj_list)
     for (auto& [b_idx, start_edge] : edges)
     {
@@ -449,7 +452,7 @@ void Sketch_topo::update_faces()
         // Base case
         if (curr_idx == start_idx)
         {
-          EZY_ASSERT(face.size() > 2);
+          EZY_ASSERT(face.size() >= 2);
 
           // Deliberately accept the cycle only if the left-most walker produced a traversal
           // whose shoelace is positive under our is_face_clockwise_ convention. If not, break
@@ -494,14 +497,18 @@ void Sketch_topo::update_faces()
         size_t              left_most_idx;
         double              min_angle      = std::numeric_limits<double>::max();
         const Sketch::Edge* left_most_edge = nullptr;
-        gp_Vec2d            edge_a         = edge_outgoing_dir(prev_idx, curr_idx);
+        gp_Vec2d edge_a = sketch_edge_outgoing_dir_2d(*curr_edge, m_sketch.m_nodes[prev_idx], m_sketch.m_nodes[curr_idx],
+                                                       m_sketch.m_pln);
 
         for (auto& [next_idx, next_edge] : adj_list[curr_idx])
         {
-          if (next_idx == prev_idx)
+          // Allow parallel edges (e.g. two arcs between the same endpoints) by skipping only
+          // the incoming edge, not every edge back to the previous node.
+          if (next_idx == prev_idx && next_edge == curr_edge)
             continue;
 
-          gp_Vec2d edge_b = edge_outgoing_dir(curr_idx, next_idx);
+          gp_Vec2d edge_b = sketch_edge_outgoing_dir_2d(*next_edge, m_sketch.m_nodes[curr_idx], m_sketch.m_nodes[next_idx],
+                                                           m_sketch.m_pln);
           double   angle  = std::atan2(edge_b.Crossed(edge_a), edge_b.Dot(edge_a));
           if (angle < min_angle)
           {
@@ -634,38 +641,59 @@ size_t Sketch_topo::Face_edge::end_nd_idx() const
 
 bool Sketch_topo::is_face_clockwise_(const Face_edges& face) const
 {
-  // Compute signed area using the shoelace formula
   double signed_area = 0.0;
   for (const Face_edge& e : face)
   {
-    // `start_nd_idx` and `end_nd_idx` consider reversed edges
     const gp_Pnt2d& p1 = m_sketch.m_nodes[e.start_nd_idx()];
     const gp_Pnt2d& p2 = m_sketch.m_nodes[e.end_nd_idx()];
-    signed_area += (p1.X() * p2.Y()) - (p2.X() * p1.Y());
+
+    if (sketch_edge_is_arc(e.edge) && e.edge.node_idx_arc_pt.has_value() && !e.edge.shp.IsNull())
+    {
+      const gp_Pnt2d& pm    = m_sketch.m_nodes[*e.edge.node_idx_arc_pt];
+      const double    wedge = (p1.X() * pm.Y()) - (pm.X() * p1.Y()) + (pm.X() * p2.Y()) - (p2.X() * pm.Y());
+      if (std::abs(wedge) > Precision::Confusion())
+      {
+        signed_area += wedge;
+        continue;
+      }
+
+      const TopoDS_Edge       occ_edge = TopoDS::Edge(e.edge.shp->Shape());
+      const BRepAdaptor_Curve curve(occ_edge);
+      const double            u0       = curve.FirstParameter();
+      const double            u1       = curve.LastParameter();
+      constexpr int           segments = 12;
+
+      auto sample_arc = [&](double u_from, double u_to)
+      {
+        gp_Pnt2d prev = to_2d(m_sketch.m_pln, curve.Value(u_from));
+        for (int i = 1; i <= segments; ++i)
+        {
+          const double t   = static_cast<double>(i) / static_cast<double>(segments);
+          const double u   = u_from + (u_to - u_from) * t;
+          gp_Pnt2d     cur = to_2d(m_sketch.m_pln, curve.Value(u));
+          signed_area += (prev.X() * cur.Y()) - (cur.X() * prev.Y());
+          prev = cur;
+        }
+      };
+
+      if (e.reversed)
+        sample_arc(u1, u0);
+      else
+        sample_arc(u0, u1);
+    }
+    else
+      signed_area += (p1.X() * p2.Y()) - (p2.X() * p1.Y());
   }
-  // signed_area *= 0.5;  // Divide by 2 for actual area
 
   return signed_area > 0;
 }
 
 Sketch_face_shp_ptr Sketch_topo::create_face_shape_(const Face_edges& face)
 {
-  EZY_ASSERT(face.size() > 2);
+  EZY_ASSERT(face.size() >= 2);
 
-  // Create edges for the wire
   BRepBuilderAPI_MakeWire wire_maker;
-
-  struct Circle_arc
-  {
-    std::optional<size_t> nd_idx_a;
-    std::optional<size_t> nd_idx_b;
-    std::optional<size_t> nd_idx_c;
-    std::optional<bool>   dbg_reversed;
-  };
-
-  std::map<Geom_TrimmedCurve*, Circle_arc> circle_arcs;
-  std::vector<gp_Pnt>                      node_verts;
-  std::optional<size_t>                    dbg_last_node_idx;
+  std::vector<gp_Pnt>     node_verts;
 
   for (const Face_edge& e : face)
   {
@@ -679,56 +707,19 @@ Sketch_face_shp_ptr Sketch_topo::create_face_shape_(const Face_edges& face)
         node_verts.push_back(pt);
     };
 
-    if (e.edge.circle_arc.get())
+    if (sketch_edge_is_arc(e.edge))
     {
-      Circle_arc& arc = circle_arcs[e.edge.circle_arc.get()];
+      gp_Pnt a = m_sketch.to_3d_(e.start_nd_idx());
+      gp_Pnt b = m_sketch.to_3d_(e.end_nd_idx());
 
-      auto try_arc_circle = [&](bool reversed)
-      {
-        if (!arc.dbg_reversed.has_value())
-          arc.dbg_reversed = reversed;
-        else
-          EZY_ASSERT(*arc.dbg_reversed == reversed);
+      add_node_vert_unique(a);
+      add_node_vert_unique(b);
 
-        if (arc.nd_idx_a && arc.nd_idx_b && arc.nd_idx_c)
-        {
-          gp_Pnt a = m_sketch.to_3d_(arc.nd_idx_a);
-          gp_Pnt b = m_sketch.to_3d_(arc.nd_idx_b);
-          gp_Pnt c = m_sketch.to_3d_(arc.nd_idx_c);
+      TopoDS_Edge occ_edge = TopoDS::Edge(e.edge.shp->Shape());
+      if (e.reversed)
+        occ_edge.Reverse();
 
-          add_node_vert_unique(a);
-          add_node_vert_unique(b);
-          add_node_vert_unique(c);
-
-          Geom_TrimmedCurve_ptr arc_circle;
-          if (reversed)
-            arc_circle = GC_MakeArcOfCircle(c, b, a);
-          else
-            arc_circle = GC_MakeArcOfCircle(a, b, c);
-
-          BRepBuilderAPI_MakeEdge edge(arc_circle);
-          EZY_ASSERT(edge.IsDone());
-          wire_maker.Add(edge.Edge());
-        }
-      };
-
-      // Depending on the order of the node indexes in face,
-      // the first or second circle arc edge might come first.
-      if (e.edge.node_idx_arc)
-      {
-        // This is the first part of the circle arc.
-        EZY_ASSERT(e.edge.node_idx_arc);
-        EZY_ASSERT(*e.edge.node_idx_b == *e.edge.node_idx_arc);
-        arc.nd_idx_a = e.edge.node_idx_a;
-        arc.nd_idx_b = e.edge.node_idx_arc;
-        try_arc_circle(e.reversed);
-      }
-      else
-      {
-        // This is the second part of the circle arc.
-        arc.nd_idx_c = *e.edge.node_idx_b;
-        try_arc_circle(e.reversed);
-      }
+      wire_maker.Add(occ_edge);
     }
     else
     {
@@ -747,11 +738,8 @@ Sketch_face_shp_ptr Sketch_topo::create_face_shape_(const Face_edges& face)
   EZY_ASSERT(wire_maker.IsDone());
   TopoDS_Wire wire = wire_maker.Wire();
 
-  // Create a face from the wire
   BRepBuilderAPI_MakeFace face_maker(wire);
   EZY_ASSERT(face_maker.IsDone());
-
-  // auto dbg_face = to_boost(face_maker.Face(), m_pln);
 
   Sketch_face_shp* ret = new Sketch_face_shp(m_sketch, face_maker.Face());
   std::swap(node_verts, ret->verts_3d);

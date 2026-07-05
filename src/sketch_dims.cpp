@@ -13,6 +13,7 @@
 #include "occt_view.h"
 #include "sketch.h"
 #include "sketch_delta.h"
+#include "sketch_edge.h"
 #include "utl_geom.h"
 
 using namespace glm;
@@ -254,7 +255,7 @@ void Sketch_dims::toggle_edge_dim_anno(const ScreenCoords& screen_coords)
   }
 
   if (std::list<Sketch::Edge>::iterator itr = m_sketch.get_edge_at_(screen_coords); itr != m_sketch.m_edges.edges().end())
-    if (!itr->circle_arc && itr->node_idx_b.has_value() && !itr->node_idx_arc.has_value())
+    if (sketch_edge_is_linear(*itr))
     {
       add_or_toggle_length_dim_between_node_indices_(itr->node_idx_a, *itr->node_idx_b);
       clear_pick_state();

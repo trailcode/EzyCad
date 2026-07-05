@@ -52,6 +52,7 @@ private:
 
   void add_edge_raw_(const gp_Pnt2d& pt_a, const gp_Pnt2d& pt_b);
   void add_edge_impl_(const gp_Pnt2d& pt_a, const gp_Pnt2d& pt_b, Sketch_op_recorder* rec);
+  void split_arc_at_node_(std::list<Sketch_edge>::iterator itr, size_t split_idx, Sketch_op_recorder* rec);
 
   Sketch&                m_sketch;
   std::list<Sketch_edge> m_edges;

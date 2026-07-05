@@ -1,28 +1,33 @@
 #pragma once
 
+#include <gp_Pln.hxx>
+#include <gp_Pnt2d.hxx>
+#include <gp_Vec2d.hxx>
 #include <optional>
 #include <string>
 
 #include "utl_types.h"
 
-/// One sketch edge segment (linear or part of a circle arc).
+/// One sketch edge segment (linear segment or circle arc).
 struct Sketch_edge
 {
   size_t                node_idx_a;
-  std::optional<size_t> node_idx_b;
-  std::optional<size_t> node_idx_arc; // Only valid for circle arc edges.
-  std::optional<size_t> node_idx_mid; // Midpoint of edge, used for snapping.
+  std::optional<size_t> node_idx_b;      // End node (lines and arcs).
+  std::optional<size_t> node_idx_arc_pt; // On-curve bulge point for arcs; not a graph vertex.
+  std::optional<size_t> node_idx_mid;    // Midpoint of edge, used for snapping (lines only).
 
-  // Used to identify the two `Sketch_edge`s defining a circle arc.
-  Geom_TrimmedCurve_ptr circle_arc;
-  Sketch_AIS_edge_ptr   shp; // Current edge annotation.
-
-  std::string name;
+  Sketch_AIS_edge_ptr shp; // Edge annotation and OCCT geometry.
+  std::string         name;
 
   bool reversed(size_t idx_a, size_t idx_b) const;
 };
 
 [[nodiscard]] bool sketch_edge_is_linear(const Sketch_edge& e);
+[[nodiscard]] bool sketch_edge_is_arc(const Sketch_edge& e);
+
+/// Unit direction from \a from_pt toward \a to_pt along \a e (chord for lines, curve tangent for arcs).
+[[nodiscard]] gp_Vec2d sketch_edge_outgoing_dir_2d(const Sketch_edge& e, const gp_Pnt2d& from_pt, const gp_Pnt2d& to_pt,
+                                                     const gp_Pln& pln);
 
 /// Read-only linear edge (node indices only).
 struct Sketch_edge_linear
@@ -32,7 +37,7 @@ struct Sketch_edge_linear
   std::optional<size_t> node_mid;
 };
 
-/// Read-only circle-arc edge (start, arc point, end); both arc halves share `shp`.
+/// Read-only circle-arc edge (start, arc point, end).
 struct Sketch_edge_arc
 {
   size_t              node_start;

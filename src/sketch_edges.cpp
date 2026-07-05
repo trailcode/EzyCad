@@ -1,14 +1,18 @@
 #include "sketch_edges.h"
 
 #include <BRepBuilderAPI_MakeEdge.hxx>
+#include <BRepAdaptor_Curve.hxx>
 #include <GC_MakeArcOfCircle.hxx>
+#include <GeomAPI_ProjectPointOnCurve.hxx>
 #include <Precision.hxx>
+#include <TopoDS.hxx>
 #include <algorithm>
 #include <vector>
 
 #include "occt_view.h"
 #include "sketch.h"
 #include "sketch_delta.h"
+#include "sketch_edge.h"
 #include "sketch_topo.h"
 #include "utl_geom.h"
 #include "utl.h"
@@ -62,35 +66,49 @@ void Sketch_edges::add_edge_impl_(const gp_Pnt2d& pt_a, const gp_Pnt2d& pt_b, Sk
   std::vector<gp_Pnt2d> inters;
   for (const Sketch_edge& e : m_edges)
   {
-    if (!is_linear(e))
-      continue;
+    if (is_linear(e))
+    {
+      gp_Pnt2d qa = m_sketch.m_nodes[e.node_idx_a];
+      gp_Pnt2d qb = m_sketch.m_nodes[e.node_idx_b];
 
-    gp_Pnt2d qa = m_sketch.m_nodes[e.node_idx_a];
-    gp_Pnt2d qb = m_sketch.m_nodes[e.node_idx_b];
-
-    if (auto inter = segment_intersection_2d(pt_a, pt_b, qa, qb, Segment_inclusion::Closed))
-      add_unique_point(inters, *inter);
+      if (auto inter = segment_intersection_2d(pt_a, pt_b, qa, qb, Segment_inclusion::Closed))
+        add_unique_point(inters, *inter);
+    }
+    else if (sketch_edge_is_arc(e))
+    {
+      for (const gp_Pnt2d& ip :
+           segment_arc_intersections_2d(pt_a, pt_b, TopoDS::Edge(e.shp->Shape()), m_sketch.m_pln, Segment_inclusion::Closed))
+        add_unique_point(inters, ip);
+    }
   }
 
-  // Collect only the *interior* hits on existing edges for splitting.
+  // Collect interior hits on existing edges for splitting.
   std::vector<gp_Pnt2d> inters_to_split;
   for (const auto& ip : inters)
   {
-    bool is_old_interior = false;
+    bool split_here = false;
     for (const Sketch_edge& e : m_edges)
     {
-      if (!is_linear(e))
-        continue;
-
-      gp_Pnt2d qa = m_sketch.m_nodes[e.node_idx_a];
-      gp_Pnt2d qb = m_sketch.m_nodes[e.node_idx_b];
-      if (point_on_open_segment_2d(ip, qa, qb))
+      if (is_linear(e))
       {
-        is_old_interior = true;
-        break;
+        gp_Pnt2d qa = m_sketch.m_nodes[e.node_idx_a];
+        gp_Pnt2d qb = m_sketch.m_nodes[e.node_idx_b];
+        if (point_on_open_segment_2d(ip, qa, qb))
+        {
+          split_here = true;
+          break;
+        }
+      }
+      else if (sketch_edge_is_arc(e))
+      {
+        if (point_on_open_arc_interior_2d(ip, TopoDS::Edge(e.shp->Shape()), m_sketch.m_pln))
+        {
+          split_here = true;
+          break;
+        }
       }
     }
-    if (is_old_interior)
+    if (split_here)
       add_unique_point(inters_to_split, ip);
   }
 
@@ -126,6 +144,7 @@ void Sketch_edges::add_edge_impl_(const gp_Pnt2d& pt_a, const gp_Pnt2d& pt_b, Sk
       rec->note_curr_node(nidx);
 
     m_sketch.m_topo.split_linear_edges_at_node_if_interior(nidx, rec);
+    m_sketch.m_topo.split_arcs_at_node_if_interior(nidx, rec);
   }
 
   for (size_t i = 0; i + 1 < div_node_idxs.size(); ++i)
@@ -175,9 +194,57 @@ void Sketch_edges::add_arc_circle_edges(const std::vector<size_t>& node_idxs)
   m_sketch.update_edge_style_(shp);
   m_sketch.m_ctx.Display(shp, false);
 
-  // Split into two edges for valid planer graph topology.
-  m_edges.push_back({node_idxs[0], node_idxs[2], node_idxs[2], std::nullopt, arc_of_circle, shp});
-  m_edges.push_back({node_idxs[2], node_idxs[1], std::nullopt, std::nullopt, arc_of_circle, shp});
+  // One graph edge per arc; endpoints are start and end only.
+  m_edges.push_back({node_idxs[0], node_idxs[1], node_idxs[2], std::nullopt, shp});
+}
+
+void Sketch_edges::split_arc_at_node_(std::list<Sketch_edge>::iterator itr, size_t split_idx, Sketch_op_recorder* rec)
+{
+  EZY_ASSERT(sketch_edge_is_arc(*itr));
+  EZY_ASSERT(itr->node_idx_b.has_value() && itr->node_idx_arc_pt.has_value());
+
+  const size_t idx_a = itr->node_idx_a;
+  const size_t idx_b = *itr->node_idx_b;
+  EZY_ASSERT(split_idx != idx_a && split_idx != idx_b);
+
+  if (rec)
+    rec->note_prev_arc_edge(m_sketch.m_nodes[idx_a], m_sketch.m_nodes[*itr->node_idx_arc_pt], m_sketch.m_nodes[idx_b]);
+
+  const TopoDS_Edge       occ_edge = TopoDS::Edge(itr->shp->Shape());
+  const BRepAdaptor_Curve curve(occ_edge);
+  const Handle(Geom_Curve) geom = curve.Curve().Curve();
+  const double             u_first = curve.FirstParameter();
+  const double             u_last  = curve.LastParameter();
+
+  auto param_at = [&](size_t node_idx) -> double
+  {
+    GeomAPI_ProjectPointOnCurve proj(to_3d(m_sketch.m_pln, m_sketch.m_nodes[node_idx]), geom, u_first, u_last);
+    EZY_ASSERT(proj.NbPoints() > 0);
+    return proj.LowerDistanceParameter();
+  };
+
+  const double u_a     = param_at(idx_a);
+  const double u_split = param_at(split_idx);
+  const double u_b     = param_at(idx_b);
+
+  const gp_Pnt2d bulge1 = to_2d(m_sketch.m_pln, curve.Value((u_a + u_split) * 0.5));
+  const gp_Pnt2d bulge2 = to_2d(m_sketch.m_pln, curve.Value((u_split + u_b) * 0.5));
+
+  m_sketch.m_ctx.Remove(itr->shp, false);
+  m_sketch.m_edges.edges().erase(itr);
+
+  const size_t bulge1_idx = m_sketch.m_nodes.get_node_exact(bulge1);
+  const size_t bulge2_idx = m_sketch.m_nodes.get_node_exact(bulge2);
+
+  add_arc_circle_edges({idx_a, split_idx, bulge1_idx});
+  add_arc_circle_edges({split_idx, idx_b, bulge2_idx});
+
+  if (rec)
+  {
+    rec->note_curr_node(split_idx);
+    rec->note_curr_arc_edge(m_sketch.m_nodes[idx_a], m_sketch.m_nodes[bulge1_idx], m_sketch.m_nodes[split_idx]);
+    rec->note_curr_arc_edge(m_sketch.m_nodes[split_idx], m_sketch.m_nodes[bulge2_idx], m_sketch.m_nodes[idx_b]);
+  }
 }
 
 void Sketch_edges::for_each_linear(const Linear_visitor& fn) const
@@ -194,28 +261,13 @@ void Sketch_edges::for_each_linear(const Linear_visitor& fn) const
 
 void Sketch_edges::for_each_arc(const Arc_visitor& fn) const
 {
-  const Sketch_edge* last_arc_half = nullptr;
-
   for (const Sketch_edge& e : m_edges)
   {
-    if (!e.circle_arc)
+    if (!sketch_edge_is_arc(e))
       continue;
 
-    EZY_ASSERT(e.node_idx_b.has_value());
-
-    if (last_arc_half)
-    {
-      EZY_ASSERT(last_arc_half->circle_arc.get() == e.circle_arc.get());
-      EZY_ASSERT(last_arc_half->node_idx_arc.has_value());
-      fn(Sketch_edge_arc{last_arc_half->node_idx_a, *last_arc_half->node_idx_arc, *e.node_idx_b, last_arc_half->shp});
-      last_arc_half = nullptr;
-    }
-    else
-    {
-      EZY_ASSERT(e.node_idx_arc.has_value());
-      EZY_ASSERT(*e.node_idx_b == *e.node_idx_arc);
-      last_arc_half = &e;
-    }
+    EZY_ASSERT(e.node_idx_arc_pt.has_value());
+    fn(Sketch_edge_arc{e.node_idx_a, *e.node_idx_arc_pt, *e.node_idx_b, e.shp});
   }
 }
 

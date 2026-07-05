@@ -229,4 +229,16 @@ void add_unique_point(std::vector<gp_Pnt2d>& points, const gp_Pnt2d& p);
 std::optional<gp_Pnt2d> snap_foot_to_open_segment_interior_if_close(const gp_Pnt2d& p, const gp_Pnt2d& a, const gp_Pnt2d& b,
                                                                     double max_perp_dist);
 
+/// True when \a p lies on the open interior of \a arc_edge (excluding endpoints).
+[[nodiscard]] bool point_on_open_arc_interior_2d(const gp_Pnt2d& p, const TopoDS_Edge& arc_edge, const gp_Pln& pln);
+
+/// Intersection points of segment [seg_a-seg_b] with \a arc_edge per \a inclusion.
+[[nodiscard]] std::vector<gp_Pnt2d> segment_arc_intersections_2d(const gp_Pnt2d& seg_a, const gp_Pnt2d& seg_b,
+                                                                   const TopoDS_Edge& arc_edge, const gp_Pln& pln,
+                                                                   Segment_inclusion inclusion = Segment_inclusion::Closed);
+
+/// Interior intersection points of two arc edges (excluding endpoint touches).
+[[nodiscard]] std::vector<gp_Pnt2d> arc_arc_intersections_2d(const TopoDS_Edge& arc_a, const TopoDS_Edge& arc_b,
+                                                               const gp_Pln& pln);
+
 #include "utl_geom.inl"
