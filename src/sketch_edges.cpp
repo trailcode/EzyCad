@@ -187,15 +187,20 @@ void Sketch_edges::update_end_pt(Sketch_edge& edge, size_t end_pt_idx)
 void Sketch_edges::add_arc_circle_edges(const std::vector<size_t>& node_idxs)
 {
   EZY_ASSERT(node_idxs.size() == 3);
+  // node_idxs[2] is the user pick (may be toward the circle center); it defines the arc only.
   Geom_TrimmedCurve_ptr arc_of_circle =
       GC_MakeArcOfCircle(m_sketch.to_3d_(node_idxs[0]), m_sketch.to_3d_(node_idxs[2]), m_sketch.to_3d_(node_idxs[1]));
 
-  Sketch_AIS_edge_ptr shp = new Sketch_AIS_edge(m_sketch, BRepBuilderAPI_MakeEdge(arc_of_circle));
+  const TopoDS_Edge edge = BRepBuilderAPI_MakeEdge(arc_of_circle).Edge();
+  const gp_Pnt2d    arc_pt_on_curve = arc_curve_midpoint_2d(edge, m_sketch.m_pln);
+  const size_t      arc_pt_idx      = m_sketch.m_nodes.get_node_exact(arc_pt_on_curve);
+
+  Sketch_AIS_edge_ptr shp = new Sketch_AIS_edge(m_sketch, edge);
   m_sketch.update_edge_style_(shp);
   m_sketch.m_ctx.Display(shp, false);
 
   // One graph edge per arc; endpoints are start and end only.
-  m_edges.push_back({node_idxs[0], node_idxs[1], node_idxs[2], std::nullopt, shp});
+  m_edges.push_back({node_idxs[0], node_idxs[1], arc_pt_idx, std::nullopt, shp});
 }
 
 void Sketch_edges::split_arc_at_node_(std::list<Sketch_edge>::iterator itr, size_t split_idx, Sketch_op_recorder* rec)

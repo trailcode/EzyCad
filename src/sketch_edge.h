@@ -13,7 +13,7 @@ struct Sketch_edge
 {
   size_t                node_idx_a;
   std::optional<size_t> node_idx_b;      // End node (lines and arcs).
-  std::optional<size_t> node_idx_arc_pt; // On-curve bulge point for arcs; not a graph vertex.
+  std::optional<size_t> node_idx_arc_pt; // Arc midpoint on the curve (parametric half); not a graph vertex.
   std::optional<size_t> node_idx_mid;    // Midpoint of edge, used for snapping (lines only).
 
   Sketch_AIS_edge_ptr shp; // Edge annotation and OCCT geometry.

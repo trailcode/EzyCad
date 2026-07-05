@@ -1,5 +1,7 @@
 #include "sketch_delta.h"
 
+#include <BRepBuilderAPI_MakeEdge.hxx>
+#include <GC_MakeArcOfCircle.hxx>
 #include <Precision.hxx>
 #include <algorithm>
 #include <utility>
@@ -78,6 +80,7 @@ public:
   static bool prev_linear_equal_(const Prev_edge_rec& x, const Prev_edge_rec& y);
   static bool curr_linear_equal_(const Curr_linear_edge_record& x, const Curr_linear_edge_record& y);
   static bool arc_equal_(const Arc_edge_record& x, const Arc_edge_record& y);
+  static bool arc_edge_matches_record_(const Sketch& sketch, const Sketch::Edge& e, const Arc_edge_record& rec);
   static bool length_dim_equal_(const Length_dim_record& x, const Length_dim_record& y);
   static void remove_linear_edges_on_segment_(Sketch& sketch, const gp_Pnt2d& seg_a, const gp_Pnt2d& seg_b);
   static void remove_linear_edges_on_node_segment_(Sketch& sketch, const gp_Pnt2d& pt_a, const gp_Pnt2d& pt_b);
@@ -525,6 +528,26 @@ bool Sketch_delta::Impl::arc_equal_(const Arc_edge_record& x, const Arc_edge_rec
          x.pt_c.SquareDistance(y.pt_c) <= Precision::SquareConfusion();
 }
 
+bool Sketch_delta::Impl::arc_edge_matches_record_(const Sketch& sketch, const Sketch::Edge& e, const Arc_edge_record& rec)
+{
+  if (!sketch_edge_is_arc(e) || !e.node_idx_arc_pt.has_value() || !e.node_idx_b.has_value() || e.shp.IsNull())
+    return false;
+
+  const gp_Pnt2d start = sketch.m_nodes[e.node_idx_a];
+  const gp_Pnt2d end   = sketch.m_nodes[*e.node_idx_b];
+  if (!pts_equal_(start, rec.pt_a) || !pts_equal_(end, rec.pt_c))
+    return false;
+
+  Geom_TrimmedCurve_ptr expected =
+      GC_MakeArcOfCircle(to_3d(sketch.m_pln, rec.pt_a), to_3d(sketch.m_pln, rec.pt_b), to_3d(sketch.m_pln, rec.pt_c));
+  if (!expected)
+    return false;
+
+  const gp_Pnt2d expected_mid = arc_curve_midpoint_2d(BRepBuilderAPI_MakeEdge(expected).Edge(), sketch.m_pln);
+  const gp_Pnt2d stored_mid   = sketch.m_nodes[*e.node_idx_arc_pt];
+  return pts_equal_(expected_mid, stored_mid);
+}
+
 bool Sketch_delta::Impl::length_dim_equal_(const Length_dim_record& x, const Length_dim_record& y)
 {
   return pts_equal_(x.pt_lo, y.pt_lo) && pts_equal_(x.pt_hi, y.pt_hi);
@@ -567,12 +590,7 @@ void Sketch_delta::Impl::remove_arc_edge_(Sketch& sketch, const Arc_edge_record&
       continue;
     }
 
-    EZY_ASSERT(itr->node_idx_arc_pt.has_value() && itr->node_idx_b.has_value());
-    const gp_Pnt2d start = sketch.m_nodes[itr->node_idx_a];
-    const gp_Pnt2d arc   = sketch.m_nodes[*itr->node_idx_arc_pt];
-    const gp_Pnt2d end   = sketch.m_nodes[*itr->node_idx_b];
-
-    if (!arc_equal_({start, arc, end}, rec))
+    if (!arc_edge_matches_record_(sketch, *itr, rec))
     {
       ++itr;
       continue;

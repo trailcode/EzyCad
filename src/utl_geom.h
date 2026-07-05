@@ -232,6 +232,9 @@ std::optional<gp_Pnt2d> snap_foot_to_open_segment_interior_if_close(const gp_Pnt
 /// True when \a p lies on the open interior of \a arc_edge (excluding endpoints).
 [[nodiscard]] bool point_on_open_arc_interior_2d(const gp_Pnt2d& p, const TopoDS_Edge& arc_edge, const gp_Pln& pln);
 
+/// Point at half the parametric length of \a arc_edge, projected to \a pln.
+[[nodiscard]] gp_Pnt2d arc_curve_midpoint_2d(const TopoDS_Edge& arc_edge, const gp_Pln& pln);
+
 /// Intersection points of segment [seg_a-seg_b] with \a arc_edge per \a inclusion.
 [[nodiscard]] std::vector<gp_Pnt2d> segment_arc_intersections_2d(const gp_Pnt2d& seg_a, const gp_Pnt2d& seg_b,
                                                                    const TopoDS_Edge& arc_edge, const gp_Pln& pln,

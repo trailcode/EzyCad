@@ -1445,6 +1445,13 @@ bool point_on_open_arc_interior_2d(const gp_Pnt2d& p, const TopoDS_Edge& arc_edg
   return on_open_arc_parameter_(proj.LowerDistanceParameter(), u_first, u_last);
 }
 
+gp_Pnt2d arc_curve_midpoint_2d(const TopoDS_Edge& arc_edge, const gp_Pln& pln)
+{
+  const BRepAdaptor_Curve curve(arc_edge);
+  const double          u_mid = (curve.FirstParameter() + curve.LastParameter()) * 0.5;
+  return to_2d(pln, curve.Value(u_mid));
+}
+
 std::vector<gp_Pnt2d> segment_arc_intersections_2d(const gp_Pnt2d& seg_a, const gp_Pnt2d& seg_b, const TopoDS_Edge& arc_edge,
                                                    const gp_Pln& pln, Segment_inclusion inclusion)
 {
