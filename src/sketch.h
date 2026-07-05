@@ -169,6 +169,7 @@ private:
   void sketch_json_set_operation_axis_(const gp_Pnt2d& pt_a, const gp_Pnt2d& pt_b);
 
   void add_arc_circle_(const std::vector<size_t>& node_idxs);
+  void add_arc_circle_(const std::vector<size_t>& node_idxs, Sketch_op_recorder& rec);
   void add_arc_circle_(const gp_Pnt2d& pt_a, const gp_Pnt2d& pt_b, const gp_Pnt2d& pt_c);
   void add_arc_circle_(const gp_Pnt2d& pt_a, const gp_Pnt2d& pt_b, const gp_Pnt2d& pt_c, Sketch_op_recorder& rec);
 

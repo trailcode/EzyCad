@@ -445,8 +445,35 @@ void Sketch_topo::update_faces()
       const Sketch::Edge* curr_edge = start_edge;
       Face_edges          face;
 
+      // Guard against non-terminating left-most walks. After arc/line splits (e.g. a circle
+      // through a slot) the graph can have parallel edges between the same nodes with identical
+      // outgoing tangents at a vertex. The walker may then ping-pong between two edges forever
+      // without returning to start_idx. Track (curr, prev, edge) and cap steps so update_faces
+      // always finishes; partial walks are discarded like dangling topology. This safety net
+      // may become unnecessary if the turn rule is changed to avoid revisiting parallel pairs.
+      using Walk_key = std::tuple<size_t, size_t, const Sketch::Edge*>;
+      struct Walk_key_hash
+      {
+        size_t operator()(const Walk_key& k) const noexcept
+        {
+          const auto [c, p, e] = k;
+          return std::hash<size_t>{}(c) ^ (std::hash<size_t>{}(p) << 1) ^
+                 (std::hash<const void*>{}(static_cast<const void*>(e)) << 2);
+        }
+      };
+      std::unordered_set<Walk_key, Walk_key_hash> walk_seen;
+      const size_t                                max_walk_steps = m_sketch.m_edges.size() + 1;
+      size_t                                      walk_steps     = 0;
+
       for (;;)
       {
+        if (++walk_steps > max_walk_steps)
+          break;
+
+        const Walk_key key{curr_idx, prev_idx, curr_edge};
+        if (!walk_seen.insert(key).second)
+          break;
+
         face.push_back({*curr_edge, curr_edge->reversed(prev_idx, curr_idx)});
 
         // Base case

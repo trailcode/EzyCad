@@ -184,25 +184,105 @@ void Sketch_edges::update_end_pt(Sketch_edge& edge, size_t end_pt_idx)
     edge.node_idx_mid = std::nullopt;
 }
 
-void Sketch_edges::add_arc_circle_edges(const std::vector<size_t>& node_idxs)
+void Sketch_edges::add_arc_circle_edges(const std::vector<size_t>& node_idxs, Sketch_op_recorder* rec)
 {
   EZY_ASSERT(node_idxs.size() == 3);
   // node_idxs[2] is the user pick (may be toward the circle center); it defines the arc only.
   Geom_TrimmedCurve_ptr arc_of_circle =
       GC_MakeArcOfCircle(m_sketch.to_3d_(node_idxs[0]), m_sketch.to_3d_(node_idxs[2]), m_sketch.to_3d_(node_idxs[1]));
+  if (!arc_of_circle)
+    return;
 
-  const TopoDS_Edge edge = BRepBuilderAPI_MakeEdge(arc_of_circle).Edge();
+  const TopoDS_Edge new_edge = BRepBuilderAPI_MakeEdge(arc_of_circle).Edge();
+  const gp_Pnt2d    pt_start = m_sketch.m_nodes[node_idxs[0]];
+  const gp_Pnt2d    pt_end   = m_sketch.m_nodes[node_idxs[1]];
+
+  // Intersections with all existing edges (split both olds and the new arc).
+  std::vector<gp_Pnt2d> inters;
+  for (const Sketch_edge& e : m_edges)
+  {
+    if (is_linear(e))
+    {
+      const gp_Pnt2d qa = m_sketch.m_nodes[e.node_idx_a];
+      const gp_Pnt2d qb = m_sketch.m_nodes[*e.node_idx_b];
+      if (point_on_open_segment_2d(pt_start, qa, qb))
+        add_unique_point(inters, pt_start);
+      if (point_on_open_segment_2d(pt_end, qa, qb))
+        add_unique_point(inters, pt_end);
+
+      for (const gp_Pnt2d& ip :
+           segment_arc_intersections_2d(qa, qb, new_edge, m_sketch.m_pln, Segment_inclusion::Closed))
+        add_unique_point(inters, ip);
+    }
+    else if (sketch_edge_is_arc(e))
+    {
+      for (const gp_Pnt2d& ip :
+           arc_arc_intersections_2d(TopoDS::Edge(e.shp->Shape()), new_edge, m_sketch.m_pln))
+        add_unique_point(inters, ip);
+    }
+  }
+
+  std::vector<gp_Pnt2d> inters_to_split;
+  for (const gp_Pnt2d& ip : inters)
+  {
+    bool split_here = false;
+    for (const Sketch_edge& e : m_edges)
+    {
+      if (is_linear(e))
+      {
+        const gp_Pnt2d qa = m_sketch.m_nodes[e.node_idx_a];
+        const gp_Pnt2d qb = m_sketch.m_nodes[*e.node_idx_b];
+        if (point_on_open_segment_2d(ip, qa, qb))
+        {
+          split_here = true;
+          break;
+        }
+      }
+      else if (sketch_edge_is_arc(e))
+      {
+        if (point_on_open_arc_interior_2d(ip, TopoDS::Edge(e.shp->Shape()), m_sketch.m_pln))
+        {
+          split_here = true;
+          break;
+        }
+      }
+    }
+    if (split_here)
+      add_unique_point(inters_to_split, ip);
+  }
+
+  for (const gp_Pnt2d& inter_p : inters_to_split)
+  {
+    const size_t nidx = m_sketch.m_nodes.get_node_exact(inter_p);
+    if (rec)
+      rec->note_curr_node(nidx);
+
+    m_sketch.m_topo.split_linear_edges_at_node_if_interior(nidx, rec);
+    m_sketch.m_topo.split_arcs_at_node_if_interior(nidx, rec);
+  }
 
   std::optional<size_t> arc_pt_idx;
   if (Sketch::get_add_mid_pt_edges())
-    arc_pt_idx = m_sketch.m_nodes.add_new_node(arc_curve_midpoint_2d(edge, m_sketch.m_pln), true);
+    arc_pt_idx = m_sketch.m_nodes.add_new_node(arc_curve_midpoint_2d(new_edge, m_sketch.m_pln), true);
 
-  Sketch_AIS_edge_ptr shp = new Sketch_AIS_edge(m_sketch, edge);
+  Sketch_AIS_edge_ptr shp = new Sketch_AIS_edge(m_sketch, new_edge);
   m_sketch.update_edge_style_(shp);
   m_sketch.m_ctx.Display(shp, false);
 
   // One graph edge per arc; endpoints are start and end only.
   m_edges.push_back({node_idxs[0], node_idxs[1], arc_pt_idx, std::nullopt, shp});
+
+  for (const gp_Pnt2d& ip : inters)
+  {
+    if (!point_on_open_arc_interior_2d(ip, new_edge, m_sketch.m_pln))
+      continue;
+
+    const size_t nidx = m_sketch.m_nodes.get_node_exact(ip);
+    if (rec)
+      rec->note_curr_node(nidx);
+
+    m_sketch.m_topo.split_arcs_at_node_if_interior(nidx, rec);
+  }
 }
 
 void Sketch_edges::split_arc_at_node_(std::list<Sketch_edge>::iterator itr, size_t split_idx, Sketch_op_recorder* rec)

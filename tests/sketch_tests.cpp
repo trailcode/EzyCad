@@ -1555,6 +1555,50 @@ TEST_F(Sketch_test, ArcSplit_LineCrossingArcInterior)
       << "Line should be split at the arc intersection";
 }
 
+TEST_F(Sketch_test, ArcSplit_ArcCrossingLineInterior)
+{
+  gp_Pln default_plane(gp::Origin(), gp::DZ());
+  Sketch sketch("test_sketch", view(), default_plane);
+
+  Sketch_access::add_edge_(sketch, gp_Pnt2d(-10.0, 0.0), gp_Pnt2d(10.0, 0.0));
+  Sketch_access::add_arc_circle_(sketch, gp_Pnt2d(-4.0, 0.0), gp_Pnt2d(4.0, 0.0), gp_Pnt2d(0.0, 4.0));
+
+  EXPECT_EQ(Sketch_access::get_linear_edge_count(sketch), 3u)
+      << "Arc endpoints on line interior should split the line into three segments";
+  EXPECT_GE(Sketch_access::get_arc_internal_edge_count(sketch), 1u);
+}
+
+TEST_F(Sketch_test, ArcSplit_CircleCrossesSlotLines)
+{
+  gp_Pln default_plane(gp::Origin(), gp::DZ());
+  Sketch sketch("test_sketch", view(), default_plane);
+
+  const gp_Pnt2d slot_a(-15.0, 0.0);
+  const gp_Pnt2d slot_b(15.0, 0.0);
+  const gp_Pnt2d slot_c(0.0, 5.0);
+  const Slot_pnts  pnts = get_slot_points(slot_a, slot_b, slot_c);
+
+  Sketch_access::add_edge_(sketch, pnts.a_top_2d, pnts.b_top_2d);
+  Sketch_access::add_edge_(sketch, pnts.a_bottom_2d, pnts.b_bottom_2d);
+  Sketch_access::add_arc_circle_(sketch, pnts.a_bottom_2d, pnts.a_top_2d, pnts.a_mid_2d);
+  Sketch_access::add_arc_circle_(sketch, pnts.b_bottom_2d, pnts.b_top_2d, pnts.b_mid_2d);
+
+  const size_t linear_before = Sketch_access::get_linear_edge_count(sketch);
+  const size_t arcs_before   = Sketch_access::get_arc_internal_edge_count(sketch);
+
+  std::array<gp_Pnt2d, 4> circle_pts = xy_stencil_pnts(gp_Pnt2d(0.0, 0.0), gp_Pnt2d(8.0, 0.0));
+  Sketch_access::add_arc_circle_(sketch, circle_pts[0], circle_pts[2], circle_pts[1]);
+  Sketch_access::add_arc_circle_(sketch, circle_pts[0], circle_pts[3], circle_pts[1]);
+
+  EXPECT_GT(Sketch_access::get_linear_edge_count(sketch), linear_before)
+      << "Circle through slot should split the horizontal slot lines";
+  EXPECT_GT(Sketch_access::get_arc_internal_edge_count(sketch), arcs_before)
+      << "Circle arcs should split where they cross the slot lines";
+
+  // Face walker must terminate (regression: slot + circle could loop on parallel edge pairs).
+  Sketch_access::update_faces_(sketch);
+}
+
 TEST_F(Sketch_test, OriginatingFaceSnapPointsSquare)
 {
   gp_Pln default_plane(gp::Origin(), gp::DZ());
