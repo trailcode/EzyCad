@@ -12,6 +12,7 @@
 #include "sketch_dims.h"
 #include "sketch_edge.h"
 #include "sketch_edges.h"
+#include "sketch_node_marks.h"
 #include "sketch_nodes.h"
 #include "sketch_topo.h"
 #include "sketch_underlay.h"
@@ -25,17 +26,12 @@ class TopoDS_Wire;
 class Sketch;
 enum class Mode;
 
-struct Sketch_AIS_node_mark;
-
 /// Selective refresh of sketch annotations after global settings or geometry changes.
 struct Sketch_annotation_refresh
 {
   bool length_dimensions    = false;
   bool permanent_node_marks = false;
 };
-
-/// If `shp` is a permanent sketch node mark, removes it from its owner sketch.
-bool try_remove_sketch_permanent_node_mark(AIS_Shape* shp);
 
 // The Sketch class provides a comprehensive set of methods for creating and manipulating 2D sketches in a 3D environment.
 // It supports adding and moving points, creating line segments, arcs, and mirror lines, and updating the sketch's
@@ -151,6 +147,7 @@ private:
   friend class Sketch_topo;
   friend class Sketch_dims;
   friend class Sketch_edges;
+  friend class Sketch_node_marks;
 
   static bool s_add_mid_pt_edges;
   static bool s_edge_from_center;
@@ -236,17 +233,10 @@ private:
 
   // Style related
   void update_edge_style_(AIS_Shape_ptr& shp);
-  void update_node_mark_style_(AIS_Shape_ptr& shp);
-  void sync_permanent_node_annos_();
   void sync_operation_axis_display_();
   bool show_operation_axis_() const;
   bool operation_axis_suppresses_sketch_snap_() const;
   void update_originating_face_style();
-
-  void remove_permanent_node_mark_ais_at_(size_t node_idx);
-  void remove_all_permanent_node_marks_();
-  void erase_permanent_node_marks_();
-  void trim_trailing_permanent_node_marks_();
 
   void json_add_length_dimension_(size_t node_a, size_t node_b, bool visible = true,
                                   std::optional<double> flyout_offset = std::nullopt, const std::string& name = {});
@@ -287,14 +277,13 @@ private:
 
   std::optional<gp_Pnt2d> m_last_pt;
   Sketch_nodes            m_nodes;
-  /// One entry per node index; only indices with permanent, non-deleted nodes hold a displayed + marker.
-  std::vector<Sketch_AIS_node_mark_ptr> m_permanent_node_marks;
-  Sketch_edges                          m_edges;
-  Sketch_topo                           m_topo;
-  Sketch_dims                           m_dims;
-  Sketch_underlay                       m_underlay;
-  std::vector<size_t>                   m_tmp_node_idxs;
-  std::vector<Edge>                     m_tmp_edges;
-  AIS_Shape_ptr                         m_tmp_shp;
-  bool                                  m_show_faces{true};
+  Sketch_node_marks       m_node_marks;
+  Sketch_edges            m_edges;
+  Sketch_topo             m_topo;
+  Sketch_dims             m_dims;
+  Sketch_underlay         m_underlay;
+  std::vector<size_t>     m_tmp_node_idxs;
+  std::vector<Edge>       m_tmp_edges;
+  AIS_Shape_ptr           m_tmp_shp;
+  bool                    m_show_faces{true};
 };

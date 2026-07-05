@@ -599,7 +599,7 @@ void Sketch_topo::update_faces()
 
   rebuild_dim_classifier_face_cache_();
   m_sketch.m_dims.purge_stale_length_dimensions();
-  m_sketch.sync_permanent_node_annos_();
+  m_sketch.m_node_marks.sync();
   m_sketch.m_dims.refresh_all_length_dimensions();
 
   if (m_sketch.is_current())

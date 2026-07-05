@@ -25,8 +25,6 @@
 
 using namespace glm;
 
-struct Sketch_AIS_node_mark;
-
 namespace
 {
 struct Symmetric_edge_span
@@ -66,6 +64,7 @@ Sketch::Sketch(const std::string& name, Occt_view& view, const gp_Pln& pln)
     , m_edges(*this)
     , m_topo(*this)
     , m_dims(*this)
+    , m_node_marks(*this)
     , m_underlay(view.ctx())
 {
 }
@@ -79,6 +78,7 @@ Sketch::Sketch(const std::string& name, Occt_view& view, const gp_Pln& pln, cons
     , m_edges(*this)
     , m_topo(*this)
     , m_dims(*this)
+    , m_node_marks(*this)
     , m_underlay(view.ctx())
 {
   m_originating_face = new AIS_Shape(outer_wire);
@@ -99,7 +99,7 @@ Sketch::~Sketch()
   if (m_operation_axis.has_value())
     m_ctx.Remove(m_operation_axis->shp, false);
 
-  remove_all_permanent_node_marks_();
+  m_node_marks.remove_all();
 
   m_ctx.Remove(m_originating_face, true);
 }
@@ -208,14 +208,6 @@ void Sketch::update_edge_style_(AIS_Shape_ptr& shp)
   default:
     EZY_ASSERT(false);
   }
-}
-
-void Sketch::update_node_mark_style_(AIS_Shape_ptr& shp)
-{
-  // Keep permanent node markers visually stable across sketch switching.
-  shp->SetWidth(1.25);
-  shp->SetColor(Quantity_NOC_RED);
-  shp->SetTransparency(0.0);
 }
 
 void Sketch::update_originating_face_style()
@@ -970,7 +962,7 @@ void Sketch::finalize_operation_axis_(Sketch_op_recorder& rec)
 
   cancel_elm(); // Reset state, we have the operation axis
   sync_operation_axis_display_();
-  sync_permanent_node_annos_();
+  m_node_marks.sync();
   m_nodes.hide_snap_annos();
 }
 
@@ -980,7 +972,7 @@ void Sketch::clear_operation_axis()
     m_ctx.Remove(m_operation_axis->shp, false);
 
   m_operation_axis = std::nullopt;
-  sync_permanent_node_annos_();
+  m_node_marks.sync();
   m_nodes.hide_snap_annos();
 }
 
@@ -1252,7 +1244,7 @@ void Sketch::refresh_annotations(const Sketch_annotation_refresh& refresh)
     m_dims.refresh_all_length_dimensions();
 
   if (refresh.permanent_node_marks)
-    sync_permanent_node_annos_();
+    m_node_marks.sync();
 }
 
 size_t Sketch::length_dimension_count() const { return m_dims.length_dimension_count(); }
@@ -1318,7 +1310,7 @@ bool Sketch::cancel_elm()
   m_nodes.hide_snap_annos();
   m_nodes.cancel();
 
-  trim_trailing_permanent_node_marks_();
+  m_node_marks.trim_trailing();
 
   return operation_canceled;
 }
@@ -1408,7 +1400,7 @@ void Sketch::on_mode()
   // Reset state
   cancel_elm();
   sync_operation_axis_display_();
-  sync_permanent_node_annos_();
+  m_node_marks.sync();
 }
 
 bool Sketch::show_operation_axis_() const
@@ -1503,7 +1495,7 @@ void Sketch::set_visible(bool state)
       m_underlay.rebuild_and_display(m_pln);
 
     sync_operation_axis_display_();
-    sync_permanent_node_annos_();
+    m_node_marks.sync();
   }
   else
   {
@@ -1526,7 +1518,7 @@ void Sketch::set_visible(bool state)
     m_nodes.hide_snap_annos();
     cancel_elm();
 
-    erase_permanent_node_marks_();
+    m_node_marks.erase_all();
   }
 
   m_ctx.UpdateCurrentViewer();
@@ -1678,78 +1670,6 @@ std::vector<std::string> Sketch::inspector_face_labels() const
   return labels;
 }
 
-/// Selectable "+" marker for user-placed permanent sketch nodes (add-node tool).
-struct Sketch_AIS_node_mark : public AIS_Shape
-{
-  Sketch_AIS_node_mark(Sketch& owner, size_t node_idx, const TopoDS_Shape& shp);
-  Sketch& owner_sketch;
-  size_t  node_idx{};
-};
-
-bool try_remove_sketch_permanent_node_mark(AIS_Shape* shp)
-{
-  if (!shp)
-    return false;
-
-  if (auto* mark = dynamic_cast<Sketch_AIS_node_mark*>(shp))
-  {
-    mark->owner_sketch.remove_permanent_node_mark(*mark);
-    return true;
-  }
-
-  return false;
-}
-
-void Sketch::sync_permanent_node_annos_()
-{
-  if (m_permanent_node_marks.size() < m_nodes.size())
-    m_permanent_node_marks.resize(m_nodes.size());
-
-  const double size_scale = std::max(static_cast<double>(m_view.gui().permanent_node_anno_scale()), 0.0);
-  const double half_arm   = std::max(m_topo.plane_pick_snap_radius_world() * 0.45 * size_scale, Precision::Confusion() * 50.0);
-
-  const Mode mode = get_mode();
-  // Show "+" markers for permanent user nodes in sketch modes and polar duplicate (which snaps to sketch nodes).
-  // Hide during face extrude so face selection is unobstructed.
-  const bool show_permanent_marks =
-      mode != Mode::Sketch_face_extrude && (is_sketch_mode(mode) || mode == Mode::Shape_polar_duplicate);
-  const bool hide_for_operation_axis = operation_axis_suppresses_sketch_snap_();
-
-  for (size_t i = 0, n = m_nodes.size(); i < n; ++i)
-  {
-    const Sketch_nodes::Node& node = m_nodes[i];
-    const bool show = m_visible && node.permanent && !node.deleted && show_permanent_marks && !hide_for_operation_axis;
-
-    if (!show)
-    {
-      if (m_permanent_node_marks[i])
-      {
-        m_ctx.Remove(m_permanent_node_marks[i], false);
-        m_permanent_node_marks[i].Nullify();
-      }
-      continue;
-    }
-
-    const gp_Pnt2d     p2(node.X(), node.Y());
-    const gp_Pnt       c3    = to_3d(m_pln, p2);
-    const TopoDS_Shape cross = create_plus_cross_shape(m_pln, c3, half_arm);
-
-    if (m_permanent_node_marks[i])
-    {
-      m_permanent_node_marks[i]->Set(cross);
-      update_node_mark_style_(m_permanent_node_marks[i]);
-      m_ctx.Redisplay(m_permanent_node_marks[i], true);
-    }
-    else
-    {
-      Sketch_AIS_node_mark_ptr mk = new Sketch_AIS_node_mark(*this, i, cross);
-      update_node_mark_style_(mk);
-      m_permanent_node_marks[i] = mk;
-      m_ctx.Display(mk, AIS_WireFrame, 0, false);
-    }
-  }
-}
-
 void Sketch::remove_permanent_node_mark(Sketch_AIS_node_mark& mark)
 {
   EZY_ASSERT(&mark.owner_sketch == this);
@@ -1757,67 +1677,7 @@ void Sketch::remove_permanent_node_mark(Sketch_AIS_node_mark& mark)
   EZY_ASSERT(i < m_nodes.size());
   m_nodes[i].deleted = true;
   remove_length_dimensions_referencing_node_(i);
-  if (i < m_permanent_node_marks.size() && m_permanent_node_marks[i].get() == &mark)
-  {
-    m_ctx.Remove(m_permanent_node_marks[i], false);
-    m_permanent_node_marks[i].Nullify();
-  }
+  m_node_marks.remove_at(i);
 
   m_ctx.UpdateCurrentViewer();
-}
-
-void Sketch::remove_permanent_node_mark_ais_at_(size_t node_idx)
-{
-  if (node_idx >= m_permanent_node_marks.size() || m_permanent_node_marks[node_idx].IsNull())
-    return;
-
-  m_ctx.Remove(m_permanent_node_marks[node_idx], false);
-  m_permanent_node_marks[node_idx].Nullify();
-}
-
-void Sketch::remove_all_permanent_node_marks_()
-{
-  for (Sketch_AIS_node_mark_ptr& mk : m_permanent_node_marks)
-    if (mk)
-      m_ctx.Remove(mk, false);
-
-  m_permanent_node_marks.clear();
-}
-
-void Sketch::erase_permanent_node_marks_()
-{
-  for (Sketch_AIS_node_mark_ptr& mk : m_permanent_node_marks)
-    if (mk)
-      m_ctx.Erase(mk, false);
-}
-
-void Sketch::trim_trailing_permanent_node_marks_()
-{
-  while (m_permanent_node_marks.size() > m_nodes.size())
-  {
-    const size_t last = m_permanent_node_marks.size() - 1;
-    if (m_permanent_node_marks[last])
-      m_ctx.Remove(m_permanent_node_marks[last], false);
-
-    m_permanent_node_marks.pop_back();
-  }
-}
-
-Sketch_AIS_edge::Sketch_AIS_edge(Sketch& owner, const TopoDS_Shape& shp)
-    : AIS_Shape(shp)
-    , owner_sketch(owner)
-{
-}
-
-Sketch_AIS_node_mark::Sketch_AIS_node_mark(Sketch& owner, size_t node_idx, const TopoDS_Shape& shp)
-    : AIS_Shape(shp)
-    , owner_sketch(owner)
-    , node_idx(node_idx)
-{
-}
-
-Sketch_face_shp::Sketch_face_shp(Sketch& owner, const TopoDS_Shape& face)
-    : owner_sketch(owner)
-    , AIS_Shape(face)
-{
 }
