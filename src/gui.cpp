@@ -1048,6 +1048,7 @@ void GUI::sketch_list_()
 {
   if (!show_sketch_list_effective())
   {
+    m_view->set_sketch_list_hover(nullptr);
     m_view->set_sketch_list_measurement_hover(nullptr, SIZE_MAX);
     return;
   }
@@ -1063,6 +1064,7 @@ void GUI::sketch_list_()
 
   if (!ImGui::Begin("Sketch List", &m_show_sketch_list, ImGuiWindowFlags_None))
   {
+    m_view->set_sketch_list_hover(nullptr);
     m_view->set_sketch_list_measurement_hover(nullptr, SIZE_MAX);
     ImGui::End();
     return;
@@ -1073,11 +1075,14 @@ void GUI::sketch_list_()
 
   int          index = 0;
   Sketch::sptr sketch_to_delete;
+  Sketch::sptr sketch_list_hover;
   Sketch::sptr sketch_list_measurement_hover_sketch;
   size_t       sketch_list_measurement_hover_index = SIZE_MAX;
   for (Sketch::sptr& sketch : m_view->get_sketches())
   {
     EZY_ASSERT(sketch);
+
+    ImGui::BeginGroup();
 
     // Buffer for editable name
     char name_buffer[1024];
@@ -1139,7 +1144,12 @@ void GUI::sketch_list_()
     ImGui::PushID(("visible" + id_suffix).c_str());
     bool visible = sketch->is_visible();
     if (ImGui::Checkbox("", &visible))
+    {
+      if (!visible && m_view->sketch_list_hover() == sketch)
+        m_view->set_sketch_list_hover(nullptr);
+
       sketch->set_visible(visible);
+    }
 
     if (ui_show_contextual_help() && ImGui::IsItemHovered())
       ImGui::SetTooltip("Visibility");
@@ -1161,6 +1171,11 @@ void GUI::sketch_list_()
         sketch->underlay_set_visible(ul_vis);
         if (m_underlay_panel_sketch == sketch.get())
           m_underlay_vis = ul_vis;
+        if (m_view->sketch_list_hover() == sketch)
+        {
+          m_view->set_sketch_list_hover(nullptr);
+          m_view->set_sketch_list_hover(sketch);
+        }
       }
 
       if (!has_ul)
@@ -1198,12 +1213,18 @@ void GUI::sketch_list_()
       ImGui::PopID();
     }
 
+    ImGui::EndGroup();
+
+    if (ImGui::IsItemHovered() && sketch->is_visible())
+      sketch_list_hover = sketch;
+
     if (expanded && ui_show_sketch_list_expand())
       sketch_list_inspector_(sketch, index, sketch_list_measurement_hover_sketch, sketch_list_measurement_hover_index);
 
     ++index;
   }
 
+  m_view->set_sketch_list_hover(sketch_list_hover);
   m_view->set_sketch_list_measurement_hover(sketch_list_measurement_hover_sketch, sketch_list_measurement_hover_index);
 
   ImGui::EndChild();

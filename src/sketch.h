@@ -87,6 +87,9 @@ public:
   /// OCCT length-dimension object for list hover / viewer highlight (may be null while rebuilding).
   PrsDim_LengthDimension_ptr length_dimension_handle(size_t dim_index) const;
 
+  /// AIS objects to emphasize while this sketch's Sketch List row is hovered.
+  void append_list_hover_ais(std::vector<AIS_InteractiveObject_ptr>& out) const;
+
   /// Rebuild length dimensions and/or permanent node '+' markers (e.g. after settings changes).
   void refresh_annotations(const Sketch_annotation_refresh& refresh);
 

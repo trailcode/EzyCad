@@ -241,6 +241,9 @@ public:
   /// Highlight \a shp in the 3D viewer while the Shape List row is hovered (null clears).
   void           set_shape_list_hover(const Shp_ptr& shp);
   const Shp_ptr& shape_list_hover() const { return m_shape_list_hover; }
+  /// Highlight \a sketch geometry (including underlay) while its Sketch List row is hovered (null clears).
+  void           set_sketch_list_hover(const Sketch_ptr& sketch);
+  const Sketch_ptr& sketch_list_hover() const { return m_sketch_list_hover; }
   /// Highlight a sketch length dimension while its Sketch List row is hovered (\a dim_index == SIZE_MAX clears).
   void set_sketch_list_measurement_hover(const Sketch_ptr& sketch, size_t dim_index);
   /// Re-apply list-hover highlight after Settings changes the hover color.
@@ -351,13 +354,17 @@ private:
   Sketch_list                       m_sketches;
   std::shared_ptr<Sketch>           m_cur_sketch;
   TopAbs_ShapeEnum                  m_shp_selection_mode{TopAbs_SHAPE};
-  Shp_ptr                           m_shape_list_hover;
-  PrsDim_LengthDimension_ptr        m_sketch_list_measurement_hover;
-  opencascade::handle<Prs3d_Drawer> m_shape_list_hover_drawer;
-  void                              update_shape_list_hover_drawer_();
-  void                              apply_sketch_list_measurement_hover_style_();
-  void                              restore_sketch_list_measurement_hover_style_();
-  void                              refresh_sketch_list_measurement_hover_highlight_();
+  Shp_ptr                                    m_shape_list_hover;
+  Sketch_ptr                                 m_sketch_list_hover;
+  std::vector<AIS_InteractiveObject_ptr>     m_sketch_list_hover_ais;
+  PrsDim_LengthDimension_ptr                 m_sketch_list_measurement_hover;
+  opencascade::handle<Prs3d_Drawer>          m_shape_list_hover_drawer;
+  void                                       update_shape_list_hover_drawer_();
+  void                                       clear_sketch_list_hover_ais_();
+  void                                       apply_sketch_list_hover_highlight_();
+  void                                       apply_sketch_list_measurement_hover_style_();
+  void                                       restore_sketch_list_measurement_hover_style_();
+  void                                       refresh_sketch_list_measurement_hover_highlight_();
   Graphic3d_MaterialAspect          m_default_material;
   bool                              m_headless_view{false};
   /// True when LMB press was handled by planar-face sketch creation without AIS_ViewController::PressMouseButton (pair with

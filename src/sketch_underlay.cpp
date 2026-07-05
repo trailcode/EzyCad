@@ -1,5 +1,7 @@
 #include "sketch_underlay.h"
 
+#include <AIS_InteractiveObject.hxx>
+
 #include <AIS_InteractiveContext.hxx>
 #include <AIS_InteractiveObject.hxx>
 #include <AIS_Shape.hxx>
@@ -608,6 +610,18 @@ void Sketch_underlay::redisplay(AIS_InteractiveContext& ctx)
 {
   if (!m_ais.IsNull())
     ctx.Redisplay(m_ais, true);
+}
+
+void Sketch_underlay::append_list_hover_ais(std::vector<opencascade::handle<AIS_InteractiveObject>>& out) const
+{
+  if (!has_image() || !m_visible)
+    return;
+
+  if (!m_ais.IsNull())
+    out.push_back(m_ais);
+
+  if (!m_border.IsNull())
+    out.push_back(m_border);
 }
 
 nlohmann::json Sketch_underlay::to_json(const Ezy_asset_store& store) const

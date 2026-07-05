@@ -1701,6 +1701,31 @@ void Occt_view::update_shape_list_hover_drawer_()
   m_shape_list_hover_drawer->SetWireAspect(wire_aspect);
 }
 
+void Occt_view::clear_sketch_list_hover_ais_()
+{
+  if (is_headless() || m_ctx.IsNull())
+    return;
+
+  for (const AIS_InteractiveObject_ptr& ais : m_sketch_list_hover_ais)
+    if (!ais.IsNull())
+      m_ctx->Unhilight(ais, false);
+
+  m_sketch_list_hover_ais.clear();
+}
+
+void Occt_view::apply_sketch_list_hover_highlight_()
+{
+  if (is_headless() || m_ctx.IsNull() || !m_sketch_list_hover || !m_sketch_list_hover->is_visible())
+    return;
+
+  update_shape_list_hover_drawer_();
+  m_sketch_list_hover->append_list_hover_ais(m_sketch_list_hover_ais);
+
+  for (const AIS_InteractiveObject_ptr& ais : m_sketch_list_hover_ais)
+    if (!ais.IsNull())
+      m_ctx->HilightWithColor(ais, m_shape_list_hover_drawer, false);
+}
+
 void Occt_view::restore_sketch_list_measurement_hover_style_()
 {
   if (m_sketch_list_measurement_hover.IsNull())
@@ -1747,6 +1772,12 @@ void Occt_view::refresh_shape_list_hover_highlight()
   if (!m_sketch_list_measurement_hover.IsNull())
     apply_sketch_list_measurement_hover_style_();
 
+  if (m_sketch_list_hover)
+  {
+    clear_sketch_list_hover_ais_();
+    apply_sketch_list_hover_highlight_();
+  }
+
   m_ctx->UpdateCurrentViewer();
 }
 
@@ -1773,6 +1804,25 @@ void Occt_view::set_sketch_list_measurement_hover(const Sketch_ptr& sketch, cons
 
   if (!m_sketch_list_measurement_hover.IsNull())
     apply_sketch_list_measurement_hover_style_();
+
+  m_ctx->UpdateCurrentViewer();
+}
+
+void Occt_view::set_sketch_list_hover(const Sketch_ptr& sketch)
+{
+  if (is_headless() || m_ctx.IsNull())
+    return;
+
+  if (m_sketch_list_hover == sketch)
+    return;
+
+  clear_sketch_list_hover_ais_();
+  m_sketch_list_hover = sketch;
+
+  if (m_sketch_list_hover && m_sketch_list_hover->is_visible())
+    apply_sketch_list_hover_highlight_();
+  else if (m_sketch_list_hover)
+    m_sketch_list_hover.reset();
 
   m_ctx->UpdateCurrentViewer();
 }
@@ -2008,6 +2058,9 @@ Occt_view::Sketch_list& Occt_view::get_sketches() { return m_sketches; }
 
 void Occt_view::remove_sketch(const Sketch_ptr& sketch)
 {
+  if (m_sketch_list_hover == sketch)
+    set_sketch_list_hover(nullptr);
+
   push_undo_snapshot();
   m_sketches.remove(sketch);
   if (m_cur_sketch == sketch)
