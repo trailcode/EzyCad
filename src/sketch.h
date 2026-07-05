@@ -15,6 +15,7 @@
 #include "sketch_node_marks.h"
 #include "sketch_nodes.h"
 #include "sketch_topo.h"
+#include "sketch_tools.h"
 #include "sketch_underlay.h"
 #include "utl_types.h"
 
@@ -56,7 +57,8 @@ public:
     Hidden
   };
 
-  using Edge = Sketch_edge;
+  using Edge            = Sketch_edge;
+  using Linestring_type = Sketch_tools::Linestring_type;
 
   // Add sketch related
   void add_sketch_pt(const ScreenCoords& screen_coords);
@@ -148,64 +150,11 @@ private:
   friend class Sketch_dims;
   friend class Sketch_edges;
   friend class Sketch_node_marks;
+  friend class Sketch_tools;
 
   static bool s_add_mid_pt_edges;
   static bool s_edge_from_center;
 
-  // Line string / segment related
-  enum class Linestring_type
-  {
-    Single,
-    Two,
-    Multiple
-  };
-
-  // Line string related
-  void add_line_string_pt_(const ScreenCoords& screen_coords, Linestring_type linestring_type);
-  void move_line_string_pt_(const ScreenCoords& screen_coords);
-  bool edge_from_center_active_() const;
-  bool complete_edge_from_center_(const ScreenCoords& screen_coords);
-  void finalize_edges_(Sketch_op_recorder& rec);
-
-  /// Add a single node (no new edge); splits any linear edge the node lies on in its interior.
-  void add_node_pt_(const ScreenCoords& screen_coords);
-  void move_add_node_pt_(const ScreenCoords& screen_coords);
-
-  // Arc circle related
-  void add_arc_circle_pt_(const ScreenCoords& screen_coords);
-  void move_arc_circle_pt_(const ScreenCoords& screen_coords);
-  void add_arc_circle_(const std::vector<size_t>& node_idxs);
-  void add_arc_circle_(const gp_Pnt2d& pt_a, const gp_Pnt2d& pt_b, const gp_Pnt2d& pt_c);
-  void add_arc_circle_(const gp_Pnt2d& pt_a, const gp_Pnt2d& pt_b, const gp_Pnt2d& pt_c, Sketch_op_recorder& rec);
-
-  // Circle related
-  void move_circle_pt_(const ScreenCoords& screen_coords);
-  void finalize_circle_(Sketch_op_recorder& rec);
-
-  // Square related
-  void move_square_pt_(const ScreenCoords& screen_coords);
-  void finalize_square_(Sketch_op_recorder& rec);
-
-  // Rectangle related
-  void move_rectangle_pt_(const ScreenCoords& screen_coords);
-  void finalize_rectangle_(Sketch_op_recorder& rec);
-
-  // Slot related
-  void move_slot_pt_(const ScreenCoords& screen_coords);
-  void finalize_slot_(Sketch_op_recorder& rec);
-
-  // Operation axis related
-  void add_operation_axis_pt_(const ScreenCoords& screen_coords);
-  void finalize_operation_axis_(Sketch_op_recorder& rec);
-
-  // General sketch point related
-  template <typename Callback>
-  void add_sketch_pt_(const ScreenCoords& screen_coords, size_t required_num_pts, Callback&& callback);
-  template <typename Callback> void move_sketch_pt_(const ScreenCoords& screen_coords, Callback&& callback);
-  /// Invokes callback(e, pt_a, pt_b) with the last tmp edge only when it exists and is non-degenerate.
-  template <typename Callback> void if_edge_pt_valid_(Callback&& callback);
-  /// Right-click / finalize: drop incomplete add-node preview (same idea as incomplete line).
-  void finalize_add_node_elm_cleanup_();
   void add_edge_(const gp_Pnt2d& pt_a, const gp_Pnt2d& pt_b);
   void add_edge_(const gp_Pnt2d& pt_a, const gp_Pnt2d& pt_b, Sketch_op_recorder& rec);
   void add_edge_raw_(const gp_Pnt2d& pt_a, const gp_Pnt2d& pt_b);
@@ -216,12 +165,15 @@ private:
   /// JSON load: restore the sketch operation axis from two plane points.
   void sketch_json_set_operation_axis_(const gp_Pnt2d& pt_a, const gp_Pnt2d& pt_b);
 
+  void add_arc_circle_(const std::vector<size_t>& node_idxs);
+  void add_arc_circle_(const gp_Pnt2d& pt_a, const gp_Pnt2d& pt_b, const gp_Pnt2d& pt_c);
+  void add_arc_circle_(const gp_Pnt2d& pt_a, const gp_Pnt2d& pt_b, const gp_Pnt2d& pt_c, Sketch_op_recorder& rec);
+
   // Selected related
   std::vector<Edge>                get_selected_edges_() const;
   std::vector<Sketch_face_shp_ptr> get_selected_faces_() const;
 
   void update_edge_end_pt_(Edge& e, size_t end_pt_idx);
-  bool clear_tmps_();
 
   void     update_faces_();
   void     update_edge_shp_(Edge& edge, const gp_Pnt2d& pt_t, const gp_Pnt2d& pt_b);
@@ -250,9 +202,6 @@ private:
 
   Edge_style m_edge_style{Edge_style::Full};
 
-  // Arc circle related.
-  std::optional<size_t> m_start_arc_circle_node_idx;
-
   // Outside sketch snapping related.
   std::vector<gp_Pnt> m_tmp_pts_3d;
 
@@ -275,15 +224,12 @@ private:
   AIS_Shape_ptr m_originating_face; // If this sketch was created from a face.
   gp_Pln        m_pln;              // Plane this sketch is on.
 
-  std::optional<gp_Pnt2d> m_last_pt;
-  Sketch_nodes            m_nodes;
-  Sketch_node_marks       m_node_marks;
-  Sketch_edges            m_edges;
-  Sketch_topo             m_topo;
-  Sketch_dims             m_dims;
-  Sketch_underlay         m_underlay;
-  std::vector<size_t>     m_tmp_node_idxs;
-  std::vector<Edge>       m_tmp_edges;
-  AIS_Shape_ptr           m_tmp_shp;
-  bool                    m_show_faces{true};
+  Sketch_nodes      m_nodes;
+  Sketch_node_marks m_node_marks;
+  Sketch_edges      m_edges;
+  Sketch_topo       m_topo;
+  Sketch_dims       m_dims;
+  Sketch_tools      m_tools;
+  Sketch_underlay   m_underlay;
+  bool              m_show_faces{true};
 };

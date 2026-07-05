@@ -382,10 +382,10 @@ void Sketch_dims::check_dimension_seg_(int kind)
   if (m_entered_edge_len->len <= Precision::Confusion())
     return;
 
-  EZY_ASSERT(m_sketch.m_tmp_edges.size());
+  EZY_ASSERT(m_sketch.m_tools.tmp_edges().size());
 
-  Sketch::Edge& edge = m_sketch.m_tmp_edges.back();
-  if (m_sketch.edge_from_center_active_() && linestring_type == Sketch::Linestring_type::Single)
+  Sketch_edge& edge = m_sketch.m_tools.tmp_edges().back();
+  if (m_sketch.m_tools.edge_from_center_active() && linestring_type == Sketch::Linestring_type::Single)
   {
     const gp_Pnt2d&                    center = m_sketch.m_nodes[edge.node_idx_a];
     std::optional<Symmetric_edge_span> span =
@@ -401,10 +401,10 @@ void Sketch_dims::check_dimension_seg_(int kind)
     return;
   }
 
-  const gp_Pnt2d& pt_a = m_sketch.m_nodes[edge.node_idx_a];
-  m_sketch.m_last_pt   = gp_Pnt2d(pt_a).Translated(gp_Vec2d(m_entered_edge_len->dir) * m_entered_edge_len->len);
+  const gp_Pnt2d& pt_a       = m_sketch.m_nodes[edge.node_idx_a];
+  m_sketch.m_tools.last_pt() = gp_Pnt2d(pt_a).Translated(gp_Vec2d(m_entered_edge_len->dir) * m_entered_edge_len->len);
 
-  m_sketch.update_edge_end_pt_(edge, m_sketch.m_nodes.get_node_exact(*m_sketch.m_last_pt));
+  m_sketch.update_edge_end_pt_(edge, m_sketch.m_nodes.get_node_exact(*m_sketch.m_tools.last_pt()));
 
   EZY_ASSERT(edge.node_idx_b.has_value());
 
@@ -415,13 +415,13 @@ void Sketch_dims::check_dimension_seg_(int kind)
 
   else if (linestring_type == Sketch::Linestring_type::Two)
   {
-    switch (m_sketch.m_tmp_edges.size())
+    switch (m_sketch.m_tools.tmp_edges().size())
     {
     case 1:
       m_entered_edge_angle = std::nullopt;
       m_show_angle_input   = false;
       m_sketch.m_view.gui().hide_angle_edit();
-      m_sketch.m_tmp_edges.push_back({*edge.node_idx_b});
+      m_sketch.m_tools.tmp_edges().push_back({*edge.node_idx_b});
       break;
 
     case 2:
@@ -437,7 +437,7 @@ void Sketch_dims::check_dimension_seg_(int kind)
     m_entered_edge_angle = std::nullopt;
     m_show_angle_input   = false;
     m_sketch.m_view.gui().hide_angle_edit();
-    m_sketch.m_tmp_edges.push_back({*edge.node_idx_b});
+    m_sketch.m_tools.tmp_edges().push_back({*edge.node_idx_b});
   }
 }
 
@@ -449,21 +449,21 @@ void Sketch_dims::check_dimension_rubber_()
   if (m_entered_edge_len->len <= Precision::Confusion())
     return;
 
-  if (m_sketch.m_tmp_edges.empty())
+  if (m_sketch.m_tools.tmp_edges().empty())
     return;
 
-  Sketch::Edge&   edge = m_sketch.m_tmp_edges.back();
-  const gp_Pnt2d& pt_a = m_sketch.m_nodes[edge.node_idx_a];
-  m_sketch.m_last_pt   = gp_Pnt2d(pt_a).Translated(gp_Vec2d(m_entered_edge_len->dir) * m_entered_edge_len->len);
+  Sketch_edge&    edge       = m_sketch.m_tools.tmp_edges().back();
+  const gp_Pnt2d& pt_a       = m_sketch.m_nodes[edge.node_idx_a];
+  m_sketch.m_tools.last_pt() = gp_Pnt2d(pt_a).Translated(gp_Vec2d(m_entered_edge_len->dir) * m_entered_edge_len->len);
 
-  if (!unique(pt_a, *m_sketch.m_last_pt))
+  if (!unique(pt_a, *m_sketch.m_tools.last_pt()))
     return;
 
   const Mode mode = m_sketch.get_mode();
   if (mode == Mode::Sketch_add_square || mode == Mode::Sketch_add_circle || mode == Mode::Sketch_add_rectangle ||
       mode == Mode::Sketch_add_rectangle_center_pt)
   {
-    m_sketch.update_edge_end_pt_(edge, m_sketch.m_nodes.get_node_exact(*m_sketch.m_last_pt));
+    m_sketch.update_edge_end_pt_(edge, m_sketch.m_nodes.get_node_exact(*m_sketch.m_tools.last_pt()));
     EZY_ASSERT(edge.node_idx_b.has_value());
     clear_all(m_entered_edge_len);
     m_sketch.finalize_elm();
@@ -471,7 +471,7 @@ void Sketch_dims::check_dimension_rubber_()
   }
 
   EZY_ASSERT(mode == Mode::Sketch_add_node);
-  const size_t b = m_sketch.m_nodes.get_node_exact(*m_sketch.m_last_pt, true);
+  const size_t b = m_sketch.m_nodes.get_node_exact(*m_sketch.m_tools.last_pt(), true);
   clear_all(m_entered_edge_len);
 
   Sketch_op_recorder rec(m_sketch.m_view, m_sketch);
@@ -479,8 +479,8 @@ void Sketch_dims::check_dimension_rubber_()
     rec.note_curr_node(b);
     m_sketch.m_topo.split_linear_edges_at_node_if_interior(b, rec);
 
-    m_sketch.m_tmp_node_idxs.clear();
-    m_sketch.clear_tmps_();
+    m_sketch.m_tools.clear_tmp_node_idxs();
+    m_sketch.m_tools.clear_tmps();
     clear_tmp_dim_anno();
     m_sketch.m_nodes.hide_snap_annos();
     m_sketch.update_faces_();
