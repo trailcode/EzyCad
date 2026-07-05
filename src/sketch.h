@@ -12,6 +12,7 @@
 
 #include "shp.h"
 #include "sketch_nodes.h"
+#include "sketch_underlay.h"
 #include "utl_types.h"
 
 struct Length_dimension_style;
@@ -20,7 +21,6 @@ class gp_Pln;
 class Sketch_op_recorder;
 class TopoDS_Wire;
 class Sketch;
-class Sketch_underlay;
 enum class Mode;
 
 struct Sketch_AIS_node_mark;
@@ -131,52 +131,13 @@ public:
   const gp_Pln& get_plane() const;
   Sketch_nodes& get_nodes();
 
-  [[nodiscard]] bool has_underlay() const;
-  [[nodiscard]] int  underlay_image_w() const;
-  [[nodiscard]] int  underlay_image_h() const;
-  [[nodiscard]] bool load_underlay_image(const std::string& file_bytes);
-  void               clear_underlay();
-  void underlay_set_center_extents_rotation(const glm::dvec2& center, const glm::dvec2& half_extents, double rot_deg);
-  void underlay_set_opacity(float opaque01);
-  void underlay_set_visible(bool v);
-  [[nodiscard]] float underlay_opacity() const;
-  [[nodiscard]] bool  underlay_visible() const;
-  void                underlay_set_key_white_transparent(bool on);
-  [[nodiscard]] bool  underlay_key_white_transparent() const;
-  void                underlay_set_line_tint_enabled(bool on);
-  void                underlay_set_line_tint_rgb(uint8_t r, uint8_t g, uint8_t b);
-  void                underlay_set_line_tint_rgba(uint8_t r, uint8_t g, uint8_t b, uint8_t a);
-  void                underlay_set_raw_shear_display(bool on);
-  [[nodiscard]] bool  underlay_raw_shear_display() const;
-  void                underlay_set_flip_image_u(bool on);
-  void                underlay_set_flip_image_v(bool on);
-  [[nodiscard]] bool  underlay_flip_image_u() const;
-  [[nodiscard]] bool  underlay_flip_image_v() const;
-  [[nodiscard]] bool  underlay_line_tint_enabled() const;
-  void                underlay_line_tint_rgb(uint8_t& r, uint8_t& g, uint8_t& b) const;
-  void                underlay_line_tint_rgba(uint8_t& r, uint8_t& g, uint8_t& b, uint8_t& a) const;
-  void                underlay_ui_params(double& cx, double& cy, double& half_w, double& half_h, double& rot_deg) const;
-  /// Retrieve the raw affine basis (bitmap origin + U and V edge vectors in sketch plane 2D coords).
-  /// Used by the 6-DOF editor for sheared (non-orthogonal) underlays.
-  void underlay_get_affine(gp_Pnt2d& base, gp_Vec2d& axis_u, gp_Vec2d& axis_v) const;
-  /// True when texture U and V directions are perpendicular (no shear). Orthogonal UI assumes this.
-  [[nodiscard]] bool underlay_axes_orthogonal() const;
-  void               underlay_rebuild_display();
+  Sketch_underlay&                     underlay() { return m_underlay; }
+  [[nodiscard]] const Sketch_underlay& underlay() const { return m_underlay; }
 
   static void set_add_mid_pt_edges(bool on);
   static bool get_add_mid_pt_edges();
   static void set_edge_from_center(bool on);
   static bool get_edge_from_center();
-
-  /// Same snap / plane rules as the line-edge tool (for underlay calibration clicks).
-  [[nodiscard]] std::optional<gp_Pnt2d> pick_point_for_underlay_calib(const ScreenCoords& screen_coords);
-  /// Set underlay from texture corner \a base, U edge vector \a axis_u, V edge vector \a axis_v (plane 2D).
-  void underlay_set_affine_plane(const gp_Pnt2d& base, const gp_Vec2d& axis_u, const gp_Vec2d& axis_v);
-  /// Uniformly scale texture axes so plane segment \a p0-\a p1 has length \a target_len; UV at \a p0 stays fixed.
-  [[nodiscard]] bool underlay_rescale_uv_chord_to_length(const gp_Pnt2d& p0, const gp_Pnt2d& p1, double target_len);
-  /// Keep U axis; adjust V and base so segment \a y0-\a y1 has length \a target_len (after X calibration).
-  [[nodiscard]] bool     underlay_rescale_v_chord_to_length(const gp_Pnt2d& y0, const gp_Pnt2d& y1, double target_len);
-  [[nodiscard]] gp_Vec2d underlay_axis_u_vec() const;
 
   // private:
   friend class Sketch_json;
@@ -418,5 +379,5 @@ public:
   bool                       m_show_faces{true};
   bool                       m_show_dims{true};
 
-  std::unique_ptr<Sketch_underlay> m_underlay;
+  Sketch_underlay m_underlay;
 };

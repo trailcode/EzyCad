@@ -7,74 +7,93 @@
 #include <gp_Vec2d.hxx>
 #include <memory>
 #include <nlohmann/json.hpp>
+#include <optional>
 #include <string>
 #include <vector>
 
+#include "utl_types.h"
+
 class AIS_InteractiveObject;
-class AIS_TexturedShape;
-class AIS_Shape;
 class AIS_InteractiveContext;
 class gp_Pln;
 class Ezy_asset_store;
+class Occt_view;
+class Sketch_nodes;
 
 /// Raster image drawn in the sketch plane (below sketch edges) for tracing / digitizing.
 class Sketch_underlay
 {
 public:
-  Sketch_underlay() = default;
+  Sketch_underlay() = delete;
+  Sketch_underlay(AIS_InteractiveContext& ctx);
+  ~Sketch_underlay();
 
   Sketch_underlay(const Sketch_underlay&)            = delete;
   Sketch_underlay& operator=(const Sketch_underlay&) = delete;
   Sketch_underlay(Sketch_underlay&&)                 = delete;
   Sketch_underlay& operator=(Sketch_underlay&&)      = delete;
 
-  [[nodiscard]] bool has_image() const { return m_rgba && !m_rgba->empty() && m_w > 0 && m_h > 0; }
+  [[nodiscard]] bool has_image() const;
 
-  /// Replace image (RGBA8). Registers pixels in \a store. Sets default axis-aligned rectangle (0.1 unit per pixel).
-  [[nodiscard]] bool set_image_rgba(std::vector<uint8_t>&& rgba, int w, int h, Ezy_asset_store& store);
-
-  void set_affine(const gp_Pnt2d& base, const gp_Vec2d& axis_u, const gp_Vec2d& axis_v);
-  /// Center \a center, half width/height \a half_extents.x/.y, rotation in degrees (matches Sketch UI transform).
-  void set_center_extents_rotation(const glm::dvec2& center, const glm::dvec2& half_extents, double rot_deg);
-  void set_opacity(float opaque01);
-  void set_visible(bool v);
   /// When true (default), bright pixels (white paper) become transparent in the texture; dark linework stays opaque.
   void set_key_white_transparent(bool on);
 
   void set_line_tint_enabled(bool on);
-  void set_line_tint_rgb(uint8_t r, uint8_t g, uint8_t b);
   void set_line_tint_rgba(uint8_t r, uint8_t g, uint8_t b, uint8_t a);
 
-  void line_tint_rgb(uint8_t& r, uint8_t& g, uint8_t& b) const;
   void line_tint_rgba(uint8_t& r, uint8_t& g, uint8_t& b, uint8_t& a) const;
 
   // clang-format off
 
-  [[nodiscard]] bool     key_white_transparent() const { return m_key_white_transparent; }
-  [[nodiscard]] bool     line_tint_enabled()     const { return m_line_tint_enabled; }
-  [[nodiscard]] float    opacity()               const { return m_opacity; }
-  [[nodiscard]] bool     visible()               const { return m_visible; }
-  [[nodiscard]] gp_Pnt2d base()                  const { return m_base; }
-  [[nodiscard]] gp_Vec2d axis_u()                const { return m_axis_u; }
-  [[nodiscard]] gp_Vec2d axis_v()                const { return m_axis_v; }
-  [[nodiscard]] int      image_w()               const { return m_w; }
-  [[nodiscard]] int      image_h()               const { return m_h; }
+  [[nodiscard]] bool     key_white_transparent() const;
+  [[nodiscard]] bool     line_tint_enabled()     const;
+  [[nodiscard]] float    opacity()               const;
+  [[nodiscard]] bool     visible()               const;
+  [[nodiscard]] int      image_w()               const;
+  [[nodiscard]] int      image_h()               const;
 
   void                set_raw_shear_display(bool on);
-  [[nodiscard]] bool  raw_shear_display() const { return m_raw_shear_display; }
+  [[nodiscard]] bool  raw_shear_display() const;
 
-  void set_flip_image_u(bool on) { m_flip_image_u = on; }
-  void set_flip_image_v(bool on) { m_flip_image_v = on; }
-  [[nodiscard]] bool flip_image_u() const { return m_flip_image_u; }
-  [[nodiscard]] bool flip_image_v() const { return m_flip_image_v; }
+  void set_flip_image_u(bool on);
+  void set_flip_image_v(bool on);
+  [[nodiscard]] bool flip_image_u() const;
+  [[nodiscard]] bool flip_image_v() const;
 
   // clang-format on
 
-  void rebuild_and_display(const gp_Pln& pln, AIS_InteractiveContext& ctx);
-  void erase(AIS_InteractiveContext& ctx);
-  void sync_visibility(const gp_Pln& pln, AIS_InteractiveContext& ctx);
-  /// Force viewer update after live property changes (e.g. threshold) without a full rebuild.
-  void redisplay(AIS_InteractiveContext& ctx);
+  void ui_params(double& cx, double& cy, double& half_w, double& half_h, double& rot_deg) const;
+  void get_affine(gp_Pnt2d& base, gp_Vec2d& axis_u, gp_Vec2d& axis_v) const;
+  /// True when texture U and V directions are perpendicular (no shear). Orthogonal UI assumes this.
+  [[nodiscard]] bool axes_orthogonal() const;
+
+  /// Same snap / plane rules as the line-edge tool (for underlay calibration clicks).
+  [[nodiscard]] static std::optional<gp_Pnt2d> pick_point_for_calib(Occt_view& view, const gp_Pln& pln, Sketch_nodes& nodes,
+                                                                    const ScreenCoords& screen_coords);
+  /// Set from texture corner \a base, U edge vector \a axis_u, V edge vector \a axis_v (plane 2D); rebuild display.
+  void set_affine_plane(const gp_Pnt2d& base, const gp_Vec2d& axis_u, const gp_Vec2d& axis_v, const gp_Pln& pln,
+                        bool sketch_shown);
+  /// Uniformly scale texture axes so plane segment \a p0-\a p1 has length \a target_len; UV at \a p0 stays fixed.
+  [[nodiscard]] bool rescale_uv_chord_to_length(const gp_Pnt2d& p0, const gp_Pnt2d& p1, double target_len, const gp_Pln& pln,
+                                                bool sketch_shown);
+  /// Keep U axis; adjust V and base so segment \a y0-\a y1 has length \a target_len (after X calibration).
+  [[nodiscard]] bool rescale_v_chord_to_length(const gp_Pnt2d& y0, const gp_Pnt2d& y1, double target_len, const gp_Pln& pln,
+                                               bool sketch_shown);
+
+  /// Decode PNG/JPEG/BMP bytes, register in \a store, apply line tint, and display when \a sketch_shown.
+  [[nodiscard]] bool load_from_file_bytes(const std::string& file_bytes, Ezy_asset_store& store, uint8_t tint_r, uint8_t tint_g,
+                                          uint8_t tint_b, uint8_t tint_a, const gp_Pln& pln, bool sketch_shown);
+
+  void clear_and_update();
+  /// Rebuild AIS when \a sketch_shown, then refresh the viewer.
+  void rebuild_display(const gp_Pln& pln, bool sketch_shown);
+  void set_center_extents_rotation_display(const glm::dvec2& center, const glm::dvec2& half_extents, double rot_deg,
+                                           const gp_Pln& pln, bool sketch_shown);
+  void set_visible_sync(bool v, const gp_Pln& pln);
+  void set_opacity_live(float opaque01);
+
+  void rebuild_and_display(const gp_Pln& pln);
+  void ctx_erase();
 
   /// Add displayed AIS objects for Sketch List row hover emphasis (image quad and border wire).
   void append_list_hover_ais(std::vector<opencascade::handle<AIS_InteractiveObject>>& out) const;
@@ -84,38 +103,6 @@ public:
   [[nodiscard]] bool from_json(const nlohmann::json& j, Ezy_asset_store& store);
 
 private:
-  void remove_ais_(AIS_InteractiveContext& ctx);
-  void build_ais_(const gp_Pln& pln, AIS_InteractiveContext& ctx);
-
-  std::shared_ptr<const std::vector<uint8_t>> m_rgba;
-  std::string                                 m_asset_id;
-  int                                         m_w{0};
-  int                                         m_h{0};
-
-  gp_Pnt2d m_base{0., 0.};
-  gp_Vec2d m_axis_u{100., 0.};
-  gp_Vec2d m_axis_v{0., 100.};
-
-  float m_opacity{0.88f};
-  bool  m_visible{true};
-  /// Luminance key applied only when building the GPU texture (stored pixels stay raw).
-  bool m_key_white_transparent{true};
-  /// Recolor pixels that remain visible (alpha > 0 after key) for contrast on dark views.
-  bool    m_line_tint_enabled{true};
-  uint8_t m_tint_r{255};
-  uint8_t m_tint_g{220};
-  uint8_t m_tint_b{0};
-  uint8_t m_tint_a{255};
-
-  /// When true and the axes are sheared, the source image is textured directly onto the
-  /// sheared parallelogram quad (raw affine applied to pixels). This makes calibration
-  /// mistakes (e.g. incorrect Y-axis) visible as skew/distortion in the raster image itself.
-  /// Default false uses special resampling to preserve source image appearance relative to U/V.
-  bool m_raw_shear_display{false};
-
-  bool m_flip_image_u{false}; // for raw mode: flip source along U (horizontal in image)
-  bool m_flip_image_v{false}; // for raw mode: flip source along V (vertical in image)
-
-  opencascade::handle<AIS_TexturedShape> m_ais;
-  opencascade::handle<AIS_Shape>         m_border;
+  class Impl;
+  std::unique_ptr<Impl> m_impl;
 };

@@ -1159,16 +1159,16 @@ void GUI::sketch_list_()
     ImGui::SameLine();
     ImGui::PushID(("uldisp" + id_suffix).c_str());
     {
-      const bool has_ul = sketch->has_underlay();
+      const bool has_ul = sketch->underlay().has_image();
       bool       dummy_off{false};
-      bool       ul_vis = has_ul && sketch->underlay_visible();
+      bool       ul_vis = has_ul && sketch->underlay().visible();
       if (!has_ul)
         ImGui::BeginDisabled();
 
       bool* const vptr = has_ul ? &ul_vis : &dummy_off;
       if (ImGui::Checkbox("", vptr) && has_ul)
       {
-        sketch->underlay_set_visible(ul_vis);
+        sketch->underlay().set_visible_sync(ul_vis, sketch->get_plane());
         if (m_underlay_panel_sketch == sketch.get())
           m_underlay_vis = ul_vis;
         if (m_view->sketch_list_hover() == sketch)
@@ -1297,37 +1297,41 @@ void GUI::sketch_underlay_panel_settings_(const Sketch::sptr& sk)
 {
   EZY_ASSERT(sk);
 
+  Sketch_underlay& ul              = sk->underlay();
+  const gp_Pln&    ul_pln          = sk->get_plane();
+  const bool       ul_sketch_shown = sk->is_visible();
+
   ImGui::TextUnformatted("Image underlay");
   ImGui::Separator();
 
   if (m_underlay_panel_sketch != sk.get())
   {
     m_underlay_panel_sketch = sk.get();
-    if (sk->has_underlay())
+    if (ul.has_image())
     {
-      sk->underlay_ui_params(m_underlay_center.x, m_underlay_center.y, m_underlay_half_extents.x, m_underlay_half_extents.y,
-                             m_underlay_rot);
+      ul.ui_params(m_underlay_center.x, m_underlay_center.y, m_underlay_half_extents.x, m_underlay_half_extents.y,
+                   m_underlay_rot);
       // Also seed raw 6-DOF for sheared editor (will be refreshed live in the transform section too).
       {
         gp_Pnt2d b;
         gp_Vec2d au, av;
-        sk->underlay_get_affine(b, au, av);
+        ul.get_affine(b, au, av);
         m_underlay_base = dvec2(b.X(), b.Y());
         m_underlay_u    = dvec2(au.X(), au.Y());
         m_underlay_v    = dvec2(av.X(), av.Y());
       }
-      m_underlay_raw_shear    = sk->underlay_raw_shear_display();
-      m_underlay_flip_u       = sk->underlay_flip_image_u();
-      m_underlay_flip_v       = sk->underlay_flip_image_v();
+      m_underlay_raw_shear    = ul.raw_shear_display();
+      m_underlay_flip_u       = ul.flip_image_u();
+      m_underlay_flip_v       = ul.flip_image_v();
       m_underlay_calib_x_done = false;
       m_underlay_calib_y_done = false;
-      m_underlay_opacity      = sk->underlay_opacity();
-      m_underlay_vis          = sk->underlay_visible();
-      m_underlay_key_white    = sk->underlay_key_white_transparent();
-      m_underlay_line_tint    = sk->underlay_line_tint_enabled();
+      m_underlay_opacity      = ul.opacity();
+      m_underlay_vis          = ul.visible();
+      m_underlay_key_white    = ul.key_white_transparent();
+      m_underlay_line_tint    = ul.line_tint_enabled();
       {
         uint8_t tr, tg, tb, ta;
-        sk->underlay_line_tint_rgba(tr, tg, tb, ta);
+        ul.line_tint_rgba(tr, tg, tb, ta);
         m_underlay_tint_col[0] = static_cast<float>(tr) / 255.f;
         m_underlay_tint_col[1] = static_cast<float>(tg) / 255.f;
         m_underlay_tint_col[2] = static_cast<float>(tb) / 255.f;
@@ -1368,10 +1372,10 @@ void GUI::sketch_underlay_panel_settings_(const Sketch::sptr& sk)
 
   ImGui::SameLine();
   if (ImGui::Button("Remove underlay"))
-    if (sk->has_underlay())
+    if (ul.has_image())
     {
       m_view->push_undo_snapshot();
-      sk->clear_underlay();
+      ul.clear_and_update();
       m_underlay_panel_sketch = nullptr;
     }
 
@@ -1380,18 +1384,24 @@ void GUI::sketch_underlay_panel_settings_(const Sketch::sptr& sk)
                 "real dimensions; changes apply in real time. Click ? to open the user guide.",
                 doc_urls::k_image_underlay);
 
-  if (!sk->has_underlay())
+  if (!ul.has_image())
     return;
 
   if (ImGui::Checkbox("White paper -> transparent", &m_underlay_key_white))
-    sk->underlay_set_key_white_transparent(m_underlay_key_white);
+  {
+    ul.set_key_white_transparent(m_underlay_key_white);
+    ul.rebuild_display(ul_pln, ul_sketch_shown);
+  }
 
   if (ui_show_contextual_help() && ImGui::IsItemHovered())
     ImGui::SetTooltip("Uses brightness: white background becomes clear; dark lines stay visible. "
                       "Turn off for full-color photos. Inverting the image is not needed for typical scans.");
 
   if (ImGui::Checkbox("Tint visible lines", &m_underlay_line_tint))
-    sk->underlay_set_line_tint_enabled(m_underlay_line_tint);
+  {
+    ul.set_line_tint_enabled(m_underlay_line_tint);
+    ul.rebuild_display(ul_pln, ul_sketch_shown);
+  }
 
   if (ui_show_contextual_help() && ImGui::IsItemHovered())
     ImGui::SetTooltip("Paints non-transparent pixels (after white key) with the line color. "
@@ -1405,12 +1415,13 @@ void GUI::sketch_underlay_panel_settings_(const Sketch::sptr& sk)
         const float x = std::clamp(c, 0.f, 1.f) * 255.f;
         return static_cast<uint8_t>(x + 0.5f);
       };
-      sk->underlay_set_line_tint_rgba(to_u8(m_underlay_tint_col[0]), to_u8(m_underlay_tint_col[1]),
-                                      to_u8(m_underlay_tint_col[2]), to_u8(m_underlay_tint_col[3]));
+      ul.set_line_tint_rgba(to_u8(m_underlay_tint_col[0]), to_u8(m_underlay_tint_col[1]), to_u8(m_underlay_tint_col[2]),
+                            to_u8(m_underlay_tint_col[3]));
+      ul.rebuild_display(ul_pln, ul_sketch_shown);
     }
 
   if (ImGui::SliderFloat("Opacity", &m_underlay_opacity, 0.f, 1.f, "%.2f"))
-    sk->underlay_set_opacity(m_underlay_opacity);
+    ul.set_opacity_live(m_underlay_opacity);
 
   if (ui_show_contextual_help() && ImGui::IsItemHovered())
     ImGui::SetTooltip("Overall opacity of the underlay image (0 = fully transparent, 1 = fully opaque).");
@@ -1487,12 +1498,12 @@ void GUI::sketch_underlay_panel_settings_(const Sketch::sptr& sk)
     // causes the basis to become (or stop being) orthogonal.
     gp_Pnt2d b;
     gp_Vec2d au, av;
-    sk->underlay_get_affine(b, au, av);
+    ul.get_affine(b, au, av);
     m_underlay_base = dvec2(b.X(), b.Y());
     m_underlay_u    = dvec2(au.X(), au.Y());
     m_underlay_v    = dvec2(av.X(), av.Y());
 
-    const bool ul_ortho = sk->underlay_axes_orthogonal();
+    const bool ul_ortho = ul.axes_orthogonal();
 
     if (!ul_ortho)
     {
@@ -1533,11 +1544,12 @@ void GUI::sketch_underlay_panel_settings_(const Sketch::sptr& sk)
 
       auto apply_ul_xform = [&]()
       {
-        if (!sk->underlay_axes_orthogonal())
+        if (!ul.axes_orthogonal())
           return;
 
-        sk->underlay_set_center_extents_rotation(dvec2(m_underlay_center.x, m_underlay_center.y),
-                                                 dvec2(m_underlay_half_extents.x, m_underlay_half_extents.y), m_underlay_rot);
+        ul.set_center_extents_rotation_display(dvec2(m_underlay_center.x, m_underlay_center.y),
+                                               dvec2(m_underlay_half_extents.x, m_underlay_half_extents.y), m_underlay_rot,
+                                               ul_pln, ul_sketch_shown);
       };
 
       auto transform_slider = [&](const char* label, ImGuiDataType type, void* p_data, const void* p_min, const void* p_max,
@@ -1584,29 +1596,29 @@ void GUI::sketch_underlay_panel_settings_(const Sketch::sptr& sk)
       // U and V are the full edge vectors (their magnitudes are the half-extents in those directions).
       // Base X/Y use viewport-relative sliders (matching the previous Center X/Y behavior for position).
 
-      m_underlay_raw_shear = sk->underlay_raw_shear_display();
+      m_underlay_raw_shear = ul.raw_shear_display();
       if (ImGui::Checkbox("Show raw shear distortion in image (makes bad Y-axis or other calibration mistakes visible as skew "
                           "in the raster)",
                           &m_underlay_raw_shear))
       {
-        sk->underlay_set_raw_shear_display(m_underlay_raw_shear);
-        sk->underlay_rebuild_display();
+        ul.set_raw_shear_display(m_underlay_raw_shear);
+        ul.rebuild_display(ul_pln, ul_sketch_shown);
       }
 
       if (m_underlay_raw_shear)
       {
-        m_underlay_flip_u = sk->underlay_flip_image_u();
-        m_underlay_flip_v = sk->underlay_flip_image_v();
+        m_underlay_flip_u = ul.flip_image_u();
+        m_underlay_flip_v = ul.flip_image_v();
 
         if (ImGui::Checkbox("Reverse image U (flip horizontal in source)", &m_underlay_flip_u))
         {
-          sk->underlay_set_flip_image_u(m_underlay_flip_u);
-          sk->underlay_rebuild_display();
+          ul.set_flip_image_u(m_underlay_flip_u);
+          ul.rebuild_display(ul_pln, ul_sketch_shown);
         }
         if (ImGui::Checkbox("Reverse image V (flip vertical in source)", &m_underlay_flip_v))
         {
-          sk->underlay_set_flip_image_v(m_underlay_flip_v);
-          sk->underlay_rebuild_display();
+          ul.set_flip_image_v(m_underlay_flip_v);
+          ul.rebuild_display(ul_pln, ul_sketch_shown);
         }
         ImGui::TextDisabled("(Cycle these to put raster (0,0) at the 'top left' corner of the parallelogram)");
       }
@@ -1627,8 +1639,9 @@ void GUI::sketch_underlay_panel_settings_(const Sketch::sptr& sk)
 
       auto apply_affine = [&]()
       {
-        sk->underlay_set_affine_plane(gp_Pnt2d(m_underlay_base.x, m_underlay_base.y), gp_Vec2d(m_underlay_u.x, m_underlay_u.y),
-                                      gp_Vec2d(m_underlay_v.x, m_underlay_v.y));
+        sk->underlay().set_affine_plane(gp_Pnt2d(m_underlay_base.x, m_underlay_base.y),
+                                        gp_Vec2d(m_underlay_u.x, m_underlay_u.y), gp_Vec2d(m_underlay_v.x, m_underlay_v.y),
+                                        sk->get_plane(), sk->is_visible());
       };
 
       // Base position sliders (viewport frustum bounds + fallback, direct plane X/Y).
@@ -1712,7 +1725,10 @@ void GUI::on_sketch_underlay_file(const std::string& file_path, const std::strin
     sk = m_view->curr_sketch_shared();
 
   m_view->push_undo_snapshot();
-  if (!sk->load_underlay_image(file_bytes))
+  uint8_t hr, hg, hb, ha;
+  underlay_highlight_color_rgba(hr, hg, hb, ha);
+  if (!sk->underlay().load_from_file_bytes(file_bytes, m_view->asset_store(), hr, hg, hb, ha, sk->get_plane(),
+                                           sk->is_visible()))
   {
     show_message("Could not decode image: " + std::filesystem::path(file_path).filename().string());
     return;
@@ -1730,18 +1746,17 @@ void GUI::cancel_underlay_calib_()
   m_underlay_calib_phase = Underlay_calib_phase::None;
 
   m_underlay_calib_sketch_wk.reset();
-
-  m_underlay_calib_axis_u = gp_Vec2d(0., 0.);
 }
 
 void GUI::force_underlay_orthogonal_(const Sketch::sptr& sk)
 {
-  if (!sk || !sk->has_underlay())
+  if (!sk || !sk->underlay().has_image())
     return;
 
-  gp_Pnt2d b;
-  gp_Vec2d au, av;
-  sk->underlay_get_affine(b, au, av);
+  Sketch_underlay& ul = sk->underlay();
+  gp_Pnt2d         b;
+  gp_Vec2d         au, av;
+  ul.get_affine(b, au, av);
   const double lu = au.Magnitude();
   const double lv = av.Magnitude();
   if (lu > 1e-12 && lv > 1e-12)
@@ -1756,19 +1771,18 @@ void GUI::force_underlay_orthogonal_(const Sketch::sptr& sk)
       av_perp = gp_Vec2d(au_n.Y() * lv, -au_n.X() * lv);
 
     const gp_Vec2d au_final = au_n * lu;
-    sk->underlay_set_affine_plane(b, au_final, av_perp);
+    ul.set_affine_plane(b, au_final, av_perp, sk->get_plane(), sk->is_visible());
     // Refresh locals for this frame and any immediate follow-up UI.
     m_underlay_u = dvec2(au_final.X(), au_final.Y());
     m_underlay_v = dvec2(av_perp.X(), av_perp.Y());
   }
-  sk->underlay_ui_params(m_underlay_center.x, m_underlay_center.y, m_underlay_half_extents.x, m_underlay_half_extents.y,
-                         m_underlay_rot);
+  ul.ui_params(m_underlay_center.x, m_underlay_center.y, m_underlay_half_extents.x, m_underlay_half_extents.y, m_underlay_rot);
   m_underlay_panel_sketch = nullptr;
 }
 
 void GUI::begin_underlay_calib_set_x_(const Sketch::sptr& sk)
 {
-  if (!sk || !sk->has_underlay())
+  if (!sk || !sk->underlay().has_image())
     return;
 
   if (m_view->curr_sketch_shared() != sk)
@@ -1778,8 +1792,8 @@ void GUI::begin_underlay_calib_set_x_(const Sketch::sptr& sk)
   }
 
   cancel_underlay_calib_();
-  sk->underlay_ui_params(m_underlay_center.x, m_underlay_center.y, m_underlay_half_extents.x, m_underlay_half_extents.y,
-                         m_underlay_rot);
+  sk->underlay().ui_params(m_underlay_center.x, m_underlay_center.y, m_underlay_half_extents.x, m_underlay_half_extents.y,
+                           m_underlay_rot);
   m_underlay_calib_sketch_wk = sk;
   m_underlay_calib_phase     = Underlay_calib_phase::PickX1;
   show_message("Underlay X: uses the current transform. Click bitmap corner (0,0), then along +U; then enter the distance.");
@@ -1787,7 +1801,7 @@ void GUI::begin_underlay_calib_set_x_(const Sketch::sptr& sk)
 
 void GUI::begin_underlay_calib_set_y_(const Sketch::sptr& sk)
 {
-  if (!sk || !sk->has_underlay())
+  if (!sk || !sk->underlay().has_image())
     return;
 
   if (m_view->curr_sketch_shared() != sk)
@@ -1797,8 +1811,8 @@ void GUI::begin_underlay_calib_set_y_(const Sketch::sptr& sk)
   }
 
   cancel_underlay_calib_();
-  sk->underlay_ui_params(m_underlay_center.x, m_underlay_center.y, m_underlay_half_extents.x, m_underlay_half_extents.y,
-                         m_underlay_rot);
+  sk->underlay().ui_params(m_underlay_center.x, m_underlay_center.y, m_underlay_half_extents.x, m_underlay_half_extents.y,
+                           m_underlay_rot);
 
   m_underlay_calib_sketch_wk = sk;
   m_underlay_calib_phase     = Underlay_calib_phase::PickY1;
@@ -1819,7 +1833,7 @@ void GUI::underlay_calib_prompt_x_distance_(const Sketch::sptr& sk)
       return;
 
     const Sketch::sptr s = wk.lock();
-    if (!s || !s->has_underlay())
+    if (!s || !s->underlay().has_image())
     {
       m_dist_callback = nullptr;
       cancel_underlay_calib_();
@@ -1837,16 +1851,16 @@ void GUI::underlay_calib_prompt_x_distance_(const Sketch::sptr& sk)
     }
 
     m_view->push_undo_snapshot();
-    if (!s->underlay_rescale_uv_chord_to_length(m_underlay_calib_x0, m_underlay_calib_x1, Dx))
+    if (!s->underlay().rescale_uv_chord_to_length(m_underlay_calib_x0, m_underlay_calib_x1, Dx, s->get_plane(),
+                                                  s->is_visible()))
     {
       m_view->pop_undo_snapshot();
       show_message("Could not calibrate X (underlay axes degenerate or segment too short).");
       return;
     }
 
-    m_underlay_calib_axis_u = s->underlay_axis_u_vec();
-    s->underlay_ui_params(m_underlay_center.x, m_underlay_center.y, m_underlay_half_extents.x, m_underlay_half_extents.y,
-                          m_underlay_rot);
+    s->underlay().ui_params(m_underlay_center.x, m_underlay_center.y, m_underlay_half_extents.x, m_underlay_half_extents.y,
+                            m_underlay_rot);
 
     m_underlay_calib_x_done = true;
     m_underlay_panel_sketch = nullptr;
@@ -1877,7 +1891,7 @@ void GUI::underlay_calib_prompt_y_distance_(const Sketch::sptr& sk)
       return;
 
     const Sketch::sptr s = wk.lock();
-    if (!s || !s->has_underlay())
+    if (!s || !s->underlay().has_image())
     {
       m_dist_callback = nullptr;
       cancel_underlay_calib_();
@@ -1895,7 +1909,7 @@ void GUI::underlay_calib_prompt_y_distance_(const Sketch::sptr& sk)
     }
 
     m_view->push_undo_snapshot();
-    if (!s->underlay_rescale_v_chord_to_length(m_underlay_calib_y0, m_underlay_calib_y1, Dy))
+    if (!s->underlay().rescale_v_chord_to_length(m_underlay_calib_y0, m_underlay_calib_y1, Dy, s->get_plane(), s->is_visible()))
     {
       m_view->pop_undo_snapshot();
       show_message("Set Y: picks need a clear span along image height (not along the same edge as X only). Try two points "
@@ -1903,8 +1917,8 @@ void GUI::underlay_calib_prompt_y_distance_(const Sketch::sptr& sk)
       return;
     }
 
-    s->underlay_ui_params(m_underlay_center.x, m_underlay_center.y, m_underlay_half_extents.x, m_underlay_half_extents.y,
-                          m_underlay_rot);
+    s->underlay().ui_params(m_underlay_center.x, m_underlay_center.y, m_underlay_half_extents.x, m_underlay_half_extents.y,
+                            m_underlay_rot);
 
     m_underlay_calib_y_done = true;
     m_underlay_panel_sketch = nullptr;
@@ -1938,13 +1952,14 @@ bool GUI::try_underlay_calib_click_(const ScreenCoords& screen_coords)
     return true;
   }
 
-  if (!sk->has_underlay())
+  if (!sk->underlay().has_image())
   {
     cancel_underlay_calib_();
     return true;
   }
 
-  const std::optional<gp_Pnt2d> pt = sk->pick_point_for_underlay_calib(screen_coords);
+  const std::optional<gp_Pnt2d> pt =
+      Sketch_underlay::pick_point_for_calib(*m_view, sk->get_plane(), sk->get_nodes(), screen_coords);
   if (!pt)
     return true;
 

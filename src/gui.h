@@ -516,7 +516,6 @@ private:
   std::weak_ptr<Sketch> m_underlay_calib_sketch_wk{};
   gp_Pnt2d              m_underlay_calib_x0{};
   gp_Pnt2d              m_underlay_calib_x1{};
-  gp_Vec2d              m_underlay_calib_axis_u{}; // After X distance (model units)
   gp_Pnt2d              m_underlay_calib_y0{};
   gp_Pnt2d              m_underlay_calib_y1{};
   /// If set, next underlay import (menu or async) applies to this sketch; otherwise current sketch.

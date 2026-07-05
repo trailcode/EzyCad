@@ -30,7 +30,6 @@
 #include "mode.h"
 #include "occt_view.h"
 #include "sketch_delta.h"
-#include "sketch_underlay.h"
 #include "utl.h"
 
 using namespace glm;
@@ -73,6 +72,7 @@ Sketch::Sketch(const std::string& name, Occt_view& view, const gp_Pln& pln)
     , m_pln(pln)
     , m_name(name)
     , m_nodes(view, pln)
+    , m_underlay(view.ctx())
 {
 }
 
@@ -82,6 +82,7 @@ Sketch::Sketch(const std::string& name, Occt_view& view, const gp_Pln& pln, cons
     , m_pln(pln)
     , m_name(name)
     , m_nodes(view, pln)
+    , m_underlay(view.ctx())
 {
   m_originating_face = new AIS_Shape(outer_wire);
   m_ctx.Display(m_originating_face, true);
@@ -90,8 +91,7 @@ Sketch::Sketch(const std::string& name, Occt_view& view, const gp_Pln& pln, cons
 
 Sketch::~Sketch()
 {
-  if (m_underlay)
-    m_underlay->erase(m_ctx);
+  m_underlay.ctx_erase();
 
   auto remove_edge = [&](Edge& e)
   {
@@ -2758,8 +2758,8 @@ void Sketch::set_visible(bool state)
     if (m_originating_face)
       m_ctx.Display(m_originating_face, AIS_WireFrame, 0, false);
 
-    if (m_underlay && m_underlay->has_image())
-      m_underlay->rebuild_and_display(m_pln, m_ctx);
+    if (m_underlay.has_image())
+      m_underlay.rebuild_and_display(m_pln);
 
     sync_operation_axis_display_();
     sync_permanent_node_annos_();
@@ -2779,8 +2779,7 @@ void Sketch::set_visible(bool state)
     if (m_originating_face)
       m_ctx.Erase(m_originating_face, false);
 
-    if (m_underlay)
-      m_underlay->erase(m_ctx);
+    m_underlay.ctx_erase();
 
     // Hide operation axis when sketch becomes invisible
     if (m_operation_axis.has_value())
@@ -2935,8 +2934,8 @@ void Sketch::append_list_hover_ais(std::vector<AIS_InteractiveObject_ptr>& out) 
   if (m_operation_axis.has_value() && !m_operation_axis->shp.IsNull())
     out.push_back(m_operation_axis->shp);
 
-  if (m_underlay && underlay_visible())
-    m_underlay->append_list_hover_ais(out);
+  if (m_underlay.has_image() && m_underlay.visible())
+    m_underlay.append_list_hover_ais(out);
 }
 
 void Sketch::set_dimension_name(size_t dim_index, const std::string& name)
@@ -3087,376 +3086,6 @@ std::vector<std::string> Sketch::inspector_node_labels() const
   }
 
   return labels;
-}
-
-bool Sketch::has_underlay() const { return m_underlay && m_underlay->has_image(); }
-
-int Sketch::underlay_image_w() const { return (m_underlay && m_underlay->has_image()) ? m_underlay->image_w() : 0; }
-
-int Sketch::underlay_image_h() const { return (m_underlay && m_underlay->has_image()) ? m_underlay->image_h() : 0; }
-
-bool Sketch::load_underlay_image(const std::string& file_bytes)
-{
-  const auto dec = decode_image_bytes(file_bytes);
-  if (!dec)
-    return false;
-
-  std::vector<uint8_t> rgba = std::move(std::get<0>(*dec));
-  const int            w    = std::get<1>(*dec);
-  const int            h    = std::get<2>(*dec);
-  if (!m_underlay)
-    m_underlay = std::make_unique<Sketch_underlay>();
-
-  if (!m_underlay->set_image_rgba(std::move(rgba), w, h, m_view.asset_store()))
-    return false;
-
-  uint8_t hr, hg, hb, ha;
-  m_view.gui().underlay_highlight_color_rgba(hr, hg, hb, ha);
-  m_underlay->set_line_tint_rgba(hr, hg, hb, ha);
-  if (m_visible)
-    m_underlay->rebuild_and_display(m_pln, m_ctx);
-
-  m_ctx.UpdateCurrentViewer();
-  return true;
-}
-
-void Sketch::clear_underlay()
-{
-  if (!m_underlay)
-    return;
-
-  m_underlay->erase(m_ctx);
-  m_underlay.reset();
-  m_ctx.UpdateCurrentViewer();
-}
-
-std::optional<gp_Pnt2d> Sketch::pick_point_for_underlay_calib(const ScreenCoords& screen_coords)
-{
-  std::optional<gp_Pnt2d> on_pln = m_view.pt_on_plane(screen_coords, m_pln);
-  if (!on_pln)
-    return std::nullopt;
-
-  if (std::optional<size_t> idx = m_nodes.try_get_node_idx_snap(*on_pln))
-    return m_nodes[*idx];
-
-  return *on_pln;
-}
-
-void Sketch::underlay_set_affine_plane(const gp_Pnt2d& base, const gp_Vec2d& axis_u, const gp_Vec2d& axis_v)
-{
-  if (!m_underlay || !m_underlay->has_image())
-    return;
-
-  constexpr double k_min2 = 1e-18;
-  if (axis_u.SquareMagnitude() < k_min2 || axis_v.SquareMagnitude() < k_min2)
-    return;
-
-  m_underlay->set_affine(base, axis_u, axis_v);
-  if (m_visible)
-    m_underlay->rebuild_and_display(m_pln, m_ctx);
-
-  m_ctx.UpdateCurrentViewer();
-}
-
-namespace
-{
-bool underlay_plane_to_uv(const gp_Pnt2d& base, const gp_Vec2d& au, const gp_Vec2d& av, const gp_Pnt2d& p, double& out_u,
-                          double& out_v)
-{
-  const double det = au.X() * av.Y() - au.Y() * av.X();
-  if (std::abs(det) < 1e-18)
-    return false;
-
-  const gp_Vec2d r(p.X() - base.X(), p.Y() - base.Y());
-  out_u = (r.X() * av.Y() - r.Y() * av.X()) / det;
-  out_v = (-r.X() * au.Y() + r.Y() * au.X()) / det;
-  return true;
-}
-} // namespace
-
-bool Sketch::underlay_rescale_uv_chord_to_length(const gp_Pnt2d& p0, const gp_Pnt2d& p1, double target_len)
-{
-  if (!m_underlay || !m_underlay->has_image())
-    return false;
-
-  if (target_len <= 1e-12)
-    return false;
-
-  const gp_Pnt2d base = m_underlay->base();
-  const gp_Vec2d au   = m_underlay->axis_u();
-  const gp_Vec2d av   = m_underlay->axis_v();
-  double         u0{};
-  double         v0{};
-  double         u1{};
-  double         v1{};
-  if (!underlay_plane_to_uv(base, au, av, p0, u0, v0) || !underlay_plane_to_uv(base, au, av, p1, u1, v1))
-    return false;
-
-  const double L = p0.Distance(p1);
-  if (L <= 1e-12)
-    return false;
-
-  const double   k   = target_len / L;
-  const gp_Vec2d au2 = au * k;
-  const gp_Vec2d av2 = av * k;
-  const gp_Vec2d off = au2 * u0 + av2 * v0;
-  const gp_Pnt2d base2(p0.X() - off.X(), p0.Y() - off.Y());
-  underlay_set_affine_plane(base2, au2, av2);
-  return true;
-}
-
-bool Sketch::underlay_rescale_v_chord_to_length(const gp_Pnt2d& y0, const gp_Pnt2d& y1, double target_len)
-{
-  if (!m_underlay || !m_underlay->has_image())
-    return false;
-
-  if (target_len <= 1e-12)
-    return false;
-
-  const gp_Pnt2d base = m_underlay->base();
-  const gp_Vec2d au   = m_underlay->axis_u();
-  const gp_Vec2d av   = m_underlay->axis_v();
-  double         u0{};
-  double         v0{};
-  double         u1{};
-  double         v1{};
-  if (!underlay_plane_to_uv(base, au, av, y0, u0, v0) || !underlay_plane_to_uv(base, au, av, y1, u1, v1))
-    return false;
-
-  const double du = u1 - u0;
-  const double dv = v1 - v0;
-  if (std::abs(dv) < 1e-9)
-    return false;
-
-  const double L = y0.Distance(y1);
-  if (L <= 1e-12)
-    return false;
-
-  const double   r      = target_len / L;
-  const gp_Vec2d av_new = av * r + au * (((r - 1.0) * du) / dv);
-  const gp_Vec2d anchor = au * u0 + av_new * v0;
-  const gp_Pnt2d base2(y0.X() - anchor.X(), y0.Y() - anchor.Y());
-  underlay_set_affine_plane(base2, au, av_new);
-  return true;
-}
-
-gp_Vec2d Sketch::underlay_axis_u_vec() const
-{
-  if (!m_underlay || !m_underlay->has_image())
-    return {};
-
-  return m_underlay->axis_u();
-}
-
-void Sketch::underlay_set_center_extents_rotation(const dvec2& center, const dvec2& half_extents, double rot_deg)
-{
-  EZY_ASSERT(m_underlay);
-  EZY_ASSERT(m_underlay->has_image());
-  EZY_ASSERT(m_visible);
-
-  m_underlay->set_center_extents_rotation(center, half_extents, rot_deg);
-  m_underlay->rebuild_and_display(m_pln, m_ctx);
-
-  m_ctx.UpdateCurrentViewer();
-}
-
-void Sketch::underlay_set_opacity(float opaque01)
-{
-  if (!m_underlay)
-    return;
-
-  m_underlay->set_opacity(opaque01);
-  m_underlay->redisplay(m_ctx);
-  m_ctx.UpdateCurrentViewer();
-}
-
-void Sketch::underlay_set_visible(bool v)
-{
-  if (!m_underlay)
-    return;
-
-  m_underlay->set_visible(v);
-  m_underlay->sync_visibility(m_pln, m_ctx);
-  m_ctx.UpdateCurrentViewer();
-}
-
-float Sketch::underlay_opacity() const { return m_underlay ? m_underlay->opacity() : 1.f; }
-
-bool Sketch::underlay_visible() const { return m_underlay && m_underlay->visible(); }
-
-void Sketch::underlay_set_key_white_transparent(bool on)
-{
-  if (!m_underlay)
-    return;
-
-  m_underlay->set_key_white_transparent(on);
-  underlay_rebuild_display();
-}
-
-bool Sketch::underlay_key_white_transparent() const { return m_underlay ? m_underlay->key_white_transparent() : true; }
-
-void Sketch::underlay_set_line_tint_enabled(bool on)
-{
-  if (!m_underlay)
-    return;
-
-  m_underlay->set_line_tint_enabled(on);
-  underlay_rebuild_display();
-}
-
-void Sketch::underlay_set_line_tint_rgb(uint8_t r, uint8_t g, uint8_t b)
-{
-  if (!m_underlay)
-    return;
-
-  m_underlay->set_line_tint_rgb(r, g, b);
-  underlay_rebuild_display();
-}
-
-void Sketch::underlay_set_line_tint_rgba(uint8_t r, uint8_t g, uint8_t b, uint8_t a)
-{
-  if (!m_underlay)
-    return;
-
-  m_underlay->set_line_tint_rgba(r, g, b, a);
-  underlay_rebuild_display();
-}
-
-void Sketch::underlay_set_raw_shear_display(bool on)
-{
-  if (!m_underlay)
-    return;
-
-  m_underlay->set_raw_shear_display(on);
-  underlay_rebuild_display();
-}
-
-bool Sketch::underlay_raw_shear_display() const
-{
-  if (!m_underlay)
-    return false;
-
-  return m_underlay->raw_shear_display();
-}
-
-void Sketch::underlay_set_flip_image_u(bool on)
-{
-  if (!m_underlay)
-    return;
-
-  m_underlay->set_flip_image_u(on);
-  underlay_rebuild_display();
-}
-
-void Sketch::underlay_set_flip_image_v(bool on)
-{
-  if (!m_underlay)
-    return;
-
-  m_underlay->set_flip_image_v(on);
-  underlay_rebuild_display();
-}
-
-bool Sketch::underlay_flip_image_u() const
-{
-  if (!m_underlay)
-    return false;
-
-  return m_underlay->flip_image_u();
-}
-
-bool Sketch::underlay_flip_image_v() const
-{
-  if (!m_underlay)
-    return false;
-
-  return m_underlay->flip_image_v();
-}
-
-bool Sketch::underlay_line_tint_enabled() const { return m_underlay ? m_underlay->line_tint_enabled() : true; }
-
-void Sketch::underlay_line_tint_rgb(uint8_t& r, uint8_t& g, uint8_t& b) const
-{
-  if (m_underlay)
-    m_underlay->line_tint_rgb(r, g, b);
-  else
-  {
-    r = 255;
-    g = 220;
-    b = 0;
-  }
-}
-
-void Sketch::underlay_line_tint_rgba(uint8_t& r, uint8_t& g, uint8_t& b, uint8_t& a) const
-{
-  if (m_underlay)
-    m_underlay->line_tint_rgba(r, g, b, a);
-  else
-  {
-    r = 255;
-    g = 220;
-    b = 0;
-    a = 255;
-  }
-}
-
-void Sketch::underlay_ui_params(double& cx, double& cy, double& half_w, double& half_h, double& rot_deg) const
-{
-  if (!m_underlay || !m_underlay->has_image())
-  {
-    cx = cy = half_w = half_h = rot_deg = 0.;
-    return;
-  }
-
-  const gp_Pnt2d b  = m_underlay->base();
-  const gp_Vec2d au = m_underlay->axis_u();
-  const gp_Vec2d av = m_underlay->axis_v();
-  half_w            = 0.5 * au.Magnitude();
-  half_h            = 0.5 * av.Magnitude();
-  cx                = b.X() + 0.5 * (au.X() + av.X());
-  cy                = b.Y() + 0.5 * (au.Y() + av.Y());
-  rot_deg           = std::atan2(au.Y(), au.X()) * (180.0 / std::numbers::pi);
-}
-
-void Sketch::underlay_get_affine(gp_Pnt2d& base, gp_Vec2d& axis_u, gp_Vec2d& axis_v) const
-{
-  if (!m_underlay || !m_underlay->has_image())
-  {
-    base   = gp_Pnt2d(0., 0.);
-    axis_u = gp_Vec2d(0., 0.);
-    axis_v = gp_Vec2d(0., 0.);
-    return;
-  }
-
-  base   = m_underlay->base();
-  axis_u = m_underlay->axis_u();
-  axis_v = m_underlay->axis_v();
-}
-
-bool Sketch::underlay_axes_orthogonal() const
-{
-  if (!m_underlay || !m_underlay->has_image())
-    return true;
-
-  const gp_Vec2d au    = m_underlay->axis_u();
-  const gp_Vec2d av    = m_underlay->axis_v();
-  const double   dot   = au.X() * av.X() + au.Y() * av.Y();
-  const double   scale = au.Magnitude() * av.Magnitude();
-  if (scale < 1e-24)
-    return true;
-
-  return std::abs(dot) < 1e-9 * scale;
-}
-
-void Sketch::underlay_rebuild_display()
-{
-  if (!m_underlay || !m_underlay->has_image())
-    return;
-
-  if (m_visible)
-    m_underlay->rebuild_and_display(m_pln, m_ctx);
-
-  m_ctx.UpdateCurrentViewer();
 }
 
 bool Sketch::Edge::reversed(size_t idx_a, size_t idx_b) const

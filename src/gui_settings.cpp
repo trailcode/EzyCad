@@ -1332,8 +1332,12 @@ void GUI::settings_()
       for (const Sketch::sptr& sk : m_view->get_sketches())
       {
         EZY_ASSERT(sk);
-        if (sk->has_underlay())
-          sk->underlay_set_line_tint_rgba(hr, hg, hb, ha);
+        if (sk->underlay().has_image())
+        {
+          Sketch_underlay& ul = sk->underlay();
+          ul.set_line_tint_rgba(hr, hg, hb, ha);
+          ul.rebuild_display(sk->get_plane(), sk->is_visible());
+        }
       }
 
       m_underlay_panel_sketch = nullptr;
