@@ -102,12 +102,18 @@ class Sketch_access
   static void get_originating_face_snp_pts_3d_(Sketch& sketch, std::vector<gp_Pnt>& out);
 
   static const std::vector<Sketch_face_shp_ptr>& get_faces(const Sketch& sketch);
+  static const std::list<Sketch::Edge>&        get_edges(const Sketch& sketch);
   static size_t                                 get_linear_edge_count(const Sketch& sketch);
   static size_t                                 get_arc_internal_edge_count(const Sketch& sketch);
+  static size_t                                 length_dimension_count(const Sketch& sketch);
+  static size_t                                 length_dimension_node_lo(const Sketch& sketch, size_t index);
+  static size_t                                 length_dimension_node_hi(const Sketch& sketch, size_t index);
+  static void                                   set_entered_edge_len(Sketch& sketch, const gp_Dir2d& dir, double len);
 
   /// Exact replay of a saved linear edge (with its pre-existing midpoint node index).
   /// Used for regression tests of specific .ezy cases (e.g. bridge + hole topologies).
   static void sketch_json_add_linear_edge_(Sketch& sketch, size_t idx_a, size_t idx_b, std::optional<size_t> idx_mid = std::nullopt);
+  static void set_operation_axis_(Sketch& sketch, const gp_Pnt2d& pt_a, const gp_Pnt2d& pt_b);
 };
 
 void Sketch_access::add_edge_(Sketch& sketch, const gp_Pnt2d& pt_a, const gp_Pnt2d& pt_b)
@@ -128,7 +134,7 @@ void Sketch_access::add_edge_raw_(Sketch& sketch, const gp_Pnt2d& pt_a, const gp
 size_t Sketch_access::get_linear_edge_count(const Sketch& sketch)
 {
   size_t count = 0;
-  for (const auto& edge : sketch.m_edges)
+  for (const auto& edge : Sketch_access::get_edges(sketch))
   {
     if (edge.node_idx_b.has_value() && !edge.circle_arc)
       ++count;
@@ -139,7 +145,7 @@ size_t Sketch_access::get_linear_edge_count(const Sketch& sketch)
 size_t Sketch_access::get_arc_internal_edge_count(const Sketch& sketch)
 {
   size_t count = 0;
-  for (const auto& edge : sketch.m_edges)
+  for (const auto& edge : Sketch_access::get_edges(sketch))
   {
     if (edge.circle_arc)
       ++count;
@@ -149,7 +155,32 @@ size_t Sketch_access::get_arc_internal_edge_count(const Sketch& sketch)
 
 const std::vector<Sketch_face_shp_ptr>& Sketch_access::get_faces(const Sketch& sketch)
 {
-  return sketch.m_faces;
+  return sketch.m_topo.faces();
+}
+
+const std::list<Sketch::Edge>& Sketch_access::get_edges(const Sketch& sketch)
+{
+  return sketch.m_edges.edges();
+}
+
+size_t Sketch_access::length_dimension_count(const Sketch& sketch)
+{
+  return sketch.m_dims.dimensions().size();
+}
+
+size_t Sketch_access::length_dimension_node_lo(const Sketch& sketch, size_t index)
+{
+  return sketch.m_dims.dimensions()[index].node_idx_lo;
+}
+
+size_t Sketch_access::length_dimension_node_hi(const Sketch& sketch, size_t index)
+{
+  return sketch.m_dims.dimensions()[index].node_idx_hi;
+}
+
+void Sketch_access::set_entered_edge_len(Sketch& sketch, const gp_Dir2d& dir, double len)
+{
+  sketch.m_dims.entered_edge_len() = Sketch_dims::Edge_len{dir, len};
 }
 
 void Sketch_access::update_faces_(Sketch& sketch)
@@ -201,6 +232,11 @@ inline void Sketch_access::get_originating_face_snp_pts_3d_(Sketch& sketch, std:
 void Sketch_access::sketch_json_add_linear_edge_(Sketch& sketch, size_t idx_a, size_t idx_b, std::optional<size_t> idx_mid)
 {
   sketch.sketch_json_add_linear_edge_(idx_a, idx_b, idx_mid);
+}
+
+void Sketch_access::set_operation_axis_(Sketch& sketch, const gp_Pnt2d& pt_a, const gp_Pnt2d& pt_b)
+{
+  sketch.sketch_json_set_operation_axis_(pt_a, pt_b);
 }
 
 class View_access
@@ -329,7 +365,7 @@ TEST_F(Sketch_test, AddLinearEdge_MidpointOption)
 
   // Check the (only) edge has no mid
   bool has_mid = false;
-  for (const auto& e : sketch.m_edges) {
+  for (const auto& e : Sketch_access::get_edges(sketch)) {
     if (e.node_idx_mid.has_value()) has_mid = true;
   }
   EXPECT_FALSE(has_mid);
@@ -346,7 +382,7 @@ TEST_F(Sketch_test, AddLinearEdge_MidpointOption)
   EXPECT_EQ(sketch.get_nodes().size(), nodes_after_first + 3);
 
   // Find the second edge and verify it has a mid
-  auto it = sketch.m_edges.begin();
+  auto it = Sketch_access::get_edges(sketch).begin();
   std::advance(it, 1);  // second edge
   EXPECT_TRUE(it->node_idx_mid.has_value());
   const gp_Pnt2d& mid = sketch.get_nodes()[*it->node_idx_mid];
@@ -417,7 +453,7 @@ TEST_F(Sketch_test, AddEdgeFromCenter_SecondClickFullSpan)
   EXPECT_EQ(Sketch_access::get_linear_edge_count(sketch), 1);
 
   bool found = false;
-  for (const auto& e : sketch.m_edges)
+  for (const auto& e : Sketch_access::get_edges(sketch))
   {
     if (!e.node_idx_b.has_value() || e.circle_arc)
       continue;
@@ -450,13 +486,13 @@ TEST_F(Sketch_test, AddEdgeFromCenter_DimensionUsesFullLength)
   sketch.add_sketch_pt(ScreenCoords(dvec2(0.0, 0.0)));
   sketch.sketch_pt_move(ScreenCoords(dvec2(1.0, 0.0)));
 
-  sketch.m_entered_edge_len = Sketch::Edge_len{gp_Dir2d(1.0, 0.0), 10.0};
+  Sketch_access::set_entered_edge_len(sketch, gp_Dir2d(1.0, 0.0), 10.0);
   sketch.on_enter();
 
   EXPECT_EQ(Sketch_access::get_linear_edge_count(sketch), 1);
 
   bool found = false;
-  for (const auto& e : sketch.m_edges)
+  for (const auto& e : Sketch_access::get_edges(sketch))
   {
     if (!e.node_idx_b.has_value() || e.circle_arc)
       continue;
@@ -592,6 +628,123 @@ TEST_F(Sketch_test, Undo_two_crossing_edges_via_finalize)
   EXPECT_TRUE(view().undo());
   EXPECT_EQ(Sketch_access::get_linear_edge_count(sketch), 0)
       << "Undo of the first edge should remove it";
+}
+
+TEST_F(Sketch_test, Undo_extrude_snapshot_keeps_single_sketch)
+{
+  Sketch::Sketch_ptr sk = view().curr_sketch_shared();
+  const size_t sk_id = sk->get_id();
+
+  {
+    Sketch_op_recorder rec(view(), *sk);
+    const std::array<gp_Pnt2d, 4> corners = square_corners(gp_Pnt2d(0.0, 0.0), gp_Pnt2d(10.0, 0.0));
+    Sketch_access::add_edge_(*sk, corners[0], corners[1], rec);
+    Sketch_access::add_edge_(*sk, corners[1], corners[2], rec);
+    Sketch_access::add_edge_(*sk, corners[2], corners[3], rec);
+    Sketch_access::add_edge_(*sk, corners[3], corners[0], rec);
+    rec.commit();
+  }
+
+  EXPECT_EQ(sk->edge_count(), 4u);
+  EXPECT_EQ(view().get_sketches().size(), 1u);
+
+  const nlohmann::json pre_extrude = nlohmann::json::parse(view().to_json());
+  ASSERT_EQ(pre_extrude["sketches"].size(), 1u);
+
+  view().push_undo_snapshot();
+
+  EXPECT_TRUE(view().undo());
+  EXPECT_EQ(view().get_sketches().size(), 1u) << "JSON undo after extrude must not add a sketch";
+
+  Sketch::Sketch_ptr restored;
+  for (const Sketch::Sketch_ptr& s : view().get_sketches())
+    if (s->get_id() == sk_id)
+      restored = s;
+
+  ASSERT_TRUE(restored) << "Restored sketch should keep the same stable id";
+  EXPECT_EQ(restored->edge_count(), 4u);
+
+  EXPECT_TRUE(view().undo());
+  EXPECT_EQ(restored->edge_count(), 0u) << "Second undo should remove the square from the same sketch";
+}
+
+TEST_F(Sketch_test, Undo_delta_resolves_by_sketch_id_when_names_duplicate)
+{
+  Sketch::Sketch_ptr sk1 = view().curr_sketch_shared();
+  Sketch::Sketch_ptr sk2 = std::make_shared<Sketch>("Other", view(), gp_Pln(gp::Origin(), gp::DX()));
+  view().get_sketches().push_back(sk2);
+  sk1->set_name("Dup");
+  sk2->set_name("Dup");
+
+  {
+    Sketch_op_recorder rec(view(), *sk2);
+    Sketch_access::add_edge_(*sk2, gp_Pnt2d(0.0, 0.0), gp_Pnt2d(5.0, 0.0), rec);
+    rec.commit();
+  }
+
+  EXPECT_EQ(Sketch_access::get_linear_edge_count(*sk1), 0u);
+  EXPECT_EQ(Sketch_access::get_linear_edge_count(*sk2), 1u);
+
+  EXPECT_TRUE(view().undo());
+  EXPECT_EQ(Sketch_access::get_linear_edge_count(*sk1), 0u);
+  EXPECT_EQ(Sketch_access::get_linear_edge_count(*sk2), 0u)
+      << "Undo must target the sketch that was edited, not the first same-named sketch";
+}
+
+TEST_F(Sketch_test, Undo_circle_axis_then_revolve_snapshot_three_undos)
+{
+  Sketch::Sketch_ptr sk = view().curr_sketch_shared();
+  const size_t         sk_id = sk->get_id();
+
+  {
+    Sketch_op_recorder rec(view(), *sk);
+    const gp_Pnt2d                 center(0.0, 0.0);
+    const gp_Pnt2d                 edge_pt(5.0, 0.0);
+    const std::array<gp_Pnt2d, 4> points = xy_stencil_pnts(center, edge_pt);
+    Sketch_access::add_arc_circle_(*sk, points[0], points[2], points[1], rec);
+    Sketch_access::add_arc_circle_(*sk, points[0], points[3], points[1], rec);
+    rec.commit();
+  }
+
+  EXPECT_EQ(Sketch_access::get_arc_internal_edge_count(*sk), 4u);
+
+  {
+    Sketch_op_recorder rec(view(), *sk);
+    const gp_Pnt2d axis_a(0.0, -10.0);
+    const gp_Pnt2d axis_b(10.0, -10.0);
+    Sketch_access::set_operation_axis_(*sk, axis_a, axis_b);
+    rec.note_curr_operation_axis(axis_a, axis_b);
+    rec.commit();
+  }
+  EXPECT_TRUE(sk->has_operation_axis());
+
+  view().push_undo_snapshot();
+
+  auto find_sk = [&]() -> Sketch::Sketch_ptr
+  {
+    for (const Sketch::Sketch_ptr& s : view().get_sketches())
+      if (s->get_id() == sk_id)
+        return s;
+    return nullptr;
+  };
+
+  EXPECT_TRUE(view().undo());
+  sk = find_sk();
+  ASSERT_TRUE(sk);
+  EXPECT_EQ(view().get_sketches().size(), 1u);
+  EXPECT_TRUE(sk->has_operation_axis());
+  EXPECT_EQ(Sketch_access::get_arc_internal_edge_count(*sk), 4u);
+
+  EXPECT_TRUE(view().undo());
+  sk = find_sk();
+  ASSERT_TRUE(sk);
+  EXPECT_FALSE(sk->has_operation_axis());
+  EXPECT_EQ(Sketch_access::get_arc_internal_edge_count(*sk), 4u);
+
+  EXPECT_TRUE(view().undo());
+  sk = find_sk();
+  ASSERT_TRUE(sk);
+  EXPECT_EQ(Sketch_access::get_arc_internal_edge_count(*sk), 0u);
 }
 
 // Test T-junction case (one edge's endpoint touches the interior of another).
@@ -1345,7 +1498,7 @@ TEST_F(Sketch_test, UpdateFaces_DanglingEdgesArcMidNode)
   // The dangling edges (especially the vertical one attached to arc_mid) should still exist
   // in the sketch, but they must not affect face detection.
   size_t total_edges = 0;
-  for (const auto& e : sketch.m_edges)
+  for (const auto& e : Sketch_access::get_edges(sketch))
     if (e.node_idx_b.has_value())
       ++total_edges;
 
@@ -1590,9 +1743,7 @@ TEST_F(Sketch_test, JsonSerializationDeserialization)
 
   // Add edges to create a rectangle-like shape
   for (size_t i = 0; i < points.size() - 1; i += 2)
-  {
     Sketch_access::add_edge_(sketch, points[i], points[i + 1]);
-  }
 
   // Serialize to JSON
   nlohmann::json json_data = Sketch_json::to_json(sketch, view().asset_store());
@@ -1612,6 +1763,7 @@ TEST_F(Sketch_test, JsonSerializationDeserialization)
   for (size_t i = 0; i < sketch.get_nodes().size(); ++i)
     if (!sketch.get_nodes()[i].deleted)
       ++live_nodes;
+
   EXPECT_EQ(json_data["nodes"].size(), live_nodes);
   EXPECT_EQ(json_data["edges"].size(), 3);      // Should have 3 edges
   EXPECT_EQ(json_data["arc_edges"].size(), 0);  // No arc edges
@@ -1625,11 +1777,10 @@ TEST_F(Sketch_test, JsonSerializationDeserialization)
 
   // Count edges in deserialized sketch
   size_t edge_count = 0;
-  for (const auto& edge : deserialized_sketch->m_edges)
-  {
+  for (const auto& edge : Sketch_access::get_edges(*deserialized_sketch))
     if (edge.node_idx_b.has_value())
       edge_count++;
-  }
+  
   EXPECT_EQ(edge_count, 3);  // Should have 3 edges
 }
 
@@ -1687,14 +1838,14 @@ TEST_F(Sketch_test, JsonSerializationDifferentEdgeCounts)
   std::shared_ptr<Sketch> deserialized2 = Sketch_json::from_json(view(), json2);
 
   size_t edge_count1 = 0;
-  for (const auto& edge : deserialized1->m_edges)
+  for (const auto& edge : Sketch_access::get_edges(*deserialized1))
   {
     if (edge.node_idx_b.has_value())
       edge_count1++;
   }
 
   size_t edge_count2 = 0;
-  for (const auto& edge : deserialized2->m_edges)
+  for (const auto& edge : Sketch_access::get_edges(*deserialized2))
   {
     if (edge.node_idx_b.has_value())
       edge_count2++;
@@ -1725,9 +1876,9 @@ TEST_F(Sketch_test, JsonSerializationWithDimensions)
 
   std::shared_ptr<Sketch> deserialized_sketch = Sketch_json::from_json(view(), json_data);
 
-  ASSERT_EQ(deserialized_sketch->m_length_dimensions.size(), 1u);
-  EXPECT_EQ(deserialized_sketch->m_length_dimensions[0].node_idx_lo, 0u);
-  EXPECT_EQ(deserialized_sketch->m_length_dimensions[0].node_idx_hi, 1u);
+  ASSERT_EQ(Sketch_access::length_dimension_count(*deserialized_sketch), 1u);
+  EXPECT_EQ(Sketch_access::length_dimension_node_lo(*deserialized_sketch, 0), 0u);
+  EXPECT_EQ(Sketch_access::length_dimension_node_hi(*deserialized_sketch, 0), 1u);
 }
 
 // Legacy indexed edges used a 4th boolean "dim" field; migrate to length_dimensions (node pair).
@@ -1742,9 +1893,9 @@ TEST_F(Sketch_test, JsonLegacyIndexedEdgeDimFlagMigratesToLengthDimensions)
   j.erase("length_dimensions");
 
   std::shared_ptr<Sketch> loaded = Sketch_json::from_json(view(), j);
-  ASSERT_EQ(loaded->m_length_dimensions.size(), 1u);
-  EXPECT_EQ(loaded->m_length_dimensions[0].node_idx_lo, 0u);
-  EXPECT_EQ(loaded->m_length_dimensions[0].node_idx_hi, 1u);
+  ASSERT_EQ(Sketch_access::length_dimension_count(*loaded), 1u);
+  EXPECT_EQ(Sketch_access::length_dimension_node_lo(*loaded, 0), 0u);
+  EXPECT_EQ(Sketch_access::length_dimension_node_hi(*loaded, 0), 1u);
 }
 
 TEST_F(Sketch_test, EzyDocumentJsonIncludesFormatVersion)
@@ -1877,7 +2028,7 @@ TEST_F(Sketch_test, UpdateFaces_BridgeEdgeRemoval)
 
   // Verify all edges still exist in the sketch (bridge edge is excluded from face detection but still exists)
   size_t total_edges = 0;
-  for (const auto& edge : sketch.m_edges)
+  for (const auto& edge : Sketch_access::get_edges(sketch))
   {
     if (edge.node_idx_b.has_value())
       total_edges++;
@@ -1886,7 +2037,7 @@ TEST_F(Sketch_test, UpdateFaces_BridgeEdgeRemoval)
 
   // Verify the bridge edge exists in the sketch
   bool found_bridge_edge = false;
-  for (const auto& edge : sketch.m_edges)
+  for (const auto& edge : Sketch_access::get_edges(sketch))
   {
     if (!edge.node_idx_b.has_value())
       continue;
@@ -2144,7 +2295,7 @@ TEST_F(Sketch_test, UpdateFaces_DanglingEdgesRemoval)
   // Verify all edges are still in the sketch (they're just excluded from face detection)
   // The edges should still exist in m_edges, but not participate in face formation
   size_t total_edges = 0;
-  for (const auto& edge : sketch.m_edges)
+  for (const auto& edge : Sketch_access::get_edges(sketch))
   {
     if (edge.node_idx_b.has_value())
       total_edges++;
@@ -2247,7 +2398,7 @@ TEST_F(Sketch_test, MirrorSelectedEdges_SimpleStraightEdge)
 
   // Find the shp of the edge we just added (last one with b node)
   AIS_Shape_ptr edge_to_mirror;
-  for (auto rit = sketch.m_edges.rbegin(); rit != sketch.m_edges.rend(); ++rit)
+  for (auto rit = Sketch_access::get_edges(sketch).rbegin(); rit != Sketch_access::get_edges(sketch).rend(); ++rit)
   {
     if (rit->node_idx_b.has_value())
     {
@@ -2265,7 +2416,7 @@ TEST_F(Sketch_test, MirrorSelectedEdges_SimpleStraightEdge)
   // Count drawable edges before
   auto count_drawable_edges = [&](const Sketch& s) -> size_t {
     size_t n = 0;
-    for (const auto& e : s.m_edges)
+    for (const auto& e : Sketch_access::get_edges(s))
       if (e.node_idx_b.has_value()) ++n;
     return n;
   };
@@ -2280,7 +2431,7 @@ TEST_F(Sketch_test, MirrorSelectedEdges_SimpleStraightEdge)
 
   // Verify a mirrored edge now exists at y = -2 with matching x coords
   bool found_mirrored = false;
-  for (const auto& e : sketch.m_edges)
+  for (const auto& e : Sketch_access::get_edges(sketch))
   {
     if (!e.node_idx_b.has_value()) continue;
     const gp_Pnt2d& na = sketch.get_nodes()[e.node_idx_a];
@@ -2316,7 +2467,7 @@ TEST_F(Sketch_test, MirrorSelectedEdges_VerticalAxis)
 
   // Select it
   AIS_Shape_ptr shp;
-  for (auto rit = sketch.m_edges.rbegin(); rit != sketch.m_edges.rend(); ++rit)
+  for (auto rit = Sketch_access::get_edges(sketch).rbegin(); rit != Sketch_access::get_edges(sketch).rend(); ++rit)
   {
     if (rit->node_idx_b.has_value()) { shp = rit->shp; break; }
   }
@@ -2327,17 +2478,17 @@ TEST_F(Sketch_test, MirrorSelectedEdges_VerticalAxis)
   cctx.AddOrRemoveSelected(shp, true);
 
   size_t before = 0;
-  for (const auto& e : sketch.m_edges) if (e.node_idx_b.has_value()) ++before;
+  for (const auto& e : Sketch_access::get_edges(sketch)) if (e.node_idx_b.has_value()) ++before;
 
   sketch.mirror_selected_edges();
 
   size_t after = 0;
-  for (const auto& e : sketch.m_edges) if (e.node_idx_b.has_value()) ++after;
+  for (const auto& e : Sketch_access::get_edges(sketch)) if (e.node_idx_b.has_value()) ++after;
   EXPECT_EQ(after, before + 1);
 
   // Expect mirrored edge at x=-2
   bool found = false;
-  for (const auto& e : sketch.m_edges)
+  for (const auto& e : Sketch_access::get_edges(sketch))
   {
     if (!e.node_idx_b.has_value()) continue;
     const gp_Pnt2d& na = sketch.get_nodes()[e.node_idx_a];
@@ -2375,7 +2526,7 @@ TEST_F(Sketch_test, MirrorSelectedEdges_Arc)
 
   // For arcs, the shp is shared; select the shp of one of the arc edges
   AIS_Shape_ptr arc_shp;
-  for (const auto& e : sketch.m_edges)
+  for (const auto& e : Sketch_access::get_edges(sketch))
   {
     if (e.circle_arc)
     {
@@ -2390,19 +2541,19 @@ TEST_F(Sketch_test, MirrorSelectedEdges_Arc)
   cctx.AddOrRemoveSelected(arc_shp, true);
 
   size_t before = 0;
-  for (const auto& e : sketch.m_edges) if (e.node_idx_b.has_value()) ++before;
+  for (const auto& e : Sketch_access::get_edges(sketch)) if (e.node_idx_b.has_value()) ++before;
 
   sketch.mirror_selected_edges();
 
   // Mirroring an arc pair should add another arc pair below
   size_t after = 0;
-  for (const auto& e : sketch.m_edges) if (e.node_idx_b.has_value()) ++after;
+  for (const auto& e : Sketch_access::get_edges(sketch)) if (e.node_idx_b.has_value()) ++after;
   // Expect +2 edges for the mirrored arc (the pair)
   EXPECT_EQ(after, before + 2) << "Mirroring an arc should add two new arc edges";
 
   // Spot-check that a mirrored point exists below the axis (e.g. around y=-1 or so)
   bool found_symmetric = false;
-  for (const auto& e : sketch.m_edges)
+  for (const auto& e : Sketch_access::get_edges(sketch))
   {
     if (!e.node_idx_b.has_value() || !e.circle_arc) continue;
     const gp_Pnt2d& pa = sketch.get_nodes()[e.node_idx_a];
@@ -2461,7 +2612,7 @@ TEST_F(Sketch_test, RevolveSelected_SimpleEdgeProfile)
 
   // Select the edge shp (same mechanism used by mirror tests and the real UI selection)
   AIS_Shape_ptr edge_shp;
-  for (auto rit = sketch.m_edges.rbegin(); rit != sketch.m_edges.rend(); ++rit)
+  for (auto rit = Sketch_access::get_edges(sketch).rbegin(); rit != Sketch_access::get_edges(sketch).rend(); ++rit)
   {
     if (rit->node_idx_b.has_value())
     {
@@ -2565,7 +2716,7 @@ TEST_F(Sketch_test, RevolveSelected_ClosedEdgeProfile)
   cctx.ClearSelected(true);
 
   size_t selected_count = 0;
-  for (const auto& e : sketch.m_edges)
+  for (const auto& e : Sketch_access::get_edges(sketch))
   {
     if (e.node_idx_b.has_value())
     {
@@ -2595,7 +2746,7 @@ TEST_F(Sketch_test, RevolveSelected_ClosedEdgeProfile)
   bld.MakeCompound(profile);
 
   // Collect exactly the profile edges we added for this test
-  for (const auto& e : sketch.m_edges)
+  for (const auto& e : Sketch_access::get_edges(sketch))
   {
     if (e.node_idx_b.has_value())
     {
@@ -2668,7 +2819,7 @@ TEST_F(Sketch_test, SplitEdge_HasMidpoints)
   // Count initial nodes and edges
   size_t initial_node_count = sketch.get_nodes().size();
   size_t initial_edge_count = 0;
-  for (const auto& edge : sketch.m_edges)
+  for (const auto& edge : Sketch_access::get_edges(sketch))
     if (edge.node_idx_b.has_value())
       initial_edge_count++;
 
@@ -2677,7 +2828,7 @@ TEST_F(Sketch_test, SplitEdge_HasMidpoints)
 
   // Find the midpoint of the initial edge
   std::optional<size_t> initial_midpoint_idx;
-  for (const auto& edge : sketch.m_edges)
+  for (const auto& edge : Sketch_access::get_edges(sketch))
   {
     if (edge.node_idx_b.has_value() && edge.node_idx_mid.has_value())
     {
@@ -2711,7 +2862,7 @@ TEST_F(Sketch_test, SplitEdge_HasMidpoints)
 
   // Count edges after splitting
   size_t final_edge_count = 0;
-  for (const auto& edge : sketch.m_edges)
+  for (const auto& edge : Sketch_access::get_edges(sketch))
     if (edge.node_idx_b.has_value())
       final_edge_count++;
 
@@ -2720,7 +2871,7 @@ TEST_F(Sketch_test, SplitEdge_HasMidpoints)
 
   // Verify that both split edges have midpoints
   std::vector<std::optional<size_t>> split_edge_midpoints;
-  for (const auto& edge : sketch.m_edges)
+  for (const auto& edge : Sketch_access::get_edges(sketch))
   {
     if (!edge.node_idx_b.has_value())
       continue;
@@ -2788,7 +2939,7 @@ TEST_F(Sketch_test, AddNode_splits_linear_edge_interior)
 
   auto count_real_edges = [](const Sketch& s) {
     size_t n = 0;
-    for (const auto& e : s.m_edges)
+    for (const auto& e : Sketch_access::get_edges(s))
       if (e.node_idx_b.has_value())
         ++n;
     return n;
@@ -2807,7 +2958,7 @@ TEST_F(Sketch_test, AddNode_splits_linear_edge_interior)
 
   bool found_0_7 = false;
   bool found_7_20 = false;
-  for (const auto& e : sketch.m_edges)
+  for (const auto& e : Sketch_access::get_edges(sketch))
   {
     if (!e.node_idx_b.has_value() || e.circle_arc)
       continue;
@@ -2857,7 +3008,7 @@ TEST_F(Sketch_test, AddNode_off_edge_adds_node_only)
   sketch.add_sketch_pt(away);
 
   size_t edge_count = 0;
-  for (const auto& e : sketch.m_edges)
+  for (const auto& e : Sketch_access::get_edges(sketch))
     if (e.node_idx_b.has_value())
       ++edge_count;
   EXPECT_EQ(edge_count, 1u);
@@ -2891,7 +3042,7 @@ TEST_F(Sketch_test, AddNode_near_edge_snaps_onto_segment_and_splits)
   sketch.add_sketch_pt(near_edge);
 
   size_t edge_count = 0;
-  for (const auto& e : sketch.m_edges)
+  for (const auto& e : Sketch_access::get_edges(sketch))
     if (e.node_idx_b.has_value())
       ++edge_count;
   EXPECT_EQ(edge_count, 2u) << "Near-miss pick should snap to segment and replace one edge with two";

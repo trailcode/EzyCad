@@ -142,6 +142,7 @@ nlohmann::json Sketch_json::to_json(const Sketch& sketch, const Ezy_asset_store&
 {
   json j;
   j["isCurrent"] = sketch.is_current();
+  j["id"]        = sketch.get_id();
   j["name"]      = sketch.get_name();
   j["plane"]     = ::to_json(sketch.m_pln);
 
@@ -155,8 +156,6 @@ nlohmann::json Sketch_json::to_json(const Sketch& sketch, const Ezy_asset_store&
 
   json& edges_json = j["edges"] = json::array();
   json& arc_edges_json = j["arc_edges"] = json::array();
-
-  const Sketch::Edge* last_arc_circle_edge = nullptr;
 
   const auto& sketch_nodes = sketch.m_nodes;
 
@@ -182,38 +181,21 @@ nlohmann::json Sketch_json::to_json(const Sketch& sketch, const Ezy_asset_store&
     return *dense_of_sparse[sparse_idx];
   };
 
-  for (const auto& edge : sketch.m_edges)
-  {
-    EZY_ASSERT(edge.node_idx_b.has_value());
+  sketch.m_edges.for_each_linear(
+      [&](const Sketch_edge_linear& e)
+      {
+        if (e.node_mid.has_value())
+          edges_json.push_back(json::array({remap(e.node_a), remap(e.node_b), remap(*e.node_mid)}));
+        else
+          edges_json.push_back(json::array({remap(e.node_a), remap(e.node_b)}));
+      });
 
-    if (!edge.circle_arc)
-    {
-      if (edge.node_idx_mid.has_value())
-        edges_json.push_back(json::array({remap(edge.node_idx_a), remap(*edge.node_idx_b), remap(*edge.node_idx_mid)}));
-      else
-        edges_json.push_back(json::array({remap(edge.node_idx_a), remap(*edge.node_idx_b)}));
-    }
-    else
-    {
-      if (last_arc_circle_edge)
-      {
-        EZY_ASSERT(last_arc_circle_edge->circle_arc.get() == edge.circle_arc.get());
-        EZY_ASSERT(last_arc_circle_edge->node_idx_arc.has_value());
-        arc_edges_json.push_back(json::array(
-            {remap(last_arc_circle_edge->node_idx_a), remap(*last_arc_circle_edge->node_idx_arc), remap(*edge.node_idx_b)}));
-        last_arc_circle_edge = nullptr;
-      }
-      else
-      {
-        EZY_ASSERT(edge.node_idx_arc.has_value());
-        EZY_ASSERT(*edge.node_idx_b == *edge.node_idx_arc);
-        last_arc_circle_edge = &edge;
-      }
-    }
-  }
+  sketch.m_edges.for_each_arc(
+      [&](const Sketch_edge_arc& a)
+      { arc_edges_json.push_back(json::array({remap(a.node_start), remap(a.node_arc), remap(a.node_end)})); });
 
   json& len_dims_json = j["length_dimensions"] = json::array();
-  for (const Sketch::Length_dimension& ld : sketch.m_length_dimensions)
+  for (const Sketch_dims::Length_dimension& ld : sketch.m_dims.dimensions())
   {
     json e = json::array({remap(ld.node_idx_lo), remap(ld.node_idx_hi), ld.visible});
     if (ld.flyout_offset.has_value())
@@ -315,6 +297,12 @@ Sketch::sptr Sketch_json::from_json(Occt_view& view, const nlohmann::json& j)
     const gp_Pnt2d pt_a = ::from_json_pnt2d(j["operation_axis"][0]);
     const gp_Pnt2d pt_b = ::from_json_pnt2d(j["operation_axis"][1]);
     ret->sketch_json_set_operation_axis_(pt_a, pt_b);
+  }
+
+  if (j.contains("id") && j["id"].is_number_unsigned())
+  {
+    ret->m_id = j["id"].get<size_t>();
+    view.adopt_sketch_id(ret->m_id);
   }
 
   if (j["isCurrent"])
