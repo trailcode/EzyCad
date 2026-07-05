@@ -1,6 +1,12 @@
 # PR - Sketch arc topology improvements
 
-## Title
+---
+github_pr: 166
+status: active
+paired_draft: ../issues/active/gh-165-sketch-slot-circle-intersection-splitting.md
+---
+
+**Opened on GitHub:** https://github.com/trailcode/EzyCad/pull/166
 
 Sketch arc topology: single edge per arc, intersection splitting, tangent face walker
 
@@ -24,7 +30,7 @@ Sketch arc topology: single edge per arc, intersection splitting, tangent face w
 
 ## Related
 
-- Issue: (slot + circle bug — link after filing)
+- Issue: https://github.com/trailcode/EzyCad/issues/165 (slot + circle bug — **not** fixed by this PR)
 - Does **not** fix slot + circle intersection splitting; tracked separately.
 
 ## Test Plan
