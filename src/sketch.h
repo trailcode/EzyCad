@@ -341,6 +341,7 @@ private:
   std::vector<Sketch_AIS_node_mark_ptr> m_permanent_node_marks;
   std::list<Edge>                       m_edges;
   Sketch_topo                           m_topo;
+  Sketch_underlay                       m_underlay;
   std::vector<Length_dimension>         m_length_dimensions;
   std::optional<size_t>                 m_len_dim_pick_anchor_node;
   /// Preview segment from anchor node to cursor while picking the second node (dim mode).
@@ -351,6 +352,4 @@ private:
   PrsDim_LengthDimension_ptr m_tmp_dim_anno;
   bool                       m_show_faces{true};
   bool                       m_show_dims{true};
-
-  Sketch_underlay m_underlay;
 };
