@@ -154,7 +154,7 @@ size_t Sketch_access::get_arc_internal_edge_count(const Sketch& sketch)
 
 const std::vector<Sketch_face_shp_ptr>& Sketch_access::get_faces(const Sketch& sketch)
 {
-  return sketch.m_faces;
+  return sketch.m_topo.faces();
 }
 
 const std::list<Sketch::Edge>& Sketch_access::get_edges(const Sketch& sketch)

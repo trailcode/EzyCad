@@ -72,6 +72,7 @@ Sketch::Sketch(const std::string& name, Occt_view& view, const gp_Pln& pln)
     , m_pln(pln)
     , m_name(name)
     , m_nodes(view, pln)
+    , m_topo(*this)
     , m_underlay(view.ctx())
 {
 }
@@ -82,6 +83,7 @@ Sketch::Sketch(const std::string& name, Occt_view& view, const gp_Pln& pln, cons
     , m_pln(pln)
     , m_name(name)
     , m_nodes(view, pln)
+    , m_topo(*this)
     , m_underlay(view.ctx())
 {
   m_originating_face = new AIS_Shape(outer_wire);
@@ -107,8 +109,7 @@ Sketch::~Sketch()
 
   m_length_dimensions.clear();
 
-  for (AIS_Shape_ptr& f : m_faces)
-    m_ctx.Remove(f, false);
+  m_topo.remove_displayed_faces();
 
   if (m_operation_axis.has_value())
     remove_edge(*m_operation_axis);
@@ -205,7 +206,7 @@ void Sketch::dbg_append_str(std::string& out) const
 {
   out += "    Nodes: " + std::to_string(m_nodes.size()) + "\n";
   out += "    Edges: " + std::to_string(m_edges.size()) + "\n";
-  out += "    Faces: " + std::to_string(m_faces.size()) + "\n";
+  out += "    Faces: " + std::to_string(m_topo.faces().size()) + "\n";
   out += "Tmp Nodes: " + std::to_string(m_tmp_node_idxs.size()) + "\n";
   out += "Tmp Edges: " + std::to_string(m_tmp_edges.size()) + "\n";
 }
@@ -481,9 +482,9 @@ void Sketch::move_line_string_pt_(const ScreenCoords& screen_coords)
 
       const double dist = span->full_len / m_view.get_dimension_scale();
       m_ctx.Remove(m_tmp_dim_anno, true);
-      m_tmp_dim_anno = create_distance_annotation(span_a, span_b, m_pln, m_view.gui().length_dimension_style(),
-                                                  approx_sketch_interior_ref_3d_(),
-                                                  m_dim_classifier_faces.empty() ? nullptr : &m_dim_classifier_faces);
+      m_tmp_dim_anno = create_distance_annotation(
+          span_a, span_b, m_pln, m_view.gui().length_dimension_style(), approx_sketch_interior_ref_3d_(),
+          m_topo.dim_classifier_faces().empty() ? nullptr : &m_topo.dim_classifier_faces());
       m_tmp_dim_anno->SetCustomValue(dist);
       m_ctx.Display(m_tmp_dim_anno, true);
 
@@ -583,9 +584,9 @@ void Sketch::move_line_string_pt_(const ScreenCoords& screen_coords)
     // line; if the mouse is (nearly) perpendicular to that line, the projection coincides with pt_a.
     if (unique(pt_a, final_pt_b))
     {
-      m_tmp_dim_anno = create_distance_annotation(pt_a, final_pt_b, m_pln, m_view.gui().length_dimension_style(),
-                                                  approx_sketch_interior_ref_3d_(),
-                                                  m_dim_classifier_faces.empty() ? nullptr : &m_dim_classifier_faces);
+      m_tmp_dim_anno = create_distance_annotation(
+          pt_a, final_pt_b, m_pln, m_view.gui().length_dimension_style(), approx_sketch_interior_ref_3d_(),
+          m_topo.dim_classifier_faces().empty() ? nullptr : &m_topo.dim_classifier_faces());
 
       m_tmp_dim_anno->SetCustomValue(dist);
       m_ctx.Display(m_tmp_dim_anno, true);
@@ -739,7 +740,7 @@ void Sketch::finalize_edges_(Sketch_op_recorder& rec)
     }
 
     for (const auto& ip : batch_to_split)
-      split_linear_edges_at_node_if_interior_(m_nodes.get_node_exact(ip), rec);
+      m_topo.split_linear_edges_at_node_if_interior(m_nodes.get_node_exact(ip), rec);
   }
 
   append(m_edges, m_tmp_edges);
@@ -781,7 +782,7 @@ void Sketch::finalize_edges_(Sketch_op_recorder& rec)
   {
     const size_t nidx = m_nodes.get_node_exact(ip);
     rec.note_curr_node(nidx);
-    split_linear_edges_at_node_if_interior_(nidx, rec);
+    m_topo.split_linear_edges_at_node_if_interior(nidx, rec);
   }
 
   m_nodes.hide_snap_annos();
@@ -795,7 +796,7 @@ void Sketch::add_node_pt_(const ScreenCoords& screen_coords)
     Sketch_op_recorder rec(m_view, *this);
     {
       rec.note_curr_node(node_b);
-      split_linear_edges_at_node_if_interior_(node_b, rec);
+      m_topo.split_linear_edges_at_node_if_interior(node_b, rec);
 
       // Add-node mode: the rubber band is only for placement (snap / dimension / angle). Do not create
       // a sketch edge between the anchor and the new node - only nodes and interior splits matter.
@@ -867,7 +868,7 @@ void Sketch::add_node_pt_(const ScreenCoords& screen_coords)
     {
       const size_t ni = m_nodes.add_new_node(pt, false, true);
       rec.note_curr_node(ni);
-      split_linear_edges_at_node_if_interior_(ni, rec);
+      m_topo.split_linear_edges_at_node_if_interior(ni, rec);
       m_ctx.Remove(m_tmp_dim_anno, true);
       m_tmp_dim_anno.Nullify();
       m_nodes.hide_snap_annos();
@@ -887,132 +888,7 @@ void Sketch::move_add_node_pt_(const ScreenCoords& screen_coords)
     move_sketch_pt_(screen_coords, [](const std::optional<size_t>&, const gp_Pnt2d&) {});
 }
 
-double Sketch::plane_pick_snap_radius_world_() const
-{
-  const double px = Sketch_nodes::get_snap_dist();
-  if (m_view.is_headless())
-    return std::max(px, Precision::Confusion() * 1e9);
-
-  const gp_Pnt2d          ref2(0.0, 0.0);
-  const ScreenCoords      s0   = m_view.get_screen_coords(to_3d(m_pln, ref2));
-  const dvec2             base = s0.unsafe_get();
-  std::optional<gp_Pnt2d> p1   = m_view.pt_on_plane(ScreenCoords(dvec2(base.x + px, base.y)), m_pln);
-  if (!p1)
-    return std::max(px, Precision::Confusion() * 1e9);
-
-  return ref2.Distance(*p1);
-}
-
-void Sketch::snap_placed_node_to_closest_linear_edge_interior_(size_t node_idx)
-{
-  EZY_ASSERT(node_idx < m_nodes.size());
-
-  const gp_Pnt2d p(m_nodes[node_idx].X(), m_nodes[node_idx].Y());
-  const double   max_d = plane_pick_snap_radius_world_();
-
-  double                  best_err = std::numeric_limits<double>::infinity();
-  std::optional<gp_Pnt2d> best_proj;
-
-  for (const auto& e : m_edges)
-  {
-    if (e.circle_arc)
-      continue;
-
-    if (e.node_idx_arc.has_value())
-      continue;
-
-    if (!e.node_idx_b.has_value())
-      continue;
-
-    const size_t    a  = e.node_idx_a;
-    const size_t    b  = *e.node_idx_b;
-    const gp_Pnt2d& pa = m_nodes[a];
-    const gp_Pnt2d& pb = m_nodes[b];
-    if (node_idx == a || node_idx == b)
-      continue;
-
-    std::optional<gp_Pnt2d> proj = snap_foot_to_open_segment_interior_if_close(p, pa, pb, max_d);
-    if (!proj)
-      continue;
-
-    const double err = p.Distance(*proj);
-    if (err < best_err)
-    {
-      best_err  = err;
-      best_proj = proj;
-    }
-  }
-
-  if (best_proj)
-  {
-    Sketch_nodes::Node& n = m_nodes[node_idx];
-    n.SetX(best_proj->X());
-    n.SetY(best_proj->Y());
-    n.midpoint = false;
-  }
-}
-
-void Sketch::split_linear_edges_at_node_if_interior_(size_t node_idx)
-{
-  split_linear_edges_at_node_if_interior_(node_idx, static_cast<Sketch_op_recorder*>(nullptr));
-}
-
-void Sketch::split_linear_edges_at_node_if_interior_(size_t node_idx, Sketch_op_recorder& rec)
-{
-  split_linear_edges_at_node_if_interior_(node_idx, &rec);
-}
-
-void Sketch::split_linear_edges_at_node_if_interior_(size_t node_idx, Sketch_op_recorder* rec)
-{
-  EZY_ASSERT(node_idx < m_nodes.size());
-  snap_placed_node_to_closest_linear_edge_interior_(node_idx);
-  const gp_Pnt2d& p = m_nodes[node_idx];
-
-  bool progress = true;
-  while (progress)
-  {
-    progress = false;
-    for (auto itr = m_edges.begin(); itr != m_edges.end(); ++itr)
-    {
-      if (itr->circle_arc)
-        continue;
-
-      if (itr->node_idx_arc.has_value())
-        continue;
-
-      if (!itr->node_idx_b.has_value())
-        continue;
-
-      const size_t    a  = itr->node_idx_a;
-      const size_t    b  = *itr->node_idx_b;
-      const gp_Pnt2d& pa = m_nodes[a];
-      const gp_Pnt2d& pb = m_nodes[b];
-
-      if (node_idx == a || node_idx == b)
-        continue;
-
-      if (!point_on_open_segment_2d(p, pa, pb))
-        continue;
-
-      Edge edge_a{a};
-      update_edge_end_pt_(edge_a, node_idx);
-      Edge edge_b{node_idx};
-      update_edge_end_pt_(edge_b, b);
-
-      if (rec)
-        rec->note_prev_linear_edge(itr->node_idx_a, *itr->node_idx_b, itr->node_idx_mid, itr->name);
-
-      m_ctx.Remove(itr->shp, false);
-      m_edges.erase(itr);
-      m_nodes[node_idx].midpoint = false;
-      m_edges.push_back(std::move(edge_a));
-      m_edges.push_back(std::move(edge_b));
-
-      progress = true;
-      break;
-    }
-  }
-}
+void Sketch::update_faces_() { m_topo.update_faces(); }
 
 // Arc circle related
 void Sketch::add_arc_circle_pt_(const ScreenCoords& screen_coords)
@@ -1481,7 +1357,7 @@ void Sketch::check_dimension_rubber_()
   Sketch_op_recorder rec(m_view, *this);
   {
     rec.note_curr_node(b);
-    split_linear_edges_at_node_if_interior_(b, rec);
+    m_topo.split_linear_edges_at_node_if_interior(b, rec);
 
     m_tmp_node_idxs.clear();
     clear_tmps_();
@@ -1608,7 +1484,7 @@ void Sketch::add_edge_impl_(const gp_Pnt2d& pt_a, const gp_Pnt2d& pt_b, Sketch_o
     if (rec)
       rec->note_curr_node(nidx);
 
-    split_linear_edges_at_node_if_interior_(nidx, rec);
+    m_topo.split_linear_edges_at_node_if_interior(nidx, rec);
   }
 
   // Now insert the (subdivided) pieces of this new edge using the raw adder.
@@ -1667,7 +1543,7 @@ std::vector<Sketch_face_shp_ptr> Sketch::get_selected_faces_() const
 {
   std::vector<Sketch_face_shp_ptr> ret;
   for (const AIS_Shape_ptr& selected : m_view.get_selected())
-    for (const Sketch_face_shp_ptr& face : m_faces)
+    for (const Sketch_face_shp_ptr& face : m_topo.faces())
       if (face == selected)
         ret.push_back(face);
 
@@ -1764,7 +1640,7 @@ void Sketch::rebuild_length_dimension_display_(Length_dimension& d)
 
   d.dim = create_distance_annotation(m_nodes[d.node_idx_lo], m_nodes[d.node_idx_hi], m_pln,
                                      m_view.gui().length_dimension_style(), approx_sketch_interior_ref_3d_(),
-                                     m_dim_classifier_faces.empty() ? nullptr : &m_dim_classifier_faces);
+                                     m_topo.dim_classifier_faces().empty() ? nullptr : &m_topo.dim_classifier_faces());
 
   const double dist = m_nodes[d.node_idx_lo].Distance(m_nodes[d.node_idx_hi]);
   d.dim->SetCustomValue(dist / m_view.get_dimension_scale());
@@ -1969,588 +1845,6 @@ bool Sketch::cancel_elm()
   return operation_canceled;
 }
 
-// Function to extract faces from the planar graph
-void Sketch::update_faces_()
-{
-  m_nodes.finalize();
-
-  m_view.remove(m_faces);
-  m_faces.clear();
-  m_dim_classifier_faces.clear();
-
-  // Used to cleanup dangling nodes;
-  std::vector<bool> used_nodes(m_nodes.size());
-
-  // Build adjacency list
-  std::unordered_map<size_t, std::vector<std::pair<size_t, const Edge*>>> adj_list;
-
-  for (const auto& edge : m_edges)
-  {
-    EZY_ASSERT(edge.node_idx_b.has_value());
-
-    size_t a = edge.node_idx_a;
-    size_t b = edge.node_idx_b.value();
-    adj_list[a].push_back({b, &edge});
-    adj_list[b].push_back({a, &edge});
-
-    // Keep track of used nodes.
-    used_nodes[a] = true;
-    used_nodes[b] = true;
-    if (edge.node_idx_mid.has_value())
-      used_nodes[*edge.node_idx_mid] = true;
-
-    if (edge.node_idx_arc.has_value())
-      used_nodes[*edge.node_idx_arc] = true;
-  }
-
-  if (m_operation_axis.has_value())
-  {
-    used_nodes[m_operation_axis->node_idx_a] = true;
-    if (m_operation_axis->node_idx_b.has_value())
-      used_nodes[*m_operation_axis->node_idx_b] = true;
-  }
-
-  // Remove dangling edges (edges with degree-1 endpoints) iteratively.
-  // These edges cannot form closed faces, so we exclude them from face detection.
-  std::unordered_set<const Edge*> excluded_edges;
-
-  // Treat edges attached to the virtual mid-node of an arc as dangling for face detection.
-  // Circle arcs are represented using a virtual node in the middle of the arc (`node_idx_arc`).
-  // Any non-arc edge that uses this virtual node as an endpoint should not participate in faces.
-  {
-    std::unordered_set<size_t> arc_mid_nodes;
-    for (const auto& edge : m_edges)
-      if (edge.node_idx_arc.has_value())
-        arc_mid_nodes.insert(*edge.node_idx_arc);
-
-    for (const auto& edge : m_edges)
-    {
-      // Only consider non-arc edges (straight segments etc.).
-      if (edge.circle_arc)
-        continue;
-
-      if (!edge.node_idx_b.has_value())
-        continue;
-
-      const size_t a = edge.node_idx_a;
-      const size_t b = *edge.node_idx_b;
-
-      if (arc_mid_nodes.count(a) || arc_mid_nodes.count(b))
-        excluded_edges.insert(&edge);
-    }
-  }
-
-  bool changed = true;
-  while (changed)
-  {
-    changed = false;
-    std::unordered_set<const Edge*> to_exclude;
-
-    // Find edges where at least one endpoint has degree 1 (considering only non-excluded edges)
-    for (const auto& edge : m_edges)
-    {
-      if (excluded_edges.count(&edge))
-        continue;
-
-      EZY_ASSERT(edge.node_idx_b.has_value());
-      size_t a = edge.node_idx_a;
-      size_t b = edge.node_idx_b.value();
-
-      // Count degree for each endpoint (excluding already excluded edges)
-      int degree_a = 0;
-      int degree_b = 0;
-      for (const auto& [neighbor, e] : adj_list[a])
-        if (!excluded_edges.count(e))
-          ++degree_a;
-
-      for (const auto& [neighbor, e] : adj_list[b])
-        if (!excluded_edges.count(e))
-          ++degree_b;
-
-      // If either endpoint has degree 1, this edge is dangling
-      if (degree_a == 1 || degree_b == 1)
-      {
-        to_exclude.insert(&edge);
-        changed = true;
-      }
-    }
-
-    excluded_edges.insert(to_exclude.begin(), to_exclude.end());
-  }
-  // Bridge edge removal logic (active). Excludes edges that purely connect separate cycles
-  // (both ends degree >=3 and no alternate path) from the adjacency used by the face walker.
-  // This is required for sketches like bridge.ezy that contain a "bridge" touching an inner
-  // triangular loop so that we obtain exactly two faces, one of which has the triangle as a
-  // hole. Dangling removal alone is not sufficient. The logic was previously disabled because
-  // an earlier version produced bad results on some nested rect holes; current state + other
-  // fixes (cw break, split rules, etc.) are being validated with the new regression test.
-  // Remove bridge edges that connect two separate cycles.
-  // A bridge edge connects two cycles and has both endpoints with degree >= 3.
-  // We detect this by checking if the edge is the only connection between two cycles.
-  std::unordered_set<const Edge*> bridge_edges;
-  for (const auto& edge : m_edges)
-  {
-    if (excluded_edges.count(&edge))
-      continue;
-
-    EZY_ASSERT(edge.node_idx_b.has_value());
-    size_t a = edge.node_idx_a;
-    size_t b = edge.node_idx_b.value();
-
-    // Count degree for each endpoint (excluding already excluded edges)
-    int degree_a = 0;
-    int degree_b = 0;
-    for (const auto& [neighbor, e] : adj_list[a])
-      if (!excluded_edges.count(e))
-        ++degree_a;
-
-    for (const auto& [neighbor, e] : adj_list[b])
-      if (!excluded_edges.count(e))
-        ++degree_b;
-
-    // Bridge edges have both endpoints with degree >= 3
-    // They connect two separate cycles. We detect this by checking if removing the edge
-    // creates two disconnected components, each containing a cycle.
-    if (degree_a >= 3 && degree_b >= 3)
-    {
-      // Check if removing this edge disconnects the graph
-      // by seeing if we can reach 'b' from 'a' without using this edge
-      std::unordered_set<size_t> visited;
-      std::vector<size_t>        queue;
-      queue.push_back(a);
-      visited.insert(a);
-      bool can_reach_b = false;
-
-      for (size_t i = 0; i < queue.size() && !can_reach_b; ++i)
-      {
-        size_t curr = queue[i];
-        for (const auto& [neighbor, e] : adj_list[curr])
-        {
-          if (excluded_edges.count(e) || e == &edge)
-            continue;
-
-          if (neighbor == b)
-          {
-            can_reach_b = true;
-            break;
-          }
-          if (!visited.count(neighbor))
-          {
-            visited.insert(neighbor);
-            queue.push_back(neighbor);
-          }
-        }
-      }
-
-      // If we can't reach b from a without this edge, it's a bridge
-      // But we also need to verify both sides have cycles
-      if (!can_reach_b)
-      {
-        // Check if component containing 'a' has a cycle
-        auto has_cycle_in_component = [&](size_t start, const Edge* exclude_edge) -> bool
-        {
-          std::unordered_set<size_t>          comp_visited;
-          std::function<bool(size_t, size_t)> dfs = [&](size_t curr, size_t parent) -> bool
-          {
-            comp_visited.insert(curr);
-            for (const auto& [neighbor, e] : adj_list[curr])
-            {
-              if (excluded_edges.count(e) || e == exclude_edge)
-                continue;
-
-              if (neighbor == parent)
-                continue;
-
-              if (comp_visited.count(neighbor))
-              {
-                // Found a back edge = cycle
-                return true;
-              }
-              if (dfs(neighbor, curr))
-                return true;
-            }
-            return false;
-          };
-
-          // Try starting from each neighbor
-          for (const auto& [neighbor, e] : adj_list[start])
-          {
-            if (excluded_edges.count(e) || e == exclude_edge)
-              continue;
-
-            comp_visited.clear();
-            comp_visited.insert(start);
-            if (dfs(neighbor, start))
-              return true;
-          }
-          return false;
-        };
-
-        bool a_has_cycle = has_cycle_in_component(a, &edge);
-        bool b_has_cycle = has_cycle_in_component(b, &edge);
-
-        // If both components have cycles, this edge is a bridge
-        if (a_has_cycle && b_has_cycle)
-          bridge_edges.insert(&edge);
-      }
-    }
-  }
-
-  // Add bridge edges to excluded set
-  excluded_edges.insert(bridge_edges.begin(), bridge_edges.end());
-
-  // Rebuild adjacency list excluding dangling and bridge edges
-  adj_list.clear();
-  for (const auto& edge : m_edges)
-  {
-    if (excluded_edges.count(&edge))
-      continue;
-
-    EZY_ASSERT(edge.node_idx_b.has_value());
-    size_t a = edge.node_idx_a;
-    size_t b = edge.node_idx_b.value();
-    adj_list[a].push_back({b, &edge});
-    adj_list[b].push_back({a, &edge});
-  }
-
-  std::vector<Face>                                        faces;
-  std::unordered_set<std::pair<size_t, size_t>, Pair_hash> seen_edges;
-
-  const auto edge_outgoing_dir = [this](size_t idx_a, size_t idx_b) -> gp_Vec2d
-  {
-    gp_Vec2d ret(m_nodes[idx_a], m_nodes[idx_b]);
-    ret.Normalize();
-    return ret;
-  };
-
-  for (auto& [a_idx, edges] : adj_list)
-    for (auto& [b_idx, start_edge] : edges)
-    {
-      if (seen_edges.count(std::make_pair(a_idx, b_idx)))
-        continue;
-
-      size_t      start_idx = a_idx;
-      size_t      prev_idx  = a_idx;
-      size_t      curr_idx  = b_idx;
-      const Edge* curr_edge = start_edge;
-      Face_edges  face;
-
-      for (;;)
-      {
-        face.push_back({*curr_edge, curr_edge->reversed(prev_idx, curr_idx)});
-
-        // Base case
-        if (curr_idx == start_idx)
-        {
-          EZY_ASSERT(face.size() > 2);
-
-          // Deliberately accept the cycle only if the left-most walker produced a traversal
-          // whose shoelace is positive under our is_face_clockwise_ convention. If not, break
-          // (skip pushing a face for this seed). This is not an error -- other seeds may still
-          // discover the same geometric cycle (or its sibling faces) in the matching orientation.
-          // The early break makes the set of accepted faces and their order in m_faces depend on
-          // m_edges list order (affected by appends and push_backs during splits) and on individual
-          // Edge node_idx_a/b values (set from pa/pb at creation time, i.e. draw direction for
-          // edges added via the GUI line tool). This dependency has been observed to be required
-          // for correct results in the GUI for cases such as "square then mid vertical splitter
-          // added lower-to-top vs. top-to-bottom" (the break version yields the expected rects
-          // on the sides the user sees; a force-to-cw normalization for every collected cycle
-          // re-introduces the direction asymmetry or malformed faces in that flow).
-          // The hole test (and bridge/dangling face tests) still pass because their edge addition
-          // order + walker seeds happen to produce matching orientations for both outer and inner
-          // boundaries.
-          if (!is_face_clockwise_(face))
-            break;
-
-          for (const Face_edge& e : face)
-          {
-            // Mark edge in both directions to avoid processing the same face twice
-            // when starting from different nodes
-            size_t start_idx = e.start_nd_idx();
-            size_t end_idx   = e.end_nd_idx();
-            seen_edges.insert(std::make_pair(start_idx, end_idx));
-            seen_edges.insert(std::make_pair(end_idx, start_idx));
-          }
-
-          auto f = create_face_shape_(face);
-          f->SetColor(Quantity_NOC_GRAY7);       // Base color
-          f->SetTransparency(0.5);               // 0.5 = 50% transparent (0.0 = opaque, 1.0 = invisible)
-          f->SetMaterial(Graphic3d_NOM_PLASTIC); // Optional: material for shading
-
-          m_ctx.Display(f, AIS_Shaded, AIS_Shape::SelectionMode(TopAbs_FACE), true);
-          m_ctx.Activate(f, AIS_Shape::SelectionMode(TopAbs_FACE));
-          // m_ctx.UpdateCurrentViewer();
-          m_faces.push_back(f);
-          break;
-        }
-
-        size_t      left_most_idx;
-        double      min_angle      = std::numeric_limits<double>::max();
-        const Edge* left_most_edge = nullptr;
-        gp_Vec2d    edge_a         = edge_outgoing_dir(prev_idx, curr_idx);
-
-        for (auto& [next_idx, next_edge] : adj_list[curr_idx])
-        {
-          if (next_idx == prev_idx)
-            continue;
-
-          gp_Vec2d edge_b = edge_outgoing_dir(curr_idx, next_idx);
-          double   angle  = std::atan2(edge_b.Crossed(edge_a), edge_b.Dot(edge_a));
-          if (angle < min_angle)
-          {
-            min_angle      = angle;
-            left_most_idx  = next_idx;
-            left_most_edge = next_edge;
-          }
-        }
-        if (!left_most_edge)
-          // Invalid topology, probably a dangling edge
-          break;
-
-        prev_idx  = curr_idx;
-        curr_idx  = left_most_idx;
-        curr_edge = left_most_edge;
-      }
-    }
-
-  // Mark unused nodes as deleted so they're excluded from snapping operations.
-  // Nodes become unused when all edges that reference them are removed.
-  // Permanent add-node points are never auto-tombstoned when unused; user delete sets `deleted` and it stays.
-  for (size_t idx = 0, num = m_nodes.size(); idx < num; ++idx)
-    if (!m_nodes[idx].permanent)
-      m_nodes[idx].deleted = !used_nodes[idx];
-
-  // Book keeping
-  struct Face_meta
-  {
-    Sketch_face_shp_ptr           shp;
-    double                        area;
-    int                           parent_idx;
-    std::vector<const Face_meta*> holes;
-  };
-
-  std::vector<Face_meta> face_metas;
-  face_metas.reserve(m_faces.size());
-  for (Sketch_face_shp_ptr& face : m_faces)
-    face_metas.push_back({face, compute_face_area(face), -1});
-
-  // Sort faces by area (descending) to check larger faces first
-  std::sort(face_metas.begin(), face_metas.end(),
-            [](const Face_meta& a, const Face_meta& b)
-            {
-              return a.area > b.area; // Descending by area
-            });
-
-  // Classify faces
-  for (size_t face_i = 0, num = face_metas.size(); face_i < num; ++face_i)
-  {
-    Face_meta& face_a = face_metas[face_i];
-    for (size_t face_j = face_i + 1; face_j < num; ++face_j)
-    {
-      Face_meta& face_b = face_metas[face_j];
-      if (is_face_contained(face_b.shp->Shape(), face_a.shp->Shape()))
-        // Check if face_a is better (smaller) parent than the current one
-        if (face_b.parent_idx == -1 || face_a.area < face_metas[face_a.parent_idx].area)
-          face_b.parent_idx = static_cast<int>(face_i);
-    }
-  }
-
-  // Assign holes
-  for (const Face_meta& face : face_metas)
-    if (face.parent_idx != -1)
-      face_metas[face.parent_idx].holes.push_back(&face);
-
-  // Rebuild face shapes with their holes
-  for (Face_meta& face : face_metas)
-    if (face.holes.size())
-    {
-      EZY_ASSERT(face.shp->Shape().ShapeType() == TopAbs_FACE);
-      BRepBuilderAPI_MakeFace face_maker(TopoDS::Face(face.shp->Shape()));
-      for (const Face_meta* hole : face.holes)
-      {
-        EZY_ASSERT(hole->shp->Shape().ShapeType() == TopAbs_FACE);
-        TopoDS_Wire hole_wire = BRepTools::OuterWire(TopoDS::Face(hole->shp->Shape()));
-        // Winding order is important
-        hole_wire.Reverse();
-        face_maker.Add(hole_wire);
-      }
-      EZY_ASSERT(face_maker.IsDone());
-      // auto dbg_face = to_boost(face_maker.Face(), m_pln);
-      face.shp->SetShape(face_maker.Face());
-    }
-
-  // Use the nesting depth of the faces to define the face selection sensitivity
-  for (const Face_meta& face : face_metas)
-  {
-    int              nesting_depth = 0;
-    const Face_meta* curr_face     = &face;
-    for (; curr_face->parent_idx != -1; ++nesting_depth)
-      curr_face = &face_metas[curr_face->parent_idx];
-
-    m_ctx.SetSelectionSensitivity(face.shp, 0, nesting_depth + 1);
-  }
-
-  rebuild_dim_classifier_face_cache_();
-  purge_stale_length_dimensions_();
-  sync_permanent_node_annos_();
-  refresh_all_length_dimensions_();
-
-  if (is_current())
-    m_view.refresh_active_sketch_grid();
-}
-
-void Sketch::rebuild_dim_classifier_face_cache_()
-{
-  m_dim_classifier_faces.clear();
-  m_dim_classifier_faces.reserve(m_faces.size());
-  for (const Sketch_face_shp_ptr& fp : m_faces)
-    m_dim_classifier_faces.push_back(TopoDS::Face(fp->Shape()));
-}
-
-size_t Sketch::Face_edge::start_nd_idx() const
-{
-  if (!reversed)
-    return edge.node_idx_a;
-
-  EZY_ASSERT(edge.node_idx_b);
-  return *edge.node_idx_b;
-}
-
-size_t Sketch::Face_edge::end_nd_idx() const
-{
-  if (reversed)
-    return edge.node_idx_a;
-
-  EZY_ASSERT(edge.node_idx_b);
-  return *edge.node_idx_b;
-}
-
-bool Sketch::is_face_clockwise_(const Face_edges& face) const
-{
-  // Compute signed area using the shoelace formula
-  double signed_area = 0.0;
-  for (const Face_edge& e : face)
-  {
-    // `start_nd_idx` and `end_nd_idx` consider reversed edges
-    const gp_Pnt2d& p1 = m_nodes[e.start_nd_idx()];
-    const gp_Pnt2d& p2 = m_nodes[e.end_nd_idx()];
-    signed_area += (p1.X() * p2.Y()) - (p2.X() * p1.Y());
-  }
-  // signed_area *= 0.5;  // Divide by 2 for actual area
-
-  return signed_area > 0;
-}
-
-Sketch_face_shp_ptr Sketch::create_face_shape_(const Face_edges& face)
-{
-  EZY_ASSERT(face.size() > 2);
-
-  // Create edges for the wire
-  BRepBuilderAPI_MakeWire wire_maker;
-
-  struct Circle_arc
-  {
-    std::optional<size_t> nd_idx_a;
-    std::optional<size_t> nd_idx_b;
-    std::optional<size_t> nd_idx_c;
-    std::optional<bool>   dbg_reversed;
-  };
-
-  std::map<Geom_TrimmedCurve*, Circle_arc> circle_arcs;
-  std::vector<gp_Pnt>                      node_verts;
-  std::optional<size_t>                    dbg_last_node_idx;
-
-  for (const Face_edge& e : face)
-  {
-    EZY_ASSERT(e.edge.node_idx_b);
-
-    auto add_node_vert_unique = [&](const gp_Pnt& pt)
-    {
-      if (node_verts.empty())
-        node_verts.push_back(pt);
-      else if (!node_verts.back().IsEqual(pt, Precision::Confusion()))
-        node_verts.push_back(pt);
-    };
-
-    if (e.edge.circle_arc.get())
-    {
-      Circle_arc& arc = circle_arcs[e.edge.circle_arc.get()];
-
-      auto try_arc_circle = [&](bool reversed)
-      {
-        if (!arc.dbg_reversed.has_value())
-          arc.dbg_reversed = reversed;
-        else
-          EZY_ASSERT(*arc.dbg_reversed == reversed);
-
-        if (arc.nd_idx_a && arc.nd_idx_b && arc.nd_idx_c)
-        {
-          gp_Pnt a = to_3d_(arc.nd_idx_a);
-          gp_Pnt b = to_3d_(arc.nd_idx_b);
-          gp_Pnt c = to_3d_(arc.nd_idx_c);
-
-          add_node_vert_unique(a);
-          add_node_vert_unique(b);
-          add_node_vert_unique(c);
-
-          Geom_TrimmedCurve_ptr arc_circle;
-          if (reversed)
-            arc_circle = GC_MakeArcOfCircle(c, b, a);
-          else
-            arc_circle = GC_MakeArcOfCircle(a, b, c);
-
-          BRepBuilderAPI_MakeEdge edge(arc_circle);
-          EZY_ASSERT(edge.IsDone());
-          wire_maker.Add(edge.Edge());
-        }
-      };
-
-      // Depending on the order of the node indexes in face,
-      // the first or second circle arc edge might come first.
-      if (e.edge.node_idx_arc)
-      {
-        // This is the first part of the circle arc.
-        EZY_ASSERT(e.edge.node_idx_arc);
-        EZY_ASSERT(*e.edge.node_idx_b == *e.edge.node_idx_arc);
-        arc.nd_idx_a = e.edge.node_idx_a;
-        arc.nd_idx_b = e.edge.node_idx_arc;
-        try_arc_circle(e.reversed);
-      }
-      else
-      {
-        // This is the second part of the circle arc.
-        arc.nd_idx_c = *e.edge.node_idx_b;
-        try_arc_circle(e.reversed);
-      }
-    }
-    else
-    {
-      gp_Pnt a = to_3d_(e.start_nd_idx());
-      gp_Pnt b = to_3d_(e.end_nd_idx());
-
-      add_node_vert_unique(a);
-      add_node_vert_unique(b);
-
-      BRepBuilderAPI_MakeEdge edge(a, b);
-      EZY_ASSERT(edge.IsDone());
-      wire_maker.Add(edge.Edge());
-    }
-  }
-
-  EZY_ASSERT(wire_maker.IsDone());
-  TopoDS_Wire wire = wire_maker.Wire();
-
-  // Create a face from the wire
-  BRepBuilderAPI_MakeFace face_maker(wire);
-  EZY_ASSERT(face_maker.IsDone());
-
-  // auto dbg_face = to_boost(face_maker.Face(), m_pln);
-
-  Sketch_face_shp* ret = new Sketch_face_shp(*this, face_maker.Face());
-  std::swap(node_verts, ret->verts_3d);
-  return ret;
-}
-
 bool Sketch::s_add_mid_pt_edges = false;
 bool Sketch::s_edge_from_center = false;
 
@@ -2741,7 +2035,7 @@ void Sketch::set_visible(bool state)
   if (state)
   {
     if (m_show_faces)
-      for (AIS_Shape_ptr& face : m_faces)
+      for (AIS_Shape_ptr& face : m_topo.faces())
         m_ctx.Display(face, AIS_Shaded, 0, false);
 
     for (Edge& e : m_edges)
@@ -2766,7 +2060,7 @@ void Sketch::set_visible(bool state)
   }
   else
   {
-    for (AIS_Shape_ptr& face : m_faces)
+    for (AIS_Shape_ptr& face : m_topo.faces())
       m_ctx.Erase(face, false);
 
     for (Edge& e : m_edges)
@@ -2802,10 +2096,10 @@ bool Sketch::is_visible() const { return m_visible; }
 void Sketch::set_show_faces(bool show)
 {
   if (show && m_visible)
-    for (AIS_Shape_ptr& face : m_faces)
+    for (AIS_Shape_ptr& face : m_topo.faces())
       m_ctx.Display(face, AIS_Shaded, 0, false);
   else
-    for (AIS_Shape_ptr& face : m_faces)
+    for (AIS_Shape_ptr& face : m_topo.faces())
       m_ctx.Erase(face, false);
 
   m_show_faces = show;
@@ -2924,7 +2218,7 @@ void Sketch::append_list_hover_ais(std::vector<AIS_InteractiveObject_ptr>& out) 
       out.push_back(e.shp);
 
   if (m_show_faces)
-    for (const Sketch_face_shp_ptr& face : m_faces)
+    for (const Sketch_face_shp_ptr& face : m_topo.faces())
       if (!face.IsNull())
         out.push_back(face);
 
@@ -3025,7 +2319,7 @@ bool Sketch::has_edges() const { return !m_edges.empty(); }
 
 size_t Sketch::edge_count() const { return m_edges.size(); }
 
-size_t Sketch::face_count() const { return m_faces.size(); }
+size_t Sketch::face_count() const { return m_topo.faces().size(); }
 
 size_t Sketch::length_dimension_count() const { return m_length_dimensions.size(); }
 
@@ -3047,10 +2341,10 @@ std::vector<std::string> Sketch::inspector_edge_labels() const
 std::vector<std::string> Sketch::inspector_face_labels() const
 {
   std::vector<std::string> labels;
-  labels.reserve(m_faces.size());
-  for (size_t i = 0; i < m_faces.size(); ++i)
+  labels.reserve(m_topo.faces().size());
+  for (size_t i = 0; i < m_topo.faces().size(); ++i)
   {
-    const Sketch_face_shp_ptr& f   = m_faces[i];
+    const Sketch_face_shp_ptr& f   = m_topo.faces()[i];
     std::string                lbl = (f && !f->name.empty()) ? f->name : ("F" + std::to_string(i));
     labels.push_back(std::move(lbl));
   }
@@ -3130,7 +2424,7 @@ void Sketch::sync_permanent_node_annos_()
     m_permanent_node_marks.resize(m_nodes.size());
 
   const double size_scale = std::max(static_cast<double>(m_view.gui().permanent_node_anno_scale()), 0.0);
-  const double half_arm   = std::max(plane_pick_snap_radius_world_() * 0.45 * size_scale, Precision::Confusion() * 50.0);
+  const double half_arm   = std::max(m_topo.plane_pick_snap_radius_world() * 0.45 * size_scale, Precision::Confusion() * 50.0);
 
   const Mode mode = get_mode();
   // Show "+" markers for permanent user nodes in sketch modes and polar duplicate (which snaps to sketch nodes).

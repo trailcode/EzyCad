@@ -1,17 +1,16 @@
 #pragma once
 
-#include <TopoDS_Face.hxx>
 #include <gp_Pnt.hxx>
 #include <gp_Pnt2d.hxx>
 #include <gp_Vec2d.hxx>
 #include <list>
-#include <memory>
 #include <optional>
 #include <string>
 #include <vector>
 
 #include "shp.h"
 #include "sketch_nodes.h"
+#include "sketch_topo.h"
 #include "sketch_underlay.h"
 #include "utl_types.h"
 
@@ -160,6 +159,7 @@ private:
   friend class Sketch_access;
   friend class Sketch_delta;
   friend class Sketch_op_recorder;
+  friend class Sketch_topo;
 
   static bool s_add_mid_pt_edges;
   static bool s_edge_from_center;
@@ -175,23 +175,12 @@ private:
     std::string                name;
   };
 
-  struct Face_edge
-  {
-    const Edge& edge;
-    bool        reversed;
-    size_t      start_nd_idx() const;
-    size_t      end_nd_idx() const;
-  };
-
   // When user types in a edge length.
   struct Edge_len
   {
     gp_Dir2d dir;
     double   len;
   };
-
-  using Face       = std::vector<size_t>;
-  using Face_edges = std::vector<Face_edge>;
 
   // Line string / segment related
   enum class Linestring_type
@@ -211,14 +200,6 @@ private:
   /// Add a single node (no new edge); splits any linear edge the node lies on in its interior.
   void add_node_pt_(const ScreenCoords& screen_coords);
   void move_add_node_pt_(const ScreenCoords& screen_coords);
-
-  void split_linear_edges_at_node_if_interior_(size_t node_idx);
-  void split_linear_edges_at_node_if_interior_(size_t node_idx, Sketch_op_recorder& rec);
-  void split_linear_edges_at_node_if_interior_(size_t node_idx, Sketch_op_recorder* rec);
-
-  /// Move a newly placed node onto the nearest linear edge within pick tolerance so split + `used_nodes` sees it.
-  void   snap_placed_node_to_closest_linear_edge_interior_(size_t node_idx);
-  double plane_pick_snap_radius_world_() const;
 
   // Arc circle related
   void add_arc_circle_pt_(const ScreenCoords& screen_coords);
@@ -277,12 +258,9 @@ private:
   void update_edge_end_pt_(Edge& e, size_t end_pt_idx);
   bool clear_tmps_();
 
-  // Function to extract faces from the planar graph
-  void                update_faces_();
-  void                update_edge_shp_(Edge& edge, const gp_Pnt2d& pt_t, const gp_Pnt2d& pt_b);
-  bool                is_face_clockwise_(const Face_edges& face) const;
-  Sketch_face_shp_ptr create_face_shape_(const Face_edges& face);
-  gp_Vec2d            edge_incoming_dir_(size_t idx_a, size_t idx_b, const Edge& edge) const;
+  void     update_faces_();
+  void     update_edge_shp_(Edge& edge, const gp_Pnt2d& pt_t, const gp_Pnt2d& pt_b);
+  gp_Vec2d edge_incoming_dir_(size_t idx_a, size_t idx_b, const Edge& edge) const;
 
   // 3D point related
   void   get_snap_pts_3d_(std::vector<gp_Pnt>& out);
@@ -314,9 +292,6 @@ private:
 
   /// Average of non-deleted node positions (3D on sketch plane); used to place edge dimensions outside loops.
   std::optional<gp_Pnt> approx_sketch_interior_ref_3d_() const;
-
-  /// `m_faces` as `TopoDS_Face` for flyout tests (rebuilt in `update_faces_`).
-  void rebuild_dim_classifier_face_cache_();
 
   // Query related
   std::list<Edge>::iterator get_edge_at_(const ScreenCoords& screen_coords);
@@ -365,8 +340,7 @@ private:
   /// One entry per node index; only indices with permanent, non-deleted nodes hold a displayed + marker.
   std::vector<Sketch_AIS_node_mark_ptr> m_permanent_node_marks;
   std::list<Edge>                       m_edges;
-  std::vector<Sketch_face_shp_ptr>      m_faces;
-  std::vector<TopoDS_Face>              m_dim_classifier_faces;
+  Sketch_topo                           m_topo;
   std::vector<Length_dimension>         m_length_dimensions;
   std::optional<size_t>                 m_len_dim_pick_anchor_node;
   /// Preview segment from anchor node to cursor while picking the second node (dim mode).
