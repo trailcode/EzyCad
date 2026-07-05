@@ -2941,6 +2941,30 @@ PrsDim_LengthDimension_ptr Sketch::length_dimension_handle(const size_t dim_inde
   return m_length_dimensions[dim_index].dim;
 }
 
+void Sketch::append_list_hover_ais(std::vector<AIS_InteractiveObject_ptr>& out) const
+{
+  if (!m_visible)
+    return;
+
+  for (const Edge& e : m_edges)
+    if (!e.shp.IsNull())
+      out.push_back(e.shp);
+
+  if (m_show_faces)
+    for (const Sketch_face_shp_ptr& face : m_faces)
+      if (!face.IsNull())
+        out.push_back(face);
+
+  if (m_originating_face)
+    out.push_back(m_originating_face);
+
+  if (m_operation_axis.has_value() && !m_operation_axis->shp.IsNull())
+    out.push_back(m_operation_axis->shp);
+
+  if (m_underlay && underlay_visible())
+    m_underlay->append_list_hover_ais(out);
+}
+
 void Sketch::set_dimension_name(size_t dim_index, const std::string& name)
 {
   EZY_ASSERT(dim_index < m_length_dimensions.size());

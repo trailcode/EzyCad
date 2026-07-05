@@ -11,6 +11,7 @@
 #include <string>
 #include <vector>
 
+class AIS_InteractiveObject;
 class AIS_TexturedShape;
 class AIS_Shape;
 class AIS_InteractiveContext;
@@ -75,6 +76,9 @@ public:
   void sync_visibility(const gp_Pln& pln, AIS_InteractiveContext& ctx);
   /// Force viewer update after live property changes (e.g. threshold) without a full rebuild.
   void redisplay(AIS_InteractiveContext& ctx);
+
+  /// Add displayed AIS objects for Sketch List row hover emphasis (image quad and border wire).
+  void append_list_hover_ais(std::vector<opencascade::handle<AIS_InteractiveObject>>& out) const;
 
   nlohmann::json to_json(const Ezy_asset_store& store) const;
   /// Returns false if JSON is invalid or image decode fails.
