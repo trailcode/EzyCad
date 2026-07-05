@@ -65,6 +65,7 @@ void Sketch_json::load_nodes_(Sketch& sketch, const json& nodes_json)
       sketch.get_nodes().set_node(i, gp_Pnt2d(0., 0.), true, false, false, "");
       continue;
     }
+
     EZY_ASSERT(el.is_object());
     const gp_Pnt2d pt        = ::from_json_pnt2d(el);
     const bool     midpoint  = el.contains("midpoint") && el["midpoint"].is_boolean() && el["midpoint"].get<bool>();
@@ -162,10 +163,8 @@ nlohmann::json Sketch_json::to_json(const Sketch& sketch, const Ezy_asset_store&
   std::vector<std::optional<size_t>> dense_of_sparse(sketch_nodes.size());
   size_t                             dense_n = 0;
   for (size_t i = 0, n = sketch_nodes.size(); i < n; ++i)
-  {
     if (!sketch_nodes[i].deleted)
       dense_of_sparse[i] = dense_n++;
-  }
 
   json& nodes_json = j["nodes"] = json::array();
   for (size_t i = 0, n = sketch_nodes.size(); i < n; ++i)
@@ -219,8 +218,10 @@ nlohmann::json Sketch_json::to_json(const Sketch& sketch, const Ezy_asset_store&
     json e = json::array({remap(ld.node_idx_lo), remap(ld.node_idx_hi), ld.visible});
     if (ld.flyout_offset.has_value())
       e.push_back(*ld.flyout_offset);
+
     if (!ld.name.empty())
       e.push_back(ld.name);
+
     len_dims_json.push_back(std::move(e));
   }
 
@@ -296,8 +297,10 @@ Sketch::sptr Sketch_json::from_json(Occt_view& view, const nlohmann::json& j)
         else if (pair_json[3].is_string())
           dim_name = pair_json[3].get<std::string>();
       }
+
       if (pair_json.size() == 5 && pair_json[4].is_string())
         dim_name = pair_json[4].get<std::string>();
+
       ret->json_add_length_dimension_(pair_json[0].get<std::size_t>(), pair_json[1].get<std::size_t>(), visible, flyout_offset,
                                       dim_name);
     }

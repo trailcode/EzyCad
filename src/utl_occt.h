@@ -3,7 +3,6 @@
 #include <TopAbs_ShapeEnum.hxx>
 #include <TopoDS_Shape.hxx>
 #include <array>
-#include <cstddef>
 #include <string_view>
 
 // Parallel to Open CASCADE TopAbs_ShapeEnum (TopAbs_ShapeEnum.hxx). Order must stay in sync with OCCT.

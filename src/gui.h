@@ -145,11 +145,11 @@ public:
   /// Headless/tests: same sketch LMB placement as on_mouse_button (does not require ImGui mouse pos).
   void sketch_left_click(const ScreenCoords& screen_coords);
   /// Options panel **Mirror** button action (operation axis mode).
-  void        mirror_selected_sketch_edges();
-  void        on_mouse_scroll(double xoffset, double yoffset);
-  void        on_resize(int width, int height);
-  Mode        get_mode() const { return m_mode; }
-  
+  void mirror_selected_sketch_edges();
+  void on_mouse_scroll(double xoffset, double yoffset);
+  void on_resize(int width, int height);
+  Mode get_mode() const { return m_mode; }
+
   static std::string get_doc_url_for_mode(Mode mode);
   Chamfer_mode       get_chamfer_mode() const { return m_chamfer_mode; }
   Fillet_mode        get_fillet_mode() const { return m_fillet_mode; }
@@ -262,7 +262,7 @@ private:
   void on_left_click_(const ScreenCoords& screen_coords);
   void sketch_list_();
   void sketch_list_inspector_(const std::shared_ptr<Sketch>& sketch, int index, std::shared_ptr<Sketch>& hover_sketch,
-                                 size_t& hover_dim_index);
+                              size_t& hover_dim_index);
   void sketch_properties_dialog_();
   void shape_list_();
   void shape_info_dialog_();
@@ -310,23 +310,23 @@ private:
   void on_key_move_mode_(int key);
   void on_key_rotate_mode_(int key);
 
-  void         dbg_();
-  void         initialize_toolbar_();
-  void         load_examples_list_();
-  void         load_default_project_();
-  void         menu_bar_();
-  void         toolbar_();
-  void         message_status_window_();
+  void dbg_();
+  void initialize_toolbar_();
+  void load_examples_list_();
+  void load_default_project_();
+  void menu_bar_();
+  void toolbar_();
+  void message_status_window_();
 
   // Add related
-  void         add_box_dialog_();
-  void         add_pyramid_dialog_();
-  void         add_sphere_dialog_();
-  void         add_cylinder_dialog_();
-  void         add_cone_dialog_();
-  void         add_torus_dialog_();
-  void         add_sketch_dialog_();
-  void         add_menu_items_();
+  void add_box_dialog_();
+  void add_pyramid_dialog_();
+  void add_sphere_dialog_();
+  void add_cylinder_dialog_();
+  void add_cone_dialog_();
+  void add_torus_dialog_();
+  void add_sketch_dialog_();
+  void add_menu_items_();
 
   void         about_dialog_();
   void         ensure_about_assets_();
@@ -369,19 +369,19 @@ private:
   void save_startup_project_();
   void clear_saved_startup_project_();
   /// Native only: store path in settings after a successful Open (for optional startup load).
-  void                      persist_last_opened_project_path_(const std::string& path);
-  [[nodiscard]] std::string serialized_project_json_() const;
+  void                               persist_last_opened_project_path_(const std::string& path);
+  [[nodiscard]] std::string          serialized_project_json_() const;
   [[nodiscard]] std::vector<uint8_t> serialized_project_ezy_() const;
-  void                      open_url_(const std::string& url);
-  void                      update_window_title_();
-  [[nodiscard]] std::string project_title_segment_() const;
+  void                               open_url_(const std::string& url);
+  void                               update_window_title_();
+  [[nodiscard]] std::string          project_title_segment_() const;
   /// Parses a float from manual dist/angle ImGui text fields (trimmed, full-string match).
   [[nodiscard]] static bool parse_dist_text_to_float_(const char* buf, float& out);
   /// True if bytes are a valid v3 zip or legacy JSON EzyCad project.
-  [[nodiscard]] static bool is_valid_project_file_(const std::string& bytes);
-  [[nodiscard]] static bool is_valid_project_manifest_(const std::string& manifest_json);
-  [[nodiscard]] static std::optional<std::string> manifest_from_project_file_(const std::string& file_bytes,
-                                                                               Occt_view& view, bool replace_assets);
+  [[nodiscard]] static bool                       is_valid_project_file_(const std::string& bytes);
+  [[nodiscard]] static bool                       is_valid_project_manifest_(const std::string& manifest_json);
+  [[nodiscard]] static std::optional<std::string> manifest_from_project_file_(const std::string& file_bytes, Occt_view& view,
+                                                                              bool replace_assets);
 
   /// OCCT standard material display names for ImGui combos (index matches \c Graphic3d_NameOfMaterial).
   [[nodiscard]] static const std::vector<std::string>& occt_material_combo_labels_();

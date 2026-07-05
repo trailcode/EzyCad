@@ -7,7 +7,6 @@
 #include <gp_Vec2d.hxx>
 #include <memory>
 #include <nlohmann/json.hpp>
-#include <optional>
 #include <string>
 #include <vector>
 

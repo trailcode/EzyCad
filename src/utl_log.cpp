@@ -27,6 +27,7 @@ int Log_strm::overflow(int c)
     // Forward to original console
     m_original_buf->sputc(c);
   }
+
   return c;
 }
 

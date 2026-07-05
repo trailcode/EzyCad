@@ -17,7 +17,7 @@ inline constexpr const char* k_ezy_assets_dir    = "assets/";
 
 struct Ezy_unpack_result
 {
-  std::string                                      manifest_json;
+  std::string                                           manifest_json;
   std::unordered_map<std::string, std::vector<uint8_t>> assets; // asset_id -> raw RGBA bytes
 };
 

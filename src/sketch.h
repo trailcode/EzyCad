@@ -251,7 +251,7 @@ public:
   /// Add a single node (no new edge); splits any linear edge the node lies on in its interior.
   void add_node_pt_(const ScreenCoords& screen_coords);
   void move_add_node_pt_(const ScreenCoords& screen_coords);
-  
+
   void split_linear_edges_at_node_if_interior_(size_t node_idx);
   void split_linear_edges_at_node_if_interior_(size_t node_idx, Sketch_op_recorder& rec);
   void split_linear_edges_at_node_if_interior_(size_t node_idx, Sketch_op_recorder* rec);
@@ -419,5 +419,4 @@ public:
   bool                       m_show_dims{true};
 
   std::unique_ptr<Sketch_underlay> m_underlay;
-
 };

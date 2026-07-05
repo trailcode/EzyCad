@@ -27,9 +27,11 @@ void trim_inplace(std::string& s)
 {
   while (!s.empty() && std::isspace(static_cast<unsigned char>(s.back())))
     s.pop_back();
+
   size_t i = 0;
   while (i < s.size() && std::isspace(static_cast<unsigned char>(s[i])))
     ++i;
+
   s.erase(0, i);
 }
 
@@ -37,9 +39,11 @@ bool iequals(const std::string& a, const std::string& b)
 {
   if (a.size() != b.size())
     return false;
+
   for (size_t i = 0; i < a.size(); ++i)
     if (std::tolower(static_cast<unsigned char>(a[i])) != std::tolower(static_cast<unsigned char>(b[i])))
       return false;
+
   return true;
 }
 
@@ -58,22 +62,17 @@ enum class ScalarType
 
 ScalarType scalar_from_token(const std::string& t)
 {
-  if (t == "char" || t == "int8")
-    return ScalarType::Int8;
-  if (t == "uchar" || t == "uint8")
-    return ScalarType::UInt8;
-  if (t == "short" || t == "int16")
-    return ScalarType::Int16;
-  if (t == "ushort" || t == "uint16")
-    return ScalarType::UInt16;
-  if (t == "int" || t == "int32")
-    return ScalarType::Int32;
-  if (t == "uint" || t == "uint32")
-    return ScalarType::UInt32;
-  if (t == "float" || t == "float32")
-    return ScalarType::Float32;
-  if (t == "double" || t == "float64")
-    return ScalarType::Float64;
+  // clang-format off
+  if (t == "char"   || t == "int8")    return ScalarType::Int8;
+  if (t == "uchar"  || t == "uint8")   return ScalarType::UInt8;
+  if (t == "short"  || t == "int16")   return ScalarType::Int16;
+  if (t == "ushort" || t == "uint16")  return ScalarType::UInt16;
+  if (t == "int"    || t == "int32")   return ScalarType::Int32;
+  if (t == "uint"   || t == "uint32")  return ScalarType::UInt32;
+  if (t == "float"  || t == "float32") return ScalarType::Float32;
+  if (t == "double" || t == "float64") return ScalarType::Float64;
+  // clang-format on
+
   return ScalarType::Unknown;
 }
 
@@ -84,15 +83,19 @@ int size_of_scalar(ScalarType t)
   case ScalarType::Int8:
   case ScalarType::UInt8:
     return 1;
+
   case ScalarType::Int16:
   case ScalarType::UInt16:
     return 2;
+
   case ScalarType::Int32:
   case ScalarType::UInt32:
   case ScalarType::Float32:
     return 4;
+
   case ScalarType::Float64:
     return 8;
+
   default:
     return 0;
   }
@@ -124,16 +127,19 @@ bool read_scalar_bin_at(const unsigned char* base, size_t off, const unsigned ch
   const unsigned char* p = base + off;
   if (p >= endbuf)
     return false;
+
   auto need = [&](size_t n) -> bool
   {
     return static_cast<size_t>(endbuf - p) >= n;
   };
+
   switch (t)
   {
   case ScalarType::Int8:
   {
     if (!need(1))
       return false;
+
     out = static_cast<double>(*reinterpret_cast<const std::int8_t*>(p));
     return true;
   }
@@ -141,6 +147,7 @@ bool read_scalar_bin_at(const unsigned char* base, size_t off, const unsigned ch
   {
     if (!need(1))
       return false;
+
     out = static_cast<double>(*p);
     return true;
   }
@@ -148,6 +155,7 @@ bool read_scalar_bin_at(const unsigned char* base, size_t off, const unsigned ch
   {
     if (!need(2))
       return false;
+
     std::int16_t v;
     std::memcpy(&v, p, 2);
     out = static_cast<double>(v);
@@ -157,6 +165,7 @@ bool read_scalar_bin_at(const unsigned char* base, size_t off, const unsigned ch
   {
     if (!need(2))
       return false;
+
     std::uint16_t v;
     std::memcpy(&v, p, 2);
     out = static_cast<double>(v);
@@ -166,6 +175,7 @@ bool read_scalar_bin_at(const unsigned char* base, size_t off, const unsigned ch
   {
     if (!need(4))
       return false;
+
     std::int32_t v;
     std::memcpy(&v, p, 4);
     out = static_cast<double>(v);
@@ -175,6 +185,7 @@ bool read_scalar_bin_at(const unsigned char* base, size_t off, const unsigned ch
   {
     if (!need(4))
       return false;
+
     std::uint32_t v;
     std::memcpy(&v, p, 4);
     out = static_cast<double>(v);
@@ -184,6 +195,7 @@ bool read_scalar_bin_at(const unsigned char* base, size_t off, const unsigned ch
   {
     if (!need(4))
       return false;
+
     float v;
     std::memcpy(&v, p, 4);
     out = static_cast<double>(v);
@@ -193,6 +205,7 @@ bool read_scalar_bin_at(const unsigned char* base, size_t off, const unsigned ch
   {
     if (!need(8))
       return false;
+
     std::memcpy(&out, p, 8);
     return true;
   }
@@ -209,6 +222,7 @@ std::uint32_t read_list_count_bin(const unsigned char*& p, const unsigned char* 
   {
     if (static_cast<size_t>(end - p) < 1)
       return 0;
+
     std::uint32_t v = *p;
     ++p;
     return v;
@@ -217,6 +231,7 @@ std::uint32_t read_list_count_bin(const unsigned char*& p, const unsigned char* 
   {
     if (static_cast<size_t>(end - p) < 2)
       return 0;
+
     std::uint16_t v;
     std::memcpy(&v, p, 2);
     p += 2;
@@ -226,6 +241,7 @@ std::uint32_t read_list_count_bin(const unsigned char*& p, const unsigned char* 
   {
     if (static_cast<size_t>(end - p) < 4)
       return 0;
+
     std::uint32_t v;
     std::memcpy(&v, p, 4);
     p += 4;
@@ -246,9 +262,11 @@ bool read_face_indices_bin(const unsigned char*& p, const unsigned char* end, Sc
     double d = 0;
     if (!read_scalar_bin_at(p, 0, end, vt, d))
       return false;
+
     int sz = size_of_scalar(vt);
     if (sz <= 0 || static_cast<size_t>(end - p) < static_cast<size_t>(sz))
       return false;
+
     p += static_cast<size_t>(sz);
     idx_out.push_back(static_cast<int>(d));
   }
@@ -268,9 +286,11 @@ bool append_triangle(TopoDS_Compound& comp, BRep_Builder& bb, const gp_Pnt& p0, 
   poly.Close();
   if (!poly.IsDone())
     return true;
+
   BRepBuilderAPI_MakeFace face(poly.Wire(), true);
   if (!face.IsDone())
     return true;
+
   bb.Add(comp, face.Shape());
   ++ntri;
   return true;
@@ -297,6 +317,7 @@ Status import_ply_shape(const std::string& file_bytes, TopoDS_Shape& out_shape)
       char c = file_bytes[pos++];
       if (c == '\n')
         break;
+
       if (c != '\r')
         line.push_back(c);
     }
@@ -315,8 +336,10 @@ Status import_ply_shape(const std::string& file_bytes, TopoDS_Shape& out_shape)
     read_line();
     if (line.empty())
       continue;
+
     if (line == "end_header")
       break;
+
     if (line.rfind("comment ", 0) == 0)
       continue;
 
@@ -358,6 +381,7 @@ Status import_ply_shape(const std::string& file_bytes, TopoDS_Shape& out_shape)
         const bool val_ok = lp.value_type == ScalarType::Int32 || lp.value_type == ScalarType::UInt32;
         if (!count_ok || !val_ok)
           return Status::user_error("PLY: unsupported face list property types.");
+
         cur_el->lists.push_back(std::move(lp));
       }
       else
@@ -369,6 +393,7 @@ Status import_ply_shape(const std::string& file_bytes, TopoDS_Shape& out_shape)
         sp.name = std::move(pname);
         if (sp.type == ScalarType::Unknown || size_of_scalar(sp.type) <= 0)
           return Status::user_error("PLY: unsupported vertex property type.");
+
         cur_el->scalars.push_back(std::move(sp));
       }
     }
@@ -376,6 +401,7 @@ Status import_ply_shape(const std::string& file_bytes, TopoDS_Shape& out_shape)
 
   if (format_mode.empty())
     return Status::user_error("PLY: missing format.");
+
   if (format_mode == "binary_big_endian")
     return Status::user_error("PLY: binary_big_endian is not supported.");
 
@@ -390,8 +416,10 @@ Status import_ply_shape(const std::string& file_bytes, TopoDS_Shape& out_shape)
   }
   if (vert_el == nullptr || vert_el->count <= 0)
     return Status::user_error("PLY: no vertex element.");
+
   if (face_el == nullptr || face_el->lists.empty())
     return Status::user_error("PLY: no face list (need triangulated mesh).");
+
   if (face_el->lists.size() != 1)
     return Status::user_error("PLY: only one list property per face is supported.");
 
@@ -424,6 +452,7 @@ Status import_ply_shape(const std::string& file_bytes, TopoDS_Shape& out_shape)
     vstride = o;
     if (vstride == 0 || off_x >= vstride || off_y >= vstride || off_z >= vstride)
       return Status::user_error("PLY: vertex x/y/z properties not found.");
+
     if (tx == ScalarType::Unknown || ty == ScalarType::Unknown || tz == ScalarType::Unknown)
       return Status::user_error("PLY: vertex x/y/z types invalid.");
   }
@@ -444,6 +473,7 @@ Status import_ply_shape(const std::string& file_bytes, TopoDS_Shape& out_shape)
       std::string vl;
       if (!std::getline(body, vl))
         return Status::user_error("PLY: unexpected EOF in vertices.");
+
       trim_inplace(vl);
       std::istringstream ls(vl);
       double             x = 0, y = 0, z = 0;
@@ -454,6 +484,7 @@ Status import_ply_shape(const std::string& file_bytes, TopoDS_Shape& out_shape)
           double d = 0;
           if (!(ls >> d))
             return Status::user_error("PLY: bad vertex data.");
+
           if (iequals(sp.name, "x"))
             x = d;
           else if (iequals(sp.name, "y"))
@@ -467,6 +498,7 @@ Status import_ply_shape(const std::string& file_bytes, TopoDS_Shape& out_shape)
           long long v = 0;
           if (!(ls >> v))
             return Status::user_error("PLY: bad vertex data.");
+
           const double d = static_cast<double>(v);
           if (iequals(sp.name, "x"))
             x = d;
@@ -486,25 +518,30 @@ Status import_ply_shape(const std::string& file_bytes, TopoDS_Shape& out_shape)
       std::string fl;
       if (!std::getline(body, fl))
         return Status::user_error("PLY: unexpected EOF in faces.");
+
       trim_inplace(fl);
       std::istringstream fs(fl);
       int                nidx = 0;
       fs >> nidx;
       if (nidx != 3)
         return Status::user_error("PLY: only triangular faces are supported.");
+
       int i0 = 0, i1 = 0, i2 = 0;
       fs >> i0 >> i1 >> i2;
       if (i0 < 0 || i1 < 0 || i2 < 0)
         return Status::user_error("PLY: negative vertex index.");
+
       const size_t su0 = static_cast<size_t>(i0);
       const size_t su1 = static_cast<size_t>(i1);
       const size_t su2 = static_cast<size_t>(i2);
       if (su0 >= verts.size() || su1 >= verts.size() || su2 >= verts.size())
         return Status::user_error("PLY: face vertex index out of range.");
+
       append_triangle(comp, bb, verts[su0], verts[su1], verts[su2], ntri);
     }
     if (ntri == 0)
       return Status::user_error("PLY: no valid triangles.");
+
     out_shape = comp;
     return Status::ok();
   }
@@ -517,10 +554,12 @@ Status import_ply_shape(const std::string& file_bytes, TopoDS_Shape& out_shape)
   {
     if (static_cast<size_t>(end - p) < vstride)
       return Status::user_error("PLY: truncated vertex data.");
+
     double x = 0, y = 0, z = 0;
     if (!read_scalar_bin_at(p, off_x, end, tx, x) || !read_scalar_bin_at(p, off_y, end, ty, y) ||
         !read_scalar_bin_at(p, off_z, end, tz, z))
       return Status::user_error("PLY: bad binary vertex.");
+
     verts[vi] = gp_Pnt(x, y, z);
     p += vstride;
   }
@@ -529,9 +568,11 @@ Status import_ply_shape(const std::string& file_bytes, TopoDS_Shape& out_shape)
   {
     if (static_cast<size_t>(end - p) < 1u)
       return Status::user_error("PLY: truncated face data.");
+
     const std::uint32_t n = read_list_count_bin(p, end, face_list.count_type);
     if (n != 3u)
       return Status::user_error("PLY: only triangular faces are supported.");
+
     std::vector<int> idx;
     if (!read_face_indices_bin(p, end, face_list.value_type, n, idx) || idx.size() != 3u)
       return Status::user_error("PLY: bad face indices.");
@@ -541,11 +582,13 @@ Status import_ply_shape(const std::string& file_bytes, TopoDS_Shape& out_shape)
     const size_t su2 = static_cast<size_t>(idx[2]);
     if (su0 >= verts.size() || su1 >= verts.size() || su2 >= verts.size())
       return Status::user_error("PLY: face vertex index out of range.");
+
     append_triangle(comp, bb, verts[su0], verts[su1], verts[su2], ntri);
   }
 
   if (ntri == 0)
     return Status::user_error("PLY: no valid triangles.");
+
   out_shape = comp;
   return Status::ok();
 }
@@ -608,6 +651,7 @@ Status export_ply_binary_file(const TopoDS_Shape& shape, const std::string& file
     const double v[9] = {t.x0, t.y0, t.z0, t.x1, t.y1, t.z1, t.x2, t.y2, t.z2};
     out.write(reinterpret_cast<const char*>(v), sizeof(v));
   }
+
   for (size_t fi = 0; fi < nf; ++fi)
   {
     const unsigned char three = 3;
@@ -622,5 +666,6 @@ Status export_ply_binary_file(const TopoDS_Shape& shape, const std::string& file
 
   if (!out.good())
     return Status::user_error("PLY: error writing file.");
+
   return Status::ok();
 }

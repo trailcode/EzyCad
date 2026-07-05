@@ -83,12 +83,12 @@ public:
   void init_viewer();
   void init_default();
 
-  std::string          to_json() const;
-  void                 load(const std::string& json_str, bool restore_view = true);
-  Ezy_asset_store&     asset_store() { return m_assets; }
+  std::string            to_json() const;
+  void                   load(const std::string& json_str, bool restore_view = true);
+  Ezy_asset_store&       asset_store() { return m_assets; }
   const Ezy_asset_store& asset_store() const { return m_assets; }
-  [[nodiscard]] Status import_step(const std::string& step_data);
-  bool                 import_ply(const std::string& ply_bytes);
+  [[nodiscard]] Status   import_step(const std::string& step_data);
+  bool                   import_ply(const std::string& ply_bytes);
 
   /// Writes STEP, IGES, binary STL, or PLY to \a file_path. Uses selected shapes if any, else all shapes.
   [[nodiscard]] Status export_document(Export_format fmt, const std::string& file_path);
@@ -242,7 +242,7 @@ public:
   void           set_shape_list_hover(const Shp_ptr& shp);
   const Shp_ptr& shape_list_hover() const { return m_shape_list_hover; }
   /// Highlight \a sketch geometry (including underlay) while its Sketch List row is hovered (null clears).
-  void           set_sketch_list_hover(const Sketch_ptr& sketch);
+  void              set_sketch_list_hover(const Sketch_ptr& sketch);
   const Sketch_ptr& sketch_list_hover() const { return m_sketch_list_hover; }
   /// Highlight a sketch length dimension while its Sketch List row is hovered (\a dim_index == SIZE_MAX clears).
   void set_sketch_list_measurement_hover(const Sketch_ptr& sketch, size_t dim_index);
@@ -316,7 +316,7 @@ private:
     double size_y{0.};
   };
   [[nodiscard]] Grid_layout compute_grid_layout_() const;
-  [[nodiscard]] gp_Ax3             grid_display_plane_() const;
+  [[nodiscard]] gp_Ax3      grid_display_plane_() const;
 
   //! GLFW callback redirecting messages into Message::DefaultMessenger().
   // static void errorCallback(int theError, const char* theDescription);
@@ -347,26 +347,26 @@ private:
 
   // --------------------------------------------------------------------
   // Dimension related
-  bool                              m_show_dim_input{false};
-  double                            m_dimension_scale{100.0};
-  std::optional<double>             m_entered_dim;
-  std::list<Shp_ptr>                m_shps;
-  Sketch_list                       m_sketches;
-  std::shared_ptr<Sketch>           m_cur_sketch;
-  TopAbs_ShapeEnum                  m_shp_selection_mode{TopAbs_SHAPE};
-  Shp_ptr                                    m_shape_list_hover;
-  Sketch_ptr                                 m_sketch_list_hover;
-  std::vector<AIS_InteractiveObject_ptr>     m_sketch_list_hover_ais;
-  PrsDim_LengthDimension_ptr                 m_sketch_list_measurement_hover;
-  opencascade::handle<Prs3d_Drawer>          m_shape_list_hover_drawer;
-  void                                       update_shape_list_hover_drawer_();
-  void                                       clear_sketch_list_hover_ais_();
-  void                                       apply_sketch_list_hover_highlight_();
-  void                                       apply_sketch_list_measurement_hover_style_();
-  void                                       restore_sketch_list_measurement_hover_style_();
-  void                                       refresh_sketch_list_measurement_hover_highlight_();
-  Graphic3d_MaterialAspect          m_default_material;
-  bool                              m_headless_view{false};
+  bool                                   m_show_dim_input{false};
+  double                                 m_dimension_scale{100.0};
+  std::optional<double>                  m_entered_dim;
+  std::list<Shp_ptr>                     m_shps;
+  Sketch_list                            m_sketches;
+  std::shared_ptr<Sketch>                m_cur_sketch;
+  TopAbs_ShapeEnum                       m_shp_selection_mode{TopAbs_SHAPE};
+  Shp_ptr                                m_shape_list_hover;
+  Sketch_ptr                             m_sketch_list_hover;
+  std::vector<AIS_InteractiveObject_ptr> m_sketch_list_hover_ais;
+  PrsDim_LengthDimension_ptr             m_sketch_list_measurement_hover;
+  opencascade::handle<Prs3d_Drawer>      m_shape_list_hover_drawer;
+  void                                   update_shape_list_hover_drawer_();
+  void                                   clear_sketch_list_hover_ais_();
+  void                                   apply_sketch_list_hover_highlight_();
+  void                                   apply_sketch_list_measurement_hover_style_();
+  void                                   restore_sketch_list_measurement_hover_style_();
+  void                                   refresh_sketch_list_measurement_hover_highlight_();
+  Graphic3d_MaterialAspect               m_default_material;
+  bool                                   m_headless_view{false};
   /// True when LMB press was handled by planar-face sketch creation without AIS_ViewController::PressMouseButton (pair with
   /// release skip).
   bool m_planar_face_lmb_skipped_view_controller{false};

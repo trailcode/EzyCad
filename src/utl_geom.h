@@ -1,9 +1,7 @@
 #pragma once
 
-//#include <Precision.hxx>
 #include <Prs3d_DimensionTextHorizontalPosition.hxx>
 #include <Standard_Handle.hxx>
-//#include <TopoDS_Face.hxx>
 #include <array>
 #include <glm/glm.hpp>
 #include <gp_Dir2d.hxx>

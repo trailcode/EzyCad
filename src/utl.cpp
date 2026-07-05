@@ -21,7 +21,6 @@ std::string unique_sequential_name(const std::string& base_name, std::span<const
   {
     if (n == base_name)
       used.insert(0);
-
     else if (n.size() > prefix.size() && n.compare(0, prefix.size(), prefix) == 0)
     {
       const std::string suffix = n.substr(prefix.size());
@@ -81,6 +80,7 @@ std::optional<std::tuple<std::vector<uint8_t>, int, int>> decode_image_bytes(con
 {
   if (file_bytes.empty())
     return std::nullopt;
+
   int            w = 0, h = 0, ch = 0;
   unsigned char* data = stbi_load_from_memory(reinterpret_cast<const stbi_uc*>(file_bytes.data()),
                                               static_cast<int>(file_bytes.size()), &w, &h, &ch, 4);
@@ -88,6 +88,7 @@ std::optional<std::tuple<std::vector<uint8_t>, int, int>> decode_image_bytes(con
   {
     if (data)
       stbi_image_free(data);
+
     return std::nullopt;
   }
   const std::size_t    n = static_cast<std::size_t>(w) * static_cast<std::size_t>(h) * 4u;

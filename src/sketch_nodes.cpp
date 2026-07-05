@@ -24,10 +24,7 @@ glm::vec3                     s_snap_guide_color_axis{0.957627f, 0.064924f, 0.54
 float                         s_snap_guide_line_width      = 1.0f;
 bool                          s_annotate_all_coaxial_nodes = true;
 
-static Quantity_Color snap_guide_qc(const glm::vec3& c)
-{
-  return Quantity_Color(c.x, c.y, c.z, Quantity_TOC_RGB);
-}
+static Quantity_Color snap_guide_qc(const glm::vec3& c) { return Quantity_Color(c.x, c.y, c.z, Quantity_TOC_RGB); }
 
 static void prepare_snap_ais_(AIS_InteractiveContext& ctx, const AIS_Shape_ptr& ais)
 {
@@ -48,6 +45,7 @@ static void update_snap_ais_shape_(AIS_InteractiveContext& ctx, AIS_Shape_ptr& a
       ctx.Remove(ais, false);
       ais.Nullify();
     }
+
     return;
   }
 
@@ -214,11 +212,13 @@ std::optional<size_t> Sketch_nodes::Impl::try_pick_existing_node(const ScreenCoo
       best_idx = idx;
     }
   }
+
   if (best_idx == static_cast<size_t>(-1))
   {
     m_owner->hide_snap_annos();
     return std::nullopt;
   }
+
   if (best_sq <= snap_dist * 0.25 * snap_dist)
   {
     // `try_get_node_idx_snap` can modify the input `pt`, we call this function to display snapping annotations.
@@ -226,6 +226,7 @@ std::optional<size_t> Sketch_nodes::Impl::try_pick_existing_node(const ScreenCoo
     m_owner->try_get_node_idx_snap(pt_snapped, {});
     return best_idx;
   }
+
   m_owner->hide_snap_annos();
   return std::nullopt;
 }
@@ -354,8 +355,8 @@ void Sketch_nodes::Impl::update_node_snap_anno_(const gp_Pnt2d& pt, const double
       const gp_Pnt p_h1 = to_3d(m_pln, gp_Pnt2d(max_u, pt.Y()));
       const gp_Pnt p_v0 = to_3d(m_pln, gp_Pnt2d(pt.X(), min_v));
       const gp_Pnt p_v1 = to_3d(m_pln, gp_Pnt2d(pt.X(), max_v));
-      fs_h                = BRepBuilderAPI_MakeEdge(p_h0, p_h1).Edge();
-      fs_v                = BRepBuilderAPI_MakeEdge(p_v0, p_v1).Edge();
+      fs_h              = BRepBuilderAPI_MakeEdge(p_h0, p_h1).Edge();
+      fs_v              = BRepBuilderAPI_MakeEdge(p_v0, p_v1).Edge();
     }
   }
 
@@ -386,14 +387,14 @@ void Sketch_nodes::Impl::update_axis_snap_anno_(int axis_index, const std::vecto
     {
       if (axis_index == 0)
       {
-        const gp_Pnt p0 = to_3d(m_pln, gp_Pnt2d(rep_pt.X(), min_v));
-        const gp_Pnt p1 = to_3d(m_pln, gp_Pnt2d(rep_pt.X(), max_v));
+        const gp_Pnt p0  = to_3d(m_pln, gp_Pnt2d(rep_pt.X(), min_v));
+        const gp_Pnt p1  = to_3d(m_pln, gp_Pnt2d(rep_pt.X(), max_v));
         fullscreen_shape = BRepBuilderAPI_MakeEdge(p0, p1).Edge();
       }
       else
       {
-        const gp_Pnt p0 = to_3d(m_pln, gp_Pnt2d(min_u, rep_pt.Y()));
-        const gp_Pnt p1 = to_3d(m_pln, gp_Pnt2d(max_u, rep_pt.Y()));
+        const gp_Pnt p0  = to_3d(m_pln, gp_Pnt2d(min_u, rep_pt.Y()));
+        const gp_Pnt p1  = to_3d(m_pln, gp_Pnt2d(max_u, rep_pt.Y()));
         fullscreen_shape = BRepBuilderAPI_MakeEdge(p0, p1).Edge();
       }
     }
@@ -444,16 +445,14 @@ void Sketch_nodes::Impl::update_global_coaxial_annotations_(double snap_dist)
   {
     if (vals.empty())
       return;
+
     std::sort(vals.begin(), vals.end());
     std::vector<double> unique;
     double              tol = Precision::Confusion();
     for (double v : vals)
-    {
       if (unique.empty() || std::fabs(v - unique.back()) > tol)
-      {
         unique.push_back(v);
-      }
-    }
+
     vals = std::move(unique);
   };
 
@@ -652,6 +651,7 @@ std::optional<size_t> Sketch_nodes::Impl::try_get_node_idx_snap(
         if (axis_diff <= Precision::Confusion())
           matches.push_back(n);
       }
+
       for (const auto& p : m_outside_snap_pts)
       {
         double axis_diff = std::fabs(guide_val - p.XY().Coord(axis_idx + 1));
@@ -689,6 +689,7 @@ std::optional<size_t> Sketch_nodes::Impl::try_get_node_idx_snap(
       clear_snap_ais_(m_ctx, m_snap_anno_axis[i]);
       clear_snap_ais_(m_ctx, m_snap_anno_axis_fs[i]);
     }
+
     update_node_snap_anno_(pt, sqrt(snap_dist));
     m_ctx.UpdateCurrentViewer();
     return snap_node_idx[0];

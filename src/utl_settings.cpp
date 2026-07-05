@@ -1,7 +1,5 @@
 #include "utl_settings.h"
 
-#include "ezy_io.h"
-
 #include <cassert>
 #include <cstdlib>
 #include <filesystem>
@@ -34,6 +32,7 @@ static std::string get_env_var(const char* name)
     free(buf);
     return val;
   }
+
   return {};
 #else
   const char* v = std::getenv(name);
@@ -49,6 +48,7 @@ std::filesystem::path user_settings_json_path()
   const std::filesystem::path dir = user_config_directory();
   if (dir.empty())
     return {};
+
   return dir / "ezycad_settings.json";
 #endif
 }
@@ -76,6 +76,7 @@ std::string load_with_defaults()
     std::ifstream f(p, std::ios::binary);
     if (!f)
       return {};
+
     std::ostringstream os;
     os << f.rdbuf();
     return os.str();
@@ -110,6 +111,7 @@ std::string load_defaults()
   {
     if (s_log_callback)
       s_log_callback("Settings: failed to load defaults (preloaded file not found)");
+
     return {};
   }
   std::ostringstream os;
@@ -117,17 +119,20 @@ std::string load_defaults()
   std::string result = os.str();
   if (s_log_callback)
     s_log_callback("Settings: loaded defaults from res/ezycad_settings.json");
+
   return result;
 #else
   std::ifstream f("res/ezycad_settings.json");
   assert(f && "res/ezycad_settings.json not found (required on native)");
   if (!f)
     return {};
+
   std::ostringstream os;
   os << f.rdbuf();
   std::string result = os.str();
   if (s_log_callback)
     s_log_callback("Settings: loaded defaults from res/ezycad_settings.json");
+
   return result;
 #endif
 }
@@ -164,19 +169,23 @@ std::filesystem::path user_config_directory()
   std::string appdata = get_env_var("APPDATA");
   if (appdata.empty())
     return {};
+
   return std::filesystem::path(appdata) / "EzyCad";
 #elif defined(__APPLE__)
   std::string home = get_env_var("HOME");
   if (home.empty())
     return {};
+
   return std::filesystem::path(home) / "Library" / "Application Support" / "EzyCad";
 #else
   std::string xdg = get_env_var("XDG_CONFIG_HOME");
   if (!xdg.empty())
     return std::filesystem::path(xdg) / "EzyCad";
+
   std::string home = get_env_var("HOME");
   if (home.empty())
     return {};
+
   return std::filesystem::path(home) / ".config" / "EzyCad";
 #endif
 }
@@ -186,6 +195,7 @@ std::filesystem::path user_startup_project_path()
   const std::filesystem::path dir = user_config_directory();
   if (dir.empty())
     return {};
+
   return dir / "startup.ezy";
 }
 
@@ -198,10 +208,12 @@ std::string load_user_startup_project()
     var buf = _malloc(len);
     if (buf)
       stringToUTF8(s, buf, len);
+
     return buf;
   });
   if (!ptr)
     return {};
+
   std::string stored((const char*)ptr);
   free(ptr);
   if (stored.rfind("B64:", 0) == 0)
@@ -209,14 +221,17 @@ std::string load_user_startup_project()
     const std::vector<uint8_t> decoded = ezy_base64_decode(stored.substr(4));
     return std::string(reinterpret_cast<const char*>(decoded.data()), decoded.size());
   }
+
   return stored;
 #else
   const std::filesystem::path p = user_startup_project_path();
   if (p.empty())
     return {};
+
   std::ifstream f(p, std::ios::binary);
   if (!f)
     return {};
+
   std::ostringstream os;
   os << f.rdbuf();
   return os.str();
@@ -233,13 +248,16 @@ bool save_user_startup_project(const std::vector<uint8_t>& ezy_bytes)
   const std::filesystem::path p = user_startup_project_path();
   if (p.empty())
     return false;
+
   std::error_code ec;
   std::filesystem::create_directories(p.parent_path(), ec);
   if (ec)
     return false;
+
   std::ofstream f(p, std::ios::binary);
   if (!f)
     return false;
+
   f.write(reinterpret_cast<const char*>(ezy_bytes.data()), static_cast<std::streamsize>(ezy_bytes.size()));
   return true;
 #endif

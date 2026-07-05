@@ -1105,7 +1105,7 @@ void GUI::settings_()
 
         ImGui::EndTable();
       }
-    
+
     ImGui::Unindent(ImGui::GetStyle().IndentSpacing);
 
     if (ImGui::BeginTable("settings_sketch", 2, ImGuiTableFlags_SizingStretchProp))

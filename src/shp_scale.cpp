@@ -29,6 +29,7 @@ Status Shp_scale::scale_selected(const ScreenCoords& screen_coords)
   m_scale_factor = dist / m_initial_distance;
   if (m_scale_factor < 0.01)
     m_scale_factor = 0.01;
+
   if (m_scale_factor > 100.0)
     m_scale_factor = 100.0;
 
@@ -59,6 +60,7 @@ void Shp_scale::preview_scale_()
 
   for (const Shp_ptr& shape : m_shps)
     shape->SetLocalTransformation(scale_trsf);
+
   redisplay_operation_shps_after_transform_();
 }
 

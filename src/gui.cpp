@@ -508,7 +508,7 @@ void GUI::doc_help_button_(const char* scope, int line, const char* tooltip, con
   if (ImGui::SmallButton("?"))
     if (doc_url && doc_url[0] != '\0')
       open_url_(doc_url);
-  
+
   ImGui::PopID();
   ImGui::PopID();
 
@@ -2690,12 +2690,12 @@ void GUI::on_left_click_(const ScreenCoords& screen_coords)
 {
   switch (m_mode)
   {
-  // clang-format off
+    // clang-format off
   case Mode::Move:                m_view->shp_move().finalize();                      break;
   case Mode::Rotate:              m_view->shp_rotate().finalize();                    break;
   case Mode::Scale:               m_view->shp_scale().finalize();                     break;
   case Mode::Sketch_face_extrude: m_view->sketch_face_extrude(screen_coords, false);  break;
-  // clang-format on
+    // clang-format on
 
   case Mode::Sketch_add_node:
   case Mode::Sketch_add_edge:

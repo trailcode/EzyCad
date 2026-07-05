@@ -1,9 +1,7 @@
 #pragma once
 
-#include <cstddef>
 #include <memory>
 #include <nlohmann/json.hpp>
-#include <string>
 #include <utility>
 #include <vector>
 
@@ -14,8 +12,7 @@ class Ezy_asset_store;
 class Sketch_json
 {
 public:
-  static nlohmann::json to_json(const Sketch& sketch, const Ezy_asset_store& assets);
-
+  static nlohmann::json          to_json(const Sketch& sketch, const Ezy_asset_store& assets);
   static std::shared_ptr<Sketch> from_json(Occt_view& view, const nlohmann::json& j);
 
 private:

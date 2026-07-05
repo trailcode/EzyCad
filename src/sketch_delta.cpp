@@ -220,15 +220,9 @@ Sketch_op_recorder::Impl::Impl(Occt_view& view, Sketch& sketch)
   m_delta = std::make_unique<Sketch_delta>(sketch, sketch.get_name());
 }
 
-void Sketch_op_recorder::Impl::register_owner_(Sketch_op_recorder& owner)
-{
-  m_owner = &owner;
-}
+void Sketch_op_recorder::Impl::register_owner_(Sketch_op_recorder& owner) { m_owner = &owner; }
 
-void Sketch_op_recorder::Impl::unregister_owner_()
-{
-  m_owner = nullptr;
-}
+void Sketch_op_recorder::Impl::unregister_owner_() { m_owner = nullptr; }
 
 void Sketch_op_recorder::Impl::on_destroy_()
 {

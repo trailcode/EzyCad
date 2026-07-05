@@ -244,7 +244,7 @@ void Occt_view::init_viewer()
 #endif
 
   capture_occt_grid_rect_from_viewer_(aViewer);
-  
+
   aViewer->SetDefaultComputedMode(true);
   aViewer->SetDefaultShadingModel(Graphic3d_TypeOfShadingModel_Phong);
   aViewer->SetDefaultLights();
@@ -252,7 +252,7 @@ void Occt_view::init_viewer()
 
   m_ctx->SetAutoActivateSelection(true); // Enable automatic selection
 
-  auto highlight_style = m_ctx->HighlightStyle();
+  auto highlight_style                           = m_ctx->HighlightStyle();
   Handle(Graphic3d_AspectFillArea3d) fill_aspect = new Graphic3d_AspectFillArea3d();
   fill_aspect->SetAlphaMode(Graphic3d_AlphaMode::Graphic3d_AlphaMode_Blend);
   fill_aspect->SetColor(Quantity_Color(0.1, 0.1, 0.1, Quantity_TOC_RGB));
@@ -278,7 +278,7 @@ void Occt_view::init_viewer()
       new Graphic3d_TransformPers(Graphic3d_TMF_TriedronPers, Aspect_TOTP_RIGHT_LOWER, NCollection_Vec2<int>(100, 100)));
 
   myViewCube->Attributes()->SetDatumAspect(new Prs3d_DatumAspect());
-  
+
   // Animation parameters
   myViewCube->SetViewAnimation(myViewAnimation);
   myViewCube->SetFixedAnimationLoop(false);
@@ -534,6 +534,7 @@ void Occt_view::on_enter(const ScreenCoords& screen_coords)
     // Apply typed distance (dist edit) and refresh preview only. LMB finalizes the extrusion (see on_mouse_button / GUI).
     sketch_face_extrude(screen_coords, true);
     break;
+
   default:
     curr_sketch().on_enter();
     break;
@@ -594,6 +595,7 @@ void Occt_view::revolve_selected(const double angle)
 void Occt_view::create_sketch_from_planar_face_(const ScreenCoords& screen_coords)
 {
   if (auto face = get_face_(screen_coords); face)
+  {
     if (auto pln = plane_from_face(*face); pln)
     {
       // Push only when we will create a sketch (avoids no-op undo on misclick).
@@ -609,7 +611,10 @@ void Occt_view::create_sketch_from_planar_face_(const ScreenCoords& screen_coord
       m_gui.set_mode(Mode::Sketch_inspection_mode);
     }
     else
+    {
       gui().show_message("Error: Selected face is not planar. Please select a planar face.");
+    }
+  }
 }
 
 void Occt_view::finalize_sketch_extrude_()
@@ -720,6 +725,7 @@ bool Occt_view::sketch_plane_view_aabb_2d(const gp_Pln& pln, double display_w, d
   {
     if (!p2)
       return;
+
     const double u = p2->X();
     const double v = p2->Y();
     if (!any)
@@ -766,9 +772,11 @@ bool Occt_view::get_camera(gp_Pnt& out_eye, gp_Pnt& out_center, gp_Dir& out_up) 
 {
   if (is_headless() || m_view.IsNull())
     return false;
+
   const Graphic3d_Camera_ptr camera = m_view->Camera();
   if (camera.IsNull())
     return false;
+
   out_eye    = camera->Eye();
   out_center = camera->Center();
   out_up     = camera->Up();
@@ -779,9 +787,11 @@ void Occt_view::set_camera(const gp_Pnt& eye, const gp_Pnt& center, const gp_Dir
 {
   if (is_headless() || m_view.IsNull())
     return;
+
   const Graphic3d_Camera_ptr camera = m_view->Camera();
   if (camera.IsNull())
     return;
+
   camera->SetEyeAndCenter(eye, center);
   camera->SetUp(up);
   m_view->SetCamera(camera);
@@ -941,6 +951,7 @@ void Occt_view::add_pyramid(double ox, double oy, double oz, double side)
   TopoDS_Shape pyramid = shp_create::create_pyramid(side);
   if (pyramid.IsNull())
     return;
+
   Shp_ptr shp = new Shp(*m_ctx, pyramid);
   shp->set_name(unique_shape_name_("Pyramid"));
   if (ox != 0 || oy != 0 || oz != 0)
@@ -949,6 +960,7 @@ void Occt_view::add_pyramid(double ox, double oy, double oz, double side)
     trsf.SetTranslation(gp_Vec(ox, oy, oz));
     shp->SetLocalTransformation(trsf);
   }
+
   add_shp_(shp);
   m_ctx->Display(shp, shp->get_disp_mode(), AIS_Shape::SelectionMode(m_shp_selection_mode), true);
   m_view->Redraw();
@@ -966,6 +978,7 @@ void Occt_view::add_sphere(double ox, double oy, double oz, double radius)
     trsf.SetTranslation(gp_Vec(ox, oy, oz));
     shp->SetLocalTransformation(trsf);
   }
+
   add_shp_(shp);
   m_ctx->Display(shp, shp->get_disp_mode(), AIS_Shape::SelectionMode(m_shp_selection_mode), true);
   m_view->Redraw();
@@ -983,6 +996,7 @@ void Occt_view::add_cylinder(double ox, double oy, double oz, double radius, dou
     trsf.SetTranslation(gp_Vec(ox, oy, oz));
     shp->SetLocalTransformation(trsf);
   }
+
   add_shp_(shp);
   m_ctx->Display(shp, shp->get_disp_mode(), AIS_Shape::SelectionMode(m_shp_selection_mode), true);
   m_view->Redraw();
@@ -1000,6 +1014,7 @@ void Occt_view::add_cone(double ox, double oy, double oz, double R1, double R2, 
     trsf.SetTranslation(gp_Vec(ox, oy, oz));
     shp->SetLocalTransformation(trsf);
   }
+
   add_shp_(shp);
   m_ctx->Display(shp, shp->get_disp_mode(), AIS_Shape::SelectionMode(m_shp_selection_mode), true);
   m_view->Redraw();
@@ -1017,6 +1032,7 @@ void Occt_view::add_torus(double ox, double oy, double oz, double R1, double R2)
     trsf.SetTranslation(gp_Vec(ox, oy, oz));
     shp->SetLocalTransformation(trsf);
   }
+
   add_shp_(shp);
   m_ctx->Display(shp, shp->get_disp_mode(), AIS_Shape::SelectionMode(m_shp_selection_mode), true);
   m_view->Redraw();
@@ -1077,6 +1093,7 @@ void Occt_view::apply_sketch_dimensions_visibility()
     for (const Sketch_ptr& s : m_sketches)
       if (s)
         s->set_show_dims(false);
+
     return;
   }
 
@@ -1112,6 +1129,7 @@ void Occt_view::dimension_input(const ScreenCoords& screen_coords)
     m_show_dim_input = true;
     sketch_face_extrude(screen_coords, true);
     break;
+
   default:
     curr_sketch().dimension_input(screen_coords);
     break;
@@ -1161,6 +1179,7 @@ void Occt_view::remove_selected_length_dimensions_from_sketches_()
       if (!dim.IsNull())
         selected_dims.push_back(dim);
     }
+
     m_ctx->NextSelected();
   }
   for (const PrsDim_LengthDimension_ptr& dim : selected_dims)
@@ -1201,6 +1220,7 @@ void set_grid_colors_on_viewer_(const V3d_Viewer_ptr& viewer, const glm::vec3& c
 {
   if (viewer.IsNull() || viewer->Grid().IsNull())
     return;
+
   Quantity_Color cc(color1.x, color1.y, color1.z, Quantity_TOC_RGB);
   Quantity_Color cd(color2.x, color2.y, color2.z, Quantity_TOC_RGB);
   viewer->Grid()->SetColors(cc, cd);
@@ -1245,6 +1265,7 @@ Occt_view::Grid_layout Occt_view::compute_grid_layout_() const
     {
       if (node.deleted)
         continue;
+
       expand_pt(min_u, min_v, max_u, max_v, has_bounds, node);
     }
   }
@@ -1307,6 +1328,7 @@ static Aspect_GradientFillMethod gradient_method_from_int(int i)
   const int                              n         = static_cast<int>(sizeof(methods) / sizeof(methods[0]));
   if (i < 0 || i >= n)
     return Aspect_GFM_VER;
+
   return methods[i];
 }
 
@@ -1483,9 +1505,7 @@ void Occt_view::apply_grid_visibility_()
     set_grid_colors_on_viewer_(viewer, m_grid_color1, m_grid_color2);
   }
   else if (viewer->IsGridActive())
-  {
     viewer->DeactivateGrid();
-  }
 
   m_view->Invalidate();
   m_view->Redraw();
@@ -1678,6 +1698,7 @@ std::vector<AIS_Shape_ptr> Occt_view::get_selected() const
 
     m_ctx->NextSelected(); // Move to the next selected object
   }
+
   return shapes;
 }
 
@@ -2085,6 +2106,7 @@ Occt_view::Sketch_ptr Occt_view::curr_sketch_shared() const
 {
   if (!m_cur_sketch)
     const_cast<Occt_view*>(this)->ensure_current_sketch_();
+
   return m_cur_sketch;
 }
 
@@ -2336,9 +2358,11 @@ void Occt_view::load(const std::string& json_str, bool restore_view)
     int mat_idx = static_cast<int>(m_default_material.Name());
     if (s.contains("material") && s["material"].is_number_integer())
       mat_idx = s["material"].get<int>();
+
     const int nmat = Graphic3d_MaterialAspect::NumberOfMaterials();
     if (mat_idx < 0 || mat_idx >= nmat)
       mat_idx = static_cast<int>(m_default_material.Name());
+
     shp->SetMaterial(Graphic3d_MaterialAspect(static_cast<Graphic3d_NameOfMaterial>(mat_idx)));
     refresh_shape_shading_(shp);
     m_shps.push_back(shp);
@@ -2404,9 +2428,11 @@ TopoDS_Shape Occt_view::shape_with_local_transform_(const AIS_Shape_ptr& ais) co
 {
   if (ais.IsNull())
     return {};
+
   const TopoDS_Shape& s = ais->Shape();
   if (s.IsNull())
     return {};
+
   const gp_Trsf&           tr = ais->LocalTransformation();
   BRepBuilderAPI_Transform transformer(s, tr, true);
   return transformer.Shape();
@@ -2444,6 +2470,7 @@ Status Occt_view::build_export_shape_(TopoDS_Shape& out_shape) const
     bb.MakeCompound(comp);
     for (const TopoDS_Shape& p : parts)
       bb.Add(comp, p);
+
     out_shape = comp;
   }
   return Status::ok();
@@ -2545,7 +2572,7 @@ bool Occt_view::import_ply(const std::string& ply_bytes)
   TopoDS_Shape shape;
   if (Status st = import_ply_shape(ply_bytes, shape); !st.is_ok())
   {
-    std::cerr << st.message() << std::endl;
+    m_gui.log_message("PLY import failed: " + st.message());
     return false;
   }
   if (shape.IsNull())

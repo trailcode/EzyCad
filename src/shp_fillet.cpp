@@ -34,6 +34,7 @@ Status Shp_fillet::add_fillet(const ScreenCoords& screen_coords, const Fillet_mo
       fillet_maker.Add(m_fillet_radius, edge);
       edge_explorer.Next();
     }
+
     break;
   }
 
@@ -50,6 +51,7 @@ Status Shp_fillet::add_fillet(const ScreenCoords& screen_coords, const Fillet_mo
       fillet_maker.Add(m_fillet_radius, edge);
       edge_explorer.Next();
     }
+
     break;
   }
 

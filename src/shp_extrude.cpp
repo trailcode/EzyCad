@@ -4,8 +4,6 @@
 #include <BRepPrimAPI_MakePrism.hxx>
 #include <Precision.hxx>
 #include <TopoDS.hxx>
-#include <V3d_View.hxx>
-#include <V3d_View.hxx>
 
 #include "utl_dbg.h"
 #include "utl_geom.h"
@@ -51,6 +49,7 @@ void Shp_extrude::sketch_face_extrude(const ScreenCoords& screen_coords, bool is
         view().redraw_view();
         m_curr_view_pln = view().get_view_plane(*m_to_extrude_pt);
       }
+
       _update_extrude(screen_coords);
     }
   }
