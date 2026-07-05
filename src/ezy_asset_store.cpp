@@ -13,6 +13,7 @@ uint64_t fnv1a64_feed(uint64_t hash, const uint8_t* data, std::size_t len)
     hash ^= static_cast<uint64_t>(data[i]);
     hash *= 1099511628211ULL;
   }
+
   return hash;
 }
 
@@ -36,6 +37,7 @@ std::string Ezy_asset_store::register_rgba(const std::vector<uint8_t>& rgba, int
   const std::string id = make_asset_id(rgba.data(), rgba.size(), w, h);
   if (m_by_id.find(id) == m_by_id.end())
     m_by_id[id] = std::make_shared<const std::vector<uint8_t>>(rgba);
+
   return id;
 }
 
@@ -44,6 +46,7 @@ std::shared_ptr<const std::vector<uint8_t>> Ezy_asset_store::get(const std::stri
   const auto it = m_by_id.find(asset_id);
   if (it == m_by_id.end())
     return {};
+
   return it->second;
 }
 

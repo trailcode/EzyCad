@@ -367,13 +367,12 @@ PYBIND11_EMBEDDED_MODULE(ezycad_native, m)
         Sketch& sketch = view->curr_sketch();
         if (static_cast<std::size_t>(idx) >= sketch.length_dimension_count())
           throw py::index_error("dimension index out of range");
-        const std::size_t i  = static_cast<std::size_t>(idx);
-        const std::size_t lo = sketch.dimension_node_lo(i);
-        const std::size_t hi = sketch.dimension_node_hi(i);
+        const std::size_t   i     = static_cast<std::size_t>(idx);
+        const std::size_t   lo    = sketch.dimension_node_lo(i);
+        const std::size_t   hi    = sketch.dimension_node_hi(i);
         const Sketch_nodes& nodes = sketch.get_nodes();
         const double        dist  = nodes[lo].Distance(nodes[hi]) / view->get_dimension_scale();
-        return py::make_tuple(lo, hi, sketch.dimension_visible(i), sketch.dimension_offset(i),
-                              sketch.dimension_name(i), dist);
+        return py::make_tuple(lo, hi, sketch.dimension_visible(i), sketch.dimension_offset(i), sketch.dimension_name(i), dist);
       },
       py::arg("i"));
 

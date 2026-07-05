@@ -4,7 +4,6 @@
 
 #include <gp_Pnt2d.hxx>
 
-#include <cstddef>
 #include <memory>
 #include <optional>
 #include <string>

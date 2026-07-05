@@ -59,14 +59,19 @@ int from_base64_char(char c)
 {
   if (c >= 'A' && c <= 'Z')
     return c - 'A';
+
   if (c >= 'a' && c <= 'z')
     return c - 'a' + 26;
+
   if (c >= '0' && c <= '9')
     return c - '0' + 52;
+
   if (c == '+')
     return 62;
+
   if (c == '/')
     return 63;
+
   return -1;
 }
 
@@ -75,9 +80,11 @@ bool base64_decode(const std::string& in, std::vector<uint8_t>& out)
   out.clear();
   if (in.empty())
     return true;
+
   std::size_t len = in.size();
   while (len > 0 && (in[len - 1] == '=' || in[len - 1] == '\n' || in[len - 1] == '\r' || in[len - 1] == ' '))
     --len;
+
   out.reserve((len * 3) / 4);
   unsigned buf  = 0;
   int      bits = 0;
@@ -86,9 +93,11 @@ bool base64_decode(const std::string& in, std::vector<uint8_t>& out)
     const char c = in[i];
     if (c == '\n' || c == '\r' || c == ' ')
       continue;
+
     const int v = from_base64_char(c);
     if (v < 0)
       return false;
+
     buf = (buf << 6) | static_cast<unsigned>(v);
     bits += 6;
     if (bits >= 8)
@@ -97,6 +106,7 @@ bool base64_decode(const std::string& in, std::vector<uint8_t>& out)
       out.push_back(static_cast<uint8_t>((buf >> bits) & 0xFF));
     }
   }
+
   return true;
 }
 
@@ -125,6 +135,7 @@ inline void apply_key_and_tint(uint8_t& r, uint8_t& g, uint8_t& b, uint8_t& a, b
     b  = tb;
     a2 = (a2 * static_cast<unsigned>(ta)) / 255u;
   }
+
   a = static_cast<uint8_t>(a2);
 }
 
@@ -135,6 +146,7 @@ inline void sample_rgba_bilinear(const uint8_t* rgba, int w, int h, double xf, d
     out[0] = out[1] = out[2] = out[3] = 0;
     return;
   }
+
   const int    x0  = static_cast<int>(std::floor(xf));
   const int    y0  = static_cast<int>(std::floor(yf));
   const int    x1  = std::min(x0 + 1, w - 1);
@@ -145,6 +157,7 @@ inline void sample_rgba_bilinear(const uint8_t* rgba, int w, int h, double xf, d
   {
     return rgba + (static_cast<std::size_t>(y) * static_cast<std::size_t>(w) + static_cast<std::size_t>(x)) * 4u;
   };
+
   for (int c = 0; c < 4; ++c)
   {
     const double v00 = static_cast<double>(pix(x0, y0)[c]);
@@ -186,6 +199,7 @@ Handle(Image_PixMap) make_pixmap_bottom_up_linear(const uint8_t* rgba, int w, in
       dstRow[static_cast<std::size_t>(ox) * 4u + 3] = px[3];
     }
   }
+
   return pix;
 }
 
@@ -294,6 +308,7 @@ bool Sketch_underlay::set_image_rgba(std::vector<uint8_t>&& rgba, int w, int h, 
   m_axis_u       = gp_Vec2d(static_cast<double>(m_w) * s, 0.);
   m_axis_v       = gp_Vec2d(0., static_cast<double>(m_h) * s);
   m_base         = gp_Pnt2d(-0.5 * m_axis_u.X(), -0.5 * m_axis_v.Y());
+
   return true;
 }
 
@@ -315,6 +330,7 @@ void Sketch_underlay::set_center_extents_rotation(const dvec2& center, const dve
   constexpr double k_min = 1e-9;
   if (half_w < k_min)
     half_w = k_min;
+
   if (half_h < k_min)
     half_h = k_min;
 
@@ -332,8 +348,10 @@ void Sketch_underlay::set_opacity(float opaque01)
 {
   if (opaque01 < 0.f)
     opaque01 = 0.f;
+
   if (opaque01 > 1.f)
     opaque01 = 1.f;
+
   m_opacity = opaque01;
   if (!m_ais.IsNull())
     m_ais->SetTransparency(1.0 - static_cast<double>(m_opacity));
@@ -422,6 +440,7 @@ void Sketch_underlay::build_ais_(const gp_Pln& pln, AIS_InteractiveContext& ctx)
     const double scale = au.Magnitude() * av.Magnitude();
     if (scale < 1e-24)
       return true;
+
     return std::abs(dot) < 1e-9 * scale;
   };
 
@@ -442,10 +461,10 @@ void Sketch_underlay::build_ais_(const gp_Pln& pln, AIS_InteractiveContext& ctx)
       BRepBuilderAPI_MakeFace faceMk(local_pln, 0.0, du_len, 0.0, dv_len);
       if (!faceMk.IsDone())
         return;
-      face = faceMk.Face();
 
-      pix = make_pixmap_bottom_up_linear(m_rgba->data(), m_w, m_h, m_key_white_transparent, m_line_tint_enabled, m_tint_r,
-                                         m_tint_g, m_tint_b, m_tint_a);
+      face = faceMk.Face();
+      pix  = make_pixmap_bottom_up_linear(m_rgba->data(), m_w, m_h, m_key_white_transparent, m_line_tint_enabled, m_tint_r,
+                                          m_tint_g, m_tint_b, m_tint_a);
     }
     else
     {
@@ -482,10 +501,10 @@ void Sketch_underlay::build_ais_(const gp_Pln& pln, AIS_InteractiveContext& ctx)
       BRepBuilderAPI_MakeFace faceMk(wireMk.Wire(), true);
       if (!faceMk.IsDone())
         return;
-      face = faceMk.Face();
 
-      pix = make_pixmap_bottom_up_warped(m_rgba->data(), m_w, m_h, m_axis_u, m_axis_v, m_key_white_transparent,
-                                         m_line_tint_enabled, m_tint_r, m_tint_g, m_tint_b, m_tint_a);
+      face = faceMk.Face();
+      pix  = make_pixmap_bottom_up_warped(m_rgba->data(), m_w, m_h, m_axis_u, m_axis_v, m_key_white_transparent,
+                                          m_line_tint_enabled, m_tint_r, m_tint_g, m_tint_b, m_tint_a);
     }
   }
   else
@@ -508,10 +527,10 @@ void Sketch_underlay::build_ais_(const gp_Pln& pln, AIS_InteractiveContext& ctx)
     BRepBuilderAPI_MakeFace faceMk(wireMk.Wire(), true);
     if (!faceMk.IsDone())
       return;
-    face = faceMk.Face();
 
-    pix = make_pixmap_bottom_up_linear(m_rgba->data(), m_w, m_h, m_key_white_transparent, m_line_tint_enabled, m_tint_r,
-                                       m_tint_g, m_tint_b, m_tint_a);
+    face = faceMk.Face();
+    pix  = make_pixmap_bottom_up_linear(m_rgba->data(), m_w, m_h, m_key_white_transparent, m_line_tint_enabled, m_tint_r,
+                                        m_tint_g, m_tint_b, m_tint_a);
 
     if (!pix.IsNull())
     {
@@ -538,10 +557,8 @@ void Sketch_underlay::build_ais_(const gp_Pln& pln, AIS_InteractiveContext& ctx)
         {
           uint8_t* row = data + r * rowBytes;
           for (size_t c = 0; c < ww / 2; ++c)
-          {
             for (int ch = 0; ch < 4; ++ch)
               std::swap(row[c * 4 + ch], row[(ww - 1 - c) * 4 + ch]);
-          }
         }
       }
     }
@@ -591,6 +608,7 @@ void Sketch_underlay::rebuild_and_display(const gp_Pln& pln, AIS_InteractiveCont
   remove_ais_(ctx);
   if (!has_image() || !m_visible)
     return;
+
   build_ais_(pln, ctx);
 }
 
@@ -600,6 +618,7 @@ void Sketch_underlay::sync_visibility(const gp_Pln& pln, AIS_InteractiveContext&
 {
   if (!has_image())
     return;
+
   if (m_visible)
     rebuild_and_display(pln, ctx);
   else
@@ -628,10 +647,9 @@ nlohmann::json Sketch_underlay::to_json(const Ezy_asset_store& store) const
 {
   using nlohmann::json;
   json j;
-  if (!has_image())
+  if (!has_image() || m_asset_id.empty())
     return j;
-  if (m_asset_id.empty())
-    return j;
+
   (void)store;
   j["asset"]                 = m_asset_id;
   j["w"]                     = m_w;
@@ -653,6 +671,7 @@ bool Sketch_underlay::from_json(const nlohmann::json& j, Ezy_asset_store& store)
   using nlohmann::json;
   if (!j.is_object() || !j.contains("w") || !j.contains("h"))
     return false;
+
   const int w = j.at("w").get<int>();
   const int h = j.at("h").get<int>();
   if (w <= 0 || h <= 0 || w > k_max_image_dim || h > k_max_image_dim)
@@ -670,10 +689,13 @@ bool Sketch_underlay::from_json(const nlohmann::json& j, Ezy_asset_store& store)
     std::vector<uint8_t> decoded;
     if (!base64_decode(j.at("rgba_b64").get<std::string>(), decoded))
       return false;
+
     if (decoded.size() < static_cast<std::size_t>(w) * static_cast<std::size_t>(h) * 4u)
       return false;
+
     if (decoded.size() > k_max_rgba_bytes)
       return false;
+
     m_asset_id = store.register_rgba(decoded, w, h);
     m_rgba     = store.get(m_asset_id);
   }
@@ -685,8 +707,10 @@ bool Sketch_underlay::from_json(const nlohmann::json& j, Ezy_asset_store& store)
 
   if (j.contains("base"))
     m_base = gp_Pnt2d(j["base"].at("x").get<double>(), j["base"].at("y").get<double>());
+
   if (j.contains("axis_u"))
     m_axis_u = gp_Vec2d(j["axis_u"].at("x").get<double>(), j["axis_u"].at("y").get<double>());
+
   if (j.contains("axis_v"))
     m_axis_v = gp_Vec2d(j["axis_v"].at("x").get<double>(), j["axis_v"].at("y").get<double>());
 
@@ -711,8 +735,11 @@ bool Sketch_underlay::from_json(const nlohmann::json& j, Ezy_asset_store& store)
   m_raw_shear_display = j.value("raw_shear_display", false);
   if (m_opacity < 0.f)
     m_opacity = 0.f;
+
   if (m_opacity > 1.f)
     m_opacity = 1.f;
+
   m_ais.Nullify();
+
   return true;
 }

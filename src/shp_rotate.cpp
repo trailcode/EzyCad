@@ -78,6 +78,7 @@ void Shp_rotate::update_rotation_axis_()
       ctx().Remove(m_rotation_axis_vis, false);
       m_rotation_axis_vis = nullptr;
     }
+
     return;
   }
 
@@ -90,15 +91,11 @@ void Shp_rotate::update_rotation_axis_()
   };
   switch (m_rotation_axis)
   {
-  case Rotation_axis::X_axis:
-    set_axis_and_color(1, 0, 0);
-    break;
-  case Rotation_axis::Y_axis:
-    set_axis_and_color(0, 1, 0);
-    break;
-  case Rotation_axis::Z_axis:
-    set_axis_and_color(0, 0, 1);
-    break;
+    // clang-format off
+  case Rotation_axis::X_axis: set_axis_and_color(1, 0, 0); break;
+  case Rotation_axis::Y_axis: set_axis_and_color(0, 1, 0); break;
+  case Rotation_axis::Z_axis: set_axis_and_color(0, 0, 1); break;
+    // clang-format on
   case Rotation_axis::View_to_object:
     return; // Already handled above
   }
@@ -158,15 +155,11 @@ void Shp_rotate::preview_rotate_()
   gp_Dir axis_dir;
   switch (m_rotation_axis)
   {
-  case Rotation_axis::X_axis:
-    axis_dir = gp_Dir(1, 0, 0);
-    break;
-  case Rotation_axis::Y_axis:
-    axis_dir = gp_Dir(0, 1, 0);
-    break;
-  case Rotation_axis::Z_axis:
-    axis_dir = gp_Dir(0, 0, 1);
-    break;
+    // clang-format off
+  case Rotation_axis::X_axis: axis_dir = gp_Dir(1, 0, 0); break;
+  case Rotation_axis::Y_axis: axis_dir = gp_Dir(0, 1, 0); break;
+  case Rotation_axis::Z_axis: axis_dir = gp_Dir(0, 0, 1); break;
+    // clang-format on
   case Rotation_axis::View_to_object:
     axis_dir = m_rotate_pln->Axis().Direction();
     break;
@@ -179,6 +172,7 @@ void Shp_rotate::preview_rotate_()
 
   for (const Shp_ptr& shape : m_shps)
     shape->SetLocalTransformation(rotation);
+
   redisplay_operation_shps_after_transform_();
 }
 

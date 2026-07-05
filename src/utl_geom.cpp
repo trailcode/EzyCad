@@ -554,9 +554,11 @@ Handle(Prs3d_DimensionAspect) clone_dimension_aspect(const PrsDim_LengthDimensio
 {
   if (dim.IsNull())
     return new Prs3d_DimensionAspect();
+
   const Handle(Prs3d_DimensionAspect)& cur = dim->DimensionAspect();
   if (!cur.IsNull())
     return new Prs3d_DimensionAspect(*cur);
+
   return new Prs3d_DimensionAspect();
 }
 
@@ -568,14 +570,17 @@ void arrow_style_preset(const int arrow_style, double& angle_deg, bool& arrows_3
     angle_deg = 15.0;
     arrows_3d = false;
     break;
+
   case 2:
     angle_deg = 40.0;
     arrows_3d = false;
     break;
+
   case 3:
     angle_deg = 25.0;
     arrows_3d = true;
     break;
+
   default:
     angle_deg = 25.0;
     arrows_3d = false;
@@ -587,12 +592,11 @@ Prs3d_DimensionArrowOrientation arrow_orientation_from_index(const int idx)
 {
   switch (idx)
   {
-  case 1:
-    return Prs3d_DAO_Internal;
-  case 2:
-    return Prs3d_DAO_External;
-  default:
-    return Prs3d_DAO_Fit;
+    // clang-format off
+  case 1:  return Prs3d_DAO_Internal;
+  case 2:  return Prs3d_DAO_External;
+  default: return Prs3d_DAO_Fit;
+    // clang-format on
   }
 }
 
@@ -644,6 +648,7 @@ void apply_length_dimension_style(const PrsDim_LengthDimension_ptr& dim, const L
     arrow = new Prs3d_ArrowAspect(*cur_arrow);
   else
     arrow = new Prs3d_ArrowAspect();
+
   arrow->SetColor(col);
   arrow->SetLength(static_cast<double>(style.arrow_size));
   arrow->SetAngle(angle_deg * (std::numbers::pi / 180.0));
@@ -655,6 +660,7 @@ void apply_length_dimension_style(const PrsDim_LengthDimension_ptr& dim, const L
     Handle(Prs3d_TextAspect) text = aspect->TextAspect();
     if (text.IsNull())
       text = new Prs3d_TextAspect();
+
     text->SetHeight(k_dim_text_height_base * static_cast<double>(style.text_height_scale));
     aspect->SetTextAspect(text);
   }
@@ -674,15 +680,11 @@ void apply_length_dimension_style(const PrsDim_LengthDimension_ptr& dim, const L
 
   switch (style.text_render_mode)
   {
-  case 4:
-    dim->SetZLayer(Graphic3d_ZLayerId_Top);
-    break;
-  case 5:
-    dim->SetZLayer(Graphic3d_ZLayerId_Topmost);
-    break;
-  default:
-    dim->SetZLayer(Graphic3d_ZLayerId_Default);
-    break;
+    // clang-format off
+  case 4:  dim->SetZLayer(Graphic3d_ZLayerId_Top);     break;
+  case 5:  dim->SetZLayer(Graphic3d_ZLayerId_Topmost); break;
+  default: dim->SetZLayer(Graphic3d_ZLayerId_Default); break;
+    // clang-format on
   }
 }
 
@@ -693,7 +695,7 @@ void apply_length_dimension_list_hover_style(const PrsDim_LengthDimension_ptr& d
     return;
 
   Handle(Prs3d_DimensionAspect) aspect = clone_dimension_aspect(dim);
-  const Quantity_Color            qc(hover_rgb[0], hover_rgb[1], hover_rgb[2], Quantity_TOC_RGB);
+  const Quantity_Color qc(hover_rgb[0], hover_rgb[1], hover_rgb[2], Quantity_TOC_RGB);
 
   Aspect_TypeOfLine typ = Aspect_TOL_SOLID;
   if (const Handle(Prs3d_LineAspect)& la = aspect->LineAspect(); !la.IsNull())
@@ -801,6 +803,7 @@ static bool orient_length_dimension_flyout_clear_of_faces(const PrsDim_LengthDim
         dim->SetFlyout(-std::abs(f));
       else
         dim->SetFlyout(std::abs(f));
+
       return true;
     }
   }
@@ -821,6 +824,7 @@ PrsDim_LengthDimension_ptr create_distance_annotation(const gp_Pnt& p1, const gp
   bool used_faces = false;
   if (sketch_faces_for_flyout && !sketch_faces_for_flyout->empty())
     used_faces = orient_length_dimension_flyout_clear_of_faces(dim, p1, p2, pln, *sketch_faces_for_flyout, style);
+
   if (!used_faces && interior_ref.has_value())
     orient_length_dimension_flyout_outward(dim, p1, p2, *interior_ref, pln, style);
   else if (!used_faces)
@@ -1077,6 +1081,7 @@ ezy_geom::polygon_2d to_boost(const TopoDS_Shape& shape, const gp_Pln& pln2)
       check_ring(inner);
       polygon.inners().emplace_back(inner);
     }
+
     wire_explorer.Next();
   }
 
@@ -1206,6 +1211,7 @@ double ezy_geom::area(const polygon_2d& poly)
   {
     if (ring.size() < 3)
       return 0.0;
+
     double a = 0.0;
     size_t n = ring.size();
     for (size_t i = 0; i < n; ++i)
@@ -1213,6 +1219,7 @@ double ezy_geom::area(const polygon_2d& poly)
       size_t j = (i + 1) % n;
       a += ring[i].x() * ring[j].y() - ring[j].x() * ring[i].y();
     }
+
     return a / 2.0;
   };
 
@@ -1221,6 +1228,7 @@ double ezy_geom::area(const polygon_2d& poly)
   {
     a -= ring_area(h);
   }
+
   return std::abs(a);
 }
 
@@ -1233,6 +1241,7 @@ std::string to_wkt_string(const ezy_geom::polygon_2d& poly)
       // whole number
       return std::to_string(static_cast<long long>(std::round(v)));
     }
+
     std::ostringstream os;
     os << std::fixed << std::setprecision(6) << v;
     return os.str();
@@ -1244,11 +1253,13 @@ std::string to_wkt_string(const ezy_geom::polygon_2d& poly)
   {
     if (!first_ring)
       ss << ",";
+
     ss << "(";
     for (size_t i = 0; i < r.size(); ++i)
     {
       if (i > 0)
         ss << ",";
+
       ss << fmt_num(r[i].x()) << " " << fmt_num(r[i].y());
     }
     ss << ")";
@@ -1257,9 +1268,8 @@ std::string to_wkt_string(const ezy_geom::polygon_2d& poly)
   ss << "POLYGON(";
   write_ring(poly.outer_, true);
   for (const auto& inner : poly.inners_)
-  {
     write_ring(inner, false);
-  }
+
   ss << ")";
   return ss.str();
 }
@@ -1357,10 +1367,9 @@ std::optional<gp_Pnt2d> segment_intersection_2d(const gp_Pnt2d& a1, const gp_Pnt
 void add_unique_point(std::vector<gp_Pnt2d>& points, const gp_Pnt2d& p)
 {
   for (const auto& existing : points)
-  {
     if (existing.Distance(p) <= Precision::Confusion())
       return;
-  }
+
   points.push_back(p);
 }
 

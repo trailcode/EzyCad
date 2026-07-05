@@ -38,6 +38,7 @@ Status Shp_chamfer::add_chamfer(const ScreenCoords& screen_coords, const Chamfer
       chamfer_maker.Add(setback_dist, edge);
       edge_explorer.Next();
     }
+
     break;
   }
 
@@ -54,6 +55,7 @@ Status Shp_chamfer::add_chamfer(const ScreenCoords& screen_coords, const Chamfer
       chamfer_maker.Add(setback_dist, edge);
       edge_explorer.Next();
     }
+
     break;
   }
 

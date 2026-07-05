@@ -49,6 +49,7 @@ Status Shp_move::move_selected(const ScreenCoords& screen_coords)
 
   for (const Shp_ptr& shape : m_shps)
     shape->SetLocalTransformation(translation);
+
   redisplay_operation_shps_after_transform_();
 
   return Status::ok();

@@ -14,9 +14,9 @@
 namespace
 {
 
-constexpr uint32_t k_zip_local_sig  = 0x04034b50u;
+constexpr uint32_t k_zip_local_sig   = 0x04034b50u;
 constexpr uint32_t k_zip_central_sig = 0x02014b50u;
-constexpr uint32_t k_zip_eocd_sig   = 0x06054b50u;
+constexpr uint32_t k_zip_eocd_sig    = 0x06054b50u;
 
 struct Zip_entry
 {
@@ -35,14 +35,17 @@ uint32_t crc32_bytes(const uint8_t* data, std::size_t len)
       uint32_t c = i;
       for (int k = 0; k < 8; ++k)
         c = (c & 1u) ? (0xEDB88320u ^ (c >> 1)) : (c >> 1);
+
       table[i] = c;
     }
+
     init = true;
   }
 
   uint32_t crc = 0xFFFFFFFFu;
   for (std::size_t i = 0; i < len; ++i)
     crc = table[(crc ^ data[i]) & 0xFFu] ^ (crc >> 8);
+
   return crc ^ 0xFFFFFFFFu;
 }
 
@@ -64,6 +67,7 @@ bool read_u16(const uint8_t* p, std::size_t avail, std::size_t& off, uint16_t& v
 {
   if (off + 2 > avail)
     return false;
+
   v = static_cast<uint16_t>(p[off]) | (static_cast<uint16_t>(p[off + 1]) << 8);
   off += 2;
   return true;
@@ -73,8 +77,9 @@ bool read_u32(const uint8_t* p, std::size_t avail, std::size_t& off, uint32_t& v
 {
   if (off + 4 > avail)
     return false;
-  v = static_cast<uint32_t>(p[off]) | (static_cast<uint32_t>(p[off + 1]) << 8) |
-      (static_cast<uint32_t>(p[off + 2]) << 16) | (static_cast<uint32_t>(p[off + 3]) << 24);
+
+  v = static_cast<uint32_t>(p[off]) | (static_cast<uint32_t>(p[off + 1]) << 8) | (static_cast<uint32_t>(p[off + 2]) << 16) |
+      (static_cast<uint32_t>(p[off + 3]) << 24);
   off += 4;
   return true;
 }
@@ -84,10 +89,10 @@ std::vector<uint8_t> zip_write_stored(const std::vector<Zip_entry>& entries)
   std::vector<uint8_t> out;
   struct Local_rec
   {
-    uint32_t offset;
-    uint16_t name_len;
-    uint32_t crc;
-    uint32_t size;
+    uint32_t    offset;
+    uint16_t    name_len;
+    uint32_t    crc;
+    uint32_t    size;
     std::string name;
   };
   std::vector<Local_rec> locals;
@@ -159,8 +164,8 @@ bool zip_read_stored(const std::string& bytes, std::vector<Zip_entry>& out_entri
   if (bytes.size() < 22)
     return false;
 
-  const uint8_t* data  = reinterpret_cast<const uint8_t*>(bytes.data());
-  const std::size_t n  = bytes.size();
+  const uint8_t*    data = reinterpret_cast<const uint8_t*>(bytes.data());
+  const std::size_t n    = bytes.size();
   std::size_t       eocd = std::string::npos;
 
   for (std::size_t i = n; i >= 4; --i)
@@ -171,6 +176,7 @@ bool zip_read_stored(const std::string& bytes, std::vector<Zip_entry>& out_entri
       eocd = at;
       break;
     }
+
     if (i == 4)
       break;
   }
@@ -216,6 +222,7 @@ bool zip_read_stored(const std::string& bytes, std::vector<Zip_entry>& out_entri
 
     if (local_offset + 30u > n)
       return false;
+
     std::size_t loc = local_offset + 4u;
     uint16_t    loc_ver, loc_flags, loc_method, loc_mod_t, loc_mod_d, loc_name_len, loc_extra_len;
     uint32_t    loc_crc, loc_comp, loc_uncomp;
@@ -247,6 +254,7 @@ void collect_underlay_asset_ids(const nlohmann::json& j, std::vector<std::string
   {
     if (!sk.contains("underlay") || !sk["underlay"].is_object())
       continue;
+
     const nlohmann::json& ul = sk["underlay"];
     if (ul.contains("asset") && ul["asset"].is_string())
       out.push_back(ul["asset"].get<std::string>());
@@ -261,10 +269,13 @@ bool parse_asset_path(std::string_view path, std::string& out_id)
   const std::string_view suffix = ".rgba";
   if (path.size() <= prefix.size() + suffix.size())
     return false;
+
   if (path.substr(0, prefix.size()) != prefix)
     return false;
+
   if (path.substr(path.size() - suffix.size()) != suffix)
     return false;
+
   out_id.assign(path.substr(prefix.size(), path.size() - prefix.size() - suffix.size()));
   return !out_id.empty();
 }
@@ -273,14 +284,19 @@ int from_b64(char c)
 {
   if (c >= 'A' && c <= 'Z')
     return c - 'A';
+
   if (c >= 'a' && c <= 'z')
     return c - 'a' + 26;
+
   if (c >= '0' && c <= '9')
     return c - '0' + 52;
+
   if (c == '+')
     return 62;
+
   if (c == '/')
     return 63;
+
   return -1;
 }
 
@@ -296,6 +312,7 @@ bool is_ezy_json(const std::string& bytes)
   std::size_t i = 0;
   while (i < bytes.size() && (bytes[i] == ' ' || bytes[i] == '\t' || bytes[i] == '\r' || bytes[i] == '\n'))
     ++i;
+
   return i < bytes.size() && bytes[i] == '{';
 }
 
@@ -349,6 +366,7 @@ std::vector<uint8_t> pack_ezy(const std::string& manifest_json, const Ezy_asset_
     const auto pixels = store.get(id);
     if (!pixels)
       continue;
+
     entries.push_back({asset_path(id), std::string(reinterpret_cast<const char*>(pixels->data()), pixels->size())});
   }
 
@@ -394,9 +412,11 @@ std::vector<uint8_t> ezy_base64_decode(const std::string& b64)
     const char c = b64[i];
     if (c == '\n' || c == '\r' || c == ' ')
       continue;
+
     const int v = from_b64(c);
     if (v < 0)
       return {};
+
     buf = (buf << 6) | static_cast<unsigned>(v);
     bits += 6;
     if (bits >= 8)
