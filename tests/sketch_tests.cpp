@@ -164,22 +164,22 @@ const std::list<Sketch::Edge>& Sketch_access::get_edges(const Sketch& sketch)
 
 size_t Sketch_access::length_dimension_count(const Sketch& sketch)
 {
-  return sketch.m_length_dimensions.size();
+  return sketch.m_dims.dimensions().size();
 }
 
 size_t Sketch_access::length_dimension_node_lo(const Sketch& sketch, size_t index)
 {
-  return sketch.m_length_dimensions[index].node_idx_lo;
+  return sketch.m_dims.dimensions()[index].node_idx_lo;
 }
 
 size_t Sketch_access::length_dimension_node_hi(const Sketch& sketch, size_t index)
 {
-  return sketch.m_length_dimensions[index].node_idx_hi;
+  return sketch.m_dims.dimensions()[index].node_idx_hi;
 }
 
 void Sketch_access::set_entered_edge_len(Sketch& sketch, const gp_Dir2d& dir, double len)
 {
-  sketch.m_entered_edge_len = Sketch::Edge_len{dir, len};
+  sketch.m_dims.entered_edge_len() = Sketch_dims::Edge_len{dir, len};
 }
 
 void Sketch_access::update_faces_(Sketch& sketch)

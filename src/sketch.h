@@ -9,6 +9,7 @@
 #include <vector>
 
 #include "shp.h"
+#include "sketch_dims.h"
 #include "sketch_nodes.h"
 #include "sketch_topo.h"
 #include "sketch_underlay.h"
@@ -160,27 +161,10 @@ private:
   friend class Sketch_delta;
   friend class Sketch_op_recorder;
   friend class Sketch_topo;
+  friend class Sketch_dims;
 
   static bool s_add_mid_pt_edges;
   static bool s_edge_from_center;
-
-  /// Linear distance between two sketch nodes (independent of which edge connects them).
-  struct Length_dimension
-  {
-    size_t                     node_idx_lo{};
-    size_t                     node_idx_hi{};
-    PrsDim_LengthDimension_ptr dim;
-    bool                       visible{true};
-    std::optional<double>      flyout_offset;
-    std::string                name;
-  };
-
-  // When user types in a edge length.
-  struct Edge_len
-  {
-    gp_Dir2d dir;
-    double   len;
-  };
 
   // Line string / segment related
   enum class Linestring_type
@@ -234,10 +218,6 @@ private:
   template <typename Callback> void move_sketch_pt_(const ScreenCoords& screen_coords, Callback&& callback);
   /// Invokes callback(e, pt_a, pt_b) with the last tmp edge only when it exists and is non-degenerate.
   template <typename Callback> void if_edge_pt_valid_(Callback&& callback);
-  void                              check_dimension_seg_(Linestring_type linestring_type);
-  /// Typed distance (Enter) while add-node rubber band is active - places node B, no edge.
-  /// Enter key / dist popup commit for rubber-band tmp edge (add node, square, circle, rectangle, ...).
-  void check_dimension_rubber_();
   /// Right-click / finalize: drop incomplete add-node preview (same idea as incomplete line).
   void finalize_add_node_elm_cleanup_();
   void add_edge_(const gp_Pnt2d& pt_a, const gp_Pnt2d& pt_b);
@@ -277,29 +257,17 @@ private:
   bool operation_axis_suppresses_sketch_snap_() const;
   void update_originating_face_style();
 
-  void rebuild_length_dimension_display_(Length_dimension& d);
-  void purge_stale_length_dimensions_();
-  void refresh_all_length_dimensions_();
-  void remove_length_dimensions_referencing_node_(size_t node_idx);
   void remove_permanent_node_mark_ais_at_(size_t node_idx);
   void remove_all_permanent_node_marks_();
   void erase_permanent_node_marks_();
   void trim_trailing_permanent_node_marks_();
-  /// Add if missing, remove if present (same unordered node pair).
-  void add_or_toggle_length_dim_between_node_indices_(size_t node_a, size_t node_b);
+
   void json_add_length_dimension_(size_t node_a, size_t node_b, bool visible = true,
                                   std::optional<double> flyout_offset = std::nullopt, const std::string& name = {});
-
-  /// Average of non-deleted node positions (3D on sketch plane); used to place edge dimensions outside loops.
-  std::optional<gp_Pnt> approx_sketch_interior_ref_3d_() const;
+  void remove_length_dimensions_referencing_node_(size_t node_idx);
 
   // Query related
   std::list<Edge>::iterator get_edge_at_(const ScreenCoords& screen_coords);
-
-  // Dimension input related
-  void clear_len_dim_rubber_line_();
-  void update_len_dim_rubber_line_(const ScreenCoords& screen_coords);
-  void clear_len_dim_pick_state_();
 
   // Style related
   Edge_style m_edge_style{Edge_style::Full};
@@ -325,12 +293,6 @@ private:
   // Mirror edges related;
   std::optional<Edge> m_operation_axis;
 
-  // Dimensions related
-  std::optional<Edge_len> m_entered_edge_len;
-  bool                    m_show_dim_input{false};
-  std::optional<double>   m_entered_edge_angle; // Angle in degrees
-  bool                    m_show_angle_input{false};
-
   // Geometry related
   AIS_Shape_ptr m_originating_face; // If this sketch was created from a face.
   gp_Pln        m_pln;              // Plane this sketch is on.
@@ -341,15 +303,10 @@ private:
   std::vector<Sketch_AIS_node_mark_ptr> m_permanent_node_marks;
   std::list<Edge>                       m_edges;
   Sketch_topo                           m_topo;
+  Sketch_dims                           m_dims;
   Sketch_underlay                       m_underlay;
-  std::vector<Length_dimension>         m_length_dimensions;
-  std::optional<size_t>                 m_len_dim_pick_anchor_node;
-  /// Preview segment from anchor node to cursor while picking the second node (dim mode).
-  AIS_Shape_ptr              m_len_dim_rubber_shp;
-  std::vector<size_t>        m_tmp_node_idxs;
-  std::vector<Edge>          m_tmp_edges;
-  AIS_Shape_ptr              m_tmp_shp;
-  PrsDim_LengthDimension_ptr m_tmp_dim_anno;
-  bool                       m_show_faces{true};
-  bool                       m_show_dims{true};
+  std::vector<size_t>                   m_tmp_node_idxs;
+  std::vector<Edge>                     m_tmp_edges;
+  AIS_Shape_ptr                         m_tmp_shp;
+  bool                                  m_show_faces{true};
 };

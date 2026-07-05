@@ -213,7 +213,7 @@ nlohmann::json Sketch_json::to_json(const Sketch& sketch, const Ezy_asset_store&
   }
 
   json& len_dims_json = j["length_dimensions"] = json::array();
-  for (const Sketch::Length_dimension& ld : sketch.m_length_dimensions)
+  for (const Sketch_dims::Length_dimension& ld : sketch.m_dims.dimensions())
   {
     json e = json::array({remap(ld.node_idx_lo), remap(ld.node_idx_hi), ld.visible});
     if (ld.flyout_offset.has_value())

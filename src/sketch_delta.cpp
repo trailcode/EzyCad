@@ -568,13 +568,13 @@ void Sketch_delta::Impl::remove_arc_edge_(Sketch& sketch, const Arc_edge_record&
 
 void Sketch_delta::Impl::remove_length_dim_(Sketch& sketch, const Length_dim_record& rec)
 {
-  for (auto it = sketch.m_length_dimensions.begin(); it != sketch.m_length_dimensions.end(); ++it)
+  for (auto it = sketch.m_dims.dimensions().begin(); it != sketch.m_dims.dimensions().end(); ++it)
     if (it->node_idx_lo == rec.node_idx_lo && it->node_idx_hi == rec.node_idx_hi)
     {
       if (!it->dim.IsNull())
         sketch.m_ctx.Remove(it->dim, true);
 
-      sketch.m_length_dimensions.erase(it);
+      sketch.m_dims.dimensions().erase(it);
       return;
     }
 }

@@ -73,6 +73,7 @@ Sketch::Sketch(const std::string& name, Occt_view& view, const gp_Pln& pln)
     , m_name(name)
     , m_nodes(view, pln)
     , m_topo(*this)
+    , m_dims(*this)
     , m_underlay(view.ctx())
 {
 }
@@ -84,6 +85,7 @@ Sketch::Sketch(const std::string& name, Occt_view& view, const gp_Pln& pln, cons
     , m_name(name)
     , m_nodes(view, pln)
     , m_topo(*this)
+    , m_dims(*this)
     , m_underlay(view.ctx())
 {
   m_originating_face = new AIS_Shape(outer_wire);
@@ -103,11 +105,7 @@ Sketch::~Sketch()
   for (Edge& e : m_edges)
     remove_edge(e);
 
-  for (Length_dimension& ld : m_length_dimensions)
-    if (!ld.dim.IsNull())
-      m_ctx.Remove(ld.dim, false);
-
-  m_length_dimensions.clear();
+  m_dims.remove_displayed();
 
   m_topo.remove_displayed_faces();
 
@@ -115,9 +113,6 @@ Sketch::~Sketch()
     remove_edge(*m_operation_axis);
 
   remove_all_permanent_node_marks_();
-
-  if (m_len_dim_rubber_shp)
-    m_ctx.Remove(m_len_dim_rubber_shp, false);
 
   m_ctx.Remove(m_originating_face, true);
 }
@@ -164,7 +159,7 @@ void Sketch::sketch_pt_move(const ScreenCoords& screen_coords)
 
     case Mode::Sketch_dim_anno:
       (void)m_nodes.try_pick_existing_node(screen_coords);
-      update_len_dim_rubber_line_(screen_coords);
+      m_dims.update_len_dim_rubber_line_(screen_coords);
       break;
     
     case Mode::Sketch_add_rectangle:
@@ -180,13 +175,13 @@ void Sketch::sketch_pt_move(const ScreenCoords& screen_coords)
 
 void Sketch::dimension_input(const ScreenCoords& screen_coords)
 {
-  m_show_dim_input = true;
+  m_dims.set_show_dim_input(true);
   sketch_pt_move(screen_coords);
 }
 
 void Sketch::angle_input(const ScreenCoords& screen_coords)
 {
-  m_show_angle_input = true;
+  m_dims.set_show_angle_input(true);
   sketch_pt_move(screen_coords);
 }
 
@@ -299,11 +294,17 @@ void Sketch::on_enter()
     case Mode::Sketch_add_rectangle_center_pt:
     case Mode::Sketch_add_circle:
     case Mode::Sketch_add_node:
-      check_dimension_rubber_();
+      m_dims.check_dimension_rubber_();
       break;
-    case Mode::Sketch_add_edge:         check_dimension_seg_(Linestring_type::Single);    break;
-    case Mode::Sketch_add_slot:         check_dimension_seg_(Linestring_type::Two);       break;
-    case Mode::Sketch_add_multi_edges:  check_dimension_seg_(Linestring_type::Multiple);  break;
+    case Mode::Sketch_add_edge:
+      m_dims.check_dimension_seg_(static_cast<int>(Linestring_type::Single));
+      break;
+    case Mode::Sketch_add_slot:
+      m_dims.check_dimension_seg_(static_cast<int>(Linestring_type::Two));
+      break;
+    case Mode::Sketch_add_multi_edges:
+      m_dims.check_dimension_seg_(static_cast<int>(Linestring_type::Multiple));
+      break;
     // clang-format on
   default:
     break;
@@ -326,16 +327,16 @@ bool Sketch::complete_edge_from_center_(const ScreenCoords& screen_coords)
   const gp_Pnt2d& center = m_nodes[edge.node_idx_a];
 
   std::optional<Symmetric_edge_span> span;
-  if (m_entered_edge_len.has_value())
-    span = symmetric_edge_from_center(center, m_entered_edge_len->dir, m_entered_edge_len->len);
+  if (m_dims.entered_edge_len().has_value())
+    span = symmetric_edge_from_center(center, m_dims.entered_edge_len()->dir, m_dims.entered_edge_len()->len);
 
-  else if (m_entered_edge_angle.has_value())
+  else if (m_dims.entered_edge_angle().has_value())
   {
     std::optional<gp_Pnt2d> pt_opt = m_view.pt_on_plane(screen_coords, m_pln);
     if (!pt_opt)
       return true;
 
-    const double angle_rad = to_radians(*m_entered_edge_angle);
+    const double angle_rad = to_radians(*m_dims.entered_edge_angle());
     gp_Dir2d     dir(std::cos(angle_rad), std::sin(angle_rad));
     gp_Vec2d     to_click(center, *pt_opt);
     const double half = std::abs(to_click.Dot(gp_Vec2d(dir)));
@@ -355,10 +356,10 @@ bool Sketch::complete_edge_from_center_(const ScreenCoords& screen_coords)
 
   edge.node_idx_a = m_nodes.get_node_exact(span->pt_a);
   update_edge_end_pt_(edge, m_nodes.get_node_exact(span->pt_b));
-  m_entered_edge_angle = std::nullopt;
-  m_entered_edge_len   = std::nullopt;
-  m_show_angle_input   = false;
-  m_show_dim_input     = false;
+  m_dims.entered_edge_angle() = std::nullopt;
+  m_dims.entered_edge_len()   = std::nullopt;
+  m_dims.set_show_angle_input(false);
+  m_dims.set_show_dim_input(false);
   m_view.gui().hide_angle_edit();
   finalize_elm();
   return true;
@@ -397,15 +398,15 @@ void Sketch::add_line_string_pt_(const ScreenCoords& screen_coords, Linestring_t
     }
 
     // Start a new edge - clear constraints for fresh start (click path for multi-line)
-    m_entered_edge_angle = std::nullopt;
-    m_entered_edge_len   = std::nullopt;
-    m_show_angle_input   = false;
+    m_dims.entered_edge_angle() = std::nullopt;
+    m_dims.entered_edge_len()   = std::nullopt;
+    m_dims.set_show_angle_input(false);
     m_view.gui().hide_angle_edit();
     m_tmp_edges.push_back({node_idx});
   };
 
   // When angle constraint is active, finalize on the constrained line (project click onto it)
-  if (m_entered_edge_angle.has_value() && m_tmp_edges.size())
+  if (m_dims.entered_edge_angle().has_value() && m_tmp_edges.size())
   {
     if (edge_from_center_active_())
     {
@@ -418,7 +419,7 @@ void Sketch::add_line_string_pt_(const ScreenCoords& screen_coords, Linestring_t
       return;
 
     const gp_Pnt2d& pt_a      = m_nodes[m_tmp_edges.back().node_idx_a];
-    double          angle_rad = to_radians(*m_entered_edge_angle);
+    double          angle_rad = to_radians(*m_dims.entered_edge_angle());
     gp_Dir2d        constrained_dir(std::cos(angle_rad), std::sin(angle_rad));
     gp_Vec2d        to_click(pt_opt->X() - pt_a.X(), pt_opt->Y() - pt_a.Y());
     double          dist_along = to_click.Dot(gp_Vec2d(constrained_dir));
@@ -446,12 +447,12 @@ void Sketch::move_line_string_pt_(const ScreenCoords& screen_coords)
       const gp_Pnt2d& center = m_nodes[edge.node_idx_a];
 
       std::optional<Symmetric_edge_span> span;
-      if (m_entered_edge_angle.has_value())
+      if (m_dims.entered_edge_angle().has_value())
       {
-        const double angle_rad = to_radians(*m_entered_edge_angle);
+        const double angle_rad = to_radians(*m_dims.entered_edge_angle());
         gp_Dir2d     dir(std::cos(angle_rad), std::sin(angle_rad));
-        if (m_entered_edge_len.has_value())
-          span = symmetric_edge_from_center(center, dir, m_entered_edge_len->len);
+        if (m_dims.entered_edge_len().has_value())
+          span = symmetric_edge_from_center(center, dir, m_dims.entered_edge_len()->len);
         else
         {
           gp_Vec2d     to_mouse(center, pt_b);
@@ -459,8 +460,8 @@ void Sketch::move_line_string_pt_(const ScreenCoords& screen_coords)
           span              = symmetric_edge_from_center(center, dir, half * 2.0);
         }
       }
-      else if (m_entered_edge_len.has_value())
-        span = symmetric_edge_from_center(center, m_entered_edge_len->dir, m_entered_edge_len->len);
+      else if (m_dims.entered_edge_len().has_value())
+        span = symmetric_edge_from_center(center, m_dims.entered_edge_len()->dir, m_dims.entered_edge_len()->len);
       else
         span = symmetric_edge_from_center_and_hint(center, pt_b);
 
@@ -471,8 +472,7 @@ void Sketch::move_line_string_pt_(const ScreenCoords& screen_coords)
           m_ctx.Remove(edge.shp, true);
           edge.shp.Nullify();
         }
-        m_ctx.Remove(m_tmp_dim_anno, true);
-        m_tmp_dim_anno.Nullify();
+        m_dims.clear_tmp_dim_anno();
         return;
       }
 
@@ -481,43 +481,10 @@ void Sketch::move_line_string_pt_(const ScreenCoords& screen_coords)
       update_edge_shp_(edge, span_a, span_b);
 
       const double dist = span->full_len / m_view.get_dimension_scale();
-      m_ctx.Remove(m_tmp_dim_anno, true);
-      m_tmp_dim_anno = create_distance_annotation(
-          span_a, span_b, m_pln, m_view.gui().length_dimension_style(), approx_sketch_interior_ref_3d_(),
-          m_topo.dim_classifier_faces().empty() ? nullptr : &m_topo.dim_classifier_faces());
-      m_tmp_dim_anno->SetCustomValue(dist);
-      m_ctx.Display(m_tmp_dim_anno, true);
-
-      if (m_show_dim_input)
-      {
-        gp_Dir2d     edge_dir = get_unit_dir(span_a, span_b);
-        ScreenCoords spos     = m_view.get_screen_coords(to_3d(m_pln, center_point(span_a, span_b)));
-        auto         cb       = [&, edge_dir](float new_dist, bool is_finial)
-        {
-          m_entered_edge_len = {edge_dir, new_dist * m_view.get_dimension_scale()};
-          m_show_dim_input   = !is_finial;
-          if (is_finial)
-            on_enter();
-        };
-        m_view.gui().set_dist_edit(float(dist), std::move(std::function<void(float, bool)>(cb)), spos);
-      }
-
-      if (m_show_angle_input)
-      {
-        ScreenCoords spos = m_view.get_screen_coords(to_3d(m_pln, center_point(span_a, span_b)));
-        gp_Vec2d     vec(center, pt_b);
-        double       current_angle_deg = to_degrees(std::atan2(vec.Y(), vec.X()));
-        auto         cb                = [&](float new_angle, bool is_finial)
-        {
-          m_entered_edge_angle = new_angle;
-          m_show_angle_input   = !is_finial;
-          ScreenCoords current_pos(dvec2(ImGui::GetIO().MousePos.x, ImGui::GetIO().MousePos.y));
-          sketch_pt_move(current_pos);
-        };
-
-        float angle_to_show = m_entered_edge_angle.has_value() ? float(*m_entered_edge_angle) : float(current_angle_deg);
-        m_view.gui().set_angle_edit(angle_to_show, std::move(std::function<void(float, bool)>(cb)), spos);
-      }
+      m_dims.show_tmp_dim_preview(span_a, span_b);
+      m_dims.offer_dist_edit_for_segment(span_a, span_b, dist);
+      m_dims.offer_angle_edit_for_segment(center, pt_b,
+                                          to_degrees(std::atan2(gp_Vec2d(center, pt_b).Y(), gp_Vec2d(center, pt_b).X())));
     };
 
     move_sketch_pt_(screen_coords, l);
@@ -539,16 +506,16 @@ void Sketch::move_line_string_pt_(const ScreenCoords& screen_coords)
     gp_Pnt2d final_pt_b = pt_b;
 
     // Apply angle constraint if set - this takes priority
-    if (m_entered_edge_angle.has_value())
+    if (m_dims.entered_edge_angle().has_value())
     {
       // Calculate direction based on angle (0 degrees = positive X axis, counterclockwise)
-      double   angle_rad = to_radians(*m_entered_edge_angle);
+      double   angle_rad = to_radians(*m_dims.entered_edge_angle());
       gp_Dir2d constrained_dir(std::cos(angle_rad), std::sin(angle_rad));
 
       // If distance is also constrained, use that
-      if (m_entered_edge_len.has_value())
+      if (m_dims.entered_edge_len().has_value())
         // Use the constrained distance - angle constraint is always enforced
-        final_pt_b = gp_Pnt2d(pt_a).Translated(gp_Vec2d(constrained_dir) * m_entered_edge_len->len);
+        final_pt_b = gp_Pnt2d(pt_a).Translated(gp_Vec2d(constrained_dir) * m_dims.entered_edge_len()->len);
       else
       {
         // Project the mouse point onto the angle-constrained line
@@ -565,9 +532,9 @@ void Sketch::move_line_string_pt_(const ScreenCoords& screen_coords)
       edge.node_idx_b = std::nullopt;
     }
     // Apply distance constraint if set (and angle is not set)
-    else if (m_entered_edge_len.has_value())
+    else if (m_dims.entered_edge_len().has_value())
     {
-      final_pt_b      = gp_Pnt2d(pt_a).Translated(gp_Vec2d(m_entered_edge_len->dir) * m_entered_edge_len->len);
+      final_pt_b      = gp_Pnt2d(pt_a).Translated(gp_Vec2d(m_dims.entered_edge_len()->dir) * m_dims.entered_edge_len()->len);
       edge.node_idx_b = m_nodes.try_get_node_idx_snap(final_pt_b);
     }
     else
@@ -579,62 +546,11 @@ void Sketch::move_line_string_pt_(const ScreenCoords& screen_coords)
     }
 
     double dist = pt_a.Distance(final_pt_b) / m_view.get_dimension_scale();
-    m_ctx.Remove(m_tmp_dim_anno, true);
-    // When angle constraint is active, final_pt_b is the projection of the mouse onto the constrained
-    // line; if the mouse is (nearly) perpendicular to that line, the projection coincides with pt_a.
-    if (unique(pt_a, final_pt_b))
-    {
-      m_tmp_dim_anno = create_distance_annotation(
-          pt_a, final_pt_b, m_pln, m_view.gui().length_dimension_style(), approx_sketch_interior_ref_3d_(),
-          m_topo.dim_classifier_faces().empty() ? nullptr : &m_topo.dim_classifier_faces());
+    m_dims.show_tmp_dim_preview(pt_a, final_pt_b);
+    m_dims.offer_dist_edit_for_segment(pt_a, final_pt_b, dist);
 
-      m_tmp_dim_anno->SetCustomValue(dist);
-      m_ctx.Display(m_tmp_dim_anno, true);
-    }
-    else
-      m_tmp_dim_anno.Nullify();
-
-    if (m_show_dim_input && unique(pt_a, final_pt_b))
-    {
-      gp_Dir2d     edge_dir = get_unit_dir(pt_a, final_pt_b);
-      ScreenCoords spos     = m_view.get_screen_coords(to_3d(m_pln, center_point(pt_a, final_pt_b)));
-
-      auto l = [&, edge_dir](float new_dist, bool is_finial)
-      {
-        m_entered_edge_len = {edge_dir, new_dist * m_view.get_dimension_scale()};
-
-        m_show_dim_input = !is_finial;
-        if (is_finial)
-          on_enter();
-      };
-
-      m_view.gui().set_dist_edit(float(dist), std::move(std::function<void(float, bool)>(l)), spos);
-    }
-
-    if (m_show_angle_input)
-    {
-      ScreenCoords spos = m_view.get_screen_coords(to_3d(m_pln, center_point(pt_a, final_pt_b)));
-
-      // Calculate current angle from pt_a to actual mouse position (pt_b), not constrained position
-      // This ensures we show the actual angle the user is moving to
-      gp_Vec2d vec(pt_a, pt_b);
-      double   current_angle_rad = std::atan2(vec.Y(), vec.X());
-      double   current_angle_deg = to_degrees(current_angle_rad);
-
-      auto l = [&](float new_angle, bool is_finial)
-      {
-        m_entered_edge_angle = new_angle;
-        m_show_angle_input   = !is_finial;
-        // Recalculate the point with the new angle using current mouse position
-        // Get current mouse position from ImGui
-        ScreenCoords current_pos(dvec2(ImGui::GetIO().MousePos.x, ImGui::GetIO().MousePos.y));
-        sketch_pt_move(current_pos);
-      };
-
-      // Use the current mouse angle if angle hasn't been set yet, otherwise use the set angle
-      float angle_to_show = m_entered_edge_angle.has_value() ? float(*m_entered_edge_angle) : float(current_angle_deg);
-      m_view.gui().set_angle_edit(angle_to_show, std::move(std::function<void(float, bool)>(l)), spos);
-    }
+    gp_Vec2d vec(pt_a, pt_b);
+    m_dims.offer_angle_edit_for_segment(pt_a, pt_b, to_degrees(std::atan2(vec.Y(), vec.X())));
 
     if (unique(pt_a, final_pt_b))
       update_edge_shp_(edge, pt_a, final_pt_b);
@@ -802,22 +718,21 @@ void Sketch::add_node_pt_(const ScreenCoords& screen_coords)
       // a sketch edge between the anchor and the new node - only nodes and interior splits matter.
       m_tmp_node_idxs.clear();
       clear_tmps_();
-      m_ctx.Remove(m_tmp_dim_anno, true);
-      m_tmp_dim_anno.Nullify();
+      m_dims.clear_tmp_dim_anno();
       m_nodes.hide_snap_annos();
       update_faces_();
       rec.commit();
     }
   };
 
-  if (m_entered_edge_angle.has_value() && m_tmp_edges.size())
+  if (m_dims.entered_edge_angle().has_value() && m_tmp_edges.size())
   {
     std::optional<gp_Pnt2d> pt_opt = m_view.pt_on_plane(screen_coords, m_pln);
     if (!pt_opt)
       return;
 
     const gp_Pnt2d& pt_a      = m_nodes[m_tmp_edges.back().node_idx_a];
-    double          angle_rad = to_radians(*m_entered_edge_angle);
+    double          angle_rad = to_radians(*m_dims.entered_edge_angle());
     gp_Dir2d        constrained_dir(std::cos(angle_rad), std::sin(angle_rad));
     gp_Vec2d        to_click(pt_opt->X() - pt_a.X(), pt_opt->Y() - pt_a.Y());
     double          dist_along = to_click.Dot(gp_Vec2d(constrained_dir));
@@ -852,10 +767,10 @@ void Sketch::add_node_pt_(const ScreenCoords& screen_coords)
     {
       auto start_rubber_from_anchor = [this](size_t idx_a)
       {
-        m_entered_edge_angle = std::nullopt;
-        m_entered_edge_len   = std::nullopt;
-        m_show_angle_input   = false;
-        m_show_dim_input     = false;
+        m_dims.entered_edge_angle() = std::nullopt;
+        m_dims.entered_edge_len()   = std::nullopt;
+        m_dims.set_show_angle_input(false);
+        m_dims.set_show_dim_input(false);
         m_view.gui().hide_angle_edit();
         m_tmp_edges.push_back({idx_a});
       };
@@ -869,8 +784,7 @@ void Sketch::add_node_pt_(const ScreenCoords& screen_coords)
       const size_t ni = m_nodes.add_new_node(pt, false, true);
       rec.note_curr_node(ni);
       m_topo.split_linear_edges_at_node_if_interior(ni, rec);
-      m_ctx.Remove(m_tmp_dim_anno, true);
-      m_tmp_dim_anno.Nullify();
+      m_dims.clear_tmp_dim_anno();
       m_nodes.hide_snap_annos();
       update_faces_();
       rec.commit();
@@ -1253,122 +1167,6 @@ template <typename Callback> void Sketch::if_edge_pt_valid_(Callback&& callback)
       callback(e, pt_a, *m_last_pt);
 }
 
-void Sketch::check_dimension_seg_(Linestring_type linestring_type)
-{
-  if (!m_entered_edge_len.has_value())
-    return;
-
-  if (m_entered_edge_len->len <= Precision::Confusion())
-    return;
-
-  EZY_ASSERT(m_tmp_edges.size());
-
-  Edge& edge = m_tmp_edges.back();
-  if (edge_from_center_active_() && linestring_type == Linestring_type::Single)
-  {
-    const gp_Pnt2d&                    center = m_nodes[edge.node_idx_a];
-    std::optional<Symmetric_edge_span> span =
-        symmetric_edge_from_center(center, m_entered_edge_len->dir, m_entered_edge_len->len);
-
-    if (span)
-    {
-      edge.node_idx_a = m_nodes.get_node_exact(span->pt_a);
-      update_edge_end_pt_(edge, m_nodes.get_node_exact(span->pt_b));
-      clear_all(m_entered_edge_len);
-      finalize_elm();
-    }
-    return;
-  }
-
-  const gp_Pnt2d& pt_a = m_nodes[edge.node_idx_a];
-  m_last_pt            = gp_Pnt2d(pt_a).Translated(gp_Vec2d(m_entered_edge_len->dir) * m_entered_edge_len->len);
-
-  update_edge_end_pt_(edge, m_nodes.get_node_exact(*m_last_pt));
-
-  EZY_ASSERT(edge.node_idx_b.has_value());
-
-  clear_all(m_entered_edge_len);
-
-  if (linestring_type == Linestring_type::Single)
-    finalize_elm();
-
-  else if (linestring_type == Linestring_type::Two)
-  {
-    switch (m_tmp_edges.size())
-    {
-    case 1:
-      m_entered_edge_angle = std::nullopt;
-      m_show_angle_input   = false;
-      m_view.gui().hide_angle_edit();
-      m_tmp_edges.push_back({*edge.node_idx_b});
-      break;
-
-    case 2:
-      finalize_elm();
-      break;
-
-    default:
-      EZY_ASSERT(false);
-    }
-  }
-  else
-  {
-    // Next segment must not inherit the previous angle constraint
-    m_entered_edge_angle = std::nullopt;
-    m_show_angle_input   = false;
-    m_view.gui().hide_angle_edit();
-    m_tmp_edges.push_back({*edge.node_idx_b});
-  }
-}
-
-void Sketch::check_dimension_rubber_()
-{
-  if (!m_entered_edge_len.has_value())
-    return;
-
-  if (m_entered_edge_len->len <= Precision::Confusion())
-    return;
-
-  if (m_tmp_edges.empty())
-    return;
-
-  Edge&           edge = m_tmp_edges.back();
-  const gp_Pnt2d& pt_a = m_nodes[edge.node_idx_a];
-  m_last_pt            = gp_Pnt2d(pt_a).Translated(gp_Vec2d(m_entered_edge_len->dir) * m_entered_edge_len->len);
-
-  if (!unique(pt_a, *m_last_pt))
-    return;
-
-  const Mode mode = get_mode();
-  if (mode == Mode::Sketch_add_square || mode == Mode::Sketch_add_circle || mode == Mode::Sketch_add_rectangle ||
-      mode == Mode::Sketch_add_rectangle_center_pt)
-  {
-    update_edge_end_pt_(edge, m_nodes.get_node_exact(*m_last_pt));
-    EZY_ASSERT(edge.node_idx_b.has_value());
-    clear_all(m_entered_edge_len);
-    finalize_elm();
-    return;
-  }
-
-  EZY_ASSERT(mode == Mode::Sketch_add_node);
-  const size_t b = m_nodes.get_node_exact(*m_last_pt, true);
-  clear_all(m_entered_edge_len);
-
-  Sketch_op_recorder rec(m_view, *this);
-  {
-    rec.note_curr_node(b);
-    m_topo.split_linear_edges_at_node_if_interior(b, rec);
-
-    m_tmp_node_idxs.clear();
-    clear_tmps_();
-    m_ctx.Remove(m_tmp_dim_anno, true);
-    m_tmp_dim_anno.Nullify();
-    m_nodes.hide_snap_annos();
-    update_faces_();
-    rec.commit();
-  }
-}
-
 void Sketch::finalize_add_node_elm_cleanup_()
 {
   if (!m_tmp_edges.empty() && !m_tmp_edges.back().node_idx_b.has_value())
@@ -1561,247 +1359,80 @@ std::list<Sketch::Edge>::iterator Sketch::get_edge_at_(const ScreenCoords& scree
 
   return m_edges.end();
 }
+bool Sketch::try_remove_length_dimension(PrsDim_LengthDimension* dim) { return m_dims.try_remove_length_dimension(dim); }
 
-void Sketch::clear_len_dim_rubber_line_()
-{
-  if (m_len_dim_rubber_shp)
-  {
-    m_ctx.Remove(m_len_dim_rubber_shp, false);
-    m_len_dim_rubber_shp.Nullify();
-  }
-}
-
-void Sketch::clear_len_dim_pick_state_()
-{
-  m_len_dim_pick_anchor_node.reset();
-  clear_len_dim_rubber_line_();
-}
-
-void Sketch::update_len_dim_rubber_line_(const ScreenCoords& screen_coords)
-{
-  if (!m_len_dim_pick_anchor_node.has_value())
-  {
-    clear_len_dim_rubber_line_();
-    return;
-  }
-
-  const gp_Pnt2d&         pt_a   = m_nodes[*m_len_dim_pick_anchor_node];
-  std::optional<gp_Pnt2d> pt_opt = m_view.pt_on_plane(screen_coords, m_pln);
-  if (!pt_opt)
-    return;
-
-  gp_Pnt2d pt_b = *pt_opt;
-  (void)m_nodes.try_get_node_idx_snap(pt_b);
-
-  if (!unique(pt_a, pt_b))
-  {
-    clear_len_dim_rubber_line_();
-    return;
-  }
-
-  const TopoDS_Shape edge_shape = BRepBuilderAPI_MakeEdge(to_3d(m_pln, pt_a), to_3d(m_pln, pt_b)).Edge();
-
-  if (m_len_dim_rubber_shp)
-  {
-    m_len_dim_rubber_shp->Set(edge_shape);
-    update_edge_style_(m_len_dim_rubber_shp);
-    m_ctx.Redisplay(m_len_dim_rubber_shp, true);
-  }
-  else
-  {
-    m_len_dim_rubber_shp = new AIS_Shape(edge_shape);
-    update_edge_style_(m_len_dim_rubber_shp);
-    m_ctx.Display(m_len_dim_rubber_shp, AIS_WireFrame, 0, true);
-  }
-}
-
-std::optional<gp_Pnt> Sketch::approx_sketch_interior_ref_3d_() const
-{
-  gp_XYZ acc(0., 0., 0.);
-  size_t n = 0;
-  for (size_t i = 0; i < m_nodes.size(); ++i)
-  {
-    if (m_nodes[i].deleted)
-      continue;
-
-    acc += to_3d_(i).XYZ();
-    ++n;
-  }
-  if (n == 0)
-    return std::nullopt;
-
-  return gp_Pnt(acc / static_cast<double>(n));
-}
-
-void Sketch::rebuild_length_dimension_display_(Length_dimension& d)
-{
-  if (!d.dim.IsNull())
-    m_ctx.Remove(d.dim, false);
-
-  d.dim = create_distance_annotation(m_nodes[d.node_idx_lo], m_nodes[d.node_idx_hi], m_pln,
-                                     m_view.gui().length_dimension_style(), approx_sketch_interior_ref_3d_(),
-                                     m_topo.dim_classifier_faces().empty() ? nullptr : &m_topo.dim_classifier_faces());
-
-  const double dist = m_nodes[d.node_idx_lo].Distance(m_nodes[d.node_idx_hi]);
-  d.dim->SetCustomValue(dist / m_view.get_dimension_scale());
-  if (d.flyout_offset.has_value() && *d.flyout_offset > 0.0)
-  {
-    const double f    = d.dim->GetFlyout();
-    const double sign = f < 0.0 ? -1.0 : 1.0;
-    d.dim->SetFlyout(static_cast<double>(sign * *d.flyout_offset));
-  }
-
-  if (m_visible && m_show_dims && d.visible)
-    m_ctx.Display(d.dim, false);
-}
-
-void Sketch::purge_stale_length_dimensions_()
-{
-  for (auto it = m_length_dimensions.begin(); it != m_length_dimensions.end();)
-  {
-    const bool bad = it->node_idx_lo >= m_nodes.size() || it->node_idx_hi >= m_nodes.size() ||
-                     m_nodes[it->node_idx_lo].deleted || m_nodes[it->node_idx_hi].deleted;
-    if (bad)
-    {
-      if (!it->dim.IsNull())
-        m_ctx.Remove(it->dim, true);
-
-      it = m_length_dimensions.erase(it);
-    }
-    else
-      ++it;
-  }
-}
-
-void Sketch::refresh_all_length_dimensions_()
-{
-  for (Length_dimension& d : m_length_dimensions)
-    rebuild_length_dimension_display_(d);
-}
-
-void Sketch::remove_length_dimensions_referencing_node_(size_t node_idx)
-{
-  for (auto it = m_length_dimensions.begin(); it != m_length_dimensions.end();)
-    if (it->node_idx_lo == node_idx || it->node_idx_hi == node_idx)
-    {
-      if (!it->dim.IsNull())
-        m_ctx.Remove(it->dim, true);
-
-      it = m_length_dimensions.erase(it);
-    }
-    else
-      ++it;
-}
-
-void Sketch::add_or_toggle_length_dim_between_node_indices_(size_t node_a, size_t node_b)
-{
-  const size_t lo = std::min(node_a, node_b);
-  const size_t hi = std::max(node_a, node_b);
-  if (lo == hi)
-    return;
-
-  for (auto it = m_length_dimensions.begin(); it != m_length_dimensions.end(); ++it)
-    if (it->node_idx_lo == lo && it->node_idx_hi == hi)
-    {
-      Sketch_op_recorder rec(m_view, *this);
-      rec.note_prev_length_dim(lo, hi, it->visible, it->flyout_offset, it->name);
-      if (!it->dim.IsNull())
-        m_ctx.Remove(it->dim, true);
-
-      m_length_dimensions.erase(it);
-      rec.commit();
-      return;
-    }
-
-  Sketch_op_recorder rec(m_view, *this);
-  {
-    Length_dimension d;
-    d.node_idx_lo = lo;
-    d.node_idx_hi = hi;
-    m_length_dimensions.push_back(std::move(d));
-    rebuild_length_dimension_display_(m_length_dimensions.back());
-    rec.note_curr_length_dim(lo, hi, m_length_dimensions.back().visible, m_length_dimensions.back().flyout_offset,
-                             m_length_dimensions.back().name);
-    rec.commit();
-  }
-}
+void Sketch::toggle_edge_dim_anno(const ScreenCoords& screen_coords) { m_dims.toggle_edge_dim_anno(screen_coords); }
 
 void Sketch::json_add_length_dimension_(size_t node_a, size_t node_b, const bool visible,
                                         const std::optional<double> flyout_offset, const std::string& name)
 {
-  const size_t lo = std::min(node_a, node_b);
-  const size_t hi = std::max(node_a, node_b);
-  if (lo == hi)
-    return;
-
-  for (const Length_dimension& x : m_length_dimensions)
-    if (x.node_idx_lo == lo && x.node_idx_hi == hi)
-      return;
-
-  Length_dimension d;
-  d.node_idx_lo   = lo;
-  d.node_idx_hi   = hi;
-  d.visible       = visible;
-  d.flyout_offset = flyout_offset;
-  d.name          = name;
-  m_length_dimensions.push_back(std::move(d));
-  rebuild_length_dimension_display_(m_length_dimensions.back());
+  m_dims.json_add_length_dimension_(node_a, node_b, visible, flyout_offset, name);
 }
 
-bool Sketch::try_remove_length_dimension(PrsDim_LengthDimension* dim)
+void Sketch::remove_length_dimensions_referencing_node_(size_t node_idx)
 {
-  if (!dim)
-    return false;
-
-  for (auto it = m_length_dimensions.begin(); it != m_length_dimensions.end(); ++it)
-    if (it->dim.get() == dim)
-    {
-      m_ctx.Remove(it->dim, true);
-      m_length_dimensions.erase(it);
-      return true;
-    }
-
-  return false;
+  m_dims.remove_length_dimensions_referencing_node_(node_idx);
 }
 
-void Sketch::toggle_edge_dim_anno(const ScreenCoords& screen_coords)
+void Sketch::set_show_dims(bool show) { m_dims.set_show_dims(show); }
+
+bool Sketch::shows_dimensions() const { return m_dims.shows_dimensions(); }
+
+bool Sketch::dimension_visible(size_t dim_index) const { return m_dims.dimension_visible(dim_index); }
+
+void Sketch::set_dimension_visible(size_t dim_index, bool visible) { m_dims.set_dimension_visible(dim_index, visible); }
+
+size_t Sketch::dimension_node_lo(size_t dim_index) const { return m_dims.dimension_node_lo(dim_index); }
+
+size_t Sketch::dimension_node_hi(size_t dim_index) const { return m_dims.dimension_node_hi(dim_index); }
+
+double Sketch::dimension_offset(size_t dim_index) const { return m_dims.dimension_offset(dim_index); }
+
+void Sketch::set_dimension_offset(size_t dim_index, const double offset) { m_dims.set_dimension_offset(dim_index, offset); }
+
+std::string Sketch::dimension_name(size_t dim_index) const { return m_dims.dimension_name(dim_index); }
+
+void Sketch::set_dimension_name(size_t dim_index, const std::string& name) { m_dims.set_dimension_name(dim_index, name); }
+
+PrsDim_LengthDimension_ptr Sketch::length_dimension_handle(const size_t dim_index) const
 {
-  if (std::optional<size_t> n = m_nodes.try_pick_existing_node(screen_coords))
+  return m_dims.length_dimension_handle(dim_index);
+}
+
+void Sketch::refresh_annotations(const Sketch_annotation_refresh& refresh)
+{
+  if (refresh.length_dimensions)
+    m_dims.refresh_all_length_dimensions();
+
+  if (refresh.permanent_node_marks)
+    sync_permanent_node_annos_();
+}
+
+size_t Sketch::length_dimension_count() const { return m_dims.length_dimension_count(); }
+
+std::vector<std::string> Sketch::inspector_dimension_labels() const { return m_dims.inspector_dimension_labels(); }
+
+std::vector<std::string> Sketch::inspector_node_labels() const
+{
+  std::vector<std::string> labels;
+  for (size_t i = 0; i < m_nodes.size(); ++i)
   {
-    if (!m_len_dim_pick_anchor_node.has_value())
+    const Sketch_nodes::Node& n = m_nodes[i];
+    if (n.permanent && !n.deleted)
     {
-      m_len_dim_pick_anchor_node = *n;
-      update_len_dim_rubber_line_(screen_coords);
-      return;
+      std::string lbl = n.name.empty() ? ("N" + std::to_string(i)) : n.name;
+      labels.push_back(std::move(lbl));
     }
-
-    if (*m_len_dim_pick_anchor_node != *n)
-      add_or_toggle_length_dim_between_node_indices_(*m_len_dim_pick_anchor_node, *n);
-
-    clear_len_dim_pick_state_();
-    return;
   }
 
-  if (std::list<Edge>::iterator itr = get_edge_at_(screen_coords); itr != m_edges.end())
-    if (!itr->circle_arc && itr->node_idx_b.has_value() && !itr->node_idx_arc.has_value())
-    {
-      add_or_toggle_length_dim_between_node_indices_(itr->node_idx_a, *itr->node_idx_b);
-      clear_len_dim_pick_state_();
-      return;
-    }
-
-  clear_len_dim_pick_state_();
+  return labels;
 }
 
 void Sketch::finalize_elm()
 {
   Sketch_op_recorder rec(m_view, *this);
   {
-    m_show_dim_input     = false;
-    m_show_angle_input   = false;
-    m_entered_edge_angle = std::nullopt;
-    m_view.gui().hide_angle_edit();
-    m_ctx.Remove(m_tmp_dim_anno, true);
+    m_dims.on_finalize_elm_start();
 
     switch (get_mode())
     {
@@ -1835,8 +1466,8 @@ void Sketch::finalize_elm()
 bool Sketch::cancel_elm()
 {
   bool operation_canceled = clear_tmps_();
-  clear_len_dim_pick_state_();
-  m_ctx.Remove(m_tmp_dim_anno, true);
+  m_dims.clear_pick_state();
+  m_dims.clear_tmp_dim_anno();
   m_nodes.hide_snap_annos();
   m_nodes.cancel();
 
@@ -1844,7 +1475,6 @@ bool Sketch::cancel_elm()
 
   return operation_canceled;
 }
-
 bool Sketch::s_add_mid_pt_edges = false;
 bool Sketch::s_edge_from_center = false;
 
@@ -1943,8 +1573,8 @@ bool Sketch::clear_tmps_()
   }
 
   bool operation_canceled = m_tmp_edges.size();
-  clear_all(m_tmp_node_idxs, m_tmp_shp, m_tmp_edges, m_entered_edge_len, m_show_dim_input, m_entered_edge_angle,
-            m_show_angle_input);
+  clear_all(m_tmp_node_idxs, m_tmp_shp, m_tmp_edges);
+  m_dims.on_clear_tmps();
 
   return operation_canceled;
 }
@@ -2027,7 +1657,6 @@ void Sketch::get_originating_face_snp_pts_3d_(std::vector<gp_Pnt>& out)
 
   append(out, snp_pts);
 }
-
 void Sketch::set_visible(bool state)
 {
   m_visible = state;
@@ -2041,13 +1670,7 @@ void Sketch::set_visible(bool state)
     for (Edge& e : m_edges)
       m_ctx.Display(e.shp, AIS_WireFrame, 0, false);
 
-    if (m_len_dim_rubber_shp && m_len_dim_pick_anchor_node.has_value())
-      m_ctx.Display(m_len_dim_rubber_shp, AIS_WireFrame, 0, false);
-
-    if (m_show_dims)
-      for (Length_dimension& ld : m_length_dimensions)
-        if (!ld.dim.IsNull() && ld.visible)
-          m_ctx.Display(ld.dim, false);
+    m_dims.on_sketch_shown();
 
     if (m_originating_face)
       m_ctx.Display(m_originating_face, AIS_WireFrame, 0, false);
@@ -2066,16 +1689,13 @@ void Sketch::set_visible(bool state)
     for (Edge& e : m_edges)
       m_ctx.Erase(e.shp, false);
 
-    for (Length_dimension& ld : m_length_dimensions)
-      if (!ld.dim.IsNull())
-        m_ctx.Erase(ld.dim, false);
+    m_dims.on_sketch_hidden();
 
     if (m_originating_face)
       m_ctx.Erase(m_originating_face, false);
 
     m_underlay.ctx_erase();
 
-    // Hide operation axis when sketch becomes invisible
     if (m_operation_axis.has_value())
       m_ctx.Erase(m_operation_axis->shp, false);
 
@@ -2087,7 +1707,6 @@ void Sketch::set_visible(bool state)
 
   m_ctx.UpdateCurrentViewer();
 
-  // Call to update outside sketch snap points.
   m_view.curr_sketch().set_current();
 }
 
@@ -2114,100 +1733,6 @@ void Sketch::set_show_edges(bool show)
     for (Edge& e : m_edges)
       m_ctx.Erase(e.shp, false);
 }
-
-void Sketch::set_show_dims(bool show)
-{
-  m_show_dims = show;
-  if (show && m_visible)
-  {
-    for (Length_dimension& ld : m_length_dimensions)
-      if (!ld.dim.IsNull() && ld.visible)
-        m_ctx.Display(ld.dim, false);
-  }
-  else
-  {
-    for (Length_dimension& ld : m_length_dimensions)
-      if (!ld.dim.IsNull())
-        m_ctx.Erase(ld.dim, false);
-  }
-}
-
-bool Sketch::shows_dimensions() const { return m_show_dims; }
-
-bool Sketch::dimension_visible(size_t dim_index) const
-{
-  EZY_ASSERT(dim_index < m_length_dimensions.size());
-  return m_length_dimensions[dim_index].visible;
-}
-
-void Sketch::set_dimension_visible(size_t dim_index, bool visible)
-{
-  EZY_ASSERT(dim_index < m_length_dimensions.size());
-  Length_dimension& d = m_length_dimensions[dim_index];
-  if (d.visible == visible)
-    return;
-
-  d.visible = visible;
-  if (!d.dim.IsNull())
-  {
-    if (visible && m_visible && m_show_dims)
-      m_ctx.Display(d.dim, false);
-    else
-      m_ctx.Erase(d.dim, false);
-  }
-}
-
-size_t Sketch::dimension_node_lo(size_t dim_index) const
-{
-  EZY_ASSERT(dim_index < m_length_dimensions.size());
-  return m_length_dimensions[dim_index].node_idx_lo;
-}
-
-size_t Sketch::dimension_node_hi(size_t dim_index) const
-{
-  EZY_ASSERT(dim_index < m_length_dimensions.size());
-  return m_length_dimensions[dim_index].node_idx_hi;
-}
-
-double Sketch::dimension_offset(size_t dim_index) const
-{
-  EZY_ASSERT(dim_index < m_length_dimensions.size());
-  const Length_dimension& d = m_length_dimensions[dim_index];
-  if (d.flyout_offset.has_value())
-    return *d.flyout_offset;
-
-  if (!d.dim.IsNull())
-    return std::abs(static_cast<double>(d.dim->GetFlyout()));
-
-  return 0.0;
-}
-
-void Sketch::set_dimension_offset(size_t dim_index, const double offset)
-{
-  EZY_ASSERT(dim_index < m_length_dimensions.size());
-  Length_dimension& d = m_length_dimensions[dim_index];
-
-  const double off = std::max(0.0, offset);
-  if (off <= 0.0)
-    d.flyout_offset.reset();
-  else
-    d.flyout_offset = off;
-
-  rebuild_length_dimension_display_(d);
-}
-
-std::string Sketch::dimension_name(size_t dim_index) const
-{
-  EZY_ASSERT(dim_index < m_length_dimensions.size());
-  return m_length_dimensions[dim_index].name;
-}
-
-PrsDim_LengthDimension_ptr Sketch::length_dimension_handle(const size_t dim_index) const
-{
-  EZY_ASSERT(dim_index < m_length_dimensions.size());
-  return m_length_dimensions[dim_index].dim;
-}
-
 void Sketch::append_list_hover_ais(std::vector<AIS_InteractiveObject_ptr>& out) const
 {
   if (!m_visible)
@@ -2231,27 +1756,6 @@ void Sketch::append_list_hover_ais(std::vector<AIS_InteractiveObject_ptr>& out) 
   if (m_underlay.has_image() && m_underlay.visible())
     m_underlay.append_list_hover_ais(out);
 }
-
-void Sketch::set_dimension_name(size_t dim_index, const std::string& name)
-{
-  EZY_ASSERT(dim_index < m_length_dimensions.size());
-  Length_dimension& d = m_length_dimensions[dim_index];
-  if (d.name == name)
-    return;
-
-  d.name = name;
-  // name is only used in Sketch List inspector; no 3D annotation update needed
-}
-
-void Sketch::refresh_annotations(const Sketch_annotation_refresh& refresh)
-{
-  if (refresh.length_dimensions)
-    refresh_all_length_dimensions_();
-
-  if (refresh.permanent_node_marks)
-    sync_permanent_node_annos_();
-}
-
 bool Sketch::is_current() const { return this == &m_view.curr_sketch(); }
 
 void Sketch::set_current()
@@ -2321,8 +1825,6 @@ size_t Sketch::edge_count() const { return m_edges.size(); }
 
 size_t Sketch::face_count() const { return m_topo.faces().size(); }
 
-size_t Sketch::length_dimension_count() const { return m_length_dimensions.size(); }
-
 std::vector<std::string> Sketch::inspector_edge_labels() const
 {
   std::vector<std::string> labels;
@@ -2347,36 +1849,6 @@ std::vector<std::string> Sketch::inspector_face_labels() const
     const Sketch_face_shp_ptr& f   = m_topo.faces()[i];
     std::string                lbl = (f && !f->name.empty()) ? f->name : ("F" + std::to_string(i));
     labels.push_back(std::move(lbl));
-  }
-
-  return labels;
-}
-
-std::vector<std::string> Sketch::inspector_dimension_labels() const
-{
-  std::vector<std::string> labels;
-  labels.reserve(m_length_dimensions.size());
-  for (size_t i = 0; i < m_length_dimensions.size(); ++i)
-  {
-    const Length_dimension& d   = m_length_dimensions[i];
-    std::string             lbl = d.name.empty() ? ("D" + std::to_string(i)) : d.name;
-    labels.push_back(std::move(lbl));
-  }
-
-  return labels;
-}
-
-std::vector<std::string> Sketch::inspector_node_labels() const
-{
-  std::vector<std::string> labels;
-  for (size_t i = 0; i < m_nodes.size(); ++i)
-  {
-    const Sketch_nodes::Node& n = m_nodes[i];
-    if (n.permanent && !n.deleted)
-    {
-      std::string lbl = n.name.empty() ? ("N" + std::to_string(i)) : n.name;
-      labels.push_back(std::move(lbl));
-    }
   }
 
   return labels;
