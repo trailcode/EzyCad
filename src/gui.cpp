@@ -1746,8 +1746,6 @@ void GUI::cancel_underlay_calib_()
   m_underlay_calib_phase = Underlay_calib_phase::None;
 
   m_underlay_calib_sketch_wk.reset();
-
-  m_underlay_calib_axis_u = gp_Vec2d(0., 0.);
 }
 
 void GUI::force_underlay_orthogonal_(const Sketch::sptr& sk)
@@ -1861,7 +1859,6 @@ void GUI::underlay_calib_prompt_x_distance_(const Sketch::sptr& sk)
       return;
     }
 
-    m_underlay_calib_axis_u = s->underlay().axis_u_vec();
     s->underlay().ui_params(m_underlay_center.x, m_underlay_center.y, m_underlay_half_extents.x, m_underlay_half_extents.y,
                             m_underlay_rot);
 

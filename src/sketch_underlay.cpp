@@ -37,30 +37,19 @@ public:
 
   [[nodiscard]] bool has_image() const;
 
-  [[nodiscard]] bool set_image_rgba(std::vector<uint8_t>&& rgba, int w, int h, Ezy_asset_store& store);
-
-  void set_affine(const gp_Pnt2d& base, const gp_Vec2d& axis_u, const gp_Vec2d& axis_v);
-  void set_center_extents_rotation(const glm::dvec2& center, const glm::dvec2& half_extents, double rot_deg);
-  void set_opacity(float opaque01);
-  void set_visible(bool v);
   void set_key_white_transparent(bool on);
 
   void set_line_tint_enabled(bool on);
-  void set_line_tint_rgb(uint8_t r, uint8_t g, uint8_t b);
   void set_line_tint_rgba(uint8_t r, uint8_t g, uint8_t b, uint8_t a);
 
-  void line_tint_rgb(uint8_t& r, uint8_t& g, uint8_t& b) const;
   void line_tint_rgba(uint8_t& r, uint8_t& g, uint8_t& b, uint8_t& a) const;
 
-  [[nodiscard]] bool     key_white_transparent() const;
-  [[nodiscard]] bool     line_tint_enabled() const;
-  [[nodiscard]] float    opacity() const;
-  [[nodiscard]] bool     visible() const;
-  [[nodiscard]] gp_Pnt2d base() const;
-  [[nodiscard]] gp_Vec2d axis_u() const;
-  [[nodiscard]] gp_Vec2d axis_v() const;
-  [[nodiscard]] int      image_w() const;
-  [[nodiscard]] int      image_h() const;
+  [[nodiscard]] bool  key_white_transparent() const;
+  [[nodiscard]] bool  line_tint_enabled() const;
+  [[nodiscard]] float opacity() const;
+  [[nodiscard]] bool  visible() const;
+  [[nodiscard]] int   image_w() const;
+  [[nodiscard]] int   image_h() const;
 
   void               set_raw_shear_display(bool on);
   [[nodiscard]] bool raw_shear_display() const;
@@ -80,7 +69,6 @@ public:
                                                  bool sketch_shown);
   [[nodiscard]] bool rescale_v_chord_to_length_(const gp_Pnt2d& y0, const gp_Pnt2d& y1, double target_len, const gp_Pln& pln,
                                                 bool sketch_shown);
-  [[nodiscard]] gp_Vec2d axis_u_vec_() const;
 
   [[nodiscard]] bool load_from_file_bytes(const std::string& file_bytes, Ezy_asset_store& store, uint8_t tint_r, uint8_t tint_g,
                                           uint8_t tint_b, uint8_t tint_a, const gp_Pln& pln, bool sketch_shown);
@@ -94,9 +82,6 @@ public:
 
   void rebuild_and_display(const gp_Pln& pln);
   void ctx_erase();
-  void clear();
-  void sync_visibility(const gp_Pln& pln);
-  void redisplay();
 
   void append_list_hover_ais(std::vector<opencascade::handle<AIS_InteractiveObject>>& out) const;
 
@@ -107,13 +92,21 @@ private:
   static constexpr int         k_max_image_dim  = 8192;
   static constexpr std::size_t k_max_rgba_bytes = 64u * 1024u * 1024u; // 64 MiB safety cap
 
-  static std::string base64_encode_(const uint8_t* data, std::size_t len);
-  static int         from_base64_char_(char c);
-  static bool        base64_decode_(const std::string& in, std::vector<uint8_t>& out);
-  static unsigned    luminance_u8_(uint8_t r, uint8_t g, uint8_t b);
-  static void        apply_key_and_tint_(uint8_t& r, uint8_t& g, uint8_t& b, uint8_t& a, bool key_white_transparent,
-                                         bool line_tint_enabled, uint8_t tr, uint8_t tg, uint8_t tb, uint8_t ta);
-  static void        sample_rgba_bilinear_(const uint8_t* rgba, int w, int h, double xf, double yf, uint8_t out[4]);
+  [[nodiscard]] bool set_image_rgba_(std::vector<uint8_t>&& rgba, int w, int h, Ezy_asset_store& store);
+  void               set_affine_(const gp_Pnt2d& base, const gp_Vec2d& axis_u, const gp_Vec2d& axis_v);
+  void               set_center_extents_rotation_(const glm::dvec2& center, const glm::dvec2& half_extents, double rot_deg);
+  void               set_opacity_(float opaque01);
+  void               set_visible_(bool v);
+  void               clear_();
+  void               sync_visibility_(const gp_Pln& pln);
+  void               redisplay_();
+
+  static int      from_base64_char_(char c);
+  static bool     base64_decode_(const std::string& in, std::vector<uint8_t>& out);
+  static unsigned luminance_u8_(uint8_t r, uint8_t g, uint8_t b);
+  static void     apply_key_and_tint_(uint8_t& r, uint8_t& g, uint8_t& b, uint8_t& a, bool key_white_transparent,
+                                      bool line_tint_enabled, uint8_t tr, uint8_t tg, uint8_t tb, uint8_t ta);
+  static void     sample_rgba_bilinear_(const uint8_t* rgba, int w, int h, double xf, double yf, uint8_t out[4]);
   static Handle(Image_PixMap)
       make_pixmap_bottom_up_linear_(const uint8_t* rgba, int w, int h, bool key_white_transparent, bool line_tint_enabled,
                                     uint8_t tr, uint8_t tg, uint8_t tb, uint8_t ta);
@@ -153,27 +146,6 @@ private:
   opencascade::handle<AIS_TexturedShape> m_ais;
   opencascade::handle<AIS_Shape>         m_border;
 };
-
-std::string Sketch_underlay::Impl::base64_encode_(const uint8_t* data, std::size_t len)
-{
-  static const char tbl[] = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
-  std::string       out;
-  out.reserve(((len + 2) / 3) * 4);
-  for (std::size_t i = 0; i < len; i += 3)
-  {
-    const std::size_t n      = len - i;
-    const unsigned    b0     = data[i];
-    const unsigned    b1     = n > 1 ? data[i + 1] : 0u;
-    const unsigned    b2     = n > 2 ? data[i + 2] : 0u;
-    const unsigned    triple = (b0 << 16) | (b1 << 8) | b2;
-    out.push_back(tbl[(triple >> 18) & 63]);
-    out.push_back(tbl[(triple >> 12) & 63]);
-    out.push_back(n > 1 ? tbl[(triple >> 6) & 63] : '=');
-    out.push_back(n > 2 ? tbl[triple & 63] : '=');
-  }
-
-  return out;
-}
 
 int Sketch_underlay::Impl::from_base64_char_(char c)
 {
@@ -423,22 +395,19 @@ Sketch_underlay::Impl::Impl(AIS_InteractiveContext& ctx)
 
 bool Sketch_underlay::Impl::has_image() const { return m_rgba && !m_rgba->empty() && m_w > 0 && m_h > 0; }
 
-bool     Sketch_underlay::Impl::key_white_transparent() const { return m_key_white_transparent; }
-bool     Sketch_underlay::Impl::line_tint_enabled() const { return m_line_tint_enabled; }
-float    Sketch_underlay::Impl::opacity() const { return m_opacity; }
-bool     Sketch_underlay::Impl::visible() const { return m_visible; }
-gp_Pnt2d Sketch_underlay::Impl::base() const { return m_base; }
-gp_Vec2d Sketch_underlay::Impl::axis_u() const { return m_axis_u; }
-gp_Vec2d Sketch_underlay::Impl::axis_v() const { return m_axis_v; }
-int      Sketch_underlay::Impl::image_w() const { return m_w; }
-int      Sketch_underlay::Impl::image_h() const { return m_h; }
-bool     Sketch_underlay::Impl::raw_shear_display() const { return m_raw_shear_display; }
-void     Sketch_underlay::Impl::set_flip_image_u(bool on) { m_flip_image_u = on; }
-void     Sketch_underlay::Impl::set_flip_image_v(bool on) { m_flip_image_v = on; }
-bool     Sketch_underlay::Impl::flip_image_u() const { return m_flip_image_u; }
-bool     Sketch_underlay::Impl::flip_image_v() const { return m_flip_image_v; }
+bool  Sketch_underlay::Impl::key_white_transparent() const { return m_key_white_transparent; }
+bool  Sketch_underlay::Impl::line_tint_enabled() const { return m_line_tint_enabled; }
+float Sketch_underlay::Impl::opacity() const { return m_opacity; }
+bool  Sketch_underlay::Impl::visible() const { return m_visible; }
+int   Sketch_underlay::Impl::image_w() const { return m_w; }
+int   Sketch_underlay::Impl::image_h() const { return m_h; }
+bool  Sketch_underlay::Impl::raw_shear_display() const { return m_raw_shear_display; }
+void  Sketch_underlay::Impl::set_flip_image_u(bool on) { m_flip_image_u = on; }
+void  Sketch_underlay::Impl::set_flip_image_v(bool on) { m_flip_image_v = on; }
+bool  Sketch_underlay::Impl::flip_image_u() const { return m_flip_image_u; }
+bool  Sketch_underlay::Impl::flip_image_v() const { return m_flip_image_v; }
 
-bool Sketch_underlay::Impl::set_image_rgba(std::vector<uint8_t>&& rgba, int w, int h, Ezy_asset_store& store)
+bool Sketch_underlay::Impl::set_image_rgba_(std::vector<uint8_t>&& rgba, int w, int h, Ezy_asset_store& store)
 {
   if (w <= 0 || h <= 0 || rgba.size() < static_cast<std::size_t>(w) * static_cast<std::size_t>(h) * 4u)
     return false;
@@ -463,14 +432,14 @@ bool Sketch_underlay::Impl::set_image_rgba(std::vector<uint8_t>&& rgba, int w, i
   return true;
 }
 
-void Sketch_underlay::Impl::set_affine(const gp_Pnt2d& base, const gp_Vec2d& axis_u, const gp_Vec2d& axis_v)
+void Sketch_underlay::Impl::set_affine_(const gp_Pnt2d& base, const gp_Vec2d& axis_u, const gp_Vec2d& axis_v)
 {
   m_base   = base;
   m_axis_u = axis_u;
   m_axis_v = axis_v;
 }
 
-void Sketch_underlay::Impl::set_center_extents_rotation(const dvec2& center, const dvec2& half_extents, double rot_deg)
+void Sketch_underlay::Impl::set_center_extents_rotation_(const dvec2& center, const dvec2& half_extents, double rot_deg)
 {
   if (!has_image())
     return;
@@ -492,10 +461,10 @@ void Sketch_underlay::Impl::set_center_extents_rotation(const dvec2& center, con
   const gp_Vec2d axis_v(-2.0 * half_h * s, 2.0 * half_h * c);
   const gp_Pnt2d base(center.x - 0.5 * (axis_u.X() + axis_v.X()), center.y - 0.5 * (axis_u.Y() + axis_v.Y()));
 
-  set_affine(base, axis_u, axis_v);
+  set_affine_(base, axis_u, axis_v);
 }
 
-void Sketch_underlay::Impl::set_opacity(float opaque01)
+void Sketch_underlay::Impl::set_opacity_(float opaque01)
 {
   if (opaque01 < 0.f)
     opaque01 = 0.f;
@@ -508,18 +477,11 @@ void Sketch_underlay::Impl::set_opacity(float opaque01)
     m_ais->SetTransparency(1.0 - static_cast<double>(m_opacity));
 }
 
-void Sketch_underlay::Impl::set_visible(bool v) { m_visible = v; }
+void Sketch_underlay::Impl::set_visible_(bool v) { m_visible = v; }
 
 void Sketch_underlay::Impl::set_key_white_transparent(bool on) { m_key_white_transparent = on; }
 
 void Sketch_underlay::Impl::set_line_tint_enabled(bool on) { m_line_tint_enabled = on; }
-
-void Sketch_underlay::Impl::set_line_tint_rgb(uint8_t r, uint8_t g, uint8_t b)
-{
-  m_tint_r = r;
-  m_tint_g = g;
-  m_tint_b = b;
-}
 
 void Sketch_underlay::Impl::set_line_tint_rgba(uint8_t r, uint8_t g, uint8_t b, uint8_t a)
 {
@@ -533,13 +495,6 @@ void Sketch_underlay::Impl::set_raw_shear_display(bool on)
 {
   if (m_raw_shear_display != on)
     m_raw_shear_display = on;
-}
-
-void Sketch_underlay::Impl::line_tint_rgb(uint8_t& r, uint8_t& g, uint8_t& b) const
-{
-  r = m_tint_r;
-  g = m_tint_g;
-  b = m_tint_b;
 }
 
 void Sketch_underlay::Impl::line_tint_rgba(uint8_t& r, uint8_t& g, uint8_t& b, uint8_t& a) const
@@ -598,7 +553,7 @@ void Sketch_underlay::Impl::set_affine_plane_(const gp_Pnt2d& base, const gp_Vec
   if (axis_u.SquareMagnitude() < k_min2 || axis_v.SquareMagnitude() < k_min2)
     return;
 
-  set_affine(base, axis_u, axis_v);
+  set_affine_(base, axis_u, axis_v);
   rebuild_display(pln, sketch_shown);
 }
 
@@ -670,14 +625,6 @@ bool Sketch_underlay::Impl::rescale_v_chord_to_length_(const gp_Pnt2d& y0, const
   return true;
 }
 
-gp_Vec2d Sketch_underlay::Impl::axis_u_vec_() const
-{
-  if (!has_image())
-    return {};
-
-  return m_axis_u;
-}
-
 bool Sketch_underlay::Impl::load_from_file_bytes(const std::string& file_bytes, Ezy_asset_store& store, uint8_t tint_r,
                                                  uint8_t tint_g, uint8_t tint_b, uint8_t tint_a, const gp_Pln& pln,
                                                  bool sketch_shown)
@@ -690,7 +637,7 @@ bool Sketch_underlay::Impl::load_from_file_bytes(const std::string& file_bytes, 
   const int            w    = std::get<1>(*dec);
   const int            h    = std::get<2>(*dec);
 
-  if (!set_image_rgba(std::move(rgba), w, h, store))
+  if (!set_image_rgba_(std::move(rgba), w, h, store))
     return false;
 
   set_line_tint_rgba(tint_r, tint_g, tint_b, tint_a);
@@ -706,7 +653,7 @@ void Sketch_underlay::Impl::clear_and_update()
   if (!has_image())
     return;
 
-  clear();
+  clear_();
   m_ctx.UpdateCurrentViewer();
 }
 
@@ -727,7 +674,7 @@ void Sketch_underlay::Impl::set_center_extents_rotation_display(const dvec2& cen
   if (!has_image())
     return;
 
-  set_center_extents_rotation(center, half_extents, rot_deg);
+  set_center_extents_rotation_(center, half_extents, rot_deg);
   if (sketch_shown)
     rebuild_and_display(pln);
 
@@ -739,8 +686,8 @@ void Sketch_underlay::Impl::set_visible_sync(bool v, const gp_Pln& pln)
   if (!has_image())
     return;
 
-  set_visible(v);
-  sync_visibility(pln);
+  set_visible_(v);
+  sync_visibility_(pln);
   m_ctx.UpdateCurrentViewer();
 }
 
@@ -749,8 +696,8 @@ void Sketch_underlay::Impl::set_opacity_live(float opaque01)
   if (!has_image())
     return;
 
-  set_opacity(opaque01);
-  redisplay();
+  set_opacity_(opaque01);
+  redisplay_();
   m_ctx.UpdateCurrentViewer();
 }
 
@@ -777,7 +724,7 @@ void Sketch_underlay::Impl::ctx_erase()
   }
 }
 
-void Sketch_underlay::Impl::clear()
+void Sketch_underlay::Impl::clear_()
 {
   ctx_erase();
   m_rgba.reset();
@@ -786,7 +733,7 @@ void Sketch_underlay::Impl::clear()
   m_h = 0;
 }
 
-void Sketch_underlay::Impl::sync_visibility(const gp_Pln& pln)
+void Sketch_underlay::Impl::sync_visibility_(const gp_Pln& pln)
 {
   if (!has_image())
     return;
@@ -797,7 +744,7 @@ void Sketch_underlay::Impl::sync_visibility(const gp_Pln& pln)
     ctx_erase();
 }
 
-void Sketch_underlay::Impl::redisplay()
+void Sketch_underlay::Impl::redisplay_()
 {
   if (!m_ais.IsNull())
     m_ctx.Redisplay(m_ais, true);
@@ -1117,34 +1064,11 @@ Sketch_underlay::~Sketch_underlay() = default;
 
 bool Sketch_underlay::has_image() const { return m_impl->has_image(); }
 
-bool Sketch_underlay::set_image_rgba(std::vector<uint8_t>&& rgba, int w, int h, Ezy_asset_store& store)
-{
-  return m_impl->set_image_rgba(std::move(rgba), w, h, store);
-}
-
-void Sketch_underlay::set_affine(const gp_Pnt2d& base, const gp_Vec2d& axis_u, const gp_Vec2d& axis_v)
-{
-  m_impl->set_affine(base, axis_u, axis_v);
-}
-
-void Sketch_underlay::set_center_extents_rotation(const glm::dvec2& center, const glm::dvec2& half_extents, double rot_deg)
-{
-  m_impl->set_center_extents_rotation(center, half_extents, rot_deg);
-}
-
-void Sketch_underlay::set_opacity(float opaque01) { m_impl->set_opacity(opaque01); }
-
-void Sketch_underlay::set_visible(bool v) { m_impl->set_visible(v); }
-
 void Sketch_underlay::set_key_white_transparent(bool on) { m_impl->set_key_white_transparent(on); }
 
 void Sketch_underlay::set_line_tint_enabled(bool on) { m_impl->set_line_tint_enabled(on); }
 
-void Sketch_underlay::set_line_tint_rgb(uint8_t r, uint8_t g, uint8_t b) { m_impl->set_line_tint_rgb(r, g, b); }
-
 void Sketch_underlay::set_line_tint_rgba(uint8_t r, uint8_t g, uint8_t b, uint8_t a) { m_impl->set_line_tint_rgba(r, g, b, a); }
-
-void Sketch_underlay::line_tint_rgb(uint8_t& r, uint8_t& g, uint8_t& b) const { m_impl->line_tint_rgb(r, g, b); }
 
 void Sketch_underlay::line_tint_rgba(uint8_t& r, uint8_t& g, uint8_t& b, uint8_t& a) const
 {
@@ -1158,12 +1082,6 @@ bool Sketch_underlay::line_tint_enabled() const { return m_impl->line_tint_enabl
 float Sketch_underlay::opacity() const { return m_impl->opacity(); }
 
 bool Sketch_underlay::visible() const { return m_impl->visible(); }
-
-gp_Pnt2d Sketch_underlay::base() const { return m_impl->base(); }
-
-gp_Vec2d Sketch_underlay::axis_u() const { return m_impl->axis_u(); }
-
-gp_Vec2d Sketch_underlay::axis_v() const { return m_impl->axis_v(); }
 
 int Sketch_underlay::image_w() const { return m_impl->image_w(); }
 
@@ -1224,8 +1142,6 @@ bool Sketch_underlay::rescale_v_chord_to_length(const gp_Pnt2d& y0, const gp_Pnt
   return m_impl->rescale_v_chord_to_length_(y0, y1, target_len, pln, sketch_shown);
 }
 
-gp_Vec2d Sketch_underlay::axis_u_vec() const { return m_impl->axis_u_vec_(); }
-
 bool Sketch_underlay::load_from_file_bytes(const std::string& file_bytes, Ezy_asset_store& store, uint8_t tint_r,
                                            uint8_t tint_g, uint8_t tint_b, uint8_t tint_a, const gp_Pln& pln, bool sketch_shown)
 {
@@ -1249,12 +1165,6 @@ void Sketch_underlay::set_opacity_live(float opaque01) { m_impl->set_opacity_liv
 void Sketch_underlay::rebuild_and_display(const gp_Pln& pln) { m_impl->rebuild_and_display(pln); }
 
 void Sketch_underlay::ctx_erase() { m_impl->ctx_erase(); }
-
-void Sketch_underlay::clear() { m_impl->clear(); }
-
-void Sketch_underlay::sync_visibility(const gp_Pln& pln) { m_impl->sync_visibility(pln); }
-
-void Sketch_underlay::redisplay() { m_impl->redisplay(); }
 
 void Sketch_underlay::append_list_hover_ais(std::vector<opencascade::handle<AIS_InteractiveObject>>& out) const
 {

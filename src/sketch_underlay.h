@@ -35,22 +35,12 @@ public:
 
   [[nodiscard]] bool has_image() const;
 
-  /// Replace image (RGBA8). Registers pixels in \a store. Sets default axis-aligned rectangle (0.1 unit per pixel).
-  [[nodiscard]] bool set_image_rgba(std::vector<uint8_t>&& rgba, int w, int h, Ezy_asset_store& store);
-
-  void set_affine(const gp_Pnt2d& base, const gp_Vec2d& axis_u, const gp_Vec2d& axis_v);
-  /// Center \a center, half width/height \a half_extents.x/.y, rotation in degrees (matches Sketch UI transform).
-  void set_center_extents_rotation(const glm::dvec2& center, const glm::dvec2& half_extents, double rot_deg);
-  void set_opacity(float opaque01);
-  void set_visible(bool v);
   /// When true (default), bright pixels (white paper) become transparent in the texture; dark linework stays opaque.
   void set_key_white_transparent(bool on);
 
   void set_line_tint_enabled(bool on);
-  void set_line_tint_rgb(uint8_t r, uint8_t g, uint8_t b);
   void set_line_tint_rgba(uint8_t r, uint8_t g, uint8_t b, uint8_t a);
 
-  void line_tint_rgb(uint8_t& r, uint8_t& g, uint8_t& b) const;
   void line_tint_rgba(uint8_t& r, uint8_t& g, uint8_t& b, uint8_t& a) const;
 
   // clang-format off
@@ -59,9 +49,6 @@ public:
   [[nodiscard]] bool     line_tint_enabled()     const;
   [[nodiscard]] float    opacity()               const;
   [[nodiscard]] bool     visible()               const;
-  [[nodiscard]] gp_Pnt2d base()                  const;
-  [[nodiscard]] gp_Vec2d axis_u()                const;
-  [[nodiscard]] gp_Vec2d axis_v()                const;
   [[nodiscard]] int      image_w()               const;
   [[nodiscard]] int      image_h()               const;
 
@@ -90,9 +77,8 @@ public:
   [[nodiscard]] bool rescale_uv_chord_to_length(const gp_Pnt2d& p0, const gp_Pnt2d& p1, double target_len, const gp_Pln& pln,
                                                 bool sketch_shown);
   /// Keep U axis; adjust V and base so segment \a y0-\a y1 has length \a target_len (after X calibration).
-  [[nodiscard]] bool     rescale_v_chord_to_length(const gp_Pnt2d& y0, const gp_Pnt2d& y1, double target_len, const gp_Pln& pln,
-                                                   bool sketch_shown);
-  [[nodiscard]] gp_Vec2d axis_u_vec() const;
+  [[nodiscard]] bool rescale_v_chord_to_length(const gp_Pnt2d& y0, const gp_Pnt2d& y1, double target_len, const gp_Pln& pln,
+                                               bool sketch_shown);
 
   /// Decode PNG/JPEG/BMP bytes, register in \a store, apply line tint, and display when \a sketch_shown.
   [[nodiscard]] bool load_from_file_bytes(const std::string& file_bytes, Ezy_asset_store& store, uint8_t tint_r, uint8_t tint_g,
@@ -108,10 +94,6 @@ public:
 
   void rebuild_and_display(const gp_Pln& pln);
   void ctx_erase();
-  void clear();
-  void sync_visibility(const gp_Pln& pln);
-  /// Force viewer update after live property changes (e.g. threshold) without a full rebuild.
-  void redisplay();
 
   /// Add displayed AIS objects for Sketch List row hover emphasis (image quad and border wire).
   void append_list_hover_ais(std::vector<opencascade::handle<AIS_InteractiveObject>>& out) const;
