@@ -1,26 +1,20 @@
 #include "sketch.h"
 
 #include <BRepBuilderAPI_MakeEdge.hxx>
-#include <BRepPrimAPI_MakeRevol.hxx>
-#include <GC_MakeArcOfCircle.hxx>
-#include <Graphic3d_AspectFillArea3d.hxx>
+#include <BRep_Tool.hxx>
 #include <Precision.hxx>
 #include <PrsDim_LengthDimension.hxx>
+#include <TopExp.hxx>
 #include <TopExp_Explorer.hxx>
 #include <TopoDS.hxx>
 #include <TopoDS_Edge.hxx>
 #include <TopoDS_Wire.hxx>
-#include <V3d_View.hxx>
-#include <cmath>
 #include <functional>
-#include <map>
 
 #include "utl_geom.h"
-#include "gui.h"
 #include "mode.h"
 #include "occt_view.h"
 #include "sketch_delta.h"
-#include "utl_occt.h"
 #include "utl.h"
 
 using namespace glm;
@@ -116,56 +110,6 @@ void Sketch::dbg_append_str(std::string& out) const
   out += "Tmp Edges: " + std::to_string(m_tools.tmp_edge_count()) + "\n";
 }
 
-void Sketch::update_edge_style_(AIS_Shape_ptr& shp)
-{
-  switch (m_edge_style)
-  {
-  case Edge_style::Full:
-    // shp->SetWidth(1.5);
-    shp->SetWidth(1.0);
-    shp->SetColor(Quantity_Color(0.0, 1.0, 0.0, Quantity_TOC_RGB));
-    shp->SetTransparency(0.0);
-
-    break;
-
-  case Edge_style::Background:
-    shp->SetWidth(1.0);
-    shp->SetColor(Quantity_Color(0.3, 0.3, 0.3, Quantity_TOC_RGB));
-    shp->SetTransparency(0.7);
-    break;
-
-  default:
-    EZY_ASSERT(false);
-  }
-}
-
-void Sketch::update_originating_face_style()
-{
-  if (!m_originating_face)
-    return;
-
-  switch (m_edge_style)
-  {
-  case Edge_style::Full:
-    m_originating_face->SetWidth(1.0);
-    m_originating_face->SetColor(Quantity_Color(0.3, 0.0, 0.0, Quantity_TOC_RGB));
-    m_originating_face->SetTransparency(0.0);
-
-    break;
-
-  case Edge_style::Background:
-    m_originating_face->SetWidth(1.0);
-    m_originating_face->SetColor(Quantity_Color(0.3, 0.3, 0.3, Quantity_TOC_RGB));
-    m_originating_face->SetTransparency(0.7);
-    break;
-
-  default:
-    EZY_ASSERT(false);
-  }
-
-  m_ctx.Redisplay(m_originating_face, true);
-}
-
 void Sketch::update_edge_shp_(Edge& edge, const gp_Pnt2d& pt_a, const gp_Pnt2d& pt_b)
 {
   EZY_ASSERT(unique(pt_a, pt_b));
@@ -202,21 +146,6 @@ void Sketch::add_edge_raw_(const gp_Pnt2d& pt_a, const gp_Pnt2d& pt_b) { m_edges
 void Sketch::sketch_json_add_linear_edge_(size_t idx_a, size_t idx_b, std::optional<size_t> idx_mid)
 {
   m_edges.sketch_json_add_linear_edge(idx_a, idx_b, idx_mid);
-}
-
-void Sketch::sketch_json_set_operation_axis_(const gp_Pnt2d& pt_a, const gp_Pnt2d& pt_b)
-{
-  if (!unique(pt_a, pt_b))
-    return;
-
-  clear_operation_axis();
-
-  Edge axis{m_nodes.get_node_exact(pt_a)};
-  axis.node_idx_b = m_nodes.get_node_exact(pt_b);
-  update_edge_shp_(axis, pt_a, pt_b);
-  m_operation_axis = std::move(axis);
-
-  sync_operation_axis_display_();
 }
 
 std::vector<Sketch::Edge> Sketch::get_selected_edges_() const { return m_edges.get_selected(); }
@@ -357,165 +286,12 @@ void Sketch::add_arc_circle_(const gp_Pnt2d& pt_a, const gp_Pnt2d& pt_b, const g
 
 void Sketch::add_arc_circle_(const std::vector<size_t>& node_idxs) { m_edges.add_arc_circle_edges(node_idxs); }
 
-void Sketch::clear_operation_axis()
-{
-  if (m_operation_axis.has_value())
-    m_ctx.Remove(m_operation_axis->shp, false);
-
-  m_operation_axis = std::nullopt;
-  m_node_marks.sync();
-  m_nodes.hide_snap_annos();
-}
-
-bool Sketch::has_operation_axis() const { return m_operation_axis.has_value(); }
-
-void Sketch::mirror_selected_edges()
-{
-  EZY_ASSERT(m_operation_axis.has_value());
-  Sketch_op_recorder rec(m_view, *this);
-
-  const std::vector<Edge> mirror_edges = get_selected_edges_();
-  if (mirror_edges.empty())
-  {
-    rec.cancel();
-    m_view.gui().show_message(ERROR_NO_EDGES_SELECTED);
-    return;
-  }
-
-  EZY_ASSERT(!m_operation_axis->shp.IsNull());
-  const auto [mirror_pt_a, mirror_pt_b] = get_edge_endpoints(m_pln, TopoDS::Edge(m_operation_axis->shp->Shape()));
-
-  std::vector<std::pair<gp_Pnt2d, gp_Pnt2d>>     mirrored_edges;
-  std::map<AIS_Shape_ptr, std::set<const Edge*>> arc_circles;
-
-  for (const Edge& e : m_edges.edges())
-    for (const Edge& selected : mirror_edges)
-      if (e.shp == selected.shp || e.circle_arc == selected.circle_arc)
-      {
-        if (e.circle_arc)
-        {
-          std::set<const Edge*>& arc_circle_edges = arc_circles[e.shp];
-          arc_circle_edges.insert(&e);
-          if (arc_circle_edges.size() == 2)
-            break;
-        }
-        else
-        {
-          const gp_Pnt2d a = mirror_point(mirror_pt_a, mirror_pt_b, m_nodes[e.node_idx_a]);
-          const gp_Pnt2d b = mirror_point(mirror_pt_a, mirror_pt_b, m_nodes[e.node_idx_b]);
-          mirrored_edges.push_back({a, b});
-          break;
-        }
-      }
-
-  for (const auto& [a, b] : mirrored_edges)
-    add_edge_(a, b, rec);
-
-  for (auto& [_, arc_circle_edges] : arc_circles)
-  {
-    EZY_ASSERT(arc_circle_edges.size() == 2);
-    const Edge* a = nullptr;
-    const Edge* b = nullptr;
-    for (const Edge* e : arc_circle_edges)
-      if (e->node_idx_arc.has_value())
-        a = e;
-      else
-        b = e;
-
-    EZY_ASSERT(a && b);
-    EZY_ASSERT(a->node_idx_arc.has_value());
-    EZY_ASSERT(b->node_idx_b);
-    const gp_Pnt2d pt_a = mirror_point(mirror_pt_a, mirror_pt_b, m_nodes[a->node_idx_a]);
-    const gp_Pnt2d pt_b = mirror_point(mirror_pt_a, mirror_pt_b, m_nodes[a->node_idx_arc]);
-    const gp_Pnt2d pt_c = mirror_point(mirror_pt_a, mirror_pt_b, m_nodes[b->node_idx_b]);
-    add_arc_circle_(pt_a, pt_b, pt_c, rec);
-  }
-
-  m_nodes.hide_snap_annos();
-  update_faces_();
-  rec.commit();
-}
-
-Shp_rslt Sketch::revolve_selected(const double angle)
-{
-  EZY_ASSERT_MSG(m_operation_axis.has_value(), "No defined operation axis.");
-
-  TopoDS_Compound compound;
-  BRep_Builder    builder;
-  builder.MakeCompound(compound);
-
-  const std::vector<Sketch_face_shp_ptr> faces          = get_selected_faces_();
-  const std::vector<Edge>                selected_edges = get_selected_edges_();
-  if (selected_edges.size())
-  {
-    std::set<AIS_Shape*> seen;
-    for (const Edge& e : selected_edges)
-      // Arc circles share the same shape
-      if (!seen.count(e.shp.get()))
-      {
-        seen.insert(e.shp.get());
-        builder.Add(compound, e.shp->Shape());
-      }
-  }
-  else if (faces.size())
-    for (const Sketch_face_shp_ptr& face : faces)
-      builder.Add(compound, face->Shape());
-
-  else
-    return Shp_rslt(Result_status::User_error, "No selected faces or edges.");
-
-  try
-  {
-    const auto [pt_a, pt_b] = get_edge_endpoints(TopoDS::Edge(m_operation_axis->shp->Shape()));
-
-    const gp_Dir direction((pt_b.XYZ() - pt_a.XYZ()).Normalized());
-    const gp_Ax1 axis(pt_a, direction);
-
-    BRepPrimAPI_MakeRevol revolMaker(compound, axis, angle);
-    return Shp_rslt(new Shp(m_ctx, try_make_solid(revolMaker.Shape())));
-  }
-  catch (const Standard_Failure& e)
-  {
-    // Catch OCCT exception and return error with message
-    std::string error_msg = "Revolution failed: ";
-    const char* msg       = e.GetMessageString();
-    error_msg += msg ? msg : "Unknown OCCT error";
-    return Shp_rslt(Result_status::Topo_error, error_msg);
-  }
-  catch (const std::exception& e)
-  {
-    // Catch other unexpected errors
-    return Shp_rslt(Result_status::User_error, "Unexpected error: " + std::string(e.what()));
-  }
-}
-
 void Sketch::on_mode()
 {
   // Reset state
   cancel_elm();
   sync_operation_axis_display_();
   m_node_marks.sync();
-}
-
-bool Sketch::show_operation_axis_() const
-{
-  return m_operation_axis.has_value() && m_visible && is_current() && get_mode() == Mode::Sketch_operation_axis;
-}
-
-bool Sketch::operation_axis_suppresses_sketch_snap_() const
-{
-  return get_mode() == Mode::Sketch_operation_axis && m_operation_axis.has_value();
-}
-
-void Sketch::sync_operation_axis_display_()
-{
-  if (!m_operation_axis.has_value())
-    return;
-
-  if (show_operation_axis_())
-    m_ctx.Display(m_operation_axis->shp, AIS_WireFrame, 0, false);
-  else
-    m_ctx.Erase(m_operation_axis->shp, false);
 }
 
 Mode Sketch::get_mode() const { return m_view.get_mode(); }
@@ -566,155 +342,6 @@ void Sketch::get_originating_face_snp_pts_3d_(std::vector<gp_Pnt>& out)
   }
 
   append(out, snp_pts);
-}
-void Sketch::set_visible(bool state)
-{
-  m_visible = state;
-
-  if (state)
-  {
-    if (m_show_faces)
-      for (AIS_Shape_ptr& face : m_topo.faces())
-        m_ctx.Display(face, AIS_Shaded, 0, false);
-
-    for (Edge& e : m_edges.edges())
-      m_ctx.Display(e.shp, AIS_WireFrame, 0, false);
-
-    m_dims.on_sketch_shown();
-
-    if (m_originating_face)
-      m_ctx.Display(m_originating_face, AIS_WireFrame, 0, false);
-
-    if (m_underlay.has_image())
-      m_underlay.rebuild_and_display(m_pln);
-
-    sync_operation_axis_display_();
-    m_node_marks.sync();
-  }
-  else
-  {
-    for (AIS_Shape_ptr& face : m_topo.faces())
-      m_ctx.Erase(face, false);
-
-    for (Edge& e : m_edges.edges())
-      m_ctx.Erase(e.shp, false);
-
-    m_dims.on_sketch_hidden();
-
-    if (m_originating_face)
-      m_ctx.Erase(m_originating_face, false);
-
-    m_underlay.ctx_erase();
-
-    if (m_operation_axis.has_value())
-      m_ctx.Erase(m_operation_axis->shp, false);
-
-    m_nodes.hide_snap_annos();
-    cancel_elm();
-
-    m_node_marks.erase_all();
-  }
-
-  m_ctx.UpdateCurrentViewer();
-
-  m_view.curr_sketch().set_current();
-}
-
-bool Sketch::is_visible() const { return m_visible; }
-
-void Sketch::set_show_faces(bool show)
-{
-  if (show && m_visible)
-    for (AIS_Shape_ptr& face : m_topo.faces())
-      m_ctx.Display(face, AIS_Shaded, 0, false);
-  else
-    for (AIS_Shape_ptr& face : m_topo.faces())
-      m_ctx.Erase(face, false);
-
-  m_show_faces = show;
-}
-
-void Sketch::set_show_edges(bool show)
-{
-  if (show && m_visible)
-    for (Edge& e : m_edges.edges())
-      m_ctx.Display(e.shp, AIS_WireFrame, 0, false);
-  else
-    for (Edge& e : m_edges.edges())
-      m_ctx.Erase(e.shp, false);
-}
-void Sketch::append_list_hover_ais(std::vector<AIS_InteractiveObject_ptr>& out) const
-{
-  if (!m_visible)
-    return;
-
-  for (const Edge& e : m_edges.edges())
-    if (!e.shp.IsNull())
-      out.push_back(e.shp);
-
-  if (m_show_faces)
-    for (const Sketch_face_shp_ptr& face : m_topo.faces())
-      if (!face.IsNull())
-        out.push_back(face);
-
-  if (m_originating_face)
-    out.push_back(m_originating_face);
-
-  if (m_operation_axis.has_value() && !m_operation_axis->shp.IsNull())
-    out.push_back(m_operation_axis->shp);
-
-  if (m_underlay.has_image() && m_underlay.visible())
-    m_underlay.append_list_hover_ais(out);
-}
-bool Sketch::is_current() const { return this == &m_view.curr_sketch(); }
-
-void Sketch::set_current()
-{
-  m_ctx.CurrentViewer()->SetPrivilegedPlane(m_pln.Position());
-  set_edge_style(Edge_style::Full);
-  m_nodes.clear_outside_snap_pnts();
-
-  m_tmp_pts_3d.clear();
-  get_originating_face_snp_pts_3d_(m_tmp_pts_3d);
-
-  for (const gp_Pnt& pt3d : m_tmp_pts_3d)
-    // Insert 2D points on this `m_pln`, points will be considered the same using `Precision::Confusion()`
-    m_nodes.add_outside_snap_pnt(pt3d);
-
-  for (Sketch_ptr& sketch : m_view.get_sketches())
-    if (sketch.get() != this)
-    {
-      sketch->set_edge_style(Edge_style::Background);
-
-      // Hide operation axis from other sketches
-      if (sketch->m_operation_axis.has_value())
-        m_ctx.Erase(sketch->m_operation_axis->shp, false);
-
-      if (sketch->is_visible())
-      {
-        // Add snap points from other sketches, but only if they are visible.
-        sketch->get_snap_pts_3d_(m_tmp_pts_3d);
-        for (const gp_Pnt& pt3d : m_tmp_pts_3d)
-          // Insert 2D points on this `m_pln`, points will be considered the same using `Precision::Confusion()`
-          m_nodes.add_outside_snap_pnt(pt3d);
-      }
-    }
-
-  sync_operation_axis_display_();
-
-  // DBG_MSG("m_outside_snap_pts " << m_nodes.m_outside_snap_pts.size());
-}
-
-void Sketch::set_edge_style(Edge_style style)
-{
-  m_edge_style = style;
-
-  for (Edge& e : m_edges.edges())
-    update_edge_style_(e.shp);
-
-  // Permanent node marker style/visibility is managed elsewhere; avoid
-  // rebuilding marker geometry during sketch switching.
-  update_originating_face_style();
 }
 
 gp_Pnt Sketch::to_3d_(size_t node_idx) const { return to_3d(m_pln, m_nodes[node_idx]); }
