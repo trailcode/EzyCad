@@ -72,6 +72,7 @@ Sketch::Sketch(const std::string& name, Occt_view& view, const gp_Pln& pln)
     , m_pln(pln)
     , m_name(name)
     , m_nodes(view, pln)
+    , m_underlay(view.ctx())
 {
 }
 
@@ -81,6 +82,7 @@ Sketch::Sketch(const std::string& name, Occt_view& view, const gp_Pln& pln, cons
     , m_pln(pln)
     , m_name(name)
     , m_nodes(view, pln)
+    , m_underlay(view.ctx())
 {
   m_originating_face = new AIS_Shape(outer_wire);
   m_ctx.Display(m_originating_face, true);
@@ -89,7 +91,7 @@ Sketch::Sketch(const std::string& name, Occt_view& view, const gp_Pln& pln, cons
 
 Sketch::~Sketch()
 {
-  m_underlay.erase(m_ctx);
+  m_underlay.ctx_erase();
 
   auto remove_edge = [&](Edge& e)
   {
@@ -2757,7 +2759,7 @@ void Sketch::set_visible(bool state)
       m_ctx.Display(m_originating_face, AIS_WireFrame, 0, false);
 
     if (m_underlay.has_image())
-      m_underlay.rebuild_and_display(m_pln, m_ctx);
+      m_underlay.rebuild_and_display(m_pln);
 
     sync_operation_axis_display_();
     sync_permanent_node_annos_();
@@ -2777,7 +2779,7 @@ void Sketch::set_visible(bool state)
     if (m_originating_face)
       m_ctx.Erase(m_originating_face, false);
 
-    m_underlay.erase(m_ctx);
+    m_underlay.ctx_erase();
 
     // Hide operation axis when sketch becomes invisible
     if (m_operation_axis.has_value())
@@ -3109,7 +3111,7 @@ bool Sketch::load_underlay_image(const std::string& file_bytes)
   m_view.gui().underlay_highlight_color_rgba(hr, hg, hb, ha);
   m_underlay.set_line_tint_rgba(hr, hg, hb, ha);
   if (m_visible)
-    m_underlay.rebuild_and_display(m_pln, m_ctx);
+    m_underlay.rebuild_and_display(m_pln);
 
   m_ctx.UpdateCurrentViewer();
   return true;
@@ -3120,7 +3122,7 @@ void Sketch::clear_underlay()
   if (!m_underlay.has_image())
     return;
 
-  m_underlay.erase(m_ctx);
+  m_underlay.clear();
   m_ctx.UpdateCurrentViewer();
 }
 
@@ -3147,7 +3149,7 @@ void Sketch::underlay_set_affine_plane(const gp_Pnt2d& base, const gp_Vec2d& axi
 
   m_underlay.set_affine(base, axis_u, axis_v);
   if (m_visible)
-    m_underlay.rebuild_and_display(m_pln, m_ctx);
+    m_underlay.rebuild_and_display(m_pln);
 
   m_ctx.UpdateCurrentViewer();
 }
@@ -3248,7 +3250,7 @@ void Sketch::underlay_set_center_extents_rotation(const dvec2& center, const dve
   EZY_ASSERT(m_visible);
 
   m_underlay.set_center_extents_rotation(center, half_extents, rot_deg);
-  m_underlay.rebuild_and_display(m_pln, m_ctx);
+  m_underlay.rebuild_and_display(m_pln);
   m_ctx.UpdateCurrentViewer();
 }
 
@@ -3258,7 +3260,7 @@ void Sketch::underlay_set_opacity(float opaque01)
     return;
 
   m_underlay.set_opacity(opaque01);
-  m_underlay.redisplay(m_ctx);
+  m_underlay.redisplay();
   m_ctx.UpdateCurrentViewer();
 }
 
@@ -3268,7 +3270,7 @@ void Sketch::underlay_set_visible(bool v)
     return;
 
   m_underlay.set_visible(v);
-  m_underlay.sync_visibility(m_pln, m_ctx);
+  m_underlay.sync_visibility(m_pln);
   m_ctx.UpdateCurrentViewer();
 }
 
@@ -3448,7 +3450,7 @@ void Sketch::underlay_rebuild_display()
     return;
 
   if (m_visible)
-    m_underlay.rebuild_and_display(m_pln, m_ctx);
+    m_underlay.rebuild_and_display(m_pln);
 
   m_ctx.UpdateCurrentViewer();
 }

@@ -21,7 +21,7 @@ class gp_Pln;
 class Sketch_op_recorder;
 class TopoDS_Wire;
 class Sketch;
-//class Sketch_underlay;
+// class Sketch_underlay;
 enum class Mode;
 
 struct Sketch_AIS_node_mark;
@@ -132,6 +132,7 @@ public:
   const gp_Pln& get_plane() const;
   Sketch_nodes& get_nodes();
 
+  Sketch_underlay&   underlay() { return m_underlay; }
   [[nodiscard]] bool has_underlay() const;
   [[nodiscard]] int  underlay_image_w() const;
   [[nodiscard]] int  underlay_image_h() const;
@@ -419,6 +420,6 @@ public:
   bool                       m_show_faces{true};
   bool                       m_show_dims{true};
 
-  //std::unique_ptr<Sketch_underlay> m_underlay;
+  // std::unique_ptr<Sketch_underlay> m_underlay;
   Sketch_underlay m_underlay;
 };

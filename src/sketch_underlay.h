@@ -21,7 +21,8 @@ class Ezy_asset_store;
 class Sketch_underlay
 {
 public:
-  Sketch_underlay() = default;
+  Sketch_underlay() = delete;
+  Sketch_underlay(AIS_InteractiveContext& ctx);
 
   Sketch_underlay(const Sketch_underlay&)            = delete;
   Sketch_underlay& operator=(const Sketch_underlay&) = delete;
@@ -70,11 +71,12 @@ public:
 
   // clang-format on
 
-  void rebuild_and_display(const gp_Pln& pln, AIS_InteractiveContext& ctx);
-  void erase(AIS_InteractiveContext& ctx);
-  void sync_visibility(const gp_Pln& pln, AIS_InteractiveContext& ctx);
+  void rebuild_and_display(const gp_Pln& pln);
+  void ctx_erase();
+  void clear();
+  void sync_visibility(const gp_Pln& pln);
   /// Force viewer update after live property changes (e.g. threshold) without a full rebuild.
-  void redisplay(AIS_InteractiveContext& ctx);
+  void redisplay();
 
   /// Add displayed AIS objects for Sketch List row hover emphasis (image quad and border wire).
   void append_list_hover_ais(std::vector<opencascade::handle<AIS_InteractiveObject>>& out) const;
@@ -84,9 +86,9 @@ public:
   [[nodiscard]] bool from_json(const nlohmann::json& j, Ezy_asset_store& store);
 
 private:
-  void remove_ais_(AIS_InteractiveContext& ctx);
-  void build_ais_(const gp_Pln& pln, AIS_InteractiveContext& ctx);
+  void build_ais_(const gp_Pln& pln);
 
+  AIS_InteractiveContext&                     m_ctx;
   std::shared_ptr<const std::vector<uint8_t>> m_rgba;
   std::string                                 m_asset_id;
   int                                         m_w{0};

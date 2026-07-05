@@ -273,18 +273,9 @@ Handle(Image_PixMap) make_pixmap_bottom_up_warped(const uint8_t* rgba, int w, in
 
 } // namespace
 
-void Sketch_underlay::remove_ais_(AIS_InteractiveContext& ctx)
+Sketch_underlay::Sketch_underlay(AIS_InteractiveContext& ctx)
+    : m_ctx(ctx)
 {
-  if (!m_ais.IsNull())
-  {
-    ctx.Remove(m_ais, false);
-    m_ais.Nullify();
-  }
-  if (!m_border.IsNull())
-  {
-    ctx.Remove(m_border, false);
-    m_border.Nullify();
-  }
 }
 
 bool Sketch_underlay::set_image_rgba(std::vector<uint8_t>&& rgba, int w, int h, Ezy_asset_store& store)
@@ -401,9 +392,9 @@ void Sketch_underlay::line_tint_rgba(uint8_t& r, uint8_t& g, uint8_t& b, uint8_t
   a = m_tint_a;
 }
 
-void Sketch_underlay::build_ais_(const gp_Pln& pln, AIS_InteractiveContext& ctx)
+void Sketch_underlay::build_ais_(const gp_Pln& pln)
 {
-  remove_ais_(ctx);
+  ctx_erase();
   if (!has_image())
     return;
 
@@ -593,42 +584,63 @@ void Sketch_underlay::build_ais_(const gp_Pln& pln, AIS_InteractiveContext& ctx)
 
   if (m_visible)
   {
-    ctx.Display(m_ais, 3, 0, false);
-    ctx.Deactivate(opencascade::handle<AIS_InteractiveObject>(m_ais));
+    m_ctx.Display(m_ais, 3, 0, false);
+    m_ctx.Deactivate(opencascade::handle<AIS_InteractiveObject>(m_ais));
     if (!m_border.IsNull())
     {
-      ctx.Display(m_border, false);
-      ctx.Deactivate(opencascade::handle<AIS_InteractiveObject>(m_border));
+      m_ctx.Display(m_border, false);
+      m_ctx.Deactivate(opencascade::handle<AIS_InteractiveObject>(m_border));
     }
   }
 }
 
-void Sketch_underlay::rebuild_and_display(const gp_Pln& pln, AIS_InteractiveContext& ctx)
+void Sketch_underlay::rebuild_and_display(const gp_Pln& pln)
 {
-  remove_ais_(ctx);
+  ctx_erase();
   if (!has_image() || !m_visible)
     return;
 
-  build_ais_(pln, ctx);
+  build_ais_(pln);
 }
 
-void Sketch_underlay::erase(AIS_InteractiveContext& ctx) { remove_ais_(ctx); }
+void Sketch_underlay::ctx_erase()
+{ 
+  if (!m_ais.IsNull())
+  {
+    m_ctx.Remove(m_ais, false);
+    m_ais.Nullify();
+  }
+  if (!m_border.IsNull())
+  {
+    m_ctx.Remove(m_border, false);
+    m_border.Nullify();
+  }
+}
 
-void Sketch_underlay::sync_visibility(const gp_Pln& pln, AIS_InteractiveContext& ctx)
+void Sketch_underlay::clear()
+{
+  ctx_erase();
+  m_rgba.reset();
+  m_asset_id.clear();
+  m_w = 0;
+  m_h = 0;
+}
+
+void Sketch_underlay::sync_visibility(const gp_Pln& pln)
 {
   if (!has_image())
     return;
 
   if (m_visible)
-    rebuild_and_display(pln, ctx);
+    rebuild_and_display(pln);
   else
-    remove_ais_(ctx);
+    ctx_erase();
 }
 
-void Sketch_underlay::redisplay(AIS_InteractiveContext& ctx)
+void Sketch_underlay::redisplay()
 {
   if (!m_ais.IsNull())
-    ctx.Redisplay(m_ais, true);
+    m_ctx.Redisplay(m_ais, true);
 }
 
 void Sketch_underlay::append_list_hover_ais(std::vector<opencascade::handle<AIS_InteractiveObject>>& out) const

@@ -308,7 +308,7 @@ Sketch::sptr Sketch_json::from_json(Occt_view& view, const nlohmann::json& j)
   if (j.contains("underlay") && j["underlay"].is_object())
     if (ret->m_underlay.from_json(j["underlay"], view.asset_store()))
       if (ret->m_visible && ret->m_underlay.has_image())
-        ret->m_underlay.rebuild_and_display(ret->m_pln, ret->m_ctx);
+        ret->m_underlay.rebuild_and_display(ret->m_pln);
 
   if (j.contains("operation_axis") && j["operation_axis"].is_array() && j["operation_axis"].size() >= 2)
   {
