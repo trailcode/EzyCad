@@ -155,7 +155,7 @@ void Sketch::append_list_hover_ais(std::vector<AIS_InteractiveObject_ptr>& out) 
     m_underlay.append_list_hover_ais(out);
 }
 
-bool Sketch::is_current() const { return this == &m_view.curr_sketch(); }
+bool Sketch::is_current() const { return m_view.current_sketch_if_any() == this; }
 
 void Sketch::set_current()
 {

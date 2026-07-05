@@ -627,8 +627,9 @@ bool Occt_view::cancel_sketch_extrude_() { return m_shp_extrude.cancel(); }
 
 void Occt_view::create_default_sketch_()
 {
-  EZY_ASSERT(m_sketches.empty());
-  EZY_ASSERT(!m_cur_sketch);
+  if (!m_sketches.empty() || m_cur_sketch)
+    return;
+
   m_cur_sketch = std::make_shared<Sketch>("Sketch", *this, xy_plane());
   m_sketches.push_back(m_cur_sketch);
   m_cur_sketch->set_current();
@@ -637,7 +638,13 @@ void Occt_view::create_default_sketch_()
 void Occt_view::ensure_current_sketch_()
 {
   if (m_cur_sketch)
-    return;
+  {
+    for (const Sketch_ptr& s : m_sketches)
+      if (s == m_cur_sketch)
+        return;
+
+    m_cur_sketch.reset();
+  }
 
   if (!m_sketches.empty())
   {
@@ -2077,6 +2084,14 @@ Aspect_VKeyFlags Occt_view::key_flags_from_glfw_(int theFlags)
 
 Occt_view::Sketch_list& Occt_view::get_sketches() { return m_sketches; }
 
+size_t Occt_view::allocate_sketch_id() { return m_next_sketch_id++; }
+
+void Occt_view::adopt_sketch_id(const size_t id)
+{
+  if (id >= m_next_sketch_id)
+    m_next_sketch_id = id + 1;
+}
+
 void Occt_view::remove_sketch(const Sketch_ptr& sketch)
 {
   if (m_sketch_list_hover == sketch)
@@ -2101,6 +2116,8 @@ Sketch& Occt_view::curr_sketch()
   ensure_current_sketch_();
   return *m_cur_sketch;
 }
+
+Sketch* Occt_view::current_sketch_if_any() const { return m_cur_sketch.get(); }
 
 Occt_view::Sketch_ptr Occt_view::curr_sketch_shared() const
 {
@@ -2330,6 +2347,13 @@ void Occt_view::load(const std::string& json_str, bool restore_view)
     m_ctx->Remove(s, false);
 
   clear_all(m_sketches, m_cur_sketch, m_shps);
+
+  if (!m_restoring)
+  {
+    m_undo_stack.clear();
+    m_redo_stack.clear();
+  }
+
   const json j = json::parse(json_str);
   (void)j.value("ezyFormat", 1); // Reserved for future migrations; sketch JSON migrates per-edge dim flags in Sketch_json.
   EZY_ASSERT(j.contains("sketches") && j["sketches"].is_array());
@@ -2593,6 +2617,7 @@ void Occt_view::new_file()
   remove(m_shps);
   clear_all(m_shps, m_sketches, m_cur_sketch);
   m_assets.clear();
+  m_next_sketch_id = 1;
 
   create_default_sketch_();
   refresh_viewer_grid_();

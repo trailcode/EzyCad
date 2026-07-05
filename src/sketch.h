@@ -117,6 +117,9 @@ public:
   const std::string& get_name() const;
   void               set_name(const std::string& name);
 
+  /// Stable identity for undo deltas and file I/O (display names may duplicate).
+  size_t get_id() const;
+
   /// True if this sketch has at least one edge (used e.g. to pick mode after undo/redo).
   bool   has_edges() const;
   size_t edge_count() const;
@@ -211,6 +214,7 @@ private:
 
   std::string m_dbg_str;
   std::string m_name;
+  size_t      m_id{0};
   bool        m_visible{true};
 
   // Extrusion related.

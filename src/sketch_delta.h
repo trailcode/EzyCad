@@ -46,8 +46,11 @@ private:
 class Sketch_delta : public Delta
 {
 public:
-  Sketch_delta(Sketch& sketch, std::string sketch_name);
+  Sketch_delta(Sketch& sketch, size_t sketch_id);
   ~Sketch_delta() override;
+
+  /// Clone path: identity by stable sketch id (no live `Sketch` pointer).
+  explicit Sketch_delta(size_t sketch_id);
 
   Sketch_delta(const Sketch_delta&)            = delete;
   Sketch_delta& operator=(const Sketch_delta&) = delete;

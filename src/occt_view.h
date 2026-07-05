@@ -135,11 +135,15 @@ public:
 
   // Sketch related
   Sketch_list& get_sketches();
+  size_t       allocate_sketch_id();
+  void         adopt_sketch_id(size_t id);
   void         remove_sketch(const Sketch_ptr& sketch);
   /// Empty sketch on \a pln; \a base_name is uniquified (e.g. Sketch_xy, Sketch_xy.001).
   void       add_sketch(const gp_Pln& pln, const std::string& base_name);
   Sketch&    curr_sketch();
   Sketch_ptr curr_sketch_shared() const;
+  /// Non-owning; null when none selected. Does not create a default sketch.
+  Sketch*    current_sketch_if_any() const;
   void       set_curr_sketch(const Sketch_ptr& sketch);
   void       sketch_face_extrude(const ScreenCoords& screen_coords, bool is_mouse_move);
 
@@ -343,6 +347,7 @@ private:
   std::vector<Undo_entry> m_undo_stack;
   std::vector<Undo_entry> m_redo_stack;
   bool                    m_restoring{false};
+  size_t                  m_next_sketch_id{1};
   Ezy_asset_store         m_assets;
 
   // --------------------------------------------------------------------

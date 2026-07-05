@@ -142,6 +142,7 @@ nlohmann::json Sketch_json::to_json(const Sketch& sketch, const Ezy_asset_store&
 {
   json j;
   j["isCurrent"] = sketch.is_current();
+  j["id"]        = sketch.get_id();
   j["name"]      = sketch.get_name();
   j["plane"]     = ::to_json(sketch.m_pln);
 
@@ -296,6 +297,12 @@ Sketch::sptr Sketch_json::from_json(Occt_view& view, const nlohmann::json& j)
     const gp_Pnt2d pt_a = ::from_json_pnt2d(j["operation_axis"][0]);
     const gp_Pnt2d pt_b = ::from_json_pnt2d(j["operation_axis"][1]);
     ret->sketch_json_set_operation_axis_(pt_a, pt_b);
+  }
+
+  if (j.contains("id") && j["id"].is_number_unsigned())
+  {
+    ret->m_id = j["id"].get<size_t>();
+    view.adopt_sketch_id(ret->m_id);
   }
 
   if (j["isCurrent"])

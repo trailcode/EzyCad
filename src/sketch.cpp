@@ -24,6 +24,7 @@ Sketch::Sketch(const std::string& name, Occt_view& view, const gp_Pln& pln)
     , m_ctx(view.ctx())
     , m_pln(pln)
     , m_name(name)
+    , m_id(view.allocate_sketch_id())
     , m_nodes(view, pln)
     , m_edges(*this)
     , m_topo(*this)
@@ -39,6 +40,7 @@ Sketch::Sketch(const std::string& name, Occt_view& view, const gp_Pln& pln, cons
     , m_ctx(view.ctx())
     , m_pln(pln)
     , m_name(name)
+    , m_id(view.allocate_sketch_id())
     , m_nodes(view, pln)
     , m_edges(*this)
     , m_topo(*this)
@@ -355,6 +357,8 @@ gp_Pnt Sketch::to_3d_(const std::optional<size_t>& node_idx) const
 const std::string& Sketch::get_name() const { return m_name; }
 
 void Sketch::set_name(const std::string& name) { m_name = name; }
+
+size_t Sketch::get_id() const { return m_id; }
 
 bool Sketch::has_edges() const { return !m_edges.empty(); }
 

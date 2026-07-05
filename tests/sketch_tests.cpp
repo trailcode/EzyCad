@@ -113,6 +113,7 @@ class Sketch_access
   /// Exact replay of a saved linear edge (with its pre-existing midpoint node index).
   /// Used for regression tests of specific .ezy cases (e.g. bridge + hole topologies).
   static void sketch_json_add_linear_edge_(Sketch& sketch, size_t idx_a, size_t idx_b, std::optional<size_t> idx_mid = std::nullopt);
+  static void set_operation_axis_(Sketch& sketch, const gp_Pnt2d& pt_a, const gp_Pnt2d& pt_b);
 };
 
 void Sketch_access::add_edge_(Sketch& sketch, const gp_Pnt2d& pt_a, const gp_Pnt2d& pt_b)
@@ -231,6 +232,11 @@ inline void Sketch_access::get_originating_face_snp_pts_3d_(Sketch& sketch, std:
 void Sketch_access::sketch_json_add_linear_edge_(Sketch& sketch, size_t idx_a, size_t idx_b, std::optional<size_t> idx_mid)
 {
   sketch.sketch_json_add_linear_edge_(idx_a, idx_b, idx_mid);
+}
+
+void Sketch_access::set_operation_axis_(Sketch& sketch, const gp_Pnt2d& pt_a, const gp_Pnt2d& pt_b)
+{
+  sketch.sketch_json_set_operation_axis_(pt_a, pt_b);
 }
 
 class View_access
@@ -622,6 +628,123 @@ TEST_F(Sketch_test, Undo_two_crossing_edges_via_finalize)
   EXPECT_TRUE(view().undo());
   EXPECT_EQ(Sketch_access::get_linear_edge_count(sketch), 0)
       << "Undo of the first edge should remove it";
+}
+
+TEST_F(Sketch_test, Undo_extrude_snapshot_keeps_single_sketch)
+{
+  Sketch::Sketch_ptr sk = view().curr_sketch_shared();
+  const size_t sk_id = sk->get_id();
+
+  {
+    Sketch_op_recorder rec(view(), *sk);
+    const std::array<gp_Pnt2d, 4> corners = square_corners(gp_Pnt2d(0.0, 0.0), gp_Pnt2d(10.0, 0.0));
+    Sketch_access::add_edge_(*sk, corners[0], corners[1], rec);
+    Sketch_access::add_edge_(*sk, corners[1], corners[2], rec);
+    Sketch_access::add_edge_(*sk, corners[2], corners[3], rec);
+    Sketch_access::add_edge_(*sk, corners[3], corners[0], rec);
+    rec.commit();
+  }
+
+  EXPECT_EQ(sk->edge_count(), 4u);
+  EXPECT_EQ(view().get_sketches().size(), 1u);
+
+  const nlohmann::json pre_extrude = nlohmann::json::parse(view().to_json());
+  ASSERT_EQ(pre_extrude["sketches"].size(), 1u);
+
+  view().push_undo_snapshot();
+
+  EXPECT_TRUE(view().undo());
+  EXPECT_EQ(view().get_sketches().size(), 1u) << "JSON undo after extrude must not add a sketch";
+
+  Sketch::Sketch_ptr restored;
+  for (const Sketch::Sketch_ptr& s : view().get_sketches())
+    if (s->get_id() == sk_id)
+      restored = s;
+
+  ASSERT_TRUE(restored) << "Restored sketch should keep the same stable id";
+  EXPECT_EQ(restored->edge_count(), 4u);
+
+  EXPECT_TRUE(view().undo());
+  EXPECT_EQ(restored->edge_count(), 0u) << "Second undo should remove the square from the same sketch";
+}
+
+TEST_F(Sketch_test, Undo_delta_resolves_by_sketch_id_when_names_duplicate)
+{
+  Sketch::Sketch_ptr sk1 = view().curr_sketch_shared();
+  Sketch::Sketch_ptr sk2 = std::make_shared<Sketch>("Other", view(), gp_Pln(gp::Origin(), gp::DX()));
+  view().get_sketches().push_back(sk2);
+  sk1->set_name("Dup");
+  sk2->set_name("Dup");
+
+  {
+    Sketch_op_recorder rec(view(), *sk2);
+    Sketch_access::add_edge_(*sk2, gp_Pnt2d(0.0, 0.0), gp_Pnt2d(5.0, 0.0), rec);
+    rec.commit();
+  }
+
+  EXPECT_EQ(Sketch_access::get_linear_edge_count(*sk1), 0u);
+  EXPECT_EQ(Sketch_access::get_linear_edge_count(*sk2), 1u);
+
+  EXPECT_TRUE(view().undo());
+  EXPECT_EQ(Sketch_access::get_linear_edge_count(*sk1), 0u);
+  EXPECT_EQ(Sketch_access::get_linear_edge_count(*sk2), 0u)
+      << "Undo must target the sketch that was edited, not the first same-named sketch";
+}
+
+TEST_F(Sketch_test, Undo_circle_axis_then_revolve_snapshot_three_undos)
+{
+  Sketch::Sketch_ptr sk = view().curr_sketch_shared();
+  const size_t         sk_id = sk->get_id();
+
+  {
+    Sketch_op_recorder rec(view(), *sk);
+    const gp_Pnt2d                 center(0.0, 0.0);
+    const gp_Pnt2d                 edge_pt(5.0, 0.0);
+    const std::array<gp_Pnt2d, 4> points = xy_stencil_pnts(center, edge_pt);
+    Sketch_access::add_arc_circle_(*sk, points[0], points[2], points[1], rec);
+    Sketch_access::add_arc_circle_(*sk, points[0], points[3], points[1], rec);
+    rec.commit();
+  }
+
+  EXPECT_EQ(Sketch_access::get_arc_internal_edge_count(*sk), 4u);
+
+  {
+    Sketch_op_recorder rec(view(), *sk);
+    const gp_Pnt2d axis_a(0.0, -10.0);
+    const gp_Pnt2d axis_b(10.0, -10.0);
+    Sketch_access::set_operation_axis_(*sk, axis_a, axis_b);
+    rec.note_curr_operation_axis(axis_a, axis_b);
+    rec.commit();
+  }
+  EXPECT_TRUE(sk->has_operation_axis());
+
+  view().push_undo_snapshot();
+
+  auto find_sk = [&]() -> Sketch::Sketch_ptr
+  {
+    for (const Sketch::Sketch_ptr& s : view().get_sketches())
+      if (s->get_id() == sk_id)
+        return s;
+    return nullptr;
+  };
+
+  EXPECT_TRUE(view().undo());
+  sk = find_sk();
+  ASSERT_TRUE(sk);
+  EXPECT_EQ(view().get_sketches().size(), 1u);
+  EXPECT_TRUE(sk->has_operation_axis());
+  EXPECT_EQ(Sketch_access::get_arc_internal_edge_count(*sk), 4u);
+
+  EXPECT_TRUE(view().undo());
+  sk = find_sk();
+  ASSERT_TRUE(sk);
+  EXPECT_FALSE(sk->has_operation_axis());
+  EXPECT_EQ(Sketch_access::get_arc_internal_edge_count(*sk), 4u);
+
+  EXPECT_TRUE(view().undo());
+  sk = find_sk();
+  ASSERT_TRUE(sk);
+  EXPECT_EQ(Sketch_access::get_arc_internal_edge_count(*sk), 0u);
 }
 
 // Test T-junction case (one edge's endpoint touches the interior of another).
