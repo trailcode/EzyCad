@@ -225,8 +225,8 @@ nlohmann::json Sketch_json::to_json(const Sketch& sketch, const Ezy_asset_store&
     len_dims_json.push_back(std::move(e));
   }
 
-  if (sketch.m_underlay && sketch.m_underlay->has_image())
-    j["underlay"] = sketch.m_underlay->to_json(assets);
+  if (sketch.m_underlay.has_image())
+    j["underlay"] = sketch.m_underlay.to_json(assets);
 
   if (sketch.m_operation_axis.has_value())
   {
@@ -306,15 +306,9 @@ Sketch::sptr Sketch_json::from_json(Occt_view& view, const nlohmann::json& j)
     }
 
   if (j.contains("underlay") && j["underlay"].is_object())
-  {
-    auto ul = std::make_unique<Sketch_underlay>();
-    if (ul->from_json(j["underlay"], view.asset_store()))
-    {
-      ret->m_underlay = std::move(ul);
-      if (ret->m_visible && ret->m_underlay->has_image())
-        ret->m_underlay->rebuild_and_display(ret->m_pln, ret->m_ctx);
-    }
-  }
+    if (ret->m_underlay.from_json(j["underlay"], view.asset_store()))
+      if (ret->m_visible && ret->m_underlay.has_image())
+        ret->m_underlay.rebuild_and_display(ret->m_pln, ret->m_ctx);
 
   if (j.contains("operation_axis") && j["operation_axis"].is_array() && j["operation_axis"].size() >= 2)
   {

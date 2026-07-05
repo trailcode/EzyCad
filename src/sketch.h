@@ -12,6 +12,7 @@
 
 #include "shp.h"
 #include "sketch_nodes.h"
+#include "sketch_underlay.h"
 #include "utl_types.h"
 
 struct Length_dimension_style;
@@ -20,7 +21,7 @@ class gp_Pln;
 class Sketch_op_recorder;
 class TopoDS_Wire;
 class Sketch;
-class Sketch_underlay;
+//class Sketch_underlay;
 enum class Mode;
 
 struct Sketch_AIS_node_mark;
@@ -418,5 +419,6 @@ public:
   bool                       m_show_faces{true};
   bool                       m_show_dims{true};
 
-  std::unique_ptr<Sketch_underlay> m_underlay;
+  //std::unique_ptr<Sketch_underlay> m_underlay;
+  Sketch_underlay m_underlay;
 };
