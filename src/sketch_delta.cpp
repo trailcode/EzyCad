@@ -491,7 +491,7 @@ bool Sketch_delta::Impl::length_dim_equal_(const Length_dim_record& x, const Len
 
 void Sketch_delta::Impl::remove_linear_edges_on_segment_(Sketch& sketch, const gp_Pnt2d& seg_a, const gp_Pnt2d& seg_b)
 {
-  for (auto itr = sketch.m_edges.begin(); itr != sketch.m_edges.end();)
+  for (auto itr = sketch.m_edges.edges().begin(); itr != sketch.m_edges.edges().end();)
   {
     if (itr->circle_arc || !itr->node_idx_b.has_value())
     {
@@ -504,7 +504,7 @@ void Sketch_delta::Impl::remove_linear_edges_on_segment_(Sketch& sketch, const g
     if (on_closed_segment_2d_(pa, seg_a, seg_b) && on_closed_segment_2d_(pb, seg_a, seg_b))
     {
       sketch.m_ctx.Remove(itr->shp, false);
-      itr = sketch.m_edges.erase(itr);
+      itr = sketch.m_edges.edges().erase(itr);
     }
     else
       ++itr;
@@ -520,47 +520,26 @@ void Sketch_delta::Impl::remove_arc_edge_(Sketch& sketch, const Arc_edge_record&
 {
   std::vector<Sketch_AIS_edge_ptr> shps_to_remove;
 
-  for (auto itr = sketch.m_edges.begin(); itr != sketch.m_edges.end(); ++itr)
-  {
-    if (!itr->circle_arc || itr->shp.IsNull())
-      continue;
-
-    const Sketch::Edge* e1 = &*itr;
-    const Sketch::Edge* e2 = nullptr;
-
-    for (auto itr2 = sketch.m_edges.begin(); itr2 != sketch.m_edges.end(); ++itr2)
-      if (itr2 != itr && itr2->shp == e1->shp)
+  sketch.m_edges.for_each_arc(
+      [&](const Sketch_edge_arc& a)
       {
-        e2 = &*itr2;
-        break;
-      }
+        const gp_Pnt2d start = sketch.m_nodes[a.node_start];
+        const gp_Pnt2d arc   = sketch.m_nodes[a.node_arc];
+        const gp_Pnt2d end   = sketch.m_nodes[a.node_end];
 
-    if (!e2)
-      continue;
+        if (!arc_equal_({start, arc, end}, rec))
+          return;
 
-    const Sketch::Edge* first  = e1->node_idx_arc.has_value() ? e1 : (e2->node_idx_arc.has_value() ? e2 : nullptr);
-    const Sketch::Edge* second = first == e1 ? e2 : e1;
-    if (!first || !first->node_idx_arc.has_value() || !second->node_idx_b.has_value())
-      continue;
-
-    const gp_Pnt2d start = sketch.m_nodes[first->node_idx_a];
-    const gp_Pnt2d arc   = sketch.m_nodes[*first->node_idx_arc];
-    const gp_Pnt2d end   = sketch.m_nodes[*second->node_idx_b];
-
-    if (!arc_equal_({start, arc, end}, rec))
-      continue;
-
-    const Sketch_AIS_edge_ptr& shp = e1->shp;
-    if (std::find(shps_to_remove.begin(), shps_to_remove.end(), shp) == shps_to_remove.end())
-      shps_to_remove.push_back(shp);
-  }
+        if (std::find(shps_to_remove.begin(), shps_to_remove.end(), a.shp) == shps_to_remove.end())
+          shps_to_remove.push_back(a.shp);
+      });
 
   for (const Sketch_AIS_edge_ptr& shp : shps_to_remove)
   {
     sketch.m_ctx.Remove(shp, false);
-    for (auto itr = sketch.m_edges.begin(); itr != sketch.m_edges.end();)
+    for (auto itr = sketch.m_edges.edges().begin(); itr != sketch.m_edges.edges().end();)
       if (itr->shp == shp)
-        itr = sketch.m_edges.erase(itr);
+        itr = sketch.m_edges.edges().erase(itr);
       else
         ++itr;
   }
@@ -592,7 +571,7 @@ void Sketch_delta::Impl::restore_prev_linear_edge_(Sketch& sketch, const Prev_ed
   remove_linear_edges_on_node_segment_(sketch, rec.node_idx_a, rec.node_idx_b);
   sketch.sketch_json_add_linear_edge_(rec.node_idx_a, rec.node_idx_b, rec.node_idx_mid);
   if (!rec.name.empty())
-    for (Sketch::Edge& e : sketch.m_edges)
+    for (Sketch::Edge& e : sketch.m_edges.edges())
       if (!e.circle_arc && e.node_idx_a == rec.node_idx_a && e.node_idx_b.has_value() && *e.node_idx_b == rec.node_idx_b &&
           e.node_idx_mid == rec.node_idx_mid)
       {
@@ -615,7 +594,7 @@ void Sketch_delta::Impl::restore_prev_operation_axis_(Sketch& sketch, const Prev
 
 void Sketch_delta::Impl::capture_linear_edges_at_start_(Sketch& sketch, std::vector<Prev_edge_rec>& out)
 {
-  for (const Sketch::Edge& e : sketch.m_edges)
+  for (const Sketch::Edge& e : sketch.m_edges.edges())
   {
     if (!is_linear_sketch_edge_(e))
       continue;

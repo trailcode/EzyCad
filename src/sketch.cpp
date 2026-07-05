@@ -63,6 +63,7 @@ Sketch::Sketch(const std::string& name, Occt_view& view, const gp_Pln& pln)
     , m_pln(pln)
     , m_name(name)
     , m_nodes(view, pln)
+    , m_edges(*this)
     , m_topo(*this)
     , m_dims(*this)
     , m_underlay(view.ctx())
@@ -75,6 +76,7 @@ Sketch::Sketch(const std::string& name, Occt_view& view, const gp_Pln& pln, cons
     , m_pln(pln)
     , m_name(name)
     , m_nodes(view, pln)
+    , m_edges(*this)
     , m_topo(*this)
     , m_dims(*this)
     , m_underlay(view.ctx())
@@ -88,20 +90,14 @@ Sketch::~Sketch()
 {
   m_underlay.ctx_erase();
 
-  auto remove_edge = [&](Edge& e)
-  {
-    m_ctx.Remove(e.shp, false);
-  };
-
-  for (Edge& e : m_edges)
-    remove_edge(e);
+  m_edges.remove_displayed();
 
   m_dims.remove_displayed();
 
   m_topo.remove_displayed_faces();
 
   if (m_operation_axis.has_value())
-    remove_edge(*m_operation_axis);
+    m_ctx.Remove(m_operation_axis->shp, false);
 
   remove_all_permanent_node_marks_();
 
@@ -178,13 +174,7 @@ void Sketch::angle_input(const ScreenCoords& screen_coords)
 
 void Sketch::remove_edge(const Sketch_AIS_edge& to_remove)
 {
-  // Some shapes are composed with multiple edges, so we cannot break when a edge is found.
-  for (std::list<Edge>::iterator itr = m_edges.begin(); itr != m_edges.end();)
-    if (itr->shp.get() == &to_remove)
-      itr = m_edges.erase(itr);
-    else
-      ++itr;
-
+  m_edges.remove_by_ais(to_remove);
   update_faces_();
 }
 
@@ -606,7 +596,7 @@ void Sketch::finalize_edges_(Sketch_op_recorder& rec)
 
       gp_Pnt2d pa = m_nodes[te.node_idx_a];
       gp_Pnt2d pb = m_nodes[te.node_idx_b];
-      for (const Edge& oe : m_edges) // pre-batch olds only
+      for (const Edge& oe : m_edges.edges()) // pre-batch olds only
       {
         if (!is_linear_edge_(oe))
           continue;
@@ -628,7 +618,7 @@ void Sketch::finalize_edges_(Sketch_op_recorder& rec)
     for (const auto& ip : batch_inters)
     {
       bool is_old_interior = false;
-      for (const Edge& e : m_edges)
+      for (const Edge& e : m_edges.edges())
       {
         if (!is_linear_edge_(e))
           continue;
@@ -650,13 +640,13 @@ void Sketch::finalize_edges_(Sketch_op_recorder& rec)
       m_topo.split_linear_edges_at_node_if_interior(m_nodes.get_node_exact(ip), rec);
   }
 
-  append(m_edges, m_tmp_edges);
+  append(m_edges.edges(), m_tmp_edges);
   m_tmp_edges.clear();
 
   // Ensure topology is correct if snapping on a midpoint happened.
   // These edges need to be split. (Kept for compatibility with current midpoint marking during draw.)
   for (size_t mid_pt_idx : split_mid_points)
-    for (auto itr = m_edges.begin(), end = m_edges.end(); itr != end; ++itr)
+    for (auto itr = m_edges.edges().begin(), end = m_edges.edges().end(); itr != end; ++itr)
       if (itr->node_idx_mid.has_value() && *itr->node_idx_mid == mid_pt_idx)
         // Cannot split arc circles.
         if (!itr->node_idx_arc.has_value())
@@ -673,10 +663,10 @@ void Sketch::finalize_edges_(Sketch_op_recorder& rec)
           rec.note_curr_node(edge_a.node_idx_mid.value());
           rec.note_curr_node(edge_b.node_idx_mid.value());
           m_ctx.Remove(itr->shp, false);
-          m_edges.erase(itr);
+          m_edges.edges().erase(itr);
           m_nodes[mid_pt_idx].midpoint = false;
-          m_edges.emplace_back(edge_a);
-          m_edges.emplace_back(edge_b);
+          m_edges.edges().emplace_back(edge_a);
+          m_edges.edges().emplace_back(edge_b);
           break;
         }
 
@@ -1015,7 +1005,7 @@ void Sketch::mirror_selected_edges()
   std::vector<std::pair<gp_Pnt2d, gp_Pnt2d>>     mirrored_edges;
   std::map<AIS_Shape_ptr, std::set<const Edge*>> arc_circles;
 
-  for (const Edge& e : m_edges)
+  for (const Edge& e : m_edges.edges())
     for (const Edge& selected : mirror_edges)
       if (e.shp == selected.shp || e.circle_arc == selected.circle_arc)
       {
@@ -1170,136 +1160,18 @@ void Sketch::finalize_add_node_elm_cleanup_()
   update_faces_();
 }
 
-void Sketch::add_edge_raw_(const gp_Pnt2d& pt_a, const gp_Pnt2d& pt_b)
-{
-  Edge edge{m_nodes.get_node_exact(pt_a)};
-  update_edge_end_pt_(edge, m_nodes.get_node_exact(pt_b));
-  m_edges.emplace_back(edge);
-  m_nodes.finalize();
-}
-
-void Sketch::add_edge_(const gp_Pnt2d& pt_a, const gp_Pnt2d& pt_b) { add_edge_impl_(pt_a, pt_b, nullptr); }
+void Sketch::add_edge_(const gp_Pnt2d& pt_a, const gp_Pnt2d& pt_b) { m_edges.add_edge(pt_a, pt_b); }
 
 void Sketch::add_edge_(const gp_Pnt2d& pt_a, const gp_Pnt2d& pt_b, Sketch_op_recorder& rec)
 {
-  rec.note_curr_linear_edge(pt_a, pt_b);
-  add_edge_impl_(pt_a, pt_b, &rec);
+  m_edges.add_edge(pt_a, pt_b, rec);
 }
 
-void Sketch::add_edge_impl_(const gp_Pnt2d& pt_a, const gp_Pnt2d& pt_b, Sketch_op_recorder* rec)
-{
-  if (!unique(pt_a, pt_b))
-    return;
-
-  // Find intersections (crossings or T-touches) between this new segment and all *currently existing* linear edges.
-  // We will split the existing ones at interior intersections, and subdivide this new one as needed.
-  std::vector<gp_Pnt2d> inters;
-  for (const Edge& e : m_edges)
-  {
-    if (!is_linear_edge_(e))
-      continue;
-
-    gp_Pnt2d qa = m_nodes[e.node_idx_a];
-    gp_Pnt2d qb = m_nodes[e.node_idx_b];
-
-    if (auto inter = segment_intersection_2d(pt_a, pt_b, qa, qb, Segment_inclusion::Closed))
-      // The intersection point is guaranteed to lie on both finite closed segments
-      // (the new logic is now handled inside segment_intersection_2d).
-      // We still collect it for later splitting of existing edges and subdividing the new one.
-      add_unique_point(inters, *inter);
-  }
-
-  // Collect only the *interior* hits on existing edges for splitting.
-  // We must not call split (which does snap) on endpoint-touch "inters" (shared corners),
-  // otherwise in headless tests (giant snap radius) corners get projected onto unrelated edges,
-  // and in general we don't want to move known join points.
-  std::vector<gp_Pnt2d> inters_to_split;
-  for (const auto& ip : inters)
-  {
-    // Need to re-find which old edge (or any) this ip lies on interior; check against all current
-    // for safety (a point could in theory be interior hit for the collect).
-    bool is_old_interior = false;
-    for (const Edge& e : m_edges)
-    {
-      if (!is_linear_edge_(e))
-        continue;
-
-      gp_Pnt2d qa = m_nodes[e.node_idx_a];
-      gp_Pnt2d qb = m_nodes[e.node_idx_b];
-      if (point_on_open_segment_2d(ip, qa, qb))
-      {
-        is_old_interior = true;
-        break;
-      }
-    }
-    if (is_old_interior)
-      add_unique_point(inters_to_split, ip);
-  }
-
-  // All division points on this new edge: its own ends + any intersections
-  std::vector<gp_Pnt2d> div_pts{pt_a, pt_b};
-  div_pts.insert(div_pts.end(), inters.begin(), inters.end());
-
-  // Sort along the edge direction
-  gp_Vec2d dir(pt_a, pt_b);
-  double   len2 = dir.SquareMagnitude();
-  if (len2 < Precision::Confusion() * Precision::Confusion())
-    return;
-
-  std::sort(div_pts.begin(), div_pts.end(),
-            [&](const gp_Pnt2d& u, const gp_Pnt2d& v) { return gp_Vec2d(pt_a, u).Dot(dir) < gp_Vec2d(pt_a, v).Dot(dir); });
-
-  // Dedup after sort
-  std::vector<gp_Pnt2d> pts;
-  for (const auto& p : div_pts)
-  {
-    if (pts.empty() || pts.back().Distance(p) > Precision::Confusion())
-      pts.push_back(p);
-  }
-
-  if (pts.size() < 2)
-    return;
-
-  // Create nodes for all division points (for subdividing the new edge)
-  std::vector<size_t> div_node_idxs;
-  for (const auto& p : pts)
-    div_node_idxs.push_back(m_nodes.get_node_exact(p));
-
-  // Only split *existing* linear edges at the true *interior* intersection points we found on olds.
-  // Endpoint touches (shared corners) are excluded here so we do not invoke snap on known vertices.
-  for (const auto& inter_p : inters_to_split)
-  {
-    const size_t nidx = m_nodes.get_node_exact(inter_p);
-    if (rec)
-      rec->note_curr_node(nidx);
-
-    m_topo.split_linear_edges_at_node_if_interior(nidx, rec);
-  }
-
-  // Now insert the (subdivided) pieces of this new edge using the raw adder.
-  // Use the (possibly adjusted by split snap) node positions.
-  for (size_t i = 0; i + 1 < div_node_idxs.size(); ++i)
-  {
-    const gp_Pnt2d& pa = m_nodes[div_node_idxs[i]];
-    const gp_Pnt2d& pb = m_nodes[div_node_idxs[i + 1]];
-    add_edge_raw_(pa, pb);
-  }
-}
+void Sketch::add_edge_raw_(const gp_Pnt2d& pt_a, const gp_Pnt2d& pt_b) { m_edges.add_edge_raw_(pt_a, pt_b); }
 
 void Sketch::sketch_json_add_linear_edge_(size_t idx_a, size_t idx_b, std::optional<size_t> idx_mid)
 {
-  EZY_ASSERT(idx_a < m_nodes.size() && idx_b < m_nodes.size());
-  if (idx_mid.has_value())
-    EZY_ASSERT(*idx_mid < m_nodes.size());
-
-  Edge edge{idx_a};
-  edge.node_idx_b      = idx_b;
-  edge.node_idx_mid    = idx_mid;
-  const gp_Pnt2d& pt_a = m_nodes[idx_a];
-  const gp_Pnt2d& pt_b = m_nodes[idx_b];
-  update_edge_shp_(edge, pt_a, pt_b);
-  m_edges.emplace_back(edge);
-  m_nodes.finalize();
+  m_edges.sketch_json_add_linear_edge(idx_a, idx_b, idx_mid);
 }
 
 void Sketch::sketch_json_set_operation_axis_(const gp_Pnt2d& pt_a, const gp_Pnt2d& pt_b)
@@ -1317,16 +1189,7 @@ void Sketch::sketch_json_set_operation_axis_(const gp_Pnt2d& pt_a, const gp_Pnt2
   sync_operation_axis_display_();
 }
 
-std::vector<Sketch::Edge> Sketch::get_selected_edges_() const
-{
-  std::vector<Edge> ret;
-  for (const AIS_Shape_ptr& selected : m_view.get_selected())
-    for (const Edge& e : m_edges)
-      if (e.shp == selected)
-        ret.push_back(e);
-
-  return ret;
-}
+std::vector<Sketch::Edge> Sketch::get_selected_edges_() const { return m_edges.get_selected(); }
 
 std::vector<Sketch_face_shp_ptr> Sketch::get_selected_faces_() const
 {
@@ -1341,14 +1204,7 @@ std::vector<Sketch_face_shp_ptr> Sketch::get_selected_faces_() const
 
 std::list<Sketch::Edge>::iterator Sketch::get_edge_at_(const ScreenCoords& screen_coords)
 {
-  AIS_Shape_ptr shp = m_view.get_shape(screen_coords);
-  if (auto edge = dynamic_cast<Sketch_AIS_edge*>(shp.get()); edge)
-    if (&edge->owner_sketch == this)
-      for (std::list<Edge>::iterator itr = m_edges.begin(); itr != m_edges.end(); ++itr)
-        if (itr->shp.get() == edge)
-          return itr;
-
-  return m_edges.end();
+  return m_edges.get_at(screen_coords);
 }
 bool Sketch::try_remove_length_dimension(PrsDim_LengthDimension* dim) { return m_dims.try_remove_length_dimension(dim); }
 
@@ -1477,18 +1333,7 @@ void Sketch::set_edge_from_center(bool on) { s_edge_from_center = on; }
 
 bool Sketch::get_edge_from_center() { return s_edge_from_center; }
 
-void Sketch::update_edge_end_pt_(Edge& edge, size_t end_pt_idx)
-{
-  EZY_ASSERT(end_pt_idx < m_nodes.size());
-  edge.node_idx_b      = end_pt_idx;
-  const gp_Pnt2d& pt_a = m_nodes[edge.node_idx_a];
-  const gp_Pnt2d& pt_b = m_nodes[end_pt_idx];
-  update_edge_shp_(edge, pt_a, pt_b);
-  if (s_add_mid_pt_edges)
-    edge.node_idx_mid = m_nodes.add_new_node(get_midpoint(pt_a, pt_b), true);
-  else
-    edge.node_idx_mid = std::nullopt;
-}
+void Sketch::update_edge_end_pt_(Edge& edge, size_t end_pt_idx) { m_edges.update_end_pt(edge, end_pt_idx); }
 
 void Sketch::add_arc_circle_(const gp_Pnt2d& pt_a, const gp_Pnt2d& pt_b, const gp_Pnt2d& pt_c)
 {
@@ -1512,19 +1357,7 @@ void Sketch::add_arc_circle_(const gp_Pnt2d& pt_a, const gp_Pnt2d& pt_b, const g
   add_arc_circle_(std::vector<size_t>{node_idx_a, node_idx_c, node_idx_b});
 }
 
-void Sketch::add_arc_circle_(const std::vector<size_t>& node_idxs)
-{
-  EZY_ASSERT(node_idxs.size() == 3);
-  Geom_TrimmedCurve_ptr arc_of_circle = GC_MakeArcOfCircle(to_3d_(node_idxs[0]), to_3d_(node_idxs[2]), to_3d_(node_idxs[1]));
-
-  Sketch_AIS_edge_ptr shp = new Sketch_AIS_edge(*this, BRepBuilderAPI_MakeEdge(arc_of_circle));
-  update_edge_style_(shp);
-  m_ctx.Display(shp, false);
-
-  // Split into two edges for valid planer graph topology.
-  m_edges.push_back({node_idxs[0], node_idxs[2], node_idxs[2], std::nullopt, arc_of_circle, shp});
-  m_edges.push_back({node_idxs[2], node_idxs[1], std::nullopt, std::nullopt, arc_of_circle, shp});
-}
+void Sketch::add_arc_circle_(const std::vector<size_t>& node_idxs) { m_edges.add_arc_circle_edges(node_idxs); }
 
 // Circle related
 void Sketch::move_circle_pt_(const ScreenCoords& screen_coords)
@@ -1658,7 +1491,7 @@ void Sketch::set_visible(bool state)
       for (AIS_Shape_ptr& face : m_topo.faces())
         m_ctx.Display(face, AIS_Shaded, 0, false);
 
-    for (Edge& e : m_edges)
+    for (Edge& e : m_edges.edges())
       m_ctx.Display(e.shp, AIS_WireFrame, 0, false);
 
     m_dims.on_sketch_shown();
@@ -1677,7 +1510,7 @@ void Sketch::set_visible(bool state)
     for (AIS_Shape_ptr& face : m_topo.faces())
       m_ctx.Erase(face, false);
 
-    for (Edge& e : m_edges)
+    for (Edge& e : m_edges.edges())
       m_ctx.Erase(e.shp, false);
 
     m_dims.on_sketch_hidden();
@@ -1718,10 +1551,10 @@ void Sketch::set_show_faces(bool show)
 void Sketch::set_show_edges(bool show)
 {
   if (show && m_visible)
-    for (Edge& e : m_edges)
+    for (Edge& e : m_edges.edges())
       m_ctx.Display(e.shp, AIS_WireFrame, 0, false);
   else
-    for (Edge& e : m_edges)
+    for (Edge& e : m_edges.edges())
       m_ctx.Erase(e.shp, false);
 }
 void Sketch::append_list_hover_ais(std::vector<AIS_InteractiveObject_ptr>& out) const
@@ -1729,7 +1562,7 @@ void Sketch::append_list_hover_ais(std::vector<AIS_InteractiveObject_ptr>& out) 
   if (!m_visible)
     return;
 
-  for (const Edge& e : m_edges)
+  for (const Edge& e : m_edges.edges())
     if (!e.shp.IsNull())
       out.push_back(e.shp);
 
@@ -1790,7 +1623,7 @@ void Sketch::set_edge_style(Edge_style style)
 {
   m_edge_style = style;
 
-  for (Edge& e : m_edges)
+  for (Edge& e : m_edges.edges())
     update_edge_style_(e.shp);
 
   // Permanent node marker style/visibility is managed elsewhere; avoid
@@ -1821,7 +1654,7 @@ std::vector<std::string> Sketch::inspector_edge_labels() const
   std::vector<std::string> labels;
   labels.reserve(m_edges.size());
   size_t idx = 0;
-  for (const Edge& e : m_edges)
+  for (const Edge& e : m_edges.edges())
   {
     std::string lbl = e.name.empty() ? ("E" + std::to_string(idx)) : e.name;
     labels.push_back(std::move(lbl));
@@ -1844,20 +1677,6 @@ std::vector<std::string> Sketch::inspector_face_labels() const
 
   return labels;
 }
-
-bool Sketch::Edge::reversed(size_t idx_a, size_t idx_b) const
-{
-  if (node_idx_a == idx_a && node_idx_b == idx_b)
-    return false;
-
-  if (node_idx_a == idx_b && node_idx_b == idx_a)
-    return true;
-
-  EZY_ASSERT(false);
-  return false;
-}
-
-bool Sketch::is_linear_edge_(const Edge& e) { return !e.circle_arc && e.node_idx_b.has_value(); }
 
 /// Selectable "+" marker for user-placed permanent sketch nodes (add-node tool).
 struct Sketch_AIS_node_mark : public AIS_Shape

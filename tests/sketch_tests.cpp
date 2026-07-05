@@ -159,7 +159,7 @@ const std::vector<Sketch_face_shp_ptr>& Sketch_access::get_faces(const Sketch& s
 
 const std::list<Sketch::Edge>& Sketch_access::get_edges(const Sketch& sketch)
 {
-  return sketch.m_edges;
+  return sketch.m_edges.edges();
 }
 
 size_t Sketch_access::length_dimension_count(const Sketch& sketch)

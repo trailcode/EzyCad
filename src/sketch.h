@@ -10,6 +10,8 @@
 
 #include "shp.h"
 #include "sketch_dims.h"
+#include "sketch_edge.h"
+#include "sketch_edges.h"
 #include "sketch_nodes.h"
 #include "sketch_topo.h"
 #include "sketch_underlay.h"
@@ -58,21 +60,7 @@ public:
     Hidden
   };
 
-  struct Edge
-  {
-    size_t                node_idx_a;
-    std::optional<size_t> node_idx_b;
-    std::optional<size_t> node_idx_arc; // Only valid for circle arc edges.
-    std::optional<size_t> node_idx_mid; // Midpoint of edge, used for snapping.
-
-    //  Used to identify the two `Edges` defining a circle arc.
-    Geom_TrimmedCurve_ptr circle_arc;
-    Sketch_AIS_edge_ptr   shp; // Current edge annotation.
-
-    std::string name;
-
-    bool reversed(size_t idx_a, size_t idx_b) const;
-  };
+  using Edge = Sketch_edge;
 
   // Add sketch related
   void add_sketch_pt(const ScreenCoords& screen_coords);
@@ -162,6 +150,7 @@ private:
   friend class Sketch_op_recorder;
   friend class Sketch_topo;
   friend class Sketch_dims;
+  friend class Sketch_edges;
 
   static bool s_add_mid_pt_edges;
   static bool s_edge_from_center;
@@ -222,10 +211,9 @@ private:
   void finalize_add_node_elm_cleanup_();
   void add_edge_(const gp_Pnt2d& pt_a, const gp_Pnt2d& pt_b);
   void add_edge_(const gp_Pnt2d& pt_a, const gp_Pnt2d& pt_b, Sketch_op_recorder& rec);
-  void add_edge_impl_(const gp_Pnt2d& pt_a, const gp_Pnt2d& pt_b, Sketch_op_recorder* rec);
   void add_edge_raw_(const gp_Pnt2d& pt_a, const gp_Pnt2d& pt_b);
   /// Helper used when walking edges for splitting / intersection logic.
-  static bool is_linear_edge_(const Edge& e);
+  static bool is_linear_edge_(const Edge& e) { return Sketch_edges::is_linear(e); }
   /// JSON load: linear edge using existing node indices (`idx_mid` is the edge midpoint node).
   void sketch_json_add_linear_edge_(size_t idx_a, size_t idx_b, std::optional<size_t> idx_mid);
   /// JSON load: restore the sketch operation axis from two plane points.
@@ -243,10 +231,8 @@ private:
   gp_Vec2d edge_incoming_dir_(size_t idx_a, size_t idx_b, const Edge& edge) const;
 
   // 3D point related
-  void   get_snap_pts_3d_(std::vector<gp_Pnt>& out);
-  void   get_originating_face_snp_pts_3d_(std::vector<gp_Pnt>& out);
-  gp_Pnt to_3d_(size_t node_idx) const;
-  gp_Pnt to_3d_(const std::optional<size_t>& node_idx) const;
+  void get_snap_pts_3d_(std::vector<gp_Pnt>& out);
+  void get_originating_face_snp_pts_3d_(std::vector<gp_Pnt>& out);
 
   // Style related
   void update_edge_style_(AIS_Shape_ptr& shp);
@@ -269,7 +255,9 @@ private:
   // Query related
   std::list<Edge>::iterator get_edge_at_(const ScreenCoords& screen_coords);
 
-  // Style related
+  gp_Pnt to_3d_(size_t node_idx) const;
+  gp_Pnt to_3d_(const std::optional<size_t>& node_idx) const;
+
   Edge_style m_edge_style{Edge_style::Full};
 
   // Arc circle related.
@@ -301,7 +289,7 @@ private:
   Sketch_nodes            m_nodes;
   /// One entry per node index; only indices with permanent, non-deleted nodes hold a displayed + marker.
   std::vector<Sketch_AIS_node_mark_ptr> m_permanent_node_marks;
-  std::list<Edge>                       m_edges;
+  Sketch_edges                          m_edges;
   Sketch_topo                           m_topo;
   Sketch_dims                           m_dims;
   Sketch_underlay                       m_underlay;

@@ -156,8 +156,6 @@ nlohmann::json Sketch_json::to_json(const Sketch& sketch, const Ezy_asset_store&
   json& edges_json = j["edges"] = json::array();
   json& arc_edges_json = j["arc_edges"] = json::array();
 
-  const Sketch::Edge* last_arc_circle_edge = nullptr;
-
   const auto& sketch_nodes = sketch.m_nodes;
 
   std::vector<std::optional<size_t>> dense_of_sparse(sketch_nodes.size());
@@ -182,35 +180,18 @@ nlohmann::json Sketch_json::to_json(const Sketch& sketch, const Ezy_asset_store&
     return *dense_of_sparse[sparse_idx];
   };
 
-  for (const auto& edge : sketch.m_edges)
-  {
-    EZY_ASSERT(edge.node_idx_b.has_value());
+  sketch.m_edges.for_each_linear(
+      [&](const Sketch_edge_linear& e)
+      {
+        if (e.node_mid.has_value())
+          edges_json.push_back(json::array({remap(e.node_a), remap(e.node_b), remap(*e.node_mid)}));
+        else
+          edges_json.push_back(json::array({remap(e.node_a), remap(e.node_b)}));
+      });
 
-    if (!edge.circle_arc)
-    {
-      if (edge.node_idx_mid.has_value())
-        edges_json.push_back(json::array({remap(edge.node_idx_a), remap(*edge.node_idx_b), remap(*edge.node_idx_mid)}));
-      else
-        edges_json.push_back(json::array({remap(edge.node_idx_a), remap(*edge.node_idx_b)}));
-    }
-    else
-    {
-      if (last_arc_circle_edge)
-      {
-        EZY_ASSERT(last_arc_circle_edge->circle_arc.get() == edge.circle_arc.get());
-        EZY_ASSERT(last_arc_circle_edge->node_idx_arc.has_value());
-        arc_edges_json.push_back(json::array(
-            {remap(last_arc_circle_edge->node_idx_a), remap(*last_arc_circle_edge->node_idx_arc), remap(*edge.node_idx_b)}));
-        last_arc_circle_edge = nullptr;
-      }
-      else
-      {
-        EZY_ASSERT(edge.node_idx_arc.has_value());
-        EZY_ASSERT(*edge.node_idx_b == *edge.node_idx_arc);
-        last_arc_circle_edge = &edge;
-      }
-    }
-  }
+  sketch.m_edges.for_each_arc(
+      [&](const Sketch_edge_arc& a)
+      { arc_edges_json.push_back(json::array({remap(a.node_start), remap(a.node_arc), remap(a.node_end)})); });
 
   json& len_dims_json = j["length_dimensions"] = json::array();
   for (const Sketch_dims::Length_dimension& ld : sketch.m_dims.dimensions())

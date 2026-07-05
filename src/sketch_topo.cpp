@@ -76,7 +76,7 @@ void Sketch_topo::snap_placed_node_to_closest_linear_edge_interior_(size_t node_
   double                  best_err = std::numeric_limits<double>::infinity();
   std::optional<gp_Pnt2d> best_proj;
 
-  for (const auto& e : m_sketch.m_edges)
+  for (const auto& e : m_sketch.m_edges.edges())
   {
     if (e.circle_arc)
       continue;
@@ -135,7 +135,7 @@ void Sketch_topo::split_linear_edges_at_node_if_interior(size_t node_idx, Sketch
   while (progress)
   {
     progress = false;
-    for (auto itr = m_sketch.m_edges.begin(); itr != m_sketch.m_edges.end(); ++itr)
+    for (auto itr = m_sketch.m_edges.edges().begin(); itr != m_sketch.m_edges.edges().end(); ++itr)
     {
       if (itr->circle_arc)
         continue;
@@ -166,10 +166,10 @@ void Sketch_topo::split_linear_edges_at_node_if_interior(size_t node_idx, Sketch
         rec->note_prev_linear_edge(itr->node_idx_a, *itr->node_idx_b, itr->node_idx_mid, itr->name);
 
       m_sketch.m_ctx.Remove(itr->shp, false);
-      m_sketch.m_edges.erase(itr);
+      m_sketch.m_edges.edges().erase(itr);
       m_sketch.m_nodes[node_idx].midpoint = false;
-      m_sketch.m_edges.push_back(std::move(edge_a));
-      m_sketch.m_edges.push_back(std::move(edge_b));
+      m_sketch.m_edges.edges().push_back(std::move(edge_a));
+      m_sketch.m_edges.edges().push_back(std::move(edge_b));
 
       progress = true;
       break;
@@ -192,7 +192,7 @@ void Sketch_topo::update_faces()
   // Build adjacency list
   std::unordered_map<size_t, std::vector<std::pair<size_t, const Sketch::Edge*>>> adj_list;
 
-  for (const auto& edge : m_sketch.m_edges)
+  for (const auto& edge : m_sketch.m_edges.edges())
   {
     EZY_ASSERT(edge.node_idx_b.has_value());
 
@@ -227,11 +227,11 @@ void Sketch_topo::update_faces()
   // Any non-arc edge that uses this virtual node as an endpoint should not participate in faces.
   {
     std::unordered_set<size_t> arc_mid_nodes;
-    for (const auto& edge : m_sketch.m_edges)
+    for (const auto& edge : m_sketch.m_edges.edges())
       if (edge.node_idx_arc.has_value())
         arc_mid_nodes.insert(*edge.node_idx_arc);
 
-    for (const auto& edge : m_sketch.m_edges)
+    for (const auto& edge : m_sketch.m_edges.edges())
     {
       // Only consider non-arc edges (straight segments etc.).
       if (edge.circle_arc)
@@ -255,7 +255,7 @@ void Sketch_topo::update_faces()
     std::unordered_set<const Sketch::Edge*> to_exclude;
 
     // Find edges where at least one endpoint has degree 1 (considering only non-excluded edges)
-    for (const auto& edge : m_sketch.m_edges)
+    for (const auto& edge : m_sketch.m_edges.edges())
     {
       if (excluded_edges.count(&edge))
         continue;
@@ -296,7 +296,7 @@ void Sketch_topo::update_faces()
   // A bridge edge connects two cycles and has both endpoints with degree >= 3.
   // We detect this by checking if the edge is the only connection between two cycles.
   std::unordered_set<const Sketch::Edge*> bridge_edges;
-  for (const auto& edge : m_sketch.m_edges)
+  for (const auto& edge : m_sketch.m_edges.edges())
   {
     if (excluded_edges.count(&edge))
       continue;
@@ -409,7 +409,7 @@ void Sketch_topo::update_faces()
 
   // Rebuild adjacency list excluding dangling and bridge edges
   adj_list.clear();
-  for (const auto& edge : m_sketch.m_edges)
+  for (const auto& edge : m_sketch.m_edges.edges())
   {
     if (excluded_edges.count(&edge))
       continue;

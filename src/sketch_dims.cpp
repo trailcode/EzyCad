@@ -253,7 +253,7 @@ void Sketch_dims::toggle_edge_dim_anno(const ScreenCoords& screen_coords)
     return;
   }
 
-  if (std::list<Sketch::Edge>::iterator itr = m_sketch.get_edge_at_(screen_coords); itr != m_sketch.m_edges.end())
+  if (std::list<Sketch::Edge>::iterator itr = m_sketch.get_edge_at_(screen_coords); itr != m_sketch.m_edges.edges().end())
     if (!itr->circle_arc && itr->node_idx_b.has_value() && !itr->node_idx_arc.has_value())
     {
       add_or_toggle_length_dim_between_node_indices_(itr->node_idx_a, *itr->node_idx_b);
