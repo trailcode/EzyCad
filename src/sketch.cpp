@@ -2934,7 +2934,7 @@ void Sketch::append_list_hover_ais(std::vector<AIS_InteractiveObject_ptr>& out) 
   if (m_operation_axis.has_value() && !m_operation_axis->shp.IsNull())
     out.push_back(m_operation_axis->shp);
 
-  if (underlay_visible())
+  if (m_underlay.has_image() && m_underlay.visible())
     m_underlay.append_list_hover_ais(out);
 }
 
@@ -3088,44 +3088,6 @@ std::vector<std::string> Sketch::inspector_node_labels() const
   return labels;
 }
 
-bool Sketch::has_underlay() const { return m_underlay.has_image(); }
-
-int Sketch::underlay_image_w() const { return m_underlay.has_image() ? m_underlay.image_w() : 0; }
-
-int Sketch::underlay_image_h() const { return m_underlay.has_image() ? m_underlay.image_h() : 0; }
-
-bool Sketch::load_underlay_image(const std::string& file_bytes)
-{
-  const auto dec = decode_image_bytes(file_bytes);
-  if (!dec)
-    return false;
-
-  std::vector<uint8_t> rgba = std::move(std::get<0>(*dec));
-  const int            w    = std::get<1>(*dec);
-  const int            h    = std::get<2>(*dec);
-
-  if (!m_underlay.set_image_rgba(std::move(rgba), w, h, m_view.asset_store()))
-    return false;
-
-  uint8_t hr, hg, hb, ha;
-  m_view.gui().underlay_highlight_color_rgba(hr, hg, hb, ha);
-  m_underlay.set_line_tint_rgba(hr, hg, hb, ha);
-  if (m_visible)
-    m_underlay.rebuild_and_display(m_pln);
-
-  m_ctx.UpdateCurrentViewer();
-  return true;
-}
-
-void Sketch::clear_underlay()
-{
-  if (!m_underlay.has_image())
-    return;
-
-  m_underlay.clear();
-  m_ctx.UpdateCurrentViewer();
-}
-
 std::optional<gp_Pnt2d> Sketch::pick_point_for_underlay_calib(const ScreenCoords& screen_coords)
 {
   std::optional<gp_Pnt2d> on_pln = m_view.pt_on_plane(screen_coords, m_pln);
@@ -3148,10 +3110,7 @@ void Sketch::underlay_set_affine_plane(const gp_Pnt2d& base, const gp_Vec2d& axi
     return;
 
   m_underlay.set_affine(base, axis_u, axis_v);
-  if (m_visible)
-    m_underlay.rebuild_and_display(m_pln);
-
-  m_ctx.UpdateCurrentViewer();
+  m_underlay.rebuild_display(m_pln, m_visible);
 }
 
 namespace
@@ -3242,217 +3201,6 @@ gp_Vec2d Sketch::underlay_axis_u_vec() const
     return {};
 
   return m_underlay.axis_u();
-}
-
-void Sketch::underlay_set_center_extents_rotation(const dvec2& center, const dvec2& half_extents, double rot_deg)
-{
-  EZY_ASSERT(m_underlay.has_image());
-  EZY_ASSERT(m_visible);
-
-  m_underlay.set_center_extents_rotation(center, half_extents, rot_deg);
-  m_underlay.rebuild_and_display(m_pln);
-  m_ctx.UpdateCurrentViewer();
-}
-
-void Sketch::underlay_set_opacity(float opaque01)
-{
-  if (!m_underlay.has_image())
-    return;
-
-  m_underlay.set_opacity(opaque01);
-  m_underlay.redisplay();
-  m_ctx.UpdateCurrentViewer();
-}
-
-void Sketch::underlay_set_visible(bool v)
-{
-  if (!m_underlay.has_image())
-    return;
-
-  m_underlay.set_visible(v);
-  m_underlay.sync_visibility(m_pln);
-  m_ctx.UpdateCurrentViewer();
-}
-
-float Sketch::underlay_opacity() const { return m_underlay.has_image() ? m_underlay.opacity() : 1.f; }
-bool  Sketch::underlay_visible() const { return m_underlay.has_image() && m_underlay.visible(); }
-
-void Sketch::underlay_set_key_white_transparent(bool on)
-{
-  if (!m_underlay.has_image())
-    return;
-
-  m_underlay.set_key_white_transparent(on);
-  underlay_rebuild_display();
-}
-
-bool Sketch::underlay_key_white_transparent() const
-{
-  return m_underlay.has_image() ? m_underlay.key_white_transparent() : true;
-}
-
-void Sketch::underlay_set_line_tint_enabled(bool on)
-{
-  if (!m_underlay.has_image())
-    return;
-
-  m_underlay.set_line_tint_enabled(on);
-  underlay_rebuild_display();
-}
-
-void Sketch::underlay_set_line_tint_rgb(uint8_t r, uint8_t g, uint8_t b)
-{
-  if (!m_underlay.has_image())
-    return;
-
-  m_underlay.set_line_tint_rgb(r, g, b);
-  underlay_rebuild_display();
-}
-
-void Sketch::underlay_set_line_tint_rgba(uint8_t r, uint8_t g, uint8_t b, uint8_t a)
-{
-  if (!m_underlay.has_image())
-    return;
-
-  m_underlay.set_line_tint_rgba(r, g, b, a);
-  underlay_rebuild_display();
-}
-
-void Sketch::underlay_set_raw_shear_display(bool on)
-{
-  if (!m_underlay.has_image())
-    return;
-
-  m_underlay.set_raw_shear_display(on);
-  underlay_rebuild_display();
-}
-
-bool Sketch::underlay_raw_shear_display() const
-{
-  if (!m_underlay.has_image())
-    return false;
-
-  return m_underlay.raw_shear_display();
-}
-
-void Sketch::underlay_set_flip_image_u(bool on)
-{
-  if (!m_underlay.has_image())
-    return;
-
-  m_underlay.set_flip_image_u(on);
-  underlay_rebuild_display();
-}
-
-void Sketch::underlay_set_flip_image_v(bool on)
-{
-  if (!m_underlay.has_image())
-    return;
-
-  m_underlay.set_flip_image_v(on);
-  underlay_rebuild_display();
-}
-
-bool Sketch::underlay_flip_image_u() const
-{
-  if (!m_underlay.has_image())
-    return false;
-
-  return m_underlay.flip_image_u();
-}
-
-bool Sketch::underlay_flip_image_v() const
-{
-  if (!m_underlay.has_image())
-    return false;
-
-  return m_underlay.flip_image_v();
-}
-
-bool Sketch::underlay_line_tint_enabled() const { return m_underlay.has_image() ? m_underlay.line_tint_enabled() : true; }
-
-void Sketch::underlay_line_tint_rgb(uint8_t& r, uint8_t& g, uint8_t& b) const
-{
-  if (m_underlay.has_image())
-    m_underlay.line_tint_rgb(r, g, b);
-  else
-  {
-    r = 255;
-    g = 220;
-    b = 0;
-  }
-}
-
-void Sketch::underlay_line_tint_rgba(uint8_t& r, uint8_t& g, uint8_t& b, uint8_t& a) const
-{
-  if (m_underlay.has_image())
-    m_underlay.line_tint_rgba(r, g, b, a);
-  else
-  {
-    r = 255;
-    g = 220;
-    b = 0;
-    a = 255;
-  }
-}
-
-void Sketch::underlay_ui_params(double& cx, double& cy, double& half_w, double& half_h, double& rot_deg) const
-{
-  if (!m_underlay.has_image())
-  {
-    cx = cy = half_w = half_h = rot_deg = 0.;
-    return;
-  }
-
-  const gp_Pnt2d b  = m_underlay.base();
-  const gp_Vec2d au = m_underlay.axis_u();
-  const gp_Vec2d av = m_underlay.axis_v();
-  half_w            = 0.5 * au.Magnitude();
-  half_h            = 0.5 * av.Magnitude();
-  cx                = b.X() + 0.5 * (au.X() + av.X());
-  cy                = b.Y() + 0.5 * (au.Y() + av.Y());
-  rot_deg           = std::atan2(au.Y(), au.X()) * (180.0 / std::numbers::pi);
-}
-
-void Sketch::underlay_get_affine(gp_Pnt2d& base, gp_Vec2d& axis_u, gp_Vec2d& axis_v) const
-{
-  if (!m_underlay.has_image())
-  {
-    base   = gp_Pnt2d(0., 0.);
-    axis_u = gp_Vec2d(0., 0.);
-    axis_v = gp_Vec2d(0., 0.);
-    return;
-  }
-
-  base   = m_underlay.base();
-  axis_u = m_underlay.axis_u();
-  axis_v = m_underlay.axis_v();
-}
-
-bool Sketch::underlay_axes_orthogonal() const
-{
-  if (!m_underlay.has_image())
-    return true;
-
-  const gp_Vec2d au    = m_underlay.axis_u();
-  const gp_Vec2d av    = m_underlay.axis_v();
-  const double   dot   = au.X() * av.X() + au.Y() * av.Y();
-  const double   scale = au.Magnitude() * av.Magnitude();
-  if (scale < 1e-24)
-    return true;
-
-  return std::abs(dot) < 1e-9 * scale;
-}
-
-void Sketch::underlay_rebuild_display()
-{
-  if (!m_underlay.has_image())
-    return;
-
-  if (m_visible)
-    m_underlay.rebuild_and_display(m_pln);
-
-  m_ctx.UpdateCurrentViewer();
 }
 
 bool Sketch::Edge::reversed(size_t idx_a, size_t idx_b) const

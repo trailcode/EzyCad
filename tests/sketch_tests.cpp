@@ -2955,9 +2955,9 @@ TEST_F(Sketch_test, EzyZipUnderlayRoundTrip)
 
   const auto sk = view().curr_sketch_shared();
   ASSERT_TRUE(sk);
-  ASSERT_TRUE(sk->has_underlay());
-  EXPECT_EQ(sk->underlay_image_w(), 2);
-  EXPECT_EQ(sk->underlay_image_h(), 2);
+  ASSERT_TRUE(sk->underlay().has_image());
+  EXPECT_EQ(sk->underlay().image_w(), 2);
+  EXPECT_EQ(sk->underlay().image_h(), 2);
 
   const std::string manifest             = view().to_json();
   const std::vector<uint8_t> zip_bytes   = pack_ezy(manifest, view().asset_store());
@@ -2976,9 +2976,9 @@ TEST_F(Sketch_test, EzyZipUnderlayRoundTrip)
   view().load(unpacked->manifest_json, false);
   const auto loaded = view().curr_sketch_shared();
   ASSERT_TRUE(loaded);
-  EXPECT_TRUE(loaded->has_underlay());
-  EXPECT_EQ(loaded->underlay_image_w(), 2);
-  EXPECT_EQ(loaded->underlay_image_h(), 2);
+  EXPECT_TRUE(loaded->underlay().has_image());
+  EXPECT_EQ(loaded->underlay().image_w(), 2);
+  EXPECT_EQ(loaded->underlay().image_h(), 2);
 }
 
 TEST_F(Sketch_test, EzyZipUnderlayDedup)
@@ -3021,7 +3021,7 @@ TEST_F(Sketch_test, LegacyUnderlayRgbaB64Load)
   view().asset_store().clear();
   const auto sk = Sketch_json::from_json(view(), minimal_sketch_json_with_underlay_b64(view().asset_store()));
   ASSERT_TRUE(sk);
-  EXPECT_TRUE(sk->has_underlay());
+  EXPECT_TRUE(sk->underlay().has_image());
   const nlohmann::json saved = Sketch_json::to_json(*sk, view().asset_store());
   EXPECT_TRUE(saved.contains("underlay"));
   EXPECT_TRUE(saved["underlay"].contains("asset"));

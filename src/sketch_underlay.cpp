@@ -26,6 +26,7 @@
 
 #include "utl_geom.h"
 #include "ezy_asset_store.h"
+#include "utl.h"
 
 using namespace glm;
 
@@ -271,6 +272,16 @@ Handle(Image_PixMap) make_pixmap_bottom_up_warped(const uint8_t* rgba, int w, in
   return pix;
 }
 
+bool underlay_axes_orthogonal(const gp_Vec2d& au, const gp_Vec2d& av)
+{
+  const double dot   = au.X() * av.X() + au.Y() * av.Y();
+  const double scale = au.Magnitude() * av.Magnitude();
+  if (scale < 1e-24)
+    return true;
+
+  return std::abs(dot) < 1e-9 * scale;
+}
+
 } // namespace
 
 Sketch_underlay::Sketch_underlay(AIS_InteractiveContext& ctx)
@@ -392,6 +403,119 @@ void Sketch_underlay::line_tint_rgba(uint8_t& r, uint8_t& g, uint8_t& b, uint8_t
   a = m_tint_a;
 }
 
+void Sketch_underlay::ui_params(double& cx, double& cy, double& half_w, double& half_h, double& rot_deg) const
+{
+  if (!has_image())
+  {
+    cx = cy = half_w = half_h = rot_deg = 0.;
+    return;
+  }
+
+  half_w  = 0.5 * m_axis_u.Magnitude();
+  half_h  = 0.5 * m_axis_v.Magnitude();
+  cx      = m_base.X() + 0.5 * (m_axis_u.X() + m_axis_v.X());
+  cy      = m_base.Y() + 0.5 * (m_axis_u.Y() + m_axis_v.Y());
+  rot_deg = std::atan2(m_axis_u.Y(), m_axis_u.X()) * (180.0 / std::numbers::pi);
+}
+
+void Sketch_underlay::get_affine(gp_Pnt2d& base, gp_Vec2d& axis_u, gp_Vec2d& axis_v) const
+{
+  if (!has_image())
+  {
+    base   = gp_Pnt2d(0., 0.);
+    axis_u = gp_Vec2d(0., 0.);
+    axis_v = gp_Vec2d(0., 0.);
+    return;
+  }
+
+  base   = m_base;
+  axis_u = m_axis_u;
+  axis_v = m_axis_v;
+}
+
+bool Sketch_underlay::axes_orthogonal() const
+{
+  if (!has_image())
+    return true;
+
+  return underlay_axes_orthogonal(m_axis_u, m_axis_v);
+}
+
+bool Sketch_underlay::load_from_file_bytes(const std::string& file_bytes, Ezy_asset_store& store, uint8_t tint_r,
+                                           uint8_t tint_g, uint8_t tint_b, uint8_t tint_a, const gp_Pln& pln, bool sketch_shown)
+{
+  const auto dec = decode_image_bytes(file_bytes);
+  if (!dec)
+    return false;
+
+  std::vector<uint8_t> rgba = std::move(std::get<0>(*dec));
+  const int            w    = std::get<1>(*dec);
+  const int            h    = std::get<2>(*dec);
+
+  if (!set_image_rgba(std::move(rgba), w, h, store))
+    return false;
+
+  set_line_tint_rgba(tint_r, tint_g, tint_b, tint_a);
+  if (sketch_shown)
+    rebuild_and_display(pln);
+
+  m_ctx.UpdateCurrentViewer();
+  return true;
+}
+
+void Sketch_underlay::clear_and_update()
+{
+  if (!has_image())
+    return;
+
+  clear();
+  m_ctx.UpdateCurrentViewer();
+}
+
+void Sketch_underlay::rebuild_display(const gp_Pln& pln, bool sketch_shown)
+{
+  if (!has_image())
+    return;
+
+  if (sketch_shown)
+    rebuild_and_display(pln);
+
+  m_ctx.UpdateCurrentViewer();
+}
+
+void Sketch_underlay::set_center_extents_rotation_display(const dvec2& center, const dvec2& half_extents, double rot_deg,
+                                                          const gp_Pln& pln, bool sketch_shown)
+{
+  if (!has_image())
+    return;
+
+  set_center_extents_rotation(center, half_extents, rot_deg);
+  if (sketch_shown)
+    rebuild_and_display(pln);
+
+  m_ctx.UpdateCurrentViewer();
+}
+
+void Sketch_underlay::set_visible_sync(bool v, const gp_Pln& pln)
+{
+  if (!has_image())
+    return;
+
+  set_visible(v);
+  sync_visibility(pln);
+  m_ctx.UpdateCurrentViewer();
+}
+
+void Sketch_underlay::set_opacity_live(float opaque01)
+{
+  if (!has_image())
+    return;
+
+  set_opacity(opaque01);
+  redisplay();
+  m_ctx.UpdateCurrentViewer();
+}
+
 void Sketch_underlay::build_ais_(const gp_Pln& pln)
 {
   ctx_erase();
@@ -425,19 +549,9 @@ void Sketch_underlay::build_ais_(const gp_Pln& pln)
   const gp_Pnt   Q11 = to_3d(pln, b11).Translated(nudge);
   const gp_Pnt   Q01 = to_3d(pln, b01).Translated(nudge);
 
-  const auto axes_orthogonal = [](const gp_Vec2d& au, const gp_Vec2d& av) -> bool
-  {
-    const double dot   = au.X() * av.X() + au.Y() * av.Y();
-    const double scale = au.Magnitude() * av.Magnitude();
-    if (scale < 1e-24)
-      return true;
-
-    return std::abs(dot) < 1e-9 * scale;
-  };
+  const bool is_ortho = underlay_axes_orthogonal(m_axis_u, m_axis_v);
 
   Handle(Image_PixMap) pix;
-
-  const bool is_ortho = axes_orthogonal(m_axis_u, m_axis_v);
 
   if (is_ortho || !m_raw_shear_display)
   {
@@ -604,7 +718,7 @@ void Sketch_underlay::rebuild_and_display(const gp_Pln& pln)
 }
 
 void Sketch_underlay::ctx_erase()
-{ 
+{
   if (!m_ais.IsNull())
   {
     m_ctx.Remove(m_ais, false);

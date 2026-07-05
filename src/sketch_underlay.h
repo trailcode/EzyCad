@@ -71,6 +71,23 @@ public:
 
   // clang-format on
 
+  void ui_params(double& cx, double& cy, double& half_w, double& half_h, double& rot_deg) const;
+  void get_affine(gp_Pnt2d& base, gp_Vec2d& axis_u, gp_Vec2d& axis_v) const;
+  /// True when texture U and V directions are perpendicular (no shear). Orthogonal UI assumes this.
+  [[nodiscard]] bool axes_orthogonal() const;
+
+  /// Decode PNG/JPEG/BMP bytes, register in \a store, apply line tint, and display when \a sketch_shown.
+  [[nodiscard]] bool load_from_file_bytes(const std::string& file_bytes, Ezy_asset_store& store, uint8_t tint_r, uint8_t tint_g,
+                                          uint8_t tint_b, uint8_t tint_a, const gp_Pln& pln, bool sketch_shown);
+
+  void clear_and_update();
+  /// Rebuild AIS when \a sketch_shown, then refresh the viewer.
+  void rebuild_display(const gp_Pln& pln, bool sketch_shown);
+  void set_center_extents_rotation_display(const glm::dvec2& center, const glm::dvec2& half_extents, double rot_deg,
+                                           const gp_Pln& pln, bool sketch_shown);
+  void set_visible_sync(bool v, const gp_Pln& pln);
+  void set_opacity_live(float opaque01);
+
   void rebuild_and_display(const gp_Pln& pln);
   void ctx_erase();
   void clear();

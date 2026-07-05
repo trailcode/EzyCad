@@ -132,38 +132,8 @@ public:
   const gp_Pln& get_plane() const;
   Sketch_nodes& get_nodes();
 
-  Sketch_underlay&   underlay() { return m_underlay; }
-  [[nodiscard]] bool has_underlay() const;
-  [[nodiscard]] int  underlay_image_w() const;
-  [[nodiscard]] int  underlay_image_h() const;
-  [[nodiscard]] bool load_underlay_image(const std::string& file_bytes);
-  void               clear_underlay();
-  void underlay_set_center_extents_rotation(const glm::dvec2& center, const glm::dvec2& half_extents, double rot_deg);
-  void underlay_set_opacity(float opaque01);
-  void underlay_set_visible(bool v);
-  [[nodiscard]] float underlay_opacity() const;
-  [[nodiscard]] bool  underlay_visible() const;
-  void                underlay_set_key_white_transparent(bool on);
-  [[nodiscard]] bool  underlay_key_white_transparent() const;
-  void                underlay_set_line_tint_enabled(bool on);
-  void                underlay_set_line_tint_rgb(uint8_t r, uint8_t g, uint8_t b);
-  void                underlay_set_line_tint_rgba(uint8_t r, uint8_t g, uint8_t b, uint8_t a);
-  void                underlay_set_raw_shear_display(bool on);
-  [[nodiscard]] bool  underlay_raw_shear_display() const;
-  void                underlay_set_flip_image_u(bool on);
-  void                underlay_set_flip_image_v(bool on);
-  [[nodiscard]] bool  underlay_flip_image_u() const;
-  [[nodiscard]] bool  underlay_flip_image_v() const;
-  [[nodiscard]] bool  underlay_line_tint_enabled() const;
-  void                underlay_line_tint_rgb(uint8_t& r, uint8_t& g, uint8_t& b) const;
-  void                underlay_line_tint_rgba(uint8_t& r, uint8_t& g, uint8_t& b, uint8_t& a) const;
-  void                underlay_ui_params(double& cx, double& cy, double& half_w, double& half_h, double& rot_deg) const;
-  /// Retrieve the raw affine basis (bitmap origin + U and V edge vectors in sketch plane 2D coords).
-  /// Used by the 6-DOF editor for sheared (non-orthogonal) underlays.
-  void underlay_get_affine(gp_Pnt2d& base, gp_Vec2d& axis_u, gp_Vec2d& axis_v) const;
-  /// True when texture U and V directions are perpendicular (no shear). Orthogonal UI assumes this.
-  [[nodiscard]] bool underlay_axes_orthogonal() const;
-  void               underlay_rebuild_display();
+  Sketch_underlay&                     underlay() { return m_underlay; }
+  [[nodiscard]] const Sketch_underlay& underlay() const { return m_underlay; }
 
   static void set_add_mid_pt_edges(bool on);
   static bool get_add_mid_pt_edges();
