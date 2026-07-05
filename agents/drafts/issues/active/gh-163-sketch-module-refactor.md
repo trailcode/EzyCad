@@ -1,7 +1,7 @@
 ---
 github_issue: 163
 status: active
-paired_draft: ../prs/active/draft-sketch-module-refactor.md
+paired_draft: ../prs/active/gh-164-sketch-module-refactor.md
 ---
 
 # Refactor monolithic Sketch into focused modules

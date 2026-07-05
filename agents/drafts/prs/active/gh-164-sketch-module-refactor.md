@@ -1,5 +1,6 @@
 ---
 github_issue: 163
+github_pr: 164
 status: active
 paired_draft: ../issues/active/gh-163-sketch-module-refactor.md
 ---
@@ -32,6 +33,7 @@ Closes #163.
 ## Related
 
 - Issue: https://github.com/trailcode/EzyCad/issues/163
+- PR: https://github.com/trailcode/EzyCad/pull/164
 - Builds on: #161 / PR #162 (`Sketch_underlay`)
 
 ## Test Plan
