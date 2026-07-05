@@ -530,7 +530,7 @@ bool Sketch_delta::Impl::arc_equal_(const Arc_edge_record& x, const Arc_edge_rec
 
 bool Sketch_delta::Impl::arc_edge_matches_record_(const Sketch& sketch, const Sketch::Edge& e, const Arc_edge_record& rec)
 {
-  if (!sketch_edge_is_arc(e) || !e.node_idx_arc_pt.has_value() || !e.node_idx_b.has_value() || e.shp.IsNull())
+  if (!sketch_edge_is_arc(e) || !e.node_idx_b.has_value() || e.shp.IsNull())
     return false;
 
   const gp_Pnt2d start = sketch.m_nodes[e.node_idx_a];
@@ -544,8 +544,8 @@ bool Sketch_delta::Impl::arc_edge_matches_record_(const Sketch& sketch, const Sk
     return false;
 
   const gp_Pnt2d expected_mid = arc_curve_midpoint_2d(BRepBuilderAPI_MakeEdge(expected).Edge(), sketch.m_pln);
-  const gp_Pnt2d stored_mid   = sketch.m_nodes[*e.node_idx_arc_pt];
-  return pts_equal_(expected_mid, stored_mid);
+  const gp_Pnt2d actual_mid   = arc_curve_midpoint_2d(TopoDS::Edge(e.shp->Shape()), sketch.m_pln);
+  return pts_equal_(expected_mid, actual_mid);
 }
 
 bool Sketch_delta::Impl::length_dim_equal_(const Length_dim_record& x, const Length_dim_record& y)

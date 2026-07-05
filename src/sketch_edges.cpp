@@ -192,8 +192,10 @@ void Sketch_edges::add_arc_circle_edges(const std::vector<size_t>& node_idxs)
       GC_MakeArcOfCircle(m_sketch.to_3d_(node_idxs[0]), m_sketch.to_3d_(node_idxs[2]), m_sketch.to_3d_(node_idxs[1]));
 
   const TopoDS_Edge edge = BRepBuilderAPI_MakeEdge(arc_of_circle).Edge();
-  const gp_Pnt2d    arc_pt_on_curve = arc_curve_midpoint_2d(edge, m_sketch.m_pln);
-  const size_t      arc_pt_idx      = m_sketch.m_nodes.get_node_exact(arc_pt_on_curve);
+
+  std::optional<size_t> arc_pt_idx;
+  if (Sketch::get_add_mid_pt_edges())
+    arc_pt_idx = m_sketch.m_nodes.add_new_node(arc_curve_midpoint_2d(edge, m_sketch.m_pln), true);
 
   Sketch_AIS_edge_ptr shp = new Sketch_AIS_edge(m_sketch, edge);
   m_sketch.update_edge_style_(shp);
@@ -206,16 +208,20 @@ void Sketch_edges::add_arc_circle_edges(const std::vector<size_t>& node_idxs)
 void Sketch_edges::split_arc_at_node_(std::list<Sketch_edge>::iterator itr, size_t split_idx, Sketch_op_recorder* rec)
 {
   EZY_ASSERT(sketch_edge_is_arc(*itr));
-  EZY_ASSERT(itr->node_idx_b.has_value() && itr->node_idx_arc_pt.has_value());
+  EZY_ASSERT(itr->node_idx_b.has_value());
 
   const size_t idx_a = itr->node_idx_a;
   const size_t idx_b = *itr->node_idx_b;
   EZY_ASSERT(split_idx != idx_a && split_idx != idx_b);
 
+  const TopoDS_Edge occ_edge = TopoDS::Edge(itr->shp->Shape());
   if (rec)
-    rec->note_prev_arc_edge(m_sketch.m_nodes[idx_a], m_sketch.m_nodes[*itr->node_idx_arc_pt], m_sketch.m_nodes[idx_b]);
+  {
+    const gp_Pnt2d arc_pt = itr->node_idx_arc_pt.has_value() ? m_sketch.m_nodes[*itr->node_idx_arc_pt]
+                                                             : arc_curve_midpoint_2d(occ_edge, m_sketch.m_pln);
+    rec->note_prev_arc_edge(m_sketch.m_nodes[idx_a], arc_pt, m_sketch.m_nodes[idx_b]);
+  }
 
-  const TopoDS_Edge       occ_edge = TopoDS::Edge(itr->shp->Shape());
   const BRepAdaptor_Curve curve(occ_edge);
   const Handle(Geom_Curve) geom = curve.Curve().Curve();
   const double             u_first = curve.FirstParameter();
@@ -271,6 +277,7 @@ void Sketch_edges::for_each_arc(const Arc_visitor& fn) const
     if (!sketch_edge_is_arc(e))
       continue;
 
+    EZY_ASSERT(e.node_idx_b.has_value());
     EZY_ASSERT(e.node_idx_arc_pt.has_value());
     fn(Sketch_edge_arc{e.node_idx_a, *e.node_idx_arc_pt, *e.node_idx_b, e.shp});
   }

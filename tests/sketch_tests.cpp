@@ -18,6 +18,7 @@
 #include "sketch_delta.h"
 #include "sketch_json.h"
 #include "sketch_edge.h"
+#include "sketch_nodes.h"
 #include "ezy_io.h"
 #include "ezy_asset_store.h"
 #include "utl_occt.h"
@@ -406,6 +407,46 @@ TEST_F(Sketch_test, AddLinearEdge_MidpointOption)
   EXPECT_EQ(j3["edges"][1].size(), 3u) << "Edge with mid should serialize as 3-element array [a,b,mid]";
 
   // Turn off again for subsequent tests (though fixture resets)
+  Sketch::set_add_mid_pt_edges(false);
+}
+
+TEST_F(Sketch_test, AddArc_MidpointOption)
+{
+  gp_Pln default_plane(gp::Origin(), gp::DZ());
+  Sketch sketch("TestSketch", view(), default_plane);
+
+  const gp_Pnt2d start(0.0, 0.0);
+  const gp_Pnt2d pick(5.0, 5.0);
+  const gp_Pnt2d end(10.0, 0.0);
+
+  Sketch::set_add_mid_pt_edges(false);
+  Sketch_access::add_arc_circle_(sketch, start, end, pick);
+
+  EXPECT_EQ(sketch.get_nodes().size(), 3u) << "Off: start, end, and bulge pick only";
+  bool has_arc_mid = false;
+  for (const auto& e : Sketch_access::get_edges(sketch))
+    if (e.node_idx_arc_pt.has_value())
+      has_arc_mid = true;
+  EXPECT_FALSE(has_arc_mid);
+
+  Sketch::set_add_mid_pt_edges(true);
+  const gp_Pnt2d start2(0.0, 10.0);
+  const gp_Pnt2d pick2(5.0, 15.0);
+  const gp_Pnt2d end2(10.0, 10.0);
+  Sketch_access::add_arc_circle_(sketch, start2, end2, pick2);
+
+  const Sketch_edge* arc_with_mid = nullptr;
+  for (const auto& e : Sketch_access::get_edges(sketch))
+    if (sketch_edge_is_arc(e) && e.node_idx_arc_pt.has_value())
+      arc_with_mid = &e;
+  ASSERT_NE(arc_with_mid, nullptr);
+  const Sketch_nodes::Node& mid_node = sketch.get_nodes()[*arc_with_mid->node_idx_arc_pt];
+  EXPECT_TRUE(mid_node.midpoint);
+  const gp_Pnt2d expected_mid =
+      arc_curve_midpoint_2d(TopoDS::Edge(arc_with_mid->shp->Shape()), default_plane);
+  EXPECT_TRUE(mid_node.IsEqual(expected_mid, Precision::Confusion()))
+      << "Arc midpoint snap node should lie on the curve at parametric half";
+
   Sketch::set_add_mid_pt_edges(false);
 }
 

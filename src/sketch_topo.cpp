@@ -647,10 +647,12 @@ bool Sketch_topo::is_face_clockwise_(const Face_edges& face) const
     const gp_Pnt2d& p1 = m_sketch.m_nodes[e.start_nd_idx()];
     const gp_Pnt2d& p2 = m_sketch.m_nodes[e.end_nd_idx()];
 
-    if (sketch_edge_is_arc(e.edge) && e.edge.node_idx_arc_pt.has_value() && !e.edge.shp.IsNull())
+    if (sketch_edge_is_arc(e.edge) && !e.edge.shp.IsNull())
     {
-      const gp_Pnt2d& pm    = m_sketch.m_nodes[*e.edge.node_idx_arc_pt];
-      const double    wedge = (p1.X() * pm.Y()) - (pm.X() * p1.Y()) + (pm.X() * p2.Y()) - (p2.X() * pm.Y());
+      const gp_Pnt2d pm = e.edge.node_idx_arc_pt.has_value() ? m_sketch.m_nodes[*e.edge.node_idx_arc_pt]
+                                                             : arc_curve_midpoint_2d(TopoDS::Edge(e.edge.shp->Shape()),
+                                                                                     m_sketch.m_pln);
+      const double wedge = (p1.X() * pm.Y()) - (pm.X() * p1.Y()) + (pm.X() * p2.Y()) - (p2.X() * pm.Y());
       if (std::abs(wedge) > Precision::Confusion())
       {
         signed_area += wedge;

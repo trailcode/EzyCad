@@ -23,9 +23,16 @@ bool Sketch_edge::reversed(size_t idx_a, size_t idx_b) const
   return false;
 }
 
-bool sketch_edge_is_linear(const Sketch_edge& e) { return e.node_idx_b.has_value() && !e.node_idx_arc_pt.has_value(); }
+bool sketch_edge_is_arc(const Sketch_edge& e)
+{
+  if (!e.node_idx_b.has_value() || e.shp.IsNull())
+    return false;
 
-bool sketch_edge_is_arc(const Sketch_edge& e) { return e.node_idx_b.has_value() && e.node_idx_arc_pt.has_value(); }
+  const BRepAdaptor_Curve curve(TopoDS::Edge(e.shp->Shape()));
+  return curve.GetType() == GeomAbs_Circle;
+}
+
+bool sketch_edge_is_linear(const Sketch_edge& e) { return e.node_idx_b.has_value() && !sketch_edge_is_arc(e); }
 
 namespace
 {

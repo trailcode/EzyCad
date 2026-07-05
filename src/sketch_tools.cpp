@@ -710,6 +710,8 @@ void Sketch_tools::add_arc_circle_pt_(const ScreenCoords& screen_coords)
       const gp_Pnt2d& pt_b = m_sketch.m_nodes[m_tmp_node_idxs[2]];
       m_sketch.add_arc_circle_(pt_a, pt_b, pt_c, rec);
       m_tmp_node_idxs.clear();
+      m_sketch.m_view.remove(m_tmp_shp);
+      m_tmp_shp = nullptr;
       m_sketch.update_faces_();
       rec.commit();
     }
@@ -722,6 +724,28 @@ void Sketch_tools::move_arc_circle_pt_(const ScreenCoords& screen_coords)
   if (!pt)
     // View plane and sketch plane must be perpendicular.
     return;
+
+  if (m_tmp_node_idxs.empty())
+  {
+    m_sketch.m_view.remove(m_tmp_shp);
+    m_tmp_shp = nullptr;
+    return;
+  }
+
+  if (m_tmp_node_idxs.size() == 1)
+  {
+    const gp_Pnt2d& pt_a = m_sketch.m_nodes[m_tmp_node_idxs[0]];
+    if (!unique(pt_a, *pt))
+    {
+      m_sketch.m_view.remove(m_tmp_shp);
+      m_tmp_shp = nullptr;
+      return;
+    }
+
+    const TopoDS_Edge edge = BRepBuilderAPI_MakeEdge(to_3d(m_sketch.m_pln, pt_a), to_3d(m_sketch.m_pln, *pt)).Edge();
+    show(m_sketch.m_ctx, m_tmp_shp, edge);
+    return;
+  }
 
   if (m_tmp_node_idxs.size() != 2)
     return;
