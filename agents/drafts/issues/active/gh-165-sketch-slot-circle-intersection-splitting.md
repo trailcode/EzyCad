@@ -1,6 +1,11 @@
 # Sketch: slot + circle edge splitting at intersections
 
-**Suggested labels:** `bug`, `sketch`
+---
+github_issue: 165
+status: active
+---
+
+**Opened on GitHub:** https://github.com/trailcode/EzyCad/issues/165
 
 ---
 
