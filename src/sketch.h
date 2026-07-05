@@ -58,6 +58,22 @@ public:
     Hidden
   };
 
+  struct Edge
+  {
+    size_t                node_idx_a;
+    std::optional<size_t> node_idx_b;
+    std::optional<size_t> node_idx_arc; // Only valid for circle arc edges.
+    std::optional<size_t> node_idx_mid; // Midpoint of edge, used for snapping.
+
+    //  Used to identify the two `Edges` defining a circle arc.
+    Geom_TrimmedCurve_ptr circle_arc;
+    Sketch_AIS_edge_ptr   shp; // Current edge annotation.
+
+    std::string name;
+
+    bool reversed(size_t idx_a, size_t idx_b) const;
+  };
+
   // Add sketch related
   void add_sketch_pt(const ScreenCoords& screen_coords);
   void sketch_pt_move(const ScreenCoords& screen_coords);
@@ -139,12 +155,11 @@ public:
   static void set_edge_from_center(bool on);
   static bool get_edge_from_center();
 
-  // private:
+private:
   friend class Sketch_json;
   friend class Sketch_access;
   friend class Sketch_delta;
   friend class Sketch_op_recorder;
-  friend class Sketch_test; // TEST_F(Sketch_test, JsonSerializationDeserialization)
 
   static bool s_add_mid_pt_edges;
   static bool s_edge_from_center;
@@ -158,22 +173,6 @@ public:
     bool                       visible{true};
     std::optional<double>      flyout_offset;
     std::string                name;
-  };
-
-  struct Edge
-  {
-    size_t                node_idx_a;
-    std::optional<size_t> node_idx_b;
-    std::optional<size_t> node_idx_arc; // Only valid for circle arc edges.
-    std::optional<size_t> node_idx_mid; // Midpoint of edge, used for snapping.
-
-    //  Used to identify the two `Edges` defining a circle arc.
-    Geom_TrimmedCurve_ptr circle_arc;
-    Sketch_AIS_edge_ptr   shp; // Current edge annotation.
-
-    std::string name;
-
-    bool reversed(size_t idx_a, size_t idx_b) const;
   };
 
   struct Face_edge
