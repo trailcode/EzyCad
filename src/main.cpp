@@ -15,7 +15,6 @@
 #include "imgui.h"
 #include "imgui_impl_glfw.h"
 #include "imgui_impl_opengl3.h"
-#include "ui_font.h"
 #define GL_SILENCE_DEPRECATION
 #if defined(IMGUI_IMPL_OPENGL_ES2)
 #include <GLES2/gl2.h>
@@ -204,6 +203,7 @@ int main(int argc, char** argv)
 #endif
 
   // DroidSans at logical px; do not multiply by main_scale - FontScaleDpi applies HiDPI.
+  constexpr float k_imgui_base_font_size_px = 13.0f;
   {
 #ifdef __EMSCRIPTEN__
     ImFont* font = io.Fonts->AddFontFromFileTTF("/DroidSans.ttf", k_imgui_base_font_size_px);
