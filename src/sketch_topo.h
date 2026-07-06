@@ -42,6 +42,9 @@ private:
   void                snap_placed_node_to_closest_linear_edge_interior_(size_t node_idx);
   [[nodiscard]] std::unordered_set<const Sketch_edge*> exclude_dangling_edges_(
       std::unordered_map<size_t, std::vector<std::pair<size_t, const Sketch_edge*>>>& adj_list);
+  [[nodiscard]] std::unordered_set<const Sketch_edge*> find_bridge_edges_(
+      std::unordered_map<size_t, std::vector<std::pair<size_t, const Sketch_edge*>>>& adj_list,
+      const std::unordered_set<const Sketch_edge*>&                                     excluded_edges) const;
   bool                is_face_ccw_(const Face_edges& face) const;
   Sketch_face_shp_ptr create_face_shape_(const Face_edges& face);
   void                rebuild_dim_classifier_face_cache_();

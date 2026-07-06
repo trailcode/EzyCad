@@ -263,60 +263,14 @@ std::unordered_set<const Sketch_edge*> Sketch_topo::exclude_dangling_edges_(
   return excluded_edges;
 }
 
-// Function to extract faces from the planar graph
-void Sketch_topo::update_faces()
+std::unordered_set<const Sketch_edge*> Sketch_topo::find_bridge_edges_(
+    std::unordered_map<size_t, std::vector<std::pair<size_t, const Sketch_edge*>>>& adj_list,
+    const std::unordered_set<const Sketch_edge*>&                                     excluded_edges) const
 {
-  m_sketch.m_nodes.finalize();
-
-  m_sketch.m_view.remove(m_faces);
-  m_faces.clear();
-  m_dim_classifier_faces.clear();
-
-  // Used to cleanup dangling nodes;
-  std::vector<bool> used_nodes(m_sketch.m_nodes.size());
-
-  // Build adjacency list
-  std::unordered_map<size_t, std::vector<std::pair<size_t, const Sketch::Edge*>>> adj_list;
-
-  for (const auto& edge : m_sketch.m_edges.edges())
-  {
-    EZY_ASSERT(edge.node_idx_b.has_value());
-
-    size_t a = edge.node_idx_a;
-    size_t b = edge.node_idx_b.value();
-    adj_list[a].push_back({b, &edge});
-    adj_list[b].push_back({a, &edge});
-
-    // Keep track of used nodes.
-    used_nodes[a] = true;
-    used_nodes[b] = true;
-    if (edge.node_idx_mid.has_value())
-      used_nodes[*edge.node_idx_mid] = true;
-
-    if (edge.node_idx_arc_pt.has_value())
-      used_nodes[*edge.node_idx_arc_pt] = true;
-  }
-
-  if (m_sketch.m_operation_axis.has_value())
-  {
-    used_nodes[m_sketch.m_operation_axis->node_idx_a] = true;
-    if (m_sketch.m_operation_axis->node_idx_b.has_value())
-      used_nodes[*m_sketch.m_operation_axis->node_idx_b] = true;
-  }
-
-  std::unordered_set<const Sketch::Edge*> excluded_edges = exclude_dangling_edges_(adj_list);
-
-  // Bridge edge removal logic (active). Excludes edges that purely connect separate cycles
-  // (both ends degree >=3 and no alternate path) from the adjacency used by the face walker.
-  // This is required for sketches like bridge.ezy that contain a "bridge" touching an inner
-  // triangular loop so that we obtain exactly two faces, one of which has the triangle as a
-  // hole. Dangling removal alone is not sufficient. The logic was previously disabled because
-  // an earlier version produced bad results on some nested rect holes; current state + other
-  // fixes (cw break, split rules, etc.) are being validated with the new regression test.
   // Remove bridge edges that connect two separate cycles.
   // A bridge edge connects two cycles and has both endpoints with degree >= 3.
   // We detect this by checking if the edge is the only connection between two cycles.
-  std::unordered_set<const Sketch::Edge*> bridge_edges;
+  std::unordered_set<const Sketch_edge*> bridge_edges;
   for (const auto& edge : m_sketch.m_edges.edges())
   {
     if (excluded_edges.count(&edge))
@@ -425,7 +379,62 @@ void Sketch_topo::update_faces()
     }
   }
 
-  // Add bridge edges to excluded set
+  return bridge_edges;
+}
+
+// Function to extract faces from the planar graph
+void Sketch_topo::update_faces()
+{
+  m_sketch.m_nodes.finalize();
+
+  m_sketch.m_view.remove(m_faces);
+  m_faces.clear();
+  m_dim_classifier_faces.clear();
+
+  // Used to cleanup dangling nodes;
+  std::vector<bool> used_nodes(m_sketch.m_nodes.size());
+
+  // Build adjacency list
+  std::unordered_map<size_t, std::vector<std::pair<size_t, const Sketch::Edge*>>> adj_list;
+
+  for (const auto& edge : m_sketch.m_edges.edges())
+  {
+    EZY_ASSERT(edge.node_idx_b.has_value());
+
+    size_t a = edge.node_idx_a;
+    size_t b = edge.node_idx_b.value();
+    adj_list[a].push_back({b, &edge});
+    adj_list[b].push_back({a, &edge});
+
+    // Keep track of used nodes.
+    used_nodes[a] = true;
+    used_nodes[b] = true;
+    if (edge.node_idx_mid.has_value())
+      used_nodes[*edge.node_idx_mid] = true;
+
+    if (edge.node_idx_arc_pt.has_value())
+      used_nodes[*edge.node_idx_arc_pt] = true;
+  }
+
+  if (m_sketch.m_operation_axis.has_value())
+  {
+    used_nodes[m_sketch.m_operation_axis->node_idx_a] = true;
+    if (m_sketch.m_operation_axis->node_idx_b.has_value())
+      used_nodes[*m_sketch.m_operation_axis->node_idx_b] = true;
+  }
+
+  // Remove dangling edges (edges with degree-1 endpoints) iteratively.
+  // These edges cannot form closed faces, so we exclude them from face detection.
+  std::unordered_set<const Sketch::Edge*> excluded_edges = exclude_dangling_edges_(adj_list);
+
+  // Bridge edge removal logic (active). Excludes edges that purely connect separate cycles
+  // (both ends degree >=3 and no alternate path) from the adjacency used by the face walker.
+  // This is required for sketches like bridge.ezy that contain a "bridge" touching an inner
+  // triangular loop so that we obtain exactly two faces, one of which has the triangle as a
+  // hole. Dangling removal alone is not sufficient. The logic was previously disabled because
+  // an earlier version produced bad results on some nested rect holes; current state + other
+  // fixes (cw break, split rules, etc.) are being validated with the new regression test.
+  const std::unordered_set<const Sketch::Edge*> bridge_edges = find_bridge_edges_(adj_list, excluded_edges);
   excluded_edges.insert(bridge_edges.begin(), bridge_edges.end());
 
   // Rebuild adjacency list excluding dangling and bridge edges
