@@ -1103,6 +1103,50 @@ TEST_F(Sketch_test, AddSquareThenMidEdge_GUIPath_BothDrawDirections_ProducesTwoR
   }
 }
 
+// Two squares via the GUI square tool (finalize_square_ path): a 2x2 square (radius/half-side 1)
+// plus a 1x1 square placed with its center on the top-right corner of the first. With midpoints
+// off, the internal edges of the second square should split the first into three faces (not two).
+TEST_F(Sketch_test, TwoSquares_TopRightCornerOverlap_GUIPath_ProducesThreeFaces)
+{
+  struct Snap_dist_guard
+  {
+    const double prev;
+    Snap_dist_guard()
+        : prev(Sketch_nodes::get_snap_dist())
+    {
+      // Headless snap radius is ~35 plane units; disable so a 1" half-side click is not pulled to center.
+      Sketch_nodes::set_snap_dist(0.5);
+    }
+    ~Snap_dist_guard() { Sketch_nodes::set_snap_dist(prev); }
+  } snap_guard;
+
+  gp_Pln default_plane(gp::Origin(), gp::DZ());
+  Sketch sketch("two_squares_top_right", view(), default_plane);
+
+  gui().set_mode(Mode::Sketch_add_square);
+  Sketch::set_add_mid_pt_edges(false);
+
+  // First square: center (0,0), edge midpoint at (1,0) => half-side 1 (2x2 square).
+  sketch.add_sketch_pt(ScreenCoords(dvec2(0.0, 0.0)));
+  sketch.add_sketch_pt(ScreenCoords(dvec2(1.0, 0.0)));
+  sketch.finalize_elm();
+
+  // Second 1" square: center at top-right corner (1,1) of the first, half-side 0.5.
+  sketch.add_sketch_pt(ScreenCoords(dvec2(1.0, 1.0)));
+  sketch.add_sketch_pt(ScreenCoords(dvec2(1.5, 1.0)));
+  sketch.finalize_elm();
+
+  for (const auto& n : sketch.get_nodes())
+  {
+    if (!n.deleted)
+      EXPECT_FALSE(n.midpoint) << "Square edges should not have auto midpoint nodes";
+  }
+
+  Sketch_access::update_faces_(sketch);
+  const auto& faces = Sketch_access::get_faces(sketch);
+  EXPECT_EQ(faces.size(), 3) << "Overlapping corner squares should produce three faces";
+}
+
 // Test edge style settings
 TEST_F(Sketch_test, EdgeStyleSettings)
 {

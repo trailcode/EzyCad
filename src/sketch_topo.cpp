@@ -467,12 +467,14 @@ void Sketch_topo::update_faces()
 
       for (;;)
       {
+        /*
         if (++walk_steps > max_walk_steps)
           break;
 
         const Walk_key key{curr_idx, prev_idx, curr_edge};
         if (!walk_seen.insert(key).second)
           break;
+          */
 
         face.push_back({*curr_edge, curr_edge->reversed(prev_idx, curr_idx)});
 
