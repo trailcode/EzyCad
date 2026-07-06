@@ -12,6 +12,7 @@ Root markers: [AGENTS.md](../AGENTS.md) / [agents.md](../agents.md).
 | C++ style (full) | [docs/ezycad_code_style.md](../docs/ezycad_code_style.md) |
 | User docs when UI changes | [conventions/user-docs-sync.md](conventions/user-docs-sync.md) |
 | Sketch module (dev doc) | [src/doc/sketch.md](../src/doc/sketch.md) — read when editing sketch code; update if API/architecture changes |
+| Shape module (dev doc) | [src/doc/shape.md](../src/doc/shape.md) — read when editing `shp_*` code; update if API/operations change |
 | Build / test / wasm | [workflows/local-dev.md](workflows/local-dev.md) |
 | Release | [workflows/release.md](workflows/release.md) |
 | Issue/PR drafts | [drafts/](drafts/) — [github-drafts.md](conventions/github-drafts.md) |

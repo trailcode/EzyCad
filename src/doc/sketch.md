@@ -33,9 +33,12 @@ Typical uses:
 
 ### Transient vs committed state
 
-- **Committed** geometry: `Sketch_edges` (persistent edge list), `Sketch_topo` (face cache), `Sketch_dims` (length dimensions), `Sketch_node_marks` (permanent "+" markers).
-- **Transient** draw state: `Sketch_tools` (`m_tmp_edges`, `m_tmp_node_idxs`, rubber-band previews). Cleared by `cancel_elm()` or committed by `finalize_elm()`.
-- Do not mix transient edges into the persistent list; tools finalize through `Sketch_edges` and `Sketch_topo`.
+| Layer | Owner | Cleared by |
+| --- | --- | --- |
+| **Committed** edges, faces, dimensions, permanent "+" markers | `Sketch_edges`, `Sketch_topo`, `Sketch_dims`, `Sketch_node_marks` | Explicit remove / undo delta |
+| **Transient** tmp edges, tmp nodes, rubber-band previews | `Sketch_tools` | `cancel_elm()` or `finalize_elm()` |
+
+Do not mix transient edges into the persistent list; tools finalize through `Sketch_edges` and `Sketch_topo`.
 
 ### Operation axis
 
@@ -86,20 +89,22 @@ Sketch(const std::string& name, Occt_view& view, const gp_Pln& pln, const TopoDS
 
 The wire overload creates a sketch **from a planar face**; `m_originating_face` is displayed and its vertices contribute to snap targets.
 
-### Input routing (from UI / Occt_view)
+### Input routing (from UI / `Occt_view`)
 
-The viewer forwards pointer and keyboard events to the **current** sketch:
+The viewer and `GUI` forward pointer and keyboard events to the **current** sketch:
 
-| Method | When |
-| --- | --- |
-| `add_sketch_pt(screen_coords)` | Click / left-button down for the active sketch tool |
-| `sketch_pt_move(screen_coords)` | Mouse move (rubber band, snap guides) |
-| `dimension_input(screen_coords)` | Tab: precise length while drawing |
-| `angle_input(screen_coords)` | Shift+Tab: angle constraint while drawing |
-| `on_enter()` | Enter: confirm typed numeric input |
-| `finalize_elm()` | Complete multi-step tool (e.g. right-click finish) |
-| `cancel_elm()` | Esc: discard transient state; returns whether an operation was canceled |
-| `on_mode()` | Called when `Mode` changes; resets transient state and refreshes axis/mark display |
+| Event | `Occt_view` / `GUI` | `Sketch` method |
+| --- | --- | --- |
+| Mouse move (sketch tools) | `GUI::on_mouse_pos` | `sketch_pt_move` |
+| Left click (place point) | `GUI::on_left_click_` | `add_sketch_pt` |
+| Tab (length) | `Occt_view::dimension_input` | `dimension_input` |
+| Shift+Tab (angle) | `Occt_view::angle_input` | `angle_input` |
+| Enter (confirm numeric input) | `Occt_view::on_enter` | `on_enter` |
+| Esc (cancel in-progress tool) | `Occt_view::cancel` | `cancel_elm` |
+| Right click (finish line / multi-line) | `GUI::on_mouse_button` | `finalize_elm` |
+| Mode change | (via `GUI::set_mode`) | `on_mode` |
+
+Face extrude mode (`Mode::Sketch_face_extrude`) routes mouse, Tab, and Enter through `Occt_view::sketch_face_extrude` / `Shp_extrude` instead of the sketch tool paths above.
 
 `get_mode()` reads `Occt_view::get_mode()`; tool behavior in `Sketch_tools` branches on the active `Mode`.
 
@@ -204,20 +209,28 @@ Prefer these visitors in JSON/delta/topo code over iterating `std::list<Sketch_e
 
 ## Edge and face model
 
-- A **linear edge** has `node_idx_a`, `node_idx_b`, optional `node_idx_mid` (midpoint snap node when the option is on).
-- An **arc edge** has start, end, and arc midpoint nodes (`node_idx_arc_pt` for the curve point used when snapping).
-- **Faces** are derived, not stored as user entities. `Sketch_topo::update_faces()` rebuilds `Sketch_face_shp` objects after edge changes. Faces drive extrusion/revolve and face selection.
-- New linear or arc edges that cross existing edges trigger **automatic splitting** so T-junctions and divided regions produce valid topology (see user doc on automatic splitting).
+| Entity | Storage | Notes |
+| --- | --- | --- |
+| **Linear edge** | `Sketch_edge` in `Sketch_edges` | `node_idx_a`, `node_idx_b`; optional `node_idx_mid` when add-midpoint is on |
+| **Arc edge** | same | Start, end, arc midpoint nodes; `node_idx_arc_pt` for curve snap |
+| **Face** | Derived in `Sketch_topo` | Rebuilt by `update_faces()` into `Sketch_face_shp`; drives extrude/revolve and face selection |
+| **Auto-split** | `Sketch_topo` / edge add | New edges crossing existing ones split at intersections (T-junctions, divided regions) |
+
+See [`docs/usage-sketch.md`](../../docs/usage-sketch.md) for user-facing splitting behavior.
 
 ## Testing
 
-- GTest suite: `tests/sketch_tests.cpp`, filter `Sketch_test.*`.
-- Build target: `EzyCad_tests` (see [`agents/workflows/local-dev.md`](../../agents/workflows/local-dev.md)).
-- Tests construct `Occt_view`, create `Sketch` on a plane, and drive geometry through `add_sketch_pt` or private helpers via test fixtures.
+| Item | Location |
+| --- | --- |
+| GTest suite | `tests/sketch_tests.cpp`, filter `Sketch_test.*` |
+| Build target | `EzyCad_tests` ([`agents/workflows/local-dev.md`](../../agents/workflows/local-dev.md)) |
+| Pattern | Construct `Occt_view`, create `Sketch` on a plane, drive via `add_sketch_pt` or test helpers |
 
 ## Related code outside `src/sketch*`
 
-- `occt_view.h` / `occt_view.cpp` -- sketch list, current sketch, input forwarding, sketch creation from planar faces.
-- `mode.h` -- `Mode` enum selects the active sketch tool.
-- `gui.cpp` -- toolbar and Sketch List UI wired to `Sketch` methods.
-- `shp.h` -- `Shp_rslt` from `revolve_selected`.
+| Location | Role |
+| --- | --- |
+| `occt_view.h` / `occt_view.cpp` | Sketch list, current sketch, input forwarding, sketch-from-face |
+| `mode.h` | `Mode` enum selects the active sketch tool |
+| `gui.cpp` | Toolbar and Sketch List UI wired to `Sketch` methods |
+| `shp.h` | `Shp_rslt` from `revolve_selected` |
