@@ -4,7 +4,7 @@
 #include <Quantity_Color.hxx>
 #include <V3d_Viewer.hxx>
 
-#include "occt_view.h"
+#include "gui_occt_view.h"
 #include "utl.h"
 
 void Sketch::update_edge_style_(AIS_Shape_ptr& shp)

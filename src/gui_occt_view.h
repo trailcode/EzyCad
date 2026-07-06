@@ -14,7 +14,7 @@
 #include <string>
 #include <vector>
 
-#include "occt_glfw_win.h"
+#include "gui_occt_glfw_win.h"
 #include "shp_chamfer.h"
 #include "shp_common.h"
 #include "shp_cut.h"
@@ -410,4 +410,4 @@ void show(AIS_InteractiveContext& ctx, Shp_ptr_t& shp, const T& obj, bool redraw
 template <typename Shp_ptr_t, typename T>
 void show(AIS_InteractiveContext& ctx, Sketch& owner, Shp_ptr_t& shp, const T& obj, bool redraw = true);
 
-#include "occt_view.inl"
+#include "gui_occt_view.inl"

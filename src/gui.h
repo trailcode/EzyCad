@@ -21,7 +21,7 @@
 #include "imgui_markdown.h"
 #include "utl_log.h"
 #include "mode.h"
-#include "occt_view.h"
+#include "gui_occt_view.h"
 #include "shp_info.h"
 #include "utl_types.h"
 

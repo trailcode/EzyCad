@@ -3,7 +3,7 @@
 #include "gui.h"
 #include "imgui.h"
 #include "mode.h"
-#include "occt_view.h"
+#include "gui_occt_view.h"
 #include "shp.h"
 #include "sketch.h"
 

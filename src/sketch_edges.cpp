@@ -9,7 +9,7 @@
 #include <algorithm>
 #include <vector>
 
-#include "occt_view.h"
+#include "gui_occt_view.h"
 #include "sketch.h"
 #include "sketch_delta.h"
 #include "sketch_edge.h"

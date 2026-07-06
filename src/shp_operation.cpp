@@ -2,7 +2,7 @@
 
 #include <Graphic3d_MaterialAspect.hxx>
 
-#include "occt_view.h"
+#include "gui_occt_view.h"
 
 Shp_operation_base::Shp_operation_base(Occt_view& view)
     : m_view(view)

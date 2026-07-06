@@ -7,7 +7,7 @@
 #include <TopoDS_Wire.hxx>
 
 #include "mode.h"
-#include "occt_view.h"
+#include "gui_occt_view.h"
 
 Shp_fillet::Shp_fillet(Occt_view& view)
     : Shp_operation_base(view)

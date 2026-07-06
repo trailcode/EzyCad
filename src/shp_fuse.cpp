@@ -2,7 +2,7 @@
 
 #include <BRepAlgoAPI_Fuse.hxx>
 
-#include "occt_view.h"
+#include "gui_occt_view.h"
 #include "utl.h"
 
 Shp_fuse::Shp_fuse(Occt_view& view)

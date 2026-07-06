@@ -3,7 +3,7 @@
 #include <BRepAlgoAPI_Cut.hxx>
 #include <NCollection_List.hxx>
 
-#include "occt_view.h"
+#include "gui_occt_view.h"
 #include "utl.h"
 
 Shp_cut::Shp_cut(Occt_view& view)

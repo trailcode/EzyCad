@@ -1,4 +1,4 @@
-#include "occt_view.h"
+#include "gui_occt_view.h"
 
 #include <AIS_ViewCube.hxx>
 #include <Aspect_GradientFillMethod.hxx>

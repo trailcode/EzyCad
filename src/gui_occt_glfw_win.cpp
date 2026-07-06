@@ -19,7 +19,7 @@
 // LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE
 
-#include "occt_glfw_win.h"
+#include "gui_occt_glfw_win.h"
 
 #if defined(__APPLE__)
 #undef Handle // avoid name collisions in macOS headers

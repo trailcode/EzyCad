@@ -2,7 +2,7 @@
 
 #include <BRepAlgoAPI_Common.hxx>
 
-#include "occt_view.h"
+#include "gui_occt_view.h"
 #include "utl.h"
 
 Shp_common::Shp_common(Occt_view& view)
