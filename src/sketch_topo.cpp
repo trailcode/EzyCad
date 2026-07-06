@@ -213,6 +213,56 @@ void Sketch_topo::split_arcs_at_node_if_interior(size_t node_idx, Sketch_op_reco
   }
 }
 
+std::unordered_set<const Sketch_edge*> Sketch_topo::exclude_dangling_edges_(
+    std::unordered_map<size_t, std::vector<std::pair<size_t, const Sketch_edge*>>>& adj_list)
+{
+  // Remove dangling edges (edges with degree-1 endpoints) iteratively.
+  // These edges cannot form closed faces, so we exclude them from face detection.
+  std::unordered_set<const Sketch_edge*> excluded_edges;
+
+  bool changed = true;
+  while (changed)
+  {
+    changed = false;
+    std::unordered_set<const Sketch_edge*> to_exclude;
+
+    // Find edges where at least one endpoint has degree 1 (considering only non-excluded edges)
+    for (const auto& edge : m_sketch.m_edges.edges())
+    {
+      if (excluded_edges.count(&edge))
+        continue;
+
+      EZY_ASSERT(edge.node_idx_b.has_value());
+      size_t a = edge.node_idx_a;
+      size_t b = edge.node_idx_b.value();
+
+      // Count degree for each endpoint (excluding already excluded edges)
+      int degree_a = 0;
+      int degree_b = 0;
+      EZY_ASSERT(adj_list.count(a));
+      for (const auto& [neighbor, e] : adj_list[a])
+        if (!excluded_edges.count(e))
+          ++degree_a;
+
+      EZY_ASSERT(adj_list.count(b));
+      for (const auto& [neighbor, e] : adj_list[b])
+        if (!excluded_edges.count(e))
+          ++degree_b;
+
+      // If either endpoint has degree 1, this edge is dangling
+      if (degree_a == 1 || degree_b == 1)
+      {
+        to_exclude.insert(&edge);
+        changed = true;
+      }
+    }
+
+    excluded_edges.insert(to_exclude.begin(), to_exclude.end());
+  }
+
+  return excluded_edges;
+}
+
 // Function to extract faces from the planar graph
 void Sketch_topo::update_faces()
 {
@@ -254,47 +304,7 @@ void Sketch_topo::update_faces()
       used_nodes[*m_sketch.m_operation_axis->node_idx_b] = true;
   }
 
-  // Remove dangling edges (edges with degree-1 endpoints) iteratively.
-  // These edges cannot form closed faces, so we exclude them from face detection.
-  std::unordered_set<const Sketch::Edge*> excluded_edges;
-
-  bool changed = true;
-  while (changed)
-  {
-    changed = false;
-    std::unordered_set<const Sketch::Edge*> to_exclude;
-
-    // Find edges where at least one endpoint has degree 1 (considering only non-excluded edges)
-    for (const auto& edge : m_sketch.m_edges.edges())
-    {
-      if (excluded_edges.count(&edge))
-        continue;
-
-      EZY_ASSERT(edge.node_idx_b.has_value());
-      size_t a = edge.node_idx_a;
-      size_t b = edge.node_idx_b.value();
-
-      // Count degree for each endpoint (excluding already excluded edges)
-      int degree_a = 0;
-      int degree_b = 0;
-      for (const auto& [neighbor, e] : adj_list[a])
-        if (!excluded_edges.count(e))
-          ++degree_a;
-
-      for (const auto& [neighbor, e] : adj_list[b])
-        if (!excluded_edges.count(e))
-          ++degree_b;
-
-      // If either endpoint has degree 1, this edge is dangling
-      if (degree_a == 1 || degree_b == 1)
-      {
-        to_exclude.insert(&edge);
-        changed = true;
-      }
-    }
-
-    excluded_edges.insert(to_exclude.begin(), to_exclude.end());
-  }
+  std::unordered_set<const Sketch::Edge*> excluded_edges = exclude_dangling_edges_(adj_list);
 
   // Bridge edge removal logic (active). Excludes edges that purely connect separate cycles
   // (both ends degree >=3 and no alternate path) from the adjacency used by the face walker.
