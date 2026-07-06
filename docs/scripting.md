@@ -50,7 +50,7 @@ Use **`ezy.help()`** or **`help()`** in either console for the built-in reminder
 | `view.get_camera()` | Camera vectors: `eye`, `center`, and `up` |
 | `view.set_camera(ex, ey, ez, cx, cy, cz, ux, uy, uz)` | Set camera vectors |
 
-**Python only** (sketch inspection and creation):
+**Sketch inspection and creation** (Lua and Python; indices are **1-based** in Lua, **0-based** in Python):
 
 | Method | Purpose |
 | --- | --- |
@@ -66,6 +66,7 @@ Use **`ezy.help()`** or **`help()`** in either console for the built-in reminder
 ## Sample scripts
 
 - **`res/scripts/lua/basic.lua`** - Defines **`kv(obj)`** to dump tables or list userdata methods via **`ezy.log`**.
+- **`res/scripts/lua/sierpinski.lua`** - Generates a Sierpinski triangle; call **`create_sierpinski_sketch()`** to build it as a sketch.
 - **`res/scripts/python/basic.py`** - Example **`dump_view()`** using **`ezy.log`** and **`view`**.
 - **`res/scripts/python/sierpinski.py`** - Generates a Sierpinski triangle; call **`create_sierpinski_sketch()`** to build it as a sketch.
 

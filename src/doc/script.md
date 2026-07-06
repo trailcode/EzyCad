@@ -95,16 +95,16 @@ Lua overrides global `print` to call `ezy.log`. Python bootstrap assigns `builti
 | `set_camera(ex,ey,ez,cx,cy,cz,ux,uy,uz)` | `Occt_view::set_camera` |
 | `get_shape(i)` | Returns `Shp` wrapper |
 
-**Python only** (current sketch inspection):
+**Lua and Python** (current sketch inspection):
 
 | Method | Returns |
 | --- | --- |
 | `curr_sketch_node_count()` | Node count |
-| `curr_sketch_node(i)` | `(x, y)` plane coords |
+| `curr_sketch_node(i)` | `(x, y)` plane coords (Lua: 1-based index; Python: 0-based) |
 | `curr_sketch_dim_count()` | Length dimension count |
-| `curr_sketch_dim(i)` | `(lo, hi, visible, offset, name, distance)` |
+| `curr_sketch_dim(i)` | `(lo, hi, visible, offset, name, distance)` (Lua: 1-based indices) |
 
-**Python only** (sketch creation):
+**Lua and Python** (sketch creation):
 
 | Method | Notes |
 | --- | --- |

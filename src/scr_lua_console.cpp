@@ -6,6 +6,7 @@
 #include "gui_occt_view.h"
 #include "shp.h"
 #include "sketch.h"
+#include "utl_geom.h"
 
 extern "C"
 {
@@ -42,6 +43,25 @@ void push_shp(lua_State* L, const Shp_ptr& shp)
 }
 
 Shp_ptr* to_shp(lua_State* L, int index) { return static_cast<Shp_ptr*>(luaL_testudata(L, index, k_shp_metatable)); }
+
+static Sketch_ref_plane parse_sketch_ref_plane(const char* plane)
+{
+  if (plane && (std::strcmp(plane, "XZ") == 0 || std::strcmp(plane, "xz") == 0))
+    return Sketch_ref_plane::XZ;
+  if (plane && (std::strcmp(plane, "YZ") == 0 || std::strcmp(plane, "yz") == 0))
+    return Sketch_ref_plane::YZ;
+  return Sketch_ref_plane::XY;
+}
+
+static const char* default_sketch_base_name(Sketch_ref_plane plane)
+{
+  switch (plane)
+  {
+  case Sketch_ref_plane::XZ: return "Sketch_xz";
+  case Sketch_ref_plane::YZ: return "Sketch_yz";
+  default:                   return "Sketch_xy";
+  }
+}
 
 // ezy.log(msg) -> append to console and log window
 int l_ezy_log(lua_State* L)
@@ -130,6 +150,123 @@ int l_view_curr_sketch_name(lua_State* L)
   }
   lua_pushstring(L, view->curr_sketch().get_name().c_str());
   return 1;
+}
+
+// view.curr_sketch_node_count() -> number
+int l_view_curr_sketch_node_count(lua_State* L)
+{
+  GUI*       gui  = get_gui(L);
+  Occt_view* view = gui ? gui->get_view() : nullptr;
+  if (!view)
+  {
+    lua_pushinteger(L, 0);
+    return 1;
+  }
+  lua_pushinteger(L, static_cast<lua_Integer>(view->curr_sketch().get_nodes().size()));
+  return 1;
+}
+
+// view.curr_sketch_node(i) -> x, y (1-based index)
+int l_view_curr_sketch_node(lua_State* L)
+{
+  GUI*        gui  = get_gui(L);
+  Occt_view*  view = gui ? gui->get_view() : nullptr;
+  lua_Integer idx  = luaL_checkinteger(L, 1);
+  if (!view)
+    return luaL_error(L, "no 3D view available");
+  if (idx < 1)
+    return luaL_error(L, "node index must be >= 1");
+  Sketch_nodes& nodes = view->curr_sketch().get_nodes();
+  if (static_cast<std::size_t>(idx) > nodes.size())
+    return luaL_error(L, "node index out of range");
+  const Sketch_nodes::Node& n = nodes[static_cast<std::size_t>(idx - 1)];
+  lua_pushnumber(L, n.X());
+  lua_pushnumber(L, n.Y());
+  return 2;
+}
+
+// view.curr_sketch_dim_count() -> number
+int l_view_curr_sketch_dim_count(lua_State* L)
+{
+  GUI*       gui  = get_gui(L);
+  Occt_view* view = gui ? gui->get_view() : nullptr;
+  if (!view)
+  {
+    lua_pushinteger(L, 0);
+    return 1;
+  }
+  lua_pushinteger(L, static_cast<lua_Integer>(view->curr_sketch().length_dimension_count()));
+  return 1;
+}
+
+// view.curr_sketch_dim(i) -> lo, hi, visible, offset, name, distance (1-based index)
+int l_view_curr_sketch_dim(lua_State* L)
+{
+  GUI*        gui  = get_gui(L);
+  Occt_view*  view = gui ? gui->get_view() : nullptr;
+  lua_Integer idx  = luaL_checkinteger(L, 1);
+  if (!view)
+    return luaL_error(L, "no 3D view available");
+  if (idx < 1)
+    return luaL_error(L, "dimension index must be >= 1");
+  Sketch& sketch = view->curr_sketch();
+  if (static_cast<std::size_t>(idx) > sketch.length_dimension_count())
+    return luaL_error(L, "dimension index out of range");
+  const std::size_t   i     = static_cast<std::size_t>(idx - 1);
+  const std::size_t   lo    = sketch.dimension_node_lo(i);
+  const std::size_t   hi    = sketch.dimension_node_hi(i);
+  const Sketch_nodes& nodes = sketch.get_nodes();
+  const double        dist  = nodes[lo].Distance(nodes[hi]) / view->get_dimension_scale();
+  lua_pushinteger(L, static_cast<lua_Integer>(lo + 1));
+  lua_pushinteger(L, static_cast<lua_Integer>(hi + 1));
+  lua_pushboolean(L, sketch.dimension_visible(i));
+  lua_pushnumber(L, sketch.dimension_offset(i));
+  lua_pushstring(L, sketch.dimension_name(i).c_str());
+  lua_pushnumber(L, dist);
+  return 6;
+}
+
+// view.add_sketch(plane, offset, base_name) - base_name optional
+int l_view_add_sketch(lua_State* L)
+{
+  GUI*       gui  = get_gui(L);
+  Occt_view* view = gui ? gui->get_view() : nullptr;
+  if (!view)
+    return luaL_error(L, "no 3D view available");
+  const char* plane  = luaL_optstring(L, 1, "XY");
+  const double offset = luaL_optnumber(L, 2, 0.0);
+  const Sketch_ref_plane ref = parse_sketch_ref_plane(plane);
+  std::string base = default_sketch_base_name(ref);
+  if (lua_gettop(L) >= 3 && !lua_isnil(L, 3))
+    base = luaL_checkstring(L, 3);
+  view->add_sketch_on_ref_plane(ref, offset, base);
+  return 0;
+}
+
+// view.add_edge(x1, y1, x2, y2)
+int l_view_add_edge(lua_State* L)
+{
+  GUI*       gui  = get_gui(L);
+  Occt_view* view = gui ? gui->get_view() : nullptr;
+  if (!view)
+    return luaL_error(L, "no 3D view available");
+  const double x1 = luaL_checknumber(L, 1);
+  const double y1 = luaL_checknumber(L, 2);
+  const double x2 = luaL_checknumber(L, 3);
+  const double y2 = luaL_checknumber(L, 4);
+  view->curr_sketch_add_edge(x1, y1, x2, y2);
+  return 0;
+}
+
+// view.finish_sketch_edges()
+int l_view_finish_sketch_edges(lua_State* L)
+{
+  GUI*       gui  = get_gui(L);
+  Occt_view* view = gui ? gui->get_view() : nullptr;
+  if (!view)
+    return luaL_error(L, "no 3D view available");
+  view->curr_sketch_rebuild_faces();
+  return 0;
 }
 
 // view.add_box(ox, oy, oz, w, l, h)
@@ -353,6 +490,13 @@ int l_ezy_help(lua_State* L)
       "  view.sketch_count()           - number of sketches\n"
       "  view.shape_count()            - number of shapes\n"
       "  view.curr_sketch_name()       - current sketch name\n"
+      "  view.curr_sketch_node_count() - number of nodes in current sketch\n"
+      "  view.curr_sketch_node(i)      - x, y of node i (1-based index)\n"
+      "  view.curr_sketch_dim_count()  - number of length dimensions in current sketch\n"
+      "  view.curr_sketch_dim(i)       - lo, hi, visible, offset, name, distance (1-based)\n"
+      "  view.add_sketch(plane, offset, base_name) - new sketch on XY/XZ/YZ (offset in display units)\n"
+      "  view.add_edge(x1,y1,x2,y2)    - add linear edge to current sketch\n"
+      "  view.finish_sketch_edges()    - rebuild face topology after bulk edge import\n"
       "  view.add_box(ox,oy,oz,w,l,h)  - add box\n"
       "  view.add_sphere(ox,oy,oz,r)   - add sphere\n"
       "  view.get_shape(i)             - get shape by 1-based index (returns Shp or nil)\n"
@@ -457,6 +601,20 @@ void Lua_console::register_bindings()
   lua_setfield(m_L, -2, "shape_count");
   lua_pushcfunction(m_L, l_view_curr_sketch_name);
   lua_setfield(m_L, -2, "curr_sketch_name");
+  lua_pushcfunction(m_L, l_view_curr_sketch_node_count);
+  lua_setfield(m_L, -2, "curr_sketch_node_count");
+  lua_pushcfunction(m_L, l_view_curr_sketch_node);
+  lua_setfield(m_L, -2, "curr_sketch_node");
+  lua_pushcfunction(m_L, l_view_curr_sketch_dim_count);
+  lua_setfield(m_L, -2, "curr_sketch_dim_count");
+  lua_pushcfunction(m_L, l_view_curr_sketch_dim);
+  lua_setfield(m_L, -2, "curr_sketch_dim");
+  lua_pushcfunction(m_L, l_view_add_sketch);
+  lua_setfield(m_L, -2, "add_sketch");
+  lua_pushcfunction(m_L, l_view_add_edge);
+  lua_setfield(m_L, -2, "add_edge");
+  lua_pushcfunction(m_L, l_view_finish_sketch_edges);
+  lua_setfield(m_L, -2, "finish_sketch_edges");
   lua_pushcfunction(m_L, l_view_add_box);
   lua_setfield(m_L, -2, "add_box");
   lua_pushcfunction(m_L, l_view_add_sphere);
