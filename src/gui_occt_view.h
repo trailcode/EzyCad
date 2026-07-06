@@ -27,6 +27,7 @@
 #include "shp_scale.h"
 #include "utl_types.h"
 #include "utl_asset_store.h"
+#include "utl_geom.h"
 
 class Delta;
 class GUI;
@@ -140,6 +141,10 @@ public:
   void         remove_sketch(const Sketch_ptr& sketch);
   /// Empty sketch on \a pln; \a base_name is uniquified (e.g. Sketch_xy, Sketch_xy.001).
   void       add_sketch(const gp_Pln& pln, const std::string& base_name);
+  /// Like add_sketch; \a offset_display is multiplied by get_dimension_scale().
+  void       add_sketch_on_ref_plane(Sketch_ref_plane plane, double offset_display, const std::string& base_name);
+  void       curr_sketch_add_edge(double x1, double y1, double x2, double y2);
+  void       curr_sketch_rebuild_faces();
   Sketch&    curr_sketch();
   Sketch_ptr curr_sketch_shared() const;
   /// Non-owning; null when none selected. Does not create a default sketch.

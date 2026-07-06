@@ -50,6 +50,16 @@ Use **`ezy.help()`** or **`help()`** in either console for the built-in reminder
 | `view.get_camera()` | Camera vectors: `eye`, `center`, and `up` |
 | `view.set_camera(ex, ey, ez, cx, cy, cz, ux, uy, uz)` | Set camera vectors |
 
+**Python only** (sketch inspection and creation):
+
+| Method | Purpose |
+| --- | --- |
+| `view.curr_sketch_node_count()` / `view.curr_sketch_node(i)` | Read nodes `(x, y)` on the current sketch plane |
+| `view.curr_sketch_dim_count()` / `view.curr_sketch_dim(i)` | Read length dimensions |
+| `view.add_sketch(plane, offset, base_name)` | New sketch on `XY`, `XZ`, or `YZ` (`offset` in display units; optional name) |
+| `view.add_edge(x1, y1, x2, y2)` | Add a linear edge to the current sketch |
+| `view.finish_sketch_edges()` | Rebuild closed-face topology after bulk edge import |
+
 **Lua only:** global **`print`** is routed to **`ezy.log`**.  
 **Python only:** **`print`** is similarly redirected to **`ezy.log`** after bootstrap.
 
@@ -57,6 +67,7 @@ Use **`ezy.help()`** or **`help()`** in either console for the built-in reminder
 
 - **`res/scripts/lua/basic.lua`** - Defines **`kv(obj)`** to dump tables or list userdata methods via **`ezy.log`**.
 - **`res/scripts/python/basic.py`** - Example **`dump_view()`** using **`ezy.log`** and **`view`**.
+- **`res/scripts/python/sierpinski.py`** - Generates a Sierpinski triangle; call **`create_sierpinski_sketch()`** to build it as a sketch.
 
 Copy these as templates for your own files in the same folders.
 

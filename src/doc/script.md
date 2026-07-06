@@ -104,6 +104,14 @@ Lua overrides global `print` to call `ezy.log`. Python bootstrap assigns `builti
 | `curr_sketch_dim_count()` | Length dimension count |
 | `curr_sketch_dim(i)` | `(lo, hi, visible, offset, name, distance)` |
 
+**Python only** (sketch creation):
+
+| Method | Notes |
+| --- | --- |
+| `add_sketch(plane, offset, base_name)` | `Occt_view::add_sketch_on_ref_plane`; plane `XY`/`XZ`/`YZ` |
+| `add_edge(x1,y1,x2,y2)` | `Occt_view::curr_sketch_add_edge` |
+| `finish_sketch_edges()` | `Occt_view::curr_sketch_rebuild_faces` |
+
 ### `Shp` object
 
 | Method | Lua | Python |

@@ -13,6 +13,7 @@
 #include "gui_occt_view.h"
 #include "shp.h"
 #include "sketch.h"
+#include "utl_geom.h"
 
 #ifdef EZYCAD_HAVE_PYTHON
 #ifdef _MSC_VER
@@ -145,6 +146,25 @@ void append_python_exception_to_history(std::vector<std::string>& history, bool*
     ++*log_display_version;
 }
 
+static Sketch_ref_plane parse_sketch_ref_plane(const std::string& plane)
+{
+  if (plane == "XZ" || plane == "xz")
+    return Sketch_ref_plane::XZ;
+  if (plane == "YZ" || plane == "yz")
+    return Sketch_ref_plane::YZ;
+  return Sketch_ref_plane::XY;
+}
+
+static const char* default_sketch_base_name(Sketch_ref_plane plane)
+{
+  switch (plane)
+  {
+  case Sketch_ref_plane::XZ: return "Sketch_xz";
+  case Sketch_ref_plane::YZ: return "Sketch_yz";
+  default:                   return "Sketch_xy";
+  }
+}
+
 static const char* k_bootstrap = R"PY(
 def _ezycad_bootstrap():
     import ezycad_native as _n
@@ -173,6 +193,12 @@ def _ezycad_bootstrap():
             return _n.view_get_camera()
         def set_camera(self, ex, ey, ez, cx, cy, cz, ux, uy, uz):
             return _n.view_set_camera(ex, ey, ez, cx, cy, cz, ux, uy, uz)
+        def add_sketch(self, plane="XY", offset=0.0, base_name=None):
+            return _n.view_add_sketch(plane, offset, base_name)
+        def add_edge(self, x1, y1, x2, y2):
+            return _n.view_add_edge(x1, y1, x2, y2)
+        def finish_sketch_edges(self):
+            return _n.view_finish_sketch_edges()
     class Ezy:
         def log(self, msg):
             return _n.ezy_log(msg)
@@ -271,6 +297,9 @@ PYBIND11_EMBEDDED_MODULE(ezycad_native, m)
               "  view.curr_sketch_node(i)     - (x, y) of node i in current sketch (raises IndexError if out of range)\n"
               "  view.curr_sketch_dim_count() - number of length dimensions in current sketch\n"
               "  view.curr_sketch_dim(i)      - (lo, hi, visible, offset, name, distance) for dimension i\n"
+              "  view.add_sketch(plane, offset, base_name) - new sketch on XY/XZ/YZ (offset in display units)\n"
+              "  view.add_edge(x1,y1,x2,y2)    - add linear edge to current sketch\n"
+              "  view.finish_sketch_edges()    - rebuild face topology after bulk edge import\n"
               "  view.add_box(ox,oy,oz,w,l,h) - add box\n"
               "  view.add_sphere(ox,oy,oz,r)  - add sphere\n"
               "  view.get_shape(i)            - get shape by 0-based index (raises IndexError if out of range)\n"
@@ -375,6 +404,40 @@ PYBIND11_EMBEDDED_MODULE(ezycad_native, m)
         return py::make_tuple(lo, hi, sketch.dimension_visible(i), sketch.dimension_offset(i), sketch.dimension_name(i), dist);
       },
       py::arg("i"));
+
+  m.def(
+      "view_add_sketch",
+      [](const std::string& plane, double offset, const py::object& base_name)
+      {
+        Occt_view* view = g_py_gui && g_py_gui->get_view() ? g_py_gui->get_view() : nullptr;
+        if (!view)
+          throw std::runtime_error("no 3D view available");
+        const Sketch_ref_plane ref = parse_sketch_ref_plane(plane);
+        const std::string      base =
+            base_name.is_none() ? std::string(default_sketch_base_name(ref)) : base_name.cast<std::string>();
+        view->add_sketch_on_ref_plane(ref, offset, base);
+      },
+      py::arg("plane") = "XY", py::arg("offset") = 0.0, py::arg("base_name") = py::none());
+
+  m.def(
+      "view_add_edge",
+      [](double x1, double y1, double x2, double y2)
+      {
+        Occt_view* view = g_py_gui && g_py_gui->get_view() ? g_py_gui->get_view() : nullptr;
+        if (!view)
+          throw std::runtime_error("no 3D view available");
+        view->curr_sketch_add_edge(x1, y1, x2, y2);
+      },
+      py::arg("x1"), py::arg("y1"), py::arg("x2"), py::arg("y2"));
+
+  m.def("view_finish_sketch_edges",
+        []
+        {
+          Occt_view* view = g_py_gui && g_py_gui->get_view() ? g_py_gui->get_view() : nullptr;
+          if (!view)
+            throw std::runtime_error("no 3D view available");
+          view->curr_sketch_rebuild_faces();
+        });
 
   m.def(
       "view_add_box",
