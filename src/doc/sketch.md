@@ -106,6 +106,8 @@ The viewer and `GUI` forward pointer and keyboard events to the **current** sket
 
 Face extrude mode (`Mode::Sketch_face_extrude`) routes mouse, Tab, and Enter through `Occt_view::sketch_face_extrude` / `Shp_extrude` instead of the sketch tool paths above.
 
+Full GLFW -> `GUI` -> view routing: [`src/doc/gui.md`](gui.md).
+
 `get_mode()` reads `Occt_view::get_mode()`; tool behavior in `Sketch_tools` branches on the active `Mode`.
 
 ### Visibility and display

@@ -14,7 +14,7 @@ Pointer for AI coding assistants. Details live in [agents/README.md](agents/READ
 - UI/settings/docs changes: [agents/conventions/user-docs-sync.md](agents/conventions/user-docs-sync.md)
 - Sketch subsystem: [src/doc/sketch.md](src/doc/sketch.md) (read; update when API or architecture changes)
 - Shape module: [src/doc/shape.md](src/doc/shape.md) (read; update when API or operation patterns change)
-- Shape module: [src/doc/shape.md](src/doc/shape.md) (read; update when API or operation patterns change)
+- GUI module: [src/doc/gui.md](src/doc/gui.md) (read; update when input routing, modes, or settings change)
 - Build/test: [agents/workflows/local-dev.md](agents/workflows/local-dev.md) or root README
 - Release (maintainers only): [agents/workflows/release.md](agents/workflows/release.md)
 - Open work context: one file under [agents/drafts/](agents/drafts/) if relevant

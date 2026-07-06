@@ -13,6 +13,7 @@ Root markers: [AGENTS.md](../AGENTS.md) / [agents.md](../agents.md).
 | User docs when UI changes | [conventions/user-docs-sync.md](conventions/user-docs-sync.md) |
 | Sketch module (dev doc) | [src/doc/sketch.md](../src/doc/sketch.md) — read when editing sketch code; update if API/architecture changes |
 | Shape module (dev doc) | [src/doc/shape.md](../src/doc/shape.md) — read when editing `shp_*` code; update if API/operations change |
+| GUI module (dev doc) | [src/doc/gui.md](../src/doc/gui.md) — read when editing `gui_*` / viewer shell; update if routing or settings change |
 | Build / test / wasm | [workflows/local-dev.md](workflows/local-dev.md) |
 | Release | [workflows/release.md](workflows/release.md) |
 | Issue/PR drafts | [drafts/](drafts/) — [github-drafts.md](conventions/github-drafts.md) |

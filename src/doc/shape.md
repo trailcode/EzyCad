@@ -163,6 +163,8 @@ Protected helpers used by all operation classes:
 
 On mode change, the view cancels in-progress move, rotate, scale, and sketch extrude sessions.
 
+Full GLFW -> `GUI` routing before these delegates: [`src/doc/gui.md`](gui.md).
+
 ## Undo
 
 | Mechanism | When |
