@@ -4,7 +4,7 @@ Repo-local markdown drafts for [trailcode/EzyCad](https://github.com/trailcode/E
 
 ## Layout
 
-Use **`agents/drafts/` only** (not legacy `agents/issues/` or `agents/prs/` at repo root).
+Use **`agents/drafts/`** for in-repo issue and PR drafts.
 
 ```
 agents/drafts/
