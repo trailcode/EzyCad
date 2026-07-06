@@ -2,13 +2,8 @@
 # Just for fun!
 #
 # Usage (after opening Python console, or it runs on load):
-#   create_sierpinski(order=3, size=20.0)
-#
-# It will log the unique nodes and the line segments (as pairs of points).
-# You can then:
-#   1. Create a new sketch in the UI (or use ezy.set_mode("Sketch_add_edge") etc.)
-#   2. Use the logged coordinates to add nodes/edges manually, or copy into
-#      a small loop if more Python bindings for sketch creation are added later.
+#   create_sierpinski(order=3, size=20.0)           # log nodes and segments
+#   create_sierpinski_sketch(order=3, size=20.0)    # build as a new sketch
 #
 # The recursion draws the standard Sierpinski gasket lines (connect midpoints
 # recursively, resulting in 3**order small upward triangles' boundaries).
@@ -70,17 +65,23 @@ def create_sierpinski(order=3, size=20.0, center=(0.0, 0.0)):
     for i, (a, b) in enumerate(unique_lines):
         ezy.log(f"    [{i}] ({a[0]:.6f},{a[1]:.6f}) -> ({b[0]:.6f},{b[1]:.6f})")
 
-    ezy.log("To build the sketch:")
-    ezy.log("  - Create or switch to a sketch (e.g. via UI or ezy.set_mode('Sketch_add_edge'))")
-    ezy.log("  - Use the node list above to place points (add-node tool or line tool).")
-    ezy.log("  - Connect them using the listed segments.")
-    ezy.log("  - Or extend the Python bindings to support sketch creation from code!")
+    ezy.log("To build the sketch: create_sierpinski_sketch(order, size, center)")
 
     # For convenience, also stash the data on the main module so you can access from console
     import __main__
     __main__.sierpinski_nodes = node_list
     __main__.sierpinski_lines = unique_lines
 
+    return node_list, unique_lines
+
+def create_sierpinski_sketch(order=3, size=20.0, center=(0.0, 0.0), plane="XY", offset=0.0, name="Sierpinski"):
+    """Generate a Sierpinski triangle and add it as a new sketch."""
+    node_list, unique_lines = create_sierpinski(order, size, center)
+    view.add_sketch(plane, offset, name)
+    for (a, b) in unique_lines:
+        view.add_edge(a[0], a[1], b[0], b[1])
+    view.finish_sketch_edges()
+    ezy.log(f"Created sketch '{view.curr_sketch_name()}' with {len(unique_lines)} edges.")
     return node_list, unique_lines
 
 # Auto-generate a small example on script load (so it's immediately visible in the console tab)

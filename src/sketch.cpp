@@ -138,6 +138,10 @@ void Sketch::update_faces_() { m_topo.update_faces(); }
 
 void Sketch::add_edge_(const gp_Pnt2d& pt_a, const gp_Pnt2d& pt_b) { m_edges.add_edge(pt_a, pt_b); }
 
+void Sketch::add_linear_edge(const gp_Pnt2d& pt_a, const gp_Pnt2d& pt_b) { add_edge_(pt_a, pt_b); }
+
+void Sketch::rebuild_faces() { update_faces_(); }
+
 void Sketch::add_edge_(const gp_Pnt2d& pt_a, const gp_Pnt2d& pt_b, Sketch_op_recorder& rec)
 {
   m_edges.add_edge(pt_a, pt_b, rec);

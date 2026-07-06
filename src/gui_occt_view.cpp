@@ -642,6 +642,19 @@ void Occt_view::add_sketch(const gp_Pln& pln, const std::string& base_name)
   m_gui.set_mode(Mode::Sketch_inspection_mode);
 }
 
+void Occt_view::add_sketch_on_ref_plane(Sketch_ref_plane plane, double offset_display, const std::string& base_name)
+{
+  const gp_Pln pln = sketch_reference_plane(plane, offset_display * get_dimension_scale());
+  add_sketch(pln, base_name);
+}
+
+void Occt_view::curr_sketch_add_edge(double x1, double y1, double x2, double y2)
+{
+  curr_sketch().add_linear_edge(gp_Pnt2d(x1, y1), gp_Pnt2d(x2, y2));
+}
+
+void Occt_view::curr_sketch_rebuild_faces() { curr_sketch().rebuild_faces(); }
+
 // Query related
 AIS_Shape_ptr Occt_view::get_shape(const ScreenCoords& screen_coords)
 {
