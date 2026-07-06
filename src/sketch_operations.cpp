@@ -2,14 +2,13 @@
 #include "sketch.h"
 
 #include <BRepPrimAPI_MakeRevol.hxx>
-#include <Geom_TrimmedCurve.hxx>
 #include <TopoDS.hxx>
-#include <map>
 #include <set>
 
 #include "gui.h"
 #include "mode.h"
 #include "sketch_delta.h"
+#include "sketch_edge.h"
 #include "utl_geom.h"
 #include "utl_occt.h"
 #include "utl.h"
@@ -57,51 +56,39 @@ void Sketch::mirror_selected_edges()
   EZY_ASSERT(!m_operation_axis->shp.IsNull());
   const auto [mirror_pt_a, mirror_pt_b] = get_edge_endpoints(m_pln, TopoDS::Edge(m_operation_axis->shp->Shape()));
 
-  std::vector<std::pair<gp_Pnt2d, gp_Pnt2d>>     mirrored_edges;
-  std::map<AIS_Shape_ptr, std::set<const Edge*>> arc_circles;
+  std::vector<std::pair<gp_Pnt2d, gp_Pnt2d>> mirrored_edges;
+  std::set<AIS_Shape_ptr>                    mirrored_arc_shps;
 
   for (const Edge& e : m_edges.edges())
     for (const Edge& selected : mirror_edges)
-      if (e.shp == selected.shp || e.circle_arc == selected.circle_arc)
+      if (e.shp == selected.shp)
       {
-        if (e.circle_arc)
+        if (sketch_edge_is_arc(e))
         {
-          std::set<const Edge*>& arc_circle_edges = arc_circles[e.shp];
-          arc_circle_edges.insert(&e);
-          if (arc_circle_edges.size() == 2)
-            break;
+          if (!mirrored_arc_shps.count(e.shp))
+          {
+            mirrored_arc_shps.insert(e.shp);
+            EZY_ASSERT(e.node_idx_b.has_value());
+            const gp_Pnt2d arc_pt =
+                e.node_idx_arc_pt.has_value() ? m_nodes[*e.node_idx_arc_pt]
+                                              : arc_curve_midpoint_2d(TopoDS::Edge(e.shp->Shape()), m_pln);
+            const gp_Pnt2d pt_a = mirror_point(mirror_pt_a, mirror_pt_b, m_nodes[e.node_idx_a]);
+            const gp_Pnt2d pt_b = mirror_point(mirror_pt_a, mirror_pt_b, arc_pt);
+            const gp_Pnt2d pt_c = mirror_point(mirror_pt_a, mirror_pt_b, m_nodes[*e.node_idx_b]);
+            add_arc_circle_(pt_a, pt_b, pt_c, rec);
+          }
         }
         else
         {
           const gp_Pnt2d a = mirror_point(mirror_pt_a, mirror_pt_b, m_nodes[e.node_idx_a]);
           const gp_Pnt2d b = mirror_point(mirror_pt_a, mirror_pt_b, m_nodes[e.node_idx_b]);
           mirrored_edges.push_back({a, b});
-          break;
         }
+        break;
       }
 
   for (const auto& [a, b] : mirrored_edges)
     add_edge_(a, b, rec);
-
-  for (auto& [_, arc_circle_edges] : arc_circles)
-  {
-    EZY_ASSERT(arc_circle_edges.size() == 2);
-    const Edge* a = nullptr;
-    const Edge* b = nullptr;
-    for (const Edge* e : arc_circle_edges)
-      if (e->node_idx_arc.has_value())
-        a = e;
-      else
-        b = e;
-
-    EZY_ASSERT(a && b);
-    EZY_ASSERT(a->node_idx_arc.has_value());
-    EZY_ASSERT(b->node_idx_b);
-    const gp_Pnt2d pt_a = mirror_point(mirror_pt_a, mirror_pt_b, m_nodes[a->node_idx_a]);
-    const gp_Pnt2d pt_b = mirror_point(mirror_pt_a, mirror_pt_b, m_nodes[a->node_idx_arc]);
-    const gp_Pnt2d pt_c = mirror_point(mirror_pt_a, mirror_pt_b, m_nodes[b->node_idx_b]);
-    add_arc_circle_(pt_a, pt_b, pt_c, rec);
-  }
 
   m_nodes.hide_snap_annos();
   update_faces_();

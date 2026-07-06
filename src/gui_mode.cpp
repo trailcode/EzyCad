@@ -895,6 +895,7 @@ void GUI::options_sketch_add_arc_circle_mode_()
   EZY_ASSERT(get_mode() == Mode::Sketch_add_seg_circle_arc);
 
   options_sketch_common_();
+  options_sketch_add_midpoint_nodes_(m_add_mid_pt_line_edges);
 }
 
 void GUI::options_sketch_add_square_mode_()
@@ -1047,6 +1048,7 @@ void GUI::sync_sketch_add_mid_pt_edges_if_applicable_()
   {
   case Mode::Sketch_add_edge:
   case Mode::Sketch_add_multi_edges:
+  case Mode::Sketch_add_seg_circle_arc:
   case Mode::Sketch_add_square:
   case Mode::Sketch_add_rectangle:
   case Mode::Sketch_add_rectangle_center_pt:
@@ -1065,6 +1067,7 @@ bool GUI::add_mid_pt_edges_for_mode_(const Mode mode) const
   {
   case Mode::Sketch_add_edge:
   case Mode::Sketch_add_multi_edges:
+  case Mode::Sketch_add_seg_circle_arc:
     return m_add_mid_pt_line_edges;
 
   case Mode::Sketch_add_square:

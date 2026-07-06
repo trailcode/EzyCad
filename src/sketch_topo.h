@@ -18,6 +18,9 @@ public:
   void split_linear_edges_at_node_if_interior(size_t node_idx);
   void split_linear_edges_at_node_if_interior(size_t node_idx, Sketch_op_recorder& rec);
   void split_linear_edges_at_node_if_interior(size_t node_idx, Sketch_op_recorder* rec);
+  void split_arcs_at_node_if_interior(size_t node_idx);
+  void split_arcs_at_node_if_interior(size_t node_idx, Sketch_op_recorder& rec);
+  void split_arcs_at_node_if_interior(size_t node_idx, Sketch_op_recorder* rec);
 
   [[nodiscard]] const std::vector<Sketch_face_shp_ptr>& faces() const { return m_faces; }
   [[nodiscard]] std::vector<Sketch_face_shp_ptr>&       faces() { return m_faces; }

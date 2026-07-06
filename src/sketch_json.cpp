@@ -14,6 +14,7 @@
 #include "utl_dbg.h"
 #include "utl_geom.h"
 #include "sketch.h"
+#include "sketch_edge.h"
 #include "sketch_nodes.h"
 #include "sketch_underlay.h"
 #include "ezy_asset_store.h"
@@ -103,9 +104,11 @@ void Sketch_json::from_json_indexed_(Sketch& ret, const json& j,
     for (const auto& edge_json : j["arc_edges"])
     {
       EZY_ASSERT(edge_json.is_array() && edge_json.size() == 3);
-      const std::size_t ia   = edge_json[0].get<std::size_t>();
-      const std::size_t iarc = edge_json[1].get<std::size_t>();
-      const std::size_t ib   = edge_json[2].get<std::size_t>();
+      const std::size_t ia = edge_json[0].get<std::size_t>();
+      const std::size_t ib = edge_json[2].get<std::size_t>();
+      const std::size_t iarc =
+          edge_json[1].is_number_unsigned() ? edge_json[1].get<std::size_t>()
+                                              : ret.get_nodes().get_node_exact(::from_json_pnt2d(edge_json[1]));
       // Matches `add_arc_circle_(pt_a, pt_b, pt_c)` -> node_idxs [a, c, b] for (json0, json1, json2) = (start, arc, end).
       ret.add_arc_circle_(std::vector<size_t>{ia, ib, iarc});
     }
@@ -190,9 +193,19 @@ nlohmann::json Sketch_json::to_json(const Sketch& sketch, const Ezy_asset_store&
           edges_json.push_back(json::array({remap(e.node_a), remap(e.node_b)}));
       });
 
-  sketch.m_edges.for_each_arc(
-      [&](const Sketch_edge_arc& a)
-      { arc_edges_json.push_back(json::array({remap(a.node_start), remap(a.node_arc), remap(a.node_end)})); });
+  for (const Sketch_edge& e : sketch.m_edges.edges())
+  {
+    if (!sketch_edge_is_arc(e) || !e.node_idx_b.has_value() || e.shp.IsNull())
+      continue;
+
+    json arc_mid_json;
+    if (e.node_idx_arc_pt.has_value())
+      arc_mid_json = remap(*e.node_idx_arc_pt);
+    else
+      arc_mid_json = ::to_json(arc_curve_midpoint_2d(TopoDS::Edge(e.shp->Shape()), sketch.m_pln));
+
+    arc_edges_json.push_back(json::array({remap(e.node_idx_a), arc_mid_json, remap(*e.node_idx_b)}));
+  }
 
   json& len_dims_json = j["length_dimensions"] = json::array();
   for (const Sketch_dims::Length_dimension& ld : sketch.m_dims.dimensions())

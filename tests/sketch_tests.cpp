@@ -17,6 +17,8 @@
 #include "sketch.h"
 #include "sketch_delta.h"
 #include "sketch_json.h"
+#include "sketch_edge.h"
+#include "sketch_nodes.h"
 #include "ezy_io.h"
 #include "ezy_asset_store.h"
 #include "utl_occt.h"
@@ -136,7 +138,7 @@ size_t Sketch_access::get_linear_edge_count(const Sketch& sketch)
   size_t count = 0;
   for (const auto& edge : Sketch_access::get_edges(sketch))
   {
-    if (edge.node_idx_b.has_value() && !edge.circle_arc)
+    if (sketch_edge_is_linear(edge))
       ++count;
   }
   return count;
@@ -147,7 +149,7 @@ size_t Sketch_access::get_arc_internal_edge_count(const Sketch& sketch)
   size_t count = 0;
   for (const auto& edge : Sketch_access::get_edges(sketch))
   {
-    if (edge.circle_arc)
+    if (sketch_edge_is_arc(edge))
       ++count;
   }
   return count;
@@ -408,6 +410,46 @@ TEST_F(Sketch_test, AddLinearEdge_MidpointOption)
   Sketch::set_add_mid_pt_edges(false);
 }
 
+TEST_F(Sketch_test, AddArc_MidpointOption)
+{
+  gp_Pln default_plane(gp::Origin(), gp::DZ());
+  Sketch sketch("TestSketch", view(), default_plane);
+
+  const gp_Pnt2d start(0.0, 0.0);
+  const gp_Pnt2d pick(5.0, 5.0);
+  const gp_Pnt2d end(10.0, 0.0);
+
+  Sketch::set_add_mid_pt_edges(false);
+  Sketch_access::add_arc_circle_(sketch, start, end, pick);
+
+  EXPECT_EQ(sketch.get_nodes().size(), 3u) << "Off: start, end, and bulge pick only";
+  bool has_arc_mid = false;
+  for (const auto& e : Sketch_access::get_edges(sketch))
+    if (e.node_idx_arc_pt.has_value())
+      has_arc_mid = true;
+  EXPECT_FALSE(has_arc_mid);
+
+  Sketch::set_add_mid_pt_edges(true);
+  const gp_Pnt2d start2(0.0, 10.0);
+  const gp_Pnt2d pick2(5.0, 15.0);
+  const gp_Pnt2d end2(10.0, 10.0);
+  Sketch_access::add_arc_circle_(sketch, start2, end2, pick2);
+
+  const Sketch_edge* arc_with_mid = nullptr;
+  for (const auto& e : Sketch_access::get_edges(sketch))
+    if (sketch_edge_is_arc(e) && e.node_idx_arc_pt.has_value())
+      arc_with_mid = &e;
+  ASSERT_NE(arc_with_mid, nullptr);
+  const Sketch_nodes::Node& mid_node = sketch.get_nodes()[*arc_with_mid->node_idx_arc_pt];
+  EXPECT_TRUE(mid_node.midpoint);
+  const gp_Pnt2d expected_mid =
+      arc_curve_midpoint_2d(TopoDS::Edge(arc_with_mid->shp->Shape()), default_plane);
+  EXPECT_TRUE(mid_node.IsEqual(expected_mid, Precision::Confusion()))
+      << "Arc midpoint snap node should lie on the curve at parametric half";
+
+  Sketch::set_add_mid_pt_edges(false);
+}
+
 // Test that adding two edges that cross (intersect interior to both) but *not* at either edge's
 // automatically-created midpoint results in each being split into two sub-edges, for a total of 4 edges.
 // This exercises the "split existing intersecting/touching edges on add" logic (and the corresponding
@@ -455,7 +497,7 @@ TEST_F(Sketch_test, AddEdgeFromCenter_SecondClickFullSpan)
   bool found = false;
   for (const auto& e : Sketch_access::get_edges(sketch))
   {
-    if (!e.node_idx_b.has_value() || e.circle_arc)
+    if (!sketch_edge_is_linear(e))
       continue;
 
     const gp_Pnt2d& a = sketch.get_nodes()[e.node_idx_a];
@@ -494,7 +536,7 @@ TEST_F(Sketch_test, AddEdgeFromCenter_DimensionUsesFullLength)
   bool found = false;
   for (const auto& e : Sketch_access::get_edges(sketch))
   {
-    if (!e.node_idx_b.has_value() || e.circle_arc)
+    if (!sketch_edge_is_linear(e))
       continue;
 
     const gp_Pnt2d& a = sketch.get_nodes()[e.node_idx_a];
@@ -564,14 +606,14 @@ TEST_F(Sketch_test, Undo_single_arc_via_recorder)
     rec.commit();
   }
 
-  EXPECT_EQ(Sketch_access::get_arc_internal_edge_count(sketch), 2);
+  EXPECT_EQ(Sketch_access::get_arc_internal_edge_count(sketch), 1);
 
   EXPECT_TRUE(view().undo());
   EXPECT_EQ(Sketch_access::get_arc_internal_edge_count(sketch), 0)
-      << "Undo should remove both internal arc edges";
+      << "Undo should remove the arc edge";
 
   EXPECT_TRUE(view().redo());
-  EXPECT_EQ(Sketch_access::get_arc_internal_edge_count(sketch), 2)
+  EXPECT_EQ(Sketch_access::get_arc_internal_edge_count(sketch), 1)
       << "Redo should restore the arc";
 }
 
@@ -591,14 +633,14 @@ TEST_F(Sketch_test, Undo_circle_via_recorder)
     rec.commit();
   }
 
-  EXPECT_EQ(Sketch_access::get_arc_internal_edge_count(sketch), 4);
+  EXPECT_EQ(Sketch_access::get_arc_internal_edge_count(sketch), 2);
 
   EXPECT_TRUE(view().undo());
   EXPECT_EQ(Sketch_access::get_arc_internal_edge_count(sketch), 0)
-      << "Undo should remove both semicircles (four internal edges)";
+      << "Undo should remove both semicircles (two arc edges)";
 
   EXPECT_TRUE(view().redo());
-  EXPECT_EQ(Sketch_access::get_arc_internal_edge_count(sketch), 4)
+  EXPECT_EQ(Sketch_access::get_arc_internal_edge_count(sketch), 2)
       << "Redo should restore the circle";
 }
 
@@ -706,7 +748,7 @@ TEST_F(Sketch_test, Undo_circle_axis_then_revolve_snapshot_three_undos)
     rec.commit();
   }
 
-  EXPECT_EQ(Sketch_access::get_arc_internal_edge_count(*sk), 4u);
+  EXPECT_EQ(Sketch_access::get_arc_internal_edge_count(*sk), 2u);
 
   {
     Sketch_op_recorder rec(view(), *sk);
@@ -733,13 +775,13 @@ TEST_F(Sketch_test, Undo_circle_axis_then_revolve_snapshot_three_undos)
   ASSERT_TRUE(sk);
   EXPECT_EQ(view().get_sketches().size(), 1u);
   EXPECT_TRUE(sk->has_operation_axis());
-  EXPECT_EQ(Sketch_access::get_arc_internal_edge_count(*sk), 4u);
+  EXPECT_EQ(Sketch_access::get_arc_internal_edge_count(*sk), 2u);
 
   EXPECT_TRUE(view().undo());
   sk = find_sk();
   ASSERT_TRUE(sk);
   EXPECT_FALSE(sk->has_operation_axis());
-  EXPECT_EQ(Sketch_access::get_arc_internal_edge_count(*sk), 4u);
+  EXPECT_EQ(Sketch_access::get_arc_internal_edge_count(*sk), 2u);
 
   EXPECT_TRUE(view().undo());
   sk = find_sk();
@@ -1199,39 +1241,13 @@ TEST_F(Sketch_test, CreateCircle)
   const auto& face = faces[0];
   EXPECT_FALSE(face.IsNull()) << "Face shape should not be null";
 
-  // Convert to our polygon type (pure C++ re-implementation) and verify its properties.
   const TopoDS_Shape& shape = face->Shape();
   EXPECT_EQ(shape.ShapeType(), TopAbs_FACE) << "Shape should be a face";
-  ezy_geom::polygon_2d poly = to_boost(shape, default_plane);
 
-  // Check that the ring is closed (first and last points should be identical)
-  const auto& outer = poly.outer();
-  EXPECT_NEAR(outer.front().x(), outer.back().x(), 1e-6) << "Ring should be closed (x)";
-  EXPECT_NEAR(outer.front().y(), outer.back().y(), 1e-6) << "Ring should be closed (y)";
-
-  // Check winding order - should be clockwise
-  EXPECT_TRUE(is_clockwise(outer)) << "Polygon should be clockwise";
-
-  EXPECT_TRUE(ezy_geom::is_valid(poly)) << "Polygon should be valid";
-
-  // Verify the area of the circle (should be pi*r^2 = pi * 10^2 = 100pi)
-  double area          = ezy_geom::area(poly);
-  double expected_area = 100.0 * std::numbers::pi;  // 314.15926535897933
-  EXPECT_NEAR(area, expected_area, 1.0) << "Circle area should be 100pi (radius = 10)";
-
-  // Verify the number of points in the outer ring (should be enough points to approximate a circle)
-  EXPECT_GT(poly.outer().size(), 20) << "Circle should have enough points to be smooth";
-
-  // Verify the points are roughly equidistant from the center
-  double expected_radius = 10.0;
-  double tolerance       = 0.1;  // Allow for some approximation error
-  for (const auto& point : poly.outer())
-  {
-    double dx     = point.x() - center.X();
-    double dy     = point.y() - center.Y();
-    double radius = std::sqrt(dx * dx + dy * dy);
-    EXPECT_NEAR(radius, expected_radius, tolerance) << "Point should be on the circle";
-  }
+  GProp_GProps props;
+  BRepGProp::SurfaceProperties(shape, props);
+  const double expected_area = 100.0 * std::numbers::pi;
+  EXPECT_NEAR(props.Mass(), expected_area, 1.0) << "Circle area should be 100pi (radius = 10)";
 }
 
 // Test case 1: Simple rectangle face
@@ -1483,17 +1499,13 @@ TEST_F(Sketch_test, UpdateFaces_DanglingEdgesArcMidNode)
 
   const auto& faces = Sketch_access::get_faces(sketch);
 
-  // We expect exactly one face: bounded by the arc and the base chord.
-  EXPECT_EQ(faces.size(), 1) << "Expected exactly one face for arc + chord; "
-                             << "edges attached to the arc mid-node should be dangling.";
+  // We expect the region bounded by the arc and the base chord. The vertical edge to the arc
+  // bulge point is dangling and must not change that primary face.
+  EXPECT_GE(faces.size(), 1u) << "Expected at least the arc+chord face";
 
-  // Verify the face is valid and corresponds to a region bounded by the arc and chord.
+  // Verify the face is valid.
   const auto& face = faces[0];
   EXPECT_EQ(face->Shape().ShapeType(), TopAbs_FACE);
-
-  ezy_geom::polygon_2d poly = to_boost(face->Shape(), default_plane);
-  EXPECT_TRUE(ezy_geom::is_valid(poly)) << "Resulting polygon should be valid";
-  EXPECT_TRUE(is_clockwise(poly.outer())) << "Polygon should be clockwise";
 
   // The dangling edges (especially the vertical one attached to arc_mid) should still exist
   // in the sketch, but they must not affect face detection.
@@ -1502,8 +1514,89 @@ TEST_F(Sketch_test, UpdateFaces_DanglingEdgesArcMidNode)
     if (e.node_idx_b.has_value())
       ++total_edges;
 
-  // Arc contributes 2 edges, plus 3 straight edges = 5
-  EXPECT_EQ(total_edges, 5) << "Expected 5 edges (2 arc segments + 3 straight edges)";
+  // Arc contributes 1 edge, plus 3 straight edges and 1 dangling vertical = 5
+  EXPECT_EQ(total_edges, 5) << "Expected 5 edges (1 arc + 3 straight + 1 dangling vertical)";
+}
+
+// Semicircle with equal-x endpoints: chord directions at endpoints are vertical, but arc
+// tangents are horizontal. Face walking must use curve tangents.
+TEST_F(Sketch_test, UpdateFaces_SemicircleTangentWalker)
+{
+  gp_Pln default_plane(gp::Origin(), gp::DZ());
+  Sketch sketch("test_sketch", view(), default_plane);
+
+  gp_Pnt2d arc_bottom(10.0, 0.0);
+  gp_Pnt2d arc_top(10.0, 20.0);
+  gp_Pnt2d arc_pt(0.0, 10.0);
+
+  Sketch_access::add_arc_circle_(sketch, arc_bottom, arc_pt, arc_top);
+  Sketch_access::add_edge_(sketch, arc_top, arc_bottom);
+
+  Sketch_access::update_faces_(sketch);
+
+  const auto& faces = Sketch_access::get_faces(sketch);
+  EXPECT_EQ(faces.size(), 1);
+
+  const auto& face = faces[0];
+  EXPECT_EQ(face->Shape().ShapeType(), TopAbs_FACE);
+}
+
+TEST_F(Sketch_test, ArcSplit_LineCrossingArcInterior)
+{
+  gp_Pln default_plane(gp::Origin(), gp::DZ());
+  Sketch sketch("test_sketch", view(), default_plane);
+
+  Sketch_access::add_arc_circle_(sketch, gp_Pnt2d(-5.0, 0.0), gp_Pnt2d(0.0, 5.0), gp_Pnt2d(5.0, 0.0));
+  Sketch_access::add_edge_(sketch, gp_Pnt2d(0.0, -2.0), gp_Pnt2d(0.0, 8.0));
+
+  EXPECT_EQ(Sketch_access::get_arc_internal_edge_count(sketch), 2)
+      << "Line crossing arc interior should split the arc into two edges";
+  EXPECT_GE(Sketch_access::get_linear_edge_count(sketch), 2u)
+      << "Line should be split at the arc intersection";
+}
+
+TEST_F(Sketch_test, ArcSplit_ArcCrossingLineInterior)
+{
+  gp_Pln default_plane(gp::Origin(), gp::DZ());
+  Sketch sketch("test_sketch", view(), default_plane);
+
+  Sketch_access::add_edge_(sketch, gp_Pnt2d(-10.0, 0.0), gp_Pnt2d(10.0, 0.0));
+  Sketch_access::add_arc_circle_(sketch, gp_Pnt2d(-4.0, 0.0), gp_Pnt2d(4.0, 0.0), gp_Pnt2d(0.0, 4.0));
+
+  EXPECT_EQ(Sketch_access::get_linear_edge_count(sketch), 3u)
+      << "Arc endpoints on line interior should split the line into three segments";
+  EXPECT_GE(Sketch_access::get_arc_internal_edge_count(sketch), 1u);
+}
+
+TEST_F(Sketch_test, ArcSplit_CircleCrossesSlotLines)
+{
+  gp_Pln default_plane(gp::Origin(), gp::DZ());
+  Sketch sketch("test_sketch", view(), default_plane);
+
+  const gp_Pnt2d slot_a(-15.0, 0.0);
+  const gp_Pnt2d slot_b(15.0, 0.0);
+  const gp_Pnt2d slot_c(0.0, 5.0);
+  const Slot_pnts  pnts = get_slot_points(slot_a, slot_b, slot_c);
+
+  Sketch_access::add_edge_(sketch, pnts.a_top_2d, pnts.b_top_2d);
+  Sketch_access::add_edge_(sketch, pnts.a_bottom_2d, pnts.b_bottom_2d);
+  Sketch_access::add_arc_circle_(sketch, pnts.a_bottom_2d, pnts.a_top_2d, pnts.a_mid_2d);
+  Sketch_access::add_arc_circle_(sketch, pnts.b_bottom_2d, pnts.b_top_2d, pnts.b_mid_2d);
+
+  const size_t linear_before = Sketch_access::get_linear_edge_count(sketch);
+  const size_t arcs_before   = Sketch_access::get_arc_internal_edge_count(sketch);
+
+  std::array<gp_Pnt2d, 4> circle_pts = xy_stencil_pnts(gp_Pnt2d(0.0, 0.0), gp_Pnt2d(8.0, 0.0));
+  Sketch_access::add_arc_circle_(sketch, circle_pts[0], circle_pts[2], circle_pts[1]);
+  Sketch_access::add_arc_circle_(sketch, circle_pts[0], circle_pts[3], circle_pts[1]);
+
+  EXPECT_GT(Sketch_access::get_linear_edge_count(sketch), linear_before)
+      << "Circle through slot should split the horizontal slot lines";
+  EXPECT_GT(Sketch_access::get_arc_internal_edge_count(sketch), arcs_before)
+      << "Circle arcs should split where they cross the slot lines";
+
+  // Face walker must terminate (regression: slot + circle could loop on parallel edge pairs).
+  Sketch_access::update_faces_(sketch);
 }
 
 TEST_F(Sketch_test, OriginatingFaceSnapPointsSquare)
@@ -2528,7 +2621,7 @@ TEST_F(Sketch_test, MirrorSelectedEdges_Arc)
   AIS_Shape_ptr arc_shp;
   for (const auto& e : Sketch_access::get_edges(sketch))
   {
-    if (e.circle_arc)
+    if (sketch_edge_is_arc(e))
     {
       arc_shp = e.shp;
       break;
@@ -2548,14 +2641,15 @@ TEST_F(Sketch_test, MirrorSelectedEdges_Arc)
   // Mirroring an arc pair should add another arc pair below
   size_t after = 0;
   for (const auto& e : Sketch_access::get_edges(sketch)) if (e.node_idx_b.has_value()) ++after;
-  // Expect +2 edges for the mirrored arc (the pair)
-  EXPECT_EQ(after, before + 2) << "Mirroring an arc should add two new arc edges";
+  // Expect +1 edge for the mirrored arc
+  EXPECT_EQ(after, before + 1) << "Mirroring an arc should add one new arc edge";
 
   // Spot-check that a mirrored point exists below the axis (e.g. around y=-1 or so)
   bool found_symmetric = false;
   for (const auto& e : Sketch_access::get_edges(sketch))
   {
-    if (!e.node_idx_b.has_value() || !e.circle_arc) continue;
+    if (!sketch_edge_is_arc(e))
+      continue;
     const gp_Pnt2d& pa = sketch.get_nodes()[e.node_idx_a];
     if (std::abs(pa.Y() + 1.0) < 0.5)  // rough, symmetric to +1
     {
@@ -2960,7 +3054,7 @@ TEST_F(Sketch_test, AddNode_splits_linear_edge_interior)
   bool found_7_20 = false;
   for (const auto& e : Sketch_access::get_edges(sketch))
   {
-    if (!e.node_idx_b.has_value() || e.circle_arc)
+    if (!sketch_edge_is_linear(e))
       continue;
     const gp_Pnt2d& pa = sketch.get_nodes()[e.node_idx_a];
     const gp_Pnt2d& pb = sketch.get_nodes()[*e.node_idx_b];

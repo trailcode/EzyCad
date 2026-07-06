@@ -23,7 +23,7 @@ public:
   void sketch_json_add_linear_edge(size_t idx_a, size_t idx_b, std::optional<size_t> idx_mid);
 
   void update_end_pt(Sketch_edge& edge, size_t end_pt_idx);
-  void add_arc_circle_edges(const std::vector<size_t>& node_idxs);
+  void add_arc_circle_edges(const std::vector<size_t>& node_idxs, Sketch_op_recorder* rec = nullptr);
 
   void remove_by_ais(const Sketch_AIS_edge& to_remove);
   void remove_displayed();
@@ -52,6 +52,7 @@ private:
 
   void add_edge_raw_(const gp_Pnt2d& pt_a, const gp_Pnt2d& pt_b);
   void add_edge_impl_(const gp_Pnt2d& pt_a, const gp_Pnt2d& pt_b, Sketch_op_recorder* rec);
+  void split_arc_at_node_(std::list<Sketch_edge>::iterator itr, size_t split_idx, Sketch_op_recorder* rec);
 
   Sketch&                m_sketch;
   std::list<Sketch_edge> m_edges;

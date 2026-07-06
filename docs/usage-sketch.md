@@ -47,7 +47,7 @@ While you draw or place points in sketch mode, EzyCad helps you align to existin
 | **Snap guides** | **Snap guide mode**: *Traditional* (local markers at guide intersections), *Fullscreen* (view-spanning axis lines), or *Both*. **Snap guide color (node)** is used when both X and Y align to the same vertex; **Snap guide color (axis)** when only one axis aligns. A separate checkbox **All co-axial nodes** (in the sketch Options panel and in Settings) enables *global* mode: when on, full horizontal and vertical guide lines + markers are shown for *all* nodes in the current sketch and all other visible sketches (the complete set of co-axial alignments). When off (default), only the closest node per active axis is annotated (classic closest-relative behavior). |
 | **Axis alignment** | Near a snap target, the pick can align to that point's **X** or **Y** on the sketch plane; guides show which axis is active. When **both** axes align to the **same** point, the cursor **locks to that vertex**. |
 | **Mid-point snap (Add node)** | A click near a **straight** edge (not at its ends) snaps onto the segment and **splits** it at commit time (see [Add node tool](#add-node-tool)). Separate from vertex lock. |
-| **Automatic splitting on edge intersections** | When you add a new straight (linear) edge using the Line Edge tool or Multi-Line Edge tool, if it crosses or touches the interior of any existing straight edge, the existing edge is automatically split at the intersection point. The new edge is also subdivided into atomic segments where needed. The same splitting occurs when an endpoint of the new edge snaps to the midpoint of an existing edge. This produces correct T-junctions (3 edges), crossings (4 edges), and cleanly divided faces from a single sketch. Arcs have special internal handling and do not trigger the same linear splits. |
+| **Automatic splitting on edge intersections** | When you add a new straight (linear) edge using the Line Edge tool or Multi-Line Edge tool, if it crosses or touches the interior of any existing straight edge, the existing edge is automatically split at the intersection point. The new edge is also subdivided into atomic segments where needed. The same splitting occurs when an endpoint of the new edge snaps to the midpoint of an existing edge. When you add an **arc segment**, existing straight and arc edges are split at interior crossings, and the new arc is subdivided at intersection points on its interior. This produces correct T-junctions, crossings, and cleanly divided faces from a single sketch. |
 | **Other visible sketches** | Nodes from **other visible sketches** are projected onto the current sketch plane and act as snap targets (same distance rules). Useful for multi-sketch layouts and tools such as **polar duplicate** that pick sketch points. |
 | **Operational axis mode** | While an operational axis is **defined** and **Operational axis** mode is active (mirror/revolve phase), sketch snap and permanent **+** node markers are **suppressed** so edge and face selection stays clear. Normal snapping applies again after **Clear axis** or when you leave the tool. Axis placement (before the axis exists) still uses snap. |
 
@@ -123,8 +123,8 @@ While the **Line Edge** tool is active, the Options panel (under the **Options**
 When checked, each new straight edge created with this tool (and with **Add multi-line edge**) gets an automatic **midpoint node** at the center of the segment. That node is a snap target but does not show a **+** marker and is not listed under **Nodes** in the [Sketch List](usage.md#sketch-list).
 
 - Default is **off** (no midpoint nodes on new edges).
-- The same preference is available globally and persistently in **Settings -> Sketch -> Add midpoints to new linear edges** (saved as `gui.add_mid_pt_edges`). The Options checkbox mirrors that setting for the current session while you use line tools.
-- Only affects **future** edges from the Line and Multi-line tools. Existing edges and midpoints loaded from a project are unchanged.
+- The same preference is available globally and persistently in **Settings -> Sketch -> Add midpoints to new linear edges** (saved as `gui.add_mid_pt_edges`). The Options checkbox mirrors that setting for the current session while you use line tools and the **Arc Segment** tool.
+- Affects **future** edges from the Line, Multi-line, and Arc Segment tools.
 - Midpoint snapping on **intersection splits** (when a new edge crosses an existing one) is separate topology behavior; see [Automatic splitting on edge intersections](#sketch-snapping).
 
 (line-edge-option-place-from-center)=
@@ -336,60 +336,72 @@ The circle tool follows this workflow:
 
 ![Arc Segment Tool](res/icons/Sketcher_Element_Arc_Edge.png)
 
-The arc segment tool allows you to create circular arc edges by defining three points that lie on the arc: a start point, a middle point, and an end point.
+The arc segment tool creates a single circular arc edge from three clicks: **start**, a **bulge point** on the arc (between start and end), and **end**.
 
 **Features:**
 
 | | |
 | ---: | --- |
-| **Three-point creation** | Click to set the start point, then the middle point, then the end point |
-| **Real-time preview** | See the arc shape while moving the mouse after setting the first two points |
-| **Automatic finalization** | The arc is automatically created and added to your sketch after the third point is clicked |
-| **Circular arc** | Creates a smooth circular arc that passes through all three points |
-| **Snap support** | Automatically snaps to existing nodes and geometry |
-| **Unique points** | All three points must be different (cannot be coincident) |
+| **Three-point creation** | Click start, then a point on the arc that sets bulge/curvature, then end |
+| **Rubber-band preview** | After the first click, a straight preview line follows the cursor; after the second click, an arc preview follows the cursor until the third click |
+| **Automatic finalization** | The arc is created and added to the sketch after the third click |
+| **Circular arc** | One smooth circular arc through the three defining points |
+| **Intersection splitting** | Splits existing straight and arc edges at interior crossings; the new arc is subdivided where other edges cross its interior |
+| **Optional arc midpoint node** | When **Add midpoint nodes** is on in the Options panel, a snap node is placed at the arc's geometric midpoint (see [Arc segment Options](#arc-segment-options)) |
+| **Snap support** | Snaps to existing nodes and geometry |
+| **Unique points** | All three clicks must be different (cannot be coincident) |
 
 **How to use:**
 1. ![Sketcher_Element_Arc_Edge](res/icons/Sketcher_Element_Arc_Edge.png) Select the **Arc Segment** tool from the toolbar
-2. Click to set the start point of the arc (first point)
-3. Click to set a point on the arc between start and end (middle point)
-4. Move the mouse to see a preview of the arc
-5. Click to set the end point of the arc (third point)
-6. The arc segment will be automatically created and added to your sketch
+2. Optionally enable **Add midpoint nodes** in the Options panel (see [Arc segment Options](#arc-segment-options))
+3. Click to set the **start** point (first click)
+4. Move the mouse — a straight rubber-band line shows from start to the cursor
+5. Click to set a **bulge point** on the arc (second click — between start and end, not necessarily at the geometric midpoint)
+6. Move the mouse — an arc preview follows the cursor from start through the bulge point toward the end
+7. Click to set the **end** point (third click)
+8. The arc is created and added to your sketch; faces update if the sketch forms closed regions
 
 **Point order:**
 
 | | |
 | ---: | --- |
-| **First click** | Start point - where the arc begins |
-| **Second click** | Middle point - a point that lies on the arc between start and end |
-| **Third click** | End point - where the arc ends |
+| **First click** | Start — where the arc begins |
+| **Second click** | Bulge point — any point on the intended arc between start and end (sets which side of the chord the arc bulges) |
+| **Third click** | End — where the arc ends |
 
 **Shortcuts:**
 
 | | |
 | ---: | --- |
 | <kbd>Escape</kbd> | Cancel the current arc creation (clears all points) |
-| **Note** | The arc is automatically finalized after the third point, so no manual finalization is needed |
+| **Note** | The arc is automatically finalized after the third click; no manual finalization is needed |
+
+(arc-segment-options)=
+### Arc segment Options
+
+While the **Arc Segment** tool is active, the Options panel shows the same **Add midpoint nodes** checkbox used by the Line Edge tool (see [Line edge option: Add midpoint nodes](#line-edge-option-add-midpoint-nodes)).
+
+- When **on**, each new arc gets an automatic **midpoint node** at the geometric center of the arc curve (parametric half). That node is a snap target only; it does not show a **+** marker and is not listed under **Nodes** in the [Sketch List](usage.md#sketch-list).
+- When **off** (default), only the three clicked points (start, bulge, end) are stored as nodes.
+- The setting mirrors **Settings -> Sketch -> Add midpoints to new linear edges** (`gui.add_mid_pt_edges`) for the current session.
 
 **Tips:**
-- The three points define a unique circular arc that passes through all of them
-- Use the snap feature to create arcs that connect precisely to existing geometry
-- The arc tool works in any sketch plane
-- Arc segments can be used as part of closed shapes that form faces
-- The middle point helps define the arc's curvature and direction
-- All three points must be unique - clicking the same point twice will be ignored
+- The three clicks define a unique circular arc; the second click controls bulge direction (which side of the chord the arc curves toward).
+- Use snap to connect arc endpoints precisely to existing geometry.
+- Adding an arc across an existing straight edge splits that edge at the crossing; adding a line across an existing arc splits the arc at the crossing.
+- Arc segments combine with straight edges to form closed shapes (slots, circles, custom profiles).
 
-**Technical details:**
-- The arc is created using the three points to define a circle, then trimming it to the arc segment
-- Internally, the arc is represented as two connected edges for proper topology
-- Arc segments can be combined with straight edges to create complex closed shapes
+**Known limitations:**
+- Combining a **slot** with a **circle** that crosses the slot horizontals can still produce incorrect edge splits or highlight colors in some cases. See [Known bugs — slot + circle](bugs.md) in the bug tracker.
+
+**Technical notes:**
+- Each arc is one graph edge (start and end nodes only); face detection uses arc **tangents** at endpoints when walking closed loops.
+- JSON save/load stores arc mid coordinates when no midpoint node is present.
 
 **Comparison with Circle Tool:**
-- **Circle Tool**: Creates a full circle from center and radius point (2 points)
-- **Arc Segment Tool**: Creates a partial arc from three points on the arc (3 points)
-- Use circles when you need a complete circular shape
-- Use arc segments when you need a curved edge that's part of a larger shape
+- **Circle Tool**: Creates a full circle from center and radius point (2 points, two semicircular arc edges)
+- **Arc Segment Tool**: Creates one partial arc from three points (start, bulge, end)
+- Use circles when you need a complete circular shape; use arc segments for partial curves in larger shapes
 
 ## Rectangle and Square Creation Tools
 

@@ -3,6 +3,7 @@
 #include <BRepBuilderAPI_MakeEdge.hxx>
 #include <GC_MakeArcOfCircle.hxx>
 #include <Precision.hxx>
+#include <TopoDS.hxx>
 #include <TopoDS_Edge.hxx>
 #include <TopoDS_Wire.hxx>
 #include <array>
@@ -14,6 +15,7 @@
 #include "occt_view.h"
 #include "sketch.h"
 #include "sketch_delta.h"
+#include "sketch_edge.h"
 #include "utl_geom.h"
 #include "utl_occt.h"
 #include "utl.h"
@@ -478,17 +480,18 @@ void Sketch_tools::finalize_edges_(Sketch_op_recorder& rec)
       gp_Pnt2d pb = m_sketch.m_nodes[te.node_idx_b];
       for (const Sketch_edge& oe : m_sketch.m_edges.edges()) // pre-batch olds only
       {
-        if (!Sketch::is_linear_edge_(oe))
-          continue;
-
-        gp_Pnt2d qa = m_sketch.m_nodes[oe.node_idx_a];
-        gp_Pnt2d qb = m_sketch.m_nodes[oe.node_idx_b];
-        if (auto inter = segment_intersection_2d(pa, pb, qa, qb, Segment_inclusion::Closed))
+        if (Sketch::is_linear_edge_(oe))
         {
-          // The intersection point is now guaranteed (by the inclusion parameter)
-          // to lie on both finite closed segments. The previous custom verification
-          // has been moved into segment_intersection_2d for consistency.
-          add_unique_point(batch_inters, *inter);
+          gp_Pnt2d qa = m_sketch.m_nodes[oe.node_idx_a];
+          gp_Pnt2d qb = m_sketch.m_nodes[oe.node_idx_b];
+          if (auto inter = segment_intersection_2d(pa, pb, qa, qb, Segment_inclusion::Closed))
+            add_unique_point(batch_inters, *inter);
+        }
+        else if (sketch_edge_is_arc(oe))
+        {
+          for (const gp_Pnt2d& inter :
+               segment_arc_intersections_2d(pa, pb, TopoDS::Edge(oe.shp->Shape()), m_sketch.m_pln, Segment_inclusion::Closed))
+            add_unique_point(batch_inters, inter);
         }
       }
     }
@@ -500,15 +503,23 @@ void Sketch_tools::finalize_edges_(Sketch_op_recorder& rec)
       bool is_old_interior = false;
       for (const Sketch_edge& e : m_sketch.m_edges.edges())
       {
-        if (!Sketch::is_linear_edge_(e))
-          continue;
-
-        gp_Pnt2d qa = m_sketch.m_nodes[e.node_idx_a];
-        gp_Pnt2d qb = m_sketch.m_nodes[e.node_idx_b];
-        if (point_on_open_segment_2d(ip, qa, qb))
+        if (Sketch::is_linear_edge_(e))
         {
-          is_old_interior = true;
-          break;
+          gp_Pnt2d qa = m_sketch.m_nodes[e.node_idx_a];
+          gp_Pnt2d qb = m_sketch.m_nodes[e.node_idx_b];
+          if (point_on_open_segment_2d(ip, qa, qb))
+          {
+            is_old_interior = true;
+            break;
+          }
+        }
+        else if (sketch_edge_is_arc(e))
+        {
+          if (point_on_open_arc_interior_2d(ip, TopoDS::Edge(e.shp->Shape()), m_sketch.m_pln))
+          {
+            is_old_interior = true;
+            break;
+          }
         }
       }
 
@@ -517,7 +528,11 @@ void Sketch_tools::finalize_edges_(Sketch_op_recorder& rec)
     }
 
     for (const auto& ip : batch_to_split)
-      m_sketch.m_topo.split_linear_edges_at_node_if_interior(m_sketch.m_nodes.get_node_exact(ip), rec);
+    {
+      const size_t nidx = m_sketch.m_nodes.get_node_exact(ip);
+      m_sketch.m_topo.split_linear_edges_at_node_if_interior(nidx, rec);
+      m_sketch.m_topo.split_arcs_at_node_if_interior(nidx, rec);
+    }
   }
 
   append(m_sketch.m_edges.edges(), m_tmp_edges);
@@ -528,8 +543,7 @@ void Sketch_tools::finalize_edges_(Sketch_op_recorder& rec)
   for (size_t mid_pt_idx : split_mid_points)
     for (auto itr = m_sketch.m_edges.edges().begin(), end = m_sketch.m_edges.edges().end(); itr != end; ++itr)
       if (itr->node_idx_mid.has_value() && *itr->node_idx_mid == mid_pt_idx)
-        // Cannot split arc circles.
-        if (!itr->node_idx_arc.has_value())
+        if (sketch_edge_is_linear(*itr))
         {
           // Split the edge.
           Sketch_edge edge_a{itr->node_idx_a, mid_pt_idx};
@@ -562,6 +576,7 @@ void Sketch_tools::finalize_edges_(Sketch_op_recorder& rec)
     const size_t nidx = m_sketch.m_nodes.get_node_exact(ip);
     rec.note_curr_node(nidx);
     m_sketch.m_topo.split_linear_edges_at_node_if_interior(nidx, rec);
+    m_sketch.m_topo.split_arcs_at_node_if_interior(nidx, rec);
   }
 
   m_sketch.m_nodes.hide_snap_annos();
@@ -576,6 +591,7 @@ void Sketch_tools::add_node_pt_(const ScreenCoords& screen_coords)
     {
       rec.note_curr_node(node_b);
       m_sketch.m_topo.split_linear_edges_at_node_if_interior(node_b, rec);
+      m_sketch.m_topo.split_arcs_at_node_if_interior(node_b, rec);
 
       // Add-node mode: the rubber band is only for placement (snap / dimension / angle). Do not create
       // a sketch edge between the anchor and the new node - only nodes and interior splits matter.
@@ -647,6 +663,7 @@ void Sketch_tools::add_node_pt_(const ScreenCoords& screen_coords)
       const size_t ni = m_sketch.m_nodes.add_new_node(pt, false, true);
       rec.note_curr_node(ni);
       m_sketch.m_topo.split_linear_edges_at_node_if_interior(ni, rec);
+      m_sketch.m_topo.split_arcs_at_node_if_interior(ni, rec);
       m_sketch.m_dims.clear_tmp_dim_anno();
       m_sketch.m_nodes.hide_snap_annos();
       m_sketch.update_faces_();
@@ -693,6 +710,8 @@ void Sketch_tools::add_arc_circle_pt_(const ScreenCoords& screen_coords)
       const gp_Pnt2d& pt_b = m_sketch.m_nodes[m_tmp_node_idxs[2]];
       m_sketch.add_arc_circle_(pt_a, pt_b, pt_c, rec);
       m_tmp_node_idxs.clear();
+      m_sketch.m_view.remove(m_tmp_shp);
+      m_tmp_shp = nullptr;
       m_sketch.update_faces_();
       rec.commit();
     }
@@ -705,6 +724,28 @@ void Sketch_tools::move_arc_circle_pt_(const ScreenCoords& screen_coords)
   if (!pt)
     // View plane and sketch plane must be perpendicular.
     return;
+
+  if (m_tmp_node_idxs.empty())
+  {
+    m_sketch.m_view.remove(m_tmp_shp);
+    m_tmp_shp = nullptr;
+    return;
+  }
+
+  if (m_tmp_node_idxs.size() == 1)
+  {
+    const gp_Pnt2d& pt_a = m_sketch.m_nodes[m_tmp_node_idxs[0]];
+    if (!unique(pt_a, *pt))
+    {
+      m_sketch.m_view.remove(m_tmp_shp);
+      m_tmp_shp = nullptr;
+      return;
+    }
+
+    const TopoDS_Edge edge = BRepBuilderAPI_MakeEdge(to_3d(m_sketch.m_pln, pt_a), to_3d(m_sketch.m_pln, *pt)).Edge();
+    show(m_sketch.m_ctx, m_tmp_shp, edge);
+    return;
+  }
 
   if (m_tmp_node_idxs.size() != 2)
     return;

@@ -283,10 +283,15 @@ void Sketch::add_arc_circle_(const gp_Pnt2d& pt_a, const gp_Pnt2d& pt_b, const g
   rec.note_curr_node(node_idx_c);
   rec.note_curr_node(node_idx_b);
 
-  add_arc_circle_(std::vector<size_t>{node_idx_a, node_idx_c, node_idx_b});
+  add_arc_circle_(std::vector<size_t>{node_idx_a, node_idx_c, node_idx_b}, rec);
 }
 
-void Sketch::add_arc_circle_(const std::vector<size_t>& node_idxs) { m_edges.add_arc_circle_edges(node_idxs); }
+void Sketch::add_arc_circle_(const std::vector<size_t>& node_idxs) { m_edges.add_arc_circle_edges(node_idxs, nullptr); }
+
+void Sketch::add_arc_circle_(const std::vector<size_t>& node_idxs, Sketch_op_recorder& rec)
+{
+  m_edges.add_arc_circle_edges(node_idxs, &rec);
+}
 
 void Sketch::on_mode()
 {
