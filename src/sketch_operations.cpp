@@ -69,12 +69,11 @@ void Sketch::mirror_selected_edges()
           {
             mirrored_arc_shps.insert(e.shp);
             EZY_ASSERT(e.node_idx_b.has_value());
-            const gp_Pnt2d arc_pt =
-                e.node_idx_arc_pt.has_value() ? m_nodes[*e.node_idx_arc_pt]
-                                              : arc_curve_midpoint_2d(TopoDS::Edge(e.shp->Shape()), m_pln);
-            const gp_Pnt2d pt_a = mirror_point(mirror_pt_a, mirror_pt_b, m_nodes[e.node_idx_a]);
-            const gp_Pnt2d pt_b = mirror_point(mirror_pt_a, mirror_pt_b, arc_pt);
-            const gp_Pnt2d pt_c = mirror_point(mirror_pt_a, mirror_pt_b, m_nodes[*e.node_idx_b]);
+            const gp_Pnt2d arc_pt = e.node_idx_arc_pt.has_value() ? m_nodes[*e.node_idx_arc_pt]
+                                                                  : arc_curve_midpoint_2d(TopoDS::Edge(e.shp->Shape()), m_pln);
+            const gp_Pnt2d pt_a   = mirror_point(mirror_pt_a, mirror_pt_b, m_nodes[e.node_idx_a]);
+            const gp_Pnt2d pt_b   = mirror_point(mirror_pt_a, mirror_pt_b, arc_pt);
+            const gp_Pnt2d pt_c   = mirror_point(mirror_pt_a, mirror_pt_b, m_nodes[*e.node_idx_b]);
             add_arc_circle_(pt_a, pt_b, pt_c, rec);
           }
         }

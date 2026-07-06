@@ -1405,9 +1405,9 @@ namespace
 {
 Handle(Geom_TrimmedCurve) edge_trimmed_curve_(const TopoDS_Edge& edge)
 {
-  Standard_Real        f = 0.0;
-  Standard_Real        l = 0.0;
-  Handle(Geom_Curve)   c = BRep_Tool::Curve(edge, f, l);
+  Standard_Real f               = 0.0;
+  Standard_Real l               = 0.0;
+  Handle(Geom_Curve) c          = BRep_Tool::Curve(edge, f, l);
   Handle(Geom_TrimmedCurve) ret = new Geom_TrimmedCurve(c, f, l);
   if (edge.Orientation() == TopAbs_REVERSED)
     ret->Reverse();
@@ -1435,8 +1435,8 @@ bool point_on_open_arc_interior_2d(const gp_Pnt2d& p, const TopoDS_Edge& arc_edg
 {
   const BRepAdaptor_Curve curve(arc_edge);
   const Handle(Geom_Curve) geom = curve.Curve().Curve();
-  const double             u_first = curve.FirstParameter();
-  const double             u_last  = curve.LastParameter();
+  const double u_first          = curve.FirstParameter();
+  const double u_last           = curve.LastParameter();
 
   GeomAPI_ProjectPointOnCurve proj(to_3d(pln, p), geom, u_first, u_last);
   if (proj.NbPoints() == 0 || proj.LowerDistance() > Precision::Confusion())
@@ -1448,7 +1448,7 @@ bool point_on_open_arc_interior_2d(const gp_Pnt2d& p, const TopoDS_Edge& arc_edg
 gp_Pnt2d arc_curve_midpoint_2d(const TopoDS_Edge& arc_edge, const gp_Pln& pln)
 {
   const BRepAdaptor_Curve curve(arc_edge);
-  const double          u_mid = (curve.FirstParameter() + curve.LastParameter()) * 0.5;
+  const double            u_mid = (curve.FirstParameter() + curve.LastParameter()) * 0.5;
   return to_2d(pln, curve.Value(u_mid));
 }
 
@@ -1477,7 +1477,7 @@ std::vector<gp_Pnt2d> segment_arc_intersections_2d(const gp_Pnt2d& seg_a, const 
     if (!on_segment_for_inclusion_(p2d, seg_a, seg_b, inclusion))
       continue;
 
-    const BRepAdaptor_Curve curve(arc_edge);
+    const BRepAdaptor_Curve     curve(arc_edge);
     GeomAPI_ProjectPointOnCurve proj(p_on_arc, curve.Curve().Curve(), curve.FirstParameter(), curve.LastParameter());
     if (proj.NbPoints() == 0)
       continue;

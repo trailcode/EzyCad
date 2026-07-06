@@ -143,9 +143,9 @@ public:
   Sketch&    curr_sketch();
   Sketch_ptr curr_sketch_shared() const;
   /// Non-owning; null when none selected. Does not create a default sketch.
-  Sketch*    current_sketch_if_any() const;
-  void       set_curr_sketch(const Sketch_ptr& sketch);
-  void       sketch_face_extrude(const ScreenCoords& screen_coords, bool is_mouse_move);
+  Sketch* current_sketch_if_any() const;
+  void    set_curr_sketch(const Sketch_ptr& sketch);
+  void    sketch_face_extrude(const ScreenCoords& screen_coords, bool is_mouse_move);
 
   std::list<Shp_ptr>& get_shapes();
   std::string         get_unique_shape_name(const char* base_name) const;

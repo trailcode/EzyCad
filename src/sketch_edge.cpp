@@ -68,8 +68,8 @@ gp_Vec2d arc_outgoing_dir_2d_(const Sketch_edge& e, const gp_Pnt2d& from_pt, con
   const gp_Pnt            to_pt_3d = to_3d(pln, to_pt);
 
   const Handle(Geom_Curve) geom = curve.Curve().Curve();
-  const double             u_first = curve.FirstParameter();
-  const double             u_last  = curve.LastParameter();
+  const double u_first          = curve.FirstParameter();
+  const double u_last           = curve.LastParameter();
 
   GeomAPI_ProjectPointOnCurve proj_from(from_3d, geom, u_first, u_last);
   GeomAPI_ProjectPointOnCurve proj_to(to_pt_3d, geom, u_first, u_last);

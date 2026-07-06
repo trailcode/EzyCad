@@ -104,11 +104,11 @@ void Sketch_json::from_json_indexed_(Sketch& ret, const json& j,
     for (const auto& edge_json : j["arc_edges"])
     {
       EZY_ASSERT(edge_json.is_array() && edge_json.size() == 3);
-      const std::size_t ia = edge_json[0].get<std::size_t>();
-      const std::size_t ib = edge_json[2].get<std::size_t>();
-      const std::size_t iarc =
-          edge_json[1].is_number_unsigned() ? edge_json[1].get<std::size_t>()
-                                              : ret.get_nodes().get_node_exact(::from_json_pnt2d(edge_json[1]));
+      const std::size_t ia   = edge_json[0].get<std::size_t>();
+      const std::size_t ib   = edge_json[2].get<std::size_t>();
+      const std::size_t iarc = edge_json[1].is_number_unsigned()
+                                   ? edge_json[1].get<std::size_t>()
+                                   : ret.get_nodes().get_node_exact(::from_json_pnt2d(edge_json[1]));
       // Matches `add_arc_circle_(pt_a, pt_b, pt_c)` -> node_idxs [a, c, b] for (json0, json1, json2) = (start, arc, end).
       ret.add_arc_circle_(std::vector<size_t>{ia, ib, iarc});
     }

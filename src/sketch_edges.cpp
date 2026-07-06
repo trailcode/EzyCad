@@ -210,14 +210,12 @@ void Sketch_edges::add_arc_circle_edges(const std::vector<size_t>& node_idxs, Sk
       if (point_on_open_segment_2d(pt_end, qa, qb))
         add_unique_point(inters, pt_end);
 
-      for (const gp_Pnt2d& ip :
-           segment_arc_intersections_2d(qa, qb, new_edge, m_sketch.m_pln, Segment_inclusion::Closed))
+      for (const gp_Pnt2d& ip : segment_arc_intersections_2d(qa, qb, new_edge, m_sketch.m_pln, Segment_inclusion::Closed))
         add_unique_point(inters, ip);
     }
     else if (sketch_edge_is_arc(e))
     {
-      for (const gp_Pnt2d& ip :
-           arc_arc_intersections_2d(TopoDS::Edge(e.shp->Shape()), new_edge, m_sketch.m_pln))
+      for (const gp_Pnt2d& ip : arc_arc_intersections_2d(TopoDS::Edge(e.shp->Shape()), new_edge, m_sketch.m_pln))
         add_unique_point(inters, ip);
     }
   }
@@ -304,8 +302,8 @@ void Sketch_edges::split_arc_at_node_(std::list<Sketch_edge>::iterator itr, size
 
   const BRepAdaptor_Curve curve(occ_edge);
   const Handle(Geom_Curve) geom = curve.Curve().Curve();
-  const double             u_first = curve.FirstParameter();
-  const double             u_last  = curve.LastParameter();
+  const double u_first          = curve.FirstParameter();
+  const double u_last           = curve.LastParameter();
 
   auto param_at = [&](size_t node_idx) -> double
   {

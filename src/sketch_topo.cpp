@@ -524,8 +524,8 @@ void Sketch_topo::update_faces()
         size_t              left_most_idx;
         double              min_angle      = std::numeric_limits<double>::max();
         const Sketch::Edge* left_most_edge = nullptr;
-        gp_Vec2d edge_a = sketch_edge_outgoing_dir_2d(*curr_edge, m_sketch.m_nodes[prev_idx], m_sketch.m_nodes[curr_idx],
-                                                       m_sketch.m_pln);
+        gp_Vec2d            edge_a =
+            sketch_edge_outgoing_dir_2d(*curr_edge, m_sketch.m_nodes[prev_idx], m_sketch.m_nodes[curr_idx], m_sketch.m_pln);
 
         for (auto& [next_idx, next_edge] : adj_list[curr_idx])
         {
@@ -534,9 +534,9 @@ void Sketch_topo::update_faces()
           if (next_idx == prev_idx && next_edge == curr_edge)
             continue;
 
-          gp_Vec2d edge_b = sketch_edge_outgoing_dir_2d(*next_edge, m_sketch.m_nodes[curr_idx], m_sketch.m_nodes[next_idx],
-                                                           m_sketch.m_pln);
-          double   angle  = std::atan2(edge_b.Crossed(edge_a), edge_b.Dot(edge_a));
+          gp_Vec2d edge_b =
+              sketch_edge_outgoing_dir_2d(*next_edge, m_sketch.m_nodes[curr_idx], m_sketch.m_nodes[next_idx], m_sketch.m_pln);
+          double angle = std::atan2(edge_b.Crossed(edge_a), edge_b.Dot(edge_a));
           if (angle < min_angle)
           {
             min_angle      = angle;
@@ -676,10 +676,10 @@ bool Sketch_topo::is_face_clockwise_(const Face_edges& face) const
 
     if (sketch_edge_is_arc(e.edge) && !e.edge.shp.IsNull())
     {
-      const gp_Pnt2d pm = e.edge.node_idx_arc_pt.has_value() ? m_sketch.m_nodes[*e.edge.node_idx_arc_pt]
-                                                             : arc_curve_midpoint_2d(TopoDS::Edge(e.edge.shp->Shape()),
-                                                                                     m_sketch.m_pln);
-      const double wedge = (p1.X() * pm.Y()) - (pm.X() * p1.Y()) + (pm.X() * p2.Y()) - (p2.X() * pm.Y());
+      const gp_Pnt2d pm    = e.edge.node_idx_arc_pt.has_value()
+                                 ? m_sketch.m_nodes[*e.edge.node_idx_arc_pt]
+                                 : arc_curve_midpoint_2d(TopoDS::Edge(e.edge.shp->Shape()), m_sketch.m_pln);
+      const double   wedge = (p1.X() * pm.Y()) - (pm.X() * p1.Y()) + (pm.X() * p2.Y()) - (p2.X() * pm.Y());
       if (std::abs(wedge) > Precision::Confusion())
       {
         signed_area += wedge;

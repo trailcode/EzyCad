@@ -63,7 +63,7 @@ public:
   std::vector<Curr_linear_edge_record>   curr_linear_edges;
   std::vector<Arc_edge_record>           prev_arc_edges;
   std::vector<Arc_edge_record>           curr_arc_edges;
-  std::vector<gp_Pnt2d>                    curr_node_pts;
+  std::vector<gp_Pnt2d>                  curr_node_pts;
   std::vector<Length_dim_record>         prev_length_dims;
   std::vector<Length_dim_record>         curr_length_dims;
   std::optional<Prev_edge_rec>           prev_operation_axis;
@@ -251,8 +251,8 @@ void Sketch_op_recorder::Impl::note_prev_linear_edge(size_t node_idx_a, size_t n
   if (!m_active || !m_delta)
     return;
 
-  const gp_Pnt2d pt_a = m_sketch.m_nodes[node_idx_a];
-  const gp_Pnt2d pt_b = m_sketch.m_nodes[node_idx_b];
+  const gp_Pnt2d          pt_a = m_sketch.m_nodes[node_idx_a];
+  const gp_Pnt2d          pt_b = m_sketch.m_nodes[node_idx_b];
   std::optional<gp_Pnt2d> pt_mid;
   if (node_idx_mid.has_value())
     pt_mid = m_sketch.m_nodes[*node_idx_mid];
@@ -493,7 +493,7 @@ std::unique_ptr<Sketch_delta> Sketch_delta::Impl::clone() const
   copy_impl.curr_linear_edges   = curr_linear_edges;
   copy_impl.prev_arc_edges      = prev_arc_edges;
   copy_impl.curr_arc_edges      = curr_arc_edges;
-  copy_impl.curr_node_pts      = curr_node_pts;
+  copy_impl.curr_node_pts       = curr_node_pts;
   copy_impl.prev_length_dims    = prev_length_dims;
   copy_impl.curr_length_dims    = curr_length_dims;
   copy_impl.prev_operation_axis = prev_operation_axis;
@@ -639,8 +639,8 @@ void Sketch_delta::Impl::restore_prev_linear_edge_(Sketch& sketch, const Prev_ed
 {
   remove_linear_edges_on_segment_(sketch, rec.pt_a, rec.pt_b);
 
-  const size_t idx_a = sketch.m_nodes.get_node_exact(rec.pt_a);
-  const size_t idx_b = sketch.m_nodes.get_node_exact(rec.pt_b);
+  const size_t          idx_a = sketch.m_nodes.get_node_exact(rec.pt_a);
+  const size_t          idx_b = sketch.m_nodes.get_node_exact(rec.pt_b);
   std::optional<size_t> idx_mid;
   if (rec.pt_mid.has_value())
     idx_mid = sketch.m_nodes.get_node_exact(*rec.pt_mid);
@@ -707,9 +707,6 @@ bool on_closed_segment_2d_(const gp_Pnt2d& p, const gp_Pnt2d& a, const gp_Pnt2d&
 
 bool is_linear_sketch_edge_(const Sketch::Edge& e) { return sketch_edge_is_linear(e); }
 
-bool pts_equal_(const gp_Pnt2d& a, const gp_Pnt2d& b)
-{
-  return a.SquareDistance(b) <= Precision::SquareConfusion();
-}
+bool pts_equal_(const gp_Pnt2d& a, const gp_Pnt2d& b) { return a.SquareDistance(b) <= Precision::SquareConfusion(); }
 
 } // namespace

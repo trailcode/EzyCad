@@ -237,11 +237,11 @@ std::optional<gp_Pnt2d> snap_foot_to_open_segment_interior_if_close(const gp_Pnt
 
 /// Intersection points of segment [seg_a-seg_b] with \a arc_edge per \a inclusion.
 [[nodiscard]] std::vector<gp_Pnt2d> segment_arc_intersections_2d(const gp_Pnt2d& seg_a, const gp_Pnt2d& seg_b,
-                                                                   const TopoDS_Edge& arc_edge, const gp_Pln& pln,
-                                                                   Segment_inclusion inclusion = Segment_inclusion::Closed);
+                                                                 const TopoDS_Edge& arc_edge, const gp_Pln& pln,
+                                                                 Segment_inclusion inclusion = Segment_inclusion::Closed);
 
 /// Interior intersection points of two arc edges (excluding endpoint touches).
 [[nodiscard]] std::vector<gp_Pnt2d> arc_arc_intersections_2d(const TopoDS_Edge& arc_a, const TopoDS_Edge& arc_b,
-                                                               const gp_Pln& pln);
+                                                             const gp_Pln& pln);
 
 #include "utl_geom.inl"
