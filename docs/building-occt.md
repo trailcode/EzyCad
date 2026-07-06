@@ -140,7 +140,7 @@ FreeType wasm configure also disables optional zlib/png/harfbuzz finds to simpli
 | `emcc` not found | Run `emsdk_env.bat` / `emsdk_env.ps1` in the same shell |
 | EzyCad configure hangs on `find_package(OpenCASCADE)` | `emcmake cmake ... --debug-output`; verify `OpenCASCADE_DIR` path |
 | OCCT 8 + ghosted dimension labels | Retest `gui.edge_dim_text_render_mode` (Z-layer Topmost); grid compositing changed in 8.0 |
-| Shaded faces missing / wireframe-only solids (wasm, OCCT 8.x) | Use **7.9.3** (`build-occt-793-wasm.ps1`); see [bugs.md](bugs.md). Bisect toggles in `src/occt_view_wasm_bisect.h` do not fix the OCCT 8 GLES regression |
+| Shaded faces missing / wireframe-only solids (wasm, OCCT 8.x) | Use **7.9.3** (`build-occt-793-wasm.ps1`); see [bugs.md](bugs.md) |
 
 ---
 

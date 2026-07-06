@@ -61,7 +61,6 @@
 #include <Font_NameOfFont.hxx>
 #include <TCollection_AsciiString.hxx>
 #include <Wasm_Window.hxx>
-#include "occt_view_wasm_bisect.h"
 #endif
 
 #include <GLFW/glfw3.h>
@@ -151,12 +150,8 @@ void Occt_view::init_viewer()
 #else // __EMSCRIPTEN__
   Handle(Aspect_DisplayConnection) aDisp;
   Handle(OpenGl_GraphicDriver) aDriver   = new OpenGl_GraphicDriver(aDisp, false);
-  aDriver->ChangeOptions().buffersNoSwap = true; // swap has no effect in WebGL
-#if defined(WASM_BISECT_DISABLE_OPAQUE_ALPHA)
-  aDriver->ChangeOptions().buffersOpaqueAlpha = false;
-#else
+  aDriver->ChangeOptions().buffersNoSwap      = true; // swap has no effect in WebGL
   aDriver->ChangeOptions().buffersOpaqueAlpha = true; // avoid unexpected blending of canvas with page background
-#endif
   // Match native OpenGL path (sRGBDisable) so shading/material gamma is consistent vs desktop.
   aDriver->ChangeOptions().sRGBDisable = true;
   if (!aDriver->InitContext())
@@ -170,7 +165,6 @@ void Occt_view::init_viewer()
   aViewer->SetDefaultShadingModel(Graphic3d_TypeOfShadingModel_Phong);
   aViewer->SetDefaultLights();
   aViewer->SetLightOn();
-#ifndef WASM_BISECT_DISABLE_LIGHT_CAST_SHADOWS
   for (NCollection_List<Handle(Graphic3d_CLight)>::Iterator aLightIter(aViewer->ActiveLights()); aLightIter.More();
        aLightIter.Next())
   {
@@ -178,7 +172,6 @@ void Occt_view::init_viewer()
     if (aLight->Type() == Graphic3d_TypeOfLightSource_Directional)
       aLight->SetCastShadows(true);
   }
-#endif
 
   Handle(Wasm_Window) aWindow = new Wasm_Window("#canvas");
 
@@ -214,34 +207,11 @@ void Occt_view::init_viewer()
   params.ToShowStats         = true;
   params.ShadowMapResolution = 1024;
   params.OitDepthFactor      = 0.0;
-  params.Resolution          = (unsigned int)(96.0 * myDevicePixelRatio + 0.5);
-#ifdef __EMSCRIPTEN__
-#if defined(WASM_BISECT_DISABLE_MSAA)
-  params.NbMsaaSamples = 0;
-#else
-  params.NbMsaaSamples = 8;
-#endif
-#if defined(WASM_BISECT_DISABLE_RESOLUTION_SCALE)
-  params.RenderResolutionScale = 1.0;
-#else
-  params.RenderResolutionScale = 2.0;
-#endif
-#if defined(WASM_BISECT_DISABLE_VIEW_SHADOWS)
-  params.IsShadowEnabled = false;
-#else
-  params.IsShadowEnabled = true;
-#endif
-#if defined(WASM_BISECT_DEPTH_PEELING_OIT)
-  params.TransparencyMethod = Graphic3d_RTM_DEPTH_PEELING_OIT;
-#else
-  params.TransparencyMethod = Graphic3d_RTM_BLEND_UNORDERED;
-#endif
-#else
-  params.NbMsaaSamples         = 8;
-  params.RenderResolutionScale = 2.0;
-  params.IsShadowEnabled       = true;
-  params.TransparencyMethod    = Graphic3d_RTM_BLEND_UNORDERED;
-#endif
+  params.Resolution              = (unsigned int)(96.0 * myDevicePixelRatio + 0.5);
+  params.NbMsaaSamples           = 8;
+  params.RenderResolutionScale   = 2.0;
+  params.IsShadowEnabled         = true;
+  params.TransparencyMethod      = Graphic3d_RTM_BLEND_UNORDERED;
 
   capture_occt_grid_rect_from_viewer_(aViewer);
 

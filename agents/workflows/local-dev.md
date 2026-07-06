@@ -68,8 +68,6 @@ High-level flow (after `emsdk_env`):
    ninja -C build-em-7-9-3
    ```
 
-   **Wasm GLES bisection:** uncomment one toggle in `src/occt_view_wasm_bisect.h`, then `ninja`.
-
 3. Serve locally:
 
    ```powershell
