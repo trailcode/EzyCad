@@ -295,6 +295,7 @@ void Sketch_topo::update_faces()
 
     excluded_edges.insert(to_exclude.begin(), to_exclude.end());
   }
+
   // Bridge edge removal logic (active). Excludes edges that purely connect separate cycles
   // (both ends degree >=3 and no alternate path) from the adjacency used by the face walker.
   // This is required for sketches like bridge.ezy that contain a "bridge" touching an inner
@@ -431,127 +432,121 @@ void Sketch_topo::update_faces()
     adj_list[b].push_back({a, &edge});
   }
 
-  std::unordered_set<std::pair<size_t, size_t>, Pair_hash> seen_edges;
+  // Extract faces by walking the planar graph one half-edge at a time.
+  //
+  // Every undirected edge has two directed "half-edges": a->b and b->a. Under a
+  // consistent leftmost-turn rule, each half-edge borders exactly one face - the
+  // region immediately to its left. So we seed a walk from every half-edge and, by
+  // marking each traversed half-edge as visited, we discover every face exactly
+  // once. Cycles wound counter-clockwise (positive signed area) bound the real
+  // regions; the single clockwise cycle is the outer, unbounded region and is
+  // discarded (it is still marked so it is never walked again).
+  //
+  // Keying the visited set on the half-edge (edge pointer + direction) - rather
+  // than on the endpoint node pair - is what lets fully enclosed faces be found: a
+  // face whose every boundary edge is shared with an already-discovered neighbor
+  // still owns its own, opposite-direction half-edges.
+  struct Half_edge
+  {
+    const Sketch::Edge* edge;
+    bool                reversed;
+    bool                operator==(const Half_edge& o) const { return edge == o.edge && reversed == o.reversed; }
+  };
+
+  struct Half_edge_hash
+  {
+    size_t operator()(const Half_edge& h) const noexcept
+    {
+      return std::hash<const void*>{}(h.edge) ^ (static_cast<size_t>(h.reversed) << 1);
+    }
+  };
+
+  std::unordered_set<Half_edge, Half_edge_hash> visited;
+
+  // A face walk consumes a distinct half-edge each step, so a valid walk cannot
+  // exceed the total number of half-edges. The cap is a safety net against
+  // degenerate geometry (e.g. parallel edges with identical tangents) that could
+  // otherwise produce a non-terminating successor cycle; such partial walks are
+  // discarded.
+  const size_t max_walk_steps = 2 * m_sketch.m_edges.size() + 2;
 
   for (auto& [a_idx, edges] : adj_list)
     for (auto& [b_idx, start_edge] : edges)
     {
-      if (seen_edges.count(std::make_pair(a_idx, b_idx)))
+      const Half_edge seed{start_edge, start_edge->reversed(a_idx, b_idx)};
+      if (visited.count(seed))
         continue;
 
-      size_t              start_idx = a_idx;
       size_t              prev_idx  = a_idx;
       size_t              curr_idx  = b_idx;
       const Sketch::Edge* curr_edge = start_edge;
       Face_edges          face;
+      bool                closed = false;
 
-      // Guard against non-terminating left-most walks. After arc/line splits (e.g. a circle
-      // through a slot) the graph can have parallel edges between the same nodes with identical
-      // outgoing tangents at a vertex. The walker may then ping-pong between two edges forever
-      // without returning to start_idx. Track (curr, prev, edge) and cap steps so update_faces
-      // always finishes; partial walks are discarded like dangling topology. This safety net
-      // may become unnecessary if the turn rule is changed to avoid revisiting parallel pairs.
-      using Walk_key = std::tuple<size_t, size_t, const Sketch::Edge*>;
-      struct Walk_key_hash
+      for (size_t step = 0; step < max_walk_steps; ++step)
       {
-        size_t operator()(const Walk_key& k) const noexcept
-        {
-          const auto [c, p, e] = k;
-          return std::hash<size_t>{}(c) ^ (std::hash<size_t>{}(p) << 1) ^
-                 (std::hash<const void*>{}(static_cast<const void*>(e)) << 2);
-        }
-      };
-      std::unordered_set<Walk_key, Walk_key_hash> walk_seen;
-      const size_t                                max_walk_steps = m_sketch.m_edges.size() + 1;
-      size_t                                      walk_steps     = 0;
+        const bool reversed = curr_edge->reversed(prev_idx, curr_idx);
+        face.push_back({*curr_edge, reversed});
+        visited.insert({curr_edge, reversed});
 
-      for (;;)
-      {
-        if (++walk_steps > max_walk_steps)
-          break;
-
-        const Walk_key key{curr_idx, prev_idx, curr_edge};
-        if (!walk_seen.insert(key).second)
-          break;
-
-        face.push_back({*curr_edge, curr_edge->reversed(prev_idx, curr_idx)});
-
-        // Base case
-        if (curr_idx == start_idx)
-        {
-          EZY_ASSERT(face.size() >= 2);
-
-          // Deliberately accept the cycle only if the left-most walker produced a traversal
-          // whose shoelace is positive under our is_face_clockwise_ convention. If not, break
-          // (skip pushing a face for this seed). This is not an error -- other seeds may still
-          // discover the same geometric cycle (or its sibling faces) in the matching orientation.
-          // The early break makes the set of accepted faces and their order in m_faces depend on
-          // m_edges list order (affected by appends and push_backs during splits) and on individual
-          // Edge node_idx_a/b values (set from pa/pb at creation time, i.e. draw direction for
-          // edges added via the GUI line tool). This dependency has been observed to be required
-          // for correct results in the GUI for cases such as "square then mid vertical splitter
-          // added lower-to-top vs. top-to-bottom" (the break version yields the expected rects
-          // on the sides the user sees; a force-to-cw normalization for every collected cycle
-          // re-introduces the direction asymmetry or malformed faces in that flow).
-          // The hole test (and bridge/dangling face tests) still pass because their edge addition
-          // order + walker seeds happen to produce matching orientations for both outer and inner
-          // boundaries.
-          if (!is_face_clockwise_(face))
-            break;
-
-          for (const Face_edge& e : face)
-          {
-            // Mark edge in both directions to avoid processing the same face twice
-            // when starting from different nodes
-            size_t start = e.start_nd_idx();
-            size_t end   = e.end_nd_idx();
-            seen_edges.insert(std::make_pair(start, end));
-            seen_edges.insert(std::make_pair(end, start));
-          }
-
-          auto f = create_face_shape_(face);
-          f->SetColor(Quantity_NOC_GRAY7);       // Base color
-          f->SetTransparency(0.5);               // 0.5 = 50% transparent (0.0 = opaque, 1.0 = invisible)
-          f->SetMaterial(Graphic3d_NOM_PLASTIC); // Optional: material for shading
-
-          m_sketch.m_ctx.Display(f, AIS_Shaded, AIS_Shape::SelectionMode(TopAbs_FACE), true);
-          m_sketch.m_ctx.Activate(f, AIS_Shape::SelectionMode(TopAbs_FACE));
-          // m_ctx.UpdateCurrentViewer();
-          m_faces.push_back(f);
-          break;
-        }
-
-        size_t              left_most_idx;
-        double              min_angle      = std::numeric_limits<double>::max();
-        const Sketch::Edge* left_most_edge = nullptr;
-        gp_Vec2d            edge_a =
+        // Choose the next edge around curr_idx: the one turning as far left as
+        // possible relative to the direction we arrived from (smallest signed
+        // angle). This keeps the face interior on our left for the whole walk.
+        const gp_Vec2d incoming_dir =
             sketch_edge_outgoing_dir_2d(*curr_edge, m_sketch.m_nodes[prev_idx], m_sketch.m_nodes[curr_idx], m_sketch.m_pln);
 
-        for (auto& [next_idx, next_edge] : adj_list[curr_idx])
+        double              min_angle = std::numeric_limits<double>::max();
+        size_t              next_idx  = 0;
+        const Sketch::Edge* next_edge = nullptr;
+        for (auto& [cand_idx, cand_edge] : adj_list[curr_idx])
         {
-          // Allow parallel edges (e.g. two arcs between the same endpoints) by skipping only
-          // the incoming edge, not every edge back to the previous node.
-          if (next_idx == prev_idx && next_edge == curr_edge)
+          // Never immediately backtrack along the edge we just traversed, but do
+          // allow other parallel edges between the same node pair.
+          if (cand_idx == prev_idx && cand_edge == curr_edge)
             continue;
 
-          gp_Vec2d edge_b =
-              sketch_edge_outgoing_dir_2d(*next_edge, m_sketch.m_nodes[curr_idx], m_sketch.m_nodes[next_idx], m_sketch.m_pln);
-          double angle = std::atan2(edge_b.Crossed(edge_a), edge_b.Dot(edge_a));
+          const gp_Vec2d outgoing_dir =
+              sketch_edge_outgoing_dir_2d(*cand_edge, m_sketch.m_nodes[curr_idx], m_sketch.m_nodes[cand_idx], m_sketch.m_pln);
+          const double angle = std::atan2(outgoing_dir.Crossed(incoming_dir), outgoing_dir.Dot(incoming_dir));
           if (angle < min_angle)
           {
-            min_angle      = angle;
-            left_most_idx  = next_idx;
-            left_most_edge = next_edge;
+            min_angle = angle;
+            next_idx  = cand_idx;
+            next_edge = cand_edge;
           }
         }
-        if (!left_most_edge)
-          // Invalid topology, probably a dangling edge
+
+        if (!next_edge)
+          // Dead end: only possible with invalid/dangling topology.
           break;
 
         prev_idx  = curr_idx;
-        curr_idx  = left_most_idx;
-        curr_edge = left_most_edge;
+        curr_idx  = next_idx;
+        curr_edge = next_edge;
+
+        // The face closes when the walk is about to re-traverse the seed
+        // half-edge (the standard face-cycle termination condition).
+        if (Half_edge{curr_edge, curr_edge->reversed(prev_idx, curr_idx)} == seed)
+        {
+          closed = true;
+          break;
+        }
       }
+
+      // Keep only closed cycles that bound a region (CCW / positive area). The CW
+      // outer cycle and any discarded partial walk are skipped; their half-edges
+      // stay marked so they are not walked again.
+      if (!closed || face.size() < 2 || !is_face_ccw_(face))
+        continue;
+
+      Sketch_face_shp_ptr f = create_face_shape_(face);
+      f->SetColor(Quantity_NOC_GRAY7);       // Base color
+      f->SetTransparency(0.5);               // 0.5 = 50% transparent (0.0 = opaque, 1.0 = invisible)
+      f->SetMaterial(Graphic3d_NOM_PLASTIC); // Optional: material for shading
+
+      m_sketch.m_ctx.Display(f, AIS_Shaded, AIS_Shape::SelectionMode(TopAbs_FACE), true);
+      m_sketch.m_ctx.Activate(f, AIS_Shape::SelectionMode(TopAbs_FACE));
+      m_faces.push_back(f);
     }
 
   // Mark unused nodes as deleted so they're excluded from snapping operations.
@@ -666,7 +661,9 @@ size_t Sketch_topo::Face_edge::end_nd_idx() const
   return *edge.node_idx_b;
 }
 
-bool Sketch_topo::is_face_clockwise_(const Face_edges& face) const
+// Returns true when the traversal winds counter-clockwise (positive signed area),
+// i.e. it bounds a real region rather than the outer/unbounded one.
+bool Sketch_topo::is_face_ccw_(const Face_edges& face) const
 {
   double signed_area = 0.0;
   for (const Face_edge& e : face)
