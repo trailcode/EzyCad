@@ -218,6 +218,16 @@ Prefer these visitors in JSON/delta/topo code over iterating `std::list<Sketch_e
 | **Face** | Derived in `Sketch_topo` | Rebuilt by `update_faces()` into `Sketch_face_shp`; drives extrude/revolve and face selection |
 | **Auto-split** | `Sketch_topo` / edge add | New edges crossing existing ones split at intersections (T-junctions, divided regions) |
 
+### Face extraction (`Sketch_topo::update_faces`)
+
+Faces are the bounded regions of the planar graph formed by the edges. The extractor:
+
+1. Builds an adjacency list, then iteratively removes **dangling** edges (an endpoint of degree 1) and **bridge** edges (connect two otherwise-separate cycles) so they do not corrupt the walk.
+2. Walks the graph one **half-edge** at a time. Every undirected edge has two directed half-edges (`a->b` and `b->a`); under the leftmost-turn rule each half-edge borders exactly one face - the region on its left. Seeding a walk from every not-yet-visited half-edge therefore discovers every face exactly once. Cycles wound counter-clockwise (positive signed area) bound real regions; the single clockwise cycle is the outer/unbounded region and is discarded.
+3. Classifies the resulting faces by area/containment to attach inner loops as **holes**.
+
+The visited set is keyed on the half-edge (edge pointer + direction), not on the endpoint node pair. This is essential: a fully enclosed face (e.g. the overlap of two squares meeting at a corner) shares every boundary edge with an already-found neighbor, but still owns its own opposite-direction half-edges, so it is still reachable.
+
 See [`docs/usage-sketch.md`](../../docs/usage-sketch.md) for user-facing splitting behavior.
 
 ## Testing
