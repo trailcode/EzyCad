@@ -23,7 +23,7 @@
 #include <numbers>
 
 #include "utl_geom.h"
-#include "ezy_asset_store.h"
+#include "utl_asset_store.h"
 #include "gui_occt_view.h"
 #include "sketch_nodes.h"
 #include "utl.h"

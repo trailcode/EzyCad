@@ -26,7 +26,7 @@
 #include "shp_rotate.h"
 #include "shp_scale.h"
 #include "utl_types.h"
-#include "ezy_asset_store.h"
+#include "utl_asset_store.h"
 
 class Delta;
 class GUI;

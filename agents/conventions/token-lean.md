@@ -19,6 +19,8 @@ Goal: give assistants **only what they need** for the task at hand. Full style g
 | Sketch subsystem (`src/sketch*`, `tests/sketch_tests.cpp`, sketch behavior in `occt_view` / `gui`) | [src/doc/sketch.md](../../src/doc/sketch.md) — read before editing; update when API, invariants, module layout, or workflows change |
 | Shape module (`src/shp*`, shape ops in `occt_view` / `gui`) | [src/doc/shape.md](../../src/doc/shape.md) — read before editing; update when API, operation patterns, or registration/undo change |
 | GUI / viewer shell (`src/gui*`, input routing, settings panes) | [src/doc/gui.md](../../src/doc/gui.md) — read before editing; update when modes, Options, hotkeys, or settings keys change |
+| Script consoles (`src/scr*`, bindings) | [src/doc/script.md](../../src/doc/script.md) — read before editing; update when `ezy`/`view` API or console UI changes |
+| Utilities (`src/utl*`, results, I/O, geometry) | [src/doc/utility.md](../../src/doc/utility.md) — read before editing; update when shared helper contracts change |
 | Docs build | [workflows/docs-build.md](../workflows/docs-build.md) |
 | Release | [workflows/release.md](../workflows/release.md) |
 | Specific issue/PR | One file under `drafts/issues/active/` or `drafts/prs/active/` |
@@ -40,12 +42,18 @@ Module notes live under `src/doc/` (IDE folder `src\doc`; see root `CMakeLists.t
 | [src/doc/sketch.md](../../src/doc/sketch.md) | Editing `src/sketch*`, `tests/sketch_tests.cpp`, or sketch-facing behavior in `occt_view` / `gui` / `mode` |
 | [src/doc/shape.md](../../src/doc/shape.md) | Editing `src/shp*`, shape operations in `occt_view` / `gui`, or 3D solid behavior |
 | [src/doc/gui.md](../../src/doc/gui.md) | Editing `src/gui*`, `Occt_view` in `gui_occt_view*`, input routing, Options/Settings UI |
+| [src/doc/script.md](../../src/doc/script.md) | Editing `src/scr*`, Lua/Python bindings, console behavior |
+| [src/doc/utility.md](../../src/doc/utility.md) | Editing `src/utl*`, `Status`/`Result`, `.ezy` I/O, geometry/settings helpers |
 
 **On sketch changes:** read `sketch.md` first for context. Update it in the same branch when you change public `Sketch` API, coordinator/sub-module boundaries, invariants (IDs, undo, transient vs committed state), or developer usage patterns. Skip updates for internal-only refactors with no doc impact.
 
 **On shape changes:** read `shape.md` first for context. Update it when you change `Shp` API, `Shp_operation_base` contract, operation class behavior, undo/finalize patterns, or how shapes are registered in `Occt_view`. Skip updates for internal-only refactors with no doc impact.
 
 **On GUI changes:** read `gui.md` first for context. Update it when you change input routing, mode/options panels, toolbar commands, settings JSON keys, or pane visibility rules. Sync user docs per `user-docs-sync.md` when behavior is user-visible.
+
+**On script changes:** read `script.md` and sync [`docs/scripting.md`](../../docs/scripting.md) when user-visible bindings change.
+
+**On utility changes:** read `utility.md` when altering `Status`/`Result`, `.ezy` format, asset store, or widely used geometry/settings helpers.
 
 ## Cursor / IDE rules
 
