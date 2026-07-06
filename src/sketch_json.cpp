@@ -17,8 +17,8 @@
 #include "sketch_edge.h"
 #include "sketch_nodes.h"
 #include "sketch_underlay.h"
-#include "ezy_asset_store.h"
-#include "occt_view.h"
+#include "utl_asset_store.h"
+#include "gui_occt_view.h"
 #include "utl_json.h"
 
 using json = nlohmann::json;

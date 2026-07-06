@@ -3,7 +3,7 @@
 #include "utl_geom.h"
 #include "gui.h"
 #include "mode.h"
-#include "occt_view.h"
+#include "gui_occt_view.h"
 #include "utl.h"
 
 Shp_scale::Shp_scale(Occt_view& view)

@@ -1,6 +1,6 @@
 #include "gui.h"
 #include "utl_geom.h"
-#include "occt_view.h"
+#include "gui_occt_view.h"
 
 void GUI::add_box_dialog_()
 {

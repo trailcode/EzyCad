@@ -8,7 +8,7 @@
 #include "utl_dbg.h"
 #include "gui.h"
 #include "imgui.h"
-#include "occt_view.h"
+#include "gui_occt_view.h"
 #include "utl_settings.h"
 #include "sketch.h"
 #include "sketch_nodes.h"

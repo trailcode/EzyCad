@@ -2,7 +2,7 @@
 
 #include "utl_geom.h"
 #include "gui.h"
-#include "occt_view.h"
+#include "gui_occt_view.h"
 #include "utl.h"
 
 Shp_move::Shp_move(Occt_view& view)

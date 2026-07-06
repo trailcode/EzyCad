@@ -13,7 +13,7 @@
 
 #include "utl_geom.h"
 #include "mode.h"
-#include "occt_view.h"
+#include "gui_occt_view.h"
 #include "sketch_delta.h"
 #include "utl.h"
 

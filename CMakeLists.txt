@@ -820,6 +820,22 @@ if(EXISTS ${CHANGELOG_FILE})
     set_source_files_properties(${CHANGELOG_FILE} PROPERTIES HEADER_FILE_ONLY TRUE)
 endif()
 
+# src/doc: developer markdown for src modules (non-compiled; nested folders under src\doc in the IDE)
+file(GLOB_RECURSE SRC_DOC_FILES CONFIGURE_DEPENDS
+  LIST_DIRECTORIES false
+  "${CMAKE_SOURCE_DIR}/src/doc/*")
+if(SRC_DOC_FILES)
+  source_group(TREE "${CMAKE_SOURCE_DIR}/src/doc" PREFIX "src\\doc" FILES ${SRC_DOC_FILES})
+  set(SRC_DOC_FILES_REL)
+  foreach(f ${SRC_DOC_FILES})
+    file(RELATIVE_PATH f_rel "${CMAKE_SOURCE_DIR}" "${f}")
+    list(APPEND SRC_DOC_FILES_REL "${f_rel}")
+  endforeach()
+  target_sources(${PROJECT_NAME}_lib PRIVATE ${SRC_DOC_FILES_REL})
+  target_sources(${PROJECT_NAME} PRIVATE ${SRC_DOC_FILES_REL})
+  set_source_files_properties(${SRC_DOC_FILES_REL} PROPERTIES HEADER_FILE_ONLY TRUE)
+endif()
+
 # Add .clang-format and .gitignore to EzyCad and EzyCad_lib so they appear in VS and other IDEs (at project root)
 set(CLANG_FORMAT_FILE ${CMAKE_SOURCE_DIR}/.clang-format)
 if(EXISTS ${CLANG_FORMAT_FILE})

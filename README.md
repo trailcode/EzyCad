@@ -103,6 +103,8 @@ EzyCad is maintained by a small team and we would love more contributors. If you
 
 **Style guides:** [ezycad_code_style.md](docs/ezycad_code_style.md) for C++ in `src/`; [ezycad_doc_style.md](docs/ezycad_doc_style.md) for user guides and [Read the Docs](https://ezycad.readthedocs.io/). Both human developers and AI coding agents should follow the relevant guide.
 
+**Developer module docs:** Maintainer notes for major `src/` modules live under [src/doc/](src/doc/) (sketch, shape, GUI, script, utilities). These are for contributors working in the codebase, not end-user guides.
+
 **AI / agent instructions:** Short repo-local notes for coding assistants live under [agents/](agents/). Root-level discovery markers are `AGENTS.md` and `agents.md`. See [agents/README.md](agents/README.md) for the index (start with [agents/workflows/local-dev.md](agents/workflows/local-dev.md)).
 
 ## In-tree third-party libraries

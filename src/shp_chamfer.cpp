@@ -8,7 +8,7 @@
 #include <cmath>
 
 #include "mode.h"
-#include "occt_view.h"
+#include "gui_occt_view.h"
 
 Shp_chamfer::Shp_chamfer(Occt_view& view)
     : Shp_operation_base(view)
