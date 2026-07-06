@@ -1,8 +1,8 @@
 # Sketch module
 
-Developer reference for the 2D sketch subsystem. The public C++ entry point is [`sketch.h`](sketch.h).
+Developer reference for the 2D sketch subsystem. The public C++ entry point is [`sketch.h`](../sketch.h).
 
-For end-user sketching workflows (tools, hotkeys, snapping), see [`docs/usage-sketch.md`](../docs/usage-sketch.md).
+Maintainers: update this file when sketch API, module boundaries, or invariants change (see [agents/conventions/token-lean.md](../../agents/conventions/token-lean.md#developer-docs-in-srcdoc)). User-facing sketch guides live in [`docs/usage-sketch.md`](../../docs/usage-sketch.md).
 
 ## Purpose
 
@@ -212,7 +212,7 @@ Prefer these visitors in JSON/delta/topo code over iterating `std::list<Sketch_e
 ## Testing
 
 - GTest suite: `tests/sketch_tests.cpp`, filter `Sketch_test.*`.
-- Build target: `EzyCad_tests` (see [`agents/workflows/local-dev.md`](../agents/workflows/local-dev.md)).
+- Build target: `EzyCad_tests` (see [`agents/workflows/local-dev.md`](../../agents/workflows/local-dev.md)).
 - Tests construct `Occt_view`, create `Sketch` on a plane, and drive geometry through `add_sketch_pt` or private helpers via test fixtures.
 
 ## Related code outside `src/sketch*`

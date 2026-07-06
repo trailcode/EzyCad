@@ -16,6 +16,7 @@ Goal: give assistants **only what they need** for the task at hand. Full style g
 | --- | --- |
 | Build / test | [workflows/local-dev.md](../workflows/local-dev.md) — or root [README.md](../../README.md#building-instructions) |
 | User-visible UI/settings | [user-docs-sync.md](user-docs-sync.md) + target `docs/usage-*.md` only |
+| Sketch subsystem (`src/sketch*`, `tests/sketch_tests.cpp`, sketch behavior in `occt_view` / `gui`) | [src/doc/sketch.md](../../src/doc/sketch.md) — read before editing; update when API, invariants, module layout, or workflows change |
 | Docs build | [workflows/docs-build.md](../workflows/docs-build.md) |
 | Release | [workflows/release.md](../workflows/release.md) |
 | Specific issue/PR | One file under `drafts/issues/active/` or `drafts/prs/active/` |
@@ -27,6 +28,16 @@ Goal: give assistants **only what they need** for the task at hand. Full style g
 - Use **frontmatter** + short bodies in archive files (see [github-drafts.md](github-drafts.md)).
 - Prefer **GitHub issue/PR links** over pasting long draft bodies into rules.
 - Drop scratch files (`*-pr-body.txt`, duplicate templates).
+
+## Developer docs in `src/doc/`
+
+Module notes live under `src/doc/` (IDE folder `src\doc`; see root `CMakeLists.txt`). They are **not** user guides — do not duplicate `docs/usage-*.md`.
+
+| Module doc | When |
+| --- | --- |
+| [src/doc/sketch.md](../../src/doc/sketch.md) | Editing `src/sketch*`, `tests/sketch_tests.cpp`, or sketch-facing behavior in `occt_view` / `gui` / `mode` |
+
+**On sketch changes:** read `sketch.md` first for context. Update it in the same branch when you change public `Sketch` API, coordinator/sub-module boundaries, invariants (IDs, undo, transient vs committed state), or developer usage patterns. Skip updates for internal-only refactors with no doc impact.
 
 ## Cursor / IDE rules
 
