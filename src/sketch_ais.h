@@ -36,3 +36,6 @@ struct Sketch_face_shp : public AIS_Shape
 
 /// If `shp` is a permanent sketch node mark, removes it from its owner sketch.
 bool try_remove_sketch_permanent_node_mark(AIS_Shape* shp);
+
+/// True when `shp` is the non-deletable sketch origin node mark.
+[[nodiscard]] bool is_sketch_origin_node_mark(const AIS_Shape* shp);

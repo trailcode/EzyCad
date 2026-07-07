@@ -15,6 +15,7 @@
 #include "gui.h"
 #include "gui_occt_view.h"
 #include "sketch.h"
+#include "sketch_ais.h"
 #include "sketch_delta.h"
 #include "sketch_json.h"
 #include "sketch_edge.h"
@@ -116,6 +117,7 @@ class Sketch_access
   /// Used for regression tests of specific .ezy cases (e.g. bridge + hole topologies).
   static void sketch_json_add_linear_edge_(Sketch& sketch, size_t idx_a, size_t idx_b, std::optional<size_t> idx_mid = std::nullopt);
   static void set_operation_axis_(Sketch& sketch, const gp_Pnt2d& pt_a, const gp_Pnt2d& pt_b);
+  static void remove_permanent_node_mark_(Sketch& sketch, size_t node_idx);
 };
 
 void Sketch_access::add_edge_(Sketch& sketch, const gp_Pnt2d& pt_a, const gp_Pnt2d& pt_b)
@@ -239,6 +241,12 @@ void Sketch_access::sketch_json_add_linear_edge_(Sketch& sketch, size_t idx_a, s
 void Sketch_access::set_operation_axis_(Sketch& sketch, const gp_Pnt2d& pt_a, const gp_Pnt2d& pt_b)
 {
   sketch.sketch_json_set_operation_axis_(pt_a, pt_b);
+}
+
+void Sketch_access::remove_permanent_node_mark_(Sketch& sketch, size_t node_idx)
+{
+  Sketch_AIS_node_mark mark(sketch, node_idx, TopoDS_Shape());
+  sketch.remove_permanent_node_mark(mark);
 }
 
 class View_access
@@ -1772,6 +1780,47 @@ TEST_F(Sketch_test, SetOriginPt)
   sketch.reset_origin_pt();
   EXPECT_NEAR(sketch.origin_pt().X(), 0.0, Precision::Confusion());
   EXPECT_NEAR(sketch.origin_pt().Y(), 0.0, Precision::Confusion());
+}
+
+TEST_F(Sketch_test, OriginNodeNotDeletable)
+{
+  gp_Pln default_plane(gp::Origin(), gp::DZ());
+  Sketch sketch("OriginNoDelete", view(), default_plane);
+
+  std::optional<size_t> origin_idx;
+  for (size_t i = 0; i < sketch.get_nodes().size(); ++i)
+  {
+    if (!sketch.get_nodes()[i].deleted && sketch.get_nodes()[i].origin)
+    {
+      origin_idx = i;
+      break;
+    }
+  }
+
+  ASSERT_TRUE(origin_idx.has_value());
+  Sketch_access::remove_permanent_node_mark_(sketch, *origin_idx);
+  EXPECT_FALSE(sketch.get_nodes()[*origin_idx].deleted);
+}
+
+TEST_F(Sketch_test, HiddenOriginExcludedFromSnap)
+{
+  gp_Pln default_plane(gp::Origin(), gp::DZ());
+  Sketch sketch("HiddenOriginSnap", view(), default_plane);
+
+  std::vector<gp_Pnt> pts;
+  sketch.get_nodes().get_snap_pts_3d(pts);
+  ASSERT_EQ(pts.size(), 1u);
+
+  sketch.set_show_origin_marker(false);
+  EXPECT_FALSE(sketch.get_nodes().origin_snap_enabled());
+
+  pts.clear();
+  sketch.get_nodes().get_snap_pts_3d(pts);
+  EXPECT_TRUE(pts.empty());
+
+  gp_Pnt2d near_origin(0.01, 0.01);
+  std::optional<size_t> snap_idx = sketch.get_nodes().try_get_node_idx_snap(near_origin);
+  EXPECT_FALSE(snap_idx.has_value());
 }
 
 TEST_F(Sketch_test, OriginatingFaceSnapPointsCircle)

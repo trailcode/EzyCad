@@ -34,3 +34,19 @@ bool try_remove_sketch_permanent_node_mark(AIS_Shape* shp)
 
   return false;
 }
+
+bool is_sketch_origin_node_mark(const AIS_Shape* shp)
+{
+  if (!shp)
+    return false;
+
+  const auto* mark = dynamic_cast<const Sketch_AIS_node_mark*>(shp);
+  if (!mark)
+    return false;
+
+  const size_t i = mark->node_idx;
+  if (i >= mark->owner_sketch.get_nodes().size())
+    return false;
+
+  return mark->owner_sketch.get_nodes()[i].origin;
+}

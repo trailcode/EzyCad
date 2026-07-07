@@ -73,6 +73,8 @@ void Sketch_node_marks::sync()
       m_marks[i]->Set(marker);
       apply_style_(m_marks[i], node.origin);
       m_sketch.m_ctx.Redisplay(m_marks[i], true);
+      if (node.origin)
+        m_sketch.m_ctx.Deactivate(m_marks[i]);
     }
     else
     {
@@ -80,6 +82,8 @@ void Sketch_node_marks::sync()
       apply_style_(mk, node.origin);
       m_marks[i] = mk;
       m_sketch.m_ctx.Display(mk, AIS_WireFrame, 0, false);
+      if (node.origin)
+        m_sketch.m_ctx.Deactivate(mk);
     }
   }
 }

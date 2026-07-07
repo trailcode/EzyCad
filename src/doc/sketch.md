@@ -25,7 +25,7 @@ Typical uses:
 - The constructor **`Occt_view& view` must outlive the sketch**. The sketch holds references to `m_view` and `m_ctx` (the OCCT interactive context).
 - Each sketch receives a stable **`m_id`** from `Occt_view::allocate_sketch_id()`. Display names (`m_name`) may duplicate; undo deltas and file I/O key off `get_id()`.
 - `set_origin_pt(gp_Pnt2d)` / `reset_origin_pt()` / `origin_pt()` — user-editable origin marker (also **Sketch properties** UI).
-- `show_origin_marker()` / `set_show_origin_marker(bool)` — per-sketch visibility of the origin annotation (active sketch only).
+- `show_origin_marker()` / `set_show_origin_marker(bool)` — per-sketch visibility of the origin annotation (active sketch only); when off, origin is excluded from snap.
 - Node indices are **never compacted**. Deleted nodes become tombstones (`Node::deleted`) so undo/redo and JSON round-trips stay stable.
 
 ### Plane and coordinates

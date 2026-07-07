@@ -327,6 +327,7 @@ Sketch::sptr Sketch_json::from_json(Occt_view& view, const nlohmann::json& j)
 
   if (j.contains("show_origin_marker") && j["show_origin_marker"].is_boolean())
     ret->m_show_origin_marker = j["show_origin_marker"].get<bool>();
+  ret->m_nodes.set_origin_snap_enabled(ret->m_show_origin_marker);
 
   if (j["isCurrent"])
     ret->set_current();

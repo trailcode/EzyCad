@@ -297,7 +297,7 @@ Every sketch has exactly one **Origin**: a fixed point on the sketch plane, show
 | **Sketch from planar face** | Origin at the **bounding-box center** of the extracted face boundary. |
 | **Sketch List** | Listed as **Origin** under **Nodes** when you expand a sketch row. |
 | **Sketch properties** | **[P]** on the sketch row: **Show origin marker**, **Position** sliders with **Set**, for typed values. |
-| **Snapping** | Full vertex and axis snap; other visible sketches' origins are snap targets too. |
+| **Snapping** | Full vertex and axis snap when the marker is shown; other visible sketches' origins snap when their marker is shown. |
 
 Full details (marker size, operational-axis visibility, tips): **[Sketch origin](usage-sketch.md#sketch-origin)** in the 2D sketching guide.
 
@@ -308,7 +308,7 @@ See the **[2D Sketching guide](usage-sketch.md)** for full documentation of sket
 | | |
 | ---: | --- |
 | **Vertex snap** | Lock to an existing corner when horizontal and vertical axis guides both align to the same point. |
-| **Sketch origin** | Every sketch's built-in **Origin** **+** is a snap target (see [Sketch origin](usage-sketch.md#sketch-origin)). |
+| **Sketch origin** | Every sketch's built-in **Origin** is a snap target when its marker is shown (see [Sketch origin](usage-sketch.md#sketch-origin)). |
 | **Mid-point snap** | With **Add node**, a click near a **straight** edge (but not at its ends) snaps onto the segment; EzyCad places a new vertex there and **splits** the edge into two. You do not need to hit the line exactly. |
 | **Edge midpoint** | Straight edges often expose a geometric **midpoint** as a snap target while drawing; that is separate from mid-point snap and from user-placed **+** nodes. |
 

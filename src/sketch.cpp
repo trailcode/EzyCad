@@ -433,7 +433,10 @@ void Sketch::set_show_origin_marker(bool show)
     return;
 
   m_show_origin_marker = show;
+  m_nodes.set_origin_snap_enabled(show);
   m_node_marks.sync();
+  if (Sketch* cur = m_view.current_sketch_if_any())
+    cur->set_current();
 }
 
 gp_Pnt Sketch::to_3d_(size_t node_idx) const { return to_3d(m_pln, m_nodes[node_idx]); }

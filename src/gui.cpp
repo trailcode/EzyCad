@@ -1404,7 +1404,7 @@ void GUI::sketch_origin_panel_settings_(const Sketch::sptr& sk)
   }
 
   ImGui::SameLine(0.0f, ImGui::GetStyle().ItemInnerSpacing.x);
-  GUI_DOC_HELP_("When off, hides the Origin +/circle for this sketch (active sketch only). The Origin remains a snap target.",
+  GUI_DOC_HELP_("When off, hides the Origin +/circle for this sketch (active sketch only) and removes it from snap targets.",
                 doc_urls::k_sketch_origin);
 
   const ImGuiIO& io    = ImGui::GetIO();

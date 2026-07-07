@@ -123,6 +123,9 @@ public:
   void clear_outside_snap_pnts();
   void add_outside_snap_pnt(const gp_Pnt& pt3d);
 
+  void set_origin_snap_enabled(bool enabled) { m_origin_snap_enabled = enabled; }
+  [[nodiscard]] bool origin_snap_enabled() const { return m_origin_snap_enabled; }
+
 private:
   Sketch_nodes*           m_owner;
   std::vector<Node>       m_nodes;
@@ -141,6 +144,16 @@ private:
   Occt_view&              m_view;
   AIS_InteractiveContext& m_ctx;
   const gp_Pln            m_pln;
+  bool                    m_origin_snap_enabled{true};
+
+  [[nodiscard]] bool node_snap_eligible_(const Node& n) const
+  {
+    if (n.deleted)
+      return false;
+    if (n.origin && !m_origin_snap_enabled)
+      return false;
+    return true;
+  }
 
   /// World-space snap radius at `pt` (same convention as `try_get_node_idx_snap` / `try_pick_existing_node`).
   double snap_radius_world_(const gp_Pnt2d& pt) const;
@@ -204,7 +217,7 @@ std::optional<size_t> Sketch_nodes::Impl::try_pick_existing_node(const ScreenCoo
   double         best_sq   = std::numeric_limits<double>::max();
   for (size_t idx = 0, num = m_nodes.size(); idx < num; ++idx)
   {
-    if (m_nodes[idx].deleted)
+    if (!node_snap_eligible_(m_nodes[idx]) || m_nodes[idx].origin)
       continue;
 
     const double sq = m_nodes[idx].SquareDistance(pt);
@@ -299,7 +312,7 @@ std::optional<size_t> Sketch_nodes::Impl::get_node(const ScreenCoords& screen_co
 void Sketch_nodes::Impl::get_snap_pts_3d(std::vector<gp_Pnt>& out)
 {
   for (const Node& n : m_nodes)
-    if (!n.deleted)
+    if (node_snap_eligible_(n))
       out.push_back(to_3d(m_pln, n));
 }
 
@@ -588,7 +601,7 @@ std::optional<size_t> Sketch_nodes::Impl::try_get_node_idx_snap(
 
     for (size_t nd_idx = 0, num = m_nodes.size(); nd_idx < num; ++nd_idx)
     {
-      if (m_nodes[nd_idx].deleted)
+      if (!node_snap_eligible_(m_nodes[nd_idx]))
         continue;
 
       if (std::find(to_exclude.begin(), to_exclude.end(), nd_idx) != to_exclude.end())
@@ -646,7 +659,7 @@ std::optional<size_t> Sketch_nodes::Impl::try_get_node_idx_snap(
       std::vector<gp_Pnt2d> matches;
       for (const auto& n : m_nodes)
       {
-        if (n.deleted)
+        if (!node_snap_eligible_(n))
           continue;
 
         double axis_diff = std::fabs(guide_val - n.XY().Coord(axis_idx + 1));
@@ -890,3 +903,7 @@ float Sketch_nodes::get_snap_guide_line_width() { return s_snap_guide_line_width
 void Sketch_nodes::set_annotate_all_coaxial_nodes(bool enable) { s_annotate_all_coaxial_nodes = enable; }
 
 bool Sketch_nodes::get_annotate_all_coaxial_nodes() { return s_annotate_all_coaxial_nodes; }
+
+void Sketch_nodes::set_origin_snap_enabled(bool enabled) { m_impl->set_origin_snap_enabled(enabled); }
+
+bool Sketch_nodes::origin_snap_enabled() const { return m_impl->origin_snap_enabled(); }
