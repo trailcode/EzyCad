@@ -98,7 +98,7 @@ Each row is laid out left to right:
 When expanded, the row shows:
 
 - **Dimensions** - Table of length dimensions: visibility, editable name, and **offset** (label distance from the edge; **0** = automatic). Hovering a row highlights that dimension in the 3D view (color from **Settings -> View presentation -> Element hover color**).
-- **Nodes**, **Edges**, **Faces** - Collapsible lists of element labels for inspection. **Nodes** lists **user-placed** points only (the ones with **+** markers in sketch mode), not every internal topology vertex or automatic edge midpoint. **Edges** and **Faces** use default labels (`E0`, `F0`, ...) or saved names where set. Dimension names are editable in the table above; node/edge/face names in these lists are read-only labels for reference.
+- **Nodes**, **Edges**, **Faces** - Collapsible lists of element labels for inspection. **Nodes** lists the sketch **Origin** (always present; see [Sketch origin](usage-sketch.md#sketch-origin)) plus **user-placed** points from the Add node tool (the ones with **+** markers in sketch mode). It does not list every internal topology vertex or automatic edge midpoint. **Edges** and **Faces** use default labels (`E0`, `F0`, ...) or saved names where set. Dimension names are editable in the table above; node/edge/face names in these lists are read-only labels for reference.
 
 The window can be closed with its close button; use **View -> Sketch List** again to show it.
 
@@ -285,7 +285,7 @@ For detailed information on creating 2D geometry, see the [2D Sketching](usage-s
 
 ### 2D Sketching
 
-See the **[2D Sketching guide](usage-sketch.md)** for full documentation of sketch tools: **add node** (points and edge splits), line and multi-line edges, circles, arcs, rectangles, squares, slots, **operation axis** (with Mirror and Revolve actions in the Options panel), edge dimensions, and creating a sketch from a planar face. Revolve (via an operation axis) is one way to generate 3D solids directly from sketch geometry.
+See the **[2D Sketching guide](usage-sketch.md)** for full documentation of sketch tools: **[sketch origin](usage-sketch.md#sketch-origin)** (one permanent **+** reference point per sketch), **add node** (points and edge splits), line and multi-line edges, circles, arcs, rectangles, squares, slots, **operation axis** (with Mirror and Revolve actions in the Options panel), edge dimensions, and creating a sketch from a planar face. Revolve (via an operation axis) is one way to generate 3D solids directly from sketch geometry.
 
 **Sketch snap (overview):** While drawing or using **Add node**, picks can snap to existing geometry within **Snap dist** (Options panel). The main behaviors:
 

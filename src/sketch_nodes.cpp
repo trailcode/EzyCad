@@ -112,8 +112,10 @@ public:
   size_t      size() const;
 
   void resize(size_t count);
-  void set_node(size_t idx, const gp_Pnt2d& pt, bool deleted, bool midpoint, bool permanent, const std::string& name);
-  void restore_node_at(size_t idx, const gp_Pnt2d& pt, bool deleted, bool midpoint, bool permanent, const std::string& name);
+  void set_node(size_t idx, const gp_Pnt2d& pt, bool deleted, bool midpoint, bool permanent, bool origin,
+                const std::string& name);
+  void restore_node_at(size_t idx, const gp_Pnt2d& pt, bool deleted, bool midpoint, bool permanent, bool origin,
+                       const std::string& name);
 
   void finalize();
   void cancel();
@@ -724,7 +726,7 @@ size_t Sketch_nodes::Impl::size() const { return m_nodes.size(); }
 
 void Sketch_nodes::Impl::resize(size_t count) { m_nodes.assign(count, Node{}); }
 
-void Sketch_nodes::Impl::set_node(size_t idx, const gp_Pnt2d& pt, bool deleted, bool midpoint, bool permanent,
+void Sketch_nodes::Impl::set_node(size_t idx, const gp_Pnt2d& pt, bool deleted, bool midpoint, bool permanent, bool origin,
                                   const std::string& name)
 {
   EZY_ASSERT(idx < m_nodes.size());
@@ -734,16 +736,17 @@ void Sketch_nodes::Impl::set_node(size_t idx, const gp_Pnt2d& pt, bool deleted, 
   n.deleted   = deleted;
   n.midpoint  = midpoint;
   n.permanent = permanent;
+  n.origin    = origin;
   n.name      = name;
 }
 
 void Sketch_nodes::Impl::restore_node_at(size_t idx, const gp_Pnt2d& pt, bool deleted, bool midpoint, bool permanent,
-                                         const std::string& name)
+                                         bool origin, const std::string& name)
 {
   if (idx >= size())
     resize(idx + 1);
 
-  set_node(idx, pt, deleted, midpoint, permanent, name);
+  set_node(idx, pt, deleted, midpoint, permanent, origin, name);
 }
 
 void Sketch_nodes::Impl::finalize() { m_prev_num_nodes = m_nodes.size(); }
@@ -827,20 +830,20 @@ size_t Sketch_nodes::size() const { return m_impl->size(); }
 
 void Sketch_nodes::resize(size_t count) { m_impl->resize(count); }
 
-void Sketch_nodes::set_node(size_t idx, const gp_Pnt2d& pt, bool deleted, bool midpoint, bool permanent,
+void Sketch_nodes::set_node(size_t idx, const gp_Pnt2d& pt, bool deleted, bool midpoint, bool permanent, bool origin,
                             const std::string& name)
 {
-  m_impl->set_node(idx, pt, deleted, midpoint, permanent, name);
+  m_impl->set_node(idx, pt, deleted, midpoint, permanent, origin, name);
 }
 
 void Sketch_nodes::finalize() { m_impl->finalize(); }
 
 void Sketch_nodes::cancel() { m_impl->cancel(); }
 
-void Sketch_nodes::restore_node_at(size_t idx, const gp_Pnt2d& pt, bool deleted, bool midpoint, bool permanent,
+void Sketch_nodes::restore_node_at(size_t idx, const gp_Pnt2d& pt, bool deleted, bool midpoint, bool permanent, bool origin,
                                    const std::string& name)
 {
-  m_impl->restore_node_at(idx, pt, deleted, midpoint, permanent, name);
+  m_impl->restore_node_at(idx, pt, deleted, midpoint, permanent, origin, name);
 }
 
 void Sketch_nodes::clear_outside_snap_pnts() { m_impl->clear_outside_snap_pnts(); }

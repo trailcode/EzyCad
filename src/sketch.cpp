@@ -33,6 +33,7 @@ Sketch::Sketch(const std::string& name, Occt_view& view, const gp_Pln& pln)
     , m_tools(*this)
     , m_underlay(view.ctx())
 {
+  ensure_origin_node_();
 }
 
 Sketch::Sketch(const std::string& name, Occt_view& view, const gp_Pln& pln, const TopoDS_Wire& outer_wire)
@@ -52,6 +53,7 @@ Sketch::Sketch(const std::string& name, Occt_view& view, const gp_Pln& pln, cons
   m_originating_face = new AIS_Shape(outer_wire);
   m_ctx.Display(m_originating_face, true);
   update_originating_face_style();
+  ensure_origin_node_();
 }
 
 Sketch::~Sketch()
@@ -233,7 +235,12 @@ std::vector<std::string> Sketch::inspector_node_labels() const
     const Sketch_nodes::Node& n = m_nodes[i];
     if (n.permanent && !n.deleted)
     {
-      std::string lbl = n.name.empty() ? ("N" + std::to_string(i)) : n.name;
+      std::string lbl;
+      if (n.origin)
+        lbl = n.name.empty() ? "Origin" : n.name;
+      else
+        lbl = n.name.empty() ? ("N" + std::to_string(i)) : n.name;
+
       labels.push_back(std::move(lbl));
     }
   }
@@ -355,6 +362,34 @@ void Sketch::get_originating_face_snp_pts_3d_(std::vector<gp_Pnt>& out)
   append(out, snp_pts);
 }
 
+void Sketch::ensure_origin_node_()
+{
+  for (size_t i = 0; i < m_nodes.size(); ++i)
+    if (!m_nodes[i].deleted && m_nodes[i].origin)
+    {
+      // Commit baseline so cancel_elm() (e.g. from on_mode) does not remove the origin.
+      m_nodes.finalize();
+      return;
+    }
+
+  gp_Pnt2d pt(0., 0.);
+  if (m_originating_face)
+  {
+    const TopoDS_Shape& shape = m_originating_face->Shape();
+    if (shape.ShapeType() == TopAbs_WIRE)
+    {
+      const gp_Pnt center = get_shape_bbox_center(shape);
+      pt                    = to_2d(m_pln, center);
+    }
+  }
+
+  const size_t        idx = m_nodes.add_new_node(pt, false, true);
+  Sketch_nodes::Node& n   = m_nodes[idx];
+  n.origin                = true;
+  n.name                  = "Origin";
+  m_nodes.finalize();
+}
+
 gp_Pnt Sketch::to_3d_(size_t node_idx) const { return to_3d(m_pln, m_nodes[node_idx]); }
 
 gp_Pnt Sketch::to_3d_(const std::optional<size_t>& node_idx) const
@@ -409,6 +444,9 @@ void Sketch::remove_permanent_node_mark(Sketch_AIS_node_mark& mark)
   EZY_ASSERT(&mark.owner_sketch == this);
   const size_t i = mark.node_idx;
   EZY_ASSERT(i < m_nodes.size());
+  if (m_nodes[i].origin)
+    return;
+
   m_nodes[i].deleted = true;
   remove_length_dimensions_referencing_node_(i);
   m_node_marks.remove_at(i);

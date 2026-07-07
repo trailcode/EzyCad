@@ -46,6 +46,9 @@ json node_to_json_(const Sketch_nodes::Node& nd)
   if (nd.permanent)
     o["permanent"] = true;
 
+  if (nd.origin)
+    o["origin"] = true;
+
   if (!nd.name.empty())
     o["name"] = nd.name;
 
@@ -63,7 +66,7 @@ void Sketch_json::load_nodes_(Sketch& sketch, const json& nodes_json)
     const json& el = nodes_json[i];
     if (el.is_null())
     {
-      sketch.get_nodes().set_node(i, gp_Pnt2d(0., 0.), true, false, false, "");
+      sketch.get_nodes().set_node(i, gp_Pnt2d(0., 0.), true, false, false, false, "");
       continue;
     }
 
@@ -71,7 +74,8 @@ void Sketch_json::load_nodes_(Sketch& sketch, const json& nodes_json)
     const gp_Pnt2d pt        = ::from_json_pnt2d(el);
     const bool     midpoint  = el.contains("midpoint") && el["midpoint"].is_boolean() && el["midpoint"].get<bool>();
     const bool     permanent = el.contains("permanent") && el["permanent"].is_boolean() && el["permanent"].get<bool>();
-    sketch.get_nodes().set_node(i, pt, false, midpoint, permanent,
+    const bool     origin    = el.contains("origin") && el["origin"].is_boolean() && el["origin"].get<bool>();
+    sketch.get_nodes().set_node(i, pt, false, midpoint, permanent, origin,
                                 el.contains("name") && el["name"].is_string() ? el["name"].get<std::string>() : "");
   }
 }
@@ -320,6 +324,8 @@ Sketch::sptr Sketch_json::from_json(Occt_view& view, const nlohmann::json& j)
 
   if (j["isCurrent"])
     ret->set_current();
+
+  ret->ensure_origin_node_();
 
   return ret;
 }

@@ -24,6 +24,7 @@ Typical uses:
 - A `Sketch` is owned by `Occt_view` (`Sketch_list m_sketches`, current sketch `m_cur_sketch`). Use `Sketch_ptr` (`std::shared_ptr<Sketch>`) when sharing.
 - The constructor **`Occt_view& view` must outlive the sketch**. The sketch holds references to `m_view` and `m_ctx` (the OCCT interactive context).
 - Each sketch receives a stable **`m_id`** from `Occt_view::allocate_sketch_id()`. Display names (`m_name`) may duplicate; undo deltas and file I/O key off `get_id()`.
+- Each sketch has an **origin node** (permanent "+" marker): plane origin `(0,0)` for new sketches, or the bounding-box center of the originating face wire when created from a face.
 - Node indices are **never compacted**. Deleted nodes become tombstones (`Node::deleted`) so undo/redo and JSON round-trips stay stable.
 
 ### Plane and coordinates
@@ -87,7 +88,7 @@ Sketch(const std::string& name, Occt_view& view, const gp_Pln& pln);
 Sketch(const std::string& name, Occt_view& view, const gp_Pln& pln, const TopoDS_Wire& outer_wire);
 ```
 
-The wire overload creates a sketch **from a planar face**; `m_originating_face` is displayed and its vertices contribute to snap targets.
+The wire overload creates a sketch **from a planar face**; `m_originating_face` is displayed and its vertices contribute to snap targets. `ensure_origin_node_()` places the origin at the wire bounding-box center (or plane `(0,0)` for plane-only sketches); call `m_nodes.finalize()` so `cancel_elm()` / `on_mode()` does not roll it back.
 
 ### Input routing (from UI / `Occt_view`)
 
