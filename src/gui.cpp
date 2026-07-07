@@ -1269,6 +1269,9 @@ void GUI::sketch_list_()
       {
         if (ImGui::SmallButton("[P]"))
         {
+          m_view->set_curr_sketch(sketch);
+          if (!is_sketch_mode(get_mode()))
+            set_mode(Mode::Sketch_inspection_mode);
           m_sketch_properties_sketch = sketch;
           m_sketch_properties_open   = true;
         }
@@ -1348,13 +1351,15 @@ void GUI::sketch_properties_dialog_()
     return;
   }
 
-  const auto sk = m_sketch_properties_sketch.lock();
+  const Sketch::sptr sk = m_view->curr_sketch_shared();
   if (!sk)
   {
     m_sketch_properties_open = false;
     hide_sketch_origin_set_edit(false);
     return;
   }
+
+  m_sketch_properties_sketch = sk;
 
   ImGui::SetNextWindowSize(ImVec2(400, 0), ImGuiCond_FirstUseEver);
   bool open = m_sketch_properties_open;
