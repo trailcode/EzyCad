@@ -402,6 +402,7 @@ void Sketch_topo::update_faces()
             if (dfs(neighbor, start))
               return true;
           }
+
           return false;
         };
 
