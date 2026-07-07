@@ -1760,6 +1760,20 @@ TEST_F(Sketch_test, SketchOriginNodeSurvivesOnMode)
   EXPECT_NEAR(sketch.get_nodes()[*origin_idx].Y(), 3.0, Precision::Confusion());
 }
 
+TEST_F(Sketch_test, SetOriginPt)
+{
+  gp_Pln default_plane(gp::Origin(), gp::DZ());
+  Sketch sketch("OriginEdit", view(), default_plane);
+
+  sketch.set_origin_pt(gp_Pnt2d(12.0, -3.5));
+  EXPECT_NEAR(sketch.origin_pt().X(), 12.0, Precision::Confusion());
+  EXPECT_NEAR(sketch.origin_pt().Y(), -3.5, Precision::Confusion());
+
+  sketch.reset_origin_pt();
+  EXPECT_NEAR(sketch.origin_pt().X(), 0.0, Precision::Confusion());
+  EXPECT_NEAR(sketch.origin_pt().Y(), 0.0, Precision::Confusion());
+}
+
 TEST_F(Sketch_test, OriginatingFaceSnapPointsCircle)
 {
   gp_Pln   default_plane(gp::Origin(), gp::DZ());

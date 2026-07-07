@@ -44,7 +44,7 @@ std::string GUI::get_doc_url_for_mode(Mode mode)
       {Mode::Move,                            "https://ezycad.readthedocs.io/en/latest/usage.html#shape-move-tool-g"},
       {Mode::Rotate,                          "https://ezycad.readthedocs.io/en/latest/usage.html#shape-rotate-tool-r"},
       {Mode::Scale,                           "https://ezycad.readthedocs.io/en/latest/usage.html#shape-scale-tool-s"},
-      {Mode::Sketch_inspection_mode,          "https://ezycad.readthedocs.io/en/latest/usage-sketch.html#sketching-2d"},
+      {Mode::Sketch_inspection_mode,          "https://ezycad.readthedocs.io/en/latest/usage-sketch.html#sketch-origin"},
       {Mode::Sketch_from_planar_face,         "https://ezycad.readthedocs.io/en/latest/usage-sketch.html#create-sketch-from-planar-face-tool"},
       {Mode::Sketch_face_extrude,             "https://ezycad.readthedocs.io/en/latest/usage.html#extrude-sketch-face-tool-e"},
       {Mode::Shape_chamfer,                   "https://ezycad.readthedocs.io/en/latest/usage.html#other-feature-operations"},

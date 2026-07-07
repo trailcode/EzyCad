@@ -24,7 +24,7 @@ Typical uses:
 - A `Sketch` is owned by `Occt_view` (`Sketch_list m_sketches`, current sketch `m_cur_sketch`). Use `Sketch_ptr` (`std::shared_ptr<Sketch>`) when sharing.
 - The constructor **`Occt_view& view` must outlive the sketch**. The sketch holds references to `m_view` and `m_ctx` (the OCCT interactive context).
 - Each sketch receives a stable **`m_id`** from `Occt_view::allocate_sketch_id()`. Display names (`m_name`) may duplicate; undo deltas and file I/O key off `get_id()`.
-- Each sketch has an **origin node** (permanent "+" marker): plane origin `(0,0)` for new sketches, or the bounding-box center of the originating face wire when created from a face.
+- `set_origin_pt(gp_Pnt2d)` / `reset_origin_pt()` / `origin_pt()` — user-editable origin marker (also **Sketch properties** UI).
 - Node indices are **never compacted**. Deleted nodes become tombstones (`Node::deleted`) so undo/redo and JSON round-trips stay stable.
 
 ### Plane and coordinates

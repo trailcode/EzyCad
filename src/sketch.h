@@ -139,6 +139,13 @@ public:
   Sketch_underlay&                     underlay() { return m_underlay; }
   [[nodiscard]] const Sketch_underlay& underlay() const { return m_underlay; }
 
+  /// Built-in origin marker position in sketch plane coordinates.
+  [[nodiscard]] gp_Pnt2d origin_pt() const;
+  /// Default origin for this sketch (plane `(0,0)` or face wire bbox center).
+  [[nodiscard]] gp_Pnt2d default_origin_pt() const;
+  void                   set_origin_pt(const gp_Pnt2d& pt);
+  void                   reset_origin_pt();
+
   static void set_add_mid_pt_edges(bool on);
   static bool get_add_mid_pt_edges();
   static void set_edge_from_center(bool on);
@@ -199,6 +206,8 @@ private:
   bool operation_axis_suppresses_sketch_snap_() const;
   void update_originating_face_style();
   void ensure_origin_node_();
+  std::optional<size_t> origin_node_idx_() const;
+  gp_Pnt2d              default_origin_pt_() const;
 
   void json_add_length_dimension_(size_t node_a, size_t node_b, bool visible = true,
                                   std::optional<double> flyout_offset = std::nullopt, const std::string& name = {});

@@ -265,6 +265,7 @@ private:
   void sketch_list_inspector_(const std::shared_ptr<Sketch>& sketch, int index, std::shared_ptr<Sketch>& hover_sketch,
                               size_t& hover_dim_index);
   void sketch_properties_dialog_();
+  void sketch_origin_panel_settings_(const std::shared_ptr<Sketch>& sk);
   void shape_list_();
   void shape_info_dialog_();
   void open_shape_info_(const Shp_ptr& shape);
@@ -510,6 +511,10 @@ private:
   float                 m_imgui_rounding_tabs{0.f};
   bool                  m_sketch_properties_open{false};
   std::weak_ptr<Sketch> m_sketch_properties_sketch;
+
+  // Sketch origin (properties pane)
+  void*  m_sketch_origin_panel_sketch{nullptr};
+  double m_sketch_origin_xy[2]{0.0, 0.0};
 
   // Sketch underlay related
   void*                 m_underlay_panel_sketch{nullptr};

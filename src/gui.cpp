@@ -1288,9 +1288,60 @@ void GUI::sketch_properties_dialog_()
 
   ImGui::TextUnformatted(sk->get_name().c_str());
   ImGui::Separator();
+  sketch_origin_panel_settings_(sk);
   sketch_underlay_panel_settings_(sk);
   m_sketch_properties_open = open;
   ImGui::End();
+}
+
+void GUI::sketch_origin_panel_settings_(const Sketch::sptr& sk)
+{
+  EZY_ASSERT(sk);
+
+  if (m_sketch_origin_panel_sketch != sk.get())
+  {
+    m_sketch_origin_panel_sketch = sk.get();
+    const gp_Pnt2d               o = sk->origin_pt();
+    m_sketch_origin_xy[0]          = o.X();
+    m_sketch_origin_xy[1]          = o.Y();
+  }
+
+  ImGui::TextUnformatted("Origin");
+  ImGui::Separator();
+
+  auto commit_origin_if_edited = [&]()
+  {
+    if (!ImGui::IsItemDeactivatedAfterEdit())
+      return;
+
+    m_view->push_undo_snapshot();
+    sk->set_origin_pt(gp_Pnt2d(m_sketch_origin_xy[0], m_sketch_origin_xy[1]));
+    m_view->ctx().UpdateCurrentViewer();
+  };
+
+  ImGui::InputDouble("X##sketch_origin", &m_sketch_origin_xy[0], 0.0, 0.0, "%.4f");
+  commit_origin_if_edited();
+  ImGui::InputDouble("Y##sketch_origin", &m_sketch_origin_xy[1], 0.0, 0.0, "%.4f");
+  commit_origin_if_edited();
+
+  const gp_Pnt2d default_o = sk->default_origin_pt();
+  ImGui::TextDisabled("Default: (%.4f, %.4f)", default_o.X(), default_o.Y());
+
+  if (ImGui::Button("Reset to default"))
+  {
+    m_view->push_undo_snapshot();
+    sk->reset_origin_pt();
+    const gp_Pnt2d o      = sk->origin_pt();
+    m_sketch_origin_xy[0] = o.X();
+    m_sketch_origin_xy[1] = o.Y();
+    m_view->ctx().UpdateCurrentViewer();
+  }
+
+  ImGui::SameLine(0.0f, ImGui::GetStyle().ItemInnerSpacing.x);
+  GUI_DOC_HELP_("Sketch plane coordinates for the permanent Origin + marker. Click ? for the user guide.",
+                doc_urls::k_sketch_origin);
+
+  ImGui::Separator();
 }
 
 void GUI::sketch_underlay_panel_settings_(const Sketch::sptr& sk)
