@@ -263,7 +263,9 @@ TEST_F(Sketch_test, CreateSketch)
 
   EXPECT_EQ(sketch.get_name(), "TestSketch");
   EXPECT_TRUE(sketch.is_visible());
-  EXPECT_TRUE(sketch.get_nodes().empty());
+  EXPECT_EQ(sketch.get_nodes().size(), 1u);
+  EXPECT_TRUE(sketch.get_nodes()[0].origin);
+  EXPECT_TRUE(sketch.get_nodes()[0].permanent);
   EXPECT_TRUE(planes_equal(sketch.get_plane(), default_plane));
 }
 
@@ -283,7 +285,7 @@ TEST_F(Sketch_test, NodeManagement)
   EXPECT_TRUE(node_idx2.has_value());
   EXPECT_EQ(node_idx, *node_idx2);
 
-  EXPECT_EQ(sketch.get_nodes().size(), 1);
+  EXPECT_EQ(sketch.get_nodes().size(), 2u);
   EXPECT_FALSE(sketch.get_nodes().empty());
   EXPECT_TRUE(sketch.get_nodes()[node_idx].IsEqual(point, Precision::Confusion()));
 }
@@ -305,8 +307,8 @@ TEST_F(Sketch_test, EdgeManagement)
 
   // Verify edge was created
   EXPECT_FALSE(sketch.get_nodes().empty());
-  // With midpoints enabled in fixture (for test compatibility), 2 endpoints + 1 mid = 3 nodes.
-  EXPECT_EQ(sketch.get_nodes().size(), 3);
+  // Origin node + 2 endpoints + 1 midpoint (midpoints enabled in fixture).
+  EXPECT_EQ(sketch.get_nodes().size(), 4u);
 }
 
 // Test that adding a single edge via add_edge_ creates exactly three nodes:
@@ -1251,8 +1253,8 @@ TEST_F(Sketch_test, CreateSquare)
         normal_nodes.push_back(n);
     }
 
-  EXPECT_EQ(edge_mid_point_nodes.size(), 4);
-  EXPECT_EQ(normal_nodes.size(), 4);
+  EXPECT_EQ(edge_mid_point_nodes.size(), 4u);
+  EXPECT_EQ(normal_nodes.size(), 5u); // 4 corners + sketch origin at center
 }
 
 // Test circle creation
@@ -1679,6 +1681,83 @@ TEST_F(Sketch_test, OriginatingFaceSnapPointsSquare)
   for (size_t i = 0; i < expected.size(); ++i)
     EXPECT_TRUE(snap_pts[i].IsEqual(expected[i], Precision::Confusion()))
         << "Mismatch at index " << i << ": got " << snap_pts[i].X() << "," << snap_pts[i].Y();
+}
+
+TEST_F(Sketch_test, SketchOriginNodePlane)
+{
+  gp_Pln default_plane(gp::Origin(), gp::DZ());
+  Sketch sketch("PlaneOrigin", view(), default_plane);
+
+  std::optional<size_t> origin_idx;
+  for (size_t i = 0; i < sketch.get_nodes().size(); ++i)
+  {
+    const Sketch_nodes::Node& n = sketch.get_nodes()[i];
+    if (!n.deleted && n.origin)
+    {
+      origin_idx = i;
+      break;
+    }
+  }
+
+  ASSERT_TRUE(origin_idx.has_value());
+  const Sketch_nodes::Node& origin = sketch.get_nodes()[*origin_idx];
+  EXPECT_TRUE(origin.permanent);
+  EXPECT_NEAR(origin.X(), 0.0, Precision::Confusion());
+  EXPECT_NEAR(origin.Y(), 0.0, Precision::Confusion());
+  EXPECT_EQ(origin.name, "Origin");
+}
+
+TEST_F(Sketch_test, SketchOriginNodeFromFaceBBoxCenter)
+{
+  gp_Pln default_plane(gp::Origin(), gp::DZ());
+
+  gp_Pnt      center(5.0, 3.0, 0.0);
+  TopoDS_Wire outer_wire = create_wire_box(default_plane, center, 20.0, 10.0);
+  Sketch      sketch("FaceOrigin", view(), default_plane, outer_wire);
+
+  std::optional<size_t> origin_idx;
+  for (size_t i = 0; i < sketch.get_nodes().size(); ++i)
+  {
+    const Sketch_nodes::Node& n = sketch.get_nodes()[i];
+    if (!n.deleted && n.origin)
+    {
+      origin_idx = i;
+      break;
+    }
+  }
+
+  ASSERT_TRUE(origin_idx.has_value());
+  const Sketch_nodes::Node& origin = sketch.get_nodes()[*origin_idx];
+  EXPECT_TRUE(origin.permanent);
+  EXPECT_NEAR(origin.X(), 5.0, Precision::Confusion());
+  EXPECT_NEAR(origin.Y(), 3.0, Precision::Confusion());
+}
+
+TEST_F(Sketch_test, SketchOriginNodeSurvivesOnMode)
+{
+  gp_Pln default_plane(gp::Origin(), gp::DZ());
+
+  gp_Pnt      center(5.0, 3.0, 0.0);
+  TopoDS_Wire outer_wire = create_wire_box(default_plane, center, 20.0, 10.0);
+  Sketch      sketch("FaceOrigin", view(), default_plane, outer_wire);
+
+  // Same path as create_sketch_from_planar_face_ -> set_mode(Sketch_inspection_mode).
+  sketch.on_mode();
+
+  std::optional<size_t> origin_idx;
+  for (size_t i = 0; i < sketch.get_nodes().size(); ++i)
+  {
+    const Sketch_nodes::Node& n = sketch.get_nodes()[i];
+    if (!n.deleted && n.origin)
+    {
+      origin_idx = i;
+      break;
+    }
+  }
+
+  ASSERT_TRUE(origin_idx.has_value());
+  EXPECT_NEAR(sketch.get_nodes()[*origin_idx].X(), 5.0, Precision::Confusion());
+  EXPECT_NEAR(sketch.get_nodes()[*origin_idx].Y(), 3.0, Precision::Confusion());
 }
 
 TEST_F(Sketch_test, OriginatingFaceSnapPointsCircle)
