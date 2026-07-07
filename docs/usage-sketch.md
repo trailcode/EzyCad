@@ -37,6 +37,8 @@ This guide covers all 2D sketching tools and operations in EzyCad. For the main 
    - ![Operation Axis Tool](res/icons/Sketcher_MirrorSketch.png) [Operational axis](#operation-axis-tool) - Define a reference axis, then use the **Mirror** and **Revolve** controls (in the Options panel) to mirror selected sketch edges or revolve edges/faces into 3D solids.
    - ![Create Sketch from Planar Face Tool](res/icons/Macro_FaceToSketch_48.png) [Create sketch from planar face](#create-sketch-from-planar-face-tool)
 
+Every sketch has a built-in **origin** — a permanent **+** marker at the sketch plane reference `(0, 0)` (new sketches on a reference plane) or at the **bounding-box center** of the face boundary when you [create a sketch from a planar face](#create-sketch-from-planar-face-tool). The origin is listed as **Origin** under **Nodes** in the [Sketch List](usage.md#sketch-list), acts as a snap target, and cannot be deleted (unlike user-placed [Add node](#add-node-tool) points).
+
 ## Sketch snapping
 
 While you draw or place points in sketch mode, EzyCad helps you align to existing geometry. **Snap dist**, **Snap guide mode**, and **All co-axial nodes** are in the Options panel; **Snap guide color**, **Snap guide line width**, and the same mode/co-axial toggles are in **Settings -> Sketch** (see [usage-settings.md](usage-settings.md#sketch-tools)).
@@ -858,7 +860,9 @@ In both cases, Add node never leaves a **permanent edge** between two clicks the
 
 ### Permanent “+” markers
 
-Nodes you place with **Add node** are treated as **user-placed** points. When the sketch is visible, eligible points can show a small **+** marker in the 3D view so you can see and pick them. Geometry that exists only as automatic **edge midpoints** for snapping is separate (those nodes are not shown the same way; controlled by the **Add midpoints to new linear edges** setting in Settings > Sketch, default off). 
+Each sketch includes a built-in **Origin** (see [Sketching (2D)](#sketching-2d)) — always shown as a permanent **+** when the sketch is visible.
+
+Nodes you place with **Add node** are treated as **user-placed** points. When the sketch is visible, eligible points can show the same small **+** marker in the 3D view so you can see and pick them; you can delete user-placed markers from the selection. Geometry that exists only as automatic **edge midpoints** for snapping is separate (those nodes are not shown the same way; controlled by the **Add midpoints to new linear edges** setting in Settings > Sketch, default off).
 
 ### How to use
 
@@ -912,6 +916,7 @@ The create sketch from planar face tool allows you to extract the boundary of a 
 3. **Sketch Created**: A new sketch is automatically created with:
    - The face boundary as the initial wire
    - The sketch plane aligned with the face plane
+   - A permanent **Origin** **+** marker at the **center of the face boundary's bounding box** (a fixed reference on the sketch plane)
    - The sketch name set to "Sketch from face"
 4. **Edit Sketch**: You can now edit the sketch using standard sketch tools (add edges, modify geometry, etc.)
 

@@ -198,6 +198,7 @@ private:
   bool show_operation_axis_() const;
   bool operation_axis_suppresses_sketch_snap_() const;
   void update_originating_face_style();
+  void ensure_origin_node_();
 
   void json_add_length_dimension_(size_t node_a, size_t node_b, bool visible = true,
                                   std::optional<double> flyout_offset = std::nullopt, const std::string& name = {});

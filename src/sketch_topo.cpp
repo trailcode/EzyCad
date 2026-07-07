@@ -572,7 +572,7 @@ void Sketch_topo::update_faces()
   // Nodes become unused when all edges that reference them are removed.
   // Permanent add-node points are never auto-tombstoned when unused; user delete sets `deleted` and it stays.
   for (size_t idx = 0, num = m_sketch.m_nodes.size(); idx < num; ++idx)
-    if (!m_sketch.m_nodes[idx].permanent)
+    if (!m_sketch.m_nodes[idx].permanent && !m_sketch.m_nodes[idx].origin)
       m_sketch.m_nodes[idx].deleted = !used_nodes[idx];
 
   // Book keeping

@@ -186,6 +186,7 @@ void Sketch::set_current()
     }
 
   sync_operation_axis_display_();
+  m_node_marks.sync();
 }
 
 void Sketch::set_edge_style(Edge_style style)

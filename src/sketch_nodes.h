@@ -28,6 +28,7 @@ public:
     bool        midpoint  = false;
     bool        deleted   = false;
     bool        permanent = false;
+    bool        origin    = false;
     std::string name;
   };
 
@@ -65,7 +66,7 @@ public:
   void        cancel();
 
   /// Restores node slot `idx` for undo/redo (appends tombstone slots as needed).
-  void restore_node_at(size_t idx, const gp_Pnt2d& pt, bool deleted, bool midpoint, bool permanent,
+  void restore_node_at(size_t idx, const gp_Pnt2d& pt, bool deleted, bool midpoint, bool permanent, bool origin,
                        const std::string& name = {});
 
   void clear_outside_snap_pnts();
@@ -103,7 +104,8 @@ private:
   /// Resize storage so indices `0..count-1` exist (JSON load).
   void resize(size_t count);
   /// Assign slot `idx` (used after `resize`).
-  void set_node(size_t idx, const gp_Pnt2d& pt, bool deleted, bool midpoint, bool permanent, const std::string& name = {});
+  void set_node(size_t idx, const gp_Pnt2d& pt, bool deleted, bool midpoint, bool permanent, bool origin,
+                const std::string& name = {});
 
   class Impl;
   std::unique_ptr<Impl> m_impl;
