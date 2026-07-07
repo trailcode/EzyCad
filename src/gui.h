@@ -105,6 +105,7 @@ namespace doc_urls
 inline constexpr const char* k_view_roll       = "https://ezycad.readthedocs.io/en/latest/usage.html#view-roll";
 inline constexpr const char* k_view_navigation = "https://ezycad.readthedocs.io/en/latest/usage.html#view-navigation";
 inline constexpr const char* k_sketch_snapping = "https://ezycad.readthedocs.io/en/latest/usage-sketch.html#sketch-snapping";
+inline constexpr const char* k_sketch_origin   = "https://ezycad.readthedocs.io/en/latest/usage-sketch.html#sketch-origin";
 inline constexpr const char* k_line_edge_midpoint_nodes =
     "https://ezycad.readthedocs.io/en/latest/usage-sketch.html#line-edge-option-add-midpoint-nodes";
 inline constexpr const char* k_line_edge_place_from_center =

@@ -4,20 +4,21 @@ This guide covers all 2D sketching tools and operations in EzyCad. For the main 
 
 ## Table of Contents
 1. [Sketching (2D)](#sketching-2d)
-2. [Sketch snapping](#sketch-snapping)
-3. [Hotkeys](#hotkeys)
-4. [Line Edge Creation Tools](#line-edge-creation-tools)
-5. [Multi-Line Edge Tool](#multi-line-edge-tool)
-6. [Circle Creation Tools](#circle-creation-tools)
-7. [Circle Creation Workflow](#circle-creation-workflow)
-8. [Arc Segment Creation Tool](#arc-segment-creation-tool)
-9. [Rectangle and Square Creation Tools](#rectangle-and-square-creation-tools)
-10. [Slot Creation Tool](#slot-creation-tool)
-11. [Operation Axis Tool](#operation-axis-tool)
-12. [Dimension Tool](#dimension-tool)
-13. [Add Node Tool](#add-node-tool)
-14. [Create Sketch from Planar Face Tool](#create-sketch-from-planar-face-tool)
-15. [Image underlay](#image-underlay)
+2. [Sketch origin](#sketch-origin)
+3. [Sketch snapping](#sketch-snapping)
+4. [Hotkeys](#hotkeys)
+5. [Line Edge Creation Tools](#line-edge-creation-tools)
+6. [Multi-Line Edge Tool](#multi-line-edge-tool)
+7. [Circle Creation Tools](#circle-creation-tools)
+8. [Circle Creation Workflow](#circle-creation-workflow)
+9. [Arc Segment Creation Tool](#arc-segment-creation-tool)
+10. [Rectangle and Square Creation Tools](#rectangle-and-square-creation-tools)
+11. [Slot Creation Tool](#slot-creation-tool)
+12. [Operation Axis Tool](#operation-axis-tool)
+13. [Dimension Tool](#dimension-tool)
+14. [Add Node Tool](#add-node-tool)
+15. [Create Sketch from Planar Face Tool](#create-sketch-from-planar-face-tool)
+16. [Image underlay](#image-underlay)
 
 ---
 
@@ -37,7 +38,28 @@ This guide covers all 2D sketching tools and operations in EzyCad. For the main 
    - ![Operation Axis Tool](res/icons/Sketcher_MirrorSketch.png) [Operational axis](#operation-axis-tool) - Define a reference axis, then use the **Mirror** and **Revolve** controls (in the Options panel) to mirror selected sketch edges or revolve edges/faces into 3D solids.
    - ![Create Sketch from Planar Face Tool](res/icons/Macro_FaceToSketch_48.png) [Create sketch from planar face](#create-sketch-from-planar-face-tool)
 
-Every sketch has a built-in **origin** — a permanent **+** marker at the sketch plane reference `(0, 0)` (new sketches on a reference plane) or at the **bounding-box center** of the face boundary when you [create a sketch from a planar face](#create-sketch-from-planar-face-tool). The origin is listed as **Origin** under **Nodes** in the [Sketch List](usage.md#sketch-list), acts as a snap target, and cannot be deleted (unlike user-placed [Add node](#add-node-tool) points).
+See [Sketch origin](#sketch-origin) — every sketch includes one permanent reference point.
+
+(sketch-origin)=
+## Sketch origin
+
+**Every sketch has exactly one Origin** — a fixed reference point on the sketch plane, shown as a red **+** marker whenever the sketch is visible in sketch mode (and in tools such as **polar duplicate** that snap to sketch nodes).
+
+| | |
+| ---: | --- |
+| **When created** | Added automatically when the sketch is created; you do not place it with a tool. |
+| **Location (reference plane)** | Sketch plane coordinates **(0, 0)** — the plane's built-in reference origin (XY, XZ, YZ, or offset reference planes). |
+| **Location (from face)** | **Center of the bounding box** of the face boundary wire when you use [Create sketch from planar face](#create-sketch-from-planar-face-tool). |
+| **Sketch List** | Listed as **Origin** under **Nodes** when you expand a sketch row (see [Sketch List](usage.md#sketch-list)). |
+| **Snapping** | Acts like any other sketch vertex: axis guides, vertex lock, and distance snap apply. Origins from **other visible sketches** are also snap targets on the current plane. |
+| **Cannot delete** | Unlike [Add node](#add-node-tool) points, the Origin cannot be removed from the selection. |
+| **Marker size** | **Settings -> Sketch -> Permanent node annotation size** (`permanent_node_anno_scale`; see [usage-settings.md](usage-settings.md#settings-file-reference)). |
+
+**Tips**
+
+- Use the Origin as a stable anchor when you need a known center (especially on [face-derived](#create-sketch-from-planar-face-tool) sketches).
+- If the **+** is hard to see, increase **Permanent node annotation size** in Settings.
+- While an **operational axis** is active in mirror/revolve phase, **+** markers (including Origin) are temporarily hidden so edge and face selection stays clear; they return when you **Clear axis** or leave that mode.
 
 ## Sketch snapping
 
@@ -50,14 +72,14 @@ While you draw or place points in sketch mode, EzyCad helps you align to existin
 | **Axis alignment** | Near a snap target, the pick can align to that point's **X** or **Y** on the sketch plane; guides show which axis is active. When **both** axes align to the **same** point, the cursor **locks to that vertex**. |
 | **Mid-point snap (Add node)** | A click near a **straight** edge (not at its ends) snaps onto the segment and **splits** it at commit time (see [Add node tool](#add-node-tool)). Separate from vertex lock. |
 | **Automatic splitting on edge intersections** | When you add a new straight (linear) edge using the Line Edge tool or Multi-Line Edge tool, if it crosses or touches the interior of any existing straight edge, the existing edge is automatically split at the intersection point. The new edge is also subdivided into atomic segments where needed. The same splitting occurs when an endpoint of the new edge snaps to the midpoint of an existing edge. When you add an **arc segment**, existing straight and arc edges are split at interior crossings, and the new arc is subdivided at intersection points on its interior. This produces correct T-junctions, crossings, and cleanly divided faces from a single sketch. |
-| **Other visible sketches** | Nodes from **other visible sketches** are projected onto the current sketch plane and act as snap targets (same distance rules). Useful for multi-sketch layouts and tools such as **polar duplicate** that pick sketch points. |
+| **Other visible sketches** | Nodes from **other visible sketches** are projected onto the current sketch plane and act as snap targets (same distance rules). Each of those sketches contributes its **Origin** as well as any user-placed nodes. Useful for multi-sketch layouts and tools such as **polar duplicate** that pick sketch points. |
 | **Operational axis mode** | While an operational axis is **defined** and **Operational axis** mode is active (mirror/revolve phase), sketch snap and permanent **+** node markers are **suppressed** so edge and face selection stays clear. Normal snapping applies again after **Clear axis** or when you leave the tool. Axis placement (before the axis exists) still uses snap. |
 
 **Angle constraint:** When a line or add-node rubber band has an active angle constraint, vertex and axis snap may be disabled or relaxed so the typed angle stays exact (see each tool's section).
 
 **Tips:**
 - For precise corners, approach a vertex until both horizontal and vertical guides appear, then click.
-- **Edge midpoints** (for straight edges) are optional snap targets. By default (see Settings > Sketch), no midpoint nodes are created for new linear edges from the Line or Multi-Line tools. When enabled, they are snap targets but do not show **+** markers and are not listed under **Nodes** in the [Sketch List](usage.md#sketch-list) (that list is user-placed points only).
+- **Edge midpoints** (for straight edges) are optional snap targets. By default (see Settings > Sketch), no midpoint nodes are created for new linear edges from the Line or Multi-Line tools. When enabled, they are snap targets but do not show **+** markers and are not listed under **Nodes** in the [Sketch List](usage.md#sketch-list). That list shows the sketch **Origin** plus **user-placed** [Add node](#add-node-tool) points only — not every internal topology vertex or automatic edge midpoint.
 - Adding a new straight edge that intersects existing straight edges (or snaps to their midpoints) automatically splits the intersected edges. This is the main way to divide a closed shape (rectangle, square, slot, or freehand closed profile) into multiple separate faces for individual extrusion or other operations. No manual "split" command is needed. The resulting faces remain valid even if you add the splitting edge before or after the outer shape.
 
 ## Hotkeys
@@ -860,7 +882,7 @@ In both cases, Add node never leaves a **permanent edge** between two clicks the
 
 ### Permanent “+” markers
 
-Each sketch includes a built-in **Origin** (see [Sketching (2D)](#sketching-2d)) — always shown as a permanent **+** when the sketch is visible.
+Each sketch includes a built-in **Origin** (see [Sketch origin](#sketch-origin)) — always shown as a permanent **+** when the sketch is visible.
 
 Nodes you place with **Add node** are treated as **user-placed** points. When the sketch is visible, eligible points can show the same small **+** marker in the 3D view so you can see and pick them; you can delete user-placed markers from the selection. Geometry that exists only as automatic **edge midpoints** for snapping is separate (those nodes are not shown the same way; controlled by the **Add midpoints to new linear edges** setting in Settings > Sketch, default off).
 

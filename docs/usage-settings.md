@@ -59,7 +59,7 @@ Between those, the pane has **six** collapsible sections. Expand a section to se
    - **Arrow style** — *Standard*, *Sharp*, *Wide*, or *3D shaded*
    - **Arrow orientation** — *Automatic*, *Internal*, or *External*
    - **Show sketch dimensions** — global on/off for length dimensions on all sketches (tool mode may still limit which sketch shows dims when on)
-   - **Permanent node annotation size**, **Add midpoints to new linear edges** (default off; only affects Line Edge and Multi-Line Edge tools), **Underlay highlight color**, **Snap guide color (node)**, **Snap guide color (axis)**, **Snap guide line width** (slider **0.5** to **8.0**; default **1.0**), **Snap guide mode**, **All co-axial nodes** (directly under **Sketch**, not inside **Dimensions**)
+   - **Permanent node annotation size** (scale for **+** markers on the sketch **Origin** and [Add node](usage-sketch.md#add-node-tool) points; see [Sketch origin](usage-sketch.md#sketch-origin)), **Add midpoints to new linear edges** (default off; only affects Line Edge and Multi-Line Edge tools), **Underlay highlight color**, **Snap guide color (node)**, **Snap guide color (axis)**, **Snap guide line width** (slider **0.5** to **8.0**; default **1.0**), **Snap guide mode**, **All co-axial nodes** (directly under **Sketch**, not inside **Dimensions**)
 
 6. **Startup project** — **Desktop only:** **Load last opened on startup** (checkbox, with **?**), then **Last opened path:** … or **(No path saved yet.)** Then **Save current as startup project**, **Clear saved startup** (with **?**). **WebAssembly:** no load-last row; only the two buttons and **?**. See [Startup project](#startup-project).
 
@@ -175,7 +175,7 @@ String: ImGui `.ini` text for window positions and docking saved with **SaveIniS
 | `edge_dim_arrow_style` | integer | **0** standard, **1** sharp, **2** wide, **3** 3D shaded. |
 | `edge_dim_arrow_orientation` | integer | **0** automatic, **1** internal, **2** external. |
 | `show_sketch_dimensions` | boolean | When false, hides length dimensions on all sketches. |
-| `permanent_node_anno_scale` | number | Scale for permanent **+** node markers in sketch mode (**0.25** to **3.0**; default **1.0**). |
+| `permanent_node_anno_scale` | number | Scale for permanent **+** markers: the sketch **Origin** and user-placed Add node points ([Sketch origin](usage-sketch.md#sketch-origin); **0.25** to **3.0**; default **1.0**). |
 | `snap_guide_color_node` | array of 3 numbers | RGB for snap guides when both axes lock to the same node (float **0** to **1**; default lavender **0.82**, **0.55**, **0.95**). Legacy `snap_guide_color` loads here when `snap_guide_color_node` is absent. |
 | `snap_guide_color_axis` | array of 3 numbers | RGB for snap guides when aligned on X or Y only (float **0** to **1**; default magenta **0.96**, **0.06**, **0.54**). Legacy `snap_guide_color` sets both node and axis colors. |
 | `snap_guide_mode` | integer | **0** *Traditional* (local markers), **1** *Fullscreen* (view-spanning axis lines), **2** *Both* (default **2**). |

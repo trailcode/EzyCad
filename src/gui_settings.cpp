@@ -1128,8 +1128,8 @@ void GUI::settings_()
         }
 
         ImGui::SameLine(0.0f, ImGui::GetStyle().ItemInnerSpacing.x);
-        GUI_DOC_HELP_("Scale for permanent '+' node markers in sketch mode. Click ? to open the user guide.",
-                      doc_urls::k_add_node_tool);
+        GUI_DOC_HELP_("Scale for '+' markers on the sketch Origin and Add node points. Click ? to open the user guide.",
+                      doc_urls::k_sketch_origin);
       }
 
       ImGui::TableNextRow();
