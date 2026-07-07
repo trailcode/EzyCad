@@ -44,7 +44,7 @@ std::string GUI::get_doc_url_for_mode(Mode mode)
       {Mode::Move,                            "https://ezycad.readthedocs.io/en/latest/usage.html#shape-move-tool-g"},
       {Mode::Rotate,                          "https://ezycad.readthedocs.io/en/latest/usage.html#shape-rotate-tool-r"},
       {Mode::Scale,                           "https://ezycad.readthedocs.io/en/latest/usage.html#shape-scale-tool-s"},
-      {Mode::Sketch_inspection_mode,          "https://ezycad.readthedocs.io/en/latest/usage-sketch.html#sketching-2d"},
+      {Mode::Sketch_inspection_mode,          "https://ezycad.readthedocs.io/en/latest/usage-sketch.html#sketch-origin"},
       {Mode::Sketch_from_planar_face,         "https://ezycad.readthedocs.io/en/latest/usage-sketch.html#create-sketch-from-planar-face-tool"},
       {Mode::Sketch_face_extrude,             "https://ezycad.readthedocs.io/en/latest/usage.html#extrude-sketch-face-tool-e"},
       {Mode::Shape_chamfer,                   "https://ezycad.readthedocs.io/en/latest/usage.html#other-feature-operations"},
@@ -306,6 +306,7 @@ void GUI::on_key(int key, int scancode, int action, int mods)
     case GLFW_KEY_ESCAPE:
       cancel_underlay_calib_();
       m_view->cancel(Set_parent_mode::Yes);
+      hide_sketch_origin_set_edit(false);
       hide_dist_edit();
       hide_angle_edit();
       break;
@@ -322,6 +323,7 @@ void GUI::on_key(int key, int scancode, int action, int mods)
     }
 
     case GLFW_KEY_ENTER:
+      hide_sketch_origin_set_edit(true);
       hide_dist_edit();
       hide_angle_edit();
       m_view->on_enter(screen_coords);

@@ -176,6 +176,7 @@ String: ImGui `.ini` text for window positions and docking saved with **SaveIniS
 | `edge_dim_arrow_orientation` | integer | **0** automatic, **1** internal, **2** external. |
 | `show_sketch_dimensions` | boolean | When false, hides length dimensions on all sketches. |
 | `permanent_node_anno_scale` | number | Scale for permanent **+** markers: the sketch **Origin** and user-placed Add node points ([Sketch origin](usage-sketch.md#sketch-origin); **0.25** to **3.0**; default **1.0**). |
+| `origin_marker_color` | array of 3 numbers | RGB color for the **active** sketch's Origin marker (+ with circle; **0** to **1** per channel; default cyan **0.0**, **0.75**, **1.0**). |
 | `snap_guide_color_node` | array of 3 numbers | RGB for snap guides when both axes lock to the same node (float **0** to **1**; default lavender **0.82**, **0.55**, **0.95**). Legacy `snap_guide_color` loads here when `snap_guide_color_node` is absent. |
 | `snap_guide_color_axis` | array of 3 numbers | RGB for snap guides when aligned on X or Y only (float **0** to **1**; default magenta **0.96**, **0.06**, **0.54**). Legacy `snap_guide_color` sets both node and axis colors. |
 | `snap_guide_mode` | integer | **0** *Traditional* (local markers), **1** *Fullscreen* (view-spanning axis lines), **2** *Both* (default **2**). |

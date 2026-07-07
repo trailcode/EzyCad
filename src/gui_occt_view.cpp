@@ -50,6 +50,7 @@
 #include "shp.h"
 #include "shp_create.h"
 #include "sketch.h"
+#include "sketch_ais.h"
 #include "sketch_json.h"
 #include "utl_types.h"
 #include "utl.h"
@@ -1147,6 +1148,10 @@ void Occt_view::delete_selected() { delete_shapes(get_selected()); }
 
 void Occt_view::delete_shapes(std::vector<AIS_Shape_ptr> to_delete)
 {
+  if (to_delete.empty())
+    return;
+
+  std::erase_if(to_delete, [](const AIS_Shape_ptr& shp) { return is_sketch_origin_node_mark(shp.get()); });
   if (to_delete.empty())
     return;
 

@@ -364,30 +364,79 @@ void Sketch::get_originating_face_snp_pts_3d_(std::vector<gp_Pnt>& out)
 
 void Sketch::ensure_origin_node_()
 {
-  for (size_t i = 0; i < m_nodes.size(); ++i)
-    if (!m_nodes[i].deleted && m_nodes[i].origin)
-    {
-      // Commit baseline so cancel_elm() (e.g. from on_mode) does not remove the origin.
-      m_nodes.finalize();
-      return;
-    }
-
-  gp_Pnt2d pt(0., 0.);
-  if (m_originating_face)
+  if (origin_node_idx_().has_value())
   {
-    const TopoDS_Shape& shape = m_originating_face->Shape();
-    if (shape.ShapeType() == TopAbs_WIRE)
-    {
-      const gp_Pnt center = get_shape_bbox_center(shape);
-      pt                    = to_2d(m_pln, center);
-    }
+    // Commit baseline so cancel_elm() (e.g. from on_mode) does not remove the origin.
+    m_nodes.finalize();
+    return;
   }
 
+  const gp_Pnt2d      pt  = default_origin_pt_();
   const size_t        idx = m_nodes.add_new_node(pt, false, true);
   Sketch_nodes::Node& n   = m_nodes[idx];
   n.origin                = true;
   n.name                  = "Origin";
   m_nodes.finalize();
+}
+
+std::optional<size_t> Sketch::origin_node_idx_() const
+{
+  for (size_t i = 0; i < m_nodes.size(); ++i)
+    if (!m_nodes[i].deleted && m_nodes[i].origin)
+      return i;
+
+  return std::nullopt;
+}
+
+gp_Pnt2d Sketch::default_origin_pt_() const
+{
+  gp_Pnt2d pt(0., 0.);
+  if (m_originating_face)
+  {
+    const TopoDS_Shape& shape = m_originating_face->Shape();
+    if (shape.ShapeType() == TopAbs_WIRE)
+      pt = to_2d(m_pln, get_shape_bbox_center(shape));
+  }
+
+  return pt;
+}
+
+gp_Pnt2d Sketch::default_origin_pt() const { return default_origin_pt_(); }
+
+gp_Pnt2d Sketch::origin_pt() const
+{
+  if (const std::optional<size_t> idx = origin_node_idx_())
+    return gp_Pnt2d(m_nodes[*idx].X(), m_nodes[*idx].Y());
+
+  return default_origin_pt_();
+}
+
+void Sketch::set_origin_pt(const gp_Pnt2d& pt)
+{
+  ensure_origin_node_();
+  const std::optional<size_t> idx = origin_node_idx_();
+  EZY_ASSERT(idx.has_value());
+
+  Sketch_nodes::Node& n = m_nodes[*idx];
+  n.SetX(pt.X());
+  n.SetY(pt.Y());
+  m_node_marks.sync();
+}
+
+void Sketch::reset_origin_pt() { set_origin_pt(default_origin_pt_()); }
+
+bool Sketch::show_origin_marker() const { return m_show_origin_marker; }
+
+void Sketch::set_show_origin_marker(bool show)
+{
+  if (m_show_origin_marker == show)
+    return;
+
+  m_show_origin_marker = show;
+  m_nodes.set_origin_snap_enabled(show);
+  m_node_marks.sync();
+  if (Sketch* cur = m_view.current_sketch_if_any())
+    cur->set_current();
 }
 
 gp_Pnt Sketch::to_3d_(size_t node_idx) const { return to_3d(m_pln, m_nodes[node_idx]); }

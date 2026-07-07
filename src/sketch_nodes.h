@@ -56,6 +56,10 @@ public:
   void get_snap_pts_3d(std::vector<gp_Pnt>& out);
   void hide_snap_annos();
 
+  /// When false, the sketch origin node is omitted from snap targets (see `Sketch::show_origin_marker`).
+  void set_origin_snap_enabled(bool enabled);
+  [[nodiscard]] bool origin_snap_enabled() const;
+
   Node&       operator[](size_t idx);
   const Node& operator[](size_t idx) const;
   Node&       operator[](const std::optional<size_t> idx);

@@ -153,6 +153,9 @@ nlohmann::json Sketch_json::to_json(const Sketch& sketch, const Ezy_asset_store&
   j["name"]      = sketch.get_name();
   j["plane"]     = ::to_json(sketch.m_pln);
 
+  if (!sketch.m_show_origin_marker)
+    j["show_origin_marker"] = false;
+
   if (sketch.m_originating_face)
   {
     const TopoDS_Shape& shape = sketch.m_originating_face->Shape();
@@ -321,6 +324,10 @@ Sketch::sptr Sketch_json::from_json(Occt_view& view, const nlohmann::json& j)
     ret->m_id = j["id"].get<size_t>();
     view.adopt_sketch_id(ret->m_id);
   }
+
+  if (j.contains("show_origin_marker") && j["show_origin_marker"].is_boolean())
+    ret->m_show_origin_marker = j["show_origin_marker"].get<bool>();
+  ret->m_nodes.set_origin_snap_enabled(ret->m_show_origin_marker);
 
   if (j["isCurrent"])
     ret->set_current();

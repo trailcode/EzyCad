@@ -56,6 +56,7 @@ EzyCad (Easy CAD) is an open-source CAD application for hobbyist machinists to d
    - [View and manage 2D sketches](#sketch-list)
    - [Select and edit sketch elements](#sketch-list)
    - [Toggle sketch visibility](#sketch-list)
+   - [Sketch origin (permanent + reference point per sketch)](usage-sketch.md#sketch-origin)
 
 4. **Shape List**
    - [List 3D solids, materials, and display options](#shape-list)
@@ -92,7 +93,7 @@ Each row is laid out left to right:
 - **Rename** - Click the name field and type a new name.
 - **Visibility** - Checkbox to show or hide the sketch in the 3D view.
 - **Underlay** - Checkbox to show or hide an [image underlay](usage-sketch.md#image-underlay) when one is imported (disabled until an underlay exists; tooltip *Display underlay*).
-- **Sketch properties** - **`[P]`** opens **Sketch properties** (import/remove underlay, calibration, transform). See [Image underlay](usage-sketch.md#image-underlay).
+- **Sketch properties** - **`[P]`** opens **Sketch properties** (sketch **Origin** X/Y, import/remove underlay, calibration, transform). See [Sketch origin](usage-sketch.md#sketch-origin) and [Image underlay](usage-sketch.md#image-underlay).
 - **Delete** - Right-click the name and choose **Delete**.
 
 When expanded, the row shows:
@@ -213,7 +214,7 @@ EzyCad uses a workflow-based approach to 3D modeling: start with 2D sketches, th
 
 The typical modeling workflow in EzyCad follows these steps:
 
-1. **Create a 2D Sketch**: Use the [2D Sketching tools](usage-sketch.md) to draw 2D geometry on a sketch plane. Sketches consist of edges (lines, arcs, circles) that form closed shapes called faces.
+1. **Create a 2D Sketch**: Use the [2D Sketching tools](usage-sketch.md) to draw 2D geometry on a sketch plane. Sketches consist of edges (lines, arcs, circles) that form closed shapes called faces. Every new sketch also gets a built-in **[Origin](usage-sketch.md#sketch-origin)** — a permanent **+** reference point on the plane (at `(0, 0)` on a reference plane, or at the face center when created from a planar face).
 
 2. **Extrude the Sketch**: Use the [Extrude tool](#extrude-sketch-face-tool-e) to convert 2D sketch faces into 3D solid shapes by extending them perpendicular to the sketch plane.
 
@@ -226,6 +227,7 @@ The typical modeling workflow in EzyCad follows these steps:
 | | |
 | ---: | --- |
 | **Sketches** | 2D drawings on a plane that define the profile of your 3D shape |
+| **Origin** | One permanent **+** reference node per sketch ([details](usage-sketch.md#sketch-origin)); snap target; listed as **Origin** in the Sketch List |
 | **Faces** | Closed regions within a sketch that can be [extruded](#extrude-sketch-face-tool-e) into 3D |
 | **Shapes** | 3D solid objects created from extruded sketch faces |
 | **Feature Operations** | Transform sketches into 3D geometry or modify existing 3D shapes |
@@ -285,6 +287,20 @@ For detailed information on creating 2D geometry, see the [2D Sketching](usage-s
 
 ### 2D Sketching
 
+#### Sketch origin (permanent reference point)
+
+Every sketch has exactly one **Origin**: a fixed point on the sketch plane, shown as a **+ inside a circle** on the **active sketch only** in sketch mode (distinct from red **+** [Add node](usage-sketch.md#add-node-tool) markers on visible sketches; you cannot delete the Origin).
+
+| | |
+| ---: | --- |
+| **Reference-plane sketch** | Origin at plane coordinates **(0, 0)**. |
+| **Sketch from planar face** | Origin at the **bounding-box center** of the extracted face boundary. |
+| **Sketch List** | Listed as **Origin** under **Nodes** when you expand a sketch row. |
+| **Sketch properties** | **[P]** on the sketch row: **Show origin marker**, **Position** sliders with **Set**, for typed values. |
+| **Snapping** | Full vertex and axis snap when the marker is shown; other visible sketches' origins snap when their marker is shown. |
+
+Full details (marker size, operational-axis visibility, tips): **[Sketch origin](usage-sketch.md#sketch-origin)** in the 2D sketching guide.
+
 See the **[2D Sketching guide](usage-sketch.md)** for full documentation of sketch tools: **[sketch origin](usage-sketch.md#sketch-origin)** (one permanent **+** reference point per sketch), **add node** (points and edge splits), line and multi-line edges, circles, arcs, rectangles, squares, slots, **operation axis** (with Mirror and Revolve actions in the Options panel), edge dimensions, and creating a sketch from a planar face. Revolve (via an operation axis) is one way to generate 3D solids directly from sketch geometry.
 
 **Sketch snap (overview):** While drawing or using **Add node**, picks can snap to existing geometry within **Snap dist** (Options panel). The main behaviors:
@@ -292,6 +308,7 @@ See the **[2D Sketching guide](usage-sketch.md)** for full documentation of sket
 | | |
 | ---: | --- |
 | **Vertex snap** | Lock to an existing corner when horizontal and vertical axis guides both align to the same point. |
+| **Sketch origin** | Every sketch's built-in **Origin** is a snap target when its marker is shown (see [Sketch origin](usage-sketch.md#sketch-origin)). |
 | **Mid-point snap** | With **Add node**, a click near a **straight** edge (but not at its ends) snaps onto the segment; EzyCad places a new vertex there and **splits** the edge into two. You do not need to hit the line exactly. |
 | **Edge midpoint** | Straight edges often expose a geometric **midpoint** as a snap target while drawing; that is separate from mid-point snap and from user-placed **+** nodes. |
 
@@ -732,7 +749,7 @@ More context on the 3D viewer stack: **[3D viewer (Open CASCADE)](usage-occt-vie
 - [This usage guide](#ezycad-usage-guide) (source: [usage.md](usage.md))
 - [Settings](usage-settings.md) (Settings pane, View menu, JSON settings file, startup project)
 - [3D viewer (Open CASCADE)](usage-occt-view.md)
-- [2D Sketching](usage-sketch.md) (including [add node](usage-sketch.md#add-node-tool) and [image underlay](usage-sketch.md#image-underlay))
+- [2D Sketching](usage-sketch.md) (including [sketch origin](usage-sketch.md#sketch-origin), [add node](usage-sketch.md#add-node-tool), and [image underlay](usage-sketch.md#image-underlay))
 - [Scripting (Lua / Python)](scripting.md)
 
 The markdown files in the repository remain the canonical source; Read the Docs publishes them on each update. Video tutorials are not published yet.

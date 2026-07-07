@@ -135,6 +135,7 @@ void GUI::render_gui()
   toolbar_();
   dist_edit_();
   angle_edit_();
+  sketch_origin_set_edit_();
   sketch_list_();
   sketch_properties_dialog_();
   shape_list_();
@@ -817,6 +818,80 @@ void GUI::hide_angle_edit()
 
 bool GUI::is_dist_or_angle_edit_active() const { return m_dist_callback != nullptr || m_angle_callback != nullptr; }
 
+bool GUI::is_sketch_origin_set_edit_active() const { return m_sketch_origin_set_plane_idx >= 0; }
+
+void GUI::open_sketch_origin_set_edit_(const Sketch::sptr& sk, int plane_idx, double v_min, double v_max)
+{
+  EZY_ASSERT(sk);
+  EZY_ASSERT(plane_idx == 0 || plane_idx == 1);
+
+  m_sketch_origin_set_sketch       = sk;
+  m_sketch_origin_set_plane_idx    = plane_idx;
+  m_sketch_origin_set_v_min        = v_min;
+  m_sketch_origin_set_v_max        = v_max;
+  m_sketch_origin_set_loc          = ImGui::GetItemRectMin();
+  m_sketch_origin_set_focus_pending = true;
+  std::snprintf(m_sketch_origin_set_text_buf.data(), m_sketch_origin_set_text_buf.size(), "%.9g",
+                m_sketch_origin_xy[plane_idx]);
+}
+
+void GUI::hide_sketch_origin_set_edit(bool apply)
+{
+  if (m_sketch_origin_set_plane_idx < 0)
+    return;
+
+  const Sketch::sptr sk        = m_sketch_origin_set_sketch.lock();
+  const int          plane_idx = m_sketch_origin_set_plane_idx;
+  const double       v_min     = m_sketch_origin_set_v_min;
+  const double       v_max     = m_sketch_origin_set_v_max;
+  m_sketch_origin_set_plane_idx = -1;
+  m_sketch_origin_set_sketch.reset();
+
+  if (!sk || !apply)
+    return;
+
+  float parsed{};
+  if (!parse_dist_text_to_float_(m_sketch_origin_set_text_buf.data(), parsed))
+    return;
+
+  m_sketch_origin_xy[plane_idx] = std::clamp(static_cast<double>(parsed), v_min, v_max);
+  sk->set_origin_pt(gp_Pnt2d(m_sketch_origin_xy[0], m_sketch_origin_xy[1]));
+  m_view->ctx().UpdateCurrentViewer();
+}
+
+void GUI::sketch_origin_set_edit_()
+{
+  if (m_sketch_origin_set_plane_idx < 0)
+    return;
+
+  if (!m_sketch_origin_set_sketch.lock())
+  {
+    m_sketch_origin_set_plane_idx = -1;
+    return;
+  }
+
+  ImGui::SetNextWindowPos(m_sketch_origin_set_loc, ImGuiCond_Always);
+  ImGui::SetNextWindowSize(ImVec2(120.0f, 25.0f), ImGuiCond_Once);
+  ImGui::Begin("OriginSetEdit##unique_id", nullptr,
+               ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_AlwaysAutoResize |
+                   ImGuiWindowFlags_NoSavedSettings);
+
+  ImGui::SetNextItemWidth(100.0f);
+  if (m_sketch_origin_set_focus_pending)
+  {
+    ImGui::SetKeyboardFocusHere(0);
+    m_sketch_origin_set_focus_pending = false;
+  }
+
+  ImGui::InputText("##origin_set_text", m_sketch_origin_set_text_buf.data(), m_sketch_origin_set_text_buf.size(),
+                   ImGuiInputTextFlags_CharsDecimal | ImGuiInputTextFlags_CharsScientific);
+
+  if (ImGui::IsItemDeactivatedAfterEdit())
+    hide_sketch_origin_set_edit(true);
+
+  ImGui::End();
+}
+
 void GUI::angle_edit_()
 {
   if (!m_angle_callback)
@@ -1194,6 +1269,9 @@ void GUI::sketch_list_()
       {
         if (ImGui::SmallButton("[P]"))
         {
+          m_view->set_curr_sketch(sketch);
+          if (!is_sketch_mode(get_mode()))
+            set_mode(Mode::Sketch_inspection_mode);
           m_sketch_properties_sketch = sketch;
           m_sketch_properties_open   = true;
         }
@@ -1268,29 +1346,116 @@ void GUI::sketch_underlay_import_dialog_()
 void GUI::sketch_properties_dialog_()
 {
   if (!m_sketch_properties_open)
+  {
+    hide_sketch_origin_set_edit(false);
     return;
+  }
 
-  const auto sk = m_sketch_properties_sketch.lock();
+  const Sketch::sptr sk = m_view->curr_sketch_shared();
   if (!sk)
   {
     m_sketch_properties_open = false;
+    hide_sketch_origin_set_edit(false);
     return;
   }
+
+  m_sketch_properties_sketch = sk;
 
   ImGui::SetNextWindowSize(ImVec2(400, 0), ImGuiCond_FirstUseEver);
   bool open = m_sketch_properties_open;
   if (!ImGui::Begin("Sketch properties", &open, ImGuiWindowFlags_None))
   {
     m_sketch_properties_open = open;
+    if (!open)
+      hide_sketch_origin_set_edit(false);
     ImGui::End();
     return;
   }
 
   ImGui::TextUnformatted(sk->get_name().c_str());
   ImGui::Separator();
+  sketch_origin_panel_settings_(sk);
   sketch_underlay_panel_settings_(sk);
   m_sketch_properties_open = open;
   ImGui::End();
+}
+
+void GUI::sketch_origin_panel_settings_(const Sketch::sptr& sk)
+{
+  EZY_ASSERT(sk);
+
+  if (m_sketch_origin_panel_sketch != sk.get())
+  {
+    hide_sketch_origin_set_edit(false);
+    m_sketch_origin_panel_sketch = sk.get();
+    const gp_Pnt2d               o = sk->origin_pt();
+    m_sketch_origin_xy[0]          = o.X();
+    m_sketch_origin_xy[1]          = o.Y();
+  }
+
+  ImGui::TextUnformatted("Origin");
+  ImGui::Separator();
+
+  bool show_origin = sk->show_origin_marker();
+  if (ImGui::Checkbox("Show origin marker", &show_origin))
+  {
+    sk->set_show_origin_marker(show_origin);
+    m_view->ctx().UpdateCurrentViewer();
+  }
+
+  ImGui::SameLine(0.0f, ImGui::GetStyle().ItemInnerSpacing.x);
+  GUI_DOC_HELP_("When off, hides the Origin +/circle for this sketch (active sketch only) and removes it from snap targets.",
+                doc_urls::k_sketch_origin);
+
+  const ImGuiIO& io    = ImGui::GetIO();
+  double         min_u = 0., min_v = 0., max_u = 1., max_v = 1.;
+  const bool     have_view =
+      m_view->sketch_plane_view_aabb_2d(sk->get_plane(), static_cast<double>(io.DisplaySize.x),
+                                        static_cast<double>(io.DisplaySize.y), min_u, min_v, max_u, max_v);
+  if (!have_view)
+  {
+    constexpr double k_fallback = 250.0;
+    min_u = m_sketch_origin_xy[0] - k_fallback;
+    max_u = m_sketch_origin_xy[0] + k_fallback;
+    min_v = m_sketch_origin_xy[1] - k_fallback;
+    max_v = m_sketch_origin_xy[1] + k_fallback;
+  }
+
+  auto apply_origin = [&]()
+  {
+    sk->set_origin_pt(gp_Pnt2d(m_sketch_origin_xy[0], m_sketch_origin_xy[1]));
+    m_view->ctx().UpdateCurrentViewer();
+  };
+
+  auto origin_axis_row = [&](const char* axis_label, const char* popup_id, int plane_idx, double v_min, double v_max)
+  {
+    ImGui::PushID(popup_id);
+    double* const p_value = &m_sketch_origin_xy[plane_idx];
+    const bool changed =
+        ImGui::SliderScalar(axis_label, ImGuiDataType_Double, p_value, &v_min, &v_max, "%.4f", ImGuiSliderFlags_ClampOnInput);
+
+    if (changed)
+      apply_origin();
+
+    ImGui::SameLine(0.0f, ImGui::GetStyle().ItemInnerSpacing.x);
+    if (ImGui::SmallButton("Set"))
+      open_sketch_origin_set_edit_(sk, plane_idx, v_min, v_max);
+
+    ImGui::PopID();
+  };
+
+  ImGui::TextUnformatted("Position (sketch plane, vs. current view)");
+  ImGui::SameLine(0.0f, ImGui::GetStyle().ItemInnerSpacing.x);
+  GUI_DOC_HELP_("Sketch plane coordinates for the permanent Origin marker (+ with circle). Click ? for the user guide.",
+                doc_urls::k_sketch_origin);
+
+  ImGui::PushID(sk.get());
+  // Labels match typical sketch axes on screen: "X" drives plane Y, "Y" plane X (same as underlay center).
+  origin_axis_row("X", "sketch_origin_set_x", 1, min_v, max_v);
+  origin_axis_row("Y", "sketch_origin_set_y", 0, min_u, max_u);
+  ImGui::PopID();
+
+  ImGui::Separator();
 }
 
 void GUI::sketch_underlay_panel_settings_(const Sketch::sptr& sk)

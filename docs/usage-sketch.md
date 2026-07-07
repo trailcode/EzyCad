@@ -43,7 +43,7 @@ See [Sketch origin](#sketch-origin) — every sketch includes one permanent refe
 (sketch-origin)=
 ## Sketch origin
 
-**Every sketch has exactly one Origin** — a fixed reference point on the sketch plane, shown as a red **+** marker whenever the sketch is visible in sketch mode (and in tools such as **polar duplicate** that snap to sketch nodes).
+**Every sketch has exactly one Origin** — a fixed reference point on the sketch plane, shown as a **+ inside a circle** on the **active sketch only** (a **permanent node**, not placed with a tool) whenever that sketch is visible in sketch mode (and in tools such as **polar duplicate** that snap to sketch nodes). User-placed [Add node](#add-node-tool) points use a red **+** without a circle on every visible sketch. Color is set in **Settings -> Sketch -> Origin marker color**.
 
 | | |
 | ---: | --- |
@@ -51,14 +51,17 @@ See [Sketch origin](#sketch-origin) — every sketch includes one permanent refe
 | **Location (reference plane)** | Sketch plane coordinates **(0, 0)** — the plane's built-in reference origin (XY, XZ, YZ, or offset reference planes). |
 | **Location (from face)** | **Center of the bounding box** of the face boundary wire when you use [Create sketch from planar face](#create-sketch-from-planar-face-tool). |
 | **Sketch List** | Listed as **Origin** under **Nodes** when you expand a sketch row (see [Sketch List](usage.md#sketch-list)). |
-| **Snapping** | Acts like any other sketch vertex: axis guides, vertex lock, and distance snap apply. Origins from **other visible sketches** are also snap targets on the current plane. |
-| **Cannot delete** | Unlike [Add node](#add-node-tool) points, the Origin cannot be removed from the selection. |
+| **Snapping** | Acts like any other sketch vertex when the marker is shown: axis guides, vertex lock, and distance snap apply. Origins from **other visible sketches** (with marker shown) are also snap targets on the current plane. When **Show origin marker** is off, the Origin is not a snap target. |
+| **Cannot delete** | The Origin cannot be selected or deleted. Hide it with **Show origin marker** in **Sketch properties** instead. |
 | **Marker size** | **Settings -> Sketch -> Permanent node annotation size** (`permanent_node_anno_scale`; see [usage-settings.md](usage-settings.md#settings-file-reference)). |
+| **Marker color** | **Settings -> Sketch -> Origin marker color** (`origin_marker_color`; active sketch only). |
+| **Sketch properties** | **Sketch List -> [P]** — **Show origin marker**, **Position** sliders (range follows the current view) with **Set** for typed values. |
 
 **Tips**
 
 - Use the Origin as a stable anchor when you need a known center (especially on [face-derived](#create-sketch-from-planar-face-tool) sketches).
 - If the **+** is hard to see, increase **Permanent node annotation size** in Settings.
+- Open **Sketch properties** (**[P]** on the sketch row) to drag **X** / **Y** sliders (view-relative range) or use **Set** beside each slider, type a value, and press **Enter**.
 - While an **operational axis** is active in mirror/revolve phase, **+** markers (including Origin) are temporarily hidden so edge and face selection stays clear; they return when you **Clear axis** or leave that mode.
 
 ## Sketch snapping
@@ -70,9 +73,10 @@ While you draw or place points in sketch mode, EzyCad helps you align to existin
 | **Snap distance** | Larger **Snap dist** values let snaps engage from farther away (screen pixels, converted to the sketch plane at the cursor). |
 | **Snap guides** | **Snap guide mode**: *Traditional* (local markers at guide intersections), *Fullscreen* (view-spanning axis lines), or *Both*. **Snap guide color (node)** is used when both X and Y align to the same vertex; **Snap guide color (axis)** when only one axis aligns. A separate checkbox **All co-axial nodes** (in the sketch Options panel and in Settings) enables *global* mode: when on, full horizontal and vertical guide lines + markers are shown for *all* nodes in the current sketch and all other visible sketches (the complete set of co-axial alignments). When off (default), only the closest node per active axis is annotated (classic closest-relative behavior). |
 | **Axis alignment** | Near a snap target, the pick can align to that point's **X** or **Y** on the sketch plane; guides show which axis is active. When **both** axes align to the **same** point, the cursor **locks to that vertex**. |
+| **Sketch origin** | Each sketch's built-in **Origin** (see [Sketch origin](#sketch-origin)) is a snap target when its marker is shown. |
 | **Mid-point snap (Add node)** | A click near a **straight** edge (not at its ends) snaps onto the segment and **splits** it at commit time (see [Add node tool](#add-node-tool)). Separate from vertex lock. |
 | **Automatic splitting on edge intersections** | When you add a new straight (linear) edge using the Line Edge tool or Multi-Line Edge tool, if it crosses or touches the interior of any existing straight edge, the existing edge is automatically split at the intersection point. The new edge is also subdivided into atomic segments where needed. The same splitting occurs when an endpoint of the new edge snaps to the midpoint of an existing edge. When you add an **arc segment**, existing straight and arc edges are split at interior crossings, and the new arc is subdivided at intersection points on its interior. This produces correct T-junctions, crossings, and cleanly divided faces from a single sketch. |
-| **Other visible sketches** | Nodes from **other visible sketches** are projected onto the current sketch plane and act as snap targets (same distance rules). Each of those sketches contributes its **Origin** as well as any user-placed nodes. Useful for multi-sketch layouts and tools such as **polar duplicate** that pick sketch points. |
+| **Other visible sketches** | Nodes from **other visible sketches** are projected onto the current sketch plane and act as snap targets (same distance rules). Each visible sketch contributes its **Origin** when that sketch's marker is shown, plus any user-placed nodes. Useful for multi-sketch layouts and tools such as **polar duplicate** that pick sketch points. |
 | **Operational axis mode** | While an operational axis is **defined** and **Operational axis** mode is active (mirror/revolve phase), sketch snap and permanent **+** node markers are **suppressed** so edge and face selection stays clear. Normal snapping applies again after **Clear axis** or when you leave the tool. Axis placement (before the axis exists) still uses snap. |
 
 **Angle constraint:** When a line or add-node rubber band has an active angle constraint, vertex and axis snap may be disabled or relaxed so the typed angle stays exact (see each tool's section).
@@ -882,9 +886,9 @@ In both cases, Add node never leaves a **permanent edge** between two clicks the
 
 ### Permanent “+” markers
 
-Each sketch includes a built-in **Origin** (see [Sketch origin](#sketch-origin)) — always shown as a permanent **+** when the sketch is visible.
+Each sketch includes a built-in **Origin** (see [Sketch origin](#sketch-origin)) — shown as a permanent **+ inside a circle** on the **active sketch** when enabled in **Sketch properties**.
 
-Nodes you place with **Add node** are treated as **user-placed** points. When the sketch is visible, eligible points can show the same small **+** marker in the 3D view so you can see and pick them; you can delete user-placed markers from the selection. Geometry that exists only as automatic **edge midpoints** for snapping is separate (those nodes are not shown the same way; controlled by the **Add midpoints to new linear edges** setting in Settings > Sketch, default off).
+Nodes you place with **Add node** are treated as **user-placed** points. When the sketch is visible, eligible points can show a red **+** marker in the 3D view so you can see and pick them; you can delete user-placed markers from the selection. Geometry that exists only as automatic **edge midpoints** for snapping is separate (those nodes are not shown the same way; controlled by the **Add midpoints to new linear edges** setting in Settings > Sketch, default off).
 
 ### How to use
 
@@ -938,7 +942,7 @@ The create sketch from planar face tool allows you to extract the boundary of a 
 3. **Sketch Created**: A new sketch is automatically created with:
    - The face boundary as the initial wire
    - The sketch plane aligned with the face plane
-   - A permanent **Origin** **+** marker at the **center of the face boundary's bounding box** (a fixed reference on the sketch plane)
+   - A permanent **Origin** marker (**cyan + inside a circle**) at the **center of the face boundary's bounding box** (a fixed reference on the sketch plane)
    - The sketch name set to "Sketch from face"
 4. **Edit Sketch**: You can now edit the sketch using standard sketch tools (add edges, modify geometry, etc.)
 

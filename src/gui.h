@@ -84,6 +84,8 @@ inline constexpr int k_gui_edge_dim_text_render_mode_max     = k_gui_edge_dim_te
 inline constexpr float k_gui_permanent_node_anno_scale_min     = 0.25f;
 inline constexpr float k_gui_permanent_node_anno_scale_max     = 3.0f;
 inline constexpr float k_gui_permanent_node_anno_scale_default = 1.0f;
+
+inline constexpr float k_gui_origin_marker_color_default[3] = {0.0f, 0.75f, 1.0f};
 /// Allowed range and default for `gui.view_roll_step_deg` (view roll and numpad orbit steps; must match Settings slider).
 inline constexpr double k_gui_view_roll_step_deg_min     = 0.1;
 inline constexpr double k_gui_view_roll_step_deg_max     = 180.0;
@@ -169,6 +171,8 @@ public:
   void apply_sketch_dimensions_visibility();
   /// Scale factor for permanent sketch-node '+' annotations.
   float permanent_node_anno_scale() const { return m_permanent_node_anno_scale; }
+  /// RGB color for the active sketch's origin marker (0-1 per channel).
+  const float* origin_marker_color_rgb() const { return m_origin_marker_color; }
   bool  get_add_mid_pt_line_edges() const { return m_add_mid_pt_line_edges; }
   bool  get_add_mid_pt_rect_edges() const { return m_add_mid_pt_rect_edges; }
   bool  get_add_mid_pt_slot_edges() const { return m_add_mid_pt_slot_edges; }
@@ -189,8 +193,10 @@ public:
   void   set_angle_edit(float angle, std::function<void(float, bool)>&& callback,
                         const std::optional<ScreenCoords> screen_coords = std::nullopt);
   void   hide_angle_edit();
+  void   hide_sketch_origin_set_edit(bool apply = true);
   /// True when dist or angle edit is visible; Tab should be routed to on_key() instead of ImGui.
   bool is_dist_or_angle_edit_active() const;
+  bool is_sketch_origin_set_edit_active() const;
   void show_message(const std::string& message);
   void log_message(const std::string& message);
   void set_show_options(bool v) { m_show_options = v; }
@@ -260,11 +266,14 @@ private:
   };
   void dist_edit_();
   void angle_edit_();
+  void sketch_origin_set_edit_();
+  void open_sketch_origin_set_edit_(const std::shared_ptr<Sketch>& sk, int plane_idx, double v_min, double v_max);
   void on_left_click_(const ScreenCoords& screen_coords);
   void sketch_list_();
   void sketch_list_inspector_(const std::shared_ptr<Sketch>& sketch, int index, std::shared_ptr<Sketch>& hover_sketch,
                               size_t& hover_dim_index);
   void sketch_properties_dialog_();
+  void sketch_origin_panel_settings_(const std::shared_ptr<Sketch>& sk);
   void shape_list_();
   void shape_info_dialog_();
   void open_shape_info_(const Shp_ptr& shape);
@@ -427,6 +436,8 @@ private:
   int          m_edge_dim_text_render_mode  = k_gui_edge_dim_text_render_mode_default;
   bool         m_show_sketch_dimensions     = true;
   float        m_permanent_node_anno_scale  = k_gui_permanent_node_anno_scale_default;
+  float        m_origin_marker_color[3]   = {k_gui_origin_marker_color_default[0], k_gui_origin_marker_color_default[1],
+                                               k_gui_origin_marker_color_default[2]};
   bool         m_add_mid_pt_line_edges      = false;
   bool         m_add_mid_pt_rect_edges      = true;
   bool         m_add_mid_pt_slot_edges      = false;
@@ -510,6 +521,17 @@ private:
   float                 m_imgui_rounding_tabs{0.f};
   bool                  m_sketch_properties_open{false};
   std::weak_ptr<Sketch> m_sketch_properties_sketch;
+
+  // Sketch origin value input (properties pane Set button)
+  std::weak_ptr<Sketch>        m_sketch_origin_set_sketch;
+  int                          m_sketch_origin_set_plane_idx{-1};
+  double                       m_sketch_origin_set_v_min{0.0};
+  double                       m_sketch_origin_set_v_max{0.0};
+  std::array<char, 64>         m_sketch_origin_set_text_buf{};
+  bool                         m_sketch_origin_set_focus_pending{false};
+  ImVec2                       m_sketch_origin_set_loc{};
+  void*                        m_sketch_origin_panel_sketch{nullptr};
+  double                       m_sketch_origin_xy[2]{0.0, 0.0};
 
   // Sketch underlay related
   void*                 m_underlay_panel_sketch{nullptr};
