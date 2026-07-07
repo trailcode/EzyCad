@@ -45,6 +45,9 @@ TopoDS_Wire create_wire_box(const gp_Pln& plane, const gp_Pnt& position, double 
 /// Two perpendicular segments forming a + on \a plane, centered at \a center_3d, half-length \a half_arm (model units).
 TopoDS_Shape create_plus_cross_shape(const gp_Pln& plane, const gp_Pnt& center_3d, double half_arm);
 
+/// Sketch origin marker: + cross with a surrounding circle on \a plane (model units).
+TopoDS_Shape create_origin_marker_shape(const gp_Pln& plane, const gp_Pnt& center_3d, double half_arm);
+
 TopoDS_Wire make_square_wire(const gp_Pln& pln, const gp_Pnt2d& center, const gp_Pnt2d& edge_midpoint);
 
 std::array<gp_Pnt2d, 4> square_corners(const gp_Pnt2d& center, const gp_Pnt2d& edge_midpoint);

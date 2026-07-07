@@ -289,14 +289,14 @@ For detailed information on creating 2D geometry, see the [2D Sketching](usage-s
 
 #### Sketch origin (permanent reference point)
 
-Every sketch has exactly one **Origin**: a fixed point on the sketch plane, shown as a red **+** marker in sketch mode (same style as user-placed [Add node](usage-sketch.md#add-node-tool) points, but you cannot delete it).
+Every sketch has exactly one **Origin**: a fixed point on the sketch plane, shown as a **+ inside a circle** on the **active sketch only** in sketch mode (distinct from red **+** [Add node](usage-sketch.md#add-node-tool) markers on visible sketches; you cannot delete the Origin).
 
 | | |
 | ---: | --- |
 | **Reference-plane sketch** | Origin at plane coordinates **(0, 0)**. |
 | **Sketch from planar face** | Origin at the **bounding-box center** of the extracted face boundary. |
 | **Sketch List** | Listed as **Origin** under **Nodes** when you expand a sketch row. |
-| **Sketch properties** | **[P]** on the sketch row: **Origin** **X** / **Y** and **Reset to default**. |
+| **Sketch properties** | **[P]** on the sketch row: **Show origin marker**, **Position** sliders with **Set**, for typed values. |
 | **Snapping** | Full vertex and axis snap; other visible sketches' origins are snap targets too. |
 
 Full details (marker size, operational-axis visibility, tips): **[Sketch origin](usage-sketch.md#sketch-origin)** in the 2D sketching guide.

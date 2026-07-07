@@ -43,7 +43,7 @@ See [Sketch origin](#sketch-origin) — every sketch includes one permanent refe
 (sketch-origin)=
 ## Sketch origin
 
-**Every sketch has exactly one Origin** — a fixed reference point on the sketch plane, shown as a red **+** marker (a **permanent node**, not placed with a tool) whenever the sketch is visible in sketch mode (and in tools such as **polar duplicate** that snap to sketch nodes).
+**Every sketch has exactly one Origin** — a fixed reference point on the sketch plane, shown as a **+ inside a circle** on the **active sketch only** (a **permanent node**, not placed with a tool) whenever that sketch is visible in sketch mode (and in tools such as **polar duplicate** that snap to sketch nodes). User-placed [Add node](#add-node-tool) points use a red **+** without a circle on every visible sketch. Color is set in **Settings -> Sketch -> Origin marker color**.
 
 | | |
 | ---: | --- |
@@ -54,13 +54,14 @@ See [Sketch origin](#sketch-origin) — every sketch includes one permanent refe
 | **Snapping** | Acts like any other sketch vertex: axis guides, vertex lock, and distance snap apply. Origins from **other visible sketches** are also snap targets on the current plane. |
 | **Cannot delete** | Unlike [Add node](#add-node-tool) points, the Origin cannot be removed from the selection. |
 | **Marker size** | **Settings -> Sketch -> Permanent node annotation size** (`permanent_node_anno_scale`; see [usage-settings.md](usage-settings.md#settings-file-reference)). |
-| **Sketch properties** | **Sketch List -> [P]** — edit **Origin** **X** / **Y** (sketch plane coordinates) or **Reset to default**. Changes are undoable. |
+| **Marker color** | **Settings -> Sketch -> Origin marker color** (`origin_marker_color`; active sketch only). |
+| **Sketch properties** | **Sketch List -> [P]** — **Show origin marker**, **Position** sliders (range follows the current view) with **Set** for typed values. |
 
 **Tips**
 
 - Use the Origin as a stable anchor when you need a known center (especially on [face-derived](#create-sketch-from-planar-face-tool) sketches).
 - If the **+** is hard to see, increase **Permanent node annotation size** in Settings.
-- Open **Sketch properties** (**[P]** on the sketch row) to set **Origin** **X** / **Y** or **Reset to default** (plane `(0, 0)` or face bbox center).
+- Open **Sketch properties** (**[P]** on the sketch row) to drag **X** / **Y** sliders (view-relative range) or use **Set** beside each slider, type a value, and press **Enter**.
 - While an **operational axis** is active in mirror/revolve phase, **+** markers (including Origin) are temporarily hidden so edge and face selection stays clear; they return when you **Clear axis** or leave that mode.
 
 ## Sketch snapping
@@ -885,9 +886,9 @@ In both cases, Add node never leaves a **permanent edge** between two clicks the
 
 ### Permanent “+” markers
 
-Each sketch includes a built-in **Origin** (see [Sketch origin](#sketch-origin)) — always shown as a permanent **+** when the sketch is visible.
+Each sketch includes a built-in **Origin** (see [Sketch origin](#sketch-origin)) — shown as a permanent **+ inside a circle** on the **active sketch** when enabled in **Sketch properties**.
 
-Nodes you place with **Add node** are treated as **user-placed** points. When the sketch is visible, eligible points can show the same small **+** marker in the 3D view so you can see and pick them; you can delete user-placed markers from the selection. Geometry that exists only as automatic **edge midpoints** for snapping is separate (those nodes are not shown the same way; controlled by the **Add midpoints to new linear edges** setting in Settings > Sketch, default off).
+Nodes you place with **Add node** are treated as **user-placed** points. When the sketch is visible, eligible points can show a red **+** marker in the 3D view so you can see and pick them; you can delete user-placed markers from the selection. Geometry that exists only as automatic **edge midpoints** for snapping is separate (those nodes are not shown the same way; controlled by the **Add midpoints to new linear edges** setting in Settings > Sketch, default off).
 
 ### How to use
 
@@ -941,7 +942,7 @@ The create sketch from planar face tool allows you to extract the boundary of a 
 3. **Sketch Created**: A new sketch is automatically created with:
    - The face boundary as the initial wire
    - The sketch plane aligned with the face plane
-   - A permanent **Origin** **+** marker at the **center of the face boundary's bounding box** (a fixed reference on the sketch plane)
+   - A permanent **Origin** marker (**cyan + inside a circle**) at the **center of the face boundary's bounding box** (a fixed reference on the sketch plane)
    - The sketch name set to "Sketch from face"
 4. **Edit Sketch**: You can now edit the sketch using standard sketch tools (add edges, modify geometry, etc.)
 

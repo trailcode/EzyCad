@@ -186,7 +186,10 @@ void Sketch::set_current()
     }
 
   sync_operation_axis_display_();
-  m_node_marks.sync();
+
+  for (Sketch_ptr& sketch : m_view.get_sketches())
+    if (sketch->is_visible())
+      sketch->m_node_marks.sync();
 }
 
 void Sketch::set_edge_style(Edge_style style)

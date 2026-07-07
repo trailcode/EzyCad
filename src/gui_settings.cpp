@@ -40,6 +40,7 @@ std::string GUI::occt_view_settings_json() const
       {"edge_dim_arrow_orientation", m_edge_dim_arrow_orientation},
       {"show_sketch_dimensions", m_show_sketch_dimensions},
       {k_gui_key_permanent_node_anno_scale, m_permanent_node_anno_scale},
+      {"origin_marker_color", {m_origin_marker_color[0], m_origin_marker_color[1], m_origin_marker_color[2]}},
       {"add_mid_pt_edges", m_add_mid_pt_line_edges},
       {"add_mid_pt_rect_edges", m_add_mid_pt_rect_edges},
       {"add_mid_pt_slot_edges", m_add_mid_pt_slot_edges},
@@ -105,6 +106,7 @@ void GUI::save_occt_view_settings()
       {"edge_dim_arrow_orientation", m_edge_dim_arrow_orientation},
       {"show_sketch_dimensions", m_show_sketch_dimensions},
       {k_gui_key_permanent_node_anno_scale, m_permanent_node_anno_scale},
+      {"origin_marker_color", {m_origin_marker_color[0], m_origin_marker_color[1], m_origin_marker_color[2]}},
       {"add_mid_pt_edges", m_add_mid_pt_line_edges},
       {"add_mid_pt_rect_edges", m_add_mid_pt_rect_edges},
       {"add_mid_pt_slot_edges", m_add_mid_pt_slot_edges},
@@ -312,6 +314,14 @@ void GUI::parse_gui_panes_settings_(const std::string& content)
       for (int i = 0; i < 3; ++i)
         if (a[i].is_number())
           m_edge_dim_color[i] = std::clamp(a[i].get<float>(), 0.f, 1.f);
+    }
+
+    if (g.contains("origin_marker_color") && g["origin_marker_color"].is_array() && g["origin_marker_color"].size() >= 3)
+    {
+      const json& a = g["origin_marker_color"];
+      for (int i = 0; i < 3; ++i)
+        if (a[i].is_number())
+          m_origin_marker_color[i] = std::clamp(a[i].get<float>(), 0.f, 1.f);
     }
 
     if (g.contains("edge_dim_arrow_style") && g["edge_dim_arrow_style"].is_number_integer())
@@ -1129,6 +1139,20 @@ void GUI::settings_()
 
         ImGui::SameLine(0.0f, ImGui::GetStyle().ItemInnerSpacing.x);
         GUI_DOC_HELP_("Scale for '+' markers on the sketch Origin and Add node points. Click ? to open the user guide.",
+                      doc_urls::k_sketch_origin);
+      }
+
+      ImGui::TableNextRow();
+      ImGui::TableSetColumnIndex(0);
+      ImGui::AlignTextToFramePadding();
+      ImGui::TextUnformatted("Origin marker color");
+      ImGui::TableSetColumnIndex(1);
+      {
+        if (ImGui::ColorEdit3("##origin_marker_color", m_origin_marker_color, ImGuiColorEditFlags_Float))
+          node_anno_changed = true;
+
+        ImGui::SameLine(0.0f, ImGui::GetStyle().ItemInnerSpacing.x);
+        GUI_DOC_HELP_("Color for the active sketch's Origin marker (+ with circle). Click ? to open the user guide.",
                       doc_urls::k_sketch_origin);
       }
 

@@ -425,6 +425,17 @@ void Sketch::set_origin_pt(const gp_Pnt2d& pt)
 
 void Sketch::reset_origin_pt() { set_origin_pt(default_origin_pt_()); }
 
+bool Sketch::show_origin_marker() const { return m_show_origin_marker; }
+
+void Sketch::set_show_origin_marker(bool show)
+{
+  if (m_show_origin_marker == show)
+    return;
+
+  m_show_origin_marker = show;
+  m_node_marks.sync();
+}
+
 gp_Pnt Sketch::to_3d_(size_t node_idx) const { return to_3d(m_pln, m_nodes[node_idx]); }
 
 gp_Pnt Sketch::to_3d_(const std::optional<size_t>& node_idx) const

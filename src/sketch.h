@@ -145,6 +145,8 @@ public:
   [[nodiscard]] gp_Pnt2d default_origin_pt() const;
   void                   set_origin_pt(const gp_Pnt2d& pt);
   void                   reset_origin_pt();
+  [[nodiscard]] bool     show_origin_marker() const;
+  void                   set_show_origin_marker(bool show);
 
   static void set_add_mid_pt_edges(bool on);
   static bool get_add_mid_pt_edges();
@@ -252,4 +254,5 @@ private:
   Sketch_tools      m_tools;
   Sketch_underlay   m_underlay;
   bool              m_show_faces{true};
+  bool              m_show_origin_marker{true};
 };

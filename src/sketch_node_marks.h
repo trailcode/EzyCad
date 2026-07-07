@@ -22,7 +22,7 @@ public:
 private:
   friend class Sketch_delta;
 
-  void apply_style_(AIS_Shape_ptr& shp) const;
+  void apply_style_(AIS_Shape_ptr& shp, bool origin) const;
 
   Sketch&                               m_sketch;
   std::vector<Sketch_AIS_node_mark_ptr> m_marks;

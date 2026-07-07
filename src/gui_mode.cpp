@@ -306,6 +306,7 @@ void GUI::on_key(int key, int scancode, int action, int mods)
     case GLFW_KEY_ESCAPE:
       cancel_underlay_calib_();
       m_view->cancel(Set_parent_mode::Yes);
+      hide_sketch_origin_set_edit(false);
       hide_dist_edit();
       hide_angle_edit();
       break;
@@ -322,6 +323,7 @@ void GUI::on_key(int key, int scancode, int action, int mods)
     }
 
     case GLFW_KEY_ENTER:
+      hide_sketch_origin_set_edit(true);
       hide_dist_edit();
       hide_angle_edit();
       m_view->on_enter(screen_coords);
