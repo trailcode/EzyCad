@@ -57,7 +57,7 @@ public:
   void hide_snap_annos();
 
   /// When false, the sketch origin node is omitted from snap targets (see `Sketch::show_origin_marker`).
-  void set_origin_snap_enabled(bool enabled);
+  void               set_origin_snap_enabled(bool enabled);
   [[nodiscard]] bool origin_snap_enabled() const;
 
   Node&       operator[](size_t idx);

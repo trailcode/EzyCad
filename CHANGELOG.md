@@ -10,6 +10,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### UI layout
 
 - **ImGui docking:** Panels (Sketch List, Shape List, Options, Log, consoles, and similar) can be docked, tabbed, and split inside the main window. On desktop, panels can also be dragged into separate OS windows. The web build supports in-canvas docking only. Saved layout in settings includes dock nodes; older installs without a `[Docking]` section get a default layout on first launch.
+- **Settings -> UI:** **Dark mode** and separate **Dark theme** / **Light theme** ImGui controls (window transparency, rounding, borders, padding, spacing). Legacy `imgui_rounding_*` keys migrate to both themes on load.
 
 ### Project format (`.ezy`)
 

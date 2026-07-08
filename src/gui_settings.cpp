@@ -19,6 +19,98 @@ const char* const k_settings_version                  = "1";
 const char* const k_gui_key_permanent_node_anno_scale = "permanent_node_anno_scale";
 
 nlohmann::json build_occt_view_settings_object_(const Occt_view& view);
+
+nlohmann::json imgui_style_to_json(const Gui_imgui_style_settings& s)
+{
+  return nlohmann::json{{"rounding_general", s.rounding_general}, {"rounding_scroll", s.rounding_scroll},
+                        {"rounding_tabs", s.rounding_tabs},       {"window_alpha", s.window_alpha},
+                        {"window_border", s.window_border},       {"frame_border", s.frame_border},
+                        {"window_padding_x", s.window_padding_x}, {"window_padding_y", s.window_padding_y},
+                        {"frame_padding_x", s.frame_padding_x},   {"frame_padding_y", s.frame_padding_y},
+                        {"item_spacing_x", s.item_spacing_x},     {"item_spacing_y", s.item_spacing_y}};
+}
+
+void parse_imgui_style_json(const nlohmann::json& obj, const Gui_imgui_style_settings& defaults, Gui_imgui_style_settings& out)
+{
+  auto f = [&obj](const char* key, float fallback) -> float
+  {
+    if (obj.contains(key) && obj[key].is_number())
+    {
+      const float v = obj[key].get<float>();
+      if (v >= 0.f && v <= 32.f)
+        return v;
+    }
+
+    return fallback;
+  };
+
+  out.rounding_general = f("rounding_general", defaults.rounding_general);
+  out.rounding_scroll  = f("rounding_scroll", defaults.rounding_scroll);
+  out.rounding_tabs    = f("rounding_tabs", defaults.rounding_tabs);
+  out.window_alpha =
+      std::clamp(f("window_alpha", defaults.window_alpha), k_gui_imgui_window_alpha_min, k_gui_imgui_window_alpha_max);
+  out.window_border    = std::clamp(f("window_border", defaults.window_border), 0.f, k_gui_imgui_border_slider_max);
+  out.frame_border     = std::clamp(f("frame_border", defaults.frame_border), 0.f, k_gui_imgui_border_slider_max);
+  out.window_padding_x = std::clamp(f("window_padding_x", defaults.window_padding_x), 0.f, k_gui_imgui_padding_slider_max);
+  out.window_padding_y = std::clamp(f("window_padding_y", defaults.window_padding_y), 0.f, k_gui_imgui_padding_slider_max);
+  out.frame_padding_x  = std::clamp(f("frame_padding_x", defaults.frame_padding_x), 0.f, k_gui_imgui_padding_slider_max);
+  out.frame_padding_y  = std::clamp(f("frame_padding_y", defaults.frame_padding_y), 0.f, k_gui_imgui_padding_slider_max);
+  out.item_spacing_x   = std::clamp(f("item_spacing_x", defaults.item_spacing_x), 0.f, k_gui_imgui_spacing_slider_max);
+  out.item_spacing_y   = std::clamp(f("item_spacing_y", defaults.item_spacing_y), 0.f, k_gui_imgui_spacing_slider_max);
+}
+
+bool settings_imgui_style_controls_(float label_col_w, Gui_imgui_style_settings& style, const char* id_prefix)
+{
+  bool changed = false;
+  if (!ImGui::BeginTable(id_prefix, 2, ImGuiTableFlags_SizingStretchProp))
+    return false;
+
+  ImGui::TableSetupColumn("label", ImGuiTableColumnFlags_WidthFixed, label_col_w);
+  ImGui::TableSetupColumn("control", ImGuiTableColumnFlags_WidthStretch);
+
+  auto section = [&](const char* title)
+  {
+    ImGui::TableNextRow();
+    ImGui::TableSetColumnIndex(0);
+    ImGui::SeparatorText(title);
+  };
+
+  auto slider = [&](const char* label, const char* id, float* v, float v_min, float v_max, const char* fmt)
+  {
+    ImGui::TableNextRow();
+    ImGui::TableSetColumnIndex(0);
+    ImGui::AlignTextToFramePadding();
+    ImGui::TextUnformatted(label);
+    ImGui::TableSetColumnIndex(1);
+    changed |= ImGui::SliderFloat(id, v, v_min, v_max, fmt);
+  };
+
+  section("Transparency");
+  slider("Window transparency", "##win_alpha", &style.window_alpha, k_gui_imgui_window_alpha_min, k_gui_imgui_window_alpha_max,
+         "%.2f");
+
+  section("Rounding");
+  slider("Windows, frames, popups", "##round_gen", &style.rounding_general, 0.f, k_gui_imgui_rounding_slider_max, "%.0f");
+  slider("Scrollbars and sliders", "##round_scr", &style.rounding_scroll, 0.f, k_gui_imgui_rounding_slider_max, "%.0f");
+  slider("Tabs", "##round_tabs", &style.rounding_tabs, 0.f, k_gui_imgui_rounding_slider_max, "%.0f");
+
+  section("Borders");
+  slider("Window border", "##win_border", &style.window_border, 0.f, k_gui_imgui_border_slider_max, "%.1f");
+  slider("Frame border", "##frame_border", &style.frame_border, 0.f, k_gui_imgui_border_slider_max, "%.1f");
+
+  section("Padding");
+  slider("Window padding X", "##win_pad_x", &style.window_padding_x, 0.f, k_gui_imgui_padding_slider_max, "%.0f");
+  slider("Window padding Y", "##win_pad_y", &style.window_padding_y, 0.f, k_gui_imgui_padding_slider_max, "%.0f");
+  slider("Frame padding X", "##frame_pad_x", &style.frame_padding_x, 0.f, k_gui_imgui_padding_slider_max, "%.0f");
+  slider("Frame padding Y", "##frame_pad_y", &style.frame_padding_y, 0.f, k_gui_imgui_padding_slider_max, "%.0f");
+
+  section("Spacing");
+  slider("Item spacing X", "##item_sp_x", &style.item_spacing_x, 0.f, k_gui_imgui_spacing_slider_max, "%.0f");
+  slider("Item spacing Y", "##item_sp_y", &style.item_spacing_y, 0.f, k_gui_imgui_spacing_slider_max, "%.0f");
+
+  ImGui::EndTable();
+  return changed;
+}
 } // namespace
 
 void GUI::set_ui_verbosity(int v) { m_ui_verbosity = std::max(k_gui_ui_verbosity_min, v); }
@@ -112,9 +204,8 @@ void GUI::save_occt_view_settings()
       {"add_mid_pt_slot_edges", m_add_mid_pt_slot_edges},
       {"load_last_opened_on_startup", m_load_last_opened_on_startup},
       {"last_opened_project_path", m_last_opened_project_path},
-      {"imgui_rounding_general", m_imgui_rounding_general},
-      {"imgui_rounding_scroll", m_imgui_rounding_scroll},
-      {"imgui_rounding_tabs", m_imgui_rounding_tabs},
+      {"imgui_style_dark", imgui_style_to_json(m_imgui_style_dark)},
+      {"imgui_style_light", imgui_style_to_json(m_imgui_style_light)},
       {"view_roll_step_deg", m_view_roll_step_deg},
       {"view_zoom_scroll_scale", m_view_zoom_scroll_scale},
       {"inspection_orthographic", m_inspection_orthographic},
@@ -357,22 +448,46 @@ void GUI::parse_gui_panes_settings_(const std::string& content)
     else if (g.contains("last_saved_project_path") && g["last_saved_project_path"].is_string())
       m_last_opened_project_path = g["last_saved_project_path"].get<std::string>();
 
-    float fb_general = 0.f, fb_scroll = 0.f, fb_tabs = 0.f;
-    imgui_rounding_fallbacks_from_theme_(fb_general, fb_scroll, fb_tabs);
-    auto round_from_json = [&g](const char* key, float fallback) -> float
-    {
-      if (g.contains(key) && g[key].is_number())
-      {
-        const float v = g[key].get<float>();
-        if (v >= 0.f && v <= 32.f)
-          return v;
-      }
-      return fallback;
-    };
+    Gui_imgui_style_settings dark_defaults{};
+    Gui_imgui_style_settings light_defaults{};
+    imgui_style_defaults_from_theme_(true, dark_defaults);
+    imgui_style_defaults_from_theme_(false, light_defaults);
+    m_imgui_style_dark  = dark_defaults;
+    m_imgui_style_light = light_defaults;
 
-    m_imgui_rounding_general = round_from_json("imgui_rounding_general", fb_general);
-    m_imgui_rounding_scroll  = round_from_json("imgui_rounding_scroll", fb_scroll);
-    m_imgui_rounding_tabs    = round_from_json("imgui_rounding_tabs", fb_tabs);
+    if (g.contains("imgui_style_dark") && g["imgui_style_dark"].is_object())
+      parse_imgui_style_json(g["imgui_style_dark"], dark_defaults, m_imgui_style_dark);
+
+    if (g.contains("imgui_style_light") && g["imgui_style_light"].is_object())
+      parse_imgui_style_json(g["imgui_style_light"], light_defaults, m_imgui_style_light);
+
+    const bool has_nested_imgui_style = (g.contains("imgui_style_dark") && g["imgui_style_dark"].is_object()) ||
+                                        (g.contains("imgui_style_light") && g["imgui_style_light"].is_object());
+    if (!has_nested_imgui_style)
+    {
+      auto round_from_json = [&g](const char* key, float fallback) -> float
+      {
+        if (g.contains(key) && g[key].is_number())
+        {
+          const float v = g[key].get<float>();
+          if (v >= 0.f && v <= 32.f)
+            return v;
+        }
+        return fallback;
+      };
+
+      const bool has_legacy_rounding =
+          g.contains("imgui_rounding_general") || g.contains("imgui_rounding_scroll") || g.contains("imgui_rounding_tabs");
+      if (has_legacy_rounding)
+      {
+        const float gen                     = round_from_json("imgui_rounding_general", dark_defaults.rounding_general);
+        const float scroll                  = round_from_json("imgui_rounding_scroll", dark_defaults.rounding_scroll);
+        const float tabs                    = round_from_json("imgui_rounding_tabs", dark_defaults.rounding_tabs);
+        m_imgui_style_dark.rounding_general = m_imgui_style_light.rounding_general = gen;
+        m_imgui_style_dark.rounding_scroll = m_imgui_style_light.rounding_scroll = scroll;
+        m_imgui_style_dark.rounding_tabs = m_imgui_style_light.rounding_tabs = tabs;
+      }
+    }
 
     m_view_roll_step_deg = k_gui_view_roll_step_deg_default;
     if (g.contains("view_roll_step_deg") && g["view_roll_step_deg"].is_number())
@@ -639,9 +754,6 @@ void GUI::settings_()
     ImGui::TextWrapped("0 = minimal UI. Odd values add more controls and panes; even values add more help (tooltips and "
                        "hints). Higher values are reserved for future tiers.");
 
-  if (ImGui::Checkbox("Dark mode", &m_dark_mode))
-    save_occt_view_settings();
-
   if (ImGui::CollapsingHeader("3D view navigation", ImGuiTreeNodeFlags_DefaultOpen))
   {
     if (ImGui::BeginTable("settings_view_nav", 2, ImGuiTableFlags_SizingStretchProp))
@@ -704,41 +816,15 @@ void GUI::settings_()
           "Hold Shift while scrolling or pressing +/- for finer zoom.");
   }
 
-  if (ui_show_feature(3) && ImGui::CollapsingHeader("UI corner rounding"))
+  if (ImGui::CollapsingHeader("UI", ImGuiTreeNodeFlags_DefaultOpen))
   {
-    bool r_changed = false;
-    if (ImGui::BeginTable("settings_rounding", 2, ImGuiTableFlags_SizingStretchProp))
-    {
-      ImGui::TableSetupColumn("label", ImGuiTableColumnFlags_WidthFixed, k_label_col_w);
-      ImGui::TableSetupColumn("control", ImGuiTableColumnFlags_WidthStretch);
+    bool ui_changed = false;
+    if (ImGui::Checkbox("Dark mode", &m_dark_mode))
+      ui_changed = true;
 
-      ImGui::TableNextRow();
-      ImGui::TableSetColumnIndex(0);
-      ImGui::AlignTextToFramePadding();
-      ImGui::TextUnformatted("Windows, frames, popups");
-      ImGui::TableSetColumnIndex(1);
-      r_changed |= ImGui::SliderFloat("##round_gen", &m_imgui_rounding_general, 0.f, 16.f, "%.0f");
+    ui_changed |= settings_imgui_style_controls_(k_label_col_w, imgui_style_active_(), "settings_ui");
 
-      ImGui::TableNextRow();
-      ImGui::TableSetColumnIndex(0);
-      ImGui::AlignTextToFramePadding();
-      ImGui::TextUnformatted("Scrollbars and sliders");
-      ImGui::TableSetColumnIndex(1);
-      r_changed |= ImGui::SliderFloat("##round_scr", &m_imgui_rounding_scroll, 0.f, 16.f, "%.0f");
-      ImGui::SameLine(0.0f, ImGui::GetStyle().ItemInnerSpacing.x);
-      GUI_DOC_HELP_("Scrollbars and sliders applies the same radius to scrollbar tracks and slider grabs.", nullptr);
-
-      ImGui::TableNextRow();
-      ImGui::TableSetColumnIndex(0);
-      ImGui::AlignTextToFramePadding();
-      ImGui::TextUnformatted("Tabs");
-      ImGui::TableSetColumnIndex(1);
-      r_changed |= ImGui::SliderFloat("##round_tabs", &m_imgui_rounding_tabs, 0.f, 16.f, "%.0f");
-
-      ImGui::EndTable();
-    }
-
-    if (r_changed)
+    if (ui_changed)
       save_occt_view_settings();
   }
 
@@ -1478,30 +1564,54 @@ void GUI::elm_list_hover_color_rgba(uint8_t& r, uint8_t& g, uint8_t& b, uint8_t&
   a = to_u8(m_elm_list_hover_color[3]);
 }
 
-void GUI::imgui_rounding_fallbacks_from_theme_(float& general, float& scroll, float& tabs) const
+void GUI::imgui_style_defaults_from_theme_(bool dark, Gui_imgui_style_settings& out) const
 {
   ImGuiStyle s;
-  if (m_dark_mode)
+  if (dark)
     ImGui::StyleColorsDark(&s);
   else
     ImGui::StyleColorsLight(&s);
 
   s.ScaleAllSizes(ImGui::GetStyle().FontScaleDpi);
-  general = s.WindowRounding;
-  scroll  = s.ScrollbarRounding;
-  tabs    = s.TabRounding;
+  out.rounding_general = s.WindowRounding;
+  out.rounding_scroll  = s.ScrollbarRounding;
+  out.rounding_tabs    = s.TabRounding;
+  out.window_alpha     = s.Colors[ImGuiCol_WindowBg].w;
+  out.window_border    = s.WindowBorderSize;
+  out.frame_border     = s.FrameBorderSize;
+  out.window_padding_x = s.WindowPadding.x;
+  out.window_padding_y = s.WindowPadding.y;
+  out.frame_padding_x  = s.FramePadding.x;
+  out.frame_padding_y  = s.FramePadding.y;
+  out.item_spacing_x   = s.ItemSpacing.x;
+  out.item_spacing_y   = s.ItemSpacing.y;
 }
 
-void GUI::apply_imgui_rounding_from_members_()
+const Gui_imgui_style_settings& GUI::imgui_style_active_() const
 {
-  ImGuiStyle& st       = ImGui::GetStyle();
-  st.WindowRounding    = m_imgui_rounding_general;
-  st.ChildRounding     = m_imgui_rounding_general;
-  st.FrameRounding     = m_imgui_rounding_general;
-  st.PopupRounding     = m_imgui_rounding_general;
-  st.ScrollbarRounding = m_imgui_rounding_scroll;
-  st.GrabRounding      = m_imgui_rounding_scroll;
-  st.TabRounding       = m_imgui_rounding_tabs;
+  return m_dark_mode ? m_imgui_style_dark : m_imgui_style_light;
+}
+
+Gui_imgui_style_settings& GUI::imgui_style_active_() { return m_dark_mode ? m_imgui_style_dark : m_imgui_style_light; }
+
+void GUI::apply_imgui_style_from_members_()
+{
+  const Gui_imgui_style_settings& style = imgui_style_active_();
+  ImGuiStyle&                     st    = ImGui::GetStyle();
+  st.WindowRounding                     = style.rounding_general;
+  st.ChildRounding                      = style.rounding_general;
+  st.FrameRounding                      = style.rounding_general;
+  st.PopupRounding                      = style.rounding_general;
+  st.ScrollbarRounding                  = style.rounding_scroll;
+  st.GrabRounding                       = style.rounding_scroll;
+  st.TabRounding                        = style.rounding_tabs;
+  st.WindowBorderSize                   = style.window_border;
+  st.FrameBorderSize                    = style.frame_border;
+  st.WindowPadding                      = ImVec2(style.window_padding_x, style.window_padding_y);
+  st.FramePadding                       = ImVec2(style.frame_padding_x, style.frame_padding_y);
+  st.ItemSpacing                        = ImVec2(style.item_spacing_x, style.item_spacing_y);
+  st.Colors[ImGuiCol_WindowBg].w        = style.window_alpha;
+  st.Colors[ImGuiCol_PopupBg].w         = style.window_alpha;
 }
 
 namespace

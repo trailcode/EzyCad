@@ -87,9 +87,13 @@ Dear ImGui **docking branch** (`third_party/imgui`, tag `v1.92.7-docking`) is ve
 
 Initialization in [`main.cpp`](../main.cpp): config flags, native-only `UpdatePlatformWindows` / `RenderPlatformWindowsDefault` after the main draw pass.
 
-Each frame, [`gui.cpp`](../gui.cpp) `dock_space_()` calls `DockSpaceOverViewport` with `ImGuiDockNodeFlags_PassthruCentralNode` so mouse input in the empty center reaches OCCT (`io.WantCaptureMouse` gating in `main`). OCCT still renders full-frame behind ImGui; dock nodes are UI overlays only.
+With `ViewportsEnable`, ImGui `MousePos` is in screen coordinates; OCCT picking uses GLFW client-area coordinates via `GUI::cursor_screen_coords()` (see `on_mouse_button` and the `main` cursor callback). Do not pass ImGui `MousePos` to `Occt_view` on native builds.
 
-Default dock layout (left: Shape/Sketch lists tabbed, right: Options, bottom: Log) is seeded once via `DockBuilder*` when loaded `imgui_ini` has no `[Docking]` section (`m_seed_default_dock_layout` in `gui_settings.cpp`).
+In [`main.cpp`](../main.cpp), GLFW mouse callbacks forward to `GUI` only when the cursor is in the dock central passthrough region **and** no ImGui window is hovered (so toolbar clicks over the 3D view do not clear OCCT selection).
+
+Each frame, [`gui.cpp`](../gui.cpp) `dock_space_()` calls `DockSpaceOverViewport` with `ImGuiDockNodeFlags_PassthruCentralNode` so mouse input in the empty center reaches OCCT. `dock_space_()` records the central passthrough rectangle and calls `SetNextFrameWantCaptureMouse(false)` when the cursor is over it.
+
+Default dock layout (left: Shape/Sketch lists tabbed, right: Options, bottom: Log) is seeded once via `DockBuilder*` when loaded `imgui_ini` has no `[Docking]` section (`m_seed_default_dock_layout` in `gui_settings.cpp`). The Toolbar uses `ImGuiWindowFlags_NoDocking` so it cannot occupy the central passthrough node.
 
 Overlay popups (`FloatEdit`, `AngleEdit`, `MessageStatus`, modals) keep `NoSavedSettings` and do not participate in docking.
 

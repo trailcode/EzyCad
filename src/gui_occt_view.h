@@ -140,7 +140,7 @@ public:
   void         adopt_sketch_id(size_t id);
   void         remove_sketch(const Sketch_ptr& sketch);
   /// Empty sketch on \a pln; \a base_name is uniquified (e.g. Sketch_xy, Sketch_xy.001).
-  void       add_sketch(const gp_Pln& pln, const std::string& base_name);
+  void add_sketch(const gp_Pln& pln, const std::string& base_name);
   /// Like add_sketch; \a offset_display is multiplied by get_dimension_scale().
   void       add_sketch_on_ref_plane(Sketch_ref_plane plane, double offset_display, const std::string& base_name);
   void       curr_sketch_add_edge(double x1, double y1, double x2, double y2);
@@ -331,6 +331,7 @@ private:
   // static void errorCallback(int theError, const char* theDescription);
   static Aspect_VKeyMouse mouse_button_from_glfw_(int theButton);
   static Aspect_VKeyFlags key_flags_from_glfw_(int theFlags);
+  Aspect_VKeyFlags        key_flags_from_glfw_window_() const;
 
   /// Maps wheel delta to OCCT zoom units using \ref m_zoom_scroll_scale and optional Shift (x0.1).
   int zoom_scroll_delta_int_(double wheel_y, bool shift_finer_zoom) const;

@@ -123,7 +123,7 @@ public:
   void clear_outside_snap_pnts();
   void add_outside_snap_pnt(const gp_Pnt& pt3d);
 
-  void set_origin_snap_enabled(bool enabled) { m_origin_snap_enabled = enabled; }
+  void               set_origin_snap_enabled(bool enabled) { m_origin_snap_enabled = enabled; }
   [[nodiscard]] bool origin_snap_enabled() const { return m_origin_snap_enabled; }
 
 private:

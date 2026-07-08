@@ -1,6 +1,7 @@
 #include "shp_operation.h"
 
 #include <Graphic3d_MaterialAspect.hxx>
+#include <unordered_set>
 
 #include "gui_occt_view.h"
 
@@ -17,10 +18,12 @@ AIS_InteractiveContext& Shp_operation_base::ctx() { return view().ctx(); }
 
 std::vector<Shp_ptr> Shp_operation_base::get_selected_shps_() const
 {
-  std::vector<Shp_ptr> ret;
+  std::vector<Shp_ptr>           ret;
+  std::unordered_set<const Shp*> seen;
   for (AIS_Shape_ptr& obj : m_view.get_selected())
-    if (auto shp = Shp_ptr::DownCast(obj); shp)
-      ret.push_back(shp);
+    if (Shp_ptr shp = Shp_ptr::DownCast(obj); !shp.IsNull())
+      if (seen.insert(shp.get()).second)
+        ret.push_back(shp);
 
   return ret;
 }
@@ -39,14 +42,11 @@ Status Shp_operation_base::ensure_operation_shps_()
 
 [[nodiscard]] Status Shp_operation_base::ensure_operation_multi_shps_()
 {
-  if (m_shps.empty())
+  m_shps = get_selected_shps_();
+  if (m_shps.size() < 2)
   {
-    m_shps = get_selected_shps_();
-    if (m_shps.size() < 2)
-    {
-      m_shps.clear();
-      return Status::user_error("Select two or more shapes.");
-    }
+    m_shps.clear();
+    return Status::user_error("Select two or more shapes.");
   }
 
   return Status::ok();

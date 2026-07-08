@@ -150,7 +150,7 @@ void Occt_view::init_viewer()
   m_ctx = new AIS_InteractiveContext(aViewer);
 #else // __EMSCRIPTEN__
   Handle(Aspect_DisplayConnection) aDisp;
-  Handle(OpenGl_GraphicDriver) aDriver   = new OpenGl_GraphicDriver(aDisp, false);
+  Handle(OpenGl_GraphicDriver) aDriver        = new OpenGl_GraphicDriver(aDisp, false);
   aDriver->ChangeOptions().buffersNoSwap      = true; // swap has no effect in WebGL
   aDriver->ChangeOptions().buffersOpaqueAlpha = true; // avoid unexpected blending of canvas with page background
   // Match native OpenGL path (sRGBDisable) so shading/material gamma is consistent vs desktop.
@@ -204,15 +204,15 @@ void Occt_view::init_viewer()
 #endif
 
   m_view->SetImmediateUpdate(false);
-  auto& params               = m_view->ChangeRenderingParams();
-  params.ToShowStats         = true;
-  params.ShadowMapResolution = 1024;
-  params.OitDepthFactor      = 0.0;
-  params.Resolution              = (unsigned int)(96.0 * myDevicePixelRatio + 0.5);
-  params.NbMsaaSamples           = 8;
-  params.RenderResolutionScale   = 2.0;
-  params.IsShadowEnabled         = true;
-  params.TransparencyMethod      = Graphic3d_RTM_BLEND_UNORDERED;
+  auto& params                 = m_view->ChangeRenderingParams();
+  params.ToShowStats           = true;
+  params.ShadowMapResolution   = 1024;
+  params.OitDepthFactor        = 0.0;
+  params.Resolution            = (unsigned int)(96.0 * myDevicePixelRatio + 0.5);
+  params.NbMsaaSamples         = 8;
+  params.RenderResolutionScale = 2.0;
+  params.IsShadowEnabled       = true;
+  params.TransparencyMethod    = Graphic3d_RTM_BLEND_UNORDERED;
 
   capture_occt_grid_rect_from_viewer_(aViewer);
 
@@ -1671,7 +1671,7 @@ void Occt_view::on_mouse_move(const ScreenCoords& screen_coords)
 {
   EZY_ASSERT(!m_view.IsNull());
   UpdateMousePosition(NCollection_Vec2<int>(int(screen_coords.unsafe_get_x()), int(screen_coords.unsafe_get_y())),
-                      PressedMouseButtons(), LastMouseFlags(), false);
+                      PressedMouseButtons(), key_flags_from_glfw_window_(), false);
 }
 
 // Selection related
@@ -2068,6 +2068,28 @@ Aspect_VKeyFlags Occt_view::key_flags_from_glfw_(int theFlags)
   if ((theFlags & GLFW_MOD_SUPER)   != 0) flags |= Aspect_VKeyFlags_META;
   // clang-format on
   return flags;
+}
+
+Aspect_VKeyFlags Occt_view::key_flags_from_glfw_window_() const
+{
+  if (m_occt_window.IsNull() || m_occt_window->getGlfwWindow() == nullptr)
+    return Aspect_VKeyFlags_NONE;
+
+  GLFWwindow* const window = m_occt_window->getGlfwWindow();
+  int               mods   = 0;
+  if (glfwGetKey(window, GLFW_KEY_LEFT_SHIFT) == GLFW_PRESS || glfwGetKey(window, GLFW_KEY_RIGHT_SHIFT) == GLFW_PRESS)
+    mods |= GLFW_MOD_SHIFT;
+
+  if (glfwGetKey(window, GLFW_KEY_LEFT_CONTROL) == GLFW_PRESS || glfwGetKey(window, GLFW_KEY_RIGHT_CONTROL) == GLFW_PRESS)
+    mods |= GLFW_MOD_CONTROL;
+
+  if (glfwGetKey(window, GLFW_KEY_LEFT_ALT) == GLFW_PRESS || glfwGetKey(window, GLFW_KEY_RIGHT_ALT) == GLFW_PRESS)
+    mods |= GLFW_MOD_ALT;
+
+  if (glfwGetKey(window, GLFW_KEY_LEFT_SUPER) == GLFW_PRESS || glfwGetKey(window, GLFW_KEY_RIGHT_SUPER) == GLFW_PRESS)
+    mods |= GLFW_MOD_SUPER;
+
+  return key_flags_from_glfw_(mods);
 }
 
 Occt_view::Sketch_list& Occt_view::get_sketches() { return m_sketches; }
