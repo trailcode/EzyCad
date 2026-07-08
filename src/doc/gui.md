@@ -10,7 +10,7 @@ Maintainers: update this file when GUI input routing, mode/options behavior, set
 
 Typical responsibilities:
 
-- ImGui frame: menu bar, toolbar, Sketch List, Shape List, Options, Settings, dist/angle popups.
+- ImGui frame: menu bar, dock space (passthrough central node for 3D input), toolbar, Sketch List, Shape List, Options, Settings, dist/angle popups.
 - Mode switching (`Mode` enum in [`mode.h`](../mode.h)) and parent-mode Esc behavior.
 - Persisted preferences (`ezycad_settings.json` via [`gui_settings.cpp`](../gui_settings.cpp)).
 - Project I/O (`.ezy` load/save, import/export dialogs).
@@ -75,6 +75,23 @@ GUI (gui.h / gui.cpp)
 ```
 
 CMake IDE group: `src\gui` (files matching `gui*` or `occt*` prefix).
+
+## ImGui docking and viewports
+
+Dear ImGui **docking branch** (`third_party/imgui`, tag `v1.92.7-docking`) is vendored with `IMGUI_HAS_DOCK`.
+
+| Platform | Flags | Behavior |
+| --- | --- | --- |
+| Native | `DockingEnable`, `ViewportsEnable` | In-canvas dock/tab/split; panels may detach to OS windows |
+| WASM | `DockingEnable` only | In-canvas docking inside `#canvas` |
+
+Initialization in [`main.cpp`](../main.cpp): config flags, native-only `UpdatePlatformWindows` / `RenderPlatformWindowsDefault` after the main draw pass.
+
+Each frame, [`gui.cpp`](../gui.cpp) `dock_space_()` calls `DockSpaceOverViewport` with `ImGuiDockNodeFlags_PassthruCentralNode` so mouse input in the empty center reaches OCCT (`io.WantCaptureMouse` gating in `main`). OCCT still renders full-frame behind ImGui; dock nodes are UI overlays only.
+
+Default dock layout (left: Shape/Sketch lists tabbed, right: Options, bottom: Log) is seeded once via `DockBuilder*` when loaded `imgui_ini` has no `[Docking]` section (`m_seed_default_dock_layout` in `gui_settings.cpp`).
+
+Overlay popups (`FloatEdit`, `AngleEdit`, `MessageStatus`, modals) keep `NoSavedSettings` and do not participate in docking.
 
 ## Input routing (GLFW -> `GUI` -> downstream)
 

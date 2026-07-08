@@ -157,6 +157,10 @@ int main(int argc, char** argv)
   (void)io;
   io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard; // Enable Keyboard Controls
   io.ConfigFlags |= ImGuiConfigFlags_NavEnableGamepad;  // Enable Gamepad Controls
+  io.ConfigFlags |= ImGuiConfigFlags_DockingEnable;
+#ifndef __EMSCRIPTEN__
+  io.ConfigFlags |= ImGuiConfigFlags_ViewportsEnable;
+#endif
 
   // Setup Dear ImGui style
   ImGui::StyleColorsDark();
@@ -168,6 +172,10 @@ int main(int argc, char** argv)
                                    // this requires resetting Style + calling this again)
   style.FontScaleDpi = main_scale; // Set initial font scale. (in docking branch: using io.ConfigDpiScaleFonts=true
                                    // automatically overrides this for every window depending on the current monitor)
+#ifndef __EMSCRIPTEN__
+  if (io.ConfigFlags & ImGuiConfigFlags_ViewportsEnable)
+    style.WindowRounding = 0.0f;
+#endif
 
   // Setup Platform/Renderer backends
   ImGui_ImplGlfw_InitForOpenGL(window, true);
@@ -316,6 +324,14 @@ int main(int argc, char** argv)
     gui.render_occt();
 
     ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
+
+#ifndef __EMSCRIPTEN__
+    if (io.ConfigFlags & ImGuiConfigFlags_ViewportsEnable)
+    {
+      ImGui::UpdatePlatformWindows();
+      ImGui::RenderPlatformWindowsDefault();
+    }
+#endif
 
     glfwSwapBuffers(window);
 

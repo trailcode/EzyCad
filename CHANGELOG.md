@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### UI layout
+
+- **ImGui docking:** Panels (Sketch List, Shape List, Options, Log, consoles, and similar) can be docked, tabbed, and split inside the main window. On desktop, panels can also be dragged into separate OS windows. The web build supports in-canvas docking only. Saved layout in settings includes dock nodes; older installs without a `[Docking]` section get a default layout on first launch.
+
 ### Project format (`.ezy`)
 
 - **Format v3:** Saved projects are a ZIP archive (`manifest.json` plus deduplicated `assets/*.rgba` underlay blobs). Sketch underlays reference assets by content hash instead of inline base64. Legacy plain-JSON `.ezy` files (v1/v2, including `rgba_b64` underlays) still load. Document snapshots for undo/redo reference shared assets rather than re-embedding pixel data.

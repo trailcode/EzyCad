@@ -566,7 +566,10 @@ void GUI::load_occt_view_settings_()
     {
       const std::string& ini = j["imgui_ini"].get<std::string>();
       if (!ini.empty())
+      {
         ImGui::LoadIniSettingsFromMemory(ini.c_str(), ini.size());
+        m_seed_default_dock_layout = (ini.find("[Docking]") == std::string::npos);
+      }
     }
   }
   catch (...)
@@ -1429,7 +1432,10 @@ void GUI::settings_()
         {
           const std::string& ini = j["imgui_ini"].get<std::string>();
           if (!ini.empty())
+          {
             ImGui::LoadIniSettingsFromMemory(ini.c_str(), ini.size());
+            m_seed_default_dock_layout = (ini.find("[Docking]") == std::string::npos);
+          }
         }
 
         show_message("Default settings applied.");

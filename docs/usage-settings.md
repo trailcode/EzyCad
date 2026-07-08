@@ -136,7 +136,11 @@ String **`"1"`**. If the version is missing or does not match, the app replaces 
 
 ### `imgui_ini`
 
-String: ImGui `.ini` text for window positions and docking saved with **SaveIniSettingsToMemory**. Loaded with **LoadIniSettingsFromMemory** on startup.
+String: ImGui `.ini` text for window layout and docking saved with **SaveIniSettingsToMemory**. Loaded with **LoadIniSettingsFromMemory** on startup. Includes dock-node data when panels have been docked or tabbed.
+
+Panels (Sketch List, Shape List, Options, Log, consoles, and similar) can be dragged to dock edges, tabbed together, or split. On desktop, panels can also be dragged outside the main window into separate OS windows. The web build supports the same in-canvas docking inside the browser canvas only. The 3D view stays in the central passthrough region of the main window; it is not moved into dock nodes.
+
+If saved layout text has no `[Docking]` section (older installs), a default dock layout is applied once on next launch.
 
 ### `occt_view`
 

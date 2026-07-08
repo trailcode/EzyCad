@@ -325,6 +325,7 @@ private:
   void load_examples_list_();
   void load_default_project_();
   void menu_bar_();
+  void dock_space_();
   void toolbar_();
   void message_status_window_();
 
@@ -398,6 +399,7 @@ private:
 
   // Settings (gui_settings.cpp)
   void load_occt_view_settings_();
+  void seed_default_dock_layout_(ImGuiID dockspace_id);
   void parse_occt_view_settings_(const std::string& content);
   void parse_gui_panes_settings_(const std::string& content);
   void apply_imgui_rounding_from_members_();
@@ -405,6 +407,7 @@ private:
 
   Occt_view::uptr m_view;
   GLFWwindow*     m_glfw_window{nullptr};
+  bool            m_seed_default_dock_layout{true};
   std::string     m_cached_window_title;
 
   // Sketch segment manual length input related

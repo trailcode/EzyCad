@@ -23,6 +23,7 @@
 
 #include "utl_geom.h"
 #include "imgui.h"
+#include "imgui_internal.h"
 #include "utl_log.h"
 #include "scr_lua_console.h"
 #include "gui_occt_view.h"
@@ -132,6 +133,7 @@ void GUI::render_gui()
   apply_imgui_rounding_from_members_();
 
   menu_bar_();
+  dock_space_();
   toolbar_();
   dist_edit_();
   angle_edit_();
@@ -220,6 +222,37 @@ void GUI::load_examples_list_()
 
   std::sort(m_example_files.begin(), m_example_files.end(),
             [](const Example_file& a, const Example_file& b) { return a.label < b.label; });
+}
+
+void GUI::seed_default_dock_layout_(ImGuiID dockspace_id)
+{
+  ImGui::DockBuilderRemoveNode(dockspace_id);
+  ImGui::DockBuilderAddNode(dockspace_id, ImGuiDockNodeFlags_DockSpace | ImGuiDockNodeFlags_PassthruCentralNode);
+  ImGui::DockBuilderSetNodeSize(dockspace_id, ImGui::GetMainViewport()->WorkSize);
+
+  ImGuiID dock_main    = dockspace_id;
+  ImGuiID dock_left    = ImGui::DockBuilderSplitNode(dock_main, ImGuiDir_Left, 0.20f, nullptr, &dock_main);
+  ImGuiID dock_right   = ImGui::DockBuilderSplitNode(dock_main, ImGuiDir_Right, 0.22f, nullptr, &dock_main);
+  ImGuiID dock_bottom  = ImGui::DockBuilderSplitNode(dock_main, ImGuiDir_Down, 0.12f, nullptr, &dock_main);
+  ImGuiID dock_left_bottom = 0;
+  ImGuiID dock_left_top    = ImGui::DockBuilderSplitNode(dock_left, ImGuiDir_Down, 0.52f, &dock_left_bottom, &dock_left);
+
+  ImGui::DockBuilderDockWindow("Shape List", dock_left_top);
+  ImGui::DockBuilderDockWindow("Sketch List", dock_left_bottom);
+  ImGui::DockBuilderDockWindow("Options", dock_right);
+  ImGui::DockBuilderDockWindow("Log", dock_bottom);
+  ImGui::DockBuilderFinish(dockspace_id);
+}
+
+void GUI::dock_space_()
+{
+  const ImGuiID dockspace_id = ImGui::DockSpaceOverViewport(
+      ImGui::GetID("EzyCadMainDockSpace"), ImGui::GetMainViewport(), ImGuiDockNodeFlags_PassthruCentralNode);
+  if (m_seed_default_dock_layout)
+  {
+    seed_default_dock_layout_(dockspace_id);
+    m_seed_default_dock_layout = false;
+  }
 }
 
 void GUI::menu_bar_()
