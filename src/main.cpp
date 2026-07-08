@@ -248,7 +248,9 @@ int main(int argc, char** argv)
   {
     ImGui_ImplGlfw_KeyCallback(window, key, scancode, action, mods);
 
-    if (!io.WantTextInput)
+    const bool route_escape_from_dim_edit =
+        key == GLFW_KEY_ESCAPE && action == GLFW_PRESS && gui.is_dist_or_angle_edit_active();
+    if (!io.WantTextInput || route_escape_from_dim_edit)
       gui.on_key(key, scancode, action, mods);
   };
 

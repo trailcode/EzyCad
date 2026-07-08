@@ -217,7 +217,7 @@ std::optional<size_t> Sketch_nodes::Impl::try_pick_existing_node(const ScreenCoo
   double         best_sq   = std::numeric_limits<double>::max();
   for (size_t idx = 0, num = m_nodes.size(); idx < num; ++idx)
   {
-    if (!node_snap_eligible_(m_nodes[idx]) || m_nodes[idx].origin)
+    if (!node_snap_eligible_(m_nodes[idx]))
       continue;
 
     const double sq = m_nodes[idx].SquareDistance(pt);

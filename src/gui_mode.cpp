@@ -305,10 +305,10 @@ void GUI::on_key(int key, int scancode, int action, int mods)
     {
     case GLFW_KEY_ESCAPE:
       cancel_underlay_calib_();
-      m_view->cancel(Set_parent_mode::Yes);
       hide_sketch_origin_set_edit(false);
-      hide_dist_edit();
-      hide_angle_edit();
+      hide_dist_edit(false);
+      hide_angle_edit(false);
+      m_view->cancel(Set_parent_mode::Yes);
       break;
 
     case GLFW_KEY_TAB:

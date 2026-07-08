@@ -471,13 +471,15 @@ void Sketch_dims::check_dimension_rubber_()
   }
 
   EZY_ASSERT(mode == Mode::Sketch_add_node);
-  const size_t b = m_sketch.m_nodes.get_node_exact(*m_sketch.m_tools.last_pt(), true);
-  clear_all(m_entered_edge_len);
 
   Sketch_op_recorder rec(m_sketch.m_view, m_sketch);
   {
+    const size_t b = m_sketch.m_nodes.get_node_exact(*m_sketch.m_tools.last_pt(), true);
+    clear_all(m_entered_edge_len);
+
     rec.note_curr_node(b);
     m_sketch.m_topo.split_linear_edges_at_node_if_interior(b, rec);
+    m_sketch.m_topo.split_arcs_at_node_if_interior(b, rec);
 
     m_sketch.m_tools.clear_tmp_node_idxs();
     m_sketch.m_tools.clear_tmps();

@@ -215,10 +215,10 @@ public:
   void   set_parent_mode();   // gui_mode.cpp
   void   set_dist_edit(float dist, std::function<void(float, bool)>&& callback,
                        const std::optional<ScreenCoords> screen_coords = std::nullopt);
-  void   hide_dist_edit();
+  void   hide_dist_edit(bool apply = true);
   void   set_angle_edit(float angle, std::function<void(float, bool)>&& callback,
                         const std::optional<ScreenCoords> screen_coords = std::nullopt);
-  void   hide_angle_edit();
+  void   hide_angle_edit(bool apply = true);
   void   hide_sketch_origin_set_edit(bool apply = true);
   /// True when dist or angle edit is visible; Tab should be routed to on_key() instead of ImGui.
   bool is_dist_or_angle_edit_active() const;

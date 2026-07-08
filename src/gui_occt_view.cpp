@@ -2623,7 +2623,8 @@ AIS_InteractiveContext& Occt_view::ctx() { return *m_ctx; }
 
 void Occt_view::new_file()
 {
-  push_undo_snapshot();
+  m_undo_stack.clear();
+  m_redo_stack.clear();
   remove(m_shps);
   clear_all(m_shps, m_sketches, m_cur_sketch);
   m_assets.clear();

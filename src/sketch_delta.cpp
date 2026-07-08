@@ -87,6 +87,7 @@ public:
   static void remove_arc_edge_(Sketch& sketch, const Arc_edge_record& rec);
   static void remove_length_dim_(Sketch& sketch, const Length_dim_record& rec);
   static void tombstone_node_at_pt_(Sketch& sketch, const gp_Pnt2d& pt);
+  static void restore_curr_node_at_pt_(Sketch& sketch, const gp_Pnt2d& pt);
   static void restore_prev_linear_edge_(Sketch& sketch, const Prev_edge_rec& rec);
   static void restore_length_dim_(Sketch& sketch, const Length_dim_record& rec);
   static void restore_prev_operation_axis_(Sketch& sketch, const Prev_edge_rec& rec);
@@ -447,6 +448,10 @@ void Sketch_delta::Impl::apply_forward_(Sketch& sketch) const
   if (curr_operation_axis.has_value())
     sketch.sketch_json_set_operation_axis_(curr_operation_axis->pt_a, curr_operation_axis->pt_b);
 
+  for (const gp_Pnt2d& pt : curr_node_pts)
+    restore_curr_node_at_pt_(sketch, pt);
+
+  sketch.m_node_marks.sync();
   sketch.m_nodes.hide_snap_annos();
   sketch.update_faces_();
 }
@@ -633,6 +638,13 @@ void Sketch_delta::Impl::tombstone_node_at_pt_(Sketch& sketch, const gp_Pnt2d& p
     sketch.m_node_marks.remove_at(i);
     return;
   }
+}
+
+void Sketch_delta::Impl::restore_curr_node_at_pt_(Sketch& sketch, const gp_Pnt2d& pt)
+{
+  const size_t node_idx = sketch.m_nodes.get_node_exact(pt, true);
+  sketch.m_topo.split_linear_edges_at_node_if_interior(node_idx);
+  sketch.m_topo.split_arcs_at_node_if_interior(node_idx);
 }
 
 void Sketch_delta::Impl::restore_prev_linear_edge_(Sketch& sketch, const Prev_edge_rec& rec)

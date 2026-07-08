@@ -789,20 +789,19 @@ void GUI::set_dist_edit(float dist, std::function<void(float, bool)>&& callback,
     m_dist_edit_focus_pending = true;
 }
 
-void GUI::hide_dist_edit()
+void GUI::hide_dist_edit(bool apply)
 {
-  if (m_dist_callback)
-  {
-    float parsed{};
-    if (parse_dist_text_to_float_(m_dist_text_buf.data(), parsed))
-      m_dist_val = parsed;
+  if (!m_dist_callback)
+    return;
 
-    // In case the callback sets a new m_dist_callback
-    std::function<void(float, bool)> callback;
-    std::swap(callback, m_dist_callback);
-    // In case just enter was pressed, or the callback needs to finalize something
+  float parsed{};
+  if (parse_dist_text_to_float_(m_dist_text_buf.data(), parsed))
+    m_dist_val = parsed;
+
+  std::function<void(float, bool)> callback;
+  std::swap(callback, m_dist_callback);
+  if (apply)
     callback(m_dist_val, true);
-  }
 }
 
 void GUI::dist_edit_()
@@ -839,6 +838,12 @@ void GUI::dist_edit_()
 
   if (ImGui::IsItemDeactivatedAfterEdit() && m_dist_callback)
   {
+    if (ImGui::IsKeyPressed(ImGuiKey_Escape))
+    {
+      hide_dist_edit(false);
+      return;
+    }
+
     float parsed{};
     if (parse_dist_text_to_float_(m_dist_text_buf.data(), parsed))
       m_dist_val = parsed;
@@ -871,18 +876,19 @@ void GUI::set_angle_edit(float angle, std::function<void(float, bool)>&& callbac
     m_angle_edit_focus_pending = true;
 }
 
-void GUI::hide_angle_edit()
+void GUI::hide_angle_edit(bool apply)
 {
-  if (m_angle_callback)
-  {
-    float parsed{};
-    if (parse_dist_text_to_float_(m_angle_text_buf.data(), parsed))
-      m_angle_val = parsed;
+  if (!m_angle_callback)
+    return;
 
-    std::function<void(float, bool)> callback;
-    std::swap(callback, m_angle_callback);
+  float parsed{};
+  if (parse_dist_text_to_float_(m_angle_text_buf.data(), parsed))
+    m_angle_val = parsed;
+
+  std::function<void(float, bool)> callback;
+  std::swap(callback, m_angle_callback);
+  if (apply)
     callback(m_angle_val, true);
-  }
 }
 
 bool GUI::is_dist_or_angle_edit_active() const { return m_dist_callback != nullptr || m_angle_callback != nullptr; }
@@ -993,6 +999,12 @@ void GUI::angle_edit_()
 
   if (ImGui::IsItemDeactivatedAfterEdit() && m_angle_callback)
   {
+    if (ImGui::IsKeyPressed(ImGuiKey_Escape))
+    {
+      hide_angle_edit(false);
+      return;
+    }
+
     float parsed{};
     if (parse_dist_text_to_float_(m_angle_text_buf.data(), parsed))
       m_angle_val = parsed;
