@@ -365,8 +365,7 @@ void Sketch_dims::offer_angle_edit_for_segment(const gp_Pnt2d& pt_a, const gp_Pn
   {
     m_entered_edge_angle = new_angle;
     m_show_angle_input   = !is_finial;
-    const ScreenCoords current_pos(dvec2(ImGui::GetIO().MousePos.x, ImGui::GetIO().MousePos.y));
-    m_sketch.sketch_pt_move(current_pos);
+    m_sketch.sketch_pt_move(m_sketch.m_view.gui().cursor_screen_coords());
   };
 
   const float angle_to_show = m_entered_edge_angle.has_value() ? float(*m_entered_edge_angle) : float(current_angle_deg);

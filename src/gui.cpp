@@ -781,7 +781,7 @@ void GUI::set_dist_edit(float dist, std::function<void(float, bool)>&& callback,
     if (screen_coords.has_value())
       m_dist_edit_loc = *screen_coords;
     else
-      m_dist_edit_loc = ScreenCoords(dvec2(ImGui::GetIO().MousePos.x, ImGui::GetIO().MousePos.y));
+      m_dist_edit_loc = cursor_screen_coords();
   }
 
   m_dist_callback = std::move(callback);
@@ -820,7 +820,7 @@ void GUI::dist_edit_()
   // Begin a window with minimal flags
   ImGui::Begin("FloatEdit##unique_id", nullptr,
                ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_AlwaysAutoResize |
-                   ImGuiWindowFlags_NoSavedSettings);
+                   ImGuiWindowFlags_NoSavedSettings | ImGuiWindowFlags_NoMouseInputs);
 
   ImGui::SetNextItemWidth(100.0f);
   // Focusing every frame prevents IsItemDeactivatedAfterEdit (click away / Tab) from ever committing.
@@ -863,7 +863,7 @@ void GUI::set_angle_edit(float angle, std::function<void(float, bool)>&& callbac
     if (screen_coords.has_value())
       m_angle_edit_loc = *screen_coords;
     else
-      m_angle_edit_loc = ScreenCoords(dvec2(ImGui::GetIO().MousePos.x, ImGui::GetIO().MousePos.y));
+      m_angle_edit_loc = cursor_screen_coords();
   }
 
   m_angle_callback = std::move(callback);
@@ -976,7 +976,7 @@ void GUI::angle_edit_()
   // Begin a window with minimal flags
   ImGui::Begin("AngleEdit##unique_id", nullptr,
                ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_AlwaysAutoResize |
-                   ImGuiWindowFlags_NoSavedSettings);
+                   ImGuiWindowFlags_NoSavedSettings | ImGuiWindowFlags_NoMouseInputs);
 
   ImGui::SetNextItemWidth(100.0f);
   if (m_angle_edit_focus_pending)
@@ -2057,7 +2057,7 @@ void GUI::underlay_calib_prompt_x_distance_(const Sketch::sptr& sk)
   m_underlay_calib_phase       = Underlay_calib_phase::AwaitDistX;
   const double       L_model   = m_underlay_calib_x0.Distance(m_underlay_calib_x1);
   const float        dist_show = static_cast<float>(L_model / m_view->get_dimension_scale());
-  const ScreenCoords spos(dvec2(ImGui::GetIO().MousePos.x, ImGui::GetIO().MousePos.y));
+  const ScreenCoords spos = cursor_screen_coords();
 
   Sketch::wptr wk      = sk;
   auto         on_dist = [this, wk](float new_dist, bool is_final)
@@ -2115,7 +2115,7 @@ void GUI::underlay_calib_prompt_y_distance_(const Sketch::sptr& sk)
   m_underlay_calib_phase       = Underlay_calib_phase::AwaitDistY;
   const double       L_model   = m_underlay_calib_y0.Distance(m_underlay_calib_y1);
   const float        dist_show = static_cast<float>(L_model / m_view->get_dimension_scale());
-  const ScreenCoords spos(dvec2(ImGui::GetIO().MousePos.x, ImGui::GetIO().MousePos.y));
+  const ScreenCoords spos = cursor_screen_coords();
 
   Sketch::wptr wk      = sk;
   auto         on_dist = [this, wk](float new_dist, bool is_final)

@@ -252,14 +252,14 @@ int main(int argc, char** argv)
       gui.on_key(key, scancode, action, mods);
   };
 
-  const auto forward_mouse_to_gui = [&]()
+  const auto forward_mouse_click_to_gui = [&]()
   {
     const float mx = (float)io.MousePos.x;
     const float my = (float)io.MousePos.y;
     if (!gui.occt_wants_mouse_at(mx, my))
       return false;
 
-    // Passthrough 3D region: forward unless an ImGui window (e.g. floating Toolbar) is hovered.
+    // Passthrough 3D region: forward clicks unless an ImGui window (e.g. floating Toolbar) is hovered.
     if (ImGui::IsWindowHovered(ImGuiHoveredFlags_AnyWindow))
       return false;
 
@@ -269,14 +269,13 @@ int main(int argc, char** argv)
   cursorPosCallback = [&](GLFWwindow* window, double xpos, double ypos)
   {
     ImGui_ImplGlfw_CursorPosCallback(window, xpos, ypos);
-    if (forward_mouse_to_gui())
-      gui.on_mouse_pos(ScreenCoords(dvec2(xpos, ypos)));
+    gui.on_mouse_pos(ScreenCoords(dvec2(xpos, ypos)));
   };
 
   mouseButtonCallback = [&](GLFWwindow* window, int button, int action, int mods)
   {
     ImGui_ImplGlfw_MouseButtonCallback(window, button, action, mods);
-    if (forward_mouse_to_gui())
+    if (forward_mouse_click_to_gui())
       gui.on_mouse_button(button, action, mods);
   };
 
@@ -288,7 +287,7 @@ int main(int argc, char** argv)
   scroll_callback = [&](GLFWwindow* window, double xoffset, double yoffset)
   {
     ImGui_ImplGlfw_ScrollCallback(window, xoffset, yoffset);
-    if (forward_mouse_to_gui())
+    if (forward_mouse_click_to_gui())
       gui.on_mouse_scroll(xoffset, yoffset);
   };
 

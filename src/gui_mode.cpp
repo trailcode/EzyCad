@@ -237,7 +237,7 @@ void GUI::on_key(int key, int scancode, int action, int mods)
     // clang-format on
   }
 
-  const ScreenCoords screen_coords(dvec2(ImGui::GetIO().MousePos.x, ImGui::GetIO().MousePos.y));
+  const ScreenCoords screen_coords = cursor_screen_coords();
 
   bool ctrl_pressed = (mods & GLFW_MOD_CONTROL) != 0;
   if (ctrl_pressed)
@@ -1126,7 +1126,7 @@ float GUI::options_sketch_label_col_w_() const
 
 void GUI::on_key_rotate_mode_(int key)
 {
-  const ScreenCoords screen_coords(dvec2(ImGui::GetIO().MousePos.x, ImGui::GetIO().MousePos.y));
+  const ScreenCoords screen_coords = cursor_screen_coords();
 
   switch (key)
   {
@@ -1173,7 +1173,7 @@ void GUI::on_key_rotate_mode_(int key)
 void GUI::on_key_move_mode_(int key)
 {
   Move_options&      opts = m_view->shp_move().get_opts();
-  const ScreenCoords screen_coords(dvec2(ImGui::GetIO().MousePos.x, ImGui::GetIO().MousePos.y));
+  const ScreenCoords screen_coords = cursor_screen_coords();
 
   switch (key)
   {

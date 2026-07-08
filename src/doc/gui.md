@@ -89,7 +89,7 @@ Initialization in [`main.cpp`](../main.cpp): config flags, native-only `UpdatePl
 
 With `ViewportsEnable`, ImGui `MousePos` is in screen coordinates; OCCT picking uses GLFW client-area coordinates via `GUI::cursor_screen_coords()` (see `on_mouse_button` and the `main` cursor callback). Do not pass ImGui `MousePos` to `Occt_view` on native builds.
 
-In [`main.cpp`](../main.cpp), GLFW mouse callbacks forward to `GUI` only when the cursor is in the dock central passthrough region **and** no ImGui window is hovered (so toolbar clicks over the 3D view do not clear OCCT selection).
+In [`main.cpp`](../main.cpp), GLFW **mouse-move** callbacks always forward to `GUI` (sketch rubber-band and OCCT hover must not stop when a float edit or docked panel is hovered). **Mouse-button** and **scroll** callbacks forward only when the cursor is in the dock central passthrough region and no ImGui window is hovered (so toolbar clicks do not clear OCCT selection).
 
 Each frame, [`gui.cpp`](../gui.cpp) `dock_space_()` calls `DockSpaceOverViewport` with `ImGuiDockNodeFlags_PassthruCentralNode` so mouse input in the empty center reaches OCCT. `dock_space_()` records the central passthrough rectangle and calls `SetNextFrameWantCaptureMouse(false)` when the cursor is over it.
 
