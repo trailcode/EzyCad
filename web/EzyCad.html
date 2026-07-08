@@ -88,8 +88,8 @@
     <script type='text/javascript'>
       (function() {
         // Bump when publishing new EzyCad.js / .wasm / .data to GitHub Pages (cache bust).
-        // Updated for v0.2.0 (version in title + About, Options ? help, full Tab/Shift+Tab per tool, etc.)
-        var EZYCAD_WEB_CACHE = '0.2.0-20260613';
+        // Updated for v0.2.0 wasm HiDPI docking scale fix (startup resize resync + no double DPR).
+        var EZYCAD_WEB_CACHE = '0.2.0-20260708';
 
         var splash = document.getElementById('ezycad-splash');
         var statusEl = document.getElementById('ezycad-splash-status');
@@ -161,6 +161,6 @@
         console.log("onerror: " + event);
       };
     </script>
-    <script type="text/javascript" src="EzyCad.js?v=0.1.0-20260522" charset="utf-8"></script>
+    <script type="text/javascript" src="EzyCad.js?v=0.2.0-20260708" charset="utf-8"></script>
   </body>
 </html>

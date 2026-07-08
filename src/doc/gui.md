@@ -83,7 +83,7 @@ Dear ImGui **docking branch** (`third_party/imgui`, tag `v1.92.7-docking`) is ve
 | Platform | Flags | Behavior |
 | --- | --- | --- |
 | Native | `DockingEnable`, `ViewportsEnable` | In-canvas dock/tab/split; panels may detach to OS windows |
-| WASM | `DockingEnable` only | In-canvas docking inside `#canvas` |
+| WASM | (none) | Fixed panel layout inside `#canvas` (no docking); proportions match the native default dock split |
 
 Initialization in [`main.cpp`](../main.cpp): config flags, native-only `UpdatePlatformWindows` / `RenderPlatformWindowsDefault` after the main draw pass.
 
@@ -91,9 +91,9 @@ With `ViewportsEnable`, ImGui `MousePos` is in screen coordinates; OCCT picking 
 
 In [`main.cpp`](../main.cpp), GLFW **mouse-move** callbacks always forward to `GUI` (sketch rubber-band and OCCT hover must not stop when a float edit or docked panel is hovered). **Mouse-button** and **scroll** callbacks forward only when the cursor is in the dock central passthrough region and no ImGui window is hovered (so toolbar clicks do not clear OCCT selection).
 
-Each frame, [`gui.cpp`](../gui.cpp) `dock_space_()` calls `DockSpaceOverViewport` with `ImGuiDockNodeFlags_PassthruCentralNode` so mouse input in the empty center reaches OCCT. `dock_space_()` records the central passthrough rectangle and calls `SetNextFrameWantCaptureMouse(false)` when the cursor is over it.
+Each frame, [`gui.cpp`](../gui.cpp) `dock_space_()` sets the OCCT passthrough rectangle. On native builds it uses `DockSpaceOverViewport` with `ImGuiDockNodeFlags_PassthruCentralNode`. On WASM, the same fractions are applied with fixed `SetNextWindowPos` / `SetNextWindowSize` in `wasm_layout_prepare_panel_()` (panels are not docked or draggable). `dock_space_()` calls `SetNextFrameWantCaptureMouse(false)` when the cursor is over the passthrough region.
 
-Default dock layout (left: Shape/Sketch lists tabbed, right: Options, bottom: Log) is seeded once via `DockBuilder*` when loaded `imgui_ini` has no `[Docking]` section (`m_seed_default_dock_layout` in `gui_settings.cpp`). The Toolbar uses `ImGuiWindowFlags_NoDocking` so it cannot occupy the central passthrough node.
+Default dock layout (left: Shape/Sketch lists tabbed, right: Options, bottom: Log) is seeded once via `DockBuilder*` when loaded `imgui_ini` has no `[Docking]` section (`m_seed_default_dock_layout` in `gui_settings.cpp`, native only). WASM uses the same proportions without persisting `imgui_ini`. The Toolbar uses `ImGuiWindowFlags_NoDocking` on native so it cannot occupy the central passthrough node.
 
 Overlay popups (`FloatEdit`, `AngleEdit`, `MessageStatus`, modals) keep `NoSavedSettings` and do not participate in docking.
 
