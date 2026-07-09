@@ -1218,21 +1218,40 @@ void ImGui_ImplGlfw_Sleep(int milliseconds)
 }
 
 #ifdef EMSCRIPTEN_USE_EMBEDDED_GLFW3
+// EzyCad / HiDPI (see https://github.com/ocornut/imgui/issues/7519#issuecomment-2629628233):
+// Drive GLFW window size and canvas backing store in physical pixels (CSS * devicePixelRatio).
+// ImGui then uses DisplaySize = physical and DisplayFramebufferScale = 1, so fonts/icons are not
+// upscaled (avoids blur). HTML CSS size (width/height: 100%) still controls on-screen layout;
+// the browser downscales the denser backing store. Shared with OCCT Wasm_Window(ToScaleBacking=false).
 static EM_BOOL ImGui_ImplGlfw_OnCanvasSizeChange(int event_type, const EmscriptenUiEvent* event, void* user_data)
 {
     ImGui_ImplGlfw_Data* bd = (ImGui_ImplGlfw_Data*)user_data;
-    double canvas_width, canvas_height;
-    emscripten_get_element_css_size(bd->CanvasSelector, &canvas_width, &canvas_height);
-    glfwSetWindowSize(bd->Window, (int)canvas_width, (int)canvas_height);
+    double css_width, css_height;
+    emscripten_get_element_css_size(bd->CanvasSelector, &css_width, &css_height);
+    const double dpr = emscripten_get_device_pixel_ratio();
+    const int new_width = (int)(css_width * dpr);
+    const int new_height = (int)(css_height * dpr);
+    if (new_width > 0 && new_height > 0)
+    {
+        emscripten_set_canvas_element_size(bd->CanvasSelector, new_width, new_height);
+        glfwSetWindowSize(bd->Window, new_width, new_height);
+    }
     return true;
 }
 
 static EM_BOOL ImGui_ImplEmscripten_FullscreenChangeCallback(int event_type, const EmscriptenFullscreenChangeEvent* event, void* user_data)
 {
     ImGui_ImplGlfw_Data* bd = (ImGui_ImplGlfw_Data*)user_data;
-    double canvas_width, canvas_height;
-    emscripten_get_element_css_size(bd->CanvasSelector, &canvas_width, &canvas_height);
-    glfwSetWindowSize(bd->Window, (int)canvas_width, (int)canvas_height);
+    double css_width, css_height;
+    emscripten_get_element_css_size(bd->CanvasSelector, &css_width, &css_height);
+    const double dpr = emscripten_get_device_pixel_ratio();
+    const int new_width = (int)(css_width * dpr);
+    const int new_height = (int)(css_height * dpr);
+    if (new_width > 0 && new_height > 0)
+    {
+        emscripten_set_canvas_element_size(bd->CanvasSelector, new_width, new_height);
+        glfwSetWindowSize(bd->Window, new_width, new_height);
+    }
     return true;
 }
 

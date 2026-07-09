@@ -100,9 +100,6 @@ void Occt_view::init_window(GLFWwindow* GlfwWindow)
 void Occt_view::init_viewer()
 {
   double myDevicePixelRatio = 1.0;
-#ifdef __EMSCRIPTEN__
-  myDevicePixelRatio = emscripten_get_device_pixel_ratio();
-#endif
 #ifndef __EMSCRIPTEN__
   if (m_occt_window.IsNull() || m_occt_window->getGlfwWindow() == nullptr)
   {
@@ -178,8 +175,12 @@ void Occt_view::init_viewer()
       aLight->SetCastShadows(true);
   }
 
-  // GLFW (GLFW_SCALE_TO_MONITOR) owns canvas backing-store scaling on wasm; do not resize here.
+  // ImGui owns HiDPI: canvas + GLFW window are CSS * DPR (see imgui_impl_glfw OnCanvasSizeChange).
+  // ToScaleBacking=false so OCCT does not resize the shared canvas again; DevicePixelRatio=1 so
+  // mouse/view coords stay in the same physical-pixel space as GLFW.
   Handle(Wasm_Window) aWindow = new Wasm_Window("#canvas", false);
+  aWindow->SetDevicePixelRatio(1.0);
+  myDevicePixelRatio = 1.0;
 
   m_view = new V3d_View(aViewer);
   m_view->Camera()->SetProjectionType(Graphic3d_Camera::Projection_Perspective);

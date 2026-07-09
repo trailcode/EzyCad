@@ -374,15 +374,7 @@ void GUI::options_()
   if (!show_options_effective())
     return;
 
-#ifdef __EMSCRIPTEN__
-  wasm_layout_prepare_panel_(Wasm_panel_slot::Options);
-#endif
-  if (!ImGui::Begin("Options", &m_show_options,
-#ifdef __EMSCRIPTEN__
-                    k_wasm_panel_window_flags))
-#else
-                    ImGuiWindowFlags_None))
-#endif
+  if (!ImGui::Begin("Options", &m_show_options, ImGuiWindowFlags_None))
   {
     ImGui::End();
     return;

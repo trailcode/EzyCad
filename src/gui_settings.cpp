@@ -235,11 +235,9 @@ void GUI::save_occt_view_settings()
        {m_elm_list_hover_color[0], m_elm_list_hover_color[1], m_elm_list_hover_color[2], m_elm_list_hover_color[3]}},
   };
   j["version"] = k_settings_version;
-#ifndef __EMSCRIPTEN__
   const char* imgui_ini = ImGui::SaveIniSettingsToMemory(nullptr);
   if (imgui_ini && *imgui_ini)
     j["imgui_ini"] = std::string(imgui_ini);
-#endif
 
   settings::save(j.dump(2));
   log_message("Settings: saved.");
@@ -675,7 +673,6 @@ void GUI::load_occt_view_settings_()
 
   sync_sketch_add_mid_pt_edges_if_applicable_();
 
-#ifndef __EMSCRIPTEN__
   try
   {
     using namespace nlohmann;
@@ -694,7 +691,6 @@ void GUI::load_occt_view_settings_()
   {
     // EZY_ASSERT_MSG(false, "Settings invalid!");
   }
-#endif
 
   log_message("Settings: loaded.");
 }
@@ -1518,7 +1514,6 @@ void GUI::settings_()
         settings::save(content);
         parse_occt_view_settings_(content);
         parse_gui_panes_settings_(content);
-#ifndef __EMSCRIPTEN__
         if (j.contains("imgui_ini") && j["imgui_ini"].is_string())
         {
           const std::string& ini = j["imgui_ini"].get<std::string>();
@@ -1528,7 +1523,6 @@ void GUI::settings_()
             m_seed_default_dock_layout = (ini.find("[Docking]") == std::string::npos);
           }
         }
-#endif
 
         show_message("Default settings applied.");
       }

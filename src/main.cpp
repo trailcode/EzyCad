@@ -1,6 +1,8 @@
 // Dear ImGui + EzyCad GUI + OCCT 3D view + chained GLFW input.
-// On wasm, sizing is handled by imgui_impl_glfw (OnCanvasSizeChange: CSS * DPR + canvas); do not
-// second-guess with extra glfwSetWindowSize/io overrides here - they fight that path and break input.
+// On wasm HiDPI (imgui#7519): ImGui_ImplGlfw_OnCanvasSizeChange sets GLFW window + canvas
+// backing to CSS * devicePixelRatio so ImGui runs in physical pixels with
+// DisplayFramebufferScale = 1 (sharp fonts/icons). OCCT uses Wasm_Window(ToScaleBacking=false)
+// and DevicePixelRatio 1 so it shares that backing store. Do not enable GLFW_SCALE_TO_MONITOR.
 
 #ifdef _WIN32
 #define WIN32_LEAN_AND_MEAN
@@ -32,6 +34,7 @@
 // This example can also compile and run with Emscripten! See 'Makefile.emscripten' for details.
 #ifdef __EMSCRIPTEN__
 #include <emscripten.h>
+#include <emscripten/html5.h>
 
 #include "emscripten/emscripten_mainloop_stub.h"
 
@@ -123,14 +126,6 @@ int main(int argc, char** argv)
   // glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE);            // 3.0+ only
 #endif
 
-#ifdef __EMSCRIPTEN__
-  // Let Emscripten GLFW own HiDPI canvas backing-store scaling (CSS * devicePixelRatio).
-  // OCCT Wasm_Window must use ToScaleBacking=false so it does not fight this path; otherwise
-  // GLFW's cached framebuffer size stays at CSS while the canvas backing store is DPR-scaled and
-  // ImGui sees DisplayFramebufferScale == 1 (blocky icons/text on HiDPI).
-  glfwWindowHint(GLFW_SCALE_TO_MONITOR, GLFW_TRUE);
-#endif
-
   // Create window with graphics context
   float       main_scale = ImGui_ImplGlfw_GetContentScaleForMonitor(glfwGetPrimaryMonitor()); // Valid on GLFW 3.3+ only
   GLFWwindow* window     = glfwCreateWindow((int)(1280 * main_scale), (int)(800 * main_scale), "EzyCad", nullptr, nullptr);
@@ -143,15 +138,13 @@ int main(int argc, char** argv)
 #endif
 
 #ifdef __EMSCRIPTEN__
-  // Do NOT bake devicePixelRatio into the ImGui style on wasm. Unlike the Windows native path -
-  // where glfwGetWindowSize == glfwGetFramebufferSize (both physical px) so DisplayFramebufferScale
-  // is 1.0 and the style/font must be scaled by the monitor content scale - the Emscripten GLFW
-  // backend already reports window = CSS size and framebuffer = CSS * devicePixelRatio, i.e.
-  // io.DisplayFramebufferScale == devicePixelRatio. ImGui 1.92 rasterizes fonts at that framebuffer
-  // scale, so HiDPI crispness is handled automatically. Scaling the style by DPR on top of that
-  // double-applies the ratio and makes the whole UI render ~2x too large. Keep main_scale at the
-  // CSS-logical 1.0 here (ImGui_ImplGlfw_GetContentScaleForMonitor already returns 1.0 on wasm).
-  main_scale = 1.0f;
+  // Physical-pixel ImGui path (imgui_impl_glfw OnCanvasSizeChange sets window = CSS * DPR).
+  // Bake DPR into style/fonts so widgets keep CSS-logical on-screen size; DisplayFramebufferScale
+  // stays 1 (window == framebuffer), so glyphs/icons are not upscaled and stay sharp.
+  // Do not enable GLFW_SCALE_TO_MONITOR (fights width/height: 100% CSS).
+  main_scale = (float)emscripten_get_device_pixel_ratio();
+  if (main_scale < 1.0f)
+    main_scale = 1.0f;
 #endif
 
   // Setup Dear ImGui context
@@ -161,8 +154,9 @@ int main(int argc, char** argv)
   (void)io;
   io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard; // Enable Keyboard Controls
   io.ConfigFlags |= ImGuiConfigFlags_NavEnableGamepad;  // Enable Gamepad Controls
-#ifndef __EMSCRIPTEN__
   io.ConfigFlags |= ImGuiConfigFlags_DockingEnable;
+#ifndef __EMSCRIPTEN__
+  // Multi-viewport OS windows are native-only (no browser equivalent).
   io.ConfigFlags |= ImGuiConfigFlags_ViewportsEnable;
 #endif
 
@@ -240,16 +234,6 @@ int main(int argc, char** argv)
 
   GUI gui;
   gui.init(window, console_font);
-
-#ifdef __EMSCRIPTEN__
-  // Refresh GLFW's cached framebuffer dimensions from the canvas (CSS * DPR) after viewer init.
-  {
-    int ww = 0, wh = 0;
-    glfwGetWindowSize(window, &ww, &wh);
-    if (ww > 0 && wh > 0)
-      glfwSetWindowSize(window, ww, wh);
-  }
-#endif
 
 #ifdef __EMSCRIPTEN__
   s_gui_for_unload = &gui;
@@ -335,7 +319,7 @@ int main(int argc, char** argv)
     }
 
 #ifdef __EMSCRIPTEN__
-    // Startup layout resync: browser CSS size may settle after init; nudge GLFW/ImGui docking once.
+    // Startup layout resync: browser CSS size may settle after init; re-run CSS*DPR canvas sync.
     {
       static int s_startup_resync_frames = 2;
       if (s_startup_resync_frames > 0)

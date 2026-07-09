@@ -244,64 +244,6 @@ void GUI::seed_default_dock_layout_(ImGuiID dockspace_id)
   ImGui::DockBuilderFinish(dockspace_id);
 }
 
-#if defined(__EMSCRIPTEN__)
-namespace
-{
-// Match seed_default_dock_layout_ fractions (left 20%, right 22%, bottom 12%, shape/sketch 48/52).
-struct Wasm_layout_metrics
-{
-  ImVec2 origin;
-  ImVec2 work_size;
-  float  left_w;
-  float  right_w;
-  float  bottom_h;
-  float  shape_h;
-};
-
-Wasm_layout_metrics wasm_layout_metrics_()
-{
-  const ImGuiViewport* vp = ImGui::GetMainViewport();
-  Wasm_layout_metrics  m{};
-  m.origin    = vp->WorkPos;
-  m.work_size = vp->WorkSize;
-  m.left_w    = m.work_size.x * 0.20f;
-  m.right_w   = m.work_size.x * 0.22f;
-  m.bottom_h  = m.work_size.y * 0.12f;
-  m.shape_h   = m.work_size.y * 0.48f;
-  return m;
-}
-} // namespace
-
-void GUI::wasm_layout_prepare_panel_(Wasm_panel_slot slot)
-{
-  const Wasm_layout_metrics m = wasm_layout_metrics_();
-  ImVec2                    pos;
-  ImVec2                    size;
-  switch (slot)
-  {
-  case Wasm_panel_slot::ShapeList:
-    pos  = ImVec2(m.origin.x, m.origin.y);
-    size = ImVec2(m.left_w, m.shape_h);
-    break;
-  case Wasm_panel_slot::SketchList:
-    pos  = ImVec2(m.origin.x, m.origin.y + m.shape_h);
-    size = ImVec2(m.left_w, m.work_size.y - m.shape_h);
-    break;
-  case Wasm_panel_slot::Options:
-    pos  = ImVec2(m.origin.x + m.work_size.x - m.right_w, m.origin.y);
-    size = ImVec2(m.right_w, m.work_size.y);
-    break;
-  case Wasm_panel_slot::Log:
-    pos  = ImVec2(m.origin.x + m.left_w, m.origin.y + m.work_size.y - m.bottom_h);
-    size = ImVec2(m.work_size.x - m.left_w - m.right_w, m.bottom_h);
-    break;
-  }
-
-  ImGui::SetNextWindowPos(pos, ImGuiCond_Always);
-  ImGui::SetNextWindowSize(size, ImGuiCond_Always);
-}
-#endif
-
 bool GUI::occt_wants_mouse_at(const float x, const float y) const
 {
   if (!m_occt_passthrough_valid)
@@ -323,20 +265,6 @@ ScreenCoords GUI::cursor_screen_coords() const
 void GUI::dock_space_()
 {
   m_occt_passthrough_valid = false;
-
-#if defined(__EMSCRIPTEN__)
-  const Wasm_layout_metrics m = wasm_layout_metrics_();
-  m_occt_passthrough_min[0]   = m.origin.x + m.left_w;
-  m_occt_passthrough_min[1]   = m.origin.y;
-  m_occt_passthrough_max[0]   = m.origin.x + m.work_size.x - m.right_w;
-  m_occt_passthrough_max[1]   = m.origin.y + m.work_size.y - m.bottom_h;
-  m_occt_passthrough_valid    = true;
-
-  const ImVec2 mouse = ImGui::GetIO().MousePos;
-  if (occt_wants_mouse_at(mouse.x, mouse.y))
-    ImGui::SetNextFrameWantCaptureMouse(false);
-  return;
-#endif
 
   const ImGuiID dockspace_id = ImGui::DockSpaceOverViewport(ImGui::GetID("EzyCadMainDockSpace"), ImGui::GetMainViewport(),
                                                             ImGuiDockNodeFlags_PassthruCentralNode);
@@ -1290,15 +1218,7 @@ void GUI::sketch_list_()
     max_name_text_w       = std::max(max_name_text_w, ImGui::CalcTextSize(nm.c_str(), nm.c_str() + nm.size()).x);
   }
 
-#ifdef __EMSCRIPTEN__
-  wasm_layout_prepare_panel_(Wasm_panel_slot::SketchList);
-#endif
-  if (!ImGui::Begin("Sketch List", &m_show_sketch_list,
-#ifdef __EMSCRIPTEN__
-                    k_wasm_panel_window_flags))
-#else
-                    ImGuiWindowFlags_None))
-#endif
+  if (!ImGui::Begin("Sketch List", &m_show_sketch_list, ImGuiWindowFlags_None))
   {
     m_view->set_sketch_list_hover(nullptr);
     m_view->set_sketch_list_measurement_hover(nullptr, SIZE_MAX);
@@ -2354,15 +2274,7 @@ void GUI::shape_list_()
     max_name_text_w       = std::max(max_name_text_w, ImGui::CalcTextSize(nm.c_str(), nm.c_str() + nm.size()).x);
   }
 
-#ifdef __EMSCRIPTEN__
-  wasm_layout_prepare_panel_(Wasm_panel_slot::ShapeList);
-#endif
-  if (!ImGui::Begin("Shape List", &m_show_shape_list,
-#ifdef __EMSCRIPTEN__
-                    k_wasm_panel_window_flags))
-#else
-                    ImGuiWindowFlags_None))
-#endif
+  if (!ImGui::Begin("Shape List", &m_show_shape_list, ImGuiWindowFlags_None))
   {
     m_view->set_shape_list_hover(nullptr);
     ImGui::End();
@@ -2777,15 +2689,7 @@ void GUI::log_window_()
   if (!log_window_visible_effective())
     return;
 
-#ifdef __EMSCRIPTEN__
-  wasm_layout_prepare_panel_(Wasm_panel_slot::Log);
-#endif
-  if (!ImGui::Begin("Log", &m_log_window_visible,
-#ifdef __EMSCRIPTEN__
-                    k_wasm_panel_window_flags))
-#else
-                    ImGuiWindowFlags_None))
-#endif
+  if (!ImGui::Begin("Log", &m_log_window_visible, ImGuiWindowFlags_None))
   {
     ImGui::End();
     return;

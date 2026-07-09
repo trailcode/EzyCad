@@ -352,18 +352,6 @@ private:
   void load_default_project_();
   void menu_bar_();
   void dock_space_();
-#if defined(__EMSCRIPTEN__)
-  enum class Wasm_panel_slot
-  {
-    ShapeList,
-    SketchList,
-    Options,
-    Log,
-  };
-  void wasm_layout_prepare_panel_(Wasm_panel_slot slot);
-  inline constexpr ImGuiWindowFlags k_wasm_panel_window_flags =
-      ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoCollapse;
-#endif
   void toolbar_();
   void message_status_window_();
 
