@@ -7,7 +7,7 @@
 
 #include "gui.h"
 #include "mode.h"
-#include "sketch_delta.h"
+#include "sketch_op_recorder.h"
 #include "sketch_edge.h"
 #include "utl_geom.h"
 #include "utl_occt.h"

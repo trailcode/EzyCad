@@ -171,7 +171,7 @@ Full GLFW -> `GUI` routing before these delegates: [`src/doc/gui.md`](gui.md).
 | --- | --- |
 | `Occt_view::push_undo_snapshot()` | Before booleans, fillet/chamfer, primitive add, polar dup, transform finalize, extrude commit, revolve |
 | Transform preview only | No undo until **finalize** (not on each mouse move) |
-| `Sketch_delta` (sketch subsystem) | Separate from shape ops; shape list captured in view snapshots |
+| `Sketch_op_delta` (sketch subsystem) | Separate from shape ops; shape list captured in view snapshots |
 
 ## Persistence
 

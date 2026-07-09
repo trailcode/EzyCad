@@ -67,7 +67,7 @@ User-facing Markdown (now in `docs/`: `usage.md`, `usage-*.md`, `scripting.md`, 
 
 - **Reader-first order** (`.cpp`): Put **public API and high-level workflow** at the top of the file (constructors, main entry points, orchestration). Put **lower-level details** below so the first screen shows what the module does before how it does it.
 - **Helper functions** (`.cpp`): Prefer **file-local static helpers** in an anonymous namespace at the **bottom** of the implementing `.cpp` file. Forward-declare them near the top (or above their first use) when needed. Avoid large helper blocks at the top of the file; the goal is high-level code first, helpers last for readability.
-- **PIMPL** (`class Foo; class Foo::Impl`): Use when hiding implementation details or when you want to swap implementations (e.g. `Sketch_nodes`, `Sketch_delta`). Keep the public surface in the header; put data members, private record types, and apply/clone logic in `Impl` inside the `.cpp`.
+- **PIMPL** (`class Foo; class Foo::Impl`): Use when hiding implementation details or when you want to swap implementations (e.g. `Sketch_nodes`, `Sketch_op_recorder`). Keep the public surface in the header; put data members, private record types, and apply/clone logic in `Impl` inside the `.cpp`.
 - **Templates**: Prefer putting template implementations in `.inl` files included from the header (e.g. `utl_types.inl`, `utl.inl`).
 - **OCCT handles**: Use `opencascade::handle<T>` and project aliases (e.g. `AIS_Shape_ptr`, `Shp_ptr`).
 - **Result/error handling**: See **Fail fast** below. Use `Result<T>` and `Status` from `utl.h`, `CHK_RET(...)` for early return on failure.

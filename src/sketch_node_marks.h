@@ -20,8 +20,6 @@ public:
   void trim_trailing();
 
 private:
-  friend class Sketch_delta;
-
   void apply_style_(AIS_Shape_ptr& shp, bool origin) const;
 
   Sketch&                               m_sketch;

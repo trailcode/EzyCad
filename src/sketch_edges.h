@@ -48,7 +48,6 @@ public:
 private:
   friend class Sketch;
   friend class Sketch_topo;
-  friend class Sketch_delta;
 
   void add_edge_raw_(const gp_Pnt2d& pt_a, const gp_Pnt2d& pt_b);
   void add_edge_impl_(const gp_Pnt2d& pt_a, const gp_Pnt2d& pt_b, Sketch_op_recorder* rec);
