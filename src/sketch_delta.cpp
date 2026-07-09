@@ -87,7 +87,8 @@ public:
   static void remove_arc_edge_(Sketch& sketch, const Arc_edge_record& rec);
   static void remove_length_dim_(Sketch& sketch, const Length_dim_record& rec);
   static void tombstone_node_at_pt_(Sketch& sketch, const gp_Pnt2d& pt);
-  static void restore_curr_node_at_pt_(Sketch& sketch, const gp_Pnt2d& pt);
+  static void restore_curr_node_at_pt_(Sketch& sketch, const gp_Pnt2d& pt,
+                                       const std::vector<Arc_edge_record>& curr_arc_edges);
   static void restore_prev_linear_edge_(Sketch& sketch, const Prev_edge_rec& rec);
   static void restore_length_dim_(Sketch& sketch, const Length_dim_record& rec);
   static void restore_prev_operation_axis_(Sketch& sketch, const Prev_edge_rec& rec);
@@ -449,7 +450,7 @@ void Sketch_delta::Impl::apply_forward_(Sketch& sketch) const
     sketch.sketch_json_set_operation_axis_(curr_operation_axis->pt_a, curr_operation_axis->pt_b);
 
   for (const gp_Pnt2d& pt : curr_node_pts)
-    restore_curr_node_at_pt_(sketch, pt);
+    restore_curr_node_at_pt_(sketch, pt, curr_arc_edges);
 
   sketch.m_node_marks.sync();
   sketch.m_nodes.hide_snap_annos();
@@ -640,9 +641,30 @@ void Sketch_delta::Impl::tombstone_node_at_pt_(Sketch& sketch, const gp_Pnt2d& p
   }
 }
 
-void Sketch_delta::Impl::restore_curr_node_at_pt_(Sketch& sketch, const gp_Pnt2d& pt)
+void Sketch_delta::Impl::restore_curr_node_at_pt_(Sketch& sketch, const gp_Pnt2d& pt,
+                                                  const std::vector<Arc_edge_record>& curr_arc_edges)
 {
-  const size_t node_idx = sketch.m_nodes.get_node_exact(pt, true);
+  bool is_arc_defining_pt = false;
+  bool is_arc_bulge       = false;
+  for (const Arc_edge_record& e : curr_arc_edges)
+  {
+    if (pts_equal_(pt, e.pt_b))
+    {
+      is_arc_defining_pt = true;
+      is_arc_bulge       = true;
+      break;
+    }
+    if (pts_equal_(pt, e.pt_a) || pts_equal_(pt, e.pt_c))
+    {
+      is_arc_defining_pt = true;
+      break;
+    }
+  }
+
+  const size_t node_idx = sketch.m_nodes.get_node_exact(pt, !is_arc_defining_pt);
+  if (is_arc_bulge)
+    return;
+
   sketch.m_topo.split_linear_edges_at_node_if_interior(node_idx);
   sketch.m_topo.split_arcs_at_node_if_interior(node_idx);
 }

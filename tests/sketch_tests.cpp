@@ -632,33 +632,32 @@ TEST_F(Sketch_test, Undo_circle_via_recorder)
   gp_Pln default_plane(gp::Origin(), gp::DZ());
   Sketch sketch("TestSketch", view(), default_plane);
 
-  const gp_Pnt2d center(0.0, 0.0);
-  const gp_Pnt2d edge_pt(5.0, 0.0);
-  const std::array<gp_Pnt2d, 4> stencil = xy_stencil_pnts(center, edge_pt);
+  gui().set_mode(Mode::Sketch_add_circle);
+  sketch.add_sketch_pt(ScreenCoords(dvec2(0.0, 0.0)));
+  sketch.add_sketch_pt(ScreenCoords(dvec2(5.0, 0.0)));
+  sketch.finalize_elm();
 
-  // Circle finalize uses two picks plus stencil-derived arc points; materialize stencil
-  // vertices before the recorder starts (same contract as the Arc Segment third-click path).
-  for (const gp_Pnt2d& pt : stencil)
-    sketch.get_nodes().get_node_exact(pt);
+  auto count_permanent_nodes = [](Sketch& s) {
+    size_t n = 0;
+    for (const auto& node : s.get_nodes())
+      if (node.permanent && !node.deleted)
+        ++n;
+    return n;
+  };
 
-  Sketch::set_add_mid_pt_edges(false);
-  {
-    Sketch_op_recorder rec(view(), sketch);
-    Sketch_access::add_arc_circle_(sketch, stencil[0], stencil[2], stencil[1], rec);
-    Sketch_access::add_arc_circle_(sketch, stencil[0], stencil[3], stencil[1], rec);
-    rec.commit();
-  }
-  Sketch::set_add_mid_pt_edges(true);
-
-  EXPECT_EQ(Sketch_access::get_arc_internal_edge_count(sketch), 2);
+  const size_t edges_after_create = Sketch_access::get_arc_internal_edge_count(sketch);
+  const size_t perm_after_create  = count_permanent_nodes(sketch);
+  EXPECT_EQ(edges_after_create, 2u);
 
   EXPECT_TRUE(view().undo());
-  EXPECT_EQ(Sketch_access::get_arc_internal_edge_count(sketch), 0)
+  EXPECT_EQ(Sketch_access::get_arc_internal_edge_count(sketch), 0u)
       << "Undo should remove both semicircles (two arc edges)";
 
   EXPECT_TRUE(view().redo());
-  EXPECT_EQ(Sketch_access::get_arc_internal_edge_count(sketch), 2)
+  EXPECT_EQ(Sketch_access::get_arc_internal_edge_count(sketch), edges_after_create)
       << "Redo should restore the circle";
+  EXPECT_EQ(count_permanent_nodes(sketch), perm_after_create)
+      << "Redo should not add extra permanent nodes";
 }
 
 TEST_F(Sketch_test, Undo_two_crossing_edges_via_finalize)
