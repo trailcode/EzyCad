@@ -43,7 +43,7 @@ Between those, the pane has **six** collapsible sections. Expand a section to se
 
 1. **3D view navigation** — **View rotation step** (degrees per key press for <kbd>NumPad 8</kbd>/<kbd>2</kbd>/<kbd>4</kbd>/<kbd>6</kbd> orbit and <kbd>Shift</kbd>+<kbd>NumPad 4</kbd>/<kbd>6</kbd> roll; default **45**; **`?`** opens [view roll](https://ezycad.readthedocs.io/en/latest/usage.html#view-roll) on Read the Docs). **Zoom scroll scale** (multiplier for wheel and **+**/**-** zoom; default **4**). Hold <kbd>Shift</kbd> while zooming for a Blender-style finer step (multiply by **0.1**). Numpad shortcuts are documented with <kbd>Num Lock</kbd> off; with <kbd>Num Lock</kbd> on, use main-row alternatives in [usage.md -> View navigation](usage.md#view-navigation). Stored as **`gui.view_roll_step_deg`** and **`gui.view_zoom_scroll_scale`**. See **[usage-occt-view.md](usage-occt-view.md)**.
 
-2. **UI corner rounding** — Sliders **0** to **16** for **Windows, frames, popups**; **Scrollbars and sliders** (has **?**); **Tabs**.
+2. **UI** — **Dark mode** checkbox. ImGui layout sliders apply to the **active theme** (switch **Dark mode** to edit the other theme). Grouped under **Transparency**, **Rounding**, **Borders**, **Padding**, and **Spacing**: **Window transparency** (**0.1** to **1.0**); corner rounding sliders **0** to **16** for **Windows, frames, popups**, **Scrollbars and sliders**, and **Tabs**; **Window border**, **Frame border** (**0** to **2**); **Window padding** X/Y, **Frame padding** X/Y, and **Item spacing** X/Y (**0** to **24**).
 
 3. **View presentation** — **Background color 1** and **Background color 2** (float RGB fields and swatches). **Gradient blend** — combo: **Horizontal**, **Vertical**, **Diagonal 1**, **Diagonal 2**, **Corner 1** … **Corner 4**. **Element hover color** — highlight for rows hovered in the **Shape List** or **Sketch List** (**Dimensions** table); stored as **`gui.elm_list_hover_color`**.
 
@@ -136,7 +136,11 @@ String **`"1"`**. If the version is missing or does not match, the app replaces 
 
 ### `imgui_ini`
 
-String: ImGui `.ini` text for window positions and docking saved with **SaveIniSettingsToMemory**. Loaded with **LoadIniSettingsFromMemory** on startup.
+String: ImGui `.ini` text for window layout and docking saved with **SaveIniSettingsToMemory**. Loaded with **LoadIniSettingsFromMemory** on startup. Includes dock-node data when panels have been docked or tabbed.
+
+Panels (Sketch List, Shape List, Options, Log, consoles, and similar) can be dragged to dock edges, tabbed together, or split. On desktop, panels can also be dragged outside the main window into separate OS windows. The web build supports the same in-canvas docking inside the browser canvas only. The 3D view stays in the central passthrough region of the main window; it is not moved into dock nodes.
+
+If saved layout text has no `[Docking]` section (older installs), a default dock layout is applied once on next launch.
 
 ### `occt_view`
 
@@ -182,15 +186,31 @@ String: ImGui `.ini` text for window positions and docking saved with **SaveIniS
 | `snap_guide_mode` | integer | **0** *Traditional* (local markers), **1** *Fullscreen* (view-spanning axis lines), **2** *Both* (default **2**). |
 | `snap_guide_line_width` | number | Open CASCADE line width for snap guides (axis lines, markers, co-axial overlay; **0.5** to **8.0**; default **1.0**). |
 | `annotate_all_coaxial_nodes` | boolean | When true (default), show axis guides and markers for *all* co-axial nodes (current sketch plus other visible sketches). When false, only the closest node per active axis is annotated. Also in sketch **Options**. |
-| `imgui_rounding_general` | number | Window/child/frame/popup rounding (**0** to **32** clamped in code; sliders stop at 16 in the UI). |
-| `imgui_rounding_scroll` | number | Scrollbar and grab rounding (same clamp). |
-| `imgui_rounding_tabs` | number | Tab rounding (same clamp). |
+| `imgui_style_dark` | object | ImGui layout for **dark mode** (see keys below). |
+| `imgui_style_light` | object | ImGui layout for **light mode** (same keys). |
+| `imgui_rounding_general` | number | **Legacy:** copied into both theme objects on load when `imgui_style_*` is absent. |
+| `imgui_rounding_scroll` | number | **Legacy:** same. |
+| `imgui_rounding_tabs` | number | **Legacy:** same. |
 | `underlay_highlight_color` | array of 3 numbers | Default underlay tint (float RGB **0** to **1** per channel; default **0.64**, **0.56**, **0.31**). |
 | `elm_list_hover_color` | array of 4 numbers | RGBA highlight for rows hovered in the **Shape List** or **Sketch List** dimensions table (float **0** to **1** per channel; default purple **0.40**, **0.10**, **0.47**, **1**). |
 | `view_roll_step_deg` | number | Degrees per **NumPad 8**/**2**/**4**/**6** orbit and **Shift+NumPad 4**/**6** roll (allowed range **0.1** to **180** in code; default **45**). |
 | `view_zoom_scroll_scale` | number | Multiplier for `UpdateZoom` scroll delta from wheel and keyboard zoom (allowed range **0.25** to **64** in code; default **4**). With **Shift** held, the effective step is multiplied by **0.1** (Blender-style finer zoom). |
 | `load_last_opened_on_startup` | boolean | Desktop: open the last `.ezy` on launch. **Legacy:** `load_last_saved_on_startup` is read as a fallback if the newer key is absent. |
 | `last_opened_project_path` | string | Path of the last opened project for the option above. **Legacy:** `last_saved_project_path` is accepted if the newer key is missing. |
+
+Each **`imgui_style_dark`** / **`imgui_style_light`** object may contain:
+
+| Key | Type | Meaning |
+| --- | --- | --- |
+| `rounding_general` | number | Window/child/frame/popup rounding (**0** to **32** in JSON; Settings sliders **0** to **16**). |
+| `rounding_scroll` | number | Scrollbar and grab rounding. |
+| `rounding_tabs` | number | Tab rounding. |
+| `window_alpha` | number | Panel window background opacity (**0.1** to **1.0**). |
+| `window_border` | number | Window border thickness (**0** to **2**). |
+| `frame_border` | number | Widget frame border thickness (**0** to **2**). |
+| `window_padding_x`, `window_padding_y` | number | Inner padding of windows (**0** to **24**). |
+| `frame_padding_x`, `frame_padding_y` | number | Padding inside framed widgets (**0** to **24**). |
+| `item_spacing_x`, `item_spacing_y` | number | Spacing between widgets (**0** to **24**). |
 
 Scripting API **`ezy.occt_view_settings_json()`** returns a JSON string with **`occt_view`** plus selected **`gui`** keys (including dimension and snap keys above, **`gui.permanent_node_anno_scale`**, **`gui.inspection_orthographic`**, **`gui.view_roll_step_deg`**, **`gui.view_zoom_scroll_scale`** when saved). See [scripting.md](scripting.md).
 

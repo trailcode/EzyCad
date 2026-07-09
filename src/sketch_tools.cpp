@@ -585,10 +585,11 @@ void Sketch_tools::finalize_edges_(Sketch_op_recorder& rec)
 
 void Sketch_tools::add_node_pt_(const ScreenCoords& screen_coords)
 {
-  auto commit_b = [this](size_t node_b)
+  auto commit_b = [this](auto&& make_node_b)
   {
     Sketch_op_recorder rec(m_sketch.m_view, m_sketch);
     {
+      const size_t node_b = make_node_b();
       rec.note_curr_node(node_b);
       m_sketch.m_topo.split_linear_edges_at_node_if_interior(node_b, rec);
       m_sketch.m_topo.split_arcs_at_node_if_interior(node_b, rec);
@@ -619,8 +620,7 @@ void Sketch_tools::add_node_pt_(const ScreenCoords& screen_coords)
     if (!unique(pt_a, final_pt))
       return;
 
-    const size_t node_idx = m_sketch.m_nodes.get_node_exact(final_pt, true);
-    commit_b(node_idx);
+    commit_b([&] { return m_sketch.m_nodes.get_node_exact(final_pt, true); });
     return;
   }
 
@@ -631,12 +631,13 @@ void Sketch_tools::add_node_pt_(const ScreenCoords& screen_coords)
   {
     if (!m_tmp_edges.empty())
     {
-      Sketch_edge& last   = m_tmp_edges.back();
-      size_t       node_b = snap_to_node ? *snap_to_node : m_sketch.m_nodes.add_new_node(pt, false, true);
-      if (node_b == last.node_idx_a)
+      const Sketch_edge& last = m_tmp_edges.back();
+      if (snap_to_node && *snap_to_node == last.node_idx_a)
         return;
 
-      commit_b(node_b);
+      commit_b([&] {
+        return snap_to_node ? *snap_to_node : m_sketch.m_nodes.add_new_node(pt, false, true);
+      });
       return;
     }
 

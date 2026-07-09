@@ -11,6 +11,8 @@
 #include <emscripten.h>
 
 #include <cstdlib>
+
+#include "utl_io.h"
 #endif
 
 namespace settings

@@ -610,11 +610,11 @@ TEST_F(Sketch_test, Undo_single_arc_via_recorder)
   const gp_Pnt2d end(10.0, 0.0);
   const gp_Pnt2d arc_mid(5.0, 5.0);
 
-  {
-    Sketch_op_recorder rec(view(), sketch);
-    Sketch_access::add_arc_circle_(sketch, start, arc_mid, end, rec);
-    rec.commit();
-  }
+  // Arc Segment tool: recorder starts on the third click, after all pick nodes exist.
+  gui().set_mode(Mode::Sketch_add_seg_circle_arc);
+  sketch.add_sketch_pt(ScreenCoords(dvec2(start.X(), start.Y())));
+  sketch.add_sketch_pt(ScreenCoords(dvec2(end.X(), end.Y())));
+  sketch.add_sketch_pt(ScreenCoords(dvec2(arc_mid.X(), arc_mid.Y())));
 
   EXPECT_EQ(Sketch_access::get_arc_internal_edge_count(sketch), 1);
 
@@ -632,26 +632,32 @@ TEST_F(Sketch_test, Undo_circle_via_recorder)
   gp_Pln default_plane(gp::Origin(), gp::DZ());
   Sketch sketch("TestSketch", view(), default_plane);
 
-  const gp_Pnt2d center(0.0, 0.0);
-  const gp_Pnt2d edge_pt(5.0, 0.0);
-  const std::array<gp_Pnt2d, 4> points = xy_stencil_pnts(center, edge_pt);
+  gui().set_mode(Mode::Sketch_add_circle);
+  sketch.add_sketch_pt(ScreenCoords(dvec2(0.0, 0.0)));
+  sketch.add_sketch_pt(ScreenCoords(dvec2(5.0, 0.0)));
+  sketch.finalize_elm();
 
-  {
-    Sketch_op_recorder rec(view(), sketch);
-    Sketch_access::add_arc_circle_(sketch, points[0], points[2], points[1], rec);
-    Sketch_access::add_arc_circle_(sketch, points[0], points[3], points[1], rec);
-    rec.commit();
-  }
+  auto count_permanent_nodes = [](Sketch& s) {
+    size_t n = 0;
+    for (const auto& node : s.get_nodes())
+      if (node.permanent && !node.deleted)
+        ++n;
+    return n;
+  };
 
-  EXPECT_EQ(Sketch_access::get_arc_internal_edge_count(sketch), 2);
+  const size_t edges_after_create = Sketch_access::get_arc_internal_edge_count(sketch);
+  const size_t perm_after_create  = count_permanent_nodes(sketch);
+  EXPECT_EQ(edges_after_create, 2u);
 
   EXPECT_TRUE(view().undo());
-  EXPECT_EQ(Sketch_access::get_arc_internal_edge_count(sketch), 0)
+  EXPECT_EQ(Sketch_access::get_arc_internal_edge_count(sketch), 0u)
       << "Undo should remove both semicircles (two arc edges)";
 
   EXPECT_TRUE(view().redo());
-  EXPECT_EQ(Sketch_access::get_arc_internal_edge_count(sketch), 2)
+  EXPECT_EQ(Sketch_access::get_arc_internal_edge_count(sketch), edges_after_create)
       << "Redo should restore the circle";
+  EXPECT_EQ(count_permanent_nodes(sketch), perm_after_create)
+      << "Redo should not add extra permanent nodes";
 }
 
 TEST_F(Sketch_test, Undo_two_crossing_edges_via_finalize)
@@ -3340,6 +3346,115 @@ TEST_F(Sketch_test, AddNode_near_edge_snaps_onto_segment_and_splits)
     }
   }
   EXPECT_TRUE(found_at_seven);
+}
+
+TEST_F(Sketch_test, AddNode_distance_enter_undo)
+{
+  gp_Pln default_plane(gp::Origin(), gp::DZ());
+  Sketch sketch("TestSketch", view(), default_plane);
+
+  gui().set_mode(Mode::Sketch_add_node);
+  sketch.add_sketch_pt(ScreenCoords(dvec2(0.0, 0.0)));
+  sketch.sketch_pt_move(ScreenCoords(dvec2(10.0, 0.0)));
+
+  Sketch_access::set_entered_edge_len(sketch, gp_Dir2d(1.0, 0.0), 10.0);
+  sketch.on_enter();
+
+  auto count_permanent_nodes = [](Sketch& s) {
+    size_t n = 0;
+    for (const auto& node : s.get_nodes())
+      if (node.permanent && !node.deleted)
+        ++n;
+    return n;
+  };
+
+  EXPECT_EQ(count_permanent_nodes(sketch), 2u) << "Origin plus distance-placed node";
+
+  EXPECT_GT(view().undo_stack_size(), 0u);
+  EXPECT_TRUE(view().undo());
+  EXPECT_EQ(count_permanent_nodes(sketch), 1u) << "Undo should remove the distance-placed node";
+
+  EXPECT_TRUE(view().redo());
+  EXPECT_EQ(count_permanent_nodes(sketch), 2u) << "Redo should restore the distance-placed node";
+}
+
+TEST_F(Sketch_test, AddNode_anchor_then_click_undo)
+{
+  struct Headless_guard
+  {
+    Occt_view& m_v;
+    explicit Headless_guard(Occt_view& v)
+        : m_v(v)
+    {
+      View_access::set_headless(m_v, true);
+    }
+    ~Headless_guard()
+    {
+      View_access::set_headless(m_v, false);
+    }
+  } guard(view());
+
+  gp_Pln default_plane(gp::Origin(), gp::DZ());
+  Sketch sketch("TestSketch", view(), default_plane);
+
+  gui().set_mode(Mode::Sketch_add_node);
+  sketch.add_sketch_pt(ScreenCoords(dvec2(0.0, 0.0)));
+  sketch.add_sketch_pt(ScreenCoords(dvec2(10.0, 200.0)));
+
+  auto count_permanent_nodes = [](Sketch& s) {
+    size_t n = 0;
+    for (const auto& node : s.get_nodes())
+      if (node.permanent && !node.deleted)
+        ++n;
+    return n;
+  };
+
+  EXPECT_EQ(count_permanent_nodes(sketch), 2u) << "Origin plus click-placed node";
+
+  EXPECT_GT(view().undo_stack_size(), 0u);
+  EXPECT_TRUE(view().undo());
+  EXPECT_EQ(count_permanent_nodes(sketch), 1u) << "Undo should remove the click-placed node";
+
+  EXPECT_TRUE(view().redo());
+  EXPECT_EQ(count_permanent_nodes(sketch), 2u) << "Redo should restore the click-placed node";
+}
+
+TEST_F(Sketch_test, NewFile_clears_undo_stacks)
+{
+  gp_Pln default_plane(gp::Origin(), gp::DZ());
+  Sketch sketch("TestSketch", view(), default_plane);
+
+  gui().set_mode(Mode::Sketch_add_node);
+  sketch.add_sketch_pt(ScreenCoords(dvec2(10.0, 10.0)));
+  ASSERT_GT(view().undo_stack_size(), 0u);
+
+  view().new_file();
+  EXPECT_EQ(view().undo_stack_size(), 0u);
+  EXPECT_EQ(view().redo_stack_size(), 0u);
+}
+
+TEST_F(Sketch_test, DimensionTool_picks_sketch_origin)
+{
+  struct Headless_guard
+  {
+    Occt_view& m_v;
+    explicit Headless_guard(Occt_view& v)
+        : m_v(v)
+    {
+      View_access::set_headless(m_v, true);
+    }
+    ~Headless_guard()
+    {
+      View_access::set_headless(m_v, false);
+    }
+  } guard(view());
+
+  gp_Pln default_plane(gp::Origin(), gp::DZ());
+  Sketch sketch("TestSketch", view(), default_plane);
+
+  const std::optional<size_t> origin_pick = sketch.get_nodes().try_pick_existing_node(ScreenCoords(dvec2(0.0, 0.0)));
+  ASSERT_TRUE(origin_pick.has_value());
+  EXPECT_TRUE(sketch.get_nodes()[*origin_pick].origin);
 }
 
 namespace

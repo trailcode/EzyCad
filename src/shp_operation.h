@@ -32,6 +32,9 @@ protected:
 
   void add_shp_(Shp_ptr& shp);
 
+  /// Remove \a old_shp from the viewer and register \a new_shp (fillet/chamfer in-place replace).
+  void replace_picked_shape_(Shp_ptr& old_shp, Shp_ptr& new_shp, const std::string& name);
+
   /// Replace `dest` presentation material with `src` (used after add_shp_, which applies the view default).
   void copy_shape_material_from_(Shp_ptr& dest, const Shp_ptr& src);
 

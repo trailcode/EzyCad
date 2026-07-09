@@ -202,12 +202,12 @@ private:
   void get_originating_face_snp_pts_3d_(std::vector<gp_Pnt>& out);
 
   // Style related
-  void update_edge_style_(AIS_Shape_ptr& shp);
-  void sync_operation_axis_display_();
-  bool show_operation_axis_() const;
-  bool operation_axis_suppresses_sketch_snap_() const;
-  void update_originating_face_style();
-  void ensure_origin_node_();
+  void                  update_edge_style_(AIS_Shape_ptr& shp);
+  void                  sync_operation_axis_display_();
+  bool                  show_operation_axis_() const;
+  bool                  operation_axis_suppresses_sketch_snap_() const;
+  void                  update_originating_face_style();
+  void                  ensure_origin_node_();
   std::optional<size_t> origin_node_idx_() const;
   gp_Pnt2d              default_origin_pt_() const;
 

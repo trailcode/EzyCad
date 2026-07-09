@@ -23,6 +23,7 @@
 
 #include "utl_geom.h"
 #include "imgui.h"
+#include "imgui_internal.h"
 #include "utl_log.h"
 #include "scr_lua_console.h"
 #include "gui_occt_view.h"
@@ -129,9 +130,10 @@ void GUI::render_gui()
   else
     ImGui::StyleColorsLight();
 
-  apply_imgui_rounding_from_members_();
+  apply_imgui_style_from_members_();
 
   menu_bar_();
+  dock_space_();
   toolbar_();
   dist_edit_();
   angle_edit_();
@@ -220,6 +222,72 @@ void GUI::load_examples_list_()
 
   std::sort(m_example_files.begin(), m_example_files.end(),
             [](const Example_file& a, const Example_file& b) { return a.label < b.label; });
+}
+
+void GUI::seed_default_dock_layout_(ImGuiID dockspace_id)
+{
+  ImGui::DockBuilderRemoveNode(dockspace_id);
+  ImGui::DockBuilderAddNode(dockspace_id, ImGuiDockNodeFlags_DockSpace | ImGuiDockNodeFlags_PassthruCentralNode);
+  ImGui::DockBuilderSetNodeSize(dockspace_id, ImGui::GetMainViewport()->WorkSize);
+
+  ImGuiID dock_main        = dockspace_id;
+  ImGuiID dock_left        = ImGui::DockBuilderSplitNode(dock_main, ImGuiDir_Left, 0.20f, nullptr, &dock_main);
+  ImGuiID dock_right       = ImGui::DockBuilderSplitNode(dock_main, ImGuiDir_Right, 0.22f, nullptr, &dock_main);
+  ImGuiID dock_bottom      = ImGui::DockBuilderSplitNode(dock_main, ImGuiDir_Down, 0.12f, nullptr, &dock_main);
+  ImGuiID dock_left_bottom = 0;
+  ImGuiID dock_left_top    = ImGui::DockBuilderSplitNode(dock_left, ImGuiDir_Down, 0.52f, &dock_left_bottom, &dock_left);
+
+  ImGui::DockBuilderDockWindow("Shape List", dock_left_top);
+  ImGui::DockBuilderDockWindow("Sketch List", dock_left_bottom);
+  ImGui::DockBuilderDockWindow("Options", dock_right);
+  ImGui::DockBuilderDockWindow("Log", dock_bottom);
+  ImGui::DockBuilderFinish(dockspace_id);
+}
+
+bool GUI::occt_wants_mouse_at(const float x, const float y) const
+{
+  if (!m_occt_passthrough_valid)
+    return false;
+
+  return x >= m_occt_passthrough_min[0] && x < m_occt_passthrough_max[0] && y >= m_occt_passthrough_min[1] &&
+         y < m_occt_passthrough_max[1];
+}
+
+ScreenCoords GUI::cursor_screen_coords() const
+{
+  EZY_ASSERT(m_glfw_window != nullptr);
+  double x = 0.0;
+  double y = 0.0;
+  glfwGetCursorPos(m_glfw_window, &x, &y);
+  return ScreenCoords(dvec2(x, y));
+}
+
+void GUI::dock_space_()
+{
+  m_occt_passthrough_valid = false;
+
+  const ImGuiID dockspace_id = ImGui::DockSpaceOverViewport(ImGui::GetID("EzyCadMainDockSpace"), ImGui::GetMainViewport(),
+                                                            ImGuiDockNodeFlags_PassthruCentralNode);
+
+  if (m_seed_default_dock_layout)
+  {
+    seed_default_dock_layout_(dockspace_id);
+    m_seed_default_dock_layout = false;
+  }
+
+  if (ImGuiDockNode* node = ImGui::DockBuilderGetNode(dockspace_id))
+    if (ImGuiDockNode* central = node->CentralNode; central && central->IsEmpty())
+    {
+      m_occt_passthrough_min[0] = central->Pos.x;
+      m_occt_passthrough_min[1] = central->Pos.y;
+      m_occt_passthrough_max[0] = central->Pos.x + central->Size.x;
+      m_occt_passthrough_max[1] = central->Pos.y + central->Size.y;
+      m_occt_passthrough_valid  = true;
+
+      const ImVec2 mouse = ImGui::GetIO().MousePos;
+      if (occt_wants_mouse_at(mouse.x, mouse.y))
+        ImGui::SetNextFrameWantCaptureMouse(false);
+    }
 }
 
 void GUI::menu_bar_()
@@ -635,7 +703,8 @@ ImGui::MarkdownImageData GUI::about_markdown_image_cb_(ImGui::MarkdownLinkCallba
 // Render toolbar with ImGui
 void GUI::toolbar_()
 {
-  ImGui::Begin("Toolbar", nullptr, ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_AlwaysAutoResize);
+  ImGui::Begin("Toolbar", nullptr,
+               ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoDocking);
 
   ImVec2 button_size(32, 32);
 
@@ -712,7 +781,7 @@ void GUI::set_dist_edit(float dist, std::function<void(float, bool)>&& callback,
     if (screen_coords.has_value())
       m_dist_edit_loc = *screen_coords;
     else
-      m_dist_edit_loc = ScreenCoords(dvec2(ImGui::GetIO().MousePos.x, ImGui::GetIO().MousePos.y));
+      m_dist_edit_loc = cursor_screen_coords();
   }
 
   m_dist_callback = std::move(callback);
@@ -720,20 +789,19 @@ void GUI::set_dist_edit(float dist, std::function<void(float, bool)>&& callback,
     m_dist_edit_focus_pending = true;
 }
 
-void GUI::hide_dist_edit()
+void GUI::hide_dist_edit(bool apply)
 {
-  if (m_dist_callback)
-  {
-    float parsed{};
-    if (parse_dist_text_to_float_(m_dist_text_buf.data(), parsed))
-      m_dist_val = parsed;
+  if (!m_dist_callback)
+    return;
 
-    // In case the callback sets a new m_dist_callback
-    std::function<void(float, bool)> callback;
-    std::swap(callback, m_dist_callback);
-    // In case just enter was pressed, or the callback needs to finalize something
+  float parsed{};
+  if (parse_dist_text_to_float_(m_dist_text_buf.data(), parsed))
+    m_dist_val = parsed;
+
+  std::function<void(float, bool)> callback;
+  std::swap(callback, m_dist_callback);
+  if (apply)
     callback(m_dist_val, true);
-  }
 }
 
 void GUI::dist_edit_()
@@ -751,7 +819,7 @@ void GUI::dist_edit_()
   // Begin a window with minimal flags
   ImGui::Begin("FloatEdit##unique_id", nullptr,
                ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_AlwaysAutoResize |
-                   ImGuiWindowFlags_NoSavedSettings);
+                   ImGuiWindowFlags_NoSavedSettings | ImGuiWindowFlags_NoMouseInputs);
 
   ImGui::SetNextItemWidth(100.0f);
   // Focusing every frame prevents IsItemDeactivatedAfterEdit (click away / Tab) from ever committing.
@@ -770,6 +838,12 @@ void GUI::dist_edit_()
 
   if (ImGui::IsItemDeactivatedAfterEdit() && m_dist_callback)
   {
+    if (ImGui::IsKeyPressed(ImGuiKey_Escape))
+    {
+      hide_dist_edit(false);
+      return;
+    }
+
     float parsed{};
     if (parse_dist_text_to_float_(m_dist_text_buf.data(), parsed))
       m_dist_val = parsed;
@@ -794,7 +868,7 @@ void GUI::set_angle_edit(float angle, std::function<void(float, bool)>&& callbac
     if (screen_coords.has_value())
       m_angle_edit_loc = *screen_coords;
     else
-      m_angle_edit_loc = ScreenCoords(dvec2(ImGui::GetIO().MousePos.x, ImGui::GetIO().MousePos.y));
+      m_angle_edit_loc = cursor_screen_coords();
   }
 
   m_angle_callback = std::move(callback);
@@ -802,18 +876,19 @@ void GUI::set_angle_edit(float angle, std::function<void(float, bool)>&& callbac
     m_angle_edit_focus_pending = true;
 }
 
-void GUI::hide_angle_edit()
+void GUI::hide_angle_edit(bool apply)
 {
-  if (m_angle_callback)
-  {
-    float parsed{};
-    if (parse_dist_text_to_float_(m_angle_text_buf.data(), parsed))
-      m_angle_val = parsed;
+  if (!m_angle_callback)
+    return;
 
-    std::function<void(float, bool)> callback;
-    std::swap(callback, m_angle_callback);
+  float parsed{};
+  if (parse_dist_text_to_float_(m_angle_text_buf.data(), parsed))
+    m_angle_val = parsed;
+
+  std::function<void(float, bool)> callback;
+  std::swap(callback, m_angle_callback);
+  if (apply)
     callback(m_angle_val, true);
-  }
 }
 
 bool GUI::is_dist_or_angle_edit_active() const { return m_dist_callback != nullptr || m_angle_callback != nullptr; }
@@ -825,11 +900,11 @@ void GUI::open_sketch_origin_set_edit_(const Sketch::sptr& sk, int plane_idx, do
   EZY_ASSERT(sk);
   EZY_ASSERT(plane_idx == 0 || plane_idx == 1);
 
-  m_sketch_origin_set_sketch       = sk;
-  m_sketch_origin_set_plane_idx    = plane_idx;
-  m_sketch_origin_set_v_min        = v_min;
-  m_sketch_origin_set_v_max        = v_max;
-  m_sketch_origin_set_loc          = ImGui::GetItemRectMin();
+  m_sketch_origin_set_sketch        = sk;
+  m_sketch_origin_set_plane_idx     = plane_idx;
+  m_sketch_origin_set_v_min         = v_min;
+  m_sketch_origin_set_v_max         = v_max;
+  m_sketch_origin_set_loc           = ImGui::GetItemRectMin();
   m_sketch_origin_set_focus_pending = true;
   std::snprintf(m_sketch_origin_set_text_buf.data(), m_sketch_origin_set_text_buf.size(), "%.9g",
                 m_sketch_origin_xy[plane_idx]);
@@ -840,10 +915,10 @@ void GUI::hide_sketch_origin_set_edit(bool apply)
   if (m_sketch_origin_set_plane_idx < 0)
     return;
 
-  const Sketch::sptr sk        = m_sketch_origin_set_sketch.lock();
-  const int          plane_idx = m_sketch_origin_set_plane_idx;
-  const double       v_min     = m_sketch_origin_set_v_min;
-  const double       v_max     = m_sketch_origin_set_v_max;
+  const Sketch::sptr sk         = m_sketch_origin_set_sketch.lock();
+  const int          plane_idx  = m_sketch_origin_set_plane_idx;
+  const double       v_min      = m_sketch_origin_set_v_min;
+  const double       v_max      = m_sketch_origin_set_v_max;
   m_sketch_origin_set_plane_idx = -1;
   m_sketch_origin_set_sketch.reset();
 
@@ -907,7 +982,7 @@ void GUI::angle_edit_()
   // Begin a window with minimal flags
   ImGui::Begin("AngleEdit##unique_id", nullptr,
                ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_AlwaysAutoResize |
-                   ImGuiWindowFlags_NoSavedSettings);
+                   ImGuiWindowFlags_NoSavedSettings | ImGuiWindowFlags_NoMouseInputs);
 
   ImGui::SetNextItemWidth(100.0f);
   if (m_angle_edit_focus_pending)
@@ -924,6 +999,12 @@ void GUI::angle_edit_()
 
   if (ImGui::IsItemDeactivatedAfterEdit() && m_angle_callback)
   {
+    if (ImGui::IsKeyPressed(ImGuiKey_Escape))
+    {
+      hide_angle_edit(false);
+      return;
+    }
+
     float parsed{};
     if (parse_dist_text_to_float_(m_angle_text_buf.data(), parsed))
       m_angle_val = parsed;
@@ -1388,9 +1469,9 @@ void GUI::sketch_origin_panel_settings_(const Sketch::sptr& sk)
   {
     hide_sketch_origin_set_edit(false);
     m_sketch_origin_panel_sketch = sk.get();
-    const gp_Pnt2d               o = sk->origin_pt();
-    m_sketch_origin_xy[0]          = o.X();
-    m_sketch_origin_xy[1]          = o.Y();
+    const gp_Pnt2d o             = sk->origin_pt();
+    m_sketch_origin_xy[0]        = o.X();
+    m_sketch_origin_xy[1]        = o.Y();
   }
 
   ImGui::TextUnformatted("Origin");
@@ -1409,16 +1490,15 @@ void GUI::sketch_origin_panel_settings_(const Sketch::sptr& sk)
 
   const ImGuiIO& io    = ImGui::GetIO();
   double         min_u = 0., min_v = 0., max_u = 1., max_v = 1.;
-  const bool     have_view =
-      m_view->sketch_plane_view_aabb_2d(sk->get_plane(), static_cast<double>(io.DisplaySize.x),
-                                        static_cast<double>(io.DisplaySize.y), min_u, min_v, max_u, max_v);
+  const bool     have_view = m_view->sketch_plane_view_aabb_2d(sk->get_plane(), static_cast<double>(io.DisplaySize.x),
+                                                               static_cast<double>(io.DisplaySize.y), min_u, min_v, max_u, max_v);
   if (!have_view)
   {
     constexpr double k_fallback = 250.0;
-    min_u = m_sketch_origin_xy[0] - k_fallback;
-    max_u = m_sketch_origin_xy[0] + k_fallback;
-    min_v = m_sketch_origin_xy[1] - k_fallback;
-    max_v = m_sketch_origin_xy[1] + k_fallback;
+    min_u                       = m_sketch_origin_xy[0] - k_fallback;
+    max_u                       = m_sketch_origin_xy[0] + k_fallback;
+    min_v                       = m_sketch_origin_xy[1] - k_fallback;
+    max_v                       = m_sketch_origin_xy[1] + k_fallback;
   }
 
   auto apply_origin = [&]()
@@ -1431,7 +1511,7 @@ void GUI::sketch_origin_panel_settings_(const Sketch::sptr& sk)
   {
     ImGui::PushID(popup_id);
     double* const p_value = &m_sketch_origin_xy[plane_idx];
-    const bool changed =
+    const bool    changed =
         ImGui::SliderScalar(axis_label, ImGuiDataType_Double, p_value, &v_min, &v_max, "%.4f", ImGuiSliderFlags_ClampOnInput);
 
     if (changed)
@@ -1989,7 +2069,7 @@ void GUI::underlay_calib_prompt_x_distance_(const Sketch::sptr& sk)
   m_underlay_calib_phase       = Underlay_calib_phase::AwaitDistX;
   const double       L_model   = m_underlay_calib_x0.Distance(m_underlay_calib_x1);
   const float        dist_show = static_cast<float>(L_model / m_view->get_dimension_scale());
-  const ScreenCoords spos(dvec2(ImGui::GetIO().MousePos.x, ImGui::GetIO().MousePos.y));
+  const ScreenCoords spos = cursor_screen_coords();
 
   Sketch::wptr wk      = sk;
   auto         on_dist = [this, wk](float new_dist, bool is_final)
@@ -2047,7 +2127,7 @@ void GUI::underlay_calib_prompt_y_distance_(const Sketch::sptr& sk)
   m_underlay_calib_phase       = Underlay_calib_phase::AwaitDistY;
   const double       L_model   = m_underlay_calib_y0.Distance(m_underlay_calib_y1);
   const float        dist_show = static_cast<float>(L_model / m_view->get_dimension_scale());
-  const ScreenCoords spos(dvec2(ImGui::GetIO().MousePos.x, ImGui::GetIO().MousePos.y));
+  const ScreenCoords spos = cursor_screen_coords();
 
   Sketch::wptr wk      = sk;
   auto         on_dist = [this, wk](float new_dist, bool is_final)
@@ -2609,7 +2689,7 @@ void GUI::log_window_()
   if (!log_window_visible_effective())
     return;
 
-  if (!ImGui::Begin("Log", &m_log_window_visible))
+  if (!ImGui::Begin("Log", &m_log_window_visible, ImGuiWindowFlags_None))
   {
     ImGui::End();
     return;
@@ -2934,7 +3014,7 @@ void GUI::sketch_left_click(const ScreenCoords& screen_coords)
 
 void GUI::on_mouse_button(int button, int action, int mods)
 {
-  const ScreenCoords screen_coords(dvec2(ImGui::GetIO().MousePos.x, ImGui::GetIO().MousePos.y));
+  const ScreenCoords screen_coords = cursor_screen_coords();
 
   if (button == GLFW_MOUSE_BUTTON_LEFT && action == GLFW_PRESS && mods == 0)
     if (try_underlay_calib_click_(screen_coords))

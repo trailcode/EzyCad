@@ -237,7 +237,7 @@ void GUI::on_key(int key, int scancode, int action, int mods)
     // clang-format on
   }
 
-  const ScreenCoords screen_coords(dvec2(ImGui::GetIO().MousePos.x, ImGui::GetIO().MousePos.y));
+  const ScreenCoords screen_coords = cursor_screen_coords();
 
   bool ctrl_pressed = (mods & GLFW_MOD_CONTROL) != 0;
   if (ctrl_pressed)
@@ -305,10 +305,10 @@ void GUI::on_key(int key, int scancode, int action, int mods)
     {
     case GLFW_KEY_ESCAPE:
       cancel_underlay_calib_();
-      m_view->cancel(Set_parent_mode::Yes);
       hide_sketch_origin_set_edit(false);
-      hide_dist_edit();
-      hide_angle_edit();
+      hide_dist_edit(false);
+      hide_angle_edit(false);
+      m_view->cancel(Set_parent_mode::Yes);
       break;
 
     case GLFW_KEY_TAB:
@@ -374,7 +374,7 @@ void GUI::options_()
   if (!show_options_effective())
     return;
 
-  if (!ImGui::Begin("Options", &m_show_options))
+  if (!ImGui::Begin("Options", &m_show_options, ImGuiWindowFlags_None))
   {
     ImGui::End();
     return;
@@ -1126,7 +1126,7 @@ float GUI::options_sketch_label_col_w_() const
 
 void GUI::on_key_rotate_mode_(int key)
 {
-  const ScreenCoords screen_coords(dvec2(ImGui::GetIO().MousePos.x, ImGui::GetIO().MousePos.y));
+  const ScreenCoords screen_coords = cursor_screen_coords();
 
   switch (key)
   {
@@ -1173,7 +1173,7 @@ void GUI::on_key_rotate_mode_(int key)
 void GUI::on_key_move_mode_(int key)
 {
   Move_options&      opts = m_view->shp_move().get_opts();
-  const ScreenCoords screen_coords(dvec2(ImGui::GetIO().MousePos.x, ImGui::GetIO().MousePos.y));
+  const ScreenCoords screen_coords = cursor_screen_coords();
 
   switch (key)
   {

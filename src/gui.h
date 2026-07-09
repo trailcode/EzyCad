@@ -101,27 +101,49 @@ inline constexpr int k_gui_ui_feature_tier_max  = 3;
 inline constexpr int k_gui_ui_help_tier_max     = 3;
 /// Minimum `gui.ui_verbosity` for contextual help (? buttons, control tooltips, doc links). Default verbosity 6 qualifies.
 inline constexpr int k_gui_ui_contextual_help_min_verbosity = 5;
+/// ImGui style sliders in Settings -> UI (rounding clamp in JSON is 0..32; UI sliders use this max).
+inline constexpr float k_gui_imgui_rounding_slider_max = 16.f;
+inline constexpr float k_gui_imgui_window_alpha_min    = 0.1f;
+inline constexpr float k_gui_imgui_window_alpha_max    = 1.f;
+inline constexpr float k_gui_imgui_border_slider_max   = 2.f;
+inline constexpr float k_gui_imgui_padding_slider_max  = 24.f;
+inline constexpr float k_gui_imgui_spacing_slider_max  = 24.f;
+
+/// Per-theme ImGui layout values (Settings -> UI; persisted under gui.imgui_style_dark / gui.imgui_style_light).
+/// The Settings pane edits whichever theme matches the current Dark mode checkbox.
+struct Gui_imgui_style_settings
+{
+  float rounding_general{0.f};
+  float rounding_scroll{0.f};
+  float rounding_tabs{0.f};
+  float window_alpha{1.f};
+  float window_border{1.f};
+  float frame_border{0.f};
+  float window_padding_x{8.f};
+  float window_padding_y{8.f};
+  float frame_padding_x{4.f};
+  float frame_padding_y{3.f};
+  float item_spacing_x{8.f};
+  float item_spacing_y{4.f};
+};
 
 namespace doc_urls
 {
-inline constexpr const char* k_view_roll       = "https://ezycad.readthedocs.io/en/latest/usage.html#view-roll";
-inline constexpr const char* k_view_navigation = "https://ezycad.readthedocs.io/en/latest/usage.html#view-navigation";
-inline constexpr const char* k_sketch_snapping = "https://ezycad.readthedocs.io/en/latest/usage-sketch.html#sketch-snapping";
-inline constexpr const char* k_sketch_origin   = "https://ezycad.readthedocs.io/en/latest/usage-sketch.html#sketch-origin";
-inline constexpr const char* k_line_edge_midpoint_nodes =
-    "https://ezycad.readthedocs.io/en/latest/usage-sketch.html#line-edge-option-add-midpoint-nodes";
-inline constexpr const char* k_line_edge_place_from_center =
-    "https://ezycad.readthedocs.io/en/latest/usage-sketch.html#line-edge-option-place-from-center";
-inline constexpr const char* k_revolve_solid_conversion =
-    "https://ezycad.readthedocs.io/en/latest/usage-sketch.html#revolve-solid-conversion";
-inline constexpr const char* k_shape_selection_filter =
-    "https://ezycad.readthedocs.io/en/latest/usage.html#shape-selection-filter-normal-mode-only";
-inline constexpr const char* k_add_node_tool  = "https://ezycad.readthedocs.io/en/latest/usage-sketch.html#add-node-tool";
-inline constexpr const char* k_image_underlay = "https://ezycad.readthedocs.io/en/latest/usage-sketch.html#image-underlay";
-inline constexpr const char* k_usage_settings_options =
-    "https://ezycad.readthedocs.io/en/latest/usage-settings.html#options-panel";
-inline constexpr const char* k_occt_view       = "https://ezycad.readthedocs.io/en/latest/usage-occt-view.html";
-inline constexpr const char* k_startup_project = "https://ezycad.readthedocs.io/en/latest/usage-settings.html#startup-project";
+// clang-format off
+inline constexpr const char* k_view_roll                    = "https://ezycad.readthedocs.io/en/latest/usage.html#view-roll";
+inline constexpr const char* k_view_navigation              = "https://ezycad.readthedocs.io/en/latest/usage.html#view-navigation";
+inline constexpr const char* k_sketch_snapping              = "https://ezycad.readthedocs.io/en/latest/usage-sketch.html#sketch-snapping";
+inline constexpr const char* k_sketch_origin                = "https://ezycad.readthedocs.io/en/latest/usage-sketch.html#sketch-origin";
+inline constexpr const char* k_line_edge_midpoint_nodes     = "https://ezycad.readthedocs.io/en/latest/usage-sketch.html#line-edge-option-add-midpoint-nodes";
+inline constexpr const char* k_line_edge_place_from_center  = "https://ezycad.readthedocs.io/en/latest/usage-sketch.html#line-edge-option-place-from-center";
+inline constexpr const char* k_revolve_solid_conversion     = "https://ezycad.readthedocs.io/en/latest/usage-sketch.html#revolve-solid-conversion";
+inline constexpr const char* k_shape_selection_filter       = "https://ezycad.readthedocs.io/en/latest/usage.html#shape-selection-filter-normal-mode-only";
+inline constexpr const char* k_add_node_tool                = "https://ezycad.readthedocs.io/en/latest/usage-sketch.html#add-node-tool";
+inline constexpr const char* k_image_underlay               = "https://ezycad.readthedocs.io/en/latest/usage-sketch.html#image-underlay";
+inline constexpr const char* k_usage_settings_options       = "https://ezycad.readthedocs.io/en/latest/usage-settings.html#options-panel";
+inline constexpr const char* k_occt_view                    = "https://ezycad.readthedocs.io/en/latest/usage-occt-view.html";
+inline constexpr const char* k_startup_project              = "https://ezycad.readthedocs.io/en/latest/usage-settings.html#startup-project";
+// clang-format on
 } // namespace doc_urls
 
 class GUI
@@ -151,7 +173,11 @@ public:
   void mirror_selected_sketch_edges();
   void on_mouse_scroll(double xoffset, double yoffset);
   void on_resize(int width, int height);
-  Mode get_mode() const { return m_mode; }
+  /// True when \a pos is in the dock central passthrough region (3D viewer input).
+  bool occt_wants_mouse_at(float x, float y) const;
+  /// GLFW client-area cursor position for OCCT (not ImGui \c MousePos, which is screen-space with viewports).
+  ScreenCoords cursor_screen_coords() const;
+  Mode         get_mode() const { return m_mode; }
 
   static std::string get_doc_url_for_mode(Mode mode);
   Chamfer_mode       get_chamfer_mode() const { return m_chamfer_mode; }
@@ -173,12 +199,12 @@ public:
   float permanent_node_anno_scale() const { return m_permanent_node_anno_scale; }
   /// RGB color for the active sketch's origin marker (0-1 per channel).
   const float* origin_marker_color_rgb() const { return m_origin_marker_color; }
-  bool  get_add_mid_pt_line_edges() const { return m_add_mid_pt_line_edges; }
-  bool  get_add_mid_pt_rect_edges() const { return m_add_mid_pt_rect_edges; }
-  bool  get_add_mid_pt_slot_edges() const { return m_add_mid_pt_slot_edges; }
-  bool  get_edge_from_center() const { return m_edge_from_center; }
-  bool  get_hide_all_shapes() const { return m_hide_all_shapes; }
-  void  set_hide_all_shapes(bool hide) { m_hide_all_shapes = hide; }
+  bool         get_add_mid_pt_line_edges() const { return m_add_mid_pt_line_edges; }
+  bool         get_add_mid_pt_rect_edges() const { return m_add_mid_pt_rect_edges; }
+  bool         get_add_mid_pt_slot_edges() const { return m_add_mid_pt_slot_edges; }
+  bool         get_edge_from_center() const { return m_edge_from_center; }
+  bool         get_hide_all_shapes() const { return m_hide_all_shapes; }
+  void         set_hide_all_shapes(bool hide) { m_hide_all_shapes = hide; }
   /// Orthographic camera toggle for non-sketch modes (forces ortho in sketch modes); persisted as
   /// `gui.inspection_orthographic`.
   bool   inspection_orthographic() const { return m_inspection_orthographic; }
@@ -189,10 +215,10 @@ public:
   void   set_parent_mode();   // gui_mode.cpp
   void   set_dist_edit(float dist, std::function<void(float, bool)>&& callback,
                        const std::optional<ScreenCoords> screen_coords = std::nullopt);
-  void   hide_dist_edit();
+  void   hide_dist_edit(bool apply = true);
   void   set_angle_edit(float angle, std::function<void(float, bool)>&& callback,
                         const std::optional<ScreenCoords> screen_coords = std::nullopt);
-  void   hide_angle_edit();
+  void   hide_angle_edit(bool apply = true);
   void   hide_sketch_origin_set_edit(bool apply = true);
   /// True when dist or angle edit is visible; Tab should be routed to on_key() instead of ImGui.
   bool is_dist_or_angle_edit_active() const;
@@ -325,6 +351,7 @@ private:
   void load_examples_list_();
   void load_default_project_();
   void menu_bar_();
+  void dock_space_();
   void toolbar_();
   void message_status_window_();
 
@@ -398,13 +425,20 @@ private:
 
   // Settings (gui_settings.cpp)
   void load_occt_view_settings_();
+  void seed_default_dock_layout_(ImGuiID dockspace_id);
   void parse_occt_view_settings_(const std::string& content);
   void parse_gui_panes_settings_(const std::string& content);
-  void apply_imgui_rounding_from_members_();
-  void imgui_rounding_fallbacks_from_theme_(float& general, float& scroll, float& tabs) const;
+  void apply_imgui_style_from_members_();
+  void imgui_style_defaults_from_theme_(bool dark, Gui_imgui_style_settings& out) const;
+  [[nodiscard]] const Gui_imgui_style_settings& imgui_style_active_() const;
+  Gui_imgui_style_settings&                     imgui_style_active_();
 
   Occt_view::uptr m_view;
   GLFWwindow*     m_glfw_window{nullptr};
+  bool            m_seed_default_dock_layout{true};
+  float           m_occt_passthrough_min[2]{0.0f, 0.0f};
+  float           m_occt_passthrough_max[2]{0.0f, 0.0f};
+  bool            m_occt_passthrough_valid{false};
   std::string     m_cached_window_title;
 
   // Sketch segment manual length input related
@@ -436,7 +470,7 @@ private:
   int          m_edge_dim_text_render_mode  = k_gui_edge_dim_text_render_mode_default;
   bool         m_show_sketch_dimensions     = true;
   float        m_permanent_node_anno_scale  = k_gui_permanent_node_anno_scale_default;
-  float        m_origin_marker_color[3]   = {k_gui_origin_marker_color_default[0], k_gui_origin_marker_color_default[1],
+  float        m_origin_marker_color[3]     = {k_gui_origin_marker_color_default[0], k_gui_origin_marker_color_default[1],
                                                k_gui_origin_marker_color_default[2]};
   bool         m_add_mid_pt_line_edges      = false;
   bool         m_add_mid_pt_rect_edges      = true;
@@ -514,24 +548,22 @@ private:
 #ifndef NDEBUG
   bool m_show_dbg{false};
 #endif
-  bool m_show_lua_console{true}; // Lua Console pane; hidden if false in settings
-  /// ImGui corner radii (applied after StyleColorsDark/Light each frame). Scroll value sets both scrollbar and grab rounding.
-  float                 m_imgui_rounding_general{0.f};
-  float                 m_imgui_rounding_scroll{0.f};
-  float                 m_imgui_rounding_tabs{0.f};
-  bool                  m_sketch_properties_open{false};
-  std::weak_ptr<Sketch> m_sketch_properties_sketch;
+  bool                     m_show_lua_console{true}; // Lua Console pane; hidden if false in settings
+  Gui_imgui_style_settings m_imgui_style_dark{};
+  Gui_imgui_style_settings m_imgui_style_light{};
+  bool                     m_sketch_properties_open{false};
+  std::weak_ptr<Sketch>    m_sketch_properties_sketch;
 
   // Sketch origin value input (properties pane Set button)
-  std::weak_ptr<Sketch>        m_sketch_origin_set_sketch;
-  int                          m_sketch_origin_set_plane_idx{-1};
-  double                       m_sketch_origin_set_v_min{0.0};
-  double                       m_sketch_origin_set_v_max{0.0};
-  std::array<char, 64>         m_sketch_origin_set_text_buf{};
-  bool                         m_sketch_origin_set_focus_pending{false};
-  ImVec2                       m_sketch_origin_set_loc{};
-  void*                        m_sketch_origin_panel_sketch{nullptr};
-  double                       m_sketch_origin_xy[2]{0.0, 0.0};
+  std::weak_ptr<Sketch> m_sketch_origin_set_sketch;
+  int                   m_sketch_origin_set_plane_idx{-1};
+  double                m_sketch_origin_set_v_min{0.0};
+  double                m_sketch_origin_set_v_max{0.0};
+  std::array<char, 64>  m_sketch_origin_set_text_buf{};
+  bool                  m_sketch_origin_set_focus_pending{false};
+  ImVec2                m_sketch_origin_set_loc{};
+  void*                 m_sketch_origin_panel_sketch{nullptr};
+  double                m_sketch_origin_xy[2]{0.0, 0.0};
 
   // Sketch underlay related
   void*                 m_underlay_panel_sketch{nullptr};

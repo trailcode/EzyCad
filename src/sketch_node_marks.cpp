@@ -64,9 +64,9 @@ void Sketch_node_marks::sync()
     }
 
     const gp_Pnt2d     p2(node.X(), node.Y());
-    const gp_Pnt       c3 = to_3d(m_sketch.m_pln, p2);
-    const TopoDS_Shape marker =
-        node.origin ? create_origin_marker_shape(m_sketch.m_pln, c3, half_arm) : create_plus_cross_shape(m_sketch.m_pln, c3, half_arm);
+    const gp_Pnt       c3     = to_3d(m_sketch.m_pln, p2);
+    const TopoDS_Shape marker = node.origin ? create_origin_marker_shape(m_sketch.m_pln, c3, half_arm)
+                                            : create_plus_cross_shape(m_sketch.m_pln, c3, half_arm);
 
     if (m_marks[i])
     {

@@ -1,57 +1,97 @@
 {
   "gui": {
+    "add_mid_pt_edges": false,
+    "add_mid_pt_rect_edges": true,
+    "add_mid_pt_slot_edges": true,
+    "annotate_all_coaxial_nodes": true,
     "dark_mode": true,
+    "edge_dim_arrow_orientation": 0,
+    "edge_dim_arrow_size": 2.0399999618530273,
+    "edge_dim_arrow_style": 0,
     "edge_dim_color": [
       0.5423728823661804,
       0.5423728823661804,
       0.21373170614242554
     ],
-    "edge_dim_label_h": 10,
-    "edge_dim_line_width": 2.0,
-    "imgui_rounding_general": 8.0,
-    "imgui_rounding_scroll": 11.0,
-    "imgui_rounding_tabs": 6.0,
-    "last_opened_project_path": "",
-    "load_last_opened_on_startup": false,
-    "log_window_visible": true,
-    "show_dbg": false,
-    "show_lua_console": true,
-    "show_options": true,
-    "show_python_console": true,
-    "ui_verbosity": 6,
-    "view_roll_step_deg": 45.0,
-    "view_zoom_scroll_scale": 4.0,
-    "show_settings_dialog": true,
-    "show_shape_list": true,
-    "show_sketch_list": true,
-    "add_mid_pt_edges": false,
-    "add_mid_pt_rect_edges": true,
-    "add_mid_pt_slot_edges": false,
-    "snap_guide_mode": 2,
-    "annotate_all_coaxial_nodes": true,
-    "snap_guide_color_node": [
-      0.8232946395874023,
-      0.5494110584259033,
-      0.9533898234367371
-    ],
-    "snap_guide_color_axis": [
-      0.9576271176338196,
-      0.06492385268211365,
-      0.5415366888046265
-    ],
-    "underlay_highlight_color": [
-      0.639830470085144,
-      0.5619884133338928,
-      0.31178179383277893
-    ],
+    "edge_dim_label_h": 3,
+    "edge_dim_line_width": 0.5,
+    "edge_dim_text_render_mode": 5,
+    "edge_dim_text_scale": 1.0,
     "elm_list_hover_color": [
       0.4020639955997467,
       0.1025567501783371,
       0.47457629442214966,
       1.0
-    ]
+    ],
+    "imgui_style_dark": {
+      "frame_border": 0.0,
+      "frame_padding_x": 5.0,
+      "frame_padding_y": 3.0,
+      "item_spacing_x": 5.0,
+      "item_spacing_y": 5.0,
+      "rounding_general": 8.0,
+      "rounding_scroll": 12.0,
+      "rounding_tabs": 6.0,
+      "window_alpha": 0.8199999928474426,
+      "window_border": 1.0,
+      "window_padding_x": 10.0,
+      "window_padding_y": 10.0
+    },
+    "imgui_style_light": {
+      "frame_border": 0.0,
+      "frame_padding_x": 5.0,
+      "frame_padding_y": 3.0,
+      "item_spacing_x": 10.0,
+      "item_spacing_y": 5.0,
+      "rounding_general": 8.0,
+      "rounding_scroll": 11.0,
+      "rounding_tabs": 6.0,
+      "window_alpha": 0.5,
+      "window_border": 1.0,
+      "window_padding_x": 10.0,
+      "window_padding_y": 10.0
+    },
+    "inspection_orthographic": false,
+    "last_opened_project_path": "",
+    "load_last_opened_on_startup": false,
+    "log_window_visible": true,
+    "origin_marker_color": [
+      0.0,
+      0.75,
+      1.0
+    ],
+    "permanent_node_anno_scale": 0.30000001192092896,
+    "show_dbg": false,
+    "show_lua_console": true,
+    "show_options": true,
+    "show_python_console": true,
+    "show_settings_dialog": false,
+    "show_shape_list": true,
+    "show_sketch_dimensions": true,
+    "show_sketch_list": true,
+    "snap_guide_color_axis": [
+      0.9576271176338196,
+      0.06492385268211365,
+      0.5415366888046265
+    ],
+    "snap_guide_color_node": [
+      0.8232946395874023,
+      0.5494110584259033,
+      0.9533898234367371
+    ],
+    "snap_guide_line_width": 1.0,
+    "snap_guide_mode": 2,
+    "ui_verbosity": 6,
+    "underlay_highlight_color": [
+      0.639830470085144,
+      0.5619884133338928,
+      0.31178179383277893,
+      1.0
+    ],
+    "view_roll_step_deg": 45.0,
+    "view_zoom_scroll_scale": 4.0
   },
-  "imgui_ini": "[Window][##MainMenuBar]\nPos=0,0\nSize=1920,22\n\n[Window][Toolbar]\nPos=7,24\nSize=1310,58\n\n[Window][Sketch List]\nPos=8,86\nSize=321,225\n\n[Window][Shape List]\nPos=8,332\nSize=220,360\n\n[Window][Options]\nPos=1322,26\nSize=389,277\n\n[Window][Lua Console]\nPos=5,855\nSize=1291,313\nCollapsed=1\n\n[Window][Python Console]\nPos=6,831\nSize=1290,225\nCollapsed=1\n\n[Window][Log]\nPos=3,975\nSize=1280,180\nCollapsed=1\n\n[Window][Settings]\nPos=796,86\nSize=520,560\nCollapsed=1\n\n[Window][Debug##Default]\nPos=60,60\nSize=400,400\n\n[Window][dbg]\nPos=260,420\nSize=320,200\n\n[Window][Sketch properties]\nPos=330,86\nSize=400,116\n\n",
+  "imgui_ini": "[Window][##MainMenuBar]\nPos=0,0\nSize=1920,22\nCollapsed=0\n\n[Window][Toolbar]\nPos=252,21\nSize=1190,58\nCollapsed=0\n\n[Window][Sketch List]\nPos=0,22\nSize=252,443\nCollapsed=0\nDockId=0x00000005,0\n\n[Window][Shape List]\nPos=0,467\nSize=252,551\nCollapsed=0\nDockId=0x00000006,0\n\n[Window][Options]\nPos=1443,34\nSize=345,431\nCollapsed=0\n\n[Window][Lua Console]\nPos=0,1020\nSize=1920,101\nCollapsed=0\nDockId=0x0000000E,0\n\n[Window][Python Console]\nPos=0,1020\nSize=1920,101\nCollapsed=0\nDockId=0x0000000E,1\n\n[Window][Log]\nPos=0,1020\nSize=1920,101\nCollapsed=0\nDockId=0x0000000E,2\n\n[Window][Settings]\nPos=603,99\nSize=603,701\nCollapsed=0\n\n[Window][Debug##Default]\nPos=60,60\nSize=400,400\nCollapsed=0\n\n[Window][dbg]\nPos=344,110\nSize=320,200\nCollapsed=0\n\n[Window][Sketch properties]\nPos=1060,381\nSize=701,477\nCollapsed=0\n\n[Window][About]\nPos=700,300\nSize=520,520\nCollapsed=0\n\n[Window][New sketch]\nPos=801,473\nSize=317,175\nCollapsed=0\n\n[Window][WindowOverViewport_11111111]\nPos=0,22\nSize=1920,1099\nCollapsed=0\n\n[Docking][Data]\nDockSpace       ID=0xD79204D4 Window=0x1BBC0F80 Pos=0,51 Size=1920,1099 Split=Y\n  DockNode      ID=0x0000000D Parent=0xD79204D4 SizeRef=1920,996 Split=X\n    DockNode    ID=0x00000007 Parent=0x0000000D SizeRef=252,1099 Split=Y Selected=0xCA8EA105\n      DockNode  ID=0x00000005 Parent=0x00000007 SizeRef=167,443 Selected=0xCA8EA105\n      DockNode  ID=0x00000006 Parent=0x00000007 SizeRef=167,551 Selected=0x3BE507E9\n    DockNode    ID=0x00000008 Parent=0x0000000D SizeRef=1666,1099 Split=X\n      DockNode  ID=0x00000001 Parent=0x00000008 SizeRef=168,1121\n      DockNode  ID=0x00000002 Parent=0x00000008 SizeRef=1750,1121 CentralNode=1 Selected=0x0C01D6D5\n  DockNode      ID=0x0000000E Parent=0xD79204D4 SizeRef=1920,101 Selected=0x139FDA3F\n\n",
   "occt_view": {
     "bg_color1": [
       0.037551622837781906,
@@ -74,10 +114,10 @@
       0.11791712790727615,
       0.13513511419296265
     ],
-    "grid_padding": 1000,
-    "grid_graphic_z_offset": 0,
-    "grid_step": 10,
-    "grid_visible": true
+    "grid_graphic_z_offset": 0.0,
+    "grid_padding": 1000.0,
+    "grid_step": 10.0,
+    "grid_visible": false
   },
   "version": "1"
 }

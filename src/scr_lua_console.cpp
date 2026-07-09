@@ -57,9 +57,12 @@ static const char* default_sketch_base_name(Sketch_ref_plane plane)
 {
   switch (plane)
   {
-  case Sketch_ref_plane::XZ: return "Sketch_xz";
-  case Sketch_ref_plane::YZ: return "Sketch_yz";
-  default:                   return "Sketch_xy";
+  case Sketch_ref_plane::XZ:
+    return "Sketch_xz";
+  case Sketch_ref_plane::YZ:
+    return "Sketch_yz";
+  default:
+    return "Sketch_xy";
   }
 }
 
@@ -233,10 +236,10 @@ int l_view_add_sketch(lua_State* L)
   Occt_view* view = gui ? gui->get_view() : nullptr;
   if (!view)
     return luaL_error(L, "no 3D view available");
-  const char* plane  = luaL_optstring(L, 1, "XY");
-  const double offset = luaL_optnumber(L, 2, 0.0);
-  const Sketch_ref_plane ref = parse_sketch_ref_plane(plane);
-  std::string base = default_sketch_base_name(ref);
+  const char*            plane  = luaL_optstring(L, 1, "XY");
+  const double           offset = luaL_optnumber(L, 2, 0.0);
+  const Sketch_ref_plane ref    = parse_sketch_ref_plane(plane);
+  std::string            base   = default_sketch_base_name(ref);
   if (lua_gettop(L) >= 3 && !lua_isnil(L, 3))
     base = luaL_checkstring(L, 3);
   view->add_sketch_on_ref_plane(ref, offset, base);

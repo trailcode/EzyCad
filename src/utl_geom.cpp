@@ -282,8 +282,8 @@ TopoDS_Shape create_origin_marker_shape(const gp_Pln& plane, const gp_Pnt& cente
   const double       circle_radius = std::max(half_arm * 1.35, Precision::Confusion() * 50.0);
   const TopoDS_Shape cross         = create_plus_cross_shape(plane, center_3d, half_arm);
 
-  const gp_Pnt2d center_2d = to_2d(plane, center_3d);
-  const gp_Pnt2d edge_2d(center_2d.X() + circle_radius, center_2d.Y());
+  const gp_Pnt2d    center_2d = to_2d(plane, center_3d);
+  const gp_Pnt2d    edge_2d(center_2d.X() + circle_radius, center_2d.Y());
   const TopoDS_Wire circle_wire = make_circle_wire(plane, center_2d, edge_2d);
 
   TopoDS_Compound comp;

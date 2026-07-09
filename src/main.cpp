@@ -1,6 +1,8 @@
 // Dear ImGui + EzyCad GUI + OCCT 3D view + chained GLFW input.
-// On wasm, sizing is handled by imgui_impl_glfw (OnCanvasSizeChange: CSS * DPR + canvas); do not
-// second-guess with extra glfwSetWindowSize/io overrides here - they fight that path and break input.
+// On wasm HiDPI (imgui#7519): ImGui_ImplGlfw_OnCanvasSizeChange sets GLFW window + canvas
+// backing to CSS * devicePixelRatio so ImGui runs in physical pixels with
+// DisplayFramebufferScale = 1 (sharp fonts/icons). OCCT uses Wasm_Window(ToScaleBacking=false)
+// and DevicePixelRatio 1 so it shares that backing store. Do not enable GLFW_SCALE_TO_MONITOR.
 
 #ifdef _WIN32
 #define WIN32_LEAN_AND_MEAN
@@ -32,6 +34,7 @@
 // This example can also compile and run with Emscripten! See 'Makefile.emscripten' for details.
 #ifdef __EMSCRIPTEN__
 #include <emscripten.h>
+#include <emscripten/html5.h>
 
 #include "emscripten/emscripten_mainloop_stub.h"
 
@@ -135,19 +138,13 @@ int main(int argc, char** argv)
 #endif
 
 #ifdef __EMSCRIPTEN__
-  // GLFW often reports content scale 1.0 on wasm while the browser uses devicePixelRatio > 1.
-  // Windows native uses monitor content scale for main_scale - align wasm so font/style size matches.
-  {
-    int ww = 0, wh = 0, fbw = 0, fbh = 0;
-    glfwGetWindowSize(window, &ww, &wh);
-    glfwGetFramebufferSize(window, &fbw, &fbh);
-    float fb_scale = 1.0f;
-    if (ww > 0 && wh > 0)
-      fb_scale = ((float)fbw / (float)ww + (float)fbh / (float)wh) * 0.5f;
-    const float dpr = emscripten_get_device_pixel_ratio();
-    if (main_scale <= 1.0f)
-      main_scale = (fb_scale > 1.01f) ? fb_scale : dpr;
-  }
+  // Physical-pixel ImGui path (imgui_impl_glfw OnCanvasSizeChange sets window = CSS * DPR).
+  // Bake DPR into style/fonts so widgets keep CSS-logical on-screen size; DisplayFramebufferScale
+  // stays 1 (window == framebuffer), so glyphs/icons are not upscaled and stay sharp.
+  // Do not enable GLFW_SCALE_TO_MONITOR (fights width/height: 100% CSS).
+  main_scale = (float)emscripten_get_device_pixel_ratio();
+  if (main_scale < 1.0f)
+    main_scale = 1.0f;
 #endif
 
   // Setup Dear ImGui context
@@ -157,6 +154,11 @@ int main(int argc, char** argv)
   (void)io;
   io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard; // Enable Keyboard Controls
   io.ConfigFlags |= ImGuiConfigFlags_NavEnableGamepad;  // Enable Gamepad Controls
+  io.ConfigFlags |= ImGuiConfigFlags_DockingEnable;
+#ifndef __EMSCRIPTEN__
+  // Multi-viewport OS windows are native-only (no browser equivalent).
+  io.ConfigFlags |= ImGuiConfigFlags_ViewportsEnable;
+#endif
 
   // Setup Dear ImGui style
   ImGui::StyleColorsDark();
@@ -168,6 +170,10 @@ int main(int argc, char** argv)
                                    // this requires resetting Style + calling this again)
   style.FontScaleDpi = main_scale; // Set initial font scale. (in docking branch: using io.ConfigDpiScaleFonts=true
                                    // automatically overrides this for every window depending on the current monitor)
+#ifndef __EMSCRIPTEN__
+  if (io.ConfigFlags & ImGuiConfigFlags_ViewportsEnable)
+    style.WindowRounding = 0.0f;
+#endif
 
   // Setup Platform/Renderer backends
   ImGui_ImplGlfw_InitForOpenGL(window, true);
@@ -240,21 +246,36 @@ int main(int argc, char** argv)
   {
     ImGui_ImplGlfw_KeyCallback(window, key, scancode, action, mods);
 
-    if (!io.WantTextInput)
+    const bool route_escape_from_dim_edit =
+        key == GLFW_KEY_ESCAPE && action == GLFW_PRESS && gui.is_dist_or_angle_edit_active();
+    if (!io.WantTextInput || route_escape_from_dim_edit)
       gui.on_key(key, scancode, action, mods);
+  };
+
+  const auto forward_mouse_click_to_gui = [&]()
+  {
+    const float mx = (float)io.MousePos.x;
+    const float my = (float)io.MousePos.y;
+    if (!gui.occt_wants_mouse_at(mx, my))
+      return false;
+
+    // Passthrough 3D region: forward clicks unless an ImGui window (e.g. floating Toolbar) is hovered.
+    if (ImGui::IsWindowHovered(ImGuiHoveredFlags_AnyWindow))
+      return false;
+
+    return true;
   };
 
   cursorPosCallback = [&](GLFWwindow* window, double xpos, double ypos)
   {
     ImGui_ImplGlfw_CursorPosCallback(window, xpos, ypos);
-    if (!io.WantCaptureMouse)
-      gui.on_mouse_pos(ScreenCoords(dvec2(xpos, ypos)));
+    gui.on_mouse_pos(ScreenCoords(dvec2(xpos, ypos)));
   };
 
   mouseButtonCallback = [&](GLFWwindow* window, int button, int action, int mods)
   {
     ImGui_ImplGlfw_MouseButtonCallback(window, button, action, mods);
-    if (!io.WantCaptureMouse)
+    if (forward_mouse_click_to_gui())
       gui.on_mouse_button(button, action, mods);
   };
 
@@ -266,7 +287,7 @@ int main(int argc, char** argv)
   scroll_callback = [&](GLFWwindow* window, double xoffset, double yoffset)
   {
     ImGui_ImplGlfw_ScrollCallback(window, xoffset, yoffset);
-    if (!io.WantCaptureMouse)
+    if (forward_mouse_click_to_gui())
       gui.on_mouse_scroll(xoffset, yoffset);
   };
 
@@ -297,6 +318,18 @@ int main(int argc, char** argv)
       continue;
     }
 
+#ifdef __EMSCRIPTEN__
+    // Startup layout resync: browser CSS size may settle after init; re-run CSS*DPR canvas sync.
+    {
+      static int s_startup_resync_frames = 2;
+      if (s_startup_resync_frames > 0)
+      {
+        --s_startup_resync_frames;
+        EM_ASM({ window.dispatchEvent(new Event('resize')); });
+      }
+    }
+#endif
+
     // Start the Dear ImGui frame (platform must set DisplaySize before renderer NewFrame)
     ImGui_ImplGlfw_NewFrame();
     ImGui_ImplOpenGL3_NewFrame();
@@ -316,6 +349,14 @@ int main(int argc, char** argv)
     gui.render_occt();
 
     ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
+
+#ifndef __EMSCRIPTEN__
+    if (io.ConfigFlags & ImGuiConfigFlags_ViewportsEnable)
+    {
+      ImGui::UpdatePlatformWindows();
+      ImGui::RenderPlatformWindowsDefault();
+    }
+#endif
 
     glfwSwapBuffers(window);
 

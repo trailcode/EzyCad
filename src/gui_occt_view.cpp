@@ -22,6 +22,7 @@
 #include <OpenGl_GraphicDriver.hxx>
 #include <Precision.hxx>
 #include <Prs3d_DatumAspect.hxx>
+#include <Standard_Failure.hxx>
 #include <Prs3d_Drawer.hxx>
 #include <Graphic3d_AspectFillArea3d.hxx>
 #include <Prs3d_LineAspect.hxx>
@@ -58,6 +59,7 @@
 #include "utl_occt.h"
 
 #ifdef __EMSCRIPTEN__
+#include <emscripten.h>
 #include <Font_FontMgr.hxx>
 #include <Font_NameOfFont.hxx>
 #include <TCollection_AsciiString.hxx>
@@ -98,7 +100,7 @@ void Occt_view::init_window(GLFWwindow* GlfwWindow)
 
 void Occt_view::init_viewer()
 {
-  double myDevicePixelRatio = 1.0; // TODO
+  double myDevicePixelRatio = 1.0;
 #ifndef __EMSCRIPTEN__
   if (m_occt_window.IsNull() || m_occt_window->getGlfwWindow() == nullptr)
   {
@@ -150,7 +152,7 @@ void Occt_view::init_viewer()
   m_ctx = new AIS_InteractiveContext(aViewer);
 #else // __EMSCRIPTEN__
   Handle(Aspect_DisplayConnection) aDisp;
-  Handle(OpenGl_GraphicDriver) aDriver   = new OpenGl_GraphicDriver(aDisp, false);
+  Handle(OpenGl_GraphicDriver) aDriver        = new OpenGl_GraphicDriver(aDisp, false);
   aDriver->ChangeOptions().buffersNoSwap      = true; // swap has no effect in WebGL
   aDriver->ChangeOptions().buffersOpaqueAlpha = true; // avoid unexpected blending of canvas with page background
   // Match native OpenGL path (sRGBDisable) so shading/material gamma is consistent vs desktop.
@@ -174,7 +176,12 @@ void Occt_view::init_viewer()
       aLight->SetCastShadows(true);
   }
 
-  Handle(Wasm_Window) aWindow = new Wasm_Window("#canvas");
+  // ImGui owns HiDPI: canvas + GLFW window are CSS * DPR (see imgui_impl_glfw OnCanvasSizeChange).
+  // ToScaleBacking=false so OCCT does not resize the shared canvas again; DevicePixelRatio=1 so
+  // mouse/view coords stay in the same physical-pixel space as GLFW.
+  Handle(Wasm_Window) aWindow = new Wasm_Window("#canvas", false);
+  aWindow->SetDevicePixelRatio(1.0);
+  myDevicePixelRatio = 1.0;
 
   m_view = new V3d_View(aViewer);
   m_view->Camera()->SetProjectionType(Graphic3d_Camera::Projection_Perspective);
@@ -204,15 +211,15 @@ void Occt_view::init_viewer()
 #endif
 
   m_view->SetImmediateUpdate(false);
-  auto& params               = m_view->ChangeRenderingParams();
-  params.ToShowStats         = true;
-  params.ShadowMapResolution = 1024;
-  params.OitDepthFactor      = 0.0;
-  params.Resolution              = (unsigned int)(96.0 * myDevicePixelRatio + 0.5);
-  params.NbMsaaSamples           = 8;
-  params.RenderResolutionScale   = 2.0;
-  params.IsShadowEnabled         = true;
-  params.TransparencyMethod      = Graphic3d_RTM_BLEND_UNORDERED;
+  auto& params                 = m_view->ChangeRenderingParams();
+  params.ToShowStats           = true;
+  params.ShadowMapResolution   = 1024;
+  params.OitDepthFactor        = 0.0;
+  params.Resolution            = (unsigned int)(96.0 * myDevicePixelRatio + 0.5);
+  params.NbMsaaSamples         = 8;
+  params.RenderResolutionScale = 2.0;
+  params.IsShadowEnabled       = true;
+  params.TransparencyMethod    = Graphic3d_RTM_BLEND_UNORDERED;
 
   capture_occt_grid_rect_from_viewer_(aViewer);
 
@@ -1551,8 +1558,21 @@ void Occt_view::set_occt_grid_rect_params(const Occt_grid_rect_params& p)
 
 void Occt_view::flush_view_events()
 {
-  if (!m_view.IsNull())
+  if (m_view.IsNull() || m_ctx.IsNull())
+    return;
+
+  try
+  {
     FlushViewEvents(m_ctx, m_view, true);
+  }
+  catch (const Standard_Failure& e)
+  {
+    DBG_MSG(e.what() ? e.what() : "FlushViewEvents failed");
+    AbortViewAnimation();
+    m_ctx->ClearSelected(false);
+    if (!m_shape_list_hover.IsNull())
+      set_shape_list_hover(nullptr);
+  }
 }
 
 void Occt_view::do_frame()
@@ -1671,7 +1691,7 @@ void Occt_view::on_mouse_move(const ScreenCoords& screen_coords)
 {
   EZY_ASSERT(!m_view.IsNull());
   UpdateMousePosition(NCollection_Vec2<int>(int(screen_coords.unsafe_get_x()), int(screen_coords.unsafe_get_y())),
-                      PressedMouseButtons(), LastMouseFlags(), false);
+                      PressedMouseButtons(), key_flags_from_glfw_window_(), false);
 }
 
 // Selection related
@@ -1917,16 +1937,35 @@ bool Occt_view::sketch_snap_suppressed() const
 
 void Occt_view::apply_camera_projection()
 {
-  if (is_headless())
+  if (is_headless() || m_view.IsNull())
     return;
 
   const bool ortho = is_sketch_mode(get_mode()) || m_gui.inspection_orthographic();
 
   Graphic3d_Camera_ptr camera = m_view->Camera();
-  if (ortho)
-    camera->SetProjectionType(Graphic3d_Camera::Projection_Orthographic);
-  else
-    camera->SetProjectionType(Graphic3d_Camera::Projection_Perspective);
+  if (camera.IsNull())
+    return;
+
+  const auto target = ortho ? Graphic3d_Camera::Projection_Orthographic : Graphic3d_Camera::Projection_Perspective;
+  if (camera->ProjectionType() == target)
+    return;
+
+  const double scale = m_view->Scale();
+  const gp_Pnt   eye = camera->Eye();
+  const gp_Pnt   at  = camera->Center();
+  const double   dist = gp_Vec(eye, at).Magnitude();
+
+  camera->SetProjectionType(target);
+  if (dist > Precision::Confusion())
+  {
+    gp_Vec offset(camera->Direction().Reversed());
+    offset.Multiply(dist);
+    camera->SetEyeAndCenter(at.Translated(offset), at);
+  }
+
+  m_view->SetCamera(camera);
+  if (scale > Precision::Confusion())
+    m_view->SetScale(scale);
 
   m_view->Redraw();
   m_ctx->UpdateCurrentViewer();
@@ -1940,6 +1979,10 @@ void Occt_view::on_mode()
 
   for (Sketch_ptr& s : m_sketches)
     s->on_mode();
+
+  // Set ortho/perspective before showing or redisplaying shapes (switching after display
+  // corrupts zoom, e.g. extrude sketch ortho -> chamfer perspective).
+  apply_camera_projection();
 
   auto show_only_current_sketch = [&]()
   {
@@ -2010,7 +2053,6 @@ void Occt_view::on_mode()
   }
 
   apply_sketch_dimensions_visibility();
-  apply_camera_projection();
 }
 
 void Occt_view::on_chamfer_mode()
@@ -2068,6 +2110,28 @@ Aspect_VKeyFlags Occt_view::key_flags_from_glfw_(int theFlags)
   if ((theFlags & GLFW_MOD_SUPER)   != 0) flags |= Aspect_VKeyFlags_META;
   // clang-format on
   return flags;
+}
+
+Aspect_VKeyFlags Occt_view::key_flags_from_glfw_window_() const
+{
+  if (m_occt_window.IsNull() || m_occt_window->getGlfwWindow() == nullptr)
+    return Aspect_VKeyFlags_NONE;
+
+  GLFWwindow* const window = m_occt_window->getGlfwWindow();
+  int               mods   = 0;
+  if (glfwGetKey(window, GLFW_KEY_LEFT_SHIFT) == GLFW_PRESS || glfwGetKey(window, GLFW_KEY_RIGHT_SHIFT) == GLFW_PRESS)
+    mods |= GLFW_MOD_SHIFT;
+
+  if (glfwGetKey(window, GLFW_KEY_LEFT_CONTROL) == GLFW_PRESS || glfwGetKey(window, GLFW_KEY_RIGHT_CONTROL) == GLFW_PRESS)
+    mods |= GLFW_MOD_CONTROL;
+
+  if (glfwGetKey(window, GLFW_KEY_LEFT_ALT) == GLFW_PRESS || glfwGetKey(window, GLFW_KEY_RIGHT_ALT) == GLFW_PRESS)
+    mods |= GLFW_MOD_ALT;
+
+  if (glfwGetKey(window, GLFW_KEY_LEFT_SUPER) == GLFW_PRESS || glfwGetKey(window, GLFW_KEY_RIGHT_SUPER) == GLFW_PRESS)
+    mods |= GLFW_MOD_SUPER;
+
+  return key_flags_from_glfw_(mods);
 }
 
 Occt_view::Sketch_list& Occt_view::get_sketches() { return m_sketches; }
@@ -2601,7 +2665,8 @@ AIS_InteractiveContext& Occt_view::ctx() { return *m_ctx; }
 
 void Occt_view::new_file()
 {
-  push_undo_snapshot();
+  m_undo_stack.clear();
+  m_redo_stack.clear();
   remove(m_shps);
   clear_all(m_shps, m_sketches, m_cur_sketch);
   m_assets.clear();

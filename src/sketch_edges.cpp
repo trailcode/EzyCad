@@ -207,6 +207,7 @@ void Sketch_edges::add_arc_circle_edges(const std::vector<size_t>& node_idxs, Sk
       const gp_Pnt2d qb = m_sketch.m_nodes[*e.node_idx_b];
       if (point_on_open_segment_2d(pt_start, qa, qb))
         add_unique_point(inters, pt_start);
+
       if (point_on_open_segment_2d(pt_end, qa, qb))
         add_unique_point(inters, pt_end);
 

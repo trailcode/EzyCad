@@ -159,9 +159,12 @@ static const char* default_sketch_base_name(Sketch_ref_plane plane)
 {
   switch (plane)
   {
-  case Sketch_ref_plane::XZ: return "Sketch_xz";
-  case Sketch_ref_plane::YZ: return "Sketch_yz";
-  default:                   return "Sketch_xy";
+  case Sketch_ref_plane::XZ:
+    return "Sketch_xz";
+  case Sketch_ref_plane::YZ:
+    return "Sketch_yz";
+  default:
+    return "Sketch_xy";
   }
 }
 
