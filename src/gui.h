@@ -492,6 +492,9 @@ private:
   std::vector<char> m_log_buffer{'\0'};
   bool              m_log_scroll_to_bottom = false; // Auto-scroll log to bottom on new lines (like Lua console)
   bool              m_log_window_visible   = true;  // Control log window visibility
+  std::string       m_log_last_line_base;           // Dedup: base text of the trailing log line
+  size_t            m_log_last_line_start = 0;      // Dedup: buffer offset where trailing line begins
+  size_t            m_log_repeat_count   = 0;       // Dedup: consecutive repeats of m_log_last_line_base
 
   // Stream redirection
   std::streambuf* m_original_cout_buf = nullptr; // Original stdout buffer
