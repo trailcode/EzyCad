@@ -161,7 +161,8 @@ public:
 private:
   friend class Sketch_json;
   friend class Sketch_access;
-  friend class Sketch_delta;
+  friend class Sketch_op_delta;
+  friend struct Sketch_op_data;
   friend class Sketch_op_recorder;
   friend class Sketch_topo;
   friend class Sketch_dims;

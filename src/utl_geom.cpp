@@ -1527,6 +1527,7 @@ std::vector<gp_Pnt2d> arc_arc_intersections_2d(const TopoDS_Edge& arc_a, const T
 
     if (!point_on_open_arc_interior_2d(p2d, arc_a, pln))
       continue;
+
     if (!point_on_open_arc_interior_2d(p2d, arc_b, pln))
       continue;
 

@@ -16,7 +16,7 @@
 #include "gui_occt_view.h"
 #include "sketch.h"
 #include "sketch_ais.h"
-#include "sketch_delta.h"
+#include "sketch_op_recorder.h"
 #include "sketch_json.h"
 #include "sketch_edge.h"
 #include "sketch_nodes.h"
@@ -686,6 +686,66 @@ TEST_F(Sketch_test, Undo_two_crossing_edges_via_finalize)
   EXPECT_TRUE(view().undo());
   EXPECT_EQ(Sketch_access::get_linear_edge_count(sketch), 0)
       << "Undo of the first edge should remove it";
+}
+
+TEST_F(Sketch_test, Redo_two_crossing_edges_keeps_intersection_node_non_permanent)
+{
+  gp_Pln default_plane(gp::Origin(), gp::DZ());
+  Sketch sketch("TestSketch", view(), default_plane);
+
+  auto count_permanent_nodes = [](Sketch& s) {
+    size_t n = 0;
+    for (const auto& node : s.get_nodes())
+      if (node.permanent && !node.deleted)
+        ++n;
+    return n;
+  };
+
+  auto find_live_node_at = [](Sketch& s, const gp_Pnt2d& pt) -> std::optional<size_t> {
+    for (size_t i = 0, n = s.get_nodes().size(); i < n; ++i)
+    {
+      const auto& node = s.get_nodes()[i];
+      if (node.deleted)
+        continue;
+
+      if (node.SquareDistance(pt) <= Precision::SquareConfusion())
+        return i;
+    }
+    return std::nullopt;
+  };
+
+  {
+    Sketch_op_recorder rec(view(), sketch);
+    Sketch_access::add_edge_(sketch, gp_Pnt2d(0.0, 0.0), gp_Pnt2d(10.0, 0.0), rec);
+    rec.commit();
+  }
+
+  {
+    Sketch_op_recorder rec(view(), sketch);
+    Sketch_access::add_edge_(sketch, gp_Pnt2d(3.0, -2.0), gp_Pnt2d(3.0, 4.0), rec);
+    rec.commit();
+  }
+
+  EXPECT_EQ(Sketch_access::get_linear_edge_count(sketch), 4);
+  const size_t perm_after_create = count_permanent_nodes(sketch);
+
+  const std::optional<size_t> intersection_before = find_live_node_at(sketch, gp_Pnt2d(3.0, 0.0));
+  ASSERT_TRUE(intersection_before.has_value()) << "Crossing should create an interior node";
+  EXPECT_FALSE(sketch.get_nodes()[*intersection_before].permanent)
+      << "Auto-split intersection nodes should not be permanent";
+
+  EXPECT_TRUE(view().undo());
+  EXPECT_TRUE(view().undo());
+  EXPECT_TRUE(view().redo());
+  EXPECT_TRUE(view().redo());
+
+  EXPECT_EQ(Sketch_access::get_linear_edge_count(sketch), 4);
+  EXPECT_EQ(count_permanent_nodes(sketch), perm_after_create) << "Redo should not add permanent nodes";
+
+  const std::optional<size_t> intersection_after = find_live_node_at(sketch, gp_Pnt2d(3.0, 0.0));
+  ASSERT_TRUE(intersection_after.has_value()) << "Crossing intersection should be restored";
+  EXPECT_FALSE(sketch.get_nodes()[*intersection_after].permanent)
+      << "Redo must not promote the intersection node to permanent";
 }
 
 TEST_F(Sketch_test, Undo_extrude_snapshot_keeps_single_sketch)

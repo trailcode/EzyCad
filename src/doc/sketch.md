@@ -75,10 +75,10 @@ Supporting (not owned sub-objects):
   sketch_display.cpp      visibility, edge styling, list hover, set_current
   sketch_operations.cpp   operation axis, mirror, revolve
   sketch_json.*           JSON serialization
-  sketch_delta.*          undo/redo (Sketch_op_recorder, Sketch_delta)
+  sketch_op_recorder.*    undo/redo (Sketch_op_recorder; Sketch_op_delta in .cpp)
 ```
 
-`Sketch` grants `friend` access to `Sketch_json`, `Sketch_delta`, `Sketch_topo`, `Sketch_edges`, `Sketch_dims`, `Sketch_node_marks`, and `Sketch_tools` for coordinated mutations without exposing internals publicly.
+`Sketch` grants `friend` access to `Sketch_json`, `Sketch_op_delta`, `Sketch_topo`, `Sketch_edges`, `Sketch_dims`, `Sketch_node_marks`, and `Sketch_tools` for coordinated mutations without exposing internals publicly.
 
 ## Public API overview
 
@@ -209,7 +209,7 @@ Prefer these visitors in JSON/delta/topo code over iterating `std::list<Sketch_e
 | `sketch_display.cpp` | Visibility, edge/face styling, `set_current`, list hover |
 | `sketch_operations.cpp` | Operation axis, mirror, revolve |
 | `sketch_json.h` | `.ezy` / project JSON for sketches |
-| `sketch_delta.h` | Undo/redo deltas keyed by `sketch_id` |
+| `sketch_op_recorder.h` | Undo/redo recorder; `Sketch_op_delta` lives in `.cpp` |
 
 ## Edge and face model
 

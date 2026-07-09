@@ -1,7 +1,5 @@
 #pragma once
 
-#include "delta.h"
-
 #include <gp_Pnt2d.hxx>
 
 #include <memory>
@@ -11,7 +9,7 @@
 class Occt_view;
 class Sketch;
 
-/// Records `prev`/`curr` lists during one sketch edit; pushes a `Sketch_delta` on commit.
+/// Records `prev`/`curr` lists during one sketch edit; pushes a `Sketch_op_delta` on commit.
 class Sketch_op_recorder
 {
 public:
@@ -37,31 +35,5 @@ public:
   void cancel();
 
 private:
-  std::unique_ptr<Impl> m_impl;
-};
-
-/// One sketch undo step: `prev_*` is restored on undo; `curr_*` is re-applied on redo.
-/// Node indices are never compacted; undo tombstones `curr_node_idxs` and redo revives them
-/// through the normal node lookup when edges are added again.
-class Sketch_delta : public Delta
-{
-public:
-  Sketch_delta(Sketch& sketch, size_t sketch_id);
-  ~Sketch_delta() override;
-
-  /// Clone path: identity by stable sketch id (no live `Sketch` pointer).
-  explicit Sketch_delta(size_t sketch_id);
-
-  Sketch_delta(const Sketch_delta&)            = delete;
-  Sketch_delta& operator=(const Sketch_delta&) = delete;
-
-  void                   apply_forward(Occt_view& view) override;
-  void                   apply_reverse(Occt_view& view) override;
-  std::unique_ptr<Delta> clone() const override;
-
-private:
-  friend class Sketch_op_recorder::Impl;
-
-  class Impl;
   std::unique_ptr<Impl> m_impl;
 };

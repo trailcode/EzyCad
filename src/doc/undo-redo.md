@@ -3,7 +3,7 @@
 Developer reference for EzyCad's document history. Public C++ entry points:
 
 - [`delta.h`](../delta.h) — abstract undo step
-- [`sketch_delta.h`](../sketch_delta.h) — sketch element deltas and recorder
+- [`sketch_op_recorder.h`](../sketch_op_recorder.h) — sketch operation recorder (public API)
 - [`gui_occt_view.h`](../gui_occt_view.h) — stack storage and `undo()` / `redo()`
 
 Maintainers: update this file when undo stack layout, delta types, or push/pop contracts change (see [agents/conventions/token-lean.md](../../agents/conventions/token-lean.md#developer-docs-in-srcdoc)). User-facing shortcuts are documented in [`docs/usage.md`](../../docs/usage.md).
@@ -16,7 +16,7 @@ The implementation uses **two strategies** on one stack:
 
 | Strategy | When used | Stored payload |
 | --- | --- | --- |
-| **Element delta** | Sketch geometry edits | `std::unique_ptr<Delta>` (`Sketch_delta` today) |
+| **Element delta** | Sketch geometry edits | `std::unique_ptr<Delta>` (`Sketch_op_delta` in `sketch_op_recorder.cpp`) |
 | **Full JSON snapshot** | Everything else | `to_json()` string of the whole document |
 
 Sketch deltas are cheaper and precise; JSON snapshots are simple and cover arbitrary document changes (shape booleans, sketch add/remove, file load, etc.).
@@ -58,7 +58,7 @@ Snapshot undo/redo calls `load(state.json, false)` so **camera pan/zoom/rotate a
 
 ### Stable sketch identity
 
-`Sketch_delta` keys sketches by stable `sketch_id` (not display name or list index). Node indices are never compacted; undo tombstones nodes created during an operation. See [sketch.md](sketch.md#requirements-and-invariants).
+`Sketch_op_delta` keys sketches by stable `sketch_id` (not display name or list index). Node indices are never compacted; undo tombstones nodes created during an operation. See [sketch.md](sketch.md#requirements-and-invariants).
 
 ## Architecture
 
@@ -69,13 +69,13 @@ GUI (menus, hotkeys, some UI-driven snapshots)
   |     m_undo_stack / m_redo_stack (Undo_entry)
   |
   +-- push_undo_snapshot()  -->  entry.json = to_json()
-  +-- push_undo_delta()     -->  entry.delta = Sketch_delta
+  +-- push_undo_delta()     -->  entry.delta = Sketch_op_delta
   +-- pop_undo_snapshot()   -->  drop last entry (failed/aborted edit)
 
 Sketch edits
   Sketch_op_recorder (RAII)
     note_prev_* / note_curr_* during mutation
-    commit() --> push_undo_delta(Sketch_delta)
+    commit() --> push_undo_delta(Sketch_op_delta)
     cancel() --> discard (destructor auto-cancels if not committed)
 
 Delta (abstract)
@@ -84,7 +84,7 @@ Delta (abstract)
   clone()               copy for opposite stack
 ```
 
-`Sketch_delta` is currently the only `Delta` subclass.
+`Sketch_op_delta` is currently the only `Delta` subclass (defined in [`sketch_op_recorder.cpp`](../sketch_op_recorder.cpp), not the public header).
 
 ## Core types
 
@@ -100,11 +100,11 @@ class Delta {
 
 Subclasses record the **forward** change. Undo applies `apply_reverse`; redo reapplies `apply_forward`.
 
-### `Sketch_op_recorder` ([`sketch_delta.h`](../sketch_delta.h))
+### `Sketch_op_recorder` ([`sketch_op_recorder.h`](../sketch_op_recorder.h))
 
 RAII scope around one sketch edit:
 
-1. **Construction** — captures live node positions and linear edges at operation start; allocates a `Sketch_delta` for the sketch's `get_id()`.
+1. **Construction** — captures live node positions and linear edges at operation start; initializes `Sketch_op_data` for the sketch's `get_id()`.
 2. **Mutation** — sketch code calls `note_*` helpers as it changes geometry.
 3. **`commit()`** — if any notes were recorded, pushes the delta via `Occt_view::push_undo_delta()`.
 4. **`cancel()`** or scope exit without commit — nothing is pushed (used for no-op mirror, failed tools, etc.).
@@ -116,13 +116,13 @@ Recorder notes (deduplicated by geometry):
 | `note_prev_linear_edge` | Edge removed or split away (must have existed at op start) |
 | `note_curr_linear_edge` | New linear segment added |
 | `note_prev_arc_edge` / `note_curr_arc_edge` | Arc circle segment removed / added |
-| `note_curr_node` | New node not live at op start |
+| `note_curr_node` | New node not live at op start (stores `permanent` for redo) |
 | `note_prev_length_dim` / `note_curr_length_dim` | Dimension removed / added |
 | `note_prev_operation_axis` / `note_curr_operation_axis` | Operation axis before / after |
 
 `note_prev_linear_edge` only records edges that were present when the recorder opened (`linear_edge_at_op_start_`), so incidental splits of pre-existing geometry are not mistaken for undoable removals of the user's new work.
 
-### `Sketch_delta` apply logic ([`sketch_delta.cpp`](../sketch_delta.cpp))
+### `Sketch_op_delta` apply logic ([`sketch_op_recorder.cpp`](../sketch_op_recorder.cpp))
 
 **Forward (redo):** add `curr_*` linear edges and arcs, restore `curr_*` dimensions and operation axis, refresh faces.
 
@@ -199,7 +199,7 @@ Hotkeys are handled in `GUI::on_key` (`gui_mode.cpp`) when dist/angle edit popup
 1. Open a `Sketch_op_recorder` around the mutation.
 2. Call `note_prev_*` before removing or splitting existing geometry; `note_curr_*` after adding.
 3. `commit()` at success; `cancel()` on no-op or error.
-4. If redo/undo needs logic not covered by existing note types, extend `Sketch_delta::Impl` and both `apply_forward_` / `apply_reverse_`.
+4. If redo/undo needs logic not covered by existing note types, extend `Sketch_op_data` and both `apply_forward_` / `apply_reverse_` in `sketch_op_recorder.cpp`.
 
 ### Non-sketch document change
 

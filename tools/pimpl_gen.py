@@ -5,8 +5,8 @@ Reads public method declarations from a class/struct and writes an .inl file
 with out-of-line definitions that delegate to m_impl->method(...).
 
 Example:
-  python tools/pimpl_gen.py src/sketch_delta.h --class Sketch_op_recorder
-  -> sketch_delta_impl_000.inl
+  python tools/pimpl_gen.py src/sketch_op_recorder.h --class Sketch_op_recorder
+  -> sketch_op_recorder_impl_000.inl
 
 The output is a starting point: review, rename, and merge into your .cpp.
 """
