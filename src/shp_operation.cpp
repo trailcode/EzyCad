@@ -96,6 +96,29 @@ const TopoDS_Edge* Shp_operation_base::get_edge_(const ScreenCoords& screen_coor
 
 void Shp_operation_base::add_shp_(Shp_ptr& shp) { m_view.add_shp_(shp); }
 
+void Shp_operation_base::replace_picked_shape_(Shp_ptr& old_shp, Shp_ptr& new_shp, const std::string& name)
+{
+  if (old_shp.IsNull() || new_shp.IsNull())
+    return;
+
+  Occt_view& v = view();
+  v.apply_camera_projection();
+
+  if (v.shape_list_hover() == old_shp)
+    v.set_shape_list_hover(nullptr);
+
+  ctx().ClearSelected(false);
+  ctx().Unhilight(old_shp, false);
+  ctx().Remove(old_shp, false);
+  v.get_shapes().remove(old_shp);
+
+  new_shp->set_name(name);
+  add_shp_(new_shp);
+  copy_shape_material_from_(new_shp, old_shp);
+  ctx().Display(new_shp, new_shp->get_disp_mode(), AIS_Shape::SelectionMode(v.get_shp_selection_mode()), true);
+  v.redraw_view();
+}
+
 void Shp_operation_base::copy_shape_material_from_(Shp_ptr& dest, const Shp_ptr& src)
 {
   if (dest.IsNull() || src.IsNull())

@@ -22,6 +22,7 @@
 #include <OpenGl_GraphicDriver.hxx>
 #include <Precision.hxx>
 #include <Prs3d_DatumAspect.hxx>
+#include <Standard_Failure.hxx>
 #include <Prs3d_Drawer.hxx>
 #include <Graphic3d_AspectFillArea3d.hxx>
 #include <Prs3d_LineAspect.hxx>
@@ -1557,8 +1558,21 @@ void Occt_view::set_occt_grid_rect_params(const Occt_grid_rect_params& p)
 
 void Occt_view::flush_view_events()
 {
-  if (!m_view.IsNull())
+  if (m_view.IsNull() || m_ctx.IsNull())
+    return;
+
+  try
+  {
     FlushViewEvents(m_ctx, m_view, true);
+  }
+  catch (const Standard_Failure& e)
+  {
+    DBG_MSG(e.what() ? e.what() : "FlushViewEvents failed");
+    AbortViewAnimation();
+    m_ctx->ClearSelected(false);
+    if (!m_shape_list_hover.IsNull())
+      set_shape_list_hover(nullptr);
+  }
 }
 
 void Occt_view::do_frame()
@@ -1923,16 +1937,35 @@ bool Occt_view::sketch_snap_suppressed() const
 
 void Occt_view::apply_camera_projection()
 {
-  if (is_headless())
+  if (is_headless() || m_view.IsNull())
     return;
 
   const bool ortho = is_sketch_mode(get_mode()) || m_gui.inspection_orthographic();
 
   Graphic3d_Camera_ptr camera = m_view->Camera();
-  if (ortho)
-    camera->SetProjectionType(Graphic3d_Camera::Projection_Orthographic);
-  else
-    camera->SetProjectionType(Graphic3d_Camera::Projection_Perspective);
+  if (camera.IsNull())
+    return;
+
+  const auto target = ortho ? Graphic3d_Camera::Projection_Orthographic : Graphic3d_Camera::Projection_Perspective;
+  if (camera->ProjectionType() == target)
+    return;
+
+  const double scale = m_view->Scale();
+  const gp_Pnt   eye = camera->Eye();
+  const gp_Pnt   at  = camera->Center();
+  const double   dist = gp_Vec(eye, at).Magnitude();
+
+  camera->SetProjectionType(target);
+  if (dist > Precision::Confusion())
+  {
+    gp_Vec offset(camera->Direction().Reversed());
+    offset.Multiply(dist);
+    camera->SetEyeAndCenter(at.Translated(offset), at);
+  }
+
+  m_view->SetCamera(camera);
+  if (scale > Precision::Confusion())
+    m_view->SetScale(scale);
 
   m_view->Redraw();
   m_ctx->UpdateCurrentViewer();
@@ -1946,6 +1979,10 @@ void Occt_view::on_mode()
 
   for (Sketch_ptr& s : m_sketches)
     s->on_mode();
+
+  // Set ortho/perspective before showing or redisplaying shapes (switching after display
+  // corrupts zoom, e.g. extrude sketch ortho -> chamfer perspective).
+  apply_camera_projection();
 
   auto show_only_current_sketch = [&]()
   {
@@ -2016,7 +2053,6 @@ void Occt_view::on_mode()
   }
 
   apply_sketch_dimensions_visibility();
-  apply_camera_projection();
 }
 
 void Occt_view::on_chamfer_mode()
