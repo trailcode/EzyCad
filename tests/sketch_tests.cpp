@@ -610,11 +610,11 @@ TEST_F(Sketch_test, Undo_single_arc_via_recorder)
   const gp_Pnt2d end(10.0, 0.0);
   const gp_Pnt2d arc_mid(5.0, 5.0);
 
-  {
-    Sketch_op_recorder rec(view(), sketch);
-    Sketch_access::add_arc_circle_(sketch, start, arc_mid, end, rec);
-    rec.commit();
-  }
+  // Arc Segment tool: recorder starts on the third click, after all pick nodes exist.
+  gui().set_mode(Mode::Sketch_add_seg_circle_arc);
+  sketch.add_sketch_pt(ScreenCoords(dvec2(start.X(), start.Y())));
+  sketch.add_sketch_pt(ScreenCoords(dvec2(end.X(), end.Y())));
+  sketch.add_sketch_pt(ScreenCoords(dvec2(arc_mid.X(), arc_mid.Y())));
 
   EXPECT_EQ(Sketch_access::get_arc_internal_edge_count(sketch), 1);
 
@@ -634,14 +634,21 @@ TEST_F(Sketch_test, Undo_circle_via_recorder)
 
   const gp_Pnt2d center(0.0, 0.0);
   const gp_Pnt2d edge_pt(5.0, 0.0);
-  const std::array<gp_Pnt2d, 4> points = xy_stencil_pnts(center, edge_pt);
+  const std::array<gp_Pnt2d, 4> stencil = xy_stencil_pnts(center, edge_pt);
 
+  // Circle finalize uses two picks plus stencil-derived arc points; materialize stencil
+  // vertices before the recorder starts (same contract as the Arc Segment third-click path).
+  for (const gp_Pnt2d& pt : stencil)
+    sketch.get_nodes().get_node_exact(pt);
+
+  Sketch::set_add_mid_pt_edges(false);
   {
     Sketch_op_recorder rec(view(), sketch);
-    Sketch_access::add_arc_circle_(sketch, points[0], points[2], points[1], rec);
-    Sketch_access::add_arc_circle_(sketch, points[0], points[3], points[1], rec);
+    Sketch_access::add_arc_circle_(sketch, stencil[0], stencil[2], stencil[1], rec);
+    Sketch_access::add_arc_circle_(sketch, stencil[0], stencil[3], stencil[1], rec);
     rec.commit();
   }
+  Sketch::set_add_mid_pt_edges(true);
 
   EXPECT_EQ(Sketch_access::get_arc_internal_edge_count(sketch), 2);
 
