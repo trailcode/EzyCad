@@ -160,7 +160,7 @@ sketch->add_sketch_pt(ScreenCoords(dvec2(0.0, 0.0)));
 sketch->add_sketch_pt(ScreenCoords(dvec2(5.0, 0.0)));
 ```
 
-For closed profiles and face tests, add edges that intersect so `Sketch_topo::update_faces()` splits segments and builds faces. See `tests/sketch_tests.cpp`.
+For closed profiles and face tests, add edges that intersect so `Sketch_topo::update_faces()` splits segments and builds faces. See `tests/sketch_topo_tests.cpp`.
 
 ### Record undoable edits
 
@@ -236,7 +236,7 @@ See [`docs/usage-sketch.md`](../../docs/usage-sketch.md) for user-facing splitti
 
 | Item | Location |
 | --- | --- |
-| GTest suite | `tests/sketch_tests.cpp`, filter `Sketch_test.*` |
+| GTest suite | `tests/sketch_*_tests.cpp` (+ `tests/sketch_test_fixture.*`), filter `Sketch_test.*` |
 | Build target | `EzyCad_tests` ([`agents/workflows/local-dev.md`](../../agents/workflows/local-dev.md)) |
 | Pattern | Construct `Occt_view`, create `Sketch` on a plane, drive via `add_sketch_pt` or test helpers |
 

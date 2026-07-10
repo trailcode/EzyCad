@@ -16,7 +16,7 @@ Goal: give assistants **only what they need** for the task at hand. Full style g
 | --- | --- |
 | Build / test | [workflows/local-dev.md](../workflows/local-dev.md) — or root [README.md](../../README.md#building-instructions) |
 | User-visible UI/settings | [user-docs-sync.md](user-docs-sync.md) + target `docs/usage-*.md` only |
-| Sketch subsystem (`src/sketch*`, `tests/sketch_tests.cpp`, sketch behavior in `occt_view` / `gui`) | [src/doc/sketch.md](../../src/doc/sketch.md) — read before editing; update when API, invariants, module layout, or workflows change |
+| Sketch subsystem (`src/sketch*`, `tests/sketch_*_tests.cpp`, sketch behavior in `occt_view` / `gui`) | [src/doc/sketch.md](../../src/doc/sketch.md) — read before editing; update when API, invariants, module layout, or workflows change |
 | Shape module (`src/shp*`, shape ops in `occt_view` / `gui`) | [src/doc/shape.md](../../src/doc/shape.md) — read before editing; update when API, operation patterns, or registration/undo change |
 | GUI / viewer shell (`src/gui*`, input routing, settings panes) | [src/doc/gui.md](../../src/doc/gui.md) — read before editing; update when modes, Options, hotkeys, or settings keys change |
 | Script consoles (`src/scr*`, bindings) | [src/doc/script.md](../../src/doc/script.md) — read before editing; update when `ezy`/`view` API or console UI changes |
@@ -39,7 +39,7 @@ Module notes live under `src/doc/` (IDE folder `src\doc`; see root `CMakeLists.t
 
 | Module doc | When |
 | --- | --- |
-| [src/doc/sketch.md](../../src/doc/sketch.md) | Editing `src/sketch*`, `tests/sketch_tests.cpp`, or sketch-facing behavior in `occt_view` / `gui` / `mode` |
+| [src/doc/sketch.md](../../src/doc/sketch.md) | Editing `src/sketch*`, `tests/sketch_*_tests.cpp`, or sketch-facing behavior in `occt_view` / `gui` / `mode` |
 | [src/doc/shape.md](../../src/doc/shape.md) | Editing `src/shp*`, shape operations in `occt_view` / `gui`, or 3D solid behavior |
 | [src/doc/gui.md](../../src/doc/gui.md) | Editing `src/gui*`, `Occt_view` in `gui_occt_view*`, input routing, Options/Settings UI |
 | [src/doc/script.md](../../src/doc/script.md) | Editing `src/scr*`, Lua/Python bindings, console behavior |

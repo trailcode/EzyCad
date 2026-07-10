@@ -167,8 +167,8 @@ Avoid circular includes: `utl_types.h` pulls sketch AIS typedefs via `sketch_ais
 
 | Item | Location |
 | --- | --- |
-| Geometry / polygon | `tests/sketch_tests.cpp` (`ezy_geom::`, `to_wkt_string`) |
-| `.ezy` zip / underlay | `tests/sketch_tests.cpp` (`pack_ezy`, `is_ezy_zip`) |
+| Geometry / polygon | `tests/sketch_topo_tests.cpp` (`ezy_geom::`, `to_wkt_string`) |
+| `.ezy` zip / underlay | `tests/sketch_json_tests.cpp` (`pack_ezy`, `is_ezy_zip`) |
 | Settings | Manual; paths vary by platform |
 
 ## Related code outside `src/utl*`

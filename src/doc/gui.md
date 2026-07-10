@@ -250,7 +250,7 @@ Occt_view* view = gui.get_view();
 
 | Item | Notes |
 | --- | --- |
-| Sketch tests | `GUI_access` friend in `tests/sketch_tests.cpp` |
+| Sketch tests | `GUI_access` friend in `tests/sketch_test_fixture.*` |
 | Headless / partial GUI | `sketch_left_click`, message getters on `GUI_access` |
 | Full UI | Manual smoke; no dedicated `gui_tests` target |
 
