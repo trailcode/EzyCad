@@ -1661,6 +1661,52 @@ TEST_F(Sketch_test, UpdateFaces_SemicircleTangentWalker)
   EXPECT_EQ(face->Shape().ShapeType(), TopAbs_FACE);
 }
 
+// Circle split into four arcs plus a chord (project.ezy topology). At the chord
+// endpoints the walker arrives on an arc whose start and end tangents differ; using
+// the start tangent as the arrival direction picks the wrong next edge and drops faces.
+TEST_F(Sketch_test, UpdateFaces_CircleWithChord_IncomingArcTangent)
+{
+  gp_Pln default_plane(gp::Origin(), gp::DZ());
+  Sketch sketch("circle_chord", view(), default_plane);
+
+  constexpr double r = 10.0;
+  const gp_Pnt2d   right(r, 0.0);
+  const gp_Pnt2d   left(-r, 0.0);
+  const gp_Pnt2d   chord_r(r * 0.5, r * std::sqrt(3.0) * 0.5);   // 60 deg
+  const gp_Pnt2d   chord_l(-r * 0.5, r * std::sqrt(3.0) * 0.5);  // 120 deg
+
+  Sketch_access::add_arc_circle_(sketch, left, gp_Pnt2d(0.0, -r), right);                                      // bottom
+  Sketch_access::add_arc_circle_(sketch, chord_r, gp_Pnt2d(r * std::sqrt(3.0) * 0.5, r * 0.5), right);         // right
+  Sketch_access::add_arc_circle_(sketch, left, gp_Pnt2d(-r * std::sqrt(3.0) * 0.5, r * 0.5), chord_l);         // left
+  Sketch_access::add_arc_circle_(sketch, chord_l, gp_Pnt2d(0.0, r), chord_r);                                  // top
+  Sketch_access::add_edge_(sketch, chord_l, chord_r);
+
+  Sketch_access::update_faces_(sketch);
+
+  const auto& faces = Sketch_access::get_faces(sketch);
+  ASSERT_EQ(faces.size(), 2u) << "Circle + chord must produce the small segment and the large remainder";
+
+  double areas[2] = {};
+  for (size_t i = 0; i < faces.size(); ++i)
+  {
+    EXPECT_EQ(faces[i]->Shape().ShapeType(), TopAbs_FACE);
+    GProp_GProps props;
+    BRepGProp::SurfaceProperties(faces[i]->Shape(), props);
+    areas[i] = props.Mass();
+  }
+
+  const double circle_area = r * r * std::numbers::pi;
+  // Smaller circular segment for central angle pi/3: (R^2/2)*(theta - sin theta).
+  constexpr double theta        = std::numbers::pi / 3.0;
+  const double     segment_area = 0.5 * r * r * (theta - std::sin(theta));
+
+  const double small = std::min(areas[0], areas[1]);
+  const double large = std::max(areas[0], areas[1]);
+  EXPECT_NEAR(small, segment_area, 0.5);
+  EXPECT_NEAR(large, circle_area - segment_area, 0.5);
+  EXPECT_NEAR(small + large, circle_area, 0.5);
+}
+
 TEST_F(Sketch_test, ArcSplit_LineCrossingArcInterior)
 {
   gp_Pln default_plane(gp::Origin(), gp::DZ());

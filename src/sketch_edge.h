@@ -25,8 +25,12 @@ struct Sketch_edge
 [[nodiscard]] bool sketch_edge_is_linear(const Sketch_edge& e);
 [[nodiscard]] bool sketch_edge_is_arc(const Sketch_edge& e);
 
-/// Unit direction from \a from_pt toward \a to_pt along \a e (chord for lines, curve tangent for arcs).
+/// Unit direction at \a from_pt toward \a to_pt along \a e (chord for lines, curve tangent for arcs).
 [[nodiscard]] gp_Vec2d sketch_edge_outgoing_dir_2d(const Sketch_edge& e, const gp_Pnt2d& from_pt, const gp_Pnt2d& to_pt,
+                                                   const gp_Pln& pln);
+
+/// Unit arrival direction at \a to_pt when traveling from \a from_pt along \a e.
+[[nodiscard]] gp_Vec2d sketch_edge_incoming_dir_2d(const Sketch_edge& e, const gp_Pnt2d& from_pt, const gp_Pnt2d& to_pt,
                                                    const gp_Pln& pln);
 
 /// Read-only linear edge (node indices only).

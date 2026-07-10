@@ -1,0 +1,53 @@
+<?xml version="1.0" encoding="utf-8"?>
+<GraphicalDebugging>
+
+  <!--
+  Graphical Debugging v0.56+ type definitions for EzyCad.
+
+  ring_2d must be a struct inheriting std::vector (not a typedef). MSVC unrolls
+  typedefs to std::vector<...>, which the extension renders as MultiPoint (dots).
+  See MyLinestring4 in the extension examples/cpp.xml.
+
+  Setup:
+    1. Tools -> Options -> Graphical Debugging -> General -> set this file path
+    2. Restart Visual Studio
+    3. Geometry Watch: seed_seg (segment) or seed_ring (linestring)
+  -->
+
+  <Point Type="ezy_geom::point_2d" Id="ezy_geom::point_2d">
+    <Coordinates>
+      <X>x_</X>
+      <Y>y_</Y>
+    </Coordinates>
+  </Point>
+
+  <Segment Type="ezy_geom::segment_2d" Id="ezy_geom::segment_2d">
+    <Coordinates>
+      <FirstX>from.x_</FirstX>
+      <FirstY>from.y_</FirstY>
+      <SecondX>to.x_</SecondX>
+      <SecondY>to.y_</SecondY>
+    </Coordinates>
+  </Segment>
+
+  <Linestring Type="ezy_geom::ring_2d" Id="ezy_geom::ring_2d">
+    <Points>
+      <Array>
+        <Pointer>_Mypair._Myval2._Myfirst</Pointer>
+        <Size>_Mypair._Myval2._Mylast - _Mypair._Myval2._Myfirst</Size>
+      </Array>
+    </Points>
+  </Linestring>
+
+  <Polygon Type="ezy_geom::polygon_2d" Id="ezy_geom::polygon_2d">
+    <ExteriorRing>
+      <Name>outer_</Name>
+    </ExteriorRing>
+    <InteriorRings>
+      <Container>
+        <Name>inners_</Name>
+      </Container>
+    </InteriorRings>
+  </Polygon>
+
+</GraphicalDebugging>

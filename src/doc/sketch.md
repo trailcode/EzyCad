@@ -197,7 +197,7 @@ Prefer these visitors in JSON/delta/topo code over iterating `std::list<Sketch_e
 | File | Responsibility |
 | --- | --- |
 | `sketch.h` / `sketch.cpp` | Coordinator: input routing, edge shape updates, snap aggregation, inspector labels, static options |
-| `sketch_edge.h` | `Sketch_edge` struct; `sketch_edge_is_linear` / `sketch_edge_is_arc` |
+| `sketch_edge.h` | `Sketch_edge` struct; `sketch_edge_is_linear` / `sketch_edge_is_arc`; `sketch_edge_outgoing_dir_2d` / `sketch_edge_incoming_dir_2d` |
 | `sketch_edges.h` | Persistent `std::list<Sketch_edge>`; add linear/arc edges; split at intersections; pick and selection |
 | `sketch_topo.h` | Planar face extraction from edge graph; automatic splitting at interior nodes and arc crossings |
 | `sketch_nodes.h` | Node storage, snap, snap guides, outside-sketch snap points |

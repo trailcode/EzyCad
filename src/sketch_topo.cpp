@@ -475,6 +475,7 @@ void Sketch_topo::update_faces()
     for (auto& [b_idx, start_edge] : edges)
     {
       const Half_edge seed{start_edge, start_edge->reversed(a_idx, b_idx)};
+
       if (visited.count(seed))
         continue;
 
@@ -494,7 +495,7 @@ void Sketch_topo::update_faces()
         // possible relative to the direction we arrived from (smallest signed
         // angle). This keeps the face interior on our left for the whole walk.
         const gp_Vec2d incoming_dir =
-            sketch_edge_outgoing_dir_2d(*curr_edge, m_sketch.m_nodes[prev_idx], m_sketch.m_nodes[curr_idx], m_sketch.m_pln);
+            sketch_edge_incoming_dir_2d(*curr_edge, m_sketch.m_nodes[prev_idx], m_sketch.m_nodes[curr_idx], m_sketch.m_pln);
 
         double              min_angle = std::numeric_limits<double>::max();
         size_t              next_idx  = 0;

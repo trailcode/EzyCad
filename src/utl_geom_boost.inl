@@ -16,7 +16,18 @@ struct point_2d
   }
 };
 
-using ring_2d = std::vector<point_2d>;
+/// Open polyline or closed ring vertex sequence (inherits vector for Graphical Debugging).
+struct ring_2d : std::vector<point_2d>
+{
+  using std::vector<point_2d>::vector;
+};
+
+/// Two endpoints (Graphical Debugging segment visualizer).
+struct segment_2d
+{
+  point_2d from;
+  point_2d to;
+};
 
 struct polygon_2d
 {
