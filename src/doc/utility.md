@@ -64,8 +64,8 @@ Large module; grouped by concern:
 | Plane / 2D | `to_2d`, `to_3d`, `xy_plane`, `sketch_reference_plane`, `Plane_side` |
 | Profile wires | `make_square_wire`, `make_circle_wire`, `make_slot_wire`, `create_wire_box` |
 | Sketch dimensions | `Length_dimension_style`, `create_distance_annotation`, `apply_length_dimension_style` |
-| Analysis | `to_boost` (polygon), `get_shape_bbox_center`, `plane_from_face`, `side_of_plane` |
-| Tests / debug | `to_wkt_string`, `ezy_geom::area`, `is_valid` |
+| Analysis | `to_boost` (polygon), `to_boost_ls` (edge linestring), `get_shape_bbox_center`, `plane_from_face`, `side_of_plane` |
+| Tests / debug | `to_wkt_string` (ring / polygon), `ezy_geom::area`, `is_valid` |
 
 Includes [`utl_geom_boost.inl`](../utl_geom_boost.inl) for Boost.Geometry polygon types used in tests and face validation.
 

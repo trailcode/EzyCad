@@ -28,9 +28,11 @@ gp_Pnt2d             to_pnt2d(const ezy_geom::point_2d& pt);
 ezy_geom::point_2d   to_boost(const gp_Pln& plane, const gp_Pnt& point_3d);
 ezy_geom::point_2d   to_boost(const gp_Pnt2d& point);
 ezy_geom::polygon_2d to_boost(const TopoDS_Shape& shape, const gp_Pln& pln2);
+ezy_geom::ring_2d    to_boost_ls(const TopoDS_Shape& shape, const gp_Pln& pln);
 bool                 is_clockwise(const ezy_geom::ring_2d& ring);
 
-// Simple WKT writer for our polygon type (used by tests).
+// Simple WKT writers (used by tests).
+std::string to_wkt_string(const ezy_geom::ring_2d& ring);
 std::string to_wkt_string(const ezy_geom::polygon_2d& poly);
 
 // Function to project a 3D point onto a plane and get its 2D (u, v) coordinates
@@ -176,6 +178,9 @@ ezy_geom::point_2d to_boost(const gp_Pnt2d& point);
 
 // Convert a TopoDS_Shape to a ezy_geom::polygon_2d
 ezy_geom::polygon_2d to_boost(const TopoDS_Shape& shape, const gp_Pln& pln2);
+
+/// Edge as an open 2D polyline on \a pln (arc edges are densified).
+ezy_geom::ring_2d to_boost_ls(const TopoDS_Shape& shape, const gp_Pln& pln);
 
 gp_Pnt get_shape_bbox_center(const TopoDS_Shape& shp);
 

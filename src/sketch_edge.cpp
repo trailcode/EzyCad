@@ -102,3 +102,9 @@ gp_Vec2d sketch_edge_outgoing_dir_2d(const Sketch_edge& e, const gp_Pnt2d& from_
 
   return normalize_or_axis_(gp_Vec2d(from_pt, to_pt));
 }
+
+gp_Vec2d sketch_edge_incoming_dir_2d(const Sketch_edge& e, const gp_Pnt2d& from_pt, const gp_Pnt2d& to_pt, const gp_Pln& pln)
+{
+  // Tangent at to_pt in the travel direction == opposite of outgoing back toward from_pt.
+  return -sketch_edge_outgoing_dir_2d(e, to_pt, from_pt, pln);
+}

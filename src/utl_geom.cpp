@@ -970,6 +970,56 @@ ezy_geom::point_2d to_boost(const gp_Pln& plane, const gp_Pnt& point_3d)
 
 ezy_geom::point_2d to_boost(const gp_Pnt2d& pt) { return {pt.X(), pt.Y()}; }
 
+ezy_geom::ring_2d to_boost_ls(const TopoDS_Shape& shape, const gp_Pln& pln)
+{
+  EZY_ASSERT_MSG(shape.ShapeType() == TopAbs_EDGE, "Shape must be an edge");
+
+  const TopoDS_Edge& edge  = TopoDS::Edge(shape);
+  BRepAdaptor_Curve  curve(edge);
+  ezy_geom::ring_2d  line;
+
+  auto append_pt = [&](const gp_Pnt2d& pt)
+  {
+    if (!line.empty())
+    {
+      const auto& last = line.back();
+      if (gp_Pnt2d(last.x(), last.y()).IsEqual(pt, Precision::Confusion()))
+        return;
+    }
+    line.push_back({pt.X(), pt.Y()});
+  };
+
+  switch (curve.GetType())
+  {
+  case GeomAbs_Line:
+    append_pt(to_2d(pln, curve.Value(curve.FirstParameter())));
+    append_pt(to_2d(pln, curve.Value(curve.LastParameter())));
+    break;
+
+  case GeomAbs_Circle:
+  {
+    const double u_start = curve.FirstParameter();
+    const double u_end   = curve.LastParameter();
+    const double span    = std::abs(u_end - u_start);
+
+    constexpr size_t k_min_pts    = 8;
+    constexpr size_t k_max_pts    = 32;
+    constexpr double k_rad_per_pt = to_radians(15.0);
+    const size_t     num_pts    = std::clamp(static_cast<size_t>(std::ceil(span / k_rad_per_pt)) + 1, k_min_pts, k_max_pts);
+
+    const double step = (u_end - u_start) / static_cast<double>(num_pts - 1);
+    for (size_t i = 0; i < num_pts; ++i)
+      append_pt(to_2d(pln, curve.Value(u_start + static_cast<double>(i) * step)));
+    break;
+  }
+
+  default:
+    EZY_ASSERT_MSG(false, "Unsupported edge curve type for to_boost_ls");
+  }
+
+  return line;
+}
+
 // Convert a TopoDS_Shape to a ezy_geom::polygon_2d (pure C++ version)
 ezy_geom::polygon_2d to_boost(const TopoDS_Shape& shape, const gp_Pln& pln2)
 {
@@ -1253,21 +1303,41 @@ double ezy_geom::area(const polygon_2d& poly)
   return std::abs(a);
 }
 
+namespace
+{
+std::string wkt_fmt_num(double v)
+{
+  if (std::abs(v - std::round(v)) < 1e-9)
+    return std::to_string(static_cast<long long>(std::round(v)));
+
+  std::ostringstream os;
+  os << std::fixed << std::setprecision(6) << v;
+  return os.str();
+}
+
+void wkt_write_ring_coords(std::ostringstream& ss, const ezy_geom::ring_2d& r)
+{
+  for (size_t i = 0; i < r.size(); ++i)
+  {
+    if (i > 0)
+      ss << ",";
+
+    ss << wkt_fmt_num(r[i].x()) << " " << wkt_fmt_num(r[i].y());
+  }
+}
+} // namespace
+
+std::string to_wkt_string(const ezy_geom::ring_2d& ring)
+{
+  std::ostringstream ss;
+  ss << "LINESTRING(";
+  wkt_write_ring_coords(ss, ring);
+  ss << ")";
+  return ss.str();
+}
+
 std::string to_wkt_string(const ezy_geom::polygon_2d& poly)
 {
-  auto fmt_num = [](double v) -> std::string
-  {
-    if (std::abs(v - std::round(v)) < 1e-9)
-    {
-      // whole number
-      return std::to_string(static_cast<long long>(std::round(v)));
-    }
-
-    std::ostringstream os;
-    os << std::fixed << std::setprecision(6) << v;
-    return os.str();
-  };
-
   std::ostringstream ss;
 
   auto write_ring = [&](const ezy_geom::ring_2d& r, bool first_ring)
@@ -1276,13 +1346,7 @@ std::string to_wkt_string(const ezy_geom::polygon_2d& poly)
       ss << ",";
 
     ss << "(";
-    for (size_t i = 0; i < r.size(); ++i)
-    {
-      if (i > 0)
-        ss << ",";
-
-      ss << fmt_num(r[i].x()) << " " << fmt_num(r[i].y());
-    }
+    wkt_write_ring_coords(ss, r);
     ss << ")";
   };
 
