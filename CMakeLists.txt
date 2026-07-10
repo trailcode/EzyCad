@@ -671,7 +671,7 @@ if(NOT CMAKE_CXX_COMPILER_ID STREQUAL "Emscripten")
     enable_testing()
     
     # Create a test executable
-    file(GLOB TEST_SRCS CONFIGURE_DEPENDS "tests/*.cpp" "tests/*.h")
+    file(GLOB TEST_SRCS CONFIGURE_DEPENDS "tests/*.cpp" "tests/*.h" "tests/*.inl")
     add_executable(${PROJECT_NAME}_tests ${TEST_SRCS})
     
     # Add src directory to include paths for tests

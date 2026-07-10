@@ -1,6 +1,11 @@
 #include "sketch_test_fixture.h"
 
+#include <BRepGProp.hxx>
+#include <BRepTools.hxx>
+#include <BRepTools_WireExplorer.hxx>
+#include <GProp_GProps.hxx>
 #include <TopoDS.hxx>
+#include <TopoDS_Wire.hxx>
 #include <algorithm>
 #include <cmath>
 #include <iostream>
@@ -8,17 +13,13 @@
 #include <set>
 #include <string>
 #include <vector>
-#include "utl_geom.h"
+
 #include "sketch_edge.h"
 #include "sketch_json.h"
 #include "sketch_nodes.h"
 #include "sketch_op_recorder.h"
+#include "utl_geom.h"
 #include "utl_occt.h"
-#include <TopoDS_Wire.hxx>
-#include <BRepTools.hxx>
-#include <BRepTools_WireExplorer.hxx>
-#include <GProp_GProps.hxx>
-#include <BRepGProp.hxx>
 
 using namespace glm;
 
@@ -85,8 +86,8 @@ TEST_F(Sketch_test, AddTwoCrossingEdges_ThroughMidpoint_ProducesFourEdges)
   sketch.add_sketch_pt(sc4);
   sketch.finalize_elm();
 
-  EXPECT_EQ(Sketch_access::get_linear_edge_count(sketch), 4)
-      << "Vertical through existing horizontal's midpoint (GUI finalize path) must still cause splits on both, yielding four edges";
+  EXPECT_EQ(Sketch_access::get_linear_edge_count(sketch), 4) << "Vertical through existing horizontal's midpoint (GUI finalize "
+                                                                "path) must still cause splits on both, yielding four edges";
 }
 
 // Test T-junction case (one edge's endpoint touches the interior of another).
@@ -108,7 +109,7 @@ TEST_F(Sketch_test, AddTwoEdges_TJunction_ProducesThreeEdges)
     gp_Pnt2d h2(10.0, 0.0);
     Sketch_access::add_edge_(sketch, h1, h2);
 
-    gp_Pnt2d v1(3.0, 0.0);  // attaches to interior of horizontal (3 != 5 midpoint)
+    gp_Pnt2d v1(3.0, 0.0); // attaches to interior of horizontal (3 != 5 midpoint)
     gp_Pnt2d v2(3.0, -5.0);
     Sketch_access::add_edge_(sketch, v1, v2);
 
@@ -195,8 +196,10 @@ TEST_F(Sketch_test, AddSquareThenMidEdge_ProducesTwoRectangles_BothOrders)
       if (std::abs(dx - 5.0) < 1e-6 && std::abs(dy - 10.0) < 1e-6)
       {
         // left or right rect
-        if (minx < 2.5) found_left = true;
-        else found_right = true;
+        if (minx < 2.5)
+          found_left = true;
+        else
+          found_right = true;
       }
       else
       {
@@ -246,8 +249,10 @@ TEST_F(Sketch_test, AddSquareThenMidEdge_ProducesTwoRectangles_BothOrders)
 
       if (std::abs(dx - 5.0) < 1e-6 && std::abs(dy - 10.0) < 1e-6)
       {
-        if (minx < 2.5) found_left = true;
-        else found_right = true;
+        if (minx < 2.5)
+          found_left = true;
+        else
+          found_right = true;
       }
       else
       {
@@ -328,8 +333,10 @@ TEST_F(Sketch_test, AddSquareThenMidEdge_GUIPath_BothDrawDirections_ProducesTwoR
 
       if (std::abs(dx - 5.0) < 1e-6 && std::abs(dy - 10.0) < 1e-6)
       {
-        if (minx < 2.5) found_left = true;
-        else found_right = true;
+        if (minx < 2.5)
+          found_left = true;
+        else
+          found_right = true;
       }
       else
       {
@@ -380,8 +387,10 @@ TEST_F(Sketch_test, AddSquareThenMidEdge_GUIPath_BothDrawDirections_ProducesTwoR
 
       if (std::abs(dx - 5.0) < 1e-6 && std::abs(dy - 10.0) < 1e-6)
       {
-        if (minx < 2.5) found_left = true;
-        else found_right = true;
+        if (minx < 2.5)
+          found_left = true;
+        else
+          found_right = true;
       }
       else
       {
@@ -448,19 +457,14 @@ TEST_F(Sketch_test, UpdateFaces_SimpleRectangle)
 {
   // Define points
   std::vector<gp_Pnt2d> points = {
-      { 0,  0}, // 0
-      {10,  0}, // 1
+      {0, 0},   // 0
+      {10, 0},  // 1
       {10, 10}, // 2
-      { 0, 10}  // 3
+      {0, 10}   // 3
   };
 
   // Define edges as pairs of indices
-  std::vector<std::pair<int, int>> edge_indices = {
-      {0, 1},
-      {1, 2},
-      {2, 3},
-      {3, 0}
-  };
+  std::vector<std::pair<int, int>> edge_indices = {{0, 1}, {1, 2}, {2, 3}, {3, 0}};
 
   auto check_sketch = [&](Sketch& sketch)
   {
@@ -492,26 +496,20 @@ TEST_F(Sketch_test, UpdateFaces_FaceWithHole)
 
   // Define points
   std::vector<gp_Pnt2d> points = {
-      { 0,  0}, // 0
-      {20,  0}, // 1
+      {0, 0},   // 0
+      {20, 0},  // 1
       {20, 20}, // 2
-      { 0, 20}, // 3
-      { 5,  5}, // 4
-      {15,  5}, // 5
+      {0, 20},  // 3
+      {5, 5},   // 4
+      {15, 5},  // 5
       {15, 15}, // 6
-      { 5, 15}  // 7
+      {5, 15}   // 7
   };
 
   // Define edges as pairs of indices
   std::vector<std::pair<int, int>> edge_indices = {
-      {0, 1},
-      {1, 2},
-      {2, 3},
-      {3, 0}, // Outer rectangle
-      {4, 5},
-      {5, 6},
-      {6, 7},
-      {7, 4}  // Inner rectangle (hole)
+      {0, 1}, {1, 2}, {2, 3}, {3, 0}, // Outer rectangle
+      {4, 5}, {5, 6}, {6, 7}, {7, 4}  // Inner rectangle (hole)
   };
 
   auto check_sketch = [&](Sketch& sketch)
@@ -630,7 +628,7 @@ TEST_F(Sketch_test, UpdateFaces_FaceWithArcs)
   gp_Pnt2d p2(10, 0);
   gp_Pnt2d p3(10, 10);
   gp_Pnt2d p4(0, 10);
-  gp_Pnt2d p5(5, 5);  // Center point for arc
+  gp_Pnt2d p5(5, 5); // Center point for arc
 
   // Add straight edges
   Sketch_access::add_edge_(sketch, p1, p2);
@@ -762,13 +760,13 @@ TEST_F(Sketch_test, UpdateFaces_CircleWithChord_IncomingArcTangent)
   constexpr double r = 10.0;
   const gp_Pnt2d   right(r, 0.0);
   const gp_Pnt2d   left(-r, 0.0);
-  const gp_Pnt2d   chord_r(r * 0.5, r * std::sqrt(3.0) * 0.5);   // 60 deg
-  const gp_Pnt2d   chord_l(-r * 0.5, r * std::sqrt(3.0) * 0.5);  // 120 deg
+  const gp_Pnt2d   chord_r(r * 0.5, r * std::sqrt(3.0) * 0.5);  // 60 deg
+  const gp_Pnt2d   chord_l(-r * 0.5, r * std::sqrt(3.0) * 0.5); // 120 deg
 
-  Sketch_access::add_arc_circle_(sketch, left, gp_Pnt2d(0.0, -r), right);                                      // bottom
-  Sketch_access::add_arc_circle_(sketch, chord_r, gp_Pnt2d(r * std::sqrt(3.0) * 0.5, r * 0.5), right);         // right
-  Sketch_access::add_arc_circle_(sketch, left, gp_Pnt2d(-r * std::sqrt(3.0) * 0.5, r * 0.5), chord_l);         // left
-  Sketch_access::add_arc_circle_(sketch, chord_l, gp_Pnt2d(0.0, r), chord_r);                                  // top
+  Sketch_access::add_arc_circle_(sketch, left, gp_Pnt2d(0.0, -r), right);                              // bottom
+  Sketch_access::add_arc_circle_(sketch, chord_r, gp_Pnt2d(r * std::sqrt(3.0) * 0.5, r * 0.5), right); // right
+  Sketch_access::add_arc_circle_(sketch, left, gp_Pnt2d(-r * std::sqrt(3.0) * 0.5, r * 0.5), chord_l); // left
+  Sketch_access::add_arc_circle_(sketch, chord_l, gp_Pnt2d(0.0, r), chord_r);                          // top
   Sketch_access::add_edge_(sketch, chord_l, chord_r);
 
   // Graphical Debugging v0.56+ (Geometry Watch): dbg_edges
@@ -794,8 +792,8 @@ TEST_F(Sketch_test, UpdateFaces_CircleWithChord_IncomingArcTangent)
   dbg_faces.reserve(faces.size());
   for (const auto& f : faces)
   {
-    ezy_geom::ring_2d   outer;
-    const TopoDS_Wire   wire = BRepTools::OuterWire(TopoDS::Face(f->Shape()));
+    ezy_geom::ring_2d outer;
+    const TopoDS_Wire wire = BRepTools::OuterWire(TopoDS::Face(f->Shape()));
     for (BRepTools_WireExplorer wex(wire); wex.More(); wex.Next())
     {
       ezy_geom::ring_2d ls = to_boost_ls(wex.Current(), default_plane);
@@ -848,8 +846,7 @@ TEST_F(Sketch_test, ArcSplit_LineCrossingArcInterior)
 
   EXPECT_EQ(Sketch_access::get_arc_internal_edge_count(sketch), 2)
       << "Line crossing arc interior should split the arc into two edges";
-  EXPECT_GE(Sketch_access::get_linear_edge_count(sketch), 2u)
-      << "Line should be split at the arc intersection";
+  EXPECT_GE(Sketch_access::get_linear_edge_count(sketch), 2u) << "Line should be split at the arc intersection";
 }
 
 TEST_F(Sketch_test, ArcSplit_ArcCrossingLineInterior)
@@ -870,10 +867,10 @@ TEST_F(Sketch_test, ArcSplit_CircleCrossesSlotLines)
   gp_Pln default_plane(gp::Origin(), gp::DZ());
   Sketch sketch("test_sketch", view(), default_plane);
 
-  const gp_Pnt2d slot_a(-15.0, 0.0);
-  const gp_Pnt2d slot_b(15.0, 0.0);
-  const gp_Pnt2d slot_c(0.0, 5.0);
-  const Slot_pnts  pnts = get_slot_points(slot_a, slot_b, slot_c);
+  const gp_Pnt2d  slot_a(-15.0, 0.0);
+  const gp_Pnt2d  slot_b(15.0, 0.0);
+  const gp_Pnt2d  slot_c(0.0, 5.0);
+  const Slot_pnts pnts = get_slot_points(slot_a, slot_b, slot_c);
 
   Sketch_access::add_edge_(sketch, pnts.a_top_2d, pnts.b_top_2d);
   Sketch_access::add_edge_(sketch, pnts.a_bottom_2d, pnts.b_bottom_2d);
@@ -980,8 +977,8 @@ TEST_F(Sketch_test, UpdateFaces_BridgeEdgeRemoval)
 
   // Add bridge edge connecting inner rectangle to outer rectangle
   // This edge should be removed from face detection
-  gp_Pnt2d bridge_start = inner_top_right;  // From inner rectangle
-  gp_Pnt2d bridge_end   = outer_top_left;   // To outer rectangle
+  gp_Pnt2d bridge_start = inner_top_right; // From inner rectangle
+  gp_Pnt2d bridge_end   = outer_top_left;  // To outer rectangle
   Sketch_access::add_edge_(sketch, bridge_start, bridge_end);
 
   // Update faces - bridge edge should be removed
@@ -998,8 +995,8 @@ TEST_F(Sketch_test, UpdateFaces_BridgeEdgeRemoval)
   EXPECT_LE(faces.size(), 3) << "Should have at most three faces";
 
   // Verify the outer face exists and is valid
-  bool                   found_outer_face = false;
-  bool                   found_inner_face = false;
+  bool                 found_outer_face = false;
+  bool                 found_inner_face = false;
   ezy_geom::polygon_2d outer_face_poly;
   ezy_geom::polygon_2d inner_face_poly;
 
@@ -1027,15 +1024,15 @@ TEST_F(Sketch_test, UpdateFaces_BridgeEdgeRemoval)
         // Output first few points of the hole for debugging
         if (hole_ring.size() > 0)
         {
-          std::cout << "  Hole " << hole_idx << " first point: ("
-                    << hole_ring[0].x() << ", " << hole_ring[0].y() << ")" << std::endl;
+          std::cout << "  Hole " << hole_idx << " first point: (" << hole_ring[0].x() << ", " << hole_ring[0].y() << ")"
+                    << std::endl;
         }
       }
     }
 
     // Check if this is the outer face (larger area) or inner face (smaller area)
     double area = ezy_geom::area(poly);
-    if (area > 5000.0)  // Outer rectangle should be much larger
+    if (area > 5000.0) // Outer rectangle should be much larger
     {
       found_outer_face = true;
       outer_face_poly  = poly;
@@ -1049,7 +1046,7 @@ TEST_F(Sketch_test, UpdateFaces_BridgeEdgeRemoval)
         std::cout << "Inner rectangle detected as hole in outer face" << std::endl;
       }
     }
-    else if (area < 500.0)  // Inner rectangle should be smaller
+    else if (area < 500.0) // Inner rectangle should be smaller
     {
       found_inner_face = true;
       inner_face_poly  = poly;
@@ -1088,10 +1085,10 @@ TEST_F(Sketch_test, UpdateFaces_BridgeEdgeRemoval)
     gp_Pnt2d pt_b = sketch.get_nodes()[edge.node_idx_b.value()];
 
     // Check if this edge connects the inner and outer rectangles
-    bool connects_inner = (pt_a.IsEqual(inner_top_right, Precision::Confusion()) ||
-                           pt_b.IsEqual(inner_top_right, Precision::Confusion()));
-    bool connects_outer = (pt_a.IsEqual(outer_top_left, Precision::Confusion()) ||
-                           pt_b.IsEqual(outer_top_left, Precision::Confusion()));
+    bool connects_inner =
+        (pt_a.IsEqual(inner_top_right, Precision::Confusion()) || pt_b.IsEqual(inner_top_right, Precision::Confusion()));
+    bool connects_outer =
+        (pt_a.IsEqual(outer_top_left, Precision::Confusion()) || pt_b.IsEqual(outer_top_left, Precision::Confusion()));
 
     if (connects_inner && connects_outer)
     {
@@ -1121,8 +1118,7 @@ TEST_F(Sketch_test, UpdateFaces_BridgeEdgeRemoval)
   }
   std::cout << "Total edges in sketch: " << total_edges << std::endl;
   std::cout << "Bridge edge found: " << (found_bridge_edge ? "yes" : "no") << std::endl;
-  std::cout << "========================================\n"
-            << std::endl;
+  std::cout << "========================================\n" << std::endl;
 }
 
 // Regression for bridge.ezy (user-provided sketch with a bridge edge + triangular hole).
@@ -1143,27 +1139,31 @@ TEST_F(Sketch_test, UpdateFaces_BridgeEzy_ProducesTwoFaces_OneWithHole)
 
   // Nodes transcribed exactly from bridge.ezy (order is significant for indices used by edges).
   // Some are pre-created midpoints.
-  struct NodeData { double x, y; bool midpoint; };
+  struct NodeData
+  {
+    double x, y;
+    bool   midpoint;
+  };
   std::vector<NodeData> node_data = {
-    {72.88693508186617, 76.7145615561364, false},  // 0
-    {92.2859012795499,  76.7145615561364, false},  // 1
-    {72.88693508186617, 115.51249395150387, false},// 2
-    {92.2859012795499,  115.51249395150387, false},// 3
-    {82.58641818070804, 76.7145615561364, true},   // 4 mid
-    {82.58641818070804, 115.51249395150387, false},// 5
-    {82.58641818070804, 107.38329713597477, false},// 6
-    {82.58641818070804, 111.44789554373932, true}, // 7 mid
-    {77.73667663128711, 115.51249395150387, true}, // 8 mid
-    {87.43615973012896, 115.51249395150387, true}, // 9 mid
-    {92.2859012795499,  101.4712508384171, false}, // 10
-    {85.01128895541851, 104.42727398719595, true}, // 11 mid
-    {72.88693508186617, 101.4712508384171, false}, // 12
-    {80.16154740599757, 104.42727398719595, true}, // 13 mid
-    {82.58641818070804, 101.4712508384171, true},  // 14 mid
-    {92.2859012795499,  108.4918723949605, true},  // 15 mid
-    {92.2859012795499,  89.09290619727676, true},  // 16 mid
-    {72.88693508186617, 89.09290619727676, true},  // 17 mid
-    {72.88693508186617, 108.4918723949605, true}   // 18 mid
+      {72.88693508186617, 76.7145615561364, false},   // 0
+      {92.2859012795499, 76.7145615561364, false},    // 1
+      {72.88693508186617, 115.51249395150387, false}, // 2
+      {92.2859012795499, 115.51249395150387, false},  // 3
+      {82.58641818070804, 76.7145615561364, true},    // 4 mid
+      {82.58641818070804, 115.51249395150387, false}, // 5
+      {82.58641818070804, 107.38329713597477, false}, // 6
+      {82.58641818070804, 111.44789554373932, true},  // 7 mid
+      {77.73667663128711, 115.51249395150387, true},  // 8 mid
+      {87.43615973012896, 115.51249395150387, true},  // 9 mid
+      {92.2859012795499, 101.4712508384171, false},   // 10
+      {85.01128895541851, 104.42727398719595, true},  // 11 mid
+      {72.88693508186617, 101.4712508384171, false},  // 12
+      {80.16154740599757, 104.42727398719595, true},  // 13 mid
+      {82.58641818070804, 101.4712508384171, true},   // 14 mid
+      {92.2859012795499, 108.4918723949605, true},    // 15 mid
+      {92.2859012795499, 89.09290619727676, true},    // 16 mid
+      {72.88693508186617, 89.09290619727676, true},   // 17 mid
+      {72.88693508186617, 108.4918723949605, true}    // 18 mid
   };
 
   for (const auto& nd : node_data)
@@ -1173,19 +1173,8 @@ TEST_F(Sketch_test, UpdateFaces_BridgeEzy_ProducesTwoFaces_OneWithHole)
 
   // Atomic linear edges from the .ezy (a, b, mid node index). Use the exact JSON replay
   // so mid nodes and connectivity match the saved state that was broken in the GUI.
-  std::vector<std::array<size_t, 3>> edges = {
-    {1, 0, 4},
-    {2, 5, 8},
-    {5, 3, 9},
-    {5, 6, 7},
-    {6, 10, 11},
-    {6, 12, 13},
-    {12, 10, 14},
-    {3, 10, 15},
-    {10, 1, 16},
-    {0, 12, 17},
-    {12, 2, 18}
-  };
+  std::vector<std::array<size_t, 3>> edges = {{1, 0, 4},    {2, 5, 8},   {5, 3, 9},   {5, 6, 7},   {6, 10, 11}, {6, 12, 13},
+                                              {12, 10, 14}, {3, 10, 15}, {10, 1, 16}, {0, 12, 17}, {12, 2, 18}};
 
   for (const auto& e : edges)
   {
@@ -1200,12 +1189,11 @@ TEST_F(Sketch_test, UpdateFaces_BridgeEzy_ProducesTwoFaces_OneWithHole)
   std::cout << "faces.size() = " << faces.size() << std::endl;
   for (size_t i = 0; i < faces.size(); ++i)
   {
-    const auto& f = faces[i];
+    const auto&          f    = faces[i];
     ezy_geom::polygon_2d poly = to_boost(f->Shape(), default_plane);
-    std::string wkt = to_wkt_string(poly);
+    std::string          wkt  = to_wkt_string(poly);
     std::cout << "Face " << i << " WKT: " << wkt << std::endl;
-    std::cout << "  area=" << ezy_geom::area(poly)
-              << " outer_size=" << poly.outer().size()
+    std::cout << "  area=" << ezy_geom::area(poly) << " outer_size=" << poly.outer().size()
               << " inners=" << poly.inners().size() << std::endl;
     for (size_t h = 0; h < poly.inners().size(); ++h)
       std::cout << "    hole " << h << " size=" << poly.inners()[h].size() << std::endl;
@@ -1285,7 +1273,7 @@ TEST_F(Sketch_test, UpdateFaces_DanglingEdgesRemoval)
 
   // Add dangling edges branching off from the rectangle
   // These should be removed from face detection
-  gp_Pnt2d branch1_start = rect_top_left;  // Branch from top-left corner
+  gp_Pnt2d branch1_start = rect_top_left; // Branch from top-left corner
   gp_Pnt2d branch1_end(-8.0, 9.0);
   Sketch_access::add_edge_(sketch, branch1_start, branch1_end);
 
@@ -1305,7 +1293,7 @@ TEST_F(Sketch_test, UpdateFaces_DanglingEdgesRemoval)
   gp_Pnt2d branch5_end(31.0, 4.0);
   Sketch_access::add_edge_(sketch, branch5_start, branch5_end);
 
-  gp_Pnt2d branch6_start = rect_bottom_left;  // Branch from bottom-left corner
+  gp_Pnt2d branch6_start = rect_bottom_left; // Branch from bottom-left corner
   gp_Pnt2d branch6_end(-23.0, -29.0);
   Sketch_access::add_edge_(sketch, branch6_start, branch6_end);
 
@@ -1336,7 +1324,7 @@ TEST_F(Sketch_test, UpdateFaces_DanglingEdgesRemoval)
 
   // Verify the area is approximately correct for a 100x100 rectangle
   double area          = ezy_geom::area(poly);
-  double expected_area = 100.0 * 100.0;  // 10000
+  double expected_area = 100.0 * 100.0; // 10000
   EXPECT_NEAR(area, expected_area, 1.0) << "Rectangle area should be approximately 10000";
 
   // Verify the polygon is clockwise (as expected for faces)
@@ -1358,7 +1346,6 @@ TEST_F(Sketch_test, UpdateFaces_DanglingEdgesRemoval)
 // Test that split edges have midpoints for snapping
 // This test verifies the fix for the bug where edges split by their midpoint
 // don't have midpoints to snap to
-// don't have midpoints to snap to
 // This test verifies the fix for the bug where edges split by their midpoint
 // don't have midpoints to snap to
 TEST_F(Sketch_test, SplitEdge_HasMidpoints)
@@ -1372,7 +1359,7 @@ TEST_F(Sketch_test, SplitEdge_HasMidpoints)
   // Create a simple horizontal edge
   gp_Pnt2d pt_left(0.0, 0.0);
   gp_Pnt2d pt_right(20.0, 0.0);
-  
+
   // Add the edge - this will automatically create a midpoint node at (10, 0)
   Sketch_access::add_edge_(sketch, pt_left, pt_right);
 
@@ -1413,7 +1400,7 @@ TEST_F(Sketch_test, SplitEdge_HasMidpoints)
   sketch.add_sketch_pt(screen_coords_mid);
 
   // Add another point above the midpoint to create a vertical edge
-  gp_Pnt2d pt_above(10.0, 10.0);
+  gp_Pnt2d     pt_above(10.0, 10.0);
   ScreenCoords screen_coords_above(dvec2(pt_above.X(), pt_above.Y()));
   sketch.add_sketch_pt(screen_coords_above);
 
@@ -1440,35 +1427,29 @@ TEST_F(Sketch_test, SplitEdge_HasMidpoints)
     const gp_Pnt2d& pt_b = sketch.get_nodes()[*edge.node_idx_b];
 
     // Check if this is one of the horizontal split edges (y = 0)
-    if (std::abs(pt_a.Y()) < Precision::Confusion() && 
-        std::abs(pt_b.Y()) < Precision::Confusion())
+    if (std::abs(pt_a.Y()) < Precision::Confusion() && std::abs(pt_b.Y()) < Precision::Confusion())
     {
       // This is a horizontal edge, verify it has a midpoint
-      EXPECT_TRUE(edge.node_idx_mid.has_value()) 
-          << "Split horizontal edge should have a midpoint";
-      
+      EXPECT_TRUE(edge.node_idx_mid.has_value()) << "Split horizontal edge should have a midpoint";
+
       if (edge.node_idx_mid.has_value())
       {
         split_edge_midpoints.push_back(edge.node_idx_mid);
-        
+
         // Verify the midpoint is correctly positioned
         const gp_Pnt2d& edge_midpoint = sketch.get_nodes()[*edge.node_idx_mid];
-        double expected_x = (pt_a.X() + pt_b.X()) / 2.0;
-        EXPECT_NEAR(edge_midpoint.X(), expected_x, Precision::Confusion())
-            << "Midpoint should be at the center of the edge";
-        EXPECT_NEAR(edge_midpoint.Y(), 0.0, Precision::Confusion())
-            << "Midpoint should have y=0";
-        
+        double          expected_x    = (pt_a.X() + pt_b.X()) / 2.0;
+        EXPECT_NEAR(edge_midpoint.X(), expected_x, Precision::Confusion()) << "Midpoint should be at the center of the edge";
+        EXPECT_NEAR(edge_midpoint.Y(), 0.0, Precision::Confusion()) << "Midpoint should have y=0";
+
         // Verify the midpoint is marked as a midpoint
-        EXPECT_TRUE(sketch.get_nodes()[*edge.node_idx_mid].midpoint)
-            << "Midpoint node should be marked as midpoint";
+        EXPECT_TRUE(sketch.get_nodes()[*edge.node_idx_mid].midpoint) << "Midpoint node should be marked as midpoint";
       }
     }
   }
 
   // Should have found two split edges with midpoints
-  EXPECT_EQ(split_edge_midpoints.size(), 2) 
-      << "Should have found 2 horizontal split edges with midpoints";
+  EXPECT_EQ(split_edge_midpoints.size(), 2) << "Should have found 2 horizontal split edges with midpoints";
 
   // Verify the split edge midpoints are at (5, 0) and (15, 0)
   std::vector<double> midpoint_x_coords;
@@ -1480,12 +1461,9 @@ TEST_F(Sketch_test, SplitEdge_HasMidpoints)
       midpoint_x_coords.push_back(mp.X());
     }
   }
-  
+
   std::sort(midpoint_x_coords.begin(), midpoint_x_coords.end());
   ASSERT_EQ(midpoint_x_coords.size(), 2);
-  EXPECT_NEAR(midpoint_x_coords[0], 5.0, Precision::Confusion()) 
-      << "First split edge should have midpoint at x=5";
-  EXPECT_NEAR(midpoint_x_coords[1], 15.0, Precision::Confusion()) 
-      << "Second split edge should have midpoint at x=15";
+  EXPECT_NEAR(midpoint_x_coords[0], 5.0, Precision::Confusion()) << "First split edge should have midpoint at x=5";
+  EXPECT_NEAR(midpoint_x_coords[1], 15.0, Precision::Confusion()) << "Second split edge should have midpoint at x=15";
 }
-

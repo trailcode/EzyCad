@@ -1,6 +1,5 @@
 #include "sketch_test_fixture.h"
 
-#include <TopoDS.hxx>
 #include <algorithm>
 #include <cmath>
 #include <iostream>
@@ -8,49 +7,21 @@
 #include <set>
 #include <string>
 #include <vector>
-#include "utl_geom.h"
+
 #include "sketch_edge.h"
 #include "sketch_json.h"
 #include "sketch_nodes.h"
 #include "sketch_op_recorder.h"
+#include "utl_geom.h"
 #include "utl_occt.h"
-#include "utl_io.h"
 #include "utl_asset_store.h"
+#include "utl_io.h"
 
 using namespace glm;
 
 namespace
 {
-
-nlohmann::json minimal_sketch_json_with_underlay_b64(Ezy_asset_store& store)
-{
-  std::vector<uint8_t> rgba(16);
-  for (int i = 0; i < 4; ++i)
-  {
-    rgba[static_cast<std::size_t>(i) * 4u + 0] = 255;
-    rgba[static_cast<std::size_t>(i) * 4u + 1] = 0;
-    rgba[static_cast<std::size_t>(i) * 4u + 2] = 0;
-    rgba[static_cast<std::size_t>(i) * 4u + 3] = 255;
-  }
-
-  nlohmann::json j;
-  j["isCurrent"] = true;
-  j["name"]      = "UnderlaySketch";
-  j["plane"]     = nlohmann::json::object({{"origin", {{"x", 0.0}, {"y", 0.0}, {"z", 0.0}}},
-                                            {"normal", {{"x", 0.0}, {"y", 0.0}, {"z", 1.0}}},
-                                            {"xAxis", {{"x", 1.0}, {"y", 0.0}, {"z", 0.0}}}});
-  j["edges"]     = nlohmann::json::array();
-  j["nodes"]     = nlohmann::json::array();
-  j["arc_edges"] = nlohmann::json::array();
-  j["underlay"]  = nlohmann::json::object({{"rgba_b64", ezy_base64_encode(rgba)},
-                                             {"w", 2},
-                                             {"h", 2},
-                                             {"opacity", 0.88},
-                                             {"visible", true}});
-  (void)store;
-  return j;
-}
-
+nlohmann::json minimal_sketch_json_with_underlay_b64(Ezy_asset_store& store);
 } // namespace
 
 // Test JSON serialization and deserialization
@@ -61,12 +32,9 @@ TEST_F(Sketch_test, JsonSerializationDeserialization)
 
   // Add some edges to create a simple shape
   std::vector<gp_Pnt2d> points = {
-      gp_Pnt2d(-42.123413069225286, 18.567557076566406),
-      gp_Pnt2d(-31.038304366797583, 18.567557076566406),
-      gp_Pnt2d(-42.123413069225286, 42.585292598493105),
-      gp_Pnt2d(-31.038304366797583, 42.585292598493105),
-      gp_Pnt2d(-42.123413069225286, -5.450178445360293),
-      gp_Pnt2d(-31.038304366797583, -5.450178445360293)};
+      gp_Pnt2d(-42.123413069225286, 18.567557076566406), gp_Pnt2d(-31.038304366797583, 18.567557076566406),
+      gp_Pnt2d(-42.123413069225286, 42.585292598493105), gp_Pnt2d(-31.038304366797583, 42.585292598493105),
+      gp_Pnt2d(-42.123413069225286, -5.450178445360293), gp_Pnt2d(-31.038304366797583, -5.450178445360293)};
 
   // Add edges to create a rectangle-like shape
   for (size_t i = 0; i < points.size() - 1; i += 2)
@@ -92,8 +60,8 @@ TEST_F(Sketch_test, JsonSerializationDeserialization)
       ++live_nodes;
 
   EXPECT_EQ(json_data["nodes"].size(), live_nodes);
-  EXPECT_EQ(json_data["edges"].size(), 3);      // Should have 3 edges
-  EXPECT_EQ(json_data["arc_edges"].size(), 0);  // No arc edges
+  EXPECT_EQ(json_data["edges"].size(), 3);     // Should have 3 edges
+  EXPECT_EQ(json_data["arc_edges"].size(), 0); // No arc edges
 
   // Deserialize from JSON
   std::shared_ptr<Sketch> deserialized_sketch = Sketch_json::from_json(view(), json_data);
@@ -107,8 +75,8 @@ TEST_F(Sketch_test, JsonSerializationDeserialization)
   for (const auto& edge : Sketch_access::get_edges(*deserialized_sketch))
     if (edge.node_idx_b.has_value())
       edge_count++;
-  
-  EXPECT_EQ(edge_count, 3);  // Should have 3 edges
+
+  EXPECT_EQ(edge_count, 3); // Should have 3 edges
 }
 
 // Test JSON serialization with different edge counts (bug1 vs bug1.1 scenario)
@@ -121,12 +89,9 @@ TEST_F(Sketch_test, JsonSerializationDifferentEdgeCounts)
   // Create first sketch with 3 edges (like bug1.ezy)
   Sketch                sketch1("Sketch1", view(), default_plane);
   std::vector<gp_Pnt2d> points1 = {
-      gp_Pnt2d(-42.123413069225286, 18.567557076566406),
-      gp_Pnt2d(-31.038304366797583, 18.567557076566406),
-      gp_Pnt2d(-42.123413069225286, 42.585292598493105),
-      gp_Pnt2d(-31.038304366797583, 42.585292598493105),
-      gp_Pnt2d(-42.123413069225286, -5.450178445360293),
-      gp_Pnt2d(-31.038304366797583, -5.450178445360293)};
+      gp_Pnt2d(-42.123413069225286, 18.567557076566406), gp_Pnt2d(-31.038304366797583, 18.567557076566406),
+      gp_Pnt2d(-42.123413069225286, 42.585292598493105), gp_Pnt2d(-31.038304366797583, 42.585292598493105),
+      gp_Pnt2d(-42.123413069225286, -5.450178445360293), gp_Pnt2d(-31.038304366797583, -5.450178445360293)};
 
   // Add 3 edges using raw (bypasses auto-split of crossing/touching; produces exactly the edge count
   // present in the original bug report files for this serialization test).
@@ -138,14 +103,10 @@ TEST_F(Sketch_test, JsonSerializationDifferentEdgeCounts)
   // Create second sketch with 4 edges (like bug1.1.ezy)
   Sketch                sketch2("Sketch2", view(), default_plane);
   std::vector<gp_Pnt2d> points2 = {
-      gp_Pnt2d(-42.123413069225286, 18.567557076566406),
-      gp_Pnt2d(-31.038304366797583, 18.567557076566406),
-      gp_Pnt2d(-42.123413069225286, 42.585292598493105),
-      gp_Pnt2d(-31.038304366797583, 42.585292598493105),
-      gp_Pnt2d(-42.123413069225286, -5.450178445360293),
-      gp_Pnt2d(-31.038304366797583, -5.450178445360293),
-      gp_Pnt2d(-42.123413069225286, -5.450178445360293),
-      gp_Pnt2d(-42.123413069225286, 42.585292598493105)};
+      gp_Pnt2d(-42.123413069225286, 18.567557076566406), gp_Pnt2d(-31.038304366797583, 18.567557076566406),
+      gp_Pnt2d(-42.123413069225286, 42.585292598493105), gp_Pnt2d(-31.038304366797583, 42.585292598493105),
+      gp_Pnt2d(-42.123413069225286, -5.450178445360293), gp_Pnt2d(-31.038304366797583, -5.450178445360293),
+      gp_Pnt2d(-42.123413069225286, -5.450178445360293), gp_Pnt2d(-42.123413069225286, 42.585292598493105)};
 
   // Add 4 edges (including the vertical edge) using raw (bypasses auto-split of crossing/touching; produces
   // exactly the edge count present in the original bug report files for this serialization test).
@@ -254,8 +215,8 @@ TEST_F(Sketch_test, EzyZipUnderlayRoundTrip)
   EXPECT_EQ(sk->underlay().image_w(), 2);
   EXPECT_EQ(sk->underlay().image_h(), 2);
 
-  const std::string manifest             = view().to_json();
-  const std::vector<uint8_t> zip_bytes   = pack_ezy(manifest, view().asset_store());
+  const std::string          manifest  = view().to_json();
+  const std::vector<uint8_t> zip_bytes = pack_ezy(manifest, view().asset_store());
   ASSERT_FALSE(zip_bytes.empty());
   ASSERT_TRUE(is_ezy_zip(std::string(reinterpret_cast<const char*>(zip_bytes.data()), zip_bytes.size())));
 
@@ -285,18 +246,18 @@ TEST_F(Sketch_test, EzyZipUnderlayDedup)
   sk2["name"]        = "B";
   sk2["isCurrent"]   = false;
   nlohmann::json doc;
-  doc["ezyFormat"]  = 3;
-  doc["shapes"]     = nlohmann::json::array();
-  doc["sketches"]   = nlohmann::json::array({sk1, sk2});
+  doc["ezyFormat"] = 3;
+  doc["shapes"]    = nlohmann::json::array();
+  doc["sketches"]  = nlohmann::json::array({sk1, sk2});
   view().load(doc.dump(), false);
 
-  const std::string manifest         = view().to_json();
+  const std::string          manifest  = view().to_json();
   const std::vector<uint8_t> zip_bytes = pack_ezy(manifest, view().asset_store());
   const auto unpacked = unpack_ezy(std::string(reinterpret_cast<const char*>(zip_bytes.data()), zip_bytes.size()));
   ASSERT_TRUE(unpacked);
   EXPECT_EQ(unpacked->assets.size(), 1u);
 
-  const nlohmann::json out = nlohmann::json::parse(unpacked->manifest_json);
+  const nlohmann::json  out = nlohmann::json::parse(unpacked->manifest_json);
   std::set<std::string> asset_ids;
   for (const nlohmann::json& sk : out["sketches"])
   {
@@ -336,3 +297,33 @@ TEST_F(Sketch_test, UnderlayUndoSnapshotUsesAssetRef)
   EXPECT_NE(snap.find("\"asset\""), std::string::npos);
 }
 
+namespace
+{
+
+nlohmann::json minimal_sketch_json_with_underlay_b64(Ezy_asset_store& store)
+{
+  std::vector<uint8_t> rgba(16);
+  for (int i = 0; i < 4; ++i)
+  {
+    rgba[static_cast<std::size_t>(i) * 4u + 0] = 255;
+    rgba[static_cast<std::size_t>(i) * 4u + 1] = 0;
+    rgba[static_cast<std::size_t>(i) * 4u + 2] = 0;
+    rgba[static_cast<std::size_t>(i) * 4u + 3] = 255;
+  }
+
+  nlohmann::json j;
+  j["isCurrent"] = true;
+  j["name"]      = "UnderlaySketch";
+  j["plane"]     = nlohmann::json::object({{"origin", {{"x", 0.0}, {"y", 0.0}, {"z", 0.0}}},
+                                           {"normal", {{"x", 0.0}, {"y", 0.0}, {"z", 1.0}}},
+                                           {"xAxis", {{"x", 1.0}, {"y", 0.0}, {"z", 0.0}}}});
+  j["edges"]     = nlohmann::json::array();
+  j["nodes"]     = nlohmann::json::array();
+  j["arc_edges"] = nlohmann::json::array();
+  j["underlay"] =
+      nlohmann::json::object({{"rgba_b64", ezy_base64_encode(rgba)}, {"w", 2}, {"h", 2}, {"opacity", 0.88}, {"visible", true}});
+  (void)store;
+  return j;
+}
+
+} // namespace

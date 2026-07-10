@@ -1,5 +1,10 @@
 #include "sketch_test_fixture.h"
 
+#include <BRepBndLib.hxx>
+#include <BRepGProp.hxx>
+#include <BRepPrimAPI_MakeRevol.hxx>
+#include <Bnd_Box.hxx>
+#include <GProp_GProps.hxx>
 #include <TopoDS.hxx>
 #include <algorithm>
 #include <cmath>
@@ -8,17 +13,13 @@
 #include <set>
 #include <string>
 #include <vector>
-#include "utl_geom.h"
+
 #include "sketch_edge.h"
 #include "sketch_json.h"
 #include "sketch_nodes.h"
 #include "sketch_op_recorder.h"
+#include "utl_geom.h"
 #include "utl_occt.h"
-#include <BRepPrimAPI_MakeRevol.hxx>
-#include <BRepBndLib.hxx>
-#include <Bnd_Box.hxx>
-#include <GProp_GProps.hxx>
-#include <BRepGProp.hxx>
 
 using namespace glm;
 
@@ -40,12 +41,10 @@ TEST_F(Sketch_test, Undo_single_arc_via_recorder)
   EXPECT_EQ(Sketch_access::get_arc_internal_edge_count(sketch), 1);
 
   EXPECT_TRUE(view().undo());
-  EXPECT_EQ(Sketch_access::get_arc_internal_edge_count(sketch), 0)
-      << "Undo should remove the arc edge";
+  EXPECT_EQ(Sketch_access::get_arc_internal_edge_count(sketch), 0) << "Undo should remove the arc edge";
 
   EXPECT_TRUE(view().redo());
-  EXPECT_EQ(Sketch_access::get_arc_internal_edge_count(sketch), 1)
-      << "Redo should restore the arc";
+  EXPECT_EQ(Sketch_access::get_arc_internal_edge_count(sketch), 1) << "Redo should restore the arc";
 }
 
 TEST_F(Sketch_test, Undo_circle_via_recorder)
@@ -58,7 +57,8 @@ TEST_F(Sketch_test, Undo_circle_via_recorder)
   sketch.add_sketch_pt(ScreenCoords(dvec2(5.0, 0.0)));
   sketch.finalize_elm();
 
-  auto count_permanent_nodes = [](Sketch& s) {
+  auto count_permanent_nodes = [](Sketch& s)
+  {
     size_t n = 0;
     for (const auto& node : s.get_nodes())
       if (node.permanent && !node.deleted)
@@ -71,14 +71,11 @@ TEST_F(Sketch_test, Undo_circle_via_recorder)
   EXPECT_EQ(edges_after_create, 2u);
 
   EXPECT_TRUE(view().undo());
-  EXPECT_EQ(Sketch_access::get_arc_internal_edge_count(sketch), 0u)
-      << "Undo should remove both semicircles (two arc edges)";
+  EXPECT_EQ(Sketch_access::get_arc_internal_edge_count(sketch), 0u) << "Undo should remove both semicircles (two arc edges)";
 
   EXPECT_TRUE(view().redo());
-  EXPECT_EQ(Sketch_access::get_arc_internal_edge_count(sketch), edges_after_create)
-      << "Redo should restore the circle";
-  EXPECT_EQ(count_permanent_nodes(sketch), perm_after_create)
-      << "Redo should not add extra permanent nodes";
+  EXPECT_EQ(Sketch_access::get_arc_internal_edge_count(sketch), edges_after_create) << "Redo should restore the circle";
+  EXPECT_EQ(count_permanent_nodes(sketch), perm_after_create) << "Redo should not add extra permanent nodes";
 }
 
 TEST_F(Sketch_test, Undo_two_crossing_edges_via_finalize)
@@ -105,8 +102,7 @@ TEST_F(Sketch_test, Undo_two_crossing_edges_via_finalize)
       << "Undo of the second edge should remove it and restore the unsplit first edge";
 
   EXPECT_TRUE(view().undo());
-  EXPECT_EQ(Sketch_access::get_linear_edge_count(sketch), 0)
-      << "Undo of the first edge should remove it";
+  EXPECT_EQ(Sketch_access::get_linear_edge_count(sketch), 0) << "Undo of the first edge should remove it";
 }
 
 TEST_F(Sketch_test, Redo_two_crossing_edges_keeps_intersection_node_non_permanent)
@@ -114,7 +110,8 @@ TEST_F(Sketch_test, Redo_two_crossing_edges_keeps_intersection_node_non_permanen
   gp_Pln default_plane(gp::Origin(), gp::DZ());
   Sketch sketch("TestSketch", view(), default_plane);
 
-  auto count_permanent_nodes = [](Sketch& s) {
+  auto count_permanent_nodes = [](Sketch& s)
+  {
     size_t n = 0;
     for (const auto& node : s.get_nodes())
       if (node.permanent && !node.deleted)
@@ -122,7 +119,8 @@ TEST_F(Sketch_test, Redo_two_crossing_edges_keeps_intersection_node_non_permanen
     return n;
   };
 
-  auto find_live_node_at = [](Sketch& s, const gp_Pnt2d& pt) -> std::optional<size_t> {
+  auto find_live_node_at = [](Sketch& s, const gp_Pnt2d& pt) -> std::optional<size_t>
+  {
     for (size_t i = 0, n = s.get_nodes().size(); i < n; ++i)
     {
       const auto& node = s.get_nodes()[i];
@@ -152,8 +150,7 @@ TEST_F(Sketch_test, Redo_two_crossing_edges_keeps_intersection_node_non_permanen
 
   const std::optional<size_t> intersection_before = find_live_node_at(sketch, gp_Pnt2d(3.0, 0.0));
   ASSERT_TRUE(intersection_before.has_value()) << "Crossing should create an interior node";
-  EXPECT_FALSE(sketch.get_nodes()[*intersection_before].permanent)
-      << "Auto-split intersection nodes should not be permanent";
+  EXPECT_FALSE(sketch.get_nodes()[*intersection_before].permanent) << "Auto-split intersection nodes should not be permanent";
 
   EXPECT_TRUE(view().undo());
   EXPECT_TRUE(view().undo());
@@ -165,17 +162,16 @@ TEST_F(Sketch_test, Redo_two_crossing_edges_keeps_intersection_node_non_permanen
 
   const std::optional<size_t> intersection_after = find_live_node_at(sketch, gp_Pnt2d(3.0, 0.0));
   ASSERT_TRUE(intersection_after.has_value()) << "Crossing intersection should be restored";
-  EXPECT_FALSE(sketch.get_nodes()[*intersection_after].permanent)
-      << "Redo must not promote the intersection node to permanent";
+  EXPECT_FALSE(sketch.get_nodes()[*intersection_after].permanent) << "Redo must not promote the intersection node to permanent";
 }
 
 TEST_F(Sketch_test, Undo_extrude_snapshot_keeps_single_sketch)
 {
-  Sketch::Sketch_ptr sk = view().curr_sketch_shared();
-  const size_t sk_id = sk->get_id();
+  Sketch::Sketch_ptr sk    = view().curr_sketch_shared();
+  const size_t       sk_id = sk->get_id();
 
   {
-    Sketch_op_recorder rec(view(), *sk);
+    Sketch_op_recorder            rec(view(), *sk);
     const std::array<gp_Pnt2d, 4> corners = square_corners(gp_Pnt2d(0.0, 0.0), gp_Pnt2d(10.0, 0.0));
     Sketch_access::add_edge_(*sk, corners[0], corners[1], rec);
     Sketch_access::add_edge_(*sk, corners[1], corners[2], rec);
@@ -232,13 +228,13 @@ TEST_F(Sketch_test, Undo_delta_resolves_by_sketch_id_when_names_duplicate)
 
 TEST_F(Sketch_test, Undo_circle_axis_then_revolve_snapshot_three_undos)
 {
-  Sketch::Sketch_ptr sk = view().curr_sketch_shared();
-  const size_t         sk_id = sk->get_id();
+  Sketch::Sketch_ptr sk    = view().curr_sketch_shared();
+  const size_t       sk_id = sk->get_id();
 
   {
-    Sketch_op_recorder rec(view(), *sk);
-    const gp_Pnt2d                 center(0.0, 0.0);
-    const gp_Pnt2d                 edge_pt(5.0, 0.0);
+    Sketch_op_recorder            rec(view(), *sk);
+    const gp_Pnt2d                center(0.0, 0.0);
+    const gp_Pnt2d                edge_pt(5.0, 0.0);
     const std::array<gp_Pnt2d, 4> points = xy_stencil_pnts(center, edge_pt);
     Sketch_access::add_arc_circle_(*sk, points[0], points[2], points[1], rec);
     Sketch_access::add_arc_circle_(*sk, points[0], points[3], points[1], rec);
@@ -249,8 +245,8 @@ TEST_F(Sketch_test, Undo_circle_axis_then_revolve_snapshot_three_undos)
 
   {
     Sketch_op_recorder rec(view(), *sk);
-    const gp_Pnt2d axis_a(0.0, -10.0);
-    const gp_Pnt2d axis_b(10.0, -10.0);
+    const gp_Pnt2d     axis_a(0.0, -10.0);
+    const gp_Pnt2d     axis_b(10.0, -10.0);
     Sketch_access::set_operation_axis_(*sk, axis_a, axis_b);
     rec.note_curr_operation_axis(axis_a, axis_b);
     rec.commit();
@@ -348,8 +344,7 @@ TEST_F(Sketch_test, MirrorSelectedEdges_NoEdgesSelected)
 
   EXPECT_EQ(GUI_access::get_message(gui()), Sketch::ERROR_NO_EDGES_SELECTED)
       << "Error message should be displayed when no edges are selected";
-  EXPECT_EQ(view().undo_stack_size(), undo_steps_before)
-      << "Mirror with no selection must not push an undo step";
+  EXPECT_EQ(view().undo_stack_size(), undo_steps_before) << "Mirror with no selection must not push an undo step";
 }
 
 // Positive test: mirror a simple straight edge across a horizontal axis.
@@ -366,7 +361,7 @@ TEST_F(Sketch_test, MirrorSelectedEdges_SimpleStraightEdge)
   gui().set_mode(Mode::Sketch_operation_axis);
 
   gp_Pnt2d axis_p1(0.0, 0.0);
-  gp_Pnt2d axis_p2(5.0, 0.0);  // length is arbitrary / visual only
+  gp_Pnt2d axis_p2(5.0, 0.0); // length is arbitrary / visual only
   sketch.add_sketch_pt(ScreenCoords(dvec2(axis_p1.X(), axis_p1.Y())));
   sketch.add_sketch_pt(ScreenCoords(dvec2(axis_p2.X(), axis_p2.Y())));
 
@@ -395,10 +390,12 @@ TEST_F(Sketch_test, MirrorSelectedEdges_SimpleStraightEdge)
   cctx.AddOrRemoveSelected(edge_to_mirror, true);
 
   // Count drawable edges before
-  auto count_drawable_edges = [&](const Sketch& s) -> size_t {
+  auto count_drawable_edges = [&](const Sketch& s) -> size_t
+  {
     size_t n = 0;
     for (const auto& e : Sketch_access::get_edges(s))
-      if (e.node_idx_b.has_value()) ++n;
+      if (e.node_idx_b.has_value())
+        ++n;
     return n;
   };
 
@@ -414,13 +411,12 @@ TEST_F(Sketch_test, MirrorSelectedEdges_SimpleStraightEdge)
   bool found_mirrored = false;
   for (const auto& e : Sketch_access::get_edges(sketch))
   {
-    if (!e.node_idx_b.has_value()) continue;
+    if (!e.node_idx_b.has_value())
+      continue;
     const gp_Pnt2d& na = sketch.get_nodes()[e.node_idx_a];
     const gp_Pnt2d& nb = sketch.get_nodes()[*e.node_idx_b];
-    if (std::abs(na.Y() + 2.0) < Precision::Confusion() &&
-        std::abs(nb.Y() + 2.0) < Precision::Confusion() &&
-        std::abs(na.X() - 1.0) < Precision::Confusion() &&
-        std::abs(nb.X() - 4.0) < Precision::Confusion())
+    if (std::abs(na.Y() + 2.0) < Precision::Confusion() && std::abs(nb.Y() + 2.0) < Precision::Confusion() &&
+        std::abs(na.X() - 1.0) < Precision::Confusion() && std::abs(nb.X() - 4.0) < Precision::Confusion())
     {
       found_mirrored = true;
       break;
@@ -452,7 +448,11 @@ TEST_F(Sketch_test, MirrorSelectedEdges_VerticalAxis)
   AIS_Shape_ptr shp;
   for (auto rit = Sketch_access::get_edges(sketch).rbegin(); rit != Sketch_access::get_edges(sketch).rend(); ++rit)
   {
-    if (rit->node_idx_b.has_value()) { shp = rit->shp; break; }
+    if (rit->node_idx_b.has_value())
+    {
+      shp = rit->shp;
+      break;
+    }
   }
   ASSERT_FALSE(shp.IsNull());
 
@@ -461,25 +461,28 @@ TEST_F(Sketch_test, MirrorSelectedEdges_VerticalAxis)
   cctx.AddOrRemoveSelected(shp, true);
 
   size_t before = 0;
-  for (const auto& e : Sketch_access::get_edges(sketch)) if (e.node_idx_b.has_value()) ++before;
+  for (const auto& e : Sketch_access::get_edges(sketch))
+    if (e.node_idx_b.has_value())
+      ++before;
 
   sketch.mirror_selected_edges();
 
   size_t after = 0;
-  for (const auto& e : Sketch_access::get_edges(sketch)) if (e.node_idx_b.has_value()) ++after;
+  for (const auto& e : Sketch_access::get_edges(sketch))
+    if (e.node_idx_b.has_value())
+      ++after;
   EXPECT_EQ(after, before + 1);
 
   // Expect mirrored edge at x=-2
   bool found = false;
   for (const auto& e : Sketch_access::get_edges(sketch))
   {
-    if (!e.node_idx_b.has_value()) continue;
+    if (!e.node_idx_b.has_value())
+      continue;
     const gp_Pnt2d& na = sketch.get_nodes()[e.node_idx_a];
     const gp_Pnt2d& nb = sketch.get_nodes()[*e.node_idx_b];
-    if (std::abs(na.X() + 2.0) < Precision::Confusion() &&
-        std::abs(nb.X() + 2.0) < Precision::Confusion() &&
-        std::abs(na.Y() - 1.0) < Precision::Confusion() &&
-        std::abs(nb.Y() - 3.0) < Precision::Confusion())
+    if (std::abs(na.X() + 2.0) < Precision::Confusion() && std::abs(nb.X() + 2.0) < Precision::Confusion() &&
+        std::abs(na.Y() - 1.0) < Precision::Confusion() && std::abs(nb.Y() - 3.0) < Precision::Confusion())
     {
       found = true;
       break;
@@ -526,13 +529,17 @@ TEST_F(Sketch_test, MirrorSelectedEdges_Arc)
   cctx.AddOrRemoveSelected(arc_shp, true);
 
   size_t before = 0;
-  for (const auto& e : Sketch_access::get_edges(sketch)) if (e.node_idx_b.has_value()) ++before;
+  for (const auto& e : Sketch_access::get_edges(sketch))
+    if (e.node_idx_b.has_value())
+      ++before;
 
   sketch.mirror_selected_edges();
 
   // Mirroring an arc pair should add another arc pair below
   size_t after = 0;
-  for (const auto& e : Sketch_access::get_edges(sketch)) if (e.node_idx_b.has_value()) ++after;
+  for (const auto& e : Sketch_access::get_edges(sketch))
+    if (e.node_idx_b.has_value())
+      ++after;
   // Expect +1 edge for the mirrored arc
   EXPECT_EQ(after, before + 1) << "Mirroring an arc should add one new arc edge";
 
@@ -543,7 +550,7 @@ TEST_F(Sketch_test, MirrorSelectedEdges_Arc)
     if (!sketch_edge_is_arc(e))
       continue;
     const gp_Pnt2d& pa = sketch.get_nodes()[e.node_idx_a];
-    if (std::abs(pa.Y() + 1.0) < 0.5)  // rough, symmetric to +1
+    if (std::abs(pa.Y() + 1.0) < 0.5) // rough, symmetric to +1
     {
       found_symmetric = true;
       break;
@@ -631,9 +638,9 @@ TEST_F(Sketch_test, RevolveSelected_SimpleEdgeProfile)
 
   // 1. Build the profile compound (same edges the sketch would have selected)
   TopoDS_Compound profile;
-  BRep_Builder bld;
+  BRep_Builder    bld;
   bld.MakeCompound(profile);
-  bld.Add(profile, edge_shp->Shape());   // the edge we selected above
+  bld.Add(profile, edge_shp->Shape()); // the edge we selected above
 
   // 2. Recreate the axis using the exact same two points we used to define the operation axis.
   //    (Only direction + a point on the line matter; length is irrelevant.)
@@ -643,7 +650,7 @@ TEST_F(Sketch_test, RevolveSelected_SimpleEdgeProfile)
   gp_Ax1 revolAxis(axA, dir);
 
   BRepPrimAPI_MakeRevol expectedMaker(profile, revolAxis, 2 * std::numbers::pi);
-  TopoDS_Shape expected = try_make_solid(expectedMaker.Shape());
+  TopoDS_Shape          expected = try_make_solid(expectedMaker.Shape());
 
   EXPECT_FALSE(expected.IsNull());
 
@@ -654,17 +661,16 @@ TEST_F(Sketch_test, RevolveSelected_SimpleEdgeProfile)
   BRepGProp::VolumeProperties(actual, gActual);
   BRepGProp::VolumeProperties(expected, gExpected);
 
-  EXPECT_NEAR(gActual.Mass(), gExpected.Mass(), 1e-8)
-      << "Revolved volume should match direct MakeRevol";
+  EXPECT_NEAR(gActual.Mass(), gExpected.Mass(), 1e-8) << "Revolved volume should match direct MakeRevol";
 
   Bnd_Box boxA, boxE;
   BRepBndLib::Add(actual, boxA);
   BRepBndLib::Add(expected, boxE);
 
-  double axmin,aymin,azmin,axmax,aymax,azmax;
-  double exmin,eymin,ezmin,exmax,eymax,ezmax;
-  boxA.Get(axmin,aymin,azmin,axmax,aymax,azmax);
-  boxE.Get(exmin,eymin,ezmin,exmax,eymax,ezmax);
+  double axmin, aymin, azmin, axmax, aymax, azmax;
+  double exmin, eymin, ezmin, exmax, eymax, ezmax;
+  boxA.Get(axmin, aymin, azmin, axmax, aymax, azmax);
+  boxE.Get(exmin, eymin, ezmin, exmax, eymax, ezmax);
 
   EXPECT_NEAR(axmin, exmin, 1e-8);
   EXPECT_NEAR(aymin, eymin, 1e-8);
@@ -737,7 +743,7 @@ TEST_F(Sketch_test, RevolveSelected_ClosedEdgeProfile)
 
   // === Oracle comparison: rebuild the identical revolve using the same inputs ===
   TopoDS_Compound profile;
-  BRep_Builder bld;
+  BRep_Builder    bld;
   bld.MakeCompound(profile);
 
   // Collect exactly the profile edges we added for this test
@@ -759,7 +765,7 @@ TEST_F(Sketch_test, RevolveSelected_ClosedEdgeProfile)
   gp_Ax1 revolAxis(axA, dir);
 
   BRepPrimAPI_MakeRevol expectedMaker(profile, revolAxis, 2 * std::numbers::pi);
-  TopoDS_Shape expected = try_make_solid(expectedMaker.Shape());
+  TopoDS_Shape          expected = try_make_solid(expectedMaker.Shape());
 
   EXPECT_FALSE(expected.IsNull());
 
@@ -767,17 +773,16 @@ TEST_F(Sketch_test, RevolveSelected_ClosedEdgeProfile)
   BRepGProp::VolumeProperties(actual, gActual);
   BRepGProp::VolumeProperties(expected, gExpected);
 
-  EXPECT_NEAR(gActual.Mass(), gExpected.Mass(), 1e-8)
-      << "Revolved volume should match direct MakeRevol";
+  EXPECT_NEAR(gActual.Mass(), gExpected.Mass(), 1e-8) << "Revolved volume should match direct MakeRevol";
 
   Bnd_Box boxA, boxE;
   BRepBndLib::Add(actual, boxA);
   BRepBndLib::Add(expected, boxE);
 
-  double axmin,aymin,azmin,axmax,aymax,azmax;
-  double exmin,eymin,ezmin,exmax,eymax,ezmax;
-  boxA.Get(axmin,aymin,azmin,axmax,aymax,azmax);
-  boxE.Get(exmin,eymin,ezmin,exmax,eymax,ezmax);
+  double axmin, aymin, azmin, axmax, aymax, azmax;
+  double exmin, eymin, ezmin, exmax, eymax, ezmax;
+  boxA.Get(axmin, aymin, azmin, axmax, aymax, azmax);
+  boxE.Get(exmin, eymin, ezmin, exmax, eymax, ezmax);
 
   EXPECT_NEAR(axmin, exmin, 1e-8);
   EXPECT_NEAR(aymin, eymin, 1e-8);
@@ -792,7 +797,6 @@ TEST_F(Sketch_test, RevolveSelected_ClosedEdgeProfile)
 
 // Test that split edges have midpoints for snapping
 // This test verifies the fix for the bug where edges split by their midpoint
-// don't have midpoints to snap to
 // don't have midpoints to snap to
 // This test verifies the fix for the bug where edges split by their midpoint
 // don't have midpoints to snap to
@@ -810,4 +814,3 @@ TEST_F(Sketch_test, NewFile_clears_undo_stacks)
   EXPECT_EQ(view().undo_stack_size(), 0u);
   EXPECT_EQ(view().redo_stack_size(), 0u);
 }
-

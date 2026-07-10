@@ -1,5 +1,9 @@
 #include "sketch_test_fixture.h"
 
+#include <BRepBndLib.hxx>
+#include <BRepGProp.hxx>
+#include <Bnd_Box.hxx>
+#include <GProp_GProps.hxx>
 #include <TopoDS.hxx>
 #include <TopoDS_Wire.hxx>
 #include <algorithm>
@@ -9,16 +13,13 @@
 #include <set>
 #include <string>
 #include <vector>
-#include "utl_geom.h"
+
 #include "sketch_edge.h"
 #include "sketch_json.h"
 #include "sketch_nodes.h"
 #include "sketch_op_recorder.h"
+#include "utl_geom.h"
 #include "utl_occt.h"
-#include <BRepBndLib.hxx>
-#include <Bnd_Box.hxx>
-#include <GProp_GProps.hxx>
-#include <BRepGProp.hxx>
 
 using namespace glm;
 
@@ -146,8 +147,10 @@ TEST_F(Sketch_test, AddLinearEdge_MidpointOption)
 
   // Check the (only) edge has no mid
   bool has_mid = false;
-  for (const auto& e : Sketch_access::get_edges(sketch)) {
-    if (e.node_idx_mid.has_value()) has_mid = true;
+  for (const auto& e : Sketch_access::get_edges(sketch))
+  {
+    if (e.node_idx_mid.has_value())
+      has_mid = true;
   }
   EXPECT_FALSE(has_mid);
 
@@ -164,15 +167,15 @@ TEST_F(Sketch_test, AddLinearEdge_MidpointOption)
 
   // Find the second edge and verify it has a mid
   auto it = Sketch_access::get_edges(sketch).begin();
-  std::advance(it, 1);  // second edge
+  std::advance(it, 1); // second edge
   EXPECT_TRUE(it->node_idx_mid.has_value());
   const gp_Pnt2d& mid = sketch.get_nodes()[*it->node_idx_mid];
-  gp_Pnt2d expected_mid(5.0, 10.0);
+  gp_Pnt2d        expected_mid(5.0, 10.0);
   EXPECT_TRUE(mid.IsEqual(expected_mid, Precision::Confusion()));
   EXPECT_TRUE(sketch.get_nodes()[*it->node_idx_mid].midpoint);
 
   // Verify JSON shape: no mid => 2-element edge array; with mid => 3 elements
-  nlohmann::json j_no_mid = Sketch_json::to_json(sketch, view().asset_store());  // current state has one with mid
+  nlohmann::json j_no_mid = Sketch_json::to_json(sketch, view().asset_store()); // current state has one with mid
   // To test no-mid JSON, recreate a sketch with flag off
   Sketch sketch2("TestSketch2", view(), default_plane);
   Sketch::set_add_mid_pt_edges(false);
@@ -221,8 +224,7 @@ TEST_F(Sketch_test, AddArc_MidpointOption)
   ASSERT_NE(arc_with_mid, nullptr);
   const Sketch_nodes::Node& mid_node = sketch.get_nodes()[*arc_with_mid->node_idx_arc_pt];
   EXPECT_TRUE(mid_node.midpoint);
-  const gp_Pnt2d expected_mid =
-      arc_curve_midpoint_2d(TopoDS::Edge(arc_with_mid->shp->Shape()), default_plane);
+  const gp_Pnt2d expected_mid = arc_curve_midpoint_2d(TopoDS::Edge(arc_with_mid->shp->Shape()), default_plane);
   EXPECT_TRUE(mid_node.IsEqual(expected_mid, Precision::Confusion()))
       << "Arc midpoint snap node should lie on the curve at parametric half";
 
@@ -255,8 +257,8 @@ TEST_F(Sketch_test, AddEdgeFromCenter_SecondClickFullSpan)
     if (!sketch_edge_is_linear(e))
       continue;
 
-    const gp_Pnt2d& a = sketch.get_nodes()[e.node_idx_a];
-    const gp_Pnt2d& b = sketch.get_nodes()[*e.node_idx_b];
+    const gp_Pnt2d& a    = sketch.get_nodes()[e.node_idx_a];
+    const gp_Pnt2d& b    = sketch.get_nodes()[*e.node_idx_b];
     const double    xmin = std::min(a.X(), b.X());
     const double    xmax = std::max(a.X(), b.X());
     if (std::abs(a.Y()) < Precision::Confusion() && std::abs(b.Y()) < Precision::Confusion() &&
@@ -294,8 +296,8 @@ TEST_F(Sketch_test, AddEdgeFromCenter_DimensionUsesFullLength)
     if (!sketch_edge_is_linear(e))
       continue;
 
-    const gp_Pnt2d& a = sketch.get_nodes()[e.node_idx_a];
-    const gp_Pnt2d& b = sketch.get_nodes()[*e.node_idx_b];
+    const gp_Pnt2d& a    = sketch.get_nodes()[e.node_idx_a];
+    const gp_Pnt2d& b    = sketch.get_nodes()[*e.node_idx_b];
     const double    xmin = std::min(a.X(), b.X());
     const double    xmax = std::max(a.X(), b.X());
     if (std::abs(a.Y()) < Precision::Confusion() && std::abs(b.Y()) < Precision::Confusion() &&
@@ -513,14 +515,8 @@ TEST_F(Sketch_test, OriginatingFaceSnapPointsSquare)
   sort_pnts(snap_pts);
 
   std::vector<gp_Pnt> expected = {
-      gp_Pnt(-10, -5, 0),
-      gp_Pnt(-10, 0, 0),
-      gp_Pnt(-10, 5, 0),
-      gp_Pnt(0, -5, 0),
-      gp_Pnt(0, 5, 0),
-      gp_Pnt(10, -5, 0),
-      gp_Pnt(10, 0, 0),
-      gp_Pnt(10, 5, 0),
+      gp_Pnt(-10, -5, 0), gp_Pnt(-10, 0, 0), gp_Pnt(-10, 5, 0), gp_Pnt(0, -5, 0),
+      gp_Pnt(0, 5, 0),    gp_Pnt(10, -5, 0), gp_Pnt(10, 0, 0),  gp_Pnt(10, 5, 0),
   };
 
   ASSERT_EQ(snap_pts.size(), expected.size());
@@ -656,7 +652,7 @@ TEST_F(Sketch_test, HiddenOriginExcludedFromSnap)
   sketch.get_nodes().get_snap_pts_3d(pts);
   EXPECT_TRUE(pts.empty());
 
-  gp_Pnt2d near_origin(0.01, 0.01);
+  gp_Pnt2d              near_origin(0.01, 0.01);
   std::optional<size_t> snap_idx = sketch.get_nodes().try_get_node_idx_snap(near_origin);
   EXPECT_FALSE(snap_idx.has_value());
 }
@@ -665,7 +661,7 @@ TEST_F(Sketch_test, OriginatingFaceSnapPointsCircle)
 {
   gp_Pln   default_plane(gp::Origin(), gp::DZ());
   gp_Pnt2d center(0.0, 0.0);
-  gp_Pnt2d edge_point(10.0, 0.0);  // Radius = 10
+  gp_Pnt2d edge_point(10.0, 0.0); // Radius = 10
 
   // Create a circular wire as the originating face
   TopoDS_Wire circle_wire = make_circle_wire(default_plane, center, edge_point);
@@ -687,19 +683,20 @@ TEST_F(Sketch_test, OriginatingFaceSnapPointsCircle)
   // - End vertex (same as start for closed circle, so not added again)
   // So we expect exactly 2 points: start vertex and midpoint
   std::vector<gp_Pnt> expected = {
-      gp_Pnt(-10, 0, 0),  // Midpoint at 180 degrees
-      gp_Pnt(10, 0, 0),   // Start vertex at 0 degrees (edge_point)
+      gp_Pnt(-10, 0, 0), // Midpoint at 180 degrees
+      gp_Pnt(10, 0, 0),  // Start vertex at 0 degrees (edge_point)
   };
 
   ASSERT_EQ(snap_pts.size(), expected.size());
   for (size_t i = 0; i < expected.size(); ++i)
     EXPECT_TRUE(snap_pts[i].IsEqual(expected[i], Precision::Confusion()))
-        << "Mismatch at index " << i << ": got (" << snap_pts[i].X() << ", " << snap_pts[i].Y() << ", " << snap_pts[i].Z() << "), expected (" << expected[i].X() << ", " << expected[i].Y() << ", " << expected[i].Z() << ")";
+        << "Mismatch at index " << i << ": got (" << snap_pts[i].X() << ", " << snap_pts[i].Y() << ", " << snap_pts[i].Z()
+        << "), expected (" << expected[i].X() << ", " << expected[i].Y() << ", " << expected[i].Z() << ")";
 }
 
 TEST_F(Sketch_test, ExtrudeSketchFace_EzyCad)
 {
-#if 0  // Not working
+#if 0 // Not working
   gp_Pln default_plane(gp::Origin(), gp::DZ());
   Sketch sketch("TestSketch", view(), default_plane);
 
@@ -751,7 +748,8 @@ TEST_F(Sketch_test, AddNode_splits_linear_edge_interior)
   Sketch_access::add_edge_(sketch, gp_Pnt2d(0.0, 0.0), gp_Pnt2d(20.0, 0.0));
   Sketch_access::update_faces_(sketch);
 
-  auto count_real_edges = [](const Sketch& s) {
+  auto count_real_edges = [](const Sketch& s)
+  {
     size_t n = 0;
     for (const auto& e : Sketch_access::get_edges(s))
       if (e.node_idx_b.has_value())
@@ -770,7 +768,7 @@ TEST_F(Sketch_test, AddNode_splits_linear_edge_interior)
 
   EXPECT_EQ(count_real_edges(sketch), 2u) << "Add node on edge interior should replace one edge with two";
 
-  bool found_0_7 = false;
+  bool found_0_7  = false;
   bool found_7_20 = false;
   for (const auto& e : Sketch_access::get_edges(sketch))
   {
@@ -866,7 +864,8 @@ TEST_F(Sketch_test, AddNode_distance_enter_undo)
   Sketch_access::set_entered_edge_len(sketch, gp_Dir2d(1.0, 0.0), 10.0);
   sketch.on_enter();
 
-  auto count_permanent_nodes = [](Sketch& s) {
+  auto count_permanent_nodes = [](Sketch& s)
+  {
     size_t n = 0;
     for (const auto& node : s.get_nodes())
       if (node.permanent && !node.deleted)
@@ -895,7 +894,8 @@ TEST_F(Sketch_test, AddNode_anchor_then_click_undo)
   sketch.add_sketch_pt(ScreenCoords(dvec2(0.0, 0.0)));
   sketch.add_sketch_pt(ScreenCoords(dvec2(10.0, 200.0)));
 
-  auto count_permanent_nodes = [](Sketch& s) {
+  auto count_permanent_nodes = [](Sketch& s)
+  {
     size_t n = 0;
     for (const auto& node : s.get_nodes())
       if (node.permanent && !node.deleted)
@@ -924,4 +924,3 @@ TEST_F(Sketch_test, DimensionTool_picks_sketch_origin)
   ASSERT_TRUE(origin_pick.has_value());
   EXPECT_TRUE(sketch.get_nodes()[*origin_pick].origin);
 }
-

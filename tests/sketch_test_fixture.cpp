@@ -2,10 +2,7 @@
 
 #include <utility>
 
-#include "sketch_ais.h"
 #include "sketch_edge.h"
-
-using namespace glm;
 
 GUI Sketch_test::s_gui;
 
@@ -27,20 +24,21 @@ void Sketch_test::TearDown()
   // view.reset();
 }
 
-Occt_view& Sketch_test::view()
-{
-  return GUI_access::get_view(s_gui);
-}
+Occt_view& Sketch_test::view() { return GUI_access::get_view(s_gui); }
 
-GUI& Sketch_test::gui()
-{
-  return s_gui;
-}
+GUI& Sketch_test::gui() { return s_gui; }
 
-void Sketch_access::add_edge_(Sketch& sketch, const gp_Pnt2d& pt_a, const gp_Pnt2d& pt_b)
-{
-  sketch.add_edge_(pt_a, pt_b);
-}
+void GUI_access::set_view(GUI& gui, std::unique_ptr<Occt_view>& view) { gui.m_view = std::move(view); }
+
+Occt_view& GUI_access::get_view(GUI& gui) { return *gui.m_view; }
+
+std::string GUI_access::get_message(const GUI& gui) { return gui.m_message; }
+
+void GUI_access::sketch_left_click(GUI& gui, const ScreenCoords& screen_coords) { gui.sketch_left_click(screen_coords); }
+
+void GUI_access::mirror_selected_edges(GUI& gui) { gui.mirror_selected_sketch_edges(); }
+
+void Sketch_access::add_edge_(Sketch& sketch, const gp_Pnt2d& pt_a, const gp_Pnt2d& pt_b) { sketch.add_edge_(pt_a, pt_b); }
 
 void Sketch_access::add_edge_(Sketch& sketch, const gp_Pnt2d& pt_a, const gp_Pnt2d& pt_b, Sketch_op_recorder& rec)
 {
@@ -51,6 +49,28 @@ void Sketch_access::add_edge_raw_(Sketch& sketch, const gp_Pnt2d& pt_a, const gp
 {
   sketch.add_edge_raw_(pt_a, pt_b);
 }
+
+void Sketch_access::update_faces_(Sketch& sketch) { sketch.update_faces_(); }
+
+void Sketch_access::add_arc_circle_(Sketch& sketch, const gp_Pnt2d& pt_a, const gp_Pnt2d& pt_b, const gp_Pnt2d& pt_c)
+{
+  sketch.add_arc_circle_(pt_a, pt_b, pt_c);
+}
+
+void Sketch_access::add_arc_circle_(Sketch& sketch, const gp_Pnt2d& pt_a, const gp_Pnt2d& pt_b, const gp_Pnt2d& pt_c,
+                                    Sketch_op_recorder& rec)
+{
+  sketch.add_arc_circle_(pt_a, pt_b, pt_c, rec);
+}
+
+void Sketch_access::get_originating_face_snp_pts_3d_(Sketch& sketch, std::vector<gp_Pnt>& out)
+{
+  sketch.get_originating_face_snp_pts_3d_(out);
+}
+
+const std::vector<Sketch_face_shp_ptr>& Sketch_access::get_faces(const Sketch& sketch) { return sketch.m_topo.faces(); }
+
+const std::list<Sketch::Edge>& Sketch_access::get_edges(const Sketch& sketch) { return sketch.m_edges.edges(); }
 
 size_t Sketch_access::get_linear_edge_count(const Sketch& sketch)
 {
@@ -74,20 +94,7 @@ size_t Sketch_access::get_arc_internal_edge_count(const Sketch& sketch)
   return count;
 }
 
-const std::vector<Sketch_face_shp_ptr>& Sketch_access::get_faces(const Sketch& sketch)
-{
-  return sketch.m_topo.faces();
-}
-
-const std::list<Sketch::Edge>& Sketch_access::get_edges(const Sketch& sketch)
-{
-  return sketch.m_edges.edges();
-}
-
-size_t Sketch_access::length_dimension_count(const Sketch& sketch)
-{
-  return sketch.m_dims.dimensions().size();
-}
+size_t Sketch_access::length_dimension_count(const Sketch& sketch) { return sketch.m_dims.dimensions().size(); }
 
 size_t Sketch_access::length_dimension_node_lo(const Sketch& sketch, size_t index)
 {
@@ -102,52 +109,6 @@ size_t Sketch_access::length_dimension_node_hi(const Sketch& sketch, size_t inde
 void Sketch_access::set_entered_edge_len(Sketch& sketch, const gp_Dir2d& dir, double len)
 {
   sketch.m_dims.entered_edge_len() = Sketch_dims::Edge_len{dir, len};
-}
-
-void Sketch_access::update_faces_(Sketch& sketch)
-{
-  sketch.update_faces_();
-}
-
-void Sketch_access::add_arc_circle_(Sketch& sketch, const gp_Pnt2d& pt_a, const gp_Pnt2d& pt_b, const gp_Pnt2d& pt_c)
-{
-  sketch.add_arc_circle_(pt_a, pt_b, pt_c);
-}
-
-void Sketch_access::add_arc_circle_(Sketch& sketch, const gp_Pnt2d& pt_a, const gp_Pnt2d& pt_b, const gp_Pnt2d& pt_c,
-                                    Sketch_op_recorder& rec)
-{
-  sketch.add_arc_circle_(pt_a, pt_b, pt_c, rec);
-}
-
-void GUI_access::set_view(GUI& gui, std::unique_ptr<Occt_view>& view)
-{
-  gui.m_view = std::move(view);
-}
-
-Occt_view& GUI_access::get_view(GUI& gui)
-{
-  return *gui.m_view;
-}
-
-std::string GUI_access::get_message(const GUI& gui)
-{
-  return gui.m_message;
-}
-
-void GUI_access::sketch_left_click(GUI& gui, const ScreenCoords& screen_coords)
-{
-  gui.sketch_left_click(screen_coords);
-}
-
-void GUI_access::mirror_selected_edges(GUI& gui)
-{
-  gui.mirror_selected_sketch_edges();
-}
-
-void Sketch_access::get_originating_face_snp_pts_3d_(Sketch& sketch, std::vector<gp_Pnt>& out)
-{
-  sketch.get_originating_face_snp_pts_3d_(out);
 }
 
 void Sketch_access::sketch_json_add_linear_edge_(Sketch& sketch, size_t idx_a, size_t idx_b, std::optional<size_t> idx_mid)
@@ -166,12 +127,6 @@ void Sketch_access::remove_permanent_node_mark_(Sketch& sketch, size_t node_idx)
   sketch.remove_permanent_node_mark(mark);
 }
 
-void View_access::set_view_plane(Occt_view& view, const gp_Pln& pln)
-{
-  view.shp_extrude().set_curr_view_pln(pln);
-}
+void View_access::set_view_plane(Occt_view& view, const gp_Pln& pln) { view.shp_extrude().set_curr_view_pln(pln); }
 
-void View_access::set_headless(Occt_view& view, bool headless)
-{
-  view.m_headless_view = headless;
-}
+void View_access::set_headless(Occt_view& view, bool headless) { view.m_headless_view = headless; }
