@@ -31,7 +31,7 @@ ezy_geom::polygon_2d to_boost(const TopoDS_Shape& shape, const gp_Pln& pln2);
 ezy_geom::ring_2d    to_boost_ls(const TopoDS_Shape& shape, const gp_Pln& pln);
 bool                 is_clockwise(const ezy_geom::ring_2d& ring);
 
-// Simple WKT writers (used by tests and Graphical Debugging log output).
+// Simple WKT writers (used by tests).
 std::string to_wkt_string(const ezy_geom::ring_2d& ring);
 std::string to_wkt_string(const ezy_geom::polygon_2d& poly);
 

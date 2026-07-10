@@ -3,15 +3,19 @@
 
   <!--
   Graphical Debugging v0.56+ type definitions for EzyCad.
+  Extension: https://github.com/awulkiew/graphical-debugging
 
   ring_2d must be a struct inheriting std::vector (not a typedef). MSVC unrolls
   typedefs to std::vector<...>, which the extension renders as MultiPoint (dots).
-  See MyLinestring4 in the extension examples/cpp.xml.
+  See MyLinestring4 / MyRing in the extension examples/cpp.xml.
+
+  ring_2d is registered as Ring (not Linestring) so polygon_2d ExteriorRing can
+  resolve it. Open polylines may show a closing segment in Geometry Watch.
 
   Setup:
     1. Tools -> Options -> Graphical Debugging -> General -> set this file path
     2. Restart Visual Studio
-    3. Geometry Watch: seed_seg (segment) or seed_ring (linestring)
+    3. Geometry Watch: ring_2d / segment_2d / polygon_2d (and containers of them)
   -->
 
   <Point Type="ezy_geom::point_2d" Id="ezy_geom::point_2d">
@@ -30,14 +34,15 @@
     </Coordinates>
   </Segment>
 
-  <Linestring Type="ezy_geom::ring_2d" Id="ezy_geom::ring_2d">
+  <!-- Ring (not Linestring): required so Polygon ExteriorRing/InteriorRings resolve. -->
+  <Ring Type="ezy_geom::ring_2d" Id="ezy_geom::ring_2d">
     <Points>
       <Array>
         <Pointer>_Mypair._Myval2._Myfirst</Pointer>
         <Size>_Mypair._Myval2._Mylast - _Mypair._Myval2._Myfirst</Size>
       </Array>
     </Points>
-  </Linestring>
+  </Ring>
 
   <Polygon Type="ezy_geom::polygon_2d" Id="ezy_geom::polygon_2d">
     <ExteriorRing>

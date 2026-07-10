@@ -16,13 +16,16 @@ struct point_2d
   }
 };
 
-/// Open polyline or closed ring vertex sequence (inherits vector for Graphical Debugging).
+/// Open polyline or closed ring vertex sequence (inherits vector for Graphical Debugging:
+/// https://github.com/awulkiew/graphical-debugging , tools/ezycad_graphical_debugging.xml).
+/// Registered as Ring in that XML so polygon_2d ExteriorRing resolves.
 struct ring_2d : std::vector<point_2d>
 {
   using std::vector<point_2d>::vector;
 };
 
-/// Two endpoints (Graphical Debugging segment visualizer).
+/// Two endpoints (Graphical Debugging segment visualizer:
+/// https://github.com/awulkiew/graphical-debugging , tools/ezycad_graphical_debugging.xml).
 struct segment_2d
 {
   point_2d from;

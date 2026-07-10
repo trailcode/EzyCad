@@ -3,10 +3,13 @@
 #include <TopoDS.hxx>
 #include <TopoDS_Wire.hxx>
 #include <BRepPrimAPI_MakeRevol.hxx>
+#include <BRepTools.hxx>
+#include <BRepTools_WireExplorer.hxx>
 #include <GProp_GProps.hxx>
 #include <BRepGProp.hxx>
 #include <Bnd_Box.hxx>
 #include <BRepBndLib.hxx>
+#include <algorithm>
 #include <iostream>
 #include <numbers>
 #include <set>
@@ -1681,10 +1684,51 @@ TEST_F(Sketch_test, UpdateFaces_CircleWithChord_IncomingArcTangent)
   Sketch_access::add_arc_circle_(sketch, chord_l, gp_Pnt2d(0.0, r), chord_r);                                  // top
   Sketch_access::add_edge_(sketch, chord_l, chord_r);
 
+  // Graphical Debugging v0.56+ (Geometry Watch): dbg_edges
+  // https://github.com/awulkiew/graphical-debugging
+  std::vector<ezy_geom::ring_2d> dbg_edges;
+  for (const auto& e : Sketch_access::get_edges(sketch))
+  {
+    if (e.shp.IsNull())
+      continue;
+    dbg_edges.push_back(to_boost_ls(e.shp->Shape(), default_plane));
+  }
+  (void)dbg_edges;
+
   Sketch_access::update_faces_(sketch);
 
   const auto& faces = Sketch_access::get_faces(sketch);
   ASSERT_EQ(faces.size(), 2u) << "Circle + chord must produce the small segment and the large remainder";
+
+  // Graphical Debugging v0.56+ (Geometry Watch): dbg_faces
+  // https://github.com/awulkiew/graphical-debugging
+  // Built from outer-wire edge samples (to_boost can assert on arc face closure).
+  std::vector<ezy_geom::polygon_2d> dbg_faces;
+  dbg_faces.reserve(faces.size());
+  for (const auto& f : faces)
+  {
+    ezy_geom::ring_2d   outer;
+    const TopoDS_Wire   wire = BRepTools::OuterWire(TopoDS::Face(f->Shape()));
+    for (BRepTools_WireExplorer wex(wire); wex.More(); wex.Next())
+    {
+      ezy_geom::ring_2d ls = to_boost_ls(wex.Current(), default_plane);
+      if (wex.Orientation() == TopAbs_REVERSED)
+        std::reverse(ls.begin(), ls.end());
+      for (size_t i = 0; i < ls.size(); ++i)
+      {
+        if (!outer.empty() && i == 0)
+          continue;
+        outer.push_back(ls[i]);
+      }
+    }
+    if (!outer.empty())
+      outer.push_back(outer.front());
+
+    ezy_geom::polygon_2d poly;
+    poly.outer() = std::move(outer);
+    dbg_faces.push_back(std::move(poly));
+  }
+  (void)dbg_faces;
 
   double areas[2] = {};
   for (size_t i = 0; i < faces.size(); ++i)
