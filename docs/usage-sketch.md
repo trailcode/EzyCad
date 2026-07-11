@@ -38,7 +38,7 @@ This guide covers all 2D sketching tools and operations in EzyCad. For the main 
    - ![Operation Axis Tool](res/icons/Sketcher_MirrorSketch.png) [Operational axis](#operation-axis-tool) - Define a reference axis, then use the **Mirror** and **Revolve** controls (in the Options panel) to mirror selected sketch edges or revolve edges/faces into 3D solids.
    - ![Create Sketch from Planar Face Tool](res/icons/Macro_FaceToSketch_48.png) [Create sketch from planar face](#create-sketch-from-planar-face-tool)
 
-See [Sketch origin](#sketch-origin) — every sketch includes one permanent reference point.
+See [Sketch origin](#sketch-origin) — every sketch includes one permanent reference point. Edge and face colors (including selection highlight and transparency) are in **Settings -> Sketch -> Appearance** (see [usage-settings.md](usage-settings.md#settings-pane)).
 
 (sketch-origin)=
 ## Sketch origin

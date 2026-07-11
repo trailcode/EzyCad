@@ -86,6 +86,21 @@ inline constexpr float k_gui_permanent_node_anno_scale_max     = 3.0f;
 inline constexpr float k_gui_permanent_node_anno_scale_default = 1.0f;
 
 inline constexpr float k_gui_origin_marker_color_default[3] = {0.0f, 0.75f, 1.0f};
+/// Current-sketch edge RGBA (`gui.sketch_edge_color`); alpha maps to OCCT opacity (1 - transparency).
+inline constexpr float k_gui_sketch_edge_color_default[4] = {0.0f, 1.0f, 0.0f, 1.0f};
+/// Selected sketch-edge RGBA (`gui.sketch_edge_selection_color`).
+inline constexpr float k_gui_sketch_edge_selection_color_default[4] = {1.0f, 1.0f, 0.0f, 1.0f};
+/// Dynamic (hover) highlight RGBA for sketch edges (`gui.sketch_edge_highlight_color`).
+inline constexpr float k_gui_sketch_edge_highlight_color_default[4] = {1.0f, 1.0f, 0.0f, 1.0f};
+inline constexpr float k_gui_sketch_edge_line_width_default         = 1.0f;
+inline constexpr float k_gui_sketch_edge_line_width_min             = 0.5f;
+inline constexpr float k_gui_sketch_edge_line_width_max             = 8.0f;
+/// Current-sketch face fill RGBA (`gui.sketch_face_color`); matches former Quantity_NOC_GRAY7 @ 50%.
+inline constexpr float k_gui_sketch_face_color_default[4] = {0.07f, 0.07f, 0.07f, 0.5f};
+/// Selected sketch-face fill RGBA (`gui.sketch_face_selection_color`).
+inline constexpr float k_gui_sketch_face_selection_color_default[4] = {1.0f, 1.0f, 0.0f, 0.5f};
+/// Dynamic (hover) highlight RGBA for sketch faces (`gui.sketch_face_highlight_color`).
+inline constexpr float k_gui_sketch_face_highlight_color_default[4] = {1.0f, 1.0f, 0.0f, 0.5f};
 /// Allowed range and default for `gui.view_roll_step_deg` (view roll and numpad orbit steps; must match Settings slider).
 inline constexpr double k_gui_view_roll_step_deg_min     = 0.1;
 inline constexpr double k_gui_view_roll_step_deg_max     = 180.0;
@@ -109,7 +124,7 @@ inline constexpr float k_gui_imgui_border_slider_max   = 2.f;
 inline constexpr float k_gui_imgui_padding_slider_max  = 24.f;
 inline constexpr float k_gui_imgui_spacing_slider_max  = 24.f;
 
-/// Per-theme ImGui layout values (Settings -> UI; persisted under gui.imgui_style_dark / gui.imgui_style_light).
+/// ImGui layout for **dark mode** / **light mode** (Settings -> UI; persisted under gui.imgui_style_dark / gui.imgui_style_light).
 /// The Settings pane edits whichever theme matches the current Dark mode checkbox.
 struct Gui_imgui_style_settings
 {
@@ -125,6 +140,20 @@ struct Gui_imgui_style_settings
   float frame_padding_y{3.f};
   float item_spacing_x{8.f};
   float item_spacing_y{4.f};
+};
+
+/// Open/closed state for Settings pane collapsing headers (`gui.settings_headers`).
+/// Defaults match the former ImGuiTreeNodeFlags_DefaultOpen choices.
+struct Gui_settings_headers
+{
+  bool view_nav{true};
+  bool ui{true};
+  bool view_presentation{false};
+  bool grid{false};
+  bool sketch{false};
+  bool sketch_appearance{true};
+  bool sketch_dimensions{true};
+  bool startup{false};
 };
 
 namespace doc_urls
@@ -199,6 +228,19 @@ public:
   float permanent_node_anno_scale() const { return m_permanent_node_anno_scale; }
   /// RGB color for the active sketch's origin marker (0-1 per channel).
   const float* origin_marker_color_rgb() const { return m_origin_marker_color; }
+  /// Current-sketch edge RGBA (0-1; alpha = opacity).
+  const float* sketch_edge_color_rgba() const { return m_sketch_edge_color; }
+  /// Sketch-edge selected-state RGBA (0-1; alpha = opacity).
+  const float* sketch_edge_selection_color_rgba() const { return m_sketch_edge_selection_color; }
+  /// Sketch-edge dynamic (hover) highlight RGBA (0-1; alpha = opacity).
+  const float* sketch_edge_highlight_color_rgba() const { return m_sketch_edge_highlight_color; }
+  float        sketch_edge_line_width() const { return m_sketch_edge_line_width; }
+  /// Current-sketch face fill RGBA (0-1; alpha = opacity).
+  const float* sketch_face_color_rgba() const { return m_sketch_face_color; }
+  /// Sketch-face selected-state RGBA (0-1; alpha = opacity).
+  const float* sketch_face_selection_color_rgba() const { return m_sketch_face_selection_color; }
+  /// Sketch-face dynamic (hover) highlight RGBA (0-1; alpha = opacity).
+  const float* sketch_face_highlight_color_rgba() const { return m_sketch_face_highlight_color; }
   bool         get_add_mid_pt_line_edges() const { return m_add_mid_pt_line_edges; }
   bool         get_add_mid_pt_rect_edges() const { return m_add_mid_pt_rect_edges; }
   bool         get_add_mid_pt_slot_edges() const { return m_add_mid_pt_slot_edges; }
@@ -432,6 +474,8 @@ private:
   void imgui_style_defaults_from_theme_(bool dark, Gui_imgui_style_settings& out) const;
   [[nodiscard]] const Gui_imgui_style_settings& imgui_style_active_() const;
   Gui_imgui_style_settings&                     imgui_style_active_();
+  /// CollapsingHeader that keeps `open_state` and saves settings when the user toggles it.
+  bool settings_collapsing_header_(const char* label, bool& open_state);
 
   Occt_view::uptr m_view;
   GLFWwindow*     m_glfw_window{nullptr};
@@ -472,6 +516,23 @@ private:
   float        m_permanent_node_anno_scale  = k_gui_permanent_node_anno_scale_default;
   float        m_origin_marker_color[3]     = {k_gui_origin_marker_color_default[0], k_gui_origin_marker_color_default[1],
                                                k_gui_origin_marker_color_default[2]};
+  float        m_sketch_edge_color[4] = {k_gui_sketch_edge_color_default[0], k_gui_sketch_edge_color_default[1],
+                                         k_gui_sketch_edge_color_default[2], k_gui_sketch_edge_color_default[3]};
+  float        m_sketch_edge_selection_color[4] = {
+      k_gui_sketch_edge_selection_color_default[0], k_gui_sketch_edge_selection_color_default[1],
+      k_gui_sketch_edge_selection_color_default[2], k_gui_sketch_edge_selection_color_default[3]};
+  float m_sketch_edge_highlight_color[4] = {
+      k_gui_sketch_edge_highlight_color_default[0], k_gui_sketch_edge_highlight_color_default[1],
+      k_gui_sketch_edge_highlight_color_default[2], k_gui_sketch_edge_highlight_color_default[3]};
+  float m_sketch_edge_line_width = k_gui_sketch_edge_line_width_default;
+  float m_sketch_face_color[4]   = {k_gui_sketch_face_color_default[0], k_gui_sketch_face_color_default[1],
+                                    k_gui_sketch_face_color_default[2], k_gui_sketch_face_color_default[3]};
+  float m_sketch_face_selection_color[4] = {
+      k_gui_sketch_face_selection_color_default[0], k_gui_sketch_face_selection_color_default[1],
+      k_gui_sketch_face_selection_color_default[2], k_gui_sketch_face_selection_color_default[3]};
+  float m_sketch_face_highlight_color[4] = {
+      k_gui_sketch_face_highlight_color_default[0], k_gui_sketch_face_highlight_color_default[1],
+      k_gui_sketch_face_highlight_color_default[2], k_gui_sketch_face_highlight_color_default[3]};
   bool         m_add_mid_pt_line_edges      = false;
   bool         m_add_mid_pt_rect_edges      = true;
   bool         m_add_mid_pt_slot_edges      = false;
@@ -554,6 +615,7 @@ private:
   bool                     m_show_lua_console{true}; // Lua Console pane; hidden if false in settings
   Gui_imgui_style_settings m_imgui_style_dark{};
   Gui_imgui_style_settings m_imgui_style_light{};
+  Gui_settings_headers     m_settings_headers{};
   bool                     m_sketch_properties_open{false};
   std::weak_ptr<Sketch>    m_sketch_properties_sketch;
 

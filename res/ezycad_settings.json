@@ -51,6 +51,16 @@
       "window_padding_x": 10.0,
       "window_padding_y": 10.0
     },
+    "settings_headers": {
+      "view_nav": true,
+      "ui": true,
+      "view_presentation": false,
+      "grid": false,
+      "sketch": false,
+      "sketch_appearance": true,
+      "sketch_dimensions": true,
+      "startup": false
+    },
     "inspection_orthographic": false,
     "last_opened_project_path": "",
     "load_last_opened_on_startup": false,
@@ -59,6 +69,43 @@
       0.0,
       0.75,
       1.0
+    ],
+    "sketch_edge_color": [
+      0.0,
+      1.0,
+      0.0,
+      1.0
+    ],
+    "sketch_edge_selection_color": [
+      1.0,
+      1.0,
+      0.0,
+      1.0
+    ],
+    "sketch_edge_highlight_color": [
+      1.0,
+      1.0,
+      0.0,
+      1.0
+    ],
+    "sketch_edge_line_width": 1.0,
+    "sketch_face_color": [
+      0.07,
+      0.07,
+      0.07,
+      0.5
+    ],
+    "sketch_face_selection_color": [
+      1.0,
+      1.0,
+      0.0,
+      0.5
+    ],
+    "sketch_face_highlight_color": [
+      1.0,
+      1.0,
+      0.0,
+      0.5
     ],
     "permanent_node_anno_scale": 0.30000001192092896,
     "show_dbg": false,

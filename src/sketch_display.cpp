@@ -1,30 +1,158 @@
 // Sketch viewer display: visibility, edge styling, sketch switching, list hover.
 #include "sketch.h"
 
+#include <Aspect_TypeOfLine.hxx>
+#include <Graphic3d_AspectFillArea3d.hxx>
+#include <Graphic3d_NameOfMaterial.hxx>
+#include <Prs3d_Drawer.hxx>
+#include <Prs3d_LineAspect.hxx>
+#include <Prs3d_ShadingAspect.hxx>
 #include <Quantity_Color.hxx>
 #include <V3d_Viewer.hxx>
+#include <algorithm>
 
+#include "gui.h"
 #include "gui_occt_view.h"
 #include "utl.h"
 
-void Sketch::update_edge_style_(AIS_Shape_ptr& shp)
+namespace
 {
+constexpr float k_originating_face_full_rgba[4] = {0.3f, 0.0f, 0.0f, 1.0f};
+/// Fixed style for non-current sketches (not user-configurable).
+constexpr float k_background_edge_rgba[4] = {0.3f, 0.3f, 0.3f, 0.3f};
+constexpr float k_background_face_rgba[4] = {0.3f, 0.3f, 0.3f, 0.2f};
+constexpr float k_edge_highlight_line_width = 2.0f;
+
+Quantity_Color rgb_from_rgba_(const float* rgba)
+{
+  return Quantity_Color(static_cast<double>(rgba[0]), static_cast<double>(rgba[1]), static_cast<double>(rgba[2]),
+                        Quantity_TOC_RGB);
+}
+
+float transparency_from_rgba_(const float* rgba)
+{
+  return std::clamp(1.f - rgba[3], 0.f, 1.f);
+}
+
+void apply_rgba_style_(AIS_Shape& shp, const float* rgba, float line_width)
+{
+  shp.SetWidth(static_cast<double>(line_width));
+  shp.SetColor(rgb_from_rgba_(rgba));
+  shp.SetTransparency(static_cast<double>(transparency_from_rgba_(rgba)));
+}
+
+Handle(Prs3d_Drawer) make_edge_hilight_drawer_(const float* rgba, float line_width)
+{
+  Handle(Prs3d_Drawer) drawer = new Prs3d_Drawer();
+  const Quantity_Color qc     = rgb_from_rgba_(rgba);
+  drawer->SetColor(qc);
+  drawer->SetTransparency(transparency_from_rgba_(rgba));
+  Handle(Prs3d_LineAspect) line =
+      new Prs3d_LineAspect(qc, Aspect_TOL_SOLID, static_cast<double>(line_width));
+  drawer->SetLineAspect(line);
+  drawer->SetWireAspect(line);
+  drawer->SetSeenLineAspect(line);
+  drawer->SetFaceBoundaryAspect(line);
+  return drawer;
+}
+
+Handle(Prs3d_Drawer) make_face_hilight_drawer_(const float* rgba)
+{
+  Handle(Prs3d_Drawer) drawer = new Prs3d_Drawer();
+  const Quantity_Color qc     = rgb_from_rgba_(rgba);
+  const float          transp = transparency_from_rgba_(rgba);
+  drawer->SetColor(qc);
+  drawer->SetTransparency(transp);
+
+  Handle(Prs3d_ShadingAspect) shading = new Prs3d_ShadingAspect();
+  shading->SetColor(qc);
+  shading->SetTransparency(static_cast<double>(transp));
+  drawer->SetShadingAspect(shading);
+
+  Handle(Graphic3d_AspectFillArea3d) fill = new Graphic3d_AspectFillArea3d();
+  fill->SetAlphaMode(Graphic3d_AlphaMode_Blend);
+  fill->SetColor(qc);
+  drawer->SetBasicFillAreaAspect(fill);
+
+  Handle(Prs3d_LineAspect) line = new Prs3d_LineAspect(qc, Aspect_TOL_SOLID, 2.0);
+  drawer->SetWireAspect(line);
+  drawer->SetFaceBoundaryAspect(line);
+  return drawer;
+}
+
+void apply_edge_hilight_(AIS_Shape& shp, const GUI& gui)
+{
+  Handle(Prs3d_Drawer) selected =
+      make_edge_hilight_drawer_(gui.sketch_edge_selection_color_rgba(), k_edge_highlight_line_width);
+  Handle(Prs3d_Drawer) hover =
+      make_edge_hilight_drawer_(gui.sketch_edge_highlight_color_rgba(), k_edge_highlight_line_width);
+  shp.SetHilightAttributes(selected);
+  shp.SetDynamicHilightAttributes(hover);
+}
+
+void apply_face_hilight_(AIS_Shape& shp, const GUI& gui)
+{
+  Handle(Prs3d_Drawer) selected = make_face_hilight_drawer_(gui.sketch_face_selection_color_rgba());
+  Handle(Prs3d_Drawer) hover    = make_face_hilight_drawer_(gui.sketch_face_highlight_color_rgba());
+  shp.SetHilightAttributes(selected);
+  shp.SetDynamicHilightAttributes(hover);
+}
+} // namespace
+
+void Sketch::update_edge_style_(const AIS_Shape_ptr& shp)
+{
+  if (shp.IsNull())
+    return;
+
+  const GUI& gui = m_view.gui();
   switch (m_edge_style)
   {
   case Edge_style::Full:
-    shp->SetWidth(1.0);
-    shp->SetColor(Quantity_Color(0.0, 1.0, 0.0, Quantity_TOC_RGB));
-    shp->SetTransparency(0.0);
+    apply_rgba_style_(*shp, gui.sketch_edge_color_rgba(), gui.sketch_edge_line_width());
     break;
 
   case Edge_style::Background:
-    shp->SetWidth(1.0);
-    shp->SetColor(Quantity_Color(0.3, 0.3, 0.3, Quantity_TOC_RGB));
-    shp->SetTransparency(0.7);
+    apply_rgba_style_(*shp, k_background_edge_rgba, gui.sketch_edge_line_width());
     break;
 
   default:
     EZY_ASSERT(false);
+  }
+
+  apply_edge_hilight_(*shp, gui);
+}
+
+void Sketch::update_face_style_(const AIS_Shape_ptr& shp)
+{
+  if (shp.IsNull())
+    return;
+
+  const GUI& gui = m_view.gui();
+  switch (m_edge_style)
+  {
+  case Edge_style::Full:
+    apply_rgba_style_(*shp, gui.sketch_face_color_rgba(), 1.0f);
+    break;
+
+  case Edge_style::Background:
+    apply_rgba_style_(*shp, k_background_face_rgba, 1.0f);
+    break;
+
+  default:
+    EZY_ASSERT(false);
+  }
+
+  shp->SetMaterial(Graphic3d_NOM_PLASTIC);
+  apply_face_hilight_(*shp, gui);
+}
+
+void Sketch::update_all_face_styles_()
+{
+  for (const Sketch_face_shp_ptr& face : m_topo.faces())
+  {
+    update_face_style_(face);
+    if (!face.IsNull())
+      m_ctx.Redisplay(face, false);
   }
 }
 
@@ -33,24 +161,23 @@ void Sketch::update_originating_face_style()
   if (!m_originating_face)
     return;
 
+  const GUI& gui = m_view.gui();
   switch (m_edge_style)
   {
   case Edge_style::Full:
-    m_originating_face->SetWidth(1.0);
-    m_originating_face->SetColor(Quantity_Color(0.3, 0.0, 0.0, Quantity_TOC_RGB));
-    m_originating_face->SetTransparency(0.0);
+    // Originating face wire stays a distinct dark-red cue for "from face" sketches.
+    apply_rgba_style_(*m_originating_face, k_originating_face_full_rgba, gui.sketch_edge_line_width());
     break;
 
   case Edge_style::Background:
-    m_originating_face->SetWidth(1.0);
-    m_originating_face->SetColor(Quantity_Color(0.3, 0.3, 0.3, Quantity_TOC_RGB));
-    m_originating_face->SetTransparency(0.7);
+    apply_rgba_style_(*m_originating_face, k_background_edge_rgba, gui.sketch_edge_line_width());
     break;
 
   default:
     EZY_ASSERT(false);
   }
 
+  apply_edge_hilight_(*m_originating_face, gui);
   m_ctx.Redisplay(m_originating_face, true);
 }
 
@@ -197,7 +324,12 @@ void Sketch::set_edge_style(Edge_style style)
   m_edge_style = style;
 
   for (Edge& e : m_edges.edges())
+  {
     update_edge_style_(e.shp);
+    if (!e.shp.IsNull())
+      m_ctx.Redisplay(e.shp, false);
+  }
 
+  update_all_face_styles_();
   update_originating_face_style();
 }

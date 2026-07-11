@@ -114,14 +114,14 @@ Full GLFW -> `GUI` -> view routing: [`src/doc/gui.md`](gui.md).
 
 ### Visibility and display
 
-| Method                                                | Purpose                                                                      |          |                                         |
-| ---                                                   | ---                                                                          |          |                                         |
-| `set_visible` / `is_visible`                          | Show or hide the whole sketch in the viewer                                  |          |                                         |
-| `set_show_faces` / `set_show_edges` / `set_show_dims` | Layer toggles for faces, edges, dimensions                                   |          |                                         |
-| `set_edge_style(Full \                                | Background \                                                                 | Hidden)` | Current vs background sketch appearance |
-| `set_current()`                                       | Make this sketch current in `Occt_view`                                      |          |                                         |
-| `refresh_annotations(Sketch_annotation_refresh)`      | Rebuild length dimensions and/or permanent node marks after settings changes |          |                                         |
-| `append_list_hover_ais(out)`                          | AIS objects to highlight when the Sketch List row is hovered                 |          |                                         |
+| Method                                                | Purpose                                                                             |
+| ----------------------------------------------------- | ----------------------------------------------------------------------------------- |
+| `set_visible` / `is_visible`                          | Show or hide the whole sketch in the viewer                                         |
+| `set_show_faces` / `set_show_edges` / `set_show_dims` | Layer toggles for faces, edges, dimensions                                          |
+| `set_edge_style(Full / Background / Hidden)`          | Current vs background appearance (edge/face colors from Settings -> Sketch)         |
+| `set_current()`                                       | Make this sketch current in `Occt_view`                                             |
+| `refresh_annotations(Sketch_annotation_refresh)`      | Rebuild dims, node marks, and/or edge-face styles after settings changes            |
+| `append_list_hover_ais(out)`                          | AIS objects to highlight when the Sketch List row is hovered                        |
 
 ### Geometry queries and inspector
 
