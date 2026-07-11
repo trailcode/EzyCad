@@ -58,6 +58,7 @@ Split sketch unit tests and move `tools/` helpers into `scripts/`
 
 - Follows sketch module split (#163 / #164).
 - PR: https://github.com/trailcode/EzyCad/pull/188
+- ExtrudeSketchFace enablement: #189
 - GitHub Pages wasm demo size: #187
 - Draft: `agents/drafts/issues/active/gh-186-unit-test-refactor.md`
 
