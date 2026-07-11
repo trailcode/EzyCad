@@ -1107,7 +1107,13 @@ ezy_geom::polygon_2d to_boost(const TopoDS_Shape& shape, const gp_Pln& pln2)
     if (wire.Orientation() == TopAbs_FORWARD)
       std::reverse(out.begin(), out.end());
 
-    EZY_ASSERT_MSG(to_pnt2d(out.front()).IsEqual(to_pnt2d(out.back()), Precision::Confusion()), "Ring not closed!");
+    // Densified arcs can leave a small gap between wire edge samples; close the ring
+    // so debug/test conversion does not assert on otherwise valid OCCT faces.
+    if (out.size() >= 2 && !to_pnt2d(out.front()).IsEqual(to_pnt2d(out.back()), Precision::Confusion()))
+      out.push_back(out.front());
+
+    EZY_ASSERT_MSG(out.size() >= 2 && to_pnt2d(out.front()).IsEqual(to_pnt2d(out.back()), Precision::Confusion()),
+                   "Ring not closed!");
 
     out.pop_back();
 

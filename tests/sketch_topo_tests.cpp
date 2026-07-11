@@ -659,8 +659,6 @@ TEST_F(Sketch_test, UpdateFaces_FaceWithArcs)
 }
 
 // Test case 6: Dangling edges attached to arc mid-node
-
-// Test case 6: Dangling edges attached to arc mid-node
 TEST_F(Sketch_test, UpdateFaces_DanglingEdgesArcMidNode)
 {
   gp_Pln default_plane(gp::Origin(), gp::DZ());
