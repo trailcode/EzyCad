@@ -70,6 +70,7 @@ User-facing Markdown (now in `docs/`: `usage.md`, `usage-*.md`, `scripting.md`, 
 - **PIMPL** (`class Foo; class Foo::Impl`): Use when hiding implementation details or when you want to swap implementations (e.g. `Sketch_nodes`, `Sketch_op_recorder`). Keep the public surface in the header; put data members, private record types, and apply/clone logic in `Impl` inside the `.cpp`.
 - **Templates**: Prefer putting template implementations in `.inl` files included from the header (e.g. `utl_types.inl`, `utl.inl`).
 - **OCCT handles**: Use `opencascade::handle<T>` and project aliases (e.g. `AIS_Shape_ptr`, `Shp_ptr`).
+- **OCCT desktop vs WASM**: Until WASM runs correctly on OCCT 8, desktop is OCCT **8** and recommended WASM is **7.9.3**. Prefer APIs available on both; for `Standard_Failure` use `GetMessageString()`, not `what()`. See [agents/conventions/occt-wasm-dual-version.md](../agents/conventions/occt-wasm-dual-version.md).
 - **Result/error handling**: See **Fail fast** below. Use `Result<T>` and `Status` from `utl.h`, `CHK_RET(...)` for early return on failure.
 - **Assertions**: See **Fail fast** below. Use `EZY_ASSERT` and `EZY_ASSERT_MSG` from `utl_dbg.h`; use `DBG_MSG` for debug logging.
 

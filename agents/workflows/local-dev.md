@@ -47,6 +47,8 @@ See root [README.md](../../README.md#building-instructions) and [docs/building-o
 
 ## WebAssembly (Emscripten)
 
+**Agent note:** desktop uses OCCT **8**, recommended wasm uses **7.9.3** until OCCT 8 wasm works. Shared `src/` must compile on both — see [conventions/occt-wasm-dual-version.md](../conventions/occt-wasm-dual-version.md).
+
 Full OCCT + EzyCad wasm instructions live in [docs/building-occt.md](../../docs/building-occt.md#webassembly-emscripten) and the root README.
 
 High-level flow (after `emsdk_env`):
