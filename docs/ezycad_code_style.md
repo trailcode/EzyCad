@@ -113,9 +113,9 @@ Prefer **`CHK_RET(expr)`** when a callee returns `Status` or `Result<T>` and the
 
 ### Quick reference
 
-| Kind of problem | Mechanism |
-|-----------------|-----------|
-| Bug, contract violation, impossible branch | `EZY_ASSERT` / `EZY_ASSERT_MSG` |
+| Kind of problem                                   | Mechanism                                               |
+| ------------------------------------------------- | ------------------------------------------------------- |
+| Bug, contract violation, impossible branch        | `EZY_ASSERT` / `EZY_ASSERT_MSG`                         |
 | User error, I/O, OS, recoverable external failure | `Status`, `Result<T>`, `CHK_RET`, explicit error return |
 
 ## Comments

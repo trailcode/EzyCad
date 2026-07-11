@@ -103,6 +103,7 @@ See `scripts/build-occt-793-wasm.ps1`, `scripts/build-occt-v8-wasm.ps1`, and sha
 
 ## Other scripts
 
+- `scripts/align_md_tables.py` — Align GFM pipe tables in `.md` files for source + preview readability (see [conventions/markdown-tables.md](../conventions/markdown-tables.md)).
 - `scripts/sync-github-pages-html.ps1` — Sync `web/` changes (EzyCad.html etc.) to the GitHub Pages wasm demo site.
 - `scripts/pbf-to-png.ps1` / `.py` — Icon / asset conversion helpers.
 - `scripts/pimpl_gen.py` — PIMPL stub generator.

@@ -12,6 +12,7 @@ Pointer for AI coding assistants. Details live in [agents/README.md](agents/READ
 ## When needed
 
 - UI/settings/docs changes: [agents/conventions/user-docs-sync.md](agents/conventions/user-docs-sync.md)
+- Markdown tables (align for source + preview): [agents/conventions/markdown-tables.md](agents/conventions/markdown-tables.md)
 - Sketch subsystem: [src/doc/sketch.md](src/doc/sketch.md) (read; update when API or architecture changes)
 - Shape module: [src/doc/shape.md](src/doc/shape.md) (read; update when API or operation patterns change)
 - GUI module: [src/doc/gui.md](src/doc/gui.md) (read; update when input routing, modes, or settings change)

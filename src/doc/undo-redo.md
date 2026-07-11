@@ -14,10 +14,10 @@ EzyCad keeps a bounded history of user edits so **Ctrl+Z** / **Ctrl+Y** (and Edi
 
 The implementation uses **two strategies** on one stack:
 
-| Strategy | When used | Stored payload |
-| --- | --- | --- |
-| **Element delta** | Sketch geometry edits | `std::unique_ptr<Delta>` (`Sketch_op_delta` in `sketch_op_recorder.cpp`) |
-| **Full JSON snapshot** | Everything else | `to_json()` string of the whole document |
+| Strategy               | When used             | Stored payload                                                           |
+| ---------------------- | --------------------- | ------------------------------------------------------------------------ |
+| **Element delta**      | Sketch geometry edits | `std::unique_ptr<Delta>` (`Sketch_op_delta` in `sketch_op_recorder.cpp`) |
+| **Full JSON snapshot** | Everything else       | `to_json()` string of the whole document                                 |
 
 Sketch deltas are cheaper and precise; JSON snapshots are simple and cover arbitrary document changes (shape booleans, sketch add/remove, file load, etc.).
 
@@ -33,11 +33,11 @@ Sketch deltas are cheaper and precise; JSON snapshots are simple and cover arbit
 
 Each stack frame stores:
 
-| Field | Role |
-| --- | --- |
+| Field   | Role                                                              |
+| ------- | ----------------------------------------------------------------- |
 | `delta` | Non-null for sketch element steps; mutually exclusive with `json` |
-| `json` | Full-document snapshot when `delta` is null |
-| `mode` | `Mode` active when the operation ran; restored on undo/redo |
+| `json`  | Full-document snapshot when `delta` is null                       |
+| `mode`  | `Mode` active when the operation ran; restored on undo/redo       |
 
 ### `m_restoring` guard
 
@@ -111,14 +111,14 @@ RAII scope around one sketch edit:
 
 Recorder notes (deduplicated by geometry):
 
-| Method | Meaning |
-| --- | --- |
-| `note_prev_linear_edge` | Edge removed or split away (must have existed at op start) |
-| `note_curr_linear_edge` | New linear segment added |
-| `note_prev_arc_edge` / `note_curr_arc_edge` | Arc circle segment removed / added |
-| `note_curr_node` | New node not live at op start (stores `permanent` for redo) |
-| `note_prev_length_dim` / `note_curr_length_dim` | Dimension removed / added |
-| `note_prev_operation_axis` / `note_curr_operation_axis` | Operation axis before / after |
+| Method                                                  | Meaning                                                     |
+| ------------------------------------------------------- | ----------------------------------------------------------- |
+| `note_prev_linear_edge`                                 | Edge removed or split away (must have existed at op start)  |
+| `note_curr_linear_edge`                                 | New linear segment added                                    |
+| `note_prev_arc_edge` / `note_curr_arc_edge`             | Arc circle segment removed / added                          |
+| `note_curr_node`                                        | New node not live at op start (stores `permanent` for redo) |
+| `note_prev_length_dim` / `note_curr_length_dim`         | Dimension removed / added                                   |
+| `note_prev_operation_axis` / `note_curr_operation_axis` | Operation axis before / after                               |
 
 `note_prev_linear_edge` only records edges that were present when the recorder opened (`linear_edge_at_op_start_`), so incidental splits of pre-existing geometry are not mistaken for undoable removals of the user's new work.
 
@@ -148,24 +148,24 @@ Geometry is matched by **2D coordinates** (`Precision::SquareConfusion()`), not 
 
 ### Sketch deltas (`Sketch_op_recorder` + `commit()`)
 
-| Area | Trigger |
-| --- | --- |
-| `Sketch_tools::finalize` | Line, multi-edge, rectangle, square, circle, slot, operation axis |
-| `Sketch_dims` | Add/remove length dimension; dimension tool finalize |
-| `Sketch_tools` / `Sketch_dims` | Add-node tool (split at interior node) |
-| `sketch_operations.cpp` | Mirror selected edges |
+| Area                           | Trigger                                                           |
+| ------------------------------ | ----------------------------------------------------------------- |
+| `Sketch_tools::finalize`       | Line, multi-edge, rectangle, square, circle, slot, operation axis |
+| `Sketch_dims`                  | Add/remove length dimension; dimension tool finalize              |
+| `Sketch_tools` / `Sketch_dims` | Add-node tool (split at interior node)                            |
+| `sketch_operations.cpp`        | Mirror selected edges                                             |
 | `Sketch_edges` / `Sketch_topo` | Splits during edge add (via recorder passed into add/split paths) |
 
 Interactive tools create the recorder internally. Direct `add_edge_(..., rec)` calls are for tests and delta replay.
 
 ### JSON snapshots (`push_undo_snapshot()`)
 
-| Area | Operation |
-| --- | --- |
+| Area        | Operation                                                                                                                                               |
+| ----------- | ------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `Occt_view` | New file, add/remove sketch, sketch from face, sketch extrude finalize, revolve, delete shapes/sketches, primitives (box, sphere, ...), STEP/PLY import |
-| `shp_*` | Fuse, cut, common, fillet, chamfer, move, rotate, scale, polar duplicate, extrude finalize |
-| `GUI` | Open project, underlay import/remove/calibration/transform sliders, underlay orthogonalize |
-| `GUI` | Underlay panel edits push on `IsItemActivated` so one snapshot covers a drag |
+| `shp_*`     | Fuse, cut, common, fillet, chamfer, move, rotate, scale, polar duplicate, extrude finalize                                                              |
+| `GUI`       | Open project, underlay import/remove/calibration/transform sliders, underlay orthogonalize                                                              |
+| `GUI`       | Underlay panel edits push on `IsItemActivated` so one snapshot covers a drag                                                                            |
 
 ### `pop_undo_snapshot()` (abort without restoring)
 
@@ -177,12 +177,12 @@ Used when a snapshot was pushed optimistically but the operation failed or made 
 
 ## User interface
 
-| Input | Action |
-| --- | --- |
-| Ctrl+Z | Undo |
-| Ctrl+Shift+Z or Ctrl+Y | Redo |
-| Edit menu | Undo / Redo (disabled when stack empty) |
-| Settings pane | Shows stack sizes: `Undo: N | Redo: M [max 50]` |
+| Input                  | Action                                  |                   |
+| ---                    | ---                                     |                   |
+| Ctrl+Z                 | Undo                                    |                   |
+| Ctrl+Shift+Z or Ctrl+Y | Redo                                    |                   |
+| Edit menu              | Undo / Redo (disabled when stack empty) |                   |
+| Settings pane          | Shows stack sizes: `Undo: N             | Redo: M [max 50]` |
 
 Hotkeys are handled in `GUI::on_key` (`gui_mode.cpp`) when dist/angle edit popups are not active.
 

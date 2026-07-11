@@ -18,15 +18,15 @@ Skip user-guide updates for internal-only refactors (PIMPL, naming, line endings
 
 ## Files to check
 
-| Change type | Primary docs |
-| --- | --- |
+| Change type                             | Primary docs                                                                               |
+| --------------------------------------- | ------------------------------------------------------------------------------------------ |
 | New/changed **Settings** or **Options** | `docs/usage-settings.md` (pane list, Options section, **`gui` / `occt_view` JSON tables**) |
-| Sketch tools, snap, dimensions | `docs/usage-sketch.md`; cross-links from `usage-settings.md` |
-| 3D view, grid, navigation | `docs/usage-occt-view.md`, `docs/usage.md` (view sections) |
-| General UI, lists, modes | `docs/usage.md` |
-| Lua / Python / settings JSON API | `docs/scripting.md` |
-| Build / OCCT / wasm | `docs/building-occt.md` |
-| Notable user-facing fix or feature | `CHANGELOG.md` under `[Unreleased]` |
+| Sketch tools, snap, dimensions          | `docs/usage-sketch.md`; cross-links from `usage-settings.md`                               |
+| 3D view, grid, navigation               | `docs/usage-occt-view.md`, `docs/usage.md` (view sections)                                 |
+| General UI, lists, modes                | `docs/usage.md`                                                                            |
+| Lua / Python / settings JSON API        | `docs/scripting.md`                                                                        |
+| Build / OCCT / wasm                     | `docs/building-occt.md`                                                                    |
+| Notable user-facing fix or feature      | `CHANGELOG.md` under `[Unreleased]`                                                        |
 
 ## Minimum checklist (settings / preferences)
 

@@ -8,9 +8,9 @@ Published site: **https://ezycad.readthedocs.io/**
 
 ## Repository automation
 
-| Mechanism | What it does |
-| --- | --- |
-| [`.readthedocs.yaml`](../.readthedocs.yaml) | RTD build config (points at `docs/conf.py`). |
+| Mechanism                                                     | What it does                                                       |
+| ------------------------------------------------------------- | ------------------------------------------------------------------ |
+| [`.readthedocs.yaml`](../.readthedocs.yaml)                   | RTD build config (points at `docs/conf.py`).                       |
 | [`.github/workflows/docs.yml`](../.github/workflows/docs.yml) | GitHub Actions verification build (runs on changes under `docs/`). |
 
 Screenshots and diagrams live in `docs/images/`. Icons come from `res/icons/`.

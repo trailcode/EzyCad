@@ -114,12 +114,12 @@ EzyCad is maintained by a small team and we would love more contributors. If you
 
 The **`third_party/`** folder holds other libraries **shipped inside the EzyCad repository** (typically committed as a vendored snapshot, not fetched by CMake except where noted):
 
-| Component | Location | Role |
-| --- | --- | --- |
-| **Dear ImGui** | `third_party/imgui/` | Immediate-mode UI used by the application. This tree includes **project-specific changes** for font rendering; see [imgui#7519 (comment)](https://github.com/ocornut/imgui/issues/7519#issuecomment-2629628233). |
-| **nlohmann/json** | `third_party/json/` (headers under `include/`) | JSON used by the project; CMake adds `third_party/json/include`. |
-| **tinyfiledialogs** | `third_party/tinyfiledialogs/` | Small C helper for native file dialogs on desktop. |
-| **ImGuiColorTextEdit** | `third_party/ImGuiColorTextEdit/` | Syntax-highlighted editor widget for the **Lua** and **Python** script consoles ([upstream](https://github.com/BalazsJako/ImGuiColorTextEdit)). |
+| Component              | Location                                       | Role                                                                                                                                                                                                             |
+| ---------------------- | ---------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Dear ImGui**         | `third_party/imgui/`                           | Immediate-mode UI used by the application. This tree includes **project-specific changes** for font rendering; see [imgui#7519 (comment)](https://github.com/ocornut/imgui/issues/7519#issuecomment-2629628233). |
+| **nlohmann/json**      | `third_party/json/` (headers under `include/`) | JSON used by the project; CMake adds `third_party/json/include`.                                                                                                                                                 |
+| **tinyfiledialogs**    | `third_party/tinyfiledialogs/`                 | Small C helper for native file dialogs on desktop.                                                                                                                                                               |
+| **ImGuiColorTextEdit** | `third_party/ImGuiColorTextEdit/`              | Syntax-highlighted editor widget for the **Lua** and **Python** script consoles ([upstream](https://github.com/BalazsJako/ImGuiColorTextEdit)).                                                                  |
 
 **ImGuiColorTextEdit:** Prefer a full checkout under `third_party/ImGuiColorTextEdit/` (see `third_party/README.md`). If that folder is missing, CMake **FetchContent** downloads upstream at a **fixed commit** (`ca2f9f1462e3b60e56351bc466acda448c5ea50d`) because the upstream repo has **no release tags**. To upgrade the editor, bump that SHA in `CMakeLists.txt` and refresh any vendored copy.
 

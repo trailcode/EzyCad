@@ -8,35 +8,35 @@ Published HTML: **[https://ezycad.readthedocs.io/](https://ezycad.readthedocs.io
 
 All live together under the single `docs/` folder:
 
-| File | Purpose |
-|------|---------|
-| `usage.md` | Main usage guide |
-| `usage-sketch.md` | 2D sketching |
-| `usage-settings.md` | Settings pane and JSON |
-| `usage-occt-view.md` | 3D viewer (OCCT) |
-| `scripting.md` | Lua / Python consoles |
-| `building-occt.md` | Building Open CASCADE (desktop + WebAssembly) |
-| `bugs.md` | Known issues / sharp edges |
-| `ezycad_code_style.md` | C++ style (in `src/`) |
-| `ezycad_doc_style.md` | This file – Markdown / user docs style |
-| `README.md` (root) | Project overview |
-| `CHANGELOG.md` (root) | Release notes ([Keep a Changelog](https://keepachangelog.com/)) |
+| File                   | Purpose                                                         |
+| ---------------------- | --------------------------------------------------------------- |
+| `usage.md`             | Main usage guide                                                |
+| `usage-sketch.md`      | 2D sketching                                                    |
+| `usage-settings.md`    | Settings pane and JSON                                          |
+| `usage-occt-view.md`   | 3D viewer (OCCT)                                                |
+| `scripting.md`         | Lua / Python consoles                                           |
+| `building-occt.md`     | Building Open CASCADE (desktop + WebAssembly)                   |
+| `bugs.md`              | Known issues / sharp edges                                      |
+| `ezycad_code_style.md` | C++ style (in `src/`)                                           |
+| `ezycad_doc_style.md`  | This file – Markdown / user docs style                          |
+| `README.md` (root)     | Project overview                                                |
+| `CHANGELOG.md` (root)  | Release notes ([Keep a Changelog](https://keepachangelog.com/)) |
 
 ## Writing conventions
 
 - **Audience**: Machinists and hobby CAD users; prefer plain language and short steps.
 - **Headings**: Use `##` / `###` for sections Sphinx/MyST can index; keep a stable **Table of Contents** in `usage.md` when adding major sections.
 - **Keyboard shortcuts**: Use `<kbd>Tab</kbd>`, `<kbd>Ctrl</kbd>+<kbd>Z</kbd>`, etc. They render on Read the Docs via MyST.
-- **Tables**: GFM pipe tables are fine on Read the Docs.
+- **Tables**: Use **aligned** GFM pipe tables (pad columns so `|` lines up in the source). They render on Read the Docs / GitHub preview and stay readable in the editor. Preferred form and helper script: [agents/conventions/markdown-tables.md](../agents/conventions/markdown-tables.md).
 - **Cross-links**: Link other guides as `usage-sketch.md`, `usage-settings.md#view-menu`, or `#anchor` within the same file. Prefer anchors that match heading text (MyST slugifies headings for URLs).
 - **Encoding**: The **ASCII-only** rule in `ezycad_code_style.md` applies to `src/`, not to these guides; Unicode in user docs is acceptable when it helps clarity.
 
 ## Images
 
-| Kind | Path | Syntax |
-|------|------|--------|
-| Toolbar icons | `res/icons/Name.png` | `![alt](res/icons/Name.png)` |
-| Screenshots / diagrams | `images/name.png` | `![alt](images/name.png)` |
+| Kind                   | Path                 | Syntax                       |
+| ---------------------- | -------------------- | ---------------------------- |
+| Toolbar icons          | `res/icons/Name.png` | `![alt](res/icons/Name.png)` |
+| Screenshots / diagrams | `images/name.png`    | `![alt](images/name.png)`    |
 
 Rules:
 
@@ -55,11 +55,11 @@ Rules:
 
 Everything documentation-related now lives under the single `docs/` folder at the repository root. This is the only directory contributors need to care about for docs.
 
-| Item | Location |
-|------|----------|
-| Read the Docs config | [`.readthedocs.yaml`](.readthedocs.yaml) (at repo root) |
-| Sphinx config + content | `docs/conf.py`, `docs/index.rst`, all the `*.md` guides |
-| Python deps | `docs/requirements.txt` |
+| Item                        | Location                                                   |
+| --------------------------- | ---------------------------------------------------------- |
+| Read the Docs config        | [`.readthedocs.yaml`](.readthedocs.yaml) (at repo root)    |
+| Sphinx config + content     | `docs/conf.py`, `docs/index.rst`, all the `*.md` guides    |
+| Python deps                 | `docs/requirements.txt`                                    |
 | GitHub Actions verification | [`.github/workflows/docs.yml`](.github/workflows/docs.yml) |
 
 ```bash
