@@ -72,7 +72,7 @@ Sketch
 **Follow-up (out of scope):**
 
 - [ ] Deduplicate batch edge commit in `Sketch_tools::finalize_edges_` with `Sketch_edges::add_edge_impl_` (shared `commit_linear_batch` helper).
-- [ ] Fix or retire `tools/gen_sketch_tools.py` generator script if kept.
+- [ ] Fix or retire `scripts/gen_sketch_tools.py` generator script if kept.
 
 ### Acceptance criteria
 

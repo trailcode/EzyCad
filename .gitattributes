@@ -11,7 +11,6 @@ scripts/** text eol=lf
 cmake/** text eol=lf
 agents/** text eol=lf
 docs/** text eol=lf
-tools/** text eol=lf
 .github/** text eol=lf
 web/** text eol=lf
 res/scripts/** text eol=lf
