@@ -850,6 +850,7 @@ void Sketch_tools::move_circle_pt_(const ScreenCoords& screen_coords)
     TopoDS_Wire circle = make_circle_wire(m_sketch.m_pln, pt_a, *m_last_pt);
     show(m_sketch.m_ctx, m_tmp_shp, circle);
   };
+
   if_edge_pt_valid_(l);
 }
 
@@ -863,6 +864,7 @@ void Sketch_tools::finalize_circle_(Sketch_op_recorder& rec)
     clear_tmps();
     m_sketch.update_faces_();
   };
+
   if_edge_pt_valid_(l);
 }
 
@@ -879,6 +881,7 @@ void Sketch_tools::move_slot_pt_(const ScreenCoords& screen_coords)
     if (unique(pt_a, pt_b, pt_c))
       show(m_sketch.m_ctx, m_tmp_shp, make_slot_wire(m_sketch.m_pln, pt_a, pt_b, pt_c));
   };
+
   if_edge_pt_valid_(l);
 }
 

@@ -1501,8 +1501,8 @@ namespace
 {
 Geom_TrimmedCurve_ptr edge_trimmed_curve_(const TopoDS_Edge& edge)
 {
-  Standard_Real         f   = 0.0;
-  Standard_Real         l   = 0.0;
+  double                f   = 0.0;
+  double                l   = 0.0;
   Geom_Curve_ptr        c   = BRep_Tool::Curve(edge, f, l);
   Geom_TrimmedCurve_ptr ret = new Geom_TrimmedCurve(c, f, l);
   if (edge.Orientation() == TopAbs_REVERSED)
