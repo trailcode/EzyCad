@@ -20,6 +20,28 @@ Rules:
 - Leave a blank line before and after the table; do not indent table rows (indentation can turn them into a code block).
 - Skip tables inside fenced code blocks (examples stay as authored).
 
+## Wide tables and editor word wrap
+
+Aligned pipe rows are **one long line per row**. Pretty/preview mode reflows cells; source/"code" mode does not. If the editor **word-wraps**, column `|` alignment looks broken even though the Markdown is fine.
+
+**Preferred fix (editor):** turn word wrap **off** for Markdown so wide tables scroll horizontally and stay aligned. In Cursor/VS Code user `settings.json`:
+
+```json
+"[markdown]": {
+  "editor.wordWrap": "off"
+}
+```
+
+Toggle for the current file: View → Word Wrap (or the equivalent command).
+
+**Content mitigations** (when a table is still painful even with wrap off):
+
+- Prefer **2–3 columns**; split a wide reference into two tables or a short table + bullets.
+- Keep cells short; move long prose **under** the table.
+- Do **not** rely on multiline pipe cells — GFM does not wrap cell text across source lines cleanly.
+
+Padding/alignment can make rows slightly longer; that is intentional for source readability when wrap is off. Do not un-align tables just to fight wrap.
+
 ## Re-align helper
 
 ```bash
