@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Sketch appearance
+
+- **Settings -> Sketch -> Appearance:** configurable edge color, selection color, highlight (hover) color, and thickness (with alpha); face fill, selection, and highlight colors (with alpha). Persisted under `gui.sketch_edge_*` and `gui.sketch_face_*`. Bundled defaults match the current preferred palette (orange edge selection; mauve face fill; magenta/violet face selection/highlight).
+- **Settings pane:** Open/closed state of collapsing section headers is persisted in `gui.settings_headers`.
+
 ### UI layout
 
 - **ImGui docking:** Panels (Sketch List, Shape List, Options, Log, consoles, and similar) can be docked, tabbed, and split inside the main window. On desktop, panels can also be dragged into separate OS windows. The web build supports in-canvas docking only. Saved layout in settings includes dock nodes; older installs without a `[Docking]` section get a default layout on first launch.

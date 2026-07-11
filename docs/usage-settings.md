@@ -39,7 +39,7 @@ Open **View -> Settings**. The window title is **Settings**.
 - **UI verbosity** — stepper at the top (default **6**). Values **5** and **6** show contextual **?** help buttons (hover for tooltip, click to open Read the Docs where linked). Lower values hide those buttons and some explanatory text.
 - At the bottom: **Defaults** — reloads bundled defaults from the app `res/` tree (including ImGui layout from that file).
 
-Between those, the pane has **six** collapsible sections. Expand a section to see its controls; when collapsed, only the section title bar is visible.
+Between those, the pane has **six** collapsible sections. Expand a section to see its controls; when collapsed, only the section title bar is visible. Which sections are expanded is remembered in settings (`gui.settings_headers`).
 
 1. **3D view navigation** — **View rotation step** (degrees per key press for <kbd>NumPad 8</kbd>/<kbd>2</kbd>/<kbd>4</kbd>/<kbd>6</kbd> orbit and <kbd>Shift</kbd>+<kbd>NumPad 4</kbd>/<kbd>6</kbd> roll; default **45**; **`?`** opens [view roll](https://ezycad.readthedocs.io/en/latest/usage.html#view-roll) on Read the Docs). **Zoom scroll scale** (multiplier for wheel and **+**/**-** zoom; default **4**). Hold <kbd>Shift</kbd> while zooming for a Blender-style finer step (multiply by **0.1**). Numpad shortcuts are documented with <kbd>Num Lock</kbd> off; with <kbd>Num Lock</kbd> on, use main-row alternatives in [usage.md -> View navigation](usage.md#view-navigation). Stored as **`gui.view_roll_step_deg`** and **`gui.view_zoom_scroll_scale`**. See **[usage-occt-view.md](usage-occt-view.md)**.
 
@@ -49,7 +49,10 @@ Between those, the pane has **six** collapsible sections. Expand a section to se
 
 4. **3D view grid** — **Show grid** (checkbox; grid is drawn on the **active sketch** plane, behind coplanar geometry). **Fine grid lines** and **Major grid lines** (dense lines vs every-tenth emphasis). **Grid step**, **Grid padding** (margin around sketch content when sizing the grid), and **Grid display Z offset** in the Settings pane use the **same length scale as sketch length dimensions** (display value = model value / internal `dimension_scale`, default **100**). Saved JSON (`occt_view`) stores padding in model units (`grid_padding`).
 
-5. **Sketch** — Expand **Dimensions** (nested, open by default) for length-dimension appearance and behavior (most rows have **?** help). Other sketch rows stay in the parent **Sketch** section:
+5. **Sketch** — Expand **Appearance** (nested) for edge and face display colors. Expand **Dimensions** (nested) for length-dimension appearance and behavior (most rows have **?** help). Other sketch rows stay in the parent **Sketch** section:
+   - **Edge color** / **Edge thickness** — current-sketch edge RGBA (alpha = opacity) and line width (**0.5** to **8.0**)
+   - **Edge selection color** / **Edge highlight color** — selected edges vs mouse-over (dynamic) highlight (RGBA)
+   - **Face fill color** / **Face selection fill** / **Face highlight fill** — normal fill, selected fill, and mouse-over fill (RGBA)
    - **Dimension line width** — slider **0.5** to **8.0**
    - **Dimension arrow size** — slider **1.0** to **24.0**
    - **Dimension color** — RGB for dimension lines, arrow heads, and value text
@@ -181,6 +184,13 @@ If saved layout text has no `[Docking]` section (older installs), a default dock
 | `show_sketch_dimensions`      | boolean            | When false, hides length dimensions on all sketches.                                                                                                                                                                          |
 | `permanent_node_anno_scale`   | number             | Scale for permanent **+** markers: the sketch **Origin** and user-placed Add node points ([Sketch origin](usage-sketch.md#sketch-origin); **0.25** to **3.0**; default **1.0**).                                              |
 | `origin_marker_color`         | array of 3 numbers | RGB color for the **active** sketch's Origin marker (+ with circle; **0** to **1** per channel; default cyan **0.0**, **0.75**, **1.0**).                                                                                     |
+| `sketch_edge_color`           | array of 4 numbers | Current-sketch edge RGBA (**0** to **1**; alpha = opacity; default green **0**, **1**, **0**, **1**).                                                                                                                       |
+| `sketch_edge_selection_color` | array of 4 numbers | Selected sketch-edge RGBA (default orange **1**, **0.545**, **0**, **1**). Falls back to `sketch_edge_highlight_color` when absent.                                                                                           |
+| `sketch_edge_highlight_color` | array of 4 numbers | Mouse-over (dynamic) highlight RGBA for sketch edges (default yellow **1**, **1**, **0**, **1**).                                                                                                                              |
+| `sketch_edge_line_width`      | number             | Current-sketch edge line width (**0.5** to **8.0**; default **1.0**).                                                                                                                                                         |
+| `sketch_face_color`           | array of 4 numbers | Current-sketch face fill RGBA (default mauve **0.301**, **0.245**, **0.321**, **0.297**).                                                                                                                                      |
+| `sketch_face_selection_color` | array of 4 numbers | Selected sketch-face **fill** RGBA (default magenta **0.799**, **0.187**, **0.591**, **1**). Falls back to `sketch_face_highlight_color` when absent.                                                                         |
+| `sketch_face_highlight_color` | array of 4 numbers | Mouse-over (dynamic) sketch-face **fill** RGBA (default violet **0.823**, **0**, **1**, **1**).                                                                                                                               |
 | `snap_guide_color_node`       | array of 3 numbers | RGB for snap guides when both axes lock to the same node (float **0** to **1**; default lavender **0.82**, **0.55**, **0.95**). Legacy `snap_guide_color` loads here when `snap_guide_color_node` is absent.                  |
 | `snap_guide_color_axis`       | array of 3 numbers | RGB for snap guides when aligned on X or Y only (float **0** to **1**; default magenta **0.96**, **0.06**, **0.54**). Legacy `snap_guide_color` sets both node and axis colors.                                               |
 | `snap_guide_mode`             | integer            | **0** *Traditional* (local markers), **1** *Fullscreen* (view-spanning axis lines), **2** *Both* (default **2**).                                                                                                             |
@@ -188,6 +198,7 @@ If saved layout text has no `[Docking]` section (older installs), a default dock
 | `annotate_all_coaxial_nodes`  | boolean            | When true (default), show axis guides and markers for *all* co-axial nodes (current sketch plus other visible sketches). When false, only the closest node per active axis is annotated. Also in sketch **Options**.          |
 | `imgui_style_dark`            | object             | ImGui layout for **dark mode** (see keys below).                                                                                                                                                                              |
 | `imgui_style_light`           | object             | ImGui layout for **light mode** (same keys).                                                                                                                                                                                  |
+| `settings_headers`            | object             | Which Settings pane collapsing sections are expanded (booleans; see keys below).                                                                                                                                              |
 | `imgui_rounding_general`      | number             | **Legacy:** copied into both theme objects on load when `imgui_style_*` is absent.                                                                                                                                            |
 | `imgui_rounding_scroll`       | number             | **Legacy:** same.                                                                                                                                                                                                             |
 | `imgui_rounding_tabs`         | number             | **Legacy:** same.                                                                                                                                                                                                             |
@@ -209,8 +220,21 @@ Each **`imgui_style_dark`** / **`imgui_style_light`** object may contain:
 | `window_border`                        | number | Window border thickness (**0** to **2**).                                                      |
 | `frame_border`                         | number | Widget frame border thickness (**0** to **2**).                                                |
 | `window_padding_x`, `window_padding_y` | number | Inner padding of windows (**0** to **24**).                                                    |
-| `frame_padding_x`, `frame_padding_y`   | number | Padding inside framed widgets (**0** to **24**).                                               |
+| `frame_padding_x`, `frame_padding_y`   | number | Padding inside frames (**0** to **24**).                                                       |
 | `item_spacing_x`, `item_spacing_y`     | number | Spacing between widgets (**0** to **24**).                                                     |
+
+Each **`settings_headers`** object may contain (default: only nested Sketch **Appearance** / **Dimensions** expanded):
+
+| Key                 | Type    | Meaning                                      |
+| ------------------- | ------- | -------------------------------------------- |
+| `view_nav`          | boolean | **3D view navigation** section expanded.     |
+| `ui`                | boolean | **UI** section expanded.                     |
+| `view_presentation` | boolean | **View presentation** section expanded.      |
+| `grid`              | boolean | **3D view grid** section expanded.           |
+| `sketch`            | boolean | **Sketch** section expanded.                 |
+| `sketch_appearance` | boolean | Nested **Appearance** under Sketch.          |
+| `sketch_dimensions` | boolean | Nested **Dimensions** under Sketch.          |
+| `startup`           | boolean | **Startup project** section expanded.        |
 
 Scripting API **`ezy.occt_view_settings_json()`** returns a JSON string with **`occt_view`** plus selected **`gui`** keys (including dimension and snap keys above, **`gui.permanent_node_anno_scale`**, **`gui.inspection_orthographic`**, **`gui.view_roll_step_deg`**, **`gui.view_zoom_scroll_scale`** when saved). See [scripting.md](scripting.md).
 

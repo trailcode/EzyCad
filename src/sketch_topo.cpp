@@ -5,9 +5,7 @@
 #include <BRepBuilderAPI_MakeWire.hxx>
 #include <BRepAdaptor_Curve.hxx>
 #include <BRepTools.hxx>
-#include <Graphic3d_AspectFillArea3d.hxx>
 #include <Precision.hxx>
-#include <Quantity_Color.hxx>
 #include <TopoDS.hxx>
 #include <TopoDS_Wire.hxx>
 #include <algorithm>
@@ -542,9 +540,7 @@ void Sketch_topo::update_faces()
         continue;
 
       Sketch_face_shp_ptr f = create_face_shape_(face);
-      f->SetColor(Quantity_NOC_GRAY7);       // Base color
-      f->SetTransparency(0.5);               // 0.5 = 50% transparent (0.0 = opaque, 1.0 = invisible)
-      f->SetMaterial(Graphic3d_NOM_PLASTIC); // Optional: material for shading
+      m_sketch.update_face_style_(f);
 
       m_sketch.m_ctx.Display(f, AIS_Shaded, AIS_Shape::SelectionMode(TopAbs_FACE), true);
       m_sketch.m_ctx.Activate(f, AIS_Shape::SelectionMode(TopAbs_FACE));

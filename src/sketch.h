@@ -32,6 +32,8 @@ struct Sketch_annotation_refresh
 {
   bool length_dimensions    = false;
   bool permanent_node_marks = false;
+  /// Reapply edge/face display colors, widths, and selection highlight drawers from GUI settings.
+  bool edge_face_style = false;
 };
 
 // The Sketch class provides a comprehensive set of methods for creating and manipulating 2D sketches in a 3D environment.
@@ -203,7 +205,9 @@ private:
   void get_originating_face_snp_pts_3d_(std::vector<gp_Pnt>& out);
 
   // Style related
-  void                  update_edge_style_(AIS_Shape_ptr& shp);
+  void                  update_edge_style_(const AIS_Shape_ptr& shp);
+  void                  update_face_style_(const AIS_Shape_ptr& shp);
+  void                  update_all_face_styles_();
   void                  sync_operation_axis_display_();
   bool                  show_operation_axis_() const;
   bool                  operation_axis_suppresses_sketch_snap_() const;

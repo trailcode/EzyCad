@@ -221,6 +221,12 @@ void Sketch::refresh_annotations(const Sketch_annotation_refresh& refresh)
 
   if (refresh.permanent_node_marks)
     m_node_marks.sync();
+
+  if (refresh.edge_face_style)
+  {
+    set_edge_style(m_edge_style);
+    m_ctx.UpdateCurrentViewer();
+  }
 }
 
 size_t Sketch::length_dimension_count() const { return m_dims.length_dimension_count(); }

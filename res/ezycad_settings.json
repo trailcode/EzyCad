@@ -31,8 +31,8 @@
       "item_spacing_y": 5.0,
       "rounding_general": 8.0,
       "rounding_scroll": 12.0,
-      "rounding_tabs": 6.0,
-      "window_alpha": 0.8199999928474426,
+      "rounding_tabs": 3.0,
+      "window_alpha": 0.8299999833106995,
       "window_border": 1.0,
       "window_padding_x": 10.0,
       "window_padding_y": 10.0
@@ -61,6 +61,16 @@
       1.0
     ],
     "permanent_node_anno_scale": 0.30000001192092896,
+    "settings_headers": {
+      "grid": false,
+      "sketch": false,
+      "sketch_appearance": true,
+      "sketch_dimensions": true,
+      "startup": false,
+      "ui": false,
+      "view_nav": false,
+      "view_presentation": false
+    },
     "show_dbg": false,
     "show_lua_console": true,
     "show_options": true,
@@ -69,6 +79,43 @@
     "show_shape_list": true,
     "show_sketch_dimensions": true,
     "show_sketch_list": true,
+    "sketch_edge_color": [
+      0.0,
+      1.0,
+      0.0,
+      1.0
+    ],
+    "sketch_edge_highlight_color": [
+      1.0,
+      1.0,
+      0.0,
+      1.0
+    ],
+    "sketch_edge_line_width": 1.0,
+    "sketch_edge_selection_color": [
+      1.0,
+      0.5454545617103577,
+      0.0,
+      1.0
+    ],
+    "sketch_face_color": [
+      0.30079561471939087,
+      0.24541562795639038,
+      0.32057416439056396,
+      0.2966507077217102
+    ],
+    "sketch_face_highlight_color": [
+      0.8229665756225586,
+      0.0,
+      1.0,
+      1.0
+    ],
+    "sketch_face_selection_color": [
+      0.7990430593490601,
+      0.18733544647693634,
+      0.5912379622459412,
+      1.0
+    ],
     "snap_guide_color_axis": [
       0.9576271176338196,
       0.06492385268211365,
@@ -91,7 +138,7 @@
     "view_roll_step_deg": 45.0,
     "view_zoom_scroll_scale": 4.0
   },
-  "imgui_ini": "[Window][##MainMenuBar]\nPos=0,0\nSize=1920,22\nCollapsed=0\n\n[Window][Toolbar]\nPos=252,21\nSize=1190,58\nCollapsed=0\n\n[Window][Sketch List]\nPos=0,22\nSize=252,443\nCollapsed=0\nDockId=0x00000005,0\n\n[Window][Shape List]\nPos=0,467\nSize=252,551\nCollapsed=0\nDockId=0x00000006,0\n\n[Window][Options]\nPos=1443,34\nSize=345,431\nCollapsed=0\n\n[Window][Lua Console]\nPos=0,1020\nSize=1920,101\nCollapsed=0\nDockId=0x0000000E,0\n\n[Window][Python Console]\nPos=0,1020\nSize=1920,101\nCollapsed=0\nDockId=0x0000000E,1\n\n[Window][Log]\nPos=0,1020\nSize=1920,101\nCollapsed=0\nDockId=0x0000000E,2\n\n[Window][Settings]\nPos=603,99\nSize=603,701\nCollapsed=0\n\n[Window][Debug##Default]\nPos=60,60\nSize=400,400\nCollapsed=0\n\n[Window][dbg]\nPos=344,110\nSize=320,200\nCollapsed=0\n\n[Window][Sketch properties]\nPos=1060,381\nSize=701,477\nCollapsed=0\n\n[Window][About]\nPos=700,300\nSize=520,520\nCollapsed=0\n\n[Window][New sketch]\nPos=801,473\nSize=317,175\nCollapsed=0\n\n[Window][WindowOverViewport_11111111]\nPos=0,22\nSize=1920,1099\nCollapsed=0\n\n[Docking][Data]\nDockSpace       ID=0xD79204D4 Window=0x1BBC0F80 Pos=0,51 Size=1920,1099 Split=Y\n  DockNode      ID=0x0000000D Parent=0xD79204D4 SizeRef=1920,996 Split=X\n    DockNode    ID=0x00000007 Parent=0x0000000D SizeRef=252,1099 Split=Y Selected=0xCA8EA105\n      DockNode  ID=0x00000005 Parent=0x00000007 SizeRef=167,443 Selected=0xCA8EA105\n      DockNode  ID=0x00000006 Parent=0x00000007 SizeRef=167,551 Selected=0x3BE507E9\n    DockNode    ID=0x00000008 Parent=0x0000000D SizeRef=1666,1099 Split=X\n      DockNode  ID=0x00000001 Parent=0x00000008 SizeRef=168,1121\n      DockNode  ID=0x00000002 Parent=0x00000008 SizeRef=1750,1121 CentralNode=1 Selected=0x0C01D6D5\n  DockNode      ID=0x0000000E Parent=0xD79204D4 SizeRef=1920,101 Selected=0x139FDA3F\n\n",
+  "imgui_ini": "[Window][##MainMenuBar]\nSize=1920,22\nCollapsed=0\n\n[Window][Toolbar]\nPos=252,21\nSize=1190,58\nCollapsed=0\n\n[Window][Sketch List]\nPos=0,22\nSize=252,443\nCollapsed=0\nDockId=0x00000005,0\n\n[Window][Shape List]\nPos=0,467\nSize=252,551\nCollapsed=0\nDockId=0x00000006,0\n\n[Window][Options]\nPos=1443,34\nSize=345,224\nCollapsed=0\n\n[Window][Lua Console]\nPos=0,1020\nSize=1920,101\nCollapsed=0\nDockId=0x0000000E,0\n\n[Window][Python Console]\nPos=0,1020\nSize=1920,101\nCollapsed=0\nDockId=0x0000000E,1\n\n[Window][Log]\nPos=0,1020\nSize=1920,101\nCollapsed=0\nDockId=0x0000000E,2\n\n[Window][Settings]\nPos=603,99\nSize=603,701\nCollapsed=0\n\n[Window][Debug##Default]\nPos=60,60\nSize=400,400\nCollapsed=0\n\n[Window][dbg]\nPos=344,110\nSize=320,200\nCollapsed=0\n\n[Window][Sketch properties]\nPos=1060,381\nSize=701,477\nCollapsed=0\n\n[Window][About]\nPos=700,300\nSize=520,520\nCollapsed=0\n\n[Window][New sketch]\nPos=801,473\nSize=317,175\nCollapsed=0\n\n[Window][WindowOverViewport_11111111]\nPos=0,22\nSize=1920,1099\nCollapsed=0\n\n[Docking][Data]\nDockSpace       ID=0xD79204D4 Window=0x1BBC0F80 Pos=0,51 Size=1920,1099 Split=Y\n  DockNode      ID=0x0000000D Parent=0xD79204D4 SizeRef=1920,996 Split=X\n    DockNode    ID=0x00000007 Parent=0x0000000D SizeRef=252,1099 Split=Y Selected=0xCA8EA105\n      DockNode  ID=0x00000005 Parent=0x00000007 SizeRef=167,443 Selected=0xCA8EA105\n      DockNode  ID=0x00000006 Parent=0x00000007 SizeRef=167,551 Selected=0x3BE507E9\n    DockNode    ID=0x00000008 Parent=0x0000000D SizeRef=1666,1099 Split=X\n      DockNode  ID=0x00000001 Parent=0x00000008 SizeRef=168,1121\n      DockNode  ID=0x00000002 Parent=0x00000008 SizeRef=1750,1121 CentralNode=1 Selected=0x0C01D6D5\n  DockNode      ID=0x0000000E Parent=0xD79204D4 SizeRef=1920,101 Selected=0xB5DBBD78\n\n",
   "occt_view": {
     "bg_color1": [
       0.037551622837781906,
@@ -107,7 +154,7 @@
     "grid_color1": [
       0.11268295347690582,
       0.056886445730924606,
-      0.13899612426757813
+      0.13899612426757812
     ],
     "grid_color2": [
       0.11791712045669556,
