@@ -21,8 +21,8 @@ namespace
 {
 constexpr float k_originating_face_full_rgba[4] = {0.3f, 0.0f, 0.0f, 1.0f};
 /// Fixed style for non-current sketches (not user-configurable).
-constexpr float k_background_edge_rgba[4] = {0.3f, 0.3f, 0.3f, 0.3f};
-constexpr float k_background_face_rgba[4] = {0.3f, 0.3f, 0.3f, 0.2f};
+constexpr float k_background_edge_rgba[4]   = {0.3f, 0.3f, 0.3f, 0.3f};
+constexpr float k_background_face_rgba[4]   = {0.3f, 0.3f, 0.3f, 0.2f};
 constexpr float k_edge_highlight_line_width = 2.0f;
 
 Quantity_Color rgb_from_rgba_(const float* rgba)
@@ -31,10 +31,7 @@ Quantity_Color rgb_from_rgba_(const float* rgba)
                         Quantity_TOC_RGB);
 }
 
-float transparency_from_rgba_(const float* rgba)
-{
-  return std::clamp(1.f - rgba[3], 0.f, 1.f);
-}
+float transparency_from_rgba_(const float* rgba) { return std::clamp(1.f - rgba[3], 0.f, 1.f); }
 
 void apply_rgba_style_(AIS_Shape& shp, const float* rgba, float line_width)
 {
@@ -45,12 +42,11 @@ void apply_rgba_style_(AIS_Shape& shp, const float* rgba, float line_width)
 
 Prs3d_Drawer_ptr make_edge_hilight_drawer_(const float* rgba, float line_width)
 {
-  Prs3d_Drawer_ptr drawer = new Prs3d_Drawer();
+  Prs3d_Drawer_ptr     drawer = new Prs3d_Drawer();
   const Quantity_Color qc     = rgb_from_rgba_(rgba);
   drawer->SetColor(qc);
   drawer->SetTransparency(transparency_from_rgba_(rgba));
-  Prs3d_LineAspect_ptr line =
-      new Prs3d_LineAspect(qc, Aspect_TOL_SOLID, static_cast<double>(line_width));
+  Prs3d_LineAspect_ptr line = new Prs3d_LineAspect(qc, Aspect_TOL_SOLID, static_cast<double>(line_width));
   drawer->SetLineAspect(line);
   drawer->SetWireAspect(line);
   drawer->SetSeenLineAspect(line);
@@ -87,10 +83,8 @@ Prs3d_Drawer_ptr make_face_hilight_drawer_(const float* rgba)
 
 void apply_edge_hilight_(AIS_Shape& shp, const GUI& gui)
 {
-  Prs3d_Drawer_ptr selected =
-      make_edge_hilight_drawer_(gui.sketch_edge_selection_color_rgba(), k_edge_highlight_line_width);
-  Prs3d_Drawer_ptr hover =
-      make_edge_hilight_drawer_(gui.sketch_edge_highlight_color_rgba(), k_edge_highlight_line_width);
+  Prs3d_Drawer_ptr selected = make_edge_hilight_drawer_(gui.sketch_edge_selection_color_rgba(), k_edge_highlight_line_width);
+  Prs3d_Drawer_ptr hover    = make_edge_hilight_drawer_(gui.sketch_edge_highlight_color_rgba(), k_edge_highlight_line_width);
   shp.SetHilightAttributes(selected);
   shp.SetDynamicHilightAttributes(hover);
 }

@@ -107,11 +107,11 @@ public:
 
 protected:
   Aspect_DisplayConnection_ptr myDisplay;
-  GLFWwindow* myGlfwWindow;
-  int         myXLeft;
-  int         myYTop;
-  int         myXRight;
-  int         myYBottom;
+  GLFWwindow*                  myGlfwWindow;
+  int                          myXLeft;
+  int                          myYTop;
+  int                          myXRight;
+  int                          myYBottom;
 };
 
 #endif // _Occt_glfw_win_Header

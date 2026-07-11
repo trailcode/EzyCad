@@ -105,10 +105,10 @@ void Occt_view::init_viewer()
   if (m_occt_window.IsNull() || m_occt_window->getGlfwWindow() == nullptr)
   {
     // create graphic driver
-    Aspect_DisplayConnection_ptr aDisp = new Aspect_DisplayConnection();
-    OpenGl_GraphicDriver_ptr aDriver   = new OpenGl_GraphicDriver(aDisp, true);
-    aDriver->ChangeOptions().swapInterval  = 0; // no window, no swap
-    V3d_Viewer_ptr myViewer            = new V3d_Viewer(aDriver);
+    Aspect_DisplayConnection_ptr aDisp    = new Aspect_DisplayConnection();
+    OpenGl_GraphicDriver_ptr     aDriver  = new OpenGl_GraphicDriver(aDisp, true);
+    aDriver->ChangeOptions().swapInterval = 0; // no window, no swap
+    V3d_Viewer_ptr myViewer               = new V3d_Viewer(aDriver);
 
     // create offscreen window
     const TCollection_AsciiString aWinName("OCCT offscreen window");
@@ -118,7 +118,7 @@ void Occt_view::init_viewer()
     // empty callback!
     WNT_WClass_ptr aWinClass = new WNT_WClass(aClassName.ToCString(), nullptr, 0);
     WNT_Window_ptr aWindow   = new WNT_Window(aWinName.ToCString(), aWinClass, 0x80000000, // WS_POPUP
-                                                  64, 64, aWinSize.x(), aWinSize.y(), Quantity_NOC_BLACK);
+                                              64, 64, aWinSize.x(), aWinSize.y(), Quantity_NOC_BLACK);
 #elif defined(__APPLE__)
     Cocoa_Window_ptr aWindow = new Cocoa_Window(aWinName.ToCString(), 64, 64, aWinSize.x(), aWinSize.y());
 #else
@@ -152,7 +152,7 @@ void Occt_view::init_viewer()
   m_ctx = new AIS_InteractiveContext(aViewer);
 #else // __EMSCRIPTEN__
   Aspect_DisplayConnection_ptr aDisp;
-  OpenGl_GraphicDriver_ptr aDriver        = new OpenGl_GraphicDriver(aDisp, false);
+  OpenGl_GraphicDriver_ptr     aDriver        = new OpenGl_GraphicDriver(aDisp, false);
   aDriver->ChangeOptions().buffersNoSwap      = true; // swap has no effect in WebGL
   aDriver->ChangeOptions().buffersOpaqueAlpha = true; // avoid unexpected blending of canvas with page background
   // Match native OpenGL path (sRGBDisable) so shading/material gamma is consistent vs desktop.
@@ -193,7 +193,7 @@ void Occt_view::init_viewer()
   // dimensions, etc. (CSS "serif" / OS fonts are not exposed as paths to WASM.)
   // Preload matches CMake --preload-file ... DroidSans.ttf@/DroidSans.ttf (shared with ImGui).
   {
-    Font_FontMgr_ptr font_mgr    = Font_FontMgr::GetInstance();
+    Font_FontMgr_ptr    font_mgr = Font_FontMgr::GetInstance();
     Font_SystemFont_ptr sys_font = font_mgr->CheckFont("/DroidSans.ttf");
     if (!sys_font.IsNull())
     {
@@ -230,8 +230,8 @@ void Occt_view::init_viewer()
 
   m_ctx->SetAutoActivateSelection(true); // Enable automatic selection
 
-  auto highlight_style                           = m_ctx->HighlightStyle();
-  Graphic3d_AspectFillArea3d_ptr fill_aspect = new Graphic3d_AspectFillArea3d();
+  auto                           highlight_style = m_ctx->HighlightStyle();
+  Graphic3d_AspectFillArea3d_ptr fill_aspect     = new Graphic3d_AspectFillArea3d();
   fill_aspect->SetAlphaMode(Graphic3d_AlphaMode::Graphic3d_AlphaMode_Blend);
   fill_aspect->SetColor(Quantity_Color(0.1, 0.1, 0.1, Quantity_TOC_RGB));
   highlight_style->SetColor(Quantity_NOC_YELLOW);
@@ -869,9 +869,9 @@ std::optional<gp_Pnt> Occt_view::get_hit_point_(const AIS_Shape_ptr& shp, const 
   TopExp_Explorer explorer(shp->Shape(), TopAbs_FACE);
   while (explorer.More())
   {
-    TopoDS_Face face             = TopoDS::Face(explorer.Current());
+    TopoDS_Face      face    = TopoDS::Face(explorer.Current());
     Geom_Surface_ptr surface = BRep_Tool::Surface(face);
-    GeomAPI_IntCS intersection(ray_line, surface);
+    GeomAPI_IntCS    intersection(ray_line, surface);
     if (intersection.NbPoints() > 0)
       return intersection.Point(1);
 
@@ -1412,9 +1412,9 @@ void Occt_view::capture_occt_grid_rect_from_viewer_(const V3d_Viewer_ptr& viewer
   if (viewer.IsNull() || viewer->Grid().IsNull())
     return;
 
-  Aspect_Grid_ptr ag            = viewer->Grid();
-  Aspect_RectangularGrid_ptr rg = Aspect_RectangularGrid_ptr::DownCast(ag);
-  V3d_RectangularGrid_ptr vrg   = V3d_RectangularGrid_ptr::DownCast(ag);
+  Aspect_Grid_ptr            ag  = viewer->Grid();
+  Aspect_RectangularGrid_ptr rg  = Aspect_RectangularGrid_ptr::DownCast(ag);
+  V3d_RectangularGrid_ptr    vrg = V3d_RectangularGrid_ptr::DownCast(ag);
   if (rg.IsNull())
     return;
 
@@ -1527,9 +1527,9 @@ void Occt_view::apply_occt_grid_rect_to_viewer_()
   const Grid_layout layout = compute_grid_layout_();
   viewer->SetPrivilegedPlane(layout.plane);
 
-  Aspect_Grid_ptr ag            = viewer->Grid();
-  Aspect_RectangularGrid_ptr rg = Aspect_RectangularGrid_ptr::DownCast(ag);
-  V3d_RectangularGrid_ptr vrg   = V3d_RectangularGrid_ptr::DownCast(ag);
+  Aspect_Grid_ptr            ag  = viewer->Grid();
+  Aspect_RectangularGrid_ptr rg  = Aspect_RectangularGrid_ptr::DownCast(ag);
+  V3d_RectangularGrid_ptr    vrg = V3d_RectangularGrid_ptr::DownCast(ag);
   if (rg.IsNull())
     return;
 

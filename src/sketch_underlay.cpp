@@ -101,20 +101,18 @@ private:
   void               sync_visibility_(const gp_Pln& pln);
   void               redisplay_();
 
-  static int      from_base64_char_(char c);
-  static bool     base64_decode_(const std::string& in, std::vector<uint8_t>& out);
-  static unsigned luminance_u8_(uint8_t r, uint8_t g, uint8_t b);
-  static void     apply_key_and_tint_(uint8_t& r, uint8_t& g, uint8_t& b, uint8_t& a, bool key_white_transparent,
-                                      bool line_tint_enabled, uint8_t tr, uint8_t tg, uint8_t tb, uint8_t ta);
-  static void     sample_rgba_bilinear_(const uint8_t* rgba, int w, int h, double xf, double yf, uint8_t out[4]);
-  static Image_PixMap_ptr
-      make_pixmap_bottom_up_linear_(const uint8_t* rgba, int w, int h, bool key_white_transparent, bool line_tint_enabled,
-                                    uint8_t tr, uint8_t tg, uint8_t tb, uint8_t ta);
-  static Image_PixMap_ptr
-      make_pixmap_bottom_up_warped_(const uint8_t* rgba, int w, int h, const gp_Vec2d& axis_u, const gp_Vec2d& axis_v,
-                                    bool key_white_transparent, bool line_tint_enabled, uint8_t tr, uint8_t tg, uint8_t tb,
-                                    uint8_t ta);
-  static bool underlay_axes_orthogonal_(const gp_Vec2d& au, const gp_Vec2d& av);
+  static int              from_base64_char_(char c);
+  static bool             base64_decode_(const std::string& in, std::vector<uint8_t>& out);
+  static unsigned         luminance_u8_(uint8_t r, uint8_t g, uint8_t b);
+  static void             apply_key_and_tint_(uint8_t& r, uint8_t& g, uint8_t& b, uint8_t& a, bool key_white_transparent,
+                                              bool line_tint_enabled, uint8_t tr, uint8_t tg, uint8_t tb, uint8_t ta);
+  static void             sample_rgba_bilinear_(const uint8_t* rgba, int w, int h, double xf, double yf, uint8_t out[4]);
+  static Image_PixMap_ptr make_pixmap_bottom_up_linear_(const uint8_t* rgba, int w, int h, bool key_white_transparent,
+                                                        bool line_tint_enabled, uint8_t tr, uint8_t tg, uint8_t tb, uint8_t ta);
+  static Image_PixMap_ptr make_pixmap_bottom_up_warped_(const uint8_t* rgba, int w, int h, const gp_Vec2d& axis_u,
+                                                        const gp_Vec2d& axis_v, bool key_white_transparent,
+                                                        bool line_tint_enabled, uint8_t tr, uint8_t tg, uint8_t tb, uint8_t ta);
+  static bool             underlay_axes_orthogonal_(const gp_Vec2d& au, const gp_Vec2d& av);
   static bool plane_to_uv_(const gp_Pnt2d& base, const gp_Vec2d& au, const gp_Vec2d& av, const gp_Pnt2d& p, double& out_u,
                            double& out_v);
 
@@ -264,8 +262,8 @@ void Sketch_underlay::Impl::sample_rgba_bilinear_(const uint8_t* rgba, int w, in
 
 /// Straight copy of the image to a bottom-up pixmap (optional row flip for OCCT/OpenGL), with key + tint.
 Image_PixMap_ptr Sketch_underlay::Impl::make_pixmap_bottom_up_linear_(const uint8_t* rgba, int w, int h,
-                                                                          bool key_white_transparent, bool line_tint_enabled,
-                                                                          uint8_t tr, uint8_t tg, uint8_t tb, uint8_t ta)
+                                                                      bool key_white_transparent, bool line_tint_enabled,
+                                                                      uint8_t tr, uint8_t tg, uint8_t tb, uint8_t ta)
 {
   if (w <= 0 || h <= 0)
     return {};
@@ -298,10 +296,10 @@ Image_PixMap_ptr Sketch_underlay::Impl::make_pixmap_bottom_up_linear_(const uint
 
 /// Builds a bottom-up pixmap for AIS_TexturedShape when the underlay axes are sheared (non-orthogonal): uses an
 /// axis-aligned face in the sketch plane and inverse-rotated sampling so the bitmap matches OCCT UV on the AABB.
-Image_PixMap_ptr Sketch_underlay::Impl::make_pixmap_bottom_up_warped_(const uint8_t* rgba, int w, int h,
-                                                                          const gp_Vec2d& axis_u, const gp_Vec2d& axis_v,
-                                                                          bool key_white_transparent, bool line_tint_enabled,
-                                                                          uint8_t tr, uint8_t tg, uint8_t tb, uint8_t ta)
+Image_PixMap_ptr Sketch_underlay::Impl::make_pixmap_bottom_up_warped_(const uint8_t* rgba, int w, int h, const gp_Vec2d& axis_u,
+                                                                      const gp_Vec2d& axis_v, bool key_white_transparent,
+                                                                      bool line_tint_enabled, uint8_t tr, uint8_t tg,
+                                                                      uint8_t tb, uint8_t ta)
 {
   const double hw = 0.5 * axis_u.Magnitude();
   const double hh = 0.5 * axis_v.Magnitude();

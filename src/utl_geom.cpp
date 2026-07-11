@@ -267,7 +267,7 @@ TopoDS_Wire make_circle_wire(const gp_Pln& pln, const gp_Pnt2d& center, const gp
   gp_Dir normal    = pln.Axis().Direction();
 
   // Create circle geometry
-  gp_Ax2 circle_axis(center_3d, normal);
+  gp_Ax2          circle_axis(center_3d, normal);
   Geom_Circle_ptr circle = new Geom_Circle(circle_axis, radius);
 
   // Make edge and wire
@@ -716,7 +716,7 @@ void apply_length_dimension_list_hover_style(const PrsDim_LengthDimension_ptr& d
     return;
 
   Prs3d_DimensionAspect_ptr aspect = clone_dimension_aspect(dim);
-  const Quantity_Color qc(hover_rgb[0], hover_rgb[1], hover_rgb[2], Quantity_TOC_RGB);
+  const Quantity_Color      qc(hover_rgb[0], hover_rgb[1], hover_rgb[2], Quantity_TOC_RGB);
 
   Aspect_TypeOfLine typ = Aspect_TOL_SOLID;
   if (const Prs3d_LineAspect_ptr& la = aspect->LineAspect(); !la.IsNull())
@@ -1031,7 +1031,7 @@ ezy_geom::polygon_2d to_boost(const TopoDS_Shape& shape, const gp_Pln& pln2)
 
   // Get the surface and verify it's a plane
   Geom_Surface_ptr surface = BRep_Tool::Surface(face);
-  Geom_Plane_ptr plane     = Geom_Plane_ptr::DownCast(surface);
+  Geom_Plane_ptr   plane   = Geom_Plane_ptr::DownCast(surface);
   EZY_ASSERT_MSG(!plane.IsNull(), "Face surface must be planar.");
 
   // Get the plane's coordinate system
@@ -1501,9 +1501,9 @@ namespace
 {
 Geom_TrimmedCurve_ptr edge_trimmed_curve_(const TopoDS_Edge& edge)
 {
-  Standard_Real f               = 0.0;
-  Standard_Real l               = 0.0;
-  Geom_Curve_ptr c          = BRep_Tool::Curve(edge, f, l);
+  Standard_Real         f   = 0.0;
+  Standard_Real         l   = 0.0;
+  Geom_Curve_ptr        c   = BRep_Tool::Curve(edge, f, l);
   Geom_TrimmedCurve_ptr ret = new Geom_TrimmedCurve(c, f, l);
   if (edge.Orientation() == TopAbs_REVERSED)
     ret->Reverse();
@@ -1530,9 +1530,9 @@ bool on_open_arc_parameter_(double u, double u_first, double u_last)
 bool point_on_open_arc_interior_2d(const gp_Pnt2d& p, const TopoDS_Edge& arc_edge, const gp_Pln& pln)
 {
   const BRepAdaptor_Curve curve(arc_edge);
-  const Geom_Curve_ptr geom = curve.Curve().Curve();
-  const double u_first          = curve.FirstParameter();
-  const double u_last           = curve.LastParameter();
+  const Geom_Curve_ptr    geom    = curve.Curve().Curve();
+  const double            u_first = curve.FirstParameter();
+  const double            u_last  = curve.LastParameter();
 
   GeomAPI_ProjectPointOnCurve proj(to_3d(pln, p), geom, u_first, u_last);
   if (proj.NbPoints() == 0 || proj.LowerDistance() > Precision::Confusion())
@@ -1557,8 +1557,8 @@ std::vector<gp_Pnt2d> segment_arc_intersections_2d(const gp_Pnt2d& seg_a, const 
   if (a3.Distance(b3) <= Precision::Confusion())
     return ret;
 
-  Geom_TrimmedCurve_ptr seg   = GC_MakeSegment(a3, b3);
-  Geom_TrimmedCurve_ptr arc_c = edge_trimmed_curve_(arc_edge);
+  Geom_TrimmedCurve_ptr     seg   = GC_MakeSegment(a3, b3);
+  Geom_TrimmedCurve_ptr     arc_c = edge_trimmed_curve_(arc_edge);
   GeomAPI_ExtremaCurveCurve ext(seg, arc_c);
 
   for (int i = 1; i <= ext.NbExtrema(); ++i)
@@ -1589,9 +1589,9 @@ std::vector<gp_Pnt2d> segment_arc_intersections_2d(const gp_Pnt2d& seg_a, const 
 
 std::vector<gp_Pnt2d> arc_arc_intersections_2d(const TopoDS_Edge& arc_a, const TopoDS_Edge& arc_b, const gp_Pln& pln)
 {
-  std::vector<gp_Pnt2d> ret;
-  Geom_TrimmedCurve_ptr curve_a = edge_trimmed_curve_(arc_a);
-  Geom_TrimmedCurve_ptr curve_b = edge_trimmed_curve_(arc_b);
+  std::vector<gp_Pnt2d>     ret;
+  Geom_TrimmedCurve_ptr     curve_a = edge_trimmed_curve_(arc_a);
+  Geom_TrimmedCurve_ptr     curve_b = edge_trimmed_curve_(arc_b);
   GeomAPI_ExtremaCurveCurve ext(curve_a, curve_b);
 
   for (int i = 1; i <= ext.NbExtrema(); ++i)
