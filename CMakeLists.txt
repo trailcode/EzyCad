@@ -652,7 +652,7 @@ source_group("web" FILES ${WEB_FILES_REL})
 
 # Root documentation (README.md, CHANGELOG.md) and docs/ folder contents are made
 # visible in the IDE via the modern glob + source_group block near the end of this
-# file (consistent with agents/, github-workflows, res/, scripts/, tools/). See below.
+# file (consistent with agents/, github-workflows, res/, scripts/). See below.
 
 # Add Google Test only for non-Emscripten builds
 if(NOT CMAKE_CXX_COMPILER_ID STREQUAL "Emscripten")
@@ -671,7 +671,7 @@ if(NOT CMAKE_CXX_COMPILER_ID STREQUAL "Emscripten")
     enable_testing()
     
     # Create a test executable
-    file(GLOB TEST_SRCS CONFIGURE_DEPENDS "tests/*.cpp" "tests/*.h")
+    file(GLOB TEST_SRCS CONFIGURE_DEPENDS "tests/*.cpp" "tests/*.h" "tests/*.inl")
     add_executable(${PROJECT_NAME}_tests ${TEST_SRCS})
     
     # Add src directory to include paths for tests
@@ -735,22 +735,6 @@ if(EZYCAD_SCRIPT_FILES)
   set_source_files_properties(${EZYCAD_SCRIPT_FILES_REL} PROPERTIES HEADER_FILE_ONLY TRUE)
 endif()
 
-# Dev tools: show tools/ in the IDE (codegen, asset helpers; not compiled)
-file(GLOB EZYCAD_TOOL_FILES CONFIGURE_DEPENDS
-  "${CMAKE_SOURCE_DIR}/tools/*.py"
-  "${CMAKE_SOURCE_DIR}/tools/*.ps1")
-if(EZYCAD_TOOL_FILES)
-  source_group(TREE "${CMAKE_SOURCE_DIR}/tools" PREFIX "tools" FILES ${EZYCAD_TOOL_FILES})
-  set(EZYCAD_TOOL_FILES_REL)
-  foreach(f ${EZYCAD_TOOL_FILES})
-    file(RELATIVE_PATH f_rel "${CMAKE_SOURCE_DIR}" "${f}")
-    list(APPEND EZYCAD_TOOL_FILES_REL "${f_rel}")
-  endforeach()
-  target_sources(${PROJECT_NAME}_lib PRIVATE ${EZYCAD_TOOL_FILES_REL})
-  target_sources(${PROJECT_NAME} PRIVATE ${EZYCAD_TOOL_FILES_REL})
-  set_source_files_properties(${EZYCAD_TOOL_FILES_REL} PROPERTIES HEADER_FILE_ONLY TRUE)
-endif()
-
 # GitHub workflow files: show .github/workflows/*.yml in the IDE under 'github-workflows' folder
 # (so they are visible in Visual Studio Solution Explorer etc. without being compiled)
 file(GLOB_RECURSE GITHUB_WORKFLOW_FILES CONFIGURE_DEPENDS
@@ -788,7 +772,7 @@ endif()
 
 # Documentation folder: show docs/ (and the moved usage guides, style guides, building-occt.md etc.)
 # in the IDE under a 'docs' folder for both the library and executable targets.
-# (non-compiled; uses the same pattern as agents/, github-workflows, res/, scripts/, tools/)
+# (non-compiled; uses the same pattern as agents/, github-workflows, res/, scripts/)
 file(GLOB_RECURSE EZYCAD_DOCS_FILES CONFIGURE_DEPENDS
   LIST_DIRECTORIES false
   "${CMAKE_SOURCE_DIR}/docs/*")

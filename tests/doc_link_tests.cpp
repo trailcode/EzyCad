@@ -5,7 +5,6 @@
 
 #include <string>
 #include <vector>
-#include <algorithm>
 
 #include <windows.h>
 #include <winhttp.h>

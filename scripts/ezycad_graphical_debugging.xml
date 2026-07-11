@@ -5,17 +5,18 @@
   Graphical Debugging v0.56+ type definitions for EzyCad.
   Extension: https://github.com/awulkiew/graphical-debugging
 
-  ring_2d must be a struct inheriting std::vector (not a typedef). MSVC unrolls
-  typedefs to std::vector<...>, which the extension renders as MultiPoint (dots).
-  See MyLinestring4 / MyRing in the extension examples/cpp.xml.
+  ring_2d must inherit std::vector and is registered as Ring (MyRing / Array).
+  linestring_2d must NOT inherit std::vector; use a named `points` member and
+  register as Linestring (MyLinestring). The same inherit+Array layout as Ring
+  does not resolve as Linestring in Geometry Watch.
 
-  ring_2d is registered as Ring (not Linestring) so polygon_2d ExteriorRing can
-  resolve it. Open polylines may show a closing segment in Geometry Watch.
+  After editing this file, re-select it under Tools -> Options -> Graphical
+  Debugging -> General (restart alone does not reload user types).
 
   Setup:
     1. Tools -> Options -> Graphical Debugging -> General -> set this file path
-    2. Restart Visual Studio
-    3. Geometry Watch: ring_2d / segment_2d / polygon_2d (and containers of them)
+    2. Re-browse/apply the path after any edit to this file
+    3. Geometry Watch: ring_2d / linestring_2d / segment_2d / polygon_2d
   -->
 
   <Point Type="ezy_geom::point_2d" Id="ezy_geom::point_2d">
@@ -43,6 +44,15 @@
       </Array>
     </Points>
   </Ring>
+
+  <!-- Named member (MyLinestring); do not use inherit+Array here. -->
+  <Linestring Type="ezy_geom::linestring_2d" Id="ezy_geom::linestring_2d">
+    <Points>
+      <Container>
+        <Name>points</Name>
+      </Container>
+    </Points>
+  </Linestring>
 
   <Polygon Type="ezy_geom::polygon_2d" Id="ezy_geom::polygon_2d">
     <ExteriorRing>

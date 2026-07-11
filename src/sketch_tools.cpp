@@ -635,9 +635,7 @@ void Sketch_tools::add_node_pt_(const ScreenCoords& screen_coords)
       if (snap_to_node && *snap_to_node == last.node_idx_a)
         return;
 
-      commit_b([&] {
-        return snap_to_node ? *snap_to_node : m_sketch.m_nodes.add_new_node(pt, false, true);
-      });
+      commit_b([&] { return snap_to_node ? *snap_to_node : m_sketch.m_nodes.add_new_node(pt, false, true); });
       return;
     }
 

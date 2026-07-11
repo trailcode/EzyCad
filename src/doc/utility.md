@@ -64,10 +64,10 @@ Large module; grouped by concern:
 | Plane / 2D | `to_2d`, `to_3d`, `xy_plane`, `sketch_reference_plane`, `Plane_side` |
 | Profile wires | `make_square_wire`, `make_circle_wire`, `make_slot_wire`, `create_wire_box` |
 | Sketch dimensions | `Length_dimension_style`, `create_distance_annotation`, `apply_length_dimension_style` |
-| Analysis | `to_boost` (polygon), `to_boost_ls` (edge linestring), `get_shape_bbox_center`, `plane_from_face`, `side_of_plane` |
-| Tests / debug | `to_wkt_string` (ring / polygon), `ezy_geom::area`, `is_valid` |
+| Analysis | `to_boost` (polygon), `to_boost_ls` (edge `linestring_2d`), `get_shape_bbox_center`, `plane_from_face`, `side_of_plane` |
+| Tests / debug | `to_wkt_string` (linestring / ring / polygon), `ezy_geom::area`, `is_valid`; Geometry Watch in `scripts/ezycad_graphical_debugging.xml` (`ring_2d` inherits vector as Ring; `linestring_2d` uses named `points` as Linestring). Re-select the XML path in Options after editing it. |
 
-Includes [`utl_geom_boost.inl`](../utl_geom_boost.inl) for Boost.Geometry polygon types used in tests and face validation.
+Includes [`utl_geom_boost.inl`](../utl_geom_boost.inl) for `ezy_geom` polygon / linestring types used in tests and face validation.
 
 ## Project I/O (`utl_io` + `Ezy_asset_store`)
 
@@ -167,8 +167,8 @@ Avoid circular includes: `utl_types.h` pulls sketch AIS typedefs via `sketch_ais
 
 | Item | Location |
 | --- | --- |
-| Geometry / polygon | `tests/sketch_tests.cpp` (`ezy_geom::`, `to_wkt_string`) |
-| `.ezy` zip / underlay | `tests/sketch_tests.cpp` (`pack_ezy`, `is_ezy_zip`) |
+| Geometry / polygon | `tests/sketch_topo_tests.cpp` (`ezy_geom::`, `to_wkt_string`) |
+| `.ezy` zip / underlay | `tests/sketch_json_tests.cpp` (`pack_ezy`, `is_ezy_zip`) |
 | Settings | Manual; paths vary by platform |
 
 ## Related code outside `src/utl*`

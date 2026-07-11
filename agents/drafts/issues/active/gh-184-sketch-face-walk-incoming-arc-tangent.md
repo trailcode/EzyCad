@@ -34,7 +34,7 @@ Face extraction in `Sketch_topo::update_faces_` treated `sketch_edge_outgoing_di
 - `src/sketch_edge.h` / `src/sketch_edge.cpp` — add `sketch_edge_incoming_dir_2d`
 - `src/sketch_topo.cpp` — use incoming dir for face-walk turn selection
 - `tests/sketch_tests.cpp` — `UpdateFaces_CircleWithChord_IncomingArcTangent` (+ Geometry Watch debug vars)
-- `tools/ezycad_graphical_debugging.xml`, `utl_geom*` — `to_boost_ls`, Ring registration for polygons
+- `scripts/ezycad_graphical_debugging.xml`, `utl_geom*` — `to_boost_ls`, Ring registration for polygons
 
 **Documentation:**
 
@@ -52,7 +52,7 @@ Face extraction in `Sketch_topo::update_faces_` treated `sketch_edge_outgoing_di
 - `src/utl_geom.cpp`, `src/utl_geom.h`, `src/utl_geom_boost.inl`
 - `src/doc/sketch.md`, `src/doc/utility.md`
 - `tests/sketch_tests.cpp`
-- `tools/ezycad_graphical_debugging.xml`
+- `scripts/ezycad_graphical_debugging.xml`
 - `agents/drafts/issues/active/gh-184-sketch-face-walk-incoming-arc-tangent.md` (this draft)
 
 ### Related

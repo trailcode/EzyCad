@@ -90,8 +90,6 @@ bool Shp_extrude::get_both_sides() const { return m_extrude_both_sides; }
 
 void Shp_extrude::set_both_sides(const bool both_sides) { m_extrude_both_sides = both_sides; }
 
-void Shp_extrude::set_curr_view_pln(const gp_Pln& pln) { m_curr_view_pln = pln; }
-
 void Shp_extrude::_update_extrude(const ScreenCoords& screen_coords)
 {
   //  Extrude the face

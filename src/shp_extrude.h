@@ -25,10 +25,9 @@ public:
   void set_both_sides(bool both_sides);
   void refresh_tmp_dimension_style(const Length_dimension_style& style);
 
-  // For testing
-  void set_curr_view_pln(const gp_Pln& pln);
-
 private:
+  friend class Shp_extrude_access;
+
   void _update_extrude(const ScreenCoords& screen_coords);
   void update_extrude_preview_(double extrude_dist, Plane_side side);
   // Face extrude related
