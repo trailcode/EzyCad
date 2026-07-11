@@ -877,60 +877,49 @@ TEST_F(Sketch_test, ArcSplit_CircleCrossesSlotLines)
   Sketch_access::update_faces_(sketch);
 }
 
-TEST_F(Sketch_test, SquareTwoArcs)
+// Square with an arc between the bottom corners through the origin. The straight
+// bottom edge and the arc bound a segment face; the remaining three sides plus the
+// arc bound the other face. (Name historically said "two arcs"; only one arc is added.)
+TEST_F(Sketch_test, UpdateFaces_SquareWithDanglingArcEdge)
 {
-//#if 0  // TODO currently failing
   gp_Pln default_plane(gp::Origin(), gp::DZ());
   Sketch sketch("TestSketch", view(), default_plane);
 
-  // Define square corners
   gp_Pnt2d p1(-10, -10);
   gp_Pnt2d p2(10, -10);
   gp_Pnt2d p3(10, 10);
   gp_Pnt2d p4(-10, 10);
 
-  // Add square edges
   Sketch_access::add_edge_(sketch, p1, p2);
   Sketch_access::add_edge_(sketch, p2, p3);
   Sketch_access::add_edge_(sketch, p3, p4);
   Sketch_access::add_edge_(sketch, p4, p1);
 
-  // Compute the center of the square
-  gp_Pnt2d center(0, 0);
+  // Arc from bottom-left to bottom-right through the origin (into the square).
+  Sketch_access::add_arc_circle_(sketch, p1, p2, gp_Pnt2d(0, 0));
 
-  // Add first arc: from p1 to p2, arc through center
-  //Sketch_access::add_arc_circle_(sketch, p1, p2, center);
-
-  // Add second arc: from p1 to p2, arc through center (again)
-  Sketch_access::add_arc_circle_(sketch, p1, p2, center);
-
-  const auto dbg_edges = Sketch_access::dbg_edge_linestrings(sketch);
-
-  // Update faces
-  // Graphical Debugging v0.56+ (Geometry Watch): dbg_faces
+  // Graphical Debugging v0.56+ (Geometry Watch): dbg_edges / dbg_faces
   // https://github.com/awulkiew/graphical-debugging
+  std::vector<ezy_geom::linestring_2d> dbg_edges = Sketch_access::dbg_edge_linestrings(sketch);
+  (void)dbg_edges;
+
   std::vector<ezy_geom::polygon_2d> dbg_faces = Sketch_access::update_faces_(sketch);
   (void)dbg_faces;
 
-  // There should be one face (the square with two arcs replacing one edge)
   const auto& faces = Sketch_access::get_faces(sketch);
-  EXPECT_EQ(faces.size(), 1);
+  ASSERT_EQ(faces.size(), 2u) << "Bottom edge + interior arc should produce two faces";
+  ASSERT_EQ(dbg_faces.size(), 2u);
 
-  // Check the face is a valid TopoDS_Face
-  const auto& face = faces[0];
-  EXPECT_EQ(face->Shape().ShapeType(), TopAbs_FACE);
+  for (const auto& face : faces)
+    EXPECT_EQ(face->Shape().ShapeType(), TopAbs_FACE);
 
-  // Convert to our polygon type for further checks (inside the #if 0 disabled test)
-  ezy_geom::polygon_2d poly = to_boost(face->Shape(), default_plane);
-
-  // Check that the ring is closed
-  const auto& outer = poly.outer();
-  EXPECT_NEAR(outer.front().x(), outer.back().x(), 1e-6);
-  EXPECT_NEAR(outer.front().y(), outer.back().y(), 1e-6);
-
-  // Check the polygon is valid
-  EXPECT_TRUE(ezy_geom::is_valid(poly));
-//#endif // #if 0  -- close the disabled test block
+  for (const auto& poly : dbg_faces)
+  {
+    EXPECT_TRUE(ezy_geom::is_valid(poly));
+    EXPECT_FALSE(poly.outer().empty());
+    EXPECT_NEAR(poly.outer().front().x(), poly.outer().back().x(), 1e-6);
+    EXPECT_NEAR(poly.outer().front().y(), poly.outer().back().y(), 1e-6);
+  }
 }
 
 // Test bridge edge removal - rectangle with inner rectangle connected by bridge
