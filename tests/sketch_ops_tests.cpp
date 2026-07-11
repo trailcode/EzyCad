@@ -5,14 +5,7 @@
 #include <BRepPrimAPI_MakeRevol.hxx>
 #include <Bnd_Box.hxx>
 #include <GProp_GProps.hxx>
-#include <TopoDS.hxx>
-#include <algorithm>
-#include <cmath>
-#include <iostream>
 #include <numbers>
-#include <set>
-#include <string>
-#include <vector>
 
 #include "sketch_edge.h"
 #include "sketch_json.h"
@@ -57,17 +50,8 @@ TEST_F(Sketch_test, Undo_circle_via_recorder)
   sketch.add_sketch_pt(ScreenCoords(dvec2(5.0, 0.0)));
   sketch.finalize_elm();
 
-  auto count_permanent_nodes = [](Sketch& s)
-  {
-    size_t n = 0;
-    for (const auto& node : s.get_nodes())
-      if (node.permanent && !node.deleted)
-        ++n;
-    return n;
-  };
-
   const size_t edges_after_create = Sketch_access::get_arc_internal_edge_count(sketch);
-  const size_t perm_after_create  = count_permanent_nodes(sketch);
+  const size_t perm_after_create  = Sketch_access::count_permanent_nodes(sketch);
   EXPECT_EQ(edges_after_create, 2u);
 
   EXPECT_TRUE(view().undo());
@@ -75,7 +59,7 @@ TEST_F(Sketch_test, Undo_circle_via_recorder)
 
   EXPECT_TRUE(view().redo());
   EXPECT_EQ(Sketch_access::get_arc_internal_edge_count(sketch), edges_after_create) << "Redo should restore the circle";
-  EXPECT_EQ(count_permanent_nodes(sketch), perm_after_create) << "Redo should not add extra permanent nodes";
+  EXPECT_EQ(Sketch_access::count_permanent_nodes(sketch), perm_after_create) << "Redo should not add extra permanent nodes";
 }
 
 TEST_F(Sketch_test, Undo_two_crossing_edges_via_finalize)
@@ -110,15 +94,6 @@ TEST_F(Sketch_test, Redo_two_crossing_edges_keeps_intersection_node_non_permanen
   gp_Pln default_plane(gp::Origin(), gp::DZ());
   Sketch sketch("TestSketch", view(), default_plane);
 
-  auto count_permanent_nodes = [](Sketch& s)
-  {
-    size_t n = 0;
-    for (const auto& node : s.get_nodes())
-      if (node.permanent && !node.deleted)
-        ++n;
-    return n;
-  };
-
   auto find_live_node_at = [](Sketch& s, const gp_Pnt2d& pt) -> std::optional<size_t>
   {
     for (size_t i = 0, n = s.get_nodes().size(); i < n; ++i)
@@ -130,6 +105,7 @@ TEST_F(Sketch_test, Redo_two_crossing_edges_keeps_intersection_node_non_permanen
       if (node.SquareDistance(pt) <= Precision::SquareConfusion())
         return i;
     }
+
     return std::nullopt;
   };
 
@@ -146,7 +122,7 @@ TEST_F(Sketch_test, Redo_two_crossing_edges_keeps_intersection_node_non_permanen
   }
 
   EXPECT_EQ(Sketch_access::get_linear_edge_count(sketch), 4);
-  const size_t perm_after_create = count_permanent_nodes(sketch);
+  const size_t perm_after_create = Sketch_access::count_permanent_nodes(sketch);
 
   const std::optional<size_t> intersection_before = find_live_node_at(sketch, gp_Pnt2d(3.0, 0.0));
   ASSERT_TRUE(intersection_before.has_value()) << "Crossing should create an interior node";
@@ -158,7 +134,7 @@ TEST_F(Sketch_test, Redo_two_crossing_edges_keeps_intersection_node_non_permanen
   EXPECT_TRUE(view().redo());
 
   EXPECT_EQ(Sketch_access::get_linear_edge_count(sketch), 4);
-  EXPECT_EQ(count_permanent_nodes(sketch), perm_after_create) << "Redo should not add permanent nodes";
+  EXPECT_EQ(Sketch_access::count_permanent_nodes(sketch), perm_after_create) << "Redo should not add permanent nodes";
 
   const std::optional<size_t> intersection_after = find_live_node_at(sketch, gp_Pnt2d(3.0, 0.0));
   ASSERT_TRUE(intersection_after.has_value()) << "Crossing intersection should be restored";
@@ -260,6 +236,7 @@ TEST_F(Sketch_test, Undo_circle_axis_then_revolve_snapshot_three_undos)
     for (const Sketch::Sketch_ptr& s : view().get_sketches())
       if (s->get_id() == sk_id)
         return s;
+
     return nullptr;
   };
 
@@ -375,13 +352,12 @@ TEST_F(Sketch_test, MirrorSelectedEdges_SimpleStraightEdge)
   // Find the shp of the edge we just added (last one with b node)
   AIS_Shape_ptr edge_to_mirror;
   for (auto rit = Sketch_access::get_edges(sketch).rbegin(); rit != Sketch_access::get_edges(sketch).rend(); ++rit)
-  {
     if (rit->node_idx_b.has_value())
     {
       edge_to_mirror = rit->shp;
       break;
     }
-  }
+  
   ASSERT_FALSE(edge_to_mirror.IsNull()) << "Expected to find a selectable edge shp";
 
   // Simulate selection via the interactive context (mirror/revolve use get_selected_edges_ which reads from view selection)
@@ -389,22 +365,12 @@ TEST_F(Sketch_test, MirrorSelectedEdges_SimpleStraightEdge)
   cctx.ClearSelected(true);
   cctx.AddOrRemoveSelected(edge_to_mirror, true);
 
-  // Count drawable edges before
-  auto count_drawable_edges = [&](const Sketch& s) -> size_t
-  {
-    size_t n = 0;
-    for (const auto& e : Sketch_access::get_edges(s))
-      if (e.node_idx_b.has_value())
-        ++n;
-    return n;
-  };
-
-  size_t before = count_drawable_edges(sketch);
+  size_t before = Sketch_access::get_edge_count(sketch);
 
   // Execute mirror
   sketch.mirror_selected_edges();
 
-  size_t after = count_drawable_edges(sketch);
+  size_t after = Sketch_access::get_edge_count(sketch);
   EXPECT_EQ(after, before + 1) << "Exactly one mirrored edge should be added";
 
   // Verify a mirrored edge now exists at y = -2 with matching x coords
@@ -413,6 +379,7 @@ TEST_F(Sketch_test, MirrorSelectedEdges_SimpleStraightEdge)
   {
     if (!e.node_idx_b.has_value())
       continue;
+
     const gp_Pnt2d& na = sketch.get_nodes()[e.node_idx_a];
     const gp_Pnt2d& nb = sketch.get_nodes()[*e.node_idx_b];
     if (std::abs(na.Y() + 2.0) < Precision::Confusion() && std::abs(nb.Y() + 2.0) < Precision::Confusion() &&
@@ -447,30 +414,24 @@ TEST_F(Sketch_test, MirrorSelectedEdges_VerticalAxis)
   // Select it
   AIS_Shape_ptr shp;
   for (auto rit = Sketch_access::get_edges(sketch).rbegin(); rit != Sketch_access::get_edges(sketch).rend(); ++rit)
-  {
     if (rit->node_idx_b.has_value())
     {
       shp = rit->shp;
       break;
     }
-  }
+  
   ASSERT_FALSE(shp.IsNull());
 
   auto& cctx = view().ctx();
   cctx.ClearSelected(true);
   cctx.AddOrRemoveSelected(shp, true);
 
-  size_t before = 0;
-  for (const auto& e : Sketch_access::get_edges(sketch))
-    if (e.node_idx_b.has_value())
-      ++before;
+  size_t before = Sketch_access::get_edge_count(sketch);
 
   sketch.mirror_selected_edges();
 
-  size_t after = 0;
-  for (const auto& e : Sketch_access::get_edges(sketch))
-    if (e.node_idx_b.has_value())
-      ++after;
+  size_t after = Sketch_access::get_edge_count(sketch);
+
   EXPECT_EQ(after, before + 1);
 
   // Expect mirrored edge at x=-2
@@ -479,6 +440,7 @@ TEST_F(Sketch_test, MirrorSelectedEdges_VerticalAxis)
   {
     if (!e.node_idx_b.has_value())
       continue;
+
     const gp_Pnt2d& na = sketch.get_nodes()[e.node_idx_a];
     const gp_Pnt2d& nb = sketch.get_nodes()[*e.node_idx_b];
     if (std::abs(na.X() + 2.0) < Precision::Confusion() && std::abs(nb.X() + 2.0) < Precision::Confusion() &&
@@ -515,31 +477,25 @@ TEST_F(Sketch_test, MirrorSelectedEdges_Arc)
   // For arcs, the shp is shared; select the shp of one of the arc edges
   AIS_Shape_ptr arc_shp;
   for (const auto& e : Sketch_access::get_edges(sketch))
-  {
     if (sketch_edge_is_arc(e))
     {
       arc_shp = e.shp;
       break;
     }
-  }
+  
   ASSERT_FALSE(arc_shp.IsNull()) << "Arc should have been added with a shp";
 
   auto& cctx = view().ctx();
   cctx.ClearSelected(true);
   cctx.AddOrRemoveSelected(arc_shp, true);
 
-  size_t before = 0;
-  for (const auto& e : Sketch_access::get_edges(sketch))
-    if (e.node_idx_b.has_value())
-      ++before;
+  size_t before = Sketch_access::get_edge_count(sketch);
 
   sketch.mirror_selected_edges();
 
   // Mirroring an arc pair should add another arc pair below
-  size_t after = 0;
-  for (const auto& e : Sketch_access::get_edges(sketch))
-    if (e.node_idx_b.has_value())
-      ++after;
+  size_t after = Sketch_access::get_edge_count(sketch);
+
   // Expect +1 edge for the mirrored arc
   EXPECT_EQ(after, before + 1) << "Mirroring an arc should add one new arc edge";
 
@@ -549,6 +505,7 @@ TEST_F(Sketch_test, MirrorSelectedEdges_Arc)
   {
     if (!sketch_edge_is_arc(e))
       continue;
+
     const gp_Pnt2d& pa = sketch.get_nodes()[e.node_idx_a];
     if (std::abs(pa.Y() + 1.0) < 0.5) // rough, symmetric to +1
     {
@@ -611,13 +568,12 @@ TEST_F(Sketch_test, RevolveSelected_SimpleEdgeProfile)
   // Select the edge shp (same mechanism used by mirror tests and the real UI selection)
   AIS_Shape_ptr edge_shp;
   for (auto rit = Sketch_access::get_edges(sketch).rbegin(); rit != Sketch_access::get_edges(sketch).rend(); ++rit)
-  {
     if (rit->node_idx_b.has_value())
     {
       edge_shp = rit->shp;
       break;
     }
-  }
+  
   ASSERT_FALSE(edge_shp.IsNull());
 
   auto& cctx = view().ctx();
@@ -718,7 +674,6 @@ TEST_F(Sketch_test, RevolveSelected_ClosedEdgeProfile)
 
   size_t selected_count = 0;
   for (const auto& e : Sketch_access::get_edges(sketch))
-  {
     if (e.node_idx_b.has_value())
     {
       // Only select the ones we just added for the profile (simple heuristic by x/y range)
@@ -730,7 +685,7 @@ TEST_F(Sketch_test, RevolveSelected_ClosedEdgeProfile)
         ++selected_count;
       }
     }
-  }
+  
   EXPECT_GE(selected_count, 2) << "Should have selected at least a couple of profile edges";
 
   Shp_rslt res = sketch.revolve_selected(2 * std::numbers::pi);
@@ -748,7 +703,6 @@ TEST_F(Sketch_test, RevolveSelected_ClosedEdgeProfile)
 
   // Collect exactly the profile edges we added for this test
   for (const auto& e : Sketch_access::get_edges(sketch))
-  {
     if (e.node_idx_b.has_value())
     {
       const gp_Pnt2d& na = sketch.get_nodes()[e.node_idx_a];
@@ -756,7 +710,6 @@ TEST_F(Sketch_test, RevolveSelected_ClosedEdgeProfile)
       if (na.X() >= 0.5 && na.X() <= 3.5 && nb.X() >= 0.5 && nb.X() <= 3.5)
         bld.Add(profile, e.shp->Shape());
     }
-  }
 
   // Reconstruct the axis from the same points we used when creating the operation axis
   gp_Pnt axA(0.0, 0.0, 0.0);

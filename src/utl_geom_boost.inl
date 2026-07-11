@@ -16,16 +16,23 @@ struct point_2d
   }
 };
 
-/// Open polyline or closed ring vertex sequence (inherits vector for Graphical Debugging:
-/// https://github.com/awulkiew/graphical-debugging , tools/ezycad_graphical_debugging.xml).
-/// Registered as Ring in that XML so polygon_2d ExteriorRing resolves.
+/// Closed ring vertex sequence for polygon outer/inners (inherits vector for Graphical Debugging:
+/// https://github.com/awulkiew/graphical-debugging , scripts/ezycad_graphical_debugging.xml).
+/// Registered as Ring so polygon_2d ExteriorRing resolves.
 struct ring_2d : std::vector<point_2d>
 {
   using std::vector<point_2d>::vector;
 };
 
+/// Open polyline for Geometry Watch Linestring. Uses a named `points` member (not
+/// inheritance) so it is distinct from ring_2d; see MyLinestring in the extension examples.
+struct linestring_2d
+{
+  std::vector<point_2d> points;
+};
+
 /// Two endpoints (Graphical Debugging segment visualizer:
-/// https://github.com/awulkiew/graphical-debugging , tools/ezycad_graphical_debugging.xml).
+/// https://github.com/awulkiew/graphical-debugging , scripts/ezycad_graphical_debugging.xml).
 struct segment_2d
 {
   point_2d from;

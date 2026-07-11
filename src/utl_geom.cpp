@@ -970,23 +970,23 @@ ezy_geom::point_2d to_boost(const gp_Pln& plane, const gp_Pnt& point_3d)
 
 ezy_geom::point_2d to_boost(const gp_Pnt2d& pt) { return {pt.X(), pt.Y()}; }
 
-ezy_geom::ring_2d to_boost_ls(const TopoDS_Shape& shape, const gp_Pln& pln)
+ezy_geom::linestring_2d to_boost_ls(const TopoDS_Shape& shape, const gp_Pln& pln)
 {
   EZY_ASSERT_MSG(shape.ShapeType() == TopAbs_EDGE, "Shape must be an edge");
 
-  const TopoDS_Edge& edge  = TopoDS::Edge(shape);
-  BRepAdaptor_Curve  curve(edge);
-  ezy_geom::ring_2d  line;
+  const TopoDS_Edge&      edge = TopoDS::Edge(shape);
+  BRepAdaptor_Curve       curve(edge);
+  ezy_geom::linestring_2d line;
 
   auto append_pt = [&](const gp_Pnt2d& pt)
   {
-    if (!line.empty())
+    if (!line.points.empty())
     {
-      const auto& last = line.back();
+      const auto& last = line.points.back();
       if (gp_Pnt2d(last.x(), last.y()).IsEqual(pt, Precision::Confusion()))
         return;
     }
-    line.push_back({pt.X(), pt.Y()});
+    line.points.push_back({pt.X(), pt.Y()});
   };
 
   switch (curve.GetType())
@@ -1315,23 +1315,32 @@ std::string wkt_fmt_num(double v)
   return os.str();
 }
 
-void wkt_write_ring_coords(std::ostringstream& ss, const ezy_geom::ring_2d& r)
+void wkt_write_coords(std::ostringstream& ss, const std::vector<ezy_geom::point_2d>& pts)
 {
-  for (size_t i = 0; i < r.size(); ++i)
+  for (size_t i = 0; i < pts.size(); ++i)
   {
     if (i > 0)
       ss << ",";
 
-    ss << wkt_fmt_num(r[i].x()) << " " << wkt_fmt_num(r[i].y());
+    ss << wkt_fmt_num(pts[i].x()) << " " << wkt_fmt_num(pts[i].y());
   }
 }
 } // namespace
+
+std::string to_wkt_string(const ezy_geom::linestring_2d& ls)
+{
+  std::ostringstream ss;
+  ss << "LINESTRING(";
+  wkt_write_coords(ss, ls.points);
+  ss << ")";
+  return ss.str();
+}
 
 std::string to_wkt_string(const ezy_geom::ring_2d& ring)
 {
   std::ostringstream ss;
   ss << "LINESTRING(";
-  wkt_write_ring_coords(ss, ring);
+  wkt_write_coords(ss, ring);
   ss << ")";
   return ss.str();
 }
@@ -1346,7 +1355,7 @@ std::string to_wkt_string(const ezy_geom::polygon_2d& poly)
       ss << ",";
 
     ss << "(";
-    wkt_write_ring_coords(ss, r);
+    wkt_write_coords(ss, r);
     ss << ")";
   };
 

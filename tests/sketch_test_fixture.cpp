@@ -50,7 +50,32 @@ void Sketch_access::add_edge_raw_(Sketch& sketch, const gp_Pnt2d& pt_a, const gp
   sketch.add_edge_raw_(pt_a, pt_b);
 }
 
-void Sketch_access::update_faces_(Sketch& sketch) { sketch.update_faces_(); }
+std::vector<ezy_geom::polygon_2d> Sketch_access::update_faces_(Sketch& sketch)
+{
+  sketch.update_faces_();
+
+  std::vector<ezy_geom::polygon_2d> polys;
+  const auto&                      faces = Sketch_access::get_faces(sketch);
+  polys.reserve(faces.size());
+  for (const auto& face : faces)
+    polys.push_back(to_boost(face->Shape(), sketch.get_plane()));
+
+  return polys;
+}
+
+std::vector<ezy_geom::linestring_2d> Sketch_access::dbg_edge_linestrings(const Sketch& sketch)
+{
+  std::vector<ezy_geom::linestring_2d> out;
+  for (const auto& e : Sketch_access::get_edges(sketch))
+  {
+    if (e.shp.IsNull())
+      continue;
+
+    out.push_back(to_boost_ls(e.shp->Shape(), sketch.get_plane()));
+  }
+
+  return out;
+}
 
 void Sketch_access::add_arc_circle_(Sketch& sketch, const gp_Pnt2d& pt_a, const gp_Pnt2d& pt_b, const gp_Pnt2d& pt_c)
 {
@@ -72,14 +97,23 @@ const std::vector<Sketch_face_shp_ptr>& Sketch_access::get_faces(const Sketch& s
 
 const std::list<Sketch::Edge>& Sketch_access::get_edges(const Sketch& sketch) { return sketch.m_edges.edges(); }
 
+size_t Sketch_access::get_edge_count(const Sketch& sketch)
+{
+  size_t count = 0;
+  for (const auto& edge : Sketch_access::get_edges(sketch))
+    if (edge.node_idx_b.has_value())
+      ++count;
+
+  return count;
+}
+
 size_t Sketch_access::get_linear_edge_count(const Sketch& sketch)
 {
   size_t count = 0;
   for (const auto& edge : Sketch_access::get_edges(sketch))
-  {
     if (sketch_edge_is_linear(edge))
       ++count;
-  }
+
   return count;
 }
 
@@ -87,11 +121,20 @@ size_t Sketch_access::get_arc_internal_edge_count(const Sketch& sketch)
 {
   size_t count = 0;
   for (const auto& edge : Sketch_access::get_edges(sketch))
-  {
     if (sketch_edge_is_arc(edge))
       ++count;
-  }
+
   return count;
+}
+
+size_t Sketch_access::count_permanent_nodes(Sketch& sketch)
+{
+  size_t n = 0;
+  for (const auto& node : sketch.get_nodes())
+    if (node.permanent && !node.deleted)
+      ++n;
+
+  return n;
 }
 
 size_t Sketch_access::length_dimension_count(const Sketch& sketch) { return sketch.m_dims.dimensions().size(); }

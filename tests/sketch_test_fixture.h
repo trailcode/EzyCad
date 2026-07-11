@@ -3,12 +3,11 @@
 #include "gui.h"
 #include "gui_occt_view.h"
 #include "sketch.h"
-#include "sketch_ais.h"
 #include "sketch_op_recorder.h"
+#include "utl_geom.h"
 
 #include <gtest/gtest.h>
 
-#include <algorithm>
 #include <list>
 #include <memory>
 #include <optional>
@@ -37,7 +36,8 @@ public:
   static void add_edge_(Sketch& sketch, const gp_Pnt2d& pt_a, const gp_Pnt2d& pt_b);
   static void add_edge_(Sketch& sketch, const gp_Pnt2d& pt_a, const gp_Pnt2d& pt_b, Sketch_op_recorder& rec);
   static void add_edge_raw_(Sketch& sketch, const gp_Pnt2d& pt_a, const gp_Pnt2d& pt_b);
-  static void update_faces_(Sketch& sketch);
+  static std::vector<ezy_geom::polygon_2d>    update_faces_(Sketch& sketch);
+  static std::vector<ezy_geom::linestring_2d> dbg_edge_linestrings(const Sketch& sketch);
   static void add_arc_circle_(Sketch& sketch, const gp_Pnt2d& pt_a, const gp_Pnt2d& pt_b, const gp_Pnt2d& pt_c);
   static void add_arc_circle_(Sketch& sketch, const gp_Pnt2d& pt_a, const gp_Pnt2d& pt_b, const gp_Pnt2d& pt_c,
                               Sketch_op_recorder& rec);
@@ -45,8 +45,10 @@ public:
 
   static const std::vector<Sketch_face_shp_ptr>& get_faces(const Sketch& sketch);
   static const std::list<Sketch::Edge>&          get_edges(const Sketch& sketch);
+  static size_t                                  get_edge_count(const Sketch& sketch);
   static size_t                                  get_linear_edge_count(const Sketch& sketch);
   static size_t                                  get_arc_internal_edge_count(const Sketch& sketch);
+  static size_t                                  count_permanent_nodes(Sketch& sketch);
   static size_t                                  length_dimension_count(const Sketch& sketch);
   static size_t                                  length_dimension_node_lo(const Sketch& sketch, size_t index);
   static size_t                                  length_dimension_node_hi(const Sketch& sketch, size_t index);

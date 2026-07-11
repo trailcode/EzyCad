@@ -1,25 +1,17 @@
 #include "sketch_test_fixture.h"
 
-#include <BRepBndLib.hxx>
 #include <BRepGProp.hxx>
-#include <Bnd_Box.hxx>
 #include <GProp_GProps.hxx>
 #include <TopoDS.hxx>
 #include <TopoDS_Wire.hxx>
 #include <algorithm>
-#include <cmath>
-#include <iostream>
 #include <numbers>
-#include <set>
-#include <string>
 #include <vector>
 
 #include "sketch_edge.h"
 #include "sketch_json.h"
 #include "sketch_nodes.h"
-#include "sketch_op_recorder.h"
 #include "utl_geom.h"
-#include "utl_occt.h"
 
 using namespace glm;
 
@@ -148,10 +140,9 @@ TEST_F(Sketch_test, AddLinearEdge_MidpointOption)
   // Check the (only) edge has no mid
   bool has_mid = false;
   for (const auto& e : Sketch_access::get_edges(sketch))
-  {
     if (e.node_idx_mid.has_value())
       has_mid = true;
-  }
+  
   EXPECT_FALSE(has_mid);
 
   // Turn the option on
@@ -209,6 +200,7 @@ TEST_F(Sketch_test, AddArc_MidpointOption)
   for (const auto& e : Sketch_access::get_edges(sketch))
     if (e.node_idx_arc_pt.has_value())
       has_arc_mid = true;
+
   EXPECT_FALSE(has_arc_mid);
 
   Sketch::set_add_mid_pt_edges(true);
@@ -221,6 +213,7 @@ TEST_F(Sketch_test, AddArc_MidpointOption)
   for (const auto& e : Sketch_access::get_edges(sketch))
     if (sketch_edge_is_arc(e) && e.node_idx_arc_pt.has_value())
       arc_with_mid = &e;
+
   ASSERT_NE(arc_with_mid, nullptr);
   const Sketch_nodes::Node& mid_node = sketch.get_nodes()[*arc_with_mid->node_idx_arc_pt];
   EXPECT_TRUE(mid_node.midpoint);
@@ -623,13 +616,11 @@ TEST_F(Sketch_test, OriginNodeNotDeletable)
 
   std::optional<size_t> origin_idx;
   for (size_t i = 0; i < sketch.get_nodes().size(); ++i)
-  {
     if (!sketch.get_nodes()[i].deleted && sketch.get_nodes()[i].origin)
     {
       origin_idx = i;
       break;
     }
-  }
 
   ASSERT_TRUE(origin_idx.has_value());
   Sketch_access::remove_permanent_node_mark_(sketch, *origin_idx);
@@ -748,16 +739,7 @@ TEST_F(Sketch_test, AddNode_splits_linear_edge_interior)
   Sketch_access::add_edge_(sketch, gp_Pnt2d(0.0, 0.0), gp_Pnt2d(20.0, 0.0));
   Sketch_access::update_faces_(sketch);
 
-  auto count_real_edges = [](const Sketch& s)
-  {
-    size_t n = 0;
-    for (const auto& e : Sketch_access::get_edges(s))
-      if (e.node_idx_b.has_value())
-        ++n;
-    return n;
-  };
-
-  ASSERT_EQ(count_real_edges(sketch), 1u);
+  ASSERT_EQ(Sketch_access::get_edge_count(sketch), 1u);
 
   gui().set_mode(Mode::Sketch_add_node);
   // Snap to an existing endpoint first (rubber band), then place the new node on the edge interior.
@@ -766,7 +748,7 @@ TEST_F(Sketch_test, AddNode_splits_linear_edge_interior)
   ScreenCoords interior(dvec2(7.0, 0.0));
   sketch.add_sketch_pt(interior);
 
-  EXPECT_EQ(count_real_edges(sketch), 2u) << "Add node on edge interior should replace one edge with two";
+  EXPECT_EQ(Sketch_access::get_edge_count(sketch), 2u) << "Add node on edge interior should replace one edge with two";
 
   bool found_0_7  = false;
   bool found_7_20 = false;
@@ -774,6 +756,7 @@ TEST_F(Sketch_test, AddNode_splits_linear_edge_interior)
   {
     if (!sketch_edge_is_linear(e))
       continue;
+
     const gp_Pnt2d& pa = sketch.get_nodes()[e.node_idx_a];
     const gp_Pnt2d& pb = sketch.get_nodes()[*e.node_idx_b];
     if (std::abs(pa.Y()) < 1e-6 && std::abs(pb.Y()) < 1e-6)
@@ -807,11 +790,7 @@ TEST_F(Sketch_test, AddNode_off_edge_adds_node_only)
   ScreenCoords away(dvec2(10.0, 200.0));
   sketch.add_sketch_pt(away);
 
-  size_t edge_count = 0;
-  for (const auto& e : Sketch_access::get_edges(sketch))
-    if (e.node_idx_b.has_value())
-      ++edge_count;
-  EXPECT_EQ(edge_count, 1u);
+  EXPECT_EQ(Sketch_access::get_edge_count(sketch), 1u);
   EXPECT_EQ(sketch.get_nodes().size(), nodes_before + 1);
 }
 
@@ -831,17 +810,15 @@ TEST_F(Sketch_test, AddNode_near_edge_snaps_onto_segment_and_splits)
   ScreenCoords near_edge(dvec2(7.0, 0.15));
   sketch.add_sketch_pt(near_edge);
 
-  size_t edge_count = 0;
-  for (const auto& e : Sketch_access::get_edges(sketch))
-    if (e.node_idx_b.has_value())
-      ++edge_count;
-  EXPECT_EQ(edge_count, 2u) << "Near-miss pick should snap to segment and replace one edge with two";
+  EXPECT_EQ(Sketch_access::get_edge_count(sketch), 2u)
+      << "Near-miss pick should snap to segment and replace one edge with two";
 
   bool found_at_seven = false;
   for (size_t i = 0; i < sketch.get_nodes().size(); ++i)
   {
     if (sketch.get_nodes()[i].deleted)
       continue;
+
     const gp_Pnt2d& p = sketch.get_nodes()[i];
     if (std::abs(p.X() - 7.0) < 1e-5 && std::abs(p.Y()) < 1e-5)
     {
@@ -864,23 +841,14 @@ TEST_F(Sketch_test, AddNode_distance_enter_undo)
   Sketch_access::set_entered_edge_len(sketch, gp_Dir2d(1.0, 0.0), 10.0);
   sketch.on_enter();
 
-  auto count_permanent_nodes = [](Sketch& s)
-  {
-    size_t n = 0;
-    for (const auto& node : s.get_nodes())
-      if (node.permanent && !node.deleted)
-        ++n;
-    return n;
-  };
-
-  EXPECT_EQ(count_permanent_nodes(sketch), 2u) << "Origin plus distance-placed node";
+  EXPECT_EQ(Sketch_access::count_permanent_nodes(sketch), 2u) << "Origin plus distance-placed node";
 
   EXPECT_GT(view().undo_stack_size(), 0u);
   EXPECT_TRUE(view().undo());
-  EXPECT_EQ(count_permanent_nodes(sketch), 1u) << "Undo should remove the distance-placed node";
+  EXPECT_EQ(Sketch_access::count_permanent_nodes(sketch), 1u) << "Undo should remove the distance-placed node";
 
   EXPECT_TRUE(view().redo());
-  EXPECT_EQ(count_permanent_nodes(sketch), 2u) << "Redo should restore the distance-placed node";
+  EXPECT_EQ(Sketch_access::count_permanent_nodes(sketch), 2u) << "Redo should restore the distance-placed node";
 }
 
 TEST_F(Sketch_test, AddNode_anchor_then_click_undo)
@@ -894,23 +862,14 @@ TEST_F(Sketch_test, AddNode_anchor_then_click_undo)
   sketch.add_sketch_pt(ScreenCoords(dvec2(0.0, 0.0)));
   sketch.add_sketch_pt(ScreenCoords(dvec2(10.0, 200.0)));
 
-  auto count_permanent_nodes = [](Sketch& s)
-  {
-    size_t n = 0;
-    for (const auto& node : s.get_nodes())
-      if (node.permanent && !node.deleted)
-        ++n;
-    return n;
-  };
-
-  EXPECT_EQ(count_permanent_nodes(sketch), 2u) << "Origin plus click-placed node";
+  EXPECT_EQ(Sketch_access::count_permanent_nodes(sketch), 2u) << "Origin plus click-placed node";
 
   EXPECT_GT(view().undo_stack_size(), 0u);
   EXPECT_TRUE(view().undo());
-  EXPECT_EQ(count_permanent_nodes(sketch), 1u) << "Undo should remove the click-placed node";
+  EXPECT_EQ(Sketch_access::count_permanent_nodes(sketch), 1u) << "Undo should remove the click-placed node";
 
   EXPECT_TRUE(view().redo());
-  EXPECT_EQ(count_permanent_nodes(sketch), 2u) << "Redo should restore the click-placed node";
+  EXPECT_EQ(Sketch_access::count_permanent_nodes(sketch), 2u) << "Redo should restore the click-placed node";
 }
 
 TEST_F(Sketch_test, DimensionTool_picks_sketch_origin)

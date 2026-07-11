@@ -9,16 +9,11 @@
 #include <algorithm>
 #include <cmath>
 #include <numbers>
-#include <set>
-#include <string>
 #include <vector>
 
 #include "sketch_edge.h"
-#include "sketch_json.h"
 #include "sketch_nodes.h"
-#include "sketch_op_recorder.h"
 #include "utl_geom.h"
-#include "utl_occt.h"
 
 using namespace glm;
 
@@ -439,10 +434,8 @@ TEST_F(Sketch_test, TwoSquares_TopRightCornerOverlap_GUIPath_ProducesThreeFaces)
   sketch.finalize_elm();
 
   for (const auto& n : sketch.get_nodes())
-  {
     if (!n.deleted)
       EXPECT_FALSE(n.midpoint) << "Square edges should not have auto midpoint nodes";
-  }
 
   Sketch_access::update_faces_(sketch);
   const auto& faces = Sketch_access::get_faces(sketch);
@@ -709,13 +702,9 @@ TEST_F(Sketch_test, UpdateFaces_DanglingEdgesArcMidNode)
 
   // The dangling edges (especially the vertical one attached to arc_mid) should still exist
   // in the sketch, but they must not affect face detection.
-  size_t total_edges = 0;
-  for (const auto& e : Sketch_access::get_edges(sketch))
-    if (e.node_idx_b.has_value())
-      ++total_edges;
-
   // Arc contributes 1 edge, plus 3 straight edges and 1 dangling vertical = 5
-  EXPECT_EQ(total_edges, 5) << "Expected 5 edges (1 arc + 3 straight + 1 dangling vertical)";
+  EXPECT_EQ(Sketch_access::get_edge_count(sketch), 5)
+      << "Expected 5 edges (1 arc + 3 straight + 1 dangling vertical)";
 }
 
 // Semicircle with equal-x endpoints: chord directions at endpoints are vertical, but arc
@@ -770,13 +759,7 @@ TEST_F(Sketch_test, UpdateFaces_CircleWithChord_IncomingArcTangent)
 
   // Graphical Debugging v0.56+ (Geometry Watch): dbg_edges
   // https://github.com/awulkiew/graphical-debugging
-  std::vector<ezy_geom::ring_2d> dbg_edges;
-  for (const auto& e : Sketch_access::get_edges(sketch))
-  {
-    if (e.shp.IsNull())
-      continue;
-    dbg_edges.push_back(to_boost_ls(e.shp->Shape(), default_plane));
-  }
+  std::vector<ezy_geom::linestring_2d> dbg_edges = Sketch_access::dbg_edge_linestrings(sketch);
   (void)dbg_edges;
 
   Sketch_access::update_faces_(sketch);
@@ -795,14 +778,16 @@ TEST_F(Sketch_test, UpdateFaces_CircleWithChord_IncomingArcTangent)
     const TopoDS_Wire wire = BRepTools::OuterWire(TopoDS::Face(f->Shape()));
     for (BRepTools_WireExplorer wex(wire); wex.More(); wex.Next())
     {
-      ezy_geom::ring_2d ls = to_boost_ls(wex.Current(), default_plane);
+      ezy_geom::linestring_2d ls = to_boost_ls(wex.Current(), default_plane);
       if (wex.Orientation() == TopAbs_REVERSED)
-        std::reverse(ls.begin(), ls.end());
-      for (size_t i = 0; i < ls.size(); ++i)
+        std::reverse(ls.points.begin(), ls.points.end());
+
+      for (size_t i = 0; i < ls.points.size(); ++i)
       {
         if (!outer.empty() && i == 0)
           continue;
-        outer.push_back(ls[i]);
+
+        outer.push_back(ls.points[i]);
       }
     }
     if (!outer.empty())
@@ -894,7 +879,7 @@ TEST_F(Sketch_test, ArcSplit_CircleCrossesSlotLines)
 
 TEST_F(Sketch_test, SquareTwoArcs)
 {
-#if 0  // TODO currently failing
+//#if 0  // TODO currently failing
   gp_Pln default_plane(gp::Origin(), gp::DZ());
   Sketch sketch("TestSketch", view(), default_plane);
 
@@ -919,8 +904,13 @@ TEST_F(Sketch_test, SquareTwoArcs)
   // Add second arc: from p1 to p2, arc through center (again)
   Sketch_access::add_arc_circle_(sketch, p1, p2, center);
 
+  const auto dbg_edges = Sketch_access::dbg_edge_linestrings(sketch);
+
   // Update faces
-  Sketch_access::update_faces_(sketch);
+  // Graphical Debugging v0.56+ (Geometry Watch): dbg_faces
+  // https://github.com/awulkiew/graphical-debugging
+  std::vector<ezy_geom::polygon_2d> dbg_faces = Sketch_access::update_faces_(sketch);
+  (void)dbg_faces;
 
   // There should be one face (the square with two arcs replacing one edge)
   const auto& faces = Sketch_access::get_faces(sketch);
@@ -940,7 +930,7 @@ TEST_F(Sketch_test, SquareTwoArcs)
 
   // Check the polygon is valid
   EXPECT_TRUE(ezy_geom::is_valid(poly));
-#endif // #if 0  -- close the disabled test block
+//#endif // #if 0  -- close the disabled test block
 }
 
 // Test bridge edge removal - rectangle with inner rectangle connected by bridge
@@ -1048,13 +1038,8 @@ TEST_F(Sketch_test, UpdateFaces_BridgeEdgeRemoval)
   }
 
   // Verify all edges still exist in the sketch (bridge edge is excluded from face detection but still exists)
-  size_t total_edges = 0;
-  for (const auto& edge : Sketch_access::get_edges(sketch))
-  {
-    if (edge.node_idx_b.has_value())
-      total_edges++;
-  }
-  EXPECT_EQ(total_edges, 9) << "All 9 edges (4 outer + 4 inner + 1 bridge) should still exist in the sketch";
+  EXPECT_EQ(Sketch_access::get_edge_count(sketch), 9)
+      << "All 9 edges (4 outer + 4 inner + 1 bridge) should still exist in the sketch";
 
   // Verify the bridge edge exists in the sketch
   bool found_bridge_edge = false;
@@ -1177,9 +1162,7 @@ TEST_F(Sketch_test, UpdateFaces_BridgeEzy_ProducesTwoFaces_OneWithHole)
       holed = std::move(poly);
     }
     else if (plain.outer().empty())
-    {
       plain = std::move(poly);
-    }
   }
   (void)dbg_faces;
 
@@ -1191,6 +1174,7 @@ TEST_F(Sketch_test, UpdateFaces_BridgeEzy_ProducesTwoFaces_OneWithHole)
     if (!holed.inners().empty())
       EXPECT_EQ(holed.inners()[0].size(), 4u); // triangle hole
   }
+
   if (!plain.outer().empty())
   {
     EXPECT_EQ(plain.inners().size(), 0u);
@@ -1283,13 +1267,8 @@ TEST_F(Sketch_test, UpdateFaces_DanglingEdgesRemoval)
 
   // Verify all edges are still in the sketch (they're just excluded from face detection)
   // The edges should still exist in m_edges, but not participate in face formation
-  size_t total_edges = 0;
-  for (const auto& edge : Sketch_access::get_edges(sketch))
-  {
-    if (edge.node_idx_b.has_value())
-      total_edges++;
-  }
-  EXPECT_EQ(total_edges, 12) << "All 12 edges (4 rectangle + 8 dangling) should still exist in the sketch";
+  EXPECT_EQ(Sketch_access::get_edge_count(sketch), 12)
+      << "All 12 edges (4 rectangle + 8 dangling) should still exist in the sketch";
 }
 
 // Test operation axis persistence in sketch JSON save/load.
@@ -1316,10 +1295,7 @@ TEST_F(Sketch_test, SplitEdge_HasMidpoints)
 
   // Count initial nodes and edges
   size_t initial_node_count = sketch.get_nodes().size();
-  size_t initial_edge_count = 0;
-  for (const auto& edge : Sketch_access::get_edges(sketch))
-    if (edge.node_idx_b.has_value())
-      initial_edge_count++;
+  size_t initial_edge_count = Sketch_access::get_edge_count(sketch);
 
   EXPECT_EQ(initial_edge_count, 1) << "Should have 1 edge initially";
   EXPECT_EQ(initial_node_count, 3) << "Should have 3 nodes initially (left, right, midpoint)";
@@ -1327,13 +1303,12 @@ TEST_F(Sketch_test, SplitEdge_HasMidpoints)
   // Find the midpoint of the initial edge
   std::optional<size_t> initial_midpoint_idx;
   for (const auto& edge : Sketch_access::get_edges(sketch))
-  {
     if (edge.node_idx_b.has_value() && edge.node_idx_mid.has_value())
     {
       initial_midpoint_idx = edge.node_idx_mid;
       break;
     }
-  }
+  
   ASSERT_TRUE(initial_midpoint_idx.has_value()) << "Initial edge should have a midpoint";
 
   // Verify the midpoint is at (10, 0)
@@ -1359,10 +1334,7 @@ TEST_F(Sketch_test, SplitEdge_HasMidpoints)
   sketch.finalize_elm();
 
   // Count edges after splitting
-  size_t final_edge_count = 0;
-  for (const auto& edge : Sketch_access::get_edges(sketch))
-    if (edge.node_idx_b.has_value())
-      final_edge_count++;
+  size_t final_edge_count = Sketch_access::get_edge_count(sketch);
 
   // Should now have 3 edges: two from the split horizontal edge, plus the new vertical edge
   EXPECT_EQ(final_edge_count, 3) << "Should have 3 edges after splitting (2 horizontal + 1 vertical)";
@@ -1405,13 +1377,11 @@ TEST_F(Sketch_test, SplitEdge_HasMidpoints)
   // Verify the split edge midpoints are at (5, 0) and (15, 0)
   std::vector<double> midpoint_x_coords;
   for (const auto& mid_idx : split_edge_midpoints)
-  {
     if (mid_idx.has_value())
     {
       const gp_Pnt2d& mp = sketch.get_nodes()[*mid_idx];
       midpoint_x_coords.push_back(mp.X());
     }
-  }
 
   std::sort(midpoint_x_coords.begin(), midpoint_x_coords.end());
   ASSERT_EQ(midpoint_x_coords.size(), 2);

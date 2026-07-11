@@ -1,9 +1,5 @@
 #include "sketch_test_fixture.h"
 
-#include <algorithm>
-#include <cmath>
-#include <iostream>
-#include <numbers>
 #include <set>
 #include <string>
 #include <vector>
@@ -11,9 +7,7 @@
 #include "sketch_edge.h"
 #include "sketch_json.h"
 #include "sketch_nodes.h"
-#include "sketch_op_recorder.h"
 #include "utl_geom.h"
-#include "utl_occt.h"
 #include "utl_asset_store.h"
 #include "utl_io.h"
 
@@ -71,12 +65,7 @@ TEST_F(Sketch_test, JsonSerializationDeserialization)
   EXPECT_EQ(deserialized_sketch->get_nodes().size(), live_nodes);
 
   // Count edges in deserialized sketch
-  size_t edge_count = 0;
-  for (const auto& edge : Sketch_access::get_edges(*deserialized_sketch))
-    if (edge.node_idx_b.has_value())
-      edge_count++;
-
-  EXPECT_EQ(edge_count, 3); // Should have 3 edges
+  EXPECT_EQ(Sketch_access::get_edge_count(*deserialized_sketch), 3); // Should have 3 edges
 }
 
 // Test JSON serialization with different edge counts (bug1 vs bug1.1 scenario)
@@ -127,19 +116,8 @@ TEST_F(Sketch_test, JsonSerializationDifferentEdgeCounts)
   std::shared_ptr<Sketch> deserialized1 = Sketch_json::from_json(view(), json1);
   std::shared_ptr<Sketch> deserialized2 = Sketch_json::from_json(view(), json2);
 
-  size_t edge_count1 = 0;
-  for (const auto& edge : Sketch_access::get_edges(*deserialized1))
-  {
-    if (edge.node_idx_b.has_value())
-      edge_count1++;
-  }
-
-  size_t edge_count2 = 0;
-  for (const auto& edge : Sketch_access::get_edges(*deserialized2))
-  {
-    if (edge.node_idx_b.has_value())
-      edge_count2++;
-  }
+  size_t edge_count1 = Sketch_access::get_edge_count(*deserialized1);
+  size_t edge_count2 = Sketch_access::get_edge_count(*deserialized2);
 
   EXPECT_EQ(edge_count1, 3);
   EXPECT_EQ(edge_count2, 4);
