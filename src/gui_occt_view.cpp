@@ -105,10 +105,10 @@ void Occt_view::init_viewer()
   if (m_occt_window.IsNull() || m_occt_window->getGlfwWindow() == nullptr)
   {
     // create graphic driver
-    Handle(Aspect_DisplayConnection) aDisp = new Aspect_DisplayConnection();
-    Handle(OpenGl_GraphicDriver) aDriver   = new OpenGl_GraphicDriver(aDisp, true);
+    Aspect_DisplayConnection_ptr aDisp = new Aspect_DisplayConnection();
+    OpenGl_GraphicDriver_ptr aDriver   = new OpenGl_GraphicDriver(aDisp, true);
     aDriver->ChangeOptions().swapInterval  = 0; // no window, no swap
-    Handle(V3d_Viewer) myViewer            = new V3d_Viewer(aDriver);
+    V3d_Viewer_ptr myViewer            = new V3d_Viewer(aDriver);
 
     // create offscreen window
     const TCollection_AsciiString aWinName("OCCT offscreen window");
@@ -116,13 +116,13 @@ void Occt_view::init_viewer()
 #if defined(_WIN32)
     const TCollection_AsciiString aClassName("OffscreenClass");
     // empty callback!
-    Handle(WNT_WClass) aWinClass = new WNT_WClass(aClassName.ToCString(), nullptr, 0);
-    Handle(WNT_Window) aWindow   = new WNT_Window(aWinName.ToCString(), aWinClass, 0x80000000, // WS_POPUP
+    WNT_WClass_ptr aWinClass = new WNT_WClass(aClassName.ToCString(), nullptr, 0);
+    WNT_Window_ptr aWindow   = new WNT_Window(aWinName.ToCString(), aWinClass, 0x80000000, // WS_POPUP
                                                   64, 64, aWinSize.x(), aWinSize.y(), Quantity_NOC_BLACK);
 #elif defined(__APPLE__)
-    Handle(Cocoa_Window) aWindow = new Cocoa_Window(aWinName.ToCString(), 64, 64, aWinSize.x(), aWinSize.y());
+    Cocoa_Window_ptr aWindow = new Cocoa_Window(aWinName.ToCString(), 64, 64, aWinSize.x(), aWinSize.y());
 #else
-    Handle(Xw_Window) aWindow = new Xw_Window(aDisp, aWinName.ToCString(), 64, 64, aWinSize.x(), aWinSize.y());
+    Xw_Window_ptr aWindow = new Xw_Window(aDisp, aWinName.ToCString(), 64, 64, aWinSize.x(), aWinSize.y());
 #endif
     aWindow->SetVirtual(true);
     m_view          = new V3d_View(myViewer);
@@ -131,13 +131,13 @@ void Occt_view::init_viewer()
     return;
   }
 
-  Handle(OpenGl_GraphicDriver) aGraphicDriver = new OpenGl_GraphicDriver(m_occt_window->GetDisplay(), false);
+  OpenGl_GraphicDriver_ptr aGraphicDriver = new OpenGl_GraphicDriver(m_occt_window->GetDisplay(), false);
 
   aGraphicDriver->ChangeOptions().buffersNoSwap      = true;
   aGraphicDriver->ChangeOptions().buffersOpaqueAlpha = true;
   aGraphicDriver->ChangeOptions().sRGBDisable        = true; // Otherwise colors are wrong when native.
 
-  Handle(V3d_Viewer) aViewer = new V3d_Viewer(aGraphicDriver);
+  V3d_Viewer_ptr aViewer = new V3d_Viewer(aGraphicDriver);
 
   aViewer->SetDefaultLights();
   aViewer->SetLightOn();
@@ -151,8 +151,8 @@ void Occt_view::init_viewer()
 
   m_ctx = new AIS_InteractiveContext(aViewer);
 #else // __EMSCRIPTEN__
-  Handle(Aspect_DisplayConnection) aDisp;
-  Handle(OpenGl_GraphicDriver) aDriver        = new OpenGl_GraphicDriver(aDisp, false);
+  Aspect_DisplayConnection_ptr aDisp;
+  OpenGl_GraphicDriver_ptr aDriver        = new OpenGl_GraphicDriver(aDisp, false);
   aDriver->ChangeOptions().buffersNoSwap      = true; // swap has no effect in WebGL
   aDriver->ChangeOptions().buffersOpaqueAlpha = true; // avoid unexpected blending of canvas with page background
   // Match native OpenGL path (sRGBDisable) so shading/material gamma is consistent vs desktop.
@@ -163,15 +163,15 @@ void Occt_view::init_viewer()
     return;
   }
 
-  Handle(V3d_Viewer) aViewer = new V3d_Viewer(aDriver);
+  V3d_Viewer_ptr aViewer = new V3d_Viewer(aDriver);
   aViewer->SetDefaultComputedMode(true); // Enable better quality rendering
   aViewer->SetDefaultShadingModel(Graphic3d_TypeOfShadingModel_Phong);
   aViewer->SetDefaultLights();
   aViewer->SetLightOn();
-  for (NCollection_List<Handle(Graphic3d_CLight)>::Iterator aLightIter(aViewer->ActiveLights()); aLightIter.More();
+  for (NCollection_List<Graphic3d_CLight_ptr>::Iterator aLightIter(aViewer->ActiveLights()); aLightIter.More();
        aLightIter.Next())
   {
-    const Handle(Graphic3d_CLight)& aLight = aLightIter.Value();
+    const Graphic3d_CLight_ptr& aLight = aLightIter.Value();
     if (aLight->Type() == Graphic3d_TypeOfLightSource_Directional)
       aLight->SetCastShadows(true);
   }
@@ -179,7 +179,7 @@ void Occt_view::init_viewer()
   // ImGui owns HiDPI: canvas + GLFW window are CSS * DPR (see imgui_impl_glfw OnCanvasSizeChange).
   // ToScaleBacking=false so OCCT does not resize the shared canvas again; DevicePixelRatio=1 so
   // mouse/view coords stay in the same physical-pixel space as GLFW.
-  Handle(Wasm_Window) aWindow = new Wasm_Window("#canvas", false);
+  Wasm_Window_ptr aWindow = new Wasm_Window("#canvas", false);
   aWindow->SetDevicePixelRatio(1.0);
   myDevicePixelRatio = 1.0;
 
@@ -193,8 +193,8 @@ void Occt_view::init_viewer()
   // dimensions, etc. (CSS "serif" / OS fonts are not exposed as paths to WASM.)
   // Preload matches CMake --preload-file ... DroidSans.ttf@/DroidSans.ttf (shared with ImGui).
   {
-    Handle(Font_FontMgr) font_mgr    = Font_FontMgr::GetInstance();
-    Handle(Font_SystemFont) sys_font = font_mgr->CheckFont("/DroidSans.ttf");
+    Font_FontMgr_ptr font_mgr    = Font_FontMgr::GetInstance();
+    Font_SystemFont_ptr sys_font = font_mgr->CheckFont("/DroidSans.ttf");
     if (!sys_font.IsNull())
     {
       font_mgr->RegisterFont(sys_font, true);
@@ -231,7 +231,7 @@ void Occt_view::init_viewer()
   m_ctx->SetAutoActivateSelection(true); // Enable automatic selection
 
   auto highlight_style                           = m_ctx->HighlightStyle();
-  Handle(Graphic3d_AspectFillArea3d) fill_aspect = new Graphic3d_AspectFillArea3d();
+  Graphic3d_AspectFillArea3d_ptr fill_aspect = new Graphic3d_AspectFillArea3d();
   fill_aspect->SetAlphaMode(Graphic3d_AlphaMode::Graphic3d_AlphaMode_Blend);
   fill_aspect->SetColor(Quantity_Color(0.1, 0.1, 0.1, Quantity_TOC_RGB));
   highlight_style->SetColor(Quantity_NOC_YELLOW);
@@ -251,7 +251,7 @@ void Occt_view::init_viewer()
   m_grid_color2        = glm::vec3(0.117917f, 0.117917f, 0.135135f);
   update_view_background_();
 
-  Handle(AIS_ViewCube) myViewCube = new AIS_ViewCube();
+  AIS_ViewCube_ptr myViewCube = new AIS_ViewCube();
   myViewCube->SetTransformPersistence(
       new Graphic3d_TransformPers(Graphic3d_TMF_TriedronPers, Aspect_TOTP_RIGHT_LOWER, NCollection_Vec2<int>(100, 100)));
 
@@ -870,7 +870,7 @@ std::optional<gp_Pnt> Occt_view::get_hit_point_(const AIS_Shape_ptr& shp, const 
   while (explorer.More())
   {
     TopoDS_Face face             = TopoDS::Face(explorer.Current());
-    Handle(Geom_Surface) surface = BRep_Tool::Surface(face);
+    Geom_Surface_ptr surface = BRep_Tool::Surface(face);
     GeomAPI_IntCS intersection(ray_line, surface);
     if (intersection.NbPoints() > 0)
       return intersection.Point(1);
@@ -891,14 +891,14 @@ void Occt_view::refresh_shape_shading_(const Shp_ptr& shp)
   // OCCT 8 GLES: Phong needs explicit color; UNLIT fallback was removed in 8.0.
   shp->SetColor(Quantity_Color(0.78, 0.78, 0.80, Quantity_TOC_RGB));
 
-  const Handle(Prs3d_Drawer)& drawer = shp->Attributes();
+  const Prs3d_Drawer_ptr& drawer = shp->Attributes();
   if (!drawer.IsNull())
   {
     drawer->SetFaceBoundaryDraw(false);
-    const Handle(Prs3d_ShadingAspect)& shading = drawer->ShadingAspect();
+    const Prs3d_ShadingAspect_ptr& shading = drawer->ShadingAspect();
     if (!shading.IsNull())
     {
-      const Handle(Graphic3d_AspectFillArea3d)& aspect = shading->Aspect();
+      const Graphic3d_AspectFillArea3d_ptr& aspect = shading->Aspect();
       if (!aspect.IsNull())
       {
 #if OCC_VERSION_HEX >= 0x080000
@@ -1412,9 +1412,9 @@ void Occt_view::capture_occt_grid_rect_from_viewer_(const V3d_Viewer_ptr& viewer
   if (viewer.IsNull() || viewer->Grid().IsNull())
     return;
 
-  Handle(Aspect_Grid) ag            = viewer->Grid();
-  Handle(Aspect_RectangularGrid) rg = Handle(Aspect_RectangularGrid)::DownCast(ag);
-  Handle(V3d_RectangularGrid) vrg   = Handle(V3d_RectangularGrid)::DownCast(ag);
+  Aspect_Grid_ptr ag            = viewer->Grid();
+  Aspect_RectangularGrid_ptr rg = Aspect_RectangularGrid_ptr::DownCast(ag);
+  V3d_RectangularGrid_ptr vrg   = V3d_RectangularGrid_ptr::DownCast(ag);
   if (rg.IsNull())
     return;
 
@@ -1438,7 +1438,7 @@ gp_Ax3 Occt_view::grid_display_plane_() const
 
   if (!m_view.IsNull())
   {
-    Handle(V3d_Viewer) viewer = m_view->Viewer();
+    V3d_Viewer_ptr viewer = m_view->Viewer();
     if (!viewer.IsNull())
       return viewer->PrivilegedPlane();
   }
@@ -1461,7 +1461,7 @@ void Occt_view::sync_grid_plane_to_active_sketch_()
   if (is_headless() || m_ctx.IsNull() || !m_cur_sketch)
     return;
 
-  Handle(V3d_Viewer) viewer = m_ctx->CurrentViewer();
+  V3d_Viewer_ptr viewer = m_ctx->CurrentViewer();
   if (viewer.IsNull())
     return;
 
@@ -1476,7 +1476,7 @@ void Occt_view::refresh_viewer_grid_()
   if (!m_grid_visible)
     return;
 
-  Handle(V3d_Viewer) viewer = m_view->Viewer();
+  V3d_Viewer_ptr viewer = m_view->Viewer();
   if (viewer.IsNull() || !viewer->IsGridActive())
     return;
 
@@ -1491,7 +1491,7 @@ void Occt_view::apply_grid_visibility_()
   if (is_headless() || m_view.IsNull())
     return;
 
-  Handle(V3d_Viewer) viewer = m_view->Viewer();
+  V3d_Viewer_ptr viewer = m_view->Viewer();
   if (viewer.IsNull())
     return;
 
@@ -1520,16 +1520,16 @@ void Occt_view::apply_occt_grid_rect_to_viewer_()
 
   m_occt_grid_rect = clamp_occt_grid_rect_params_(m_occt_grid_rect);
 
-  Handle(V3d_Viewer) viewer = m_view->Viewer();
+  V3d_Viewer_ptr viewer = m_view->Viewer();
   if (viewer.IsNull() || viewer->Grid().IsNull())
     return;
 
   const Grid_layout layout = compute_grid_layout_();
   viewer->SetPrivilegedPlane(layout.plane);
 
-  Handle(Aspect_Grid) ag            = viewer->Grid();
-  Handle(Aspect_RectangularGrid) rg = Handle(Aspect_RectangularGrid)::DownCast(ag);
-  Handle(V3d_RectangularGrid) vrg   = Handle(V3d_RectangularGrid)::DownCast(ag);
+  Aspect_Grid_ptr ag            = viewer->Grid();
+  Aspect_RectangularGrid_ptr rg = Aspect_RectangularGrid_ptr::DownCast(ag);
+  V3d_RectangularGrid_ptr vrg   = V3d_RectangularGrid_ptr::DownCast(ag);
   if (rg.IsNull())
     return;
 
@@ -1730,11 +1730,11 @@ void Occt_view::update_shape_list_hover_drawer_()
     m_shape_list_hover_drawer = new Prs3d_Drawer();
 
   m_shape_list_hover_drawer->SetColor(qc);
-  Handle(Graphic3d_AspectFillArea3d) fill_aspect = new Graphic3d_AspectFillArea3d();
+  Graphic3d_AspectFillArea3d_ptr fill_aspect = new Graphic3d_AspectFillArea3d();
   fill_aspect->SetAlphaMode(Graphic3d_AlphaMode_Blend);
   fill_aspect->SetColor(Quantity_Color(0.1, 0.1, 0.1, Quantity_TOC_RGB));
   m_shape_list_hover_drawer->SetBasicFillAreaAspect(fill_aspect);
-  Handle(Prs3d_LineAspect) wire_aspect = new Prs3d_LineAspect(qc, Aspect_TOL_SOLID, 2.0);
+  Prs3d_LineAspect_ptr wire_aspect = new Prs3d_LineAspect(qc, Aspect_TOL_SOLID, 2.0);
   m_shape_list_hover_drawer->SetWireAspect(wire_aspect);
 }
 

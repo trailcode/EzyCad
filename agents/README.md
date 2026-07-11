@@ -18,6 +18,7 @@ Root markers: [AGENTS.md](../AGENTS.md) / [agents.md](../agents.md).
 | Utility module (dev doc)     | [src/doc/utility.md](../src/doc/utility.md) — read when editing `utl_*`; update if shared helpers or I/O change      |
 | Build / test / wasm          | [workflows/local-dev.md](workflows/local-dev.md)                                                                     |
 | OCCT desktop 8 vs wasm 7.9.3 | [conventions/occt-wasm-dual-version.md](conventions/occt-wasm-dual-version.md) — until wasm works on OCCT 8          |
+| OCCT handles (`*_ptr`)       | [conventions/occt-handles.md](conventions/occt-handles.md) — prefer aliases over `Handle()` for clang-format         |
 | Release                      | [workflows/release.md](workflows/release.md)                                                                         |
 | Issue/PR drafts              | [drafts/](drafts/) — [github-drafts.md](conventions/github-drafts.md)                                                |
 | Token-saving rules           | [conventions/token-lean.md](conventions/token-lean.md)                                                               |

@@ -67,7 +67,7 @@ gp_Vec2d arc_outgoing_dir_2d_(const Sketch_edge& e, const gp_Pnt2d& from_pt, con
   const gp_Pnt            from_3d  = to_3d(pln, from_pt);
   const gp_Pnt            to_pt_3d = to_3d(pln, to_pt);
 
-  const Handle(Geom_Curve) geom = curve.Curve().Curve();
+  const Geom_Curve_ptr geom = curve.Curve().Curve();
   const double u_first          = curve.FirstParameter();
   const double u_last           = curve.LastParameter();
 

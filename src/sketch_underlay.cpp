@@ -83,7 +83,7 @@ public:
   void rebuild_and_display(const gp_Pln& pln);
   void ctx_erase();
 
-  void append_list_hover_ais(std::vector<opencascade::handle<AIS_InteractiveObject>>& out) const;
+  void append_list_hover_ais(std::vector<AIS_InteractiveObject_ptr>& out) const;
 
   nlohmann::json     to_json(const Ezy_asset_store& store) const;
   [[nodiscard]] bool from_json(const nlohmann::json& j, Ezy_asset_store& store);
@@ -107,10 +107,10 @@ private:
   static void     apply_key_and_tint_(uint8_t& r, uint8_t& g, uint8_t& b, uint8_t& a, bool key_white_transparent,
                                       bool line_tint_enabled, uint8_t tr, uint8_t tg, uint8_t tb, uint8_t ta);
   static void     sample_rgba_bilinear_(const uint8_t* rgba, int w, int h, double xf, double yf, uint8_t out[4]);
-  static Handle(Image_PixMap)
+  static Image_PixMap_ptr
       make_pixmap_bottom_up_linear_(const uint8_t* rgba, int w, int h, bool key_white_transparent, bool line_tint_enabled,
                                     uint8_t tr, uint8_t tg, uint8_t tb, uint8_t ta);
-  static Handle(Image_PixMap)
+  static Image_PixMap_ptr
       make_pixmap_bottom_up_warped_(const uint8_t* rgba, int w, int h, const gp_Vec2d& axis_u, const gp_Vec2d& axis_v,
                                     bool key_white_transparent, bool line_tint_enabled, uint8_t tr, uint8_t tg, uint8_t tb,
                                     uint8_t ta);
@@ -143,8 +143,8 @@ private:
   bool m_flip_image_u{false};
   bool m_flip_image_v{false};
 
-  opencascade::handle<AIS_TexturedShape> m_ais;
-  opencascade::handle<AIS_Shape>         m_border;
+  AIS_TexturedShape_ptr m_ais;
+  AIS_Shape_ptr         m_border;
 };
 
 int Sketch_underlay::Impl::from_base64_char_(char c)
@@ -263,14 +263,14 @@ void Sketch_underlay::Impl::sample_rgba_bilinear_(const uint8_t* rgba, int w, in
 }
 
 /// Straight copy of the image to a bottom-up pixmap (optional row flip for OCCT/OpenGL), with key + tint.
-Handle(Image_PixMap) Sketch_underlay::Impl::make_pixmap_bottom_up_linear_(const uint8_t* rgba, int w, int h,
+Image_PixMap_ptr Sketch_underlay::Impl::make_pixmap_bottom_up_linear_(const uint8_t* rgba, int w, int h,
                                                                           bool key_white_transparent, bool line_tint_enabled,
                                                                           uint8_t tr, uint8_t tg, uint8_t tb, uint8_t ta)
 {
   if (w <= 0 || h <= 0)
     return {};
 
-  Handle(Image_PixMap) pix = new Image_PixMap();
+  Image_PixMap_ptr pix = new Image_PixMap();
   if (!pix->InitTrash(Image_Format_RGBA, static_cast<size_t>(w), static_cast<size_t>(h)))
     return {};
 
@@ -298,7 +298,7 @@ Handle(Image_PixMap) Sketch_underlay::Impl::make_pixmap_bottom_up_linear_(const 
 
 /// Builds a bottom-up pixmap for AIS_TexturedShape when the underlay axes are sheared (non-orthogonal): uses an
 /// axis-aligned face in the sketch plane and inverse-rotated sampling so the bitmap matches OCCT UV on the AABB.
-Handle(Image_PixMap) Sketch_underlay::Impl::make_pixmap_bottom_up_warped_(const uint8_t* rgba, int w, int h,
+Image_PixMap_ptr Sketch_underlay::Impl::make_pixmap_bottom_up_warped_(const uint8_t* rgba, int w, int h,
                                                                           const gp_Vec2d& axis_u, const gp_Vec2d& axis_v,
                                                                           bool key_white_transparent, bool line_tint_enabled,
                                                                           uint8_t tr, uint8_t tg, uint8_t tb, uint8_t ta)
@@ -319,7 +319,7 @@ Handle(Image_PixMap) Sketch_underlay::Impl::make_pixmap_bottom_up_warped_(const 
   out_w     = std::clamp(out_w, 1, k_max_image_dim);
   out_h     = std::clamp(out_h, 1, k_max_image_dim);
 
-  Handle(Image_PixMap) pix = new Image_PixMap();
+  Image_PixMap_ptr pix = new Image_PixMap();
   if (!pix->InitTrash(Image_Format_RGBA, static_cast<size_t>(out_w), static_cast<size_t>(out_h)))
     return {};
 
@@ -750,7 +750,7 @@ void Sketch_underlay::Impl::redisplay_()
     m_ctx.Redisplay(m_ais, true);
 }
 
-void Sketch_underlay::Impl::append_list_hover_ais(std::vector<opencascade::handle<AIS_InteractiveObject>>& out) const
+void Sketch_underlay::Impl::append_list_hover_ais(std::vector<AIS_InteractiveObject_ptr>& out) const
 {
   if (!has_image() || !m_visible)
     return;
@@ -797,7 +797,7 @@ void Sketch_underlay::Impl::build_ais_(const gp_Pln& pln)
 
   const bool is_ortho = underlay_axes_orthogonal_(m_axis_u, m_axis_v);
 
-  Handle(Image_PixMap) pix;
+  Image_PixMap_ptr pix;
 
   if (is_ortho || !m_raw_shear_display)
   {
@@ -945,11 +945,11 @@ void Sketch_underlay::Impl::build_ais_(const gp_Pln& pln)
   if (m_visible)
   {
     m_ctx.Display(m_ais, 3, 0, false);
-    m_ctx.Deactivate(opencascade::handle<AIS_InteractiveObject>(m_ais));
+    m_ctx.Deactivate(AIS_InteractiveObject_ptr(m_ais));
     if (!m_border.IsNull())
     {
       m_ctx.Display(m_border, false);
-      m_ctx.Deactivate(opencascade::handle<AIS_InteractiveObject>(m_border));
+      m_ctx.Deactivate(AIS_InteractiveObject_ptr(m_border));
     }
   }
 }
@@ -1166,7 +1166,7 @@ void Sketch_underlay::rebuild_and_display(const gp_Pln& pln) { m_impl->rebuild_a
 
 void Sketch_underlay::ctx_erase() { m_impl->ctx_erase(); }
 
-void Sketch_underlay::append_list_hover_ais(std::vector<opencascade::handle<AIS_InteractiveObject>>& out) const
+void Sketch_underlay::append_list_hover_ais(std::vector<AIS_InteractiveObject_ptr>& out) const
 {
   m_impl->append_list_hover_ais(out);
 }

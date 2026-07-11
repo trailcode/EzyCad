@@ -605,7 +605,7 @@ Status export_ply_binary_file(const TopoDS_Shape& shape, const std::string& file
   {
     const TopoDS_Face& face = TopoDS::Face(exp.Current());
     TopLoc_Location    loc;
-    const Handle(Poly_Triangulation)& tri = BRep_Tool::Triangulation(face, loc);
+    const Poly_Triangulation_ptr& tri = BRep_Tool::Triangulation(face, loc);
     if (tri.IsNull())
       continue;
 

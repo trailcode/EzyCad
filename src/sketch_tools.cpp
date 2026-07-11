@@ -753,7 +753,7 @@ void Sketch_tools::move_arc_circle_pt_(const ScreenCoords& screen_coords)
   gp_Pnt b = to_3d(m_sketch.m_pln, *pt);
   gp_Pnt c = m_sketch.to_3d_(m_tmp_node_idxs[1]);
 
-  Handle(Geom_TrimmedCurve) arc_circle = GC_MakeArcOfCircle(a, b, c);
+  Geom_TrimmedCurve_ptr arc_circle = GC_MakeArcOfCircle(a, b, c);
   if (!arc_circle)
   {
     m_sketch.m_view.remove(m_tmp_shp);

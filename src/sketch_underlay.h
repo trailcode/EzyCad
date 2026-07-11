@@ -96,7 +96,7 @@ public:
   void ctx_erase();
 
   /// Add displayed AIS objects for Sketch List row hover emphasis (image quad and border wire).
-  void append_list_hover_ais(std::vector<opencascade::handle<AIS_InteractiveObject>>& out) const;
+  void append_list_hover_ais(std::vector<AIS_InteractiveObject_ptr>& out) const;
 
   nlohmann::json to_json(const Ezy_asset_store& store) const;
   /// Returns false if JSON is invalid or image decode fails.
