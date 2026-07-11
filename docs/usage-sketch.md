@@ -45,17 +45,17 @@ See [Sketch origin](#sketch-origin) — every sketch includes one permanent refe
 
 **Every sketch has exactly one Origin** — a fixed reference point on the sketch plane, shown as a **+ inside a circle** on the **active sketch only** (a **permanent node**, not placed with a tool) whenever that sketch is visible in sketch mode (and in tools such as **polar duplicate** that snap to sketch nodes). User-placed [Add node](#add-node-tool) points use a red **+** without a circle on every visible sketch. Color is set in **Settings -> Sketch -> Origin marker color**.
 
-| | |
-| ---: | --- |
-| **When created** | Added automatically when the sketch is created; you do not place it with a tool. |
-| **Location (reference plane)** | Sketch plane coordinates **(0, 0)** — the plane's built-in reference origin (XY, XZ, YZ, or offset reference planes). |
-| **Location (from face)** | **Center of the bounding box** of the face boundary wire when you use [Create sketch from planar face](#create-sketch-from-planar-face-tool). |
-| **Sketch List** | Listed as **Origin** under **Nodes** when you expand a sketch row (see [Sketch List](usage.md#sketch-list)). |
-| **Snapping** | Acts like any other sketch vertex when the marker is shown: axis guides, vertex lock, and distance snap apply. Origins from **other visible sketches** (with marker shown) are also snap targets on the current plane. When **Show origin marker** is off, the Origin is not a snap target. |
-| **Cannot delete** | The Origin cannot be selected or deleted. Hide it with **Show origin marker** in **Sketch properties** instead. |
-| **Marker size** | **Settings -> Sketch -> Permanent node annotation size** (`permanent_node_anno_scale`; see [usage-settings.md](usage-settings.md#settings-file-reference)). |
-| **Marker color** | **Settings -> Sketch -> Origin marker color** (`origin_marker_color`; active sketch only). |
-| **Sketch properties** | **Sketch List -> [P]** — **Show origin marker**, **Position** sliders (range follows the current view) with **Set** for typed values. |
+|                                |                                                                                                                                                                                                                                                                                             |
+| -----------------------------: | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **When created**               | Added automatically when the sketch is created; you do not place it with a tool.                                                                                                                                                                                                            |
+| **Location (reference plane)** | Sketch plane coordinates **(0, 0)** — the plane's built-in reference origin (XY, XZ, YZ, or offset reference planes).                                                                                                                                                                       |
+| **Location (from face)**       | **Center of the bounding box** of the face boundary wire when you use [Create sketch from planar face](#create-sketch-from-planar-face-tool).                                                                                                                                               |
+| **Sketch List**                | Listed as **Origin** under **Nodes** when you expand a sketch row (see [Sketch List](usage.md#sketch-list)).                                                                                                                                                                                |
+| **Snapping**                   | Acts like any other sketch vertex when the marker is shown: axis guides, vertex lock, and distance snap apply. Origins from **other visible sketches** (with marker shown) are also snap targets on the current plane. When **Show origin marker** is off, the Origin is not a snap target. |
+| **Cannot delete**              | The Origin cannot be selected or deleted. Hide it with **Show origin marker** in **Sketch properties** instead.                                                                                                                                                                             |
+| **Marker size**                | **Settings -> Sketch -> Permanent node annotation size** (`permanent_node_anno_scale`; see [usage-settings.md](usage-settings.md#settings-file-reference)).                                                                                                                                 |
+| **Marker color**               | **Settings -> Sketch -> Origin marker color** (`origin_marker_color`; active sketch only).                                                                                                                                                                                                  |
+| **Sketch properties**          | **Sketch List -> [P]** — **Show origin marker**, **Position** sliders (range follows the current view) with **Set** for typed values.                                                                                                                                                       |
 
 **Tips**
 
@@ -68,16 +68,16 @@ See [Sketch origin](#sketch-origin) — every sketch includes one permanent refe
 
 While you draw or place points in sketch mode, EzyCad helps you align to existing geometry. **Snap dist**, **Snap guide mode**, and **All co-axial nodes** are in the Options panel; **Snap guide color**, **Snap guide line width**, and the same mode/co-axial toggles are in **Settings -> Sketch** (see [usage-settings.md](usage-settings.md#sketch-tools)).
 
-| | |
-| ---: | --- |
-| **Snap distance** | Larger **Snap dist** values let snaps engage from farther away (screen pixels, converted to the sketch plane at the cursor). |
-| **Snap guides** | **Snap guide mode**: *Traditional* (local markers at guide intersections), *Fullscreen* (view-spanning axis lines), or *Both*. **Snap guide color (node)** is used when both X and Y align to the same vertex; **Snap guide color (axis)** when only one axis aligns. A separate checkbox **All co-axial nodes** (in the sketch Options panel and in Settings) enables *global* mode: when on, full horizontal and vertical guide lines + markers are shown for *all* nodes in the current sketch and all other visible sketches (the complete set of co-axial alignments). When off (default), only the closest node per active axis is annotated (classic closest-relative behavior). |
-| **Axis alignment** | Near a snap target, the pick can align to that point's **X** or **Y** on the sketch plane; guides show which axis is active. When **both** axes align to the **same** point, the cursor **locks to that vertex**. |
-| **Sketch origin** | Each sketch's built-in **Origin** (see [Sketch origin](#sketch-origin)) is a snap target when its marker is shown. |
-| **Mid-point snap (Add node)** | A click near a **straight** edge (not at its ends) snaps onto the segment and **splits** it at commit time (see [Add node tool](#add-node-tool)). Separate from vertex lock. |
-| **Automatic splitting on edge intersections** | When you add a new straight (linear) edge using the Line Edge tool or Multi-Line Edge tool, if it crosses or touches the interior of any existing straight edge, the existing edge is automatically split at the intersection point. The new edge is also subdivided into atomic segments where needed. The same splitting occurs when an endpoint of the new edge snaps to the midpoint of an existing edge. When you add an **arc segment**, existing straight and arc edges are split at interior crossings, and the new arc is subdivided at intersection points on its interior. This produces correct T-junctions, crossings, and cleanly divided faces from a single sketch. |
-| **Other visible sketches** | Nodes from **other visible sketches** are projected onto the current sketch plane and act as snap targets (same distance rules). Each visible sketch contributes its **Origin** when that sketch's marker is shown, plus any user-placed nodes. Useful for multi-sketch layouts and tools such as **polar duplicate** that pick sketch points. |
-| **Operational axis mode** | While an operational axis is **defined** and **Operational axis** mode is active (mirror/revolve phase), sketch snap and permanent **+** node markers are **suppressed** so edge and face selection stays clear. Normal snapping applies again after **Clear axis** or when you leave the tool. Axis placement (before the axis exists) still uses snap. |
+|                                               |                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                         |
+| --------------------------------------------: | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Snap distance**                             | Larger **Snap dist** values let snaps engage from farther away (screen pixels, converted to the sketch plane at the cursor).                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            |
+| **Snap guides**                               | **Snap guide mode**: *Traditional* (local markers at guide intersections), *Fullscreen* (view-spanning axis lines), or *Both*. **Snap guide color (node)** is used when both X and Y align to the same vertex; **Snap guide color (axis)** when only one axis aligns. A separate checkbox **All co-axial nodes** (in the sketch Options panel and in Settings) enables *global* mode: when on, full horizontal and vertical guide lines + markers are shown for *all* nodes in the current sketch and all other visible sketches (the complete set of co-axial alignments). When off (default), only the closest node per active axis is annotated (classic closest-relative behavior). |
+| **Axis alignment**                            | Near a snap target, the pick can align to that point's **X** or **Y** on the sketch plane; guides show which axis is active. When **both** axes align to the **same** point, the cursor **locks to that vertex**.                                                                                                                                                                                                                                                                                                                                                                                                                                                                       |
+| **Sketch origin**                             | Each sketch's built-in **Origin** (see [Sketch origin](#sketch-origin)) is a snap target when its marker is shown.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      |
+| **Mid-point snap (Add node)**                 | A click near a **straight** edge (not at its ends) snaps onto the segment and **splits** it at commit time (see [Add node tool](#add-node-tool)). Separate from vertex lock.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            |
+| **Automatic splitting on edge intersections** | When you add a new straight (linear) edge using the Line Edge tool or Multi-Line Edge tool, if it crosses or touches the interior of any existing straight edge, the existing edge is automatically split at the intersection point. The new edge is also subdivided into atomic segments where needed. The same splitting occurs when an endpoint of the new edge snaps to the midpoint of an existing edge. When you add an **arc segment**, existing straight and arc edges are split at interior crossings, and the new arc is subdivided at intersection points on its interior. This produces correct T-junctions, crossings, and cleanly divided faces from a single sketch.     |
+| **Other visible sketches**                    | Nodes from **other visible sketches** are projected onto the current sketch plane and act as snap targets (same distance rules). Each visible sketch contributes its **Origin** when that sketch's marker is shown, plus any user-placed nodes. Useful for multi-sketch layouts and tools such as **polar duplicate** that pick sketch points.                                                                                                                                                                                                                                                                                                                                          |
+| **Operational axis mode**                     | While an operational axis is **defined** and **Operational axis** mode is active (mirror/revolve phase), sketch snap and permanent **+** node markers are **suppressed** so edge and face selection stays clear. Normal snapping applies again after **Clear axis** or when you leave the tool. Axis placement (before the axis exists) still uses snap.                                                                                                                                                                                                                                                                                                                                |
 
 **Angle constraint:** When a line or add-node rubber band has an active angle constraint, vertex and axis snap may be disabled or relaxed so the typed angle stays exact (see each tool's section).
 
@@ -92,15 +92,15 @@ Common keyboard shortcuts (hotkeys) while working in 2D sketch mode or with sket
 
 ### Common sketch hotkeys
 
-| Hotkey                        | Action |
-| ---                           | --- |
-| <kbd>Tab</kbd>                | Open precise distance / length / radius / size input dialog (most creation tools) |
-| <kbd>Shift</kbd>+<kbd>Tab</kbd> | Open angle (degrees) input dialog for constrained line / multi-line / add-node placement |
-| <kbd>Esc</kbd>                | Cancel the current tool, step, or rubber-band preview |
-| <kbd>Enter</kbd>              | Confirm current numeric input or finalize the step |
-| <kbd>D</kbd>                  | Activate the Dimension tool |
-| <kbd>Shift</kbd>+<kbd>D</kbd> / <kbd>Delete</kbd> / <kbd>Backspace</kbd> | Delete the selected sketch element(s) or dimension |
-| <kbd>Right-click</kbd>        | In multi-line / sequences: complete current item and continue, or finish the whole operation |
+| Hotkey                                                                   | Action                                                                                       |
+| ------------------------------------------------------------------------ | -------------------------------------------------------------------------------------------- |
+| <kbd>Tab</kbd>                                                           | Open precise distance / length / radius / size input dialog (most creation tools)            |
+| <kbd>Shift</kbd>+<kbd>Tab</kbd>                                          | Open angle (degrees) input dialog for constrained line / multi-line / add-node placement     |
+| <kbd>Esc</kbd>                                                           | Cancel the current tool, step, or rubber-band preview                                        |
+| <kbd>Enter</kbd>                                                         | Confirm current numeric input or finalize the step                                           |
+| <kbd>D</kbd>                                                             | Activate the Dimension tool                                                                  |
+| <kbd>Shift</kbd>+<kbd>D</kbd> / <kbd>Delete</kbd> / <kbd>Backspace</kbd> | Delete the selected sketch element(s) or dimension                                           |
+| <kbd>Right-click</kbd>                                                   | In multi-line / sequences: complete current item and continue, or finish the whole operation |
 
 **Notes:**
 - <kbd>Tab</kbd> / <kbd>Shift+Tab</kbd> work even when focus is in the 3D view (they are routed to the active sketch tool for precise entry).
@@ -109,11 +109,11 @@ Common keyboard shortcuts (hotkeys) while working in 2D sketch mode or with sket
 
 ### Move / rotate / polar axis constraints (when those options are active)
 
-| Hotkey   | Action |
-| ---      | --- |
+| Hotkey       | Action                                                                    |
+| ------------ | ------------------------------------------------------------------------- |
 | <kbd>X</kbd> | Toggle / cycle X axis constraint (move) or rotation axis (rotate / polar) |
-| <kbd>Y</kbd> | Toggle / cycle Y |
-| <kbd>Z</kbd> | Toggle / cycle Z |
+| <kbd>Y</kbd> | Toggle / cycle Y                                                          |
+| <kbd>Z</kbd> | Toggle / cycle Z                                                          |
 
 See the individual tool sections (and [usage.md#hotkeys](usage.md#hotkeys)) for full context and additional view / general hotkeys.
 
@@ -130,15 +130,15 @@ The single line edge tool allows you to create straight line segments between tw
 
 **Features:**
 
-| | |
-| ---: | --- |
-| **Two-point creation** | Click to set the start point, then click to set the end point |
-| **Real-time preview** | See the line shape while moving the mouse |
-| **Precise length control** | Use the distance input dialog (<kbd>Tab</kbd> key) for exact line lengths |
-| **Angle constraint** | Use the angle input dialog (<kbd>Shift</kbd>+<kbd>Tab</kbd>) to constrain the line to a specific angle |
-| **Snap support** | Automatically snaps to existing nodes and geometry (disabled when angle constraint is active) |
-| **Dimension annotations** | Optional length dimensions can be displayed |
-| **Tool Options** | **Add midpoint nodes** and **Place from center** checkboxes (see [Line edge Options](#line-edge-options) below); each has a **?** help button |
+|                            |                                                                                                                                               |
+| -------------------------: | --------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Two-point creation**     | Click to set the start point, then click to set the end point                                                                                 |
+| **Real-time preview**      | See the line shape while moving the mouse                                                                                                     |
+| **Precise length control** | Use the distance input dialog (<kbd>Tab</kbd> key) for exact line lengths                                                                     |
+| **Angle constraint**       | Use the angle input dialog (<kbd>Shift</kbd>+<kbd>Tab</kbd>) to constrain the line to a specific angle                                        |
+| **Snap support**           | Automatically snaps to existing nodes and geometry (disabled when angle constraint is active)                                                 |
+| **Dimension annotations**  | Optional length dimensions can be displayed                                                                                                   |
+| **Tool Options**           | **Add midpoint nodes** and **Place from center** checkboxes (see [Line edge Options](#line-edge-options) below); each has a **?** help button |
 
 (line-edge-options)=
 ### Line edge Options
@@ -178,13 +178,13 @@ When checked, the **first click** sets the **midpoint** of the new edge (not an 
 
 **Shortcuts:**
 
-| | |
-| ---: | --- |
-| <kbd>Tab</kbd> | Open distance input dialog for precise length control |
+|                                 |                                                                                              |
+| ------------------------------: | -------------------------------------------------------------------------------------------- |
+| <kbd>Tab</kbd>                  | Open distance input dialog for precise length control                                        |
 | <kbd>Shift</kbd>+<kbd>Tab</kbd> | Open angle input dialog to constrain the line to a specific angle (after first point is set) |
-| <kbd>Escape</kbd> | Cancel the current line creation |
-| <kbd>Enter</kbd> | Finalize the line (if using distance or angle input) |
-| <kbd>Right-click</kbd> | Complete the current line and start a new one |
+| <kbd>Escape</kbd>               | Cancel the current line creation                                                             |
+| <kbd>Enter</kbd>                | Finalize the line (if using distance or angle input)                                         |
+| <kbd>Right-click</kbd>          | Complete the current line and start a new one                                                |
 
 **Angle Constraint:**
 - After setting the first point, press **Shift+Tab** to open the angle input dialog
@@ -211,15 +211,15 @@ The multi-line edge tool allows you to create multiple connected line segments i
 
 **Features:**
 
-| | |
-| ---: | --- |
-| **Continuous edge creation** | Click multiple points to create a chain of connected line segments |
-| **Real-time preview** | See each edge shape while moving the mouse before clicking |
-| **Precise length control** | Use the distance input dialog (<kbd>Tab</kbd> key) for exact edge lengths |
-| **Angle constraint** | Use the angle input dialog (<kbd>Shift</kbd>+<kbd>Tab</kbd>) to constrain the current edge to an angle (in degrees) |
-| **Snap support** | Automatically snaps to existing nodes and geometry |
-| **Distance annotations** | Real-time distance display for the current edge being drawn |
-| **Flexible finalization** | Continue adding edges until you right-click to finalize the entire sequence |
+|                              |                                                                                                                     |
+| ---------------------------: | ------------------------------------------------------------------------------------------------------------------- |
+| **Continuous edge creation** | Click multiple points to create a chain of connected line segments                                                  |
+| **Real-time preview**        | See each edge shape while moving the mouse before clicking                                                          |
+| **Precise length control**   | Use the distance input dialog (<kbd>Tab</kbd> key) for exact edge lengths                                           |
+| **Angle constraint**         | Use the angle input dialog (<kbd>Shift</kbd>+<kbd>Tab</kbd>) to constrain the current edge to an angle (in degrees) |
+| **Snap support**             | Automatically snaps to existing nodes and geometry                                                                  |
+| **Distance annotations**     | Real-time distance display for the current edge being drawn                                                         |
+| **Flexible finalization**    | Continue adding edges until you right-click to finalize the entire sequence                                         |
 
 **How to use:**
 1. ![ls](res/icons/ls.png) Select the **Multi-line Edge** tool from the toolbar
@@ -234,13 +234,13 @@ The multi-line edge tool allows you to create multiple connected line segments i
 
 **Shortcuts:**
 
-| | |
-| ---: | --- |
-| <kbd>Tab</kbd> | Open distance input dialog for precise length control of the current edge |
+|                                 |                                                                                              |
+| ------------------------------: | -------------------------------------------------------------------------------------------- |
+| <kbd>Tab</kbd>                  | Open distance input dialog for precise length control of the current edge                    |
 | <kbd>Shift</kbd>+<kbd>Tab</kbd> | Open angle input dialog to constrain the current edge to an angle (after first point is set) |
-| <kbd>Escape</kbd> | Cancel the entire multi-line creation operation |
-| <kbd>Enter</kbd> | Finalize the current edge length (if using distance input) and continue to the next edge |
-| <kbd>Right-click</kbd> | Finalize the entire multi-line sequence and complete the operation |
+| <kbd>Escape</kbd>               | Cancel the entire multi-line creation operation                                              |
+| <kbd>Enter</kbd>                | Finalize the current edge length (if using distance input) and continue to the next edge     |
+| <kbd>Right-click</kbd>          | Finalize the entire multi-line sequence and complete the operation                           |
 
 **Workflow details:**
 - Each click after the first creates a new edge connected to the previous edge's end point
@@ -274,13 +274,13 @@ The center-radius circle tool allows you to create circles by defining a center 
 
 **Features:**
 
-| | |
-| ---: | --- |
-| **Two-point creation** | Click to set the center, then click to set the radius point |
-| **Real-time preview** | See the circle shape while dragging the radius point |
-| **Precise radius control** | Use the distance input dialog (<kbd>Tab</kbd> key) for exact radius values |
-| **Angle constraint** | Use the angle input dialog (<kbd>Shift</kbd>+<kbd>Tab</kbd>) to constrain the direction from the center to the radius point |
-| **Snap support** | Automatically snaps to existing nodes and geometry (disabled when angle constraint is active) |
+|                            |                                                                                                                             |
+| -------------------------: | --------------------------------------------------------------------------------------------------------------------------- |
+| **Two-point creation**     | Click to set the center, then click to set the radius point                                                                 |
+| **Real-time preview**      | See the circle shape while dragging the radius point                                                                        |
+| **Precise radius control** | Use the distance input dialog (<kbd>Tab</kbd> key) for exact radius values                                                  |
+| **Angle constraint**       | Use the angle input dialog (<kbd>Shift</kbd>+<kbd>Tab</kbd>) to constrain the direction from the center to the radius point |
+| **Snap support**           | Automatically snaps to existing nodes and geometry (disabled when angle constraint is active)                               |
 
 **How to use:**
 1. ![Circle Tool](res/icons/Sketcher_CreateCircle.png) Select the **Circle** tool from the toolbar
@@ -294,12 +294,12 @@ The center-radius circle tool allows you to create circles by defining a center 
 
 **Shortcuts:**
 
-| | |
-| ---: | --- |
-| <kbd>Tab</kbd> | Open distance input dialog for precise radius control |
+|                                 |                                                                                                       |
+| ------------------------------: | ----------------------------------------------------------------------------------------------------- |
+| <kbd>Tab</kbd>                  | Open distance input dialog for precise radius control                                                 |
 | <kbd>Shift</kbd>+<kbd>Tab</kbd> | Open angle input dialog to constrain the radius direction from the center (after center point is set) |
-| <kbd>Escape</kbd> | Cancel the current circle creation |
-| <kbd>Enter</kbd> | Finalize the circle (if using distance input) |
+| <kbd>Escape</kbd>               | Cancel the current circle creation                                                                    |
+| <kbd>Enter</kbd>                | Finalize the circle (if using distance input)                                                         |
 
 **Angle Constraint:**
 - After setting the center point, press **Shift+Tab** to open the angle input dialog
@@ -324,11 +324,11 @@ The three-point circle tool is planned for future development. This feature woul
 
 **Planned Features:**
 
-| | |
-| ---: | --- |
-| **Three-point creation** | Click three points that lie on the circle's circumference |
+|                                             |                                                                      |
+| ------------------------------------------: | -------------------------------------------------------------------- |
+| **Three-point creation**                    | Click three points that lie on the circle's circumference            |
 | **Automatic center and radius calculation** | The system would compute the center and radius from the three points |
-| **Geometric validation** | Ensure the three points are not collinear |
+| **Geometric validation**                    | Ensure the three points are not collinear                            |
 
 **Note**: ![Sketcher_Create3PointCircle](res/icons/Sketcher_Create3PointCircle.png) The toolbar icon exists but the functionality is not yet implemented.
 
@@ -345,20 +345,20 @@ The circle tool follows this workflow:
 
 **Common Operations with Circles:**
 
-| | |
-| ---: | --- |
-| **Extrusion** | Select the circle face and [extrude](usage.md#extrude-sketch-face-tool-e) to create cylindrical shapes |
-| **Boolean Operations** | Use circles in [cut, fuse, or common](usage.md#boolean-operations) operations |
-| **Pattern Creation** | Use circles as the basis for polar arrays or other patterns |
-| **Dimensioning** | Add radius or diameter dimensions to circles |
+|                        |                                                                                                        |
+| ---------------------: | ------------------------------------------------------------------------------------------------------ |
+| **Extrusion**          | Select the circle face and [extrude](usage.md#extrude-sketch-face-tool-e) to create cylindrical shapes |
+| **Boolean Operations** | Use circles in [cut, fuse, or common](usage.md#boolean-operations) operations                          |
+| **Pattern Creation**   | Use circles as the basis for polar arrays or other patterns                                            |
+| **Dimensioning**       | Add radius or diameter dimensions to circles                                                           |
 
 **Error Handling:**
 
-| | |
-| ---: | --- |
+|                       |                                                          |
+| --------------------: | -------------------------------------------------------- |
 | **Coincident Points** | The system prevents creation of circles with zero radius |
-| **Invalid Geometry** | Circles that would be too small are rejected |
-| **Snap Integration** | Use existing snap points for precise circle placement |
+| **Invalid Geometry**  | Circles that would be too small are rejected             |
+| **Snap Integration**  | Use existing snap points for precise circle placement    |
 
 ## Arc Segment Creation Tool
 
@@ -368,16 +368,16 @@ The arc segment tool creates a single circular arc edge from three clicks: **sta
 
 **Features:**
 
-| | |
-| ---: | --- |
-| **Three-point creation** | Click start, then a point on the arc that sets bulge/curvature, then end |
-| **Rubber-band preview** | After the first click, a straight preview line follows the cursor; after the second click, an arc preview follows the cursor until the third click |
-| **Automatic finalization** | The arc is created and added to the sketch after the third click |
-| **Circular arc** | One smooth circular arc through the three defining points |
-| **Intersection splitting** | Splits existing straight and arc edges at interior crossings; the new arc is subdivided where other edges cross its interior |
+|                                |                                                                                                                                                                 |
+| -----------------------------: | --------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Three-point creation**       | Click start, then a point on the arc that sets bulge/curvature, then end                                                                                        |
+| **Rubber-band preview**        | After the first click, a straight preview line follows the cursor; after the second click, an arc preview follows the cursor until the third click              |
+| **Automatic finalization**     | The arc is created and added to the sketch after the third click                                                                                                |
+| **Circular arc**               | One smooth circular arc through the three defining points                                                                                                       |
+| **Intersection splitting**     | Splits existing straight and arc edges at interior crossings; the new arc is subdivided where other edges cross its interior                                    |
 | **Optional arc midpoint node** | When **Add midpoint nodes** is on in the Options panel, a snap node is placed at the arc's geometric midpoint (see [Arc segment Options](#arc-segment-options)) |
-| **Snap support** | Snaps to existing nodes and geometry |
-| **Unique points** | All three clicks must be different (cannot be coincident) |
+| **Snap support**               | Snaps to existing nodes and geometry                                                                                                                            |
+| **Unique points**              | All three clicks must be different (cannot be coincident)                                                                                                       |
 
 **How to use:**
 1. ![Sketcher_Element_Arc_Edge](res/icons/Sketcher_Element_Arc_Edge.png) Select the **Arc Segment** tool from the toolbar
@@ -391,18 +391,18 @@ The arc segment tool creates a single circular arc edge from three clicks: **sta
 
 **Point order:**
 
-| | |
-| ---: | --- |
-| **First click** | Start — where the arc begins |
+|                  |                                                                                                                 |
+| ---------------: | --------------------------------------------------------------------------------------------------------------- |
+| **First click**  | Start — where the arc begins                                                                                    |
 | **Second click** | Bulge point — any point on the intended arc between start and end (sets which side of the chord the arc bulges) |
-| **Third click** | End — where the arc ends |
+| **Third click**  | End — where the arc ends                                                                                        |
 
 **Shortcuts:**
 
-| | |
-| ---: | --- |
-| <kbd>Escape</kbd> | Cancel the current arc creation (clears all points) |
-| **Note** | The arc is automatically finalized after the third click; no manual finalization is needed |
+|                   |                                                                                            |
+| ----------------: | ------------------------------------------------------------------------------------------ |
+| <kbd>Escape</kbd> | Cancel the current arc creation (clears all points)                                        |
+| **Note**          | The arc is automatically finalized after the third click; no manual finalization is needed |
 
 (arc-segment-options)=
 ### Arc segment Options
@@ -443,15 +443,15 @@ The square tool allows you to create perfect squares by defining a center point 
 
 **Features:**
 
-| | |
-| ---: | --- |
-| **Two-point creation** | Click to set the center point, then click to set the midpoint of one edge |
-| **Real-time preview** | See the square shape while moving the mouse |
-| **Perfect square** | Automatically ensures all sides are equal length |
-| **Orientation control** | The square's orientation is determined by the direction from center to edge midpoint |
-| **Precise size control** | Use the distance input dialog (<kbd>Tab</kbd> key) for exact side lengths |
-| **Angle constraint** | Use the angle input dialog (<kbd>Shift</kbd>+<kbd>Tab</kbd>) to constrain the orientation (direction from center to edge midpoint) |
-| **Snap support** | Automatically snaps to existing nodes and geometry (disabled when angle constraint is active) |
+|                          |                                                                                                                                    |
+| -----------------------: | ---------------------------------------------------------------------------------------------------------------------------------- |
+| **Two-point creation**   | Click to set the center point, then click to set the midpoint of one edge                                                          |
+| **Real-time preview**    | See the square shape while moving the mouse                                                                                        |
+| **Perfect square**       | Automatically ensures all sides are equal length                                                                                   |
+| **Orientation control**  | The square's orientation is determined by the direction from center to edge midpoint                                               |
+| **Precise size control** | Use the distance input dialog (<kbd>Tab</kbd> key) for exact side lengths                                                          |
+| **Angle constraint**     | Use the angle input dialog (<kbd>Shift</kbd>+<kbd>Tab</kbd>) to constrain the orientation (direction from center to edge midpoint) |
+| **Snap support**         | Automatically snaps to existing nodes and geometry (disabled when angle constraint is active)                                      |
 
 **How to use:**
 1. ![Sketcher_CreateSquare](res/icons/Sketcher_CreateSquare.png) Select the **Square** tool from the toolbar
@@ -465,12 +465,12 @@ The square tool allows you to create perfect squares by defining a center point 
 
 **Shortcuts:**
 
-| | |
-| ---: | --- |
-| <kbd>Tab</kbd> | Open distance input dialog for precise side length control |
+|                                 |                                                                                                                          |
+| ------------------------------: | ------------------------------------------------------------------------------------------------------------------------ |
+| <kbd>Tab</kbd>                  | Open distance input dialog for precise side length control                                                               |
 | <kbd>Shift</kbd>+<kbd>Tab</kbd> | Open angle input dialog to constrain the orientation (direction from center to edge midpoint; after center point is set) |
-| <kbd>Escape</kbd> | Cancel the current square creation |
-| <kbd>Enter</kbd> | Finalize the square (if using distance input) |
+| <kbd>Escape</kbd>               | Cancel the current square creation                                                                                       |
+| <kbd>Enter</kbd>                | Finalize the square (if using distance input)                                                                            |
 
 **Angle Constraint:**
 - After setting the center point, press **Shift+Tab** to open the angle input dialog
@@ -496,14 +496,14 @@ The rectangle tool allows you to create rectangles by defining two opposite corn
 
 **Features:**
 
-| | |
-| ---: | --- |
-| **Two-point creation** | Click to set the first corner, then click to set the opposite corner |
-| **Real-time preview** | See the rectangle shape while moving the mouse |
-| **Precise size control** | Use the distance input dialog (<kbd>Tab</kbd> key) for exact dimensions |
-| **Angle constraint** | Use the angle input dialog (<kbd>Shift</kbd>+<kbd>Tab</kbd>) to constrain the direction from the first to the opposite corner |
-| **Snap support** | Automatically snaps to existing nodes and geometry (disabled when angle constraint is active) |
-| **Automatic corner calculation** | The system automatically calculates the other two corners |
+|                                  |                                                                                                                               |
+| -------------------------------: | ----------------------------------------------------------------------------------------------------------------------------- |
+| **Two-point creation**           | Click to set the first corner, then click to set the opposite corner                                                          |
+| **Real-time preview**            | See the rectangle shape while moving the mouse                                                                                |
+| **Precise size control**         | Use the distance input dialog (<kbd>Tab</kbd> key) for exact dimensions                                                       |
+| **Angle constraint**             | Use the angle input dialog (<kbd>Shift</kbd>+<kbd>Tab</kbd>) to constrain the direction from the first to the opposite corner |
+| **Snap support**                 | Automatically snaps to existing nodes and geometry (disabled when angle constraint is active)                                 |
+| **Automatic corner calculation** | The system automatically calculates the other two corners                                                                     |
 
 **How to use:**
 1. ![Sketcher_CreateRectangle](res/icons/Sketcher_CreateRectangle.png) Select the **Rectangle** tool from the toolbar
@@ -517,12 +517,12 @@ The rectangle tool allows you to create rectangles by defining two opposite corn
 
 **Shortcuts:**
 
-| | |
-| ---: | --- |
-| <kbd>Tab</kbd> | Open distance input dialog for precise dimension control |
+|                                 |                                                                                                                      |
+| ------------------------------: | -------------------------------------------------------------------------------------------------------------------- |
+| <kbd>Tab</kbd>                  | Open distance input dialog for precise dimension control                                                             |
 | <kbd>Shift</kbd>+<kbd>Tab</kbd> | Open angle input dialog to constrain the direction from the first to the opposite corner (after first corner is set) |
-| <kbd>Escape</kbd> | Cancel the current rectangle creation |
-| <kbd>Enter</kbd> | Finalize the rectangle (if using distance input) |
+| <kbd>Escape</kbd>               | Cancel the current rectangle creation                                                                                |
+| <kbd>Enter</kbd>                | Finalize the rectangle (if using distance input)                                                                     |
 
 **Angle Constraint:**
 - After setting the first corner point, press **Shift+Tab** to open the angle input dialog
@@ -549,14 +549,14 @@ The rectangle with center point tool allows you to create rectangles by defining
 
 **Features:**
 
-| | |
-| ---: | --- |
-| **Two-point creation** | Click to set the center point, then click to set a corner point |
-| **Real-time preview** | See the rectangle shape while moving the mouse |
-| **Centered creation** | The rectangle is centered on the first point |
-| **Precise size control** | Use the distance input dialog (<kbd>Tab</kbd> key) for exact dimensions |
-| **Angle constraint** | Use the angle input dialog (<kbd>Shift</kbd>+<kbd>Tab</kbd>) to constrain the orientation (direction from center to corner point) |
-| **Snap support** | Automatically snaps to existing nodes and geometry (disabled when angle constraint is active) |
+|                          |                                                                                                                                   |
+| -----------------------: | --------------------------------------------------------------------------------------------------------------------------------- |
+| **Two-point creation**   | Click to set the center point, then click to set a corner point                                                                   |
+| **Real-time preview**    | See the rectangle shape while moving the mouse                                                                                    |
+| **Centered creation**    | The rectangle is centered on the first point                                                                                      |
+| **Precise size control** | Use the distance input dialog (<kbd>Tab</kbd> key) for exact dimensions                                                           |
+| **Angle constraint**     | Use the angle input dialog (<kbd>Shift</kbd>+<kbd>Tab</kbd>) to constrain the orientation (direction from center to corner point) |
+| **Snap support**         | Automatically snaps to existing nodes and geometry (disabled when angle constraint is active)                                     |
 
 **How to use:**
 1. ![Sketcher_CreateRectangle_Center](res/icons/Sketcher_CreateRectangle_Center.png) Select the **Rectangle with Center Point** tool from the toolbar
@@ -570,12 +570,12 @@ The rectangle with center point tool allows you to create rectangles by defining
 
 **Shortcuts:**
 
-| | |
-| ---: | --- |
-| <kbd>Tab</kbd> | Open distance input dialog for precise dimension control |
+|                                 |                                                                                                                         |
+| ------------------------------: | ----------------------------------------------------------------------------------------------------------------------- |
+| <kbd>Tab</kbd>                  | Open distance input dialog for precise dimension control                                                                |
 | <kbd>Shift</kbd>+<kbd>Tab</kbd> | Open angle input dialog to constrain the orientation (direction from center to corner point; after center point is set) |
-| <kbd>Escape</kbd> | Cancel the current rectangle creation |
-| <kbd>Enter</kbd> | Finalize the rectangle (if using distance input) |
+| <kbd>Escape</kbd>               | Cancel the current rectangle creation                                                                                   |
+| <kbd>Enter</kbd>                | Finalize the rectangle (if using distance input)                                                                        |
 
 **Angle Constraint:**
 - After setting the center point, press **Shift+Tab** to open the angle input dialog
@@ -596,11 +596,11 @@ The rectangle with center point tool allows you to create rectangles by defining
 
 **Comparison of Rectangle Tools:**
 
-| | |
-| ---: | --- |
-| **Rectangle (Two Points)** | Define opposite corners - useful when you know the corner positions |
+|                              |                                                                                            |
+| ---------------------------: | ------------------------------------------------------------------------------------------ |
+| **Rectangle (Two Points)**   | Define opposite corners - useful when you know the corner positions                        |
 | **Rectangle (Center Point)** | Define center and corner - useful when you want the rectangle centered on a specific point |
-| **Square** | Always creates a perfect square - use when you need equal sides |
+| **Square**                   | Always creates a perfect square - use when you need equal sides                            |
 
 ## Slot Creation Tool
 
@@ -610,16 +610,16 @@ The slot tool allows you to create an oblong or oval-shaped slot with rounded en
 
 **Features:**
 
-| | |
-| ---: | --- |
-| **Three-point creation** | Click to set the first arc center, then the second arc center, then a point to define the radius |
-| **Real-time preview** | See the slot shape while moving the mouse after setting the first two points |
-| **Automatic finalization** | The slot is automatically created and added to your sketch after the third point is clicked |
-| **Rounded ends** | Creates semicircular arcs at both ends with equal radius |
-| **Parallel edges** | The two straight edges connecting the arcs are always parallel |
-| **Precise size control** | Use the distance input dialog (<kbd>Tab</kbd> key) for exact dimensions |
-| **Angle constraint** | Use the angle input dialog (<kbd>Shift</kbd>+<kbd>Tab</kbd>) to constrain the orientation (direction of the slot length between arc centers, or radius direction) |
-| **Snap support** | Automatically snaps to existing nodes and geometry (disabled when angle constraint is active) |
+|                            |                                                                                                                                                                   |
+| -------------------------: | ----------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Three-point creation**   | Click to set the first arc center, then the second arc center, then a point to define the radius                                                                  |
+| **Real-time preview**      | See the slot shape while moving the mouse after setting the first two points                                                                                      |
+| **Automatic finalization** | The slot is automatically created and added to your sketch after the third point is clicked                                                                       |
+| **Rounded ends**           | Creates semicircular arcs at both ends with equal radius                                                                                                          |
+| **Parallel edges**         | The two straight edges connecting the arcs are always parallel                                                                                                    |
+| **Precise size control**   | Use the distance input dialog (<kbd>Tab</kbd> key) for exact dimensions                                                                                           |
+| **Angle constraint**       | Use the angle input dialog (<kbd>Shift</kbd>+<kbd>Tab</kbd>) to constrain the orientation (direction of the slot length between arc centers, or radius direction) |
+| **Snap support**           | Automatically snaps to existing nodes and geometry (disabled when angle constraint is active)                                                                     |
 
 **How to use:**
 1. ![Sketcher_CreateSlot](res/icons/Sketcher_CreateSlot.png) Select the **Slot** tool from the toolbar
@@ -645,13 +645,13 @@ The slot tool allows you to create an oblong or oval-shaped slot with rounded en
 
 **Shortcuts:**
 
-| | |
-| ---: | --- |
-| <kbd>Tab</kbd> | Open distance input dialog for precise dimension control (length of slot on first edge, or radius on third point) |
+|                                 |                                                                                                                                                          |
+| ------------------------------: | -------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| <kbd>Tab</kbd>                  | Open distance input dialog for precise dimension control (length of slot on first edge, or radius on third point)                                        |
 | <kbd>Shift</kbd>+<kbd>Tab</kbd> | Open angle input dialog to constrain the orientation (direction of the slot on first edge, or radius direction on third point; after previous point set) |
-| <kbd>Escape</kbd> | Cancel the current slot creation |
-| <kbd>Enter</kbd> | Finalize the slot (if using distance input) |
-| **Note** | The slot is automatically finalized after the third point, so no manual finalization is needed |
+| <kbd>Escape</kbd>               | Cancel the current slot creation                                                                                                                         |
+| <kbd>Enter</kbd>                | Finalize the slot (if using distance input)                                                                                                              |
+| **Note**                        | The slot is automatically finalized after the third point, so no manual finalization is needed                                                           |
 
 **Angle Constraint:**
 - The tool has two main rubber-band stages where angle/distance apply:
@@ -680,12 +680,12 @@ The slot tool allows you to create an oblong or oval-shaped slot with rounded en
 
 **Technical details:**
 
-| | |
-| ---: | --- |
+|                    |                                                                   |
+| -----------------: | ----------------------------------------------------------------- |
 | **Slot structure** | Four edges: two semicircular arcs and two straight parallel edges |
-| **Arcs** | Created using the arc segment functionality |
-| **Straight edges** | Connect the arcs at their endpoints |
-| **Closed shape** | Suitable for face creation and extrusion |
+| **Arcs**           | Created using the arc segment functionality                       |
+| **Straight edges** | Connect the arcs at their endpoints                               |
+| **Closed shape**   | Suitable for face creation and extrusion                          |
 
 **Common use cases:**
 - Creating mounting slots for screws or bolts
@@ -703,15 +703,15 @@ The axis reference line is **visible only while Operational axis mode is active*
 
 **Features:**
 
-| | |
-| ---: | --- |
-| **Two-point definition** | Click to set the start point, then click to set the end point of the axis line |
-| **Real-time preview** | See the axis line while moving the mouse |
-| **Visual length control (Tab)** | Use the distance input dialog (<kbd>Tab</kbd> key) to set the length of the *drawn helper segment* (purely visual/reference; the length has no effect on mirror or revolve results) |
-| **Angle constraint** | Use the angle input dialog (<kbd>Shift</kbd>+<kbd>Tab</kbd>) to constrain the direction of the axis line |
-| **Mirror operations** | Use the defined axis to mirror selected edges |
-| **Revolve operations** | Use the defined axis to revolve selected edges or faces |
-| **Selection-friendly mirror/revolve** | After the axis is defined, permanent **+** markers and sketch snap are hidden so you can select edges and faces without snap clutter |
+|                                       |                                                                                                                                                                                     |
+| ------------------------------------: | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Two-point definition**              | Click to set the start point, then click to set the end point of the axis line                                                                                                      |
+| **Real-time preview**                 | See the axis line while moving the mouse                                                                                                                                            |
+| **Visual length control (Tab)**       | Use the distance input dialog (<kbd>Tab</kbd> key) to set the length of the *drawn helper segment* (purely visual/reference; the length has no effect on mirror or revolve results) |
+| **Angle constraint**                  | Use the angle input dialog (<kbd>Shift</kbd>+<kbd>Tab</kbd>) to constrain the direction of the axis line                                                                            |
+| **Mirror operations**                 | Use the defined axis to mirror selected edges                                                                                                                                       |
+| **Revolve operations**                | Use the defined axis to revolve selected edges or faces                                                                                                                             |
+| **Selection-friendly mirror/revolve** | After the axis is defined, permanent **+** markers and sketch snap are hidden so you can select edges and faces without snap clutter                                                |
 
 **How to Use:**
 
@@ -753,11 +753,11 @@ Once the axis exists, the Options panel (under the **Sketch operation** heading)
 **Using the Operation Axis (UI reference):**
 The controls that appear in the Options panel once an axis is defined are:
 
-| Control | Purpose |
-| --- | --- |
-| **Mirror** button | Mirrors selected edges across the operation axis (stays in 2D sketch). |
+| Control                                                  | Purpose                                                                                                                              |
+| -------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------ |
+| **Mirror** button                                        | Mirrors selected edges across the operation axis (stays in 2D sketch).                                                               |
 | **Revolve** button + numeric field (e.g. 360.00) + **?** | Revolves selected edges or faces around the axis by the entered angle. Use **?** next to the angle field for solid-conversion notes. |
-| **Clear axis** button | Manually removes the current operation axis reference. |
+| **Clear axis** button                                    | Manually removes the current operation axis reference.                                                                               |
 
 The Revolve numeric field accepts any float angle (in degrees); 360 is the most common for closed solids.
 
@@ -765,11 +765,11 @@ The Revolve numeric field accepts any float angle (in degrees); 360 is the most 
 
 Open CASCADE often returns a **shell** or separate **faces** when you revolve a **closed loop of edges** rather than selecting a **face**. EzyCad then does its best to convert that result into a **solid** (sewing faces when needed, then wrapping a closed shell with `MakeSolid`) so downstream tools such as **chamfer**, **fillet**, and **booleans** can work.
 
-| Selection | Typical OCCT output | After conversion |
-| --- | --- | --- |
-| Closed **face** | Solid | Unchanged (already a solid) |
-| Closed **edges** (360°) | Shell or compound of faces | Converted to solid when possible |
-| Open edge or partial angle | Surface / open shape | Left as-is (cannot close into a solid) |
+| Selection                  | Typical OCCT output        | After conversion                       |
+| -------------------------- | -------------------------- | -------------------------------------- |
+| Closed **face**            | Solid                      | Unchanged (already a solid)            |
+| Closed **edges** (360°)    | Shell or compound of faces | Converted to solid when possible       |
+| Open edge or partial angle | Surface / open shape       | Left as-is (cannot close into a solid) |
 
 Use **View → Shape List → Shape info...** on the new body to confirm the root type is **Solid**. If conversion fails, try selecting the enclosed **face** instead of individual edges, or check that the profile is closed, does not cross the axis, and uses a **360°** angle.
 
@@ -783,11 +783,11 @@ The two points you pick define a *direction* and a point the axis passes through
 
 **Shortcuts:**
 
-| | |
-| ---: | --- |
-| <kbd>Tab</kbd> | Open distance input dialog to set the length of the drawn axis helper segment (visual only; length has no functional effect on mirror/revolve) |
-| <kbd>Shift</kbd>+<kbd>Tab</kbd> | Open angle input dialog to constrain the direction of the axis (after first point is set) |
-| <kbd>Escape</kbd> | Cancel the current axis definition |
+|                                 |                                                                                                                                                |
+| ------------------------------: | ---------------------------------------------------------------------------------------------------------------------------------------------- |
+| <kbd>Tab</kbd>                  | Open distance input dialog to set the length of the drawn axis helper segment (visual only; length has no functional effect on mirror/revolve) |
+| <kbd>Shift</kbd>+<kbd>Tab</kbd> | Open angle input dialog to constrain the direction of the axis (after first point is set)                                                      |
+| <kbd>Escape</kbd>               | Cancel the current axis definition                                                                                                             |
 
 **Angle Constraint:**
 - After setting the first point, press **Shift+Tab** to open the angle input dialog
@@ -815,19 +815,19 @@ Edge dimension tool creates/removes **length dimensions between two sketch nodes
 
 **Features:**
 
-| | |
-| ---: | --- |
-| **Node-pair dimensions** | Dimensions are defined by two sketch nodes |
-| **Fast edge workflow** | Click a straight edge to toggle a dimension between its two endpoint nodes |
-| **Two-node workflow** | Click one node, then a second node, to toggle a dimension between them; after the first node, a **preview line** follows the cursor (same idea as the line-edge rubber band), so two-node mode is visually distinct from a single edge click |
-| **Selectable/deletable** | Dimension objects can be selected in sketch mode and deleted (for example with <kbd>Shift</kbd>+<kbd>D</kbd>, <kbd>Delete</kbd>, or <kbd>Backspace</kbd>) |
-| **Helpful for verification** | Quickly verify that your sketch has the correct dimensions |
+|                              |                                                                                                                                                                                                                                              |
+| ---------------------------: | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Node-pair dimensions**     | Dimensions are defined by two sketch nodes                                                                                                                                                                                                   |
+| **Fast edge workflow**       | Click a straight edge to toggle a dimension between its two endpoint nodes                                                                                                                                                                   |
+| **Two-node workflow**        | Click one node, then a second node, to toggle a dimension between them; after the first node, a **preview line** follows the cursor (same idea as the line-edge rubber band), so two-node mode is visually distinct from a single edge click |
+| **Selectable/deletable**     | Dimension objects can be selected in sketch mode and deleted (for example with <kbd>Shift</kbd>+<kbd>D</kbd>, <kbd>Delete</kbd>, or <kbd>Backspace</kbd>)                                                                                    |
+| **Helpful for verification** | Quickly verify that your sketch has the correct dimensions                                                                                                                                                                                   |
 
 **Shortcuts:**
 
-| | |
-| ---: | --- |
-| <kbd>D</kbd> | Activate dimension tool |
+|                                                                           |                                                |
+| ------------------------------------------------------------------------: | ---------------------------------------------- |
+| <kbd>D</kbd>                                                              | Activate dimension tool                        |
 | <kbd>Shift</kbd>+<kbd>D</kbd>, <kbd>Delete</kbd>, or <kbd>Backspace</kbd> | Delete selected dimension (or other selection) |
 
 **How to Use:**
@@ -840,13 +840,13 @@ Edge dimension tool creates/removes **length dimensions between two sketch nodes
 
 **When to Use:**
 
-| | |
-| ---: | --- |
-| **Design verification** | Check that your sketch dimensions match your design requirements |
-| **Quality control** | Verify measurements before extruding or performing operations |
-| **Learning and debugging** | Understand how your sketch geometry is sized |
-| **Documentation** | Take screenshots with dimensions visible for reference |
-| **Selective display** | Show dimensions only for the node pairs you care about |
+|                            |                                                                  |
+| -------------------------: | ---------------------------------------------------------------- |
+| **Design verification**    | Check that your sketch dimensions match your design requirements |
+| **Quality control**        | Verify measurements before extruding or performing operations    |
+| **Learning and debugging** | Understand how your sketch geometry is sized                     |
+| **Documentation**          | Take screenshots with dimensions visible for reference           |
+| **Selective display**      | Show dimensions only for the node pairs you care about           |
 
 **Tips:**
 - Dimensions display the distance between the two referenced nodes
@@ -858,12 +858,12 @@ Edge dimension tool creates/removes **length dimensions between two sketch nodes
 
 **Technical Details:**
 
-| | |
-| ---: | --- |
-| **Dimension source** | Calculated from the two referenced nodes |
-| **Unit system** | Displays measurements in the current unit system |
-| **Auto-update** | Dimensions update automatically when geometry is modified |
-| **View-only** | Does not affect the underlying geometry |
+|                      |                                                           |
+| -------------------: | --------------------------------------------------------- |
+| **Dimension source** | Calculated from the two referenced nodes                  |
+| **Unit system**      | Displays measurements in the current unit system          |
+| **Auto-update**      | Dimensions update automatically when geometry is modified |
+| **View-only**        | Does not affect the underlying geometry                   |
 
 ## Add Node Tool
 
@@ -878,11 +878,11 @@ In both cases, Add node never leaves a **permanent edge** between two clicks the
 
 ### What else it does
 
-| | |
-| ---: | --- |
-| **Mid-point snap / split** | If a click lands near a **straight** (non-arc) edge (not at its endpoints), the pick snaps onto the segment and that edge is **replaced by two** meeting at the new vertex. Arc edges are **not** split this way. |
-| **No stored edge from anchor** | After a two-step placement from an anchor, **no** sketch edge is created between anchor and new node (unlike Line edge). |
-| **Angle constraint** | With an angle constraint active during rubber-band placement, the next click places the new node along that ray from the anchor; snapping may be relaxed to stay on that direction (similar to the line tool). |
+|                                |                                                                                                                                                                                                                   |
+| -----------------------------: | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Mid-point snap / split**     | If a click lands near a **straight** (non-arc) edge (not at its endpoints), the pick snaps onto the segment and that edge is **replaced by two** meeting at the new vertex. Arc edges are **not** split this way. |
+| **No stored edge from anchor** | After a two-step placement from an anchor, **no** sketch edge is created between anchor and new node (unlike Line edge).                                                                                          |
+| **Angle constraint**           | With an angle constraint active during rubber-band placement, the next click places the new node along that ray from the anchor; snapping may be relaxed to stay on that direction (similar to the line tool).    |
 
 ### Permanent “+” markers
 
@@ -899,12 +899,12 @@ Nodes you place with **Add node** are treated as **user-placed** points. When th
 
 ### Shortcuts
 
-| | |
-| ---: | --- |
-| <kbd>Tab</kbd> | Distance input for rubber-band placement (when an anchor is active). |
-| <kbd>Shift</kbd>+<kbd>Tab</kbd> | Angle input (degrees) for rubber-band placement. |
-| <kbd>Escape</kbd> | Cancel the current placement or rubber-band step. |
-| <kbd>Right-click</kbd> | Drop an incomplete rubber-band preview if you started from an anchor and have not placed the second point yet. |
+|                                 |                                                                                                                |
+| ------------------------------: | -------------------------------------------------------------------------------------------------------------- |
+| <kbd>Tab</kbd>                  | Distance input for rubber-band placement (when an anchor is active).                                           |
+| <kbd>Shift</kbd>+<kbd>Tab</kbd> | Angle input (degrees) for rubber-band placement.                                                               |
+| <kbd>Escape</kbd>               | Cancel the current placement or rubber-band step.                                                              |
+| <kbd>Right-click</kbd>          | Drop an incomplete rubber-band preview if you started from an anchor and have not placed the second point yet. |
 
 ### Tips
 
@@ -913,10 +913,10 @@ Nodes you place with **Add node** are treated as **user-placed** points. When th
 
 ### Add node vs. Line edge
 
-| | |
-| ---: | --- |
-| **Add node** | Rubber band is for **placement** only; **does not** add a permanent edge between the two clicks. |
-| **Line edge** | Two clicks (or numeric input) create a **new line edge** in the sketch. |
+|               |                                                                                                  |
+| ------------: | ------------------------------------------------------------------------------------------------ |
+| **Add node**  | Rubber band is for **placement** only; **does not** add a permanent edge between the two clicks. |
+| **Line edge** | Two clicks (or numeric input) create a **new line edge** in the sketch.                          |
 
 ## Create Sketch from Planar Face Tool
 
@@ -926,13 +926,13 @@ The create sketch from planar face tool allows you to extract the boundary of a 
 
 **Features:**
 
-| | |
-| ---: | --- |
-| **Face selection** | Click directly on a planar face from an existing 3D shape |
-| **Automatic boundary extraction** | Extracts the outer wire (boundary) of the selected face |
-| **New sketch creation** | Creates a new sketch with the face boundary as the initial geometry |
-| **Planar face requirement** | Only works with planar (flat) faces - curved or complex surfaces are not supported |
-| **Error handling** | Displays an error message if a non-planar face is selected |
+|                                   |                                                                                    |
+| --------------------------------: | ---------------------------------------------------------------------------------- |
+| **Face selection**                | Click directly on a planar face from an existing 3D shape                          |
+| **Automatic boundary extraction** | Extracts the outer wire (boundary) of the selected face                            |
+| **New sketch creation**           | Creates a new sketch with the face boundary as the initial geometry                |
+| **Planar face requirement**       | Only works with planar (flat) faces - curved or complex surfaces are not supported |
+| **Error handling**                | Displays an error message if a non-planar face is selected                         |
 
 **How to Use:**
 1. **Activate Tool**: ![Macro_FaceToSketch_48](res/icons/Macro_FaceToSketch_48.png) Click the **Create Sketch from Planar Face** tool from the toolbar
@@ -971,22 +971,22 @@ The create sketch from planar face tool allows you to extract the boundary of a 
 
 **Common Use Cases:**
 
-| | |
-| ---: | --- |
-| **Reverse engineering** | Extract profiles from imported 3D models |
+|                          |                                                                                                                              |
+| -----------------------: | ---------------------------------------------------------------------------------------------------------------------------- |
+| **Reverse engineering**  | Extract profiles from imported 3D models                                                                                     |
 | **Feature modification** | Create a sketch from an existing face, modify it, and [extrude](usage.md#extrude-sketch-face-tool-e) to create a new feature |
-| **Reference geometry** | Use existing face boundaries as reference for new sketches |
-| **Model editing** | Extract a face boundary, modify it, and use it in [boolean operations](usage.md#boolean-operations) |
-| **Workflow efficiency** | Quickly create sketches from existing geometry instead of manually recreating profiles |
+| **Reference geometry**   | Use existing face boundaries as reference for new sketches                                                                   |
+| **Model editing**        | Extract a face boundary, modify it, and use it in [boolean operations](usage.md#boolean-operations)                          |
+| **Workflow efficiency**  | Quickly create sketches from existing geometry instead of manually recreating profiles                                       |
 
 **Technical Details:**
 
-| | |
-| ---: | --- |
-| **Boundary extraction** | Uses `BRepTools::OuterWire()` on the selected face |
-| **Sketch plane** | Determined from the face's underlying surface geometry |
-| **Supported faces** | Only `Geom_Plane` surfaces - other surface types are rejected |
-| **Sketch list** | Created sketch is added and can be managed like any other sketch |
+|                         |                                                                  |
+| ----------------------: | ---------------------------------------------------------------- |
+| **Boundary extraction** | Uses `BRepTools::OuterWire()` on the selected face               |
+| **Sketch plane**        | Determined from the face's underlying surface geometry           |
+| **Supported faces**     | Only `Geom_Plane` surfaces - other surface types are rejected    |
+| **Sketch list**         | Created sketch is added and can be managed like any other sketch |
 
 ## Image underlay
 
@@ -994,27 +994,27 @@ Import a reference image (PNG, JPEG, or BMP) behind a sketch for tracing or alig
 
 **Sketch List shortcuts**
 
-| Control | Action |
-| --- | --- |
+| Control           | Action                                                                   |
+| ----------------- | ------------------------------------------------------------------------ |
 | Underlay checkbox | Show or hide the underlay for that sketch (only when an image is loaded) |
-| **`[P]`** | Open **Sketch properties** for import, calibration, and transform |
+| **`[P]`**         | Open **Sketch properties** for import, calibration, and transform        |
 
 **Sketch properties — Image underlay**
 
-| Control | Action |
-| --- | --- |
-| **Import image...** | Load PNG/JPEG/BMP into the current sketch |
-| **Remove underlay** | Clear the image from the sketch |
-| **White paper -> transparent** | Treat bright pixels as clear (typical for scanned line drawings; turn off for photos) |
+| Control                                 | Action                                                                                                       |
+| --------------------------------------- | ------------------------------------------------------------------------------------------------------------ |
+| **Import image...**                     | Load PNG/JPEG/BMP into the current sketch                                                                    |
+| **Remove underlay**                     | Clear the image from the sketch                                                                              |
+| **White paper -> transparent**          | Treat bright pixels as clear (typical for scanned line drawings; turn off for photos)                        |
 | **Tint visible lines** / **Line color** | Recolor non-transparent pixels after the white key (default **amber/gold** for contrast on dark backgrounds) |
-| **Opacity** | Overall underlay transparency (**0**–**1**) |
+| **Opacity**                             | Overall underlay transparency (**0**–**1**)                                                                  |
 
 **Calibrate from sketch edges** (sketch must be **current** in the Sketch List):
 
-| Button | Action |
-| --- | --- |
+| Button                 | Action                                                                                                     |
+| ---------------------- | ---------------------------------------------------------------------------------------------------------- |
 | **Set X from edge...** | Two clicks along bitmap width (+U), then enter the real drawing distance (same units as sketch dimensions) |
-| **Set Y from edge...** | Two clicks along bitmap height (+V), then enter the drawing distance for Y |
+| **Set Y from edge...** | Two clicks along bitmap height (+V), then enter the drawing distance for Y                                 |
 
 After edge calibration, bitmap axes may be non-orthogonal (shear). In that case the **Transform** section switches to a 6-DOF affine editor instead of the sliders:
 

@@ -4,10 +4,10 @@ EzyCad can embed **Lua** and (on supported builds) **Python** consoles. They sha
 
 ## Availability
 
-| | Lua | Python |
-| --- | --- | --- |
+|                       | Lua                           | Python                                                                                                                                                                                                   |
+| --------------------- | ----------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | **Desktop (Windows)** | Always (built-in Lua library) | Only if the app was **built with Python enabled** (`EZYCAD_HAVE_PYTHON` in CMake; needs Python development libraries). If the **View -> Python Console** item appears and works, your build includes it. |
-| **WebAssembly** | Yes | No (not shipped in the browser build). |
+| **WebAssembly**       | Yes                           | No (not shipped in the browser build).                                                                                                                                                                   |
 
 ## Opening the consoles
 
@@ -30,35 +30,35 @@ Use **`ezy.help()`** or **`help()`** in either console for the built-in reminder
 
 **`ezy`**
 
-| Method | Purpose |
-| --- | --- |
-| `ezy.log(msg)` | Print to the console and the main **Log** pane |
-| `ezy.msg(text)` | Show a status message (same style as GUI messages) |
-| `ezy.get_mode()` | Current application mode name (string) |
-| `ezy.set_mode(name)` | Switch mode by name |
-| `ezy.help()` | Print binding summary |
+| Method               | Purpose                                            |
+| -------------------- | -------------------------------------------------- |
+| `ezy.log(msg)`       | Print to the console and the main **Log** pane     |
+| `ezy.msg(text)`      | Show a status message (same style as GUI messages) |
+| `ezy.get_mode()`     | Current application mode name (string)             |
+| `ezy.set_mode(name)` | Switch mode by name                                |
+| `ezy.help()`         | Print binding summary                              |
 
 **`view`**
 
-| Method | Purpose |
-| --- | --- |
-| `view.sketch_count()` | Number of sketches |
-| `view.shape_count()` | Number of 3D shapes |
-| `view.curr_sketch_name()` | Name of the current sketch |
-| `view.add_box(ox, oy, oz, w, l, h)` / `view.add_sphere(ox, oy, oz, r)` | Add primitive shapes |
-| `view.get_shape(i)` | Shape by **1-based** index: Lua userdata or `nil`; Python `Shp` with `name`, `visible`, `set_visible`, etc. |
-| `view.get_camera()` | Camera vectors: `eye`, `center`, and `up` |
-| `view.set_camera(ex, ey, ez, cx, cy, cz, ux, uy, uz)` | Set camera vectors |
+| Method                                                                 | Purpose                                                                                                     |
+| ---------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------- |
+| `view.sketch_count()`                                                  | Number of sketches                                                                                          |
+| `view.shape_count()`                                                   | Number of 3D shapes                                                                                         |
+| `view.curr_sketch_name()`                                              | Name of the current sketch                                                                                  |
+| `view.add_box(ox, oy, oz, w, l, h)` / `view.add_sphere(ox, oy, oz, r)` | Add primitive shapes                                                                                        |
+| `view.get_shape(i)`                                                    | Shape by **1-based** index: Lua userdata or `nil`; Python `Shp` with `name`, `visible`, `set_visible`, etc. |
+| `view.get_camera()`                                                    | Camera vectors: `eye`, `center`, and `up`                                                                   |
+| `view.set_camera(ex, ey, ez, cx, cy, cz, ux, uy, uz)`                  | Set camera vectors                                                                                          |
 
 **Sketch inspection and creation** (Lua and Python; indices are **1-based** in Lua, **0-based** in Python):
 
-| Method | Purpose |
-| --- | --- |
-| `view.curr_sketch_node_count()` / `view.curr_sketch_node(i)` | Read nodes `(x, y)` on the current sketch plane |
-| `view.curr_sketch_dim_count()` / `view.curr_sketch_dim(i)` | Read length dimensions |
-| `view.add_sketch(plane, offset, base_name)` | New sketch on `XY`, `XZ`, or `YZ` (`offset` in display units; optional name) |
-| `view.add_edge(x1, y1, x2, y2)` | Add a linear edge to the current sketch |
-| `view.finish_sketch_edges()` | Rebuild closed-face topology after bulk edge import |
+| Method                                                       | Purpose                                                                      |
+| ------------------------------------------------------------ | ---------------------------------------------------------------------------- |
+| `view.curr_sketch_node_count()` / `view.curr_sketch_node(i)` | Read nodes `(x, y)` on the current sketch plane                              |
+| `view.curr_sketch_dim_count()` / `view.curr_sketch_dim(i)`   | Read length dimensions                                                       |
+| `view.add_sketch(plane, offset, base_name)`                  | New sketch on `XY`, `XZ`, or `YZ` (`offset` in display units; optional name) |
+| `view.add_edge(x1, y1, x2, y2)`                              | Add a linear edge to the current sketch                                      |
+| `view.finish_sketch_edges()`                                 | Rebuild closed-face topology after bulk edge import                          |
 
 **Lua only:** global **`print`** is routed to **`ezy.log`**.  
 **Python only:** **`print`** is similarly redirected to **`ezy.log`** after bootstrap.

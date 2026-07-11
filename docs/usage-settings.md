@@ -144,73 +144,73 @@ If saved layout text has no `[Docking]` section (older installs), a default dock
 
 ### `occt_view`
 
-| Key | Type | Meaning |
-| --- | --- | --- |
-| `bg_color1` | array of 3 numbers | Background gradient color 1 (float RGB, 0 to 1). |
-| `bg_color2` | array of 3 numbers | Background gradient color 2. |
-| `bg_gradient_method` | integer | Gradient mode: 0 horizontal, 1 vertical, 2 to 3 diagonals, 4 to 7 corners (same order as the Settings pane combo). |
-| `grid_color1` | array of 3 numbers | Fine (dense) grid lines (`Aspect_Grid` main color). |
-| `grid_color2` | array of 3 numbers | Major (sparse / every-tenth) grid lines (`Aspect_Grid` tenth-line color). |
-| `grid_visible` | boolean | When **true**, the OCCT reference grid is drawn in the 3D view (default **true**). |
-| `grid_step` | number | Grid line spacing in **model** units (default **10**). Legacy `grid_x_step` / `grid_y_step` load as this value (X preferred). |
-| `grid_padding` | number | Margin around active sketch content when sizing the grid, in **model** units (default **1000**; Settings shows display units). Legacy `grid_graphic_x_size` loads as padding if `grid_padding` is absent. |
-| `grid_graphic_z_offset` | number | Grid plane offset along Z in **model** units. |
+| Key                     | Type               | Meaning                                                                                                                                                                                                   |
+| ----------------------- | ------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `bg_color1`             | array of 3 numbers | Background gradient color 1 (float RGB, 0 to 1).                                                                                                                                                          |
+| `bg_color2`             | array of 3 numbers | Background gradient color 2.                                                                                                                                                                              |
+| `bg_gradient_method`    | integer            | Gradient mode: 0 horizontal, 1 vertical, 2 to 3 diagonals, 4 to 7 corners (same order as the Settings pane combo).                                                                                        |
+| `grid_color1`           | array of 3 numbers | Fine (dense) grid lines (`Aspect_Grid` main color).                                                                                                                                                       |
+| `grid_color2`           | array of 3 numbers | Major (sparse / every-tenth) grid lines (`Aspect_Grid` tenth-line color).                                                                                                                                 |
+| `grid_visible`          | boolean            | When **true**, the OCCT reference grid is drawn in the 3D view (default **true**).                                                                                                                        |
+| `grid_step`             | number             | Grid line spacing in **model** units (default **10**). Legacy `grid_x_step` / `grid_y_step` load as this value (X preferred).                                                                             |
+| `grid_padding`          | number             | Margin around active sketch content when sizing the grid, in **model** units (default **1000**; Settings shows display units). Legacy `grid_graphic_x_size` loads as padding if `grid_padding` is absent. |
+| `grid_graphic_z_offset` | number             | Grid plane offset along Z in **model** units.                                                                                                                                                             |
 
 ### `gui`
 
-| Key | Type | Meaning |
-| --- | --- | --- |
-| `dark_mode` | boolean | Light/dark theme. |
-| `show_options` | boolean | Options panel visible. |
-| `show_sketch_list` | boolean | Sketch List pane visible. |
-| `show_shape_list` | boolean | Shape List pane visible. |
-| `log_window_visible` | boolean | Log window visible. |
-| `show_settings_dialog` | boolean | Whether the Settings pane was open when last saved (usually false). |
-| `show_lua_console` | boolean | Lua console pane visible. |
-| `show_python_console` | boolean | Python console pane visible (native builds with Python). |
-| `show_dbg` | boolean | Debug pane visible (debug builds only). |
-| `inspection_orthographic` | boolean | Non-sketch modes Options: orthographic camera when true (default false). Sketch modes always use orthographic. |
-| `edge_dim_label_h` | integer | Length dimension label placement: **0** near first point, **1** near second, **2** center, **3** automatic. |
-| `edge_dim_line_width` | number | Sketch length dimension line width (**0.5** to **8.0**). |
-| `edge_dim_arrow_size` | number | Arrow head length (**1.0** to **24.0**). |
-| `edge_dim_color` | array of 3 numbers | Dimension line, arrow, and text RGB (**0** to **1** per channel; default olive **0.54**, **0.54**, **0.21**). |
-| `edge_dim_text_scale` | number | Label height multiplier (**0.5** to **3.0**; default **1.0**). |
-| `edge_dim_text_render_mode` | integer | **0** opaque 2D, **1** SetCommonColor, **2** 2D screen, **3** 3D text, **4** Z Top, **5** Z Topmost (default). |
-| `edge_dim_arrow_style` | integer | **0** standard, **1** sharp, **2** wide, **3** 3D shaded. |
-| `edge_dim_arrow_orientation` | integer | **0** automatic, **1** internal, **2** external. |
-| `show_sketch_dimensions` | boolean | When false, hides length dimensions on all sketches. |
-| `permanent_node_anno_scale` | number | Scale for permanent **+** markers: the sketch **Origin** and user-placed Add node points ([Sketch origin](usage-sketch.md#sketch-origin); **0.25** to **3.0**; default **1.0**). |
-| `origin_marker_color` | array of 3 numbers | RGB color for the **active** sketch's Origin marker (+ with circle; **0** to **1** per channel; default cyan **0.0**, **0.75**, **1.0**). |
-| `snap_guide_color_node` | array of 3 numbers | RGB for snap guides when both axes lock to the same node (float **0** to **1**; default lavender **0.82**, **0.55**, **0.95**). Legacy `snap_guide_color` loads here when `snap_guide_color_node` is absent. |
-| `snap_guide_color_axis` | array of 3 numbers | RGB for snap guides when aligned on X or Y only (float **0** to **1**; default magenta **0.96**, **0.06**, **0.54**). Legacy `snap_guide_color` sets both node and axis colors. |
-| `snap_guide_mode` | integer | **0** *Traditional* (local markers), **1** *Fullscreen* (view-spanning axis lines), **2** *Both* (default **2**). |
-| `snap_guide_line_width` | number | Open CASCADE line width for snap guides (axis lines, markers, co-axial overlay; **0.5** to **8.0**; default **1.0**). |
-| `annotate_all_coaxial_nodes` | boolean | When true (default), show axis guides and markers for *all* co-axial nodes (current sketch plus other visible sketches). When false, only the closest node per active axis is annotated. Also in sketch **Options**. |
-| `imgui_style_dark` | object | ImGui layout for **dark mode** (see keys below). |
-| `imgui_style_light` | object | ImGui layout for **light mode** (same keys). |
-| `imgui_rounding_general` | number | **Legacy:** copied into both theme objects on load when `imgui_style_*` is absent. |
-| `imgui_rounding_scroll` | number | **Legacy:** same. |
-| `imgui_rounding_tabs` | number | **Legacy:** same. |
-| `underlay_highlight_color` | array of 3 numbers | Default underlay tint (float RGB **0** to **1** per channel; default **0.64**, **0.56**, **0.31**). |
-| `elm_list_hover_color` | array of 4 numbers | RGBA highlight for rows hovered in the **Shape List** or **Sketch List** dimensions table (float **0** to **1** per channel; default purple **0.40**, **0.10**, **0.47**, **1**). |
-| `view_roll_step_deg` | number | Degrees per **NumPad 8**/**2**/**4**/**6** orbit and **Shift+NumPad 4**/**6** roll (allowed range **0.1** to **180** in code; default **45**). |
-| `view_zoom_scroll_scale` | number | Multiplier for `UpdateZoom` scroll delta from wheel and keyboard zoom (allowed range **0.25** to **64** in code; default **4**). With **Shift** held, the effective step is multiplied by **0.1** (Blender-style finer zoom). |
-| `load_last_opened_on_startup` | boolean | Desktop: open the last `.ezy` on launch. **Legacy:** `load_last_saved_on_startup` is read as a fallback if the newer key is absent. |
-| `last_opened_project_path` | string | Path of the last opened project for the option above. **Legacy:** `last_saved_project_path` is accepted if the newer key is missing. |
+| Key                           | Type               | Meaning                                                                                                                                                                                                                       |
+| ----------------------------- | ------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `dark_mode`                   | boolean            | Light/dark theme.                                                                                                                                                                                                             |
+| `show_options`                | boolean            | Options panel visible.                                                                                                                                                                                                        |
+| `show_sketch_list`            | boolean            | Sketch List pane visible.                                                                                                                                                                                                     |
+| `show_shape_list`             | boolean            | Shape List pane visible.                                                                                                                                                                                                      |
+| `log_window_visible`          | boolean            | Log window visible.                                                                                                                                                                                                           |
+| `show_settings_dialog`        | boolean            | Whether the Settings pane was open when last saved (usually false).                                                                                                                                                           |
+| `show_lua_console`            | boolean            | Lua console pane visible.                                                                                                                                                                                                     |
+| `show_python_console`         | boolean            | Python console pane visible (native builds with Python).                                                                                                                                                                      |
+| `show_dbg`                    | boolean            | Debug pane visible (debug builds only).                                                                                                                                                                                       |
+| `inspection_orthographic`     | boolean            | Non-sketch modes Options: orthographic camera when true (default false). Sketch modes always use orthographic.                                                                                                                |
+| `edge_dim_label_h`            | integer            | Length dimension label placement: **0** near first point, **1** near second, **2** center, **3** automatic.                                                                                                                   |
+| `edge_dim_line_width`         | number             | Sketch length dimension line width (**0.5** to **8.0**).                                                                                                                                                                      |
+| `edge_dim_arrow_size`         | number             | Arrow head length (**1.0** to **24.0**).                                                                                                                                                                                      |
+| `edge_dim_color`              | array of 3 numbers | Dimension line, arrow, and text RGB (**0** to **1** per channel; default olive **0.54**, **0.54**, **0.21**).                                                                                                                 |
+| `edge_dim_text_scale`         | number             | Label height multiplier (**0.5** to **3.0**; default **1.0**).                                                                                                                                                                |
+| `edge_dim_text_render_mode`   | integer            | **0** opaque 2D, **1** SetCommonColor, **2** 2D screen, **3** 3D text, **4** Z Top, **5** Z Topmost (default).                                                                                                                |
+| `edge_dim_arrow_style`        | integer            | **0** standard, **1** sharp, **2** wide, **3** 3D shaded.                                                                                                                                                                     |
+| `edge_dim_arrow_orientation`  | integer            | **0** automatic, **1** internal, **2** external.                                                                                                                                                                              |
+| `show_sketch_dimensions`      | boolean            | When false, hides length dimensions on all sketches.                                                                                                                                                                          |
+| `permanent_node_anno_scale`   | number             | Scale for permanent **+** markers: the sketch **Origin** and user-placed Add node points ([Sketch origin](usage-sketch.md#sketch-origin); **0.25** to **3.0**; default **1.0**).                                              |
+| `origin_marker_color`         | array of 3 numbers | RGB color for the **active** sketch's Origin marker (+ with circle; **0** to **1** per channel; default cyan **0.0**, **0.75**, **1.0**).                                                                                     |
+| `snap_guide_color_node`       | array of 3 numbers | RGB for snap guides when both axes lock to the same node (float **0** to **1**; default lavender **0.82**, **0.55**, **0.95**). Legacy `snap_guide_color` loads here when `snap_guide_color_node` is absent.                  |
+| `snap_guide_color_axis`       | array of 3 numbers | RGB for snap guides when aligned on X or Y only (float **0** to **1**; default magenta **0.96**, **0.06**, **0.54**). Legacy `snap_guide_color` sets both node and axis colors.                                               |
+| `snap_guide_mode`             | integer            | **0** *Traditional* (local markers), **1** *Fullscreen* (view-spanning axis lines), **2** *Both* (default **2**).                                                                                                             |
+| `snap_guide_line_width`       | number             | Open CASCADE line width for snap guides (axis lines, markers, co-axial overlay; **0.5** to **8.0**; default **1.0**).                                                                                                         |
+| `annotate_all_coaxial_nodes`  | boolean            | When true (default), show axis guides and markers for *all* co-axial nodes (current sketch plus other visible sketches). When false, only the closest node per active axis is annotated. Also in sketch **Options**.          |
+| `imgui_style_dark`            | object             | ImGui layout for **dark mode** (see keys below).                                                                                                                                                                              |
+| `imgui_style_light`           | object             | ImGui layout for **light mode** (same keys).                                                                                                                                                                                  |
+| `imgui_rounding_general`      | number             | **Legacy:** copied into both theme objects on load when `imgui_style_*` is absent.                                                                                                                                            |
+| `imgui_rounding_scroll`       | number             | **Legacy:** same.                                                                                                                                                                                                             |
+| `imgui_rounding_tabs`         | number             | **Legacy:** same.                                                                                                                                                                                                             |
+| `underlay_highlight_color`    | array of 3 numbers | Default underlay tint (float RGB **0** to **1** per channel; default **0.64**, **0.56**, **0.31**).                                                                                                                           |
+| `elm_list_hover_color`        | array of 4 numbers | RGBA highlight for rows hovered in the **Shape List** or **Sketch List** dimensions table (float **0** to **1** per channel; default purple **0.40**, **0.10**, **0.47**, **1**).                                             |
+| `view_roll_step_deg`          | number             | Degrees per **NumPad 8**/**2**/**4**/**6** orbit and **Shift+NumPad 4**/**6** roll (allowed range **0.1** to **180** in code; default **45**).                                                                                |
+| `view_zoom_scroll_scale`      | number             | Multiplier for `UpdateZoom` scroll delta from wheel and keyboard zoom (allowed range **0.25** to **64** in code; default **4**). With **Shift** held, the effective step is multiplied by **0.1** (Blender-style finer zoom). |
+| `load_last_opened_on_startup` | boolean            | Desktop: open the last `.ezy` on launch. **Legacy:** `load_last_saved_on_startup` is read as a fallback if the newer key is absent.                                                                                           |
+| `last_opened_project_path`    | string             | Path of the last opened project for the option above. **Legacy:** `last_saved_project_path` is accepted if the newer key is missing.                                                                                          |
 
 Each **`imgui_style_dark`** / **`imgui_style_light`** object may contain:
 
-| Key | Type | Meaning |
-| --- | --- | --- |
-| `rounding_general` | number | Window/child/frame/popup rounding (**0** to **32** in JSON; Settings sliders **0** to **16**). |
-| `rounding_scroll` | number | Scrollbar and grab rounding. |
-| `rounding_tabs` | number | Tab rounding. |
-| `window_alpha` | number | Panel window background opacity (**0.1** to **1.0**). |
-| `window_border` | number | Window border thickness (**0** to **2**). |
-| `frame_border` | number | Widget frame border thickness (**0** to **2**). |
-| `window_padding_x`, `window_padding_y` | number | Inner padding of windows (**0** to **24**). |
-| `frame_padding_x`, `frame_padding_y` | number | Padding inside framed widgets (**0** to **24**). |
-| `item_spacing_x`, `item_spacing_y` | number | Spacing between widgets (**0** to **24**). |
+| Key                                    | Type   | Meaning                                                                                        |
+| -------------------------------------- | ------ | ---------------------------------------------------------------------------------------------- |
+| `rounding_general`                     | number | Window/child/frame/popup rounding (**0** to **32** in JSON; Settings sliders **0** to **16**). |
+| `rounding_scroll`                      | number | Scrollbar and grab rounding.                                                                   |
+| `rounding_tabs`                        | number | Tab rounding.                                                                                  |
+| `window_alpha`                         | number | Panel window background opacity (**0.1** to **1.0**).                                          |
+| `window_border`                        | number | Window border thickness (**0** to **2**).                                                      |
+| `frame_border`                         | number | Widget frame border thickness (**0** to **2**).                                                |
+| `window_padding_x`, `window_padding_y` | number | Inner padding of windows (**0** to **24**).                                                    |
+| `frame_padding_x`, `frame_padding_y`   | number | Padding inside framed widgets (**0** to **24**).                                               |
+| `item_spacing_x`, `item_spacing_y`     | number | Spacing between widgets (**0** to **24**).                                                     |
 
 Scripting API **`ezy.occt_view_settings_json()`** returns a JSON string with **`occt_view`** plus selected **`gui`** keys (including dimension and snap keys above, **`gui.permanent_node_anno_scale`**, **`gui.inspection_orthographic`**, **`gui.view_roll_step_deg`**, **`gui.view_zoom_scroll_scale`** when saved). See [scripting.md](scripting.md).
 

@@ -129,12 +129,12 @@ Right-click a shape **name** or the **M** button in the Shape List and choose **
 
 The dialog reports document fields (name, material, shaded vs wireframe display, visibility) and Open CASCADE (OCCT) topology and measurements, including:
 
-| Category | Examples |
-| --- | --- |
-| **Topology** | Root type (Solid, Shell, Face, Compound, etc.), validity, whether the shape has a location transform, closed-shell flag when the root is a shell |
-| **Counts** | Compounds, CompSolids, Solids, Shells, Faces, Wires, Edges, Vertices (nested sub-shapes included) |
-| **Bounds** | Axis-aligned bounding box min/max and overall size |
-| **Mass properties** | Volume and center of mass (when the shape encloses volume), surface area, length (for wire-like geometry) |
+| Category            | Examples                                                                                                                                         |
+| ------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------ |
+| **Topology**        | Root type (Solid, Shell, Face, Compound, etc.), validity, whether the shape has a location transform, closed-shell flag when the root is a shell |
+| **Counts**          | Compounds, CompSolids, Solids, Shells, Faces, Wires, Edges, Vertices (nested sub-shapes included)                                                |
+| **Bounds**          | Axis-aligned bounding box min/max and overall size                                                                                               |
+| **Mass properties** | Volume and center of mass (when the shape encloses volume), surface area, length (for wire-like geometry)                                        |
 
 This is useful after **Revolve**, **Extrude**, booleans, or imports when you need to confirm whether a result is a closed **Solid** or an open **Shell** / surface, or to check face and edge counts and overall size. The dialog closes automatically if the shape is deleted from the document.
 
@@ -224,30 +224,30 @@ The typical modeling workflow in EzyCad follows these steps:
 
 **Key Concepts:**
 
-| | |
-| ---: | --- |
-| **Sketches** | 2D drawings on a plane that define the profile of your 3D shape |
-| **Origin** | One permanent **+** reference node per sketch ([details](usage-sketch.md#sketch-origin)); snap target; listed as **Origin** in the Sketch List |
-| **Faces** | Closed regions within a sketch that can be [extruded](#extrude-sketch-face-tool-e) into 3D |
-| **Shapes** | 3D solid objects created from extruded sketch faces |
-| **Feature Operations** | Transform sketches into 3D geometry or modify existing 3D shapes |
+|                        |                                                                                                                                                |
+| ---------------------: | ---------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Sketches**           | 2D drawings on a plane that define the profile of your 3D shape                                                                                |
+| **Origin**             | One permanent **+** reference node per sketch ([details](usage-sketch.md#sketch-origin)); snap target; listed as **Origin** in the Sketch List |
+| **Faces**              | Closed regions within a sketch that can be [extruded](#extrude-sketch-face-tool-e) into 3D                                                     |
+| **Shapes**             | 3D solid objects created from extruded sketch faces                                                                                            |
+| **Feature Operations** | Transform sketches into 3D geometry or modify existing 3D shapes                                                                               |
 
 ### Importing 3D Geometries
 
 In addition to creating 3D shapes from sketches, EzyCad supports importing existing 3D geometry from external CAD files. This allows you to:
 
-| | |
-| ---: | --- |
-| **Work with existing designs** | Import models created in other CAD software |
-| **Combine workflows** | Use imported geometry alongside sketched shapes |
-| **Modify imported models** | Apply EzyCad's modeling tools to imported shapes |
+|                                |                                                  |
+| -----------------------------: | ------------------------------------------------ |
+| **Work with existing designs** | Import models created in other CAD software      |
+| **Combine workflows**          | Use imported geometry alongside sketched shapes  |
+| **Modify imported models**     | Apply EzyCad's modeling tools to imported shapes |
 
 **Supported import formats:**
 
-| | |
-| ---: | --- |
-| **STEP** (`.step`, `.stp`) | Precise B-rep (boundary representation) CAD exchange |
-| **PLY** (`.ply`) | Triangle mesh; fast to load compared to heavy STEP assemblies |
+|                            |                                                               |
+| -------------------------: | ------------------------------------------------------------- |
+| **STEP** (`.step`, `.stp`) | Precise B-rep (boundary representation) CAD exchange          |
+| **PLY** (`.ply`)           | Triangle mesh; fast to load compared to heavy STEP assemblies |
 
 **How to import:**
 1. Use **File -> Import**
@@ -270,12 +270,12 @@ In addition to creating 3D shapes from sketches, EzyCad supports importing exist
 
 Use **File -> Export** to save the current model for other CAD tools, CAM, or 3D printing.
 
-| | |
-| ---: | --- |
-| **STEP** (`.step`) | Precise B-rep exchange |
-| **IGES** (`.igs`) | Legacy CAD exchange |
-| **STL** | Triangle mesh; files are written in **binary** form |
-| **PLY** (`.ply`) | Triangle mesh in **binary little-endian** PLY (tessellated like STL) |
+|                    |                                                                      |
+| -----------------: | -------------------------------------------------------------------- |
+| **STEP** (`.step`) | Precise B-rep exchange                                               |
+| **IGES** (`.igs`)  | Legacy CAD exchange                                                  |
+| **STL**            | Triangle mesh; files are written in **binary** form                  |
+| **PLY** (`.ply`)   | Triangle mesh in **binary little-endian** PLY (tessellated like STL) |
 
 **Scope:** If one or more 3D shapes are selected in the viewer, only those shapes are exported (with their current move/rotate/scale applied). If nothing is selected, all shapes in the document are exported together.
 
@@ -291,13 +291,13 @@ For detailed information on creating 2D geometry, see the [2D Sketching](usage-s
 
 Every sketch has exactly one **Origin**: a fixed point on the sketch plane, shown as a **+ inside a circle** on the **active sketch only** in sketch mode (distinct from red **+** [Add node](usage-sketch.md#add-node-tool) markers on visible sketches; you cannot delete the Origin).
 
-| | |
-| ---: | --- |
-| **Reference-plane sketch** | Origin at plane coordinates **(0, 0)**. |
-| **Sketch from planar face** | Origin at the **bounding-box center** of the extracted face boundary. |
-| **Sketch List** | Listed as **Origin** under **Nodes** when you expand a sketch row. |
-| **Sketch properties** | **[P]** on the sketch row: **Show origin marker**, **Position** sliders with **Set**, for typed values. |
-| **Snapping** | Full vertex and axis snap when the marker is shown; other visible sketches' origins snap when their marker is shown. |
+|                             |                                                                                                                      |
+| --------------------------: | -------------------------------------------------------------------------------------------------------------------- |
+| **Reference-plane sketch**  | Origin at plane coordinates **(0, 0)**.                                                                              |
+| **Sketch from planar face** | Origin at the **bounding-box center** of the extracted face boundary.                                                |
+| **Sketch List**             | Listed as **Origin** under **Nodes** when you expand a sketch row.                                                   |
+| **Sketch properties**       | **[P]** on the sketch row: **Show origin marker**, **Position** sliders with **Set**, for typed values.              |
+| **Snapping**                | Full vertex and axis snap when the marker is shown; other visible sketches' origins snap when their marker is shown. |
 
 Full details (marker size, operational-axis visibility, tips): **[Sketch origin](usage-sketch.md#sketch-origin)** in the 2D sketching guide.
 
@@ -305,12 +305,12 @@ See the **[2D Sketching guide](usage-sketch.md)** for full documentation of sket
 
 **Sketch snap (overview):** While drawing or using **Add node**, picks can snap to existing geometry within **Snap dist** (Options panel). The main behaviors:
 
-| | |
-| ---: | --- |
-| **Vertex snap** | Lock to an existing corner when horizontal and vertical axis guides both align to the same point. |
-| **Sketch origin** | Every sketch's built-in **Origin** is a snap target when its marker is shown (see [Sketch origin](usage-sketch.md#sketch-origin)). |
+|                    |                                                                                                                                                                                                               |
+| -----------------: | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Vertex snap**    | Lock to an existing corner when horizontal and vertical axis guides both align to the same point.                                                                                                             |
+| **Sketch origin**  | Every sketch's built-in **Origin** is a snap target when its marker is shown (see [Sketch origin](usage-sketch.md#sketch-origin)).                                                                            |
 | **Mid-point snap** | With **Add node**, a click near a **straight** edge (but not at its ends) snaps onto the segment; EzyCad places a new vertex there and **splits** the edge into two. You do not need to hit the line exactly. |
-| **Edge midpoint** | Straight edges often expose a geometric **midpoint** as a snap target while drawing; that is separate from mid-point snap and from user-placed **+** nodes. |
+| **Edge midpoint**  | Straight edges often expose a geometric **midpoint** as a snap target while drawing; that is separate from mid-point snap and from user-placed **+** nodes.                                                   |
 
 More detail: [Sketch snapping](usage-sketch.md#sketch-snapping) in the sketch guide.
 
@@ -329,13 +329,13 @@ The shape move tool allows you to reposition selected shapes in the 3D viewer wi
 
 **Features:**
 
-| | |
-| ---: | --- |
-| **Axis Constraints** | Restrict movement to the X, Y, or Z axis by toggling axis constraints in the options panel or using keyboard shortcuts. |
+|                                  |                                                                                                                                         |
+| -------------------------------: | --------------------------------------------------------------------------------------------------------------------------------------- |
+| **Axis Constraints**             | Restrict movement to the X, Y, or Z axis by toggling axis constraints in the options panel or using keyboard shortcuts.                 |
 | **Interactive Distance Editing** | Enter or adjust the distance moved along each axis for precise control. Real-time feedback is provided in the viewer and options panel. |
-| **Improved Plane Handling** | The move plane is automatically estimated based on the center of the selected shapes, making movement more intuitive. |
-| **Finalization Logic** | The move operation completes when you confirm the action (e.g., <kbd>left mouse button</kbd>). |
-| **Reset and Cancel** | Press <kbd>Esc</kbd> to cancel and revert to the original position at any time during the move operation. |
+| **Improved Plane Handling**      | The move plane is automatically estimated based on the center of the selected shapes, making movement more intuitive.                   |
+| **Finalization Logic**           | The move operation completes when you confirm the action (e.g., <kbd>left mouse button</kbd>).                                          |
+| **Reset and Cancel**             | Press <kbd>Esc</kbd> to cancel and revert to the original position at any time during the move operation.                               |
 
 **How to Use:**
 1. ![Assembly_AxialMove](res/icons/Assembly_AxialMove.png) **Activate Move Tool:** Select one or more shapes and press <kbd>G</kbd> or click the icon.
@@ -362,11 +362,11 @@ The shape rotate tool enables precise rotation of selected shapes around a speci
 
 **Features:**
 
-| | |
-| ---: | --- |
-| **Rotation Axis Options** | Choose between view-to-object rotation or constrain rotation to X, Y, or Z axis. |
-| **Interactive Angle Editing** | Enter or adjust the rotation angle for precise control with real-time preview. |
-| **Visual Feedback** | The rotation axis is displayed with color-coded indicators (Red for X, Green for Y, Blue for Z). |
+|                               |                                                                                                  |
+| ----------------------------: | ------------------------------------------------------------------------------------------------ |
+| **Rotation Axis Options**     | Choose between view-to-object rotation or constrain rotation to X, Y, or Z axis.                 |
+| **Interactive Angle Editing** | Enter or adjust the rotation angle for precise control with real-time preview.                   |
+| **Visual Feedback**           | The rotation axis is displayed with color-coded indicators (Red for X, Green for Y, Blue for Z). |
 
 **How to Use:**
 1. **Activate Rotate Tool:** ![Draft_Rotate](res/icons/Draft_Rotate.png) Select one or more shapes and press <kbd>R</kbd> or click the icon. You can also activate the tool and select the shape(s) to rotate afterwards.
@@ -405,12 +405,12 @@ The shape scale tool allows you to uniformly scale selected shapes around a comp
 
 **Features:**
 
-| | |
-| ---: | --- |
-| **Automatic center detection** | The scale center is estimated from the bounding box center of the selected shapes. |
-| **Screen-plane scaling** | Scaling happens in a plane derived from the current view, making the interaction intuitive. |
-| **Interactive preview** | Moving the mouse adjusts the scale factor and updates the shapes in real time. |
-| **Safe bounds** | The scale factor is clamped to a reasonable range (e.g., between very small and very large values) to avoid degenerate geometry. |
+|                                |                                                                                                                                  |
+| -----------------------------: | -------------------------------------------------------------------------------------------------------------------------------- |
+| **Automatic center detection** | The scale center is estimated from the bounding box center of the selected shapes.                                               |
+| **Screen-plane scaling**       | Scaling happens in a plane derived from the current view, making the interaction intuitive.                                      |
+| **Interactive preview**        | Moving the mouse adjusts the scale factor and updates the shapes in real time.                                                   |
+| **Safe bounds**                | The scale factor is clamped to a reasonable range (e.g., between very small and very large values) to avoid degenerate geometry. |
 
 **How to Use:**
 
@@ -437,14 +437,14 @@ The extrude tool allows you to create 3D solid shapes by extruding 2D sketch fac
 
 **Features:**
 
-| | |
-| ---: | --- |
-| **Direct face selection** | Click directly on a sketch face to select it for extrusion |
-| **Automatic view adjustment** | The view automatically rotates if the face plane is parallel to the view plane (within 5 degrees), providing better visibility for the extrusion operation |
-| **Real-time preview** | See the extruded shape update in real-time as you move the mouse |
-| **Interactive distance control** | Drag the mouse to adjust extrusion distance, or use the distance input dialog (<kbd>Tab</kbd> key) for precise control |
-| **Distance annotation** | A dimension annotation displays the current extrusion distance |
-| **Bidirectional extrusion** | The extrusion direction is determined by which side of the face plane you move the mouse to |
+|                                  |                                                                                                                                                            |
+| -------------------------------: | ---------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Direct face selection**        | Click directly on a sketch face to select it for extrusion                                                                                                 |
+| **Automatic view adjustment**    | The view automatically rotates if the face plane is parallel to the view plane (within 5 degrees), providing better visibility for the extrusion operation |
+| **Real-time preview**            | See the extruded shape update in real-time as you move the mouse                                                                                           |
+| **Interactive distance control** | Drag the mouse to adjust extrusion distance, or use the distance input dialog (<kbd>Tab</kbd> key) for precise control                                     |
+| **Distance annotation**          | A dimension annotation displays the current extrusion distance                                                                                             |
+| **Bidirectional extrusion**      | The extrusion direction is determined by which side of the face plane you move the mouse to                                                                |
 
 **How to Use:**
 1. ![Design456_Extrude](res/icons/Design456_Extrude.png) **Activate Extrude Tool**: Press <kbd>E</kbd> or click the icon to enter extrude mode
@@ -460,12 +460,12 @@ The extrude tool allows you to create 3D solid shapes by extruding 2D sketch fac
 
 **Keyboard Shortcuts:**
 
-| | |
-| ---: | --- |
-| <kbd>E</kbd> | Activate extrude mode |
-| <kbd>Tab</kbd> | Open distance input dialog for precise extrusion distance |
-| <kbd>Esc</kbd> | Cancel current extrusion operation |
-| <kbd>Enter</kbd> | Finalize extrusion (when using distance input) |
+|                  |                                                           |
+| ---------------: | --------------------------------------------------------- |
+| <kbd>E</kbd>     | Activate extrude mode                                     |
+| <kbd>Tab</kbd>   | Open distance input dialog for precise extrusion distance |
+| <kbd>Esc</kbd>   | Cancel current extrusion operation                        |
+| <kbd>Enter</kbd> | Finalize extrusion (when using distance input)            |
 
 **Tips:**
 - Extrude works best when the view is not directly parallel to the sketch plane - the system will automatically rotate the view if needed
@@ -476,12 +476,12 @@ The extrude tool allows you to create 3D solid shapes by extruding 2D sketch fac
 
 **Common Use Cases:**
 
-| | |
-| ---: | --- |
-| **Extrusion** | Select the circle face and [extrude](#extrude-sketch-face-tool-e) to create cylindrical shapes |
-| **Base features** | Create the base feature of a part by [extruding](#extrude-sketch-face-tool-e) a profile |
-| **Additive features** | [Extrude](#extrude-sketch-face-tool-e) additional features on existing parts |
-| **Through features** | Extrude holes or cutouts by using the [Cut](#boolean-operations) operation after extrusion |
+|                       |                                                                                                |
+| --------------------: | ---------------------------------------------------------------------------------------------- |
+| **Extrusion**         | Select the circle face and [extrude](#extrude-sketch-face-tool-e) to create cylindrical shapes |
+| **Base features**     | Create the base feature of a part by [extruding](#extrude-sketch-face-tool-e) a profile        |
+| **Additive features** | [Extrude](#extrude-sketch-face-tool-e) additional features on existing parts                   |
+| **Through features**  | Extrude holes or cutouts by using the [Cut](#boolean-operations) operation after extrusion     |
 
 #### Shape Polar Duplicate Tool
 
@@ -491,14 +491,14 @@ The polar duplicate tool allows you to create multiple copies of selected shapes
 
 **Features:**
 
-| | |
-| ---: | --- |
-| **Circular array** | Creates multiple copies of shapes arranged in a circular pattern |
-| **Configurable angle** | Set the total angle for the pattern (default: 360 degrees) |
-| **Configurable count** | Set the number of duplicate elements to create (default: 5) |
-| **Rotation option** | Choose whether duplicates are rotated as they're copied (default: enabled) |
-| **Combine option** | Choose whether to combine all duplicates into a single shape (default: enabled) |
-| **Polar arm definition** | Define the rotation center and direction by clicking a point |
+|                          |                                                                                 |
+| -----------------------: | ------------------------------------------------------------------------------- |
+| **Circular array**       | Creates multiple copies of shapes arranged in a circular pattern                |
+| **Configurable angle**   | Set the total angle for the pattern (default: 360 degrees)                      |
+| **Configurable count**   | Set the number of duplicate elements to create (default: 5)                     |
+| **Rotation option**      | Choose whether duplicates are rotated as they're copied (default: enabled)      |
+| **Combine option**       | Choose whether to combine all duplicates into a single shape (default: enabled) |
+| **Polar arm definition** | Define the rotation center and direction by clicking a point                    |
 
 **How to use:**
 1. ![Draft_PolarArray](res/icons/Draft_PolarArray.png) **Activate Polar Duplicate Tool**: Click the icon to enter polar duplicate mode
@@ -514,18 +514,18 @@ The polar duplicate tool allows you to create multiple copies of selected shapes
 
 **Options explained:**
 
-| | |
-| ---: | --- |
-| **Polar angle** | The total angular span of the pattern. 360 deg creates a full circle, 180 deg creates a half circle, etc. |
-| **Num Elms** | The number of duplicate elements to create. The original shape is not counted, so 5 elements means 5 copies plus the original. |
-| **Rotate dups** | When enabled, each duplicate is rotated around its own center as it's positioned. When disabled, duplicates maintain their original orientation. |
-| **Combine dups** | When enabled, all duplicates are fused together into a single shape. When disabled, each duplicate remains a separate shape. |
-| **Material** | Preset for new solids from **Dup**; matches **Normal** mode Options **Material**. Existing shapes: [Shape List](#shape-list). |
+|                  |                                                                                                                                                  |
+| ---------------: | ------------------------------------------------------------------------------------------------------------------------------------------------ |
+| **Polar angle**  | The total angular span of the pattern. 360 deg creates a full circle, 180 deg creates a half circle, etc.                                        |
+| **Num Elms**     | The number of duplicate elements to create. The original shape is not counted, so 5 elements means 5 copies plus the original.                   |
+| **Rotate dups**  | When enabled, each duplicate is rotated around its own center as it's positioned. When disabled, duplicates maintain their original orientation. |
+| **Combine dups** | When enabled, all duplicates are fused together into a single shape. When disabled, each duplicate remains a separate shape.                     |
+| **Material**     | Preset for new solids from **Dup**; matches **Normal** mode Options **Material**. Existing shapes: [Shape List](#shape-list).                    |
 
 **Keyboard shortcuts:**
 
-| | |
-| ---: | --- |
+|                   |                                              |
+| ----------------: | -------------------------------------------- |
 | <kbd>Escape</kbd> | Cancel the current polar duplicate operation |
 
 **Tips:**
@@ -562,16 +562,16 @@ These tools are in the main toolbar (after the polar duplicate button). They are
 
 **Features:**
 
-| | |
-| ---: | --- |
-| **Multi-select input** | Select any two or more solids in Normal/Inspection mode, then activate the desired boolean |
-| **Order matters for Cut** | The first selected shape is the base body; all others are used as cutters (subtracted) |
-| **Inputs are consumed** | The original selected shapes are removed and replaced by a single result shape (destructive / non-parametric) |
-| **Result naming** | New shape is named "Cut", "Fused", or "Common". Rename it in the **Shape List** pane for clarity |
-| **Material** | The result receives the current document default material (the one shown in Normal mode Options → Material, or last chosen preset) |
-| **Undoable** | Every boolean pushes an undo snapshot. Use <kbd>Ctrl</kbd>+<kbd>Z</kbd> (or Edit → Undo) to restore the input shapes |
-| **Broad compatibility** | Works with extruded solids, imported STEP/IGES/PLY bodies, previous boolean results, and shapes produced by polar duplicate (especially with "Combine dups" enabled) |
-| **Selection filter aware** | Use the **Selection Mode** filter (Options panel or <kbd>1</kbd>–<kbd>9</kbd> keys) to pick only Solids, Compounds, etc. |
+|                            |                                                                                                                                                                      |
+| -------------------------: | -------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Multi-select input**     | Select any two or more solids in Normal/Inspection mode, then activate the desired boolean                                                                           |
+| **Order matters for Cut**  | The first selected shape is the base body; all others are used as cutters (subtracted)                                                                               |
+| **Inputs are consumed**    | The original selected shapes are removed and replaced by a single result shape (destructive / non-parametric)                                                        |
+| **Result naming**          | New shape is named "Cut", "Fused", or "Common". Rename it in the **Shape List** pane for clarity                                                                     |
+| **Material**               | The result receives the current document default material (the one shown in Normal mode Options → Material, or last chosen preset)                                   |
+| **Undoable**               | Every boolean pushes an undo snapshot. Use <kbd>Ctrl</kbd>+<kbd>Z</kbd> (or Edit → Undo) to restore the input shapes                                                 |
+| **Broad compatibility**    | Works with extruded solids, imported STEP/IGES/PLY bodies, previous boolean results, and shapes produced by polar duplicate (especially with "Combine dups" enabled) |
+| **Selection filter aware** | Use the **Selection Mode** filter (Options panel or <kbd>1</kbd>–<kbd>9</kbd> keys) to pick only Solids, Compounds, etc.                                             |
 
 **How to Use:**
 
@@ -600,14 +600,14 @@ If fewer than two shapes are selected you will see an error message and nothing 
 
 **Common Use Cases:**
 
-| Goal | Typical workflow |
-|------|------------------|
-| Create a hole or pocket | Sketch and extrude a closed profile through (or into) the target body, then **Cut** the extrusion from the main solid |
-| Merge separate parts into one | Position solids so they overlap or adjoin, multi-select them, and **Fuse** |
-| Compute intersection volume | Overlap two or more bodies and use **Common** to extract the shared region |
-| Clean up or simplify imports | Fuse multiple imported bodies; cut away unwanted protrusions |
-| Build complex machined parts | Repeated extrude + boolean sequence (base block → cuts for pockets → fuses for bosses) |
-| Radial patterns with merging | Use polar duplicate with **Combine dups** checked, then boolean the result with other geometry |
+| Goal                          | Typical workflow                                                                                                      |
+| ----------------------------- | --------------------------------------------------------------------------------------------------------------------- |
+| Create a hole or pocket       | Sketch and extrude a closed profile through (or into) the target body, then **Cut** the extrusion from the main solid |
+| Merge separate parts into one | Position solids so they overlap or adjoin, multi-select them, and **Fuse**                                            |
+| Compute intersection volume   | Overlap two or more bodies and use **Common** to extract the shared region                                            |
+| Clean up or simplify imports  | Fuse multiple imported bodies; cut away unwanted protrusions                                                          |
+| Build complex machined parts  | Repeated extrude + boolean sequence (base block → cuts for pockets → fuses for bosses)                                |
+| Radial patterns with merging  | Use polar duplicate with **Combine dups** checked, then boolean the result with other geometry                        |
 
 **Keyboard notes:**
 
@@ -619,46 +619,46 @@ For more on 3D solids and the viewer, see [3D viewer (Open CASCADE)](usage-occt-
 
 ### General Operations
 
-| | |
-| ---: | --- |
-| <kbd>Ctrl</kbd>+<kbd>Z</kbd> | Undo last operation |
-| <kbd>Ctrl</kbd>+<kbd>Y</kbd> / <kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>Z</kbd> | Redo |
-| <kbd>Ctrl</kbd>+<kbd>O</kbd> | Open file |
-| <kbd>Ctrl</kbd>+<kbd>S</kbd> | Save file |
-| <kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>S</kbd> | Save as |
-| <kbd>Esc</kbd> | [Cancel current operation or step to parent mode](#cancel-current-operation-esc) |
-| <kbd>Enter</kbd> | Confirm current operation |
-| <kbd>Tab</kbd> | Distance/dimension input |
-| <kbd>Shift</kbd>+<kbd>Tab</kbd> | Angle input (for line edges with angle constraint) |
-| <kbd>Shift</kbd>+<kbd>D</kbd>, <kbd>Delete</kbd>, or <kbd>Backspace</kbd> | Remove selected elements |
+|                                                                              |                                                                                  |
+| ---------------------------------------------------------------------------: | -------------------------------------------------------------------------------- |
+| <kbd>Ctrl</kbd>+<kbd>Z</kbd>                                                 | Undo last operation                                                              |
+| <kbd>Ctrl</kbd>+<kbd>Y</kbd> / <kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>Z</kbd> | Redo                                                                             |
+| <kbd>Ctrl</kbd>+<kbd>O</kbd>                                                 | Open file                                                                        |
+| <kbd>Ctrl</kbd>+<kbd>S</kbd>                                                 | Save file                                                                        |
+| <kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>S</kbd>                                | Save as                                                                          |
+| <kbd>Esc</kbd>                                                               | [Cancel current operation or step to parent mode](#cancel-current-operation-esc) |
+| <kbd>Enter</kbd>                                                             | Confirm current operation                                                        |
+| <kbd>Tab</kbd>                                                               | Distance/dimension input                                                         |
+| <kbd>Shift</kbd>+<kbd>Tab</kbd>                                              | Angle input (for line edges with angle constraint)                               |
+| <kbd>Shift</kbd>+<kbd>D</kbd>, <kbd>Delete</kbd>, or <kbd>Backspace</kbd>    | Remove selected elements                                                         |
 
 ### Modeling Shortcuts
 
-| | |
-| ---: | --- |
-| <kbd>G</kbd> | Move mode |
-| <kbd>R</kbd> | Rotate mode |
-| <kbd>S</kbd> | Scale mode |
-| <kbd>E</kbd> | Extrude mode |
-| <kbd>C</kbd> | Chamfer mode |
-| <kbd>F</kbd> | Fillet mode |
+|              |                         |
+| -----------: | ----------------------- |
+| <kbd>G</kbd> | Move mode               |
+| <kbd>R</kbd> | Rotate mode             |
+| <kbd>S</kbd> | Scale mode              |
+| <kbd>E</kbd> | Extrude mode            |
+| <kbd>C</kbd> | Chamfer mode            |
+| <kbd>F</kbd> | Fillet mode             |
 | <kbd>D</kbd> | Dimension tool (sketch) |
 
 
 ### View navigation
 
-| | |
-| ---: | --- |
-| <kbd>NumPad 8</kbd> | Orbit [up](#view-orbit-numpad) (same sense as dragging the view up). Step: **Settings -> 3D view navigation -> View rotation step** (default **45** degrees). |
-| <kbd>NumPad 2</kbd> | Orbit [down](#view-orbit-numpad). |
-| <kbd>NumPad 4</kbd> | Orbit [left](#view-orbit-numpad). |
-| <kbd>NumPad 6</kbd> | Orbit [right](#view-orbit-numpad). |
-| <kbd>Shift</kbd>+<kbd>NumPad 4</kbd>, <kbd>Shift</kbd>+<kbd>4</kbd>, or <kbd>Shift</kbd>+<kbd>Left</kbd> | [Roll the 3D view](#view-roll) one way (same step setting as orbit). |
-| <kbd>Shift</kbd>+<kbd>NumPad 6</kbd>, <kbd>Shift</kbd>+<kbd>6</kbd>, or <kbd>Shift</kbd>+<kbd>Right</kbd> | [Roll the 3D view](#view-roll) the other way. |
-| <kbd>NumPad 5</kbd> | Snap to the nearest world-axis view (top, bottom, front, back, left, or right): keeps the current eye-target distance, aligns the view direction to +/- **X** / **Y** / **Z**, and resets roll to a standard **Up** (same convention as the initial top view: **Up** is **+Y** when looking along **Z**, else **+Z** when looking along **X** or **Y**). |
-| <kbd>NumPad +</kbd> / <kbd>NumPad -</kbd> | Zoom in / out at the cursor; step size uses **Settings -> 3D view navigation -> Zoom scroll scale** (default **4**, same role as the former fixed wheel multiplier). **Hold** the key for continuous zoom (system key repeat). |
-| <kbd>Shift</kbd>+<kbd>=</kbd> (often labeled **+**) | Zoom in (same as **NumPad +** on US layouts); hold for repeat. With **Shift**, Blender-style **finer** zoom (**x0.1** on the scroll delta). |
-| <kbd>-</kbd> (main keyboard) | Zoom out (same as **NumPad -**); hold for repeat. **Shift** gives finer zoom. |
+|                                                                                                           |                                                                                                                                                                                                                                                                                                                                                          |
+| --------------------------------------------------------------------------------------------------------: | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| <kbd>NumPad 8</kbd>                                                                                       | Orbit [up](#view-orbit-numpad) (same sense as dragging the view up). Step: **Settings -> 3D view navigation -> View rotation step** (default **45** degrees).                                                                                                                                                                                            |
+| <kbd>NumPad 2</kbd>                                                                                       | Orbit [down](#view-orbit-numpad).                                                                                                                                                                                                                                                                                                                        |
+| <kbd>NumPad 4</kbd>                                                                                       | Orbit [left](#view-orbit-numpad).                                                                                                                                                                                                                                                                                                                        |
+| <kbd>NumPad 6</kbd>                                                                                       | Orbit [right](#view-orbit-numpad).                                                                                                                                                                                                                                                                                                                       |
+| <kbd>Shift</kbd>+<kbd>NumPad 4</kbd>, <kbd>Shift</kbd>+<kbd>4</kbd>, or <kbd>Shift</kbd>+<kbd>Left</kbd>  | [Roll the 3D view](#view-roll) one way (same step setting as orbit).                                                                                                                                                                                                                                                                                     |
+| <kbd>Shift</kbd>+<kbd>NumPad 6</kbd>, <kbd>Shift</kbd>+<kbd>6</kbd>, or <kbd>Shift</kbd>+<kbd>Right</kbd> | [Roll the 3D view](#view-roll) the other way.                                                                                                                                                                                                                                                                                                            |
+| <kbd>NumPad 5</kbd>                                                                                       | Snap to the nearest world-axis view (top, bottom, front, back, left, or right): keeps the current eye-target distance, aligns the view direction to +/- **X** / **Y** / **Z**, and resets roll to a standard **Up** (same convention as the initial top view: **Up** is **+Y** when looking along **Z**, else **+Z** when looking along **X** or **Y**). |
+| <kbd>NumPad +</kbd> / <kbd>NumPad -</kbd>                                                                 | Zoom in / out at the cursor; step size uses **Settings -> 3D view navigation -> Zoom scroll scale** (default **4**, same role as the former fixed wheel multiplier). **Hold** the key for continuous zoom (system key repeat).                                                                                                                           |
+| <kbd>Shift</kbd>+<kbd>=</kbd> (often labeled **+**)                                                       | Zoom in (same as **NumPad +** on US layouts); hold for repeat. With **Shift**, Blender-style **finer** zoom (**x0.1** on the scroll delta).                                                                                                                                                                                                              |
+| <kbd>-</kbd> (main keyboard)                                                                              | Zoom out (same as **NumPad -**); hold for repeat. **Shift** gives finer zoom.                                                                                                                                                                                                                                                                            |
 
 **Num Lock (numeric keypad):** **Num Lock off** is what we test against and recommend. The shortcuts below assume the keypad produces **NumPad** key codes (orbit, axis snap, zoom, roll, and keypad selection digits). With **Num Lock on**, Windows and other systems often remap the keypad (digits vs arrow/Home/End behavior), so numpad shortcuts may not match this document. Use the alternatives in the table (main-row <kbd>4</kbd> / <kbd>6</kbd>, <kbd>Shift</kbd>+<kbd>Left</kbd> / <kbd>Right</kbd>, main <kbd>+</kbd> / <kbd>-</kbd>, main <kbd>1</kbd>-<kbd>9</kbd> for selection) or turn **Num Lock off**.
 
@@ -668,17 +668,17 @@ Same idea as Blender **View Roll** for <kbd>Shift</kbd>+<kbd>NumPad 4</kbd> / <k
 
 In **Normal** mode, number keys set the **Selection Mode** filter for picking 3D shapes (same control as **Options -> Selection Mode**). Main keyboard **<kbd>1</kbd>-<kbd>9</kbd>** and keypad **<kbd>1</kbd>-<kbd>9</kbd>** are supported, except **keypad <kbd>5</kbd>** and **keypad <kbd>2</kbd>**, **<kbd>4</kbd>**, **<kbd>6</kbd>**, **<kbd>8</kbd>** (see [View navigation](#view-navigation)). The key order matches the list in the **Selection Mode** control (from compound down to whole shape):
 
-| Key | Filter |
-| ---: | --- |
-| <kbd>1</kbd> | Compound |
+| Key          | Filter    |
+| -----------: | --------- |
+| <kbd>1</kbd> | Compound  |
 | <kbd>2</kbd> | CompSolid |
-| <kbd>3</kbd> | Solid |
-| <kbd>4</kbd> | Shell |
-| <kbd>5</kbd> | Face |
-| <kbd>6</kbd> | Wire |
-| <kbd>7</kbd> | Edge |
-| <kbd>8</kbd> | Vertex |
-| <kbd>9</kbd> | Shape |
+| <kbd>3</kbd> | Solid     |
+| <kbd>4</kbd> | Shell     |
+| <kbd>5</kbd> | Face      |
+| <kbd>6</kbd> | Wire      |
+| <kbd>7</kbd> | Edge      |
+| <kbd>8</kbd> | Vertex    |
+| <kbd>9</kbd> | Shape     |
 
 While focus is in a text field (dimension input, script console, etc.), **<kbd>1</kbd>-<kbd>9</kbd>** are left to the UI: `main.cpp` does not call the global key handler when ImGui reports `WantTextInput`. Chamfer, fillet, and sketch modes may change the filter automatically when you enter them.
 
@@ -690,13 +690,13 @@ Open or close the **Lua** or **Python** consoles from **View -> Lua Console** or
 
 ### Mouse Controls
 
-| | |
-| ---: | --- |
-| **Left Click** | Select object |
-| **Left drag** | Orbit view |
-| **Middle drag** | Pan view |
-| **Right drag** | Zoom |
-| **Scroll Wheel** | Zoom in/out (**Zoom scroll scale** in Settings; hold **Shift** for finer steps) |
+|                                                                                        |                                                                                    |
+| -------------------------------------------------------------------------------------: | ---------------------------------------------------------------------------------- |
+| **Left Click**                                                                         | Select object                                                                      |
+| **Left drag**                                                                          | Orbit view                                                                         |
+| **Middle drag**                                                                        | Pan view                                                                           |
+| **Right drag**                                                                         | Zoom                                                                               |
+| **Scroll Wheel**                                                                       | Zoom in/out (**Zoom scroll scale** in Settings; hold **Shift** for finer steps)    |
 | <kbd>NumPad +</kbd> / <kbd>NumPad -</kbd>, <kbd>Shift</kbd>+<kbd>=</kbd>, <kbd>-</kbd> | Zoom in/out ([keyboard](#view-navigation); settings scale; <kbd>Shift</kbd> finer) |
 
 ### View orbit (NumPad)
@@ -713,13 +713,13 @@ More context on the 3D viewer stack: **[3D viewer (Open CASCADE)](usage-occt-vie
 
 ### View Options
 
-| | |
-| ---: | --- |
-| **Reset view** | Reset the 3D view |
-| **Fit to screen** | Fit the model to the viewport |
-| **Toggle wireframe** | Switch wireframe display |
-| **Change material appearance** | Adjust material display |
-| **Adjust lighting** | Change lighting settings |
+|                                |                               |
+| -----------------------------: | ----------------------------- |
+| **Reset view**                 | Reset the 3D view             |
+| **Fit to screen**              | Fit the model to the viewport |
+| **Toggle wireframe**           | Switch wireframe display      |
+| **Change material appearance** | Adjust material display       |
+| **Adjust lighting**            | Change lighting settings      |
 
 ## Tips and Tricks
 

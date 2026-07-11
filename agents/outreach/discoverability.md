@@ -4,13 +4,13 @@ Copy-paste templates for posts that link back to the project. Update URLs or scr
 
 **Canonical links**
 
-| Resource | URL |
-| --- | --- |
-| GitHub | https://github.com/trailcode/EzyCad |
-| Documentation | https://ezycad.readthedocs.io/ |
-| Landing page | https://trailcode.github.io/EzyCad/ |
+| Resource                     | URL                                            |
+| ---------------------------- | ---------------------------------------------- |
+| GitHub                       | https://github.com/trailcode/EzyCad            |
+| Documentation                | https://ezycad.readthedocs.io/                 |
+| Landing page                 | https://trailcode.github.io/EzyCad/            |
 | Run in browser (WebAssembly) | https://trailcode.github.io/EzyCad/EzyCad.html |
-| Releases | https://github.com/trailcode/EzyCad/releases |
+| Releases                     | https://github.com/trailcode/EzyCad/releases   |
 
 **Search tip for others:** `trailcode EzyCad` or `site:github.com EzyCad trailcode`
 

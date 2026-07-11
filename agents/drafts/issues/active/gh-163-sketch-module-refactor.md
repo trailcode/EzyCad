@@ -36,17 +36,17 @@ No user-visible behavior change is intended; this is structural cleanup followin
 
 **New modules / translation units:**
 
-| Module / file | Responsibility |
-| --- | --- |
-| `sketch_edge` | `Sketch_edge` type and `sketch_edge_is_linear()` |
-| `Sketch_edges` | Persistent edge list; add/split/remove; JSON linear edges; read-only `for_each_linear` / `for_each_arc` visitors |
-| `Sketch_topo` | Face extraction, `split_linear_edges_at_node_if_interior`, face caches |
-| `Sketch_dims` | Length dimensions, typed input, pick state, tmp dimension preview |
-| `Sketch_node_marks` | Permanent node '+' markers (`sync`, `remove_at`, etc.) |
-| `sketch_ais` | `Sketch_AIS_edge`, `Sketch_AIS_node_mark`, `Sketch_face_shp`, mark removal helper |
-| `Sketch_tools` | Interactive drawing session: tmp edges/nodes, mode-specific tools, finalize/cancel |
-| `sketch_display.cpp` | Viewer display: visibility, edge styling, sketch switching, list hover (state on `Sketch`) |
-| `sketch_operations.cpp` | Operation axis, mirror, revolve (state on `Sketch`) |
+| Module / file           | Responsibility                                                                                                   |
+| ----------------------- | ---------------------------------------------------------------------------------------------------------------- |
+| `sketch_edge`           | `Sketch_edge` type and `sketch_edge_is_linear()`                                                                 |
+| `Sketch_edges`          | Persistent edge list; add/split/remove; JSON linear edges; read-only `for_each_linear` / `for_each_arc` visitors |
+| `Sketch_topo`           | Face extraction, `split_linear_edges_at_node_if_interior`, face caches                                           |
+| `Sketch_dims`           | Length dimensions, typed input, pick state, tmp dimension preview                                                |
+| `Sketch_node_marks`     | Permanent node '+' markers (`sync`, `remove_at`, etc.)                                                           |
+| `sketch_ais`            | `Sketch_AIS_edge`, `Sketch_AIS_node_mark`, `Sketch_face_shp`, mark removal helper                                |
+| `Sketch_tools`          | Interactive drawing session: tmp edges/nodes, mode-specific tools, finalize/cancel                               |
+| `sketch_display.cpp`    | Viewer display: visibility, edge styling, sketch switching, list hover (state on `Sketch`)                       |
+| `sketch_operations.cpp` | Operation axis, mirror, revolve (state on `Sketch`)                                                              |
 
 **`Sketch` layout after refactor:**
 

@@ -12,10 +12,10 @@ EzyCad does **not** vendor OCCT; builds live **outside** the tree. Point CMake a
 
 ## Version matrix (EzyCad)
 
-| Target | Documented / tested | CMake variables |
-| --- | --- | --- |
-| **Windows desktop** | OCCT **8.0.0** prebuilt | `OpenCASCADE_DIR`, `OCCT_3RD_PARTY_DIR` |
-| **WebAssembly** | OCCT **7.9.3** (`V7_9_3`) recommended; **8.0.0.p1** (`V8_0_0_p1`) has regressions | `OpenCASCADE_DIR` only (static install) |
+| Target              | Documented / tested                                                               | CMake variables                         |
+| ------------------- | --------------------------------------------------------------------------------- | --------------------------------------- |
+| **Windows desktop** | OCCT **8.0.0** prebuilt                                                           | `OpenCASCADE_DIR`, `OCCT_3RD_PARTY_DIR` |
+| **WebAssembly**     | OCCT **7.9.3** (`V7_9_3`) recommended; **8.0.0.p1** (`V8_0_0_p1`) has regressions | `OpenCASCADE_DIR` only (static install) |
 
 ---
 
@@ -75,10 +75,10 @@ EzyCad’s wasm target links **`TKOpenGles`** (not `TKOpenGl`), static OCCT, and
 
 EzyCad links **`TKOpenGles`** (not `TKOpenGl`), static OCCT, and **`-fexceptions`** (see `CMakeLists.txt` Emscripten block).
 
-| Script | OCCT tag | Default tree root |
-| --- | --- | --- |
-| `scripts/build-occt-793-wasm.ps1` (`.cmd`) | **V7_9_3** (recommended) | `%USERPROFILE%\occt-wasm-build\V7_9_3` |
-| `scripts/build-occt-v8-wasm.ps1` (`.cmd`) | V8_0_0_p1 | `%USERPROFILE%\occt-wasm-build\V8_0_0_p1` |
+| Script                                     | OCCT tag                 | Default tree root                         |
+| ------------------------------------------ | ------------------------ | ----------------------------------------- |
+| `scripts/build-occt-793-wasm.ps1` (`.cmd`) | **V7_9_3** (recommended) | `%USERPROFILE%\occt-wasm-build\V7_9_3`    |
+| `scripts/build-occt-v8-wasm.ps1` (`.cmd`)  | V8_0_0_p1                | `%USERPROFILE%\occt-wasm-build\V8_0_0_p1` |
 
 Both wrap the shared implementation `scripts/build-occt-wasm.ps1`. Each version gets its own `src/`, `build/`, and `install/` under the versioned root (flat layout).
 
@@ -117,30 +117,30 @@ Serve: `python -m http.server 8000` from the build output directory (the `.html`
 
 Used by `build-occt-wasm.ps1` — keep in sync if editing the script:
 
-| Variable | Value | Why |
-| --- | --- | --- |
-| `BUILD_LIBRARY_TYPE` | `Static` | `.a` archives linked into EzyCad.wasm |
-| `BUILD_MODULE_Draw` | `OFF` | No Tcl/Tk harness |
-| `USE_OPENGL` | `OFF` | Desktop GL driver |
-| `USE_GLES2` | `ON` | `TKOpenGles` for WebGL2 |
-| `USE_VTK` | `OFF` | Default in 8.0; avoids GLES VTK issues |
-| `USE_FREETYPE` | `ON` | Dimension / text rendering |
-| `USE_TBB`, `USE_FFMPEG`, `USE_FREEIMAGE`, `USE_OPENVR`, `USE_TK` | `OFF` | Reduce deps and build time |
-| `CMAKE_*_FLAGS` | `-fexceptions` | Match EzyCad emscripten link flags |
+| Variable                                                         | Value          | Why                                    |
+| ---------------------------------------------------------------- | -------------- | -------------------------------------- |
+| `BUILD_LIBRARY_TYPE`                                             | `Static`       | `.a` archives linked into EzyCad.wasm  |
+| `BUILD_MODULE_Draw`                                              | `OFF`          | No Tcl/Tk harness                      |
+| `USE_OPENGL`                                                     | `OFF`          | Desktop GL driver                      |
+| `USE_GLES2`                                                      | `ON`           | `TKOpenGles` for WebGL2                |
+| `USE_VTK`                                                        | `OFF`          | Default in 8.0; avoids GLES VTK issues |
+| `USE_FREETYPE`                                                   | `ON`           | Dimension / text rendering             |
+| `USE_TBB`, `USE_FFMPEG`, `USE_FREEIMAGE`, `USE_OPENVR`, `USE_TK` | `OFF`          | Reduce deps and build time             |
+| `CMAKE_*_FLAGS`                                                  | `-fexceptions` | Match EzyCad emscripten link flags     |
 
 FreeType wasm configure also disables optional zlib/png/harfbuzz finds to simplify the emscripten build.
 
 ### Wasm troubleshooting
 
-| Symptom | Fix |
-| --- | --- |
-| `running scripts is disabled` | `Set-ExecutionPolicy -Scope CurrentUser RemoteSigned` **or** use `build-occt-793-wasm.cmd` / `build-occt-v8-wasm.cmd` **or** `powershell -ExecutionPolicy Bypass -File ...` |
-| `Can't initialize filter; xz` | Script uses `.tar.gz` for FreeType; delete stale `*.tar.xz` under `src/` and re-run |
-| `source directory .../build/freetype does not contain CMakeLists.txt` | Fixed: do not name a PowerShell function parameter `$Args` (shadows automatic `$Args`) |
-| `emcc` not found | Run `emsdk_env.bat` / `emsdk_env.ps1` in the same shell |
-| EzyCad configure hangs on `find_package(OpenCASCADE)` | `emcmake cmake ... --debug-output`; verify `OpenCASCADE_DIR` path |
-| OCCT 8 + ghosted dimension labels | Retest `gui.edge_dim_text_render_mode` (Z-layer Topmost); grid compositing changed in 8.0 |
-| Shaded faces missing / wireframe-only solids (wasm, OCCT 8.x) | Use **7.9.3** (`build-occt-793-wasm.ps1`); see [bugs.md](bugs.md) |
+| Symptom                                                               | Fix                                                                                                                                                                         |
+| --------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `running scripts is disabled`                                         | `Set-ExecutionPolicy -Scope CurrentUser RemoteSigned` **or** use `build-occt-793-wasm.cmd` / `build-occt-v8-wasm.cmd` **or** `powershell -ExecutionPolicy Bypass -File ...` |
+| `Can't initialize filter; xz`                                         | Script uses `.tar.gz` for FreeType; delete stale `*.tar.xz` under `src/` and re-run                                                                                         |
+| `source directory .../build/freetype does not contain CMakeLists.txt` | Fixed: do not name a PowerShell function parameter `$Args` (shadows automatic `$Args`)                                                                                      |
+| `emcc` not found                                                      | Run `emsdk_env.bat` / `emsdk_env.ps1` in the same shell                                                                                                                     |
+| EzyCad configure hangs on `find_package(OpenCASCADE)`                 | `emcmake cmake ... --debug-output`; verify `OpenCASCADE_DIR` path                                                                                                           |
+| OCCT 8 + ghosted dimension labels                                     | Retest `gui.edge_dim_text_render_mode` (Z-layer Topmost); grid compositing changed in 8.0                                                                                   |
+| Shaded faces missing / wireframe-only solids (wasm, OCCT 8.x)         | Use **7.9.3** (`build-occt-793-wasm.ps1`); see [bugs.md](bugs.md)                                                                                                           |
 
 ---
 
@@ -204,25 +204,25 @@ OCCT 8 supports vcpkg (`USE_VTK=ON` only if needed). EzyCad’s `CMakeLists.txt`
 
 ## Maintaining OCCT version pins
 
-| File | What to update |
-| --- | --- |
-| `README.md` | Pin version, download URLs, example `OpenCASCADE_DIR` |
-| `CMakeLists.txt` | `OCCT_3RD_PARTY_DIR` paths (freetype/tbb/ffmpeg versions in `DLLS_COMMON`) |
+| File                                 | What to update                                                                           |
+| ------------------------------------ | ---------------------------------------------------------------------------------------- |
+| `README.md`                          | Pin version, download URLs, example `OpenCASCADE_DIR`                                    |
+| `CMakeLists.txt`                     | `OCCT_3RD_PARTY_DIR` paths (freetype/tbb/ffmpeg versions in `DLLS_COMMON`)               |
 | `.github/workflows/windows-msvc.yml` | Prebuilt download URL, cache key, `OpenCASCADE_DIR`/`OCCT_3RD_PARTY_DIR` in CI configure |
-| `scripts/build-occt-wasm.ps1` | Shared wasm build; `$OcctTag`, `$FreeTypeVersion`, cmake flags |
-| `scripts/build-occt-793-wasm.ps1` | Wrapper defaulting to `V7_9_3` |
-| `scripts/build-occt-v8-wasm.ps1` | Wrapper defaulting to `V8_0_0_p1` |
-| `docs/building-occt.md` | This document |
-| `src/ply_io.cpp` | Comments if triangulation API changes |
+| `scripts/build-occt-wasm.ps1`        | Shared wasm build; `$OcctTag`, `$FreeTypeVersion`, cmake flags                           |
+| `scripts/build-occt-793-wasm.ps1`    | Wrapper defaulting to `V7_9_3`                                                           |
+| `scripts/build-occt-v8-wasm.ps1`     | Wrapper defaulting to `V8_0_0_p1`                                                        |
+| `docs/building-occt.md`              | This document                                                                            |
+| `src/ply_io.cpp`                     | Comments if triangulation API changes                                                    |
 
 ---
 
 ## Quick reference: EzyCad CMake variables
 
-| Variable | Platform | Purpose |
-| --- | --- | --- |
-| `OpenCASCADE_DIR` | All | Path to `OpenCASCADEConfig.cmake` directory |
-| `OCCT_3RD_PARTY_DIR` | Windows desktop | Root of 3rdparty bundle for runtime DLLs |
-| `CMAKE_BUILD_TYPE` | Native / wasm | `Release` recommended |
+| Variable             | Platform        | Purpose                                     |
+| -------------------- | --------------- | ------------------------------------------- |
+| `OpenCASCADE_DIR`    | All             | Path to `OpenCASCADEConfig.cmake` directory |
+| `OCCT_3RD_PARTY_DIR` | Windows desktop | Root of 3rdparty bundle for runtime DLLs    |
+| `CMAKE_BUILD_TYPE`   | Native / wasm   | `Release` recommended                       |
 
 EzyCad wasm also sets `TKOpenGles` in `OpenCASCADE_LIBS` when `CMAKE_CXX_COMPILER_ID` is `Emscripten`.

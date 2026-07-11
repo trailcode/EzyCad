@@ -35,10 +35,10 @@ Typical uses:
 
 ### Transient vs committed state
 
-| Layer | Owner | Cleared by |
-| --- | --- | --- |
-| **Committed** edges, faces, dimensions, permanent "+" markers | `Sketch_edges`, `Sketch_topo`, `Sketch_dims`, `Sketch_node_marks` | Explicit remove / undo delta |
-| **Transient** tmp edges, tmp nodes, rubber-band previews | `Sketch_tools` | `cancel_elm()` or `finalize_elm()` |
+| Layer                                                         | Owner                                                             | Cleared by                         |
+| ------------------------------------------------------------- | ----------------------------------------------------------------- | ---------------------------------- |
+| **Committed** edges, faces, dimensions, permanent "+" markers | `Sketch_edges`, `Sketch_topo`, `Sketch_dims`, `Sketch_node_marks` | Explicit remove / undo delta       |
+| **Transient** tmp edges, tmp nodes, rubber-band previews      | `Sketch_tools`                                                    | `cancel_elm()` or `finalize_elm()` |
 
 Do not mix transient edges into the persistent list; tools finalize through `Sketch_edges` and `Sketch_topo`.
 
@@ -49,10 +49,10 @@ Do not mix transient edges into the persistent list; tools finalize through `Ske
 
 ### Global sketch options (static)
 
-| API | Effect |
-| --- | --- |
+| API                                  | Effect                                                                                                                                 |
+| ------------------------------------ | -------------------------------------------------------------------------------------------------------------------------------------- |
 | `Sketch::set_add_mid_pt_edges(bool)` | When true, linear edge tools create midpoint snap nodes on new segments. Default off in the app; many unit tests enable it in `SetUp`. |
-| `Sketch::set_edge_from_center(bool)` | When true, rectangle/circle/slot tools place from center instead of corner. |
+| `Sketch::set_edge_from_center(bool)` | When true, rectangle/circle/slot tools place from center instead of corner.                                                            |
 
 Snap distance, guide mode, and guide colors live on `Sketch_nodes` (static setters).
 
@@ -95,16 +95,16 @@ The wire overload creates a sketch **from a planar face**; `m_originating_face` 
 
 The viewer and `GUI` forward pointer and keyboard events to the **current** sketch:
 
-| Event | `Occt_view` / `GUI` | `Sketch` method |
-| --- | --- | --- |
-| Mouse move (sketch tools) | `GUI::on_mouse_pos` | `sketch_pt_move` |
-| Left click (place point) | `GUI::on_left_click_` | `add_sketch_pt` |
-| Tab (length) | `Occt_view::dimension_input` | `dimension_input` |
-| Shift+Tab (angle) | `Occt_view::angle_input` | `angle_input` |
-| Enter (confirm numeric input) | `Occt_view::on_enter` | `on_enter` |
-| Esc (cancel in-progress tool) | `Occt_view::cancel` | `cancel_elm` |
-| Right click (finish line / multi-line) | `GUI::on_mouse_button` | `finalize_elm` |
-| Mode change | (via `GUI::set_mode`) | `on_mode` |
+| Event                                  | `Occt_view` / `GUI`          | `Sketch` method   |
+| -------------------------------------- | ---------------------------- | ----------------- |
+| Mouse move (sketch tools)              | `GUI::on_mouse_pos`          | `sketch_pt_move`  |
+| Left click (place point)               | `GUI::on_left_click_`        | `add_sketch_pt`   |
+| Tab (length)                           | `Occt_view::dimension_input` | `dimension_input` |
+| Shift+Tab (angle)                      | `Occt_view::angle_input`     | `angle_input`     |
+| Enter (confirm numeric input)          | `Occt_view::on_enter`        | `on_enter`        |
+| Esc (cancel in-progress tool)          | `Occt_view::cancel`          | `cancel_elm`      |
+| Right click (finish line / multi-line) | `GUI::on_mouse_button`       | `finalize_elm`    |
+| Mode change                            | (via `GUI::set_mode`)        | `on_mode`         |
 
 Face extrude mode (`Mode::Sketch_face_extrude`) routes mouse, Tab, and Enter through `Occt_view::sketch_face_extrude` / `Shp_extrude` instead of the sketch tool paths above.
 
@@ -114,32 +114,32 @@ Full GLFW -> `GUI` -> view routing: [`src/doc/gui.md`](gui.md).
 
 ### Visibility and display
 
-| Method | Purpose |
-| --- | --- |
-| `set_visible` / `is_visible` | Show or hide the whole sketch in the viewer |
-| `set_show_faces` / `set_show_edges` / `set_show_dims` | Layer toggles for faces, edges, dimensions |
-| `set_edge_style(Full \| Background \| Hidden)` | Current vs background sketch appearance |
-| `set_current()` | Make this sketch current in `Occt_view` |
-| `refresh_annotations(Sketch_annotation_refresh)` | Rebuild length dimensions and/or permanent node marks after settings changes |
-| `append_list_hover_ais(out)` | AIS objects to highlight when the Sketch List row is hovered |
+| Method                                                | Purpose                                                                      |          |                                         |
+| ---                                                   | ---                                                                          |          |                                         |
+| `set_visible` / `is_visible`                          | Show or hide the whole sketch in the viewer                                  |          |                                         |
+| `set_show_faces` / `set_show_edges` / `set_show_dims` | Layer toggles for faces, edges, dimensions                                   |          |                                         |
+| `set_edge_style(Full \                                | Background \                                                                 | Hidden)` | Current vs background sketch appearance |
+| `set_current()`                                       | Make this sketch current in `Occt_view`                                      |          |                                         |
+| `refresh_annotations(Sketch_annotation_refresh)`      | Rebuild length dimensions and/or permanent node marks after settings changes |          |                                         |
+| `append_list_hover_ais(out)`                          | AIS objects to highlight when the Sketch List row is hovered                 |          |                                         |
 
 ### Geometry queries and inspector
 
-| Method | Purpose |
-| --- | --- |
-| `has_edges`, `edge_count`, `face_count`, `length_dimension_count` | Counts for UI and mode selection after undo |
-| `inspector_*_labels()` | Human-readable labels for Sketch List / inspector panels |
-| `get_plane()`, `get_nodes()`, `underlay()` | Access plane, nodes, and image underlay |
+| Method                                                            | Purpose                                                  |
+| ----------------------------------------------------------------- | -------------------------------------------------------- |
+| `has_edges`, `edge_count`, `face_count`, `length_dimension_count` | Counts for UI and mode selection after undo              |
+| `inspector_*_labels()`                                            | Human-readable labels for Sketch List / inspector panels |
+| `get_plane()`, `get_nodes()`, `underlay()`                        | Access plane, nodes, and image underlay                  |
 
 ### Operations
 
-| Method | Purpose |
-| --- | --- |
-| `mirror_selected_edges()` | Mirror selected edges about `m_operation_axis` (requires axis + selection) |
-| `revolve_selected(angle)` | Revolve selected edges/faces into a 3D solid |
-| `clear_operation_axis` / `has_operation_axis` | Operation-axis lifecycle |
-| `remove_edge`, `remove_permanent_node_mark` | Delete committed geometry from selection |
-| `toggle_edge_dim_anno`, `try_remove_length_dimension` | Dimension tool and deletion |
+| Method                                                | Purpose                                                                    |
+| ----------------------------------------------------- | -------------------------------------------------------------------------- |
+| `mirror_selected_edges()`                             | Mirror selected edges about `m_operation_axis` (requires axis + selection) |
+| `revolve_selected(angle)`                             | Revolve selected edges/faces into a 3D solid                               |
+| `clear_operation_axis` / `has_operation_axis`         | Operation-axis lifecycle                                                   |
+| `remove_edge`, `remove_permanent_node_mark`           | Delete committed geometry from selection                                   |
+| `toggle_edge_dim_anno`, `try_remove_length_dimension` | Dimension tool and deletion                                                |
 
 ### Dimensions (delegated to `Sketch_dims`)
 
@@ -194,31 +194,31 @@ Prefer these visitors in JSON/delta/topo code over iterating `std::list<Sketch_e
 
 ## Module responsibilities (detail)
 
-| File | Responsibility |
-| --- | --- |
-| `sketch.h` / `sketch.cpp` | Coordinator: input routing, edge shape updates, snap aggregation, inspector labels, static options |
-| `sketch_edge.h` | `Sketch_edge` struct; `sketch_edge_is_linear` / `sketch_edge_is_arc`; `sketch_edge_outgoing_dir_2d` / `sketch_edge_incoming_dir_2d` |
-| `sketch_edges.h` | Persistent `std::list<Sketch_edge>`; add linear/arc edges; split at intersections; pick and selection |
-| `sketch_topo.h` | Planar face extraction from edge graph; automatic splitting at interior nodes and arc crossings |
-| `sketch_nodes.h` | Node storage, snap, snap guides, outside-sketch snap points |
-| `sketch_node_marks.h` | AIS "+" markers for permanent nodes only |
-| `sketch_dims.h` | Length dimensions between node pairs; Tab/Shift+Tab input; dimension-tool pick state |
-| `sketch_tools.h` | Mode-specific click/move/finalize/cancel for all sketch creation tools |
-| `sketch_underlay.h` | Calibrated raster underlay on the sketch plane |
-| `sketch_ais.h` | OCCT AIS wrappers tied back to owning `Sketch` |
-| `sketch_display.cpp` | Visibility, edge/face styling, `set_current`, list hover |
-| `sketch_operations.cpp` | Operation axis, mirror, revolve |
-| `sketch_json.h` | `.ezy` / project JSON for sketches |
-| `sketch_op_recorder.h` | Undo/redo recorder; `Sketch_op_delta` lives in `.cpp` |
+| File                      | Responsibility                                                                                                                      |
+| ------------------------- | ----------------------------------------------------------------------------------------------------------------------------------- |
+| `sketch.h` / `sketch.cpp` | Coordinator: input routing, edge shape updates, snap aggregation, inspector labels, static options                                  |
+| `sketch_edge.h`           | `Sketch_edge` struct; `sketch_edge_is_linear` / `sketch_edge_is_arc`; `sketch_edge_outgoing_dir_2d` / `sketch_edge_incoming_dir_2d` |
+| `sketch_edges.h`          | Persistent `std::list<Sketch_edge>`; add linear/arc edges; split at intersections; pick and selection                               |
+| `sketch_topo.h`           | Planar face extraction from edge graph; automatic splitting at interior nodes and arc crossings                                     |
+| `sketch_nodes.h`          | Node storage, snap, snap guides, outside-sketch snap points                                                                         |
+| `sketch_node_marks.h`     | AIS "+" markers for permanent nodes only                                                                                            |
+| `sketch_dims.h`           | Length dimensions between node pairs; Tab/Shift+Tab input; dimension-tool pick state                                                |
+| `sketch_tools.h`          | Mode-specific click/move/finalize/cancel for all sketch creation tools                                                              |
+| `sketch_underlay.h`       | Calibrated raster underlay on the sketch plane                                                                                      |
+| `sketch_ais.h`            | OCCT AIS wrappers tied back to owning `Sketch`                                                                                      |
+| `sketch_display.cpp`      | Visibility, edge/face styling, `set_current`, list hover                                                                            |
+| `sketch_operations.cpp`   | Operation axis, mirror, revolve                                                                                                     |
+| `sketch_json.h`           | `.ezy` / project JSON for sketches                                                                                                  |
+| `sketch_op_recorder.h`    | Undo/redo recorder; `Sketch_op_delta` lives in `.cpp`                                                                               |
 
 ## Edge and face model
 
-| Entity | Storage | Notes |
-| --- | --- | --- |
-| **Linear edge** | `Sketch_edge` in `Sketch_edges` | `node_idx_a`, `node_idx_b`; optional `node_idx_mid` when add-midpoint is on |
-| **Arc edge** | same | Start, end, arc midpoint nodes; `node_idx_arc_pt` for curve snap |
-| **Face** | Derived in `Sketch_topo` | Rebuilt by `update_faces()` into `Sketch_face_shp`; drives extrude/revolve and face selection |
-| **Auto-split** | `Sketch_topo` / edge add | New edges crossing existing ones split at intersections (T-junctions, divided regions) |
+| Entity          | Storage                         | Notes                                                                                         |
+| --------------- | ------------------------------- | --------------------------------------------------------------------------------------------- |
+| **Linear edge** | `Sketch_edge` in `Sketch_edges` | `node_idx_a`, `node_idx_b`; optional `node_idx_mid` when add-midpoint is on                   |
+| **Arc edge**    | same                            | Start, end, arc midpoint nodes; `node_idx_arc_pt` for curve snap                              |
+| **Face**        | Derived in `Sketch_topo`        | Rebuilt by `update_faces()` into `Sketch_face_shp`; drives extrude/revolve and face selection |
+| **Auto-split**  | `Sketch_topo` / edge add        | New edges crossing existing ones split at intersections (T-junctions, divided regions)        |
 
 ### Face extraction (`Sketch_topo::update_faces`)
 
@@ -234,17 +234,17 @@ See [`docs/usage-sketch.md`](../../docs/usage-sketch.md) for user-facing splitti
 
 ## Testing
 
-| Item | Location |
-| --- | --- |
-| GTest suite | `tests/sketch_*_tests.cpp` (+ `tests/sketch_test_fixture.*`), filter `Sketch_test.*` |
-| Build target | `EzyCad_tests` ([`agents/workflows/local-dev.md`](../../agents/workflows/local-dev.md)) |
-| Pattern | Construct `Occt_view`, create `Sketch` on a plane, drive via `add_sketch_pt` or test helpers |
+| Item         | Location                                                                                     |
+| ------------ | -------------------------------------------------------------------------------------------- |
+| GTest suite  | `tests/sketch_*_tests.cpp` (+ `tests/sketch_test_fixture.*`), filter `Sketch_test.*`         |
+| Build target | `EzyCad_tests` ([`agents/workflows/local-dev.md`](../../agents/workflows/local-dev.md))      |
+| Pattern      | Construct `Occt_view`, create `Sketch` on a plane, drive via `add_sketch_pt` or test helpers |
 
 ## Related code outside `src/sketch*`
 
-| Location | Role |
-| --- | --- |
+| Location                        | Role                                                            |
+| ------------------------------- | --------------------------------------------------------------- |
 | `occt_view.h` / `occt_view.cpp` | Sketch list, current sketch, input forwarding, sketch-from-face |
-| `mode.h` | `Mode` enum selects the active sketch tool |
-| `gui.cpp` | Toolbar and Sketch List UI wired to `Sketch` methods |
-| `shp.h` | `Shp_rslt` from `revolve_selected` |
+| `mode.h`                        | `Mode` enum selects the active sketch tool                      |
+| `gui.cpp`                       | Toolbar and Sketch List UI wired to `Sketch` methods            |
+| `shp.h`                         | `Shp_rslt` from `revolve_selected`                              |

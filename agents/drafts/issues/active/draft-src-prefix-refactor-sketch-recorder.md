@@ -29,17 +29,17 @@ No user-visible behavior change is intended; this is structural cleanup on top o
 
 **File renames (prefix convention):**
 
-| Old | New | Prefix |
-| --- | --- | --- |
-| `dbg.h` | `utl_dbg.h` | `utl_` utilities |
-| `geom.cpp/h/inl` | `utl_geom.cpp/h/inl` | `utl_` |
-| `log.cpp/h` | `utl_log.cpp/h` | `utl_` |
-| `ply_io.cpp/h` | `utl_ply_io.cpp/h` | `utl_` |
-| `settings.cpp/h` | `utl_settings.cpp/h` | `utl_` |
-| `types.h/inl` | `utl_types.h/inl` | `utl_` |
-| `modes.cpp/h` | `gui_modes.cpp/h` | `gui_` |
-| `lua_console.cpp/h` | `scr_lua_console.cpp/h` | `scr_` (scripting) |
-| `python_console.cpp/h` | `scr_python_console.cpp/h` | `scr_` |
+| Old                    | New                        | Prefix             |
+| ---------------------- | -------------------------- | ------------------ |
+| `dbg.h`                | `utl_dbg.h`                | `utl_` utilities   |
+| `geom.cpp/h/inl`       | `utl_geom.cpp/h/inl`       | `utl_`             |
+| `log.cpp/h`            | `utl_log.cpp/h`            | `utl_`             |
+| `ply_io.cpp/h`         | `utl_ply_io.cpp/h`         | `utl_`             |
+| `settings.cpp/h`       | `utl_settings.cpp/h`       | `utl_`             |
+| `types.h/inl`          | `utl_types.h/inl`          | `utl_`             |
+| `modes.cpp/h`          | `gui_modes.cpp/h`          | `gui_`             |
+| `lua_console.cpp/h`    | `scr_lua_console.cpp/h`    | `scr_` (scripting) |
+| `python_console.cpp/h` | `scr_python_console.cpp/h` | `scr_`             |
 
 Existing prefixes unchanged: `shp_*`, `sketch*`, `gui*`, `occt_*`, `utl_*` (json/occt helpers), `delta*`.
 

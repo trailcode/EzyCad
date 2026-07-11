@@ -22,11 +22,11 @@ agents/drafts/
 
 ## Naming (GitHub-first)
 
-| Situation | Filename pattern | Example |
-| --- | --- | --- |
-| Issue filed on GitHub | `gh-NNN-short-slug.md` | `gh-134-linear-edge-automatic-splitting.md` |
-| PR filed on GitHub | `gh-NNN-short-slug.md` (use **PR** number in `prs/`) | `gh-145-sketch-delta-undo-redo.md` |
-| Not yet filed | `draft-short-slug.md` | `draft-src-prefix-refactor-sketch-recorder.md` |
+| Situation             | Filename pattern                                     | Example                                        |
+| --------------------- | ---------------------------------------------------- | ---------------------------------------------- |
+| Issue filed on GitHub | `gh-NNN-short-slug.md`                               | `gh-134-linear-edge-automatic-splitting.md`    |
+| PR filed on GitHub    | `gh-NNN-short-slug.md` (use **PR** number in `prs/`) | `gh-145-sketch-delta-undo-redo.md`             |
+| Not yet filed         | `draft-short-slug.md`                                | `draft-src-prefix-refactor-sketch-recorder.md` |
 
 Use lowercase kebab-case slugs. Keep slugs short but recognizable.
 
