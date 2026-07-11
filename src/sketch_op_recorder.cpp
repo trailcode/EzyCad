@@ -75,8 +75,8 @@ struct Sketch_op_data
   bool empty() const
   {
     return prev_linear_edges.empty() && curr_linear_edges.empty() && prev_arc_edges.empty() && curr_arc_edges.empty() &&
-           curr_nodes.empty() && prev_length_dims.empty() && curr_length_dims.empty() &&
-           !prev_operation_axis.has_value() && !curr_operation_axis.has_value();
+           curr_nodes.empty() && prev_length_dims.empty() && curr_length_dims.empty() && !prev_operation_axis.has_value() &&
+           !curr_operation_axis.has_value();
   }
 
   Sketch* resolve_sketch_(Occt_view& view) const;
@@ -94,7 +94,7 @@ struct Sketch_op_data
   static void remove_length_dim_(Sketch& sketch, const Length_dim_record& rec);
   static void tombstone_node_at_pt_(Sketch& sketch, const gp_Pnt2d& pt);
   static void restore_curr_node_at_pt_(Sketch& sketch, const Curr_node_record& rec,
-                                      const std::vector<Arc_edge_record>& curr_arc_edges);
+                                       const std::vector<Arc_edge_record>& curr_arc_edges);
   static void restore_prev_linear_edge_(Sketch& sketch, const Prev_edge_rec& rec);
   static void restore_length_dim_(Sketch& sketch, const Length_dim_record& rec);
   static void restore_prev_operation_axis_(Sketch& sketch, const Prev_edge_rec& rec);
@@ -124,14 +124,14 @@ private:
 class Sketch_op_recorder::Impl
 {
 public:
-  Occt_view&                        m_view;
-  Sketch&                           m_sketch;
-  Sketch_op_recorder*               m_owner{nullptr};
-  bool                              m_active{true};
-  bool                              m_committed{false};
-  std::vector<gp_Pnt2d>             m_live_node_pts_at_start;
+  Occt_view&                                 m_view;
+  Sketch&                                    m_sketch;
+  Sketch_op_recorder*                        m_owner{nullptr};
+  bool                                       m_active{true};
+  bool                                       m_committed{false};
+  std::vector<gp_Pnt2d>                      m_live_node_pts_at_start;
   std::vector<Sketch_op_data::Prev_edge_rec> m_linear_edges_at_start;
-  Sketch_op_data                    m_data;
+  Sketch_op_data                             m_data;
 
   Impl(Occt_view& view, Sketch& sketch);
 
@@ -602,7 +602,7 @@ void Sketch_op_data::tombstone_node_at_pt_(Sketch& sketch, const gp_Pnt2d& pt)
 }
 
 void Sketch_op_data::restore_curr_node_at_pt_(Sketch& sketch, const Curr_node_record& rec,
-                                            const std::vector<Arc_edge_record>& curr_arc_edges)
+                                              const std::vector<Arc_edge_record>& curr_arc_edges)
 {
   bool is_arc_bulge = false;
   for (const Arc_edge_record& e : curr_arc_edges)

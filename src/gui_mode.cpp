@@ -1172,7 +1172,7 @@ void GUI::on_key_rotate_mode_(int key)
 
 void GUI::on_key_move_mode_(int key)
 {
-  Move_options&      opts = m_view->shp_move().get_opts();
+  Move_options&      opts          = m_view->shp_move().get_opts();
   const ScreenCoords screen_coords = cursor_screen_coords();
 
   switch (key)

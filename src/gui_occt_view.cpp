@@ -1951,9 +1951,9 @@ void Occt_view::apply_camera_projection()
     return;
 
   const double scale = m_view->Scale();
-  const gp_Pnt   eye = camera->Eye();
-  const gp_Pnt   at  = camera->Center();
-  const double   dist = gp_Vec(eye, at).Magnitude();
+  const gp_Pnt eye   = camera->Eye();
+  const gp_Pnt at    = camera->Center();
+  const double dist  = gp_Vec(eye, at).Magnitude();
 
   camera->SetProjectionType(target);
   if (dist > Precision::Confusion())

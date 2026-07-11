@@ -484,8 +484,7 @@ TEST_F(Sketch_test, CreateCircle)
   EXPECT_NEAR(props.Mass(), expected_area, 1.0) << "Circle area should be 100pi (radius = 10)";
 }
 
-// Test case 1: Simple rectangle face
-
+// Snap points from a square originating face
 TEST_F(Sketch_test, OriginatingFaceSnapPointsSquare)
 {
   gp_Pln default_plane(gp::Origin(), gp::DZ());

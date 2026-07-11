@@ -234,7 +234,7 @@ void GUI::save_occt_view_settings()
       {"elm_list_hover_color",
        {m_elm_list_hover_color[0], m_elm_list_hover_color[1], m_elm_list_hover_color[2], m_elm_list_hover_color[3]}},
   };
-  j["version"] = k_settings_version;
+  j["version"]          = k_settings_version;
   const char* imgui_ini = ImGui::SaveIniSettingsToMemory(nullptr);
   if (imgui_ini && *imgui_ini)
     j["imgui_ini"] = std::string(imgui_ini);

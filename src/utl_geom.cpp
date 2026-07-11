@@ -1005,7 +1005,7 @@ ezy_geom::linestring_2d to_boost_ls(const TopoDS_Shape& shape, const gp_Pln& pln
     constexpr size_t k_min_pts    = 8;
     constexpr size_t k_max_pts    = 32;
     constexpr double k_rad_per_pt = to_radians(15.0);
-    const size_t     num_pts    = std::clamp(static_cast<size_t>(std::ceil(span / k_rad_per_pt)) + 1, k_min_pts, k_max_pts);
+    const size_t     num_pts      = std::clamp(static_cast<size_t>(std::ceil(span / k_rad_per_pt)) + 1, k_min_pts, k_max_pts);
 
     const double step = (u_end - u_start) / static_cast<double>(num_pts - 1);
     for (size_t i = 0; i < num_pts; ++i)

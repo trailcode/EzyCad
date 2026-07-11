@@ -177,8 +177,7 @@ TEST_F(Sketch_test, EzyDocumentJsonIncludesFormatVersion)
   EXPECT_EQ(doc["ezyFormat"].get<int>(), 3);
 }
 
-// Test bridge edge removal - rectangle with inner rectangle connected by bridge
-
+// Underlay round-trip through .ezy zip
 TEST_F(Sketch_test, EzyZipUnderlayRoundTrip)
 {
   view().asset_store().clear();

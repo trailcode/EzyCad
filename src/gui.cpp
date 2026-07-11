@@ -2069,7 +2069,7 @@ void GUI::underlay_calib_prompt_x_distance_(const Sketch::sptr& sk)
   m_underlay_calib_phase       = Underlay_calib_phase::AwaitDistX;
   const double       L_model   = m_underlay_calib_x0.Distance(m_underlay_calib_x1);
   const float        dist_show = static_cast<float>(L_model / m_view->get_dimension_scale());
-  const ScreenCoords spos = cursor_screen_coords();
+  const ScreenCoords spos      = cursor_screen_coords();
 
   Sketch::wptr wk      = sk;
   auto         on_dist = [this, wk](float new_dist, bool is_final)
@@ -2127,7 +2127,7 @@ void GUI::underlay_calib_prompt_y_distance_(const Sketch::sptr& sk)
   m_underlay_calib_phase       = Underlay_calib_phase::AwaitDistY;
   const double       L_model   = m_underlay_calib_y0.Distance(m_underlay_calib_y1);
   const float        dist_show = static_cast<float>(L_model / m_view->get_dimension_scale());
-  const ScreenCoords spos = cursor_screen_coords();
+  const ScreenCoords spos      = cursor_screen_coords();
 
   Sketch::wptr wk      = sk;
   auto         on_dist = [this, wk](float new_dist, bool is_final)

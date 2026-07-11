@@ -259,11 +259,7 @@ TEST_F(Sketch_test, Undo_circle_axis_then_revolve_snapshot_three_undos)
   EXPECT_EQ(Sketch_access::get_arc_internal_edge_count(*sk), 0u);
 }
 
-// Test T-junction case (one edge's endpoint touches the interior of another).
-// Initially two edges are added; the touched edge is split at the junction point,
-// resulting in three edges total. Test both addition orders.
-
-// Test operation axis persistence in sketch JSON save/load.
+// Operation axis persistence in sketch JSON save/load.
 TEST_F(Sketch_test, OperationAxis_JSON_RoundTrip)
 {
   gp_Pln default_plane(gp::Origin(), gp::DZ());
@@ -748,12 +744,7 @@ TEST_F(Sketch_test, RevolveSelected_ClosedEdgeProfile)
   EXPECT_EQ(actual.ShapeType(), TopAbs_SOLID) << "Closed edge profile revolved 360 deg should be a solid";
 }
 
-// Test that split edges have midpoints for snapping
-// This test verifies the fix for the bug where edges split by their midpoint
-// don't have midpoints to snap to
-// This test verifies the fix for the bug where edges split by their midpoint
-// don't have midpoints to snap to
-
+// New file clears undo/redo stacks
 TEST_F(Sketch_test, NewFile_clears_undo_stacks)
 {
   gp_Pln default_plane(gp::Origin(), gp::DZ());

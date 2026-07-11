@@ -46,8 +46,6 @@ TEST_F(Sketch_test, AddTwoCrossingEdges_NotAtMidpoints_ProducesFourEdges)
       << "Two edges crossing interiorly (but not at midpoints) must each be split, producing four edges total";
 }
 
-// Test add line edge with "place from center": Tab length is the full edge span.
-
 // Test the case where the second (vertical) edge is added after the first (horizontal) and passes
 // *exactly through the midpoint* of the first (and not the midpoint of the second).
 // The split logic must still split the horizontal at its (former) mid node and subdivide the
@@ -128,8 +126,6 @@ TEST_F(Sketch_test, AddTwoEdges_TJunction_ProducesThreeEdges)
         << "T-junction (vert first): new edge split at interior attach point on it -> 3 edges total";
   }
 }
-
-// Test visibility settings
 
 // Test for splitting a square with a vertical edge at the midpoints (T-junction at mid, not crossing).
 // Result must be two proper rectangles in *both* addition orders.
@@ -257,13 +253,6 @@ TEST_F(Sketch_test, AddSquareThenMidEdge_ProducesTwoRectangles_BothOrders)
     EXPECT_TRUE(found_right) << "Missing right 5x10 rect (mid first)";
   }
 }
-
-// GUI path coverage for the mid edge: the vertical mid is added via the finalize_edges_
-// (line string tmp, pre-pass batch inters to split olds, append, post re-subdivide news,
-// plus mid snap handling). Exercise both draw directions for the vertical (lower midpoint
-// first then top; top first then lower). Must still produce exactly two 5x10 rect faces
-// (not squares) in either case. This addresses order/direction sensitivity that can appear
-// only in the GUI finalize path vs controlled direct add_edge_.
 
 // GUI path coverage for the mid edge: the vertical mid is added via the finalize_edges_
 // (line string tmp, pre-pass batch inters to split olds, append, post re-subdivide news,
@@ -399,10 +388,6 @@ TEST_F(Sketch_test, AddSquareThenMidEdge_GUIPath_BothDrawDirections_ProducesTwoR
 // Two squares via the GUI square tool (finalize_square_ path): a 2x2 square (radius/half-side 1)
 // plus a 1x1 square placed with its center on the top-right corner of the first. With midpoints
 // off, the internal edges of the second square should split the first into three faces (not two).
-
-// Two squares via the GUI square tool (finalize_square_ path): a 2x2 square (radius/half-side 1)
-// plus a 1x1 square placed with its center on the top-right corner of the first. With midpoints
-// off, the internal edges of the second square should split the first into three faces (not two).
 TEST_F(Sketch_test, TwoSquares_TopRightCornerOverlap_GUIPath_ProducesThreeFaces)
 {
   struct Snap_dist_guard
@@ -442,9 +427,7 @@ TEST_F(Sketch_test, TwoSquares_TopRightCornerOverlap_GUIPath_ProducesThreeFaces)
   EXPECT_EQ(faces.size(), 3) << "Overlapping corner squares should produce three faces";
 }
 
-// Test edge style settings
-
-// Test case 1: Simple rectangle face
+// Simple rectangle face
 TEST_F(Sketch_test, UpdateFaces_SimpleRectangle)
 {
   // Define points
@@ -479,9 +462,7 @@ TEST_F(Sketch_test, UpdateFaces_SimpleRectangle)
   for_all_edge_permutations_(points, edge_indices, gp_Pln(gp::Origin(), gp::DZ()), check_sketch);
 }
 
-// Test case 2: Face with hole
-
-// Test case 2: Face with hole
+// Face with hole
 TEST_F(Sketch_test, UpdateFaces_FaceWithHole)
 {
   Sketch sketch("test_sketch", view(), gp_Pln(gp::Origin(), gp::DZ()));
@@ -540,9 +521,7 @@ TEST_F(Sketch_test, UpdateFaces_FaceWithHole)
   add_edges_from_indices_(points, edge_indices, gp_Pln(gp::Origin(), gp::DZ()), check_sketch);
 }
 
-// Test case 3: Multiple faces
-
-// Test case 3: Multiple faces
+// Multiple faces
 TEST_F(Sketch_test, UpdateFaces_MultipleFaces)
 {
   Sketch sketch("test_sketch", view(), gp_Pln(gp::Origin(), gp::DZ()));
@@ -586,9 +565,7 @@ TEST_F(Sketch_test, UpdateFaces_MultipleFaces)
   }
 }
 
-// Test case 4: Invalid face (non-closed shape)
-
-// Test case 4: Invalid face (non-closed shape)
+// Invalid face (non-closed shape)
 TEST_F(Sketch_test, UpdateFaces_InvalidFace)
 {
   Sketch sketch("test_sketch", view(), gp_Pln(gp::Origin(), gp::DZ()));
@@ -608,9 +585,7 @@ TEST_F(Sketch_test, UpdateFaces_InvalidFace)
   EXPECT_EQ(faces.size(), 0);
 }
 
-// Test case 5: Face with arc edges
-
-// Test case 5: Face with arc edges
+// Face with arc edges
 TEST_F(Sketch_test, UpdateFaces_FaceWithArcs)
 {
   Sketch sketch("test_sketch", view(), gp_Pln(gp::Origin(), gp::DZ()));
@@ -658,7 +633,7 @@ TEST_F(Sketch_test, UpdateFaces_FaceWithArcs)
   */
 }
 
-// Test case 6: Dangling edges attached to arc mid-node
+// Dangling edges attached to arc mid-node
 TEST_F(Sketch_test, UpdateFaces_DanglingEdgesArcMidNode)
 {
   gp_Pln default_plane(gp::Origin(), gp::DZ());
@@ -713,9 +688,6 @@ TEST_F(Sketch_test, UpdateFaces_DanglingEdgesArcMidNode)
 
 // Semicircle with equal-x endpoints: chord directions at endpoints are vertical, but arc
 // tangents are horizontal. Face walking must use curve tangents.
-
-// Semicircle with equal-x endpoints: chord directions at endpoints are vertical, but arc
-// tangents are horizontal. Face walking must use curve tangents.
 TEST_F(Sketch_test, UpdateFaces_SemicircleTangentWalker)
 {
   gp_Pln default_plane(gp::Origin(), gp::DZ());
@@ -736,10 +708,6 @@ TEST_F(Sketch_test, UpdateFaces_SemicircleTangentWalker)
   const auto& face = faces[0];
   EXPECT_EQ(face->Shape().ShapeType(), TopAbs_FACE);
 }
-
-// Circle split into four arcs plus a chord (project.ezy topology). At the chord
-// endpoints the walker arrives on an arc whose start and end tangents differ; using
-// the start tangent as the arrival direction picks the wrong next edge and drops faces.
 
 // Circle split into four arcs plus a chord (project.ezy topology). At the chord
 // endpoints the walker arrives on an arc whose start and end tangents differ; using
@@ -926,7 +894,7 @@ TEST_F(Sketch_test, UpdateFaces_SquareWithDanglingArcEdge)
   }
 }
 
-// Test bridge edge removal - rectangle with inner rectangle connected by bridge
+// Bridge edge removal - rectangle with inner rectangle connected by bridge
 TEST_F(Sketch_test, UpdateFaces_BridgeEdgeRemoval)
 {
   gp_Pln default_plane(gp::Origin(), gp::DZ());
@@ -1064,12 +1032,6 @@ TEST_F(Sketch_test, UpdateFaces_BridgeEdgeRemoval)
 // inner ring (the triangle as hole). The other is a separate closed face (e.g. a top "cap"
 // region created by the horizontal/vertical structure). The bridge edge(s) must not prevent
 // proper hole attachment or cause extra/missing faces or degenerate polys.
-
-// Regression for bridge.ezy (user-provided sketch with a bridge edge + triangular hole).
-// Expected: exactly two faces after update_faces_, with exactly one of them having a single
-// inner ring (the triangle as hole). The other is a separate closed face (e.g. a top "cap"
-// region created by the horizontal/vertical structure). The bridge edge(s) must not prevent
-// proper hole attachment or cause extra/missing faces or degenerate polys.
 TEST_F(Sketch_test, UpdateFaces_BridgeEzy_ProducesTwoFaces_OneWithHole)
 {
   gp_Pln default_plane(gp::Origin(), gp::DZ());
@@ -1178,9 +1140,7 @@ TEST_F(Sketch_test, UpdateFaces_BridgeEzy_ProducesTwoFaces_OneWithHole)
   EXPECT_EQ(linear_count, 11u) << "All atomic edges from the .ezy must survive (bridge excluded only from cycles)";
 }
 
-// Test dangling edges removal - rectangle with branching edges
-
-// Test dangling edges removal - rectangle with branching edges
+// Dangling edges removal - rectangle with branching edges
 TEST_F(Sketch_test, UpdateFaces_DanglingEdgesRemoval)
 {
   gp_Pln default_plane(gp::Origin(), gp::DZ());
@@ -1264,13 +1224,7 @@ TEST_F(Sketch_test, UpdateFaces_DanglingEdgesRemoval)
       << "All 12 edges (4 rectangle + 8 dangling) should still exist in the sketch";
 }
 
-// Test operation axis persistence in sketch JSON save/load.
-
-// Test that split edges have midpoints for snapping
-// This test verifies the fix for the bug where edges split by their midpoint
-// don't have midpoints to snap to
-// This test verifies the fix for the bug where edges split by their midpoint
-// don't have midpoints to snap to
+// Split edges should keep midpoints for snapping after a midpoint split
 TEST_F(Sketch_test, SplitEdge_HasMidpoints)
 {
   gp_Pln default_plane(gp::Origin(), gp::DZ());
