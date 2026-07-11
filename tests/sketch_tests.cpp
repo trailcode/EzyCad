@@ -51,8 +51,6 @@ TEST_F(Sketch_test, NodeManagement)
 }
 
 // Test edge creation and management
-
-// Test edge creation and management
 TEST_F(Sketch_test, EdgeManagement)
 {
   gp_Pln default_plane(gp::Origin(), gp::DZ());
@@ -72,10 +70,6 @@ TEST_F(Sketch_test, EdgeManagement)
   // Origin node + 2 endpoints + 1 midpoint (midpoints enabled in fixture).
   EXPECT_EQ(sketch.get_nodes().size(), 4u);
 }
-
-// Test that adding a single edge via add_edge_ creates exactly three nodes:
-// the two endpoints (user nodes) + one automatically created midpoint node for snapping.
-// Verifies positions and the midpoint flag.
 
 // Test that adding a single edge via add_edge_ creates exactly three nodes:
 // the two endpoints (user nodes) + one automatically created midpoint node for snapping.
@@ -111,10 +105,6 @@ TEST_F(Sketch_test, AddSingleEdge_CreatesThreeCorrectNodes)
   EXPECT_TRUE(nodes[2].IsEqual(expected_mid, Precision::Confusion())) << "Node 2 should be the exact midpoint";
   EXPECT_TRUE(nodes[2].midpoint) << "The auto-created center node must be marked as midpoint for snapping";
 }
-
-// Test the new "add midpoints to linear edges" option (default off).
-// Verifies that linear edges do not get auto midpoints by default,
-// and that the static setter controls it for add_edge_ (used by line/multi-line tools).
 
 // Test the new "add midpoints to linear edges" option (default off).
 // Verifies that linear edges do not get auto midpoints by default,
@@ -223,11 +213,6 @@ TEST_F(Sketch_test, AddArc_MidpointOption)
 
   Sketch::set_add_mid_pt_edges(false);
 }
-
-// Test that adding two edges that cross (intersect interior to both) but *not* at either edge's
-// automatically-created midpoint results in each being split into two sub-edges, for a total of 4 edges.
-// This exercises the "split existing intersecting/touching edges on add" logic (and the corresponding
-// subdivision of the new edge) in the non-midpoint-crossing case.
 
 // Test add line edge with "place from center": Tab length is the full edge span.
 TEST_F(Sketch_test, AddEdgeFromCenter_SecondClickFullSpan)
@@ -686,7 +671,6 @@ TEST_F(Sketch_test, OriginatingFaceSnapPointsCircle)
 
 TEST_F(Sketch_test, ExtrudeSketchFace_EzyCad)
 {
-#if 0 // Not working
   gp_Pln default_plane(gp::Origin(), gp::DZ());
   Sketch sketch("TestSketch", view(), default_plane);
 
@@ -701,33 +685,17 @@ TEST_F(Sketch_test, ExtrudeSketchFace_EzyCad)
   const auto& faces = Sketch_access::get_faces(sketch);
   ASSERT_EQ(faces.size(), 1);
 
-  // Tilt the view plane a little
-  gp_Vec tilted_vec(0, 0.1, 1);      // Slightly off Z
-  gp_Dir tilted_normal(tilted_vec);  // gp_Dir is always normalized
-  gp_Pln tilted_plane(gp::Origin(), tilted_normal);
-  View_access::set_view_plane(view(), tilted_plane);
-
-  // Convert a 3D point on the face to screen coordinates
-  gp_Pnt       face_center(5, 2.5, 0);
-  ScreenCoords screen_coords = view().get_screen_coords(face_center);
-
-  // Set the mode to extrusion (if required)
   gui().set_mode(Mode::Sketch_face_extrude);
 
-  // Call the extrusion function
-  view().sketch_face_extrude(screen_coords);
+  // Headless/offscreen viewers cannot AIS-pick faces via MoveTo; inject the face directly.
+  Shp_extrude_access::begin_face_extrude(view().shp_extrude(), faces[0], 5.0);
+  ASSERT_TRUE(view().shp_extrude().has_active_extrusion());
 
-  // Now, check that a new shape was created and is a solid
+  view().shp_extrude().finalize();
+
   auto& shapes = view().get_shapes();
   ASSERT_FALSE(shapes.empty());
-
-  const auto&         extruded_shape = shapes.back();
-  const TopoDS_Shape& topo_shape     = extruded_shape->Shape();
-
-  EXPECT_EQ(topo_shape.ShapeType(), TopAbs_SOLID);
-
-  // Optionally, check the bounding box or volume as before
-#endif
+  EXPECT_EQ(shapes.back()->Shape().ShapeType(), TopAbs_SOLID);
 }
 
 TEST_F(Sketch_test, AddNode_splits_linear_edge_interior)

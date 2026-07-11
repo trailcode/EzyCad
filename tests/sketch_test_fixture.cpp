@@ -2,7 +2,9 @@
 
 #include <utility>
 
+#include "sketch_ais.h"
 #include "sketch_edge.h"
+#include "utl_dbg.h"
 
 GUI Sketch_test::s_gui;
 
@@ -170,6 +172,30 @@ void Sketch_access::remove_permanent_node_mark_(Sketch& sketch, size_t node_idx)
   sketch.remove_permanent_node_mark(mark);
 }
 
-void View_access::set_view_plane(Occt_view& view, const gp_Pln& pln) { view.shp_extrude().set_curr_view_pln(pln); }
+void View_access::set_view_plane(Occt_view& view, const gp_Pln& pln)
+{
+  Shp_extrude_access::set_curr_view_pln(view.shp_extrude(), pln);
+}
 
 void View_access::set_headless(Occt_view& view, bool headless) { view.m_headless_view = headless; }
+
+void Shp_extrude_access::set_curr_view_pln(Shp_extrude& extrude, const gp_Pln& pln)
+{
+  extrude.m_curr_view_pln = pln;
+}
+
+void Shp_extrude_access::begin_face_extrude(Shp_extrude& extrude, const AIS_Shape_ptr& face, double extrude_dist)
+{
+  auto* sketch_face = dynamic_cast<Sketch_face_shp*>(face.get());
+  EZY_ASSERT(sketch_face);
+  EZY_ASSERT(!sketch_face->verts_3d.empty());
+
+  extrude.m_to_extrude_pln = sketch_face->owner_sketch.get_plane();
+  extrude.m_extrude_side   = Plane_side::Front;
+  extrude.m_to_extrude_pt  = sketch_face->verts_3d.front();
+  // Height plane must not be parallel to the sketch plane or Distance stays ~0.
+  extrude.m_curr_view_pln = gp_Pln(*extrude.m_to_extrude_pt, gp_Dir(0.0, 1.0, 0.0));
+  extrude.m_to_extrude    = face;
+
+  extrude.update_extrude_preview_(extrude_dist, extrude.m_extrude_side);
+}

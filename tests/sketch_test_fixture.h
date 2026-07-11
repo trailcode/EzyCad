@@ -69,6 +69,14 @@ public:
   static void set_headless(Occt_view& view, bool headless);
 };
 
+class Shp_extrude_access
+{
+public:
+  static void set_curr_view_pln(Shp_extrude& extrude, const gp_Pln& pln);
+  /// Start an extrude preview from a known face (bypasses AIS screen picking).
+  static void begin_face_extrude(Shp_extrude& extrude, const AIS_Shape_ptr& face, double extrude_dist);
+};
+
 struct Headless_guard
 {
   Occt_view& m_v;
