@@ -89,18 +89,18 @@ inline constexpr float k_gui_origin_marker_color_default[3] = {0.0f, 0.75f, 1.0f
 /// Current-sketch edge RGBA (`gui.sketch_edge_color`); alpha maps to OCCT opacity (1 - transparency).
 inline constexpr float k_gui_sketch_edge_color_default[4] = {0.0f, 1.0f, 0.0f, 1.0f};
 /// Selected sketch-edge RGBA (`gui.sketch_edge_selection_color`).
-inline constexpr float k_gui_sketch_edge_selection_color_default[4] = {1.0f, 1.0f, 0.0f, 1.0f};
+inline constexpr float k_gui_sketch_edge_selection_color_default[4] = {1.0f, 0.545455f, 0.0f, 1.0f};
 /// Dynamic (hover) highlight RGBA for sketch edges (`gui.sketch_edge_highlight_color`).
 inline constexpr float k_gui_sketch_edge_highlight_color_default[4] = {1.0f, 1.0f, 0.0f, 1.0f};
 inline constexpr float k_gui_sketch_edge_line_width_default         = 1.0f;
 inline constexpr float k_gui_sketch_edge_line_width_min             = 0.5f;
 inline constexpr float k_gui_sketch_edge_line_width_max             = 8.0f;
-/// Current-sketch face fill RGBA (`gui.sketch_face_color`); matches former Quantity_NOC_GRAY7 @ 50%.
-inline constexpr float k_gui_sketch_face_color_default[4] = {0.07f, 0.07f, 0.07f, 0.5f};
+/// Current-sketch face fill RGBA (`gui.sketch_face_color`).
+inline constexpr float k_gui_sketch_face_color_default[4] = {0.300796f, 0.245416f, 0.320574f, 0.296651f};
 /// Selected sketch-face fill RGBA (`gui.sketch_face_selection_color`).
-inline constexpr float k_gui_sketch_face_selection_color_default[4] = {1.0f, 1.0f, 0.0f, 0.5f};
+inline constexpr float k_gui_sketch_face_selection_color_default[4] = {0.799043f, 0.187335f, 0.591238f, 1.0f};
 /// Dynamic (hover) highlight RGBA for sketch faces (`gui.sketch_face_highlight_color`).
-inline constexpr float k_gui_sketch_face_highlight_color_default[4] = {1.0f, 1.0f, 0.0f, 0.5f};
+inline constexpr float k_gui_sketch_face_highlight_color_default[4] = {0.822967f, 0.0f, 1.0f, 1.0f};
 /// Allowed range and default for `gui.view_roll_step_deg` (view roll and numpad orbit steps; must match Settings slider).
 inline constexpr double k_gui_view_roll_step_deg_min     = 0.1;
 inline constexpr double k_gui_view_roll_step_deg_max     = 180.0;
@@ -143,11 +143,10 @@ struct Gui_imgui_style_settings
 };
 
 /// Open/closed state for Settings pane collapsing headers (`gui.settings_headers`).
-/// Defaults match the former ImGuiTreeNodeFlags_DefaultOpen choices.
 struct Gui_settings_headers
 {
-  bool view_nav{true};
-  bool ui{true};
+  bool view_nav{false};
+  bool ui{false};
   bool view_presentation{false};
   bool grid{false};
   bool sketch{false};

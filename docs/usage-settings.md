@@ -52,7 +52,7 @@ Between those, the pane has **six** collapsible sections. Expand a section to se
 5. **Sketch** — Expand **Appearance** (nested) for edge and face display colors. Expand **Dimensions** (nested) for length-dimension appearance and behavior (most rows have **?** help). Other sketch rows stay in the parent **Sketch** section:
    - **Edge color** / **Edge thickness** — current-sketch edge RGBA (alpha = opacity) and line width (**0.5** to **8.0**)
    - **Edge selection color** / **Edge highlight color** — selected edges vs mouse-over (dynamic) highlight (RGBA)
-   - **Face fill color** / **Face selection color** / **Face highlight color** — face fill, selected fill, and mouse-over highlight (RGBA)
+   - **Face fill color** / **Face selection fill** / **Face highlight fill** — normal fill, selected fill, and mouse-over fill (RGBA)
    - **Dimension line width** — slider **0.5** to **8.0**
    - **Dimension arrow size** — slider **1.0** to **24.0**
    - **Dimension color** — RGB for dimension lines, arrow heads, and value text
@@ -185,12 +185,12 @@ If saved layout text has no `[Docking]` section (older installs), a default dock
 | `permanent_node_anno_scale`   | number             | Scale for permanent **+** markers: the sketch **Origin** and user-placed Add node points ([Sketch origin](usage-sketch.md#sketch-origin); **0.25** to **3.0**; default **1.0**).                                              |
 | `origin_marker_color`         | array of 3 numbers | RGB color for the **active** sketch's Origin marker (+ with circle; **0** to **1** per channel; default cyan **0.0**, **0.75**, **1.0**).                                                                                     |
 | `sketch_edge_color`           | array of 4 numbers | Current-sketch edge RGBA (**0** to **1**; alpha = opacity; default green **0**, **1**, **0**, **1**).                                                                                                                       |
-| `sketch_edge_selection_color` | array of 4 numbers | Selected sketch-edge RGBA (default yellow **1**, **1**, **0**, **1**). Falls back to `sketch_edge_highlight_color` when absent.                                                                                               |
+| `sketch_edge_selection_color` | array of 4 numbers | Selected sketch-edge RGBA (default orange **1**, **0.545**, **0**, **1**). Falls back to `sketch_edge_highlight_color` when absent.                                                                                           |
 | `sketch_edge_highlight_color` | array of 4 numbers | Mouse-over (dynamic) highlight RGBA for sketch edges (default yellow **1**, **1**, **0**, **1**).                                                                                                                              |
 | `sketch_edge_line_width`      | number             | Current-sketch edge line width (**0.5** to **8.0**; default **1.0**).                                                                                                                                                         |
-| `sketch_face_color`           | array of 4 numbers | Current-sketch face fill RGBA (default dark gray **0.07**, **0.07**, **0.07**, **0.5**).                                                                                                                                      |
-| `sketch_face_selection_color` | array of 4 numbers | Selected sketch-face fill RGBA (default yellow **1**, **1**, **0**, **0.5**). Falls back to `sketch_face_highlight_color` when absent.                                                                                          |
-| `sketch_face_highlight_color` | array of 4 numbers | Mouse-over (dynamic) highlight RGBA for sketch faces (default yellow **1**, **1**, **0**, **0.5**).                                                                                                                             |
+| `sketch_face_color`           | array of 4 numbers | Current-sketch face fill RGBA (default mauve **0.301**, **0.245**, **0.321**, **0.297**).                                                                                                                                      |
+| `sketch_face_selection_color` | array of 4 numbers | Selected sketch-face **fill** RGBA (default magenta **0.799**, **0.187**, **0.591**, **1**). Falls back to `sketch_face_highlight_color` when absent.                                                                         |
+| `sketch_face_highlight_color` | array of 4 numbers | Mouse-over (dynamic) sketch-face **fill** RGBA (default violet **0.823**, **0**, **1**, **1**).                                                                                                                               |
 | `snap_guide_color_node`       | array of 3 numbers | RGB for snap guides when both axes lock to the same node (float **0** to **1**; default lavender **0.82**, **0.55**, **0.95**). Legacy `snap_guide_color` loads here when `snap_guide_color_node` is absent.                  |
 | `snap_guide_color_axis`       | array of 3 numbers | RGB for snap guides when aligned on X or Y only (float **0** to **1**; default magenta **0.96**, **0.06**, **0.54**). Legacy `snap_guide_color` sets both node and axis colors.                                               |
 | `snap_guide_mode`             | integer            | **0** *Traditional* (local markers), **1** *Fullscreen* (view-spanning axis lines), **2** *Both* (default **2**).                                                                                                             |
@@ -223,7 +223,7 @@ Each **`imgui_style_dark`** / **`imgui_style_light`** object may contain:
 | `frame_padding_x`, `frame_padding_y`   | number | Padding inside frames (**0** to **24**).                                                       |
 | `item_spacing_x`, `item_spacing_y`     | number | Spacing between widgets (**0** to **24**).                                                     |
 
-Each **`settings_headers`** object may contain (default **true** for sections that used to open by default):
+Each **`settings_headers`** object may contain (default: only nested Sketch **Appearance** / **Dimensions** expanded):
 
 | Key                 | Type    | Meaning                                      |
 | ------------------- | ------- | -------------------------------------------- |

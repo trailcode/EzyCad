@@ -2,6 +2,8 @@
 #include "sketch.h"
 
 #include <Aspect_TypeOfLine.hxx>
+#include <Aspect_InteriorStyle.hxx>
+#include <AIS_DisplayMode.hxx>
 #include <Graphic3d_AspectFillArea3d.hxx>
 #include <Graphic3d_NameOfMaterial.hxx>
 #include <Prs3d_Drawer.hxx>
@@ -59,6 +61,7 @@ Handle(Prs3d_Drawer) make_edge_hilight_drawer_(const float* rgba, float line_wid
 Handle(Prs3d_Drawer) make_face_hilight_drawer_(const float* rgba)
 {
   Handle(Prs3d_Drawer) drawer = new Prs3d_Drawer();
+  drawer->SetupOwnDefaults();
   const Quantity_Color qc     = rgb_from_rgba_(rgba);
   const float          transp = transparency_from_rgba_(rgba);
   drawer->SetColor(qc);
@@ -71,6 +74,8 @@ Handle(Prs3d_Drawer) make_face_hilight_drawer_(const float* rgba)
 
   Handle(Graphic3d_AspectFillArea3d) fill = new Graphic3d_AspectFillArea3d();
   fill->SetAlphaMode(Graphic3d_AlphaMode_Blend);
+  fill->SetInteriorStyle(Aspect_IS_SOLID);
+  fill->SetInteriorColor(qc);
   fill->SetColor(qc);
   drawer->SetBasicFillAreaAspect(fill);
 
@@ -92,6 +97,8 @@ void apply_edge_hilight_(AIS_Shape& shp, const GUI& gui)
 
 void apply_face_hilight_(AIS_Shape& shp, const GUI& gui)
 {
+  // Use shaded hilight so selection/hover tint the face fill, not only a wire outline.
+  shp.SetHilightMode(AIS_Shaded);
   Handle(Prs3d_Drawer) selected = make_face_hilight_drawer_(gui.sketch_face_selection_color_rgba());
   Handle(Prs3d_Drawer) hover    = make_face_hilight_drawer_(gui.sketch_face_highlight_color_rgba());
   shp.SetHilightAttributes(selected);

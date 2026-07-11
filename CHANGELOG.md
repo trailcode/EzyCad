@@ -9,7 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Sketch appearance
 
-- **Settings -> Sketch -> Appearance:** configurable edge color, selection color, highlight (hover) color, and thickness (with alpha); face fill, selection, and highlight colors (with alpha). Persisted under `gui.sketch_edge_*` and `gui.sketch_face_*`.
+- **Settings -> Sketch -> Appearance:** configurable edge color, selection color, highlight (hover) color, and thickness (with alpha); face fill, selection, and highlight colors (with alpha). Persisted under `gui.sketch_edge_*` and `gui.sketch_face_*`. Bundled defaults match the current preferred palette (orange edge selection; mauve face fill; magenta/violet face selection/highlight).
 - **Settings pane:** Open/closed state of collapsing section headers is persisted in `gui.settings_headers`.
 
 ### UI layout

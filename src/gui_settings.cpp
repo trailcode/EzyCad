@@ -1192,7 +1192,7 @@ void GUI::settings_()
         ImGui::TableNextRow();
         ImGui::TableSetColumnIndex(0);
         ImGui::AlignTextToFramePadding();
-        ImGui::TextUnformatted("Face selection color");
+        ImGui::TextUnformatted("Face selection fill");
         ImGui::TableSetColumnIndex(1);
         if (ImGui::ColorEdit4("##sketch_face_sel_color", m_sketch_face_selection_color,
                               ImGuiColorEditFlags_Float | ImGuiColorEditFlags_AlphaBar))
@@ -1203,7 +1203,7 @@ void GUI::settings_()
         ImGui::TableNextRow();
         ImGui::TableSetColumnIndex(0);
         ImGui::AlignTextToFramePadding();
-        ImGui::TextUnformatted("Face highlight color");
+        ImGui::TextUnformatted("Face highlight fill");
         ImGui::TableSetColumnIndex(1);
         if (ImGui::ColorEdit4("##sketch_face_hl_color", m_sketch_face_highlight_color,
                               ImGuiColorEditFlags_Float | ImGuiColorEditFlags_AlphaBar))
