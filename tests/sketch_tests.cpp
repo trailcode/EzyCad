@@ -290,11 +290,6 @@ TEST_F(Sketch_test, AddEdgeFromCenter_DimensionUsesFullLength)
   Sketch::set_edge_from_center(false);
 }
 
-// Test the case where the second (vertical) edge is added after the first (horizontal) and passes
-// *exactly through the midpoint* of the first (and not the midpoint of the second).
-// The split logic must still split the horizontal at its (former) mid node and subdivide the
-// vertical, resulting in four edges total. (Currently observed to produce only three.)
-
 // Test visibility settings
 TEST_F(Sketch_test, VisibilitySettings)
 {
@@ -313,10 +308,6 @@ TEST_F(Sketch_test, VisibilitySettings)
   sketch.set_show_edges(false);
   // Note: We can't directly test the visual state, but we can verify the settings were applied
 }
-
-// Test for splitting a square with a vertical edge at the midpoints (T-junction at mid, not crossing).
-// Result must be two proper rectangles in *both* addition orders.
-// (Image shows the geometry: square split vertically down the middle into two rects.)
 
 // Test edge style settings
 TEST_F(Sketch_test, EdgeStyleSettings)
@@ -338,8 +329,6 @@ TEST_F(Sketch_test, EdgeStyleSettings)
   sketch.set_edge_style(Sketch::Edge_style::Background);
   // Note: We can't directly test the visual style, but we can verify the setting was applied
 }
-
-// Test square creation
 
 // Test square creation
 TEST_F(Sketch_test, CreateSquare)
@@ -427,8 +416,6 @@ TEST_F(Sketch_test, CreateSquare)
   EXPECT_EQ(edge_mid_point_nodes.size(), 4u);
   EXPECT_EQ(normal_nodes.size(), 5u); // 4 corners + sketch origin at center
 }
-
-// Test circle creation
 
 // Test circle creation
 TEST_F(Sketch_test, CreateCircle)
@@ -760,8 +747,6 @@ TEST_F(Sketch_test, AddNode_off_edge_adds_node_only)
   EXPECT_EQ(Sketch_access::get_edge_count(sketch), 1u);
   EXPECT_EQ(sketch.get_nodes().size(), nodes_before + 1);
 }
-
-// Pick slightly off a segment in plane space; should snap onto the edge and split so the node stays snappable.
 
 // Pick slightly off a segment in plane space; should snap onto the edge and split so the node stays snappable.
 TEST_F(Sketch_test, AddNode_near_edge_snaps_onto_segment_and_splits)

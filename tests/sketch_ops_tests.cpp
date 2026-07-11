@@ -389,8 +389,6 @@ TEST_F(Sketch_test, MirrorSelectedEdges_SimpleStraightEdge)
 }
 
 // Test mirroring works across a vertical axis as well
-
-// Test mirroring works across a vertical axis as well
 TEST_F(Sketch_test, MirrorSelectedEdges_VerticalAxis)
 {
   gp_Pln default_plane(gp::Origin(), gp::DZ());
@@ -448,8 +446,6 @@ TEST_F(Sketch_test, MirrorSelectedEdges_VerticalAxis)
   }
   EXPECT_TRUE(found) << "Mirrored edge should appear on the left of vertical axis";
 }
-
-// Test that mirroring an arc (circle arc pair) works
 
 // Test that mirroring an arc (circle arc pair) works
 TEST_F(Sketch_test, MirrorSelectedEdges_Arc)

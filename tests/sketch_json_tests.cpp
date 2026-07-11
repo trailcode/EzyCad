@@ -69,8 +69,6 @@ TEST_F(Sketch_test, JsonSerializationDeserialization)
 }
 
 // Test JSON serialization with different edge counts (bug1 vs bug1.1 scenario)
-
-// Test JSON serialization with different edge counts (bug1 vs bug1.1 scenario)
 TEST_F(Sketch_test, JsonSerializationDifferentEdgeCounts)
 {
   gp_Pln default_plane(gp::Origin(), gp::DZ());
@@ -123,8 +121,6 @@ TEST_F(Sketch_test, JsonSerializationDifferentEdgeCounts)
   EXPECT_EQ(edge_count2, 4);
   EXPECT_NE(edge_count1, edge_count2);
 }
-
-// Test JSON serialization with length dimensions (node pairs, not per-edge)
 
 // Test JSON serialization with length dimensions (node pairs, not per-edge)
 TEST_F(Sketch_test, JsonSerializationWithDimensions)

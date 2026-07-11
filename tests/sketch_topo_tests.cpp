@@ -46,10 +46,9 @@ TEST_F(Sketch_test, AddTwoCrossingEdges_NotAtMidpoints_ProducesFourEdges)
       << "Two edges crossing interiorly (but not at midpoints) must each be split, producing four edges total";
 }
 
-// Test the case where the second (vertical) edge is added after the first (horizontal) and passes
-// *exactly through the midpoint* of the first (and not the midpoint of the second).
-// The split logic must still split the horizontal at its (former) mid node and subdivide the
-// vertical, resulting in four edges total. (Currently observed to produce only three.)
+// Vertical through the midpoint of the first (horizontal) edge, but not through the
+// midpoint of the second. The split logic must still split the horizontal at its
+// (former) mid node and subdivide the vertical, resulting in four edges total.
 TEST_F(Sketch_test, AddTwoCrossingEdges_ThroughMidpoint_ProducesFourEdges)
 {
   gp_Pln default_plane(gp::Origin(), gp::DZ());
@@ -70,7 +69,7 @@ TEST_F(Sketch_test, AddTwoCrossingEdges_ThroughMidpoint_ProducesFourEdges)
   // Now the vertical, passing exactly through the horizontal's midpoint (5,0).
   // Vertical from (5,-5) to (5,10): the cross (5,0) is interior to horiz (its mid) and
   // interior to this vert (its mid would be (5,2.5), 0 != 2.5).
-  // With the fix, horiz will be split at mid + vert will be subdivided at cross --> 4 edges.
+  // Expected: horiz split at mid + vert subdivided at the cross --> 4 edges.
   gui().set_mode(Mode::Sketch_add_edge);
   ScreenCoords sc3(dvec2(5.0, -5.0));
   sketch.add_sketch_pt(sc3);
@@ -127,9 +126,8 @@ TEST_F(Sketch_test, AddTwoEdges_TJunction_ProducesThreeEdges)
   }
 }
 
-// Test for splitting a square with a vertical edge at the midpoints (T-junction at mid, not crossing).
-// Result must be two proper rectangles in *both* addition orders.
-// (Image shows the geometry: square split vertically down the middle into two rects.)
+// Split a square with a vertical edge through the midpoints (T-junction at mid, not a full cross).
+// Result must be two proper rectangles in both addition orders.
 TEST_F(Sketch_test, AddSquareThenMidEdge_ProducesTwoRectangles_BothOrders)
 {
   gp_Pln default_plane(gp::Origin(), gp::DZ());
