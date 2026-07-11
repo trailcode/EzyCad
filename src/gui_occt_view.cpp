@@ -1567,8 +1567,7 @@ void Occt_view::flush_view_events()
   }
   catch (const Standard_Failure& e)
   {
-    const char* msg = e.GetMessageString();
-    DBG_MSG(msg && msg[0] ? msg : "FlushViewEvents failed");
+    DBG_MSG(std::string("FlushViewEvents failed: ") + standard_failure_message(e));
     AbortViewAnimation();
     m_ctx->ClearSelected(false);
     if (!m_shape_list_hover.IsNull())

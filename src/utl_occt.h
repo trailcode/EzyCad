@@ -30,3 +30,10 @@ static_assert(c_names_TopAbs_ShapeEnum.size() == static_cast<std::size_t>(TopAbs
 /// When \a shape is a closed shell (or compound of closed shells), wrap it as a solid.
 /// Otherwise returns \a shape unchanged.
 TopoDS_Shape try_make_solid(const TopoDS_Shape& shape);
+
+class Standard_Failure;
+
+/// Message from `Standard_Failure` for logging / `Status` text.
+/// Uses `what()` on OCCT 8+ and `GetMessageString()` on OCCT 7.x (wasm) so shared code builds
+/// without deprecation warnings or missing-member errors. Never returns null or empty.
+const char* standard_failure_message(const Standard_Failure& e);

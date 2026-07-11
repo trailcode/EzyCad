@@ -18,17 +18,17 @@ Most app code is one tree linked against **desktop 8** and **wasm 7.9.3**. Prefe
 
 ### `Standard_Failure` messages
 
-Use `GetMessageString()`, not `what()`:
+Use `standard_failure_message(e)` from [`utl_occt.h`](../../src/utl_occt.h) — not raw `what()` or `GetMessageString()`:
 
 ```cpp
 catch (const Standard_Failure& e)
 {
-  const char* msg = e.GetMessageString();
+  const char* msg = standard_failure_message(e);
   // ...
 }
 ```
 
-`what()` is for `std::exception`. On OCCT 7.9.3 headers used for wasm, `Standard_Failure` has no `what()` -- em++ fails the build. Match existing catch sites (`shp_fillet.cpp`, `shp_chamfer.cpp`, etc.).
+OCCT **8** (desktop) deprecates `GetMessageString()` in favor of `what()`; OCCT **7.9.3** (wasm) has no `what()` on `Standard_Failure`. The helper picks the right API via `OCC_VERSION_HEX` so shared code builds on both without warnings or missing-member errors.
 
 ### Other dual-version habits
 
