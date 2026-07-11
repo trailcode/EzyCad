@@ -2,21 +2,25 @@
 
 Short notes for day-to-day build, test, and quality checks.
 
-## Desktop build (Windows + Visual Studio 2022 / MSVC)
+## Desktop build (Windows + Visual Studio 2026 / MSVC)
 
 **Prerequisites**
-- CMake 3.14+
-- Visual Studio 2022 (C++ workload)
+- CMake that supports generator **Visual Studio 18 2026** (VS 2026 bundled CMake 4.3+ is fine; older PATH CMake may lack this generator)
+- Visual Studio 2026 (C++ workload) — primary local toolchain
 - nuget CLI (for GLFW/GLEW)
 - OCCT 8.0.0 prebuilts + 3rdparty-vc14-64 (strongly recommended — see [docs/building-occt.md](../../docs/building-occt.md))
 
 **Typical configure** (run from repo root):
 
 ```powershell
-cmake -S . -B build -G "Visual Studio 17 2022" -A x64 `
+# Prefer VS-bundled cmake if PATH cmake is too old for the VS 18 generator:
+#   "C:\Program Files\Microsoft Visual Studio\18\Community\Common7\IDE\CommonExtensions\Microsoft\CMake\CMake\bin\cmake.exe"
+cmake -S . -B build -G "Visual Studio 18 2026" -A x64 `
   -DOpenCASCADE_DIR=C:\path\to\occt-8.0.0\cmake `
   -DOCCT_3RD_PARTY_DIR=C:\path\to\3rdparty-vc14-64
 ```
+
+Do **not** use `-G "Visual Studio 17 2022"` on a machine that only has VS 2026 installed — configure fails with a generator/instance mismatch. CI still uses VS 2022 (`windows-msvc.yml`).
 
 **Build**:
 
@@ -35,7 +39,7 @@ ctest -C Release --output-on-failure
 # Or run the EzyCad_tests project / executable directly from Visual Studio
 ```
 
-**After CMake structural changes** (e.g. adding new folders for IDE visibility under `agents/`, `docs/`, or `github-workflows`):
+**After CMake structural changes** (e.g. adding new folders for IDE visibility under `agents/`, `docs/`, or `github-workflows`), or when switching generators (e.g. VS 17 -> VS 18):
 - Clean the configure cache: delete `build/CMakeCache.txt`, `build/CMakeFiles/`, and any `_deps/*-subbuild/` directories.
 - Re-run the configure step above.
 

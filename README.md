@@ -53,24 +53,25 @@ Ensure the following dependencies are installed:
 
 Full guide: **[docs/building-occt.md](docs/building-occt.md)** (Windows prebuilts, wasm/Emscripten, troubleshooting).
 
-#### For VS2022 (summary)
+#### For Windows / MSVC (summary)
 - See: https://dev.opencascade.org/doc/overview/html/build_upgrade__building_occt.html
 - OCCT 3rd-party binaries: https://github.com/Open-Cascade-SAS/OCCT/releases/download/V8_0_0/3rdparty-vc14-64.zip
 - Currently building EzyCad has only been tested with the Release build of OCCT.
 - Or download pre-built binaries: https://github.com/Open-Cascade-SAS/OCCT/releases/tag/V8_0_0
+- Local desktop builds: prefer **Visual Studio 2026** (`-G "Visual Studio 18 2026"`). Details: [agents/workflows/local-dev.md](agents/workflows/local-dev.md).
 
 ### Steps to Build
 1. Clone the repository.
-2. Create a build directory, e.g., `C:\src\EzyCad_build`.
+2. Create a build directory, e.g., `C:\src\EzyCad\build`.
 3. Configure the project in the build directory using CMake:
-   - E.g., `cmake C:\src\EzyCad -DOpenCASCADE_DIR=C:\bin\OCCT-8_0_0_install\cmake -DOCCT_3RD_PARTY_DIR=C:\bin\3rdparty-vc14-64`
+   - E.g., `cmake -S C:\src\EzyCad -B build -G "Visual Studio 18 2026" -A x64 -DOpenCASCADE_DIR=C:\bin\OCCT-8_0_0_install\cmake -DOCCT_3RD_PARTY_DIR=C:\bin\3rdparty-vc14-64`
    - `OCCT_3RD_PARTY_DIR` should point to the OCCT 3rd-party distribution.
    - CMake will use `nuget` to download additional dependencies.
-4. Build the project.
+4. Build the project (`cmake --build build --config Release`).
 
 ### Notes for Windows Users
 - Ensure `nuget` is installed for fetching dependencies like GLFW and GLEW.
-- Use Visual Studio as the IDE for debugging and building.
+- Use Visual Studio 2026 as the IDE for debugging and building (generator `Visual Studio 18 2026`).
 
 ### Notes for Emscripten Builds
 - Install Emscripten and activate its environment (`emsdk_env`).

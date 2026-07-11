@@ -218,9 +218,11 @@ auto lines = shp_info::collect(shp->Shape(), &meta);
 
 | Item | Notes |
 | --- | --- |
-| Dedicated suite | None (`shp_tests` does not exist) |
-| Coverage | GUI/view tests and manual smoke (extrude, fuse, move, fillet) |
-| Adding tests | Drive `Occt_view` helpers or operation classes through existing fixtures when possible |
+| GTest suite | `tests/shp_tests.cpp` — filters `Shp_create.*`, `Shp_info.*`, `Shp_test.*` |
+| Coverage | `shp_create` volumes/bboxes; `shp_info::collect`; `Occt_view::add_*` / unique names; fuse/cut/common via AIS selection injection |
+| Fixture | `Shp_test` inherits `Sketch_test` (headless `Occt_view`) |
+| Related | Sketch-face extrude / revolve still live under `Sketch_test.*` |
+| Build target | `EzyCad_tests` ([`agents/workflows/local-dev.md`](../../agents/workflows/local-dev.md)) |
 
 ## Related code outside `src/shp_*`
 
