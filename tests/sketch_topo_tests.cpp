@@ -687,8 +687,14 @@ TEST_F(Sketch_test, UpdateFaces_DanglingEdgesArcMidNode)
   Sketch_access::add_edge_(sketch, arc_left, chord_mid);
   Sketch_access::add_edge_(sketch, chord_mid, arc_right);
 
+  // Graphical Debugging v0.56+ (Geometry Watch): dbg_edges / dbg_faces
+  // https://github.com/awulkiew/graphical-debugging
+  std::vector<ezy_geom::linestring_2d> dbg_edges = Sketch_access::dbg_edge_linestrings(sketch);
+  (void)dbg_edges;
+
   // Update faces - edges attached to the arc mid-node should not participate in faces.
-  Sketch_access::update_faces_(sketch);
+  std::vector<ezy_geom::polygon_2d> dbg_faces = Sketch_access::update_faces_(sketch);
+  (void)dbg_faces;
 
   const auto& faces = Sketch_access::get_faces(sketch);
 
