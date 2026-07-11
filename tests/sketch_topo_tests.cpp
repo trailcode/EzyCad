@@ -8,7 +8,6 @@
 #include <TopoDS_Wire.hxx>
 #include <algorithm>
 #include <cmath>
-#include <iostream>
 #include <numbers>
 #include <set>
 #include <string>
@@ -1000,6 +999,11 @@ TEST_F(Sketch_test, UpdateFaces_BridgeEdgeRemoval)
   ezy_geom::polygon_2d outer_face_poly;
   ezy_geom::polygon_2d inner_face_poly;
 
+  // Graphical Debugging v0.56+ (Geometry Watch): dbg_faces
+  // https://github.com/awulkiew/graphical-debugging
+  std::vector<ezy_geom::polygon_2d> dbg_faces;
+  dbg_faces.reserve(faces.size());
+
   for (size_t i = 0; i < faces.size(); ++i)
   {
     const auto& face = faces[i];
@@ -1007,28 +1011,7 @@ TEST_F(Sketch_test, UpdateFaces_BridgeEdgeRemoval)
     ezy_geom::polygon_2d poly = to_boost(face->Shape(), default_plane);
     EXPECT_TRUE(ezy_geom::is_valid(poly)) << "Polygon should be valid";
     EXPECT_TRUE(is_clockwise(poly.outer())) << "Polygon should be clockwise";
-
-    // Debug: Output WKT (pure C++ implementation)
-    std::string wkt_str = to_wkt_string(poly);
-    std::cout << "Face " << i << " WKT: " << wkt_str << std::endl;
-    std::cout << "Face " << i << " area: " << ezy_geom::area(poly) << std::endl;
-    std::cout << "Face " << i << " outer ring size: " << poly.outer().size() << std::endl;
-    std::cout << "Face " << i << " inner rings: " << poly.inners().size() << std::endl;
-
-    if (poly.inners().size() > 0)
-    {
-      for (size_t hole_idx = 0; hole_idx < poly.inners().size(); ++hole_idx)
-      {
-        auto& hole_ring = poly.inners()[hole_idx];
-        std::cout << "  Hole " << hole_idx << " ring size: " << hole_ring.size() << std::endl;
-        // Output first few points of the hole for debugging
-        if (hole_ring.size() > 0)
-        {
-          std::cout << "  Hole " << hole_idx << " first point: (" << hole_ring[0].x() << ", " << hole_ring[0].y() << ")"
-                    << std::endl;
-        }
-      }
-    }
+    dbg_faces.push_back(poly);
 
     // Check if this is the outer face (larger area) or inner face (smaller area)
     double area = ezy_geom::area(poly);
@@ -1043,16 +1026,15 @@ TEST_F(Sketch_test, UpdateFaces_BridgeEdgeRemoval)
         found_inner_face = true;
         // The inner should be counter-clockwise (reversed for hole)
         EXPECT_FALSE(is_clockwise(poly.inners()[0])) << "Hole should be counter-clockwise";
-        std::cout << "Inner rectangle detected as hole in outer face" << std::endl;
       }
     }
     else if (area < 500.0) // Inner rectangle should be smaller
     {
       found_inner_face = true;
       inner_face_poly  = poly;
-      std::cout << "Inner rectangle detected as separate face" << std::endl;
     }
   }
+  (void)dbg_faces;
 
   EXPECT_TRUE(found_outer_face) << "Should find the outer rectangle face";
 
@@ -1097,28 +1079,6 @@ TEST_F(Sketch_test, UpdateFaces_BridgeEdgeRemoval)
     }
   }
   EXPECT_TRUE(found_bridge_edge) << "Bridge edge should still exist in the sketch";
-
-  // Debug: Output summary (now always available via pure C++ implementation)
-  std::cout << "\n=== Bridge Edge Removal Test Summary ===" << std::endl;
-  std::cout << "Total faces found: " << faces.size() << std::endl;
-  std::cout << "Outer face found: " << (found_outer_face ? "yes" : "no") << std::endl;
-  std::cout << "Inner face found: " << (found_inner_face ? "yes" : "no") << std::endl;
-  if (found_outer_face)
-  {
-    std::cout << "Outer face has holes: " << outer_face_poly.inners().size() << std::endl;
-    std::cout << "Outer face WKT: " << to_wkt_string(outer_face_poly) << std::endl;
-  }
-  if (found_inner_face && !outer_face_poly.inners().empty())
-  {
-    std::cout << "Inner face WKT (as hole): " << to_wkt_string(inner_face_poly) << std::endl;
-  }
-  else if (found_inner_face)
-  {
-    std::cout << "Inner face WKT (separate): " << to_wkt_string(inner_face_poly) << std::endl;
-  }
-  std::cout << "Total edges in sketch: " << total_edges << std::endl;
-  std::cout << "Bridge edge found: " << (found_bridge_edge ? "yes" : "no") << std::endl;
-  std::cout << "========================================\n" << std::endl;
 }
 
 // Regression for bridge.ezy (user-provided sketch with a bridge edge + triangular hole).
@@ -1184,22 +1144,6 @@ TEST_F(Sketch_test, UpdateFaces_BridgeEzy_ProducesTwoFaces_OneWithHole)
   Sketch_access::update_faces_(sketch);
   const auto& faces = Sketch_access::get_faces(sketch);
 
-  // Debug dump for this specific regression case (helps diagnose bridge/hole walker issues).
-  std::cout << "\n=== bridge.ezy face dump (current behavior) ===" << std::endl;
-  std::cout << "faces.size() = " << faces.size() << std::endl;
-  for (size_t i = 0; i < faces.size(); ++i)
-  {
-    const auto&          f    = faces[i];
-    ezy_geom::polygon_2d poly = to_boost(f->Shape(), default_plane);
-    std::string          wkt  = to_wkt_string(poly);
-    std::cout << "Face " << i << " WKT: " << wkt << std::endl;
-    std::cout << "  area=" << ezy_geom::area(poly) << " outer_size=" << poly.outer().size()
-              << " inners=" << poly.inners().size() << std::endl;
-    for (size_t h = 0; h < poly.inners().size(); ++h)
-      std::cout << "    hole " << h << " size=" << poly.inners()[h].size() << std::endl;
-  }
-  std::cout << "==============================================\n" << std::endl;
-
   // Per user report + screenshot (bridge.ezy): there should be exactly two faces, one of
   // which has the triangular inner ring as a hole. With bridge logic re-enabled and current
   // dangling/cw-break rules the walker currently produces 4 plain faces (the lower rect,
@@ -1211,6 +1155,11 @@ TEST_F(Sketch_test, UpdateFaces_BridgeEzy_ProducesTwoFaces_OneWithHole)
   EXPECT_GE(faces.size(), 1u);
   EXPECT_LE(faces.size(), 4u) << "bridge.ezy should produce a small number of faces; desired is 2 (one with triangular hole)";
 
+  // Graphical Debugging v0.56+ (Geometry Watch): dbg_faces
+  // https://github.com/awulkiew/graphical-debugging
+  std::vector<ezy_geom::polygon_2d> dbg_faces;
+  dbg_faces.reserve(faces.size());
+
   ezy_geom::polygon_2d holed;
   ezy_geom::polygon_2d plain;
   for (const auto& f : faces)
@@ -1220,6 +1169,7 @@ TEST_F(Sketch_test, UpdateFaces_BridgeEzy_ProducesTwoFaces_OneWithHole)
     EXPECT_TRUE(ezy_geom::is_valid(poly)) << "Polygon must be valid";
     EXPECT_TRUE(is_clockwise(poly.outer())) << "Outer must be clockwise";
     EXPECT_FALSE(poly.outer().empty());
+    dbg_faces.push_back(poly);
 
     if (poly.inners().size() > 0)
     {
@@ -1231,6 +1181,7 @@ TEST_F(Sketch_test, UpdateFaces_BridgeEzy_ProducesTwoFaces_OneWithHole)
       plain = std::move(poly);
     }
   }
+  (void)dbg_faces;
 
   // Aspirational checks for the desired state (see comment above about current 4-face output).
   // When the logic produces a holed face these will enforce the structure.
