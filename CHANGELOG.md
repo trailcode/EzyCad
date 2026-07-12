@@ -9,8 +9,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Scripting
 
-- **Public API layout:** Python-first package surface under `ezy` / `ezy.view` / `ezy.sketch` (Lua mirrors the same namespaces). Global `view` and flat `view.curr_sketch_*` names remain as compatibility aliases. See [docs/scripting.md](docs/scripting.md).
-- **Remote Python (`--listen`):** Desktop builds with embedded Python can accept console snippets over TCP (`EzyCad --listen [host:]port`). Execution is marshaled to the main UI thread. Client module: `scripts/ezycad_remote.py` (`Session`, `ezy`/`view` proxies). See [docs/scripting.md](docs/scripting.md#remote-python---listen).
+- **Public API layout:** Python-first package surface under `ezy` / `ezy.view` / `ezy.view.curr_sketch` (same object as `ezy.sketch`). Lua mirrors the same namespaces. See [docs/scripting.md](docs/scripting.md).
+- **Remote Python (`--listen`):** Desktop builds with embedded Python can accept console snippets over TCP (`EzyCad --listen [host:]port`). Execution is marshaled to the main UI thread. Importable client: `pip install -e .` then `import ezycad; ezycad.connect()` (typed API for IPython/IDE completion) under `scripts/ezycad/`. See [docs/scripting.md](docs/scripting.md#remote-python---listen).
 
 ### Sketch appearance
 

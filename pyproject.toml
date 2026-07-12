@@ -1,0 +1,21 @@
+[build-system]
+requires = ["setuptools>=61"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "ezycad"
+version = "0.1.0"
+description = "Remote client for EzyCad --listen scripting API"
+requires-python = ">=3.9"
+readme = "docs/scripting.md"
+license = { text = "See repository LICENSE" }
+
+[project.scripts]
+ezycad-remote = "ezycad.__main__:main"
+
+[project.urls]
+Homepage = "https://github.com/trailcode/EzyCad"
+
+[tool.setuptools.packages.find]
+where = ["scripts"]
+include = ["ezycad*"]

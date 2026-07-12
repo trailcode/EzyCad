@@ -100,7 +100,7 @@ function create_sierpinski_sketch(order, size, center, plane, offset, name)
     ezy.sketch.add_edge(a[1], a[2], b[1], b[2])
   end
   ezy.sketch.finish_edges()
-  ezy.log(string.format("Created sketch '%s' with %d edges.", ezy.sketch.curr_name(), #unique_lines))
+  ezy.log(string.format("Created sketch '%s' with %d edges.", view.curr_sketch.name(), #unique_lines))
   return node_list, unique_lines
 end
 

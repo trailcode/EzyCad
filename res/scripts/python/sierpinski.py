@@ -81,7 +81,7 @@ def create_sierpinski_sketch(order=3, size=20.0, center=(0.0, 0.0), plane="XY", 
     for (a, b) in unique_lines:
         ezy.sketch.add_edge(a[0], a[1], b[0], b[1])
     ezy.sketch.finish_edges()
-    ezy.log(f"Created sketch '{ezy.sketch.curr_name()}' with {len(unique_lines)} edges.")
+    ezy.log(f"Created sketch '{view.curr_sketch.name()}' with {len(unique_lines)} edges.")
     return node_list, unique_lines
 
 # Auto-generate a small example on script load (so it's immediately visible in the console tab)

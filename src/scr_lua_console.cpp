@@ -272,13 +272,16 @@ int l_view_finish_sketch_edges(lua_State* L)
   return 0;
 }
 
-// view.add_box(ox, oy, oz, w, l, h)
+// view.add_box(ox, oy, oz, w, l, h) -> Shp
 int l_view_add_box(lua_State* L)
 {
   GUI*       gui  = get_gui(L);
   Occt_view* view = gui ? gui->get_view() : nullptr;
   if (!view)
-    return 0;
+  {
+    lua_pushnil(L);
+    return 1;
+  }
   double ox  = luaL_checknumber(L, 1);
   double oy  = luaL_checknumber(L, 2);
   double oz  = luaL_checknumber(L, 3);
@@ -286,22 +289,39 @@ int l_view_add_box(lua_State* L)
   double len = luaL_checknumber(L, 5);
   double h   = luaL_checknumber(L, 6);
   view->add_box(ox, oy, oz, w, len, h);
-  return 0;
+  std::list<Shp_ptr>& shapes = view->get_shapes();
+  if (shapes.empty())
+  {
+    lua_pushnil(L);
+    return 1;
+  }
+  push_shp(L, shapes.back());
+  return 1;
 }
 
-// view.add_sphere(ox, oy, oz, radius)
+// view.add_sphere(ox, oy, oz, radius) -> Shp
 int l_view_add_sphere(lua_State* L)
 {
   GUI*       gui  = get_gui(L);
   Occt_view* view = gui ? gui->get_view() : nullptr;
   if (!view)
-    return 0;
+  {
+    lua_pushnil(L);
+    return 1;
+  }
   double ox = luaL_checknumber(L, 1);
   double oy = luaL_checknumber(L, 2);
   double oz = luaL_checknumber(L, 3);
   double r  = luaL_checknumber(L, 4);
   view->add_sphere(ox, oy, oz, r);
-  return 0;
+  std::list<Shp_ptr>& shapes = view->get_shapes();
+  if (shapes.empty())
+  {
+    lua_pushnil(L);
+    return 1;
+  }
+  push_shp(L, shapes.back());
+  return 1;
 }
 
 // view.get_shape(index) -> Shp userdata or nil (1-based index)
@@ -487,15 +507,16 @@ int l_ezy_help(lua_State* L)
       "  ezy.save_occt_view_settings() / ezy.occt_view_settings_json()\n"
       "ezy.view:\n"
       "  sketch_count() / shape_count()\n"
-      "  add_box(ox,oy,oz,w,l,h) / add_sphere(ox,oy,oz,r)\n"
+      "  add_box(ox,oy,oz,w,l,h) / add_sphere(ox,oy,oz,r)  - returns Shp\n"
       "  get_shape(i)  - shape by 1-based index (returns Shp or nil)\n"
       "  get_camera() / set_camera(ex,ey,ez,cx,cy,cz,ux,uy,uz)\n"
-      "ezy.sketch:\n"
-      "  curr_name() / node_count() / node(i) / dim_count() / dim(i)  (1-based indices)\n"
+      "  curr_sketch.name() / node_count() / node(i) / dim_count() / dim(i)  (1-based indices)\n"
+      "ezy.sketch: (same table as ezy.view.curr_sketch)\n"
+      "  name() / node_count() / node(i) / dim_count() / dim(i)\n"
       "  add(plane, offset, base_name) / add_edge(x1,y1,x2,y2) / finish_edges()\n"
       "Shp: s:name() / set_name / visible / set_visible\n"
       "aliases: view == ezy.view; help() == ezy.help()\n"
-      "  view.curr_sketch_* / add_sketch / add_edge / finish_sketch_edges -> ezy.sketch.*";
+      "  view.add_sketch / add_edge / finish_sketch_edges -> view.curr_sketch.*";
   con->append_line_from_lua(help_text);
   return 0;
 }
@@ -527,7 +548,7 @@ Lua_console::Lua_console(GUI* gui)
   lua_setfield(m_L, LUA_REGISTRYINDEX, "ezycad_console");
   register_bindings();
   load_scripts();
-  append_line("Lua console ready. Try: ezy.log('hello'), ezy.view.sketch_count(), ezy.sketch.node_count()");
+  append_line("Lua console ready. Try: ezy.log('hello'), ezy.view.sketch_count(), view.curr_sketch.node_count()");
 }
 
 Lua_console::~Lua_console()
@@ -557,8 +578,10 @@ void Lua_console::register_bindings()
   lua_setfield(m_L, -2, "__index");
   lua_pop(m_L, 1);
 
-  // ezy.sketch table (canonical sketch API)
+  // ezy.sketch table (also exposed as ezy.view.curr_sketch)
   lua_newtable(m_L);
+  lua_pushcfunction(m_L, l_view_curr_sketch_name);
+  lua_setfield(m_L, -2, "name");
   lua_pushcfunction(m_L, l_view_curr_sketch_name);
   lua_setfield(m_L, -2, "curr_name");
   lua_pushcfunction(m_L, l_view_curr_sketch_node_count);
@@ -577,7 +600,7 @@ void Lua_console::register_bindings()
   lua_setfield(m_L, -2, "finish_edges");
   // stack: sketch
 
-  // ezy.view table (document / shapes / camera) + flat sketch aliases
+  // ezy.view table (document / shapes / camera)
   lua_newtable(m_L);
   lua_pushcfunction(m_L, l_view_sketch_count);
   lua_setfield(m_L, -2, "sketch_count");
@@ -593,17 +616,10 @@ void Lua_console::register_bindings()
   lua_setfield(m_L, -2, "get_camera");
   lua_pushcfunction(m_L, l_view_set_camera);
   lua_setfield(m_L, -2, "set_camera");
-  // Compatibility aliases -> ezy.sketch.*
-  lua_pushcfunction(m_L, l_view_curr_sketch_name);
-  lua_setfield(m_L, -2, "curr_sketch_name");
-  lua_pushcfunction(m_L, l_view_curr_sketch_node_count);
-  lua_setfield(m_L, -2, "curr_sketch_node_count");
-  lua_pushcfunction(m_L, l_view_curr_sketch_node);
-  lua_setfield(m_L, -2, "curr_sketch_node");
-  lua_pushcfunction(m_L, l_view_curr_sketch_dim_count);
-  lua_setfield(m_L, -2, "curr_sketch_dim_count");
-  lua_pushcfunction(m_L, l_view_curr_sketch_dim);
-  lua_setfield(m_L, -2, "curr_sketch_dim");
+  // view.curr_sketch -> same table as ezy.sketch
+  lua_pushvalue(m_L, -2); // sketch
+  lua_setfield(m_L, -2, "curr_sketch");
+  // Compatibility aliases for sketch mutation
   lua_pushcfunction(m_L, l_view_add_sketch);
   lua_setfield(m_L, -2, "add_sketch");
   lua_pushcfunction(m_L, l_view_add_edge);

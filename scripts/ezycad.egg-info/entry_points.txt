@@ -1,0 +1,2 @@
+[console_scripts]
+ezycad-remote = ezycad.__main__:main

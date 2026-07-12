@@ -78,14 +78,14 @@ CMake IDE group: `src\scr`.
 
 ## Remote Python (`--listen`)
 
-| Item         | Notes                                                        |
-| ------------ | ------------------------------------------------------------ |
-| CLI          | `EzyCad --listen [host:]port` (port-only binds `127.0.0.1`)  |
-| Protocol     | `uint32` BE length + UTF-8 JSON request/response             |
-| Request      | `{"id": int, "code": str}`                                   |
-| Response     | `{"id", "ok", "output", "result", "error"}`                  |
-| Client       | [`scripts/ezycad_remote.py`](../../scripts/ezycad_remote.py) |
-| Out of scope | `--headless`, auth/TLS, wasm                                 |
+| Item         | Notes                                                                                                                  |
+| ------------ | ---------------------------------------------------------------------------------------------------------------------- |
+| CLI          | `EzyCad --listen [host:]port` (port-only binds `127.0.0.1`)                                                            |
+| Protocol     | `uint32` BE length + UTF-8 JSON request/response                                                                       |
+| Request      | `{"id": int, "code": str}`                                                                                             |
+| Response     | `{"id", "ok", "output", "result", "error"}`                                                                            |
+| Client       | [`scripts/ezycad/`](../../scripts/ezycad/) (`import ezycad`); CLI [`ezycad_remote.py`](../../scripts/ezycad_remote.py) |
+| Out of scope | `--headless`, auth/TLS, wasm                                                                                           |
 
 Shared interpreter with the ImGui console: same `__main__.ezy` / `view`.
 
@@ -95,14 +95,14 @@ Implementation lives in the `.cpp` files; [`docs/scripting.md`](../../docs/scrip
 
 ### Public package shape
 
-| Path           | Role                                      |
-| -------------- | ----------------------------------------- |
-| `ezy.*`        | App / session (log, mode, settings, help) |
-| `ezy.view.*`   | Document shapes, counts, camera           |
-| `ezy.sketch.*` | Current sketch inspect / create / edges   |
-| `ezy.Shp`      | Shape wrapper type                        |
+| Path                                    | Role                                                  |
+| --------------------------------------- | ----------------------------------------------------- |
+| `ezy.*`                                 | App / session (log, mode, settings, help)             |
+| `ezy.view.*`                            | Document shapes, counts, camera                       |
+| `ezy.view.curr_sketch` / `ezy.sketch.*` | Current sketch inspect / create / edges (same object) |
+| `ezy.Shp`                               | Shape wrapper type                                    |
 
-Aliases: global `view` == `ezy.view`; `Shp` == `ezy.Shp`; flat `view.curr_sketch_*` / `add_sketch` / `finish_sketch_edges` forward to `ezy.sketch.*`.
+Aliases: global `view` == `ezy.view`; `Shp` == `ezy.Shp`; `view.add_sketch` / `finish_sketch_edges` forward to `view.curr_sketch.*`.
 
 ### `ezy` (root)
 
@@ -124,16 +124,16 @@ Lua overrides global `print` to call `ezy.log`. Python bootstrap assigns `builti
 | ---------------------------------------- | ------------------------------------ |
 | `sketch_count()`                         | `Occt_view::get_sketches().size()`   |
 | `shape_count()`                          | `Occt_view::get_shapes().size()`     |
-| `add_box(...)` / `add_sphere(...)`       | `Occt_view` primitive helpers        |
+| `add_box(...)` / `add_sphere(...)`       | `Occt_view` helpers; return `Shp` / Lua userdata |
 | `get_camera()`                           | `{ eye, center, up }` tables / dicts |
 | `set_camera(ex,ey,ez,cx,cy,cz,ux,uy,uz)` | `Occt_view::set_camera`              |
 | `get_shape(i)`                           | Returns `Shp` wrapper                |
 
-### `ezy.sketch`
+### `ezy.view.curr_sketch` / `ezy.sketch`
 
 | Method                          | Notes                                                      |
 | ------------------------------- | ---------------------------------------------------------- |
-| `curr_name()`                   | Current sketch display name                                |
+| `name()` / `curr_name()`        | Current sketch display name                                |
 | `node_count()` / `node(i)`      | `(x, y)` plane coords (Lua: 1-based; Python: 0-based)      |
 | `dim_count()` / `dim(i)`        | Length dim tuple (Lua: 1-based)                            |
 | `add(plane, offset, base_name)` | `Occt_view::add_sketch_on_ref_plane`; plane `XY`/`XZ`/`YZ` |

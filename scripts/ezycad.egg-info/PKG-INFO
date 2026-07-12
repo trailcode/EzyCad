@@ -1,3 +1,14 @@
+Metadata-Version: 2.4
+Name: ezycad
+Version: 0.1.0
+Summary: Remote client for EzyCad --listen scripting API
+License: See repository LICENSE
+Project-URL: Homepage, https://github.com/trailcode/EzyCad
+Requires-Python: >=3.9
+Description-Content-Type: text/markdown
+License-File: LICENSE
+Dynamic: license-file
+
 # EzyCad scripting
 
 EzyCad embeds script consoles that drive the live document through a **public Python-first API** under **`ezy`**. Lua mirrors the same namespaces (required for WebAssembly). Remote `--listen` clients use the same Python tree.
@@ -34,11 +45,11 @@ Canonical surface (also available in Lua with the same names):
 ezy.log / ezy.msg / ezy.help / ezy.get_mode / ezy.set_mode
 ezy.save_occt_view_settings / ezy.occt_view_settings_json
 ezy.view.*
-ezy.view.curr_sketch.*   # same object as ezy.sketch
+ezy.sketch.*
 ezy.Shp
 ```
 
-**Aliases** (compatibility): global **`view`** is **`ezy.view`**; global **`Shp`** is **`ezy.Shp`**; **`help()`** is **`ezy.help()`**. **`ezy.view.curr_sketch`** is the same object as **`ezy.sketch`**. Flat `view.add_sketch` / `add_edge` / `finish_sketch_edges` forward to **`view.curr_sketch.*`**.
+**Aliases** (compatibility): global **`view`** is **`ezy.view`**; global **`Shp`** is **`ezy.Shp`**; **`help()`** is **`ezy.help()`**. Flat sketch names on `view` (`curr_sketch_*`, `add_sketch`, `add_edge`, `finish_sketch_edges`) forward to **`ezy.sketch.*`**.
 
 **`print`** is redirected to **`ezy.log`** in both consoles.
 
@@ -60,25 +71,24 @@ ezy.Shp
 | --------------------------------------------------------- | ------------------------------------------------ |
 | `ezy.view.sketch_count()`                                 | Number of sketches                               |
 | `ezy.view.shape_count()`                                  | Number of 3D shapes                              |
-| `ezy.view.add_box(ox, oy, oz, w, l, h)`                   | Add a box; returns **`Shp`**                     |
-| `ezy.view.add_sphere(ox, oy, oz, r)`                      | Add a sphere; returns **`Shp`**                  |
+| `ezy.view.add_box(ox, oy, oz, w, l, h)`                   | Add a box                                        |
+| `ezy.view.add_sphere(ox, oy, oz, r)`                      | Add a sphere                                     |
 | `ezy.view.get_shape(i)`                                   | Shape by **0-based** index (raises `IndexError`) |
 | `ezy.view.get_camera()`                                   | Camera vectors: `eye`, `center`, `up`            |
 | `ezy.view.set_camera(ex, ey, ez, cx, cy, cz, ux, uy, uz)` | Set camera vectors                               |
-| `ezy.view.curr_sketch`                                    | Current sketch API (same as `ezy.sketch`)        |
 
-### `ezy.view.curr_sketch` / `ezy.sketch`
+### `ezy.sketch`
 
-Indices are **0-based** in Python. Prefer **`view.curr_sketch`** for inspection; **`ezy.sketch`** is the same object and also used for creation helpers.
+Indices are **0-based** in Python.
 
-| Method                                                       | Purpose                                                                      |
-| ------------------------------------------------------------ | ---------------------------------------------------------------------------- |
-| `view.curr_sketch.name()`                                    | Name of the current sketch (`curr_name()` alias on `ezy.sketch`)             |
-| `view.curr_sketch.node_count()` / `view.curr_sketch.node(i)` | Read nodes `(x, y)` on the current sketch plane                              |
-| `view.curr_sketch.dim_count()` / `view.curr_sketch.dim(i)`   | Read length dimensions                                                       |
-| `view.curr_sketch.add(plane, offset, base_name)`             | New sketch on `XY`, `XZ`, or `YZ` (`offset` in display units; optional name) |
-| `view.curr_sketch.add_edge(x1, y1, x2, y2)`                  | Add a linear edge to the current sketch                                      |
-| `view.curr_sketch.finish_edges()`                            | Rebuild closed-face topology after bulk edge import                          |
+| Method                                           | Purpose                                                                      |
+| ------------------------------------------------ | ---------------------------------------------------------------------------- |
+| `ezy.sketch.curr_name()`                         | Name of the current sketch                                                   |
+| `ezy.sketch.node_count()` / `ezy.sketch.node(i)` | Read nodes `(x, y)` on the current sketch plane                              |
+| `ezy.sketch.dim_count()` / `ezy.sketch.dim(i)`   | Read length dimensions                                                       |
+| `ezy.sketch.add(plane, offset, base_name)`       | New sketch on `XY`, `XZ`, or `YZ` (`offset` in display units; optional name) |
+| `ezy.sketch.add_edge(x1, y1, x2, y2)`            | Add a linear edge to the current sketch                                      |
+| `ezy.sketch.finish_edges()`                      | Rebuild closed-face topology after bulk edge import                          |
 
 ### `ezy.Shp`
 
@@ -127,34 +137,25 @@ Bind `0.0.0.0` only if you intentionally expose the port on the network (no auth
 
 ### Importable client (`ezycad`)
 
-**Install is optional.** If `scripts/` is already on your Python path (as in many IPython setups), just `import ezycad`. Otherwise either::
+Install once from the repo root (editable)::
 
 ```text
 pip install -e .
 ```
 
-or::
-
-```python
-import sys
-sys.path.insert(0, r"C:\src\EzyCad\scripts")
-import ezycad
-```
-
-Then (keep the connection open — avoid `with` in IPython if you will call `app` again later)::
+Then use from IPython or any script (tab completion works on typed methods)::
 
 ```python
 import ezycad
 
-app = ezycad.connect()  # 127.0.0.1:8765; EzyCad must be running with --listen
-app.ezy.log("hello from remote")
-print(app.view.sketch_count())
-print(app.view.curr_sketch.node_count())
-print(app.ezy.get_mode())
-# app.close() when done
+with ezycad.connect() as app:  # 127.0.0.1:8765
+    app.ezy.log("hello from remote")
+    print(app.view.sketch_count())
+    print(app.sketch.node_count())
+    print(app.ezy.get_mode())
 ```
 
-If you see a connection / socket error, EzyCad was closed or `app` was already closed — call `ezycad.connect()` again.
+Package layout: [`scripts/ezycad/`](../scripts/ezycad/) (`EzyCad`, `Ezy`, `View`, `Sketch`, `Shp`). Without install, run with `PYTHONPATH=scripts` or use the CLI wrapper below.
 
 ### CLI
 

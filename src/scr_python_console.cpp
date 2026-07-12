@@ -190,8 +190,10 @@ def _ezycad_bootstrap():
     import ezycad_native as _n
 
     class Sketch:
-        def curr_name(self):
+        def name(self):
             return _n.view_curr_sketch_name()
+        def curr_name(self):
+            return self.name()
         def node_count(self):
             return _n.view_curr_sketch_node_count()
         def node(self, i):
@@ -209,7 +211,7 @@ def _ezycad_bootstrap():
 
     class View:
         def __init__(self, sketch):
-            self._sketch = sketch
+            self.curr_sketch = sketch
         def sketch_count(self):
             return _n.view_sketch_count()
         def shape_count(self):
@@ -224,23 +226,13 @@ def _ezycad_bootstrap():
             return _n.view_get_camera()
         def set_camera(self, ex, ey, ez, cx, cy, cz, ux, uy, uz):
             return _n.view_set_camera(ex, ey, ez, cx, cy, cz, ux, uy, uz)
-        # Compatibility aliases -> ezy.sketch.*
-        def curr_sketch_name(self):
-            return self._sketch.curr_name()
-        def curr_sketch_node_count(self):
-            return self._sketch.node_count()
-        def curr_sketch_node(self, i):
-            return self._sketch.node(i)
-        def curr_sketch_dim_count(self):
-            return self._sketch.dim_count()
-        def curr_sketch_dim(self, i):
-            return self._sketch.dim(i)
+        # Compatibility aliases -> ezy.sketch / view.curr_sketch
         def add_sketch(self, plane="XY", offset=0.0, base_name=None):
-            return self._sketch.add(plane, offset, base_name)
+            return self.curr_sketch.add(plane, offset, base_name)
         def add_edge(self, x1, y1, x2, y2):
-            return self._sketch.add_edge(x1, y1, x2, y2)
+            return self.curr_sketch.add_edge(x1, y1, x2, y2)
         def finish_sketch_edges(self):
-            return self._sketch.finish_edges()
+            return self.curr_sketch.finish_edges()
 
     class Ezy:
         def __init__(self):
@@ -335,15 +327,16 @@ PYBIND11_EMBEDDED_MODULE(ezycad_native, m)
               "  ezy.save_occt_view_settings() / ezy.occt_view_settings_json()\n"
               "ezy.view:\n"
               "  sketch_count() / shape_count()\n"
-              "  add_box(ox,oy,oz,w,l,h) / add_sphere(ox,oy,oz,r)\n"
+              "  add_box(ox,oy,oz,w,l,h) / add_sphere(ox,oy,oz,r)  - returns Shp\n"
               "  get_shape(i)  - shape by 0-based index (raises IndexError if out of range)\n"
               "  get_camera() / set_camera(ex,ey,ez,cx,cy,cz,ux,uy,uz)\n"
-              "ezy.sketch:\n"
-              "  curr_name() / node_count() / node(i) / dim_count() / dim(i)\n"
+              "  curr_sketch.name() / node_count() / node(i) / dim_count() / dim(i)\n"
+              "ezy.sketch: (same object as ezy.view.curr_sketch)\n"
+              "  name() / node_count() / node(i) / dim_count() / dim(i)\n"
               "  add(plane, offset, base_name) / add_edge(x1,y1,x2,y2) / finish_edges()\n"
               "ezy.Shp: name / set_name / visible / set_visible\n"
               "aliases: view == ezy.view; Shp == ezy.Shp; help() == ezy.help()\n"
-              "  view.curr_sketch_* / add_sketch / add_edge / finish_sketch_edges -> ezy.sketch.*";
+              "  view.add_sketch / add_edge / finish_sketch_edges -> view.curr_sketch.*";
           g_py_console->append_line_from_python(help_text);
         });
 
@@ -475,21 +468,31 @@ PYBIND11_EMBEDDED_MODULE(ezycad_native, m)
 
   m.def(
       "view_add_box",
-      [](double ox, double oy, double oz, double w, double len, double h)
+      [](double ox, double oy, double oz, double w, double len, double h) -> Ezy_shp
       {
         Occt_view* view = g_py_gui && g_py_gui->get_view() ? g_py_gui->get_view() : nullptr;
-        if (view)
-          view->add_box(ox, oy, oz, w, len, h);
+        if (!view)
+          throw std::runtime_error("no 3D view available");
+        view->add_box(ox, oy, oz, w, len, h);
+        std::list<Shp_ptr>& shapes = view->get_shapes();
+        if (shapes.empty())
+          throw std::runtime_error("add_box failed to create a shape");
+        return Ezy_shp{shapes.back()};
       },
       py::arg("ox"), py::arg("oy"), py::arg("oz"), py::arg("w"), py::arg("l"), py::arg("h"));
 
   m.def(
       "view_add_sphere",
-      [](double ox, double oy, double oz, double r)
+      [](double ox, double oy, double oz, double r) -> Ezy_shp
       {
         Occt_view* view = g_py_gui && g_py_gui->get_view() ? g_py_gui->get_view() : nullptr;
-        if (view)
-          view->add_sphere(ox, oy, oz, r);
+        if (!view)
+          throw std::runtime_error("no 3D view available");
+        view->add_sphere(ox, oy, oz, r);
+        std::list<Shp_ptr>& shapes = view->get_shapes();
+        if (shapes.empty())
+          throw std::runtime_error("add_sphere failed to create a shape");
+        return Ezy_shp{shapes.back()};
       },
       py::arg("ox"), py::arg("oy"), py::arg("oz"), py::arg("r"));
 
@@ -574,7 +577,7 @@ Python_console::Python_console(GUI* gui)
 #ifdef EZYCAD_HAVE_PYTHON
   m_python_ok = init_python_();
   if (m_python_ok)
-    append_line("Python console ready (pybind11). Try: ezy.log('hello'), ezy.view.sketch_count(), ezy.sketch.node_count()");
+    append_line("Python console ready (pybind11). Try: ezy.log('hello'), ezy.view.sketch_count(), view.curr_sketch.node_count()");
   else
     append_line("Python failed to initialize. Is PYTHONHOME set and the runtime on PATH?", true);
   load_scripts();
