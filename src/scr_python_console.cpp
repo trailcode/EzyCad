@@ -84,12 +84,14 @@ Python_console* g_py_console = nullptr;
 
 // Requires PyErr to be set. After `catch (py::error_already_set& e)`, call `e.restore()` first -
 // pybind11 stores the error in the exception object and clears PyErr until restored.
-void append_python_exception_to_history(std::vector<std::string>& history, bool* scroll, uint64_t* log_display_version)
+// Returns a single multi-line error string (no "[err] " prefix). Clears PyErr.
+std::string format_and_clear_python_exception()
 {
   PyObject *type = nullptr, *value = nullptr, *traceback = nullptr;
   PyErr_Fetch(&type, &value, &traceback);
   PyErr_NormalizeException(&type, &value, &traceback);
-  PyObject* lines = nullptr;
+  PyObject*   lines = nullptr;
+  std::string text;
   if (value)
   {
     PyObject* tb_mod = PyImport_ImportModule("traceback");
@@ -120,21 +122,14 @@ void append_python_exception_to_history(std::vector<std::string>& history, bool*
       PyObject*   item = PyList_GET_ITEM(lines, i);
       const char* u    = PyUnicode_AsUTF8(item);
       if (u)
-      {
-        std::string line(u);
-        while (!line.empty() && (line.back() == '\n' || line.back() == '\r'))
-          line.pop_back();
-        history.push_back("[err] " + line);
-      }
+        text += u;
     }
-    *scroll = true;
   }
   else
   {
     PyObject*   s   = value ? PyObject_Str(value) : nullptr;
     const char* msg = s ? PyUnicode_AsUTF8(s) : "Python error";
-    history.push_back(std::string("[err] ") + (msg ? msg : "?"));
-    *scroll = true;
+    text            = msg ? msg : "?";
     Py_XDECREF(s);
   }
   Py_XDECREF(lines);
@@ -142,6 +137,28 @@ void append_python_exception_to_history(std::vector<std::string>& history, bool*
   Py_XDECREF(value);
   Py_XDECREF(traceback);
   PyErr_Clear();
+  while (!text.empty() && (text.back() == '\n' || text.back() == '\r'))
+    text.pop_back();
+  return text;
+}
+
+void append_python_exception_to_history(std::vector<std::string>& history, bool* scroll, uint64_t* log_display_version)
+{
+  const std::string  text = format_and_clear_python_exception();
+  std::istringstream iss(text);
+  std::string        line;
+  bool               any = false;
+  while (std::getline(iss, line))
+  {
+    while (!line.empty() && line.back() == '\r')
+      line.pop_back();
+    history.push_back("[err] " + line);
+    any = true;
+  }
+  if (!any)
+    history.push_back("[err] Python error");
+  if (scroll)
+    *scroll = true;
   if (log_display_version)
     ++*log_display_version;
 }
@@ -171,21 +188,32 @@ static const char* default_sketch_base_name(Sketch_ref_plane plane)
 static const char* k_bootstrap = R"PY(
 def _ezycad_bootstrap():
     import ezycad_native as _n
+
+    class Sketch:
+        def curr_name(self):
+            return _n.view_curr_sketch_name()
+        def node_count(self):
+            return _n.view_curr_sketch_node_count()
+        def node(self, i):
+            return _n.view_curr_sketch_node(int(i))  # returns (x, y) tuple
+        def dim_count(self):
+            return _n.view_curr_sketch_dim_count()
+        def dim(self, i):
+            return _n.view_curr_sketch_dim(int(i))  # (lo, hi, visible, offset, name, distance)
+        def add(self, plane="XY", offset=0.0, base_name=None):
+            return _n.view_add_sketch(plane, offset, base_name)
+        def add_edge(self, x1, y1, x2, y2):
+            return _n.view_add_edge(x1, y1, x2, y2)
+        def finish_edges(self):
+            return _n.view_finish_sketch_edges()
+
     class View:
+        def __init__(self, sketch):
+            self._sketch = sketch
         def sketch_count(self):
             return _n.view_sketch_count()
         def shape_count(self):
             return _n.view_shape_count()
-        def curr_sketch_name(self):
-            return _n.view_curr_sketch_name()
-        def curr_sketch_node_count(self):
-            return _n.view_curr_sketch_node_count()
-        def curr_sketch_node(self, i):
-            return _n.view_curr_sketch_node(int(i))  # returns (x, y) tuple
-        def curr_sketch_dim_count(self):
-            return _n.view_curr_sketch_dim_count()
-        def curr_sketch_dim(self, i):
-            return _n.view_curr_sketch_dim(int(i))  # (lo, hi, visible, offset, name, distance)
         def add_box(self, ox, oy, oz, w, l, h):
             return _n.view_add_box(ox, oy, oz, w, l, h)
         def add_sphere(self, ox, oy, oz, r):
@@ -196,13 +224,29 @@ def _ezycad_bootstrap():
             return _n.view_get_camera()
         def set_camera(self, ex, ey, ez, cx, cy, cz, ux, uy, uz):
             return _n.view_set_camera(ex, ey, ez, cx, cy, cz, ux, uy, uz)
+        # Compatibility aliases -> ezy.sketch.*
+        def curr_sketch_name(self):
+            return self._sketch.curr_name()
+        def curr_sketch_node_count(self):
+            return self._sketch.node_count()
+        def curr_sketch_node(self, i):
+            return self._sketch.node(i)
+        def curr_sketch_dim_count(self):
+            return self._sketch.dim_count()
+        def curr_sketch_dim(self, i):
+            return self._sketch.dim(i)
         def add_sketch(self, plane="XY", offset=0.0, base_name=None):
-            return _n.view_add_sketch(plane, offset, base_name)
+            return self._sketch.add(plane, offset, base_name)
         def add_edge(self, x1, y1, x2, y2):
-            return _n.view_add_edge(x1, y1, x2, y2)
+            return self._sketch.add_edge(x1, y1, x2, y2)
         def finish_sketch_edges(self):
-            return _n.view_finish_sketch_edges()
+            return self._sketch.finish_edges()
+
     class Ezy:
+        def __init__(self):
+            self.sketch = Sketch()
+            self.view = View(self.sketch)
+            self.Shp = _n.Shp
         def log(self, msg):
             return _n.ezy_log(msg)
         def msg(self, text):
@@ -217,10 +261,11 @@ def _ezycad_bootstrap():
             return _n.ezy_occt_view_settings_json()
         def help(self):
             return _n.ezy_help()
+
     import __main__
     __main__.ezy = Ezy()
-    __main__.view = View()
-    __main__.Shp = _n.Shp
+    __main__.view = __main__.ezy.view
+    __main__.Shp = __main__.ezy.Shp
     __main__.help = lambda: __main__.ezy.help()
     import builtins
     builtins.print = lambda *a: __main__.ezy.log(" ".join(str(x) for x in a))
@@ -284,35 +329,21 @@ PYBIND11_EMBEDDED_MODULE(ezycad_native, m)
           if (!g_py_console)
             return;
           const char* help_text =
-              "ezy:\n"
-              "  ezy.log(msg)                  - append message to console and log window\n"
-              "  ezy.msg(text)                 - show status message\n"
-              "  ezy.get_mode()                - return current mode name\n"
-              "  ezy.set_mode(name)            - set mode by name\n"
-              "  ezy.save_occt_view_settings() - write settings JSON (incl. view colors)\n"
-              "  ezy.occt_view_settings_json() - JSON: occt_view + gui edge_dim_*, view_roll_step_deg, view_zoom_scroll_scale\n"
-              "  ezy.help()            - print this help\n"
-              "view:\n"
-              "  view.sketch_count()          - number of sketches\n"
-              "  view.shape_count()           - number of shapes\n"
-              "  view.curr_sketch_name()      - current sketch name\n"
-              "  view.curr_sketch_node_count()- number of nodes in current sketch\n"
-              "  view.curr_sketch_node(i)     - (x, y) of node i in current sketch (raises IndexError if out of range)\n"
-              "  view.curr_sketch_dim_count() - number of length dimensions in current sketch\n"
-              "  view.curr_sketch_dim(i)      - (lo, hi, visible, offset, name, distance) for dimension i\n"
-              "  view.add_sketch(plane, offset, base_name) - new sketch on XY/XZ/YZ (offset in display units)\n"
-              "  view.add_edge(x1,y1,x2,y2)    - add linear edge to current sketch\n"
-              "  view.finish_sketch_edges()    - rebuild face topology after bulk edge import\n"
-              "  view.add_box(ox,oy,oz,w,l,h) - add box\n"
-              "  view.add_sphere(ox,oy,oz,r)  - add sphere\n"
-              "  view.get_shape(i)            - get shape by 0-based index (raises IndexError if out of range)\n"
-              "  view.get_camera()            - get camera eye/center/up vectors\n"
-              "  view.set_camera(ex,ey,ez,cx,cy,cz,ux,uy,uz) - set camera vectors\n"
-              "Shp:\n"
-              "  s.name()              - get shape name\n"
-              "  s.set_name(s)         - set shape name\n"
-              "  s.visible()           - get visibility\n"
-              "  s.set_visible(b)      - set visibility";
+              "ezy (public scripting API):\n"
+              "  ezy.log(msg) / ezy.msg(text) / ezy.help()\n"
+              "  ezy.get_mode() / ezy.set_mode(name)\n"
+              "  ezy.save_occt_view_settings() / ezy.occt_view_settings_json()\n"
+              "ezy.view:\n"
+              "  sketch_count() / shape_count()\n"
+              "  add_box(ox,oy,oz,w,l,h) / add_sphere(ox,oy,oz,r)\n"
+              "  get_shape(i)  - shape by 0-based index (raises IndexError if out of range)\n"
+              "  get_camera() / set_camera(ex,ey,ez,cx,cy,cz,ux,uy,uz)\n"
+              "ezy.sketch:\n"
+              "  curr_name() / node_count() / node(i) / dim_count() / dim(i)\n"
+              "  add(plane, offset, base_name) / add_edge(x1,y1,x2,y2) / finish_edges()\n"
+              "ezy.Shp: name / set_name / visible / set_visible\n"
+              "aliases: view == ezy.view; Shp == ezy.Shp; help() == ezy.help()\n"
+              "  view.curr_sketch_* / add_sketch / add_edge / finish_sketch_edges -> ezy.sketch.*";
           g_py_console->append_line_from_python(help_text);
         });
 
@@ -519,7 +550,16 @@ struct Python_console::Ezycad_python_runtime
 
 #endif // EZYCAD_HAVE_PYTHON
 
-void Python_console::append_line_from_python(const std::string& line) { append_line(line, false); }
+void Python_console::append_line_from_python(const std::string& line)
+{
+  append_line(line, false);
+  if (m_capturing)
+  {
+    if (!m_capture_buf.empty())
+      m_capture_buf.push_back('\n');
+    m_capture_buf += line;
+  }
+}
 
 void Python_console::append_line(const std::string& line, bool is_error)
 {
@@ -534,7 +574,7 @@ Python_console::Python_console(GUI* gui)
 #ifdef EZYCAD_HAVE_PYTHON
   m_python_ok = init_python_();
   if (m_python_ok)
-    append_line("Python console ready (pybind11). Try: ezy.log('hello'), view.sketch_count()");
+    append_line("Python console ready (pybind11). Try: ezy.log('hello'), ezy.view.sketch_count(), ezy.sketch.node_count()");
   else
     append_line("Python failed to initialize. Is PYTHONHOME set and the runtime on PATH?", true);
   load_scripts();
@@ -657,10 +697,21 @@ void Python_console::load_scripts()
   }
 }
 
-void Python_console::execute(const std::string& code)
+Python_exec_result Python_console::execute_captured(const std::string& code)
 {
-  if (!m_python_ok || code.empty())
-    return;
+  Python_exec_result r;
+  if (!m_python_ok)
+  {
+    r.ok    = false;
+    r.error = "Python interpreter is not ready";
+    return r;
+  }
+  if (code.empty())
+  {
+    r.ok    = false;
+    r.error = "empty code";
+    return r;
+  }
 
   if (m_cmd_history.empty() || m_cmd_history.back() != code)
     m_cmd_history.push_back(code);
@@ -668,22 +719,75 @@ void Python_console::execute(const std::string& code)
 
   append_line("> " + code);
 
+  m_capturing = true;
+  m_capture_buf.clear();
+
   try
   {
-    py::object result = py::eval<py::eval_single_statement>(py::str(code), py::globals(), py::globals());
+    py::object result;
+    // Prefer expression eval so remote clients get a result repr (e.g. view.sketch_count()).
+    // Fall back to single-statement (console REPL) when the source is not an expression.
+    try
+    {
+      result = py::eval(py::str(code), py::globals(), py::globals());
+    }
+    catch (py::error_already_set& e)
+    {
+      if (!e.matches(PyExc_SyntaxError))
+        throw;
+      e.restore();
+      PyErr_Clear();
+      result = py::eval<py::eval_single_statement>(py::str(code), py::globals(), py::globals());
+    }
     if (result.ptr() != nullptr && !result.is_none())
-      append_line(py::repr(result).cast<std::string>());
+    {
+      r.result = py::repr(result).cast<std::string>();
+      append_line(r.result);
+    }
   }
   catch (py::error_already_set& e)
   {
     e.restore();
-    append_python_exception_to_history(m_history, &m_scroll_to_bottom, &m_log_display_version);
+    r.ok    = false;
+    r.error = format_and_clear_python_exception();
+    {
+      std::istringstream iss(r.error);
+      std::string        line;
+      bool               any = false;
+      while (std::getline(iss, line))
+      {
+        while (!line.empty() && line.back() == '\r')
+          line.pop_back();
+        m_history.push_back("[err] " + line);
+        any = true;
+      }
+      if (!any)
+        m_history.push_back("[err] Python error");
+      m_scroll_to_bottom = true;
+      ++m_log_display_version;
+    }
   }
+
+  m_capturing = false;
+  r.output    = m_capture_buf;
+  m_capture_buf.clear();
+  return r;
 }
+
+void Python_console::execute(const std::string& code) { (void)execute_captured(code); }
 #else
 void Python_console::load_scripts() {}
 
 void Python_console::execute(const std::string& code) { (void)code; }
+
+Python_exec_result Python_console::execute_captured(const std::string& code)
+{
+  (void)code;
+  Python_exec_result r;
+  r.ok    = false;
+  r.error = "Python console is not available in this build";
+  return r;
+}
 #endif
 
 int Python_console::text_edit_callback(ImGuiInputTextCallbackData* data)

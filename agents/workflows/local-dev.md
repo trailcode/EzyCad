@@ -105,6 +105,7 @@ See `scripts/build-occt-793-wasm.ps1`, `scripts/build-occt-v8-wasm.ps1`, and sha
 
 ## Other scripts
 
+- `scripts/ezycad_remote.py` — Client for desktop `--listen` remote Python console (see [docs/scripting.md](../../docs/scripting.md#remote-python---listen)). Smoke: build with Python embed, run `EzyCad --listen 127.0.0.1:8765`, then `python scripts/ezycad_remote.py -c "view.sketch_count()"`.
 - `scripts/align_md_tables.py` — Align GFM pipe tables in `.md` files for source + preview readability (see [conventions/markdown-tables.md](../conventions/markdown-tables.md)).
 - `scripts/sync-github-pages-html.ps1` — Sync `web/` changes (EzyCad.html etc.) to the GitHub Pages wasm demo site.
 - `scripts/pbf-to-png.ps1` / `.py` — Icon / asset conversion helpers.

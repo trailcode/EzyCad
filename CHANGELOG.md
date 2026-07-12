@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Scripting
+
+- **Public API layout:** Python-first package surface under `ezy` / `ezy.view` / `ezy.sketch` (Lua mirrors the same namespaces). Global `view` and flat `view.curr_sketch_*` names remain as compatibility aliases. See [docs/scripting.md](docs/scripting.md).
+- **Remote Python (`--listen`):** Desktop builds with embedded Python can accept console snippets over TCP (`EzyCad --listen [host:]port`). Execution is marshaled to the main UI thread. Client module: `scripts/ezycad_remote.py` (`Session`, `ezy`/`view` proxies). See [docs/scripting.md](docs/scripting.md#remote-python---listen).
+
 ### Sketch appearance
 
 - **Settings -> Sketch -> Appearance:** configurable edge color, selection color, highlight (hover) color, and thickness (with alpha); face fill, selection, and highlight colors (with alpha). Persisted under `gui.sketch_edge_*` and `gui.sketch_face_*`. Bundled defaults match the current preferred palette (orange edge selection; mauve face fill; magenta/violet face selection/highlight).

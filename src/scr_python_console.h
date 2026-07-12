@@ -16,6 +16,15 @@ struct Python_script_editor
   TextEditor  editor;
 };
 
+/// Result of running one Python snippet (UI console or remote).
+struct Python_exec_result
+{
+  bool        ok = true;
+  std::string output; // print / ezy.log lines captured for this request
+  std::string result; // repr of expression value when present
+  std::string error;  // traceback / error text when ok is false
+};
+
 /// ImGui Python console: run Python snippets with bindings to EzyCad (ezy.*, view.*).
 /// Available when built with EZYCAD_HAVE_PYTHON (native builds with Python development libraries).
 class Python_console
@@ -28,7 +37,9 @@ public:
   static int text_edit_callback(struct ImGuiInputTextCallbackData* data);
   static int log_display_resize_callback(struct ImGuiInputTextCallbackData* data);
 
-  void append_line_from_python(const std::string& line);
+  void               append_line_from_python(const std::string& line);
+  Python_exec_result execute_captured(const std::string& code);
+  bool               is_python_ok() const { return m_python_ok; }
 
 private:
   void load_scripts();
@@ -50,6 +61,8 @@ private:
   char                     m_input_buf[k_input_buf_size]{};
   bool                     m_scroll_to_bottom = false;
   bool                     m_python_ok        = false;
+  bool                     m_capturing        = false;
+  std::string              m_capture_buf;
 
   std::string m_log_display_buf;
   uint64_t    m_log_display_version       = 0;

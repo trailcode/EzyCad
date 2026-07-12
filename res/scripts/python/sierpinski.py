@@ -77,11 +77,11 @@ def create_sierpinski(order=3, size=20.0, center=(0.0, 0.0)):
 def create_sierpinski_sketch(order=3, size=20.0, center=(0.0, 0.0), plane="XY", offset=0.0, name="Sierpinski"):
     """Generate a Sierpinski triangle and add it as a new sketch."""
     node_list, unique_lines = create_sierpinski(order, size, center)
-    view.add_sketch(plane, offset, name)
+    ezy.sketch.add(plane, offset, name)
     for (a, b) in unique_lines:
-        view.add_edge(a[0], a[1], b[0], b[1])
-    view.finish_sketch_edges()
-    ezy.log(f"Created sketch '{view.curr_sketch_name()}' with {len(unique_lines)} edges.")
+        ezy.sketch.add_edge(a[0], a[1], b[0], b[1])
+    ezy.sketch.finish_edges()
+    ezy.log(f"Created sketch '{ezy.sketch.curr_name()}' with {len(unique_lines)} edges.")
     return node_list, unique_lines
 
 # Auto-generate a small example on script load (so it's immediately visible in the console tab)
