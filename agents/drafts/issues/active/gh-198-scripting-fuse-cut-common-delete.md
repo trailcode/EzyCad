@@ -1,8 +1,8 @@
 ---
 github_issue: 198
-github_pr: 
+github_pr: 199
 status: active
-paired_draft: ../prs/active/draft-remote-scripting-boolean-ops.md
+paired_draft: ../prs/active/gh-199-remote-scripting-boolean-ops.md
 ---
 
 # Scripting bindings for fuse, cut, common, and delete

@@ -1,6 +1,6 @@
 ---
 github_issue: 198
-github_pr: 
+github_pr: 199
 status: active
 paired_draft: ../issues/active/gh-198-scripting-fuse-cut-common-delete.md
 ---
@@ -26,6 +26,7 @@ Remote / console / main, `shp_fuse` / `shp_cut` / `shp_common`, `scripts/ezycad/
 ## Related
 
 - Issues: https://github.com/trailcode/EzyCad/issues/118 , https://github.com/trailcode/EzyCad/issues/198
+- PR: https://github.com/trailcode/EzyCad/pull/199
 - Supersedes empty tip on PR #119 (`feature/remote-python-server`)
 
 ## Test Plan
