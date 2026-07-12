@@ -1175,18 +1175,21 @@ void GUI::settings_()
         ImGui::SameLine(0.0f, ImGui::GetStyle().ItemInnerSpacing.x);
         GUI_DOC_HELP_("Color and opacity of edges on the current sketch (alpha = opacity).", nullptr);
 
-        ImGui::TableNextRow();
-        ImGui::TableSetColumnIndex(0);
-        ImGui::AlignTextToFramePadding();
-        ImGui::TextUnformatted("Edge thickness");
-        ImGui::TableSetColumnIndex(1);
+        if (ui_show_occt_line_width_settings())
         {
-          float lw = m_sketch_edge_line_width;
-          if (ImGui::SliderFloat("##sketch_edge_lw", &lw, k_gui_sketch_edge_line_width_min, k_gui_sketch_edge_line_width_max,
-                                 "%.2f"))
+          ImGui::TableNextRow();
+          ImGui::TableSetColumnIndex(0);
+          ImGui::AlignTextToFramePadding();
+          ImGui::TextUnformatted("Edge thickness");
+          ImGui::TableSetColumnIndex(1);
           {
-            m_sketch_edge_line_width = lw;
-            appear_changed           = true;
+            float lw = m_sketch_edge_line_width;
+            if (ImGui::SliderFloat("##sketch_edge_lw", &lw, k_gui_sketch_edge_line_width_min, k_gui_sketch_edge_line_width_max,
+                                   "%.2f"))
+            {
+              m_sketch_edge_line_width = lw;
+              appear_changed           = true;
+            }
           }
         }
 
@@ -1254,21 +1257,25 @@ void GUI::settings_()
         ImGui::TableSetupColumn("label", ImGuiTableColumnFlags_WidthFixed, k_label_col_w);
         ImGui::TableSetupColumn("control", ImGuiTableColumnFlags_WidthStretch);
 
-        ImGui::TableNextRow();
-        ImGui::TableSetColumnIndex(0);
-        ImGui::AlignTextToFramePadding();
-        ImGui::TextUnformatted("Dimension line width");
-        ImGui::TableSetColumnIndex(1);
+        if (ui_show_occt_line_width_settings())
         {
-          float lw = m_edge_dim_line_width;
-          if (ImGui::SliderFloat("##edge_dim_lw", &lw, 0.5f, 8.0f, "%.2f"))
+          ImGui::TableNextRow();
+          ImGui::TableSetColumnIndex(0);
+          ImGui::AlignTextToFramePadding();
+          ImGui::TextUnformatted("Dimension line width");
+          ImGui::TableSetColumnIndex(1);
           {
-            m_edge_dim_line_width = lw;
-            dim_changed           = true;
-          }
+            float lw = m_edge_dim_line_width;
+            if (ImGui::SliderFloat("##edge_dim_lw", &lw, 0.5f, 8.0f, "%.2f"))
+            {
+              m_edge_dim_line_width = lw;
+              dim_changed           = true;
+            }
 
-          ImGui::SameLine(0.0f, ImGui::GetStyle().ItemInnerSpacing.x);
-          GUI_DOC_HELP_("Thickness of sketch edge length dimensions (Open CASCADE line width scale; 1.0 = default).", nullptr);
+            ImGui::SameLine(0.0f, ImGui::GetStyle().ItemInnerSpacing.x);
+            GUI_DOC_HELP_("Thickness of sketch edge length dimensions (Open CASCADE line width scale; 1.0 = default).",
+                          nullptr);
+          }
         }
 
         ImGui::TableNextRow();
@@ -1583,23 +1590,26 @@ void GUI::settings_()
                       doc_urls::k_sketch_snapping);
       }
 
-      ImGui::TableNextRow();
-      ImGui::TableSetColumnIndex(0);
-      ImGui::AlignTextToFramePadding();
-      ImGui::TextUnformatted("Snap guide line width");
-      ImGui::TableSetColumnIndex(1);
+      if (ui_show_occt_line_width_settings())
       {
-        float line_width = Sketch_nodes::get_snap_guide_line_width();
-        if (ImGui::SliderFloat("##snap_guide_line_width", &line_width, 0.5f, 8.0f, "%.2f"))
+        ImGui::TableNextRow();
+        ImGui::TableSetColumnIndex(0);
+        ImGui::AlignTextToFramePadding();
+        ImGui::TextUnformatted("Snap guide line width");
+        ImGui::TableSetColumnIndex(1);
         {
-          Sketch_nodes::set_snap_guide_line_width(line_width);
-          save_occt_view_settings();
-        }
+          float line_width = Sketch_nodes::get_snap_guide_line_width();
+          if (ImGui::SliderFloat("##snap_guide_line_width", &line_width, 0.5f, 8.0f, "%.2f"))
+          {
+            Sketch_nodes::set_snap_guide_line_width(line_width);
+            save_occt_view_settings();
+          }
 
-        ImGui::SameLine(0.0f, ImGui::GetStyle().ItemInnerSpacing.x);
-        GUI_DOC_HELP_("Line width for sketch snap guides (axis lines, markers, and co-axial overlay). Click ? to open "
-                      "the user guide.",
-                      doc_urls::k_sketch_snapping);
+          ImGui::SameLine(0.0f, ImGui::GetStyle().ItemInnerSpacing.x);
+          GUI_DOC_HELP_("Line width for sketch snap guides (axis lines, markers, and co-axial overlay). Click ? to open "
+                        "the user guide.",
+                        doc_urls::k_sketch_snapping);
+        }
       }
 
       ImGui::TableNextRow();

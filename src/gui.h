@@ -287,6 +287,12 @@ public:
   bool ui_show_feature(int tier) const { return tier <= ui_feature_tier(); }
   bool ui_show_help(int tier) const { return tier <= ui_help_tier(); }
   bool ui_show_contextual_help() const { return m_ui_verbosity >= k_gui_ui_contextual_help_min_verbosity; }
+#ifndef __EMSCRIPTEN__
+  /// Open CASCADE line-width settings (SetWidth / Prs3d line width); ineffective on wasm GLES.
+  bool ui_show_occt_line_width_settings() const { return true; }
+#else
+  bool ui_show_occt_line_width_settings() const { return false; }
+#endif
   /// Sketch list: reserved [P] column at verbosity >= 2; active button at feature tier 2 (verbosity >= 3).
   bool ui_show_sketch_list_props_slot() const { return m_ui_verbosity >= 2; }
   bool ui_show_sketch_list_props_button() const { return ui_show_feature(2); }

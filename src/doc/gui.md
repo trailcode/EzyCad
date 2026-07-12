@@ -51,6 +51,7 @@ Typical responsibilities:
 | `ui_help_tier()`            | `verbosity / 2` -- contextual help depth                |
 | `ui_show_contextual_help()` | `verbosity >= 5` -- `?` buttons and doc links           |
 | `show_*_effective()`        | Pane flag AND feature tier                              |
+| `ui_show_occt_line_width_settings()` | `false` on wasm (GLES ignores OCCT `SetWidth` / line-width sliders) |
 
 Constants and ranges live in `gui.h` (`k_gui_ui_verbosity_*`, dimension defaults, view roll/zoom ranges).
 

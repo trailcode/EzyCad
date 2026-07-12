@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.3.0] - 2026-07-12
+
+### WebAssembly
+
+- **Settings -> Sketch:** **Edge thickness**, **Dimension line width**, and **Snap guide line width** are hidden in the browser build (Open CASCADE line-width controls have no visible effect on wasm GLES).
+
 ### View presentation
 
 - **Settings -> View presentation:** **Shape selection color** for selected 3D shapes in the viewer (AIS SelectionStyle). Persisted as `gui.shape_selection_color` (default purple).
@@ -151,6 +157,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Initial version tracking: `src/version.h` and this changelog.
 
-[Unreleased]: https://github.com/trailcode/EzyCad/compare/v0.2.0...HEAD
+[Unreleased]: https://github.com/trailcode/EzyCad/compare/v0.3.0...HEAD
+[0.3.0]: https://github.com/trailcode/EzyCad/releases/tag/v0.3.0
 [0.2.0]: https://github.com/trailcode/EzyCad/releases/tag/v0.2.0
 [0.1.0]: https://github.com/trailcode/EzyCad/releases/tag/v0.1.0
