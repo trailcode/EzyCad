@@ -227,7 +227,10 @@ void GUI::load_examples_list_()
 void GUI::seed_default_dock_layout_(ImGuiID dockspace_id)
 {
   ImGui::DockBuilderRemoveNode(dockspace_id);
-  ImGui::DockBuilderAddNode(dockspace_id, ImGuiDockNodeFlags_DockSpace | ImGuiDockNodeFlags_PassthruCentralNode);
+  // Cast private DockSpace flag: mixing ImGuiDockNodeFlagsPrivate_ with ImGuiDockNodeFlags_
+  // triggers -Wdeprecated-enum-enum-conversion (e.g. emscripten/clang).
+  ImGui::DockBuilderAddNode(dockspace_id, static_cast<ImGuiDockNodeFlags>(ImGuiDockNodeFlags_DockSpace) |
+                                              ImGuiDockNodeFlags_PassthruCentralNode);
   ImGui::DockBuilderSetNodeSize(dockspace_id, ImGui::GetMainViewport()->WorkSize);
 
   ImGuiID dock_main        = dockspace_id;
