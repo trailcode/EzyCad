@@ -264,6 +264,8 @@ public:
 
   // Selection related
   std::vector<AIS_Shape_ptr> get_selected() const;
+  /// Document `Shp` objects in the current viewer selection (deduped; ignores non-Shp AIS).
+  std::vector<Shp_ptr> get_selected_shps() const;
   TopAbs_ShapeEnum           get_shp_selection_mode() const;
   void                       set_shp_selection_mode(const TopAbs_ShapeEnum selection_mode);
 
@@ -277,6 +279,8 @@ public:
   void set_sketch_list_measurement_hover(const Sketch_ptr& sketch, size_t dim_index);
   /// Re-apply list-hover highlight after Settings changes the hover color.
   void refresh_shape_list_hover_highlight();
+  /// Apply AIS SelectionStyle from Settings (shape selection color).
+  void apply_shape_selection_style();
 
   // Material related
   const Graphic3d_MaterialAspect& get_default_material() const;

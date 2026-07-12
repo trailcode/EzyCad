@@ -202,6 +202,10 @@ std::string GUI::occt_view_settings_json() const
       {"snap_guide_line_width", Sketch_nodes::get_snap_guide_line_width()},
       {"annotate_all_coaxial_nodes", Sketch_nodes::get_annotate_all_coaxial_nodes()},
       {"ui_verbosity", m_ui_verbosity},
+      {"elm_list_hover_color",
+       {m_elm_list_hover_color[0], m_elm_list_hover_color[1], m_elm_list_hover_color[2], m_elm_list_hover_color[3]}},
+      {"shape_selection_color",
+       {m_shape_selection_color[0], m_shape_selection_color[1], m_shape_selection_color[2], m_shape_selection_color[3]}},
   };
   return j.dump(2);
 }
@@ -295,6 +299,8 @@ void GUI::save_occt_view_settings()
         m_underlay_highlight_color[3]}},
       {"elm_list_hover_color",
        {m_elm_list_hover_color[0], m_elm_list_hover_color[1], m_elm_list_hover_color[2], m_elm_list_hover_color[3]}},
+      {"shape_selection_color",
+       {m_shape_selection_color[0], m_shape_selection_color[1], m_shape_selection_color[2], m_shape_selection_color[3]}},
   };
   j["version"]          = k_settings_version;
   const char* imgui_ini = ImGui::SaveIniSettingsToMemory(nullptr);
@@ -502,6 +508,8 @@ void GUI::parse_gui_panes_settings_(const std::string& content)
 
     m_sketch_edge_line_width = parse_bounded_float("sketch_edge_line_width", k_gui_sketch_edge_line_width_min,
                                                    k_gui_sketch_edge_line_width_max, k_gui_sketch_edge_line_width_default);
+
+    parse_rgba4("shape_selection_color", m_shape_selection_color, k_gui_shape_selection_color_default);
 
     if (g.contains("edge_dim_arrow_style") && g["edge_dim_arrow_style"].is_number_integer())
     {
@@ -761,7 +769,10 @@ void GUI::load_occt_view_settings_()
   parse_occt_view_settings_(content);
   parse_gui_panes_settings_(content);
   if (m_view)
+  {
     apply_sketch_dimensions_visibility();
+    m_view->apply_shape_selection_style();
+  }
 
   sync_sketch_add_mid_pt_edges_if_applicable_();
 
@@ -1002,6 +1013,32 @@ void GUI::settings_()
     if (element_hover_changed)
     {
       m_view->refresh_shape_list_hover_highlight();
+      save_occt_view_settings();
+    }
+
+    bool shape_sel_changed = false;
+    if (ImGui::BeginTable("settings_shape_selection", 2, ImGuiTableFlags_SizingStretchProp))
+    {
+      ImGui::TableSetupColumn("label", ImGuiTableColumnFlags_WidthFixed, k_label_col_w);
+      ImGui::TableSetupColumn("control", ImGuiTableColumnFlags_WidthStretch);
+
+      ImGui::TableNextRow();
+      ImGui::TableSetColumnIndex(0);
+      ImGui::AlignTextToFramePadding();
+      ImGui::TextUnformatted("Shape selection color");
+      ImGui::TableSetColumnIndex(1);
+      if (ImGui::ColorEdit4("##shape_sel_color", m_shape_selection_color,
+                            ImGuiColorEditFlags_Float | ImGuiColorEditFlags_AlphaBar))
+        shape_sel_changed = true;
+      ImGui::SameLine(0.0f, ImGui::GetStyle().ItemInnerSpacing.x);
+      GUI_DOC_HELP_("Highlight color for selected 3D shapes in the viewer (edges and wires).", doc_urls::k_occt_view);
+
+      ImGui::EndTable();
+    }
+
+    if (shape_sel_changed)
+    {
+      m_view->apply_shape_selection_style();
       save_occt_view_settings();
     }
   }
@@ -1728,8 +1765,12 @@ void GUI::settings_()
 
         show_message("Default settings applied.");
         if (m_view)
+        {
           m_view->refresh_sketch_annotations(
               {.length_dimensions = true, .permanent_node_marks = true, .edge_face_style = true});
+          m_view->apply_shape_selection_style();
+          m_view->refresh_shape_list_hover_highlight();
+        }
       }
       catch (...)
       {

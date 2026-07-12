@@ -23,6 +23,12 @@
       0.47457629442214966,
       1.0
     ],
+    "shape_selection_color": [
+      1.0,
+      1.0,
+      1.0,
+      1.0
+    ],
     "imgui_style_dark": {
       "frame_border": 0.0,
       "frame_padding_x": 5.0,

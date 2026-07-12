@@ -356,6 +356,54 @@ int l_view_get_shape(lua_State* L)
   return 1;
 }
 
+// view.get_selected() -> table of Shp (1-based array keys; may be empty)
+int l_view_get_selected(lua_State* L)
+{
+  GUI*       gui  = get_gui(L);
+  Occt_view* view = gui ? gui->get_view() : nullptr;
+  lua_newtable(L);
+  if (!view)
+    return 1;
+
+  const std::vector<Shp_ptr> selected = view->get_selected_shps();
+  int                        i        = 1;
+  for (const Shp_ptr& shp : selected)
+  {
+    push_shp(L, shp);
+    lua_rawseti(L, -2, i++);
+  }
+  return 1;
+}
+
+// view.get_selected_indices() -> table of 1-based shape indices (may be empty)
+int l_view_get_selected_indices(lua_State* L)
+{
+  GUI*       gui  = get_gui(L);
+  Occt_view* view = gui ? gui->get_view() : nullptr;
+  lua_newtable(L);
+  if (!view)
+    return 1;
+
+  const std::vector<Shp_ptr> selected = view->get_selected_shps();
+  std::list<Shp_ptr>&        shapes   = view->get_shapes();
+  int                       out_i    = 1;
+  for (const Shp_ptr& sel : selected)
+  {
+    lua_Integer idx = 1;
+    for (const Shp_ptr& shp : shapes)
+    {
+      if (shp == sel)
+      {
+        lua_pushinteger(L, idx);
+        lua_rawseti(L, -2, out_i++);
+        break;
+      }
+      ++idx;
+    }
+  }
+  return 1;
+}
+
 // view.fuse(s1, s2, ...) -> Shp
 int l_view_fuse(lua_State* L)
 {
@@ -616,6 +664,8 @@ int l_ezy_help(lua_State* L)
                           "  common(s1, s2, ...)  - boolean intersection; returns Shp\n"
                           "  delete(s1, ...)  - remove one or more Shp from the document\n"
                           "  get_shape(i)  - shape by 1-based index (returns Shp or nil)\n"
+                          "  get_selected()  - table of selected document Shp (empty if none)\n"
+                          "  get_selected_indices()  - 1-based indices of selected document shapes\n"
                           "  get_camera() / set_camera(ex,ey,ez,cx,cy,cz,ux,uy,uz)\n"
                           "  curr_sketch.name() / node_count() / node(i) / dim_count() / dim(i)  (1-based indices)\n"
                           "ezy.sketch: (same table as ezy.view.curr_sketch)\n"
@@ -727,6 +777,10 @@ void Lua_console::register_bindings()
   lua_setfield(m_L, -2, "delete");
   lua_pushcfunction(m_L, l_view_get_shape);
   lua_setfield(m_L, -2, "get_shape");
+  lua_pushcfunction(m_L, l_view_get_selected);
+  lua_setfield(m_L, -2, "get_selected");
+  lua_pushcfunction(m_L, l_view_get_selected_indices);
+  lua_setfield(m_L, -2, "get_selected_indices");
   lua_pushcfunction(m_L, l_view_get_camera);
   lua_setfield(m_L, -2, "get_camera");
   lua_pushcfunction(m_L, l_view_set_camera);

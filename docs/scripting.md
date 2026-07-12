@@ -56,20 +56,22 @@ ezy.Shp
 
 ### `ezy.view`
 
-| Method                                                    | Purpose                                                       |
-| --------------------------------------------------------- | ------------------------------------------------------------- |
-| `ezy.view.sketch_count()`                                 | Number of sketches                                            |
-| `ezy.view.shape_count()`                                  | Number of 3D shapes                                           |
-| `ezy.view.add_box(ox, oy, oz, w, l, h)`                   | Add a box; returns **`Shp`**                                  |
-| `ezy.view.add_sphere(ox, oy, oz, r)`                      | Add a sphere; returns **`Shp`**                               |
-| `ezy.view.fuse(s1, s2, ...)`                              | Boolean union of two or more **`Shp`**; returns **`Shp`**     |
-| `ezy.view.cut(body, tool, ...)`                           | Subtract tools from body; returns **`Shp`**                   |
-| `ezy.view.common(s1, s2, ...)`                            | Boolean intersection; returns **`Shp`**                       |
-| `ezy.view.delete(s1, ...)`                                | Remove one or more **`Shp`** from the document                |
-| `ezy.view.get_shape(i)`                                   | Shape by **0-based** index (raises `IndexError`)              |
-| `ezy.view.get_camera()`                                   | Camera vectors: `eye`, `center`, `up`                         |
-| `ezy.view.set_camera(ex, ey, ez, cx, cy, cz, ux, uy, uz)` | Set camera vectors                                            |
-| `ezy.view.curr_sketch`                                    | Current sketch API (same as `ezy.sketch`)                     |
+| Method                                                    | Purpose                                                   |
+| --------------------------------------------------------- | --------------------------------------------------------- |
+| `ezy.view.sketch_count()`                                 | Number of sketches                                        |
+| `ezy.view.shape_count()`                                  | Number of 3D shapes                                       |
+| `ezy.view.add_box(ox, oy, oz, w, l, h)`                   | Add a box; returns **`Shp`**                              |
+| `ezy.view.add_sphere(ox, oy, oz, r)`                      | Add a sphere; returns **`Shp`**                           |
+| `ezy.view.fuse(s1, s2, ...)`                              | Boolean union of two or more **`Shp`**; returns **`Shp`** |
+| `ezy.view.cut(body, tool, ...)`                           | Subtract tools from body; returns **`Shp`**               |
+| `ezy.view.common(s1, s2, ...)`                            | Boolean intersection; returns **`Shp`**                   |
+| `ezy.view.delete(s1, ...)`                                | Remove one or more **`Shp`** from the document            |
+| `ezy.view.get_shape(i)`                                   | Shape by **0-based** index (raises `IndexError`)          |
+| `ezy.view.get_selected()`                                 | List of selected document **`Shp`** (empty if none)       |
+| `ezy.view.get_selected_indices()`                         | **0-based** indices of selected document shapes           |
+| `ezy.view.get_camera()`                                   | Camera vectors: `eye`, `center`, `up`                     |
+| `ezy.view.set_camera(ex, ey, ez, cx, cy, cz, ux, uy, uz)` | Set camera vectors                                        |
+| `ezy.view.curr_sketch`                                    | Current sketch API (same as `ezy.sketch`)                 |
 
 ### `ezy.view.curr_sketch` / `ezy.sketch`
 
@@ -98,6 +100,7 @@ Lua exposes the **same** `ezy` / `ezy.view` / `ezy.sketch` layout. Differences:
 | Topic        | Lua                                         | Python                           |
 | ------------ | ------------------------------------------- | -------------------------------- |
 | Shape index  | **1-based**; out of range returns **`nil`** | **0-based**; raises `IndexError` |
+| Selected idx | **1-based** in `get_selected_indices()`     | **0-based**                      |
 | Sketch index | **1-based** for `node` / `dim`              | **0-based**                      |
 | Methods      | Prefer `s:name()` style on userdata         | `s.name()`                       |
 | WASM         | Available                                   | Not built                        |

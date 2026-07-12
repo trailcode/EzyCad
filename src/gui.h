@@ -103,6 +103,8 @@ inline constexpr float k_gui_sketch_face_color_default[4] = {0.300796f, 0.245416
 inline constexpr float k_gui_sketch_face_selection_color_default[4] = {0.799043f, 0.187335f, 0.591238f, 1.0f};
 /// Dynamic (hover) highlight RGBA for sketch faces (`gui.sketch_face_highlight_color`).
 inline constexpr float k_gui_sketch_face_highlight_color_default[4] = {0.822967f, 0.0f, 1.0f, 1.0f};
+/// 3D shape selection (AIS SelectionStyle) RGBA (`gui.shape_selection_color`); default matches OCCT white edges.
+inline constexpr float k_gui_shape_selection_color_default[4] = {1.0f, 1.0f, 1.0f, 1.0f};
 /// Allowed range and default for `gui.view_roll_step_deg` (view roll and numpad orbit steps; must match Settings slider).
 inline constexpr double k_gui_view_roll_step_deg_min     = 0.1;
 inline constexpr double k_gui_view_roll_step_deg_max     = 180.0;
@@ -242,6 +244,8 @@ public:
   const float* sketch_face_selection_color_rgba() const { return m_sketch_face_selection_color; }
   /// Sketch-face dynamic (hover) highlight RGBA (0-1; alpha = opacity).
   const float* sketch_face_highlight_color_rgba() const { return m_sketch_face_highlight_color; }
+  /// 3D shape selection (AIS SelectionStyle) RGBA (0-1; alpha = opacity).
+  const float* shape_selection_color_rgba() const { return m_shape_selection_color; }
   bool         get_add_mid_pt_line_edges() const { return m_add_mid_pt_line_edges; }
   bool         get_add_mid_pt_rect_edges() const { return m_add_mid_pt_rect_edges; }
   bool         get_add_mid_pt_slot_edges() const { return m_add_mid_pt_slot_edges; }
@@ -672,6 +676,10 @@ private:
   void                          push_underlay_change_(Sketch& sk, const nlohmann::json& before);
   /// Shape List hover highlight in the OCCT view (0-1, persisted in ezycad_settings.json).
   glm::vec4 m_elm_list_hover_color{0.402064f, 0.102557f, 0.474576f, 1.f};
+  /// AIS SelectionStyle for selected 3D shapes (0-1 RGBA; Settings -> View presentation).
+  float m_shape_selection_color[4] = {
+      k_gui_shape_selection_color_default[0], k_gui_shape_selection_color_default[1],
+      k_gui_shape_selection_color_default[2], k_gui_shape_selection_color_default[3]};
 
   std::unique_ptr<Lua_console>    m_lua_console;
   bool                            m_show_python_console{false};

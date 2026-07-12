@@ -45,7 +45,7 @@ Between those, the pane has **six** collapsible sections. Expand a section to se
 
 2. **UI** — **Dark mode** checkbox. ImGui layout sliders apply to the **active theme** (switch **Dark mode** to edit the other theme). Grouped under **Transparency**, **Rounding**, **Borders**, **Padding**, and **Spacing**: **Window transparency** (**0.1** to **1.0**); corner rounding sliders **0** to **16** for **Windows, frames, popups**, **Scrollbars and sliders**, and **Tabs**; **Window border**, **Frame border** (**0** to **2**); **Window padding** X/Y, **Frame padding** X/Y, and **Item spacing** X/Y (**0** to **24**).
 
-3. **View presentation** — **Background color 1** and **Background color 2** (float RGB fields and swatches). **Gradient blend** — combo: **Horizontal**, **Vertical**, **Diagonal 1**, **Diagonal 2**, **Corner 1** … **Corner 4**. **Element hover color** — highlight for rows hovered in the **Shape List** or **Sketch List** (**Dimensions** table); stored as **`gui.elm_list_hover_color`**.
+3. **View presentation** — **Background color 1** and **Background color 2** (float RGB fields and swatches). **Gradient blend** — combo: **Horizontal**, **Vertical**, **Diagonal 1**, **Diagonal 2**, **Corner 1** … **Corner 4**. **Element hover color** — highlight for rows hovered in the **Shape List** or **Sketch List** (**Dimensions** table); stored as **`gui.elm_list_hover_color`**. **Shape selection color** — selected 3D shape highlight in the viewer (RGBA; default white); stored as **`gui.shape_selection_color`**.
 
 4. **3D view grid** — **Show grid** (checkbox; grid is drawn on the **active sketch** plane, behind coplanar geometry). **Fine grid lines** and **Major grid lines** (dense lines vs every-tenth emphasis). **Grid step**, **Grid padding** (margin around sketch content when sizing the grid), and **Grid display Z offset** in the Settings pane use the **same length scale as sketch length dimensions** (display value = model value / internal `dimension_scale`, default **100**). Saved JSON (`occt_view`) stores padding in model units (`grid_padding`).
 
@@ -184,11 +184,11 @@ If saved layout text has no `[Docking]` section (older installs), a default dock
 | `show_sketch_dimensions`      | boolean            | When false, hides length dimensions on all sketches.                                                                                                                                                                          |
 | `permanent_node_anno_scale`   | number             | Scale for permanent **+** markers: the sketch **Origin** and user-placed Add node points ([Sketch origin](usage-sketch.md#sketch-origin); **0.25** to **3.0**; default **1.0**).                                              |
 | `origin_marker_color`         | array of 3 numbers | RGB color for the **active** sketch's Origin marker (+ with circle; **0** to **1** per channel; default cyan **0.0**, **0.75**, **1.0**).                                                                                     |
-| `sketch_edge_color`           | array of 4 numbers | Current-sketch edge RGBA (**0** to **1**; alpha = opacity; default green **0**, **1**, **0**, **1**).                                                                                                                       |
+| `sketch_edge_color`           | array of 4 numbers | Current-sketch edge RGBA (**0** to **1**; alpha = opacity; default green **0**, **1**, **0**, **1**).                                                                                                                         |
 | `sketch_edge_selection_color` | array of 4 numbers | Selected sketch-edge RGBA (default orange **1**, **0.545**, **0**, **1**). Falls back to `sketch_edge_highlight_color` when absent.                                                                                           |
-| `sketch_edge_highlight_color` | array of 4 numbers | Mouse-over (dynamic) highlight RGBA for sketch edges (default yellow **1**, **1**, **0**, **1**).                                                                                                                              |
+| `sketch_edge_highlight_color` | array of 4 numbers | Mouse-over (dynamic) highlight RGBA for sketch edges (default yellow **1**, **1**, **0**, **1**).                                                                                                                             |
 | `sketch_edge_line_width`      | number             | Current-sketch edge line width (**0.5** to **8.0**; default **1.0**).                                                                                                                                                         |
-| `sketch_face_color`           | array of 4 numbers | Current-sketch face fill RGBA (default mauve **0.301**, **0.245**, **0.321**, **0.297**).                                                                                                                                      |
+| `sketch_face_color`           | array of 4 numbers | Current-sketch face fill RGBA (default mauve **0.301**, **0.245**, **0.321**, **0.297**).                                                                                                                                     |
 | `sketch_face_selection_color` | array of 4 numbers | Selected sketch-face **fill** RGBA (default magenta **0.799**, **0.187**, **0.591**, **1**). Falls back to `sketch_face_highlight_color` when absent.                                                                         |
 | `sketch_face_highlight_color` | array of 4 numbers | Mouse-over (dynamic) sketch-face **fill** RGBA (default violet **0.823**, **0**, **1**, **1**).                                                                                                                               |
 | `snap_guide_color_node`       | array of 3 numbers | RGB for snap guides when both axes lock to the same node (float **0** to **1**; default lavender **0.82**, **0.55**, **0.95**). Legacy `snap_guide_color` loads here when `snap_guide_color_node` is absent.                  |
@@ -204,6 +204,7 @@ If saved layout text has no `[Docking]` section (older installs), a default dock
 | `imgui_rounding_tabs`         | number             | **Legacy:** same.                                                                                                                                                                                                             |
 | `underlay_highlight_color`    | array of 3 numbers | Default underlay tint (float RGB **0** to **1** per channel; default **0.64**, **0.56**, **0.31**).                                                                                                                           |
 | `elm_list_hover_color`        | array of 4 numbers | RGBA highlight for rows hovered in the **Shape List** or **Sketch List** dimensions table (float **0** to **1** per channel; default purple **0.40**, **0.10**, **0.47**, **1**).                                             |
+| `shape_selection_color`       | array of 4 numbers | Selected 3D shape highlight RGBA (AIS SelectionStyle; float **0** to **1**; alpha = opacity; default white **1**, **1**, **1**, **1**).                                                                                       |
 | `view_roll_step_deg`          | number             | Degrees per **NumPad 8**/**2**/**4**/**6** orbit and **Shift+NumPad 4**/**6** roll (allowed range **0.1** to **180** in code; default **45**).                                                                                |
 | `view_zoom_scroll_scale`      | number             | Multiplier for `UpdateZoom` scroll delta from wheel and keyboard zoom (allowed range **0.25** to **64** in code; default **4**). With **Shift** held, the effective step is multiplied by **0.1** (Blender-style finer zoom). |
 | `load_last_opened_on_startup` | boolean            | Desktop: open the last `.ezy` on launch. **Legacy:** `load_last_saved_on_startup` is read as a fallback if the newer key is absent.                                                                                           |
@@ -225,16 +226,16 @@ Each **`imgui_style_dark`** / **`imgui_style_light`** object may contain:
 
 Each **`settings_headers`** object may contain (default: only nested Sketch **Appearance** / **Dimensions** expanded):
 
-| Key                 | Type    | Meaning                                      |
-| ------------------- | ------- | -------------------------------------------- |
-| `view_nav`          | boolean | **3D view navigation** section expanded.     |
-| `ui`                | boolean | **UI** section expanded.                     |
-| `view_presentation` | boolean | **View presentation** section expanded.      |
-| `grid`              | boolean | **3D view grid** section expanded.           |
-| `sketch`            | boolean | **Sketch** section expanded.                 |
-| `sketch_appearance` | boolean | Nested **Appearance** under Sketch.          |
-| `sketch_dimensions` | boolean | Nested **Dimensions** under Sketch.          |
-| `startup`           | boolean | **Startup project** section expanded.        |
+| Key                 | Type    | Meaning                                  |
+| ------------------- | ------- | ---------------------------------------- |
+| `view_nav`          | boolean | **3D view navigation** section expanded. |
+| `ui`                | boolean | **UI** section expanded.                 |
+| `view_presentation` | boolean | **View presentation** section expanded.  |
+| `grid`              | boolean | **3D view grid** section expanded.       |
+| `sketch`            | boolean | **Sketch** section expanded.             |
+| `sketch_appearance` | boolean | Nested **Appearance** under Sketch.      |
+| `sketch_dimensions` | boolean | Nested **Dimensions** under Sketch.      |
+| `startup`           | boolean | **Startup project** section expanded.    |
 
 Scripting API **`ezy.occt_view_settings_json()`** returns a JSON string with **`occt_view`** plus selected **`gui`** keys (including dimension and snap keys above, **`gui.permanent_node_anno_scale`**, **`gui.inspection_orthographic`**, **`gui.view_roll_step_deg`**, **`gui.view_zoom_scroll_scale`** when saved). See [scripting.md](scripting.md).
 

@@ -7,8 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### View presentation
+
+- **Settings -> View presentation:** **Shape selection color** for selected 3D shapes in the viewer (AIS SelectionStyle). Persisted as `gui.shape_selection_color` (default white).
+
 ### Scripting
 
+- **`ezy.view.get_selected()` / `get_selected_indices()`:** Return the current 3D viewer selection as document `Shp` objects, or as shape indices (Python **0-based**, Lua **1-based**). Available in Python, Lua, and the remote `ezycad` client.
 - **Public API layout:** Python-first package surface under `ezy` / `ezy.view` / `ezy.view.curr_sketch` (same object as `ezy.sketch`). Lua mirrors the same namespaces. See [docs/scripting.md](docs/scripting.md).
 - **`ezy.view.fuse` / `cut` / `common` / `delete`:** Boolean union, cut (first shape is body, rest are tools), intersection, or delete one or more shapes. Available in Python, Lua, and the remote `ezycad` client.
 - **Remote Python (`--listen`):** Desktop builds with embedded Python can accept console snippets over TCP (`EzyCad --listen [host:]port`). Execution is marshaled to the main UI thread. Importable client: `pip install -e .` then `import ezycad; ezycad.connect()` (typed API for IPython/IDE completion) under `scripts/ezycad/`. See [docs/scripting.md](docs/scripting.md#remote-python---listen).

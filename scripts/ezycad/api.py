@@ -193,6 +193,18 @@ class View(_Remote):
         self._call("ezy.view.get_shape", int(i))
         return Shp(self._session, int(i))
 
+    def get_selected(self) -> list[Shp]:
+        idxs = self._call("ezy.view.get_selected_indices")
+        if not isinstance(idxs, (list, tuple)):
+            return []
+        return [Shp(self._session, int(i)) for i in idxs]
+
+    def get_selected_indices(self) -> list[int]:
+        idxs = self._call("ezy.view.get_selected_indices")
+        if not isinstance(idxs, (list, tuple)):
+            return []
+        return [int(i) for i in idxs]
+
     def get_camera(self) -> Camera:
         value = self._call("ezy.view.get_camera")
         return dict(value) if isinstance(value, dict) else value

@@ -214,7 +214,7 @@ Shared sketch controls (snap, midpoint nodes, place-from-center) live in `option
 | `load_occt_view_settings_`  | Called from `GUI::init`                                             |
 | `occt_view_settings_json()` | Scripting API for settings blob                                     |
 
-Sketch edge/face display colors live under `gui.sketch_edge_*` / `gui.sketch_face_*` and are applied live via `Sketch_annotation_refresh::edge_face_style`. Settings collapsing-header open state is stored in `gui.settings_headers`.
+Sketch edge/face display colors live under `gui.sketch_edge_*` / `gui.sketch_face_*` and are applied live via `Sketch_annotation_refresh::edge_face_style`. 3D shape selection highlight uses `gui.shape_selection_color` applied through `Occt_view::apply_shape_selection_style` (`AIS_InteractiveContext::SelectionStyle`). Settings collapsing-header open state is stored in `gui.settings_headers`.
 
 User-visible key tables: [`docs/usage-settings.md`](../../docs/usage-settings.md). When adding a Settings control, follow [agents/conventions/user-docs-sync.md](../../agents/conventions/user-docs-sync.md).
 

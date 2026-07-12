@@ -243,6 +243,10 @@ def _ezycad_bootstrap():
             return _n.view_delete(*shapes)
         def get_shape(self, i):
             return _n.view_get_shape(int(i))
+        def get_selected(self):
+            return _n.view_get_selected()
+        def get_selected_indices(self):
+            return _n.view_get_selected_indices()
         def get_camera(self):
             return _n.view_get_camera()
         def set_camera(self, ex, ey, ez, cx, cy, cz, ux, uy, uz):
@@ -356,6 +360,8 @@ PYBIND11_EMBEDDED_MODULE(ezycad_native, m)
                                   "  common(s1, s2, ...)  - boolean intersection; returns Shp\n"
                                   "  delete(s1, ...)  - remove one or more Shp from the document\n"
                                   "  get_shape(i)  - shape by 0-based index (raises IndexError if out of range)\n"
+                                  "  get_selected()  - list of selected document Shp (empty if none)\n"
+                                  "  get_selected_indices()  - 0-based indices of selected document shapes\n"
                                   "  get_camera() / set_camera(ex,ey,ez,cx,cy,cz,ux,uy,uz)\n"
                                   "  curr_sketch.name() / node_count() / node(i) / dim_count() / dim(i)\n"
                                   "ezy.sketch: (same object as ezy.view.curr_sketch)\n"
@@ -560,6 +566,46 @@ PYBIND11_EMBEDDED_MODULE(ezycad_native, m)
         return Ezy_shp{*it};
       },
       py::arg("i"));
+
+  m.def("view_get_selected",
+        []() -> py::list
+        {
+          Occt_view* view = g_py_gui && g_py_gui->get_view() ? g_py_gui->get_view() : nullptr;
+          py::list   out;
+          if (!view)
+            return out;
+
+          for (const Shp_ptr& shp : view->get_selected_shps())
+            out.append(Ezy_shp{shp});
+
+          return out;
+        });
+
+  m.def("view_get_selected_indices",
+        []() -> py::list
+        {
+          Occt_view* view = g_py_gui && g_py_gui->get_view() ? g_py_gui->get_view() : nullptr;
+          py::list   out;
+          if (!view)
+            return out;
+
+          const std::vector<Shp_ptr> selected = view->get_selected_shps();
+          std::list<Shp_ptr>&        shapes   = view->get_shapes();
+          for (const Shp_ptr& sel : selected)
+          {
+            std::ptrdiff_t i = 0;
+            for (const Shp_ptr& shp : shapes)
+            {
+              if (shp == sel)
+              {
+                out.append(i);
+                break;
+              }
+              ++i;
+            }
+          }
+          return out;
+        });
 
   m.def("view_fuse",
         [](py::args args) -> Ezy_shp

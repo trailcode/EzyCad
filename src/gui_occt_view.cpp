@@ -26,6 +26,7 @@
 #include <Prs3d_Drawer.hxx>
 #include <Graphic3d_AspectFillArea3d.hxx>
 #include <Prs3d_LineAspect.hxx>
+#include <Prs3d_TypeOfHighlight.hxx>
 #include <PrsDim_LengthDimension.hxx>
 #include <STEPControl_Reader.hxx>
 #include <STEPControl_Writer.hxx>
@@ -42,6 +43,7 @@
 #include <cmath>
 #include <gp_Ax1.hxx>
 #include <gp_Trsf.hxx>
+#include <unordered_set>
 
 #include "utl_dbg.h"
 #include "delta.h"
@@ -241,6 +243,7 @@ void Occt_view::init_viewer()
   highlight_style->SetTransparency(0.8f); // Seems to not do anything
 
   m_ctx->SetHighlightStyle(highlight_style);
+  apply_shape_selection_style();
   m_ctx->SetPixelTolerance(10); // Picking?
 
   m_ctx->UpdateCurrentViewer();
@@ -591,9 +594,7 @@ void Occt_view::create_sketch_from_planar_face_(const ScreenCoords& screen_coord
       m_gui.set_mode(Mode::Sketch_inspection_mode);
     }
     else
-    {
       gui().show_message("Error: Selected face is not planar. Please select a planar face.");
-    }
   }
 }
 
@@ -1877,6 +1878,62 @@ std::vector<AIS_Shape_ptr> Occt_view::get_selected() const
   }
 
   return shapes;
+}
+
+std::vector<Shp_ptr> Occt_view::get_selected_shps() const
+{
+  std::vector<Shp_ptr>           ret;
+  std::unordered_set<const Shp*> seen;
+  for (const AIS_Shape_ptr& obj : get_selected())
+    if (Shp_ptr shp = Shp_ptr::DownCast(obj); !shp.IsNull())
+      if (seen.insert(shp.get()).second)
+        ret.push_back(shp);
+
+  return ret;
+}
+
+void Occt_view::apply_shape_selection_style()
+{
+  if (m_ctx.IsNull())
+    return;
+
+  const float* rgba = gui().shape_selection_color_rgba();
+  const Quantity_Color qc(static_cast<double>(rgba[0]), static_cast<double>(rgba[1]), static_cast<double>(rgba[2]),
+                          Quantity_TOC_RGB);
+  const float transparency = 1.0f - std::clamp(rgba[3], 0.0f, 1.0f);
+
+  const auto apply_to_style = [&](const Prs3d_Drawer_ptr& style)
+  {
+    if (style.IsNull())
+      return;
+
+    style->SetMethod(Aspect_TOHM_COLOR);
+    style->SetColor(qc);
+    style->SetTransparency(transparency);
+    style->SetOwnLineAspects();
+
+    const auto set_color = [&](const Prs3d_LineAspect_ptr& aspect)
+    {
+      if (!aspect.IsNull())
+        aspect->SetColor(qc);
+    };
+
+    set_color(style->LineAspect());
+    set_color(style->WireAspect());
+    set_color(style->SeenLineAspect());
+    set_color(style->FreeBoundaryAspect());
+    set_color(style->UnFreeBoundaryAspect());
+    set_color(style->FaceBoundaryAspect());
+
+    if (!style->ShadingAspect().IsNull())
+      style->ShadingAspect()->SetColor(qc);
+  };
+
+  apply_to_style(m_ctx->SelectionStyle());
+  apply_to_style(m_ctx->HighlightStyle(Prs3d_TypeOfHighlight_LocalSelected));
+
+  m_ctx->HilightSelected(true);
+  m_ctx->UpdateCurrentViewer();
 }
 
 void Occt_view::update_shape_list_hover_drawer_()

@@ -132,6 +132,8 @@ Lua overrides global `print` to call `ezy.log`. Python bootstrap assigns `builti
 | `get_camera()`                           | `{ eye, center, up }` tables / dicts                    |
 | `set_camera(ex,ey,ez,cx,cy,cz,ux,uy,uz)` | `Occt_view::set_camera`                                 |
 | `get_shape(i)`                           | Returns `Shp` wrapper                                   |
+| `get_selected()`                         | Selected document `Shp` list / Lua table (may be empty) |
+| `get_selected_indices()`                 | Indices into `get_shapes` (Python 0-based; Lua 1-based) |
 
 ### `ezy.view.curr_sketch` / `ezy.sketch`
 
