@@ -12,6 +12,7 @@ end
 --- kv: dump keys and values of a Lua object (table). For userdata, dumps metatable __index (available methods).
 --- For other non-tables, outputs the value.
 --- Uses ezy.log() when available so output appears in the Lua console.
+--- Public API lives under ezy / ezy.view / ezy.sketch (view is an alias for ezy.view).
 --- @param obj any Lua value (table = dump keys/values; userdata = list methods; other = single line)
 --- @param prefix string optional indent prefix for nested tables
 function kv(obj, prefix)

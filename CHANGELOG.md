@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Scripting
+
+- **Public API layout:** Python-first package surface under `ezy` / `ezy.view` / `ezy.view.curr_sketch` (same object as `ezy.sketch`). Lua mirrors the same namespaces. See [docs/scripting.md](docs/scripting.md).
+- **`ezy.view.fuse` / `cut` / `common` / `delete`:** Boolean union, cut (first shape is body, rest are tools), intersection, or delete one or more shapes. Available in Python, Lua, and the remote `ezycad` client.
+- **Remote Python (`--listen`):** Desktop builds with embedded Python can accept console snippets over TCP (`EzyCad --listen [host:]port`). Execution is marshaled to the main UI thread. Importable client: `pip install -e .` then `import ezycad; ezycad.connect()` (typed API for IPython/IDE completion) under `scripts/ezycad/`. See [docs/scripting.md](docs/scripting.md#remote-python---listen).
+
 ### Sketch appearance
 
 - **Settings -> Sketch -> Appearance:** configurable edge color, selection color, highlight (hover) color, and thickness (with alpha); face fill, selection, and highlight colors (with alpha). Persisted under `gui.sketch_edge_*` and `gui.sketch_face_*`. Bundled defaults match the current preferred palette (orange edge selection; mauve face fill; magenta/violet face selection/highlight).

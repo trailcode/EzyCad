@@ -2765,6 +2765,16 @@ void GUI::python_console_()
   m_python_console->render(&m_show_python_console);
 }
 
+void GUI::ensure_python_console()
+{
+#ifdef EZYCAD_HAVE_PYTHON
+  if (!m_python_console)
+    m_python_console = std::make_unique<Python_console>(this);
+#endif
+}
+
+Python_console* GUI::get_python_console() { return m_python_console.get(); }
+
 void GUI::init(GLFWwindow* window, ImFont* console_font)
 {
   m_glfw_window  = window;

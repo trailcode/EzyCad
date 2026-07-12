@@ -94,13 +94,13 @@ function create_sierpinski_sketch(order, size, center, plane, offset, name)
   offset = offset or 0.0
   name = name or "Sierpinski"
   local node_list, unique_lines = create_sierpinski(order, size, center)
-  view.add_sketch(plane, offset, name)
+  ezy.sketch.add(plane, offset, name)
   for _, seg in ipairs(unique_lines) do
     local a, b = seg[1], seg[2]
-    view.add_edge(a[1], a[2], b[1], b[2])
+    ezy.sketch.add_edge(a[1], a[2], b[1], b[2])
   end
-  view.finish_sketch_edges()
-  ezy.log(string.format("Created sketch '%s' with %d edges.", view.curr_sketch_name(), #unique_lines))
+  ezy.sketch.finish_edges()
+  ezy.log(string.format("Created sketch '%s' with %d edges.", view.curr_sketch.name(), #unique_lines))
   return node_list, unique_lines
 end
 

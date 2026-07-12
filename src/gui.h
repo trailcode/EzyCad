@@ -290,6 +290,9 @@ public:
   bool log_window_visible_effective() const { return m_log_window_visible && ui_show_feature(1); }
   bool show_lua_console_effective() const { return m_show_lua_console && ui_show_feature(2); }
   bool show_python_console_effective() const { return m_show_python_console && ui_show_feature(2); }
+  /// Create the embedded Python console if needed (e.g. for --listen without opening the UI).
+  void            ensure_python_console();
+  Python_console* get_python_console();
 #ifndef NDEBUG
   void set_show_dbg(bool v) { m_show_dbg = v; }
 #endif

@@ -1,6 +1,8 @@
-# EzyCad scripting (Lua and Python)
+# EzyCad scripting
 
-EzyCad can embed **Lua** and (on supported builds) **Python** consoles. They share the same idea: run short snippets against live **`ezy.*`** and **`view.*`** bindings while the app is running.
+EzyCad embeds script consoles that drive the live document through a **public Python-first API** under **`ezy`**. Lua mirrors the same namespaces (required for WebAssembly). Remote `--listen` clients use the same Python tree.
+
+Use **`ezy.help()`** (or **`help()`**) in a console for a short built-in summary.
 
 ## Availability
 
@@ -24,58 +26,147 @@ Visibility is remembered with other panes (see **usage.md** -> *Help and Setting
 
 Paths are relative to the app working directory on desktop; on WASM, Lua scripts are under the preloaded **`/res/scripts/lua`** tree.
 
-## Bindings overview
+## Public API (Python)
 
-Use **`ezy.help()`** or **`help()`** in either console for the built-in reminder text.
+Canonical surface (also available in Lua with the same names):
 
-**`ezy`**
+```text
+ezy.log / ezy.msg / ezy.help / ezy.get_mode / ezy.set_mode
+ezy.save_occt_view_settings / ezy.occt_view_settings_json
+ezy.view.*
+ezy.view.curr_sketch.*   # same object as ezy.sketch
+ezy.Shp
+```
 
-| Method               | Purpose                                            |
-| -------------------- | -------------------------------------------------- |
-| `ezy.log(msg)`       | Print to the console and the main **Log** pane     |
-| `ezy.msg(text)`      | Show a status message (same style as GUI messages) |
-| `ezy.get_mode()`     | Current application mode name (string)             |
-| `ezy.set_mode(name)` | Switch mode by name                                |
-| `ezy.help()`         | Print binding summary                              |
+**Aliases** (compatibility): global **`view`** is **`ezy.view`**; global **`Shp`** is **`ezy.Shp`**; **`help()`** is **`ezy.help()`**. **`ezy.view.curr_sketch`** is the same object as **`ezy.sketch`**. Flat `view.add_sketch` / `add_edge` / `finish_sketch_edges` forward to **`view.curr_sketch.*`**.
 
-**`view`**
+**`print`** is redirected to **`ezy.log`** in both consoles.
 
-| Method                                                                 | Purpose                                                                                                     |
-| ---------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------- |
-| `view.sketch_count()`                                                  | Number of sketches                                                                                          |
-| `view.shape_count()`                                                   | Number of 3D shapes                                                                                         |
-| `view.curr_sketch_name()`                                              | Name of the current sketch                                                                                  |
-| `view.add_box(ox, oy, oz, w, l, h)` / `view.add_sphere(ox, oy, oz, r)` | Add primitive shapes                                                                                        |
-| `view.get_shape(i)`                                                    | Shape by **1-based** index: Lua userdata or `nil`; Python `Shp` with `name`, `visible`, `set_visible`, etc. |
-| `view.get_camera()`                                                    | Camera vectors: `eye`, `center`, and `up`                                                                   |
-| `view.set_camera(ex, ey, ez, cx, cy, cz, ux, uy, uz)`                  | Set camera vectors                                                                                          |
+### `ezy`
 
-**Sketch inspection and creation** (Lua and Python; indices are **1-based** in Lua, **0-based** in Python):
+| Method                          | Purpose                                        |
+| ------------------------------- | ---------------------------------------------- |
+| `ezy.log(msg)`                  | Print to the console and the main **Log** pane |
+| `ezy.msg(text)`                 | Show a status message                          |
+| `ezy.get_mode()`                | Current application mode name (string)         |
+| `ezy.set_mode(name)`            | Switch mode by name                            |
+| `ezy.save_occt_view_settings()` | Write settings JSON (including view colors)    |
+| `ezy.occt_view_settings_json()` | Settings JSON string                           |
+| `ezy.help()`                    | Print binding summary                          |
+
+### `ezy.view`
+
+| Method                                                    | Purpose                                                       |
+| --------------------------------------------------------- | ------------------------------------------------------------- |
+| `ezy.view.sketch_count()`                                 | Number of sketches                                            |
+| `ezy.view.shape_count()`                                  | Number of 3D shapes                                           |
+| `ezy.view.add_box(ox, oy, oz, w, l, h)`                   | Add a box; returns **`Shp`**                                  |
+| `ezy.view.add_sphere(ox, oy, oz, r)`                      | Add a sphere; returns **`Shp`**                               |
+| `ezy.view.fuse(s1, s2, ...)`                              | Boolean union of two or more **`Shp`**; returns **`Shp`**     |
+| `ezy.view.cut(body, tool, ...)`                           | Subtract tools from body; returns **`Shp`**                   |
+| `ezy.view.common(s1, s2, ...)`                            | Boolean intersection; returns **`Shp`**                       |
+| `ezy.view.delete(s1, ...)`                                | Remove one or more **`Shp`** from the document                |
+| `ezy.view.get_shape(i)`                                   | Shape by **0-based** index (raises `IndexError`)              |
+| `ezy.view.get_camera()`                                   | Camera vectors: `eye`, `center`, `up`                         |
+| `ezy.view.set_camera(ex, ey, ez, cx, cy, cz, ux, uy, uz)` | Set camera vectors                                            |
+| `ezy.view.curr_sketch`                                    | Current sketch API (same as `ezy.sketch`)                     |
+
+### `ezy.view.curr_sketch` / `ezy.sketch`
+
+Indices are **0-based** in Python. Prefer **`view.curr_sketch`** for inspection; **`ezy.sketch`** is the same object and also used for creation helpers.
 
 | Method                                                       | Purpose                                                                      |
 | ------------------------------------------------------------ | ---------------------------------------------------------------------------- |
-| `view.curr_sketch_node_count()` / `view.curr_sketch_node(i)` | Read nodes `(x, y)` on the current sketch plane                              |
-| `view.curr_sketch_dim_count()` / `view.curr_sketch_dim(i)`   | Read length dimensions                                                       |
-| `view.add_sketch(plane, offset, base_name)`                  | New sketch on `XY`, `XZ`, or `YZ` (`offset` in display units; optional name) |
-| `view.add_edge(x1, y1, x2, y2)`                              | Add a linear edge to the current sketch                                      |
-| `view.finish_sketch_edges()`                                 | Rebuild closed-face topology after bulk edge import                          |
+| `view.curr_sketch.name()`                                    | Name of the current sketch (`curr_name()` alias on `ezy.sketch`)             |
+| `view.curr_sketch.node_count()` / `view.curr_sketch.node(i)` | Read nodes `(x, y)` on the current sketch plane                              |
+| `view.curr_sketch.dim_count()` / `view.curr_sketch.dim(i)`   | Read length dimensions                                                       |
+| `view.curr_sketch.add(plane, offset, base_name)`             | New sketch on `XY`, `XZ`, or `YZ` (`offset` in display units; optional name) |
+| `view.curr_sketch.add_edge(x1, y1, x2, y2)`                  | Add a linear edge to the current sketch                                      |
+| `view.curr_sketch.finish_edges()`                            | Rebuild closed-face topology after bulk edge import                          |
 
-**Lua only:** global **`print`** is routed to **`ezy.log`**.  
-**Python only:** **`print`** is similarly redirected to **`ezy.log`** after bootstrap.
+### `ezy.Shp`
+
+| Method                             | Purpose    |
+| ---------------------------------- | ---------- |
+| `s.name()` / `s.set_name(s)`       | Shape name |
+| `s.visible()` / `s.set_visible(b)` | Visibility |
+
+## Lua notes
+
+Lua exposes the **same** `ezy` / `ezy.view` / `ezy.sketch` layout. Differences:
+
+| Topic        | Lua                                         | Python                           |
+| ------------ | ------------------------------------------- | -------------------------------- |
+| Shape index  | **1-based**; out of range returns **`nil`** | **0-based**; raises `IndexError` |
+| Sketch index | **1-based** for `node` / `dim`              | **0-based**                      |
+| Methods      | Prefer `s:name()` style on userdata         | `s.name()`                       |
+| WASM         | Available                                   | Not built                        |
 
 ## Sample scripts
 
-- **`res/scripts/lua/basic.lua`** - Defines **`kv(obj)`** to dump tables or list userdata methods via **`ezy.log`**.
-- **`res/scripts/lua/sierpinski.lua`** - Generates a Sierpinski triangle; call **`create_sierpinski_sketch()`** to build it as a sketch.
-- **`res/scripts/python/basic.py`** - Example **`dump_view()`** using **`ezy.log`** and **`view`**.
-- **`res/scripts/python/sierpinski.py`** - Generates a Sierpinski triangle; call **`create_sierpinski_sketch()`** to build it as a sketch.
-
-Copy these as templates for your own files in the same folders.
+- **`res/scripts/python/basic.py`** - **`dump_view()`** using **`ezy.view`** (and a legacy **`view`** alias line).
+- **`res/scripts/python/sierpinski.py`** - Sierpinski triangle; call **`create_sierpinski_sketch()`**.
+- **`res/scripts/lua/basic.lua`** - **`kv(obj)`** helper via **`ezy.log`**.
+- **`res/scripts/lua/sierpinski.lua`** - Same idea for Lua; call **`create_sierpinski_sketch()`**.
 
 ## Limitations
 
 - The API is **small** and may change between versions; prefer **`ezy.help()`** after upgrades.
 - Scripting is for **automation and inspection**, not a full replacement for the GUI workflow.
-- Heavy work in the console thread can **block the UI**; keep snippets short.
+- Heavy work on the UI thread can **block the app**; keep snippets short.
+- Only APIs under **`ezy`** (and documented aliases) are the supported public scripting contract.
+
+## Remote Python (`--listen`)
+
+Desktop builds with embedded Python can accept console snippets over TCP while the GUI runs. The remote client talks to the **same `ezy` tree** as the in-app console.
+
+**Launch** (default host is localhost when you pass only a port):
+
+```text
+EzyCad.exe --listen 8765
+EzyCad.exe --listen 127.0.0.1:8765
+```
+
+Bind `0.0.0.0` only if you intentionally expose the port on the network (no authentication).
+
+### Importable client (`ezycad`)
+
+**Install is optional.** If `scripts/` is already on your Python path (as in many IPython setups), just `import ezycad`. Otherwise either::
+
+```text
+pip install -e .
+```
+
+or::
+
+```python
+import sys
+sys.path.insert(0, r"C:\src\EzyCad\scripts")
+import ezycad
+```
+
+Then (keep the connection open — avoid `with` in IPython if you will call `app` again later)::
+
+```python
+import ezycad
+
+app = ezycad.connect()  # 127.0.0.1:8765; EzyCad must be running with --listen
+app.ezy.log("hello from remote")
+print(app.view.sketch_count())
+print(app.view.curr_sketch.node_count())
+print(app.ezy.get_mode())
+# app.close() when done
+```
+
+If you see a connection / socket error, EzyCad was closed or `app` was already closed — call `ezycad.connect()` again.
+
+### CLI
+
+```text
+python -m ezycad --port 8765
+python scripts/ezycad_remote.py -c "ezy.log('hello')"
+```
+
+Raw `execute` / `eval` still return a `Result` (`ok` / `output` / `result` / `error`). Typed methods raise `ezycad.EzyCadError` on failure and unwrap simple values (ints, tuples, dicts) from the remote `repr`.
 
 For general application behavior, see **[usage.md](usage.md)**.

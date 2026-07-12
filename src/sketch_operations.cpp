@@ -133,8 +133,7 @@ Shp_rslt Sketch::revolve_selected(const double angle)
   }
   catch (const Standard_Failure& e)
   {
-    return Shp_rslt(Result_status::Topo_error,
-                    std::string("Revolution failed: ") + standard_failure_message(e));
+    return Shp_rslt(Result_status::Topo_error, std::string("Revolution failed: ") + standard_failure_message(e));
   }
   catch (const std::exception& e)
   {

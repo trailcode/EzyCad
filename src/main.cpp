@@ -11,12 +11,16 @@
 
 #include <filesystem>
 #include <functional>
+#include <memory>
 #include <string>
 
 #include "gui.h"
 #include "imgui.h"
 #include "imgui_impl_glfw.h"
 #include "imgui_impl_opengl3.h"
+#if !defined(__EMSCRIPTEN__) && defined(EZYCAD_HAVE_PYTHON)
+#include "scr_python_remote.h"
+#endif
 #define GL_SILENCE_DEPRECATION
 #if defined(IMGUI_IMPL_OPENGL_ES2)
 #include <GLES2/gl2.h>
@@ -90,9 +94,54 @@ void scroll_callback_wrapper(GLFWwindow* window, double xoffset, double yoffset)
 
 using namespace glm;
 
+namespace
+{
+#if !defined(__EMSCRIPTEN__)
+bool parse_cli_listen(int argc, char** argv, bool& want_listen, std::string& listen_arg, std::string& error)
+{
+  want_listen = false;
+  listen_arg.clear();
+  error.clear();
+  for (int i = 1; i < argc; ++i)
+  {
+    const std::string a = argv[i] ? argv[i] : "";
+    if (a == "--listen")
+    {
+      if (i + 1 >= argc || argv[i + 1] == nullptr || argv[i + 1][0] == '\0')
+      {
+        error = "--listen requires [host:]port";
+        return false;
+      }
+      want_listen = true;
+      listen_arg  = argv[++i];
+    }
+  }
+  return true;
+}
+#endif
+} // namespace
+
 // Main code
 int main(int argc, char** argv)
 {
+#if !defined(__EMSCRIPTEN__)
+  bool        want_listen = false;
+  std::string listen_arg;
+  std::string listen_cli_error;
+  if (!parse_cli_listen(argc, argv, want_listen, listen_arg, listen_cli_error))
+  {
+    std::fprintf(stderr, "EzyCad: %s\n", listen_cli_error.c_str());
+    return 1;
+  }
+#if !defined(EZYCAD_HAVE_PYTHON)
+  if (want_listen)
+  {
+    std::fprintf(stderr, "EzyCad: --listen requires a build with embedded Python (EZYCAD_HAVE_PYTHON)\n");
+    return 1;
+  }
+#endif
+#endif
+
   glfwSetErrorCallback(glfw_error_callback);
   if (!glfwInit())
     return 1;
@@ -235,6 +284,37 @@ int main(int argc, char** argv)
   GUI gui;
   gui.init(window, console_font);
 
+#if !defined(__EMSCRIPTEN__) && defined(EZYCAD_HAVE_PYTHON)
+  std::unique_ptr<Python_execution_queue> py_queue;
+  std::unique_ptr<Python_remote_server>   py_remote;
+  if (want_listen)
+  {
+    Python_listen_endpoint ep;
+    std::string            parse_err;
+    if (!parse_listen_arg(listen_arg, ep, parse_err))
+    {
+      std::fprintf(stderr, "EzyCad: --listen: %s\n", parse_err.c_str());
+      return 1;
+    }
+    gui.ensure_python_console();
+    Python_console* console = gui.get_python_console();
+    if (!console || !console->is_python_ok())
+    {
+      std::fprintf(stderr, "EzyCad: --listen requires a working Python interpreter\n");
+      return 1;
+    }
+    py_queue  = std::make_unique<Python_execution_queue>();
+    py_remote = std::make_unique<Python_remote_server>(*py_queue);
+    std::string start_err;
+    if (!py_remote->start(ep, start_err))
+    {
+      std::fprintf(stderr, "EzyCad: remote listen failed: %s\n", start_err.c_str());
+      return 1;
+    }
+    std::fprintf(stderr, "EzyCad: Python remote listening on %s:%u\n", ep.host.c_str(), static_cast<unsigned>(ep.port));
+  }
+#endif
+
 #ifdef __EMSCRIPTEN__
   s_gui_for_unload = &gui;
   EM_ASM({
@@ -312,6 +392,15 @@ int main(int argc, char** argv)
     // your copy of the keyboard data. Generally you may always pass all inputs to dear imgui, and hide them from your
     // application based on those two flags.
     glfwPollEvents();
+
+#if !defined(__EMSCRIPTEN__) && defined(EZYCAD_HAVE_PYTHON)
+    if (py_queue)
+    {
+      if (Python_console* console = gui.get_python_console())
+        py_queue->process_pending(*console);
+    }
+#endif
+
     if (glfwGetWindowAttrib(window, GLFW_ICONIFIED) != 0)
     {
       ImGui_ImplGlfw_Sleep(10);
@@ -371,6 +460,12 @@ int main(int argc, char** argv)
 #endif
 
   // Cleanup
+#if !defined(__EMSCRIPTEN__) && defined(EZYCAD_HAVE_PYTHON)
+  if (py_remote)
+    py_remote->stop();
+  py_remote.reset();
+  py_queue.reset();
+#endif
   gui.save_occt_view_settings();
   ImGui_ImplOpenGL3_Shutdown();
   ImGui_ImplGlfw_Shutdown();
