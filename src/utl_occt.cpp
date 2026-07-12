@@ -4,10 +4,22 @@
 #include <BRepBuilderAPI_MakeSolid.hxx>
 #include <BRepBuilderAPI_Sewing.hxx>
 #include <Precision.hxx>
+#include <Standard_Failure.hxx>
+#include <Standard_Version.hxx>
 #include <TopExp_Explorer.hxx>
 #include <TopoDS.hxx>
 #include <TopoDS_Compound.hxx>
 #include <TopoDS_Shell.hxx>
+
+const char* standard_failure_message(const Standard_Failure& e)
+{
+#if OCC_VERSION_HEX >= 0x080000
+  const char* msg = e.what();
+#else
+  const char* msg = e.GetMessageString();
+#endif
+  return (msg && msg[0]) ? msg : "Unknown OCCT error";
+}
 
 namespace
 {

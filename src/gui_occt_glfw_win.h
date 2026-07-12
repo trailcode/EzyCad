@@ -28,6 +28,8 @@
 #include <NCollection_Vec2.hxx>
 #include <TCollection_AsciiString.hxx>
 
+#include "utl_types.h"
+
 struct GLFWwindow;
 
 //! GLFWwindow wrapper implementing Aspect_Window interface.
@@ -46,7 +48,7 @@ public:
   void Close();
 
   //! Return X Display connection.
-  const Handle(Aspect_DisplayConnection) & GetDisplay() const { return myDisplay; }
+  const Aspect_DisplayConnection_ptr& GetDisplay() const { return myDisplay; }
 
   //! Return GLFW window.
   GLFWwindow* getGlfwWindow() { return myGlfwWindow; }
@@ -104,12 +106,12 @@ public:
   virtual Aspect_FBConfig NativeFBConfig() const override { return NULL; }
 
 protected:
-  Handle(Aspect_DisplayConnection) myDisplay;
-  GLFWwindow* myGlfwWindow;
-  int         myXLeft;
-  int         myYTop;
-  int         myXRight;
-  int         myYBottom;
+  Aspect_DisplayConnection_ptr myDisplay;
+  GLFWwindow*                  myGlfwWindow;
+  int                          myXLeft;
+  int                          myYTop;
+  int                          myXRight;
+  int                          myYBottom;
 };
 
 #endif // _Occt_glfw_win_Header

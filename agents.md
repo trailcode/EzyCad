@@ -21,6 +21,8 @@ Pointer for AI coding assistants. Details live in [agents/README.md](agents/READ
 - Script consoles: [src/doc/script.md](src/doc/script.md) (read; update when bindings or console UI change)
 - Utilities: [src/doc/utility.md](src/doc/utility.md) (read; update when utl_* contracts or I/O change)
 - Build/test: [agents/workflows/local-dev.md](agents/workflows/local-dev.md) or root README
+- OCCT APIs / WASM (desktop 8 vs wasm 7.9.3): [agents/conventions/occt-wasm-dual-version.md](agents/conventions/occt-wasm-dual-version.md) — until wasm works on OCCT 8
+- OCCT handles (`Handle` vs `*_ptr`): [agents/conventions/occt-handles.md](agents/conventions/occt-handles.md)
 - Release (maintainers only): [agents/workflows/release.md](agents/workflows/release.md)
 - Open work context: one file under [agents/drafts/](agents/drafts/) if relevant
 

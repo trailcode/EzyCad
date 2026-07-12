@@ -21,7 +21,7 @@ struct Parsed_url
 {
   std::wstring  host;
   std::wstring  path;
-  std::wstring  fragment;
+  std::string   fragment;
   bool          https = true;
   INTERNET_PORT port  = INTERNET_DEFAULT_HTTPS_PORT;
 };
@@ -69,10 +69,7 @@ Parsed_url parse_doc_url(const std::string& url)
     p.path = L"/";
 
   if (hash != std::string::npos)
-  {
-    std::string frag = u.substr(hash + 1);
-    p.fragment.assign(frag.begin(), frag.end());
-  }
+    p.fragment = u.substr(hash + 1);
 
   return p;
 }
@@ -182,7 +179,7 @@ bool check_doc_url(const std::string& url)
   if (!p.fragment.empty() && !body_for_anchor.empty())
   {
     // Check for common Sphinx/ReadTheDocs anchor patterns
-    std::string frag(p.fragment.begin(), p.fragment.end());
+    const std::string& frag = p.fragment;
     if (body_for_anchor.find("id=\"" + frag + "\"") != std::string::npos ||
         body_for_anchor.find("name=\"" + frag + "\"") != std::string::npos ||
         body_for_anchor.find("href=\"#" + frag + "\"") != std::string::npos ||

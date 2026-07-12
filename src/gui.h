@@ -124,8 +124,8 @@ inline constexpr float k_gui_imgui_border_slider_max   = 2.f;
 inline constexpr float k_gui_imgui_padding_slider_max  = 24.f;
 inline constexpr float k_gui_imgui_spacing_slider_max  = 24.f;
 
-/// ImGui layout for **dark mode** / **light mode** (Settings -> UI; persisted under gui.imgui_style_dark / gui.imgui_style_light).
-/// The Settings pane edits whichever theme matches the current Dark mode checkbox.
+/// ImGui layout for **dark mode** / **light mode** (Settings -> UI; persisted under gui.imgui_style_dark /
+/// gui.imgui_style_light). The Settings pane edits whichever theme matches the current Dark mode checkbox.
 struct Gui_imgui_style_settings
 {
   float rounding_general{0.f};
@@ -499,43 +499,43 @@ private:
   bool                             m_angle_edit_focus_pending{false};
 
   // Mode related
-  Mode         m_mode                       = Mode::Normal;
-  Chamfer_mode m_chamfer_mode               = Chamfer_mode::Shape;
-  Fillet_mode  m_fillet_mode                = Fillet_mode::Shape;
-  int          m_edge_dim_label_h           = 3;
-  float        m_edge_dim_line_width        = k_gui_edge_dim_line_width_default;
-  float        m_edge_dim_arrow_size        = k_gui_edge_dim_arrow_size_default;
-  float        m_edge_dim_color[3]          = {k_gui_edge_dim_color_default[0], k_gui_edge_dim_color_default[1],
-                                               k_gui_edge_dim_color_default[2]};
-  float        m_edge_dim_text_scale        = k_gui_edge_dim_text_scale_default;
-  int          m_edge_dim_arrow_style       = 0;
-  int          m_edge_dim_arrow_orientation = 0;
-  int          m_edge_dim_text_render_mode  = k_gui_edge_dim_text_render_mode_default;
-  bool         m_show_sketch_dimensions     = true;
-  float        m_permanent_node_anno_scale  = k_gui_permanent_node_anno_scale_default;
-  float        m_origin_marker_color[3]     = {k_gui_origin_marker_color_default[0], k_gui_origin_marker_color_default[1],
-                                               k_gui_origin_marker_color_default[2]};
-  float        m_sketch_edge_color[4] = {k_gui_sketch_edge_color_default[0], k_gui_sketch_edge_color_default[1],
-                                         k_gui_sketch_edge_color_default[2], k_gui_sketch_edge_color_default[3]};
+  Mode         m_mode                           = Mode::Normal;
+  Chamfer_mode m_chamfer_mode                   = Chamfer_mode::Shape;
+  Fillet_mode  m_fillet_mode                    = Fillet_mode::Shape;
+  int          m_edge_dim_label_h               = 3;
+  float        m_edge_dim_line_width            = k_gui_edge_dim_line_width_default;
+  float        m_edge_dim_arrow_size            = k_gui_edge_dim_arrow_size_default;
+  float        m_edge_dim_color[3]              = {k_gui_edge_dim_color_default[0], k_gui_edge_dim_color_default[1],
+                                                   k_gui_edge_dim_color_default[2]};
+  float        m_edge_dim_text_scale            = k_gui_edge_dim_text_scale_default;
+  int          m_edge_dim_arrow_style           = 0;
+  int          m_edge_dim_arrow_orientation     = 0;
+  int          m_edge_dim_text_render_mode      = k_gui_edge_dim_text_render_mode_default;
+  bool         m_show_sketch_dimensions         = true;
+  float        m_permanent_node_anno_scale      = k_gui_permanent_node_anno_scale_default;
+  float        m_origin_marker_color[3]         = {k_gui_origin_marker_color_default[0], k_gui_origin_marker_color_default[1],
+                                                   k_gui_origin_marker_color_default[2]};
+  float        m_sketch_edge_color[4]           = {k_gui_sketch_edge_color_default[0], k_gui_sketch_edge_color_default[1],
+                                                   k_gui_sketch_edge_color_default[2], k_gui_sketch_edge_color_default[3]};
   float        m_sketch_edge_selection_color[4] = {
       k_gui_sketch_edge_selection_color_default[0], k_gui_sketch_edge_selection_color_default[1],
       k_gui_sketch_edge_selection_color_default[2], k_gui_sketch_edge_selection_color_default[3]};
   float m_sketch_edge_highlight_color[4] = {
       k_gui_sketch_edge_highlight_color_default[0], k_gui_sketch_edge_highlight_color_default[1],
       k_gui_sketch_edge_highlight_color_default[2], k_gui_sketch_edge_highlight_color_default[3]};
-  float m_sketch_edge_line_width = k_gui_sketch_edge_line_width_default;
-  float m_sketch_face_color[4]   = {k_gui_sketch_face_color_default[0], k_gui_sketch_face_color_default[1],
-                                    k_gui_sketch_face_color_default[2], k_gui_sketch_face_color_default[3]};
+  float m_sketch_edge_line_width         = k_gui_sketch_edge_line_width_default;
+  float m_sketch_face_color[4]           = {k_gui_sketch_face_color_default[0], k_gui_sketch_face_color_default[1],
+                                            k_gui_sketch_face_color_default[2], k_gui_sketch_face_color_default[3]};
   float m_sketch_face_selection_color[4] = {
       k_gui_sketch_face_selection_color_default[0], k_gui_sketch_face_selection_color_default[1],
       k_gui_sketch_face_selection_color_default[2], k_gui_sketch_face_selection_color_default[3]};
   float m_sketch_face_highlight_color[4] = {
       k_gui_sketch_face_highlight_color_default[0], k_gui_sketch_face_highlight_color_default[1],
       k_gui_sketch_face_highlight_color_default[2], k_gui_sketch_face_highlight_color_default[3]};
-  bool         m_add_mid_pt_line_edges      = false;
-  bool         m_add_mid_pt_rect_edges      = true;
-  bool         m_add_mid_pt_slot_edges      = false;
-  bool         m_edge_from_center           = false;
+  bool m_add_mid_pt_line_edges = false;
+  bool m_add_mid_pt_rect_edges = true;
+  bool m_add_mid_pt_slot_edges = false;
+  bool m_edge_from_center      = false;
   /// Degrees per numpad orbit (8/2/4/6) and Blender-style roll (Shift+NumPad 4/6); persisted in `gui.view_roll_step_deg`.
   double m_view_roll_step_deg = k_gui_view_roll_step_deg_default;
   /// Multiplier for `UpdateZoom(Aspect_ScrollDelta(..., int(y * scale)))`; persisted in `gui.view_zoom_scroll_scale`.

@@ -369,7 +369,7 @@ private:
   Sketch_ptr                             m_sketch_list_hover;
   std::vector<AIS_InteractiveObject_ptr> m_sketch_list_hover_ais;
   PrsDim_LengthDimension_ptr             m_sketch_list_measurement_hover;
-  opencascade::handle<Prs3d_Drawer>      m_shape_list_hover_drawer;
+  Prs3d_Drawer_ptr                       m_shape_list_hover_drawer;
   void                                   update_shape_list_hover_drawer_();
   void                                   clear_sketch_list_hover_ais_();
   void                                   apply_sketch_list_hover_highlight_();

@@ -35,7 +35,8 @@ public:
   [[nodiscard]] std::vector<Sketch_edge>&       tmp_edges() { return m_tmp_edges; }
   [[nodiscard]] const std::vector<Sketch_edge>& tmp_edges() const { return m_tmp_edges; }
   [[nodiscard]] std::optional<gp_Pnt2d>&        last_pt() { return m_last_pt; }
-  [[nodiscard]] bool                            clear_tmps();
+  /// Clears rubber-band / tmp geometry. Returns true if tmp edges were present (used by `cancel()`).
+  bool clear_tmps();
 
   void clear_tmp_node_idxs() { m_tmp_node_idxs.clear(); }
 

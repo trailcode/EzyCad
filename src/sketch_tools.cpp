@@ -753,7 +753,7 @@ void Sketch_tools::move_arc_circle_pt_(const ScreenCoords& screen_coords)
   gp_Pnt b = to_3d(m_sketch.m_pln, *pt);
   gp_Pnt c = m_sketch.to_3d_(m_tmp_node_idxs[1]);
 
-  Handle(Geom_TrimmedCurve) arc_circle = GC_MakeArcOfCircle(a, b, c);
+  Geom_TrimmedCurve_ptr arc_circle = GC_MakeArcOfCircle(a, b, c);
   if (!arc_circle)
   {
     m_sketch.m_view.remove(m_tmp_shp);
@@ -850,6 +850,7 @@ void Sketch_tools::move_circle_pt_(const ScreenCoords& screen_coords)
     TopoDS_Wire circle = make_circle_wire(m_sketch.m_pln, pt_a, *m_last_pt);
     show(m_sketch.m_ctx, m_tmp_shp, circle);
   };
+
   if_edge_pt_valid_(l);
 }
 
@@ -863,6 +864,7 @@ void Sketch_tools::finalize_circle_(Sketch_op_recorder& rec)
     clear_tmps();
     m_sketch.update_faces_();
   };
+
   if_edge_pt_valid_(l);
 }
 
@@ -879,6 +881,7 @@ void Sketch_tools::move_slot_pt_(const ScreenCoords& screen_coords)
     if (unique(pt_a, pt_b, pt_c))
       show(m_sketch.m_ctx, m_tmp_shp, make_slot_wire(m_sketch.m_pln, pt_a, pt_b, pt_c));
   };
+
   if_edge_pt_valid_(l);
 }
 

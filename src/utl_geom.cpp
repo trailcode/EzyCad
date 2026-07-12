@@ -267,8 +267,8 @@ TopoDS_Wire make_circle_wire(const gp_Pln& pln, const gp_Pnt2d& center, const gp
   gp_Dir normal    = pln.Axis().Direction();
 
   // Create circle geometry
-  gp_Ax2 circle_axis(center_3d, normal);
-  Handle(Geom_Circle) circle = new Geom_Circle(circle_axis, radius);
+  gp_Ax2          circle_axis(center_3d, normal);
+  Geom_Circle_ptr circle = new Geom_Circle(circle_axis, radius);
 
   // Make edge and wire
   BRepBuilderAPI_MakeEdge edge_maker(circle, 0.0, 2.0 * std::numbers::pi);
@@ -360,7 +360,7 @@ TopoDS_Wire make_slot_wire(const gp_Pln& plane, const gp_Pnt2d& pt_a, const gp_P
 }
 
 // Function to get the directional vectors at the start and end of a Geom_TrimmedCurve
-std::pair<gp_Vec, gp_Vec> get_start_end_tangents(const Handle(Geom_TrimmedCurve) & curve)
+std::pair<gp_Vec, gp_Vec> get_start_end_tangents(const Geom_TrimmedCurve_ptr& curve)
 {
   // Get the start and end parameters
   double u_start = curve->FirstParameter();
@@ -436,12 +436,12 @@ std::optional<gp_Pln> plane_from_face(const TopoDS_Face& face)
     return std::nullopt;
 
   // Get the underlying surface
-  Handle(Geom_Surface) surface = BRep_Tool::Surface(face);
+  Geom_Surface_ptr surface = BRep_Tool::Surface(face);
   if (surface.IsNull())
     return std::nullopt;
 
   // Check if the surface is a plane and cast it
-  Handle(Geom_Plane) plane_surface = Handle(Geom_Plane)::DownCast(surface);
+  Geom_Plane_ptr plane_surface = Geom_Plane_ptr::DownCast(surface);
   if (plane_surface.IsNull())
     return std::nullopt;
 
@@ -538,7 +538,7 @@ gp_Pnt2d mirror_point(const gp_Pnt2d& p1, const gp_Pnt2d& p2, const gp_Pnt2d& po
   gp_Vec2d line_vec(p1, p2);
   gp_Dir2d line_dir(line_vec);
 
-  Handle(Geom2d_Curve) line_ptr = new Geom2d_Line(p1, line_dir);
+  Geom2d_Curve_ptr line_ptr = new Geom2d_Line(p1, line_dir);
   // Project the point onto the line
   Geom2dAPI_ProjectPointOnCurve projector(point_to_mirror, line_ptr);
   EZY_ASSERT(projector.NbPoints() != 0);
@@ -571,12 +571,12 @@ namespace
 {
 constexpr double k_dim_text_height_base = 16.0;
 
-Handle(Prs3d_DimensionAspect) clone_dimension_aspect(const PrsDim_LengthDimension_ptr& dim)
+Prs3d_DimensionAspect_ptr clone_dimension_aspect(const PrsDim_LengthDimension_ptr& dim)
 {
   if (dim.IsNull())
     return new Prs3d_DimensionAspect();
 
-  const Handle(Prs3d_DimensionAspect)& cur = dim->DimensionAspect();
+  const Prs3d_DimensionAspect_ptr& cur = dim->DimensionAspect();
   if (!cur.IsNull())
     return new Prs3d_DimensionAspect(*cur);
 
@@ -621,13 +621,13 @@ Prs3d_DimensionArrowOrientation arrow_orientation_from_index(const int idx)
   }
 }
 
-void apply_dimension_label_text_aspect(const Handle(Prs3d_TextAspect) & text, const Quantity_Color& col,
+void apply_dimension_label_text_aspect(const Prs3d_TextAspect_ptr& text, const Quantity_Color& col,
                                        const Length_dimension_style& style)
 {
   text->SetColor(col);
   text->SetHeight(k_dim_text_height_base * static_cast<double>(style.text_height_scale));
 
-  Handle(Graphic3d_AspectText3d) gtext = new Graphic3d_AspectText3d();
+  Graphic3d_AspectText3d_ptr gtext = new Graphic3d_AspectText3d();
   gtext->SetColor(col);
   gtext->SetDisplayType(Aspect_TODT_NORMAL);
   gtext->SetStyle(Aspect_TOST_NORMAL);
@@ -648,12 +648,12 @@ void apply_length_dimension_style(const PrsDim_LengthDimension_ptr& dim, const L
   if (dim.IsNull())
     return;
 
-  Handle(Prs3d_DimensionAspect) aspect = clone_dimension_aspect(dim);
+  Prs3d_DimensionAspect_ptr aspect = clone_dimension_aspect(dim);
 
   const Quantity_Color col(style.color_rgb[0], style.color_rgb[1], style.color_rgb[2], Quantity_TOC_RGB);
 
   Aspect_TypeOfLine typ = Aspect_TOL_SOLID;
-  if (const Handle(Prs3d_LineAspect)& la = aspect->LineAspect(); !la.IsNull())
+  if (const Prs3d_LineAspect_ptr& la = aspect->LineAspect(); !la.IsNull())
     typ = la->Aspect()->Type();
 
   aspect->SetLineAspect(new Prs3d_LineAspect(col, typ, static_cast<double>(style.line_width)));
@@ -664,8 +664,8 @@ void apply_length_dimension_style(const PrsDim_LengthDimension_ptr& dim, const L
   aspect->MakeArrows3d(arrows_3d);
   aspect->SetArrowOrientation(arrow_orientation_from_index(style.arrow_orientation));
 
-  Handle(Prs3d_ArrowAspect) arrow;
-  if (const Handle(Prs3d_ArrowAspect)& cur_arrow = aspect->ArrowAspect(); !cur_arrow.IsNull())
+  Prs3d_ArrowAspect_ptr arrow;
+  if (const Prs3d_ArrowAspect_ptr& cur_arrow = aspect->ArrowAspect(); !cur_arrow.IsNull())
     arrow = new Prs3d_ArrowAspect(*cur_arrow);
   else
     arrow = new Prs3d_ArrowAspect();
@@ -678,7 +678,7 @@ void apply_length_dimension_style(const PrsDim_LengthDimension_ptr& dim, const L
   if (style.text_render_mode == 1)
   {
     aspect->SetCommonColor(col);
-    Handle(Prs3d_TextAspect) text = aspect->TextAspect();
+    Prs3d_TextAspect_ptr text = aspect->TextAspect();
     if (text.IsNull())
       text = new Prs3d_TextAspect();
 
@@ -687,7 +687,7 @@ void apply_length_dimension_style(const PrsDim_LengthDimension_ptr& dim, const L
   }
   else
   {
-    Handle(Prs3d_TextAspect) text = new Prs3d_TextAspect();
+    Prs3d_TextAspect_ptr text = new Prs3d_TextAspect();
     apply_dimension_label_text_aspect(text, col, style);
     aspect->SetTextAspect(text);
   }
@@ -715,27 +715,27 @@ void apply_length_dimension_list_hover_style(const PrsDim_LengthDimension_ptr& d
   if (dim.IsNull())
     return;
 
-  Handle(Prs3d_DimensionAspect) aspect = clone_dimension_aspect(dim);
-  const Quantity_Color qc(hover_rgb[0], hover_rgb[1], hover_rgb[2], Quantity_TOC_RGB);
+  Prs3d_DimensionAspect_ptr aspect = clone_dimension_aspect(dim);
+  const Quantity_Color      qc(hover_rgb[0], hover_rgb[1], hover_rgb[2], Quantity_TOC_RGB);
 
   Aspect_TypeOfLine typ = Aspect_TOL_SOLID;
-  if (const Handle(Prs3d_LineAspect)& la = aspect->LineAspect(); !la.IsNull())
+  if (const Prs3d_LineAspect_ptr& la = aspect->LineAspect(); !la.IsNull())
     typ = la->Aspect()->Type();
 
   aspect->SetLineAspect(new Prs3d_LineAspect(qc, typ, hover_line_width));
 
-  if (const Handle(Prs3d_ArrowAspect)& cur_arrow = aspect->ArrowAspect(); !cur_arrow.IsNull())
+  if (const Prs3d_ArrowAspect_ptr& cur_arrow = aspect->ArrowAspect(); !cur_arrow.IsNull())
   {
-    Handle(Prs3d_ArrowAspect) arrow = new Prs3d_ArrowAspect(*cur_arrow);
+    Prs3d_ArrowAspect_ptr arrow = new Prs3d_ArrowAspect(*cur_arrow);
     arrow->SetColor(qc);
     aspect->SetArrowAspect(arrow);
   }
 
   aspect->SetCommonColor(qc);
 
-  if (const Handle(Prs3d_TextAspect)& text = aspect->TextAspect(); !text.IsNull())
+  if (const Prs3d_TextAspect_ptr& text = aspect->TextAspect(); !text.IsNull())
   {
-    Handle(Prs3d_TextAspect) t = new Prs3d_TextAspect(*text);
+    Prs3d_TextAspect_ptr t = new Prs3d_TextAspect(*text);
     t->SetColor(qc);
     aspect->SetTextAspect(t);
   }
@@ -920,11 +920,11 @@ bool is_face_contained(const TopoDS_Shape& shape_a, const TopoDS_Shape& shape_b)
   const TopoDS_Face& face_b = TopoDS::Face(shape_b);
 
   // Check surface compatibility (both planar and coplanar)
-  Handle(Geom_Surface) surface_a = BRep_Tool::Surface(face_a);
-  Handle(Geom_Surface) surface_b = BRep_Tool::Surface(face_b);
+  Geom_Surface_ptr surface_a = BRep_Tool::Surface(face_a);
+  Geom_Surface_ptr surface_b = BRep_Tool::Surface(face_b);
 
-  Handle(Geom_Plane) plane_a = Handle(Geom_Plane)::DownCast(surface_a);
-  Handle(Geom_Plane) plane_b = Handle(Geom_Plane)::DownCast(surface_b);
+  Geom_Plane_ptr plane_a = Geom_Plane_ptr::DownCast(surface_a);
+  Geom_Plane_ptr plane_b = Geom_Plane_ptr::DownCast(surface_b);
 
   if (plane_a.IsNull() || plane_b.IsNull())
     throw std::runtime_error("Both faces must be planar.");
@@ -1030,8 +1030,8 @@ ezy_geom::polygon_2d to_boost(const TopoDS_Shape& shape, const gp_Pln& pln2)
   const TopoDS_Face& face = TopoDS::Face(shape);
 
   // Get the surface and verify it's a plane
-  Handle(Geom_Surface) surface = BRep_Tool::Surface(face);
-  Handle(Geom_Plane) plane     = Handle(Geom_Plane)::DownCast(surface);
+  Geom_Surface_ptr surface = BRep_Tool::Surface(face);
+  Geom_Plane_ptr   plane   = Geom_Plane_ptr::DownCast(surface);
   EZY_ASSERT_MSG(!plane.IsNull(), "Face surface must be planar.");
 
   // Get the plane's coordinate system
@@ -1499,12 +1499,12 @@ std::optional<gp_Pnt2d> snap_foot_to_open_segment_interior_if_close(const gp_Pnt
 
 namespace
 {
-Handle(Geom_TrimmedCurve) edge_trimmed_curve_(const TopoDS_Edge& edge)
+Geom_TrimmedCurve_ptr edge_trimmed_curve_(const TopoDS_Edge& edge)
 {
-  Standard_Real f               = 0.0;
-  Standard_Real l               = 0.0;
-  Handle(Geom_Curve) c          = BRep_Tool::Curve(edge, f, l);
-  Handle(Geom_TrimmedCurve) ret = new Geom_TrimmedCurve(c, f, l);
+  double                f   = 0.0;
+  double                l   = 0.0;
+  Geom_Curve_ptr        c   = BRep_Tool::Curve(edge, f, l);
+  Geom_TrimmedCurve_ptr ret = new Geom_TrimmedCurve(c, f, l);
   if (edge.Orientation() == TopAbs_REVERSED)
     ret->Reverse();
   return ret;
@@ -1530,9 +1530,9 @@ bool on_open_arc_parameter_(double u, double u_first, double u_last)
 bool point_on_open_arc_interior_2d(const gp_Pnt2d& p, const TopoDS_Edge& arc_edge, const gp_Pln& pln)
 {
   const BRepAdaptor_Curve curve(arc_edge);
-  const Handle(Geom_Curve) geom = curve.Curve().Curve();
-  const double u_first          = curve.FirstParameter();
-  const double u_last           = curve.LastParameter();
+  const Geom_Curve_ptr    geom    = curve.Curve().Curve();
+  const double            u_first = curve.FirstParameter();
+  const double            u_last  = curve.LastParameter();
 
   GeomAPI_ProjectPointOnCurve proj(to_3d(pln, p), geom, u_first, u_last);
   if (proj.NbPoints() == 0 || proj.LowerDistance() > Precision::Confusion())
@@ -1557,8 +1557,8 @@ std::vector<gp_Pnt2d> segment_arc_intersections_2d(const gp_Pnt2d& seg_a, const 
   if (a3.Distance(b3) <= Precision::Confusion())
     return ret;
 
-  Handle(Geom_TrimmedCurve) seg   = GC_MakeSegment(a3, b3);
-  Handle(Geom_TrimmedCurve) arc_c = edge_trimmed_curve_(arc_edge);
+  Geom_TrimmedCurve_ptr     seg   = GC_MakeSegment(a3, b3);
+  Geom_TrimmedCurve_ptr     arc_c = edge_trimmed_curve_(arc_edge);
   GeomAPI_ExtremaCurveCurve ext(seg, arc_c);
 
   for (int i = 1; i <= ext.NbExtrema(); ++i)
@@ -1589,9 +1589,9 @@ std::vector<gp_Pnt2d> segment_arc_intersections_2d(const gp_Pnt2d& seg_a, const 
 
 std::vector<gp_Pnt2d> arc_arc_intersections_2d(const TopoDS_Edge& arc_a, const TopoDS_Edge& arc_b, const gp_Pln& pln)
 {
-  std::vector<gp_Pnt2d> ret;
-  Handle(Geom_TrimmedCurve) curve_a = edge_trimmed_curve_(arc_a);
-  Handle(Geom_TrimmedCurve) curve_b = edge_trimmed_curve_(arc_b);
+  std::vector<gp_Pnt2d>     ret;
+  Geom_TrimmedCurve_ptr     curve_a = edge_trimmed_curve_(arc_a);
+  Geom_TrimmedCurve_ptr     curve_b = edge_trimmed_curve_(arc_b);
   GeomAPI_ExtremaCurveCurve ext(curve_a, curve_b);
 
   for (int i = 1; i <= ext.NbExtrema(); ++i)

@@ -302,9 +302,9 @@ void Sketch_edges::split_arc_at_node_(std::list<Sketch_edge>::iterator itr, size
   }
 
   const BRepAdaptor_Curve curve(occ_edge);
-  const Handle(Geom_Curve) geom = curve.Curve().Curve();
-  const double u_first          = curve.FirstParameter();
-  const double u_last           = curve.LastParameter();
+  const Geom_Curve_ptr    geom    = curve.Curve().Curve();
+  const double            u_first = curve.FirstParameter();
+  const double            u_last  = curve.LastParameter();
 
   auto param_at = [&](size_t node_idx) -> double
   {

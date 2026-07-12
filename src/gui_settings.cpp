@@ -51,14 +51,14 @@ void parse_settings_headers_json(const nlohmann::json& obj, Gui_settings_headers
       return obj[key].get<bool>();
     return fallback;
   };
-  out.view_nav           = b("view_nav", defaults.view_nav);
-  out.ui                 = b("ui", defaults.ui);
-  out.view_presentation  = b("view_presentation", defaults.view_presentation);
-  out.grid               = b("grid", defaults.grid);
-  out.sketch             = b("sketch", defaults.sketch);
-  out.sketch_appearance  = b("sketch_appearance", defaults.sketch_appearance);
-  out.sketch_dimensions  = b("sketch_dimensions", defaults.sketch_dimensions);
-  out.startup            = b("startup", defaults.startup);
+  out.view_nav          = b("view_nav", defaults.view_nav);
+  out.ui                = b("ui", defaults.ui);
+  out.view_presentation = b("view_presentation", defaults.view_presentation);
+  out.grid              = b("grid", defaults.grid);
+  out.sketch            = b("sketch", defaults.sketch);
+  out.sketch_appearance = b("sketch_appearance", defaults.sketch_appearance);
+  out.sketch_dimensions = b("sketch_dimensions", defaults.sketch_dimensions);
+  out.startup           = b("startup", defaults.startup);
 }
 
 void parse_imgui_style_json(const nlohmann::json& obj, const Gui_imgui_style_settings& defaults, Gui_imgui_style_settings& out)
@@ -164,23 +164,21 @@ std::string GUI::occt_view_settings_json() const
       {"show_sketch_dimensions", m_show_sketch_dimensions},
       {k_gui_key_permanent_node_anno_scale, m_permanent_node_anno_scale},
       {"origin_marker_color", {m_origin_marker_color[0], m_origin_marker_color[1], m_origin_marker_color[2]}},
-      {"sketch_edge_color",
-       {m_sketch_edge_color[0], m_sketch_edge_color[1], m_sketch_edge_color[2], m_sketch_edge_color[3]}},
+      {"sketch_edge_color", {m_sketch_edge_color[0], m_sketch_edge_color[1], m_sketch_edge_color[2], m_sketch_edge_color[3]}},
       {"sketch_edge_selection_color",
-       {m_sketch_edge_selection_color[0], m_sketch_edge_selection_color[1], m_sketch_edge_selection_color[2],
-        m_sketch_edge_selection_color[3]}},
+             {m_sketch_edge_selection_color[0], m_sketch_edge_selection_color[1], m_sketch_edge_selection_color[2],
+              m_sketch_edge_selection_color[3]}},
       {"sketch_edge_highlight_color",
-       {m_sketch_edge_highlight_color[0], m_sketch_edge_highlight_color[1], m_sketch_edge_highlight_color[2],
-        m_sketch_edge_highlight_color[3]}},
+             {m_sketch_edge_highlight_color[0], m_sketch_edge_highlight_color[1], m_sketch_edge_highlight_color[2],
+              m_sketch_edge_highlight_color[3]}},
       {"sketch_edge_line_width", m_sketch_edge_line_width},
-      {"sketch_face_color",
-       {m_sketch_face_color[0], m_sketch_face_color[1], m_sketch_face_color[2], m_sketch_face_color[3]}},
+      {"sketch_face_color", {m_sketch_face_color[0], m_sketch_face_color[1], m_sketch_face_color[2], m_sketch_face_color[3]}},
       {"sketch_face_selection_color",
-       {m_sketch_face_selection_color[0], m_sketch_face_selection_color[1], m_sketch_face_selection_color[2],
-        m_sketch_face_selection_color[3]}},
+             {m_sketch_face_selection_color[0], m_sketch_face_selection_color[1], m_sketch_face_selection_color[2],
+              m_sketch_face_selection_color[3]}},
       {"sketch_face_highlight_color",
-       {m_sketch_face_highlight_color[0], m_sketch_face_highlight_color[1], m_sketch_face_highlight_color[2],
-        m_sketch_face_highlight_color[3]}},
+             {m_sketch_face_highlight_color[0], m_sketch_face_highlight_color[1], m_sketch_face_highlight_color[2],
+              m_sketch_face_highlight_color[3]}},
       {"add_mid_pt_edges", m_add_mid_pt_line_edges},
       {"add_mid_pt_rect_edges", m_add_mid_pt_rect_edges},
       {"add_mid_pt_slot_edges", m_add_mid_pt_slot_edges},
@@ -247,23 +245,21 @@ void GUI::save_occt_view_settings()
       {"show_sketch_dimensions", m_show_sketch_dimensions},
       {k_gui_key_permanent_node_anno_scale, m_permanent_node_anno_scale},
       {"origin_marker_color", {m_origin_marker_color[0], m_origin_marker_color[1], m_origin_marker_color[2]}},
-      {"sketch_edge_color",
-       {m_sketch_edge_color[0], m_sketch_edge_color[1], m_sketch_edge_color[2], m_sketch_edge_color[3]}},
+      {"sketch_edge_color", {m_sketch_edge_color[0], m_sketch_edge_color[1], m_sketch_edge_color[2], m_sketch_edge_color[3]}},
       {"sketch_edge_selection_color",
-       {m_sketch_edge_selection_color[0], m_sketch_edge_selection_color[1], m_sketch_edge_selection_color[2],
-        m_sketch_edge_selection_color[3]}},
+             {m_sketch_edge_selection_color[0], m_sketch_edge_selection_color[1], m_sketch_edge_selection_color[2],
+              m_sketch_edge_selection_color[3]}},
       {"sketch_edge_highlight_color",
-       {m_sketch_edge_highlight_color[0], m_sketch_edge_highlight_color[1], m_sketch_edge_highlight_color[2],
-        m_sketch_edge_highlight_color[3]}},
+             {m_sketch_edge_highlight_color[0], m_sketch_edge_highlight_color[1], m_sketch_edge_highlight_color[2],
+              m_sketch_edge_highlight_color[3]}},
       {"sketch_edge_line_width", m_sketch_edge_line_width},
-      {"sketch_face_color",
-       {m_sketch_face_color[0], m_sketch_face_color[1], m_sketch_face_color[2], m_sketch_face_color[3]}},
+      {"sketch_face_color", {m_sketch_face_color[0], m_sketch_face_color[1], m_sketch_face_color[2], m_sketch_face_color[3]}},
       {"sketch_face_selection_color",
-       {m_sketch_face_selection_color[0], m_sketch_face_selection_color[1], m_sketch_face_selection_color[2],
-        m_sketch_face_selection_color[3]}},
+             {m_sketch_face_selection_color[0], m_sketch_face_selection_color[1], m_sketch_face_selection_color[2],
+              m_sketch_face_selection_color[3]}},
       {"sketch_face_highlight_color",
-       {m_sketch_face_highlight_color[0], m_sketch_face_highlight_color[1], m_sketch_face_highlight_color[2],
-        m_sketch_face_highlight_color[3]}},
+             {m_sketch_face_highlight_color[0], m_sketch_face_highlight_color[1], m_sketch_face_highlight_color[2],
+              m_sketch_face_highlight_color[3]}},
       {"add_mid_pt_edges", m_add_mid_pt_line_edges},
       {"add_mid_pt_rect_edges", m_add_mid_pt_rect_edges},
       {"add_mid_pt_slot_edges", m_add_mid_pt_slot_edges},
@@ -504,9 +500,8 @@ void GUI::parse_gui_panes_settings_(const std::string& content)
                 g.contains("sketch_face_selection_color") ? k_gui_sketch_face_selection_color_default
                                                           : m_sketch_face_highlight_color);
 
-    m_sketch_edge_line_width =
-        parse_bounded_float("sketch_edge_line_width", k_gui_sketch_edge_line_width_min, k_gui_sketch_edge_line_width_max,
-                            k_gui_sketch_edge_line_width_default);
+    m_sketch_edge_line_width = parse_bounded_float("sketch_edge_line_width", k_gui_sketch_edge_line_width_min,
+                                                   k_gui_sketch_edge_line_width_max, k_gui_sketch_edge_line_width_default);
 
     if (g.contains("edge_dim_arrow_style") && g["edge_dim_arrow_style"].is_number_integer())
     {
@@ -1137,7 +1132,8 @@ void GUI::settings_()
         ImGui::AlignTextToFramePadding();
         ImGui::TextUnformatted("Edge color");
         ImGui::TableSetColumnIndex(1);
-        if (ImGui::ColorEdit4("##sketch_edge_color", m_sketch_edge_color, ImGuiColorEditFlags_Float | ImGuiColorEditFlags_AlphaBar))
+        if (ImGui::ColorEdit4("##sketch_edge_color", m_sketch_edge_color,
+                              ImGuiColorEditFlags_Float | ImGuiColorEditFlags_AlphaBar))
           appear_changed = true;
         ImGui::SameLine(0.0f, ImGui::GetStyle().ItemInnerSpacing.x);
         GUI_DOC_HELP_("Color and opacity of edges on the current sketch (alpha = opacity).", nullptr);
@@ -1149,8 +1145,8 @@ void GUI::settings_()
         ImGui::TableSetColumnIndex(1);
         {
           float lw = m_sketch_edge_line_width;
-          if (ImGui::SliderFloat("##sketch_edge_lw", &lw, k_gui_sketch_edge_line_width_min,
-                                 k_gui_sketch_edge_line_width_max, "%.2f"))
+          if (ImGui::SliderFloat("##sketch_edge_lw", &lw, k_gui_sketch_edge_line_width_min, k_gui_sketch_edge_line_width_max,
+                                 "%.2f"))
           {
             m_sketch_edge_line_width = lw;
             appear_changed           = true;
@@ -1184,7 +1180,8 @@ void GUI::settings_()
         ImGui::AlignTextToFramePadding();
         ImGui::TextUnformatted("Face fill color");
         ImGui::TableSetColumnIndex(1);
-        if (ImGui::ColorEdit4("##sketch_face_color", m_sketch_face_color, ImGuiColorEditFlags_Float | ImGuiColorEditFlags_AlphaBar))
+        if (ImGui::ColorEdit4("##sketch_face_color", m_sketch_face_color,
+                              ImGuiColorEditFlags_Float | ImGuiColorEditFlags_AlphaBar))
           appear_changed = true;
         ImGui::SameLine(0.0f, ImGui::GetStyle().ItemInnerSpacing.x);
         GUI_DOC_HELP_("Fill color and opacity of closed faces on the current sketch.", nullptr);

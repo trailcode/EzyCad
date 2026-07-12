@@ -24,7 +24,7 @@ Typical uses:
 | [`utl_types.h`](../utl_types.h)                                                | OCCT/AIS handle typedefs, `ScreenCoords`, `Export_format`, `DECL_PTR`, `SafeType`          |
 | [`utl_geom.h`](../utl_geom.h) / [`.cpp`](../utl_geom.cpp)                      | 2D/3D geometry, wires, dimensions, Boost polygon tests, plane projection                   |
 | [`utl_geom_boost.inl`](../utl_geom_boost.inl)                                  | `ezy_geom` Boost.Geometry aliases                                                          |
-| [`utl_occt.h`](../utl_occt.h) / [`.cpp`](../utl_occt.cpp)                      | `TopAbs` name table, `try_make_solid`                                                      |
+| [`utl_occt.h`](../utl_occt.h) / [`.cpp`](../utl_occt.cpp)                      | `TopAbs` name table, `try_make_solid`, `standard_failure_message`                          |
 | [`utl_json.h`](../utl_json.h) / [`.cpp`](../utl_json.cpp)                      | JSON serializers for `gp_Pnt`, `gp_Pln`, etc.                                              |
 | [`utl_io.h`](../utl_io.h) / [`.cpp`](../utl_io.cpp)                            | `.ezy` zip v3 pack/unpack, format sniff, base64                                            |
 | [`utl_asset_store.h`](../utl_asset_store.h) / [`.cpp`](../utl_asset_store.cpp) | Content-addressed RGBA blobs for sketch underlay assets                                    |
@@ -102,10 +102,11 @@ Includes [`utl_geom_boost.inl`](../utl_geom_boost.inl) for `ezy_geom` polygon / 
 
 ## OCCT helpers (`utl_occt`)
 
-| API                        | Role                                                     |
-| -------------------------- | -------------------------------------------------------- |
-| `c_names_TopAbs_ShapeEnum` | String names parallel to OCCT enum (selection filter UI) |
-| `try_make_solid(shape)`    | Wrap closed shell as solid when possible                 |
+| API                           | Role                                                                  |
+| ----------------------------- | --------------------------------------------------------------------- |
+| `c_names_TopAbs_ShapeEnum`    | String names parallel to OCCT enum (selection filter UI)              |
+| `try_make_solid(shape)`       | Wrap closed shell as solid when possible                              |
+| `standard_failure_message(e)` | OCCT 7/8-safe message from `Standard_Failure` (see dual-version note) |
 
 ## JSON geom (`utl_json`)
 

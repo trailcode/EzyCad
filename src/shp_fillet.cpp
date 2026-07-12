@@ -8,6 +8,7 @@
 
 #include "mode.h"
 #include "gui_occt_view.h"
+#include "utl_occt.h"
 
 Shp_fillet::Shp_fillet(Occt_view& view)
     : Shp_operation_base(view)
@@ -95,8 +96,7 @@ Status Shp_fillet::add_fillet(const ScreenCoords& screen_coords, const Fillet_mo
   }
   catch (const Standard_Failure& e)
   {
-    const char* msg     = e.GetMessageString();
-    std::string err_str = msg ? msg : "Unknown OCCT error";
+    const std::string err_str = standard_failure_message(e);
     DBG_MSG(err_str);
     return Status::user_error(err_str);
   }
