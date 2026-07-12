@@ -2,6 +2,7 @@
 
 #include <cstdio>
 #include <cstring>
+#include <chrono>
 #include <future>
 #include <memory>
 #include <sstream>
@@ -47,8 +48,10 @@ bool send_all(socket_t s, const char* data, size_t len)
 #endif
     if (n <= 0)
       return false;
+
     sent += static_cast<size_t>(n);
   }
+
   return true;
 }
 
@@ -64,8 +67,10 @@ bool recv_all(socket_t s, char* data, size_t len)
 #endif
     if (n <= 0)
       return false;
+
     got += static_cast<size_t>(n);
   }
+
   return true;
 }
 
@@ -73,10 +78,12 @@ bool send_frame(socket_t s, const std::string& payload)
 {
   if (payload.size() > 0x7fffffffu)
     return false;
+
   const uint32_t n    = static_cast<uint32_t>(payload.size());
   const uint32_t n_be = htonl(n);
   if (!send_all(s, reinterpret_cast<const char*>(&n_be), 4))
     return false;
+
   return send_all(s, payload.data(), payload.size());
 }
 
@@ -85,12 +92,15 @@ bool recv_frame(socket_t s, std::string& payload)
   uint32_t n_be = 0;
   if (!recv_all(s, reinterpret_cast<char*>(&n_be), 4))
     return false;
+
   const uint32_t n = ntohl(n_be);
   if (n > 16u * 1024u * 1024u)
     return false;
+
   payload.assign(n, '\0');
   if (n == 0)
     return true;
+
   return recv_all(s, payload.data(), n);
 }
 
@@ -137,14 +147,13 @@ bool parse_listen_arg(const std::string& arg, Python_listen_endpoint& out, std::
     error = "empty port in listen argument";
     return false;
   }
+
   for (char c : port_str)
-  {
     if (c < '0' || c > '9')
     {
       error = "port must be an integer";
       return false;
     }
-  }
 
   unsigned long port_ul = 0;
   try
@@ -156,6 +165,7 @@ bool parse_listen_arg(const std::string& arg, Python_listen_endpoint& out, std::
     error = "invalid port";
     return false;
   }
+
   if (port_ul == 0 || port_ul > 65535ul)
   {
     error = "port out of range (1-65535)";
@@ -169,11 +179,25 @@ bool parse_listen_arg(const std::string& arg, Python_listen_endpoint& out, std::
 
 void Python_execution_queue::enqueue(std::string code, Completer done)
 {
-  Job job;
-  job.code = std::move(code);
-  job.done = std::move(done);
-  std::lock_guard<std::mutex> lock(m_mutex);
-  m_jobs.push_back(std::move(job));
+  {
+    std::lock_guard<std::mutex> lock(m_mutex);
+    if (!m_shutdown)
+    {
+      Job job;
+      job.code = std::move(code);
+      job.done = std::move(done);
+      m_jobs.push_back(std::move(job));
+      return;
+    }
+  }
+
+  if (done)
+  {
+    Python_exec_result r;
+    r.ok    = false;
+    r.error = "EzyCad remote server is shutting down";
+    done(std::move(r));
+  }
 }
 
 void Python_execution_queue::process_pending(Python_console& console)
@@ -181,13 +205,38 @@ void Python_execution_queue::process_pending(Python_console& console)
   std::vector<Job> jobs;
   {
     std::lock_guard<std::mutex> lock(m_mutex);
+    if (m_shutdown)
+      return;
+
     jobs.swap(m_jobs);
   }
+
   for (Job& job : jobs)
   {
     Python_exec_result r = console.execute_captured(job.code);
     if (job.done)
       job.done(std::move(r));
+  }
+}
+
+void Python_execution_queue::shutdown()
+{
+  std::vector<Job> jobs;
+  {
+    std::lock_guard<std::mutex> lock(m_mutex);
+    m_shutdown = true;
+    jobs.swap(m_jobs);
+  }
+
+  for (Job& job : jobs)
+  {
+    if (!job.done)
+      continue;
+
+    Python_exec_result r;
+    r.ok    = false;
+    r.error = "EzyCad remote server is shutting down";
+    job.done(std::move(r));
   }
 }
 
@@ -206,6 +255,7 @@ bool Python_remote_server::start(const Python_listen_endpoint& ep, std::string& 
     error = "invalid listen endpoint";
     return false;
   }
+
   if (m_running.load())
   {
     error = "already listening";
@@ -220,6 +270,7 @@ bool Python_remote_server::start(const Python_listen_endpoint& ep, std::string& 
     error = "WSAStartup failed (err=" + std::to_string(wsa_rc) + ")";
     return false;
   }
+
   m_wsa_started = true;
 #endif
 
@@ -295,13 +346,17 @@ bool Python_remote_server::start(const Python_listen_endpoint& ep, std::string& 
 void Python_remote_server::stop()
 {
   m_running.store(false);
+  m_queue.shutdown();
   if (m_listen_sock != 0)
   {
     closesocket_compat(static_cast<socket_t>(m_listen_sock));
     m_listen_sock = 0;
   }
+
+  close_all_clients_();
   if (m_thread.joinable())
     m_thread.join();
+
 #ifdef _WIN32
   if (m_wsa_started)
   {
@@ -309,6 +364,30 @@ void Python_remote_server::stop()
     m_wsa_started = false;
   }
 #endif
+}
+
+void Python_remote_server::track_client_(uintptr_t client_sock)
+{
+  std::lock_guard<std::mutex> lock(m_clients_mutex);
+  m_clients.insert(client_sock);
+}
+
+void Python_remote_server::untrack_client_(uintptr_t client_sock)
+{
+  std::lock_guard<std::mutex> lock(m_clients_mutex);
+  m_clients.erase(client_sock);
+}
+
+void Python_remote_server::close_all_clients_()
+{
+  std::unordered_set<uintptr_t> clients;
+  {
+    std::lock_guard<std::mutex> lock(m_clients_mutex);
+    clients.swap(m_clients);
+  }
+
+  for (uintptr_t c : clients)
+    closesocket_compat(static_cast<socket_t>(c));
 }
 
 void Python_remote_server::accept_loop_()
@@ -327,8 +406,15 @@ void Python_remote_server::accept_loop_()
     {
       if (!m_running.load())
         break;
+
       std::fprintf(stderr, "EzyCad: remote accept failed (err=%d)\n", last_socket_error());
       continue;
+    }
+
+    if (!m_running.load())
+    {
+      closesocket_compat(client);
+      break;
     }
     handle_client_(static_cast<uintptr_t>(client));
   }
@@ -337,6 +423,7 @@ void Python_remote_server::accept_loop_()
 void Python_remote_server::handle_client_(uintptr_t client_sock_u)
 {
   const socket_t client = static_cast<socket_t>(client_sock_u);
+  track_client_(client_sock_u);
   while (m_running.load())
   {
     std::string payload;
@@ -360,6 +447,7 @@ void Python_remote_server::handle_client_(uintptr_t client_sock_u)
                           {"error", std::string("bad request JSON: ") + e.what()}};
       if (!send_frame(client, resp.dump()))
         break;
+
       continue;
     }
 
@@ -370,7 +458,22 @@ void Python_remote_server::handle_client_(uintptr_t client_sock_u)
     Python_exec_result r;
     try
     {
-      r = future.get();
+      // Timed wait so shutdown (queue.shutdown + closed sockets) cannot hang forever.
+      for (;;)
+      {
+        if (future.wait_for(std::chrono::milliseconds(100)) == std::future_status::ready)
+        {
+          r = future.get();
+          break;
+        }
+
+        if (!m_running.load())
+        {
+          r.ok    = false;
+          r.error = "EzyCad remote server is shutting down";
+          break;
+        }
+      }
     }
     catch (const std::exception& e)
     {
@@ -378,10 +481,14 @@ void Python_remote_server::handle_client_(uintptr_t client_sock_u)
       r.error = std::string("execution queue failed: ") + e.what();
     }
 
+    if (!m_running.load())
+      break;
+
     nlohmann::json resp{{"id", req_id}, {"ok", r.ok}, {"output", r.output}, {"result", r.result}, {"error", r.error}};
     if (!send_frame(client, resp.dump()))
       break;
   }
+  untrack_client_(client_sock_u);
   closesocket_compat(client);
 }
 
@@ -409,6 +516,8 @@ void Python_execution_queue::enqueue(std::string code, Completer done)
 
 void Python_execution_queue::process_pending(Python_console& console) { (void)console; }
 
+void Python_execution_queue::shutdown() {}
+
 Python_remote_server::Python_remote_server(Python_execution_queue& queue)
     : m_queue(queue)
 {
@@ -428,5 +537,11 @@ void Python_remote_server::stop() {}
 void Python_remote_server::accept_loop_() {}
 
 void Python_remote_server::handle_client_(uintptr_t) {}
+
+void Python_remote_server::track_client_(uintptr_t) {}
+
+void Python_remote_server::untrack_client_(uintptr_t) {}
+
+void Python_remote_server::close_all_clients_() {}
 
 #endif // EZYCAD_HAVE_PYTHON

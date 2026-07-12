@@ -153,6 +153,42 @@ class View(_Remote):
             raise EzyCadError("add_sphere failed to create a shape")
         return Shp(self._session, idx)
 
+    def fuse(self, *shapes: Shp) -> Shp:
+        if len(shapes) < 2:
+            raise EzyCadError("fuse requires two or more shapes")
+        args = ", ".join(s._expr() for s in shapes)
+        self._run(f"ezy.view.fuse({args})")
+        idx = self.shape_count() - 1
+        if idx < 0:
+            raise EzyCadError("fuse failed to create a shape")
+        return Shp(self._session, idx)
+
+    def cut(self, *shapes: Shp) -> Shp:
+        if len(shapes) < 2:
+            raise EzyCadError("cut requires two or more shapes")
+        args = ", ".join(s._expr() for s in shapes)
+        self._run(f"ezy.view.cut({args})")
+        idx = self.shape_count() - 1
+        if idx < 0:
+            raise EzyCadError("cut failed to create a shape")
+        return Shp(self._session, idx)
+
+    def common(self, *shapes: Shp) -> Shp:
+        if len(shapes) < 2:
+            raise EzyCadError("common requires two or more shapes")
+        args = ", ".join(s._expr() for s in shapes)
+        self._run(f"ezy.view.common({args})")
+        idx = self.shape_count() - 1
+        if idx < 0:
+            raise EzyCadError("common failed to create a shape")
+        return Shp(self._session, idx)
+
+    def delete(self, *shapes: Shp) -> None:
+        if not shapes:
+            raise EzyCadError("delete requires one or more shapes")
+        args = ", ".join(s._expr() for s in shapes)
+        self._run(f"ezy.view.delete({args})")
+
     def get_shape(self, i: int) -> Shp:
         self._call("ezy.view.get_shape", int(i))
         return Shp(self._session, int(i))

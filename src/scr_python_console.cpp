@@ -12,6 +12,9 @@
 #include "mode.h"
 #include "gui_occt_view.h"
 #include "shp.h"
+#include "shp_common.h"
+#include "shp_cut.h"
+#include "shp_fuse.h"
 #include "sketch.h"
 #include "utl_geom.h"
 
@@ -114,6 +117,7 @@ std::string format_and_clear_python_exception()
       Py_DECREF(tb_mod);
     }
   }
+
   if (lines && PyList_Check(lines))
   {
     Py_ssize_t n = PyList_GET_SIZE(lines);
@@ -132,6 +136,7 @@ std::string format_and_clear_python_exception()
     text            = msg ? msg : "?";
     Py_XDECREF(s);
   }
+
   Py_XDECREF(lines);
   Py_XDECREF(type);
   Py_XDECREF(value);
@@ -139,6 +144,7 @@ std::string format_and_clear_python_exception()
   PyErr_Clear();
   while (!text.empty() && (text.back() == '\n' || text.back() == '\r'))
     text.pop_back();
+
   return text;
 }
 
@@ -152,13 +158,16 @@ void append_python_exception_to_history(std::vector<std::string>& history, bool*
   {
     while (!line.empty() && line.back() == '\r')
       line.pop_back();
+
     history.push_back("[err] " + line);
     any = true;
   }
   if (!any)
     history.push_back("[err] Python error");
+
   if (scroll)
     *scroll = true;
+
   if (log_display_version)
     ++*log_display_version;
 }
@@ -167,8 +176,10 @@ static Sketch_ref_plane parse_sketch_ref_plane(const std::string& plane)
 {
   if (plane == "XZ" || plane == "xz")
     return Sketch_ref_plane::XZ;
+
   if (plane == "YZ" || plane == "yz")
     return Sketch_ref_plane::YZ;
+
   return Sketch_ref_plane::XY;
 }
 
@@ -178,8 +189,10 @@ static const char* default_sketch_base_name(Sketch_ref_plane plane)
   {
   case Sketch_ref_plane::XZ:
     return "Sketch_xz";
+
   case Sketch_ref_plane::YZ:
     return "Sketch_yz";
+
   default:
     return "Sketch_xy";
   }
@@ -220,6 +233,14 @@ def _ezycad_bootstrap():
             return _n.view_add_box(ox, oy, oz, w, l, h)
         def add_sphere(self, ox, oy, oz, r):
             return _n.view_add_sphere(ox, oy, oz, r)
+        def fuse(self, *shapes):
+            return _n.view_fuse(*shapes)
+        def cut(self, *shapes):
+            return _n.view_cut(*shapes)
+        def common(self, *shapes):
+            return _n.view_common(*shapes)
+        def delete(self, *shapes):
+            return _n.view_delete(*shapes)
         def get_shape(self, i):
             return _n.view_get_shape(int(i))
         def get_camera(self):
@@ -283,6 +304,7 @@ PYBIND11_EMBEDDED_MODULE(ezycad_native, m)
         std::string line = py::str(msg).cast<std::string>();
         if (g_py_gui)
           g_py_gui->log_message(line);
+
         if (g_py_console)
           g_py_console->append_line_from_python(line);
       },
@@ -302,6 +324,7 @@ PYBIND11_EMBEDDED_MODULE(ezycad_native, m)
         {
           if (!g_py_gui)
             return std::string("Normal");
+
           Mode mmode = g_py_gui->get_mode();
           return std::string(c_mode_strs[static_cast<int>(mmode)]);
         });
@@ -320,23 +343,27 @@ PYBIND11_EMBEDDED_MODULE(ezycad_native, m)
         {
           if (!g_py_console)
             return;
-          const char* help_text =
-              "ezy (public scripting API):\n"
-              "  ezy.log(msg) / ezy.msg(text) / ezy.help()\n"
-              "  ezy.get_mode() / ezy.set_mode(name)\n"
-              "  ezy.save_occt_view_settings() / ezy.occt_view_settings_json()\n"
-              "ezy.view:\n"
-              "  sketch_count() / shape_count()\n"
-              "  add_box(ox,oy,oz,w,l,h) / add_sphere(ox,oy,oz,r)  - returns Shp\n"
-              "  get_shape(i)  - shape by 0-based index (raises IndexError if out of range)\n"
-              "  get_camera() / set_camera(ex,ey,ez,cx,cy,cz,ux,uy,uz)\n"
-              "  curr_sketch.name() / node_count() / node(i) / dim_count() / dim(i)\n"
-              "ezy.sketch: (same object as ezy.view.curr_sketch)\n"
-              "  name() / node_count() / node(i) / dim_count() / dim(i)\n"
-              "  add(plane, offset, base_name) / add_edge(x1,y1,x2,y2) / finish_edges()\n"
-              "ezy.Shp: name / set_name / visible / set_visible\n"
-              "aliases: view == ezy.view; Shp == ezy.Shp; help() == ezy.help()\n"
-              "  view.add_sketch / add_edge / finish_sketch_edges -> view.curr_sketch.*";
+
+          const char* help_text = "ezy (public scripting API):\n"
+                                  "  ezy.log(msg) / ezy.msg(text) / ezy.help()\n"
+                                  "  ezy.get_mode() / ezy.set_mode(name)\n"
+                                  "  ezy.save_occt_view_settings() / ezy.occt_view_settings_json()\n"
+                                  "ezy.view:\n"
+                                  "  sketch_count() / shape_count()\n"
+                                  "  add_box(ox,oy,oz,w,l,h) / add_sphere(ox,oy,oz,r)  - returns Shp\n"
+                                  "  fuse(s1, s2, ...)  - boolean union of two or more Shp; returns Shp\n"
+                                  "  cut(body, tool, ...)  - subtract tools from body; returns Shp\n"
+                                  "  common(s1, s2, ...)  - boolean intersection; returns Shp\n"
+                                  "  delete(s1, ...)  - remove one or more Shp from the document\n"
+                                  "  get_shape(i)  - shape by 0-based index (raises IndexError if out of range)\n"
+                                  "  get_camera() / set_camera(ex,ey,ez,cx,cy,cz,ux,uy,uz)\n"
+                                  "  curr_sketch.name() / node_count() / node(i) / dim_count() / dim(i)\n"
+                                  "ezy.sketch: (same object as ezy.view.curr_sketch)\n"
+                                  "  name() / node_count() / node(i) / dim_count() / dim(i)\n"
+                                  "  add(plane, offset, base_name) / add_edge(x1,y1,x2,y2) / finish_edges()\n"
+                                  "ezy.Shp: name / set_name / visible / set_visible\n"
+                                  "aliases: view == ezy.view; Shp == ezy.Shp; help() == ezy.help()\n"
+                                  "  view.add_sketch / add_edge / finish_sketch_edges -> view.curr_sketch.*";
           g_py_console->append_line_from_python(help_text);
         });
 
@@ -352,6 +379,7 @@ PYBIND11_EMBEDDED_MODULE(ezycad_native, m)
         {
           if (!g_py_gui)
             return std::string("{}");
+
           return g_py_gui->occt_view_settings_json();
         });
 
@@ -382,6 +410,7 @@ PYBIND11_EMBEDDED_MODULE(ezycad_native, m)
           Occt_view* view = g_py_gui && g_py_gui->get_view() ? g_py_gui->get_view() : nullptr;
           if (!view)
             return std::size_t{0};
+
           return view->curr_sketch().get_nodes().size();
         });
 
@@ -392,11 +421,14 @@ PYBIND11_EMBEDDED_MODULE(ezycad_native, m)
         Occt_view* view = g_py_gui && g_py_gui->get_view() ? g_py_gui->get_view() : nullptr;
         if (!view)
           throw std::runtime_error("no 3D view available");
+
         if (idx < 0)
           throw py::index_error("node index must be >= 0");
+
         Sketch_nodes& nodes = view->curr_sketch().get_nodes();
         if (static_cast<std::size_t>(idx) >= nodes.size())
           throw py::index_error("node index out of range");
+
         const Sketch_nodes::Node& n = nodes[static_cast<std::size_t>(idx)];
         return py::make_tuple(n.X(), n.Y());
       },
@@ -408,6 +440,7 @@ PYBIND11_EMBEDDED_MODULE(ezycad_native, m)
           Occt_view* view = g_py_gui && g_py_gui->get_view() ? g_py_gui->get_view() : nullptr;
           if (!view)
             return std::size_t{0};
+
           return view->curr_sketch().length_dimension_count();
         });
 
@@ -418,11 +451,14 @@ PYBIND11_EMBEDDED_MODULE(ezycad_native, m)
         Occt_view* view = g_py_gui && g_py_gui->get_view() ? g_py_gui->get_view() : nullptr;
         if (!view)
           throw std::runtime_error("no 3D view available");
+
         if (idx < 0)
           throw py::index_error("dimension index must be >= 0");
+
         Sketch& sketch = view->curr_sketch();
         if (static_cast<std::size_t>(idx) >= sketch.length_dimension_count())
           throw py::index_error("dimension index out of range");
+
         const std::size_t   i     = static_cast<std::size_t>(idx);
         const std::size_t   lo    = sketch.dimension_node_lo(i);
         const std::size_t   hi    = sketch.dimension_node_hi(i);
@@ -439,6 +475,7 @@ PYBIND11_EMBEDDED_MODULE(ezycad_native, m)
         Occt_view* view = g_py_gui && g_py_gui->get_view() ? g_py_gui->get_view() : nullptr;
         if (!view)
           throw std::runtime_error("no 3D view available");
+
         const Sketch_ref_plane ref = parse_sketch_ref_plane(plane);
         const std::string      base =
             base_name.is_none() ? std::string(default_sketch_base_name(ref)) : base_name.cast<std::string>();
@@ -453,6 +490,7 @@ PYBIND11_EMBEDDED_MODULE(ezycad_native, m)
         Occt_view* view = g_py_gui && g_py_gui->get_view() ? g_py_gui->get_view() : nullptr;
         if (!view)
           throw std::runtime_error("no 3D view available");
+
         view->curr_sketch_add_edge(x1, y1, x2, y2);
       },
       py::arg("x1"), py::arg("y1"), py::arg("x2"), py::arg("y2"));
@@ -463,6 +501,7 @@ PYBIND11_EMBEDDED_MODULE(ezycad_native, m)
           Occt_view* view = g_py_gui && g_py_gui->get_view() ? g_py_gui->get_view() : nullptr;
           if (!view)
             throw std::runtime_error("no 3D view available");
+
           view->curr_sketch_rebuild_faces();
         });
 
@@ -473,10 +512,12 @@ PYBIND11_EMBEDDED_MODULE(ezycad_native, m)
         Occt_view* view = g_py_gui && g_py_gui->get_view() ? g_py_gui->get_view() : nullptr;
         if (!view)
           throw std::runtime_error("no 3D view available");
+
         view->add_box(ox, oy, oz, w, len, h);
         std::list<Shp_ptr>& shapes = view->get_shapes();
         if (shapes.empty())
           throw std::runtime_error("add_box failed to create a shape");
+
         return Ezy_shp{shapes.back()};
       },
       py::arg("ox"), py::arg("oy"), py::arg("oz"), py::arg("w"), py::arg("l"), py::arg("h"));
@@ -488,10 +529,12 @@ PYBIND11_EMBEDDED_MODULE(ezycad_native, m)
         Occt_view* view = g_py_gui && g_py_gui->get_view() ? g_py_gui->get_view() : nullptr;
         if (!view)
           throw std::runtime_error("no 3D view available");
+
         view->add_sphere(ox, oy, oz, r);
         std::list<Shp_ptr>& shapes = view->get_shapes();
         if (shapes.empty())
           throw std::runtime_error("add_sphere failed to create a shape");
+
         return Ezy_shp{shapes.back()};
       },
       py::arg("ox"), py::arg("oy"), py::arg("oz"), py::arg("r"));
@@ -503,17 +546,124 @@ PYBIND11_EMBEDDED_MODULE(ezycad_native, m)
         Occt_view* view = g_py_gui && g_py_gui->get_view() ? g_py_gui->get_view() : nullptr;
         if (!view)
           throw std::runtime_error("no 3D view available");
+
         if (idx < 0)
           throw py::index_error("shape index must be >= 0");
+
         std::list<Shp_ptr>& shapes = view->get_shapes();
         auto                it     = shapes.begin();
         for (std::ptrdiff_t i = 0; i < idx && it != shapes.end(); ++i, ++it)
           ;
         if (it == shapes.end())
           throw py::index_error("shape index out of range");
+
         return Ezy_shp{*it};
       },
       py::arg("i"));
+
+  m.def("view_fuse",
+        [](py::args args) -> Ezy_shp
+        {
+          Occt_view* view = g_py_gui && g_py_gui->get_view() ? g_py_gui->get_view() : nullptr;
+          if (!view)
+            throw std::runtime_error("no 3D view available");
+
+          if (args.size() < 2)
+            throw std::runtime_error("fuse requires two or more shapes");
+
+          std::vector<Shp_ptr> shps;
+          shps.reserve(static_cast<std::size_t>(args.size()));
+          for (py::handle item : args)
+          {
+            Ezy_shp es = item.cast<Ezy_shp>();
+            if (es.shp.IsNull())
+              throw std::runtime_error("fuse: null shape");
+
+            shps.push_back(es.shp);
+          }
+          Shp_rslt r = view->shp_fuse().fuse(std::move(shps));
+          if (!r.is_ok())
+            throw std::runtime_error(r.message().empty() ? "fuse failed" : r.message());
+
+          return Ezy_shp{r.value()};
+        });
+
+  m.def("view_cut",
+        [](py::args args) -> Ezy_shp
+        {
+          Occt_view* view = g_py_gui && g_py_gui->get_view() ? g_py_gui->get_view() : nullptr;
+          if (!view)
+            throw std::runtime_error("no 3D view available");
+
+          if (args.size() < 2)
+            throw std::runtime_error("cut requires two or more shapes");
+
+          std::vector<Shp_ptr> shps;
+          shps.reserve(static_cast<std::size_t>(args.size()));
+          for (py::handle item : args)
+          {
+            Ezy_shp es = item.cast<Ezy_shp>();
+            if (es.shp.IsNull())
+              throw std::runtime_error("cut: null shape");
+
+            shps.push_back(es.shp);
+          }
+          Shp_rslt r = view->shp_cut().cut(std::move(shps));
+          if (!r.is_ok())
+            throw std::runtime_error(r.message().empty() ? "cut failed" : r.message());
+
+          return Ezy_shp{r.value()};
+        });
+
+  m.def("view_common",
+        [](py::args args) -> Ezy_shp
+        {
+          Occt_view* view = g_py_gui && g_py_gui->get_view() ? g_py_gui->get_view() : nullptr;
+          if (!view)
+            throw std::runtime_error("no 3D view available");
+
+          if (args.size() < 2)
+            throw std::runtime_error("common requires two or more shapes");
+
+          std::vector<Shp_ptr> shps;
+          shps.reserve(static_cast<std::size_t>(args.size()));
+          for (py::handle item : args)
+          {
+            Ezy_shp es = item.cast<Ezy_shp>();
+            if (es.shp.IsNull())
+              throw std::runtime_error("common: null shape");
+
+            shps.push_back(es.shp);
+          }
+          Shp_rslt r = view->shp_common().common(std::move(shps));
+          if (!r.is_ok())
+            throw std::runtime_error(r.message().empty() ? "common failed" : r.message());
+
+          return Ezy_shp{r.value()};
+        });
+
+  m.def("view_delete",
+        [](py::args args)
+        {
+          Occt_view* view = g_py_gui && g_py_gui->get_view() ? g_py_gui->get_view() : nullptr;
+          if (!view)
+            throw std::runtime_error("no 3D view available");
+
+          if (args.size() < 1)
+            throw std::runtime_error("delete requires one or more shapes");
+
+          std::vector<AIS_Shape_ptr> to_delete;
+          to_delete.reserve(static_cast<std::size_t>(args.size()));
+          for (py::handle item : args)
+          {
+            Ezy_shp es = item.cast<Ezy_shp>();
+            if (es.shp.IsNull())
+              throw std::runtime_error("delete: null shape");
+
+            to_delete.push_back(es.shp);
+          }
+          view->delete_shapes(std::move(to_delete));
+        });
 
   m.def("view_get_camera",
         []() -> py::dict
@@ -521,11 +671,13 @@ PYBIND11_EMBEDDED_MODULE(ezycad_native, m)
           Occt_view* view = g_py_gui && g_py_gui->get_view() ? g_py_gui->get_view() : nullptr;
           if (!view)
             throw std::runtime_error("no 3D view available");
+
           gp_Pnt eye;
           gp_Pnt center;
           gp_Dir up;
           if (!view->get_camera(eye, center, up))
             throw std::runtime_error("camera is not available");
+
           py::dict out;
           out["eye"]    = py::make_tuple(eye.X(), eye.Y(), eye.Z());
           out["center"] = py::make_tuple(center.X(), center.Y(), center.Z());
@@ -540,6 +692,7 @@ PYBIND11_EMBEDDED_MODULE(ezycad_native, m)
         Occt_view* view = g_py_gui && g_py_gui->get_view() ? g_py_gui->get_view() : nullptr;
         if (!view)
           throw std::runtime_error("no 3D view available");
+
         view->set_camera(gp_Pnt(ex, ey, ez), gp_Pnt(cx, cy, cz), gp_Dir(ux, uy, uz));
       },
       py::arg("ex"), py::arg("ey"), py::arg("ez"), py::arg("cx"), py::arg("cy"), py::arg("cz"), py::arg("ux"), py::arg("uy"),
@@ -560,6 +713,7 @@ void Python_console::append_line_from_python(const std::string& line)
   {
     if (!m_capture_buf.empty())
       m_capture_buf.push_back('\n');
+
     m_capture_buf += line;
   }
 }
@@ -577,9 +731,11 @@ Python_console::Python_console(GUI* gui)
 #ifdef EZYCAD_HAVE_PYTHON
   m_python_ok = init_python_();
   if (m_python_ok)
-    append_line("Python console ready (pybind11). Try: ezy.log('hello'), ezy.view.sketch_count(), view.curr_sketch.node_count()");
+    append_line(
+        "Python console ready (pybind11). Try: ezy.log('hello'), ezy.view.sketch_count(), view.curr_sketch.node_count()");
   else
     append_line("Python failed to initialize. Is PYTHONHOME set and the runtime on PATH?", true);
+
   load_scripts();
 #else
   append_line("Python console is not available in this build (configure with Python development libraries).");
@@ -657,6 +813,7 @@ void Python_console::load_scripts()
   {
     if (!entry.is_regular_file() || entry.path().extension() != ".py")
       continue;
+
     py_files.push_back(entry.path());
   }
   std::sort(py_files.begin(), py_files.end());
@@ -709,6 +866,7 @@ Python_exec_result Python_console::execute_captured(const std::string& code)
     r.error = "Python interpreter is not ready";
     return r;
   }
+
   if (code.empty())
   {
     r.ok    = false;
@@ -718,6 +876,7 @@ Python_exec_result Python_console::execute_captured(const std::string& code)
 
   if (m_cmd_history.empty() || m_cmd_history.back() != code)
     m_cmd_history.push_back(code);
+
   m_cmd_history_pos = -1;
 
   append_line("> " + code);
@@ -738,6 +897,7 @@ Python_exec_result Python_console::execute_captured(const std::string& code)
     {
       if (!e.matches(PyExc_SyntaxError))
         throw;
+
       e.restore();
       PyErr_Clear();
       result = py::eval<py::eval_single_statement>(py::str(code), py::globals(), py::globals());
@@ -761,11 +921,13 @@ Python_exec_result Python_console::execute_captured(const std::string& code)
       {
         while (!line.empty() && line.back() == '\r')
           line.pop_back();
+
         m_history.push_back("[err] " + line);
         any = true;
       }
       if (!any)
         m_history.push_back("[err] Python error");
+
       m_scroll_to_bottom = true;
       ++m_log_display_version;
     }
@@ -810,6 +972,7 @@ int Python_console::text_edit_callback(ImGuiInputTextCallbackData* data)
       else if (console->m_cmd_history_pos > 0)
         --console->m_cmd_history_pos;
     }
+
     else if (data->EventKey == ImGuiKey_DownArrow)
     {
       if (console->m_cmd_history_pos != -1)
@@ -881,6 +1044,7 @@ void Python_console::render(bool* p_open)
           m_log_display_buf += m_history[i];
           m_log_display_buf += '\n';
         }
+
         m_log_display_buf.push_back('\0');
         m_log_display_built_version = m_log_display_version;
       }
@@ -903,6 +1067,7 @@ void Python_console::render(bool* p_open)
         ImGui::SetScrollHereY(1.0f);
         m_scroll_to_bottom = false;
       }
+
       ImGui::EndChild();
     }
 
@@ -927,6 +1092,7 @@ void Python_console::render(bool* p_open)
 
     if (console_font)
       ImGui::PopFont();
+
     ImGui::EndTabItem();
   }
 
@@ -957,6 +1123,7 @@ void Python_console::render(bool* p_open)
       {
         if (!to_save.empty())
           of.write(to_save.data(), static_cast<std::streamsize>(to_save.size()));
+
         if (of.good())
           append_line("Saved " + script.filename);
         else

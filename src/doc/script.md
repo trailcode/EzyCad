@@ -120,14 +120,18 @@ Lua overrides global `print` to call `ezy.log`. Python bootstrap assigns `builti
 
 ### `ezy.view`
 
-| Method                                   | Notes                                |
-| ---------------------------------------- | ------------------------------------ |
-| `sketch_count()`                         | `Occt_view::get_sketches().size()`   |
-| `shape_count()`                          | `Occt_view::get_shapes().size()`     |
-| `add_box(...)` / `add_sphere(...)`       | `Occt_view` helpers; return `Shp` / Lua userdata |
-| `get_camera()`                           | `{ eye, center, up }` tables / dicts |
-| `set_camera(ex,ey,ez,cx,cy,cz,ux,uy,uz)` | `Occt_view::set_camera`              |
-| `get_shape(i)`                           | Returns `Shp` wrapper                |
+| Method                                   | Notes                                                   |
+| ---------------------------------------- | ------------------------------------------------------- |
+| `sketch_count()`                         | `Occt_view::get_sketches().size()`                      |
+| `shape_count()`                          | `Occt_view::get_shapes().size()`                        |
+| `add_box(...)` / `add_sphere(...)`       | `Occt_view` helpers; return `Shp` / Lua userdata        |
+| `fuse(s1, s2, ...)`                      | `Shp_fuse::fuse`; deletes inputs; returns `Shp`         |
+| `cut(body, tool, ...)`                   | `Shp_cut::cut`; first is body, rest are tools           |
+| `common(s1, s2, ...)`                    | `Shp_common::common`; deletes inputs; returns `Shp`     |
+| `delete(s1, ...)`                        | `Occt_view::delete_shapes`                              |
+| `get_camera()`                           | `{ eye, center, up }` tables / dicts                    |
+| `set_camera(ex,ey,ez,cx,cy,cz,ux,uy,uz)` | `Occt_view::set_camera`                                 |
+| `get_shape(i)`                           | Returns `Shp` wrapper                                   |
 
 ### `ezy.view.curr_sketch` / `ezy.sketch`
 

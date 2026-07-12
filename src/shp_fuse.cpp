@@ -10,10 +10,17 @@ Shp_fuse::Shp_fuse(Occt_view& view)
 {
 }
 
-Status Shp_fuse::selected_fuse()
+Shp_rslt Shp_fuse::fuse(std::vector<Shp_ptr> shps)
 {
+  if (shps.size() < 2)
+    return Shp_rslt(Result_status::User_error, "fuse requires two or more shapes");
+
+  for (const Shp_ptr& shp : shps)
+    if (shp.IsNull())
+      return Shp_rslt(Result_status::User_error, "fuse: null shape");
+
   view().push_undo_snapshot();
-  CHK_RET(ensure_operation_multi_shps_());
+  m_shps = std::move(shps);
 
   std::vector<Shp_ptr>::iterator itr = m_shps.begin();
 
@@ -27,13 +34,13 @@ Status Shp_fuse::selected_fuse()
 
     // Check if the operation was successful
     if (!fuse_op.IsDone())
-      return Status::user_error("Error: Union operation failed");
+      return Shp_rslt(Result_status::User_error, "Error: Union operation failed");
 
     // Get the result of this union operation
     result = fuse_op.Shape();
 
     if (result.IsNull())
-      return Status::user_error("Error: Resulting shape is null");
+      return Shp_rslt(Result_status::User_error, "Error: Resulting shape is null");
   }
 
   // Create a new shape from the union result
@@ -41,5 +48,14 @@ Status Shp_fuse::selected_fuse()
   shp->set_name("Fused");
   delete_operation_shps_();
   add_shp_(shp);
+  return Shp_rslt(shp);
+}
+
+Status Shp_fuse::selected_fuse()
+{
+  CHK_RET(ensure_operation_multi_shps_());
+  Shp_rslt r = fuse(std::move(m_shps));
+  if (!r.is_ok())
+    return Status(r.status(), r.message());
   return Status::ok();
 }

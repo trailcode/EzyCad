@@ -8,6 +8,7 @@
 #include <mutex>
 #include <string>
 #include <thread>
+#include <unordered_set>
 #include <vector>
 
 /// Parsed `--listen [host:]port`. Default host is 127.0.0.1 when only a port is given.
@@ -30,6 +31,8 @@ public:
 
   void enqueue(std::string code, Completer done);
   void process_pending(Python_console& console);
+  /// Fail all pending jobs and reject new ones (unblocks remote waiters on shutdown).
+  void shutdown();
 
 private:
   struct Job
@@ -40,6 +43,7 @@ private:
 
   std::mutex       m_mutex;
   std::vector<Job> m_jobs;
+  bool             m_shutdown = false;
 };
 
 /// Background TCP server: length-prefixed UTF-8 JSON frames for remote Python console exec.
@@ -58,12 +62,17 @@ public:
 private:
   void accept_loop_();
   void handle_client_(uintptr_t client_sock);
+  void track_client_(uintptr_t client_sock);
+  void untrack_client_(uintptr_t client_sock);
+  void close_all_clients_();
 
-  Python_execution_queue& m_queue;
-  Python_listen_endpoint  m_ep;
-  std::thread             m_thread;
-  std::atomic<bool>       m_running{false};
-  uintptr_t               m_listen_sock = 0;
+  Python_execution_queue&       m_queue;
+  Python_listen_endpoint        m_ep;
+  std::thread                   m_thread;
+  std::atomic<bool>             m_running{false};
+  uintptr_t                     m_listen_sock = 0;
+  std::mutex                    m_clients_mutex;
+  std::unordered_set<uintptr_t> m_clients;
 #ifdef _WIN32
   bool m_wsa_started = false;
 #endif
