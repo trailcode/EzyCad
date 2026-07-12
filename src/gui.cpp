@@ -27,6 +27,7 @@
 #include "utl_log.h"
 #include "scr_lua_console.h"
 #include "gui_occt_view.h"
+#include "doc_delta.h"
 #include "utl_io.h"
 #include "scr_python_console.h"
 #include "shp_info.h"
@@ -1622,8 +1623,9 @@ void GUI::sketch_underlay_panel_settings_(const Sketch::sptr& sk)
   if (ImGui::Button("Remove underlay"))
     if (ul.has_image())
     {
-      m_view->push_undo_snapshot();
+      const nlohmann::json before = ul.to_json(m_view->asset_store());
       ul.clear_and_update();
+      push_underlay_change_(*sk, before);
       m_underlay_panel_sketch = nullptr;
     }
 
@@ -1805,7 +1807,9 @@ void GUI::sketch_underlay_panel_settings_(const Sketch::sptr& sk)
       {
         const bool changed = ImGui::SliderScalar(label, type, p_data, p_min, p_max, format, flags);
         if (ImGui::IsItemActivated())
-          m_view->push_undo_snapshot();
+          begin_underlay_undo_(*sk);
+        if (ImGui::IsItemDeactivatedAfterEdit())
+          commit_underlay_undo_(*sk);
 
         if (changed)
           apply_ul_xform();
@@ -1815,7 +1819,9 @@ void GUI::sketch_underlay_panel_settings_(const Sketch::sptr& sk)
       {
         const bool changed = ImGui::InputDouble(label, p_data, 0.0, 0.0, format);
         if (ImGui::IsItemActivated())
-          m_view->push_undo_snapshot();
+          begin_underlay_undo_(*sk);
+        if (ImGui::IsItemDeactivatedAfterEdit())
+          commit_underlay_undo_(*sk);
 
         if (changed)
         {
@@ -1897,7 +1903,9 @@ void GUI::sketch_underlay_panel_settings_(const Sketch::sptr& sk)
         const bool changed = ImGui::SliderScalar("Base X", ImGuiDataType_Double, &m_underlay_base.x, &min_u, &max_u, "%.4f",
                                                  ImGuiSliderFlags_ClampOnInput);
         if (ImGui::IsItemActivated())
-          m_view->push_undo_snapshot();
+          begin_underlay_undo_(*sk);
+        if (ImGui::IsItemDeactivatedAfterEdit())
+          commit_underlay_undo_(*sk);
         if (changed)
           apply_affine();
       }
@@ -1906,7 +1914,9 @@ void GUI::sketch_underlay_panel_settings_(const Sketch::sptr& sk)
         const bool changed = ImGui::SliderScalar("Base Y", ImGuiDataType_Double, &m_underlay_base.y, &min_v, &max_v, "%.4f",
                                                  ImGuiSliderFlags_ClampOnInput);
         if (ImGui::IsItemActivated())
-          m_view->push_undo_snapshot();
+          begin_underlay_undo_(*sk);
+        if (ImGui::IsItemDeactivatedAfterEdit())
+          commit_underlay_undo_(*sk);
         if (changed)
           apply_affine();
       }
@@ -1915,7 +1925,9 @@ void GUI::sketch_underlay_panel_settings_(const Sketch::sptr& sk)
       {
         const bool changed = ImGui::InputDouble(label, p_data, 0.0, 0.0, "%.4f");
         if (ImGui::IsItemActivated())
-          m_view->push_undo_snapshot();
+          begin_underlay_undo_(*sk);
+        if (ImGui::IsItemDeactivatedAfterEdit())
+          commit_underlay_undo_(*sk);
 
         if (changed)
           apply_affine();
@@ -1954,8 +1966,9 @@ void GUI::sketch_underlay_panel_settings_(const Sketch::sptr& sk)
 
       if (ImGui::Button("Make orthogonal (keep lengths + U direction)"))
       {
-        m_view->push_undo_snapshot();
+        const nlohmann::json before = sk->underlay().to_json(m_view->asset_store());
         force_underlay_orthogonal_(sk);
+        push_underlay_change_(*sk, before);
       }
 
       if (ui_show_contextual_help() && ImGui::IsItemHovered())
@@ -1972,8 +1985,8 @@ void GUI::on_sketch_underlay_file(const std::string& file_path, const std::strin
   if (!sk)
     sk = m_view->curr_sketch_shared();
 
-  m_view->push_undo_snapshot();
-  uint8_t hr, hg, hb, ha;
+  const nlohmann::json before = sk->underlay().to_json(m_view->asset_store());
+  uint8_t              hr, hg, hb, ha;
   underlay_highlight_color_rgba(hr, hg, hb, ha);
   if (!sk->underlay().load_from_file_bytes(file_bytes, m_view->asset_store(), hr, hg, hb, ha, sk->get_plane(),
                                            sk->is_visible()))
@@ -1982,6 +1995,7 @@ void GUI::on_sketch_underlay_file(const std::string& file_path, const std::strin
     return;
   }
 
+  push_underlay_change_(*sk, before);
   m_underlay_calib_x_done = false;
   m_underlay_calib_y_done = false;
   m_underlay_panel_sketch = nullptr;
@@ -1994,6 +2008,37 @@ void GUI::cancel_underlay_calib_()
   m_underlay_calib_phase = Underlay_calib_phase::None;
 
   m_underlay_calib_sketch_wk.reset();
+}
+
+void GUI::begin_underlay_undo_(Sketch& sk)
+{
+  m_underlay_undo_before     = sk.underlay().to_json(m_view->asset_store());
+  m_underlay_undo_sketch_id  = sk.get_id();
+}
+
+void GUI::commit_underlay_undo_(Sketch& sk)
+{
+  if (!m_underlay_undo_before)
+    return;
+
+  const nlohmann::json after = sk.underlay().to_json(m_view->asset_store());
+  if (after == *m_underlay_undo_before)
+  {
+    m_underlay_undo_before.reset();
+    return;
+  }
+
+  m_view->push_undo_delta(std::make_unique<Underlay_delta>(m_underlay_undo_sketch_id, *m_underlay_undo_before, after));
+  m_underlay_undo_before.reset();
+}
+
+void GUI::push_underlay_change_(Sketch& sk, const nlohmann::json& before)
+{
+  const nlohmann::json after = sk.underlay().to_json(m_view->asset_store());
+  if (after == before)
+    return;
+
+  m_view->push_undo_delta(std::make_unique<Underlay_delta>(sk.get_id(), before, after));
 }
 
 void GUI::force_underlay_orthogonal_(const Sketch::sptr& sk)
@@ -2098,11 +2143,10 @@ void GUI::underlay_calib_prompt_x_distance_(const Sketch::sptr& sk)
       return;
     }
 
-    m_view->push_undo_snapshot();
+    const nlohmann::json before = s->underlay().to_json(m_view->asset_store());
     if (!s->underlay().rescale_uv_chord_to_length(m_underlay_calib_x0, m_underlay_calib_x1, Dx, s->get_plane(),
                                                   s->is_visible()))
     {
-      m_view->pop_undo_snapshot();
       show_message("Could not calibrate X (underlay axes degenerate or segment too short).");
       return;
     }
@@ -2115,6 +2159,8 @@ void GUI::underlay_calib_prompt_x_distance_(const Sketch::sptr& sk)
 
     if (m_underlay_calib_x_done && m_underlay_calib_y_done)
       force_underlay_orthogonal_(s);
+
+    push_underlay_change_(*s, before);
 
     m_dist_callback        = nullptr;
     m_underlay_calib_phase = Underlay_calib_phase::None;
@@ -2156,10 +2202,9 @@ void GUI::underlay_calib_prompt_y_distance_(const Sketch::sptr& sk)
       return;
     }
 
-    m_view->push_undo_snapshot();
+    const nlohmann::json before = s->underlay().to_json(m_view->asset_store());
     if (!s->underlay().rescale_v_chord_to_length(m_underlay_calib_y0, m_underlay_calib_y1, Dy, s->get_plane(), s->is_visible()))
     {
-      m_view->pop_undo_snapshot();
       show_message("Set Y: picks need a clear span along image height (not along the same edge as X only). Try two points "
                    "further apart in V.");
       return;
@@ -2173,6 +2218,8 @@ void GUI::underlay_calib_prompt_y_distance_(const Sketch::sptr& sk)
 
     if (m_underlay_calib_x_done && m_underlay_calib_y_done)
       force_underlay_orthogonal_(s);
+
+    push_underlay_change_(*s, before);
 
     m_dist_callback = nullptr;
     cancel_underlay_calib_();

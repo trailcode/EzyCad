@@ -3,6 +3,7 @@
 #include <BRepAlgoAPI_Common.hxx>
 
 #include "gui_occt_view.h"
+#include "shp_delta.h"
 #include "utl.h"
 
 Shp_common::Shp_common(Occt_view& view)
@@ -19,8 +20,12 @@ Shp_rslt Shp_common::common(std::vector<Shp_ptr> shps)
     if (shp.IsNull())
       return Shp_rslt(Result_status::User_error, "common: null shape");
 
-  view().push_undo_snapshot();
   m_shps = std::move(shps);
+
+  std::vector<Shape_rec> removed;
+  removed.reserve(m_shps.size());
+  for (const Shp_ptr& shp : m_shps)
+    removed.push_back(capture_shape_rec(*shp));
 
   std::vector<Shp_ptr>::iterator itr = m_shps.begin();
 
@@ -48,6 +53,7 @@ Shp_rslt Shp_common::common(std::vector<Shp_ptr> shps)
   shp->set_name("Common");
   delete_operation_shps_();
   add_shp_(shp);
+  view().push_undo_delta(std::make_unique<Shape_replace_delta>(std::move(removed), std::vector<Shape_rec>{capture_shape_rec(*shp)}));
   return Shp_rslt(shp);
 }
 

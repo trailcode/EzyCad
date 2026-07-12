@@ -29,9 +29,12 @@
 #include "utl_asset_store.h"
 #include "utl_geom.h"
 
+#include <nlohmann/json.hpp>
+
 class Delta;
 class GUI;
 class Sketch;
+struct Shape_rec;
 struct Sketch_annotation_refresh;
 struct Length_dimension_style;
 class Prs3d_Drawer;
@@ -94,10 +97,10 @@ public:
   /// Writes STEP, IGES, binary STL, or PLY to \a file_path. Uses selected shapes if any, else all shapes.
   [[nodiscard]] Status export_document(Export_format fmt, const std::string& file_path);
 
-  // Undo / redo (delta steps for sketch edits; full JSON snapshot for other operations).
-  /// Saves current document (full JSON) and mode.
+  // Undo / redo (element deltas for edits; full JSON only for file-open checkpoint).
+  /// Saves current document (full JSON) and mode. Prefer typed deltas for interactive edits.
   void push_undo_snapshot();
-  /// Records a sketch element delta (added/removed nodes and edges).
+  /// Records an element/document delta (sketch, shape, underlay, etc.).
   void push_undo_delta(std::unique_ptr<Delta> delta);
   /// Removes the last snapshot without restoring (e.g. aborted edit that did not change the document).
   void   pop_undo_snapshot();
@@ -107,6 +110,23 @@ public:
   bool   can_redo() const;
   size_t undo_stack_size() const;
   size_t redo_stack_size() const;
+
+  Shape_id allocate_shape_id();
+  void     adopt_shape_id(Shape_id id);
+  Shp_ptr  find_shape_by_id(Shape_id id) const;
+  /// Insert a shape from an undo snapshot (keeps \a rec.id). Displays in the viewer.
+  void insert_shape_rec(const Shape_rec& rec);
+  /// Remove a shape by stable id (viewer + document list).
+  void remove_shape_by_id(Shape_id id);
+  /// Replace BREP of an existing shape (identity local transform).
+  void set_shape_geom_by_id(Shape_id id, const TopoDS_Shape& geom);
+
+  /// Insert a sketch from JSON for undo/redo (adopts sketch id from JSON).
+  void undo_insert_sketch(const nlohmann::json& sketch_json, bool make_current);
+  /// Remove a sketch by id for undo/redo (does not auto-create a default sketch).
+  void undo_remove_sketch(size_t sketch_id);
+  /// Ensure there is a current sketch after undo left the list empty.
+  void ensure_current_sketch_for_undo();
 
   void do_frame();
   /// Apply pending navigation (pan/zoom/rotate) to the camera before UI uses view projection (e.g. underlay slider bounds).
@@ -354,6 +374,7 @@ private:
   std::vector<Undo_entry> m_redo_stack;
   bool                    m_restoring{false};
   size_t                  m_next_sketch_id{1};
+  Shape_id                m_next_shape_id{1};
   Ezy_asset_store         m_assets;
 
   // --------------------------------------------------------------------

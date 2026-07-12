@@ -8,6 +8,7 @@
 #include "utl_geom.h"
 #include "gui.h"
 #include "gui_occt_view.h"
+#include "shp_delta.h"
 #include "utl.h"
 
 Shp_rotate::Shp_rotate(Occt_view& view)
@@ -198,8 +199,21 @@ void Shp_rotate::finalize()
   if (m_shps.empty())
     return;
 
-  view().push_undo_snapshot();
+  std::vector<Shape_geom_delta::Geom_change> changes;
+  changes.reserve(m_shps.size());
+  for (const Shp_ptr& shape : m_shps)
+    changes.push_back(Shape_geom_delta::Geom_change{shape->get_id(), shape_brep_string(shape->Shape()), {}});
+
   operation_shps_finalize_();
+
+  for (Shape_geom_delta::Geom_change& ch : changes)
+  {
+    Shp_ptr shp = view().find_shape_by_id(ch.id);
+    if (!shp.IsNull())
+      ch.after_geom = shape_brep_string(shp->Shape());
+  }
+
+  view().push_undo_delta(std::make_unique<Shape_geom_delta>(std::move(changes)));
   reset();
 }
 

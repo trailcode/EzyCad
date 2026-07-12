@@ -13,6 +13,7 @@
 #include "gui_occt_view.h"
 #include "sketch.h"
 #include "sketch_nodes.h"
+#include "shp_delta.h"
 
 Shp_polar_dup::Shp_polar_dup(Occt_view& view)
     : Shp_operation_base(view)
@@ -82,7 +83,10 @@ Status Shp_polar_dup::dup()
   if (!m_polar_arm_end.has_value())
     return Status::user_error("Polar arm not set.");
 
-  view().push_undo_snapshot();
+  std::vector<Shape_rec> removed;
+  removed.reserve(m_shps.size());
+  for (const Shp_ptr& shp : m_shps)
+    removed.push_back(capture_shape_rec(*shp));
 
   const double  step_angle = m_polar_angle / double(m_num_elms);
   const gp_Pln& sketch_pln = view().curr_sketch().get_plane();
@@ -92,6 +96,7 @@ Status Shp_polar_dup::dup()
 
   // Vector to store all transformed shapes if combining
   std::vector<TopoDS_Shape> transformed_shapes;
+  std::vector<Shape_rec>    added;
 
   // Create copies and rotate them
   for (size_t i = 0; i < m_num_elms; ++i)
@@ -142,6 +147,7 @@ Status Shp_polar_dup::dup()
         Shp_ptr new_shape = new Shp(ctx(), transformed_shape);
         new_shape->set_name("Polar duplicate");
         add_shp_(new_shape);
+        added.push_back(capture_shape_rec(*new_shape));
       }
     }
   }
@@ -161,9 +167,11 @@ Status Shp_polar_dup::dup()
     Shp_ptr new_shape = new Shp(ctx(), combined_shape);
     new_shape->set_name("Combined polar duplicate");
     add_shp_(new_shape);
+    added.push_back(capture_shape_rec(*new_shape));
   }
 
   delete_operation_shps_();
+  view().push_undo_delta(std::make_unique<Shape_replace_delta>(std::move(removed), std::move(added)));
   gui().set_mode(Mode::Normal); // Will call reset()
   return Status::ok();
 }

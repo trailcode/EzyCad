@@ -45,7 +45,7 @@ Always go through `Occt_view::add_shp_(Shp_ptr&)` (or a wrapper that calls it):
 | 2    | Set the document-wide shape selection mode (`m_shp_selection_mode`) |
 | 3    | Redisplay and append to `m_shps`                                    |
 
-`add_shp_()` does **not** push undo; callers that mutate the document should call `view().push_undo_snapshot()` first when appropriate.
+`add_shp_()` does **not** push undo; callers that mutate the document should push a typed shape delta (or snapshot fallback) after a successful commit. New shapes receive a stable `Shape_id` from `allocate_shape_id()` when id is still 0.
 
 ### Operation selection cache (`m_shps` on `Shp_operation_base`)
 
@@ -167,15 +167,21 @@ Full GLFW -> `GUI` routing before these delegates: [`src/doc/gui.md`](gui.md).
 
 ## Undo
 
-| Mechanism                            | When                                                                                                   |
-| ------------------------------------ | ------------------------------------------------------------------------------------------------------ |
-| `Occt_view::push_undo_snapshot()`    | Before booleans, fillet/chamfer, primitive add, polar dup, transform finalize, extrude commit, revolve |
-| Transform preview only               | No undo until **finalize** (not on each mouse move)                                                    |
-| `Sketch_op_delta` (sketch subsystem) | Separate from shape ops; shape list captured in view snapshots                                         |
+Shape ops use typed deltas from [`shp_delta.h`](../shp_delta.h) (see [undo-redo.md](undo-redo.md)). No full-document JSON for these paths.
+
+| Mechanism                         | When                                                          |
+| --------------------------------- | ------------------------------------------------------------- |
+| `Shape_add_delta`                 | Primitives, extrude, revolve, STEP/PLY import                 |
+| `Shape_remove_delta`              | Delete selection when only `Shp` objects are selected         |
+| `Shape_geom_delta`                | Move / rotate / scale **finalize** (not preview)              |
+| `Shape_replace_delta`             | Fuse / cut / common / fillet / chamfer / polar duplicate      |
+| `push_undo_snapshot()` (fallback) | Delete when selection also includes sketch edges / dimensions |
+
+Shapes carry a stable `Shape_id` persisted as `shapes[].id` in project JSON.
 
 ## Persistence
 
-Shape serialization is handled in **`Occt_view`** (JSON `shapes` array in project save/load), not in a dedicated `shp_json` module. Fields include name, display mode, visibility, material, and tessellated/brep payload as implemented in the view I/O path.
+Shape serialization is handled in **`Occt_view`** (JSON `shapes` array in project save/load), not in a dedicated `shp_json` module. Fields include stable `id`, name, material, and BREP payload.
 
 Import/export (STEP, IGES, STL, PLY) also flows through `Occt_view` reader/writer helpers.
 
@@ -185,24 +191,25 @@ Import/export (STEP, IGES, STL, PLY) also flows through `Occt_view` reader/write
 
 ```cpp
 Occt_view& view = ...;
-view.push_undo_snapshot();
-TopoDS_Shape box = shp_create::create_box(0, 0, 0, 10, 10, 10);
-Shp_ptr shp = new Shp(view.ctx(), box);
-shp->set_name(view.get_unique_shape_name("Box"));
-view.add_shp_(shp);  // friend access, or use view.add_box(...) wrapper
+// Prefer view.add_box(...) which registers the shape and pushes Shape_add_delta.
+view.add_box(0, 0, 0, 10, 10, 10);
 ```
 
 ### Implement a replace-style operation
 
 ```cpp
 Status My_op::run() {
-  view().push_undo_snapshot();
   CHK_RET(ensure_operation_multi_shps_());
+  std::vector<Shape_rec> removed;
+  for (const Shp_ptr& s : m_shps)
+    removed.push_back(capture_shape_rec(*s));
   // ... BRepAlgoAPI_* ...
   Shp_ptr result = new Shp(ctx(), new_topo);
   result->set_name("MyOp");
   delete_operation_shps_();
   add_shp_(result);
+  view().push_undo_delta(std::make_unique<Shape_replace_delta>(
+      std::move(removed), std::vector<Shape_rec>{capture_shape_rec(*result)}));
   return Status::ok();
 }
 ```
@@ -216,13 +223,13 @@ auto lines = shp_info::collect(shp->Shape(), &meta);
 
 ## Testing
 
-| Item         | Notes                                                                                                                            |
-| ------------ | -------------------------------------------------------------------------------------------------------------------------------- |
-| GTest suite  | `tests/shp_tests.cpp` — filters `Shp_create.*`, `Shp_info.*`, `Shp_test.*`                                                       |
-| Coverage     | `shp_create` volumes/bboxes; `shp_info::collect`; `Occt_view::add_*` / unique names; fuse/cut/common via AIS selection injection |
-| Fixture      | `Shp_test` inherits `Sketch_test` (headless `Occt_view`)                                                                         |
-| Related      | Sketch-face extrude / revolve still live under `Sketch_test.*`                                                                   |
-| Build target | `EzyCad_tests` ([`agents/workflows/local-dev.md`](../../agents/workflows/local-dev.md))                                          |
+| Item         | Notes                                                                                                                        |
+| ------------ | ---------------------------------------------------------------------------------------------------------------------------- |
+| GTest suite  | `tests/shp_tests.cpp` — filters `Shp_create.*`, `Shp_info.*`, `Shp_test.*`                                                   |
+| Coverage     | `shp_create` volumes/bboxes; `shp_info::collect`; `Occt_view::add_*` / unique names; fuse/cut/common; shape undo/redo deltas |
+| Fixture      | `Shp_test` inherits `Sketch_test` (headless `Occt_view`)                                                                     |
+| Related      | Sketch-face extrude / revolve still live under `Sketch_test.*`                                                               |
+| Build target | `EzyCad_tests` ([`agents/workflows/local-dev.md`](../../agents/workflows/local-dev.md))                                      |
 
 ## Related code outside `src/shp_*`
 

@@ -5,6 +5,7 @@
 Shp::Shp(AIS_InteractiveContext& ctx, const TopoDS_Shape& shp)
     : AIS_Shape(shp)
     , m_ctx(ctx)
+    , m_id(0)
     , m_name("Shape")
     , m_disp_mode(AIS_Shaded)
     , m_visible(true)
@@ -13,6 +14,10 @@ Shp::Shp(AIS_InteractiveContext& ctx, const TopoDS_Shape& shp)
 }
 
 Shp::~Shp() {}
+
+Shape_id Shp::get_id() const { return m_id; }
+
+void Shp::set_id(Shape_id id) { m_id = id; }
 
 const std::string& Shp::get_name() const { return m_name; }
 
