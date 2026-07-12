@@ -1,28 +1,6 @@
 #include "shp_delta.h"
 
-#include <BRepTools.hxx>
-#include <BRep_Builder.hxx>
-#include <Graphic3d_MaterialAspect.hxx>
-#include <TopTools_FormatVersion.hxx>
-
-#include <sstream>
-
 #include "gui_occt_view.h"
-
-std::string shape_brep_string(const TopoDS_Shape& shape)
-{
-  std::ostringstream oss;
-  BRepTools::Write(shape, oss, false, false, TopTools_FormatVersion_CURRENT);
-  return oss.str();
-}
-
-TopoDS_Shape shape_from_brep_string(const std::string& geom)
-{
-  TopoDS_Shape       shape;
-  std::istringstream iss(geom);
-  BRepTools::Read(shape, iss, BRep_Builder());
-  return shape;
-}
 
 Shape_rec capture_shape_rec(const Shp& shp)
 {
@@ -30,7 +8,7 @@ Shape_rec capture_shape_rec(const Shp& shp)
   rec.id       = shp.get_id();
   rec.name     = shp.get_name();
   rec.material = shp.Material();
-  rec.geom     = shape_brep_string(shp.Shape());
+  rec.geom     = shp.Shape();
   return rec;
 }
 
@@ -81,13 +59,13 @@ Shape_geom_delta::Shape_geom_delta(std::vector<Geom_change> changes)
 void Shape_geom_delta::apply_forward(Occt_view& view)
 {
   for (const Geom_change& ch : m_changes)
-    view.set_shape_geom_by_id(ch.id, shape_from_brep_string(ch.after_geom));
+    view.set_shape_geom_by_id(ch.id, ch.after_geom);
 }
 
 void Shape_geom_delta::apply_reverse(Occt_view& view)
 {
   for (const Geom_change& ch : m_changes)
-    view.set_shape_geom_by_id(ch.id, shape_from_brep_string(ch.before_geom));
+    view.set_shape_geom_by_id(ch.id, ch.before_geom);
 }
 
 std::unique_ptr<Delta> Shape_geom_delta::clone() const { return std::make_unique<Shape_geom_delta>(m_changes); }

@@ -945,8 +945,7 @@ Shp_ptr Occt_view::find_shape_by_id(Shape_id id) const
 
 void Occt_view::insert_shape_rec(const Shape_rec& rec)
 {
-  TopoDS_Shape shape = shape_from_brep_string(rec.geom);
-  Shp_ptr      shp   = new Shp(*m_ctx, shape);
+  Shp_ptr shp = new Shp(*m_ctx, rec.geom);
   shp->set_id(rec.id);
   adopt_shape_id(rec.id);
   shp->set_name(rec.name);

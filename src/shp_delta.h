@@ -9,18 +9,16 @@
 #include <string>
 #include <vector>
 
-/// Serializable snapshot of one document shape for undo/redo (BREP text + attrs).
+/// In-memory snapshot of one document shape for undo/redo (shared TopoDS_Shape + attrs).
 struct Shape_rec
 {
-  Shape_id    id{0};
-  std::string name;
-  int         material{0};
-  std::string geom;
+  Shape_id     id{0};
+  std::string  name;
+  int          material{0};
+  TopoDS_Shape geom;
 };
 
-Shape_rec    capture_shape_rec(const Shp& shp);
-std::string  shape_brep_string(const TopoDS_Shape& shape);
-TopoDS_Shape shape_from_brep_string(const std::string& geom);
+Shape_rec capture_shape_rec(const Shp& shp);
 
 /// Adds shapes on forward; removes them on reverse.
 class Shape_add_delta : public Delta
@@ -56,9 +54,9 @@ class Shape_geom_delta : public Delta
 public:
   struct Geom_change
   {
-    Shape_id    id{0};
-    std::string before_geom;
-    std::string after_geom;
+    Shape_id     id{0};
+    TopoDS_Shape before_geom;
+    TopoDS_Shape after_geom;
   };
 
   explicit Shape_geom_delta(std::vector<Geom_change> changes);

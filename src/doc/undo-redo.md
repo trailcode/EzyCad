@@ -110,12 +110,12 @@ See [`Sketch_op_recorder`](../sketch_op_recorder.h) / `Sketch_op_delta` (unchang
 
 | Type                  | Stores                                       | Used for                                       |
 | --------------------- | -------------------------------------------- | ---------------------------------------------- |
-| `Shape_add_delta`     | Added `Shape_rec` list (id, name, mat, BREP) | Primitives, extrude, revolve, STEP/PLY import  |
+| `Shape_add_delta`     | Added `Shape_rec` list (id, name, mat, geom) | Primitives, extrude, revolve, STEP/PLY import  |
 | `Shape_remove_delta`  | Removed `Shape_rec` list                     | Delete selection (shapes only)                 |
-| `Shape_geom_delta`    | Per-id before/after BREP                     | Move / rotate / scale finalize                 |
+| `Shape_geom_delta`    | Per-id before/after `TopoDS_Shape`           | Move / rotate / scale finalize                 |
 | `Shape_replace_delta` | Removed + added `Shape_rec` lists            | Fuse / cut / common / fillet / chamfer / polar |
 
-`Shape_rec` is BREP text plus attrs for one shape. Helpers: `capture_shape_rec`, `Occt_view::insert_shape_rec` / `remove_shape_by_id` / `set_shape_geom_by_id`.
+`Shape_rec` holds a shared `TopoDS_Shape` plus attrs (not BREP text). File I/O still serializes BREP in project JSON. Helpers: `capture_shape_rec`, `Occt_view::insert_shape_rec` / `remove_shape_by_id` / `set_shape_geom_by_id`.
 
 ### Document deltas ([`doc_delta.h`](../doc_delta.h))
 
@@ -198,7 +198,7 @@ Hotkeys are handled in `GUI::on_key` (`gui_mode.cpp`) when dist/angle edit popup
 
 ### Shape change
 
-1. Capture affected `Shape_rec` / geom strings **before** mutating when needed for reverse.
+1. Capture affected `Shape_rec` / `TopoDS_Shape` **before** mutating when needed for reverse.
 2. Mutate; capture results.
 3. `push_undo_delta(std::make_unique<Shape_*_delta>(...))` on success only.
 
