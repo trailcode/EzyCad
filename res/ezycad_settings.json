@@ -24,9 +24,9 @@
       1.0
     ],
     "shape_selection_color": [
-      1.0,
-      1.0,
-      1.0,
+      0.7543118000030518,
+      0.07293790578842163,
+      0.8468899726867676,
       1.0
     ],
     "imgui_style_dark": {
@@ -78,9 +78,9 @@
       "view_presentation": false
     },
     "show_dbg": false,
-    "show_lua_console": true,
+    "show_lua_console": false,
     "show_options": true,
-    "show_python_console": true,
+    "show_python_console": false,
     "show_settings_dialog": false,
     "show_shape_list": true,
     "show_sketch_dimensions": true,

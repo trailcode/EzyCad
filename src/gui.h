@@ -103,8 +103,9 @@ inline constexpr float k_gui_sketch_face_color_default[4] = {0.300796f, 0.245416
 inline constexpr float k_gui_sketch_face_selection_color_default[4] = {0.799043f, 0.187335f, 0.591238f, 1.0f};
 /// Dynamic (hover) highlight RGBA for sketch faces (`gui.sketch_face_highlight_color`).
 inline constexpr float k_gui_sketch_face_highlight_color_default[4] = {0.822967f, 0.0f, 1.0f, 1.0f};
-/// 3D shape selection (AIS SelectionStyle) RGBA (`gui.shape_selection_color`); default matches OCCT white edges.
-inline constexpr float k_gui_shape_selection_color_default[4] = {1.0f, 1.0f, 1.0f, 1.0f};
+/// 3D shape selection (AIS SelectionStyle) RGBA (`gui.shape_selection_color`).
+inline constexpr float k_gui_shape_selection_color_default[4] = {
+    0.754312f, 0.072938f, 0.846890f, 1.0f};
 /// Allowed range and default for `gui.view_roll_step_deg` (view roll and numpad orbit steps; must match Settings slider).
 inline constexpr double k_gui_view_roll_step_deg_min     = 0.1;
 inline constexpr double k_gui_view_roll_step_deg_max     = 180.0;
@@ -620,7 +621,7 @@ private:
 #ifndef NDEBUG
   bool m_show_dbg{false};
 #endif
-  bool                     m_show_lua_console{true}; // Lua Console pane; hidden if false in settings
+  bool                     m_show_lua_console{false}; // Lua Console pane; hidden if false in settings
   Gui_imgui_style_settings m_imgui_style_dark{};
   Gui_imgui_style_settings m_imgui_style_light{};
   Gui_settings_headers     m_settings_headers{};

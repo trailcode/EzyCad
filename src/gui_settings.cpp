@@ -429,7 +429,7 @@ void GUI::parse_gui_panes_settings_(const std::string& content)
     set_log_window_visible(b("log_window_visible", true));
     set_show_settings_dialog(b("show_settings_dialog", false));
     m_dark_mode           = b("dark_mode", m_dark_mode);
-    m_show_lua_console    = b("show_lua_console", true);
+    m_show_lua_console    = b("show_lua_console", false);
     m_show_python_console = b("show_python_console", false);
     if (g.contains("edge_dim_label_h") && g["edge_dim_label_h"].is_number_integer())
     {

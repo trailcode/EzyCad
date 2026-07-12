@@ -9,7 +9,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### View presentation
 
-- **Settings -> View presentation:** **Shape selection color** for selected 3D shapes in the viewer (AIS SelectionStyle). Persisted as `gui.shape_selection_color` (default white).
+- **Settings -> View presentation:** **Shape selection color** for selected 3D shapes in the viewer (AIS SelectionStyle). Persisted as `gui.shape_selection_color` (default purple).
+- **Bundled defaults:** Shape selection color is purple; Lua and Python consoles start hidden (`show_lua_console` / `show_python_console` default **false**).
 
 ### Scripting
 

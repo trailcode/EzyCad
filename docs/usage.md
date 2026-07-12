@@ -119,7 +119,7 @@ For each shape, one row includes:
 - **Solid / wire** - Checkbox (tooltip *solid/wire*) to switch **shaded** display or **wireframe** for that shape.
 - **M** - Click to open a **Material** popup; right-click **M** for **Shape info...** or **Delete**. The tooltip on **M** also notes that right-clicking the name deletes the shape.
 
-Rows that match the **current 3D selection** are drawn with a slightly brighter style so the list stays in sync with what is selected in the viewer (tooltip *Selected in 3D viewer* when you hover the highlighted row). Hovering any visible row also highlights that shape in the 3D view (**Settings -> View presentation -> Element hover color**).
+Rows that match the **current 3D selection** use a brighter row style (text and controls) so the list stays in sync with what is selected in the viewer (tooltip *Selected in 3D viewer* when you hover a highlighted row). Hovering any visible row also highlights that shape in the 3D view (**Settings -> View presentation -> Element hover color**).
 
 The window can be closed with its close button; use **View -> Shape List** again to show it.
 
@@ -439,6 +439,7 @@ The extrude tool allows you to create 3D solid shapes by extruding 2D sketch fac
 
 |                                  |                                                                                                                                                            |
 | -------------------------------: | ---------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Orthographic camera**          | Extrude mode forces **orthographic** projection (same as other sketch tools) so extrusion height is easier to judge without perspective foreshortening     |
 | **Direct face selection**        | Click directly on a sketch face to select it for extrusion                                                                                                 |
 | **Automatic view adjustment**    | The view automatically rotates if the face plane is parallel to the view plane (within 5 degrees), providing better visibility for the extrusion operation |
 | **Real-time preview**            | See the extruded shape update in real-time as you move the mouse                                                                                           |
@@ -468,6 +469,7 @@ The extrude tool allows you to create 3D solid shapes by extruding 2D sketch fac
 | <kbd>Enter</kbd> | Finalize extrusion (when using distance input)            |
 
 **Tips:**
+- Extrude uses an **orthographic** camera (projection mode). Perspective from Normal mode is restored when you leave Extrude.
 - Extrude works best when the view is not directly parallel to the sketch plane - the system will automatically rotate the view if needed
 - Use the distance input dialog for precise measurements
 - The extrusion direction depends on which side of the face plane you move the mouse to
