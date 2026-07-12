@@ -346,6 +346,10 @@ int main(int argc, char** argv)
     return true;
   };
 
+  // Buttons whose press was forwarded to the view: keep forwarding that button's release even if the
+  // cursor is over a docked pane (otherwise AIS_ViewController never sees ReleaseMouseButton).
+  unsigned occt_mouse_button_capture = 0;
+
   cursorPosCallback = [&](GLFWwindow* window, double xpos, double ypos)
   {
     ImGui_ImplGlfw_CursorPosCallback(window, xpos, ypos);
@@ -355,8 +359,27 @@ int main(int argc, char** argv)
   mouseButtonCallback = [&](GLFWwindow* window, int button, int action, int mods)
   {
     ImGui_ImplGlfw_MouseButtonCallback(window, button, action, mods);
-    if (forward_mouse_click_to_gui())
+
+    const unsigned button_bit =
+        (button >= 0 && button < 32) ? (1u << static_cast<unsigned>(button)) : 0u;
+    const bool in_view = forward_mouse_click_to_gui();
+
+    if (action == GLFW_PRESS)
+    {
+      if (!in_view)
+        return;
       gui.on_mouse_button(button, action, mods);
+      occt_mouse_button_capture |= button_bit;
+      return;
+    }
+
+    if (action == GLFW_RELEASE)
+    {
+      if (!in_view && (occt_mouse_button_capture & button_bit) == 0)
+        return;
+      gui.on_mouse_button(button, action, mods);
+      occt_mouse_button_capture &= ~button_bit;
+    }
   };
 
   windowSizeCallback = [&](GLFWwindow* window, int width, int height)
