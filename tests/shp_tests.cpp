@@ -12,6 +12,7 @@
 #include "shp.h"
 #include "shp_create.h"
 #include "shp_info.h"
+#include "sketch_op_recorder.h"
 #include "utl.h"
 
 namespace
@@ -321,4 +322,108 @@ TEST_F(Shp_test, Fuse_requires_two_shapes)
   Status st = view().shp_fuse().selected_fuse();
   EXPECT_FALSE(st.is_ok());
   EXPECT_EQ(view().get_shapes().size(), 1u);
+}
+
+// ---------------------------------------------------------------------------
+// Shape undo / redo (typed deltas, no full-document snapshot)
+// ---------------------------------------------------------------------------
+
+TEST_F(Shp_test, Undo_add_box_removes_shape)
+{
+  EXPECT_EQ(view().get_shapes().size(), 0u);
+  view().add_box(0, 0, 0, 10, 10, 10);
+  ASSERT_EQ(view().get_shapes().size(), 1u);
+  const Shape_id id = view().get_shapes().back()->get_id();
+  EXPECT_NE(id, 0u);
+
+  EXPECT_TRUE(view().undo());
+  EXPECT_EQ(view().get_shapes().size(), 0u);
+
+  EXPECT_TRUE(view().redo());
+  ASSERT_EQ(view().get_shapes().size(), 1u);
+  EXPECT_EQ(view().get_shapes().back()->get_id(), id);
+  EXPECT_NEAR(volume_of(view().get_shapes().back()->Shape()), 1000.0, 1e-6);
+}
+
+TEST_F(Shp_test, Undo_delete_shape_restores_brep)
+{
+  view().add_box(0, 0, 0, 10, 10, 10);
+  ASSERT_EQ(view().get_shapes().size(), 1u);
+  const Shape_id id = view().get_shapes().back()->get_id();
+
+  std::vector<AIS_Shape_ptr> to_delete;
+  to_delete.push_back(view().get_shapes().back());
+  view().delete_shapes(to_delete);
+  EXPECT_EQ(view().get_shapes().size(), 0u);
+
+  EXPECT_TRUE(view().undo());
+  ASSERT_EQ(view().get_shapes().size(), 1u);
+  EXPECT_EQ(view().get_shapes().back()->get_id(), id);
+  EXPECT_NEAR(volume_of(view().get_shapes().back()->Shape()), 1000.0, 1e-6);
+}
+
+TEST_F(Shp_test, Undo_fuse_restores_inputs)
+{
+  view().add_box(0, 0, 0, 10, 10, 10);
+  view().add_box(5, 0, 0, 10, 10, 10);
+  ASSERT_EQ(view().get_shapes().size(), 2u);
+  const Shape_id id_a = view().get_shapes().front()->get_id();
+  const Shape_id id_b = view().get_shapes().back()->get_id();
+
+  std::vector<Shp_ptr> to_select(view().get_shapes().begin(), view().get_shapes().end());
+  select_shapes(view(), to_select);
+  ASSERT_TRUE(view().shp_fuse().selected_fuse().is_ok());
+  ASSERT_EQ(view().get_shapes().size(), 1u);
+
+  EXPECT_TRUE(view().undo());
+  ASSERT_EQ(view().get_shapes().size(), 2u);
+  EXPECT_FALSE(view().find_shape_by_id(id_a).IsNull());
+  EXPECT_FALSE(view().find_shape_by_id(id_b).IsNull());
+
+  EXPECT_TRUE(view().redo());
+  ASSERT_EQ(view().get_shapes().size(), 1u);
+  EXPECT_NEAR(volume_of(view().get_shapes().back()->Shape()), 1500.0, 1e-3);
+}
+
+TEST_F(Shp_test, Undo_interleaves_sketch_delta_and_shape_add)
+{
+  gp_Pln default_plane(gp::Origin(), gp::DZ());
+  Sketch sketch("TestSketch", view(), default_plane);
+
+  {
+    Sketch_op_recorder rec(view(), sketch);
+    Sketch_access::add_edge_(sketch, gp_Pnt2d(0.0, 0.0), gp_Pnt2d(10.0, 0.0), rec);
+    rec.commit();
+  }
+
+  view().add_box(0, 0, 0, 2, 2, 2);
+  EXPECT_EQ(view().get_shapes().size(), 1u);
+  EXPECT_EQ(Sketch_access::get_linear_edge_count(sketch), 1u);
+
+  EXPECT_TRUE(view().undo()); // undo box
+  EXPECT_EQ(view().get_shapes().size(), 0u);
+  EXPECT_EQ(Sketch_access::get_linear_edge_count(sketch), 1u);
+
+  EXPECT_TRUE(view().undo()); // undo edge
+  EXPECT_EQ(Sketch_access::get_linear_edge_count(sketch), 0u);
+
+  EXPECT_TRUE(view().redo());
+  EXPECT_EQ(Sketch_access::get_linear_edge_count(sketch), 1u);
+  EXPECT_TRUE(view().redo());
+  EXPECT_EQ(view().get_shapes().size(), 1u);
+}
+
+TEST_F(Shp_test, Shape_ids_persist_in_json)
+{
+  view().add_box(0, 0, 0, 3, 4, 5);
+  ASSERT_EQ(view().get_shapes().size(), 1u);
+  const Shape_id id = view().get_shapes().back()->get_id();
+
+  const std::string json = view().to_json();
+  view().new_file();
+  EXPECT_EQ(view().get_shapes().size(), 0u);
+
+  view().load(json, false);
+  ASSERT_EQ(view().get_shapes().size(), 1u);
+  EXPECT_EQ(view().get_shapes().back()->get_id(), id);
 }

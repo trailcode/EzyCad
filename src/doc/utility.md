@@ -133,9 +133,8 @@ Symmetric `to_json` / `from_json_*` for `gp_Pnt2d`, `gp_Pnt`, `gp_Dir`, `gp_Pln`
 
 ```cpp
 Status Shp_fuse::selected_fuse() {
-  view().push_undo_snapshot();
   CHK_RET(ensure_operation_multi_shps_());
-  // ...
+  // ... mutate, then push Shape_replace_delta on success (see undo-redo.md)
   return Status::ok();
 }
 ```

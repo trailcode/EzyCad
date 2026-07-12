@@ -2,10 +2,13 @@
 
 #include <AIS_Shape.hxx>
 #include <AIS_DisplayMode.hxx>
+#include <cstdint>
 
 #include "utl.h"
 
 class AIS_InteractiveContext;
+
+using Shape_id = uint64_t;
 
 class Shp : public AIS_Shape
 {
@@ -13,6 +16,8 @@ public:
   Shp(AIS_InteractiveContext& ctx, const TopoDS_Shape& shp);
   virtual ~Shp();
 
+  Shape_id           get_id() const;
+  void               set_id(Shape_id id);
   const std::string& get_name() const;
   void               set_name(const std::string& name);
   AIS_DisplayMode    get_disp_mode() const;
@@ -25,6 +30,7 @@ protected:
   void update_display_();
 
   AIS_InteractiveContext& m_ctx;
+  Shape_id                m_id{0};
   std::string             m_name;
   AIS_DisplayMode         m_disp_mode;
   bool                    m_visible;

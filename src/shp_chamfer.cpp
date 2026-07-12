@@ -9,6 +9,7 @@
 
 #include "mode.h"
 #include "gui_occt_view.h"
+#include "shp_delta.h"
 #include "utl_occt.h"
 
 Shp_chamfer::Shp_chamfer(Occt_view& view)
@@ -18,10 +19,11 @@ Shp_chamfer::Shp_chamfer(Occt_view& view)
 
 Status Shp_chamfer::add_chamfer(const ScreenCoords& screen_coords, const Chamfer_mode chamfer_mode)
 {
-  view().push_undo_snapshot();
   Shp_ptr chamfer_src_shp = Shp_ptr::DownCast(get_shape_(screen_coords));
   if (chamfer_src_shp.IsNull())
     return Status::user_error("Click on a shape.");
+
+  const Shape_rec removed = capture_shape_rec(*chamfer_src_shp);
 
   BRepFilletAPI_MakeChamfer chamfer_maker(chamfer_src_shp->Shape());
 
@@ -97,6 +99,8 @@ Status Shp_chamfer::add_chamfer(const ScreenCoords& screen_coords, const Chamfer
     chamfer_maker.Build();
     Shp_ptr chamfer_shp = new Shp(ctx(), chamfer_maker.Shape());
     replace_picked_shape_(chamfer_src_shp, chamfer_shp, "Chamfered shape");
+    view().push_undo_delta(std::make_unique<Shape_replace_delta>(std::vector<Shape_rec>{removed},
+                                                                  std::vector<Shape_rec>{capture_shape_rec(*chamfer_shp)}));
   }
   catch (const Standard_Failure& e)
   {

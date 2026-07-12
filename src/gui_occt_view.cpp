@@ -45,11 +45,13 @@
 
 #include "utl_dbg.h"
 #include "delta.h"
+#include "doc_delta.h"
 #include "utl_geom.h"
 #include "gui.h"
 #include "utl_ply_io.h"
 #include "shp.h"
 #include "shp_create.h"
+#include "shp_delta.h"
 #include "sketch.h"
 #include "sketch_ais.h"
 #include "sketch_json.h"
@@ -554,11 +556,11 @@ void Occt_view::cancel(Set_parent_mode set_parent_mode)
 // Revolve related
 void Occt_view::revolve_selected(const double angle)
 {
-  push_undo_snapshot();
   Shp_rslt revolved = curr_sketch().revolve_selected(angle);
   if (revolved.has_value())
   {
     add_shp_(*revolved);
+    push_undo_delta(std::make_unique<Shape_add_delta>(std::vector<Shape_rec>{capture_shape_rec(**revolved)}));
     // Switch to none mode because displaying shapes in sketch modes is disabled.
     gui().set_mode(Mode::Normal);
   }
@@ -576,8 +578,6 @@ void Occt_view::create_sketch_from_planar_face_(const ScreenCoords& screen_coord
   {
     if (auto pln = plane_from_face(*face); pln)
     {
-      // Push only when we will create a sketch (avoids no-op undo on misclick).
-      push_undo_snapshot();
       // Get the outer wire of the face
       TopoDS_Wire outer_wire = BRepTools::OuterWire(*face);
       EZY_ASSERT(!outer_wire.IsNull());
@@ -585,6 +585,8 @@ void Occt_view::create_sketch_from_planar_face_(const ScreenCoords& screen_coord
       m_sketches.push_back(m_cur_sketch);
       m_cur_sketch->set_current();
       refresh_viewer_grid_();
+      push_undo_delta(std::make_unique<Sketch_struct_delta>(
+          Sketch_struct_delta::Kind::Add, Sketch_json::to_json(*m_cur_sketch, m_assets), true));
       // fit_face_in_view(*face);
       m_gui.set_mode(Mode::Sketch_inspection_mode);
     }
@@ -597,7 +599,7 @@ void Occt_view::create_sketch_from_planar_face_(const ScreenCoords& screen_coord
 
 void Occt_view::finalize_sketch_extrude_()
 {
-  push_undo_snapshot();
+  // Extrude finalize pushes Shape_add_delta after the solid is registered.
   m_shp_extrude.finalize();
 }
 
@@ -636,7 +638,6 @@ void Occt_view::ensure_current_sketch_()
 
 void Occt_view::add_sketch(const gp_Pln& pln, const std::string& base_name)
 {
-  push_undo_snapshot();
   std::vector<std::string> existing;
   existing.reserve(m_sketches.size());
   for (const Sketch_ptr& s : m_sketches)
@@ -647,6 +648,8 @@ void Occt_view::add_sketch(const gp_Pln& pln, const std::string& base_name)
   m_sketches.push_back(m_cur_sketch);
   m_cur_sketch->set_current();
   refresh_viewer_grid_();
+  push_undo_delta(std::make_unique<Sketch_struct_delta>(Sketch_struct_delta::Kind::Add,
+                                                         Sketch_json::to_json(*m_cur_sketch, m_assets), true));
   m_gui.set_mode(Mode::Sketch_inspection_mode);
 }
 
@@ -912,6 +915,9 @@ void Occt_view::refresh_shape_shading_(const Shp_ptr& shp)
 
 void Occt_view::add_shp_(Shp_ptr& shp)
 {
+  if (shp->get_id() == 0)
+    shp->set_id(allocate_shape_id());
+
   shp->SetMaterial(m_default_material);
   refresh_shape_shading_(shp);
   shp->set_selection_mode(m_shp_selection_mode);
@@ -919,6 +925,118 @@ void Occt_view::add_shp_(Shp_ptr& shp)
   m_ctx->UpdateCurrentViewer();
   m_shps.push_back(shp);
 }
+
+Shape_id Occt_view::allocate_shape_id() { return m_next_shape_id++; }
+
+void Occt_view::adopt_shape_id(Shape_id id)
+{
+  if (id >= m_next_shape_id)
+    m_next_shape_id = id + 1;
+}
+
+Shp_ptr Occt_view::find_shape_by_id(Shape_id id) const
+{
+  for (const Shp_ptr& s : m_shps)
+    if (!s.IsNull() && s->get_id() == id)
+      return s;
+
+  return Shp_ptr();
+}
+
+void Occt_view::insert_shape_rec(const Shape_rec& rec)
+{
+  Shp_ptr shp = new Shp(*m_ctx, rec.geom);
+  shp->set_id(rec.id);
+  adopt_shape_id(rec.id);
+  shp->set_name(rec.name);
+
+  const int nmat    = Graphic3d_MaterialAspect::NumberOfMaterials();
+  int       mat_idx = rec.material;
+  if (mat_idx < 0 || mat_idx >= nmat)
+    mat_idx = static_cast<int>(m_default_material.Name());
+
+  shp->SetMaterial(Graphic3d_MaterialAspect(static_cast<Graphic3d_NameOfMaterial>(mat_idx)));
+  refresh_shape_shading_(shp);
+  shp->set_selection_mode(m_shp_selection_mode);
+  m_shps.push_back(shp);
+  m_ctx->Display(shp, shp->get_disp_mode(), AIS_Shape::SelectionMode(m_shp_selection_mode), true);
+  m_ctx->Redisplay(shp, true);
+  m_ctx->UpdateCurrentViewer();
+}
+
+void Occt_view::remove_shape_by_id(Shape_id id)
+{
+  for (auto it = m_shps.begin(); it != m_shps.end(); ++it)
+  {
+    if ((*it).IsNull() || (*it)->get_id() != id)
+      continue;
+
+    Shp_ptr shp = *it;
+    if (m_shape_list_hover == shp)
+      set_shape_list_hover(nullptr);
+
+    m_ctx->Remove(shp, false);
+    m_shps.erase(it);
+    m_ctx->UpdateCurrentViewer();
+    return;
+  }
+}
+
+void Occt_view::set_shape_geom_by_id(Shape_id id, const TopoDS_Shape& geom)
+{
+  Shp_ptr shp = find_shape_by_id(id);
+  if (shp.IsNull())
+    return;
+
+  shp->Set(geom);
+  gp_Trsf identity;
+  shp->SetLocalTransformation(identity);
+  m_ctx->Redisplay(shp, true);
+  m_ctx->UpdateCurrentViewer();
+}
+
+void Occt_view::undo_insert_sketch(const nlohmann::json& sketch_json, bool make_current)
+{
+  Sketch_ptr sketch = Sketch_json::from_json(*this, sketch_json);
+  m_sketches.push_back(sketch);
+  if (make_current)
+  {
+    m_cur_sketch = sketch;
+    m_cur_sketch->set_current();
+  }
+
+  refresh_viewer_grid_();
+}
+
+void Occt_view::undo_remove_sketch(size_t sketch_id)
+{
+  for (auto it = m_sketches.begin(); it != m_sketches.end(); ++it)
+  {
+    if ((*it)->get_id() != sketch_id)
+      continue;
+
+    const Sketch_ptr sketch = *it;
+    if (m_sketch_list_hover == sketch)
+      set_sketch_list_hover(nullptr);
+
+    m_sketches.erase(it);
+    if (m_cur_sketch == sketch)
+    {
+      if (m_sketches.empty())
+        m_cur_sketch = nullptr;
+      else
+      {
+        m_cur_sketch = m_sketches.front();
+        m_cur_sketch->set_current();
+      }
+    }
+
+    refresh_viewer_grid_();
+    return;
+  }
+}
+
+void Occt_view::ensure_current_sketch_for_undo() { ensure_current_sketch_(); }
 
 std::string Occt_view::unique_shape_name_(const char* base_name) const
 {
@@ -934,18 +1052,17 @@ std::string Occt_view::get_unique_shape_name(const char* base_name) const { retu
 
 void Occt_view::add_box(double ox, double oy, double oz, double width, double length, double height)
 {
-  push_undo_snapshot();
   TopoDS_Shape box = shp_create::create_box(ox, oy, oz, width, length, height);
   Shp_ptr      shp = new Shp(*m_ctx, box);
   shp->set_name(unique_shape_name_("Box"));
   add_shp_(shp);
   m_ctx->Display(shp, shp->get_disp_mode(), AIS_Shape::SelectionMode(m_shp_selection_mode), true);
   m_view->Redraw();
+  push_undo_delta(std::make_unique<Shape_add_delta>(std::vector<Shape_rec>{capture_shape_rec(*shp)}));
 }
 
 void Occt_view::add_pyramid(double ox, double oy, double oz, double side)
 {
-  push_undo_snapshot();
   TopoDS_Shape pyramid = shp_create::create_pyramid(side);
   if (pyramid.IsNull())
     return;
@@ -961,12 +1078,18 @@ void Occt_view::add_pyramid(double ox, double oy, double oz, double side)
 
   add_shp_(shp);
   m_ctx->Display(shp, shp->get_disp_mode(), AIS_Shape::SelectionMode(m_shp_selection_mode), true);
+  if (ox != 0 || oy != 0 || oz != 0)
+  {
+    AIS_Shape_ptr ais = shp;
+    bake_transform_into_geometry(ais);
+  }
+
   m_view->Redraw();
+  push_undo_delta(std::make_unique<Shape_add_delta>(std::vector<Shape_rec>{capture_shape_rec(*shp)}));
 }
 
 void Occt_view::add_sphere(double ox, double oy, double oz, double radius)
 {
-  push_undo_snapshot();
   TopoDS_Shape sphere = shp_create::create_sphere(radius);
   Shp_ptr      shp    = new Shp(*m_ctx, sphere);
   shp->set_name(unique_shape_name_("Sphere"));
@@ -979,12 +1102,18 @@ void Occt_view::add_sphere(double ox, double oy, double oz, double radius)
 
   add_shp_(shp);
   m_ctx->Display(shp, shp->get_disp_mode(), AIS_Shape::SelectionMode(m_shp_selection_mode), true);
+  if (ox != 0 || oy != 0 || oz != 0)
+  {
+    AIS_Shape_ptr ais = shp;
+    bake_transform_into_geometry(ais);
+  }
+
   m_view->Redraw();
+  push_undo_delta(std::make_unique<Shape_add_delta>(std::vector<Shape_rec>{capture_shape_rec(*shp)}));
 }
 
 void Occt_view::add_cylinder(double ox, double oy, double oz, double radius, double height)
 {
-  push_undo_snapshot();
   TopoDS_Shape shape = shp_create::create_cylinder(radius, height);
   Shp_ptr      shp   = new Shp(*m_ctx, shape);
   shp->set_name(unique_shape_name_("Cylinder"));
@@ -997,12 +1126,18 @@ void Occt_view::add_cylinder(double ox, double oy, double oz, double radius, dou
 
   add_shp_(shp);
   m_ctx->Display(shp, shp->get_disp_mode(), AIS_Shape::SelectionMode(m_shp_selection_mode), true);
+  if (ox != 0 || oy != 0 || oz != 0)
+  {
+    AIS_Shape_ptr ais = shp;
+    bake_transform_into_geometry(ais);
+  }
+
   m_view->Redraw();
+  push_undo_delta(std::make_unique<Shape_add_delta>(std::vector<Shape_rec>{capture_shape_rec(*shp)}));
 }
 
 void Occt_view::add_cone(double ox, double oy, double oz, double R1, double R2, double height)
 {
-  push_undo_snapshot();
   TopoDS_Shape shape = shp_create::create_cone(R1, R2, height);
   Shp_ptr      shp   = new Shp(*m_ctx, shape);
   shp->set_name(unique_shape_name_("Cone"));
@@ -1015,12 +1150,18 @@ void Occt_view::add_cone(double ox, double oy, double oz, double R1, double R2, 
 
   add_shp_(shp);
   m_ctx->Display(shp, shp->get_disp_mode(), AIS_Shape::SelectionMode(m_shp_selection_mode), true);
+  if (ox != 0 || oy != 0 || oz != 0)
+  {
+    AIS_Shape_ptr ais = shp;
+    bake_transform_into_geometry(ais);
+  }
+
   m_view->Redraw();
+  push_undo_delta(std::make_unique<Shape_add_delta>(std::vector<Shape_rec>{capture_shape_rec(*shp)}));
 }
 
 void Occt_view::add_torus(double ox, double oy, double oz, double R1, double R2)
 {
-  push_undo_snapshot();
   TopoDS_Shape shape = shp_create::create_torus(R1, R2);
   Shp_ptr      shp   = new Shp(*m_ctx, shape);
   shp->set_name(unique_shape_name_("Torus"));
@@ -1033,7 +1174,14 @@ void Occt_view::add_torus(double ox, double oy, double oz, double R1, double R2)
 
   add_shp_(shp);
   m_ctx->Display(shp, shp->get_disp_mode(), AIS_Shape::SelectionMode(m_shp_selection_mode), true);
+  if (ox != 0 || oy != 0 || oz != 0)
+  {
+    AIS_Shape_ptr ais = shp;
+    bake_transform_into_geometry(ais);
+  }
+
   m_view->Redraw();
+  push_undo_delta(std::make_unique<Shape_add_delta>(std::vector<Shape_rec>{capture_shape_rec(*shp)}));
 }
 
 bool Occt_view::fit_face_in_view(const TopoDS_Face& face)
@@ -1162,7 +1310,21 @@ void Occt_view::delete_shapes(std::vector<AIS_Shape_ptr> to_delete)
   if (to_delete.empty())
     return;
 
-  push_undo_snapshot();
+  std::vector<Shape_rec> removed_shapes;
+  bool                   has_non_shape = false;
+  for (const AIS_Shape_ptr& obj : to_delete)
+  {
+    if (Shp_ptr shp = Shp_ptr::DownCast(obj); !shp.IsNull())
+      removed_shapes.push_back(capture_shape_rec(*shp));
+    else
+      has_non_shape = true;
+  }
+
+  if (has_non_shape)
+    push_undo_snapshot();
+  else if (!removed_shapes.empty())
+    push_undo_delta(std::make_unique<Shape_remove_delta>(std::move(removed_shapes)));
+
   remove_selected_length_dimensions_from_sketches_();
   delete_(to_delete);
   cancel(Set_parent_mode::No); // In case we are in the middle of a operation.
@@ -2149,18 +2311,26 @@ void Occt_view::remove_sketch(const Sketch_ptr& sketch)
   if (m_sketch_list_hover == sketch)
     set_sketch_list_hover(nullptr);
 
-  push_undo_snapshot();
+  const bool           was_current = (m_cur_sketch == sketch);
+  const nlohmann::json removed_json = Sketch_json::to_json(*sketch, m_assets);
+
   m_sketches.remove(sketch);
+  std::optional<nlohmann::json> auto_default;
   if (m_cur_sketch == sketch)
   {
     if (m_sketches.empty())
     {
       m_cur_sketch = nullptr;
       create_default_sketch_();
+      auto_default = Sketch_json::to_json(*m_cur_sketch, m_assets);
     }
     else
       m_cur_sketch = m_sketches.front();
   }
+
+  push_undo_delta(std::make_unique<Sketch_struct_delta>(Sketch_struct_delta::Kind::Remove, removed_json, was_current,
+                                                         std::move(auto_default)));
+  refresh_viewer_grid_();
 }
 
 Sketch& Occt_view::curr_sketch()
@@ -2216,7 +2386,7 @@ Shp_extrude&   Occt_view::shp_extrude()   { return m_shp_extrude;    }
 // clang-format on
 
 // ---------------------------------------------------------------------------
-// Undo / redo: sketch edits use element deltas; other operations use full JSON snapshots.
+// Undo / redo: interactive edits use typed deltas; JSON snapshots for mixed delete / file open.
 void Occt_view::push_undo_snapshot()
 {
   if (m_restoring)
@@ -2355,6 +2525,7 @@ std::string Occt_view::to_json() const
     std::ostringstream  oss;
     BRepTools::Write(shape, oss, false, false, TopTools_FormatVersion_CURRENT); // Write BREP data to the stream
     json shp_json;
+    shp_json["id"]       = s->get_id();
     shp_json["name"]     = s->get_name();
     shp_json["material"] = s->Material();
     shp_json["geom"]     = oss.str();
@@ -2406,6 +2577,8 @@ void Occt_view::load(const std::string& json_str, bool restore_view)
     m_redo_stack.clear();
   }
 
+  m_next_shape_id = 1;
+
   const json j = json::parse(json_str);
   (void)j.value("ezyFormat", 1); // Reserved for future migrations; sketch JSON migrates per-edge dim flags in Sketch_json.
   EZY_ASSERT(j.contains("sketches") && j["sketches"].is_array());
@@ -2430,6 +2603,14 @@ void Occt_view::load(const std::string& json_str, bool restore_view)
     iss.str(s["geom"]);
     BRepTools::Read(shape, iss, BRep_Builder());
     Shp_ptr shp = new Shp(*m_ctx, shape);
+    if (s.contains("id") && s["id"].is_number_unsigned())
+    {
+      shp->set_id(s["id"].get<Shape_id>());
+      adopt_shape_id(shp->get_id());
+    }
+    else
+      shp->set_id(allocate_shape_id());
+
     shp->set_name(s["name"]);
     int mat_idx = static_cast<int>(m_default_material.Name());
     if (s.contains("material") && s["material"].is_number_integer())
@@ -2632,19 +2813,21 @@ Status Occt_view::import_step(const std::string& step_data)
   if (to_add.empty())
     return Status::user_error("STEP: no valid shapes in file.");
 
-  push_undo_snapshot();
+  std::vector<Shape_rec> added;
+  added.reserve(to_add.size());
   for (const TopoDS_Shape& shape : to_add)
   {
     Shp_ptr shp = new Shp(*m_ctx, shape);
     add_shp_(shp);
+    added.push_back(capture_shape_rec(*shp));
   }
 
+  push_undo_delta(std::make_unique<Shape_add_delta>(std::move(added)));
   return Status::ok();
 }
 
 bool Occt_view::import_ply(const std::string& ply_bytes)
 {
-  push_undo_snapshot();
   TopoDS_Shape shape;
   if (Status st = import_ply_shape(ply_bytes, shape); !st.is_ok())
   {
@@ -2656,6 +2839,7 @@ bool Occt_view::import_ply(const std::string& ply_bytes)
 
   Shp_ptr shp = new Shp(*m_ctx, shape);
   add_shp_(shp);
+  push_undo_delta(std::make_unique<Shape_add_delta>(std::vector<Shape_rec>{capture_shape_rec(*shp)}));
   return true;
 }
 
@@ -2671,6 +2855,7 @@ void Occt_view::new_file()
   clear_all(m_shps, m_sketches, m_cur_sketch);
   m_assets.clear();
   m_next_sketch_id = 1;
+  m_next_shape_id  = 1;
 
   create_default_sketch_();
   refresh_viewer_grid_();

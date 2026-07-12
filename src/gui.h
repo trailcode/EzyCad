@@ -25,6 +25,8 @@
 #include "shp_info.h"
 #include "utl_types.h"
 
+#include <nlohmann/json.hpp>
+
 class Lua_console;
 class Python_console;
 class Sketch;
@@ -661,6 +663,13 @@ private:
   glm::vec4  m_underlay_tint_col{1.f, 220.f / 255.f, 0.f, 1.f};
   /// Default underlay tint for new imports (0-1, persisted in ezycad_settings.json).
   glm::vec4 m_underlay_highlight_color{0.639830f, 0.561988f, 0.311782f, 1.f};
+
+  /// Stash underlay JSON before a slider drag; commit on deactivate.
+  std::optional<nlohmann::json> m_underlay_undo_before;
+  size_t                        m_underlay_undo_sketch_id{0};
+  void                          begin_underlay_undo_(Sketch& sk);
+  void                          commit_underlay_undo_(Sketch& sk);
+  void                          push_underlay_change_(Sketch& sk, const nlohmann::json& before);
   /// Shape List hover highlight in the OCCT view (0-1, persisted in ezycad_settings.json).
   glm::vec4 m_elm_list_hover_color{0.402064f, 0.102557f, 0.474576f, 1.f};
 

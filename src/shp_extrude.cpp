@@ -10,6 +10,7 @@
 #include "gui.h"
 #include "gui_occt_view.h"
 #include "sketch.h"
+#include "shp_delta.h"
 #include "utl.h"
 
 Shp_extrude::Shp_extrude(Occt_view& view)
@@ -63,6 +64,7 @@ void Shp_extrude::finalize()
   EZY_ASSERT(m_extruded);
   m_extruded->set_name(view().get_unique_shape_name("Shape"));
   add_shp_(m_extruded);
+  view().push_undo_delta(std::make_unique<Shape_add_delta>(std::vector<Shape_rec>{capture_shape_rec(*m_extruded)}));
   ctx().Remove(m_tmp_dim, false);
   clear_all(m_to_extrude_pt, m_to_extrude, m_extruded, m_tmp_dim);
   view().set_show_dim_input(false);
@@ -119,7 +121,6 @@ void Shp_extrude::_update_extrude(const ScreenCoords& screen_coords)
         {
           view().set_show_dim_input(false);
           update_extrude_preview_(entered_dist, m_extrude_side);
-          view().push_undo_snapshot();
           finalize();
         }
       };

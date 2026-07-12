@@ -8,6 +8,7 @@
 
 #include "mode.h"
 #include "gui_occt_view.h"
+#include "shp_delta.h"
 #include "utl_occt.h"
 
 Shp_fillet::Shp_fillet(Occt_view& view)
@@ -17,10 +18,11 @@ Shp_fillet::Shp_fillet(Occt_view& view)
 
 Status Shp_fillet::add_fillet(const ScreenCoords& screen_coords, const Fillet_mode fillet_mode)
 {
-  view().push_undo_snapshot();
   Shp_ptr fillet_src_shp = Shp_ptr::DownCast(get_shape_(screen_coords));
   if (fillet_src_shp.IsNull())
     return Status::user_error("Click on a shape.");
+
+  const Shape_rec removed = capture_shape_rec(*fillet_src_shp);
 
   BRepFilletAPI_MakeFillet fillet_maker(fillet_src_shp->Shape());
 
@@ -93,6 +95,8 @@ Status Shp_fillet::add_fillet(const ScreenCoords& screen_coords, const Fillet_mo
     fillet_maker.Build();
     Shp_ptr fillet_shp = new Shp(ctx(), fillet_maker.Shape());
     replace_picked_shape_(fillet_src_shp, fillet_shp, "Filleted shape");
+    view().push_undo_delta(
+        std::make_unique<Shape_replace_delta>(std::vector<Shape_rec>{removed}, std::vector<Shape_rec>{capture_shape_rec(*fillet_shp)}));
   }
   catch (const Standard_Failure& e)
   {
