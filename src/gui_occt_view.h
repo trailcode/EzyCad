@@ -86,6 +86,8 @@ public:
   void init_window(GLFWwindow* GlfwWindow);
   void init_viewer();
   void init_default();
+  /// Top view (+Z) centered on the origin, framed to Settings default 2D view width x height (display units).
+  void reset_default_view();
 
   std::string            to_json() const;
   void                   load(const std::string& json_str, bool restore_view = true);
@@ -305,6 +307,7 @@ public:
 
   bool is_headless() const;
 
+  /// Clears the document, creates the default XY sketch, and calls \ref reset_default_view.
   void new_file();
 
 private:

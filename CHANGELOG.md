@@ -7,6 +7,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Documentation
+
+- **Usage guide workflow:** Added a dedicated step for creating sketches from planar faces in *Workflow: From 2D Sketches to 3D Shapes* ([usage.md](docs/usage.md)).
+- **Usage guide order:** Moved **Scripting** to the end of the TOC and page body (after Tool Icons) so core modeling comes first for new users.
+
+### View / New Project
+
+- **File -> New** resets the camera to a **top view** framed to **Settings -> 3D view navigation** **Default 2D view width** / **height** (defaults **3** x **3** display units; `gui.default_2d_view_width` / `gui.default_2d_view_height`). Projects with no saved camera use the same framing.
+
 ## [0.3.0] - 2026-07-12
 
 ### WebAssembly

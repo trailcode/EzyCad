@@ -53,7 +53,7 @@ Typical responsibilities:
 | `show_*_effective()`        | Pane flag AND feature tier                              |
 | `ui_show_occt_line_width_settings()` | `false` on wasm (GLES ignores OCCT `SetWidth` / line-width sliders) |
 
-Constants and ranges live in `gui.h` (`k_gui_ui_verbosity_*`, dimension defaults, view roll/zoom ranges).
+Constants and ranges live in `gui.h` (`k_gui_ui_verbosity_*`, dimension defaults, view roll/zoom ranges, default 2D view size).
 
 ### Dist / angle edit popups
 

@@ -6,6 +6,7 @@
 #include <Aspect_RectangularGrid.hxx>
 #include <V3d_RectangularGrid.hxx>
 #include <BRepBndLib.hxx>
+#include <Bnd_Box.hxx>
 #include <BRepBuilderAPI_Transform.hxx>
 #include <BRepMesh_IncrementalMesh.hxx>
 #include <BRepPrimAPI_MakePrism.hxx>
@@ -407,11 +408,31 @@ void Occt_view::init_default()
   SetStickToRayOnZoom(true);
   SetRotationMode(AIS_RotationMode_PickLast);
 
-  m_view->SetProj(0, 0, 1); // Look up the Z-axis (top view)
-  m_view->SetUp(0, 1, 0);   // Up direction along Y-axis
-  m_view->SetZoom(2.0);
+  reset_default_view();
 
   apply_grid_visibility_();
+}
+
+void Occt_view::reset_default_view()
+{
+  if (is_headless() || m_view.IsNull())
+    return;
+
+  const double dim_scale = get_dimension_scale();
+  const double half_w    = 0.5 * m_gui.default_2d_view_width() * dim_scale;
+  const double half_h    = 0.5 * m_gui.default_2d_view_height() * dim_scale;
+  const double half_z    = std::max(1.0, 0.01 * std::max(half_w, half_h));
+
+  m_view->SetProj(0, 0, 1); // Look along +Z (top view of XY sketch plane)
+  m_view->SetUp(0, 1, 0);   // Up along +Y
+  m_view->SetAt(0, 0, 0);
+  m_view->SetEye(0, 0, 100);
+
+  Bnd_Box bbox;
+  bbox.Add(gp_Pnt(-half_w, -half_h, -half_z));
+  bbox.Add(gp_Pnt(half_w, half_h, half_z));
+  m_view->FitAll(bbox, 0.0);
+  m_view->Redraw();
 }
 
 // Geometry related
@@ -2686,50 +2707,57 @@ void Occt_view::load(const std::string& json_str, bool restore_view)
   }
 
   // ---------------------------------------------------------------------------
-  // Restore view / camera state if requested (e.g. File > Open; not for undo/redo)
-  if (restore_view && !m_view.IsNull() && j.contains("view") && j["view"].is_object())
+  // Restore view / camera state if requested (e.g. File > Open; not for undo/redo).
+  // Projects without a saved view (e.g. bundled default.ezy) get the Settings default framing.
+  if (restore_view && !m_view.IsNull())
   {
-    const json& view_json = j["view"];
-    try
+    if (j.contains("view") && j["view"].is_object())
     {
-      if (view_json.contains("eye") && view_json["eye"].is_object())
+      const json& view_json = j["view"];
+      try
       {
-        gp_Pnt eye = from_json_pnt(view_json["eye"]);
-        m_view->SetEye(eye.X(), eye.Y(), eye.Z());
-      }
+        if (view_json.contains("eye") && view_json["eye"].is_object())
+        {
+          gp_Pnt eye = from_json_pnt(view_json["eye"]);
+          m_view->SetEye(eye.X(), eye.Y(), eye.Z());
+        }
 
-      if (view_json.contains("at") && view_json["at"].is_object())
+        if (view_json.contains("at") && view_json["at"].is_object())
+        {
+          gp_Pnt at = from_json_pnt(view_json["at"]);
+          m_view->SetAt(at.X(), at.Y(), at.Z());
+        }
+
+        if (view_json.contains("up") && view_json["up"].is_object())
+        {
+          gp_Dir up = from_json_dir(view_json["up"]);
+          m_view->SetUp(up.X(), up.Y(), up.Z());
+        }
+
+        if (view_json.contains("proj") && view_json["proj"].is_object())
+        {
+          gp_Dir dir = from_json_dir(view_json["proj"]);
+          m_view->SetProj(dir.X(), dir.Y(), dir.Z());
+        }
+
+        if (view_json.contains("scale") && view_json["scale"].is_number())
+        {
+          const double scale = view_json["scale"].get<double>();
+          if (scale > Precision::Confusion())
+            m_view->SetScale(scale);
+        }
+
+        m_view->Redraw();
+        m_ctx->UpdateCurrentViewer();
+      }
+      catch (const std::exception&)
       {
-        gp_Pnt at = from_json_pnt(view_json["at"]);
-        m_view->SetAt(at.X(), at.Y(), at.Z());
+        // Ignore view restoration errors; project geometry has already loaded.
+        reset_default_view();
       }
-
-      if (view_json.contains("up") && view_json["up"].is_object())
-      {
-        gp_Dir up = from_json_dir(view_json["up"]);
-        m_view->SetUp(up.X(), up.Y(), up.Z());
-      }
-
-      if (view_json.contains("proj") && view_json["proj"].is_object())
-      {
-        gp_Dir dir = from_json_dir(view_json["proj"]);
-        m_view->SetProj(dir.X(), dir.Y(), dir.Z());
-      }
-
-      if (view_json.contains("scale") && view_json["scale"].is_number())
-      {
-        const double scale = view_json["scale"].get<double>();
-        if (scale > Precision::Confusion())
-          m_view->SetScale(scale);
-      }
-
-      m_view->Redraw();
-      m_ctx->UpdateCurrentViewer();
     }
-    catch (const std::exception&)
-    {
-      // Ignore view restoration errors; project geometry has already loaded.
-    }
+    else
+      reset_default_view();
   }
 
   if (m_cur_sketch)
@@ -2917,5 +2945,6 @@ void Occt_view::new_file()
 
   create_default_sketch_();
   refresh_viewer_grid_();
+  reset_default_view();
   m_gui.set_mode(Mode::Normal);
 }

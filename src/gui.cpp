@@ -2836,6 +2836,8 @@ void GUI::init(GLFWwindow* window, ImFont* console_font)
   log_message("EzyCad: 3D view ready (initial empty document).");
 
   load_occt_view_settings_();
+  // Re-frame after settings load so Default 2D view width/height apply (init_default ran with defaults).
+  m_view->reset_default_view();
 
   load_examples_list_();
   if (m_example_files.empty())
