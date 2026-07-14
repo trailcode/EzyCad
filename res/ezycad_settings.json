@@ -29,6 +29,9 @@
       0.8468899726867676,
       1.0
     ],
+    "sketch_shape_faint_style": 1,
+    "sketch_shape_faint_opacity": 0.14,
+    "sketch_shape_faint_enabled": true,
     "imgui_style_dark": {
       "frame_border": 0.0,
       "frame_padding_x": 5.0,

@@ -2341,9 +2341,7 @@ void GUI::shape_list_()
   {
     if (m_hide_all_shapes)
       m_view->set_shape_list_hover(nullptr);
-    // Update visibility of all shapes based on the new state
-    for (const Shp_ptr& shape : m_view->get_shapes())
-      shape->set_visible(!m_hide_all_shapes);
+    m_view->sync_sketch_shape_faint_style();
   }
 
   ImGui::Separator();

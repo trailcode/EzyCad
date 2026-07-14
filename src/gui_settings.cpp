@@ -208,6 +208,9 @@ std::string GUI::occt_view_settings_json() const
        {m_elm_list_hover_color[0], m_elm_list_hover_color[1], m_elm_list_hover_color[2], m_elm_list_hover_color[3]}},
       {"shape_selection_color",
        {m_shape_selection_color[0], m_shape_selection_color[1], m_shape_selection_color[2], m_shape_selection_color[3]}},
+      {"sketch_shape_faint_style", m_sketch_shape_faint_style},
+      {"sketch_shape_faint_opacity", m_sketch_shape_faint_opacity},
+      {"sketch_shape_faint_enabled", m_sketch_shape_faint_enabled},
   };
   return j.dump(2);
 }
@@ -305,6 +308,9 @@ void GUI::save_occt_view_settings()
        {m_elm_list_hover_color[0], m_elm_list_hover_color[1], m_elm_list_hover_color[2], m_elm_list_hover_color[3]}},
       {"shape_selection_color",
        {m_shape_selection_color[0], m_shape_selection_color[1], m_shape_selection_color[2], m_shape_selection_color[3]}},
+      {"sketch_shape_faint_style", m_sketch_shape_faint_style},
+      {"sketch_shape_faint_opacity", m_sketch_shape_faint_opacity},
+      {"sketch_shape_faint_enabled", m_sketch_shape_faint_enabled},
   };
   j["version"]          = k_settings_version;
   const char* imgui_ini = ImGui::SaveIniSettingsToMemory(nullptr);
@@ -514,6 +520,18 @@ void GUI::parse_gui_panes_settings_(const std::string& content)
                                                    k_gui_sketch_edge_line_width_max, k_gui_sketch_edge_line_width_default);
 
     parse_rgba4("shape_selection_color", m_shape_selection_color, k_gui_shape_selection_color_default);
+
+    if (g.contains("sketch_shape_faint_style") && g["sketch_shape_faint_style"].is_number_integer())
+    {
+      const int v = g["sketch_shape_faint_style"].get<int>();
+      if (v >= k_gui_sketch_shape_faint_style_min && v <= k_gui_sketch_shape_faint_style_max)
+        m_sketch_shape_faint_style = v;
+    }
+
+    m_sketch_shape_faint_opacity =
+        parse_bounded_float("sketch_shape_faint_opacity", k_gui_sketch_shape_faint_opacity_min,
+                            k_gui_sketch_shape_faint_opacity_max, k_gui_sketch_shape_faint_opacity_default);
+    m_sketch_shape_faint_enabled = b("sketch_shape_faint_enabled", k_gui_sketch_shape_faint_enabled_default);
 
     if (g.contains("edge_dim_arrow_style") && g["edge_dim_arrow_style"].is_number_integer())
     {
@@ -800,6 +818,7 @@ void GUI::load_occt_view_settings_()
   {
     apply_sketch_dimensions_visibility();
     m_view->apply_shape_selection_style();
+    m_view->sync_sketch_shape_faint_style();
   }
 
   sync_sketch_add_mid_pt_edges_if_applicable_();
@@ -1309,6 +1328,73 @@ void GUI::settings_()
         ImGui::SameLine(0.0f, ImGui::GetStyle().ItemInnerSpacing.x);
         GUI_DOC_HELP_("Fill color and opacity for mouse-over (dynamic) highlight on sketch faces.", nullptr);
 
+        ImGui::TableNextRow();
+        ImGui::TableSetColumnIndex(0);
+        ImGui::AlignTextToFramePadding();
+        ImGui::TextUnformatted("Shapes in sketch mode");
+        ImGui::TableSetColumnIndex(1);
+        {
+          bool faint = m_sketch_shape_faint_enabled;
+          if (ImGui::Checkbox("##sketch_shape_faint_enabled_settings", &faint))
+          {
+            m_sketch_shape_faint_enabled = faint;
+            appear_changed               = true;
+          }
+          ImGui::SameLine(0.0f, ImGui::GetStyle().ItemInnerSpacing.x);
+          ImGui::TextUnformatted("Enabled");
+        }
+        ImGui::SameLine(0.0f, ImGui::GetStyle().ItemInnerSpacing.x);
+        GUI_DOC_HELP_("Master switch also in Options -> Sketch options (all sketch tools). When off, solids are "
+                      "hidden in sketch modes.",
+                      doc_urls::k_sketching_2d);
+
+        if (m_sketch_shape_faint_enabled)
+        {
+          ImGui::TableNextRow();
+          ImGui::TableSetColumnIndex(0);
+          ImGui::AlignTextToFramePadding();
+          ImGui::TextUnformatted("Shape style");
+          ImGui::TableSetColumnIndex(1);
+          {
+            static const char* faint_items[] = {"Off (hide)", "Ghost", "Wire"};
+            int                style         = m_sketch_shape_faint_style;
+            if (ImGui::Combo("##sketch_shape_faint_style", &style, faint_items, IM_ARRAYSIZE(faint_items)))
+            {
+              m_sketch_shape_faint_style = style;
+              appear_changed             = true;
+            }
+          }
+          ImGui::SameLine(0.0f, ImGui::GetStyle().ItemInnerSpacing.x);
+          GUI_DOC_HELP_("How 3D shapes appear while sketch tools are active when faint shapes are enabled: hide, "
+                        "semi-transparent ghost, or wireframe. Shape List Hide all still hides everything.",
+                        doc_urls::k_sketching_2d);
+
+          // Strength applies to Ghost and Wire (not Off/hide).
+          if (m_sketch_shape_faint_style == 1 || m_sketch_shape_faint_style == 2)
+          {
+            ImGui::TableNextRow();
+            ImGui::TableSetColumnIndex(0);
+            ImGui::AlignTextToFramePadding();
+            ImGui::TextUnformatted("Shape Faint Strength");
+            ImGui::TableSetColumnIndex(1);
+            {
+              float strength_pct = m_sketch_shape_faint_opacity * 100.0f;
+              if (ImGui::SliderFloat("##sketch_shape_faint_strength", &strength_pct,
+                                     k_gui_sketch_shape_faint_opacity_min * 100.0f,
+                                     k_gui_sketch_shape_faint_opacity_max * 100.0f, "%.0f%%"))
+              {
+                m_sketch_shape_faint_opacity =
+                    std::clamp(strength_pct / 100.0f, k_gui_sketch_shape_faint_opacity_min, k_gui_sketch_shape_faint_opacity_max);
+                appear_changed = true;
+              }
+            }
+            ImGui::SameLine(0.0f, ImGui::GetStyle().ItemInnerSpacing.x);
+            GUI_DOC_HELP_("How solid faint shapes look in sketch mode (higher = closer to normal inspection "
+                          "opacity). Applies to Ghost and Wire styles.",
+                          doc_urls::k_sketching_2d);
+          }
+        }
+
         ImGui::EndTable();
       }
 
@@ -1745,7 +1831,10 @@ void GUI::settings_()
     {
       save_occt_view_settings();
       if (m_view)
+      {
         m_view->refresh_sketch_annotations({.edge_face_style = true});
+        m_view->sync_sketch_shape_faint_style();
+      }
     }
 
     if (ul_changed)
@@ -1840,6 +1929,7 @@ void GUI::settings_()
           m_view->refresh_sketch_annotations(
               {.length_dimensions = true, .permanent_node_marks = true, .edge_face_style = true});
           m_view->apply_shape_selection_style();
+          m_view->sync_sketch_shape_faint_style();
           m_view->refresh_shape_list_hover_highlight();
         }
       }

@@ -585,7 +585,7 @@ void Occt_view::revolve_selected(const double angle)
   {
     add_shp_(*revolved);
     push_undo_delta(std::make_unique<Shape_add_delta>(std::vector<Shape_rec>{capture_shape_rec(**revolved)}));
-    // Switch to none mode because displaying shapes in sketch modes is disabled.
+    // Leave sketch mode so the new solid is shown at full strength (sketch tools use faint/hide).
     gui().set_mode(Mode::Normal);
   }
   else
@@ -946,6 +946,7 @@ void Occt_view::add_shp_(Shp_ptr& shp)
   m_ctx->Redisplay(shp, true);
   m_ctx->UpdateCurrentViewer();
   m_shps.push_back(shp);
+  sync_sketch_shape_faint_style();
 }
 
 Shape_id Occt_view::allocate_shape_id() { return m_next_shape_id++; }
@@ -984,6 +985,7 @@ void Occt_view::insert_shape_rec(const Shape_rec& rec)
   m_ctx->Display(shp, shp->get_disp_mode(), AIS_Shape::SelectionMode(m_shp_selection_mode), true);
   m_ctx->Redisplay(shp, true);
   m_ctx->UpdateCurrentViewer();
+  sync_sketch_shape_faint_style();
 }
 
 void Occt_view::remove_shape_by_id(Shape_id id)
@@ -2245,9 +2247,6 @@ void Occt_view::on_mode()
 
   if (is_sketch_mode(get_mode()))
   {
-    for (auto shp : m_shps)
-      shp->set_visible(false);
-
     switch (get_mode())
     {
     case Mode::Sketch_operation_axis:
@@ -2288,12 +2287,62 @@ void Occt_view::on_mode()
         break;
       // clang-format on
     }
-
-    for (auto shp : m_shps)
-      shp->set_visible(true);
   }
 
+  sync_sketch_shape_faint_style();
   apply_sketch_dimensions_visibility();
+}
+
+void Occt_view::sync_sketch_shape_faint_style()
+{
+  const bool hide_all = gui().get_hide_all_shapes();
+  const bool sketch   = is_sketch_mode(get_mode());
+  const bool enabled  = gui().sketch_shape_faint_enabled();
+  const int  style    = gui().sketch_shape_faint_style();
+  const float opacity =
+      std::clamp(gui().sketch_shape_faint_opacity(), k_gui_sketch_shape_faint_opacity_min, k_gui_sketch_shape_faint_opacity_max);
+  const float transparency = 1.0f - opacity;
+  // Options master switch off, or Settings style Off: hide solids while sketching.
+  const bool hide_in_sketch = !enabled || style == k_gui_sketch_shape_faint_style_min;
+  const bool faint_active   = sketch && !hide_all && !hide_in_sketch;
+
+  if (faint_active)
+  {
+    // Drop shape selection/hover so yellow dynamic highlight does not fight the sketch.
+    set_shape_list_hover(nullptr);
+    if (!m_ctx.IsNull())
+    {
+      m_ctx->ClearSelected(false);
+      m_ctx->ClearDetected();
+    }
+  }
+
+  for (Shp_ptr& shp : m_shps)
+  {
+    if (shp.IsNull())
+      continue;
+
+    if (hide_all || !sketch || hide_in_sketch)
+    {
+      shp->set_sketch_faint(false, AIS_Shaded, 0.0f);
+      if (hide_all || (sketch && hide_in_sketch))
+        shp->set_visible(false);
+      else
+        shp->set_visible(true);
+      continue;
+    }
+
+    // Ghost (1) or Wire (2) while sketching; strength drives transparency for both.
+    if (style == 2)
+      shp->set_sketch_faint(true, AIS_WireFrame, transparency);
+    else
+      shp->set_sketch_faint(true, AIS_Shaded, transparency);
+
+    shp->set_visible(true);
+  }
+
+  if (!m_ctx.IsNull())
+    m_ctx->UpdateCurrentViewer();
 }
 
 void Occt_view::on_chamfer_mode()
@@ -2437,11 +2486,9 @@ void Occt_view::set_curr_sketch(const Sketch_ptr& to_set)
       m_cur_sketch->set_current();
       refresh_viewer_grid_();
 
-      // If hide all shapes is enabled, hide all shapes except the current sketch
+      // If hide all shapes is enabled, hide all shapes.
       if (m_gui.get_hide_all_shapes())
-        // Hide all shapes
-        for (const Shp_ptr& shape : m_shps)
-          shape->set_visible(false);
+        sync_sketch_shape_faint_style();
 
       return;
     }

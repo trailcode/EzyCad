@@ -1030,6 +1030,26 @@ void GUI::options_sketch_common_()
                   "to open the user guide.",
                   doc_urls::k_sketch_snapping);
 
+    ImGui::TableNextRow();
+    ImGui::TableSetColumnIndex(0);
+    options_right_aligned_label_("Faint shapes");
+    ImGui::TableSetColumnIndex(1);
+    {
+      bool faint = m_sketch_shape_faint_enabled;
+      if (ImGui::Checkbox("##sketch_shape_faint_enabled", &faint))
+      {
+        m_sketch_shape_faint_enabled = faint;
+        if (m_view)
+          m_view->sync_sketch_shape_faint_style();
+        save_occt_view_settings();
+      }
+    }
+    ImGui::SameLine(0.0f, ImGui::GetStyle().ItemInnerSpacing.x);
+    GUI_DOC_HELP_("When on, document solids stay visible as ghost or wireframe while any sketch tool is active "
+                  "(style in Settings -> Sketch -> Appearance). When off, solids are hidden in sketch modes. Applies "
+                  "to all sketch tools.",
+                  doc_urls::k_sketching_2d);
+
     ImGui::EndTable();
   }
 }

@@ -283,6 +283,8 @@ public:
   void refresh_shape_list_hover_highlight();
   /// Apply AIS SelectionStyle from Settings (shape selection color).
   void apply_shape_selection_style();
+  /// Apply or clear sketch-mode shape ghost/wire/hide from current GUI settings and mode.
+  void sync_sketch_shape_faint_style();
 
   // Material related
   const Graphic3d_MaterialAspect& get_default_material() const;

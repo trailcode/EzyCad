@@ -106,6 +106,17 @@ inline constexpr float k_gui_sketch_face_highlight_color_default[4] = {0.822967f
 /// 3D shape selection (AIS SelectionStyle) RGBA (`gui.shape_selection_color`).
 inline constexpr float k_gui_shape_selection_color_default[4] = {
     0.754312f, 0.072938f, 0.846890f, 1.0f};
+/// `gui.sketch_shape_faint_style`: 0 = Off (hide shapes in sketch mode), 1 = Ghost, 2 = Wire.
+inline constexpr int k_gui_sketch_shape_faint_style_min     = 0;
+inline constexpr int k_gui_sketch_shape_faint_style_max     = 2;
+inline constexpr int k_gui_sketch_shape_faint_style_default = 1;
+/// Opacity / faint strength of shapes in sketch mode (`gui.sketch_shape_faint_opacity`; 0-1; OCCT transparency = 1 - opacity).
+/// UI label: Shape Faint Strength (shown as percent). Applies to Ghost and Wire styles.
+inline constexpr float k_gui_sketch_shape_faint_opacity_min     = 0.05f;
+inline constexpr float k_gui_sketch_shape_faint_opacity_max     = 0.85f;
+inline constexpr float k_gui_sketch_shape_faint_opacity_default = 0.14f;
+/// Master switch for sketch-mode faint shapes (`gui.sketch_shape_faint_enabled`); Options checkbox for all sketch tools.
+inline constexpr bool k_gui_sketch_shape_faint_enabled_default = true;
 /// Allowed range and default for `gui.view_roll_step_deg` (view roll and numpad orbit steps; must match Settings slider).
 inline constexpr double k_gui_view_roll_step_deg_min     = 0.1;
 inline constexpr double k_gui_view_roll_step_deg_max     = 180.0;
@@ -172,6 +183,7 @@ inline constexpr const char* k_view_roll                    = "https://ezycad.re
 inline constexpr const char* k_view_navigation              = "https://ezycad.readthedocs.io/en/latest/usage.html#view-navigation";
 inline constexpr const char* k_sketch_snapping              = "https://ezycad.readthedocs.io/en/latest/usage-sketch.html#sketch-snapping";
 inline constexpr const char* k_sketch_origin                = "https://ezycad.readthedocs.io/en/latest/usage-sketch.html#sketch-origin";
+inline constexpr const char* k_sketching_2d                 = "https://ezycad.readthedocs.io/en/latest/usage-sketch.html#sketching-2d";
 inline constexpr const char* k_line_edge_midpoint_nodes     = "https://ezycad.readthedocs.io/en/latest/usage-sketch.html#line-edge-option-add-midpoint-nodes";
 inline constexpr const char* k_line_edge_place_from_center  = "https://ezycad.readthedocs.io/en/latest/usage-sketch.html#line-edge-option-place-from-center";
 inline constexpr const char* k_revolve_solid_conversion     = "https://ezycad.readthedocs.io/en/latest/usage-sketch.html#revolve-solid-conversion";
@@ -252,6 +264,11 @@ public:
   const float* sketch_face_highlight_color_rgba() const { return m_sketch_face_highlight_color; }
   /// 3D shape selection (AIS SelectionStyle) RGBA (0-1; alpha = opacity).
   const float* shape_selection_color_rgba() const { return m_shape_selection_color; }
+  /// How 3D shapes appear while in sketch mode (`gui.sketch_shape_faint_style`).
+  int   sketch_shape_faint_style() const { return m_sketch_shape_faint_style; }
+  float sketch_shape_faint_opacity() const { return m_sketch_shape_faint_opacity; }
+  /// Master on/off for faint shapes in all sketch modes (`gui.sketch_shape_faint_enabled`).
+  bool sketch_shape_faint_enabled() const { return m_sketch_shape_faint_enabled; }
   bool         get_add_mid_pt_line_edges() const { return m_add_mid_pt_line_edges; }
   bool         get_add_mid_pt_rect_edges() const { return m_add_mid_pt_rect_edges; }
   bool         get_add_mid_pt_slot_edges() const { return m_add_mid_pt_slot_edges; }
@@ -556,6 +573,9 @@ private:
   float m_sketch_face_highlight_color[4] = {
       k_gui_sketch_face_highlight_color_default[0], k_gui_sketch_face_highlight_color_default[1],
       k_gui_sketch_face_highlight_color_default[2], k_gui_sketch_face_highlight_color_default[3]};
+  int   m_sketch_shape_faint_style   = k_gui_sketch_shape_faint_style_default;
+  float m_sketch_shape_faint_opacity = k_gui_sketch_shape_faint_opacity_default;
+  bool  m_sketch_shape_faint_enabled = k_gui_sketch_shape_faint_enabled_default;
   bool m_add_mid_pt_line_edges = false;
   bool m_add_mid_pt_rect_edges = true;
   bool m_add_mid_pt_slot_edges = false;

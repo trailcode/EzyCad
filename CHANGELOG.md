@@ -7,6 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Sketch appearance
+
+- **Settings -> Sketch -> Appearance:** **Shapes in sketch mode** — *Off (hide)*, *Ghost* (default semi-transparent shaded), or *Wire*. Optional **Ghost opacity**. Persisted as `gui.sketch_shape_faint_style` / `gui.sketch_shape_faint_opacity`. Replaces always-hiding solids while sketch tools are active.
+- **Options -> Sketch options:** **Faint shapes** checkbox (all sketch tools) enables or disables that behavior; persisted as `gui.sketch_shape_faint_enabled` (default on).
+- **Settings -> Sketch -> Appearance:** **Shape Faint Strength** slider (**5%**–**85%**, default **14%**) for Ghost and Wire styles (`gui.sketch_shape_faint_opacity`).
+- Faint shapes in sketch mode are not selectable (no yellow hover/selection highlight).
+
 ### Documentation
 
 - **Usage guide workflow:** Added a dedicated step for creating sketches from planar faces in *Workflow: From 2D Sketches to 3D Shapes* ([usage.md](docs/usage.md)).
