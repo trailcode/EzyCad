@@ -4,6 +4,7 @@
 #include <AIS_Shape.hxx>
 #include <AIS_ViewController.hxx>
 #include <Graphic3d_MaterialAspect.hxx>
+#include <Graphic3d_ZLayerId.hxx>
 #include <gp_Ax3.hxx>
 #include <glm/glm.hpp>
 #include <list>
@@ -406,6 +407,9 @@ private:
   PrsDim_LengthDimension_ptr             m_sketch_list_measurement_hover;
   Sketch_face_shp_ptr                    m_sketch_list_face_hover;
   bool                                   m_sketch_list_face_hover_temp_display{false};
+  /// Saved Z-layer while list hover uses Topmost so solids do not occlude the face.
+  Graphic3d_ZLayerId                     m_sketch_list_face_hover_prev_zlayer{Graphic3d_ZLayerId_Default};
+  bool                                   m_sketch_list_face_hover_zlayer_override{false};
   Prs3d_Drawer_ptr                       m_shape_list_hover_drawer;
   Prs3d_Drawer_ptr                       m_sketch_list_face_hover_drawer;
   void                                   update_shape_list_hover_drawer_();

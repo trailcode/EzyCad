@@ -2136,18 +2136,33 @@ void Occt_view::clear_sketch_list_face_hover_()
   if (!is_headless() && !m_ctx.IsNull())
   {
     m_ctx->Unhilight(m_sketch_list_face_hover, false);
+    if (m_sketch_list_face_hover_zlayer_override)
+    {
+      m_sketch_list_face_hover->SetZLayer(m_sketch_list_face_hover_prev_zlayer);
+      m_sketch_list_face_hover_zlayer_override = false;
+    }
     if (m_sketch_list_face_hover_temp_display)
       m_ctx->Erase(m_sketch_list_face_hover, false);
   }
 
   m_sketch_list_face_hover.Nullify();
   m_sketch_list_face_hover_temp_display = false;
+  m_sketch_list_face_hover_zlayer_override = false;
 }
 
 void Occt_view::apply_sketch_list_face_hover_highlight_()
 {
   if (is_headless() || m_ctx.IsNull() || m_sketch_list_face_hover.IsNull())
     return;
+
+  // Topmost clears the depth buffer before draw (OCCT pop-up layer), so extruded
+  // solids in inspection/Normal mode do not hide the Sketch List face highlight.
+  if (!m_sketch_list_face_hover_zlayer_override)
+  {
+    m_sketch_list_face_hover_prev_zlayer = m_sketch_list_face_hover->ZLayer();
+    m_sketch_list_face_hover->SetZLayer(Graphic3d_ZLayerId_Topmost);
+    m_sketch_list_face_hover_zlayer_override = true;
+  }
 
   if (!m_ctx->IsDisplayed(m_sketch_list_face_hover))
   {
