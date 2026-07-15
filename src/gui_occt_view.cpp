@@ -16,7 +16,10 @@
 #include <GeomAPI_IntCS.hxx>
 #include <Geom_Line.hxx>
 #include <Geom_Plane.hxx>
+#include <Aspect_InteriorStyle.hxx>
+#include <Aspect_TypeOfLine.hxx>
 #include <Graphic3d_Camera.hxx>
+#include <Prs3d_ShadingAspect.hxx>
 #include <NCollection_IndexedDataMap.hxx>
 #include <NCollection_Vec2.hxx>
 #include <IGESControl_Writer.hxx>
@@ -1042,8 +1045,15 @@ void Occt_view::undo_remove_sketch(size_t sketch_id)
     const Sketch_ptr sketch = *it;
     if (m_sketch_list_hover == sketch)
       set_sketch_list_hover(nullptr);
-    if (!m_sketch_list_face_hover.IsNull() && &m_sketch_list_face_hover->owner_sketch == sketch.get())
-      set_sketch_list_face_hover(nullptr, SIZE_MAX);
+
+    if (sketch_owner_of_list_ais_(m_sketch_list_hover_face.ais) == sketch.get())
+      set_sketch_list_hover_face(nullptr, SIZE_MAX);
+
+    if (sketch_owner_of_list_ais_(m_sketch_list_hover_edge.ais) == sketch.get())
+      set_sketch_list_hover_edge(nullptr, SIZE_MAX);
+
+    if (sketch_owner_of_list_ais_(m_sketch_list_hover_node.ais) == sketch.get())
+      set_sketch_list_hover_node(nullptr, SIZE_MAX);
 
     m_sketches.erase(it);
     if (m_cur_sketch == sketch)
@@ -1986,7 +1996,7 @@ void Occt_view::update_shape_list_hover_drawer_()
   m_shape_list_hover_drawer->SetWireAspect(wire_aspect);
 }
 
-void Occt_view::update_sketch_list_face_hover_drawer_()
+void Occt_view::update_sketch_list_hover_face_drawer_()
 {
   // Match Sketch:: face mouse-over (Settings -> Sketch -> Face highlight fill).
   const float* rgba = gui().sketch_face_highlight_color_rgba();
@@ -1994,28 +2004,67 @@ void Occt_view::update_sketch_list_face_hover_drawer_()
                           Quantity_TOC_RGB);
   const float          transp = std::clamp(1.f - rgba[3], 0.f, 1.f);
 
-  if (m_sketch_list_face_hover_drawer.IsNull())
-    m_sketch_list_face_hover_drawer = new Prs3d_Drawer();
+  if (m_sketch_list_hover_face_drawer.IsNull())
+    m_sketch_list_hover_face_drawer = new Prs3d_Drawer();
 
-  m_sketch_list_face_hover_drawer->SetupOwnDefaults();
-  m_sketch_list_face_hover_drawer->SetColor(qc);
-  m_sketch_list_face_hover_drawer->SetTransparency(transp);
+  m_sketch_list_hover_face_drawer->SetupOwnDefaults();
+  m_sketch_list_hover_face_drawer->SetColor(qc);
+  m_sketch_list_hover_face_drawer->SetTransparency(transp);
 
   Prs3d_ShadingAspect_ptr shading = new Prs3d_ShadingAspect();
   shading->SetColor(qc);
   shading->SetTransparency(static_cast<double>(transp));
-  m_sketch_list_face_hover_drawer->SetShadingAspect(shading);
+  m_sketch_list_hover_face_drawer->SetShadingAspect(shading);
 
   Graphic3d_AspectFillArea3d_ptr fill = new Graphic3d_AspectFillArea3d();
   fill->SetAlphaMode(Graphic3d_AlphaMode_Blend);
   fill->SetInteriorStyle(Aspect_IS_SOLID);
   fill->SetInteriorColor(qc);
   fill->SetColor(qc);
-  m_sketch_list_face_hover_drawer->SetBasicFillAreaAspect(fill);
+  m_sketch_list_hover_face_drawer->SetBasicFillAreaAspect(fill);
 
   Prs3d_LineAspect_ptr line = new Prs3d_LineAspect(qc, Aspect_TOL_SOLID, 2.0);
-  m_sketch_list_face_hover_drawer->SetWireAspect(line);
-  m_sketch_list_face_hover_drawer->SetFaceBoundaryAspect(line);
+  m_sketch_list_hover_face_drawer->SetWireAspect(line);
+  m_sketch_list_hover_face_drawer->SetFaceBoundaryAspect(line);
+}
+
+void Occt_view::update_sketch_list_hover_edge_drawer_()
+{
+  // Match Sketch:: edge mouse-over (Settings -> Sketch -> Edge highlight).
+  const float* rgba = gui().sketch_edge_highlight_color_rgba();
+  const Quantity_Color qc(static_cast<double>(rgba[0]), static_cast<double>(rgba[1]), static_cast<double>(rgba[2]),
+                          Quantity_TOC_RGB);
+  const float          transp = std::clamp(1.f - rgba[3], 0.f, 1.f);
+
+  if (m_sketch_list_hover_edge_drawer.IsNull())
+    m_sketch_list_hover_edge_drawer = new Prs3d_Drawer();
+
+  m_sketch_list_hover_edge_drawer->SetColor(qc);
+  m_sketch_list_hover_edge_drawer->SetTransparency(transp);
+  Prs3d_LineAspect_ptr line = new Prs3d_LineAspect(qc, Aspect_TOL_SOLID, 2.0);
+  m_sketch_list_hover_edge_drawer->SetLineAspect(line);
+  m_sketch_list_hover_edge_drawer->SetWireAspect(line);
+  m_sketch_list_hover_edge_drawer->SetSeenLineAspect(line);
+  m_sketch_list_hover_edge_drawer->SetFaceBoundaryAspect(line);
+}
+
+void Occt_view::update_sketch_list_hover_node_drawer_()
+{
+  uint8_t r{}, g{}, b{}, a{};
+  gui().elm_list_hover_color_rgba(r, g, b, a);
+  (void)a;
+  const Quantity_Color qc(static_cast<double>(r) / 255.0, static_cast<double>(g) / 255.0, static_cast<double>(b) / 255.0,
+                          Quantity_TOC_RGB);
+
+  if (m_sketch_list_hover_node_drawer.IsNull())
+    m_sketch_list_hover_node_drawer = new Prs3d_Drawer();
+
+  m_sketch_list_hover_node_drawer->SetColor(qc);
+  Prs3d_LineAspect_ptr line = new Prs3d_LineAspect(qc, Aspect_TOL_SOLID, 3.0);
+  m_sketch_list_hover_node_drawer->SetLineAspect(line);
+  m_sketch_list_hover_node_drawer->SetWireAspect(line);
+  m_sketch_list_hover_node_drawer->SetSeenLineAspect(line);
+  m_sketch_list_hover_node_drawer->SetFaceBoundaryAspect(line);
 }
 
 void Occt_view::clear_sketch_list_hover_ais_()
@@ -2095,8 +2144,21 @@ void Occt_view::refresh_shape_list_hover_highlight()
     apply_sketch_list_hover_highlight_();
   }
 
-  if (!m_sketch_list_face_hover.IsNull())
-    apply_sketch_list_face_hover_highlight_();
+  if (!m_sketch_list_hover_face.ais.IsNull())
+  {
+    update_sketch_list_hover_face_drawer_();
+    apply_sketch_list_hover_ais_state_(m_sketch_list_hover_face, m_sketch_list_hover_face_drawer, AIS_Shaded);
+  }
+  if (!m_sketch_list_hover_edge.ais.IsNull())
+  {
+    update_sketch_list_hover_edge_drawer_();
+    apply_sketch_list_hover_ais_state_(m_sketch_list_hover_edge, m_sketch_list_hover_edge_drawer, AIS_WireFrame);
+  }
+  if (!m_sketch_list_hover_node.ais.IsNull())
+  {
+    update_sketch_list_hover_node_drawer_();
+    apply_sketch_list_hover_ais_state_(m_sketch_list_hover_node, m_sketch_list_hover_node_drawer, AIS_WireFrame);
+  }
 
   m_ctx->UpdateCurrentViewer();
 }
@@ -2128,53 +2190,93 @@ void Occt_view::set_sketch_list_measurement_hover(const Sketch_ptr& sketch, cons
   m_ctx->UpdateCurrentViewer();
 }
 
-void Occt_view::clear_sketch_list_face_hover_()
+Sketch* Occt_view::sketch_owner_of_list_ais_(const AIS_Shape_ptr& ais)
 {
-  if (m_sketch_list_face_hover.IsNull())
+  if (ais.IsNull())
+    return nullptr;
+  if (auto* face = dynamic_cast<Sketch_face_shp*>(ais.get()))
+    return &face->owner_sketch;
+  if (auto* edge = dynamic_cast<Sketch_AIS_edge*>(ais.get()))
+    return &edge->owner_sketch;
+  if (auto* node = dynamic_cast<Sketch_AIS_node_mark*>(ais.get()))
+    return &node->owner_sketch;
+  return nullptr;
+}
+
+void Occt_view::clear_sketch_list_hover_ais_state_(Sketch_list_hover_ais& hover)
+{
+  if (hover.ais.IsNull())
     return;
 
   if (!is_headless() && !m_ctx.IsNull())
   {
-    m_ctx->Unhilight(m_sketch_list_face_hover, false);
-    if (m_sketch_list_face_hover_zlayer_override)
+    m_ctx->Unhilight(hover.ais, false);
+    if (hover.zlayer_override)
     {
-      m_sketch_list_face_hover->SetZLayer(m_sketch_list_face_hover_prev_zlayer);
-      m_sketch_list_face_hover_zlayer_override = false;
+      hover.ais->SetZLayer(hover.prev_zlayer);
+      hover.zlayer_override = false;
     }
-    if (m_sketch_list_face_hover_temp_display)
-      m_ctx->Erase(m_sketch_list_face_hover, false);
+    if (hover.temp_display)
+      m_ctx->Erase(hover.ais, false);
   }
 
-  m_sketch_list_face_hover.Nullify();
-  m_sketch_list_face_hover_temp_display = false;
-  m_sketch_list_face_hover_zlayer_override = false;
+  hover.ais.Nullify();
+  hover.temp_display     = false;
+  hover.zlayer_override  = false;
+  hover.prev_zlayer      = Graphic3d_ZLayerId_Default;
 }
 
-void Occt_view::apply_sketch_list_face_hover_highlight_()
+void Occt_view::apply_sketch_list_hover_ais_state_(Sketch_list_hover_ais& hover, const Prs3d_Drawer_ptr& drawer,
+                                             const int display_mode)
 {
-  if (is_headless() || m_ctx.IsNull() || m_sketch_list_face_hover.IsNull())
+  if (is_headless() || m_ctx.IsNull() || hover.ais.IsNull() || drawer.IsNull())
     return;
 
   // Topmost clears the depth buffer before draw (OCCT pop-up layer), so extruded
-  // solids in inspection/Normal mode do not hide the Sketch List face highlight.
-  if (!m_sketch_list_face_hover_zlayer_override)
+  // solids in inspection/Normal mode do not hide Sketch List highlights.
+  if (!hover.zlayer_override)
   {
-    m_sketch_list_face_hover_prev_zlayer = m_sketch_list_face_hover->ZLayer();
-    m_sketch_list_face_hover->SetZLayer(Graphic3d_ZLayerId_Topmost);
-    m_sketch_list_face_hover_zlayer_override = true;
+    hover.prev_zlayer = hover.ais->ZLayer();
+    hover.ais->SetZLayer(Graphic3d_ZLayerId_Topmost);
+    hover.zlayer_override = true;
   }
 
-  if (!m_ctx->IsDisplayed(m_sketch_list_face_hover))
+  if (!m_ctx->IsDisplayed(hover.ais))
   {
-    m_sketch_list_face_hover_temp_display = true;
-    m_ctx->Display(m_sketch_list_face_hover, AIS_Shaded, 0, false);
+    hover.temp_display = true;
+    m_ctx->Display(hover.ais, display_mode, 0, false);
   }
 
-  update_sketch_list_face_hover_drawer_();
-  m_ctx->HilightWithColor(m_sketch_list_face_hover, m_sketch_list_face_hover_drawer, false);
+  m_ctx->HilightWithColor(hover.ais, drawer, false);
 }
 
-void Occt_view::set_sketch_list_face_hover(const Sketch_ptr& sketch, const size_t face_index)
+void Occt_view::set_sketch_list_hover_ais_state_(Sketch_list_hover_ais& hover, const AIS_Shape_ptr& ais,
+                                           const Prs3d_Drawer_ptr& drawer, const int display_mode)
+{
+  if (is_headless() || m_ctx.IsNull())
+    return;
+
+  if (hover.ais == ais)
+  {
+    // Geometry can be erased when leaving sketch mode while the row stays hovered.
+    if (!ais.IsNull() && !m_ctx->IsDisplayed(ais))
+    {
+      apply_sketch_list_hover_ais_state_(hover, drawer, display_mode);
+      m_ctx->UpdateCurrentViewer();
+    }
+    return;
+  }
+
+  clear_sketch_list_hover_ais_state_(hover);
+  hover.ais = ais;
+
+  if (!hover.ais.IsNull())
+    apply_sketch_list_hover_ais_state_(hover, drawer, display_mode);
+
+  m_ctx->UpdateCurrentViewer();
+}
+
+void Occt_view::set_sketch_list_hover_face(const Sketch_ptr& sketch, const size_t face_index)
 {
   if (is_headless() || m_ctx.IsNull())
     return;
@@ -2183,24 +2285,34 @@ void Occt_view::set_sketch_list_face_hover(const Sketch_ptr& sketch, const size_
   if (sketch && sketch->is_visible() && face_index != SIZE_MAX)
     face = sketch->inspector_face(face_index);
 
-  if (m_sketch_list_face_hover == face)
-  {
-    // Faces can be erased when leaving sketch mode while the row stays hovered.
-    if (!face.IsNull() && !m_ctx->IsDisplayed(face))
-    {
-      apply_sketch_list_face_hover_highlight_();
-      m_ctx->UpdateCurrentViewer();
-    }
+  update_sketch_list_hover_face_drawer_();
+  set_sketch_list_hover_ais_state_(m_sketch_list_hover_face, face, m_sketch_list_hover_face_drawer, AIS_Shaded);
+}
+
+void Occt_view::set_sketch_list_hover_edge(const Sketch_ptr& sketch, const size_t edge_index)
+{
+  if (is_headless() || m_ctx.IsNull())
     return;
-  }
 
-  clear_sketch_list_face_hover_();
-  m_sketch_list_face_hover = face;
+  Sketch_AIS_edge_ptr edge;
+  if (sketch && sketch->is_visible() && edge_index != SIZE_MAX)
+    edge = sketch->inspector_edge(edge_index);
 
-  if (!m_sketch_list_face_hover.IsNull())
-    apply_sketch_list_face_hover_highlight_();
+  update_sketch_list_hover_edge_drawer_();
+  set_sketch_list_hover_ais_state_(m_sketch_list_hover_edge, edge, m_sketch_list_hover_edge_drawer, AIS_WireFrame);
+}
 
-  m_ctx->UpdateCurrentViewer();
+void Occt_view::set_sketch_list_hover_node(const Sketch_ptr& sketch, const size_t list_index)
+{
+  if (is_headless() || m_ctx.IsNull())
+    return;
+
+  Sketch_AIS_node_mark_ptr node;
+  if (sketch && sketch->is_visible() && list_index != SIZE_MAX)
+    node = sketch->inspector_node(list_index);
+
+  update_sketch_list_hover_node_drawer_();
+  set_sketch_list_hover_ais_state_(m_sketch_list_hover_node, node, m_sketch_list_hover_node_drawer, AIS_WireFrame);
 }
 
 void Occt_view::set_sketch_list_hover(const Sketch_ptr& sketch)
@@ -2555,8 +2667,15 @@ void Occt_view::remove_sketch(const Sketch_ptr& sketch)
 {
   if (m_sketch_list_hover == sketch)
     set_sketch_list_hover(nullptr);
-  if (!m_sketch_list_face_hover.IsNull() && &m_sketch_list_face_hover->owner_sketch == sketch.get())
-    set_sketch_list_face_hover(nullptr, SIZE_MAX);
+
+  if (sketch_owner_of_list_ais_(m_sketch_list_hover_face.ais) == sketch.get())
+    set_sketch_list_hover_face(nullptr, SIZE_MAX);
+
+  if (sketch_owner_of_list_ais_(m_sketch_list_hover_edge.ais) == sketch.get())
+    set_sketch_list_hover_edge(nullptr, SIZE_MAX);
+
+  if (sketch_owner_of_list_ais_(m_sketch_list_hover_node.ais) == sketch.get())
+    set_sketch_list_hover_node(nullptr, SIZE_MAX);
 
   const bool           was_current = (m_cur_sketch == sketch);
   const nlohmann::json removed_json = Sketch_json::to_json(*sketch, m_assets);

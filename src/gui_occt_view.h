@@ -284,7 +284,11 @@ public:
   void set_sketch_list_measurement_hover(const Sketch_ptr& sketch, size_t dim_index);
   /// Highlight a sketch face while its Sketch List Faces row is hovered (\a face_index == SIZE_MAX clears).
   /// Temporarily displays the face when faces are hidden (e.g. outside sketch modes).
-  void set_sketch_list_face_hover(const Sketch_ptr& sketch, size_t face_index);
+  void set_sketch_list_hover_face(const Sketch_ptr& sketch, size_t face_index);
+  /// Highlight a sketch edge while its Sketch List Edges row is hovered (\a edge_index == SIZE_MAX clears).
+  void set_sketch_list_hover_edge(const Sketch_ptr& sketch, size_t edge_index);
+  /// Highlight a permanent node mark while its Sketch List Nodes row is hovered (\a list_index == SIZE_MAX clears).
+  void set_sketch_list_hover_node(const Sketch_ptr& sketch, size_t list_index);
   /// Re-apply list-hover highlight after Settings changes the hover color.
   void refresh_shape_list_hover_highlight();
   /// Apply AIS SelectionStyle from Settings (shape selection color).
@@ -405,23 +409,37 @@ private:
   Sketch_ptr                             m_sketch_list_hover;
   std::vector<AIS_InteractiveObject_ptr> m_sketch_list_hover_ais;
   PrsDim_LengthDimension_ptr             m_sketch_list_measurement_hover;
-  Sketch_face_shp_ptr                    m_sketch_list_face_hover;
-  bool                                   m_sketch_list_face_hover_temp_display{false};
-  /// Saved Z-layer while list hover uses Topmost so solids do not occlude the face.
-  Graphic3d_ZLayerId                     m_sketch_list_face_hover_prev_zlayer{Graphic3d_ZLayerId_Default};
-  bool                                   m_sketch_list_face_hover_zlayer_override{false};
-  Prs3d_Drawer_ptr                       m_shape_list_hover_drawer;
-  Prs3d_Drawer_ptr                       m_sketch_list_face_hover_drawer;
-  void                                   update_shape_list_hover_drawer_();
-  void                                   update_sketch_list_face_hover_drawer_();
-  void                                   clear_sketch_list_hover_ais_();
-  void                                   apply_sketch_list_hover_highlight_();
-  void                                   apply_sketch_list_measurement_hover_style_();
-  void                                   restore_sketch_list_measurement_hover_style_();
-  void                                   refresh_sketch_list_measurement_hover_highlight_();
-  void                                   clear_sketch_list_face_hover_();
-  void                                   apply_sketch_list_face_hover_highlight_();
-  Graphic3d_MaterialAspect               m_default_material;
+  /// Shared state for Sketch List face/edge/node AIS hover (Topmost + optional temp Display).
+  struct Sketch_list_hover_ais
+  {
+    AIS_Shape_ptr      ais;
+    bool               temp_display{false};
+    Graphic3d_ZLayerId prev_zlayer{Graphic3d_ZLayerId_Default};
+    bool               zlayer_override{false};
+  };
+  Sketch_list_hover_ais m_sketch_list_hover_face;
+  Sketch_list_hover_ais m_sketch_list_hover_edge;
+  Sketch_list_hover_ais m_sketch_list_hover_node;
+  Prs3d_Drawer_ptr      m_shape_list_hover_drawer;
+  Prs3d_Drawer_ptr      m_sketch_list_hover_face_drawer;
+  Prs3d_Drawer_ptr      m_sketch_list_hover_edge_drawer;
+  Prs3d_Drawer_ptr      m_sketch_list_hover_node_drawer;
+  void                  update_shape_list_hover_drawer_();
+  void                  update_sketch_list_hover_face_drawer_();
+  void                  update_sketch_list_hover_edge_drawer_();
+  void                  update_sketch_list_hover_node_drawer_();
+  void                  clear_sketch_list_hover_ais_();
+  void                  apply_sketch_list_hover_highlight_();
+  void                  apply_sketch_list_measurement_hover_style_();
+  void                  restore_sketch_list_measurement_hover_style_();
+  void                  refresh_sketch_list_measurement_hover_highlight_();
+  void                  clear_sketch_list_hover_ais_state_(Sketch_list_hover_ais& hover);
+  void                  apply_sketch_list_hover_ais_state_(Sketch_list_hover_ais& hover, const Prs3d_Drawer_ptr& drawer,
+                                                     int display_mode);
+  void                  set_sketch_list_hover_ais_state_(Sketch_list_hover_ais& hover, const AIS_Shape_ptr& ais,
+                                                   const Prs3d_Drawer_ptr& drawer, int display_mode);
+  [[nodiscard]] static Sketch* sketch_owner_of_list_ais_(const AIS_Shape_ptr& ais);
+  Graphic3d_MaterialAspect     m_default_material;
   bool                                   m_headless_view{false};
   /// True when LMB press was handled by planar-face sketch creation without AIS_ViewController::PressMouseButton (pair with
   /// release skip).

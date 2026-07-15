@@ -124,3 +124,51 @@ void Sketch_node_marks::trim_trailing()
     m_marks.pop_back();
   }
 }
+
+Sketch_AIS_node_mark_ptr Sketch_node_marks::get(size_t node_idx) const
+{
+  if (node_idx >= m_marks.size())
+    return {};
+  return m_marks[node_idx];
+}
+
+Sketch_AIS_node_mark_ptr Sketch_node_marks::ensure_for_list_hover(size_t node_idx)
+{
+  if (node_idx >= m_sketch.m_nodes.size())
+    return {};
+
+  const Sketch_nodes::Node& node = m_sketch.m_nodes[node_idx];
+  if (!node.permanent || node.deleted)
+    return {};
+
+  if (m_marks.size() <= node_idx)
+    m_marks.resize(node_idx + 1);
+
+  const double size_scale = std::max(static_cast<double>(m_sketch.m_view.gui().permanent_node_anno_scale()), 0.0);
+  const double half_arm =
+      std::max(m_sketch.m_topo.plane_pick_snap_radius_world() * 0.45 * size_scale, Precision::Confusion() * 50.0);
+
+  const gp_Pnt2d     p2(node.X(), node.Y());
+  const gp_Pnt       c3     = to_3d(m_sketch.m_pln, p2);
+  const TopoDS_Shape marker = node.origin ? create_origin_marker_shape(m_sketch.m_pln, c3, half_arm)
+                                          : create_plus_cross_shape(m_sketch.m_pln, c3, half_arm);
+
+  if (m_marks[node_idx])
+  {
+    m_marks[node_idx]->Set(marker);
+    apply_style_(m_marks[node_idx], node.origin);
+    if (m_sketch.m_ctx.IsDisplayed(m_marks[node_idx]))
+      m_sketch.m_ctx.Redisplay(m_marks[node_idx], false);
+  }
+  else
+  {
+    Sketch_AIS_node_mark_ptr mk = new Sketch_AIS_node_mark(m_sketch, node_idx, marker);
+    apply_style_(mk, node.origin);
+    m_marks[node_idx] = mk;
+  }
+
+  if (node.origin)
+    m_sketch.m_ctx.Deactivate(m_marks[node_idx]);
+
+  return m_marks[node_idx];
+}

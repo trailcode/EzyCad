@@ -17,7 +17,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Sketch List
 
 - Expanded **Faces** rows: **`E`** button and right-click **Extrude** start [extrude](docs/usage.md#extrude-sketch-face-tool-e) for that face (then drag height in the viewer).
-- Hovering a **Faces** row highlights that face in the viewer with **Face highlight fill** (even outside sketch modes, when faces are normally hidden). The highlight uses the OCCT **Topmost** Z-layer so extruded solids do not cover it in inspection/Normal mode.
+- Hovering a **Faces**, **Edges**, or **Nodes** row highlights that element in the viewer (even outside sketch modes, when sketch geometry is normally hidden). Highlights use the OCCT **Topmost** Z-layer so extruded solids do not cover them in inspection/Normal mode.
 
 ### Documentation
 

@@ -379,7 +379,9 @@ private:
   void on_left_click_(const ScreenCoords& screen_coords);
   void sketch_list_();
   void sketch_list_inspector_(const std::shared_ptr<Sketch>& sketch, int index, std::shared_ptr<Sketch>& hover_dim_sketch,
-                              size_t& hover_dim_index, std::shared_ptr<Sketch>& hover_face_sketch, size_t& hover_face_index);
+                              size_t& hover_dim_index, std::shared_ptr<Sketch>& hover_face_sketch, size_t& hover_face_index,
+                              std::shared_ptr<Sketch>& hover_edge_sketch, size_t& hover_edge_index,
+                              std::shared_ptr<Sketch>& hover_node_sketch, size_t& hover_node_index);
   void sketch_list_extrude_face_(const std::shared_ptr<Sketch>& sketch, size_t face_index);
   void sketch_properties_dialog_();
   void sketch_origin_panel_settings_(const std::shared_ptr<Sketch>& sk);

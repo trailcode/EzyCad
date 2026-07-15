@@ -132,8 +132,12 @@ public:
   std::vector<std::string> inspector_face_labels() const;
   /// Face AIS used by Sketch List Extrude (E / context menu); null if index is out of range.
   [[nodiscard]] Sketch_face_shp_ptr inspector_face(size_t index) const;
-  std::vector<std::string>          inspector_dimension_labels() const;
-  std::vector<std::string>          inspector_node_labels() const;
+  /// Edge AIS for Sketch List hover; null if index is out of range.
+  [[nodiscard]] Sketch_AIS_edge_ptr inspector_edge(size_t index) const;
+  /// Permanent-node mark for Sketch List hover (list index matches `inspector_node_labels`); may create the mark.
+  [[nodiscard]] Sketch_AIS_node_mark_ptr inspector_node(size_t list_index);
+  std::vector<std::string>               inspector_dimension_labels() const;
+  std::vector<std::string>               inspector_node_labels() const;
 
   void          on_mode();
   Mode          get_mode() const;
