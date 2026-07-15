@@ -1106,7 +1106,8 @@ const std::vector<std::string>& GUI::occt_material_combo_labels_()
   return names;
 }
 
-void GUI::sketch_list_inspector_(const Sketch::sptr& sketch, int index, Sketch::sptr& hover_sketch, size_t& hover_dim_index)
+void GUI::sketch_list_inspector_(const Sketch::sptr& sketch, int index, Sketch::sptr& hover_dim_sketch,
+                                 size_t& hover_dim_index, Sketch::sptr& hover_face_sketch, size_t& hover_face_index)
 {
   ImGui::Indent();
   ImGui::PushID(index);
@@ -1181,8 +1182,8 @@ void GUI::sketch_list_inspector_(const Sketch::sptr& sketch, int index, Sketch::
           if (row_hovered && sketch->is_visible() && sketch->shows_dimensions() && visible &&
               !sketch->length_dimension_handle(i).IsNull())
           {
-            hover_sketch    = sketch;
-            hover_dim_index = i;
+            hover_dim_sketch = sketch;
+            hover_dim_index  = i;
           }
 
           ImGui::PopID();
@@ -1210,9 +1211,12 @@ void GUI::sketch_list_inspector_(const Sketch::sptr& sketch, int index, Sketch::
     {
       for (size_t i = 0; i < count; ++i)
       {
+        bool row_hovered = false;
+
         ImGui::PushID(static_cast<int>(i));
         ImGui::AlignTextToFramePadding();
         ImGui::BulletText("%s", labels[i].c_str());
+        row_hovered |= ImGui::IsItemHovered();
         if (ImGui::BeginPopupContextItem("face_extrude_ctx"))
         {
           if (ImGui::MenuItem("Extrude"))
@@ -1220,10 +1224,18 @@ void GUI::sketch_list_inspector_(const Sketch::sptr& sketch, int index, Sketch::
           ImGui::EndPopup();
         }
         ImGui::SameLine();
-        if (ImGui::SmallButton("[O]"))
+        if (ImGui::SmallButton("E"))
           sketch_list_extrude_face_(sketch, i);
+        row_hovered |= ImGui::IsItemHovered();
         if (ui_show_contextual_help() && ImGui::IsItemHovered())
           ImGui::SetTooltip("Extrude this face");
+
+        if (row_hovered && sketch->is_visible() && sketch->inspector_face(i))
+        {
+          hover_face_sketch = sketch;
+          hover_face_index  = i;
+        }
+
         ImGui::PopID();
       }
 
@@ -1254,6 +1266,7 @@ void GUI::sketch_list_()
   {
     m_view->set_sketch_list_hover(nullptr);
     m_view->set_sketch_list_measurement_hover(nullptr, SIZE_MAX);
+    m_view->set_sketch_list_face_hover(nullptr, SIZE_MAX);
     return;
   }
 
@@ -1270,6 +1283,7 @@ void GUI::sketch_list_()
   {
     m_view->set_sketch_list_hover(nullptr);
     m_view->set_sketch_list_measurement_hover(nullptr, SIZE_MAX);
+    m_view->set_sketch_list_face_hover(nullptr, SIZE_MAX);
     ImGui::End();
     return;
   }
@@ -1282,6 +1296,8 @@ void GUI::sketch_list_()
   Sketch::sptr sketch_list_hover;
   Sketch::sptr sketch_list_measurement_hover_sketch;
   size_t       sketch_list_measurement_hover_index = SIZE_MAX;
+  Sketch::sptr sketch_list_face_hover_sketch;
+  size_t       sketch_list_face_hover_index = SIZE_MAX;
   for (Sketch::sptr& sketch : m_view->get_sketches())
   {
     EZY_ASSERT(sketch);
@@ -1426,13 +1442,15 @@ void GUI::sketch_list_()
       sketch_list_hover = sketch;
 
     if (expanded && ui_show_sketch_list_expand())
-      sketch_list_inspector_(sketch, index, sketch_list_measurement_hover_sketch, sketch_list_measurement_hover_index);
+      sketch_list_inspector_(sketch, index, sketch_list_measurement_hover_sketch, sketch_list_measurement_hover_index,
+                             sketch_list_face_hover_sketch, sketch_list_face_hover_index);
 
     ++index;
   }
 
   m_view->set_sketch_list_hover(sketch_list_hover);
   m_view->set_sketch_list_measurement_hover(sketch_list_measurement_hover_sketch, sketch_list_measurement_hover_index);
+  m_view->set_sketch_list_face_hover(sketch_list_face_hover_sketch, sketch_list_face_hover_index);
 
   ImGui::EndChild();
 

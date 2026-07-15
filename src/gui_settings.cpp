@@ -1834,6 +1834,7 @@ void GUI::settings_()
       {
         m_view->refresh_sketch_annotations({.edge_face_style = true});
         m_view->sync_sketch_shape_faint_style();
+        m_view->refresh_shape_list_hover_highlight();
       }
     }
 

@@ -130,7 +130,7 @@ public:
 
   std::vector<std::string> inspector_edge_labels() const;
   std::vector<std::string> inspector_face_labels() const;
-  /// Face AIS used by Sketch List Extrude ([O] / context menu); null if index is out of range.
+  /// Face AIS used by Sketch List Extrude (E / context menu); null if index is out of range.
   [[nodiscard]] Sketch_face_shp_ptr inspector_face(size_t index) const;
   std::vector<std::string>          inspector_dimension_labels() const;
   std::vector<std::string>          inspector_node_labels() const;

@@ -16,7 +16,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Sketch List
 
-- Expanded **Faces** rows: **`[O]`** button and right-click **Extrude** start [extrude](docs/usage.md#extrude-sketch-face-tool-e) for that face (then drag height in the viewer).
+- Expanded **Faces** rows: **`E`** button and right-click **Extrude** start [extrude](docs/usage.md#extrude-sketch-face-tool-e) for that face (then drag height in the viewer).
+- Hovering a **Faces** row highlights that face in the viewer with **Face highlight fill** (even outside sketch modes, when faces are normally hidden).
 
 ### Documentation
 

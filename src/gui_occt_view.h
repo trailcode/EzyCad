@@ -281,6 +281,9 @@ public:
   const Sketch_ptr& sketch_list_hover() const { return m_sketch_list_hover; }
   /// Highlight a sketch length dimension while its Sketch List row is hovered (\a dim_index == SIZE_MAX clears).
   void set_sketch_list_measurement_hover(const Sketch_ptr& sketch, size_t dim_index);
+  /// Highlight a sketch face while its Sketch List Faces row is hovered (\a face_index == SIZE_MAX clears).
+  /// Temporarily displays the face when faces are hidden (e.g. outside sketch modes).
+  void set_sketch_list_face_hover(const Sketch_ptr& sketch, size_t face_index);
   /// Re-apply list-hover highlight after Settings changes the hover color.
   void refresh_shape_list_hover_highlight();
   /// Apply AIS SelectionStyle from Settings (shape selection color).
@@ -401,13 +404,19 @@ private:
   Sketch_ptr                             m_sketch_list_hover;
   std::vector<AIS_InteractiveObject_ptr> m_sketch_list_hover_ais;
   PrsDim_LengthDimension_ptr             m_sketch_list_measurement_hover;
+  Sketch_face_shp_ptr                    m_sketch_list_face_hover;
+  bool                                   m_sketch_list_face_hover_temp_display{false};
   Prs3d_Drawer_ptr                       m_shape_list_hover_drawer;
+  Prs3d_Drawer_ptr                       m_sketch_list_face_hover_drawer;
   void                                   update_shape_list_hover_drawer_();
+  void                                   update_sketch_list_face_hover_drawer_();
   void                                   clear_sketch_list_hover_ais_();
   void                                   apply_sketch_list_hover_highlight_();
   void                                   apply_sketch_list_measurement_hover_style_();
   void                                   restore_sketch_list_measurement_hover_style_();
   void                                   refresh_sketch_list_measurement_hover_highlight_();
+  void                                   clear_sketch_list_face_hover_();
+  void                                   apply_sketch_list_face_hover_highlight_();
   Graphic3d_MaterialAspect               m_default_material;
   bool                                   m_headless_view{false};
   /// True when LMB press was handled by planar-face sketch creation without AIS_ViewController::PressMouseButton (pair with
