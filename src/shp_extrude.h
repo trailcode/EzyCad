@@ -18,6 +18,8 @@ public:
   Shp_extrude(Occt_view& view);
 
   void sketch_face_extrude(const ScreenCoords& screen_coords, bool is_mouse_move);
+  /// Start extruding a known sketch face (list / script); returns false if `shp` is not a valid face.
+  bool begin_face_extrude(const AIS_Shape_ptr& shp);
   void finalize();
   bool cancel();
   bool has_active_extrusion() const;

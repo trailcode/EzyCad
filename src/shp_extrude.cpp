@@ -19,6 +19,38 @@ Shp_extrude::Shp_extrude(Occt_view& view)
 {
 }
 
+bool Shp_extrude::begin_face_extrude(const AIS_Shape_ptr& shp)
+{
+  auto* face = dynamic_cast<Sketch_face_shp*>(shp.get());
+  if (!face || face->verts_3d.empty())
+    return false;
+
+  cancel();
+
+  m_to_extrude_pln = face->owner_sketch.get_plane();
+  m_extrude_side   = Plane_side::Front;
+  m_to_extrude_pt  = closest_to_camera(view().view_handle(), face->verts_3d);
+  m_curr_view_pln  = view().get_view_plane(*m_to_extrude_pt);
+  m_to_extrude     = shp;
+
+  const gp_Ax1& a = m_to_extrude_pln.Axis();
+  const gp_Ax1& b = m_curr_view_pln.Axis();
+
+  if (a.IsParallel(b, to_radians(5.0)))
+  {
+    // Rotate view by 45 degrees (radians)
+    auto rotation_axis = gp_Vec(m_to_extrude_pln.XAxis().Direction()) + gp_Vec(m_to_extrude_pln.YAxis().Direction());
+    rotation_axis.Normalize();
+    rotation_axis *= to_radians(45.0);
+    // rotate around arbitrary axis (use clean view API)
+    view().rotate_view(rotation_axis, *m_to_extrude_pt);
+    view().redraw_view();
+    m_curr_view_pln = view().get_view_plane(*m_to_extrude_pt);
+  }
+
+  return true;
+}
+
 void Shp_extrude::sketch_face_extrude(const ScreenCoords& screen_coords, bool is_mouse_move)
 {
   if (!m_to_extrude_pt)
@@ -28,31 +60,8 @@ void Shp_extrude::sketch_face_extrude(const ScreenCoords& screen_coords, bool is
 
     //  Find face to extrude
     auto shp = view().get_shape(screen_coords);
-    if (auto face = dynamic_cast<Sketch_face_shp*>(shp.get()); face)
-    {
-      m_to_extrude_pln = face->owner_sketch.get_plane();
-      m_extrude_side   = Plane_side::Front;
-      m_to_extrude_pt  = closest_to_camera(view().view_handle(), face->verts_3d);
-      m_curr_view_pln  = view().get_view_plane(*m_to_extrude_pt);
-      m_to_extrude     = shp;
-
-      const gp_Ax1& a = m_to_extrude_pln.Axis();
-      const gp_Ax1& b = m_curr_view_pln.Axis();
-
-      if (a.IsParallel(b, to_radians(5.0)))
-      {
-        // Rotate view by 45 degrees (radians)
-        auto rotation_axis = gp_Vec(m_to_extrude_pln.XAxis().Direction()) + gp_Vec(m_to_extrude_pln.YAxis().Direction());
-        rotation_axis.Normalize();
-        rotation_axis *= to_radians(45.0);
-        // rotate around arbitrary axis (use clean view API)
-        view().rotate_view(rotation_axis, *m_to_extrude_pt);
-        view().redraw_view();
-        m_curr_view_pln = view().get_view_plane(*m_to_extrude_pt);
-      }
-
+    if (begin_face_extrude(shp))
       _update_extrude(screen_coords);
-    }
   }
   else
     _update_extrude(screen_coords);

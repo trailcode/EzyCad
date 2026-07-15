@@ -494,6 +494,13 @@ std::vector<std::string> Sketch::inspector_face_labels() const
   return labels;
 }
 
+Sketch_face_shp_ptr Sketch::inspector_face(size_t index) const
+{
+  if (index >= m_topo.faces().size())
+    return {};
+  return m_topo.faces()[index];
+}
+
 void Sketch::remove_permanent_node_mark(Sketch_AIS_node_mark& mark)
 {
   EZY_ASSERT(&mark.owner_sketch == this);

@@ -14,6 +14,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Settings -> Sketch -> Appearance:** **Shape Faint Strength** slider (**5%**–**85%**, default **14%**) for Ghost and Wire styles (`gui.sketch_shape_faint_opacity`).
 - Faint shapes in sketch mode are not selectable (no yellow hover/selection highlight).
 
+### Sketch List
+
+- Expanded **Faces** rows: **`[O]`** button and right-click **Extrude** start [extrude](docs/usage.md#extrude-sketch-face-tool-e) for that face (then drag height in the viewer).
+
 ### Documentation
 
 - **Usage guide workflow:** Added a dedicated step for creating sketches from planar faces in *Workflow: From 2D Sketches to 3D Shapes* ([usage.md](docs/usage.md)).

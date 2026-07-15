@@ -1323,6 +1323,11 @@ void Occt_view::sketch_face_extrude(const ScreenCoords& screen_coords, bool is_m
   m_shp_extrude.sketch_face_extrude(screen_coords, is_mouse_move);
 }
 
+bool Occt_view::begin_sketch_face_extrude(const AIS_Shape_ptr& face)
+{
+  return m_shp_extrude.begin_face_extrude(face);
+}
+
 void Occt_view::delete_selected() { delete_shapes(get_selected()); }
 
 void Occt_view::delete_shapes(std::vector<AIS_Shape_ptr> to_delete)

@@ -53,7 +53,7 @@ Between those, the pane has **six** collapsible sections. Expand a section to se
    - **Edge color** / **Edge thickness** (desktop only) — current-sketch edge RGBA (alpha = opacity) and line width (**0.5** to **8.0**)
    - **Edge selection color** / **Edge highlight color** — selected edges vs mouse-over (dynamic) highlight (RGBA)
    - **Face fill color** / **Face selection fill** / **Face highlight fill** — normal fill, selected fill, and mouse-over fill (RGBA)
-   - **Shapes in sketch mode** — **Enabled** checkbox (same as **Options -> Faint shapes**; default on). When enabled: *Off (hide)*, *Ghost*, or *Wire* style (default **Ghost**), and **Shape Faint Strength** (**5%** to **85%**, default **14%**; Ghost and Wire). Higher strength looks closer to normal inspection opacity. **Shape List -> Hide all** still hides every shape.
+   - **Shapes in sketch mode** — **Enabled** checkbox (same as **Options -> Faint shapes**; default on). When enabled: *Off (hide)*, *Ghost*, or *Wire* style (default **Ghost**), and **Shape Faint Strength** (**5%** to **85%**, default **14%**; Ghost and Wire). Higher strength looks closer to normal inspection opacity. **Shape List -> Hide all** still hides every shape. Screenshot: [Sketching (2D)](usage-sketch.md#sketching-2d).
    - **Dimension line width** (desktop only) — slider **0.5** to **8.0**
    - **Dimension arrow size** — slider **1.0** to **24.0**
    - **Dimension color** — RGB for dimension lines, arrow heads, and value text

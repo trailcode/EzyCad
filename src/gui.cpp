@@ -1198,10 +1198,54 @@ void GUI::sketch_list_inspector_(const Sketch::sptr& sketch, int index, Sketch::
 
   draw_section("Nodes", sketch->inspector_node_labels());
   draw_section("Edges", sketch->inspector_edge_labels());
-  draw_section("Faces", sketch->inspector_face_labels());
+
+  {
+    const std::vector<std::string> labels = sketch->inspector_face_labels();
+    const size_t                   count  = labels.size();
+    ImGuiTreeNodeFlags             flags  = ImGuiTreeNodeFlags_SpanAvailWidth;
+    if (count == 0)
+      flags |= ImGuiTreeNodeFlags_Leaf | ImGuiTreeNodeFlags_NoTreePushOnOpen;
+
+    if (ImGui::TreeNodeEx("Faces", flags, "Faces (%zu)", count))
+    {
+      for (size_t i = 0; i < count; ++i)
+      {
+        ImGui::PushID(static_cast<int>(i));
+        ImGui::AlignTextToFramePadding();
+        ImGui::BulletText("%s", labels[i].c_str());
+        if (ImGui::BeginPopupContextItem("face_extrude_ctx"))
+        {
+          if (ImGui::MenuItem("Extrude"))
+            sketch_list_extrude_face_(sketch, i);
+          ImGui::EndPopup();
+        }
+        ImGui::SameLine();
+        if (ImGui::SmallButton("[O]"))
+          sketch_list_extrude_face_(sketch, i);
+        if (ui_show_contextual_help() && ImGui::IsItemHovered())
+          ImGui::SetTooltip("Extrude this face");
+        ImGui::PopID();
+      }
+
+      if (count > 0)
+        ImGui::TreePop();
+    }
+  }
 
   ImGui::PopID();
   ImGui::Unindent();
+}
+
+void GUI::sketch_list_extrude_face_(const Sketch::sptr& sketch, size_t face_index)
+{
+  EZY_ASSERT(sketch);
+  const Sketch_face_shp_ptr face = sketch->inspector_face(face_index);
+  if (!face)
+    return;
+
+  m_view->set_curr_sketch(sketch);
+  set_mode(Mode::Sketch_face_extrude);
+  m_view->begin_sketch_face_extrude(face);
 }
 
 void GUI::sketch_list_()

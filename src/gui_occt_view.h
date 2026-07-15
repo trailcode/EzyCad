@@ -173,6 +173,8 @@ public:
   Sketch* current_sketch_if_any() const;
   void    set_curr_sketch(const Sketch_ptr& sketch);
   void    sketch_face_extrude(const ScreenCoords& screen_coords, bool is_mouse_move);
+  /// Enter face-extrude drag for a Sketch List face (after mode is already Sketch_face_extrude).
+  bool    begin_sketch_face_extrude(const AIS_Shape_ptr& face);
 
   std::list<Shp_ptr>& get_shapes();
   std::string         get_unique_shape_name(const char* base_name) const;

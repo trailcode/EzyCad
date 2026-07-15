@@ -128,7 +128,7 @@ Full GLFW -> `GUI` -> view routing: [`src/doc/gui.md`](gui.md).
 | Method                                                            | Purpose                                                  |
 | ----------------------------------------------------------------- | -------------------------------------------------------- |
 | `has_edges`, `edge_count`, `face_count`, `length_dimension_count` | Counts for UI and mode selection after undo              |
-| `inspector_*_labels()`                                            | Human-readable labels for Sketch List / inspector panels |
+| `inspector_*_labels()` / `inspector_face(i)`                      | Labels for Sketch List; face AIS for list Extrude (`[O]` / context menu) |
 | `get_plane()`, `get_nodes()`, `underlay()`                        | Access plane, nodes, and image underlay                  |
 
 ### Operations

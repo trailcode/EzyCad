@@ -206,6 +206,8 @@ Shared sketch controls (snap, midpoint nodes, place-from-center) live in `option
 | 8     | `add_*_dialog_`                              | Primitive / sketch creation popups    |
 | 9     | `log_window_`, consoles, `settings_`, `dbg_` | Log, Lua/Python, Settings             |
 
+Sketch List expand **Faces**: each face row supports **`[O]`** and right-click **Extrude** via `GUI::sketch_list_extrude_face_` (`set_mode(Sketch_face_extrude)` + `Occt_view::begin_sketch_face_extrude` / `Shp_extrude::begin_face_extrude`).
+
 3D redraw: `render_occt()` -> `Occt_view::do_frame()` (separate from ImGui pass).
 
 ## Settings and persistence

@@ -99,7 +99,7 @@ Each row is laid out left to right:
 When expanded, the row shows:
 
 - **Dimensions** - Table of length dimensions: visibility, editable name, and **offset** (label distance from the edge; **0** = automatic). Hovering a row highlights that dimension in the 3D view (color from **Settings -> View presentation -> Element hover color**).
-- **Nodes**, **Edges**, **Faces** - Collapsible lists of element labels for inspection. **Nodes** lists the sketch **Origin** (always present; see [Sketch origin](usage-sketch.md#sketch-origin)) plus **user-placed** points from the Add node tool (the ones with **+** markers in sketch mode). It does not list every internal topology vertex or automatic edge midpoint. **Edges** and **Faces** use default labels (`E0`, `F0`, ...) or saved names where set. Dimension names are editable in the table above; node/edge/face names in these lists are read-only labels for reference.
+- **Nodes**, **Edges**, **Faces** - Collapsible lists of element labels for inspection. **Nodes** lists the sketch **Origin** (always present; see [Sketch origin](usage-sketch.md#sketch-origin)) plus **user-placed** points from the Add node tool (the ones with **+** markers in sketch mode). It does not list every internal topology vertex or automatic edge midpoint. **Edges** and **Faces** use default labels (`E0`, `F0`, ...) or saved names where set. Dimension names are editable in the table above; node/edge names in these lists are read-only labels for reference. Each **Faces** row has an **`[O]`** button (tooltip *Extrude this face*) and a right-click **Extrude** menu item that enter [extrude mode](#extrude-sketch-face-tool-e) for that face (set the sketch current, then drag height in the 3D view).
 
 The window can be closed with its close button; use **View -> Sketch List** again to show it.
 
@@ -437,7 +437,7 @@ The extrude tool allows you to create 3D solid shapes by extruding 2D sketch fac
 |                                  |                                                                                                                                                            |
 | -------------------------------: | ---------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | **Orthographic camera**          | Extrude mode forces **orthographic** projection (same as other sketch tools) so extrusion height is easier to judge without perspective foreshortening     |
-| **Direct face selection**        | Click directly on a sketch face to select it for extrusion                                                                                                 |
+| **Direct face selection**        | Click directly on a sketch face to select it for extrusion, or use **`[O]`** / right-click **Extrude** on a face in the [Sketch List](#sketch-list) |
 | **Automatic view adjustment**    | The view automatically rotates if the face plane is parallel to the view plane (within 5 degrees), providing better visibility for the extrusion operation |
 | **Real-time preview**            | See the extruded shape update in real-time as you move the mouse                                                                                           |
 | **Interactive distance control** | Drag the mouse to adjust extrusion distance, or use the distance input dialog (<kbd>Tab</kbd> key) for precise control                                     |
@@ -446,9 +446,9 @@ The extrude tool allows you to create 3D solid shapes by extruding 2D sketch fac
 
 **How to Use:**
 1. ![Design456_Extrude](res/icons/Design456_Extrude.png) **Activate Extrude Tool**: Press <kbd>E</kbd> or click the icon to enter extrude mode
-2. **Select Face**: Click on a sketch face that you want to extrude
+2. **Select Face**: Click on a sketch face that you want to extrude, **or** in the [Sketch List](#sketch-list) expand the sketch, open **Faces**, and use **`[O]`** or right-click **Extrude** on that face row
    - The face must be part of a closed sketch (forming a valid face)
-   - The system will automatically select the face closest to the camera if multiple faces overlap
+   - The system will automatically select the face closest to the camera if multiple faces overlap (3D click only)
 3. **Adjust Extrusion Distance**:
    - **Mouse drag**: Move the mouse to adjust the extrusion distance in real-time
    - **Precise input**: Press <kbd>Tab</kbd> to open the distance input dialog and enter an exact extrusion distance
