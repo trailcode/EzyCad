@@ -16,11 +16,13 @@ Short notes for day-to-day build, test, and quality checks.
 # Prefer VS-bundled cmake if PATH cmake is too old for the VS 18 generator:
 #   "C:\Program Files\Microsoft Visual Studio\18\Community\Common7\IDE\CommonExtensions\Microsoft\CMake\CMake\bin\cmake.exe"
 cmake -S . -B build -G "Visual Studio 18 2026" -A x64 `
-  -DOpenCASCADE_DIR=C:\path\to\occt-8.0.0\cmake `
-  -DOCCT_3RD_PARTY_DIR=C:\path\to\3rdparty-vc14-64
+  -DOpenCASCADE_DIR=C:\bin\opencascade-8.0.0-vc14-64\cmake `
+  -DOCCT_3RD_PARTY_DIR=C:\bin\3rdparty-vc14-64
 ```
 
-Do **not** use `-G "Visual Studio 17 2022"` on a machine that only has VS 2026 installed — configure fails with a generator/instance mismatch. CI still uses VS 2022 (`windows-msvc.yml`).
+Paths above match the V8.0.0 combined prebuilt extracted under `C:\bin` (see [docs/building-occt.md](../../docs/building-occt.md)). Adjust if your install lives elsewhere.
+
+Do **not** use `-G "Visual Studio 17 2022"` on a machine that only has VS 2026 installed — configure fails with a generator/instance mismatch. CI still uses VS 2022 (`windows-msvc.yml`). After wiping `build/`, re-run this configure step (do not open a stale `.sln` alone).
 
 **Build**:
 

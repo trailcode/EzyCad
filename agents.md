@@ -4,6 +4,10 @@ Pointer for AI coding assistants. Details live in [agents/README.md](agents/READ
 
 **Precedence:** user instructions > nested AGENTS.md > this file.
 
+## Git (hard rule)
+
+- **Only the user** may `git commit` or `git push`. Agents must never commit or push (even if asked). Leave changes in the working tree / stage for the user, or prepare a suggested commit message without running commit/push.
+
 ## Always (editing code)
 
 - [agents/conventions/ascii-source.md](agents/conventions/ascii-source.md) for `src/` and `tests/`

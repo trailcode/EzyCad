@@ -26,8 +26,15 @@ public:
   void               set_visible(const bool visible);
   void               set_selection_mode(const TopAbs_ShapeEnum mode);
 
+  /// Temporary display override for sketch-mode ghost/wire (does not change get_disp_mode()).
+  /// When active, the shape is not selectable (no hover/selection highlight).
+  void set_sketch_faint(bool enabled, AIS_DisplayMode faint_mode, float transparency);
+  bool sketch_faint_active() const { return m_sketch_faint_active; }
+
 protected:
-  void update_display_();
+  void            update_display_();
+  void            redisplay_();
+  AIS_DisplayMode effective_disp_mode_() const;
 
   AIS_InteractiveContext& m_ctx;
   Shape_id                m_id{0};
@@ -35,6 +42,8 @@ protected:
   AIS_DisplayMode         m_disp_mode;
   bool                    m_visible;
   TopAbs_ShapeEnum        m_selection_mode;
+  bool                    m_sketch_faint_active{false};
+  AIS_DisplayMode         m_faint_disp_mode{AIS_Shaded};
 };
 
 using Shp_ptr  = opencascade::handle<Shp>;

@@ -106,6 +106,17 @@ inline constexpr float k_gui_sketch_face_highlight_color_default[4] = {0.822967f
 /// 3D shape selection (AIS SelectionStyle) RGBA (`gui.shape_selection_color`).
 inline constexpr float k_gui_shape_selection_color_default[4] = {
     0.754312f, 0.072938f, 0.846890f, 1.0f};
+/// `gui.sketch_shape_faint_style`: 0 = Off (hide shapes in sketch mode), 1 = Ghost, 2 = Wire.
+inline constexpr int k_gui_sketch_shape_faint_style_min     = 0;
+inline constexpr int k_gui_sketch_shape_faint_style_max     = 2;
+inline constexpr int k_gui_sketch_shape_faint_style_default = 1;
+/// Opacity / faint strength of shapes in sketch mode (`gui.sketch_shape_faint_opacity`; 0-1; OCCT transparency = 1 - opacity).
+/// UI label: Shape Faint Strength (shown as percent). Applies to Ghost and Wire styles.
+inline constexpr float k_gui_sketch_shape_faint_opacity_min     = 0.05f;
+inline constexpr float k_gui_sketch_shape_faint_opacity_max     = 0.85f;
+inline constexpr float k_gui_sketch_shape_faint_opacity_default = 0.14f;
+/// Master switch for sketch-mode faint shapes (`gui.sketch_shape_faint_enabled`); Options checkbox for all sketch tools.
+inline constexpr bool k_gui_sketch_shape_faint_enabled_default = true;
 /// Allowed range and default for `gui.view_roll_step_deg` (view roll and numpad orbit steps; must match Settings slider).
 inline constexpr double k_gui_view_roll_step_deg_min     = 0.1;
 inline constexpr double k_gui_view_roll_step_deg_max     = 180.0;
@@ -114,6 +125,11 @@ inline constexpr double k_gui_view_roll_step_deg_default = 45.0;
 inline constexpr double k_gui_view_zoom_scroll_scale_min     = 0.25;
 inline constexpr double k_gui_view_zoom_scroll_scale_max     = 64.0;
 inline constexpr double k_gui_view_zoom_scroll_scale_default = 4.0;
+/// Allowed range and default for `gui.default_2d_view_width` / `gui.default_2d_view_height` (display units;
+/// New Project / default camera framing on the sketch plane; must match Settings sliders).
+inline constexpr double k_gui_default_2d_view_size_min     = 0.1;
+inline constexpr double k_gui_default_2d_view_size_max     = 1000.0;
+inline constexpr double k_gui_default_2d_view_size_default = 3.0;
 /// `gui.ui_verbosity`: 0 = minimal UI; odd steps unlock feature tiers; even steps unlock help tiers.
 inline constexpr int k_gui_ui_verbosity_min     = 0;
 inline constexpr int k_gui_ui_verbosity_default = 6;
@@ -167,6 +183,7 @@ inline constexpr const char* k_view_roll                    = "https://ezycad.re
 inline constexpr const char* k_view_navigation              = "https://ezycad.readthedocs.io/en/latest/usage.html#view-navigation";
 inline constexpr const char* k_sketch_snapping              = "https://ezycad.readthedocs.io/en/latest/usage-sketch.html#sketch-snapping";
 inline constexpr const char* k_sketch_origin                = "https://ezycad.readthedocs.io/en/latest/usage-sketch.html#sketch-origin";
+inline constexpr const char* k_sketching_2d                 = "https://ezycad.readthedocs.io/en/latest/usage-sketch.html#sketching-2d";
 inline constexpr const char* k_line_edge_midpoint_nodes     = "https://ezycad.readthedocs.io/en/latest/usage-sketch.html#line-edge-option-add-midpoint-nodes";
 inline constexpr const char* k_line_edge_place_from_center  = "https://ezycad.readthedocs.io/en/latest/usage-sketch.html#line-edge-option-place-from-center";
 inline constexpr const char* k_revolve_solid_conversion     = "https://ezycad.readthedocs.io/en/latest/usage-sketch.html#revolve-solid-conversion";
@@ -247,6 +264,11 @@ public:
   const float* sketch_face_highlight_color_rgba() const { return m_sketch_face_highlight_color; }
   /// 3D shape selection (AIS SelectionStyle) RGBA (0-1; alpha = opacity).
   const float* shape_selection_color_rgba() const { return m_shape_selection_color; }
+  /// How 3D shapes appear while in sketch mode (`gui.sketch_shape_faint_style`).
+  int   sketch_shape_faint_style() const { return m_sketch_shape_faint_style; }
+  float sketch_shape_faint_opacity() const { return m_sketch_shape_faint_opacity; }
+  /// Master on/off for faint shapes in all sketch modes (`gui.sketch_shape_faint_enabled`).
+  bool sketch_shape_faint_enabled() const { return m_sketch_shape_faint_enabled; }
   bool         get_add_mid_pt_line_edges() const { return m_add_mid_pt_line_edges; }
   bool         get_add_mid_pt_rect_edges() const { return m_add_mid_pt_rect_edges; }
   bool         get_add_mid_pt_slot_edges() const { return m_add_mid_pt_slot_edges; }
@@ -257,6 +279,9 @@ public:
   /// `gui.inspection_orthographic`.
   bool   inspection_orthographic() const { return m_inspection_orthographic; }
   void   set_inspection_orthographic(bool v) { m_inspection_orthographic = v; }
+  /// Default top-view framing width/height in display units (`gui.default_2d_view_width` / `_height`).
+  double default_2d_view_width() const { return m_default_2d_view_width; }
+  double default_2d_view_height() const { return m_default_2d_view_height; }
   bool   get_dark_mode() const { return m_dark_mode; }
   ImVec4 get_clear_color() const;
   void   set_mode(Mode mode); // gui_mode.cpp
@@ -353,8 +378,11 @@ private:
   void open_sketch_origin_set_edit_(const std::shared_ptr<Sketch>& sk, int plane_idx, double v_min, double v_max);
   void on_left_click_(const ScreenCoords& screen_coords);
   void sketch_list_();
-  void sketch_list_inspector_(const std::shared_ptr<Sketch>& sketch, int index, std::shared_ptr<Sketch>& hover_sketch,
-                              size_t& hover_dim_index);
+  void sketch_list_inspector_(const std::shared_ptr<Sketch>& sketch, int index, std::shared_ptr<Sketch>& hover_dim_sketch,
+                              size_t& hover_dim_index, std::shared_ptr<Sketch>& hover_face_sketch, size_t& hover_face_index,
+                              std::shared_ptr<Sketch>& hover_edge_sketch, size_t& hover_edge_index,
+                              std::shared_ptr<Sketch>& hover_node_sketch, size_t& hover_node_index);
+  void sketch_list_extrude_face_(const std::shared_ptr<Sketch>& sketch, size_t face_index);
   void sketch_properties_dialog_();
   void sketch_origin_panel_settings_(const std::shared_ptr<Sketch>& sk);
   void shape_list_();
@@ -548,6 +576,9 @@ private:
   float m_sketch_face_highlight_color[4] = {
       k_gui_sketch_face_highlight_color_default[0], k_gui_sketch_face_highlight_color_default[1],
       k_gui_sketch_face_highlight_color_default[2], k_gui_sketch_face_highlight_color_default[3]};
+  int   m_sketch_shape_faint_style   = k_gui_sketch_shape_faint_style_default;
+  float m_sketch_shape_faint_opacity = k_gui_sketch_shape_faint_opacity_default;
+  bool  m_sketch_shape_faint_enabled = k_gui_sketch_shape_faint_enabled_default;
   bool m_add_mid_pt_line_edges = false;
   bool m_add_mid_pt_rect_edges = true;
   bool m_add_mid_pt_slot_edges = false;
@@ -556,6 +587,9 @@ private:
   double m_view_roll_step_deg = k_gui_view_roll_step_deg_default;
   /// Multiplier for `UpdateZoom(Aspect_ScrollDelta(..., int(y * scale)))`; persisted in `gui.view_zoom_scroll_scale`.
   double                      m_view_zoom_scroll_scale  = k_gui_view_zoom_scroll_scale_default;
+  /// Sketch-plane framing for New Project / default camera (`gui.default_2d_view_width` / `_height`, display units).
+  double                      m_default_2d_view_width    = k_gui_default_2d_view_size_default;
+  double                      m_default_2d_view_height   = k_gui_default_2d_view_size_default;
   bool                        m_inspection_orthographic = false;
   std::vector<Toolbar_button> m_toolbar_buttons;
 

@@ -41,6 +41,8 @@ Typical responsibilities:
 
 `set_parent_mode()` maps each tool mode back to `Normal` or `Sketch_inspection_mode` (see parent map in `gui_mode.cpp`).
 
+`Occt_view::on_mode` ends with `sync_sketch_shape_faint_style()`: while `is_sketch_mode`, document shapes follow **Options/Settings** `gui.sketch_shape_faint_enabled` (master) plus `gui.sketch_shape_faint_style` (**0** hide / **1** ghost / **2** wire) and `gui.sketch_shape_faint_opacity` (ghost). Outside sketch mode, faint overrides clear and shapes show at full strength (unless Shape List **Hide all**). New shapes call the same sync from `add_shp_` / `insert_shape_rec`. The **Faint shapes** checkbox lives in `options_sketch_common_` (every sketch tool).
+
 ### UI verbosity
 
 `gui.ui_verbosity` gates panes and help (Settings slider). Derived tiers on `GUI`:
@@ -53,7 +55,7 @@ Typical responsibilities:
 | `show_*_effective()`        | Pane flag AND feature tier                              |
 | `ui_show_occt_line_width_settings()` | `false` on wasm (GLES ignores OCCT `SetWidth` / line-width sliders) |
 
-Constants and ranges live in `gui.h` (`k_gui_ui_verbosity_*`, dimension defaults, view roll/zoom ranges).
+Constants and ranges live in `gui.h` (`k_gui_ui_verbosity_*`, dimension defaults, view roll/zoom ranges, default 2D view size).
 
 ### Dist / angle edit popups
 
@@ -204,6 +206,8 @@ Shared sketch controls (snap, midpoint nodes, place-from-center) live in `option
 | 8     | `add_*_dialog_`                              | Primitive / sketch creation popups    |
 | 9     | `log_window_`, consoles, `settings_`, `dbg_` | Log, Lua/Python, Settings             |
 
+Sketch List expand **Faces**: each face row supports **`E`** and right-click **Extrude** via `GUI::sketch_list_extrude_face_` (`set_mode(Sketch_face_extrude)` + `Occt_view::begin_sketch_face_extrude` / `Shp_extrude::begin_face_extrude`). Hovering a **Faces**, **Edges**, or **Nodes** row calls `Occt_view::set_sketch_list_hover_{face,edge,node}` (temporarily displays the AIS when hidden outside sketch modes; uses `Graphic3d_ZLayerId_Topmost` so solids do not occlude the highlight).
+
 3D redraw: `render_occt()` -> `Occt_view::do_frame()` (separate from ImGui pass).
 
 ## Settings and persistence
@@ -215,7 +219,7 @@ Shared sketch controls (snap, midpoint nodes, place-from-center) live in `option
 | `load_occt_view_settings_`  | Called from `GUI::init`                                             |
 | `occt_view_settings_json()` | Scripting API for settings blob                                     |
 
-Sketch edge/face display colors live under `gui.sketch_edge_*` / `gui.sketch_face_*` and are applied live via `Sketch_annotation_refresh::edge_face_style`. 3D shape selection highlight uses `gui.shape_selection_color` applied through `Occt_view::apply_shape_selection_style` (`AIS_InteractiveContext::SelectionStyle`). Settings collapsing-header open state is stored in `gui.settings_headers`.
+Sketch edge/face display colors live under `gui.sketch_edge_*` / `gui.sketch_face_*` and are applied live via `Sketch_annotation_refresh::edge_face_style`. Sketch-mode shape ghost/wire uses `gui.sketch_shape_faint_style` / `gui.sketch_shape_faint_opacity` via `Occt_view::sync_sketch_shape_faint_style`. 3D shape selection highlight uses `gui.shape_selection_color` applied through `Occt_view::apply_shape_selection_style` (`AIS_InteractiveContext::SelectionStyle`). Settings collapsing-header open state is stored in `gui.settings_headers`.
 
 User-visible key tables: [`docs/usage-settings.md`](../../docs/usage-settings.md). When adding a Settings control, follow [agents/conventions/user-docs-sync.md](../../agents/conventions/user-docs-sync.md).
 

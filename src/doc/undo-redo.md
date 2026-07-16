@@ -186,7 +186,7 @@ Hotkeys are handled in `GUI::on_key` (`gui_mode.cpp`) when dist/angle edit popup
 ## Document load and new file
 
 - **Open `.ezy`:** `GUI::on_file` pushes a snapshot of the current document, then `load(manifest)`. A failed parse calls `pop_undo_snapshot()`. Successful `load` clears both stacks.
-- **`Occt_view::new_file`:** clears undo/redo stacks, resets sketch and shape id allocators, creates the default sketch.
+- **`Occt_view::new_file`:** clears undo/redo stacks, resets sketch and shape id allocators, creates the default sketch, and calls `reset_default_view()` (top view framed to Settings default 2D view size).
 
 ## Adding undo for new behavior
 

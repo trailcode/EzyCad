@@ -40,6 +40,10 @@ This guide covers all 2D sketching tools and operations in EzyCad. For the main 
 
 See [Sketch origin](#sketch-origin) — every sketch includes one permanent reference point. Edge and face colors (including selection highlight and transparency) are in **Settings -> Sketch -> Appearance** (see [usage-settings.md](usage-settings.md#settings-pane)).
 
+While a sketch tool is active, document **shapes** can stay visible as context: **Options -> Sketch options -> Faint shapes** (all sketch tools; default on) toggles this. Style and **Shape Faint Strength** are in **Settings -> Sketch -> Appearance**: **Ghost** (default), **Wire**, or **Off (hide)**; strength (**5%**–**85%**, default **14%**) sets how solid they look. Faint shapes are display-only (no yellow hover/selection highlight). **Shape List -> Hide all** still hides every shape. Leaving sketch mode restores each shape's normal shaded/wire look.
+
+![Faint shapes in sketch mode (Ghost style)](images/faint-shps.png)
+
 (sketch-origin)=
 ## Sketch origin
 

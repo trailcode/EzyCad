@@ -21,6 +21,7 @@ Root markers: [AGENTS.md](../AGENTS.md) / [agents.md](../agents.md).
 | OCCT handles (`*_ptr`)       | [conventions/occt-handles.md](conventions/occt-handles.md) — prefer aliases over `Handle()` for clang-format         |
 | Release                      | [workflows/release.md](workflows/release.md)                                                                         |
 | Issue/PR drafts              | [drafts/](drafts/) — [github-drafts.md](conventions/github-drafts.md)                                                |
+| Feature plans (opt-in)       | [plans/](plans/) — load **only** when the prompt matches that feature ([token-lean](conventions/token-lean.md))      |
 | Token-saving rules           | [conventions/token-lean.md](conventions/token-lean.md)                                                               |
 | Markdown tables              | [conventions/markdown-tables.md](conventions/markdown-tables.md) — align GFM pipes for source + preview              |
 | Outreach (optional)          | [outreach/discoverability.md](outreach/discoverability.md)                                                           |

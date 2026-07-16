@@ -109,7 +109,7 @@ class Shp : public AIS_Shape {
 };
 ```
 
-`set_visible(false)` erases from context; `true` re-displays with stored mode and selection mode. `update_display_()` re-binds selection after mode changes.
+`set_visible(false)` erases from context; `true` re-displays with the effective display mode (user `m_disp_mode`, or sketch-mode faint override) and selection mode. `set_sketch_faint` toggles a temporary ghost/wire override without changing `get_disp_mode()`; while faint is active the shape is display-only (not selectable, so hover/selection highlight does not apply). `update_display_()` re-binds selection after mode changes.
 
 ## `Shp_operation_base`
 

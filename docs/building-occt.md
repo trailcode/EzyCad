@@ -43,14 +43,18 @@ https://github.com/Open-Cascade-SAS/OCCT/releases/download/V8_0_0/3rdparty-vc14-
 
 ### Configure EzyCad
 
+Example layout after extracting the combined zip so both folders sit under `C:\bin`:
+
 ```text
-cmake C:\src\EzyCad -DOpenCASCADE_DIR=C:\bin\OCCT-install\cmake -DOCCT_3RD_PARTY_DIR=C:\bin\3rdparty-vc14-64
+cmake -S C:\src\EzyCad -B build -G "Visual Studio 18 2026" -A x64 ^
+  -DOpenCASCADE_DIR=C:\bin\opencascade-8.0.0-vc14-64\cmake ^
+  -DOCCT_3RD_PARTY_DIR=C:\bin\3rdparty-vc14-64
 ```
 
-- `OpenCASCADE_DIR` — directory containing `OpenCASCADEConfig.cmake` (often `...\cmake` or `...\lib\cmake\opencascade` depending on package layout; **verify on disk**).
+- `OpenCASCADE_DIR` — directory containing `OpenCASCADEConfig.cmake` (combined package: `...\opencascade-8.0.0-vc14-64\cmake`; install trees may use `...\lib\cmake\opencascade` — **verify on disk**).
 - `OCCT_3RD_PARTY_DIR` — root of `3rdparty-vc14-64` (FreeType, TBB, FFmpeg DLLs copied next to `EzyCad.exe` per `CMakeLists.txt`).
 
-Use **Visual Studio** generator, **x64**, **Release** for the app.
+Use **Visual Studio 18 2026** (or another installed VS generator), **x64**, **Release** for the app. After deleting `build/`, re-run configure before `cmake --build`.
 
 ---
 
@@ -58,7 +62,7 @@ Use **Visual Studio** generator, **x64**, **Release** for the app.
 
 Only when prebuilts are insufficient (custom flags, Debug OCCT, patches).
 
-1. Install **VS 2022** (C++), **CMake 3.16+**, **Git**.
+1. Install **VS 2026** (C++ workload; VS 2022 also works for CI/source builds), **CMake 3.16+** (4.3+ for the VS 18 generator), **Git**.
 2. Download [3rdparty-vc14-64.zip](https://github.com/Open-Cascade-SAS/OCCT/releases) matching the OCCT tag.
 3. Clone OCCT, configure with CMake GUI or CLI, `BUILD_LIBRARY_TYPE=Shared` or `Static` as needed, enable `USE_OPENGL`, `USE_FREETYPE`, etc. per [build guide](https://dev.opencascade.org/doc/overview/html/build_upgrade__building_occt.html).
 4. Build **INSTALL** target; set `OpenCASCADE_DIR` to the install prefix’s cmake package path.

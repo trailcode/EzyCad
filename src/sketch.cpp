@@ -10,6 +10,7 @@
 #include <TopoDS_Edge.hxx>
 #include <TopoDS_Wire.hxx>
 #include <functional>
+#include <iterator>
 
 #include "utl_geom.h"
 #include "mode.h"
@@ -492,6 +493,41 @@ std::vector<std::string> Sketch::inspector_face_labels() const
   }
 
   return labels;
+}
+
+Sketch_face_shp_ptr Sketch::inspector_face(size_t index) const
+{
+  if (index >= m_topo.faces().size())
+    return {};
+  return m_topo.faces()[index];
+}
+
+Sketch_AIS_edge_ptr Sketch::inspector_edge(size_t index) const
+{
+  if (index >= m_edges.size())
+    return {};
+
+  auto it = m_edges.edges().begin();
+  std::advance(it, static_cast<std::ptrdiff_t>(index));
+  return it->shp;
+}
+
+Sketch_AIS_node_mark_ptr Sketch::inspector_node(size_t list_index)
+{
+  size_t list_i = 0;
+  for (size_t i = 0; i < m_nodes.size(); ++i)
+  {
+    const Sketch_nodes::Node& n = m_nodes[i];
+    if (!n.permanent || n.deleted)
+      continue;
+
+    if (list_i == list_index)
+      return m_node_marks.ensure_for_list_hover(i);
+
+    ++list_i;
+  }
+
+  return {};
 }
 
 void Sketch::remove_permanent_node_mark(Sketch_AIS_node_mark& mark)

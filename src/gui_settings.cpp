@@ -184,6 +184,8 @@ std::string GUI::occt_view_settings_json() const
       {"add_mid_pt_slot_edges", m_add_mid_pt_slot_edges},
       {"view_roll_step_deg", m_view_roll_step_deg},
       {"view_zoom_scroll_scale", m_view_zoom_scroll_scale},
+      {"default_2d_view_width", m_default_2d_view_width},
+      {"default_2d_view_height", m_default_2d_view_height},
       {"inspection_orthographic", m_inspection_orthographic},
       {"snap_guide_color_node",
              [&]()
@@ -206,6 +208,9 @@ std::string GUI::occt_view_settings_json() const
        {m_elm_list_hover_color[0], m_elm_list_hover_color[1], m_elm_list_hover_color[2], m_elm_list_hover_color[3]}},
       {"shape_selection_color",
        {m_shape_selection_color[0], m_shape_selection_color[1], m_shape_selection_color[2], m_shape_selection_color[3]}},
+      {"sketch_shape_faint_style", m_sketch_shape_faint_style},
+      {"sketch_shape_faint_opacity", m_sketch_shape_faint_opacity},
+      {"sketch_shape_faint_enabled", m_sketch_shape_faint_enabled},
   };
   return j.dump(2);
 }
@@ -274,6 +279,8 @@ void GUI::save_occt_view_settings()
       {"settings_headers", settings_headers_to_json(m_settings_headers)},
       {"view_roll_step_deg", m_view_roll_step_deg},
       {"view_zoom_scroll_scale", m_view_zoom_scroll_scale},
+      {"default_2d_view_width", m_default_2d_view_width},
+      {"default_2d_view_height", m_default_2d_view_height},
       {"inspection_orthographic", m_inspection_orthographic},
       {"snap_guide_color_node",
              [&]()
@@ -301,6 +308,9 @@ void GUI::save_occt_view_settings()
        {m_elm_list_hover_color[0], m_elm_list_hover_color[1], m_elm_list_hover_color[2], m_elm_list_hover_color[3]}},
       {"shape_selection_color",
        {m_shape_selection_color[0], m_shape_selection_color[1], m_shape_selection_color[2], m_shape_selection_color[3]}},
+      {"sketch_shape_faint_style", m_sketch_shape_faint_style},
+      {"sketch_shape_faint_opacity", m_sketch_shape_faint_opacity},
+      {"sketch_shape_faint_enabled", m_sketch_shape_faint_enabled},
   };
   j["version"]          = k_settings_version;
   const char* imgui_ini = ImGui::SaveIniSettingsToMemory(nullptr);
@@ -511,6 +521,18 @@ void GUI::parse_gui_panes_settings_(const std::string& content)
 
     parse_rgba4("shape_selection_color", m_shape_selection_color, k_gui_shape_selection_color_default);
 
+    if (g.contains("sketch_shape_faint_style") && g["sketch_shape_faint_style"].is_number_integer())
+    {
+      const int v = g["sketch_shape_faint_style"].get<int>();
+      if (v >= k_gui_sketch_shape_faint_style_min && v <= k_gui_sketch_shape_faint_style_max)
+        m_sketch_shape_faint_style = v;
+    }
+
+    m_sketch_shape_faint_opacity =
+        parse_bounded_float("sketch_shape_faint_opacity", k_gui_sketch_shape_faint_opacity_min,
+                            k_gui_sketch_shape_faint_opacity_max, k_gui_sketch_shape_faint_opacity_default);
+    m_sketch_shape_faint_enabled = b("sketch_shape_faint_enabled", k_gui_sketch_shape_faint_enabled_default);
+
     if (g.contains("edge_dim_arrow_style") && g["edge_dim_arrow_style"].is_number_integer())
     {
       const int v = g["edge_dim_arrow_style"].get<int>();
@@ -618,6 +640,30 @@ void GUI::parse_gui_panes_settings_(const std::string& content)
 
     if (m_view)
       m_view->set_zoom_scroll_scale(m_view_zoom_scroll_scale);
+
+    m_default_2d_view_width = k_gui_default_2d_view_size_default;
+    if (g.contains("default_2d_view_width") && g["default_2d_view_width"].is_number())
+    {
+      const double v = g["default_2d_view_width"].get<double>();
+      if (v >= k_gui_default_2d_view_size_min && v <= k_gui_default_2d_view_size_max)
+        m_default_2d_view_width = v;
+      else
+        log_message("EzyCad: settings gui.default_2d_view_width out of range [" +
+                    std::to_string(k_gui_default_2d_view_size_min) + ", " + std::to_string(k_gui_default_2d_view_size_max) +
+                    "], got " + std::to_string(v) + "; using default.");
+    }
+
+    m_default_2d_view_height = k_gui_default_2d_view_size_default;
+    if (g.contains("default_2d_view_height") && g["default_2d_view_height"].is_number())
+    {
+      const double v = g["default_2d_view_height"].get<double>();
+      if (v >= k_gui_default_2d_view_size_min && v <= k_gui_default_2d_view_size_max)
+        m_default_2d_view_height = v;
+      else
+        log_message("EzyCad: settings gui.default_2d_view_height out of range [" +
+                    std::to_string(k_gui_default_2d_view_size_min) + ", " + std::to_string(k_gui_default_2d_view_size_max) +
+                    "], got " + std::to_string(v) + "; using default.");
+    }
 
     Sketch_nodes::set_snap_guide_color_node(0.823295f, 0.549411f, 0.953390f);
     Sketch_nodes::set_snap_guide_color_axis(0.957627f, 0.064924f, 0.541537f);
@@ -772,6 +818,7 @@ void GUI::load_occt_view_settings_()
   {
     apply_sketch_dimensions_visibility();
     m_view->apply_shape_selection_style();
+    m_view->sync_sketch_shape_faint_style();
   }
 
   sync_sketch_add_mid_pt_edges_if_applicable_();
@@ -920,6 +967,38 @@ void GUI::settings_()
                     "user guide.",
                     doc_urls::k_view_navigation);
 
+      ImGui::TableNextRow();
+      ImGui::TableSetColumnIndex(0);
+      ImGui::AlignTextToFramePadding();
+      ImGui::TextUnformatted("Default 2D view width");
+      ImGui::TableSetColumnIndex(1);
+      if (ImGui::SliderScalar("##default_2d_view_width", ImGuiDataType_Double, &m_default_2d_view_width,
+                              &k_gui_default_2d_view_size_min, &k_gui_default_2d_view_size_max, "%.2f",
+                              ImGuiSliderFlags_AlwaysClamp | ImGuiSliderFlags_ClampOnInput))
+        save_occt_view_settings();
+      m_default_2d_view_width =
+          std::clamp(m_default_2d_view_width, k_gui_default_2d_view_size_min, k_gui_default_2d_view_size_max);
+      ImGui::SameLine(0.0f, ImGui::GetStyle().ItemInnerSpacing.x);
+      GUI_DOC_HELP_("Horizontal span of the sketch plane framed by File -> New and by projects with no saved camera "
+                    "(same length scale as sketch dimensions). Default 3. Ctrl+click to type. Click ? for the guide.",
+                    doc_urls::k_view_navigation);
+
+      ImGui::TableNextRow();
+      ImGui::TableSetColumnIndex(0);
+      ImGui::AlignTextToFramePadding();
+      ImGui::TextUnformatted("Default 2D view height");
+      ImGui::TableSetColumnIndex(1);
+      if (ImGui::SliderScalar("##default_2d_view_height", ImGuiDataType_Double, &m_default_2d_view_height,
+                              &k_gui_default_2d_view_size_min, &k_gui_default_2d_view_size_max, "%.2f",
+                              ImGuiSliderFlags_AlwaysClamp | ImGuiSliderFlags_ClampOnInput))
+        save_occt_view_settings();
+      m_default_2d_view_height =
+          std::clamp(m_default_2d_view_height, k_gui_default_2d_view_size_min, k_gui_default_2d_view_size_max);
+      ImGui::SameLine(0.0f, ImGui::GetStyle().ItemInnerSpacing.x);
+      GUI_DOC_HELP_("Vertical span of the sketch plane framed by File -> New and by projects with no saved camera "
+                    "(same length scale as sketch dimensions). Default 3. Ctrl+click to type. Click ? for the guide.",
+                    doc_urls::k_view_navigation);
+
       ImGui::EndTable();
     }
 
@@ -928,7 +1007,8 @@ void GUI::settings_()
           "NumPad 8 / 2 / 4 / 6 orbit the view (same axes as left-drag orbit). Hold Shift and press NumPad 4 or NumPad 6, "
           "main 4 / 6, or Left / Right arrow for Blender-style roll around the screen Z axis (hold to repeat). "
           "Num Lock off is recommended for numpad shortcuts (see usage.md View navigation). "
-          "Hold Shift while scrolling or pressing +/- for finer zoom.");
+          "Hold Shift while scrolling or pressing +/- for finer zoom. "
+          "Default 2D view width/height set the top-view framing for File -> New.");
   }
 
   if (settings_collapsing_header_("UI", m_settings_headers.ui))
@@ -1247,6 +1327,73 @@ void GUI::settings_()
           appear_changed = true;
         ImGui::SameLine(0.0f, ImGui::GetStyle().ItemInnerSpacing.x);
         GUI_DOC_HELP_("Fill color and opacity for mouse-over (dynamic) highlight on sketch faces.", nullptr);
+
+        ImGui::TableNextRow();
+        ImGui::TableSetColumnIndex(0);
+        ImGui::AlignTextToFramePadding();
+        ImGui::TextUnformatted("Shapes in sketch mode");
+        ImGui::TableSetColumnIndex(1);
+        {
+          bool faint = m_sketch_shape_faint_enabled;
+          if (ImGui::Checkbox("##sketch_shape_faint_enabled_settings", &faint))
+          {
+            m_sketch_shape_faint_enabled = faint;
+            appear_changed               = true;
+          }
+          ImGui::SameLine(0.0f, ImGui::GetStyle().ItemInnerSpacing.x);
+          ImGui::TextUnformatted("Enabled");
+        }
+        ImGui::SameLine(0.0f, ImGui::GetStyle().ItemInnerSpacing.x);
+        GUI_DOC_HELP_("Master switch also in Options -> Sketch options (all sketch tools). When off, solids are "
+                      "hidden in sketch modes.",
+                      doc_urls::k_sketching_2d);
+
+        if (m_sketch_shape_faint_enabled)
+        {
+          ImGui::TableNextRow();
+          ImGui::TableSetColumnIndex(0);
+          ImGui::AlignTextToFramePadding();
+          ImGui::TextUnformatted("Shape style");
+          ImGui::TableSetColumnIndex(1);
+          {
+            static const char* faint_items[] = {"Off (hide)", "Ghost", "Wire"};
+            int                style         = m_sketch_shape_faint_style;
+            if (ImGui::Combo("##sketch_shape_faint_style", &style, faint_items, IM_ARRAYSIZE(faint_items)))
+            {
+              m_sketch_shape_faint_style = style;
+              appear_changed             = true;
+            }
+          }
+          ImGui::SameLine(0.0f, ImGui::GetStyle().ItemInnerSpacing.x);
+          GUI_DOC_HELP_("How 3D shapes appear while sketch tools are active when faint shapes are enabled: hide, "
+                        "semi-transparent ghost, or wireframe. Shape List Hide all still hides everything.",
+                        doc_urls::k_sketching_2d);
+
+          // Strength applies to Ghost and Wire (not Off/hide).
+          if (m_sketch_shape_faint_style == 1 || m_sketch_shape_faint_style == 2)
+          {
+            ImGui::TableNextRow();
+            ImGui::TableSetColumnIndex(0);
+            ImGui::AlignTextToFramePadding();
+            ImGui::TextUnformatted("Shape Faint Strength");
+            ImGui::TableSetColumnIndex(1);
+            {
+              float strength_pct = m_sketch_shape_faint_opacity * 100.0f;
+              if (ImGui::SliderFloat("##sketch_shape_faint_strength", &strength_pct,
+                                     k_gui_sketch_shape_faint_opacity_min * 100.0f,
+                                     k_gui_sketch_shape_faint_opacity_max * 100.0f, "%.0f%%"))
+              {
+                m_sketch_shape_faint_opacity =
+                    std::clamp(strength_pct / 100.0f, k_gui_sketch_shape_faint_opacity_min, k_gui_sketch_shape_faint_opacity_max);
+                appear_changed = true;
+              }
+            }
+            ImGui::SameLine(0.0f, ImGui::GetStyle().ItemInnerSpacing.x);
+            GUI_DOC_HELP_("How solid faint shapes look in sketch mode (higher = closer to normal inspection "
+                          "opacity). Applies to Ghost and Wire styles.",
+                          doc_urls::k_sketching_2d);
+          }
+        }
 
         ImGui::EndTable();
       }
@@ -1684,7 +1831,11 @@ void GUI::settings_()
     {
       save_occt_view_settings();
       if (m_view)
+      {
         m_view->refresh_sketch_annotations({.edge_face_style = true});
+        m_view->sync_sketch_shape_faint_style();
+        m_view->refresh_shape_list_hover_highlight();
+      }
     }
 
     if (ul_changed)
@@ -1779,6 +1930,7 @@ void GUI::settings_()
           m_view->refresh_sketch_annotations(
               {.length_dimensions = true, .permanent_node_marks = true, .edge_face_style = true});
           m_view->apply_shape_selection_style();
+          m_view->sync_sketch_shape_faint_style();
           m_view->refresh_shape_list_hover_highlight();
         }
       }

@@ -64,14 +64,18 @@ Full guide: **[docs/building-occt.md](docs/building-occt.md)** (Windows prebuilt
 1. Clone the repository.
 2. Create a build directory, e.g., `C:\src\EzyCad\build`.
 3. Configure the project in the build directory using CMake:
-   - E.g., `cmake -S C:\src\EzyCad -B build -G "Visual Studio 18 2026" -A x64 -DOpenCASCADE_DIR=C:\bin\OCCT-8_0_0_install\cmake -DOCCT_3RD_PARTY_DIR=C:\bin\3rdparty-vc14-64`
-   - `OCCT_3RD_PARTY_DIR` should point to the OCCT 3rd-party distribution.
-   - CMake will use `nuget` to download additional dependencies.
+   - After extracting the V8.0.0 combined prebuilt zip under `C:\bin` (see [docs/building-occt.md](docs/building-occt.md)):
+     `cmake -S C:\src\EzyCad -B build -G "Visual Studio 18 2026" -A x64 -DOpenCASCADE_DIR=C:\bin\opencascade-8.0.0-vc14-64\cmake -DOCCT_3RD_PARTY_DIR=C:\bin\3rdparty-vc14-64`
+   - `OpenCASCADE_DIR` must be the folder that contains `OpenCASCADEConfig.cmake` (for the combined package that is `...\opencascade-8.0.0-vc14-64\cmake`).
+   - `OCCT_3RD_PARTY_DIR` should point to the OCCT 3rd-party distribution (`...\3rdparty-vc14-64`).
+   - Prefer CMake 4.3+ (PATH or VS 2026 bundled) so generator **Visual Studio 18 2026** is available. After deleting `build/`, re-run this configure step before building.
+   - CMake will use `nuget` to download additional dependencies (GLFW, GLEW).
 4. Build the project (`cmake --build build --config Release`).
 
 ### Notes for Windows Users
 - Ensure `nuget` is installed for fetching dependencies like GLFW and GLEW.
-- Use Visual Studio 2026 as the IDE for debugging and building (generator `Visual Studio 18 2026`).
+- Use Visual Studio 2026 as the IDE for debugging and building (generator `Visual Studio 18 2026`). Do not configure with `Visual Studio 17 2022` on a machine that only has VS 2026.
+- If configure fails after wiping `build/`, confirm both OCCT paths exist on disk and that your CMake lists `Visual Studio 18 2026` in `cmake --help`.
 
 ### Notes for Emscripten Builds
 - Install Emscripten and activate its environment (`emsdk_env`).

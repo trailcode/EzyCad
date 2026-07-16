@@ -114,22 +114,22 @@ Full GLFW -> `GUI` -> view routing: [`src/doc/gui.md`](gui.md).
 
 ### Visibility and display
 
-| Method                                                | Purpose                                                                             |
-| ----------------------------------------------------- | ----------------------------------------------------------------------------------- |
-| `set_visible` / `is_visible`                          | Show or hide the whole sketch in the viewer                                         |
-| `set_show_faces` / `set_show_edges` / `set_show_dims` | Layer toggles for faces, edges, dimensions                                          |
-| `set_edge_style(Full / Background / Hidden)`          | Current vs background appearance (edge/face colors from Settings -> Sketch)         |
-| `set_current()`                                       | Make this sketch current in `Occt_view`                                             |
-| `refresh_annotations(Sketch_annotation_refresh)`      | Rebuild dims, node marks, and/or edge-face styles after settings changes            |
-| `append_list_hover_ais(out)`                          | AIS objects to highlight when the Sketch List row is hovered                        |
+| Method                                                | Purpose                                                                     |
+| ----------------------------------------------------- | --------------------------------------------------------------------------- |
+| `set_visible` / `is_visible`                          | Show or hide the whole sketch in the viewer                                 |
+| `set_show_faces` / `set_show_edges` / `set_show_dims` | Layer toggles for faces, edges, dimensions                                  |
+| `set_edge_style(Full / Background / Hidden)`          | Current vs background appearance (edge/face colors from Settings -> Sketch) |
+| `set_current()`                                       | Make this sketch current in `Occt_view`                                     |
+| `refresh_annotations(Sketch_annotation_refresh)`      | Rebuild dims, node marks, and/or edge-face styles after settings changes    |
+| `append_list_hover_ais(out)`                          | AIS objects to highlight when the Sketch List row is hovered                |
 
 ### Geometry queries and inspector
 
-| Method                                                            | Purpose                                                  |
-| ----------------------------------------------------------------- | -------------------------------------------------------- |
-| `has_edges`, `edge_count`, `face_count`, `length_dimension_count` | Counts for UI and mode selection after undo              |
-| `inspector_*_labels()`                                            | Human-readable labels for Sketch List / inspector panels |
-| `get_plane()`, `get_nodes()`, `underlay()`                        | Access plane, nodes, and image underlay                  |
+| Method                                                                                   | Purpose                                                           |
+| ---------------------------------------------------------------------------------------- | ----------------------------------------------------------------- |
+| `has_edges`, `edge_count`, `face_count`, `length_dimension_count`                        | Counts for UI and mode selection after undo                       |
+| `inspector_*_labels()` / `inspector_face(i)` / `inspector_edge(i)` / `inspector_node(i)` | Labels for Sketch List; AIS for list Extrude (`E`) and list hover |
+| `get_plane()`, `get_nodes()`, `underlay()`                                               | Access plane, nodes, and image underlay                           |
 
 ### Operations
 

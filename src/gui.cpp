@@ -1106,12 +1106,16 @@ const std::vector<std::string>& GUI::occt_material_combo_labels_()
   return names;
 }
 
-void GUI::sketch_list_inspector_(const Sketch::sptr& sketch, int index, Sketch::sptr& hover_sketch, size_t& hover_dim_index)
+void GUI::sketch_list_inspector_(const Sketch::sptr& sketch, int index, Sketch::sptr& hover_dim_sketch,
+                                 size_t& hover_dim_index, Sketch::sptr& hover_face_sketch, size_t& hover_face_index,
+                                 Sketch::sptr& hover_edge_sketch, size_t& hover_edge_index,
+                                 Sketch::sptr& hover_node_sketch, size_t& hover_node_index)
 {
   ImGui::Indent();
   ImGui::PushID(index);
 
-  const auto draw_section = [](const char* title, const std::vector<std::string>& labels)
+  const auto draw_hover_section = [&](const char* title, const std::vector<std::string>& labels,
+                                      Sketch::sptr& hover_sketch, size_t& hover_index)
   {
     const size_t       count = labels.size();
     ImGuiTreeNodeFlags flags = ImGuiTreeNodeFlags_SpanAvailWidth;
@@ -1120,8 +1124,17 @@ void GUI::sketch_list_inspector_(const Sketch::sptr& sketch, int index, Sketch::
 
     if (ImGui::TreeNodeEx(title, flags, "%s (%zu)", title, count))
     {
-      for (const std::string& label : labels)
-        ImGui::BulletText("%s", label.c_str());
+      for (size_t i = 0; i < count; ++i)
+      {
+        ImGui::PushID(static_cast<int>(i));
+        ImGui::BulletText("%s", labels[i].c_str());
+        if (ImGui::IsItemHovered() && sketch->is_visible())
+        {
+          hover_sketch = sketch;
+          hover_index  = i;
+        }
+        ImGui::PopID();
+      }
 
       if (count > 0)
         ImGui::TreePop();
@@ -1181,8 +1194,8 @@ void GUI::sketch_list_inspector_(const Sketch::sptr& sketch, int index, Sketch::
           if (row_hovered && sketch->is_visible() && sketch->shows_dimensions() && visible &&
               !sketch->length_dimension_handle(i).IsNull())
           {
-            hover_sketch    = sketch;
-            hover_dim_index = i;
+            hover_dim_sketch = sketch;
+            hover_dim_index  = i;
           }
 
           ImGui::PopID();
@@ -1196,12 +1209,67 @@ void GUI::sketch_list_inspector_(const Sketch::sptr& sketch, int index, Sketch::
     }
   }
 
-  draw_section("Nodes", sketch->inspector_node_labels());
-  draw_section("Edges", sketch->inspector_edge_labels());
-  draw_section("Faces", sketch->inspector_face_labels());
+  draw_hover_section("Nodes", sketch->inspector_node_labels(), hover_node_sketch, hover_node_index);
+  draw_hover_section("Edges", sketch->inspector_edge_labels(), hover_edge_sketch, hover_edge_index);
+
+  {
+    const std::vector<std::string> labels = sketch->inspector_face_labels();
+    const size_t                   count  = labels.size();
+    ImGuiTreeNodeFlags             flags  = ImGuiTreeNodeFlags_SpanAvailWidth;
+    if (count == 0)
+      flags |= ImGuiTreeNodeFlags_Leaf | ImGuiTreeNodeFlags_NoTreePushOnOpen;
+
+    if (ImGui::TreeNodeEx("Faces", flags, "Faces (%zu)", count))
+    {
+      for (size_t i = 0; i < count; ++i)
+      {
+        bool row_hovered = false;
+
+        ImGui::PushID(static_cast<int>(i));
+        ImGui::AlignTextToFramePadding();
+        ImGui::BulletText("%s", labels[i].c_str());
+        row_hovered |= ImGui::IsItemHovered();
+        if (ImGui::BeginPopupContextItem("face_extrude_ctx"))
+        {
+          if (ImGui::MenuItem("Extrude"))
+            sketch_list_extrude_face_(sketch, i);
+          ImGui::EndPopup();
+        }
+        ImGui::SameLine();
+        if (ImGui::SmallButton("E"))
+          sketch_list_extrude_face_(sketch, i);
+        row_hovered |= ImGui::IsItemHovered();
+        if (ui_show_contextual_help() && ImGui::IsItemHovered())
+          ImGui::SetTooltip("Extrude this face");
+
+        if (row_hovered && sketch->is_visible() && sketch->inspector_face(i))
+        {
+          hover_face_sketch = sketch;
+          hover_face_index  = i;
+        }
+
+        ImGui::PopID();
+      }
+
+      if (count > 0)
+        ImGui::TreePop();
+    }
+  }
 
   ImGui::PopID();
   ImGui::Unindent();
+}
+
+void GUI::sketch_list_extrude_face_(const Sketch::sptr& sketch, size_t face_index)
+{
+  EZY_ASSERT(sketch);
+  const Sketch_face_shp_ptr face = sketch->inspector_face(face_index);
+  if (!face)
+    return;
+
+  m_view->set_curr_sketch(sketch);
+  set_mode(Mode::Sketch_face_extrude);
+  m_view->begin_sketch_face_extrude(face);
 }
 
 void GUI::sketch_list_()
@@ -1210,6 +1278,9 @@ void GUI::sketch_list_()
   {
     m_view->set_sketch_list_hover(nullptr);
     m_view->set_sketch_list_measurement_hover(nullptr, SIZE_MAX);
+    m_view->set_sketch_list_hover_face(nullptr, SIZE_MAX);
+    m_view->set_sketch_list_hover_edge(nullptr, SIZE_MAX);
+    m_view->set_sketch_list_hover_node(nullptr, SIZE_MAX);
     return;
   }
 
@@ -1226,6 +1297,9 @@ void GUI::sketch_list_()
   {
     m_view->set_sketch_list_hover(nullptr);
     m_view->set_sketch_list_measurement_hover(nullptr, SIZE_MAX);
+    m_view->set_sketch_list_hover_face(nullptr, SIZE_MAX);
+    m_view->set_sketch_list_hover_edge(nullptr, SIZE_MAX);
+    m_view->set_sketch_list_hover_node(nullptr, SIZE_MAX);
     ImGui::End();
     return;
   }
@@ -1238,6 +1312,12 @@ void GUI::sketch_list_()
   Sketch::sptr sketch_list_hover;
   Sketch::sptr sketch_list_measurement_hover_sketch;
   size_t       sketch_list_measurement_hover_index = SIZE_MAX;
+  Sketch::sptr sketch_list_hover_face_sketch;
+  size_t       sketch_list_hover_face_index = SIZE_MAX;
+  Sketch::sptr sketch_list_hover_edge_sketch;
+  size_t       sketch_list_hover_edge_index = SIZE_MAX;
+  Sketch::sptr sketch_list_hover_node_sketch;
+  size_t       sketch_list_hover_node_index = SIZE_MAX;
   for (Sketch::sptr& sketch : m_view->get_sketches())
   {
     EZY_ASSERT(sketch);
@@ -1382,13 +1462,18 @@ void GUI::sketch_list_()
       sketch_list_hover = sketch;
 
     if (expanded && ui_show_sketch_list_expand())
-      sketch_list_inspector_(sketch, index, sketch_list_measurement_hover_sketch, sketch_list_measurement_hover_index);
+      sketch_list_inspector_(sketch, index, sketch_list_measurement_hover_sketch, sketch_list_measurement_hover_index,
+                             sketch_list_hover_face_sketch, sketch_list_hover_face_index, sketch_list_hover_edge_sketch,
+                             sketch_list_hover_edge_index, sketch_list_hover_node_sketch, sketch_list_hover_node_index);
 
     ++index;
   }
 
   m_view->set_sketch_list_hover(sketch_list_hover);
   m_view->set_sketch_list_measurement_hover(sketch_list_measurement_hover_sketch, sketch_list_measurement_hover_index);
+  m_view->set_sketch_list_hover_face(sketch_list_hover_face_sketch, sketch_list_hover_face_index);
+  m_view->set_sketch_list_hover_edge(sketch_list_hover_edge_sketch, sketch_list_hover_edge_index);
+  m_view->set_sketch_list_hover_node(sketch_list_hover_node_sketch, sketch_list_hover_node_index);
 
   ImGui::EndChild();
 
@@ -2341,9 +2426,7 @@ void GUI::shape_list_()
   {
     if (m_hide_all_shapes)
       m_view->set_shape_list_hover(nullptr);
-    // Update visibility of all shapes based on the new state
-    for (const Shp_ptr& shape : m_view->get_shapes())
-      shape->set_visible(!m_hide_all_shapes);
+    m_view->sync_sketch_shape_faint_style();
   }
 
   ImGui::Separator();
@@ -2836,6 +2919,8 @@ void GUI::init(GLFWwindow* window, ImFont* console_font)
   log_message("EzyCad: 3D view ready (initial empty document).");
 
   load_occt_view_settings_();
+  // Re-frame after settings load so Default 2D view width/height apply (init_default ran with defaults).
+  m_view->reset_default_view();
 
   load_examples_list_();
   if (m_example_files.empty())

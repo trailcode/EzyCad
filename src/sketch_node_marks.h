@@ -19,6 +19,11 @@ public:
   void erase_all();
   void trim_trailing();
 
+  /// Existing permanent-node mark, or null if not currently created.
+  [[nodiscard]] Sketch_AIS_node_mark_ptr get(size_t node_idx) const;
+  /// Create/display the mark so Sketch List hover can highlight it outside sketch modes.
+  [[nodiscard]] Sketch_AIS_node_mark_ptr ensure_for_list_hover(size_t node_idx);
+
 private:
   void apply_style_(AIS_Shape_ptr& shp, bool origin) const;
 

@@ -51,7 +51,7 @@ Run **`scripts/format-src.ps1`** (or `clang-format -i` on individual files) befo
 
 Use **`// clang-format off`** / **`// clang-format on`** only where layout must be preserved (e.g. macro-like tables). Prefer formatting the file normally.
 
-**Not enforced by clang-format** (project convention): brace-initialize members (`bool ok {false};`); declare locals close to first use; omit braces on single-statement `if`/`for`/`while` bodies when clear.
+**Not enforced by clang-format** (project convention): brace-initialize members (`bool ok {false};`); declare locals close to first use; omit braces on single-statement `if`/`for`/`while` bodies when clear; put a **blank line between consecutive `if` statements** that have no `else` (treat each as its own block).
 
 ## Documentation
 

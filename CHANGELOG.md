@@ -7,6 +7,27 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Sketch appearance
+
+- **Settings -> Sketch -> Appearance:** **Shapes in sketch mode** — *Off (hide)*, *Ghost* (default semi-transparent shaded), or *Wire*. Optional **Ghost opacity**. Persisted as `gui.sketch_shape_faint_style` / `gui.sketch_shape_faint_opacity`. Replaces always-hiding solids while sketch tools are active.
+- **Options -> Sketch options:** **Faint shapes** checkbox (all sketch tools) enables or disables that behavior; persisted as `gui.sketch_shape_faint_enabled` (default on).
+- **Settings -> Sketch -> Appearance:** **Shape Faint Strength** slider (**5%**–**85%**, default **14%**) for Ghost and Wire styles (`gui.sketch_shape_faint_opacity`).
+- Faint shapes in sketch mode are not selectable (no yellow hover/selection highlight).
+
+### Sketch List
+
+- Expanded **Faces** rows: **`E`** button and right-click **Extrude** start [extrude](docs/usage.md#extrude-sketch-face-tool-e) for that face (then drag height in the viewer).
+- Hovering a **Faces**, **Edges**, or **Nodes** row highlights that element in the viewer (even outside sketch modes, when sketch geometry is normally hidden). Highlights use the OCCT **Topmost** Z-layer so extruded solids do not cover them in inspection/Normal mode.
+
+### Documentation
+
+- **Usage guide workflow:** Added a dedicated step for creating sketches from planar faces in *Workflow: From 2D Sketches to 3D Shapes* ([usage.md](docs/usage.md)).
+- **Usage guide order:** Moved **Scripting** to the end of the TOC and page body (after Tool Icons) so core modeling comes first for new users.
+
+### View / New Project
+
+- **File -> New** resets the camera to a **top view** framed to **Settings -> 3D view navigation** **Default 2D view width** / **height** (defaults **3** x **3** display units; `gui.default_2d_view_width` / `gui.default_2d_view_height`). Projects with no saved camera use the same framing.
+
 ## [0.3.0] - 2026-07-12
 
 ### WebAssembly

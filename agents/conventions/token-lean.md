@@ -8,7 +8,7 @@ Goal: give assistants **only what they need** for the task at hand. Full style g
 2. [ascii-source.md](ascii-source.md) — when touching `src/` or `tests/`.
 3. [docs/ezycad_code_style.md](../../docs/ezycad_code_style.md) — when writing C++ (do not duplicate in chat).
 
-**Do not** auto-load: `workflows/release.md`, `outreach/`, `drafts/archive/`, or full `local-dev.md` unless building/releasing.
+**Do not** auto-load: `workflows/release.md`, `outreach/`, `drafts/archive/`, `plans/` (except the one plan matching the prompt), or full `local-dev.md` unless building/releasing.
 
 ## Load on demand
 
@@ -27,6 +27,7 @@ Goal: give assistants **only what they need** for the task at hand. Full style g
 | Editing Markdown tables                                                                              | [markdown-tables.md](markdown-tables.md) — align GFM pipes; `python scripts/align_md_tables.py`                                     |
 | Release                                                                                              | [workflows/release.md](../workflows/release.md)                                                                                     |
 | Specific issue/PR                                                                                    | One file under `drafts/issues/active/` or `drafts/prs/active/`                                                                      |
+| Feature plan under `plans/`                                                                          | **Only** the matching file when the prompt is clearly about that feature (see [plans/README.md](../plans/README.md)); never bulk-load `plans/` |
 | Forum posts                                                                                          | [outreach/discoverability.md](../outreach/discoverability.md)                                                                       |
 
 ## Draft hygiene (saves tokens long-term)

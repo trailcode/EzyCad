@@ -6,6 +6,7 @@
 #include <Aspect_RectangularGrid.hxx>
 #include <V3d_RectangularGrid.hxx>
 #include <BRepBndLib.hxx>
+#include <Bnd_Box.hxx>
 #include <BRepBuilderAPI_Transform.hxx>
 #include <BRepMesh_IncrementalMesh.hxx>
 #include <BRepPrimAPI_MakePrism.hxx>
@@ -15,7 +16,10 @@
 #include <GeomAPI_IntCS.hxx>
 #include <Geom_Line.hxx>
 #include <Geom_Plane.hxx>
+#include <Aspect_InteriorStyle.hxx>
+#include <Aspect_TypeOfLine.hxx>
 #include <Graphic3d_Camera.hxx>
+#include <Prs3d_ShadingAspect.hxx>
 #include <NCollection_IndexedDataMap.hxx>
 #include <NCollection_Vec2.hxx>
 #include <IGESControl_Writer.hxx>
@@ -407,11 +411,31 @@ void Occt_view::init_default()
   SetStickToRayOnZoom(true);
   SetRotationMode(AIS_RotationMode_PickLast);
 
-  m_view->SetProj(0, 0, 1); // Look up the Z-axis (top view)
-  m_view->SetUp(0, 1, 0);   // Up direction along Y-axis
-  m_view->SetZoom(2.0);
+  reset_default_view();
 
   apply_grid_visibility_();
+}
+
+void Occt_view::reset_default_view()
+{
+  if (is_headless() || m_view.IsNull())
+    return;
+
+  const double dim_scale = get_dimension_scale();
+  const double half_w    = 0.5 * m_gui.default_2d_view_width() * dim_scale;
+  const double half_h    = 0.5 * m_gui.default_2d_view_height() * dim_scale;
+  const double half_z    = std::max(1.0, 0.01 * std::max(half_w, half_h));
+
+  m_view->SetProj(0, 0, 1); // Look along +Z (top view of XY sketch plane)
+  m_view->SetUp(0, 1, 0);   // Up along +Y
+  m_view->SetAt(0, 0, 0);
+  m_view->SetEye(0, 0, 100);
+
+  Bnd_Box bbox;
+  bbox.Add(gp_Pnt(-half_w, -half_h, -half_z));
+  bbox.Add(gp_Pnt(half_w, half_h, half_z));
+  m_view->FitAll(bbox, 0.0);
+  m_view->Redraw();
 }
 
 // Geometry related
@@ -564,7 +588,7 @@ void Occt_view::revolve_selected(const double angle)
   {
     add_shp_(*revolved);
     push_undo_delta(std::make_unique<Shape_add_delta>(std::vector<Shape_rec>{capture_shape_rec(**revolved)}));
-    // Switch to none mode because displaying shapes in sketch modes is disabled.
+    // Leave sketch mode so the new solid is shown at full strength (sketch tools use faint/hide).
     gui().set_mode(Mode::Normal);
   }
   else
@@ -925,6 +949,7 @@ void Occt_view::add_shp_(Shp_ptr& shp)
   m_ctx->Redisplay(shp, true);
   m_ctx->UpdateCurrentViewer();
   m_shps.push_back(shp);
+  sync_sketch_shape_faint_style();
 }
 
 Shape_id Occt_view::allocate_shape_id() { return m_next_shape_id++; }
@@ -963,6 +988,7 @@ void Occt_view::insert_shape_rec(const Shape_rec& rec)
   m_ctx->Display(shp, shp->get_disp_mode(), AIS_Shape::SelectionMode(m_shp_selection_mode), true);
   m_ctx->Redisplay(shp, true);
   m_ctx->UpdateCurrentViewer();
+  sync_sketch_shape_faint_style();
 }
 
 void Occt_view::remove_shape_by_id(Shape_id id)
@@ -1019,6 +1045,15 @@ void Occt_view::undo_remove_sketch(size_t sketch_id)
     const Sketch_ptr sketch = *it;
     if (m_sketch_list_hover == sketch)
       set_sketch_list_hover(nullptr);
+
+    if (sketch_owner_of_list_ais_(m_sketch_list_hover_face.ais) == sketch.get())
+      set_sketch_list_hover_face(nullptr, SIZE_MAX);
+
+    if (sketch_owner_of_list_ais_(m_sketch_list_hover_edge.ais) == sketch.get())
+      set_sketch_list_hover_edge(nullptr, SIZE_MAX);
+
+    if (sketch_owner_of_list_ais_(m_sketch_list_hover_node.ais) == sketch.get())
+      set_sketch_list_hover_node(nullptr, SIZE_MAX);
 
     m_sketches.erase(it);
     if (m_cur_sketch == sketch)
@@ -1298,6 +1333,11 @@ void Occt_view::set_entered_dim(const std::optional<double>& dim) { m_entered_di
 void Occt_view::sketch_face_extrude(const ScreenCoords& screen_coords, bool is_mouse_move)
 {
   m_shp_extrude.sketch_face_extrude(screen_coords, is_mouse_move);
+}
+
+bool Occt_view::begin_sketch_face_extrude(const AIS_Shape_ptr& face)
+{
+  return m_shp_extrude.begin_face_extrude(face);
 }
 
 void Occt_view::delete_selected() { delete_shapes(get_selected()); }
@@ -1956,6 +1996,77 @@ void Occt_view::update_shape_list_hover_drawer_()
   m_shape_list_hover_drawer->SetWireAspect(wire_aspect);
 }
 
+void Occt_view::update_sketch_list_hover_face_drawer_()
+{
+  // Match Sketch:: face mouse-over (Settings -> Sketch -> Face highlight fill).
+  const float* rgba = gui().sketch_face_highlight_color_rgba();
+  const Quantity_Color qc(static_cast<double>(rgba[0]), static_cast<double>(rgba[1]), static_cast<double>(rgba[2]),
+                          Quantity_TOC_RGB);
+  const float          transp = std::clamp(1.f - rgba[3], 0.f, 1.f);
+
+  if (m_sketch_list_hover_face_drawer.IsNull())
+    m_sketch_list_hover_face_drawer = new Prs3d_Drawer();
+
+  m_sketch_list_hover_face_drawer->SetupOwnDefaults();
+  m_sketch_list_hover_face_drawer->SetColor(qc);
+  m_sketch_list_hover_face_drawer->SetTransparency(transp);
+
+  Prs3d_ShadingAspect_ptr shading = new Prs3d_ShadingAspect();
+  shading->SetColor(qc);
+  shading->SetTransparency(static_cast<double>(transp));
+  m_sketch_list_hover_face_drawer->SetShadingAspect(shading);
+
+  Graphic3d_AspectFillArea3d_ptr fill = new Graphic3d_AspectFillArea3d();
+  fill->SetAlphaMode(Graphic3d_AlphaMode_Blend);
+  fill->SetInteriorStyle(Aspect_IS_SOLID);
+  fill->SetInteriorColor(qc);
+  fill->SetColor(qc);
+  m_sketch_list_hover_face_drawer->SetBasicFillAreaAspect(fill);
+
+  Prs3d_LineAspect_ptr line = new Prs3d_LineAspect(qc, Aspect_TOL_SOLID, 2.0);
+  m_sketch_list_hover_face_drawer->SetWireAspect(line);
+  m_sketch_list_hover_face_drawer->SetFaceBoundaryAspect(line);
+}
+
+void Occt_view::update_sketch_list_hover_edge_drawer_()
+{
+  // Match Sketch:: edge mouse-over (Settings -> Sketch -> Edge highlight).
+  const float* rgba = gui().sketch_edge_highlight_color_rgba();
+  const Quantity_Color qc(static_cast<double>(rgba[0]), static_cast<double>(rgba[1]), static_cast<double>(rgba[2]),
+                          Quantity_TOC_RGB);
+  const float          transp = std::clamp(1.f - rgba[3], 0.f, 1.f);
+
+  if (m_sketch_list_hover_edge_drawer.IsNull())
+    m_sketch_list_hover_edge_drawer = new Prs3d_Drawer();
+
+  m_sketch_list_hover_edge_drawer->SetColor(qc);
+  m_sketch_list_hover_edge_drawer->SetTransparency(transp);
+  Prs3d_LineAspect_ptr line = new Prs3d_LineAspect(qc, Aspect_TOL_SOLID, 2.0);
+  m_sketch_list_hover_edge_drawer->SetLineAspect(line);
+  m_sketch_list_hover_edge_drawer->SetWireAspect(line);
+  m_sketch_list_hover_edge_drawer->SetSeenLineAspect(line);
+  m_sketch_list_hover_edge_drawer->SetFaceBoundaryAspect(line);
+}
+
+void Occt_view::update_sketch_list_hover_node_drawer_()
+{
+  uint8_t r{}, g{}, b{}, a{};
+  gui().elm_list_hover_color_rgba(r, g, b, a);
+  (void)a;
+  const Quantity_Color qc(static_cast<double>(r) / 255.0, static_cast<double>(g) / 255.0, static_cast<double>(b) / 255.0,
+                          Quantity_TOC_RGB);
+
+  if (m_sketch_list_hover_node_drawer.IsNull())
+    m_sketch_list_hover_node_drawer = new Prs3d_Drawer();
+
+  m_sketch_list_hover_node_drawer->SetColor(qc);
+  Prs3d_LineAspect_ptr line = new Prs3d_LineAspect(qc, Aspect_TOL_SOLID, 3.0);
+  m_sketch_list_hover_node_drawer->SetLineAspect(line);
+  m_sketch_list_hover_node_drawer->SetWireAspect(line);
+  m_sketch_list_hover_node_drawer->SetSeenLineAspect(line);
+  m_sketch_list_hover_node_drawer->SetFaceBoundaryAspect(line);
+}
+
 void Occt_view::clear_sketch_list_hover_ais_()
 {
   if (is_headless() || m_ctx.IsNull())
@@ -2033,6 +2144,22 @@ void Occt_view::refresh_shape_list_hover_highlight()
     apply_sketch_list_hover_highlight_();
   }
 
+  if (!m_sketch_list_hover_face.ais.IsNull())
+  {
+    update_sketch_list_hover_face_drawer_();
+    apply_sketch_list_hover_ais_state_(m_sketch_list_hover_face, m_sketch_list_hover_face_drawer, AIS_Shaded);
+  }
+  if (!m_sketch_list_hover_edge.ais.IsNull())
+  {
+    update_sketch_list_hover_edge_drawer_();
+    apply_sketch_list_hover_ais_state_(m_sketch_list_hover_edge, m_sketch_list_hover_edge_drawer, AIS_WireFrame);
+  }
+  if (!m_sketch_list_hover_node.ais.IsNull())
+  {
+    update_sketch_list_hover_node_drawer_();
+    apply_sketch_list_hover_ais_state_(m_sketch_list_hover_node, m_sketch_list_hover_node_drawer, AIS_WireFrame);
+  }
+
   m_ctx->UpdateCurrentViewer();
 }
 
@@ -2061,6 +2188,131 @@ void Occt_view::set_sketch_list_measurement_hover(const Sketch_ptr& sketch, cons
     apply_sketch_list_measurement_hover_style_();
 
   m_ctx->UpdateCurrentViewer();
+}
+
+Sketch* Occt_view::sketch_owner_of_list_ais_(const AIS_Shape_ptr& ais)
+{
+  if (ais.IsNull())
+    return nullptr;
+  if (auto* face = dynamic_cast<Sketch_face_shp*>(ais.get()))
+    return &face->owner_sketch;
+  if (auto* edge = dynamic_cast<Sketch_AIS_edge*>(ais.get()))
+    return &edge->owner_sketch;
+  if (auto* node = dynamic_cast<Sketch_AIS_node_mark*>(ais.get()))
+    return &node->owner_sketch;
+  return nullptr;
+}
+
+void Occt_view::clear_sketch_list_hover_ais_state_(Sketch_list_hover_ais& hover)
+{
+  if (hover.ais.IsNull())
+    return;
+
+  if (!is_headless() && !m_ctx.IsNull())
+  {
+    m_ctx->Unhilight(hover.ais, false);
+    if (hover.zlayer_override)
+    {
+      hover.ais->SetZLayer(hover.prev_zlayer);
+      hover.zlayer_override = false;
+    }
+    if (hover.temp_display)
+      m_ctx->Erase(hover.ais, false);
+  }
+
+  hover.ais.Nullify();
+  hover.temp_display     = false;
+  hover.zlayer_override  = false;
+  hover.prev_zlayer      = Graphic3d_ZLayerId_Default;
+}
+
+void Occt_view::apply_sketch_list_hover_ais_state_(Sketch_list_hover_ais& hover, const Prs3d_Drawer_ptr& drawer,
+                                             const int display_mode)
+{
+  if (is_headless() || m_ctx.IsNull() || hover.ais.IsNull() || drawer.IsNull())
+    return;
+
+  // Topmost clears the depth buffer before draw (OCCT pop-up layer), so extruded
+  // solids in inspection/Normal mode do not hide Sketch List highlights.
+  if (!hover.zlayer_override)
+  {
+    hover.prev_zlayer = hover.ais->ZLayer();
+    hover.ais->SetZLayer(Graphic3d_ZLayerId_Topmost);
+    hover.zlayer_override = true;
+  }
+
+  if (!m_ctx->IsDisplayed(hover.ais))
+  {
+    hover.temp_display = true;
+    m_ctx->Display(hover.ais, display_mode, 0, false);
+  }
+
+  m_ctx->HilightWithColor(hover.ais, drawer, false);
+}
+
+void Occt_view::set_sketch_list_hover_ais_state_(Sketch_list_hover_ais& hover, const AIS_Shape_ptr& ais,
+                                           const Prs3d_Drawer_ptr& drawer, const int display_mode)
+{
+  if (is_headless() || m_ctx.IsNull())
+    return;
+
+  if (hover.ais == ais)
+  {
+    // Geometry can be erased when leaving sketch mode while the row stays hovered.
+    if (!ais.IsNull() && !m_ctx->IsDisplayed(ais))
+    {
+      apply_sketch_list_hover_ais_state_(hover, drawer, display_mode);
+      m_ctx->UpdateCurrentViewer();
+    }
+    return;
+  }
+
+  clear_sketch_list_hover_ais_state_(hover);
+  hover.ais = ais;
+
+  if (!hover.ais.IsNull())
+    apply_sketch_list_hover_ais_state_(hover, drawer, display_mode);
+
+  m_ctx->UpdateCurrentViewer();
+}
+
+void Occt_view::set_sketch_list_hover_face(const Sketch_ptr& sketch, const size_t face_index)
+{
+  if (is_headless() || m_ctx.IsNull())
+    return;
+
+  Sketch_face_shp_ptr face;
+  if (sketch && sketch->is_visible() && face_index != SIZE_MAX)
+    face = sketch->inspector_face(face_index);
+
+  update_sketch_list_hover_face_drawer_();
+  set_sketch_list_hover_ais_state_(m_sketch_list_hover_face, face, m_sketch_list_hover_face_drawer, AIS_Shaded);
+}
+
+void Occt_view::set_sketch_list_hover_edge(const Sketch_ptr& sketch, const size_t edge_index)
+{
+  if (is_headless() || m_ctx.IsNull())
+    return;
+
+  Sketch_AIS_edge_ptr edge;
+  if (sketch && sketch->is_visible() && edge_index != SIZE_MAX)
+    edge = sketch->inspector_edge(edge_index);
+
+  update_sketch_list_hover_edge_drawer_();
+  set_sketch_list_hover_ais_state_(m_sketch_list_hover_edge, edge, m_sketch_list_hover_edge_drawer, AIS_WireFrame);
+}
+
+void Occt_view::set_sketch_list_hover_node(const Sketch_ptr& sketch, const size_t list_index)
+{
+  if (is_headless() || m_ctx.IsNull())
+    return;
+
+  Sketch_AIS_node_mark_ptr node;
+  if (sketch && sketch->is_visible() && list_index != SIZE_MAX)
+    node = sketch->inspector_node(list_index);
+
+  update_sketch_list_hover_node_drawer_();
+  set_sketch_list_hover_ais_state_(m_sketch_list_hover_node, node, m_sketch_list_hover_node_drawer, AIS_WireFrame);
 }
 
 void Occt_view::set_sketch_list_hover(const Sketch_ptr& sketch)
@@ -2224,9 +2476,6 @@ void Occt_view::on_mode()
 
   if (is_sketch_mode(get_mode()))
   {
-    for (auto shp : m_shps)
-      shp->set_visible(false);
-
     switch (get_mode())
     {
     case Mode::Sketch_operation_axis:
@@ -2267,12 +2516,62 @@ void Occt_view::on_mode()
         break;
       // clang-format on
     }
-
-    for (auto shp : m_shps)
-      shp->set_visible(true);
   }
 
+  sync_sketch_shape_faint_style();
   apply_sketch_dimensions_visibility();
+}
+
+void Occt_view::sync_sketch_shape_faint_style()
+{
+  const bool hide_all = gui().get_hide_all_shapes();
+  const bool sketch   = is_sketch_mode(get_mode());
+  const bool enabled  = gui().sketch_shape_faint_enabled();
+  const int  style    = gui().sketch_shape_faint_style();
+  const float opacity =
+      std::clamp(gui().sketch_shape_faint_opacity(), k_gui_sketch_shape_faint_opacity_min, k_gui_sketch_shape_faint_opacity_max);
+  const float transparency = 1.0f - opacity;
+  // Options master switch off, or Settings style Off: hide solids while sketching.
+  const bool hide_in_sketch = !enabled || style == k_gui_sketch_shape_faint_style_min;
+  const bool faint_active   = sketch && !hide_all && !hide_in_sketch;
+
+  if (faint_active)
+  {
+    // Drop shape selection/hover so yellow dynamic highlight does not fight the sketch.
+    set_shape_list_hover(nullptr);
+    if (!m_ctx.IsNull())
+    {
+      m_ctx->ClearSelected(false);
+      m_ctx->ClearDetected();
+    }
+  }
+
+  for (Shp_ptr& shp : m_shps)
+  {
+    if (shp.IsNull())
+      continue;
+
+    if (hide_all || !sketch || hide_in_sketch)
+    {
+      shp->set_sketch_faint(false, AIS_Shaded, 0.0f);
+      if (hide_all || (sketch && hide_in_sketch))
+        shp->set_visible(false);
+      else
+        shp->set_visible(true);
+      continue;
+    }
+
+    // Ghost (1) or Wire (2) while sketching; strength drives transparency for both.
+    if (style == 2)
+      shp->set_sketch_faint(true, AIS_WireFrame, transparency);
+    else
+      shp->set_sketch_faint(true, AIS_Shaded, transparency);
+
+    shp->set_visible(true);
+  }
+
+  if (!m_ctx.IsNull())
+    m_ctx->UpdateCurrentViewer();
 }
 
 void Occt_view::on_chamfer_mode()
@@ -2369,6 +2668,15 @@ void Occt_view::remove_sketch(const Sketch_ptr& sketch)
   if (m_sketch_list_hover == sketch)
     set_sketch_list_hover(nullptr);
 
+  if (sketch_owner_of_list_ais_(m_sketch_list_hover_face.ais) == sketch.get())
+    set_sketch_list_hover_face(nullptr, SIZE_MAX);
+
+  if (sketch_owner_of_list_ais_(m_sketch_list_hover_edge.ais) == sketch.get())
+    set_sketch_list_hover_edge(nullptr, SIZE_MAX);
+
+  if (sketch_owner_of_list_ais_(m_sketch_list_hover_node.ais) == sketch.get())
+    set_sketch_list_hover_node(nullptr, SIZE_MAX);
+
   const bool           was_current = (m_cur_sketch == sketch);
   const nlohmann::json removed_json = Sketch_json::to_json(*sketch, m_assets);
 
@@ -2416,11 +2724,9 @@ void Occt_view::set_curr_sketch(const Sketch_ptr& to_set)
       m_cur_sketch->set_current();
       refresh_viewer_grid_();
 
-      // If hide all shapes is enabled, hide all shapes except the current sketch
+      // If hide all shapes is enabled, hide all shapes.
       if (m_gui.get_hide_all_shapes())
-        // Hide all shapes
-        for (const Shp_ptr& shape : m_shps)
-          shape->set_visible(false);
+        sync_sketch_shape_faint_style();
 
       return;
     }
@@ -2686,50 +2992,57 @@ void Occt_view::load(const std::string& json_str, bool restore_view)
   }
 
   // ---------------------------------------------------------------------------
-  // Restore view / camera state if requested (e.g. File > Open; not for undo/redo)
-  if (restore_view && !m_view.IsNull() && j.contains("view") && j["view"].is_object())
+  // Restore view / camera state if requested (e.g. File > Open; not for undo/redo).
+  // Projects without a saved view (e.g. bundled default.ezy) get the Settings default framing.
+  if (restore_view && !m_view.IsNull())
   {
-    const json& view_json = j["view"];
-    try
+    if (j.contains("view") && j["view"].is_object())
     {
-      if (view_json.contains("eye") && view_json["eye"].is_object())
+      const json& view_json = j["view"];
+      try
       {
-        gp_Pnt eye = from_json_pnt(view_json["eye"]);
-        m_view->SetEye(eye.X(), eye.Y(), eye.Z());
-      }
+        if (view_json.contains("eye") && view_json["eye"].is_object())
+        {
+          gp_Pnt eye = from_json_pnt(view_json["eye"]);
+          m_view->SetEye(eye.X(), eye.Y(), eye.Z());
+        }
 
-      if (view_json.contains("at") && view_json["at"].is_object())
+        if (view_json.contains("at") && view_json["at"].is_object())
+        {
+          gp_Pnt at = from_json_pnt(view_json["at"]);
+          m_view->SetAt(at.X(), at.Y(), at.Z());
+        }
+
+        if (view_json.contains("up") && view_json["up"].is_object())
+        {
+          gp_Dir up = from_json_dir(view_json["up"]);
+          m_view->SetUp(up.X(), up.Y(), up.Z());
+        }
+
+        if (view_json.contains("proj") && view_json["proj"].is_object())
+        {
+          gp_Dir dir = from_json_dir(view_json["proj"]);
+          m_view->SetProj(dir.X(), dir.Y(), dir.Z());
+        }
+
+        if (view_json.contains("scale") && view_json["scale"].is_number())
+        {
+          const double scale = view_json["scale"].get<double>();
+          if (scale > Precision::Confusion())
+            m_view->SetScale(scale);
+        }
+
+        m_view->Redraw();
+        m_ctx->UpdateCurrentViewer();
+      }
+      catch (const std::exception&)
       {
-        gp_Pnt at = from_json_pnt(view_json["at"]);
-        m_view->SetAt(at.X(), at.Y(), at.Z());
+        // Ignore view restoration errors; project geometry has already loaded.
+        reset_default_view();
       }
-
-      if (view_json.contains("up") && view_json["up"].is_object())
-      {
-        gp_Dir up = from_json_dir(view_json["up"]);
-        m_view->SetUp(up.X(), up.Y(), up.Z());
-      }
-
-      if (view_json.contains("proj") && view_json["proj"].is_object())
-      {
-        gp_Dir dir = from_json_dir(view_json["proj"]);
-        m_view->SetProj(dir.X(), dir.Y(), dir.Z());
-      }
-
-      if (view_json.contains("scale") && view_json["scale"].is_number())
-      {
-        const double scale = view_json["scale"].get<double>();
-        if (scale > Precision::Confusion())
-          m_view->SetScale(scale);
-      }
-
-      m_view->Redraw();
-      m_ctx->UpdateCurrentViewer();
     }
-    catch (const std::exception&)
-    {
-      // Ignore view restoration errors; project geometry has already loaded.
-    }
+    else
+      reset_default_view();
   }
 
   if (m_cur_sketch)
@@ -2917,5 +3230,6 @@ void Occt_view::new_file()
 
   create_default_sketch_();
   refresh_viewer_grid_();
+  reset_default_view();
   m_gui.set_mode(Mode::Normal);
 }

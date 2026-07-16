@@ -16,7 +16,7 @@ The **coordinate axes** (small triedron) and optional **view cube** are part of 
 
 ## Settings file
 
-Background gradient, grid lines, and related **3D appearance** are stored under **`occt_view`** in your settings JSON. **View rotation step**, **zoom scroll scale**, and **element hover color** are stored under **`gui`**. Full lists of keys: **[usage-settings.md — Settings file reference](usage-settings.md#settings-file-reference)**.
+Background gradient, grid lines, and related **3D appearance** are stored under **`occt_view`** in your settings JSON. **View rotation step**, **zoom scroll scale**, **default 2D view width/height** (New Project framing), and **element hover color** are stored under **`gui`**. Full lists of keys: **[usage-settings.md — Settings file reference](usage-settings.md#settings-file-reference)**.
 
 If you use scripts, **`ezy.occt_view_settings_json()`** returns a small JSON snapshot of some of these values — see **[scripting.md](scripting.md)**.
 
