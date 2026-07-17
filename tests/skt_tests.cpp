@@ -1,4 +1,4 @@
-#include "sketch_test_fixture.h"
+#include "skt_test_fixture.h"
 
 #include <BRepGProp.hxx>
 #include <GProp_GProps.hxx>
@@ -8,9 +8,9 @@
 #include <numbers>
 #include <vector>
 
-#include "sketch_edge.h"
-#include "sketch_json.h"
-#include "sketch_nodes.h"
+#include "skt_edge.h"
+#include "skt_json.h"
+#include "skt_nodes.h"
 #include "utl_geom.h"
 
 using namespace glm;

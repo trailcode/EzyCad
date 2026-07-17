@@ -1,4 +1,4 @@
-#include "sketch_test_fixture.h"
+#include "skt_test_fixture.h"
 
 #include <BRepBndLib.hxx>
 #include <BRepGProp.hxx>
@@ -7,10 +7,10 @@
 #include <GProp_GProps.hxx>
 #include <numbers>
 
-#include "sketch_edge.h"
-#include "sketch_json.h"
-#include "sketch_nodes.h"
-#include "sketch_op_recorder.h"
+#include "skt_edge.h"
+#include "skt_json.h"
+#include "skt_nodes.h"
+#include "skt_op_recorder.h"
 #include "utl_geom.h"
 #include "utl_occt.h"
 

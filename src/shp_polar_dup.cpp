@@ -11,8 +11,8 @@
 #include "gui.h"
 #include "mode.h"
 #include "gui_occt_view.h"
-#include "sketch.h"
-#include "sketch_nodes.h"
+#include "skt.h"
+#include "skt_nodes.h"
 #include "shp_delta.h"
 
 Shp_polar_dup::Shp_polar_dup(Occt_view& view)

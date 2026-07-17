@@ -1,4 +1,4 @@
-#include "sketch_tools.h"
+#include "skt_tools.h"
 
 #include <BRepBuilderAPI_MakeEdge.hxx>
 #include <GC_MakeArcOfCircle.hxx>
@@ -13,9 +13,9 @@
 #include "gui.h"
 #include "mode.h"
 #include "gui_occt_view.h"
-#include "sketch.h"
-#include "sketch_op_recorder.h"
-#include "sketch_edge.h"
+#include "skt.h"
+#include "skt_op_recorder.h"
+#include "skt_edge.h"
 #include "utl_geom.h"
 #include "utl_occt.h"
 #include "utl.h"

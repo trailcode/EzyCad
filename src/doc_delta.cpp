@@ -1,8 +1,8 @@
 #include "doc_delta.h"
 
 #include "gui_occt_view.h"
-#include "sketch.h"
-#include "sketch_json.h"
+#include "skt.h"
+#include "skt_json.h"
 #include "utl.h"
 
 Sketch_struct_delta::Sketch_struct_delta(Kind kind, nlohmann::json sketch_json, bool was_current,

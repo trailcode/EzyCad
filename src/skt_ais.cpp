@@ -1,6 +1,6 @@
-#include "sketch_ais.h"
+#include "skt_ais.h"
 
-#include "sketch.h"
+#include "skt.h"
 
 Sketch_AIS_edge::Sketch_AIS_edge(Sketch& owner, const TopoDS_Shape& shp)
     : AIS_Shape(shp)

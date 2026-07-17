@@ -6,8 +6,8 @@ Use this style when editing or adding C/C++ code in the EzyCad project (files un
 
 - Use **`#pragma once`** for include guards (no `#ifndef`/`#define`/`#endif`).
 - **Include order**: Put the **closest / most direct** dependencies first.
-  - In a **`.cpp`** file: include **this file's own header first** (e.g. in `sketch_nodes.cpp`, the first line is `#include "sketch_nodes.h"`). Then other project headers it needs, then external/system headers (`<...>`). Use a blank line before the `<...>` block when you have both.
-  - In a **`.h`** file: include the project headers this file directly depends on first (e.g. `sketch_nodes.h` has `#include "utl_types.h"` before `<gp_Pln.hxx>`; `shp_operation.h` has `"shp.h"`, `"utl_types.h"` first). Then external/system headers. So **project (`"..."`) before external (`<...>`)**, with the most relevant project header at the very top when there is one.
+  - In a **`.cpp`** file: include **this file's own header first** (e.g. in `skt_nodes.cpp`, the first line is `#include "skt_nodes.h"`). Then other project headers it needs, then external/system headers (`<...>`). Use a blank line before the `<...>` block when you have both.
+  - In a **`.h`** file: include the project headers this file directly depends on first (e.g. `skt_nodes.h` has `#include "utl_types.h"` before `<gp_Pln.hxx>`; `shp_operation.h` has `"shp.h"`, `"utl_types.h"` first). Then external/system headers. So **project (`"..."`) before external (`<...>`)**, with the most relevant project header at the very top when there is one.
 - Prefer **forward declarations** for types used only as pointers/references (e.g. `class gp_Pln;`) when it reduces includes.
 
 ## Naming

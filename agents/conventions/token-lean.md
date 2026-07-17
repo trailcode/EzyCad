@@ -12,23 +12,23 @@ Goal: give assistants **only what they need** for the task at hand. Full style g
 
 ## Load on demand
 
-| Task                                                                                                 | Read                                                                                                                                |
-| ---------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------- |
-| Build / test                                                                                         | [workflows/local-dev.md](../workflows/local-dev.md) — or root [README.md](../../README.md#building-instructions)                    |
-| OCCT / WASM (shared `src/` APIs)                                                                     | [occt-wasm-dual-version.md](occt-wasm-dual-version.md) — desktop 8 vs wasm 7.9.3 until wasm works on OCCT 8                         |
-| OCCT handles                                                                                         | [occt-handles.md](occt-handles.md) — `*_ptr` / `opencascade::handle` over `Handle()` (clang-format)                                 |
-| User-visible UI/settings                                                                             | [user-docs-sync.md](user-docs-sync.md) + target `docs/usage-*.md` only                                                              |
-| Sketch subsystem (`src/sketch*`, `tests/sketch_*_tests.cpp`, sketch behavior in `occt_view` / `gui`) | [src/doc/sketch.md](../../src/doc/sketch.md) — read before editing; update when API, invariants, module layout, or workflows change |
-| Shape module (`src/shp*`, shape ops in `occt_view` / `gui`)                                          | [src/doc/shape.md](../../src/doc/shape.md) — read before editing; update when API, operation patterns, or registration/undo change  |
-| GUI / viewer shell (`src/gui*`, input routing, settings panes)                                       | [src/doc/gui.md](../../src/doc/gui.md) — read before editing; update when modes, Options, hotkeys, or settings keys change          |
-| Script consoles (`src/scr*`, bindings)                                                               | [src/doc/script.md](../../src/doc/script.md) — read before editing; update when `ezy`/`view` API or console UI changes              |
-| Utilities (`src/utl*`, results, I/O, geometry)                                                       | [src/doc/utility.md](../../src/doc/utility.md) — read before editing; update when shared helper contracts change                    |
-| Docs build                                                                                           | [workflows/docs-build.md](../workflows/docs-build.md)                                                                               |
-| Editing Markdown tables                                                                              | [markdown-tables.md](markdown-tables.md) — align GFM pipes; `python scripts/align_md_tables.py`                                     |
-| Release                                                                                              | [workflows/release.md](../workflows/release.md)                                                                                     |
-| Specific issue/PR                                                                                    | One file under `drafts/issues/active/` or `drafts/prs/active/`                                                                      |
-| Feature plan under `plans/`                                                                          | **Only** the matching file when the prompt is clearly about that feature (see [plans/README.md](../plans/README.md)); never bulk-load `plans/` |
-| Forum posts                                                                                          | [outreach/discoverability.md](../outreach/discoverability.md)                                                                       |
+| Task                                                                                 | Read                                                                                                                                           |
+| ------------------------------------------------------------------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------- |
+| Build / test                                                                         | [workflows/local-dev.md](../workflows/local-dev.md) — or root [README.md](../../README.md#building-instructions)                               |
+| OCCT / WASM (shared `src/` APIs)                                                     | [occt-wasm-dual-version.md](occt-wasm-dual-version.md) — desktop 8 vs wasm 7.9.3 until wasm works on OCCT 8                                    |
+| OCCT handles                                                                         | [occt-handles.md](occt-handles.md) — `*_ptr` / `opencascade::handle` over `Handle()` (clang-format)                                            |
+| User-visible UI/settings                                                             | [user-docs-sync.md](user-docs-sync.md) + target `docs/usage-*.md` only                                                                         |
+| Sketch subsystem (`src/skt*`, `tests/skt_*`, sketch behavior in `occt_view` / `gui`) | [src/doc/sketch.md](../../src/doc/sketch.md) — read before editing; update when API, invariants, module layout, or workflows change            |
+| Shape module (`src/shp*`, shape ops in `occt_view` / `gui`)                          | [src/doc/shape.md](../../src/doc/shape.md) — read before editing; update when API, operation patterns, or registration/undo change             |
+| GUI / viewer shell (`src/gui*`, input routing, settings panes)                       | [src/doc/gui.md](../../src/doc/gui.md) — read before editing; update when modes, Options, hotkeys, or settings keys change                     |
+| Script consoles (`src/scr*`, bindings)                                               | [src/doc/script.md](../../src/doc/script.md) — read before editing; update when `ezy`/`view` API or console UI changes                         |
+| Utilities (`src/utl*`, results, I/O, geometry)                                       | [src/doc/utility.md](../../src/doc/utility.md) — read before editing; update when shared helper contracts change                               |
+| Docs build                                                                           | [workflows/docs-build.md](../workflows/docs-build.md)                                                                                          |
+| Editing Markdown tables                                                              | [markdown-tables.md](markdown-tables.md) — align GFM pipes; `python scripts/align_md_tables.py`                                                |
+| Release                                                                              | [workflows/release.md](../workflows/release.md)                                                                                                |
+| Specific issue/PR                                                                    | One file under `drafts/issues/active/` or `drafts/prs/active/`                                                                                 |
+| Feature plan under `plans/`                                                          | **Only** the matching file when the prompt is clearly about that feature (see [plans/README.md](../plans/README.md)); never bulk-load `plans/` |
+| Forum posts                                                                          | [outreach/discoverability.md](../outreach/discoverability.md)                                                                                  |
 
 ## Draft hygiene (saves tokens long-term)
 
@@ -41,13 +41,13 @@ Goal: give assistants **only what they need** for the task at hand. Full style g
 
 Module notes live under `src/doc/` (IDE folder `src\doc`; see root `CMakeLists.txt`). They are **not** user guides — do not duplicate `docs/usage-*.md`.
 
-| Module doc                                     | When                                                                                                         |
-| ---------------------------------------------- | ------------------------------------------------------------------------------------------------------------ |
-| [src/doc/sketch.md](../../src/doc/sketch.md)   | Editing `src/sketch*`, `tests/sketch_*_tests.cpp`, or sketch-facing behavior in `occt_view` / `gui` / `mode` |
-| [src/doc/shape.md](../../src/doc/shape.md)     | Editing `src/shp*`, shape operations in `occt_view` / `gui`, or 3D solid behavior                            |
-| [src/doc/gui.md](../../src/doc/gui.md)         | Editing `src/gui*`, `Occt_view` in `gui_occt_view*`, input routing, Options/Settings UI                      |
-| [src/doc/script.md](../../src/doc/script.md)   | Editing `src/scr*`, Lua/Python bindings, console behavior                                                    |
-| [src/doc/utility.md](../../src/doc/utility.md) | Editing `src/utl*`, `Status`/`Result`, `.ezy` I/O, geometry/settings helpers                                 |
+| Module doc                                     | When                                                                                         |
+| ---------------------------------------------- | -------------------------------------------------------------------------------------------- |
+| [src/doc/sketch.md](../../src/doc/sketch.md)   | Editing `src/skt*`, `tests/skt_*`, or sketch-facing behavior in `occt_view` / `gui` / `mode` |
+| [src/doc/shape.md](../../src/doc/shape.md)     | Editing `src/shp*`, shape operations in `occt_view` / `gui`, or 3D solid behavior            |
+| [src/doc/gui.md](../../src/doc/gui.md)         | Editing `src/gui*`, `Occt_view` in `gui_occt_view*`, input routing, Options/Settings UI      |
+| [src/doc/script.md](../../src/doc/script.md)   | Editing `src/scr*`, Lua/Python bindings, console behavior                                    |
+| [src/doc/utility.md](../../src/doc/utility.md) | Editing `src/utl*`, `Status`/`Result`, `.ezy` I/O, geometry/settings helpers                 |
 
 **On sketch changes:** read `sketch.md` first for context. Update it in the same branch when you change public `Sketch` API, coordinator/sub-module boundaries, invariants (IDs, undo, transient vs committed state), or developer usage patterns. Skip updates for internal-only refactors with no doc impact.
 

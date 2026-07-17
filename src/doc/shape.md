@@ -20,7 +20,7 @@ Typical uses:
 
 - Display and select 3D solids in the interactive context.
 - Create primitives (box, sphere, cylinder, ...) and add them to the document.
-- Extrude a sketch face into a solid; revolve sketch geometry (revolve lives in `sketch_operations.cpp`, returns `Shp_rslt`).
+- Extrude a sketch face into a solid; revolve sketch geometry (revolve lives in `skt_operations.cpp`, returns `Shp_rslt`).
 - Boolean fuse/cut/common on selected shapes.
 - Interactive move, rotate, and scale with preview transforms.
 - Fillet/chamfer by shape, face, wire, or edge pick mode.
@@ -236,8 +236,8 @@ auto lines = shp_info::collect(shp->Shape(), &meta);
 | Location                            | Role                                                                             |
 | ----------------------------------- | -------------------------------------------------------------------------------- |
 | `occt_view.h` / `gui_occt_view.cpp` | Shape list, `add_shp_`, primitives, I/O, operation member objects                |
-| `sketch_ais.h`                      | `Sketch_face_shp` extrusion source                                               |
-| `sketch_operations.cpp`             | `Sketch::revolve_selected` -> `Shp_rslt`                                         |
+| `skt_ais.h`                         | `Sketch_face_shp` extrusion source                                               |
+| `skt_operations.cpp`                | `Sketch::revolve_selected` -> `Shp_rslt`                                         |
 | `mode.h`                            | `Fillet_mode`, `Chamfer_mode`, tool modes                                        |
 | `gui.h` / `gui.cpp`                 | Toolbar, Shape List, fillet/chamfer mode, material UI                            |
 | `utl_geom.h`                        | Plane projection, bbox center, rotation helpers used by transforms and polar dup |

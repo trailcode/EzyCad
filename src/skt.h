@@ -9,14 +9,14 @@
 #include <vector>
 
 #include "shp.h"
-#include "sketch_dims.h"
-#include "sketch_edge.h"
-#include "sketch_edges.h"
-#include "sketch_node_marks.h"
-#include "sketch_nodes.h"
-#include "sketch_topo.h"
-#include "sketch_tools.h"
-#include "sketch_underlay.h"
+#include "skt_dims.h"
+#include "skt_edge.h"
+#include "skt_edges.h"
+#include "skt_node_marks.h"
+#include "skt_nodes.h"
+#include "skt_topo.h"
+#include "skt_tools.h"
+#include "skt_underlay.h"
 #include "utl_types.h"
 
 struct Length_dimension_style;

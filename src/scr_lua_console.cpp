@@ -8,7 +8,7 @@
 #include "shp_common.h"
 #include "shp_cut.h"
 #include "shp_fuse.h"
-#include "sketch.h"
+#include "skt.h"
 #include "utl_geom.h"
 
 extern "C"

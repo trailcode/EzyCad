@@ -1,9 +1,9 @@
-#include "sketch_test_fixture.h"
+#include "skt_test_fixture.h"
 
 #include <utility>
 
-#include "sketch_ais.h"
-#include "sketch_edge.h"
+#include "skt_ais.h"
+#include "skt_edge.h"
 #include "utl_dbg.h"
 
 GUI Sketch_test::s_gui;

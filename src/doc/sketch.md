@@ -1,6 +1,6 @@
 # Sketch module
 
-Developer reference for the 2D sketch subsystem. The public C++ entry point is [`sketch.h`](../sketch.h).
+Developer reference for the 2D sketch subsystem. The public C++ entry point is [`skt.h`](../skt.h).
 
 Maintainers: update this file when sketch API, module boundaries, or invariants change (see [agents/conventions/token-lean.md](../../agents/conventions/token-lean.md#developer-docs-in-srcdoc)). User-facing sketch guides live in [`docs/usage-sketch.md`](../../docs/usage-sketch.md).
 
@@ -59,7 +59,7 @@ Snap distance, guide mode, and guide colors live on `Sketch_nodes` (static sette
 ## Architecture
 
 ```
-Sketch  (coordinator: sketch.cpp, sketch.h)
+Sketch  (coordinator: skt.cpp, skt.h)
   |
   +-- Sketch_nodes        vertices, snapping, outside-sketch snap points
   +-- Sketch_node_marks   permanent "+" markers for user-placed nodes; origin uses cyan + with circle
@@ -70,12 +70,12 @@ Sketch  (coordinator: sketch.cpp, sketch.h)
   +-- Sketch_underlay     raster image on the sketch plane
 
 Supporting (not owned sub-objects):
-  sketch_edge.*           Sketch_edge type, linear/arc predicates
-  sketch_ais.*            Sketch_AIS_edge, Sketch_AIS_node_mark, Sketch_face_shp
-  sketch_display.cpp      visibility, edge styling, list hover, set_current
-  sketch_operations.cpp   operation axis, mirror, revolve
-  sketch_json.*           JSON serialization
-  sketch_op_recorder.*    undo/redo (Sketch_op_recorder; Sketch_op_delta in .cpp)
+  skt_edge.*           Sketch_edge type, linear/arc predicates
+  skt_ais.*            Sketch_AIS_edge, Sketch_AIS_node_mark, Sketch_face_shp
+  skt_display.cpp      visibility, edge styling, list hover, set_current
+  skt_operations.cpp   operation axis, mirror, revolve
+  skt_json.*           JSON serialization
+  skt_op_recorder.*    undo/redo (Sketch_op_recorder; Sketch_op_delta in .cpp)
 ```
 
 `Sketch` grants `friend` access to `Sketch_json`, `Sketch_op_delta`, `Sketch_topo`, `Sketch_edges`, `Sketch_dims`, `Sketch_node_marks`, and `Sketch_tools` for coordinated mutations without exposing internals publicly.
@@ -160,7 +160,7 @@ sketch->add_sketch_pt(ScreenCoords(dvec2(0.0, 0.0)));
 sketch->add_sketch_pt(ScreenCoords(dvec2(5.0, 0.0)));
 ```
 
-For closed profiles and face tests, add edges that intersect so `Sketch_topo::update_faces()` splits segments and builds faces. See `tests/sketch_topo_tests.cpp`.
+For closed profiles and face tests, add edges that intersect so `Sketch_topo::update_faces()` splits segments and builds faces. See `tests/skt_topo_tests.cpp`.
 
 ### Record undoable edits
 
@@ -194,22 +194,22 @@ Prefer these visitors in JSON/delta/topo code over iterating `std::list<Sketch_e
 
 ## Module responsibilities (detail)
 
-| File                      | Responsibility                                                                                                                      |
-| ------------------------- | ----------------------------------------------------------------------------------------------------------------------------------- |
-| `sketch.h` / `sketch.cpp` | Coordinator: input routing, edge shape updates, snap aggregation, inspector labels, static options                                  |
-| `sketch_edge.h`           | `Sketch_edge` struct; `sketch_edge_is_linear` / `sketch_edge_is_arc`; `sketch_edge_outgoing_dir_2d` / `sketch_edge_incoming_dir_2d` |
-| `sketch_edges.h`          | Persistent `std::list<Sketch_edge>`; add linear/arc edges; split at intersections; pick and selection                               |
-| `sketch_topo.h`           | Planar face extraction from edge graph; automatic splitting at interior nodes and arc crossings                                     |
-| `sketch_nodes.h`          | Node storage, snap, snap guides, outside-sketch snap points                                                                         |
-| `sketch_node_marks.h`     | AIS "+" markers for permanent nodes only                                                                                            |
-| `sketch_dims.h`           | Length dimensions between node pairs; Tab/Shift+Tab input; dimension-tool pick state                                                |
-| `sketch_tools.h`          | Mode-specific click/move/finalize/cancel for all sketch creation tools                                                              |
-| `sketch_underlay.h`       | Calibrated raster underlay on the sketch plane                                                                                      |
-| `sketch_ais.h`            | OCCT AIS wrappers tied back to owning `Sketch`                                                                                      |
-| `sketch_display.cpp`      | Visibility, edge/face styling, `set_current`, list hover                                                                            |
-| `sketch_operations.cpp`   | Operation axis, mirror, revolve                                                                                                     |
-| `sketch_json.h`           | `.ezy` / project JSON for sketches                                                                                                  |
-| `sketch_op_recorder.h`    | Undo/redo recorder; `Sketch_op_delta` lives in `.cpp`                                                                               |
+| File                 | Responsibility                                                                                                                      |
+| -------------------- | ----------------------------------------------------------------------------------------------------------------------------------- |
+| `skt.h` / `skt.cpp`  | Coordinator: input routing, edge shape updates, snap aggregation, inspector labels, static options                                  |
+| `skt_edge.h`         | `Sketch_edge` struct; `sketch_edge_is_linear` / `sketch_edge_is_arc`; `sketch_edge_outgoing_dir_2d` / `sketch_edge_incoming_dir_2d` |
+| `skt_edges.h`        | Persistent `std::list<Sketch_edge>`; add linear/arc edges; split at intersections; pick and selection                               |
+| `skt_topo.h`         | Planar face extraction from edge graph; automatic splitting at interior nodes and arc crossings                                     |
+| `skt_nodes.h`        | Node storage, snap, snap guides, outside-sketch snap points                                                                         |
+| `skt_node_marks.h`   | AIS "+" markers for permanent nodes only                                                                                            |
+| `skt_dims.h`         | Length dimensions between node pairs; Tab/Shift+Tab input; dimension-tool pick state                                                |
+| `skt_tools.h`        | Mode-specific click/move/finalize/cancel for all sketch creation tools                                                              |
+| `skt_underlay.h`     | Calibrated raster underlay on the sketch plane                                                                                      |
+| `skt_ais.h`          | OCCT AIS wrappers tied back to owning `Sketch`                                                                                      |
+| `skt_display.cpp`    | Visibility, edge/face styling, `set_current`, list hover                                                                            |
+| `skt_operations.cpp` | Operation axis, mirror, revolve                                                                                                     |
+| `skt_json.h`         | `.ezy` / project JSON for sketches                                                                                                  |
+| `skt_op_recorder.h`  | Undo/redo recorder; `Sketch_op_delta` lives in `.cpp`                                                                               |
 
 ## Edge and face model
 
@@ -236,7 +236,7 @@ See [`docs/usage-sketch.md`](../../docs/usage-sketch.md) for user-facing splitti
 
 | Item         | Location                                                                                     |
 | ------------ | -------------------------------------------------------------------------------------------- |
-| GTest suite  | `tests/sketch_*_tests.cpp` (+ `tests/sketch_test_fixture.*`), filter `Sketch_test.*`         |
+| GTest suite  | `tests/skt_*_tests.cpp` (+ `tests/skt_test_fixture.*`), filter `Sketch_test.*`               |
 | Build target | `EzyCad_tests` ([`agents/workflows/local-dev.md`](../../agents/workflows/local-dev.md))      |
 | Pattern      | Construct `Occt_view`, create `Sketch` on a plane, drive via `add_sketch_pt` or test helpers |
 

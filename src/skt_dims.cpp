@@ -1,4 +1,4 @@
-#include "sketch_dims.h"
+#include "skt_dims.h"
 
 #include <BRepBuilderAPI_MakeEdge.hxx>
 #include <Precision.hxx>
@@ -11,9 +11,9 @@
 #include "gui.h"
 #include "mode.h"
 #include "gui_occt_view.h"
-#include "sketch.h"
-#include "sketch_op_recorder.h"
-#include "sketch_edge.h"
+#include "skt.h"
+#include "skt_op_recorder.h"
+#include "skt_edge.h"
 #include "utl_geom.h"
 
 using namespace glm;

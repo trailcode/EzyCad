@@ -161,21 +161,21 @@ gp_Pnt back = to_3d(sketch.get_plane(), uv);
 | Mid   | `utl`, `utl_json`, `utl_occt`, `utl_io`, `utl_asset_store`, `utl_settings` |
 | Heavy | `utl_geom` (OCCT + Boost + glm), `utl_ply_io`                              |
 
-Avoid circular includes: `utl_types.h` pulls sketch AIS typedefs via `sketch_ais.h`; geometry code should not include GUI headers.
+Avoid circular includes: `utl_types.h` pulls sketch AIS typedefs via `skt_ais.h`; geometry code should not include GUI headers.
 
 ## Testing
 
-| Item                  | Location                                                      |
-| --------------------- | ------------------------------------------------------------- |
-| Geometry / polygon    | `tests/sketch_topo_tests.cpp` (`ezy_geom::`, `to_wkt_string`) |
-| `.ezy` zip / underlay | `tests/sketch_json_tests.cpp` (`pack_ezy`, `is_ezy_zip`)      |
-| Settings              | Manual; paths vary by platform                                |
+| Item                  | Location                                                   |
+| --------------------- | ---------------------------------------------------------- |
+| Geometry / polygon    | `tests/skt_topo_tests.cpp` (`ezy_geom::`, `to_wkt_string`) |
+| `.ezy` zip / underlay | `tests/skt_json_tests.cpp` (`pack_ezy`, `is_ezy_zip`)      |
+| Settings              | Manual; paths vary by platform                             |
 
 ## Related code outside `src/utl*`
 
-| Location                                        | Role                                             |
-| ----------------------------------------------- | ------------------------------------------------ |
-| [`gui.cpp`](../gui.cpp)                         | `pack_ezy` / `unpack_ezy` for file open/save     |
-| [`sketch_underlay.cpp`](../sketch_underlay.cpp) | `Ezy_asset_store` for underlay pixels            |
-| [`sketch_json.cpp`](../sketch_json.cpp)         | Manifest JSON + asset references                 |
-| [`gui_settings.cpp`](../gui_settings.cpp)       | Parses `gui.*` / `occt_view.*` keys into members |
+| Location                                  | Role                                             |
+| ----------------------------------------- | ------------------------------------------------ |
+| [`gui.cpp`](../gui.cpp)                   | `pack_ezy` / `unpack_ezy` for file open/save     |
+| [`skt_underlay.cpp`](../skt_underlay.cpp) | `Ezy_asset_store` for underlay pixels            |
+| [`skt_json.cpp`](../skt_json.cpp)         | Manifest JSON + asset references                 |
+| [`gui_settings.cpp`](../gui_settings.cpp) | Parses `gui.*` / `occt_view.*` keys into members |
