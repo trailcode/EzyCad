@@ -3,7 +3,7 @@
 Developer reference for EzyCad's document history. Public C++ entry points:
 
 - [`delta.h`](../delta.h) -- abstract undo step
-- [`sketch_op_recorder.h`](../sketch_op_recorder.h) -- sketch operation recorder (public API)
+- [`skt_op_recorder.h`](../skt_op_recorder.h) -- sketch operation recorder (public API)
 - [`shp_delta.h`](../shp_delta.h) -- shape add / remove / geom / replace deltas
 - [`doc_delta.h`](../doc_delta.h) -- sketch structural and underlay deltas
 - [`gui_occt_view.h`](../gui_occt_view.h) -- stack storage and `undo()` / `redo()`
@@ -104,7 +104,7 @@ class Delta {
 
 ### Sketch deltas
 
-See [`Sketch_op_recorder`](../sketch_op_recorder.h) / `Sketch_op_delta` (unchanged element prev/curr lists).
+See [`Sketch_op_recorder`](../skt_op_recorder.h) / `Sketch_op_delta` (unchanged element prev/curr lists).
 
 ### Shape deltas ([`shp_delta.h`](../shp_delta.h))
 
