@@ -208,6 +208,8 @@ Shared sketch controls (snap, midpoint nodes, place-from-center) live in `option
 
 Sketch List expand **Faces**: each face row supports **`E`** and right-click **Extrude** via `GUI::sketch_list_extrude_face_` (`set_mode(Sketch_face_extrude)` + `Occt_view::begin_sketch_face_extrude` / `Shp_extrude::begin_face_extrude`). Hovering a **Faces**, **Edges**, or **Nodes** row calls `Occt_view::set_sketch_list_hover_{face,edge,node}` (temporarily displays the AIS when hidden outside sketch modes; uses `Graphic3d_ZLayerId_Topmost` so solids do not occlude the highlight).
 
+**Sketch List UI in the project file:** `GUI::serialized_project_json_` writes `ui.sketchList` (scroll Y plus per-sketch `rows` keyed by sketch `id`: `expanded`, `dimensions`, `nodes`, `edges`, `faces`). `GUI::on_file` restores via `apply_sketch_list_ui_from_json_`. Subsection open state is app-owned (`Sketch_list_row_ui` + `SetNextItemOpen`), not ImGui ini storage.
+
 3D redraw: `render_occt()` -> `Occt_view::do_frame()` (separate from ImGui pass).
 
 ## Settings and persistence

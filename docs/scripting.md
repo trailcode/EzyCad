@@ -134,13 +134,7 @@ Bind `0.0.0.0` only if you intentionally expose the port on the network (no auth
 
 ### Importable client (`ezycad`)
 
-**Install is optional.** If `scripts/` is already on your Python path (as in many IPython setups), just `import ezycad`. Otherwise either::
-
-```text
-pip install -e .
-```
-
-or::
+If `scripts/` is already on your Python path (as in many IPython setups), just `import ezycad`. Otherwise::
 
 ```python
 import sys
@@ -166,9 +160,11 @@ If you see a connection / socket error, EzyCad was closed or `app` was already c
 ### CLI
 
 ```text
-python -m ezycad --port 8765
+python scripts/ezycad_remote.py --port 8765
 python scripts/ezycad_remote.py -c "ezy.log('hello')"
 ```
+
+With `scripts/` on `PYTHONPATH`, `python -m ezycad` works the same way.
 
 Raw `execute` / `eval` still return a `Result` (`ok` / `output` / `result` / `error`). Typed methods raise `ezycad.EzyCadError` on failure and unwrap simple values (ints, tuples, dicts) from the remote `repr`.
 

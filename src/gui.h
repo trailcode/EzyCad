@@ -176,6 +176,16 @@ struct Gui_settings_headers
   bool startup{false};
 };
 
+/// Per-sketch Sketch List expand / subsection open state (project `ui.sketchList`).
+struct Sketch_list_row_ui
+{
+  bool expanded{false};
+  bool dimensions{false};
+  bool nodes{false};
+  bool edges{false};
+  bool faces{false};
+};
+
 namespace doc_urls
 {
 // clang-format off
@@ -378,11 +388,15 @@ private:
   void open_sketch_origin_set_edit_(const std::shared_ptr<Sketch>& sk, int plane_idx, double v_min, double v_max);
   void on_left_click_(const ScreenCoords& screen_coords);
   void sketch_list_();
-  void sketch_list_inspector_(const std::shared_ptr<Sketch>& sketch, int index, std::shared_ptr<Sketch>& hover_dim_sketch,
-                              size_t& hover_dim_index, std::shared_ptr<Sketch>& hover_face_sketch, size_t& hover_face_index,
+  void sketch_list_inspector_(const std::shared_ptr<Sketch>& sketch, int index, Sketch_list_row_ui& row_ui,
+                              std::shared_ptr<Sketch>& hover_dim_sketch, size_t& hover_dim_index,
+                              std::shared_ptr<Sketch>& hover_face_sketch, size_t& hover_face_index,
                               std::shared_ptr<Sketch>& hover_edge_sketch, size_t& hover_edge_index,
                               std::shared_ptr<Sketch>& hover_node_sketch, size_t& hover_node_index);
   void sketch_list_extrude_face_(const std::shared_ptr<Sketch>& sketch, size_t face_index);
+  void clear_sketch_list_ui_();
+  void apply_sketch_list_ui_from_json_(const nlohmann::json& j);
+  [[nodiscard]] nlohmann::json sketch_list_ui_to_json_() const;
   void sketch_properties_dialog_();
   void sketch_origin_panel_settings_(const std::shared_ptr<Sketch>& sk);
   void shape_list_();
@@ -619,7 +633,9 @@ private:
   using Example_file_list = std::vector<Example_file>;
   Example_file_list m_example_files;
 
-  std::unordered_map<const Sketch*, bool> m_sketch_list_expanded;
+  std::unordered_map<size_t, Sketch_list_row_ui> m_sketch_list_ui;
+  float                                          m_sketch_list_scroll_y{0.f};
+  bool                                           m_sketch_list_scroll_restore{false};
 
   bool                        m_show_sketch_list{true};
   bool                        m_show_shape_list{true};

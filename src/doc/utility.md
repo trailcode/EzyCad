@@ -73,10 +73,10 @@ Includes [`utl_geom_boost.inl`](../utl_geom_boost.inl) for `ezy_geom` polygon / 
 
 ### `.ezy` v3 zip layout
 
-| Path in archive    | Content                                           |
-| ------------------ | ------------------------------------------------- |
-| `manifest.json`    | Document JSON (sketches, shapes, view state)      |
-| `assets/<id>.rgba` | Raw RGBA pixels for underlay `"asset"` references |
+| Path in archive    | Content                                                       |
+| ------------------ | ------------------------------------------------------------- |
+| `manifest.json`    | Document JSON (sketches, shapes, view, mode, `ui.sketchList`) |
+| `assets/<id>.rgba` | Raw RGBA pixels for underlay `"asset"` references             |
 
 | Function                       | Role                                                            |
 | ------------------------------ | --------------------------------------------------------------- |

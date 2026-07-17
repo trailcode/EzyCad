@@ -158,7 +158,8 @@ public:
   void cancel(Set_parent_mode set_parent_mode);
 
   // Sketch related
-  Sketch_list& get_sketches();
+  Sketch_list&       get_sketches();
+  const Sketch_list& get_sketches() const;
   size_t       allocate_sketch_id();
   void         adopt_sketch_id(size_t id);
   void         remove_sketch(const Sketch_ptr& sketch);

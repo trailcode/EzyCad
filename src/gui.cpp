@@ -1106,15 +1106,22 @@ const std::vector<std::string>& GUI::occt_material_combo_labels_()
   return names;
 }
 
-void GUI::sketch_list_inspector_(const Sketch::sptr& sketch, int index, Sketch::sptr& hover_dim_sketch,
-                                 size_t& hover_dim_index, Sketch::sptr& hover_face_sketch, size_t& hover_face_index,
+void GUI::sketch_list_inspector_(const Sketch::sptr& sketch, int index, Sketch_list_row_ui& row_ui,
+                                 Sketch::sptr& hover_dim_sketch, size_t& hover_dim_index,
+                                 Sketch::sptr& hover_face_sketch, size_t& hover_face_index,
                                  Sketch::sptr& hover_edge_sketch, size_t& hover_edge_index,
                                  Sketch::sptr& hover_node_sketch, size_t& hover_node_index)
 {
   ImGui::Indent();
   ImGui::PushID(index);
 
-  const auto draw_hover_section = [&](const char* title, const std::vector<std::string>& labels,
+  const auto sync_tree_open = [](bool& open_state, bool open)
+  {
+    if (open != open_state)
+      open_state = open;
+  };
+
+  const auto draw_hover_section = [&](const char* title, const std::vector<std::string>& labels, bool& open_state,
                                       Sketch::sptr& hover_sketch, size_t& hover_index)
   {
     const size_t       count = labels.size();
@@ -1122,23 +1129,26 @@ void GUI::sketch_list_inspector_(const Sketch::sptr& sketch, int index, Sketch::
     if (count == 0)
       flags |= ImGuiTreeNodeFlags_Leaf | ImGuiTreeNodeFlags_NoTreePushOnOpen;
 
-    if (ImGui::TreeNodeEx(title, flags, "%s (%zu)", title, count))
-    {
-      for (size_t i = 0; i < count; ++i)
-      {
-        ImGui::PushID(static_cast<int>(i));
-        ImGui::BulletText("%s", labels[i].c_str());
-        if (ImGui::IsItemHovered() && sketch->is_visible())
-        {
-          hover_sketch = sketch;
-          hover_index  = i;
-        }
-        ImGui::PopID();
-      }
+    ImGui::SetNextItemOpen(open_state);
+    const bool open = ImGui::TreeNodeEx(title, flags, "%s (%zu)", title, count);
+    sync_tree_open(open_state, open);
+    if (!open)
+      return;
 
-      if (count > 0)
-        ImGui::TreePop();
+    for (size_t i = 0; i < count; ++i)
+    {
+      ImGui::PushID(static_cast<int>(i));
+      ImGui::BulletText("%s", labels[i].c_str());
+      if (ImGui::IsItemHovered() && sketch->is_visible())
+      {
+        hover_sketch = sketch;
+        hover_index  = i;
+      }
+      ImGui::PopID();
     }
+
+    if (count > 0)
+      ImGui::TreePop();
   };
 
   {
@@ -1148,7 +1158,10 @@ void GUI::sketch_list_inspector_(const Sketch::sptr& sketch, int index, Sketch::
     if (count == 0)
       flags |= ImGuiTreeNodeFlags_Leaf | ImGuiTreeNodeFlags_NoTreePushOnOpen;
 
-    if (ImGui::TreeNodeEx("Dimensions", flags, "Dimensions (%zu)", count))
+    ImGui::SetNextItemOpen(row_ui.dimensions);
+    const bool open = ImGui::TreeNodeEx("Dimensions", flags, "Dimensions (%zu)", count);
+    sync_tree_open(row_ui.dimensions, open);
+    if (open)
     {
       if (count > 0 && ImGui::BeginTable("sketch_dim_rows", 3, ImGuiTableFlags_Resizable | ImGuiTableFlags_SizingStretchProp))
       {
@@ -1209,8 +1222,8 @@ void GUI::sketch_list_inspector_(const Sketch::sptr& sketch, int index, Sketch::
     }
   }
 
-  draw_hover_section("Nodes", sketch->inspector_node_labels(), hover_node_sketch, hover_node_index);
-  draw_hover_section("Edges", sketch->inspector_edge_labels(), hover_edge_sketch, hover_edge_index);
+  draw_hover_section("Nodes", sketch->inspector_node_labels(), row_ui.nodes, hover_node_sketch, hover_node_index);
+  draw_hover_section("Edges", sketch->inspector_edge_labels(), row_ui.edges, hover_edge_sketch, hover_edge_index);
 
   {
     const std::vector<std::string> labels = sketch->inspector_face_labels();
@@ -1219,7 +1232,10 @@ void GUI::sketch_list_inspector_(const Sketch::sptr& sketch, int index, Sketch::
     if (count == 0)
       flags |= ImGuiTreeNodeFlags_Leaf | ImGuiTreeNodeFlags_NoTreePushOnOpen;
 
-    if (ImGui::TreeNodeEx("Faces", flags, "Faces (%zu)", count))
+    ImGui::SetNextItemOpen(row_ui.faces);
+    const bool open = ImGui::TreeNodeEx("Faces", flags, "Faces (%zu)", count);
+    sync_tree_open(row_ui.faces, open);
+    if (open)
     {
       for (size_t i = 0; i < count; ++i)
       {
@@ -1331,8 +1347,8 @@ void GUI::sketch_list_()
     // Unique ID suffix using index
     std::string id_suffix = "##" + std::to_string(index);
 
-    const Sketch* sk_key   = sketch.get();
-    bool&         expanded = m_sketch_list_expanded[sk_key];
+    Sketch_list_row_ui& row_ui   = m_sketch_list_ui[sketch->get_id()];
+    bool&               expanded = row_ui.expanded;
 
     if (ui_show_sketch_list_expand())
     {
@@ -1462,9 +1478,10 @@ void GUI::sketch_list_()
       sketch_list_hover = sketch;
 
     if (expanded && ui_show_sketch_list_expand())
-      sketch_list_inspector_(sketch, index, sketch_list_measurement_hover_sketch, sketch_list_measurement_hover_index,
-                             sketch_list_hover_face_sketch, sketch_list_hover_face_index, sketch_list_hover_edge_sketch,
-                             sketch_list_hover_edge_index, sketch_list_hover_node_sketch, sketch_list_hover_node_index);
+      sketch_list_inspector_(sketch, index, row_ui, sketch_list_measurement_hover_sketch,
+                             sketch_list_measurement_hover_index, sketch_list_hover_face_sketch,
+                             sketch_list_hover_face_index, sketch_list_hover_edge_sketch, sketch_list_hover_edge_index,
+                             sketch_list_hover_node_sketch, sketch_list_hover_node_index);
 
     ++index;
   }
@@ -1475,6 +1492,14 @@ void GUI::sketch_list_()
   m_view->set_sketch_list_hover_edge(sketch_list_hover_edge_sketch, sketch_list_hover_edge_index);
   m_view->set_sketch_list_hover_node(sketch_list_hover_node_sketch, sketch_list_hover_node_index);
 
+  if (m_sketch_list_scroll_restore)
+  {
+    ImGui::SetScrollY(m_sketch_list_scroll_y);
+    m_sketch_list_scroll_restore = false;
+  }
+  else
+    m_sketch_list_scroll_y = ImGui::GetScrollY();
+
   ImGui::EndChild();
 
   if (sketch_to_delete)
@@ -1482,6 +1507,7 @@ void GUI::sketch_list_()
     if (const auto p = m_sketch_properties_sketch.lock(); p && p == sketch_to_delete)
       m_sketch_properties_open = false;
 
+    m_sketch_list_ui.erase(sketch_to_delete->get_id());
     m_view->remove_sketch(sketch_to_delete);
   }
 
@@ -3033,12 +3059,104 @@ void GUI::load_default_project_()
     log_message("EzyCad: bundled " + std::string(k_bundled_default) + " is invalid; keeping initial empty document.");
 }
 
+void GUI::clear_sketch_list_ui_()
+{
+  m_sketch_list_ui.clear();
+  m_sketch_list_scroll_y       = 0.f;
+  m_sketch_list_scroll_restore = false;
+}
+
+nlohmann::json GUI::sketch_list_ui_to_json_() const
+{
+  using namespace nlohmann;
+  json out;
+  out["scrollY"] = m_sketch_list_scroll_y;
+
+  json rows = json::object();
+  for (const Sketch::sptr& sketch : m_view->get_sketches())
+  {
+    EZY_ASSERT(sketch);
+    const auto it = m_sketch_list_ui.find(sketch->get_id());
+    if (it == m_sketch_list_ui.end())
+      continue;
+
+    const Sketch_list_row_ui& ui = it->second;
+    if (!ui.expanded && !ui.dimensions && !ui.nodes && !ui.edges && !ui.faces)
+      continue;
+
+    json row;
+    if (ui.expanded)
+      row["expanded"] = true;
+    if (ui.dimensions)
+      row["dimensions"] = true;
+    if (ui.nodes)
+      row["nodes"] = true;
+    if (ui.edges)
+      row["edges"] = true;
+    if (ui.faces)
+      row["faces"] = true;
+    rows[std::to_string(sketch->get_id())] = std::move(row);
+  }
+  if (!rows.empty())
+    out["rows"] = std::move(rows);
+
+  return out;
+}
+
+void GUI::apply_sketch_list_ui_from_json_(const nlohmann::json& j)
+{
+  using namespace nlohmann;
+  clear_sketch_list_ui_();
+
+  if (!j.contains("ui") || !j["ui"].is_object())
+    return;
+
+  const json& ui = j["ui"];
+  if (!ui.contains("sketchList") || !ui["sketchList"].is_object())
+    return;
+
+  const json& sl = ui["sketchList"];
+  if (sl.contains("scrollY") && sl["scrollY"].is_number())
+  {
+    m_sketch_list_scroll_y       = sl["scrollY"].get<float>();
+    m_sketch_list_scroll_restore = true;
+  }
+
+  if (!sl.contains("rows") || !sl["rows"].is_object())
+    return;
+
+  for (const auto& [key, row] : sl["rows"].items())
+  {
+    if (!row.is_object() || key.empty())
+      continue;
+
+    char*                   end = nullptr;
+    const unsigned long long parsed = std::strtoull(key.c_str(), &end, 10);
+    if (!end || *end != '\0')
+      continue;
+
+    const size_t        id     = static_cast<size_t>(parsed);
+    Sketch_list_row_ui& ui_row = m_sketch_list_ui[id];
+    if (row.contains("expanded") && row["expanded"].is_boolean())
+      ui_row.expanded = row["expanded"].get<bool>();
+    if (row.contains("dimensions") && row["dimensions"].is_boolean())
+      ui_row.dimensions = row["dimensions"].get<bool>();
+    if (row.contains("nodes") && row["nodes"].is_boolean())
+      ui_row.nodes = row["nodes"].get<bool>();
+    if (row.contains("edges") && row["edges"].is_boolean())
+      ui_row.edges = row["edges"].get<bool>();
+    if (row.contains("faces") && row["faces"].is_boolean())
+      ui_row.faces = row["faces"].get<bool>();
+  }
+}
+
 std::string GUI::serialized_project_json_() const
 {
   using namespace nlohmann;
   std::string project_json = m_view->to_json();
   json        j            = json::parse(project_json);
   j["mode"]                = static_cast<int>(get_mode());
+  j["ui"]["sketchList"]    = sketch_list_ui_to_json_();
   return j.dump(2);
 }
 
@@ -3389,6 +3507,7 @@ void GUI::import_file_dialog_()
 void GUI::new_project_()
 {
   m_last_saved_path.clear();
+  clear_sketch_list_ui_();
   m_view->new_file();
 }
 
@@ -3484,6 +3603,7 @@ void GUI::on_file(const std::string& file_path, const std::string& file_bytes, b
   const json j = json::parse(*manifest);
   m_view->load(*manifest);
   log_message("on_file: load complete");
+  apply_sketch_list_ui_from_json_(j);
   m_last_saved_path = file_path;
   Mode opened_mode  = Mode::Normal;
   if (j.contains("mode") && j["mode"].is_number_integer())
