@@ -4,7 +4,7 @@
 #include <glm/glm.hpp>
 #include <memory>
 
-#include "sketch_ais.h"
+#include "skt_ais.h"
 
 class TopoDS_Shape;
 class Sketch;

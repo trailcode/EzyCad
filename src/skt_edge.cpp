@@ -1,4 +1,4 @@
-#include "sketch_edge.h"
+#include "skt_edge.h"
 
 #include <BRepAdaptor_Curve.hxx>
 #include <GeomAPI_ProjectPointOnCurve.hxx>

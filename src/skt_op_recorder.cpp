@@ -1,4 +1,4 @@
-#include "sketch_op_recorder.h"
+#include "skt_op_recorder.h"
 
 #include <BRepBuilderAPI_MakeEdge.hxx>
 #include <GC_MakeArcOfCircle.hxx>
@@ -10,8 +10,8 @@
 #include "utl_geom.h"
 #include "gui_occt_view.h"
 #include "sketch.h"
-#include "sketch_nodes.h"
-#include "sketch_edge.h"
+#include "skt_nodes.h"
+#include "skt_edge.h"
 
 namespace
 {

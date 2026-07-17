@@ -2,7 +2,7 @@
 
 #include <vector>
 
-#include "sketch_ais.h"
+#include "skt_ais.h"
 #include "utl_types.h"
 
 class Sketch;

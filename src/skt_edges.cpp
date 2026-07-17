@@ -1,4 +1,4 @@
-#include "sketch_edges.h"
+#include "skt_edges.h"
 
 #include <BRepBuilderAPI_MakeEdge.hxx>
 #include <BRepAdaptor_Curve.hxx>
@@ -11,9 +11,9 @@
 
 #include "gui_occt_view.h"
 #include "sketch.h"
-#include "sketch_op_recorder.h"
-#include "sketch_edge.h"
-#include "sketch_topo.h"
+#include "skt_op_recorder.h"
+#include "skt_edge.h"
+#include "skt_topo.h"
 #include "utl_geom.h"
 #include "utl.h"
 

@@ -1,12 +1,12 @@
-#include "sketch_test_fixture.h"
+#include "skt_test_fixture.h"
 
 #include <set>
 #include <string>
 #include <vector>
 
-#include "sketch_edge.h"
-#include "sketch_json.h"
-#include "sketch_nodes.h"
+#include "skt_edge.h"
+#include "skt_json.h"
+#include "skt_nodes.h"
 #include "utl_geom.h"
 #include "utl_asset_store.h"
 #include "utl_io.h"

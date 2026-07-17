@@ -1,4 +1,4 @@
-#include "sketch_json.h"
+#include "skt_json.h"
 
 #include <AIS_InteractiveContext.hxx>
 #include <BRepTools.hxx>
@@ -14,9 +14,9 @@
 #include "utl_dbg.h"
 #include "utl_geom.h"
 #include "sketch.h"
-#include "sketch_edge.h"
-#include "sketch_nodes.h"
-#include "sketch_underlay.h"
+#include "skt_edge.h"
+#include "skt_nodes.h"
+#include "skt_underlay.h"
 #include "utl_asset_store.h"
 #include "gui_occt_view.h"
 #include "utl_json.h"

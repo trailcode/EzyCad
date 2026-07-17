@@ -6,7 +6,7 @@
 #include <optional>
 #include <vector>
 
-#include "sketch_edge.h"
+#include "skt_edge.h"
 #include "utl_types.h"
 
 class Sketch;

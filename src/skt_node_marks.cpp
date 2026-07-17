@@ -1,4 +1,4 @@
-#include "sketch_node_marks.h"
+#include "skt_node_marks.h"
 
 #include <Precision.hxx>
 #include <Quantity_Color.hxx>
@@ -7,8 +7,8 @@
 #include "mode.h"
 #include "gui_occt_view.h"
 #include "sketch.h"
-#include "sketch_nodes.h"
-#include "sketch_topo.h"
+#include "skt_nodes.h"
+#include "skt_topo.h"
 #include "utl_geom.h"
 
 Sketch_node_marks::Sketch_node_marks(Sketch& sketch)

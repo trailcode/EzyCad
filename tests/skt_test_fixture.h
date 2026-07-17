@@ -3,7 +3,7 @@
 #include "gui.h"
 #include "gui_occt_view.h"
 #include "sketch.h"
-#include "sketch_op_recorder.h"
+#include "skt_op_recorder.h"
 #include "utl_geom.h"
 
 #include <gtest/gtest.h>
@@ -113,4 +113,4 @@ protected:
   static GUI s_gui;
 };
 
-#include "sketch_test_fixture.inl"
+#include "skt_test_fixture.inl"

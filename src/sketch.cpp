@@ -15,7 +15,7 @@
 #include "utl_geom.h"
 #include "mode.h"
 #include "gui_occt_view.h"
-#include "sketch_op_recorder.h"
+#include "skt_op_recorder.h"
 #include "utl.h"
 
 using namespace glm;

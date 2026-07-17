@@ -1,4 +1,4 @@
-#include "sketch_test_fixture.h"
+#include "skt_test_fixture.h"
 
 #include <AIS_InteractiveContext.hxx>
 #include <BRepBndLib.hxx>
@@ -12,7 +12,7 @@
 #include "shp.h"
 #include "shp_create.h"
 #include "shp_info.h"
-#include "sketch_op_recorder.h"
+#include "skt_op_recorder.h"
 #include "utl.h"
 
 namespace
