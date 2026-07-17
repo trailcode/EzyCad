@@ -1,4 +1,4 @@
-#include "sketch.h"
+#include "skt.h"
 
 #include <BRepBuilderAPI_MakeEdge.hxx>
 #include <BRep_Tool.hxx>

@@ -6,7 +6,7 @@
 #include "gui.h"
 #include "mode.h"
 #include "gui_occt_view.h"
-#include "sketch.h"
+#include "skt.h"
 #include "skt_nodes.h"
 #include "skt_topo.h"
 #include "utl_geom.h"

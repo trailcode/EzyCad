@@ -58,7 +58,7 @@
 #include "shp.h"
 #include "shp_create.h"
 #include "shp_delta.h"
-#include "sketch.h"
+#include "skt.h"
 #include "skt_ais.h"
 #include "skt_json.h"
 #include "utl_types.h"

@@ -17,7 +17,7 @@
 #include "imgui_internal.h"
 #include "mode.h"
 #include "gui_occt_view.h"
-#include "sketch.h"
+#include "skt.h"
 #include "utl_occt.h"
 
 #include <gp_Pnt2d.hxx>

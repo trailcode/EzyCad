@@ -31,7 +31,7 @@
 #include "utl_io.h"
 #include "scr_python_console.h"
 #include "shp_info.h"
-#include "sketch.h"
+#include "skt.h"
 #include "utl.h"
 #include "version.h"
 

@@ -1,5 +1,5 @@
 // Sketch viewer display: visibility, edge styling, sketch switching, list hover.
-#include "sketch.h"
+#include "skt.h"
 
 #include <Aspect_TypeOfLine.hxx>
 #include <Aspect_InteriorStyle.hxx>

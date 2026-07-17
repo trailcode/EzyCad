@@ -2,7 +2,7 @@
 
 #include "gui.h"
 #include "gui_occt_view.h"
-#include "sketch.h"
+#include "skt.h"
 #include "skt_op_recorder.h"
 #include "utl_geom.h"
 

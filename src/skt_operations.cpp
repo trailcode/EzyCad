@@ -1,5 +1,5 @@
 // Sketch mirror/revolve and operation-axis helpers (state remains on Sketch).
-#include "sketch.h"
+#include "skt.h"
 
 #include <BRepPrimAPI_MakeRevol.hxx>
 #include <TopoDS.hxx>

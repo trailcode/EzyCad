@@ -10,7 +10,7 @@
 #include <vector>
 
 #include "gui_occt_view.h"
-#include "sketch.h"
+#include "skt.h"
 #include "skt_op_recorder.h"
 #include "skt_edge.h"
 #include "skt_topo.h"

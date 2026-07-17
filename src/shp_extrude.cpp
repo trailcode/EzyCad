@@ -9,7 +9,7 @@
 #include "utl_geom.h"
 #include "gui.h"
 #include "gui_occt_view.h"
-#include "sketch.h"
+#include "skt.h"
 #include "shp_delta.h"
 #include "utl.h"
 

@@ -10,7 +10,7 @@
 #include "imgui.h"
 #include "gui_occt_view.h"
 #include "utl_settings.h"
-#include "sketch.h"
+#include "skt.h"
 #include "skt_nodes.h"
 
 namespace

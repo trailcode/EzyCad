@@ -1,7 +1,7 @@
 #include "doc_delta.h"
 
 #include "gui_occt_view.h"
-#include "sketch.h"
+#include "skt.h"
 #include "skt_json.h"
 #include "utl.h"
 

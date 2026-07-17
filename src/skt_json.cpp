@@ -13,7 +13,7 @@
 
 #include "utl_dbg.h"
 #include "utl_geom.h"
-#include "sketch.h"
+#include "skt.h"
 #include "skt_edge.h"
 #include "skt_nodes.h"
 #include "skt_underlay.h"

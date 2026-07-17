@@ -11,7 +11,7 @@
 #include "gui.h"
 #include "mode.h"
 #include "gui_occt_view.h"
-#include "sketch.h"
+#include "skt.h"
 #include "skt_nodes.h"
 #include "shp_delta.h"
 

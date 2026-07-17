@@ -13,7 +13,7 @@
 #include "gui.h"
 #include "mode.h"
 #include "gui_occt_view.h"
-#include "sketch.h"
+#include "skt.h"
 #include "skt_op_recorder.h"
 #include "skt_edge.h"
 #include "utl_geom.h"

@@ -47,12 +47,12 @@ Typical responsibilities:
 
 `gui.ui_verbosity` gates panes and help (Settings slider). Derived tiers on `GUI`:
 
-| API                         | Meaning                                                 |
-| --------------------------- | ------------------------------------------------------- |
-| `ui_feature_tier()`         | `(verbosity + 1) / 2` -- Options, lists, log at tier 1+ |
-| `ui_help_tier()`            | `verbosity / 2` -- contextual help depth                |
-| `ui_show_contextual_help()` | `verbosity >= 5` -- `?` buttons and doc links           |
-| `show_*_effective()`        | Pane flag AND feature tier                              |
+| API                                  | Meaning                                                             |
+| ------------------------------------ | ------------------------------------------------------------------- |
+| `ui_feature_tier()`                  | `(verbosity + 1) / 2` -- Options, lists, log at tier 1+             |
+| `ui_help_tier()`                     | `verbosity / 2` -- contextual help depth                            |
+| `ui_show_contextual_help()`          | `verbosity >= 5` -- `?` buttons and doc links                       |
+| `show_*_effective()`                 | Pane flag AND feature tier                                          |
 | `ui_show_occt_line_width_settings()` | `false` on wasm (GLES ignores OCCT `SetWidth` / line-width sliders) |
 
 Constants and ranges live in `gui.h` (`k_gui_ui_verbosity_*`, dimension defaults, view roll/zoom ranges, default 2D view size).
@@ -259,7 +259,7 @@ Occt_view* view = gui.get_view();
 
 | Item                   | Notes                                                |
 | ---------------------- | ---------------------------------------------------- |
-| Sketch tests           | `GUI_access` friend in `tests/sketch_test_fixture.*` |
+| Sketch tests           | `GUI_access` friend in `tests/skt_test_fixture.*`    |
 | Headless / partial GUI | `sketch_left_click`, message getters on `GUI_access` |
 | Full UI                | Manual smoke; no dedicated `gui_tests` target        |
 
