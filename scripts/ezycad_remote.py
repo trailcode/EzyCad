@@ -3,11 +3,10 @@
 
 Prefer::
 
-    pip install -e .
     python -m ezycad
     # or: import ezycad; app = ezycad.connect()
 
-This script adds ``scripts/`` to sys.path so it works without install.
+This script adds ``scripts/`` to sys.path so it works from the repo.
 """
 
 from __future__ import annotations

@@ -18,6 +18,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Expanded **Faces** rows: **`E`** button and right-click **Extrude** start [extrude](docs/usage.md#extrude-sketch-face-tool-e) for that face (then drag height in the viewer).
 - Hovering a **Faces**, **Edges**, or **Nodes** row highlights that element in the viewer (even outside sketch modes, when sketch geometry is normally hidden). Highlights use the OCCT **Topmost** Z-layer so extruded solids do not cover them in inspection/Normal mode.
+- Project `.ezy` files save Sketch List expand state, open subsections (**Dimensions** / **Nodes** / **Edges** / **Faces**), and vertical scroll position (`ui.sketchList`).
 
 ### Documentation
 
@@ -44,7 +45,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **`ezy.view.get_selected()` / `get_selected_indices()`:** Return the current 3D viewer selection as document `Shp` objects, or as shape indices (Python **0-based**, Lua **1-based**). Available in Python, Lua, and the remote `ezycad` client.
 - **Public API layout:** Python-first package surface under `ezy` / `ezy.view` / `ezy.view.curr_sketch` (same object as `ezy.sketch`). Lua mirrors the same namespaces. See [docs/scripting.md](docs/scripting.md).
 - **`ezy.view.fuse` / `cut` / `common` / `delete`:** Boolean union, cut (first shape is body, rest are tools), intersection, or delete one or more shapes. Available in Python, Lua, and the remote `ezycad` client.
-- **Remote Python (`--listen`):** Desktop builds with embedded Python can accept console snippets over TCP (`EzyCad --listen [host:]port`). Execution is marshaled to the main UI thread. Importable client: `pip install -e .` then `import ezycad; ezycad.connect()` (typed API for IPython/IDE completion) under `scripts/ezycad/`. See [docs/scripting.md](docs/scripting.md#remote-python---listen).
+- **Remote Python (`--listen`):** Desktop builds with embedded Python can accept console snippets over TCP (`EzyCad --listen [host:]port`). Execution is marshaled to the main UI thread. Importable client under `scripts/ezycad/` (`import ezycad; ezycad.connect()`, with `scripts/` on `PYTHONPATH`). See [docs/scripting.md](docs/scripting.md#remote-python---listen).
 
 ### Sketch appearance
 

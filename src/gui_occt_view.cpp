@@ -2653,7 +2653,8 @@ Aspect_VKeyFlags Occt_view::key_flags_from_glfw_window_() const
   return key_flags_from_glfw_(mods);
 }
 
-Occt_view::Sketch_list& Occt_view::get_sketches() { return m_sketches; }
+Occt_view::Sketch_list&       Occt_view::get_sketches() { return m_sketches; }
+const Occt_view::Sketch_list& Occt_view::get_sketches() const { return m_sketches; }
 
 size_t Occt_view::allocate_sketch_id() { return m_next_sketch_id++; }
 

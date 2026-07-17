@@ -1,6 +1,6 @@
 """EzyCad remote client: importable API for a running EzyCad --listen instance.
 
-Quick start (no install if ``scripts/`` is on ``PYTHONPATH``)::
+Quick start (put ``scripts/`` on ``PYTHONPATH``, or)::
 
     import sys
     sys.path.insert(0, r"C:\\src\\EzyCad\\scripts")  # or cd / repo setup
@@ -8,10 +8,6 @@ Quick start (no install if ``scripts/`` is on ``PYTHONPATH``)::
     app = ezycad.connect()          # keep this; do not use `with` in IPython if you reuse app
     app.ezy.log("hello")
     n = app.view.sketch_count()     # tab-completes in IPython / IDEs
-
-Optional install from repo root::
-
-    pip install -e .
 
 Requires EzyCad launched with ``--listen`` (see docs/scripting.md).
 """
