@@ -39,6 +39,9 @@ nlohmann::json settings_headers_to_json(const Gui_settings_headers& h)
                         {"sketch", h.sketch},
                         {"sketch_appearance", h.sketch_appearance},
                         {"sketch_dimensions", h.sketch_dimensions},
+                        {"sketch_nodes", h.sketch_nodes},
+                        {"sketch_snap", h.sketch_snap},
+                        {"sketch_underlay", h.sketch_underlay},
                         {"startup", h.startup}};
 }
 
@@ -58,6 +61,9 @@ void parse_settings_headers_json(const nlohmann::json& obj, Gui_settings_headers
   out.sketch            = b("sketch", defaults.sketch);
   out.sketch_appearance = b("sketch_appearance", defaults.sketch_appearance);
   out.sketch_dimensions = b("sketch_dimensions", defaults.sketch_dimensions);
+  out.sketch_nodes      = b("sketch_nodes", defaults.sketch_nodes);
+  out.sketch_snap       = b("sketch_snap", defaults.sketch_snap);
+  out.sketch_underlay   = b("sketch_underlay", defaults.sketch_underlay);
   out.startup           = b("startup", defaults.startup);
 }
 
@@ -1591,227 +1597,246 @@ void GUI::settings_()
         ImGui::EndTable();
       }
 
-    ImGui::Unindent(ImGui::GetStyle().IndentSpacing);
-
-    if (ImGui::BeginTable("settings_sketch", 2, ImGuiTableFlags_SizingStretchProp))
-    {
-      ImGui::TableSetupColumn("label", ImGuiTableColumnFlags_WidthFixed, k_label_col_w);
-      ImGui::TableSetupColumn("control", ImGuiTableColumnFlags_WidthStretch);
-
-      ImGui::TableNextRow();
-      ImGui::TableSetColumnIndex(0);
-      ImGui::AlignTextToFramePadding();
-      ImGui::TextUnformatted("Permanent node annotation size");
-      ImGui::TableSetColumnIndex(1);
+    if (settings_collapsing_header_("Nodes", m_settings_headers.sketch_nodes))
+      if (ImGui::BeginTable("settings_sketch_nodes", 2, ImGuiTableFlags_SizingStretchProp))
       {
-        float size_scale = m_permanent_node_anno_scale;
-        if (ImGui::SliderFloat("##permanent_node_anno_scale", &size_scale, k_gui_permanent_node_anno_scale_min,
-                               k_gui_permanent_node_anno_scale_max, "%.2f"))
-        {
-          m_permanent_node_anno_scale = size_scale;
-          node_anno_changed           = true;
-        }
+        ImGui::TableSetupColumn("label", ImGuiTableColumnFlags_WidthFixed, k_label_col_w);
+        ImGui::TableSetupColumn("control", ImGuiTableColumnFlags_WidthStretch);
 
-        ImGui::SameLine(0.0f, ImGui::GetStyle().ItemInnerSpacing.x);
-        GUI_DOC_HELP_("Scale for '+' markers on the sketch Origin and Add node points. Click ? to open the user guide.",
-                      doc_urls::k_sketch_origin);
-      }
-
-      ImGui::TableNextRow();
-      ImGui::TableSetColumnIndex(0);
-      ImGui::AlignTextToFramePadding();
-      ImGui::TextUnformatted("Origin marker color");
-      ImGui::TableSetColumnIndex(1);
-      {
-        if (ImGui::ColorEdit3("##origin_marker_color", m_origin_marker_color, ImGuiColorEditFlags_Float))
-          node_anno_changed = true;
-
-        ImGui::SameLine(0.0f, ImGui::GetStyle().ItemInnerSpacing.x);
-        GUI_DOC_HELP_("Color for the active sketch's Origin marker (+ with circle). Click ? to open the user guide.",
-                      doc_urls::k_sketch_origin);
-      }
-
-      ImGui::TableNextRow();
-      ImGui::TableSetColumnIndex(0);
-      ImGui::AlignTextToFramePadding();
-      ImGui::TextUnformatted("Add midpoints to line edges");
-      ImGui::TableSetColumnIndex(1);
-      {
-        bool add = m_add_mid_pt_line_edges;
-        if (ImGui::Checkbox("##add_mids_line", &add))
-        {
-          m_add_mid_pt_line_edges = add;
-          sync_sketch_add_mid_pt_edges_if_applicable_();
-          save_occt_view_settings();
-        }
-
-        ImGui::SameLine(0.0f, ImGui::GetStyle().ItemInnerSpacing.x);
-        GUI_DOC_HELP_("Line edge and multi-line edge tools (default off). Click ? to open the user guide.",
-                      doc_urls::k_line_edge_midpoint_nodes);
-      }
-
-      ImGui::TableNextRow();
-      ImGui::TableSetColumnIndex(0);
-      ImGui::AlignTextToFramePadding();
-      ImGui::TextUnformatted("Add midpoints to square/rectangle");
-      ImGui::TableSetColumnIndex(1);
-      {
-        bool add = m_add_mid_pt_rect_edges;
-        if (ImGui::Checkbox("##add_mids_rect", &add))
-        {
-          m_add_mid_pt_rect_edges = add;
-          sync_sketch_add_mid_pt_edges_if_applicable_();
-          save_occt_view_settings();
-        }
-
-        ImGui::SameLine(0.0f, ImGui::GetStyle().ItemInnerSpacing.x);
-        GUI_DOC_HELP_("Square and rectangle tools (default on). Click ? to open the user guide.",
-                      doc_urls::k_line_edge_midpoint_nodes);
-      }
-
-      ImGui::TableNextRow();
-      ImGui::TableSetColumnIndex(0);
-      ImGui::AlignTextToFramePadding();
-      ImGui::TextUnformatted("Add midpoints to slot edges");
-      ImGui::TableSetColumnIndex(1);
-      {
-        bool add = m_add_mid_pt_slot_edges;
-        if (ImGui::Checkbox("##add_mids_slot", &add))
-        {
-          m_add_mid_pt_slot_edges = add;
-          sync_sketch_add_mid_pt_edges_if_applicable_();
-          save_occt_view_settings();
-        }
-
-        ImGui::SameLine(0.0f, ImGui::GetStyle().ItemInnerSpacing.x);
-        GUI_DOC_HELP_("Slot tool straight edges only (default off). Click ? to open the user guide.",
-                      doc_urls::k_line_edge_midpoint_nodes);
-      }
-
-      ImGui::TableNextRow();
-      ImGui::TableSetColumnIndex(0);
-      ImGui::AlignTextToFramePadding();
-      ImGui::TextUnformatted("Underlay highlight color");
-      ImGui::TableSetColumnIndex(1);
-      ul_changed |= ImGui::ColorEdit4("##underlay_hi", &m_underlay_highlight_color[0], ImGuiColorEditFlags_Float);
-      ImGui::SameLine(0.0f, ImGui::GetStyle().ItemInnerSpacing.x);
-      GUI_DOC_HELP_("Updates all sketch underlays immediately. Also used as the default when you import a new image. "
-                    "Per-sketch overrides in Sketch List if needed. Click ? to open the user guide.",
-                    doc_urls::k_image_underlay);
-
-      ImGui::TableNextRow();
-      ImGui::TableSetColumnIndex(0);
-      ImGui::AlignTextToFramePadding();
-      ImGui::TextUnformatted("Snap guide color (node)");
-      ImGui::TableSetColumnIndex(1);
-      {
-        glm::vec3 snap_col;
-        Sketch_nodes::get_snap_guide_color_node(snap_col[0], snap_col[1], snap_col[2]);
-        if (ImGui::ColorEdit3("##snap_guide_color_node", &snap_col[0], ImGuiColorEditFlags_Float))
-        {
-          Sketch_nodes::set_snap_guide_color_node(snap_col[0], snap_col[1], snap_col[2]);
-          save_occt_view_settings();
-        }
-
-        ImGui::SameLine(0.0f, ImGui::GetStyle().ItemInnerSpacing.x);
-        GUI_DOC_HELP_("Guides when both X and Y snap to the same node (vertex lock). Click ? to open the user guide.",
-                      doc_urls::k_sketch_snapping);
-      }
-
-      ImGui::TableNextRow();
-      ImGui::TableSetColumnIndex(0);
-      ImGui::AlignTextToFramePadding();
-      ImGui::TextUnformatted("Snap guide color (axis)");
-      ImGui::TableSetColumnIndex(1);
-      {
-        glm::vec3 snap_col = Sketch_nodes::get_snap_guide_color_axis();
-        if (ImGui::ColorEdit3("##snap_guide_color_axis", &snap_col[0], ImGuiColorEditFlags_Float))
-        {
-          Sketch_nodes::set_snap_guide_color_axis(snap_col[0], snap_col[1], snap_col[2]);
-          save_occt_view_settings();
-        }
-
-        ImGui::SameLine(0.0f, ImGui::GetStyle().ItemInnerSpacing.x);
-        GUI_DOC_HELP_("Guides when the cursor aligns to a node on X or Y only (axis snap). Click ? to open the user "
-                      "guide.",
-                      doc_urls::k_sketch_snapping);
-      }
-
-      if (ui_show_occt_line_width_settings())
-      {
         ImGui::TableNextRow();
         ImGui::TableSetColumnIndex(0);
         ImGui::AlignTextToFramePadding();
-        ImGui::TextUnformatted("Snap guide line width");
+        ImGui::TextUnformatted("Permanent node annotation size");
         ImGui::TableSetColumnIndex(1);
         {
-          float line_width = Sketch_nodes::get_snap_guide_line_width();
-          if (ImGui::SliderFloat("##snap_guide_line_width", &line_width, 0.5f, 8.0f, "%.2f"))
+          float size_scale = m_permanent_node_anno_scale;
+          if (ImGui::SliderFloat("##permanent_node_anno_scale", &size_scale, k_gui_permanent_node_anno_scale_min,
+                                 k_gui_permanent_node_anno_scale_max, "%.2f"))
           {
-            Sketch_nodes::set_snap_guide_line_width(line_width);
+            m_permanent_node_anno_scale = size_scale;
+            node_anno_changed           = true;
+          }
+
+          ImGui::SameLine(0.0f, ImGui::GetStyle().ItemInnerSpacing.x);
+          GUI_DOC_HELP_("Scale for '+' markers on the sketch Origin and Add node points. Click ? to open the user guide.",
+                        doc_urls::k_sketch_origin);
+        }
+
+        ImGui::TableNextRow();
+        ImGui::TableSetColumnIndex(0);
+        ImGui::AlignTextToFramePadding();
+        ImGui::TextUnformatted("Origin marker color");
+        ImGui::TableSetColumnIndex(1);
+        {
+          if (ImGui::ColorEdit3("##origin_marker_color", m_origin_marker_color, ImGuiColorEditFlags_Float))
+            node_anno_changed = true;
+
+          ImGui::SameLine(0.0f, ImGui::GetStyle().ItemInnerSpacing.x);
+          GUI_DOC_HELP_("Color for the active sketch's Origin marker (+ with circle). Click ? to open the user guide.",
+                        doc_urls::k_sketch_origin);
+        }
+
+        ImGui::TableNextRow();
+        ImGui::TableSetColumnIndex(0);
+        ImGui::AlignTextToFramePadding();
+        ImGui::TextUnformatted("Add midpoints to line edges");
+        ImGui::TableSetColumnIndex(1);
+        {
+          bool add = m_add_mid_pt_line_edges;
+          if (ImGui::Checkbox("##add_mids_line", &add))
+          {
+            m_add_mid_pt_line_edges = add;
+            sync_sketch_add_mid_pt_edges_if_applicable_();
             save_occt_view_settings();
           }
 
           ImGui::SameLine(0.0f, ImGui::GetStyle().ItemInnerSpacing.x);
-          GUI_DOC_HELP_("Line width for sketch snap guides (axis lines, markers, and co-axial overlay). Click ? to open "
-                        "the user guide.",
-                        doc_urls::k_sketch_snapping);
+          GUI_DOC_HELP_("Line edge and multi-line edge tools (default off). Click ? to open the user guide.",
+                        doc_urls::k_line_edge_midpoint_nodes);
         }
+
+        ImGui::TableNextRow();
+        ImGui::TableSetColumnIndex(0);
+        ImGui::AlignTextToFramePadding();
+        ImGui::TextUnformatted("Add midpoints to square/rectangle");
+        ImGui::TableSetColumnIndex(1);
+        {
+          bool add = m_add_mid_pt_rect_edges;
+          if (ImGui::Checkbox("##add_mids_rect", &add))
+          {
+            m_add_mid_pt_rect_edges = add;
+            sync_sketch_add_mid_pt_edges_if_applicable_();
+            save_occt_view_settings();
+          }
+
+          ImGui::SameLine(0.0f, ImGui::GetStyle().ItemInnerSpacing.x);
+          GUI_DOC_HELP_("Square and rectangle tools (default on). Click ? to open the user guide.",
+                        doc_urls::k_line_edge_midpoint_nodes);
+        }
+
+        ImGui::TableNextRow();
+        ImGui::TableSetColumnIndex(0);
+        ImGui::AlignTextToFramePadding();
+        ImGui::TextUnformatted("Add midpoints to slot edges");
+        ImGui::TableSetColumnIndex(1);
+        {
+          bool add = m_add_mid_pt_slot_edges;
+          if (ImGui::Checkbox("##add_mids_slot", &add))
+          {
+            m_add_mid_pt_slot_edges = add;
+            sync_sketch_add_mid_pt_edges_if_applicable_();
+            save_occt_view_settings();
+          }
+
+          ImGui::SameLine(0.0f, ImGui::GetStyle().ItemInnerSpacing.x);
+          GUI_DOC_HELP_("Slot tool straight edges only (default off). Click ? to open the user guide.",
+                        doc_urls::k_line_edge_midpoint_nodes);
+        }
+
+        ImGui::EndTable();
       }
 
-      ImGui::TableNextRow();
-      ImGui::TableSetColumnIndex(0);
-      ImGui::AlignTextToFramePadding();
-      ImGui::TextUnformatted("Snap guide mode");
-      ImGui::TableSetColumnIndex(1);
+    if (settings_collapsing_header_("Snap", m_settings_headers.sketch_snap))
+      if (ImGui::BeginTable("settings_sketch_snap", 2, ImGuiTableFlags_SizingStretchProp))
       {
-        constexpr std::array<const char*, 3> k_snap_guide_mode_labels = {
-            "Traditional",
-            "Fullscreen",
-            "Both",
-        };
-        int mode = static_cast<int>(Sketch_nodes::get_snap_guide_mode());
-        ImGui::SetNextItemWidth(160.0f);
-        if (ImGui::BeginCombo("##settings_snap_guide_mode", k_snap_guide_mode_labels[static_cast<size_t>(mode)],
-                              ImGuiComboFlags_HeightSmall))
+        ImGui::TableSetupColumn("label", ImGuiTableColumnFlags_WidthFixed, k_label_col_w);
+        ImGui::TableSetupColumn("control", ImGuiTableColumnFlags_WidthStretch);
+
+        ImGui::TableNextRow();
+        ImGui::TableSetColumnIndex(0);
+        ImGui::AlignTextToFramePadding();
+        ImGui::TextUnformatted("Snap guide color (node)");
+        ImGui::TableSetColumnIndex(1);
         {
-          for (int i = 0; i < static_cast<int>(k_snap_guide_mode_labels.size()); ++i)
-            if (ImGui::Selectable(k_snap_guide_mode_labels[static_cast<size_t>(i)], i == mode))
+          glm::vec3 snap_col;
+          Sketch_nodes::get_snap_guide_color_node(snap_col[0], snap_col[1], snap_col[2]);
+          if (ImGui::ColorEdit3("##snap_guide_color_node", &snap_col[0], ImGuiColorEditFlags_Float))
+          {
+            Sketch_nodes::set_snap_guide_color_node(snap_col[0], snap_col[1], snap_col[2]);
+            save_occt_view_settings();
+          }
+
+          ImGui::SameLine(0.0f, ImGui::GetStyle().ItemInnerSpacing.x);
+          GUI_DOC_HELP_("Guides when both X and Y snap to the same node (vertex lock). Click ? to open the user guide.",
+                        doc_urls::k_sketch_snapping);
+        }
+
+        ImGui::TableNextRow();
+        ImGui::TableSetColumnIndex(0);
+        ImGui::AlignTextToFramePadding();
+        ImGui::TextUnformatted("Snap guide color (axis)");
+        ImGui::TableSetColumnIndex(1);
+        {
+          glm::vec3 snap_col = Sketch_nodes::get_snap_guide_color_axis();
+          if (ImGui::ColorEdit3("##snap_guide_color_axis", &snap_col[0], ImGuiColorEditFlags_Float))
+          {
+            Sketch_nodes::set_snap_guide_color_axis(snap_col[0], snap_col[1], snap_col[2]);
+            save_occt_view_settings();
+          }
+
+          ImGui::SameLine(0.0f, ImGui::GetStyle().ItemInnerSpacing.x);
+          GUI_DOC_HELP_("Guides when the cursor aligns to a node on X or Y only (axis snap). Click ? to open the user "
+                        "guide.",
+                        doc_urls::k_sketch_snapping);
+        }
+
+        if (ui_show_occt_line_width_settings())
+        {
+          ImGui::TableNextRow();
+          ImGui::TableSetColumnIndex(0);
+          ImGui::AlignTextToFramePadding();
+          ImGui::TextUnformatted("Snap guide line width");
+          ImGui::TableSetColumnIndex(1);
+          {
+            float line_width = Sketch_nodes::get_snap_guide_line_width();
+            if (ImGui::SliderFloat("##snap_guide_line_width", &line_width, 0.5f, 8.0f, "%.2f"))
             {
-              Sketch_nodes::set_snap_guide_mode(static_cast<Sketch_nodes::Snap_guide_mode>(i));
+              Sketch_nodes::set_snap_guide_line_width(line_width);
               save_occt_view_settings();
             }
 
-          ImGui::EndCombo();
+            ImGui::SameLine(0.0f, ImGui::GetStyle().ItemInnerSpacing.x);
+            GUI_DOC_HELP_("Line width for sketch snap guides (axis lines, markers, and co-axial overlay). Click ? to open "
+                          "the user guide.",
+                          doc_urls::k_sketch_snapping);
+          }
         }
-        ImGui::SameLine(0.0f, ImGui::GetStyle().ItemInnerSpacing.x);
-        GUI_DOC_HELP_("Traditional: compact local snap marker.\nFullscreen: full-view crosshair/axis guides.\nBoth: show "
-                      "compact marker and fullscreen guides together. Click ? to open the user guide.",
-                      doc_urls::k_sketch_snapping);
-      }
 
-      ImGui::TableNextRow();
-      ImGui::TableSetColumnIndex(0);
-      ImGui::AlignTextToFramePadding();
-      ImGui::TextUnformatted("All co-axial nodes");
-      ImGui::TableSetColumnIndex(1);
-      {
-        bool annotate_all = Sketch_nodes::get_annotate_all_coaxial_nodes();
-        if (ImGui::Checkbox("##settings_annotate_all_coaxial", &annotate_all))
+        ImGui::TableNextRow();
+        ImGui::TableSetColumnIndex(0);
+        ImGui::AlignTextToFramePadding();
+        ImGui::TextUnformatted("Snap guide mode");
+        ImGui::TableSetColumnIndex(1);
         {
-          Sketch_nodes::set_annotate_all_coaxial_nodes(annotate_all);
-          save_occt_view_settings();
+          constexpr std::array<const char*, 3> k_snap_guide_mode_labels = {
+              "Traditional",
+              "Fullscreen",
+              "Both",
+          };
+          int mode = static_cast<int>(Sketch_nodes::get_snap_guide_mode());
+          ImGui::SetNextItemWidth(160.0f);
+          if (ImGui::BeginCombo("##settings_snap_guide_mode", k_snap_guide_mode_labels[static_cast<size_t>(mode)],
+                                ImGuiComboFlags_HeightSmall))
+          {
+            for (int i = 0; i < static_cast<int>(k_snap_guide_mode_labels.size()); ++i)
+              if (ImGui::Selectable(k_snap_guide_mode_labels[static_cast<size_t>(i)], i == mode))
+              {
+                Sketch_nodes::set_snap_guide_mode(static_cast<Sketch_nodes::Snap_guide_mode>(i));
+                save_occt_view_settings();
+              }
+
+            ImGui::EndCombo();
+          }
+          ImGui::SameLine(0.0f, ImGui::GetStyle().ItemInnerSpacing.x);
+          GUI_DOC_HELP_("Traditional: compact local snap marker.\nFullscreen: full-view crosshair/axis guides.\nBoth: show "
+                        "compact marker and fullscreen guides together. Click ? to open the user guide.",
+                        doc_urls::k_sketch_snapping);
         }
 
-        ImGui::SameLine(0.0f, ImGui::GetStyle().ItemInnerSpacing.x);
-        GUI_DOC_HELP_("When on (global mode): axis guide lines + markers for *all* nodes in the current sketch and all "
-                      "other visible sketches. When off (default): only closest node per active axis is annotated. Click ? "
-                      "to open the user guide.",
-                      doc_urls::k_sketch_snapping);
+        ImGui::TableNextRow();
+        ImGui::TableSetColumnIndex(0);
+        ImGui::AlignTextToFramePadding();
+        ImGui::TextUnformatted("All co-axial nodes");
+        ImGui::TableSetColumnIndex(1);
+        {
+          bool annotate_all = Sketch_nodes::get_annotate_all_coaxial_nodes();
+          if (ImGui::Checkbox("##settings_annotate_all_coaxial", &annotate_all))
+          {
+            Sketch_nodes::set_annotate_all_coaxial_nodes(annotate_all);
+            save_occt_view_settings();
+          }
+
+          ImGui::SameLine(0.0f, ImGui::GetStyle().ItemInnerSpacing.x);
+          GUI_DOC_HELP_("When on (global mode): axis guide lines + markers for *all* nodes in the current sketch and all "
+                        "other visible sketches. When off (default): only closest node per active axis is annotated. Click ? "
+                        "to open the user guide.",
+                        doc_urls::k_sketch_snapping);
+        }
+
+        ImGui::EndTable();
       }
 
-      ImGui::EndTable();
-    }
+    if (settings_collapsing_header_("Underlay", m_settings_headers.sketch_underlay))
+      if (ImGui::BeginTable("settings_sketch_underlay", 2, ImGuiTableFlags_SizingStretchProp))
+      {
+        ImGui::TableSetupColumn("label", ImGuiTableColumnFlags_WidthFixed, k_label_col_w);
+        ImGui::TableSetupColumn("control", ImGuiTableColumnFlags_WidthStretch);
+
+        ImGui::TableNextRow();
+        ImGui::TableSetColumnIndex(0);
+        ImGui::AlignTextToFramePadding();
+        ImGui::TextUnformatted("Underlay highlight color");
+        ImGui::TableSetColumnIndex(1);
+        ul_changed |= ImGui::ColorEdit4("##underlay_hi", &m_underlay_highlight_color[0], ImGuiColorEditFlags_Float);
+        ImGui::SameLine(0.0f, ImGui::GetStyle().ItemInnerSpacing.x);
+        GUI_DOC_HELP_("Updates all sketch underlays immediately. Also used as the default when you import a new image. "
+                      "Per-sketch overrides in Sketch List if needed. Click ? to open the user guide.",
+                      doc_urls::k_image_underlay);
+
+        ImGui::EndTable();
+      }
+
+    ImGui::Unindent(ImGui::GetStyle().IndentSpacing);
 
     if (dim_changed)
     {

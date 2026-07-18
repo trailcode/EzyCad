@@ -49,7 +49,14 @@ Between those, the pane has **six** collapsible sections. Expand a section to se
 
 4. **3D view grid** — **Show grid** (checkbox; grid is drawn on the **active sketch** plane, behind coplanar geometry). **Fine grid lines** and **Major grid lines** (dense lines vs every-tenth emphasis). **Grid step**, **Grid padding** (margin around sketch content when sizing the grid), and **Grid display Z offset** in the Settings pane use the **same length scale as sketch length dimensions** (display value = model value / internal `dimension_scale`, default **100**). Saved JSON (`occt_view`) stores padding in model units (`grid_padding`).
 
-5. **Sketch** — Expand **Appearance** (nested) for edge and face display colors. Expand **Dimensions** (nested) for length-dimension appearance and behavior (most rows have **?** help). Other sketch rows stay in the parent **Sketch** section:
+5. **Sketch** — Nested sections (open state remembered in `gui.settings_headers`):
+   - **Appearance** — edge and face display colors; shapes in sketch mode (faint/ghost/wire).
+   - **Dimensions** — length-dimension appearance and behavior (most rows have **?** help).
+   - **Nodes** — permanent node marker size and origin color; midpoint options for line/rect/slot tools.
+   - **Snap** — snap guide colors, line width (desktop), mode, and **All co-axial nodes**.
+   - **Underlay** — underlay highlight color.
+
+   Controls in those sections:
    - **Edge color** / **Edge thickness** (desktop only) — current-sketch edge RGBA (alpha = opacity) and line width (**0.5** to **8.0**)
    - **Edge selection color** / **Edge highlight color** — selected edges vs mouse-over (dynamic) highlight (RGBA)
    - **Face fill color** / **Face selection fill** / **Face highlight fill** — normal fill, selected fill, and mouse-over fill (RGBA)
@@ -63,7 +70,7 @@ Between those, the pane has **six** collapsible sections. Expand a section to se
    - **Arrow style** — *Standard*, *Sharp*, *Wide*, or *3D shaded*
    - **Arrow orientation** — *Automatic*, *Internal*, or *External*
    - **Show sketch dimensions** — global on/off for length dimensions on all sketches (tool mode may still limit which sketch shows dims when on)
-   - **Permanent node annotation size** (scale for **+** markers on the sketch **Origin** and [Add node](usage-sketch.md#add-node-tool) points; see [Sketch origin](usage-sketch.md#sketch-origin)), **Add midpoints to new linear edges** (default off; only affects Line Edge and Multi-Line Edge tools), **Underlay highlight color**, **Snap guide color (node)**, **Snap guide color (axis)**, **Snap guide line width** (desktop only; slider **0.5** to **8.0**; default **1.0**), **Snap guide mode**, **All co-axial nodes** (directly under **Sketch**, not inside **Dimensions**)
+   - **Permanent node annotation size** (scale for **+** markers on the sketch **Origin** and [Add node](usage-sketch.md#add-node-tool) points; see [Sketch origin](usage-sketch.md#sketch-origin)), **Origin marker color**, **Add midpoints to line edges** / **square/rectangle** / **slot edges**, **Underlay highlight color**, **Snap guide color (node)** / **(axis)**, **Snap guide line width** (desktop only; slider **0.5** to **8.0**; default **1.0**), **Snap guide mode**, **All co-axial nodes**
 
 **WebAssembly build** — Open CASCADE line-width controls (`SetWidth` / `Prs3d` line width) have no visible effect in the browser (WebGL/GLES). The **Settings** pane hides **Edge thickness**, **Dimension line width**, and **Snap guide line width** on the web build. Saved JSON may still contain those keys from a desktop session; they are not shown as editable rows in the browser UI.
 
@@ -101,13 +108,13 @@ For other non-sketch Options content (for example **Polar duplicate**), see [usa
 
 Sketch-related preferences are edited in the **Options** panel while you use a sketch tool, not in the **Settings** pane:
 
-- **Sketch options** (all sketch tools): **Snap dist**, **Snap guide mode** (*Traditional*, *Fullscreen*, *Both*), **All co-axial nodes** (global co-axial grid vs closest-per-axis only), and **Faint shapes** (show document solids as ghost/wire while sketching; style and **Shape Faint Strength** in **Settings -> Sketch -> Appearance**). See [How sketch snap works](usage-sketch.md#sketch-snapping). **Snap guide color (node)**, **Snap guide color (axis)**, **Snap guide line width**, **Snap guide mode**, and **All co-axial nodes** are also in **Settings -> Sketch** (persisted in `gui.*` keys below).
+- **Sketch options** (all sketch tools): **Snap dist**, **Snap guide mode** (*Traditional*, *Fullscreen*, *Both*), **All co-axial nodes** (global co-axial grid vs closest-per-axis only), and **Faint shapes** (show document solids as ghost/wire while sketching; style and **Shape Faint Strength** in **Settings -> Sketch -> Appearance**). See [How sketch snap works](usage-sketch.md#sketch-snapping). **Snap guide color (node)**, **Snap guide color (axis)**, **Snap guide line width**, **Snap guide mode**, and **All co-axial nodes** are also in **Settings -> Sketch -> Snap** (persisted in `gui.*` keys below).
 - **Extrude sketch face**: under **Extrude**, **Both sides** and **Material** for the new solid (same document preset as **Normal** mode Options **Material**). Other modes that still show **Material** in Options use that same preset when relevant (for example **Sketch from planar face**).
 - **Add edge** / **Add node** (and similar): a **Shortcuts** line documents TAB / Shift+TAB typing behavior.
-- **Add line edge**: under **Options**, **Add midpoint nodes** ([usage-sketch.md#line-edge-option-add-midpoint-nodes](usage-sketch.md#line-edge-option-add-midpoint-nodes)) and **Place from center** ([usage-sketch.md#line-edge-option-place-from-center](usage-sketch.md#line-edge-option-place-from-center)); each has a **?** link. See also [Line edge Options](usage-sketch.md#line-edge-options). The midpoint setting is also in **Settings -> Sketch** (persisted).
+- **Add line edge**: under **Options**, **Add midpoint nodes** ([usage-sketch.md#line-edge-option-add-midpoint-nodes](usage-sketch.md#line-edge-option-add-midpoint-nodes)) and **Place from center** ([usage-sketch.md#line-edge-option-place-from-center](usage-sketch.md#line-edge-option-place-from-center)); each has a **?** link. See also [Line edge Options](usage-sketch.md#line-edge-options). The midpoint setting is also in **Settings -> Sketch -> Nodes** (persisted).
 - **Sketch operation** (mirror / revolve axis): mirror, revolve, angle, and clear-axis actions (see [usage-sketch.md](usage-sketch.md#operation-axis-tool)).
 
-Global length-dimension style (line width, arrows, color, text) is in **Settings -> Sketch**. Per-dimension visibility, name, and offset remain in **Sketch List -> Dimensions** (saved in the project `.ezy` file).
+Global length-dimension style (line width, arrows, color, text) is in **Settings -> Sketch -> Dimensions**. Per-dimension visibility, name, and offset remain in **Sketch List -> Dimensions** (saved in the project `.ezy` file).
 
 ## Where settings are stored
 
@@ -243,6 +250,9 @@ Each **`settings_headers`** object may contain (default: only nested Sketch **Ap
 | `sketch`            | boolean | **Sketch** section expanded.             |
 | `sketch_appearance` | boolean | Nested **Appearance** under Sketch.      |
 | `sketch_dimensions` | boolean | Nested **Dimensions** under Sketch.      |
+| `sketch_nodes`      | boolean | Nested **Nodes** under Sketch.           |
+| `sketch_snap`       | boolean | Nested **Snap** under Sketch.            |
+| `sketch_underlay`   | boolean | Nested **Underlay** under Sketch.        |
 | `startup`           | boolean | **Startup project** section expanded.    |
 
 Scripting API **`ezy.occt_view_settings_json()`** returns a JSON string with **`occt_view`** plus selected **`gui`** keys (including dimension and snap keys above, **`gui.permanent_node_anno_scale`**, **`gui.inspection_orthographic`**, **`gui.view_roll_step_deg`**, **`gui.view_zoom_scroll_scale`**, **`gui.default_2d_view_width`**, **`gui.default_2d_view_height`** when saved). See [scripting.md](scripting.md).

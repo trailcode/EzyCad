@@ -221,7 +221,7 @@ Sketch List expand **Faces**: each face row supports **`E`** and right-click **E
 | `load_occt_view_settings_`  | Called from `GUI::init`                                             |
 | `occt_view_settings_json()` | Scripting API for settings blob                                     |
 
-Sketch edge/face display colors live under `gui.sketch_edge_*` / `gui.sketch_face_*` and are applied live via `Sketch_annotation_refresh::edge_face_style`. Sketch-mode shape ghost/wire uses `gui.sketch_shape_faint_style` / `gui.sketch_shape_faint_opacity` via `Occt_view::sync_sketch_shape_faint_style`. 3D shape selection highlight uses `gui.shape_selection_color` applied through `Occt_view::apply_shape_selection_style` (`AIS_InteractiveContext::SelectionStyle`). Settings collapsing-header open state is stored in `gui.settings_headers`.
+Sketch edge/face display colors live under `gui.sketch_edge_*` / `gui.sketch_face_*` and are applied live via `Sketch_annotation_refresh::edge_face_style`. Sketch-mode shape ghost/wire uses `gui.sketch_shape_faint_style` / `gui.sketch_shape_faint_opacity` via `Occt_view::sync_sketch_shape_faint_style`. 3D shape selection highlight uses `gui.shape_selection_color` applied through `Occt_view::apply_shape_selection_style` (`AIS_InteractiveContext::SelectionStyle`). Settings collapsing-header open state is stored in `gui.settings_headers` (Sketch nests **Appearance**, **Dimensions**, **Nodes**, **Snap**, **Underlay**).
 
 User-visible key tables: [`docs/usage-settings.md`](../../docs/usage-settings.md). When adding a Settings control, follow [agents/conventions/user-docs-sync.md](../../agents/conventions/user-docs-sync.md).
 

@@ -173,6 +173,9 @@ struct Gui_settings_headers
   bool sketch{false};
   bool sketch_appearance{true};
   bool sketch_dimensions{true};
+  bool sketch_nodes{false};
+  bool sketch_snap{false};
+  bool sketch_underlay{false};
   bool startup{false};
 };
 
