@@ -310,6 +310,8 @@ public:
   bool is_dist_or_angle_edit_active() const;
   bool is_sketch_origin_set_edit_active() const;
   void show_message(const std::string& message);
+  /// Queue an ImGui error modal (also logs and shows a short toast). Works on native and wasm.
+  void show_error_dialog(const std::string& title, const std::string& message);
   void log_message(const std::string& message);
   void set_show_options(bool v) { m_show_options = v; }
   void set_show_sketch_list(bool v) { m_show_sketch_list = v; }
@@ -504,6 +506,7 @@ private:
   void new_project_();
   void open_file_dialog_();
   void save_file_dialog_();
+  void error_modal_dialog_();
 
   void save_startup_project_();
   void clear_saved_startup_project_();
@@ -614,6 +617,12 @@ private:
   std::string                           m_message;
   bool                                  m_message_visible = false;
   std::chrono::steady_clock::time_point m_message_start_time;
+
+  // ImGui error modal (File save failures, etc.; works on native and wasm)
+  bool        m_open_error_modal{false};
+  bool        m_error_modal_open{false};
+  std::string m_error_modal_title;
+  std::string m_error_modal_message;
 
   // Log window (single buffer for ImGui read-only multiline = selectable / copyable text)
   std::vector<char> m_log_buffer{'\0'};

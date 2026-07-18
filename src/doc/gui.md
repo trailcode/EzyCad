@@ -129,7 +129,7 @@ Overlay popups (`FloatEdit`, `AngleEdit`, `MessageStatus`, modals) keep `NoSaved
 | Shift + 4/6 / arrows / numpad 4/6 | No Ctrl/Alt         | `Occt_view::roll_view_z_deg`                                        |
 | Numpad 5                          | No modifiers        | `Occt_view::snap_view_to_nearest_standard_axis`                     |
 | Numpad 2/4/6/8                    | No modifiers        | `Occt_view::orbit_view_screen_step_deg`                             |
-| Ctrl+N/O/S                        |                     | `new_project_` / `open_file_dialog_` / `save_file_dialog_`          |
+| Ctrl+N/O/S                        |                     | `new_project_` / `open_file_dialog_` / `save_file_dialog_` (save failures: `show_error_dialog` / `error_modal_dialog_`) |
 | Ctrl+Z / Ctrl+Shift+Z / Ctrl+Y    |                     | `Occt_view::undo` / `redo`                                          |
 | `1`-`9` / numpad `1`-`9`          | `Mode::Normal` only | `set_shp_selection_mode` (TopAbs enum index)                        |
 | Esc                               |                     | `cancel_underlay_calib_`, `Occt_view::cancel`, hide dist/angle edit |
