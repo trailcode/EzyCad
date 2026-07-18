@@ -3,6 +3,7 @@
 #include <algorithm>
 #include <array>
 #include <cctype>
+#include <cerrno>
 #include <cmath>
 #include <cstdio>
 #include <cstdlib>
@@ -10,6 +11,7 @@
 #include <filesystem>
 #include <fstream>
 #include <nlohmann/json.hpp>
+#include <sstream>
 #include <string>
 #include <unordered_set>
 
@@ -145,6 +147,7 @@ void GUI::render_gui()
   shape_info_dialog_();
   options_();
   message_status_window_();
+  error_modal_dialog_();
   about_dialog_();
   add_box_dialog_();
   add_pyramid_dialog_();
@@ -2788,6 +2791,44 @@ void GUI::show_message(const std::string& message)
   m_message_start_time = std::chrono::steady_clock::now();
 }
 
+void GUI::show_error_dialog(const std::string& title, const std::string& message)
+{
+  log_message(title + ": " + message);
+  show_message(title);
+  m_error_modal_title   = title;
+  m_error_modal_message = message;
+  m_open_error_modal    = true;
+}
+
+void GUI::error_modal_dialog_()
+{
+  if (m_open_error_modal)
+  {
+    m_error_modal_open = true;
+    ImGui::SetNextWindowSize(ImVec2(480.0f, 0.0f), ImGuiCond_Appearing);
+    ImGui::OpenPopup("##EzyCadErrorModal");
+    m_open_error_modal = false;
+  }
+
+  if (!ImGui::BeginPopupModal("##EzyCadErrorModal", &m_error_modal_open, ImGuiWindowFlags_AlwaysAutoResize))
+    return;
+
+  ImGui::PushTextWrapPos(ImGui::GetCursorPos().x + 440.0f);
+  ImGui::TextUnformatted(m_error_modal_title.c_str());
+  ImGui::Separator();
+  ImGui::TextWrapped("%s", m_error_modal_message.c_str());
+  ImGui::PopTextWrapPos();
+  ImGui::Spacing();
+
+  if (ImGui::Button("OK", ImVec2(120.0f, 0.0f)))
+  {
+    m_error_modal_open = false;
+    ImGui::CloseCurrentPopup();
+  }
+  ImGui::SetItemDefaultFocus();
+  ImGui::EndPopup();
+}
+
 void GUI::message_status_window_()
 {
   if (!m_message_visible || m_message.empty())
@@ -3559,19 +3600,82 @@ void GUI::save_file_dialog_()
   }
   if (!file.empty())
   {
-    std::ofstream out(file, std::ios::binary);
-    if (out.is_open())
+    auto describe_save_failure = [&](const char* stage) -> std::string
     {
-      out.write(reinterpret_cast<const char*>(ezy_bytes.data()), static_cast<std::streamsize>(ezy_bytes.size()));
-      out.close();
-      show_message("Saved: " + std::filesystem::path(file).filename().string());
+      const int         err  = errno;
+      const std::string name = std::filesystem::path(file).filename().string();
+      std::ostringstream msg;
+      msg << "Could not save \"" << name << "\".\n\n";
+      msg << "Path:\n" << file << "\n\n";
+      msg << "Failed while: " << stage << "\n";
+      if (err != 0)
+      {
+        msg << "System error: ";
+#ifdef _MSC_VER
+        char err_buf[256] = {};
+        if (strerror_s(err_buf, sizeof(err_buf), err) == 0)
+          msg << err_buf;
+        else
+          msg << "code " << err;
+#else
+        const char* err_str = std::strerror(err);
+        msg << (err_str ? err_str : "unknown");
+#endif
+        msg << " (" << err << ")\n";
+      }
+      msg << "\n";
+      if (err == EACCES || err == EPERM
+#ifdef EROFS
+          || err == EROFS
+#endif
+      )
+        msg << "The file may be open in another program, or you may not have permission to write there. "
+               "Close the file elsewhere and try again.";
+      else if (err == ENOSPC)
+        msg << "There may not be enough free disk space.";
+      else if (err == ENOENT)
+        msg << "The destination folder may not exist.";
+      else
+        msg << "Check that the path is writable and the file is not locked by another application.";
+      return msg.str();
+    };
+
+    errno = 0;
+    std::ofstream out(file, std::ios::binary);
+    if (!out.is_open())
+    {
+      show_error_dialog("Save failed", describe_save_failure("opening the file for write"));
     }
     else
-      show_message("Failed to save: " + std::filesystem::path(file).filename().string());
+    {
+      errno = 0;
+      out.write(reinterpret_cast<const char*>(ezy_bytes.data()), static_cast<std::streamsize>(ezy_bytes.size()));
+      out.flush();
+      if (!out.good())
+      {
+        show_error_dialog("Save failed", describe_save_failure("writing file data"));
+      }
+      else
+      {
+        out.close();
+        if (!out)
+          show_error_dialog("Save failed", describe_save_failure("closing the file"));
+        else
+          show_message("Saved: " + std::filesystem::path(file).filename().string());
+      }
+    }
   }
   else
     show_message("Save canceled");
 #else
+  if (ezy_bytes.empty())
+  {
+    show_error_dialog("Save failed",
+                      "Could not save the project.\n\nFailed while: building project data\n\n"
+                      "The serialized project was empty. Try again, or use File -> Save settings if only preferences "
+                      "changed.");
+    return;
+  }
   std::string default_file =
       m_last_saved_path.empty() ? "project.ezy" : std::filesystem::path(m_last_saved_path).filename().string();
   save_file_dialog_async("Save EzyCad project", default_file, ezy_bytes);
@@ -3633,6 +3737,7 @@ void GUI::on_import_file(const std::string& file_path, const std::string& file_d
       show_message("PLY import failed.");
     else
       show_message("Imported: " + std::filesystem::path(file_path).filename().string());
+
     return;
   }
 
@@ -3744,21 +3849,25 @@ void GUI::save_file_dialog_async(const char* title, const std::string& default_f
   (void)title;
   EM_ASM_ARGS(
       {
-        var data = HEAPU8.subarray($0, $0 + $1);
-        var blob = new Blob([data],
-                            {
-                              type:
-                                'application/octet-stream'
-                            });
-        var url    = URL.createObjectURL(blob);
-        var a      = document.createElement('a');
-        a.href     = url;
-        a.download = UTF8ToString($2); // Default file name
-        document.body.appendChild(a);
-        a.click();
-        document.body.removeChild(a);
-        URL.revokeObjectURL(url);
-        Module.ccall('on_save_file_selected', null, ['string'], [UTF8ToString($2)]);
+        try
+        {
+          var data = HEAPU8.subarray($0, $0 + $1);
+          var blob = new Blob([data], {type : 'application/octet-stream'});
+          var url  = URL.createObjectURL(blob);
+          var a    = document.createElement('a');
+          a.href   = url;
+          a.download = UTF8ToString($2);
+          document.body.appendChild(a);
+          a.click();
+          document.body.removeChild(a);
+          URL.revokeObjectURL(url);
+          Module.ccall('on_save_file_selected', null, ['string'], [UTF8ToString($2)]);
+        }
+        catch (e)
+        {
+          var msg = (e && e.message) ? e.message : String(e);
+          Module.ccall('on_save_file_failed', null, ['string'], [msg]);
+        }
       },
       ezy_bytes.data(), ezy_bytes.size(), default_file.c_str());
 }
@@ -3810,5 +3919,16 @@ extern "C" void on_save_file_selected(const char* file_name)
     g.note_saved_project_filename(file_name);
 
   g.show_message(std::string("Saved: ") + (file_name ? file_name : ""));
+}
+extern "C" void on_save_file_failed(const char* reason)
+{
+  // Browser UIs often also report that the download / save did not complete; this ImGui
+  // modal is our in-app explanation and does not replace that browser message.
+  std::ostringstream msg;
+  msg << "Could not download the project file.\n\n";
+  if (reason && reason[0] != '\0')
+    msg << "Browser error: " << reason << "\n\n";
+  msg << "Check that downloads are allowed in this browser, then try File -> Save again.";
+  GUI::instance().show_error_dialog("Save failed", msg.str());
 }
 #endif

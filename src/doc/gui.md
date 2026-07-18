@@ -129,7 +129,7 @@ Overlay popups (`FloatEdit`, `AngleEdit`, `MessageStatus`, modals) keep `NoSaved
 | Shift + 4/6 / arrows / numpad 4/6 | No Ctrl/Alt         | `Occt_view::roll_view_z_deg`                                        |
 | Numpad 5                          | No modifiers        | `Occt_view::snap_view_to_nearest_standard_axis`                     |
 | Numpad 2/4/6/8                    | No modifiers        | `Occt_view::orbit_view_screen_step_deg`                             |
-| Ctrl+N/O/S                        |                     | `new_project_` / `open_file_dialog_` / `save_file_dialog_`          |
+| Ctrl+N/O/S                        |                     | `new_project_` / `open_file_dialog_` / `save_file_dialog_` (save failures: `show_error_dialog` / `error_modal_dialog_`) |
 | Ctrl+Z / Ctrl+Shift+Z / Ctrl+Y    |                     | `Occt_view::undo` / `redo`                                          |
 | `1`-`9` / numpad `1`-`9`          | `Mode::Normal` only | `set_shp_selection_mode` (TopAbs enum index)                        |
 | Esc                               |                     | `cancel_underlay_calib_`, `Occt_view::cancel`, hide dist/angle edit |
@@ -221,7 +221,7 @@ Sketch List expand **Faces**: each face row supports **`E`** and right-click **E
 | `load_occt_view_settings_`  | Called from `GUI::init`                                             |
 | `occt_view_settings_json()` | Scripting API for settings blob                                     |
 
-Sketch edge/face display colors live under `gui.sketch_edge_*` / `gui.sketch_face_*` and are applied live via `Sketch_annotation_refresh::edge_face_style`. Sketch-mode shape ghost/wire uses `gui.sketch_shape_faint_style` / `gui.sketch_shape_faint_opacity` via `Occt_view::sync_sketch_shape_faint_style`. 3D shape selection highlight uses `gui.shape_selection_color` applied through `Occt_view::apply_shape_selection_style` (`AIS_InteractiveContext::SelectionStyle`). Settings collapsing-header open state is stored in `gui.settings_headers`.
+Sketch edge/face display colors live under `gui.sketch_edge_*` / `gui.sketch_face_*` and are applied live via `Sketch_annotation_refresh::edge_face_style`. Sketch-mode shape ghost/wire uses `gui.sketch_shape_faint_style` / `gui.sketch_shape_faint_opacity` via `Occt_view::sync_sketch_shape_faint_style`. 3D shape selection highlight uses `gui.shape_selection_color` applied through `Occt_view::apply_shape_selection_style` (`AIS_InteractiveContext::SelectionStyle`). Settings collapsing-header open state is stored in `gui.settings_headers` (Sketch nests **Appearance**, **Dimensions**, **Nodes**, **Snap**, **Underlay**).
 
 User-visible key tables: [`docs/usage-settings.md`](../../docs/usage-settings.md). When adding a Settings control, follow [agents/conventions/user-docs-sync.md](../../agents/conventions/user-docs-sync.md).
 

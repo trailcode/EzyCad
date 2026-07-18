@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### File save
+
+- **File -> Save:** On failed save, an ImGui error modal shows the path/system error (native) or browser download error (wasm), with a hint when the file may be locked or unwritable.
+
+### Settings
+
+- **Settings -> Sketch:** Nested **Nodes**, **Snap**, and **Underlay** sections (with existing **Appearance** / **Dimensions**). Open state persisted as `gui.settings_headers.sketch_nodes` / `sketch_snap` / `sketch_underlay`.
+
 ### Sketch appearance
 
 - **Settings -> Sketch -> Appearance:** **Shapes in sketch mode** — *Off (hide)*, *Ghost* (default semi-transparent shaded), or *Wire*. Optional **Ghost opacity**. Persisted as `gui.sketch_shape_faint_style` / `gui.sketch_shape_faint_opacity`. Replaces always-hiding solids while sketch tools are active.
