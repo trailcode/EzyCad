@@ -11,6 +11,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - **File -> Import** and **File -> Export** now scale geometry so sketch/display lengths stay in **inches**. STEP is read/written via millimeters (OCCT cascade/write unit); PLY import and STL/PLY export treat unitless mesh coords as inches; IGES export writes millimeters. STEP round-trips preserve size relative to project dimensions.
 - **File -> Export** exports only document 3D shapes. Selected sketch edges or faces are ignored (if no 3D shapes are selected, all document shapes are exported).
+- **File -> Export:** After choosing a format, an **Export units** dialog offers **Inches** or **Millimeters** (defaults: mm for STEP/IGES, inches for STL/PLY). STEP/IGES declare the chosen unit in the file; STL/PLY remain unitless with coordinates in that unit.
 
 ### File save
 

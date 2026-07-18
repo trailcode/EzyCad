@@ -3074,10 +3074,10 @@ double step_import_to_model_scale_(double dimension_scale) { return dimension_sc
 // PLY has no unit metadata; treat file coords as inches.
 double ply_import_to_model_scale_(double dimension_scale) { return dimension_scale; }
 
-// Model space -> mm for STEP/IGES files.
+// Model space -> mm for CAD/mesh export when the user picks millimeters.
 double model_to_cad_mm_export_scale_(double dimension_scale) { return k_mm_per_inch / dimension_scale; }
 
-// Model space -> inches for unitless mesh files (STL/PLY).
+// Model space -> inches for CAD/mesh export when the user picks inches.
 double model_to_inch_export_scale_(double dimension_scale) { return 1.0 / dimension_scale; }
 
 } // namespace
@@ -3135,33 +3135,25 @@ Status Occt_view::build_export_shape_(TopoDS_Shape& out_shape) const
   return Status::ok();
 }
 
-Status Occt_view::export_document(Export_format fmt, const std::string& file_path)
+Status Occt_view::export_document(Export_format fmt, Export_unit unit, const std::string& file_path)
 {
   TopoDS_Shape shape;
   CHK_RET(build_export_shape_(shape));
 
-  const double dim_scale  = get_dimension_scale();
-  double       unit_scale = 1.0;
-  switch (fmt)
-  {
-  case Export_format::Step:
-  case Export_format::Iges:
-    unit_scale = model_to_cad_mm_export_scale_(dim_scale);
-    break;
-  case Export_format::Stl:
-  case Export_format::Ply:
-    unit_scale = model_to_inch_export_scale_(dim_scale);
-    break;
-  }
+  const double dim_scale = get_dimension_scale();
+  const double unit_scale =
+      (unit == Export_unit::Millimeter) ? model_to_cad_mm_export_scale_(dim_scale) : model_to_inch_export_scale_(dim_scale);
   shape = scale_shape_about_origin_(shape, unit_scale);
+
+  const char* unit_name = (unit == Export_unit::Millimeter) ? "MM" : "INCH";
 
   switch (fmt)
   {
   case Export_format::Step:
   {
-    // Shape is already in mm; keep cascade/write unit as MM so OCCT does not rescale again.
-    Interface_Static::SetCVal("xstep.cascade.unit", "MM");
-    Interface_Static::SetCVal("write.step.unit", "MM");
+    // Geometry is already in \a unit; match cascade/write so OCCT does not rescale again.
+    Interface_Static::SetCVal("xstep.cascade.unit", unit_name);
+    Interface_Static::SetCVal("write.step.unit", unit_name);
     STEPControl_Writer    writer;
     IFSelect_ReturnStatus tr = writer.Transfer(shape, STEPControl_AsIs);
     if (tr != IFSelect_RetDone)
@@ -3175,9 +3167,9 @@ Status Occt_view::export_document(Export_format fmt, const std::string& file_pat
   }
   case Export_format::Iges:
   {
-    // Shape is already in mm; declare mm so translators do not apply another factor.
-    Interface_Static::SetCVal("xstep.cascade.unit", "MM");
-    Interface_Static::SetCVal("write.iges.unit", "MM");
+    // Geometry is already in \a unit; declare the same unit so translators do not apply another factor.
+    Interface_Static::SetCVal("xstep.cascade.unit", unit_name);
+    Interface_Static::SetCVal("write.iges.unit", unit_name);
     IGESControl_Writer writer;
     if (!writer.AddShape(shape))
       return Status::user_error("IGES does not support this shape.");

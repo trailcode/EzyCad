@@ -285,19 +285,16 @@ Use **File -> Export** to save the current model for other CAD tools, CAM, or 3D
 
 **Scope:** Export includes only **document 3D shapes** (Shape List solids), not sketch edges or faces. If one or more 3D shapes are selected in the viewer, only those shapes are exported (with their current move/rotate/scale applied). Selected sketch elements are ignored. If no 3D shapes are selected, all document shapes are exported together.
 
-**Units on export** (inverse of import):
+**Units:** After you choose a format, an **Export units** dialog asks for **Inches** or **Millimeters** (defaults: millimeters for STEP/IGES, inches for STL/PLY).
 
-| Format          | Exported coordinates                     |
-| --------------- | ---------------------------------------- |
-| **STEP**        | Millimeters (STEP length unit set to mm) |
-| **IGES**        | Millimeters                              |
-| **STL** / **PLY** | Inches (unitless mesh coords)          |
-
-A STEP round-trip (export then import) therefore preserves size relative to inch-based sketch dimensions.
+| Format              | How units are applied                                                       |
+| ------------------- | --------------------------------------------------------------------------- |
+| **STEP** / **IGES** | Geometry scaled to the chosen unit; that unit is written into the CAD file  |
+| **STL** / **PLY**   | Geometry scaled to the chosen unit; files have **no** unit metadata         |
 
 **Mesh exports (STL and PLY):** Surfaces are **tessellated** with a fixed linear deflection (same idea as typical STL export). Very complex B-rep models produce large mesh files.
 
-**How to export:** **File -> Export ->** choose STEP, IGES, STL (binary), or **PLY (binary)**, then pick a save location (desktop) or accept the browser download (WebAssembly).
+**How to export:** **File -> Export ->** choose STEP, IGES, STL (binary), or **PLY (binary)**, pick **Inches** or **Millimeters**, then pick a save location (desktop) or accept the browser download (WebAssembly).
 
 For detailed information on creating 2D geometry, see the [2D Sketching](usage-sketch.md) guide. For information on working with 3D shapes, see the [3D Modeling](#3d-modeling) section.
 

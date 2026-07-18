@@ -126,4 +126,11 @@ enum class Export_format
   Ply
 };
 
+/// Length unit for CAD/mesh export coordinates (and STEP/IGES declared unit).
+enum class Export_unit
+{
+  Inch,
+  Millimeter
+};
+
 #include "utl_types.inl"

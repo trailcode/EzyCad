@@ -99,8 +99,8 @@ public:
   /// Import PLY (coords treated as inches) scaled into model space (* dimension_scale).
   bool                 import_ply(const std::string& ply_bytes);
 
-  /// Writes STEP/IGES (mm) or STL/PLY (inches) from model space. Selected shapes if any, else all.
-  [[nodiscard]] Status export_document(Export_format fmt, const std::string& file_path);
+  /// Writes STEP/IGES/STL/PLY from model space in \a unit. Selected document shapes if any, else all.
+  [[nodiscard]] Status export_document(Export_format fmt, Export_unit unit, const std::string& file_path);
 
   // Undo / redo (element deltas for edits; full JSON only for file-open checkpoint).
   /// Saves current document (full JSON) and mode. Prefer typed deltas for interactive edits.
