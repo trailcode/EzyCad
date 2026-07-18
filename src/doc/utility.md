@@ -114,6 +114,8 @@ Symmetric `to_json` / `from_json_*` for `gp_Pnt2d`, `gp_Pnt`, `gp_Dir`, `gp_Pln`
 
 ## PLY (`utl_ply_io`)
 
+Raw PLY parse/write only (no unit conversion). `Occt_view::import_ply` / `export_document` scale about the origin: import treats coords as inches into model space; export writes inches.
+
 | API                                   | Role                                                |
 | ------------------------------------- | --------------------------------------------------- |
 | `import_ply_shape(bytes, out)`        | ASCII or binary_little_endian PLY -> `TopoDS_Shape` |

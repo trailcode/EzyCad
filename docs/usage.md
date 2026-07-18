@@ -283,7 +283,7 @@ Use **File -> Export** to save the current model for other CAD tools, CAM, or 3D
 | **STL**            | Triangle mesh; files are written in **binary** form                  |
 | **PLY** (`.ply`)   | Triangle mesh in **binary little-endian** PLY (tessellated like STL) |
 
-**Scope:** If one or more 3D shapes are selected in the viewer, only those shapes are exported (with their current move/rotate/scale applied). If nothing is selected, all shapes in the document are exported together.
+**Scope:** Export includes only **document 3D shapes** (Shape List solids), not sketch edges or faces. If one or more 3D shapes are selected in the viewer, only those shapes are exported (with their current move/rotate/scale applied). Selected sketch elements are ignored. If no 3D shapes are selected, all document shapes are exported together.
 
 **Units on export** (inverse of import):
 
