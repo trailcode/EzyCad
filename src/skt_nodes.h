@@ -20,7 +20,8 @@ public:
   {
     Traditional = 0,
     Fullscreen  = 1,
-    Both        = 2
+    Both        = 2,
+    None        = 3
   };
 
   struct Node : public gp_Pnt2d

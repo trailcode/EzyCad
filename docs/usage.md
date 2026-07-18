@@ -251,8 +251,15 @@ In addition to creating 3D shapes from sketches, EzyCad supports importing exist
 **How to import:**
 1. Use **File -> Import**
 2. Pick a `.step`, `.stp`, or `.ply` file (the dialog lists these types)
-3. Geometry is added as 3D shape(s) in the document
+3. Geometry is added as 3D shape(s) in the document, scaled to project units (see below)
 4. You can move, rotate, scale, and use imported bodies in [boolean operations](#boolean-operations) like native solids where the geometry allows it
+
+**Units:** EzyCad treats sketch and display lengths as **inches**. Internal model coordinates are inches multiplied by an internal `dimension_scale` (default **100**). Import scaling:
+
+| Format                     | File units                                                              | Into EzyCad                                      |
+| -------------------------- | ----------------------------------------------------------------------- | ------------------------------------------------ |
+| **STEP** (`.step`, `.stp`) | Declared in the file (often mm); OCCT reads them as mm, then converted | Scaled so lengths match inch-based project dims  |
+| **PLY** (`.ply`)           | No standard unit metadata                                               | Vertex coords are treated as **inches**          |
 
 **PLY import notes:**
 - Supported: **ASCII** PLY and **binary little-endian** PLY.
@@ -278,6 +285,16 @@ Use **File -> Export** to save the current model for other CAD tools, CAM, or 3D
 
 **Scope:** If one or more 3D shapes are selected in the viewer, only those shapes are exported (with their current move/rotate/scale applied). If nothing is selected, all shapes in the document are exported together.
 
+**Units on export** (inverse of import):
+
+| Format          | Exported coordinates                     |
+| --------------- | ---------------------------------------- |
+| **STEP**        | Millimeters (STEP length unit set to mm) |
+| **IGES**        | Millimeters                              |
+| **STL** / **PLY** | Inches (unitless mesh coords)          |
+
+A STEP round-trip (export then import) therefore preserves size relative to inch-based sketch dimensions.
+
 **Mesh exports (STL and PLY):** Surfaces are **tessellated** with a fixed linear deflection (same idea as typical STL export). Very complex B-rep models produce large mesh files.
 
 **How to export:** **File -> Export ->** choose STEP, IGES, STL (binary), or **PLY (binary)**, then pick a save location (desktop) or accept the browser download (WebAssembly).
@@ -302,7 +319,7 @@ Full details (marker size, operational-axis visibility, tips): **[Sketch origin]
 
 See the **[2D Sketching guide](usage-sketch.md)** for full documentation of sketch tools: **[sketch origin](usage-sketch.md#sketch-origin)** (one permanent **+** reference point per sketch), **add node** (points and edge splits), line and multi-line edges, circles, arcs, rectangles, squares, slots, **operation axis** (with Mirror and Revolve actions in the Options panel), edge dimensions, and creating a sketch from a planar face. Revolve (via an operation axis) is one way to generate 3D solids directly from sketch geometry.
 
-**Sketch snap (overview):** While drawing or using **Add node**, picks can snap to existing geometry within **Snap dist** (Options panel). The main behaviors:
+**Sketch snap (overview):** While drawing or using **Add node**, picks can snap to existing geometry within **Snap dist** (Options panel), unless **Snap guide mode** is *None*. The main behaviors:
 
 |                    |                                                                                                                                                                                                               |
 | -----------------: | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |

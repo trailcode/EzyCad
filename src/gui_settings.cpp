@@ -717,7 +717,7 @@ void GUI::parse_gui_panes_settings_(const std::string& content)
     {
       const int mode = g["snap_guide_mode"].get<int>();
       if (mode >= static_cast<int>(Sketch_nodes::Snap_guide_mode::Traditional) &&
-          mode <= static_cast<int>(Sketch_nodes::Snap_guide_mode::Both))
+          mode <= static_cast<int>(Sketch_nodes::Snap_guide_mode::None))
         Sketch_nodes::set_snap_guide_mode(static_cast<Sketch_nodes::Snap_guide_mode>(mode));
     }
 
@@ -1768,10 +1768,11 @@ void GUI::settings_()
         ImGui::TextUnformatted("Snap guide mode");
         ImGui::TableSetColumnIndex(1);
         {
-          constexpr std::array<const char*, 3> k_snap_guide_mode_labels = {
+          constexpr std::array<const char*, 4> k_snap_guide_mode_labels = {
               "Traditional",
               "Fullscreen",
               "Both",
+              "None",
           };
           int mode = static_cast<int>(Sketch_nodes::get_snap_guide_mode());
           ImGui::SetNextItemWidth(160.0f);
@@ -1789,28 +1790,32 @@ void GUI::settings_()
           }
           ImGui::SameLine(0.0f, ImGui::GetStyle().ItemInnerSpacing.x);
           GUI_DOC_HELP_("Traditional: compact local snap marker.\nFullscreen: full-view crosshair/axis guides.\nBoth: show "
-                        "compact marker and fullscreen guides together. Click ? to open the user guide.",
+                        "compact marker and fullscreen guides together.\nNone: disable snap-to-node and snap guides. Click ? "
+                        "to open the user guide.",
                         doc_urls::k_sketch_snapping);
         }
 
-        ImGui::TableNextRow();
-        ImGui::TableSetColumnIndex(0);
-        ImGui::AlignTextToFramePadding();
-        ImGui::TextUnformatted("All co-axial nodes");
-        ImGui::TableSetColumnIndex(1);
+        if (Sketch_nodes::get_snap_guide_mode() != Sketch_nodes::Snap_guide_mode::None)
         {
-          bool annotate_all = Sketch_nodes::get_annotate_all_coaxial_nodes();
-          if (ImGui::Checkbox("##settings_annotate_all_coaxial", &annotate_all))
+          ImGui::TableNextRow();
+          ImGui::TableSetColumnIndex(0);
+          ImGui::AlignTextToFramePadding();
+          ImGui::TextUnformatted("All co-axial nodes");
+          ImGui::TableSetColumnIndex(1);
           {
-            Sketch_nodes::set_annotate_all_coaxial_nodes(annotate_all);
-            save_occt_view_settings();
-          }
+            bool annotate_all = Sketch_nodes::get_annotate_all_coaxial_nodes();
+            if (ImGui::Checkbox("##settings_annotate_all_coaxial", &annotate_all))
+            {
+              Sketch_nodes::set_annotate_all_coaxial_nodes(annotate_all);
+              save_occt_view_settings();
+            }
 
-          ImGui::SameLine(0.0f, ImGui::GetStyle().ItemInnerSpacing.x);
-          GUI_DOC_HELP_("When on (global mode): axis guide lines + markers for *all* nodes in the current sketch and all "
-                        "other visible sketches. When off (default): only closest node per active axis is annotated. Click ? "
-                        "to open the user guide.",
-                        doc_urls::k_sketch_snapping);
+            ImGui::SameLine(0.0f, ImGui::GetStyle().ItemInnerSpacing.x);
+            GUI_DOC_HELP_("When on (global mode): axis guide lines + markers for *all* nodes in the current sketch and all "
+                          "other visible sketches. When off (default): only closest node per active axis is annotated. "
+                          "Click ? to open the user guide.",
+                          doc_urls::k_sketch_snapping);
+          }
         }
 
         ImGui::EndTable();

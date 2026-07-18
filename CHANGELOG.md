@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Import / export units
+
+- **File -> Import** and **File -> Export** now scale geometry so sketch/display lengths stay in **inches**. STEP is read/written via millimeters (OCCT cascade/write unit); PLY import and STL/PLY export treat unitless mesh coords as inches; IGES export writes millimeters. STEP round-trips preserve size relative to project dimensions.
+
 ### File save
 
 - **File -> Save:** On failed save, an ImGui error modal shows the path/system error (native) or browser download error (wasm), with a hint when the file may be locked or unwritable.
@@ -14,6 +18,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Settings
 
 - **Settings -> Sketch:** Nested **Nodes**, **Snap**, and **Underlay** sections (with existing **Appearance** / **Dimensions**). Open state persisted as `gui.settings_headers.sketch_nodes` / `sketch_snap` / `sketch_underlay`.
+- **Snap guide mode** adds *None* (`gui.snap_guide_mode` **3**), which disables snap-to-node and snap guides. In **Options**, **Snap guide mode** is listed above **Snap dist**; **Snap dist** and **All co-axial nodes** are hidden when mode is *None* (same hide for **All co-axial nodes** in **Settings -> Sketch -> Snap**).
 
 ### Sketch appearance
 

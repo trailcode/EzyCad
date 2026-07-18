@@ -94,10 +94,12 @@ public:
   void                   load(const std::string& json_str, bool restore_view = true);
   Ezy_asset_store&       asset_store() { return m_assets; }
   const Ezy_asset_store& asset_store() const { return m_assets; }
-  [[nodiscard]] Status   import_step(const std::string& step_data);
-  bool                   import_ply(const std::string& ply_bytes);
+  /// Import STEP (OCCT reads cascade mm) scaled into model space (inches * dimension_scale).
+  [[nodiscard]] Status import_step(const std::string& step_data);
+  /// Import PLY (coords treated as inches) scaled into model space (* dimension_scale).
+  bool                 import_ply(const std::string& ply_bytes);
 
-  /// Writes STEP, IGES, binary STL, or PLY to \a file_path. Uses selected shapes if any, else all shapes.
+  /// Writes STEP/IGES (mm) or STL/PLY (inches) from model space. Selected shapes if any, else all.
   [[nodiscard]] Status export_document(Export_format fmt, const std::string& file_path);
 
   // Undo / redo (element deltas for edits; full JSON only for file-open checkpoint).

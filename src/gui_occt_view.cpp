@@ -23,6 +23,7 @@
 #include <NCollection_IndexedDataMap.hxx>
 #include <NCollection_Vec2.hxx>
 #include <IGESControl_Writer.hxx>
+#include <Interface_Static.hxx>
 #include <OpenGl_GraphicDriver.hxx>
 #include <Precision.hxx>
 #include <Prs3d_DatumAspect.hxx>
@@ -3053,6 +3054,49 @@ void Occt_view::load(const std::string& json_str, bool restore_view)
   }
 }
 
+namespace {
+
+// Project display lengths are inches. Model space = inches * dimension_scale (default 100).
+constexpr double k_mm_per_inch = 25.4;
+
+TopoDS_Shape scale_shape_about_origin_(const TopoDS_Shape& shape, double factor)
+{
+  if (shape.IsNull())
+    return shape;
+  if (std::abs(factor - 1.0) <= Precision::Confusion())
+    return shape;
+
+  gp_Trsf tr;
+  tr.SetScale(gp_Pnt(0.0, 0.0, 0.0), factor);
+  return BRepBuilderAPI_Transform(shape, tr, true).Shape();
+}
+
+// OCCT STEP reader delivers mm (xstep.cascade.unit); convert to model space.
+double step_import_to_model_scale_(double dimension_scale)
+{
+  return dimension_scale / k_mm_per_inch;
+}
+
+// PLY has no unit metadata; treat file coords as inches.
+double ply_import_to_model_scale_(double dimension_scale)
+{
+  return dimension_scale;
+}
+
+// Model space -> mm for STEP/IGES files.
+double model_to_cad_mm_export_scale_(double dimension_scale)
+{
+  return k_mm_per_inch / dimension_scale;
+}
+
+// Model space -> inches for unitless mesh files (STL/PLY).
+double model_to_inch_export_scale_(double dimension_scale)
+{
+  return 1.0 / dimension_scale;
+}
+
+} // namespace
+
 TopoDS_Shape Occt_view::shape_with_local_transform_(const AIS_Shape_ptr& ais) const
 {
   if (ais.IsNull())
@@ -3110,10 +3154,28 @@ Status Occt_view::export_document(Export_format fmt, const std::string& file_pat
   TopoDS_Shape shape;
   CHK_RET(build_export_shape_(shape));
 
+  const double dim_scale = get_dimension_scale();
+  double       unit_scale = 1.0;
+  switch (fmt)
+  {
+  case Export_format::Step:
+  case Export_format::Iges:
+    unit_scale = model_to_cad_mm_export_scale_(dim_scale);
+    break;
+  case Export_format::Stl:
+  case Export_format::Ply:
+    unit_scale = model_to_inch_export_scale_(dim_scale);
+    break;
+  }
+  shape = scale_shape_about_origin_(shape, unit_scale);
+
   switch (fmt)
   {
   case Export_format::Step:
   {
+    // Shape is already in mm; keep cascade/write unit as MM so OCCT does not rescale again.
+    Interface_Static::SetCVal("xstep.cascade.unit", "MM");
+    Interface_Static::SetCVal("write.step.unit", "MM");
     STEPControl_Writer    writer;
     IFSelect_ReturnStatus tr = writer.Transfer(shape, STEPControl_AsIs);
     if (tr != IFSelect_RetDone)
@@ -3127,6 +3189,9 @@ Status Occt_view::export_document(Export_format fmt, const std::string& file_pat
   }
   case Export_format::Iges:
   {
+    // Shape is already in mm; declare mm so translators do not apply another factor.
+    Interface_Static::SetCVal("xstep.cascade.unit", "MM");
+    Interface_Static::SetCVal("write.iges.unit", "MM");
     IGESControl_Writer writer;
     if (!writer.AddShape(shape))
       return Status::user_error("IGES does not support this shape.");
@@ -3138,9 +3203,10 @@ Status Occt_view::export_document(Export_format fmt, const std::string& file_pat
   }
   case Export_format::Stl:
   {
-    // Tessellate for mesh export (linear deflection in model units).
-    constexpr double               k_lin_deflection = 0.1;
-    const BRepMesh_IncrementalMesh mesher(shape, k_lin_deflection);
+    // Tessellate in export units (0.1 model units, scaled like the geometry).
+    constexpr double               k_lin_deflection_model = 0.1;
+    const double                   lin_deflection         = k_lin_deflection_model * unit_scale;
+    const BRepMesh_IncrementalMesh mesher(shape, lin_deflection);
     (void)mesher;
     StlAPI_Writer stl_writer;
     stl_writer.ASCIIMode() = false;
@@ -3151,8 +3217,9 @@ Status Occt_view::export_document(Export_format fmt, const std::string& file_pat
   }
   case Export_format::Ply:
   {
-    constexpr double               k_lin_deflection = 0.1;
-    const BRepMesh_IncrementalMesh mesher(shape, k_lin_deflection);
+    constexpr double               k_lin_deflection_model = 0.1;
+    const double                   lin_deflection         = k_lin_deflection_model * unit_scale;
+    const BRepMesh_IncrementalMesh mesher(shape, lin_deflection);
     (void)mesher;
     return export_ply_binary_file(shape, file_path);
   }
@@ -3162,6 +3229,9 @@ Status Occt_view::export_document(Export_format fmt, const std::string& file_pat
 
 Status Occt_view::import_step(const std::string& step_data)
 {
+  // Force cascade mm so file SI / conversion units land in a known space before our inch scale.
+  Interface_Static::SetCVal("xstep.cascade.unit", "MM");
+
   STEPControl_Reader reader;
   std::istringstream stream(step_data);
 
@@ -3172,6 +3242,7 @@ Status Occt_view::import_step(const std::string& step_data)
   if (reader.TransferRoots() == 0)
     return Status::user_error("STEP: no geometry was transferred from the file.");
 
+  const double              to_model = step_import_to_model_scale_(get_dimension_scale());
   const int                 num_shps = reader.NbShapes();
   std::vector<TopoDS_Shape> to_add;
   to_add.reserve(static_cast<size_t>(num_shps));
@@ -3179,7 +3250,7 @@ Status Occt_view::import_step(const std::string& step_data)
   {
     TopoDS_Shape shape = reader.Shape(i);
     if (!shape.IsNull())
-      to_add.push_back(shape);
+      to_add.push_back(scale_shape_about_origin_(shape, to_model));
   }
 
   if (to_add.empty())
@@ -3208,6 +3279,8 @@ bool Occt_view::import_ply(const std::string& ply_bytes)
   }
   if (shape.IsNull())
     return false;
+
+  shape = scale_shape_about_origin_(shape, ply_import_to_model_scale_(get_dimension_scale()));
 
   Shp_ptr shp = new Shp(*m_ctx, shape);
   add_shp_(shp);
