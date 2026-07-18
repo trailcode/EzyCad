@@ -62,7 +62,7 @@ void Shp_move::show_dist_edit(const ScreenCoords& screen_coords)
 
   auto dist_edit_axis_x = [&, screen_coords](float new_dist, bool is_final)
   {
-    m_delta.override_x = new_dist * view().get_dimension_scale();
+    m_delta.override_x = new_dist * view().get_display_to_model_scale();
     EZY_ASSERT(move_selected(screen_coords).is_ok()); // Status should always be valid here
     if (is_final)
       check_finalize_();
@@ -70,7 +70,7 @@ void Shp_move::show_dist_edit(const ScreenCoords& screen_coords)
 
   auto dist_edit_axis_y = [&, screen_coords](float new_dist, bool is_final)
   {
-    m_delta.override_y = new_dist * view().get_dimension_scale();
+    m_delta.override_y = new_dist * view().get_display_to_model_scale();
     EZY_ASSERT(move_selected(screen_coords).is_ok());
     if (is_final)
       check_finalize_();
@@ -78,22 +78,22 @@ void Shp_move::show_dist_edit(const ScreenCoords& screen_coords)
 
   auto dist_edit_axis_z = [&, screen_coords](float new_dist, bool is_final)
   {
-    m_delta.override_z = new_dist * view().get_dimension_scale();
+    m_delta.override_z = new_dist * view().get_display_to_model_scale();
     EZY_ASSERT(move_selected(screen_coords).is_ok());
     if (is_final)
       check_finalize_();
   };
 
   if (!m_delta.override_x.has_value() && (no_axis_constraints || m_opts.constr_axis_x))
-    gui().set_dist_edit(float(m_delta.delta.X() / view().get_dimension_scale()),
+    gui().set_dist_edit(float(m_delta.delta.X() / view().get_display_to_model_scale()),
                         std::move(std::function<void(float, bool)>(dist_edit_axis_x)));
 
   else if (!m_delta.override_y.has_value() && (no_axis_constraints || m_opts.constr_axis_y))
-    gui().set_dist_edit(float(m_delta.delta.Y() / view().get_dimension_scale()),
+    gui().set_dist_edit(float(m_delta.delta.Y() / view().get_display_to_model_scale()),
                         std::move(std::function<void(float, bool)>(dist_edit_axis_y)));
 
   else if (!m_delta.override_z.has_value() && (no_axis_constraints || m_opts.constr_axis_z))
-    gui().set_dist_edit(float(m_delta.delta.Z() / view().get_dimension_scale()),
+    gui().set_dist_edit(float(m_delta.delta.Z() / view().get_display_to_model_scale()),
                         std::move(std::function<void(float, bool)>(dist_edit_axis_z)));
 }
 

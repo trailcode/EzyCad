@@ -115,7 +115,7 @@ void Sketch_dims::rebuild_length_dimension_display_(Length_dimension& d)
                                                                                     : &m_sketch.m_topo.dim_classifier_faces());
 
   const double dist = m_sketch.m_nodes[d.node_idx_lo].Distance(m_sketch.m_nodes[d.node_idx_hi]);
-  d.dim->SetCustomValue(dist / m_sketch.m_view.get_dimension_scale());
+  d.dim->SetCustomValue(dist / m_sketch.m_view.get_display_to_model_scale());
   if (d.flyout_offset.has_value() && *d.flyout_offset > 0.0)
   {
     const double f    = d.dim->GetFlyout();
@@ -327,7 +327,7 @@ void Sketch_dims::show_tmp_dim_preview(const gp_Pnt2d& pt_a, const gp_Pnt2d& pt_
     return;
   }
 
-  const double dist = pt_a.Distance(pt_b) / m_sketch.m_view.get_dimension_scale();
+  const double dist = pt_a.Distance(pt_b) / m_sketch.m_view.get_display_to_model_scale();
   m_tmp_dim_anno    = create_distance_annotation(
       pt_a, pt_b, m_sketch.m_pln, m_sketch.m_view.gui().length_dimension_style(), approx_sketch_interior_ref_3d_(),
       m_sketch.m_topo.dim_classifier_faces().empty() ? nullptr : &m_sketch.m_topo.dim_classifier_faces());
@@ -345,7 +345,7 @@ void Sketch_dims::offer_dist_edit_for_segment(const gp_Pnt2d& pt_a, const gp_Pnt
 
   auto cb = [this, edge_dir](float new_dist, bool is_finial)
   {
-    m_entered_edge_len = {edge_dir, new_dist * m_sketch.m_view.get_dimension_scale()};
+    m_entered_edge_len = {edge_dir, new_dist * m_sketch.m_view.get_display_to_model_scale()};
     m_show_dim_input   = !is_finial;
     if (is_finial)
       m_sketch.on_enter();

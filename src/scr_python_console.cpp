@@ -469,7 +469,7 @@ PYBIND11_EMBEDDED_MODULE(ezycad_native, m)
         const std::size_t   lo    = sketch.dimension_node_lo(i);
         const std::size_t   hi    = sketch.dimension_node_hi(i);
         const Sketch_nodes& nodes = sketch.get_nodes();
-        const double        dist  = nodes[lo].Distance(nodes[hi]) / view->get_dimension_scale();
+        const double        dist  = nodes[lo].Distance(nodes[hi]) / view->get_display_to_model_scale();
         return py::make_tuple(lo, hi, sketch.dimension_visible(i), sketch.dimension_offset(i), sketch.dimension_name(i), dist);
       },
       py::arg("i"));

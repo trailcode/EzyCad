@@ -986,7 +986,8 @@ void GUI::settings_()
           std::clamp(m_default_2d_view_width, k_gui_default_2d_view_size_min, k_gui_default_2d_view_size_max);
       ImGui::SameLine(0.0f, ImGui::GetStyle().ItemInnerSpacing.x);
       GUI_DOC_HELP_("Horizontal span of the sketch plane framed by File -> New and by projects with no saved camera "
-                    "(same length scale as sketch dimensions). Default 3. Ctrl+click to type. Click ? for the guide.",
+                    "(always inches in settings; independent of File -> Project units). Default 3. Ctrl+click to type. "
+                    "Click ? for the guide.",
                     doc_urls::k_view_navigation);
 
       ImGui::TableNextRow();
@@ -1002,7 +1003,8 @@ void GUI::settings_()
           std::clamp(m_default_2d_view_height, k_gui_default_2d_view_size_min, k_gui_default_2d_view_size_max);
       ImGui::SameLine(0.0f, ImGui::GetStyle().ItemInnerSpacing.x);
       GUI_DOC_HELP_("Vertical span of the sketch plane framed by File -> New and by projects with no saved camera "
-                    "(same length scale as sketch dimensions). Default 3. Ctrl+click to type. Click ? for the guide.",
+                    "(always inches in settings; independent of File -> Project units). Default 3. Ctrl+click to type. "
+                    "Click ? for the guide.",
                     doc_urls::k_view_navigation);
 
       ImGui::EndTable();
@@ -1135,8 +1137,8 @@ void GUI::settings_()
     m_view->get_grid_colors(g1, g2);
     Occt_grid_rect_params gr{};
     m_view->get_occt_grid_rect_params(gr);
-    const double dim_scale = m_view->get_dimension_scale();
-    // Settings show the same length units as sketch dimensions (model / dimension_scale).
+    const double dim_scale = m_view->get_display_to_model_scale();
+    // Settings show the same length units as sketch dimensions (project unit).
     double          step_ui          = gr.step / dim_scale;
     double          padding_ui       = gr.grid_padding / dim_scale;
     double          graphic_z_off_ui = gr.graphic_z_offset / dim_scale;
@@ -1191,6 +1193,8 @@ void GUI::settings_()
       const double step_min_ui = 1e-6;
       if (ImGui::DragScalar("##gstep", ImGuiDataType_Double, &step_ui, spd_s, &step_min_ui, nullptr, "%.8g"))
         geom_changed = true;
+      ImGui::SameLine(0.0f, ImGui::GetStyle().ItemInnerSpacing.x);
+      ImGui::TextUnformatted(m_view->project_unit_suffix());
 
       ImGui::TableNextRow();
       ImGui::TableSetColumnIndex(0);
@@ -1200,11 +1204,13 @@ void GUI::settings_()
       const double padding_min_ui = 0.0;
       if (ImGui::DragScalar("##gpad", ImGuiDataType_Double, &padding_ui, spd_extent, &padding_min_ui, nullptr, "%.8g"))
         geom_changed = true;
+      ImGui::SameLine(0.0f, ImGui::GetStyle().ItemInnerSpacing.x);
+      ImGui::TextUnformatted(m_view->project_unit_suffix());
 
       ImGui::SameLine(0.f, ImGui::GetStyle().ItemInnerSpacing.x);
       GUI_DOC_HELP_("Margin added around the active sketch when sizing the grid (same length scale as sketch "
-                    "dimensions). The grid extent follows sketch geometry plus this padding. Click ? to open the user "
-                    "guide.",
+                    "dimensions / project units). The grid extent follows sketch geometry plus this padding. Click ? "
+                    "to open the user guide.",
                     doc_urls::k_occt_view);
 
       ImGui::TableNextRow();
@@ -1214,6 +1220,8 @@ void GUI::settings_()
       ImGui::TableSetColumnIndex(1);
       if (ImGui::DragScalar("##ggz", ImGuiDataType_Double, &graphic_z_off_ui, spd_m, nullptr, nullptr, "%.8g"))
         geom_changed = true;
+      ImGui::SameLine(0.0f, ImGui::GetStyle().ItemInnerSpacing.x);
+      ImGui::TextUnformatted(m_view->project_unit_suffix());
 
       ImGui::EndTable();
     }

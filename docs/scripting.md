@@ -77,14 +77,14 @@ ezy.Shp
 
 Indices are **0-based** in Python. Prefer **`view.curr_sketch`** for inspection; **`ezy.sketch`** is the same object and also used for creation helpers.
 
-| Method                                                       | Purpose                                                                      |
-| ------------------------------------------------------------ | ---------------------------------------------------------------------------- |
-| `view.curr_sketch.name()`                                    | Name of the current sketch (`curr_name()` alias on `ezy.sketch`)             |
-| `view.curr_sketch.node_count()` / `view.curr_sketch.node(i)` | Read nodes `(x, y)` on the current sketch plane                              |
-| `view.curr_sketch.dim_count()` / `view.curr_sketch.dim(i)`   | Read length dimensions                                                       |
-| `view.curr_sketch.add(plane, offset, base_name)`             | New sketch on `XY`, `XZ`, or `YZ` (`offset` in display units; optional name) |
-| `view.curr_sketch.add_edge(x1, y1, x2, y2)`                  | Add a linear edge to the current sketch                                      |
-| `view.curr_sketch.finish_edges()`                            | Rebuild closed-face topology after bulk edge import                          |
+| Method                                                       | Purpose                                                                              |
+| ------------------------------------------------------------ | ------------------------------------------------------------------------------------ |
+| `view.curr_sketch.name()`                                    | Name of the current sketch (`curr_name()` alias on `ezy.sketch`)                     |
+| `view.curr_sketch.node_count()` / `view.curr_sketch.node(i)` | Read nodes `(x, y)` on the current sketch plane                                      |
+| `view.curr_sketch.dim_count()` / `view.curr_sketch.dim(i)`   | Read length dimensions (distance in project display units)                           |
+| `view.curr_sketch.add(plane, offset, base_name)`             | New sketch on `XY`, `XZ`, or `YZ` (`offset` in project display units; optional name) |
+| `view.curr_sketch.add_edge(x1, y1, x2, y2)`                  | Add a linear edge to the current sketch                                              |
+| `view.curr_sketch.finish_edges()`                            | Rebuild closed-face topology after bulk edge import                                  |
 
 ### `ezy.Shp`
 

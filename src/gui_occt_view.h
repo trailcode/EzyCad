@@ -167,7 +167,7 @@ public:
   void         remove_sketch(const Sketch_ptr& sketch);
   /// Empty sketch on \a pln; \a base_name is uniquified (e.g. Sketch_xy, Sketch_xy.001).
   void add_sketch(const gp_Pln& pln, const std::string& base_name);
-  /// Like add_sketch; \a offset_display is multiplied by get_dimension_scale().
+  /// Like add_sketch; \a offset_display is multiplied by get_display_to_model_scale().
   void       add_sketch_on_ref_plane(Sketch_ref_plane plane, double offset_display, const std::string& base_name);
   void       curr_sketch_add_edge(double x1, double y1, double x2, double y2);
   void       curr_sketch_rebuild_faces();
@@ -219,7 +219,17 @@ public:
   void                  angle_input(const ScreenCoords& screen_coords);
   void                  refresh_sketch_annotations(const Sketch_annotation_refresh& refresh);
   void                  apply_sketch_dimensions_visibility();
+  /// Inch-based model scale (`model = inches * scale`). Used for STEP/PLY import/export.
   double                get_dimension_scale() const;
+  /// Display (project unit) -> model scale. Prefer for UI length I/O.
+  double                get_display_to_model_scale() const;
+  double                to_model(double display) const;
+  double                to_display(double model) const;
+  Project_unit          get_project_unit() const;
+  /// Sets project unit, refreshes length dimensions; does not rewrite geometry.
+  void                  set_project_unit(Project_unit unit);
+  /// Short label for length fields: "in" or "mm".
+  const char*           project_unit_suffix() const;
   bool                  get_show_dim_input() const;
   void                  set_show_dim_input(bool show);
   std::optional<double> get_entered_dim() const;
@@ -403,6 +413,7 @@ private:
   // Dimension related
   bool                                   m_show_dim_input{false};
   double                                 m_dimension_scale{100.0};
+  Project_unit                           m_project_unit{Project_unit::Inch};
   std::optional<double>                  m_entered_dim;
   std::list<Shp_ptr>                     m_shps;
   Sketch_list                            m_sketches;

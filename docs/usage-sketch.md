@@ -862,12 +862,12 @@ Edge dimension tool creates/removes **length dimensions between two sketch nodes
 
 **Technical Details:**
 
-|                      |                                                           |
-| -------------------: | --------------------------------------------------------- |
-| **Dimension source** | Calculated from the two referenced nodes                  |
-| **Unit system**      | Displays measurements in the current unit system          |
-| **Auto-update**      | Dimensions update automatically when geometry is modified |
-| **View-only**        | Does not affect the underlying geometry                   |
+|                      |                                                                                |
+| -------------------: | ------------------------------------------------------------------------------ |
+| **Dimension source** | Calculated from the two referenced nodes                                       |
+| **Unit system**      | **File -> Project units** (Inches or Millimeters); dims and length entry follow it |
+| **Auto-update**      | Dimensions update automatically when geometry is modified                      |
+| **View-only**        | Does not affect the underlying geometry                                        |
 
 ## Add Node Tool
 

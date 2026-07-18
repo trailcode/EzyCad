@@ -75,7 +75,7 @@ Includes [`utl_geom_boost.inl`](../utl_geom_boost.inl) for `ezy_geom` polygon / 
 
 | Path in archive    | Content                                                       |
 | ------------------ | ------------------------------------------------------------- |
-| `manifest.json`    | Document JSON (sketches, shapes, view, mode, `ui.sketchList`) |
+| `manifest.json`    | Document JSON (`ezyFormat`, `projectUnit`, sketches, shapes, view, mode, `ui.sketchList`) |
 | `assets/<id>.rgba` | Raw RGBA pixels for underlay `"asset"` references             |
 
 | Function                       | Role                                                            |

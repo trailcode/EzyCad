@@ -681,7 +681,7 @@ void Occt_view::add_sketch(const gp_Pln& pln, const std::string& base_name)
 
 void Occt_view::add_sketch_on_ref_plane(Sketch_ref_plane plane, double offset_display, const std::string& base_name)
 {
-  const gp_Pln pln = sketch_reference_plane(plane, offset_display * get_dimension_scale());
+  const gp_Pln pln = sketch_reference_plane(plane, offset_display * get_display_to_model_scale());
   add_sketch(pln, base_name);
 }
 
@@ -1322,6 +1322,38 @@ void Occt_view::dimension_input(const ScreenCoords& screen_coords)
 void Occt_view::angle_input(const ScreenCoords& screen_coords) { curr_sketch().angle_input(screen_coords); }
 
 double Occt_view::get_dimension_scale() const { return m_dimension_scale; }
+
+double Occt_view::get_display_to_model_scale() const
+{
+  if (m_project_unit == Project_unit::Millimeter)
+    return m_dimension_scale / k_mm_per_inch;
+
+  return m_dimension_scale;
+}
+
+double Occt_view::to_model(double display) const { return display * get_display_to_model_scale(); }
+
+double Occt_view::to_display(double model) const
+{
+  const double scale = get_display_to_model_scale();
+  return scale != 0.0 ? model / scale : 0.0;
+}
+
+Project_unit Occt_view::get_project_unit() const { return m_project_unit; }
+
+void Occt_view::set_project_unit(Project_unit unit)
+{
+  if (m_project_unit == unit)
+    return;
+
+  m_project_unit = unit;
+  refresh_sketch_annotations({.length_dimensions = true});
+}
+
+const char* Occt_view::project_unit_suffix() const
+{
+  return m_project_unit == Project_unit::Millimeter ? "mm" : "in";
+}
 
 bool Occt_view::get_show_dim_input() const { return m_show_dim_input; }
 
@@ -2868,6 +2900,7 @@ std::string Occt_view::to_json() const
   using namespace nlohmann;
   json j;
   j["ezyFormat"] = k_ezy_file_format_version;
+  j["projectUnit"] = (m_project_unit == Project_unit::Millimeter) ? "millimeter" : "inch";
   json& sketches = j["sketches"] = json::array();
   json& shps = j["shapes"] = json::array();
 
@@ -2943,6 +2976,13 @@ void Occt_view::load(const std::string& json_str, bool restore_view)
 
   const json j = json::parse(json_str);
   (void)j.value("ezyFormat", 1); // Reserved for future migrations; sketch JSON migrates per-edge dim flags in Sketch_json.
+  m_project_unit = Project_unit::Inch;
+  if (j.contains("projectUnit") && j["projectUnit"].is_string())
+  {
+    const std::string u = j["projectUnit"].get<std::string>();
+    if (u == "millimeter" || u == "mm")
+      m_project_unit = Project_unit::Millimeter;
+  }
   EZY_ASSERT(j.contains("sketches") && j["sketches"].is_array());
   for (const auto& s : j["sketches"])
   {
@@ -3053,9 +3093,7 @@ void Occt_view::load(const std::string& json_str, bool restore_view)
 namespace
 {
 
-// Project display lengths are inches. Model space = inches * dimension_scale (default 100).
-constexpr double k_mm_per_inch = 25.4;
-
+// Project display lengths use Project_unit (inch or mm). Model space = inches * dimension_scale (default 100).
 TopoDS_Shape scale_shape_about_origin_(const TopoDS_Shape& shape, double factor)
 {
   if (shape.IsNull())
@@ -3279,6 +3317,7 @@ void Occt_view::new_file()
   m_assets.clear();
   m_next_sketch_id = 1;
   m_next_shape_id  = 1;
+  m_project_unit   = Project_unit::Inch;
 
   create_default_sketch_();
   refresh_viewer_grid_();

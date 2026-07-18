@@ -13,7 +13,7 @@ void GUI::add_box_dialog_()
   if (!ImGui::BeginPopupModal("Add box", nullptr, ImGuiWindowFlags_AlwaysAutoResize))
     return;
 
-  ImGui::TextUnformatted("Values in display units.");
+  ImGui::Text("Values in project units (%s).", m_view->project_unit_suffix());
   ImGui::Spacing();
 
   if (ImGui::BeginTable("Add box##table", 2, ImGuiTableFlags_SizingStretchProp))
@@ -68,7 +68,7 @@ void GUI::add_box_dialog_()
   {
     if (m_add_box_size.x > 0 && m_add_box_size.y > 0 && m_add_box_size.z > 0)
     {
-      const double scale = m_view->get_dimension_scale();
+      const double scale = m_view->get_display_to_model_scale();
       m_view->add_box(m_add_box_origin.x * scale, m_add_box_origin.y * scale, m_add_box_origin.z * scale,
                       m_add_box_size.x * scale, m_add_box_size.y * scale, m_add_box_size.z * scale);
 
@@ -92,7 +92,7 @@ void GUI::add_pyramid_dialog_()
   if (!ImGui::BeginPopupModal("Add pyramid", nullptr, ImGuiWindowFlags_AlwaysAutoResize))
     return;
 
-  ImGui::TextUnformatted("Values in display units.");
+  ImGui::Text("Values in project units (%s).", m_view->project_unit_suffix());
   ImGui::Spacing();
   if (ImGui::BeginTable("Add pyramid##table", 2, ImGuiTableFlags_SizingStretchProp))
   {
@@ -125,7 +125,7 @@ void GUI::add_pyramid_dialog_()
   ImGui::Spacing();
   if (ImGui::Button("Add") && m_add_pyramid_side > 0)
   {
-    const double scale = m_view->get_dimension_scale();
+    const double scale = m_view->get_display_to_model_scale();
     m_view->add_pyramid(m_add_pyramid_origin.x * scale, m_add_pyramid_origin.y * scale, m_add_pyramid_origin.z * scale,
                         m_add_pyramid_side * scale);
 
@@ -149,7 +149,7 @@ void GUI::add_sphere_dialog_()
   if (!ImGui::BeginPopupModal("Add sphere", nullptr, ImGuiWindowFlags_AlwaysAutoResize))
     return;
 
-  ImGui::TextUnformatted("Values in display units.");
+  ImGui::Text("Values in project units (%s).", m_view->project_unit_suffix());
   ImGui::Spacing();
   if (ImGui::BeginTable("Add sphere##table", 2, ImGuiTableFlags_SizingStretchProp))
   {
@@ -183,7 +183,7 @@ void GUI::add_sphere_dialog_()
   ImGui::Spacing();
   if (ImGui::Button("Add") && m_add_sphere_radius > 0)
   {
-    const double scale = m_view->get_dimension_scale();
+    const double scale = m_view->get_display_to_model_scale();
     m_view->add_sphere(m_add_sphere_origin.x * scale, m_add_sphere_origin.y * scale, m_add_sphere_origin.z * scale,
                        m_add_sphere_radius * scale);
 
@@ -208,7 +208,7 @@ void GUI::add_cylinder_dialog_()
   if (!ImGui::BeginPopupModal("Add cylinder", nullptr, ImGuiWindowFlags_AlwaysAutoResize))
     return;
 
-  ImGui::TextUnformatted("Values in display units.");
+  ImGui::Text("Values in project units (%s).", m_view->project_unit_suffix());
   ImGui::Spacing();
   if (ImGui::BeginTable("Add cylinder##table", 2, ImGuiTableFlags_SizingStretchProp))
   {
@@ -248,7 +248,7 @@ void GUI::add_cylinder_dialog_()
   ImGui::Spacing();
   if (ImGui::Button("Add") && m_add_cylinder_radius > 0 && m_add_cylinder_height > 0)
   {
-    const double scale = m_view->get_dimension_scale();
+    const double scale = m_view->get_display_to_model_scale();
     m_view->add_cylinder(m_add_cylinder_origin.x * scale, m_add_cylinder_origin.y * scale, m_add_cylinder_origin.z * scale,
                          m_add_cylinder_radius * scale, m_add_cylinder_height * scale);
 
@@ -272,7 +272,7 @@ void GUI::add_cone_dialog_()
   if (!ImGui::BeginPopupModal("Add cone", nullptr, ImGuiWindowFlags_AlwaysAutoResize))
     return;
 
-  ImGui::TextUnformatted("Values in display units.");
+  ImGui::Text("Values in project units (%s).", m_view->project_unit_suffix());
   ImGui::Spacing();
   if (ImGui::BeginTable("Add cone##table", 2, ImGuiTableFlags_SizingStretchProp))
   {
@@ -318,7 +318,7 @@ void GUI::add_cone_dialog_()
   ImGui::Spacing();
   if (ImGui::Button("Add") && m_add_cone_R1 >= 0 && m_add_cone_R2 >= 0 && m_add_cone_height > 0)
   {
-    const double scale = m_view->get_dimension_scale();
+    const double scale = m_view->get_display_to_model_scale();
     m_view->add_cone(m_add_cone_origin.x * scale, m_add_cone_origin.y * scale, m_add_cone_origin.z * scale,
                      m_add_cone_R1 * scale, m_add_cone_R2 * scale, m_add_cone_height * scale);
 
@@ -342,7 +342,7 @@ void GUI::add_torus_dialog_()
   if (!ImGui::BeginPopupModal("Add torus", nullptr, ImGuiWindowFlags_AlwaysAutoResize))
     return;
 
-  ImGui::TextUnformatted("Values in display units.");
+  ImGui::Text("Values in project units (%s).", m_view->project_unit_suffix());
   ImGui::Spacing();
   if (ImGui::BeginTable("Add torus##table", 2, ImGuiTableFlags_SizingStretchProp))
   {
@@ -382,7 +382,7 @@ void GUI::add_torus_dialog_()
   ImGui::Spacing();
   if (ImGui::Button("Add") && m_add_torus_R1 > 0 && m_add_torus_R2 > 0)
   {
-    const double scale = m_view->get_dimension_scale();
+    const double scale = m_view->get_display_to_model_scale();
     m_view->add_torus(m_add_torus_origin.x * scale, m_add_torus_origin.y * scale, m_add_torus_origin.z * scale,
                       m_add_torus_R1 * scale, m_add_torus_R2 * scale);
 
@@ -406,7 +406,7 @@ void GUI::add_sketch_dialog_()
   if (!ImGui::BeginPopupModal("New sketch", nullptr, ImGuiWindowFlags_AlwaysAutoResize))
     return;
 
-  ImGui::TextUnformatted("Plane and offset along its normal (display units).");
+  ImGui::Text("Plane and offset along its normal (project units, %s).", m_view->project_unit_suffix());
   ImGui::Spacing();
 
   ImGui::TextUnformatted("Reference plane");
@@ -444,7 +444,7 @@ void GUI::add_sketch_dialog_()
       break;
     }
 
-    const double scale = m_view->get_dimension_scale();
+    const double scale = m_view->get_display_to_model_scale();
     const gp_Pln pln   = sketch_reference_plane(plane, m_new_sketch_offset * scale);
     m_view->add_sketch(pln, base);
     ImGui::CloseCurrentPopup();
@@ -469,7 +469,7 @@ void GUI::add_menu_items_()
   ImGui::Separator();
   if (ImGui::MenuItem("Add box"))
   {
-    const double scale = m_view->get_dimension_scale();
+    const double scale = m_view->get_display_to_model_scale();
     m_view->add_box(0, 0, 0, scale, scale, scale);
   }
 
@@ -482,7 +482,7 @@ void GUI::add_menu_items_()
 
   if (ImGui::MenuItem("Add pyramid"))
   {
-    const double scale = m_view->get_dimension_scale();
+    const double scale = m_view->get_display_to_model_scale();
     m_view->add_pyramid(0, 0, 0, scale);
   }
 
@@ -495,7 +495,7 @@ void GUI::add_menu_items_()
 
   if (ImGui::MenuItem("Add sphere"))
   {
-    const double scale = m_view->get_dimension_scale();
+    const double scale = m_view->get_display_to_model_scale();
     m_view->add_sphere(0, 0, 0, scale);
   }
 
@@ -508,7 +508,7 @@ void GUI::add_menu_items_()
 
   if (ImGui::MenuItem("Add cylinder"))
   {
-    const double scale = m_view->get_dimension_scale();
+    const double scale = m_view->get_display_to_model_scale();
     m_view->add_cylinder(0, 0, 0, scale, scale);
   }
 
@@ -521,7 +521,7 @@ void GUI::add_menu_items_()
 
   if (ImGui::MenuItem("Add cone"))
   {
-    const double scale = m_view->get_dimension_scale();
+    const double scale = m_view->get_display_to_model_scale();
     m_view->add_cone(0, 0, 0, scale, 0.0, scale);
   }
 
@@ -536,7 +536,7 @@ void GUI::add_menu_items_()
 
   if (ImGui::MenuItem("Add torus"))
   {
-    const double scale = m_view->get_dimension_scale();
+    const double scale = m_view->get_display_to_model_scale();
     m_view->add_torus(0, 0, 0, scale, scale / 2.0);
   }
 

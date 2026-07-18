@@ -14,7 +14,7 @@ Typical responsibilities:
 - Mode switching (`Mode` enum in [`mode.h`](../mode.h)) and parent-mode Esc behavior.
 - Persisted preferences (`ezycad_settings.json` via [`gui_settings.cpp`](../gui_settings.cpp)).
 - Project I/O (`.ezy` load/save, import/export dialogs).
-- CAD/mesh interchange scales about the origin: project display lengths are **inches** (`model = inches * dimension_scale`). STEP import converts OCCT cascade **mm** into model space; PLY import treats coords as inches. **File -> Export** asks for **Inches** or **Millimeters** (STEP/IGES declare that unit; STL/PLY write unitless coords in that scale).
+- CAD/mesh interchange scales about the origin: project display lengths follow **File -> Project units** (`Project_unit`; Inch or Millimeter). Model space stays inch-scaled (`model = inches * dimension_scale`). STEP import converts OCCT cascade **mm** into model space; PLY import treats coords as inches. **File -> Export** asks for **Inches** or **Millimeters** (STEP/IGES declare that unit; STL/PLY write unitless coords in that scale). `.ezy` persists `projectUnit`.
 - Contextual help links (`doc_urls` in `gui.h`).
 
 ## Requirements and invariants
