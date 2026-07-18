@@ -54,7 +54,7 @@ Do not mix transient edges into the persistent list; tools finalize through `Ske
 | `Sketch::set_add_mid_pt_edges(bool)` | When true, linear edge tools create midpoint snap nodes on new segments. Default off in the app; many unit tests enable it in `SetUp`. |
 | `Sketch::set_edge_from_center(bool)` | When true, rectangle/circle/slot tools place from center instead of corner.                                                            |
 
-Snap distance, guide mode, and guide colors live on `Sketch_nodes` (static setters).
+Snap distance, guide mode (*Traditional* / *Fullscreen* / *Both* / *None*), and guide colors live on `Sketch_nodes` (static setters). *None* disables snap-to-node and snap guides.
 
 ## Architecture
 

@@ -543,7 +543,7 @@ std::optional<size_t> Sketch_nodes::Impl::try_get_node_idx_snap(
     gp_Pnt2d&                  pt, // `pt` could be snapped to a node, an axis of another node, or an outside snap point.
     const std::vector<size_t>& to_exclude)
 {
-  if (m_view.sketch_snap_suppressed())
+  if (m_view.sketch_snap_suppressed() || s_snap_guide_mode == Sketch_nodes::Snap_guide_mode::None)
   {
     m_owner->hide_snap_annos();
     return std::nullopt;

@@ -148,6 +148,7 @@ void GUI::render_gui()
   options_();
   message_status_window_();
   error_modal_dialog_();
+  export_units_dialog_();
   about_dialog_();
   add_box_dialog_();
   add_pyramid_dialog_();
@@ -336,16 +337,16 @@ void GUI::menu_bar_()
     if (ImGui::BeginMenu("Export"))
     {
       if (ImGui::MenuItem("STEP (.step)..."))
-        export_file_dialog_(Export_format::Step);
+        open_export_units_dialog_(Export_format::Step);
 
       if (ImGui::MenuItem("IGES (.igs)..."))
-        export_file_dialog_(Export_format::Iges);
+        open_export_units_dialog_(Export_format::Iges);
 
       if (ImGui::MenuItem("STL (binary)..."))
-        export_file_dialog_(Export_format::Stl);
+        open_export_units_dialog_(Export_format::Stl);
 
       if (ImGui::MenuItem("PLY (binary)..."))
-        export_file_dialog_(Export_format::Ply);
+        open_export_units_dialog_(Export_format::Ply);
 
       ImGui::EndMenu();
     }
@@ -3434,7 +3435,84 @@ void GUI::cleanup_log_redirection_()
 }
 
 // Import/export related
-void GUI::export_file_dialog_(Export_format fmt)
+void GUI::open_export_units_dialog_(Export_format fmt)
+{
+  m_export_pending_fmt = fmt;
+  // Defaults match prior fixed behavior: STEP/IGES mm, STL/PLY inches.
+  switch (fmt)
+  {
+  case Export_format::Step:
+  case Export_format::Iges:
+    m_export_unit = Export_unit::Millimeter;
+    break;
+  case Export_format::Stl:
+  case Export_format::Ply:
+    m_export_unit = Export_unit::Inch;
+    break;
+  }
+  m_open_export_units_modal = true;
+}
+
+void GUI::export_units_dialog_()
+{
+  if (m_open_export_units_modal)
+  {
+    m_export_units_modal_open = true;
+    ImGui::OpenPopup("Export units");
+    m_open_export_units_modal = false;
+  }
+
+  if (!ImGui::BeginPopupModal("Export units", &m_export_units_modal_open, ImGuiWindowFlags_AlwaysAutoResize))
+    return;
+
+  const char* fmt_label = "STEP";
+  switch (m_export_pending_fmt)
+  {
+  case Export_format::Step:
+    break;
+  case Export_format::Iges:
+    fmt_label = "IGES";
+    break;
+  case Export_format::Stl:
+    fmt_label = "STL";
+    break;
+  case Export_format::Ply:
+    fmt_label = "PLY";
+    break;
+  }
+
+  ImGui::Text("Export %s in which units?", fmt_label);
+  ImGui::Spacing();
+
+  if (ImGui::RadioButton("Inches", m_export_unit == Export_unit::Inch))
+    m_export_unit = Export_unit::Inch;
+  if (ImGui::RadioButton("Millimeters", m_export_unit == Export_unit::Millimeter))
+    m_export_unit = Export_unit::Millimeter;
+
+  ImGui::Spacing();
+  if (m_export_pending_fmt == Export_format::Stl || m_export_pending_fmt == Export_format::Ply)
+    ImGui::TextWrapped("STL and PLY have no unit metadata; vertex coordinates will be in the chosen unit.");
+
+  ImGui::Spacing();
+  if (ImGui::Button("Export", ImVec2(120.0f, 0.0f)))
+  {
+    const Export_format fmt  = m_export_pending_fmt;
+    const Export_unit   unit = m_export_unit;
+    ImGui::CloseCurrentPopup();
+    m_export_units_modal_open = false;
+    export_file_dialog_(fmt, unit);
+  }
+  ImGui::SameLine();
+  if (ImGui::Button("Cancel", ImVec2(120.0f, 0.0f)))
+  {
+    ImGui::CloseCurrentPopup();
+    m_export_units_modal_open = false;
+  }
+
+  ImGui::EndPopup();
+}
+
+void GUI::export_file_dialog_(Export_format fmt, Export_unit unit)
 {
 #ifndef __EMSCRIPTEN__
   const char* title       = "Export STEP";
@@ -3473,7 +3551,7 @@ void GUI::export_file_dialog_(Export_format fmt)
     return;
   }
 
-  const Status s = m_view->export_document(fmt, selected);
+  const Status s = m_view->export_document(fmt, unit, selected);
   if (!s.is_ok())
     show_message(s.message());
   else
@@ -3498,7 +3576,7 @@ void GUI::export_file_dialog_(Export_format fmt)
     download_name = "export.ply";
     break;
   }
-  const Status s = m_view->export_document(fmt, mem_path);
+  const Status s = m_view->export_document(fmt, unit, mem_path);
   if (!s.is_ok())
   {
     show_message(s.message());

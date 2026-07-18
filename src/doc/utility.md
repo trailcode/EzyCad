@@ -21,7 +21,7 @@ Typical uses:
 | File                                                                           | Responsibility                                                                             |
 | ------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------ |
 | [`utl.h`](../utl.h) / [`utl.cpp`](../utl.cpp)                                  | `Status`, `Result<T>`, `CHK_RET`, `clear_all`, textures, image decode, name uniquification |
-| [`utl_types.h`](../utl_types.h)                                                | OCCT/AIS handle typedefs, `ScreenCoords`, `Export_format`, `DECL_PTR`, `SafeType`          |
+| [`utl_types.h`](../utl_types.h)                                                | OCCT/AIS handle typedefs, `ScreenCoords`, `Export_format`, `Export_unit`, `DECL_PTR`, `SafeType` |
 | [`utl_geom.h`](../utl_geom.h) / [`.cpp`](../utl_geom.cpp)                      | 2D/3D geometry, wires, dimensions, Boost polygon tests, plane projection                   |
 | [`utl_geom_boost.inl`](../utl_geom_boost.inl)                                  | `ezy_geom` Boost.Geometry aliases                                                          |
 | [`utl_occt.h`](../utl_occt.h) / [`.cpp`](../utl_occt.cpp)                      | `TopAbs` name table, `try_make_solid`, `standard_failure_message`                          |
@@ -113,6 +113,8 @@ Includes [`utl_geom_boost.inl`](../utl_geom_boost.inl) for `ezy_geom` polygon / 
 Symmetric `to_json` / `from_json_*` for `gp_Pnt2d`, `gp_Pnt`, `gp_Dir`, `gp_Pln` used in sketch/project serialization.
 
 ## PLY (`utl_ply_io`)
+
+Raw PLY parse/write only (no unit conversion). `Occt_view::import_ply` / `export_document` scale about the origin: import treats coords as inches into model space; export writes inches or millimeters per the export-units dialog (no unit metadata in the PLY).
 
 | API                                   | Role                                                |
 | ------------------------------------- | --------------------------------------------------- |

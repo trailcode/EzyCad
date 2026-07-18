@@ -23,6 +23,7 @@
 #include <NCollection_IndexedDataMap.hxx>
 #include <NCollection_Vec2.hxx>
 #include <IGESControl_Writer.hxx>
+#include <Interface_Static.hxx>
 #include <OpenGl_GraphicDriver.hxx>
 #include <Precision.hxx>
 #include <Prs3d_DatumAspect.hxx>
@@ -612,8 +613,8 @@ void Occt_view::create_sketch_from_planar_face_(const ScreenCoords& screen_coord
       m_sketches.push_back(m_cur_sketch);
       m_cur_sketch->set_current();
       refresh_viewer_grid_();
-      push_undo_delta(std::make_unique<Sketch_struct_delta>(
-          Sketch_struct_delta::Kind::Add, Sketch_json::to_json(*m_cur_sketch, m_assets), true));
+      push_undo_delta(std::make_unique<Sketch_struct_delta>(Sketch_struct_delta::Kind::Add,
+                                                            Sketch_json::to_json(*m_cur_sketch, m_assets), true));
       // fit_face_in_view(*face);
       m_gui.set_mode(Mode::Sketch_inspection_mode);
     }
@@ -674,7 +675,7 @@ void Occt_view::add_sketch(const gp_Pln& pln, const std::string& base_name)
   m_cur_sketch->set_current();
   refresh_viewer_grid_();
   push_undo_delta(std::make_unique<Sketch_struct_delta>(Sketch_struct_delta::Kind::Add,
-                                                         Sketch_json::to_json(*m_cur_sketch, m_assets), true));
+                                                        Sketch_json::to_json(*m_cur_sketch, m_assets), true));
   m_gui.set_mode(Mode::Sketch_inspection_mode);
 }
 
@@ -1335,10 +1336,7 @@ void Occt_view::sketch_face_extrude(const ScreenCoords& screen_coords, bool is_m
   m_shp_extrude.sketch_face_extrude(screen_coords, is_mouse_move);
 }
 
-bool Occt_view::begin_sketch_face_extrude(const AIS_Shape_ptr& face)
-{
-  return m_shp_extrude.begin_face_extrude(face);
-}
+bool Occt_view::begin_sketch_face_extrude(const AIS_Shape_ptr& face) { return m_shp_extrude.begin_face_extrude(face); }
 
 void Occt_view::delete_selected() { delete_shapes(get_selected()); }
 
@@ -1937,10 +1935,10 @@ void Occt_view::apply_shape_selection_style()
   if (m_ctx.IsNull())
     return;
 
-  const float* rgba = gui().shape_selection_color_rgba();
+  const float*         rgba = gui().shape_selection_color_rgba();
   const Quantity_Color qc(static_cast<double>(rgba[0]), static_cast<double>(rgba[1]), static_cast<double>(rgba[2]),
                           Quantity_TOC_RGB);
-  const float transparency = 1.0f - std::clamp(rgba[3], 0.0f, 1.0f);
+  const float          transparency = 1.0f - std::clamp(rgba[3], 0.0f, 1.0f);
 
   const auto apply_to_style = [&](const Prs3d_Drawer_ptr& style)
   {
@@ -1999,7 +1997,7 @@ void Occt_view::update_shape_list_hover_drawer_()
 void Occt_view::update_sketch_list_hover_face_drawer_()
 {
   // Match Sketch:: face mouse-over (Settings -> Sketch -> Face highlight fill).
-  const float* rgba = gui().sketch_face_highlight_color_rgba();
+  const float*         rgba = gui().sketch_face_highlight_color_rgba();
   const Quantity_Color qc(static_cast<double>(rgba[0]), static_cast<double>(rgba[1]), static_cast<double>(rgba[2]),
                           Quantity_TOC_RGB);
   const float          transp = std::clamp(1.f - rgba[3], 0.f, 1.f);
@@ -2031,7 +2029,7 @@ void Occt_view::update_sketch_list_hover_face_drawer_()
 void Occt_view::update_sketch_list_hover_edge_drawer_()
 {
   // Match Sketch:: edge mouse-over (Settings -> Sketch -> Edge highlight).
-  const float* rgba = gui().sketch_edge_highlight_color_rgba();
+  const float*         rgba = gui().sketch_edge_highlight_color_rgba();
   const Quantity_Color qc(static_cast<double>(rgba[0]), static_cast<double>(rgba[1]), static_cast<double>(rgba[2]),
                           Quantity_TOC_RGB);
   const float          transp = std::clamp(1.f - rgba[3], 0.f, 1.f);
@@ -2221,13 +2219,13 @@ void Occt_view::clear_sketch_list_hover_ais_state_(Sketch_list_hover_ais& hover)
   }
 
   hover.ais.Nullify();
-  hover.temp_display     = false;
-  hover.zlayer_override  = false;
-  hover.prev_zlayer      = Graphic3d_ZLayerId_Default;
+  hover.temp_display    = false;
+  hover.zlayer_override = false;
+  hover.prev_zlayer     = Graphic3d_ZLayerId_Default;
 }
 
 void Occt_view::apply_sketch_list_hover_ais_state_(Sketch_list_hover_ais& hover, const Prs3d_Drawer_ptr& drawer,
-                                             const int display_mode)
+                                                   const int display_mode)
 {
   if (is_headless() || m_ctx.IsNull() || hover.ais.IsNull() || drawer.IsNull())
     return;
@@ -2251,7 +2249,7 @@ void Occt_view::apply_sketch_list_hover_ais_state_(Sketch_list_hover_ais& hover,
 }
 
 void Occt_view::set_sketch_list_hover_ais_state_(Sketch_list_hover_ais& hover, const AIS_Shape_ptr& ais,
-                                           const Prs3d_Drawer_ptr& drawer, const int display_mode)
+                                                 const Prs3d_Drawer_ptr& drawer, const int display_mode)
 {
   if (is_headless() || m_ctx.IsNull())
     return;
@@ -2411,8 +2409,7 @@ void Occt_view::apply_camera_projection()
   if (is_headless() || m_view.IsNull())
     return;
 
-  const bool ortho =
-      is_sketch_mode(get_mode()) || m_gui.inspection_orthographic(); // Sketch tools + Extrude force ortho
+  const bool ortho = is_sketch_mode(get_mode()) || m_gui.inspection_orthographic(); // Sketch tools + Extrude force ortho
 
   Graphic3d_Camera_ptr camera = m_view->Camera();
   if (camera.IsNull())
@@ -2524,12 +2521,12 @@ void Occt_view::on_mode()
 
 void Occt_view::sync_sketch_shape_faint_style()
 {
-  const bool hide_all = gui().get_hide_all_shapes();
-  const bool sketch   = is_sketch_mode(get_mode());
-  const bool enabled  = gui().sketch_shape_faint_enabled();
-  const int  style    = gui().sketch_shape_faint_style();
-  const float opacity =
-      std::clamp(gui().sketch_shape_faint_opacity(), k_gui_sketch_shape_faint_opacity_min, k_gui_sketch_shape_faint_opacity_max);
+  const bool  hide_all     = gui().get_hide_all_shapes();
+  const bool  sketch       = is_sketch_mode(get_mode());
+  const bool  enabled      = gui().sketch_shape_faint_enabled();
+  const int   style        = gui().sketch_shape_faint_style();
+  const float opacity      = std::clamp(gui().sketch_shape_faint_opacity(), k_gui_sketch_shape_faint_opacity_min,
+                                        k_gui_sketch_shape_faint_opacity_max);
   const float transparency = 1.0f - opacity;
   // Options master switch off, or Settings style Off: hide solids while sketching.
   const bool hide_in_sketch = !enabled || style == k_gui_sketch_shape_faint_style_min;
@@ -2678,7 +2675,7 @@ void Occt_view::remove_sketch(const Sketch_ptr& sketch)
   if (sketch_owner_of_list_ais_(m_sketch_list_hover_node.ais) == sketch.get())
     set_sketch_list_hover_node(nullptr, SIZE_MAX);
 
-  const bool           was_current = (m_cur_sketch == sketch);
+  const bool           was_current  = (m_cur_sketch == sketch);
   const nlohmann::json removed_json = Sketch_json::to_json(*sketch, m_assets);
 
   m_sketches.remove(sketch);
@@ -2696,7 +2693,7 @@ void Occt_view::remove_sketch(const Sketch_ptr& sketch)
   }
 
   push_undo_delta(std::make_unique<Sketch_struct_delta>(Sketch_struct_delta::Kind::Remove, removed_json, was_current,
-                                                         std::move(auto_default)));
+                                                        std::move(auto_default)));
   refresh_viewer_grid_();
 }
 
@@ -3053,6 +3050,38 @@ void Occt_view::load(const std::string& json_str, bool restore_view)
   }
 }
 
+namespace
+{
+
+// Project display lengths are inches. Model space = inches * dimension_scale (default 100).
+constexpr double k_mm_per_inch = 25.4;
+
+TopoDS_Shape scale_shape_about_origin_(const TopoDS_Shape& shape, double factor)
+{
+  if (shape.IsNull())
+    return shape;
+  if (std::abs(factor - 1.0) <= Precision::Confusion())
+    return shape;
+
+  gp_Trsf tr;
+  tr.SetScale(gp_Pnt(0.0, 0.0, 0.0), factor);
+  return BRepBuilderAPI_Transform(shape, tr, true).Shape();
+}
+
+// OCCT STEP reader delivers mm (xstep.cascade.unit); convert to model space.
+double step_import_to_model_scale_(double dimension_scale) { return dimension_scale / k_mm_per_inch; }
+
+// PLY has no unit metadata; treat file coords as inches.
+double ply_import_to_model_scale_(double dimension_scale) { return dimension_scale; }
+
+// Model space -> mm for CAD/mesh export when the user picks millimeters.
+double model_to_cad_mm_export_scale_(double dimension_scale) { return k_mm_per_inch / dimension_scale; }
+
+// Model space -> inches for CAD/mesh export when the user picks inches.
+double model_to_inch_export_scale_(double dimension_scale) { return 1.0 / dimension_scale; }
+
+} // namespace
+
 TopoDS_Shape Occt_view::shape_with_local_transform_(const AIS_Shape_ptr& ais) const
 {
   if (ais.IsNull())
@@ -3069,12 +3098,12 @@ TopoDS_Shape Occt_view::shape_with_local_transform_(const AIS_Shape_ptr& ais) co
 
 Status Occt_view::build_export_shape_(TopoDS_Shape& out_shape) const
 {
-  std::vector<TopoDS_Shape>        parts;
-  const std::vector<AIS_Shape_ptr> selected = get_selected();
+  std::vector<TopoDS_Shape>  parts;
+  const std::vector<Shp_ptr> selected = get_selected_shps();
   if (!selected.empty())
-    for (const AIS_Shape_ptr& ais : selected)
+    for (const Shp_ptr& shp : selected)
     {
-      TopoDS_Shape t = shape_with_local_transform_(ais);
+      TopoDS_Shape t = shape_with_local_transform_(shp);
       if (!t.IsNull())
         parts.push_back(t);
     }
@@ -3102,18 +3131,29 @@ Status Occt_view::build_export_shape_(TopoDS_Shape& out_shape) const
 
     out_shape = comp;
   }
+
   return Status::ok();
 }
 
-Status Occt_view::export_document(Export_format fmt, const std::string& file_path)
+Status Occt_view::export_document(Export_format fmt, Export_unit unit, const std::string& file_path)
 {
   TopoDS_Shape shape;
   CHK_RET(build_export_shape_(shape));
+
+  const double dim_scale = get_dimension_scale();
+  const double unit_scale =
+      (unit == Export_unit::Millimeter) ? model_to_cad_mm_export_scale_(dim_scale) : model_to_inch_export_scale_(dim_scale);
+  shape = scale_shape_about_origin_(shape, unit_scale);
+
+  const char* unit_name = (unit == Export_unit::Millimeter) ? "MM" : "INCH";
 
   switch (fmt)
   {
   case Export_format::Step:
   {
+    // Geometry is already in \a unit; match cascade/write so OCCT does not rescale again.
+    Interface_Static::SetCVal("xstep.cascade.unit", unit_name);
+    Interface_Static::SetCVal("write.step.unit", unit_name);
     STEPControl_Writer    writer;
     IFSelect_ReturnStatus tr = writer.Transfer(shape, STEPControl_AsIs);
     if (tr != IFSelect_RetDone)
@@ -3127,6 +3167,9 @@ Status Occt_view::export_document(Export_format fmt, const std::string& file_pat
   }
   case Export_format::Iges:
   {
+    // Geometry is already in \a unit; declare the same unit so translators do not apply another factor.
+    Interface_Static::SetCVal("xstep.cascade.unit", unit_name);
+    Interface_Static::SetCVal("write.iges.unit", unit_name);
     IGESControl_Writer writer;
     if (!writer.AddShape(shape))
       return Status::user_error("IGES does not support this shape.");
@@ -3138,9 +3181,10 @@ Status Occt_view::export_document(Export_format fmt, const std::string& file_pat
   }
   case Export_format::Stl:
   {
-    // Tessellate for mesh export (linear deflection in model units).
-    constexpr double               k_lin_deflection = 0.1;
-    const BRepMesh_IncrementalMesh mesher(shape, k_lin_deflection);
+    // Tessellate in export units (0.1 model units, scaled like the geometry).
+    constexpr double               k_lin_deflection_model = 0.1;
+    const double                   lin_deflection         = k_lin_deflection_model * unit_scale;
+    const BRepMesh_IncrementalMesh mesher(shape, lin_deflection);
     (void)mesher;
     StlAPI_Writer stl_writer;
     stl_writer.ASCIIMode() = false;
@@ -3151,8 +3195,9 @@ Status Occt_view::export_document(Export_format fmt, const std::string& file_pat
   }
   case Export_format::Ply:
   {
-    constexpr double               k_lin_deflection = 0.1;
-    const BRepMesh_IncrementalMesh mesher(shape, k_lin_deflection);
+    constexpr double               k_lin_deflection_model = 0.1;
+    const double                   lin_deflection         = k_lin_deflection_model * unit_scale;
+    const BRepMesh_IncrementalMesh mesher(shape, lin_deflection);
     (void)mesher;
     return export_ply_binary_file(shape, file_path);
   }
@@ -3162,6 +3207,9 @@ Status Occt_view::export_document(Export_format fmt, const std::string& file_pat
 
 Status Occt_view::import_step(const std::string& step_data)
 {
+  // Force cascade mm so file SI / conversion units land in a known space before our inch scale.
+  Interface_Static::SetCVal("xstep.cascade.unit", "MM");
+
   STEPControl_Reader reader;
   std::istringstream stream(step_data);
 
@@ -3172,6 +3220,7 @@ Status Occt_view::import_step(const std::string& step_data)
   if (reader.TransferRoots() == 0)
     return Status::user_error("STEP: no geometry was transferred from the file.");
 
+  const double              to_model = step_import_to_model_scale_(get_dimension_scale());
   const int                 num_shps = reader.NbShapes();
   std::vector<TopoDS_Shape> to_add;
   to_add.reserve(static_cast<size_t>(num_shps));
@@ -3179,7 +3228,7 @@ Status Occt_view::import_step(const std::string& step_data)
   {
     TopoDS_Shape shape = reader.Shape(i);
     if (!shape.IsNull())
-      to_add.push_back(shape);
+      to_add.push_back(scale_shape_about_origin_(shape, to_model));
   }
 
   if (to_add.empty())
@@ -3208,6 +3257,8 @@ bool Occt_view::import_ply(const std::string& ply_bytes)
   }
   if (shape.IsNull())
     return false;
+
+  shape = scale_shape_about_origin_(shape, ply_import_to_model_scale_(get_dimension_scale()));
 
   Shp_ptr shp = new Shp(*m_ctx, shape);
   add_shp_(shp);

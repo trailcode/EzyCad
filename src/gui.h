@@ -486,7 +486,9 @@ private:
 
   // Import/export related
   void import_file_dialog_();
-  void export_file_dialog_(Export_format fmt);
+  void open_export_units_dialog_(Export_format fmt);
+  void export_units_dialog_();
+  void export_file_dialog_(Export_format fmt, Export_unit unit);
 
   // Sketch underlay related
   void sketch_underlay_import_dialog_();
@@ -623,6 +625,12 @@ private:
   bool        m_error_modal_open{false};
   std::string m_error_modal_title;
   std::string m_error_modal_message;
+
+  // File -> Export: unit picker modal (inches / mm) before save/download
+  bool          m_open_export_units_modal{false};
+  bool          m_export_units_modal_open{false};
+  Export_format m_export_pending_fmt{Export_format::Step};
+  Export_unit   m_export_unit{Export_unit::Inch};
 
   // Log window (single buffer for ImGui read-only multiline = selectable / copyable text)
   std::vector<char> m_log_buffer{'\0'};
