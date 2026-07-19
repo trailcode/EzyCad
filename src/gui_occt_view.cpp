@@ -3317,7 +3317,7 @@ void Occt_view::new_file()
   m_assets.clear();
   m_next_sketch_id = 1;
   m_next_shape_id  = 1;
-  m_project_unit   = Project_unit::Inch;
+  m_project_unit   = m_gui.default_project_unit();
 
   create_default_sketch_();
   refresh_viewer_grid_();

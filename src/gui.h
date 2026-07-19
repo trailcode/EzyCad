@@ -168,6 +168,7 @@ struct Gui_imgui_style_settings
 struct Gui_settings_headers
 {
   bool view_nav{false};
+  bool new_project{false};
   bool ui{false};
   bool view_presentation{false};
   bool grid{false};
@@ -296,6 +297,8 @@ public:
   /// Default top-view framing width/height in inches (`gui.default_2d_view_width` / `_height`).
   double default_2d_view_width() const { return m_default_2d_view_width; }
   double default_2d_view_height() const { return m_default_2d_view_height; }
+  /// Unit applied by File -> New (`gui.default_project_unit`).
+  Project_unit default_project_unit() const { return m_default_project_unit; }
   bool   get_dark_mode() const { return m_dark_mode; }
   ImVec4 get_clear_color() const;
   void   set_mode(Mode mode); // gui_mode.cpp
@@ -613,6 +616,7 @@ private:
   /// Sketch-plane framing for New Project / default camera (`gui.default_2d_view_width` / `_height`, inches).
   double                      m_default_2d_view_width    = k_gui_default_2d_view_size_default;
   double                      m_default_2d_view_height   = k_gui_default_2d_view_size_default;
+  Project_unit                m_default_project_unit     = Project_unit::Inch;
   bool                        m_inspection_orthographic = false;
   std::vector<Toolbar_button> m_toolbar_buttons;
 

@@ -150,8 +150,8 @@ This is useful after **Revolve**, **Extrude**, booleans, or imports when you nee
 ### Basic Operations
 1. #### New Project
    - Start with a clean workspace (default XY sketch)
-   - Reset project units to **Inches**
-   - Reset the camera to a **top view** framed to **Settings -> 3D view navigation** **Default 2D view width** / **height** (defaults **3** x **3** **inches** in settings)
+   - Apply **Settings -> New project defaults** (**Project units**, **Default 2D view width** / **height**)
+   - Reset the camera to a **top view** framed to those width/height values
 
 2. #### Open Project
    - Load existing `.ezy` files
@@ -160,9 +160,10 @@ This is useful after **Revolve**, **Extrude**, booleans, or imports when you nee
    - Save current work to `.ezy` file (includes `projectUnit`)
 
 4. #### Project units
-   - **File -> Project units -> Inches** or **Millimeters** sets how sketch lengths, dimensions, Tab distance entry, grid Settings fields, and related length inputs are shown and typed
+   - **File -> Project units -> Inches** or **Millimeters** sets how sketch lengths, dimensions, Tab distance entry, grid Settings fields, and related length inputs are shown and typed for the **open** project
    - Changing units does **not** rescale stored geometry; a length that was **1** inch becomes **25.4** mm in the UI
    - Stored in the `.ezy` manifest as `projectUnit` (`inch` or `millimeter`); older files without the field load as **Inches**
+   - Default for **File -> New** comes from **Settings -> New project defaults -> Project units**
    - Independent of **File -> Export** units (export still asks separately)
 
 5. **Import/Export**
