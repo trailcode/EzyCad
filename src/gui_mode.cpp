@@ -566,7 +566,7 @@ void GUI::options_shape_chamfer_mode_()
     }
 
     static char  chamfer_buf[64];
-    const double scale        = m_view->get_dimension_scale();
+    const double scale        = m_view->get_display_to_model_scale();
     const double chamfer_dist = m_view->shp_chamfer().get_chamfer_dist() / scale;
 
     ImGui::PushID("chamfer_dist_micron");
@@ -594,6 +594,8 @@ void GUI::options_shape_chamfer_mode_()
           m_view->shp_chamfer().set_chamfer_dist(p * scale);
       }
     }
+    ImGui::SameLine(0.0f, ImGui::GetStyle().ItemInnerSpacing.x);
+    ImGui::TextUnformatted(m_view->project_unit_suffix());
     ImGui::PopID();
     ImGui::EndTable();
   }
@@ -629,7 +631,7 @@ void GUI::options_shape_fillet_mode_()
     }
 
     static char  fillet_buf[64];
-    const double scale         = m_view->get_dimension_scale();
+    const double scale         = m_view->get_display_to_model_scale();
     const double fillet_radius = m_view->shp_fillet().get_fillet_radius() / scale;
 
     ImGui::PushID("fillet_rad_micron");
@@ -657,6 +659,8 @@ void GUI::options_shape_fillet_mode_()
           m_view->shp_fillet().set_fillet_radius(p * scale);
       }
     }
+    ImGui::SameLine(0.0f, ImGui::GetStyle().ItemInnerSpacing.x);
+    ImGui::TextUnformatted(m_view->project_unit_suffix());
     ImGui::PopID();
 
     ImGui::EndTable();

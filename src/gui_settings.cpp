@@ -33,6 +33,7 @@ nlohmann::json imgui_style_to_json(const Gui_imgui_style_settings& s)
 nlohmann::json settings_headers_to_json(const Gui_settings_headers& h)
 {
   return nlohmann::json{{"view_nav", h.view_nav},
+                        {"new_project", h.new_project},
                         {"ui", h.ui},
                         {"view_presentation", h.view_presentation},
                         {"grid", h.grid},
@@ -55,6 +56,7 @@ void parse_settings_headers_json(const nlohmann::json& obj, Gui_settings_headers
     return fallback;
   };
   out.view_nav          = b("view_nav", defaults.view_nav);
+  out.new_project       = b("new_project", defaults.new_project);
   out.ui                = b("ui", defaults.ui);
   out.view_presentation = b("view_presentation", defaults.view_presentation);
   out.grid              = b("grid", defaults.grid);
@@ -192,6 +194,7 @@ std::string GUI::occt_view_settings_json() const
       {"view_zoom_scroll_scale", m_view_zoom_scroll_scale},
       {"default_2d_view_width", m_default_2d_view_width},
       {"default_2d_view_height", m_default_2d_view_height},
+      {"default_project_unit", (m_default_project_unit == Project_unit::Millimeter) ? "millimeter" : "inch"},
       {"inspection_orthographic", m_inspection_orthographic},
       {"snap_guide_color_node",
              [&]()
@@ -287,6 +290,7 @@ void GUI::save_occt_view_settings()
       {"view_zoom_scroll_scale", m_view_zoom_scroll_scale},
       {"default_2d_view_width", m_default_2d_view_width},
       {"default_2d_view_height", m_default_2d_view_height},
+      {"default_project_unit", (m_default_project_unit == Project_unit::Millimeter) ? "millimeter" : "inch"},
       {"inspection_orthographic", m_inspection_orthographic},
       {"snap_guide_color_node",
              [&]()
@@ -671,6 +675,14 @@ void GUI::parse_gui_panes_settings_(const std::string& content)
                     "], got " + std::to_string(v) + "; using default.");
     }
 
+    m_default_project_unit = Project_unit::Inch;
+    if (g.contains("default_project_unit") && g["default_project_unit"].is_string())
+    {
+      const std::string u = g["default_project_unit"].get<std::string>();
+      if (u == "millimeter" || u == "mm")
+        m_default_project_unit = Project_unit::Millimeter;
+    }
+
     Sketch_nodes::set_snap_guide_color_node(0.823295f, 0.549411f, 0.953390f);
     Sketch_nodes::set_snap_guide_color_axis(0.957627f, 0.064924f, 0.541537f);
     if (g.contains("snap_guide_color_node") && g["snap_guide_color_node"].is_array() && g["snap_guide_color_node"].size() >= 3)
@@ -973,38 +985,6 @@ void GUI::settings_()
                     "user guide.",
                     doc_urls::k_view_navigation);
 
-      ImGui::TableNextRow();
-      ImGui::TableSetColumnIndex(0);
-      ImGui::AlignTextToFramePadding();
-      ImGui::TextUnformatted("Default 2D view width");
-      ImGui::TableSetColumnIndex(1);
-      if (ImGui::SliderScalar("##default_2d_view_width", ImGuiDataType_Double, &m_default_2d_view_width,
-                              &k_gui_default_2d_view_size_min, &k_gui_default_2d_view_size_max, "%.2f",
-                              ImGuiSliderFlags_AlwaysClamp | ImGuiSliderFlags_ClampOnInput))
-        save_occt_view_settings();
-      m_default_2d_view_width =
-          std::clamp(m_default_2d_view_width, k_gui_default_2d_view_size_min, k_gui_default_2d_view_size_max);
-      ImGui::SameLine(0.0f, ImGui::GetStyle().ItemInnerSpacing.x);
-      GUI_DOC_HELP_("Horizontal span of the sketch plane framed by File -> New and by projects with no saved camera "
-                    "(same length scale as sketch dimensions). Default 3. Ctrl+click to type. Click ? for the guide.",
-                    doc_urls::k_view_navigation);
-
-      ImGui::TableNextRow();
-      ImGui::TableSetColumnIndex(0);
-      ImGui::AlignTextToFramePadding();
-      ImGui::TextUnformatted("Default 2D view height");
-      ImGui::TableSetColumnIndex(1);
-      if (ImGui::SliderScalar("##default_2d_view_height", ImGuiDataType_Double, &m_default_2d_view_height,
-                              &k_gui_default_2d_view_size_min, &k_gui_default_2d_view_size_max, "%.2f",
-                              ImGuiSliderFlags_AlwaysClamp | ImGuiSliderFlags_ClampOnInput))
-        save_occt_view_settings();
-      m_default_2d_view_height =
-          std::clamp(m_default_2d_view_height, k_gui_default_2d_view_size_min, k_gui_default_2d_view_size_max);
-      ImGui::SameLine(0.0f, ImGui::GetStyle().ItemInnerSpacing.x);
-      GUI_DOC_HELP_("Vertical span of the sketch plane framed by File -> New and by projects with no saved camera "
-                    "(same length scale as sketch dimensions). Default 3. Ctrl+click to type. Click ? for the guide.",
-                    doc_urls::k_view_navigation);
-
       ImGui::EndTable();
     }
 
@@ -1013,8 +993,94 @@ void GUI::settings_()
           "NumPad 8 / 2 / 4 / 6 orbit the view (same axes as left-drag orbit). Hold Shift and press NumPad 4 or NumPad 6, "
           "main 4 / 6, or Left / Right arrow for Blender-style roll around the screen Z axis (hold to repeat). "
           "Num Lock off is recommended for numpad shortcuts (see usage.md View navigation). "
-          "Hold Shift while scrolling or pressing +/- for finer zoom. "
-          "Default 2D view width/height set the top-view framing for File -> New.");
+          "Hold Shift while scrolling or pressing +/- for finer zoom.");
+  }
+
+  if (settings_collapsing_header_("New project defaults", m_settings_headers.new_project))
+  {
+    if (ImGui::BeginTable("settings_new_project", 2, ImGuiTableFlags_SizingStretchProp))
+    {
+      ImGui::TableSetupColumn("label", ImGuiTableColumnFlags_WidthFixed, k_label_col_w);
+      ImGui::TableSetupColumn("control", ImGuiTableColumnFlags_WidthStretch);
+
+      ImGui::TableNextRow();
+      ImGui::TableSetColumnIndex(0);
+      ImGui::AlignTextToFramePadding();
+      ImGui::TextUnformatted("Project units");
+      ImGui::TableSetColumnIndex(1);
+      int unit_idx = (m_default_project_unit == Project_unit::Millimeter) ? 1 : 0;
+      if (ImGui::Combo("##default_project_unit", &unit_idx, "Inches\0Millimeters\0"))
+      {
+        m_default_project_unit = (unit_idx == 1) ? Project_unit::Millimeter : Project_unit::Inch;
+        save_occt_view_settings();
+      }
+      ImGui::SameLine(0.0f, ImGui::GetStyle().ItemInnerSpacing.x);
+      GUI_DOC_HELP_("Unit applied by File -> New. Width/height below are edited in this unit (stored as inches). "
+                    "Does not change the open project's File -> Project units. Click ? for the guide.",
+                    doc_urls::k_view_navigation);
+
+      const double to_ui =
+          (m_default_project_unit == Project_unit::Millimeter) ? k_mm_per_inch : 1.0;
+      const char*  unit_sfx =
+          (m_default_project_unit == Project_unit::Millimeter) ? "mm" : "in";
+      double       w_ui   = m_default_2d_view_width * to_ui;
+      double       h_ui   = m_default_2d_view_height * to_ui;
+      const double min_ui = k_gui_default_2d_view_size_min * to_ui;
+      const double max_ui = k_gui_default_2d_view_size_max * to_ui;
+      // Drag (not a 0.1..1000 slider): default 3 in sits near the left of a linear slider and is easy to
+      // accidentally set to the minimum.
+      const float  drag_spd = (m_default_project_unit == Project_unit::Millimeter) ? 1.0f : 0.05f;
+
+      ImGui::TableNextRow();
+      ImGui::TableSetColumnIndex(0);
+      ImGui::AlignTextToFramePadding();
+      ImGui::TextUnformatted("Default 2D view width");
+      ImGui::TableSetColumnIndex(1);
+      ImGui::SetNextItemWidth(120.0f);
+      if (ImGui::DragScalar("##default_2d_view_width", ImGuiDataType_Double, &w_ui, drag_spd, &min_ui, &max_ui, "%.2f"))
+      {
+        m_default_2d_view_width =
+            std::clamp(w_ui / to_ui, k_gui_default_2d_view_size_min, k_gui_default_2d_view_size_max);
+        save_occt_view_settings();
+      }
+      m_default_2d_view_width =
+          std::clamp(m_default_2d_view_width, k_gui_default_2d_view_size_min, k_gui_default_2d_view_size_max);
+      ImGui::SameLine(0.0f, ImGui::GetStyle().ItemInnerSpacing.x);
+      ImGui::TextUnformatted(unit_sfx);
+      ImGui::SameLine(0.0f, ImGui::GetStyle().ItemInnerSpacing.x);
+      GUI_DOC_HELP_("Horizontal span of the sketch plane framed by File -> New and by projects with no saved camera. "
+                    "Edited in Project units above; stored as inches. Default 3 in. Ctrl+click to type. Click ? for "
+                    "the guide.",
+                    doc_urls::k_view_navigation);
+
+      ImGui::TableNextRow();
+      ImGui::TableSetColumnIndex(0);
+      ImGui::AlignTextToFramePadding();
+      ImGui::TextUnformatted("Default 2D view height");
+      ImGui::TableSetColumnIndex(1);
+      ImGui::SetNextItemWidth(120.0f);
+      if (ImGui::DragScalar("##default_2d_view_height", ImGuiDataType_Double, &h_ui, drag_spd, &min_ui, &max_ui, "%.2f"))
+      {
+        m_default_2d_view_height =
+            std::clamp(h_ui / to_ui, k_gui_default_2d_view_size_min, k_gui_default_2d_view_size_max);
+        save_occt_view_settings();
+      }
+      m_default_2d_view_height =
+          std::clamp(m_default_2d_view_height, k_gui_default_2d_view_size_min, k_gui_default_2d_view_size_max);
+      ImGui::SameLine(0.0f, ImGui::GetStyle().ItemInnerSpacing.x);
+      ImGui::TextUnformatted(unit_sfx);
+      ImGui::SameLine(0.0f, ImGui::GetStyle().ItemInnerSpacing.x);
+      GUI_DOC_HELP_("Vertical span of the sketch plane framed by File -> New and by projects with no saved camera. "
+                    "Edited in Project units above; stored as inches. Default 3 in. Ctrl+click to type. Click ? for "
+                    "the guide.",
+                    doc_urls::k_view_navigation);
+
+      ImGui::EndTable();
+    }
+
+    if (ui_show_contextual_help())
+      ImGui::TextWrapped("These defaults apply when you use File -> New. Open projects keep their own project units "
+                         "(File -> Project units). Changing Project units here only remaps the width/height labels.");
   }
 
   if (settings_collapsing_header_("UI", m_settings_headers.ui))
@@ -1135,8 +1201,8 @@ void GUI::settings_()
     m_view->get_grid_colors(g1, g2);
     Occt_grid_rect_params gr{};
     m_view->get_occt_grid_rect_params(gr);
-    const double dim_scale = m_view->get_dimension_scale();
-    // Settings show the same length units as sketch dimensions (model / dimension_scale).
+    const double dim_scale = m_view->get_display_to_model_scale();
+    // Settings show the same length units as sketch dimensions (project unit).
     double          step_ui          = gr.step / dim_scale;
     double          padding_ui       = gr.grid_padding / dim_scale;
     double          graphic_z_off_ui = gr.graphic_z_offset / dim_scale;
@@ -1191,6 +1257,8 @@ void GUI::settings_()
       const double step_min_ui = 1e-6;
       if (ImGui::DragScalar("##gstep", ImGuiDataType_Double, &step_ui, spd_s, &step_min_ui, nullptr, "%.8g"))
         geom_changed = true;
+      ImGui::SameLine(0.0f, ImGui::GetStyle().ItemInnerSpacing.x);
+      ImGui::TextUnformatted(m_view->project_unit_suffix());
 
       ImGui::TableNextRow();
       ImGui::TableSetColumnIndex(0);
@@ -1200,11 +1268,13 @@ void GUI::settings_()
       const double padding_min_ui = 0.0;
       if (ImGui::DragScalar("##gpad", ImGuiDataType_Double, &padding_ui, spd_extent, &padding_min_ui, nullptr, "%.8g"))
         geom_changed = true;
+      ImGui::SameLine(0.0f, ImGui::GetStyle().ItemInnerSpacing.x);
+      ImGui::TextUnformatted(m_view->project_unit_suffix());
 
       ImGui::SameLine(0.f, ImGui::GetStyle().ItemInnerSpacing.x);
       GUI_DOC_HELP_("Margin added around the active sketch when sizing the grid (same length scale as sketch "
-                    "dimensions). The grid extent follows sketch geometry plus this padding. Click ? to open the user "
-                    "guide.",
+                    "dimensions / project units). The grid extent follows sketch geometry plus this padding. Click ? "
+                    "to open the user guide.",
                     doc_urls::k_occt_view);
 
       ImGui::TableNextRow();
@@ -1214,6 +1284,8 @@ void GUI::settings_()
       ImGui::TableSetColumnIndex(1);
       if (ImGui::DragScalar("##ggz", ImGuiDataType_Double, &graphic_z_off_ui, spd_m, nullptr, nullptr, "%.8g"))
         geom_changed = true;
+      ImGui::SameLine(0.0f, ImGui::GetStyle().ItemInnerSpacing.x);
+      ImGui::TextUnformatted(m_view->project_unit_suffix());
 
       ImGui::EndTable();
     }

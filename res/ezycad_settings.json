@@ -72,6 +72,7 @@
     "permanent_node_anno_scale": 0.30000001192092896,
     "settings_headers": {
       "grid": false,
+      "new_project": false,
       "sketch": false,
       "sketch_appearance": true,
       "sketch_dimensions": true,
@@ -83,6 +84,9 @@
       "view_nav": false,
       "view_presentation": false
     },
+    "default_project_unit": "inch",
+    "default_2d_view_width": 3.0,
+    "default_2d_view_height": 3.0,
     "show_dbg": false,
     "show_lua_console": false,
     "show_options": true,

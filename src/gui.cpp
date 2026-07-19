@@ -322,6 +322,16 @@ void GUI::menu_bar_()
       save_file_dialog_();
     }
 
+    if (ImGui::BeginMenu("Project units"))
+    {
+      const Project_unit cur = m_view->get_project_unit();
+      if (ImGui::MenuItem("Inches", nullptr, cur == Project_unit::Inch))
+        m_view->set_project_unit(Project_unit::Inch);
+      if (ImGui::MenuItem("Millimeters", nullptr, cur == Project_unit::Millimeter))
+        m_view->set_project_unit(Project_unit::Millimeter);
+      ImGui::EndMenu();
+    }
+
     if (ui_show_feature(2))
     {
       if (ImGui::MenuItem("Import"))
@@ -840,6 +850,9 @@ void GUI::dist_edit_()
   // Text field: InputFloat applies printf rounding so typed digits can disagree with m_dist_val.
   const bool text_changed = ImGui::InputText("##dist_edit_text", m_dist_text_buf.data(), m_dist_text_buf.size(),
                                              ImGuiInputTextFlags_CharsDecimal | ImGuiInputTextFlags_CharsScientific);
+
+  ImGui::SameLine(0.0f, ImGui::GetStyle().ItemInnerSpacing.x);
+  ImGui::TextUnformatted(m_view->project_unit_suffix());
 
   if (text_changed && parse_dist_text_to_float_(m_dist_text_buf.data(), m_dist_val))
     m_dist_callback(m_dist_val, false);
@@ -2231,7 +2244,7 @@ void GUI::underlay_calib_prompt_x_distance_(const Sketch::sptr& sk)
 {
   m_underlay_calib_phase       = Underlay_calib_phase::AwaitDistX;
   const double       L_model   = m_underlay_calib_x0.Distance(m_underlay_calib_x1);
-  const float        dist_show = static_cast<float>(L_model / m_view->get_dimension_scale());
+  const float        dist_show = static_cast<float>(L_model / m_view->get_display_to_model_scale());
   const ScreenCoords spos      = cursor_screen_coords();
 
   Sketch::wptr wk      = sk;
@@ -2251,7 +2264,7 @@ void GUI::underlay_calib_prompt_x_distance_(const Sketch::sptr& sk)
     if (m_underlay_calib_phase != Underlay_calib_phase::AwaitDistX)
       return;
 
-    const double Dx = static_cast<double>(new_dist) * m_view->get_dimension_scale();
+    const double Dx = static_cast<double>(new_dist) * m_view->get_display_to_model_scale();
     if (Dx <= 1e-12)
     {
       show_message("Distance must be positive.");
@@ -2290,7 +2303,7 @@ void GUI::underlay_calib_prompt_y_distance_(const Sketch::sptr& sk)
 {
   m_underlay_calib_phase       = Underlay_calib_phase::AwaitDistY;
   const double       L_model   = m_underlay_calib_y0.Distance(m_underlay_calib_y1);
-  const float        dist_show = static_cast<float>(L_model / m_view->get_dimension_scale());
+  const float        dist_show = static_cast<float>(L_model / m_view->get_display_to_model_scale());
   const ScreenCoords spos      = cursor_screen_coords();
 
   Sketch::wptr wk      = sk;
@@ -2310,7 +2323,7 @@ void GUI::underlay_calib_prompt_y_distance_(const Sketch::sptr& sk)
     if (m_underlay_calib_phase != Underlay_calib_phase::AwaitDistY)
       return;
 
-    const double Dy = static_cast<double>(new_dist) * m_view->get_dimension_scale();
+    const double Dy = static_cast<double>(new_dist) * m_view->get_display_to_model_scale();
     if (Dy <= 1e-12)
     {
       show_message("Distance must be positive.");

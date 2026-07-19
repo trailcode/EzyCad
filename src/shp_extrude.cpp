@@ -118,13 +118,13 @@ void Shp_extrude::_update_extrude(const ScreenCoords& screen_coords)
     if (cursor_side != Plane_side::On)
       m_extrude_side = cursor_side;
 
-    double scaled_dist = extrude_dist / view().get_dimension_scale();
+    double scaled_dist = extrude_dist / view().get_display_to_model_scale();
 
     if (view().get_show_dim_input())
     {
       auto l = [this](float new_dist, bool do_finalize)
       {
-        const double entered_dist = static_cast<double>(new_dist) * view().get_dimension_scale();
+        const double entered_dist = static_cast<double>(new_dist) * view().get_display_to_model_scale();
         view().set_entered_dim(entered_dist);
         if (do_finalize)
         {
@@ -161,7 +161,7 @@ void Shp_extrude::update_extrude_preview_(const double extrude_dist, const Plane
                                          gp_Pnt(m_to_extrude_pt->XYZ() + face_offset.XYZ()), m_curr_view_pln,
                                          gui().length_dimension_style());
 
-  m_tmp_dim->SetCustomValue(extrude_dist / view().get_dimension_scale());
+  m_tmp_dim->SetCustomValue(extrude_dist / view().get_display_to_model_scale());
 
   ctx().Display(m_tmp_dim, false);
 

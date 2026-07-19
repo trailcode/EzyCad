@@ -125,7 +125,8 @@ inline constexpr double k_gui_view_roll_step_deg_default = 45.0;
 inline constexpr double k_gui_view_zoom_scroll_scale_min     = 0.25;
 inline constexpr double k_gui_view_zoom_scroll_scale_max     = 64.0;
 inline constexpr double k_gui_view_zoom_scroll_scale_default = 4.0;
-/// Allowed range and default for `gui.default_2d_view_width` / `gui.default_2d_view_height` (display units;
+/// Allowed range and default for `gui.default_2d_view_width` / `gui.default_2d_view_height` (inches in settings;
+
 /// New Project / default camera framing on the sketch plane; must match Settings sliders).
 inline constexpr double k_gui_default_2d_view_size_min     = 0.1;
 inline constexpr double k_gui_default_2d_view_size_max     = 1000.0;
@@ -167,6 +168,7 @@ struct Gui_imgui_style_settings
 struct Gui_settings_headers
 {
   bool view_nav{false};
+  bool new_project{false};
   bool ui{false};
   bool view_presentation{false};
   bool grid{false};
@@ -292,9 +294,11 @@ public:
   /// `gui.inspection_orthographic`.
   bool   inspection_orthographic() const { return m_inspection_orthographic; }
   void   set_inspection_orthographic(bool v) { m_inspection_orthographic = v; }
-  /// Default top-view framing width/height in display units (`gui.default_2d_view_width` / `_height`).
+  /// Default top-view framing width/height in inches (`gui.default_2d_view_width` / `_height`).
   double default_2d_view_width() const { return m_default_2d_view_width; }
   double default_2d_view_height() const { return m_default_2d_view_height; }
+  /// Unit applied by File -> New (`gui.default_project_unit`).
+  Project_unit default_project_unit() const { return m_default_project_unit; }
   bool   get_dark_mode() const { return m_dark_mode; }
   ImVec4 get_clear_color() const;
   void   set_mode(Mode mode); // gui_mode.cpp
@@ -609,9 +613,10 @@ private:
   double m_view_roll_step_deg = k_gui_view_roll_step_deg_default;
   /// Multiplier for `UpdateZoom(Aspect_ScrollDelta(..., int(y * scale)))`; persisted in `gui.view_zoom_scroll_scale`.
   double                      m_view_zoom_scroll_scale  = k_gui_view_zoom_scroll_scale_default;
-  /// Sketch-plane framing for New Project / default camera (`gui.default_2d_view_width` / `_height`, display units).
+  /// Sketch-plane framing for New Project / default camera (`gui.default_2d_view_width` / `_height`, inches).
   double                      m_default_2d_view_width    = k_gui_default_2d_view_size_default;
   double                      m_default_2d_view_height   = k_gui_default_2d_view_size_default;
+  Project_unit                m_default_project_unit     = Project_unit::Inch;
   bool                        m_inspection_orthographic = false;
   std::vector<Toolbar_button> m_toolbar_buttons;
 

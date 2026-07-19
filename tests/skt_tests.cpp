@@ -12,6 +12,9 @@
 #include "skt_json.h"
 #include "skt_nodes.h"
 #include "utl_geom.h"
+#include "utl_types.h"
+
+#include <nlohmann/json.hpp>
 
 using namespace glm;
 
@@ -834,4 +837,37 @@ TEST_F(Sketch_test, DimensionTool_picks_sketch_origin)
   const std::optional<size_t> origin_pick = sketch.get_nodes().try_pick_existing_node(ScreenCoords(dvec2(0.0, 0.0)));
   ASSERT_TRUE(origin_pick.has_value());
   EXPECT_TRUE(sketch.get_nodes()[*origin_pick].origin);
+}
+
+TEST_F(Sketch_test, ProjectUnit_displayConversionAndJsonRoundTrip)
+{
+  Headless_guard guard(view());
+
+  EXPECT_EQ(view().get_project_unit(), Project_unit::Inch);
+  EXPECT_DOUBLE_EQ(view().get_display_to_model_scale(), view().get_dimension_scale());
+  EXPECT_DOUBLE_EQ(view().to_model(1.0), 100.0);
+  EXPECT_DOUBLE_EQ(view().to_display(100.0), 1.0);
+  EXPECT_STREQ(view().project_unit_suffix(), "in");
+
+  view().set_project_unit(Project_unit::Millimeter);
+  EXPECT_EQ(view().get_project_unit(), Project_unit::Millimeter);
+  EXPECT_NEAR(view().to_model(25.4), 100.0, 1e-9);
+  EXPECT_NEAR(view().to_display(100.0), 25.4, 1e-9);
+  EXPECT_STREQ(view().project_unit_suffix(), "mm");
+
+  const std::string json_mm = view().to_json();
+  EXPECT_NE(json_mm.find("\"projectUnit\": \"millimeter\""), std::string::npos);
+
+  view().set_project_unit(Project_unit::Inch);
+  view().load(json_mm, false);
+  EXPECT_EQ(view().get_project_unit(), Project_unit::Millimeter);
+
+  // Old manifests without projectUnit default to inches.
+  nlohmann::json j = nlohmann::json::parse(json_mm);
+  j.erase("projectUnit");
+  view().load(j.dump(), false);
+  EXPECT_EQ(view().get_project_unit(), Project_unit::Inch);
+
+  view().new_file();
+  EXPECT_EQ(view().get_project_unit(), Project_unit::Inch);
 }

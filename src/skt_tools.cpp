@@ -342,7 +342,7 @@ void Sketch_tools::move_line_string_pt_(const ScreenCoords& screen_coords)
       const gp_Pnt2d& span_b = span->pt_b;
       m_sketch.update_edge_shp_(edge, span_a, span_b);
 
-      const double dist = span->full_len / m_sketch.m_view.get_dimension_scale();
+      const double dist = span->full_len / m_sketch.m_view.get_display_to_model_scale();
       m_sketch.m_dims.show_tmp_dim_preview(span_a, span_b);
       m_sketch.m_dims.offer_dist_edit_for_segment(span_a, span_b, dist);
       m_sketch.m_dims.offer_angle_edit_for_segment(
@@ -408,7 +408,7 @@ void Sketch_tools::move_line_string_pt_(const ScreenCoords& screen_coords)
         final_pt_b = m_sketch.m_nodes[edge.node_idx_b];
     }
 
-    double dist = pt_a.Distance(final_pt_b) / m_sketch.m_view.get_dimension_scale();
+    double dist = pt_a.Distance(final_pt_b) / m_sketch.m_view.get_display_to_model_scale();
     m_sketch.m_dims.show_tmp_dim_preview(pt_a, final_pt_b);
     m_sketch.m_dims.offer_dist_edit_for_segment(pt_a, final_pt_b, dist);
 

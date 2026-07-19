@@ -222,7 +222,7 @@ int l_view_curr_sketch_dim(lua_State* L)
   const std::size_t   lo    = sketch.dimension_node_lo(i);
   const std::size_t   hi    = sketch.dimension_node_hi(i);
   const Sketch_nodes& nodes = sketch.get_nodes();
-  const double        dist  = nodes[lo].Distance(nodes[hi]) / view->get_dimension_scale();
+  const double        dist  = nodes[lo].Distance(nodes[hi]) / view->get_display_to_model_scale();
   lua_pushinteger(L, static_cast<lua_Integer>(lo + 1));
   lua_pushinteger(L, static_cast<lua_Integer>(hi + 1));
   lua_pushboolean(L, sketch.dimension_visible(i));

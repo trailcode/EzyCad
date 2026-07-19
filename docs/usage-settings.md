@@ -39,17 +39,19 @@ Open **View -> Settings**. The window title is **Settings**.
 - **UI verbosity** — stepper at the top (default **6**). Values **5** and **6** show contextual **?** help buttons (hover for tooltip, click to open Read the Docs where linked). Lower values hide those buttons and some explanatory text.
 - At the bottom: **Defaults** — reloads bundled defaults from the app `res/` tree (including ImGui layout from that file).
 
-Between those, the pane has **six** collapsible sections. Expand a section to see its controls; when collapsed, only the section title bar is visible. Which sections are expanded is remembered in settings (`gui.settings_headers`).
+Between those, the pane has collapsible sections. Expand a section to see its controls; when collapsed, only the section title bar is visible. Which sections are expanded is remembered in settings (`gui.settings_headers`).
 
-1. **3D view navigation** — **View rotation step** (degrees per key press for <kbd>NumPad 8</kbd>/<kbd>2</kbd>/<kbd>4</kbd>/<kbd>6</kbd> orbit and <kbd>Shift</kbd>+<kbd>NumPad 4</kbd>/<kbd>6</kbd> roll; default **45**; **`?`** opens [view roll](https://ezycad.readthedocs.io/en/latest/usage.html#view-roll) on Read the Docs). **Zoom scroll scale** (multiplier for wheel and **+**/**-** zoom; default **4**). Hold <kbd>Shift</kbd> while zooming for a Blender-style finer step (multiply by **0.1**). **Default 2D view width** / **height** (display units; default **3** x **3**) frame the top view used by **File -> New** and by projects with no saved camera. Numpad shortcuts are documented with <kbd>Num Lock</kbd> off; with <kbd>Num Lock</kbd> on, use main-row alternatives in [usage.md -> View navigation](usage.md#view-navigation). Stored as **`gui.view_roll_step_deg`**, **`gui.view_zoom_scroll_scale`**, **`gui.default_2d_view_width`**, and **`gui.default_2d_view_height`**. See **[usage-occt-view.md](usage-occt-view.md)**.
+1. **3D view navigation** — **View rotation step** (degrees per key press for <kbd>NumPad 8</kbd>/<kbd>2</kbd>/<kbd>4</kbd>/<kbd>6</kbd> orbit and <kbd>Shift</kbd>+<kbd>NumPad 4</kbd>/<kbd>6</kbd> roll; default **45**; **`?`** opens [view roll](https://ezycad.readthedocs.io/en/latest/usage.html#view-roll) on Read the Docs). **Zoom scroll scale** (multiplier for wheel and **+**/**-** zoom; default **4**). Hold <kbd>Shift</kbd> while zooming for a Blender-style finer step (multiply by **0.1**). Numpad shortcuts are documented with <kbd>Num Lock</kbd> off; with <kbd>Num Lock</kbd> on, use main-row alternatives in [usage.md -> View navigation](usage.md#view-navigation). Stored as **`gui.view_roll_step_deg`** and **`gui.view_zoom_scroll_scale`**. See **[usage-occt-view.md](usage-occt-view.md)**.
 
-2. **UI** — **Dark mode** checkbox. ImGui layout sliders apply to the **active theme** (switch **Dark mode** to edit the other theme). Grouped under **Transparency**, **Rounding**, **Borders**, **Padding**, and **Spacing**: **Window transparency** (**0.1** to **1.0**); corner rounding sliders **0** to **16** for **Windows, frames, popups**, **Scrollbars and sliders**, and **Tabs**; **Window border**, **Frame border** (**0** to **2**); **Window padding** X/Y, **Frame padding** X/Y, and **Item spacing** X/Y (**0** to **24**).
+2. **New project defaults** — **Project units** (**Inches** or **Millimeters**; applied by **File -> New**; stored as **`gui.default_project_unit`**). **Default 2D view width** / **height** frame the top view for **File -> New** and projects with no saved camera; edited in the selected Project units (show `in` or `mm`); stored as inches in **`gui.default_2d_view_width`** / **`gui.default_2d_view_height`** (default **3** x **3** in).
 
-3. **View presentation** — **Background color 1** and **Background color 2** (float RGB fields and swatches). **Gradient blend** — combo: **Horizontal**, **Vertical**, **Diagonal 1**, **Diagonal 2**, **Corner 1** … **Corner 4**. **Element hover color** — highlight for rows hovered in the **Shape List** or **Sketch List** (**Dimensions** table); stored as **`gui.elm_list_hover_color`**. **Shape selection color** — selected 3D shape highlight in the viewer (RGBA; default purple **0.75**, **0.07**, **0.85**, **1**); stored as **`gui.shape_selection_color`**.
+3. **UI** — **Dark mode** checkbox. ImGui layout sliders apply to the **active theme** (switch **Dark mode** to edit the other theme). Grouped under **Transparency**, **Rounding**, **Borders**, **Padding**, and **Spacing**: **Window transparency** (**0.1** to **1.0**); corner rounding sliders **0** to **16** for **Windows, frames, popups**, **Scrollbars and sliders**, and **Tabs**; **Window border**, **Frame border** (**0** to **2**); **Window padding** X/Y, **Frame padding** X/Y, and **Item spacing** X/Y (**0** to **24**).
 
-4. **3D view grid** — **Show grid** (checkbox; grid is drawn on the **active sketch** plane, behind coplanar geometry). **Fine grid lines** and **Major grid lines** (dense lines vs every-tenth emphasis). **Grid step**, **Grid padding** (margin around sketch content when sizing the grid), and **Grid display Z offset** in the Settings pane use the **same length scale as sketch length dimensions** (display value = model value / internal `dimension_scale`, default **100**). Saved JSON (`occt_view`) stores padding in model units (`grid_padding`).
+4. **View presentation** — **Background color 1** and **Background color 2** (float RGB fields and swatches). **Gradient blend** — combo: **Horizontal**, **Vertical**, **Diagonal 1**, **Diagonal 2**, **Corner 1** … **Corner 4**. **Element hover color** — highlight for rows hovered in the **Shape List** or **Sketch List** (**Dimensions** table); stored as **`gui.elm_list_hover_color`**. **Shape selection color** — selected 3D shape highlight in the viewer (RGBA; default purple **0.75**, **0.07**, **0.85**, **1**); stored as **`gui.shape_selection_color`**.
 
-5. **Sketch** — Nested sections (open state remembered in `gui.settings_headers`):
+5. **3D view grid** — **Show grid** (checkbox; grid is drawn on the **active sketch** plane, behind coplanar geometry). **Fine grid lines** and **Major grid lines** (dense lines vs every-tenth emphasis). **Grid step**, **Grid padding** (margin around sketch content when sizing the grid), and **Grid display Z offset** in the Settings pane use the **same length scale as sketch length dimensions** (**File -> Project units**; Settings shows `in` or `mm`). Saved JSON (`occt_view`) stores values in model units (`grid_step`, `grid_padding`).
+
+6. **Sketch** — Nested sections (open state remembered in `gui.settings_headers`):
    - **Appearance** — edge and face display colors; shapes in sketch mode (faint/ghost/wire).
    - **Dimensions** — length-dimension appearance and behavior (most rows have **?** help).
    - **Nodes** — permanent node marker size and origin color; midpoint options for line/rect/slot tools.
@@ -74,7 +76,7 @@ Between those, the pane has **six** collapsible sections. Expand a section to se
 
 **WebAssembly build** — Open CASCADE line-width controls (`SetWidth` / `Prs3d` line width) have no visible effect in the browser (WebGL/GLES). The **Settings** pane hides **Edge thickness**, **Dimension line width**, and **Snap guide line width** on the web build. Saved JSON may still contain those keys from a desktop session; they are not shown as editable rows in the browser UI.
 
-6. **Startup project** — **Desktop only:** **Load last opened on startup** (checkbox, with **?**), then **Last opened path:** … or **(No path saved yet.)** Then **Save current as startup project**, **Clear saved startup** (with **?**). **WebAssembly:** no load-last row; only the two buttons and **?**. See [Startup project](#startup-project).
+7. **Startup project** — **Desktop only:** **Load last opened on startup** (checkbox, with **?**), then **Last opened path:** … or **(No path saved yet.)** Then **Save current as startup project**, **Clear saved startup** (with **?**). **WebAssembly:** no load-last row; only the two buttons and **?**. See [Startup project](#startup-project).
 
 **Not in this pane**
 
@@ -166,7 +168,7 @@ If saved layout text has no `[Docking]` section (older installs), a default dock
 | `grid_color2`           | array of 3 numbers | Major (sparse / every-tenth) grid lines (`Aspect_Grid` tenth-line color).                                                                                                                                 |
 | `grid_visible`          | boolean            | When **true**, the OCCT reference grid is drawn in the 3D view (default **true**).                                                                                                                        |
 | `grid_step`             | number             | Grid line spacing in **model** units (default **10**). Legacy `grid_x_step` / `grid_y_step` load as this value (X preferred).                                                                             |
-| `grid_padding`          | number             | Margin around active sketch content when sizing the grid, in **model** units (default **1000**; Settings shows display units). Legacy `grid_graphic_x_size` loads as padding if `grid_padding` is absent. |
+| `grid_padding`          | number             | Margin around active sketch content when sizing the grid, in **model** units (default **1000**; Settings shows project units). Legacy `grid_graphic_x_size` loads as padding if `grid_padding` is absent. |
 | `grid_graphic_z_offset` | number             | Grid plane offset along Z in **model** units.                                                                                                                                                             |
 
 ### `gui`
@@ -220,8 +222,9 @@ If saved layout text has no `[Docking]` section (older installs), a default dock
 | `sketch_shape_faint_enabled`  | boolean            | Master switch for faint solids in all sketch tools (default **true**). Also **Options -> Sketch options -> Faint shapes**. When false, solids are hidden in sketch modes.                                                     |
 | `view_roll_step_deg`          | number             | Degrees per **NumPad 8**/**2**/**4**/**6** orbit and **Shift+NumPad 4**/**6** roll (allowed range **0.1** to **180** in code; default **45**).                                                                                |
 | `view_zoom_scroll_scale`      | number             | Multiplier for `UpdateZoom` scroll delta from wheel and keyboard zoom (allowed range **0.25** to **64** in code; default **4**). With **Shift** held, the effective step is multiplied by **0.1** (Blender-style finer zoom). |
-| `default_2d_view_width`       | number             | Horizontal sketch-plane span (display units) for **File -> New** / projects with no saved camera (allowed range **0.1** to **1000**; default **3**).                                                                          |
-| `default_2d_view_height`      | number             | Vertical sketch-plane span (display units) for the same framing (allowed range **0.1** to **1000**; default **3**).                                                                                                           |
+| `default_project_unit`        | string             | Default **File -> New** project unit: `"inch"` or `"millimeter"` (default **`inch`**). Edited under **Settings -> New project defaults**.                                                                                     |
+| `default_2d_view_width`       | number             | Horizontal sketch-plane span for **File -> New** / projects with no saved camera, stored in **inches** (allowed range **0.1** to **1000**; default **3**). Settings UI shows this in **`default_project_unit`**.             |
+| `default_2d_view_height`      | number             | Vertical sketch-plane span, stored in **inches** (allowed range **0.1** to **1000**; default **3**). Settings UI shows this in **`default_project_unit`**.                                                                    |
 | `load_last_opened_on_startup` | boolean            | Desktop: open the last `.ezy` on launch. **Legacy:** `load_last_saved_on_startup` is read as a fallback if the newer key is absent.                                                                                           |
 | `last_opened_project_path`    | string             | Path of the last opened project for the option above. **Legacy:** `last_saved_project_path` is accepted if the newer key is missing.                                                                                          |
 
@@ -244,6 +247,7 @@ Each **`settings_headers`** object may contain (default: only nested Sketch **Ap
 | Key                 | Type    | Meaning                                  |
 | ------------------- | ------- | ---------------------------------------- |
 | `view_nav`          | boolean | **3D view navigation** section expanded. |
+| `new_project`       | boolean | **New project defaults** section expanded. |
 | `ui`                | boolean | **UI** section expanded.                 |
 | `view_presentation` | boolean | **View presentation** section expanded.  |
 | `grid`              | boolean | **3D view grid** section expanded.       |
@@ -255,7 +259,7 @@ Each **`settings_headers`** object may contain (default: only nested Sketch **Ap
 | `sketch_underlay`   | boolean | Nested **Underlay** under Sketch.        |
 | `startup`           | boolean | **Startup project** section expanded.    |
 
-Scripting API **`ezy.occt_view_settings_json()`** returns a JSON string with **`occt_view`** plus selected **`gui`** keys (including dimension and snap keys above, **`gui.permanent_node_anno_scale`**, **`gui.inspection_orthographic`**, **`gui.view_roll_step_deg`**, **`gui.view_zoom_scroll_scale`**, **`gui.default_2d_view_width`**, **`gui.default_2d_view_height`** when saved). See [scripting.md](scripting.md).
+Scripting API **`ezy.occt_view_settings_json()`** returns a JSON string with **`occt_view`** plus selected **`gui`** keys (including dimension and snap keys above, **`gui.permanent_node_anno_scale`**, **`gui.inspection_orthographic`**, **`gui.view_roll_step_deg`**, **`gui.view_zoom_scroll_scale`**, **`gui.default_project_unit`**, **`gui.default_2d_view_width`**, **`gui.default_2d_view_height`** when saved). See [scripting.md](scripting.md).
 
 ---
 

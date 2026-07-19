@@ -42,7 +42,7 @@ EzyCad (Easy CAD) is an open-source CAD application for hobbyist machinists to d
 
 ### Main Components
 1. **Menu Bar**
-   - **File** - [New](#new-project), [Open](#open-project), [Save](#save-project), Save as, [Import](#importing-3d-geometries), [Export](#exporting-3d-geometries), Examples, Exit
+   - **File** - [New](#new-project), [Open](#open-project), [Save](#save-project), Save as, [Project units](#project-units), [Import](#importing-3d-geometries), [Export](#exporting-3d-geometries), Examples, Exit
    - **Edit** - [Undo](#edit-operations), [Redo](#edit-operations)
    - **View** - [Settings, panes, Lua/Python consoles](usage-settings.md#view-menu)
    - **Help** - [About](#help-menu), [Usage Guide](#help-menu), and the separate **[Settings guide](usage-settings.md)**
@@ -150,15 +150,23 @@ This is useful after **Revolve**, **Extrude**, booleans, or imports when you nee
 ### Basic Operations
 1. #### New Project
    - Start with a clean workspace (default XY sketch)
-   - Reset the camera to a **top view** framed to **Settings -> 3D view navigation** **Default 2D view width** / **height** (defaults **3** x **3**, same length scale as sketch dimensions)
+   - Apply **Settings -> New project defaults** (**Project units**, **Default 2D view width** / **height**)
+   - Reset the camera to a **top view** framed to those width/height values
 
 2. #### Open Project
    - Load existing `.ezy` files
 
 3. #### Save Project
-   - Save current work to `.ezy` file
+   - Save current work to `.ezy` file (includes `projectUnit`)
 
-4. **Import/Export**
+4. #### Project units
+   - **File -> Project units -> Inches** or **Millimeters** sets how sketch lengths, dimensions, Tab distance entry, grid Settings fields, and related length inputs are shown and typed for the **open** project
+   - Changing units does **not** rescale stored geometry; a length that was **1** inch becomes **25.4** mm in the UI
+   - Stored in the `.ezy` manifest as `projectUnit` (`inch` or `millimeter`); older files without the field load as **Inches**
+   - Default for **File -> New** comes from **Settings -> New project defaults -> Project units**
+   - Independent of **File -> Export** units (export still asks separately)
+
+5. **Import/Export**
    - [Import STEP or PLY](#importing-3d-geometries)
    - [Export to STEP, IGES, binary STL, or binary PLY](#exporting-3d-geometries)
 
@@ -254,11 +262,11 @@ In addition to creating 3D shapes from sketches, EzyCad supports importing exist
 3. Geometry is added as 3D shape(s) in the document, scaled to project units (see below)
 4. You can move, rotate, scale, and use imported bodies in [boolean operations](#boolean-operations) like native solids where the geometry allows it
 
-**Units:** EzyCad treats sketch and display lengths as **inches**. Internal model coordinates are inches multiplied by an internal `dimension_scale` (default **100**). Import scaling:
+**Units:** Sketch and display lengths follow **File -> Project units** (**Inches** or **Millimeters**). Internal model coordinates stay inch-scaled (`model = inches * dimension_scale`, default **100**). Changing project units only remaps the UI; it does not rewrite geometry. Import scaling:
 
 | Format                     | File units                                                              | Into EzyCad                                      |
 | -------------------------- | ----------------------------------------------------------------------- | ------------------------------------------------ |
-| **STEP** (`.step`, `.stp`) | Declared in the file (often mm); OCCT reads them as mm, then converted | Scaled so lengths match inch-based project dims  |
+| **STEP** (`.step`, `.stp`) | Declared in the file (often mm); OCCT reads them as mm, then converted | Scaled so lengths match the inch-scaled model    |
 | **PLY** (`.ply`)           | No standard unit metadata                                               | Vertex coords are treated as **inches**          |
 
 **PLY import notes:**

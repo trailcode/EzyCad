@@ -133,4 +133,15 @@ enum class Export_unit
   Millimeter
 };
 
+/// Project display/input length unit. Model space stays inch-scaled
+/// (`model = inches * dimension_scale`); this only affects UI and dimensions.
+enum class Project_unit
+{
+  Inch,
+  Millimeter
+};
+
+/// Millimeters per inch (display conversion and CAD interchange).
+inline constexpr double k_mm_per_inch = 25.4;
+
 #include "utl_types.inl"

@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Project units
+
+- **File -> Project units:** Choose **Inches** or **Millimeters** for sketch/display lengths (dimensions, Tab distance, add-primitive dialogs, chamfer/fillet, grid Settings fields). Stored in the `.ezy` as `projectUnit`. Changing units remaps the UI only; geometry is not rewritten. Export units remain a separate dialog.
+- **Settings -> New project defaults:** **Project units** plus **Default 2D view width** / **height** (edited in that unit; stored as inches). Applied by **File -> New**.
+
 ### Import / export units
 
 - **File -> Import** and **File -> Export** now scale geometry so sketch/display lengths stay in **inches**. STEP is read/written via millimeters (OCCT cascade/write unit); PLY import and STL/PLY export treat unitless mesh coords as inches; IGES export writes millimeters. STEP round-trips preserve size relative to project dimensions.
