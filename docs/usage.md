@@ -107,21 +107,29 @@ The window can be closed with its close button; use **View -> Sketch List** agai
 
 ### Shape List
 
-The **Shape List** pane lists every **3D shape** in the current document (extrudes, imports, booleans, etc.). Open it from **View -> Shape List**.
+The **Shape List** pane lists every **3D shape** and **group** in the current document (extrudes, imports, booleans, etc.). Open it from **View -> Shape List**.
 
 At the top:
 
-- **Hide all** - When checked, hides every shape in the 3D view; when cleared, every shape is shown again (same as turning visibility back on for all rows).
+- **Hide all** - When checked, hides every solid in the 3D view without changing each row's visibility checkbox; when cleared, solids return to their previous per-row visibility (and group visibility).
+- **New group** - Creates an empty organizational group under the **current group** (document root when none is set) and makes it current.
+- **Group** - Places the currently selected solids under a new group (enabled when one or more solids are selected in the 3D view) and makes that group current.
 
-For each shape, one row includes:
+Shapes form a parent/child outliner. Groups are folders only (they do not move children when transformed). Drag a row onto a group to reparent it, or onto a solid to place it under that solid's parent.
 
-- **Name** - Editable text field; change the label stored with the shape.
-- **Right-click the name** - **Shape info...** opens a dialog with topology and property details for that shape (see [Shape info](#shape-info) below). **Delete** removes the shape from the document.
-- **Visibility** - Checkbox (tooltip *visibility*) to show or hide that shape in the 3D view.
-- **Solid / wire** - Checkbox (tooltip *solid/wire*) to switch **shaded** display or **wireframe** for that shape.
-- **M** - Click to open a **Material** popup; right-click **M** for **Shape info...** or **Delete**. The tooltip on **M** also notes that right-clicking the name deletes the shape.
+Click a **group** (including an empty one) to make it the **current group**. Click a solid to select it and set the current group to that solid's parent. New primitives, extrudes, revolves, and similar additions go into the current group.
 
-Rows that match the **current 3D selection** use a brighter row style (text and controls) so the list stays in sync with what is selected in the viewer (tooltip *Selected in 3D viewer* when you hover a highlighted row). Hovering any visible row also highlights that shape in the 3D view (**Settings -> View presentation -> Element hover color**).
+Each row (left to right):
+
+- **Name** - Expandable tree row with an editable name. Click the row to select that solid (or all descendant solids for a group) and update the current group. **Ctrl+click** toggles multi-select. Drag to reparent.
+- **Visibility** - Checkbox to show or hide that node. Hiding a **group** hides its whole subtree in the 3D view.
+- **Solid / wire** - Checkbox (solids only) to switch **shaded** or **wireframe**.
+- **M** - Solids only: material popup; right-click for **Shape info...** or **Delete**.
+- **Right-click the name** - Solids: **Shape info...** / **Delete**. Groups: **Ungroup** (moves **all** direct children to the group's parent, then removes the group) / **Delete** (cascade-deletes the whole subtree).
+
+Boolean results stay under the shared parent of their inputs when all inputs share one parent; otherwise they are placed at the document root. **File -> Import** STEP assemblies preserve product/assembly groups in the tree (unless **Union shapes** is checked).
+
+The **current group** and rows that match the **current 3D selection** use a highlighted full-row style. Hovering a visible solid row also highlights that shape in the 3D view (**Settings -> View presentation -> Element hover color**).
 
 The window can be closed with its close button; use **View -> Shape List** again to show it.
 
@@ -295,7 +303,7 @@ In addition to creating 3D shapes from sketches, EzyCad supports importing exist
 
 **STEP import notes:**
 - If the file cannot be read or contains no transferable geometry, a **message** explains the failure (invalid data, empty transfer, etc.).
-- Assemblies often arrive as a single compound containing many solids. Import expands those into separate Shape List entries. The Import dialog **Import bodies** count shows how many shapes will be added.
+- Assemblies often arrive with XCAF product structure. Import builds Shape List **groups** for assemblies and leaf solids for bodies (unless **Union shapes** merges everything into one solid). The Import dialog **Import bodies** count shows how many leaf solids will be added.
 - When the STEP file includes product or part names, those names appear in the Shape List (duplicate names get `.001`, `.002`, ...). Unnamed bodies stay as `Shape`.
 - **Union shapes** (Import dialog) fuses those bodies into one solid before adding to the document. If union fails, the import is aborted and nothing is added.
 

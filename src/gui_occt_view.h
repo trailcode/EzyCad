@@ -120,12 +120,40 @@ public:
   Shape_id allocate_shape_id();
   void     adopt_shape_id(Shape_id id);
   Shp_ptr  find_shape_by_id(Shape_id id) const;
-  /// Insert a shape from an undo snapshot (keeps \a rec.id). Displays in the viewer.
+  /// Insert a shape from an undo snapshot (keeps \a rec.id). Displays solids in the viewer (not groups).
   void insert_shape_rec(const Shape_rec& rec);
   /// Remove a shape by stable id (viewer + document list).
   void remove_shape_by_id(Shape_id id);
   /// Replace BREP of an existing shape (identity local transform).
   void set_shape_geom_by_id(Shape_id id, const TopoDS_Shape& geom);
+
+  /// Next sibling_order among children of \a parent_id (0 = document root).
+  int next_sibling_order(Shape_id parent_id) const;
+  /// True if setting \a id's parent to \a new_parent would create a cycle.
+  bool would_reparent_create_cycle(Shape_id id, Shape_id new_parent) const;
+  /// Children of \a parent_id sorted by sibling_order (0 = roots).
+  std::vector<Shp_ptr> shape_children(Shape_id parent_id) const;
+  /// Descendant leaf solids under \a id (if \a id is a solid, returns itself).
+  std::vector<Shp_ptr> shape_descendant_solids(Shape_id id) const;
+  /// Effective visibility: own flag and all ancestors visible (ignores Hide all / sketch overlays).
+  bool shape_ancestors_visible(const Shp& shp) const;
+  /// Create an empty group under \a parent_id; pushes undo.
+  Shp_ptr create_group(const std::string& name, Shape_id parent_id = 0);
+  /// Group \a nodes under a new parent (common parent of selection, or root if mixed). Pushes undo.
+  [[nodiscard]] Status group_shapes(const std::vector<Shp_ptr>& nodes);
+  /// Move children of \a group_id to its parent and remove the group. Pushes undo.
+  [[nodiscard]] Status ungroup_shape(Shape_id group_id);
+  /// Change parent/order; rejects cycles. Pushes undo when \a push_undo.
+  [[nodiscard]] Status reparent_shape(Shape_id id, Shape_id new_parent, int sibling_order = -1, bool push_undo = true);
+  /// Apply parent/order without undo (used by deltas).
+  void apply_shape_link(Shape_id id, Shape_id parent_id, int sibling_order);
+  /// Parent for a boolean/extrude result: shared parent if all match, else primary's parent, else root if mixed.
+  static Shape_id result_parent_id(const std::vector<Shp_ptr>& operands);
+
+  /// Group that receives new primitives / extrudes / revolves (0 = document root). Empty groups are valid.
+  Shape_id current_group_id() const { return m_current_group_id; }
+  /// Set current group; \a id must be 0 or an existing group. Invalid ids clear to root.
+  void set_current_group_id(Shape_id id);
 
   /// Insert a sketch from JSON for undo/redo (adopts sketch id from JSON).
   void undo_insert_sketch(const nlohmann::json& sketch_json, bool make_current);
@@ -358,7 +386,9 @@ private:
   Ray                   get_hit_test_ray_(const ScreenCoords& screen_coords) const;
   std::optional<gp_Pnt> get_hit_point_(const AIS_Shape_ptr& shp, const ScreenCoords& screen_coords) const;
 
-  void        add_shp_(Shp_ptr& shp);
+  /// Register shape. When \a use_current_group, solids still at parent 0 are placed under current_group_id().
+  void        add_shp_(Shp_ptr& shp, bool use_current_group = false);
+  void        ensure_current_group_valid_();
   std::string unique_shape_name_(const char* base_name) const;
 
   TopoDS_Shape         shape_with_local_transform_(const AIS_Shape_ptr& ais) const;
@@ -408,6 +438,7 @@ private:
   bool                    m_restoring{false};
   size_t                  m_next_sketch_id{1};
   Shape_id                m_next_shape_id{1};
+  Shape_id                m_current_group_id{0};
   Ezy_asset_store         m_assets;
 
   // --------------------------------------------------------------------

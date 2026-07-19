@@ -498,6 +498,61 @@ void append_named_from_label(const XCAFDoc_ShapeTool_ptr& shapes, const TDF_Labe
     out.push_back(Named_body{std::move(body), name});
 }
 
+void append_tree_from_label(const XCAFDoc_ShapeTool_ptr& shapes, const TDF_Label& lab, int parent_index,
+                            std::vector<Named_node>& out)
+{
+  const std::string name = xcaf_product_name(shapes, lab);
+
+  if (shapes->IsAssembly(lab))
+  {
+    Named_node grp;
+    grp.name         = name.empty() ? "Assembly" : name;
+    grp.is_group     = true;
+    grp.parent_index = parent_index;
+    const int grp_i  = static_cast<int>(out.size());
+    out.push_back(std::move(grp));
+
+    NCollection_Sequence<TDF_Label> comps;
+    shapes->GetComponents(lab, comps, false);
+    for (int i = 1; i <= comps.Length(); ++i)
+      append_tree_from_label(shapes, comps.Value(i), grp_i, out);
+    return;
+  }
+
+  TopoDS_Shape shape;
+  if (!XCAFDoc_ShapeTool::GetShape(lab, shape) || shape.IsNull())
+    return;
+
+  std::vector<TopoDS_Shape> bodies;
+  append_cad_import_bodies(shape, bodies);
+  if (bodies.empty())
+    return;
+
+  // Multiple solids under one product: wrap in a group when more than one body.
+  int leaf_parent = parent_index;
+  if (bodies.size() > 1)
+  {
+    Named_node grp;
+    grp.name         = name.empty() ? "Compound" : name;
+    grp.is_group     = true;
+    grp.parent_index = parent_index;
+    leaf_parent      = static_cast<int>(out.size());
+    out.push_back(std::move(grp));
+  }
+
+  for (size_t bi = 0; bi < bodies.size(); ++bi)
+  {
+    Named_node leaf;
+    leaf.shape        = std::move(bodies[bi]);
+    leaf.name         = name;
+    leaf.is_group     = false;
+    leaf.parent_index = leaf_parent;
+    if (bodies.size() > 1 && !name.empty())
+      leaf.name = name + "." + std::to_string(bi + 1);
+    out.push_back(std::move(leaf));
+  }
+}
+
 Status read_step_named_bodies_xcaf(const std::string& file_bytes, std::vector<Named_body>& out)
 {
   Interface_Static::SetCVal("xstep.cascade.unit", "MM");
@@ -582,5 +637,82 @@ Status read_step_named_bodies(const std::string& file_bytes, std::vector<Named_b
 
   out.clear();
   return read_step_named_bodies_plain(file_bytes, out);
+}
+
+Status read_step_named_tree_xcaf(const std::string& file_bytes, std::vector<Named_node>& out)
+{
+  Interface_Static::SetCVal("xstep.cascade.unit", "MM");
+
+  STEPCAFControl_Reader reader;
+  reader.SetNameMode(true);
+  reader.SetColorMode(false);
+  reader.SetLayerMode(false);
+
+  std::istringstream          stream(file_bytes);
+  const IFSelect_ReturnStatus read_st = reader.ReadStream("", stream);
+  if (read_st != IFSelect_RetDone)
+    return Status::user_error("STEP: could not read file (invalid or corrupt STEP data).");
+
+  XCAFApp_Application_ptr app = XCAFApp_Application::GetApplication();
+  if (app.IsNull())
+    return Status::user_error("STEP: XCAF application unavailable.");
+
+  TDocStd_Document_ptr doc;
+  app->NewDocument("MDTV-XCAF", doc);
+  if (doc.IsNull())
+    return Status::user_error("STEP: could not create XCAF document.");
+
+  if (!reader.Transfer(doc))
+    return Status::user_error("STEP: no geometry was transferred from the file.");
+
+  XCAFDoc_ShapeTool_ptr shapes = XCAFDoc_DocumentTool::ShapeTool(doc->Main());
+  if (shapes.IsNull())
+    return Status::user_error("STEP: missing XCAF shape tool.");
+
+  NCollection_Sequence<TDF_Label> free_shapes;
+  shapes->GetFreeShapes(free_shapes);
+  if (free_shapes.IsEmpty())
+    return Status::user_error("STEP: no valid shapes in file.");
+
+  for (int i = 1; i <= free_shapes.Length(); ++i)
+    append_tree_from_label(shapes, free_shapes.Value(i), -1, out);
+
+  bool any_leaf = false;
+  for (const Named_node& n : out)
+    if (!n.is_group)
+    {
+      any_leaf = true;
+      break;
+    }
+
+  if (!any_leaf)
+    return Status::user_error("STEP: no valid shapes in file.");
+
+  return Status::ok();
+}
+
+Status read_step_named_tree(const std::string& file_bytes, std::vector<Named_node>& out)
+{
+  out.clear();
+  const Status xcaf = read_step_named_tree_xcaf(file_bytes, out);
+  if (xcaf.is_ok())
+    return xcaf;
+
+  out.clear();
+  std::vector<Named_body> flat;
+  const Status            plain = read_step_named_bodies_plain(file_bytes, flat);
+  if (!plain.is_ok())
+    return plain;
+
+  for (Named_body& b : flat)
+  {
+    Named_node n;
+    n.shape        = std::move(b.shape);
+    n.name         = std::move(b.name);
+    n.is_group     = false;
+    n.parent_index = -1;
+    out.push_back(std::move(n));
+  }
+  return Status::ok();
 }
 } // namespace utl_cad_file_info

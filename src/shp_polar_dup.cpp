@@ -146,6 +146,7 @@ Status Shp_polar_dup::dup()
         // Create new shape and add to view as before
         Shp_ptr new_shape = new Shp(ctx(), transformed_shape);
         new_shape->set_name("Polar duplicate");
+        assign_result_parent_(new_shape, m_shps);
         add_shp_(new_shape);
         added.push_back(capture_shape_rec(*new_shape));
       }
@@ -166,6 +167,7 @@ Status Shp_polar_dup::dup()
     // Create a single shape from all the combined shapes
     Shp_ptr new_shape = new Shp(ctx(), combined_shape);
     new_shape->set_name("Combined polar duplicate");
+    assign_result_parent_(new_shape, m_shps);
     add_shp_(new_shape);
     added.push_back(capture_shape_rec(*new_shape));
   }

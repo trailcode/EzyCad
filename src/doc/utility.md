@@ -132,7 +132,8 @@ Used by **File -> Import**. Reads file bytes only until the user confirms import
 | `detect(path, bytes)`       | Format from extension, then content sniff                         |
 | `can_import(fmt)`           | True for STEP and PLY                                             |
 | `collect(path, bytes)`      | Label/value rows (size, roots/shapes, mesh header, bbox, etc.)    |
-| `read_step_named_bodies`    | STEPCAF/XCAF bodies + product names (falls back to plain reader)  |
+| `read_step_named_bodies`    | STEPCAF/XCAF bodies + product names (flat; falls back to plain reader)  |
+| `read_step_named_tree`      | STEPCAF/XCAF assembly tree as group/leaf `Named_node`s (falls back flat) |
 
 ## Logging and debug
 

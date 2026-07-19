@@ -51,6 +51,7 @@ Shp_rslt Shp_cut::cut(std::vector<Shp_ptr> shps)
 
   Shp_ptr shp = new Shp(ctx(), result_shape);
   shp->set_name("Cut");
+  assign_result_parent_(shp, m_shps);
   delete_operation_shps_();
   add_shp_(shp);
   view().push_undo_delta(std::make_unique<Shape_replace_delta>(std::move(removed), std::vector<Shape_rec>{capture_shape_rec(*shp)}));

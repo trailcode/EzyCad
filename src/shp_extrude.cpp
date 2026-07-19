@@ -72,7 +72,7 @@ void Shp_extrude::finalize()
   DBG_MSG("");
   EZY_ASSERT(m_extruded);
   m_extruded->set_name(view().get_unique_shape_name("Shape"));
-  add_shp_(m_extruded);
+  add_shp_(m_extruded, true);
   view().push_undo_delta(std::make_unique<Shape_add_delta>(std::vector<Shape_rec>{capture_shape_rec(*m_extruded)}));
   ctx().Remove(m_tmp_dim, false);
   clear_all(m_to_extrude_pt, m_to_extrude, m_extruded, m_tmp_dim);

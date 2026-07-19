@@ -7,9 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Shape List
+
+- **Shape List** is a hierarchical outliner: organizational **groups**, expand/collapse, drag-and-drop reparent, **Group** / **New group** / **Ungroup**, cascade delete, and Ctrl+click multi-select. Click a group (including empty) to set the **current group**; new primitives/extrudes/revolves are added there. Group visibility hides the subtree. **Hide all** no longer clears per-shape visibility flags. Boolean results inherit a shared parent when inputs share one. STEP import preserves XCAF assembly groups (unless **Union shapes**).
+- Persisted in `.ezy`: `parentId`, `order`, `isGroup`, `visible`; UI expand state and current group in `ui.shapeList.expanded` / `ui.shapeList.currentGroupId`.
+
 ### Import / export
 
-- **File -> Import** opens an **Import** dialog with file metadata, optional **Union shapes** for STEP, then **Import into project**. The dialog closes after a successful import. Multi-body STEP assemblies import as separate Shape List entries unless **Union shapes** is checked. STEP product/part names are used in the Shape List when present (with `.001` suffixes if needed).
+- **File -> Import** opens an **Import** dialog with file metadata, optional **Union shapes** for STEP, then **Import into project**. The dialog closes after a successful import. Multi-body STEP assemblies import as a **group tree** of Shape List entries unless **Union shapes** is checked. STEP product/part names are used in the Shape List when present (with `.001` suffixes if needed).
 - Removed the **Tools** menu (**Inspector** lives under **File -> Import**). Removed **File -> Sketch underlay image...** (import underlays from **Sketch properties**).
 
 ### Project units
