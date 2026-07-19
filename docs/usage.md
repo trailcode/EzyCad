@@ -115,7 +115,7 @@ At the top:
 - **New group** - Creates an empty organizational group under the **current group** (document root when none is set) and makes it current.
 - **Group** - Places the currently selected solids under a new group (enabled when one or more solids are selected in the 3D view) and makes that group current.
 
-Shapes form a parent/child outliner. Groups are folders only (they do not move children when transformed). Drag a row onto a group to reparent it, or onto a solid to place it under that solid's parent.
+Shapes form a parent/child outliner. Groups are folders only (they do not move children when transformed). Drag a row onto a group to reparent it, onto a solid to place it under that solid's parent, or into the empty space below the list to move it to the document root.
 
 Click a **group** (including an empty one) to make it the **current group**. Click a solid to select it and set the current group to that solid's parent. New primitives, extrudes, revolves, and similar additions go into the current group.
 
@@ -124,7 +124,7 @@ Each row (left to right):
 - **Visibility** - Checkbox to show or hide that node. Hiding a **group** hides its whole subtree in the 3D view.
 - **Solid / wire** - Checkbox (solids only) to switch **shaded** or **wireframe**.
 - **M** - Solids only: material popup; right-click for **Shape info...** or **Delete**.
-- **Name** - Expandable tree row with an editable name. Click the row to select that solid (or all descendant solids for a group) and update the current group. **Ctrl+click** toggles multi-select. Drag to reparent.
+- **Name** - Expandable tree row with an editable name. Click the row to select that solid (or all descendant solids for a group) and update the current group. **Ctrl+click** toggles multi-select. Drag to reparent (empty area below the list = document root).
 - **Right-click the name** - Solids: **Shape info...** / **Delete**. Groups: **Ungroup** (moves **all** direct children to the group's parent, then removes the group) / **Delete** (cascade-deletes the whole subtree).
 
 Boolean results stay under the shared parent of their inputs when all inputs share one parent; otherwise they are placed at the document root. **File -> Import** STEP assemblies preserve product/assembly groups in the tree (unless **Union shapes** is checked).

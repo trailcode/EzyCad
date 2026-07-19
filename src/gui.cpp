@@ -2695,8 +2695,13 @@ void GUI::shape_list_()
       ImGui::EndDragDropSource();
     }
 
-    if (ImGui::BeginDragDropTarget())
+    // Drop onto group -> that group; onto solid -> solid's parent. Register on both the
+    // tree arrow and the name field — the name covers most of the row.
+    auto accept_reparent_drop = [&]()
     {
+      if (!ImGui::BeginDragDropTarget())
+        return;
+
       if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("EZY_SHAPE_ID"))
       {
         Shape_id drag_id = 0;
@@ -2705,7 +2710,8 @@ void GUI::shape_list_()
         (void)m_view->reparent_shape(drag_id, new_parent, -1, true);
       }
       ImGui::EndDragDropTarget();
-    }
+    };
+    accept_reparent_drop();
 
     ImGui::SameLine();
     ImGui::SetNextItemWidth(std::max(1.0f, ImGui::GetContentRegionAvail().x));
@@ -2714,6 +2720,15 @@ void GUI::shape_list_()
 
     if (ImGui::IsItemClicked())
       select_shape_row(shape);
+
+    if (ImGui::BeginDragDropSource(ImGuiDragDropFlags_SourceAllowNullID))
+    {
+      const Shape_id drag_id = shape->get_id();
+      ImGui::SetDragDropPayload("EZY_SHAPE_ID", &drag_id, sizeof(drag_id));
+      ImGui::TextUnformatted(shape->get_name().c_str());
+      ImGui::EndDragDropSource();
+    }
+    accept_reparent_drop();
 
     row_hovered |= ImGui::IsItemHovered();
     if (ImGui::BeginPopupContextItem("shape_name_ctx"))
@@ -2766,6 +2781,57 @@ void GUI::shape_list_()
 
     for (const Shp_ptr& root : m_view->shape_children(0))
       draw_shape_row(draw_shape_row, root);
+
+    // Empty pad below the last row: drop here to move to document root (no permanent root node).
+    {
+      const float min_pad_h = ImGui::GetFrameHeight();
+      const float pad_h     = std::max(min_pad_h, ImGui::GetContentRegionAvail().y);
+      ImGui::TableNextRow(ImGuiTableRowFlags_None, pad_h);
+      ImGui::TableSetColumnIndex(0);
+
+      const ImGuiPayload* active_payload = ImGui::GetDragDropPayload();
+      const bool dragging_shape =
+          active_payload != nullptr && active_payload->IsDataType("EZY_SHAPE_ID") && active_payload->DataSize == sizeof(Shape_id);
+
+      if (dragging_shape)
+        ImGui::TableSetBgColor(ImGuiTableBgTarget_RowBg0, ImGui::GetColorU32(ImGuiCol_Header, 0.20f));
+
+      ImGui::Selectable("##shape_root_drop", false,
+                        ImGuiSelectableFlags_SpanAllColumns | ImGuiSelectableFlags_AllowOverlap | ImGuiSelectableFlags_Disabled,
+                        ImVec2(0.0f, pad_h));
+
+      bool root_drop_hovered = false;
+      if (ImGui::BeginDragDropTarget())
+      {
+        const ImGuiPayload* payload =
+            ImGui::AcceptDragDropPayload("EZY_SHAPE_ID", ImGuiDragDropFlags_AcceptBeforeDelivery);
+        if (payload != nullptr)
+        {
+          root_drop_hovered = payload->Preview;
+          if (payload->IsDelivery())
+          {
+            Shape_id drag_id = 0;
+            std::memcpy(&drag_id, payload->Data, sizeof(drag_id));
+            (void)m_view->reparent_shape(drag_id, 0, -1, true);
+          }
+        }
+        ImGui::EndDragDropTarget();
+      }
+
+      if (dragging_shape)
+      {
+        const ImVec2 rmin = ImGui::GetItemRectMin();
+        const ImVec2 rmax = ImGui::GetItemRectMax();
+        if (root_drop_hovered)
+          ImGui::GetWindowDrawList()->AddRectFilled(rmin, rmax, ImGui::GetColorU32(ImGuiCol_HeaderHovered, 0.55f));
+
+        const char*  hint = "Move to root";
+        const ImVec2 ts   = ImGui::CalcTextSize(hint);
+        ImGui::GetWindowDrawList()->AddText(ImVec2(rmin.x + (rmax.x - rmin.x - ts.x) * 0.5f,
+                                                   rmin.y + (rmax.y - rmin.y - ts.y) * 0.5f),
+                                            ImGui::GetColorU32(ImGuiCol_TextDisabled), hint);
+      }
+    }
 
     ImGui::PopStyleVar(2);
     ImGui::EndTable();

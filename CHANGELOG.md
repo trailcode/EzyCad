@@ -9,7 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Shape List
 
-- **Shape List** is a hierarchical outliner: organizational **groups**, expand/collapse, drag-and-drop reparent, **Group** / **New group** / **Ungroup**, cascade delete, and Ctrl+click multi-select. Click a group (including empty) to set the **current group**; new primitives/extrudes/revolves are added there. Group visibility hides the subtree. **Hide all** no longer clears per-shape visibility flags. Boolean results inherit a shared parent when inputs share one. STEP import preserves XCAF assembly groups (unless **Union shapes**).
+- **Shape List** is a hierarchical outliner: organizational **groups**, expand/collapse, drag-and-drop reparent, **Group** / **New group** / **Ungroup**, cascade delete, and Ctrl+click multi-select. Click a group (including empty) to set the **current group**; new primitives/extrudes/revolves are added there. Drop on empty space below the list to move a node to the document root. Group visibility hides the subtree. **Hide all** no longer clears per-shape visibility flags. Boolean results inherit a shared parent when inputs share one. STEP import preserves XCAF assembly groups (unless **Union shapes**).
 - Persisted in `.ezy`: `parentId`, `order`, `isGroup`, `visible`; UI expand state and current group in `ui.shapeList.expanded` / `ui.shapeList.currentGroupId`.
 
 ### Import / export
