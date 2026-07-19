@@ -23,6 +23,7 @@
 #include "mode.h"
 #include "gui_occt_view.h"
 #include "shp_info.h"
+#include "utl_cad_file_info.h"
 #include "utl_types.h"
 
 #include <nlohmann/json.hpp>
@@ -356,7 +357,7 @@ public:
 
 #ifdef __EMSCRIPTEN__
   void open_file_dialog_async();   // Emscripten: hidden <input type="file">; no custom title (browser UI)
-  void import_file_dialog_async(); // STEP / PLY import (routes to on_import_file)
+  void import_file_dialog_async(); // STEP / PLY: open Import dialog before loading
   void save_file_dialog_async(const char* title, const std::string& default_file, const std::vector<uint8_t>& ezy_bytes);
   void download_blob_async(const std::string& default_filename, const std::string& data);
   /// After browser download save, remember basename for window title and Save-as default.
@@ -364,7 +365,8 @@ public:
 #endif
 
   void on_file(const std::string& file_path, const std::string& file_bytes, bool announce_load = true);
-  void on_import_file(const std::string& file_path, const std::string& file_data);
+  [[nodiscard]] bool on_import_file(const std::string& file_path, const std::string& file_data, bool union_shapes = false);
+  void on_inspector_file(const std::string& file_path, const std::string& file_data);
   /// Emscripten `on_sketch_underlay_selected` routes here (must be public for C callback).
   void on_sketch_underlay_file(const std::string& file_path, const std::string& file_bytes);
 
@@ -411,6 +413,9 @@ private:
   void shape_list_();
   void shape_info_dialog_();
   void open_shape_info_(const Shp_ptr& shape);
+  void file_inspector_dialog_();
+  void open_file_inspector_(const std::string& file_path, const std::string& file_bytes);
+  void close_file_inspector_();
 
   // Mode + Options panel (gui_mode.cpp)
   void options_();
@@ -671,6 +676,12 @@ private:
   bool                        m_shape_info_open{false};
   Shp_ptr                     m_shape_info_shp;
   std::vector<shp_info::Line> m_shape_info_lines;
+  bool                        m_file_inspector_open{false};
+  bool                        m_file_inspector_union{false};
+  std::string                 m_file_inspector_path;
+  std::string                 m_file_inspector_bytes;
+  utl_cad_file_info::Format   m_file_inspector_fmt{utl_cad_file_info::Format::Unknown};
+  std::vector<utl_cad_file_info::Line> m_file_inspector_lines;
   std::string                 m_about_markdown;
   uint32_t                    m_about_splash_gl{0};
   glm::ivec2                  m_about_splash_size{512, 512};

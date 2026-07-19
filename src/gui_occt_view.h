@@ -95,7 +95,8 @@ public:
   Ezy_asset_store&       asset_store() { return m_assets; }
   const Ezy_asset_store& asset_store() const { return m_assets; }
   /// Import STEP (OCCT reads cascade mm) scaled into model space (inches * dimension_scale).
-  [[nodiscard]] Status import_step(const std::string& step_data);
+  /// When \a union_shapes is true and the file has multiple roots, fuse them into one solid first.
+  [[nodiscard]] Status import_step(const std::string& step_data, bool union_shapes = false);
   /// Import PLY (coords treated as inches) scaled into model space (* dimension_scale).
   bool                 import_ply(const std::string& ply_bytes);
 

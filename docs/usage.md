@@ -239,6 +239,23 @@ The typical modeling workflow in EzyCad follows these steps:
 | **Shapes**                  | 3D solid objects created from extruded sketch faces                                                                                             |
 | **Feature Operations**      | Transform sketches into 3D geometry or modify existing 3D shapes                                                                                |
 
+### Import dialog
+
+**File -> Import** opens an **Import** window for STEP or PLY. Review metadata, optionally enable **Union shapes** (STEP), then click **Import into project**. The window closes after a successful import.
+
+| Format                     | What the Import dialog shows                                   |
+| -------------------------- | -------------------------------------------------------------- |
+| **STEP** (`.step`, `.stp`) | Roots/shapes, import bodies, named bodies, topology, bbox      |
+| **PLY** (`.ply`)           | Encoding, vertex and face counts from the header               |
+
+**How to use:**
+1. Choose **File -> Import**
+2. Pick a `.step`, `.stp`, or `.ply` file
+3. Review the label/value table; for STEP, optionally enable **Union shapes**
+4. Click **Import into project**
+
+For in-document topology of an already-loaded solid, use [Shape info](#shape-info) from the Shape List.
+
 ### Importing 3D Geometries
 
 In addition to creating 3D shapes from sketches, EzyCad supports importing existing 3D geometry from external CAD files. This allows you to:
@@ -258,9 +275,10 @@ In addition to creating 3D shapes from sketches, EzyCad supports importing exist
 
 **How to import:**
 1. Use **File -> Import**
-2. Pick a `.step`, `.stp`, or `.ply` file (the dialog lists these types)
-3. Geometry is added as 3D shape(s) in the document, scaled to project units (see below)
-4. You can move, rotate, scale, and use imported bodies in [boolean operations](#boolean-operations) like native solids where the geometry allows it
+2. Pick a `.step`, `.stp`, or `.ply` file
+3. Review metadata in the [Import dialog](#import-dialog); for STEP assemblies, optionally check **Union shapes**
+4. Click **Import into project** - geometry is added as 3D shape(s) in the document, scaled to project units (see below)
+5. You can move, rotate, scale, and use imported bodies in [boolean operations](#boolean-operations) like native solids where the geometry allows it
 
 **Units:** Sketch and display lengths follow **File -> Project units** (**Inches** or **Millimeters**). Internal model coordinates stay inch-scaled (`model = inches * dimension_scale`, default **100**). Changing project units only remaps the UI; it does not rewrite geometry. Import scaling:
 
@@ -277,6 +295,9 @@ In addition to creating 3D shapes from sketches, EzyCad supports importing exist
 
 **STEP import notes:**
 - If the file cannot be read or contains no transferable geometry, a **message** explains the failure (invalid data, empty transfer, etc.).
+- Assemblies often arrive as a single compound containing many solids. Import expands those into separate Shape List entries. The Import dialog **Import bodies** count shows how many shapes will be added.
+- When the STEP file includes product or part names, those names appear in the Shape List (duplicate names get `.001`, `.002`, ...). Unnamed bodies stay as `Shape`.
+- **Union shapes** (Import dialog) fuses those bodies into one solid before adding to the document. If union fails, the import is aborted and nothing is added.
 
 **Note:** **IGES** and **STL** are available for **export** only, not import.
 

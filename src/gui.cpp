@@ -35,6 +35,7 @@
 #include "shp_info.h"
 #include "skt.h"
 #include "utl.h"
+#include "utl_cad_file_info.h"
 #include "version.h"
 
 #include <Standard_Version.hxx>
@@ -145,6 +146,7 @@ void GUI::render_gui()
   sketch_properties_dialog_();
   shape_list_();
   shape_info_dialog_();
+  file_inspector_dialog_();
   options_();
   message_status_window_();
   error_modal_dialog_();
@@ -336,12 +338,6 @@ void GUI::menu_bar_()
     {
       if (ImGui::MenuItem("Import"))
         import_file_dialog_();
-
-      if (ImGui::MenuItem("Sketch underlay image..."))
-      {
-        m_underlay_import_sketch_target.reset();
-        sketch_underlay_import_dialog_();
-      }
     }
 
     if (ImGui::BeginMenu("Export"))
@@ -2756,6 +2752,108 @@ void GUI::shape_info_dialog_()
   ImGui::End();
 }
 
+void GUI::open_file_inspector_(const std::string& file_path, const std::string& file_bytes)
+{
+  m_file_inspector_path  = file_path;
+  m_file_inspector_bytes = file_bytes;
+  m_file_inspector_fmt   = utl_cad_file_info::detect(file_path, file_bytes);
+  m_file_inspector_lines = utl_cad_file_info::collect(file_path, file_bytes);
+  m_file_inspector_open  = true;
+}
+
+void GUI::close_file_inspector_()
+{
+  m_file_inspector_open = false;
+  m_file_inspector_path.clear();
+  m_file_inspector_bytes.clear();
+  m_file_inspector_lines.clear();
+  m_file_inspector_fmt   = utl_cad_file_info::Format::Unknown;
+  m_file_inspector_union = false;
+}
+
+void GUI::file_inspector_dialog_()
+{
+  if (!m_file_inspector_open)
+    return;
+
+  const std::string name  = std::filesystem::path(m_file_inspector_path).filename().string();
+  const std::string title = "Import: " + (name.empty() ? std::string("file") : name);
+  ImGui::SetNextWindowSize(ImVec2(480.0f, 0.0f), ImGuiCond_FirstUseEver);
+  bool open = m_file_inspector_open;
+  if (!ImGui::Begin(title.c_str(), &open, ImGuiWindowFlags_None))
+  {
+    m_file_inspector_open = open;
+    ImGui::End();
+    return;
+  }
+
+  if (utl_cad_file_info::can_import(m_file_inspector_fmt) && !m_file_inspector_bytes.empty())
+  {
+    const bool can_union = m_file_inspector_fmt == utl_cad_file_info::Format::Step;
+    if (!can_union)
+      m_file_inspector_union = false;
+
+    ImGui::BeginDisabled(!can_union);
+    ImGui::Checkbox("Union shapes", &m_file_inspector_union);
+    ImGui::EndDisabled();
+    if (ui_show_contextual_help() && ImGui::IsItemHovered(ImGuiHoveredFlags_AllowWhenDisabled))
+      ImGui::SetTooltip(can_union ? "Fuse multiple STEP roots into one shape on import."
+                                  : "Union applies to multi-shape STEP files only.");
+
+    if (ImGui::Button("Import into project"))
+    {
+      if (on_import_file(m_file_inspector_path, m_file_inspector_bytes, m_file_inspector_union))
+      {
+        close_file_inspector_();
+        ImGui::End();
+        return;
+      }
+    }
+  }
+
+  ImGui::Separator();
+
+  const float max_h = ImGui::GetTextLineHeightWithSpacing() * 20.0f;
+  if (ImGui::BeginChild("file_inspector_scroll", ImVec2(0.0f, max_h), ImGuiChildFlags_Borders,
+                        ImGuiWindowFlags_AlwaysVerticalScrollbar))
+  {
+    if (ImGui::BeginTable("file_inspector_tbl", 2, ImGuiTableFlags_SizingStretchProp | ImGuiTableFlags_RowBg))
+    {
+      ImGui::TableSetupColumn("label", ImGuiTableColumnFlags_WidthFixed, 140.0f);
+      ImGui::TableSetupColumn("value", ImGuiTableColumnFlags_WidthStretch);
+
+      for (const utl_cad_file_info::Line& line : m_file_inspector_lines)
+      {
+        if (line.label.empty() && line.value.empty())
+        {
+          ImGui::TableNextRow();
+          ImGui::TableSetColumnIndex(0);
+          ImGui::Separator();
+          ImGui::TableSetColumnIndex(1);
+          ImGui::Separator();
+          continue;
+        }
+
+        ImGui::TableNextRow();
+        ImGui::TableSetColumnIndex(0);
+        ImGui::TextUnformatted(line.label.c_str());
+        ImGui::TableSetColumnIndex(1);
+        ImGui::TextWrapped("%s", line.value.c_str());
+      }
+
+      ImGui::EndTable();
+    }
+
+    ImGui::EndChild();
+  }
+
+  m_file_inspector_open = open;
+  if (!open)
+    close_file_inspector_();
+
+  ImGui::End();
+}
+
 float GUI::list_name_field_width_(const ImGuiStyle& st, const float max_name_text_w)
 {
   constexpr float k_name_field_cap = 480.f;
@@ -3626,7 +3724,7 @@ void GUI::import_file_dialog_()
 
     const std::string file_bytes{std::istreambuf_iterator<char>(file), std::istreambuf_iterator<char>()};
     if (!file_bytes.empty())
-      on_import_file(selected, file_bytes);
+      on_inspector_file(selected, file_bytes);
     else
       show_message("Error opening: " + std::filesystem::path(selected).filename().string());
   }
@@ -3816,7 +3914,7 @@ void GUI::on_file(const std::string& file_path, const std::string& file_bytes, b
     show_message("Opened: " + std::filesystem::path(file_path).filename().string());
 }
 
-void GUI::on_import_file(const std::string& file_path, const std::string& file_data)
+bool GUI::on_import_file(const std::string& file_path, const std::string& file_data, const bool union_shapes)
 {
   std::string ext = std::filesystem::path(file_path).extension().string();
   for (char& c : ext)
@@ -3825,17 +3923,29 @@ void GUI::on_import_file(const std::string& file_path, const std::string& file_d
   if (ext == ".ply")
   {
     if (!m_view->import_ply(file_data))
+    {
       show_message("PLY import failed.");
-    else
-      show_message("Imported: " + std::filesystem::path(file_path).filename().string());
+      return false;
+    }
 
-    return;
+    show_message("Imported: " + std::filesystem::path(file_path).filename().string());
+    return true;
   }
 
-  if (Status st = m_view->import_step(file_data); !st.is_ok())
+  if (Status st = m_view->import_step(file_data, union_shapes); !st.is_ok())
+  {
     show_message(st.message());
-  else
-    show_message("Imported: " + std::filesystem::path(file_path).filename().string());
+    return false;
+  }
+
+  show_message(union_shapes ? "Imported (union): " + std::filesystem::path(file_path).filename().string()
+                            : "Imported: " + std::filesystem::path(file_path).filename().string());
+  return true;
+}
+
+void GUI::on_inspector_file(const std::string& file_path, const std::string& file_data)
+{
+  open_file_inspector_(file_path, file_data);
 }
 
 #ifdef __EMSCRIPTEN__
@@ -3893,7 +4003,9 @@ void GUI::import_file_dialog_async()
           var length      = contents.length;
           var contentsPtr = _malloc(length);
           HEAPU8.set(contents, contentsPtr);
-          Module.ccall('on_import_file_selected', null, [ 'string', 'number', 'number' ], [ fileName, contentsPtr, length ]);
+          // File -> Import opens the Import dialog (metadata, then Import into project).
+          Module.ccall('on_inspector_file_selected', null, [ 'string', 'number', 'number' ],
+                       [ fileName, contentsPtr, length ]);
           _free(contentsPtr);
         };
         reader.readAsArrayBuffer(file);
@@ -3997,6 +4109,11 @@ extern "C" void on_import_file_selected(const char* file_path, char* contents, i
 {
   const std::string file_bytes(contents, static_cast<size_t>(length));
   GUI::instance().on_import_file(file_path, file_bytes);
+}
+extern "C" void on_inspector_file_selected(const char* file_path, char* contents, int length)
+{
+  const std::string file_bytes(contents, static_cast<size_t>(length));
+  GUI::instance().on_inspector_file(file_path, file_bytes);
 }
 extern "C" void on_sketch_underlay_selected(const char* file_path, char* contents, int length)
 {

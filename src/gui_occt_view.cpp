@@ -8,6 +8,7 @@
 #include <BRepBndLib.hxx>
 #include <Bnd_Box.hxx>
 #include <BRepBuilderAPI_Transform.hxx>
+#include <BRepAlgoAPI_Fuse.hxx>
 #include <BRepMesh_IncrementalMesh.hxx>
 #include <BRepPrimAPI_MakePrism.hxx>
 #include <BRepTools.hxx>
@@ -33,7 +34,6 @@
 #include <Prs3d_LineAspect.hxx>
 #include <Prs3d_TypeOfHighlight.hxx>
 #include <PrsDim_LengthDimension.hxx>
-#include <STEPControl_Reader.hxx>
 #include <STEPControl_Writer.hxx>
 #include <StdSelect_BRepOwner.hxx>
 #include <StlAPI_Writer.hxx>
@@ -66,6 +66,7 @@
 #include "utl.h"
 #include "utl_json.h"
 #include "utl_occt.h"
+#include "utl_cad_file_info.h"
 
 #ifdef __EMSCRIPTEN__
 #include <emscripten.h>
@@ -3243,40 +3244,57 @@ Status Occt_view::export_document(Export_format fmt, Export_unit unit, const std
   return Status::user_error("Unknown export format.");
 }
 
-Status Occt_view::import_step(const std::string& step_data)
+Status Occt_view::import_step(const std::string& step_data, const bool union_shapes)
 {
-  // Force cascade mm so file SI / conversion units land in a known space before our inch scale.
-  Interface_Static::SetCVal("xstep.cascade.unit", "MM");
+  std::vector<utl_cad_file_info::Named_body> named;
+  if (Status st = utl_cad_file_info::read_step_named_bodies(step_data, named); !st.is_ok())
+    return st;
 
-  STEPControl_Reader reader;
-  std::istringstream stream(step_data);
-
-  IFSelect_ReturnStatus read_st = reader.ReadStream("", stream);
-  if (read_st != IFSelect_RetDone)
-    return Status::user_error("STEP: could not read file (invalid or corrupt STEP data).");
-
-  if (reader.TransferRoots() == 0)
-    return Status::user_error("STEP: no geometry was transferred from the file.");
-
-  const double              to_model = step_import_to_model_scale_(get_dimension_scale());
-  const int                 num_shps = reader.NbShapes();
-  std::vector<TopoDS_Shape> to_add;
-  to_add.reserve(static_cast<size_t>(num_shps));
-  for (int i = 1; i <= num_shps; ++i)
+  const double                            to_model = step_import_to_model_scale_(get_dimension_scale());
+  std::vector<utl_cad_file_info::Named_body> to_add;
+  to_add.reserve(named.size());
+  for (utl_cad_file_info::Named_body& body : named)
   {
-    TopoDS_Shape shape = reader.Shape(i);
-    if (!shape.IsNull())
-      to_add.push_back(scale_shape_about_origin_(shape, to_model));
+    if (body.shape.IsNull())
+      continue;
+
+    body.shape = scale_shape_about_origin_(body.shape, to_model);
+    to_add.push_back(std::move(body));
   }
 
   if (to_add.empty())
     return Status::user_error("STEP: no valid shapes in file.");
 
+  bool did_union = false;
+  if (union_shapes && to_add.size() >= 2)
+  {
+    TopoDS_Shape result = to_add[0].shape;
+    for (size_t i = 1; i < to_add.size(); ++i)
+    {
+      BRepAlgoAPI_Fuse fuse_op(result, to_add[i].shape);
+      if (!fuse_op.IsDone())
+        return Status::user_error("STEP: union of imported shapes failed.");
+
+      result = fuse_op.Shape();
+      if (result.IsNull())
+        return Status::user_error("STEP: union produced an empty shape.");
+    }
+    to_add.clear();
+    to_add.push_back(utl_cad_file_info::Named_body{result, "Fused"});
+    did_union = true;
+  }
+
   std::vector<Shape_rec> added;
   added.reserve(to_add.size());
-  for (const TopoDS_Shape& shape : to_add)
+  for (utl_cad_file_info::Named_body& body : to_add)
   {
-    Shp_ptr shp = new Shp(*m_ctx, shape);
+    Shp_ptr shp = new Shp(*m_ctx, body.shape);
+    if (did_union)
+      shp->set_name(unique_shape_name_("Fused"));
+    else if (!body.name.empty())
+      shp->set_name(unique_shape_name_(body.name.c_str()));
+    else
+      shp->set_name(unique_shape_name_("Shape"));
     add_shp_(shp);
     added.push_back(capture_shape_rec(*shp));
   }

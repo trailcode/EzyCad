@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Import / export
+
+- **File -> Import** opens an **Import** dialog with file metadata, optional **Union shapes** for STEP, then **Import into project**. The dialog closes after a successful import. Multi-body STEP assemblies import as separate Shape List entries unless **Union shapes** is checked. STEP product/part names are used in the Shape List when present (with `.001` suffixes if needed).
+- Removed the **Tools** menu (**Inspector** lives under **File -> Import**). Removed **File -> Sketch underlay image...** (import underlays from **Sketch properties**).
+
 ### Project units
 
 - **File -> Project units:** Choose **Inches** or **Millimeters** for sketch/display lengths (dimensions, Tab distance, add-primitive dialogs, chamfer/fillet, grid Settings fields). Stored in the `.ezy` as `projectUnit`. Changing units remaps the UI only; geometry is not rewritten. Export units remain a separate dialog.

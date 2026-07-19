@@ -9,6 +9,7 @@
 #include <TopExp_Explorer.hxx>
 #include <TopoDS.hxx>
 #include <TopoDS_Compound.hxx>
+#include <TopoDS_Iterator.hxx>
 #include <TopoDS_Shell.hxx>
 
 const char* standard_failure_message(const Standard_Failure& e)
@@ -132,5 +133,49 @@ TopoDS_Shape try_make_solid(const TopoDS_Shape& shape)
 
   default:
     return shape;
+  }
+}
+
+void append_cad_import_bodies(const TopoDS_Shape& shape, std::vector<TopoDS_Shape>& out)
+{
+  if (shape.IsNull())
+    return;
+
+  switch (shape.ShapeType())
+  {
+  case TopAbs_COMPOUND:
+  {
+    // STEP assemblies usually transfer as one compound with many nested solids.
+    bool has_solid = false;
+    for (TopExp_Explorer exp(shape, TopAbs_SOLID); exp.More(); exp.Next())
+    {
+      has_solid = true;
+      out.push_back(exp.Current());
+    }
+    if (has_solid)
+      return;
+
+    bool has_shell = false;
+    for (TopExp_Explorer exp(shape, TopAbs_SHELL); exp.More(); exp.Next())
+    {
+      has_shell = true;
+      out.push_back(exp.Current());
+    }
+    if (has_shell)
+      return;
+
+    for (TopoDS_Iterator it(shape); it.More(); it.Next())
+      append_cad_import_bodies(it.Value(), out);
+    return;
+  }
+
+  case TopAbs_COMPSOLID:
+    for (TopExp_Explorer exp(shape, TopAbs_SOLID); exp.More(); exp.Next())
+      out.push_back(exp.Current());
+    return;
+
+  default:
+    out.push_back(shape);
+    return;
   }
 }

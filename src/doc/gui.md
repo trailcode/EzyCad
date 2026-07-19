@@ -13,7 +13,7 @@ Typical responsibilities:
 - ImGui frame: menu bar, dock space (passthrough central node for 3D input), toolbar, Sketch List, Shape List, Options, Settings, dist/angle popups.
 - Mode switching (`Mode` enum in [`mode.h`](../mode.h)) and parent-mode Esc behavior.
 - Persisted preferences (`ezycad_settings.json` via [`gui_settings.cpp`](../gui_settings.cpp)).
-- Project I/O (`.ezy` load/save, import/export dialogs).
+- Project I/O (`.ezy` load/save, import/export dialogs; **File -> Import** shows metadata then loads STEP/PLY).
 - CAD/mesh interchange scales about the origin: project display lengths follow **File -> Project units** (`Project_unit`; Inch or Millimeter). Model space stays inch-scaled (`model = inches * dimension_scale`). STEP import converts OCCT cascade **mm** into model space; PLY import treats coords as inches. **File -> Export** asks for **Inches** or **Millimeters** (STEP/IGES declare that unit; STL/PLY write unitless coords in that scale). `.ezy` persists `projectUnit`. **Settings -> New project defaults** stores `gui.default_project_unit` and inch-based default 2D framing for **File -> New**.
 - Contextual help links (`doc_urls` in `gui.h`).
 
@@ -201,7 +201,7 @@ Shared sketch controls (snap, midpoint nodes, place-from-center) live in `option
 | 2     | `menu_bar_`, `toolbar_`                      | File / View / mode tools              |
 | 3     | `dist_edit_`, `angle_edit_`                  | Floating numeric entry                |
 | 4     | `sketch_list_`, `sketch_properties_dialog_`  | Sketch List + underlay/properties     |
-| 5     | `shape_list_`, `shape_info_dialog_`          | Shape List + info popup               |
+| 5     | `shape_list_`, `shape_info_dialog_`, `file_inspector_dialog_` | Shape List + info + Import dialog |
 | 6     | `options_`                                   | Mode-specific Options pane            |
 | 7     | `message_status_window_`, `about_dialog_`    | Status + About                        |
 | 8     | `add_*_dialog_`                              | Primitive / sketch creation popups    |
@@ -274,3 +274,4 @@ Occt_view* view = gui.get_view();
 | [`src/doc/shape.md`](shape.md)                                                                          | Shape operations invoked from toolbar, Options, mouse            |
 | [`scr_lua_console.cpp`](../scr_lua_console.cpp) / [`scr_python_console.cpp`](../scr_python_console.cpp) | Script consoles embedded in `render_gui`                         |
 | [`utl_settings.cpp`](../utl_settings.cpp)                                                               | User settings file path and I/O helpers                          |
+| [`utl_cad_file_info.h`](../utl_cad_file_info.h)                                                          | CAD/mesh file metadata for **File -> Import**                    |
