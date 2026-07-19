@@ -2578,84 +2578,8 @@ void GUI::shape_list_()
       m_view->ctx().UpdateCurrentViewer();
     };
 
-    // Column 0: tree arrow + name (first column so indent applies like imgui_demo Tables/Tree view)
+    // Columns 0-2: fixed actions on the left (no tree indent).
     ImGui::TableSetColumnIndex(0);
-    ImGui::AlignTextToFramePadding();
-
-    ImGuiTreeNodeFlags node_flags = ImGuiTreeNodeFlags_SpanAllColumns | ImGuiTreeNodeFlags_FramePadding |
-                                    ImGuiTreeNodeFlags_OpenOnArrow | ImGuiTreeNodeFlags_DrawLinesToNodes |
-                                    ImGuiTreeNodeFlags_NoTreePushOnOpen;
-    if (!has_children)
-      node_flags |= ImGuiTreeNodeFlags_Leaf;
-
-    if (row_selected)
-      node_flags |= ImGuiTreeNodeFlags_Selected;
-
-    bool open = true;
-    if (has_children)
-    {
-      const auto exp_it = m_shape_list_expanded.find(shape->get_id());
-      open              = (exp_it == m_shape_list_expanded.end()) ? true : exp_it->second;
-      ImGui::SetNextItemOpen(open);
-    }
-
-    ImGui::SetNextItemAllowOverlap();
-    const bool node_open = ImGui::TreeNodeEx("##node", node_flags);
-    if (has_children && node_open != open)
-      m_shape_list_expanded[shape->get_id()] = node_open;
-
-    if (ImGui::IsItemClicked() && !ImGui::IsItemToggledOpen())
-      select_shape_row(shape);
-
-    row_hovered |= ImGui::IsItemHovered();
-    if (row_selected && ui_show_contextual_help() && ImGui::IsItemHovered())
-      ImGui::SetTooltip(is_current_group ? "Current group (new shapes go here)" : "Selected in 3D viewer");
-
-    if (ImGui::BeginDragDropSource(ImGuiDragDropFlags_SourceAllowNullID))
-    {
-      const Shape_id drag_id = shape->get_id();
-      ImGui::SetDragDropPayload("EZY_SHAPE_ID", &drag_id, sizeof(drag_id));
-      ImGui::TextUnformatted(shape->get_name().c_str());
-      ImGui::EndDragDropSource();
-    }
-
-    if (ImGui::BeginDragDropTarget())
-    {
-      if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("EZY_SHAPE_ID"))
-      {
-        Shape_id drag_id = 0;
-        std::memcpy(&drag_id, payload->Data, sizeof(drag_id));
-        const Shape_id new_parent = is_group ? shape->get_id() : shape->get_parent_id();
-        (void)m_view->reparent_shape(drag_id, new_parent, -1, true);
-      }
-      ImGui::EndDragDropTarget();
-    }
-
-    ImGui::SameLine();
-    ImGui::SetNextItemWidth(-FLT_MIN);
-    if (ImGui::InputText("##name", name_buffer, sizeof(name_buffer)))
-      shape->set_name(std::string(name_buffer));
-
-    if (ImGui::IsItemClicked())
-      select_shape_row(shape);
-
-    row_hovered |= ImGui::IsItemHovered();
-    if (ImGui::BeginPopupContextItem("shape_name_ctx"))
-    {
-      if (!is_group && ImGui::MenuItem("Shape info..."))
-        open_shape_info_(shape);
-
-      if (is_group && ImGui::MenuItem("Ungroup"))
-        shape_to_ungroup_id = shape->get_id();
-
-      if (ImGui::MenuItem("Delete"))
-        shape_to_delete = shape;
-
-      ImGui::EndPopup();
-    }
-
-    // Column 1: visibility
-    ImGui::TableSetColumnIndex(1);
     bool visible = shape->get_visible();
     if (ImGui::Checkbox("##vis", &visible))
     {
@@ -2669,8 +2593,7 @@ void GUI::shape_list_()
     if (ui_show_contextual_help() && ImGui::IsItemHovered())
       ImGui::SetTooltip(is_group ? "Show/hide group subtree" : "visibility");
 
-    // Column 2: solid/wire (leaves only)
-    ImGui::TableSetColumnIndex(2);
+    ImGui::TableSetColumnIndex(1);
     if (is_group)
       ImGui::TextUnformatted("");
     else
@@ -2684,8 +2607,7 @@ void GUI::shape_list_()
         ImGui::SetTooltip("solid/wire");
     }
 
-    // Column 3: material (leaves only)
-    ImGui::TableSetColumnIndex(3);
+    ImGui::TableSetColumnIndex(2);
     if (is_group)
       ImGui::TextUnformatted("");
     else
@@ -2733,6 +2655,81 @@ void GUI::shape_list_()
       }
     }
 
+    // Column 3: tree arrow + name (indent applies here so hierarchy stays under the name).
+    ImGui::TableSetColumnIndex(3);
+    ImGui::AlignTextToFramePadding();
+
+    ImGuiTreeNodeFlags node_flags = ImGuiTreeNodeFlags_FramePadding | ImGuiTreeNodeFlags_OpenOnArrow |
+                                    ImGuiTreeNodeFlags_DrawLinesToNodes | ImGuiTreeNodeFlags_NoTreePushOnOpen;
+    if (!has_children)
+      node_flags |= ImGuiTreeNodeFlags_Leaf;
+
+    if (row_selected)
+      node_flags |= ImGuiTreeNodeFlags_Selected;
+
+    bool open = true;
+    if (has_children)
+    {
+      const auto exp_it = m_shape_list_expanded.find(shape->get_id());
+      open              = (exp_it == m_shape_list_expanded.end()) ? true : exp_it->second;
+      ImGui::SetNextItemOpen(open);
+    }
+
+    ImGui::SetNextItemAllowOverlap();
+    const bool node_open = ImGui::TreeNodeEx("##node", node_flags);
+    if (has_children && node_open != open)
+      m_shape_list_expanded[shape->get_id()] = node_open;
+
+    if (ImGui::IsItemClicked() && !ImGui::IsItemToggledOpen())
+      select_shape_row(shape);
+
+    row_hovered |= ImGui::IsItemHovered();
+    if (row_selected && ui_show_contextual_help() && ImGui::IsItemHovered())
+      ImGui::SetTooltip(is_current_group ? "Current group (new shapes go here)" : "Selected in 3D viewer");
+
+    if (ImGui::BeginDragDropSource(ImGuiDragDropFlags_SourceAllowNullID))
+    {
+      const Shape_id drag_id = shape->get_id();
+      ImGui::SetDragDropPayload("EZY_SHAPE_ID", &drag_id, sizeof(drag_id));
+      ImGui::TextUnformatted(shape->get_name().c_str());
+      ImGui::EndDragDropSource();
+    }
+
+    if (ImGui::BeginDragDropTarget())
+    {
+      if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("EZY_SHAPE_ID"))
+      {
+        Shape_id drag_id = 0;
+        std::memcpy(&drag_id, payload->Data, sizeof(drag_id));
+        const Shape_id new_parent = is_group ? shape->get_id() : shape->get_parent_id();
+        (void)m_view->reparent_shape(drag_id, new_parent, -1, true);
+      }
+      ImGui::EndDragDropTarget();
+    }
+
+    ImGui::SameLine();
+    ImGui::SetNextItemWidth(std::max(1.0f, ImGui::GetContentRegionAvail().x));
+    if (ImGui::InputText("##name", name_buffer, sizeof(name_buffer)))
+      shape->set_name(std::string(name_buffer));
+
+    if (ImGui::IsItemClicked())
+      select_shape_row(shape);
+
+    row_hovered |= ImGui::IsItemHovered();
+    if (ImGui::BeginPopupContextItem("shape_name_ctx"))
+    {
+      if (!is_group && ImGui::MenuItem("Shape info..."))
+        open_shape_info_(shape);
+
+      if (is_group && ImGui::MenuItem("Ungroup"))
+        shape_to_ungroup_id = shape->get_id();
+
+      if (ImGui::MenuItem("Delete"))
+        shape_to_delete = shape;
+
+      ImGui::EndPopup();
+    }
+
     if (row_hovered && shape->get_visible() && !is_group)
       shape_list_hover = shape;
 
@@ -2748,13 +2745,20 @@ void GUI::shape_list_()
   };
 
   const ImGuiTableFlags table_flags =
-      ImGuiTableFlags_ScrollY | ImGuiTableFlags_RowBg | ImGuiTableFlags_NoBordersInBody | ImGuiTableFlags_SizingStretchProp;
+      ImGuiTableFlags_ScrollY | ImGuiTableFlags_RowBg | ImGuiTableFlags_NoBordersInBody | ImGuiTableFlags_SizingFixedFit;
   if (ImGui::BeginTable("##shape_outliner", 4, table_flags, ImVec2(0.f, 0.f)))
   {
-    ImGui::TableSetupColumn("name", ImGuiTableColumnFlags_WidthStretch);
-    ImGui::TableSetupColumn("vis", ImGuiTableColumnFlags_WidthFixed, check_col_w);
-    ImGui::TableSetupColumn("disp", ImGuiTableColumnFlags_WidthFixed, check_col_w);
-    ImGui::TableSetupColumn("mat", ImGuiTableColumnFlags_WidthFixed, mat_col_w);
+    // Fixed actions on the left; stretch name on the right (tree indent on name only).
+    ImGui::TableSetupColumn("vis", ImGuiTableColumnFlags_WidthFixed | ImGuiTableColumnFlags_NoResize |
+                                       ImGuiTableColumnFlags_IndentDisable,
+                            check_col_w);
+    ImGui::TableSetupColumn("disp", ImGuiTableColumnFlags_WidthFixed | ImGuiTableColumnFlags_NoResize |
+                                        ImGuiTableColumnFlags_IndentDisable,
+                            check_col_w);
+    ImGui::TableSetupColumn("mat", ImGuiTableColumnFlags_WidthFixed | ImGuiTableColumnFlags_NoResize |
+                                       ImGuiTableColumnFlags_IndentDisable,
+                            mat_col_w);
+    ImGui::TableSetupColumn("name", ImGuiTableColumnFlags_WidthStretch | ImGuiTableColumnFlags_IndentEnable, 1.0f);
 
     ImGui::PushStyleVar(ImGuiStyleVar_FramePadding,
                         ImVec2(st_mat.FramePadding.x, std::max(1.0f, st_mat.FramePadding.y * 0.65f)));
