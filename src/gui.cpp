@@ -2696,7 +2696,7 @@ void GUI::shape_list_()
     }
 
     // Drop onto group -> that group; onto solid -> solid's parent. Register on both the
-    // tree arrow and the name field — the name covers most of the row.
+    // tree arrow and the name field - the name covers most of the row.
     auto accept_reparent_drop = [&]()
     {
       if (!ImGui::BeginDragDropTarget())
