@@ -108,7 +108,7 @@ There is no single `Shape` coordinator class; **`Occt_view` is the hub** and exp
 ```cpp
 class Shp : public AIS_Shape {
   Shp(AIS_InteractiveContext& ctx, const TopoDS_Shape& shp);
-  static handle create_group(...); // organizational node; not displayed
+  static Shp_ptr create_group(...); // organizational node; not displayed
   // name, display mode, visibility preference, parent_id, sibling_order, is_group
   void apply_context_shown(bool); // Erase/Display without changing get_visible()
 };

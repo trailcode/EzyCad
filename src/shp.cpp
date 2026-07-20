@@ -17,11 +17,11 @@ Shp::Shp(AIS_InteractiveContext& ctx, const TopoDS_Shape& shp)
 
 Shp::~Shp() {}
 
-opencascade::handle<Shp> Shp::create_group(AIS_InteractiveContext& ctx, const std::string& name)
+Shp_ptr Shp::create_group(AIS_InteractiveContext& ctx, const std::string& name)
 {
   TopoDS_Compound comp;
   BRep_Builder().MakeCompound(comp);
-  opencascade::handle<Shp> grp = new Shp(ctx, comp);
+  Shp_ptr grp = new Shp(ctx, comp);
   grp->m_is_group = true;
   grp->set_name(name);
   grp->m_visible  = true;

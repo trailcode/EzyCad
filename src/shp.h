@@ -10,13 +10,16 @@ class AIS_InteractiveContext;
 
 using Shape_id = uint64_t;
 
+class Shp;
+using Shp_ptr = opencascade::handle<Shp>;
+
 /// Document shape or organizational group (group nodes have no viewer display).
 class Shp : public AIS_Shape
 {
 public:
   Shp(AIS_InteractiveContext& ctx, const TopoDS_Shape& shp);
   /// Organizational group (empty compound geometry; never displayed).
-  static opencascade::handle<Shp> create_group(AIS_InteractiveContext& ctx, const std::string& name);
+  static Shp_ptr create_group(AIS_InteractiveContext& ctx, const std::string& name);
   virtual ~Shp();
 
   Shape_id           get_id() const;
@@ -63,5 +66,4 @@ protected:
   int                     m_sibling_order{0};
 };
 
-using Shp_ptr  = opencascade::handle<Shp>;
 using Shp_rslt = Result<Shp_ptr>;
