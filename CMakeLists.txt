@@ -840,3 +840,5 @@ if(EXISTS ${GITIGNORE_FILE})
     target_sources(${PROJECT_NAME} PRIVATE ${GITIGNORE_FILE})
     set_source_files_properties(${GITIGNORE_FILE} PROPERTIES HEADER_FILE_ONLY TRUE)
 endif()
+
+
