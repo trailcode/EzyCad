@@ -1,6 +1,8 @@
 #include "shp.h"
 
 #include <AIS_InteractiveContext.hxx>
+#include <BRep_Builder.hxx>
+#include <TopoDS_Compound.hxx>
 
 Shp::Shp(AIS_InteractiveContext& ctx, const TopoDS_Shape& shp)
     : AIS_Shape(shp)
@@ -15,6 +17,17 @@ Shp::Shp(AIS_InteractiveContext& ctx, const TopoDS_Shape& shp)
 
 Shp::~Shp() {}
 
+Shp_ptr Shp::create_group(AIS_InteractiveContext& ctx, const std::string& name)
+{
+  TopoDS_Compound comp;
+  BRep_Builder().MakeCompound(comp);
+  Shp_ptr grp = new Shp(ctx, comp);
+  grp->m_is_group = true;
+  grp->set_name(name);
+  grp->m_visible  = true;
+  return grp;
+}
+
 Shape_id Shp::get_id() const { return m_id; }
 
 void Shp::set_id(Shape_id id) { m_id = id; }
@@ -28,7 +41,8 @@ AIS_DisplayMode Shp::get_disp_mode() const { return m_disp_mode; }
 void Shp::set_disp_mode(const AIS_DisplayMode mode)
 {
   m_disp_mode = mode;
-  update_display_();
+  if (!m_is_group)
+    update_display_();
 }
 
 bool Shp::get_visible() const { return m_visible; }
@@ -39,10 +53,13 @@ void Shp::set_visible(const bool visible)
     return;
 
   m_visible = visible;
+  if (m_is_group)
+    return;
+
+  // Immediate context update for leaf solids when no overlay is applied by the view.
+  // Occt_view::sync_sketch_shape_faint_style() recomputes effective visibility afterward.
   if (visible)
-  {
     redisplay_();
-  }
   else
   {
     m_ctx.Unhilight(this, false);
@@ -50,14 +67,32 @@ void Shp::set_visible(const bool visible)
   }
 }
 
+void Shp::apply_context_shown(bool shown)
+{
+  if (m_is_group)
+    return;
+
+  if (shown)
+    redisplay_();
+  else
+  {
+    m_ctx.Unhilight(this, false);
+    m_ctx.Erase(this, false);
+  }
+}
+
 void Shp::set_selection_mode(const TopAbs_ShapeEnum mode)
 {
   m_selection_mode = mode;
-  update_display_();
+  if (!m_is_group)
+    update_display_();
 }
 
 void Shp::set_sketch_faint(bool enabled, AIS_DisplayMode faint_mode, float transparency)
 {
+  if (m_is_group)
+    return;
+
   m_sketch_faint_active = enabled;
   m_faint_disp_mode     = faint_mode;
   SetTransparency(enabled ? static_cast<double>(transparency) : 0.0);
@@ -71,6 +106,9 @@ AIS_DisplayMode Shp::effective_disp_mode_() const
 
 void Shp::redisplay_()
 {
+  if (m_is_group)
+    return;
+
   m_ctx.Unhilight(this, false);
   // Faint sketch-mode shapes are display-only (no pick/hover highlight).
   if (m_sketch_faint_active)
@@ -87,7 +125,7 @@ void Shp::redisplay_()
 
 void Shp::update_display_()
 {
-  if (!get_visible())
+  if (m_is_group || !get_visible())
     return;
 
   // Required to update selection mode in some cases.

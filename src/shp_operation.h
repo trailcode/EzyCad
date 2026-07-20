@@ -19,6 +19,9 @@ protected:
   AIS_InteractiveContext& ctx();
 
   std::vector<Shp_ptr> get_selected_shps_() const;
+  /// Parent id for new shapes from multi-selection (see Occt_view::result_parent_id).
+  Shape_id result_parent_from_operands_() const;
+  void     assign_result_parent_(Shp_ptr& result, const std::vector<Shp_ptr>& operands);
   [[nodiscard]] Status ensure_operation_shps_();
   [[nodiscard]] Status ensure_operation_multi_shps_();
   void                 delete_operation_shps_();
@@ -30,7 +33,7 @@ protected:
   const TopoDS_Wire* get_wire_(const ScreenCoords& screen_coords) const;
   const TopoDS_Edge* get_edge_(const ScreenCoords& screen_coords) const;
 
-  void add_shp_(Shp_ptr& shp);
+  void add_shp_(Shp_ptr& shp, bool use_current_group = false);
 
   /// Remove \a old_shp from the viewer and register \a new_shp (fillet/chamfer in-place replace).
   void replace_picked_shape_(Shp_ptr& old_shp, Shp_ptr& new_shp, const std::string& name);

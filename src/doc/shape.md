@@ -31,9 +31,12 @@ Typical uses:
 ### Lifetime and ownership
 
 - Shapes are stored in `Occt_view::m_shps` (`std::list<Shp_ptr>`). Access via `get_shapes()` or internal `add_shp_()`.
-- `Shp_ptr` is `opencascade::handle<Shp>`. New shapes are allocated with `new Shp(ctx(), topo_shape)` then registered through `Occt_view::add_shp_()`.
+- `Shp_ptr` is `opencascade::handle<Shp>`. New shapes are allocated with `new Shp(ctx(), topo_shape)` then registered through `Occt_view::add_shp_()`. Groups use `Shp::create_group` (empty compound, never displayed).
+- Hierarchy: `parent_id` (0 = root) + `sibling_order`. Organizational groups only (no transform inheritance). Helpers: `shape_children`, `shape_descendant_solids`, `group_shapes`, `ungroup_shape`, `reparent_shape`, `would_reparent_create_cycle`.
+- **Current group** (`Occt_view::current_group_id`, 0 = root): Shape List click sets it; empty groups are valid. Primitives / extrude / revolve / PLY / unioned STEP import call `add_shp_(..., use_current_group=true)` so new solids land under that group. Booleans keep `assign_result_parent_`.
 - `Shp_operation_base` is a **`friend` of `Occt_view`** so operations can call `add_shp_()`, read selection, and use pick helpers without exposing those on the public view API.
 - **`Occt_view&` must outlive** all `Shp_*` operation objects (they are member subobjects of the view).
+- Boolean/polar results call `assign_result_parent_` so the new solid shares the inputs' parent when all match; otherwise root (`parent_id` 0).
 
 ### Adding a shape to the document
 
@@ -105,11 +108,15 @@ There is no single `Shape` coordinator class; **`Occt_view` is the hub** and exp
 ```cpp
 class Shp : public AIS_Shape {
   Shp(AIS_InteractiveContext& ctx, const TopoDS_Shape& shp);
-  // name, display mode (shaded/wire), visibility, selection mode (TopAbs_ShapeEnum)
+  static Shp_ptr create_group(...); // organizational node; not displayed
+  // name, display mode, visibility preference, parent_id, sibling_order, is_group
+  void apply_context_shown(bool); // Erase/Display without changing get_visible()
 };
 ```
 
-`set_visible(false)` erases from context; `true` re-displays with the effective display mode (user `m_disp_mode`, or sketch-mode faint override) and selection mode. `set_sketch_faint` toggles a temporary ghost/wire override without changing `get_disp_mode()`; while faint is active the shape is display-only (not selectable, so hover/selection highlight does not apply). `update_display_()` re-binds selection after mode changes.
+`set_visible` stores the user preference. `Occt_view::sync_sketch_shape_faint_style` applies effective visibility (own flag, ancestor groups, Hide all overlay, sketch faint/hide) via `apply_context_shown` so Hide all does not stomp per-shape flags. `update_display_()` re-binds selection after mode changes.
+
+`.ezy` `shapes[]` entries include `id`, `name`, `parentId`, `order`, `visible`, and either `isGroup: true` or `material` + `geom`. Undo uses `Shape_rec` (same fields) plus `Shape_tree_delta` for reparent/group/ungroup.
 
 ## `Shp_operation_base`
 

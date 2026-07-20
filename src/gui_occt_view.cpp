@@ -8,6 +8,7 @@
 #include <BRepBndLib.hxx>
 #include <Bnd_Box.hxx>
 #include <BRepBuilderAPI_Transform.hxx>
+#include <BRepAlgoAPI_Fuse.hxx>
 #include <BRepMesh_IncrementalMesh.hxx>
 #include <BRepPrimAPI_MakePrism.hxx>
 #include <BRepTools.hxx>
@@ -33,7 +34,6 @@
 #include <Prs3d_LineAspect.hxx>
 #include <Prs3d_TypeOfHighlight.hxx>
 #include <PrsDim_LengthDimension.hxx>
-#include <STEPControl_Reader.hxx>
 #include <STEPControl_Writer.hxx>
 #include <StdSelect_BRepOwner.hxx>
 #include <StlAPI_Writer.hxx>
@@ -66,6 +66,7 @@
 #include "utl.h"
 #include "utl_json.h"
 #include "utl_occt.h"
+#include "utl_cad_file_info.h"
 
 #ifdef __EMSCRIPTEN__
 #include <emscripten.h>
@@ -587,7 +588,7 @@ void Occt_view::revolve_selected(const double angle)
   Shp_rslt revolved = curr_sketch().revolve_selected(angle);
   if (revolved.has_value())
   {
-    add_shp_(*revolved);
+    add_shp_(*revolved, true);
     push_undo_delta(std::make_unique<Shape_add_delta>(std::vector<Shape_rec>{capture_shape_rec(**revolved)}));
     // Leave sketch mode so the new solid is shown at full strength (sketch tools use faint/hide).
     gui().set_mode(Mode::Normal);
@@ -939,18 +940,60 @@ void Occt_view::refresh_shape_shading_(const Shp_ptr& shp)
 #endif
 }
 
-void Occt_view::add_shp_(Shp_ptr& shp)
+void Occt_view::add_shp_(Shp_ptr& shp, bool use_current_group)
 {
   if (shp->get_id() == 0)
     shp->set_id(allocate_shape_id());
 
-  shp->SetMaterial(m_default_material);
-  refresh_shape_shading_(shp);
-  shp->set_selection_mode(m_shp_selection_mode);
-  m_ctx->Redisplay(shp, true);
-  m_ctx->UpdateCurrentViewer();
+  if (use_current_group && !shp->is_group() && shp->get_parent_id() == 0)
+  {
+    ensure_current_group_valid_();
+    if (m_current_group_id != 0)
+    {
+      shp->set_parent_id(m_current_group_id);
+      shp->set_sibling_order(next_sibling_order(m_current_group_id));
+    }
+  }
+
+  if (!shp->is_group())
+  {
+    shp->SetMaterial(m_default_material);
+    refresh_shape_shading_(shp);
+    shp->set_selection_mode(m_shp_selection_mode);
+    m_ctx->Redisplay(shp, true);
+    m_ctx->UpdateCurrentViewer();
+  }
+
   m_shps.push_back(shp);
   sync_sketch_shape_faint_style();
+}
+
+void Occt_view::ensure_current_group_valid_()
+{
+  if (m_current_group_id == 0)
+    return;
+
+  Shp_ptr g = find_shape_by_id(m_current_group_id);
+  if (g.IsNull() || !g->is_group())
+    m_current_group_id = 0;
+}
+
+void Occt_view::set_current_group_id(Shape_id id)
+{
+  if (id == 0)
+  {
+    m_current_group_id = 0;
+    return;
+  }
+
+  Shp_ptr g = find_shape_by_id(id);
+  if (g.IsNull() || !g->is_group())
+  {
+    m_current_group_id = 0;
+    return;
+  }
+
+  m_current_group_id = id;
 }
 
 Shape_id Occt_view::allocate_shape_id() { return m_next_shape_id++; }
@@ -970,25 +1013,318 @@ Shp_ptr Occt_view::find_shape_by_id(Shape_id id) const
   return Shp_ptr();
 }
 
+int Occt_view::next_sibling_order(Shape_id parent_id) const
+{
+  int max_order = -1;
+  for (const Shp_ptr& s : m_shps)
+  {
+    if (s.IsNull() || s->get_parent_id() != parent_id)
+      continue;
+
+    max_order = std::max(max_order, s->get_sibling_order());
+  }
+  return max_order + 1;
+}
+
+bool Occt_view::would_reparent_create_cycle(Shape_id id, Shape_id new_parent) const
+{
+  if (new_parent == 0)
+    return false;
+
+  if (new_parent == id)
+    return true;
+
+  Shape_id walk = new_parent;
+  while (walk != 0)
+  {
+    if (walk == id)
+      return true;
+
+    Shp_ptr p = find_shape_by_id(walk);
+    if (p.IsNull())
+      break;
+
+    walk = p->get_parent_id();
+  }
+  return false;
+}
+
+std::vector<Shp_ptr> Occt_view::shape_children(Shape_id parent_id) const
+{
+  std::vector<Shp_ptr> kids;
+  for (const Shp_ptr& s : m_shps)
+    if (!s.IsNull() && s->get_parent_id() == parent_id)
+      kids.push_back(s);
+
+  std::sort(kids.begin(), kids.end(), [](const Shp_ptr& a, const Shp_ptr& b)
+            {
+              if (a->get_sibling_order() != b->get_sibling_order())
+                return a->get_sibling_order() < b->get_sibling_order();
+              return a->get_id() < b->get_id();
+            });
+  return kids;
+}
+
+std::vector<Shp_ptr> Occt_view::shape_descendant_solids(Shape_id id) const
+{
+  std::vector<Shp_ptr> out;
+  Shp_ptr              root = find_shape_by_id(id);
+  if (root.IsNull())
+    return out;
+
+  std::vector<Shp_ptr> stack = {root};
+  while (!stack.empty())
+  {
+    Shp_ptr n = stack.back();
+    stack.pop_back();
+    if (n.IsNull())
+      continue;
+
+    if (!n->is_group())
+    {
+      out.push_back(n);
+      continue;
+    }
+
+    for (const Shp_ptr& c : shape_children(n->get_id()))
+      stack.push_back(c);
+  }
+  return out;
+}
+
+bool Occt_view::shape_ancestors_visible(const Shp& shp) const
+{
+  Shape_id walk = shp.get_parent_id();
+  while (walk != 0)
+  {
+    Shp_ptr p = find_shape_by_id(walk);
+    if (p.IsNull())
+      break;
+
+    if (!p->get_visible())
+      return false;
+
+    walk = p->get_parent_id();
+  }
+  return true;
+}
+
+Shape_id Occt_view::result_parent_id(const std::vector<Shp_ptr>& operands)
+{
+  if (operands.empty() || operands[0].IsNull())
+    return 0;
+
+  const Shape_id primary = operands[0]->get_parent_id();
+  for (size_t i = 1; i < operands.size(); ++i)
+  {
+    if (operands[i].IsNull())
+      continue;
+
+    if (operands[i]->get_parent_id() != primary)
+      return 0;
+  }
+  return primary;
+}
+
+void Occt_view::apply_shape_link(Shape_id id, Shape_id parent_id, int sibling_order)
+{
+  Shp_ptr shp = find_shape_by_id(id);
+  if (shp.IsNull())
+    return;
+
+  shp->set_parent_id(parent_id);
+  shp->set_sibling_order(sibling_order);
+}
+
+Shp_ptr Occt_view::create_group(const std::string& name, Shape_id parent_id)
+{
+  Shp_ptr grp = Shp::create_group(*m_ctx, get_unique_shape_name(name.c_str()));
+  grp->set_parent_id(parent_id);
+  grp->set_sibling_order(next_sibling_order(parent_id));
+  add_shp_(grp);
+  push_undo_delta(std::make_unique<Shape_add_delta>(std::vector<Shape_rec>{capture_shape_rec(*grp)}));
+  return grp;
+}
+
+Status Occt_view::group_shapes(const std::vector<Shp_ptr>& nodes)
+{
+  std::vector<Shp_ptr> to_group;
+  to_group.reserve(nodes.size());
+  for (const Shp_ptr& n : nodes)
+    if (!n.IsNull())
+      to_group.push_back(n);
+
+  if (to_group.empty())
+    return Status::user_error("Select one or more shapes to group.");
+
+  Shape_id parent = to_group[0]->get_parent_id();
+  for (size_t i = 1; i < to_group.size(); ++i)
+    if (to_group[i]->get_parent_id() != parent)
+    {
+      parent = 0;
+      break;
+    }
+
+  Shp_ptr grp = Shp::create_group(*m_ctx, get_unique_shape_name("Group"));
+  grp->set_id(allocate_shape_id());
+  grp->set_parent_id(parent);
+  grp->set_sibling_order(next_sibling_order(parent));
+
+  std::vector<Shape_tree_delta::Link_change> links;
+  links.reserve(to_group.size());
+  int order = 0;
+  for (const Shp_ptr& n : to_group)
+  {
+    if (would_reparent_create_cycle(n->get_id(), grp->get_id()))
+      return Status::user_error("Cannot group: would create a cycle.");
+
+    Shape_tree_delta::Link_change ch;
+    ch.id         = n->get_id();
+    ch.old_parent = n->get_parent_id();
+    ch.old_order  = n->get_sibling_order();
+    ch.new_parent = grp->get_id();
+    ch.new_order  = order++;
+    links.push_back(ch);
+  }
+
+  m_shps.push_back(grp);
+  for (const Shape_tree_delta::Link_change& ch : links)
+    apply_shape_link(ch.id, ch.new_parent, ch.new_order);
+
+  m_current_group_id = grp->get_id();
+  push_undo_delta(std::make_unique<Shape_tree_delta>(std::vector<Shape_rec>{capture_shape_rec(*grp)},
+                                                     std::vector<Shape_rec>{}, std::move(links)));
+  sync_sketch_shape_faint_style();
+  return Status::ok();
+}
+
+Status Occt_view::ungroup_shape(Shape_id group_id)
+{
+  Shp_ptr grp = find_shape_by_id(group_id);
+  if (grp.IsNull() || !grp->is_group())
+    return Status::user_error("Ungroup requires a group.");
+
+  const Shape_id parent = grp->get_parent_id();
+
+  // Snapshot every direct child id up front (all must move one level up).
+  std::vector<Shape_id> kid_ids;
+  kid_ids.reserve(m_shps.size());
+  for (const Shp_ptr& s : m_shps)
+    if (!s.IsNull() && s->get_id() != group_id && s->get_parent_id() == group_id)
+      kid_ids.push_back(s->get_id());
+
+  std::vector<Shape_tree_delta::Link_change> links;
+  links.reserve(kid_ids.size());
+  int order = next_sibling_order(parent);
+  for (Shape_id kid_id : kid_ids)
+  {
+    Shp_ptr c = find_shape_by_id(kid_id);
+    if (c.IsNull())
+      continue;
+
+    Shape_tree_delta::Link_change ch;
+    ch.id         = kid_id;
+    ch.old_parent = c->get_parent_id();
+    ch.old_order  = c->get_sibling_order();
+    ch.new_parent = parent;
+    ch.new_order  = order++;
+    links.push_back(ch);
+    apply_shape_link(ch.id, ch.new_parent, ch.new_order);
+  }
+
+  // Belt-and-suspenders: nothing may keep pointing at the removed group.
+  for (const Shp_ptr& s : m_shps)
+  {
+    if (s.IsNull() || s->get_id() == group_id || s->get_parent_id() != group_id)
+      continue;
+
+    Shape_tree_delta::Link_change ch;
+    ch.id         = s->get_id();
+    ch.old_parent = group_id;
+    ch.old_order  = s->get_sibling_order();
+    ch.new_parent = parent;
+    ch.new_order  = order++;
+    links.push_back(ch);
+    apply_shape_link(ch.id, ch.new_parent, ch.new_order);
+  }
+
+  Shape_rec removed = capture_shape_rec(*grp);
+  remove_shape_by_id(group_id);
+  if (m_current_group_id == group_id)
+    m_current_group_id = parent;
+
+  push_undo_delta(std::make_unique<Shape_tree_delta>(std::vector<Shape_rec>{}, std::vector<Shape_rec>{std::move(removed)},
+                                                     std::move(links)));
+  sync_sketch_shape_faint_style();
+  return Status::ok();
+}
+
+Status Occt_view::reparent_shape(Shape_id id, Shape_id new_parent, int sibling_order, bool push_undo)
+{
+  Shp_ptr shp = find_shape_by_id(id);
+  if (shp.IsNull())
+    return Status::user_error("Shape not found.");
+
+  if (new_parent != 0)
+  {
+    Shp_ptr p = find_shape_by_id(new_parent);
+    if (p.IsNull() || !p->is_group())
+      return Status::user_error("Parent must be a group (or root).");
+  }
+
+  if (would_reparent_create_cycle(id, new_parent))
+    return Status::user_error("Cannot reparent: would create a cycle.");
+
+  const int new_order = (sibling_order < 0) ? next_sibling_order(new_parent) : sibling_order;
+
+  Shape_tree_delta::Link_change ch;
+  ch.id         = id;
+  ch.old_parent = shp->get_parent_id();
+  ch.old_order  = shp->get_sibling_order();
+  ch.new_parent = new_parent;
+  ch.new_order  = new_order;
+
+  if (ch.old_parent == ch.new_parent && ch.old_order == ch.new_order)
+    return Status::ok();
+
+  apply_shape_link(id, new_parent, new_order);
+  if (push_undo)
+    push_undo_delta(std::make_unique<Shape_tree_delta>(std::vector<Shape_rec>{}, std::vector<Shape_rec>{},
+                                                       std::vector<Shape_tree_delta::Link_change>{ch}));
+  sync_sketch_shape_faint_style();
+  return Status::ok();
+}
+
 void Occt_view::insert_shape_rec(const Shape_rec& rec)
 {
-  Shp_ptr shp = new Shp(*m_ctx, rec.geom);
+  Shp_ptr shp;
+  if (rec.is_group)
+  {
+    shp = Shp::create_group(*m_ctx, rec.name);
+  }
+  else
+  {
+    shp = new Shp(*m_ctx, rec.geom);
+    const int nmat    = Graphic3d_MaterialAspect::NumberOfMaterials();
+    int       mat_idx = rec.material;
+    if (mat_idx < 0 || mat_idx >= nmat)
+      mat_idx = static_cast<int>(m_default_material.Name());
+
+    shp->SetMaterial(Graphic3d_MaterialAspect(static_cast<Graphic3d_NameOfMaterial>(mat_idx)));
+    refresh_shape_shading_(shp);
+    shp->set_selection_mode(m_shp_selection_mode);
+  }
+
   shp->set_id(rec.id);
   adopt_shape_id(rec.id);
   shp->set_name(rec.name);
+  shp->set_parent_id(rec.parent_id);
+  shp->set_sibling_order(rec.sibling_order);
+  // Prefer writing the flag without relying on Display order; sync applies context.
+  if (shp->get_visible() != rec.visible)
+    shp->set_visible(rec.visible);
 
-  const int nmat    = Graphic3d_MaterialAspect::NumberOfMaterials();
-  int       mat_idx = rec.material;
-  if (mat_idx < 0 || mat_idx >= nmat)
-    mat_idx = static_cast<int>(m_default_material.Name());
-
-  shp->SetMaterial(Graphic3d_MaterialAspect(static_cast<Graphic3d_NameOfMaterial>(mat_idx)));
-  refresh_shape_shading_(shp);
-  shp->set_selection_mode(m_shp_selection_mode);
   m_shps.push_back(shp);
-  m_ctx->Display(shp, shp->get_disp_mode(), AIS_Shape::SelectionMode(m_shp_selection_mode), true);
-  m_ctx->Redisplay(shp, true);
-  m_ctx->UpdateCurrentViewer();
   sync_sketch_shape_faint_style();
 }
 
@@ -1003,8 +1339,11 @@ void Occt_view::remove_shape_by_id(Shape_id id)
     if (m_shape_list_hover == shp)
       set_shape_list_hover(nullptr);
 
-    m_ctx->Remove(shp, false);
+    if (!shp->is_group())
+      m_ctx->Remove(shp, false);
+
     m_shps.erase(it);
+    ensure_current_group_valid_();
     m_ctx->UpdateCurrentViewer();
     return;
   }
@@ -1092,7 +1431,7 @@ void Occt_view::add_box(double ox, double oy, double oz, double width, double le
   TopoDS_Shape box = shp_create::create_box(ox, oy, oz, width, length, height);
   Shp_ptr      shp = new Shp(*m_ctx, box);
   shp->set_name(unique_shape_name_("Box"));
-  add_shp_(shp);
+  add_shp_(shp, true);
   m_ctx->Display(shp, shp->get_disp_mode(), AIS_Shape::SelectionMode(m_shp_selection_mode), true);
   m_view->Redraw();
   push_undo_delta(std::make_unique<Shape_add_delta>(std::vector<Shape_rec>{capture_shape_rec(*shp)}));
@@ -1113,7 +1452,7 @@ void Occt_view::add_pyramid(double ox, double oy, double oz, double side)
     shp->SetLocalTransformation(trsf);
   }
 
-  add_shp_(shp);
+  add_shp_(shp, true);
   m_ctx->Display(shp, shp->get_disp_mode(), AIS_Shape::SelectionMode(m_shp_selection_mode), true);
   if (ox != 0 || oy != 0 || oz != 0)
   {
@@ -1137,7 +1476,7 @@ void Occt_view::add_sphere(double ox, double oy, double oz, double radius)
     shp->SetLocalTransformation(trsf);
   }
 
-  add_shp_(shp);
+  add_shp_(shp, true);
   m_ctx->Display(shp, shp->get_disp_mode(), AIS_Shape::SelectionMode(m_shp_selection_mode), true);
   if (ox != 0 || oy != 0 || oz != 0)
   {
@@ -1161,7 +1500,7 @@ void Occt_view::add_cylinder(double ox, double oy, double oz, double radius, dou
     shp->SetLocalTransformation(trsf);
   }
 
-  add_shp_(shp);
+  add_shp_(shp, true);
   m_ctx->Display(shp, shp->get_disp_mode(), AIS_Shape::SelectionMode(m_shp_selection_mode), true);
   if (ox != 0 || oy != 0 || oz != 0)
   {
@@ -1185,7 +1524,7 @@ void Occt_view::add_cone(double ox, double oy, double oz, double R1, double R2, 
     shp->SetLocalTransformation(trsf);
   }
 
-  add_shp_(shp);
+  add_shp_(shp, true);
   m_ctx->Display(shp, shp->get_disp_mode(), AIS_Shape::SelectionMode(m_shp_selection_mode), true);
   if (ox != 0 || oy != 0 || oz != 0)
   {
@@ -1209,7 +1548,7 @@ void Occt_view::add_torus(double ox, double oy, double oz, double R1, double R2)
     shp->SetLocalTransformation(trsf);
   }
 
-  add_shp_(shp);
+  add_shp_(shp, true);
   m_ctx->Display(shp, shp->get_disp_mode(), AIS_Shape::SelectionMode(m_shp_selection_mode), true);
   if (ox != 0 || oy != 0 || oz != 0)
   {
@@ -1381,6 +1720,39 @@ void Occt_view::delete_shapes(std::vector<AIS_Shape_ptr> to_delete)
   if (to_delete.empty())
     return;
 
+  // Cascade: deleting a group removes its entire subtree.
+  std::unordered_set<const AIS_Shape*> seen;
+  std::vector<AIS_Shape_ptr>           expanded;
+  for (const AIS_Shape_ptr& obj : to_delete)
+  {
+    if (obj.IsNull())
+      continue;
+
+    Shp_ptr shp = Shp_ptr::DownCast(obj);
+    if (shp.IsNull())
+    {
+      if (seen.insert(obj.get()).second)
+        expanded.push_back(obj);
+
+      continue;
+    }
+
+    std::vector<Shp_ptr> stack = {shp};
+    while (!stack.empty())
+    {
+      Shp_ptr cur = stack.back();
+      stack.pop_back();
+      if (cur.IsNull() || !seen.insert(cur.get()).second)
+        continue;
+
+      expanded.push_back(cur);
+      if (cur->is_group())
+        for (const Shp_ptr& c : shape_children(cur->get_id()))
+          stack.push_back(c);
+    }
+  }
+  to_delete = std::move(expanded);
+
   std::vector<Shape_rec> removed_shapes;
   bool                   has_non_shape = false;
   for (const AIS_Shape_ptr& obj : to_delete)
@@ -1437,6 +1809,8 @@ void Occt_view::delete_(std::vector<AIS_Shape_ptr>& to_delete)
       itr = m_shps.erase(itr);
     else
       ++itr;
+
+  ensure_current_group_valid_();
 
   for (const AIS_Shape_ptr& shp : to_delete)
     if (m_shape_list_hover == shp)
@@ -1955,7 +2329,7 @@ std::vector<Shp_ptr> Occt_view::get_selected_shps() const
   std::vector<Shp_ptr>           ret;
   std::unordered_set<const Shp*> seen;
   for (const AIS_Shape_ptr& obj : get_selected())
-    if (Shp_ptr shp = Shp_ptr::DownCast(obj); !shp.IsNull())
+    if (Shp_ptr shp = Shp_ptr::DownCast(obj); !shp.IsNull() && !shp->is_group())
       if (seen.insert(shp.get()).second)
         ret.push_back(shp);
 
@@ -2577,26 +2951,29 @@ void Occt_view::sync_sketch_shape_faint_style()
 
   for (Shp_ptr& shp : m_shps)
   {
-    if (shp.IsNull())
+    if (shp.IsNull() || shp->is_group())
       continue;
 
-    if (hide_all || !sketch || hide_in_sketch)
+    // Hide all / sketch-hide are overlays: do not write get_visible().
+    const bool own_ok      = shp->get_visible() && shape_ancestors_visible(*shp);
+    const bool hide_overlay = hide_all || (sketch && hide_in_sketch);
+    const bool show         = own_ok && !hide_overlay;
+
+    if (faint_active && show)
+    {
+      // Ghost (1) or Wire (2) while sketching; strength drives transparency for both.
+      if (style == 2)
+        shp->set_sketch_faint(true, AIS_WireFrame, transparency);
+      else
+        shp->set_sketch_faint(true, AIS_Shaded, transparency);
+
+      shp->apply_context_shown(true);
+    }
+    else
     {
       shp->set_sketch_faint(false, AIS_Shaded, 0.0f);
-      if (hide_all || (sketch && hide_in_sketch))
-        shp->set_visible(false);
-      else
-        shp->set_visible(true);
-      continue;
+      shp->apply_context_shown(show);
     }
-
-    // Ghost (1) or Wire (2) while sketching; strength drives transparency for both.
-    if (style == 2)
-      shp->set_sketch_faint(true, AIS_WireFrame, transparency);
-    else
-      shp->set_sketch_faint(true, AIS_Shaded, transparency);
-
-    shp->set_visible(true);
   }
 
   if (!m_ctx.IsNull())
@@ -2916,14 +3293,24 @@ std::string Occt_view::to_json() const
 
   for (const Shp_ptr& s : m_shps)
   {
-    const TopoDS_Shape& shape = s->Shape();
-    std::ostringstream  oss;
-    BRepTools::Write(shape, oss, false, false, TopTools_FormatVersion_CURRENT); // Write BREP data to the stream
     json shp_json;
     shp_json["id"]       = s->get_id();
     shp_json["name"]     = s->get_name();
-    shp_json["material"] = s->Material();
-    shp_json["geom"]     = oss.str();
+    shp_json["parentId"] = s->get_parent_id();
+    shp_json["order"]    = s->get_sibling_order();
+    shp_json["visible"]  = s->get_visible();
+    if (s->is_group())
+    {
+      shp_json["isGroup"] = true;
+    }
+    else
+    {
+      const TopoDS_Shape& shape = s->Shape();
+      std::ostringstream  oss;
+      BRepTools::Write(shape, oss, false, false, TopTools_FormatVersion_CURRENT);
+      shp_json["material"] = s->Material();
+      shp_json["geom"]     = oss.str();
+    }
     shps.push_back(shp_json);
   }
 
@@ -3000,11 +3387,31 @@ void Occt_view::load(const std::string& json_str, bool restore_view)
 
   for (const json& s : j["shapes"])
   {
-    TopoDS_Shape       shape;
-    std::istringstream iss;
-    iss.str(s["geom"]);
-    BRepTools::Read(shape, iss, BRep_Builder());
-    Shp_ptr shp = new Shp(*m_ctx, shape);
+    const bool is_group = s.contains("isGroup") && s["isGroup"].is_boolean() && s["isGroup"].get<bool>();
+    Shp_ptr    shp;
+    if (is_group)
+    {
+      shp = Shp::create_group(*m_ctx, s.value("name", "Group"));
+    }
+    else
+    {
+      TopoDS_Shape       shape;
+      std::istringstream iss;
+      iss.str(s["geom"]);
+      BRepTools::Read(shape, iss, BRep_Builder());
+      shp = new Shp(*m_ctx, shape);
+      int mat_idx = static_cast<int>(m_default_material.Name());
+      if (s.contains("material") && s["material"].is_number_integer())
+        mat_idx = s["material"].get<int>();
+
+      const int nmat = Graphic3d_MaterialAspect::NumberOfMaterials();
+      if (mat_idx < 0 || mat_idx >= nmat)
+        mat_idx = static_cast<int>(m_default_material.Name());
+
+      shp->SetMaterial(Graphic3d_MaterialAspect(static_cast<Graphic3d_NameOfMaterial>(mat_idx)));
+      refresh_shape_shading_(shp);
+    }
+
     if (s.contains("id") && s["id"].is_number_unsigned())
     {
       shp->set_id(s["id"].get<Shape_id>());
@@ -3013,21 +3420,23 @@ void Occt_view::load(const std::string& json_str, bool restore_view)
     else
       shp->set_id(allocate_shape_id());
 
-    shp->set_name(s["name"]);
-    int mat_idx = static_cast<int>(m_default_material.Name());
-    if (s.contains("material") && s["material"].is_number_integer())
-      mat_idx = s["material"].get<int>();
+    shp->set_name(s.value("name", shp->get_name()));
+    if (s.contains("parentId") && s["parentId"].is_number_unsigned())
+      shp->set_parent_id(s["parentId"].get<Shape_id>());
 
-    const int nmat = Graphic3d_MaterialAspect::NumberOfMaterials();
-    if (mat_idx < 0 || mat_idx >= nmat)
-      mat_idx = static_cast<int>(m_default_material.Name());
+    if (s.contains("order") && s["order"].is_number_integer())
+      shp->set_sibling_order(s["order"].get<int>());
 
-    shp->SetMaterial(Graphic3d_MaterialAspect(static_cast<Graphic3d_NameOfMaterial>(mat_idx)));
-    refresh_shape_shading_(shp);
+    if (s.contains("visible") && s["visible"].is_boolean())
+    {
+      const bool vis = s["visible"].get<bool>();
+      if (shp->get_visible() != vis)
+        shp->set_visible(vis);
+    }
+
     m_shps.push_back(shp);
-    m_ctx->Display(shp, shp->get_disp_mode(), 0, true);
-    m_ctx->Redisplay(shp, true);
   }
+  sync_sketch_shape_faint_style();
 
   // ---------------------------------------------------------------------------
   // Restore view / camera state if requested (e.g. File > Open; not for undo/redo).
@@ -3243,43 +3652,102 @@ Status Occt_view::export_document(Export_format fmt, Export_unit unit, const std
   return Status::user_error("Unknown export format.");
 }
 
-Status Occt_view::import_step(const std::string& step_data)
+Status Occt_view::import_step(const std::string& step_data, const bool union_shapes)
 {
-  // Force cascade mm so file SI / conversion units land in a known space before our inch scale.
-  Interface_Static::SetCVal("xstep.cascade.unit", "MM");
+  std::vector<utl_cad_file_info::Named_node> named;
+  if (Status st = utl_cad_file_info::read_step_named_tree(step_data, named); !st.is_ok())
+    return st;
 
-  STEPControl_Reader reader;
-  std::istringstream stream(step_data);
-
-  IFSelect_ReturnStatus read_st = reader.ReadStream("", stream);
-  if (read_st != IFSelect_RetDone)
-    return Status::user_error("STEP: could not read file (invalid or corrupt STEP data).");
-
-  if (reader.TransferRoots() == 0)
-    return Status::user_error("STEP: no geometry was transferred from the file.");
-
-  const double              to_model = step_import_to_model_scale_(get_dimension_scale());
-  const int                 num_shps = reader.NbShapes();
-  std::vector<TopoDS_Shape> to_add;
-  to_add.reserve(static_cast<size_t>(num_shps));
-  for (int i = 1; i <= num_shps; ++i)
+  const double to_model = step_import_to_model_scale_(get_dimension_scale());
+  for (utl_cad_file_info::Named_node& node : named)
   {
-    TopoDS_Shape shape = reader.Shape(i);
-    if (!shape.IsNull())
-      to_add.push_back(scale_shape_about_origin_(shape, to_model));
+    if (node.is_group || node.shape.IsNull())
+      continue;
+
+    node.shape = scale_shape_about_origin_(node.shape, to_model);
   }
 
-  if (to_add.empty())
+  bool any_leaf = false;
+  for (const utl_cad_file_info::Named_node& n : named)
+    if (!n.is_group && !n.shape.IsNull())
+    {
+      any_leaf = true;
+      break;
+    }
+
+  if (!any_leaf)
     return Status::user_error("STEP: no valid shapes in file.");
 
-  std::vector<Shape_rec> added;
-  added.reserve(to_add.size());
-  for (const TopoDS_Shape& shape : to_add)
+  if (union_shapes)
   {
-    Shp_ptr shp = new Shp(*m_ctx, shape);
+    TopoDS_Shape result;
+    bool         have = false;
+    for (utl_cad_file_info::Named_node& node : named)
+    {
+      if (node.is_group || node.shape.IsNull())
+        continue;
+
+      if (!have)
+      {
+        result = node.shape;
+        have   = true;
+        continue;
+      }
+
+      BRepAlgoAPI_Fuse fuse_op(result, node.shape);
+      if (!fuse_op.IsDone())
+        return Status::user_error("STEP: union of imported shapes failed.");
+
+      result = fuse_op.Shape();
+      if (result.IsNull())
+        return Status::user_error("STEP: union produced an empty shape.");
+    }
+
+    Shp_ptr shp = new Shp(*m_ctx, result);
+    shp->set_name(unique_shape_name_("Fused"));
+    add_shp_(shp, true);
+    push_undo_delta(std::make_unique<Shape_add_delta>(std::vector<Shape_rec>{capture_shape_rec(*shp)}));
+    return Status::ok();
+  }
+
+  std::vector<Shape_id> id_by_index(named.size(), 0);
+  std::vector<Shape_rec> added;
+  added.reserve(named.size());
+
+  for (size_t i = 0; i < named.size(); ++i)
+  {
+    utl_cad_file_info::Named_node& node = named[i];
+    Shape_id                       parent_id = 0;
+    if (node.parent_index >= 0 && static_cast<size_t>(node.parent_index) < id_by_index.size())
+      parent_id = id_by_index[static_cast<size_t>(node.parent_index)];
+
+    Shp_ptr shp;
+    if (node.is_group)
+    {
+      const char* base = node.name.empty() ? "Assembly" : node.name.c_str();
+      shp              = Shp::create_group(*m_ctx, unique_shape_name_(base));
+    }
+    else
+    {
+      if (node.shape.IsNull())
+        continue;
+
+      shp = new Shp(*m_ctx, node.shape);
+      if (!node.name.empty())
+        shp->set_name(unique_shape_name_(node.name.c_str()));
+      else
+        shp->set_name(unique_shape_name_("Shape"));
+    }
+
+    shp->set_parent_id(parent_id);
+    shp->set_sibling_order(next_sibling_order(parent_id));
     add_shp_(shp);
+    id_by_index[i] = shp->get_id();
     added.push_back(capture_shape_rec(*shp));
   }
+
+  if (added.empty())
+    return Status::user_error("STEP: no valid shapes in file.");
 
   push_undo_delta(std::make_unique<Shape_add_delta>(std::move(added)));
   return Status::ok();
@@ -3299,7 +3767,7 @@ bool Occt_view::import_ply(const std::string& ply_bytes)
   shape = scale_shape_about_origin_(shape, ply_import_to_model_scale_(get_dimension_scale()));
 
   Shp_ptr shp = new Shp(*m_ctx, shape);
-  add_shp_(shp);
+  add_shp_(shp, true);
   push_undo_delta(std::make_unique<Shape_add_delta>(std::vector<Shape_rec>{capture_shape_rec(*shp)}));
   return true;
 }
@@ -3317,6 +3785,7 @@ void Occt_view::new_file()
   m_assets.clear();
   m_next_sketch_id = 1;
   m_next_shape_id  = 1;
+  m_current_group_id = 0;
   m_project_unit   = m_gui.default_project_unit();
 
   create_default_sketch_();

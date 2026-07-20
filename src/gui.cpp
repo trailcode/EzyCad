@@ -5,6 +5,7 @@
 #include <cctype>
 #include <cerrno>
 #include <cmath>
+#include <cstdint>
 #include <cstdio>
 #include <cstdlib>
 #include <cstring>
@@ -35,6 +36,7 @@
 #include "shp_info.h"
 #include "skt.h"
 #include "utl.h"
+#include "utl_cad_file_info.h"
 #include "version.h"
 
 #include <Standard_Version.hxx>
@@ -145,6 +147,7 @@ void GUI::render_gui()
   sketch_properties_dialog_();
   shape_list_();
   shape_info_dialog_();
+  file_inspector_dialog_();
   options_();
   message_status_window_();
   error_modal_dialog_();
@@ -336,12 +339,6 @@ void GUI::menu_bar_()
     {
       if (ImGui::MenuItem("Import"))
         import_file_dialog_();
-
-      if (ImGui::MenuItem("Sketch underlay image..."))
-      {
-        m_underlay_import_sketch_target.reset();
-        sketch_underlay_import_dialog_();
-      }
     }
 
     if (ImGui::BeginMenu("Export"))
@@ -2444,14 +2441,6 @@ void GUI::shape_list_()
     return;
   }
 
-  float max_name_text_w = 0.f;
-  for (const Shp_ptr& s : m_view->get_shapes())
-  {
-    EZY_ASSERT(s);
-    const std::string& nm = s->get_name();
-    max_name_text_w       = std::max(max_name_text_w, ImGui::CalcTextSize(nm.c_str(), nm.c_str() + nm.size()).x);
-  }
-
   if (!ImGui::Begin("Shape List", &m_show_shape_list, ImGuiWindowFlags_None))
   {
     m_view->set_shape_list_hover(nullptr);
@@ -2459,17 +2448,33 @@ void GUI::shape_list_()
     return;
   }
 
-  ImGui::BeginChild("##shape_list_scroll", ImVec2(0.f, 0.f), false, ImGuiWindowFlags_HorizontalScrollbar);
-
-  const float name_field_w = list_name_field_width_(ImGui::GetStyle(), max_name_text_w);
-  int         index        = 0;
-
-  // Add checkbox for hiding all shapes except current sketches
   if (ImGui::Checkbox("Hide all", &m_hide_all_shapes))
   {
     if (m_hide_all_shapes)
       m_view->set_shape_list_hover(nullptr);
     m_view->sync_sketch_shape_faint_style();
+  }
+
+  ImGui::SameLine();
+  if (ImGui::SmallButton("New group"))
+  {
+    Shp_ptr grp = m_view->create_group("Group", m_view->current_group_id());
+    if (!grp.IsNull())
+      m_view->set_current_group_id(grp->get_id());
+  }
+
+  ImGui::SameLine();
+  {
+    const std::vector<Shp_ptr> sel       = m_view->get_selected_shps();
+    const bool                 can_group = !sel.empty();
+    if (!can_group)
+      ImGui::BeginDisabled();
+
+    if (ImGui::SmallButton("Group"))
+      (void)m_view->group_shapes(sel);
+
+    if (!can_group)
+      ImGui::EndDisabled();
   }
 
   ImGui::Separator();
@@ -2483,54 +2488,88 @@ void GUI::shape_list_()
   const ImGuiStyle& st_mat      = ImGui::GetStyle();
   const float       mat_popup_w = std::min(440.0f, std::max(280.0f, mat_label_w_max + st_mat.WindowPadding.x * 2.0f +
                                                                         st_mat.FramePadding.x * 2.0f + st_mat.ScrollbarSize + 8.0f));
+  const float       check_col_w = ImGui::GetFrameHeight();
+  const float       mat_col_w   = ImGui::CalcTextSize("M").x + st_mat.FramePadding.x * 2.0f;
 
-  Shp_ptr shape_to_delete;
-  Shp_ptr shape_list_hover;
+  Shp_ptr  shape_to_delete;
+  Shp_ptr  shape_list_hover;
+  Shape_id shape_to_ungroup_id = 0;
 
   std::unordered_set<const AIS_Shape*> selected_in_viewer;
   for (const AIS_Shape_ptr& ais : m_view->get_selected())
     if (!ais.IsNull())
       selected_in_viewer.insert(ais.get());
 
-  for (const Shp_ptr& shape : m_view->get_shapes())
+  auto row_is_selected = [&](const Shp_ptr& shape) -> bool
   {
-    const bool row_selected = selected_in_viewer.count(shape.get()) != 0;
+    if (shape.IsNull())
+      return false;
 
-    if (row_selected)
+    if (shape->is_group())
     {
-      const ImVec4 header = ImGui::GetStyleColorVec4(ImGuiCol_Header);
-      ImGui::PushStyleColor(ImGuiCol_FrameBg, ImVec4(header.x, header.y, header.z, 0.40f));
-      ImGui::PushStyleColor(ImGuiCol_FrameBgHovered, ImVec4(header.x, header.y, header.z, 0.55f));
-      ImGui::PushStyleColor(ImGuiCol_FrameBgActive, ImVec4(header.x, header.y, header.z, 0.65f));
-      const ImVec4 text = ImGui::GetStyleColorVec4(ImGuiCol_Text);
+      for (const Shp_ptr& leaf : m_view->shape_descendant_solids(shape->get_id()))
+        if (selected_in_viewer.count(leaf.get()) != 0)
+          return true;
 
-      // Shape List: when a row matches OCCT selection, ImGuiCol_Text is nudged brighter (RGB only).
-      constexpr float k_shape_list_selected_text_rgb_scale = 1.08f; // per-channel multiplier for a modest relative lift
-      constexpr float k_shape_list_selected_text_rgb_bias =
-          0.04f; // added after scaling so very dark text still reads a bit lighter
+      return false;
+    }
+    return selected_in_viewer.count(shape.get()) != 0;
+  };
 
-      ImGui::PushStyleColor(
-          ImGuiCol_Text,
-          ImVec4(std::min(1.0f, text.x * k_shape_list_selected_text_rgb_scale + k_shape_list_selected_text_rgb_bias),
-                 std::min(1.0f, text.y * k_shape_list_selected_text_rgb_scale + k_shape_list_selected_text_rgb_bias),
-                 std::min(1.0f, text.z * k_shape_list_selected_text_rgb_scale + k_shape_list_selected_text_rgb_bias), text.w));
+  auto select_shape_row = [&](const Shp_ptr& shape)
+  {
+    AIS_InteractiveContext& ctx  = m_view->ctx();
+    const bool              ctrl = ImGui::GetIO().KeyCtrl;
+    if (!ctrl)
+      ctx.ClearSelected(false);
+
+    if (shape->is_group())
+    {
+      m_view->set_current_group_id(shape->get_id());
+      for (const Shp_ptr& leaf : m_view->shape_descendant_solids(shape->get_id()))
+        ctx.AddOrRemoveSelected(leaf, true);
+    }
+    else
+    {
+      m_view->set_current_group_id(shape->get_parent_id());
+      ctx.AddOrRemoveSelected(shape, true);
     }
 
-    ImGui::BeginGroup();
+    ctx.UpdateCurrentViewer();
+  };
 
-    // Unique ID suffix using index
-    std::string id_suffix = "##" + std::to_string(index++);
-    // Editable text box for name
+  // Tree node always uses NoTreePushOnOpen; indent children with an explicit TreePush/TreePop
+  // pair so table rows cannot leave the ImGui tree stack unbalanced (which nested siblings
+  // under the wrong parent and made Ungroup look like it only moved one child).
+  auto draw_shape_row = [&](auto&& self, const Shp_ptr& shape) -> void
+  {
+    EZY_ASSERT(shape);
+    const bool                 is_group         = shape->is_group();
+    const std::vector<Shp_ptr> children         = m_view->shape_children(shape->get_id());
+    const bool                 has_children     = !children.empty();
+    const bool                 is_current_group = is_group && shape->get_id() == m_view->current_group_id();
+    const bool                 row_selected     = is_current_group || row_is_selected(shape);
+    bool                       row_hovered      = false;
+
+    ImGui::PushID(static_cast<int>(shape->get_id()));
+    ImGui::TableNextRow();
+    if (row_selected)
+      ImGui::TableSetBgColor(ImGuiTableBgTarget_RowBg0, ImGui::GetColorU32(ImGuiCol_Header, 0.45f));
+
     char name_buffer[1024];
     safe_cstr_copy(name_buffer, sizeof(name_buffer), shape->get_name().c_str());
 
-    int mat_idx = shape->Material();
-    if (mat_idx < 0 || mat_idx >= nmat)
-      mat_idx = static_cast<int>(m_view->get_default_material().Name());
+    int mat_idx = 0;
+    if (!is_group)
+    {
+      mat_idx = shape->Material();
+      if (mat_idx < 0 || mat_idx >= nmat)
+        mat_idx = static_cast<int>(m_view->get_default_material().Name());
+    }
 
     auto apply_shape_material = [&](int i)
     {
-      if (i < 0 || i >= nmat)
+      if (is_group || i < 0 || i >= nmat)
         return;
 
       shape->SetMaterial(Graphic3d_MaterialAspect(static_cast<Graphic3d_NameOfMaterial>(i)));
@@ -2539,88 +2578,166 @@ void GUI::shape_list_()
       m_view->ctx().UpdateCurrentViewer();
     };
 
-    ImGui::PushID(("name" + id_suffix).c_str());
-    ImGui::SetNextItemWidth(name_field_w);
-    if (ImGui::InputText("", name_buffer, sizeof(name_buffer)))
-      shape->set_name(std::string(name_buffer));
-
-    if (ImGui::BeginPopupContextItem("shape_name_ctx"))
-    {
-      if (ImGui::MenuItem("Shape info..."))
-        open_shape_info_(shape);
-
-      if (ImGui::MenuItem("Delete"))
-        shape_to_delete = shape;
-
-      ImGui::EndPopup();
-    }
-
-    ImGui::PopID();
-    // Visibility checkbox
-    ImGui::SameLine();
-    ImGui::PushID(("visible" + id_suffix).c_str());
+    // Columns 0-2: fixed actions on the left (no tree indent).
+    ImGui::TableSetColumnIndex(0);
     bool visible = shape->get_visible();
-    if (ImGui::Checkbox("", &visible))
+    if (ImGui::Checkbox("##vis", &visible))
     {
       if (!visible && m_view->shape_list_hover() == shape)
         m_view->set_shape_list_hover(nullptr);
 
       shape->set_visible(visible);
+      m_view->sync_sketch_shape_faint_style();
+    }
+    row_hovered |= ImGui::IsItemHovered();
+    if (ui_show_contextual_help() && ImGui::IsItemHovered())
+      ImGui::SetTooltip(is_group ? "Show/hide group subtree" : "visibility");
+
+    ImGui::TableSetColumnIndex(1);
+    if (is_group)
+      ImGui::TextUnformatted("");
+    else
+    {
+      bool shaded = shape->get_disp_mode() == AIS_Shaded;
+      if (ImGui::Checkbox("##shaded", &shaded))
+        shape->set_disp_mode(shaded ? AIS_Shaded : AIS_WireFrame);
+
+      row_hovered |= ImGui::IsItemHovered();
+      if (ui_show_contextual_help() && ImGui::IsItemHovered())
+        ImGui::SetTooltip("solid/wire");
     }
 
-    if (ui_show_contextual_help() && ImGui::IsItemHovered())
-      ImGui::SetTooltip("visibility");
-
-    ImGui::PopID();
-
-    // Shaded display mode checkbox
-    ImGui::SameLine();
-    ImGui::PushID(("shaded" + id_suffix).c_str());
-    bool shaded = shape->get_disp_mode() == AIS_Shaded;
-    if (ImGui::Checkbox("", &shaded))
-      shape->set_disp_mode(shaded ? AIS_Shaded : AIS_WireFrame);
-
-    if (ui_show_contextual_help() && ImGui::IsItemHovered())
-      ImGui::SetTooltip("solid/wire");
-
-    ImGui::PopID();
-
-    ImGui::SameLine();
-    ImGui::PushID(("matbtn" + id_suffix).c_str());
-    ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(4.0f, ImGui::GetStyle().FramePadding.y));
-    if (ImGui::Button("M"))
-      ImGui::OpenPopup("mat_pick");
-
-    ImGui::PopStyleVar();
-    if (ui_show_contextual_help() && ImGui::IsItemHovered())
-      ImGui::SetTooltip("%s\n(click: material; right-click name: Delete)", mat_names[static_cast<size_t>(mat_idx)].c_str());
-
-    ImGui::SetNextWindowSize(ImVec2(mat_popup_w, 0.0f), ImGuiCond_Appearing);
-    if (ImGui::BeginPopup("mat_pick"))
+    ImGui::TableSetColumnIndex(2);
+    if (is_group)
+      ImGui::TextUnformatted("");
+    else
     {
-      ImGui::TextUnformatted("Material");
-      ImGui::Separator();
-      const float max_h = ImGui::GetTextLineHeightWithSpacing() * 12.0f;
-      const float sc_w  = std::max(1.0f, ImGui::GetContentRegionAvail().x);
-      if (ImGui::BeginChild("mat_sc", ImVec2(sc_w, max_h), ImGuiChildFlags_Borders, ImGuiWindowFlags_AlwaysVerticalScrollbar))
-      {
-        for (int i = 0; i < nmat; ++i)
-          if (ImGui::Selectable(mat_names[static_cast<size_t>(i)].c_str(), i == mat_idx))
-          {
-            apply_shape_material(i);
-            ImGui::CloseCurrentPopup();
-          }
+      ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(4.0f, ImGui::GetStyle().FramePadding.y));
+      if (ImGui::Button("M"))
+        ImGui::OpenPopup("mat_pick");
 
-        ImGui::EndChild();
+      ImGui::PopStyleVar();
+      row_hovered |= ImGui::IsItemHovered();
+      if (ui_show_contextual_help() && ImGui::IsItemHovered())
+        ImGui::SetTooltip("%s\n(click: material; right-click name: Delete)", mat_names[static_cast<size_t>(mat_idx)].c_str());
+
+      ImGui::SetNextWindowSize(ImVec2(mat_popup_w, 0.0f), ImGuiCond_Appearing);
+      if (ImGui::BeginPopup("mat_pick"))
+      {
+        ImGui::TextUnformatted("Material");
+        ImGui::Separator();
+        const float max_h = ImGui::GetTextLineHeightWithSpacing() * 12.0f;
+        const float sc_w  = std::max(1.0f, ImGui::GetContentRegionAvail().x);
+        if (ImGui::BeginChild("mat_sc", ImVec2(sc_w, max_h), ImGuiChildFlags_Borders, ImGuiWindowFlags_AlwaysVerticalScrollbar))
+        {
+          for (int i = 0; i < nmat; ++i)
+            if (ImGui::Selectable(mat_names[static_cast<size_t>(i)].c_str(), i == mat_idx))
+            {
+              apply_shape_material(i);
+              ImGui::CloseCurrentPopup();
+            }
+
+          ImGui::EndChild();
+        }
+
+        ImGui::EndPopup();
       }
 
-      ImGui::EndPopup();
+      if (ImGui::BeginPopupContextItem("mat_btn_ctx"))
+      {
+        if (ImGui::MenuItem("Shape info..."))
+          open_shape_info_(shape);
+
+        if (ImGui::MenuItem("Delete"))
+          shape_to_delete = shape;
+
+        ImGui::EndPopup();
+      }
     }
 
-    if (ImGui::BeginPopupContextItem("mat_btn_ctx"))
+    // Column 3: tree arrow + name (indent applies here so hierarchy stays under the name).
+    ImGui::TableSetColumnIndex(3);
+    ImGui::AlignTextToFramePadding();
+
+    ImGuiTreeNodeFlags node_flags = ImGuiTreeNodeFlags_FramePadding | ImGuiTreeNodeFlags_OpenOnArrow |
+                                    ImGuiTreeNodeFlags_DrawLinesToNodes | ImGuiTreeNodeFlags_NoTreePushOnOpen;
+    if (!has_children)
+      node_flags |= ImGuiTreeNodeFlags_Leaf;
+
+    if (row_selected)
+      node_flags |= ImGuiTreeNodeFlags_Selected;
+
+    bool open = true;
+    if (has_children)
     {
-      if (ImGui::MenuItem("Shape info..."))
+      const auto exp_it = m_shape_list_expanded.find(shape->get_id());
+      open              = (exp_it == m_shape_list_expanded.end()) ? true : exp_it->second;
+      ImGui::SetNextItemOpen(open);
+    }
+
+    ImGui::SetNextItemAllowOverlap();
+    const bool node_open = ImGui::TreeNodeEx("##node", node_flags);
+    if (has_children && node_open != open)
+      m_shape_list_expanded[shape->get_id()] = node_open;
+
+    if (ImGui::IsItemClicked() && !ImGui::IsItemToggledOpen())
+      select_shape_row(shape);
+
+    row_hovered |= ImGui::IsItemHovered();
+    if (row_selected && ui_show_contextual_help() && ImGui::IsItemHovered())
+      ImGui::SetTooltip(is_current_group ? "Current group (new shapes go here)" : "Selected in 3D viewer");
+
+    if (ImGui::BeginDragDropSource(ImGuiDragDropFlags_SourceAllowNullID))
+    {
+      const Shape_id drag_id = shape->get_id();
+      ImGui::SetDragDropPayload("EZY_SHAPE_ID", &drag_id, sizeof(drag_id));
+      ImGui::TextUnformatted(shape->get_name().c_str());
+      ImGui::EndDragDropSource();
+    }
+
+    // Drop onto group -> that group; onto solid -> solid's parent. Register on both the
+    // tree arrow and the name field - the name covers most of the row.
+    auto accept_reparent_drop = [&]()
+    {
+      if (!ImGui::BeginDragDropTarget())
+        return;
+
+      if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("EZY_SHAPE_ID"))
+      {
+        Shape_id drag_id = 0;
+        std::memcpy(&drag_id, payload->Data, sizeof(drag_id));
+        const Shape_id new_parent = is_group ? shape->get_id() : shape->get_parent_id();
+        (void)m_view->reparent_shape(drag_id, new_parent, -1, true);
+      }
+      ImGui::EndDragDropTarget();
+    };
+    accept_reparent_drop();
+
+    ImGui::SameLine();
+    ImGui::SetNextItemWidth(std::max(1.0f, ImGui::GetContentRegionAvail().x));
+    if (ImGui::InputText("##name", name_buffer, sizeof(name_buffer)))
+      shape->set_name(std::string(name_buffer));
+
+    if (ImGui::IsItemClicked())
+      select_shape_row(shape);
+
+    if (ImGui::BeginDragDropSource(ImGuiDragDropFlags_SourceAllowNullID))
+    {
+      const Shape_id drag_id = shape->get_id();
+      ImGui::SetDragDropPayload("EZY_SHAPE_ID", &drag_id, sizeof(drag_id));
+      ImGui::TextUnformatted(shape->get_name().c_str());
+      ImGui::EndDragDropSource();
+    }
+    accept_reparent_drop();
+
+    row_hovered |= ImGui::IsItemHovered();
+    if (ImGui::BeginPopupContextItem("shape_name_ctx"))
+    {
+      if (!is_group && ImGui::MenuItem("Shape info..."))
         open_shape_info_(shape);
+
+      if (is_group && ImGui::MenuItem("Ungroup"))
+        shape_to_ungroup_id = shape->get_id();
 
       if (ImGui::MenuItem("Delete"))
         shape_to_delete = shape;
@@ -2628,33 +2745,120 @@ void GUI::shape_list_()
       ImGui::EndPopup();
     }
 
-    ImGui::PopID();
-
-    ImGui::EndGroup();
-
-    if (ImGui::IsItemHovered() && shape->get_visible())
+    if (row_hovered && shape->get_visible() && !is_group)
       shape_list_hover = shape;
 
-    if (row_selected)
+    if (has_children && node_open)
     {
-      ImGui::PopStyleColor(4);
-      if (ui_show_contextual_help() && ImGui::IsItemHovered())
-        ImGui::SetTooltip("Selected in 3D viewer");
+      ImGui::TreePush(reinterpret_cast<const void*>(static_cast<uintptr_t>(shape->get_id())));
+      for (const Shp_ptr& child : children)
+        self(self, child);
+      ImGui::TreePop();
     }
+
+    ImGui::PopID();
+  };
+
+  const ImGuiTableFlags table_flags =
+      ImGuiTableFlags_ScrollY | ImGuiTableFlags_RowBg | ImGuiTableFlags_NoBordersInBody | ImGuiTableFlags_SizingFixedFit;
+  if (ImGui::BeginTable("##shape_outliner", 4, table_flags, ImVec2(0.f, 0.f)))
+  {
+    // Fixed actions on the left; stretch name on the right (tree indent on name only).
+    ImGui::TableSetupColumn("vis", ImGuiTableColumnFlags_WidthFixed | ImGuiTableColumnFlags_NoResize |
+                                       ImGuiTableColumnFlags_IndentDisable,
+                            check_col_w);
+    ImGui::TableSetupColumn("disp", ImGuiTableColumnFlags_WidthFixed | ImGuiTableColumnFlags_NoResize |
+                                        ImGuiTableColumnFlags_IndentDisable,
+                            check_col_w);
+    ImGui::TableSetupColumn("mat", ImGuiTableColumnFlags_WidthFixed | ImGuiTableColumnFlags_NoResize |
+                                       ImGuiTableColumnFlags_IndentDisable,
+                            mat_col_w);
+    ImGui::TableSetupColumn("name", ImGuiTableColumnFlags_WidthStretch | ImGuiTableColumnFlags_IndentEnable, 1.0f);
+
+    ImGui::PushStyleVar(ImGuiStyleVar_FramePadding,
+                        ImVec2(st_mat.FramePadding.x, std::max(1.0f, st_mat.FramePadding.y * 0.65f)));
+    ImGui::PushStyleVar(ImGuiStyleVar_CellPadding, ImVec2(st_mat.CellPadding.x, std::max(1.0f, st_mat.CellPadding.y * 0.5f)));
+
+    for (const Shp_ptr& root : m_view->shape_children(0))
+      draw_shape_row(draw_shape_row, root);
+
+    // Empty pad below the last row: drop here to move to document root (no permanent root node).
+    // Size from the visible clip remainder, not GetContentRegionAvail().y -- inside a ScrollY
+    // table that avail tracks content size, so a fill-avail pad feeds back into growing scroll.
+    {
+      const float        min_pad_h = ImGui::GetFrameHeight();
+      const ImGuiWindow* inner     = ImGui::GetCurrentWindow();
+      const float        visible_remain =
+          inner->InnerClipRect.Max.y - ImGui::GetCursorScreenPos().y - ImGui::GetStyle().CellPadding.y;
+      const float pad_h = std::max(min_pad_h, visible_remain);
+      ImGui::TableNextRow(ImGuiTableRowFlags_None, pad_h);
+      ImGui::TableSetColumnIndex(0);
+
+      const ImGuiPayload* active_payload = ImGui::GetDragDropPayload();
+      const bool dragging_shape =
+          active_payload != nullptr && active_payload->IsDataType("EZY_SHAPE_ID") && active_payload->DataSize == sizeof(Shape_id);
+
+      if (dragging_shape)
+        ImGui::TableSetBgColor(ImGuiTableBgTarget_RowBg0, ImGui::GetColorU32(ImGuiCol_Header, 0.20f));
+
+      ImGui::Selectable("##shape_root_drop", false,
+                        ImGuiSelectableFlags_SpanAllColumns | ImGuiSelectableFlags_AllowOverlap | ImGuiSelectableFlags_Disabled,
+                        ImVec2(0.0f, pad_h));
+
+      bool root_drop_hovered = false;
+      if (ImGui::BeginDragDropTarget())
+      {
+        const ImGuiPayload* payload =
+            ImGui::AcceptDragDropPayload("EZY_SHAPE_ID", ImGuiDragDropFlags_AcceptBeforeDelivery);
+        if (payload != nullptr)
+        {
+          root_drop_hovered = payload->Preview;
+          if (payload->IsDelivery())
+          {
+            Shape_id drag_id = 0;
+            std::memcpy(&drag_id, payload->Data, sizeof(drag_id));
+            (void)m_view->reparent_shape(drag_id, 0, -1, true);
+          }
+        }
+        ImGui::EndDragDropTarget();
+      }
+
+      if (dragging_shape)
+      {
+        const ImVec2 rmin = ImGui::GetItemRectMin();
+        const ImVec2 rmax = ImGui::GetItemRectMax();
+        if (root_drop_hovered)
+          ImGui::GetWindowDrawList()->AddRectFilled(rmin, rmax, ImGui::GetColorU32(ImGuiCol_HeaderHovered, 0.55f));
+
+        const char*  hint = "Move to root";
+        const ImVec2 ts   = ImGui::CalcTextSize(hint);
+        ImGui::GetWindowDrawList()->AddText(ImVec2(rmin.x + (rmax.x - rmin.x - ts.x) * 0.5f,
+                                                   rmin.y + (rmax.y - rmin.y - ts.y) * 0.5f),
+                                            ImGui::GetColorU32(ImGuiCol_TextDisabled), hint);
+      }
+    }
+
+    ImGui::PopStyleVar(2);
+    ImGui::EndTable();
   }
 
   m_view->set_shape_list_hover(shape_list_hover);
 
+  if (shape_to_ungroup_id != 0)
+  {
+    m_shape_list_expanded.erase(shape_to_ungroup_id);
+    (void)m_view->ungroup_shape(shape_to_ungroup_id);
+  }
+
   if (shape_to_delete)
     m_view->delete_shapes({shape_to_delete});
 
-  ImGui::EndChild();
   ImGui::End();
 }
 
 void GUI::open_shape_info_(const Shp_ptr& shape)
 {
-  if (shape.IsNull())
+  if (shape.IsNull() || shape->is_group())
     return;
 
   const std::vector<std::string>& mat_names = occt_material_combo_labels_();
@@ -2752,6 +2956,108 @@ void GUI::shape_info_dialog_()
   m_shape_info_open = open;
   if (!open)
     m_shape_info_shp.Nullify();
+
+  ImGui::End();
+}
+
+void GUI::open_file_inspector_(const std::string& file_path, const std::string& file_bytes)
+{
+  m_file_inspector_path  = file_path;
+  m_file_inspector_bytes = file_bytes;
+  m_file_inspector_fmt   = utl_cad_file_info::detect(file_path, file_bytes);
+  m_file_inspector_lines = utl_cad_file_info::collect(file_path, file_bytes);
+  m_file_inspector_open  = true;
+}
+
+void GUI::close_file_inspector_()
+{
+  m_file_inspector_open = false;
+  m_file_inspector_path.clear();
+  m_file_inspector_bytes.clear();
+  m_file_inspector_lines.clear();
+  m_file_inspector_fmt   = utl_cad_file_info::Format::Unknown;
+  m_file_inspector_union = false;
+}
+
+void GUI::file_inspector_dialog_()
+{
+  if (!m_file_inspector_open)
+    return;
+
+  const std::string name  = std::filesystem::path(m_file_inspector_path).filename().string();
+  const std::string title = "Import: " + (name.empty() ? std::string("file") : name);
+  ImGui::SetNextWindowSize(ImVec2(480.0f, 0.0f), ImGuiCond_FirstUseEver);
+  bool open = m_file_inspector_open;
+  if (!ImGui::Begin(title.c_str(), &open, ImGuiWindowFlags_None))
+  {
+    m_file_inspector_open = open;
+    ImGui::End();
+    return;
+  }
+
+  if (utl_cad_file_info::can_import(m_file_inspector_fmt) && !m_file_inspector_bytes.empty())
+  {
+    const bool can_union = m_file_inspector_fmt == utl_cad_file_info::Format::Step;
+    if (!can_union)
+      m_file_inspector_union = false;
+
+    ImGui::BeginDisabled(!can_union);
+    ImGui::Checkbox("Union shapes", &m_file_inspector_union);
+    ImGui::EndDisabled();
+    if (ui_show_contextual_help() && ImGui::IsItemHovered(ImGuiHoveredFlags_AllowWhenDisabled))
+      ImGui::SetTooltip(can_union ? "Fuse multiple STEP roots into one shape on import."
+                                  : "Union applies to multi-shape STEP files only.");
+
+    if (ImGui::Button("Import into project"))
+    {
+      if (on_import_file(m_file_inspector_path, m_file_inspector_bytes, m_file_inspector_union))
+      {
+        close_file_inspector_();
+        ImGui::End();
+        return;
+      }
+    }
+  }
+
+  ImGui::Separator();
+
+  const float max_h = ImGui::GetTextLineHeightWithSpacing() * 20.0f;
+  if (ImGui::BeginChild("file_inspector_scroll", ImVec2(0.0f, max_h), ImGuiChildFlags_Borders,
+                        ImGuiWindowFlags_AlwaysVerticalScrollbar))
+  {
+    if (ImGui::BeginTable("file_inspector_tbl", 2, ImGuiTableFlags_SizingStretchProp | ImGuiTableFlags_RowBg))
+    {
+      ImGui::TableSetupColumn("label", ImGuiTableColumnFlags_WidthFixed, 140.0f);
+      ImGui::TableSetupColumn("value", ImGuiTableColumnFlags_WidthStretch);
+
+      for (const utl_cad_file_info::Line& line : m_file_inspector_lines)
+      {
+        if (line.label.empty() && line.value.empty())
+        {
+          ImGui::TableNextRow();
+          ImGui::TableSetColumnIndex(0);
+          ImGui::Separator();
+          ImGui::TableSetColumnIndex(1);
+          ImGui::Separator();
+          continue;
+        }
+
+        ImGui::TableNextRow();
+        ImGui::TableSetColumnIndex(0);
+        ImGui::TextUnformatted(line.label.c_str());
+        ImGui::TableSetColumnIndex(1);
+        ImGui::TextWrapped("%s", line.value.c_str());
+      }
+
+      ImGui::EndTable();
+    }
+
+    ImGui::EndChild();
+  }
+
+  m_file_inspector_open = open;
+  if (!open)
+    close_file_inspector_();
 
   ImGui::End();
 }
@@ -3119,6 +3425,63 @@ void GUI::clear_sketch_list_ui_()
   m_sketch_list_ui.clear();
   m_sketch_list_scroll_y       = 0.f;
   m_sketch_list_scroll_restore = false;
+  m_shape_list_expanded.clear();
+}
+
+nlohmann::json GUI::shape_list_ui_to_json_() const
+{
+  using namespace nlohmann;
+  json out;
+  json expanded = json::object();
+  for (const auto& [id, is_open] : m_shape_list_expanded)
+  {
+    if (!is_open)
+      expanded[std::to_string(id)] = false;
+  }
+  if (!expanded.empty())
+    out["expanded"] = std::move(expanded);
+
+  if (m_view && m_view->current_group_id() != 0)
+    out["currentGroupId"] = m_view->current_group_id();
+
+  return out;
+}
+
+void GUI::apply_shape_list_ui_from_json_(const nlohmann::json& j)
+{
+  using namespace nlohmann;
+  m_shape_list_expanded.clear();
+  if (m_view)
+    m_view->set_current_group_id(0);
+
+  if (!j.contains("ui") || !j["ui"].is_object())
+    return;
+
+  const json& ui = j["ui"];
+  if (!ui.contains("shapeList") || !ui["shapeList"].is_object())
+    return;
+
+  const json& sl = ui["shapeList"];
+  if (sl.contains("expanded") && sl["expanded"].is_object())
+  {
+    for (auto it = sl["expanded"].begin(); it != sl["expanded"].end(); ++it)
+    {
+      if (!it.value().is_boolean())
+        continue;
+
+      try
+      {
+        const Shape_id id = static_cast<Shape_id>(std::stoull(it.key()));
+        m_shape_list_expanded[id] = it.value().get<bool>();
+      }
+      catch (...)
+      {
+      }
+    }
+  }
+
+  if (m_view && sl.contains("currentGroupId") && sl["currentGroupId"].is_number_unsigned())
+    m_view->set_current_group_id(sl["currentGroupId"].get<Shape_id>());
 }
 
 nlohmann::json GUI::sketch_list_ui_to_json_() const
@@ -3211,7 +3574,8 @@ std::string GUI::serialized_project_json_() const
   std::string project_json = m_view->to_json();
   json        j            = json::parse(project_json);
   j["mode"]                = static_cast<int>(get_mode());
-  j["ui"]["sketchList"]    = sketch_list_ui_to_json_();
+  j["ui"]["sketchList"] = sketch_list_ui_to_json_();
+  j["ui"]["shapeList"]  = shape_list_ui_to_json_();
   return j.dump(2);
 }
 
@@ -3626,7 +3990,7 @@ void GUI::import_file_dialog_()
 
     const std::string file_bytes{std::istreambuf_iterator<char>(file), std::istreambuf_iterator<char>()};
     if (!file_bytes.empty())
-      on_import_file(selected, file_bytes);
+      on_inspector_file(selected, file_bytes);
     else
       show_message("Error opening: " + std::filesystem::path(selected).filename().string());
   }
@@ -3799,6 +4163,7 @@ void GUI::on_file(const std::string& file_path, const std::string& file_bytes, b
   m_view->load(*manifest);
   log_message("on_file: load complete");
   apply_sketch_list_ui_from_json_(j);
+  apply_shape_list_ui_from_json_(j);
   m_last_saved_path = file_path;
   Mode opened_mode  = Mode::Normal;
   if (j.contains("mode") && j["mode"].is_number_integer())
@@ -3816,7 +4181,7 @@ void GUI::on_file(const std::string& file_path, const std::string& file_bytes, b
     show_message("Opened: " + std::filesystem::path(file_path).filename().string());
 }
 
-void GUI::on_import_file(const std::string& file_path, const std::string& file_data)
+bool GUI::on_import_file(const std::string& file_path, const std::string& file_data, const bool union_shapes)
 {
   std::string ext = std::filesystem::path(file_path).extension().string();
   for (char& c : ext)
@@ -3825,17 +4190,29 @@ void GUI::on_import_file(const std::string& file_path, const std::string& file_d
   if (ext == ".ply")
   {
     if (!m_view->import_ply(file_data))
+    {
       show_message("PLY import failed.");
-    else
-      show_message("Imported: " + std::filesystem::path(file_path).filename().string());
+      return false;
+    }
 
-    return;
+    show_message("Imported: " + std::filesystem::path(file_path).filename().string());
+    return true;
   }
 
-  if (Status st = m_view->import_step(file_data); !st.is_ok())
+  if (Status st = m_view->import_step(file_data, union_shapes); !st.is_ok())
+  {
     show_message(st.message());
-  else
-    show_message("Imported: " + std::filesystem::path(file_path).filename().string());
+    return false;
+  }
+
+  show_message(union_shapes ? "Imported (union): " + std::filesystem::path(file_path).filename().string()
+                            : "Imported: " + std::filesystem::path(file_path).filename().string());
+  return true;
+}
+
+void GUI::on_inspector_file(const std::string& file_path, const std::string& file_data)
+{
+  open_file_inspector_(file_path, file_data);
 }
 
 #ifdef __EMSCRIPTEN__
@@ -3893,7 +4270,9 @@ void GUI::import_file_dialog_async()
           var length      = contents.length;
           var contentsPtr = _malloc(length);
           HEAPU8.set(contents, contentsPtr);
-          Module.ccall('on_import_file_selected', null, [ 'string', 'number', 'number' ], [ fileName, contentsPtr, length ]);
+          // File -> Import opens the Import dialog (metadata, then Import into project).
+          Module.ccall('on_inspector_file_selected', null, [ 'string', 'number', 'number' ],
+                       [ fileName, contentsPtr, length ]);
           _free(contentsPtr);
         };
         reader.readAsArrayBuffer(file);
@@ -3997,6 +4376,11 @@ extern "C" void on_import_file_selected(const char* file_path, char* contents, i
 {
   const std::string file_bytes(contents, static_cast<size_t>(length));
   GUI::instance().on_import_file(file_path, file_bytes);
+}
+extern "C" void on_inspector_file_selected(const char* file_path, char* contents, int length)
+{
+  const std::string file_bytes(contents, static_cast<size_t>(length));
+  GUI::instance().on_inspector_file(file_path, file_bytes);
 }
 extern "C" void on_sketch_underlay_selected(const char* file_path, char* contents, int length)
 {

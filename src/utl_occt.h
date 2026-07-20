@@ -4,6 +4,7 @@
 #include <TopoDS_Shape.hxx>
 #include <array>
 #include <string_view>
+#include <vector>
 
 // Parallel to Open CASCADE TopAbs_ShapeEnum (TopAbs_ShapeEnum.hxx). Order must stay in sync with OCCT.
 #define EZY_TOPABS_SHAPE_ENUM_LIST(X)                                                                                          \
@@ -30,6 +31,10 @@ static_assert(c_names_TopAbs_ShapeEnum.size() == static_cast<std::size_t>(TopAbs
 /// When \a shape is a closed shell (or compound of closed shells), wrap it as a solid.
 /// Otherwise returns \a shape unchanged.
 TopoDS_Shape try_make_solid(const TopoDS_Shape& shape);
+
+/// Split a STEP/IGES transfer result into document-level bodies.
+/// Compounds / compsolids expand to nested solids (or free shells if there are no solids).
+void append_cad_import_bodies(const TopoDS_Shape& shape, std::vector<TopoDS_Shape>& out);
 
 class Standard_Failure;
 

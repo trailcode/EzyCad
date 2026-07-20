@@ -51,6 +51,7 @@ Shp_rslt Shp_fuse::fuse(std::vector<Shp_ptr> shps)
   // Create a new shape from the union result
   Shp_ptr shp = new Shp(ctx(), result);
   shp->set_name("Fused");
+  assign_result_parent_(shp, m_shps);
   delete_operation_shps_();
   add_shp_(shp);
   view().push_undo_delta(std::make_unique<Shape_replace_delta>(std::move(removed), std::vector<Shape_rec>{capture_shape_rec(*shp)}));

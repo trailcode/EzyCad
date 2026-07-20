@@ -50,6 +50,10 @@ class Wasm_Window;
 class WNT_WClass;
 class WNT_Window;
 class Xw_Window;
+class TDocStd_Document;
+class XCAFApp_Application;
+class XCAFDoc_ShapeTool;
+class TDataStd_Name;
 
 using AIS_InteractiveObject_ptr      = opencascade::handle<AIS_InteractiveObject>;
 using AIS_InteractiveContext_ptr     = opencascade::handle<AIS_InteractiveContext>;
@@ -88,12 +92,16 @@ using Sketch_AIS_edge_ptr            = opencascade::handle<Sketch_AIS_edge>;
 using Sketch_AIS_node_mark_ptr       = opencascade::handle<Sketch_AIS_node_mark>;
 using Sketch_face_shp_ptr            = opencascade::handle<Sketch_face_shp>;
 using StdSelect_BRepOwner_ptr        = opencascade::handle<StdSelect_BRepOwner>;
+using TDataStd_Name_ptr              = opencascade::handle<TDataStd_Name>;
+using TDocStd_Document_ptr           = opencascade::handle<TDocStd_Document>;
 using V3d_RectangularGrid_ptr        = opencascade::handle<V3d_RectangularGrid>;
 using V3d_View_ptr                   = opencascade::handle<V3d_View>;
 using V3d_Viewer_ptr                 = opencascade::handle<V3d_Viewer>;
 using Wasm_Window_ptr                = opencascade::handle<Wasm_Window>;
 using WNT_WClass_ptr                 = opencascade::handle<WNT_WClass>;
 using WNT_Window_ptr                 = opencascade::handle<WNT_Window>;
+using XCAFApp_Application_ptr        = opencascade::handle<XCAFApp_Application>;
+using XCAFDoc_ShapeTool_ptr          = opencascade::handle<XCAFDoc_ShapeTool>;
 using Xw_Window_ptr                  = opencascade::handle<Xw_Window>;
 
 #define DECL_PTR(TypeName)                                                                                                     \

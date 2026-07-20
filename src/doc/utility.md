@@ -24,12 +24,13 @@ Typical uses:
 | [`utl_types.h`](../utl_types.h)                                                | OCCT/AIS handle typedefs, `ScreenCoords`, `Export_format`, `Export_unit`, `DECL_PTR`, `SafeType` |
 | [`utl_geom.h`](../utl_geom.h) / [`.cpp`](../utl_geom.cpp)                      | 2D/3D geometry, wires, dimensions, Boost polygon tests, plane projection                   |
 | [`utl_geom_boost.inl`](../utl_geom_boost.inl)                                  | `ezy_geom` Boost.Geometry aliases                                                          |
-| [`utl_occt.h`](../utl_occt.h) / [`.cpp`](../utl_occt.cpp)                      | `TopAbs` name table, `try_make_solid`, `standard_failure_message`                          |
+| [`utl_occt.h`](../utl_occt.h) / [`.cpp`](../utl_occt.cpp)                      | `TopAbs` name table, `try_make_solid`, `append_cad_import_bodies`, `standard_failure_message` |
 | [`utl_json.h`](../utl_json.h) / [`.cpp`](../utl_json.cpp)                      | JSON serializers for `gp_Pnt`, `gp_Pln`, etc.                                              |
 | [`utl_io.h`](../utl_io.h) / [`.cpp`](../utl_io.cpp)                            | `.ezy` zip v3 pack/unpack, format sniff, base64                                            |
 | [`utl_asset_store.h`](../utl_asset_store.h) / [`.cpp`](../utl_asset_store.cpp) | Content-addressed RGBA blobs for sketch underlay assets                                    |
 | [`utl_settings.h`](../utl_settings.h) / [`.cpp`](../utl_settings.cpp)          | User settings file paths, startup project blob I/O                                         |
 | [`utl_ply_io.h`](../utl_ply_io.h) / [`.cpp`](../utl_ply_io.cpp)                | PLY import/export for mesh shapes                                                          |
+| [`utl_cad_file_info.h`](../utl_cad_file_info.h) / [`.cpp`](../utl_cad_file_info.cpp) | Read-only STEP/IGES/STL/PLY metadata for **File -> Import** (no document mutation until Import) |
 | [`utl_log.h`](../utl_log.h) / [`.cpp`](../utl_log.cpp)                         | `Log_strm` redirecting stdout/stderr to `GUI::log_message`                                 |
 | [`utl_dbg.h`](../utl_dbg.h)                                                    | `EZY_ASSERT`, `DBG_MSG`, debug break macros                                                |
 
@@ -106,6 +107,7 @@ Includes [`utl_geom_boost.inl`](../utl_geom_boost.inl) for `ezy_geom` polygon / 
 | ----------------------------- | --------------------------------------------------------------------- |
 | `c_names_TopAbs_ShapeEnum`    | String names parallel to OCCT enum (selection filter UI)              |
 | `try_make_solid(shape)`       | Wrap closed shell as solid when possible                              |
+| `append_cad_import_bodies`    | Expand STEP/IGES compounds into solids (or free shells) for import    |
 | `standard_failure_message(e)` | OCCT 7/8-safe message from `Standard_Failure` (see dual-version note) |
 
 ## JSON geom (`utl_json`)
@@ -120,6 +122,18 @@ Raw PLY parse/write only (no unit conversion). `Occt_view::import_ply` / `export
 | ------------------------------------- | --------------------------------------------------- |
 | `import_ply_shape(bytes, out)`        | ASCII or binary_little_endian PLY -> `TopoDS_Shape` |
 | `export_ply_binary_file(shape, path)` | Mesh export (mesh shape first)                      |
+
+## CAD file metadata (`utl_cad_file_info`)
+
+Used by **File -> Import**. Reads file bytes only until the user confirms import; does not add shapes by itself.
+
+| API                         | Role                                                              |
+| --------------------------- | ----------------------------------------------------------------- |
+| `detect(path, bytes)`       | Format from extension, then content sniff                         |
+| `can_import(fmt)`           | True for STEP and PLY                                             |
+| `collect(path, bytes)`      | Label/value rows (size, roots/shapes, mesh header, bbox, etc.)    |
+| `read_step_named_bodies`    | STEPCAF/XCAF bodies + product names (flat; falls back to plain reader)  |
+| `read_step_named_tree`      | STEPCAF/XCAF assembly tree as group/leaf `Named_node`s (falls back flat) |
 
 ## Logging and debug
 

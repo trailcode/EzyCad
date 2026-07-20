@@ -13,7 +13,7 @@ Typical responsibilities:
 - ImGui frame: menu bar, dock space (passthrough central node for 3D input), toolbar, Sketch List, Shape List, Options, Settings, dist/angle popups.
 - Mode switching (`Mode` enum in [`mode.h`](../mode.h)) and parent-mode Esc behavior.
 - Persisted preferences (`ezycad_settings.json` via [`gui_settings.cpp`](../gui_settings.cpp)).
-- Project I/O (`.ezy` load/save, import/export dialogs).
+- Project I/O (`.ezy` load/save, import/export dialogs; **File -> Import** shows metadata then loads STEP/PLY).
 - CAD/mesh interchange scales about the origin: project display lengths follow **File -> Project units** (`Project_unit`; Inch or Millimeter). Model space stays inch-scaled (`model = inches * dimension_scale`). STEP import converts OCCT cascade **mm** into model space; PLY import treats coords as inches. **File -> Export** asks for **Inches** or **Millimeters** (STEP/IGES declare that unit; STL/PLY write unitless coords in that scale). `.ezy` persists `projectUnit`. **Settings -> New project defaults** stores `gui.default_project_unit` and inch-based default 2D framing for **File -> New**.
 - Contextual help links (`doc_urls` in `gui.h`).
 
@@ -201,13 +201,15 @@ Shared sketch controls (snap, midpoint nodes, place-from-center) live in `option
 | 2     | `menu_bar_`, `toolbar_`                      | File / View / mode tools              |
 | 3     | `dist_edit_`, `angle_edit_`                  | Floating numeric entry                |
 | 4     | `sketch_list_`, `sketch_properties_dialog_`  | Sketch List + underlay/properties     |
-| 5     | `shape_list_`, `shape_info_dialog_`          | Shape List + info popup               |
+| 5     | `shape_list_`, `shape_info_dialog_`, `file_inspector_dialog_` | Shape List + info + Import dialog |
 | 6     | `options_`                                   | Mode-specific Options pane            |
 | 7     | `message_status_window_`, `about_dialog_`    | Status + About                        |
 | 8     | `add_*_dialog_`                              | Primitive / sketch creation popups    |
 | 9     | `log_window_`, consoles, `settings_`, `dbg_` | Log, Lua/Python, Settings             |
 
 Sketch List expand **Faces**: each face row supports **`E`** and right-click **Extrude** via `GUI::sketch_list_extrude_face_` (`set_mode(Sketch_face_extrude)` + `Occt_view::begin_sketch_face_extrude` / `Shp_extrude::begin_face_extrude`). Hovering a **Faces**, **Edges**, or **Nodes** row calls `Occt_view::set_sketch_list_hover_{face,edge,node}` (temporarily displays the AIS when hidden outside sketch modes; uses `Graphic3d_ZLayerId_Topmost` so solids do not occlude the highlight).
+
+**Shape List outliner:** `shape_list_` draws a tree of document shapes/groups via `shape_children(0)` and recursive `TreeNodeEx` rows. Fixed-width vis/disp/mat columns are on the left; the name column stretches on the right with tree indent (`IndentEnable` on name only). An empty pad row after the last item is a drag-drop target for document root (`reparent_shape(..., 0)`); it shows a "Move to root" hint while dragging. Groups support expand/collapse (`ui.shapeList.expanded`), drag-drop reparent (`EZY_SHAPE_ID` payload), Group / New group / Ungroup, and cascade delete. Clicking a group sets `Occt_view::current_group_id` (including empty groups) and selects descendant solids; clicking a solid selects it and sets current group to its parent. New primitives/extrudes/revolves parent under the current group. Ctrl+click multi-selects. Hover uses `set_shape_list_hover` on leaf solids only. `ui.shapeList.currentGroupId` is persisted in `.ezy`.
 
 **Sketch List UI in the project file:** `GUI::serialized_project_json_` writes `ui.sketchList` (scroll Y plus per-sketch `rows` keyed by sketch `id`: `expanded`, `dimensions`, `nodes`, `edges`, `faces`). `GUI::on_file` restores via `apply_sketch_list_ui_from_json_`. Subsection open state is app-owned (`Sketch_list_row_ui` + `SetNextItemOpen`), not ImGui ini storage.
 
@@ -274,3 +276,4 @@ Occt_view* view = gui.get_view();
 | [`src/doc/shape.md`](shape.md)                                                                          | Shape operations invoked from toolbar, Options, mouse            |
 | [`scr_lua_console.cpp`](../scr_lua_console.cpp) / [`scr_python_console.cpp`](../scr_python_console.cpp) | Script consoles embedded in `render_gui`                         |
 | [`utl_settings.cpp`](../utl_settings.cpp)                                                               | User settings file path and I/O helpers                          |
+| [`utl_cad_file_info.h`](../utl_cad_file_info.h)                                                          | CAD/mesh file metadata for **File -> Import**                    |

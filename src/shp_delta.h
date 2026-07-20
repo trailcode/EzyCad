@@ -16,6 +16,10 @@ struct Shape_rec
   std::string  name;
   int          material{0};
   TopoDS_Shape geom;
+  Shape_id     parent_id{0};
+  int          sibling_order{0};
+  bool         is_group{false};
+  bool         visible{true};
 };
 
 Shape_rec capture_shape_rec(const Shp& shp);
@@ -82,4 +86,29 @@ public:
 private:
   std::vector<Shape_rec> m_removed;
   std::vector<Shape_rec> m_added;
+};
+
+/// Parent/sibling-order edits plus optional group add/remove (group, ungroup, reparent).
+class Shape_tree_delta : public Delta
+{
+public:
+  struct Link_change
+  {
+    Shape_id id{0};
+    Shape_id old_parent{0};
+    int      old_order{0};
+    Shape_id new_parent{0};
+    int      new_order{0};
+  };
+
+  Shape_tree_delta(std::vector<Shape_rec> added, std::vector<Shape_rec> removed, std::vector<Link_change> links);
+
+  void                   apply_forward(Occt_view& view) override;
+  void                   apply_reverse(Occt_view& view) override;
+  std::unique_ptr<Delta> clone() const override;
+
+private:
+  std::vector<Shape_rec>  m_added;
+  std::vector<Shape_rec>  m_removed;
+  std::vector<Link_change> m_links;
 };

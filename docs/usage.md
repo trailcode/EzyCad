@@ -107,21 +107,29 @@ The window can be closed with its close button; use **View -> Sketch List** agai
 
 ### Shape List
 
-The **Shape List** pane lists every **3D shape** in the current document (extrudes, imports, booleans, etc.). Open it from **View -> Shape List**.
+The **Shape List** pane lists every **3D shape** and **group** in the current document (extrudes, imports, booleans, etc.). Open it from **View -> Shape List**.
 
 At the top:
 
-- **Hide all** - When checked, hides every shape in the 3D view; when cleared, every shape is shown again (same as turning visibility back on for all rows).
+- **Hide all** - When checked, hides every solid in the 3D view without changing each row's visibility checkbox; when cleared, solids return to their previous per-row visibility (and group visibility).
+- **New group** - Creates an empty organizational group under the **current group** (document root when none is set) and makes it current.
+- **Group** - Places the currently selected solids under a new group (enabled when one or more solids are selected in the 3D view) and makes that group current.
 
-For each shape, one row includes:
+Shapes form a parent/child outliner. Groups are folders only (they do not move children when transformed). Drag a row onto a group to reparent it, onto a solid to place it under that solid's parent, or into the empty space below the list to move it to the document root.
 
-- **Name** - Editable text field; change the label stored with the shape.
-- **Right-click the name** - **Shape info...** opens a dialog with topology and property details for that shape (see [Shape info](#shape-info) below). **Delete** removes the shape from the document.
-- **Visibility** - Checkbox (tooltip *visibility*) to show or hide that shape in the 3D view.
-- **Solid / wire** - Checkbox (tooltip *solid/wire*) to switch **shaded** display or **wireframe** for that shape.
-- **M** - Click to open a **Material** popup; right-click **M** for **Shape info...** or **Delete**. The tooltip on **M** also notes that right-clicking the name deletes the shape.
+Click a **group** (including an empty one) to make it the **current group**. Click a solid to select it and set the current group to that solid's parent. New primitives, extrudes, revolves, and similar additions go into the current group.
 
-Rows that match the **current 3D selection** use a brighter row style (text and controls) so the list stays in sync with what is selected in the viewer (tooltip *Selected in 3D viewer* when you hover a highlighted row). Hovering any visible row also highlights that shape in the 3D view (**Settings -> View presentation -> Element hover color**).
+Each row (left to right):
+
+- **Visibility** - Checkbox to show or hide that node. Hiding a **group** hides its whole subtree in the 3D view.
+- **Solid / wire** - Checkbox (solids only) to switch **shaded** or **wireframe**.
+- **M** - Solids only: material popup; right-click for **Shape info...** or **Delete**.
+- **Name** - Expandable tree row with an editable name. Click the row to select that solid (or all descendant solids for a group) and update the current group. **Ctrl+click** toggles multi-select. Drag to reparent (empty area below the list = document root).
+- **Right-click the name** - Solids: **Shape info...** / **Delete**. Groups: **Ungroup** (moves **all** direct children to the group's parent, then removes the group) / **Delete** (cascade-deletes the whole subtree).
+
+Boolean results stay under the shared parent of their inputs when all inputs share one parent; otherwise they are placed at the document root. **File -> Import** STEP assemblies preserve product/assembly groups in the tree (unless **Union shapes** is checked).
+
+The **current group** and rows that match the **current 3D selection** use a highlighted full-row style. Hovering a visible solid row also highlights that shape in the 3D view (**Settings -> View presentation -> Element hover color**).
 
 The window can be closed with its close button; use **View -> Shape List** again to show it.
 
@@ -239,6 +247,23 @@ The typical modeling workflow in EzyCad follows these steps:
 | **Shapes**                  | 3D solid objects created from extruded sketch faces                                                                                             |
 | **Feature Operations**      | Transform sketches into 3D geometry or modify existing 3D shapes                                                                                |
 
+### Import dialog
+
+**File -> Import** opens an **Import** window for STEP or PLY. Review metadata, optionally enable **Union shapes** (STEP), then click **Import into project**. The window closes after a successful import.
+
+| Format                     | What the Import dialog shows                                   |
+| -------------------------- | -------------------------------------------------------------- |
+| **STEP** (`.step`, `.stp`) | Roots/shapes, import bodies, named bodies, topology, bbox      |
+| **PLY** (`.ply`)           | Encoding, vertex and face counts from the header               |
+
+**How to use:**
+1. Choose **File -> Import**
+2. Pick a `.step`, `.stp`, or `.ply` file
+3. Review the label/value table; for STEP, optionally enable **Union shapes**
+4. Click **Import into project**
+
+For in-document topology of an already-loaded solid, use [Shape info](#shape-info) from the Shape List.
+
 ### Importing 3D Geometries
 
 In addition to creating 3D shapes from sketches, EzyCad supports importing existing 3D geometry from external CAD files. This allows you to:
@@ -258,9 +283,10 @@ In addition to creating 3D shapes from sketches, EzyCad supports importing exist
 
 **How to import:**
 1. Use **File -> Import**
-2. Pick a `.step`, `.stp`, or `.ply` file (the dialog lists these types)
-3. Geometry is added as 3D shape(s) in the document, scaled to project units (see below)
-4. You can move, rotate, scale, and use imported bodies in [boolean operations](#boolean-operations) like native solids where the geometry allows it
+2. Pick a `.step`, `.stp`, or `.ply` file
+3. Review metadata in the [Import dialog](#import-dialog); for STEP assemblies, optionally check **Union shapes**
+4. Click **Import into project** - geometry is added as 3D shape(s) in the document, scaled to project units (see below)
+5. You can move, rotate, scale, and use imported bodies in [boolean operations](#boolean-operations) like native solids where the geometry allows it
 
 **Units:** Sketch and display lengths follow **File -> Project units** (**Inches** or **Millimeters**). Internal model coordinates stay inch-scaled (`model = inches * dimension_scale`, default **100**). Changing project units only remaps the UI; it does not rewrite geometry. Import scaling:
 
@@ -277,6 +303,9 @@ In addition to creating 3D shapes from sketches, EzyCad supports importing exist
 
 **STEP import notes:**
 - If the file cannot be read or contains no transferable geometry, a **message** explains the failure (invalid data, empty transfer, etc.).
+- Assemblies often arrive with XCAF product structure. Import builds Shape List **groups** for assemblies and leaf solids for bodies (unless **Union shapes** merges everything into one solid). The Import dialog **Import bodies** count shows how many leaf solids will be added.
+- When the STEP file includes product or part names, those names appear in the Shape List (duplicate names get `.001`, `.002`, ...). Unnamed bodies stay as `Shape`.
+- **Union shapes** (Import dialog) fuses those bodies into one solid before adding to the document. If union fails, the import is aborted and nothing is added.
 
 **Note:** **IGES** and **STL** are available for **export** only, not import.
 

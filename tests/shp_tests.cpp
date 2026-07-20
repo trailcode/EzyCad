@@ -427,3 +427,201 @@ TEST_F(Shp_test, Shape_ids_persist_in_json)
   ASSERT_EQ(view().get_shapes().size(), 1u);
   EXPECT_EQ(view().get_shapes().back()->get_id(), id);
 }
+
+// ---------------------------------------------------------------------------
+// Shape hierarchy (organizational groups)
+// ---------------------------------------------------------------------------
+
+TEST_F(Shp_test, Group_reparent_cycle_rejected)
+{
+  view().add_box(0, 0, 0, 1, 1, 1);
+  view().add_box(2, 0, 0, 1, 1, 1);
+  Shp_ptr a = view().get_shapes().front();
+  Shp_ptr b = view().get_shapes().back();
+
+  ASSERT_TRUE(view().group_shapes({a, b}).is_ok());
+  Shp_ptr grp;
+  for (const Shp_ptr& s : view().get_shapes())
+    if (s->is_group())
+      grp = s;
+
+  ASSERT_FALSE(grp.IsNull());
+  EXPECT_TRUE(view().would_reparent_create_cycle(grp->get_id(), a->get_id()));
+  EXPECT_FALSE(view().reparent_shape(grp->get_id(), a->get_id()).is_ok());
+}
+
+TEST_F(Shp_test, Ungroup_moves_all_direct_children)
+{
+  view().add_box(0, 0, 0, 1, 1, 1);
+  view().add_box(2, 0, 0, 1, 1, 1);
+  view().add_box(4, 0, 0, 1, 1, 1);
+  ASSERT_EQ(view().get_shapes().size(), 3u);
+
+  Shp_ptr grp = view().create_group("Group", 0);
+  ASSERT_FALSE(grp.IsNull());
+  const Shape_id gid = grp->get_id();
+
+  std::vector<Shp_ptr> boxes;
+  for (const Shp_ptr& s : view().get_shapes())
+    if (!s->is_group())
+      boxes.push_back(s);
+
+  ASSERT_EQ(boxes.size(), 3u);
+  for (const Shp_ptr& b : boxes)
+    ASSERT_TRUE(view().reparent_shape(b->get_id(), gid).is_ok());
+
+  EXPECT_EQ(view().shape_children(gid).size(), 3u);
+
+  ASSERT_TRUE(view().ungroup_shape(gid).is_ok());
+  EXPECT_TRUE(view().find_shape_by_id(gid).IsNull());
+  EXPECT_EQ(view().shape_children(0).size(), 3u);
+  for (const Shp_ptr& s : view().get_shapes())
+  {
+    EXPECT_FALSE(s->is_group());
+    EXPECT_EQ(s->get_parent_id(), 0u);
+  }
+}
+
+TEST_F(Shp_test, Group_ungroup_and_cascade_delete_undo)
+{
+  view().add_box(0, 0, 0, 1, 1, 1);
+  view().add_box(2, 0, 0, 1, 1, 1);
+  std::vector<Shp_ptr> boxes(view().get_shapes().begin(), view().get_shapes().end());
+  ASSERT_TRUE(view().group_shapes(boxes).is_ok());
+
+  Shp_ptr grp;
+  for (const Shp_ptr& s : view().get_shapes())
+    if (s->is_group())
+      grp = s;
+
+  ASSERT_FALSE(grp.IsNull());
+  EXPECT_EQ(view().shape_children(grp->get_id()).size(), 2u);
+
+  ASSERT_TRUE(view().ungroup_shape(grp->get_id()).is_ok());
+  EXPECT_EQ(view().shape_children(0).size(), 2u);
+  for (const Shp_ptr& s : view().get_shapes())
+    EXPECT_FALSE(s->is_group());
+
+  EXPECT_TRUE(view().undo()); // undo ungroup -> group back
+  size_t groups = 0;
+  for (const Shp_ptr& s : view().get_shapes())
+    if (s->is_group())
+      ++groups;
+
+  EXPECT_EQ(groups, 1u);
+
+  for (const Shp_ptr& s : view().get_shapes())
+    if (s->is_group())
+      grp = s;
+
+  view().delete_shapes({grp});
+  EXPECT_TRUE(view().get_shapes().empty());
+
+  EXPECT_TRUE(view().undo());
+  EXPECT_EQ(view().get_shapes().size(), 3u); // group + 2 boxes
+}
+
+TEST_F(Shp_test, Hierarchy_json_round_trip)
+{
+  view().add_box(0, 0, 0, 1, 1, 1);
+  view().add_box(2, 0, 0, 1, 1, 1);
+  std::vector<Shp_ptr> boxes(view().get_shapes().begin(), view().get_shapes().end());
+  ASSERT_TRUE(view().group_shapes(boxes).is_ok());
+
+  const std::string json = view().to_json();
+  view().new_file();
+  view().load(json, false);
+
+  size_t groups = 0;
+  size_t leaves = 0;
+  Shape_id group_id = 0;
+  for (const Shp_ptr& s : view().get_shapes())
+  {
+    if (s->is_group())
+    {
+      ++groups;
+      group_id = s->get_id();
+    }
+    else
+      ++leaves;
+  }
+  EXPECT_EQ(groups, 1u);
+  EXPECT_EQ(leaves, 2u);
+  EXPECT_EQ(view().shape_children(group_id).size(), 2u);
+  for (const Shp_ptr& c : view().shape_children(group_id))
+    EXPECT_EQ(c->get_parent_id(), group_id);
+}
+
+TEST_F(Shp_test, Hide_all_preserves_per_shape_visibility)
+{
+  view().add_box(0, 0, 0, 1, 1, 1);
+  Shp_ptr shp = view().get_shapes().back();
+  shp->set_visible(false);
+  EXPECT_FALSE(shp->get_visible());
+
+  gui().set_hide_all_shapes(true);
+  view().sync_sketch_shape_faint_style();
+  EXPECT_FALSE(shp->get_visible()); // preference unchanged
+
+  gui().set_hide_all_shapes(false);
+  view().sync_sketch_shape_faint_style();
+  EXPECT_FALSE(shp->get_visible());
+}
+
+TEST_F(Shp_test, Fuse_keeps_shared_parent)
+{
+  view().add_box(0, 0, 0, 10, 10, 10);
+  view().add_box(5, 0, 0, 10, 10, 10);
+  std::vector<Shp_ptr> boxes(view().get_shapes().begin(), view().get_shapes().end());
+  ASSERT_TRUE(view().group_shapes(boxes).is_ok());
+
+  Shp_ptr grp;
+  for (const Shp_ptr& s : view().get_shapes())
+    if (s->is_group())
+      grp = s;
+
+  ASSERT_FALSE(grp.IsNull());
+  std::vector<Shp_ptr> kids = view().shape_children(grp->get_id());
+  ASSERT_EQ(kids.size(), 2u);
+  select_shapes(view(), kids);
+  ASSERT_TRUE(view().shp_fuse().selected_fuse().is_ok());
+
+  Shp_ptr fused;
+  for (const Shp_ptr& s : view().get_shapes())
+    if (!s->is_group())
+      fused = s;
+
+  ASSERT_FALSE(fused.IsNull());
+  EXPECT_EQ(fused->get_parent_id(), grp->get_id());
+}
+
+TEST_F(Shp_test, Current_group_parents_new_primitives)
+{
+  Shp_ptr grp = view().create_group("Group", 0);
+  ASSERT_FALSE(grp.IsNull());
+  view().set_current_group_id(grp->get_id());
+  EXPECT_EQ(view().current_group_id(), grp->get_id());
+
+  view().add_box(0, 0, 0, 1, 1, 1);
+  Shp_ptr box;
+  for (const Shp_ptr& s : view().get_shapes())
+    if (!s->is_group())
+      box = s;
+
+  ASSERT_FALSE(box.IsNull());
+  EXPECT_EQ(box->get_parent_id(), grp->get_id());
+
+  view().set_current_group_id(0);
+  view().add_box(2, 0, 0, 1, 1, 1);
+  Shp_ptr root_box;
+  for (const Shp_ptr& s : view().get_shapes())
+    if (!s->is_group() && s->get_parent_id() == 0)
+      root_box = s;
+
+  ASSERT_FALSE(root_box.IsNull());
+  EXPECT_EQ(root_box->get_parent_id(), 0u);
+
+  view().set_current_group_id(grp->get_id());
+  ASSERT_TRUE(view().ungroup_shape(grp->get_id()).is_ok());
+  EXPECT_EQ(view().current_group_id(), 0u);
+}

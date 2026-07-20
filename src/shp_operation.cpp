@@ -21,11 +21,26 @@ std::vector<Shp_ptr> Shp_operation_base::get_selected_shps_() const
   std::vector<Shp_ptr>           ret;
   std::unordered_set<const Shp*> seen;
   for (AIS_Shape_ptr& obj : m_view.get_selected())
-    if (Shp_ptr shp = Shp_ptr::DownCast(obj); !shp.IsNull())
+    if (Shp_ptr shp = Shp_ptr::DownCast(obj); !shp.IsNull() && !shp->is_group())
       if (seen.insert(shp.get()).second)
         ret.push_back(shp);
 
   return ret;
+}
+
+Shape_id Shp_operation_base::result_parent_from_operands_() const
+{
+  return Occt_view::result_parent_id(m_shps);
+}
+
+void Shp_operation_base::assign_result_parent_(Shp_ptr& result, const std::vector<Shp_ptr>& operands)
+{
+  if (result.IsNull())
+    return;
+
+  const Shape_id parent = Occt_view::result_parent_id(operands);
+  result->set_parent_id(parent);
+  result->set_sibling_order(view().next_sibling_order(parent));
 }
 
 Status Shp_operation_base::ensure_operation_shps_()
@@ -94,7 +109,10 @@ const TopoDS_Edge* Shp_operation_base::get_edge_(const ScreenCoords& screen_coor
   return m_view.get_edge_(screen_coords);
 }
 
-void Shp_operation_base::add_shp_(Shp_ptr& shp) { m_view.add_shp_(shp); }
+void Shp_operation_base::add_shp_(Shp_ptr& shp, bool use_current_group)
+{
+  m_view.add_shp_(shp, use_current_group);
+}
 
 void Shp_operation_base::replace_picked_shape_(Shp_ptr& old_shp, Shp_ptr& new_shp, const std::string& name)
 {
@@ -113,6 +131,8 @@ void Shp_operation_base::replace_picked_shape_(Shp_ptr& old_shp, Shp_ptr& new_sh
   v.get_shapes().remove(old_shp);
 
   new_shp->set_name(name);
+  new_shp->set_parent_id(old_shp->get_parent_id());
+  new_shp->set_sibling_order(old_shp->get_sibling_order());
   add_shp_(new_shp);
   copy_shape_material_from_(new_shp, old_shp);
   ctx().Display(new_shp, new_shp->get_disp_mode(), AIS_Shape::SelectionMode(v.get_shp_selection_mode()), true);
