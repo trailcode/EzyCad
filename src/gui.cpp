@@ -2783,9 +2783,14 @@ void GUI::shape_list_()
       draw_shape_row(draw_shape_row, root);
 
     // Empty pad below the last row: drop here to move to document root (no permanent root node).
+    // Size from the visible clip remainder, not GetContentRegionAvail().y -- inside a ScrollY
+    // table that avail tracks content size, so a fill-avail pad feeds back into growing scroll.
     {
-      const float min_pad_h = ImGui::GetFrameHeight();
-      const float pad_h     = std::max(min_pad_h, ImGui::GetContentRegionAvail().y);
+      const float        min_pad_h = ImGui::GetFrameHeight();
+      const ImGuiWindow* inner     = ImGui::GetCurrentWindow();
+      const float        visible_remain =
+          inner->InnerClipRect.Max.y - ImGui::GetCursorScreenPos().y - ImGui::GetStyle().CellPadding.y;
+      const float pad_h = std::max(min_pad_h, visible_remain);
       ImGui::TableNextRow(ImGuiTableRowFlags_None, pad_h);
       ImGui::TableSetColumnIndex(0);
 
