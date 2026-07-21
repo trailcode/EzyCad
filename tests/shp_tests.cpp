@@ -19,7 +19,7 @@
 #include "shp.h"
 #include "shp_create.h"
 #include "shp_info.h"
-#include "shp_section.h"
+#include "shp_cross_section.h"
 #include "skt_op_recorder.h"
 #include "utl.h"
 
@@ -174,38 +174,38 @@ TEST(Shp_create, Pyramid_solid_non_null)
 // Cross-section geometry (no viewer)
 // ---------------------------------------------------------------------------
 
-TEST(Shp_section, Box_midplane_is_four_lines)
+TEST(Shp_cross_section, Box_midplane_is_four_lines)
 {
   const TopoDS_Shape box   = shp_create::create_box(0, 0, 0, 4, 6, 8);
   const gp_Ax3       frame = gp_Ax3(gp_Pnt(2, 3, 4), gp::DZ(), gp::DX());
 
-  const Result<Section_geometry> result = section_shape(box, frame, Section_plane::XY, 0.0);
+  const Result<Cross_section_geometry> result = cross_section_shape(box, frame, Cross_section_plane::XY, 0.0);
   ASSERT_TRUE(result.has_value()) << result.message();
   EXPECT_EQ((*result).edge_count, 4u);
   EXPECT_EQ((*result).line_count, 4u);
 }
 
-TEST(Shp_section, Cylinder_midplane_contains_circle)
+TEST(Shp_cross_section, Cylinder_midplane_contains_circle)
 {
   const TopoDS_Shape cylinder = shp_create::create_cylinder(2.0, 6.0);
   const gp_Ax3       frame(gp::Origin(), gp::DZ(), gp::DX());
 
-  const Result<Section_geometry> result = section_shape(cylinder, frame, Section_plane::XY, 0.0);
+  const Result<Cross_section_geometry> result = cross_section_shape(cylinder, frame, Cross_section_plane::XY, 0.0);
   ASSERT_TRUE(result.has_value()) << result.message();
   EXPECT_GE((*result).edge_count, 1u);
   EXPECT_GE((*result).circle_count, 1u);
 }
 
-TEST(Shp_section, Offset_outside_box_fails_closed)
+TEST(Shp_cross_section, Offset_outside_box_fails_closed)
 {
   const TopoDS_Shape box   = shp_create::create_box(0, 0, 0, 4, 6, 8);
   const gp_Ax3       frame = gp_Ax3(gp_Pnt(2, 3, 4), gp::DZ(), gp::DX());
 
-  const Result<Section_geometry> result = section_shape(box, frame, Section_plane::XY, 5.0);
+  const Result<Cross_section_geometry> result = cross_section_shape(box, frame, Cross_section_plane::XY, 5.0);
   EXPECT_FALSE(result.has_value());
 }
 
-TEST(Shp_section, Compound_with_solid_is_supported)
+TEST(Shp_cross_section, Compound_with_solid_is_supported)
 {
   TopoDS_Compound compound;
   BRep_Builder    builder;
@@ -213,21 +213,21 @@ TEST(Shp_section, Compound_with_solid_is_supported)
   builder.Add(compound, shp_create::create_box(0, 0, 0, 4, 6, 8));
 
   const gp_Ax3                   frame(gp_Pnt(2, 3, 4), gp::DZ(), gp::DX());
-  const Result<Section_geometry> result = section_shape(compound, frame, Section_plane::XY, 0.0);
+  const Result<Cross_section_geometry> result = cross_section_shape(compound, frame, Cross_section_plane::XY, 0.0);
   ASSERT_TRUE(result.has_value()) << result.message();
   EXPECT_EQ((*result).line_count, 4u);
 }
 
-TEST(Shp_section, Empty_compound_is_rejected)
+TEST(Shp_cross_section, Empty_compound_is_rejected)
 {
   TopoDS_Compound compound;
   BRep_Builder().MakeCompound(compound);
 
-  const Result<Section_geometry> result = section_shape(compound, gp_Ax3(), Section_plane::XY, 0.0);
+  const Result<Cross_section_geometry> result = cross_section_shape(compound, gp_Ax3(), Cross_section_plane::XY, 0.0);
   EXPECT_FALSE(result.has_value());
 }
 
-TEST(Shp_section, Face_only_compound_is_rejected)
+TEST(Shp_cross_section, Face_only_compound_is_rejected)
 {
   const TopoDS_Shape face = BRepBuilderAPI_MakeFace(gp_Pln(gp::Origin(), gp::DZ()), -1.0, 1.0, -1.0, 1.0).Face();
   TopoDS_Compound    compound;
@@ -235,27 +235,27 @@ TEST(Shp_section, Face_only_compound_is_rejected)
   builder.MakeCompound(compound);
   builder.Add(compound, face);
 
-  const Result<Section_geometry> result = section_shape(compound, gp_Ax3(), Section_plane::XY, 0.0);
+  const Result<Cross_section_geometry> result = cross_section_shape(compound, gp_Ax3(), Cross_section_plane::XY, 0.0);
   EXPECT_FALSE(result.has_value());
 }
 
-TEST(Shp_section, Box_local_xz_and_yz_midplanes_are_four_lines)
+TEST(Shp_cross_section, Box_local_xz_and_yz_midplanes_are_four_lines)
 {
   const TopoDS_Shape box   = shp_create::create_box(0, 0, 0, 4, 6, 8);
   const gp_Ax3       frame = gp_Ax3(gp_Pnt(2, 3, 4), gp::DZ(), gp::DX());
 
-  const Result<Section_geometry> xz = section_shape(box, frame, Section_plane::XZ, 0.0);
+  const Result<Cross_section_geometry> xz = cross_section_shape(box, frame, Cross_section_plane::XZ, 0.0);
   ASSERT_TRUE(xz.has_value()) << xz.message();
   EXPECT_EQ((*xz).edge_count, 4u);
   EXPECT_EQ((*xz).line_count, 4u);
 
-  const Result<Section_geometry> yz = section_shape(box, frame, Section_plane::YZ, 0.0);
+  const Result<Cross_section_geometry> yz = cross_section_shape(box, frame, Cross_section_plane::YZ, 0.0);
   ASSERT_TRUE(yz.has_value()) << yz.message();
   EXPECT_EQ((*yz).edge_count, 4u);
   EXPECT_EQ((*yz).line_count, 4u);
 }
 
-TEST(Shp_section, Rotated_frame_midplane_is_four_lines)
+TEST(Shp_cross_section, Rotated_frame_midplane_is_four_lines)
 {
   const TopoDS_Shape box = shp_create::create_box(0, 0, 0, 4, 6, 8);
   gp_Ax3             frame(gp_Pnt(2, 3, 4), gp::DZ(), gp::DX());
@@ -263,13 +263,13 @@ TEST(Shp_section, Rotated_frame_midplane_is_four_lines)
   rotate.SetRotation(gp_Ax1(frame.Location(), gp::DX()), std::numbers::pi / 2.0);
   frame.Transform(rotate);
 
-  const Result<Section_geometry> result = section_shape(box, frame, Section_plane::XY, 0.0);
+  const Result<Cross_section_geometry> result = cross_section_shape(box, frame, Cross_section_plane::XY, 0.0);
   ASSERT_TRUE(result.has_value()) << result.message();
   EXPECT_EQ((*result).edge_count, 4u);
   EXPECT_EQ((*result).line_count, 4u);
 }
 
-TEST(Shp_section, Fused_boxes_midplane_returns_extra_line_edges)
+TEST(Shp_cross_section, Fused_boxes_midplane_returns_extra_line_edges)
 {
   const TopoDS_Shape a = shp_create::create_box(0, 0, 0, 10, 10, 10);
   const TopoDS_Shape b = shp_create::create_box(5, 0, 0, 10, 10, 10);
@@ -278,7 +278,7 @@ TEST(Shp_section, Fused_boxes_midplane_returns_extra_line_edges)
   ASSERT_TRUE(fuse.IsDone());
 
   const gp_Ax3                   frame(gp_Pnt(7.5, 5, 5), gp::DZ(), gp::DX());
-  const Result<Section_geometry> result = section_shape(fuse.Shape(), frame, Section_plane::XY, 0.0);
+  const Result<Cross_section_geometry> result = cross_section_shape(fuse.Shape(), frame, Cross_section_plane::XY, 0.0);
   ASSERT_TRUE(result.has_value()) << result.message();
   // Ideal outer section is a 15x10 rectangle (4 lines), but BRepAlgoAPI_Section currently
   // returns 8 line edges here. Keep this expectation as discovery evidence for sketch import.
@@ -287,15 +287,15 @@ TEST(Shp_section, Fused_boxes_midplane_returns_extra_line_edges)
   EXPECT_EQ((*result).other_curve_count, 0u);
 }
 
-TEST(Shp_section, Shared_plane_cuts_two_separated_boxes)
+TEST(Shp_cross_section, Shared_plane_cuts_two_separated_boxes)
 {
   // Mimic multi-select: one plane through the combined bbox center must hit both solids.
   const TopoDS_Shape left  = shp_create::create_box(0, 0, 0, 4, 4, 4);
   const TopoDS_Shape right = shp_create::create_box(6, 0, 0, 4, 4, 4);
   const gp_Ax3       shared_frame(gp_Pnt(5, 2, 2), gp::DZ(), gp::DX());
 
-  const Result<Section_geometry> left_result  = section_shape(left, shared_frame, Section_plane::XY, 0.0);
-  const Result<Section_geometry> right_result = section_shape(right, shared_frame, Section_plane::XY, 0.0);
+  const Result<Cross_section_geometry> left_result  = cross_section_shape(left, shared_frame, Cross_section_plane::XY, 0.0);
+  const Result<Cross_section_geometry> right_result = cross_section_shape(right, shared_frame, Cross_section_plane::XY, 0.0);
   ASSERT_TRUE(left_result.has_value()) << left_result.message();
   ASSERT_TRUE(right_result.has_value()) << right_result.message();
   EXPECT_EQ((*left_result).line_count, 4u);

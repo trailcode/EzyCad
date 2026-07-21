@@ -428,7 +428,7 @@ private:
   void options_shape_chamfer_mode_();
   void options_shape_fillet_mode_();
   void options_shape_polar_duplicate_mode_();
-  void options_shape_section_mode_();
+  void options_shape_cross_section_mode_();
   void options_sketch_from_planer_face_mode_();
   void options_sketch_operation_axis_mode_();
   void options_sketch_face_extrude_mode_();

@@ -26,7 +26,7 @@
 #include "shp_polar_dup.h"
 #include "shp_rotate.h"
 #include "shp_scale.h"
-#include "shp_section.h"
+#include "shp_cross_section.h"
 #include "utl_types.h"
 #include "utl_asset_store.h"
 #include "utl_geom.h"
@@ -230,7 +230,7 @@ public:
   Shp_common&    shp_common();
   Shp_polar_dup& shp_polar_dup();
   Shp_extrude&   shp_extrude();
-  Shp_section&   shp_section();
+  Shp_cross_section&   shp_cross_section();
 
   // Revolve related
   void revolve_selected(const double angle);
@@ -515,7 +515,7 @@ private:
   Shp_common    m_shp_common;
   Shp_polar_dup m_shp_polar_dup;
   Shp_extrude   m_shp_extrude;
-  Shp_section   m_shp_section;
+  Shp_cross_section   m_shp_cross_section;
   // --------------------------------------------------------------------
   // Selection related
   std::map<Mode, TopAbs_ShapeEnum> m_modes_selection_mode_map;

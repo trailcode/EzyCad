@@ -63,7 +63,7 @@ std::string GUI::get_doc_url_for_mode(Mode mode)
       {Mode::Sketch_add_circle_3_pts,         ""}, // planned feature - no specific section in the docs yet; falls back to main guide
       {Mode::Sketch_add_slot,                 "https://ezycad.readthedocs.io/en/latest/usage-sketch.html#slot-creation-tool"},
       {Mode::Sketch_dim_anno,                 "https://ezycad.readthedocs.io/en/latest/usage-sketch.html#dimension-tool"},
-      {Mode::Shape_section,                   "https://ezycad.readthedocs.io/en/latest/usage.html#shape-cross-section-tool"},
+      {Mode::Shape_cross_section,                   "https://ezycad.readthedocs.io/en/latest/usage.html#shape-cross-section-tool"},
       // clang-format on
   };
 
@@ -132,7 +132,7 @@ void GUI::set_parent_mode()
       {Mode::Sketch_add_circle_3_pts,         Mode::Sketch_inspection_mode},
       {Mode::Sketch_add_slot,                 Mode::Sketch_inspection_mode},
       {Mode::Sketch_dim_anno,                 Mode::Sketch_inspection_mode},
-      {Mode::Shape_section,                   Mode::Normal},
+      {Mode::Shape_cross_section,                   Mode::Normal},
       // clang-format on
   };
 
@@ -395,7 +395,7 @@ void GUI::options_()
     case Mode::Shape_chamfer:                   options_shape_chamfer_mode_();                break;
     case Mode::Shape_fillet:                    options_shape_fillet_mode_();                 break;
     case Mode::Shape_polar_duplicate:           options_shape_polar_duplicate_mode_();        break;
-    case Mode::Shape_section:                   options_shape_section_mode_();                break;
+    case Mode::Shape_cross_section:                   options_shape_cross_section_mode_();                break;
     
       // Sketch related modes:
     case Mode::Sketch_inspection_mode:          options_sketch_inspection_mode_();            break;
@@ -757,11 +757,11 @@ void GUI::options_shape_polar_duplicate_mode_()
   options_orthographic_projection_();
 }
 
-void GUI::options_shape_section_mode_()
+void GUI::options_shape_cross_section_mode_()
 {
-  EZY_ASSERT(get_mode() == Mode::Shape_section);
+  EZY_ASSERT(get_mode() == Mode::Shape_cross_section);
 
-  Shp_section& section = m_view->shp_section();
+  Shp_cross_section& section = m_view->shp_cross_section();
   int          plane   = static_cast<int>(section.get_plane());
   double       offset  = section.get_offset_display();
 
@@ -776,21 +776,21 @@ void GUI::options_shape_section_mode_()
   ImGui::Separator();
   ImGui::TextUnformatted("Section plane");
 
-  if (ImGui::RadioButton("Local XY", &plane, static_cast<int>(Section_plane::XY)))
+  if (ImGui::RadioButton("Local XY", &plane, static_cast<int>(Cross_section_plane::XY)))
   {
-    section.set_plane(Section_plane::XY);
+    section.set_plane(Cross_section_plane::XY);
     update_preview();
   }
   ImGui::SameLine();
-  if (ImGui::RadioButton("Local XZ", &plane, static_cast<int>(Section_plane::XZ)))
+  if (ImGui::RadioButton("Local XZ", &plane, static_cast<int>(Cross_section_plane::XZ)))
   {
-    section.set_plane(Section_plane::XZ);
+    section.set_plane(Cross_section_plane::XZ);
     update_preview();
   }
   ImGui::SameLine();
-  if (ImGui::RadioButton("Local YZ", &plane, static_cast<int>(Section_plane::YZ)))
+  if (ImGui::RadioButton("Local YZ", &plane, static_cast<int>(Cross_section_plane::YZ)))
   {
-    section.set_plane(Section_plane::YZ);
+    section.set_plane(Cross_section_plane::YZ);
     update_preview();
   }
 

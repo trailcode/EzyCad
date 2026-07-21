@@ -95,7 +95,7 @@ Occt_view::Occt_view(GUI& gui)
     , m_shp_common(*this)
     , m_shp_polar_dup(*this)
     , m_shp_extrude(*this)
-    , m_shp_section(*this)
+    , m_shp_cross_section(*this)
 {
 }
 
@@ -574,8 +574,8 @@ void Occt_view::cancel(Set_parent_mode set_parent_mode)
     gui().set_mode(Mode::Normal);
     break;
 
-  case Mode::Shape_section:
-    shp_section().clear();
+  case Mode::Shape_cross_section:
+    shp_cross_section().clear();
     gui().set_mode(Mode::Normal);
     break;
 
@@ -2859,8 +2859,8 @@ void Occt_view::on_mode()
   DBG_MSG(c_mode_strs[int(get_mode())]);
 
   shp_polar_dup().reset();
-  if (get_mode() != Mode::Shape_section)
-    shp_section().clear();
+  if (get_mode() != Mode::Shape_cross_section)
+    shp_cross_section().clear();
 
   for (Sketch_ptr& s : m_sketches)
     s->on_mode();
@@ -2922,7 +2922,7 @@ void Occt_view::on_mode()
       case Mode::Move:                    set_shp_selection_mode(TopAbs_COMPOUND);  break;
       case Mode::Rotate:                  set_shp_selection_mode(TopAbs_COMPOUND);  break;
       case Mode::Scale:                   set_shp_selection_mode(TopAbs_COMPOUND);  break;
-      case Mode::Shape_section:           set_shp_selection_mode(TopAbs_COMPOUND);  break;
+      case Mode::Shape_cross_section:           set_shp_selection_mode(TopAbs_COMPOUND);  break;
       default:
         if(m_modes_selection_mode_map.count(get_mode()))
           set_shp_selection_mode(m_modes_selection_mode_map.at(get_mode()));
@@ -3165,7 +3165,7 @@ Shp_fuse&      Occt_view::shp_fuse()      { return m_shp_fuse;       }
 Shp_common&    Occt_view::shp_common()    { return m_shp_common;     }
 Shp_polar_dup& Occt_view::shp_polar_dup() { return m_shp_polar_dup;  }
 Shp_extrude&   Occt_view::shp_extrude()   { return m_shp_extrude;    }
-Shp_section&   Occt_view::shp_section()   { return m_shp_section;    }
+Shp_cross_section&   Occt_view::shp_cross_section()   { return m_shp_cross_section;    }
 // clang-format on
 
 // ---------------------------------------------------------------------------

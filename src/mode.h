@@ -29,7 +29,7 @@
   X(Sketch_add_circle_3_pts)                                                                                                   \
   X(Sketch_add_slot)                                                                                                           \
   X(Sketch_dim_anno)                                                                                                           \
-  X(Shape_section)
+  X(Shape_cross_section)
 
 enum class Mode
 {

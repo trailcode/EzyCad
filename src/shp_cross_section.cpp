@@ -1,4 +1,4 @@
-#include "shp_section.h"
+#include "shp_cross_section.h"
 
 #include "gui_occt_view.h"
 #include "utl_occt.h"
@@ -32,8 +32,8 @@
 
 namespace
 {
-gp_Pln                section_plane_(const gp_Ax3& frame, Section_plane plane, double offset);
-void                  count_curve_type_(const TopoDS_Edge& edge, Section_geometry& result);
+gp_Pln                cross_section_plane_(const gp_Ax3& frame, Cross_section_plane plane, double offset);
+void                  count_curve_type_(const TopoDS_Edge& edge, Cross_section_geometry& result);
 bool                  contains_solid_(const TopoDS_Shape& shape);
 TopoDS_Shape          shape_world_(const Shp& shp);
 gp_Ax3                frame_world_(const Shp& shp);
@@ -42,20 +42,20 @@ std::array<gp_Pnt, 8> bbox_corners_(const Bnd_Box& bounds);
 void project_bbox_offsets_(const Bnd_Box& bounds, const gp_Pnt& origin, const gp_Dir& normal, double& out_min, double& out_max);
 void add_plane_annotation_(const Bnd_Box& bounds, const gp_Pln& plane, BRep_Builder& builder, TopoDS_Compound& fill,
                            TopoDS_Compound& lines);
-Result<Section_geometry> section_shape_on_plane_(const TopoDS_Shape& shape, const gp_Pln& plane);
+Result<Cross_section_geometry> cross_section_shape_on_plane_(const TopoDS_Shape& shape, const gp_Pln& plane);
 } // namespace
 
-Result<Section_geometry> section_shape(const TopoDS_Shape& shape, const gp_Ax3& frame, Section_plane plane, double offset)
+Result<Cross_section_geometry> cross_section_shape(const TopoDS_Shape& shape, const gp_Ax3& frame, Cross_section_plane plane, double offset)
 {
-  return section_shape_on_plane_(shape, section_plane_(frame, plane, offset));
+  return cross_section_shape_on_plane_(shape, cross_section_plane_(frame, plane, offset));
 }
 
-Shp_section::Shp_section(Occt_view& view)
+Shp_cross_section::Shp_cross_section(Occt_view& view)
     : Shp_operation_base(view)
 {
 }
 
-Status Shp_section::preview_selected()
+Status Shp_cross_section::preview_selected()
 {
   clear();
   if (!std::isfinite(m_offset_display))
@@ -97,7 +97,7 @@ Status Shp_section::preview_selected()
   shared_axes.SetLocation(gp_Pnt((x_min + x_max) * 0.5, (y_min + y_max) * 0.5, (z_min + z_max) * 0.5));
 
   const double offset_model = view().to_model(m_offset_display);
-  const gp_Pln shared_plane = section_plane_(shared_axes, m_plane, offset_model);
+  const gp_Pln shared_plane = cross_section_plane_(shared_axes, m_plane, offset_model);
 
   TopoDS_Compound compound;
   TopoDS_Compound plane_fill;
@@ -107,11 +107,11 @@ Status Shp_section::preview_selected()
   builder.MakeCompound(plane_fill);
   builder.MakeCompound(plane_lines);
 
-  Section_geometry totals;
+  Cross_section_geometry totals;
   size_t           missed = 0;
   for (size_t i = 0; i < selected.size(); ++i)
   {
-    Result<Section_geometry> result = section_shape_on_plane_(world_shapes[i], shared_plane);
+    Result<Cross_section_geometry> result = cross_section_shape_on_plane_(world_shapes[i], shared_plane);
     if (!result.has_value())
     {
       // A miss on one solid should not kill the shared preview for the others.
@@ -124,7 +124,7 @@ Status Shp_section::preview_selected()
       return Status(result.status(), selected[i]->get_name() + ": " + result.message());
     }
 
-    const Section_geometry& geometry = *result;
+    const Cross_section_geometry& geometry = *result;
     builder.Add(compound, geometry.shape);
     totals.edge_count += geometry.edge_count;
     totals.line_count += geometry.line_count;
@@ -177,7 +177,7 @@ Status Shp_section::preview_selected()
   return Status::ok(msg.str());
 }
 
-void Shp_section::clear()
+void Shp_cross_section::clear()
 {
   if (!m_preview.IsNull())
     ctx().Remove(m_preview, false);
@@ -194,7 +194,7 @@ void Shp_section::clear()
   ctx().UpdateCurrentViewer();
 }
 
-bool Shp_section::try_get_offset_range_display(double& out_min, double& out_max)
+bool Shp_cross_section::try_get_offset_range_display(double& out_min, double& out_max)
 {
   const std::vector<Shp_ptr> selected = get_selected_shps_();
   if (selected.empty())
@@ -224,7 +224,7 @@ bool Shp_section::try_get_offset_range_display(double& out_min, double& out_max)
   combined_bounds.Get(x_min, y_min, z_min, x_max, y_max, z_max);
   shared_axes.SetLocation(gp_Pnt((x_min + x_max) * 0.5, (y_min + y_max) * 0.5, (z_min + z_max) * 0.5));
 
-  const gp_Pln plane = section_plane_(shared_axes, m_plane, 0.0);
+  const gp_Pln plane = cross_section_plane_(shared_axes, m_plane, 0.0);
   double       model_min;
   double       model_max;
   project_bbox_offsets_(combined_bounds, plane.Location(), plane.Axis().Direction(), model_min, model_max);
@@ -241,21 +241,21 @@ bool Shp_section::try_get_offset_range_display(double& out_min, double& out_max)
 
 namespace
 {
-gp_Pln section_plane_(const gp_Ax3& frame, Section_plane plane, double offset)
+gp_Pln cross_section_plane_(const gp_Ax3& frame, Cross_section_plane plane, double offset)
 {
   gp_Dir normal;
   gp_Dir x_dir;
   switch (plane)
   {
-  case Section_plane::XY:
+  case Cross_section_plane::XY:
     normal = frame.Direction();
     x_dir  = frame.XDirection();
     break;
-  case Section_plane::XZ:
+  case Cross_section_plane::XZ:
     normal = frame.YDirection();
     x_dir  = frame.XDirection();
     break;
-  case Section_plane::YZ:
+  case Cross_section_plane::YZ:
     normal = frame.XDirection();
     x_dir  = frame.YDirection();
     break;
@@ -265,7 +265,7 @@ gp_Pln section_plane_(const gp_Ax3& frame, Section_plane plane, double offset)
   return gp_Pln(gp_Ax3(location, normal, x_dir));
 }
 
-Result<Section_geometry> section_shape_on_plane_(const TopoDS_Shape& shape, const gp_Pln& plane)
+Result<Cross_section_geometry> cross_section_shape_on_plane_(const TopoDS_Shape& shape, const gp_Pln& plane)
 {
   if (shape.IsNull())
     return {Result_status::User_error, "Cannot section a null shape."};
@@ -281,7 +281,7 @@ Result<Section_geometry> section_shape_on_plane_(const TopoDS_Shape& shape, cons
     if (!section.IsDone())
       return {Result_status::Topo_error, "Open CASCADE could not compute the section."};
 
-    Section_geometry result;
+    Cross_section_geometry result;
     result.shape = section.Shape();
     for (TopExp_Explorer it(result.shape, TopAbs_EDGE); it.More(); it.Next())
     {
@@ -300,7 +300,7 @@ Result<Section_geometry> section_shape_on_plane_(const TopoDS_Shape& shape, cons
   }
 }
 
-void count_curve_type_(const TopoDS_Edge& edge, Section_geometry& result)
+void count_curve_type_(const TopoDS_Edge& edge, Cross_section_geometry& result)
 {
   switch (BRepAdaptor_Curve(edge).GetType())
   {

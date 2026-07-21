@@ -196,7 +196,7 @@ void GUI::initialize_toolbar_()
       {load_texture("res/icons/PartDesign_Chamfer.png"),              false, "Chamfer (c)",                       Mode::Shape_chamfer},
       {load_texture("res/icons/PartDesign_Fillet.png"),               false, "Fillet (f)",                        Mode::Shape_fillet},
       {load_texture("res/icons/Draft_PolarArray.png"),                false, "Shape polar duplicate",             Mode::Shape_polar_duplicate},
-      {load_texture("res/icons/Curves_ExtractSubshape.png"),          false, "Shape cross-section",               Mode::Shape_section},
+      {load_texture("res/icons/Curves_ExtractSubshape.png"),          false, "Shape cross-section",               Mode::Shape_cross_section},
       {load_texture("res/icons/Part_Cut.png"),                        false, "Shape cut",                         Command::Shape_cut},
       {load_texture("res/icons/Part_Fuse.png"),                       false, "Shape fuse",                        Command::Shape_fuse},
       {load_texture("res/icons/Part_Common.png"),                     false, "Shape common",                      Command::Shape_common},
