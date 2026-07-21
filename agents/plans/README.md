@@ -13,9 +13,10 @@ shp-origin-orientation  -->  cross-section-tool  -->  sketch-from-shape-section
 sketch-mode-shape-faint  (parallel UX: ghost/wire shapes while sketching)
 ```
 
-| Plan                                                         | Load only when prompt is about                                       |
-| ------------------------------------------------------------ | -------------------------------------------------------------------- |
-| [shp-origin-orientation.md](shp-origin-orientation.md)       | shape origin, shape frame, shape axes / orientation annotation       |
-| [cross-section-tool.md](cross-section-tool.md)               | cross-section tool, section cut preview, cutting-plane experiment    |
-| [sketch-from-shape-section.md](sketch-from-shape-section.md) | "sketch from shape", section → editable sketch (end-state; deferred) |
-| [sketch-mode-shape-faint.md](sketch-mode-shape-faint.md)     | faint/ghost/wireframe shapes in sketch mode, alpha blending solids   |
+| Plan                                                             | Load only when prompt is about                                        |
+| ---------------------------------------------------------------- | --------------------------------------------------------------------- |
+| [shp-origin-orientation.md](shp-origin-orientation.md)           | shape origin, shape frame, shape axes / orientation annotation        |
+| [cross-section-tool.md](cross-section-tool.md)                   | cross-section tool, section cut preview, cutting-plane experiment     |
+| [sketch-from-shape-section.md](sketch-from-shape-section.md)     | "sketch from shape", section → editable sketch (end-state; deferred)  |
+| [sketch-mode-shape-faint.md](sketch-mode-shape-faint.md)         | faint/ghost/wireframe shapes in sketch mode, alpha blending solids    |
+| [shape-list-hierarchy-phase3.md](shape-list-hierarchy-phase3.md) | parent transform inheritance, Parts/planes, Boolean history (#214)    |
