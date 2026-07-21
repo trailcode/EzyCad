@@ -2,6 +2,7 @@
 
 #include <AIS_Shape.hxx>
 #include <AIS_DisplayMode.hxx>
+#include <gp_Ax3.hxx>
 #include <cstdint>
 
 #include "utl.h"
@@ -30,14 +31,20 @@ public:
   void               set_disp_mode(const AIS_DisplayMode mode);
   bool               get_visible() const;
   /// User visibility preference (does not alone control viewer Erase/Display when overlays apply).
-  void               set_visible(const bool visible);
-  void               set_selection_mode(const TopAbs_ShapeEnum mode);
+  void set_visible(const bool visible);
+  void set_selection_mode(const TopAbs_ShapeEnum mode);
 
   bool     is_group() const { return m_is_group; }
   Shape_id get_parent_id() const { return m_parent_id; }
   void     set_parent_id(Shape_id parent_id) { m_parent_id = parent_id; }
   int      get_sibling_order() const { return m_sibling_order; }
   void     set_sibling_order(int order) { m_sibling_order = order; }
+
+  /// Shape-local frame metadata. New shapes default to a world-aligned frame
+  /// centered on their bounding box.
+  const gp_Ax3& get_frame() const { return m_frame; }
+  void          set_frame(const gp_Ax3& frame) { m_frame = frame; }
+  void          transform_frame(const gp_Trsf& transform) { m_frame.Transform(transform); }
 
   /// Show or erase in the interactive context without changing get_visible().
   /// No-op for group nodes.
@@ -64,6 +71,7 @@ protected:
   bool                    m_is_group{false};
   Shape_id                m_parent_id{0};
   int                     m_sibling_order{0};
+  gp_Ax3                  m_frame;
 };
 
 using Shp_rslt = Result<Shp_ptr>;

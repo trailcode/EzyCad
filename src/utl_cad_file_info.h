@@ -37,7 +37,7 @@ struct Named_body
 /// STEP XCAF node: assemblies become groups (`is_group`); leaves carry geometry.
 struct Named_node
 {
-  TopoDS_Shape shape;       // null/empty when is_group
+  TopoDS_Shape shape; // null/empty when is_group
   std::string  name;
   bool         is_group{false};
   int          parent_index{-1}; // index in the output vector, or -1 for root

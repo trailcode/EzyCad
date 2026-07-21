@@ -100,7 +100,7 @@ Status Shp_chamfer::add_chamfer(const ScreenCoords& screen_coords, const Chamfer
     Shp_ptr chamfer_shp = new Shp(ctx(), chamfer_maker.Shape());
     replace_picked_shape_(chamfer_src_shp, chamfer_shp, "Chamfered shape");
     view().push_undo_delta(std::make_unique<Shape_replace_delta>(std::vector<Shape_rec>{removed},
-                                                                  std::vector<Shape_rec>{capture_shape_rec(*chamfer_shp)}));
+                                                                 std::vector<Shape_rec>{capture_shape_rec(*chamfer_shp)}));
   }
   catch (const Standard_Failure& e)
   {

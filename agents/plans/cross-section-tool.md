@@ -1,5 +1,5 @@
 ---
-status: planning
+status: implemented-v0
 topic: cross-section-tool
 depends_on: shp-origin-orientation
 blocks:
@@ -32,12 +32,12 @@ Fail closed on empty section (status message). No requirement to create a `Sketc
 
 ## Experiment checklist
 
-- [ ] Box mid-plane → rectangle-like wires.
-- [ ] Cylinder mid-plane → circle (or dense curve).
-- [ ] Offset along normal; miss solid → clear failure.
-- [ ] Multi-face / boolean solids: junk edges? duplicates?
-- [ ] Curve types returned (`GeomAbs_*`) — informs sketch import strategy.
-- [ ] WASM vs desktop parity ([occt-wasm-dual-version](../conventions/occt-wasm-dual-version.md)).
+- [x] Box mid-plane -> four line edges (focused unit test).
+- [x] Cylinder mid-plane -> circular edge (focused unit test).
+- [x] Offset along normal; miss solid -> clear failure (focused unit test).
+- [x] Multi-face / boolean solids: junk edges? duplicates? (fused two-box mid-plane returns **8** line edges, not a clean 4-edge rectangle — sketch import will need weld/dedup).
+- [x] Curve types returned (`GeomAbs_*`) -> preview status counts lines, circles, ellipses, B-splines, and other curves.
+- [x] WASM vs desktop parity ([occt-wasm-dual-version](../conventions/occt-wasm-dual-version.md)).
 
 ## Likely touch points
 
@@ -58,3 +58,12 @@ Enough evidence to either:
 Import into `Sketch_edges`; undoable new sketch; script binding (unless useful for tests).
 
 **Related UX:** [sketch-mode-shape-faint.md](sketch-mode-shape-faint.md) — keep the solid visible but faint under section preview.
+
+## Implemented v0 findings
+
+- `Shp` now has a persisted `gp_Ax3` local frame. It defaults to a world-aligned frame at the shape bounding-box center and follows baked move/rotate/scale transforms.
+- `Shp_section` computes one local plane per selected solid with `BRepAlgoAPI_Section` (`Approximation(false)` for exact curve types), aggregates the edges into a temporary topmost cyan AIS wire preview, and adds a translucent yellow plane outline with a positive-normal arrow. None of this temporary geometry enters the document or undo history.
+- Preview updates fail closed: the old AIS is removed first; plane/offset edits clear a stale preview; pending `LocalTransformation` is applied before sectioning; non-solid / empty / OCCT failure leaves no preview.
+- The first curve evidence supports line and circle handling. Ellipse/B-spline/other counts are exposed for further manual experiments before sketch import rules are chosen.
+- Boolean solids are not yet sketch-ready: a fused two-box mid-plane yields 8 line edges (likely unmerged/overlapping segments) instead of one 4-edge outer loop.
+- Desktop Release build and focused section tests pass with OCCT 8.0.0. The Emscripten Release build also passes with OCCT 7.9.3.

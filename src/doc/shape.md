@@ -23,6 +23,7 @@ Typical uses:
 - Extrude a sketch face into a solid; revolve sketch geometry (revolve lives in `skt_operations.cpp`, returns `Shp_rslt`).
 - Boolean fuse/cut/common on selected shapes.
 - Interactive move, rotate, and scale with preview transforms.
+- Preview cross-sections on a shape-local XY, XZ, or YZ plane.
 - Fillet/chamfer by shape, face, wire, or edge pick mode.
 - Polar duplicate selected shapes about an arm on the current sketch plane.
 
@@ -31,6 +32,7 @@ Typical uses:
 ### Lifetime and ownership
 
 - Shapes are stored in `Occt_view::m_shps` (`std::list<Shp_ptr>`). Access via `get_shapes()` or internal `add_shp_()`.
+- Each solid stores a `gp_Ax3` local frame. New geometry defaults to a world-aligned frame at its bounding-box center. Baked move/rotate/scale transforms update the frame; project JSON and shape undo records preserve it.
 - `Shp_ptr` is `opencascade::handle<Shp>`. New shapes are allocated with `new Shp(ctx(), topo_shape)` then registered through `Occt_view::add_shp_()`. Groups use `Shp::create_group` (empty compound, never displayed).
 - Hierarchy: `parent_id` (0 = root) + `sibling_order`. Organizational groups only (no transform inheritance). Helpers: `shape_children`, `shape_descendant_solids`, `group_shapes`, `ungroup_shape`, `reparent_shape`, `would_reparent_create_cycle`.
 - **Current group** (`Occt_view::current_group_id`, 0 = root): Shape List click sets it; empty groups are valid. Primitives / extrude / revolve / PLY / unioned STEP import call `add_shp_(..., use_current_group=true)` so new solids land under that group. Booleans keep `assign_result_parent_`.
@@ -90,6 +92,7 @@ Occt_view
   |
   +-- std::list<Shp_ptr> m_shps          document shapes
   +-- Shp_move / Shp_rotate / Shp_scale  interactive transforms
+  +-- Shp_section                       temporary local-plane section preview
   +-- Shp_extrude                        sketch face extrude session
   +-- Shp_fuse / Shp_cut / Shp_common    booleans
   +-- Shp_fillet / Shp_chamfer           edge modifiers (replace in place)
@@ -116,7 +119,7 @@ class Shp : public AIS_Shape {
 
 `set_visible` stores the user preference. `Occt_view::sync_sketch_shape_faint_style` applies effective visibility (own flag, ancestor groups, Hide all overlay, sketch faint/hide) via `apply_context_shown` so Hide all does not stomp per-shape flags. `update_display_()` re-binds selection after mode changes.
 
-`.ezy` `shapes[]` entries include `id`, `name`, `parentId`, `order`, `visible`, and either `isGroup: true` or `material` + `geom`. Undo uses `Shape_rec` (same fields) plus `Shape_tree_delta` for reparent/group/ungroup.
+`.ezy` `shapes[]` entries include `id`, `name`, `parentId`, `order`, `visible`, and either `isGroup: true` or `material` + `geom` + `frame`. Undo uses `Shape_rec` (including the local frame) plus `Shape_tree_delta` for reparent/group/ungroup.
 
 ## `Shp_operation_base`
 
@@ -148,6 +151,7 @@ Protected helpers used by all operation classes:
 | `shp_fillet.h`    | `Shp_fillet`           | `add_fillet(..., Fillet_mode)` -- `BRepFilletAPI_MakeFillet`; modes: Shape, Face, Wire, Edge (`mode.h`).                                                                     |
 | `shp_chamfer.h`   | `Shp_chamfer`          | `add_chamfer(..., Chamfer_mode)` -- diagonal distance converted to setback (`dist/sqrt(2)`).                                                                                 |
 | `shp_polar_dup.h` | `Shp_polar_dup`        | Arm on sketch plane; `dup()` copies selection at polar steps; options: rotate copies, combine into one solid.                                                                |
+| `shp_section.h`   | `Shp_section`          | `BRepAlgoAPI_Section` preview on each selected solid's local XY/XZ/YZ plane plus offset; temporary cyan section wires plus a translucent yellow plane/normal annotation.       |
 | `shp_info.h`      | `namespace shp_info`   | `collect(TopoDS_Shape, Display_meta*)` -> labeled lines for Shape info dialog.                                                                                               |
 
 ## Input routing (from UI / `Occt_view`)
@@ -163,6 +167,7 @@ Protected helpers used by all operation classes:
 | `Mode::Shape_fillet`          | --                               | `shp_fillet().add_fillet(..., Fillet_mode)`                                  | --                                             | --                                     |
 | `Mode::Shape_chamfer`         | --                               | `shp_chamfer().add_chamfer(..., Chamfer_mode)`                               | --                                             | --                                     |
 | `Mode::Shape_polar_duplicate` | `shp_polar_dup().move_point`     | `shp_polar_dup().add_point`                                                  | --                                             | `shp_polar_dup().reset` on mode change |
+| `Mode::Shape_section`         | --                               | --                                                                           | Options **Update preview**                     | Preview cleared                        |
 | Fuse / cut / common (toolbar) | --                               | `selected_fuse` / `selected_cut` / `selected_common` (one-shot)              | --                                             | --                                     |
 | Primitives (menu / script)    | --                               | `Occt_view::add_box`, `add_sphere`, ...                                      | --                                             | --                                     |
 | Revolve (sketch Options)      | --                               | `Occt_view::revolve_selected` -> `add_shp_`                                  | --                                             | --                                     |

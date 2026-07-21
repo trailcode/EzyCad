@@ -95,6 +95,7 @@ Occt_view::Occt_view(GUI& gui)
     , m_shp_common(*this)
     , m_shp_polar_dup(*this)
     , m_shp_extrude(*this)
+    , m_shp_section(*this)
 {
 }
 
@@ -519,6 +520,8 @@ void Occt_view::bake_transform_into_geometry(AIS_Shape_ptr& shape)
 
   // Update the AIS_Shape with the new geometry
   shape->Set(transformed_shape);
+  if (Shp_ptr document_shape = Shp_ptr::DownCast(shape); !document_shape.IsNull())
+    document_shape->transform_frame(current_transform);
 
   // Reset the local transformation to identity
   gp_Trsf identity_transform;
@@ -568,6 +571,11 @@ void Occt_view::cancel(Set_parent_mode set_parent_mode)
 
   case Mode::Scale:
     shp_scale().cancel();
+    gui().set_mode(Mode::Normal);
+    break;
+
+  case Mode::Shape_section:
+    shp_section().clear();
     gui().set_mode(Mode::Normal);
     break;
 
@@ -1056,7 +1064,8 @@ std::vector<Shp_ptr> Occt_view::shape_children(Shape_id parent_id) const
     if (!s.IsNull() && s->get_parent_id() == parent_id)
       kids.push_back(s);
 
-  std::sort(kids.begin(), kids.end(), [](const Shp_ptr& a, const Shp_ptr& b)
+  std::sort(kids.begin(), kids.end(),
+            [](const Shp_ptr& a, const Shp_ptr& b)
             {
               if (a->get_sibling_order() != b->get_sibling_order())
                 return a->get_sibling_order() < b->get_sibling_order();
@@ -1192,8 +1201,8 @@ Status Occt_view::group_shapes(const std::vector<Shp_ptr>& nodes)
     apply_shape_link(ch.id, ch.new_parent, ch.new_order);
 
   m_current_group_id = grp->get_id();
-  push_undo_delta(std::make_unique<Shape_tree_delta>(std::vector<Shape_rec>{capture_shape_rec(*grp)},
-                                                     std::vector<Shape_rec>{}, std::move(links)));
+  push_undo_delta(std::make_unique<Shape_tree_delta>(std::vector<Shape_rec>{capture_shape_rec(*grp)}, std::vector<Shape_rec>{},
+                                                     std::move(links)));
   sync_sketch_shape_faint_style();
   return Status::ok();
 }
@@ -1304,7 +1313,7 @@ void Occt_view::insert_shape_rec(const Shape_rec& rec)
   }
   else
   {
-    shp = new Shp(*m_ctx, rec.geom);
+    shp               = new Shp(*m_ctx, rec.geom);
     const int nmat    = Graphic3d_MaterialAspect::NumberOfMaterials();
     int       mat_idx = rec.material;
     if (mat_idx < 0 || mat_idx >= nmat)
@@ -1318,6 +1327,7 @@ void Occt_view::insert_shape_rec(const Shape_rec& rec)
   shp->set_id(rec.id);
   adopt_shape_id(rec.id);
   shp->set_name(rec.name);
+  shp->set_frame(rec.frame);
   shp->set_parent_id(rec.parent_id);
   shp->set_sibling_order(rec.sibling_order);
   // Prefer writing the flag without relying on Display order; sync applies context.
@@ -1349,13 +1359,14 @@ void Occt_view::remove_shape_by_id(Shape_id id)
   }
 }
 
-void Occt_view::set_shape_geom_by_id(Shape_id id, const TopoDS_Shape& geom)
+void Occt_view::set_shape_geom_by_id(Shape_id id, const TopoDS_Shape& geom, const gp_Ax3& frame)
 {
   Shp_ptr shp = find_shape_by_id(id);
   if (shp.IsNull())
     return;
 
   shp->Set(geom);
+  shp->set_frame(frame);
   gp_Trsf identity;
   shp->SetLocalTransformation(identity);
   m_ctx->Redisplay(shp, true);
@@ -1689,10 +1700,7 @@ void Occt_view::set_project_unit(Project_unit unit)
   refresh_sketch_annotations({.length_dimensions = true});
 }
 
-const char* Occt_view::project_unit_suffix() const
-{
-  return m_project_unit == Project_unit::Millimeter ? "mm" : "in";
-}
+const char* Occt_view::project_unit_suffix() const { return m_project_unit == Project_unit::Millimeter ? "mm" : "in"; }
 
 bool Occt_view::get_show_dim_input() const { return m_show_dim_input; }
 
@@ -2851,6 +2859,8 @@ void Occt_view::on_mode()
   DBG_MSG(c_mode_strs[int(get_mode())]);
 
   shp_polar_dup().reset();
+  if (get_mode() != Mode::Shape_section)
+    shp_section().clear();
 
   for (Sketch_ptr& s : m_sketches)
     s->on_mode();
@@ -2912,6 +2922,7 @@ void Occt_view::on_mode()
       case Mode::Move:                    set_shp_selection_mode(TopAbs_COMPOUND);  break;
       case Mode::Rotate:                  set_shp_selection_mode(TopAbs_COMPOUND);  break;
       case Mode::Scale:                   set_shp_selection_mode(TopAbs_COMPOUND);  break;
+      case Mode::Shape_section:           set_shp_selection_mode(TopAbs_COMPOUND);  break;
       default:
         if(m_modes_selection_mode_map.count(get_mode()))
           set_shp_selection_mode(m_modes_selection_mode_map.at(get_mode()));
@@ -2955,7 +2966,7 @@ void Occt_view::sync_sketch_shape_faint_style()
       continue;
 
     // Hide all / sketch-hide are overlays: do not write get_visible().
-    const bool own_ok      = shp->get_visible() && shape_ancestors_visible(*shp);
+    const bool own_ok       = shp->get_visible() && shape_ancestors_visible(*shp);
     const bool hide_overlay = hide_all || (sketch && hide_in_sketch);
     const bool show         = own_ok && !hide_overlay;
 
@@ -3154,6 +3165,7 @@ Shp_fuse&      Occt_view::shp_fuse()      { return m_shp_fuse;       }
 Shp_common&    Occt_view::shp_common()    { return m_shp_common;     }
 Shp_polar_dup& Occt_view::shp_polar_dup() { return m_shp_polar_dup;  }
 Shp_extrude&   Occt_view::shp_extrude()   { return m_shp_extrude;    }
+Shp_section&   Occt_view::shp_section()   { return m_shp_section;    }
 // clang-format on
 
 // ---------------------------------------------------------------------------
@@ -3276,7 +3288,7 @@ std::string Occt_view::to_json() const
 {
   using namespace nlohmann;
   json j;
-  j["ezyFormat"] = k_ezy_file_format_version;
+  j["ezyFormat"]   = k_ezy_file_format_version;
   j["projectUnit"] = (m_project_unit == Project_unit::Millimeter) ? "millimeter" : "inch";
   json& sketches = j["sketches"] = json::array();
   json& shps = j["shapes"] = json::array();
@@ -3310,6 +3322,7 @@ std::string Occt_view::to_json() const
       BRepTools::Write(shape, oss, false, false, TopTools_FormatVersion_CURRENT);
       shp_json["material"] = s->Material();
       shp_json["geom"]     = oss.str();
+      shp_json["frame"]    = ::to_json(gp_Pln(s->get_frame()));
     }
     shps.push_back(shp_json);
   }
@@ -3400,6 +3413,8 @@ void Occt_view::load(const std::string& json_str, bool restore_view)
       iss.str(s["geom"]);
       BRepTools::Read(shape, iss, BRep_Builder());
       shp = new Shp(*m_ctx, shape);
+      if (s.contains("frame") && s["frame"].is_object())
+        shp->set_frame(from_json_pln(s["frame"]).Position());
       int mat_idx = static_cast<int>(m_default_material.Name());
       if (s.contains("material") && s["material"].is_number_integer())
         mat_idx = s["material"].get<int>();
@@ -3710,13 +3725,13 @@ Status Occt_view::import_step(const std::string& step_data, const bool union_sha
     return Status::ok();
   }
 
-  std::vector<Shape_id> id_by_index(named.size(), 0);
+  std::vector<Shape_id>  id_by_index(named.size(), 0);
   std::vector<Shape_rec> added;
   added.reserve(named.size());
 
   for (size_t i = 0; i < named.size(); ++i)
   {
-    utl_cad_file_info::Named_node& node = named[i];
+    utl_cad_file_info::Named_node& node      = named[i];
     Shape_id                       parent_id = 0;
     if (node.parent_index >= 0 && static_cast<size_t>(node.parent_index) < id_by_index.size())
       parent_id = id_by_index[static_cast<size_t>(node.parent_index)];
@@ -3783,10 +3798,10 @@ void Occt_view::new_file()
   remove(m_shps);
   clear_all(m_shps, m_sketches, m_cur_sketch);
   m_assets.clear();
-  m_next_sketch_id = 1;
-  m_next_shape_id  = 1;
+  m_next_sketch_id   = 1;
+  m_next_shape_id    = 1;
   m_current_group_id = 0;
-  m_project_unit   = m_gui.default_project_unit();
+  m_project_unit     = m_gui.default_project_unit();
 
   create_default_sketch_();
   refresh_viewer_grid_();

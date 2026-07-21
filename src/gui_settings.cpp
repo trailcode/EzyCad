@@ -214,9 +214,9 @@ std::string GUI::occt_view_settings_json() const
       {"annotate_all_coaxial_nodes", Sketch_nodes::get_annotate_all_coaxial_nodes()},
       {"ui_verbosity", m_ui_verbosity},
       {"elm_list_hover_color",
-       {m_elm_list_hover_color[0], m_elm_list_hover_color[1], m_elm_list_hover_color[2], m_elm_list_hover_color[3]}},
+             {m_elm_list_hover_color[0], m_elm_list_hover_color[1], m_elm_list_hover_color[2], m_elm_list_hover_color[3]}},
       {"shape_selection_color",
-       {m_shape_selection_color[0], m_shape_selection_color[1], m_shape_selection_color[2], m_shape_selection_color[3]}},
+             {m_shape_selection_color[0], m_shape_selection_color[1], m_shape_selection_color[2], m_shape_selection_color[3]}},
       {"sketch_shape_faint_style", m_sketch_shape_faint_style},
       {"sketch_shape_faint_opacity", m_sketch_shape_faint_opacity},
       {"sketch_shape_faint_enabled", m_sketch_shape_faint_enabled},
@@ -1019,17 +1019,15 @@ void GUI::settings_()
                     "Does not change the open project's File -> Project units. Click ? for the guide.",
                     doc_urls::k_view_navigation);
 
-      const double to_ui =
-          (m_default_project_unit == Project_unit::Millimeter) ? k_mm_per_inch : 1.0;
-      const char*  unit_sfx =
-          (m_default_project_unit == Project_unit::Millimeter) ? "mm" : "in";
-      double       w_ui   = m_default_2d_view_width * to_ui;
-      double       h_ui   = m_default_2d_view_height * to_ui;
-      const double min_ui = k_gui_default_2d_view_size_min * to_ui;
-      const double max_ui = k_gui_default_2d_view_size_max * to_ui;
+      const double to_ui    = (m_default_project_unit == Project_unit::Millimeter) ? k_mm_per_inch : 1.0;
+      const char*  unit_sfx = (m_default_project_unit == Project_unit::Millimeter) ? "mm" : "in";
+      double       w_ui     = m_default_2d_view_width * to_ui;
+      double       h_ui     = m_default_2d_view_height * to_ui;
+      const double min_ui   = k_gui_default_2d_view_size_min * to_ui;
+      const double max_ui   = k_gui_default_2d_view_size_max * to_ui;
       // Drag (not a 0.1..1000 slider): default 3 in sits near the left of a linear slider and is easy to
       // accidentally set to the minimum.
-      const float  drag_spd = (m_default_project_unit == Project_unit::Millimeter) ? 1.0f : 0.05f;
+      const float drag_spd = (m_default_project_unit == Project_unit::Millimeter) ? 1.0f : 0.05f;
 
       ImGui::TableNextRow();
       ImGui::TableSetColumnIndex(0);
@@ -1039,8 +1037,7 @@ void GUI::settings_()
       ImGui::SetNextItemWidth(120.0f);
       if (ImGui::DragScalar("##default_2d_view_width", ImGuiDataType_Double, &w_ui, drag_spd, &min_ui, &max_ui, "%.2f"))
       {
-        m_default_2d_view_width =
-            std::clamp(w_ui / to_ui, k_gui_default_2d_view_size_min, k_gui_default_2d_view_size_max);
+        m_default_2d_view_width = std::clamp(w_ui / to_ui, k_gui_default_2d_view_size_min, k_gui_default_2d_view_size_max);
         save_occt_view_settings();
       }
       m_default_2d_view_width =
@@ -1061,8 +1058,7 @@ void GUI::settings_()
       ImGui::SetNextItemWidth(120.0f);
       if (ImGui::DragScalar("##default_2d_view_height", ImGuiDataType_Double, &h_ui, drag_spd, &min_ui, &max_ui, "%.2f"))
       {
-        m_default_2d_view_height =
-            std::clamp(h_ui / to_ui, k_gui_default_2d_view_size_min, k_gui_default_2d_view_size_max);
+        m_default_2d_view_height = std::clamp(h_ui / to_ui, k_gui_default_2d_view_size_min, k_gui_default_2d_view_size_max);
         save_occt_view_settings();
       }
       m_default_2d_view_height =
@@ -1461,9 +1457,9 @@ void GUI::settings_()
                                      k_gui_sketch_shape_faint_opacity_min * 100.0f,
                                      k_gui_sketch_shape_faint_opacity_max * 100.0f, "%.0f%%"))
               {
-                m_sketch_shape_faint_opacity =
-                    std::clamp(strength_pct / 100.0f, k_gui_sketch_shape_faint_opacity_min, k_gui_sketch_shape_faint_opacity_max);
-                appear_changed = true;
+                m_sketch_shape_faint_opacity = std::clamp(strength_pct / 100.0f, k_gui_sketch_shape_faint_opacity_min,
+                                                          k_gui_sketch_shape_faint_opacity_max);
+                appear_changed               = true;
               }
             }
             ImGui::SameLine(0.0f, ImGui::GetStyle().ItemInnerSpacing.x);

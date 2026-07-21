@@ -196,6 +196,7 @@ void GUI::initialize_toolbar_()
       {load_texture("res/icons/PartDesign_Chamfer.png"),              false, "Chamfer (c)",                       Mode::Shape_chamfer},
       {load_texture("res/icons/PartDesign_Fillet.png"),               false, "Fillet (f)",                        Mode::Shape_fillet},
       {load_texture("res/icons/Draft_PolarArray.png"),                false, "Shape polar duplicate",             Mode::Shape_polar_duplicate},
+      {load_texture("res/icons/Curves_ExtractSubshape.png"),          false, "Shape cross-section",               Mode::Shape_section},
       {load_texture("res/icons/Part_Cut.png"),                        false, "Shape cut",                         Command::Shape_cut},
       {load_texture("res/icons/Part_Fuse.png"),                       false, "Shape fuse",                        Command::Shape_fuse},
       {load_texture("res/icons/Part_Common.png"),                     false, "Shape common",                      Command::Shape_common},
@@ -1121,9 +1122,8 @@ const std::vector<std::string>& GUI::occt_material_combo_labels_()
 }
 
 void GUI::sketch_list_inspector_(const Sketch::sptr& sketch, int index, Sketch_list_row_ui& row_ui,
-                                 Sketch::sptr& hover_dim_sketch, size_t& hover_dim_index,
-                                 Sketch::sptr& hover_face_sketch, size_t& hover_face_index,
-                                 Sketch::sptr& hover_edge_sketch, size_t& hover_edge_index,
+                                 Sketch::sptr& hover_dim_sketch, size_t& hover_dim_index, Sketch::sptr& hover_face_sketch,
+                                 size_t& hover_face_index, Sketch::sptr& hover_edge_sketch, size_t& hover_edge_index,
                                  Sketch::sptr& hover_node_sketch, size_t& hover_node_index)
 {
   ImGui::Indent();
@@ -1492,10 +1492,9 @@ void GUI::sketch_list_()
       sketch_list_hover = sketch;
 
     if (expanded && ui_show_sketch_list_expand())
-      sketch_list_inspector_(sketch, index, row_ui, sketch_list_measurement_hover_sketch,
-                             sketch_list_measurement_hover_index, sketch_list_hover_face_sketch,
-                             sketch_list_hover_face_index, sketch_list_hover_edge_sketch, sketch_list_hover_edge_index,
-                             sketch_list_hover_node_sketch, sketch_list_hover_node_index);
+      sketch_list_inspector_(sketch, index, row_ui, sketch_list_measurement_hover_sketch, sketch_list_measurement_hover_index,
+                             sketch_list_hover_face_sketch, sketch_list_hover_face_index, sketch_list_hover_edge_sketch,
+                             sketch_list_hover_edge_index, sketch_list_hover_node_sketch, sketch_list_hover_node_index);
 
     ++index;
   }
@@ -2137,8 +2136,8 @@ void GUI::cancel_underlay_calib_()
 
 void GUI::begin_underlay_undo_(Sketch& sk)
 {
-  m_underlay_undo_before     = sk.underlay().to_json(m_view->asset_store());
-  m_underlay_undo_sketch_id  = sk.get_id();
+  m_underlay_undo_before    = sk.underlay().to_json(m_view->asset_store());
+  m_underlay_undo_sketch_id = sk.get_id();
 }
 
 void GUI::commit_underlay_undo_(Sketch& sk)
@@ -2764,15 +2763,15 @@ void GUI::shape_list_()
   if (ImGui::BeginTable("##shape_outliner", 4, table_flags, ImVec2(0.f, 0.f)))
   {
     // Fixed actions on the left; stretch name on the right (tree indent on name only).
-    ImGui::TableSetupColumn("vis", ImGuiTableColumnFlags_WidthFixed | ImGuiTableColumnFlags_NoResize |
-                                       ImGuiTableColumnFlags_IndentDisable,
-                            check_col_w);
-    ImGui::TableSetupColumn("disp", ImGuiTableColumnFlags_WidthFixed | ImGuiTableColumnFlags_NoResize |
-                                        ImGuiTableColumnFlags_IndentDisable,
-                            check_col_w);
-    ImGui::TableSetupColumn("mat", ImGuiTableColumnFlags_WidthFixed | ImGuiTableColumnFlags_NoResize |
-                                       ImGuiTableColumnFlags_IndentDisable,
-                            mat_col_w);
+    ImGui::TableSetupColumn(
+        "vis", ImGuiTableColumnFlags_WidthFixed | ImGuiTableColumnFlags_NoResize | ImGuiTableColumnFlags_IndentDisable,
+        check_col_w);
+    ImGui::TableSetupColumn(
+        "disp", ImGuiTableColumnFlags_WidthFixed | ImGuiTableColumnFlags_NoResize | ImGuiTableColumnFlags_IndentDisable,
+        check_col_w);
+    ImGui::TableSetupColumn(
+        "mat", ImGuiTableColumnFlags_WidthFixed | ImGuiTableColumnFlags_NoResize | ImGuiTableColumnFlags_IndentDisable,
+        mat_col_w);
     ImGui::TableSetupColumn("name", ImGuiTableColumnFlags_WidthStretch | ImGuiTableColumnFlags_IndentEnable, 1.0f);
 
     ImGui::PushStyleVar(ImGuiStyleVar_FramePadding,
@@ -2788,15 +2787,14 @@ void GUI::shape_list_()
     {
       const float        min_pad_h = ImGui::GetFrameHeight();
       const ImGuiWindow* inner     = ImGui::GetCurrentWindow();
-      const float        visible_remain =
-          inner->InnerClipRect.Max.y - ImGui::GetCursorScreenPos().y - ImGui::GetStyle().CellPadding.y;
-      const float pad_h = std::max(min_pad_h, visible_remain);
+      const float visible_remain = inner->InnerClipRect.Max.y - ImGui::GetCursorScreenPos().y - ImGui::GetStyle().CellPadding.y;
+      const float pad_h          = std::max(min_pad_h, visible_remain);
       ImGui::TableNextRow(ImGuiTableRowFlags_None, pad_h);
       ImGui::TableSetColumnIndex(0);
 
       const ImGuiPayload* active_payload = ImGui::GetDragDropPayload();
-      const bool dragging_shape =
-          active_payload != nullptr && active_payload->IsDataType("EZY_SHAPE_ID") && active_payload->DataSize == sizeof(Shape_id);
+      const bool          dragging_shape = active_payload != nullptr && active_payload->IsDataType("EZY_SHAPE_ID") &&
+                                  active_payload->DataSize == sizeof(Shape_id);
 
       if (dragging_shape)
         ImGui::TableSetBgColor(ImGuiTableBgTarget_RowBg0, ImGui::GetColorU32(ImGuiCol_Header, 0.20f));
@@ -2808,8 +2806,7 @@ void GUI::shape_list_()
       bool root_drop_hovered = false;
       if (ImGui::BeginDragDropTarget())
       {
-        const ImGuiPayload* payload =
-            ImGui::AcceptDragDropPayload("EZY_SHAPE_ID", ImGuiDragDropFlags_AcceptBeforeDelivery);
+        const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("EZY_SHAPE_ID", ImGuiDragDropFlags_AcceptBeforeDelivery);
         if (payload != nullptr)
         {
           root_drop_hovered = payload->Preview;
@@ -2832,9 +2829,9 @@ void GUI::shape_list_()
 
         const char*  hint = "Move to root";
         const ImVec2 ts   = ImGui::CalcTextSize(hint);
-        ImGui::GetWindowDrawList()->AddText(ImVec2(rmin.x + (rmax.x - rmin.x - ts.x) * 0.5f,
-                                                   rmin.y + (rmax.y - rmin.y - ts.y) * 0.5f),
-                                            ImGui::GetColorU32(ImGuiCol_TextDisabled), hint);
+        ImGui::GetWindowDrawList()->AddText(
+            ImVec2(rmin.x + (rmax.x - rmin.x - ts.x) * 0.5f, rmin.y + (rmax.y - rmin.y - ts.y) * 0.5f),
+            ImGui::GetColorU32(ImGuiCol_TextDisabled), hint);
       }
     }
 
@@ -3471,7 +3468,7 @@ void GUI::apply_shape_list_ui_from_json_(const nlohmann::json& j)
 
       try
       {
-        const Shape_id id = static_cast<Shape_id>(std::stoull(it.key()));
+        const Shape_id id         = static_cast<Shape_id>(std::stoull(it.key()));
         m_shape_list_expanded[id] = it.value().get<bool>();
       }
       catch (...)
@@ -3548,7 +3545,7 @@ void GUI::apply_sketch_list_ui_from_json_(const nlohmann::json& j)
     if (!row.is_object() || key.empty())
       continue;
 
-    char*                   end = nullptr;
+    char*                    end    = nullptr;
     const unsigned long long parsed = std::strtoull(key.c_str(), &end, 10);
     if (!end || *end != '\0')
       continue;
@@ -3574,8 +3571,8 @@ std::string GUI::serialized_project_json_() const
   std::string project_json = m_view->to_json();
   json        j            = json::parse(project_json);
   j["mode"]                = static_cast<int>(get_mode());
-  j["ui"]["sketchList"] = sketch_list_ui_to_json_();
-  j["ui"]["shapeList"]  = shape_list_ui_to_json_();
+  j["ui"]["sketchList"]    = sketch_list_ui_to_json_();
+  j["ui"]["shapeList"]     = shape_list_ui_to_json_();
   return j.dump(2);
 }
 
@@ -4057,8 +4054,8 @@ void GUI::save_file_dialog_()
   {
     auto describe_save_failure = [&](const char* stage) -> std::string
     {
-      const int         err  = errno;
-      const std::string name = std::filesystem::path(file).filename().string();
+      const int          err  = errno;
+      const std::string  name = std::filesystem::path(file).filename().string();
       std::ostringstream msg;
       msg << "Could not save \"" << name << "\".\n\n";
       msg << "Path:\n" << file << "\n\n";
@@ -4271,8 +4268,7 @@ void GUI::import_file_dialog_async()
           var contentsPtr = _malloc(length);
           HEAPU8.set(contents, contentsPtr);
           // File -> Import opens the Import dialog (metadata, then Import into project).
-          Module.ccall('on_inspector_file_selected', null, [ 'string', 'number', 'number' ],
-                       [ fileName, contentsPtr, length ]);
+          Module.ccall('on_inspector_file_selected', null, [ 'string', 'number', 'number' ], [ fileName, contentsPtr, length ]);
           _free(contentsPtr);
         };
         reader.readAsArrayBuffer(file);
@@ -4322,10 +4318,14 @@ void GUI::save_file_dialog_async(const char* title, const std::string& default_f
         try
         {
           var data = HEAPU8.subarray($0, $0 + $1);
-          var blob = new Blob([data], {type : 'application/octet-stream'});
-          var url  = URL.createObjectURL(blob);
-          var a    = document.createElement('a');
-          a.href   = url;
+          var blob = new Blob([data],
+                              {
+                                type:
+                                  'application/octet-stream'
+                              });
+          var url    = URL.createObjectURL(blob);
+          var a      = document.createElement('a');
+          a.href     = url;
           a.download = UTF8ToString($2);
           document.body.appendChild(a);
           a.click();

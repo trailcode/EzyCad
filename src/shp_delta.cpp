@@ -9,6 +9,7 @@ Shape_rec capture_shape_rec(const Shp& shp)
   rec.name          = shp.get_name();
   rec.material      = shp.Material();
   rec.geom          = shp.Shape();
+  rec.frame         = shp.get_frame();
   rec.parent_id     = shp.get_parent_id();
   rec.sibling_order = shp.get_sibling_order();
   rec.is_group      = shp.is_group();
@@ -85,13 +86,13 @@ Shape_geom_delta::Shape_geom_delta(std::vector<Geom_change> changes)
 void Shape_geom_delta::apply_forward(Occt_view& view)
 {
   for (const Geom_change& ch : m_changes)
-    view.set_shape_geom_by_id(ch.id, ch.after_geom);
+    view.set_shape_geom_by_id(ch.id, ch.after_geom, ch.after_frame);
 }
 
 void Shape_geom_delta::apply_reverse(Occt_view& view)
 {
   for (const Geom_change& ch : m_changes)
-    view.set_shape_geom_by_id(ch.id, ch.before_geom);
+    view.set_shape_geom_by_id(ch.id, ch.before_geom, ch.before_frame);
 }
 
 std::unique_ptr<Delta> Shape_geom_delta::clone() const { return std::make_unique<Shape_geom_delta>(m_changes); }
@@ -114,13 +115,9 @@ void Shape_replace_delta::apply_reverse(Occt_view& view)
   insert_recs_(view, m_removed);
 }
 
-std::unique_ptr<Delta> Shape_replace_delta::clone() const
-{
-  return std::make_unique<Shape_replace_delta>(m_removed, m_added);
-}
+std::unique_ptr<Delta> Shape_replace_delta::clone() const { return std::make_unique<Shape_replace_delta>(m_removed, m_added); }
 
-Shape_tree_delta::Shape_tree_delta(std::vector<Shape_rec> added, std::vector<Shape_rec> removed,
-                                   std::vector<Link_change> links)
+Shape_tree_delta::Shape_tree_delta(std::vector<Shape_rec> added, std::vector<Shape_rec> removed, std::vector<Link_change> links)
     : m_added(std::move(added))
     , m_removed(std::move(removed))
     , m_links(std::move(links))

@@ -1,8 +1,15 @@
 #include "shp.h"
 
 #include <AIS_InteractiveContext.hxx>
+#include <BRepBndLib.hxx>
 #include <BRep_Builder.hxx>
+#include <Bnd_Box.hxx>
 #include <TopoDS_Compound.hxx>
+
+namespace
+{
+gp_Ax3 default_shape_frame_(const TopoDS_Shape& shape);
+}
 
 Shp::Shp(AIS_InteractiveContext& ctx, const TopoDS_Shape& shp)
     : AIS_Shape(shp)
@@ -12,6 +19,7 @@ Shp::Shp(AIS_InteractiveContext& ctx, const TopoDS_Shape& shp)
     , m_disp_mode(AIS_Shaded)
     , m_visible(true)
     , m_selection_mode(TopAbs_SHAPE)
+    , m_frame(default_shape_frame_(shp))
 {
 }
 
@@ -21,10 +29,10 @@ Shp_ptr Shp::create_group(AIS_InteractiveContext& ctx, const std::string& name)
 {
   TopoDS_Compound comp;
   BRep_Builder().MakeCompound(comp);
-  Shp_ptr grp = new Shp(ctx, comp);
+  Shp_ptr grp     = new Shp(ctx, comp);
   grp->m_is_group = true;
   grp->set_name(name);
-  grp->m_visible  = true;
+  grp->m_visible = true;
   return grp;
 }
 
@@ -99,10 +107,7 @@ void Shp::set_sketch_faint(bool enabled, AIS_DisplayMode faint_mode, float trans
   update_display_();
 }
 
-AIS_DisplayMode Shp::effective_disp_mode_() const
-{
-  return m_sketch_faint_active ? m_faint_disp_mode : m_disp_mode;
-}
+AIS_DisplayMode Shp::effective_disp_mode_() const { return m_sketch_faint_active ? m_faint_disp_mode : m_disp_mode; }
 
 void Shp::redisplay_()
 {
@@ -134,3 +139,21 @@ void Shp::update_display_()
   redisplay_();
   m_ctx.UpdateCurrentViewer();
 }
+
+namespace
+{
+gp_Ax3 default_shape_frame_(const TopoDS_Shape& shape)
+{
+  if (shape.IsNull())
+    return gp_Ax3();
+
+  Bnd_Box bounds;
+  BRepBndLib::Add(shape, bounds);
+  if (bounds.IsVoid())
+    return gp_Ax3();
+
+  double x_min, y_min, z_min, x_max, y_max, z_max;
+  bounds.Get(x_min, y_min, z_min, x_max, y_max, z_max);
+  return gp_Ax3(gp_Pnt((x_min + x_max) * 0.5, (y_min + y_max) * 0.5, (z_min + z_max) * 0.5), gp::DZ(), gp::DX());
+}
+} // namespace

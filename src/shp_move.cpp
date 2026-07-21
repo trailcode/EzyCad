@@ -127,7 +127,7 @@ void Shp_move::finalize()
   std::vector<Shape_geom_delta::Geom_change> changes;
   changes.reserve(m_shps.size());
   for (const Shp_ptr& shape : m_shps)
-    changes.push_back(Shape_geom_delta::Geom_change{shape->get_id(), shape->Shape(), {}});
+    changes.push_back(Shape_geom_delta::Geom_change{shape->get_id(), shape->Shape(), {}, shape->get_frame(), {}});
 
   operation_shps_finalize_();
 
@@ -135,7 +135,10 @@ void Shp_move::finalize()
   {
     Shp_ptr shp = view().find_shape_by_id(ch.id);
     if (!shp.IsNull())
-      ch.after_geom = shp->Shape();
+    {
+      ch.after_geom  = shp->Shape();
+      ch.after_frame = shp->get_frame();
+    }
   }
 
   view().push_undo_delta(std::make_unique<Shape_geom_delta>(std::move(changes)));

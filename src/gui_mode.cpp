@@ -62,6 +62,7 @@ std::string GUI::get_doc_url_for_mode(Mode mode)
       {Mode::Sketch_add_circle_3_pts,         ""}, // planned feature - no specific section in the docs yet; falls back to main guide
       {Mode::Sketch_add_slot,                 "https://ezycad.readthedocs.io/en/latest/usage-sketch.html#slot-creation-tool"},
       {Mode::Sketch_dim_anno,                 "https://ezycad.readthedocs.io/en/latest/usage-sketch.html#dimension-tool"},
+      {Mode::Shape_section,                   "https://ezycad.readthedocs.io/en/latest/usage.html#shape-cross-section-tool"},
       // clang-format on
   };
 
@@ -130,6 +131,7 @@ void GUI::set_parent_mode()
       {Mode::Sketch_add_circle_3_pts,         Mode::Sketch_inspection_mode},
       {Mode::Sketch_add_slot,                 Mode::Sketch_inspection_mode},
       {Mode::Sketch_dim_anno,                 Mode::Sketch_inspection_mode},
+      {Mode::Shape_section,                   Mode::Normal},
       // clang-format on
   };
 
@@ -392,6 +394,7 @@ void GUI::options_()
     case Mode::Shape_chamfer:                   options_shape_chamfer_mode_();                break;
     case Mode::Shape_fillet:                    options_shape_fillet_mode_();                 break;
     case Mode::Shape_polar_duplicate:           options_shape_polar_duplicate_mode_();        break;
+    case Mode::Shape_section:                   options_shape_section_mode_();                break;
     
       // Sketch related modes:
     case Mode::Sketch_inspection_mode:          options_sketch_inspection_mode_();            break;
@@ -750,6 +753,63 @@ void GUI::options_shape_polar_duplicate_mode_()
     ImGui::EndTable();
   }
 
+  options_orthographic_projection_();
+}
+
+void GUI::options_shape_section_mode_()
+{
+  EZY_ASSERT(get_mode() == Mode::Shape_section);
+
+  Shp_section& section = m_view->shp_section();
+  int          plane   = static_cast<int>(section.get_plane());
+  double       offset  = section.get_offset_display();
+
+  ImGui::TextUnformatted(current_mode_description_());
+  options_doc_help_button_();
+  ImGui::Separator();
+  ImGui::TextUnformatted("Section plane");
+
+  if (ImGui::RadioButton("Local XY", &plane, static_cast<int>(Section_plane::XY)))
+  {
+    section.set_plane(Section_plane::XY);
+    section.clear();
+  }
+  ImGui::SameLine();
+  if (ImGui::RadioButton("Local XZ", &plane, static_cast<int>(Section_plane::XZ)))
+  {
+    section.set_plane(Section_plane::XZ);
+    section.clear();
+  }
+  ImGui::SameLine();
+  if (ImGui::RadioButton("Local YZ", &plane, static_cast<int>(Section_plane::YZ)))
+  {
+    section.set_plane(Section_plane::YZ);
+    section.clear();
+  }
+
+  ImGui::SetNextItemWidth(120.0f);
+  if (ImGui::InputDouble("Offset", &offset, 0.0, 0.0, "%.6g"))
+  {
+    section.set_offset_display(offset);
+    section.clear();
+  }
+  ImGui::SameLine(0.0f, ImGui::GetStyle().ItemInnerSpacing.x);
+  ImGui::TextUnformatted(m_view->project_unit_suffix());
+
+  if (ImGui::Button("Update preview"))
+  {
+    const Status status = section.preview_selected();
+    show_message(status.message());
+  }
+  if (section.has_preview())
+  {
+    ImGui::SameLine();
+    if (ImGui::Button("Clear"))
+      section.clear();
+  }
+
+  ImGui::TextWrapped(
+      "Each selected solid uses its own local frame. The yellow plane and arrow show the cut plane and positive normal.");
   options_orthographic_projection_();
 }
 

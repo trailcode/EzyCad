@@ -95,8 +95,8 @@ Status Shp_fillet::add_fillet(const ScreenCoords& screen_coords, const Fillet_mo
     fillet_maker.Build();
     Shp_ptr fillet_shp = new Shp(ctx(), fillet_maker.Shape());
     replace_picked_shape_(fillet_src_shp, fillet_shp, "Filleted shape");
-    view().push_undo_delta(
-        std::make_unique<Shape_replace_delta>(std::vector<Shape_rec>{removed}, std::vector<Shape_rec>{capture_shape_rec(*fillet_shp)}));
+    view().push_undo_delta(std::make_unique<Shape_replace_delta>(std::vector<Shape_rec>{removed},
+                                                                 std::vector<Shape_rec>{capture_shape_rec(*fillet_shp)}));
   }
   catch (const Standard_Failure& e)
   {

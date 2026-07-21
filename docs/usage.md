@@ -251,10 +251,10 @@ The typical modeling workflow in EzyCad follows these steps:
 
 **File -> Import** opens an **Import** window for STEP or PLY. Review metadata, optionally enable **Union shapes** (STEP), then click **Import into project**. The window closes after a successful import.
 
-| Format                     | What the Import dialog shows                                   |
-| -------------------------- | -------------------------------------------------------------- |
-| **STEP** (`.step`, `.stp`) | Roots/shapes, import bodies, named bodies, topology, bbox      |
-| **PLY** (`.ply`)           | Encoding, vertex and face counts from the header               |
+| Format                     | What the Import dialog shows                              |
+| -------------------------- | --------------------------------------------------------- |
+| **STEP** (`.step`, `.stp`) | Roots/shapes, import bodies, named bodies, topology, bbox |
+| **PLY** (`.ply`)           | Encoding, vertex and face counts from the header          |
 
 **How to use:**
 1. Choose **File -> Import**
@@ -290,10 +290,10 @@ In addition to creating 3D shapes from sketches, EzyCad supports importing exist
 
 **Units:** Sketch and display lengths follow **File -> Project units** (**Inches** or **Millimeters**). Internal model coordinates stay inch-scaled (`model = inches * dimension_scale`, default **100**). Changing project units only remaps the UI; it does not rewrite geometry. Import scaling:
 
-| Format                     | File units                                                              | Into EzyCad                                      |
-| -------------------------- | ----------------------------------------------------------------------- | ------------------------------------------------ |
-| **STEP** (`.step`, `.stp`) | Declared in the file (often mm); OCCT reads them as mm, then converted | Scaled so lengths match the inch-scaled model    |
-| **PLY** (`.ply`)           | No standard unit metadata                                               | Vertex coords are treated as **inches**          |
+| Format                     | File units                                                             | Into EzyCad                                   |
+| -------------------------- | ---------------------------------------------------------------------- | --------------------------------------------- |
+| **STEP** (`.step`, `.stp`) | Declared in the file (often mm); OCCT reads them as mm, then converted | Scaled so lengths match the inch-scaled model |
+| **PLY** (`.ply`)           | No standard unit metadata                                              | Vertex coords are treated as **inches**       |
 
 **PLY import notes:**
 - Supported: **ASCII** PLY and **binary little-endian** PLY.
@@ -324,10 +324,10 @@ Use **File -> Export** to save the current model for other CAD tools, CAM, or 3D
 
 **Units:** After you choose a format, an **Export units** dialog asks for **Inches** or **Millimeters** (defaults: millimeters for STEP/IGES, inches for STL/PLY).
 
-| Format              | How units are applied                                                       |
-| ------------------- | --------------------------------------------------------------------------- |
-| **STEP** / **IGES** | Geometry scaled to the chosen unit; that unit is written into the CAD file  |
-| **STL** / **PLY**   | Geometry scaled to the chosen unit; files have **no** unit metadata         |
+| Format              | How units are applied                                                      |
+| ------------------- | -------------------------------------------------------------------------- |
+| **STEP** / **IGES** | Geometry scaled to the chosen unit; that unit is written into the CAD file |
+| **STL** / **PLY**   | Geometry scaled to the chosen unit; files have **no** unit metadata        |
 
 **Mesh exports (STL and PLY):** Surfaces are **tessellated** with a fixed linear deflection (same idea as typical STL export). Very complex B-rep models produce large mesh files.
 
@@ -370,6 +370,7 @@ More detail: [Sketch snapping](usage-sketch.md#sketch-snapping) in the sketch gu
    - ![Shape Rotate Tool](res/icons/Draft_Rotate.png) [Rotate objects (R)](#shape-rotate-tool-r)
    - ![Shape Scale Tool](res/icons/Part_Scale.png) [Scale elements (S)](#shape-scale-tool)
    - ![Polar Duplicate Tool](res/icons/Draft_PolarArray.png) [Polar duplicate](#shape-polar-duplicate-tool)
+   - ![Cross-section Tool](res/icons/Curves_ExtractSubshape.png) [Preview a local-plane cross-section](#shape-cross-section-tool)
 
 #### Shape Move Tool (G)
 
@@ -490,7 +491,7 @@ The extrude tool allows you to create 3D solid shapes by extruding 2D sketch fac
 |                                  |                                                                                                                                                            |
 | -------------------------------: | ---------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | **Orthographic camera**          | Extrude mode forces **orthographic** projection (same as other sketch tools) so extrusion height is easier to judge without perspective foreshortening     |
-| **Direct face selection**        | Click directly on a sketch face to select it for extrusion, or use **`E`** / right-click **Extrude** on a face in the [Sketch List](#sketch-list) |
+| **Direct face selection**        | Click directly on a sketch face to select it for extrusion, or use **`E`** / right-click **Extrude** on a face in the [Sketch List](#sketch-list)          |
 | **Automatic view adjustment**    | The view automatically rotates if the face plane is parallel to the view plane (within 5 degrees), providing better visibility for the extrusion operation |
 | **Real-time preview**            | See the extruded shape update in real-time as you move the mouse                                                                                           |
 | **Interactive distance control** | Drag the mouse to adjust extrusion distance, or use the distance input dialog (<kbd>Tab</kbd> key) for precise control                                     |
@@ -593,6 +594,22 @@ The polar duplicate tool allows you to create multiple copies of selected shapes
 - Arranging objects in a circular pattern
 - Creating symmetric designs with rotational symmetry
 - Duplicating features around a center point
+
+#### Shape Cross-section Tool
+
+![Cross-section Tool](res/icons/Curves_ExtractSubshape.png)
+
+Use the cross-section tool to inspect where a plane cuts one or more selected solids. The result is a temporary cyan wire preview. A translucent yellow rectangle outlines the cutting plane, with an arrow showing its positive normal direction. These annotations do not modify the solids or create a sketch.
+
+1. Select one or more solids.
+2. Click **Shape cross-section** in the toolbar.
+3. In **Options**, choose **Local XY**, **Local XZ**, or **Local YZ**.
+4. Enter an **Offset** along that plane's local normal, in the current project unit.
+5. Click **Update preview**. Changing the plane or offset clears a stale preview; click **Update preview** again to recompute it. Use **Clear** or leave the tool to remove the preview.
+
+Each solid uses its own local frame. New solids start with a world-aligned frame at the center of their bounding box; moving, rotating, or scaling a solid updates that frame. With multiple selected solids, the same local plane and offset are evaluated separately for each solid.
+
+If any selected item is not a solid, the plane misses a selected solid, or Open CASCADE cannot compute the section, EzyCad clears the previous preview and shows a status message. Section edges may be lines, circles, ellipses, B-splines, or other OCCT curves. The status message reports the curve counts.
 
 ### Other Feature Operations
 

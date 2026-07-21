@@ -124,24 +124,24 @@ Overlay popups (`FloatEdit`, `AngleEdit`, `MessageStatus`, modals) keep `NoSaved
 
 ### Keyboard (`GUI::on_key` in `gui_mode.cpp`)
 
-| Input                             | Condition           | Handler                                                             |
-| --------------------------------- | ------------------- | ------------------------------------------------------------------- |
-| `+` / `-` / numpad +/-            | No Ctrl/Alt         | `Occt_view::zoom_view_wheel_notches`                                |
-| Shift + 4/6 / arrows / numpad 4/6 | No Ctrl/Alt         | `Occt_view::roll_view_z_deg`                                        |
-| Numpad 5                          | No modifiers        | `Occt_view::snap_view_to_nearest_standard_axis`                     |
-| Numpad 2/4/6/8                    | No modifiers        | `Occt_view::orbit_view_screen_step_deg`                             |
+| Input                             | Condition           | Handler                                                                                                                 |
+| --------------------------------- | ------------------- | ----------------------------------------------------------------------------------------------------------------------- |
+| `+` / `-` / numpad +/-            | No Ctrl/Alt         | `Occt_view::zoom_view_wheel_notches`                                                                                    |
+| Shift + 4/6 / arrows / numpad 4/6 | No Ctrl/Alt         | `Occt_view::roll_view_z_deg`                                                                                            |
+| Numpad 5                          | No modifiers        | `Occt_view::snap_view_to_nearest_standard_axis`                                                                         |
+| Numpad 2/4/6/8                    | No modifiers        | `Occt_view::orbit_view_screen_step_deg`                                                                                 |
 | Ctrl+N/O/S                        |                     | `new_project_` / `open_file_dialog_` / `save_file_dialog_` (save failures: `show_error_dialog` / `error_modal_dialog_`) |
-| Ctrl+Z / Ctrl+Shift+Z / Ctrl+Y    |                     | `Occt_view::undo` / `redo`                                          |
-| `1`-`9` / numpad `1`-`9`          | `Mode::Normal` only | `set_shp_selection_mode` (TopAbs enum index)                        |
-| Esc                               |                     | `cancel_underlay_calib_`, `Occt_view::cancel`, hide dist/angle edit |
-| Tab                               |                     | `Occt_view::dimension_input`                                        |
-| Shift+Tab                         |                     | `Occt_view::angle_input`                                            |
-| Enter                             |                     | hide edits, `Occt_view::on_enter`                                   |
-| D                                 |                     | `Mode::Sketch_dim_anno`                                             |
-| Shift+D / Delete / Backspace      |                     | `Occt_view::delete_selected`                                        |
-| G / R / E / S / C / F             |                     | Move / Rotate / Extrude / Scale / Chamfer / Fillet modes            |
-| Move-mode keys                    | `Mode::Move`        | `on_key_move_mode_` (axis constraints X/Y/Z)                        |
-| Rotate-mode keys                  | `Mode::Rotate`      | `on_key_rotate_mode_` (axis pick, Tab angle)                        |
+| Ctrl+Z / Ctrl+Shift+Z / Ctrl+Y    |                     | `Occt_view::undo` / `redo`                                                                                              |
+| `1`-`9` / numpad `1`-`9`          | `Mode::Normal` only | `set_shp_selection_mode` (TopAbs enum index)                                                                            |
+| Esc                               |                     | `cancel_underlay_calib_`, `Occt_view::cancel`, hide dist/angle edit                                                     |
+| Tab                               |                     | `Occt_view::dimension_input`                                                                                            |
+| Shift+Tab                         |                     | `Occt_view::angle_input`                                                                                                |
+| Enter                             |                     | hide edits, `Occt_view::on_enter`                                                                                       |
+| D                                 |                     | `Mode::Sketch_dim_anno`                                                                                                 |
+| Shift+D / Delete / Backspace      |                     | `Occt_view::delete_selected`                                                                                            |
+| G / R / E / S / C / F             |                     | Move / Rotate / Extrude / Scale / Chamfer / Fillet modes                                                                |
+| Move-mode keys                    | `Mode::Move`        | `on_key_move_mode_` (axis constraints X/Y/Z)                                                                            |
+| Rotate-mode keys                  | `Mode::Rotate`      | `on_key_rotate_mode_` (axis pick, Tab angle)                                                                            |
 
 See also [`src/doc/sketch.md`](sketch.md) and [`src/doc/shape.md`](shape.md) for per-mode mouse routing after `GUI` delegates to `Occt_view`.
 
@@ -186,6 +186,7 @@ Tests use `sketch_left_click` to simulate sketch LMB without ImGui mouse positio
 | `Move` / `Rotate` / `Scale`      | `options_*_mode_` (constraints, axis, material)         |
 | `Shape_chamfer` / `Shape_fillet` | mode + radius/distance                                  |
 | `Shape_polar_duplicate`          | angle, count, rotate/combine, **Dup** button            |
+| `Shape_section`                  | local XY/XZ/YZ plane, offset, **Update preview**, clear |
 | `Sketch_inspection_mode`         | `options_sketch_common_`                                |
 | Each sketch tool mode            | Matching `options_sketch_*_mode_`                       |
 | `Sketch_operation_axis`          | Mirror / Revolve / Clear axis                           |
@@ -195,17 +196,17 @@ Shared sketch controls (snap, midpoint nodes, place-from-center) live in `option
 
 ## ImGui frame order (`render_gui`)
 
-| Order | Function                                     | Purpose                               |
-| ----- | -------------------------------------------- | ------------------------------------- |
-| 1     | `flush_view_events`                          | Sync camera before UI uses projection |
-| 2     | `menu_bar_`, `toolbar_`                      | File / View / mode tools              |
-| 3     | `dist_edit_`, `angle_edit_`                  | Floating numeric entry                |
-| 4     | `sketch_list_`, `sketch_properties_dialog_`  | Sketch List + underlay/properties     |
-| 5     | `shape_list_`, `shape_info_dialog_`, `file_inspector_dialog_` | Shape List + info + Import dialog |
-| 6     | `options_`                                   | Mode-specific Options pane            |
-| 7     | `message_status_window_`, `about_dialog_`    | Status + About                        |
-| 8     | `add_*_dialog_`                              | Primitive / sketch creation popups    |
-| 9     | `log_window_`, consoles, `settings_`, `dbg_` | Log, Lua/Python, Settings             |
+| Order | Function                                                      | Purpose                               |
+| ----- | ------------------------------------------------------------- | ------------------------------------- |
+| 1     | `flush_view_events`                                           | Sync camera before UI uses projection |
+| 2     | `menu_bar_`, `toolbar_`                                       | File / View / mode tools              |
+| 3     | `dist_edit_`, `angle_edit_`                                   | Floating numeric entry                |
+| 4     | `sketch_list_`, `sketch_properties_dialog_`                   | Sketch List + underlay/properties     |
+| 5     | `shape_list_`, `shape_info_dialog_`, `file_inspector_dialog_` | Shape List + info + Import dialog     |
+| 6     | `options_`                                                    | Mode-specific Options pane            |
+| 7     | `message_status_window_`, `about_dialog_`                     | Status + About                        |
+| 8     | `add_*_dialog_`                                               | Primitive / sketch creation popups    |
+| 9     | `log_window_`, consoles, `settings_`, `dbg_`                  | Log, Lua/Python, Settings             |
 
 Sketch List expand **Faces**: each face row supports **`E`** and right-click **Extrude** via `GUI::sketch_list_extrude_face_` (`set_mode(Sketch_face_extrude)` + `Occt_view::begin_sketch_face_extrude` / `Shp_extrude::begin_face_extrude`). Hovering a **Faces**, **Edges**, or **Nodes** row calls `Occt_view::set_sketch_list_hover_{face,edge,node}` (temporarily displays the AIS when hidden outside sketch modes; uses `Graphic3d_ZLayerId_Topmost` so solids do not occlude the highlight).
 
@@ -233,6 +234,8 @@ User-visible key tables: [`docs/usage-settings.md`](../../docs/usage-settings.md
 Toolbar buttons hold `std::variant<Mode, Command>`. `Command` (`Shape_cut`, `Shape_fuse`, `Shape_common`) runs immediately on click via `shp_cut` / `shp_fuse` / `shp_common` (no persistent mode).
 
 Mode buttons call `set_mode`. Active state tracks `m_mode`.
+
+The cross-section toolbar button enters `Mode::Shape_section`. Its Options controls call `Shp_section::preview_selected`; the temporary AIS wire result is cleared when the mode is left, when the user presses **Clear**, or before a failed/updated preview.
 
 ## Typical developer usage
 
@@ -276,4 +279,4 @@ Occt_view* view = gui.get_view();
 | [`src/doc/shape.md`](shape.md)                                                                          | Shape operations invoked from toolbar, Options, mouse            |
 | [`scr_lua_console.cpp`](../scr_lua_console.cpp) / [`scr_python_console.cpp`](../scr_python_console.cpp) | Script consoles embedded in `render_gui`                         |
 | [`utl_settings.cpp`](../utl_settings.cpp)                                                               | User settings file path and I/O helpers                          |
-| [`utl_cad_file_info.h`](../utl_cad_file_info.h)                                                          | CAD/mesh file metadata for **File -> Import**                    |
+| [`utl_cad_file_info.h`](../utl_cad_file_info.h)                                                         | CAD/mesh file metadata for **File -> Import**                    |

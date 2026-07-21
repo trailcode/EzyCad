@@ -386,7 +386,7 @@ int l_view_get_selected_indices(lua_State* L)
 
   const std::vector<Shp_ptr> selected = view->get_selected_shps();
   std::list<Shp_ptr>&        shapes   = view->get_shapes();
-  int                       out_i    = 1;
+  int                        out_i    = 1;
   for (const Shp_ptr& sel : selected)
   {
     lua_Integer idx = 1;
