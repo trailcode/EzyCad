@@ -186,7 +186,7 @@ Tests use `sketch_left_click` to simulate sketch LMB without ImGui mouse positio
 | `Move` / `Rotate` / `Scale`      | `options_*_mode_` (constraints, axis, material)         |
 | `Shape_chamfer` / `Shape_fillet` | mode + radius/distance                                  |
 | `Shape_polar_duplicate`          | angle, count, rotate/combine, **Dup** button            |
-| `Shape_section`                  | local XY/XZ/YZ plane, offset, **Update preview**, clear |
+| `Shape_section`                  | local XY/XZ/YZ plane, bbox-ranged offset slider (auto preview), **Update preview**, clear |
 | `Sketch_inspection_mode`         | `options_sketch_common_`                                |
 | Each sketch tool mode            | Matching `options_sketch_*_mode_`                       |
 | `Sketch_operation_axis`          | Mirror / Revolve / Clear axis                           |

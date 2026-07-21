@@ -9,7 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Cross-section
 
-- Added a temporary **Shape cross-section** preview tool for selected solids. Options choose each shape's local **XY**, **XZ**, or **YZ** plane and an offset in project units; a translucent yellow plane and normal arrow annotate the cut, while empty or invalid sections clear the preview and report status/curve counts.
+- Added a temporary **Shape cross-section** preview tool for selected solids. Options choose a shared local **XY**, **XZ**, or **YZ** plane (first-selected axes, selection-bbox center) and a bounding-box **Offset** slider (Ctrl+click to type; auto-updates preview) in project units; a translucent yellow plane and normal arrow annotate the cut. Solids the plane misses are skipped; the preview clears only if nothing in the selection is cut. Status reports curve counts and any missed solids.
 - Shapes now carry a bbox-centered local frame that follows baked move/rotate/scale transforms and persists in project JSON and shape undo records.
 
 ### Shape List

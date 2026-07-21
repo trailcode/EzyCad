@@ -604,12 +604,12 @@ Use the cross-section tool to inspect where a plane cuts one or more selected so
 1. Select one or more solids.
 2. Click **Shape cross-section** in the toolbar.
 3. In **Options**, choose **Local XY**, **Local XZ**, or **Local YZ**.
-4. Enter an **Offset** along that plane's local normal, in the current project unit.
-5. Click **Update preview**. Changing the plane or offset clears a stale preview; click **Update preview** again to recompute it. Use **Clear** or leave the tool to remove the preview.
+4. Drag **Offset** (or Ctrl+click to type) along that plane's local normal. The slider range follows the selected solids' bounding box in the current project unit, and the preview updates as you change it.
+5. If you change the selection, click **Update preview**. Use **Clear** or leave the tool to remove the preview.
 
-Each solid uses its own local frame. New solids start with a world-aligned frame at the center of their bounding box; moving, rotating, or scaling a solid updates that frame. With multiple selected solids, the same local plane and offset are evaluated separately for each solid.
+Each solid has a local frame used for orientation. New solids start with a world-aligned frame at the center of their bounding box; moving, rotating, or scaling a solid updates that frame. With multiple selected solids, all of them share one cutting plane: orientation from the first selected solid's local axes, and origin at the selection bounding-box center. Offset moves that shared plane along its normal.
 
-If any selected item is not a solid, the plane misses a selected solid, or Open CASCADE cannot compute the section, EzyCad clears the previous preview and shows a status message. Section edges may be lines, circles, ellipses, B-splines, or other OCCT curves. The status message reports the curve counts.
+If any selected item is not a solid, or Open CASCADE cannot compute a section for a solid, that solid is skipped. If the plane misses some solids but still intersects others, the preview continues for the solids it cuts and the status notes how many were missed. Only when the plane misses the entire selection is the preview cleared. Section edges may be lines, circles, ellipses, B-splines, or other OCCT curves. The status message reports the curve counts.
 
 ### Other Feature Operations
 

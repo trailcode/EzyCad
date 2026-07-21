@@ -2,6 +2,7 @@
 
 #include <GLFW/glfw3.h>
 
+#include <algorithm>
 #include <array>
 #include <cstdio>
 #include <cstdlib>
@@ -764,6 +765,12 @@ void GUI::options_shape_section_mode_()
   int          plane   = static_cast<int>(section.get_plane());
   double       offset  = section.get_offset_display();
 
+  auto update_preview = [&]()
+  {
+    const Status status = section.preview_selected();
+    show_message(status.message());
+  };
+
   ImGui::TextUnformatted(current_mode_description_());
   options_doc_help_button_();
   ImGui::Separator();
@@ -772,35 +779,63 @@ void GUI::options_shape_section_mode_()
   if (ImGui::RadioButton("Local XY", &plane, static_cast<int>(Section_plane::XY)))
   {
     section.set_plane(Section_plane::XY);
-    section.clear();
+    update_preview();
   }
   ImGui::SameLine();
   if (ImGui::RadioButton("Local XZ", &plane, static_cast<int>(Section_plane::XZ)))
   {
     section.set_plane(Section_plane::XZ);
-    section.clear();
+    update_preview();
   }
   ImGui::SameLine();
   if (ImGui::RadioButton("Local YZ", &plane, static_cast<int>(Section_plane::YZ)))
   {
     section.set_plane(Section_plane::YZ);
-    section.clear();
+    update_preview();
   }
 
-  ImGui::SetNextItemWidth(120.0f);
-  if (ImGui::InputDouble("Offset", &offset, 0.0, 0.0, "%.6g"))
+  double     offset_min = -1.0;
+  double     offset_max = 1.0;
+  const bool have_range = section.try_get_offset_range_display(offset_min, offset_max);
+  if (have_range)
+  {
+    if (offset < offset_min)
+    {
+      offset = offset_min;
+      section.set_offset_display(offset);
+    }
+    else if (offset > offset_max)
+    {
+      offset = offset_max;
+      section.set_offset_display(offset);
+    }
+  }
+  else
+  {
+    offset_min = std::min(offset, -1.0);
+    offset_max = std::max(offset, 1.0);
+    if (!(offset_max > offset_min))
+    {
+      offset_min = offset - 1.0;
+      offset_max = offset + 1.0;
+    }
+  }
+
+  ImGui::SetNextItemWidth(180.0f);
+  ImGui::BeginDisabled(!have_range);
+  if (ImGui::SliderScalar("Offset", ImGuiDataType_Double, &offset, &offset_min, &offset_max, "%.6g"))
   {
     section.set_offset_display(offset);
-    section.clear();
+    update_preview();
   }
+  ImGui::EndDisabled();
   ImGui::SameLine(0.0f, ImGui::GetStyle().ItemInnerSpacing.x);
   ImGui::TextUnformatted(m_view->project_unit_suffix());
+  if (!have_range)
+    ImGui::TextDisabled("Select solids to enable the offset slider.");
 
   if (ImGui::Button("Update preview"))
-  {
-    const Status status = section.preview_selected();
-    show_message(status.message());
-  }
+    update_preview();
   if (section.has_preview())
   {
     ImGui::SameLine();
@@ -809,7 +844,9 @@ void GUI::options_shape_section_mode_()
   }
 
   ImGui::TextWrapped(
-      "Each selected solid uses its own local frame. The yellow plane and arrow show the cut plane and positive normal.");
+      "All selected solids share one cutting plane. Orientation follows the first selected solid's local axes; the "
+      "plane is centered on the selection bounding box. Offset slides across that box along the plane normal "
+      "(Ctrl+click the slider to type a value). The yellow plane and arrow show the cut plane and positive normal.");
   options_orthographic_projection_();
 }
 

@@ -25,8 +25,9 @@ struct Section_geometry
   std::size_t  other_curve_count{0};
 };
 
-/// Compute a section in \a frame local coordinates. Offset is in model units
-/// along the selected local plane normal.
+/// Compute a section with a plane from \a frame local coordinates. Offset is in
+/// model units along the selected local plane normal. Interactive preview uses one
+/// shared plane for the whole selection (first-shape axes, selection bbox center).
 Result<Section_geometry> section_shape(const TopoDS_Shape& shape, const gp_Ax3& frame, Section_plane plane, double offset);
 
 class Shp_section : private Shp_operation_base
@@ -42,6 +43,9 @@ public:
   double        get_offset_display() const { return m_offset_display; }
   void          set_offset_display(double offset) { m_offset_display = offset; }
   bool          has_preview() const { return !m_preview.IsNull(); }
+  /// Projected extent of the current selection along the shared section-plane normal,
+  /// in display units. False when nothing solid is selected or bounds are empty.
+  [[nodiscard]] bool try_get_offset_range_display(double& out_min, double& out_max);
 
 private:
   Section_plane m_plane{Section_plane::XY};

@@ -151,7 +151,7 @@ Protected helpers used by all operation classes:
 | `shp_fillet.h`    | `Shp_fillet`           | `add_fillet(..., Fillet_mode)` -- `BRepFilletAPI_MakeFillet`; modes: Shape, Face, Wire, Edge (`mode.h`).                                                                     |
 | `shp_chamfer.h`   | `Shp_chamfer`          | `add_chamfer(..., Chamfer_mode)` -- diagonal distance converted to setback (`dist/sqrt(2)`).                                                                                 |
 | `shp_polar_dup.h` | `Shp_polar_dup`        | Arm on sketch plane; `dup()` copies selection at polar steps; options: rotate copies, combine into one solid.                                                                |
-| `shp_section.h`   | `Shp_section`          | `BRepAlgoAPI_Section` preview on each selected solid's local XY/XZ/YZ plane plus offset; temporary cyan section wires plus a translucent yellow plane/normal annotation.       |
+| `shp_section.h`   | `Shp_section`          | Shared `BRepAlgoAPI_Section` preview for the selection (first-shape local XY/XZ/YZ orientation, selection-bbox center + offset); temporary cyan section wires plus one translucent yellow plane/normal annotation. |
 | `shp_info.h`      | `namespace shp_info`   | `collect(TopoDS_Shape, Display_meta*)` -> labeled lines for Shape info dialog.                                                                                               |
 
 ## Input routing (from UI / `Occt_view`)

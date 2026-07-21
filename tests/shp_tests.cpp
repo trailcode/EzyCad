@@ -287,6 +287,21 @@ TEST(Shp_section, Fused_boxes_midplane_returns_extra_line_edges)
   EXPECT_EQ((*result).other_curve_count, 0u);
 }
 
+TEST(Shp_section, Shared_plane_cuts_two_separated_boxes)
+{
+  // Mimic multi-select: one plane through the combined bbox center must hit both solids.
+  const TopoDS_Shape left  = shp_create::create_box(0, 0, 0, 4, 4, 4);
+  const TopoDS_Shape right = shp_create::create_box(6, 0, 0, 4, 4, 4);
+  const gp_Ax3       shared_frame(gp_Pnt(5, 2, 2), gp::DZ(), gp::DX());
+
+  const Result<Section_geometry> left_result  = section_shape(left, shared_frame, Section_plane::XY, 0.0);
+  const Result<Section_geometry> right_result = section_shape(right, shared_frame, Section_plane::XY, 0.0);
+  ASSERT_TRUE(left_result.has_value()) << left_result.message();
+  ASSERT_TRUE(right_result.has_value()) << right_result.message();
+  EXPECT_EQ((*left_result).line_count, 4u);
+  EXPECT_EQ((*right_result).line_count, 4u);
+}
+
 // ---------------------------------------------------------------------------
 // shp_info
 // ---------------------------------------------------------------------------

@@ -62,8 +62,8 @@ Import into `Sketch_edges`; undoable new sketch; script binding (unless useful f
 ## Implemented v0 findings
 
 - `Shp` now has a persisted `gp_Ax3` local frame. It defaults to a world-aligned frame at the shape bounding-box center and follows baked move/rotate/scale transforms.
-- `Shp_section` computes one local plane per selected solid with `BRepAlgoAPI_Section` (`Approximation(false)` for exact curve types), aggregates the edges into a temporary topmost cyan AIS wire preview, and adds a translucent yellow plane outline with a positive-normal arrow. None of this temporary geometry enters the document or undo history.
-- Preview updates fail closed: the old AIS is removed first; plane/offset edits clear a stale preview; pending `LocalTransformation` is applied before sectioning; non-solid / empty / OCCT failure leaves no preview.
+- `Shp_section` computes one shared cutting plane for the selection with `BRepAlgoAPI_Section` (`Approximation(false)` for exact curve types): orientation from the first selected solid's local axes, origin at the selection bbox center, plus offset. Section edges aggregate into a temporary topmost cyan AIS wire preview, with one translucent yellow plane outline and positive-normal arrow. None of this temporary geometry enters the document or undo history.
+- Preview updates fail closed only when the shared plane misses every selected solid, or a hard OCCT failure occurs. Solids the plane does not intersect are skipped and counted in the status message; the yellow plane annotation remains.
 - The first curve evidence supports line and circle handling. Ellipse/B-spline/other counts are exposed for further manual experiments before sketch import rules are chosen.
 - Boolean solids are not yet sketch-ready: a fused two-box mid-plane yields 8 line edges (likely unmerged/overlapping segments) instead of one 4-edge outer loop.
 - Desktop Release build and focused section tests pass with OCCT 8.0.0. The Emscripten Release build also passes with OCCT 7.9.3.
