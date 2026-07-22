@@ -186,7 +186,7 @@ Tests use `sketch_left_click` to simulate sketch LMB without ImGui mouse positio
 | `Move` / `Rotate` / `Scale`      | `options_*_mode_` (constraints, axis, material)         |
 | `Shape_chamfer` / `Shape_fillet` | mode + radius/distance                                  |
 | `Shape_polar_duplicate`          | angle, count, rotate/combine, **Dup** button            |
-| `Shape_cross_section`                  | local XY/XZ/YZ plane, bbox-ranged offset slider (auto preview), **Update preview**, clear |
+| `Shape_cross_section`                  | local XY/XZ/YZ plane, bbox-ranged offset slider (auto preview on selection / plane / offset) |
 | `Sketch_inspection_mode`         | `options_sketch_common_`                                |
 | Each sketch tool mode            | Matching `options_sketch_*_mode_`                       |
 | `Sketch_operation_axis`          | Mirror / Revolve / Clear axis                           |
@@ -235,7 +235,7 @@ Toolbar buttons hold `std::variant<Mode, Command>`. `Command` (`Shape_cut`, `Sha
 
 Mode buttons call `set_mode`. Active state tracks `m_mode`.
 
-The cross-section toolbar button enters `Mode::Shape_cross_section`. Entering the mode snapshots any selected solids first (selection-mode and sketch-faint redisplay Erase AIS selection), restores them after that sync, and calls `Shp_cross_section::preview` with the snapshot. While the mode is active, Options polls `selection_stale` and rebuilds (or clears) the preview when the AIS selection ids change. Plane/offset controls and **Update preview** also call `preview_selected`. **Clear** removes the AIS preview and acknowledges the current selection so it does not rebuild until the selection changes again. The temporary AIS wire result is also cleared when the mode is left, or before a failed/updated preview.
+The cross-section toolbar button enters `Mode::Shape_cross_section`. Entering the mode snapshots any selected solids first (selection-mode and sketch-faint redisplay Erase AIS selection), restores them after that sync, and calls `Shp_cross_section::preview` with the snapshot. While the mode is active, Options applies plane/offset widgets then polls `preview_inputs_stale` (selection ids, plane, or offset) and rebuilds or clears the preview. The temporary AIS wire result is cleared when the mode is left, when the selection becomes empty, or before a failed/updated preview.
 
 ## Typical developer usage
 

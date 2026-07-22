@@ -771,30 +771,6 @@ void GUI::options_shape_cross_section_mode_()
     show_message(status.message());
   };
 
-  // Viewer / shape-list / script selection changes: rebuild once when the id set changes.
-  if (section.selection_stale())
-  {
-    if (m_view->get_selected_shps().empty())
-    {
-      section.clear();
-      section.acknowledge_current_selection();
-    }
-    else
-    {
-      double range_min = 0.0;
-      double range_max = 0.0;
-      if (section.try_get_offset_range_display(range_min, range_max))
-      {
-        if (offset < range_min)
-          section.set_offset_display(range_min);
-        else if (offset > range_max)
-          section.set_offset_display(range_max);
-        offset = section.get_offset_display();
-      }
-      update_preview();
-    }
-  }
-
   ImGui::TextUnformatted(current_mode_description_());
   options_doc_help_button_();
   ImGui::Separator();
@@ -803,32 +779,21 @@ void GUI::options_shape_cross_section_mode_()
   if (!have_selection)
   {
     // No dedicated bold font is loaded; offset a second draw for a bold look.
-    const char*        msg = "Select one or more shapes.";
-    const ImVec2       pos = ImGui::GetCursorScreenPos();
-    const ImU32        col = ImGui::GetColorU32(ImGuiCol_Text);
+    const char*  msg = "Select one or more shapes.";
+    const ImVec2 pos = ImGui::GetCursorScreenPos();
+    const ImU32  col = ImGui::GetColorU32(ImGuiCol_Text);
     ImGui::GetWindowDrawList()->AddText(ImVec2(pos.x + 1.0f, pos.y), col, msg);
     ImGui::TextUnformatted(msg);
   }
 
   ImGui::TextUnformatted("Section plane");
 
-  if (ImGui::RadioButton("Local XY", &plane, static_cast<int>(Cross_section_plane::XY)))
-  {
-    section.set_plane(Cross_section_plane::XY);
-    update_preview();
-  }
+  ImGui::RadioButton("Local XY", &plane, static_cast<int>(Cross_section_plane::XY));
   ImGui::SameLine();
-  if (ImGui::RadioButton("Local XZ", &plane, static_cast<int>(Cross_section_plane::XZ)))
-  {
-    section.set_plane(Cross_section_plane::XZ);
-    update_preview();
-  }
+  ImGui::RadioButton("Local XZ", &plane, static_cast<int>(Cross_section_plane::XZ));
   ImGui::SameLine();
-  if (ImGui::RadioButton("Local YZ", &plane, static_cast<int>(Cross_section_plane::YZ)))
-  {
-    section.set_plane(Cross_section_plane::YZ);
-    update_preview();
-  }
+  ImGui::RadioButton("Local YZ", &plane, static_cast<int>(Cross_section_plane::YZ));
+  section.set_plane(static_cast<Cross_section_plane>(plane));
 
   double     offset_min = -1.0;
   double     offset_max = 1.0;
@@ -836,15 +801,9 @@ void GUI::options_shape_cross_section_mode_()
   if (have_range)
   {
     if (offset < offset_min)
-    {
       offset = offset_min;
-      section.set_offset_display(offset);
-    }
     else if (offset > offset_max)
-    {
       offset = offset_max;
-      section.set_offset_display(offset);
-    }
   }
   else
   {
@@ -859,34 +818,31 @@ void GUI::options_shape_cross_section_mode_()
 
   ImGui::SetNextItemWidth(180.0f);
   ImGui::BeginDisabled(!have_range);
-  if (ImGui::SliderScalar("Offset", ImGuiDataType_Double, &offset, &offset_min, &offset_max, "%.6g"))
-  {
-    section.set_offset_display(offset);
-    update_preview();
-  }
+  ImGui::SliderScalar("Offset", ImGuiDataType_Double, &offset, &offset_min, &offset_max, "%.6g");
   ImGui::EndDisabled();
+  section.set_offset_display(offset);
   ImGui::SameLine(0.0f, ImGui::GetStyle().ItemInnerSpacing.x);
   ImGui::TextUnformatted(m_view->project_unit_suffix());
   if (have_selection && !have_range)
     ImGui::TextDisabled("Select solid shapes to enable the offset slider.");
 
-  if (ImGui::Button("Update preview"))
-    update_preview();
-  if (section.has_preview())
+  // Refresh after plane/offset widgets so a plane change is never missed.
+  if (section.preview_inputs_stale())
   {
-    ImGui::SameLine();
-    if (ImGui::Button("Clear"))
+    if (m_view->get_selected_shps().empty())
     {
       section.clear();
       section.acknowledge_current_selection();
     }
+    else
+      update_preview();
   }
 
   ImGui::TextWrapped(
       "All selected solids share one cutting plane. Orientation follows the first selected solid's local axes; the "
       "plane is centered on the selection bounding box. Offset slides across that box along the plane normal "
       "(Ctrl+click the slider to type a value). The yellow plane and arrow show the cut plane and positive normal. "
-      "Changing the selection updates the preview automatically.");
+      "Changing the selection or section plane updates the preview automatically.");
   options_orthographic_projection_();
 }
 

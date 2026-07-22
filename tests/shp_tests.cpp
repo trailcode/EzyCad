@@ -326,18 +326,25 @@ TEST_F(Shp_test, Cross_section_selection_stale_after_selection_change)
   gui().set_mode(Mode::Shape_cross_section);
   ASSERT_TRUE(view().shp_cross_section().has_preview());
   EXPECT_FALSE(view().shp_cross_section().selection_stale());
+  EXPECT_FALSE(view().shp_cross_section().preview_inputs_stale());
 
   select_shapes(view(), {boxes[1]});
   EXPECT_TRUE(view().shp_cross_section().selection_stale());
+  EXPECT_TRUE(view().shp_cross_section().preview_inputs_stale());
 
   ASSERT_TRUE(view().shp_cross_section().preview_selected().is_ok());
   EXPECT_TRUE(view().shp_cross_section().has_preview());
   EXPECT_FALSE(view().shp_cross_section().selection_stale());
 
+  view().shp_cross_section().set_plane(Cross_section_plane::XZ);
+  EXPECT_TRUE(view().shp_cross_section().preview_inputs_stale());
+  ASSERT_TRUE(view().shp_cross_section().preview_selected().is_ok());
+  EXPECT_FALSE(view().shp_cross_section().preview_inputs_stale());
+
   view().shp_cross_section().clear();
   view().shp_cross_section().acknowledge_current_selection();
   EXPECT_FALSE(view().shp_cross_section().has_preview());
-  EXPECT_FALSE(view().shp_cross_section().selection_stale());
+  EXPECT_FALSE(view().shp_cross_section().preview_inputs_stale());
 }
 
 

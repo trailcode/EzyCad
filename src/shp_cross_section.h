@@ -49,7 +49,9 @@ public:
   bool                has_preview() const { return !m_preview.IsNull(); }
   /// True when the current AIS selection ids differ from the last acknowledged set.
   [[nodiscard]] bool selection_stale() const;
-  /// Record the current AIS selection as acknowledged without rebuilding the preview.
+  /// True when selection, section plane, or offset differ from the last preview/acknowledge.
+  [[nodiscard]] bool preview_inputs_stale() const;
+  /// Record the current AIS selection, plane, and offset as acknowledged without rebuilding.
   void acknowledge_current_selection();
   /// Projected extent of the current selection along the shared cross-section plane normal,
   /// in display units. False when nothing solid is selected or bounds are empty.
@@ -57,9 +59,12 @@ public:
 
 private:
   static std::vector<Shape_id> selection_ids_(const std::vector<Shp_ptr>& shapes);
+  void                         acknowledge_inputs_(const std::vector<Shp_ptr>& shapes);
 
   Cross_section_plane   m_plane{Cross_section_plane::XY};
   double                m_offset_display{0.0};
+  Cross_section_plane   m_acked_plane{Cross_section_plane::XY};
+  double                m_acked_offset_display{0.0};
   std::vector<Shape_id> m_acked_selection_ids;
   AIS_Shape_ptr         m_preview;
   AIS_Shape_ptr         m_plane_fill;
