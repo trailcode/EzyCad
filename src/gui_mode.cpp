@@ -798,6 +798,18 @@ void GUI::options_shape_cross_section_mode_()
   ImGui::TextUnformatted(current_mode_description_());
   options_doc_help_button_();
   ImGui::Separator();
+
+  const bool have_selection = !m_view->get_selected_shps().empty();
+  if (!have_selection)
+  {
+    // No dedicated bold font is loaded; offset a second draw for a bold look.
+    const char*        msg = "Select one or more shapes.";
+    const ImVec2       pos = ImGui::GetCursorScreenPos();
+    const ImU32        col = ImGui::GetColorU32(ImGuiCol_Text);
+    ImGui::GetWindowDrawList()->AddText(ImVec2(pos.x + 1.0f, pos.y), col, msg);
+    ImGui::TextUnformatted(msg);
+  }
+
   ImGui::TextUnformatted("Section plane");
 
   if (ImGui::RadioButton("Local XY", &plane, static_cast<int>(Cross_section_plane::XY)))
@@ -855,8 +867,8 @@ void GUI::options_shape_cross_section_mode_()
   ImGui::EndDisabled();
   ImGui::SameLine(0.0f, ImGui::GetStyle().ItemInnerSpacing.x);
   ImGui::TextUnformatted(m_view->project_unit_suffix());
-  if (!have_range)
-    ImGui::TextDisabled("Select solids to enable the offset slider.");
+  if (have_selection && !have_range)
+    ImGui::TextDisabled("Select solid shapes to enable the offset slider.");
 
   if (ImGui::Button("Update preview"))
     update_preview();

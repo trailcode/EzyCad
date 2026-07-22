@@ -605,7 +605,7 @@ Use the cross-section tool to inspect where a plane cuts one or more selected so
 2. Click **Shape cross-section** in the toolbar. If solids were already selected, the preview updates immediately.
 3. In **Options**, choose **Local XY**, **Local XZ**, or **Local YZ**.
 4. Drag **Offset** (or Ctrl+click to type) along that plane's local normal. The slider range follows the selected solids' bounding box in the current project unit, and the preview updates as you change it.
-5. Changing the selection (in the 3D view or Shape List) updates the preview automatically. Use **Update preview** to force a refresh, or **Clear** / leave the tool to remove the preview.
+5. Changing the selection (in the 3D view or Shape List) updates the preview automatically. If nothing is selected, Options shows a bold prompt to select one or more shapes. Use **Update preview** to force a refresh, or **Clear** / leave the tool to remove the preview.
 
 Each solid has a local frame used for orientation. New solids start with a world-aligned frame at the center of their bounding box; moving, rotating, or scaling a solid updates that frame. With multiple selected solids, all of them share one cutting plane: orientation from the first selected solid's local axes, and origin at the selection bounding-box center. Offset moves that shared plane along its normal.
 
