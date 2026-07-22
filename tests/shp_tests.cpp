@@ -302,6 +302,18 @@ TEST(Shp_cross_section, Shared_plane_cuts_two_separated_boxes)
   EXPECT_EQ((*right_result).line_count, 4u);
 }
 
+TEST_F(Shp_test, Cross_section_previews_on_mode_enter_with_selection)
+{
+  view().add_box(0, 0, 0, 10, 10, 10);
+  select_shapes(view(), {view().get_shapes().back()});
+  EXPECT_FALSE(view().shp_cross_section().has_preview());
+
+  gui().set_mode(Mode::Shape_cross_section);
+
+  EXPECT_TRUE(view().shp_cross_section().has_preview());
+  EXPECT_EQ(gui().get_mode(), Mode::Shape_cross_section);
+}
+
 // ---------------------------------------------------------------------------
 // shp_info
 // ---------------------------------------------------------------------------

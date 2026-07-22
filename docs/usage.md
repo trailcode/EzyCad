@@ -602,7 +602,7 @@ The polar duplicate tool allows you to create multiple copies of selected shapes
 Use the cross-section tool to inspect where a plane cuts one or more selected solids. The result is a temporary cyan wire preview. A translucent yellow rectangle outlines the cutting plane, with an arrow showing its positive normal direction. These annotations do not modify the solids or create a sketch.
 
 1. Select one or more solids.
-2. Click **Shape cross-section** in the toolbar.
+2. Click **Shape cross-section** in the toolbar. If solids were already selected, the preview updates immediately.
 3. In **Options**, choose **Local XY**, **Local XZ**, or **Local YZ**.
 4. Drag **Offset** (or Ctrl+click to type) along that plane's local normal. The slider range follows the selected solids' bounding box in the current project unit, and the preview updates as you change it.
 5. If you change the selection, click **Update preview**. Use **Clear** or leave the tool to remove the preview.

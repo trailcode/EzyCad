@@ -37,6 +37,8 @@ public:
   explicit Shp_cross_section(Occt_view& view);
 
   [[nodiscard]] Status preview_selected();
+  /// Same as preview_selected, but uses \a shapes instead of the current AIS selection.
+  [[nodiscard]] Status preview(const std::vector<Shp_ptr>& shapes);
   void                 clear();
 
   Cross_section_plane get_plane() const { return m_plane; }

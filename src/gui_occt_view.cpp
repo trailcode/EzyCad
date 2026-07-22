@@ -2858,6 +2858,10 @@ void Occt_view::on_mode()
 {
   DBG_MSG(c_mode_strs[int(get_mode())]);
 
+  // Snapshot before selection-mode / faint redisplay Erase drops AIS selection.
+  const std::vector<Shp_ptr> cross_section_enter_selection =
+      get_mode() == Mode::Shape_cross_section ? get_selected_shps() : std::vector<Shp_ptr>{};
+
   shp_polar_dup().reset();
   if (get_mode() != Mode::Shape_cross_section)
     shp_cross_section().clear();
@@ -2922,7 +2926,7 @@ void Occt_view::on_mode()
       case Mode::Move:                    set_shp_selection_mode(TopAbs_COMPOUND);  break;
       case Mode::Rotate:                  set_shp_selection_mode(TopAbs_COMPOUND);  break;
       case Mode::Scale:                   set_shp_selection_mode(TopAbs_COMPOUND);  break;
-      case Mode::Shape_cross_section:           set_shp_selection_mode(TopAbs_COMPOUND);  break;
+      case Mode::Shape_cross_section:     set_shp_selection_mode(TopAbs_COMPOUND);  break;
       default:
         if(m_modes_selection_mode_map.count(get_mode()))
           set_shp_selection_mode(m_modes_selection_mode_map.at(get_mode()));
@@ -2934,6 +2938,23 @@ void Occt_view::on_mode()
 
   sync_sketch_shape_faint_style();
   apply_sketch_dimensions_visibility();
+
+  if (get_mode() == Mode::Shape_cross_section && !cross_section_enter_selection.empty())
+  {
+    // Restore after faint sync (set_sketch_faint Erase/redisplays and clears AIS selection).
+    if (!m_ctx.IsNull())
+    {
+      m_ctx->ClearSelected(false);
+      for (const Shp_ptr& shp : cross_section_enter_selection)
+        if (!shp.IsNull())
+          m_ctx->AddOrRemoveSelected(shp, false);
+      m_ctx->HilightSelected(false);
+      m_ctx->UpdateCurrentViewer();
+    }
+
+    const Status status = shp_cross_section().preview(cross_section_enter_selection);
+    gui().show_message(status.message());
+  }
 }
 
 void Occt_view::sync_sketch_shape_faint_style()

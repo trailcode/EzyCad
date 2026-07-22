@@ -235,7 +235,7 @@ Toolbar buttons hold `std::variant<Mode, Command>`. `Command` (`Shape_cut`, `Sha
 
 Mode buttons call `set_mode`. Active state tracks `m_mode`.
 
-The cross-section toolbar button enters `Mode::Shape_cross_section`. Its Options controls call `Shp_cross_section::preview_selected`; the temporary AIS wire result is cleared when the mode is left, when the user presses **Clear**, or before a failed/updated preview.
+The cross-section toolbar button enters `Mode::Shape_cross_section`. Entering the mode snapshots any selected solids first (selection-mode and sketch-faint redisplay Erase AIS selection), restores them after that sync, and calls `Shp_cross_section::preview` with the snapshot. Options controls call `preview_selected`. The temporary AIS wire result is cleared when the mode is left, when the user presses **Clear**, or before a failed/updated preview.
 
 ## Typical developer usage
 

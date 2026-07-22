@@ -57,11 +57,15 @@ Shp_cross_section::Shp_cross_section(Occt_view& view)
 
 Status Shp_cross_section::preview_selected()
 {
+  return preview(get_selected_shps_());
+}
+
+Status Shp_cross_section::preview(const std::vector<Shp_ptr>& selected)
+{
   clear();
   if (!std::isfinite(m_offset_display))
     return Status::user_error("Section offset must be a finite number.");
 
-  const std::vector<Shp_ptr> selected = get_selected_shps_();
   if (selected.empty())
     return Status::user_error("Select one or more solid shapes.");
 
