@@ -32,7 +32,7 @@
 
 namespace
 {
-gp_Pln                cross_section_plane_(const gp_Ax3& frame, Cross_section_plane plane, double offset);
+gp_Pln                cross_section_plane_(const gp_Ax3& frame, Cross_section_plane plane, double offset, bool invert_normal);
 void                  count_curve_type_(const TopoDS_Edge& edge, Cross_section_geometry& result);
 bool                  contains_solid_(const TopoDS_Shape& shape);
 TopoDS_Shape          shape_world_(const Shp& shp);
@@ -47,7 +47,7 @@ Result<Cross_section_geometry> cross_section_shape_on_plane_(const TopoDS_Shape&
 
 Result<Cross_section_geometry> cross_section_shape(const TopoDS_Shape& shape, const gp_Ax3& frame, Cross_section_plane plane, double offset)
 {
-  return cross_section_shape_on_plane_(shape, cross_section_plane_(frame, plane, offset));
+  return cross_section_shape_on_plane_(shape, cross_section_plane_(frame, plane, offset, false));
 }
 
 Shp_cross_section::Shp_cross_section(Occt_view& view)
@@ -102,7 +102,7 @@ Status Shp_cross_section::preview(const std::vector<Shp_ptr>& selected)
   shared_axes.SetLocation(gp_Pnt((x_min + x_max) * 0.5, (y_min + y_max) * 0.5, (z_min + z_max) * 0.5));
 
   const double offset_model = view().to_model(m_offset_display);
-  const gp_Pln shared_plane = cross_section_plane_(shared_axes, m_plane, offset_model);
+  const gp_Pln shared_plane = cross_section_plane_(shared_axes, m_plane, offset_model, m_invert_normal);
 
   TopoDS_Compound compound;
   TopoDS_Compound plane_fill;
@@ -216,14 +216,25 @@ bool Shp_cross_section::selection_stale() const
 
 bool Shp_cross_section::preview_inputs_stale() const
 {
-  return selection_stale() || m_acked_plane != m_plane || m_acked_offset_display != m_offset_display;
+  return selection_stale() || m_acked_plane != m_plane || m_acked_offset_display != m_offset_display ||
+         m_acked_invert_normal != m_invert_normal;
+}
+
+void Shp_cross_section::set_invert_normal(bool invert)
+{
+  if (m_invert_normal == invert)
+    return;
+
+  m_invert_normal    = invert;
+  m_offset_display   = -m_offset_display;
 }
 
 void Shp_cross_section::acknowledge_inputs_(const std::vector<Shp_ptr>& shapes)
 {
-  m_acked_selection_ids   = selection_ids_(shapes);
-  m_acked_plane           = m_plane;
-  m_acked_offset_display  = m_offset_display;
+  m_acked_selection_ids  = selection_ids_(shapes);
+  m_acked_plane          = m_plane;
+  m_acked_offset_display = m_offset_display;
+  m_acked_invert_normal  = m_invert_normal;
 }
 
 void Shp_cross_section::acknowledge_current_selection()
@@ -261,7 +272,7 @@ bool Shp_cross_section::try_get_offset_range_display(double& out_min, double& ou
   combined_bounds.Get(x_min, y_min, z_min, x_max, y_max, z_max);
   shared_axes.SetLocation(gp_Pnt((x_min + x_max) * 0.5, (y_min + y_max) * 0.5, (z_min + z_max) * 0.5));
 
-  const gp_Pln plane = cross_section_plane_(shared_axes, m_plane, 0.0);
+  const gp_Pln plane = cross_section_plane_(shared_axes, m_plane, 0.0, m_invert_normal);
   double       model_min;
   double       model_max;
   project_bbox_offsets_(combined_bounds, plane.Location(), plane.Axis().Direction(), model_min, model_max);
@@ -278,7 +289,7 @@ bool Shp_cross_section::try_get_offset_range_display(double& out_min, double& ou
 
 namespace
 {
-gp_Pln cross_section_plane_(const gp_Ax3& frame, Cross_section_plane plane, double offset)
+gp_Pln cross_section_plane_(const gp_Ax3& frame, Cross_section_plane plane, double offset, bool invert_normal)
 {
   gp_Dir normal;
   gp_Dir x_dir;
@@ -297,6 +308,9 @@ gp_Pln cross_section_plane_(const gp_Ax3& frame, Cross_section_plane plane, doub
     x_dir  = frame.YDirection();
     break;
   }
+
+  if (invert_normal)
+    normal.Reverse();
 
   const gp_Pnt location = frame.Location().Translated(gp_Vec(normal) * offset);
   return gp_Pln(gp_Ax3(location, normal, x_dir));

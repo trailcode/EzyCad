@@ -768,7 +768,9 @@ void GUI::options_shape_cross_section_mode_()
   auto update_preview = [&]()
   {
     const Status status = section.preview_selected();
-    show_message(status.message());
+    // Always rebuild above; only toast failures. Success edge-count spam on Offset drag is noise.
+    if (!status.is_ok())
+      show_message(status.message());
   };
 
   ImGui::TextUnformatted(current_mode_description_());
@@ -795,9 +797,14 @@ void GUI::options_shape_cross_section_mode_()
   ImGui::RadioButton("Local YZ", &plane, static_cast<int>(Cross_section_plane::YZ));
   section.set_plane(static_cast<Cross_section_plane>(plane));
 
+  bool invert_normal = section.get_invert_normal();
+  if (ImGui::Checkbox("Invert normal", &invert_normal))
+    section.set_invert_normal(invert_normal);
+
   double     offset_min = -1.0;
   double     offset_max = 1.0;
   const bool have_range = section.try_get_offset_range_display(offset_min, offset_max);
+  offset                = section.get_offset_display();
   if (have_range)
   {
     if (offset < offset_min)
@@ -841,7 +848,8 @@ void GUI::options_shape_cross_section_mode_()
   ImGui::TextWrapped(
       "All selected solids share one cutting plane. Orientation follows the first selected solid's local axes; the "
       "plane is centered on the selection bounding box. Offset slides across that box along the plane normal "
-      "(Ctrl+click the slider to type a value). The yellow plane and arrow show the cut plane and positive normal. "
+      "(Ctrl+click the slider to type a value). The yellow plane and arrow show the cut plane and positive normal; "
+      "use Invert normal to flip the arrow (offset is negated so the plane stays in place). "
       "Changing the selection or section plane updates the preview automatically.");
   options_orthographic_projection_();
 }

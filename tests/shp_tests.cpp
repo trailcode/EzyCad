@@ -341,6 +341,19 @@ TEST_F(Shp_test, Cross_section_selection_stale_after_selection_change)
   ASSERT_TRUE(view().shp_cross_section().preview_selected().is_ok());
   EXPECT_FALSE(view().shp_cross_section().preview_inputs_stale());
 
+  double offset_min = 0.0;
+  double offset_max = 0.0;
+  ASSERT_TRUE(view().shp_cross_section().try_get_offset_range_display(offset_min, offset_max));
+  const double sample_offset = (offset_min + offset_max) * 0.25;
+  view().shp_cross_section().set_offset_display(sample_offset);
+  ASSERT_TRUE(view().shp_cross_section().preview_selected().is_ok());
+  view().shp_cross_section().set_invert_normal(true);
+  EXPECT_TRUE(view().shp_cross_section().get_invert_normal());
+  EXPECT_NEAR(view().shp_cross_section().get_offset_display(), -sample_offset, 1e-9);
+  EXPECT_TRUE(view().shp_cross_section().preview_inputs_stale());
+  ASSERT_TRUE(view().shp_cross_section().preview_selected().is_ok());
+  EXPECT_FALSE(view().shp_cross_section().preview_inputs_stale());
+
   view().shp_cross_section().clear();
   view().shp_cross_section().acknowledge_current_selection();
   EXPECT_FALSE(view().shp_cross_section().has_preview());

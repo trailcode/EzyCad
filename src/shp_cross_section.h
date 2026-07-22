@@ -46,12 +46,15 @@ public:
   void                set_plane(Cross_section_plane plane) { m_plane = plane; }
   double              get_offset_display() const { return m_offset_display; }
   void                set_offset_display(double offset) { m_offset_display = offset; }
+  bool                get_invert_normal() const { return m_invert_normal; }
+  /// Flips the cutting-plane normal (and annotation arrow). Negates offset so the plane stays put.
+  void                set_invert_normal(bool invert);
   bool                has_preview() const { return !m_preview.IsNull(); }
   /// True when the current AIS selection ids differ from the last acknowledged set.
   [[nodiscard]] bool selection_stale() const;
-  /// True when selection, section plane, or offset differ from the last preview/acknowledge.
+  /// True when selection, section plane, offset, or normal invert differ from the last preview/acknowledge.
   [[nodiscard]] bool preview_inputs_stale() const;
-  /// Record the current AIS selection, plane, and offset as acknowledged without rebuilding.
+  /// Record the current AIS selection, plane, offset, and invert as acknowledged without rebuilding.
   void acknowledge_current_selection();
   /// Projected extent of the current selection along the shared cross-section plane normal,
   /// in display units. False when nothing solid is selected or bounds are empty.
@@ -63,8 +66,10 @@ private:
 
   Cross_section_plane   m_plane{Cross_section_plane::XY};
   double                m_offset_display{0.0};
+  bool                  m_invert_normal{false};
   Cross_section_plane   m_acked_plane{Cross_section_plane::XY};
   double                m_acked_offset_display{0.0};
+  bool                  m_acked_invert_normal{false};
   std::vector<Shape_id> m_acked_selection_ids;
   AIS_Shape_ptr         m_preview;
   AIS_Shape_ptr         m_plane_fill;
