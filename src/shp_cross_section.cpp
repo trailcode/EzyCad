@@ -63,6 +63,7 @@ Status Shp_cross_section::preview_selected()
 Status Shp_cross_section::preview(const std::vector<Shp_ptr>& selected)
 {
   clear();
+  m_acked_selection_ids = selection_ids_(selected);
   if (!std::isfinite(m_offset_display))
     return Status::user_error("Section offset must be a finite number.");
 
@@ -196,6 +197,26 @@ void Shp_cross_section::clear()
   m_plane_fill.Nullify();
   m_plane_lines.Nullify();
   ctx().UpdateCurrentViewer();
+}
+
+std::vector<Shape_id> Shp_cross_section::selection_ids_(const std::vector<Shp_ptr>& shapes)
+{
+  std::vector<Shape_id> ids;
+  ids.reserve(shapes.size());
+  for (const Shp_ptr& shp : shapes)
+    if (!shp.IsNull())
+      ids.push_back(shp->get_id());
+  return ids;
+}
+
+bool Shp_cross_section::selection_stale() const
+{
+  return selection_ids_(get_selected_shps_()) != m_acked_selection_ids;
+}
+
+void Shp_cross_section::acknowledge_current_selection()
+{
+  m_acked_selection_ids = selection_ids_(get_selected_shps_());
 }
 
 bool Shp_cross_section::try_get_offset_range_display(double& out_min, double& out_max)

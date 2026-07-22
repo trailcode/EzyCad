@@ -762,14 +762,38 @@ void GUI::options_shape_cross_section_mode_()
   EZY_ASSERT(get_mode() == Mode::Shape_cross_section);
 
   Shp_cross_section& section = m_view->shp_cross_section();
-  int          plane   = static_cast<int>(section.get_plane());
-  double       offset  = section.get_offset_display();
+  int                plane   = static_cast<int>(section.get_plane());
+  double             offset  = section.get_offset_display();
 
   auto update_preview = [&]()
   {
     const Status status = section.preview_selected();
     show_message(status.message());
   };
+
+  // Viewer / shape-list / script selection changes: rebuild once when the id set changes.
+  if (section.selection_stale())
+  {
+    if (m_view->get_selected_shps().empty())
+    {
+      section.clear();
+      section.acknowledge_current_selection();
+    }
+    else
+    {
+      double range_min = 0.0;
+      double range_max = 0.0;
+      if (section.try_get_offset_range_display(range_min, range_max))
+      {
+        if (offset < range_min)
+          section.set_offset_display(range_min);
+        else if (offset > range_max)
+          section.set_offset_display(range_max);
+        offset = section.get_offset_display();
+      }
+      update_preview();
+    }
+  }
 
   ImGui::TextUnformatted(current_mode_description_());
   options_doc_help_button_();
@@ -840,13 +864,17 @@ void GUI::options_shape_cross_section_mode_()
   {
     ImGui::SameLine();
     if (ImGui::Button("Clear"))
+    {
       section.clear();
+      section.acknowledge_current_selection();
+    }
   }
 
   ImGui::TextWrapped(
       "All selected solids share one cutting plane. Orientation follows the first selected solid's local axes; the "
       "plane is centered on the selection bounding box. Offset slides across that box along the plane normal "
-      "(Ctrl+click the slider to type a value). The yellow plane and arrow show the cut plane and positive normal.");
+      "(Ctrl+click the slider to type a value). The yellow plane and arrow show the cut plane and positive normal. "
+      "Changing the selection updates the preview automatically.");
   options_orthographic_projection_();
 }
 

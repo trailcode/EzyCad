@@ -6,6 +6,7 @@
 #include <TopoDS_Shape.hxx>
 
 #include <cstddef>
+#include <vector>
 
 enum class Cross_section_plane
 {
@@ -46,14 +47,21 @@ public:
   double              get_offset_display() const { return m_offset_display; }
   void                set_offset_display(double offset) { m_offset_display = offset; }
   bool                has_preview() const { return !m_preview.IsNull(); }
+  /// True when the current AIS selection ids differ from the last acknowledged set.
+  [[nodiscard]] bool selection_stale() const;
+  /// Record the current AIS selection as acknowledged without rebuilding the preview.
+  void acknowledge_current_selection();
   /// Projected extent of the current selection along the shared cross-section plane normal,
   /// in display units. False when nothing solid is selected or bounds are empty.
   [[nodiscard]] bool try_get_offset_range_display(double& out_min, double& out_max);
 
 private:
-  Cross_section_plane m_plane{Cross_section_plane::XY};
-  double              m_offset_display{0.0};
-  AIS_Shape_ptr       m_preview;
-  AIS_Shape_ptr       m_plane_fill;
-  AIS_Shape_ptr       m_plane_lines;
+  static std::vector<Shape_id> selection_ids_(const std::vector<Shp_ptr>& shapes);
+
+  Cross_section_plane   m_plane{Cross_section_plane::XY};
+  double                m_offset_display{0.0};
+  std::vector<Shape_id> m_acked_selection_ids;
+  AIS_Shape_ptr         m_preview;
+  AIS_Shape_ptr         m_plane_fill;
+  AIS_Shape_ptr         m_plane_lines;
 };

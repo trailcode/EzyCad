@@ -312,7 +312,34 @@ TEST_F(Shp_test, Cross_section_previews_on_mode_enter_with_selection)
 
   EXPECT_TRUE(view().shp_cross_section().has_preview());
   EXPECT_EQ(gui().get_mode(), Mode::Shape_cross_section);
+  EXPECT_FALSE(view().shp_cross_section().selection_stale());
 }
+
+TEST_F(Shp_test, Cross_section_selection_stale_after_selection_change)
+{
+  view().add_box(0, 0, 0, 10, 10, 10);
+  view().add_box(20, 0, 0, 10, 10, 10);
+  const std::vector<Shp_ptr> boxes(view().get_shapes().begin(), view().get_shapes().end());
+  ASSERT_EQ(boxes.size(), 2u);
+
+  select_shapes(view(), {boxes[0]});
+  gui().set_mode(Mode::Shape_cross_section);
+  ASSERT_TRUE(view().shp_cross_section().has_preview());
+  EXPECT_FALSE(view().shp_cross_section().selection_stale());
+
+  select_shapes(view(), {boxes[1]});
+  EXPECT_TRUE(view().shp_cross_section().selection_stale());
+
+  ASSERT_TRUE(view().shp_cross_section().preview_selected().is_ok());
+  EXPECT_TRUE(view().shp_cross_section().has_preview());
+  EXPECT_FALSE(view().shp_cross_section().selection_stale());
+
+  view().shp_cross_section().clear();
+  view().shp_cross_section().acknowledge_current_selection();
+  EXPECT_FALSE(view().shp_cross_section().has_preview());
+  EXPECT_FALSE(view().shp_cross_section().selection_stale());
+}
+
 
 // ---------------------------------------------------------------------------
 // shp_info
