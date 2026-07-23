@@ -418,6 +418,22 @@ TEST_F(Shp_test, Cross_section_clip_removes_fully_discarded_solids)
   EXPECT_TRUE(contains_solid_like(view().get_shapes().front()->Shape()));
 }
 
+TEST_F(Shp_test, Cross_section_sketch_imports_box_midplane_lines)
+{
+  view().add_box(0, 0, 0, 10, 10, 10);
+  select_shapes(view(), {view().get_shapes().back()});
+  gui().set_mode(Mode::Shape_cross_section);
+  ASSERT_TRUE(view().shp_cross_section().preview_selected().is_ok());
+  ASSERT_TRUE(view().shp_cross_section().has_preview());
+
+  const size_t sketches_before = view().get_sketches().size();
+  const Status status          = view().create_sketch_from_cross_section();
+  ASSERT_TRUE(status.is_ok()) << status.message();
+  EXPECT_EQ(view().get_sketches().size(), sketches_before + 1u);
+  EXPECT_EQ(gui().get_mode(), Mode::Sketch_inspection_mode);
+  EXPECT_GE(Sketch_access::get_linear_edge_count(view().curr_sketch()), 4u);
+}
+
 
 // ---------------------------------------------------------------------------
 // shp_info

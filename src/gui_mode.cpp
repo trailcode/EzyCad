@@ -861,6 +861,14 @@ void GUI::options_shape_cross_section_mode_()
   }
   ImGui::EndDisabled();
 
+  ImGui::BeginDisabled(!section.has_preview() || section.section_busy());
+  if (ImGui::Button("Cross section sketch"))
+  {
+    const Status status = m_view->create_sketch_from_cross_section();
+    show_message(status.message());
+  }
+  ImGui::EndDisabled();
+
   options_orthographic_projection_();
 }
 

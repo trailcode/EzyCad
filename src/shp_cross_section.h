@@ -82,11 +82,17 @@ public:
   void                set_show_section_outline(bool show);
   /// True when a section compound is cached (wires may still be hidden via show outline).
   bool                has_preview() const { return !m_last_section_compound.IsNull(); }
+  /// Cached section compound from the last successful preview (null if none).
+  const TopoDS_Shape& last_section_compound() const { return m_last_section_compound; }
+  /// Cutting plane used for `last_section_compound` (valid when `has_preview()`).
+  const gp_Pln&       last_section_plane() const;
   bool                section_busy() const;
   [[nodiscard]] bool  selection_stale() const;
   [[nodiscard]] bool  preview_inputs_stale() const;
   void                acknowledge_current_selection();
   [[nodiscard]] bool  try_get_offset_range_display(double& out_min, double& out_max);
+  /// Block until the current section job finishes (used by sketch import / tests).
+  [[nodiscard]] Status wait_section();
 
 private:
   struct Shared_plane
@@ -111,6 +117,7 @@ private:
     std::uint64_t generation{0};
     Status        status{Result_status::Success};
     TopoDS_Shape  compound;
+    gp_Pln        plane;
   };
 
   static std::vector<Shape_id> selection_ids_(const std::vector<Shp_ptr>& shapes);
@@ -128,7 +135,6 @@ private:
   [[nodiscard]] static Section_result compute_section_result_(Section_request req, std::atomic<bool>* cancel);
   [[nodiscard]] std::optional<Status> finish_section_result_(Section_result result);
   [[nodiscard]] Result<Shared_plane>  build_shared_plane_(const std::vector<Shp_ptr>& shapes);
-  [[nodiscard]] Status                wait_section_();
 
   Cross_section_plane     m_plane{Cross_section_plane::XY};
   double                  m_offset_display{0.0};
@@ -141,6 +147,8 @@ private:
   bool                    m_acked_hide_back_side{true};
   std::vector<Shape_id>   m_acked_selection_ids;
   TopoDS_Shape            m_last_section_compound;
+  gp_Pln                  m_last_section_plane;
+  bool                    m_have_last_section_plane{false};
   AIS_Shape_ptr           m_preview;
   AIS_Shape_ptr           m_plane_fill;
   AIS_Shape_ptr           m_plane_lines;

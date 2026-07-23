@@ -143,6 +143,11 @@ void Sketch::add_edge_(const gp_Pnt2d& pt_a, const gp_Pnt2d& pt_b) { m_edges.add
 
 void Sketch::add_linear_edge(const gp_Pnt2d& pt_a, const gp_Pnt2d& pt_b) { add_edge_(pt_a, pt_b); }
 
+void Sketch::add_arc_circle(const gp_Pnt2d& pt_a, const gp_Pnt2d& pt_mid, const gp_Pnt2d& pt_c)
+{
+  add_arc_circle_(pt_a, pt_mid, pt_c);
+}
+
 void Sketch::rebuild_faces() { update_faces_(); }
 
 void Sketch::add_edge_(const gp_Pnt2d& pt_a, const gp_Pnt2d& pt_b, Sketch_op_recorder& rec)
