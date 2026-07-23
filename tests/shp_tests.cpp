@@ -378,6 +378,16 @@ TEST_F(Shp_test, Cross_section_selection_stale_after_selection_change)
   EXPECT_FALSE(boxes[1]->ClipPlanes().IsNull());
   EXPECT_EQ(boxes[1]->ClipPlanes()->Size(), 1);
 
+  // Outline defaults off; toggle shows/hides cyan AIS without a full recompute (not a preview-input).
+  EXPECT_FALSE(view().shp_cross_section().get_show_section_outline());
+  EXPECT_TRUE(view().shp_cross_section().has_preview());
+  view().shp_cross_section().set_show_section_outline(true);
+  EXPECT_TRUE(view().shp_cross_section().has_preview());
+  EXPECT_FALSE(view().shp_cross_section().preview_inputs_stale());
+  view().shp_cross_section().set_show_section_outline(false);
+  EXPECT_TRUE(view().shp_cross_section().has_preview());
+  EXPECT_FALSE(view().shp_cross_section().preview_inputs_stale());
+
   const Shape_id clipped_id = boxes[1]->get_id();
   ASSERT_TRUE(view().shp_cross_section().clip_selected().is_ok());
   EXPECT_FALSE(view().shp_cross_section().has_preview());

@@ -255,9 +255,15 @@ std::optional<Status> Shp_cross_section::finish_section_result_(Section_result r
 
   m_last_section_status = result.status;
   if (result.status.is_ok() && !result.compound.IsNull())
-    display_section_wires_(result.compound);
+  {
+    m_last_section_compound = result.compound;
+    display_section_wires_(m_last_section_compound);
+  }
   else
+  {
+    m_last_section_compound.Nullify();
     clear_section_wires_();
+  }
 
   ctx().UpdateCurrentViewer();
   return result.status;
@@ -393,12 +399,29 @@ void Shp_cross_section::display_section_wires_(const TopoDS_Shape& compound)
 {
   clear_section_wires_();
 
+  if (!m_show_section_outline || compound.IsNull())
+    return;
+
   m_preview = new AIS_Shape(compound);
   m_preview->SetColor(Quantity_NOC_CYAN);
   m_preview->SetWidth(3.0);
   m_preview->SetZLayer(Graphic3d_ZLayerId_Topmost);
   ctx().Display(m_preview, AIS_WireFrame, -1, false);
   ctx().Deactivate(m_preview);
+}
+
+void Shp_cross_section::set_show_section_outline(bool show)
+{
+  if (m_show_section_outline == show)
+    return;
+
+  m_show_section_outline = show;
+  if (show)
+    display_section_wires_(m_last_section_compound);
+  else
+    clear_section_wires_();
+
+  ctx().UpdateCurrentViewer();
 }
 
 void Shp_cross_section::clear_section_wires_()
@@ -425,6 +448,7 @@ void Shp_cross_section::clear_preview_ais_()
 {
   clear_section_wires_();
   clear_plane_annotation_();
+  m_last_section_compound.Nullify();
 }
 
 Status Shp_cross_section::clip_selected() { return clip(get_selected_shps_()); }

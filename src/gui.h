@@ -313,8 +313,9 @@ public:
   /// True when dist or angle edit is visible; Tab should be routed to on_key() instead of ImGui.
   bool is_dist_or_angle_edit_active() const;
   bool is_sketch_origin_set_edit_active() const;
+  /// Transient bottom-right status toast; also appends to the Log window.
   void show_message(const std::string& message);
-  /// Queue an ImGui error modal (also logs and shows a short toast). Works on native and wasm.
+  /// Queue an ImGui error modal (logs title: message once; short title toast). Native and wasm.
   void show_error_dialog(const std::string& title, const std::string& message);
   void log_message(const std::string& message);
   void set_show_options(bool v) { m_show_options = v; }

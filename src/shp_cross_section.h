@@ -77,7 +77,11 @@ public:
   void                set_invert_normal(bool invert);
   bool                get_hide_back_side() const { return m_hide_back_side; }
   void                set_hide_back_side(bool hide) { m_hide_back_side = hide; }
-  bool                has_preview() const { return !m_preview.IsNull(); }
+  bool                get_show_section_outline() const { return m_show_section_outline; }
+  /// Show/hide cyan section wires without recomputing (keeps last compound for restore).
+  void                set_show_section_outline(bool show);
+  /// True when a section compound is cached (wires may still be hidden via show outline).
+  bool                has_preview() const { return !m_last_section_compound.IsNull(); }
   bool                section_busy() const;
   [[nodiscard]] bool  selection_stale() const;
   [[nodiscard]] bool  preview_inputs_stale() const;
@@ -130,11 +134,13 @@ private:
   double                  m_offset_display{0.0};
   bool                    m_invert_normal{false};
   bool                    m_hide_back_side{true};
+  bool                    m_show_section_outline{false};
   Cross_section_plane     m_acked_plane{Cross_section_plane::XY};
   double                  m_acked_offset_display{0.0};
   bool                    m_acked_invert_normal{false};
   bool                    m_acked_hide_back_side{true};
   std::vector<Shape_id>   m_acked_selection_ids;
+  TopoDS_Shape            m_last_section_compound;
   AIS_Shape_ptr           m_preview;
   AIS_Shape_ptr           m_plane_fill;
   AIS_Shape_ptr           m_plane_lines;
