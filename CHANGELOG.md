@@ -15,7 +15,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Cross-section
 
 - Added a temporary **Shape cross-section** preview tool for selected solids. Entering the tool with solids already selected updates the preview immediately; changing the selection while in the tool also updates it. Options choose a shared local **XY**, **XZ**, or **YZ** plane (first-selected axes, selection-bbox center), **Invert normal** (flips the annotation arrow and positive-offset direction while keeping the plane in place), **Hide back side** (display-only AIS clip opposite the yellow arrow), a bounding-box **Offset** slider (Ctrl+click to type; auto-updates preview) in project units, and **Clip** (half-space cut: keeps the positive-normal side, deletes the originals, adds clipped replacements; undoable). A translucent yellow plane and normal arrow annotate the cut. Solids the plane misses are skipped; the preview clears only if nothing in the selection is cut.
-- Desktop preview sections multiple selected solids in parallel (worker pool); WASM remains single-threaded. Bounding-box culling skips solids that cannot meet the plane.
+- Desktop preview sections multiple selected solids in parallel (worker pool); WASM remains single-threaded for the per-solid pool. Bounding-box culling skips solids that cannot meet the plane. Offset/plane dragging updates the yellow plane immediately and runs section wires asynchronously (cancel + latest-pending) so the Options slider stays responsive.
 - Shapes now carry a bbox-centered local frame that follows baked move/rotate/scale transforms and persists in project JSON and shape undo records.
 
 ### Shape List

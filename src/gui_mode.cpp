@@ -8,6 +8,7 @@
 #include <cstdlib>
 #include <cstring>
 #include <map>
+#include <optional>
 #include <string_view>
 #include <unordered_map>
 #include <vector>
@@ -765,14 +766,6 @@ void GUI::options_shape_cross_section_mode_()
   int                plane   = static_cast<int>(section.get_plane());
   double             offset  = section.get_offset_display();
 
-  auto update_preview = [&]()
-  {
-    const Status status = section.preview_selected();
-    // Always rebuild above; only toast failures. Success edge-count spam on Offset drag is noise.
-    if (!status.is_ok())
-      show_message(status.message());
-  };
-
   ImGui::TextUnformatted(current_mode_description_());
   options_doc_help_button_();
   ImGui::Separator();
@@ -837,7 +830,7 @@ void GUI::options_shape_cross_section_mode_()
   if (have_selection && !have_range)
     ImGui::TextDisabled("Select solid shapes to enable the offset slider.");
 
-  // Refresh after plane/offset widgets so a plane change is never missed.
+  // Plane annotation updates immediately; section wires run async (poll below).
   if (section.preview_inputs_stale())
   {
     if (m_view->get_selected_shps().empty())
@@ -845,8 +838,15 @@ void GUI::options_shape_cross_section_mode_()
       section.clear();
       section.acknowledge_current_selection();
     }
-    else
-      update_preview();
+    else if (const Status status = section.request_preview_selected(); !status.is_ok())
+      show_message(status.message());
+  }
+
+  if (std::optional<Status> finished = section.poll())
+  {
+    // Toast failures only; success edge-count spam on Offset drag is noise.
+    if (!finished->is_ok())
+      show_message(finished->message());
   }
 
   ImGui::BeginDisabled(!have_selection);

@@ -20,3 +20,4 @@ sketch-mode-shape-faint  (parallel UX: ghost/wire shapes while sketching)
 | [sketch-from-shape-section.md](sketch-from-shape-section.md)     | "sketch from shape", section → editable sketch (end-state; deferred)  |
 | [sketch-mode-shape-faint.md](sketch-mode-shape-faint.md)         | faint/ghost/wireframe shapes in sketch mode, alpha blending solids    |
 | [shape-list-hierarchy-phase3.md](shape-list-hierarchy-phase3.md) | parent transform inheritance, Parts/planes, Boolean history (#214)    |
+| [wasm-multithreading.md](wasm-multithreading.md)                 | WASM/Emscripten pthreads, SharedArrayBuffer, parallel OCCT on web     |

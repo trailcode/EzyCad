@@ -604,7 +604,7 @@ Use the cross-section tool to inspect where a plane cuts one or more selected so
 1. Select one or more solids.
 2. Click **Shape cross-section** in the toolbar. If solids were already selected, the preview updates immediately.
 3. In **Options**, choose **Local XY**, **Local XZ**, or **Local YZ**. Use **Invert normal** to flip the yellow arrow (and the positive-offset direction); the cut stays in place. Enable **Hide back side** to preview-clip the selected solids so geometry on the negative-normal side of the plane is not drawn (opposite the yellow arrow).
-4. Drag **Offset** (or Ctrl+click to type) along that plane's local normal. The slider range follows the selected solids' bounding box in the current project unit, and the preview updates as you change it.
+4. Drag **Offset** (or Ctrl+click to type) along that plane's local normal. The slider range follows the selected solids' bounding box in the current project unit. The yellow plane updates immediately while you drag; cyan section wires catch up asynchronously so the control stays responsive.
 5. Click **Clip** to keep the positive-normal half of each selected solid as a new shape and delete the originals (undoable). Leave the tool (or clear the selection) to remove the preview and any hide-back display clip.
 6. Changing the selection or **Section plane** (or dragging **Offset**) updates the preview automatically. If nothing is selected, Options shows a bold prompt to select one or more shapes.
 
