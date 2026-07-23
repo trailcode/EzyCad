@@ -33,5 +33,6 @@ Desktop: **Alt + LMB drag** rubber-band multi-selects shapes via OCCT `AIS_ViewC
 ### Related
 
 - Issue: https://github.com/trailcode/EzyCad/issues/220
-- Plan: `agents/plans/wasm-alt-drag-multiselect.md`
+- Plan: `agents/plans/wasm-alt-drag-multiselect.md` (tracking on PR #219; bug not fixed there)
 - Related: #93 / `gh-93-emscripten-web-hotkeys-followup.md`
+- PR that added tracking: https://github.com/trailcode/EzyCad/pull/219

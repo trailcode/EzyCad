@@ -930,7 +930,7 @@ void Occt_view::refresh_shape_shading_(const Shp_ptr& shp)
 #if OCC_VERSION_HEX >= 0x080000
   // OCCT 8 GLES: AIS OwnColor overrides Graphic3d material presets, so Shape List
   // picks (Copper, Gold, ...) never change the shaded look. Clear any forced color and
-  // let SetMaterial drive appearance. Broader OCCT 8 wasm shading regressions remain —
+  // let SetMaterial drive appearance. Broader OCCT 8 wasm shading regressions remain -
   // recommended kit is still 7.9.3 (docs/building-occt.md).
   if (shp->HasColor())
     shp->UnsetColor();

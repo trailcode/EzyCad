@@ -13,9 +13,9 @@ Add temporary shape cross-section preview tool
 
 ## Summary
 
-- Temporary shape cross-section preview tool (local XY/XZ/YZ + offset).
+- Temporary shape cross-section preview (local XY/XZ/YZ + offset, Invert normal, Hide back side, Clip).
+- Async section wires + desktop parallel pool; WASM serial (see `wasm-multithreading.md`).
 - Shape local frames for plane orientation / persistence.
-- Auto-update preview from selection, plane, and offset; Options empty-selection prompt.
 
 ## Related
 
@@ -28,5 +28,5 @@ Add temporary shape cross-section preview tool
 
 - [ ] Desktop Release build
 - [ ] `EzyCad_tests --gtest_filter=Shp_cross_section.*:Shp_test.Cross_section*`
-- [ ] Manual enter / selection / plane / offset / Esc
+- [ ] Manual enter / selection / plane / offset / Hide back / Clip / Esc
 - [ ] Docs sync checklist
