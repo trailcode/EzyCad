@@ -21,3 +21,4 @@ sketch-mode-shape-faint  (parallel UX: ghost/wire shapes while sketching)
 | [sketch-mode-shape-faint.md](sketch-mode-shape-faint.md)         | faint/ghost/wireframe shapes in sketch mode, alpha blending solids    |
 | [shape-list-hierarchy-phase3.md](shape-list-hierarchy-phase3.md) | parent transform inheritance, Parts/planes, Boolean history (#214)    |
 | [wasm-multithreading.md](wasm-multithreading.md)                 | WASM/Emscripten pthreads, SharedArrayBuffer, parallel OCCT on web     |
+| [wasm-alt-drag-multiselect.md](wasm-alt-drag-multiselect.md)     | WASM Alt+LMB drag rectangle multi-select broken (#220)                |

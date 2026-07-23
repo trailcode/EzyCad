@@ -129,11 +129,11 @@ private:
   Cross_section_plane     m_plane{Cross_section_plane::XY};
   double                  m_offset_display{0.0};
   bool                    m_invert_normal{false};
-  bool                    m_hide_back_side{false};
+  bool                    m_hide_back_side{true};
   Cross_section_plane     m_acked_plane{Cross_section_plane::XY};
   double                  m_acked_offset_display{0.0};
   bool                    m_acked_invert_normal{false};
-  bool                    m_acked_hide_back_side{false};
+  bool                    m_acked_hide_back_side{true};
   std::vector<Shape_id>   m_acked_selection_ids;
   AIS_Shape_ptr           m_preview;
   AIS_Shape_ptr           m_plane_fill;
