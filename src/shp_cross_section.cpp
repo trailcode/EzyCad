@@ -31,10 +31,16 @@
 
 #include <algorithm>
 #include <array>
+#include <atomic>
 #include <cmath>
+#include <functional>
 #include <limits>
 #include <sstream>
 #include <vector>
+
+#ifndef __EMSCRIPTEN__
+#  include <thread>
+#endif
 
 namespace
 {
@@ -47,11 +53,15 @@ bool                  append_bounds_(const TopoDS_Shape& shape, Bnd_Box& bounds)
 std::array<gp_Pnt, 8> bbox_corners_(const Bnd_Box& bounds);
 void project_bbox_offsets_(const Bnd_Box& bounds, const gp_Pnt& origin, const gp_Dir& normal, double& out_min, double& out_max);
 void project_bbox_uv_(const Bnd_Box& bounds, const gp_Pln& plane, double& u_min, double& u_max, double& v_min, double& v_max);
+bool bbox_misses_plane_(const Bnd_Box& bounds, const gp_Pln& plane);
 void add_plane_annotation_(const Bnd_Box& bounds, const gp_Pln& plane, BRep_Builder& builder, TopoDS_Compound& fill,
                            TopoDS_Compound& lines);
 Result<Cross_section_geometry> cross_section_shape_on_plane_(const TopoDS_Shape& shape, const gp_Pln& plane);
 Result<TopoDS_Solid>           keep_half_space_(const gp_Pln& plane, const Bnd_Box& bounds);
 Result<TopoDS_Shape>           clip_solid_to_half_space_(const TopoDS_Shape& world_shape, const TopoDS_Solid& half_space);
+void                           for_each_index_(size_t count, const std::function<void(size_t)>& fn);
+std::vector<Result<Cross_section_geometry>> section_shapes_on_plane_(const std::vector<TopoDS_Shape>& world_shapes,
+                                                                     const gp_Pln&                    plane);
 } // namespace
 
 Result<Cross_section_geometry> cross_section_shape(const TopoDS_Shape& shape, const gp_Ax3& frame, Cross_section_plane plane,
@@ -127,6 +137,10 @@ Status Shp_cross_section::preview(const std::vector<Shp_ptr>& selected)
 
   const Shared_plane& plane_ctx = *shared;
 
+  // Desktop: section each solid on a worker pool. WASM stays serial (no pthreads).
+  const std::vector<Result<Cross_section_geometry>> section_results =
+      section_shapes_on_plane_(plane_ctx.world_shapes, plane_ctx.plane);
+
   TopoDS_Compound compound;
   TopoDS_Compound plane_fill;
   TopoDS_Compound plane_lines;
@@ -137,9 +151,9 @@ Status Shp_cross_section::preview(const std::vector<Shp_ptr>& selected)
 
   Cross_section_geometry totals;
   size_t                 missed = 0;
-  for (size_t i = 0; i < plane_ctx.shapes.size(); ++i)
+  for (size_t i = 0; i < section_results.size(); ++i)
   {
-    Result<Cross_section_geometry> result = cross_section_shape_on_plane_(plane_ctx.world_shapes[i], plane_ctx.plane);
+    const Result<Cross_section_geometry>& result = section_results[i];
     if (!result.has_value())
     {
       // A miss on one solid should not kill the shared preview for the others.
@@ -543,6 +557,79 @@ void project_bbox_offsets_(const Bnd_Box& bounds, const gp_Pnt& origin, const gp
     out_min        = std::min(out_min, t);
     out_max        = std::max(out_max, t);
   }
+}
+
+bool bbox_misses_plane_(const Bnd_Box& bounds, const gp_Pln& plane)
+{
+  if (bounds.IsVoid())
+    return true;
+
+  double d_min = 0.0;
+  double d_max = 0.0;
+  project_bbox_offsets_(bounds, plane.Location(), plane.Axis().Direction(), d_min, d_max);
+  // Strict same-side means Section cannot hit; keep a tiny tolerance for near-tangency.
+  constexpr double tol = 1.0e-7;
+  return d_max < -tol || d_min > tol;
+}
+
+void for_each_index_(size_t count, const std::function<void(size_t)>& fn)
+{
+  if (count == 0)
+    return;
+
+#ifdef __EMSCRIPTEN__
+  for (size_t i = 0; i < count; ++i)
+    fn(i);
+#else
+  if (count == 1)
+  {
+    fn(0);
+    return;
+  }
+
+  const unsigned hw = std::thread::hardware_concurrency();
+  const size_t   workers =
+      std::min(count, static_cast<size_t>(hw == 0 ? 2u : hw));
+  std::atomic<size_t> next{0};
+  std::vector<std::thread> threads;
+  threads.reserve(workers);
+  for (size_t w = 0; w < workers; ++w)
+  {
+    threads.emplace_back(
+        [&]()
+        {
+          for (;;)
+          {
+            const size_t i = next.fetch_add(1, std::memory_order_relaxed);
+            if (i >= count)
+              break;
+            fn(i);
+          }
+        });
+  }
+  for (std::thread& t : threads)
+    t.join();
+#endif
+}
+
+std::vector<Result<Cross_section_geometry>> section_shapes_on_plane_(const std::vector<TopoDS_Shape>& world_shapes,
+                                                                     const gp_Pln&                    plane)
+{
+  std::vector<Result<Cross_section_geometry>> results(world_shapes.size());
+  for_each_index_(world_shapes.size(),
+                  [&](size_t i)
+                  {
+                    Bnd_Box bounds;
+                    BRepBndLib::Add(world_shapes[i], bounds);
+                    if (bbox_misses_plane_(bounds, plane))
+                    {
+                      results[i] = {Result_status::User_error, "The section plane does not intersect the shape."};
+                      return;
+                    }
+
+                    results[i] = cross_section_shape_on_plane_(world_shapes[i], plane);
+                  });
+  return results;
 }
 
 void project_bbox_uv_(const Bnd_Box& bounds, const gp_Pln& plane, double& u_min, double& u_max, double& v_min, double& v_max)
