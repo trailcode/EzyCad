@@ -28,10 +28,7 @@ std::vector<Shp_ptr> Shp_operation_base::get_selected_shps_() const
   return ret;
 }
 
-Shape_id Shp_operation_base::result_parent_from_operands_() const
-{
-  return Occt_view::result_parent_id(m_shps);
-}
+Shape_id Shp_operation_base::result_parent_from_operands_() const { return Occt_view::result_parent_id(m_shps); }
 
 void Shp_operation_base::assign_result_parent_(Shp_ptr& result, const std::vector<Shp_ptr>& operands)
 {
@@ -109,10 +106,7 @@ const TopoDS_Edge* Shp_operation_base::get_edge_(const ScreenCoords& screen_coor
   return m_view.get_edge_(screen_coords);
 }
 
-void Shp_operation_base::add_shp_(Shp_ptr& shp, bool use_current_group)
-{
-  m_view.add_shp_(shp, use_current_group);
-}
+void Shp_operation_base::add_shp_(Shp_ptr& shp, bool use_current_group) { m_view.add_shp_(shp, use_current_group); }
 
 void Shp_operation_base::replace_picked_shape_(Shp_ptr& old_shp, Shp_ptr& new_shp, const std::string& name)
 {

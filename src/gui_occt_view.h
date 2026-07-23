@@ -26,6 +26,7 @@
 #include "shp_polar_dup.h"
 #include "shp_rotate.h"
 #include "shp_scale.h"
+#include "shp_cross_section.h"
 #include "utl_types.h"
 #include "utl_asset_store.h"
 #include "utl_geom.h"
@@ -98,7 +99,7 @@ public:
   /// When \a union_shapes is true and the file has multiple roots, fuse them into one solid first.
   [[nodiscard]] Status import_step(const std::string& step_data, bool union_shapes = false);
   /// Import PLY (coords treated as inches) scaled into model space (* dimension_scale).
-  bool                 import_ply(const std::string& ply_bytes);
+  bool import_ply(const std::string& ply_bytes);
 
   /// Writes STEP/IGES/STL/PLY from model space in \a unit. Selected document shapes if any, else all.
   [[nodiscard]] Status export_document(Export_format fmt, Export_unit unit, const std::string& file_path);
@@ -125,7 +126,7 @@ public:
   /// Remove a shape by stable id (viewer + document list).
   void remove_shape_by_id(Shape_id id);
   /// Replace BREP of an existing shape (identity local transform).
-  void set_shape_geom_by_id(Shape_id id, const TopoDS_Shape& geom);
+  void set_shape_geom_by_id(Shape_id id, const TopoDS_Shape& geom, const gp_Ax3& frame);
 
   /// Next sibling_order among children of \a parent_id (0 = document root).
   int next_sibling_order(Shape_id parent_id) const;
@@ -191,9 +192,9 @@ public:
   // Sketch related
   Sketch_list&       get_sketches();
   const Sketch_list& get_sketches() const;
-  size_t       allocate_sketch_id();
-  void         adopt_sketch_id(size_t id);
-  void         remove_sketch(const Sketch_ptr& sketch);
+  size_t             allocate_sketch_id();
+  void               adopt_sketch_id(size_t id);
+  void               remove_sketch(const Sketch_ptr& sketch);
   /// Empty sketch on \a pln; \a base_name is uniquified (e.g. Sketch_xy, Sketch_xy.001).
   void add_sketch(const gp_Pln& pln, const std::string& base_name);
   /// Like add_sketch; \a offset_display is multiplied by get_display_to_model_scale().
@@ -207,7 +208,7 @@ public:
   void    set_curr_sketch(const Sketch_ptr& sketch);
   void    sketch_face_extrude(const ScreenCoords& screen_coords, bool is_mouse_move);
   /// Enter face-extrude drag for a Sketch List face (after mode is already Sketch_face_extrude).
-  bool    begin_sketch_face_extrude(const AIS_Shape_ptr& face);
+  bool begin_sketch_face_extrude(const AIS_Shape_ptr& face);
 
   std::list<Shp_ptr>& get_shapes();
   std::string         get_unique_shape_name(const char* base_name) const;
@@ -229,6 +230,7 @@ public:
   Shp_common&    shp_common();
   Shp_polar_dup& shp_polar_dup();
   Shp_extrude&   shp_extrude();
+  Shp_cross_section&   shp_cross_section();
 
   // Revolve related
   void revolve_selected(const double angle);
@@ -244,19 +246,19 @@ public:
   bool fit_face_in_view(const TopoDS_Face& face);
 
   // Dimension related
-  void                  dimension_input(const ScreenCoords& screen_coords);
-  void                  angle_input(const ScreenCoords& screen_coords);
-  void                  refresh_sketch_annotations(const Sketch_annotation_refresh& refresh);
-  void                  apply_sketch_dimensions_visibility();
+  void dimension_input(const ScreenCoords& screen_coords);
+  void angle_input(const ScreenCoords& screen_coords);
+  void refresh_sketch_annotations(const Sketch_annotation_refresh& refresh);
+  void apply_sketch_dimensions_visibility();
   /// Inch-based model scale (`model = inches * scale`). Used for STEP/PLY import/export.
-  double                get_dimension_scale() const;
+  double get_dimension_scale() const;
   /// Display (project unit) -> model scale. Prefer for UI length I/O.
-  double                get_display_to_model_scale() const;
-  double                to_model(double display) const;
-  double                to_display(double model) const;
-  Project_unit          get_project_unit() const;
+  double       get_display_to_model_scale() const;
+  double       to_model(double display) const;
+  double       to_display(double model) const;
+  Project_unit get_project_unit() const;
   /// Sets project unit, refreshes length dimensions; does not rewrite geometry.
-  void                  set_project_unit(Project_unit unit);
+  void set_project_unit(Project_unit unit);
   /// Short label for length fields: "in" or "mm".
   const char*           project_unit_suffix() const;
   bool                  get_show_dim_input() const;
@@ -313,8 +315,8 @@ public:
   std::vector<AIS_Shape_ptr> get_selected() const;
   /// Document `Shp` objects in the current viewer selection (deduped; ignores non-Shp AIS).
   std::vector<Shp_ptr> get_selected_shps() const;
-  TopAbs_ShapeEnum           get_shp_selection_mode() const;
-  void                       set_shp_selection_mode(const TopAbs_ShapeEnum selection_mode);
+  TopAbs_ShapeEnum     get_shp_selection_mode() const;
+  void                 set_shp_selection_mode(const TopAbs_ShapeEnum selection_mode);
 
   /// Highlight \a shp in the 3D viewer while the Shape List row is hovered (null clears).
   void           set_shape_list_hover(const Shp_ptr& shp);
@@ -341,7 +343,7 @@ public:
   // Material related
   const Graphic3d_MaterialAspect& get_default_material() const;
   void                            set_default_material(const Graphic3d_MaterialAspect& mat);
-  /// Apply default material/color and wasm GLES presentation fixes; call before Redisplay.
+  /// Apply wasm presentation fixes after SetMaterial (OCCT 8 GLES color/back-face); call before Redisplay.
   void refresh_shape_shading_(const Shp_ptr& shp);
 
   // View presentation (background gradient) and grid colors (0-1 RGB)
@@ -480,13 +482,12 @@ private:
   void                  restore_sketch_list_measurement_hover_style_();
   void                  refresh_sketch_list_measurement_hover_highlight_();
   void                  clear_sketch_list_hover_ais_state_(Sketch_list_hover_ais& hover);
-  void                  apply_sketch_list_hover_ais_state_(Sketch_list_hover_ais& hover, const Prs3d_Drawer_ptr& drawer,
-                                                     int display_mode);
-  void                  set_sketch_list_hover_ais_state_(Sketch_list_hover_ais& hover, const AIS_Shape_ptr& ais,
-                                                   const Prs3d_Drawer_ptr& drawer, int display_mode);
+  void apply_sketch_list_hover_ais_state_(Sketch_list_hover_ais& hover, const Prs3d_Drawer_ptr& drawer, int display_mode);
+  void set_sketch_list_hover_ais_state_(Sketch_list_hover_ais& hover, const AIS_Shape_ptr& ais, const Prs3d_Drawer_ptr& drawer,
+                                        int display_mode);
   [[nodiscard]] static Sketch* sketch_owner_of_list_ais_(const AIS_Shape_ptr& ais);
   Graphic3d_MaterialAspect     m_default_material;
-  bool                                   m_headless_view{false};
+  bool                         m_headless_view{false};
   /// True when LMB press was handled by planar-face sketch creation without AIS_ViewController::PressMouseButton (pair with
   /// release skip).
   bool m_planar_face_lmb_skipped_view_controller{false};
@@ -514,6 +515,7 @@ private:
   Shp_common    m_shp_common;
   Shp_polar_dup m_shp_polar_dup;
   Shp_extrude   m_shp_extrude;
+  Shp_cross_section   m_shp_cross_section;
   // --------------------------------------------------------------------
   // Selection related
   std::map<Mode, TopAbs_ShapeEnum> m_modes_selection_mode_map;

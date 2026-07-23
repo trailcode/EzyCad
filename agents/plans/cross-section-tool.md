@@ -1,5 +1,5 @@
 ---
-status: planning
+status: implemented-v0
 topic: cross-section-tool
 depends_on: shp-origin-orientation
 blocks:
@@ -32,12 +32,12 @@ Fail closed on empty section (status message). No requirement to create a `Sketc
 
 ## Experiment checklist
 
-- [ ] Box mid-plane → rectangle-like wires.
-- [ ] Cylinder mid-plane → circle (or dense curve).
-- [ ] Offset along normal; miss solid → clear failure.
-- [ ] Multi-face / boolean solids: junk edges? duplicates?
-- [ ] Curve types returned (`GeomAbs_*`) — informs sketch import strategy.
-- [ ] WASM vs desktop parity ([occt-wasm-dual-version](../conventions/occt-wasm-dual-version.md)).
+- [x] Box mid-plane -> four line edges (focused unit test).
+- [x] Cylinder mid-plane -> circular edge (focused unit test).
+- [x] Offset along normal; miss solid -> clear failure (focused unit test).
+- [x] Multi-face / boolean solids: junk edges? duplicates? (fused two-box mid-plane returns **8** line edges, not a clean 4-edge rectangle — sketch import will need weld/dedup).
+- [x] Curve types returned (`GeomAbs_*`) -> preview status counts lines, circles, ellipses, B-splines, and other curves.
+- [x] WASM vs desktop parity ([occt-wasm-dual-version](../conventions/occt-wasm-dual-version.md)).
 
 ## Likely touch points
 
@@ -58,3 +58,13 @@ Enough evidence to either:
 Import into `Sketch_edges`; undoable new sketch; script binding (unless useful for tests).
 
 **Related UX:** [sketch-mode-shape-faint.md](sketch-mode-shape-faint.md) — keep the solid visible but faint under section preview.
+
+## Implemented v0 findings
+
+- `Shp` now has a persisted `gp_Ax3` local frame. It defaults to a world-aligned frame at the shape bounding-box center and follows baked move/rotate/scale transforms.
+- `Shp_cross_section` computes one shared cutting plane for the selection with `BRepAlgoAPI_Section` (`Approximation(false)` for exact curve types): orientation from the first selected solid's local axes, origin at the selection bbox center, plus offset. Section edges aggregate into a temporary topmost cyan AIS wire preview, with one translucent yellow plane outline and positive-normal arrow. None of this temporary geometry enters the document or undo history.
+- Preview updates fail closed only when the shared plane misses every selected solid, or a hard OCCT failure occurs. Solids the plane does not intersect are skipped and counted in the status message; the yellow plane annotation remains.
+- The first curve evidence supports line and circle handling. Ellipse/B-spline/other counts are exposed for further manual experiments before sketch import rules are chosen.
+- Boolean solids are not yet sketch-ready: a fused two-box mid-plane yields 8 line edges (likely unmerged/overlapping segments) instead of one 4-edge outer loop.
+- Desktop Release build and focused section tests pass with OCCT 8.0.0. The Emscripten Release build also passes with OCCT 7.9.3.
+- Desktop multi-solid preview sections solids on a `std::thread` worker pool (`for_each_index_` / `section_shapes_on_plane_`); WASM remains single-threaded for that pool. Interactive Options use `request_preview` + `poll`: plane AIS updates immediately; section wires run async with cancel + latest-pending (desktop `std::async`; WASM one solid per poll). WASM pthread enablement is tracked in [wasm-multithreading.md](wasm-multithreading.md).

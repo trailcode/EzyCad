@@ -16,6 +16,7 @@ struct Shape_rec
   std::string  name;
   int          material{0};
   TopoDS_Shape geom;
+  gp_Ax3       frame;
   Shape_id     parent_id{0};
   int          sibling_order{0};
   bool         is_group{false};
@@ -61,6 +62,8 @@ public:
     Shape_id     id{0};
     TopoDS_Shape before_geom;
     TopoDS_Shape after_geom;
+    gp_Ax3       before_frame;
+    gp_Ax3       after_frame;
   };
 
   explicit Shape_geom_delta(std::vector<Geom_change> changes);
@@ -108,7 +111,7 @@ public:
   std::unique_ptr<Delta> clone() const override;
 
 private:
-  std::vector<Shape_rec>  m_added;
-  std::vector<Shape_rec>  m_removed;
+  std::vector<Shape_rec>   m_added;
+  std::vector<Shape_rec>   m_removed;
   std::vector<Link_change> m_links;
 };

@@ -33,10 +33,7 @@ namespace utl_cad_file_info
 {
 namespace
 {
-void add_line(std::vector<Line>& out, const char* label, const std::string& value)
-{
-  out.push_back({label, value});
-}
+void add_line(std::vector<Line>& out, const char* label, const std::string& value) { out.push_back({label, value}); }
 
 void add_blank(std::vector<Line>& out) { out.push_back({"", ""}); }
 
@@ -154,16 +151,14 @@ void append_shape_summary(std::vector<Line>& lines, const TopoDS_Shape& shape)
   add_line(lines, "BBox X", fmt_double(xmin) + " .. " + fmt_double(xmax));
   add_line(lines, "BBox Y", fmt_double(ymin) + " .. " + fmt_double(ymax));
   add_line(lines, "BBox Z", fmt_double(zmin) + " .. " + fmt_double(zmax));
-  add_line(lines, "BBox size",
-           fmt_double(xmax - xmin) + " x " + fmt_double(ymax - ymin) + " x " + fmt_double(zmax - zmin));
+  add_line(lines, "BBox size", fmt_double(xmax - xmin) + " x " + fmt_double(ymax - ymin) + " x " + fmt_double(zmax - zmin));
 }
 
 void append_common(std::vector<Line>& lines, const std::string& file_path, const std::string& file_bytes, Format fmt)
 {
   const std::string name = std::filesystem::path(file_path).filename().string();
   add_line(lines, "File", name.empty() ? file_path : name);
-  if (!file_path.empty() &&
-      (file_path.find('/') != std::string::npos || file_path.find('\\') != std::string::npos))
+  if (!file_path.empty() && (file_path.find('/') != std::string::npos || file_path.find('\\') != std::string::npos))
     add_line(lines, "Path", file_path);
 
   add_line(lines, "Format", format_label(fmt));
@@ -180,8 +175,8 @@ std::vector<Line> collect_step(const std::string& file_path, const std::string& 
 
   Interface_Static::SetCVal("xstep.cascade.unit", "MM");
 
-  STEPControl_Reader reader;
-  std::istringstream stream(file_bytes);
+  STEPControl_Reader          reader;
+  std::istringstream          stream(file_bytes);
   const IFSelect_ReturnStatus read_st = reader.ReadStream("", stream);
   if (read_st != IFSelect_RetDone)
   {
@@ -228,8 +223,8 @@ std::vector<Line> collect_iges(const std::string& file_path, const std::string& 
   append_common(lines, file_path, file_bytes, Format::Iges);
   add_blank(lines);
 
-  IGESControl_Reader reader;
-  std::istringstream stream(file_bytes);
+  IGESControl_Reader          reader;
+  std::istringstream          stream(file_bytes);
   const IFSelect_ReturnStatus read_st = reader.ReadStream("", stream);
   if (read_st != IFSelect_RetDone)
   {

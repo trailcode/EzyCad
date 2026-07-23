@@ -105,8 +105,7 @@ inline constexpr float k_gui_sketch_face_selection_color_default[4] = {0.799043f
 /// Dynamic (hover) highlight RGBA for sketch faces (`gui.sketch_face_highlight_color`).
 inline constexpr float k_gui_sketch_face_highlight_color_default[4] = {0.822967f, 0.0f, 1.0f, 1.0f};
 /// 3D shape selection (AIS SelectionStyle) RGBA (`gui.shape_selection_color`).
-inline constexpr float k_gui_shape_selection_color_default[4] = {
-    0.754312f, 0.072938f, 0.846890f, 1.0f};
+inline constexpr float k_gui_shape_selection_color_default[4] = {0.754312f, 0.072938f, 0.846890f, 1.0f};
 /// `gui.sketch_shape_faint_style`: 0 = Off (hide shapes in sketch mode), 1 = Ghost, 2 = Wire.
 inline constexpr int k_gui_sketch_shape_faint_style_min     = 0;
 inline constexpr int k_gui_sketch_shape_faint_style_max     = 2;
@@ -285,32 +284,32 @@ public:
   float sketch_shape_faint_opacity() const { return m_sketch_shape_faint_opacity; }
   /// Master on/off for faint shapes in all sketch modes (`gui.sketch_shape_faint_enabled`).
   bool sketch_shape_faint_enabled() const { return m_sketch_shape_faint_enabled; }
-  bool         get_add_mid_pt_line_edges() const { return m_add_mid_pt_line_edges; }
-  bool         get_add_mid_pt_rect_edges() const { return m_add_mid_pt_rect_edges; }
-  bool         get_add_mid_pt_slot_edges() const { return m_add_mid_pt_slot_edges; }
-  bool         get_edge_from_center() const { return m_edge_from_center; }
-  bool         get_hide_all_shapes() const { return m_hide_all_shapes; }
-  void         set_hide_all_shapes(bool hide) { m_hide_all_shapes = hide; }
+  bool get_add_mid_pt_line_edges() const { return m_add_mid_pt_line_edges; }
+  bool get_add_mid_pt_rect_edges() const { return m_add_mid_pt_rect_edges; }
+  bool get_add_mid_pt_slot_edges() const { return m_add_mid_pt_slot_edges; }
+  bool get_edge_from_center() const { return m_edge_from_center; }
+  bool get_hide_all_shapes() const { return m_hide_all_shapes; }
+  void set_hide_all_shapes(bool hide) { m_hide_all_shapes = hide; }
   /// Orthographic camera toggle for non-sketch modes (forces ortho in sketch modes); persisted as
   /// `gui.inspection_orthographic`.
-  bool   inspection_orthographic() const { return m_inspection_orthographic; }
-  void   set_inspection_orthographic(bool v) { m_inspection_orthographic = v; }
+  bool inspection_orthographic() const { return m_inspection_orthographic; }
+  void set_inspection_orthographic(bool v) { m_inspection_orthographic = v; }
   /// Default top-view framing width/height in inches (`gui.default_2d_view_width` / `_height`).
   double default_2d_view_width() const { return m_default_2d_view_width; }
   double default_2d_view_height() const { return m_default_2d_view_height; }
   /// Unit applied by File -> New (`gui.default_project_unit`).
   Project_unit default_project_unit() const { return m_default_project_unit; }
-  bool   get_dark_mode() const { return m_dark_mode; }
-  ImVec4 get_clear_color() const;
-  void   set_mode(Mode mode); // gui_mode.cpp
-  void   set_parent_mode();   // gui_mode.cpp
-  void   set_dist_edit(float dist, std::function<void(float, bool)>&& callback,
-                       const std::optional<ScreenCoords> screen_coords = std::nullopt);
-  void   hide_dist_edit(bool apply = true);
-  void   set_angle_edit(float angle, std::function<void(float, bool)>&& callback,
-                        const std::optional<ScreenCoords> screen_coords = std::nullopt);
-  void   hide_angle_edit(bool apply = true);
-  void   hide_sketch_origin_set_edit(bool apply = true);
+  bool         get_dark_mode() const { return m_dark_mode; }
+  ImVec4       get_clear_color() const;
+  void         set_mode(Mode mode); // gui_mode.cpp
+  void         set_parent_mode();   // gui_mode.cpp
+  void         set_dist_edit(float dist, std::function<void(float, bool)>&& callback,
+                             const std::optional<ScreenCoords> screen_coords = std::nullopt);
+  void         hide_dist_edit(bool apply = true);
+  void         set_angle_edit(float angle, std::function<void(float, bool)>&& callback,
+                              const std::optional<ScreenCoords> screen_coords = std::nullopt);
+  void         hide_angle_edit(bool apply = true);
+  void         hide_sketch_origin_set_edit(bool apply = true);
   /// True when dist or angle edit is visible; Tab should be routed to on_key() instead of ImGui.
   bool is_dist_or_angle_edit_active() const;
   bool is_sketch_origin_set_edit_active() const;
@@ -364,9 +363,9 @@ public:
   void note_saved_project_filename(const std::string& filename);
 #endif
 
-  void on_file(const std::string& file_path, const std::string& file_bytes, bool announce_load = true);
+  void               on_file(const std::string& file_path, const std::string& file_bytes, bool announce_load = true);
   [[nodiscard]] bool on_import_file(const std::string& file_path, const std::string& file_data, bool union_shapes = false);
-  void on_inspector_file(const std::string& file_path, const std::string& file_data);
+  void               on_inspector_file(const std::string& file_path, const std::string& file_data);
   /// Emscripten `on_sketch_underlay_selected` routes here (must be public for C callback).
   void on_sketch_underlay_file(const std::string& file_path, const std::string& file_bytes);
 
@@ -410,14 +409,14 @@ private:
   [[nodiscard]] nlohmann::json sketch_list_ui_to_json_() const;
   [[nodiscard]] nlohmann::json shape_list_ui_to_json_() const;
   void                         apply_shape_list_ui_from_json_(const nlohmann::json& j);
-  void sketch_properties_dialog_();
-  void sketch_origin_panel_settings_(const std::shared_ptr<Sketch>& sk);
-  void shape_list_();
-  void shape_info_dialog_();
-  void open_shape_info_(const Shp_ptr& shape);
-  void file_inspector_dialog_();
-  void open_file_inspector_(const std::string& file_path, const std::string& file_bytes);
-  void close_file_inspector_();
+  void                         sketch_properties_dialog_();
+  void                         sketch_origin_panel_settings_(const std::shared_ptr<Sketch>& sk);
+  void                         shape_list_();
+  void                         shape_info_dialog_();
+  void                         open_shape_info_(const Shp_ptr& shape);
+  void                         file_inspector_dialog_();
+  void                         open_file_inspector_(const std::string& file_path, const std::string& file_bytes);
+  void                         close_file_inspector_();
 
   // Mode + Options panel (gui_mode.cpp)
   void options_();
@@ -429,6 +428,7 @@ private:
   void options_shape_chamfer_mode_();
   void options_shape_fillet_mode_();
   void options_shape_polar_duplicate_mode_();
+  void options_shape_cross_section_mode_();
   void options_sketch_from_planer_face_mode_();
   void options_sketch_operation_axis_mode_();
   void options_sketch_face_extrude_mode_();
@@ -612,18 +612,18 @@ private:
   int   m_sketch_shape_faint_style   = k_gui_sketch_shape_faint_style_default;
   float m_sketch_shape_faint_opacity = k_gui_sketch_shape_faint_opacity_default;
   bool  m_sketch_shape_faint_enabled = k_gui_sketch_shape_faint_enabled_default;
-  bool m_add_mid_pt_line_edges = false;
-  bool m_add_mid_pt_rect_edges = true;
-  bool m_add_mid_pt_slot_edges = false;
-  bool m_edge_from_center      = false;
+  bool  m_add_mid_pt_line_edges      = false;
+  bool  m_add_mid_pt_rect_edges      = true;
+  bool  m_add_mid_pt_slot_edges      = false;
+  bool  m_edge_from_center           = false;
   /// Degrees per numpad orbit (8/2/4/6) and Blender-style roll (Shift+NumPad 4/6); persisted in `gui.view_roll_step_deg`.
   double m_view_roll_step_deg = k_gui_view_roll_step_deg_default;
   /// Multiplier for `UpdateZoom(Aspect_ScrollDelta(..., int(y * scale)))`; persisted in `gui.view_zoom_scroll_scale`.
-  double                      m_view_zoom_scroll_scale  = k_gui_view_zoom_scroll_scale_default;
+  double m_view_zoom_scroll_scale = k_gui_view_zoom_scroll_scale_default;
   /// Sketch-plane framing for New Project / default camera (`gui.default_2d_view_width` / `_height`, inches).
-  double                      m_default_2d_view_width    = k_gui_default_2d_view_size_default;
-  double                      m_default_2d_view_height   = k_gui_default_2d_view_size_default;
-  Project_unit                m_default_project_unit     = Project_unit::Inch;
+  double                      m_default_2d_view_width   = k_gui_default_2d_view_size_default;
+  double                      m_default_2d_view_height  = k_gui_default_2d_view_size_default;
+  Project_unit                m_default_project_unit    = Project_unit::Inch;
   bool                        m_inspection_orthographic = false;
   std::vector<Toolbar_button> m_toolbar_buttons;
 
@@ -668,52 +668,52 @@ private:
   std::unordered_map<size_t, Sketch_list_row_ui> m_sketch_list_ui;
   /// Shape List group expand state (project `ui.shapeList.expanded`); missing id defaults to open.
   std::unordered_map<Shape_id, bool> m_shape_list_expanded;
-  float                                          m_sketch_list_scroll_y{0.f};
-  bool                                           m_sketch_list_scroll_restore{false};
+  float                              m_sketch_list_scroll_y{0.f};
+  bool                               m_sketch_list_scroll_restore{false};
 
-  bool                        m_show_sketch_list{true};
-  bool                        m_show_shape_list{true};
-  bool                        m_show_options{true};
-  bool                        m_show_settings_dialog{false};
-  bool                        m_open_about_popup{false};
-  bool                        m_about_popup_open{false};
-  bool                        m_shape_info_open{false};
-  Shp_ptr                     m_shape_info_shp;
-  std::vector<shp_info::Line> m_shape_info_lines;
-  bool                        m_file_inspector_open{false};
-  bool                        m_file_inspector_union{false};
-  std::string                 m_file_inspector_path;
-  std::string                 m_file_inspector_bytes;
-  utl_cad_file_info::Format   m_file_inspector_fmt{utl_cad_file_info::Format::Unknown};
+  bool                                 m_show_sketch_list{true};
+  bool                                 m_show_shape_list{true};
+  bool                                 m_show_options{true};
+  bool                                 m_show_settings_dialog{false};
+  bool                                 m_open_about_popup{false};
+  bool                                 m_about_popup_open{false};
+  bool                                 m_shape_info_open{false};
+  Shp_ptr                              m_shape_info_shp;
+  std::vector<shp_info::Line>          m_shape_info_lines;
+  bool                                 m_file_inspector_open{false};
+  bool                                 m_file_inspector_union{false};
+  std::string                          m_file_inspector_path;
+  std::string                          m_file_inspector_bytes;
+  utl_cad_file_info::Format            m_file_inspector_fmt{utl_cad_file_info::Format::Unknown};
   std::vector<utl_cad_file_info::Line> m_file_inspector_lines;
-  std::string                 m_about_markdown;
-  uint32_t                    m_about_splash_gl{0};
-  glm::ivec2                  m_about_splash_size{512, 512};
-  bool                        m_about_assets_loaded{false};
-  bool                        m_open_add_box_popup{false};
-  glm::dvec3                  m_add_box_origin{0.0, 0.0, 0.0};
-  glm::dvec3                  m_add_box_size{1.0, 1.0, 1.0};
-  bool                        m_open_add_pyramid_popup{false};
-  glm::dvec3                  m_add_pyramid_origin{0.0, 0.0, 0.0};
-  double                      m_add_pyramid_side{1};
-  bool                        m_open_add_sphere_popup{false};
-  glm::dvec3                  m_add_sphere_origin{0.0, 0.0, 0.0};
-  double                      m_add_sphere_radius{1};
-  bool                        m_open_add_cylinder_popup{false};
-  glm::dvec3                  m_add_cylinder_origin{0.0, 0.0, 0.0};
-  double                      m_add_cylinder_radius{1}, m_add_cylinder_height{1};
-  bool                        m_open_add_cone_popup{false};
-  glm::dvec3                  m_add_cone_origin{0.0, 0.0, 0.0};
-  double                      m_add_cone_R1{1}, m_add_cone_R2{0}, m_add_cone_height{1};
-  bool                        m_open_add_torus_popup{false};
-  glm::dvec3                  m_add_torus_origin{0.0, 0.0, 0.0};
-  double                      m_add_torus_R1{1}, m_add_torus_R2{0.5};
-  bool                        m_open_add_sketch_popup{false};
-  int                         m_new_sketch_plane{0}; // 0=XY, 1=XZ, 2=YZ
-  double                      m_new_sketch_offset{};
-  bool                        m_hide_all_shapes{false};
-  int                         m_ui_verbosity{k_gui_ui_verbosity_default};
-  bool                        m_dark_mode{false};
+  std::string                          m_about_markdown;
+  uint32_t                             m_about_splash_gl{0};
+  glm::ivec2                           m_about_splash_size{512, 512};
+  bool                                 m_about_assets_loaded{false};
+  bool                                 m_open_add_box_popup{false};
+  glm::dvec3                           m_add_box_origin{0.0, 0.0, 0.0};
+  glm::dvec3                           m_add_box_size{1.0, 1.0, 1.0};
+  bool                                 m_open_add_pyramid_popup{false};
+  glm::dvec3                           m_add_pyramid_origin{0.0, 0.0, 0.0};
+  double                               m_add_pyramid_side{1};
+  bool                                 m_open_add_sphere_popup{false};
+  glm::dvec3                           m_add_sphere_origin{0.0, 0.0, 0.0};
+  double                               m_add_sphere_radius{1};
+  bool                                 m_open_add_cylinder_popup{false};
+  glm::dvec3                           m_add_cylinder_origin{0.0, 0.0, 0.0};
+  double                               m_add_cylinder_radius{1}, m_add_cylinder_height{1};
+  bool                                 m_open_add_cone_popup{false};
+  glm::dvec3                           m_add_cone_origin{0.0, 0.0, 0.0};
+  double                               m_add_cone_R1{1}, m_add_cone_R2{0}, m_add_cone_height{1};
+  bool                                 m_open_add_torus_popup{false};
+  glm::dvec3                           m_add_torus_origin{0.0, 0.0, 0.0};
+  double                               m_add_torus_R1{1}, m_add_torus_R2{0.5};
+  bool                                 m_open_add_sketch_popup{false};
+  int                                  m_new_sketch_plane{0}; // 0=XY, 1=XZ, 2=YZ
+  double                               m_new_sketch_offset{};
+  bool                                 m_hide_all_shapes{false};
+  int                                  m_ui_verbosity{k_gui_ui_verbosity_default};
+  bool                                 m_dark_mode{false};
 #ifndef NDEBUG
   bool m_show_dbg{false};
 #endif
@@ -774,9 +774,8 @@ private:
   /// Shape List hover highlight in the OCCT view (0-1, persisted in ezycad_settings.json).
   glm::vec4 m_elm_list_hover_color{0.402064f, 0.102557f, 0.474576f, 1.f};
   /// AIS SelectionStyle for selected 3D shapes (0-1 RGBA; Settings -> View presentation).
-  float m_shape_selection_color[4] = {
-      k_gui_shape_selection_color_default[0], k_gui_shape_selection_color_default[1],
-      k_gui_shape_selection_color_default[2], k_gui_shape_selection_color_default[3]};
+  float m_shape_selection_color[4] = {k_gui_shape_selection_color_default[0], k_gui_shape_selection_color_default[1],
+                                      k_gui_shape_selection_color_default[2], k_gui_shape_selection_color_default[3]};
 
   std::unique_ptr<Lua_console>    m_lua_console;
   bool                            m_show_python_console{false};

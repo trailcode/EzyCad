@@ -1,17 +1,26 @@
 #include "skt_test_fixture.h"
 
 #include <AIS_InteractiveContext.hxx>
+#include <BRepAlgoAPI_Fuse.hxx>
 #include <BRepBndLib.hxx>
+#include <BRepBuilderAPI_MakeFace.hxx>
 #include <BRepCheck_Analyzer.hxx>
 #include <BRepGProp.hxx>
+#include <BRep_Builder.hxx>
 #include <Bnd_Box.hxx>
 #include <GProp_GProps.hxx>
 #include <TopAbs_ShapeEnum.hxx>
+#include <TopExp_Explorer.hxx>
+#include <TopoDS_Compound.hxx>
+#include <gp_Ax1.hxx>
+#include <gp_Pln.hxx>
+#include <gp_Trsf.hxx>
 #include <numbers>
 
 #include "shp.h"
 #include "shp_create.h"
 #include "shp_info.h"
+#include "shp_cross_section.h"
 #include "skt_op_recorder.h"
 #include "utl.h"
 
@@ -30,6 +39,11 @@ void get_bbox(const TopoDS_Shape& shape, double& xmin, double& ymin, double& zmi
   BRepBndLib::Add(shape, bbox);
   ASSERT_FALSE(bbox.IsVoid());
   bbox.Get(xmin, ymin, zmin, xmax, ymax, zmax);
+}
+
+bool contains_solid_like(const TopoDS_Shape& shape)
+{
+  return !shape.IsNull() && (shape.ShapeType() == TopAbs_SOLID || TopExp_Explorer(shape, TopAbs_SOLID).More());
 }
 
 std::string line_value(const std::vector<shp_info::Line>& lines, const char* label)
@@ -79,8 +93,8 @@ TEST(Shp_create, Box_solid_volume_and_origin)
 
 TEST(Shp_create, Sphere_volume_centered_at_origin)
 {
-  const double         r      = 2.0;
-  const TopoDS_Shape   sphere = shp_create::create_sphere(r);
+  const double       r      = 2.0;
+  const TopoDS_Shape sphere = shp_create::create_sphere(r);
   ASSERT_FALSE(sphere.IsNull());
   EXPECT_EQ(sphere.ShapeType(), TopAbs_SOLID);
   EXPECT_TRUE(BRepCheck_Analyzer(sphere).IsValid());
@@ -163,6 +177,217 @@ TEST(Shp_create, Pyramid_solid_non_null)
 }
 
 // ---------------------------------------------------------------------------
+// Cross-section geometry (no viewer)
+// ---------------------------------------------------------------------------
+
+TEST(Shp_cross_section, Box_midplane_is_four_lines)
+{
+  const TopoDS_Shape box   = shp_create::create_box(0, 0, 0, 4, 6, 8);
+  const gp_Ax3       frame = gp_Ax3(gp_Pnt(2, 3, 4), gp::DZ(), gp::DX());
+
+  const Result<Cross_section_geometry> result = cross_section_shape(box, frame, Cross_section_plane::XY, 0.0);
+  ASSERT_TRUE(result.has_value()) << result.message();
+  EXPECT_EQ((*result).edge_count, 4u);
+  EXPECT_EQ((*result).line_count, 4u);
+}
+
+TEST(Shp_cross_section, Cylinder_midplane_contains_circle)
+{
+  const TopoDS_Shape cylinder = shp_create::create_cylinder(2.0, 6.0);
+  const gp_Ax3       frame(gp::Origin(), gp::DZ(), gp::DX());
+
+  const Result<Cross_section_geometry> result = cross_section_shape(cylinder, frame, Cross_section_plane::XY, 0.0);
+  ASSERT_TRUE(result.has_value()) << result.message();
+  EXPECT_GE((*result).edge_count, 1u);
+  EXPECT_GE((*result).circle_count, 1u);
+}
+
+TEST(Shp_cross_section, Offset_outside_box_fails_closed)
+{
+  const TopoDS_Shape box   = shp_create::create_box(0, 0, 0, 4, 6, 8);
+  const gp_Ax3       frame = gp_Ax3(gp_Pnt(2, 3, 4), gp::DZ(), gp::DX());
+
+  const Result<Cross_section_geometry> result = cross_section_shape(box, frame, Cross_section_plane::XY, 5.0);
+  EXPECT_FALSE(result.has_value());
+}
+
+TEST(Shp_cross_section, Compound_with_solid_is_supported)
+{
+  TopoDS_Compound compound;
+  BRep_Builder    builder;
+  builder.MakeCompound(compound);
+  builder.Add(compound, shp_create::create_box(0, 0, 0, 4, 6, 8));
+
+  const gp_Ax3                   frame(gp_Pnt(2, 3, 4), gp::DZ(), gp::DX());
+  const Result<Cross_section_geometry> result = cross_section_shape(compound, frame, Cross_section_plane::XY, 0.0);
+  ASSERT_TRUE(result.has_value()) << result.message();
+  EXPECT_EQ((*result).line_count, 4u);
+}
+
+TEST(Shp_cross_section, Empty_compound_is_rejected)
+{
+  TopoDS_Compound compound;
+  BRep_Builder().MakeCompound(compound);
+
+  const Result<Cross_section_geometry> result = cross_section_shape(compound, gp_Ax3(), Cross_section_plane::XY, 0.0);
+  EXPECT_FALSE(result.has_value());
+}
+
+TEST(Shp_cross_section, Face_only_compound_is_rejected)
+{
+  const TopoDS_Shape face = BRepBuilderAPI_MakeFace(gp_Pln(gp::Origin(), gp::DZ()), -1.0, 1.0, -1.0, 1.0).Face();
+  TopoDS_Compound    compound;
+  BRep_Builder       builder;
+  builder.MakeCompound(compound);
+  builder.Add(compound, face);
+
+  const Result<Cross_section_geometry> result = cross_section_shape(compound, gp_Ax3(), Cross_section_plane::XY, 0.0);
+  EXPECT_FALSE(result.has_value());
+}
+
+TEST(Shp_cross_section, Box_local_xz_and_yz_midplanes_are_four_lines)
+{
+  const TopoDS_Shape box   = shp_create::create_box(0, 0, 0, 4, 6, 8);
+  const gp_Ax3       frame = gp_Ax3(gp_Pnt(2, 3, 4), gp::DZ(), gp::DX());
+
+  const Result<Cross_section_geometry> xz = cross_section_shape(box, frame, Cross_section_plane::XZ, 0.0);
+  ASSERT_TRUE(xz.has_value()) << xz.message();
+  EXPECT_EQ((*xz).edge_count, 4u);
+  EXPECT_EQ((*xz).line_count, 4u);
+
+  const Result<Cross_section_geometry> yz = cross_section_shape(box, frame, Cross_section_plane::YZ, 0.0);
+  ASSERT_TRUE(yz.has_value()) << yz.message();
+  EXPECT_EQ((*yz).edge_count, 4u);
+  EXPECT_EQ((*yz).line_count, 4u);
+}
+
+TEST(Shp_cross_section, Rotated_frame_midplane_is_four_lines)
+{
+  const TopoDS_Shape box = shp_create::create_box(0, 0, 0, 4, 6, 8);
+  gp_Ax3             frame(gp_Pnt(2, 3, 4), gp::DZ(), gp::DX());
+  gp_Trsf            rotate;
+  rotate.SetRotation(gp_Ax1(frame.Location(), gp::DX()), std::numbers::pi / 2.0);
+  frame.Transform(rotate);
+
+  const Result<Cross_section_geometry> result = cross_section_shape(box, frame, Cross_section_plane::XY, 0.0);
+  ASSERT_TRUE(result.has_value()) << result.message();
+  EXPECT_EQ((*result).edge_count, 4u);
+  EXPECT_EQ((*result).line_count, 4u);
+}
+
+TEST(Shp_cross_section, Fused_boxes_midplane_returns_extra_line_edges)
+{
+  const TopoDS_Shape a = shp_create::create_box(0, 0, 0, 10, 10, 10);
+  const TopoDS_Shape b = shp_create::create_box(5, 0, 0, 10, 10, 10);
+  BRepAlgoAPI_Fuse   fuse(a, b);
+  fuse.Build();
+  ASSERT_TRUE(fuse.IsDone());
+
+  const gp_Ax3                   frame(gp_Pnt(7.5, 5, 5), gp::DZ(), gp::DX());
+  const Result<Cross_section_geometry> result = cross_section_shape(fuse.Shape(), frame, Cross_section_plane::XY, 0.0);
+  ASSERT_TRUE(result.has_value()) << result.message();
+  // Ideal outer section is a 15x10 rectangle (4 lines), but BRepAlgoAPI_Section currently
+  // returns 8 line edges here. Keep this expectation as discovery evidence for sketch import.
+  EXPECT_EQ((*result).edge_count, 8u);
+  EXPECT_EQ((*result).line_count, 8u);
+  EXPECT_EQ((*result).other_curve_count, 0u);
+}
+
+TEST(Shp_cross_section, Shared_plane_cuts_two_separated_boxes)
+{
+  // Mimic multi-select: one plane through the combined bbox center must hit both solids.
+  const TopoDS_Shape left  = shp_create::create_box(0, 0, 0, 4, 4, 4);
+  const TopoDS_Shape right = shp_create::create_box(6, 0, 0, 4, 4, 4);
+  const gp_Ax3       shared_frame(gp_Pnt(5, 2, 2), gp::DZ(), gp::DX());
+
+  const Result<Cross_section_geometry> left_result  = cross_section_shape(left, shared_frame, Cross_section_plane::XY, 0.0);
+  const Result<Cross_section_geometry> right_result = cross_section_shape(right, shared_frame, Cross_section_plane::XY, 0.0);
+  ASSERT_TRUE(left_result.has_value()) << left_result.message();
+  ASSERT_TRUE(right_result.has_value()) << right_result.message();
+  EXPECT_EQ((*left_result).line_count, 4u);
+  EXPECT_EQ((*right_result).line_count, 4u);
+}
+
+TEST_F(Shp_test, Cross_section_previews_on_mode_enter_with_selection)
+{
+  view().add_box(0, 0, 0, 10, 10, 10);
+  select_shapes(view(), {view().get_shapes().back()});
+  EXPECT_FALSE(view().shp_cross_section().has_preview());
+
+  gui().set_mode(Mode::Shape_cross_section);
+
+  EXPECT_TRUE(view().shp_cross_section().has_preview());
+  EXPECT_EQ(gui().get_mode(), Mode::Shape_cross_section);
+  EXPECT_FALSE(view().shp_cross_section().selection_stale());
+}
+
+TEST_F(Shp_test, Cross_section_selection_stale_after_selection_change)
+{
+  view().add_box(0, 0, 0, 10, 10, 10);
+  view().add_box(20, 0, 0, 10, 10, 10);
+  const std::vector<Shp_ptr> boxes(view().get_shapes().begin(), view().get_shapes().end());
+  ASSERT_EQ(boxes.size(), 2u);
+
+  select_shapes(view(), {boxes[0]});
+  gui().set_mode(Mode::Shape_cross_section);
+  ASSERT_TRUE(view().shp_cross_section().has_preview());
+  EXPECT_FALSE(view().shp_cross_section().selection_stale());
+  EXPECT_FALSE(view().shp_cross_section().preview_inputs_stale());
+
+  select_shapes(view(), {boxes[1]});
+  EXPECT_TRUE(view().shp_cross_section().selection_stale());
+  EXPECT_TRUE(view().shp_cross_section().preview_inputs_stale());
+
+  ASSERT_TRUE(view().shp_cross_section().preview_selected().is_ok());
+  EXPECT_TRUE(view().shp_cross_section().has_preview());
+  EXPECT_FALSE(view().shp_cross_section().selection_stale());
+
+  view().shp_cross_section().set_plane(Cross_section_plane::XZ);
+  EXPECT_TRUE(view().shp_cross_section().preview_inputs_stale());
+  ASSERT_TRUE(view().shp_cross_section().preview_selected().is_ok());
+  EXPECT_FALSE(view().shp_cross_section().preview_inputs_stale());
+
+  double offset_min = 0.0;
+  double offset_max = 0.0;
+  ASSERT_TRUE(view().shp_cross_section().try_get_offset_range_display(offset_min, offset_max));
+  const double sample_offset = (offset_min + offset_max) * 0.25;
+  view().shp_cross_section().set_offset_display(sample_offset);
+  ASSERT_TRUE(view().shp_cross_section().preview_selected().is_ok());
+  view().shp_cross_section().set_invert_normal(true);
+  EXPECT_TRUE(view().shp_cross_section().get_invert_normal());
+  EXPECT_NEAR(view().shp_cross_section().get_offset_display(), -sample_offset, 1e-9);
+  EXPECT_TRUE(view().shp_cross_section().preview_inputs_stale());
+  ASSERT_TRUE(view().shp_cross_section().preview_selected().is_ok());
+  EXPECT_FALSE(view().shp_cross_section().preview_inputs_stale());
+
+  // Hide back side defaults on (already acked by prior preview); toggle to exercise stale + clip apply.
+  EXPECT_TRUE(view().shp_cross_section().get_hide_back_side());
+  EXPECT_FALSE(boxes[1]->ClipPlanes().IsNull());
+  EXPECT_EQ(boxes[1]->ClipPlanes()->Size(), 1);
+
+  view().shp_cross_section().set_hide_back_side(false);
+  EXPECT_TRUE(view().shp_cross_section().preview_inputs_stale());
+  ASSERT_TRUE(view().shp_cross_section().preview_selected().is_ok());
+  EXPECT_FALSE(view().shp_cross_section().preview_inputs_stale());
+  EXPECT_TRUE(boxes[1]->ClipPlanes().IsNull() || boxes[1]->ClipPlanes()->IsEmpty());
+
+  view().shp_cross_section().set_hide_back_side(true);
+  EXPECT_TRUE(view().shp_cross_section().preview_inputs_stale());
+  ASSERT_TRUE(view().shp_cross_section().preview_selected().is_ok());
+  EXPECT_FALSE(view().shp_cross_section().preview_inputs_stale());
+  EXPECT_FALSE(boxes[1]->ClipPlanes().IsNull());
+  EXPECT_EQ(boxes[1]->ClipPlanes()->Size(), 1);
+
+  const Shape_id clipped_id = boxes[1]->get_id();
+  ASSERT_TRUE(view().shp_cross_section().clip_selected().is_ok());
+  EXPECT_FALSE(view().shp_cross_section().has_preview());
+  EXPECT_TRUE(view().find_shape_by_id(clipped_id).IsNull());
+  ASSERT_FALSE(view().get_shapes().empty());
+  EXPECT_TRUE(contains_solid_like(view().get_shapes().back()->Shape()));
+}
+
+
+// ---------------------------------------------------------------------------
 // shp_info
 // ---------------------------------------------------------------------------
 
@@ -174,7 +399,7 @@ TEST(Shp_info, Collect_null_shape)
 
 TEST(Shp_info, Collect_box_with_display_meta)
 {
-  const TopoDS_Shape box = shp_create::create_box(0, 0, 0, 2, 3, 4);
+  const TopoDS_Shape     box = shp_create::create_box(0, 0, 0, 2, 3, 4);
   shp_info::Display_meta meta{"Box1", "Steel", "Shaded", true};
   const auto             lines = shp_info::collect(box, &meta);
 
@@ -205,6 +430,7 @@ TEST_F(Shp_test, AddBox_registers_named_solid)
   EXPECT_EQ(shp->get_disp_mode(), AIS_Shaded);
   EXPECT_EQ(shp->Shape().ShapeType(), TopAbs_SOLID);
   EXPECT_NEAR(volume_of(shp->Shape()), 10.0 * 20.0 * 30.0, 1e-6);
+  EXPECT_TRUE(shp->get_frame().Location().IsEqual(gp_Pnt(5, 10, 15), 1e-6));
 }
 
 TEST_F(Shp_test, UniqueShapeNames_increment)
@@ -428,6 +654,27 @@ TEST_F(Shp_test, Shape_ids_persist_in_json)
   EXPECT_EQ(view().get_shapes().back()->get_id(), id);
 }
 
+TEST_F(Shp_test, Shape_frame_persists_in_json_and_undo)
+{
+  view().add_box(10, 20, 30, 4, 6, 8);
+  ASSERT_EQ(view().get_shapes().size(), 1u);
+  const gp_Ax3 expected = view().get_shapes().back()->get_frame();
+
+  EXPECT_TRUE(view().undo());
+  EXPECT_TRUE(view().get_shapes().empty());
+  EXPECT_TRUE(view().redo());
+  ASSERT_EQ(view().get_shapes().size(), 1u);
+  EXPECT_TRUE(view().get_shapes().back()->get_frame().Location().IsEqual(expected.Location(), 1e-6));
+
+  const std::string json = view().to_json();
+  view().new_file();
+  view().load(json, false);
+  ASSERT_EQ(view().get_shapes().size(), 1u);
+  EXPECT_TRUE(view().get_shapes().back()->get_frame().Location().IsEqual(expected.Location(), 1e-6));
+  EXPECT_TRUE(view().get_shapes().back()->get_frame().Direction().IsEqual(expected.Direction(), 1e-9));
+  EXPECT_TRUE(view().get_shapes().back()->get_frame().XDirection().IsEqual(expected.XDirection(), 1e-9));
+}
+
 // ---------------------------------------------------------------------------
 // Shape hierarchy (organizational groups)
 // ---------------------------------------------------------------------------
@@ -532,8 +779,8 @@ TEST_F(Shp_test, Hierarchy_json_round_trip)
   view().new_file();
   view().load(json, false);
 
-  size_t groups = 0;
-  size_t leaves = 0;
+  size_t   groups   = 0;
+  size_t   leaves   = 0;
   Shape_id group_id = 0;
   for (const Shp_ptr& s : view().get_shapes())
   {

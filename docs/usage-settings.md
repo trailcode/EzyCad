@@ -104,7 +104,7 @@ Under **Material**:
 
 - Document preset for new solids that do not inherit from a clicked shape (toolbar **Box**, **polar duplicate** output, and similar). To change material on an existing solid, use the [Shape List](usage.md#shape-list).
 
-For other non-sketch Options content (for example **Polar duplicate**), see [usage.md -> User Interface](usage.md#user-interface) (Options Panel).
+For other non-sketch Options content, see the matching tool section in the usage guide. In particular, **Shape cross-section** provides local **XY/XZ/YZ**, **Invert normal**, **Hide back side**, a bbox-ranged **Offset** slider (Ctrl+click to type), **Clip** (half-space cut, replaces selection), and automatic preview updates when the selection changes; see [Shape cross-section tool](usage.md#shape-cross-section-tool).
 
 ### Sketch tools
 
@@ -223,7 +223,7 @@ If saved layout text has no `[Docking]` section (older installs), a default dock
 | `view_roll_step_deg`          | number             | Degrees per **NumPad 8**/**2**/**4**/**6** orbit and **Shift+NumPad 4**/**6** roll (allowed range **0.1** to **180** in code; default **45**).                                                                                |
 | `view_zoom_scroll_scale`      | number             | Multiplier for `UpdateZoom` scroll delta from wheel and keyboard zoom (allowed range **0.25** to **64** in code; default **4**). With **Shift** held, the effective step is multiplied by **0.1** (Blender-style finer zoom). |
 | `default_project_unit`        | string             | Default **File -> New** project unit: `"inch"` or `"millimeter"` (default **`inch`**). Edited under **Settings -> New project defaults**.                                                                                     |
-| `default_2d_view_width`       | number             | Horizontal sketch-plane span for **File -> New** / projects with no saved camera, stored in **inches** (allowed range **0.1** to **1000**; default **3**). Settings UI shows this in **`default_project_unit`**.             |
+| `default_2d_view_width`       | number             | Horizontal sketch-plane span for **File -> New** / projects with no saved camera, stored in **inches** (allowed range **0.1** to **1000**; default **3**). Settings UI shows this in **`default_project_unit`**.              |
 | `default_2d_view_height`      | number             | Vertical sketch-plane span, stored in **inches** (allowed range **0.1** to **1000**; default **3**). Settings UI shows this in **`default_project_unit`**.                                                                    |
 | `load_last_opened_on_startup` | boolean            | Desktop: open the last `.ezy` on launch. **Legacy:** `load_last_saved_on_startup` is read as a fallback if the newer key is absent.                                                                                           |
 | `last_opened_project_path`    | string             | Path of the last opened project for the option above. **Legacy:** `last_saved_project_path` is accepted if the newer key is missing.                                                                                          |
@@ -244,20 +244,20 @@ Each **`imgui_style_dark`** / **`imgui_style_light`** object may contain:
 
 Each **`settings_headers`** object may contain (default: only nested Sketch **Appearance** / **Dimensions** expanded):
 
-| Key                 | Type    | Meaning                                  |
-| ------------------- | ------- | ---------------------------------------- |
-| `view_nav`          | boolean | **3D view navigation** section expanded. |
+| Key                 | Type    | Meaning                                    |
+| ------------------- | ------- | ------------------------------------------ |
+| `view_nav`          | boolean | **3D view navigation** section expanded.   |
 | `new_project`       | boolean | **New project defaults** section expanded. |
-| `ui`                | boolean | **UI** section expanded.                 |
-| `view_presentation` | boolean | **View presentation** section expanded.  |
-| `grid`              | boolean | **3D view grid** section expanded.       |
-| `sketch`            | boolean | **Sketch** section expanded.             |
-| `sketch_appearance` | boolean | Nested **Appearance** under Sketch.      |
-| `sketch_dimensions` | boolean | Nested **Dimensions** under Sketch.      |
-| `sketch_nodes`      | boolean | Nested **Nodes** under Sketch.           |
-| `sketch_snap`       | boolean | Nested **Snap** under Sketch.            |
-| `sketch_underlay`   | boolean | Nested **Underlay** under Sketch.        |
-| `startup`           | boolean | **Startup project** section expanded.    |
+| `ui`                | boolean | **UI** section expanded.                   |
+| `view_presentation` | boolean | **View presentation** section expanded.    |
+| `grid`              | boolean | **3D view grid** section expanded.         |
+| `sketch`            | boolean | **Sketch** section expanded.               |
+| `sketch_appearance` | boolean | Nested **Appearance** under Sketch.        |
+| `sketch_dimensions` | boolean | Nested **Dimensions** under Sketch.        |
+| `sketch_nodes`      | boolean | Nested **Nodes** under Sketch.             |
+| `sketch_snap`       | boolean | Nested **Snap** under Sketch.              |
+| `sketch_underlay`   | boolean | Nested **Underlay** under Sketch.          |
+| `startup`           | boolean | **Startup project** section expanded.      |
 
 Scripting API **`ezy.occt_view_settings_json()`** returns a JSON string with **`occt_view`** plus selected **`gui`** keys (including dimension and snap keys above, **`gui.permanent_node_anno_scale`**, **`gui.inspection_orthographic`**, **`gui.view_roll_step_deg`**, **`gui.view_zoom_scroll_scale`**, **`gui.default_project_unit`**, **`gui.default_2d_view_width`**, **`gui.default_2d_view_height`** when saved). See [scripting.md](scripting.md).
 

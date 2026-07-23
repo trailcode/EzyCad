@@ -19,10 +19,7 @@ void Sketch_struct_delta::add_sketch_(Occt_view& view, const nlohmann::json& ske
   view.undo_insert_sketch(sketch_json, make_current);
 }
 
-void Sketch_struct_delta::remove_sketch_by_id_(Occt_view& view, size_t sketch_id) const
-{
-  view.undo_remove_sketch(sketch_id);
-}
+void Sketch_struct_delta::remove_sketch_by_id_(Occt_view& view, size_t sketch_id) const { view.undo_remove_sketch(sketch_id); }
 
 void Sketch_struct_delta::apply_forward(Occt_view& view)
 {

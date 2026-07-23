@@ -31,6 +31,7 @@ class Graphic3d_AspectFillArea3d;
 class Graphic3d_AspectText3d;
 class Graphic3d_Camera;
 class Graphic3d_CLight;
+class Graphic3d_ClipPlane;
 class Image_PixMap;
 class Occt_glfw_win;
 class OpenGl_GraphicDriver;
@@ -77,6 +78,7 @@ using Graphic3d_AspectFillArea3d_ptr = opencascade::handle<Graphic3d_AspectFillA
 using Graphic3d_AspectText3d_ptr     = opencascade::handle<Graphic3d_AspectText3d>;
 using Graphic3d_Camera_ptr           = opencascade::handle<Graphic3d_Camera>;
 using Graphic3d_CLight_ptr           = opencascade::handle<Graphic3d_CLight>;
+using Graphic3d_ClipPlane_ptr        = opencascade::handle<Graphic3d_ClipPlane>;
 using Image_PixMap_ptr               = opencascade::handle<Image_PixMap>;
 using Occt_glfw_win_ptr              = opencascade::handle<Occt_glfw_win>;
 using OpenGl_GraphicDriver_ptr       = opencascade::handle<OpenGl_GraphicDriver>;

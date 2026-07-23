@@ -20,8 +20,8 @@ protected:
 
   std::vector<Shp_ptr> get_selected_shps_() const;
   /// Parent id for new shapes from multi-selection (see Occt_view::result_parent_id).
-  Shape_id result_parent_from_operands_() const;
-  void     assign_result_parent_(Shp_ptr& result, const std::vector<Shp_ptr>& operands);
+  Shape_id             result_parent_from_operands_() const;
+  void                 assign_result_parent_(Shp_ptr& result, const std::vector<Shp_ptr>& operands);
   [[nodiscard]] Status ensure_operation_shps_();
   [[nodiscard]] Status ensure_operation_multi_shps_();
   void                 delete_operation_shps_();

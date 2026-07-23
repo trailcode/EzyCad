@@ -2,11 +2,13 @@
 
 #include <GLFW/glfw3.h>
 
+#include <algorithm>
 #include <array>
 #include <cstdio>
 #include <cstdlib>
 #include <cstring>
 #include <map>
+#include <optional>
 #include <string_view>
 #include <unordered_map>
 #include <vector>
@@ -62,6 +64,7 @@ std::string GUI::get_doc_url_for_mode(Mode mode)
       {Mode::Sketch_add_circle_3_pts,         ""}, // planned feature - no specific section in the docs yet; falls back to main guide
       {Mode::Sketch_add_slot,                 "https://ezycad.readthedocs.io/en/latest/usage-sketch.html#slot-creation-tool"},
       {Mode::Sketch_dim_anno,                 "https://ezycad.readthedocs.io/en/latest/usage-sketch.html#dimension-tool"},
+      {Mode::Shape_cross_section,                   "https://ezycad.readthedocs.io/en/latest/usage.html#shape-cross-section-tool"},
       // clang-format on
   };
 
@@ -130,6 +133,7 @@ void GUI::set_parent_mode()
       {Mode::Sketch_add_circle_3_pts,         Mode::Sketch_inspection_mode},
       {Mode::Sketch_add_slot,                 Mode::Sketch_inspection_mode},
       {Mode::Sketch_dim_anno,                 Mode::Sketch_inspection_mode},
+      {Mode::Shape_cross_section,                   Mode::Normal},
       // clang-format on
   };
 
@@ -392,6 +396,7 @@ void GUI::options_()
     case Mode::Shape_chamfer:                   options_shape_chamfer_mode_();                break;
     case Mode::Shape_fillet:                    options_shape_fillet_mode_();                 break;
     case Mode::Shape_polar_duplicate:           options_shape_polar_duplicate_mode_();        break;
+    case Mode::Shape_cross_section:                   options_shape_cross_section_mode_();                break;
     
       // Sketch related modes:
     case Mode::Sketch_inspection_mode:          options_sketch_inspection_mode_();            break;
@@ -749,6 +754,108 @@ void GUI::options_shape_polar_duplicate_mode_()
 
     ImGui::EndTable();
   }
+
+  options_orthographic_projection_();
+}
+
+void GUI::options_shape_cross_section_mode_()
+{
+  EZY_ASSERT(get_mode() == Mode::Shape_cross_section);
+
+  Shp_cross_section& section = m_view->shp_cross_section();
+  int                plane   = static_cast<int>(section.get_plane());
+  double             offset  = section.get_offset_display();
+
+  ImGui::TextUnformatted(current_mode_description_());
+  options_doc_help_button_();
+  ImGui::Separator();
+
+  const bool have_selection = !m_view->get_selected_shps().empty();
+  if (!have_selection)
+  {
+    // No dedicated bold font is loaded; offset a second draw for a bold look.
+    const char*  msg = "Select one or more shapes.";
+    const ImVec2 pos = ImGui::GetCursorScreenPos();
+    const ImU32  col = ImGui::GetColorU32(ImGuiCol_Text);
+    ImGui::GetWindowDrawList()->AddText(ImVec2(pos.x + 1.0f, pos.y), col, msg);
+    ImGui::TextUnformatted(msg);
+  }
+
+  ImGui::TextUnformatted("Section plane");
+
+  ImGui::RadioButton("Local XY", &plane, static_cast<int>(Cross_section_plane::XY));
+  ImGui::SameLine();
+  ImGui::RadioButton("Local XZ", &plane, static_cast<int>(Cross_section_plane::XZ));
+  ImGui::SameLine();
+  ImGui::RadioButton("Local YZ", &plane, static_cast<int>(Cross_section_plane::YZ));
+  section.set_plane(static_cast<Cross_section_plane>(plane));
+
+  bool invert_normal = section.get_invert_normal();
+  if (ImGui::Checkbox("Invert normal", &invert_normal))
+    section.set_invert_normal(invert_normal);
+
+  bool hide_back_side = section.get_hide_back_side();
+  if (ImGui::Checkbox("Hide back side", &hide_back_side))
+    section.set_hide_back_side(hide_back_side);
+
+  double     offset_min = -1.0;
+  double     offset_max = 1.0;
+  const bool have_range = section.try_get_offset_range_display(offset_min, offset_max);
+  offset                = section.get_offset_display();
+  if (have_range)
+  {
+    if (offset < offset_min)
+      offset = offset_min;
+    else if (offset > offset_max)
+      offset = offset_max;
+  }
+  else
+  {
+    offset_min = std::min(offset, -1.0);
+    offset_max = std::max(offset, 1.0);
+    if (!(offset_max > offset_min))
+    {
+      offset_min = offset - 1.0;
+      offset_max = offset + 1.0;
+    }
+  }
+
+  ImGui::SetNextItemWidth(180.0f);
+  ImGui::BeginDisabled(!have_range);
+  ImGui::SliderScalar("Offset", ImGuiDataType_Double, &offset, &offset_min, &offset_max, "%.6g");
+  ImGui::EndDisabled();
+  section.set_offset_display(offset);
+  ImGui::SameLine(0.0f, ImGui::GetStyle().ItemInnerSpacing.x);
+  ImGui::TextUnformatted(m_view->project_unit_suffix());
+  if (have_selection && !have_range)
+    ImGui::TextDisabled("Select solid shapes to enable the offset slider.");
+
+  // Plane annotation updates immediately; section wires run async (poll below).
+  if (section.preview_inputs_stale())
+  {
+    if (m_view->get_selected_shps().empty())
+    {
+      section.clear();
+      section.acknowledge_current_selection();
+    }
+    else if (const Status status = section.request_preview_selected(); !status.is_ok())
+      show_message(status.message());
+  }
+
+  if (std::optional<Status> finished = section.poll())
+  {
+    // Toast failures only; success edge-count spam on Offset drag is noise.
+    if (!finished->is_ok())
+      show_message(finished->message());
+  }
+
+  ImGui::BeginDisabled(!have_selection);
+  if (ImGui::Button("Clip"))
+  {
+    const Status status = section.clip_selected();
+    show_message(status.message());
+  }
+  ImGui::EndDisabled();
 
   options_orthographic_projection_();
 }

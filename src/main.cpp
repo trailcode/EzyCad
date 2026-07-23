@@ -360,9 +360,8 @@ int main(int argc, char** argv)
   {
     ImGui_ImplGlfw_MouseButtonCallback(window, button, action, mods);
 
-    const unsigned button_bit =
-        (button >= 0 && button < 32) ? (1u << static_cast<unsigned>(button)) : 0u;
-    const bool in_view = forward_mouse_click_to_gui();
+    const unsigned button_bit = (button >= 0 && button < 32) ? (1u << static_cast<unsigned>(button)) : 0u;
+    const bool     in_view    = forward_mouse_click_to_gui();
 
     if (action == GLFW_PRESS)
     {
