@@ -849,6 +849,14 @@ void GUI::options_shape_cross_section_mode_()
       update_preview();
   }
 
+  ImGui::BeginDisabled(!have_selection);
+  if (ImGui::Button("Clip"))
+  {
+    const Status status = section.clip_selected();
+    show_message(status.message());
+  }
+  ImGui::EndDisabled();
+
   options_orthographic_projection_();
 }
 

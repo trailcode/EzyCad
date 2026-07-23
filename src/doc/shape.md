@@ -23,7 +23,7 @@ Typical uses:
 - Extrude a sketch face into a solid; revolve sketch geometry (revolve lives in `skt_operations.cpp`, returns `Shp_rslt`).
 - Boolean fuse/cut/common on selected shapes.
 - Interactive move, rotate, and scale with preview transforms.
-- Preview cross-sections on a shape-local XY, XZ, or YZ plane (optional hide of the back half).
+- Preview cross-sections on a shape-local XY, XZ, or YZ plane (optional hide-back preview; **Clip** commits a half-space cut).
 - Fillet/chamfer by shape, face, wire, or edge pick mode.
 - Polar duplicate selected shapes about an arm on the current sketch plane.
 
@@ -151,7 +151,7 @@ Protected helpers used by all operation classes:
 | `shp_fillet.h`    | `Shp_fillet`           | `add_fillet(..., Fillet_mode)` -- `BRepFilletAPI_MakeFillet`; modes: Shape, Face, Wire, Edge (`mode.h`).                                                                     |
 | `shp_chamfer.h`   | `Shp_chamfer`          | `add_chamfer(..., Chamfer_mode)` -- diagonal distance converted to setback (`dist/sqrt(2)`).                                                                                 |
 | `shp_polar_dup.h` | `Shp_polar_dup`        | Arm on sketch plane; `dup()` copies selection at polar steps; options: rotate copies, combine into one solid.                                                                |
-| `shp_cross_section.h`   | `Shp_cross_section`          | Shared `BRepAlgoAPI_Section` preview for the selection (first-shape local XY/XZ/YZ orientation, selection-bbox center + offset); temporary cyan section wires plus one translucent yellow plane/normal annotation; optional per-shape `Graphic3d_ClipPlane` to hide the negative-normal half. |
+| `shp_cross_section.h`   | `Shp_cross_section`          | Shared `BRepAlgoAPI_Section` preview for the selection (first-shape local XY/XZ/YZ orientation, selection-bbox center + offset); temporary cyan section wires plus one translucent yellow plane/normal annotation; optional AIS `Graphic3d_ClipPlane` (**Hide back side**); **Clip** half-space-commons each solid and replaces the inputs. |
 | `shp_info.h`      | `namespace shp_info`   | `collect(TopoDS_Shape, Display_meta*)` -> labeled lines for Shape info dialog.                                                                                               |
 
 ## Input routing (from UI / `Occt_view`)
@@ -167,7 +167,7 @@ Protected helpers used by all operation classes:
 | `Mode::Shape_fillet`          | --                               | `shp_fillet().add_fillet(..., Fillet_mode)`                                  | --                                             | --                                     |
 | `Mode::Shape_chamfer`         | --                               | `shp_chamfer().add_chamfer(..., Chamfer_mode)`                               | --                                             | --                                     |
 | `Mode::Shape_polar_duplicate` | `shp_polar_dup().move_point`     | `shp_polar_dup().add_point`                                                  | --                                             | `shp_polar_dup().reset` on mode change |
-| `Mode::Shape_cross_section`   | --                               | --                                                                           | Auto-preview on enter / selection / Options plane, offset, hide-back | Preview and clips cleared              |
+| `Mode::Shape_cross_section`   | --                               | --                                                                           | Auto-preview on enter / selection / Options; Clip replaces solids | Preview cleared; Clip commits          |
 | Fuse / cut / common (toolbar) | --                               | `selected_fuse` / `selected_cut` / `selected_common` (one-shot)              | --                                             | --                                     |
 | Primitives (menu / script)    | --                               | `Occt_view::add_box`, `add_sphere`, ...                                      | --                                             | --                                     |
 | Revolve (sketch Options)      | --                               | `Occt_view::revolve_selected` -> `add_shp_`                                  | --                                             | --                                     |

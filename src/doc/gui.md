@@ -186,7 +186,7 @@ Tests use `sketch_left_click` to simulate sketch LMB without ImGui mouse positio
 | `Move` / `Rotate` / `Scale`      | `options_*_mode_` (constraints, axis, material)         |
 | `Shape_chamfer` / `Shape_fillet` | mode + radius/distance                                  |
 | `Shape_polar_duplicate`          | angle, count, rotate/combine, **Dup** button            |
-| `Shape_cross_section`                  | local XY/XZ/YZ, invert normal, hide back side, bbox-ranged offset slider (auto preview) |
+| `Shape_cross_section`                  | local XY/XZ/YZ, invert normal, hide back side, bbox-ranged offset, Clip (replace) |
 | `Sketch_inspection_mode`         | `options_sketch_common_`                                |
 | Each sketch tool mode            | Matching `options_sketch_*_mode_`                       |
 | `Sketch_operation_axis`          | Mirror / Revolve / Clear axis                           |
@@ -235,7 +235,7 @@ Toolbar buttons hold `std::variant<Mode, Command>`. `Command` (`Shape_cut`, `Sha
 
 Mode buttons call `set_mode`. Active state tracks `m_mode`.
 
-The cross-section toolbar button enters `Mode::Shape_cross_section`. Entering the mode snapshots any selected solids first (selection-mode and sketch-faint redisplay Erase AIS selection), restores them after that sync, and calls `Shp_cross_section::preview` with the snapshot. While the mode is active, Options applies plane/offset/hide-back widgets then polls `preview_inputs_stale` (selection ids, plane, offset, invert, or hide-back) and rebuilds or clears the preview. The temporary AIS wire result and any per-shape `Graphic3d_ClipPlane` attachments are cleared when the mode is left, when the selection becomes empty, or before a failed/updated preview.
+The cross-section toolbar button enters `Mode::Shape_cross_section`. Entering the mode snapshots any selected solids first (selection-mode and sketch-faint redisplay Erase AIS selection), restores them after that sync, and calls `Shp_cross_section::preview` with the snapshot. While the mode is active, Options applies plane/offset/hide-back widgets then polls `preview_inputs_stale` (selection ids, plane, offset, invert, or hide-back) and rebuilds or clears the preview. **Hide back side** attaches a temporary per-shape `Graphic3d_ClipPlane` for display only. **Clip** runs a half-space `BRepAlgoAPI_Common`, deletes the input solids, and adds clipped replacements (`Shape_replace_delta`). The temporary AIS wire result and any display clip planes are cleared when the mode is left, when the selection becomes empty, after a successful **Clip**, or before a failed/updated preview.
 
 ## Typical developer usage
 

@@ -10,6 +10,7 @@
 #include <Bnd_Box.hxx>
 #include <GProp_GProps.hxx>
 #include <TopAbs_ShapeEnum.hxx>
+#include <TopExp_Explorer.hxx>
 #include <TopoDS_Compound.hxx>
 #include <gp_Ax1.hxx>
 #include <gp_Pln.hxx>
@@ -38,6 +39,11 @@ void get_bbox(const TopoDS_Shape& shape, double& xmin, double& ymin, double& zmi
   BRepBndLib::Add(shape, bbox);
   ASSERT_FALSE(bbox.IsVoid());
   bbox.Get(xmin, ymin, zmin, xmax, ymax, zmax);
+}
+
+bool contains_solid_like(const TopoDS_Shape& shape)
+{
+  return !shape.IsNull() && (shape.ShapeType() == TopAbs_SOLID || TopExp_Explorer(shape, TopAbs_SOLID).More());
 }
 
 std::string line_value(const std::vector<shp_info::Line>& lines, const char* label)
@@ -362,11 +368,12 @@ TEST_F(Shp_test, Cross_section_selection_stale_after_selection_change)
   EXPECT_FALSE(boxes[1]->ClipPlanes().IsNull());
   EXPECT_EQ(boxes[1]->ClipPlanes()->Size(), 1);
 
-  view().shp_cross_section().clear();
-  view().shp_cross_section().acknowledge_current_selection();
+  const Shape_id clipped_id = boxes[1]->get_id();
+  ASSERT_TRUE(view().shp_cross_section().clip_selected().is_ok());
   EXPECT_FALSE(view().shp_cross_section().has_preview());
-  EXPECT_FALSE(view().shp_cross_section().preview_inputs_stale());
-  EXPECT_TRUE(boxes[1]->ClipPlanes().IsNull() || boxes[1]->ClipPlanes()->IsEmpty());
+  EXPECT_TRUE(view().find_shape_by_id(clipped_id).IsNull());
+  ASSERT_FALSE(view().get_shapes().empty());
+  EXPECT_TRUE(contains_solid_like(view().get_shapes().back()->Shape()));
 }
 
 

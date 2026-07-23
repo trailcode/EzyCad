@@ -2,6 +2,7 @@
 
 #include "shp_operation.h"
 
+#include <Bnd_Box.hxx>
 #include <gp_Ax3.hxx>
 #include <gp_Pln.hxx>
 #include <TopoDS_Shape.hxx>
@@ -43,6 +44,12 @@ public:
   [[nodiscard]] Status preview(const std::vector<Shp_ptr>& shapes);
   void                 clear();
 
+  /// Half-space clip: keep the positive-normal side of each selected solid, delete the inputs,
+  /// and add the clipped results (undoable).
+  [[nodiscard]] Status clip_selected();
+  /// Same as clip_selected, but uses \a shapes instead of the current AIS selection.
+  [[nodiscard]] Status clip(const std::vector<Shp_ptr>& shapes);
+
   Cross_section_plane get_plane() const { return m_plane; }
   void                set_plane(Cross_section_plane plane) { m_plane = plane; }
   double              get_offset_display() const { return m_offset_display; }
@@ -65,10 +72,20 @@ public:
   [[nodiscard]] bool try_get_offset_range_display(double& out_min, double& out_max);
 
 private:
+  struct Shared_plane
+  {
+    std::vector<Shp_ptr>      shapes;
+    std::vector<TopoDS_Shape> world_shapes;
+    Bnd_Box                   bounds;
+    gp_Pln                    plane;
+  };
+
   static std::vector<Shape_id> selection_ids_(const std::vector<Shp_ptr>& shapes);
   void                         acknowledge_inputs_(const std::vector<Shp_ptr>& shapes);
-  void                         clear_clips_();
-  void                         apply_clips_(const std::vector<Shp_ptr>& shapes, const gp_Pln& plane);
+  void                         clear_preview_();
+  void                         clear_ais_clips_();
+  void                         apply_ais_clips_(const std::vector<Shp_ptr>& shapes, const gp_Pln& plane);
+  [[nodiscard]] Result<Shared_plane> build_shared_plane_(const std::vector<Shp_ptr>& shapes);
 
   Cross_section_plane     m_plane{Cross_section_plane::XY};
   double                  m_offset_display{0.0};
@@ -82,6 +99,6 @@ private:
   AIS_Shape_ptr           m_preview;
   AIS_Shape_ptr           m_plane_fill;
   AIS_Shape_ptr           m_plane_lines;
-  Graphic3d_ClipPlane_ptr m_clip_plane;
-  std::vector<Shp_ptr>    m_clipped_shapes;
+  Graphic3d_ClipPlane_ptr m_ais_clip_plane;
+  std::vector<Shp_ptr>    m_ais_clipped_shapes;
 };

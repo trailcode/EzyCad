@@ -1,15 +1,18 @@
 #include "shp_cross_section.h"
 
 #include "gui_occt_view.h"
+#include "shp_delta.h"
 #include "utl_occt.h"
 
 #include <BRepAdaptor_Curve.hxx>
+#include <BRepAlgoAPI_Common.hxx>
 #include <BRepAlgoAPI_Section.hxx>
 #include <BRepBndLib.hxx>
 #include <BRepBuilderAPI_MakeEdge.hxx>
 #include <BRepBuilderAPI_MakeFace.hxx>
 #include <BRepBuilderAPI_MakePolygon.hxx>
 #include <BRepBuilderAPI_Transform.hxx>
+#include <BRepPrimAPI_MakeHalfSpace.hxx>
 #include <BRep_Builder.hxx>
 #include <Bnd_Box.hxx>
 #include <GeomAbs_CurveType.hxx>
@@ -21,6 +24,8 @@
 #include <TopExp_Explorer.hxx>
 #include <TopoDS.hxx>
 #include <TopoDS_Compound.hxx>
+#include <TopoDS_Face.hxx>
+#include <TopoDS_Solid.hxx>
 #include <gp_Pln.hxx>
 #include <gp_Vec.hxx>
 
@@ -41,12 +46,16 @@ gp_Ax3                frame_world_(const Shp& shp);
 bool                  append_bounds_(const TopoDS_Shape& shape, Bnd_Box& bounds);
 std::array<gp_Pnt, 8> bbox_corners_(const Bnd_Box& bounds);
 void project_bbox_offsets_(const Bnd_Box& bounds, const gp_Pnt& origin, const gp_Dir& normal, double& out_min, double& out_max);
+void project_bbox_uv_(const Bnd_Box& bounds, const gp_Pln& plane, double& u_min, double& u_max, double& v_min, double& v_max);
 void add_plane_annotation_(const Bnd_Box& bounds, const gp_Pln& plane, BRep_Builder& builder, TopoDS_Compound& fill,
                            TopoDS_Compound& lines);
 Result<Cross_section_geometry> cross_section_shape_on_plane_(const TopoDS_Shape& shape, const gp_Pln& plane);
+Result<TopoDS_Solid>           keep_half_space_(const gp_Pln& plane, const Bnd_Box& bounds);
+Result<TopoDS_Shape>           clip_solid_to_half_space_(const TopoDS_Shape& world_shape, const TopoDS_Solid& half_space);
 } // namespace
 
-Result<Cross_section_geometry> cross_section_shape(const TopoDS_Shape& shape, const gp_Ax3& frame, Cross_section_plane plane, double offset)
+Result<Cross_section_geometry> cross_section_shape(const TopoDS_Shape& shape, const gp_Ax3& frame, Cross_section_plane plane,
+                                                   double offset)
 {
   return cross_section_shape_on_plane_(shape, cross_section_plane_(frame, plane, offset, false));
 }
@@ -56,35 +65,33 @@ Shp_cross_section::Shp_cross_section(Occt_view& view)
 {
 }
 
-Status Shp_cross_section::preview_selected()
-{
-  return preview(get_selected_shps_());
-}
+Status Shp_cross_section::preview_selected() { return preview(get_selected_shps_()); }
 
-Status Shp_cross_section::preview(const std::vector<Shp_ptr>& selected)
+Result<Shp_cross_section::Shared_plane> Shp_cross_section::build_shared_plane_(const std::vector<Shp_ptr>& shapes)
 {
-  clear();
-  acknowledge_inputs_(selected);
   if (!std::isfinite(m_offset_display))
-    return Status::user_error("Section offset must be a finite number.");
+    return {Result_status::User_error, "Section offset must be a finite number."};
 
-  if (selected.empty())
-    return Status::user_error("Select one or more solid shapes.");
+  if (shapes.empty())
+    return {Result_status::User_error, "Select one or more solid shapes."};
 
-  std::vector<TopoDS_Shape> world_shapes;
-  world_shapes.reserve(selected.size());
-  Bnd_Box combined_bounds;
-  gp_Ax3  shared_axes;
-  bool    have_axes = false;
+  Shared_plane shared;
+  shared.shapes.reserve(shapes.size());
+  shared.world_shapes.reserve(shapes.size());
+  gp_Ax3 shared_axes;
+  bool   have_axes = false;
 
-  for (const Shp_ptr& shp : selected)
+  for (const Shp_ptr& shp : shapes)
   {
+    if (shp.IsNull() || shp->is_group())
+      continue;
+
     TopoDS_Shape world_shape = shape_world_(*shp);
     if (!contains_solid_(world_shape))
-      return Status::user_error(shp->get_name() + ": Cross-section supports solid shapes only.");
+      return {Result_status::User_error, shp->get_name() + ": Cross-section supports solid shapes only."};
 
-    if (!append_bounds_(world_shape, combined_bounds))
-      return Status::user_error(shp->get_name() + ": Shape has empty bounds.");
+    if (!append_bounds_(world_shape, shared.bounds))
+      return {Result_status::User_error, shp->get_name() + ": Shape has empty bounds."};
 
     if (!have_axes)
     {
@@ -92,18 +99,33 @@ Status Shp_cross_section::preview(const std::vector<Shp_ptr>& selected)
       have_axes   = true;
     }
 
-    world_shapes.push_back(std::move(world_shape));
+    shared.shapes.push_back(shp);
+    shared.world_shapes.push_back(std::move(world_shape));
   }
 
-  if (combined_bounds.IsVoid() || !have_axes)
-    return Status::user_error("Select one or more solid shapes.");
+  if (shared.shapes.empty() || shared.bounds.IsVoid() || !have_axes)
+    return {Result_status::User_error, "Select one or more solid shapes."};
 
   double x_min, y_min, z_min, x_max, y_max, z_max;
-  combined_bounds.Get(x_min, y_min, z_min, x_max, y_max, z_max);
+  shared.bounds.Get(x_min, y_min, z_min, x_max, y_max, z_max);
   shared_axes.SetLocation(gp_Pnt((x_min + x_max) * 0.5, (y_min + y_max) * 0.5, (z_min + z_max) * 0.5));
 
   const double offset_model = view().to_model(m_offset_display);
-  const gp_Pln shared_plane = cross_section_plane_(shared_axes, m_plane, offset_model, m_invert_normal);
+  shared.plane              = cross_section_plane_(shared_axes, m_plane, offset_model, m_invert_normal);
+  return shared;
+}
+
+Status Shp_cross_section::preview(const std::vector<Shp_ptr>& selected)
+{
+  clear_preview_();
+  clear_ais_clips_();
+  acknowledge_inputs_(selected);
+
+  Result<Shared_plane> shared = build_shared_plane_(selected);
+  if (!shared.has_value())
+    return Status(shared.status(), shared.message());
+
+  const Shared_plane& plane_ctx = *shared;
 
   TopoDS_Compound compound;
   TopoDS_Compound plane_fill;
@@ -114,10 +136,10 @@ Status Shp_cross_section::preview(const std::vector<Shp_ptr>& selected)
   builder.MakeCompound(plane_lines);
 
   Cross_section_geometry totals;
-  size_t           missed = 0;
-  for (size_t i = 0; i < selected.size(); ++i)
+  size_t                 missed = 0;
+  for (size_t i = 0; i < plane_ctx.shapes.size(); ++i)
   {
-    Result<Cross_section_geometry> result = cross_section_shape_on_plane_(world_shapes[i], shared_plane);
+    Result<Cross_section_geometry> result = cross_section_shape_on_plane_(plane_ctx.world_shapes[i], plane_ctx.plane);
     if (!result.has_value())
     {
       // A miss on one solid should not kill the shared preview for the others.
@@ -127,7 +149,7 @@ Status Shp_cross_section::preview(const std::vector<Shp_ptr>& selected)
         continue;
       }
 
-      return Status(result.status(), selected[i]->get_name() + ": " + result.message());
+      return Status(result.status(), plane_ctx.shapes[i]->get_name() + ": " + result.message());
     }
 
     const Cross_section_geometry& geometry = *result;
@@ -144,9 +166,9 @@ Status Shp_cross_section::preview(const std::vector<Shp_ptr>& selected)
     return Status::user_error("The section plane does not intersect the selection.");
 
   if (m_hide_back_side)
-    apply_clips_(selected, shared_plane);
+    apply_ais_clips_(plane_ctx.shapes, plane_ctx.plane);
 
-  add_plane_annotation_(combined_bounds, shared_plane, builder, plane_fill, plane_lines);
+  add_plane_annotation_(plane_ctx.bounds, plane_ctx.plane, builder, plane_fill, plane_lines);
 
   m_preview = new AIS_Shape(compound);
   m_preview->SetColor(Quantity_NOC_CYAN);
@@ -186,10 +208,66 @@ Status Shp_cross_section::preview(const std::vector<Shp_ptr>& selected)
   return Status::ok(msg.str());
 }
 
+Status Shp_cross_section::clip_selected() { return clip(get_selected_shps_()); }
+
+Status Shp_cross_section::clip(const std::vector<Shp_ptr>& shapes)
+{
+  Result<Shared_plane> shared = build_shared_plane_(shapes);
+  if (!shared.has_value())
+    return Status(shared.status(), shared.message());
+
+  const Shared_plane& plane_ctx = *shared;
+  Result<TopoDS_Solid> half     = keep_half_space_(plane_ctx.plane, plane_ctx.bounds);
+  if (!half.has_value())
+    return Status(half.status(), half.message());
+
+  std::vector<TopoDS_Shape> clipped_geoms;
+  clipped_geoms.reserve(plane_ctx.shapes.size());
+  for (size_t i = 0; i < plane_ctx.shapes.size(); ++i)
+  {
+    Result<TopoDS_Shape> clipped = clip_solid_to_half_space_(plane_ctx.world_shapes[i], *half);
+    if (!clipped.has_value())
+      return Status(clipped.status(), plane_ctx.shapes[i]->get_name() + ": " + clipped.message());
+
+    clipped_geoms.push_back(std::move(*clipped));
+  }
+
+  std::vector<Shape_rec> removed;
+  removed.reserve(plane_ctx.shapes.size());
+  for (const Shp_ptr& shp : plane_ctx.shapes)
+    removed.push_back(capture_shape_rec(*shp));
+
+  std::vector<Shape_rec> added;
+  added.reserve(plane_ctx.shapes.size());
+  m_shps = plane_ctx.shapes;
+
+  for (size_t i = 0; i < plane_ctx.shapes.size(); ++i)
+  {
+    const Shp_ptr& old_shp = plane_ctx.shapes[i];
+    Shp_ptr        new_shp = new Shp(ctx(), clipped_geoms[i]);
+    new_shp->set_name(old_shp->get_name());
+    new_shp->set_frame(frame_world_(*old_shp));
+    assign_result_parent_(new_shp, std::vector<Shp_ptr>{old_shp});
+    add_shp_(new_shp);
+    copy_shape_material_from_(new_shp, old_shp);
+    added.push_back(capture_shape_rec(*new_shp));
+  }
+
+  delete_operation_shps_();
+  view().push_undo_delta(std::make_unique<Shape_replace_delta>(std::move(removed), std::move(added)));
+  clear();
+  return Status::ok("Clipped " + std::to_string(added.size()) + (added.size() == 1 ? " shape." : " shapes."));
+}
+
 void Shp_cross_section::clear()
 {
-  clear_clips_();
+  clear_preview_();
+  clear_ais_clips_();
+  ctx().UpdateCurrentViewer();
+}
 
+void Shp_cross_section::clear_preview_()
+{
   if (!m_preview.IsNull())
     ctx().Remove(m_preview, false);
 
@@ -202,41 +280,40 @@ void Shp_cross_section::clear()
   m_preview.Nullify();
   m_plane_fill.Nullify();
   m_plane_lines.Nullify();
-  ctx().UpdateCurrentViewer();
 }
 
-void Shp_cross_section::clear_clips_()
+void Shp_cross_section::clear_ais_clips_()
 {
-  if (!m_clip_plane.IsNull())
+  if (!m_ais_clip_plane.IsNull())
   {
-    for (const Shp_ptr& shp : m_clipped_shapes)
+    for (const Shp_ptr& shp : m_ais_clipped_shapes)
     {
       if (shp.IsNull())
         continue;
 
-      shp->RemoveClipPlane(m_clip_plane);
+      shp->RemoveClipPlane(m_ais_clip_plane);
       ctx().Redisplay(shp, false);
     }
   }
 
-  m_clipped_shapes.clear();
-  m_clip_plane.Nullify();
+  m_ais_clipped_shapes.clear();
+  m_ais_clip_plane.Nullify();
 }
 
-void Shp_cross_section::apply_clips_(const std::vector<Shp_ptr>& shapes, const gp_Pln& plane)
+void Shp_cross_section::apply_ais_clips_(const std::vector<Shp_ptr>& shapes, const gp_Pln& plane)
 {
-  clear_clips_();
-  m_clip_plane = new Graphic3d_ClipPlane(plane);
-  m_clip_plane->SetOn(true);
-  m_clipped_shapes.reserve(shapes.size());
+  clear_ais_clips_();
+  m_ais_clip_plane = new Graphic3d_ClipPlane(plane);
+  m_ais_clip_plane->SetOn(true);
+  m_ais_clipped_shapes.reserve(shapes.size());
   for (const Shp_ptr& shp : shapes)
   {
     if (shp.IsNull() || shp->is_group())
       continue;
 
-    shp->AddClipPlane(m_clip_plane);
+    shp->AddClipPlane(m_ais_clip_plane);
     ctx().Redisplay(shp, false);
-    m_clipped_shapes.push_back(shp);
+    m_ais_clipped_shapes.push_back(shp);
   }
 }
 
@@ -250,10 +327,7 @@ std::vector<Shape_id> Shp_cross_section::selection_ids_(const std::vector<Shp_pt
   return ids;
 }
 
-bool Shp_cross_section::selection_stale() const
-{
-  return selection_ids_(get_selected_shps_()) != m_acked_selection_ids;
-}
+bool Shp_cross_section::selection_stale() const { return selection_ids_(get_selected_shps_()) != m_acked_selection_ids; }
 
 bool Shp_cross_section::preview_inputs_stale() const
 {
@@ -266,23 +340,20 @@ void Shp_cross_section::set_invert_normal(bool invert)
   if (m_invert_normal == invert)
     return;
 
-  m_invert_normal    = invert;
-  m_offset_display   = -m_offset_display;
+  m_invert_normal  = invert;
+  m_offset_display = -m_offset_display;
 }
 
 void Shp_cross_section::acknowledge_inputs_(const std::vector<Shp_ptr>& shapes)
 {
-  m_acked_selection_ids   = selection_ids_(shapes);
-  m_acked_plane           = m_plane;
-  m_acked_offset_display  = m_offset_display;
-  m_acked_invert_normal   = m_invert_normal;
-  m_acked_hide_back_side  = m_hide_back_side;
+  m_acked_selection_ids  = selection_ids_(shapes);
+  m_acked_plane          = m_plane;
+  m_acked_offset_display = m_offset_display;
+  m_acked_invert_normal  = m_invert_normal;
+  m_acked_hide_back_side = m_hide_back_side;
 }
 
-void Shp_cross_section::acknowledge_current_selection()
-{
-  acknowledge_inputs_(get_selected_shps_());
-}
+void Shp_cross_section::acknowledge_current_selection() { acknowledge_inputs_(get_selected_shps_()); }
 
 bool Shp_cross_section::try_get_offset_range_display(double& out_min, double& out_max)
 {
@@ -474,19 +545,15 @@ void project_bbox_offsets_(const Bnd_Box& bounds, const gp_Pnt& origin, const gp
   }
 }
 
-void add_plane_annotation_(const Bnd_Box& bounds, const gp_Pln& plane, BRep_Builder& builder, TopoDS_Compound& fill,
-                           TopoDS_Compound& lines)
+void project_bbox_uv_(const Bnd_Box& bounds, const gp_Pln& plane, double& u_min, double& u_max, double& v_min, double& v_max)
 {
-  if (bounds.IsVoid())
-    return;
-
   const gp_Pnt origin = plane.Location();
   const gp_Vec x_axis(plane.XAxis().Direction());
   const gp_Vec y_axis(plane.YAxis().Direction());
-  double       u_min = std::numeric_limits<double>::max();
-  double       u_max = std::numeric_limits<double>::lowest();
-  double       v_min = std::numeric_limits<double>::max();
-  double       v_max = std::numeric_limits<double>::lowest();
+  u_min = std::numeric_limits<double>::max();
+  u_max = std::numeric_limits<double>::lowest();
+  v_min = std::numeric_limits<double>::max();
+  v_max = std::numeric_limits<double>::lowest();
   for (const gp_Pnt& corner : bbox_corners_(bounds))
   {
     const gp_Vec relative(origin, corner);
@@ -497,6 +564,76 @@ void add_plane_annotation_(const Bnd_Box& bounds, const gp_Pln& plane, BRep_Buil
     v_min          = std::min(v_min, v);
     v_max          = std::max(v_max, v);
   }
+}
+
+Result<TopoDS_Solid> keep_half_space_(const gp_Pln& plane, const Bnd_Box& bounds)
+{
+  if (bounds.IsVoid())
+    return {Result_status::User_error, "Cannot build a clipping half-space from empty bounds."};
+
+  double u_min, u_max, v_min, v_max;
+  project_bbox_uv_(bounds, plane, u_min, u_max, v_min, v_max);
+  const double width  = u_max - u_min;
+  const double height = v_max - v_min;
+  const double margin = std::max(1.0, std::max(width, height) * 0.5);
+  u_min -= margin;
+  u_max += margin;
+  v_min -= margin;
+  v_max += margin;
+
+  try
+  {
+    const TopoDS_Face face = BRepBuilderAPI_MakeFace(plane, u_min, u_max, v_min, v_max).Face();
+    if (face.IsNull())
+      return {Result_status::Topo_error, "Could not build the clipping plane face."};
+
+    // Reference point on the positive-normal side (kept half, same as Hide back side / AIS clip).
+    const gp_Pnt ref = plane.Location().Translated(gp_Vec(plane.Axis().Direction()));
+    BRepPrimAPI_MakeHalfSpace half(face, ref);
+    const TopoDS_Solid        solid = half.Solid();
+    if (solid.IsNull())
+      return {Result_status::Topo_error, "Could not build the clipping half-space."};
+
+    return solid;
+  }
+  catch (const Standard_Failure& e)
+  {
+    return {Result_status::Topo_error, std::string("Half-space failed: ") + standard_failure_message(e)};
+  }
+}
+
+Result<TopoDS_Shape> clip_solid_to_half_space_(const TopoDS_Shape& world_shape, const TopoDS_Solid& half_space)
+{
+  try
+  {
+    BRepAlgoAPI_Common common(world_shape, half_space);
+    common.Build();
+    if (!common.IsDone())
+      return {Result_status::Topo_error, "Open CASCADE could not clip the solid."};
+
+    const TopoDS_Shape& result = common.Shape();
+    if (result.IsNull() || !contains_solid_(result))
+      return {Result_status::User_error, "Clip removed the entire solid (nothing left on the kept side)."};
+
+    return result;
+  }
+  catch (const Standard_Failure& e)
+  {
+    return {Result_status::Topo_error, std::string("Clip failed: ") + standard_failure_message(e)};
+  }
+}
+
+void add_plane_annotation_(const Bnd_Box& bounds, const gp_Pln& plane, BRep_Builder& builder, TopoDS_Compound& fill,
+                           TopoDS_Compound& lines)
+{
+  if (bounds.IsVoid())
+    return;
+
+  const gp_Pnt origin = plane.Location();
+  const gp_Vec x_axis(plane.XAxis().Direction());
+  const gp_Vec y_axis(plane.YAxis().Direction());
+  double       u_min, u_max, v_min, v_max;
+  project_bbox_uv_(bounds, plane, u_min, u_max, v_min, v_max);
 
   const double width  = u_max - u_min;
   const double height = v_max - v_min;
