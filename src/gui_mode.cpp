@@ -801,6 +801,10 @@ void GUI::options_shape_cross_section_mode_()
   if (ImGui::Checkbox("Invert normal", &invert_normal))
     section.set_invert_normal(invert_normal);
 
+  bool hide_back_side = section.get_hide_back_side();
+  if (ImGui::Checkbox("Hide back side", &hide_back_side))
+    section.set_hide_back_side(hide_back_side);
+
   double     offset_min = -1.0;
   double     offset_max = 1.0;
   const bool have_range = section.try_get_offset_range_display(offset_min, offset_max);
@@ -845,12 +849,6 @@ void GUI::options_shape_cross_section_mode_()
       update_preview();
   }
 
-  ImGui::TextWrapped(
-      "All selected solids share one cutting plane. Orientation follows the first selected solid's local axes; the "
-      "plane is centered on the selection bounding box. Offset slides across that box along the plane normal "
-      "(Ctrl+click the slider to type a value). The yellow plane and arrow show the cut plane and positive normal; "
-      "use Invert normal to flip the arrow (offset is negated so the plane stays in place). "
-      "Changing the selection or section plane updates the preview automatically.");
   options_orthographic_projection_();
 }
 

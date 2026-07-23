@@ -104,7 +104,7 @@ Under **Material**:
 
 - Document preset for new solids that do not inherit from a clicked shape (toolbar **Box**, **polar duplicate** output, and similar). To change material on an existing solid, use the [Shape List](usage.md#shape-list).
 
-For other non-sketch Options content, see the matching tool section in the usage guide. In particular, **Shape cross-section** provides local **XY/XZ/YZ**, **Invert normal**, a bbox-ranged **Offset** slider (Ctrl+click to type), and automatic preview updates when the selection changes; see [Shape cross-section tool](usage.md#shape-cross-section-tool).
+For other non-sketch Options content, see the matching tool section in the usage guide. In particular, **Shape cross-section** provides local **XY/XZ/YZ**, **Invert normal**, **Hide back side**, a bbox-ranged **Offset** slider (Ctrl+click to type), and automatic preview updates when the selection changes; see [Shape cross-section tool](usage.md#shape-cross-section-tool).
 
 ### Sketch tools
 

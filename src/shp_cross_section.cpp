@@ -13,6 +13,7 @@
 #include <BRep_Builder.hxx>
 #include <Bnd_Box.hxx>
 #include <GeomAbs_CurveType.hxx>
+#include <Graphic3d_ClipPlane.hxx>
 #include <Graphic3d_ZLayerId.hxx>
 #include <Quantity_Color.hxx>
 #include <Standard_Failure.hxx>
@@ -142,6 +143,9 @@ Status Shp_cross_section::preview(const std::vector<Shp_ptr>& selected)
   if (totals.edge_count == 0)
     return Status::user_error("The section plane does not intersect the selection.");
 
+  if (m_hide_back_side)
+    apply_clips_(selected, shared_plane);
+
   add_plane_annotation_(combined_bounds, shared_plane, builder, plane_fill, plane_lines);
 
   m_preview = new AIS_Shape(compound);
@@ -184,6 +188,8 @@ Status Shp_cross_section::preview(const std::vector<Shp_ptr>& selected)
 
 void Shp_cross_section::clear()
 {
+  clear_clips_();
+
   if (!m_preview.IsNull())
     ctx().Remove(m_preview, false);
 
@@ -197,6 +203,41 @@ void Shp_cross_section::clear()
   m_plane_fill.Nullify();
   m_plane_lines.Nullify();
   ctx().UpdateCurrentViewer();
+}
+
+void Shp_cross_section::clear_clips_()
+{
+  if (!m_clip_plane.IsNull())
+  {
+    for (const Shp_ptr& shp : m_clipped_shapes)
+    {
+      if (shp.IsNull())
+        continue;
+
+      shp->RemoveClipPlane(m_clip_plane);
+      ctx().Redisplay(shp, false);
+    }
+  }
+
+  m_clipped_shapes.clear();
+  m_clip_plane.Nullify();
+}
+
+void Shp_cross_section::apply_clips_(const std::vector<Shp_ptr>& shapes, const gp_Pln& plane)
+{
+  clear_clips_();
+  m_clip_plane = new Graphic3d_ClipPlane(plane);
+  m_clip_plane->SetOn(true);
+  m_clipped_shapes.reserve(shapes.size());
+  for (const Shp_ptr& shp : shapes)
+  {
+    if (shp.IsNull() || shp->is_group())
+      continue;
+
+    shp->AddClipPlane(m_clip_plane);
+    ctx().Redisplay(shp, false);
+    m_clipped_shapes.push_back(shp);
+  }
 }
 
 std::vector<Shape_id> Shp_cross_section::selection_ids_(const std::vector<Shp_ptr>& shapes)
@@ -217,7 +258,7 @@ bool Shp_cross_section::selection_stale() const
 bool Shp_cross_section::preview_inputs_stale() const
 {
   return selection_stale() || m_acked_plane != m_plane || m_acked_offset_display != m_offset_display ||
-         m_acked_invert_normal != m_invert_normal;
+         m_acked_invert_normal != m_invert_normal || m_acked_hide_back_side != m_hide_back_side;
 }
 
 void Shp_cross_section::set_invert_normal(bool invert)
@@ -231,10 +272,11 @@ void Shp_cross_section::set_invert_normal(bool invert)
 
 void Shp_cross_section::acknowledge_inputs_(const std::vector<Shp_ptr>& shapes)
 {
-  m_acked_selection_ids  = selection_ids_(shapes);
-  m_acked_plane          = m_plane;
-  m_acked_offset_display = m_offset_display;
-  m_acked_invert_normal  = m_invert_normal;
+  m_acked_selection_ids   = selection_ids_(shapes);
+  m_acked_plane           = m_plane;
+  m_acked_offset_display  = m_offset_display;
+  m_acked_invert_normal   = m_invert_normal;
+  m_acked_hide_back_side  = m_hide_back_side;
 }
 
 void Shp_cross_section::acknowledge_current_selection()

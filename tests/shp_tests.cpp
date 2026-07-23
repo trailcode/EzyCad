@@ -354,10 +354,19 @@ TEST_F(Shp_test, Cross_section_selection_stale_after_selection_change)
   ASSERT_TRUE(view().shp_cross_section().preview_selected().is_ok());
   EXPECT_FALSE(view().shp_cross_section().preview_inputs_stale());
 
+  view().shp_cross_section().set_hide_back_side(true);
+  EXPECT_TRUE(view().shp_cross_section().get_hide_back_side());
+  EXPECT_TRUE(view().shp_cross_section().preview_inputs_stale());
+  ASSERT_TRUE(view().shp_cross_section().preview_selected().is_ok());
+  EXPECT_FALSE(view().shp_cross_section().preview_inputs_stale());
+  EXPECT_FALSE(boxes[1]->ClipPlanes().IsNull());
+  EXPECT_EQ(boxes[1]->ClipPlanes()->Size(), 1);
+
   view().shp_cross_section().clear();
   view().shp_cross_section().acknowledge_current_selection();
   EXPECT_FALSE(view().shp_cross_section().has_preview());
   EXPECT_FALSE(view().shp_cross_section().preview_inputs_stale());
+  EXPECT_TRUE(boxes[1]->ClipPlanes().IsNull() || boxes[1]->ClipPlanes()->IsEmpty());
 }
 
 
