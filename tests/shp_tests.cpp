@@ -360,8 +360,18 @@ TEST_F(Shp_test, Cross_section_selection_stale_after_selection_change)
   ASSERT_TRUE(view().shp_cross_section().preview_selected().is_ok());
   EXPECT_FALSE(view().shp_cross_section().preview_inputs_stale());
 
-  view().shp_cross_section().set_hide_back_side(true);
+  // Hide back side defaults on (already acked by prior preview); toggle to exercise stale + clip apply.
   EXPECT_TRUE(view().shp_cross_section().get_hide_back_side());
+  EXPECT_FALSE(boxes[1]->ClipPlanes().IsNull());
+  EXPECT_EQ(boxes[1]->ClipPlanes()->Size(), 1);
+
+  view().shp_cross_section().set_hide_back_side(false);
+  EXPECT_TRUE(view().shp_cross_section().preview_inputs_stale());
+  ASSERT_TRUE(view().shp_cross_section().preview_selected().is_ok());
+  EXPECT_FALSE(view().shp_cross_section().preview_inputs_stale());
+  EXPECT_TRUE(boxes[1]->ClipPlanes().IsNull() || boxes[1]->ClipPlanes()->IsEmpty());
+
+  view().shp_cross_section().set_hide_back_side(true);
   EXPECT_TRUE(view().shp_cross_section().preview_inputs_stale());
   ASSERT_TRUE(view().shp_cross_section().preview_selected().is_ok());
   EXPECT_FALSE(view().shp_cross_section().preview_inputs_stale());
