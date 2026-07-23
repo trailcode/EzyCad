@@ -10,6 +10,8 @@
 | WASM (Emscripten) | **7.9.3** (`V7_9_3`) recommended    | `scripts/build-occt-793-wasm.ps1`          |
 | WASM (compare)    | 8.0.0.p1 (`V8_0_0_p1`) experimental | Shading regressions; not for demos/release |
 
+Do **not** apply OCCT 8 GLES workarounds unconditionally under `__EMSCRIPTEN__`. Example: `Occt_view::refresh_shape_shading_` must not force a fixed AIS `SetColor` on 7.9.3 (washes out material presets). Gate with `OCC_VERSION_HEX >= 0x080000`, and when a color is required on OCCT 8 prefer the material's own color.
+
 Details: [docs/building-occt.md](../../docs/building-occt.md), [workflows/local-dev.md](../workflows/local-dev.md).
 
 ## Shared `src/` must compile on both

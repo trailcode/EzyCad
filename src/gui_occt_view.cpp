@@ -29,6 +29,7 @@
 #include <Precision.hxx>
 #include <Prs3d_DatumAspect.hxx>
 #include <Standard_Failure.hxx>
+#include <Standard_Version.hxx>
 #include <Prs3d_Drawer.hxx>
 #include <Graphic3d_AspectFillArea3d.hxx>
 #include <Prs3d_LineAspect.hxx>
@@ -926,8 +927,14 @@ void Occt_view::refresh_shape_shading_(const Shp_ptr& shp)
     return;
 
 #ifdef __EMSCRIPTEN__
-  // OCCT 8 GLES: Phong needs explicit color; UNLIT fallback was removed in 8.0.
-  shp->SetColor(Quantity_Color(0.78, 0.78, 0.80, Quantity_TOC_RGB));
+#if OCC_VERSION_HEX >= 0x080000
+  // OCCT 8 GLES: AIS OwnColor overrides Graphic3d material presets, so Shape List
+  // picks (Copper, Gold, ...) never change the shaded look. Clear any forced color and
+  // let SetMaterial drive appearance. Broader OCCT 8 wasm shading regressions remain —
+  // recommended kit is still 7.9.3 (docs/building-occt.md).
+  if (shp->HasColor())
+    shp->UnsetColor();
+#endif
 
   const Prs3d_Drawer_ptr& drawer = shp->Attributes();
   if (!drawer.IsNull())
@@ -947,7 +954,6 @@ void Occt_view::refresh_shape_shading_(const Shp_ptr& shp)
   }
 #endif
 }
-
 void Occt_view::add_shp_(Shp_ptr& shp, bool use_current_group)
 {
   if (shp->get_id() == 0)

@@ -2571,6 +2571,9 @@ void GUI::shape_list_()
       if (is_group || i < 0 || i >= nmat)
         return;
 
+      // OwnColor (e.g. from older wasm SetColor workarounds) overrides material presets.
+      if (shape->HasColor())
+        shape->UnsetColor();
       shape->SetMaterial(Graphic3d_MaterialAspect(static_cast<Graphic3d_NameOfMaterial>(i)));
       m_view->refresh_shape_shading_(shape);
       m_view->ctx().Redisplay(shape, true);

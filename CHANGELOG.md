@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+
+- WASM (OCCT 7.9.3): stop forcing a near-white AIS `SetColor` after every material apply. That OCCT 8 GLES workaround had been running on all Emscripten builds and made steel, gold, and other presets look identical (glass still showed transparency).
+- WASM: clear AIS `OwnColor` when applying a Shape List material so presets are not stuck on a forced color. Prefer the **OCCT 7.9.3** wasm kit — OCCT 8.x GLES still has known shading regressions (`docs/building-occt.md`).
+
 ### Cross-section
 
 - Added a temporary **Shape cross-section** preview tool for selected solids. Entering the tool with solids already selected updates the preview immediately; changing the selection while in the tool also updates it. Options choose a shared local **XY**, **XZ**, or **YZ** plane (first-selected axes, selection-bbox center), **Invert normal** (flips the annotation arrow and positive-offset direction while keeping the plane in place), and a bounding-box **Offset** slider (Ctrl+click to type; auto-updates preview) in project units; a translucent yellow plane and normal arrow annotate the cut. Solids the plane misses are skipped; the preview clears only if nothing in the selection is cut.
