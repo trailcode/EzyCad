@@ -468,13 +468,23 @@ Status Shp_cross_section::clip(const std::vector<Shp_ptr>& shapes)
 
   std::vector<TopoDS_Shape> clipped_geoms;
   clipped_geoms.reserve(plane_ctx.shapes.size());
+  std::vector<Shp_ptr>      survivors;
+  survivors.reserve(plane_ctx.shapes.size());
+  size_t                    removed_fully = 0;
   for (size_t i = 0; i < plane_ctx.shapes.size(); ++i)
   {
     Result<TopoDS_Shape> clipped = clip_solid_to_half_space_(plane_ctx.world_shapes[i], *half);
     if (!clipped.has_value())
       return Status(clipped.status(), plane_ctx.shapes[i]->get_name() + ": " + clipped.message());
 
+    if ((*clipped).IsNull() || !contains_solid_(*clipped))
+    {
+      ++removed_fully;
+      continue;
+    }
+
     clipped_geoms.push_back(std::move(*clipped));
+    survivors.push_back(plane_ctx.shapes[i]);
   }
 
   std::vector<Shape_rec> removed;
@@ -483,12 +493,12 @@ Status Shp_cross_section::clip(const std::vector<Shp_ptr>& shapes)
     removed.push_back(capture_shape_rec(*shp));
 
   std::vector<Shape_rec> added;
-  added.reserve(plane_ctx.shapes.size());
+  added.reserve(survivors.size());
   m_shps = plane_ctx.shapes;
 
-  for (size_t i = 0; i < plane_ctx.shapes.size(); ++i)
+  for (size_t i = 0; i < survivors.size(); ++i)
   {
-    const Shp_ptr& old_shp = plane_ctx.shapes[i];
+    const Shp_ptr& old_shp = survivors[i];
     Shp_ptr        new_shp = new Shp(ctx(), clipped_geoms[i]);
     new_shp->set_name(old_shp->get_name());
     new_shp->set_frame(frame_world_(*old_shp));
@@ -501,7 +511,18 @@ Status Shp_cross_section::clip(const std::vector<Shp_ptr>& shapes)
   delete_operation_shps_();
   view().push_undo_delta(std::make_unique<Shape_replace_delta>(std::move(removed), std::move(added)));
   clear();
-  return Status::ok("Clipped " + std::to_string(added.size()) + (added.size() == 1 ? " shape." : " shapes."));
+
+  std::ostringstream msg;
+  if (added.empty())
+    msg << "Removed " << removed_fully << (removed_fully == 1 ? " fully clipped shape." : " fully clipped shapes.");
+  else
+  {
+    msg << "Clipped " << added.size() << (added.size() == 1 ? " shape." : " shapes.");
+    if (removed_fully > 0)
+      msg << " Removed " << removed_fully
+          << (removed_fully == 1 ? " fully clipped shape." : " fully clipped shapes.");
+  }
+  return Status::ok(msg.str());
 }
 
 void Shp_cross_section::clear()
@@ -992,8 +1013,9 @@ Result<TopoDS_Shape> clip_solid_to_half_space_(const TopoDS_Shape& world_shape, 
       return {Result_status::Topo_error, "Open CASCADE could not clip the solid."};
 
     const TopoDS_Shape& result = common.Shape();
+    // Null / non-solid means the solid lies entirely on the discarded side.
     if (result.IsNull() || !contains_solid_(result))
-      return {Result_status::User_error, "Clip removed the entire solid (nothing left on the kept side)."};
+      return TopoDS_Shape();
 
     return result;
   }

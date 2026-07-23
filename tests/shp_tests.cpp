@@ -396,6 +396,28 @@ TEST_F(Shp_test, Cross_section_selection_stale_after_selection_change)
   EXPECT_TRUE(contains_solid_like(view().get_shapes().back()->Shape()));
 }
 
+TEST_F(Shp_test, Cross_section_clip_removes_fully_discarded_solids)
+{
+  // Short box lies entirely below the shared midplane; tall box is cut (kept half survives).
+  view().add_box(0, 0, 0, 4, 4, 4);
+  view().add_box(0, 0, 0, 4, 4, 10);
+  const std::vector<Shp_ptr> boxes(view().get_shapes().begin(), view().get_shapes().end());
+  ASSERT_EQ(boxes.size(), 2u);
+  const Shape_id short_id = boxes[0]->get_id();
+  const Shape_id tall_id  = boxes[1]->get_id();
+
+  select_shapes(view(), boxes);
+  gui().set_mode(Mode::Shape_cross_section);
+  ASSERT_TRUE(view().shp_cross_section().preview_selected().is_ok());
+
+  const Status clip_status = view().shp_cross_section().clip_selected();
+  ASSERT_TRUE(clip_status.is_ok()) << clip_status.message();
+  EXPECT_TRUE(view().find_shape_by_id(short_id).IsNull());
+  EXPECT_TRUE(view().find_shape_by_id(tall_id).IsNull());
+  ASSERT_EQ(view().get_shapes().size(), 1u);
+  EXPECT_TRUE(contains_solid_like(view().get_shapes().front()->Shape()));
+}
+
 
 // ---------------------------------------------------------------------------
 // shp_info
