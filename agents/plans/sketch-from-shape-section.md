@@ -1,5 +1,5 @@
 ---
-status: deferred
+status: partial
 topic: sketch-from-shape
 depends_on:
   - shp-origin-orientation
@@ -12,12 +12,7 @@ depends_on:
 
 ## Status
 
-**Deferred.** Needs experimentation first:
-
-1. [shp-origin-orientation.md](shp-origin-orientation.md) — persistent shape frame (origin + orientation).
-2. [cross-section-tool.md](cross-section-tool.md) — prototype section display and OCCT curve discovery.
-
-Do **not** implement sketch import until the cross-section prototype has findings (curve types, plane UX, fail cases).
+**Partial.** Cross-section Options **Cross section sketch** imports cached section **line** and **circle** edges into a new sketch (`Occt_view::create_sketch_from_cross_section`). Remaining work: weld/dedup for boolean sections, ellipse/B-spline densify, script binding.
 
 ## Goal (end state)
 
@@ -43,18 +38,19 @@ Earlier draft used world XY/XZ/YZ through bbox center — superseded once shape 
 3. Weld nodes → `rebuild_faces()` → one undo commit.
 
 **Reuse:** `to_2d`/`to_3d`, `add_sketch`, `Sketch_edges`, `Sketch_op_recorder`.  
-**New:** section→sketch importer after prototype validates section quality.
+**Shipped MVP:** Options button on the cross-section tool; caches section plane with compound.
 
 ## Phases (after prerequisites)
 
-- **MVP:** One solid; plane from shape frame; line+circle; polyline fallback; undo; tests.
-- **Later:** Multi-shape; densify; script; face-pick plane; optional `originating_shape_id`.
+- **MVP:** One solid; plane from shape frame; line+circle; undo; tests. *(Delivered via cross-section tool button; multi-solid uses shared plane.)*
+- **Later:** densify; script; face-pick plane; optional `originating_shape_id`; weld overlapping boolean edges.
 
 ## Acceptance (when un-deferred)
 
-- [ ] Editable sketch edges from section; undo works; fail closed on miss.
-- [ ] Docs + CHANGELOG; curve rules match cross-section findings.
+- [x] Editable sketch edges from section; undo works; fail closed on miss.
+- [x] Docs + CHANGELOG; curve rules match cross-section findings (line + circle first).
+- [ ] Weld/dedup for fused solids; densify unsupported curves.
 
 ## Out of scope until unblocked
 
-C++ sketch import; changing planar-face behavior.
+Changing planar-face behavior.
