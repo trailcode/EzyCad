@@ -700,14 +700,14 @@ void Occt_view::add_sketch_on_ref_plane(Sketch_ref_plane plane, double offset_di
 
 namespace
 {
-void import_section_circle_edge_(Sketch& sketch, const TopoDS_Edge& edge, const gp_Pln& pln)
+[[nodiscard]] bool import_section_circle_edge_(Sketch& sketch, const TopoDS_Edge& edge, const gp_Pln& pln)
 {
   const BRepAdaptor_Curve curve(edge);
   const double            u0   = curve.FirstParameter();
   const double            u1   = curve.LastParameter();
   const double            span = u1 - u0;
   if (std::abs(span) <= Precision::Confusion())
-    return;
+    return false;
 
   // Full (or near-full) circles become two semicircles; sketch arcs cannot be closed loops.
   const bool full_circle = curve.IsClosed() || std::abs(std::abs(span) - 2.0 * std::numbers::pi) <= 1.0e-3;
@@ -719,14 +719,15 @@ void import_section_circle_edge_(Sketch& sketch, const TopoDS_Edge& edge, const 
     const gp_Pnt2d mid2 = to_2d(pln, curve.Value(u0 + 0.75 * span));
     sketch.add_arc_circle(a, mid1, b);
     sketch.add_arc_circle(b, mid2, a);
-    return;
+    return true;
   }
 
   const auto [pt_a, pt_c] = get_edge_endpoints(pln, edge);
   if (pt_a.Distance(pt_c) <= Precision::Confusion())
-    return;
+    return false;
 
   sketch.add_arc_circle(pt_a, arc_curve_midpoint_2d(edge, pln), pt_c);
+  return true;
 }
 
 struct Section_import_counts
@@ -756,8 +757,10 @@ Section_import_counts import_section_edges_into_sketch_(Sketch& sketch, const To
       break;
     }
     case GeomAbs_Circle:
-      import_section_circle_edge_(sketch, edge, pln);
-      ++counts.imported;
+      if (import_section_circle_edge_(sketch, edge, pln))
+        ++counts.imported;
+      else
+        ++counts.skipped;
       break;
     default:
       ++counts.skipped;
@@ -792,7 +795,7 @@ Status Occt_view::create_sketch_from_cross_section(const std::string& base_name)
   const std::string name   = unique_sequential_name(base_name, existing);
   Sketch_ptr        sketch = std::make_shared<Sketch>(name, *this, pln);
   const Section_import_counts counts = import_section_edges_into_sketch_(*sketch, compound, pln);
-  if (counts.imported == 0)
+  if (counts.imported == 0 || sketch->edge_count() == 0)
     return Status::user_error("Cross-section has no line or circle edges to import.");
 
   sketch->rebuild_faces();

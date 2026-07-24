@@ -3114,7 +3114,7 @@ void GUI::show_message(const std::string& message)
 
 void GUI::show_error_dialog(const std::string& title, const std::string& message)
 {
-  // Log full detail once; toast title only (do not call show_message — that would log twice).
+  // Log full detail once; toast title only (do not call show_message - that would log twice).
   log_message(title + ": " + message);
   m_message            = title;
   m_message_visible    = true;
