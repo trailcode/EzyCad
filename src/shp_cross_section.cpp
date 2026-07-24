@@ -2,6 +2,7 @@
 
 #include "gui_occt_view.h"
 #include "shp_delta.h"
+#include "utl_dbg.h"
 #include "utl_occt.h"
 
 #include <BRepAdaptor_Curve.hxx>
@@ -182,7 +183,7 @@ Status Shp_cross_section::preview(const std::vector<Shp_ptr>& shapes)
   const Status requested = request_preview(shapes);
   if (!requested.is_ok())
     return requested;
-  return wait_section_();
+  return wait_section();
 }
 
 void Shp_cross_section::enqueue_section_(const Shared_plane& plane_ctx)
@@ -245,6 +246,7 @@ Shp_cross_section::Section_result Shp_cross_section::compute_section_result_(Sec
   const Assembled_section assembled = assemble_section_geometries_(section_results, req.shape_names);
   out.status                        = assembled.status;
   out.compound                      = assembled.compound;
+  out.plane                         = req.plane;
   return out;
 }
 
@@ -255,9 +257,18 @@ std::optional<Status> Shp_cross_section::finish_section_result_(Section_result r
 
   m_last_section_status = result.status;
   if (result.status.is_ok() && !result.compound.IsNull())
-    display_section_wires_(result.compound);
+  {
+    m_last_section_compound     = result.compound;
+    m_last_section_plane        = result.plane;
+    m_have_last_section_plane   = true;
+    display_section_wires_(m_last_section_compound);
+  }
   else
+  {
+    m_last_section_compound.Nullify();
+    m_have_last_section_plane = false;
     clear_section_wires_();
+  }
 
   ctx().UpdateCurrentViewer();
   return result.status;
@@ -293,6 +304,7 @@ std::optional<Status> Shp_cross_section::poll()
       result.generation = job.request.generation;
       result.status     = assembled.status;
       result.compound   = assembled.compound;
+      result.plane      = job.request.plane;
       finished          = std::move(result);
       m_chunked.reset();
     }
@@ -328,7 +340,7 @@ bool Shp_cross_section::section_busy() const
 #endif
 }
 
-Status Shp_cross_section::wait_section_()
+Status Shp_cross_section::wait_section()
 {
   while (section_busy())
   {
@@ -393,12 +405,29 @@ void Shp_cross_section::display_section_wires_(const TopoDS_Shape& compound)
 {
   clear_section_wires_();
 
+  if (!m_show_section_outline || compound.IsNull())
+    return;
+
   m_preview = new AIS_Shape(compound);
   m_preview->SetColor(Quantity_NOC_CYAN);
   m_preview->SetWidth(3.0);
   m_preview->SetZLayer(Graphic3d_ZLayerId_Topmost);
   ctx().Display(m_preview, AIS_WireFrame, -1, false);
   ctx().Deactivate(m_preview);
+}
+
+void Shp_cross_section::set_show_section_outline(bool show)
+{
+  if (m_show_section_outline == show)
+    return;
+
+  m_show_section_outline = show;
+  if (show)
+    display_section_wires_(m_last_section_compound);
+  else
+    clear_section_wires_();
+
+  ctx().UpdateCurrentViewer();
 }
 
 void Shp_cross_section::clear_section_wires_()
@@ -425,6 +454,14 @@ void Shp_cross_section::clear_preview_ais_()
 {
   clear_section_wires_();
   clear_plane_annotation_();
+  m_last_section_compound.Nullify();
+  m_have_last_section_plane = false;
+}
+
+const gp_Pln& Shp_cross_section::last_section_plane() const
+{
+  EZY_ASSERT(m_have_last_section_plane);
+  return m_last_section_plane;
 }
 
 Status Shp_cross_section::clip_selected() { return clip(get_selected_shps_()); }
@@ -444,13 +481,23 @@ Status Shp_cross_section::clip(const std::vector<Shp_ptr>& shapes)
 
   std::vector<TopoDS_Shape> clipped_geoms;
   clipped_geoms.reserve(plane_ctx.shapes.size());
+  std::vector<Shp_ptr>      survivors;
+  survivors.reserve(plane_ctx.shapes.size());
+  size_t                    removed_fully = 0;
   for (size_t i = 0; i < plane_ctx.shapes.size(); ++i)
   {
     Result<TopoDS_Shape> clipped = clip_solid_to_half_space_(plane_ctx.world_shapes[i], *half);
     if (!clipped.has_value())
       return Status(clipped.status(), plane_ctx.shapes[i]->get_name() + ": " + clipped.message());
 
+    if ((*clipped).IsNull() || !contains_solid_(*clipped))
+    {
+      ++removed_fully;
+      continue;
+    }
+
     clipped_geoms.push_back(std::move(*clipped));
+    survivors.push_back(plane_ctx.shapes[i]);
   }
 
   std::vector<Shape_rec> removed;
@@ -459,12 +506,12 @@ Status Shp_cross_section::clip(const std::vector<Shp_ptr>& shapes)
     removed.push_back(capture_shape_rec(*shp));
 
   std::vector<Shape_rec> added;
-  added.reserve(plane_ctx.shapes.size());
+  added.reserve(survivors.size());
   m_shps = plane_ctx.shapes;
 
-  for (size_t i = 0; i < plane_ctx.shapes.size(); ++i)
+  for (size_t i = 0; i < survivors.size(); ++i)
   {
-    const Shp_ptr& old_shp = plane_ctx.shapes[i];
+    const Shp_ptr& old_shp = survivors[i];
     Shp_ptr        new_shp = new Shp(ctx(), clipped_geoms[i]);
     new_shp->set_name(old_shp->get_name());
     new_shp->set_frame(frame_world_(*old_shp));
@@ -477,7 +524,18 @@ Status Shp_cross_section::clip(const std::vector<Shp_ptr>& shapes)
   delete_operation_shps_();
   view().push_undo_delta(std::make_unique<Shape_replace_delta>(std::move(removed), std::move(added)));
   clear();
-  return Status::ok("Clipped " + std::to_string(added.size()) + (added.size() == 1 ? " shape." : " shapes."));
+
+  std::ostringstream msg;
+  if (added.empty())
+    msg << "Removed " << removed_fully << (removed_fully == 1 ? " fully clipped shape." : " fully clipped shapes.");
+  else
+  {
+    msg << "Clipped " << added.size() << (added.size() == 1 ? " shape." : " shapes.");
+    if (removed_fully > 0)
+      msg << " Removed " << removed_fully
+          << (removed_fully == 1 ? " fully clipped shape." : " fully clipped shapes.");
+  }
+  return Status::ok(msg.str());
 }
 
 void Shp_cross_section::clear()
@@ -968,8 +1026,9 @@ Result<TopoDS_Shape> clip_solid_to_half_space_(const TopoDS_Shape& world_shape, 
       return {Result_status::Topo_error, "Open CASCADE could not clip the solid."};
 
     const TopoDS_Shape& result = common.Shape();
+    // Null / non-solid means the solid lies entirely on the discarded side.
     if (result.IsNull() || !contains_solid_(result))
-      return {Result_status::User_error, "Clip removed the entire solid (nothing left on the kept side)."};
+      return TopoDS_Shape();
 
     return result;
   }

@@ -5,6 +5,7 @@
 #include <Aspect_Grid.hxx>
 #include <Aspect_RectangularGrid.hxx>
 #include <V3d_RectangularGrid.hxx>
+#include <BRepAdaptor_Curve.hxx>
 #include <BRepBndLib.hxx>
 #include <Bnd_Box.hxx>
 #include <BRepBuilderAPI_Transform.hxx>
@@ -14,6 +15,7 @@
 #include <BRepTools.hxx>
 #include <BRep_Builder.hxx>
 #include <BRep_Tool.hxx>
+#include <GeomAbs_CurveType.hxx>
 #include <GeomAPI_IntCS.hxx>
 #include <Geom_Line.hxx>
 #include <Geom_Plane.hxx>
@@ -80,6 +82,7 @@
 #include <GLFW/glfw3.h>
 
 #include <iostream>
+#include <numbers>
 #include <sstream>
 
 using namespace glm;
@@ -693,6 +696,125 @@ void Occt_view::add_sketch_on_ref_plane(Sketch_ref_plane plane, double offset_di
 {
   const gp_Pln pln = sketch_reference_plane(plane, offset_display * get_display_to_model_scale());
   add_sketch(pln, base_name);
+}
+
+namespace
+{
+[[nodiscard]] bool import_section_circle_edge_(Sketch& sketch, const TopoDS_Edge& edge, const gp_Pln& pln)
+{
+  const BRepAdaptor_Curve curve(edge);
+  const double            u0   = curve.FirstParameter();
+  const double            u1   = curve.LastParameter();
+  const double            span = u1 - u0;
+  if (std::abs(span) <= Precision::Confusion())
+    return false;
+
+  // Full (or near-full) circles become two semicircles; sketch arcs cannot be closed loops.
+  const bool full_circle = curve.IsClosed() || std::abs(std::abs(span) - 2.0 * std::numbers::pi) <= 1.0e-3;
+  if (full_circle)
+  {
+    const gp_Pnt2d a    = to_2d(pln, curve.Value(u0));
+    const gp_Pnt2d mid1 = to_2d(pln, curve.Value(u0 + 0.25 * span));
+    const gp_Pnt2d b    = to_2d(pln, curve.Value(u0 + 0.5 * span));
+    const gp_Pnt2d mid2 = to_2d(pln, curve.Value(u0 + 0.75 * span));
+    sketch.add_arc_circle(a, mid1, b);
+    sketch.add_arc_circle(b, mid2, a);
+    return true;
+  }
+
+  const auto [pt_a, pt_c] = get_edge_endpoints(pln, edge);
+  if (pt_a.Distance(pt_c) <= Precision::Confusion())
+    return false;
+
+  sketch.add_arc_circle(pt_a, arc_curve_midpoint_2d(edge, pln), pt_c);
+  return true;
+}
+
+struct Section_import_counts
+{
+  size_t imported{0};
+  size_t skipped{0};
+};
+
+Section_import_counts import_section_edges_into_sketch_(Sketch& sketch, const TopoDS_Shape& compound, const gp_Pln& pln)
+{
+  Section_import_counts counts;
+  for (TopExp_Explorer it(compound, TopAbs_EDGE); it.More(); it.Next())
+  {
+    const TopoDS_Edge edge = TopoDS::Edge(it.Current());
+    switch (BRepAdaptor_Curve(edge).GetType())
+    {
+    case GeomAbs_Line:
+    {
+      const auto [pt_a, pt_b] = get_edge_endpoints(pln, edge);
+      if (pt_a.Distance(pt_b) <= Precision::Confusion())
+      {
+        ++counts.skipped;
+        break;
+      }
+      sketch.add_linear_edge(pt_a, pt_b);
+      ++counts.imported;
+      break;
+    }
+    case GeomAbs_Circle:
+      if (import_section_circle_edge_(sketch, edge, pln))
+        ++counts.imported;
+      else
+        ++counts.skipped;
+      break;
+    default:
+      ++counts.skipped;
+      break;
+    }
+  }
+  return counts;
+}
+} // namespace
+
+Status Occt_view::create_sketch_from_cross_section(const std::string& base_name)
+{
+  Shp_cross_section& section = shp_cross_section();
+  if (section.section_busy())
+  {
+    const Status waited = section.wait_section();
+    if (!waited.is_ok() && !section.has_preview())
+      return waited;
+  }
+
+  if (!section.has_preview())
+    return Status::user_error("No cross-section outline to convert into a sketch.");
+
+  const gp_Pln&       pln      = section.last_section_plane();
+  const TopoDS_Shape& compound = section.last_section_compound();
+
+  std::vector<std::string> existing;
+  existing.reserve(m_sketches.size());
+  for (const Sketch_ptr& s : m_sketches)
+    existing.push_back(s->get_name());
+
+  const std::string name   = unique_sequential_name(base_name, existing);
+  Sketch_ptr        sketch = std::make_shared<Sketch>(name, *this, pln);
+  const Section_import_counts counts = import_section_edges_into_sketch_(*sketch, compound, pln);
+  if (counts.imported == 0 || sketch->edge_count() == 0)
+    return Status::user_error("Cross-section has no line or circle edges to import.");
+
+  sketch->rebuild_faces();
+  m_cur_sketch = sketch;
+  m_sketches.push_back(m_cur_sketch);
+  m_cur_sketch->set_current();
+  refresh_viewer_grid_();
+  push_undo_delta(std::make_unique<Sketch_struct_delta>(Sketch_struct_delta::Kind::Add,
+                                                        Sketch_json::to_json(*m_cur_sketch, m_assets), true));
+  m_gui.set_mode(Mode::Sketch_inspection_mode);
+
+  std::ostringstream msg;
+  msg << "Created sketch '" << name << "' with " << counts.imported
+      << (counts.imported == 1 ? " imported edge" : " imported edges");
+  if (counts.skipped > 0)
+    msg << " (" << counts.skipped << " unsupported curve"
+        << (counts.skipped == 1 ? "" : "s") << " skipped)";
+  msg << ".";
+  return Status::ok(msg.str());
 }
 
 void Occt_view::curr_sketch_add_edge(double x1, double y1, double x2, double y2)

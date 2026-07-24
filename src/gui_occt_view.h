@@ -199,6 +199,8 @@ public:
   void add_sketch(const gp_Pln& pln, const std::string& base_name);
   /// Like add_sketch; \a offset_display is multiplied by get_display_to_model_scale().
   void       add_sketch_on_ref_plane(Sketch_ref_plane plane, double offset_display, const std::string& base_name);
+  /// New sketch on the current cross-section plane; imports line/circle section edges (undoable).
+  [[nodiscard]] Status create_sketch_from_cross_section(const std::string& base_name = "Section_sketch");
   void       curr_sketch_add_edge(double x1, double y1, double x2, double y2);
   void       curr_sketch_rebuild_faces();
   Sketch&    curr_sketch();

@@ -186,7 +186,7 @@ Tests use `sketch_left_click` to simulate sketch LMB without ImGui mouse positio
 | `Move` / `Rotate` / `Scale`      | `options_*_mode_` (constraints, axis, material)         |
 | `Shape_chamfer` / `Shape_fillet` | mode + radius/distance                                  |
 | `Shape_polar_duplicate`          | angle, count, rotate/combine, **Dup** button            |
-| `Shape_cross_section`                  | local XY/XZ/YZ, invert normal, hide back side, bbox-ranged offset, Clip (replace) |
+| `Shape_cross_section`                  | local XY/XZ/YZ, invert normal, hide back side, show section outline, bbox-ranged offset, Clip, Cross section sketch |
 | `Sketch_inspection_mode`         | `options_sketch_common_`                                |
 | Each sketch tool mode            | Matching `options_sketch_*_mode_`                       |
 | `Sketch_operation_axis`          | Mirror / Revolve / Clear axis                           |
@@ -207,6 +207,8 @@ Shared sketch controls (snap, midpoint nodes, place-from-center) live in `option
 | 7     | `message_status_window_`, `about_dialog_`                     | Status + About                        |
 | 8     | `add_*_dialog_`                                               | Primitive / sketch creation popups    |
 | 9     | `log_window_`, consoles, `settings_`, `dbg_`                  | Log, Lua/Python, Settings             |
+
+`GUI::show_message` drives the transient status toast (`message_status_window_`) and also appends via `log_message`. `show_error_dialog` logs `title: message` once and toasts the title only.
 
 Sketch List expand **Faces**: each face row supports **`E`** and right-click **Extrude** via `GUI::sketch_list_extrude_face_` (`set_mode(Sketch_face_extrude)` + `Occt_view::begin_sketch_face_extrude` / `Shp_extrude::begin_face_extrude`). Hovering a **Faces**, **Edges**, or **Nodes** row calls `Occt_view::set_sketch_list_hover_{face,edge,node}` (temporarily displays the AIS when hidden outside sketch modes; uses `Graphic3d_ZLayerId_Topmost` so solids do not occlude the highlight).
 
@@ -235,7 +237,7 @@ Toolbar buttons hold `std::variant<Mode, Command>`. `Command` (`Shape_cut`, `Sha
 
 Mode buttons call `set_mode`. Active state tracks `m_mode`.
 
-The cross-section toolbar button enters `Mode::Shape_cross_section`. Entering the mode snapshots any selected solids first (selection-mode and sketch-faint redisplay Erase AIS selection), restores them after that sync, and calls `Shp_cross_section::preview` (blocking) with the snapshot. While the mode is active, Options updates the yellow plane annotation immediately on plane/offset/hide-back changes (`request_preview`), then `poll`s a background section job (desktop `std::async`; WASM chunks one solid per frame). At most one running job plus one pending (latest only); moving the slider cancels/coalesces work so the UI stays responsive. **Hide back side** attaches a temporary per-shape `Graphic3d_ClipPlane` for display only. **Clip** runs a half-space `BRepAlgoAPI_Common`, deletes the input solids, and adds clipped replacements (`Shape_replace_delta`). Temporary AIS and jobs are cleared when the mode is left, when the selection becomes empty, after a successful **Clip**, or on `clear()`.
+The cross-section toolbar button enters `Mode::Shape_cross_section`. Entering the mode snapshots any selected solids first (selection-mode and sketch-faint redisplay Erase AIS selection), restores them after that sync, and calls `Shp_cross_section::preview` (blocking) with the snapshot. While the mode is active, Options updates the yellow plane annotation immediately on plane/offset/hide-back changes (`request_preview`), then `poll`s a background section job (desktop `std::async`; WASM chunks one solid per frame). At most one running job plus one pending (latest only); moving the slider cancels/coalesces work so the UI stays responsive. **Hide back side** attaches a temporary per-shape `Graphic3d_ClipPlane` for display only. **Clip** runs a half-space `BRepAlgoAPI_Common`, deletes the input solids, and adds clipped replacements (`Shape_replace_delta`). **Cross section sketch** imports cached section line/circle edges into a new sketch (`Sketch_struct_delta::Add`) and switches to sketch inspection. Temporary AIS and jobs are cleared when the mode is left, when the selection becomes empty, after a successful **Clip**, or on `clear()`.
 
 ## Typical developer usage
 

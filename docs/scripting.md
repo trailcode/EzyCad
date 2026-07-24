@@ -47,7 +47,7 @@ ezy.Shp
 | Method                          | Purpose                                        |
 | ------------------------------- | ---------------------------------------------- |
 | `ezy.log(msg)`                  | Print to the console and the main **Log** pane |
-| `ezy.msg(text)`                 | Show a status message                          |
+| `ezy.msg(text)`                 | Status toast and append to the main **Log** pane |
 | `ezy.get_mode()`                | Current application mode name (string)         |
 | `ezy.set_mode(name)`            | Switch mode by name                            |
 | `ezy.save_occt_view_settings()` | Write settings JSON (including view colors)    |

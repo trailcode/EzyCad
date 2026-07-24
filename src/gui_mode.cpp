@@ -798,6 +798,10 @@ void GUI::options_shape_cross_section_mode_()
   if (ImGui::Checkbox("Hide back side", &hide_back_side))
     section.set_hide_back_side(hide_back_side);
 
+  bool show_section_outline = section.get_show_section_outline();
+  if (ImGui::Checkbox("Show section outline", &show_section_outline))
+    section.set_show_section_outline(show_section_outline);
+
   double     offset_min = -1.0;
   double     offset_max = 1.0;
   const bool have_range = section.try_get_offset_range_display(offset_min, offset_max);
@@ -853,6 +857,14 @@ void GUI::options_shape_cross_section_mode_()
   if (ImGui::Button("Clip"))
   {
     const Status status = section.clip_selected();
+    show_message(status.message());
+  }
+  ImGui::EndDisabled();
+
+  ImGui::BeginDisabled(!section.has_preview() || section.section_busy());
+  if (ImGui::Button("Cross section sketch"))
+  {
+    const Status status = m_view->create_sketch_from_cross_section();
     show_message(status.message());
   }
   ImGui::EndDisabled();

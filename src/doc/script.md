@@ -109,7 +109,7 @@ Aliases: global `view` == `ezy.view`; `Shp` == `ezy.Shp`; `view.add_sketch` / `f
 | Method                          | C++ delegate                           |
 | ------------------------------- | -------------------------------------- |
 | `ezy.log(msg)`                  | `GUI::log_message` + console history   |
-| `ezy.msg(text)`                 | `GUI::show_message`                    |
+| `ezy.msg(text)`                 | `GUI::show_message` (toast + Log)      |
 | `ezy.get_mode()`                | `GUI::get_mode()` -> mode name string  |
 | `ezy.set_mode(name)`            | `GUI::set_mode(mode_from_string(...))` |
 | `ezy.save_occt_view_settings()` | `GUI::save_occt_view_settings()`       |

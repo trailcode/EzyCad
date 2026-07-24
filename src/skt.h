@@ -163,6 +163,8 @@ public:
 
   /// Add a linear edge between plane points (scripting / import).
   void add_linear_edge(const gp_Pnt2d& pt_a, const gp_Pnt2d& pt_b);
+  /// Add a circular arc through plane points start, mid, end (scripting / import).
+  void add_arc_circle(const gp_Pnt2d& pt_a, const gp_Pnt2d& pt_mid, const gp_Pnt2d& pt_c);
   /// Rebuild closed-face topology after bulk edge import.
   void rebuild_faces();
 
