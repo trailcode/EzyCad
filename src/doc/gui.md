@@ -60,7 +60,7 @@ Constants and ranges live in `gui.h` (`k_gui_ui_verbosity_*`, dimension defaults
 
 ### Dist / angle edit popups
 
-Tab and Shift+Tab in the 3D view open numeric entry via `GUI::set_dist_edit` / `set_angle_edit`. While active (`is_dist_or_angle_edit_active()`), keys route to `on_key()` instead of ImGui text fields (`main` checks this).
+Tab and Shift+Tab in the 3D view open numeric entry via `GUI::set_dist_edit` / `set_angle_edit` (sketch / extrude). Move and Rotate skip that path and handle Tab in their mode key handlers (`show_dist_edit` / `show_angle_edit`). The angle popup shows a `deg` suffix. While active (`is_dist_or_angle_edit_active()`), keys route to `on_key()` instead of ImGui text fields (`main` checks this).
 
 ## Architecture
 
@@ -134,8 +134,8 @@ Overlay popups (`FloatEdit`, `AngleEdit`, `MessageStatus`, modals) keep `NoSaved
 | Ctrl+Z / Ctrl+Shift+Z / Ctrl+Y    |                     | `Occt_view::undo` / `redo`                                                                                              |
 | `1`-`9` / numpad `1`-`9`          | `Mode::Normal` only | `set_shp_selection_mode` (TopAbs enum index)                                                                            |
 | Esc                               |                     | `cancel_underlay_calib_`, `Occt_view::cancel`, hide dist/angle edit                                                     |
-| Tab                               |                     | `Occt_view::dimension_input`                                                                                            |
-| Shift+Tab                         |                     | `Occt_view::angle_input`                                                                                                |
+| Tab                               | not Move/Rotate     | `Occt_view::dimension_input` (Move/Rotate: mode handler)                                                                |
+| Shift+Tab                         | not Move/Rotate     | `Occt_view::angle_input`                                                                                                |
 | Enter                             |                     | hide edits, `Occt_view::on_enter`                                                                                       |
 | D                                 |                     | `Mode::Sketch_dim_anno`                                                                                                 |
 | Shift+D / Delete / Backspace      |                     | `Occt_view::delete_selected`                                                                                            |

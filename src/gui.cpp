@@ -848,6 +848,8 @@ void GUI::dist_edit_()
   // Text field: InputFloat applies printf rounding so typed digits can disagree with m_dist_val.
   const bool text_changed = ImGui::InputText("##dist_edit_text", m_dist_text_buf.data(), m_dist_text_buf.size(),
                                              ImGuiInputTextFlags_CharsDecimal | ImGuiInputTextFlags_CharsScientific);
+  // Snapshot before unit suffix Text; that widget becomes LastItem and would hide Enter/click-away commit.
+  const bool deactivated_after_edit = ImGui::IsItemDeactivatedAfterEdit();
 
   ImGui::SameLine(0.0f, ImGui::GetStyle().ItemInnerSpacing.x);
   ImGui::TextUnformatted(m_view->project_unit_suffix());
@@ -855,7 +857,7 @@ void GUI::dist_edit_()
   if (text_changed && parse_dist_text_to_float_(m_dist_text_buf.data(), m_dist_val))
     m_dist_callback(m_dist_val, false);
 
-  if (ImGui::IsItemDeactivatedAfterEdit() && m_dist_callback)
+  if (deactivated_after_edit && m_dist_callback)
   {
     if (ImGui::IsKeyPressed(ImGuiKey_Escape))
     {
@@ -1012,11 +1014,16 @@ void GUI::angle_edit_()
 
   const bool text_changed = ImGui::InputText("##angle_edit_text", m_angle_text_buf.data(), m_angle_text_buf.size(),
                                              ImGuiInputTextFlags_CharsDecimal | ImGuiInputTextFlags_CharsScientific);
+  // Snapshot before "deg" Text; that widget becomes LastItem and would hide Enter/click-away commit.
+  const bool deactivated_after_edit = ImGui::IsItemDeactivatedAfterEdit();
+
+  ImGui::SameLine(0.0f, ImGui::GetStyle().ItemInnerSpacing.x);
+  ImGui::TextUnformatted("deg");
 
   if (text_changed && parse_dist_text_to_float_(m_angle_text_buf.data(), m_angle_val))
     m_angle_callback(m_angle_val, false);
 
-  if (ImGui::IsItemDeactivatedAfterEdit() && m_angle_callback)
+  if (deactivated_after_edit && m_angle_callback)
   {
     if (ImGui::IsKeyPressed(ImGuiKey_Escape))
     {
