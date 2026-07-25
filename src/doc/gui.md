@@ -163,7 +163,7 @@ Always calls `m_view->on_mouse_move(screen_coords)` first.
 | Event                       | Handler                                                                                                              |
 | --------------------------- | -------------------------------------------------------------------------------------------------------------------- |
 | LMB (underlay calib active) | `try_underlay_calib_click_` (early return)                                                                           |
-| LMB                         | `m_view->on_mouse_button` then `on_left_click_`                                                                      |
+| LMB                         | `m_view->on_mouse_button` then `on_left_click_` (skipped when extrude finalize already consumed the press)           |
 | RMB press                   | `finalize_elm` for line / multi-line sketch modes                                                                    |
 | LMB in `on_left_click_`     | Mode-specific: transform finalize, sketch `add_sketch_pt`, fillet/chamfer click, polar dup `add_point`, extrude pick |
 

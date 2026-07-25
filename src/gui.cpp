@@ -3741,12 +3741,18 @@ void GUI::on_mouse_button(int button, int action, int mods)
       return;
     }
 
+  // Sample before the view call: Occt_view finalizes an active extrude on LMB press and clears
+  // the session. Skipping on_left_click_ prevents the same click from re-picking the face.
+  const bool extrude_finalize_on_press =
+      button == GLFW_MOUSE_BUTTON_LEFT && action == GLFW_PRESS && mods == 0 &&
+      m_mode == Mode::Sketch_face_extrude && m_view->shp_extrude().has_active_extrusion();
+
   m_view->on_mouse_button(button, action, mods);
 
   m_view->on_mouse_move(screen_coords);
   m_view->ctx().UpdateCurrentViewer();
 
-  if (button == GLFW_MOUSE_BUTTON_LEFT && action == GLFW_PRESS && mods == 0)
+  if (button == GLFW_MOUSE_BUTTON_LEFT && action == GLFW_PRESS && mods == 0 && !extrude_finalize_on_press)
     on_left_click_(screen_coords);
 
   else if (button == GLFW_MOUSE_BUTTON_RIGHT && action == GLFW_PRESS && mods == 0)

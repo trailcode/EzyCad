@@ -69,7 +69,6 @@ void Shp_extrude::sketch_face_extrude(const ScreenCoords& screen_coords, bool is
 
 void Shp_extrude::finalize()
 {
-  DBG_MSG("");
   EZY_ASSERT(m_extruded);
   m_extruded->set_name(view().get_unique_shape_name("Shape"));
   add_shp_(m_extruded, true);
