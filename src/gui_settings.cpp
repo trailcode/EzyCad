@@ -371,6 +371,7 @@ void GUI::parse_occt_view_settings_(const std::string& content)
           if (a[i].is_number())
             out[i] = a[i].get<float>();
     };
+
     if (ov.contains("bg_color1"))
       arr3(ov["bg_color1"], bg1);
 
@@ -401,6 +402,7 @@ void GUI::parse_occt_view_settings_(const std::string& content)
       if (v.is_number())
         dst = v.get<double>();
     };
+
     apply_num("grid_step", grid_rect.step);
     if (!ov.contains("grid_step"))
     {
@@ -410,6 +412,7 @@ void GUI::parse_occt_view_settings_(const std::string& content)
       else if (ov.contains("grid_y_step"))
         apply_num("grid_y_step", grid_rect.step);
     }
+
     apply_num("grid_padding", grid_rect.grid_padding);
     if (!ov.contains("grid_padding") && ov.contains("grid_graphic_x_size"))
       // Legacy: treat old half-extent as padding margin around sketch content.
@@ -525,8 +528,10 @@ void GUI::parse_gui_panes_settings_(const std::string& content)
     {
       for (int i = 0; i < 4; ++i)
         out[i] = defaults[i];
+
       if (!g.contains(key) || !g[key].is_array())
         return;
+
       const json& a = g[key];
       for (int i = 0; i < 4; ++i)
         if (i < static_cast<int>(a.size()) && a[i].is_number())
@@ -902,6 +907,7 @@ bool GUI::settings_collapsing_header_(const char* label, bool& open_state)
     open_state = open;
     save_occt_view_settings();
   }
+
   return open;
 }
 
@@ -1208,6 +1214,7 @@ void GUI::settings_()
       if (ImGui::ColorEdit4("##shape_sel_color", m_shape_selection_color,
                             ImGuiColorEditFlags_Float | ImGuiColorEditFlags_AlphaBar))
         shape_sel_changed = true;
+
       ImGui::SameLine(0.0f, ImGui::GetStyle().ItemInnerSpacing.x);
       GUI_DOC_HELP_("Highlight color for selected 3D shapes in the viewer (edges and wires).", doc_urls::k_occt_view);
 
@@ -1253,6 +1260,7 @@ void GUI::settings_()
         m_view->set_grid_visible(grid_visible);
         save_occt_view_settings();
       }
+
       ImGui::SameLine(0.0f, ImGui::GetStyle().ItemInnerSpacing.x);
       GUI_DOC_HELP_("Show or hide the OCCT reference grid in the 3D view. When shown, the grid lies on the active "
                     "sketch plane. Click ? to open the user guide.",
@@ -1283,6 +1291,7 @@ void GUI::settings_()
       const double step_min_ui = 1e-6;
       if (ImGui::DragScalar("##gstep", ImGuiDataType_Double, &step_ui, spd_s, &step_min_ui, nullptr, "%.8g"))
         geom_changed = true;
+
       ImGui::SameLine(0.0f, ImGui::GetStyle().ItemInnerSpacing.x);
       ImGui::TextUnformatted(m_view->project_unit_suffix());
 
@@ -1294,6 +1303,7 @@ void GUI::settings_()
       const double padding_min_ui = 0.0;
       if (ImGui::DragScalar("##gpad", ImGuiDataType_Double, &padding_ui, spd_extent, &padding_min_ui, nullptr, "%.8g"))
         geom_changed = true;
+
       ImGui::SameLine(0.0f, ImGui::GetStyle().ItemInnerSpacing.x);
       ImGui::TextUnformatted(m_view->project_unit_suffix());
 
@@ -1310,6 +1320,7 @@ void GUI::settings_()
       ImGui::TableSetColumnIndex(1);
       if (ImGui::DragScalar("##ggz", ImGuiDataType_Double, &graphic_z_off_ui, spd_m, nullptr, nullptr, "%.8g"))
         geom_changed = true;
+
       ImGui::SameLine(0.0f, ImGui::GetStyle().ItemInnerSpacing.x);
       ImGui::TextUnformatted(m_view->project_unit_suffix());
 
@@ -1356,6 +1367,7 @@ void GUI::settings_()
         if (ImGui::ColorEdit4("##sketch_edge_color", m_sketch_edge_color,
                               ImGuiColorEditFlags_Float | ImGuiColorEditFlags_AlphaBar))
           appear_changed = true;
+
         ImGui::SameLine(0.0f, ImGui::GetStyle().ItemInnerSpacing.x);
         GUI_DOC_HELP_("Color and opacity of edges on the current sketch (alpha = opacity).", nullptr);
 
@@ -1385,6 +1397,7 @@ void GUI::settings_()
         if (ImGui::ColorEdit4("##sketch_edge_sel_color", m_sketch_edge_selection_color,
                               ImGuiColorEditFlags_Float | ImGuiColorEditFlags_AlphaBar))
           appear_changed = true;
+
         ImGui::SameLine(0.0f, ImGui::GetStyle().ItemInnerSpacing.x);
         GUI_DOC_HELP_("Color and opacity for selected sketch edges.", nullptr);
 
@@ -1396,6 +1409,7 @@ void GUI::settings_()
         if (ImGui::ColorEdit4("##sketch_edge_hl_color", m_sketch_edge_highlight_color,
                               ImGuiColorEditFlags_Float | ImGuiColorEditFlags_AlphaBar))
           appear_changed = true;
+
         ImGui::SameLine(0.0f, ImGui::GetStyle().ItemInnerSpacing.x);
         GUI_DOC_HELP_("Color and opacity for mouse-over (dynamic) highlight on sketch edges.", nullptr);
 
@@ -1407,6 +1421,7 @@ void GUI::settings_()
         if (ImGui::ColorEdit4("##sketch_face_color", m_sketch_face_color,
                               ImGuiColorEditFlags_Float | ImGuiColorEditFlags_AlphaBar))
           appear_changed = true;
+
         ImGui::SameLine(0.0f, ImGui::GetStyle().ItemInnerSpacing.x);
         GUI_DOC_HELP_("Fill color and opacity of closed faces on the current sketch.", nullptr);
 
@@ -1418,6 +1433,7 @@ void GUI::settings_()
         if (ImGui::ColorEdit4("##sketch_face_sel_color", m_sketch_face_selection_color,
                               ImGuiColorEditFlags_Float | ImGuiColorEditFlags_AlphaBar))
           appear_changed = true;
+
         ImGui::SameLine(0.0f, ImGui::GetStyle().ItemInnerSpacing.x);
         GUI_DOC_HELP_("Fill color and opacity for selected sketch faces.", nullptr);
 
@@ -1429,6 +1445,7 @@ void GUI::settings_()
         if (ImGui::ColorEdit4("##sketch_face_hl_color", m_sketch_face_highlight_color,
                               ImGuiColorEditFlags_Float | ImGuiColorEditFlags_AlphaBar))
           appear_changed = true;
+
         ImGui::SameLine(0.0f, ImGui::GetStyle().ItemInnerSpacing.x);
         GUI_DOC_HELP_("Fill color and opacity for mouse-over (dynamic) highlight on sketch faces.", nullptr);
 
@@ -1444,6 +1461,7 @@ void GUI::settings_()
             m_sketch_shape_faint_enabled = faint;
             appear_changed               = true;
           }
+
           ImGui::SameLine(0.0f, ImGui::GetStyle().ItemInnerSpacing.x);
           ImGui::TextUnformatted("Enabled");
         }
@@ -1492,6 +1510,7 @@ void GUI::settings_()
                 appear_changed               = true;
               }
             }
+
             ImGui::SameLine(0.0f, ImGui::GetStyle().ItemInnerSpacing.x);
             GUI_DOC_HELP_("How solid faint shapes look in sketch mode (higher = closer to normal inspection "
                           "opacity). Applies to Ghost and Wire styles.",
@@ -1511,6 +1530,7 @@ void GUI::settings_()
             m_extrude_fast_preview = fast;
             appear_changed         = true;
           }
+
           ImGui::SameLine(0.0f, ImGui::GetStyle().ItemInnerSpacing.x);
           ImGui::TextUnformatted("Enabled");
         }
@@ -1657,6 +1677,7 @@ void GUI::settings_()
               "Center on dimension line",
               "Automatic",
           };
+
           int h = m_edge_dim_label_h;
           ImGui::SetNextItemWidth(200.0f);
           if (ImGui::BeginCombo("##edge_dim_h", k_edge_dim_label_placement[static_cast<size_t>(h)],
@@ -1668,6 +1689,7 @@ void GUI::settings_()
                 m_edge_dim_label_h = i;
                 dim_changed        = true;
               }
+
             ImGui::EndCombo();
           }
         }
@@ -2055,10 +2077,12 @@ void GUI::settings_()
       ImGui::TextWrapped("Last opened path: %s", m_last_opened_project_path.c_str());
     else
       ImGui::TextDisabled("(No path saved yet.)");
+
     ImGui::Spacing();
 #endif
     if (ImGui::Button("Save current as startup project"))
       save_startup_project_();
+
     ImGui::SameLine();
     if (ImGui::Button("Clear saved startup"))
       clear_saved_startup_project_();
@@ -2073,9 +2097,7 @@ void GUI::settings_()
   if (ImGui::Button("Defaults"))
   {
     std::string content = settings::load_defaults();
-    if (content.empty())
-      show_message("Failed to load default settings.");
-    else
+    if (!content.empty())
     {
       try
       {
@@ -2111,6 +2133,8 @@ void GUI::settings_()
         show_message("Failed to apply default settings.");
       }
     }
+    else
+      show_message("Failed to load default settings.");
   }
 
   ImGui::End();
