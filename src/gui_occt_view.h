@@ -211,9 +211,6 @@ public:
   void    sketch_face_extrude(const ScreenCoords& screen_coords, bool is_mouse_move);
   /// Enter face-extrude drag for a Sketch List face (after mode is already Sketch_face_extrude).
   bool begin_sketch_face_extrude(const AIS_Shape_ptr& face);
-  /// True once if the last LMB press finalized an active extrude (so GUI skips on_left_click_
-  /// and does not immediately start a new extrude under the cursor). Clears on read.
-  bool consume_extrude_finalize_press();
 
   std::list<Shp_ptr>& get_shapes();
   std::string         get_unique_shape_name(const char* base_name) const;
@@ -382,8 +379,6 @@ private:
 
   // Sketch related
   void create_sketch_from_planar_face_(const ScreenCoords& screen_coords);
-  void finalize_sketch_extrude_();
-  bool cancel_sketch_extrude_();
   void create_default_sketch_();
   void ensure_current_sketch_();
   void remove_selected_length_dimensions_from_sketches_();
@@ -504,9 +499,6 @@ private:
   /// True when LMB press will finalize Move/Rotate/Scale (skip Press/Release so AIS SelectDetected
   /// on release cannot replace the restored multi-selection with the shape under the cursor).
   bool m_transform_finalize_lmb_skipped_view_controller{false};
-  /// Set when an LMB press finalized an active extrude; consumed by the GUI so the same
-  /// press does not also begin a new extrude (see consume_extrude_finalize_press).
-  bool m_extrude_finalized_on_press{false};
   // OCCT view colors; defaults match what we render (set explicitly in init_viewer())
   glm::vec3             m_bg_color1{0.037552f, 0.040503f, 0.042471f};
   glm::vec3             m_bg_color2{0.043440f, 0.174068f, 0.239382f};

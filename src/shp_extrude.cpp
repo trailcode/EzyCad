@@ -87,7 +87,6 @@ void Shp_extrude::sketch_face_extrude(const ScreenCoords& screen_coords, bool is
 
 void Shp_extrude::finalize()
 {
-  DBG_MSG("");
   EZY_ASSERT(m_extruded);
   EZY_ASSERT(m_last_preview_dist);
 

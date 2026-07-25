@@ -586,7 +586,7 @@ void Occt_view::cancel(Set_parent_mode set_parent_mode)
     break;
 
   default:
-    operation_canceled |= cancel_sketch_extrude_();
+    operation_canceled |= m_shp_extrude.cancel();
     operation_canceled |= curr_sketch().cancel_elm();
     break;
   }
@@ -637,14 +637,6 @@ void Occt_view::create_sketch_from_planar_face_(const ScreenCoords& screen_coord
       gui().show_message("Error: Selected face is not planar. Please select a planar face.");
   }
 }
-
-void Occt_view::finalize_sketch_extrude_()
-{
-  // Extrude finalize pushes Shape_add_delta after the solid is registered.
-  m_shp_extrude.finalize();
-}
-
-bool Occt_view::cancel_sketch_extrude_() { return m_shp_extrude.cancel(); }
 
 void Occt_view::create_default_sketch_()
 {
@@ -1846,13 +1838,6 @@ void Occt_view::sketch_face_extrude(const ScreenCoords& screen_coords, bool is_m
 
 bool Occt_view::begin_sketch_face_extrude(const AIS_Shape_ptr& face) { return m_shp_extrude.begin_face_extrude(face); }
 
-bool Occt_view::consume_extrude_finalize_press()
-{
-  const bool finalized         = m_extrude_finalized_on_press;
-  m_extrude_finalized_on_press = false;
-  return finalized;
-}
-
 void Occt_view::delete_selected() { delete_shapes(get_selected()); }
 
 void Occt_view::delete_shapes(std::vector<AIS_Shape_ptr> to_delete)
@@ -2427,10 +2412,7 @@ void Occt_view::on_mouse_button(int theButton, int theAction, int theMods)
 
     if (m_shp_extrude.has_active_extrusion())
     {
-      finalize_sketch_extrude_();
-      // This press consumed the extrude; tell the GUI not to also run on_left_click_
-      // (which would immediately pick a new face and begin another extrude).
-      m_extrude_finalized_on_press = true;
+      m_shp_extrude.finalize();
       return;
     }
 
@@ -3034,18 +3016,20 @@ void Occt_view::on_mode()
   // Move/rotate/scale preview uses SetLocalTransformation without Redisplay, so selection BVHs
   // stay at the pre-transform pose. Disable AIS_ViewController dynamic highlight (skips MoveTo
   // while idle) so hover cannot paint a wireframe ghost there; orbit/pan still get mouse updates.
-  const bool transform_preview = get_mode() == Mode::Move || get_mode() == Mode::Rotate || get_mode() == Mode::Scale;
+  const Mode mode = get_mode();
+  const bool transform_preview =
+      mode == Mode::Move || mode == Mode::Rotate || mode == Mode::Scale;
   SetAllowHighlight(!transform_preview);
   if (transform_preview && !m_ctx.IsNull())
     m_ctx->ClearDetected(false);
 
-  // Snapshot before selection-mode / faint redisplay Erase drops AIS selection. Move/Rotate/Scale
-  // and Cross-section operate on the pre-switch selection, so it is restored after the redisplay.
-  const bool                 preserve_enter_selection = transform_preview || get_mode() == Mode::Shape_cross_section;
+  // Snapshot before selection-mode / faint redisplay Erase drops AIS selection.
+  // Move / rotate / scale / cross-section need the solids that were selected on enter.
+  const bool                 preserve_enter_selection = transform_preview || mode == Mode::Shape_cross_section;
   const std::vector<Shp_ptr> enter_selection          = preserve_enter_selection ? get_selected_shps() : std::vector<Shp_ptr>{};
 
   shp_polar_dup().reset();
-  if (get_mode() != Mode::Shape_cross_section)
+  if (mode != Mode::Shape_cross_section)
     shp_cross_section().clear();
 
   for (Sketch_ptr& s : m_sketches)
@@ -3130,7 +3114,7 @@ void Occt_view::on_mode()
   // (selection-mode Erase/Activate can leave multi-select incomplete).
   if (transform_preview)
   {
-    switch (get_mode())
+    switch (mode)
     {
     case Mode::Move:
       shp_move().begin(enter_selection);
@@ -3146,7 +3130,7 @@ void Occt_view::on_mode()
     }
   }
 
-  if (get_mode() == Mode::Shape_cross_section && !enter_selection.empty())
+  if (mode == Mode::Shape_cross_section && !enter_selection.empty())
   {
     const Status status = shp_cross_section().preview(enter_selection);
     gui().show_message(status.message());

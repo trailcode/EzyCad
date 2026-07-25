@@ -64,7 +64,7 @@ Constants and ranges live in `gui.h` (`k_gui_ui_verbosity_*`, dimension defaults
 
 ### Dist / angle edit popups
 
-Tab and Shift+Tab in the 3D view open numeric entry via `GUI::set_dist_edit` / `set_angle_edit`. While active (`is_dist_or_angle_edit_active()`), keys route to `on_key()` instead of ImGui text fields (`main` checks this).
+Tab and Shift+Tab in the 3D view open numeric entry via `GUI::set_dist_edit` / `set_angle_edit` (sketch / extrude). Move and Rotate skip that path and handle Tab in their mode key handlers (`show_dist_edit` / `show_angle_edit`). The angle popup shows a `deg` suffix. While active (`is_dist_or_angle_edit_active()`), keys route to `on_key()` instead of ImGui text fields (`main` checks this).
 
 ## Architecture
 
@@ -138,8 +138,8 @@ Overlay popups (`FloatEdit`, `AngleEdit`, `MessageStatus`, modals) keep `NoSaved
 | Ctrl+Z / Ctrl+Shift+Z / Ctrl+Y    |                     | `Occt_view::undo` / `redo`                                                                                              |
 | `1`-`9` / numpad `1`-`9`          | `Mode::Normal` only | `set_shp_selection_mode` (TopAbs enum index)                                                                            |
 | Esc                               |                     | `cancel_underlay_calib_`, `Occt_view::cancel`, hide dist/angle edit                                                     |
-| Tab                               |                     | `Occt_view::dimension_input`                                                                                            |
-| Shift+Tab                         |                     | `Occt_view::angle_input`                                                                                                |
+| Tab                               | not Move/Rotate     | `Occt_view::dimension_input` (Move/Rotate: mode handler)                                                                |
+| Shift+Tab                         | not Move/Rotate     | `Occt_view::angle_input`                                                                                                |
 | Enter                             |                     | hide edits, `Occt_view::on_enter`                                                                                       |
 | D                                 |                     | `Mode::Sketch_dim_anno`                                                                                                 |
 | Shift+D / Delete / Backspace      |                     | `Occt_view::delete_selected`                                                                                            |
@@ -167,7 +167,7 @@ Always calls `m_view->on_mouse_move(screen_coords)` first.
 | Event                       | Handler                                                                                                              |
 | --------------------------- | -------------------------------------------------------------------------------------------------------------------- |
 | LMB (underlay calib active) | `try_underlay_calib_click_` (early return)                                                                           |
-| LMB                         | `m_view->on_mouse_button` then `on_left_click_`                                                                      |
+| LMB                         | `m_view->on_mouse_button` then `on_left_click_` (skipped when extrude finalize already consumed the press)           |
 | RMB press                   | `finalize_elm` for line / multi-line sketch modes                                                                    |
 | LMB in `on_left_click_`     | Mode-specific: transform finalize, sketch `add_sketch_pt`, fillet/chamfer click, polar dup `add_point`, extrude pick |
 
@@ -239,9 +239,9 @@ User-visible key tables: [`docs/usage-settings.md`](../../docs/usage-settings.md
 
 Toolbar buttons hold `std::variant<Mode, Command>`. `Command` (`Shape_cut`, `Shape_fuse`, `Shape_common`) runs immediately on click via `shp_cut` / `shp_fuse` / `shp_common` (no persistent mode).
 
-Mode buttons call `set_mode`. Active state tracks `m_mode`.
+Mode buttons call `set_mode`. Active state tracks `m_mode`. Entering Move / Rotate / Scale / cross-section snapshots selected solids before selection-mode and sketch-faint redisplay (those Erase AIS selection) and restores them afterward so pre-selection is honored.
 
-The cross-section toolbar button enters `Mode::Shape_cross_section`. Entering the mode snapshots any selected solids first (selection-mode and sketch-faint redisplay Erase AIS selection), restores them after that sync, and calls `Shp_cross_section::preview` (blocking) with the snapshot. While the mode is active, Options updates the yellow plane annotation immediately on plane/offset/hide-back changes (`request_preview`), then `poll`s a background section job (desktop `std::async`; WASM chunks one solid per frame). At most one running job plus one pending (latest only); moving the slider cancels/coalesces work so the UI stays responsive. **Hide back side** attaches a temporary per-shape `Graphic3d_ClipPlane` for display only. **Clip** runs a half-space `BRepAlgoAPI_Common`, deletes the input solids, and adds clipped replacements (`Shape_replace_delta`). **Cross section sketch** imports cached section line/circle edges into a new sketch (`Sketch_struct_delta::Add`) and switches to sketch inspection. Temporary AIS and jobs are cleared when the mode is left, when the selection becomes empty, after a successful **Clip**, or on `clear()`.
+The cross-section toolbar button enters `Mode::Shape_cross_section`. After the shared selection restore, it calls `Shp_cross_section::preview` (blocking) with the snapshot. While the mode is active, Options updates the yellow plane annotation immediately on plane/offset/hide-back changes (`request_preview`), then `poll`s a background section job (desktop `std::async`; WASM chunks one solid per frame). At most one running job plus one pending (latest only); moving the slider cancels/coalesces work so the UI stays responsive. **Hide back side** attaches a temporary per-shape `Graphic3d_ClipPlane` for display only. **Clip** runs a half-space `BRepAlgoAPI_Common`, deletes the input solids, and adds clipped replacements (`Shape_replace_delta`). **Cross section sketch** imports cached section line/circle edges into a new sketch (`Sketch_struct_delta::Add`) and switches to sketch inspection. Temporary AIS and jobs are cleared when the mode is left, when the selection becomes empty, after a successful **Clip**, or on `clear()`.
 
 ## Typical developer usage
 

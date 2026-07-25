@@ -205,7 +205,7 @@ Status Shp_rotate::show_angle_edit(const ScreenCoords& screen_coords)
     if (is_final)
       finalize();
   };
-  gui().set_dist_edit(float(to_degrees(m_angle)), std::move(std::function<void(float, bool)>(angle_edit)));
+  gui().set_angle_edit(float(to_degrees(m_angle)), std::move(std::function<void(float, bool)>(angle_edit)));
 
   return Status::ok();
 }
