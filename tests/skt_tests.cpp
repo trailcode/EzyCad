@@ -688,6 +688,75 @@ TEST_F(Sketch_test, ExtrudeSketchFace_EzyCad)
   EXPECT_EQ(shapes.back()->Shape().ShapeType(), TopAbs_SOLID);
 }
 
+TEST_F(Sketch_test, ExtrudeSketchFace_Twist_solid)
+{
+  gp_Pln default_plane(gp::Origin(), gp::DZ());
+  Sketch sketch("TwistExtrude", view(), default_plane);
+
+  gp_Pnt2d p1(0, 0), p2(10, 0), p3(10, 5), p4(0, 5);
+  Sketch_access::add_edge_(sketch, p1, p2);
+  Sketch_access::add_edge_(sketch, p2, p3);
+  Sketch_access::add_edge_(sketch, p3, p4);
+  Sketch_access::add_edge_(sketch, p4, p1);
+  Sketch_access::update_faces_(sketch);
+  const auto& faces = Sketch_access::get_faces(sketch);
+  ASSERT_EQ(faces.size(), 1);
+
+  gui().set_mode(Mode::Sketch_face_extrude);
+  Shp_extrude& extrude = view().shp_extrude();
+  Shp_extrude_access::set_twist(extrude, true);
+  Shp_extrude_access::begin_face_extrude(extrude, faces[0], 8.0);
+  ASSERT_TRUE(extrude.has_active_extrusion());
+  EXPECT_FALSE(extrude.is_twist_phase());
+
+  Shp_extrude_access::lock_height_begin_twist(extrude);
+  EXPECT_TRUE(extrude.is_twist_phase());
+
+  const double twist_rad = to_radians(45.0);
+  Shp_extrude_access::set_twist_angle_rad(extrude, twist_rad);
+
+  const TopoDS_Shape body =
+      Shp_extrude_access::make_body(extrude, 8.0, Plane_side::Front, twist_rad);
+  EXPECT_EQ(body.ShapeType(), TopAbs_SOLID);
+
+  extrude.finalize();
+  auto& shapes = view().get_shapes();
+  ASSERT_FALSE(shapes.empty());
+  EXPECT_EQ(shapes.back()->Shape().ShapeType(), TopAbs_SOLID);
+}
+
+TEST_F(Sketch_test, ExtrudeSketchFace_Twist_both_sides_solid)
+{
+  gp_Pln default_plane(gp::Origin(), gp::DZ());
+  Sketch sketch("TwistBothSides", view(), default_plane);
+
+  gp_Pnt2d p1(-4, -2), p2(4, -2), p3(4, 2), p4(-4, 2);
+  Sketch_access::add_edge_(sketch, p1, p2);
+  Sketch_access::add_edge_(sketch, p2, p3);
+  Sketch_access::add_edge_(sketch, p3, p4);
+  Sketch_access::add_edge_(sketch, p4, p1);
+  Sketch_access::update_faces_(sketch);
+  const auto& faces = Sketch_access::get_faces(sketch);
+  ASSERT_EQ(faces.size(), 1);
+
+  gui().set_mode(Mode::Sketch_face_extrude);
+  Shp_extrude& extrude = view().shp_extrude();
+  Shp_extrude_access::set_twist(extrude, true);
+  Shp_extrude_access::set_both_sides(extrude, true);
+  Shp_extrude_access::begin_face_extrude(extrude, faces[0], 10.0);
+  Shp_extrude_access::lock_height_begin_twist(extrude);
+
+  // Symmetric both-sides: +/- half of 90 deg at the ends.
+  const double twist_rad = to_radians(90.0);
+  const TopoDS_Shape body =
+      Shp_extrude_access::make_body(extrude, 10.0, Plane_side::Front, twist_rad);
+  EXPECT_EQ(body.ShapeType(), TopAbs_SOLID);
+
+  Shp_extrude_access::set_twist_angle_rad(extrude, twist_rad);
+  extrude.finalize();
+  EXPECT_EQ(view().get_shapes().back()->Shape().ShapeType(), TopAbs_SOLID);
+}
+
 TEST_F(Sketch_test, AddNode_splits_linear_edge_interior)
 {
   gp_Pln default_plane(gp::Origin(), gp::DZ());

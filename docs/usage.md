@@ -493,8 +493,9 @@ The extrude tool allows you to create 3D solid shapes by extruding 2D sketch fac
 | **Orthographic camera**          | Extrude mode forces **orthographic** projection (same as other sketch tools) so extrusion height is easier to judge without perspective foreshortening                                                                                                                                                                   |
 | **Direct face selection**        | Click directly on a sketch face to select it for extrusion, or use **`E`** / right-click **Extrude** on a face in the [Sketch List](#sketch-list)                                                                                                                                                                        |
 | **Automatic view adjustment**    | The view automatically rotates if the face plane is parallel to the view plane (within 5 degrees), providing better visibility for the extrusion operation                                                                                                                                                               |
-| **Real-time preview**            | See the extrusion update while dragging. Simple faces show a shaded solid. Dense faces (many edges) can use a fast preview that moves face copies - enable or tune this in **Settings -> Sketch -> Appearance -> Extrude fast preview**. With **Both sides**, both ends are annotated. Finalize always creates the solid |
+| **Real-time preview**            | See the extrusion update while dragging. Simple faces show a shaded solid. Dense faces (many edges) can use a fast preview that moves face copies (translate, and rotate when **Twist** is on) - enable or tune this in **Settings -> Sketch -> Appearance -> Extrude fast preview**. With **Both sides**, both ends are annotated. Finalize always creates the solid |
 | **Interactive distance control** | Drag the mouse to adjust extrusion distance, or use the distance input dialog (<kbd>Tab</kbd> key) for precise control                                                                                                                                                                                                   |
+| **Twist**                        | Options **Twist**: after locking height (click or <kbd>Tab</kbd> commit), drag to rotate the far end about the face center, or <kbd>Shift+Tab</kbd> for an exact angle. With **Both sides**, the mid-plane stays unrotated and each end twists by half the angle in opposite directions                                      |
 | **Distance annotation**          | A dimension annotation displays the current extrusion distance                                                                                                                                                                                                                                                           |
 | **Bidirectional extrusion**      | The extrusion direction is determined by which side of the face plane you move the mouse to                                                                                                                                                                                                                              |
 
@@ -507,24 +508,26 @@ The extrude tool allows you to create 3D solid shapes by extruding 2D sketch fac
    - **Mouse drag**: Move the mouse to adjust the extrusion distance in real-time
    - **Precise input**: Press <kbd>Tab</kbd> to open the distance input dialog and enter an exact extrusion distance
    - The distance annotation shows the current extrusion distance
-4. **Finalize**: Click the <kbd>left mouse button</kbd> to confirm and create the extruded shape
-5. **Cancel**: Press <kbd>Esc</kbd> at any time to cancel the extrusion operation
+4. **Twist (optional)**: Enable **Twist** in Options. After locking height with a left click (or committing distance with <kbd>Tab</kbd>), move the mouse around the face center to set the twist angle, or press <kbd>Shift+Tab</kbd> for degrees
+5. **Finalize**: Click the <kbd>left mouse button</kbd> to confirm and create the extruded shape (second click when Twist is on, after the height lock)
+6. **Cancel**: Press <kbd>Esc</kbd> at any time to cancel the extrusion operation
 
 **Keyboard Shortcuts:**
 
-|                  |                                                           |
-| ---------------: | --------------------------------------------------------- |
-| <kbd>E</kbd>     | Activate extrude mode                                     |
-| <kbd>Tab</kbd>   | Open distance input dialog for precise extrusion distance |
-| <kbd>Esc</kbd>   | Cancel current extrusion operation                        |
-| <kbd>Enter</kbd> | Finalize extrusion (when using distance input)            |
+|                      |                                                                                |
+| -------------------: | ------------------------------------------------------------------------------ |
+| <kbd>E</kbd>         | Activate extrude mode                                                          |
+| <kbd>Tab</kbd>       | Open distance input for extrusion height (height phase)                        |
+| <kbd>Shift+Tab</kbd> | Open angle input for twist (twist phase, when **Twist** is on)                 |
+| <kbd>Esc</kbd>       | Cancel current extrusion operation                                             |
+| <kbd>Enter</kbd>     | Commit distance/angle input (height commit enters twist when **Twist** is on)  |
 
 **Tips:**
 - Extrude uses an **orthographic** camera (projection mode). Perspective from Normal mode is restored when you leave Extrude.
 - Extrude works best when the view is not directly parallel to the sketch plane - the system will automatically rotate the view if needed
 - Use the distance input dialog for precise measurements
 - The extrusion direction depends on which side of the face plane you move the mouse to
-- Dense faces (for example imported cross-section outlines) use a fast drag preview when **Settings -> Sketch -> Appearance -> Extrude fast preview** is enabled; turn it off to always drag a full shaded solid
+- Dense faces (for example imported cross-section outlines) use a fast drag preview when **Settings -> Sketch -> Appearance -> Extrude fast preview** is enabled (face copies translate, and rotate when **Twist** is on); turn it off to always drag a full shaded solid
 - Multiple faces from the same sketch can be extruded separately
 - Extruded shapes can be used in [boolean operations](#boolean-operations) (cut, fuse, common)
 
