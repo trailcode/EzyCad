@@ -947,6 +947,14 @@ void GUI::options_sketch_face_extrude_mode_()
     if (ImGui::Checkbox("##extrude_both_sides", &extrude_both_sides))
       m_view->shp_extrude().set_both_sides(extrude_both_sides);
 
+    bool extrude_twist = m_view->shp_extrude().get_twist();
+    ImGui::TableNextRow();
+    ImGui::TableSetColumnIndex(0);
+    options_right_aligned_label_("Twist");
+    ImGui::TableSetColumnIndex(1);
+    if (ImGui::Checkbox("##extrude_twist", &extrude_twist))
+      m_view->shp_extrude().set_twist(extrude_twist);
+
     const std::vector<std::string>& material_names = occt_material_combo_labels_();
     int                             current_item   = int(m_view->get_default_material().Name());
     if (current_item < 0 || current_item >= static_cast<int>(material_names.size()))
@@ -1280,6 +1288,7 @@ float GUI::options_sketch_label_col_w_() const
   if (get_mode() == Mode::Sketch_face_extrude)
   {
     sketch_label_col_w = std::max(sketch_label_col_w, ImGui::CalcTextSize("Both sides").x);
+    sketch_label_col_w = std::max(sketch_label_col_w, ImGui::CalcTextSize("Twist").x);
     sketch_label_col_w = std::max(sketch_label_col_w, ImGui::CalcTextSize("Material").x);
   }
 

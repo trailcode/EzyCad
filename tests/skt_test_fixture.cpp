@@ -196,6 +196,35 @@ void Shp_extrude_access::begin_face_extrude(Shp_extrude& extrude, const AIS_Shap
   // Height plane must not be parallel to the sketch plane or Distance stays ~0.
   extrude.m_curr_view_pln = gp_Pln(*extrude.m_to_extrude_pt, gp_Dir(0.0, 1.0, 0.0));
   extrude.m_to_extrude    = face;
+  extrude.m_phase         = Shp_extrude::Phase::Height;
+  extrude.m_twist_angle   = 0.0;
+  {
+    gp_XYZ sum(0.0, 0.0, 0.0);
+    for (const gp_Pnt& p : sketch_face->verts_3d)
+      sum += p.XYZ();
+    sum /= static_cast<double>(sketch_face->verts_3d.size());
+    extrude.m_twist_centroid = gp_Pnt(sum);
+  }
+  extrude.m_show_angle_input = false;
+  extrude.m_entered_twist_deg.reset();
 
   extrude.update_extrude_preview_(extrude_dist, extrude.m_extrude_side);
+}
+
+void Shp_extrude_access::set_twist(Shp_extrude& extrude, bool twist) { extrude.set_twist(twist); }
+
+void Shp_extrude_access::set_both_sides(Shp_extrude& extrude, bool both_sides) { extrude.set_both_sides(both_sides); }
+
+void Shp_extrude_access::lock_height_begin_twist(Shp_extrude& extrude) { extrude.lock_height_begin_twist_(); }
+
+void Shp_extrude_access::set_twist_angle_rad(Shp_extrude& extrude, double twist_rad)
+{
+  extrude.m_twist_angle = twist_rad;
+  if (extrude.m_last_preview_dist)
+    extrude.update_extrude_preview_(*extrude.m_last_preview_dist, extrude.m_extrude_side);
+}
+
+TopoDS_Shape Shp_extrude_access::make_body(Shp_extrude& extrude, double extrude_dist, Plane_side side, double twist_rad)
+{
+  return extrude.make_body_(extrude_dist, side, twist_rad);
 }

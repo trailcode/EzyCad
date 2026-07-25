@@ -145,6 +145,7 @@ double length_dimension_auto_flyout(double edge_len);
 
 /// Apply full dimension aspect (line, text, arrows, extensions). Call `Redisplay` after.
 void apply_length_dimension_style(const PrsDim_LengthDimension_ptr& dim, const Length_dimension_style& style);
+void apply_angle_dimension_style(const PrsDim_AngleDimension_ptr& dim, const Length_dimension_style& style);
 
 /// Sketch-list row hover: recolor and thicken the dimension line (call `Redisplay` after).
 void apply_length_dimension_list_hover_style(const PrsDim_LengthDimension_ptr& dim, const float hover_rgb[3],
@@ -162,6 +163,10 @@ PrsDim_LengthDimension_ptr create_distance_annotation(const gp_Pnt2d& p1, const 
                                                       const Length_dimension_style&   style,
                                                       const std::optional<gp_Pnt>&    interior_ref            = std::nullopt,
                                                       const std::vector<TopoDS_Face>* sketch_faces_for_flyout = nullptr);
+
+/// Temporary angle annotation (apex at `center`, arms through `p_ref` and `p_cur`). Label shows `degrees` with a "deg" suffix.
+PrsDim_AngleDimension_ptr create_angle_annotation(const gp_Pnt& p_ref, const gp_Pnt& center, const gp_Pnt& p_cur,
+                                                  double degrees, const Length_dimension_style& style);
 
 const gp_Pnt& closest_to_camera(const V3d_View_ptr& view, const std::vector<gp_Pnt>& pnts);
 

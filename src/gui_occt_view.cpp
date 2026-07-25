@@ -1780,6 +1780,9 @@ void Occt_view::dimension_input(const ScreenCoords& screen_coords)
   switch (get_mode())
   {
   case Mode::Sketch_face_extrude:
+    // Tab is height-only; no-op during twist phase.
+    if (m_shp_extrude.is_twist_phase())
+      return;
     m_show_dim_input = true;
     sketch_face_extrude(screen_coords, true);
     break;
@@ -1790,7 +1793,15 @@ void Occt_view::dimension_input(const ScreenCoords& screen_coords)
   }
 }
 
-void Occt_view::angle_input(const ScreenCoords& screen_coords) { curr_sketch().angle_input(screen_coords); }
+void Occt_view::angle_input(const ScreenCoords& screen_coords)
+{
+  if (get_mode() == Mode::Sketch_face_extrude)
+  {
+    m_shp_extrude.begin_angle_input(screen_coords);
+    return;
+  }
+  curr_sketch().angle_input(screen_coords);
+}
 
 double Occt_view::get_dimension_scale() const { return m_dimension_scale; }
 
@@ -2412,7 +2423,8 @@ void Occt_view::on_mouse_button(int theButton, int theAction, int theMods)
 
     if (m_shp_extrude.has_active_extrusion())
     {
-      m_shp_extrude.finalize();
+      // Height phase + Twist: lock height and enter twist. Otherwise finalize.
+      m_shp_extrude.on_left_click();
       return;
     }
 

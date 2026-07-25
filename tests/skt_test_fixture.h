@@ -19,6 +19,7 @@
 #include <gp_Pln.hxx>
 #include <gp_Pnt.hxx>
 #include <gp_Pnt2d.hxx>
+#include <TopoDS_Shape.hxx>
 
 class GUI_access
 {
@@ -75,6 +76,11 @@ public:
   static void set_curr_view_pln(Shp_extrude& extrude, const gp_Pln& pln);
   /// Start an extrude preview from a known face (bypasses AIS screen picking).
   static void begin_face_extrude(Shp_extrude& extrude, const AIS_Shape_ptr& face, double extrude_dist);
+  static void set_twist(Shp_extrude& extrude, bool twist);
+  static void set_both_sides(Shp_extrude& extrude, bool both_sides);
+  static void lock_height_begin_twist(Shp_extrude& extrude);
+  static void set_twist_angle_rad(Shp_extrude& extrude, double twist_rad);
+  static TopoDS_Shape make_body(Shp_extrude& extrude, double extrude_dist, Plane_side side, double twist_rad);
 };
 
 struct Headless_guard

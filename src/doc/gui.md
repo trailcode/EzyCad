@@ -167,7 +167,7 @@ Always calls `m_view->on_mouse_move(screen_coords)` first.
 | Event                       | Handler                                                                                                              |
 | --------------------------- | -------------------------------------------------------------------------------------------------------------------- |
 | LMB (underlay calib active) | `try_underlay_calib_click_` (early return)                                                                           |
-| LMB                         | `m_view->on_mouse_button` then `on_left_click_` (skipped when extrude finalize already consumed the press)           |
+| LMB                         | `m_view->on_mouse_button` then `on_left_click_` (skipped when extrude LMB already advanced/finalized the session)     |
 | RMB press                   | `finalize_elm` for line / multi-line sketch modes                                                                    |
 | LMB in `on_left_click_`     | Mode-specific: transform finalize, sketch `add_sketch_pt`, fillet/chamfer click, polar dup `add_point`, extrude pick |
 
@@ -194,7 +194,7 @@ Tests use `sketch_left_click` to simulate sketch LMB without ImGui mouse positio
 | `Sketch_inspection_mode`         | `options_sketch_common_`                                                                                            |
 | Each sketch tool mode            | Matching `options_sketch_*_mode_`                                                                                   |
 | `Sketch_operation_axis`          | Mirror / Revolve / Clear axis                                                                                       |
-| `Sketch_face_extrude`            | Both sides, material; help mentions Settings fast preview                                                           |
+| `Sketch_face_extrude`            | Both sides, Twist, material; help mentions Settings fast preview                                                    |
 
 Shared sketch controls (snap, midpoint nodes, place-from-center) live in `options_sketch_common_` and helpers in `gui_mode.cpp`.
 

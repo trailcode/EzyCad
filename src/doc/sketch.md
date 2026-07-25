@@ -106,7 +106,7 @@ The viewer and `GUI` forward pointer and keyboard events to the **current** sket
 | Right click (finish line / multi-line) | `GUI::on_mouse_button`       | `finalize_elm`    |
 | Mode change                            | (via `GUI::set_mode`)        | `on_mode`         |
 
-Face extrude mode (`Mode::Sketch_face_extrude`) routes mouse, Tab, and Enter through `Occt_view::sketch_face_extrude` / `Shp_extrude` instead of the sketch tool paths above.
+Face extrude mode (`Mode::Sketch_face_extrude`) routes mouse, Tab (height), Shift+Tab (twist angle when Twist is on), and Enter through `Occt_view` / `Shp_extrude` instead of the sketch tool paths above.
 
 Full GLFW -> `GUI` -> view routing: [`src/doc/gui.md`](gui.md).
 
