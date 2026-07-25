@@ -488,15 +488,15 @@ The extrude tool allows you to create 3D solid shapes by extruding 2D sketch fac
 
 **Features:**
 
-|                                  |                                                                                                                                                            |
-| -------------------------------: | ---------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **Orthographic camera**          | Extrude mode forces **orthographic** projection (same as other sketch tools) so extrusion height is easier to judge without perspective foreshortening     |
-| **Direct face selection**        | Click directly on a sketch face to select it for extrusion, or use **`E`** / right-click **Extrude** on a face in the [Sketch List](#sketch-list)          |
-| **Automatic view adjustment**    | The view automatically rotates if the face plane is parallel to the view plane (within 5 degrees), providing better visibility for the extrusion operation |
-| **Real-time preview**            | See the extruded shape update in real-time as you move the mouse                                                                                           |
-| **Interactive distance control** | Drag the mouse to adjust extrusion distance, or use the distance input dialog (<kbd>Tab</kbd> key) for precise control                                     |
-| **Distance annotation**          | A dimension annotation displays the current extrusion distance                                                                                             |
-| **Bidirectional extrusion**      | The extrusion direction is determined by which side of the face plane you move the mouse to                                                                |
+|                                  |                                                                                                                                                                                                                                                                       |
+| -------------------------------: | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Orthographic camera**          | Extrude mode forces **orthographic** projection (same as other sketch tools) so extrusion height is easier to judge without perspective foreshortening                                                                                                                |
+| **Direct face selection**        | Click directly on a sketch face to select it for extrusion, or use **`E`** / right-click **Extrude** on a face in the [Sketch List](#sketch-list)                                                                                                                     |
+| **Automatic view adjustment**    | The view automatically rotates if the face plane is parallel to the view plane (within 5 degrees), providing better visibility for the extrusion operation                                                                                                            |
+| **Real-time preview**            | See the extruded shape update in real-time as you move the mouse. The drag preview is wireframe by default for speed; enable **Shaded preview** in Options to see the shaded solid while dragging (slower on faces with many edges). The final shape is always shaded |
+| **Interactive distance control** | Drag the mouse to adjust extrusion distance, or use the distance input dialog (<kbd>Tab</kbd> key) for precise control                                                                                                                                                |
+| **Distance annotation**          | A dimension annotation displays the current extrusion distance                                                                                                                                                                                                        |
+| **Bidirectional extrusion**      | The extrusion direction is determined by which side of the face plane you move the mouse to                                                                                                                                                                           |
 
 **How to Use:**
 1. ![Design456_Extrude](res/icons/Design456_Extrude.png) **Activate Extrude Tool**: Press <kbd>E</kbd> or click the icon to enter extrude mode

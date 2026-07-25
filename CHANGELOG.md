@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Performance
+
+- **Sketch face extrude** live preview no longer sweeps a fresh solid every mouse move. It caches a height-1 prism of the picked face and stretches it along the plane normal (affinity), draws the drag preview as wireframe (shaded solid is baked on finalize), reuses the length dimension instead of recreating it, and skips redundant rebuilds when the height is unchanged. This keeps dragging responsive on dense profiles (e.g. many-arc cross-section faces). A **Shaded preview** checkbox in extrude Options restores the previous shaded drag preview.
+
 ### Fixed
 
 - Status toast messages (`GUI::show_message` / `ezy.msg`) are also written to the **Log** window.

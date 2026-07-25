@@ -933,6 +933,18 @@ void GUI::options_sketch_face_extrude_mode_()
     if (ImGui::Checkbox("##extrude_both_sides", &extrude_both_sides))
       m_view->shp_extrude().set_both_sides(extrude_both_sides);
 
+    bool shaded_preview = m_view->shp_extrude().get_shaded_preview();
+    ImGui::TableNextRow();
+    ImGui::TableSetColumnIndex(0);
+    options_right_aligned_label_("Shaded preview");
+    ImGui::TableSetColumnIndex(1);
+    if (ImGui::Checkbox("##extrude_shaded_preview", &shaded_preview))
+      m_view->shp_extrude().set_shaded_preview(shaded_preview);
+    ImGui::SameLine(0.0f, ImGui::GetStyle().ItemInnerSpacing.x);
+    GUI_DOC_HELP_("Show the drag preview as a shaded solid instead of wireframe. "
+                  "Slower on faces with many edges (e.g. imported cross-sections). Click ? to open the user guide.",
+                  get_doc_url_for_mode(get_mode()).c_str());
+
     const std::vector<std::string>& material_names = occt_material_combo_labels_();
     int                             current_item   = int(m_view->get_default_material().Name());
     if (current_item < 0 || current_item >= static_cast<int>(material_names.size()))
