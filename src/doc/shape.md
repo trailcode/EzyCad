@@ -73,7 +73,7 @@ Do not confuse this vector with `Occt_view::m_shps` (the document list).
 | **Finalize** | `operation_shps_finalize_()` -> `bake_transform_into_geometry()`          | New `Shp`; `delete_operation_shps_()`; `add_shp_()` |
 | **Cancel**   | `operation_shps_cancel_()` -> `ResetTransformation()`                     | N/A                                                 |
 
-`redisplay_operation_shps_after_transform_()` only calls `UpdateCurrentViewer()`; it does **not** `Redisplay` the shapes. `SetLocalTransformation()` applies the matrix to the presentation via `UpdateTransformation()`, so a recompute would only rebuild identical geometry (re-triangulate faces, rebuild sensitive BVH) - prohibitively slow for dense shapes per mouse-move. Selection sensitive entities stay at the pre-transform pose, so pick is deactivated for the duration of the preview (`deactivate_operation_shps_pick_`) and restored on finalize/cancel to avoid a dynamic-highlight wireframe ghost at the original location.
+`redisplay_operation_shps_after_transform_()` only calls `UpdateCurrentViewer()`; it does **not** `Redisplay` the shapes. `SetLocalTransformation()` applies the matrix to the presentation via `UpdateTransformation()`, so a recompute would only rebuild identical geometry (re-triangulate faces, rebuild sensitive BVH) - prohibitively slow for dense shapes per mouse-move. Selection sensitive entities stay at the pre-transform pose; `Occt_view::on_mode()` turns off `AIS_ViewController::SetAllowHighlight` for Move/Rotate/Scale (and `ClearDetected`) so idle mouse moves do not queue `MoveTo` / dynamic highlight. Orbit/pan still receive `UpdateMousePosition` when buttons are held.
 
 ### Sketch-linked geometry
 

@@ -42,6 +42,8 @@ Typical responsibilities:
 
 `set_parent_mode()` maps each tool mode back to `Normal` or `Sketch_inspection_mode` (see parent map in `gui_mode.cpp`).
 
+`Occt_view::on_mode` also sets `AIS_ViewController::SetAllowHighlight(false)` for `Move` / `Rotate` / `Scale` (and `ClearDetected`) so idle mouse moves do not run dynamic `MoveTo` while transform preview leaves selection BVHs at the pre-transform pose; other modes restore highlight. Orbit/pan still receive `UpdateMousePosition` when buttons are held.
+
 `Occt_view::on_mode` ends with `sync_sketch_shape_faint_style()`: while `is_sketch_mode`, document shapes follow **Options/Settings** `gui.sketch_shape_faint_enabled` (master) plus `gui.sketch_shape_faint_style` (**0** hide / **1** ghost / **2** wire) and `gui.sketch_shape_faint_opacity` (ghost). Outside sketch mode, faint overrides clear and shapes show at full strength (unless Shape List **Hide all**). New shapes call the same sync from `add_shp_` / `insert_shape_rec`. The **Faint shapes** checkbox lives in `options_sketch_common_` (every sketch tool).
 
 ### UI verbosity

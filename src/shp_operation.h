@@ -28,12 +28,6 @@ protected:
   void                 operation_shps_finalize_();
   void                 operation_shps_cancel_();
 
-  /// Deactivate pick/highlight on `m_shps` once during transform preview (selection BVHs stay
-  /// at the pre-transform location when we skip Redisplay).
-  void deactivate_operation_shps_pick_();
-  /// Re-enable pick after bake / cancel.
-  void reactivate_operation_shps_pick_();
-
   AIS_Shape_ptr      get_shape_(const ScreenCoords& screen_coords);
   const TopoDS_Face* get_face_(const ScreenCoords& screen_coords) const;
   const TopoDS_Wire* get_wire_(const ScreenCoords& screen_coords) const;
@@ -56,5 +50,4 @@ protected:
 
 private:
   Occt_view& m_view;
-  bool       m_transform_pick_deactivated{false};
 };

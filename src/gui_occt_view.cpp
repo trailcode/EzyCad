@@ -2996,6 +2996,15 @@ void Occt_view::on_mode()
 {
   DBG_MSG(c_mode_strs[int(get_mode())]);
 
+  // Move/rotate/scale preview uses SetLocalTransformation without Redisplay, so selection BVHs
+  // stay at the pre-transform pose. Disable AIS_ViewController dynamic highlight (skips MoveTo
+  // while idle) so hover cannot paint a wireframe ghost there; orbit/pan still get mouse updates.
+  const bool transform_preview =
+      get_mode() == Mode::Move || get_mode() == Mode::Rotate || get_mode() == Mode::Scale;
+  SetAllowHighlight(!transform_preview);
+  if (transform_preview && !m_ctx.IsNull())
+    m_ctx->ClearDetected(false);
+
   // Snapshot before selection-mode / faint redisplay Erase drops AIS selection.
   const std::vector<Shp_ptr> cross_section_enter_selection =
       get_mode() == Mode::Shape_cross_section ? get_selected_shps() : std::vector<Shp_ptr>{};
