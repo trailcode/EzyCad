@@ -1,6 +1,7 @@
 #include "shp_extrude.h"
 
 #include <AIS_Shape.hxx>
+#include <BRepAlgoAPI_Cut.hxx>
 #include <BRepBuilderAPI_Transform.hxx>
 #include <BRepOffsetAPI_ThruSections.hxx>
 #include <BRepPrimAPI_MakePrism.hxx>
@@ -10,6 +11,7 @@
 #include <TopoDS.hxx>
 #include <cmath>
 #include <gp_Trsf.hxx>
+#include <vector>
 
 #include "utl_dbg.h"
 #include "utl_geom.h"
@@ -52,6 +54,42 @@ gp_Trsf section_trsf_(const gp_Ax1& axis, double height_along_axis, double twist
   gp_Trsf trans;
   trans.SetTranslation(gp_Vec(axis.Direction()) * height_along_axis);
   return trans * rot;
+}
+
+/// Ruled thru-sections solid from a closed wire with height + twist along `axis`.
+/// Compatibility is off so intentional twist keeps edge/vertex pairing.
+TopoDS_Shape loft_twisted_wire_(const TopoDS_Wire& wire, const gp_Ax1& axis, const double h0, const double h1,
+                                const double ang0, const double ang1, const int n_seg)
+{
+  EZY_ASSERT(!wire.IsNull());
+  EZY_ASSERT(n_seg >= 1);
+
+  BRepOffsetAPI_ThruSections maker(true /*isSolid*/, true /*ruled*/);
+  maker.CheckCompatibility(false);
+  for (int i = 0; i <= n_seg; ++i)
+  {
+    const double t      = static_cast<double>(i) / static_cast<double>(n_seg);
+    const double height = h0 + t * (h1 - h0);
+    const double ang    = ang0 + t * (ang1 - ang0);
+    maker.AddWire(transform_wire_(wire, section_trsf_(axis, height, ang)));
+  }
+
+  maker.Build();
+  EZY_ASSERT(maker.IsDone());
+  return try_make_solid(maker.Shape());
+}
+
+std::vector<TopoDS_Wire> face_hole_wires_(const TopoDS_Face& face, const TopoDS_Wire& outer_wire)
+{
+  std::vector<TopoDS_Wire> holes;
+  for (TopExp_Explorer ex(face, TopAbs_WIRE); ex.More(); ex.Next())
+  {
+    const TopoDS_Wire w = TopoDS::Wire(ex.Current());
+    if (w.IsNull() || w.IsSame(outer_wire))
+      continue;
+    holes.push_back(w);
+  }
+  return holes;
 }
 } // namespace
 
@@ -583,7 +621,7 @@ TopoDS_Shape Shp_extrude::make_body_(const double extrude_dist, const Plane_side
   if (std::fabs(twist_rad) <= Precision::Angular())
     return make_prism_body_(extrude_dist, side);
 
-  const TopoDS_Face face = TopoDS::Face(m_to_extrude->Shape());
+  const TopoDS_Face face       = TopoDS::Face(m_to_extrude->Shape());
   const TopoDS_Wire outer_wire = BRepTools::OuterWire(face);
   EZY_ASSERT(!outer_wire.IsNull());
 
@@ -591,26 +629,26 @@ TopoDS_Shape Shp_extrude::make_body_(const double extrude_dist, const Plane_side
   const gp_Ax1 axis      = twist_axis_();
 
   // Param t in [0, 1]: height along signed extrude axis, twist from near to far.
-  const double h0     = m_extrude_both_sides ? (-0.5 * side_sign * extrude_dist) : 0.0;
-  const double h1     = m_extrude_both_sides ? (0.5 * side_sign * extrude_dist) : (side_sign * extrude_dist);
-  const double ang0   = m_extrude_both_sides ? (-0.5 * twist_rad) : 0.0;
-  const double ang1   = m_extrude_both_sides ? (0.5 * twist_rad) : twist_rad;
+  const double h0   = m_extrude_both_sides ? (-0.5 * side_sign * extrude_dist) : 0.0;
+  const double h1   = m_extrude_both_sides ? (0.5 * side_sign * extrude_dist) : (side_sign * extrude_dist);
+  const double ang0 = m_extrude_both_sides ? (-0.5 * twist_rad) : 0.0;
+  const double ang1 = m_extrude_both_sides ? (0.5 * twist_rad) : twist_rad;
 
   const double abs_ang = std::fabs(twist_rad);
   const int    n_seg   = std::max(1, static_cast<int>(std::ceil(abs_ang / to_radians(45.0))));
 
-  BRepOffsetAPI_ThruSections maker(true /*isSolid*/, true /*ruled*/);
-  for (int i = 0; i <= n_seg; ++i)
+  TopoDS_Shape body = loft_twisted_wire_(outer_wire, axis, h0, h1, ang0, ang1, n_seg);
+
+  // MakePrism keeps face holes; loft only the outer wire then cut matching twisted hole solids.
+  for (const TopoDS_Wire& hole : face_hole_wires_(face, outer_wire))
   {
-    const double t      = static_cast<double>(i) / static_cast<double>(n_seg);
-    const double height = h0 + t * (h1 - h0);
-    const double ang    = ang0 + t * (ang1 - ang0);
-    maker.AddWire(transform_wire_(outer_wire, section_trsf_(axis, height, ang)));
+    const TopoDS_Shape hole_body = loft_twisted_wire_(hole, axis, h0, h1, ang0, ang1, n_seg);
+    BRepAlgoAPI_Cut    cut(body, hole_body);
+    EZY_ASSERT(cut.IsDone());
+    body = try_make_solid(cut.Shape());
   }
 
-  maker.Build();
-  EZY_ASSERT(maker.IsDone());
-  return try_make_solid(maker.Shape());
+  return body;
 }
 
 void Shp_extrude::clear_lite_other_face_()
