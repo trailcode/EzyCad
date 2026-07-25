@@ -93,6 +93,15 @@ const char* GUI::current_mode_description_() const
 void GUI::options_doc_help_button_()
 {
   ImGui::SameLine(0.0f, ImGui::GetStyle().ItemInnerSpacing.x);
+  if (get_mode() == Mode::Sketch_face_extrude)
+  {
+    GUI_DOC_HELP_("Extrude a sketch face into a solid. Dense faces can use a fast drag preview "
+                  "(face copies) controlled in Settings -> Sketch -> Appearance -> Extrude fast preview. "
+                  "Click ? to open the user guide.",
+                  doc_urls::k_extrude_sketch_face);
+    return;
+  }
+
   GUI_DOC_HELP_("Open the relevant section of the online user guide.", get_doc_url_for_mode(get_mode()).c_str());
 }
 
@@ -107,9 +116,9 @@ void GUI::set_mode(Mode mode)
       b.is_active = std::get<Mode>(b.data) == mode;
 }
 
-void GUI::set_parent_mode()
+Mode GUI::parent_mode_of(Mode mode)
 {
-  static std::map<Mode, Mode> parent_modes = {
+  static const std::map<Mode, Mode> parent_modes = {
       // clang-format off
       {Mode::Normal,                          Mode::Normal},
       {Mode::Move,                            Mode::Normal},
@@ -137,20 +146,20 @@ void GUI::set_parent_mode()
       // clang-format on
   };
 
-  static bool check = [&]()
+  static const bool check = []()
   {
-    // Called only once.
     for (size_t idx = 0; idx < size_t(Mode::_count); ++idx)
       EZY_ASSERT(parent_modes.find(Mode(idx)) != parent_modes.end());
-
     return true;
   }();
-
   (void)check;
-  const auto itr = parent_modes.find(get_mode());
+
+  const auto itr = parent_modes.find(mode);
   EZY_ASSERT(itr != parent_modes.end());
-  set_mode(itr->second);
+  return itr->second;
 }
+
+void GUI::set_parent_mode() { set_mode(parent_mode_of(get_mode())); }
 
 void GUI::on_key(int key, int scancode, int action, int mods)
 {

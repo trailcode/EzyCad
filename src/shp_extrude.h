@@ -30,15 +30,29 @@ public:
 private:
   friend class Shp_extrude_access;
 
-  void _update_extrude(const ScreenCoords& screen_coords);
-  void update_extrude_preview_(double extrude_dist, Plane_side side);
+  void         _update_extrude(const ScreenCoords& screen_coords);
+  void         update_extrude_preview_(double extrude_dist, Plane_side side);
+  void         update_dim_(double extrude_dist, Plane_side side);
+  void         clear_preview_();
+  void         clear_lite_other_face_();
+  bool         use_lite_preview_();
+  TopoDS_Shape make_prism_body_(double extrude_dist, Plane_side side) const;
+
   // Face extrude related
-  AIS_Shape_ptr              m_to_extrude;
-  gp_Pln                     m_to_extrude_pln;
-  std::optional<gp_Pnt>      m_to_extrude_pt;
-  Shp_ptr                    m_extruded;
+  AIS_Shape_ptr         m_to_extrude;
+  gp_Pln                m_to_extrude_pln;
+  std::optional<gp_Pnt> m_to_extrude_pt;
+  Shp_ptr               m_extruded;
+  /// Second face copy for lite both-sides preview (near side); not a document shape.
+  AIS_Shape_ptr              m_lite_face_other;
   gp_Pln                     m_curr_view_pln;
   PrsDim_LengthDimension_ptr m_tmp_dim;
   Plane_side                 m_extrude_side;
   bool                       m_extrude_both_sides{false};
+  // Faces with more than the settings threshold use a translated face-copy preview.
+  size_t                m_face_edge_count{0};
+  bool                  m_lite_preview_active{false};
+  std::optional<double> m_last_preview_dist;
+  Plane_side            m_last_preview_side;
+  bool                  m_last_preview_both_sides{false};
 };

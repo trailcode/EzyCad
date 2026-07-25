@@ -11,6 +11,13 @@ Shp_move::Shp_move(Occt_view& view)
 {
 }
 
+void Shp_move::begin(std::vector<Shp_ptr> shps)
+{
+  m_delta = {};
+  clear_all(m_move_pln, m_center);
+  set_operation_shps_(std::move(shps));
+}
+
 Status Shp_move::move_selected(const ScreenCoords& screen_coords)
 {
   CHK_RET(ensure_operation_shps_());
@@ -143,12 +150,14 @@ void Shp_move::finalize()
 
   view().push_undo_delta(std::make_unique<Shape_geom_delta>(std::move(changes)));
   reset();
+  restore_operation_selection_();
 }
 
 void Shp_move::cancel()
 {
   operation_shps_cancel_();
   reset();
+  restore_operation_selection_();
 }
 
 void Shp_move::reset()

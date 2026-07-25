@@ -245,6 +245,10 @@ def _ezycad_bootstrap():
             return _n.view_get_shape(int(i))
         def get_selected(self):
             return _n.view_get_selected()
+        def set_selected(self, *shapes):
+            if len(shapes) == 1 and isinstance(shapes[0], (list, tuple)):
+                shapes = tuple(shapes[0])
+            return _n.view_set_selected(*shapes)
         def get_selected_indices(self):
             return _n.view_get_selected_indices()
         def get_camera(self):
@@ -361,6 +365,7 @@ PYBIND11_EMBEDDED_MODULE(ezycad_native, m)
                                   "  delete(s1, ...)  - remove one or more Shp from the document\n"
                                   "  get_shape(i)  - shape by 0-based index (raises IndexError if out of range)\n"
                                   "  get_selected()  - list of selected document Shp (empty if none)\n"
+                                  "  set_selected(s1, ...) or set_selected(list)  - replace selection (no args clears)\n"
                                   "  get_selected_indices()  - 0-based indices of selected document shapes\n"
                                   "  get_camera() / set_camera(ex,ey,ez,cx,cy,cz,ux,uy,uz)\n"
                                   "  curr_sketch.name() / node_count() / node(i) / dim_count() / dim(i)\n"
@@ -579,6 +584,26 @@ PYBIND11_EMBEDDED_MODULE(ezycad_native, m)
             out.append(Ezy_shp{shp});
 
           return out;
+        });
+
+  m.def("view_set_selected",
+        [](py::args args)
+        {
+          Occt_view* view = g_py_gui && g_py_gui->get_view() ? g_py_gui->get_view() : nullptr;
+          if (!view)
+            throw std::runtime_error("no 3D view available");
+
+          std::vector<Shp_ptr> shps;
+          shps.reserve(static_cast<std::size_t>(args.size()));
+          for (py::handle item : args)
+          {
+            Ezy_shp es = item.cast<Ezy_shp>();
+            if (es.shp.IsNull())
+              throw std::runtime_error("set_selected: null shape");
+
+            shps.push_back(es.shp);
+          }
+          view->set_selected_shps(shps);
         });
 
   m.def("view_get_selected_indices",

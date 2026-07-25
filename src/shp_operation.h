@@ -27,6 +27,11 @@ protected:
   void                 delete_operation_shps_();
   void                 operation_shps_finalize_();
   void                 operation_shps_cancel_();
+  /// Seed operands (e.g. selection snapshot at mode enter). Empty clears.
+  void set_operation_shps_(std::vector<Shp_ptr> shps);
+  /// Re-select the operands captured by `operation_shps_finalize_` / `operation_shps_cancel_`.
+  /// Call *after* `reset()`: leaving the tool mode redisplays shapes and drops the AIS selection.
+  void restore_operation_selection_();
 
   AIS_Shape_ptr      get_shape_(const ScreenCoords& screen_coords);
   const TopoDS_Face* get_face_(const ScreenCoords& screen_coords) const;
@@ -41,11 +46,15 @@ protected:
   /// Replace `dest` presentation material with `src` (used after add_shp_, which applies the view default).
   void copy_shape_material_from_(Shp_ptr& dest, const Shp_ptr& src);
 
-  /// After transform-only changes on `m_shps`, refresh presentations once (avoids N x viewer updates per frame).
+  /// After transform-only changes on `m_shps` (SetLocalTransformation), redraw the viewer once.
+  /// Does not Redisplay/recompute presentations - the local transform is applied by
+  /// UpdateTransformation(), so a recompute would only rebuild identical geometry.
   void redisplay_operation_shps_after_transform_();
 
   std::vector<Shp_ptr> m_shps;
 
 private:
   Occt_view& m_view;
+  /// Operands captured on finalize / cancel, re-selected by `restore_operation_selection_`.
+  std::vector<Shp_ptr> m_completed_shps;
 };

@@ -508,7 +508,7 @@ std::optional<gp_Pnt> Occt_view::pt3d_on_plane(const ScreenCoords& screen_coords
   return std::nullopt;
 }
 
-void Occt_view::bake_transform_into_geometry(AIS_Shape_ptr& shape)
+void Occt_view::bake_transform_into_geometry(AIS_Shape_ptr& shape, bool update_viewer)
 {
   // Function to bake the local transformation into the geometry
   // Get the current local transformation
@@ -532,7 +532,7 @@ void Occt_view::bake_transform_into_geometry(AIS_Shape_ptr& shape)
   shape->SetLocalTransformation(identity_transform);
 
   // Redisplay to update the viewer and selection
-  m_ctx->Redisplay(shape, true);
+  m_ctx->Redisplay(shape, update_viewer);
 }
 
 gp_Pln Occt_view::get_view_plane(const gp_Pnt& point_on_plane) const
@@ -563,19 +563,21 @@ void Occt_view::cancel(Set_parent_mode set_parent_mode)
 
   switch (get_mode())
   {
+  // Transform tools already return to Normal in their reset() and re-select the operands;
+  // a further set_mode() here would redisplay shapes and drop that selection again.
   case Mode::Move:
     shp_move().cancel();
-    gui().set_mode(Mode::Normal);
+    operation_canceled = true;
     break;
 
   case Mode::Rotate:
     shp_rotate().cancel();
-    gui().set_mode(Mode::Normal);
+    operation_canceled = true;
     break;
 
   case Mode::Scale:
     shp_scale().cancel();
-    gui().set_mode(Mode::Normal);
+    operation_canceled = true;
     break;
 
   case Mode::Shape_cross_section:
@@ -784,8 +786,8 @@ Status Occt_view::create_sketch_from_cross_section(const std::string& base_name)
   for (const Sketch_ptr& s : m_sketches)
     existing.push_back(s->get_name());
 
-  const std::string name   = unique_sequential_name(base_name, existing);
-  Sketch_ptr        sketch = std::make_shared<Sketch>(name, *this, pln);
+  const std::string           name   = unique_sequential_name(base_name, existing);
+  Sketch_ptr                  sketch = std::make_shared<Sketch>(name, *this, pln);
   const Section_import_counts counts = import_section_edges_into_sketch_(*sketch, compound, pln);
   if (counts.imported == 0 || sketch->edge_count() == 0)
     return Status::user_error("Cross-section has no line or circle edges to import.");
@@ -803,8 +805,7 @@ Status Occt_view::create_sketch_from_cross_section(const std::string& base_name)
   msg << "Created sketch '" << name << "' with " << counts.imported
       << (counts.imported == 1 ? " imported edge" : " imported edges");
   if (counts.skipped > 0)
-    msg << " (" << counts.skipped << " unsupported curve"
-        << (counts.skipped == 1 ? "" : "s") << " skipped)";
+    msg << " (" << counts.skipped << " unsupported curve" << (counts.skipped == 1 ? "" : "s") << " skipped)";
   msg << ".";
   return Status::ok(msg.str());
 }
@@ -2393,6 +2394,20 @@ void Occt_view::on_mouse_button(int theButton, int theAction, int theMods)
       return;
     }
 
+    // LMB finalizes an active Move/Rotate/Scale. Skip Press/Release so AIS SelectDetected on
+    // release cannot replace the restored multi-selection with the single shape under the cursor.
+    if (theButton == GLFW_MOUSE_BUTTON_LEFT)
+    {
+      const bool finalize_transform = (get_mode() == Mode::Move && shp_move().has_operation_shps()) ||
+                                      (get_mode() == Mode::Rotate && shp_rotate().has_operation_shps()) ||
+                                      (get_mode() == Mode::Scale && shp_scale().has_operation_shps());
+      if (finalize_transform)
+      {
+        m_transform_finalize_lmb_skipped_view_controller = true;
+        return;
+      }
+    }
+
     PressMouseButton(pos, mouse_button_from_glfw_(theButton), key_flags_from_glfw_(theMods), false);
 
     if (m_shp_extrude.has_active_extrusion())
@@ -2415,6 +2430,12 @@ void Occt_view::on_mouse_button(int theButton, int theAction, int theMods)
     if (m_planar_face_lmb_skipped_view_controller && theButton == GLFW_MOUSE_BUTTON_LEFT)
     {
       m_planar_face_lmb_skipped_view_controller = false;
+      return;
+    }
+
+    if (m_transform_finalize_lmb_skipped_view_controller && theButton == GLFW_MOUSE_BUTTON_LEFT)
+    {
+      m_transform_finalize_lmb_skipped_view_controller = false;
       return;
     }
 
@@ -2462,6 +2483,20 @@ std::vector<Shp_ptr> Occt_view::get_selected_shps() const
         ret.push_back(shp);
 
   return ret;
+}
+
+void Occt_view::set_selected_shps(const std::vector<Shp_ptr>& shps)
+{
+  if (m_ctx.IsNull())
+    return;
+
+  m_ctx->ClearSelected(false);
+  for (const Shp_ptr& shp : shps)
+    if (!shp.IsNull() && !shp->is_group())
+      m_ctx->AddOrRemoveSelected(shp, false);
+
+  m_ctx->HilightSelected(false);
+  m_ctx->UpdateCurrentViewer();
 }
 
 void Occt_view::apply_shape_selection_style()
@@ -2978,12 +3013,20 @@ void Occt_view::on_mode()
 {
   DBG_MSG(c_mode_strs[int(get_mode())]);
 
+  // Move/rotate/scale preview uses SetLocalTransformation without Redisplay, so selection BVHs
+  // stay at the pre-transform pose. Disable AIS_ViewController dynamic highlight (skips MoveTo
+  // while idle) so hover cannot paint a wireframe ghost there; orbit/pan still get mouse updates.
+  const Mode mode = get_mode();
+  const bool transform_preview =
+      mode == Mode::Move || mode == Mode::Rotate || mode == Mode::Scale;
+  SetAllowHighlight(!transform_preview);
+  if (transform_preview && !m_ctx.IsNull())
+    m_ctx->ClearDetected(false);
+
   // Snapshot before selection-mode / faint redisplay Erase drops AIS selection.
   // Move / rotate / scale / cross-section need the solids that were selected on enter.
-  const Mode mode = get_mode();
-  const bool preserve_enter_selection = mode == Mode::Move || mode == Mode::Rotate || mode == Mode::Scale ||
-                                        mode == Mode::Shape_cross_section;
-  const std::vector<Shp_ptr> enter_selection = preserve_enter_selection ? get_selected_shps() : std::vector<Shp_ptr>{};
+  const bool                 preserve_enter_selection = transform_preview || mode == Mode::Shape_cross_section;
+  const std::vector<Shp_ptr> enter_selection          = preserve_enter_selection ? get_selected_shps() : std::vector<Shp_ptr>{};
 
   shp_polar_dup().reset();
   if (mode != Mode::Shape_cross_section)
@@ -3046,9 +3089,9 @@ void Occt_view::on_mode()
       case Mode::Sketch_from_planar_face: set_shp_selection_mode(TopAbs_FACE);      break;
       case Mode::Shape_chamfer:           on_chamfer_mode();                        break; // Will update selection mode
       case Mode::Shape_fillet:            on_fillet_mode();                         break; // Will update selection mode
-      case Mode::Move:                    set_shp_selection_mode(TopAbs_COMPOUND);  break;
-      case Mode::Rotate:                  set_shp_selection_mode(TopAbs_COMPOUND);  break;
-      case Mode::Scale:                   set_shp_selection_mode(TopAbs_COMPOUND);  break;
+      case Mode::Move:                    set_shp_selection_mode(TopAbs_SHAPE);     break;
+      case Mode::Rotate:                  set_shp_selection_mode(TopAbs_SHAPE);     break;
+      case Mode::Scale:                   set_shp_selection_mode(TopAbs_SHAPE);     break;
       case Mode::Shape_cross_section:     set_shp_selection_mode(TopAbs_COMPOUND);  break;
       default:
         if(m_modes_selection_mode_map.count(get_mode()))
@@ -3062,24 +3105,35 @@ void Occt_view::on_mode()
   sync_sketch_shape_faint_style();
   apply_sketch_dimensions_visibility();
 
-  if (!enter_selection.empty())
-  {
-    // Restore after faint sync (set_sketch_faint Erase/redisplays and clears AIS selection).
-    if (!m_ctx.IsNull())
-    {
-      m_ctx->ClearSelected(false);
-      for (const Shp_ptr& shp : enter_selection)
-        if (!shp.IsNull())
-          m_ctx->AddOrRemoveSelected(shp, false);
-      m_ctx->HilightSelected(false);
-      m_ctx->UpdateCurrentViewer();
-    }
+  // Restore after faint sync (set_sketch_faint Erase/redisplays and clears AIS selection) so the
+  // transform tools / cross-section see the shapes that were selected when the mode was entered.
+  if (preserve_enter_selection && !enter_selection.empty())
+    set_selected_shps(enter_selection);
 
-    if (mode == Mode::Shape_cross_section)
+  // Seed transform tools from the snapshot. Do not rely on AIS selection alone after mode switch
+  // (selection-mode Erase/Activate can leave multi-select incomplete).
+  if (transform_preview)
+  {
+    switch (mode)
     {
-      const Status status = shp_cross_section().preview(enter_selection);
-      gui().show_message(status.message());
+    case Mode::Move:
+      shp_move().begin(enter_selection);
+      break;
+    case Mode::Rotate:
+      shp_rotate().begin(enter_selection);
+      break;
+    case Mode::Scale:
+      shp_scale().begin(enter_selection);
+      break;
+    default:
+      break;
     }
+  }
+
+  if (mode == Mode::Shape_cross_section && !enter_selection.empty())
+  {
+    const Status status = shp_cross_section().preview(enter_selection);
+    gui().show_message(status.message());
   }
 }
 
@@ -3317,6 +3371,24 @@ Shp_cross_section&   Occt_view::shp_cross_section()   { return m_shp_cross_secti
 
 // ---------------------------------------------------------------------------
 // Undo / redo: interactive edits use typed deltas; JSON snapshots for mixed delete / file open.
+namespace
+{
+/// Move/Rotate/Scale follow the mouse while active. Restoring those modes on undo/redo would
+/// immediately drag whatever is selected; use the tool's parent mode instead.
+Mode mode_for_history_restore_(Mode mode)
+{
+  switch (mode)
+  {
+  case Mode::Move:
+  case Mode::Rotate:
+  case Mode::Scale:
+    return GUI::parent_mode_of(mode);
+  default:
+    return mode;
+  }
+}
+} // namespace
+
 void Occt_view::push_undo_snapshot()
 {
   if (m_restoring)
@@ -3377,8 +3449,9 @@ bool Occt_view::undo()
   }
 
   m_redo_stack.push_back(std::move(redo_entry));
-  m_gui.set_mode(state.mode);
-  if (state.mode == Mode::Sketch_inspection_mode)
+  const Mode restore_mode = mode_for_history_restore_(state.mode);
+  m_gui.set_mode(restore_mode);
+  if (restore_mode == Mode::Sketch_inspection_mode)
     m_gui.set_show_sketch_list(true);
 
   m_restoring = false;
@@ -3409,8 +3482,9 @@ bool Occt_view::redo()
   }
 
   m_undo_stack.push_back(std::move(undo_entry));
-  m_gui.set_mode(state.mode);
-  if (state.mode == Mode::Sketch_inspection_mode)
+  const Mode restore_mode = mode_for_history_restore_(state.mode);
+  m_gui.set_mode(restore_mode);
+  if (restore_mode == Mode::Sketch_inspection_mode)
     m_gui.set_show_sketch_list(true);
 
   m_restoring = false;

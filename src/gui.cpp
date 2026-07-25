@@ -3123,9 +3123,9 @@ void GUI::show_error_dialog(const std::string& title, const std::string& message
 {
   // Log full detail once; toast title only (do not call show_message - that would log twice).
   log_message(title + ": " + message);
-  m_message            = title;
-  m_message_visible    = true;
-  m_message_start_time = std::chrono::steady_clock::now();
+  m_message             = title;
+  m_message_visible     = true;
+  m_message_start_time  = std::chrono::steady_clock::now();
   m_error_modal_title   = title;
   m_error_modal_message = message;
   m_open_error_modal    = true;
@@ -3761,7 +3761,6 @@ void GUI::on_mouse_button(int button, int action, int mods)
 
   if (button == GLFW_MOUSE_BUTTON_LEFT && action == GLFW_PRESS && mods == 0 && !extrude_finalize_on_press)
     on_left_click_(screen_coords);
-
   else if (button == GLFW_MOUSE_BUTTON_RIGHT && action == GLFW_PRESS && mods == 0)
     // Right button is to finalize the current operation.
     switch (m_mode)

@@ -40,7 +40,11 @@ Typical responsibilities:
 | 3    | `sync_sketch_add_mid_pt_edges_if_applicable_()` |
 | 4    | Update toolbar active state                     |
 
-`set_parent_mode()` maps each tool mode back to `Normal` or `Sketch_inspection_mode` (see parent map in `gui_mode.cpp`).
+`set_parent_mode()` maps each tool mode back to `Normal` or `Sketch_inspection_mode` via `GUI::parent_mode_of` (see parent map in `gui_mode.cpp`). Undo/redo uses the same map so stored `Move` / `Rotate` / `Scale` restore their parent instead of re-entering the free-drag tool (see [undo-redo.md](undo-redo.md#mode-restoration)).
+
+`Occt_view::on_mode` also sets `AIS_ViewController::SetAllowHighlight(false)` for `Move` / `Rotate` / `Scale` (and `ClearDetected`) so idle mouse moves do not run dynamic `MoveTo` while transform preview leaves selection BVHs at the pre-transform pose; other modes restore highlight. Orbit/pan still receive `UpdateMousePosition` when buttons are held. When LMB finalizes an active transform (operands loaded), `on_mouse_button` skips `PressMouseButton` / `ReleaseMouseButton` for that click so AIS `SelectDetected` on release cannot replace the restored multi-selection with the single shape under the cursor.
+
+Because the faint/selection-mode redisplay `Erase`s shapes (dropping the AIS selection), `on_mode` snapshots the entered selection for `Move` / `Rotate` / `Scale` / `Shape_cross_section` and restores it via `Occt_view::set_selected_shps` after `sync_sketch_shape_faint_style()`. The same helper restores the operands when a transform tool finishes (see `restore_operation_selection_` in [shape.md](shape.md)); `Occt_view::cancel` therefore treats `Move` / `Rotate` / `Scale` as already handled instead of switching mode again. Transform tools are also seeded via `Shp_move` / `Shp_rotate` / `Shp_scale::begin(enter_selection)` so multi-select operands do not depend on AIS selection surviving the mode switch (`ensure_operation_shps_` still falls back to the AIS selection when the seed was empty). Move/Rotate/Scale use `TopAbs_SHAPE` (whole-object) selection mode.
 
 `Occt_view::on_mode` ends with `sync_sketch_shape_faint_style()`: while `is_sketch_mode`, document shapes follow **Options/Settings** `gui.sketch_shape_faint_enabled` (master) plus `gui.sketch_shape_faint_style` (**0** hide / **1** ghost / **2** wire) and `gui.sketch_shape_faint_opacity` (ghost). Outside sketch mode, faint overrides clear and shapes show at full strength (unless Shape List **Hide all**). New shapes call the same sync from `add_shp_` / `insert_shape_rec`. The **Faint shapes** checkbox lives in `options_sketch_common_` (every sketch tool).
 
@@ -180,17 +184,17 @@ Tests use `sketch_left_click` to simulate sketch LMB without ImGui mouse positio
 
 `GUI::options_()` switches on `get_mode()`:
 
-| `Mode`                           | Options function                                        |
-| -------------------------------- | ------------------------------------------------------- |
-| `Normal`                         | `options_normal_mode_` (selection filter, orthographic) |
-| `Move` / `Rotate` / `Scale`      | `options_*_mode_` (constraints, axis, material)         |
-| `Shape_chamfer` / `Shape_fillet` | mode + radius/distance                                  |
-| `Shape_polar_duplicate`          | angle, count, rotate/combine, **Dup** button            |
-| `Shape_cross_section`                  | local XY/XZ/YZ, invert normal, hide back side, show section outline, bbox-ranged offset, Clip, Cross section sketch |
-| `Sketch_inspection_mode`         | `options_sketch_common_`                                |
-| Each sketch tool mode            | Matching `options_sketch_*_mode_`                       |
-| `Sketch_operation_axis`          | Mirror / Revolve / Clear axis                           |
-| `Sketch_face_extrude`            | Both sides, material                                    |
+| `Mode`                           | Options function                                                                                                    |
+| -------------------------------- | ------------------------------------------------------------------------------------------------------------------- |
+| `Normal`                         | `options_normal_mode_` (selection filter, orthographic)                                                             |
+| `Move` / `Rotate` / `Scale`      | `options_*_mode_` (constraints, axis, material)                                                                     |
+| `Shape_chamfer` / `Shape_fillet` | mode + radius/distance                                                                                              |
+| `Shape_polar_duplicate`          | angle, count, rotate/combine, **Dup** button                                                                        |
+| `Shape_cross_section`            | local XY/XZ/YZ, invert normal, hide back side, show section outline, bbox-ranged offset, Clip, Cross section sketch |
+| `Sketch_inspection_mode`         | `options_sketch_common_`                                                                                            |
+| Each sketch tool mode            | Matching `options_sketch_*_mode_`                                                                                   |
+| `Sketch_operation_axis`          | Mirror / Revolve / Clear axis                                                                                       |
+| `Sketch_face_extrude`            | Both sides, material; help mentions Settings fast preview                                                           |
 
 Shared sketch controls (snap, midpoint nodes, place-from-center) live in `options_sketch_common_` and helpers in `gui_mode.cpp`.
 

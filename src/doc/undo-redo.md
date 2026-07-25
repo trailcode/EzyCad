@@ -50,7 +50,7 @@ This prevents re-entrant history pushes while applying a step.
 
 ### Mode restoration
 
-After applying a delta or reloading a snapshot, `Occt_view` calls `GUI::set_mode(state.mode)`. If the stored mode is `Sketch_inspection_mode`, the sketch list pane is shown again.
+After applying a delta or reloading a snapshot, `Occt_view` restores a UI mode via `GUI::set_mode`. Stored `Move` / `Rotate` / `Scale` are mapped to their parent mode (`GUI::parent_mode_of`, normally `Normal`) so undo/redo does not re-enter a free-drag tool that would immediately move the current selection under the cursor. Other stored modes are restored as-is. If the restored mode is `Sketch_inspection_mode`, the sketch list pane is shown again.
 
 ### View camera
 
@@ -134,7 +134,7 @@ Underlay pixels stay in `Ezy_asset_store`; undo restores placement / asset id re
 1. Set `m_restoring = true`.
 2. Pop the undo entry; build a redo entry from the **current** state (clone delta or `to_json()`).
 3. If the popped entry has a delta, `apply_reverse`; else `load(json, false)`.
-4. Push redo entry; restore `mode`.
+4. Push redo entry; restore mode (Move/Rotate/Scale -> parent / Normal).
 5. Clear `m_restoring`.
 
 `redo()` is symmetric.

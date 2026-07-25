@@ -220,6 +220,8 @@ std::string GUI::occt_view_settings_json() const
       {"sketch_shape_faint_style", m_sketch_shape_faint_style},
       {"sketch_shape_faint_opacity", m_sketch_shape_faint_opacity},
       {"sketch_shape_faint_enabled", m_sketch_shape_faint_enabled},
+      {"extrude_fast_preview", m_extrude_fast_preview},
+      {"extrude_fast_preview_edge_threshold", m_extrude_fast_preview_edge_threshold},
   };
   return j.dump(2);
 }
@@ -321,6 +323,8 @@ void GUI::save_occt_view_settings()
       {"sketch_shape_faint_style", m_sketch_shape_faint_style},
       {"sketch_shape_faint_opacity", m_sketch_shape_faint_opacity},
       {"sketch_shape_faint_enabled", m_sketch_shape_faint_enabled},
+      {"extrude_fast_preview", m_extrude_fast_preview},
+      {"extrude_fast_preview_edge_threshold", m_extrude_fast_preview_edge_threshold},
   };
   j["version"]          = k_settings_version;
   const char* imgui_ini = ImGui::SaveIniSettingsToMemory(nullptr);
@@ -542,6 +546,14 @@ void GUI::parse_gui_panes_settings_(const std::string& content)
         parse_bounded_float("sketch_shape_faint_opacity", k_gui_sketch_shape_faint_opacity_min,
                             k_gui_sketch_shape_faint_opacity_max, k_gui_sketch_shape_faint_opacity_default);
     m_sketch_shape_faint_enabled = b("sketch_shape_faint_enabled", k_gui_sketch_shape_faint_enabled_default);
+
+    m_extrude_fast_preview = b("extrude_fast_preview", k_gui_extrude_fast_preview_default);
+    if (g.contains("extrude_fast_preview_edge_threshold") && g["extrude_fast_preview_edge_threshold"].is_number_integer())
+    {
+      const int v = g["extrude_fast_preview_edge_threshold"].get<int>();
+      if (v >= k_gui_extrude_fast_preview_edge_threshold_min && v <= k_gui_extrude_fast_preview_edge_threshold_max)
+        m_extrude_fast_preview_edge_threshold = v;
+    }
 
     if (g.contains("edge_dim_arrow_style") && g["edge_dim_arrow_style"].is_number_integer())
     {
@@ -1467,6 +1479,49 @@ void GUI::settings_()
                           "opacity). Applies to Ghost and Wire styles.",
                           doc_urls::k_sketching_2d);
           }
+        }
+
+        ImGui::TableNextRow();
+        ImGui::TableSetColumnIndex(0);
+        ImGui::AlignTextToFramePadding();
+        ImGui::TextUnformatted("Extrude fast preview");
+        ImGui::TableSetColumnIndex(1);
+        {
+          bool fast = m_extrude_fast_preview;
+          if (ImGui::Checkbox("##extrude_fast_preview_settings", &fast))
+          {
+            m_extrude_fast_preview = fast;
+            appear_changed         = true;
+          }
+          ImGui::SameLine(0.0f, ImGui::GetStyle().ItemInnerSpacing.x);
+          ImGui::TextUnformatted("Enabled");
+        }
+        ImGui::SameLine(0.0f, ImGui::GetStyle().ItemInnerSpacing.x);
+        GUI_DOC_HELP_("When on, extruding a sketch face with many edges previews by moving face copies "
+                      "(responsive). Simple faces still show a shaded solid. Finalize always builds the solid. "
+                      "See Extrude in the user guide.",
+                      doc_urls::k_extrude_sketch_face);
+
+        if (m_extrude_fast_preview)
+        {
+          ImGui::TableNextRow();
+          ImGui::TableSetColumnIndex(0);
+          ImGui::AlignTextToFramePadding();
+          ImGui::TextUnformatted("Fast preview edge count");
+          ImGui::TableSetColumnIndex(1);
+          {
+            int thr = m_extrude_fast_preview_edge_threshold;
+            if (ImGui::SliderInt("##extrude_fast_preview_edge_threshold", &thr, k_gui_extrude_fast_preview_edge_threshold_min,
+                                 k_gui_extrude_fast_preview_edge_threshold_max))
+            {
+              m_extrude_fast_preview_edge_threshold = thr;
+              appear_changed                        = true;
+            }
+          }
+          ImGui::SameLine(0.0f, ImGui::GetStyle().ItemInnerSpacing.x);
+          GUI_DOC_HELP_("Faces with more edges than this use the fast face-copy drag preview "
+                        "(default 24). Boxes and circles stay under the threshold.",
+                        doc_urls::k_extrude_sketch_face);
         }
 
         ImGui::EndTable();

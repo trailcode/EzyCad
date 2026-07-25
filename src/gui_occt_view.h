@@ -198,13 +198,13 @@ public:
   /// Empty sketch on \a pln; \a base_name is uniquified (e.g. Sketch_xy, Sketch_xy.001).
   void add_sketch(const gp_Pln& pln, const std::string& base_name);
   /// Like add_sketch; \a offset_display is multiplied by get_display_to_model_scale().
-  void       add_sketch_on_ref_plane(Sketch_ref_plane plane, double offset_display, const std::string& base_name);
+  void add_sketch_on_ref_plane(Sketch_ref_plane plane, double offset_display, const std::string& base_name);
   /// New sketch on the current cross-section plane; imports line/circle section edges (undoable).
   [[nodiscard]] Status create_sketch_from_cross_section(const std::string& base_name = "Section_sketch");
-  void       curr_sketch_add_edge(double x1, double y1, double x2, double y2);
-  void       curr_sketch_rebuild_faces();
-  Sketch&    curr_sketch();
-  Sketch_ptr curr_sketch_shared() const;
+  void                 curr_sketch_add_edge(double x1, double y1, double x2, double y2);
+  void                 curr_sketch_rebuild_faces();
+  Sketch&              curr_sketch();
+  Sketch_ptr           curr_sketch_shared() const;
   /// Non-owning; null when none selected. Does not create a default sketch.
   Sketch* current_sketch_if_any() const;
   void    set_curr_sketch(const Sketch_ptr& sketch);
@@ -222,17 +222,17 @@ public:
   void                add_torus(double ox, double oy, double oz, double R1, double R2);
 
   // Shape related
-  Shp_move&      shp_move();
-  Shp_rotate&    shp_rotate();
-  Shp_scale&     shp_scale();
-  Shp_chamfer&   shp_chamfer();
-  Shp_fillet&    shp_fillet();
-  Shp_cut&       shp_cut();
-  Shp_fuse&      shp_fuse();
-  Shp_common&    shp_common();
-  Shp_polar_dup& shp_polar_dup();
-  Shp_extrude&   shp_extrude();
-  Shp_cross_section&   shp_cross_section();
+  Shp_move&          shp_move();
+  Shp_rotate&        shp_rotate();
+  Shp_scale&         shp_scale();
+  Shp_chamfer&       shp_chamfer();
+  Shp_fillet&        shp_fillet();
+  Shp_cut&           shp_cut();
+  Shp_fuse&          shp_fuse();
+  Shp_common&        shp_common();
+  Shp_polar_dup&     shp_polar_dup();
+  Shp_extrude&       shp_extrude();
+  Shp_cross_section& shp_cross_section();
 
   // Revolve related
   void revolve_selected(const double angle);
@@ -278,8 +278,10 @@ public:
   // Geometry related
   ScreenCoords          get_screen_coords(const gp_Pnt& point);
   std::optional<gp_Pnt> pt3d_on_plane(const ScreenCoords& screen_coords, const gp_Pln& plane) const;
-  void                  bake_transform_into_geometry(AIS_Shape_ptr& shape);
-  gp_Pln                get_view_plane(const gp_Pnt& point_on_plane) const;
+  /// Bake the AIS local transformation into the shape geometry (transform becomes identity).
+  /// \a update_viewer false lets callers batch one viewer update when baking many shapes.
+  void   bake_transform_into_geometry(AIS_Shape_ptr& shape, bool update_viewer = true);
+  gp_Pln get_view_plane(const gp_Pnt& point_on_plane) const;
 
   // Query related
   AIS_Shape_ptr           get_shape(const ScreenCoords& screen_coords);
@@ -317,8 +319,11 @@ public:
   std::vector<AIS_Shape_ptr> get_selected() const;
   /// Document `Shp` objects in the current viewer selection (deduped; ignores non-Shp AIS).
   std::vector<Shp_ptr> get_selected_shps() const;
-  TopAbs_ShapeEnum     get_shp_selection_mode() const;
-  void                 set_shp_selection_mode(const TopAbs_ShapeEnum selection_mode);
+  /// Replace the viewer selection with \a shps (null handles and group nodes are skipped).
+  /// Empty \a shps clears the selection.
+  void             set_selected_shps(const std::vector<Shp_ptr>& shps);
+  TopAbs_ShapeEnum get_shp_selection_mode() const;
+  void             set_shp_selection_mode(const TopAbs_ShapeEnum selection_mode);
 
   /// Highlight \a shp in the 3D viewer while the Shape List row is hovered (null clears).
   void           set_shape_list_hover(const Shp_ptr& shp);
@@ -491,6 +496,9 @@ private:
   /// True when LMB press was handled by planar-face sketch creation without AIS_ViewController::PressMouseButton (pair with
   /// release skip).
   bool m_planar_face_lmb_skipped_view_controller{false};
+  /// True when LMB press will finalize Move/Rotate/Scale (skip Press/Release so AIS SelectDetected
+  /// on release cannot replace the restored multi-selection with the shape under the cursor).
+  bool m_transform_finalize_lmb_skipped_view_controller{false};
   // OCCT view colors; defaults match what we render (set explicitly in init_viewer())
   glm::vec3             m_bg_color1{0.037552f, 0.040503f, 0.042471f};
   glm::vec3             m_bg_color2{0.043440f, 0.174068f, 0.239382f};
@@ -508,14 +516,14 @@ private:
   Shp_scale  m_shp_scale;
   // --------------------------------------------------------------------
   // Commands
-  Shp_chamfer   m_shp_chamfer;
-  Shp_fillet    m_shp_fillet;
-  Shp_cut       m_shp_cut;
-  Shp_fuse      m_shp_fuse;
-  Shp_common    m_shp_common;
-  Shp_polar_dup m_shp_polar_dup;
-  Shp_extrude   m_shp_extrude;
-  Shp_cross_section   m_shp_cross_section;
+  Shp_chamfer       m_shp_chamfer;
+  Shp_fillet        m_shp_fillet;
+  Shp_cut           m_shp_cut;
+  Shp_fuse          m_shp_fuse;
+  Shp_common        m_shp_common;
+  Shp_polar_dup     m_shp_polar_dup;
+  Shp_extrude       m_shp_extrude;
+  Shp_cross_section m_shp_cross_section;
   // --------------------------------------------------------------------
   // Selection related
   std::map<Mode, TopAbs_ShapeEnum> m_modes_selection_mode_map;

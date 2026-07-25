@@ -52,6 +52,8 @@ Status Shp_operation_base::ensure_operation_shps_()
   return Status::ok();
 }
 
+void Shp_operation_base::set_operation_shps_(std::vector<Shp_ptr> shps) { m_shps = std::move(shps); }
+
 [[nodiscard]] Status Shp_operation_base::ensure_operation_multi_shps_()
 {
   m_shps = get_selected_shps_();
@@ -76,17 +78,33 @@ void Shp_operation_base::delete_operation_shps_()
 
 void Shp_operation_base::operation_shps_finalize_()
 {
+  m_completed_shps = m_shps;
   for (Shp_ptr& shape : m_shps)
   {
     AIS_Shape_ptr s = shape;
-    view().bake_transform_into_geometry(s);
+    // Batch: one viewer update after all shapes are baked.
+    view().bake_transform_into_geometry(s, false);
   }
+
+  ctx().UpdateCurrentViewer();
 }
 
 void Shp_operation_base::operation_shps_cancel_()
 {
+  if (!m_shps.empty())
+    m_completed_shps = m_shps;
+
   for (Shp_ptr& shape : m_shps)
     shape->ResetTransformation();
+}
+
+void Shp_operation_base::restore_operation_selection_()
+{
+  if (m_completed_shps.empty())
+    return;
+
+  view().set_selected_shps(m_completed_shps);
+  m_completed_shps.clear();
 }
 
 AIS_Shape_ptr Shp_operation_base::get_shape_(const ScreenCoords& screen_coords) { return m_view.get_shape(screen_coords); }
@@ -150,8 +168,10 @@ void Shp_operation_base::copy_shape_material_from_(Shp_ptr& dest, const Shp_ptr&
 
 void Shp_operation_base::redisplay_operation_shps_after_transform_()
 {
-  for (Shp_ptr& shape : m_shps)
-    ctx().Redisplay(shape, false);
-
+  // SetLocalTransformation() already pushes the new matrix into each presentation via
+  // UpdateTransformation(); a per-shape Redisplay would needlessly recompute the Prs/selection
+  // from the B-Rep (re-triangulate faces, rebuild sensitive BVH) - very slow for dense shapes.
+  // Dynamic highlight is disabled for Move/Rotate/Scale in Occt_view::on_mode() so stale
+  // selection BVHs cannot paint a wireframe ghost at the original pose.
   ctx().UpdateCurrentViewer();
 }

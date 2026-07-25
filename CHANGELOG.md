@@ -7,10 +7,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Performance
+
+- **Sketch face extrude** live preview: simple faces show a shaded prism while dragging; dense faces (when **Settings -> Sketch -> Appearance -> Extrude fast preview** is on, default edge threshold **24**) preview by translating face copies so dragging stays responsive. **Both sides** shows face copies on both ends. Finalize always builds the real solid with `MakePrism`. Length dimension is reused in place.
+- **Move / scale / rotate** live preview no longer `Redisplay`s (recomputes) each shape per mouse-move. `SetLocalTransformation` already updates the presentation transform, so previews now just redraw the viewer - dense shapes drag smoothly instead of re-triangulating and rebuilding selection BVHs every frame. While those tools are active, view-controller dynamic highlight is off (`SetAllowHighlight(false)`) so idle mouse moves skip `MoveTo` and cannot paint a wireframe ghost on the stale pre-transform selection BVH; orbit/pan still work.
+
 ### Fixed
 
 - Shape **Rotate** (<kbd>Tab</kbd>): angle entry uses the degrees popup (with a **deg** suffix) instead of the length popup (`in`/`mm`).
 - Dist/angle popups: <kbd>Enter</kbd> (and click-away) commit again when a unit suffix is shown; `IsItemDeactivatedAfterEdit` is read before the suffix label.
+- **Move / rotate / scale:** the shapes selected when entering the tool are kept selected and used as the operands. The mode-switch faint/selection-mode redisplay was clearing the AIS selection, so the first drag found nothing to transform. Multi-select is seeded into the tool from the enter snapshot (AIS restore alone could leave only one shape selected after switching to whole-object pick mode).
+- **Move / rotate / scale:** the full set of transformed shapes stays selected after the operation completes or is cancelled with Escape. Baking the transform and leaving the tool mode was collapsing a multi-shape selection down to one shape; the matching LMB release was also running AIS `SelectDetected` and replacing the restored multi-selection with the shape under the cursor. Escape also no longer runs two redundant mode switches after the tool already returned to Normal.
+- **Undo / redo after move / rotate / scale:** no longer restores those free-drag tool modes (which would immediately drag a leftover selection). Undo/redo maps Move/Rotate/Scale to the tool parent mode (`Normal`).
+- **Extrude:** the left click that finalizes a sketch-face extrude no longer immediately starts a new extrude on whatever face is under the cursor (e.g. a box around the circle you just extruded).
 - Status toast messages (`GUI::show_message` / `ezy.msg`) are also written to the **Log** window.
 - WASM (OCCT 7.9.3): stop forcing a near-white AIS `SetColor` after every material apply. That OCCT 8 GLES workaround had been running on all Emscripten builds and made steel, gold, and other presets look identical (glass still showed transparency).
 - WASM: clear AIS `OwnColor` when applying a Shape List material so presets are not stuck on a forced color. Prefer the **OCCT 7.9.3** wasm kit — OCCT 8.x GLES still has known shading regressions (`docs/building-occt.md`).
@@ -87,6 +96,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Scripting
 
 - **`ezy.view.get_selected()` / `get_selected_indices()`:** Return the current 3D viewer selection as document `Shp` objects, or as shape indices (Python **0-based**, Lua **1-based**). Available in Python, Lua, and the remote `ezycad` client.
+- **`ezy.view.set_selected(s1, ...)`:** Replace the 3D viewer selection with the given shapes. Accepts a Python list / Lua table, and clears the selection when called with no arguments. Available in Python, Lua, and the remote `ezycad` client.
 - **Public API layout:** Python-first package surface under `ezy` / `ezy.view` / `ezy.view.curr_sketch` (same object as `ezy.sketch`). Lua mirrors the same namespaces. See [docs/scripting.md](docs/scripting.md).
 - **`ezy.view.fuse` / `cut` / `common` / `delete`:** Boolean union, cut (first shape is body, rest are tools), intersection, or delete one or more shapes. Available in Python, Lua, and the remote `ezycad` client.
 - **Remote Python (`--listen`):** Desktop builds with embedded Python can accept console snippets over TCP (`EzyCad --listen [host:]port`). Execution is marshaled to the main UI thread. Importable client under `scripts/ezycad/` (`import ezycad; ezycad.connect()`, with `scripts/` on `PYTHONPATH`). See [docs/scripting.md](docs/scripting.md#remote-python---listen).

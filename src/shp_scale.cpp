@@ -12,6 +12,13 @@ Shp_scale::Shp_scale(Occt_view& view)
 {
 }
 
+void Shp_scale::begin(std::vector<Shp_ptr> shps)
+{
+  clear_all(m_scale_pln, m_center, m_initial_distance);
+  m_scale_factor = 1.0;
+  set_operation_shps_(std::move(shps));
+}
+
 Status Shp_scale::scale_selected(const ScreenCoords& screen_coords)
 {
   CHK_RET(ensure_start_state_());
@@ -89,6 +96,7 @@ void Shp_scale::finalize()
 
   view().push_undo_delta(std::make_unique<Shape_geom_delta>(std::move(changes)));
   reset();
+  restore_operation_selection_();
 }
 
 void Shp_scale::reset()
@@ -108,4 +116,5 @@ void Shp_scale::cancel()
 {
   operation_shps_cancel_();
   reset();
+  restore_operation_selection_();
 }

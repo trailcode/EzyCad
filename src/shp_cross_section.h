@@ -15,7 +15,7 @@
 #include <vector>
 
 #ifndef __EMSCRIPTEN__
-#  include <future>
+#include <future>
 #endif
 
 enum class Cross_section_plane
@@ -74,23 +74,23 @@ public:
   void                set_offset_display(double offset) { m_offset_display = offset; }
   bool                get_invert_normal() const { return m_invert_normal; }
   /// Flips the cutting-plane normal (and annotation arrow). Negates offset so the plane stays put.
-  void                set_invert_normal(bool invert);
-  bool                get_hide_back_side() const { return m_hide_back_side; }
-  void                set_hide_back_side(bool hide) { m_hide_back_side = hide; }
-  bool                get_show_section_outline() const { return m_show_section_outline; }
+  void set_invert_normal(bool invert);
+  bool get_hide_back_side() const { return m_hide_back_side; }
+  void set_hide_back_side(bool hide) { m_hide_back_side = hide; }
+  bool get_show_section_outline() const { return m_show_section_outline; }
   /// Show/hide cyan section wires without recomputing (keeps last compound for restore).
-  void                set_show_section_outline(bool show);
+  void set_show_section_outline(bool show);
   /// True when a section compound is cached (wires may still be hidden via show outline).
-  bool                has_preview() const { return !m_last_section_compound.IsNull(); }
+  bool has_preview() const { return !m_last_section_compound.IsNull(); }
   /// Cached section compound from the last successful preview (null if none).
   const TopoDS_Shape& last_section_compound() const { return m_last_section_compound; }
   /// Cutting plane used for `last_section_compound` (valid when `has_preview()`).
-  const gp_Pln&       last_section_plane() const;
-  bool                section_busy() const;
-  [[nodiscard]] bool  selection_stale() const;
-  [[nodiscard]] bool  preview_inputs_stale() const;
-  void                acknowledge_current_selection();
-  [[nodiscard]] bool  try_get_offset_range_display(double& out_min, double& out_max);
+  const gp_Pln&      last_section_plane() const;
+  bool               section_busy() const;
+  [[nodiscard]] bool selection_stale() const;
+  [[nodiscard]] bool preview_inputs_stale() const;
+  void               acknowledge_current_selection();
+  [[nodiscard]] bool try_get_offset_range_display(double& out_min, double& out_max);
   /// Block until the current section job finishes (used by sketch import / tests).
   [[nodiscard]] Status wait_section();
 
@@ -120,18 +120,18 @@ private:
     gp_Pln        plane;
   };
 
-  static std::vector<Shape_id> selection_ids_(const std::vector<Shp_ptr>& shapes);
-  void                         acknowledge_inputs_(const std::vector<Shp_ptr>& shapes);
-  void                         clear_section_wires_();
-  void                         clear_plane_annotation_();
-  void                         clear_preview_ais_();
-  void                         clear_ais_clips_();
-  void                         apply_ais_clips_(const std::vector<Shp_ptr>& shapes, const gp_Pln& plane);
-  void                         display_plane_annotation_(const Bnd_Box& bounds, const gp_Pln& plane);
-  void                         display_section_wires_(const TopoDS_Shape& compound);
-  void                         cancel_section_jobs_();
-  void                         enqueue_section_(const Shared_plane& plane_ctx);
-  void                         start_section_job_(Section_request req);
+  static std::vector<Shape_id>        selection_ids_(const std::vector<Shp_ptr>& shapes);
+  void                                acknowledge_inputs_(const std::vector<Shp_ptr>& shapes);
+  void                                clear_section_wires_();
+  void                                clear_plane_annotation_();
+  void                                clear_preview_ais_();
+  void                                clear_ais_clips_();
+  void                                apply_ais_clips_(const std::vector<Shp_ptr>& shapes, const gp_Pln& plane);
+  void                                display_plane_annotation_(const Bnd_Box& bounds, const gp_Pln& plane);
+  void                                display_section_wires_(const TopoDS_Shape& compound);
+  void                                cancel_section_jobs_();
+  void                                enqueue_section_(const Shared_plane& plane_ctx);
+  void                                start_section_job_(Section_request req);
   [[nodiscard]] static Section_result compute_section_result_(Section_request req, std::atomic<bool>* cancel);
   [[nodiscard]] std::optional<Status> finish_section_result_(Section_result result);
   [[nodiscard]] Result<Shared_plane>  build_shared_plane_(const std::vector<Shp_ptr>& shapes);
@@ -155,8 +155,8 @@ private:
   Graphic3d_ClipPlane_ptr m_ais_clip_plane;
   std::vector<Shp_ptr>    m_ais_clipped_shapes;
 
-  std::atomic<std::uint64_t> m_generation{0};
-  std::atomic<bool>          m_cancel{false};
+  std::atomic<std::uint64_t>     m_generation{0};
+  std::atomic<bool>              m_cancel{false};
   std::optional<Section_request> m_pending;
   Status                         m_last_section_status{Result_status::Success};
 
@@ -166,9 +166,9 @@ private:
 #else
   struct Chunked_job
   {
-    Section_request                                request;
-    std::size_t                                    next{0};
-    std::vector<Result<Cross_section_geometry>>    results;
+    Section_request                             request;
+    std::size_t                                 next{0};
+    std::vector<Result<Cross_section_geometry>> results;
   };
   std::optional<Chunked_job> m_chunked;
 #endif

@@ -117,6 +117,12 @@ inline constexpr float k_gui_sketch_shape_faint_opacity_max     = 0.85f;
 inline constexpr float k_gui_sketch_shape_faint_opacity_default = 0.14f;
 /// Master switch for sketch-mode faint shapes (`gui.sketch_shape_faint_enabled`); Options checkbox for all sketch tools.
 inline constexpr bool k_gui_sketch_shape_faint_enabled_default = true;
+/// Extrude: use translated face-copy preview for dense faces (`gui.extrude_fast_preview`).
+inline constexpr bool k_gui_extrude_fast_preview_default = true;
+/// Edge-count threshold for extrude fast preview (`gui.extrude_fast_preview_edge_threshold`).
+inline constexpr int k_gui_extrude_fast_preview_edge_threshold_min     = 4;
+inline constexpr int k_gui_extrude_fast_preview_edge_threshold_max     = 256;
+inline constexpr int k_gui_extrude_fast_preview_edge_threshold_default = 24;
 /// Allowed range and default for `gui.view_roll_step_deg` (view roll and numpad orbit steps; must match Settings slider).
 inline constexpr double k_gui_view_roll_step_deg_min     = 0.1;
 inline constexpr double k_gui_view_roll_step_deg_max     = 180.0;
@@ -208,6 +214,7 @@ inline constexpr const char* k_image_underlay               = "https://ezycad.re
 inline constexpr const char* k_usage_settings_options       = "https://ezycad.readthedocs.io/en/latest/usage-settings.html#options-panel";
 inline constexpr const char* k_occt_view                    = "https://ezycad.readthedocs.io/en/latest/usage-occt-view.html";
 inline constexpr const char* k_startup_project              = "https://ezycad.readthedocs.io/en/latest/usage-settings.html#startup-project";
+inline constexpr const char* k_extrude_sketch_face          = "https://ezycad.readthedocs.io/en/latest/usage.html#extrude-sketch-face-tool-e";
 // clang-format on
 } // namespace doc_urls
 
@@ -284,6 +291,10 @@ public:
   float sketch_shape_faint_opacity() const { return m_sketch_shape_faint_opacity; }
   /// Master on/off for faint shapes in all sketch modes (`gui.sketch_shape_faint_enabled`).
   bool sketch_shape_faint_enabled() const { return m_sketch_shape_faint_enabled; }
+  /// Extrude dense-face fast preview (`gui.extrude_fast_preview`); Settings.
+  bool extrude_fast_preview_enabled() const { return m_extrude_fast_preview; }
+  /// Edge count above which extrude uses face-copy preview (`gui.extrude_fast_preview_edge_threshold`).
+  int  extrude_fast_preview_edge_threshold() const { return m_extrude_fast_preview_edge_threshold; }
   bool get_add_mid_pt_line_edges() const { return m_add_mid_pt_line_edges; }
   bool get_add_mid_pt_rect_edges() const { return m_add_mid_pt_rect_edges; }
   bool get_add_mid_pt_slot_edges() const { return m_add_mid_pt_slot_edges; }
@@ -303,13 +314,15 @@ public:
   ImVec4       get_clear_color() const;
   void         set_mode(Mode mode); // gui_mode.cpp
   void         set_parent_mode();   // gui_mode.cpp
-  void         set_dist_edit(float dist, std::function<void(float, bool)>&& callback,
+  /// Parent mode for Escape / tool exit (e.g. Move -> Normal, sketch tools -> Sketch_inspection_mode).
+  static Mode parent_mode_of(Mode mode); // gui_mode.cpp
+  void        set_dist_edit(float dist, std::function<void(float, bool)>&& callback,
+                            const std::optional<ScreenCoords> screen_coords = std::nullopt);
+  void        hide_dist_edit(bool apply = true);
+  void        set_angle_edit(float angle, std::function<void(float, bool)>&& callback,
                              const std::optional<ScreenCoords> screen_coords = std::nullopt);
-  void         hide_dist_edit(bool apply = true);
-  void         set_angle_edit(float angle, std::function<void(float, bool)>&& callback,
-                              const std::optional<ScreenCoords> screen_coords = std::nullopt);
-  void         hide_angle_edit(bool apply = true);
-  void         hide_sketch_origin_set_edit(bool apply = true);
+  void        hide_angle_edit(bool apply = true);
+  void        hide_sketch_origin_set_edit(bool apply = true);
   /// True when dist or angle edit is visible; Tab should be routed to on_key() instead of ImGui.
   bool is_dist_or_angle_edit_active() const;
   bool is_sketch_origin_set_edit_active() const;
@@ -610,13 +623,15 @@ private:
   float m_sketch_face_highlight_color[4] = {
       k_gui_sketch_face_highlight_color_default[0], k_gui_sketch_face_highlight_color_default[1],
       k_gui_sketch_face_highlight_color_default[2], k_gui_sketch_face_highlight_color_default[3]};
-  int   m_sketch_shape_faint_style   = k_gui_sketch_shape_faint_style_default;
-  float m_sketch_shape_faint_opacity = k_gui_sketch_shape_faint_opacity_default;
-  bool  m_sketch_shape_faint_enabled = k_gui_sketch_shape_faint_enabled_default;
-  bool  m_add_mid_pt_line_edges      = false;
-  bool  m_add_mid_pt_rect_edges      = true;
-  bool  m_add_mid_pt_slot_edges      = false;
-  bool  m_edge_from_center           = false;
+  int   m_sketch_shape_faint_style            = k_gui_sketch_shape_faint_style_default;
+  float m_sketch_shape_faint_opacity          = k_gui_sketch_shape_faint_opacity_default;
+  bool  m_sketch_shape_faint_enabled          = k_gui_sketch_shape_faint_enabled_default;
+  bool  m_extrude_fast_preview                = k_gui_extrude_fast_preview_default;
+  int   m_extrude_fast_preview_edge_threshold = k_gui_extrude_fast_preview_edge_threshold_default;
+  bool  m_add_mid_pt_line_edges               = false;
+  bool  m_add_mid_pt_rect_edges               = true;
+  bool  m_add_mid_pt_slot_edges               = false;
+  bool  m_edge_from_center                    = false;
   /// Degrees per numpad orbit (8/2/4/6) and Blender-style roll (Shift+NumPad 4/6); persisted in `gui.view_roll_step_deg`.
   double m_view_roll_step_deg = k_gui_view_roll_step_deg_default;
   /// Multiplier for `UpdateZoom(Aspect_ScrollDelta(..., int(y * scale)))`; persisted in `gui.view_zoom_scroll_scale`.
