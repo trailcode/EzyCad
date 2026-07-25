@@ -389,6 +389,7 @@ void Shp_extrude::update_dim_(const double extrude_dist, const Plane_side side)
 void Shp_extrude::update_angle_dim_()
 {
   clear_length_dim_();
+  EZY_ASSERT(m_last_preview_dist);
 
   const double radius = twist_dim_radius_();
   if (radius <= Precision::Confusion())
@@ -399,9 +400,14 @@ void Shp_extrude::update_angle_dim_()
   if (std::fabs(geom_ang) < to_radians(1.0))
     geom_ang = (geom_ang < 0.0) ? -to_radians(1.0) : to_radians(1.0);
 
+  const double side_sign = (m_extrude_side == Plane_side::Front) ? 1.0 : -1.0;
+  const double h_far =
+      m_extrude_both_sides ? (0.5 * side_sign * *m_last_preview_dist) : (side_sign * *m_last_preview_dist);
+  const gp_Vec normal_dir(m_to_extrude_pln.Axis().Direction());
+  const gp_Pnt center(m_twist_centroid.XYZ() + normal_dir.XYZ() * h_far);
+
   const gp_Vec x_dir(m_to_extrude_pln.XAxis().Direction());
   const gp_Vec y_dir(m_to_extrude_pln.YAxis().Direction());
-  const gp_Pnt center = m_twist_centroid;
   const gp_Pnt p_ref(center.XYZ() + x_dir.XYZ() * radius);
   const gp_Pnt p_cur(center.XYZ() + (x_dir * std::cos(geom_ang) + y_dir * std::sin(geom_ang)).XYZ() * radius);
 
