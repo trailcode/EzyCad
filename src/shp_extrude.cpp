@@ -1,12 +1,13 @@
 #include "shp_extrude.h"
 
-#include <BRepBuilderAPI_GTransform.hxx>
+#include <AIS_Shape.hxx>
 #include <BRepBuilderAPI_Transform.hxx>
 #include <BRepPrimAPI_MakePrism.hxx>
 #include <Precision.hxx>
+#include <TopExp_Explorer.hxx>
 #include <TopoDS.hxx>
 #include <cmath>
-#include <gp_GTrsf.hxx>
+#include <gp_Trsf.hxx>
 
 #include "utl_dbg.h"
 #include "utl_geom.h"
@@ -16,10 +17,21 @@
 #include "shp_delta.h"
 #include "utl.h"
 
+namespace
+{
+size_t count_shape_edges_(const TopoDS_Shape& shape)
+{
+  size_t n = 0;
+  for (TopExp_Explorer ex(shape, TopAbs_EDGE); ex.More(); ex.Next())
+    ++n;
+  return n;
+}
+} // namespace
+
 Shp_extrude::Shp_extrude(Occt_view& view)
     : Shp_operation_base(view)
     , m_extrude_side(Plane_side::Front)
-    , m_unit_prism_side(Plane_side::Front)
+    , m_last_preview_side(Plane_side::Front)
 {
 }
 
@@ -31,11 +43,13 @@ bool Shp_extrude::begin_face_extrude(const AIS_Shape_ptr& shp)
 
   cancel();
 
-  m_to_extrude_pln = face->owner_sketch.get_plane();
-  m_extrude_side   = Plane_side::Front;
-  m_to_extrude_pt  = closest_to_camera(view().view_handle(), face->verts_3d);
-  m_curr_view_pln  = view().get_view_plane(*m_to_extrude_pt);
-  m_to_extrude     = shp;
+  m_to_extrude_pln      = face->owner_sketch.get_plane();
+  m_extrude_side        = Plane_side::Front;
+  m_to_extrude_pt       = closest_to_camera(view().view_handle(), face->verts_3d);
+  m_curr_view_pln       = view().get_view_plane(*m_to_extrude_pt);
+  m_to_extrude          = shp;
+  m_face_edge_count     = count_shape_edges_(shp->Shape());
+  m_lite_preview_active = false;
 
   const gp_Ax1& a = m_to_extrude_pln.Axis();
   const gp_Ax1& b = m_curr_view_pln.Axis();
@@ -75,15 +89,20 @@ void Shp_extrude::finalize()
 {
   DBG_MSG("");
   EZY_ASSERT(m_extruded);
-  // Drag preview is wireframe; bake the shaded solid for the document (add_shp_
-  // applies the default material and redisplays).
+  EZY_ASSERT(m_last_preview_dist);
+
+  // Lite preview only translated face copies. Always bake a shaded MakePrism solid.
+  clear_lite_other_face_();
+  const TopoDS_Shape body = make_prism_body_(*m_last_preview_dist, m_extrude_side);
+  m_extruded->ResetTransformation();
+  m_extruded->Set(body);
   m_extruded->set_disp_mode(AIS_Shaded);
   m_extruded->set_name(view().get_unique_shape_name("Shape"));
   add_shp_(m_extruded, true);
   view().push_undo_delta(std::make_unique<Shape_add_delta>(std::vector<Shape_rec>{capture_shape_rec(*m_extruded)}));
   ctx().Remove(m_tmp_dim, false);
   clear_all(m_to_extrude_pt, m_to_extrude, m_extruded, m_tmp_dim);
-  invalidate_unit_prism_();
+  clear_preview_();
   view().set_show_dim_input(false);
   view().set_entered_dim(std::nullopt);
   ctx().ClearSelected(true);
@@ -91,11 +110,12 @@ void Shp_extrude::finalize()
 
 bool Shp_extrude::cancel()
 {
+  clear_lite_other_face_();
   ctx().Remove(m_extruded, true);
   ctx().Remove(m_tmp_dim, false);
   bool did_cancel = m_to_extrude_pt.has_value();
   clear_all(m_to_extrude_pt, m_to_extrude, m_extruded, m_tmp_dim);
-  invalidate_unit_prism_();
+  clear_preview_();
   view().set_show_dim_input(false);
   view().set_entered_dim(std::nullopt);
 
@@ -109,27 +129,6 @@ bool Shp_extrude::has_active_extrusion() const { return !m_extruded.IsNull(); }
 bool Shp_extrude::get_both_sides() const { return m_extrude_both_sides; }
 
 void Shp_extrude::set_both_sides(const bool both_sides) { m_extrude_both_sides = both_sides; }
-
-bool Shp_extrude::get_shaded_preview() const { return m_shaded_preview; }
-
-void Shp_extrude::set_shaded_preview(const bool shaded)
-{
-  if (m_shaded_preview == shaded)
-    return;
-
-  m_shaded_preview = shaded;
-  if (m_extruded.IsNull())
-    return;
-
-  // Switch the live preview in place.
-  if (shaded)
-  {
-    m_extruded->SetMaterial(view().get_default_material());
-    view().refresh_shape_shading_(m_extruded);
-  }
-
-  m_extruded->set_disp_mode(shaded ? AIS_Shaded : AIS_WireFrame);
-}
 
 void Shp_extrude::_update_extrude(const ScreenCoords& screen_coords)
 {
@@ -171,20 +170,16 @@ void Shp_extrude::_update_extrude(const ScreenCoords& screen_coords)
   }
 }
 
-void Shp_extrude::update_extrude_preview_(const double extrude_dist, const Plane_side side)
+bool Shp_extrude::use_lite_preview_()
 {
-  if (extrude_dist <= Precision::Confusion())
-    return;
+  if (!gui().extrude_fast_preview_enabled())
+    return false;
 
-  EZY_ASSERT(side != Plane_side::On);
+  return m_face_edge_count > static_cast<size_t>(gui().extrude_fast_preview_edge_threshold());
+}
 
-  // Skip redundant rebuilds when the height (and side) are effectively unchanged
-  // between frames (e.g. cursor moved parallel to the plane).
-  if (!m_extruded.IsNull() && m_last_preview_dist && m_unit_prism_side == side
-      && m_unit_prism_both_sides == m_extrude_both_sides
-      && std::fabs(extrude_dist - *m_last_preview_dist) <= Precision::Confusion())
-    return;
-
+void Shp_extrude::update_dim_(const double extrude_dist, const Plane_side side)
+{
   const gp_Vec normal_dir(m_to_extrude_pln.Axis().Direction());
   const double side_sign   = (side == Plane_side::Front) ? 1.0 : -1.0;
   const gp_Vec extrude_vec = normal_dir * (side_sign * extrude_dist);
@@ -193,8 +188,6 @@ void Shp_extrude::update_extrude_preview_(const double extrude_dist, const Plane
   if (m_extrude_both_sides)
     face_offset = normal_dir * (-side_sign * (extrude_dist * 0.5));
 
-  // Length dimension: create once, then update its endpoints in place instead of
-  // removing and rebuilding the annotation every mouse move.
   const gp_Pnt dim_top(m_to_extrude_pt->XYZ() + face_offset.XYZ() + extrude_vec.XYZ());
   const gp_Pnt dim_base(m_to_extrude_pt->XYZ() + face_offset.XYZ());
   if (m_tmp_dim.IsNull())
@@ -208,67 +201,142 @@ void Shp_extrude::update_extrude_preview_(const double extrude_dist, const Plane
     ctx().Redisplay(m_tmp_dim, false);
   }
   m_tmp_dim->SetCustomValue(extrude_dist / view().get_display_to_model_scale());
+}
 
-  // Body: stretch a cached height-1 prism along the plane normal (affinity) rather
-  // than sweeping a fresh solid with BRepPrimAPI_MakePrism every frame. Points on
-  // the sketch plane stay fixed; distance from the plane scales by extrude_dist.
-  if (m_unit_prism.IsNull() || m_unit_prism_side != side || m_unit_prism_both_sides != m_extrude_both_sides)
-    build_unit_prism_(side);
+void Shp_extrude::update_extrude_preview_(const double extrude_dist, const Plane_side side)
+{
+  if (extrude_dist <= Precision::Confusion())
+    return;
 
-  gp_GTrsf affinity;
-  affinity.SetAffinity(m_to_extrude_pln.Position().Ax2(), extrude_dist);
-  const TopoDS_Shape body = BRepBuilderAPI_GTransform(m_unit_prism, affinity, true).Shape();
+  EZY_ASSERT(side != Plane_side::On);
 
-  if (m_extruded.IsNull())
+  const bool lite = use_lite_preview_();
+
+  // Skip redundant work when height / side / preview mode are unchanged.
+  if (!m_extruded.IsNull() && m_last_preview_dist && m_last_preview_side == side
+      && m_last_preview_both_sides == m_extrude_both_sides && m_lite_preview_active == lite
+      && std::fabs(extrude_dist - *m_last_preview_dist) <= Precision::Confusion())
+    return;
+
+  // Switching between lite and full needs a fresh AIS object.
+  if (!m_extruded.IsNull() && m_lite_preview_active != lite)
   {
-    m_extruded = new Shp(ctx(), body);
-    // Wireframe while dragging keeps the preview cheap (no shaded remesh per move);
-    // finalize() bakes the shaded solid. Options "Shaded preview" opts back in.
-    const AIS_DisplayMode preview_mode = m_shaded_preview ? AIS_Shaded : AIS_WireFrame;
-    m_extruded->set_disp_mode(preview_mode);
-    ctx().Display(m_extruded, preview_mode, AIS_Shape::SelectionMode(TopAbs_SHAPE), false);
+    clear_lite_other_face_();
+    ctx().Remove(m_extruded, false);
+    m_extruded.Nullify();
+  }
+
+  update_dim_(extrude_dist, side);
+
+  const gp_Vec normal_dir(m_to_extrude_pln.Axis().Direction());
+  const double side_sign   = (side == Plane_side::Front) ? 1.0 : -1.0;
+  const gp_Vec extrude_vec = normal_dir * (side_sign * extrude_dist);
+  gp_Vec       face_offset(0.0, 0.0, 0.0);
+  if (m_extrude_both_sides)
+    face_offset = normal_dir * (-side_sign * (extrude_dist * 0.5));
+
+  if (lite)
+  {
+    // Dense faces: translate copies of the sketch face (Move-style cheap preview).
+    if (m_extruded.IsNull())
+    {
+      m_extruded = new Shp(ctx(), m_to_extrude->Shape());
+      m_extruded->set_disp_mode(AIS_WireFrame);
+      ctx().Display(m_extruded, AIS_WireFrame, AIS_Shape::SelectionMode(TopAbs_SHAPE), false);
+    }
+
+    gp_Trsf far_trsf;
+    far_trsf.SetTranslation(face_offset + extrude_vec);
+    m_extruded->SetLocalTransformation(far_trsf);
+
+    if (m_extrude_both_sides)
+    {
+      if (m_lite_face_other.IsNull())
+      {
+        m_lite_face_other = new AIS_Shape(m_to_extrude->Shape());
+        ctx().Display(m_lite_face_other, AIS_WireFrame, -1, false);
+        ctx().Deactivate(m_lite_face_other);
+      }
+
+      gp_Trsf near_trsf;
+      near_trsf.SetTranslation(face_offset);
+      m_lite_face_other->SetLocalTransformation(near_trsf);
+      ctx().Redisplay(m_lite_face_other, false);
+    }
+    else
+      clear_lite_other_face_();
+
+    m_lite_preview_active = true;
   }
   else
-    m_extruded->Set(body);
-
-  if (m_shaded_preview)
   {
-    // Shaded preview keeps live-material behavior (Options Material row changes
-    // show while dragging).
+    clear_lite_other_face_();
+
+    // Simple faces: full shaded solid prism each update.
+    const TopoDS_Shape body = make_prism_body_(extrude_dist, side);
+
+    if (m_extruded.IsNull())
+    {
+      m_extruded = new Shp(ctx(), body);
+      m_extruded->set_disp_mode(AIS_Shaded);
+      ctx().Display(m_extruded, AIS_Shaded, AIS_Shape::SelectionMode(TopAbs_SHAPE), false);
+    }
+    else
+    {
+      m_extruded->ResetTransformation();
+      m_extruded->Set(body);
+      m_extruded->set_disp_mode(AIS_Shaded);
+    }
+
     m_extruded->SetMaterial(view().get_default_material());
     view().refresh_shape_shading_(m_extruded);
+    m_lite_preview_active = false;
   }
 
   ctx().Redisplay(m_extruded, false);
   ctx().UpdateCurrentViewer();
-  m_last_preview_dist = extrude_dist;
+  m_last_preview_dist       = extrude_dist;
+  m_last_preview_side       = side;
+  m_last_preview_both_sides = m_extrude_both_sides;
 }
 
-void Shp_extrude::build_unit_prism_(const Plane_side side)
+TopoDS_Shape Shp_extrude::make_prism_body_(const double extrude_dist, const Plane_side side) const
 {
+  EZY_ASSERT(side != Plane_side::On);
+  EZY_ASSERT(extrude_dist > Precision::Confusion());
+
   const gp_Vec normal_dir(m_to_extrude_pln.Axis().Direction());
-  const double side_sign = (side == Plane_side::Front) ? 1.0 : -1.0;
-  const gp_Vec unit_vec  = normal_dir * side_sign; // height 1 along the extrude side
+  const double side_sign   = (side == Plane_side::Front) ? 1.0 : -1.0;
+  const gp_Vec extrude_vec = normal_dir * (side_sign * extrude_dist);
 
   TopoDS_Face face = TopoDS::Face(m_to_extrude->Shape());
   if (m_extrude_both_sides)
   {
-    // Center the unit prism on the sketch plane (span -0.5..+0.5) so the affinity
-    // stretch yields -d/2..+d/2.
     gp_Trsf trsf;
-    trsf.SetTranslation(normal_dir * (-side_sign * 0.5));
+    trsf.SetTranslation(normal_dir * (-side_sign * (extrude_dist * 0.5)));
     face = TopoDS::Face(BRepBuilderAPI_Transform(face, trsf, true).Shape());
   }
 
-  m_unit_prism            = BRepPrimAPI_MakePrism(face, unit_vec);
-  m_unit_prism_side       = side;
-  m_unit_prism_both_sides = m_extrude_both_sides;
+  return BRepPrimAPI_MakePrism(face, extrude_vec);
 }
 
-void Shp_extrude::invalidate_unit_prism_()
+void Shp_extrude::clear_lite_other_face_()
 {
-  m_unit_prism.Nullify();
+  if (!m_lite_face_other.IsNull())
+  {
+    ctx().Remove(m_lite_face_other, false);
+    m_lite_face_other.Nullify();
+  }
+}
+
+void Shp_extrude::clear_preview_()
+{
+  clear_lite_other_face_();
+  m_face_edge_count         = 0;
+  m_lite_preview_active     = false;
   m_last_preview_dist.reset();
+  m_last_preview_side       = Plane_side::Front;
+  m_last_preview_both_sides = false;
 }
 
 void Shp_extrude::refresh_tmp_dimension_style(const Length_dimension_style& style)

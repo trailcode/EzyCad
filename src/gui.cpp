@@ -848,6 +848,9 @@ void GUI::dist_edit_()
   // Text field: InputFloat applies printf rounding so typed digits can disagree with m_dist_val.
   const bool text_changed = ImGui::InputText("##dist_edit_text", m_dist_text_buf.data(), m_dist_text_buf.size(),
                                              ImGuiInputTextFlags_CharsDecimal | ImGuiInputTextFlags_CharsScientific);
+  // Snapshot before the unit suffix Text - IsItemDeactivatedAfterEdit would otherwise refer to
+  // that Text widget and Enter / click-away would never commit (requires a second Enter).
+  const bool deactivated_after_edit = ImGui::IsItemDeactivatedAfterEdit();
 
   ImGui::SameLine(0.0f, ImGui::GetStyle().ItemInnerSpacing.x);
   ImGui::TextUnformatted(m_view->project_unit_suffix());
@@ -855,7 +858,7 @@ void GUI::dist_edit_()
   if (text_changed && parse_dist_text_to_float_(m_dist_text_buf.data(), m_dist_val))
     m_dist_callback(m_dist_val, false);
 
-  if (ImGui::IsItemDeactivatedAfterEdit() && m_dist_callback)
+  if (deactivated_after_edit && m_dist_callback)
   {
     if (ImGui::IsKeyPressed(ImGuiKey_Escape))
     {
@@ -3747,7 +3750,12 @@ void GUI::on_mouse_button(int button, int action, int mods)
   m_view->ctx().UpdateCurrentViewer();
 
   if (button == GLFW_MOUSE_BUTTON_LEFT && action == GLFW_PRESS && mods == 0)
-    on_left_click_(screen_coords);
+  {
+    // If this press finalized an active extrude in the view, do not also run on_left_click_
+    // (that would immediately pick the face under the cursor and start a new extrude).
+    if (!m_view->consume_extrude_finalize_press())
+      on_left_click_(screen_coords);
+  }
 
   else if (button == GLFW_MOUSE_BUTTON_RIGHT && action == GLFW_PRESS && mods == 0)
     // Right button is to finalize the current operation.

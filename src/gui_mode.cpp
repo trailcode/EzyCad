@@ -93,6 +93,15 @@ const char* GUI::current_mode_description_() const
 void GUI::options_doc_help_button_()
 {
   ImGui::SameLine(0.0f, ImGui::GetStyle().ItemInnerSpacing.x);
+  if (get_mode() == Mode::Sketch_face_extrude)
+  {
+    GUI_DOC_HELP_("Extrude a sketch face into a solid. Dense faces can use a fast drag preview "
+                  "(face copies) controlled in Settings -> Sketch -> Appearance -> Extrude fast preview. "
+                  "Click ? to open the user guide.",
+                  doc_urls::k_extrude_sketch_face);
+    return;
+  }
+
   GUI_DOC_HELP_("Open the relevant section of the online user guide.", get_doc_url_for_mode(get_mode()).c_str());
 }
 
@@ -932,18 +941,6 @@ void GUI::options_sketch_face_extrude_mode_()
     ImGui::TableSetColumnIndex(1);
     if (ImGui::Checkbox("##extrude_both_sides", &extrude_both_sides))
       m_view->shp_extrude().set_both_sides(extrude_both_sides);
-
-    bool shaded_preview = m_view->shp_extrude().get_shaded_preview();
-    ImGui::TableNextRow();
-    ImGui::TableSetColumnIndex(0);
-    options_right_aligned_label_("Shaded preview");
-    ImGui::TableSetColumnIndex(1);
-    if (ImGui::Checkbox("##extrude_shaded_preview", &shaded_preview))
-      m_view->shp_extrude().set_shaded_preview(shaded_preview);
-    ImGui::SameLine(0.0f, ImGui::GetStyle().ItemInnerSpacing.x);
-    GUI_DOC_HELP_("Show the drag preview as a shaded solid instead of wireframe. "
-                  "Slower on faces with many edges (e.g. imported cross-sections). Click ? to open the user guide.",
-                  get_doc_url_for_mode(get_mode()).c_str());
 
     const std::vector<std::string>& material_names = occt_material_combo_labels_();
     int                             current_item   = int(m_view->get_default_material().Name());

@@ -190,7 +190,7 @@ Tests use `sketch_left_click` to simulate sketch LMB without ImGui mouse positio
 | `Sketch_inspection_mode`         | `options_sketch_common_`                                                                                            |
 | Each sketch tool mode            | Matching `options_sketch_*_mode_`                                                                                   |
 | `Sketch_operation_axis`          | Mirror / Revolve / Clear axis                                                                                       |
-| `Sketch_face_extrude`            | Both sides, shaded preview, material                                                                                |
+| `Sketch_face_extrude`            | Both sides, material; help mentions Settings fast preview                                                           |
 
 Shared sketch controls (snap, midpoint nodes, place-from-center) live in `options_sketch_common_` and helpers in `gui_mode.cpp`.
 

@@ -1845,6 +1845,13 @@ void Occt_view::sketch_face_extrude(const ScreenCoords& screen_coords, bool is_m
 
 bool Occt_view::begin_sketch_face_extrude(const AIS_Shape_ptr& face) { return m_shp_extrude.begin_face_extrude(face); }
 
+bool Occt_view::consume_extrude_finalize_press()
+{
+  const bool finalized       = m_extrude_finalized_on_press;
+  m_extrude_finalized_on_press = false;
+  return finalized;
+}
+
 void Occt_view::delete_selected() { delete_shapes(get_selected()); }
 
 void Occt_view::delete_shapes(std::vector<AIS_Shape_ptr> to_delete)
@@ -2406,6 +2413,9 @@ void Occt_view::on_mouse_button(int theButton, int theAction, int theMods)
     if (m_shp_extrude.has_active_extrusion())
     {
       finalize_sketch_extrude_();
+      // This press consumed the extrude; tell the GUI not to also run on_left_click_
+      // (which would immediately pick a new face and begin another extrude).
+      m_extrude_finalized_on_press = true;
       return;
     }
 

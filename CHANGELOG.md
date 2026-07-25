@@ -9,10 +9,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Performance
 
-- **Sketch face extrude** live preview no longer sweeps a fresh solid every mouse move. It caches a height-1 prism of the picked face and stretches it along the plane normal (affinity), draws the drag preview as wireframe (shaded solid is baked on finalize), reuses the length dimension instead of recreating it, and skips redundant rebuilds when the height is unchanged. This keeps dragging responsive on dense profiles (e.g. many-arc cross-section faces). A **Shaded preview** checkbox in extrude Options restores the previous shaded drag preview.
+- **Sketch face extrude** live preview: simple faces show a shaded prism while dragging; dense faces (when **Settings -> Sketch -> Appearance -> Extrude fast preview** is on, default edge threshold **24**) preview by translating face copies so dragging stays responsive. **Both sides** shows face copies on both ends. Finalize always builds the real solid with `MakePrism`. Length dimension is reused in place.
 
 ### Fixed
 
+- **Distance edit (Tab):** Enter / click-away commit works again when the `in`/`mm` unit suffix is shown. `IsItemDeactivatedAfterEdit` was queried after the suffix `Text` widget, so the first Enter only left the field and a second Enter was needed (affected extrude, move, and other Tab distance popups).
+- **Extrude:** the left click that finalizes a sketch-face extrude no longer immediately starts a new extrude on whatever face is under the cursor (e.g. a box around the circle you just extruded).
 - Status toast messages (`GUI::show_message` / `ezy.msg`) are also written to the **Log** window.
 - WASM (OCCT 7.9.3): stop forcing a near-white AIS `SetColor` after every material apply. That OCCT 8 GLES workaround had been running on all Emscripten builds and made steel, gold, and other presets look identical (glass still showed transparency).
 - WASM: clear AIS `OwnColor` when applying a Shape List material so presets are not stuck on a forced color. Prefer the **OCCT 7.9.3** wasm kit — OCCT 8.x GLES still has known shading regressions (`docs/building-occt.md`).
