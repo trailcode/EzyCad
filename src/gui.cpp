@@ -3119,9 +3119,9 @@ void GUI::show_error_dialog(const std::string& title, const std::string& message
 {
   // Log full detail once; toast title only (do not call show_message - that would log twice).
   log_message(title + ": " + message);
-  m_message            = title;
-  m_message_visible    = true;
-  m_message_start_time = std::chrono::steady_clock::now();
+  m_message             = title;
+  m_message_visible     = true;
+  m_message_start_time  = std::chrono::steady_clock::now();
   m_error_modal_title   = title;
   m_error_modal_message = message;
   m_open_error_modal    = true;

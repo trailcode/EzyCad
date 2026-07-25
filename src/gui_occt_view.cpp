@@ -794,8 +794,8 @@ Status Occt_view::create_sketch_from_cross_section(const std::string& base_name)
   for (const Sketch_ptr& s : m_sketches)
     existing.push_back(s->get_name());
 
-  const std::string name   = unique_sequential_name(base_name, existing);
-  Sketch_ptr        sketch = std::make_shared<Sketch>(name, *this, pln);
+  const std::string           name   = unique_sequential_name(base_name, existing);
+  Sketch_ptr                  sketch = std::make_shared<Sketch>(name, *this, pln);
   const Section_import_counts counts = import_section_edges_into_sketch_(*sketch, compound, pln);
   if (counts.imported == 0 || sketch->edge_count() == 0)
     return Status::user_error("Cross-section has no line or circle edges to import.");
@@ -813,8 +813,7 @@ Status Occt_view::create_sketch_from_cross_section(const std::string& base_name)
   msg << "Created sketch '" << name << "' with " << counts.imported
       << (counts.imported == 1 ? " imported edge" : " imported edges");
   if (counts.skipped > 0)
-    msg << " (" << counts.skipped << " unsupported curve"
-        << (counts.skipped == 1 ? "" : "s") << " skipped)";
+    msg << " (" << counts.skipped << " unsupported curve" << (counts.skipped == 1 ? "" : "s") << " skipped)";
   msg << ".";
   return Status::ok(msg.str());
 }
@@ -1849,7 +1848,7 @@ bool Occt_view::begin_sketch_face_extrude(const AIS_Shape_ptr& face) { return m_
 
 bool Occt_view::consume_extrude_finalize_press()
 {
-  const bool finalized       = m_extrude_finalized_on_press;
+  const bool finalized         = m_extrude_finalized_on_press;
   m_extrude_finalized_on_press = false;
   return finalized;
 }
@@ -2414,10 +2413,9 @@ void Occt_view::on_mouse_button(int theButton, int theAction, int theMods)
     // release cannot replace the restored multi-selection with the single shape under the cursor.
     if (theButton == GLFW_MOUSE_BUTTON_LEFT)
     {
-      const bool finalize_transform =
-          (get_mode() == Mode::Move && shp_move().has_operation_shps()) ||
-          (get_mode() == Mode::Rotate && shp_rotate().has_operation_shps()) ||
-          (get_mode() == Mode::Scale && shp_scale().has_operation_shps());
+      const bool finalize_transform = (get_mode() == Mode::Move && shp_move().has_operation_shps()) ||
+                                      (get_mode() == Mode::Rotate && shp_rotate().has_operation_shps()) ||
+                                      (get_mode() == Mode::Scale && shp_scale().has_operation_shps());
       if (finalize_transform)
       {
         m_transform_finalize_lmb_skipped_view_controller = true;
@@ -3036,17 +3034,15 @@ void Occt_view::on_mode()
   // Move/rotate/scale preview uses SetLocalTransformation without Redisplay, so selection BVHs
   // stay at the pre-transform pose. Disable AIS_ViewController dynamic highlight (skips MoveTo
   // while idle) so hover cannot paint a wireframe ghost there; orbit/pan still get mouse updates.
-  const bool transform_preview =
-      get_mode() == Mode::Move || get_mode() == Mode::Rotate || get_mode() == Mode::Scale;
+  const bool transform_preview = get_mode() == Mode::Move || get_mode() == Mode::Rotate || get_mode() == Mode::Scale;
   SetAllowHighlight(!transform_preview);
   if (transform_preview && !m_ctx.IsNull())
     m_ctx->ClearDetected(false);
 
   // Snapshot before selection-mode / faint redisplay Erase drops AIS selection. Move/Rotate/Scale
   // and Cross-section operate on the pre-switch selection, so it is restored after the redisplay.
-  const bool preserve_enter_selection = transform_preview || get_mode() == Mode::Shape_cross_section;
-  const std::vector<Shp_ptr> enter_selection =
-      preserve_enter_selection ? get_selected_shps() : std::vector<Shp_ptr>{};
+  const bool                 preserve_enter_selection = transform_preview || get_mode() == Mode::Shape_cross_section;
+  const std::vector<Shp_ptr> enter_selection          = preserve_enter_selection ? get_selected_shps() : std::vector<Shp_ptr>{};
 
   shp_polar_dup().reset();
   if (get_mode() != Mode::Shape_cross_section)

@@ -240,9 +240,9 @@ void Shp_extrude::update_extrude_preview_(const double extrude_dist, const Plane
   const bool lite = use_lite_preview_();
 
   // Skip redundant work when height / side / preview mode are unchanged.
-  if (!m_extruded.IsNull() && m_last_preview_dist && m_last_preview_side == side
-      && m_last_preview_both_sides == m_extrude_both_sides && m_lite_preview_active == lite
-      && std::fabs(extrude_dist - *m_last_preview_dist) <= Precision::Confusion())
+  if (!m_extruded.IsNull() && m_last_preview_dist && m_last_preview_side == side &&
+      m_last_preview_both_sides == m_extrude_both_sides && m_lite_preview_active == lite &&
+      std::fabs(extrude_dist - *m_last_preview_dist) <= Precision::Confusion())
     return;
 
   // Switching between lite and full needs a fresh AIS object.
@@ -359,8 +359,8 @@ void Shp_extrude::clear_lite_other_face_()
 void Shp_extrude::clear_preview_()
 {
   clear_lite_other_face_();
-  m_face_edge_count         = 0;
-  m_lite_preview_active     = false;
+  m_face_edge_count     = 0;
+  m_lite_preview_active = false;
   m_last_preview_dist.reset();
   m_last_preview_side       = Plane_side::Front;
   m_last_preview_both_sides = false;

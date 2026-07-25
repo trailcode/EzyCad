@@ -1511,12 +1511,11 @@ void GUI::settings_()
           ImGui::TableSetColumnIndex(1);
           {
             int thr = m_extrude_fast_preview_edge_threshold;
-            if (ImGui::SliderInt("##extrude_fast_preview_edge_threshold", &thr,
-                                 k_gui_extrude_fast_preview_edge_threshold_min,
+            if (ImGui::SliderInt("##extrude_fast_preview_edge_threshold", &thr, k_gui_extrude_fast_preview_edge_threshold_min,
                                  k_gui_extrude_fast_preview_edge_threshold_max))
             {
               m_extrude_fast_preview_edge_threshold = thr;
-              appear_changed                       = true;
+              appear_changed                        = true;
             }
           }
           ImGui::SameLine(0.0f, ImGui::GetStyle().ItemInnerSpacing.x);

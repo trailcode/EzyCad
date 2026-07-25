@@ -14,7 +14,7 @@ enum class Plane_side;
 
 class Shp_extrude : private Shp_operation_base
 {
- public:
+public:
   Shp_extrude(Occt_view& view);
 
   void sketch_face_extrude(const ScreenCoords& screen_coords, bool is_mouse_move);
@@ -27,7 +27,7 @@ class Shp_extrude : private Shp_operation_base
   void set_both_sides(bool both_sides);
   void refresh_tmp_dimension_style(const Length_dimension_style& style);
 
- private:
+private:
   friend class Shp_extrude_access;
 
   void         _update_extrude(const ScreenCoords& screen_coords);
@@ -39,10 +39,10 @@ class Shp_extrude : private Shp_operation_base
   TopoDS_Shape make_prism_body_(double extrude_dist, Plane_side side) const;
 
   // Face extrude related
-  AIS_Shape_ptr              m_to_extrude;
-  gp_Pln                     m_to_extrude_pln;
-  std::optional<gp_Pnt>      m_to_extrude_pt;
-  Shp_ptr                    m_extruded;
+  AIS_Shape_ptr         m_to_extrude;
+  gp_Pln                m_to_extrude_pln;
+  std::optional<gp_Pnt> m_to_extrude_pt;
+  Shp_ptr               m_extruded;
   /// Second face copy for lite both-sides preview (near side); not a document shape.
   AIS_Shape_ptr              m_lite_face_other;
   gp_Pln                     m_curr_view_pln;

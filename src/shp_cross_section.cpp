@@ -42,9 +42,9 @@
 #include <vector>
 
 #ifndef __EMSCRIPTEN__
-#  include <chrono>
-#  include <future>
-#  include <thread>
+#include <chrono>
+#include <future>
+#include <thread>
 #endif
 
 namespace
@@ -217,9 +217,8 @@ void Shp_cross_section::start_section_job_(Section_request req)
   m_cancel.store(false);
 
 #ifndef __EMSCRIPTEN__
-  m_running = std::async(std::launch::async,
-                         [req = std::move(req), cancel = &m_cancel]() mutable
-                         { return compute_section_result_(std::move(req), cancel); });
+  m_running        = std::async(std::launch::async, [req = std::move(req), cancel = &m_cancel]() mutable
+                                { return compute_section_result_(std::move(req), cancel); });
   m_running_active = true;
 #else
   Chunked_job job;
@@ -258,9 +257,9 @@ std::optional<Status> Shp_cross_section::finish_section_result_(Section_result r
   m_last_section_status = result.status;
   if (result.status.is_ok() && !result.compound.IsNull())
   {
-    m_last_section_compound     = result.compound;
-    m_last_section_plane        = result.plane;
-    m_have_last_section_plane   = true;
+    m_last_section_compound   = result.compound;
+    m_last_section_plane      = result.plane;
+    m_have_last_section_plane = true;
     display_section_wires_(m_last_section_compound);
   }
   else
@@ -474,16 +473,16 @@ Status Shp_cross_section::clip(const std::vector<Shp_ptr>& shapes)
   if (!shared.has_value())
     return Status(shared.status(), shared.message());
 
-  const Shared_plane& plane_ctx = *shared;
-  Result<TopoDS_Solid> half     = keep_half_space_(plane_ctx.plane, plane_ctx.bounds);
+  const Shared_plane&  plane_ctx = *shared;
+  Result<TopoDS_Solid> half      = keep_half_space_(plane_ctx.plane, plane_ctx.bounds);
   if (!half.has_value())
     return Status(half.status(), half.message());
 
   std::vector<TopoDS_Shape> clipped_geoms;
   clipped_geoms.reserve(plane_ctx.shapes.size());
-  std::vector<Shp_ptr>      survivors;
+  std::vector<Shp_ptr> survivors;
   survivors.reserve(plane_ctx.shapes.size());
-  size_t                    removed_fully = 0;
+  size_t removed_fully = 0;
   for (size_t i = 0; i < plane_ctx.shapes.size(); ++i)
   {
     Result<TopoDS_Shape> clipped = clip_solid_to_half_space_(plane_ctx.world_shapes[i], *half);
@@ -532,8 +531,7 @@ Status Shp_cross_section::clip(const std::vector<Shp_ptr>& shapes)
   {
     msg << "Clipped " << added.size() << (added.size() == 1 ? " shape." : " shapes.");
     if (removed_fully > 0)
-      msg << " Removed " << removed_fully
-          << (removed_fully == 1 ? " fully clipped shape." : " fully clipped shapes.");
+      msg << " Removed " << removed_fully << (removed_fully == 1 ? " fully clipped shape." : " fully clipped shapes.");
   }
   return Status::ok(msg.str());
 }
@@ -853,10 +851,9 @@ void for_each_index_(size_t count, const std::function<void(size_t)>& fn, std::a
     return;
   }
 
-  const unsigned hw = std::thread::hardware_concurrency();
-  const size_t   workers =
-      std::min(count, static_cast<size_t>(hw == 0 ? 2u : hw));
-  std::atomic<size_t> next{0};
+  const unsigned           hw      = std::thread::hardware_concurrency();
+  const size_t             workers = std::min(count, static_cast<size_t>(hw == 0 ? 2u : hw));
+  std::atomic<size_t>      next{0};
   std::vector<std::thread> threads;
   threads.reserve(workers);
   for (size_t w = 0; w < workers; ++w)
@@ -885,15 +882,16 @@ std::vector<Result<Cross_section_geometry>> section_shapes_on_plane_(const std::
                                                                      const gp_Pln& plane, std::atomic<bool>* cancel)
 {
   std::vector<Result<Cross_section_geometry>> results(world_shapes.size());
-  for_each_index_(world_shapes.size(),
-                  [&](size_t i)
-                  {
-                    if (cancel && cancel->load())
-                      return;
+  for_each_index_(
+      world_shapes.size(),
+      [&](size_t i)
+      {
+        if (cancel && cancel->load())
+          return;
 
-                    results[i] = section_one_shape_on_plane_(world_shapes[i], plane);
-                  },
-                  cancel);
+        results[i] = section_one_shape_on_plane_(world_shapes[i], plane);
+      },
+      cancel);
   return results;
 }
 
@@ -1002,7 +1000,7 @@ Result<TopoDS_Solid> keep_half_space_(const gp_Pln& plane, const Bnd_Box& bounds
       return {Result_status::Topo_error, "Could not build the clipping plane face."};
 
     // Reference point on the positive-normal side (kept half, same as Hide back side / AIS clip).
-    const gp_Pnt ref = plane.Location().Translated(gp_Vec(plane.Axis().Direction()));
+    const gp_Pnt              ref = plane.Location().Translated(gp_Vec(plane.Axis().Direction()));
     BRepPrimAPI_MakeHalfSpace half(face, ref);
     const TopoDS_Solid        solid = half.Solid();
     if (solid.IsNull())

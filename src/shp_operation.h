@@ -28,10 +28,10 @@ protected:
   void                 operation_shps_finalize_();
   void                 operation_shps_cancel_();
   /// Seed operands (e.g. selection snapshot at mode enter). Empty clears.
-  void                 set_operation_shps_(std::vector<Shp_ptr> shps);
+  void set_operation_shps_(std::vector<Shp_ptr> shps);
   /// Re-select the operands captured by `operation_shps_finalize_` / `operation_shps_cancel_`.
   /// Call *after* `reset()`: leaving the tool mode redisplays shapes and drops the AIS selection.
-  void                 restore_operation_selection_();
+  void restore_operation_selection_();
 
   AIS_Shape_ptr      get_shape_(const ScreenCoords& screen_coords);
   const TopoDS_Face* get_face_(const ScreenCoords& screen_coords) const;
