@@ -128,7 +128,17 @@ bool Shp_extrude::has_active_extrusion() const { return !m_extruded.IsNull(); }
 
 bool Shp_extrude::get_both_sides() const { return m_extrude_both_sides; }
 
-void Shp_extrude::set_both_sides(const bool both_sides) { m_extrude_both_sides = both_sides; }
+void Shp_extrude::set_both_sides(const bool both_sides)
+{
+  if (m_extrude_both_sides == both_sides)
+    return;
+
+  m_extrude_both_sides = both_sides;
+
+  // Options checkbox does not move the mouse; refresh preview + length dim immediately.
+  if (!m_extruded.IsNull() && m_last_preview_dist)
+    update_extrude_preview_(*m_last_preview_dist, m_extrude_side);
+}
 
 void Shp_extrude::_update_extrude(const ScreenCoords& screen_coords)
 {
@@ -188,19 +198,36 @@ void Shp_extrude::update_dim_(const double extrude_dist, const Plane_side side)
   if (m_extrude_both_sides)
     face_offset = normal_dir * (-side_sign * (extrude_dist * 0.5));
 
-  const gp_Pnt dim_top(m_to_extrude_pt->XYZ() + face_offset.XYZ() + extrude_vec.XYZ());
-  const gp_Pnt dim_base(m_to_extrude_pt->XYZ() + face_offset.XYZ());
-  if (m_tmp_dim.IsNull())
+  // Span the full extrusion height (near face to far face), including both-sides.
+  const gp_Pnt dim_near(m_to_extrude_pt->XYZ() + face_offset.XYZ());
+  const gp_Pnt dim_far(m_to_extrude_pt->XYZ() + face_offset.XYZ() + extrude_vec.XYZ());
+
+  // Plane must contain the measurement segment so PrsDim_LengthDimension stays valid
+  // (view plane alone can break when the segment is centered across the sketch plane).
+  gp_Pln dim_pln = m_curr_view_pln;
   {
-    m_tmp_dim = create_distance_annotation(dim_top, dim_base, m_curr_view_pln, gui().length_dimension_style());
-    ctx().Display(m_tmp_dim, false);
+    const gp_Vec measure(dim_near, dim_far);
+    if (measure.Magnitude() > Precision::Confusion())
+    {
+      const gp_Vec plane_norm = measure.Crossed(gp_Vec(m_curr_view_pln.Axis().Direction()));
+      if (plane_norm.Magnitude() > Precision::Confusion())
+        dim_pln = gp_Pln(dim_near, gp_Dir(plane_norm));
+      else
+      {
+        // Measurement nearly along the view: fall back to sketch-plane X for a readable plane.
+        const gp_Vec alt = measure.Crossed(gp_Vec(m_to_extrude_pln.XAxis().Direction()));
+        if (alt.Magnitude() > Precision::Confusion())
+          dim_pln = gp_Pln(dim_near, gp_Dir(alt));
+      }
+    }
   }
-  else
-  {
-    m_tmp_dim->SetMeasuredGeometry(dim_top, dim_base, m_curr_view_pln);
-    ctx().Redisplay(m_tmp_dim, false);
-  }
+
+  // Recreate each update: SetMeasuredGeometry was unreliable when toggling both-sides
+  // (endpoints jump from one-sided to a centered span).
+  ctx().Remove(m_tmp_dim, false);
+  m_tmp_dim = create_distance_annotation(dim_far, dim_near, dim_pln, gui().length_dimension_style());
   m_tmp_dim->SetCustomValue(extrude_dist / view().get_display_to_model_scale());
+  ctx().Display(m_tmp_dim, false);
 }
 
 void Shp_extrude::update_extrude_preview_(const double extrude_dist, const Plane_side side)
