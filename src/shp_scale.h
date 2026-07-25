@@ -13,6 +13,8 @@ public:
 
   /// Seed operands from the shapes selected when Scale mode was entered (may be empty).
   void                 begin(std::vector<Shp_ptr> shps);
+  /// True when operands are loaded (LMB will finalize rather than AIS-select).
+  [[nodiscard]] bool   has_operation_shps() const { return !m_shps.empty(); }
   [[nodiscard]] Status scale_selected(const ScreenCoords& screen_coords);
   void                 finalize();
   void                 cancel();

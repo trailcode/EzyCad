@@ -199,6 +199,12 @@ class View(_Remote):
             return []
         return [Shp(self._session, int(i)) for i in idxs]
 
+    def set_selected(self, *shapes: Shp) -> None:
+        if len(shapes) == 1 and isinstance(shapes[0], (list, tuple)):
+            shapes = tuple(shapes[0])
+        args = ", ".join(s._expr() for s in shapes)
+        self._run(f"ezy.view.set_selected({args})")
+
     def get_selected_indices(self) -> list[int]:
         idxs = self._call("ezy.view.get_selected_indices")
         if not isinstance(idxs, (list, tuple)):

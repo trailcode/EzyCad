@@ -281,7 +281,9 @@ public:
   // Geometry related
   ScreenCoords          get_screen_coords(const gp_Pnt& point);
   std::optional<gp_Pnt> pt3d_on_plane(const ScreenCoords& screen_coords, const gp_Pln& plane) const;
-  void                  bake_transform_into_geometry(AIS_Shape_ptr& shape);
+  /// Bake the AIS local transformation into the shape geometry (transform becomes identity).
+  /// \a update_viewer false lets callers batch one viewer update when baking many shapes.
+  void                  bake_transform_into_geometry(AIS_Shape_ptr& shape, bool update_viewer = true);
   gp_Pln                get_view_plane(const gp_Pnt& point_on_plane) const;
 
   // Query related
@@ -320,6 +322,9 @@ public:
   std::vector<AIS_Shape_ptr> get_selected() const;
   /// Document `Shp` objects in the current viewer selection (deduped; ignores non-Shp AIS).
   std::vector<Shp_ptr> get_selected_shps() const;
+  /// Replace the viewer selection with \a shps (null handles and group nodes are skipped).
+  /// Empty \a shps clears the selection.
+  void                 set_selected_shps(const std::vector<Shp_ptr>& shps);
   TopAbs_ShapeEnum     get_shp_selection_mode() const;
   void                 set_shp_selection_mode(const TopAbs_ShapeEnum selection_mode);
 
@@ -496,6 +501,9 @@ private:
   /// True when LMB press was handled by planar-face sketch creation without AIS_ViewController::PressMouseButton (pair with
   /// release skip).
   bool m_planar_face_lmb_skipped_view_controller{false};
+  /// True when LMB press will finalize Move/Rotate/Scale (skip Press/Release so AIS SelectDetected
+  /// on release cannot replace the restored multi-selection with the shape under the cursor).
+  bool m_transform_finalize_lmb_skipped_view_controller{false};
   /// Set when an LMB press finalized an active extrude; consumed by the GUI so the same
   /// press does not also begin a new extrude (see consume_extrude_finalize_press).
   bool m_extrude_finalized_on_press{false};

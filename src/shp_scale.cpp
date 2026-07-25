@@ -96,6 +96,7 @@ void Shp_scale::finalize()
 
   view().push_undo_delta(std::make_unique<Shape_geom_delta>(std::move(changes)));
   reset();
+  restore_operation_selection_();
 }
 
 void Shp_scale::reset()
@@ -115,4 +116,5 @@ void Shp_scale::cancel()
 {
   operation_shps_cancel_();
   reset();
+  restore_operation_selection_();
 }

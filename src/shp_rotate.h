@@ -17,6 +17,8 @@ public:
 
   /// Seed operands from the shapes selected when Rotate mode was entered (may be empty).
   void                 begin(std::vector<Shp_ptr> shps);
+  /// True when operands are loaded (LMB will finalize rather than AIS-select).
+  [[nodiscard]] bool   has_operation_shps() const { return !m_shps.empty(); }
   [[nodiscard]] Status rotate_selected(const ScreenCoords& screen_coords);
   [[nodiscard]] Status show_angle_edit(const ScreenCoords& screen_coords);
   void                 finalize();

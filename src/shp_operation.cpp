@@ -78,17 +78,33 @@ void Shp_operation_base::delete_operation_shps_()
 
 void Shp_operation_base::operation_shps_finalize_()
 {
+  m_completed_shps = m_shps;
   for (Shp_ptr& shape : m_shps)
   {
     AIS_Shape_ptr s = shape;
-    view().bake_transform_into_geometry(s);
+    // Batch: one viewer update after all shapes are baked.
+    view().bake_transform_into_geometry(s, false);
   }
+
+  ctx().UpdateCurrentViewer();
 }
 
 void Shp_operation_base::operation_shps_cancel_()
 {
+  if (!m_shps.empty())
+    m_completed_shps = m_shps;
+
   for (Shp_ptr& shape : m_shps)
     shape->ResetTransformation();
+}
+
+void Shp_operation_base::restore_operation_selection_()
+{
+  if (m_completed_shps.empty())
+    return;
+
+  view().set_selected_shps(m_completed_shps);
+  m_completed_shps.clear();
 }
 
 AIS_Shape_ptr Shp_operation_base::get_shape_(const ScreenCoords& screen_coords) { return m_view.get_shape(screen_coords); }

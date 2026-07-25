@@ -234,12 +234,14 @@ void Shp_rotate::finalize()
 
   view().push_undo_delta(std::make_unique<Shape_geom_delta>(std::move(changes)));
   reset();
+  restore_operation_selection_();
 }
 
 void Shp_rotate::cancel()
 {
   operation_shps_cancel_();
   reset();
+  restore_operation_selection_();
 }
 
 void Shp_rotate::reset()

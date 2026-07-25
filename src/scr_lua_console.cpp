@@ -375,6 +375,50 @@ int l_view_get_selected(lua_State* L)
   return 1;
 }
 
+// view.set_selected(s1, ...) or view.set_selected({s1, ...}) -> replace selection (no args clears)
+int l_view_set_selected(lua_State* L)
+{
+  GUI*       gui  = get_gui(L);
+  Occt_view* view = gui ? gui->get_view() : nullptr;
+  if (!view)
+    return luaL_error(L, "no 3D view available");
+
+  std::vector<Shp_ptr> shps;
+  const int            n = lua_gettop(L);
+  if (n == 1 && lua_istable(L, 1))
+  {
+    const lua_Integer count = static_cast<lua_Integer>(lua_rawlen(L, 1));
+    for (lua_Integer i = 1; i <= count; ++i)
+    {
+      lua_rawgeti(L, 1, i);
+      Shp_ptr* p = to_shp(L, -1);
+      if (!p || p->IsNull())
+      {
+        lua_pop(L, 1);
+        return luaL_error(L, "set_selected: table entry %d must be a Shp", static_cast<int>(i));
+      }
+
+      shps.push_back(*p);
+      lua_pop(L, 1);
+    }
+  }
+  else
+  {
+    shps.reserve(static_cast<std::size_t>(n));
+    for (int i = 1; i <= n; ++i)
+    {
+      Shp_ptr* p = to_shp(L, i);
+      if (!p || p->IsNull())
+        return luaL_error(L, "set_selected: argument %d must be a Shp", i);
+
+      shps.push_back(*p);
+    }
+  }
+
+  view->set_selected_shps(shps);
+  return 0;
+}
+
 // view.get_selected_indices() -> table of 1-based shape indices (may be empty)
 int l_view_get_selected_indices(lua_State* L)
 {
@@ -665,6 +709,7 @@ int l_ezy_help(lua_State* L)
                           "  delete(s1, ...)  - remove one or more Shp from the document\n"
                           "  get_shape(i)  - shape by 1-based index (returns Shp or nil)\n"
                           "  get_selected()  - table of selected document Shp (empty if none)\n"
+                          "  set_selected(s1, ...) or set_selected({...})  - replace selection (no args clears)\n"
                           "  get_selected_indices()  - 1-based indices of selected document shapes\n"
                           "  get_camera() / set_camera(ex,ey,ez,cx,cy,cz,ux,uy,uz)\n"
                           "  curr_sketch.name() / node_count() / node(i) / dim_count() / dim(i)  (1-based indices)\n"
@@ -779,6 +824,8 @@ void Lua_console::register_bindings()
   lua_setfield(m_L, -2, "get_shape");
   lua_pushcfunction(m_L, l_view_get_selected);
   lua_setfield(m_L, -2, "get_selected");
+  lua_pushcfunction(m_L, l_view_set_selected);
+  lua_setfield(m_L, -2, "set_selected");
   lua_pushcfunction(m_L, l_view_get_selected_indices);
   lua_setfield(m_L, -2, "get_selected_indices");
   lua_pushcfunction(m_L, l_view_get_camera);

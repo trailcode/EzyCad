@@ -73,6 +73,8 @@ Do not confuse this vector with `Occt_view::m_shps` (the document list).
 | **Finalize** | `operation_shps_finalize_()` -> `bake_transform_into_geometry()`          | New `Shp`; `delete_operation_shps_()`; `add_shp_()` |
 | **Cancel**   | `operation_shps_cancel_()` -> `ResetTransformation()`                     | N/A                                                 |
 
+`operation_shps_finalize_()` / `operation_shps_cancel_()` snapshot the operands; each tool calls `restore_operation_selection_()` as the last step of `finalize()` / `cancel()` (after `reset()`), which re-selects them via `Occt_view::set_selected_shps`. This is required because `reset()` switches mode and the faint/selection redisplay clears the AIS selection - without it a multi-shape move ended with only one shape selected. Finalize bakes with `bake_transform_into_geometry(shape, false)` and issues a single `UpdateCurrentViewer()`.
+
 `redisplay_operation_shps_after_transform_()` only calls `UpdateCurrentViewer()`; it does **not** `Redisplay` the shapes. `SetLocalTransformation()` applies the matrix to the presentation via `UpdateTransformation()`, so a recompute would only rebuild identical geometry (re-triangulate faces, rebuild sensitive BVH) - prohibitively slow for dense shapes per mouse-move. Selection sensitive entities stay at the pre-transform pose; `Occt_view::on_mode()` turns off `AIS_ViewController::SetAllowHighlight` for Move/Rotate/Scale (and `ClearDetected`) so idle mouse moves do not queue `MoveTo` / dynamic highlight. Orbit/pan still receive `UpdateMousePosition` when buttons are held.
 
 ### Sketch-linked geometry

@@ -44,15 +44,15 @@ ezy.Shp
 
 ### `ezy`
 
-| Method                          | Purpose                                        |
-| ------------------------------- | ---------------------------------------------- |
-| `ezy.log(msg)`                  | Print to the console and the main **Log** pane |
+| Method                          | Purpose                                          |
+| ------------------------------- | ------------------------------------------------ |
+| `ezy.log(msg)`                  | Print to the console and the main **Log** pane   |
 | `ezy.msg(text)`                 | Status toast and append to the main **Log** pane |
-| `ezy.get_mode()`                | Current application mode name (string)         |
-| `ezy.set_mode(name)`            | Switch mode by name                            |
-| `ezy.save_occt_view_settings()` | Write settings JSON (including view colors)    |
-| `ezy.occt_view_settings_json()` | Settings JSON string                           |
-| `ezy.help()`                    | Print binding summary                          |
+| `ezy.get_mode()`                | Current application mode name (string)           |
+| `ezy.set_mode(name)`            | Switch mode by name                              |
+| `ezy.save_occt_view_settings()` | Write settings JSON (including view colors)      |
+| `ezy.occt_view_settings_json()` | Settings JSON string                             |
+| `ezy.help()`                    | Print binding summary                            |
 
 ### `ezy.view`
 
@@ -68,6 +68,7 @@ ezy.Shp
 | `ezy.view.delete(s1, ...)`                                | Remove one or more **`Shp`** from the document            |
 | `ezy.view.get_shape(i)`                                   | Shape by **0-based** index (raises `IndexError`)          |
 | `ezy.view.get_selected()`                                 | List of selected document **`Shp`** (empty if none)       |
+| `ezy.view.set_selected(s1, ...)`                          | Replace the selection; accepts a list; no args clears     |
 | `ezy.view.get_selected_indices()`                         | **0-based** indices of selected document shapes           |
 | `ezy.view.get_camera()`                                   | Camera vectors: `eye`, `center`, `up`                     |
 | `ezy.view.set_camera(ex, ey, ez, cx, cy, cz, ux, uy, uz)` | Set camera vectors                                        |

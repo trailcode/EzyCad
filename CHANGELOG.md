@@ -15,6 +15,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Fixed
 
 - **Move / rotate / scale:** the shapes selected when entering the tool are kept selected and used as the operands. The mode-switch faint/selection-mode redisplay was clearing the AIS selection, so the first drag found nothing to transform. Multi-select is seeded into the tool from the enter snapshot (AIS restore alone could leave only one shape selected after switching to whole-object pick mode).
+- **Move / rotate / scale:** the full set of transformed shapes stays selected after the operation completes or is cancelled with Escape. Baking the transform and leaving the tool mode was collapsing a multi-shape selection down to one shape; the matching LMB release was also running AIS `SelectDetected` and replacing the restored multi-selection with the shape under the cursor. Escape also no longer runs two redundant mode switches after the tool already returned to Normal.
 - **Undo / redo after move / rotate / scale:** no longer restores those free-drag tool modes (which would immediately drag a leftover selection). Undo/redo maps Move/Rotate/Scale to the tool parent mode (`Normal`).
 - **Distance edit (Tab):** Enter / click-away commit works again when the `in`/`mm` unit suffix is shown. `IsItemDeactivatedAfterEdit` was queried after the suffix `Text` widget, so the first Enter only left the field and a second Enter was needed (affected extrude, move, and other Tab distance popups).
 - **Extrude:** the left click that finalizes a sketch-face extrude no longer immediately starts a new extrude on whatever face is under the cursor (e.g. a box around the circle you just extruded).
@@ -94,6 +95,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Scripting
 
 - **`ezy.view.get_selected()` / `get_selected_indices()`:** Return the current 3D viewer selection as document `Shp` objects, or as shape indices (Python **0-based**, Lua **1-based**). Available in Python, Lua, and the remote `ezycad` client.
+- **`ezy.view.set_selected(s1, ...)`:** Replace the 3D viewer selection with the given shapes. Accepts a Python list / Lua table, and clears the selection when called with no arguments. Available in Python, Lua, and the remote `ezycad` client.
 - **Public API layout:** Python-first package surface under `ezy` / `ezy.view` / `ezy.view.curr_sketch` (same object as `ezy.sketch`). Lua mirrors the same namespaces. See [docs/scripting.md](docs/scripting.md).
 - **`ezy.view.fuse` / `cut` / `common` / `delete`:** Boolean union, cut (first shape is body, rest are tools), intersection, or delete one or more shapes. Available in Python, Lua, and the remote `ezycad` client.
 - **Remote Python (`--listen`):** Desktop builds with embedded Python can accept console snippets over TCP (`EzyCad --listen [host:]port`). Execution is marshaled to the main UI thread. Importable client under `scripts/ezycad/` (`import ezycad; ezycad.connect()`, with `scripts/` on `PYTHONPATH`). See [docs/scripting.md](docs/scripting.md#remote-python---listen).
