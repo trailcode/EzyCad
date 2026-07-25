@@ -3016,9 +3016,8 @@ void Occt_view::on_mode()
   // Move/rotate/scale preview uses SetLocalTransformation without Redisplay, so selection BVHs
   // stay at the pre-transform pose. Disable AIS_ViewController dynamic highlight (skips MoveTo
   // while idle) so hover cannot paint a wireframe ghost there; orbit/pan still get mouse updates.
-  const Mode mode = get_mode();
-  const bool transform_preview =
-      mode == Mode::Move || mode == Mode::Rotate || mode == Mode::Scale;
+  const Mode mode              = get_mode();
+  const bool transform_preview = mode == Mode::Move || mode == Mode::Rotate || mode == Mode::Scale;
   SetAllowHighlight(!transform_preview);
   if (transform_preview && !m_ctx.IsNull())
     m_ctx->ClearDetected(false);
