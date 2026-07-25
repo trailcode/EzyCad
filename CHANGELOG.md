@@ -9,6 +9,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- Shape **Rotate** (<kbd>Tab</kbd>): angle entry uses the degrees popup (with a **deg** suffix) instead of the length popup (`in`/`mm`).
+- Dist/angle popups: <kbd>Enter</kbd> (and click-away) commit again when a unit suffix is shown; `IsItemDeactivatedAfterEdit` is read before the suffix label.
 - Status toast messages (`GUI::show_message` / `ezy.msg`) are also written to the **Log** window.
 - WASM (OCCT 7.9.3): stop forcing a near-white AIS `SetColor` after every material apply. That OCCT 8 GLES workaround had been running on all Emscripten builds and made steel, gold, and other presets look identical (glass still showed transparency).
 - WASM: clear AIS `OwnColor` when applying a Shape List material so presets are not stuck on a forced color. Prefer the **OCCT 7.9.3** wasm kit — OCCT 8.x GLES still has known shading regressions (`docs/building-occt.md`).

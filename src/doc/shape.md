@@ -163,7 +163,7 @@ Protected helpers used by all operation classes:
 | `Mode::Move`                  | `shp_move().move_selected`       | `shp_move().finalize`                                                        | `shp_move().show_dist_edit` (`gui_mode`)       | `shp_move().cancel` -> `Normal`        |
 | `Mode::Rotate`                | `shp_rotate().rotate_selected`   | `shp_rotate().finalize`                                                      | `shp_rotate().show_angle_edit`                 | `shp_rotate().cancel` -> `Normal`      |
 | `Mode::Scale`                 | `shp_scale().scale_selected`     | `shp_scale().finalize`                                                       | --                                             | `shp_scale().cancel` -> `Normal`       |
-| `Mode::Sketch_face_extrude`   | `sketch_face_extrude(..., true)` | 1st click: pick face; 2nd click (view): `finalize_sketch_extrude_` if active | `dimension_input` / `on_enter` refresh preview | `m_shp_extrude.cancel`                 |
+| `Mode::Sketch_face_extrude`   | `sketch_face_extrude(..., true)` | 1st click: pick face; 2nd click (view): `m_shp_extrude.finalize()` if active (`GUI` skips `on_left_click_` so the same press does not re-pick) | `dimension_input` / `on_enter` refresh preview | `m_shp_extrude.cancel`                 |
 | `Mode::Shape_fillet`          | --                               | `shp_fillet().add_fillet(..., Fillet_mode)`                                  | --                                             | --                                     |
 | `Mode::Shape_chamfer`         | --                               | `shp_chamfer().add_chamfer(..., Chamfer_mode)`                               | --                                             | --                                     |
 | `Mode::Shape_polar_duplicate` | `shp_polar_dup().move_point`     | `shp_polar_dup().add_point`                                                  | --                                             | `shp_polar_dup().reset` on mode change |
@@ -172,6 +172,8 @@ Protected helpers used by all operation classes:
 | Primitives (menu / script)    | --                               | `Occt_view::add_box`, `add_sphere`, ...                                      | --                                             | --                                     |
 | Revolve (sketch Options)      | --                               | `Occt_view::revolve_selected` -> `add_shp_`                                  | --                                             | --                                     |
 | Polar duplicate commit        | --                               | Options **Dup** button -> `shp_polar_dup().dup()`                            | --                                             | --                                     |
+
+Pre-selection: entering Move / Rotate / Scale / cross-section snapshots selected solids in `Occt_view::on_mode` and restores AIS selection after selection-mode / faint redisplay (same wipe that cleared picks before). `ensure_operation_shps_()` then sees those shapes on the first mouse move.
 
 On mode change, the view cancels in-progress move, rotate, scale, and sketch extrude sessions.
 

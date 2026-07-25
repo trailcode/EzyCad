@@ -317,11 +317,16 @@ void GUI::on_key(int key, int scancode, int action, int mods)
 
     case GLFW_KEY_TAB:
     {
-      bool shift_pressed = (mods & GLFW_MOD_SHIFT) != 0;
-      if (shift_pressed)
-        m_view->angle_input(screen_coords);
-      else
-        m_view->dimension_input(screen_coords);
+      // Move / Rotate handle Tab in their mode key handlers (distance / angle).
+      const Mode mode = get_mode();
+      if (mode != Mode::Move && mode != Mode::Rotate)
+      {
+        bool shift_pressed = (mods & GLFW_MOD_SHIFT) != 0;
+        if (shift_pressed)
+          m_view->angle_input(screen_coords);
+        else
+          m_view->dimension_input(screen_coords);
+      }
 
       break;
     }

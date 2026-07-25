@@ -848,6 +848,8 @@ void GUI::dist_edit_()
   // Text field: InputFloat applies printf rounding so typed digits can disagree with m_dist_val.
   const bool text_changed = ImGui::InputText("##dist_edit_text", m_dist_text_buf.data(), m_dist_text_buf.size(),
                                              ImGuiInputTextFlags_CharsDecimal | ImGuiInputTextFlags_CharsScientific);
+  // Snapshot before unit suffix Text; that widget becomes LastItem and would hide Enter/click-away commit.
+  const bool deactivated_after_edit = ImGui::IsItemDeactivatedAfterEdit();
 
   ImGui::SameLine(0.0f, ImGui::GetStyle().ItemInnerSpacing.x);
   ImGui::TextUnformatted(m_view->project_unit_suffix());
@@ -855,7 +857,7 @@ void GUI::dist_edit_()
   if (text_changed && parse_dist_text_to_float_(m_dist_text_buf.data(), m_dist_val))
     m_dist_callback(m_dist_val, false);
 
-  if (ImGui::IsItemDeactivatedAfterEdit() && m_dist_callback)
+  if (deactivated_after_edit && m_dist_callback)
   {
     if (ImGui::IsKeyPressed(ImGuiKey_Escape))
     {
@@ -1012,11 +1014,16 @@ void GUI::angle_edit_()
 
   const bool text_changed = ImGui::InputText("##angle_edit_text", m_angle_text_buf.data(), m_angle_text_buf.size(),
                                              ImGuiInputTextFlags_CharsDecimal | ImGuiInputTextFlags_CharsScientific);
+  // Snapshot before "deg" Text; that widget becomes LastItem and would hide Enter/click-away commit.
+  const bool deactivated_after_edit = ImGui::IsItemDeactivatedAfterEdit();
+
+  ImGui::SameLine(0.0f, ImGui::GetStyle().ItemInnerSpacing.x);
+  ImGui::TextUnformatted("deg");
 
   if (text_changed && parse_dist_text_to_float_(m_angle_text_buf.data(), m_angle_val))
     m_angle_callback(m_angle_val, false);
 
-  if (ImGui::IsItemDeactivatedAfterEdit() && m_angle_callback)
+  if (deactivated_after_edit && m_angle_callback)
   {
     if (ImGui::IsKeyPressed(ImGuiKey_Escape))
     {
@@ -3741,12 +3748,18 @@ void GUI::on_mouse_button(int button, int action, int mods)
       return;
     }
 
+  // Sample before the view call: Occt_view finalizes an active extrude on LMB press and clears
+  // the session. Skipping on_left_click_ prevents the same click from re-picking the face.
+  const bool extrude_finalize_on_press =
+      button == GLFW_MOUSE_BUTTON_LEFT && action == GLFW_PRESS && mods == 0 &&
+      m_mode == Mode::Sketch_face_extrude && m_view->shp_extrude().has_active_extrusion();
+
   m_view->on_mouse_button(button, action, mods);
 
   m_view->on_mouse_move(screen_coords);
   m_view->ctx().UpdateCurrentViewer();
 
-  if (button == GLFW_MOUSE_BUTTON_LEFT && action == GLFW_PRESS && mods == 0)
+  if (button == GLFW_MOUSE_BUTTON_LEFT && action == GLFW_PRESS && mods == 0 && !extrude_finalize_on_press)
     on_left_click_(screen_coords);
 
   else if (button == GLFW_MOUSE_BUTTON_RIGHT && action == GLFW_PRESS && mods == 0)

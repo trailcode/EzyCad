@@ -584,7 +584,7 @@ void Occt_view::cancel(Set_parent_mode set_parent_mode)
     break;
 
   default:
-    operation_canceled |= cancel_sketch_extrude_();
+    operation_canceled |= m_shp_extrude.cancel();
     operation_canceled |= curr_sketch().cancel_elm();
     break;
   }
@@ -635,14 +635,6 @@ void Occt_view::create_sketch_from_planar_face_(const ScreenCoords& screen_coord
       gui().show_message("Error: Selected face is not planar. Please select a planar face.");
   }
 }
-
-void Occt_view::finalize_sketch_extrude_()
-{
-  // Extrude finalize pushes Shape_add_delta after the solid is registered.
-  m_shp_extrude.finalize();
-}
-
-bool Occt_view::cancel_sketch_extrude_() { return m_shp_extrude.cancel(); }
 
 void Occt_view::create_default_sketch_()
 {
@@ -2405,7 +2397,7 @@ void Occt_view::on_mouse_button(int theButton, int theAction, int theMods)
 
     if (m_shp_extrude.has_active_extrusion())
     {
-      finalize_sketch_extrude_();
+      m_shp_extrude.finalize();
       return;
     }
 
@@ -2987,11 +2979,14 @@ void Occt_view::on_mode()
   DBG_MSG(c_mode_strs[int(get_mode())]);
 
   // Snapshot before selection-mode / faint redisplay Erase drops AIS selection.
-  const std::vector<Shp_ptr> cross_section_enter_selection =
-      get_mode() == Mode::Shape_cross_section ? get_selected_shps() : std::vector<Shp_ptr>{};
+  // Move / rotate / scale / cross-section need the solids that were selected on enter.
+  const Mode mode = get_mode();
+  const bool preserve_enter_selection = mode == Mode::Move || mode == Mode::Rotate || mode == Mode::Scale ||
+                                        mode == Mode::Shape_cross_section;
+  const std::vector<Shp_ptr> enter_selection = preserve_enter_selection ? get_selected_shps() : std::vector<Shp_ptr>{};
 
   shp_polar_dup().reset();
-  if (get_mode() != Mode::Shape_cross_section)
+  if (mode != Mode::Shape_cross_section)
     shp_cross_section().clear();
 
   for (Sketch_ptr& s : m_sketches)
@@ -3067,21 +3062,24 @@ void Occt_view::on_mode()
   sync_sketch_shape_faint_style();
   apply_sketch_dimensions_visibility();
 
-  if (get_mode() == Mode::Shape_cross_section && !cross_section_enter_selection.empty())
+  if (!enter_selection.empty())
   {
     // Restore after faint sync (set_sketch_faint Erase/redisplays and clears AIS selection).
     if (!m_ctx.IsNull())
     {
       m_ctx->ClearSelected(false);
-      for (const Shp_ptr& shp : cross_section_enter_selection)
+      for (const Shp_ptr& shp : enter_selection)
         if (!shp.IsNull())
           m_ctx->AddOrRemoveSelected(shp, false);
       m_ctx->HilightSelected(false);
       m_ctx->UpdateCurrentViewer();
     }
 
-    const Status status = shp_cross_section().preview(cross_section_enter_selection);
-    gui().show_message(status.message());
+    if (mode == Mode::Shape_cross_section)
+    {
+      const Status status = shp_cross_section().preview(enter_selection);
+      gui().show_message(status.message());
+    }
   }
 }
 
