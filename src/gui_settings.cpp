@@ -22,28 +22,32 @@ nlohmann::json build_occt_view_settings_object_(const Occt_view& view);
 
 nlohmann::json imgui_style_to_json(const Gui_imgui_style_settings& s)
 {
-  return nlohmann::json{{"rounding_general", s.rounding_general}, {"rounding_scroll", s.rounding_scroll},
-                        {"rounding_tabs", s.rounding_tabs},       {"window_alpha", s.window_alpha},
-                        {"window_border", s.window_border},       {"frame_border", s.frame_border},
-                        {"window_padding_x", s.window_padding_x}, {"window_padding_y", s.window_padding_y},
-                        {"frame_padding_x", s.frame_padding_x},   {"frame_padding_y", s.frame_padding_y},
-                        {"item_spacing_x", s.item_spacing_x},     {"item_spacing_y", s.item_spacing_y}};
+  // clang-format off
+  return nlohmann::json{{"rounding_general",  s.rounding_general}, {"rounding_scroll",  s.rounding_scroll},
+                        {"rounding_tabs",     s.rounding_tabs},    {"window_alpha",     s.window_alpha},
+                        {"window_border",     s.window_border},    {"frame_border",     s.frame_border},
+                        {"window_padding_x",  s.window_padding_x}, {"window_padding_y", s.window_padding_y},
+                        {"frame_padding_x",   s.frame_padding_x},  {"frame_padding_y",  s.frame_padding_y},
+                        {"item_spacing_x",    s.item_spacing_x},   {"item_spacing_y",   s.item_spacing_y}};
+  // clang-format on
 }
 
 nlohmann::json settings_headers_to_json(const Gui_settings_headers& h)
 {
-  return nlohmann::json{{"view_nav", h.view_nav},
-                        {"new_project", h.new_project},
-                        {"ui", h.ui},
+  // clang-format off
+  return nlohmann::json{{"view_nav",          h.view_nav},
+                        {"new_project",       h.new_project},
+                        {"ui",                h.ui},
                         {"view_presentation", h.view_presentation},
-                        {"grid", h.grid},
-                        {"sketch", h.sketch},
+                        {"grid",              h.grid},
+                        {"sketch",            h.sketch},
                         {"sketch_appearance", h.sketch_appearance},
                         {"sketch_dimensions", h.sketch_dimensions},
-                        {"sketch_nodes", h.sketch_nodes},
-                        {"sketch_snap", h.sketch_snap},
-                        {"sketch_underlay", h.sketch_underlay},
-                        {"startup", h.startup}};
+                        {"sketch_nodes",      h.sketch_nodes},
+                        {"sketch_snap",       h.sketch_snap},
+                        {"sketch_underlay",   h.sketch_underlay},
+                        {"startup",           h.startup}};
+  // clang-format on
 }
 
 void parse_settings_headers_json(const nlohmann::json& obj, Gui_settings_headers& out)
@@ -55,18 +59,21 @@ void parse_settings_headers_json(const nlohmann::json& obj, Gui_settings_headers
       return obj[key].get<bool>();
     return fallback;
   };
-  out.view_nav          = b("view_nav", defaults.view_nav);
-  out.new_project       = b("new_project", defaults.new_project);
-  out.ui                = b("ui", defaults.ui);
-  out.view_presentation = b("view_presentation", defaults.view_presentation);
-  out.grid              = b("grid", defaults.grid);
-  out.sketch            = b("sketch", defaults.sketch);
-  out.sketch_appearance = b("sketch_appearance", defaults.sketch_appearance);
-  out.sketch_dimensions = b("sketch_dimensions", defaults.sketch_dimensions);
-  out.sketch_nodes      = b("sketch_nodes", defaults.sketch_nodes);
-  out.sketch_snap       = b("sketch_snap", defaults.sketch_snap);
-  out.sketch_underlay   = b("sketch_underlay", defaults.sketch_underlay);
-  out.startup           = b("startup", defaults.startup);
+
+  // clang-format off
+  out.view_nav          = b("view_nav",           defaults.view_nav);
+  out.new_project       = b("new_project",        defaults.new_project);
+  out.ui                = b("ui",                 defaults.ui);
+  out.view_presentation = b("view_presentation",  defaults.view_presentation);
+  out.grid              = b("grid",               defaults.grid);
+  out.sketch            = b("sketch",             defaults.sketch);
+  out.sketch_appearance = b("sketch_appearance",  defaults.sketch_appearance);
+  out.sketch_dimensions = b("sketch_dimensions",  defaults.sketch_dimensions);
+  out.sketch_nodes      = b("sketch_nodes",       defaults.sketch_nodes);
+  out.sketch_snap       = b("sketch_snap",        defaults.sketch_snap);
+  out.sketch_underlay   = b("sketch_underlay",    defaults.sketch_underlay);
+  out.startup           = b("startup",            defaults.startup);
+  // clang-format on
 }
 
 void parse_imgui_style_json(const nlohmann::json& obj, const Gui_imgui_style_settings& defaults, Gui_imgui_style_settings& out)
@@ -1518,6 +1525,7 @@ void GUI::settings_()
               appear_changed                        = true;
             }
           }
+
           ImGui::SameLine(0.0f, ImGui::GetStyle().ItemInnerSpacing.x);
           GUI_DOC_HELP_("Faces with more edges than this use the fast face-copy drag preview "
                         "(default 24). Boxes and circles stay under the threshold.",
