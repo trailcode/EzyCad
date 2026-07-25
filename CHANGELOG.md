@@ -9,7 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
-- **Extrude Twist**: Options **Twist** checkbox. Two-phase flow locks height first, then sets twist angle about the face centroid (mouse, or <kbd>Shift+Tab</kbd> for degrees). With **Both sides**, ends twist symmetrically by +/- half the angle. Geometry uses thru-sections when twisted; straight prism when twist is zero. Dense-face **Extrude fast preview** also applies during Twist (face copies translate and rotate; finalize builds the solid).
+- **Extrude Twist**: Options **Twist** checkbox. Two-phase flow locks height first, then sets twist angle about the face centroid (mouse, or <kbd>Shift+Tab</kbd> for degrees). Height length dim is cleared on lock; a temporary angle annotation shows degrees during twist. With **Both sides**, ends twist symmetrically by +/- half the angle. Geometry uses thru-sections when twisted; straight prism when twist is zero. Dense-face **Extrude fast preview** also applies during Twist (face copies translate and rotate; finalize builds the solid).
 
 ## [0.4.0] - 2026-07-25
 

@@ -31,7 +31,9 @@
 #include <Prs3d_DimensionAspect.hxx>
 #include <Prs3d_LineAspect.hxx>
 #include <Prs3d_TextAspect.hxx>
+#include <PrsDim_AngleDimension.hxx>
 #include <PrsDim_LengthDimension.hxx>
+#include <TCollection_ExtendedString.hxx>
 #include <TopExp.hxx>
 #include <TopExp_Explorer.hxx>
 #include <TopoDS.hxx>
@@ -50,6 +52,7 @@
 #include <gp_Pnt.hxx>
 #include <gp_Vec.hxx>
 #include <numbers>
+#include <cstdio>
 #include <optional>
 
 // Function to project a 3D point onto a plane and get its 2D (u, v) coordinates
@@ -571,7 +574,7 @@ namespace
 {
 constexpr double k_dim_text_height_base = 16.0;
 
-Prs3d_DimensionAspect_ptr clone_dimension_aspect(const PrsDim_LengthDimension_ptr& dim)
+Prs3d_DimensionAspect_ptr clone_dimension_aspect(const Handle(PrsDim_Dimension)& dim)
 {
   if (dim.IsNull())
     return new Prs3d_DimensionAspect();
@@ -643,7 +646,7 @@ double length_dimension_auto_flyout(const double edge_len)
   return std::max(k_min_flyout, edge_len * k_edge_fraction);
 }
 
-void apply_length_dimension_style(const PrsDim_LengthDimension_ptr& dim, const Length_dimension_style& style)
+void apply_dimension_style_(const Handle(PrsDim_Dimension)& dim, const Length_dimension_style& style)
 {
   if (dim.IsNull())
     return;
@@ -707,6 +710,16 @@ void apply_length_dimension_style(const PrsDim_LengthDimension_ptr& dim, const L
   default: dim->SetZLayer(Graphic3d_ZLayerId_Default); break;
     // clang-format on
   }
+}
+
+void apply_length_dimension_style(const PrsDim_LengthDimension_ptr& dim, const Length_dimension_style& style)
+{
+  apply_dimension_style_(dim, style);
+}
+
+void apply_angle_dimension_style(const PrsDim_AngleDimension_ptr& dim, const Length_dimension_style& style)
+{
+  apply_dimension_style_(dim, style);
 }
 
 void apply_length_dimension_list_hover_style(const PrsDim_LengthDimension_ptr& dim, const float hover_rgb[3],
@@ -863,6 +876,24 @@ PrsDim_LengthDimension_ptr create_distance_annotation(const gp_Pnt2d& p1, const 
                                                       const std::vector<TopoDS_Face>* sketch_faces_for_flyout)
 {
   return create_distance_annotation(to_3d(pln, p1), to_3d(pln, p2), pln, style, interior_ref, sketch_faces_for_flyout);
+}
+
+PrsDim_AngleDimension_ptr create_angle_annotation(const gp_Pnt& p_ref, const gp_Pnt& center, const gp_Pnt& p_cur,
+                                                  const double degrees, const Length_dimension_style& style)
+{
+  EZY_ASSERT(unique(p_ref, center));
+  EZY_ASSERT(unique(p_cur, center));
+
+  PrsDim_AngleDimension_ptr dim = new PrsDim_AngleDimension(p_ref, center, p_cur);
+  apply_angle_dimension_style(dim, style);
+
+  char buf[64];
+  std::snprintf(buf, sizeof(buf), "%.2f deg", degrees);
+  dim->SetCustomValue(TCollection_ExtendedString(buf));
+
+  const double arm = std::max(center.Distance(p_ref), center.Distance(p_cur));
+  dim->SetFlyout(length_dimension_auto_flyout(arm));
+  return dim;
 }
 
 const gp_Pnt& closest_to_camera(const V3d_View_ptr& view, const std::vector<gp_Pnt>& pnts)

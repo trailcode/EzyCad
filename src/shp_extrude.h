@@ -1,5 +1,6 @@
 #pragma once
 
+#include <PrsDim_AngleDimension.hxx>
 #include <PrsDim_LengthDimension.hxx>
 #include <gp_Ax1.hxx>
 #include <gp_Pln.hxx>
@@ -50,10 +51,14 @@ private:
   void         lock_height_begin_twist_();
   void         update_extrude_preview_(double extrude_dist, Plane_side side);
   void         update_dim_(double extrude_dist, Plane_side side);
+  void         update_angle_dim_();
+  void         clear_length_dim_();
+  void         clear_angle_dim_();
   void         clear_preview_();
   void         clear_lite_other_face_();
   void         clear_session_inputs_();
   bool         use_lite_preview_();
+  double       twist_dim_radius_() const;
   gp_Ax1       twist_axis_() const;
   TopoDS_Shape make_prism_body_(double extrude_dist, Plane_side side) const;
   TopoDS_Shape make_body_(double extrude_dist, Plane_side side, double twist_rad) const;
@@ -67,6 +72,7 @@ private:
   AIS_Shape_ptr              m_lite_face_other;
   gp_Pln                     m_curr_view_pln;
   PrsDim_LengthDimension_ptr m_tmp_dim;
+  PrsDim_AngleDimension_ptr  m_tmp_angle_dim;
   Plane_side                 m_extrude_side;
   bool                       m_extrude_both_sides{false};
   bool                       m_twist_enabled{false};
@@ -82,4 +88,5 @@ private:
   Plane_side            m_last_preview_side;
   bool                  m_last_preview_both_sides{false};
   double                m_last_preview_twist{0.0};
+  bool                  m_last_preview_was_twist_phase{false};
 };

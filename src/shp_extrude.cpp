@@ -131,8 +131,9 @@ void Shp_extrude::finalize()
   m_extruded->set_name(view().get_unique_shape_name("Shape"));
   add_shp_(m_extruded, true);
   view().push_undo_delta(std::make_unique<Shape_add_delta>(std::vector<Shape_rec>{capture_shape_rec(*m_extruded)}));
-  ctx().Remove(m_tmp_dim, false);
-  clear_all(m_to_extrude_pt, m_to_extrude, m_extruded, m_tmp_dim);
+  clear_length_dim_();
+  clear_angle_dim_();
+  clear_all(m_to_extrude_pt, m_to_extrude, m_extruded);
   clear_preview_();
   clear_session_inputs_();
   ctx().ClearSelected(true);
@@ -153,9 +154,10 @@ bool Shp_extrude::cancel()
 {
   clear_lite_other_face_();
   ctx().Remove(m_extruded, true);
-  ctx().Remove(m_tmp_dim, false);
+  clear_length_dim_();
+  clear_angle_dim_();
   bool did_cancel = m_to_extrude_pt.has_value();
-  clear_all(m_to_extrude_pt, m_to_extrude, m_extruded, m_tmp_dim);
+  clear_all(m_to_extrude_pt, m_to_extrude, m_extruded);
   clear_preview_();
   clear_session_inputs_();
 
@@ -196,6 +198,7 @@ void Shp_extrude::set_twist(const bool twist)
     m_twist_angle = 0.0;
     m_show_angle_input = false;
     m_entered_twist_deg.reset();
+    clear_angle_dim_();
     view().set_entered_dim(std::nullopt);
     view().set_show_dim_input(false);
     gui().hide_angle_edit(false);
@@ -228,6 +231,7 @@ void Shp_extrude::lock_height_begin_twist_()
   m_twist_angle = 0.0;
   m_entered_twist_deg.reset();
   m_show_angle_input = false;
+  clear_length_dim_();
   update_extrude_preview_(*m_last_preview_dist, m_extrude_side);
 }
 
@@ -340,6 +344,8 @@ bool Shp_extrude::use_lite_preview_()
 
 void Shp_extrude::update_dim_(const double extrude_dist, const Plane_side side)
 {
+  clear_angle_dim_();
+
   const gp_Vec normal_dir(m_to_extrude_pln.Axis().Direction());
   const double side_sign   = (side == Plane_side::Front) ? 1.0 : -1.0;
   const gp_Vec extrude_vec = normal_dir * (side_sign * extrude_dist);
@@ -360,24 +366,67 @@ void Shp_extrude::update_dim_(const double extrude_dist, const Plane_side side)
     if (measure.Magnitude() > Precision::Confusion())
     {
       const gp_Vec plane_norm = measure.Crossed(gp_Vec(m_curr_view_pln.Axis().Direction()));
-      if (plane_norm.Magnitude() > Precision::Confusion())
-        dim_pln = gp_Pln(dim_near, gp_Dir(plane_norm));
-      else
+      if (plane_norm.Magnitude() <= Precision::Confusion())
       {
         // Measurement nearly along the view: fall back to sketch-plane X for a readable plane.
         const gp_Vec alt = measure.Crossed(gp_Vec(m_to_extrude_pln.XAxis().Direction()));
         if (alt.Magnitude() > Precision::Confusion())
           dim_pln = gp_Pln(dim_near, gp_Dir(alt));
       }
+      else
+        dim_pln = gp_Pln(dim_near, gp_Dir(plane_norm));
     }
   }
 
   // Recreate each update: SetMeasuredGeometry was unreliable when toggling both-sides
   // (endpoints jump from one-sided to a centered span).
-  ctx().Remove(m_tmp_dim, false);
+  clear_length_dim_();
   m_tmp_dim = create_distance_annotation(dim_far, dim_near, dim_pln, gui().length_dimension_style());
   m_tmp_dim->SetCustomValue(extrude_dist / view().get_display_to_model_scale());
   ctx().Display(m_tmp_dim, false);
+}
+
+void Shp_extrude::update_angle_dim_()
+{
+  clear_length_dim_();
+
+  const double radius = twist_dim_radius_();
+  if (radius <= Precision::Confusion())
+    return;
+
+  // Geometry needs a non-zero opening; label still shows the real twist degrees.
+  double geom_ang = m_twist_angle;
+  if (std::fabs(geom_ang) < to_radians(1.0))
+    geom_ang = (geom_ang < 0.0) ? -to_radians(1.0) : to_radians(1.0);
+
+  const gp_Vec x_dir(m_to_extrude_pln.XAxis().Direction());
+  const gp_Vec y_dir(m_to_extrude_pln.YAxis().Direction());
+  const gp_Pnt center = m_twist_centroid;
+  const gp_Pnt p_ref(center.XYZ() + x_dir.XYZ() * radius);
+  const gp_Pnt p_cur(center.XYZ() + (x_dir * std::cos(geom_ang) + y_dir * std::sin(geom_ang)).XYZ() * radius);
+
+  clear_angle_dim_();
+  m_tmp_angle_dim =
+      create_angle_annotation(p_ref, center, p_cur, to_degrees(m_twist_angle), gui().length_dimension_style());
+  ctx().Display(m_tmp_angle_dim, false);
+}
+
+void Shp_extrude::clear_length_dim_()
+{
+  if (!m_tmp_dim.IsNull())
+  {
+    ctx().Remove(m_tmp_dim, false);
+    m_tmp_dim.Nullify();
+  }
+}
+
+void Shp_extrude::clear_angle_dim_()
+{
+  if (!m_tmp_angle_dim.IsNull())
+  {
+    ctx().Remove(m_tmp_angle_dim, false);
+    m_tmp_angle_dim.Nullify();
+  }
 }
 
 void Shp_extrude::update_extrude_preview_(const double extrude_dist, const Plane_side side)
@@ -387,11 +436,13 @@ void Shp_extrude::update_extrude_preview_(const double extrude_dist, const Plane
 
   EZY_ASSERT(side != Plane_side::On);
 
-  const bool lite = use_lite_preview_();
+  const bool lite             = use_lite_preview_();
+  const bool twist_phase_now  = (m_phase == Phase::Twist);
 
-  // Skip redundant work when height / side / twist / preview mode are unchanged.
+  // Skip redundant work when height / side / twist / phase / preview mode are unchanged.
   if (!m_extruded.IsNull() && m_last_preview_dist && m_last_preview_side == side &&
       m_last_preview_both_sides == m_extrude_both_sides && m_lite_preview_active == lite &&
+      m_last_preview_was_twist_phase == twist_phase_now &&
       std::fabs(extrude_dist - *m_last_preview_dist) <= Precision::Confusion() &&
       std::fabs(m_twist_angle - m_last_preview_twist) <= Precision::Angular())
     return;
@@ -404,7 +455,10 @@ void Shp_extrude::update_extrude_preview_(const double extrude_dist, const Plane
     m_extruded.Nullify();
   }
 
-  update_dim_(extrude_dist, side);
+  if (twist_phase_now)
+    update_angle_dim_();
+  else
+    update_dim_(extrude_dist, side);
 
   const double side_sign = (side == Plane_side::Front) ? 1.0 : -1.0;
 
@@ -419,8 +473,8 @@ void Shp_extrude::update_extrude_preview_(const double extrude_dist, const Plane
       ctx().Display(m_extruded, AIS_WireFrame, AIS_Shape::SelectionMode(TopAbs_SHAPE), false);
     }
 
-    const gp_Ax1 axis   = twist_axis_();
-    const double h_far  = m_extrude_both_sides ? (0.5 * side_sign * extrude_dist) : (side_sign * extrude_dist);
+    const gp_Ax1 axis    = twist_axis_();
+    const double h_far   = m_extrude_both_sides ? (0.5 * side_sign * extrude_dist) : (side_sign * extrude_dist);
     const double ang_far = m_extrude_both_sides ? (0.5 * m_twist_angle) : m_twist_angle;
     m_extruded->SetLocalTransformation(section_trsf_(axis, h_far, ang_far));
 
@@ -470,15 +524,29 @@ void Shp_extrude::update_extrude_preview_(const double extrude_dist, const Plane
 
   ctx().Redisplay(m_extruded, false);
   ctx().UpdateCurrentViewer();
-  m_last_preview_dist       = extrude_dist;
-  m_last_preview_side       = side;
-  m_last_preview_both_sides = m_extrude_both_sides;
-  m_last_preview_twist      = m_twist_angle;
+  m_last_preview_dist             = extrude_dist;
+  m_last_preview_side             = side;
+  m_last_preview_both_sides       = m_extrude_both_sides;
+  m_last_preview_twist            = m_twist_angle;
+  m_last_preview_was_twist_phase  = twist_phase_now;
 }
 
 gp_Ax1 Shp_extrude::twist_axis_() const
 {
   return gp_Ax1(m_twist_centroid, m_to_extrude_pln.Axis().Direction());
+}
+
+double Shp_extrude::twist_dim_radius_() const
+{
+  double radius = 0.0;
+  if (auto* face = dynamic_cast<Sketch_face_shp*>(m_to_extrude.get()))
+  {
+    for (const gp_Pnt& p : face->verts_3d)
+      radius = std::max(radius, m_twist_centroid.Distance(p));
+  }
+  if (radius <= Precision::Confusion() && m_to_extrude_pt)
+    radius = m_twist_centroid.Distance(*m_to_extrude_pt);
+  return radius;
 }
 
 TopoDS_Shape Shp_extrude::make_prism_body_(const double extrude_dist, const Plane_side side) const
@@ -561,20 +629,29 @@ void Shp_extrude::clear_session_inputs_()
 void Shp_extrude::clear_preview_()
 {
   clear_lite_other_face_();
+  clear_length_dim_();
+  clear_angle_dim_();
   m_face_edge_count     = 0;
   m_lite_preview_active = false;
   m_last_preview_dist.reset();
-  m_last_preview_side       = Plane_side::Front;
-  m_last_preview_both_sides = false;
-  m_last_preview_twist      = 0.0;
-  m_phase                   = Phase::Height;
-  m_twist_angle             = 0.0;
+  m_last_preview_side             = Plane_side::Front;
+  m_last_preview_both_sides       = false;
+  m_last_preview_twist            = 0.0;
+  m_last_preview_was_twist_phase  = false;
+  m_phase                         = Phase::Height;
+  m_twist_angle                   = 0.0;
 }
 
 void Shp_extrude::refresh_tmp_dimension_style(const Length_dimension_style& style)
 {
-  if (m_tmp_dim.IsNull())
-    return;
-  apply_length_dimension_style(m_tmp_dim, style);
-  ctx().Redisplay(m_tmp_dim, true);
+  if (!m_tmp_dim.IsNull())
+  {
+    apply_length_dimension_style(m_tmp_dim, style);
+    ctx().Redisplay(m_tmp_dim, true);
+  }
+  if (!m_tmp_angle_dim.IsNull())
+  {
+    apply_angle_dimension_style(m_tmp_angle_dim, style);
+    ctx().Redisplay(m_tmp_angle_dim, true);
+  }
 }
