@@ -10,6 +10,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Performance
 
 - **Sketch face extrude** live preview: simple faces show a shaded prism while dragging; dense faces (when **Settings -> Sketch -> Appearance -> Extrude fast preview** is on, default edge threshold **24**) preview by translating face copies so dragging stays responsive. **Both sides** shows face copies on both ends. Finalize always builds the real solid with `MakePrism`. Length dimension is reused in place.
+- **Move / scale / rotate** live preview no longer `Redisplay`s (recomputes) each shape per mouse-move. `SetLocalTransformation` already updates the presentation transform, so previews now just redraw the viewer - dense shapes drag smoothly instead of re-triangulating and rebuilding selection BVHs every frame.
 
 ### Fixed
 

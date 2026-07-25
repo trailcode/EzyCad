@@ -150,8 +150,9 @@ void Shp_operation_base::copy_shape_material_from_(Shp_ptr& dest, const Shp_ptr&
 
 void Shp_operation_base::redisplay_operation_shps_after_transform_()
 {
-  for (Shp_ptr& shape : m_shps)
-    ctx().Redisplay(shape, false);
-
+  // SetLocalTransformation() already pushes the new matrix into each presentation via
+  // UpdateTransformation(); a per-shape Redisplay would needlessly recompute the Prs/selection
+  // from the B-Rep (re-triangulate faces, rebuild sensitive BVH) - very slow for dense shapes.
+  // Just redraw the viewer with the updated transforms.
   ctx().UpdateCurrentViewer();
 }

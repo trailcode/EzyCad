@@ -41,7 +41,9 @@ protected:
   /// Replace `dest` presentation material with `src` (used after add_shp_, which applies the view default).
   void copy_shape_material_from_(Shp_ptr& dest, const Shp_ptr& src);
 
-  /// After transform-only changes on `m_shps`, refresh presentations once (avoids N x viewer updates per frame).
+  /// After transform-only changes on `m_shps` (SetLocalTransformation), redraw the viewer once.
+  /// Does not Redisplay/recompute presentations - the local transform is applied by
+  /// UpdateTransformation(), so a recompute would only rebuild identical geometry.
   void redisplay_operation_shps_after_transform_();
 
   std::vector<Shp_ptr> m_shps;
