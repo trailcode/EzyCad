@@ -374,8 +374,6 @@ private:
 
   // Sketch related
   void create_sketch_from_planar_face_(const ScreenCoords& screen_coords);
-  void finalize_sketch_extrude_();
-  bool cancel_sketch_extrude_();
   void create_default_sketch_();
   void ensure_current_sketch_();
   void remove_selected_length_dimensions_from_sketches_();

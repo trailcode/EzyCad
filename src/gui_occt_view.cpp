@@ -584,7 +584,7 @@ void Occt_view::cancel(Set_parent_mode set_parent_mode)
     break;
 
   default:
-    operation_canceled |= cancel_sketch_extrude_();
+    operation_canceled |= m_shp_extrude.cancel();
     operation_canceled |= curr_sketch().cancel_elm();
     break;
   }
@@ -635,14 +635,6 @@ void Occt_view::create_sketch_from_planar_face_(const ScreenCoords& screen_coord
       gui().show_message("Error: Selected face is not planar. Please select a planar face.");
   }
 }
-
-void Occt_view::finalize_sketch_extrude_()
-{
-  // Extrude finalize pushes Shape_add_delta after the solid is registered.
-  m_shp_extrude.finalize();
-}
-
-bool Occt_view::cancel_sketch_extrude_() { return m_shp_extrude.cancel(); }
 
 void Occt_view::create_default_sketch_()
 {
@@ -2405,7 +2397,7 @@ void Occt_view::on_mouse_button(int theButton, int theAction, int theMods)
 
     if (m_shp_extrude.has_active_extrusion())
     {
-      finalize_sketch_extrude_();
+      m_shp_extrude.finalize();
       return;
     }
 
