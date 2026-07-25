@@ -81,12 +81,44 @@ void Shp_operation_base::operation_shps_finalize_()
     AIS_Shape_ptr s = shape;
     view().bake_transform_into_geometry(s);
   }
+  reactivate_operation_shps_pick_();
 }
 
 void Shp_operation_base::operation_shps_cancel_()
 {
   for (Shp_ptr& shape : m_shps)
     shape->ResetTransformation();
+  reactivate_operation_shps_pick_();
+}
+
+void Shp_operation_base::deactivate_operation_shps_pick_()
+{
+  if (m_transform_pick_deactivated)
+    return;
+
+  for (Shp_ptr& shape : m_shps)
+  {
+    ctx().Unhilight(shape, false);
+    ctx().Deactivate(shape);
+  }
+  // Drop any dynamic highlight already painted at the pre-transform pick location.
+  ctx().ClearDetected(false);
+  m_transform_pick_deactivated = true;
+}
+
+void Shp_operation_base::reactivate_operation_shps_pick_()
+{
+  if (!m_transform_pick_deactivated)
+    return;
+
+  const int sel_mode = AIS_Shape::SelectionMode(view().get_shp_selection_mode());
+  for (Shp_ptr& shape : m_shps)
+  {
+    if (shape.IsNull() || shape->is_group())
+      continue;
+    ctx().Activate(shape, sel_mode);
+  }
+  m_transform_pick_deactivated = false;
 }
 
 AIS_Shape_ptr Shp_operation_base::get_shape_(const ScreenCoords& screen_coords) { return m_view.get_shape(screen_coords); }
@@ -153,6 +185,8 @@ void Shp_operation_base::redisplay_operation_shps_after_transform_()
   // SetLocalTransformation() already pushes the new matrix into each presentation via
   // UpdateTransformation(); a per-shape Redisplay would needlessly recompute the Prs/selection
   // from the B-Rep (re-triangulate faces, rebuild sensitive BVH) - very slow for dense shapes.
-  // Just redraw the viewer with the updated transforms.
+  // Selection sensitive entities stay at the pre-transform location, so deactivate pick to avoid
+  // a dynamic-highlight wireframe ghost at the original pose while dragging.
+  deactivate_operation_shps_pick_();
   ctx().UpdateCurrentViewer();
 }
