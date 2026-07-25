@@ -314,6 +314,8 @@ public:
   ImVec4       get_clear_color() const;
   void         set_mode(Mode mode); // gui_mode.cpp
   void         set_parent_mode();   // gui_mode.cpp
+  /// Parent mode for Escape / tool exit (e.g. Move -> Normal, sketch tools -> Sketch_inspection_mode).
+  static Mode  parent_mode_of(Mode mode); // gui_mode.cpp
   void         set_dist_edit(float dist, std::function<void(float, bool)>&& callback,
                              const std::optional<ScreenCoords> screen_coords = std::nullopt);
   void         hide_dist_edit(bool apply = true);

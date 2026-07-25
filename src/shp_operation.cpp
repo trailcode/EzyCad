@@ -52,6 +52,8 @@ Status Shp_operation_base::ensure_operation_shps_()
   return Status::ok();
 }
 
+void Shp_operation_base::set_operation_shps_(std::vector<Shp_ptr> shps) { m_shps = std::move(shps); }
+
 [[nodiscard]] Status Shp_operation_base::ensure_operation_multi_shps_()
 {
   m_shps = get_selected_shps_();

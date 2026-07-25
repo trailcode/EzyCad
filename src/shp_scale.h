@@ -11,6 +11,8 @@ class Shp_scale : private Shp_operation_base
 public:
   Shp_scale(Occt_view& view);
 
+  /// Seed operands from the shapes selected when Scale mode was entered (may be empty).
+  void                 begin(std::vector<Shp_ptr> shps);
   [[nodiscard]] Status scale_selected(const ScreenCoords& screen_coords);
   void                 finalize();
   void                 cancel();

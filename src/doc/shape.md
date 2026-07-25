@@ -61,7 +61,7 @@ Each operation object inherits `Shp_operation_base` and uses **`m_shps`** as a l
 | `ensure_operation_shps_()`       | One or more selected `Shp` objects              |
 | `ensure_operation_multi_shps_()` | Two or more selected shapes (fuse, cut, common) |
 
-On first call, `m_shps` is filled from `get_selected_shps_()` (viewer selection filtered to `Shp`). Cleared on `reset()` / cancel paths in interactive tools.
+On first call, if `m_shps` is empty it is filled from `get_selected_shps_()` (viewer selection filtered to `Shp`). Move/Rotate/Scale also call `begin(enter_selection)` from `Occt_view::on_mode` so a multi-select snapshot at mode enter seeds `m_shps` before the first drag. Cleared on `reset()` / cancel paths in interactive tools.
 
 Do not confuse this vector with `Occt_view::m_shps` (the document list).
 

@@ -14,6 +14,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- **Move / rotate / scale:** the shapes selected when entering the tool are kept selected and used as the operands. The mode-switch faint/selection-mode redisplay was clearing the AIS selection, so the first drag found nothing to transform. Multi-select is seeded into the tool from the enter snapshot (AIS restore alone could leave only one shape selected after switching to whole-object pick mode).
+- **Undo / redo after move / rotate / scale:** no longer restores those free-drag tool modes (which would immediately drag a leftover selection). Undo/redo maps Move/Rotate/Scale to the tool parent mode (`Normal`).
 - **Distance edit (Tab):** Enter / click-away commit works again when the `in`/`mm` unit suffix is shown. `IsItemDeactivatedAfterEdit` was queried after the suffix `Text` widget, so the first Enter only left the field and a second Enter was needed (affected extrude, move, and other Tab distance popups).
 - **Extrude:** the left click that finalizes a sketch-face extrude no longer immediately starts a new extrude on whatever face is under the cursor (e.g. a box around the circle you just extruded).
 - Status toast messages (`GUI::show_message` / `ezy.msg`) are also written to the **Log** window.

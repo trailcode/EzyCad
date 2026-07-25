@@ -20,6 +20,8 @@ class Shp_move : private Shp_operation_base
 public:
   Shp_move(Occt_view& view);
 
+  /// Seed operands from the shapes selected when Move mode was entered (may be empty).
+  void                 begin(std::vector<Shp_ptr> shps);
   [[nodiscard]] Status move_selected(const ScreenCoords& screen_coords);
   void                 show_dist_edit(const ScreenCoords& screen_coords);
   void                 finalize();

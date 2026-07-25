@@ -27,6 +27,8 @@ protected:
   void                 delete_operation_shps_();
   void                 operation_shps_finalize_();
   void                 operation_shps_cancel_();
+  /// Seed operands (e.g. selection snapshot at mode enter). Empty clears.
+  void                 set_operation_shps_(std::vector<Shp_ptr> shps);
 
   AIS_Shape_ptr      get_shape_(const ScreenCoords& screen_coords);
   const TopoDS_Face* get_face_(const ScreenCoords& screen_coords) const;

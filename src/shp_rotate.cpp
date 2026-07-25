@@ -16,6 +16,22 @@ Shp_rotate::Shp_rotate(Occt_view& view)
 {
 }
 
+void Shp_rotate::begin(std::vector<Shp_ptr> shps)
+{
+  clear_all(m_angle, m_initial_mouse_pos, m_rotate_pln, m_center);
+  if (m_rotation_axis_vis)
+  {
+    ctx().Remove(m_rotation_axis_vis, false);
+    m_rotation_axis_vis = nullptr;
+  }
+  if (m_rotation_center_vis)
+  {
+    ctx().Remove(m_rotation_center_vis, false);
+    m_rotation_center_vis = nullptr;
+  }
+  set_operation_shps_(std::move(shps));
+}
+
 Status Shp_rotate::rotate_selected(const ScreenCoords& screen_coords)
 {
   CHK_RET(ensure_start_state_());

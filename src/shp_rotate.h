@@ -15,6 +15,8 @@ class Shp_rotate : private Shp_operation_base
 public:
   Shp_rotate(Occt_view& view);
 
+  /// Seed operands from the shapes selected when Rotate mode was entered (may be empty).
+  void                 begin(std::vector<Shp_ptr> shps);
   [[nodiscard]] Status rotate_selected(const ScreenCoords& screen_coords);
   [[nodiscard]] Status show_angle_edit(const ScreenCoords& screen_coords);
   void                 finalize();

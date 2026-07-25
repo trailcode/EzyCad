@@ -12,6 +12,13 @@ Shp_scale::Shp_scale(Occt_view& view)
 {
 }
 
+void Shp_scale::begin(std::vector<Shp_ptr> shps)
+{
+  clear_all(m_scale_pln, m_center, m_initial_distance);
+  m_scale_factor = 1.0;
+  set_operation_shps_(std::move(shps));
+}
+
 Status Shp_scale::scale_selected(const ScreenCoords& screen_coords)
 {
   CHK_RET(ensure_start_state_());
