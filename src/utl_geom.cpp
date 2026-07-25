@@ -891,8 +891,9 @@ PrsDim_AngleDimension_ptr create_angle_annotation(const gp_Pnt& p_ref, const gp_
   std::snprintf(buf, sizeof(buf), "%.2f deg", degrees);
   dim->SetCustomValue(TCollection_ExtendedString(buf));
 
+  // For angle dims, flyout is the arc radius (not a length-dim offset). Match the attach arms.
   const double arm = std::max(center.Distance(p_ref), center.Distance(p_cur));
-  dim->SetFlyout(length_dimension_auto_flyout(arm));
+  dim->SetFlyout(arm);
   return dim;
 }
 
