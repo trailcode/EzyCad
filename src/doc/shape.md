@@ -173,6 +173,8 @@ Protected helpers used by all operation classes:
 | Revolve (sketch Options)      | --                               | `Occt_view::revolve_selected` -> `add_shp_`                                  | --                                             | --                                     |
 | Polar duplicate commit        | --                               | Options **Dup** button -> `shp_polar_dup().dup()`                            | --                                             | --                                     |
 
+Pre-selection: entering Move / Rotate / Scale / cross-section snapshots selected solids in `Occt_view::on_mode` and restores AIS selection after selection-mode / faint redisplay (same wipe that cleared picks before). `ensure_operation_shps_()` then sees those shapes on the first mouse move.
+
 On mode change, the view cancels in-progress move, rotate, scale, and sketch extrude sessions.
 
 Full GLFW -> `GUI` routing before these delegates: [`src/doc/gui.md`](gui.md).
