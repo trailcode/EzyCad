@@ -22,28 +22,42 @@ nlohmann::json build_occt_view_settings_object_(const Occt_view& view);
 
 nlohmann::json imgui_style_to_json(const Gui_imgui_style_settings& s)
 {
-  return nlohmann::json{{"rounding_general", s.rounding_general}, {"rounding_scroll", s.rounding_scroll},
-                        {"rounding_tabs", s.rounding_tabs},       {"window_alpha", s.window_alpha},
-                        {"window_border", s.window_border},       {"frame_border", s.frame_border},
-                        {"window_padding_x", s.window_padding_x}, {"window_padding_y", s.window_padding_y},
-                        {"frame_padding_x", s.frame_padding_x},   {"frame_padding_y", s.frame_padding_y},
-                        {"item_spacing_x", s.item_spacing_x},     {"item_spacing_y", s.item_spacing_y}};
+  // clang-format off
+  return nlohmann::json{
+      {"rounding_general", s.rounding_general},
+      {"rounding_scroll",  s.rounding_scroll},
+      {"rounding_tabs",    s.rounding_tabs},
+      {"window_alpha",     s.window_alpha},
+      {"window_border",    s.window_border},
+      {"frame_border",     s.frame_border},
+      {"window_padding_x", s.window_padding_x},
+      {"window_padding_y", s.window_padding_y},
+      {"frame_padding_x",  s.frame_padding_x},
+      {"frame_padding_y",  s.frame_padding_y},
+      {"item_spacing_x",   s.item_spacing_x},
+      {"item_spacing_y",   s.item_spacing_y},
+  };
+  // clang-format on
 }
 
 nlohmann::json settings_headers_to_json(const Gui_settings_headers& h)
 {
-  return nlohmann::json{{"view_nav", h.view_nav},
-                        {"new_project", h.new_project},
-                        {"ui", h.ui},
-                        {"view_presentation", h.view_presentation},
-                        {"grid", h.grid},
-                        {"sketch", h.sketch},
-                        {"sketch_appearance", h.sketch_appearance},
-                        {"sketch_dimensions", h.sketch_dimensions},
-                        {"sketch_nodes", h.sketch_nodes},
-                        {"sketch_snap", h.sketch_snap},
-                        {"sketch_underlay", h.sketch_underlay},
-                        {"startup", h.startup}};
+  // clang-format off
+  return nlohmann::json{
+      {"view_nav",          h.view_nav},
+      {"new_project",       h.new_project},
+      {"ui",                h.ui},
+      {"view_presentation", h.view_presentation},
+      {"grid",              h.grid},
+      {"sketch",            h.sketch},
+      {"sketch_appearance", h.sketch_appearance},
+      {"sketch_dimensions", h.sketch_dimensions},
+      {"sketch_nodes",      h.sketch_nodes},
+      {"sketch_snap",       h.sketch_snap},
+      {"sketch_underlay",   h.sketch_underlay},
+      {"startup",           h.startup},
+  };
+  // clang-format on
 }
 
 void parse_settings_headers_json(const nlohmann::json& obj, Gui_settings_headers& out)
@@ -55,18 +69,21 @@ void parse_settings_headers_json(const nlohmann::json& obj, Gui_settings_headers
       return obj[key].get<bool>();
     return fallback;
   };
-  out.view_nav          = b("view_nav", defaults.view_nav);
-  out.new_project       = b("new_project", defaults.new_project);
-  out.ui                = b("ui", defaults.ui);
-  out.view_presentation = b("view_presentation", defaults.view_presentation);
-  out.grid              = b("grid", defaults.grid);
-  out.sketch            = b("sketch", defaults.sketch);
-  out.sketch_appearance = b("sketch_appearance", defaults.sketch_appearance);
-  out.sketch_dimensions = b("sketch_dimensions", defaults.sketch_dimensions);
-  out.sketch_nodes      = b("sketch_nodes", defaults.sketch_nodes);
-  out.sketch_snap       = b("sketch_snap", defaults.sketch_snap);
-  out.sketch_underlay   = b("sketch_underlay", defaults.sketch_underlay);
-  out.startup           = b("startup", defaults.startup);
+
+  // clang-format off
+  out.view_nav          = b("view_nav",           defaults.view_nav);
+  out.new_project       = b("new_project",        defaults.new_project);
+  out.ui                = b("ui",                 defaults.ui);
+  out.view_presentation = b("view_presentation",  defaults.view_presentation);
+  out.grid              = b("grid",               defaults.grid);
+  out.sketch            = b("sketch",             defaults.sketch);
+  out.sketch_appearance = b("sketch_appearance",  defaults.sketch_appearance);
+  out.sketch_dimensions = b("sketch_dimensions",  defaults.sketch_dimensions);
+  out.sketch_nodes      = b("sketch_nodes",       defaults.sketch_nodes);
+  out.sketch_snap       = b("sketch_snap",        defaults.sketch_snap);
+  out.sketch_underlay   = b("sketch_underlay",    defaults.sketch_underlay);
+  out.startup           = b("startup",            defaults.startup);
+  // clang-format on
 }
 
 void parse_imgui_style_json(const nlohmann::json& obj, const Gui_imgui_style_settings& defaults, Gui_imgui_style_settings& out)
@@ -83,19 +100,21 @@ void parse_imgui_style_json(const nlohmann::json& obj, const Gui_imgui_style_set
     return fallback;
   };
 
+  // clang-format off
   out.rounding_general = f("rounding_general", defaults.rounding_general);
-  out.rounding_scroll  = f("rounding_scroll", defaults.rounding_scroll);
-  out.rounding_tabs    = f("rounding_tabs", defaults.rounding_tabs);
-  out.window_alpha =
-      std::clamp(f("window_alpha", defaults.window_alpha), k_gui_imgui_window_alpha_min, k_gui_imgui_window_alpha_max);
-  out.window_border    = std::clamp(f("window_border", defaults.window_border), 0.f, k_gui_imgui_border_slider_max);
-  out.frame_border     = std::clamp(f("frame_border", defaults.frame_border), 0.f, k_gui_imgui_border_slider_max);
+  out.rounding_scroll  = f("rounding_scroll",  defaults.rounding_scroll);
+  out.rounding_tabs    = f("rounding_tabs",    defaults.rounding_tabs);
+  out.window_alpha     = std::clamp(f("window_alpha", defaults.window_alpha),
+                                    k_gui_imgui_window_alpha_min, k_gui_imgui_window_alpha_max);
+  out.window_border    = std::clamp(f("window_border",    defaults.window_border),    0.f, k_gui_imgui_border_slider_max);
+  out.frame_border     = std::clamp(f("frame_border",     defaults.frame_border),     0.f, k_gui_imgui_border_slider_max);
   out.window_padding_x = std::clamp(f("window_padding_x", defaults.window_padding_x), 0.f, k_gui_imgui_padding_slider_max);
   out.window_padding_y = std::clamp(f("window_padding_y", defaults.window_padding_y), 0.f, k_gui_imgui_padding_slider_max);
-  out.frame_padding_x  = std::clamp(f("frame_padding_x", defaults.frame_padding_x), 0.f, k_gui_imgui_padding_slider_max);
-  out.frame_padding_y  = std::clamp(f("frame_padding_y", defaults.frame_padding_y), 0.f, k_gui_imgui_padding_slider_max);
-  out.item_spacing_x   = std::clamp(f("item_spacing_x", defaults.item_spacing_x), 0.f, k_gui_imgui_spacing_slider_max);
-  out.item_spacing_y   = std::clamp(f("item_spacing_y", defaults.item_spacing_y), 0.f, k_gui_imgui_spacing_slider_max);
+  out.frame_padding_x  = std::clamp(f("frame_padding_x",  defaults.frame_padding_x),  0.f, k_gui_imgui_padding_slider_max);
+  out.frame_padding_y  = std::clamp(f("frame_padding_y",  defaults.frame_padding_y),  0.f, k_gui_imgui_padding_slider_max);
+  out.item_spacing_x   = std::clamp(f("item_spacing_x",   defaults.item_spacing_x),   0.f, k_gui_imgui_spacing_slider_max);
+  out.item_spacing_y   = std::clamp(f("item_spacing_y",   defaults.item_spacing_y),   0.f, k_gui_imgui_spacing_slider_max);
+  // clang-format on
 }
 
 bool settings_imgui_style_controls_(float label_col_w, Gui_imgui_style_settings& style, const char* id_prefix)
@@ -160,69 +179,67 @@ std::string GUI::occt_view_settings_json() const
   EZY_ASSERT(m_view);
   json j;
   j["occt_view"] = build_occt_view_settings_object_(*m_view);
+  // clang-format off
   j["gui"]       = {
-      {"edge_dim_label_h", m_edge_dim_label_h},
-      {"edge_dim_line_width", m_edge_dim_line_width},
-      {"edge_dim_arrow_size", m_edge_dim_arrow_size},
-      {"edge_dim_color", {m_edge_dim_color[0], m_edge_dim_color[1], m_edge_dim_color[2]}},
-      {"edge_dim_text_scale", m_edge_dim_text_scale},
-      {"edge_dim_text_render_mode", m_edge_dim_text_render_mode},
-      {"edge_dim_arrow_style", m_edge_dim_arrow_style},
-      {"edge_dim_arrow_orientation", m_edge_dim_arrow_orientation},
-      {"show_sketch_dimensions", m_show_sketch_dimensions},
-      {k_gui_key_permanent_node_anno_scale, m_permanent_node_anno_scale},
-      {"origin_marker_color", {m_origin_marker_color[0], m_origin_marker_color[1], m_origin_marker_color[2]}},
-      {"sketch_edge_color", {m_sketch_edge_color[0], m_sketch_edge_color[1], m_sketch_edge_color[2], m_sketch_edge_color[3]}},
-      {"sketch_edge_selection_color",
-             {m_sketch_edge_selection_color[0], m_sketch_edge_selection_color[1], m_sketch_edge_selection_color[2],
-              m_sketch_edge_selection_color[3]}},
-      {"sketch_edge_highlight_color",
-             {m_sketch_edge_highlight_color[0], m_sketch_edge_highlight_color[1], m_sketch_edge_highlight_color[2],
-              m_sketch_edge_highlight_color[3]}},
-      {"sketch_edge_line_width", m_sketch_edge_line_width},
-      {"sketch_face_color", {m_sketch_face_color[0], m_sketch_face_color[1], m_sketch_face_color[2], m_sketch_face_color[3]}},
-      {"sketch_face_selection_color",
-             {m_sketch_face_selection_color[0], m_sketch_face_selection_color[1], m_sketch_face_selection_color[2],
-              m_sketch_face_selection_color[3]}},
-      {"sketch_face_highlight_color",
-             {m_sketch_face_highlight_color[0], m_sketch_face_highlight_color[1], m_sketch_face_highlight_color[2],
-              m_sketch_face_highlight_color[3]}},
-      {"add_mid_pt_edges", m_add_mid_pt_line_edges},
-      {"add_mid_pt_rect_edges", m_add_mid_pt_rect_edges},
-      {"add_mid_pt_slot_edges", m_add_mid_pt_slot_edges},
-      {"view_roll_step_deg", m_view_roll_step_deg},
-      {"view_zoom_scroll_scale", m_view_zoom_scroll_scale},
-      {"default_2d_view_width", m_default_2d_view_width},
-      {"default_2d_view_height", m_default_2d_view_height},
-      {"default_project_unit", (m_default_project_unit == Project_unit::Millimeter) ? "millimeter" : "inch"},
-      {"inspection_orthographic", m_inspection_orthographic},
-      {"snap_guide_color_node",
-             [&]()
-             {
-         float r{}, g{}, b{};
-         Sketch_nodes::get_snap_guide_color_node(r, g, b);
-         return nlohmann::json::array({r, g, b});
-       }()},
-      {"snap_guide_color_axis",
-             [&]()
-             {
-         const glm::vec3 c = Sketch_nodes::get_snap_guide_color_axis();
-         return nlohmann::json::array({c.x, c.y, c.z});
-       }()},
-      {"snap_guide_mode", static_cast<int>(Sketch_nodes::get_snap_guide_mode())},
-      {"snap_guide_line_width", Sketch_nodes::get_snap_guide_line_width()},
-      {"annotate_all_coaxial_nodes", Sketch_nodes::get_annotate_all_coaxial_nodes()},
-      {"ui_verbosity", m_ui_verbosity},
-      {"elm_list_hover_color",
-             {m_elm_list_hover_color[0], m_elm_list_hover_color[1], m_elm_list_hover_color[2], m_elm_list_hover_color[3]}},
-      {"shape_selection_color",
-             {m_shape_selection_color[0], m_shape_selection_color[1], m_shape_selection_color[2], m_shape_selection_color[3]}},
-      {"sketch_shape_faint_style", m_sketch_shape_faint_style},
-      {"sketch_shape_faint_opacity", m_sketch_shape_faint_opacity},
-      {"sketch_shape_faint_enabled", m_sketch_shape_faint_enabled},
-      {"extrude_fast_preview", m_extrude_fast_preview},
+      {"edge_dim_label_h",                   m_edge_dim_label_h},
+      {"edge_dim_line_width",                m_edge_dim_line_width},
+      {"edge_dim_arrow_size",                m_edge_dim_arrow_size},
+      {"edge_dim_color",                     {m_edge_dim_color[0], m_edge_dim_color[1], m_edge_dim_color[2]}},
+      {"edge_dim_text_scale",                m_edge_dim_text_scale},
+      {"edge_dim_text_render_mode",          m_edge_dim_text_render_mode},
+      {"edge_dim_arrow_style",               m_edge_dim_arrow_style},
+      {"edge_dim_arrow_orientation",         m_edge_dim_arrow_orientation},
+      {"show_sketch_dimensions",             m_show_sketch_dimensions},
+      {k_gui_key_permanent_node_anno_scale,  m_permanent_node_anno_scale},
+      {"origin_marker_color",                {m_origin_marker_color[0], m_origin_marker_color[1], m_origin_marker_color[2]}},
+      {"sketch_edge_color",                  {m_sketch_edge_color[0], m_sketch_edge_color[1],
+                                              m_sketch_edge_color[2], m_sketch_edge_color[3]}},
+      {"sketch_edge_selection_color",        {m_sketch_edge_selection_color[0], m_sketch_edge_selection_color[1],
+                                              m_sketch_edge_selection_color[2], m_sketch_edge_selection_color[3]}},
+      {"sketch_edge_highlight_color",        {m_sketch_edge_highlight_color[0], m_sketch_edge_highlight_color[1],
+                                              m_sketch_edge_highlight_color[2], m_sketch_edge_highlight_color[3]}},
+      {"sketch_edge_line_width",             m_sketch_edge_line_width},
+      {"sketch_face_color",                  {m_sketch_face_color[0], m_sketch_face_color[1],
+                                              m_sketch_face_color[2], m_sketch_face_color[3]}},
+      {"sketch_face_selection_color",        {m_sketch_face_selection_color[0], m_sketch_face_selection_color[1],
+                                              m_sketch_face_selection_color[2], m_sketch_face_selection_color[3]}},
+      {"sketch_face_highlight_color",        {m_sketch_face_highlight_color[0], m_sketch_face_highlight_color[1],
+                                              m_sketch_face_highlight_color[2], m_sketch_face_highlight_color[3]}},
+      {"add_mid_pt_edges",                   m_add_mid_pt_line_edges},
+      {"add_mid_pt_rect_edges",              m_add_mid_pt_rect_edges},
+      {"add_mid_pt_slot_edges",              m_add_mid_pt_slot_edges},
+      {"view_roll_step_deg",                 m_view_roll_step_deg},
+      {"view_zoom_scroll_scale",             m_view_zoom_scroll_scale},
+      {"default_2d_view_width",              m_default_2d_view_width},
+      {"default_2d_view_height",             m_default_2d_view_height},
+      {"default_project_unit",               (m_default_project_unit == Project_unit::Millimeter) ? "millimeter" : "inch"},
+      {"inspection_orthographic",            m_inspection_orthographic},
+      {"snap_guide_color_node",              [&]()
+                                              {
+                                                float r{}, g{}, b{};
+                                                Sketch_nodes::get_snap_guide_color_node(r, g, b);
+                                                return nlohmann::json::array({r, g, b});
+                                              }()},
+      {"snap_guide_color_axis",              [&]()
+                                              {
+                                                const glm::vec3 c = Sketch_nodes::get_snap_guide_color_axis();
+                                                return nlohmann::json::array({c.x, c.y, c.z});
+                                              }()},
+      {"snap_guide_mode",                    static_cast<int>(Sketch_nodes::get_snap_guide_mode())},
+      {"snap_guide_line_width",              Sketch_nodes::get_snap_guide_line_width()},
+      {"annotate_all_coaxial_nodes",         Sketch_nodes::get_annotate_all_coaxial_nodes()},
+      {"ui_verbosity",                       m_ui_verbosity},
+      {"elm_list_hover_color",               {m_elm_list_hover_color[0], m_elm_list_hover_color[1],
+                                              m_elm_list_hover_color[2], m_elm_list_hover_color[3]}},
+      {"shape_selection_color",              {m_shape_selection_color[0], m_shape_selection_color[1],
+                                              m_shape_selection_color[2], m_shape_selection_color[3]}},
+      {"sketch_shape_faint_style",           m_sketch_shape_faint_style},
+      {"sketch_shape_faint_opacity",         m_sketch_shape_faint_opacity},
+      {"sketch_shape_faint_enabled",         m_sketch_shape_faint_enabled},
+      {"extrude_fast_preview",               m_extrude_fast_preview},
       {"extrude_fast_preview_edge_threshold", m_extrude_fast_preview_edge_threshold},
   };
+  // clang-format on
   return j.dump(2);
 }
 
@@ -244,88 +261,85 @@ void GUI::save_occt_view_settings()
 
   EZY_ASSERT(m_view);
   j["occt_view"] = build_occt_view_settings_object_(*m_view);
+  // clang-format off
   j["gui"]       = {
-      {"show_options", m_show_options},
-      {"show_sketch_list", m_show_sketch_list},
-      {"show_shape_list", m_show_shape_list},
-      {"log_window_visible", m_log_window_visible},
-      {"show_settings_dialog", m_show_settings_dialog},
-      {"dark_mode", m_dark_mode},
-      {"show_lua_console", m_show_lua_console},
-      {"show_python_console", m_show_python_console},
-      {"ui_verbosity", m_ui_verbosity},
-      {"edge_dim_label_h", m_edge_dim_label_h},
-      {"edge_dim_line_width", m_edge_dim_line_width},
-      {"edge_dim_arrow_size", m_edge_dim_arrow_size},
-      {"edge_dim_color", {m_edge_dim_color[0], m_edge_dim_color[1], m_edge_dim_color[2]}},
-      {"edge_dim_text_scale", m_edge_dim_text_scale},
-      {"edge_dim_text_render_mode", m_edge_dim_text_render_mode},
-      {"edge_dim_arrow_style", m_edge_dim_arrow_style},
-      {"edge_dim_arrow_orientation", m_edge_dim_arrow_orientation},
-      {"show_sketch_dimensions", m_show_sketch_dimensions},
-      {k_gui_key_permanent_node_anno_scale, m_permanent_node_anno_scale},
-      {"origin_marker_color", {m_origin_marker_color[0], m_origin_marker_color[1], m_origin_marker_color[2]}},
-      {"sketch_edge_color", {m_sketch_edge_color[0], m_sketch_edge_color[1], m_sketch_edge_color[2], m_sketch_edge_color[3]}},
-      {"sketch_edge_selection_color",
-             {m_sketch_edge_selection_color[0], m_sketch_edge_selection_color[1], m_sketch_edge_selection_color[2],
-              m_sketch_edge_selection_color[3]}},
-      {"sketch_edge_highlight_color",
-             {m_sketch_edge_highlight_color[0], m_sketch_edge_highlight_color[1], m_sketch_edge_highlight_color[2],
-              m_sketch_edge_highlight_color[3]}},
-      {"sketch_edge_line_width", m_sketch_edge_line_width},
-      {"sketch_face_color", {m_sketch_face_color[0], m_sketch_face_color[1], m_sketch_face_color[2], m_sketch_face_color[3]}},
-      {"sketch_face_selection_color",
-             {m_sketch_face_selection_color[0], m_sketch_face_selection_color[1], m_sketch_face_selection_color[2],
-              m_sketch_face_selection_color[3]}},
-      {"sketch_face_highlight_color",
-             {m_sketch_face_highlight_color[0], m_sketch_face_highlight_color[1], m_sketch_face_highlight_color[2],
-              m_sketch_face_highlight_color[3]}},
-      {"add_mid_pt_edges", m_add_mid_pt_line_edges},
-      {"add_mid_pt_rect_edges", m_add_mid_pt_rect_edges},
-      {"add_mid_pt_slot_edges", m_add_mid_pt_slot_edges},
-      {"load_last_opened_on_startup", m_load_last_opened_on_startup},
-      {"last_opened_project_path", m_last_opened_project_path},
-      {"imgui_style_dark", imgui_style_to_json(m_imgui_style_dark)},
-      {"imgui_style_light", imgui_style_to_json(m_imgui_style_light)},
-      {"settings_headers", settings_headers_to_json(m_settings_headers)},
-      {"view_roll_step_deg", m_view_roll_step_deg},
-      {"view_zoom_scroll_scale", m_view_zoom_scroll_scale},
-      {"default_2d_view_width", m_default_2d_view_width},
-      {"default_2d_view_height", m_default_2d_view_height},
-      {"default_project_unit", (m_default_project_unit == Project_unit::Millimeter) ? "millimeter" : "inch"},
-      {"inspection_orthographic", m_inspection_orthographic},
-      {"snap_guide_color_node",
-             [&]()
-             {
-         float r{}, g{}, b{};
-         Sketch_nodes::get_snap_guide_color_node(r, g, b);
-         return nlohmann::json::array({r, g, b});
-       }()},
-      {"snap_guide_color_axis",
-             [&]()
-             {
-         const glm::vec3 c = Sketch_nodes::get_snap_guide_color_axis();
-         return nlohmann::json::array({c.x, c.y, c.z});
-       }()},
-      {"snap_guide_mode", static_cast<int>(Sketch_nodes::get_snap_guide_mode())},
-      {"snap_guide_line_width", Sketch_nodes::get_snap_guide_line_width()},
-      {"annotate_all_coaxial_nodes", Sketch_nodes::get_annotate_all_coaxial_nodes()},
+      {"show_options",                       m_show_options},
+      {"show_sketch_list",                   m_show_sketch_list},
+      {"show_shape_list",                    m_show_shape_list},
+      {"log_window_visible",                 m_log_window_visible},
+      {"show_settings_dialog",               m_show_settings_dialog},
+      {"dark_mode",                          m_dark_mode},
+      {"show_lua_console",                   m_show_lua_console},
+      {"show_python_console",                m_show_python_console},
+      {"ui_verbosity",                       m_ui_verbosity},
+      {"edge_dim_label_h",                   m_edge_dim_label_h},
+      {"edge_dim_line_width",                m_edge_dim_line_width},
+      {"edge_dim_arrow_size",                m_edge_dim_arrow_size},
+      {"edge_dim_color",                     {m_edge_dim_color[0], m_edge_dim_color[1], m_edge_dim_color[2]}},
+      {"edge_dim_text_scale",                m_edge_dim_text_scale},
+      {"edge_dim_text_render_mode",          m_edge_dim_text_render_mode},
+      {"edge_dim_arrow_style",               m_edge_dim_arrow_style},
+      {"edge_dim_arrow_orientation",         m_edge_dim_arrow_orientation},
+      {"show_sketch_dimensions",             m_show_sketch_dimensions},
+      {k_gui_key_permanent_node_anno_scale,  m_permanent_node_anno_scale},
+      {"origin_marker_color",                {m_origin_marker_color[0], m_origin_marker_color[1], m_origin_marker_color[2]}},
+      {"sketch_edge_color",                  {m_sketch_edge_color[0], m_sketch_edge_color[1],
+                                              m_sketch_edge_color[2], m_sketch_edge_color[3]}},
+      {"sketch_edge_selection_color",        {m_sketch_edge_selection_color[0], m_sketch_edge_selection_color[1],
+                                              m_sketch_edge_selection_color[2], m_sketch_edge_selection_color[3]}},
+      {"sketch_edge_highlight_color",        {m_sketch_edge_highlight_color[0], m_sketch_edge_highlight_color[1],
+                                              m_sketch_edge_highlight_color[2], m_sketch_edge_highlight_color[3]}},
+      {"sketch_edge_line_width",             m_sketch_edge_line_width},
+      {"sketch_face_color",                  {m_sketch_face_color[0], m_sketch_face_color[1],
+                                              m_sketch_face_color[2], m_sketch_face_color[3]}},
+      {"sketch_face_selection_color",        {m_sketch_face_selection_color[0], m_sketch_face_selection_color[1],
+                                              m_sketch_face_selection_color[2], m_sketch_face_selection_color[3]}},
+      {"sketch_face_highlight_color",        {m_sketch_face_highlight_color[0], m_sketch_face_highlight_color[1],
+                                              m_sketch_face_highlight_color[2], m_sketch_face_highlight_color[3]}},
+      {"add_mid_pt_edges",                   m_add_mid_pt_line_edges},
+      {"add_mid_pt_rect_edges",              m_add_mid_pt_rect_edges},
+      {"add_mid_pt_slot_edges",              m_add_mid_pt_slot_edges},
+      {"load_last_opened_on_startup",        m_load_last_opened_on_startup},
+      {"last_opened_project_path",           m_last_opened_project_path},
+      {"imgui_style_dark",                   imgui_style_to_json(m_imgui_style_dark)},
+      {"imgui_style_light",                  imgui_style_to_json(m_imgui_style_light)},
+      {"settings_headers",                   settings_headers_to_json(m_settings_headers)},
+      {"view_roll_step_deg",                 m_view_roll_step_deg},
+      {"view_zoom_scroll_scale",             m_view_zoom_scroll_scale},
+      {"default_2d_view_width",              m_default_2d_view_width},
+      {"default_2d_view_height",             m_default_2d_view_height},
+      {"default_project_unit",               (m_default_project_unit == Project_unit::Millimeter) ? "millimeter" : "inch"},
+      {"inspection_orthographic",            m_inspection_orthographic},
+      {"snap_guide_color_node",              [&]()
+                                              {
+                                                float r{}, g{}, b{};
+                                                Sketch_nodes::get_snap_guide_color_node(r, g, b);
+                                                return nlohmann::json::array({r, g, b});
+                                              }()},
+      {"snap_guide_color_axis",              [&]()
+                                              {
+                                                const glm::vec3 c = Sketch_nodes::get_snap_guide_color_axis();
+                                                return nlohmann::json::array({c.x, c.y, c.z});
+                                              }()},
+      {"snap_guide_mode",                    static_cast<int>(Sketch_nodes::get_snap_guide_mode())},
+      {"snap_guide_line_width",              Sketch_nodes::get_snap_guide_line_width()},
+      {"annotate_all_coaxial_nodes",         Sketch_nodes::get_annotate_all_coaxial_nodes()},
 #ifndef NDEBUG
-      {"show_dbg", m_show_dbg},
+      {"show_dbg",                           m_show_dbg},
 #endif
-      {"underlay_highlight_color",
-       {m_underlay_highlight_color[0], m_underlay_highlight_color[1], m_underlay_highlight_color[2],
-        m_underlay_highlight_color[3]}},
-      {"elm_list_hover_color",
-       {m_elm_list_hover_color[0], m_elm_list_hover_color[1], m_elm_list_hover_color[2], m_elm_list_hover_color[3]}},
-      {"shape_selection_color",
-       {m_shape_selection_color[0], m_shape_selection_color[1], m_shape_selection_color[2], m_shape_selection_color[3]}},
-      {"sketch_shape_faint_style", m_sketch_shape_faint_style},
-      {"sketch_shape_faint_opacity", m_sketch_shape_faint_opacity},
-      {"sketch_shape_faint_enabled", m_sketch_shape_faint_enabled},
-      {"extrude_fast_preview", m_extrude_fast_preview},
+      {"underlay_highlight_color",           {m_underlay_highlight_color[0], m_underlay_highlight_color[1],
+                                              m_underlay_highlight_color[2], m_underlay_highlight_color[3]}},
+      {"elm_list_hover_color",               {m_elm_list_hover_color[0], m_elm_list_hover_color[1],
+                                              m_elm_list_hover_color[2], m_elm_list_hover_color[3]}},
+      {"shape_selection_color",              {m_shape_selection_color[0], m_shape_selection_color[1],
+                                              m_shape_selection_color[2], m_shape_selection_color[3]}},
+      {"sketch_shape_faint_style",           m_sketch_shape_faint_style},
+      {"sketch_shape_faint_opacity",         m_sketch_shape_faint_opacity},
+      {"sketch_shape_faint_enabled",         m_sketch_shape_faint_enabled},
+      {"extrude_fast_preview",               m_extrude_fast_preview},
       {"extrude_fast_preview_edge_threshold", m_extrude_fast_preview_edge_threshold},
   };
+  // clang-format on
   j["version"]          = k_settings_version;
   const char* imgui_ini = ImGui::SaveIniSettingsToMemory(nullptr);
   if (imgui_ini && *imgui_ini)
@@ -357,6 +371,7 @@ void GUI::parse_occt_view_settings_(const std::string& content)
           if (a[i].is_number())
             out[i] = a[i].get<float>();
     };
+
     if (ov.contains("bg_color1"))
       arr3(ov["bg_color1"], bg1);
 
@@ -387,6 +402,7 @@ void GUI::parse_occt_view_settings_(const std::string& content)
       if (v.is_number())
         dst = v.get<double>();
     };
+
     apply_num("grid_step", grid_rect.step);
     if (!ov.contains("grid_step"))
     {
@@ -396,6 +412,7 @@ void GUI::parse_occt_view_settings_(const std::string& content)
       else if (ov.contains("grid_y_step"))
         apply_num("grid_y_step", grid_rect.step);
     }
+
     apply_num("grid_padding", grid_rect.grid_padding);
     if (!ov.contains("grid_padding") && ov.contains("grid_graphic_x_size"))
       // Legacy: treat old half-extent as padding margin around sketch content.
@@ -511,17 +528,21 @@ void GUI::parse_gui_panes_settings_(const std::string& content)
     {
       for (int i = 0; i < 4; ++i)
         out[i] = defaults[i];
+
       if (!g.contains(key) || !g[key].is_array())
         return;
+
       const json& a = g[key];
       for (int i = 0; i < 4; ++i)
         if (i < static_cast<int>(a.size()) && a[i].is_number())
           out[i] = std::clamp(a[i].get<float>(), 0.f, 1.f);
     };
-    parse_rgba4("sketch_edge_color", m_sketch_edge_color, k_gui_sketch_edge_color_default);
+    // clang-format off
+    parse_rgba4("sketch_edge_color",           m_sketch_edge_color,           k_gui_sketch_edge_color_default);
     parse_rgba4("sketch_edge_highlight_color", m_sketch_edge_highlight_color, k_gui_sketch_edge_highlight_color_default);
-    parse_rgba4("sketch_face_color", m_sketch_face_color, k_gui_sketch_face_color_default);
+    parse_rgba4("sketch_face_color",           m_sketch_face_color,           k_gui_sketch_face_color_default);
     parse_rgba4("sketch_face_highlight_color", m_sketch_face_highlight_color, k_gui_sketch_face_highlight_color_default);
+    // clang-format on
     // Selection colors: fall back to highlight when absent (pre-split settings files).
     parse_rgba4("sketch_edge_selection_color", m_sketch_edge_selection_color,
                 g.contains("sketch_edge_selection_color") ? k_gui_sketch_edge_selection_color_default
@@ -624,9 +645,11 @@ void GUI::parse_gui_panes_settings_(const std::string& content)
           g.contains("imgui_rounding_general") || g.contains("imgui_rounding_scroll") || g.contains("imgui_rounding_tabs");
       if (has_legacy_rounding)
       {
-        const float gen                     = round_from_json("imgui_rounding_general", dark_defaults.rounding_general);
-        const float scroll                  = round_from_json("imgui_rounding_scroll", dark_defaults.rounding_scroll);
-        const float tabs                    = round_from_json("imgui_rounding_tabs", dark_defaults.rounding_tabs);
+        // clang-format off
+        const float gen    = round_from_json("imgui_rounding_general", dark_defaults.rounding_general);
+        const float scroll = round_from_json("imgui_rounding_scroll",  dark_defaults.rounding_scroll);
+        const float tabs   = round_from_json("imgui_rounding_tabs",    dark_defaults.rounding_tabs);
+        // clang-format on
         m_imgui_style_dark.rounding_general = m_imgui_style_light.rounding_general = gen;
         m_imgui_style_dark.rounding_scroll = m_imgui_style_light.rounding_scroll = scroll;
         m_imgui_style_dark.rounding_tabs = m_imgui_style_light.rounding_tabs = tabs;
@@ -884,6 +907,7 @@ bool GUI::settings_collapsing_header_(const char* label, bool& open_state)
     open_state = open;
     save_occt_view_settings();
   }
+
   return open;
 }
 
@@ -1190,6 +1214,7 @@ void GUI::settings_()
       if (ImGui::ColorEdit4("##shape_sel_color", m_shape_selection_color,
                             ImGuiColorEditFlags_Float | ImGuiColorEditFlags_AlphaBar))
         shape_sel_changed = true;
+
       ImGui::SameLine(0.0f, ImGui::GetStyle().ItemInnerSpacing.x);
       GUI_DOC_HELP_("Highlight color for selected 3D shapes in the viewer (edges and wires).", doc_urls::k_occt_view);
 
@@ -1235,6 +1260,7 @@ void GUI::settings_()
         m_view->set_grid_visible(grid_visible);
         save_occt_view_settings();
       }
+
       ImGui::SameLine(0.0f, ImGui::GetStyle().ItemInnerSpacing.x);
       GUI_DOC_HELP_("Show or hide the OCCT reference grid in the 3D view. When shown, the grid lies on the active "
                     "sketch plane. Click ? to open the user guide.",
@@ -1265,6 +1291,7 @@ void GUI::settings_()
       const double step_min_ui = 1e-6;
       if (ImGui::DragScalar("##gstep", ImGuiDataType_Double, &step_ui, spd_s, &step_min_ui, nullptr, "%.8g"))
         geom_changed = true;
+
       ImGui::SameLine(0.0f, ImGui::GetStyle().ItemInnerSpacing.x);
       ImGui::TextUnformatted(m_view->project_unit_suffix());
 
@@ -1276,6 +1303,7 @@ void GUI::settings_()
       const double padding_min_ui = 0.0;
       if (ImGui::DragScalar("##gpad", ImGuiDataType_Double, &padding_ui, spd_extent, &padding_min_ui, nullptr, "%.8g"))
         geom_changed = true;
+
       ImGui::SameLine(0.0f, ImGui::GetStyle().ItemInnerSpacing.x);
       ImGui::TextUnformatted(m_view->project_unit_suffix());
 
@@ -1292,6 +1320,7 @@ void GUI::settings_()
       ImGui::TableSetColumnIndex(1);
       if (ImGui::DragScalar("##ggz", ImGuiDataType_Double, &graphic_z_off_ui, spd_m, nullptr, nullptr, "%.8g"))
         geom_changed = true;
+
       ImGui::SameLine(0.0f, ImGui::GetStyle().ItemInnerSpacing.x);
       ImGui::TextUnformatted(m_view->project_unit_suffix());
 
@@ -1338,6 +1367,7 @@ void GUI::settings_()
         if (ImGui::ColorEdit4("##sketch_edge_color", m_sketch_edge_color,
                               ImGuiColorEditFlags_Float | ImGuiColorEditFlags_AlphaBar))
           appear_changed = true;
+
         ImGui::SameLine(0.0f, ImGui::GetStyle().ItemInnerSpacing.x);
         GUI_DOC_HELP_("Color and opacity of edges on the current sketch (alpha = opacity).", nullptr);
 
@@ -1367,6 +1397,7 @@ void GUI::settings_()
         if (ImGui::ColorEdit4("##sketch_edge_sel_color", m_sketch_edge_selection_color,
                               ImGuiColorEditFlags_Float | ImGuiColorEditFlags_AlphaBar))
           appear_changed = true;
+
         ImGui::SameLine(0.0f, ImGui::GetStyle().ItemInnerSpacing.x);
         GUI_DOC_HELP_("Color and opacity for selected sketch edges.", nullptr);
 
@@ -1378,6 +1409,7 @@ void GUI::settings_()
         if (ImGui::ColorEdit4("##sketch_edge_hl_color", m_sketch_edge_highlight_color,
                               ImGuiColorEditFlags_Float | ImGuiColorEditFlags_AlphaBar))
           appear_changed = true;
+
         ImGui::SameLine(0.0f, ImGui::GetStyle().ItemInnerSpacing.x);
         GUI_DOC_HELP_("Color and opacity for mouse-over (dynamic) highlight on sketch edges.", nullptr);
 
@@ -1389,6 +1421,7 @@ void GUI::settings_()
         if (ImGui::ColorEdit4("##sketch_face_color", m_sketch_face_color,
                               ImGuiColorEditFlags_Float | ImGuiColorEditFlags_AlphaBar))
           appear_changed = true;
+
         ImGui::SameLine(0.0f, ImGui::GetStyle().ItemInnerSpacing.x);
         GUI_DOC_HELP_("Fill color and opacity of closed faces on the current sketch.", nullptr);
 
@@ -1400,6 +1433,7 @@ void GUI::settings_()
         if (ImGui::ColorEdit4("##sketch_face_sel_color", m_sketch_face_selection_color,
                               ImGuiColorEditFlags_Float | ImGuiColorEditFlags_AlphaBar))
           appear_changed = true;
+
         ImGui::SameLine(0.0f, ImGui::GetStyle().ItemInnerSpacing.x);
         GUI_DOC_HELP_("Fill color and opacity for selected sketch faces.", nullptr);
 
@@ -1411,6 +1445,7 @@ void GUI::settings_()
         if (ImGui::ColorEdit4("##sketch_face_hl_color", m_sketch_face_highlight_color,
                               ImGuiColorEditFlags_Float | ImGuiColorEditFlags_AlphaBar))
           appear_changed = true;
+
         ImGui::SameLine(0.0f, ImGui::GetStyle().ItemInnerSpacing.x);
         GUI_DOC_HELP_("Fill color and opacity for mouse-over (dynamic) highlight on sketch faces.", nullptr);
 
@@ -1426,6 +1461,7 @@ void GUI::settings_()
             m_sketch_shape_faint_enabled = faint;
             appear_changed               = true;
           }
+
           ImGui::SameLine(0.0f, ImGui::GetStyle().ItemInnerSpacing.x);
           ImGui::TextUnformatted("Enabled");
         }
@@ -1474,6 +1510,7 @@ void GUI::settings_()
                 appear_changed               = true;
               }
             }
+
             ImGui::SameLine(0.0f, ImGui::GetStyle().ItemInnerSpacing.x);
             GUI_DOC_HELP_("How solid faint shapes look in sketch mode (higher = closer to normal inspection "
                           "opacity). Applies to Ghost and Wire styles.",
@@ -1493,6 +1530,7 @@ void GUI::settings_()
             m_extrude_fast_preview = fast;
             appear_changed         = true;
           }
+
           ImGui::SameLine(0.0f, ImGui::GetStyle().ItemInnerSpacing.x);
           ImGui::TextUnformatted("Enabled");
         }
@@ -1518,6 +1556,7 @@ void GUI::settings_()
               appear_changed                        = true;
             }
           }
+
           ImGui::SameLine(0.0f, ImGui::GetStyle().ItemInnerSpacing.x);
           GUI_DOC_HELP_("Faces with more edges than this use the fast face-copy drag preview "
                         "(default 24). Boxes and circles stay under the threshold.",
@@ -1638,6 +1677,7 @@ void GUI::settings_()
               "Center on dimension line",
               "Automatic",
           };
+
           int h = m_edge_dim_label_h;
           ImGui::SetNextItemWidth(200.0f);
           if (ImGui::BeginCombo("##edge_dim_h", k_edge_dim_label_placement[static_cast<size_t>(h)],
@@ -1649,6 +1689,7 @@ void GUI::settings_()
                 m_edge_dim_label_h = i;
                 dim_changed        = true;
               }
+
             ImGui::EndCombo();
           }
         }
@@ -2036,10 +2077,12 @@ void GUI::settings_()
       ImGui::TextWrapped("Last opened path: %s", m_last_opened_project_path.c_str());
     else
       ImGui::TextDisabled("(No path saved yet.)");
+
     ImGui::Spacing();
 #endif
     if (ImGui::Button("Save current as startup project"))
       save_startup_project_();
+
     ImGui::SameLine();
     if (ImGui::Button("Clear saved startup"))
       clear_saved_startup_project_();
@@ -2054,9 +2097,7 @@ void GUI::settings_()
   if (ImGui::Button("Defaults"))
   {
     std::string content = settings::load_defaults();
-    if (content.empty())
-      show_message("Failed to load default settings.");
-    else
+    if (!content.empty())
     {
       try
       {
@@ -2092,6 +2133,8 @@ void GUI::settings_()
         show_message("Failed to apply default settings.");
       }
     }
+    else
+      show_message("Failed to load default settings.");
   }
 
   ImGui::End();
@@ -2187,16 +2230,18 @@ nlohmann::json build_occt_view_settings_object_(const Occt_view& view)
   const int             method = view.get_bg_gradient_method();
   Occt_grid_rect_params grid_rect{};
   view.get_occt_grid_rect_params(grid_rect);
+  // clang-format off
   return nlohmann::json{
-      {"bg_color1", {bg1[0], bg1[1], bg1[2]}},
-      {"bg_color2", {bg2[0], bg2[1], bg2[2]}},
-      {"bg_gradient_method", method},
-      {"grid_color1", {g1[0], g1[1], g1[2]}},
-      {"grid_color2", {g2[0], g2[1], g2[2]}},
-      {"grid_step", grid_rect.step},
-      {"grid_padding", grid_rect.grid_padding},
+      {"bg_color1",            {bg1[0], bg1[1], bg1[2]}},
+      {"bg_color2",            {bg2[0], bg2[1], bg2[2]}},
+      {"bg_gradient_method",   method},
+      {"grid_color1",          {g1[0], g1[1], g1[2]}},
+      {"grid_color2",          {g2[0], g2[1], g2[2]}},
+      {"grid_step",            grid_rect.step},
+      {"grid_padding",         grid_rect.grid_padding},
       {"grid_graphic_z_offset", grid_rect.graphic_z_offset},
-      {"grid_visible", view.get_grid_visible()},
+      {"grid_visible",          view.get_grid_visible()},
   };
+  // clang-format on
 }
 } // namespace

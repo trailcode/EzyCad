@@ -49,9 +49,82 @@ Run **`scripts/format-src.ps1`** (or `clang-format -i` on individual files) befo
 - **`IndentCaseLabels: false`** — `case` / `default` labels align with the surrounding `switch`, not extra-indented under it.
 - **`SortIncludes: false`** — clang-format does **not** reorder `#include` lines. Follow **Headers** above manually (own header first in `.cpp`, project `"..."` before `<...>`).
 
-Use **`// clang-format off`** / **`// clang-format on`** only where layout must be preserved (e.g. macro-like tables). Prefer formatting the file normally.
+Use **`// clang-format off`** / **`// clang-format on`** only around regions where layout must be preserved. Prefer formatting the file normally; do **not** wrap an entire translation unit.
 
-**Not enforced by clang-format** (project convention): brace-initialize members (`bool ok {false};`); declare locals close to first use; omit braces on single-statement `if`/`for`/`while` bodies when clear; put a **blank line between consecutive `if` statements** that have no `else` (treat each as its own block).
+### Tabular layout (clang-format off)
+
+When a block is naturally a **table** (parallel keys/values, assignments, call arguments, or short `switch` cases), align columns by hand and wrap **only that block**:
+
+```cpp
+// clang-format off
+out.view_nav          = b("view_nav",          defaults.view_nav);
+out.view_presentation = b("view_presentation", defaults.view_presentation);
+// clang-format on
+```
+
+```cpp
+// clang-format off
+return nlohmann::json{
+    {"rounding_scroll",  s.rounding_scroll},
+    {"window_padding_x", s.window_padding_x},
+};
+// clang-format on
+```
+
+```cpp
+// clang-format off
+switch (curve.GetType())
+{
+case GeomAbs_Line:         ++result.line_count;        break;
+case GeomAbs_Circle:       ++result.circle_count;      break;
+case GeomAbs_Ellipse:      ++result.ellipse_count;     break;
+case GeomAbs_BSplineCurve: ++result.bspline_count;     break;
+default:                   ++result.other_curve_count; break;
+}
+// clang-format on
+```
+
+- Put the comma **immediately after** the key (`{"key",  value}`), then pad spaces so the value column lines up.
+- Use one entry per line for object/map-like initializers when aligning.
+- For a **`switch` of short, parallel cases**, put each `case`/`default` on **one line** and align the label, statement(s), and trailing `break;` into columns. Keep `IndentCaseLabels: false` (labels align with `switch`), and prefer this only when every case is a simple one-liner.
+- Keep `off`/`on` tight to the table; leave surrounding code under normal clang-format.
+
+`AlignConsecutiveDeclarations` / `AlignConsecutiveAssignments` already help many declaration and assignment runs; use explicit `off`/`on` when clang-format would still break a hand-aligned key/value or argument table.
+
+### Vertical rhythm (blank lines)
+
+Not enforced by clang-format. Treat each **logical beat** as its own short paragraph:
+
+- Put a **blank line between consecutive `if` statements** that have no `else` (each is its own block).
+- After a **local lambda or helper** closes (`};`), put a blank line before the first use or following statement.
+- Inside a short helper, separate **setup**, **early return**, and **main body** with blank lines when each is a distinct step.
+- After a multi-statement `if { ... }` (or single-statement `if` that mutates state), put a blank line before trailing same-row UI such as `ImGui::SameLine`, unit labels, or `GUI_DOC_HELP_`.
+- After a **lookup table / constexpr array**, put a blank line before the locals or code that use it.
+- Before a final **`return`**, put a blank line when the function already performed a side effect (e.g. save) above.
+- Between sequential but distinct ImGui actions (e.g. `TextWrapped` / `TextDisabled`, then `Spacing`; or one `Button` then `SameLine` / next `Button`), prefer a blank line so the chain does not read as one run-on block.
+
+Do not sprinkle blank lines inside a tight expression or a one-line `if` body; the goal is readable beats, not sparse files.
+
+### Control flow polarity
+
+When both branches are short and one is the normal success path, prefer **happy-path first**:
+
+```cpp
+if (!content.empty())
+{
+  // apply / succeed
+}
+else
+  show_message("Failed...");
+```
+
+rather than leading with the failure `if` and putting the main work in `else`, unless an early-return failure keeps the success path flatter.
+
+### Other conventions (not enforced by clang-format)
+
+- Brace-initialize members (`bool ok {false};`).
+- Declare locals close to first use.
+- Omit braces on single-statement `if`/`for`/`while` bodies when clear.
 
 ## Documentation
 

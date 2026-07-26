@@ -107,12 +107,7 @@ void Shp_move::show_dist_edit(const ScreenCoords& screen_coords)
 void Shp_move::check_finalize_()
 {
   bool no_axis_constraints = !m_opts.constr_axis_x && !m_opts.constr_axis_y && !m_opts.constr_axis_z;
-  if (no_axis_constraints)
-  {
-    if (m_delta.override_x.has_value() && m_delta.override_y.has_value() && m_delta.override_z.has_value())
-      finalize();
-  }
-  else
+  if (!no_axis_constraints)
   {
     bool got_x = !m_opts.constr_axis_x || m_delta.override_x.has_value();
     bool got_y = !m_opts.constr_axis_y || m_delta.override_y.has_value();
@@ -121,6 +116,8 @@ void Shp_move::check_finalize_()
     if (got_x && got_y && got_z)
       finalize();
   }
+  else if (m_delta.override_x.has_value() && m_delta.override_y.has_value() && m_delta.override_z.has_value())
+    finalize();
 }
 
 void Shp_move::finalize()

@@ -8,7 +8,6 @@
 #include <TopoDS_Shape.hxx>
 
 #include <atomic>
-#include <cstddef>
 #include <cstdint>
 #include <optional>
 #include <string>
