@@ -62,16 +62,19 @@ TopoDS_Shape          shape_world_(const Shp& shp);
 gp_Ax3                frame_world_(const Shp& shp);
 bool                  append_bounds_(const TopoDS_Shape& shape, Bnd_Box& bounds);
 std::array<gp_Pnt, 8> bbox_corners_(const Bnd_Box& bounds);
+
 void project_bbox_offsets_(const Bnd_Box& bounds, const gp_Pnt& origin, const gp_Dir& normal, double& out_min, double& out_max);
 void project_bbox_uv_(const Bnd_Box& bounds, const gp_Pln& plane, double& u_min, double& u_max, double& v_min, double& v_max);
 bool bbox_misses_plane_(const Bnd_Box& bounds, const gp_Pln& plane);
 void add_plane_annotation_(const Bnd_Box& bounds, const gp_Pln& plane, BRep_Builder& builder, TopoDS_Compound& fill,
                            TopoDS_Compound& lines);
+
 Result<Cross_section_geometry> section_one_shape_on_plane_(const TopoDS_Shape& shape, const gp_Pln& plane);
 Result<Cross_section_geometry> cross_section_shape_on_plane_(const TopoDS_Shape& shape, const gp_Pln& plane);
 Result<TopoDS_Solid>           keep_half_space_(const gp_Pln& plane, const Bnd_Box& bounds);
 Result<TopoDS_Shape>           clip_solid_to_half_space_(const TopoDS_Shape& world_shape, const TopoDS_Solid& half_space);
 void                           for_each_index_(size_t count, const std::function<void(size_t)>& fn, std::atomic<bool>* cancel);
+
 std::vector<Result<Cross_section_geometry>> section_shapes_on_plane_(const std::vector<TopoDS_Shape>& world_shapes,
                                                                      const gp_Pln& plane, std::atomic<bool>* cancel);
 Assembled_section assemble_section_geometries_(const std::vector<Result<Cross_section_geometry>>& section_results,
@@ -147,6 +150,7 @@ Result<Shp_cross_section::Shared_plane> Shp_cross_section::build_shared_plane_(c
 
   const double offset_model = view().to_model(m_offset_display);
   shared.plane              = cross_section_plane_(shared_axes, m_plane, offset_model, m_invert_normal);
+
   return shared;
 }
 
@@ -175,6 +179,7 @@ Status Shp_cross_section::request_preview(const std::vector<Shp_ptr>& shapes)
   // Keep last cyan wires until the new section job finishes (feels less flickery while dragging).
   enqueue_section_(plane_ctx);
   ctx().UpdateCurrentViewer();
+
   return Status::ok();
 }
 
@@ -183,6 +188,7 @@ Status Shp_cross_section::preview(const std::vector<Shp_ptr>& shapes)
   const Status requested = request_preview(shapes);
   if (!requested.is_ok())
     return requested;
+
   return wait_section();
 }
 
@@ -246,6 +252,7 @@ Shp_cross_section::Section_result Shp_cross_section::compute_section_result_(Sec
   out.status                        = assembled.status;
   out.compound                      = assembled.compound;
   out.plane                         = req.plane;
+
   return out;
 }
 
@@ -270,6 +277,7 @@ std::optional<Status> Shp_cross_section::finish_section_result_(Section_result r
   }
 
   ctx().UpdateCurrentViewer();
+
   return result.status;
 }
 
@@ -525,14 +533,15 @@ Status Shp_cross_section::clip(const std::vector<Shp_ptr>& shapes)
   clear();
 
   std::ostringstream msg;
-  if (added.empty())
-    msg << "Removed " << removed_fully << (removed_fully == 1 ? " fully clipped shape." : " fully clipped shapes.");
-  else
+  if (!added.empty())
   {
     msg << "Clipped " << added.size() << (added.size() == 1 ? " shape." : " shapes.");
     if (removed_fully > 0)
       msg << " Removed " << removed_fully << (removed_fully == 1 ? " fully clipped shape." : " fully clipped shapes.");
   }
+  else
+    msg << "Removed " << removed_fully << (removed_fully == 1 ? " fully clipped shape." : " fully clipped shapes.");
+
   return Status::ok(msg.str());
 }
 
@@ -547,7 +556,6 @@ void Shp_cross_section::clear()
 void Shp_cross_section::clear_ais_clips_()
 {
   if (!m_ais_clip_plane.IsNull())
-  {
     for (const Shp_ptr& shp : m_ais_clipped_shapes)
     {
       if (shp.IsNull())
@@ -556,7 +564,6 @@ void Shp_cross_section::clear_ais_clips_()
       shp->RemoveClipPlane(m_ais_clip_plane);
       ctx().Redisplay(shp, false);
     }
-  }
 
   m_ais_clipped_shapes.clear();
   m_ais_clip_plane.Nullify();
@@ -586,6 +593,7 @@ std::vector<Shape_id> Shp_cross_section::selection_ids_(const std::vector<Shp_pt
   for (const Shp_ptr& shp : shapes)
     if (!shp.IsNull())
       ids.push_back(shp->get_id());
+
   return ids;
 }
 
@@ -668,26 +676,20 @@ gp_Pln cross_section_plane_(const gp_Ax3& frame, Cross_section_plane plane, doub
 {
   gp_Dir normal;
   gp_Dir x_dir;
+  // clang-format off
   switch (plane)
   {
-  case Cross_section_plane::XY:
-    normal = frame.Direction();
-    x_dir  = frame.XDirection();
-    break;
-  case Cross_section_plane::XZ:
-    normal = frame.YDirection();
-    x_dir  = frame.XDirection();
-    break;
-  case Cross_section_plane::YZ:
-    normal = frame.XDirection();
-    x_dir  = frame.YDirection();
-    break;
+  case Cross_section_plane::XY: normal = frame.Direction();  x_dir = frame.XDirection(); break;
+  case Cross_section_plane::XZ: normal = frame.YDirection(); x_dir = frame.XDirection(); break;
+  case Cross_section_plane::YZ: normal = frame.XDirection(); x_dir = frame.YDirection(); break;
   }
+  // clang-format on
 
   if (invert_normal)
     normal.Reverse();
 
   const gp_Pnt location = frame.Location().Translated(gp_Vec(normal) * offset);
+
   return gp_Pln(gp_Ax3(location, normal, x_dir));
 }
 
@@ -738,24 +740,16 @@ Result<Cross_section_geometry> section_one_shape_on_plane_(const TopoDS_Shape& s
 
 void count_curve_type_(const TopoDS_Edge& edge, Cross_section_geometry& result)
 {
+  // clang-format off
   switch (BRepAdaptor_Curve(edge).GetType())
   {
-  case GeomAbs_Line:
-    ++result.line_count;
-    break;
-  case GeomAbs_Circle:
-    ++result.circle_count;
-    break;
-  case GeomAbs_Ellipse:
-    ++result.ellipse_count;
-    break;
-  case GeomAbs_BSplineCurve:
-    ++result.bspline_count;
-    break;
-  default:
-    ++result.other_curve_count;
-    break;
+  case GeomAbs_Line:         ++result.line_count;        break;
+  case GeomAbs_Circle:       ++result.circle_count;      break;
+  case GeomAbs_Ellipse:      ++result.ellipse_count;     break;
+  case GeomAbs_BSplineCurve: ++result.bspline_count;     break;
+  default:                   ++result.other_curve_count; break;
   }
+  // clang-format on
 }
 
 bool contains_solid_(const TopoDS_Shape& shape)
@@ -791,6 +785,7 @@ bool append_bounds_(const TopoDS_Shape& shape, Bnd_Box& bounds)
     return false;
 
   bounds.Add(local);
+
   return true;
 }
 
@@ -848,6 +843,7 @@ void for_each_index_(size_t count, const std::function<void(size_t)>& fn, std::a
   {
     if (!(cancel && cancel->load()))
       fn(0);
+
     return;
   }
 
@@ -869,6 +865,7 @@ void for_each_index_(size_t count, const std::function<void(size_t)>& fn, std::a
             const size_t i = next.fetch_add(1, std::memory_order_relaxed);
             if (i >= count)
               break;
+
             fn(i);
           }
         });
@@ -892,6 +889,7 @@ std::vector<Result<Cross_section_geometry>> section_shapes_on_plane_(const std::
         results[i] = section_one_shape_on_plane_(world_shapes[i], plane);
       },
       cancel);
+
   return results;
 }
 
@@ -919,6 +917,7 @@ Assembled_section assemble_section_geometries_(const std::vector<Result<Cross_se
 
       const std::string name = i < shape_names.size() ? shape_names[i] : "Shape";
       out.status             = Status(result.status(), name + ": " + result.message());
+
       return out;
     }
 
@@ -944,6 +943,7 @@ Assembled_section assemble_section_geometries_(const std::vector<Result<Cross_se
   msg << "Section preview: " << totals.edge_count << " edge";
   if (totals.edge_count != 1)
     msg << "s";
+
   msg << " (" << totals.line_count << " line, " << totals.circle_count << " circle, " << totals.ellipse_count << " ellipse, "
       << totals.bspline_count << " B-spline, " << totals.other_curve_count << " other)";
   if (missed > 0)
@@ -952,8 +952,10 @@ Assembled_section assemble_section_geometries_(const std::vector<Result<Cross_se
     if (missed != 1)
       msg << "s";
   }
+
   msg << ".";
   out.status = Status::ok(msg.str());
+
   return out;
 }
 

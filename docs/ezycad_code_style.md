@@ -53,7 +53,7 @@ Use **`// clang-format off`** / **`// clang-format on`** only around regions whe
 
 ### Tabular layout (clang-format off)
 
-When a block is naturally a **table** (parallel keys/values, assignments, or call arguments), align columns by hand and wrap **only that block**:
+When a block is naturally a **table** (parallel keys/values, assignments, call arguments, or short `switch` cases), align columns by hand and wrap **only that block**:
 
 ```cpp
 // clang-format off
@@ -71,8 +71,22 @@ return nlohmann::json{
 // clang-format on
 ```
 
+```cpp
+// clang-format off
+switch (curve.GetType())
+{
+case GeomAbs_Line:         ++result.line_count;        break;
+case GeomAbs_Circle:       ++result.circle_count;      break;
+case GeomAbs_Ellipse:      ++result.ellipse_count;     break;
+case GeomAbs_BSplineCurve: ++result.bspline_count;     break;
+default:                   ++result.other_curve_count; break;
+}
+// clang-format on
+```
+
 - Put the comma **immediately after** the key (`{"key",  value}`), then pad spaces so the value column lines up.
 - Use one entry per line for object/map-like initializers when aligning.
+- For a **`switch` of short, parallel cases**, put each `case`/`default` on **one line** and align the label, statement(s), and trailing `break;` into columns. Keep `IndentCaseLabels: false` (labels align with `switch`), and prefer this only when every case is a simple one-liner.
 - Keep `off`/`on` tight to the table; leave surrounding code under normal clang-format.
 
 `AlignConsecutiveDeclarations` / `AlignConsecutiveAssignments` already help many declaration and assignment runs; use explicit `off`/`on` when clang-format would still break a hand-aligned key/value or argument table.

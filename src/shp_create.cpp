@@ -84,6 +84,7 @@ TopoDS_Shape create_pyramid(double side)
   TopoDS_Shape pyramid = solid_maker.Solid();
   gp_Trsf      trsf;
   trsf.SetTranslation(gp_Vec(0, 0, -h / 2.0));
+
   return BRepBuilderAPI_Transform(pyramid, trsf).Shape();
 }
 
@@ -94,6 +95,7 @@ TopoDS_Shape create_cylinder(double radius, double height)
   TopoDS_Shape cyl = BRepPrimAPI_MakeCylinder(radius, height).Shape();
   gp_Trsf      trsf;
   trsf.SetTranslation(gp_Vec(0, 0, -height / 2.0));
+
   return BRepBuilderAPI_Transform(cyl, trsf).Shape();
 }
 
@@ -102,6 +104,7 @@ TopoDS_Shape create_cone(double R1, double R2, double height)
   TopoDS_Shape cone = BRepPrimAPI_MakeCone(R1, R2, height).Shape();
   gp_Trsf      trsf;
   trsf.SetTranslation(gp_Vec(0, 0, -height / 2.0));
+
   return BRepBuilderAPI_Transform(cone, trsf).Shape();
 }
 
