@@ -29,6 +29,7 @@ size_t count_shape_edges_(const TopoDS_Shape& shape)
   size_t n = 0;
   for (TopExp_Explorer ex(shape, TopAbs_EDGE); ex.More(); ex.Next())
     ++n;
+
   return n;
 }
 
@@ -38,7 +39,9 @@ gp_Pnt centroid_of_verts_(const std::vector<gp_Pnt>& verts)
   gp_XYZ sum(0.0, 0.0, 0.0);
   for (const gp_Pnt& p : verts)
     sum += p.XYZ();
+
   sum /= static_cast<double>(verts.size());
+
   return gp_Pnt(sum);
 }
 
@@ -53,6 +56,7 @@ gp_Trsf section_trsf_(const gp_Ax1& axis, double height_along_axis, double twist
   rot.SetRotation(axis, twist_rad);
   gp_Trsf trans;
   trans.SetTranslation(gp_Vec(axis.Direction()) * height_along_axis);
+
   return trans * rot;
 }
 
@@ -76,6 +80,7 @@ TopoDS_Shape loft_twisted_wire_(const TopoDS_Wire& wire, const gp_Ax1& axis, con
 
   maker.Build();
   EZY_ASSERT(maker.IsDone());
+
   return try_make_solid(maker.Shape());
 }
 
@@ -87,8 +92,10 @@ std::vector<TopoDS_Wire> face_hole_wires_(const TopoDS_Face& face, const TopoDS_
     const TopoDS_Wire w = TopoDS::Wire(ex.Current());
     if (w.IsNull() || w.IsSame(outer_wire))
       continue;
+
     holes.push_back(w);
   }
+
   return holes;
 }
 } // namespace
@@ -185,6 +192,7 @@ void Shp_extrude::on_left_click()
     lock_height_begin_twist_();
     return;
   }
+
   finalize();
 }
 
@@ -343,6 +351,7 @@ void Shp_extrude::update_twist_(const ScreenCoords& screen_coords)
     const double vy = v.Dot(y_dir);
     if (std::hypot(vx, vy) <= Precision::Confusion())
       return;
+
     twist_rad = std::atan2(vy, vx);
     if (!m_show_angle_input)
       m_entered_twist_deg.reset();
@@ -588,8 +597,10 @@ double Shp_extrude::twist_dim_radius_() const
     for (const gp_Pnt& p : face->verts_3d)
       radius = std::max(radius, m_twist_centroid.Distance(p));
   }
+
   if (radius <= Precision::Confusion() && m_to_extrude_pt)
     radius = m_twist_centroid.Distance(*m_to_extrude_pt);
+
   return radius;
 }
 
@@ -693,6 +704,7 @@ void Shp_extrude::refresh_tmp_dimension_style(const Length_dimension_style& styl
     apply_length_dimension_style(m_tmp_dim, style);
     ctx().Redisplay(m_tmp_dim, true);
   }
+
   if (!m_tmp_angle_dim.IsNull())
   {
     apply_angle_dimension_style(m_tmp_angle_dim, style);

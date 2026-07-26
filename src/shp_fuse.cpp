@@ -56,6 +56,7 @@ Shp_rslt Shp_fuse::fuse(std::vector<Shp_ptr> shps)
   add_shp_(shp);
   view().push_undo_delta(
       std::make_unique<Shape_replace_delta>(std::move(removed), std::vector<Shape_rec>{capture_shape_rec(*shp)}));
+  
   return Shp_rslt(shp);
 }
 
@@ -65,5 +66,6 @@ Status Shp_fuse::selected_fuse()
   Shp_rslt r = fuse(std::move(m_shps));
   if (!r.is_ok())
     return Status(r.status(), r.message());
+
   return Status::ok();
 }

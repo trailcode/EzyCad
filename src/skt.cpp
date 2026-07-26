@@ -81,6 +81,7 @@ void Sketch::sketch_pt_move(const ScreenCoords& screen_coords)
     (void)m_nodes.try_pick_existing_node(screen_coords);
     m_dims.update_len_dim_rubber_line_(screen_coords);
     return;
+
   default:
     break;
   }

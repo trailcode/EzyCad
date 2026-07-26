@@ -24,11 +24,13 @@ void Shp_rotate::begin(std::vector<Shp_ptr> shps)
     ctx().Remove(m_rotation_axis_vis, false);
     m_rotation_axis_vis = nullptr;
   }
+
   if (m_rotation_center_vis)
   {
     ctx().Remove(m_rotation_center_vis, false);
     m_rotation_center_vis = nullptr;
   }
+
   set_operation_shps_(std::move(shps));
 }
 
@@ -106,6 +108,7 @@ void Shp_rotate::update_rotation_axis_()
     axis_dir   = gp_Dir(x, y, z);
     axis_color = Quantity_Color(x, y, z, Quantity_TOC_RGB);
   };
+
   switch (m_rotation_axis)
   {
     // clang-format off
@@ -205,6 +208,7 @@ Status Shp_rotate::show_angle_edit(const ScreenCoords& screen_coords)
     if (is_final)
       finalize();
   };
+
   gui().set_angle_edit(float(to_degrees(m_angle)), std::move(std::function<void(float, bool)>(angle_edit)));
 
   return Status::ok();

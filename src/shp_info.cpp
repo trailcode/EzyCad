@@ -21,6 +21,7 @@ std::string fmt_double(const double v)
 {
   char buf[64];
   std::snprintf(buf, sizeof(buf), "%.6g", v);
+
   return buf;
 }
 
