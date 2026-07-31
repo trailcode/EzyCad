@@ -277,8 +277,7 @@ void GUI::on_key(int key, int scancode, int action, int mods)
     else if (key >= GLFW_KEY_KP_1 && key <= GLFW_KEY_KP_9)
       idx = key - GLFW_KEY_KP_1;
 
-    if (idx >= 0 && idx <= static_cast<int>(TopAbs_SHAPE) &&
-        (mods & (GLFW_MOD_CONTROL | GLFW_MOD_ALT | GLFW_MOD_SUPER)) == 0)
+    if (idx >= 0 && idx <= static_cast<int>(TopAbs_SHAPE) && (mods & (GLFW_MOD_CONTROL | GLFW_MOD_ALT | GLFW_MOD_SUPER)) == 0)
     {
       m_view->set_shp_selection_mode(static_cast<TopAbs_ShapeEnum>(idx));
       return;
@@ -444,8 +443,7 @@ bool GUI::try_capture_hotkey_press_(int key, int mods)
   const Key_chord chord{key, Gui_hotkeys::normalize_mods(mods)};
   if (Gui_hotkeys::is_reserved_chord(chord))
   {
-    m_hotkey_capture_error =
-        "Reserved: " + Gui_hotkeys::format_chord(chord) + " is a fixed shortcut and cannot be remapped.";
+    m_hotkey_capture_error = "Reserved: " + Gui_hotkeys::format_chord(chord) + " is a fixed shortcut and cannot be remapped.";
     return true;
   }
   if (!m_hotkeys.set_chord(*m_hotkey_capture_action, chord))

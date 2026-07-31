@@ -207,7 +207,8 @@ void GUI::initialize_toolbar_()
 
 void GUI::sync_toolbar_hotkey_tooltips_()
 {
-  auto tip_mode = [this](Mode mode, const char* base, Gui_action action) {
+  auto tip_mode = [this](Mode mode, const char* base, Gui_action action)
+  {
     for (Toolbar_button& b : m_toolbar_buttons)
     {
       if (b.data.index() != 0 || std::get<Mode>(b.data) != mode)
@@ -217,7 +218,8 @@ void GUI::sync_toolbar_hotkey_tooltips_()
       return;
     }
   };
-  auto tip_cmd = [this](Command cmd, const char* base, Gui_action action) {
+  auto tip_cmd = [this](Command cmd, const char* base, Gui_action action)
+  {
     for (Toolbar_button& b : m_toolbar_buttons)
     {
       if (b.data.index() != 1 || std::get<Command>(b.data) != cmd)

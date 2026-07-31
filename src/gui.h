@@ -747,7 +747,7 @@ private:
   std::optional<Gui_action> m_hotkey_capture_action;
   std::string               m_hotkey_capture_error;
   bool                      m_sketch_properties_open{false};
-  std::weak_ptr<Sketch>    m_sketch_properties_sketch;
+  std::weak_ptr<Sketch>     m_sketch_properties_sketch;
 
   // Sketch origin value input (properties pane Set button)
   std::weak_ptr<Sketch> m_sketch_origin_set_sketch;

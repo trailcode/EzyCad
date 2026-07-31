@@ -120,7 +120,8 @@ static_assert(sizeof(c_actions) / sizeof(c_actions[0]) == Gui_hotkeys::k_count);
       return GLFW_KEY_0 + (c - '0');
   }
 
-  auto eq = [&](const char* lit) {
+  auto eq = [&](const char* lit)
+  {
     const std::string_view l(lit);
     if (tok.size() != l.size())
       return false;
@@ -151,10 +152,7 @@ bool Key_chord::operator==(const Key_chord& o) const
   return key == o.key && Gui_hotkeys::normalize_mods(mods) == Gui_hotkeys::normalize_mods(o.mods);
 }
 
-Gui_hotkeys::Gui_hotkeys()
-{
-  reset_defaults();
-}
+Gui_hotkeys::Gui_hotkeys() { reset_defaults(); }
 
 void Gui_hotkeys::reset_defaults()
 {
@@ -234,16 +232,15 @@ bool Gui_hotkeys::is_reserved_chord(Key_chord chord)
   // View roll: Shift + KP4/6, 4/6, or Left/Right.
   if ((mods & GLFW_MOD_SHIFT) != 0 && (mods & (GLFW_MOD_CONTROL | GLFW_MOD_ALT)) == 0)
   {
-    if (key == GLFW_KEY_KP_4 || key == GLFW_KEY_KP_6 || key == GLFW_KEY_4 || key == GLFW_KEY_6 ||
-        key == GLFW_KEY_LEFT || key == GLFW_KEY_RIGHT)
+    if (key == GLFW_KEY_KP_4 || key == GLFW_KEY_KP_6 || key == GLFW_KEY_4 || key == GLFW_KEY_6 || key == GLFW_KEY_LEFT ||
+        key == GLFW_KEY_RIGHT)
       return true;
   }
 
   // View orbit / snap: unmodified numpad 2/4/5/6/8.
   if (mods == 0)
   {
-    if (key == GLFW_KEY_KP_2 || key == GLFW_KEY_KP_4 || key == GLFW_KEY_KP_5 || key == GLFW_KEY_KP_6 ||
-        key == GLFW_KEY_KP_8)
+    if (key == GLFW_KEY_KP_2 || key == GLFW_KEY_KP_4 || key == GLFW_KEY_KP_5 || key == GLFW_KEY_KP_6 || key == GLFW_KEY_KP_8)
       return true;
   }
 
@@ -298,10 +295,7 @@ std::optional<Gui_action> Gui_hotkeys::action_from_id(std::string_view id)
   return std::nullopt;
 }
 
-int Gui_hotkeys::normalize_mods(int mods)
-{
-  return mods & k_chord_mods_mask;
-}
+int Gui_hotkeys::normalize_mods(int mods) { return mods & k_chord_mods_mask; }
 
 std::string Gui_hotkeys::format_chord(Key_chord chord)
 {
@@ -330,9 +324,8 @@ std::optional<Key_chord> Gui_hotkeys::parse_chord(std::string_view text)
   size_t      start = 0;
   while (start < text.size())
   {
-    size_t plus = text.find('+', start);
-    std::string_view part =
-        plus == std::string_view::npos ? text.substr(start) : text.substr(start, plus - start);
+    size_t           plus = text.find('+', start);
+    std::string_view part = plus == std::string_view::npos ? text.substr(start) : text.substr(start, plus - start);
     // Trim spaces
     while (!part.empty() && part.front() == ' ')
       part.remove_prefix(1);
@@ -342,7 +335,8 @@ std::optional<Key_chord> Gui_hotkeys::parse_chord(std::string_view text)
     if (part.empty())
       return std::nullopt;
 
-    auto is_mod = [&](const char* lit) {
+    auto is_mod = [&](const char* lit)
+    {
       const std::string_view l(lit);
       if (part.size() != l.size())
         return false;

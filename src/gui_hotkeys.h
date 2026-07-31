@@ -62,24 +62,24 @@ public:
   void reset_defaults();
   void reset_action(Gui_action action);
 
-  [[nodiscard]] Key_chord                  chord_for(Gui_action action) const;
-  [[nodiscard]] std::optional<Gui_action>  action_for(int key, int mods) const;
+  [[nodiscard]] Key_chord                 chord_for(Gui_action action) const;
+  [[nodiscard]] std::optional<Gui_action> action_for(int key, int mods) const;
   /// Returns false if \a chord is reserved, invalid, or already bound to a different action.
-  [[nodiscard]] bool                       set_chord(Gui_action action, Key_chord chord);
+  [[nodiscard]] bool set_chord(Gui_action action, Key_chord chord);
 
-  [[nodiscard]] static const char*         action_id(Gui_action action);
-  [[nodiscard]] static const char*         action_label(Gui_action action);
+  [[nodiscard]] static const char*               action_id(Gui_action action);
+  [[nodiscard]] static const char*               action_label(Gui_action action);
   [[nodiscard]] static std::optional<Gui_action> action_from_id(std::string_view id);
 
-  [[nodiscard]] static int                 normalize_mods(int mods);
+  [[nodiscard]] static int normalize_mods(int mods);
   /// Fixed chords handled outside the remappable map (Esc, Tab, digits, view nav, Ctrl+Shift+Z, ...).
-  [[nodiscard]] static bool                is_reserved_chord(Key_chord chord);
-  [[nodiscard]] static std::string         format_chord(Key_chord chord);
+  [[nodiscard]] static bool                     is_reserved_chord(Key_chord chord);
+  [[nodiscard]] static std::string              format_chord(Key_chord chord);
   [[nodiscard]] static std::optional<Key_chord> parse_chord(std::string_view text);
 
-  [[nodiscard]] nlohmann::json             to_json() const;
+  [[nodiscard]] nlohmann::json to_json() const;
   /// Overlay known action ids from \a obj; missing / invalid keys keep current values.
-  void                                     merge_from_json(const nlohmann::json& obj);
+  void merge_from_json(const nlohmann::json& obj);
 
   static constexpr int k_count = static_cast<int>(Gui_action::_count);
 

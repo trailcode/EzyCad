@@ -633,6 +633,7 @@ void GUI::parse_gui_panes_settings_(const std::string& content)
     m_hotkeys.reset_defaults();
     if (g.contains("hotkeys") && g["hotkeys"].is_object())
       m_hotkeys.merge_from_json(g["hotkeys"]);
+
     sync_toolbar_hotkey_tooltips_();
 
     const bool has_nested_imgui_style = (g.contains("imgui_style_dark") && g["imgui_style_dark"].is_object()) ||
@@ -736,6 +737,7 @@ void GUI::parse_gui_panes_settings_(const std::string& content)
       for (size_t i = 0; i < 3; ++i)
         if (a[static_cast<json::size_type>(i)].is_number())
           c[static_cast<glm::vec3::length_type>(i)] = std::clamp(a[static_cast<json::size_type>(i)].get<float>(), 0.f, 1.f);
+
       Sketch_nodes::set_snap_guide_color_node(c[0], c[1], c[2]);
     }
     else if (g.contains("snap_guide_color") && g["snap_guide_color"].is_array() && g["snap_guide_color"].size() >= 3)
@@ -929,6 +931,7 @@ void GUI::settings_()
       m_hotkey_capture_action.reset();
       m_hotkey_capture_error.clear();
     }
+
     return;
   }
 
@@ -941,6 +944,7 @@ void GUI::settings_()
       m_hotkey_capture_action.reset();
       m_hotkey_capture_error.clear();
     }
+
     return;
   }
 
@@ -1027,6 +1031,7 @@ void GUI::settings_()
       {
         m_view_zoom_scroll_scale =
             std::clamp(m_view_zoom_scroll_scale, k_gui_view_zoom_scroll_scale_min, k_gui_view_zoom_scroll_scale_max);
+
         if (m_view)
           m_view->set_zoom_scroll_scale(m_view_zoom_scroll_scale);
 
@@ -1071,6 +1076,7 @@ void GUI::settings_()
         m_default_project_unit = (unit_idx == 1) ? Project_unit::Millimeter : Project_unit::Inch;
         save_occt_view_settings();
       }
+
       ImGui::SameLine(0.0f, ImGui::GetStyle().ItemInnerSpacing.x);
       GUI_DOC_HELP_("Unit applied by File -> New. Width/height below are edited in this unit (stored as inches). "
                     "Does not change the open project's File -> Project units. Click ? for the guide.",
@@ -1097,6 +1103,7 @@ void GUI::settings_()
         m_default_2d_view_width = std::clamp(w_ui / to_ui, k_gui_default_2d_view_size_min, k_gui_default_2d_view_size_max);
         save_occt_view_settings();
       }
+
       m_default_2d_view_width =
           std::clamp(m_default_2d_view_width, k_gui_default_2d_view_size_min, k_gui_default_2d_view_size_max);
       ImGui::SameLine(0.0f, ImGui::GetStyle().ItemInnerSpacing.x);
@@ -1118,6 +1125,7 @@ void GUI::settings_()
         m_default_2d_view_height = std::clamp(h_ui / to_ui, k_gui_default_2d_view_size_min, k_gui_default_2d_view_size_max);
         save_occt_view_settings();
       }
+
       m_default_2d_view_height =
           std::clamp(m_default_2d_view_height, k_gui_default_2d_view_size_min, k_gui_default_2d_view_size_max);
       ImGui::SameLine(0.0f, ImGui::GetStyle().ItemInnerSpacing.x);
@@ -2098,9 +2106,8 @@ void GUI::settings_()
         ImGui::TextUnformatted(Gui_hotkeys::action_label(action));
 
         ImGui::TableSetColumnIndex(1);
-        const bool capturing = m_hotkey_capture_action && *m_hotkey_capture_action == action;
-        std::string label =
-            capturing ? std::string("Press key...") : Gui_hotkeys::format_chord(m_hotkeys.chord_for(action));
+        const bool  capturing = m_hotkey_capture_action && *m_hotkey_capture_action == action;
+        std::string label = capturing ? std::string("Press key...") : Gui_hotkeys::format_chord(m_hotkeys.chord_for(action));
         if (ImGui::Button(label.c_str(), ImVec2(-FLT_MIN, 0.f)))
         {
           m_hotkey_capture_action = action;
@@ -2113,6 +2120,7 @@ void GUI::settings_()
           m_hotkeys.reset_action(action);
           if (m_hotkey_capture_action && *m_hotkey_capture_action == action)
             m_hotkey_capture_action.reset();
+
           m_hotkey_capture_error.clear();
           sync_toolbar_hotkey_tooltips_();
           save_occt_view_settings();
@@ -2315,13 +2323,13 @@ nlohmann::json build_occt_view_settings_object_(const Occt_view& view)
   view.get_occt_grid_rect_params(grid_rect);
   // clang-format off
   return nlohmann::json{
-      {"bg_color1",            {bg1[0], bg1[1], bg1[2]}},
-      {"bg_color2",            {bg2[0], bg2[1], bg2[2]}},
-      {"bg_gradient_method",   method},
-      {"grid_color1",          {g1[0], g1[1], g1[2]}},
-      {"grid_color2",          {g2[0], g2[1], g2[2]}},
-      {"grid_step",            grid_rect.step},
-      {"grid_padding",         grid_rect.grid_padding},
+      {"bg_color1",             {bg1[0], bg1[1], bg1[2]}},
+      {"bg_color2",             {bg2[0], bg2[1], bg2[2]}},
+      {"bg_gradient_method",    method},
+      {"grid_color1",           {g1[0], g1[1], g1[2]}},
+      {"grid_color2",           {g2[0], g2[1], g2[2]}},
+      {"grid_step",             grid_rect.step},
+      {"grid_padding",          grid_rect.grid_padding},
       {"grid_graphic_z_offset", grid_rect.graphic_z_offset},
       {"grid_visible",          view.get_grid_visible()},
   };
