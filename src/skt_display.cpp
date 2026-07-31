@@ -252,11 +252,23 @@ void Sketch::set_show_faces(bool show)
 void Sketch::set_show_edges(bool show)
 {
   if (show && m_visible)
+  {
     for (Edge& e : m_edges.edges())
       m_ctx.Display(e.shp, AIS_WireFrame, 0, false);
+
+    // Originating-face wire is the from-face profile cue; follow edge visibility so
+    // Occt_view::on_mode hide outside sketch modes (and polar-dup current-only) applies.
+    if (m_originating_face)
+      m_ctx.Display(m_originating_face, AIS_WireFrame, 0, false);
+  }
   else
+  {
     for (Edge& e : m_edges.edges())
       m_ctx.Erase(e.shp, false);
+
+    if (m_originating_face)
+      m_ctx.Erase(m_originating_face, false);
+  }
 }
 
 void Sketch::append_list_hover_ais(std::vector<AIS_InteractiveObject_ptr>& out) const

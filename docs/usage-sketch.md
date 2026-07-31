@@ -952,7 +952,7 @@ The create sketch from planar face tool allows you to extract the boundary of a 
    - The face must be planar (flat) - curved surfaces like cylinders, spheres, or complex surfaces will show an error
    - The system will automatically extract the outer boundary of the face
 3. **Sketch Created**: A new sketch is automatically created with:
-   - The face boundary as the initial wire
+   - The face boundary as the initial wire (shown as a dark-red profile while sketch tools are active; hidden in Normal and other non-sketch modes, like other sketch edges)
    - The sketch plane aligned with the face plane
    - A permanent **Origin** marker (**cyan + inside a circle**) at the **center of the face boundary's bounding box** (a fixed reference on the sketch plane)
    - The sketch name set to "Sketch from face"

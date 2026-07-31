@@ -288,6 +288,7 @@ const char* Gui_hotkeys::action_label(Gui_action action)
   const int i = static_cast<int>(action);
   if (i < 0 || i >= k_count)
     return "";
+
   return c_actions[i].label;
 }
 
@@ -296,6 +297,7 @@ Key_chord Gui_hotkeys::default_chord(Gui_action action)
   const int i = static_cast<int>(action);
   if (i < 0 || i >= k_count)
     return {};
+
   return c_actions[i].def;
 }
 
@@ -304,6 +306,7 @@ std::optional<Gui_action> Gui_hotkeys::action_from_id(std::string_view id)
   for (const Action_meta& m : c_actions)
     if (id == m.id)
       return m.action;
+
   return std::nullopt;
 }
 
@@ -341,6 +344,7 @@ std::optional<Key_chord> Gui_hotkeys::parse_chord(std::string_view text)
     // Trim spaces
     while (!part.empty() && part.front() == ' ')
       part.remove_prefix(1);
+      
     while (!part.empty() && part.back() == ' ')
       part.remove_suffix(1);
 
