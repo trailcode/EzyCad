@@ -56,6 +56,7 @@ nlohmann::json settings_headers_to_json(const Gui_settings_headers& h)
       {"sketch_snap",       h.sketch_snap},
       {"sketch_underlay",   h.sketch_underlay},
       {"startup",           h.startup},
+      {"hotkeys",           h.hotkeys},
   };
   // clang-format on
 }
@@ -83,6 +84,7 @@ void parse_settings_headers_json(const nlohmann::json& obj, Gui_settings_headers
   out.sketch_snap       = b("sketch_snap",        defaults.sketch_snap);
   out.sketch_underlay   = b("sketch_underlay",    defaults.sketch_underlay);
   out.startup           = b("startup",            defaults.startup);
+  out.hotkeys           = b("hotkeys",            defaults.hotkeys);
   // clang-format on
 }
 
@@ -238,6 +240,7 @@ std::string GUI::occt_view_settings_json() const
       {"sketch_shape_faint_enabled",         m_sketch_shape_faint_enabled},
       {"extrude_fast_preview",               m_extrude_fast_preview},
       {"extrude_fast_preview_edge_threshold", m_extrude_fast_preview_edge_threshold},
+      {"hotkeys",                            m_hotkeys.to_json()},
   };
   // clang-format on
   return j.dump(2);
@@ -338,6 +341,7 @@ void GUI::save_occt_view_settings()
       {"sketch_shape_faint_enabled",         m_sketch_shape_faint_enabled},
       {"extrude_fast_preview",               m_extrude_fast_preview},
       {"extrude_fast_preview_edge_threshold", m_extrude_fast_preview_edge_threshold},
+      {"hotkeys",                            m_hotkeys.to_json()},
   };
   // clang-format on
   j["version"]          = k_settings_version;
@@ -626,6 +630,12 @@ void GUI::parse_gui_panes_settings_(const std::string& content)
     if (g.contains("settings_headers") && g["settings_headers"].is_object())
       parse_settings_headers_json(g["settings_headers"], m_settings_headers);
 
+    m_hotkeys.reset_defaults();
+    if (g.contains("hotkeys") && g["hotkeys"].is_object())
+      m_hotkeys.merge_from_json(g["hotkeys"]);
+
+    sync_toolbar_hotkey_tooltips_();
+
     const bool has_nested_imgui_style = (g.contains("imgui_style_dark") && g["imgui_style_dark"].is_object()) ||
                                         (g.contains("imgui_style_light") && g["imgui_style_light"].is_object());
     if (!has_nested_imgui_style)
@@ -727,6 +737,7 @@ void GUI::parse_gui_panes_settings_(const std::string& content)
       for (size_t i = 0; i < 3; ++i)
         if (a[static_cast<json::size_type>(i)].is_number())
           c[static_cast<glm::vec3::length_type>(i)] = std::clamp(a[static_cast<json::size_type>(i)].get<float>(), 0.f, 1.f);
+
       Sketch_nodes::set_snap_guide_color_node(c[0], c[1], c[2]);
     }
     else if (g.contains("snap_guide_color") && g["snap_guide_color"].is_array() && g["snap_guide_color"].size() >= 3)
@@ -914,12 +925,26 @@ bool GUI::settings_collapsing_header_(const char* label, bool& open_state)
 void GUI::settings_()
 {
   if (!m_show_settings_dialog)
+  {
+    if (m_hotkey_capture_action)
+    {
+      m_hotkey_capture_action.reset();
+      m_hotkey_capture_error.clear();
+    }
+
     return;
+  }
 
   ImGui::SetNextWindowSize(ImVec2(520, 0), ImGuiCond_FirstUseEver); // Auto height; width matches res defaults
   if (!ImGui::Begin("Settings", &m_show_settings_dialog, ImGuiWindowFlags_None))
   {
     ImGui::End();
+    if (!m_show_settings_dialog && m_hotkey_capture_action)
+    {
+      m_hotkey_capture_action.reset();
+      m_hotkey_capture_error.clear();
+    }
+
     return;
   }
 
@@ -1006,6 +1031,7 @@ void GUI::settings_()
       {
         m_view_zoom_scroll_scale =
             std::clamp(m_view_zoom_scroll_scale, k_gui_view_zoom_scroll_scale_min, k_gui_view_zoom_scroll_scale_max);
+
         if (m_view)
           m_view->set_zoom_scroll_scale(m_view_zoom_scroll_scale);
 
@@ -1050,6 +1076,7 @@ void GUI::settings_()
         m_default_project_unit = (unit_idx == 1) ? Project_unit::Millimeter : Project_unit::Inch;
         save_occt_view_settings();
       }
+
       ImGui::SameLine(0.0f, ImGui::GetStyle().ItemInnerSpacing.x);
       GUI_DOC_HELP_("Unit applied by File -> New. Width/height below are edited in this unit (stored as inches). "
                     "Does not change the open project's File -> Project units. Click ? for the guide.",
@@ -1076,6 +1103,7 @@ void GUI::settings_()
         m_default_2d_view_width = std::clamp(w_ui / to_ui, k_gui_default_2d_view_size_min, k_gui_default_2d_view_size_max);
         save_occt_view_settings();
       }
+
       m_default_2d_view_width =
           std::clamp(m_default_2d_view_width, k_gui_default_2d_view_size_min, k_gui_default_2d_view_size_max);
       ImGui::SameLine(0.0f, ImGui::GetStyle().ItemInnerSpacing.x);
@@ -1097,6 +1125,7 @@ void GUI::settings_()
         m_default_2d_view_height = std::clamp(h_ui / to_ui, k_gui_default_2d_view_size_min, k_gui_default_2d_view_size_max);
         save_occt_view_settings();
       }
+
       m_default_2d_view_height =
           std::clamp(m_default_2d_view_height, k_gui_default_2d_view_size_min, k_gui_default_2d_view_size_max);
       ImGui::SameLine(0.0f, ImGui::GetStyle().ItemInnerSpacing.x);
@@ -2052,6 +2081,67 @@ void GUI::settings_()
     }
   }
 
+  if (settings_collapsing_header_("Keyboard shortcuts", m_settings_headers.hotkeys))
+  {
+    if (ui_show_contextual_help())
+      ImGui::TextWrapped("Click a shortcut, then press the new key combination. Esc cancels capture. "
+                         "Two actions cannot share the same chord. Fixed shortcuts (Esc, Enter, Tab, "
+                         "Delete/Backspace, selection digits, view zoom/orbit/roll, Ctrl+Shift+Z redo) "
+                         "cannot be remapped. Delete and Backspace always delete selection.");
+
+    if (ImGui::BeginTable("settings_hotkeys", 3, ImGuiTableFlags_SizingStretchProp | ImGuiTableFlags_RowBg))
+    {
+      ImGui::TableSetupColumn("Action", ImGuiTableColumnFlags_WidthFixed, k_label_col_w);
+      ImGui::TableSetupColumn("Shortcut", ImGuiTableColumnFlags_WidthStretch);
+      ImGui::TableSetupColumn("##reset", ImGuiTableColumnFlags_WidthFixed, 56.f);
+      ImGui::TableHeadersRow();
+
+      for (int i = 0; i < Gui_hotkeys::k_count; ++i)
+      {
+        const Gui_action action = static_cast<Gui_action>(i);
+        ImGui::PushID(i);
+        ImGui::TableNextRow();
+        ImGui::TableSetColumnIndex(0);
+        ImGui::AlignTextToFramePadding();
+        ImGui::TextUnformatted(Gui_hotkeys::action_label(action));
+
+        ImGui::TableSetColumnIndex(1);
+        const bool  capturing = m_hotkey_capture_action && *m_hotkey_capture_action == action;
+        std::string label = capturing ? std::string("Press key...") : Gui_hotkeys::format_chord(m_hotkeys.chord_for(action));
+        if (ImGui::Button(label.c_str(), ImVec2(-FLT_MIN, 0.f)))
+        {
+          m_hotkey_capture_action = action;
+          m_hotkey_capture_error.clear();
+        }
+
+        ImGui::TableSetColumnIndex(2);
+        if (ImGui::SmallButton("Reset"))
+        {
+          if (!m_hotkeys.reset_action(action))
+          {
+            m_hotkey_capture_error = "Conflict: " + Gui_hotkeys::format_chord(Gui_hotkeys::default_chord(action)) +
+                                     " is already assigned.";
+          }
+          else
+          {
+            if (m_hotkey_capture_action && *m_hotkey_capture_action == action)
+              m_hotkey_capture_action.reset();
+            m_hotkey_capture_error.clear();
+            sync_toolbar_hotkey_tooltips_();
+            save_occt_view_settings();
+          }
+        }
+        ImGui::PopID();
+      }
+      ImGui::EndTable();
+    }
+
+    if (!m_hotkey_capture_error.empty())
+      ImGui::TextColored(ImVec4(1.f, 0.45f, 0.35f, 1.f), "%s", m_hotkey_capture_error.c_str());
+    else if (m_hotkey_capture_action)
+      ImGui::TextDisabled("Listening for a key... Esc to cancel.");
+  }
+
   if (ui_show_feature(3) && settings_collapsing_header_("Startup project", m_settings_headers.startup))
   {
 #ifndef __EMSCRIPTEN__
@@ -2138,6 +2228,13 @@ void GUI::settings_()
   }
 
   ImGui::End();
+
+  // Closing via the window X sets the flag during Begin; drop capture so viewer keys stay normal.
+  if (!m_show_settings_dialog && m_hotkey_capture_action)
+  {
+    m_hotkey_capture_action.reset();
+    m_hotkey_capture_error.clear();
+  }
 }
 
 void GUI::underlay_highlight_color_rgba(uint8_t& r, uint8_t& g, uint8_t& b, uint8_t& a) const
@@ -2232,13 +2329,13 @@ nlohmann::json build_occt_view_settings_object_(const Occt_view& view)
   view.get_occt_grid_rect_params(grid_rect);
   // clang-format off
   return nlohmann::json{
-      {"bg_color1",            {bg1[0], bg1[1], bg1[2]}},
-      {"bg_color2",            {bg2[0], bg2[1], bg2[2]}},
-      {"bg_gradient_method",   method},
-      {"grid_color1",          {g1[0], g1[1], g1[2]}},
-      {"grid_color2",          {g2[0], g2[1], g2[2]}},
-      {"grid_step",            grid_rect.step},
-      {"grid_padding",         grid_rect.grid_padding},
+      {"bg_color1",             {bg1[0], bg1[1], bg1[2]}},
+      {"bg_color2",             {bg2[0], bg2[1], bg2[2]}},
+      {"bg_gradient_method",    method},
+      {"grid_color1",           {g1[0], g1[1], g1[2]}},
+      {"grid_color2",           {g2[0], g2[1], g2[2]}},
+      {"grid_step",             grid_rect.step},
+      {"grid_padding",          grid_rect.grid_padding},
       {"grid_graphic_z_offset", grid_rect.graphic_z_offset},
       {"grid_visible",          view.get_grid_visible()},
   };

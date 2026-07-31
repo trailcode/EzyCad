@@ -574,7 +574,7 @@ namespace
 {
 constexpr double k_dim_text_height_base = 16.0;
 
-Prs3d_DimensionAspect_ptr clone_dimension_aspect(const Handle(PrsDim_Dimension)& dim)
+Prs3d_DimensionAspect_ptr clone_dimension_aspect(const Handle(PrsDim_Dimension) & dim)
 {
   if (dim.IsNull())
     return new Prs3d_DimensionAspect();
@@ -646,7 +646,7 @@ double length_dimension_auto_flyout(const double edge_len)
   return std::max(k_min_flyout, edge_len * k_edge_fraction);
 }
 
-void apply_dimension_style_(const Handle(PrsDim_Dimension)& dim, const Length_dimension_style& style)
+void apply_dimension_style_(const Handle(PrsDim_Dimension) & dim, const Length_dimension_style& style)
 {
   if (dim.IsNull())
     return;

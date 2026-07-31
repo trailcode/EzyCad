@@ -21,6 +21,7 @@
 #include "imgui_markdown.h"
 #include "utl_log.h"
 #include "mode.h"
+#include "gui_hotkeys.h"
 #include "gui_occt_view.h"
 #include "shp_info.h"
 #include "utl_cad_file_info.h"
@@ -185,6 +186,7 @@ struct Gui_settings_headers
   bool sketch_snap{false};
   bool sketch_underlay{false};
   bool startup{false};
+  bool hotkeys{false};
 };
 
 /// Per-sketch Sketch List expand / subsection open state (project `ui.sketchList`).
@@ -403,7 +405,7 @@ private:
   {
     uint32_t                    texture_id;
     bool                        is_active;
-    const char*                 tooltip;
+    std::string                 tooltip;
     std::variant<Mode, Command> data;
   };
   void dist_edit_();
@@ -474,6 +476,9 @@ private:
 
   void on_key_move_mode_(int key);
   void on_key_rotate_mode_(int key);
+  void dispatch_hotkey_action_(Gui_action action);
+  void sync_toolbar_hotkey_tooltips_();
+  bool try_capture_hotkey_press_(int key, int mods);
 
   void dbg_();
   void initialize_toolbar_();
@@ -737,8 +742,12 @@ private:
   Gui_imgui_style_settings m_imgui_style_dark{};
   Gui_imgui_style_settings m_imgui_style_light{};
   Gui_settings_headers     m_settings_headers{};
-  bool                     m_sketch_properties_open{false};
-  std::weak_ptr<Sketch>    m_sketch_properties_sketch;
+  Gui_hotkeys              m_hotkeys{};
+  /// When set, next non-modifier GLFW_PRESS assigns that action's chord (Settings capture).
+  std::optional<Gui_action> m_hotkey_capture_action;
+  std::string               m_hotkey_capture_error;
+  bool                      m_sketch_properties_open{false};
+  std::weak_ptr<Sketch>     m_sketch_properties_sketch;
 
   // Sketch origin value input (properties pane Set button)
   std::weak_ptr<Sketch> m_sketch_origin_set_sketch;
