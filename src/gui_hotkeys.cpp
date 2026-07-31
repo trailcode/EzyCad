@@ -416,17 +416,33 @@ void Gui_hotkeys::merge_from_json(const nlohmann::json& obj)
     m_chords[static_cast<int>(*act)] = *chord;
   }
 
-  // Resolve conflicts: keep first action in enum order, restore later conflicts to defaults if still colliding.
-  for (int i = 0; i < k_count; ++i)
+  // Resolve conflicts until unique. Prefer keeping the lower Gui_action index when the later
+  // row can move to its factory chord. If that factory chord is already held by an earlier
+  // remap (e.g. both mode.move and mode.rotate on R), restore the earlier remapped row to
+  // its factory chord too. Factory defaults are pairwise unique, so this always terminates
+  // without leaving a silent duplicate that would make action_for ignore higher actions.
+  bool changed = true;
+  while (changed)
   {
-    for (int j = 0; j < i; ++j)
+    changed = false;
+    for (int i = 0; i < k_count; ++i)
     {
-      if (m_chords[i] != m_chords[j])
-        continue;
-      m_chords[i] = c_actions[i].def;
-      // If default also collides with an earlier binding that was remapped onto default, leave as-is
-      // (user can fix in UI); rare for missing-key merge.
-      break;
+      for (int j = 0; j < i; ++j)
+      {
+        if (m_chords[i] != m_chords[j])
+          continue;
+        if (m_chords[i] != c_actions[i].def)
+        {
+          m_chords[i] = c_actions[i].def;
+          changed = true;
+        }
+        else if (m_chords[j] != c_actions[j].def)
+        {
+          m_chords[j] = c_actions[j].def;
+          changed = true;
+        }
+        break;
+      }
     }
   }
 }

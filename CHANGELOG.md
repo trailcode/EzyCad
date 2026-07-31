@@ -13,6 +13,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - **Extrude Twist**: Options **Twist** checkbox. Two-phase flow locks height first, then sets twist angle about the face centroid (mouse, or <kbd>Shift+Tab</kbd> for degrees). Height length dim is cleared on lock; a temporary angle annotation on the extruded front face shows degrees during twist. With **Both sides**, ends twist symmetrically by +/- half the angle. Geometry uses ruled thru-sections with compatibility off (keeps tooth pairing) and cuts twisted hole solids so face bores survive; straight prism when twist is zero. Dense-face **Extrude fast preview** also applies during Twist (face copies translate and rotate; finalize builds the solid).
 
+### Fixed
+
+- **`gui.hotkeys` load**: duplicate-chord cleanup no longer leaves two actions on the same key when the later row's factory chord is the colliding key (e.g. Move and Rotate both `"R"`). Earlier remaps that steal a later action's factory chord are restored to defaults so each binding stays unique.
+
 ## [0.4.0] - 2026-07-25
 
 ### Performance

@@ -82,6 +82,8 @@ public:
 
   [[nodiscard]] nlohmann::json to_json() const;
   /// Overlay known action ids from \a obj; missing / invalid keys keep current values.
+  /// Duplicate chords are resolved to unique bindings (later rows prefer factory; if still
+  /// colliding, earlier remaps are restored to factory).
   void merge_from_json(const nlohmann::json& obj);
 
   static constexpr int k_count = static_cast<int>(Gui_action::_count);
