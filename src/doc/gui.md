@@ -143,7 +143,7 @@ Overlay popups (`FloatEdit`, `AngleEdit`, `MessageStatus`, modals) keep `NoSaved
 
 ### Keyboard (`GUI::on_key` in `gui_mode.cpp`)
 
-Remappable chords live in `Gui_hotkeys` (`gui_hotkeys.h` / `.cpp`), owned by `GUI::m_hotkeys`. Stable action ids (e.g. `mode.move`, `mode.add_edge`, `cmd.shape_cut`, `edit.undo`) map to `Key_chord { key, mods }`. Persistence: `gui.hotkeys` in `ezycad_settings.json` as human-readable strings (`"G"`, `"Shift+L"`, `"Ctrl+Shift+C"`); missing keys merge to built-in defaults. Settings **Keyboard shortcuts** captures the next `GLFW_PRESS` (Esc cancels; `set_chord` rejects conflicts and **reserved** fixed chords via `is_reserved_chord`). Capture is cleared when Settings closes. Toolbar tooltips for remappable modes and boolean commands are rebuilt via `sync_toolbar_hotkey_tooltips_()`.
+Remappable chords live in `Gui_hotkeys` (`gui_hotkeys.h` / `.cpp`), owned by `GUI::m_hotkeys`. Stable action ids (e.g. `mode.move`, `mode.add_edge`, `cmd.shape_cut`, `edit.undo`) map to `Key_chord { key, mods }`. Persistence: `gui.hotkeys` in `ezycad_settings.json` as human-readable strings (`"G"`, `"Shift+L"`, `"Ctrl+Shift+C"`); missing keys merge to built-in defaults. Settings **Keyboard shortcuts** captures the next `GLFW_PRESS` (Esc cancels; `set_chord` rejects conflicts and **reserved** fixed chords via `is_reserved_chord`). Per-row **Reset** calls `reset_action` (factory chord via `set_chord`, so duplicates are rejected with the same inline conflict message). Capture is cleared when Settings closes. Toolbar tooltips for remappable modes and boolean commands are rebuilt via `sync_toolbar_hotkey_tooltips_()`.
 
 | Input                             | Condition           | Handler                                                                                               |
 | --------------------------------- | ------------------- | ----------------------------------------------------------------------------------------------------- |
@@ -154,9 +154,9 @@ Remappable chords live in `Gui_hotkeys` (`gui_hotkeys.h` / `.cpp`), owned by `GU
 | Hotkey capture active             | Settings            | `try_capture_hotkey_press_` (assign / Esc cancel / conflict message)                                  |
 | `1`-`9` / numpad `1`-`9`          | `Mode::Normal` only | `set_shp_selection_mode` (TopAbs enum index); fixed                                                   |
 | Esc                               |                     | cancel capture if listening; else `cancel_underlay_calib_`, `Occt_view::cancel`, hide dist/angle edit |
-| Tab                               | not Move/Rotate     | `Occt_view::dimension_input` (Move/Rotate: mode handler); fixed                                       |
+| Tab                               | not Move/Rotate     | `Occt_view::dimension_input`; Move/Rotate: `break` into mode handlers                                 |
 | Shift+Tab                         | not Move/Rotate     | `Occt_view::angle_input`; fixed                                                                       |
-| Enter                             |                     | hide edits, `Occt_view::on_enter`; fixed                                                              |
+| Enter                             | not Rotate          | hide edits, `Occt_view::on_enter`; Rotate: `break` into `on_key_rotate_mode_` (finalize)               |
 | Delete / Backspace                |                     | `Occt_view::delete_selected` (fixed aliases; remapping `edit.delete` does not remove these)           |
 | Ctrl+Shift+Z                      |                     | `Occt_view::redo` (fixed second redo; remappable `edit.redo` defaults to Ctrl+Y)                      |
 | Remappable chord                  | `m_hotkeys` hit     | `dispatch_hotkey_action_` (`Gui_action`: sketch/shape modes, booleans, delete, file, undo/redo)       |

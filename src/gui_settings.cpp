@@ -2117,13 +2117,19 @@ void GUI::settings_()
         ImGui::TableSetColumnIndex(2);
         if (ImGui::SmallButton("Reset"))
         {
-          m_hotkeys.reset_action(action);
-          if (m_hotkey_capture_action && *m_hotkey_capture_action == action)
-            m_hotkey_capture_action.reset();
-
-          m_hotkey_capture_error.clear();
-          sync_toolbar_hotkey_tooltips_();
-          save_occt_view_settings();
+          if (!m_hotkeys.reset_action(action))
+          {
+            m_hotkey_capture_error = "Conflict: " + Gui_hotkeys::format_chord(Gui_hotkeys::default_chord(action)) +
+                                     " is already assigned.";
+          }
+          else
+          {
+            if (m_hotkey_capture_action && *m_hotkey_capture_action == action)
+              m_hotkey_capture_action.reset();
+            m_hotkey_capture_error.clear();
+            sync_toolbar_hotkey_tooltips_();
+            save_occt_view_settings();
+          }
         }
         ImGui::PopID();
       }

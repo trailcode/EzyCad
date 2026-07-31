@@ -304,18 +304,21 @@ void GUI::on_key(int key, int scancode, int action, int mods)
   {
     // Move / Rotate handle Tab in their mode key handlers (distance / angle).
     const Mode mode = get_mode();
-    if (mode != Mode::Move && mode != Mode::Rotate)
-    {
-      bool shift_pressed = (mods & GLFW_MOD_SHIFT) != 0;
-      if (shift_pressed)
-        m_view->angle_input(screen_coords);
-      else
-        m_view->dimension_input(screen_coords);
-    }
+    if (mode == Mode::Move || mode == Mode::Rotate)
+      break;
+
+    bool shift_pressed = (mods & GLFW_MOD_SHIFT) != 0;
+    if (shift_pressed)
+      m_view->angle_input(screen_coords);
+    else
+      m_view->dimension_input(screen_coords);
     return;
   }
 
   case GLFW_KEY_ENTER:
+    // Rotate finalizes on Enter in on_key_rotate_mode_.
+    if (get_mode() == Mode::Rotate)
+      break;
     hide_sketch_origin_set_edit(true);
     hide_dist_edit();
     hide_angle_edit();

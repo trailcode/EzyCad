@@ -60,7 +60,9 @@ public:
   Gui_hotkeys();
 
   void reset_defaults();
-  void reset_action(Gui_action action);
+  /// Restore factory chord for \a action. Returns false if that chord is already bound elsewhere
+  /// (same conflict rules as \ref set_chord).
+  [[nodiscard]] bool reset_action(Gui_action action);
 
   [[nodiscard]] Key_chord                 chord_for(Gui_action action) const;
   [[nodiscard]] std::optional<Gui_action> action_for(int key, int mods) const;
@@ -69,6 +71,7 @@ public:
 
   [[nodiscard]] static const char*               action_id(Gui_action action);
   [[nodiscard]] static const char*               action_label(Gui_action action);
+  [[nodiscard]] static Key_chord                 default_chord(Gui_action action);
   [[nodiscard]] static std::optional<Gui_action> action_from_id(std::string_view id);
 
   [[nodiscard]] static int normalize_mods(int mods);

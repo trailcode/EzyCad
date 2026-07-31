@@ -160,12 +160,16 @@ void Gui_hotkeys::reset_defaults()
     m_chords[static_cast<int>(m.action)] = m.def;
 }
 
-void Gui_hotkeys::reset_action(Gui_action action)
+bool Gui_hotkeys::reset_action(Gui_action action)
 {
   const int i = static_cast<int>(action);
   if (i < 0 || i >= k_count)
-    return;
-  m_chords[i] = c_actions[i].def;
+    return false;
+  // Already factory: succeed without rewriting (avoids a false conflict if a
+  // duplicate somehow already exists on another row).
+  if (m_chords[i] == c_actions[i].def)
+    return true;
+  return set_chord(action, c_actions[i].def);
 }
 
 Key_chord Gui_hotkeys::chord_for(Gui_action action) const
@@ -285,6 +289,14 @@ const char* Gui_hotkeys::action_label(Gui_action action)
   if (i < 0 || i >= k_count)
     return "";
   return c_actions[i].label;
+}
+
+Key_chord Gui_hotkeys::default_chord(Gui_action action)
+{
+  const int i = static_cast<int>(action);
+  if (i < 0 || i >= k_count)
+    return {};
+  return c_actions[i].def;
 }
 
 std::optional<Gui_action> Gui_hotkeys::action_from_id(std::string_view id)
