@@ -190,6 +190,66 @@ std::optional<Gui_action> Gui_hotkeys::action_for(int key, int mods) const
   return std::nullopt;
 }
 
+bool Gui_hotkeys::is_reserved_chord(Key_chord chord)
+{
+  chord.mods     = normalize_mods(chord.mods);
+  const int key  = chord.key;
+  const int mods = chord.mods;
+
+  switch (key)
+  {
+  case GLFW_KEY_ESCAPE:
+  case GLFW_KEY_ENTER:
+  case GLFW_KEY_TAB:
+  case GLFW_KEY_DELETE:
+  case GLFW_KEY_BACKSPACE:
+    return true;
+  default:
+    break;
+  }
+
+  // Fixed redo alias (edit.redo remappable default remains Ctrl+Y).
+  if (key == GLFW_KEY_Z && (mods & GLFW_MOD_CONTROL) != 0 && (mods & GLFW_MOD_SHIFT) != 0 &&
+      (mods & (GLFW_MOD_ALT | GLFW_MOD_SUPER)) == 0)
+    return true;
+
+  const bool no_ctrl_alt_super = (mods & (GLFW_MOD_CONTROL | GLFW_MOD_ALT | GLFW_MOD_SUPER)) == 0;
+
+  // Selection filter digits (Normal mode); also blocks Shift+digit.
+  if (no_ctrl_alt_super)
+  {
+    if ((key >= GLFW_KEY_1 && key <= GLFW_KEY_9) || (key >= GLFW_KEY_KP_1 && key <= GLFW_KEY_KP_9))
+      return true;
+  }
+
+  // View zoom (+/-) without Ctrl/Alt.
+  if ((mods & (GLFW_MOD_CONTROL | GLFW_MOD_ALT)) == 0)
+  {
+    if (key == GLFW_KEY_KP_ADD || key == GLFW_KEY_KP_SUBTRACT || key == GLFW_KEY_MINUS)
+      return true;
+    if (key == GLFW_KEY_EQUAL && (mods & GLFW_MOD_SHIFT) != 0)
+      return true;
+  }
+
+  // View roll: Shift + KP4/6, 4/6, or Left/Right.
+  if ((mods & GLFW_MOD_SHIFT) != 0 && (mods & (GLFW_MOD_CONTROL | GLFW_MOD_ALT)) == 0)
+  {
+    if (key == GLFW_KEY_KP_4 || key == GLFW_KEY_KP_6 || key == GLFW_KEY_4 || key == GLFW_KEY_6 ||
+        key == GLFW_KEY_LEFT || key == GLFW_KEY_RIGHT)
+      return true;
+  }
+
+  // View orbit / snap: unmodified numpad 2/4/5/6/8.
+  if (mods == 0)
+  {
+    if (key == GLFW_KEY_KP_2 || key == GLFW_KEY_KP_4 || key == GLFW_KEY_KP_5 || key == GLFW_KEY_KP_6 ||
+        key == GLFW_KEY_KP_8)
+      return true;
+  }
+
+  return false;
+}
+
 bool Gui_hotkeys::set_chord(Gui_action action, Key_chord chord)
 {
   const int ai = static_cast<int>(action);
@@ -199,6 +259,9 @@ bool Gui_hotkeys::set_chord(Gui_action action, Key_chord chord)
     return false;
 
   chord.mods = normalize_mods(chord.mods);
+  if (is_reserved_chord(chord))
+    return false;
+
   for (int i = 0; i < k_count; ++i)
   {
     if (i == ai)
@@ -341,7 +404,7 @@ void Gui_hotkeys::merge_from_json(const nlohmann::json& obj)
     if (!act)
       continue;
     const std::optional<Key_chord> chord = parse_chord(it.value().get<std::string>());
-    if (!chord)
+    if (!chord || is_reserved_chord(*chord))
       continue;
     // Apply without conflict reject against other remaps still loading; rebuild unique at end.
     m_chords[static_cast<int>(*act)] = *chord;

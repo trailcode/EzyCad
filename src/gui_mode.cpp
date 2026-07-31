@@ -166,6 +166,10 @@ void GUI::on_key(int key, int scancode, int action, int mods)
   (void)scancode;
   const bool press_or_repeat = (action == GLFW_PRESS || action == GLFW_REPEAT);
 
+  // Capture before fixed view/nav handlers so reserved chords can be rejected with a message.
+  if (action == GLFW_PRESS && try_capture_hotkey_press_(key, mods))
+    return;
+
   // Zoom (+/-): scaled like mouse wheel; GLFW_REPEAT while held; Shift = Blender-style finer step.
   if (press_or_repeat && (mods & (GLFW_MOD_CONTROL | GLFW_MOD_ALT)) == 0)
   {
@@ -251,9 +255,6 @@ void GUI::on_key(int key, int scancode, int action, int mods)
   }
 
   const ScreenCoords screen_coords = cursor_screen_coords();
-
-  if (try_capture_hotkey_press_(key, mods))
-    return;
 
   // -------------------------------------------------------------------------
   // Shape selection filter hotkeys (Options -> Selection Mode combo, Normal mode only)
@@ -366,47 +367,52 @@ void GUI::dispatch_hotkey_action_(Gui_action action)
   // clang-format off
   switch (action)
   {
-  case Gui_action::Mode_move:                 set_mode(Mode::Move);                         break;
-  case Gui_action::Mode_rotate:               set_mode(Mode::Rotate);                       break;
-  case Gui_action::Mode_scale:                set_mode(Mode::Scale);                        break;
-  case Gui_action::Mode_extrude:              set_mode(Mode::Sketch_face_extrude);          break;
-  case Gui_action::Mode_chamfer:              set_mode(Mode::Shape_chamfer);                break;
-  case Gui_action::Mode_fillet:               set_mode(Mode::Shape_fillet);                 break;
-  case Gui_action::Mode_dimension:            set_mode(Mode::Sketch_dim_anno);              break;
-  case Gui_action::Mode_sketch_inspection:    set_mode(Mode::Sketch_inspection_mode);       break;
-  case Gui_action::Mode_sketch_from_face:     set_mode(Mode::Sketch_from_planar_face);      break;
-  case Gui_action::Mode_operation_axis:       set_mode(Mode::Sketch_operation_axis);        break;
-  case Gui_action::Mode_add_node:             set_mode(Mode::Sketch_add_node);              break;
-  case Gui_action::Mode_add_edge:             set_mode(Mode::Sketch_add_edge);              break;
-  case Gui_action::Mode_add_multi_edges:      set_mode(Mode::Sketch_add_multi_edges);       break;
-  case Gui_action::Mode_add_arc:              set_mode(Mode::Sketch_add_seg_circle_arc);    break;
-  case Gui_action::Mode_add_square:           set_mode(Mode::Sketch_add_square);            break;
-  case Gui_action::Mode_add_rectangle:        set_mode(Mode::Sketch_add_rectangle);         break;
+  case Gui_action::Mode_move:                 set_mode(Mode::Move);                           break;
+  case Gui_action::Mode_rotate:               set_mode(Mode::Rotate);                         break;
+  case Gui_action::Mode_scale:                set_mode(Mode::Scale);                          break;
+  case Gui_action::Mode_extrude:              set_mode(Mode::Sketch_face_extrude);            break;
+  case Gui_action::Mode_chamfer:              set_mode(Mode::Shape_chamfer);                  break;
+  case Gui_action::Mode_fillet:               set_mode(Mode::Shape_fillet);                   break;
+  case Gui_action::Mode_dimension:            set_mode(Mode::Sketch_dim_anno);                break;
+  case Gui_action::Mode_sketch_inspection:    set_mode(Mode::Sketch_inspection_mode);         break;
+  case Gui_action::Mode_sketch_from_face:     set_mode(Mode::Sketch_from_planar_face);        break;
+  case Gui_action::Mode_operation_axis:       set_mode(Mode::Sketch_operation_axis);          break;
+  case Gui_action::Mode_add_node:             set_mode(Mode::Sketch_add_node);                break;
+  case Gui_action::Mode_add_edge:             set_mode(Mode::Sketch_add_edge);                break;
+  case Gui_action::Mode_add_multi_edges:      set_mode(Mode::Sketch_add_multi_edges);         break;
+  case Gui_action::Mode_add_arc:              set_mode(Mode::Sketch_add_seg_circle_arc);      break;
+  case Gui_action::Mode_add_square:           set_mode(Mode::Sketch_add_square);              break;
+  case Gui_action::Mode_add_rectangle:        set_mode(Mode::Sketch_add_rectangle);           break;
   case Gui_action::Mode_add_rectangle_center: set_mode(Mode::Sketch_add_rectangle_center_pt); break;
-  case Gui_action::Mode_add_circle:           set_mode(Mode::Sketch_add_circle);            break;
-  case Gui_action::Mode_add_circle_3_pts:     set_mode(Mode::Sketch_add_circle_3_pts);      break;
-  case Gui_action::Mode_add_slot:             set_mode(Mode::Sketch_add_slot);              break;
-  case Gui_action::Mode_polar_duplicate:      set_mode(Mode::Shape_polar_duplicate);        break;
-  case Gui_action::Mode_cross_section:        set_mode(Mode::Shape_cross_section);          break;
+  case Gui_action::Mode_add_circle:           set_mode(Mode::Sketch_add_circle);              break;
+  case Gui_action::Mode_add_circle_3_pts:     set_mode(Mode::Sketch_add_circle_3_pts);        break;
+  case Gui_action::Mode_add_slot:             set_mode(Mode::Sketch_add_slot);                break;
+  case Gui_action::Mode_polar_duplicate:      set_mode(Mode::Shape_polar_duplicate);          break;
+  case Gui_action::Mode_cross_section:        set_mode(Mode::Shape_cross_section);            break;
   case Gui_action::Cmd_shape_cut:
     if (Status s = m_view->shp_cut().selected_cut(); !s.is_ok())
       show_message(s.message());
     break;
+
   case Gui_action::Cmd_shape_fuse:
     if (Status s = m_view->shp_fuse().selected_fuse(); !s.is_ok())
       show_message(s.message());
     break;
+
   case Gui_action::Cmd_shape_common:
     if (Status s = m_view->shp_common().selected_common(); !s.is_ok())
       show_message(s.message());
     break;
-  case Gui_action::Edit_delete:               m_view->delete_selected();                    break;
-  case Gui_action::File_new:                  new_project_();                               break;
-  case Gui_action::File_open:                 open_file_dialog_();                          break;
-  case Gui_action::File_save:                 save_file_dialog_();                          break;
-  case Gui_action::Edit_undo:                 m_view->undo();                               break;
-  case Gui_action::Edit_redo:                 m_view->redo();                               break;
-  case Gui_action::_count:                    break;
+
+  case Gui_action::Edit_delete:               m_view->delete_selected();  break;
+  case Gui_action::File_new:                  new_project_();             break;
+  case Gui_action::File_open:                 open_file_dialog_();        break;
+  case Gui_action::File_save:                 save_file_dialog_();        break;
+  case Gui_action::Edit_undo:                 m_view->undo();             break;
+  case Gui_action::Edit_redo:                 m_view->redo();             break;
+  case Gui_action::_count:
+    EZY_ASSERT(false); // Logic error: _count should never be dispatched as an action.
+    break;
   }
   // clang-format on
 }
@@ -436,6 +442,12 @@ bool GUI::try_capture_hotkey_press_(int key, int mods)
   }
 
   const Key_chord chord{key, Gui_hotkeys::normalize_mods(mods)};
+  if (Gui_hotkeys::is_reserved_chord(chord))
+  {
+    m_hotkey_capture_error =
+        "Reserved: " + Gui_hotkeys::format_chord(chord) + " is a fixed shortcut and cannot be remapped.";
+    return true;
+  }
   if (!m_hotkeys.set_chord(*m_hotkey_capture_action, chord))
   {
     m_hotkey_capture_error = "Conflict: " + Gui_hotkeys::format_chord(chord) + " is already assigned.";
@@ -472,7 +484,7 @@ void GUI::options_()
     case Mode::Shape_chamfer:                   options_shape_chamfer_mode_();                break;
     case Mode::Shape_fillet:                    options_shape_fillet_mode_();                 break;
     case Mode::Shape_polar_duplicate:           options_shape_polar_duplicate_mode_();        break;
-    case Mode::Shape_cross_section:                   options_shape_cross_section_mode_();                break;
+    case Mode::Shape_cross_section:             options_shape_cross_section_mode_();          break;
     
       // Sketch related modes:
     case Mode::Sketch_inspection_mode:          options_sketch_inspection_mode_();            break;
@@ -491,6 +503,7 @@ void GUI::options_()
     case Mode::Sketch_add_circle_3_pts:         options_sketch_add_circle_three_pts_mode_();  break;
     case Mode::Sketch_add_slot:                 options_sketch_add_slot_mode_();              break;
     default:
+      EZY_ASSERT_MSG(false, "Options panel: unhandled mode");
       break;
   }
   // clang-format on

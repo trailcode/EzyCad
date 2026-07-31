@@ -923,12 +923,24 @@ bool GUI::settings_collapsing_header_(const char* label, bool& open_state)
 void GUI::settings_()
 {
   if (!m_show_settings_dialog)
+  {
+    if (m_hotkey_capture_action)
+    {
+      m_hotkey_capture_action.reset();
+      m_hotkey_capture_error.clear();
+    }
     return;
+  }
 
   ImGui::SetNextWindowSize(ImVec2(520, 0), ImGuiCond_FirstUseEver); // Auto height; width matches res defaults
   if (!ImGui::Begin("Settings", &m_show_settings_dialog, ImGuiWindowFlags_None))
   {
     ImGui::End();
+    if (!m_show_settings_dialog && m_hotkey_capture_action)
+    {
+      m_hotkey_capture_action.reset();
+      m_hotkey_capture_error.clear();
+    }
     return;
   }
 
@@ -2065,7 +2077,9 @@ void GUI::settings_()
   {
     if (ui_show_contextual_help())
       ImGui::TextWrapped("Click a shortcut, then press the new key combination. Esc cancels capture. "
-                         "Two actions cannot share the same chord. Delete and Backspace always delete selection.");
+                         "Two actions cannot share the same chord. Fixed shortcuts (Esc, Enter, Tab, "
+                         "Delete/Backspace, selection digits, view zoom/orbit/roll, Ctrl+Shift+Z redo) "
+                         "cannot be remapped. Delete and Backspace always delete selection.");
 
     if (ImGui::BeginTable("settings_hotkeys", 3, ImGuiTableFlags_SizingStretchProp | ImGuiTableFlags_RowBg))
     {
@@ -2200,6 +2214,13 @@ void GUI::settings_()
   }
 
   ImGui::End();
+
+  // Closing via the window X sets the flag during Begin; drop capture so viewer keys stay normal.
+  if (!m_show_settings_dialog && m_hotkey_capture_action)
+  {
+    m_hotkey_capture_action.reset();
+    m_hotkey_capture_error.clear();
+  }
 }
 
 void GUI::underlay_highlight_color_rgba(uint8_t& r, uint8_t& g, uint8_t& b, uint8_t& a) const

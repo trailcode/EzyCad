@@ -26,4 +26,4 @@ Hold-`D` duplicate conflicts with hardcoded `D` -> Dimension. A Settings-backed 
 
 **Hold-key duplicate translate:** new action (e.g. `edit.duplicate_translate`), default unbound or `Ctrl+D`; needs PRESS/RELEASE session + clone + `Shp_move`-style preview. Enabled once users can free `D` or pick another chord via this system.
 
-**Later:** custom multi-chord sequences; per-mode binding contexts; WASM #93 parity; warn when remapping onto fixed keys (digits/Esc/Tab).
+**Later:** custom multi-chord sequences; per-mode binding contexts; WASM #93 parity.
