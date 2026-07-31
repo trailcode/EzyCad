@@ -56,6 +56,7 @@ nlohmann::json settings_headers_to_json(const Gui_settings_headers& h)
       {"sketch_snap",       h.sketch_snap},
       {"sketch_underlay",   h.sketch_underlay},
       {"startup",           h.startup},
+      {"hotkeys",           h.hotkeys},
   };
   // clang-format on
 }
@@ -83,6 +84,7 @@ void parse_settings_headers_json(const nlohmann::json& obj, Gui_settings_headers
   out.sketch_snap       = b("sketch_snap",        defaults.sketch_snap);
   out.sketch_underlay   = b("sketch_underlay",    defaults.sketch_underlay);
   out.startup           = b("startup",            defaults.startup);
+  out.hotkeys           = b("hotkeys",            defaults.hotkeys);
   // clang-format on
 }
 
@@ -238,6 +240,7 @@ std::string GUI::occt_view_settings_json() const
       {"sketch_shape_faint_enabled",         m_sketch_shape_faint_enabled},
       {"extrude_fast_preview",               m_extrude_fast_preview},
       {"extrude_fast_preview_edge_threshold", m_extrude_fast_preview_edge_threshold},
+      {"hotkeys",                            m_hotkeys.to_json()},
   };
   // clang-format on
   return j.dump(2);
@@ -338,6 +341,7 @@ void GUI::save_occt_view_settings()
       {"sketch_shape_faint_enabled",         m_sketch_shape_faint_enabled},
       {"extrude_fast_preview",               m_extrude_fast_preview},
       {"extrude_fast_preview_edge_threshold", m_extrude_fast_preview_edge_threshold},
+      {"hotkeys",                            m_hotkeys.to_json()},
   };
   // clang-format on
   j["version"]          = k_settings_version;
@@ -625,6 +629,11 @@ void GUI::parse_gui_panes_settings_(const std::string& content)
     m_settings_headers = Gui_settings_headers{};
     if (g.contains("settings_headers") && g["settings_headers"].is_object())
       parse_settings_headers_json(g["settings_headers"], m_settings_headers);
+
+    m_hotkeys.reset_defaults();
+    if (g.contains("hotkeys") && g["hotkeys"].is_object())
+      m_hotkeys.merge_from_json(g["hotkeys"]);
+    sync_toolbar_hotkey_tooltips_();
 
     const bool has_nested_imgui_style = (g.contains("imgui_style_dark") && g["imgui_style_dark"].is_object()) ||
                                         (g.contains("imgui_style_light") && g["imgui_style_light"].is_object());
@@ -2050,6 +2059,59 @@ void GUI::settings_()
       m_underlay_panel_sketch = nullptr;
       save_occt_view_settings();
     }
+  }
+
+  if (settings_collapsing_header_("Keyboard shortcuts", m_settings_headers.hotkeys))
+  {
+    if (ui_show_contextual_help())
+      ImGui::TextWrapped("Click a shortcut, then press the new key combination. Esc cancels capture. "
+                         "Two actions cannot share the same chord. Delete and Backspace always delete selection.");
+
+    if (ImGui::BeginTable("settings_hotkeys", 3, ImGuiTableFlags_SizingStretchProp | ImGuiTableFlags_RowBg))
+    {
+      ImGui::TableSetupColumn("Action", ImGuiTableColumnFlags_WidthFixed, k_label_col_w);
+      ImGui::TableSetupColumn("Shortcut", ImGuiTableColumnFlags_WidthStretch);
+      ImGui::TableSetupColumn("##reset", ImGuiTableColumnFlags_WidthFixed, 56.f);
+      ImGui::TableHeadersRow();
+
+      for (int i = 0; i < Gui_hotkeys::k_count; ++i)
+      {
+        const Gui_action action = static_cast<Gui_action>(i);
+        ImGui::PushID(i);
+        ImGui::TableNextRow();
+        ImGui::TableSetColumnIndex(0);
+        ImGui::AlignTextToFramePadding();
+        ImGui::TextUnformatted(Gui_hotkeys::action_label(action));
+
+        ImGui::TableSetColumnIndex(1);
+        const bool capturing = m_hotkey_capture_action && *m_hotkey_capture_action == action;
+        std::string label =
+            capturing ? std::string("Press key...") : Gui_hotkeys::format_chord(m_hotkeys.chord_for(action));
+        if (ImGui::Button(label.c_str(), ImVec2(-FLT_MIN, 0.f)))
+        {
+          m_hotkey_capture_action = action;
+          m_hotkey_capture_error.clear();
+        }
+
+        ImGui::TableSetColumnIndex(2);
+        if (ImGui::SmallButton("Reset"))
+        {
+          m_hotkeys.reset_action(action);
+          if (m_hotkey_capture_action && *m_hotkey_capture_action == action)
+            m_hotkey_capture_action.reset();
+          m_hotkey_capture_error.clear();
+          sync_toolbar_hotkey_tooltips_();
+          save_occt_view_settings();
+        }
+        ImGui::PopID();
+      }
+      ImGui::EndTable();
+    }
+
+    if (!m_hotkey_capture_error.empty())
+      ImGui::TextColored(ImVec4(1.f, 0.45f, 0.35f, 1.f), "%s", m_hotkey_capture_error.c_str());
+    else if (m_hotkey_capture_action)
+      ImGui::TextDisabled("Listening for a key... Esc to cancel.");
   }
 
   if (ui_show_feature(3) && settings_collapsing_header_("Startup project", m_settings_headers.startup))

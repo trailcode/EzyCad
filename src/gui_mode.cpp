@@ -84,7 +84,7 @@ const char* GUI::current_mode_description_() const
   for (const auto& b : m_toolbar_buttons)
     if (b.data.index() == 0) // holds a Mode
       if (std::get<Mode>(b.data) == m_mode)
-        return b.tooltip;
+        return b.tooltip.c_str();
 
   EZY_ASSERT_MSG(false, "Current mode not found in toolbar buttons");
   return "";
@@ -252,139 +252,174 @@ void GUI::on_key(int key, int scancode, int action, int mods)
 
   const ScreenCoords screen_coords = cursor_screen_coords();
 
-  bool ctrl_pressed = (mods & GLFW_MOD_CONTROL) != 0;
-  if (ctrl_pressed)
+  if (try_capture_hotkey_press_(key, mods))
+    return;
+
+  // -------------------------------------------------------------------------
+  // Shape selection filter hotkeys (Options -> Selection Mode combo, Normal mode only)
+  //
+  // Maps main-row 1-9 and keypad 1-9 to TopAbs_ShapeEnum values 0..8 in OCCT order
+  // (same order as c_names_TopAbs_ShapeEnum in utl_occt.h):
+  //   1 Compound, 2 CompSolid, 3 Solid, 4 Shell, 5 Face, 6 Wire, 7 Edge, 8 Vertex, 9 Shape
+  //
+  // Input routing: main.cpp calls GUI::on_key only when !io.WantTextInput, so digits go to
+  // text fields while typing. We return early so these keys are not handled again below.
+  //
+  // Other modes: chamfer/fillet/sketch may override selection mode via Occt_view::on_mode().
+  // -------------------------------------------------------------------------
+  if (get_mode() == Mode::Normal)
   {
-    switch (key)
+    int idx = -1;
+    if (key >= GLFW_KEY_1 && key <= GLFW_KEY_9)
+      idx = key - GLFW_KEY_1;
+
+    else if (key >= GLFW_KEY_KP_1 && key <= GLFW_KEY_KP_9)
+      idx = key - GLFW_KEY_KP_1;
+
+    if (idx >= 0 && idx <= static_cast<int>(TopAbs_SHAPE) &&
+        (mods & (GLFW_MOD_CONTROL | GLFW_MOD_ALT | GLFW_MOD_SUPER)) == 0)
     {
-    case GLFW_KEY_N:
-      new_project_();
-      break;
-
-    case GLFW_KEY_O:
-      open_file_dialog_();
-      break;
-
-    case GLFW_KEY_S:
-      save_file_dialog_();
-      break;
-
-    case GLFW_KEY_Z:
-      if ((mods & GLFW_MOD_SHIFT) != 0)
-        m_view->redo();
-      else
-        m_view->undo();
-      break;
-
-    case GLFW_KEY_Y:
-      m_view->redo();
-      break;
-
-    default:
-      break;
+      m_view->set_shp_selection_mode(static_cast<TopAbs_ShapeEnum>(idx));
+      return;
     }
   }
-  else
+
+  switch (key)
   {
-    // -------------------------------------------------------------------------
-    // Shape selection filter hotkeys (Options -> Selection Mode combo, Normal mode only)
-    //
-    // Maps main-row 1-9 and keypad 1-9 to TopAbs_ShapeEnum values 0..8 in OCCT order
-    // (same order as c_names_TopAbs_ShapeEnum in utl_occt.h):
-    //   1 Compound, 2 CompSolid, 3 Solid, 4 Shell, 5 Face, 6 Wire, 7 Edge, 8 Vertex, 9 Shape
-    //
-    // Input routing: main.cpp calls GUI::on_key only when !io.WantTextInput, so digits go to
-    // text fields while typing. We return early so these keys are not handled again below.
-    //
-    // Other modes: chamfer/fillet/sketch may override selection mode via Occt_view::on_mode().
-    // -------------------------------------------------------------------------
-    if (get_mode() == Mode::Normal)
+  case GLFW_KEY_ESCAPE:
+    if (m_hotkey_capture_action)
     {
-      int idx = -1;
-      if (key >= GLFW_KEY_1 && key <= GLFW_KEY_9)
-        idx = key - GLFW_KEY_1;
-
-      else if (key >= GLFW_KEY_KP_1 && key <= GLFW_KEY_KP_9)
-        idx = key - GLFW_KEY_KP_1;
-
-      if (idx >= 0 && idx <= static_cast<int>(TopAbs_SHAPE))
-      {
-        m_view->set_shp_selection_mode(static_cast<TopAbs_ShapeEnum>(idx));
-        return;
-      }
+      m_hotkey_capture_action.reset();
+      m_hotkey_capture_error.clear();
+      return;
     }
+    cancel_underlay_calib_();
+    hide_sketch_origin_set_edit(false);
+    hide_dist_edit(false);
+    hide_angle_edit(false);
+    m_view->cancel(Set_parent_mode::Yes);
+    return;
 
-    switch (key)
+  case GLFW_KEY_TAB:
+  {
+    // Move / Rotate handle Tab in their mode key handlers (distance / angle).
+    const Mode mode = get_mode();
+    if (mode != Mode::Move && mode != Mode::Rotate)
     {
-    case GLFW_KEY_ESCAPE:
-      cancel_underlay_calib_();
-      hide_sketch_origin_set_edit(false);
-      hide_dist_edit(false);
-      hide_angle_edit(false);
-      m_view->cancel(Set_parent_mode::Yes);
-      break;
-
-    case GLFW_KEY_TAB:
-    {
-      // Move / Rotate handle Tab in their mode key handlers (distance / angle).
-      const Mode mode = get_mode();
-      if (mode != Mode::Move && mode != Mode::Rotate)
-      {
-        bool shift_pressed = (mods & GLFW_MOD_SHIFT) != 0;
-        if (shift_pressed)
-          m_view->angle_input(screen_coords);
-        else
-          m_view->dimension_input(screen_coords);
-      }
-
-      break;
-    }
-
-    case GLFW_KEY_ENTER:
-      hide_sketch_origin_set_edit(true);
-      hide_dist_edit();
-      hide_angle_edit();
-      m_view->on_enter(screen_coords);
-      break;
-
-      // clang-format off
-    case GLFW_KEY_D:
-      if ((mods & GLFW_MOD_SHIFT) != 0)
-        m_view->delete_selected();
+      bool shift_pressed = (mods & GLFW_MOD_SHIFT) != 0;
+      if (shift_pressed)
+        m_view->angle_input(screen_coords);
       else
-        set_mode(Mode::Sketch_dim_anno);
-      break;
-
-    case GLFW_KEY_DELETE:
-    case GLFW_KEY_BACKSPACE:
-      m_view->delete_selected();
-      break;
-
-    case GLFW_KEY_G: set_mode(Mode::Move);                break;
-    case GLFW_KEY_R: set_mode(Mode::Rotate);              break;
-    case GLFW_KEY_E: set_mode(Mode::Sketch_face_extrude); break;
-    case GLFW_KEY_S: set_mode(Mode::Scale);               break;
-    case GLFW_KEY_C: set_mode(Mode::Shape_chamfer);       break;
-    case GLFW_KEY_F: set_mode(Mode::Shape_fillet);        break;
-      // clang-format on
-    default:
-      break;
+        m_view->dimension_input(screen_coords);
     }
-
-    switch (get_mode())
-    {
-    case Mode::Move:
-      on_key_move_mode_(key);
-      break;
-
-    case Mode::Rotate:
-      on_key_rotate_mode_(key);
-      break;
-
-    default:
-      break;
-    }
+    return;
   }
+
+  case GLFW_KEY_ENTER:
+    hide_sketch_origin_set_edit(true);
+    hide_dist_edit();
+    hide_angle_edit();
+    m_view->on_enter(screen_coords);
+    return;
+
+  case GLFW_KEY_DELETE:
+  case GLFW_KEY_BACKSPACE:
+    // Fixed aliases: remapping edit.delete (default Shift+D) must not remove these keys.
+    m_view->delete_selected();
+    return;
+
+  default:
+    break;
+  }
+
+  // Fixed second redo chord (Ctrl+Shift+Z); edit.redo default remains Ctrl+Y.
+  if (key == GLFW_KEY_Z && (mods & GLFW_MOD_CONTROL) != 0 && (mods & GLFW_MOD_SHIFT) != 0 &&
+      (mods & (GLFW_MOD_ALT | GLFW_MOD_SUPER)) == 0)
+  {
+    m_view->redo();
+    return;
+  }
+
+  if (const std::optional<Gui_action> act = m_hotkeys.action_for(key, mods))
+  {
+    dispatch_hotkey_action_(*act);
+    return;
+  }
+
+  switch (get_mode())
+  {
+  case Mode::Move:
+    on_key_move_mode_(key);
+    break;
+
+  case Mode::Rotate:
+    on_key_rotate_mode_(key);
+    break;
+
+  default:
+    break;
+  }
+}
+
+void GUI::dispatch_hotkey_action_(Gui_action action)
+{
+  // clang-format off
+  switch (action)
+  {
+  case Gui_action::Mode_move:      set_mode(Mode::Move);                break;
+  case Gui_action::Mode_rotate:    set_mode(Mode::Rotate);              break;
+  case Gui_action::Mode_scale:     set_mode(Mode::Scale);               break;
+  case Gui_action::Mode_extrude:   set_mode(Mode::Sketch_face_extrude); break;
+  case Gui_action::Mode_chamfer:   set_mode(Mode::Shape_chamfer);       break;
+  case Gui_action::Mode_fillet:    set_mode(Mode::Shape_fillet);        break;
+  case Gui_action::Mode_dimension: set_mode(Mode::Sketch_dim_anno);     break;
+  case Gui_action::Edit_delete:    m_view->delete_selected();           break;
+  case Gui_action::File_new:       new_project_();                      break;
+  case Gui_action::File_open:      open_file_dialog_();                 break;
+  case Gui_action::File_save:      save_file_dialog_();                 break;
+  case Gui_action::Edit_undo:      m_view->undo();                      break;
+  case Gui_action::Edit_redo:      m_view->redo();                      break;
+  case Gui_action::_count:         break;
+  }
+  // clang-format on
+}
+
+bool GUI::try_capture_hotkey_press_(int key, int mods)
+{
+  if (!m_hotkey_capture_action)
+    return false;
+
+  switch (key)
+  {
+  case GLFW_KEY_LEFT_SHIFT:
+  case GLFW_KEY_RIGHT_SHIFT:
+  case GLFW_KEY_LEFT_CONTROL:
+  case GLFW_KEY_RIGHT_CONTROL:
+  case GLFW_KEY_LEFT_ALT:
+  case GLFW_KEY_RIGHT_ALT:
+  case GLFW_KEY_LEFT_SUPER:
+  case GLFW_KEY_RIGHT_SUPER:
+    return true; // keep capturing; ignore pure modifiers
+  case GLFW_KEY_ESCAPE:
+    m_hotkey_capture_action.reset();
+    m_hotkey_capture_error.clear();
+    return true;
+  default:
+    break;
+  }
+
+  const Key_chord chord{key, Gui_hotkeys::normalize_mods(mods)};
+  if (!m_hotkeys.set_chord(*m_hotkey_capture_action, chord))
+  {
+    m_hotkey_capture_error = "Conflict: " + Gui_hotkeys::format_chord(chord) + " is already assigned.";
+    return true;
+  }
+
+  m_hotkey_capture_action.reset();
+  m_hotkey_capture_error.clear();
+  sync_toolbar_hotkey_tooltips_();
+  save_occt_view_settings();
+  return true;
 }
 
 void GUI::options_()

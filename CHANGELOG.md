@@ -9,6 +9,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **Configurable hotkeys**: **Settings -> Keyboard shortcuts** remaps Move/Rotate/Scale/Extrude/Chamfer/Fillet/Dimension, Delete, New/Open/Save, and Undo/Redo. Bindings persist as **`gui.hotkeys`** (human-readable chords; missing keys use defaults). Toolbar tooltips follow remaps. **Delete** / **Backspace** stay fixed delete aliases; <kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>Z</kbd> stays a fixed redo alias.
+
 - **Extrude Twist**: Options **Twist** checkbox. Two-phase flow locks height first, then sets twist angle about the face centroid (mouse, or <kbd>Shift+Tab</kbd> for degrees). Height length dim is cleared on lock; a temporary angle annotation on the extruded front face shows degrees during twist. With **Both sides**, ends twist symmetrically by +/- half the angle. Geometry uses ruled thru-sections with compatibility off (keeps tooth pairing) and cuts twisted hole solids so face bores survive; straight prism when twist is zero. Dense-face **Extrude fast preview** also applies during Twist (face copies translate and rotate; finalize builds the solid).
 
 ## [0.4.0] - 2026-07-25

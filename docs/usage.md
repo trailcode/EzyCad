@@ -488,16 +488,16 @@ The extrude tool allows you to create 3D solid shapes by extruding 2D sketch fac
 
 **Features:**
 
-|                                  |                                                                                                                                                                                                                                                                                                                          |
-| -------------------------------: | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| **Orthographic camera**          | Extrude mode forces **orthographic** projection (same as other sketch tools) so extrusion height is easier to judge without perspective foreshortening                                                                                                                                                                   |
-| **Direct face selection**        | Click directly on a sketch face to select it for extrusion, or use **`E`** / right-click **Extrude** on a face in the [Sketch List](#sketch-list)                                                                                                                                                                        |
-| **Automatic view adjustment**    | The view automatically rotates if the face plane is parallel to the view plane (within 5 degrees), providing better visibility for the extrusion operation                                                                                                                                                               |
-| **Real-time preview**            | See the extrusion update while dragging. Simple faces show a shaded solid. Dense faces (many edges) can use a fast preview that moves face copies (translate, and rotate when **Twist** is on) - enable or tune this in **Settings -> Sketch -> Appearance -> Extrude fast preview**. With **Both sides**, both ends are annotated. Finalize always creates the solid |
-| **Interactive distance control** | Drag the mouse to adjust extrusion distance, or use the distance input dialog (<kbd>Tab</kbd> key) for precise control                                                                                                                                                                                                   |
+|                                  |                                                                                                                                                                                                                                                                                                                                                                                                             |
+| -------------------------------: | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Orthographic camera**          | Extrude mode forces **orthographic** projection (same as other sketch tools) so extrusion height is easier to judge without perspective foreshortening                                                                                                                                                                                                                                                      |
+| **Direct face selection**        | Click directly on a sketch face to select it for extrusion, or use **`E`** / right-click **Extrude** on a face in the [Sketch List](#sketch-list)                                                                                                                                                                                                                                                           |
+| **Automatic view adjustment**    | The view automatically rotates if the face plane is parallel to the view plane (within 5 degrees), providing better visibility for the extrusion operation                                                                                                                                                                                                                                                  |
+| **Real-time preview**            | See the extrusion update while dragging. Simple faces show a shaded solid. Dense faces (many edges) can use a fast preview that moves face copies (translate, and rotate when **Twist** is on) - enable or tune this in **Settings -> Sketch -> Appearance -> Extrude fast preview**. With **Both sides**, both ends are annotated. Finalize always creates the solid                                       |
+| **Interactive distance control** | Drag the mouse to adjust extrusion distance, or use the distance input dialog (<kbd>Tab</kbd> key) for precise control                                                                                                                                                                                                                                                                                      |
 | **Twist**                        | Options **Twist**: after locking height (click or <kbd>Tab</kbd> commit), the height dimension is removed and a temporary angle annotation on the extruded front face shows twist in degrees. Drag to rotate the far end about the face center, or <kbd>Shift+Tab</kbd> for an exact angle. With **Both sides**, the mid-plane stays unrotated and each end twists by half the angle in opposite directions |
-| **Distance annotation**          | A dimension annotation displays the current extrusion distance                                                                                                                                                                                                                                                           |
-| **Bidirectional extrusion**      | The extrusion direction is determined by which side of the face plane you move the mouse to                                                                                                                                                                                                                              |
+| **Distance annotation**          | A dimension annotation displays the current extrusion distance                                                                                                                                                                                                                                                                                                                                              |
+| **Bidirectional extrusion**      | The extrusion direction is determined by which side of the face plane you move the mouse to                                                                                                                                                                                                                                                                                                                 |
 
 **How to Use:**
 1. ![Design456_Extrude](res/icons/Design456_Extrude.png) **Activate Extrude Tool**: Press <kbd>E</kbd> or click the icon to enter extrude mode
@@ -514,13 +514,13 @@ The extrude tool allows you to create 3D solid shapes by extruding 2D sketch fac
 
 **Keyboard Shortcuts:**
 
-|                      |                                                                                |
-| -------------------: | ------------------------------------------------------------------------------ |
-| <kbd>E</kbd>         | Activate extrude mode                                                          |
-| <kbd>Tab</kbd>       | Open distance input for extrusion height (height phase)                        |
-| <kbd>Shift+Tab</kbd> | Open angle input for twist (twist phase, when **Twist** is on)                 |
-| <kbd>Esc</kbd>       | Cancel current extrusion operation                                             |
-| <kbd>Enter</kbd>     | Commit distance/angle input (height commit enters twist when **Twist** is on)  |
+|                      |                                                                               |
+| -------------------: | ----------------------------------------------------------------------------- |
+| <kbd>E</kbd>         | Activate extrude mode                                                         |
+| <kbd>Tab</kbd>       | Open distance input for extrusion height (height phase)                       |
+| <kbd>Shift+Tab</kbd> | Open angle input for twist (twist phase, when **Twist** is on)                |
+| <kbd>Esc</kbd>       | Cancel current extrusion operation                                            |
+| <kbd>Enter</kbd>     | Commit distance/angle input (height commit enters twist when **Twist** is on) |
 
 **Tips:**
 - Extrude uses an **orthographic** camera (projection mode). Perspective from Normal mode is restored when you leave Extrude.
@@ -690,6 +690,8 @@ There are no single-letter hotkeys for the boolean tools (unlike <kbd>E</kbd> ex
 For more on 3D solids and the viewer, see [3D viewer (Open CASCADE)](usage-occt-view.md).
 
 ## Hotkeys
+
+Mode, file, and edit chords in the **General Operations** and **Modeling Shortcuts** tables below are the **defaults**. Remap them in **View -> Settings -> Keyboard shortcuts** (persisted as **`gui.hotkeys`**). Toolbar tooltips for remappable modes show the current chord. Fixed keys (Esc, Enter, Tab / Shift+Tab, selection filter digits, view zoom/orbit/roll) are not remappable. **Delete** and **Backspace** always delete the selection even if **Delete** is remapped off <kbd>Shift</kbd>+<kbd>D</kbd>. <kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>Z</kbd> remains a fixed redo alias alongside the remappable <kbd>Ctrl</kbd>+<kbd>Y</kbd>.
 
 ### General Operations
 

@@ -72,6 +72,7 @@ Tab and Shift+Tab in the 3D view open numeric entry via `GUI::set_dist_edit` / `
 GUI (gui.h / gui.cpp)
   |
   +-- gui_mode.cpp       set_mode, on_key, Options panel per Mode
+  +-- gui_hotkeys.*      remappable Gui_action <-> Key_chord map
   +-- gui_add.cpp        Add menu dialogs (primitives, new sketch)
   +-- gui_settings.cpp   Settings dialog, load/save ezycad_settings.json
   |
@@ -128,24 +129,27 @@ Overlay popups (`FloatEdit`, `AngleEdit`, `MessageStatus`, modals) keep `NoSaved
 
 ### Keyboard (`GUI::on_key` in `gui_mode.cpp`)
 
-| Input                             | Condition           | Handler                                                                                                                 |
-| --------------------------------- | ------------------- | ----------------------------------------------------------------------------------------------------------------------- |
-| `+` / `-` / numpad +/-            | No Ctrl/Alt         | `Occt_view::zoom_view_wheel_notches`                                                                                    |
-| Shift + 4/6 / arrows / numpad 4/6 | No Ctrl/Alt         | `Occt_view::roll_view_z_deg`                                                                                            |
-| Numpad 5                          | No modifiers        | `Occt_view::snap_view_to_nearest_standard_axis`                                                                         |
-| Numpad 2/4/6/8                    | No modifiers        | `Occt_view::orbit_view_screen_step_deg`                                                                                 |
-| Ctrl+N/O/S                        |                     | `new_project_` / `open_file_dialog_` / `save_file_dialog_` (save failures: `show_error_dialog` / `error_modal_dialog_`) |
-| Ctrl+Z / Ctrl+Shift+Z / Ctrl+Y    |                     | `Occt_view::undo` / `redo`                                                                                              |
-| `1`-`9` / numpad `1`-`9`          | `Mode::Normal` only | `set_shp_selection_mode` (TopAbs enum index)                                                                            |
-| Esc                               |                     | `cancel_underlay_calib_`, `Occt_view::cancel`, hide dist/angle edit                                                     |
-| Tab                               | not Move/Rotate     | `Occt_view::dimension_input` (Move/Rotate: mode handler)                                                                |
-| Shift+Tab                         | not Move/Rotate     | `Occt_view::angle_input`                                                                                                |
-| Enter                             |                     | hide edits, `Occt_view::on_enter`                                                                                       |
-| D                                 |                     | `Mode::Sketch_dim_anno`                                                                                                 |
-| Shift+D / Delete / Backspace      |                     | `Occt_view::delete_selected`                                                                                            |
-| G / R / E / S / C / F             |                     | Move / Rotate / Extrude / Scale / Chamfer / Fillet modes                                                                |
-| Move-mode keys                    | `Mode::Move`        | `on_key_move_mode_` (axis constraints X/Y/Z)                                                                            |
-| Rotate-mode keys                  | `Mode::Rotate`      | `on_key_rotate_mode_` (axis pick, Tab angle)                                                                            |
+Remappable chords live in `Gui_hotkeys` (`gui_hotkeys.h` / `.cpp`), owned by `GUI::m_hotkeys`. Stable action ids (e.g. `mode.move`, `edit.undo`) map to `Key_chord { key, mods }`. Persistence: `gui.hotkeys` in `ezycad_settings.json` as human-readable strings (`"G"`, `"Ctrl+S"`, `"Shift+D"`); missing keys merge to built-in defaults. Settings **Keyboard shortcuts** captures the next `GLFW_PRESS` (Esc cancels; `set_chord` rejects conflicts). Toolbar tooltips for remappable modes are rebuilt via `sync_toolbar_hotkey_tooltips_()`.
+
+| Input                             | Condition           | Handler                                                                                               |
+| --------------------------------- | ------------------- | ----------------------------------------------------------------------------------------------------- |
+| `+` / `-` / numpad +/-            | No Ctrl/Alt         | `Occt_view::zoom_view_wheel_notches`                                                                  |
+| Shift + 4/6 / arrows / numpad 4/6 | No Ctrl/Alt         | `Occt_view::roll_view_z_deg`                                                                          |
+| Numpad 5                          | No modifiers        | `Occt_view::snap_view_to_nearest_standard_axis`                                                       |
+| Numpad 2/4/6/8                    | No modifiers        | `Occt_view::orbit_view_screen_step_deg`                                                               |
+| Hotkey capture active             | Settings            | `try_capture_hotkey_press_` (assign / Esc cancel / conflict message)                                  |
+| `1`-`9` / numpad `1`-`9`          | `Mode::Normal` only | `set_shp_selection_mode` (TopAbs enum index); fixed                                                   |
+| Esc                               |                     | cancel capture if listening; else `cancel_underlay_calib_`, `Occt_view::cancel`, hide dist/angle edit |
+| Tab                               | not Move/Rotate     | `Occt_view::dimension_input` (Move/Rotate: mode handler); fixed                                       |
+| Shift+Tab                         | not Move/Rotate     | `Occt_view::angle_input`; fixed                                                                       |
+| Enter                             |                     | hide edits, `Occt_view::on_enter`; fixed                                                              |
+| Delete / Backspace                |                     | `Occt_view::delete_selected` (fixed aliases; remapping `edit.delete` does not remove these)           |
+| Ctrl+Shift+Z                      |                     | `Occt_view::redo` (fixed second redo; remappable `edit.redo` defaults to Ctrl+Y)                      |
+| Remappable chord                  | `m_hotkeys` hit     | `dispatch_hotkey_action_` (`Gui_action`: modes, delete, file new/open/save, undo/redo)                |
+| Move-mode keys                    | `Mode::Move`        | `on_key_move_mode_` (axis constraints X/Y/Z); hardcoded                                               |
+| Rotate-mode keys                  | `Mode::Rotate`      | `on_key_rotate_mode_` (axis pick, Tab angle); hardcoded                                               |
+
+Default remappable chords: G/R/S/E/C/F/D modes, Shift+D delete, Ctrl+N/O/S, Ctrl+Z / Ctrl+Y.
 
 See also [`src/doc/sketch.md`](sketch.md) and [`src/doc/shape.md`](shape.md) for per-mode mouse routing after `GUI` delegates to `Occt_view`.
 
@@ -167,7 +171,7 @@ Always calls `m_view->on_mouse_move(screen_coords)` first.
 | Event                       | Handler                                                                                                              |
 | --------------------------- | -------------------------------------------------------------------------------------------------------------------- |
 | LMB (underlay calib active) | `try_underlay_calib_click_` (early return)                                                                           |
-| LMB                         | `m_view->on_mouse_button` then `on_left_click_` (skipped when extrude LMB already advanced/finalized the session)     |
+| LMB                         | `m_view->on_mouse_button` then `on_left_click_` (skipped when extrude LMB already advanced/finalized the session)    |
 | RMB press                   | `finalize_elm` for line / multi-line sketch modes                                                                    |
 | LMB in `on_left_click_`     | Mode-specific: transform finalize, sketch `add_sketch_pt`, fillet/chamfer click, polar dup `add_point`, extrude pick |
 
@@ -231,7 +235,7 @@ Sketch List expand **Faces**: each face row supports **`E`** and right-click **E
 | `load_occt_view_settings_`  | Called from `GUI::init`                                             |
 | `occt_view_settings_json()` | Scripting API for settings blob                                     |
 
-Sketch edge/face display colors live under `gui.sketch_edge_*` / `gui.sketch_face_*` and are applied live via `Sketch_annotation_refresh::edge_face_style`. Sketch-mode shape ghost/wire uses `gui.sketch_shape_faint_style` / `gui.sketch_shape_faint_opacity` via `Occt_view::sync_sketch_shape_faint_style`. 3D shape selection highlight uses `gui.shape_selection_color` applied through `Occt_view::apply_shape_selection_style` (`AIS_InteractiveContext::SelectionStyle`). Settings collapsing-header open state is stored in `gui.settings_headers` (Sketch nests **Appearance**, **Dimensions**, **Nodes**, **Snap**, **Underlay**).
+Sketch edge/face display colors live under `gui.sketch_edge_*` / `gui.sketch_face_*` and are applied live via `Sketch_annotation_refresh::edge_face_style`. Sketch-mode shape ghost/wire uses `gui.sketch_shape_faint_style` / `gui.sketch_shape_faint_opacity` via `Occt_view::sync_sketch_shape_faint_style`. 3D shape selection highlight uses `gui.shape_selection_color` applied through `Occt_view::apply_shape_selection_style` (`AIS_InteractiveContext::SelectionStyle`). Settings collapsing-header open state is stored in `gui.settings_headers` (Sketch nests **Appearance**, **Dimensions**, **Nodes**, **Snap**, **Underlay**; also **Keyboard shortcuts** / `hotkeys`). Remappable chords: `gui.hotkeys` object via `Gui_hotkeys::to_json` / `merge_from_json`.
 
 User-visible key tables: [`docs/usage-settings.md`](../../docs/usage-settings.md). When adding a Settings control, follow [agents/conventions/user-docs-sync.md](../../agents/conventions/user-docs-sync.md).
 

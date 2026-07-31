@@ -32,6 +32,21 @@
     "sketch_shape_faint_style": 1,
     "sketch_shape_faint_opacity": 0.14,
     "sketch_shape_faint_enabled": true,
+    "hotkeys": {
+      "mode.move": "G",
+      "mode.rotate": "R",
+      "mode.scale": "S",
+      "mode.extrude": "E",
+      "mode.chamfer": "C",
+      "mode.fillet": "F",
+      "mode.dimension": "D",
+      "edit.delete": "Shift+D",
+      "file.new": "Ctrl+N",
+      "file.open": "Ctrl+O",
+      "file.save": "Ctrl+S",
+      "edit.undo": "Ctrl+Z",
+      "edit.redo": "Ctrl+Y"
+    },
     "imgui_style_dark": {
       "frame_border": 0.0,
       "frame_padding_x": 5.0,
@@ -80,6 +95,7 @@
       "sketch_snap": false,
       "sketch_underlay": false,
       "startup": false,
+      "hotkeys": false,
       "ui": false,
       "view_nav": false,
       "view_presentation": false
