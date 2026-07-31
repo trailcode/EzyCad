@@ -12,6 +12,7 @@ Update user docs in the **same PR / branch** as the code when you **add or chang
 - **Persisted keys** in `ezycad_settings.json` (`gui.*`, `occt_view.*`)
 - **Sketch / shape / view** workflows users see in the app
 - **Keyboard shortcuts**, tooltips, or Help links
+- **New `Mode` / toolbar tool / `Command`** (also update remappable hotkeys — see [gui.md](../../src/doc/gui.md#new-mode-or-toolbar-command-hotkeys))
 - **Scripting** surface (`ezy.occt_view_settings_json()`, etc.)
 
 Skip user-guide updates for internal-only refactors (PIMPL, naming, line endings in `src/`, etc.) unless behavior or saved data changes.
@@ -24,6 +25,7 @@ Skip user-guide updates for internal-only refactors (PIMPL, naming, line endings
 | Sketch tools, snap, dimensions          | `docs/usage-sketch.md`; cross-links from `usage-settings.md`                               |
 | 3D view, grid, navigation               | `docs/usage-occt-view.md`, `docs/usage.md` (view sections)                                 |
 | General UI, lists, modes                | `docs/usage.md`                                                                            |
+| New mode / tool **hotkeys**             | `gui_hotkeys.*`, `dispatch_hotkey_action_`, toolbar tooltips, `res/ezycad_settings.json`, `docs/usage.md#hotkeys` (+ sketch table if needed) |
 | Lua / Python / settings JSON API        | `docs/scripting.md`                                                                        |
 | Build / OCCT / wasm                     | `docs/building-occt.md`                                                                    |
 | Notable user-facing fix or feature      | `CHANGELOG.md` under `[Unreleased]`                                                        |

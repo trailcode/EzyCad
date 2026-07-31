@@ -366,20 +366,47 @@ void GUI::dispatch_hotkey_action_(Gui_action action)
   // clang-format off
   switch (action)
   {
-  case Gui_action::Mode_move:      set_mode(Mode::Move);                break;
-  case Gui_action::Mode_rotate:    set_mode(Mode::Rotate);              break;
-  case Gui_action::Mode_scale:     set_mode(Mode::Scale);               break;
-  case Gui_action::Mode_extrude:   set_mode(Mode::Sketch_face_extrude); break;
-  case Gui_action::Mode_chamfer:   set_mode(Mode::Shape_chamfer);       break;
-  case Gui_action::Mode_fillet:    set_mode(Mode::Shape_fillet);        break;
-  case Gui_action::Mode_dimension: set_mode(Mode::Sketch_dim_anno);     break;
-  case Gui_action::Edit_delete:    m_view->delete_selected();           break;
-  case Gui_action::File_new:       new_project_();                      break;
-  case Gui_action::File_open:      open_file_dialog_();                 break;
-  case Gui_action::File_save:      save_file_dialog_();                 break;
-  case Gui_action::Edit_undo:      m_view->undo();                      break;
-  case Gui_action::Edit_redo:      m_view->redo();                      break;
-  case Gui_action::_count:         break;
+  case Gui_action::Mode_move:                 set_mode(Mode::Move);                         break;
+  case Gui_action::Mode_rotate:               set_mode(Mode::Rotate);                       break;
+  case Gui_action::Mode_scale:                set_mode(Mode::Scale);                        break;
+  case Gui_action::Mode_extrude:              set_mode(Mode::Sketch_face_extrude);          break;
+  case Gui_action::Mode_chamfer:              set_mode(Mode::Shape_chamfer);                break;
+  case Gui_action::Mode_fillet:               set_mode(Mode::Shape_fillet);                 break;
+  case Gui_action::Mode_dimension:            set_mode(Mode::Sketch_dim_anno);              break;
+  case Gui_action::Mode_sketch_inspection:    set_mode(Mode::Sketch_inspection_mode);       break;
+  case Gui_action::Mode_sketch_from_face:     set_mode(Mode::Sketch_from_planar_face);      break;
+  case Gui_action::Mode_operation_axis:       set_mode(Mode::Sketch_operation_axis);        break;
+  case Gui_action::Mode_add_node:             set_mode(Mode::Sketch_add_node);              break;
+  case Gui_action::Mode_add_edge:             set_mode(Mode::Sketch_add_edge);              break;
+  case Gui_action::Mode_add_multi_edges:      set_mode(Mode::Sketch_add_multi_edges);       break;
+  case Gui_action::Mode_add_arc:              set_mode(Mode::Sketch_add_seg_circle_arc);    break;
+  case Gui_action::Mode_add_square:           set_mode(Mode::Sketch_add_square);            break;
+  case Gui_action::Mode_add_rectangle:        set_mode(Mode::Sketch_add_rectangle);         break;
+  case Gui_action::Mode_add_rectangle_center: set_mode(Mode::Sketch_add_rectangle_center_pt); break;
+  case Gui_action::Mode_add_circle:           set_mode(Mode::Sketch_add_circle);            break;
+  case Gui_action::Mode_add_circle_3_pts:     set_mode(Mode::Sketch_add_circle_3_pts);      break;
+  case Gui_action::Mode_add_slot:             set_mode(Mode::Sketch_add_slot);              break;
+  case Gui_action::Mode_polar_duplicate:      set_mode(Mode::Shape_polar_duplicate);        break;
+  case Gui_action::Mode_cross_section:        set_mode(Mode::Shape_cross_section);          break;
+  case Gui_action::Cmd_shape_cut:
+    if (Status s = m_view->shp_cut().selected_cut(); !s.is_ok())
+      show_message(s.message());
+    break;
+  case Gui_action::Cmd_shape_fuse:
+    if (Status s = m_view->shp_fuse().selected_fuse(); !s.is_ok())
+      show_message(s.message());
+    break;
+  case Gui_action::Cmd_shape_common:
+    if (Status s = m_view->shp_common().selected_common(); !s.is_ok())
+      show_message(s.message());
+    break;
+  case Gui_action::Edit_delete:               m_view->delete_selected();                    break;
+  case Gui_action::File_new:                  new_project_();                               break;
+  case Gui_action::File_open:                 open_file_dialog_();                          break;
+  case Gui_action::File_save:                 save_file_dialog_();                          break;
+  case Gui_action::Edit_undo:                 m_view->undo();                               break;
+  case Gui_action::Edit_redo:                 m_view->redo();                               break;
+  case Gui_action::_count:                    break;
   }
   // clang-format on
 }

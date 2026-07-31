@@ -207,7 +207,7 @@ void GUI::initialize_toolbar_()
 
 void GUI::sync_toolbar_hotkey_tooltips_()
 {
-  auto tip = [this](Mode mode, const char* base, Gui_action action) {
+  auto tip_mode = [this](Mode mode, const char* base, Gui_action action) {
     for (Toolbar_button& b : m_toolbar_buttons)
     {
       if (b.data.index() != 0 || std::get<Mode>(b.data) != mode)
@@ -217,15 +217,43 @@ void GUI::sync_toolbar_hotkey_tooltips_()
       return;
     }
   };
+  auto tip_cmd = [this](Command cmd, const char* base, Gui_action action) {
+    for (Toolbar_button& b : m_toolbar_buttons)
+    {
+      if (b.data.index() != 1 || std::get<Command>(b.data) != cmd)
+        continue;
+      const std::string chord = Gui_hotkeys::format_chord(m_hotkeys.chord_for(action));
+      b.tooltip               = std::string(base) + " (" + chord + ")";
+      return;
+    }
+  };
 
   // clang-format off
-  tip(Mode::Move,                "Shape move",          Gui_action::Mode_move);
-  tip(Mode::Rotate,              "Shape rotate",        Gui_action::Mode_rotate);
-  tip(Mode::Scale,               "Shape Scale",         Gui_action::Mode_scale);
-  tip(Mode::Sketch_dim_anno,     "Length dimension",    Gui_action::Mode_dimension);
-  tip(Mode::Sketch_face_extrude, "Extrude sketch face", Gui_action::Mode_extrude);
-  tip(Mode::Shape_chamfer,       "Chamfer",             Gui_action::Mode_chamfer);
-  tip(Mode::Shape_fillet,        "Fillet",              Gui_action::Mode_fillet);
+  tip_mode(Mode::Move,                          "Shape move",                      Gui_action::Mode_move);
+  tip_mode(Mode::Rotate,                        "Shape rotate",                    Gui_action::Mode_rotate);
+  tip_mode(Mode::Scale,                         "Shape Scale",                     Gui_action::Mode_scale);
+  tip_mode(Mode::Sketch_dim_anno,               "Length dimension",                Gui_action::Mode_dimension);
+  tip_mode(Mode::Sketch_face_extrude,           "Extrude sketch face",             Gui_action::Mode_extrude);
+  tip_mode(Mode::Shape_chamfer,                 "Chamfer",                         Gui_action::Mode_chamfer);
+  tip_mode(Mode::Shape_fillet,                  "Fillet",                          Gui_action::Mode_fillet);
+  tip_mode(Mode::Sketch_inspection_mode,        "Sketch inspection mode",          Gui_action::Mode_sketch_inspection);
+  tip_mode(Mode::Sketch_from_planar_face,       "Create a sketch from planar face", Gui_action::Mode_sketch_from_face);
+  tip_mode(Mode::Sketch_operation_axis,         "Operational axis",                Gui_action::Mode_operation_axis);
+  tip_mode(Mode::Sketch_add_node,               "Add node",                        Gui_action::Mode_add_node);
+  tip_mode(Mode::Sketch_add_edge,               "Add line edge",                   Gui_action::Mode_add_edge);
+  tip_mode(Mode::Sketch_add_multi_edges,        "Add multi-line edge",             Gui_action::Mode_add_multi_edges);
+  tip_mode(Mode::Sketch_add_seg_circle_arc,     "Add arc circle",                  Gui_action::Mode_add_arc);
+  tip_mode(Mode::Sketch_add_square,             "Add square",                      Gui_action::Mode_add_square);
+  tip_mode(Mode::Sketch_add_rectangle,          "Add rectangle from two points",   Gui_action::Mode_add_rectangle);
+  tip_mode(Mode::Sketch_add_rectangle_center_pt,"Add rectangle with center point", Gui_action::Mode_add_rectangle_center);
+  tip_mode(Mode::Sketch_add_circle,             "Add circle",                      Gui_action::Mode_add_circle);
+  tip_mode(Mode::Sketch_add_circle_3_pts,       "Add circle from three points",    Gui_action::Mode_add_circle_3_pts);
+  tip_mode(Mode::Sketch_add_slot,               "Add slot",                        Gui_action::Mode_add_slot);
+  tip_mode(Mode::Shape_polar_duplicate,         "Shape polar duplicate",           Gui_action::Mode_polar_duplicate);
+  tip_mode(Mode::Shape_cross_section,           "Shape cross-section",             Gui_action::Mode_cross_section);
+  tip_cmd(Command::Shape_cut,                   "Shape cut",                       Gui_action::Cmd_shape_cut);
+  tip_cmd(Command::Shape_fuse,                  "Shape fuse",                      Gui_action::Cmd_shape_fuse);
+  tip_cmd(Command::Shape_common,                "Shape common",                    Gui_action::Cmd_shape_common);
   // clang-format on
 }
 

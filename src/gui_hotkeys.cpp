@@ -18,21 +18,41 @@ struct Action_meta
   Key_chord   def;
 };
 
+// Defaults avoid existing shape letters (G/R/S/E/C/F/D), X/Y/Z (axis toggles), and digits.
+// Sketch: AutoCAD/FreeCAD-flavored mnemonics; booleans use Ctrl+Shift chords.
 // clang-format off
 constexpr Action_meta c_actions[] = {
-    {Gui_action::Mode_move,      "mode.move",      "Move",           {GLFW_KEY_G, 0}},
-    {Gui_action::Mode_rotate,    "mode.rotate",    "Rotate",         {GLFW_KEY_R, 0}},
-    {Gui_action::Mode_scale,     "mode.scale",     "Scale",          {GLFW_KEY_S, 0}},
-    {Gui_action::Mode_extrude,   "mode.extrude",   "Extrude",        {GLFW_KEY_E, 0}},
-    {Gui_action::Mode_chamfer,   "mode.chamfer",   "Chamfer",        {GLFW_KEY_C, 0}},
-    {Gui_action::Mode_fillet,    "mode.fillet",    "Fillet",         {GLFW_KEY_F, 0}},
-    {Gui_action::Mode_dimension, "mode.dimension", "Dimension",      {GLFW_KEY_D, 0}},
-    {Gui_action::Edit_delete,    "edit.delete",    "Delete",         {GLFW_KEY_D, GLFW_MOD_SHIFT}},
-    {Gui_action::File_new,       "file.new",       "New project",    {GLFW_KEY_N, GLFW_MOD_CONTROL}},
-    {Gui_action::File_open,      "file.open",      "Open",           {GLFW_KEY_O, GLFW_MOD_CONTROL}},
-    {Gui_action::File_save,      "file.save",      "Save",           {GLFW_KEY_S, GLFW_MOD_CONTROL}},
-    {Gui_action::Edit_undo,      "edit.undo",      "Undo",           {GLFW_KEY_Z, GLFW_MOD_CONTROL}},
-    {Gui_action::Edit_redo,      "edit.redo",      "Redo",           {GLFW_KEY_Y, GLFW_MOD_CONTROL}},
+    {Gui_action::Mode_move,                 "mode.move",                 "Move",                    {GLFW_KEY_G, 0}},
+    {Gui_action::Mode_rotate,               "mode.rotate",               "Rotate",                  {GLFW_KEY_R, 0}},
+    {Gui_action::Mode_scale,                "mode.scale",                "Scale",                   {GLFW_KEY_S, 0}},
+    {Gui_action::Mode_extrude,              "mode.extrude",              "Extrude",                 {GLFW_KEY_E, 0}},
+    {Gui_action::Mode_chamfer,              "mode.chamfer",              "Chamfer",                 {GLFW_KEY_C, 0}},
+    {Gui_action::Mode_fillet,               "mode.fillet",               "Fillet",                  {GLFW_KEY_F, 0}},
+    {Gui_action::Mode_dimension,            "mode.dimension",            "Dimension",               {GLFW_KEY_D, 0}},
+    {Gui_action::Mode_sketch_inspection,    "mode.sketch_inspection",    "Sketch inspection",       {GLFW_KEY_I, 0}},
+    {Gui_action::Mode_sketch_from_face,     "mode.sketch_from_face",     "Sketch from face",        {GLFW_KEY_P, 0}},
+    {Gui_action::Mode_operation_axis,       "mode.operation_axis",       "Operation axis",          {GLFW_KEY_A, GLFW_MOD_SHIFT}},
+    {Gui_action::Mode_add_node,             "mode.add_node",             "Add node",                {GLFW_KEY_N, 0}},
+    {Gui_action::Mode_add_edge,             "mode.add_edge",             "Add line",                {GLFW_KEY_L, 0}},
+    {Gui_action::Mode_add_multi_edges,      "mode.add_multi_edges",      "Add multi-line",          {GLFW_KEY_L, GLFW_MOD_SHIFT}},
+    {Gui_action::Mode_add_arc,              "mode.add_arc",              "Add arc",                 {GLFW_KEY_A, 0}},
+    {Gui_action::Mode_add_square,           "mode.add_square",           "Add square",              {GLFW_KEY_Q, 0}},
+    {Gui_action::Mode_add_rectangle,        "mode.add_rectangle",        "Add rectangle",           {GLFW_KEY_B, 0}},
+    {Gui_action::Mode_add_rectangle_center, "mode.add_rectangle_center", "Add rectangle (center)",  {GLFW_KEY_B, GLFW_MOD_SHIFT}},
+    {Gui_action::Mode_add_circle,           "mode.add_circle",           "Add circle",              {GLFW_KEY_O, 0}},
+    {Gui_action::Mode_add_circle_3_pts,     "mode.add_circle_3_pts",     "Add circle (3 pts)",      {GLFW_KEY_O, GLFW_MOD_SHIFT}},
+    {Gui_action::Mode_add_slot,             "mode.add_slot",             "Add slot",                {GLFW_KEY_U, 0}},
+    {Gui_action::Mode_polar_duplicate,      "mode.polar_duplicate",      "Polar duplicate",         {GLFW_KEY_P, GLFW_MOD_SHIFT}},
+    {Gui_action::Mode_cross_section,        "mode.cross_section",        "Cross-section",           {GLFW_KEY_X, GLFW_MOD_SHIFT}},
+    {Gui_action::Cmd_shape_cut,             "cmd.shape_cut",             "Shape cut",               {GLFW_KEY_C, GLFW_MOD_CONTROL | GLFW_MOD_SHIFT}},
+    {Gui_action::Cmd_shape_fuse,            "cmd.shape_fuse",            "Shape fuse",              {GLFW_KEY_F, GLFW_MOD_CONTROL | GLFW_MOD_SHIFT}},
+    {Gui_action::Cmd_shape_common,          "cmd.shape_common",          "Shape common",            {GLFW_KEY_M, GLFW_MOD_CONTROL | GLFW_MOD_SHIFT}},
+    {Gui_action::Edit_delete,               "edit.delete",               "Delete",                  {GLFW_KEY_D, GLFW_MOD_SHIFT}},
+    {Gui_action::File_new,                  "file.new",                  "New project",             {GLFW_KEY_N, GLFW_MOD_CONTROL}},
+    {Gui_action::File_open,                 "file.open",                 "Open",                    {GLFW_KEY_O, GLFW_MOD_CONTROL}},
+    {Gui_action::File_save,                 "file.save",                 "Save",                    {GLFW_KEY_S, GLFW_MOD_CONTROL}},
+    {Gui_action::Edit_undo,                 "edit.undo",                 "Undo",                    {GLFW_KEY_Z, GLFW_MOD_CONTROL}},
+    {Gui_action::Edit_redo,                 "edit.redo",                 "Redo",                    {GLFW_KEY_Y, GLFW_MOD_CONTROL}},
 };
 // clang-format on
 

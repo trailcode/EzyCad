@@ -685,7 +685,7 @@ If fewer than two shapes are selected you will see an error message and nothing 
 
 **Keyboard notes:**
 
-There are no single-letter hotkeys for the boolean tools (unlike <kbd>E</kbd> extrude, <kbd>C</kbd> chamfer, <kbd>F</kbd> fillet, <kbd>G</kbd>/<kbd>R</kbd>/<kbd>S</kbd> transforms). Activate them from the toolbar after multi-selecting in Normal mode. General selection and view hotkeys still apply.
+There are default chords for the boolean tools (<kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>C</kbd> cut, <kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>F</kbd> fuse, <kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>M</kbd> common; remappable in **Settings -> Keyboard shortcuts**). You can also activate them from the toolbar after multi-selecting in Normal mode. General selection and view hotkeys still apply.
 
 For more on 3D solids and the viewer, see [3D viewer (Open CASCADE)](usage-occt-view.md).
 
@@ -710,15 +710,33 @@ Mode, file, and edit chords in the **General Operations** and **Modeling Shortcu
 
 ### Modeling Shortcuts
 
-|              |                         |
-| -----------: | ----------------------- |
-| <kbd>G</kbd> | Move mode               |
-| <kbd>R</kbd> | Rotate mode             |
-| <kbd>S</kbd> | Scale mode              |
-| <kbd>E</kbd> | Extrude mode            |
-| <kbd>C</kbd> | Chamfer mode            |
-| <kbd>F</kbd> | Fillet mode             |
-| <kbd>D</kbd> | Dimension tool (sketch) |
+|                                                   |                                |
+| ------------------------------------------------:| ------------------------------ |
+| <kbd>G</kbd>                                      | Move mode                      |
+| <kbd>R</kbd>                                      | Rotate mode                    |
+| <kbd>S</kbd>                                      | Scale mode                     |
+| <kbd>E</kbd>                                      | Extrude mode                   |
+| <kbd>C</kbd>                                      | Chamfer mode                   |
+| <kbd>F</kbd>                                      | Fillet mode                    |
+| <kbd>D</kbd>                                      | Dimension tool (sketch)        |
+| <kbd>I</kbd>                                      | Sketch inspection              |
+| <kbd>P</kbd>                                      | Sketch from planar face        |
+| <kbd>Shift</kbd>+<kbd>A</kbd>                     | Operation axis                 |
+| <kbd>N</kbd>                                      | Add node                       |
+| <kbd>L</kbd>                                      | Add line edge                  |
+| <kbd>Shift</kbd>+<kbd>L</kbd>                     | Add multi-line edge            |
+| <kbd>A</kbd>                                      | Add arc                        |
+| <kbd>Q</kbd>                                      | Add square                     |
+| <kbd>B</kbd>                                      | Add rectangle (two points)     |
+| <kbd>Shift</kbd>+<kbd>B</kbd>                     | Add rectangle (center)         |
+| <kbd>O</kbd>                                      | Add circle                     |
+| <kbd>Shift</kbd>+<kbd>O</kbd>                     | Add circle (three points)      |
+| <kbd>U</kbd>                                      | Add slot                       |
+| <kbd>Shift</kbd>+<kbd>P</kbd>                     | Polar duplicate                |
+| <kbd>Shift</kbd>+<kbd>X</kbd>                     | Cross-section                  |
+| <kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>C</kbd>     | Shape cut                      |
+| <kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>F</kbd>     | Shape fuse                     |
+| <kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>M</kbd>     | Shape common                   |
 
 
 ### View navigation
