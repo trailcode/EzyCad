@@ -13,7 +13,7 @@ Typical responsibilities:
 - ImGui frame: menu bar, dock space (passthrough central node for 3D input), toolbar, Sketch List, Shape List, Options, Settings, dist/angle popups.
 - Mode switching (`Mode` enum in [`mode.h`](../mode.h)) and parent-mode Esc behavior.
 - Persisted preferences (`ezycad_settings.json` via [`gui_settings.cpp`](../gui_settings.cpp)).
-- Project I/O (`.ezy` load/save, import/export dialogs; **File -> Import** confirms STEP/PLY with **Import as** for hierarchy / flat / union). STEP **Import into project** uses a progress modal (`Atomic_progress_indicator`); desktop runs OCCT Transfer off the UI thread.
+- Project I/O (`.ezy` load/save, import/export dialogs; **File -> Import** confirms STEP/PLY with **Import as** for hierarchy / flat / union). STEP **Import into project** shows an Importing modal; desktop uses `Atomic_progress_indicator` + background Transfer + Cancel; WASM paints the modal for two frames then runs Transfer on the main thread (no Cancel).
 - CAD/mesh interchange scales about the origin: project display lengths follow **File -> Project units** (`Project_unit`; Inch or Millimeter). Model space stays inch-scaled (`model = inches * dimension_scale`). STEP import converts OCCT cascade **mm** into model space; PLY import treats coords as inches. **File -> Export** asks for **Inches** or **Millimeters** (STEP/IGES declare that unit; STL/PLY write unitless coords in that scale). `.ezy` persists `projectUnit`. **Settings -> New project defaults** stores `gui.default_project_unit` and inch-based default 2D framing for **File -> New**.
 - Contextual help links (`doc_urls` in `gui.h`).
 

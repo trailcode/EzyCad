@@ -732,7 +732,8 @@ private:
   std::string                   m_cad_busy_title;
   Step_import_mode              m_cad_busy_import_mode{Step_import_mode::Preserve_hierarchy};
 #ifdef __EMSCRIPTEN__
-  bool m_cad_busy_run_next_frame{false};
+  /// Frames to paint the Importing modal before starting the blocking STEP transfer.
+  int m_cad_busy_defer_frames{0};
 #else
   std::future<std::pair<Status, Occt_view::Step_import_geom>> m_cad_busy_import_fut;
 #endif

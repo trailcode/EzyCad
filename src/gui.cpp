@@ -150,8 +150,9 @@ void GUI::render_gui()
   shape_list_();
   shape_info_dialog_();
   file_inspector_dialog_();
-  poll_cad_busy_();
+  // Paint the busy modal before poll so WASM can show "Importing..." for a frame first.
   cad_busy_dialog_();
+  poll_cad_busy_();
   options_();
   message_status_window_();
   error_modal_dialog_();
@@ -3052,13 +3053,13 @@ void GUI::begin_step_import_(const Step_import_mode mode)
   m_cad_busy_path        = m_file_inspector_path;
   m_cad_busy_bytes       = m_file_inspector_bytes;
   m_cad_busy_import_mode = mode;
-  m_cad_busy_title       = "Importing STEP";
-  m_cad_busy_progress    = new Atomic_progress_indicator();
-  m_cad_busy_progress->set_stage("Starting...");
-  m_cad_busy_open_popup = true;
-  m_cad_busy_modal_open = true;
+  m_cad_busy_title       = "Importing";
+  m_cad_busy_open_popup  = true;
+  m_cad_busy_modal_open  = true;
 
 #ifndef __EMSCRIPTEN__
+  m_cad_busy_progress = new Atomic_progress_indicator();
+  m_cad_busy_progress->set_stage("Starting...");
   const std::string                   bytes = m_cad_busy_bytes;
   const Step_import_mode              m     = mode;
   const double                        scale = m_view->step_import_model_scale();
@@ -3071,7 +3072,9 @@ void GUI::begin_step_import_(const Step_import_mode mode)
                                        return {st, std::move(geom)};
                                      });
 #else
-  m_cad_busy_run_next_frame = true;
+  // OpenPopup + one painted frame before the main-thread Transfer freezes the UI.
+  m_cad_busy_defer_frames = 2;
+  m_cad_busy_progress     = {};
 #endif
 }
 
@@ -3122,16 +3125,15 @@ void GUI::poll_cad_busy_()
     return;
 
 #ifdef __EMSCRIPTEN__
-  if (m_cad_busy_run_next_frame)
+  if (m_cad_busy_defer_frames > 0)
   {
-    // Paint the modal for one frame, then run the heavy work on the next poll.
-    m_cad_busy_run_next_frame = false;
+    --m_cad_busy_defer_frames;
     return;
   }
 
   Occt_view::Step_import_geom geom;
   Status st = Occt_view::prepare_step_import(m_cad_busy_bytes, m_cad_busy_import_mode, m_view->step_import_model_scale(),
-                                             geom, m_cad_busy_progress);
+                                             geom, {});
   finish_step_import_(st, geom);
 #else
   if (!m_cad_busy_import_fut.valid())
@@ -3156,6 +3158,30 @@ void GUI::cad_busy_dialog_()
   if (!cad_busy_() && !m_cad_busy_modal_open)
     return;
 
+#ifdef __EMSCRIPTEN__
+  // Simple wait dialog (no Cancel / no close). Transfer runs on the main thread after paint.
+  if (!cad_busy_())
+  {
+    if (ImGui::BeginPopupModal("##EzyCadCadBusy", nullptr, ImGuiWindowFlags_AlwaysAutoResize))
+    {
+      ImGui::CloseCurrentPopup();
+      ImGui::EndPopup();
+    }
+    return;
+  }
+
+  ImGui::SetNextWindowSize(ImVec2(280.0f, 0.0f), ImGuiCond_Appearing);
+  if (!ImGui::BeginPopupModal("##EzyCadCadBusy", nullptr,
+                              ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoMove))
+    return;
+
+  ImGui::TextUnformatted("Importing...");
+  const std::string name = std::filesystem::path(m_cad_busy_path).filename().string();
+  if (!name.empty())
+    ImGui::TextWrapped("%s", name.c_str());
+
+  ImGui::EndPopup();
+#else
   ImGui::SetNextWindowSize(ImVec2(420.0f, 0.0f), ImGuiCond_Appearing);
   if (!ImGui::BeginPopupModal("##EzyCadCadBusy", &m_cad_busy_modal_open, ImGuiWindowFlags_AlwaysAutoResize))
   {
@@ -3165,7 +3191,7 @@ void GUI::cad_busy_dialog_()
     return;
   }
 
-  ImGui::TextUnformatted(m_cad_busy_title.empty() ? "Working..." : m_cad_busy_title.c_str());
+  ImGui::TextUnformatted(m_cad_busy_title.empty() ? "Importing" : m_cad_busy_title.c_str());
   const std::string name = std::filesystem::path(m_cad_busy_path).filename().string();
   if (!name.empty())
     ImGui::TextWrapped("%s", name.c_str());
@@ -3185,14 +3211,11 @@ void GUI::cad_busy_dialog_()
   else
     ImGui::ProgressBar(-1.0f * static_cast<float>(ImGui::GetTime()), ImVec2(-1.0f, 0.0f), "Working...");
 
-#ifndef __EMSCRIPTEN__
   if (ImGui::Button("Cancel", ImVec2(120.0f, 0.0f)))
     cancel_cad_busy_();
-#else
-  ImGui::TextDisabled("Please wait...");
-#endif
 
   ImGui::EndPopup();
+#endif
 }
 
 void GUI::close_file_inspector_()

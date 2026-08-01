@@ -249,7 +249,7 @@ The typical modeling workflow in EzyCad follows these steps:
 
 ### Import dialog
 
-**File -> Import** opens an **Import** window for STEP or PLY. Choose how STEP assemblies land in the Shape List (**Import as**, default **Preserve hierarchy**), then click **Import into project**. Large STEP files show a progress modal while transferring. The window closes after a successful import.
+**File -> Import** opens an **Import** window for STEP or PLY. Choose how STEP assemblies land in the Shape List (**Import as**, default **Preserve hierarchy**), then click **Import into project**. STEP import shows an **Importing...** dialog while transferring (desktop also shows stage/progress and Cancel). The window closes after a successful import.
 
 **How to use:**
 1. Choose **File -> Import**
