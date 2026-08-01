@@ -1,6 +1,5 @@
 #include "shp_cyl_align.h"
 
-#include <cmath>
 #include <Precision.hxx>
 
 #include "gui.h"
@@ -138,6 +137,7 @@ Status Shp_cyl_align::drag_depth(const ScreenCoords& screen_coords)
   const gp_Vec from_seed(seed_on_ax, *mouse_wc);
   m_axial_offset = from_seed.Dot(gp_Vec(fixed_dir));
   apply_preview_();
+
   return Status::ok();
 }
 
@@ -190,6 +190,7 @@ void Shp_cyl_align::cancel()
 {
   if (is_dragging())
     operation_shps_cancel_();
+
   reset();
   restore_operation_selection_();
 }
