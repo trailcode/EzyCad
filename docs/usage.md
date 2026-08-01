@@ -691,7 +691,7 @@ For more on 3D solids and the viewer, see [3D viewer (Open CASCADE)](usage-occt-
 
 ## Hotkeys
 
-Mode, file, and edit chords in the **General Operations** and **Modeling Shortcuts** tables below are the **defaults**. Remap them in **View -> Settings -> Keyboard shortcuts** (persisted as **`gui.hotkeys`**). Toolbar tooltips for remappable modes show the current chord. Fixed keys (Esc, Enter, Tab / Shift+Tab, selection filter digits, view zoom/orbit/roll, and <kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>Z</kbd> redo) are reserved and cannot be assigned in Settings. **Delete** and **Backspace** always delete the selection even if **Delete** is remapped off <kbd>Shift</kbd>+<kbd>D</kbd>. <kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>Z</kbd> remains a fixed redo alias alongside the remappable <kbd>Ctrl</kbd>+<kbd>Y</kbd>.
+Mode, file, and edit chords in the **General Operations** and **Modeling Shortcuts** tables below are the **defaults**. Remap them in **View -> Settings -> Keyboard shortcuts** — see [usage-settings.md -> Keyboard shortcuts](usage-settings.md#keyboard-shortcuts) for bindable keys, reserved chords, Reset/Defaults, and **`gui.hotkeys`** persistence. Toolbar tooltips for remappable modes show the current chord. **Delete** and **Backspace** always delete the selection even if **Delete** is remapped off <kbd>Shift</kbd>+<kbd>D</kbd>. <kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>Z</kbd> remains a fixed redo alias alongside the remappable <kbd>Ctrl</kbd>+<kbd>Y</kbd>.
 
 ### General Operations
 

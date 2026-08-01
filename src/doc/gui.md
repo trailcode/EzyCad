@@ -54,7 +54,7 @@ When adding a `Mode` to [`mode.h`](../mode.h) (`EZY_MODE_LIST`), a toolbar butto
 | 4    | `gui.hotkeys` entry in [`res/ezycad_settings.json`](../../res/ezycad_settings.json)                                                     |
 | 5    | User docs: [usage.md](../../docs/usage.md#hotkeys) Modeling table; sketch tools also [usage-sketch.md](../../docs/usage-sketch.md#hotkeys); [usage-settings.md](../../docs/usage-settings.md) if labels change; `CHANGELOG.md` |
 
-Pick a default that does not collide with existing `c_actions` chords or fixed keys (Esc, Enter, Tab, digits, unmodified X/Y/Z axis toggles). Also wire parent-mode / Options / doc URL maps as usual for new modes.
+Pick a default that does not collide with existing `c_actions` chords or fixed keys (Esc, Enter, Tab, digits, unmodified X/Y/Z axis toggles — reserved via `is_reserved_chord`). Also wire parent-mode / Options / doc URL maps as usual for new modes.
 
 `Occt_view::on_mode` also sets `AIS_ViewController::SetAllowHighlight(false)` for `Move` / `Rotate` / `Scale` (and `ClearDetected`) so idle mouse moves do not run dynamic `MoveTo` while transform preview leaves selection BVHs at the pre-transform pose; other modes restore highlight. Orbit/pan still receive `UpdateMousePosition` when buttons are held. When LMB finalizes an active transform (operands loaded), `on_mouse_button` skips `PressMouseButton` / `ReleaseMouseButton` for that click so AIS `SelectDetected` on release cannot replace the restored multi-selection with the single shape under the cursor.
 
@@ -163,7 +163,7 @@ Remappable chords live in `Gui_hotkeys` (`gui_hotkeys.h` / `.cpp`), owned by `GU
 | Move-mode keys                    | `Mode::Move`        | `on_key_move_mode_` (axis constraints X/Y/Z); hardcoded                                               |
 | Rotate-mode keys                  | `Mode::Rotate`      | `on_key_rotate_mode_` (axis pick, Tab angle); hardcoded                                               |
 
-Default remappable chords include G/R/S/E/C/F/D shape tools; sketch tools N/L/A/Q/B/O/U/I/P and Shift variants; Shift+P polar, Shift+X cross-section; Ctrl+Shift+C/F/M booleans; Shift+D delete; Ctrl+N/O/S; Ctrl+Z / Ctrl+Y. Avoid binding unmodified X/Y/Z (axis toggles in Move/Rotate).
+Default remappable chords include G/R/S/E/C/F/D shape tools; sketch tools N/L/A/Q/B/O/U/I/P and Shift variants; Shift+P polar, Shift+X cross-section; Ctrl+Shift+C/F/M booleans; Shift+D delete; Ctrl+N/O/S; Ctrl+Z / Ctrl+Y. Unmodified X/Y/Z are reserved for Move/Rotate axis toggles (`is_reserved_chord`); Shift+X remains free for cross-section. Remappable keys must pass `is_bindable_key` (letters, digits, Space, and named keys that round-trip in settings JSON); punctuation such as `,` / `.` and numpad keys are rejected. Settings **Keyboard shortcuts** has a `?` to `doc_urls::k_hotkeys` ([usage-settings.md#keyboard-shortcuts](../../docs/usage-settings.md#keyboard-shortcuts)).
 
 See also [`src/doc/sketch.md`](sketch.md) and [`src/doc/shape.md`](shape.md) for per-mode mouse routing after `GUI` delegates to `Occt_view`.
 

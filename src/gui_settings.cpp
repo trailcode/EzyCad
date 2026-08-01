@@ -2083,11 +2083,16 @@ void GUI::settings_()
 
   if (settings_collapsing_header_("Keyboard shortcuts", m_settings_headers.hotkeys))
   {
+    GUI_DOC_HELP_("How to remap chords, which keys are reserved, and gui.hotkeys persistence. "
+                  "Click ? to open Keyboard shortcuts in the settings guide.",
+                  doc_urls::k_hotkeys);
+
     if (ui_show_contextual_help())
       ImGui::TextWrapped("Click a shortcut, then press the new key combination. Esc cancels capture. "
-                         "Two actions cannot share the same chord. Fixed shortcuts (Esc, Enter, Tab, "
-                         "Delete/Backspace, selection digits, view zoom/orbit/roll, Ctrl+Shift+Z redo) "
-                         "cannot be remapped. Delete and Backspace always delete selection.");
+                         "Use a letter, digit, or Space (optional modifiers). Two actions cannot share "
+                         "the same chord. Fixed shortcuts (Esc, Enter, Tab, Delete/Backspace, selection "
+                         "digits, view zoom/orbit/roll, unmodified X/Y/Z, Ctrl+Shift+Z redo) cannot be "
+                         "remapped. Delete and Backspace always delete selection.");
 
     if (ImGui::BeginTable("settings_hotkeys", 3, ImGuiTableFlags_SizingStretchProp | ImGuiTableFlags_RowBg))
     {
@@ -2119,8 +2124,9 @@ void GUI::settings_()
         {
           if (!m_hotkeys.reset_action(action))
           {
-            m_hotkey_capture_error = "Conflict: " + Gui_hotkeys::format_chord(Gui_hotkeys::default_chord(action)) +
-                                     " is already assigned.";
+            m_hotkey_capture_error =
+                "Conflict: " + Gui_hotkeys::format_chord(Gui_hotkeys::default_chord(action)) + " is already assigned.";
+            show_message(m_hotkey_capture_error);
           }
           else
           {

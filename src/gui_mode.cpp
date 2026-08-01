@@ -444,14 +444,22 @@ bool GUI::try_capture_hotkey_press_(int key, int mods)
   }
 
   const Key_chord chord{key, Gui_hotkeys::normalize_mods(mods)};
+  if (!Gui_hotkeys::is_bindable_key(key))
+  {
+    m_hotkey_capture_error = "Unsupported key. Use a letter, digit, or Space (modifiers allowed).";
+    show_message(m_hotkey_capture_error);
+    return true;
+  }
   if (Gui_hotkeys::is_reserved_chord(chord))
   {
     m_hotkey_capture_error = "Reserved: " + Gui_hotkeys::format_chord(chord) + " is a fixed shortcut and cannot be remapped.";
+    show_message(m_hotkey_capture_error);
     return true;
   }
   if (!m_hotkeys.set_chord(*m_hotkey_capture_action, chord))
   {
     m_hotkey_capture_error = "Conflict: " + Gui_hotkeys::format_chord(chord) + " is already assigned.";
+    show_message(m_hotkey_capture_error);
     return true;
   }
 

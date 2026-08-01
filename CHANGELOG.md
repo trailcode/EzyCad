@@ -9,7 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
-- **Configurable hotkeys**: **Settings -> Keyboard shortcuts** remaps shape tools (Move/Rotate/Scale/Extrude/Chamfer/Fillet/Polar duplicate/Cross-section), sketch tools (inspection, from face, operation axis, node/line/multi-line/arc/square/rectangle/circle/slot, Dimension), boolean commands (Cut/Fuse/Common), Delete, New/Open/Save, and Undo/Redo. Bindings persist as **`gui.hotkeys`** (human-readable chords; missing keys use defaults). Toolbar tooltips follow remaps. **Delete** / **Backspace** stay fixed delete aliases; <kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>Z</kbd> stays a fixed redo alias. Fixed chords are rejected on assign; per-row **Reset** rejects when the factory chord is already bound elsewhere (same conflict message as assign); hotkey capture clears when Settings closes.
+- **Configurable hotkeys**: **Settings -> Keyboard shortcuts** remaps shape tools (Move/Rotate/Scale/Extrude/Chamfer/Fillet/Polar duplicate/Cross-section), sketch tools (inspection, from face, operation axis, node/line/multi-line/arc/square/rectangle/circle/slot, Dimension), boolean commands (Cut/Fuse/Common), Delete, New/Open/Save, and Undo/Redo. Bindings persist as **`gui.hotkeys`** (human-readable chords; missing keys use defaults). Toolbar tooltips follow remaps. **Delete** / **Backspace** stay fixed delete aliases; <kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>Z</kbd> stays a fixed redo alias. Fixed, unsupported, and conflicting chords are rejected on assign with a status toast (and inline message); remaps accept letters, digits, and <kbd>Space</kbd> only (punctuation/numpad rejected); per-row **Reset** rejects when the factory chord is already bound elsewhere (same conflict message as assign); hotkey capture clears when Settings closes. A **?** at the top of the section opens the [Keyboard shortcuts](https://ezycad.readthedocs.io/en/latest/usage-settings.html#keyboard-shortcuts) settings guide.
 
 - **Extrude Twist**: Options **Twist** checkbox. Two-phase flow locks height first, then sets twist angle about the face centroid (mouse, or <kbd>Shift+Tab</kbd> for degrees). Height length dim is cleared on lock; a temporary angle annotation on the extruded front face shows degrees during twist. With **Both sides**, ends twist symmetrically by +/- half the angle. Geometry uses ruled thru-sections with compatibility off (keeps tooth pairing) and cuts twisted hole solids so face bores survive; straight prism when twist is zero. Dense-face **Extrude fast preview** also applies during Twist (face copies translate and rotate; finalize builds the solid).
 
@@ -18,6 +18,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Sketch from face profile wire**: the dark-red originating-face boundary no longer stays drawn after leaving sketch mode (e.g. after Revolve returns to Normal). It follows sketch edge visibility and only appears while sketch tools (or polar duplicate) show the sketch.
 
 - **`gui.hotkeys` load**: duplicate-chord cleanup no longer leaves two actions on the same key when the later row's factory chord is the colliding key (e.g. Move and Rotate both `"R"`). Earlier remaps that steal a later action's factory chord are restored to defaults so each binding stays unique.
+
+- **Move / Rotate axis keys**: unmodified <kbd>X</kbd> / <kbd>Y</kbd> / <kbd>Z</kbd> are reserved so Settings remaps cannot steal axis constraints (Move) or rotation-axis pick (Rotate). Existing `"X"` / `"Y"` / `"Z"` bindings in **`gui.hotkeys`** are dropped on load.
+
+- **Hotkey capture**: punctuation (e.g. <kbd>,</kbd> / <kbd>.</kbd>) and other non-round-trippable keys are rejected with an unsupported-key message instead of saving as opaque `KeyN` chords that fail to reload.
 
 ## [0.4.0] - 2026-07-25
 
