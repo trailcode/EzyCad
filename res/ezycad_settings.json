@@ -55,6 +55,7 @@
       "mode.add_slot": "U",
       "mode.polar_duplicate": "Shift+P",
       "mode.cross_section": "Shift+X",
+      "mode.cyl_align": "J",
       "cmd.shape_cut": "Ctrl+Shift+C",
       "cmd.shape_fuse": "Ctrl+Shift+F",
       "cmd.shape_common": "Ctrl+Shift+M",

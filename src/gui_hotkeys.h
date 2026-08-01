@@ -32,6 +32,7 @@ enum class Gui_action
   Mode_add_slot,
   Mode_polar_duplicate,
   Mode_cross_section,
+  Mode_cyl_align,
   Cmd_shape_cut,
   Cmd_shape_fuse,
   Cmd_shape_common,

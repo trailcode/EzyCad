@@ -417,10 +417,8 @@ int main(int argc, char** argv)
 
 #if !defined(__EMSCRIPTEN__) && defined(EZYCAD_HAVE_PYTHON)
     if (py_queue)
-    {
       if (Python_console* console = gui.get_python_console())
         py_queue->process_pending(*console);
-    }
 #endif
 
     if (glfwGetWindowAttrib(window, GLFW_ICONIFIED) != 0)

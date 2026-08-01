@@ -162,8 +162,9 @@ Remappable chords live in `Gui_hotkeys` (`gui_hotkeys.h` / `.cpp`), owned by `GU
 | Remappable chord                  | `m_hotkeys` hit     | `dispatch_hotkey_action_` (`Gui_action`: sketch/shape modes, booleans, delete, file, undo/redo)       |
 | Move-mode keys                    | `Mode::Move`        | `on_key_move_mode_` (axis constraints X/Y/Z); hardcoded                                               |
 | Rotate-mode keys                  | `Mode::Rotate`      | `on_key_rotate_mode_` (axis pick, Tab angle); hardcoded                                               |
+| Cyl-align keys                    | `Mode::Shape_cyl_align` | `on_key_cyl_align_mode_` (Tab depth, Enter finalize); hardcoded                                   |
 
-Default remappable chords include G/R/S/E/C/F/D shape tools; sketch tools N/L/A/Q/B/O/U/I/P and Shift variants; Shift+P polar, Shift+X cross-section; Ctrl+Shift+C/F/M booleans; Shift+D delete; Ctrl+N/O/S; Ctrl+Z / Ctrl+Y. Unmodified X/Y/Z are reserved for Move/Rotate axis toggles (`is_reserved_chord`); Shift+X remains free for cross-section. Remappable keys must pass `is_bindable_key` (letters, digits, Space, and named keys that round-trip in settings JSON); punctuation such as `,` / `.` and numpad keys are rejected. Settings **Keyboard shortcuts** has a `?` to `doc_urls::k_hotkeys` ([usage-settings.md#keyboard-shortcuts](../../docs/usage-settings.md#keyboard-shortcuts)).
+Default remappable chords include G/R/S/J/E/C/F/D shape tools; sketch tools N/L/A/Q/B/O/U/I/P and Shift variants; Shift+P polar, Shift+X cross-section; Ctrl+Shift+C/F/M booleans; Shift+D delete; Ctrl+N/O/S; Ctrl+Z / Ctrl+Y. Unmodified X/Y/Z are reserved for Move/Rotate axis toggles (`is_reserved_chord`); Shift+X remains free for cross-section. Remappable keys must pass `is_bindable_key` (letters, digits, Space, and named keys that round-trip in settings JSON); punctuation such as `,` / `.` and numpad keys are rejected. Settings **Keyboard shortcuts** has a `?` to `doc_urls::k_hotkeys` ([usage-settings.md#keyboard-shortcuts](../../docs/usage-settings.md#keyboard-shortcuts)).
 
 See also [`src/doc/sketch.md`](sketch.md) and [`src/doc/shape.md`](shape.md) for per-mode mouse routing after `GUI` delegates to `Occt_view`.
 
@@ -174,6 +175,7 @@ See also [`src/doc/sketch.md`](sketch.md) and [`src/doc/shape.md`](shape.md) for
 | `Move`                                              | `shp_move().move_selected`       |
 | `Rotate`                                            | `shp_rotate().rotate_selected`   |
 | `Scale`                                             | `shp_scale().scale_selected`     |
+| `Shape_cyl_align`                                   | `shp_cyl_align().drag_depth`     |
 | `Shape_polar_duplicate`                             | `shp_polar_dup().move_point`     |
 | Sketch tool modes (line, arc, rect, dim, axis, ...) | `curr_sketch().sketch_pt_move`   |
 | `Sketch_face_extrude`                               | `sketch_face_extrude(..., true)` |
@@ -187,7 +189,7 @@ Always calls `m_view->on_mouse_move(screen_coords)` first.
 | LMB (underlay calib active) | `try_underlay_calib_click_` (early return)                                                                           |
 | LMB                         | `m_view->on_mouse_button` then `on_left_click_` (skipped when extrude LMB already advanced/finalized the session)    |
 | RMB press                   | `finalize_elm` for line / multi-line sketch modes                                                                    |
-| LMB in `on_left_click_`     | Mode-specific: transform finalize, sketch `add_sketch_pt`, fillet/chamfer click, polar dup `add_point`, extrude pick |
+| LMB in `on_left_click_`     | Mode-specific: transform finalize, cyl-align face pick / finalize, sketch `add_sketch_pt`, fillet/chamfer click, polar dup `add_point`, extrude pick |
 
 Tests use `sketch_left_click` to simulate sketch LMB without ImGui mouse position.
 
@@ -206,6 +208,7 @@ Tests use `sketch_left_click` to simulate sketch LMB without ImGui mouse positio
 | -------------------------------- | ------------------------------------------------------------------------------------------------------------------- |
 | `Normal`                         | `options_normal_mode_` (selection filter, orthographic)                                                             |
 | `Move` / `Rotate` / `Scale`      | `options_*_mode_` (constraints, axis, material)                                                                     |
+| `Shape_cyl_align`                | Flip direction; short pick/drag help                                                                                |
 | `Shape_chamfer` / `Shape_fillet` | mode + radius/distance                                                                                              |
 | `Shape_polar_duplicate`          | angle, count, rotate/combine, **Dup** button                                                                        |
 | `Shape_cross_section`            | local XY/XZ/YZ, invert normal, hide back side, show section outline, bbox-ranged offset, Clip, Cross section sketch |

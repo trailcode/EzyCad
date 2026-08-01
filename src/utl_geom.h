@@ -4,8 +4,10 @@
 #include <Standard_Handle.hxx>
 #include <array>
 #include <glm/glm.hpp>
+#include <gp_Ax1.hxx>
 #include <gp_Dir2d.hxx>
 #include <gp_Pnt.hxx>
+#include <gp_Trsf.hxx>
 #include <numbers> // For Pi
 #include <optional>
 #include <vector>
@@ -91,6 +93,21 @@ Plane_side side_of_plane(const gp_Pln& plane, const gp_Pnt& point);
 
 // Function to get gp_Pln from a TopoDS_Face
 std::optional<gp_Pln> plane_from_face(const TopoDS_Face& face);
+
+/// Cylinder axis and radius from a cylindrical face (location applied).
+struct Cyl_face_info
+{
+  gp_Ax1 axis;
+  double radius{0};
+};
+
+std::optional<Cyl_face_info> cylinder_from_face(const TopoDS_Face& face);
+
+/// Rigid transform that maps \a moving_axis onto \a fixed_axis.
+/// Offset 0 places the moving origin on its projection onto the fixed axis;
+/// \a axial_offset then slides along the fixed direction. \a flip reverses the
+/// moving direction sense (180 deg about a perpendicular).
+gp_Trsf cyl_align_trsf(const gp_Ax1& moving_axis, const gp_Ax1& fixed_axis, bool flip, double axial_offset);
 
 bool planes_equal(const gp_Pln& plane1, const gp_Pln& plane2);
 
