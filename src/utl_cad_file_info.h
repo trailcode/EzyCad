@@ -4,9 +4,11 @@
 #include <string>
 #include <vector>
 
+#include <Message_ProgressRange.hxx>
 #include <TopoDS_Shape.hxx>
 
 #include "utl.h"
+#include "utl_occt_progress.h"
 
 /// Read-only metadata for CAD/mesh files EzyCad can import and/or export.
 /// Does not modify the document.
@@ -50,12 +52,16 @@ struct Named_node
 
 [[nodiscard]] const char* format_label(Format fmt);
 
-/// Collect label/value rows for the Tools -> Inspector window.
-[[nodiscard]] std::vector<Line> collect(const std::string& file_path, const std::string& file_bytes);
+/// Collect label/value rows for the Import dialog.
+/// Optional \a progress receives stage text and Transfer percent (STEP/IGES).
+[[nodiscard]] std::vector<Line> collect(const std::string& file_path, const std::string& file_bytes,
+                                        const Atomic_progress_indicator_ptr& progress = {});
 
 /// Read STEP bodies with XCAF product/part names when present (flat; assemblies expanded to leaves).
-[[nodiscard]] Status read_step_named_bodies(const std::string& file_bytes, std::vector<Named_body>& out);
+[[nodiscard]] Status read_step_named_bodies(const std::string& file_bytes, std::vector<Named_body>& out,
+                                            const Message_ProgressRange& progress = Message_ProgressRange());
 
 /// Read STEP as a group/leaf tree (XCAF assemblies preserved). Falls back to flat bodies as root leaves.
-[[nodiscard]] Status read_step_named_tree(const std::string& file_bytes, std::vector<Named_node>& out);
+[[nodiscard]] Status read_step_named_tree(const std::string& file_bytes, std::vector<Named_node>& out,
+                                          const Message_ProgressRange& progress = Message_ProgressRange());
 } // namespace utl_cad_file_info

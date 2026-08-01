@@ -4,6 +4,9 @@
 #include <chrono> // For message status window (from previous request)
 #include <cstdint>
 #include <functional>
+#ifndef __EMSCRIPTEN__
+#include <future>
+#endif
 #include <glm/glm.hpp>
 #include <gp_Pnt2d.hxx>
 #include <gp_Vec2d.hxx>
@@ -381,7 +384,8 @@ public:
 #endif
 
   void               on_file(const std::string& file_path, const std::string& file_bytes, bool announce_load = true);
-  [[nodiscard]] bool on_import_file(const std::string& file_path, const std::string& file_data, bool union_shapes = false);
+  [[nodiscard]] bool on_import_file(const std::string& file_path, const std::string& file_data,
+                                    Step_import_mode step_mode = Step_import_mode::Preserve_hierarchy);
   void               on_inspector_file(const std::string& file_path, const std::string& file_data);
   /// Emscripten `on_sketch_underlay_selected` routes here (must be public for C callback).
   void on_sketch_underlay_file(const std::string& file_path, const std::string& file_bytes);
@@ -434,6 +438,12 @@ private:
   void                         file_inspector_dialog_();
   void                         open_file_inspector_(const std::string& file_path, const std::string& file_bytes);
   void                         close_file_inspector_();
+  void                         cad_busy_dialog_();
+  void                         poll_cad_busy_();
+  void                         begin_step_import_(Step_import_mode mode);
+  void                         finish_step_import_(Status st, Occt_view::Step_import_geom& geom);
+  void                         cancel_cad_busy_();
+  [[nodiscard]] bool           cad_busy_() const;
 
   // Mode + Options panel (gui_mode.cpp)
   void options_();
@@ -702,40 +712,59 @@ private:
   bool                                 m_shape_info_open{false};
   Shp_ptr                              m_shape_info_shp;
   std::vector<shp_info::Line>          m_shape_info_lines;
-  bool                                 m_file_inspector_open{false};
-  bool                                 m_file_inspector_union{false};
-  std::string                          m_file_inspector_path;
-  std::string                          m_file_inspector_bytes;
-  utl_cad_file_info::Format            m_file_inspector_fmt{utl_cad_file_info::Format::Unknown};
-  std::vector<utl_cad_file_info::Line> m_file_inspector_lines;
-  std::string                          m_about_markdown;
-  uint32_t                             m_about_splash_gl{0};
-  glm::ivec2                           m_about_splash_size{512, 512};
-  bool                                 m_about_assets_loaded{false};
-  bool                                 m_open_add_box_popup{false};
-  glm::dvec3                           m_add_box_origin{0.0, 0.0, 0.0};
-  glm::dvec3                           m_add_box_size{1.0, 1.0, 1.0};
-  bool                                 m_open_add_pyramid_popup{false};
-  glm::dvec3                           m_add_pyramid_origin{0.0, 0.0, 0.0};
-  double                               m_add_pyramid_side{1};
-  bool                                 m_open_add_sphere_popup{false};
-  glm::dvec3                           m_add_sphere_origin{0.0, 0.0, 0.0};
-  double                               m_add_sphere_radius{1};
-  bool                                 m_open_add_cylinder_popup{false};
-  glm::dvec3                           m_add_cylinder_origin{0.0, 0.0, 0.0};
-  double                               m_add_cylinder_radius{1}, m_add_cylinder_height{1};
-  bool                                 m_open_add_cone_popup{false};
-  glm::dvec3                           m_add_cone_origin{0.0, 0.0, 0.0};
-  double                               m_add_cone_R1{1}, m_add_cone_R2{0}, m_add_cone_height{1};
-  bool                                 m_open_add_torus_popup{false};
-  glm::dvec3                           m_add_torus_origin{0.0, 0.0, 0.0};
-  double                               m_add_torus_R1{1}, m_add_torus_R2{0.5};
-  bool                                 m_open_add_sketch_popup{false};
-  int                                  m_new_sketch_plane{0}; // 0=XY, 1=XZ, 2=YZ
-  double                               m_new_sketch_offset{};
-  bool                                 m_hide_all_shapes{false};
-  int                                  m_ui_verbosity{k_gui_ui_verbosity_default};
-  bool                                 m_dark_mode{false};
+  bool                      m_file_inspector_open{false};
+  Step_import_mode          m_file_inspector_step_mode{Step_import_mode::Preserve_hierarchy};
+  std::string               m_file_inspector_path;
+  std::string               m_file_inspector_bytes;
+  utl_cad_file_info::Format m_file_inspector_fmt{utl_cad_file_info::Format::Unknown};
+
+  enum class Cad_busy_kind : uint8_t
+  {
+    Idle,
+    Import
+  };
+  Cad_busy_kind                 m_cad_busy_kind{Cad_busy_kind::Idle};
+  bool                          m_cad_busy_open_popup{false};
+  bool                          m_cad_busy_modal_open{false};
+  Atomic_progress_indicator_ptr m_cad_busy_progress;
+  std::string                   m_cad_busy_path;
+  std::string                   m_cad_busy_bytes;
+  std::string                   m_cad_busy_title;
+  Step_import_mode              m_cad_busy_import_mode{Step_import_mode::Preserve_hierarchy};
+#ifdef __EMSCRIPTEN__
+  /// Frames to paint the Importing modal before starting the blocking STEP transfer.
+  int m_cad_busy_defer_frames{0};
+#else
+  std::future<std::pair<Status, Occt_view::Step_import_geom>> m_cad_busy_import_fut;
+#endif
+  std::string m_about_markdown;
+  uint32_t    m_about_splash_gl{0};
+  glm::ivec2  m_about_splash_size{512, 512};
+  bool        m_about_assets_loaded{false};
+  bool        m_open_add_box_popup{false};
+  glm::dvec3  m_add_box_origin{0.0, 0.0, 0.0};
+  glm::dvec3  m_add_box_size{1.0, 1.0, 1.0};
+  bool        m_open_add_pyramid_popup{false};
+  glm::dvec3  m_add_pyramid_origin{0.0, 0.0, 0.0};
+  double      m_add_pyramid_side{1};
+  bool        m_open_add_sphere_popup{false};
+  glm::dvec3  m_add_sphere_origin{0.0, 0.0, 0.0};
+  double      m_add_sphere_radius{1};
+  bool        m_open_add_cylinder_popup{false};
+  glm::dvec3  m_add_cylinder_origin{0.0, 0.0, 0.0};
+  double      m_add_cylinder_radius{1}, m_add_cylinder_height{1};
+  bool        m_open_add_cone_popup{false};
+  glm::dvec3  m_add_cone_origin{0.0, 0.0, 0.0};
+  double      m_add_cone_R1{1}, m_add_cone_R2{0}, m_add_cone_height{1};
+  bool        m_open_add_torus_popup{false};
+  glm::dvec3  m_add_torus_origin{0.0, 0.0, 0.0};
+  double      m_add_torus_R1{1}, m_add_torus_R2{0.5};
+  bool        m_open_add_sketch_popup{false};
+  int         m_new_sketch_plane{0}; // 0=XY, 1=XZ, 2=YZ
+  double      m_new_sketch_offset{};
+  bool        m_hide_all_shapes{false};
+  int         m_ui_verbosity{k_gui_ui_verbosity_default};
+  bool        m_dark_mode{false};
 #ifndef NDEBUG
   bool m_show_dbg{false};
 #endif

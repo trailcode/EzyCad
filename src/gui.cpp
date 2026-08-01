@@ -4,6 +4,7 @@
 #include <array>
 #include <cctype>
 #include <cerrno>
+#include <chrono>
 #include <cmath>
 #include <cstdint>
 #include <cstdio>
@@ -15,6 +16,7 @@
 #include <sstream>
 #include <string>
 #include <unordered_set>
+#include <utility>
 
 #include "utl_settings.h"
 
@@ -148,6 +150,9 @@ void GUI::render_gui()
   shape_list_();
   shape_info_dialog_();
   file_inspector_dialog_();
+  // Paint the busy modal before poll so WASM can show "Importing..." for a frame first.
+  cad_busy_dialog_();
+  poll_cad_busy_();
   options_();
   message_status_window_();
   error_modal_dialog_();
@@ -3024,11 +3029,193 @@ void GUI::shape_info_dialog_()
 
 void GUI::open_file_inspector_(const std::string& file_path, const std::string& file_bytes)
 {
-  m_file_inspector_path  = file_path;
-  m_file_inspector_bytes = file_bytes;
-  m_file_inspector_fmt   = utl_cad_file_info::detect(file_path, file_bytes);
-  m_file_inspector_lines = utl_cad_file_info::collect(file_path, file_bytes);
-  m_file_inspector_open  = true;
+  m_file_inspector_path      = file_path;
+  m_file_inspector_bytes     = file_bytes;
+  m_file_inspector_fmt       = utl_cad_file_info::detect(file_path, file_bytes);
+  m_file_inspector_step_mode = Step_import_mode::Preserve_hierarchy;
+  m_file_inspector_open      = true;
+}
+
+bool GUI::cad_busy_() const { return m_cad_busy_kind != Cad_busy_kind::Idle; }
+
+void GUI::cancel_cad_busy_()
+{
+  if (!m_cad_busy_progress.IsNull())
+    m_cad_busy_progress->request_cancel();
+}
+
+void GUI::begin_step_import_(const Step_import_mode mode)
+{
+  if (cad_busy_() || m_file_inspector_bytes.empty() || !m_view)
+    return;
+
+  m_cad_busy_kind        = Cad_busy_kind::Import;
+  m_cad_busy_path        = m_file_inspector_path;
+  m_cad_busy_bytes       = m_file_inspector_bytes;
+  m_cad_busy_import_mode = mode;
+  m_cad_busy_title       = "Importing";
+  m_cad_busy_open_popup  = true;
+  m_cad_busy_modal_open  = true;
+
+#ifndef __EMSCRIPTEN__
+  m_cad_busy_progress = new Atomic_progress_indicator();
+  m_cad_busy_progress->set_stage("Starting...");
+  const std::string                   bytes = m_cad_busy_bytes;
+  const Step_import_mode              m     = mode;
+  const double                        scale = m_view->step_import_model_scale();
+  const Atomic_progress_indicator_ptr prog  = m_cad_busy_progress;
+  m_cad_busy_import_fut                     = std::async(std::launch::async,
+                                                         [bytes, m, scale, prog]() -> std::pair<Status, Occt_view::Step_import_geom>
+                                                         {
+                                       Occt_view::Step_import_geom geom;
+                                       Status st = Occt_view::prepare_step_import(bytes, m, scale, geom, prog);
+                                       return {st, std::move(geom)};
+                                     });
+#else
+  // OpenPopup + one painted frame before the main-thread Transfer freezes the UI.
+  m_cad_busy_defer_frames = 2;
+  m_cad_busy_progress     = {};
+#endif
+}
+
+void GUI::finish_step_import_(Status st, Occt_view::Step_import_geom& geom)
+{
+  const bool cancelled = !m_cad_busy_progress.IsNull() && m_cad_busy_progress->cancelled();
+  m_cad_busy_kind       = Cad_busy_kind::Idle;
+  m_cad_busy_progress   = {};
+  m_cad_busy_modal_open = false;
+
+  if (cancelled || (!st.is_ok() && st.message().find("cancelled") != std::string::npos))
+  {
+    show_message("STEP import cancelled.");
+    return;
+  }
+
+  if (!st.is_ok())
+  {
+    show_message(st.message());
+    return;
+  }
+
+  if (Status commit = m_view->commit_step_import(geom); !commit.is_ok())
+  {
+    show_message(commit.message());
+    return;
+  }
+
+  const std::string name = std::filesystem::path(m_cad_busy_path).filename().string();
+  switch (m_cad_busy_import_mode)
+  {
+  case Step_import_mode::Union_shapes:
+    show_message("Imported (union): " + name);
+    break;
+  case Step_import_mode::Flat_solids:
+    show_message("Imported (flat): " + name);
+    break;
+  default:
+    show_message("Imported: " + name);
+    break;
+  }
+  close_file_inspector_();
+}
+
+void GUI::poll_cad_busy_()
+{
+  if (m_cad_busy_kind != Cad_busy_kind::Import)
+    return;
+
+#ifdef __EMSCRIPTEN__
+  if (m_cad_busy_defer_frames > 0)
+  {
+    --m_cad_busy_defer_frames;
+    return;
+  }
+
+  Occt_view::Step_import_geom geom;
+  Status st = Occt_view::prepare_step_import(m_cad_busy_bytes, m_cad_busy_import_mode, m_view->step_import_model_scale(),
+                                             geom, {});
+  finish_step_import_(st, geom);
+#else
+  if (!m_cad_busy_import_fut.valid())
+    return;
+
+  if (m_cad_busy_import_fut.wait_for(std::chrono::seconds(0)) != std::future_status::ready)
+    return;
+
+  auto [st, geom] = m_cad_busy_import_fut.get();
+  finish_step_import_(st, geom);
+#endif
+}
+
+void GUI::cad_busy_dialog_()
+{
+  if (m_cad_busy_open_popup)
+  {
+    ImGui::OpenPopup("##EzyCadCadBusy");
+    m_cad_busy_open_popup = false;
+  }
+
+  if (!cad_busy_() && !m_cad_busy_modal_open)
+    return;
+
+#ifdef __EMSCRIPTEN__
+  // Simple wait dialog (no Cancel / no close). Transfer runs on the main thread after paint.
+  if (!cad_busy_())
+  {
+    if (ImGui::BeginPopupModal("##EzyCadCadBusy", nullptr, ImGuiWindowFlags_AlwaysAutoResize))
+    {
+      ImGui::CloseCurrentPopup();
+      ImGui::EndPopup();
+    }
+    return;
+  }
+
+  ImGui::SetNextWindowSize(ImVec2(280.0f, 0.0f), ImGuiCond_Appearing);
+  if (!ImGui::BeginPopupModal("##EzyCadCadBusy", nullptr,
+                              ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoMove))
+    return;
+
+  ImGui::TextUnformatted("Importing...");
+  const std::string name = std::filesystem::path(m_cad_busy_path).filename().string();
+  if (!name.empty())
+    ImGui::TextWrapped("%s", name.c_str());
+
+  ImGui::EndPopup();
+#else
+  ImGui::SetNextWindowSize(ImVec2(420.0f, 0.0f), ImGuiCond_Appearing);
+  if (!ImGui::BeginPopupModal("##EzyCadCadBusy", &m_cad_busy_modal_open, ImGuiWindowFlags_AlwaysAutoResize))
+  {
+    if (!m_cad_busy_modal_open && cad_busy_())
+      cancel_cad_busy_();
+
+    return;
+  }
+
+  ImGui::TextUnformatted(m_cad_busy_title.empty() ? "Importing" : m_cad_busy_title.c_str());
+  const std::string name = std::filesystem::path(m_cad_busy_path).filename().string();
+  if (!name.empty())
+    ImGui::TextWrapped("%s", name.c_str());
+
+  std::string stage = m_cad_busy_progress.IsNull() ? std::string("Working...") : m_cad_busy_progress->stage();
+  if (stage.empty())
+    stage = "Working...";
+  ImGui::TextWrapped("%s", stage.c_str());
+
+  const float pos = m_cad_busy_progress.IsNull() ? 0.f : m_cad_busy_progress->position();
+  if (pos > 0.001f)
+  {
+    char overlay[32];
+    std::snprintf(overlay, sizeof(overlay), "%.0f%%", static_cast<double>(pos) * 100.0);
+    ImGui::ProgressBar(pos, ImVec2(-1.0f, 0.0f), overlay);
+  }
+  else
+    ImGui::ProgressBar(-1.0f * static_cast<float>(ImGui::GetTime()), ImVec2(-1.0f, 0.0f), "Working...");
+
+  if (ImGui::Button("Cancel", ImVec2(120.0f, 0.0f)))
+    cancel_cad_busy_();
+
+  ImGui::EndPopup();
+#endif
 }
 
 void GUI::close_file_inspector_()
@@ -3036,9 +3223,8 @@ void GUI::close_file_inspector_()
   m_file_inspector_open = false;
   m_file_inspector_path.clear();
   m_file_inspector_bytes.clear();
-  m_file_inspector_lines.clear();
-  m_file_inspector_fmt   = utl_cad_file_info::Format::Unknown;
-  m_file_inspector_union = false;
+  m_file_inspector_fmt       = utl_cad_file_info::Format::Unknown;
+  m_file_inspector_step_mode = Step_import_mode::Preserve_hierarchy;
 }
 
 void GUI::file_inspector_dialog_()
@@ -3048,74 +3234,56 @@ void GUI::file_inspector_dialog_()
 
   const std::string name  = std::filesystem::path(m_file_inspector_path).filename().string();
   const std::string title = "Import: " + (name.empty() ? std::string("file") : name);
-  ImGui::SetNextWindowSize(ImVec2(480.0f, 0.0f), ImGuiCond_FirstUseEver);
+  ImGui::SetNextWindowSize(ImVec2(360.0f, 0.0f), ImGuiCond_FirstUseEver);
   bool open = m_file_inspector_open;
-  if (!ImGui::Begin(title.c_str(), &open, ImGuiWindowFlags_None))
+  if (!ImGui::Begin(title.c_str(), &open, ImGuiWindowFlags_AlwaysAutoResize))
   {
     m_file_inspector_open = open;
     ImGui::End();
     return;
   }
 
+  if (!name.empty())
+    ImGui::TextUnformatted(name.c_str());
+
   if (utl_cad_file_info::can_import(m_file_inspector_fmt) && !m_file_inspector_bytes.empty())
   {
-    const bool can_union = m_file_inspector_fmt == utl_cad_file_info::Format::Step;
-    if (!can_union)
-      m_file_inspector_union = false;
+    const bool is_step = m_file_inspector_fmt == utl_cad_file_info::Format::Step;
+    if (is_step)
+    {
+      static const char* k_step_import_labels[] = {
+          "Preserve hierarchy",
+          "Flat solids",
+          "Union shapes",
+      };
+      int mode_i = static_cast<int>(m_file_inspector_step_mode);
+      ImGui::SetNextItemWidth(220.0f);
+      if (ImGui::Combo("Import as", &mode_i, k_step_import_labels, IM_ARRAYSIZE(k_step_import_labels)))
+        m_file_inspector_step_mode = static_cast<Step_import_mode>(mode_i);
+      if (ui_show_contextual_help() && ImGui::IsItemHovered())
+        ImGui::SetTooltip("Preserve hierarchy: Shape List groups from the STEP assembly (default).\n"
+                          "Flat solids: leaf solids only at the document root.\n"
+                          "Union shapes: fuse all bodies into one solid.");
+    }
+    else
+      m_file_inspector_step_mode = Step_import_mode::Preserve_hierarchy;
 
-    ImGui::BeginDisabled(!can_union);
-    ImGui::Checkbox("Union shapes", &m_file_inspector_union);
-    ImGui::EndDisabled();
-    if (ui_show_contextual_help() && ImGui::IsItemHovered(ImGuiHoveredFlags_AllowWhenDisabled))
-      ImGui::SetTooltip(can_union ? "Fuse multiple STEP roots into one shape on import."
-                                  : "Union applies to multi-shape STEP files only.");
-
+    ImGui::BeginDisabled(cad_busy_());
     if (ImGui::Button("Import into project"))
     {
-      if (on_import_file(m_file_inspector_path, m_file_inspector_bytes, m_file_inspector_union))
+      if (m_file_inspector_fmt == utl_cad_file_info::Format::Step)
+        begin_step_import_(m_file_inspector_step_mode);
+      else if (on_import_file(m_file_inspector_path, m_file_inspector_bytes, m_file_inspector_step_mode))
       {
         close_file_inspector_();
         ImGui::End();
         return;
       }
     }
+    ImGui::EndDisabled();
   }
-
-  ImGui::Separator();
-
-  const float max_h = ImGui::GetTextLineHeightWithSpacing() * 20.0f;
-  if (ImGui::BeginChild("file_inspector_scroll", ImVec2(0.0f, max_h), ImGuiChildFlags_Borders,
-                        ImGuiWindowFlags_AlwaysVerticalScrollbar))
-  {
-    if (ImGui::BeginTable("file_inspector_tbl", 2, ImGuiTableFlags_SizingStretchProp | ImGuiTableFlags_RowBg))
-    {
-      ImGui::TableSetupColumn("label", ImGuiTableColumnFlags_WidthFixed, 140.0f);
-      ImGui::TableSetupColumn("value", ImGuiTableColumnFlags_WidthStretch);
-
-      for (const utl_cad_file_info::Line& line : m_file_inspector_lines)
-      {
-        if (line.label.empty() && line.value.empty())
-        {
-          ImGui::TableNextRow();
-          ImGui::TableSetColumnIndex(0);
-          ImGui::Separator();
-          ImGui::TableSetColumnIndex(1);
-          ImGui::Separator();
-          continue;
-        }
-
-        ImGui::TableNextRow();
-        ImGui::TableSetColumnIndex(0);
-        ImGui::TextUnformatted(line.label.c_str());
-        ImGui::TableSetColumnIndex(1);
-        ImGui::TextWrapped("%s", line.value.c_str());
-      }
-
-      ImGui::EndTable();
-    }
-
-    ImGui::EndChild();
-  }
+  else
+    ImGui::TextWrapped("This file type cannot be imported.");
 
   m_file_inspector_open = open;
   if (!open)
@@ -4251,7 +4419,7 @@ void GUI::on_file(const std::string& file_path, const std::string& file_bytes, b
     show_message("Opened: " + std::filesystem::path(file_path).filename().string());
 }
 
-bool GUI::on_import_file(const std::string& file_path, const std::string& file_data, const bool union_shapes)
+bool GUI::on_import_file(const std::string& file_path, const std::string& file_data, const Step_import_mode step_mode)
 {
   std::string ext = std::filesystem::path(file_path).extension().string();
   for (char& c : ext)
@@ -4269,14 +4437,26 @@ bool GUI::on_import_file(const std::string& file_path, const std::string& file_d
     return true;
   }
 
-  if (Status st = m_view->import_step(file_data, union_shapes); !st.is_ok())
+  if (Status st = m_view->import_step(file_data, step_mode); !st.is_ok())
   {
     show_message(st.message());
     return false;
   }
 
-  show_message(union_shapes ? "Imported (union): " + std::filesystem::path(file_path).filename().string()
-                            : "Imported: " + std::filesystem::path(file_path).filename().string());
+  const std::string base = "Imported: " + std::filesystem::path(file_path).filename().string();
+  switch (step_mode)
+  {
+  case Step_import_mode::Union_shapes:
+    show_message("Imported (union): " + std::filesystem::path(file_path).filename().string());
+    break;
+  case Step_import_mode::Flat_solids:
+    show_message("Imported (flat): " + std::filesystem::path(file_path).filename().string());
+    break;
+  case Step_import_mode::Preserve_hierarchy:
+  default:
+    show_message(base);
+    break;
+  }
   return true;
 }
 

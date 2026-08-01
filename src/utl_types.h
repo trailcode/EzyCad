@@ -145,6 +145,14 @@ enum class Export_unit
   Millimeter
 };
 
+/// How STEP assemblies land in the Shape List on import.
+enum class Step_import_mode
+{
+  Preserve_hierarchy, // XCAF assemblies -> groups; leaves keep file names
+  Flat_solids,        // leaf solids only at document root
+  Union_shapes        // fuse all leaves into one solid
+};
+
 /// Project display/input length unit. Model space stays inch-scaled
 /// (`model = inches * dimension_scale`); this only affects UI and dimensions.
 enum class Project_unit

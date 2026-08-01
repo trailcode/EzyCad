@@ -29,7 +29,9 @@
 #include "shp_cross_section.h"
 #include "utl_types.h"
 #include "utl_asset_store.h"
+#include "utl_cad_file_info.h"
 #include "utl_geom.h"
+#include "utl_occt_progress.h"
 
 #include <nlohmann/json.hpp>
 
@@ -95,9 +97,29 @@ public:
   void                   load(const std::string& json_str, bool restore_view = true);
   Ezy_asset_store&       asset_store() { return m_assets; }
   const Ezy_asset_store& asset_store() const { return m_assets; }
+  /// Geometry prepared off the UI thread for STEP import (no AIS / document mutation).
+  struct Step_import_geom
+  {
+    Step_import_mode                           mode{Step_import_mode::Preserve_hierarchy};
+    std::vector<utl_cad_file_info::Named_node> named;
+    TopoDS_Shape                               fused;
+  };
+
   /// Import STEP (OCCT reads cascade mm) scaled into model space (inches * dimension_scale).
-  /// When \a union_shapes is true and the file has multiple roots, fuse them into one solid first.
-  [[nodiscard]] Status import_step(const std::string& step_data, bool union_shapes = false);
+  /// \a mode selects hierarchy groups, flat root leaves, or a single fused solid.
+  [[nodiscard]] Status import_step(const std::string& step_data, Step_import_mode mode = Step_import_mode::Preserve_hierarchy,
+                                   const Atomic_progress_indicator_ptr& progress = {});
+
+  /// Read/transfer/scale/fuse STEP on a worker thread. Call \ref commit_step_import on the UI thread.
+  [[nodiscard]] static Status prepare_step_import(const std::string& step_data, Step_import_mode mode, double to_model_scale,
+                                                  Step_import_geom& out, const Atomic_progress_indicator_ptr& progress = {});
+
+  /// Add prepared STEP geometry to the document (UI thread).
+  [[nodiscard]] Status commit_step_import(Step_import_geom& geom);
+
+  /// Model-space scale factor for STEP import (mm cascade -> inches * dimension_scale).
+  [[nodiscard]] double step_import_model_scale() const;
+
   /// Import PLY (coords treated as inches) scaled into model space (* dimension_scale).
   bool import_ply(const std::string& ply_bytes);
 
