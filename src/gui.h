@@ -440,8 +440,8 @@ private:
   void                         close_file_inspector_();
   void                         cad_busy_dialog_();
   void                         poll_cad_busy_();
-  void                         begin_step_inspect_(const std::string& file_path, const std::string& file_bytes);
   void                         begin_step_import_(Step_import_mode mode);
+  void                         finish_step_import_(Status st, Occt_view::Step_import_geom& geom);
   void                         cancel_cad_busy_();
   [[nodiscard]] bool           cad_busy_() const;
 
@@ -712,17 +712,15 @@ private:
   bool                                 m_shape_info_open{false};
   Shp_ptr                              m_shape_info_shp;
   std::vector<shp_info::Line>          m_shape_info_lines;
-  bool                                 m_file_inspector_open{false};
-  Step_import_mode                     m_file_inspector_step_mode{Step_import_mode::Preserve_hierarchy};
-  std::string                          m_file_inspector_path;
-  std::string                          m_file_inspector_bytes;
-  utl_cad_file_info::Format            m_file_inspector_fmt{utl_cad_file_info::Format::Unknown};
-  std::vector<utl_cad_file_info::Line> m_file_inspector_lines;
+  bool                      m_file_inspector_open{false};
+  Step_import_mode          m_file_inspector_step_mode{Step_import_mode::Preserve_hierarchy};
+  std::string               m_file_inspector_path;
+  std::string               m_file_inspector_bytes;
+  utl_cad_file_info::Format m_file_inspector_fmt{utl_cad_file_info::Format::Unknown};
 
   enum class Cad_busy_kind : uint8_t
   {
     Idle,
-    Inspect,
     Import
   };
   Cad_busy_kind                 m_cad_busy_kind{Cad_busy_kind::Idle};
@@ -736,7 +734,6 @@ private:
 #ifdef __EMSCRIPTEN__
   bool m_cad_busy_run_next_frame{false};
 #else
-  std::future<std::vector<utl_cad_file_info::Line>>           m_cad_busy_inspect_fut;
   std::future<std::pair<Status, Occt_view::Step_import_geom>> m_cad_busy_import_fut;
 #endif
   std::string m_about_markdown;
