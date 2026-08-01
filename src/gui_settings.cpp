@@ -2126,6 +2126,7 @@ void GUI::settings_()
           {
             m_hotkey_capture_error =
                 "Conflict: " + Gui_hotkeys::format_chord(Gui_hotkeys::default_chord(action)) + " is already assigned.";
+            show_message(m_hotkey_capture_error);
           }
           else
           {

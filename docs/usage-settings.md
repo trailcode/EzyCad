@@ -175,7 +175,7 @@ A **?** at the top of the section (when [UI verbosity](#settings-pane) is high e
 | Unmodified <kbd>X</kbd> / <kbd>Y</kbd> / <kbd>Z</kbd>                              | Move axis constraints; Rotate axis pick                                  |
 | <kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>Z</kbd>                                      | Fixed redo alias (alongside remappable <kbd>Ctrl</kbd>+<kbd>Y</kbd>)     |
 
-Two actions cannot share the same chord. Reserved and duplicate chords show an inline message under the table.
+Two actions cannot share the same chord. Reserved, unsupported, and duplicate chords show an inline message under the table and a status toast with the reason.
 
 **Persistence** — Bindings are stored as **`gui.hotkeys`**: action id keys to chord strings such as `"G"`, `"Ctrl+S"`, `"Shift+L"`. Missing ids merge to built-in defaults; reserved or invalid chords are dropped on load. See [Settings file reference](#gui) (`hotkeys`).
 
