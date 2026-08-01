@@ -444,6 +444,11 @@ bool GUI::try_capture_hotkey_press_(int key, int mods)
   }
 
   const Key_chord chord{key, Gui_hotkeys::normalize_mods(mods)};
+  if (!Gui_hotkeys::is_bindable_key(key))
+  {
+    m_hotkey_capture_error = "Unsupported key. Use a letter, digit, or Space (modifiers allowed).";
+    return true;
+  }
   if (Gui_hotkeys::is_reserved_chord(chord))
   {
     m_hotkey_capture_error = "Reserved: " + Gui_hotkeys::format_chord(chord) + " is a fixed shortcut and cannot be remapped.";

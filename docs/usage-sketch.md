@@ -117,7 +117,7 @@ Common keyboard shortcuts (hotkeys) while working in 2D sketch mode or with sket
 **Notes:**
 - <kbd>Tab</kbd> / <kbd>Shift+Tab</kbd> work even when focus is in the 3D view (they are routed to the active sketch tool for precise entry).
 - When an angle constraint is active, node snapping is typically relaxed or disabled to preserve the exact angle.
-- Global hotkeys (mode switches like <kbd>G</kbd> Move, sketch tools, undo, view navigation, selection filters) are in the main [Hotkeys](usage.md#hotkeys) section. Remap sketch and modeling chords in **View -> Settings -> Keyboard shortcuts**.
+- Global hotkeys (mode switches like <kbd>G</kbd> Move, sketch tools, undo, view navigation, selection filters) are in the main [Hotkeys](usage.md#hotkeys) section. Remap sketch and modeling chords in **View -> Settings -> Keyboard shortcuts** ([usage-settings.md](usage-settings.md#keyboard-shortcuts)).
 
 ### Move / rotate / polar axis constraints (when those options are active)
 

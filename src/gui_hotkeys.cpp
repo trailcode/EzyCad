@@ -18,7 +18,7 @@ struct Action_meta
   Key_chord   def;
 };
 
-// Defaults avoid existing shape letters (G/R/S/E/C/F/D), X/Y/Z (axis toggles), and digits.
+// Defaults avoid existing shape letters (G/R/S/E/C/F/D), reserved X/Y/Z (axis toggles), and digits.
 // Sketch: AutoCAD/FreeCAD-flavored mnemonics; booleans use Ctrl+Shift chords.
 // clang-format off
 constexpr Action_meta c_actions[] = {
@@ -71,6 +71,7 @@ static_assert(sizeof(c_actions) / sizeof(c_actions[0]) == Gui_hotkeys::k_count);
   case GLFW_KEY_LEFT_SUPER:
   case GLFW_KEY_RIGHT_SUPER:
     return true;
+
   default:
     return false;
   }
@@ -86,18 +87,14 @@ static_assert(sizeof(c_actions) / sizeof(c_actions[0]) == Gui_hotkeys::k_count);
 
   switch (key)
   {
-  case GLFW_KEY_DELETE:
-    return "Delete";
-  case GLFW_KEY_BACKSPACE:
-    return "Backspace";
-  case GLFW_KEY_TAB:
-    return "Tab";
-  case GLFW_KEY_ENTER:
-    return "Enter";
-  case GLFW_KEY_ESCAPE:
-    return "Esc";
-  case GLFW_KEY_SPACE:
-    return "Space";
+    // clang-format off
+  case GLFW_KEY_DELETE:     return "Delete";
+  case GLFW_KEY_BACKSPACE:  return "Backspace";
+  case GLFW_KEY_TAB:        return "Tab";
+  case GLFW_KEY_ENTER:      return "Enter";
+  case GLFW_KEY_ESCAPE:     return "Esc";
+  case GLFW_KEY_SPACE:      return "Space";
+    // clang-format on
   default:
   {
     std::ostringstream oss;
@@ -111,13 +108,12 @@ static_assert(sizeof(c_actions) / sizeof(c_actions[0]) == Gui_hotkeys::k_count);
 {
   if (tok.size() == 1)
   {
+    // clang-format off
     const char c = tok[0];
-    if (c >= 'A' && c <= 'Z')
-      return GLFW_KEY_A + (c - 'A');
-    if (c >= 'a' && c <= 'z')
-      return GLFW_KEY_A + (c - 'a');
-    if (c >= '0' && c <= '9')
-      return GLFW_KEY_0 + (c - '0');
+    if (c >= 'A' && c <= 'Z') return GLFW_KEY_A + (c - 'A');
+    if (c >= 'a' && c <= 'z') return GLFW_KEY_A + (c - 'a');
+    if (c >= '0' && c <= '9') return GLFW_KEY_0 + (c - '0');
+    // clang-format on
   }
 
   auto eq = [&](const char* lit)
@@ -125,24 +121,22 @@ static_assert(sizeof(c_actions) / sizeof(c_actions[0]) == Gui_hotkeys::k_count);
     const std::string_view l(lit);
     if (tok.size() != l.size())
       return false;
+
     for (size_t i = 0; i < tok.size(); ++i)
       if (std::tolower(static_cast<unsigned char>(tok[i])) != std::tolower(static_cast<unsigned char>(l[i])))
         return false;
+
     return true;
   };
 
-  if (eq("Delete"))
-    return GLFW_KEY_DELETE;
-  if (eq("Backspace"))
-    return GLFW_KEY_BACKSPACE;
-  if (eq("Tab"))
-    return GLFW_KEY_TAB;
-  if (eq("Enter") || eq("Return"))
-    return GLFW_KEY_ENTER;
-  if (eq("Esc") || eq("Escape"))
-    return GLFW_KEY_ESCAPE;
-  if (eq("Space"))
-    return GLFW_KEY_SPACE;
+  // clang-format off
+  if (eq("Delete"))                 return GLFW_KEY_DELETE;
+  if (eq("Backspace"))              return GLFW_KEY_BACKSPACE;
+  if (eq("Tab"))                    return GLFW_KEY_TAB;
+  if (eq("Enter") || eq("Return"))  return GLFW_KEY_ENTER;
+  if (eq("Esc") || eq("Escape"))    return GLFW_KEY_ESCAPE;
+  if (eq("Space"))                  return GLFW_KEY_SPACE;
+  // clang-format on
   return std::nullopt;
 }
 } // namespace
@@ -165,10 +159,12 @@ bool Gui_hotkeys::reset_action(Gui_action action)
   const int i = static_cast<int>(action);
   if (i < 0 || i >= k_count)
     return false;
+
   // Already factory: succeed without rewriting (avoids a false conflict if a
   // duplicate somehow already exists on another row).
   if (m_chords[i] == c_actions[i].def)
     return true;
+
   return set_chord(action, c_actions[i].def);
 }
 
@@ -177,6 +173,7 @@ Key_chord Gui_hotkeys::chord_for(Gui_action action) const
   const int i = static_cast<int>(action);
   if (i < 0 || i >= k_count)
     return {};
+
   return m_chords[i];
 }
 
@@ -189,7 +186,31 @@ std::optional<Gui_action> Gui_hotkeys::action_for(int key, int mods) const
   for (int i = 0; i < k_count; ++i)
     if (m_chords[i] == needle)
       return static_cast<Gui_action>(i);
+
   return std::nullopt;
+}
+
+bool Gui_hotkeys::is_bindable_key(int key)
+{
+  if (key >= GLFW_KEY_A && key <= GLFW_KEY_Z)
+    return true;
+
+  if (key >= GLFW_KEY_0 && key <= GLFW_KEY_9)
+    return true;
+
+  switch (key)
+  {
+  case GLFW_KEY_DELETE:
+  case GLFW_KEY_BACKSPACE:
+  case GLFW_KEY_TAB:
+  case GLFW_KEY_ENTER:
+  case GLFW_KEY_ESCAPE:
+  case GLFW_KEY_SPACE:
+    return true;
+
+  default:
+    return false;
+  }
 }
 
 bool Gui_hotkeys::is_reserved_chord(Key_chord chord)
@@ -206,6 +227,7 @@ bool Gui_hotkeys::is_reserved_chord(Key_chord chord)
   case GLFW_KEY_DELETE:
   case GLFW_KEY_BACKSPACE:
     return true;
+
   default:
     break;
   }
@@ -219,32 +241,33 @@ bool Gui_hotkeys::is_reserved_chord(Key_chord chord)
 
   // Selection filter digits (Normal mode); also blocks Shift+digit.
   if (no_ctrl_alt_super)
-  {
     if ((key >= GLFW_KEY_1 && key <= GLFW_KEY_9) || (key >= GLFW_KEY_KP_1 && key <= GLFW_KEY_KP_9))
       return true;
-  }
 
   // View zoom (+/-) without Ctrl/Alt.
   if ((mods & (GLFW_MOD_CONTROL | GLFW_MOD_ALT)) == 0)
   {
     if (key == GLFW_KEY_KP_ADD || key == GLFW_KEY_KP_SUBTRACT || key == GLFW_KEY_MINUS)
       return true;
+
     if (key == GLFW_KEY_EQUAL && (mods & GLFW_MOD_SHIFT) != 0)
       return true;
   }
 
   // View roll: Shift + KP4/6, 4/6, or Left/Right.
   if ((mods & GLFW_MOD_SHIFT) != 0 && (mods & (GLFW_MOD_CONTROL | GLFW_MOD_ALT)) == 0)
-  {
     if (key == GLFW_KEY_KP_4 || key == GLFW_KEY_KP_6 || key == GLFW_KEY_4 || key == GLFW_KEY_6 || key == GLFW_KEY_LEFT ||
         key == GLFW_KEY_RIGHT)
       return true;
-  }
 
   // View orbit / snap: unmodified numpad 2/4/5/6/8.
+  // Move / Rotate axis toggles: unmodified X/Y/Z (mode handlers run after remaps).
   if (mods == 0)
   {
     if (key == GLFW_KEY_KP_2 || key == GLFW_KEY_KP_4 || key == GLFW_KEY_KP_5 || key == GLFW_KEY_KP_6 || key == GLFW_KEY_KP_8)
+      return true;
+
+    if (key == GLFW_KEY_X || key == GLFW_KEY_Y || key == GLFW_KEY_Z)
       return true;
   }
 
@@ -256,7 +279,8 @@ bool Gui_hotkeys::set_chord(Gui_action action, Key_chord chord)
   const int ai = static_cast<int>(action);
   if (ai < 0 || ai >= k_count)
     return false;
-  if (is_pure_modifier_key(chord.key) || chord.key == 0)
+
+  if (is_pure_modifier_key(chord.key) || chord.key == 0 || !is_bindable_key(chord.key))
     return false;
 
   chord.mods = normalize_mods(chord.mods);
@@ -267,6 +291,7 @@ bool Gui_hotkeys::set_chord(Gui_action action, Key_chord chord)
   {
     if (i == ai)
       continue;
+
     if (m_chords[i] == chord)
       return false;
   }
@@ -280,6 +305,7 @@ const char* Gui_hotkeys::action_id(Gui_action action)
   const int i = static_cast<int>(action);
   if (i < 0 || i >= k_count)
     return "";
+
   return c_actions[i].id;
 }
 
@@ -316,15 +342,12 @@ std::string Gui_hotkeys::format_chord(Key_chord chord)
 {
   chord.mods = normalize_mods(chord.mods);
   std::string out;
-  if (chord.mods & GLFW_MOD_CONTROL)
-    out += "Ctrl+";
-  if (chord.mods & GLFW_MOD_SHIFT)
-    out += "Shift+";
-  if (chord.mods & GLFW_MOD_ALT)
-    out += "Alt+";
-  if (chord.mods & GLFW_MOD_SUPER)
-    out += "Super+";
-
+  // clang-format off
+  if (chord.mods & GLFW_MOD_CONTROL)  out += "Ctrl+";
+  if (chord.mods & GLFW_MOD_SHIFT)    out += "Shift+";
+  if (chord.mods & GLFW_MOD_ALT)      out += "Alt+";
+  if (chord.mods & GLFW_MOD_SUPER)    out += "Super+";
+  // clang-format on
   out += key_token(chord.key);
   return out;
 }
@@ -344,7 +367,7 @@ std::optional<Key_chord> Gui_hotkeys::parse_chord(std::string_view text)
     // Trim spaces
     while (!part.empty() && part.front() == ' ')
       part.remove_prefix(1);
-      
+
     while (!part.empty() && part.back() == ' ')
       part.remove_suffix(1);
 
@@ -356,9 +379,11 @@ std::optional<Key_chord> Gui_hotkeys::parse_chord(std::string_view text)
       const std::string_view l(lit);
       if (part.size() != l.size())
         return false;
+
       for (size_t i = 0; i < part.size(); ++i)
         if (std::tolower(static_cast<unsigned char>(part[i])) != std::tolower(static_cast<unsigned char>(l[i])))
           return false;
+
       return true;
     };
 
@@ -398,6 +423,7 @@ nlohmann::json Gui_hotkeys::to_json() const
   nlohmann::json j = nlohmann::json::object();
   for (int i = 0; i < k_count; ++i)
     j[c_actions[i].id] = format_chord(m_chords[i]);
+
   return j;
 }
 
@@ -410,12 +436,15 @@ void Gui_hotkeys::merge_from_json(const nlohmann::json& obj)
   {
     if (!it.value().is_string())
       continue;
+
     const std::optional<Gui_action> act = action_from_id(it.key());
     if (!act)
       continue;
+
     const std::optional<Key_chord> chord = parse_chord(it.value().get<std::string>());
-    if (!chord || is_reserved_chord(*chord))
+    if (!chord || !is_bindable_key(chord->key) || is_reserved_chord(*chord))
       continue;
+
     // Apply without conflict reject against other remaps still loading; rebuild unique at end.
     m_chords[static_cast<int>(*act)] = *chord;
   }
@@ -430,23 +459,22 @@ void Gui_hotkeys::merge_from_json(const nlohmann::json& obj)
   {
     changed = false;
     for (int i = 0; i < k_count; ++i)
-    {
       for (int j = 0; j < i; ++j)
       {
         if (m_chords[i] != m_chords[j])
           continue;
+
         if (m_chords[i] != c_actions[i].def)
         {
           m_chords[i] = c_actions[i].def;
-          changed = true;
+          changed     = true;
         }
         else if (m_chords[j] != c_actions[j].def)
         {
           m_chords[j] = c_actions[j].def;
-          changed = true;
+          changed     = true;
         }
         break;
       }
-    }
   }
 }

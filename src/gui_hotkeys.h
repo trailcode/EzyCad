@@ -66,7 +66,7 @@ public:
 
   [[nodiscard]] Key_chord                 chord_for(Gui_action action) const;
   [[nodiscard]] std::optional<Gui_action> action_for(int key, int mods) const;
-  /// Returns false if \a chord is reserved, invalid, or already bound to a different action.
+  /// Returns false if \a chord is reserved, not bindable, invalid, or already bound to a different action.
   [[nodiscard]] bool set_chord(Gui_action action, Key_chord chord);
 
   [[nodiscard]] static const char*               action_id(Gui_action action);
@@ -75,7 +75,11 @@ public:
   [[nodiscard]] static std::optional<Gui_action> action_from_id(std::string_view id);
 
   [[nodiscard]] static int normalize_mods(int mods);
-  /// Fixed chords handled outside the remappable map (Esc, Tab, digits, view nav, Ctrl+Shift+Z, ...).
+  /// Letters, digits, and named keys that round-trip through \ref format_chord / \ref parse_chord
+  /// (punctuation and numpad keys are rejected so settings JSON stays readable).
+  [[nodiscard]] static bool is_bindable_key(int key);
+  /// Fixed chords handled outside the remappable map (Esc, Tab, digits, view nav,
+  /// unmodified X/Y/Z Move/Rotate axes, Ctrl+Shift+Z, ...).
   [[nodiscard]] static bool                     is_reserved_chord(Key_chord chord);
   [[nodiscard]] static std::string              format_chord(Key_chord chord);
   [[nodiscard]] static std::optional<Key_chord> parse_chord(std::string_view text);
