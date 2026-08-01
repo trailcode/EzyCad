@@ -184,6 +184,7 @@ void GUI::initialize_toolbar_()
       {load_texture("res/icons/Assembly_AxialMove.png"),              false, "Shape move",                        Mode::Move},
       {load_texture("res/icons/Draft_Rotate.png"),                    false, "Shape rotate",                      Mode::Rotate},
       {load_texture("res/icons/Part_Scale.png"),                      false, "Shape Scale",                       Mode::Scale},
+      {load_texture("res/icons/Assembly_Move.png"),                   false, "Align cylinders",                   Mode::Shape_cyl_align},
       {load_texture("res/icons/Macro_FaceToSketch_48.png"),           false, "Create a sketch from planar face",  Mode::Sketch_from_planar_face},
       {load_texture("res/icons/Sketcher_MirrorSketch.png"),           false, "Operational axis",                  Mode::Sketch_operation_axis},
       {load_texture("res/icons/Sketcher_CreatePoint.png"),            false, "Add node",                          Mode::Sketch_add_node},
@@ -239,6 +240,7 @@ void GUI::sync_toolbar_hotkey_tooltips_()
   tip_mode(Mode::Move,                          "Shape move",                      Gui_action::Mode_move);
   tip_mode(Mode::Rotate,                        "Shape rotate",                    Gui_action::Mode_rotate);
   tip_mode(Mode::Scale,                         "Shape Scale",                     Gui_action::Mode_scale);
+  tip_mode(Mode::Shape_cyl_align,               "Align cylinders",                 Gui_action::Mode_cyl_align);
   tip_mode(Mode::Sketch_dim_anno,               "Length dimension",                Gui_action::Mode_dimension);
   tip_mode(Mode::Sketch_face_extrude,           "Extrude sketch face",             Gui_action::Mode_extrude);
   tip_mode(Mode::Shape_chamfer,                 "Chamfer",                         Gui_action::Mode_chamfer);
@@ -3866,6 +3868,12 @@ void GUI::on_mouse_pos(const ScreenCoords& screen_coords)
 
     break;
 
+  case Mode::Shape_cyl_align:
+    if (Status s = m_view->shp_cyl_align().drag_depth(screen_coords); !s.is_ok())
+      show_message(s.message());
+
+    break;
+
   case Mode::Shape_polar_duplicate:
     if (Status s = m_view->shp_polar_dup().move_point(screen_coords); !s.is_ok())
       show_message(s.message());
@@ -3901,6 +3909,12 @@ void GUI::on_left_click_(const ScreenCoords& screen_coords)
   case Mode::Move:                m_view->shp_move().finalize();                      break;
   case Mode::Rotate:              m_view->shp_rotate().finalize();                    break;
   case Mode::Scale:               m_view->shp_scale().finalize();                     break;
+  case Mode::Shape_cyl_align:
+    if (m_view->shp_cyl_align().is_dragging())
+      m_view->shp_cyl_align().finalize();
+    else if (Status s = m_view->shp_cyl_align().pick(screen_coords); !s.is_ok())
+      show_message(s.message());
+    break;
   case Mode::Sketch_face_extrude: m_view->sketch_face_extrude(screen_coords, false);  break;
     // clang-format on
 

@@ -19,6 +19,7 @@
 #include "shp_chamfer.h"
 #include "shp_common.h"
 #include "shp_cut.h"
+#include "shp_cyl_align.h"
 #include "shp_extrude.h"
 #include "shp_fillet.h"
 #include "shp_fuse.h"
@@ -247,6 +248,7 @@ public:
   Shp_move&          shp_move();
   Shp_rotate&        shp_rotate();
   Shp_scale&         shp_scale();
+  Shp_cyl_align&     shp_cyl_align();
   Shp_chamfer&       shp_chamfer();
   Shp_fillet&        shp_fillet();
   Shp_cut&           shp_cut();
@@ -255,6 +257,9 @@ public:
   Shp_polar_dup&     shp_polar_dup();
   Shp_extrude&       shp_extrude();
   Shp_cross_section& shp_cross_section();
+
+  /// Enable/disable AIS_ViewController dynamic highlight (MoveTo hover). Off during transform drag.
+  void set_dynamic_highlight_enabled(bool enabled);
 
   // Revolve related
   void revolve_selected(const double angle);
@@ -533,9 +538,10 @@ private:
   double m_zoom_scroll_scale{4.0};
   // --------------------------------------------------------------------
   // Operations
-  Shp_move   m_shp_move;
-  Shp_rotate m_shp_rotate;
-  Shp_scale  m_shp_scale;
+  Shp_move      m_shp_move;
+  Shp_rotate    m_shp_rotate;
+  Shp_scale     m_shp_scale;
+  Shp_cyl_align m_shp_cyl_align;
   // --------------------------------------------------------------------
   // Commands
   Shp_chamfer       m_shp_chamfer;

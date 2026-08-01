@@ -92,6 +92,7 @@ Occt_view::Occt_view(GUI& gui)
     , m_shp_move(*this)
     , m_shp_rotate(*this)
     , m_shp_scale(*this)
+    , m_shp_cyl_align(*this)
     , m_shp_chamfer(*this)
     , m_shp_fillet(*this)
     , m_shp_cut(*this)
@@ -577,6 +578,11 @@ void Occt_view::cancel(Set_parent_mode set_parent_mode)
 
   case Mode::Scale:
     shp_scale().cancel();
+    operation_canceled = true;
+    break;
+
+  case Mode::Shape_cyl_align:
+    shp_cyl_align().cancel();
     operation_canceled = true;
     break;
 
@@ -2411,7 +2417,8 @@ void Occt_view::on_mouse_button(int theButton, int theAction, int theMods)
     {
       const bool finalize_transform = (get_mode() == Mode::Move && shp_move().has_operation_shps()) ||
                                       (get_mode() == Mode::Rotate && shp_rotate().has_operation_shps()) ||
-                                      (get_mode() == Mode::Scale && shp_scale().has_operation_shps());
+                                      (get_mode() == Mode::Scale && shp_scale().has_operation_shps()) ||
+                                      (get_mode() == Mode::Shape_cyl_align && shp_cyl_align().is_dragging());
       if (finalize_transform)
       {
         m_transform_finalize_lmb_skipped_view_controller = true;
@@ -3103,6 +3110,7 @@ void Occt_view::on_mode()
       case Mode::Move:                    set_shp_selection_mode(TopAbs_SHAPE);     break;
       case Mode::Rotate:                  set_shp_selection_mode(TopAbs_SHAPE);     break;
       case Mode::Scale:                   set_shp_selection_mode(TopAbs_SHAPE);     break;
+      case Mode::Shape_cyl_align:         set_shp_selection_mode(TopAbs_FACE);      break;
       case Mode::Shape_cross_section:     set_shp_selection_mode(TopAbs_COMPOUND);  break;
       default:
         if(m_modes_selection_mode_map.count(get_mode()))
@@ -3140,6 +3148,9 @@ void Occt_view::on_mode()
       break;
     }
   }
+
+  if (mode == Mode::Shape_cyl_align)
+    shp_cyl_align().begin();
 
   if (mode == Mode::Shape_cross_section && !enter_selection.empty())
   {
@@ -3370,6 +3381,7 @@ std::list<Shp_ptr>& Occt_view::get_shapes() { return m_shps; }
 Shp_move&      Occt_view::shp_move()      { return m_shp_move;       }
 Shp_rotate&    Occt_view::shp_rotate()    { return m_shp_rotate;     }
 Shp_scale&     Occt_view::shp_scale()     { return m_shp_scale;      }
+Shp_cyl_align& Occt_view::shp_cyl_align() { return m_shp_cyl_align; }
 Shp_chamfer&   Occt_view::shp_chamfer()   { return m_shp_chamfer;    }
 Shp_fillet&    Occt_view::shp_fillet()    { return m_shp_fillet;     }
 Shp_cut&       Occt_view::shp_cut()       { return m_shp_cut;        }
@@ -3379,6 +3391,13 @@ Shp_polar_dup& Occt_view::shp_polar_dup() { return m_shp_polar_dup;  }
 Shp_extrude&   Occt_view::shp_extrude()   { return m_shp_extrude;    }
 Shp_cross_section&   Occt_view::shp_cross_section()   { return m_shp_cross_section;    }
 // clang-format on
+
+void Occt_view::set_dynamic_highlight_enabled(bool enabled)
+{
+  SetAllowHighlight(enabled);
+  if (!enabled && !m_ctx.IsNull())
+    m_ctx->ClearDetected(false);
+}
 
 // ---------------------------------------------------------------------------
 // Undo / redo: interactive edits use typed deltas; JSON snapshots for mixed delete / file open.
@@ -3393,6 +3412,7 @@ Mode mode_for_history_restore_(Mode mode)
   case Mode::Move:
   case Mode::Rotate:
   case Mode::Scale:
+  case Mode::Shape_cyl_align:
     return GUI::parent_mode_of(mode);
   default:
     return mode;

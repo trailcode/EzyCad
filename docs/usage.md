@@ -232,7 +232,7 @@ The typical modeling workflow in EzyCad follows these steps:
 
 3. **Create a Sketch from a Planar Face**: Once you have 3D shapes, use [Create sketch from planar face](usage-sketch.md#create-sketch-from-planar-face-tool) to pick a flat face on a solid. EzyCad extracts the face boundary into a new sketch aligned with that face (Origin at the face bounding-box center). Edit the sketch, then extrude again to add or cut features on the existing model.
 
-4. **Modify 3D Shapes**: Use [3D Modeling tools](#3d-modeling) to transform shapes ([move](#shape-move-tool-g), [rotate](#shape-rotate-tool-r), [scale](#shape-scale-tool-s)) or create patterns ([polar duplicate](#shape-polar-duplicate-tool)).
+4. **Modify 3D Shapes**: Use [3D Modeling tools](#3d-modeling) to transform shapes ([move](#shape-move-tool-g), [rotate](#shape-rotate-tool-r), [scale](#shape-scale-tool-s), [align cylinders](#align-cylinders-tool-j)) or create patterns ([polar duplicate](#shape-polar-duplicate-tool)).
 
 5. **Apply Feature Operations**: Use [boolean operations](#boolean-operations) (cut, fuse, common) or edge-based feature operations (chamfer with <kbd>C</kbd>, fillet with <kbd>F</kbd>) to refine your 3D model.
 
@@ -366,6 +366,7 @@ More detail: [Sketch snapping](usage-sketch.md#sketch-snapping) in the sketch gu
    - ![Shape Move Tool](res/icons/Assembly_AxialMove.png) [Move shapes (G)](#shape-move-tool-g)
    - ![Shape Rotate Tool](res/icons/Draft_Rotate.png) [Rotate objects (R)](#shape-rotate-tool-r)
    - ![Shape Scale Tool](res/icons/Part_Scale.png) [Scale elements (S)](#shape-scale-tool)
+   - ![Align Cylinders Tool](res/icons/Assembly_Move.png) [Align cylinders (J)](#align-cylinders-tool-j)
    - ![Polar Duplicate Tool](res/icons/Draft_PolarArray.png) [Polar duplicate](#shape-polar-duplicate-tool)
    - ![Cross-section Tool](res/icons/Curves_ExtractSubshape.png) [Preview a local-plane cross-section](#shape-cross-section-tool)
 
@@ -474,6 +475,36 @@ The shape scale tool allows you to uniformly scale selected shapes around a comp
 
 - Scale works best when the view direction makes the movement relative to the center easy to see (avoid looking exactly edge-on at the objects).
 - Because the operation is undoable, you can experiment with different scale amounts and step back with <kbd>Ctrl</kbd>+<kbd>Z</kbd> if needed.
+
+#### Align Cylinders Tool (J)
+
+![Align Cylinders Tool](res/icons/Assembly_Move.png)
+
+Place a shaft into a hole (or the reverse) by aligning two cylindrical faces, then sliding along the shared axis for insert depth. This is a one-shot transform that bakes into the solid geometry (same as Move / Rotate), not a persistent assembly mate.
+
+**Features:**
+
+|                         |                                                                                                      |
+| ----------------------: | ---------------------------------------------------------------------------------------------------- |
+| **Face picks**          | Click a cylindrical face on the shape to move, then a cylindrical face on the fixed shape.           |
+| **Coaxial align**       | The moving shape snaps so the two cylinder axes coincide.                                            |
+| **Axial depth drag**    | After align, drag to set how far the moving shape slides along the shared axis.                      |
+| **Flip direction**      | Options **Flip direction** reverses which way the moving axis points along the fixed axis.           |
+| **Radius mismatch**     | Placement is still allowed when radii differ (clearance / press fits); a log warning is recorded.    |
+
+**How to Use:**
+
+1. ![Assembly_Move](res/icons/Assembly_Move.png) **Activate:** Press <kbd>J</kbd> or click the toolbar icon.
+2. **Pick moving face:** Click a cylindrical face on the body that should move (for example the outer face of a rod).
+3. **Pick fixed face:** Click a cylindrical face on a different body (for example the inner face of a hole).
+4. **Set depth:** Drag along the axis. Optionally press <kbd>Tab</kbd> to type an exact depth.
+5. **Finalize or cancel:** <kbd>left mouse button</kbd> or <kbd>Enter</kbd> to bake; <kbd>Esc</kbd> to cancel.
+
+**Tips:**
+
+- The first face you pick is the body that moves. To move the hole body onto the shaft, pick the hole face first.
+- Use **Flip direction** in Options if the shaft points the wrong way after align.
+- This tool only places solids; use [Cut](#boolean-operations) afterward if you need a boolean.
 
 ## Feature Operations
 
@@ -712,6 +743,7 @@ Mode, file, and edit chords in the **General Operations** and **Modeling Shortcu
 | <kbd>G</kbd>                                      | Move mode                      |
 | <kbd>R</kbd>                                      | Rotate mode                    |
 | <kbd>S</kbd>                                      | Scale mode                     |
+| <kbd>J</kbd>                                      | Align cylinders mode           |
 | <kbd>E</kbd>                                      | Extrude mode                   |
 | <kbd>C</kbd>                                      | Chamfer mode                   |
 | <kbd>F</kbd>                                      | Fillet mode                    |
@@ -866,6 +898,7 @@ Contributors should follow **[ezycad_code_style.md](ezycad_code_style.md)** for 
 - ![Assembly_AxialMove](res/icons/Assembly_AxialMove.png) - Shape move (<kbd>G</kbd>)
 - ![Draft_Rotate](res/icons/Draft_Rotate.png) - Shape rotate (<kbd>R</kbd>)
 - ![Part_Scale](res/icons/Part_Scale.png) - Shape scale (<kbd>S</kbd>)
+- ![Assembly_Move](res/icons/Assembly_Move.png) - Align cylinders (<kbd>J</kbd>)
 
 ### Sketch Tools
 - ![Workbench_Sketcher_none](res/icons/Workbench_Sketcher_none.png) - Sketch inspection mode

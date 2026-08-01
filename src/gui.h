@@ -456,6 +456,7 @@ private:
   void options_shape_fillet_mode_();
   void options_shape_polar_duplicate_mode_();
   void options_shape_cross_section_mode_();
+  void options_shape_cyl_align_mode_();
   void options_sketch_from_planer_face_mode_();
   void options_sketch_operation_axis_mode_();
   void options_sketch_face_extrude_mode_();
@@ -487,6 +488,7 @@ private:
 
   void on_key_move_mode_(int key);
   void on_key_rotate_mode_(int key);
+  void on_key_cyl_align_mode_(int key);
   void dispatch_hotkey_action_(Gui_action action);
   void sync_toolbar_hotkey_tooltips_();
   bool try_capture_hotkey_press_(int key, int mods);

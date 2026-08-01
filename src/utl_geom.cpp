@@ -2,6 +2,7 @@
 
 #include <AIS_Shape.hxx>
 #include <BRepAdaptor_Curve.hxx>
+#include <BRepAdaptor_Surface.hxx>
 #include <BRepBndLib.hxx>
 #include <BRepBuilderAPI_MakeEdge.hxx>
 #include <BRepBuilderAPI_MakeWire.hxx>
@@ -10,6 +11,7 @@
 #include <BRepTools.hxx>
 #include <BRep_Builder.hxx>
 #include <BRep_Tool.hxx>
+#include <GeomAbs_SurfaceType.hxx>
 #include <GC_MakeArcOfCircle.hxx>
 #include <GC_MakeSegment.hxx>
 #include <GeomAPI_ExtremaCurveCurve.hxx>
@@ -46,11 +48,15 @@
 #include <V3d_View.hxx>
 #include <algorithm>
 #include <cmath>
+#include <gp_Ax1.hxx>
+#include <gp_Ax2.hxx>
 #include <gp_Ax3.hxx>
 #include <gp_Dir.hxx>
 #include <gp_Pln.hxx>
 #include <gp_Pnt.hxx>
+#include <gp_Trsf.hxx>
 #include <gp_Vec.hxx>
+#include <Precision.hxx>
 #include <numbers>
 #include <cstdio>
 #include <optional>
@@ -450,6 +456,55 @@ std::optional<gp_Pln> plane_from_face(const TopoDS_Face& face)
 
   // Return the gp_Pln
   return plane_surface->Pln();
+}
+
+std::optional<Cyl_face_info> cylinder_from_face(const TopoDS_Face& face)
+{
+  if (face.IsNull())
+    return std::nullopt;
+
+  BRepAdaptor_Surface surf(face);
+  if (surf.GetType() != GeomAbs_Cylinder)
+    return std::nullopt;
+
+  const gp_Cylinder cyl = surf.Cylinder();
+  Cyl_face_info     info;
+  info.axis   = cyl.Axis();
+  info.radius = cyl.Radius();
+  return info;
+}
+
+gp_Trsf cyl_align_trsf(const gp_Ax1& moving_axis, const gp_Ax1& fixed_axis, bool flip, double axial_offset)
+{
+  const gp_Dir from_dir = moving_axis.Direction();
+  const gp_Dir to_dir   = flip ? fixed_axis.Direction().Reversed() : fixed_axis.Direction();
+  const gp_Dir fixed_dir = fixed_axis.Direction();
+
+  const gp_Vec to_moving(fixed_axis.Location(), moving_axis.Location());
+  const double param0 = to_moving.Dot(gp_Vec(fixed_dir));
+  const gp_Pnt target = fixed_axis.Location().Translated(gp_Vec(fixed_dir) * (param0 + axial_offset));
+
+  gp_Trsf rot;
+  if (from_dir.IsParallel(to_dir, Precision::Angular()))
+  {
+    if (from_dir.Dot(to_dir) < 0.0)
+    {
+      // 180 deg: rotate about a stable perpendicular through the moving origin.
+      const gp_Ax2 ax2(moving_axis.Location(), from_dir);
+      rot.SetRotation(gp_Ax1(moving_axis.Location(), ax2.XDirection()), std::numbers::pi);
+    }
+  }
+  else
+  {
+    const gp_Dir rot_axis(gp_Vec(from_dir).Crossed(gp_Vec(to_dir)));
+    rot.SetRotation(gp_Ax1(moving_axis.Location(), rot_axis), from_dir.Angle(to_dir));
+  }
+
+  const gp_Pnt moved_loc = moving_axis.Location().Transformed(rot);
+  gp_Trsf      trans;
+  trans.SetTranslation(gp_Vec(moved_loc, target));
+
+  return trans * rot;
 }
 
 bool planes_equal(const gp_Pln& plane1, const gp_Pln& plane2)

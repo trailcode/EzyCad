@@ -44,6 +44,7 @@ constexpr Action_meta c_actions[] = {
     {Gui_action::Mode_add_slot,             "mode.add_slot",             "Add slot",                {GLFW_KEY_U, 0}},
     {Gui_action::Mode_polar_duplicate,      "mode.polar_duplicate",      "Polar duplicate",         {GLFW_KEY_P, GLFW_MOD_SHIFT}},
     {Gui_action::Mode_cross_section,        "mode.cross_section",        "Cross-section",           {GLFW_KEY_X, GLFW_MOD_SHIFT}},
+    {Gui_action::Mode_cyl_align,            "mode.cyl_align",            "Align cylinders",         {GLFW_KEY_J, 0}},
     {Gui_action::Cmd_shape_cut,             "cmd.shape_cut",             "Shape cut",               {GLFW_KEY_C, GLFW_MOD_CONTROL | GLFW_MOD_SHIFT}},
     {Gui_action::Cmd_shape_fuse,            "cmd.shape_fuse",            "Shape fuse",              {GLFW_KEY_F, GLFW_MOD_CONTROL | GLFW_MOD_SHIFT}},
     {Gui_action::Cmd_shape_common,          "cmd.shape_common",          "Shape common",            {GLFW_KEY_M, GLFW_MOD_CONTROL | GLFW_MOD_SHIFT}},

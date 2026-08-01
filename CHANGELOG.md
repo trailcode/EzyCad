@@ -9,6 +9,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **Align cylinders** (<kbd>J</kbd>): pick two cylindrical faces (first moves, second is fixed), coaxially align, then drag insert depth along the shared axis (or <kbd>Tab</kbd> for an exact depth). Options **Flip direction** reverses axis sense. Bakes like Move/Rotate (`Shape_geom_delta`); radius mismatch logs a warning but still places. Remappable as **`mode.cyl_align`**.
+
 - **STEP Import as**: the Import dialog replaces the **Union shapes** checkbox with an **Import as** combo (**Preserve hierarchy** default, **Flat solids**, **Union shapes**). Hierarchy keeps XCAF assembly groups and product/instance names; flat adds leaf solids at the document root; union fuses into one solid.
 
 - **STEP import progress**: on **Import into project**, an **Importing...** modal appears while transferring. Desktop shows stage/progress and Cancel (OCCT transfer on a background thread). Web shows a simple wait dialog (no Cancel; transfer runs on the main thread after the dialog paints). The Import dialog no longer shows a file metadata summary (opens immediately after file pick).
