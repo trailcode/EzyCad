@@ -89,7 +89,7 @@ Sketch(const std::string& name, Occt_view& view, const gp_Pln& pln);
 Sketch(const std::string& name, Occt_view& view, const gp_Pln& pln, const TopoDS_Wire& outer_wire);
 ```
 
-The wire overload creates a sketch **from a planar face**; `m_originating_face` is displayed and its vertices contribute to snap targets. `ensure_origin_node_()` places the origin at the wire bounding-box center (or plane `(0,0)` for plane-only sketches); call `m_nodes.finalize()` so `cancel_elm()` / `on_mode()` does not roll it back.
+The wire overload creates a sketch **from a planar face**; `m_originating_face` is the dark-red outer-wire cue and its vertices contribute to snap targets. Display follows `set_show_edges` (same as sketch edges), so `Occt_view::on_mode` hides it outside sketch modes. `ensure_origin_node_()` places the origin at the wire bounding-box center (or plane `(0,0)` for plane-only sketches); call `m_nodes.finalize()` so `cancel_elm()` / `on_mode()` does not roll it back.
 
 ### Input routing (from UI / `Occt_view`)
 
@@ -117,7 +117,7 @@ Full GLFW -> `GUI` -> view routing: [`src/doc/gui.md`](gui.md).
 | Method                                                | Purpose                                                                     |
 | ----------------------------------------------------- | --------------------------------------------------------------------------- |
 | `set_visible` / `is_visible`                          | Show or hide the whole sketch in the viewer                                 |
-| `set_show_faces` / `set_show_edges` / `set_show_dims` | Layer toggles for faces, edges, dimensions                                  |
+| `set_show_faces` / `set_show_edges` / `set_show_dims` | Layer toggles for faces, edges (+ originating-face wire), dimensions        |
 | `set_edge_style(Full / Background / Hidden)`          | Current vs background appearance (edge/face colors from Settings -> Sketch) |
 | `set_current()`                                       | Make this sketch current in `Occt_view`                                     |
 | `refresh_annotations(Sketch_annotation_refresh)`      | Rebuild dims, node marks, and/or edge-face styles after settings changes    |
