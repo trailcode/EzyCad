@@ -127,7 +127,7 @@ Each row (left to right):
 - **Name** - Expandable tree row with an editable name. Click the row to select that solid (or all descendant solids for a group) and update the current group. **Ctrl+click** toggles multi-select. Drag to reparent (empty area below the list = document root).
 - **Right-click the name** - Solids: **Shape info...** / **Delete**. Groups: **Ungroup** (moves **all** direct children to the group's parent, then removes the group) / **Delete** (cascade-deletes the whole subtree).
 
-Boolean results stay under the shared parent of their inputs when all inputs share one parent; otherwise they are placed at the document root. **File -> Import** STEP assemblies preserve product/assembly groups in the tree (unless **Union shapes** is checked).
+Boolean results stay under the shared parent of their inputs when all inputs share one parent; otherwise they are placed at the document root. **File -> Import** STEP assemblies use **Import as** (default **Preserve hierarchy**) to keep product/assembly groups in the tree, import **Flat solids** at the root, or **Union shapes** into one solid.
 
 The **current group** and rows that match the **current 3D selection** use a highlighted full-row style. Hovering a visible solid row also highlights that shape in the 3D view (**Settings -> View presentation -> Element hover color**).
 
@@ -249,7 +249,7 @@ The typical modeling workflow in EzyCad follows these steps:
 
 ### Import dialog
 
-**File -> Import** opens an **Import** window for STEP or PLY. Review metadata, optionally enable **Union shapes** (STEP), then click **Import into project**. The window closes after a successful import.
+**File -> Import** opens an **Import** window for STEP or PLY. Review metadata, choose how STEP assemblies land in the Shape List (**Import as**, default **Preserve hierarchy**), then click **Import into project**. The window closes after a successful import.
 
 | Format                     | What the Import dialog shows                              |
 | -------------------------- | --------------------------------------------------------- |
@@ -259,7 +259,7 @@ The typical modeling workflow in EzyCad follows these steps:
 **How to use:**
 1. Choose **File -> Import**
 2. Pick a `.step`, `.stp`, or `.ply` file
-3. Review the label/value table; for STEP, optionally enable **Union shapes**
+3. Review the label/value table; for STEP, choose **Import as** if needed
 4. Click **Import into project**
 
 For in-document topology of an already-loaded solid, use [Shape info](#shape-info) from the Shape List.
@@ -284,7 +284,7 @@ In addition to creating 3D shapes from sketches, EzyCad supports importing exist
 **How to import:**
 1. Use **File -> Import**
 2. Pick a `.step`, `.stp`, or `.ply` file
-3. Review metadata in the [Import dialog](#import-dialog); for STEP assemblies, optionally check **Union shapes**
+3. Review metadata in the [Import dialog](#import-dialog); for STEP, choose **Import as** if needed
 4. Click **Import into project** - geometry is added as 3D shape(s) in the document, scaled to project units (see below)
 5. You can move, rotate, scale, and use imported bodies in [boolean operations](#boolean-operations) like native solids where the geometry allows it
 
@@ -303,9 +303,12 @@ In addition to creating 3D shapes from sketches, EzyCad supports importing exist
 
 **STEP import notes:**
 - If the file cannot be read or contains no transferable geometry, a **message** explains the failure (invalid data, empty transfer, etc.).
-- Assemblies often arrive with XCAF product structure. Import builds Shape List **groups** for assemblies and leaf solids for bodies (unless **Union shapes** merges everything into one solid). The Import dialog **Import bodies** count shows how many leaf solids will be added.
-- When the STEP file includes product or part names, those names appear in the Shape List (duplicate names get `.001`, `.002`, ...). Unnamed bodies stay as `Shape`.
-- **Union shapes** (Import dialog) fuses those bodies into one solid before adding to the document. If union fails, the import is aborted and nothing is added.
+- Assemblies often arrive with XCAF product structure. The Import dialog **Import as** combo controls how they land in the Shape List:
+  - **Preserve hierarchy** (default) - builds Shape List **groups** for assemblies and leaf solids for bodies; group and part names come from product/instance names in the file when present.
+  - **Flat solids** - adds leaf solids only at the document root (no assembly groups); keeps per-body names from the file.
+  - **Union shapes** - fuses those bodies into one solid before adding to the document. If union fails, the import is aborted and nothing is added.
+- The Import dialog **Import bodies** count shows how many leaf solids will be added (before union).
+- When the STEP file includes product or part names, those names appear in the Shape List (duplicate names get `.001`, `.002`, ...). Unnamed bodies stay as `Shape`; unnamed assemblies use `Assembly`.
 
 **Note:** **IGES** and **STL** are available for **export** only, not import.
 

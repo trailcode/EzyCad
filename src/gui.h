@@ -381,7 +381,9 @@ public:
 #endif
 
   void               on_file(const std::string& file_path, const std::string& file_bytes, bool announce_load = true);
-  [[nodiscard]] bool on_import_file(const std::string& file_path, const std::string& file_data, bool union_shapes = false);
+  [[nodiscard]] bool on_import_file(const std::string& file_path,
+                                    const std::string& file_data,
+                                    Step_import_mode   step_mode = Step_import_mode::Preserve_hierarchy);
   void               on_inspector_file(const std::string& file_path, const std::string& file_data);
   /// Emscripten `on_sketch_underlay_selected` routes here (must be public for C callback).
   void on_sketch_underlay_file(const std::string& file_path, const std::string& file_bytes);
@@ -703,7 +705,7 @@ private:
   Shp_ptr                              m_shape_info_shp;
   std::vector<shp_info::Line>          m_shape_info_lines;
   bool                                 m_file_inspector_open{false};
-  bool                                 m_file_inspector_union{false};
+  Step_import_mode                     m_file_inspector_step_mode{Step_import_mode::Preserve_hierarchy};
   std::string                          m_file_inspector_path;
   std::string                          m_file_inspector_bytes;
   utl_cad_file_info::Format            m_file_inspector_fmt{utl_cad_file_info::Format::Unknown};

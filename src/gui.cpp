@@ -3037,8 +3037,8 @@ void GUI::close_file_inspector_()
   m_file_inspector_path.clear();
   m_file_inspector_bytes.clear();
   m_file_inspector_lines.clear();
-  m_file_inspector_fmt   = utl_cad_file_info::Format::Unknown;
-  m_file_inspector_union = false;
+  m_file_inspector_fmt       = utl_cad_file_info::Format::Unknown;
+  m_file_inspector_step_mode = Step_import_mode::Preserve_hierarchy;
 }
 
 void GUI::file_inspector_dialog_()
@@ -3059,20 +3059,30 @@ void GUI::file_inspector_dialog_()
 
   if (utl_cad_file_info::can_import(m_file_inspector_fmt) && !m_file_inspector_bytes.empty())
   {
-    const bool can_union = m_file_inspector_fmt == utl_cad_file_info::Format::Step;
-    if (!can_union)
-      m_file_inspector_union = false;
-
-    ImGui::BeginDisabled(!can_union);
-    ImGui::Checkbox("Union shapes", &m_file_inspector_union);
-    ImGui::EndDisabled();
-    if (ui_show_contextual_help() && ImGui::IsItemHovered(ImGuiHoveredFlags_AllowWhenDisabled))
-      ImGui::SetTooltip(can_union ? "Fuse multiple STEP roots into one shape on import."
-                                  : "Union applies to multi-shape STEP files only.");
+    const bool is_step = m_file_inspector_fmt == utl_cad_file_info::Format::Step;
+    if (is_step)
+    {
+      static const char* k_step_import_labels[] = {
+          "Preserve hierarchy",
+          "Flat solids",
+          "Union shapes",
+      };
+      int mode_i = static_cast<int>(m_file_inspector_step_mode);
+      ImGui::SetNextItemWidth(220.0f);
+      if (ImGui::Combo("Import as", &mode_i, k_step_import_labels, IM_ARRAYSIZE(k_step_import_labels)))
+        m_file_inspector_step_mode = static_cast<Step_import_mode>(mode_i);
+      if (ui_show_contextual_help() && ImGui::IsItemHovered())
+        ImGui::SetTooltip(
+            "Preserve hierarchy: Shape List groups from the STEP assembly (default).\n"
+            "Flat solids: leaf solids only at the document root.\n"
+            "Union shapes: fuse all bodies into one solid.");
+    }
+    else
+      m_file_inspector_step_mode = Step_import_mode::Preserve_hierarchy;
 
     if (ImGui::Button("Import into project"))
     {
-      if (on_import_file(m_file_inspector_path, m_file_inspector_bytes, m_file_inspector_union))
+      if (on_import_file(m_file_inspector_path, m_file_inspector_bytes, m_file_inspector_step_mode))
       {
         close_file_inspector_();
         ImGui::End();
@@ -4251,7 +4261,7 @@ void GUI::on_file(const std::string& file_path, const std::string& file_bytes, b
     show_message("Opened: " + std::filesystem::path(file_path).filename().string());
 }
 
-bool GUI::on_import_file(const std::string& file_path, const std::string& file_data, const bool union_shapes)
+bool GUI::on_import_file(const std::string& file_path, const std::string& file_data, const Step_import_mode step_mode)
 {
   std::string ext = std::filesystem::path(file_path).extension().string();
   for (char& c : ext)
@@ -4269,14 +4279,26 @@ bool GUI::on_import_file(const std::string& file_path, const std::string& file_d
     return true;
   }
 
-  if (Status st = m_view->import_step(file_data, union_shapes); !st.is_ok())
+  if (Status st = m_view->import_step(file_data, step_mode); !st.is_ok())
   {
     show_message(st.message());
     return false;
   }
 
-  show_message(union_shapes ? "Imported (union): " + std::filesystem::path(file_path).filename().string()
-                            : "Imported: " + std::filesystem::path(file_path).filename().string());
+  const std::string base = "Imported: " + std::filesystem::path(file_path).filename().string();
+  switch (step_mode)
+  {
+  case Step_import_mode::Union_shapes:
+    show_message("Imported (union): " + std::filesystem::path(file_path).filename().string());
+    break;
+  case Step_import_mode::Flat_solids:
+    show_message("Imported (flat): " + std::filesystem::path(file_path).filename().string());
+    break;
+  case Step_import_mode::Preserve_hierarchy:
+  default:
+    show_message(base);
+    break;
+  }
   return true;
 }
 

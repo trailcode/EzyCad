@@ -3899,7 +3899,7 @@ Status Occt_view::export_document(Export_format fmt, Export_unit unit, const std
   return Status::user_error("Unknown export format.");
 }
 
-Status Occt_view::import_step(const std::string& step_data, const bool union_shapes)
+Status Occt_view::import_step(const std::string& step_data, const Step_import_mode mode)
 {
   std::vector<utl_cad_file_info::Named_node> named;
   if (Status st = utl_cad_file_info::read_step_named_tree(step_data, named); !st.is_ok())
@@ -3925,7 +3925,7 @@ Status Occt_view::import_step(const std::string& step_data, const bool union_sha
   if (!any_leaf)
     return Status::user_error("STEP: no valid shapes in file.");
 
-  if (union_shapes)
+  if (mode == Step_import_mode::Union_shapes)
   {
     TopoDS_Shape result;
     bool         have = false;
@@ -3954,6 +3954,35 @@ Status Occt_view::import_step(const std::string& step_data, const bool union_sha
     shp->set_name(unique_shape_name_("Fused"));
     add_shp_(shp, true);
     push_undo_delta(std::make_unique<Shape_add_delta>(std::vector<Shape_rec>{capture_shape_rec(*shp)}));
+    return Status::ok();
+  }
+
+  if (mode == Step_import_mode::Flat_solids)
+  {
+    std::vector<Shape_rec> added;
+    added.reserve(named.size());
+
+    for (utl_cad_file_info::Named_node& node : named)
+    {
+      if (node.is_group || node.shape.IsNull())
+        continue;
+
+      Shp_ptr shp = new Shp(*m_ctx, node.shape);
+      if (!node.name.empty())
+        shp->set_name(unique_shape_name_(node.name.c_str()));
+      else
+        shp->set_name(unique_shape_name_("Shape"));
+
+      shp->set_parent_id(0);
+      shp->set_sibling_order(next_sibling_order(0));
+      add_shp_(shp);
+      added.push_back(capture_shape_rec(*shp));
+    }
+
+    if (added.empty())
+      return Status::user_error("STEP: no valid shapes in file.");
+
+    push_undo_delta(std::make_unique<Shape_add_delta>(std::move(added)));
     return Status::ok();
   }
 
