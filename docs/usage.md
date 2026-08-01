@@ -249,7 +249,7 @@ The typical modeling workflow in EzyCad follows these steps:
 
 ### Import dialog
 
-**File -> Import** opens an **Import** window for STEP or PLY. Review metadata, choose how STEP assemblies land in the Shape List (**Import as**, default **Preserve hierarchy**), then click **Import into project**. The window closes after a successful import.
+**File -> Import** opens an **Import** window for STEP or PLY. Large STEP files show a progress modal while metadata is read (and again while importing). Review metadata, choose how STEP assemblies land in the Shape List (**Import as**, default **Preserve hierarchy**), then click **Import into project**. The window closes after a successful import.
 
 | Format                     | What the Import dialog shows                              |
 | -------------------------- | --------------------------------------------------------- |
@@ -258,9 +258,9 @@ The typical modeling workflow in EzyCad follows these steps:
 
 **How to use:**
 1. Choose **File -> Import**
-2. Pick a `.step`, `.stp`, or `.ply` file
+2. Pick a `.step`, `.stp`, or `.ply` file (STEP may show a progress modal while reading)
 3. Review the label/value table; for STEP, choose **Import as** if needed
-4. Click **Import into project**
+4. Click **Import into project** (STEP may show a progress modal again while transferring)
 
 For in-document topology of an already-loaded solid, use [Shape info](#shape-info) from the Shape List.
 

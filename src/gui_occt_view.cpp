@@ -3899,23 +3899,40 @@ Status Occt_view::export_document(Export_format fmt, Export_unit unit, const std
   return Status::user_error("Unknown export format.");
 }
 
-Status Occt_view::import_step(const std::string& step_data, const Step_import_mode mode)
+double Occt_view::step_import_model_scale() const { return step_import_to_model_scale_(get_dimension_scale()); }
+
+Status Occt_view::prepare_step_import(const std::string& step_data, const Step_import_mode mode, const double to_model_scale,
+                                      Step_import_geom& out, const Atomic_progress_indicator_ptr& progress)
 {
-  std::vector<utl_cad_file_info::Named_node> named;
-  if (Status st = utl_cad_file_info::read_step_named_tree(step_data, named); !st.is_ok())
+  out      = {};
+  out.mode = mode;
+
+  Message_ProgressRange range;
+  if (!progress.IsNull())
+  {
+    progress->set_stage("Transferring STEP...");
+    range = progress->Start();
+  }
+
+  if (Status st = utl_cad_file_info::read_step_named_tree(step_data, out.named, range); !st.is_ok())
     return st;
 
-  const double to_model = step_import_to_model_scale_(get_dimension_scale());
-  for (utl_cad_file_info::Named_node& node : named)
+  if (!progress.IsNull() && progress->cancelled())
+    return Status::user_error("STEP: import cancelled.");
+
+  if (!progress.IsNull())
+    progress->set_stage("Scaling shapes...");
+
+  for (utl_cad_file_info::Named_node& node : out.named)
   {
     if (node.is_group || node.shape.IsNull())
       continue;
 
-    node.shape = scale_shape_about_origin_(node.shape, to_model);
+    node.shape = scale_shape_about_origin_(node.shape, to_model_scale);
   }
 
   bool any_leaf = false;
-  for (const utl_cad_file_info::Named_node& n : named)
+  for (const utl_cad_file_info::Named_node& n : out.named)
     if (!n.is_group && !n.shape.IsNull())
     {
       any_leaf = true;
@@ -3925,44 +3942,60 @@ Status Occt_view::import_step(const std::string& step_data, const Step_import_mo
   if (!any_leaf)
     return Status::user_error("STEP: no valid shapes in file.");
 
-  if (mode == Step_import_mode::Union_shapes)
+  if (mode != Step_import_mode::Union_shapes)
+    return Status::ok();
+
+  if (!progress.IsNull())
+    progress->set_stage("Fusing shapes...");
+
+  TopoDS_Shape result;
+  bool         have = false;
+  for (utl_cad_file_info::Named_node& node : out.named)
   {
-    TopoDS_Shape result;
-    bool         have = false;
-    for (utl_cad_file_info::Named_node& node : named)
+    if (node.is_group || node.shape.IsNull())
+      continue;
+
+    if (!have)
     {
-      if (node.is_group || node.shape.IsNull())
-        continue;
-
-      if (!have)
-      {
-        result = node.shape;
-        have   = true;
-        continue;
-      }
-
-      BRepAlgoAPI_Fuse fuse_op(result, node.shape);
-      if (!fuse_op.IsDone())
-        return Status::user_error("STEP: union of imported shapes failed.");
-
-      result = fuse_op.Shape();
-      if (result.IsNull())
-        return Status::user_error("STEP: union produced an empty shape.");
+      result = node.shape;
+      have   = true;
+      continue;
     }
 
-    Shp_ptr shp = new Shp(*m_ctx, result);
+    BRepAlgoAPI_Fuse fuse_op(result, node.shape);
+    if (!fuse_op.IsDone())
+      return Status::user_error("STEP: union of imported shapes failed.");
+
+    result = fuse_op.Shape();
+    if (result.IsNull())
+      return Status::user_error("STEP: union produced an empty shape.");
+  }
+
+  out.fused = result;
+  out.named.clear();
+  return Status::ok();
+}
+
+Status Occt_view::commit_step_import(Step_import_geom& geom)
+{
+  if (geom.mode == Step_import_mode::Union_shapes)
+  {
+    if (geom.fused.IsNull())
+      return Status::user_error("STEP: union produced an empty shape.");
+
+    Shp_ptr shp = new Shp(*m_ctx, geom.fused);
     shp->set_name(unique_shape_name_("Fused"));
     add_shp_(shp, true);
     push_undo_delta(std::make_unique<Shape_add_delta>(std::vector<Shape_rec>{capture_shape_rec(*shp)}));
     return Status::ok();
   }
 
-  if (mode == Step_import_mode::Flat_solids)
+  if (geom.mode == Step_import_mode::Flat_solids)
   {
     std::vector<Shape_rec> added;
-    added.reserve(named.size());
+    added.reserve(geom.named.size());
 
-    for (utl_cad_file_info::Named_node& node : named)
+    for (utl_cad_file_info::Named_node& node : geom.named)
     {
       if (node.is_group || node.shape.IsNull())
         continue;
@@ -3986,13 +4019,13 @@ Status Occt_view::import_step(const std::string& step_data, const Step_import_mo
     return Status::ok();
   }
 
-  std::vector<Shape_id>  id_by_index(named.size(), 0);
+  std::vector<Shape_id>  id_by_index(geom.named.size(), 0);
   std::vector<Shape_rec> added;
-  added.reserve(named.size());
+  added.reserve(geom.named.size());
 
-  for (size_t i = 0; i < named.size(); ++i)
+  for (size_t i = 0; i < geom.named.size(); ++i)
   {
-    utl_cad_file_info::Named_node& node      = named[i];
+    utl_cad_file_info::Named_node& node      = geom.named[i];
     Shape_id                       parent_id = 0;
     if (node.parent_index >= 0 && static_cast<size_t>(node.parent_index) < id_by_index.size())
       parent_id = id_by_index[static_cast<size_t>(node.parent_index)];
@@ -4027,6 +4060,16 @@ Status Occt_view::import_step(const std::string& step_data, const Step_import_mo
 
   push_undo_delta(std::make_unique<Shape_add_delta>(std::move(added)));
   return Status::ok();
+}
+
+Status Occt_view::import_step(const std::string& step_data, const Step_import_mode mode,
+                              const Atomic_progress_indicator_ptr& progress)
+{
+  Step_import_geom geom;
+  if (Status st = prepare_step_import(step_data, mode, step_import_model_scale(), geom, progress); !st.is_ok())
+    return st;
+
+  return commit_step_import(geom);
 }
 
 bool Occt_view::import_ply(const std::string& ply_bytes)

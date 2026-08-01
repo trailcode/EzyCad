@@ -4,6 +4,7 @@
 #include <array>
 #include <cctype>
 #include <cerrno>
+#include <chrono>
 #include <cmath>
 #include <cstdint>
 #include <cstdio>
@@ -15,6 +16,7 @@
 #include <sstream>
 #include <string>
 #include <unordered_set>
+#include <utility>
 
 #include "utl_settings.h"
 
@@ -148,6 +150,8 @@ void GUI::render_gui()
   shape_list_();
   shape_info_dialog_();
   file_inspector_dialog_();
+  poll_cad_busy_();
+  cad_busy_dialog_();
   options_();
   message_status_window_();
   error_modal_dialog_();
@@ -3031,6 +3035,276 @@ void GUI::open_file_inspector_(const std::string& file_path, const std::string& 
   m_file_inspector_open  = true;
 }
 
+bool GUI::cad_busy_() const { return m_cad_busy_kind != Cad_busy_kind::Idle; }
+
+void GUI::cancel_cad_busy_()
+{
+  if (!m_cad_busy_progress.IsNull())
+    m_cad_busy_progress->request_cancel();
+}
+
+void GUI::begin_step_inspect_(const std::string& file_path, const std::string& file_bytes)
+{
+  if (cad_busy_())
+    return;
+
+  m_cad_busy_kind     = Cad_busy_kind::Inspect;
+  m_cad_busy_path     = file_path;
+  m_cad_busy_bytes    = file_bytes;
+  m_cad_busy_title    = "Reading STEP";
+  m_cad_busy_progress = new Atomic_progress_indicator();
+  m_cad_busy_progress->set_stage("Starting...");
+  m_cad_busy_open_popup = true;
+  m_cad_busy_modal_open = true;
+
+#ifndef __EMSCRIPTEN__
+  const std::string                   path  = m_cad_busy_path;
+  const std::string                   bytes = m_cad_busy_bytes;
+  const Atomic_progress_indicator_ptr prog  = m_cad_busy_progress;
+  m_cad_busy_inspect_fut =
+      std::async(std::launch::async, [path, bytes, prog]() { return utl_cad_file_info::collect(path, bytes, prog); });
+#else
+  m_cad_busy_run_next_frame = true;
+#endif
+}
+
+void GUI::begin_step_import_(const Step_import_mode mode)
+{
+  if (cad_busy_() || m_file_inspector_bytes.empty() || !m_view)
+    return;
+
+  m_cad_busy_kind        = Cad_busy_kind::Import;
+  m_cad_busy_path        = m_file_inspector_path;
+  m_cad_busy_bytes       = m_file_inspector_bytes;
+  m_cad_busy_import_mode = mode;
+  m_cad_busy_title       = "Importing STEP";
+  m_cad_busy_progress    = new Atomic_progress_indicator();
+  m_cad_busy_progress->set_stage("Starting...");
+  m_cad_busy_open_popup = true;
+  m_cad_busy_modal_open = true;
+
+#ifndef __EMSCRIPTEN__
+  const std::string                   bytes = m_cad_busy_bytes;
+  const Step_import_mode              m     = mode;
+  const double                        scale = m_view->step_import_model_scale();
+  const Atomic_progress_indicator_ptr prog  = m_cad_busy_progress;
+  m_cad_busy_import_fut                     = std::async(std::launch::async,
+                                                         [bytes, m, scale, prog]() -> std::pair<Status, Occt_view::Step_import_geom>
+                                                         {
+                                       Occt_view::Step_import_geom geom;
+                                       Status st = Occt_view::prepare_step_import(bytes, m, scale, geom, prog);
+                                       return {st, std::move(geom)};
+                                     });
+#else
+  m_cad_busy_run_next_frame = true;
+#endif
+}
+
+void GUI::poll_cad_busy_()
+{
+  if (!cad_busy_())
+    return;
+
+#ifdef __EMSCRIPTEN__
+  if (m_cad_busy_run_next_frame)
+  {
+    // Paint the modal for one frame, then run the heavy work on the next poll.
+    m_cad_busy_run_next_frame = false;
+    return;
+  }
+
+  if (m_cad_busy_kind == Cad_busy_kind::Inspect)
+  {
+    const auto lines      = utl_cad_file_info::collect(m_cad_busy_path, m_cad_busy_bytes, m_cad_busy_progress);
+    const bool cancelled  = !m_cad_busy_progress.IsNull() && m_cad_busy_progress->cancelled();
+    m_cad_busy_kind       = Cad_busy_kind::Idle;
+    m_cad_busy_progress   = {};
+    m_cad_busy_modal_open = false;
+    if (cancelled)
+    {
+      show_message("STEP read cancelled.");
+      return;
+    }
+
+    m_file_inspector_path      = m_cad_busy_path;
+    m_file_inspector_bytes     = m_cad_busy_bytes;
+    m_file_inspector_fmt       = utl_cad_file_info::Format::Step;
+    m_file_inspector_lines     = lines;
+    m_file_inspector_step_mode = Step_import_mode::Preserve_hierarchy;
+    m_file_inspector_open      = true;
+    return;
+  }
+
+  if (m_cad_busy_kind == Cad_busy_kind::Import)
+  {
+    Occt_view::Step_import_geom geom;
+    Status     st = Occt_view::prepare_step_import(m_cad_busy_bytes, m_cad_busy_import_mode, m_view->step_import_model_scale(),
+                                                   geom, m_cad_busy_progress);
+    const bool cancelled  = !m_cad_busy_progress.IsNull() && m_cad_busy_progress->cancelled();
+    m_cad_busy_kind       = Cad_busy_kind::Idle;
+    m_cad_busy_progress   = {};
+    m_cad_busy_modal_open = false;
+    if (cancelled || (!st.is_ok() && st.message().find("cancelled") != std::string::npos))
+    {
+      show_message("STEP import cancelled.");
+      return;
+    }
+
+    if (!st.is_ok())
+    {
+      show_message(st.message());
+      return;
+    }
+
+    if (Status commit = m_view->commit_step_import(geom); !commit.is_ok())
+    {
+      show_message(commit.message());
+      return;
+    }
+
+    const std::string name = std::filesystem::path(m_cad_busy_path).filename().string();
+    switch (m_cad_busy_import_mode)
+    {
+    case Step_import_mode::Union_shapes:
+      show_message("Imported (union): " + name);
+      break;
+    case Step_import_mode::Flat_solids:
+      show_message("Imported (flat): " + name);
+      break;
+    default:
+      show_message("Imported: " + name);
+      break;
+    }
+    close_file_inspector_();
+  }
+#else
+  if (m_cad_busy_kind == Cad_busy_kind::Inspect)
+  {
+    if (!m_cad_busy_inspect_fut.valid())
+      return;
+
+    if (m_cad_busy_inspect_fut.wait_for(std::chrono::seconds(0)) != std::future_status::ready)
+      return;
+
+    auto       lines      = m_cad_busy_inspect_fut.get();
+    const bool cancelled  = !m_cad_busy_progress.IsNull() && m_cad_busy_progress->cancelled();
+    m_cad_busy_kind       = Cad_busy_kind::Idle;
+    m_cad_busy_progress   = {};
+    m_cad_busy_modal_open = false;
+    if (cancelled)
+    {
+      show_message("STEP read cancelled.");
+      return;
+    }
+
+    m_file_inspector_path      = m_cad_busy_path;
+    m_file_inspector_bytes     = m_cad_busy_bytes;
+    m_file_inspector_fmt       = utl_cad_file_info::Format::Step;
+    m_file_inspector_lines     = std::move(lines);
+    m_file_inspector_step_mode = Step_import_mode::Preserve_hierarchy;
+    m_file_inspector_open      = true;
+    return;
+  }
+
+  if (m_cad_busy_kind == Cad_busy_kind::Import)
+  {
+    if (!m_cad_busy_import_fut.valid())
+      return;
+
+    if (m_cad_busy_import_fut.wait_for(std::chrono::seconds(0)) != std::future_status::ready)
+      return;
+
+    auto [st, geom]       = m_cad_busy_import_fut.get();
+    const bool cancelled  = !m_cad_busy_progress.IsNull() && m_cad_busy_progress->cancelled();
+    m_cad_busy_kind       = Cad_busy_kind::Idle;
+    m_cad_busy_progress   = {};
+    m_cad_busy_modal_open = false;
+    if (cancelled || (!st.is_ok() && st.message().find("cancelled") != std::string::npos))
+    {
+      show_message("STEP import cancelled.");
+      return;
+    }
+
+    if (!st.is_ok())
+    {
+      show_message(st.message());
+      return;
+    }
+
+    if (Status commit = m_view->commit_step_import(geom); !commit.is_ok())
+    {
+      show_message(commit.message());
+      return;
+    }
+
+    const std::string name = std::filesystem::path(m_cad_busy_path).filename().string();
+    switch (m_cad_busy_import_mode)
+    {
+    case Step_import_mode::Union_shapes:
+      show_message("Imported (union): " + name);
+      break;
+    case Step_import_mode::Flat_solids:
+      show_message("Imported (flat): " + name);
+      break;
+    default:
+      show_message("Imported: " + name);
+      break;
+    }
+    close_file_inspector_();
+  }
+#endif
+}
+
+void GUI::cad_busy_dialog_()
+{
+  if (m_cad_busy_open_popup)
+  {
+    ImGui::OpenPopup("##EzyCadCadBusy");
+    m_cad_busy_open_popup = false;
+  }
+
+  if (!cad_busy_() && !m_cad_busy_modal_open)
+    return;
+
+  ImGui::SetNextWindowSize(ImVec2(420.0f, 0.0f), ImGuiCond_Appearing);
+  if (!ImGui::BeginPopupModal("##EzyCadCadBusy", &m_cad_busy_modal_open, ImGuiWindowFlags_AlwaysAutoResize))
+  {
+    if (!m_cad_busy_modal_open && cad_busy_())
+      cancel_cad_busy_();
+
+    return;
+  }
+
+  ImGui::TextUnformatted(m_cad_busy_title.empty() ? "Working..." : m_cad_busy_title.c_str());
+  const std::string name = std::filesystem::path(m_cad_busy_path).filename().string();
+  if (!name.empty())
+    ImGui::TextWrapped("%s", name.c_str());
+
+  std::string stage = m_cad_busy_progress.IsNull() ? std::string("Working...") : m_cad_busy_progress->stage();
+  if (stage.empty())
+    stage = "Working...";
+  ImGui::TextWrapped("%s", stage.c_str());
+
+  const float pos = m_cad_busy_progress.IsNull() ? 0.f : m_cad_busy_progress->position();
+  if (pos > 0.001f)
+  {
+    char overlay[32];
+    std::snprintf(overlay, sizeof(overlay), "%.0f%%", static_cast<double>(pos) * 100.0);
+    ImGui::ProgressBar(pos, ImVec2(-1.0f, 0.0f), overlay);
+  }
+  else
+    ImGui::ProgressBar(-1.0f * static_cast<float>(ImGui::GetTime()), ImVec2(-1.0f, 0.0f), "Working...");
+
+#ifndef __EMSCRIPTEN__
+  if (ImGui::Button("Cancel", ImVec2(120.0f, 0.0f)))
+    cancel_cad_busy_();
+#else
+  ImGui::TextDisabled("Please wait...");
+#endif
+
+  ImGui::EndPopup();
+}
+
 void GUI::close_file_inspector_()
 {
   m_file_inspector_open = false;
@@ -3072,23 +3346,26 @@ void GUI::file_inspector_dialog_()
       if (ImGui::Combo("Import as", &mode_i, k_step_import_labels, IM_ARRAYSIZE(k_step_import_labels)))
         m_file_inspector_step_mode = static_cast<Step_import_mode>(mode_i);
       if (ui_show_contextual_help() && ImGui::IsItemHovered())
-        ImGui::SetTooltip(
-            "Preserve hierarchy: Shape List groups from the STEP assembly (default).\n"
-            "Flat solids: leaf solids only at the document root.\n"
-            "Union shapes: fuse all bodies into one solid.");
+        ImGui::SetTooltip("Preserve hierarchy: Shape List groups from the STEP assembly (default).\n"
+                          "Flat solids: leaf solids only at the document root.\n"
+                          "Union shapes: fuse all bodies into one solid.");
     }
     else
       m_file_inspector_step_mode = Step_import_mode::Preserve_hierarchy;
 
+    ImGui::BeginDisabled(cad_busy_());
     if (ImGui::Button("Import into project"))
     {
-      if (on_import_file(m_file_inspector_path, m_file_inspector_bytes, m_file_inspector_step_mode))
+      if (m_file_inspector_fmt == utl_cad_file_info::Format::Step)
+        begin_step_import_(m_file_inspector_step_mode);
+      else if (on_import_file(m_file_inspector_path, m_file_inspector_bytes, m_file_inspector_step_mode))
       {
         close_file_inspector_();
         ImGui::End();
         return;
       }
     }
+    ImGui::EndDisabled();
   }
 
   ImGui::Separator();
@@ -4304,7 +4581,11 @@ bool GUI::on_import_file(const std::string& file_path, const std::string& file_d
 
 void GUI::on_inspector_file(const std::string& file_path, const std::string& file_data)
 {
-  open_file_inspector_(file_path, file_data);
+  const utl_cad_file_info::Format fmt = utl_cad_file_info::detect(file_path, file_data);
+  if (fmt == utl_cad_file_info::Format::Step)
+    begin_step_inspect_(file_path, file_data);
+  else
+    open_file_inspector_(file_path, file_data);
 }
 
 #ifdef __EMSCRIPTEN__

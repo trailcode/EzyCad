@@ -135,7 +135,7 @@ Used by **File -> Import**. Reads file bytes only until the user confirms import
 | `read_step_named_bodies`    | STEPCAF/XCAF bodies + product names (flat; falls back to plain reader)  |
 | `read_step_named_tree`      | STEPCAF/XCAF assembly tree as group/leaf `Named_node`s (falls back flat) |
 
-`Occt_view::import_step` takes `Step_import_mode` (`utl_types.h`): preserve hierarchy (default), flat root leaves, or union.
+`Occt_view::import_step` takes `Step_import_mode` (`utl_types.h`): preserve hierarchy (default), flat root leaves, or union. Heavy work splits into `prepare_step_import` (thread-safe geometry) + `commit_step_import` (UI thread). `collect` / STEP Transfer accept optional `Atomic_progress_indicator` / `Message_ProgressRange` (`utl_occt_progress.h`).
 
 ## Logging and debug
 
