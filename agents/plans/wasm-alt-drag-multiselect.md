@@ -1,5 +1,5 @@
 ---
-status: planned
+status: planning
 topic: wasm-alt-drag-multiselect
 depends_on: []
 blocks: []

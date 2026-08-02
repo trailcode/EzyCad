@@ -1,5 +1,5 @@
 ---
-status: implemented
+status: done
 topic: sketch-mode-shape-faint
 helps:
   - shp-origin-orientation
@@ -13,7 +13,7 @@ helps:
 
 ## Status
 
-**Implemented** (prototype): Settings **Shapes in sketch mode** = Off / Ghost (default) / Wire; Ghost opacity; `Occt_view::sync_sketch_shape_faint_style` on mode change and new shapes.
+**Done** (prototype): Settings **Shapes in sketch mode** = Off / Ghost (default) / Wire; Ghost opacity; `Occt_view::sync_sketch_shape_faint_style` on mode change and new shapes.
 
 ## Why
 

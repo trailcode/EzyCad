@@ -1,5 +1,5 @@
 ---
-status: implemented
+status: done
 topic: configurable-hotkeys
 depends_on: null
 blocks:

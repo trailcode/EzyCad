@@ -1,5 +1,5 @@
 ---
-status: planned
+status: planning
 topic: wasm-multithreading
 depends_on: []
 blocks: []
