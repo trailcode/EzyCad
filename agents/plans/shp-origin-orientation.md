@@ -1,5 +1,5 @@
 ---
-status: planning
+status: partial
 topic: shp-origin-orientation
 depends_on: null
 blocks:

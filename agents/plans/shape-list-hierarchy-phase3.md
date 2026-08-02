@@ -1,5 +1,5 @@
 ---
-status: planning
+status: deferred
 topic: shape-list-hierarchy-phase3
 depends_on: null
 blocks: null
