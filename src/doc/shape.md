@@ -26,6 +26,7 @@ Typical uses:
 - Preview cross-sections on a shape-local XY, XZ, or YZ plane (optional hide-back preview; **Clip** commits a half-space cut).
 - Fillet/chamfer by shape, face, wire, or edge pick mode.
 - Polar duplicate selected shapes about an arm on the current sketch plane.
+- In-app copy/paste of solids and group subtrees (`copy_selected_shapes` / `paste_clipboard_shapes`).
 
 ## Requirements and invariants
 
@@ -191,7 +192,7 @@ Shape ops use typed deltas from [`shp_delta.h`](../shp_delta.h) (see [undo-redo.
 
 | Mechanism                         | When                                                          |
 | --------------------------------- | ------------------------------------------------------------- |
-| `Shape_add_delta`                 | Primitives, extrude, revolve, STEP/PLY import                 |
+| `Shape_add_delta`                 | Primitives, extrude, revolve, STEP/PLY import, shape paste    |
 | `Shape_remove_delta`              | Delete selection when only `Shp` objects are selected         |
 | `Shape_geom_delta`                | Move / rotate / scale **finalize** (not preview)              |
 | `Shape_replace_delta`             | Fuse / cut / common / fillet / chamfer / polar duplicate      |

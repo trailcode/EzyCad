@@ -78,7 +78,7 @@ Between those, the pane has collapsible sections. Expand a section to see its co
 
 **WebAssembly build** — Open CASCADE line-width controls (`SetWidth` / `Prs3d` line width) have no visible effect in the browser (WebGL/GLES). The **Settings** pane hides **Edge thickness**, **Dimension line width**, and **Snap guide line width** on the web build. Saved JSON may still contain those keys from a desktop session; they are not shown as editable rows in the browser UI.
 
-7. **Keyboard shortcuts** — Remappable chords for modeling and sketch tools, booleans, Delete, New/Open/Save, and Undo/Redo. See [Keyboard shortcuts](#keyboard-shortcuts).
+7. **Keyboard shortcuts** — Remappable chords for modeling and sketch tools, booleans, Delete, Copy/Paste, New/Open/Save, and Undo/Redo. See [Keyboard shortcuts](#keyboard-shortcuts).
 
 8. **Startup project** — **Desktop only:** **Load last opened on startup** (checkbox, with **?**), then **Last opened path:** … or **(No path saved yet.)** Then **Save current as startup project**, **Clear saved startup** (with **?**). **WebAssembly:** no load-last row; only the two buttons and **?**. See [Startup project](#startup-project).
 
@@ -147,7 +147,7 @@ Similar to Blender's startup file: EzyCad can load a **default document** when i
 
 ## Keyboard shortcuts
 
-Remap modeling and sketch tool chords, boolean commands, Delete, New/Open/Save, and Undo/Redo in **View -> Settings -> Keyboard shortcuts**. Default key lists live in [usage.md -> Hotkeys](usage.md#hotkeys) (and [usage-sketch.md -> Hotkeys](usage-sketch.md#hotkeys) for sketch-focused summaries). Toolbar tooltips for remappable modes and boolean commands follow the current bindings.
+Remap modeling and sketch tool chords, boolean commands, Delete, Copy/Paste, New/Open/Save, and Undo/Redo in **View -> Settings -> Keyboard shortcuts**. Default key lists live in [usage.md -> Hotkeys](usage.md#hotkeys) (and [usage-sketch.md -> Hotkeys](usage-sketch.md#hotkeys) for sketch-focused summaries). Toolbar tooltips for remappable modes and boolean commands follow the current bindings.
 
 **How to remap**
 
@@ -267,7 +267,7 @@ If saved layout text has no `[Docking]` section (older installs), a default dock
 | `default_2d_view_height`              | number             | Vertical sketch-plane span, stored in **inches** (allowed range **0.1** to **1000**; default **3**). Settings UI shows this in **`default_project_unit`**.                                                                                                                                            |
 | `load_last_opened_on_startup`         | boolean            | Desktop: open the last `.ezy` on launch. **Legacy:** `load_last_saved_on_startup` is read as a fallback if the newer key is absent.                                                                                                                                                                   |
 | `last_opened_project_path`            | string             | Path of the last opened project for the option above. **Legacy:** `last_saved_project_path` is accepted if the newer key is missing.                                                                                                                                                                  |
-| `hotkeys`                             | object             | Remappable keyboard shortcuts: action id string keys to human-readable chord strings (for example `"mode.move": "G"`, `"mode.add_edge": "L"`, `"cmd.shape_cut": "Ctrl+Shift+C"`, `"edit.delete": "Shift+D"`). Missing keys merge to built-in defaults. See [Keyboard shortcuts](#keyboard-shortcuts) and [usage.md#hotkeys](usage.md#hotkeys). |
+| `hotkeys`                             | object             | Remappable keyboard shortcuts: action id string keys to human-readable chord strings (for example `"mode.move": "G"`, `"mode.add_edge": "L"`, `"cmd.shape_cut": "Ctrl+Shift+C"`, `"edit.delete": "Shift+D"`, `"edit.copy": "Ctrl+C"`, `"edit.paste": "Ctrl+V"`). Missing keys merge to built-in defaults. See [Keyboard shortcuts](#keyboard-shortcuts) and [usage.md#hotkeys](usage.md#hotkeys). |
 
 Each **`imgui_style_dark`** / **`imgui_style_light`** object may contain:
 

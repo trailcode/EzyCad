@@ -28,6 +28,7 @@
 #include "shp_rotate.h"
 #include "shp_scale.h"
 #include "shp_cross_section.h"
+#include "shp_delta.h"
 #include "utl_types.h"
 #include "utl_asset_store.h"
 #include "utl_cad_file_info.h"
@@ -39,7 +40,6 @@
 class Delta;
 class GUI;
 class Sketch;
-struct Shape_rec;
 struct Sketch_annotation_refresh;
 struct Length_dimension_style;
 class Prs3d_Drawer;
@@ -206,6 +206,15 @@ public:
   void delete_selected();
   void delete_shapes(std::vector<AIS_Shape_ptr> to_delete);
   void delete_(std::vector<AIS_Shape_ptr>& to_delete);
+
+  /// Copy selected solids / current-group subtree into the in-app shape clipboard.
+  [[nodiscard]] Status copy_selected_shapes();
+  /// Paste clipboard shapes under current_group_id (undoable deep copy).
+  [[nodiscard]] Status paste_clipboard_shapes();
+  /// True when the in-app shape clipboard holds at least one node.
+  [[nodiscard]] bool has_shape_clipboard() const { return !m_shape_clipboard.empty(); }
+  /// Clear the in-app shape clipboard (New project leaves it intact).
+  void clear_shape_clipboard() { m_shape_clipboard.clear(); }
 
   //  Member function to delete variable arguments
   template <typename... Args> void remove(Args&&... args);
@@ -424,6 +433,8 @@ private:
   void        add_shp_(Shp_ptr& shp, bool use_current_group = false);
   void        ensure_current_group_valid_();
   std::string unique_shape_name_(const char* base_name) const;
+  /// Snapshot one shape for the in-app clipboard (independent BREP; local transform baked).
+  [[nodiscard]] Shape_rec capture_clipboard_shape_rec_(const Shp& shp) const;
 
   TopoDS_Shape         shape_with_local_transform_(const AIS_Shape_ptr& ais) const;
   [[nodiscard]] Status build_export_shape_(TopoDS_Shape& out_shape) const;
@@ -473,6 +484,8 @@ private:
   size_t                  m_next_sketch_id{1};
   Shape_id                m_next_shape_id{1};
   Shape_id                m_current_group_id{0};
+  /// In-app clipboard: forest of Shape_rec (roots have parent_id 0; independent BREP).
+  std::vector<Shape_rec>  m_shape_clipboard;
   Ezy_asset_store         m_assets;
 
   // --------------------------------------------------------------------

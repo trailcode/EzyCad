@@ -125,6 +125,7 @@ Each row (left to right):
 - **Solid / wire** - Checkbox (solids only) to switch **shaded** or **wireframe**.
 - **M** - Solids only: material popup; right-click for **Shape info...** or **Delete**.
 - **Name** - Expandable tree row with an editable name. Click the row to select that solid (or all descendant solids for a group) and update the current group. **Ctrl+click** toggles multi-select. Drag to reparent (empty area below the list = document root).
+- **Copy / Paste** - <kbd>Ctrl</kbd>+<kbd>C</kbd> / <kbd>Ctrl</kbd>+<kbd>V</kbd> (remappable) copy selected solids, or a whole group subtree when you clicked that group (all its descendant solids are selected). Paste inserts an independent deep copy under the current group, at the same pose. This is an in-app clipboard (survives **New**; it does not use the system clipboard). Sketch edges are not copied.
 - **Right-click the name** - Solids: **Shape info...** / **Delete**. Groups: **Ungroup** (moves **all** direct children to the group's parent, then removes the group) / **Delete** (cascade-deletes the whole subtree).
 
 Boolean results stay under the shared parent of their inputs when all inputs share one parent; otherwise they are placed at the document root. **File -> Import** STEP assemblies use **Import as** (default **Preserve hierarchy**) to keep product/assembly groups in the tree, import **Flat solids** at the root, or **Union shapes** into one solid.
@@ -735,6 +736,8 @@ Mode, file, and edit chords in the **General Operations** and **Modeling Shortcu
 | <kbd>Tab</kbd>                                                               | Distance/dimension input                                                         |
 | <kbd>Shift</kbd>+<kbd>Tab</kbd>                                              | Angle input (for line edges with angle constraint)                               |
 | <kbd>Shift</kbd>+<kbd>D</kbd>, <kbd>Delete</kbd>, or <kbd>Backspace</kbd>    | Remove selected elements                                                         |
+| <kbd>Ctrl</kbd>+<kbd>C</kbd>                                                 | Copy selected shapes (or current group subtree) to the in-app clipboard          |
+| <kbd>Ctrl</kbd>+<kbd>V</kbd>                                                 | Paste clipboard shapes under the current group (same pose; undoable)               |
 
 ### Modeling Shortcuts
 
