@@ -115,18 +115,14 @@ bool Shp_extrude::begin_face_extrude(const AIS_Shape_ptr& shp)
 
   cancel();
 
-  m_to_extrude_pln      = face->owner_sketch.get_plane();
-  m_extrude_side        = Plane_side::Front;
-  m_to_extrude_pt       = closest_to_camera(view().view_handle(), face->verts_3d);
-  m_curr_view_pln       = view().get_view_plane(*m_to_extrude_pt);
-  m_to_extrude          = shp;
-  m_face_edge_count     = count_shape_edges_(shp->Shape());
-  m_lite_preview_active = false;
-  m_phase               = Phase::Height;
-  m_twist_angle         = 0.0;
-  m_twist_centroid      = centroid_of_verts_(face->verts_3d);
-  m_show_angle_input    = false;
-  m_entered_twist_deg.reset();
+  m_to_extrude_pln  = face->owner_sketch.get_plane();
+  m_extrude_side    = Plane_side::Front;
+  m_to_extrude_pt   = closest_to_camera(view().view_handle(), face->verts_3d);
+  m_curr_view_pln   = view().get_view_plane(*m_to_extrude_pt);
+  m_to_extrude      = shp;
+  m_face_edge_count = count_shape_edges_(shp->Shape());
+  m_twist_centroid  = centroid_of_verts_(face->verts_3d);
+  clear_all(m_lite_preview_active, m_phase, m_twist_angle, m_show_angle_input, m_entered_twist_deg);
 
   const gp_Ax1& a = m_to_extrude_pln.Axis();
   const gp_Ax1& b = m_curr_view_pln.Axis();
@@ -240,10 +236,7 @@ void Shp_extrude::set_twist(const bool twist)
   if (!twist && m_phase == Phase::Twist)
   {
     // Return to editable height preview; drop twist angle.
-    m_phase            = Phase::Height;
-    m_twist_angle      = 0.0;
-    m_show_angle_input = false;
-    m_entered_twist_deg.reset();
+    clear_all(m_phase, m_twist_angle, m_show_angle_input, m_entered_twist_deg);
     clear_angle_dim_();
     view().set_entered_dim(std::nullopt);
     view().set_show_dim_input(false);
@@ -274,9 +267,7 @@ void Shp_extrude::lock_height_begin_twist_()
   view().set_show_dim_input(false);
   // Lock height to the last preview distance (typed or mouse).
   view().set_entered_dim(*m_last_preview_dist);
-  m_twist_angle = 0.0;
-  m_entered_twist_deg.reset();
-  m_show_angle_input = false;
+  clear_all(m_twist_angle, m_entered_twist_deg, m_show_angle_input);
   clear_length_dim_();
   update_extrude_preview_(*m_last_preview_dist, m_extrude_side);
 }

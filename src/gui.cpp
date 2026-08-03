@@ -3085,10 +3085,8 @@ void GUI::begin_step_import_(const Step_import_mode mode)
 
 void GUI::finish_step_import_(Status st, Occt_view::Step_import_geom& geom)
 {
-  const bool cancelled  = !m_cad_busy_progress.IsNull() && m_cad_busy_progress->cancelled();
-  m_cad_busy_kind       = Cad_busy_kind::Idle;
-  m_cad_busy_progress   = {};
-  m_cad_busy_modal_open = false;
+  const bool cancelled = !m_cad_busy_progress.IsNull() && m_cad_busy_progress->cancelled();
+  clear_all(m_cad_busy_kind, m_cad_busy_progress, m_cad_busy_modal_open);
 
   if (cancelled || (!st.is_ok() && st.message().find("cancelled") != std::string::npos))
   {

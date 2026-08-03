@@ -3083,10 +3083,7 @@ void Occt_view::clear_sketch_list_hover_ais_state_(Sketch_list_hover_ais& hover)
       m_ctx->Erase(hover.ais, false);
   }
 
-  hover.ais.Nullify();
-  hover.temp_display    = false;
-  hover.zlayer_override = false;
-  hover.prev_zlayer     = Graphic3d_ZLayerId_Default;
+  clear_all(hover.ais, hover.temp_display, hover.zlayer_override, hover.prev_zlayer);
 }
 
 void Occt_view::apply_sketch_list_hover_ais_state_(Sketch_list_hover_ais& hover, const Prs3d_Drawer_ptr& drawer,

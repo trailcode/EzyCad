@@ -188,7 +188,6 @@ void Shp_cyl_align::cancel()
 
 void Shp_cyl_align::reset()
 {
-  clear_all(m_phase, m_opts, m_axial_offset, m_moving_radius, m_fixed_radius, m_depth_override, m_moving_shp, m_fixed_shp,
-            m_moving_axis, m_fixed_axis, m_drag_pln, m_shps);
+  begin();
   gui().set_mode(Mode::Normal);
 }
