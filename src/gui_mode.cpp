@@ -414,6 +414,14 @@ void GUI::dispatch_hotkey_action_(Gui_action action)
     break;
 
   case Gui_action::Edit_delete:               m_view->delete_selected();  break;
+  case Gui_action::Edit_copy:
+    if (Status s = m_view->copy_selected_shapes(); !s.is_ok())
+      show_message(s.message());
+    break;
+  case Gui_action::Edit_paste:
+    if (Status s = m_view->paste_clipboard_shapes(); !s.is_ok())
+      show_message(s.message());
+    break;
   case Gui_action::File_new:                  new_project_();             break;
   case Gui_action::File_open:                 open_file_dialog_();        break;
   case Gui_action::File_save:                 save_file_dialog_();        break;

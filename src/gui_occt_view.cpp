@@ -8,6 +8,7 @@
 #include <BRepAdaptor_Curve.hxx>
 #include <BRepBndLib.hxx>
 #include <Bnd_Box.hxx>
+#include <BRepBuilderAPI_Copy.hxx>
 #include <BRepBuilderAPI_Transform.hxx>
 #include <BRepAlgoAPI_Fuse.hxx>
 #include <BRepMesh_IncrementalMesh.hxx>
@@ -51,6 +52,7 @@
 #include <cmath>
 #include <gp_Ax1.hxx>
 #include <gp_Trsf.hxx>
+#include <unordered_map>
 #include <unordered_set>
 
 #include "utl_dbg.h"
@@ -1169,11 +1171,16 @@ bool Occt_view::would_reparent_create_cycle(Shape_id id, Shape_id new_parent) co
   if (new_parent == id)
     return true;
 
-  Shape_id walk = new_parent;
+  // Also: id is an ancestor of new_parent (same as "new_parent is under id").
+  std::unordered_set<Shape_id> seen;
+  Shape_id                     walk = new_parent;
   while (walk != 0)
   {
     if (walk == id)
       return true;
+
+    if (!seen.insert(walk).second)
+      break; // Corrupt parent cycle; treat as no further ancestors.
 
     Shp_ptr p = find_shape_by_id(walk);
     if (p.IsNull())
@@ -1208,12 +1215,13 @@ std::vector<Shp_ptr> Occt_view::shape_descendant_solids(Shape_id id) const
   if (root.IsNull())
     return out;
 
-  std::vector<Shp_ptr> stack = {root};
+  std::unordered_set<Shape_id> seen;
+  std::vector<Shp_ptr>         stack = {root};
   while (!stack.empty())
   {
     Shp_ptr n = stack.back();
     stack.pop_back();
-    if (n.IsNull())
+    if (n.IsNull() || !seen.insert(n->get_id()).second)
       continue;
 
     if (!n->is_group())
@@ -1230,9 +1238,13 @@ std::vector<Shp_ptr> Occt_view::shape_descendant_solids(Shape_id id) const
 
 bool Occt_view::shape_ancestors_visible(const Shp& shp) const
 {
-  Shape_id walk = shp.get_parent_id();
+  std::unordered_set<Shape_id> seen;
+  Shape_id                     walk = shp.get_parent_id();
   while (walk != 0)
   {
+    if (!seen.insert(walk).second)
+      break; // Parent cycle; treat as visible rather than hang.
+
     Shp_ptr p = find_shape_by_id(walk);
     if (p.IsNull())
       break;
@@ -1917,6 +1929,271 @@ void Occt_view::delete_shapes(std::vector<AIS_Shape_ptr> to_delete)
   remove_selected_length_dimensions_from_sketches_();
   delete_(to_delete);
   cancel(Set_parent_mode::No); // In case we are in the middle of a operation.
+}
+
+Shape_rec Occt_view::capture_clipboard_shape_rec_(const Shp& shp) const
+{
+  Shape_rec rec;
+  rec.id            = shp.get_id();
+  rec.name          = shp.get_name();
+  rec.material      = shp.Material();
+  rec.parent_id     = shp.get_parent_id();
+  rec.sibling_order = shp.get_sibling_order();
+  rec.is_group      = shp.is_group();
+  rec.visible       = shp.get_visible();
+  rec.frame         = shp.get_frame();
+
+  if (!rec.is_group)
+  {
+    // Bake AIS local transform, then deep-copy so clipboard never shares TShape with the document.
+    const TopoDS_Shape&      s  = shp.Shape();
+    const gp_Trsf&           tr = shp.LocalTransformation();
+    BRepBuilderAPI_Transform transformer(s, tr, true);
+    BRepBuilderAPI_Copy      copier(transformer.Shape());
+    rec.geom = copier.Shape();
+    if (tr.Form() != gp_Identity)
+      rec.frame.Transform(tr);
+  }
+
+  return rec;
+}
+
+Status Occt_view::copy_selected_shapes()
+{
+  const std::vector<Shp_ptr> selected = get_selected_shps();
+  if (selected.empty())
+    return Status::user_error("Nothing to copy.");
+
+  std::unordered_set<Shape_id> selected_ids;
+  selected_ids.reserve(selected.size());
+  for (const Shp_ptr& s : selected)
+    selected_ids.insert(s->get_id());
+
+  std::vector<Shape_id> root_ids;
+
+  // Exact match: Shape List clicked a group (all descendant solids selected).
+  const Shape_id gid = current_group_id();
+  if (gid != 0)
+  {
+    const std::vector<Shp_ptr> desc = shape_descendant_solids(gid);
+    if (!desc.empty() && desc.size() == selected.size())
+    {
+      bool exact = true;
+      for (const Shp_ptr& d : desc)
+        if (selected_ids.find(d->get_id()) == selected_ids.end())
+        {
+          exact = false;
+          break;
+        }
+
+      if (exact)
+        root_ids.push_back(gid);
+    }
+  }
+
+  if (root_ids.empty())
+  {
+    for (const Shp_ptr& s : selected)
+      root_ids.push_back(s->get_id());
+  }
+
+  // Collapse: drop roots that sit under another root.
+  // would_reparent_create_cycle(other, id) <=> id is under other (incl. equal).
+  std::vector<Shape_id> collapsed;
+  collapsed.reserve(root_ids.size());
+  for (Shape_id id : root_ids)
+  {
+    bool under_other = false;
+    for (Shape_id other : root_ids)
+    {
+      if (other == id)
+        continue;
+
+      if (would_reparent_create_cycle(other, id))
+      {
+        under_other = true;
+        break;
+      }
+    }
+    if (!under_other)
+      collapsed.push_back(id);
+  }
+
+  // Snapshot each root subtree (pre-order); normalize root parent_id to 0.
+  std::vector<Shape_rec> clip;
+  std::vector<Shape_id>  source_roots;
+  std::unordered_set<Shape_id> seen;
+  for (Shape_id root_id : collapsed)
+  {
+    Shp_ptr root = find_shape_by_id(root_id);
+    if (root.IsNull())
+      continue;
+
+    source_roots.push_back(root_id);
+
+    std::vector<Shp_ptr> stack = {root};
+    // Pre-order via explicit queue for stable child order.
+    std::vector<Shp_ptr> ordered;
+    while (!stack.empty())
+    {
+      Shp_ptr cur = stack.back();
+      stack.pop_back();
+      if (cur.IsNull() || !seen.insert(cur->get_id()).second)
+        continue;
+
+      ordered.push_back(cur);
+      if (cur->is_group())
+      {
+        const std::vector<Shp_ptr> kids = shape_children(cur->get_id());
+        for (auto it = kids.rbegin(); it != kids.rend(); ++it)
+          stack.push_back(*it);
+      }
+    }
+
+    for (const Shp_ptr& n : ordered)
+    {
+      Shape_rec rec = capture_clipboard_shape_rec_(*n);
+      if (n->get_id() == root_id)
+        rec.parent_id = 0;
+      clip.push_back(std::move(rec));
+    }
+  }
+
+  if (clip.empty())
+    return Status::user_error("Nothing to copy.");
+
+  m_shape_clipboard              = std::move(clip);
+  m_shape_clipboard_source_roots = std::move(source_roots);
+  return Status::ok();
+}
+
+Status Occt_view::paste_clipboard_shapes()
+{
+  if (m_shape_clipboard.empty())
+    return Status::user_error("Clipboard is empty.");
+
+  ensure_current_group_valid_();
+  Shape_id paste_parent = m_current_group_id;
+
+  // If the user still has a copied group as the current group (Shape List click + Ctrl+C +
+  // Ctrl+V), paste as a sibling of that group -- not as a child of itself.
+  for (Shape_id src_root : m_shape_clipboard_source_roots)
+  {
+    if (src_root == 0 || src_root != paste_parent)
+      continue;
+
+    Shp_ptr src = find_shape_by_id(src_root);
+    if (!src.IsNull() && src->is_group())
+    {
+      paste_parent = src->get_parent_id();
+      break;
+    }
+  }
+
+  if (paste_parent != 0)
+  {
+    Shp_ptr p = find_shape_by_id(paste_parent);
+    if (p.IsNull() || !p->is_group())
+      return Status::user_error("Current group is invalid.");
+
+    // Pasting a clipboard root under one of its own live source roots is handled above;
+    // also reject nesting under any live descendant/ancestor of a copied source root.
+    for (Shape_id src_root : m_shape_clipboard_source_roots)
+      if (would_reparent_create_cycle(src_root, paste_parent))
+        return Status::user_error("Cannot paste a group into its own subtree.");
+  }
+
+  std::unordered_map<Shape_id, Shape_id> id_map;
+  id_map.reserve(m_shape_clipboard.size());
+  for (const Shape_rec& rec : m_shape_clipboard)
+  {
+    const Shape_id new_id = allocate_shape_id();
+    if (!find_shape_by_id(new_id).IsNull())
+      return Status::user_error("Internal error: shape id collision on paste.");
+
+    id_map[rec.id] = new_id;
+  }
+
+  std::vector<std::string> existing_names;
+  existing_names.reserve(m_shps.size() + m_shape_clipboard.size());
+  for (const Shp_ptr& s : m_shps)
+    if (!s.IsNull())
+      existing_names.push_back(s->get_name());
+
+  // Build the full insert set before mutating the document (all-or-nothing).
+  std::vector<Shape_rec> added;
+  added.reserve(m_shape_clipboard.size());
+  Shape_id               first_pasted_group = 0;
+  int                    root_order_base    = next_sibling_order(paste_parent);
+
+  for (const Shape_rec& src : m_shape_clipboard)
+  {
+    Shape_rec rec = src;
+    rec.id        = id_map[src.id];
+
+    const bool is_root = (src.parent_id == 0);
+    if (is_root)
+    {
+      rec.parent_id     = paste_parent;
+      rec.sibling_order = root_order_base++;
+    }
+    else
+    {
+      const auto it = id_map.find(src.parent_id);
+      if (it == id_map.end())
+        return Status::user_error("Clipboard tree is corrupt.");
+
+      rec.parent_id = it->second;
+    }
+
+    if (rec.parent_id == rec.id || would_reparent_create_cycle(rec.id, rec.parent_id))
+      return Status::user_error("Internal error: paste would create a parent cycle.");
+
+    rec.name = unique_sequential_name(src.name, existing_names);
+    existing_names.push_back(rec.name);
+
+    if (!rec.is_group)
+    {
+      if (rec.geom.IsNull())
+        return Status::user_error("Clipboard solid has no geometry.");
+
+      BRepBuilderAPI_Copy copier(rec.geom);
+      rec.geom = copier.Shape();
+      if (rec.geom.IsNull())
+        return Status::user_error("Failed to copy solid geometry.");
+    }
+
+    if (rec.is_group && is_root && first_pasted_group == 0)
+      first_pasted_group = rec.id;
+
+    added.push_back(std::move(rec));
+  }
+
+  for (const Shape_rec& rec : added)
+    insert_shape_rec(rec);
+
+  push_undo_delta(std::make_unique<Shape_add_delta>(std::move(added)));
+
+  if (first_pasted_group != 0)
+    set_current_group_id(first_pasted_group);
+
+  // Sync display before selection: sketch faint sync clears AIS selection when active.
+  sync_sketch_shape_faint_style();
+
+  // Select pasted root solids (and solids under pasted groups).
+  std::vector<Shp_ptr> to_select;
+  for (const Shape_rec& src : m_shape_clipboard)
+  {
+    if (src.parent_id != 0)
+      continue;
+
+    const Shape_id new_root = id_map[src.id];
+    for (const Shp_ptr& s : shape_descendant_solids(new_root))
+      to_select.push_back(s);
+  }
+  set_selected_shps(to_select);
+
+  return Status::ok();
 }
 
 void Occt_view::remove_selected_length_dimensions_from_sketches_()
@@ -4122,6 +4399,9 @@ void Occt_view::new_file()
   remove(m_shps);
   clear_all(m_shps, m_sketches, m_cur_sketch);
   m_assets.clear();
+  // Keep m_shape_clipboard so Copy then New then Paste can seed a fresh document.
+  // Live source-root ids are invalid after the document is cleared.
+  m_shape_clipboard_source_roots.clear();
   m_next_sketch_id   = 1;
   m_next_shape_id    = 1;
   m_current_group_id = 0;

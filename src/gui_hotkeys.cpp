@@ -49,6 +49,8 @@ constexpr Action_meta c_actions[] = {
     {Gui_action::Cmd_shape_fuse,            "cmd.shape_fuse",            "Shape fuse",              {GLFW_KEY_F, GLFW_MOD_CONTROL | GLFW_MOD_SHIFT}},
     {Gui_action::Cmd_shape_common,          "cmd.shape_common",          "Shape common",            {GLFW_KEY_M, GLFW_MOD_CONTROL | GLFW_MOD_SHIFT}},
     {Gui_action::Edit_delete,               "edit.delete",               "Delete",                  {GLFW_KEY_D, GLFW_MOD_SHIFT}},
+    {Gui_action::Edit_copy,                 "edit.copy",                 "Copy",                    {GLFW_KEY_C, GLFW_MOD_CONTROL}},
+    {Gui_action::Edit_paste,                "edit.paste",                "Paste",                   {GLFW_KEY_V, GLFW_MOD_CONTROL}},
     {Gui_action::File_new,                  "file.new",                  "New project",             {GLFW_KEY_N, GLFW_MOD_CONTROL}},
     {Gui_action::File_open,                 "file.open",                 "Open",                    {GLFW_KEY_O, GLFW_MOD_CONTROL}},
     {Gui_action::File_save,                 "file.save",                 "Save",                    {GLFW_KEY_S, GLFW_MOD_CONTROL}},

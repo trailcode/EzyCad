@@ -60,6 +60,8 @@
       "cmd.shape_fuse": "Ctrl+Shift+F",
       "cmd.shape_common": "Ctrl+Shift+M",
       "edit.delete": "Shift+D",
+      "edit.copy": "Ctrl+C",
+      "edit.paste": "Ctrl+V",
       "file.new": "Ctrl+N",
       "file.open": "Ctrl+O",
       "file.save": "Ctrl+S",

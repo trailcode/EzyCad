@@ -745,6 +745,33 @@ TEST_F(Shp_test, Group_reparent_cycle_rejected)
   EXPECT_FALSE(view().reparent_shape(grp->get_id(), a->get_id()).is_ok());
 }
 
+TEST_F(Shp_test, Parent_chain_walk_tolerates_corrupt_cycle)
+{
+  // Defensive: a corrupt parent loop must not hang ancestor walks used by reparent
+  // and copy/paste collapse / paste-into-subtree checks.
+  Shp_ptr g1 = view().create_group("G1", 0);
+  Shp_ptr g2 = view().create_group("G2", 0);
+  ASSERT_FALSE(g1.IsNull());
+  ASSERT_FALSE(g2.IsNull());
+  g1->set_parent_id(g2->get_id());
+  g2->set_parent_id(g1->get_id());
+
+  EXPECT_TRUE(view().would_reparent_create_cycle(g1->get_id(), g2->get_id()));
+  EXPECT_FALSE(view().would_reparent_create_cycle(g1->get_id(), 0));
+
+  view().add_box(0, 0, 0, 1, 1, 1);
+  Shp_ptr box;
+  for (const Shp_ptr& s : view().get_shapes())
+    if (!s->is_group())
+      box = s;
+  ASSERT_FALSE(box.IsNull());
+  select_shapes(view(), {box});
+  ASSERT_TRUE(view().copy_selected_shapes().is_ok());
+  view().set_current_group_id(g1->get_id());
+  // Paste under a node trapped in a parent cycle must terminate (ok or error).
+  (void)view().paste_clipboard_shapes();
+}
+
 TEST_F(Shp_test, Ungroup_moves_all_direct_children)
 {
   view().add_box(0, 0, 0, 1, 1, 1);
@@ -919,4 +946,236 @@ TEST_F(Shp_test, Current_group_parents_new_primitives)
   view().set_current_group_id(grp->get_id());
   ASSERT_TRUE(view().ungroup_shape(grp->get_id()).is_ok());
   EXPECT_EQ(view().current_group_id(), 0u);
+}
+
+// ---------------------------------------------------------------------------
+// In-app shape copy / paste
+// ---------------------------------------------------------------------------
+
+TEST_F(Shp_test, Copy_paste_loose_solids_new_ids_and_undo)
+{
+  view().add_box(0, 0, 0, 1, 1, 1);
+  view().add_box(2, 0, 0, 1, 1, 1);
+  std::vector<Shp_ptr> boxes;
+  for (const Shp_ptr& s : view().get_shapes())
+    if (!s->is_group())
+      boxes.push_back(s);
+
+  ASSERT_EQ(boxes.size(), 2u);
+  const Shape_id id0 = boxes[0]->get_id();
+  const Shape_id id1 = boxes[1]->get_id();
+  select_shapes(view(), boxes);
+
+  ASSERT_TRUE(view().copy_selected_shapes().is_ok());
+  EXPECT_TRUE(view().has_shape_clipboard());
+  ASSERT_TRUE(view().paste_clipboard_shapes().is_ok());
+
+  size_t leaves = 0;
+  for (const Shp_ptr& s : view().get_shapes())
+    if (!s->is_group())
+      ++leaves;
+
+  EXPECT_EQ(leaves, 4u);
+
+  const std::vector<Shp_ptr> selected = view().get_selected_shps();
+  ASSERT_EQ(selected.size(), 2u);
+  for (const Shp_ptr& s : selected)
+  {
+    EXPECT_NE(s->get_id(), id0);
+    EXPECT_NE(s->get_id(), id1);
+    EXPECT_EQ(s->get_parent_id(), 0u);
+  }
+
+  EXPECT_TRUE(view().undo());
+  leaves = 0;
+  for (const Shp_ptr& s : view().get_shapes())
+    if (!s->is_group())
+      ++leaves;
+
+  EXPECT_EQ(leaves, 2u);
+}
+
+TEST_F(Shp_test, Copy_paste_group_subtree_preserves_nesting)
+{
+  view().add_box(0, 0, 0, 1, 1, 1);
+  view().add_box(2, 0, 0, 1, 1, 1);
+  std::vector<Shp_ptr> boxes;
+  for (const Shp_ptr& s : view().get_shapes())
+    if (!s->is_group())
+      boxes.push_back(s);
+
+  ASSERT_TRUE(view().group_shapes(boxes).is_ok());
+  Shp_ptr grp;
+  for (const Shp_ptr& s : view().get_shapes())
+    if (s->is_group())
+      grp = s;
+
+  ASSERT_FALSE(grp.IsNull());
+  const Shape_id gid = grp->get_id();
+
+  // Nested empty group under the outer group.
+  Shp_ptr nested = view().create_group("Nested", gid);
+  ASSERT_FALSE(nested.IsNull());
+
+  // Mimic Shape List group click: current group + all descendant solids selected.
+  view().set_current_group_id(gid);
+  select_shapes(view(), view().shape_descendant_solids(gid));
+
+  ASSERT_TRUE(view().copy_selected_shapes().is_ok());
+  view().set_current_group_id(0);
+  ASSERT_TRUE(view().paste_clipboard_shapes().is_ok());
+
+  size_t groups = 0;
+  size_t leaves = 0;
+  for (const Shp_ptr& s : view().get_shapes())
+  {
+    if (s->is_group())
+      ++groups;
+    else
+      ++leaves;
+  }
+  // Original: outer + nested; pasted: outer + nested.
+  EXPECT_EQ(groups, 4u);
+  EXPECT_EQ(leaves, 4u);
+
+  // Pasted root group should be current and have two direct children (2 boxes or nested+boxes).
+  const Shape_id pasted_gid = view().current_group_id();
+  EXPECT_NE(pasted_gid, 0u);
+  EXPECT_NE(pasted_gid, gid);
+  Shp_ptr pasted_grp = view().find_shape_by_id(pasted_gid);
+  ASSERT_FALSE(pasted_grp.IsNull());
+  EXPECT_TRUE(pasted_grp->is_group());
+  EXPECT_EQ(pasted_grp->get_parent_id(), 0u);
+
+  size_t nested_under_paste = 0;
+  size_t solids_under_paste = 0;
+  for (const Shp_ptr& c : view().shape_children(pasted_gid))
+  {
+    if (c->is_group())
+      ++nested_under_paste;
+    else
+      ++solids_under_paste;
+  }
+  EXPECT_EQ(nested_under_paste, 1u);
+  EXPECT_EQ(solids_under_paste, 2u);
+  EXPECT_EQ(view().shape_descendant_solids(pasted_gid).size(), 2u);
+}
+
+TEST_F(Shp_test, Copy_partial_group_selection_copies_solids_not_group)
+{
+  view().add_box(0, 0, 0, 1, 1, 1);
+  view().add_box(2, 0, 0, 1, 1, 1);
+  std::vector<Shp_ptr> boxes;
+  for (const Shp_ptr& s : view().get_shapes())
+    if (!s->is_group())
+      boxes.push_back(s);
+
+  ASSERT_TRUE(view().group_shapes(boxes).is_ok());
+  Shp_ptr grp;
+  for (const Shp_ptr& s : view().get_shapes())
+    if (s->is_group())
+      grp = s;
+
+  ASSERT_FALSE(grp.IsNull());
+  view().set_current_group_id(grp->get_id());
+  // Only one solid selected -> do not treat as whole-group copy.
+  select_shapes(view(), {boxes[0]});
+
+  ASSERT_TRUE(view().copy_selected_shapes().is_ok());
+  view().set_current_group_id(0);
+  ASSERT_TRUE(view().paste_clipboard_shapes().is_ok());
+
+  size_t groups = 0;
+  size_t leaves = 0;
+  for (const Shp_ptr& s : view().get_shapes())
+  {
+    if (s->is_group())
+      ++groups;
+    else
+      ++leaves;
+  }
+  EXPECT_EQ(groups, 1u);
+  EXPECT_EQ(leaves, 3u);
+
+  const std::vector<Shp_ptr> selected = view().get_selected_shps();
+  ASSERT_EQ(selected.size(), 1u);
+  EXPECT_EQ(selected[0]->get_parent_id(), 0u);
+}
+
+TEST_F(Shp_test, Copy_paste_group_while_still_current_group)
+{
+  // User workflow: click group in Shape List (current_group = that group), Ctrl+C, Ctrl+V
+  // without changing the current group first. Paste must be a sibling, not a child of itself.
+  view().add_box(0, 0, 0, 1, 1, 1);
+  view().add_box(2, 0, 0, 1, 1, 1);
+  std::vector<Shp_ptr> boxes;
+  for (const Shp_ptr& s : view().get_shapes())
+    if (!s->is_group())
+      boxes.push_back(s);
+
+  ASSERT_TRUE(view().group_shapes(boxes).is_ok());
+  Shp_ptr grp;
+  for (const Shp_ptr& s : view().get_shapes())
+    if (s->is_group())
+      grp = s;
+
+  ASSERT_FALSE(grp.IsNull());
+  const Shape_id gid = grp->get_id();
+  view().set_current_group_id(gid);
+  select_shapes(view(), view().shape_descendant_solids(gid));
+
+  ASSERT_TRUE(view().copy_selected_shapes().is_ok());
+  // Intentionally leave current_group_id == gid.
+  ASSERT_EQ(view().current_group_id(), gid);
+  ASSERT_TRUE(view().paste_clipboard_shapes().is_ok());
+
+  size_t groups = 0;
+  size_t leaves = 0;
+  for (const Shp_ptr& s : view().get_shapes())
+  {
+    ASSERT_FALSE(s.IsNull());
+    if (s->is_group())
+      ++groups;
+    else
+    {
+      ++leaves;
+      EXPECT_FALSE(s->Shape().IsNull());
+    }
+  }
+  EXPECT_EQ(groups, 2u);
+  EXPECT_EQ(leaves, 4u);
+  EXPECT_FALSE(view().find_shape_by_id(gid).IsNull());
+
+  // Both groups remain document roots (sibling paste, not nested under the source).
+  const std::vector<Shp_ptr> roots = view().shape_children(0);
+  EXPECT_EQ(roots.size(), 2u);
+  EXPECT_EQ(view().get_shapes().size(), 6u);
+
+  const Shape_id pasted_gid = view().current_group_id();
+  EXPECT_NE(pasted_gid, 0u);
+  EXPECT_NE(pasted_gid, gid);
+  Shp_ptr pasted = view().find_shape_by_id(pasted_gid);
+  ASSERT_FALSE(pasted.IsNull());
+  EXPECT_TRUE(pasted->is_group());
+  EXPECT_EQ(pasted->get_parent_id(), 0u);
+  EXPECT_EQ(view().shape_descendant_solids(pasted_gid).size(), 2u);
+  EXPECT_EQ(view().shape_descendant_solids(gid).size(), 2u);
+}
+
+TEST_F(Shp_test, New_file_keeps_shape_clipboard)
+{
+  view().add_box(0, 0, 0, 1, 1, 1);
+  select_shapes(view(), {view().get_shapes().back()});
+  ASSERT_TRUE(view().copy_selected_shapes().is_ok());
+  EXPECT_TRUE(view().has_shape_clipboard());
+  view().new_file();
+  EXPECT_TRUE(view().has_shape_clipboard());
+  ASSERT_TRUE(view().paste_clipboard_shapes().is_ok());
+
+  size_t leaves = 0;
+  for (const Shp_ptr& s : view().get_shapes())
+    if (!s->is_group())
+      ++leaves;
+
+  EXPECT_EQ(leaves, 1u);
 }
