@@ -476,8 +476,8 @@ std::optional<Cyl_face_info> cylinder_from_face(const TopoDS_Face& face)
 
 gp_Trsf cyl_align_trsf(const gp_Ax1& moving_axis, const gp_Ax1& fixed_axis, bool flip, double axial_offset)
 {
-  const gp_Dir from_dir = moving_axis.Direction();
-  const gp_Dir to_dir   = flip ? fixed_axis.Direction().Reversed() : fixed_axis.Direction();
+  const gp_Dir from_dir  = moving_axis.Direction();
+  const gp_Dir to_dir    = flip ? fixed_axis.Direction().Reversed() : fixed_axis.Direction();
   const gp_Dir fixed_dir = fixed_axis.Direction();
 
   const gp_Vec to_moving(fixed_axis.Location(), moving_axis.Location());

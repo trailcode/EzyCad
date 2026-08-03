@@ -16,8 +16,8 @@ Shp_cyl_align::Shp_cyl_align(Occt_view& view)
 
 void Shp_cyl_align::begin()
 {
-  clear_all(m_phase, m_opts, m_axial_offset, m_moving_radius, m_fixed_radius, m_depth_override, m_moving_shp,
-            m_fixed_shp, m_moving_axis, m_fixed_axis, m_drag_pln, m_shps);
+  clear_all(m_phase, m_opts, m_axial_offset, m_moving_radius, m_fixed_radius, m_depth_override, m_moving_shp, m_fixed_shp,
+            m_moving_axis, m_fixed_axis, m_drag_pln, m_shps);
 }
 
 bool Shp_cyl_align::is_dragging() const { return m_phase == Phase::Drag_depth && !m_shps.empty(); }
@@ -91,8 +91,8 @@ void Shp_cyl_align::apply_preview_()
   EZY_ASSERT(m_moving_axis.has_value() && m_fixed_axis.has_value());
   EZY_ASSERT(!m_shps.empty());
 
-  const double offset = m_depth_override.value_or(m_axial_offset);
-  const gp_Trsf trsf  = cyl_align_trsf(*m_moving_axis, *m_fixed_axis, m_opts.flip_direction, offset);
+  const double  offset = m_depth_override.value_or(m_axial_offset);
+  const gp_Trsf trsf   = cyl_align_trsf(*m_moving_axis, *m_fixed_axis, m_opts.flip_direction, offset);
 
   for (const Shp_ptr& shape : m_shps)
     shape->SetLocalTransformation(trsf);
@@ -115,7 +115,7 @@ Status Shp_cyl_align::drag_depth(const ScreenCoords& screen_coords)
 
   const gp_Dir& fixed_dir = m_fixed_axis->Direction();
   const gp_Vec  to_moving(m_fixed_axis->Location(), m_moving_axis->Location());
-  const double  param0    = to_moving.Dot(gp_Vec(fixed_dir));
+  const double  param0     = to_moving.Dot(gp_Vec(fixed_dir));
   const gp_Pnt  seed_on_ax = m_fixed_axis->Location().Translated(gp_Vec(fixed_dir) * param0);
 
   if (!m_drag_pln.has_value())
@@ -188,7 +188,7 @@ void Shp_cyl_align::cancel()
 
 void Shp_cyl_align::reset()
 {
-  clear_all(m_phase, m_opts, m_axial_offset, m_moving_radius, m_fixed_radius, m_depth_override, m_moving_shp,
-            m_fixed_shp, m_moving_axis, m_fixed_axis, m_drag_pln, m_shps);
+  clear_all(m_phase, m_opts, m_axial_offset, m_moving_radius, m_fixed_radius, m_depth_override, m_moving_shp, m_fixed_shp,
+            m_moving_axis, m_fixed_axis, m_drag_pln, m_shps);
   gui().set_mode(Mode::Normal);
 }

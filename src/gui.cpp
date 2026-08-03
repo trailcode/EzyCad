@@ -2610,7 +2610,7 @@ void GUI::shape_list_()
   // pair so table rows cannot leave the ImGui tree stack unbalanced (which nested siblings
   // under the wrong parent and made Ungroup look like it only moved one child).
   std::unordered_set<Shape_id> shape_list_ancestors;
-  auto draw_shape_row = [&](auto&& self, const Shp_ptr& shape) -> void
+  auto                         draw_shape_row = [&](auto&& self, const Shp_ptr& shape) -> void
   {
     EZY_ASSERT(shape);
     if (!shape_list_ancestors.insert(shape->get_id()).second)
@@ -3085,7 +3085,7 @@ void GUI::begin_step_import_(const Step_import_mode mode)
 
 void GUI::finish_step_import_(Status st, Occt_view::Step_import_geom& geom)
 {
-  const bool cancelled = !m_cad_busy_progress.IsNull() && m_cad_busy_progress->cancelled();
+  const bool cancelled  = !m_cad_busy_progress.IsNull() && m_cad_busy_progress->cancelled();
   m_cad_busy_kind       = Cad_busy_kind::Idle;
   m_cad_busy_progress   = {};
   m_cad_busy_modal_open = false;
@@ -3137,8 +3137,8 @@ void GUI::poll_cad_busy_()
   }
 
   Occt_view::Step_import_geom geom;
-  Status st = Occt_view::prepare_step_import(m_cad_busy_bytes, m_cad_busy_import_mode, m_view->step_import_model_scale(),
-                                             geom, {});
+  Status                      st =
+      Occt_view::prepare_step_import(m_cad_busy_bytes, m_cad_busy_import_mode, m_view->step_import_model_scale(), geom, {});
   finish_step_import_(st, geom);
 #else
   if (!m_cad_busy_import_fut.valid())
@@ -3176,8 +3176,7 @@ void GUI::cad_busy_dialog_()
   }
 
   ImGui::SetNextWindowSize(ImVec2(280.0f, 0.0f), ImGuiCond_Appearing);
-  if (!ImGui::BeginPopupModal("##EzyCadCadBusy", nullptr,
-                              ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoMove))
+  if (!ImGui::BeginPopupModal("##EzyCadCadBusy", nullptr, ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoMove))
     return;
 
   ImGui::TextUnformatted("Importing...");

@@ -679,8 +679,8 @@ void Shp_extrude::clear_preview_()
   clear_lite_other_face_();
   clear_length_dim_();
   clear_angle_dim_();
-  clear_all(m_face_edge_count, m_lite_preview_active, m_last_preview_dist, m_last_preview_side,
-            m_last_preview_both_sides, m_last_preview_twist, m_last_preview_was_twist_phase, m_phase, m_twist_angle);
+  clear_all(m_face_edge_count, m_lite_preview_active, m_last_preview_dist, m_last_preview_side, m_last_preview_both_sides,
+            m_last_preview_twist, m_last_preview_was_twist_phase, m_phase, m_twist_angle);
 }
 
 void Shp_extrude::refresh_tmp_dimension_style(const Length_dimension_style& style)

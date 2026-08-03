@@ -91,9 +91,8 @@ template <typename T, typename... Args> void clear_all(T& arg, Args&... args)
     arg = T{};
   else
     // Fail for unsupported types
-    static_assert(false,
-                  "clear_all: Type must have clear()/reset()/Nullify(), be arithmetic/optional/pointer, "
-                  "or be an enum/aggregate");
+    static_assert(false, "clear_all: Type must have clear()/reset()/Nullify(), be arithmetic/optional/pointer, "
+                         "or be an enum/aggregate");
 
   // Recursively process remaining arguments
   clear_all(args...);

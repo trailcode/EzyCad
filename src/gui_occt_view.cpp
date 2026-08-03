@@ -2020,8 +2020,8 @@ Status Occt_view::copy_selected_shapes()
   }
 
   // Snapshot each root subtree (pre-order); normalize root parent_id to 0.
-  std::vector<Shape_rec> clip;
-  std::vector<Shape_id>  source_roots;
+  std::vector<Shape_rec>       clip;
+  std::vector<Shape_id>        source_roots;
   std::unordered_set<Shape_id> seen;
   for (Shape_id root_id : collapsed)
   {
@@ -2123,8 +2123,8 @@ Status Occt_view::paste_clipboard_shapes()
   // Build the full insert set before mutating the document (all-or-nothing).
   std::vector<Shape_rec> added;
   added.reserve(m_shape_clipboard.size());
-  Shape_id               first_pasted_group = 0;
-  int                    root_order_base    = next_sibling_order(paste_parent);
+  Shape_id first_pasted_group = 0;
+  int      root_order_base    = next_sibling_order(paste_parent);
 
   for (const Shape_rec& src : m_shape_clipboard)
   {
