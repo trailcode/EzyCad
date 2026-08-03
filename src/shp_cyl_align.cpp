@@ -16,15 +16,8 @@ Shp_cyl_align::Shp_cyl_align(Occt_view& view)
 
 void Shp_cyl_align::begin()
 {
-  m_phase          = Phase::Pick_moving;
-  m_opts           = {};
-  m_axial_offset   = 0;
-  m_moving_radius  = 0;
-  m_fixed_radius   = 0;
-  m_depth_override = std::nullopt;
-  m_moving_shp.Nullify();
-  m_fixed_shp.Nullify();
-  clear_all(m_moving_axis, m_fixed_axis, m_drag_pln, m_shps);
+  clear_all(m_phase, m_opts, m_axial_offset, m_moving_radius, m_fixed_radius, m_depth_override, m_moving_shp,
+            m_fixed_shp, m_moving_axis, m_fixed_axis, m_drag_pln, m_shps);
 }
 
 bool Shp_cyl_align::is_dragging() const { return m_phase == Phase::Drag_depth && !m_shps.empty(); }
@@ -86,9 +79,7 @@ void Shp_cyl_align::enter_drag_()
   EZY_ASSERT(!m_moving_shp.IsNull());
   EZY_ASSERT(m_moving_axis.has_value() && m_fixed_axis.has_value());
 
-  m_axial_offset   = 0;
-  m_depth_override = std::nullopt;
-  clear_all(m_drag_pln);
+  clear_all(m_axial_offset, m_depth_override, m_drag_pln);
   set_operation_shps_({m_moving_shp});
   m_phase = Phase::Drag_depth;
   view().set_dynamic_highlight_enabled(false);
@@ -197,14 +188,7 @@ void Shp_cyl_align::cancel()
 
 void Shp_cyl_align::reset()
 {
-  m_phase          = Phase::Pick_moving;
-  m_opts           = {};
-  m_axial_offset   = 0;
-  m_moving_radius  = 0;
-  m_fixed_radius   = 0;
-  m_depth_override = std::nullopt;
-  m_moving_shp.Nullify();
-  m_fixed_shp.Nullify();
-  clear_all(m_moving_axis, m_fixed_axis, m_drag_pln, m_shps);
+  clear_all(m_phase, m_opts, m_axial_offset, m_moving_radius, m_fixed_radius, m_depth_override, m_moving_shp,
+            m_fixed_shp, m_moving_axis, m_fixed_axis, m_drag_pln, m_shps);
   gui().set_mode(Mode::Normal);
 }

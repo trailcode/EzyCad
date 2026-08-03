@@ -1,3 +1,5 @@
+#include <type_traits>
+
 // Helper function for `for_each_flat`
 template <typename Lambda, typename T> void handle_arg(Lambda&& lambda, T&& arg)
 {
@@ -57,10 +59,12 @@ inline void clear_all() {}
  *
  * Supported types:
  * - Containers with `clear()` (e.g., `std::vector`, `std::string`)
- * - Arithmetic types (e.g., `int`, `float`), set to 0
+ * - Types with `reset()` (e.g. `std::optional` via reset)
+ * - Arithmetic types (e.g., `int`, `float`, `bool`), set to 0 / false
  * - `std::optional`, set to `std::nullopt`
- * - `opencascade::handle`, call Nullify()
- * - Raw pointers are set to nullptr
+ * - Types with `Nullify()` (OCCT handles, `TopoDS_Shape`, ...), call Nullify()
+ * - Raw pointers, set to nullptr
+ * - Enums and aggregates, value-initialized (`arg = T{}`)
  *
  * Fails at compile time for unsupported types.
  */
@@ -82,9 +86,14 @@ template <typename T, typename... Args> void clear_all(T& arg, Args&... args)
     arg = std::nullopt;
   else if constexpr (has_nullify<T>::value)
     arg.Nullify();
+  else if constexpr (std::is_enum_v<T> || std::is_aggregate_v<T>)
+    // Enums / option structs / small aggregates: value-initialize
+    arg = T{};
   else
     // Fail for unsupported types
-    static_assert(false, "clear_all: Type must have clear(), be arithmetic, opencascade::handle, or be std::optional");
+    static_assert(false,
+                  "clear_all: Type must have clear()/reset()/Nullify(), be arithmetic/optional/pointer, "
+                  "or be an enum/aggregate");
 
   // Recursively process remaining arguments
   clear_all(args...);

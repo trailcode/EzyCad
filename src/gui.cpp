@@ -2972,9 +2972,7 @@ void GUI::shape_info_dialog_()
 
   if (!shape_still_exists)
   {
-    m_shape_info_open = false;
-    m_shape_info_shp.Nullify();
-    m_shape_info_lines.clear();
+    clear_all(m_shape_info_open, m_shape_info_shp, m_shape_info_lines);
     return;
   }
 

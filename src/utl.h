@@ -83,8 +83,11 @@ private:
  *
  * Supported types:
  * - Containers with `clear()` (e.g., `std::vector`, `std::string`)
- * - Arithmetic types (e.g., `int`, `float`), set to 0
- * - `std::optional`, set to `std::nullopt`
+ * - Types with `reset()` / `std::optional` (nullopt)
+ * - Arithmetic types (e.g., `int`, `float`, `bool`), set to 0 / false
+ * - Types with `Nullify()` (OCCT handles, `TopoDS_Shape`, ...)
+ * - Raw pointers (nullptr)
+ * - Enums and aggregates (`arg = T{}`)
  *
  * Fails at compile time for unsupported types.
  */

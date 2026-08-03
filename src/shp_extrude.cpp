@@ -669,8 +669,7 @@ void Shp_extrude::clear_session_inputs_()
 {
   view().set_show_dim_input(false);
   view().set_entered_dim(std::nullopt);
-  m_show_angle_input = false;
-  m_entered_twist_deg.reset();
+  clear_all(m_show_angle_input, m_entered_twist_deg);
   gui().hide_angle_edit(false);
   gui().hide_dist_edit(false);
 }
@@ -680,15 +679,8 @@ void Shp_extrude::clear_preview_()
   clear_lite_other_face_();
   clear_length_dim_();
   clear_angle_dim_();
-  m_face_edge_count     = 0;
-  m_lite_preview_active = false;
-  m_last_preview_dist.reset();
-  m_last_preview_side            = Plane_side::Front;
-  m_last_preview_both_sides      = false;
-  m_last_preview_twist           = 0.0;
-  m_last_preview_was_twist_phase = false;
-  m_phase                        = Phase::Height;
-  m_twist_angle                  = 0.0;
+  clear_all(m_face_edge_count, m_lite_preview_active, m_last_preview_dist, m_last_preview_side,
+            m_last_preview_both_sides, m_last_preview_twist, m_last_preview_was_twist_phase, m_phase, m_twist_angle);
 }
 
 void Shp_extrude::refresh_tmp_dimension_style(const Length_dimension_style& style)

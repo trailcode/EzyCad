@@ -217,10 +217,7 @@ bool Sketch_tools::complete_edge_from_center_(const ScreenCoords& screen_coords)
 
   edge.node_idx_a = m_sketch.m_nodes.get_node_exact(span->pt_a);
   m_sketch.update_edge_end_pt_(edge, m_sketch.m_nodes.get_node_exact(span->pt_b));
-  m_sketch.m_dims.entered_edge_angle() = std::nullopt;
-  m_sketch.m_dims.entered_edge_len()   = std::nullopt;
-  m_sketch.m_dims.set_show_angle_input(false);
-  m_sketch.m_dims.set_show_dim_input(false);
+  m_sketch.m_dims.clear_typed_constraints();
   m_sketch.m_view.gui().hide_angle_edit();
   finalize();
   return true;
@@ -259,8 +256,7 @@ void Sketch_tools::add_line_string_pt_(const ScreenCoords& screen_coords, Sketch
     }
 
     // Start a new edge - clear constraints for fresh start (click path for multi-line)
-    m_sketch.m_dims.entered_edge_angle() = std::nullopt;
-    m_sketch.m_dims.entered_edge_len()   = std::nullopt;
+    clear_all(m_sketch.m_dims.entered_edge_angle(), m_sketch.m_dims.entered_edge_len());
     m_sketch.m_dims.set_show_angle_input(false);
     m_sketch.m_view.gui().hide_angle_edit();
     m_tmp_edges.push_back({node_idx});
@@ -645,10 +641,7 @@ void Sketch_tools::add_node_pt_(const ScreenCoords& screen_coords)
     {
       auto start_rubber_from_anchor = [this](size_t idx_a)
       {
-        m_sketch.m_dims.entered_edge_angle() = std::nullopt;
-        m_sketch.m_dims.entered_edge_len()   = std::nullopt;
-        m_sketch.m_dims.set_show_angle_input(false);
-        m_sketch.m_dims.set_show_dim_input(false);
+        m_sketch.m_dims.clear_typed_constraints();
         m_sketch.m_view.gui().hide_angle_edit();
         m_tmp_edges.push_back({idx_a});
       };

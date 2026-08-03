@@ -2,6 +2,7 @@
 
 #include "gui_occt_view.h"
 #include "shp_delta.h"
+#include "utl.h"
 #include "utl_dbg.h"
 #include "utl_occt.h"
 
@@ -271,8 +272,7 @@ std::optional<Status> Shp_cross_section::finish_section_result_(Section_result r
   }
   else
   {
-    m_last_section_compound.Nullify();
-    m_have_last_section_plane = false;
+    clear_all(m_last_section_compound, m_have_last_section_plane);
     clear_section_wires_();
   }
 
@@ -453,16 +453,14 @@ void Shp_cross_section::clear_plane_annotation_()
   if (!m_plane_lines.IsNull())
     ctx().Remove(m_plane_lines, false);
 
-  m_plane_fill.Nullify();
-  m_plane_lines.Nullify();
+  clear_all(m_plane_fill, m_plane_lines);
 }
 
 void Shp_cross_section::clear_preview_ais_()
 {
   clear_section_wires_();
   clear_plane_annotation_();
-  m_last_section_compound.Nullify();
-  m_have_last_section_plane = false;
+  clear_all(m_last_section_compound, m_have_last_section_plane);
 }
 
 const gp_Pln& Shp_cross_section::last_section_plane() const
