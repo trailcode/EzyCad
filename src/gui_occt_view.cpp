@@ -1171,11 +1171,16 @@ bool Occt_view::would_reparent_create_cycle(Shape_id id, Shape_id new_parent) co
   if (new_parent == id)
     return true;
 
-  Shape_id walk = new_parent;
+  // Also: id is an ancestor of new_parent (same as "new_parent is under id").
+  std::unordered_set<Shape_id> seen;
+  Shape_id                     walk = new_parent;
   while (walk != 0)
   {
     if (walk == id)
       return true;
+
+    if (!seen.insert(walk).second)
+      break; // Corrupt parent cycle; treat as no further ancestors.
 
     Shp_ptr p = find_shape_by_id(walk);
     if (p.IsNull())
@@ -1926,29 +1931,6 @@ void Occt_view::delete_shapes(std::vector<AIS_Shape_ptr> to_delete)
   cancel(Set_parent_mode::No); // In case we are in the middle of a operation.
 }
 
-namespace
-{
-[[nodiscard]] bool shape_is_under_ancestor_(const Occt_view& view, Shape_id id, Shape_id ancestor)
-{
-  if (ancestor == 0 || id == 0)
-    return false;
-
-  Shape_id walk = id;
-  while (walk != 0)
-  {
-    if (walk == ancestor)
-      return true;
-
-    Shp_ptr n = view.find_shape_by_id(walk);
-    if (n.IsNull())
-      break;
-
-    walk = n->get_parent_id();
-  }
-  return false;
-}
-} // namespace
-
 Shape_rec Occt_view::capture_clipboard_shape_rec_(const Shp& shp) const
 {
   Shape_rec rec;
@@ -2016,6 +1998,7 @@ Status Occt_view::copy_selected_shapes()
   }
 
   // Collapse: drop roots that sit under another root.
+  // would_reparent_create_cycle(other, id) <=> id is under other (incl. equal).
   std::vector<Shape_id> collapsed;
   collapsed.reserve(root_ids.size());
   for (Shape_id id : root_ids)
@@ -2026,7 +2009,7 @@ Status Occt_view::copy_selected_shapes()
       if (other == id)
         continue;
 
-      if (shape_is_under_ancestor_(*this, id, other))
+      if (would_reparent_create_cycle(other, id))
       {
         under_other = true;
         break;
@@ -2114,9 +2097,9 @@ Status Occt_view::paste_clipboard_shapes()
       return Status::user_error("Current group is invalid.");
 
     // Pasting a clipboard root under one of its own live source roots is handled above;
-    // also reject nesting under any live ancestor that was part of the copied forest.
+    // also reject nesting under any live descendant/ancestor of a copied source root.
     for (Shape_id src_root : m_shape_clipboard_source_roots)
-      if (shape_is_under_ancestor_(*this, paste_parent, src_root))
+      if (would_reparent_create_cycle(src_root, paste_parent))
         return Status::user_error("Cannot paste a group into its own subtree.");
   }
 

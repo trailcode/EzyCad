@@ -745,6 +745,33 @@ TEST_F(Shp_test, Group_reparent_cycle_rejected)
   EXPECT_FALSE(view().reparent_shape(grp->get_id(), a->get_id()).is_ok());
 }
 
+TEST_F(Shp_test, Parent_chain_walk_tolerates_corrupt_cycle)
+{
+  // Defensive: a corrupt parent loop must not hang ancestor walks used by reparent
+  // and copy/paste collapse / paste-into-subtree checks.
+  Shp_ptr g1 = view().create_group("G1", 0);
+  Shp_ptr g2 = view().create_group("G2", 0);
+  ASSERT_FALSE(g1.IsNull());
+  ASSERT_FALSE(g2.IsNull());
+  g1->set_parent_id(g2->get_id());
+  g2->set_parent_id(g1->get_id());
+
+  EXPECT_TRUE(view().would_reparent_create_cycle(g1->get_id(), g2->get_id()));
+  EXPECT_FALSE(view().would_reparent_create_cycle(g1->get_id(), 0));
+
+  view().add_box(0, 0, 0, 1, 1, 1);
+  Shp_ptr box;
+  for (const Shp_ptr& s : view().get_shapes())
+    if (!s->is_group())
+      box = s;
+  ASSERT_FALSE(box.IsNull());
+  select_shapes(view(), {box});
+  ASSERT_TRUE(view().copy_selected_shapes().is_ok());
+  view().set_current_group_id(g1->get_id());
+  // Paste under a node trapped in a parent cycle must terminate (ok or error).
+  (void)view().paste_clipboard_shapes();
+}
+
 TEST_F(Shp_test, Ungroup_moves_all_direct_children)
 {
   view().add_box(0, 0, 0, 1, 1, 1);
