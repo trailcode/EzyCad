@@ -2609,9 +2609,13 @@ void GUI::shape_list_()
   // Tree node always uses NoTreePushOnOpen; indent children with an explicit TreePush/TreePop
   // pair so table rows cannot leave the ImGui tree stack unbalanced (which nested siblings
   // under the wrong parent and made Ungroup look like it only moved one child).
+  std::unordered_set<Shape_id> shape_list_ancestors;
   auto draw_shape_row = [&](auto&& self, const Shp_ptr& shape) -> void
   {
     EZY_ASSERT(shape);
+    if (!shape_list_ancestors.insert(shape->get_id()).second)
+      return; // Parent cycle: skip rather than hang the Shape List.
+
     const bool                 is_group         = shape->is_group();
     const std::vector<Shp_ptr> children         = m_view->shape_children(shape->get_id());
     const bool                 has_children     = !children.empty();
@@ -2828,6 +2832,7 @@ void GUI::shape_list_()
     }
 
     ImGui::PopID();
+    shape_list_ancestors.erase(shape->get_id());
   };
 
   const ImGuiTableFlags table_flags =

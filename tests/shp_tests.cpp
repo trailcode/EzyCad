@@ -1075,6 +1075,66 @@ TEST_F(Shp_test, Copy_partial_group_selection_copies_solids_not_group)
   EXPECT_EQ(selected[0]->get_parent_id(), 0u);
 }
 
+TEST_F(Shp_test, Copy_paste_group_while_still_current_group)
+{
+  // User workflow: click group in Shape List (current_group = that group), Ctrl+C, Ctrl+V
+  // without changing the current group first. Paste must be a sibling, not a child of itself.
+  view().add_box(0, 0, 0, 1, 1, 1);
+  view().add_box(2, 0, 0, 1, 1, 1);
+  std::vector<Shp_ptr> boxes;
+  for (const Shp_ptr& s : view().get_shapes())
+    if (!s->is_group())
+      boxes.push_back(s);
+
+  ASSERT_TRUE(view().group_shapes(boxes).is_ok());
+  Shp_ptr grp;
+  for (const Shp_ptr& s : view().get_shapes())
+    if (s->is_group())
+      grp = s;
+
+  ASSERT_FALSE(grp.IsNull());
+  const Shape_id gid = grp->get_id();
+  view().set_current_group_id(gid);
+  select_shapes(view(), view().shape_descendant_solids(gid));
+
+  ASSERT_TRUE(view().copy_selected_shapes().is_ok());
+  // Intentionally leave current_group_id == gid.
+  ASSERT_EQ(view().current_group_id(), gid);
+  ASSERT_TRUE(view().paste_clipboard_shapes().is_ok());
+
+  size_t groups = 0;
+  size_t leaves = 0;
+  for (const Shp_ptr& s : view().get_shapes())
+  {
+    ASSERT_FALSE(s.IsNull());
+    if (s->is_group())
+      ++groups;
+    else
+    {
+      ++leaves;
+      EXPECT_FALSE(s->Shape().IsNull());
+    }
+  }
+  EXPECT_EQ(groups, 2u);
+  EXPECT_EQ(leaves, 4u);
+  EXPECT_FALSE(view().find_shape_by_id(gid).IsNull());
+
+  // Both groups remain document roots (sibling paste, not nested under the source).
+  const std::vector<Shp_ptr> roots = view().shape_children(0);
+  EXPECT_EQ(roots.size(), 2u);
+  EXPECT_EQ(view().get_shapes().size(), 6u);
+
+  const Shape_id pasted_gid = view().current_group_id();
+  EXPECT_NE(pasted_gid, 0u);
+  EXPECT_NE(pasted_gid, gid);
+  Shp_ptr pasted = view().find_shape_by_id(pasted_gid);
+  ASSERT_FALSE(pasted.IsNull());
+  EXPECT_TRUE(pasted->is_group());
+  EXPECT_EQ(pasted->get_parent_id(), 0u);
+  EXPECT_EQ(view().shape_descendant_solids(pasted_gid).size(), 2u);
+  EXPECT_EQ(view().shape_descendant_solids(gid).size(), 2u);
+}
+
 TEST_F(Shp_test, New_file_keeps_shape_clipboard)
 {
   view().add_box(0, 0, 0, 1, 1, 1);

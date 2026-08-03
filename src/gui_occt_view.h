@@ -210,11 +210,16 @@ public:
   /// Copy selected solids / current-group subtree into the in-app shape clipboard.
   [[nodiscard]] Status copy_selected_shapes();
   /// Paste clipboard shapes under current_group_id (undoable deep copy).
+  /// If current_group_id is still a copied group root, pastes as a sibling of that group.
   [[nodiscard]] Status paste_clipboard_shapes();
   /// True when the in-app shape clipboard holds at least one node.
   [[nodiscard]] bool has_shape_clipboard() const { return !m_shape_clipboard.empty(); }
   /// Clear the in-app shape clipboard (New project leaves it intact).
-  void clear_shape_clipboard() { m_shape_clipboard.clear(); }
+  void clear_shape_clipboard()
+  {
+    m_shape_clipboard.clear();
+    m_shape_clipboard_source_roots.clear();
+  }
 
   //  Member function to delete variable arguments
   template <typename... Args> void remove(Args&&... args);
@@ -486,6 +491,8 @@ private:
   Shape_id                m_current_group_id{0};
   /// In-app clipboard: forest of Shape_rec (roots have parent_id 0; independent BREP).
   std::vector<Shape_rec>  m_shape_clipboard;
+  /// Live document ids of clipboard roots at copy time (for paste-as-sibling when still current).
+  std::vector<Shape_id>   m_shape_clipboard_source_roots;
   Ezy_asset_store         m_assets;
 
   // --------------------------------------------------------------------

@@ -1210,12 +1210,13 @@ std::vector<Shp_ptr> Occt_view::shape_descendant_solids(Shape_id id) const
   if (root.IsNull())
     return out;
 
-  std::vector<Shp_ptr> stack = {root};
+  std::unordered_set<Shape_id> seen;
+  std::vector<Shp_ptr>         stack = {root};
   while (!stack.empty())
   {
     Shp_ptr n = stack.back();
     stack.pop_back();
-    if (n.IsNull())
+    if (n.IsNull() || !seen.insert(n->get_id()).second)
       continue;
 
     if (!n->is_group())
@@ -1232,9 +1233,13 @@ std::vector<Shp_ptr> Occt_view::shape_descendant_solids(Shape_id id) const
 
 bool Occt_view::shape_ancestors_visible(const Shp& shp) const
 {
-  Shape_id walk = shp.get_parent_id();
+  std::unordered_set<Shape_id> seen;
+  Shape_id                     walk = shp.get_parent_id();
   while (walk != 0)
   {
+    if (!seen.insert(walk).second)
+      break; // Parent cycle; treat as visible rather than hang.
+
     Shp_ptr p = find_shape_by_id(walk);
     if (p.IsNull())
       break;
@@ -1958,12 +1963,14 @@ Shape_rec Occt_view::capture_clipboard_shape_rec_(const Shp& shp) const
 
   if (!rec.is_group)
   {
-    // Independent BREP with any pending AIS local transform baked in.
-    const TopoDS_Shape&        s  = shp.Shape();
-    const gp_Trsf&             tr = shp.LocalTransformation();
-    BRepBuilderAPI_Transform   transformer(s, tr, true);
-    rec.geom = transformer.Shape();
-    rec.frame.Transform(tr);
+    // Bake AIS local transform, then deep-copy so clipboard never shares TShape with the document.
+    const TopoDS_Shape&      s  = shp.Shape();
+    const gp_Trsf&           tr = shp.LocalTransformation();
+    BRepBuilderAPI_Transform transformer(s, tr, true);
+    BRepBuilderAPI_Copy      copier(transformer.Shape());
+    rec.geom = copier.Shape();
+    if (tr.Form() != gp_Identity)
+      rec.frame.Transform(tr);
   }
 
   return rec;
@@ -2031,12 +2038,15 @@ Status Occt_view::copy_selected_shapes()
 
   // Snapshot each root subtree (pre-order); normalize root parent_id to 0.
   std::vector<Shape_rec> clip;
+  std::vector<Shape_id>  source_roots;
   std::unordered_set<Shape_id> seen;
   for (Shape_id root_id : collapsed)
   {
     Shp_ptr root = find_shape_by_id(root_id);
     if (root.IsNull())
       continue;
+
+    source_roots.push_back(root_id);
 
     std::vector<Shp_ptr> stack = {root};
     // Pre-order via explicit queue for stable child order.
@@ -2069,7 +2079,8 @@ Status Occt_view::copy_selected_shapes()
   if (clip.empty())
     return Status::user_error("Nothing to copy.");
 
-  m_shape_clipboard = std::move(clip);
+  m_shape_clipboard              = std::move(clip);
+  m_shape_clipboard_source_roots = std::move(source_roots);
   return Status::ok();
 }
 
@@ -2079,21 +2090,46 @@ Status Occt_view::paste_clipboard_shapes()
     return Status::user_error("Clipboard is empty.");
 
   ensure_current_group_valid_();
-  const Shape_id paste_parent = m_current_group_id;
+  Shape_id paste_parent = m_current_group_id;
 
-  // Reject paste that would parent a group under one of its own pasted descendants (impossible
-  // with remapped ids) and cycles against the live tree.
+  // If the user still has a copied group as the current group (Shape List click + Ctrl+C +
+  // Ctrl+V), paste as a sibling of that group -- not as a child of itself.
+  for (Shape_id src_root : m_shape_clipboard_source_roots)
+  {
+    if (src_root == 0 || src_root != paste_parent)
+      continue;
+
+    Shp_ptr src = find_shape_by_id(src_root);
+    if (!src.IsNull() && src->is_group())
+    {
+      paste_parent = src->get_parent_id();
+      break;
+    }
+  }
+
   if (paste_parent != 0)
   {
     Shp_ptr p = find_shape_by_id(paste_parent);
     if (p.IsNull() || !p->is_group())
       return Status::user_error("Current group is invalid.");
+
+    // Pasting a clipboard root under one of its own live source roots is handled above;
+    // also reject nesting under any live ancestor that was part of the copied forest.
+    for (Shape_id src_root : m_shape_clipboard_source_roots)
+      if (shape_is_under_ancestor_(*this, paste_parent, src_root))
+        return Status::user_error("Cannot paste a group into its own subtree.");
   }
 
   std::unordered_map<Shape_id, Shape_id> id_map;
   id_map.reserve(m_shape_clipboard.size());
   for (const Shape_rec& rec : m_shape_clipboard)
-    id_map[rec.id] = allocate_shape_id();
+  {
+    const Shape_id new_id = allocate_shape_id();
+    if (!find_shape_by_id(new_id).IsNull())
+      return Status::user_error("Internal error: shape id collision on paste.");
+
+    id_map[rec.id] = new_id;
+  }
 
   std::vector<std::string> existing_names;
   existing_names.reserve(m_shps.size() + m_shape_clipboard.size());
@@ -2101,6 +2137,7 @@ Status Occt_view::paste_clipboard_shapes()
     if (!s.IsNull())
       existing_names.push_back(s->get_name());
 
+  // Build the full insert set before mutating the document (all-or-nothing).
   std::vector<Shape_rec> added;
   added.reserve(m_shape_clipboard.size());
   Shape_id               first_pasted_group = 0;
@@ -2124,30 +2161,41 @@ Status Occt_view::paste_clipboard_shapes()
         return Status::user_error("Clipboard tree is corrupt.");
 
       rec.parent_id = it->second;
-      // Keep relative sibling_order among clipboard siblings.
     }
+
+    if (rec.parent_id == rec.id || would_reparent_create_cycle(rec.id, rec.parent_id))
+      return Status::user_error("Internal error: paste would create a parent cycle.");
 
     rec.name = unique_sequential_name(src.name, existing_names);
     existing_names.push_back(rec.name);
 
-    if (!rec.is_group && !rec.geom.IsNull())
+    if (!rec.is_group)
     {
-      // Deep-copy BREP again so repeated paste does not share TopoDS with clipboard.
+      if (rec.geom.IsNull())
+        return Status::user_error("Clipboard solid has no geometry.");
+
       BRepBuilderAPI_Copy copier(rec.geom);
       rec.geom = copier.Shape();
+      if (rec.geom.IsNull())
+        return Status::user_error("Failed to copy solid geometry.");
     }
-
-    insert_shape_rec(rec);
-    added.push_back(rec);
 
     if (rec.is_group && is_root && first_pasted_group == 0)
       first_pasted_group = rec.id;
+
+    added.push_back(std::move(rec));
   }
+
+  for (const Shape_rec& rec : added)
+    insert_shape_rec(rec);
 
   push_undo_delta(std::make_unique<Shape_add_delta>(std::move(added)));
 
   if (first_pasted_group != 0)
     set_current_group_id(first_pasted_group);
+
+  // Sync display before selection: sketch faint sync clears AIS selection when active.
+  sync_sketch_shape_faint_style();
 
   // Select pasted root solids (and solids under pasted groups).
   std::vector<Shp_ptr> to_select;
@@ -4369,6 +4417,8 @@ void Occt_view::new_file()
   clear_all(m_shps, m_sketches, m_cur_sketch);
   m_assets.clear();
   // Keep m_shape_clipboard so Copy then New then Paste can seed a fresh document.
+  // Live source-root ids are invalid after the document is cleared.
+  m_shape_clipboard_source_roots.clear();
   m_next_sketch_id   = 1;
   m_next_shape_id    = 1;
   m_current_group_id = 0;
