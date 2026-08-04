@@ -626,7 +626,6 @@ void Occt_view::revolve_selected(const double angle)
 void Occt_view::create_sketch_from_planar_face_(const ScreenCoords& screen_coords)
 {
   if (auto face = get_face_(screen_coords); face)
-  {
     if (auto pln = plane_from_face(*face); pln)
     {
       // Get the outer wire of the face
@@ -643,7 +642,6 @@ void Occt_view::create_sketch_from_planar_face_(const ScreenCoords& screen_coord
     }
     else
       gui().show_message("Error: Selected face is not planar. Please select a planar face.");
-  }
 }
 
 void Occt_view::create_default_sketch_()
@@ -702,35 +700,7 @@ void Occt_view::add_sketch_on_ref_plane(Sketch_ref_plane plane, double offset_di
 
 namespace
 {
-[[nodiscard]] bool import_section_circle_edge_(Sketch& sketch, const TopoDS_Edge& edge, const gp_Pln& pln)
-{
-  const BRepAdaptor_Curve curve(edge);
-  const double            u0   = curve.FirstParameter();
-  const double            u1   = curve.LastParameter();
-  const double            span = u1 - u0;
-  if (std::abs(span) <= Precision::Confusion())
-    return false;
-
-  // Full (or near-full) circles become two semicircles; sketch arcs cannot be closed loops.
-  const bool full_circle = curve.IsClosed() || std::abs(std::abs(span) - 2.0 * std::numbers::pi) <= 1.0e-3;
-  if (full_circle)
-  {
-    const gp_Pnt2d a    = to_2d(pln, curve.Value(u0));
-    const gp_Pnt2d mid1 = to_2d(pln, curve.Value(u0 + 0.25 * span));
-    const gp_Pnt2d b    = to_2d(pln, curve.Value(u0 + 0.5 * span));
-    const gp_Pnt2d mid2 = to_2d(pln, curve.Value(u0 + 0.75 * span));
-    sketch.add_arc_circle(a, mid1, b);
-    sketch.add_arc_circle(b, mid2, a);
-    return true;
-  }
-
-  const auto [pt_a, pt_c] = get_edge_endpoints(pln, edge);
-  if (pt_a.Distance(pt_c) <= Precision::Confusion())
-    return false;
-
-  sketch.add_arc_circle(pt_a, arc_curve_midpoint_2d(edge, pln), pt_c);
-  return true;
-}
+[[nodiscard]] bool import_section_circle_edge_(Sketch& sketch, const TopoDS_Edge& edge, const gp_Pln& pln);
 
 struct Section_import_counts
 {
@@ -738,39 +708,7 @@ struct Section_import_counts
   size_t skipped{0};
 };
 
-Section_import_counts import_section_edges_into_sketch_(Sketch& sketch, const TopoDS_Shape& compound, const gp_Pln& pln)
-{
-  Section_import_counts counts;
-  for (TopExp_Explorer it(compound, TopAbs_EDGE); it.More(); it.Next())
-  {
-    const TopoDS_Edge edge = TopoDS::Edge(it.Current());
-    switch (BRepAdaptor_Curve(edge).GetType())
-    {
-    case GeomAbs_Line:
-    {
-      const auto [pt_a, pt_b] = get_edge_endpoints(pln, edge);
-      if (pt_a.Distance(pt_b) <= Precision::Confusion())
-      {
-        ++counts.skipped;
-        break;
-      }
-      sketch.add_linear_edge(pt_a, pt_b);
-      ++counts.imported;
-      break;
-    }
-    case GeomAbs_Circle:
-      if (import_section_circle_edge_(sketch, edge, pln))
-        ++counts.imported;
-      else
-        ++counts.skipped;
-      break;
-    default:
-      ++counts.skipped;
-      break;
-    }
-  }
-  return counts;
-}
+Section_import_counts import_section_edges_into_sketch_(Sketch& sketch, const TopoDS_Shape& compound, const gp_Pln& pln);
 } // namespace
 
 Status Occt_view::create_sketch_from_cross_section(const std::string& base_name)
@@ -2020,8 +1958,8 @@ Status Occt_view::copy_selected_shapes()
   }
 
   // Snapshot each root subtree (pre-order); normalize root parent_id to 0.
-  std::vector<Shape_rec> clip;
-  std::vector<Shape_id>  source_roots;
+  std::vector<Shape_rec>       clip;
+  std::vector<Shape_id>        source_roots;
   std::unordered_set<Shape_id> seen;
   for (Shape_id root_id : collapsed)
   {
@@ -2123,8 +2061,8 @@ Status Occt_view::paste_clipboard_shapes()
   // Build the full insert set before mutating the document (all-or-nothing).
   std::vector<Shape_rec> added;
   added.reserve(m_shape_clipboard.size());
-  Shape_id               first_pasted_group = 0;
-  int                    root_order_base    = next_sibling_order(paste_parent);
+  Shape_id first_pasted_group = 0;
+  int      root_order_base    = next_sibling_order(paste_parent);
 
   for (const Shape_rec& src : m_shape_clipboard)
   {
@@ -2247,17 +2185,7 @@ void Occt_view::delete_(std::vector<AIS_Shape_ptr>& to_delete)
 
 namespace
 {
-
-void set_grid_colors_on_viewer_(const V3d_Viewer_ptr& viewer, const glm::vec3& color1, const glm::vec3& color2)
-{
-  if (viewer.IsNull() || viewer->Grid().IsNull())
-    return;
-
-  Quantity_Color cc(color1.x, color1.y, color1.z, Quantity_TOC_RGB);
-  Quantity_Color cd(color2.x, color2.y, color2.z, Quantity_TOC_RGB);
-  viewer->Grid()->SetColors(cc, cd);
-}
-
+void set_grid_colors_on_viewer_(const V3d_Viewer_ptr& viewer, const glm::vec3& color1, const glm::vec3& color2);
 } // namespace
 
 Occt_view::Grid_layout Occt_view::compute_grid_layout_() const
@@ -3083,10 +3011,7 @@ void Occt_view::clear_sketch_list_hover_ais_state_(Sketch_list_hover_ais& hover)
       m_ctx->Erase(hover.ais, false);
   }
 
-  hover.ais.Nullify();
-  hover.temp_display    = false;
-  hover.zlayer_override = false;
-  hover.prev_zlayer     = Graphic3d_ZLayerId_Default;
+  clear_all(hover.ais, hover.temp_display, hover.zlayer_override, hover.prev_zlayer);
 }
 
 void Occt_view::apply_sketch_list_hover_ais_state_(Sketch_list_hover_ais& hover, const Prs3d_Drawer_ptr& drawer,
@@ -3682,19 +3607,7 @@ namespace
 {
 /// Move/Rotate/Scale follow the mouse while active. Restoring those modes on undo/redo would
 /// immediately drag whatever is selected; use the tool's parent mode instead.
-Mode mode_for_history_restore_(Mode mode)
-{
-  switch (mode)
-  {
-  case Mode::Move:
-  case Mode::Rotate:
-  case Mode::Scale:
-  case Mode::Shape_cyl_align:
-    return GUI::parent_mode_of(mode);
-  default:
-    return mode;
-  }
-}
+Mode mode_for_history_restore_(Mode mode);
 } // namespace
 
 void Occt_view::push_undo_snapshot()
@@ -4045,32 +3958,16 @@ void Occt_view::load(const std::string& json_str, bool restore_view)
 
 namespace
 {
-
 // Project display lengths use Project_unit (inch or mm). Model space = inches * dimension_scale (default 100).
-TopoDS_Shape scale_shape_about_origin_(const TopoDS_Shape& shape, double factor)
-{
-  if (shape.IsNull())
-    return shape;
-  if (std::abs(factor - 1.0) <= Precision::Confusion())
-    return shape;
-
-  gp_Trsf tr;
-  tr.SetScale(gp_Pnt(0.0, 0.0, 0.0), factor);
-  return BRepBuilderAPI_Transform(shape, tr, true).Shape();
-}
-
+TopoDS_Shape scale_shape_about_origin_(const TopoDS_Shape& shape, double factor);
 // OCCT STEP reader delivers mm (xstep.cascade.unit); convert to model space.
-double step_import_to_model_scale_(double dimension_scale) { return dimension_scale / k_mm_per_inch; }
-
+double step_import_to_model_scale_(double dimension_scale);
 // PLY has no unit metadata; treat file coords as inches.
-double ply_import_to_model_scale_(double dimension_scale) { return dimension_scale; }
-
+double ply_import_to_model_scale_(double dimension_scale);
 // Model space -> mm for CAD/mesh export when the user picks millimeters.
-double model_to_cad_mm_export_scale_(double dimension_scale) { return k_mm_per_inch / dimension_scale; }
-
+double model_to_cad_mm_export_scale_(double dimension_scale);
 // Model space -> inches for CAD/mesh export when the user picks inches.
-double model_to_inch_export_scale_(double dimension_scale) { return 1.0 / dimension_scale; }
-
+double model_to_inch_export_scale_(double dimension_scale);
 } // namespace
 
 TopoDS_Shape Occt_view::shape_with_local_transform_(const AIS_Shape_ptr& ais) const
@@ -4412,3 +4309,114 @@ void Occt_view::new_file()
   reset_default_view();
   m_gui.set_mode(Mode::Normal);
 }
+
+namespace
+{
+[[nodiscard]] bool import_section_circle_edge_(Sketch& sketch, const TopoDS_Edge& edge, const gp_Pln& pln)
+{
+  const BRepAdaptor_Curve curve(edge);
+  const double            u0   = curve.FirstParameter();
+  const double            u1   = curve.LastParameter();
+  const double            span = u1 - u0;
+  if (std::abs(span) <= Precision::Confusion())
+    return false;
+
+  // Full (or near-full) circles become two semicircles; sketch arcs cannot be closed loops.
+  const bool full_circle = curve.IsClosed() || std::abs(std::abs(span) - 2.0 * std::numbers::pi) <= 1.0e-3;
+  if (full_circle)
+  {
+    const gp_Pnt2d a    = to_2d(pln, curve.Value(u0));
+    const gp_Pnt2d mid1 = to_2d(pln, curve.Value(u0 + 0.25 * span));
+    const gp_Pnt2d b    = to_2d(pln, curve.Value(u0 + 0.5 * span));
+    const gp_Pnt2d mid2 = to_2d(pln, curve.Value(u0 + 0.75 * span));
+    sketch.add_arc_circle(a, mid1, b);
+    sketch.add_arc_circle(b, mid2, a);
+    return true;
+  }
+
+  const auto [pt_a, pt_c] = get_edge_endpoints(pln, edge);
+  if (pt_a.Distance(pt_c) <= Precision::Confusion())
+    return false;
+
+  sketch.add_arc_circle(pt_a, arc_curve_midpoint_2d(edge, pln), pt_c);
+  return true;
+}
+
+Section_import_counts import_section_edges_into_sketch_(Sketch& sketch, const TopoDS_Shape& compound, const gp_Pln& pln)
+{
+  Section_import_counts counts;
+  for (TopExp_Explorer it(compound, TopAbs_EDGE); it.More(); it.Next())
+  {
+    const TopoDS_Edge edge = TopoDS::Edge(it.Current());
+    switch (BRepAdaptor_Curve(edge).GetType())
+    {
+    case GeomAbs_Line:
+    {
+      const auto [pt_a, pt_b] = get_edge_endpoints(pln, edge);
+      if (pt_a.Distance(pt_b) <= Precision::Confusion())
+      {
+        ++counts.skipped;
+        break;
+      }
+      sketch.add_linear_edge(pt_a, pt_b);
+      ++counts.imported;
+      break;
+    }
+    case GeomAbs_Circle:
+      if (import_section_circle_edge_(sketch, edge, pln))
+        ++counts.imported;
+      else
+        ++counts.skipped;
+      break;
+    default:
+      ++counts.skipped;
+      break;
+    }
+  }
+  return counts;
+}
+
+void set_grid_colors_on_viewer_(const V3d_Viewer_ptr& viewer, const glm::vec3& color1, const glm::vec3& color2)
+{
+  if (viewer.IsNull() || viewer->Grid().IsNull())
+    return;
+
+  Quantity_Color cc(color1.x, color1.y, color1.z, Quantity_TOC_RGB);
+  Quantity_Color cd(color2.x, color2.y, color2.z, Quantity_TOC_RGB);
+  viewer->Grid()->SetColors(cc, cd);
+}
+
+Mode mode_for_history_restore_(Mode mode)
+{
+  switch (mode)
+  {
+  case Mode::Move:
+  case Mode::Rotate:
+  case Mode::Scale:
+  case Mode::Shape_cyl_align:
+    return GUI::parent_mode_of(mode);
+  default:
+    return mode;
+  }
+}
+
+TopoDS_Shape scale_shape_about_origin_(const TopoDS_Shape& shape, double factor)
+{
+  if (shape.IsNull())
+    return shape;
+  if (std::abs(factor - 1.0) <= Precision::Confusion())
+    return shape;
+
+  gp_Trsf tr;
+  tr.SetScale(gp_Pnt(0.0, 0.0, 0.0), factor);
+  return BRepBuilderAPI_Transform(shape, tr, true).Shape();
+}
+
+double step_import_to_model_scale_(double dimension_scale) { return dimension_scale / k_mm_per_inch; }
+
+double ply_import_to_model_scale_(double dimension_scale) { return dimension_scale; }
+
+double model_to_cad_mm_export_scale_(double dimension_scale) { return k_mm_per_inch / dimension_scale; }
+
+double model_to_inch_export_scale_(double dimension_scale) { return 1.0 / dimension_scale; }
+} // namespace

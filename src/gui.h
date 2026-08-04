@@ -705,20 +705,20 @@ private:
   float                              m_sketch_list_scroll_y{0.f};
   bool                               m_sketch_list_scroll_restore{false};
 
-  bool                                 m_show_sketch_list{true};
-  bool                                 m_show_shape_list{true};
-  bool                                 m_show_options{true};
-  bool                                 m_show_settings_dialog{false};
-  bool                                 m_open_about_popup{false};
-  bool                                 m_about_popup_open{false};
-  bool                                 m_shape_info_open{false};
-  Shp_ptr                              m_shape_info_shp;
-  std::vector<shp_info::Line>          m_shape_info_lines;
-  bool                      m_file_inspector_open{false};
-  Step_import_mode          m_file_inspector_step_mode{Step_import_mode::Preserve_hierarchy};
-  std::string               m_file_inspector_path;
-  std::string               m_file_inspector_bytes;
-  utl_cad_file_info::Format m_file_inspector_fmt{utl_cad_file_info::Format::Unknown};
+  bool                        m_show_sketch_list{true};
+  bool                        m_show_shape_list{true};
+  bool                        m_show_options{true};
+  bool                        m_show_settings_dialog{false};
+  bool                        m_open_about_popup{false};
+  bool                        m_about_popup_open{false};
+  bool                        m_shape_info_open{false};
+  Shp_ptr                     m_shape_info_shp;
+  std::vector<shp_info::Line> m_shape_info_lines;
+  bool                        m_file_inspector_open{false};
+  Step_import_mode            m_file_inspector_step_mode{Step_import_mode::Preserve_hierarchy};
+  std::string                 m_file_inspector_path;
+  std::string                 m_file_inspector_bytes;
+  utl_cad_file_info::Format   m_file_inspector_fmt{utl_cad_file_info::Format::Unknown};
 
   enum class Cad_busy_kind : uint8_t
   {

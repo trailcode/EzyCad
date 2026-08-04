@@ -25,79 +25,13 @@ constexpr float k_background_edge_rgba[4]   = {0.3f, 0.3f, 0.3f, 0.3f};
 constexpr float k_background_face_rgba[4]   = {0.3f, 0.3f, 0.3f, 0.2f};
 constexpr float k_edge_highlight_line_width = 2.0f;
 
-Quantity_Color rgb_from_rgba_(const float* rgba)
-{
-  return Quantity_Color(static_cast<double>(rgba[0]), static_cast<double>(rgba[1]), static_cast<double>(rgba[2]),
-                        Quantity_TOC_RGB);
-}
-
-float transparency_from_rgba_(const float* rgba) { return std::clamp(1.f - rgba[3], 0.f, 1.f); }
-
-void apply_rgba_style_(AIS_Shape& shp, const float* rgba, float line_width)
-{
-  shp.SetWidth(static_cast<double>(line_width));
-  shp.SetColor(rgb_from_rgba_(rgba));
-  shp.SetTransparency(static_cast<double>(transparency_from_rgba_(rgba)));
-}
-
-Prs3d_Drawer_ptr make_edge_hilight_drawer_(const float* rgba, float line_width)
-{
-  Prs3d_Drawer_ptr     drawer = new Prs3d_Drawer();
-  const Quantity_Color qc     = rgb_from_rgba_(rgba);
-  drawer->SetColor(qc);
-  drawer->SetTransparency(transparency_from_rgba_(rgba));
-  Prs3d_LineAspect_ptr line = new Prs3d_LineAspect(qc, Aspect_TOL_SOLID, static_cast<double>(line_width));
-  drawer->SetLineAspect(line);
-  drawer->SetWireAspect(line);
-  drawer->SetSeenLineAspect(line);
-  drawer->SetFaceBoundaryAspect(line);
-  return drawer;
-}
-
-Prs3d_Drawer_ptr make_face_hilight_drawer_(const float* rgba)
-{
-  Prs3d_Drawer_ptr drawer = new Prs3d_Drawer();
-  drawer->SetupOwnDefaults();
-  const Quantity_Color qc     = rgb_from_rgba_(rgba);
-  const float          transp = transparency_from_rgba_(rgba);
-  drawer->SetColor(qc);
-  drawer->SetTransparency(transp);
-
-  Prs3d_ShadingAspect_ptr shading = new Prs3d_ShadingAspect();
-  shading->SetColor(qc);
-  shading->SetTransparency(static_cast<double>(transp));
-  drawer->SetShadingAspect(shading);
-
-  Graphic3d_AspectFillArea3d_ptr fill = new Graphic3d_AspectFillArea3d();
-  fill->SetAlphaMode(Graphic3d_AlphaMode_Blend);
-  fill->SetInteriorStyle(Aspect_IS_SOLID);
-  fill->SetInteriorColor(qc);
-  fill->SetColor(qc);
-  drawer->SetBasicFillAreaAspect(fill);
-
-  Prs3d_LineAspect_ptr line = new Prs3d_LineAspect(qc, Aspect_TOL_SOLID, 2.0);
-  drawer->SetWireAspect(line);
-  drawer->SetFaceBoundaryAspect(line);
-  return drawer;
-}
-
-void apply_edge_hilight_(AIS_Shape& shp, const GUI& gui)
-{
-  Prs3d_Drawer_ptr selected = make_edge_hilight_drawer_(gui.sketch_edge_selection_color_rgba(), k_edge_highlight_line_width);
-  Prs3d_Drawer_ptr hover    = make_edge_hilight_drawer_(gui.sketch_edge_highlight_color_rgba(), k_edge_highlight_line_width);
-  shp.SetHilightAttributes(selected);
-  shp.SetDynamicHilightAttributes(hover);
-}
-
-void apply_face_hilight_(AIS_Shape& shp, const GUI& gui)
-{
-  // Use shaded hilight so selection/hover tint the face fill, not only a wire outline.
-  shp.SetHilightMode(AIS_Shaded);
-  Prs3d_Drawer_ptr selected = make_face_hilight_drawer_(gui.sketch_face_selection_color_rgba());
-  Prs3d_Drawer_ptr hover    = make_face_hilight_drawer_(gui.sketch_face_highlight_color_rgba());
-  shp.SetHilightAttributes(selected);
-  shp.SetDynamicHilightAttributes(hover);
-}
+Quantity_Color       rgb_from_rgba_(const float* rgba);
+float                transparency_from_rgba_(const float* rgba);
+void                 apply_rgba_style_(AIS_Shape& shp, const float* rgba, float line_width);
+Prs3d_Drawer_ptr     make_edge_hilight_drawer_(const float* rgba, float line_width);
+Prs3d_Drawer_ptr     make_face_hilight_drawer_(const float* rgba);
+void                 apply_edge_hilight_(AIS_Shape& shp, const GUI& gui);
+void                 apply_face_hilight_(AIS_Shape& shp, const GUI& gui);
 } // namespace
 
 void Sketch::update_edge_style_(const AIS_Shape_ptr& shp)
@@ -346,3 +280,80 @@ void Sketch::set_edge_style(Edge_style style)
   update_all_face_styles_();
   update_originating_face_style();
 }
+
+namespace
+{
+Quantity_Color rgb_from_rgba_(const float* rgba)
+{
+  return Quantity_Color(static_cast<double>(rgba[0]), static_cast<double>(rgba[1]), static_cast<double>(rgba[2]),
+                        Quantity_TOC_RGB);
+}
+
+float transparency_from_rgba_(const float* rgba) { return std::clamp(1.f - rgba[3], 0.f, 1.f); }
+
+void apply_rgba_style_(AIS_Shape& shp, const float* rgba, float line_width)
+{
+  shp.SetWidth(static_cast<double>(line_width));
+  shp.SetColor(rgb_from_rgba_(rgba));
+  shp.SetTransparency(static_cast<double>(transparency_from_rgba_(rgba)));
+}
+
+Prs3d_Drawer_ptr make_edge_hilight_drawer_(const float* rgba, float line_width)
+{
+  Prs3d_Drawer_ptr     drawer = new Prs3d_Drawer();
+  const Quantity_Color qc     = rgb_from_rgba_(rgba);
+  drawer->SetColor(qc);
+  drawer->SetTransparency(transparency_from_rgba_(rgba));
+  Prs3d_LineAspect_ptr line = new Prs3d_LineAspect(qc, Aspect_TOL_SOLID, static_cast<double>(line_width));
+  drawer->SetLineAspect(line);
+  drawer->SetWireAspect(line);
+  drawer->SetSeenLineAspect(line);
+  drawer->SetFaceBoundaryAspect(line);
+  return drawer;
+}
+
+Prs3d_Drawer_ptr make_face_hilight_drawer_(const float* rgba)
+{
+  Prs3d_Drawer_ptr drawer = new Prs3d_Drawer();
+  drawer->SetupOwnDefaults();
+  const Quantity_Color qc     = rgb_from_rgba_(rgba);
+  const float          transp = transparency_from_rgba_(rgba);
+  drawer->SetColor(qc);
+  drawer->SetTransparency(transp);
+
+  Prs3d_ShadingAspect_ptr shading = new Prs3d_ShadingAspect();
+  shading->SetColor(qc);
+  shading->SetTransparency(static_cast<double>(transp));
+  drawer->SetShadingAspect(shading);
+
+  Graphic3d_AspectFillArea3d_ptr fill = new Graphic3d_AspectFillArea3d();
+  fill->SetAlphaMode(Graphic3d_AlphaMode_Blend);
+  fill->SetInteriorStyle(Aspect_IS_SOLID);
+  fill->SetInteriorColor(qc);
+  fill->SetColor(qc);
+  drawer->SetBasicFillAreaAspect(fill);
+
+  Prs3d_LineAspect_ptr line = new Prs3d_LineAspect(qc, Aspect_TOL_SOLID, 2.0);
+  drawer->SetWireAspect(line);
+  drawer->SetFaceBoundaryAspect(line);
+  return drawer;
+}
+
+void apply_edge_hilight_(AIS_Shape& shp, const GUI& gui)
+{
+  Prs3d_Drawer_ptr selected = make_edge_hilight_drawer_(gui.sketch_edge_selection_color_rgba(), k_edge_highlight_line_width);
+  Prs3d_Drawer_ptr hover    = make_edge_hilight_drawer_(gui.sketch_edge_highlight_color_rgba(), k_edge_highlight_line_width);
+  shp.SetHilightAttributes(selected);
+  shp.SetDynamicHilightAttributes(hover);
+}
+
+void apply_face_hilight_(AIS_Shape& shp, const GUI& gui)
+{
+  // Use shaded hilight so selection/hover tint the face fill, not only a wire outline.
+  shp.SetHilightMode(AIS_Shaded);
+  Prs3d_Drawer_ptr selected = make_face_hilight_drawer_(gui.sketch_face_selection_color_rgba());
+  Prs3d_Drawer_ptr hover    = make_face_hilight_drawer_(gui.sketch_face_highlight_color_rgba());
+  shp.SetHilightAttributes(selected);
+  shp.SetDynamicHilightAttributes(hover);
+}
+} // namespace

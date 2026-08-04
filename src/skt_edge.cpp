@@ -11,6 +11,13 @@
 #include "utl.h"
 #include "utl_geom.h"
 
+namespace
+{
+gp_Vec2d normalize_or_axis_(gp_Vec2d v);
+gp_Vec2d curve_tangent_dir_2d_(const BRepAdaptor_Curve& curve, double u, const gp_Pln& pln, bool forward);
+gp_Vec2d arc_outgoing_dir_2d_(const Sketch_edge& e, const gp_Pnt2d& from_pt, const gp_Pnt2d& to_pt, const gp_Pln& pln);
+} // namespace
+
 bool Sketch_edge::reversed(size_t idx_a, size_t idx_b) const
 {
   if (node_idx_a == idx_a && node_idx_b == idx_b)
@@ -33,6 +40,20 @@ bool sketch_edge_is_arc(const Sketch_edge& e)
 }
 
 bool sketch_edge_is_linear(const Sketch_edge& e) { return e.node_idx_b.has_value() && !sketch_edge_is_arc(e); }
+
+gp_Vec2d sketch_edge_outgoing_dir_2d(const Sketch_edge& e, const gp_Pnt2d& from_pt, const gp_Pnt2d& to_pt, const gp_Pln& pln)
+{
+  if (sketch_edge_is_arc(e))
+    return arc_outgoing_dir_2d_(e, from_pt, to_pt, pln);
+
+  return normalize_or_axis_(gp_Vec2d(from_pt, to_pt));
+}
+
+gp_Vec2d sketch_edge_incoming_dir_2d(const Sketch_edge& e, const gp_Pnt2d& from_pt, const gp_Pnt2d& to_pt, const gp_Pln& pln)
+{
+  // Tangent at to_pt in the travel direction == opposite of outgoing back toward from_pt.
+  return -sketch_edge_outgoing_dir_2d(e, to_pt, from_pt, pln);
+}
 
 namespace
 {
@@ -94,17 +115,3 @@ gp_Vec2d arc_outgoing_dir_2d_(const Sketch_edge& e, const gp_Pnt2d& from_pt, con
   return normalize_or_axis_(ret);
 }
 } // namespace
-
-gp_Vec2d sketch_edge_outgoing_dir_2d(const Sketch_edge& e, const gp_Pnt2d& from_pt, const gp_Pnt2d& to_pt, const gp_Pln& pln)
-{
-  if (sketch_edge_is_arc(e))
-    return arc_outgoing_dir_2d_(e, from_pt, to_pt, pln);
-
-  return normalize_or_axis_(gp_Vec2d(from_pt, to_pt));
-}
-
-gp_Vec2d sketch_edge_incoming_dir_2d(const Sketch_edge& e, const gp_Pnt2d& from_pt, const gp_Pnt2d& to_pt, const gp_Pln& pln)
-{
-  // Tangent at to_pt in the travel direction == opposite of outgoing back toward from_pt.
-  return -sketch_edge_outgoing_dir_2d(e, to_pt, from_pt, pln);
-}

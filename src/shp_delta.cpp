@@ -2,6 +2,13 @@
 
 #include "gui_occt_view.h"
 
+namespace
+{
+void remove_recs_(Occt_view& view, const std::vector<Shape_rec>& recs);
+void insert_recs_(Occt_view& view, const std::vector<Shape_rec>& recs);
+void apply_links_(Occt_view& view, const std::vector<Shape_tree_delta::Link_change>& links, bool forward);
+} // namespace
+
 Shape_rec capture_shape_rec(const Shp& shp)
 {
   Shape_rec rec;
@@ -16,45 +23,6 @@ Shape_rec capture_shape_rec(const Shp& shp)
   rec.visible       = shp.get_visible();
   return rec;
 }
-
-namespace
-{
-
-void remove_recs_(Occt_view& view, const std::vector<Shape_rec>& recs)
-{
-  for (const Shape_rec& rec : recs)
-    view.remove_shape_by_id(rec.id);
-}
-
-void insert_recs_(Occt_view& view, const std::vector<Shape_rec>& recs)
-{
-  for (const Shape_rec& rec : recs)
-    view.insert_shape_rec(rec);
-}
-
-void apply_links_(Occt_view& view, const std::vector<Shape_tree_delta::Link_change>& links, bool forward)
-{
-  for (const Shape_tree_delta::Link_change& ch : links)
-  {
-    Shp_ptr shp = view.find_shape_by_id(ch.id);
-    if (shp.IsNull())
-      continue;
-
-    if (forward)
-    {
-      shp->set_parent_id(ch.new_parent);
-      shp->set_sibling_order(ch.new_order);
-    }
-    else
-    {
-      shp->set_parent_id(ch.old_parent);
-      shp->set_sibling_order(ch.old_order);
-    }
-  }
-  view.sync_sketch_shape_faint_style();
-}
-
-} // namespace
 
 Shape_add_delta::Shape_add_delta(std::vector<Shape_rec> added)
     : m_added(std::move(added))
@@ -142,3 +110,41 @@ std::unique_ptr<Delta> Shape_tree_delta::clone() const
 {
   return std::make_unique<Shape_tree_delta>(m_added, m_removed, m_links);
 }
+
+namespace
+{
+void remove_recs_(Occt_view& view, const std::vector<Shape_rec>& recs)
+{
+  for (const Shape_rec& rec : recs)
+    view.remove_shape_by_id(rec.id);
+}
+
+void insert_recs_(Occt_view& view, const std::vector<Shape_rec>& recs)
+{
+  for (const Shape_rec& rec : recs)
+    view.insert_shape_rec(rec);
+}
+
+void apply_links_(Occt_view& view, const std::vector<Shape_tree_delta::Link_change>& links, bool forward)
+{
+  for (const Shape_tree_delta::Link_change& ch : links)
+  {
+    Shp_ptr shp = view.find_shape_by_id(ch.id);
+    if (shp.IsNull())
+      continue;
+
+    if (forward)
+    {
+      shp->set_parent_id(ch.new_parent);
+      shp->set_sibling_order(ch.new_order);
+    }
+    else
+    {
+      shp->set_parent_id(ch.old_parent);
+      shp->set_sibling_order(ch.old_order);
+    }
+  }
+  view.sync_sketch_shape_faint_style();
+}
+
+} // namespace

@@ -2,6 +2,11 @@
 #include "utl_geom.h"
 #include "gui_occt_view.h"
 
+namespace
+{
+void table_row_input_double_(const char* label, const char* id, double* value);
+} // namespace
+
 void GUI::add_box_dialog_()
 {
   if (m_open_add_box_popup)
@@ -18,48 +23,12 @@ void GUI::add_box_dialog_()
 
   if (ImGui::BeginTable("Add box##table", 2, ImGuiTableFlags_SizingStretchProp))
   {
-    ImGui::TableNextRow();
-    ImGui::TableSetColumnIndex(0);
-    ImGui::TextUnformatted("Origin X");
-    ImGui::TableSetColumnIndex(1);
-    ImGui::SetNextItemWidth(-1);
-    ImGui::InputDouble("##box_origin_x", &m_add_box_origin.x, 0.0, 0.0, "%.3f");
-
-    ImGui::TableNextRow();
-    ImGui::TableSetColumnIndex(0);
-    ImGui::TextUnformatted("Origin Y");
-    ImGui::TableSetColumnIndex(1);
-    ImGui::SetNextItemWidth(-1);
-    ImGui::InputDouble("##box_origin_y", &m_add_box_origin.y, 0.0, 0.0, "%.3f");
-
-    ImGui::TableNextRow();
-    ImGui::TableSetColumnIndex(0);
-    ImGui::TextUnformatted("Origin Z");
-    ImGui::TableSetColumnIndex(1);
-    ImGui::SetNextItemWidth(-1);
-    ImGui::InputDouble("##box_origin_z", &m_add_box_origin.z, 0.0, 0.0, "%.3f");
-
-    ImGui::TableNextRow();
-    ImGui::TableSetColumnIndex(0);
-    ImGui::TextUnformatted("Width (X)");
-    ImGui::TableSetColumnIndex(1);
-    ImGui::SetNextItemWidth(-1);
-    ImGui::InputDouble("##box_width", &m_add_box_size.x, 0.0, 0.0, "%.3f");
-
-    ImGui::TableNextRow();
-    ImGui::TableSetColumnIndex(0);
-    ImGui::TextUnformatted("Length (Y)");
-    ImGui::TableSetColumnIndex(1);
-    ImGui::SetNextItemWidth(-1);
-    ImGui::InputDouble("##box_length", &m_add_box_size.y, 0.0, 0.0, "%.3f");
-
-    ImGui::TableNextRow();
-    ImGui::TableSetColumnIndex(0);
-    ImGui::TextUnformatted("Height (Z)");
-    ImGui::TableSetColumnIndex(1);
-    ImGui::SetNextItemWidth(-1);
-    ImGui::InputDouble("##box_height", &m_add_box_size.z, 0.0, 0.0, "%.3f");
-
+    table_row_input_double_("Origin X", "##box_origin_x", &m_add_box_origin.x);
+    table_row_input_double_("Origin Y", "##box_origin_y", &m_add_box_origin.y);
+    table_row_input_double_("Origin Z", "##box_origin_z", &m_add_box_origin.z);
+    table_row_input_double_("Width (X)", "##box_width", &m_add_box_size.x);
+    table_row_input_double_("Length (Y)", "##box_length", &m_add_box_size.y);
+    table_row_input_double_("Height (Z)", "##box_height", &m_add_box_size.z);
     ImGui::EndTable();
   }
   ImGui::Spacing();
@@ -96,30 +65,10 @@ void GUI::add_pyramid_dialog_()
   ImGui::Spacing();
   if (ImGui::BeginTable("Add pyramid##table", 2, ImGuiTableFlags_SizingStretchProp))
   {
-    ImGui::TableNextRow();
-    ImGui::TableSetColumnIndex(0);
-    ImGui::TextUnformatted("Origin X");
-    ImGui::TableSetColumnIndex(1);
-    ImGui::SetNextItemWidth(-1);
-    ImGui::InputDouble("##pyramid_origin_x", &m_add_pyramid_origin.x, 0.0, 0.0, "%.3f");
-    ImGui::TableNextRow();
-    ImGui::TableSetColumnIndex(0);
-    ImGui::TextUnformatted("Origin Y");
-    ImGui::TableSetColumnIndex(1);
-    ImGui::SetNextItemWidth(-1);
-    ImGui::InputDouble("##pyramid_origin_y", &m_add_pyramid_origin.y, 0.0, 0.0, "%.3f");
-    ImGui::TableNextRow();
-    ImGui::TableSetColumnIndex(0);
-    ImGui::TextUnformatted("Origin Z");
-    ImGui::TableSetColumnIndex(1);
-    ImGui::SetNextItemWidth(-1);
-    ImGui::InputDouble("##pyramid_origin_z", &m_add_pyramid_origin.z, 0.0, 0.0, "%.3f");
-    ImGui::TableNextRow();
-    ImGui::TableSetColumnIndex(0);
-    ImGui::TextUnformatted("Side (base & height)");
-    ImGui::TableSetColumnIndex(1);
-    ImGui::SetNextItemWidth(-1);
-    ImGui::InputDouble("##pyramid_side", &m_add_pyramid_side, 0.0, 0.0, "%.3f");
+    table_row_input_double_("Origin X", "##pyramid_origin_x", &m_add_pyramid_origin.x);
+    table_row_input_double_("Origin Y", "##pyramid_origin_y", &m_add_pyramid_origin.y);
+    table_row_input_double_("Origin Z", "##pyramid_origin_z", &m_add_pyramid_origin.z);
+    table_row_input_double_("Side (base & height)", "##pyramid_side", &m_add_pyramid_side);
     ImGui::EndTable();
   }
   ImGui::Spacing();
@@ -153,30 +102,10 @@ void GUI::add_sphere_dialog_()
   ImGui::Spacing();
   if (ImGui::BeginTable("Add sphere##table", 2, ImGuiTableFlags_SizingStretchProp))
   {
-    ImGui::TableNextRow();
-    ImGui::TableSetColumnIndex(0);
-    ImGui::TextUnformatted("Origin X");
-    ImGui::TableSetColumnIndex(1);
-    ImGui::SetNextItemWidth(-1);
-    ImGui::InputDouble("##sphere_origin_x", &m_add_sphere_origin.x, 0.0, 0.0, "%.3f");
-    ImGui::TableNextRow();
-    ImGui::TableSetColumnIndex(0);
-    ImGui::TextUnformatted("Origin Y");
-    ImGui::TableSetColumnIndex(1);
-    ImGui::SetNextItemWidth(-1);
-    ImGui::InputDouble("##sphere_origin_y", &m_add_sphere_origin.y, 0.0, 0.0, "%.3f");
-    ImGui::TableNextRow();
-    ImGui::TableSetColumnIndex(0);
-    ImGui::TextUnformatted("Origin Z");
-    ImGui::TableSetColumnIndex(1);
-    ImGui::SetNextItemWidth(-1);
-    ImGui::InputDouble("##sphere_origin_z", &m_add_sphere_origin.z, 0.0, 0.0, "%.3f");
-    ImGui::TableNextRow();
-    ImGui::TableSetColumnIndex(0);
-    ImGui::TextUnformatted("Radius");
-    ImGui::TableSetColumnIndex(1);
-    ImGui::SetNextItemWidth(-1);
-    ImGui::InputDouble("##sphere_radius", &m_add_sphere_radius, 0.0, 0.0, "%.3f");
+    table_row_input_double_("Origin X", "##sphere_origin_x", &m_add_sphere_origin.x);
+    table_row_input_double_("Origin Y", "##sphere_origin_y", &m_add_sphere_origin.y);
+    table_row_input_double_("Origin Z", "##sphere_origin_z", &m_add_sphere_origin.z);
+    table_row_input_double_("Radius", "##sphere_radius", &m_add_sphere_radius);
     ImGui::EndTable();
   }
 
@@ -212,36 +141,11 @@ void GUI::add_cylinder_dialog_()
   ImGui::Spacing();
   if (ImGui::BeginTable("Add cylinder##table", 2, ImGuiTableFlags_SizingStretchProp))
   {
-    ImGui::TableNextRow();
-    ImGui::TableSetColumnIndex(0);
-    ImGui::TextUnformatted("Origin X");
-    ImGui::TableSetColumnIndex(1);
-    ImGui::SetNextItemWidth(-1);
-    ImGui::InputDouble("##cyl_origin_x", &m_add_cylinder_origin.x, 0.0, 0.0, "%.3f");
-    ImGui::TableNextRow();
-    ImGui::TableSetColumnIndex(0);
-    ImGui::TextUnformatted("Origin Y");
-    ImGui::TableSetColumnIndex(1);
-    ImGui::SetNextItemWidth(-1);
-    ImGui::InputDouble("##cyl_origin_y", &m_add_cylinder_origin.y, 0.0, 0.0, "%.3f");
-    ImGui::TableNextRow();
-    ImGui::TableSetColumnIndex(0);
-    ImGui::TextUnformatted("Origin Z");
-    ImGui::TableSetColumnIndex(1);
-    ImGui::SetNextItemWidth(-1);
-    ImGui::InputDouble("##cyl_origin_z", &m_add_cylinder_origin.z, 0.0, 0.0, "%.3f");
-    ImGui::TableNextRow();
-    ImGui::TableSetColumnIndex(0);
-    ImGui::TextUnformatted("Radius");
-    ImGui::TableSetColumnIndex(1);
-    ImGui::SetNextItemWidth(-1);
-    ImGui::InputDouble("##cyl_radius", &m_add_cylinder_radius, 0.0, 0.0, "%.3f");
-    ImGui::TableNextRow();
-    ImGui::TableSetColumnIndex(0);
-    ImGui::TextUnformatted("Height");
-    ImGui::TableSetColumnIndex(1);
-    ImGui::SetNextItemWidth(-1);
-    ImGui::InputDouble("##cyl_height", &m_add_cylinder_height, 0.0, 0.0, "%.3f");
+    table_row_input_double_("Origin X", "##cyl_origin_x", &m_add_cylinder_origin.x);
+    table_row_input_double_("Origin Y", "##cyl_origin_y", &m_add_cylinder_origin.y);
+    table_row_input_double_("Origin Z", "##cyl_origin_z", &m_add_cylinder_origin.z);
+    table_row_input_double_("Radius", "##cyl_radius", &m_add_cylinder_radius);
+    table_row_input_double_("Height", "##cyl_height", &m_add_cylinder_height);
     ImGui::EndTable();
   }
 
@@ -276,42 +180,12 @@ void GUI::add_cone_dialog_()
   ImGui::Spacing();
   if (ImGui::BeginTable("Add cone##table", 2, ImGuiTableFlags_SizingStretchProp))
   {
-    ImGui::TableNextRow();
-    ImGui::TableSetColumnIndex(0);
-    ImGui::TextUnformatted("Origin X");
-    ImGui::TableSetColumnIndex(1);
-    ImGui::SetNextItemWidth(-1);
-    ImGui::InputDouble("##cone_origin_x", &m_add_cone_origin.x, 0.0, 0.0, "%.3f");
-    ImGui::TableNextRow();
-    ImGui::TableSetColumnIndex(0);
-    ImGui::TextUnformatted("Origin Y");
-    ImGui::TableSetColumnIndex(1);
-    ImGui::SetNextItemWidth(-1);
-    ImGui::InputDouble("##cone_origin_y", &m_add_cone_origin.y, 0.0, 0.0, "%.3f");
-    ImGui::TableNextRow();
-    ImGui::TableSetColumnIndex(0);
-    ImGui::TextUnformatted("Origin Z");
-    ImGui::TableSetColumnIndex(1);
-    ImGui::SetNextItemWidth(-1);
-    ImGui::InputDouble("##cone_origin_z", &m_add_cone_origin.z, 0.0, 0.0, "%.3f");
-    ImGui::TableNextRow();
-    ImGui::TableSetColumnIndex(0);
-    ImGui::TextUnformatted("Base radius (R1)");
-    ImGui::TableSetColumnIndex(1);
-    ImGui::SetNextItemWidth(-1);
-    ImGui::InputDouble("##cone_R1", &m_add_cone_R1, 0.0, 0.0, "%.3f");
-    ImGui::TableNextRow();
-    ImGui::TableSetColumnIndex(0);
-    ImGui::TextUnformatted("Top radius (R2)");
-    ImGui::TableSetColumnIndex(1);
-    ImGui::SetNextItemWidth(-1);
-    ImGui::InputDouble("##cone_R2", &m_add_cone_R2, 0.0, 0.0, "%.3f");
-    ImGui::TableNextRow();
-    ImGui::TableSetColumnIndex(0);
-    ImGui::TextUnformatted("Height");
-    ImGui::TableSetColumnIndex(1);
-    ImGui::SetNextItemWidth(-1);
-    ImGui::InputDouble("##cone_height", &m_add_cone_height, 0.0, 0.0, "%.3f");
+    table_row_input_double_("Origin X", "##cone_origin_x", &m_add_cone_origin.x);
+    table_row_input_double_("Origin Y", "##cone_origin_y", &m_add_cone_origin.y);
+    table_row_input_double_("Origin Z", "##cone_origin_z", &m_add_cone_origin.z);
+    table_row_input_double_("Base radius (R1)", "##cone_R1", &m_add_cone_R1);
+    table_row_input_double_("Top radius (R2)", "##cone_R2", &m_add_cone_R2);
+    table_row_input_double_("Height", "##cone_height", &m_add_cone_height);
     ImGui::EndTable();
   }
 
@@ -346,36 +220,11 @@ void GUI::add_torus_dialog_()
   ImGui::Spacing();
   if (ImGui::BeginTable("Add torus##table", 2, ImGuiTableFlags_SizingStretchProp))
   {
-    ImGui::TableNextRow();
-    ImGui::TableSetColumnIndex(0);
-    ImGui::TextUnformatted("Origin X");
-    ImGui::TableSetColumnIndex(1);
-    ImGui::SetNextItemWidth(-1);
-    ImGui::InputDouble("##torus_origin_x", &m_add_torus_origin.x, 0.0, 0.0, "%.3f");
-    ImGui::TableNextRow();
-    ImGui::TableSetColumnIndex(0);
-    ImGui::TextUnformatted("Origin Y");
-    ImGui::TableSetColumnIndex(1);
-    ImGui::SetNextItemWidth(-1);
-    ImGui::InputDouble("##torus_origin_y", &m_add_torus_origin.y, 0.0, 0.0, "%.3f");
-    ImGui::TableNextRow();
-    ImGui::TableSetColumnIndex(0);
-    ImGui::TextUnformatted("Origin Z");
-    ImGui::TableSetColumnIndex(1);
-    ImGui::SetNextItemWidth(-1);
-    ImGui::InputDouble("##torus_origin_z", &m_add_torus_origin.z, 0.0, 0.0, "%.3f");
-    ImGui::TableNextRow();
-    ImGui::TableSetColumnIndex(0);
-    ImGui::TextUnformatted("Major radius (R1)");
-    ImGui::TableSetColumnIndex(1);
-    ImGui::SetNextItemWidth(-1);
-    ImGui::InputDouble("##torus_R1", &m_add_torus_R1, 0.0, 0.0, "%.3f");
-    ImGui::TableNextRow();
-    ImGui::TableSetColumnIndex(0);
-    ImGui::TextUnformatted("Minor radius (R2)");
-    ImGui::TableSetColumnIndex(1);
-    ImGui::SetNextItemWidth(-1);
-    ImGui::InputDouble("##torus_R2", &m_add_torus_R2, 0.0, 0.0, "%.3f");
+    table_row_input_double_("Origin X", "##torus_origin_x", &m_add_torus_origin.x);
+    table_row_input_double_("Origin Y", "##torus_origin_y", &m_add_torus_origin.y);
+    table_row_input_double_("Origin Z", "##torus_origin_z", &m_add_torus_origin.z);
+    table_row_input_double_("Major radius (R1)", "##torus_R1", &m_add_torus_R1);
+    table_row_input_double_("Minor radius (R2)", "##torus_R2", &m_add_torus_R2);
     ImGui::EndTable();
   }
 
@@ -436,10 +285,12 @@ void GUI::add_sketch_dialog_()
       plane = Sketch_ref_plane::XZ;
       base  = "Sketch_xz";
       break;
+
     case 2:
       plane = Sketch_ref_plane::YZ;
       base  = "Sketch_yz";
       break;
+
     default:
       break;
     }
@@ -548,3 +399,16 @@ void GUI::add_menu_items_()
     m_open_add_torus_popup = true;
   }
 }
+
+namespace
+{
+void table_row_input_double_(const char* label, const char* id, double* value)
+{
+  ImGui::TableNextRow();
+  ImGui::TableSetColumnIndex(0);
+  ImGui::TextUnformatted(label);
+  ImGui::TableSetColumnIndex(1);
+  ImGui::SetNextItemWidth(-1);
+  ImGui::InputDouble(id, value, 0.0, 0.0, "%.3f");
+}
+} // namespace

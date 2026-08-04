@@ -476,8 +476,8 @@ std::optional<Cyl_face_info> cylinder_from_face(const TopoDS_Face& face)
 
 gp_Trsf cyl_align_trsf(const gp_Ax1& moving_axis, const gp_Ax1& fixed_axis, bool flip, double axial_offset)
 {
-  const gp_Dir from_dir = moving_axis.Direction();
-  const gp_Dir to_dir   = flip ? fixed_axis.Direction().Reversed() : fixed_axis.Direction();
+  const gp_Dir from_dir  = moving_axis.Direction();
+  const gp_Dir to_dir    = flip ? fixed_axis.Direction().Reversed() : fixed_axis.Direction();
   const gp_Dir fixed_dir = fixed_axis.Direction();
 
   const gp_Vec to_moving(fixed_axis.Location(), moving_axis.Location());
@@ -629,69 +629,11 @@ namespace
 {
 constexpr double k_dim_text_height_base = 16.0;
 
-Prs3d_DimensionAspect_ptr clone_dimension_aspect(const Handle(PrsDim_Dimension) & dim)
-{
-  if (dim.IsNull())
-    return new Prs3d_DimensionAspect();
-
-  const Prs3d_DimensionAspect_ptr& cur = dim->DimensionAspect();
-  if (!cur.IsNull())
-    return new Prs3d_DimensionAspect(*cur);
-
-  return new Prs3d_DimensionAspect();
-}
-
-void arrow_style_preset(const int arrow_style, double& angle_deg, bool& arrows_3d)
-{
-  switch (arrow_style)
-  {
-  case 1:
-    angle_deg = 15.0;
-    arrows_3d = false;
-    break;
-
-  case 2:
-    angle_deg = 40.0;
-    arrows_3d = false;
-    break;
-
-  case 3:
-    angle_deg = 25.0;
-    arrows_3d = true;
-    break;
-
-  default:
-    angle_deg = 25.0;
-    arrows_3d = false;
-    break;
-  }
-}
-
-Prs3d_DimensionArrowOrientation arrow_orientation_from_index(const int idx)
-{
-  switch (idx)
-  {
-    // clang-format off
-  case 1:  return Prs3d_DAO_Internal;
-  case 2:  return Prs3d_DAO_External;
-  default: return Prs3d_DAO_Fit;
-    // clang-format on
-  }
-}
-
-void apply_dimension_label_text_aspect(const Prs3d_TextAspect_ptr& text, const Quantity_Color& col,
-                                       const Length_dimension_style& style)
-{
-  text->SetColor(col);
-  text->SetHeight(k_dim_text_height_base * static_cast<double>(style.text_height_scale));
-
-  Graphic3d_AspectText3d_ptr gtext = new Graphic3d_AspectText3d();
-  gtext->SetColor(col);
-  gtext->SetDisplayType(Aspect_TODT_NORMAL);
-  gtext->SetStyle(Aspect_TOST_NORMAL);
-  gtext->SetAlphaMode(Graphic3d_AlphaMode_Opaque);
-  text->SetAspect(gtext);
-}
+Prs3d_DimensionAspect_ptr         clone_dimension_aspect_(const Handle(PrsDim_Dimension) & dim);
+void                              arrow_style_preset_(const int arrow_style, double& angle_deg, bool& arrows_3d);
+Prs3d_DimensionArrowOrientation   arrow_orientation_from_index_(const int idx);
+void                              apply_dimension_label_text_aspect_(const Prs3d_TextAspect_ptr& text, const Quantity_Color& col,
+                                                                     const Length_dimension_style& style);
 } // namespace
 
 double length_dimension_auto_flyout(const double edge_len)
@@ -706,7 +648,7 @@ void apply_dimension_style_(const Handle(PrsDim_Dimension) & dim, const Length_d
   if (dim.IsNull())
     return;
 
-  Prs3d_DimensionAspect_ptr aspect = clone_dimension_aspect(dim);
+  Prs3d_DimensionAspect_ptr aspect = clone_dimension_aspect_(dim);
 
   const Quantity_Color col(style.color_rgb[0], style.color_rgb[1], style.color_rgb[2], Quantity_TOC_RGB);
 
@@ -718,9 +660,9 @@ void apply_dimension_style_(const Handle(PrsDim_Dimension) & dim, const Length_d
 
   double angle_deg{};
   bool   arrows_3d{};
-  arrow_style_preset(style.arrow_style, angle_deg, arrows_3d);
+  arrow_style_preset_(style.arrow_style, angle_deg, arrows_3d);
   aspect->MakeArrows3d(arrows_3d);
-  aspect->SetArrowOrientation(arrow_orientation_from_index(style.arrow_orientation));
+  aspect->SetArrowOrientation(arrow_orientation_from_index_(style.arrow_orientation));
 
   Prs3d_ArrowAspect_ptr arrow;
   if (const Prs3d_ArrowAspect_ptr& cur_arrow = aspect->ArrowAspect(); !cur_arrow.IsNull())
@@ -746,7 +688,7 @@ void apply_dimension_style_(const Handle(PrsDim_Dimension) & dim, const Length_d
   else
   {
     Prs3d_TextAspect_ptr text = new Prs3d_TextAspect();
-    apply_dimension_label_text_aspect(text, col, style);
+    apply_dimension_label_text_aspect_(text, col, style);
     aspect->SetTextAspect(text);
   }
 
@@ -783,7 +725,7 @@ void apply_length_dimension_list_hover_style(const PrsDim_LengthDimension_ptr& d
   if (dim.IsNull())
     return;
 
-  Prs3d_DimensionAspect_ptr aspect = clone_dimension_aspect(dim);
+  Prs3d_DimensionAspect_ptr aspect = clone_dimension_aspect_(dim);
   const Quantity_Color      qc(hover_rgb[0], hover_rgb[1], hover_rgb[2], Quantity_TOC_RGB);
 
   Aspect_TypeOfLine typ = Aspect_TOL_SOLID;
@@ -1398,33 +1340,15 @@ double ezy_geom::area(const polygon_2d& poly)
 
 namespace
 {
-std::string wkt_fmt_num(double v)
-{
-  if (std::abs(v - std::round(v)) < 1e-9)
-    return std::to_string(static_cast<long long>(std::round(v)));
-
-  std::ostringstream os;
-  os << std::fixed << std::setprecision(6) << v;
-  return os.str();
-}
-
-void wkt_write_coords(std::ostringstream& ss, const std::vector<ezy_geom::point_2d>& pts)
-{
-  for (size_t i = 0; i < pts.size(); ++i)
-  {
-    if (i > 0)
-      ss << ",";
-
-    ss << wkt_fmt_num(pts[i].x()) << " " << wkt_fmt_num(pts[i].y());
-  }
-}
+std::string wkt_fmt_num_(double v);
+void        wkt_write_coords_(std::ostringstream& ss, const std::vector<ezy_geom::point_2d>& pts);
 } // namespace
 
 std::string to_wkt_string(const ezy_geom::linestring_2d& ls)
 {
   std::ostringstream ss;
   ss << "LINESTRING(";
-  wkt_write_coords(ss, ls.points);
+  wkt_write_coords_(ss, ls.points);
   ss << ")";
   return ss.str();
 }
@@ -1433,7 +1357,7 @@ std::string to_wkt_string(const ezy_geom::ring_2d& ring)
 {
   std::ostringstream ss;
   ss << "LINESTRING(";
-  wkt_write_coords(ss, ring);
+  wkt_write_coords_(ss, ring);
   ss << ")";
   return ss.str();
 }
@@ -1448,7 +1372,7 @@ std::string to_wkt_string(const ezy_geom::polygon_2d& poly)
       ss << ",";
 
     ss << "(";
-    wkt_write_coords(ss, r);
+    wkt_write_coords_(ss, r);
     ss << ")";
   };
 
@@ -1586,32 +1510,10 @@ std::optional<gp_Pnt2d> snap_foot_to_open_segment_interior_if_close(const gp_Pnt
 
 namespace
 {
-Geom_TrimmedCurve_ptr edge_trimmed_curve_(const TopoDS_Edge& edge)
-{
-  double                f   = 0.0;
-  double                l   = 0.0;
-  Geom_Curve_ptr        c   = BRep_Tool::Curve(edge, f, l);
-  Geom_TrimmedCurve_ptr ret = new Geom_TrimmedCurve(c, f, l);
-  if (edge.Orientation() == TopAbs_REVERSED)
-    ret->Reverse();
-  return ret;
-}
-
-bool on_segment_for_inclusion_(const gp_Pnt2d& p, const gp_Pnt2d& a, const gp_Pnt2d& b, Segment_inclusion inclusion)
-{
-  const double tol = Precision::Confusion();
-  if (p.Distance(a) <= tol || p.Distance(b) <= tol)
-    return inclusion == Segment_inclusion::Closed;
-
-  return point_on_open_segment_2d(p, a, b);
-}
-
-bool on_open_arc_parameter_(double u, double u_first, double u_last)
-{
-  const double span   = u_last - u_first;
-  const double margin = std::max(Precision::Confusion(), std::abs(span) * 1e-9);
-  return u > u_first + margin && u < u_last - margin;
-}
+Geom_TrimmedCurve_ptr edge_trimmed_curve_(const TopoDS_Edge& edge);
+bool                  on_segment_for_inclusion_(const gp_Pnt2d& p, const gp_Pnt2d& a, const gp_Pnt2d& b,
+                                                Segment_inclusion inclusion);
+bool                  on_open_arc_parameter_(double u, double u_first, double u_last);
 } // namespace
 
 bool point_on_open_arc_interior_2d(const gp_Pnt2d& p, const TopoDS_Edge& arc_edge, const gp_Pln& pln)
@@ -1702,3 +1604,118 @@ std::vector<gp_Pnt2d> arc_arc_intersections_2d(const TopoDS_Edge& arc_a, const T
 
   return ret;
 }
+
+namespace
+{
+Prs3d_DimensionAspect_ptr clone_dimension_aspect_(const Handle(PrsDim_Dimension) & dim)
+{
+  if (dim.IsNull())
+    return new Prs3d_DimensionAspect();
+
+  const Prs3d_DimensionAspect_ptr& cur = dim->DimensionAspect();
+  if (!cur.IsNull())
+    return new Prs3d_DimensionAspect(*cur);
+
+  return new Prs3d_DimensionAspect();
+}
+
+void arrow_style_preset_(const int arrow_style, double& angle_deg, bool& arrows_3d)
+{
+  switch (arrow_style)
+  {
+  case 1:
+    angle_deg = 15.0;
+    arrows_3d = false;
+    break;
+
+  case 2:
+    angle_deg = 40.0;
+    arrows_3d = false;
+    break;
+
+  case 3:
+    angle_deg = 25.0;
+    arrows_3d = true;
+    break;
+
+  default:
+    angle_deg = 25.0;
+    arrows_3d = false;
+    break;
+  }
+}
+
+Prs3d_DimensionArrowOrientation arrow_orientation_from_index_(const int idx)
+{
+  switch (idx)
+  {
+    // clang-format off
+  case 1:  return Prs3d_DAO_Internal;
+  case 2:  return Prs3d_DAO_External;
+  default: return Prs3d_DAO_Fit;
+    // clang-format on
+  }
+}
+
+void apply_dimension_label_text_aspect_(const Prs3d_TextAspect_ptr& text, const Quantity_Color& col,
+                                        const Length_dimension_style& style)
+{
+  text->SetColor(col);
+  text->SetHeight(k_dim_text_height_base * static_cast<double>(style.text_height_scale));
+
+  Graphic3d_AspectText3d_ptr gtext = new Graphic3d_AspectText3d();
+  gtext->SetColor(col);
+  gtext->SetDisplayType(Aspect_TODT_NORMAL);
+  gtext->SetStyle(Aspect_TOST_NORMAL);
+  gtext->SetAlphaMode(Graphic3d_AlphaMode_Opaque);
+  text->SetAspect(gtext);
+}
+
+std::string wkt_fmt_num_(double v)
+{
+  if (std::abs(v - std::round(v)) < 1e-9)
+    return std::to_string(static_cast<long long>(std::round(v)));
+
+  std::ostringstream os;
+  os << std::fixed << std::setprecision(6) << v;
+  return os.str();
+}
+
+void wkt_write_coords_(std::ostringstream& ss, const std::vector<ezy_geom::point_2d>& pts)
+{
+  for (size_t i = 0; i < pts.size(); ++i)
+  {
+    if (i > 0)
+      ss << ",";
+
+    ss << wkt_fmt_num_(pts[i].x()) << " " << wkt_fmt_num_(pts[i].y());
+  }
+}
+
+Geom_TrimmedCurve_ptr edge_trimmed_curve_(const TopoDS_Edge& edge)
+{
+  double                f   = 0.0;
+  double                l   = 0.0;
+  Geom_Curve_ptr        c   = BRep_Tool::Curve(edge, f, l);
+  Geom_TrimmedCurve_ptr ret = new Geom_TrimmedCurve(c, f, l);
+  if (edge.Orientation() == TopAbs_REVERSED)
+    ret->Reverse();
+  return ret;
+}
+
+bool on_segment_for_inclusion_(const gp_Pnt2d& p, const gp_Pnt2d& a, const gp_Pnt2d& b, Segment_inclusion inclusion)
+{
+  const double tol = Precision::Confusion();
+  if (p.Distance(a) <= tol || p.Distance(b) <= tol)
+    return inclusion == Segment_inclusion::Closed;
+
+  return point_on_open_segment_2d(p, a, b);
+}
+
+bool on_open_arc_parameter_(double u, double u_first, double u_last)
+{
+  const double span   = u_last - u_first;
+  const double margin = std::max(Precision::Confusion(), std::abs(span) * 1e-9);
+  return u > u_first + margin && u < u_last - margin;
+}
+} // namespace

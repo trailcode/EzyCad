@@ -36,11 +36,196 @@ namespace utl_cad_file_info
 {
 namespace
 {
-void add_line(std::vector<Line>& out, const char* label, const std::string& value) { out.push_back({label, value}); }
+std::vector<Line> collect_step_(const std::string& file_path, const std::string& file_bytes,
+                               const Atomic_progress_indicator_ptr& progress);
 
-void add_blank(std::vector<Line>& out) { out.push_back({"", ""}); }
+void add_line_(std::vector<Line>& out, const char* label, const std::string& value);
 
-std::string to_lower_ext(const std::string& path)
+void add_blank_(std::vector<Line>& out);
+
+std::string to_lower_ext_(const std::string& path);
+
+std::string fmt_bytes_(const size_t n);
+
+std::string fmt_double_(const double v);
+
+bool starts_with_ci_(const std::string& s, const char* prefix);
+
+bool looks_like_ply_(const std::string& bytes);
+
+bool looks_like_step_(const std::string& bytes);
+
+bool looks_like_iges_(const std::string& bytes);
+
+bool is_binary_stl_(const std::string& bytes);
+
+bool looks_like_stl_(const std::string& bytes);
+
+int count_subshapes_(const TopoDS_Shape& shape, const TopAbs_ShapeEnum type);
+
+void append_shape_summary_(std::vector<Line>& lines, const TopoDS_Shape& shape);
+
+void append_common_(std::vector<Line>& lines, const std::string& file_path, const std::string& file_bytes, Format fmt);
+
+void set_progress_stage_(const Atomic_progress_indicator_ptr& progress, const char* stage);
+
+Message_ProgressRange start_progress_(const Atomic_progress_indicator_ptr& progress);
+
+std::vector<Line> collect_iges_(const std::string& file_path, const std::string& file_bytes);
+
+std::vector<Line> collect_stl_(const std::string& file_path, const std::string& file_bytes);
+
+std::vector<Line> collect_ply_(const std::string& file_path, const std::string& file_bytes);
+
+std::string trim_name_(std::string s);
+
+std::string xcaf_label_name_(const TDF_Label& lab);
+
+std::string xcaf_product_name_(const XCAFDoc_ShapeTool_ptr& shapes, const TDF_Label& lab);
+
+void append_named_from_label_(const XCAFDoc_ShapeTool_ptr& shapes, const TDF_Label& lab, std::vector<Named_body>& out);
+
+void append_tree_from_label_(const XCAFDoc_ShapeTool_ptr& shapes, const TDF_Label& lab, int parent_index,
+                            std::vector<Named_node>& out);
+
+Status read_step_named_bodies_xcaf_(const std::string& file_bytes, std::vector<Named_body>& out,
+                                   const Message_ProgressRange& progress);
+
+Status read_step_named_bodies_plain_(const std::string& file_bytes, std::vector<Named_body>& out,
+                                    const Message_ProgressRange& progress);
+
+bool collect_step_has_status_error_(const std::vector<Line>& lines);
+
+std::vector<Line> collect_step_xcaf_(const std::string& file_path, const std::string& file_bytes,
+                                    const Atomic_progress_indicator_ptr& progress);
+
+std::vector<Line> collect_step_plain_(const std::string& file_path, const std::string& file_bytes,
+                                     const Atomic_progress_indicator_ptr& progress);
+
+Status read_step_named_tree_xcaf_(const std::string& file_bytes, std::vector<Named_node>& out,
+                                 const Message_ProgressRange& progress);
+} // namespace
+
+Format detect(const std::string& file_path, const std::string& file_bytes)
+{
+  const std::string ext = to_lower_ext_(file_path);
+  if (ext == ".step" || ext == ".stp")
+    return Format::Step;
+
+  if (ext == ".igs" || ext == ".iges")
+    return Format::Iges;
+
+  if (ext == ".stl")
+    return Format::Stl;
+
+  if (ext == ".ply")
+    return Format::Ply;
+
+  // Content sniff when extension is missing or wrong (e.g. browser basename only).
+  if (looks_like_ply_(file_bytes))
+    return Format::Ply;
+
+  if (looks_like_step_(file_bytes))
+    return Format::Step;
+
+  if (looks_like_stl_(file_bytes))
+    return Format::Stl;
+
+  if (looks_like_iges_(file_bytes))
+    return Format::Iges;
+
+  return Format::Unknown;
+}
+
+bool can_import(Format fmt) { return fmt == Format::Step || fmt == Format::Ply; }
+
+const char* format_label(Format fmt)
+{
+  switch (fmt)
+  {
+  case Format::Step:
+    return "STEP";
+  case Format::Iges:
+    return "IGES";
+  case Format::Stl:
+    return "STL";
+  case Format::Ply:
+    return "PLY";
+  default:
+    return "Unknown";
+  }
+}
+
+std::vector<Line> collect(const std::string& file_path, const std::string& file_bytes,
+                          const Atomic_progress_indicator_ptr& progress)
+{
+  const Format fmt = detect(file_path, file_bytes);
+  switch (fmt)
+  {
+  case Format::Step:
+    return collect_step_(file_path, file_bytes, progress);
+  case Format::Iges:
+    return collect_iges_(file_path, file_bytes);
+  case Format::Stl:
+    return collect_stl_(file_path, file_bytes);
+  case Format::Ply:
+    return collect_ply_(file_path, file_bytes);
+  default:
+  {
+    std::vector<Line> lines;
+    append_common_(lines, file_path, file_bytes, Format::Unknown);
+    add_blank_(lines);
+    add_line_(lines, "Status", "unsupported or unrecognized format");
+    add_line_(lines, "Hint", "Open STEP, IGES, STL, or PLY");
+    return lines;
+  }
+  }
+}
+
+Status read_step_named_bodies(const std::string& file_bytes, std::vector<Named_body>& out,
+                              const Message_ProgressRange& progress)
+{
+  out.clear();
+  const Status xcaf = read_step_named_bodies_xcaf_(file_bytes, out, progress);
+  if (xcaf.is_ok())
+    return xcaf;
+
+  out.clear();
+  return read_step_named_bodies_plain_(file_bytes, out, Message_ProgressRange());
+}
+
+Status read_step_named_tree(const std::string& file_bytes, std::vector<Named_node>& out, const Message_ProgressRange& progress)
+{
+  out.clear();
+  const Status xcaf = read_step_named_tree_xcaf_(file_bytes, out, progress);
+  if (xcaf.is_ok())
+    return xcaf;
+
+  out.clear();
+  std::vector<Named_body> flat;
+  const Status            plain = read_step_named_bodies_plain_(file_bytes, flat, Message_ProgressRange());
+  if (!plain.is_ok())
+    return plain;
+
+  for (Named_body& b : flat)
+  {
+    Named_node n;
+    n.shape        = std::move(b.shape);
+    n.name         = std::move(b.name);
+    n.is_group     = false;
+    n.parent_index = -1;
+    out.push_back(std::move(n));
+  }
+  return Status::ok();
+}
+
+namespace
+{
+void add_line_(std::vector<Line>& out, const char* label, const std::string& value) { out.push_back({label, value}); }
+
+void add_blank_(std::vector<Line>& out) { out.push_back({"", ""}); }
+
+std::string to_lower_ext_(const std::string& path)
 {
   std::string ext = std::filesystem::path(path).extension().string();
   for (char& c : ext)
@@ -49,7 +234,7 @@ std::string to_lower_ext(const std::string& path)
   return ext;
 }
 
-std::string fmt_bytes(const size_t n)
+std::string fmt_bytes_(const size_t n)
 {
   char buf[64];
   if (n < 1024)
@@ -62,14 +247,14 @@ std::string fmt_bytes(const size_t n)
   return buf;
 }
 
-std::string fmt_double(const double v)
+std::string fmt_double_(const double v)
 {
   char buf[64];
   std::snprintf(buf, sizeof(buf), "%.6g", v);
   return buf;
 }
 
-bool starts_with_ci(const std::string& s, const char* prefix)
+bool starts_with_ci_(const std::string& s, const char* prefix)
 {
   const size_t n = std::strlen(prefix);
   if (s.size() < n)
@@ -82,15 +267,15 @@ bool starts_with_ci(const std::string& s, const char* prefix)
   return true;
 }
 
-bool looks_like_ply(const std::string& bytes) { return starts_with_ci(bytes, "ply"); }
+bool looks_like_ply_(const std::string& bytes) { return starts_with_ci_(bytes, "ply"); }
 
-bool looks_like_step(const std::string& bytes)
+bool looks_like_step_(const std::string& bytes)
 {
   // ISO-10303-21 exchange files typically start with "ISO-10303-21;"
   return bytes.find("ISO-10303-21") != std::string::npos;
 }
 
-bool looks_like_iges(const std::string& bytes)
+bool looks_like_iges_(const std::string& bytes)
 {
   // Start / global / directory / parameter / terminate section markers (cols 73-80).
   if (bytes.size() < 80)
@@ -100,7 +285,7 @@ bool looks_like_iges(const std::string& bytes)
   return c73 == 'S' || c73 == 'G' || c73 == 'D' || c73 == 'P' || c73 == 'T';
 }
 
-bool is_binary_stl(const std::string& bytes)
+bool is_binary_stl_(const std::string& bytes)
 {
   if (bytes.size() < 84)
     return false;
@@ -111,15 +296,15 @@ bool is_binary_stl(const std::string& bytes)
   return expected == bytes.size();
 }
 
-bool looks_like_stl(const std::string& bytes)
+bool looks_like_stl_(const std::string& bytes)
 {
-  if (is_binary_stl(bytes))
+  if (is_binary_stl_(bytes))
     return true;
 
-  return starts_with_ci(bytes, "solid");
+  return starts_with_ci_(bytes, "solid");
 }
 
-int count_subshapes(const TopoDS_Shape& shape, const TopAbs_ShapeEnum type)
+int count_subshapes_(const TopoDS_Shape& shape, const TopAbs_ShapeEnum type)
 {
   int n = 0;
   for (TopExp_Explorer exp(shape, type); exp.More(); exp.Next())
@@ -128,20 +313,20 @@ int count_subshapes(const TopoDS_Shape& shape, const TopAbs_ShapeEnum type)
   return n;
 }
 
-void append_shape_summary(std::vector<Line>& lines, const TopoDS_Shape& shape)
+void append_shape_summary_(std::vector<Line>& lines, const TopoDS_Shape& shape)
 {
   if (shape.IsNull())
   {
-    add_line(lines, "Shape", "null");
+    add_line_(lines, "Shape", "null");
     return;
   }
 
-  add_line(lines, "Solids", std::to_string(count_subshapes(shape, TopAbs_SOLID)));
-  add_line(lines, "Shells", std::to_string(count_subshapes(shape, TopAbs_SHELL)));
-  add_line(lines, "Faces", std::to_string(count_subshapes(shape, TopAbs_FACE)));
-  add_line(lines, "Wires", std::to_string(count_subshapes(shape, TopAbs_WIRE)));
-  add_line(lines, "Edges", std::to_string(count_subshapes(shape, TopAbs_EDGE)));
-  add_line(lines, "Vertices", std::to_string(count_subshapes(shape, TopAbs_VERTEX)));
+  add_line_(lines, "Solids", std::to_string(count_subshapes_(shape, TopAbs_SOLID)));
+  add_line_(lines, "Shells", std::to_string(count_subshapes_(shape, TopAbs_SHELL)));
+  add_line_(lines, "Faces", std::to_string(count_subshapes_(shape, TopAbs_FACE)));
+  add_line_(lines, "Wires", std::to_string(count_subshapes_(shape, TopAbs_WIRE)));
+  add_line_(lines, "Edges", std::to_string(count_subshapes_(shape, TopAbs_EDGE)));
+  add_line_(lines, "Vertices", std::to_string(count_subshapes_(shape, TopAbs_VERTEX)));
 
   Bnd_Box bbox;
   BRepBndLib::Add(shape, bbox);
@@ -150,33 +335,33 @@ void append_shape_summary(std::vector<Line>& lines, const TopoDS_Shape& shape)
 
   double xmin, ymin, zmin, xmax, ymax, zmax;
   bbox.Get(xmin, ymin, zmin, xmax, ymax, zmax);
-  add_blank(lines);
-  add_line(lines, "BBox X", fmt_double(xmin) + " .. " + fmt_double(xmax));
-  add_line(lines, "BBox Y", fmt_double(ymin) + " .. " + fmt_double(ymax));
-  add_line(lines, "BBox Z", fmt_double(zmin) + " .. " + fmt_double(zmax));
-  add_line(lines, "BBox size", fmt_double(xmax - xmin) + " x " + fmt_double(ymax - ymin) + " x " + fmt_double(zmax - zmin));
+  add_blank_(lines);
+  add_line_(lines, "BBox X", fmt_double_(xmin) + " .. " + fmt_double_(xmax));
+  add_line_(lines, "BBox Y", fmt_double_(ymin) + " .. " + fmt_double_(ymax));
+  add_line_(lines, "BBox Z", fmt_double_(zmin) + " .. " + fmt_double_(zmax));
+  add_line_(lines, "BBox size", fmt_double_(xmax - xmin) + " x " + fmt_double_(ymax - ymin) + " x " + fmt_double_(zmax - zmin));
 }
 
-void append_common(std::vector<Line>& lines, const std::string& file_path, const std::string& file_bytes, Format fmt)
+void append_common_(std::vector<Line>& lines, const std::string& file_path, const std::string& file_bytes, Format fmt)
 {
   const std::string name = std::filesystem::path(file_path).filename().string();
-  add_line(lines, "File", name.empty() ? file_path : name);
+  add_line_(lines, "File", name.empty() ? file_path : name);
   if (!file_path.empty() && (file_path.find('/') != std::string::npos || file_path.find('\\') != std::string::npos))
-    add_line(lines, "Path", file_path);
+    add_line_(lines, "Path", file_path);
 
-  add_line(lines, "Format", format_label(fmt));
-  add_line(lines, "Size", fmt_bytes(file_bytes.size()));
-  add_line(lines, "Importable", can_import(fmt) ? "yes (File -> Import)" : "no (export-only)");
-  add_line(lines, "Exportable", "yes (File -> Export)");
+  add_line_(lines, "Format", format_label(fmt));
+  add_line_(lines, "Size", fmt_bytes_(file_bytes.size()));
+  add_line_(lines, "Importable", can_import(fmt) ? "yes (File -> Import)" : "no (export-only)");
+  add_line_(lines, "Exportable", "yes (File -> Export)");
 }
 
-void set_progress_stage(const Atomic_progress_indicator_ptr& progress, const char* stage)
+void set_progress_stage_(const Atomic_progress_indicator_ptr& progress, const char* stage)
 {
   if (!progress.IsNull())
     progress->set_stage(stage);
 }
 
-Message_ProgressRange start_progress(const Atomic_progress_indicator_ptr& progress)
+Message_ProgressRange start_progress_(const Atomic_progress_indicator_ptr& progress)
 {
   if (progress.IsNull())
     return Message_ProgressRange();
@@ -184,43 +369,40 @@ Message_ProgressRange start_progress(const Atomic_progress_indicator_ptr& progre
   return progress->Start();
 }
 
-std::vector<Line> collect_step(const std::string& file_path, const std::string& file_bytes,
-                               const Atomic_progress_indicator_ptr& progress);
-
-std::vector<Line> collect_iges(const std::string& file_path, const std::string& file_bytes)
+std::vector<Line> collect_iges_(const std::string& file_path, const std::string& file_bytes)
 {
   std::vector<Line> lines;
-  append_common(lines, file_path, file_bytes, Format::Iges);
-  add_blank(lines);
+  append_common_(lines, file_path, file_bytes, Format::Iges);
+  add_blank_(lines);
 
   IGESControl_Reader          reader;
   std::istringstream          stream(file_bytes);
   const IFSelect_ReturnStatus read_st = reader.ReadStream("", stream);
   if (read_st != IFSelect_RetDone)
   {
-    add_line(lines, "Status", "could not read IGES data");
+    add_line_(lines, "Status", "could not read IGES data");
     return lines;
   }
 
   const int nb_roots = reader.NbRootsForTransfer();
-  add_line(lines, "Roots", std::to_string(nb_roots));
+  add_line_(lines, "Roots", std::to_string(nb_roots));
 
   const int transferred = reader.TransferRoots();
-  add_line(lines, "Transferred", std::to_string(transferred));
-  add_line(lines, "Shapes", std::to_string(reader.NbShapes()));
+  add_line_(lines, "Transferred", std::to_string(transferred));
+  add_line_(lines, "Shapes", std::to_string(reader.NbShapes()));
 
-  add_blank(lines);
-  append_shape_summary(lines, reader.OneShape());
+  add_blank_(lines);
+  append_shape_summary_(lines, reader.OneShape());
   return lines;
 }
 
-std::vector<Line> collect_stl(const std::string& file_path, const std::string& file_bytes)
+std::vector<Line> collect_stl_(const std::string& file_path, const std::string& file_bytes)
 {
   std::vector<Line> lines;
-  append_common(lines, file_path, file_bytes, Format::Stl);
-  add_blank(lines);
+  append_common_(lines, file_path, file_bytes, Format::Stl);
+  add_blank_(lines);
 
-  if (is_binary_stl(file_bytes))
+  if (is_binary_stl_(file_bytes))
   {
     uint32_t tri_count = 0;
     std::memcpy(&tri_count, file_bytes.data() + 80, sizeof(tri_count));
@@ -228,15 +410,15 @@ std::vector<Line> collect_stl(const std::string& file_path, const std::string& f
     while (!header.empty() && (header.back() == '\0' || std::isspace(static_cast<unsigned char>(header.back()))))
       header.pop_back();
 
-    add_line(lines, "Encoding", "binary");
+    add_line_(lines, "Encoding", "binary");
     if (!header.empty())
-      add_line(lines, "Header", header);
+      add_line_(lines, "Header", header);
 
-    add_line(lines, "Triangles", std::to_string(tri_count));
+    add_line_(lines, "Triangles", std::to_string(tri_count));
     return lines;
   }
 
-  add_line(lines, "Encoding", "ASCII");
+  add_line_(lines, "Encoding", "ASCII");
   size_t facets = 0;
   size_t pos    = 0;
   while (pos < file_bytes.size())
@@ -262,23 +444,23 @@ std::vector<Line> collect_stl(const std::string& file_path, const std::string& f
 
       name.erase(0, j);
       if (!name.empty())
-        add_line(lines, "Solid name", name);
+        add_line_(lines, "Solid name", name);
     }
   }
 
-  add_line(lines, "Triangles", std::to_string(facets));
+  add_line_(lines, "Triangles", std::to_string(facets));
   return lines;
 }
 
-std::vector<Line> collect_ply(const std::string& file_path, const std::string& file_bytes)
+std::vector<Line> collect_ply_(const std::string& file_path, const std::string& file_bytes)
 {
   std::vector<Line> lines;
-  append_common(lines, file_path, file_bytes, Format::Ply);
-  add_blank(lines);
+  append_common_(lines, file_path, file_bytes, Format::Ply);
+  add_blank_(lines);
 
-  if (!looks_like_ply(file_bytes))
+  if (!looks_like_ply_(file_bytes))
   {
-    add_line(lines, "Status", "not a PLY file (missing ply magic)");
+    add_line_(lines, "Status", "not a PLY file (missing ply magic)");
     return lines;
   }
 
@@ -286,7 +468,7 @@ std::vector<Line> collect_ply(const std::string& file_path, const std::string& f
   std::string        line;
   if (!std::getline(in, line))
   {
-    add_line(lines, "Status", "empty file");
+    add_line_(lines, "Status", "empty file");
     return lines;
   }
 
@@ -314,20 +496,20 @@ std::vector<Line> collect_ply(const std::string& file_path, const std::string& f
       n_face = std::atoi(line.c_str() + 13);
   }
 
-  add_line(lines, "Encoding", format);
+  add_line_(lines, "Encoding", format);
   if (n_vert >= 0)
-    add_line(lines, "Vertices", std::to_string(n_vert));
+    add_line_(lines, "Vertices", std::to_string(n_vert));
 
   if (n_face >= 0)
-    add_line(lines, "Faces", std::to_string(n_face));
+    add_line_(lines, "Faces", std::to_string(n_face));
 
   if (!ended)
-    add_line(lines, "Status", "header incomplete (no end_header)");
+    add_line_(lines, "Status", "header incomplete (no end_header)");
 
   return lines;
 }
 
-std::string trim_name(std::string s)
+std::string trim_name_(std::string s)
 {
   while (!s.empty() && std::isspace(static_cast<unsigned char>(s.back())))
     s.pop_back();
@@ -340,41 +522,41 @@ std::string trim_name(std::string s)
   return s;
 }
 
-std::string xcaf_label_name(const TDF_Label& lab)
+std::string xcaf_label_name_(const TDF_Label& lab)
 {
   TDataStd_Name_ptr attr;
   if (!lab.FindAttribute(TDataStd_Name::GetID(), attr) || attr.IsNull())
     return {};
 
   const TCollection_AsciiString ascii(attr->Get(), '?');
-  return trim_name(std::string(ascii.ToCString()));
+  return trim_name_(std::string(ascii.ToCString()));
 }
 
-std::string xcaf_product_name(const XCAFDoc_ShapeTool_ptr& shapes, const TDF_Label& lab)
+std::string xcaf_product_name_(const XCAFDoc_ShapeTool_ptr& shapes, const TDF_Label& lab)
 {
   TDF_Label ref;
   if (shapes->GetReferredShape(lab, ref))
   {
-    const std::string referred = xcaf_label_name(ref);
+    const std::string referred = xcaf_label_name_(ref);
     if (!referred.empty())
       return referred;
   }
 
-  return xcaf_label_name(lab);
+  return xcaf_label_name_(lab);
 }
 
-void append_named_from_label(const XCAFDoc_ShapeTool_ptr& shapes, const TDF_Label& lab, std::vector<Named_body>& out)
+void append_named_from_label_(const XCAFDoc_ShapeTool_ptr& shapes, const TDF_Label& lab, std::vector<Named_body>& out)
 {
   if (shapes->IsAssembly(lab))
   {
     NCollection_Sequence<TDF_Label> comps;
     shapes->GetComponents(lab, comps, false);
     for (int i = 1; i <= comps.Length(); ++i)
-      append_named_from_label(shapes, comps.Value(i), out);
+      append_named_from_label_(shapes, comps.Value(i), out);
     return;
   }
 
-  const std::string name = xcaf_product_name(shapes, lab);
+  const std::string name = xcaf_product_name_(shapes, lab);
   TopoDS_Shape      shape;
   if (!XCAFDoc_ShapeTool::GetShape(lab, shape) || shape.IsNull())
     return;
@@ -385,10 +567,10 @@ void append_named_from_label(const XCAFDoc_ShapeTool_ptr& shapes, const TDF_Labe
     out.push_back(Named_body{std::move(body), name});
 }
 
-void append_tree_from_label(const XCAFDoc_ShapeTool_ptr& shapes, const TDF_Label& lab, int parent_index,
+void append_tree_from_label_(const XCAFDoc_ShapeTool_ptr& shapes, const TDF_Label& lab, int parent_index,
                             std::vector<Named_node>& out)
 {
-  const std::string name = xcaf_product_name(shapes, lab);
+  const std::string name = xcaf_product_name_(shapes, lab);
 
   if (shapes->IsAssembly(lab))
   {
@@ -402,7 +584,7 @@ void append_tree_from_label(const XCAFDoc_ShapeTool_ptr& shapes, const TDF_Label
     NCollection_Sequence<TDF_Label> comps;
     shapes->GetComponents(lab, comps, false);
     for (int i = 1; i <= comps.Length(); ++i)
-      append_tree_from_label(shapes, comps.Value(i), grp_i, out);
+      append_tree_from_label_(shapes, comps.Value(i), grp_i, out);
     return;
   }
 
@@ -440,7 +622,7 @@ void append_tree_from_label(const XCAFDoc_ShapeTool_ptr& shapes, const TDF_Label
   }
 }
 
-Status read_step_named_bodies_xcaf(const std::string& file_bytes, std::vector<Named_body>& out,
+Status read_step_named_bodies_xcaf_(const std::string& file_bytes, std::vector<Named_body>& out,
                                    const Message_ProgressRange& progress)
 {
   Interface_Static::SetCVal("xstep.cascade.unit", "MM");
@@ -477,7 +659,7 @@ Status read_step_named_bodies_xcaf(const std::string& file_bytes, std::vector<Na
     return Status::user_error("STEP: no valid shapes in file.");
 
   for (int i = 1; i <= free_shapes.Length(); ++i)
-    append_named_from_label(shapes, free_shapes.Value(i), out);
+    append_named_from_label_(shapes, free_shapes.Value(i), out);
 
   if (out.empty())
     return Status::user_error("STEP: no valid shapes in file.");
@@ -485,7 +667,7 @@ Status read_step_named_bodies_xcaf(const std::string& file_bytes, std::vector<Na
   return Status::ok();
 }
 
-Status read_step_named_bodies_plain(const std::string& file_bytes, std::vector<Named_body>& out,
+Status read_step_named_bodies_plain_(const std::string& file_bytes, std::vector<Named_body>& out,
                                     const Message_ProgressRange& progress)
 {
   Interface_Static::SetCVal("xstep.cascade.unit", "MM");
@@ -516,7 +698,7 @@ Status read_step_named_bodies_plain(const std::string& file_bytes, std::vector<N
   return Status::ok();
 }
 
-bool collect_step_has_status_error(const std::vector<Line>& lines)
+bool collect_step_has_status_error_(const std::vector<Line>& lines)
 {
   for (const Line& line : lines)
     if (line.label == "Status")
@@ -525,16 +707,16 @@ bool collect_step_has_status_error(const std::vector<Line>& lines)
   return false;
 }
 
-std::vector<Line> collect_step_xcaf(const std::string& file_path, const std::string& file_bytes,
+std::vector<Line> collect_step_xcaf_(const std::string& file_path, const std::string& file_bytes,
                                     const Atomic_progress_indicator_ptr& progress)
 {
   std::vector<Line> lines;
-  append_common(lines, file_path, file_bytes, Format::Step);
-  add_blank(lines);
+  append_common_(lines, file_path, file_bytes, Format::Step);
+  add_blank_(lines);
 
   Interface_Static::SetCVal("xstep.cascade.unit", "MM");
 
-  set_progress_stage(progress, "Reading STEP...");
+  set_progress_stage_(progress, "Reading STEP...");
   STEPCAFControl_Reader reader;
   reader.SetNameMode(true);
   reader.SetColorMode(false);
@@ -544,16 +726,16 @@ std::vector<Line> collect_step_xcaf(const std::string& file_path, const std::str
   const IFSelect_ReturnStatus read_st = reader.ReadStream("", stream);
   if (read_st != IFSelect_RetDone)
   {
-    add_line(lines, "Status", "could not read STEP data");
+    add_line_(lines, "Status", "could not read STEP data");
     return lines;
   }
 
-  add_line(lines, "Roots", std::to_string(reader.NbRootsForTransfer()));
+  add_line_(lines, "Roots", std::to_string(reader.NbRootsForTransfer()));
 
   XCAFApp_Application_ptr app = XCAFApp_Application::GetApplication();
   if (app.IsNull())
   {
-    add_line(lines, "Status", "XCAF application unavailable");
+    add_line_(lines, "Status", "XCAF application unavailable");
     return lines;
   }
 
@@ -561,49 +743,49 @@ std::vector<Line> collect_step_xcaf(const std::string& file_path, const std::str
   app->NewDocument("MDTV-XCAF", doc);
   if (doc.IsNull())
   {
-    add_line(lines, "Status", "could not create XCAF document");
+    add_line_(lines, "Status", "could not create XCAF document");
     return lines;
   }
 
-  set_progress_stage(progress, "Transferring STEP...");
-  if (!reader.Transfer(doc, start_progress(progress)))
+  set_progress_stage_(progress, "Transferring STEP...");
+  if (!reader.Transfer(doc, start_progress_(progress)))
   {
-    add_line(lines, "Status", "no geometry was transferred");
+    add_line_(lines, "Status", "no geometry was transferred");
     return lines;
   }
 
   if (!progress.IsNull() && progress->cancelled())
   {
-    add_line(lines, "Status", "cancelled");
+    add_line_(lines, "Status", "cancelled");
     return lines;
   }
 
   XCAFDoc_ShapeTool_ptr shapes = XCAFDoc_DocumentTool::ShapeTool(doc->Main());
   if (shapes.IsNull())
   {
-    add_line(lines, "Status", "missing XCAF shape tool");
+    add_line_(lines, "Status", "missing XCAF shape tool");
     return lines;
   }
 
   NCollection_Sequence<TDF_Label> free_shapes;
   shapes->GetFreeShapes(free_shapes);
-  add_line(lines, "Transferred", std::to_string(free_shapes.Length()));
-  add_line(lines, "Shapes", std::to_string(free_shapes.Length()));
+  add_line_(lines, "Transferred", std::to_string(free_shapes.Length()));
+  add_line_(lines, "Shapes", std::to_string(free_shapes.Length()));
 
   std::vector<Named_body> named;
   for (int i = 1; i <= free_shapes.Length(); ++i)
-    append_named_from_label(shapes, free_shapes.Value(i), named);
+    append_named_from_label_(shapes, free_shapes.Value(i), named);
 
-  add_line(lines, "Import bodies", std::to_string(named.size()));
+  add_line_(lines, "Import bodies", std::to_string(named.size()));
   int named_count = 0;
   for (const Named_body& b : named)
     if (!b.name.empty())
       ++named_count;
-  add_line(lines, "Named bodies", std::to_string(named_count));
+  add_line_(lines, "Named bodies", std::to_string(named_count));
 
   const char* cascade = Interface_Static::CVal("xstep.cascade.unit");
   if (cascade && cascade[0] != '\0')
-    add_line(lines, "Cascade unit", cascade);
+    add_line_(lines, "Cascade unit", cascade);
 
   TopoDS_Compound compound;
   BRep_Builder    builder;
@@ -612,66 +794,66 @@ std::vector<Line> collect_step_xcaf(const std::string& file_path, const std::str
     if (!b.shape.IsNull())
       builder.Add(compound, b.shape);
 
-  add_blank(lines);
-  append_shape_summary(lines, compound);
+  add_blank_(lines);
+  append_shape_summary_(lines, compound);
   return lines;
 }
 
-std::vector<Line> collect_step_plain(const std::string& file_path, const std::string& file_bytes,
+std::vector<Line> collect_step_plain_(const std::string& file_path, const std::string& file_bytes,
                                      const Atomic_progress_indicator_ptr& progress)
 {
   std::vector<Line> lines;
-  append_common(lines, file_path, file_bytes, Format::Step);
-  add_blank(lines);
+  append_common_(lines, file_path, file_bytes, Format::Step);
+  add_blank_(lines);
 
   Interface_Static::SetCVal("xstep.cascade.unit", "MM");
 
-  set_progress_stage(progress, "Reading STEP...");
+  set_progress_stage_(progress, "Reading STEP...");
   STEPControl_Reader reader;
   std::istringstream stream(file_bytes);
   if (reader.ReadStream("", stream) != IFSelect_RetDone)
   {
-    add_line(lines, "Status", "could not read STEP data");
+    add_line_(lines, "Status", "could not read STEP data");
     return lines;
   }
 
-  add_line(lines, "Roots", std::to_string(reader.NbRootsForTransfer()));
+  add_line_(lines, "Roots", std::to_string(reader.NbRootsForTransfer()));
 
-  set_progress_stage(progress, "Transferring STEP...");
-  const int transferred = reader.TransferRoots(start_progress(progress));
-  add_line(lines, "Transferred", std::to_string(transferred));
-  add_line(lines, "Shapes", std::to_string(reader.NbShapes()));
+  set_progress_stage_(progress, "Transferring STEP...");
+  const int transferred = reader.TransferRoots(start_progress_(progress));
+  add_line_(lines, "Transferred", std::to_string(transferred));
+  add_line_(lines, "Shapes", std::to_string(reader.NbShapes()));
 
   std::vector<TopoDS_Shape> bodies;
   for (int i = 1; i <= reader.NbShapes(); ++i)
     append_cad_import_bodies(reader.Shape(i), bodies);
-  add_line(lines, "Import bodies", std::to_string(bodies.size()));
-  add_line(lines, "Named bodies", "0");
+  add_line_(lines, "Import bodies", std::to_string(bodies.size()));
+  add_line_(lines, "Named bodies", "0");
 
   const char* cascade = Interface_Static::CVal("xstep.cascade.unit");
   if (cascade && cascade[0] != '\0')
-    add_line(lines, "Cascade unit", cascade);
+    add_line_(lines, "Cascade unit", cascade);
 
-  add_blank(lines);
-  append_shape_summary(lines, reader.OneShape());
+  add_blank_(lines);
+  append_shape_summary_(lines, reader.OneShape());
   return lines;
 }
 
-std::vector<Line> collect_step(const std::string& file_path, const std::string& file_bytes,
+std::vector<Line> collect_step_(const std::string& file_path, const std::string& file_bytes,
                                const Atomic_progress_indicator_ptr& progress)
 {
   // Single Transfer pass (XCAF preferred). Avoids the old double-parse for Named bodies.
-  std::vector<Line> xcaf = collect_step_xcaf(file_path, file_bytes, progress);
-  if (!collect_step_has_status_error(xcaf))
+  std::vector<Line> xcaf = collect_step_xcaf_(file_path, file_bytes, progress);
+  if (!collect_step_has_status_error_(xcaf))
     return xcaf;
 
   if (!progress.IsNull() && progress->cancelled())
     return xcaf;
 
-  return collect_step_plain(file_path, file_bytes, progress);
+  return collect_step_plain_(file_path, file_bytes, progress);
 }
 
-Status read_step_named_tree_xcaf(const std::string& file_bytes, std::vector<Named_node>& out,
+Status read_step_named_tree_xcaf_(const std::string& file_bytes, std::vector<Named_node>& out,
                                  const Message_ProgressRange& progress)
 {
   Interface_Static::SetCVal("xstep.cascade.unit", "MM");
@@ -708,7 +890,7 @@ Status read_step_named_tree_xcaf(const std::string& file_bytes, std::vector<Name
     return Status::user_error("STEP: no valid shapes in file.");
 
   for (int i = 1; i <= free_shapes.Length(); ++i)
-    append_tree_from_label(shapes, free_shapes.Value(i), -1, out);
+    append_tree_from_label_(shapes, free_shapes.Value(i), -1, out);
 
   bool any_leaf = false;
   for (const Named_node& n : out)
@@ -725,116 +907,4 @@ Status read_step_named_tree_xcaf(const std::string& file_bytes, std::vector<Name
 }
 } // namespace
 
-Format detect(const std::string& file_path, const std::string& file_bytes)
-{
-  const std::string ext = to_lower_ext(file_path);
-  if (ext == ".step" || ext == ".stp")
-    return Format::Step;
-
-  if (ext == ".igs" || ext == ".iges")
-    return Format::Iges;
-
-  if (ext == ".stl")
-    return Format::Stl;
-
-  if (ext == ".ply")
-    return Format::Ply;
-
-  // Content sniff when extension is missing or wrong (e.g. browser basename only).
-  if (looks_like_ply(file_bytes))
-    return Format::Ply;
-
-  if (looks_like_step(file_bytes))
-    return Format::Step;
-
-  if (looks_like_stl(file_bytes))
-    return Format::Stl;
-
-  if (looks_like_iges(file_bytes))
-    return Format::Iges;
-
-  return Format::Unknown;
-}
-
-bool can_import(Format fmt) { return fmt == Format::Step || fmt == Format::Ply; }
-
-const char* format_label(Format fmt)
-{
-  switch (fmt)
-  {
-  case Format::Step:
-    return "STEP";
-  case Format::Iges:
-    return "IGES";
-  case Format::Stl:
-    return "STL";
-  case Format::Ply:
-    return "PLY";
-  default:
-    return "Unknown";
-  }
-}
-
-std::vector<Line> collect(const std::string& file_path, const std::string& file_bytes,
-                          const Atomic_progress_indicator_ptr& progress)
-{
-  const Format fmt = detect(file_path, file_bytes);
-  switch (fmt)
-  {
-  case Format::Step:
-    return collect_step(file_path, file_bytes, progress);
-  case Format::Iges:
-    return collect_iges(file_path, file_bytes);
-  case Format::Stl:
-    return collect_stl(file_path, file_bytes);
-  case Format::Ply:
-    return collect_ply(file_path, file_bytes);
-  default:
-  {
-    std::vector<Line> lines;
-    append_common(lines, file_path, file_bytes, Format::Unknown);
-    add_blank(lines);
-    add_line(lines, "Status", "unsupported or unrecognized format");
-    add_line(lines, "Hint", "Open STEP, IGES, STL, or PLY");
-    return lines;
-  }
-  }
-}
-
-Status read_step_named_bodies(const std::string& file_bytes, std::vector<Named_body>& out,
-                              const Message_ProgressRange& progress)
-{
-  out.clear();
-  const Status xcaf = read_step_named_bodies_xcaf(file_bytes, out, progress);
-  if (xcaf.is_ok())
-    return xcaf;
-
-  out.clear();
-  return read_step_named_bodies_plain(file_bytes, out, Message_ProgressRange());
-}
-
-Status read_step_named_tree(const std::string& file_bytes, std::vector<Named_node>& out, const Message_ProgressRange& progress)
-{
-  out.clear();
-  const Status xcaf = read_step_named_tree_xcaf(file_bytes, out, progress);
-  if (xcaf.is_ok())
-    return xcaf;
-
-  out.clear();
-  std::vector<Named_body> flat;
-  const Status            plain = read_step_named_bodies_plain(file_bytes, flat, Message_ProgressRange());
-  if (!plain.is_ok())
-    return plain;
-
-  for (Named_body& b : flat)
-  {
-    Named_node n;
-    n.shape        = std::move(b.shape);
-    n.name         = std::move(b.name);
-    n.is_group     = false;
-    n.parent_index = -1;
-    out.push_back(std::move(n));
-  }
-  return Status::ok();
-}
 } // namespace utl_cad_file_info

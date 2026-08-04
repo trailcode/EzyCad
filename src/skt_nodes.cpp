@@ -24,59 +24,11 @@ glm::vec3                     s_snap_guide_color_axis{0.957627f, 0.064924f, 0.54
 float                         s_snap_guide_line_width      = 1.0f;
 bool                          s_annotate_all_coaxial_nodes = true;
 
-static Quantity_Color snap_guide_qc(const glm::vec3& c) { return Quantity_Color(c.x, c.y, c.z, Quantity_TOC_RGB); }
-
-static void prepare_snap_ais_(AIS_InteractiveContext& ctx, const AIS_Shape_ptr& ais)
-{
-  if (ais.IsNull())
-    return;
-
-  ctx.Unhilight(ais, false);
-  ctx.Deactivate(ais);
-}
-
-static void update_snap_ais_shape_(AIS_InteractiveContext& ctx, AIS_Shape_ptr& ais, const TopoDS_Shape& shape,
-                                   const glm::vec3& color)
-{
-  if (shape.IsNull())
-  {
-    if (!ais.IsNull())
-    {
-      ctx.Remove(ais, false);
-      ais.Nullify();
-    }
-
-    return;
-  }
-
-  const Quantity_Color qc = snap_guide_qc(color);
-  if (ais.IsNull())
-  {
-    ais = new AIS_Shape(shape);
-    ais->SetWidth(s_snap_guide_line_width);
-    ais->SetColor(qc);
-    ctx.Display(ais, false);
-    prepare_snap_ais_(ctx, ais);
-  }
-  else
-  {
-    prepare_snap_ais_(ctx, ais);
-    ais->Set(shape);
-    ais->SetWidth(s_snap_guide_line_width);
-    ais->SetColor(qc);
-    ctx.Redisplay(ais, false);
-    prepare_snap_ais_(ctx, ais);
-  }
-}
-
-static void clear_snap_ais_(AIS_InteractiveContext& ctx, AIS_Shape_ptr& ais)
-{
-  if (!ais.IsNull())
-  {
-    ctx.Remove(ais, false);
-    ais.Nullify();
-  }
-}
+Quantity_Color snap_guide_qc_(const glm::vec3& c);
+void           prepare_snap_ais_(AIS_InteractiveContext& ctx, const AIS_Shape_ptr& ais);
+void           update_snap_ais_shape_(AIS_InteractiveContext& ctx, AIS_Shape_ptr& ais, const TopoDS_Shape& shape,
+                                      const glm::vec3& color);
+void           clear_snap_ais_(AIS_InteractiveContext& ctx, AIS_Shape_ptr& ais);
 } // namespace
 
 class Sketch_nodes::Impl
@@ -907,3 +859,59 @@ bool Sketch_nodes::get_annotate_all_coaxial_nodes() { return s_annotate_all_coax
 void Sketch_nodes::set_origin_snap_enabled(bool enabled) { m_impl->set_origin_snap_enabled(enabled); }
 
 bool Sketch_nodes::origin_snap_enabled() const { return m_impl->origin_snap_enabled(); }
+
+namespace
+{
+Quantity_Color snap_guide_qc_(const glm::vec3& c) { return Quantity_Color(c.x, c.y, c.z, Quantity_TOC_RGB); }
+
+void prepare_snap_ais_(AIS_InteractiveContext& ctx, const AIS_Shape_ptr& ais)
+{
+  if (ais.IsNull())
+    return;
+
+  ctx.Unhilight(ais, false);
+  ctx.Deactivate(ais);
+}
+
+void update_snap_ais_shape_(AIS_InteractiveContext& ctx, AIS_Shape_ptr& ais, const TopoDS_Shape& shape, const glm::vec3& color)
+{
+  if (shape.IsNull())
+  {
+    if (!ais.IsNull())
+    {
+      ctx.Remove(ais, false);
+      ais.Nullify();
+    }
+
+    return;
+  }
+
+  const Quantity_Color qc = snap_guide_qc_(color);
+  if (ais.IsNull())
+  {
+    ais = new AIS_Shape(shape);
+    ais->SetWidth(s_snap_guide_line_width);
+    ais->SetColor(qc);
+    ctx.Display(ais, false);
+    prepare_snap_ais_(ctx, ais);
+  }
+  else
+  {
+    prepare_snap_ais_(ctx, ais);
+    ais->Set(shape);
+    ais->SetWidth(s_snap_guide_line_width);
+    ais->SetColor(qc);
+    ctx.Redisplay(ais, false);
+    prepare_snap_ais_(ctx, ais);
+  }
+}
+
+void clear_snap_ais_(AIS_InteractiveContext& ctx, AIS_Shape_ptr& ais)
+{
+  if (!ais.IsNull())
+  {
+    ctx.Remove(ais, false);
+    ais.Nullify();
+  }
+}
+} // namespace

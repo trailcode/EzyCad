@@ -2610,7 +2610,7 @@ void GUI::shape_list_()
   // pair so table rows cannot leave the ImGui tree stack unbalanced (which nested siblings
   // under the wrong parent and made Ungroup look like it only moved one child).
   std::unordered_set<Shape_id> shape_list_ancestors;
-  auto draw_shape_row = [&](auto&& self, const Shp_ptr& shape) -> void
+  auto                         draw_shape_row = [&](auto&& self, const Shp_ptr& shape) -> void
   {
     EZY_ASSERT(shape);
     if (!shape_list_ancestors.insert(shape->get_id()).second)
@@ -2972,9 +2972,7 @@ void GUI::shape_info_dialog_()
 
   if (!shape_still_exists)
   {
-    m_shape_info_open = false;
-    m_shape_info_shp.Nullify();
-    m_shape_info_lines.clear();
+    clear_all(m_shape_info_open, m_shape_info_shp, m_shape_info_lines);
     return;
   }
 
@@ -3088,9 +3086,7 @@ void GUI::begin_step_import_(const Step_import_mode mode)
 void GUI::finish_step_import_(Status st, Occt_view::Step_import_geom& geom)
 {
   const bool cancelled = !m_cad_busy_progress.IsNull() && m_cad_busy_progress->cancelled();
-  m_cad_busy_kind       = Cad_busy_kind::Idle;
-  m_cad_busy_progress   = {};
-  m_cad_busy_modal_open = false;
+  clear_all(m_cad_busy_kind, m_cad_busy_progress, m_cad_busy_modal_open);
 
   if (cancelled || (!st.is_ok() && st.message().find("cancelled") != std::string::npos))
   {
@@ -3139,8 +3135,8 @@ void GUI::poll_cad_busy_()
   }
 
   Occt_view::Step_import_geom geom;
-  Status st = Occt_view::prepare_step_import(m_cad_busy_bytes, m_cad_busy_import_mode, m_view->step_import_model_scale(),
-                                             geom, {});
+  Status                      st =
+      Occt_view::prepare_step_import(m_cad_busy_bytes, m_cad_busy_import_mode, m_view->step_import_model_scale(), geom, {});
   finish_step_import_(st, geom);
 #else
   if (!m_cad_busy_import_fut.valid())
@@ -3178,8 +3174,7 @@ void GUI::cad_busy_dialog_()
   }
 
   ImGui::SetNextWindowSize(ImVec2(280.0f, 0.0f), ImGuiCond_Appearing);
-  if (!ImGui::BeginPopupModal("##EzyCadCadBusy", nullptr,
-                              ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoMove))
+  if (!ImGui::BeginPopupModal("##EzyCadCadBusy", nullptr, ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoMove))
     return;
 
   ImGui::TextUnformatted("Importing...");
@@ -3432,28 +3427,8 @@ void GUI::message_status_window_()
 // Log window implementation
 namespace
 {
-
-std::string format_log_line(const std::string& base, size_t repeat_count)
-{
-  if (repeat_count <= 1)
-    return base;
-  return base + " #" + std::to_string(repeat_count);
-}
-
-void append_log_line(std::vector<char>& buffer, const std::string& line)
-{
-  if (buffer.size() > 1)
-  {
-    buffer.pop_back(); // trailing '\0'
-    buffer.push_back('\n');
-  }
-  else if (!buffer.empty())
-    buffer.pop_back();
-
-  buffer.insert(buffer.end(), line.begin(), line.end());
-  buffer.push_back('\0');
-}
-
+std::string format_log_line_(const std::string& base, size_t repeat_count);
+void        append_log_line_(std::vector<char>& buffer, const std::string& line);
 } // namespace
 
 void GUI::log_message(const std::string& message)
@@ -3461,7 +3436,7 @@ void GUI::log_message(const std::string& message)
   if (!m_log_last_line_base.empty() && message == m_log_last_line_base)
   {
     ++m_log_repeat_count;
-    const std::string line = format_log_line(m_log_last_line_base, m_log_repeat_count);
+    const std::string line = format_log_line_(m_log_last_line_base, m_log_repeat_count);
     m_log_buffer.resize(m_log_last_line_start);
     m_log_buffer.insert(m_log_buffer.end(), line.begin(), line.end());
     m_log_buffer.push_back('\0');
@@ -3469,7 +3444,7 @@ void GUI::log_message(const std::string& message)
     return;
   }
 
-  append_log_line(m_log_buffer, message);
+  append_log_line_(m_log_buffer, message);
   m_log_last_line_base   = message;
   m_log_last_line_start  = m_log_buffer.size() - message.size() - 1;
   m_log_repeat_count     = 1;
@@ -4483,6 +4458,30 @@ void GUI::on_inspector_file(const std::string& file_path, const std::string& fil
 {
   open_file_inspector_(file_path, file_data);
 }
+
+namespace
+{
+std::string format_log_line_(const std::string& base, size_t repeat_count)
+{
+  if (repeat_count <= 1)
+    return base;
+  return base + " #" + std::to_string(repeat_count);
+}
+
+void append_log_line_(std::vector<char>& buffer, const std::string& line)
+{
+  if (buffer.size() > 1)
+  {
+    buffer.pop_back(); // trailing '\0'
+    buffer.push_back('\n');
+  }
+  else if (!buffer.empty())
+    buffer.pop_back();
+
+  buffer.insert(buffer.end(), line.begin(), line.end());
+  buffer.push_back('\0');
+}
+} // namespace
 
 #ifdef __EMSCRIPTEN__
 void GUI::open_file_dialog_async()

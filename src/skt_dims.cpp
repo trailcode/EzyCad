@@ -27,15 +27,7 @@ struct Symmetric_edge_span
   double   full_len;
 };
 
-std::optional<Symmetric_edge_span> symmetric_edge_from_center(const gp_Pnt2d& center, const gp_Dir2d& dir, double full_len)
-{
-  if (full_len <= Precision::Confusion())
-    return std::nullopt;
-
-  const double   half = full_len * 0.5;
-  const gp_Vec2d v(dir);
-  return Symmetric_edge_span{center.Translated(-v * half), center.Translated(v * half), full_len};
-}
+std::optional<Symmetric_edge_span> symmetric_edge_from_center_(const gp_Pnt2d& center, const gp_Dir2d& dir, double full_len);
 } // namespace
 
 Sketch_dims::Sketch_dims(Sketch& sketch)
@@ -69,9 +61,7 @@ void Sketch_dims::clear_tmp_dim_anno()
 
 void Sketch_dims::on_finalize_elm_start()
 {
-  m_show_dim_input     = false;
-  m_show_angle_input   = false;
-  m_entered_edge_angle = std::nullopt;
+  clear_all(m_show_dim_input, m_show_angle_input, m_entered_edge_angle);
   m_sketch.m_view.gui().hide_angle_edit();
   clear_tmp_dim_anno();
 }
@@ -80,10 +70,7 @@ void Sketch_dims::on_clear_tmps() { clear_all(m_entered_edge_len, m_show_dim_inp
 
 void Sketch_dims::clear_typed_constraints()
 {
-  m_entered_edge_angle = std::nullopt;
-  m_entered_edge_len   = std::nullopt;
-  m_show_angle_input   = false;
-  m_show_dim_input     = false;
+  clear_all(m_entered_edge_angle, m_entered_edge_len, m_show_angle_input, m_show_dim_input);
 }
 
 std::optional<gp_Pnt> Sketch_dims::approx_sketch_interior_ref_3d_() const
@@ -389,7 +376,7 @@ void Sketch_dims::check_dimension_seg_(int kind)
   {
     const gp_Pnt2d&                    center = m_sketch.m_nodes[edge.node_idx_a];
     std::optional<Symmetric_edge_span> span =
-        symmetric_edge_from_center(center, m_entered_edge_len->dir, m_entered_edge_len->len);
+        symmetric_edge_from_center_(center, m_entered_edge_len->dir, m_entered_edge_len->len);
 
     if (span)
     {
@@ -418,8 +405,7 @@ void Sketch_dims::check_dimension_seg_(int kind)
     switch (m_sketch.m_tools.tmp_edges().size())
     {
     case 1:
-      m_entered_edge_angle = std::nullopt;
-      m_show_angle_input   = false;
+      clear_all(m_entered_edge_angle, m_show_angle_input);
       m_sketch.m_view.gui().hide_angle_edit();
       m_sketch.m_tools.tmp_edges().push_back({*edge.node_idx_b});
       break;
@@ -434,8 +420,7 @@ void Sketch_dims::check_dimension_seg_(int kind)
   }
   else
   {
-    m_entered_edge_angle = std::nullopt;
-    m_show_angle_input   = false;
+    clear_all(m_entered_edge_angle, m_show_angle_input);
     m_sketch.m_view.gui().hide_angle_edit();
     m_sketch.m_tools.tmp_edges().push_back({*edge.node_idx_b});
   }
@@ -626,3 +611,16 @@ void Sketch_dims::on_sketch_hidden()
     if (!ld.dim.IsNull())
       m_sketch.m_ctx.Erase(ld.dim, false);
 }
+
+namespace
+{
+std::optional<Symmetric_edge_span> symmetric_edge_from_center_(const gp_Pnt2d& center, const gp_Dir2d& dir, double full_len)
+{
+  if (full_len <= Precision::Confusion())
+    return std::nullopt;
+
+  const double   half = full_len * 0.5;
+  const gp_Vec2d v(dir);
+  return Symmetric_edge_span{center.Translated(-v * half), center.Translated(v * half), full_len};
+}
+} // namespace

@@ -490,10 +490,10 @@ private:
   Shape_id                m_next_shape_id{1};
   Shape_id                m_current_group_id{0};
   /// In-app clipboard: forest of Shape_rec (roots have parent_id 0; independent BREP).
-  std::vector<Shape_rec>  m_shape_clipboard;
+  std::vector<Shape_rec> m_shape_clipboard;
   /// Live document ids of clipboard roots at copy time (for paste-as-sibling when still current).
-  std::vector<Shape_id>   m_shape_clipboard_source_roots;
-  Ezy_asset_store         m_assets;
+  std::vector<Shape_id> m_shape_clipboard_source_roots;
+  Ezy_asset_store       m_assets;
 
   // --------------------------------------------------------------------
   // Dimension related

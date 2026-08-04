@@ -725,10 +725,7 @@ void Sketch_underlay::Impl::ctx_erase()
 void Sketch_underlay::Impl::clear_()
 {
   ctx_erase();
-  m_rgba.reset();
-  m_asset_id.clear();
-  m_w = 0;
-  m_h = 0;
+  clear_all(m_rgba, m_asset_id, m_w, m_h);
 }
 
 void Sketch_underlay::Impl::sync_visibility_(const gp_Pln& pln)

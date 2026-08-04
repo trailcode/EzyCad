@@ -19,18 +19,7 @@ Shp_rotate::Shp_rotate(Occt_view& view)
 void Shp_rotate::begin(std::vector<Shp_ptr> shps)
 {
   clear_all(m_angle, m_initial_mouse_pos, m_rotate_pln, m_center);
-  if (m_rotation_axis_vis)
-  {
-    ctx().Remove(m_rotation_axis_vis, false);
-    m_rotation_axis_vis = nullptr;
-  }
-
-  if (m_rotation_center_vis)
-  {
-    ctx().Remove(m_rotation_center_vis, false);
-    m_rotation_center_vis = nullptr;
-  }
-
+  clear_rotation_vis_();
   set_operation_shps_(std::move(shps));
 }
 
@@ -250,22 +239,18 @@ void Shp_rotate::cancel()
 
 void Shp_rotate::reset()
 {
-  // Reset state
   clear_all(m_angle, m_shps, m_initial_mouse_pos, m_rotate_pln, m_center);
-
-  if (m_rotation_axis_vis)
-  {
-    ctx().Remove(m_rotation_axis_vis, false);
-    m_rotation_axis_vis = nullptr;
-  }
-
-  if (m_rotation_center_vis)
-  {
-    ctx().Remove(m_rotation_center_vis, false);
-    m_rotation_center_vis = nullptr;
-  }
-
+  clear_rotation_vis_();
   gui().set_mode(Mode::Normal);
+}
+
+void Shp_rotate::clear_rotation_vis_()
+{
+  if (!m_rotation_axis_vis.IsNull())
+    ctx().Remove(m_rotation_axis_vis, false);
+  if (!m_rotation_center_vis.IsNull())
+    ctx().Remove(m_rotation_center_vis, false);
+  clear_all(m_rotation_axis_vis, m_rotation_center_vis);
 }
 
 void Shp_rotate::set_rotation_axis(Rotation_axis axis)

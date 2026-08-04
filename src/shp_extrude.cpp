@@ -24,80 +24,13 @@
 
 namespace
 {
-size_t count_shape_edges_(const TopoDS_Shape& shape)
-{
-  size_t n = 0;
-  for (TopExp_Explorer ex(shape, TopAbs_EDGE); ex.More(); ex.Next())
-    ++n;
-
-  return n;
-}
-
-gp_Pnt centroid_of_verts_(const std::vector<gp_Pnt>& verts)
-{
-  EZY_ASSERT(!verts.empty());
-  gp_XYZ sum(0.0, 0.0, 0.0);
-  for (const gp_Pnt& p : verts)
-    sum += p.XYZ();
-
-  sum /= static_cast<double>(verts.size());
-
-  return gp_Pnt(sum);
-}
-
-TopoDS_Wire transform_wire_(const TopoDS_Wire& wire, const gp_Trsf& trsf)
-{
-  return TopoDS::Wire(BRepBuilderAPI_Transform(wire, trsf, true).Shape());
-}
-
-gp_Trsf section_trsf_(const gp_Ax1& axis, double height_along_axis, double twist_rad)
-{
-  gp_Trsf rot;
-  rot.SetRotation(axis, twist_rad);
-  gp_Trsf trans;
-  trans.SetTranslation(gp_Vec(axis.Direction()) * height_along_axis);
-
-  return trans * rot;
-}
-
-/// Ruled thru-sections solid from a closed wire with height + twist along `axis`.
-/// Compatibility is off so intentional twist keeps edge/vertex pairing.
-TopoDS_Shape loft_twisted_wire_(const TopoDS_Wire& wire, const gp_Ax1& axis, const double h0, const double h1,
-                                const double ang0, const double ang1, const int n_seg)
-{
-  EZY_ASSERT(!wire.IsNull());
-  EZY_ASSERT(n_seg >= 1);
-
-  BRepOffsetAPI_ThruSections maker(true /*isSolid*/, true /*ruled*/);
-  maker.CheckCompatibility(false);
-  for (int i = 0; i <= n_seg; ++i)
-  {
-    const double t      = static_cast<double>(i) / static_cast<double>(n_seg);
-    const double height = h0 + t * (h1 - h0);
-    const double ang    = ang0 + t * (ang1 - ang0);
-    maker.AddWire(transform_wire_(wire, section_trsf_(axis, height, ang)));
-  }
-
-  maker.Build();
-  EZY_ASSERT(maker.IsDone());
-
-  return try_make_solid(maker.Shape());
-}
-
-std::vector<TopoDS_Wire> face_hole_wires_(const TopoDS_Face& face, const TopoDS_Wire& outer_wire)
-{
-  std::vector<TopoDS_Wire> holes;
-  for (TopExp_Explorer ex(face, TopAbs_WIRE); ex.More(); ex.Next())
-  {
-    const TopoDS_Wire w = TopoDS::Wire(ex.Current());
-    if (w.IsNull() || w.IsSame(outer_wire))
-      continue;
-
-    holes.push_back(w);
-  }
-
-  return holes;
-}
+size_t                   count_shape_edges_(const TopoDS_Shape& shape);
+gp_Pnt                   centroid_of_verts_(const std::vector<gp_Pnt>& verts);
+TopoDS_Wire              transform_wire_(const TopoDS_Wire& wire, const gp_Trsf& trsf);
+gp_Trsf                  section_trsf_(const gp_Ax1& axis, double height_along_axis, double twist_rad);
+TopoDS_Shape             loft_twisted_wire_(const TopoDS_Wire& wire, const gp_Ax1& axis, double h0, double h1, double ang0,
+                                            double ang1, int n_seg);
+std::vector<TopoDS_Wire> face_hole_wires_(const TopoDS_Face& face, const TopoDS_Wire& outer_wire);
 } // namespace
 
 Shp_extrude::Shp_extrude(Occt_view& view)
@@ -115,18 +48,14 @@ bool Shp_extrude::begin_face_extrude(const AIS_Shape_ptr& shp)
 
   cancel();
 
-  m_to_extrude_pln      = face->owner_sketch.get_plane();
-  m_extrude_side        = Plane_side::Front;
-  m_to_extrude_pt       = closest_to_camera(view().view_handle(), face->verts_3d);
-  m_curr_view_pln       = view().get_view_plane(*m_to_extrude_pt);
-  m_to_extrude          = shp;
-  m_face_edge_count     = count_shape_edges_(shp->Shape());
-  m_lite_preview_active = false;
-  m_phase               = Phase::Height;
-  m_twist_angle         = 0.0;
-  m_twist_centroid      = centroid_of_verts_(face->verts_3d);
-  m_show_angle_input    = false;
-  m_entered_twist_deg.reset();
+  m_to_extrude_pln  = face->owner_sketch.get_plane();
+  m_extrude_side    = Plane_side::Front;
+  m_to_extrude_pt   = closest_to_camera(view().view_handle(), face->verts_3d);
+  m_curr_view_pln   = view().get_view_plane(*m_to_extrude_pt);
+  m_to_extrude      = shp;
+  m_face_edge_count = count_shape_edges_(shp->Shape());
+  m_twist_centroid  = centroid_of_verts_(face->verts_3d);
+  clear_all(m_lite_preview_active, m_phase, m_twist_angle, m_show_angle_input, m_entered_twist_deg);
 
   const gp_Ax1& a = m_to_extrude_pln.Axis();
   const gp_Ax1& b = m_curr_view_pln.Axis();
@@ -240,10 +169,7 @@ void Shp_extrude::set_twist(const bool twist)
   if (!twist && m_phase == Phase::Twist)
   {
     // Return to editable height preview; drop twist angle.
-    m_phase            = Phase::Height;
-    m_twist_angle      = 0.0;
-    m_show_angle_input = false;
-    m_entered_twist_deg.reset();
+    clear_all(m_phase, m_twist_angle, m_show_angle_input, m_entered_twist_deg);
     clear_angle_dim_();
     view().set_entered_dim(std::nullopt);
     view().set_show_dim_input(false);
@@ -274,9 +200,7 @@ void Shp_extrude::lock_height_begin_twist_()
   view().set_show_dim_input(false);
   // Lock height to the last preview distance (typed or mouse).
   view().set_entered_dim(*m_last_preview_dist);
-  m_twist_angle = 0.0;
-  m_entered_twist_deg.reset();
-  m_show_angle_input = false;
+  clear_all(m_twist_angle, m_entered_twist_deg, m_show_angle_input);
   clear_length_dim_();
   update_extrude_preview_(*m_last_preview_dist, m_extrude_side);
 }
@@ -669,8 +593,7 @@ void Shp_extrude::clear_session_inputs_()
 {
   view().set_show_dim_input(false);
   view().set_entered_dim(std::nullopt);
-  m_show_angle_input = false;
-  m_entered_twist_deg.reset();
+  clear_all(m_show_angle_input, m_entered_twist_deg);
   gui().hide_angle_edit(false);
   gui().hide_dist_edit(false);
 }
@@ -680,15 +603,8 @@ void Shp_extrude::clear_preview_()
   clear_lite_other_face_();
   clear_length_dim_();
   clear_angle_dim_();
-  m_face_edge_count     = 0;
-  m_lite_preview_active = false;
-  m_last_preview_dist.reset();
-  m_last_preview_side            = Plane_side::Front;
-  m_last_preview_both_sides      = false;
-  m_last_preview_twist           = 0.0;
-  m_last_preview_was_twist_phase = false;
-  m_phase                        = Phase::Height;
-  m_twist_angle                  = 0.0;
+  clear_all(m_face_edge_count, m_lite_preview_active, m_last_preview_dist, m_last_preview_side, m_last_preview_both_sides,
+            m_last_preview_twist, m_last_preview_was_twist_phase, m_phase, m_twist_angle);
 }
 
 void Shp_extrude::refresh_tmp_dimension_style(const Length_dimension_style& style)
@@ -705,3 +621,81 @@ void Shp_extrude::refresh_tmp_dimension_style(const Length_dimension_style& styl
     ctx().Redisplay(m_tmp_angle_dim, true);
   }
 }
+
+namespace
+{
+size_t count_shape_edges_(const TopoDS_Shape& shape)
+{
+  size_t n = 0;
+  for (TopExp_Explorer ex(shape, TopAbs_EDGE); ex.More(); ex.Next())
+    ++n;
+
+  return n;
+}
+
+gp_Pnt centroid_of_verts_(const std::vector<gp_Pnt>& verts)
+{
+  EZY_ASSERT(!verts.empty());
+  gp_XYZ sum(0.0, 0.0, 0.0);
+  for (const gp_Pnt& p : verts)
+    sum += p.XYZ();
+
+  sum /= static_cast<double>(verts.size());
+
+  return gp_Pnt(sum);
+}
+
+TopoDS_Wire transform_wire_(const TopoDS_Wire& wire, const gp_Trsf& trsf)
+{
+  return TopoDS::Wire(BRepBuilderAPI_Transform(wire, trsf, true).Shape());
+}
+
+gp_Trsf section_trsf_(const gp_Ax1& axis, double height_along_axis, double twist_rad)
+{
+  gp_Trsf rot;
+  rot.SetRotation(axis, twist_rad);
+  gp_Trsf trans;
+  trans.SetTranslation(gp_Vec(axis.Direction()) * height_along_axis);
+
+  return trans * rot;
+}
+
+/// Ruled thru-sections solid from a closed wire with height + twist along `axis`.
+/// Compatibility is off so intentional twist keeps edge/vertex pairing.
+TopoDS_Shape loft_twisted_wire_(const TopoDS_Wire& wire, const gp_Ax1& axis, const double h0, const double h1,
+                                const double ang0, const double ang1, const int n_seg)
+{
+  EZY_ASSERT(!wire.IsNull());
+  EZY_ASSERT(n_seg >= 1);
+
+  BRepOffsetAPI_ThruSections maker(true /*isSolid*/, true /*ruled*/);
+  maker.CheckCompatibility(false);
+  for (int i = 0; i <= n_seg; ++i)
+  {
+    const double t      = static_cast<double>(i) / static_cast<double>(n_seg);
+    const double height = h0 + t * (h1 - h0);
+    const double ang    = ang0 + t * (ang1 - ang0);
+    maker.AddWire(transform_wire_(wire, section_trsf_(axis, height, ang)));
+  }
+
+  maker.Build();
+  EZY_ASSERT(maker.IsDone());
+
+  return try_make_solid(maker.Shape());
+}
+
+std::vector<TopoDS_Wire> face_hole_wires_(const TopoDS_Face& face, const TopoDS_Wire& outer_wire)
+{
+  std::vector<TopoDS_Wire> holes;
+  for (TopExp_Explorer ex(face, TopAbs_WIRE); ex.More(); ex.Next())
+  {
+    const TopoDS_Wire w = TopoDS::Wire(ex.Current());
+    if (w.IsNull() || w.IsSame(outer_wire))
+      continue;
+
+    holes.push_back(w);
+  }
+
+  return holes;
+}
+} // namespace

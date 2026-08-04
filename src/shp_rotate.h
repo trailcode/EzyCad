@@ -33,6 +33,7 @@ private:
   void                 reset();
   void                 update_rotation_axis_();
   void                 update_rotation_center_();
+  void                 clear_rotation_vis_();
 
   std::optional<gp_Pln> m_rotate_pln;
   std::optional<gp_Pnt> m_initial_mouse_pos;

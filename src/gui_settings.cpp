@@ -19,158 +19,12 @@ const char* const k_settings_version                  = "1";
 const char* const k_gui_key_permanent_node_anno_scale = "permanent_node_anno_scale";
 
 nlohmann::json build_occt_view_settings_object_(const Occt_view& view);
-
-nlohmann::json imgui_style_to_json(const Gui_imgui_style_settings& s)
-{
-  // clang-format off
-  return nlohmann::json{
-      {"rounding_general", s.rounding_general},
-      {"rounding_scroll",  s.rounding_scroll},
-      {"rounding_tabs",    s.rounding_tabs},
-      {"window_alpha",     s.window_alpha},
-      {"window_border",    s.window_border},
-      {"frame_border",     s.frame_border},
-      {"window_padding_x", s.window_padding_x},
-      {"window_padding_y", s.window_padding_y},
-      {"frame_padding_x",  s.frame_padding_x},
-      {"frame_padding_y",  s.frame_padding_y},
-      {"item_spacing_x",   s.item_spacing_x},
-      {"item_spacing_y",   s.item_spacing_y},
-  };
-  // clang-format on
-}
-
-nlohmann::json settings_headers_to_json(const Gui_settings_headers& h)
-{
-  // clang-format off
-  return nlohmann::json{
-      {"view_nav",          h.view_nav},
-      {"new_project",       h.new_project},
-      {"ui",                h.ui},
-      {"view_presentation", h.view_presentation},
-      {"grid",              h.grid},
-      {"sketch",            h.sketch},
-      {"sketch_appearance", h.sketch_appearance},
-      {"sketch_dimensions", h.sketch_dimensions},
-      {"sketch_nodes",      h.sketch_nodes},
-      {"sketch_snap",       h.sketch_snap},
-      {"sketch_underlay",   h.sketch_underlay},
-      {"startup",           h.startup},
-      {"hotkeys",           h.hotkeys},
-  };
-  // clang-format on
-}
-
-void parse_settings_headers_json(const nlohmann::json& obj, Gui_settings_headers& out)
-{
-  Gui_settings_headers defaults{};
-  auto                 b = [&obj](const char* key, bool fallback) -> bool
-  {
-    if (obj.contains(key) && obj[key].is_boolean())
-      return obj[key].get<bool>();
-    return fallback;
-  };
-
-  // clang-format off
-  out.view_nav          = b("view_nav",           defaults.view_nav);
-  out.new_project       = b("new_project",        defaults.new_project);
-  out.ui                = b("ui",                 defaults.ui);
-  out.view_presentation = b("view_presentation",  defaults.view_presentation);
-  out.grid              = b("grid",               defaults.grid);
-  out.sketch            = b("sketch",             defaults.sketch);
-  out.sketch_appearance = b("sketch_appearance",  defaults.sketch_appearance);
-  out.sketch_dimensions = b("sketch_dimensions",  defaults.sketch_dimensions);
-  out.sketch_nodes      = b("sketch_nodes",       defaults.sketch_nodes);
-  out.sketch_snap       = b("sketch_snap",        defaults.sketch_snap);
-  out.sketch_underlay   = b("sketch_underlay",    defaults.sketch_underlay);
-  out.startup           = b("startup",            defaults.startup);
-  out.hotkeys           = b("hotkeys",            defaults.hotkeys);
-  // clang-format on
-}
-
-void parse_imgui_style_json(const nlohmann::json& obj, const Gui_imgui_style_settings& defaults, Gui_imgui_style_settings& out)
-{
-  auto f = [&obj](const char* key, float fallback) -> float
-  {
-    if (obj.contains(key) && obj[key].is_number())
-    {
-      const float v = obj[key].get<float>();
-      if (v >= 0.f && v <= 32.f)
-        return v;
-    }
-
-    return fallback;
-  };
-
-  // clang-format off
-  out.rounding_general = f("rounding_general", defaults.rounding_general);
-  out.rounding_scroll  = f("rounding_scroll",  defaults.rounding_scroll);
-  out.rounding_tabs    = f("rounding_tabs",    defaults.rounding_tabs);
-  out.window_alpha     = std::clamp(f("window_alpha", defaults.window_alpha),
-                                    k_gui_imgui_window_alpha_min, k_gui_imgui_window_alpha_max);
-  out.window_border    = std::clamp(f("window_border",    defaults.window_border),    0.f, k_gui_imgui_border_slider_max);
-  out.frame_border     = std::clamp(f("frame_border",     defaults.frame_border),     0.f, k_gui_imgui_border_slider_max);
-  out.window_padding_x = std::clamp(f("window_padding_x", defaults.window_padding_x), 0.f, k_gui_imgui_padding_slider_max);
-  out.window_padding_y = std::clamp(f("window_padding_y", defaults.window_padding_y), 0.f, k_gui_imgui_padding_slider_max);
-  out.frame_padding_x  = std::clamp(f("frame_padding_x",  defaults.frame_padding_x),  0.f, k_gui_imgui_padding_slider_max);
-  out.frame_padding_y  = std::clamp(f("frame_padding_y",  defaults.frame_padding_y),  0.f, k_gui_imgui_padding_slider_max);
-  out.item_spacing_x   = std::clamp(f("item_spacing_x",   defaults.item_spacing_x),   0.f, k_gui_imgui_spacing_slider_max);
-  out.item_spacing_y   = std::clamp(f("item_spacing_y",   defaults.item_spacing_y),   0.f, k_gui_imgui_spacing_slider_max);
-  // clang-format on
-}
-
-bool settings_imgui_style_controls_(float label_col_w, Gui_imgui_style_settings& style, const char* id_prefix)
-{
-  bool changed = false;
-  if (!ImGui::BeginTable(id_prefix, 2, ImGuiTableFlags_SizingStretchProp))
-    return false;
-
-  ImGui::TableSetupColumn("label", ImGuiTableColumnFlags_WidthFixed, label_col_w);
-  ImGui::TableSetupColumn("control", ImGuiTableColumnFlags_WidthStretch);
-
-  auto section = [&](const char* title)
-  {
-    ImGui::TableNextRow();
-    ImGui::TableSetColumnIndex(0);
-    ImGui::SeparatorText(title);
-  };
-
-  auto slider = [&](const char* label, const char* id, float* v, float v_min, float v_max, const char* fmt)
-  {
-    ImGui::TableNextRow();
-    ImGui::TableSetColumnIndex(0);
-    ImGui::AlignTextToFramePadding();
-    ImGui::TextUnformatted(label);
-    ImGui::TableSetColumnIndex(1);
-    changed |= ImGui::SliderFloat(id, v, v_min, v_max, fmt);
-  };
-
-  section("Transparency");
-  slider("Window transparency", "##win_alpha", &style.window_alpha, k_gui_imgui_window_alpha_min, k_gui_imgui_window_alpha_max,
-         "%.2f");
-
-  section("Rounding");
-  slider("Windows, frames, popups", "##round_gen", &style.rounding_general, 0.f, k_gui_imgui_rounding_slider_max, "%.0f");
-  slider("Scrollbars and sliders", "##round_scr", &style.rounding_scroll, 0.f, k_gui_imgui_rounding_slider_max, "%.0f");
-  slider("Tabs", "##round_tabs", &style.rounding_tabs, 0.f, k_gui_imgui_rounding_slider_max, "%.0f");
-
-  section("Borders");
-  slider("Window border", "##win_border", &style.window_border, 0.f, k_gui_imgui_border_slider_max, "%.1f");
-  slider("Frame border", "##frame_border", &style.frame_border, 0.f, k_gui_imgui_border_slider_max, "%.1f");
-
-  section("Padding");
-  slider("Window padding X", "##win_pad_x", &style.window_padding_x, 0.f, k_gui_imgui_padding_slider_max, "%.0f");
-  slider("Window padding Y", "##win_pad_y", &style.window_padding_y, 0.f, k_gui_imgui_padding_slider_max, "%.0f");
-  slider("Frame padding X", "##frame_pad_x", &style.frame_padding_x, 0.f, k_gui_imgui_padding_slider_max, "%.0f");
-  slider("Frame padding Y", "##frame_pad_y", &style.frame_padding_y, 0.f, k_gui_imgui_padding_slider_max, "%.0f");
-
-  section("Spacing");
-  slider("Item spacing X", "##item_sp_x", &style.item_spacing_x, 0.f, k_gui_imgui_spacing_slider_max, "%.0f");
-  slider("Item spacing Y", "##item_sp_y", &style.item_spacing_y, 0.f, k_gui_imgui_spacing_slider_max, "%.0f");
-
-  ImGui::EndTable();
-  return changed;
-}
+nlohmann::json imgui_style_to_json_(const Gui_imgui_style_settings& s);
+nlohmann::json settings_headers_to_json_(const Gui_settings_headers& h);
+void           parse_settings_headers_json_(const nlohmann::json& obj, Gui_settings_headers& out);
+void           parse_imgui_style_json_(const nlohmann::json& obj, const Gui_imgui_style_settings& defaults,
+                                       Gui_imgui_style_settings& out);
+bool           settings_imgui_style_controls_(float label_col_w, Gui_imgui_style_settings& style, const char* id_prefix);
 } // namespace
 
 void GUI::set_ui_verbosity(int v) { m_ui_verbosity = std::max(k_gui_ui_verbosity_min, v); }
@@ -304,9 +158,9 @@ void GUI::save_occt_view_settings()
       {"add_mid_pt_slot_edges",              m_add_mid_pt_slot_edges},
       {"load_last_opened_on_startup",        m_load_last_opened_on_startup},
       {"last_opened_project_path",           m_last_opened_project_path},
-      {"imgui_style_dark",                   imgui_style_to_json(m_imgui_style_dark)},
-      {"imgui_style_light",                  imgui_style_to_json(m_imgui_style_light)},
-      {"settings_headers",                   settings_headers_to_json(m_settings_headers)},
+      {"imgui_style_dark",                   imgui_style_to_json_(m_imgui_style_dark)},
+      {"imgui_style_light",                  imgui_style_to_json_(m_imgui_style_light)},
+      {"settings_headers",                   settings_headers_to_json_(m_settings_headers)},
       {"view_roll_step_deg",                 m_view_roll_step_deg},
       {"view_zoom_scroll_scale",             m_view_zoom_scroll_scale},
       {"default_2d_view_width",              m_default_2d_view_width},
@@ -621,14 +475,14 @@ void GUI::parse_gui_panes_settings_(const std::string& content)
     m_imgui_style_light = light_defaults;
 
     if (g.contains("imgui_style_dark") && g["imgui_style_dark"].is_object())
-      parse_imgui_style_json(g["imgui_style_dark"], dark_defaults, m_imgui_style_dark);
+      parse_imgui_style_json_(g["imgui_style_dark"], dark_defaults, m_imgui_style_dark);
 
     if (g.contains("imgui_style_light") && g["imgui_style_light"].is_object())
-      parse_imgui_style_json(g["imgui_style_light"], light_defaults, m_imgui_style_light);
+      parse_imgui_style_json_(g["imgui_style_light"], light_defaults, m_imgui_style_light);
 
     m_settings_headers = Gui_settings_headers{};
     if (g.contains("settings_headers") && g["settings_headers"].is_object())
-      parse_settings_headers_json(g["settings_headers"], m_settings_headers);
+      parse_settings_headers_json_(g["settings_headers"], m_settings_headers);
 
     m_hotkeys.reset_defaults();
     if (g.contains("hotkeys") && g["hotkeys"].is_object())
@@ -2323,6 +2177,158 @@ void GUI::apply_imgui_style_from_members_()
 
 namespace
 {
+nlohmann::json imgui_style_to_json_(const Gui_imgui_style_settings& s)
+{
+  // clang-format off
+  return nlohmann::json{
+      {"rounding_general", s.rounding_general},
+      {"rounding_scroll",  s.rounding_scroll},
+      {"rounding_tabs",    s.rounding_tabs},
+      {"window_alpha",     s.window_alpha},
+      {"window_border",    s.window_border},
+      {"frame_border",     s.frame_border},
+      {"window_padding_x", s.window_padding_x},
+      {"window_padding_y", s.window_padding_y},
+      {"frame_padding_x",  s.frame_padding_x},
+      {"frame_padding_y",  s.frame_padding_y},
+      {"item_spacing_x",   s.item_spacing_x},
+      {"item_spacing_y",   s.item_spacing_y},
+  };
+  // clang-format on
+}
+
+nlohmann::json settings_headers_to_json_(const Gui_settings_headers& h)
+{
+  // clang-format off
+  return nlohmann::json{
+      {"view_nav",          h.view_nav},
+      {"new_project",       h.new_project},
+      {"ui",                h.ui},
+      {"view_presentation", h.view_presentation},
+      {"grid",              h.grid},
+      {"sketch",            h.sketch},
+      {"sketch_appearance", h.sketch_appearance},
+      {"sketch_dimensions", h.sketch_dimensions},
+      {"sketch_nodes",      h.sketch_nodes},
+      {"sketch_snap",       h.sketch_snap},
+      {"sketch_underlay",   h.sketch_underlay},
+      {"startup",           h.startup},
+      {"hotkeys",           h.hotkeys},
+  };
+  // clang-format on
+}
+
+void parse_settings_headers_json_(const nlohmann::json& obj, Gui_settings_headers& out)
+{
+  Gui_settings_headers defaults{};
+  auto                 b = [&obj](const char* key, bool fallback) -> bool
+  {
+    if (obj.contains(key) && obj[key].is_boolean())
+      return obj[key].get<bool>();
+    return fallback;
+  };
+
+  // clang-format off
+  out.view_nav          = b("view_nav",           defaults.view_nav);
+  out.new_project       = b("new_project",        defaults.new_project);
+  out.ui                = b("ui",                 defaults.ui);
+  out.view_presentation = b("view_presentation",  defaults.view_presentation);
+  out.grid              = b("grid",               defaults.grid);
+  out.sketch            = b("sketch",             defaults.sketch);
+  out.sketch_appearance = b("sketch_appearance",  defaults.sketch_appearance);
+  out.sketch_dimensions = b("sketch_dimensions",  defaults.sketch_dimensions);
+  out.sketch_nodes      = b("sketch_nodes",       defaults.sketch_nodes);
+  out.sketch_snap       = b("sketch_snap",        defaults.sketch_snap);
+  out.sketch_underlay   = b("sketch_underlay",    defaults.sketch_underlay);
+  out.startup           = b("startup",            defaults.startup);
+  out.hotkeys           = b("hotkeys",            defaults.hotkeys);
+  // clang-format on
+}
+
+void parse_imgui_style_json_(const nlohmann::json& obj, const Gui_imgui_style_settings& defaults, Gui_imgui_style_settings& out)
+{
+  auto f = [&obj](const char* key, float fallback) -> float
+  {
+    if (obj.contains(key) && obj[key].is_number())
+    {
+      const float v = obj[key].get<float>();
+      if (v >= 0.f && v <= 32.f)
+        return v;
+    }
+
+    return fallback;
+  };
+
+  // clang-format off
+  out.rounding_general = f("rounding_general", defaults.rounding_general);
+  out.rounding_scroll  = f("rounding_scroll",  defaults.rounding_scroll);
+  out.rounding_tabs    = f("rounding_tabs",    defaults.rounding_tabs);
+  out.window_alpha     = std::clamp(f("window_alpha", defaults.window_alpha),
+                                    k_gui_imgui_window_alpha_min, k_gui_imgui_window_alpha_max);
+  out.window_border    = std::clamp(f("window_border",    defaults.window_border),    0.f, k_gui_imgui_border_slider_max);
+  out.frame_border     = std::clamp(f("frame_border",     defaults.frame_border),     0.f, k_gui_imgui_border_slider_max);
+  out.window_padding_x = std::clamp(f("window_padding_x", defaults.window_padding_x), 0.f, k_gui_imgui_padding_slider_max);
+  out.window_padding_y = std::clamp(f("window_padding_y", defaults.window_padding_y), 0.f, k_gui_imgui_padding_slider_max);
+  out.frame_padding_x  = std::clamp(f("frame_padding_x",  defaults.frame_padding_x),  0.f, k_gui_imgui_padding_slider_max);
+  out.frame_padding_y  = std::clamp(f("frame_padding_y",  defaults.frame_padding_y),  0.f, k_gui_imgui_padding_slider_max);
+  out.item_spacing_x   = std::clamp(f("item_spacing_x",   defaults.item_spacing_x),   0.f, k_gui_imgui_spacing_slider_max);
+  out.item_spacing_y   = std::clamp(f("item_spacing_y",   defaults.item_spacing_y),   0.f, k_gui_imgui_spacing_slider_max);
+  // clang-format on
+}
+
+bool settings_imgui_style_controls_(float label_col_w, Gui_imgui_style_settings& style, const char* id_prefix)
+{
+  bool changed = false;
+  if (!ImGui::BeginTable(id_prefix, 2, ImGuiTableFlags_SizingStretchProp))
+    return false;
+
+  ImGui::TableSetupColumn("label", ImGuiTableColumnFlags_WidthFixed, label_col_w);
+  ImGui::TableSetupColumn("control", ImGuiTableColumnFlags_WidthStretch);
+
+  auto section = [&](const char* title)
+  {
+    ImGui::TableNextRow();
+    ImGui::TableSetColumnIndex(0);
+    ImGui::SeparatorText(title);
+  };
+
+  auto slider = [&](const char* label, const char* id, float* v, float v_min, float v_max, const char* fmt)
+  {
+    ImGui::TableNextRow();
+    ImGui::TableSetColumnIndex(0);
+    ImGui::AlignTextToFramePadding();
+    ImGui::TextUnformatted(label);
+    ImGui::TableSetColumnIndex(1);
+    changed |= ImGui::SliderFloat(id, v, v_min, v_max, fmt);
+  };
+
+  section("Transparency");
+  slider("Window transparency", "##win_alpha", &style.window_alpha, k_gui_imgui_window_alpha_min, k_gui_imgui_window_alpha_max,
+         "%.2f");
+
+  section("Rounding");
+  slider("Windows, frames, popups", "##round_gen", &style.rounding_general, 0.f, k_gui_imgui_rounding_slider_max, "%.0f");
+  slider("Scrollbars and sliders", "##round_scr", &style.rounding_scroll, 0.f, k_gui_imgui_rounding_slider_max, "%.0f");
+  slider("Tabs", "##round_tabs", &style.rounding_tabs, 0.f, k_gui_imgui_rounding_slider_max, "%.0f");
+
+  section("Borders");
+  slider("Window border", "##win_border", &style.window_border, 0.f, k_gui_imgui_border_slider_max, "%.1f");
+  slider("Frame border", "##frame_border", &style.frame_border, 0.f, k_gui_imgui_border_slider_max, "%.1f");
+
+  section("Padding");
+  slider("Window padding X", "##win_pad_x", &style.window_padding_x, 0.f, k_gui_imgui_padding_slider_max, "%.0f");
+  slider("Window padding Y", "##win_pad_y", &style.window_padding_y, 0.f, k_gui_imgui_padding_slider_max, "%.0f");
+  slider("Frame padding X", "##frame_pad_x", &style.frame_padding_x, 0.f, k_gui_imgui_padding_slider_max, "%.0f");
+  slider("Frame padding Y", "##frame_pad_y", &style.frame_padding_y, 0.f, k_gui_imgui_padding_slider_max, "%.0f");
+
+  section("Spacing");
+  slider("Item spacing X", "##item_sp_x", &style.item_spacing_x, 0.f, k_gui_imgui_spacing_slider_max, "%.0f");
+  slider("Item spacing Y", "##item_sp_y", &style.item_spacing_y, 0.f, k_gui_imgui_spacing_slider_max, "%.0f");
+
+  ImGui::EndTable();
+  return changed;
+}
+
 /// `occt_view` JSON object: view background gradient and grid (shared with `save_occt_view_settings` /
 /// `occt_view_settings_json`).
 nlohmann::json build_occt_view_settings_object_(const Occt_view& view)
