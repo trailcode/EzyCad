@@ -18,7 +18,7 @@ Use this style when editing or adding C/C++ code in the EzyCad project (files un
 - Prefer clear domain prefixes for related member groups (e.g. `m_underlay_*`) instead of mixed short forms.
 - **Constants** (e.g. lookup arrays for enums): `c_` prefix (e.g. `c_mode_strs`, `c_chamfer_mode_strs`).
 - **Functions / methods**: snake_case (e.g. `add_new_node`, `get_node_exact`, `try_get_node_idx_snap`).
-- **Private methods**: snake_case with trailing underscore (e.g. `update_axis_snap_anno_`).
+- **Private methods** and **file-local helpers** (anonymous-namespace free functions in a `.cpp`): snake_case with trailing underscore (e.g. `update_axis_snap_anno_`, `table_row_input_double_`).
 - **Type aliases**: snake_case with suffix by role, e.g. `*_ptr` for handles (`AIS_Shape_ptr`, `Shp_ptr`), `*_rslt` for result types (`Shp_rslt`). Typedefs like `ScreenCoords` are PascalCase.
 - **Macros**: UPPER_SNAKE_CASE (e.g. `EZY_ASSERT`, `EZY_ASSERT_MSG`, `DBG_MSG`).
 
@@ -139,7 +139,7 @@ User-facing Markdown (now in `docs/`: `usage.md`, `usage-*.md`, `scripting.md`, 
 ## Code organization
 
 - **Reader-first order** (`.cpp`): Put **public API and high-level workflow** at the top of the file (constructors, main entry points, orchestration). Put **lower-level details** below so the first screen shows what the module does before how it does it.
-- **Helper functions** (`.cpp`): Prefer **file-local static helpers** in an anonymous namespace at the **bottom** of the implementing `.cpp` file. Forward-declare them near the top (or above their first use) when needed. Avoid large helper blocks at the top of the file; the goal is high-level code first, helpers last for readability.
+- **Helper functions** (`.cpp`): Prefer **file-local helpers** in an anonymous namespace at the **bottom** of the implementing `.cpp` file (trailing `_` name; see **Naming**). Forward-declare them near the top (or above their first use) when needed. Avoid large helper blocks at the top of the file; the goal is high-level code first, helpers last for readability.
 - **PIMPL** (`class Foo; class Foo::Impl`): Use when hiding implementation details or when you want to swap implementations (e.g. `Sketch_nodes`, `Sketch_op_recorder`). Keep the public surface in the header; put data members, private record types, and apply/clone logic in `Impl` inside the `.cpp`.
 - **Templates**: Prefer putting template implementations in `.inl` files included from the header (e.g. `utl_types.inl`, `utl.inl`).
 - **OCCT handles**: Prefer `opencascade::handle<T>` and project `*_ptr` aliases from `utl_types.h` (e.g. `AIS_Shape_ptr`, `Shp_ptr`). Avoid the OCCT `Handle(T)` macro in new/touched code -- clang-format mishandles it with `PointerAlignment: Left` (e.g. `Handle(Foo) &`). See [agents/conventions/occt-handles.md](../agents/conventions/occt-handles.md).
@@ -155,7 +155,7 @@ User-facing Markdown (now in `docs/`: `usage.md`, `usage-*.md`, `scripting.md`, 
 - Too much DRY can increase coupling by forcing unrelated code through one shared abstraction.
 - Prefer readability over clever reuse when repetition is small and explicit code is clearer.
 - **When duplication is acceptable**: a few lines repeated across nearby UI or glue code can beat a shared helper if call sites are likely to diverge (different tooltips, widths, or disabled logic) or if extracting would scatter one screen across many symbols. Prefer **locality**: keep a small block self-contained so a reader does not jump to understand one pane.
-- **Rule of thumb**: extract when the behavior is **the same and stable** (or when a bug fix must touch N copies); wait when the pattern is still moving. If you extract, prefer a **file-local static helper at the bottom of the `.cpp`** (see **Code organization**) over a generic framework.
+- **Rule of thumb**: extract when the behavior is **the same and stable** (or when a bug fix must touch N copies); wait when the pattern is still moving. If you extract, prefer a **file-local helper at the bottom of the `.cpp`** (see **Code organization**) over a generic framework.
 - Context matters: stronger DRY is often good in monolith/shared-library code; some duplication can be healthier in fast-changing or separated systems.
 - Balance DRY with KISS, YAGNI, and overall cognitive load.
 
