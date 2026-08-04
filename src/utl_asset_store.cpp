@@ -5,27 +5,16 @@
 
 namespace
 {
-
-uint64_t fnv1a64_feed(uint64_t hash, const uint8_t* data, std::size_t len)
-{
-  for (std::size_t i = 0; i < len; ++i)
-  {
-    hash ^= static_cast<uint64_t>(data[i]);
-    hash *= 1099511628211ULL;
-  }
-
-  return hash;
-}
-
+uint64_t fnv1a64_feed_(uint64_t hash, const uint8_t* data, std::size_t len);
 } // namespace
 
 std::string Ezy_asset_store::make_asset_id(const uint8_t* rgba, std::size_t len, int w, int h)
 {
   uint64_t hash = 14695981039346656037ULL;
-  hash          = fnv1a64_feed(hash, reinterpret_cast<const uint8_t*>(&w), sizeof(w));
-  hash          = fnv1a64_feed(hash, reinterpret_cast<const uint8_t*>(&h), sizeof(h));
+  hash          = fnv1a64_feed_(hash, reinterpret_cast<const uint8_t*>(&w), sizeof(w));
+  hash          = fnv1a64_feed_(hash, reinterpret_cast<const uint8_t*>(&h), sizeof(h));
   if (rgba && len > 0)
-    hash = fnv1a64_feed(hash, rgba, len);
+    hash = fnv1a64_feed_(hash, rgba, len);
 
   std::ostringstream oss;
   oss << std::hex << std::setfill('0') << std::setw(16) << hash;
@@ -56,3 +45,17 @@ void Ezy_asset_store::import_asset(const std::string& asset_id, std::vector<uint
 }
 
 void Ezy_asset_store::clear() { m_by_id.clear(); }
+
+namespace
+{
+uint64_t fnv1a64_feed_(uint64_t hash, const uint8_t* data, std::size_t len)
+{
+  for (std::size_t i = 0; i < len; ++i)
+  {
+    hash ^= static_cast<uint64_t>(data[i]);
+    hash *= 1099511628211ULL;
+  }
+
+  return hash;
+}
+} // namespace
