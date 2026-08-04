@@ -626,7 +626,6 @@ void Occt_view::revolve_selected(const double angle)
 void Occt_view::create_sketch_from_planar_face_(const ScreenCoords& screen_coords)
 {
   if (auto face = get_face_(screen_coords); face)
-  {
     if (auto pln = plane_from_face(*face); pln)
     {
       // Get the outer wire of the face
@@ -643,7 +642,6 @@ void Occt_view::create_sketch_from_planar_face_(const ScreenCoords& screen_coord
     }
     else
       gui().show_message("Error: Selected face is not planar. Please select a planar face.");
-  }
 }
 
 void Occt_view::create_default_sketch_()

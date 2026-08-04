@@ -24,80 +24,13 @@
 
 namespace
 {
-size_t count_shape_edges_(const TopoDS_Shape& shape)
-{
-  size_t n = 0;
-  for (TopExp_Explorer ex(shape, TopAbs_EDGE); ex.More(); ex.Next())
-    ++n;
-
-  return n;
-}
-
-gp_Pnt centroid_of_verts_(const std::vector<gp_Pnt>& verts)
-{
-  EZY_ASSERT(!verts.empty());
-  gp_XYZ sum(0.0, 0.0, 0.0);
-  for (const gp_Pnt& p : verts)
-    sum += p.XYZ();
-
-  sum /= static_cast<double>(verts.size());
-
-  return gp_Pnt(sum);
-}
-
-TopoDS_Wire transform_wire_(const TopoDS_Wire& wire, const gp_Trsf& trsf)
-{
-  return TopoDS::Wire(BRepBuilderAPI_Transform(wire, trsf, true).Shape());
-}
-
-gp_Trsf section_trsf_(const gp_Ax1& axis, double height_along_axis, double twist_rad)
-{
-  gp_Trsf rot;
-  rot.SetRotation(axis, twist_rad);
-  gp_Trsf trans;
-  trans.SetTranslation(gp_Vec(axis.Direction()) * height_along_axis);
-
-  return trans * rot;
-}
-
-/// Ruled thru-sections solid from a closed wire with height + twist along `axis`.
-/// Compatibility is off so intentional twist keeps edge/vertex pairing.
-TopoDS_Shape loft_twisted_wire_(const TopoDS_Wire& wire, const gp_Ax1& axis, const double h0, const double h1,
-                                const double ang0, const double ang1, const int n_seg)
-{
-  EZY_ASSERT(!wire.IsNull());
-  EZY_ASSERT(n_seg >= 1);
-
-  BRepOffsetAPI_ThruSections maker(true /*isSolid*/, true /*ruled*/);
-  maker.CheckCompatibility(false);
-  for (int i = 0; i <= n_seg; ++i)
-  {
-    const double t      = static_cast<double>(i) / static_cast<double>(n_seg);
-    const double height = h0 + t * (h1 - h0);
-    const double ang    = ang0 + t * (ang1 - ang0);
-    maker.AddWire(transform_wire_(wire, section_trsf_(axis, height, ang)));
-  }
-
-  maker.Build();
-  EZY_ASSERT(maker.IsDone());
-
-  return try_make_solid(maker.Shape());
-}
-
-std::vector<TopoDS_Wire> face_hole_wires_(const TopoDS_Face& face, const TopoDS_Wire& outer_wire)
-{
-  std::vector<TopoDS_Wire> holes;
-  for (TopExp_Explorer ex(face, TopAbs_WIRE); ex.More(); ex.Next())
-  {
-    const TopoDS_Wire w = TopoDS::Wire(ex.Current());
-    if (w.IsNull() || w.IsSame(outer_wire))
-      continue;
-
-    holes.push_back(w);
-  }
-
-  return holes;
-}
+size_t                   count_shape_edges_(const TopoDS_Shape& shape);
+gp_Pnt                   centroid_of_verts_(const std::vector<gp_Pnt>& verts);
+TopoDS_Wire              transform_wire_(const TopoDS_Wire& wire, const gp_Trsf& trsf);
+gp_Trsf                  section_trsf_(const gp_Ax1& axis, double height_along_axis, double twist_rad);
+TopoDS_Shape             loft_twisted_wire_(const TopoDS_Wire& wire, const gp_Ax1& axis, double h0, double h1, double ang0,
+                                            double ang1, int n_seg);
+std::vector<TopoDS_Wire> face_hole_wires_(const TopoDS_Face& face, const TopoDS_Wire& outer_wire);
 } // namespace
 
 Shp_extrude::Shp_extrude(Occt_view& view)
@@ -688,3 +621,81 @@ void Shp_extrude::refresh_tmp_dimension_style(const Length_dimension_style& styl
     ctx().Redisplay(m_tmp_angle_dim, true);
   }
 }
+
+namespace
+{
+size_t count_shape_edges_(const TopoDS_Shape& shape)
+{
+  size_t n = 0;
+  for (TopExp_Explorer ex(shape, TopAbs_EDGE); ex.More(); ex.Next())
+    ++n;
+
+  return n;
+}
+
+gp_Pnt centroid_of_verts_(const std::vector<gp_Pnt>& verts)
+{
+  EZY_ASSERT(!verts.empty());
+  gp_XYZ sum(0.0, 0.0, 0.0);
+  for (const gp_Pnt& p : verts)
+    sum += p.XYZ();
+
+  sum /= static_cast<double>(verts.size());
+
+  return gp_Pnt(sum);
+}
+
+TopoDS_Wire transform_wire_(const TopoDS_Wire& wire, const gp_Trsf& trsf)
+{
+  return TopoDS::Wire(BRepBuilderAPI_Transform(wire, trsf, true).Shape());
+}
+
+gp_Trsf section_trsf_(const gp_Ax1& axis, double height_along_axis, double twist_rad)
+{
+  gp_Trsf rot;
+  rot.SetRotation(axis, twist_rad);
+  gp_Trsf trans;
+  trans.SetTranslation(gp_Vec(axis.Direction()) * height_along_axis);
+
+  return trans * rot;
+}
+
+/// Ruled thru-sections solid from a closed wire with height + twist along `axis`.
+/// Compatibility is off so intentional twist keeps edge/vertex pairing.
+TopoDS_Shape loft_twisted_wire_(const TopoDS_Wire& wire, const gp_Ax1& axis, const double h0, const double h1,
+                                const double ang0, const double ang1, const int n_seg)
+{
+  EZY_ASSERT(!wire.IsNull());
+  EZY_ASSERT(n_seg >= 1);
+
+  BRepOffsetAPI_ThruSections maker(true /*isSolid*/, true /*ruled*/);
+  maker.CheckCompatibility(false);
+  for (int i = 0; i <= n_seg; ++i)
+  {
+    const double t      = static_cast<double>(i) / static_cast<double>(n_seg);
+    const double height = h0 + t * (h1 - h0);
+    const double ang    = ang0 + t * (ang1 - ang0);
+    maker.AddWire(transform_wire_(wire, section_trsf_(axis, height, ang)));
+  }
+
+  maker.Build();
+  EZY_ASSERT(maker.IsDone());
+
+  return try_make_solid(maker.Shape());
+}
+
+std::vector<TopoDS_Wire> face_hole_wires_(const TopoDS_Face& face, const TopoDS_Wire& outer_wire)
+{
+  std::vector<TopoDS_Wire> holes;
+  for (TopExp_Explorer ex(face, TopAbs_WIRE); ex.More(); ex.Next())
+  {
+    const TopoDS_Wire w = TopoDS::Wire(ex.Current());
+    if (w.IsNull() || w.IsSame(outer_wire))
+      continue;
+
+    holes.push_back(w);
+  }
+
+  return holes;
+}
+} // namespace

@@ -97,27 +97,7 @@ using namespace glm;
 namespace
 {
 #if !defined(__EMSCRIPTEN__)
-bool parse_cli_listen(int argc, char** argv, bool& want_listen, std::string& listen_arg, std::string& error)
-{
-  want_listen = false;
-  listen_arg.clear();
-  error.clear();
-  for (int i = 1; i < argc; ++i)
-  {
-    const std::string a = argv[i] ? argv[i] : "";
-    if (a == "--listen")
-    {
-      if (i + 1 >= argc || argv[i + 1] == nullptr || argv[i + 1][0] == '\0')
-      {
-        error = "--listen requires [host:]port";
-        return false;
-      }
-      want_listen = true;
-      listen_arg  = argv[++i];
-    }
-  }
-  return true;
-}
+bool parse_cli_listen_(int argc, char** argv, bool& want_listen, std::string& listen_arg, std::string& error);
 #endif
 } // namespace
 
@@ -128,7 +108,7 @@ int main(int argc, char** argv)
   bool        want_listen = false;
   std::string listen_arg;
   std::string listen_cli_error;
-  if (!parse_cli_listen(argc, argv, want_listen, listen_arg, listen_cli_error))
+  if (!parse_cli_listen_(argc, argv, want_listen, listen_arg, listen_cli_error))
   {
     std::fprintf(stderr, "EzyCad: %s\n", listen_cli_error.c_str());
     return 1;
@@ -496,3 +476,30 @@ int main(int argc, char** argv)
 
   return 0;
 }
+
+namespace
+{
+#if !defined(__EMSCRIPTEN__)
+bool parse_cli_listen_(int argc, char** argv, bool& want_listen, std::string& listen_arg, std::string& error)
+{
+  want_listen = false;
+  listen_arg.clear();
+  error.clear();
+  for (int i = 1; i < argc; ++i)
+  {
+    const std::string a = argv[i] ? argv[i] : "";
+    if (a == "--listen")
+    {
+      if (i + 1 >= argc || argv[i + 1] == nullptr || argv[i + 1][0] == '\0')
+      {
+        error = "--listen requires [host:]port";
+        return false;
+      }
+      want_listen = true;
+      listen_arg  = argv[++i];
+    }
+  }
+  return true;
+}
+#endif
+} // namespace

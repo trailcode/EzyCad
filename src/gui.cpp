@@ -3427,28 +3427,8 @@ void GUI::message_status_window_()
 // Log window implementation
 namespace
 {
-
-std::string format_log_line(const std::string& base, size_t repeat_count)
-{
-  if (repeat_count <= 1)
-    return base;
-  return base + " #" + std::to_string(repeat_count);
-}
-
-void append_log_line(std::vector<char>& buffer, const std::string& line)
-{
-  if (buffer.size() > 1)
-  {
-    buffer.pop_back(); // trailing '\0'
-    buffer.push_back('\n');
-  }
-  else if (!buffer.empty())
-    buffer.pop_back();
-
-  buffer.insert(buffer.end(), line.begin(), line.end());
-  buffer.push_back('\0');
-}
-
+std::string format_log_line_(const std::string& base, size_t repeat_count);
+void        append_log_line_(std::vector<char>& buffer, const std::string& line);
 } // namespace
 
 void GUI::log_message(const std::string& message)
@@ -3456,7 +3436,7 @@ void GUI::log_message(const std::string& message)
   if (!m_log_last_line_base.empty() && message == m_log_last_line_base)
   {
     ++m_log_repeat_count;
-    const std::string line = format_log_line(m_log_last_line_base, m_log_repeat_count);
+    const std::string line = format_log_line_(m_log_last_line_base, m_log_repeat_count);
     m_log_buffer.resize(m_log_last_line_start);
     m_log_buffer.insert(m_log_buffer.end(), line.begin(), line.end());
     m_log_buffer.push_back('\0');
@@ -3464,7 +3444,7 @@ void GUI::log_message(const std::string& message)
     return;
   }
 
-  append_log_line(m_log_buffer, message);
+  append_log_line_(m_log_buffer, message);
   m_log_last_line_base   = message;
   m_log_last_line_start  = m_log_buffer.size() - message.size() - 1;
   m_log_repeat_count     = 1;
@@ -4478,6 +4458,30 @@ void GUI::on_inspector_file(const std::string& file_path, const std::string& fil
 {
   open_file_inspector_(file_path, file_data);
 }
+
+namespace
+{
+std::string format_log_line_(const std::string& base, size_t repeat_count)
+{
+  if (repeat_count <= 1)
+    return base;
+  return base + " #" + std::to_string(repeat_count);
+}
+
+void append_log_line_(std::vector<char>& buffer, const std::string& line)
+{
+  if (buffer.size() > 1)
+  {
+    buffer.pop_back(); // trailing '\0'
+    buffer.push_back('\n');
+  }
+  else if (!buffer.empty())
+    buffer.pop_back();
+
+  buffer.insert(buffer.end(), line.begin(), line.end());
+  buffer.push_back('\0');
+}
+} // namespace
 
 #ifdef __EMSCRIPTEN__
 void GUI::open_file_dialog_async()

@@ -31,25 +31,8 @@ struct Symmetric_edge_span
   double   full_len;
 };
 
-std::optional<Symmetric_edge_span> symmetric_edge_from_center(const gp_Pnt2d& center, const gp_Dir2d& dir, double full_len)
-{
-  if (full_len <= Precision::Confusion())
-    return std::nullopt;
-
-  const double   half = full_len * 0.5;
-  const gp_Vec2d v(dir);
-  return Symmetric_edge_span{center.Translated(-v * half), center.Translated(v * half), full_len};
-}
-
-std::optional<Symmetric_edge_span> symmetric_edge_from_center_and_hint(const gp_Pnt2d& center, const gp_Pnt2d& dir_hint_pt)
-{
-  gp_Vec2d     v(center, dir_hint_pt);
-  const double half = v.Magnitude();
-  if (half <= Precision::Confusion())
-    return std::nullopt;
-
-  return symmetric_edge_from_center(center, gp_Dir2d(v), half * 2.0);
-}
+std::optional<Symmetric_edge_span> symmetric_edge_from_center_(const gp_Pnt2d& center, const gp_Dir2d& dir, double full_len);
+std::optional<Symmetric_edge_span> symmetric_edge_from_center_and_hint_(const gp_Pnt2d& center, const gp_Pnt2d& dir_hint_pt);
 } // namespace
 
 Sketch_tools::Sketch_tools(Sketch& sketch)
@@ -189,7 +172,7 @@ bool Sketch_tools::complete_edge_from_center_(const ScreenCoords& screen_coords)
 
   std::optional<Symmetric_edge_span> span;
   if (m_sketch.m_dims.entered_edge_len().has_value())
-    span = symmetric_edge_from_center(center, m_sketch.m_dims.entered_edge_len()->dir, m_sketch.m_dims.entered_edge_len()->len);
+    span = symmetric_edge_from_center_(center, m_sketch.m_dims.entered_edge_len()->dir, m_sketch.m_dims.entered_edge_len()->len);
 
   else if (m_sketch.m_dims.entered_edge_angle().has_value())
   {
@@ -201,7 +184,7 @@ bool Sketch_tools::complete_edge_from_center_(const ScreenCoords& screen_coords)
     gp_Dir2d     dir(std::cos(angle_rad), std::sin(angle_rad));
     gp_Vec2d     to_click(center, *pt_opt);
     const double half = std::abs(to_click.Dot(gp_Vec2d(dir)));
-    span              = symmetric_edge_from_center(center, dir, half * 2.0);
+    span              = symmetric_edge_from_center_(center, dir, half * 2.0);
   }
   else
   {
@@ -209,7 +192,7 @@ bool Sketch_tools::complete_edge_from_center_(const ScreenCoords& screen_coords)
     if (!pt_opt)
       return true;
 
-    span = symmetric_edge_from_center_and_hint(center, *pt_opt);
+    span = symmetric_edge_from_center_and_hint_(center, *pt_opt);
   }
 
   if (!span)
@@ -309,19 +292,19 @@ void Sketch_tools::move_line_string_pt_(const ScreenCoords& screen_coords)
         const double angle_rad = to_radians(*m_sketch.m_dims.entered_edge_angle());
         gp_Dir2d     dir(std::cos(angle_rad), std::sin(angle_rad));
         if (m_sketch.m_dims.entered_edge_len().has_value())
-          span = symmetric_edge_from_center(center, dir, m_sketch.m_dims.entered_edge_len()->len);
+          span = symmetric_edge_from_center_(center, dir, m_sketch.m_dims.entered_edge_len()->len);
         else
         {
           gp_Vec2d     to_mouse(center, pt_b);
           const double half = std::abs(to_mouse.Dot(gp_Vec2d(dir)));
-          span              = symmetric_edge_from_center(center, dir, half * 2.0);
+          span              = symmetric_edge_from_center_(center, dir, half * 2.0);
         }
       }
       else if (m_sketch.m_dims.entered_edge_len().has_value())
-        span = symmetric_edge_from_center(center, m_sketch.m_dims.entered_edge_len()->dir,
+        span = symmetric_edge_from_center_(center, m_sketch.m_dims.entered_edge_len()->dir,
                                           m_sketch.m_dims.entered_edge_len()->len);
       else
-        span = symmetric_edge_from_center_and_hint(center, pt_b);
+        span = symmetric_edge_from_center_and_hint_(center, pt_b);
 
       if (!span)
       {
@@ -987,3 +970,26 @@ void Sketch_tools::finalize_add_node_elm_cleanup_()
   m_sketch.m_nodes.hide_snap_annos();
   m_sketch.update_faces_();
 }
+
+namespace
+{
+std::optional<Symmetric_edge_span> symmetric_edge_from_center_(const gp_Pnt2d& center, const gp_Dir2d& dir, double full_len)
+{
+  if (full_len <= Precision::Confusion())
+    return std::nullopt;
+
+  const double   half = full_len * 0.5;
+  const gp_Vec2d v(dir);
+  return Symmetric_edge_span{center.Translated(-v * half), center.Translated(v * half), full_len};
+}
+
+std::optional<Symmetric_edge_span> symmetric_edge_from_center_and_hint_(const gp_Pnt2d& center, const gp_Pnt2d& dir_hint_pt)
+{
+  gp_Vec2d     v(center, dir_hint_pt);
+  const double half = v.Magnitude();
+  if (half <= Precision::Confusion())
+    return std::nullopt;
+
+  return symmetric_edge_from_center_(center, gp_Dir2d(v), half * 2.0);
+}
+} // namespace

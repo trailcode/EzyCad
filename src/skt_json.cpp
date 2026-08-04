@@ -25,36 +25,8 @@ using json = nlohmann::json;
 
 namespace
 {
-std::optional<size_t> find_live_node_at_(Sketch& sketch, const gp_Pnt2d& p)
-{
-  const Sketch_nodes& ns = sketch.get_nodes();
-  for (size_t i = 0, n = ns.size(); i < n; ++i)
-    if (!ns[i].deleted && ns[i].SquareDistance(p) < Precision::SquareConfusion())
-      return i;
-
-  return std::nullopt;
-}
-
-/// Serializes one sketch node for `j["nodes"]`. Caller must only pass non-deleted nodes (compact save omits tombstones).
-json node_to_json_(const Sketch_nodes::Node& nd)
-{
-  EZY_ASSERT(!nd.deleted);
-  json o = ::to_json(static_cast<const gp_Pnt2d&>(nd));
-  if (nd.midpoint)
-    o["midpoint"] = true;
-
-  if (nd.permanent)
-    o["permanent"] = true;
-
-  if (nd.origin)
-    o["origin"] = true;
-
-  if (!nd.name.empty())
-    o["name"] = nd.name;
-
-  return o;
-}
-
+std::optional<size_t> find_live_node_at_(Sketch& sketch, const gp_Pnt2d& p);
+json                  node_to_json_(const Sketch_nodes::Node& nd);
 } // namespace
 
 void Sketch_json::load_nodes_(Sketch& sketch, const json& nodes_json)
@@ -352,3 +324,37 @@ bool Sketch_json::edges_use_node_indices_(const json& j)
 
   return e0[0].is_number();
 }
+
+namespace
+{
+std::optional<size_t> find_live_node_at_(Sketch& sketch, const gp_Pnt2d& p)
+{
+  const Sketch_nodes& ns = sketch.get_nodes();
+  for (size_t i = 0, n = ns.size(); i < n; ++i)
+    if (!ns[i].deleted && ns[i].SquareDistance(p) < Precision::SquareConfusion())
+      return i;
+
+  return std::nullopt;
+}
+
+/// Serializes one sketch node for `j["nodes"]`. Caller must only pass non-deleted nodes (compact save omits tombstones).
+json node_to_json_(const Sketch_nodes::Node& nd)
+{
+  EZY_ASSERT(!nd.deleted);
+  json o = ::to_json(static_cast<const gp_Pnt2d&>(nd));
+  if (nd.midpoint)
+    o["midpoint"] = true;
+
+  if (nd.permanent)
+    o["permanent"] = true;
+
+  if (nd.origin)
+    o["origin"] = true;
+
+  if (!nd.name.empty())
+    o["name"] = nd.name;
+
+  return o;
+}
+
+} // namespace

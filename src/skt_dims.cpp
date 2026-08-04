@@ -27,15 +27,7 @@ struct Symmetric_edge_span
   double   full_len;
 };
 
-std::optional<Symmetric_edge_span> symmetric_edge_from_center(const gp_Pnt2d& center, const gp_Dir2d& dir, double full_len)
-{
-  if (full_len <= Precision::Confusion())
-    return std::nullopt;
-
-  const double   half = full_len * 0.5;
-  const gp_Vec2d v(dir);
-  return Symmetric_edge_span{center.Translated(-v * half), center.Translated(v * half), full_len};
-}
+std::optional<Symmetric_edge_span> symmetric_edge_from_center_(const gp_Pnt2d& center, const gp_Dir2d& dir, double full_len);
 } // namespace
 
 Sketch_dims::Sketch_dims(Sketch& sketch)
@@ -384,7 +376,7 @@ void Sketch_dims::check_dimension_seg_(int kind)
   {
     const gp_Pnt2d&                    center = m_sketch.m_nodes[edge.node_idx_a];
     std::optional<Symmetric_edge_span> span =
-        symmetric_edge_from_center(center, m_entered_edge_len->dir, m_entered_edge_len->len);
+        symmetric_edge_from_center_(center, m_entered_edge_len->dir, m_entered_edge_len->len);
 
     if (span)
     {
@@ -619,3 +611,16 @@ void Sketch_dims::on_sketch_hidden()
     if (!ld.dim.IsNull())
       m_sketch.m_ctx.Erase(ld.dim, false);
 }
+
+namespace
+{
+std::optional<Symmetric_edge_span> symmetric_edge_from_center_(const gp_Pnt2d& center, const gp_Dir2d& dir, double full_len)
+{
+  if (full_len <= Precision::Confusion())
+    return std::nullopt;
+
+  const double   half = full_len * 0.5;
+  const gp_Vec2d v(dir);
+  return Symmetric_edge_span{center.Translated(-v * half), center.Translated(v * half), full_len};
+}
+} // namespace
