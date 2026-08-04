@@ -474,7 +474,11 @@ std::optional<Cyl_face_info> cylinder_from_face(const TopoDS_Face& face)
   return info;
 }
 
-gp_Trsf cyl_align_trsf(const gp_Ax1& moving_axis, const gp_Ax1& fixed_axis, bool flip, double axial_offset)
+gp_Trsf cyl_align_trsf(const gp_Ax1& moving_axis,
+                       const gp_Ax1& fixed_axis,
+                       bool         flip,
+                       double       axial_offset,
+                       double       twist_rad)
 {
   const gp_Dir from_dir  = moving_axis.Direction();
   const gp_Dir to_dir    = flip ? fixed_axis.Direction().Reversed() : fixed_axis.Direction();
@@ -504,7 +508,14 @@ gp_Trsf cyl_align_trsf(const gp_Ax1& moving_axis, const gp_Ax1& fixed_axis, bool
   gp_Trsf      trans;
   trans.SetTranslation(gp_Vec(moved_loc, target));
 
-  return trans * rot;
+  const gp_Trsf coaxial = trans * rot;
+  if (std::fabs(twist_rad) <= Precision::Angular())
+    return coaxial;
+
+  // Twist about the fixed axis after coaxial placement (keeps axes coincident).
+  gp_Trsf twist;
+  twist.SetRotation(fixed_axis, twist_rad);
+  return twist * coaxial;
 }
 
 bool planes_equal(const gp_Pln& plane1, const gp_Pln& plane2)

@@ -481,17 +481,18 @@ The shape scale tool allows you to uniformly scale selected shapes around a comp
 
 ![Align Cylinders Tool](res/icons/Assembly_Move.png)
 
-Place a shaft into a hole (or the reverse) by aligning two cylindrical faces, then sliding along the shared axis for insert depth. This is a one-shot transform that bakes into the solid geometry (same as Move / Rotate), not a persistent assembly mate.
+Place a shaft into a hole (or the reverse) by aligning two cylindrical faces, sliding along the shared axis for insert depth, then twisting about that axis for tooth clocking (splines, keyways). This is a one-shot transform that bakes into the solid geometry (same as Move / Rotate), not a persistent assembly mate.
 
 **Features:**
 
-|                         |                                                                                                      |
-| ----------------------: | ---------------------------------------------------------------------------------------------------- |
-| **Face picks**          | Click a cylindrical face on the shape to move, then a cylindrical face on the fixed shape.           |
-| **Coaxial align**       | The moving shape snaps so the two cylinder axes coincide.                                            |
-| **Axial depth drag**    | After align, drag to set how far the moving shape slides along the shared axis.                      |
-| **Flip direction**      | Options **Flip direction** reverses which way the moving axis points along the fixed axis.           |
-| **Radius mismatch**     | Placement is still allowed when radii differ (clearance / press fits); a log warning is recorded.    |
+|                      |                                                                                                   |
+| -------------------: | ------------------------------------------------------------------------------------------------- |
+| **Face picks**       | Click a cylindrical face on the shape to move, then a cylindrical face on the fixed shape.        |
+| **Coaxial align**    | The moving shape snaps so the two cylinder axes coincide.                                         |
+| **Axial depth drag** | After align, drag to set how far the moving shape slides along the shared axis.                   |
+| **Twist / clocking** | After depth, drag to rotate about the shared axis (mesh splines by eye).                          |
+| **Flip direction**   | Options **Flip direction** reverses which way the moving axis points along the fixed axis.        |
+| **Radius mismatch**  | Placement is still allowed when radii differ (clearance / press fits); a log warning is recorded. |
 
 **How to Use:**
 
@@ -499,12 +500,14 @@ Place a shaft into a hole (or the reverse) by aligning two cylindrical faces, th
 2. **Pick moving face:** Click a cylindrical face on the body that should move (for example the outer face of a rod).
 3. **Pick fixed face:** Click a cylindrical face on a different body (for example the inner face of a hole).
 4. **Set depth:** Drag along the axis. Optionally press <kbd>Tab</kbd> to type an exact depth.
-5. **Finalize or cancel:** <kbd>left mouse button</kbd> or <kbd>Enter</kbd> to bake; <kbd>Esc</kbd> to cancel.
+5. **Twist:** <kbd>left mouse button</kbd> locks depth and enters twist; drag about the axis to clock teeth. Optionally press <kbd>Tab</kbd> to type an exact angle.
+6. **Finalize or cancel:** <kbd>left mouse button</kbd> or <kbd>Enter</kbd> to bake; <kbd>Esc</kbd> to cancel. <kbd>Enter</kbd> during the depth phase finalizes immediately with no twist.
 
 **Tips:**
 
 - The first face you pick is the body that moves. To move the hole body onto the shaft, pick the hole face first.
 - Use **Flip direction** in Options if the shaft points the wrong way after align.
+- Pick cylindrical faces (root / major diameter or smooth lands), not spline tooth flanks.
 - This tool only places solids; use [Cut](#boolean-operations) afterward if you need a boolean.
 
 ## Feature Operations
@@ -737,38 +740,38 @@ Mode, file, and edit chords in the **General Operations** and **Modeling Shortcu
 | <kbd>Shift</kbd>+<kbd>Tab</kbd>                                              | Angle input (for line edges with angle constraint)                               |
 | <kbd>Shift</kbd>+<kbd>D</kbd>, <kbd>Delete</kbd>, or <kbd>Backspace</kbd>    | Remove selected elements                                                         |
 | <kbd>Ctrl</kbd>+<kbd>C</kbd>                                                 | Copy selected shapes (or current group subtree) to the in-app clipboard          |
-| <kbd>Ctrl</kbd>+<kbd>V</kbd>                                                 | Paste clipboard shapes under the current group (same pose; undoable)               |
+| <kbd>Ctrl</kbd>+<kbd>V</kbd>                                                 | Paste clipboard shapes under the current group (same pose; undoable)             |
 
 ### Modeling Shortcuts
 
-|                                                   |                                |
-| ------------------------------------------------:| ------------------------------ |
-| <kbd>G</kbd>                                      | Move mode                      |
-| <kbd>R</kbd>                                      | Rotate mode                    |
-| <kbd>S</kbd>                                      | Scale mode                     |
-| <kbd>J</kbd>                                      | Align cylinders mode           |
-| <kbd>E</kbd>                                      | Extrude mode                   |
-| <kbd>C</kbd>                                      | Chamfer mode                   |
-| <kbd>F</kbd>                                      | Fillet mode                    |
-| <kbd>D</kbd>                                      | Dimension tool (sketch)        |
-| <kbd>I</kbd>                                      | Sketch inspection              |
-| <kbd>P</kbd>                                      | Sketch from planar face        |
-| <kbd>Shift</kbd>+<kbd>A</kbd>                     | Operation axis                 |
-| <kbd>N</kbd>                                      | Add node                       |
-| <kbd>L</kbd>                                      | Add line edge                  |
-| <kbd>Shift</kbd>+<kbd>L</kbd>                     | Add multi-line edge            |
-| <kbd>A</kbd>                                      | Add arc                        |
-| <kbd>Q</kbd>                                      | Add square                     |
-| <kbd>B</kbd>                                      | Add rectangle (two points)     |
-| <kbd>Shift</kbd>+<kbd>B</kbd>                     | Add rectangle (center)         |
-| <kbd>O</kbd>                                      | Add circle                     |
-| <kbd>Shift</kbd>+<kbd>O</kbd>                     | Add circle (three points)      |
-| <kbd>U</kbd>                                      | Add slot                       |
-| <kbd>Shift</kbd>+<kbd>P</kbd>                     | Polar duplicate                |
-| <kbd>Shift</kbd>+<kbd>X</kbd>                     | Cross-section                  |
-| <kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>C</kbd>     | Shape cut                      |
-| <kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>F</kbd>     | Shape fuse                     |
-| <kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>M</kbd>     | Shape common                   |
+|                                               |                            |
+| --------------------------------------------: | -------------------------- |
+| <kbd>G</kbd>                                  | Move mode                  |
+| <kbd>R</kbd>                                  | Rotate mode                |
+| <kbd>S</kbd>                                  | Scale mode                 |
+| <kbd>J</kbd>                                  | Align cylinders mode       |
+| <kbd>E</kbd>                                  | Extrude mode               |
+| <kbd>C</kbd>                                  | Chamfer mode               |
+| <kbd>F</kbd>                                  | Fillet mode                |
+| <kbd>D</kbd>                                  | Dimension tool (sketch)    |
+| <kbd>I</kbd>                                  | Sketch inspection          |
+| <kbd>P</kbd>                                  | Sketch from planar face    |
+| <kbd>Shift</kbd>+<kbd>A</kbd>                 | Operation axis             |
+| <kbd>N</kbd>                                  | Add node                   |
+| <kbd>L</kbd>                                  | Add line edge              |
+| <kbd>Shift</kbd>+<kbd>L</kbd>                 | Add multi-line edge        |
+| <kbd>A</kbd>                                  | Add arc                    |
+| <kbd>Q</kbd>                                  | Add square                 |
+| <kbd>B</kbd>                                  | Add rectangle (two points) |
+| <kbd>Shift</kbd>+<kbd>B</kbd>                 | Add rectangle (center)     |
+| <kbd>O</kbd>                                  | Add circle                 |
+| <kbd>Shift</kbd>+<kbd>O</kbd>                 | Add circle (three points)  |
+| <kbd>U</kbd>                                  | Add slot                   |
+| <kbd>Shift</kbd>+<kbd>P</kbd>                 | Polar duplicate            |
+| <kbd>Shift</kbd>+<kbd>X</kbd>                 | Cross-section              |
+| <kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>C</kbd> | Shape cut                  |
+| <kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>F</kbd> | Shape fuse                 |
+| <kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>M</kbd> | Shape common               |
 
 
 ### View navigation

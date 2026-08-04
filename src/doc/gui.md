@@ -46,12 +46,12 @@ Typical responsibilities:
 
 When adding a `Mode` to [`mode.h`](../mode.h) (`EZY_MODE_LIST`), a toolbar button, or a one-shot `Command`, update remappable hotkeys in the **same change**. Skip only for modes that must stay toolbar-only (document that choice).
 
-| Step | Touch                                                                                                                                  |
-| ---- | -------------------------------------------------------------------------------------------------------------------------------------- |
-| 1    | `Gui_action` + default chord in [`gui_hotkeys.h`](../gui_hotkeys.h) / [`gui_hotkeys.cpp`](../gui_hotkeys.cpp) (`c_actions`; enum order) |
-| 2    | `GUI::dispatch_hotkey_action_` in [`gui_mode.cpp`](../gui_mode.cpp)                                                                    |
-| 3    | `sync_toolbar_hotkey_tooltips_` in [`gui.cpp`](../gui.cpp)                                                                             |
-| 4    | `gui.hotkeys` entry in [`res/ezycad_settings.json`](../../res/ezycad_settings.json)                                                     |
+| Step | Touch                                                                                                                                                                                                                          |
+| ---- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| 1    | `Gui_action` + default chord in [`gui_hotkeys.h`](../gui_hotkeys.h) / [`gui_hotkeys.cpp`](../gui_hotkeys.cpp) (`c_actions`; enum order)                                                                                        |
+| 2    | `GUI::dispatch_hotkey_action_` in [`gui_mode.cpp`](../gui_mode.cpp)                                                                                                                                                            |
+| 3    | `sync_toolbar_hotkey_tooltips_` in [`gui.cpp`](../gui.cpp)                                                                                                                                                                     |
+| 4    | `gui.hotkeys` entry in [`res/ezycad_settings.json`](../../res/ezycad_settings.json)                                                                                                                                            |
 | 5    | User docs: [usage.md](../../docs/usage.md#hotkeys) Modeling table; sketch tools also [usage-sketch.md](../../docs/usage-sketch.md#hotkeys); [usage-settings.md](../../docs/usage-settings.md) if labels change; `CHANGELOG.md` |
 
 Pick a default that does not collide with existing `c_actions` chords or fixed keys (Esc, Enter, Tab, digits, unmodified X/Y/Z axis toggles — reserved via `is_reserved_chord`). Also wire parent-mode / Options / doc URL maps as usual for new modes.
@@ -145,24 +145,24 @@ Overlay popups (`FloatEdit`, `AngleEdit`, `MessageStatus`, modals) keep `NoSaved
 
 Remappable chords live in `Gui_hotkeys` (`gui_hotkeys.h` / `.cpp`), owned by `GUI::m_hotkeys`. Stable action ids (e.g. `mode.move`, `mode.add_edge`, `cmd.shape_cut`, `edit.undo`) map to `Key_chord { key, mods }`. Persistence: `gui.hotkeys` in `ezycad_settings.json` as human-readable strings (`"G"`, `"Shift+L"`, `"Ctrl+Shift+C"`); missing keys merge to built-in defaults. On load, `merge_from_json` drops reserved/invalid chords, then resolves duplicate chords: later actions reset to factory; if that factory chord is still held by an earlier remap, that earlier row is also restored to factory (defaults are unique, so `action_for` never keeps a silent collision). Settings **Keyboard shortcuts** captures the next `GLFW_PRESS` (Esc cancels; `set_chord` rejects conflicts and **reserved** fixed chords via `is_reserved_chord`). Per-row **Reset** calls `reset_action` (factory chord via `set_chord`, so duplicates are rejected with the same inline conflict message). Capture is cleared when Settings closes. Toolbar tooltips for remappable modes and boolean commands are rebuilt via `sync_toolbar_hotkey_tooltips_()`.
 
-| Input                             | Condition           | Handler                                                                                               |
-| --------------------------------- | ------------------- | ----------------------------------------------------------------------------------------------------- |
-| `+` / `-` / numpad +/-            | No Ctrl/Alt         | `Occt_view::zoom_view_wheel_notches`                                                                  |
-| Shift + 4/6 / arrows / numpad 4/6 | No Ctrl/Alt         | `Occt_view::roll_view_z_deg`                                                                          |
-| Numpad 5                          | No modifiers        | `Occt_view::snap_view_to_nearest_standard_axis`                                                       |
-| Numpad 2/4/6/8                    | No modifiers        | `Occt_view::orbit_view_screen_step_deg`                                                               |
-| Hotkey capture active             | Settings            | `try_capture_hotkey_press_` (assign / Esc cancel / conflict message)                                  |
-| `1`-`9` / numpad `1`-`9`          | `Mode::Normal` only | `set_shp_selection_mode` (TopAbs enum index); fixed                                                   |
-| Esc                               |                     | cancel capture if listening; else `cancel_underlay_calib_`, `Occt_view::cancel`, hide dist/angle edit |
-| Tab                               | not Move/Rotate     | `Occt_view::dimension_input`; Move/Rotate: `break` into mode handlers                                 |
-| Shift+Tab                         | not Move/Rotate     | `Occt_view::angle_input`; fixed                                                                       |
-| Enter                             | not Rotate          | hide edits, `Occt_view::on_enter`; Rotate: `break` into `on_key_rotate_mode_` (finalize)               |
-| Delete / Backspace                |                     | `Occt_view::delete_selected` (fixed aliases; remapping `edit.delete` does not remove these)           |
-| Ctrl+Shift+Z                      |                     | `Occt_view::redo` (fixed second redo; remappable `edit.redo` defaults to Ctrl+Y)                      |
-| Remappable chord                  | `m_hotkeys` hit     | `dispatch_hotkey_action_` (`Gui_action`: sketch/shape modes, booleans, delete, copy/paste, file, undo/redo) |
-| Move-mode keys                    | `Mode::Move`        | `on_key_move_mode_` (axis constraints X/Y/Z); hardcoded                                               |
-| Rotate-mode keys                  | `Mode::Rotate`      | `on_key_rotate_mode_` (axis pick, Tab angle); hardcoded                                               |
-| Cyl-align keys                    | `Mode::Shape_cyl_align` | `on_key_cyl_align_mode_` (Tab depth, Enter finalize); hardcoded                                   |
+| Input                             | Condition               | Handler                                                                                                     |
+| --------------------------------- | ----------------------- | ----------------------------------------------------------------------------------------------------------- |
+| `+` / `-` / numpad +/-            | No Ctrl/Alt             | `Occt_view::zoom_view_wheel_notches`                                                                        |
+| Shift + 4/6 / arrows / numpad 4/6 | No Ctrl/Alt             | `Occt_view::roll_view_z_deg`                                                                                |
+| Numpad 5                          | No modifiers            | `Occt_view::snap_view_to_nearest_standard_axis`                                                             |
+| Numpad 2/4/6/8                    | No modifiers            | `Occt_view::orbit_view_screen_step_deg`                                                                     |
+| Hotkey capture active             | Settings                | `try_capture_hotkey_press_` (assign / Esc cancel / conflict message)                                        |
+| `1`-`9` / numpad `1`-`9`          | `Mode::Normal` only     | `set_shp_selection_mode` (TopAbs enum index); fixed                                                         |
+| Esc                               |                         | cancel capture if listening; else `cancel_underlay_calib_`, `Occt_view::cancel`, hide dist/angle edit       |
+| Tab                               | not Move/Rotate         | `Occt_view::dimension_input`; Move/Rotate: `break` into mode handlers                                       |
+| Shift+Tab                         | not Move/Rotate         | `Occt_view::angle_input`; fixed                                                                             |
+| Enter                             | not Rotate              | hide edits, `Occt_view::on_enter`; Rotate: `break` into `on_key_rotate_mode_` (finalize)                    |
+| Delete / Backspace                |                         | `Occt_view::delete_selected` (fixed aliases; remapping `edit.delete` does not remove these)                 |
+| Ctrl+Shift+Z                      |                         | `Occt_view::redo` (fixed second redo; remappable `edit.redo` defaults to Ctrl+Y)                            |
+| Remappable chord                  | `m_hotkeys` hit         | `dispatch_hotkey_action_` (`Gui_action`: sketch/shape modes, booleans, delete, copy/paste, file, undo/redo) |
+| Move-mode keys                    | `Mode::Move`            | `on_key_move_mode_` (axis constraints X/Y/Z); hardcoded                                                     |
+| Rotate-mode keys                  | `Mode::Rotate`          | `on_key_rotate_mode_` (axis pick, Tab angle); hardcoded                                                     |
+| Cyl-align keys                    | `Mode::Shape_cyl_align` | `on_key_cyl_align_mode_` (Tab depth or twist angle, Enter finalize); hardcoded                              |
 
 Default remappable chords include G/R/S/J/E/C/F/D shape tools; sketch tools N/L/A/Q/B/O/U/I/P and Shift variants; Shift+P polar, Shift+X cross-section; Ctrl+Shift+C/F/M booleans; Shift+D delete; Ctrl+C / Ctrl+V copy/paste (in-app shape clipboard); Ctrl+N/O/S; Ctrl+Z / Ctrl+Y. Unmodified X/Y/Z are reserved for Move/Rotate axis toggles (`is_reserved_chord`); Shift+X remains free for cross-section. Remappable keys must pass `is_bindable_key` (letters, digits, Space, and named keys that round-trip in settings JSON); punctuation such as `,` / `.` and numpad keys are rejected. Settings **Keyboard shortcuts** has a `?` to `doc_urls::k_hotkeys` ([usage-settings.md#keyboard-shortcuts](../../docs/usage-settings.md#keyboard-shortcuts)).
 
@@ -177,7 +177,7 @@ See also [`src/doc/sketch.md`](sketch.md) and [`src/doc/shape.md`](shape.md) for
 | `Move`                                              | `shp_move().move_selected`       |
 | `Rotate`                                            | `shp_rotate().rotate_selected`   |
 | `Scale`                                             | `shp_scale().scale_selected`     |
-| `Shape_cyl_align`                                   | `shp_cyl_align().drag_depth`     |
+| `Shape_cyl_align`                                   | `drag_depth` / `drag_twist`      |
 | `Shape_polar_duplicate`                             | `shp_polar_dup().move_point`     |
 | Sketch tool modes (line, arc, rect, dim, axis, ...) | `curr_sketch().sketch_pt_move`   |
 | `Sketch_face_extrude`                               | `sketch_face_extrude(..., true)` |
@@ -186,12 +186,12 @@ Always calls `m_view->on_mouse_move(screen_coords)` first.
 
 ### Mouse buttons (`GUI::on_mouse_button` + `on_left_click_`)
 
-| Event                       | Handler                                                                                                              |
-| --------------------------- | -------------------------------------------------------------------------------------------------------------------- |
-| LMB (underlay calib active) | `try_underlay_calib_click_` (early return)                                                                           |
-| LMB                         | `m_view->on_mouse_button` then `on_left_click_` (skipped when extrude LMB already advanced/finalized the session)    |
-| RMB press                   | `finalize_elm` for line / multi-line sketch modes                                                                    |
-| LMB in `on_left_click_`     | Mode-specific: transform finalize, cyl-align face pick / finalize, sketch `add_sketch_pt`, fillet/chamfer click, polar dup `add_point`, extrude pick |
+| Event                       | Handler                                                                                                                                                             |
+| --------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| LMB (underlay calib active) | `try_underlay_calib_click_` (early return)                                                                                                                          |
+| LMB                         | `m_view->on_mouse_button` then `on_left_click_` (skipped when extrude LMB already advanced/finalized the session)                                                   |
+| RMB press                   | `finalize_elm` for line / multi-line sketch modes                                                                                                                   |
+| LMB in `on_left_click_`     | Mode-specific: transform finalize, cyl-align face pick / depth->twist / finalize, sketch `add_sketch_pt`, fillet/chamfer click, polar dup `add_point`, extrude pick |
 
 Tests use `sketch_left_click` to simulate sketch LMB without ImGui mouse position.
 
@@ -210,7 +210,7 @@ Tests use `sketch_left_click` to simulate sketch LMB without ImGui mouse positio
 | -------------------------------- | ------------------------------------------------------------------------------------------------------------------- |
 | `Normal`                         | `options_normal_mode_` (selection filter, orthographic)                                                             |
 | `Move` / `Rotate` / `Scale`      | `options_*_mode_` (constraints, axis, material)                                                                     |
-| `Shape_cyl_align`                | Flip direction; short pick/drag help                                                                                |
+| `Shape_cyl_align`                | Flip direction; pick / depth / twist help                                                                           |
 | `Shape_chamfer` / `Shape_fillet` | mode + radius/distance                                                                                              |
 | `Shape_polar_duplicate`          | angle, count, rotate/combine, **Dup** button                                                                        |
 | `Shape_cross_section`            | local XY/XZ/YZ, invert normal, hide back side, show section outline, bbox-ranged offset, Clip, Cross section sketch |

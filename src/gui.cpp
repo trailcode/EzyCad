@@ -3849,7 +3849,12 @@ void GUI::on_mouse_pos(const ScreenCoords& screen_coords)
     break;
 
   case Mode::Shape_cyl_align:
-    if (Status s = m_view->shp_cyl_align().drag_depth(screen_coords); !s.is_ok())
+    if (m_view->shp_cyl_align().is_twist_phase())
+    {
+      if (Status s = m_view->shp_cyl_align().drag_twist(screen_coords); !s.is_ok())
+        show_message(s.message());
+    }
+    else if (Status s = m_view->shp_cyl_align().drag_depth(screen_coords); !s.is_ok())
       show_message(s.message());
 
     break;
@@ -3891,7 +3896,7 @@ void GUI::on_left_click_(const ScreenCoords& screen_coords)
   case Mode::Scale:               m_view->shp_scale().finalize();                     break;
   case Mode::Shape_cyl_align:
     if (m_view->shp_cyl_align().is_dragging())
-      m_view->shp_cyl_align().finalize();
+      m_view->shp_cyl_align().on_left_click();
     else if (Status s = m_view->shp_cyl_align().pick(screen_coords); !s.is_ok())
       show_message(s.message());
     break;

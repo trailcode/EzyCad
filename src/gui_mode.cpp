@@ -304,7 +304,7 @@ void GUI::on_key(int key, int scancode, int action, int mods)
 
   case GLFW_KEY_TAB:
   {
-    // Move / Rotate / Align cylinders handle Tab in their mode key handlers (distance / angle / depth).
+    // Move / Rotate / Align cylinders handle Tab in their mode key handlers (distance / angle / depth / twist).
     const Mode mode = get_mode();
     if (mode == Mode::Move || mode == Mode::Rotate || mode == Mode::Shape_cyl_align)
       break;
@@ -643,7 +643,8 @@ void GUI::options_shape_cyl_align_mode_()
 
   ImGui::TextWrapped(
       "Pick a cylindrical face on the shape to move, then a cylindrical face on the fixed shape. "
-      "Drag along the shared axis for insert depth. First pick moves; pick the hole first to move the hole onto the shaft.");
+      "Drag insert depth, LMB to twist about the shared axis (tooth clocking), then LMB or Enter to confirm. "
+      "Enter during depth skips twist. First pick moves; pick the hole first to move the hole onto the shaft.");
 
   Cyl_align_options& opts = m_view->shp_cyl_align().get_opts();
   if (ImGui::Checkbox("Flip direction", &opts.flip_direction))
@@ -1428,12 +1429,16 @@ void GUI::on_key_cyl_align_mode_(int key)
 
   case GLFW_KEY_ENTER:
   case GLFW_KEY_KP_ENTER:
+    // Enter finalizes immediately (skips twist if still in depth phase).
     if (m_view->shp_cyl_align().is_dragging())
       m_view->shp_cyl_align().finalize();
     break;
 
   case GLFW_KEY_TAB:
-    m_view->shp_cyl_align().show_depth_edit(screen_coords);
+    if (m_view->shp_cyl_align().is_twist_phase())
+      m_view->shp_cyl_align().show_twist_edit(screen_coords);
+    else
+      m_view->shp_cyl_align().show_depth_edit(screen_coords);
     break;
 
   default:
