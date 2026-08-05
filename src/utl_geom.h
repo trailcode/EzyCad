@@ -108,11 +108,8 @@ std::optional<Cyl_face_info> cylinder_from_face(const TopoDS_Face& face);
 /// \a axial_offset then slides along the fixed direction. \a flip reverses the
 /// moving direction sense (180 deg about a perpendicular). \a twist_rad is an
 /// extra rotation about the fixed axis after coaxial placement (clock rotation).
-gp_Trsf cyl_align_trsf(const gp_Ax1& moving_axis,
-                       const gp_Ax1& fixed_axis,
-                       bool         flip,
-                       double       axial_offset,
-                       double       twist_rad = 0.0);
+gp_Trsf cyl_align_trsf(const gp_Ax1& moving_axis, const gp_Ax1& fixed_axis, bool flip, double axial_offset,
+                       double twist_rad = 0.0);
 
 bool planes_equal(const gp_Pln& plane1, const gp_Pln& plane2);
 

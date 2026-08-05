@@ -474,11 +474,7 @@ std::optional<Cyl_face_info> cylinder_from_face(const TopoDS_Face& face)
   return info;
 }
 
-gp_Trsf cyl_align_trsf(const gp_Ax1& moving_axis,
-                       const gp_Ax1& fixed_axis,
-                       bool         flip,
-                       double       axial_offset,
-                       double       twist_rad)
+gp_Trsf cyl_align_trsf(const gp_Ax1& moving_axis, const gp_Ax1& fixed_axis, bool flip, double axial_offset, double twist_rad)
 {
   const gp_Dir from_dir  = moving_axis.Direction();
   const gp_Dir to_dir    = flip ? fixed_axis.Direction().Reversed() : fixed_axis.Direction();
@@ -640,11 +636,11 @@ namespace
 {
 constexpr double k_dim_text_height_base = 16.0;
 
-Prs3d_DimensionAspect_ptr         clone_dimension_aspect_(const Handle(PrsDim_Dimension) & dim);
-void                              arrow_style_preset_(const int arrow_style, double& angle_deg, bool& arrows_3d);
-Prs3d_DimensionArrowOrientation   arrow_orientation_from_index_(const int idx);
-void                              apply_dimension_label_text_aspect_(const Prs3d_TextAspect_ptr& text, const Quantity_Color& col,
-                                                                     const Length_dimension_style& style);
+Prs3d_DimensionAspect_ptr       clone_dimension_aspect_(const Handle(PrsDim_Dimension) & dim);
+void                            arrow_style_preset_(const int arrow_style, double& angle_deg, bool& arrows_3d);
+Prs3d_DimensionArrowOrientation arrow_orientation_from_index_(const int idx);
+void                            apply_dimension_label_text_aspect_(const Prs3d_TextAspect_ptr& text, const Quantity_Color& col,
+                                                                   const Length_dimension_style& style);
 } // namespace
 
 double length_dimension_auto_flyout(const double edge_len)
@@ -1522,9 +1518,8 @@ std::optional<gp_Pnt2d> snap_foot_to_open_segment_interior_if_close(const gp_Pnt
 namespace
 {
 Geom_TrimmedCurve_ptr edge_trimmed_curve_(const TopoDS_Edge& edge);
-bool                  on_segment_for_inclusion_(const gp_Pnt2d& p, const gp_Pnt2d& a, const gp_Pnt2d& b,
-                                                Segment_inclusion inclusion);
-bool                  on_open_arc_parameter_(double u, double u_first, double u_last);
+bool on_segment_for_inclusion_(const gp_Pnt2d& p, const gp_Pnt2d& a, const gp_Pnt2d& b, Segment_inclusion inclusion);
+bool on_open_arc_parameter_(double u, double u_first, double u_last);
 } // namespace
 
 bool point_on_open_arc_interior_2d(const gp_Pnt2d& p, const TopoDS_Edge& arc_edge, const gp_Pln& pln)

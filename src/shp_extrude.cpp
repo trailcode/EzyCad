@@ -24,12 +24,12 @@
 
 namespace
 {
-size_t                   count_shape_edges_(const TopoDS_Shape& shape);
-gp_Pnt                   centroid_of_verts_(const std::vector<gp_Pnt>& verts);
-TopoDS_Wire              transform_wire_(const TopoDS_Wire& wire, const gp_Trsf& trsf);
-gp_Trsf                  section_trsf_(const gp_Ax1& axis, double height_along_axis, double twist_rad);
-TopoDS_Shape             loft_twisted_wire_(const TopoDS_Wire& wire, const gp_Ax1& axis, double h0, double h1, double ang0,
-                                            double ang1, int n_seg);
+size_t       count_shape_edges_(const TopoDS_Shape& shape);
+gp_Pnt       centroid_of_verts_(const std::vector<gp_Pnt>& verts);
+TopoDS_Wire  transform_wire_(const TopoDS_Wire& wire, const gp_Trsf& trsf);
+gp_Trsf      section_trsf_(const gp_Ax1& axis, double height_along_axis, double twist_rad);
+TopoDS_Shape loft_twisted_wire_(const TopoDS_Wire& wire, const gp_Ax1& axis, double h0, double h1, double ang0, double ang1,
+                                int n_seg);
 std::vector<TopoDS_Wire> face_hole_wires_(const TopoDS_Face& face, const TopoDS_Wire& outer_wire);
 } // namespace
 

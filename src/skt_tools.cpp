@@ -172,7 +172,8 @@ bool Sketch_tools::complete_edge_from_center_(const ScreenCoords& screen_coords)
 
   std::optional<Symmetric_edge_span> span;
   if (m_sketch.m_dims.entered_edge_len().has_value())
-    span = symmetric_edge_from_center_(center, m_sketch.m_dims.entered_edge_len()->dir, m_sketch.m_dims.entered_edge_len()->len);
+    span =
+        symmetric_edge_from_center_(center, m_sketch.m_dims.entered_edge_len()->dir, m_sketch.m_dims.entered_edge_len()->len);
 
   else if (m_sketch.m_dims.entered_edge_angle().has_value())
   {
@@ -302,7 +303,7 @@ void Sketch_tools::move_line_string_pt_(const ScreenCoords& screen_coords)
       }
       else if (m_sketch.m_dims.entered_edge_len().has_value())
         span = symmetric_edge_from_center_(center, m_sketch.m_dims.entered_edge_len()->dir,
-                                          m_sketch.m_dims.entered_edge_len()->len);
+                                           m_sketch.m_dims.entered_edge_len()->len);
       else
         span = symmetric_edge_from_center_and_hint_(center, pt_b);
 

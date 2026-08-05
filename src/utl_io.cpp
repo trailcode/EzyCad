@@ -24,11 +24,11 @@ struct Zip_entry
   std::string data;
 };
 
-uint32_t crc32_bytes_(const uint8_t* data, std::size_t len);
-void     write_u16_(std::vector<uint8_t>& out, uint16_t v);
-void     write_u32_(std::vector<uint8_t>& out, uint32_t v);
-bool     read_u16_(const uint8_t* p, std::size_t avail, std::size_t& off, uint16_t& v);
-bool     read_u32_(const uint8_t* p, std::size_t avail, std::size_t& off, uint32_t& v);
+uint32_t             crc32_bytes_(const uint8_t* data, std::size_t len);
+void                 write_u16_(std::vector<uint8_t>& out, uint16_t v);
+void                 write_u32_(std::vector<uint8_t>& out, uint32_t v);
+bool                 read_u16_(const uint8_t* p, std::size_t avail, std::size_t& off, uint16_t& v);
+bool                 read_u32_(const uint8_t* p, std::size_t avail, std::size_t& off, uint32_t& v);
 std::vector<uint8_t> zip_write_stored_(const std::vector<Zip_entry>& entries);
 bool                 zip_read_stored_(const std::string& bytes, std::vector<Zip_entry>& out_entries);
 void                 collect_underlay_asset_ids_(const nlohmann::json& j, std::vector<std::string>& out);
@@ -330,8 +330,9 @@ bool zip_read_stored_(const std::string& bytes, std::vector<Zip_entry>& out_entr
   std::size_t off = eocd + 4;
   uint16_t    disk_num, disk_with_cd, num_entries_cd, num_entries_total;
   uint32_t    cd_size, cd_offset;
-  if (!read_u16_(data, n, off, disk_num) || !read_u16_(data, n, off, disk_with_cd) || !read_u16_(data, n, off, num_entries_cd) ||
-      !read_u16_(data, n, off, num_entries_total) || !read_u32_(data, n, off, cd_size) || !read_u32_(data, n, off, cd_offset))
+  if (!read_u16_(data, n, off, disk_num) || !read_u16_(data, n, off, disk_with_cd) ||
+      !read_u16_(data, n, off, num_entries_cd) || !read_u16_(data, n, off, num_entries_total) ||
+      !read_u32_(data, n, off, cd_size) || !read_u32_(data, n, off, cd_offset))
     return false;
 
   if (num_entries_cd != num_entries_total || cd_offset + cd_size > n)

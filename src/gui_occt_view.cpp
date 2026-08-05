@@ -583,7 +583,7 @@ void Occt_view::cancel(Set_parent_mode set_parent_mode)
     operation_canceled = true;
     break;
 
-  case Mode::Shape_cyl_align:
+  case Mode::Shape_shaft_align:
     shp_cyl_align().cancel();
     operation_canceled = true;
     break;
@@ -2664,7 +2664,7 @@ void Occt_view::on_mouse_button(int theButton, int theAction, int theMods)
       const bool finalize_transform = (get_mode() == Mode::Move && shp_move().has_operation_shps()) ||
                                       (get_mode() == Mode::Rotate && shp_rotate().has_operation_shps()) ||
                                       (get_mode() == Mode::Scale && shp_scale().has_operation_shps()) ||
-                                      (get_mode() == Mode::Shape_cyl_align && shp_cyl_align().is_dragging());
+                                      (get_mode() == Mode::Shape_shaft_align && shp_cyl_align().is_dragging());
       if (finalize_transform)
       {
         m_transform_finalize_lmb_skipped_view_controller = true;
@@ -3353,7 +3353,7 @@ void Occt_view::on_mode()
       case Mode::Move:                    set_shp_selection_mode(TopAbs_SHAPE);     break;
       case Mode::Rotate:                  set_shp_selection_mode(TopAbs_SHAPE);     break;
       case Mode::Scale:                   set_shp_selection_mode(TopAbs_SHAPE);     break;
-      case Mode::Shape_cyl_align:         set_shp_selection_mode(TopAbs_FACE);      break;
+      case Mode::Shape_shaft_align:         set_shp_selection_mode(TopAbs_FACE);      break;
       case Mode::Shape_cross_section:     set_shp_selection_mode(TopAbs_COMPOUND);  break;
       default:
         if(m_modes_selection_mode_map.count(get_mode()))
@@ -3392,7 +3392,7 @@ void Occt_view::on_mode()
     }
   }
 
-  if (mode == Mode::Shape_cyl_align)
+  if (mode == Mode::Shape_shaft_align)
     shp_cyl_align().begin();
 
   if (mode == Mode::Shape_cross_section && !enter_selection.empty())
@@ -4434,7 +4434,7 @@ Mode mode_for_history_restore_(Mode mode)
   case Mode::Move:
   case Mode::Rotate:
   case Mode::Scale:
-  case Mode::Shape_cyl_align:
+  case Mode::Shape_shaft_align:
     return GUI::parent_mode_of(mode);
   default:
     return mode;

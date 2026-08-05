@@ -25,13 +25,13 @@ constexpr float k_background_edge_rgba[4]   = {0.3f, 0.3f, 0.3f, 0.3f};
 constexpr float k_background_face_rgba[4]   = {0.3f, 0.3f, 0.3f, 0.2f};
 constexpr float k_edge_highlight_line_width = 2.0f;
 
-Quantity_Color       rgb_from_rgba_(const float* rgba);
-float                transparency_from_rgba_(const float* rgba);
-void                 apply_rgba_style_(AIS_Shape& shp, const float* rgba, float line_width);
-Prs3d_Drawer_ptr     make_edge_hilight_drawer_(const float* rgba, float line_width);
-Prs3d_Drawer_ptr     make_face_hilight_drawer_(const float* rgba);
-void                 apply_edge_hilight_(AIS_Shape& shp, const GUI& gui);
-void                 apply_face_hilight_(AIS_Shape& shp, const GUI& gui);
+Quantity_Color   rgb_from_rgba_(const float* rgba);
+float            transparency_from_rgba_(const float* rgba);
+void             apply_rgba_style_(AIS_Shape& shp, const float* rgba, float line_width);
+Prs3d_Drawer_ptr make_edge_hilight_drawer_(const float* rgba, float line_width);
+Prs3d_Drawer_ptr make_face_hilight_drawer_(const float* rgba);
+void             apply_edge_hilight_(AIS_Shape& shp, const GUI& gui);
+void             apply_face_hilight_(AIS_Shape& shp, const GUI& gui);
 } // namespace
 
 void Sketch::update_edge_style_(const AIS_Shape_ptr& shp)
