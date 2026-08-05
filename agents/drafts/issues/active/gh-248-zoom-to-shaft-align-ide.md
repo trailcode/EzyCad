@@ -1,8 +1,8 @@
 ---
 github_issue: 248
-github_pr:
+github_pr: 249
 status: active
-paired_draft:
+paired_draft: ../prs/active/gh-249-zoom-to-shaft-align-ide.md
 ---
 
 # Shape List Zoom to, shaft-align mode rename, and third_party IDE filters
