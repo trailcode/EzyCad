@@ -2720,6 +2720,12 @@ void GUI::shape_list_()
 
       if (ImGui::BeginPopupContextItem("mat_btn_ctx"))
       {
+        if (ImGui::MenuItem("Zoom to"))
+        {
+          select_shape_row(shape);
+          m_view->fit_shapes_in_view(shape);
+        }
+
         if (ImGui::MenuItem("Shape info..."))
           open_shape_info_(shape);
 
@@ -2808,6 +2814,14 @@ void GUI::shape_list_()
     row_hovered |= ImGui::IsItemHovered();
     if (ImGui::BeginPopupContextItem("shape_name_ctx"))
     {
+      const bool can_zoom =
+          is_group ? !m_view->shape_descendant_solids(shape->get_id()).empty() : !shape->Shape().IsNull();
+      if (ImGui::MenuItem("Zoom to", nullptr, false, can_zoom))
+      {
+        select_shape_row(shape);
+        m_view->fit_shapes_in_view(shape);
+      }
+
       if (!is_group && ImGui::MenuItem("Shape info..."))
         open_shape_info_(shape);
 

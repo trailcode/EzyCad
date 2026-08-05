@@ -9,6 +9,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **Shape List Zoom to**: right-click a shape or group name (or the **M** button on a solid) and choose **Zoom to** to frame that solid, or all descendant solids of a group, in the 3D view while keeping the current camera orientation.
+
 - **Shape copy / paste** (<kbd>Ctrl</kbd>+<kbd>C</kbd> / <kbd>Ctrl</kbd>+<kbd>V</kbd>): in-app clipboard for selected solids, or a Shape List group subtree when the selection matches that group's descendant solids. Paste deep-copies under the current group (new ids, uniquified names, same pose) with one undo step. Survives **New** so you can copy, start a blank project, and paste. Remappable as **`edit.copy`** / **`edit.paste`**. Does not use the OS clipboard; sketch geometry is not copied.
 
 - **Align shafts** (<kbd>J</kbd>): pick two cylindrical faces (first moves, second is fixed), coaxially align, drag axial insert depth; with Options **Clock rotation** (default off), LMB or <kbd>Shift</kbd>+<kbd>Tab</kbd> rotates about the shared axis for tooth clocking (<kbd>Enter</kbd> during depth skips clocking). <kbd>Tab</kbd> edits depth or angle by phase. Options **Flip direction** reverses axis sense. Bakes like Move/Rotate (`Shape_geom_delta`); radius mismatch logs a warning but still places. Remappable as **`mode.cyl_align`**.

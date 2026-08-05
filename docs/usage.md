@@ -123,10 +123,10 @@ Each row (left to right):
 
 - **Visibility** - Checkbox to show or hide that node. Hiding a **group** hides its whole subtree in the 3D view.
 - **Solid / wire** - Checkbox (solids only) to switch **shaded** or **wireframe**.
-- **M** - Solids only: material popup; right-click for **Shape info...** or **Delete**.
+- **M** - Solids only: material popup; right-click for **Zoom to**, **Shape info...**, or **Delete**.
 - **Name** - Expandable tree row with an editable name. Click the row to select that solid (or all descendant solids for a group) and update the current group. **Ctrl+click** toggles multi-select. Drag to reparent (empty area below the list = document root).
 - **Copy / Paste** - <kbd>Ctrl</kbd>+<kbd>C</kbd> / <kbd>Ctrl</kbd>+<kbd>V</kbd> (remappable) copy selected solids, or a whole group subtree when you clicked that group (all its descendant solids are selected). Paste inserts an independent deep copy under the current group, at the same pose. If you still have that copied group as the current group, paste places a sibling copy beside it (not nested inside it). This is an in-app clipboard (survives **New**; it does not use the system clipboard). Sketch edges are not copied.
-- **Right-click the name** - Solids: **Shape info...** / **Delete**. Groups: **Ungroup** (moves **all** direct children to the group's parent, then removes the group) / **Delete** (cascade-deletes the whole subtree).
+- **Right-click the name** - Solids: **Zoom to** / **Shape info...** / **Delete**. Groups: **Zoom to** (fits all descendant solids; disabled when the group has none) / **Ungroup** (moves **all** direct children to the group's parent, then removes the group) / **Delete** (cascade-deletes the whole subtree). **Zoom to** keeps the current camera orientation and frames the solid or group with a little padding.
 
 Boolean results stay under the shared parent of their inputs when all inputs share one parent; otherwise they are placed at the document root. **File -> Import** STEP assemblies use **Import as** (default **Preserve hierarchy**) to keep product/assembly groups in the tree, import **Flat solids** at the root, or **Union shapes** into one solid.
 

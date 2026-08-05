@@ -1685,6 +1685,47 @@ bool Occt_view::fit_face_in_view(const TopoDS_Face& face)
   return true;
 }
 
+bool Occt_view::fit_shapes_in_view(const Shp_ptr& shp)
+{
+  if (is_headless() || m_view.IsNull() || shp.IsNull())
+    return false;
+
+  std::vector<Shp_ptr> solids;
+  if (shp->is_group())
+    solids = shape_descendant_solids(shp->get_id());
+  else
+    solids.push_back(shp);
+
+  Bnd_Box bbox;
+  for (const Shp_ptr& s : solids)
+  {
+    if (s.IsNull())
+      continue;
+
+    const TopoDS_Shape& geom = s->Shape();
+    if (geom.IsNull())
+      continue;
+
+    Bnd_Box local;
+    BRepBndLib::Add(geom, local);
+    if (local.IsVoid())
+      continue;
+
+    const gp_Trsf& tr = s->LocalTransformation();
+    if (tr.Form() != gp_Identity)
+      local = local.Transformed(tr);
+
+    bbox.Add(local);
+  }
+
+  if (bbox.IsVoid())
+    return false;
+
+  m_view->FitAll(bbox, 0.1); // 10% padding; keep current camera orientation
+  m_view->Redraw();
+  return true;
+}
+
 // Dimension related
 void Occt_view::refresh_sketch_annotations(const Sketch_annotation_refresh& refresh)
 {

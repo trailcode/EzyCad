@@ -287,6 +287,8 @@ public:
 
   void on_enter(const ScreenCoords& screen_coords); // For manual dimension distance keyboard input.
   bool fit_face_in_view(const TopoDS_Face& face);
+  /// Fit the 3D view to a solid, or to all descendant solids of a group. Keeps camera orientation.
+  bool fit_shapes_in_view(const Shp_ptr& shp);
 
   // Dimension related
   void dimension_input(const ScreenCoords& screen_coords);
