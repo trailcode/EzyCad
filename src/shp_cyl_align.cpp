@@ -92,6 +92,7 @@ Status Shp_cyl_align::pick(const ScreenCoords& screen_coords)
     gui().show_message("Drag along the axis for insert depth, then LMB or Shift+Tab for clock rotation (or Enter to finish).");
   else
     gui().show_message("Drag along the axis for insert depth, then LMB or Enter to confirm.");
+
   return Status::ok();
 }
 
@@ -297,8 +298,10 @@ void Shp_cyl_align::finalize()
   // Commit typed overrides before bake.
   if (m_depth_override.has_value())
     m_axial_offset = *m_depth_override;
+
   if (m_twist_override.has_value())
     m_twist_angle = *m_twist_override;
+
   clear_all(m_depth_override, m_twist_override);
   apply_preview_();
 
