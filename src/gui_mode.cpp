@@ -362,7 +362,7 @@ void GUI::on_key(int key, int scancode, int action, int mods)
     break;
 
   case Mode::Shape_cyl_align:
-    on_key_cyl_align_mode_(key);
+    on_key_cyl_align_mode_(key, mods);
     break;
 
   default:
@@ -643,12 +643,16 @@ void GUI::options_shape_cyl_align_mode_()
 
   ImGui::TextWrapped(
       "Pick a cylindrical face on the shape to move, then a cylindrical face on the fixed shape. "
-      "Drag insert depth, LMB to twist about the shared axis (tooth clocking), then LMB or Enter to confirm. "
-      "Enter during depth skips twist. First pick moves; pick the hole first to move the hole onto the shaft.");
+      "Drag insert depth. With Clock rotation on, LMB or Shift+Tab rotates about the shared axis; Enter finalizes. "
+      "First pick moves; pick the hole first to move the hole onto the shaft.");
 
   Cyl_align_options& opts = m_view->shp_cyl_align().get_opts();
   if (ImGui::Checkbox("Flip direction", &opts.flip_direction))
     m_view->shp_cyl_align().apply_preview();
+
+  bool clock_rotation = opts.clock_rotation;
+  if (ImGui::Checkbox("Clock rotation", &clock_rotation))
+    m_view->shp_cyl_align().set_clock_rotation_enabled(clock_rotation);
 
   ImGui::Separator();
   options_orthographic_projection_();
@@ -1417,7 +1421,7 @@ float GUI::options_sketch_label_col_w_() const
   return sketch_label_col_w;
 }
 
-void GUI::on_key_cyl_align_mode_(int key)
+void GUI::on_key_cyl_align_mode_(int key, int mods)
 {
   const ScreenCoords screen_coords = cursor_screen_coords();
 
@@ -1429,13 +1433,15 @@ void GUI::on_key_cyl_align_mode_(int key)
 
   case GLFW_KEY_ENTER:
   case GLFW_KEY_KP_ENTER:
-    // Enter finalizes immediately (skips twist if still in depth phase).
+    // Enter finalizes immediately (skips clock rotation if still in depth phase).
     if (m_view->shp_cyl_align().is_dragging())
       m_view->shp_cyl_align().finalize();
     break;
 
   case GLFW_KEY_TAB:
-    if (m_view->shp_cyl_align().is_twist_phase())
+    if ((mods & GLFW_MOD_SHIFT) != 0)
+      m_view->shp_cyl_align().begin_twist_input(screen_coords);
+    else if (m_view->shp_cyl_align().is_twist_phase())
       m_view->shp_cyl_align().show_twist_edit(screen_coords);
     else
       m_view->shp_cyl_align().show_depth_edit(screen_coords);

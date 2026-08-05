@@ -107,7 +107,7 @@ std::optional<Cyl_face_info> cylinder_from_face(const TopoDS_Face& face);
 /// Offset 0 places the moving origin on its projection onto the fixed axis;
 /// \a axial_offset then slides along the fixed direction. \a flip reverses the
 /// moving direction sense (180 deg about a perpendicular). \a twist_rad is an
-/// extra rotation about the fixed axis after coaxial placement (tooth clocking).
+/// extra rotation about the fixed axis after coaxial placement (clock rotation).
 gp_Trsf cyl_align_trsf(const gp_Ax1& moving_axis,
                        const gp_Ax1& fixed_axis,
                        bool         flip,

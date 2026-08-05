@@ -18,7 +18,8 @@ Shp_cyl_align::Shp_cyl_align(Occt_view& view)
 
 void Shp_cyl_align::begin()
 {
-  clear_all(m_phase, m_opts, m_axial_offset, m_moving_radius, m_fixed_radius, m_depth_override, m_moving_shp, m_fixed_shp,
+  // Keep m_opts (Flip / Clock rotation) across sessions, like Extrude Twist.
+  clear_all(m_phase, m_axial_offset, m_moving_radius, m_fixed_radius, m_depth_override, m_moving_shp, m_fixed_shp,
             m_moving_axis, m_fixed_axis, m_drag_pln, m_twist_angle, m_twist_override, m_twist_angle0, m_twist_pln, m_shps);
 }
 
@@ -30,6 +31,16 @@ bool Shp_cyl_align::is_dragging() const
 bool Shp_cyl_align::is_twist_phase() const { return m_phase == Phase::Drag_twist && !m_shps.empty(); }
 
 Cyl_align_options& Shp_cyl_align::get_opts() { return m_opts; }
+
+void Shp_cyl_align::set_clock_rotation_enabled(bool enabled)
+{
+  if (m_opts.clock_rotation == enabled)
+    return;
+
+  m_opts.clock_rotation = enabled;
+  if (!enabled && m_phase == Phase::Drag_twist)
+    exit_twist_to_depth_();
+}
 
 void Shp_cyl_align::apply_preview()
 {
@@ -77,7 +88,11 @@ Status Shp_cyl_align::pick(const ScreenCoords& screen_coords)
                       std::to_string(m_fixed_radius) + "); placement still allowed.");
 
   enter_drag_();
-  gui().show_message("Drag along the axis for insert depth, then LMB to twist (or Enter to finish).");
+  if (m_opts.clock_rotation)
+    gui().show_message(
+        "Drag along the axis for insert depth, then LMB or Shift+Tab for clock rotation (or Enter to finish).");
+  else
+    gui().show_message("Drag along the axis for insert depth, then LMB or Enter to confirm.");
   return Status::ok();
 }
 
@@ -96,6 +111,7 @@ void Shp_cyl_align::enter_drag_()
 void Shp_cyl_align::enter_twist_()
 {
   EZY_ASSERT(m_phase == Phase::Drag_depth);
+  EZY_ASSERT(m_opts.clock_rotation);
   EZY_ASSERT(m_fixed_axis.has_value() && m_moving_axis.has_value());
 
   // Commit any typed depth override into the live offset, then clear overrides.
@@ -103,6 +119,7 @@ void Shp_cyl_align::enter_twist_()
     m_axial_offset = *m_depth_override;
 
   clear_all(m_depth_override, m_twist_angle, m_twist_override, m_twist_angle0, m_twist_pln);
+  gui().hide_dist_edit(false);
 
   const gp_Dir& fixed_dir = m_fixed_axis->Direction();
   const gp_Vec  to_moving(m_fixed_axis->Location(), m_moving_axis->Location());
@@ -111,8 +128,18 @@ void Shp_cyl_align::enter_twist_()
   m_twist_pln          = gp_Pln(seed, fixed_dir);
 
   m_phase = Phase::Drag_twist;
-  gui().show_message("Drag to twist about the axis for tooth clocking, then LMB or Enter to confirm.");
+  gui().show_message("Drag to clock about the axis, then LMB or Enter to confirm.");
   apply_preview_();
+}
+
+void Shp_cyl_align::exit_twist_to_depth_()
+{
+  EZY_ASSERT(m_phase == Phase::Drag_twist);
+  clear_all(m_twist_angle, m_twist_override, m_twist_angle0, m_twist_pln);
+  gui().hide_angle_edit(false);
+  m_phase = Phase::Drag_depth;
+  apply_preview_();
+  gui().show_message("Drag along the axis for insert depth, then LMB or Enter to confirm.");
 }
 
 void Shp_cyl_align::apply_preview_()
@@ -200,9 +227,26 @@ Status Shp_cyl_align::drag_twist(const ScreenCoords& screen_coords)
 void Shp_cyl_align::on_left_click()
 {
   if (m_phase == Phase::Drag_depth)
-    enter_twist_();
+  {
+    if (m_opts.clock_rotation)
+      enter_twist_();
+    else
+      finalize();
+  }
   else if (m_phase == Phase::Drag_twist)
     finalize();
+}
+
+void Shp_cyl_align::begin_twist_input(const ScreenCoords& screen_coords)
+{
+  if (!m_opts.clock_rotation || !is_dragging())
+    return;
+
+  if (m_phase == Phase::Drag_depth)
+    enter_twist_();
+
+  if (m_phase == Phase::Drag_twist)
+    show_twist_edit(screen_coords);
 }
 
 void Shp_cyl_align::show_depth_edit(const ScreenCoords& screen_coords)
@@ -215,7 +259,12 @@ void Shp_cyl_align::show_depth_edit(const ScreenCoords& screen_coords)
     m_depth_override = new_dist * view().get_display_to_model_scale();
     EZY_ASSERT(drag_depth(screen_coords).is_ok());
     if (is_final)
-      enter_twist_();
+    {
+      if (m_opts.clock_rotation)
+        enter_twist_();
+      else
+        finalize();
+    }
   };
 
   const double cur = m_depth_override.value_or(m_axial_offset);

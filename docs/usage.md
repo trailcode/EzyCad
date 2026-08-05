@@ -481,18 +481,18 @@ The shape scale tool allows you to uniformly scale selected shapes around a comp
 
 ![Align Cylinders Tool](res/icons/Assembly_Move.png)
 
-Place a shaft into a hole (or the reverse) by aligning two cylindrical faces, sliding along the shared axis for insert depth, then twisting about that axis for tooth clocking (splines, keyways). This is a one-shot transform that bakes into the solid geometry (same as Move / Rotate), not a persistent assembly mate.
+Place a shaft into a hole (or the reverse) by aligning two cylindrical faces, sliding along the shared axis for insert depth, and optionally clocking rotation about that axis (splines, keyways). This is a one-shot transform that bakes into the solid geometry (same as Move / Rotate), not a persistent assembly mate.
 
 **Features:**
 
-|                      |                                                                                                   |
-| -------------------: | ------------------------------------------------------------------------------------------------- |
-| **Face picks**       | Click a cylindrical face on the shape to move, then a cylindrical face on the fixed shape.        |
-| **Coaxial align**    | The moving shape snaps so the two cylinder axes coincide.                                         |
-| **Axial depth drag** | After align, drag to set how far the moving shape slides along the shared axis.                   |
-| **Twist / clocking** | After depth, drag to rotate about the shared axis (mesh splines by eye).                          |
-| **Flip direction**   | Options **Flip direction** reverses which way the moving axis points along the fixed axis.        |
-| **Radius mismatch**  | Placement is still allowed when radii differ (clearance / press fits); a log warning is recorded. |
+|                      |                                                                                                    |
+| -------------------: | -------------------------------------------------------------------------------------------------- |
+| **Face picks**       | Click a cylindrical face on the shape to move, then a cylindrical face on the fixed shape.         |
+| **Coaxial align**    | The moving shape snaps so the two cylinder axes coincide.                                          |
+| **Axial depth drag** | After align, drag to set how far the moving shape slides along the shared axis.                    |
+| **Clock rotation**   | Options **Clock rotation** (default off): after depth, rotate about the shared axis to mesh teeth. |
+| **Flip direction**   | Options **Flip direction** reverses which way the moving axis points along the fixed axis.         |
+| **Radius mismatch**  | Placement is still allowed when radii differ (clearance / press fits); a log warning is recorded.  |
 
 **How to Use:**
 
@@ -500,8 +500,8 @@ Place a shaft into a hole (or the reverse) by aligning two cylindrical faces, sl
 2. **Pick moving face:** Click a cylindrical face on the body that should move (for example the outer face of a rod).
 3. **Pick fixed face:** Click a cylindrical face on a different body (for example the inner face of a hole).
 4. **Set depth:** Drag along the axis. Optionally press <kbd>Tab</kbd> to type an exact depth.
-5. **Twist:** <kbd>left mouse button</kbd> locks depth and enters twist; drag about the axis to clock teeth. Optionally press <kbd>Tab</kbd> to type an exact angle.
-6. **Finalize or cancel:** <kbd>left mouse button</kbd> or <kbd>Enter</kbd> to bake; <kbd>Esc</kbd> to cancel. <kbd>Enter</kbd> during the depth phase finalizes immediately with no twist.
+5. **Clock rotation (optional):** Enable Options **Clock rotation**. Then <kbd>left mouse button</kbd> or <kbd>Shift</kbd>+<kbd>Tab</kbd> locks depth and enters clocking; drag about the axis (or type an angle). With **Clock rotation** off, LMB finalizes after depth.
+6. **Finalize or cancel:** <kbd>left mouse button</kbd> or <kbd>Enter</kbd> to bake; <kbd>Esc</kbd> to cancel. <kbd>Enter</kbd> during the depth phase finalizes immediately without clocking.
 
 **Tips:**
 

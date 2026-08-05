@@ -512,7 +512,7 @@ gp_Trsf cyl_align_trsf(const gp_Ax1& moving_axis,
   if (std::fabs(twist_rad) <= Precision::Angular())
     return coaxial;
 
-  // Twist about the fixed axis after coaxial placement (keeps axes coincident).
+  // Twist about the fixed axis after coaxial placement (clock rotation; keeps axes coincident).
   gp_Trsf twist;
   twist.SetRotation(fixed_axis, twist_rad);
   return twist * coaxial;
