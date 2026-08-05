@@ -84,7 +84,7 @@ Status Shp_cyl_align::pick(const ScreenCoords& screen_coords)
   m_fixed_radius = cyl->radius;
 
   if (std::abs(m_moving_radius - m_fixed_radius) > Precision::Confusion())
-    gui().log_message("Align cylinders: radii differ (moving " + std::to_string(m_moving_radius) + ", fixed " +
+    gui().log_message("Align shafts: radii differ (moving " + std::to_string(m_moving_radius) + ", fixed " +
                       std::to_string(m_fixed_radius) + "); placement still allowed.");
 
   enter_drag_();

@@ -184,7 +184,7 @@ void GUI::initialize_toolbar_()
       {load_texture("res/icons/Assembly_AxialMove.png"),              false, "Shape move",                        Mode::Move},
       {load_texture("res/icons/Draft_Rotate.png"),                    false, "Shape rotate",                      Mode::Rotate},
       {load_texture("res/icons/Part_Scale.png"),                      false, "Shape Scale",                       Mode::Scale},
-      {load_texture("res/icons/Assembly_Move.png"),                   false, "Align cylinders",                   Mode::Shape_cyl_align},
+      {load_texture("res/icons/Assembly_Move.png"),                   false, "Align shafts",                      Mode::Shape_cyl_align},
       {load_texture("res/icons/Macro_FaceToSketch_48.png"),           false, "Create a sketch from planar face",  Mode::Sketch_from_planar_face},
       {load_texture("res/icons/Sketcher_MirrorSketch.png"),           false, "Operational axis",                  Mode::Sketch_operation_axis},
       {load_texture("res/icons/Sketcher_CreatePoint.png"),            false, "Add node",                          Mode::Sketch_add_node},
@@ -240,7 +240,7 @@ void GUI::sync_toolbar_hotkey_tooltips_()
   tip_mode(Mode::Move,                          "Shape move",                      Gui_action::Mode_move);
   tip_mode(Mode::Rotate,                        "Shape rotate",                    Gui_action::Mode_rotate);
   tip_mode(Mode::Scale,                         "Shape Scale",                     Gui_action::Mode_scale);
-  tip_mode(Mode::Shape_cyl_align,               "Align cylinders",                 Gui_action::Mode_cyl_align);
+  tip_mode(Mode::Shape_cyl_align,               "Align shafts",                    Gui_action::Mode_cyl_align);
   tip_mode(Mode::Sketch_dim_anno,               "Length dimension",                Gui_action::Mode_dimension);
   tip_mode(Mode::Sketch_face_extrude,           "Extrude sketch face",             Gui_action::Mode_extrude);
   tip_mode(Mode::Shape_chamfer,                 "Chamfer",                         Gui_action::Mode_chamfer);

@@ -46,7 +46,7 @@ std::string GUI::get_doc_url_for_mode(Mode mode)
       {Mode::Move,                            "https://ezycad.readthedocs.io/en/latest/usage.html#shape-move-tool-g"},
       {Mode::Rotate,                          "https://ezycad.readthedocs.io/en/latest/usage.html#shape-rotate-tool-r"},
       {Mode::Scale,                           "https://ezycad.readthedocs.io/en/latest/usage.html#shape-scale-tool-s"},
-      {Mode::Shape_cyl_align,                 "https://ezycad.readthedocs.io/en/latest/usage.html#align-cylinders-tool-j"},
+      {Mode::Shape_cyl_align,                 "https://ezycad.readthedocs.io/en/latest/usage.html#align-shafts-tool-j"},
       {Mode::Sketch_inspection_mode,          "https://ezycad.readthedocs.io/en/latest/usage-sketch.html#sketch-origin"},
       {Mode::Sketch_from_planar_face,         "https://ezycad.readthedocs.io/en/latest/usage-sketch.html#create-sketch-from-planar-face-tool"},
       {Mode::Sketch_face_extrude,             "https://ezycad.readthedocs.io/en/latest/usage.html#extrude-sketch-face-tool-e"},
@@ -304,7 +304,7 @@ void GUI::on_key(int key, int scancode, int action, int mods)
 
   case GLFW_KEY_TAB:
   {
-    // Move / Rotate / Align cylinders handle Tab in their mode key handlers (distance / angle / depth / twist).
+    // Move / Rotate / Align shafts handle Tab in their mode key handlers (distance / angle / depth / twist).
     const Mode mode = get_mode();
     if (mode == Mode::Move || mode == Mode::Rotate || mode == Mode::Shape_cyl_align)
       break;
@@ -318,7 +318,7 @@ void GUI::on_key(int key, int scancode, int action, int mods)
   }
 
   case GLFW_KEY_ENTER:
-    // Rotate / Align cylinders finalize on Enter in their mode key handlers.
+    // Rotate / Align shafts finalize on Enter in their mode key handlers.
     if (get_mode() == Mode::Rotate || get_mode() == Mode::Shape_cyl_align)
       break;
     hide_sketch_origin_set_edit(true);

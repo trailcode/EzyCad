@@ -53,7 +53,7 @@ flowchart TB
 
 Esc ladder (see [docs/usage.md](../../docs/usage.md)): sketch tool → sketch inspection → Normal.
 
-**Not first-class yet:** Parts, instances, mates, inherited parent transforms. Shape List **groups** are organizational (STEP XCAF hierarchy on import). Move / Rotate / Scale / Align cylinders **bake** into leaf BREP — one-shot geometry edits, not assembly placement. Toolbar icons named `Assembly_*.png` are FreeCAD-style assets for those shape tools, not an assembly workbench.
+**Not first-class yet:** Parts, instances, mates, inherited parent transforms. Shape List **groups** are organizational (STEP XCAF hierarchy on import). Move / Rotate / Scale / Align shafts **bake** into leaf BREP — one-shot geometry edits, not assembly placement. Toolbar icons named `Assembly_*.png` are FreeCAD-style assets for those shape tools, not an assembly workbench.
 
 Planned model: [shape-list-hierarchy-phase3.md](shape-list-hierarchy-phase3.md) (#214) — relative placement, typed nodes (Body, Group, Part, …), non-baking transforms.
 
