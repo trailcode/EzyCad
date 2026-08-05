@@ -89,8 +89,7 @@ Status Shp_cyl_align::pick(const ScreenCoords& screen_coords)
 
   enter_drag_();
   if (m_opts.clock_rotation)
-    gui().show_message(
-        "Drag along the axis for insert depth, then LMB or Shift+Tab for clock rotation (or Enter to finish).");
+    gui().show_message("Drag along the axis for insert depth, then LMB or Shift+Tab for clock rotation (or Enter to finish).");
   else
     gui().show_message("Drag along the axis for insert depth, then LMB or Enter to confirm.");
   return Status::ok();
@@ -170,8 +169,8 @@ Status Shp_cyl_align::drag_depth(const ScreenCoords& screen_coords)
     return Status::ok();
   }
 
-  const gp_Dir& fixed_dir = m_fixed_axis->Direction();
-  const gp_Vec  to_moving(m_fixed_axis->Location(), m_moving_axis->Location());
+  const gp_Dir& fixed_dir  = m_fixed_axis->Direction();
+  const gp_Vec  to_moving  = {m_fixed_axis->Location(), m_moving_axis->Location()};
   const double  param0     = to_moving.Dot(gp_Vec(fixed_dir));
   const gp_Pnt  seed_on_ax = m_fixed_axis->Location().Translated(gp_Vec(fixed_dir) * param0);
 
