@@ -488,7 +488,7 @@ private:
 
   void on_key_move_mode_(int key);
   void on_key_rotate_mode_(int key);
-  void on_key_cyl_align_mode_(int key);
+  void on_key_cyl_align_mode_(int key, int mods);
   void dispatch_hotkey_action_(Gui_action action);
   void sync_toolbar_hotkey_tooltips_();
   bool try_capture_hotkey_press_(int key, int mods);

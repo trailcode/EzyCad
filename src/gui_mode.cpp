@@ -46,7 +46,7 @@ std::string GUI::get_doc_url_for_mode(Mode mode)
       {Mode::Move,                            "https://ezycad.readthedocs.io/en/latest/usage.html#shape-move-tool-g"},
       {Mode::Rotate,                          "https://ezycad.readthedocs.io/en/latest/usage.html#shape-rotate-tool-r"},
       {Mode::Scale,                           "https://ezycad.readthedocs.io/en/latest/usage.html#shape-scale-tool-s"},
-      {Mode::Shape_cyl_align,                 "https://ezycad.readthedocs.io/en/latest/usage.html#align-cylinders-tool-j"},
+      {Mode::Shape_cyl_align,                 "https://ezycad.readthedocs.io/en/latest/usage.html#align-shafts-tool-j"},
       {Mode::Sketch_inspection_mode,          "https://ezycad.readthedocs.io/en/latest/usage-sketch.html#sketch-origin"},
       {Mode::Sketch_from_planar_face,         "https://ezycad.readthedocs.io/en/latest/usage-sketch.html#create-sketch-from-planar-face-tool"},
       {Mode::Sketch_face_extrude,             "https://ezycad.readthedocs.io/en/latest/usage.html#extrude-sketch-face-tool-e"},
@@ -304,7 +304,7 @@ void GUI::on_key(int key, int scancode, int action, int mods)
 
   case GLFW_KEY_TAB:
   {
-    // Move / Rotate / Align cylinders handle Tab in their mode key handlers (distance / angle / depth).
+    // Move / Rotate / Align shafts handle Tab in their mode key handlers (distance / angle / depth / twist).
     const Mode mode = get_mode();
     if (mode == Mode::Move || mode == Mode::Rotate || mode == Mode::Shape_cyl_align)
       break;
@@ -318,7 +318,7 @@ void GUI::on_key(int key, int scancode, int action, int mods)
   }
 
   case GLFW_KEY_ENTER:
-    // Rotate / Align cylinders finalize on Enter in their mode key handlers.
+    // Rotate / Align shafts finalize on Enter in their mode key handlers.
     if (get_mode() == Mode::Rotate || get_mode() == Mode::Shape_cyl_align)
       break;
     hide_sketch_origin_set_edit(true);
@@ -362,7 +362,7 @@ void GUI::on_key(int key, int scancode, int action, int mods)
     break;
 
   case Mode::Shape_cyl_align:
-    on_key_cyl_align_mode_(key);
+    on_key_cyl_align_mode_(key, mods);
     break;
 
   default:
@@ -643,11 +643,16 @@ void GUI::options_shape_cyl_align_mode_()
 
   ImGui::TextWrapped(
       "Pick a cylindrical face on the shape to move, then a cylindrical face on the fixed shape. "
-      "Drag along the shared axis for insert depth. First pick moves; pick the hole first to move the hole onto the shaft.");
+      "Drag insert depth. With Clock rotation on, LMB or Shift+Tab rotates about the shared axis; Enter finalizes. "
+      "First pick moves; pick the hole first to move the hole onto the shaft.");
 
   Cyl_align_options& opts = m_view->shp_cyl_align().get_opts();
   if (ImGui::Checkbox("Flip direction", &opts.flip_direction))
     m_view->shp_cyl_align().apply_preview();
+
+  bool clock_rotation = opts.clock_rotation;
+  if (ImGui::Checkbox("Clock rotation", &clock_rotation))
+    m_view->shp_cyl_align().set_clock_rotation_enabled(clock_rotation);
 
   ImGui::Separator();
   options_orthographic_projection_();
@@ -1416,7 +1421,7 @@ float GUI::options_sketch_label_col_w_() const
   return sketch_label_col_w;
 }
 
-void GUI::on_key_cyl_align_mode_(int key)
+void GUI::on_key_cyl_align_mode_(int key, int mods)
 {
   const ScreenCoords screen_coords = cursor_screen_coords();
 
@@ -1428,12 +1433,18 @@ void GUI::on_key_cyl_align_mode_(int key)
 
   case GLFW_KEY_ENTER:
   case GLFW_KEY_KP_ENTER:
+    // Enter finalizes immediately (skips clock rotation if still in depth phase).
     if (m_view->shp_cyl_align().is_dragging())
       m_view->shp_cyl_align().finalize();
     break;
 
   case GLFW_KEY_TAB:
-    m_view->shp_cyl_align().show_depth_edit(screen_coords);
+    if ((mods & GLFW_MOD_SHIFT) != 0)
+      m_view->shp_cyl_align().begin_twist_input(screen_coords);
+    else if (m_view->shp_cyl_align().is_twist_phase())
+      m_view->shp_cyl_align().show_twist_edit(screen_coords);
+    else
+      m_view->shp_cyl_align().show_depth_edit(screen_coords);
     break;
 
   default:
