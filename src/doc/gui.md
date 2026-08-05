@@ -210,7 +210,7 @@ Tests use `sketch_left_click` to simulate sketch LMB without ImGui mouse positio
 | -------------------------------- | ------------------------------------------------------------------------------------------------------------------- |
 | `Normal`                         | `options_normal_mode_` (selection filter, orthographic)                                                             |
 | `Move` / `Rotate` / `Scale`      | `options_*_mode_` (constraints, axis, material)                                                                     |
-| `Shape_shaft_align`                | `options_Shape_shaft_align_mode_` (Flip direction, Clock rotation; pick / depth / clock help)                         |
+| `Shape_shaft_align`                | `options_shape_shaft_align_mode_` (Flip direction, Clock rotation; pick / depth / clock help)                         |
 | `Shape_chamfer` / `Shape_fillet` | mode + radius/distance                                                                                              |
 | `Shape_polar_duplicate`          | angle, count, rotate/combine, **Dup** button                                                                        |
 | `Shape_cross_section`            | local XY/XZ/YZ, invert normal, hide back side, show section outline, bbox-ranged offset, Clip, Cross section sketch |

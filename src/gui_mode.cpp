@@ -505,7 +505,7 @@ void GUI::options_()
     case Mode::Move:                            options_move_mode_();                         break;
     case Mode::Rotate:                          options_rotate_mode_();                       break;
     case Mode::Scale:                           options_scale_mode_();                        break;
-    case Mode::Shape_shaft_align:                 options_Shape_shaft_align_mode_();              break;
+    case Mode::Shape_shaft_align:                 options_shape_shaft_align_mode_();              break;
     case Mode::Shape_chamfer:                   options_shape_chamfer_mode_();                break;
     case Mode::Shape_fillet:                    options_shape_fillet_mode_();                 break;
     case Mode::Shape_polar_duplicate:           options_shape_polar_duplicate_mode_();        break;
@@ -633,7 +633,7 @@ void GUI::options_scale_mode_()
   options_orthographic_projection_();
 }
 
-void GUI::options_Shape_shaft_align_mode_()
+void GUI::options_shape_shaft_align_mode_()
 {
   EZY_ASSERT(get_mode() == Mode::Shape_shaft_align);
 
