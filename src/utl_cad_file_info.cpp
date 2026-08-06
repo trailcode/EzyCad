@@ -37,7 +37,7 @@ namespace utl_cad_file_info
 namespace
 {
 std::vector<Line> collect_step_(const std::string& file_path, const std::string& file_bytes,
-                               const Atomic_progress_indicator_ptr& progress);
+                                const Atomic_progress_indicator_ptr& progress);
 
 void add_line_(std::vector<Line>& out, const char* label, const std::string& value);
 
@@ -86,24 +86,24 @@ std::string xcaf_product_name_(const XCAFDoc_ShapeTool_ptr& shapes, const TDF_La
 void append_named_from_label_(const XCAFDoc_ShapeTool_ptr& shapes, const TDF_Label& lab, std::vector<Named_body>& out);
 
 void append_tree_from_label_(const XCAFDoc_ShapeTool_ptr& shapes, const TDF_Label& lab, int parent_index,
-                            std::vector<Named_node>& out);
+                             std::vector<Named_node>& out);
 
 Status read_step_named_bodies_xcaf_(const std::string& file_bytes, std::vector<Named_body>& out,
-                                   const Message_ProgressRange& progress);
+                                    const Message_ProgressRange& progress);
 
 Status read_step_named_bodies_plain_(const std::string& file_bytes, std::vector<Named_body>& out,
-                                    const Message_ProgressRange& progress);
+                                     const Message_ProgressRange& progress);
 
 bool collect_step_has_status_error_(const std::vector<Line>& lines);
 
 std::vector<Line> collect_step_xcaf_(const std::string& file_path, const std::string& file_bytes,
-                                    const Atomic_progress_indicator_ptr& progress);
-
-std::vector<Line> collect_step_plain_(const std::string& file_path, const std::string& file_bytes,
                                      const Atomic_progress_indicator_ptr& progress);
 
+std::vector<Line> collect_step_plain_(const std::string& file_path, const std::string& file_bytes,
+                                      const Atomic_progress_indicator_ptr& progress);
+
 Status read_step_named_tree_xcaf_(const std::string& file_bytes, std::vector<Named_node>& out,
-                                 const Message_ProgressRange& progress);
+                                  const Message_ProgressRange& progress);
 } // namespace
 
 Format detect(const std::string& file_path, const std::string& file_bytes)
@@ -568,7 +568,7 @@ void append_named_from_label_(const XCAFDoc_ShapeTool_ptr& shapes, const TDF_Lab
 }
 
 void append_tree_from_label_(const XCAFDoc_ShapeTool_ptr& shapes, const TDF_Label& lab, int parent_index,
-                            std::vector<Named_node>& out)
+                             std::vector<Named_node>& out)
 {
   const std::string name = xcaf_product_name_(shapes, lab);
 
@@ -623,7 +623,7 @@ void append_tree_from_label_(const XCAFDoc_ShapeTool_ptr& shapes, const TDF_Labe
 }
 
 Status read_step_named_bodies_xcaf_(const std::string& file_bytes, std::vector<Named_body>& out,
-                                   const Message_ProgressRange& progress)
+                                    const Message_ProgressRange& progress)
 {
   Interface_Static::SetCVal("xstep.cascade.unit", "MM");
 
@@ -668,7 +668,7 @@ Status read_step_named_bodies_xcaf_(const std::string& file_bytes, std::vector<N
 }
 
 Status read_step_named_bodies_plain_(const std::string& file_bytes, std::vector<Named_body>& out,
-                                    const Message_ProgressRange& progress)
+                                     const Message_ProgressRange& progress)
 {
   Interface_Static::SetCVal("xstep.cascade.unit", "MM");
 
@@ -708,7 +708,7 @@ bool collect_step_has_status_error_(const std::vector<Line>& lines)
 }
 
 std::vector<Line> collect_step_xcaf_(const std::string& file_path, const std::string& file_bytes,
-                                    const Atomic_progress_indicator_ptr& progress)
+                                     const Atomic_progress_indicator_ptr& progress)
 {
   std::vector<Line> lines;
   append_common_(lines, file_path, file_bytes, Format::Step);
@@ -800,7 +800,7 @@ std::vector<Line> collect_step_xcaf_(const std::string& file_path, const std::st
 }
 
 std::vector<Line> collect_step_plain_(const std::string& file_path, const std::string& file_bytes,
-                                     const Atomic_progress_indicator_ptr& progress)
+                                      const Atomic_progress_indicator_ptr& progress)
 {
   std::vector<Line> lines;
   append_common_(lines, file_path, file_bytes, Format::Step);
@@ -840,7 +840,7 @@ std::vector<Line> collect_step_plain_(const std::string& file_path, const std::s
 }
 
 std::vector<Line> collect_step_(const std::string& file_path, const std::string& file_bytes,
-                               const Atomic_progress_indicator_ptr& progress)
+                                const Atomic_progress_indicator_ptr& progress)
 {
   // Single Transfer pass (XCAF preferred). Avoids the old double-parse for Named bodies.
   std::vector<Line> xcaf = collect_step_xcaf_(file_path, file_bytes, progress);
@@ -854,7 +854,7 @@ std::vector<Line> collect_step_(const std::string& file_path, const std::string&
 }
 
 Status read_step_named_tree_xcaf_(const std::string& file_bytes, std::vector<Named_node>& out,
-                                 const Message_ProgressRange& progress)
+                                  const Message_ProgressRange& progress)
 {
   Interface_Static::SetCVal("xstep.cascade.unit", "MM");
 

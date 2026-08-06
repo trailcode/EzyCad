@@ -28,14 +28,14 @@ public:
   [[nodiscard]] Status drag_depth(const ScreenCoords& screen_coords);
   [[nodiscard]] Status drag_twist(const ScreenCoords& screen_coords);
   /// Depth + Clock rotation on: enter clock phase. Depth + off: finalize. Clock phase: finalize.
-  void                 on_left_click();
+  void on_left_click();
   /// Depth -> clock rotation (requires Options Clock rotation), then open angle edit.
-  void                 begin_twist_input(const ScreenCoords& screen_coords);
-  void                 show_depth_edit(const ScreenCoords& screen_coords);
-  void                 show_twist_edit(const ScreenCoords& screen_coords);
-  void                 finalize();
-  void                 cancel();
-  void                 reset();
+  void begin_twist_input(const ScreenCoords& screen_coords);
+  void show_depth_edit(const ScreenCoords& screen_coords);
+  void show_twist_edit(const ScreenCoords& screen_coords);
+  void finalize();
+  void cancel();
+  void reset();
 
   Cyl_align_options& get_opts();
   /// Apply Options Clock rotation toggle (exits clock phase if turned off).

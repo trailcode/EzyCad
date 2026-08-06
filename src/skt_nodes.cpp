@@ -26,9 +26,8 @@ bool                          s_annotate_all_coaxial_nodes = true;
 
 Quantity_Color snap_guide_qc_(const glm::vec3& c);
 void           prepare_snap_ais_(AIS_InteractiveContext& ctx, const AIS_Shape_ptr& ais);
-void           update_snap_ais_shape_(AIS_InteractiveContext& ctx, AIS_Shape_ptr& ais, const TopoDS_Shape& shape,
-                                      const glm::vec3& color);
-void           clear_snap_ais_(AIS_InteractiveContext& ctx, AIS_Shape_ptr& ais);
+void update_snap_ais_shape_(AIS_InteractiveContext& ctx, AIS_Shape_ptr& ais, const TopoDS_Shape& shape, const glm::vec3& color);
+void clear_snap_ais_(AIS_InteractiveContext& ctx, AIS_Shape_ptr& ais);
 } // namespace
 
 class Sketch_nodes::Impl

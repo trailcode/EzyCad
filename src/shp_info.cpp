@@ -83,7 +83,8 @@ std::vector<Line> collect(const TopoDS_Shape& shape, const Display_meta* display
     add_line_(lines, "BBox X", fmt_double_(xmin) + " .. " + fmt_double_(xmax));
     add_line_(lines, "BBox Y", fmt_double_(ymin) + " .. " + fmt_double_(ymax));
     add_line_(lines, "BBox Z", fmt_double_(zmin) + " .. " + fmt_double_(zmax));
-    add_line_(lines, "BBox size", fmt_double_(xmax - xmin) + " x " + fmt_double_(ymax - ymin) + " x " + fmt_double_(zmax - zmin));
+    add_line_(lines, "BBox size",
+              fmt_double_(xmax - xmin) + " x " + fmt_double_(ymax - ymin) + " x " + fmt_double_(zmax - zmin));
   }
 
   GProp_GProps vol_props;

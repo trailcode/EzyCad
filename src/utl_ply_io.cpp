@@ -57,16 +57,15 @@ struct ElementDesc
   std::vector<ListProp>   lists;
 };
 
-void     trim_inplace_(std::string& s);
-bool     iequals_(const std::string& a, const std::string& b);
+void       trim_inplace_(std::string& s);
+bool       iequals_(const std::string& a, const std::string& b);
 ScalarType scalar_from_token_(const std::string& t);
-int      size_of_scalar_(ScalarType t);
-bool     read_scalar_bin_at_(const unsigned char* base, size_t off, const unsigned char* endbuf, ScalarType t, double& out);
+int        size_of_scalar_(ScalarType t);
+bool       read_scalar_bin_at_(const unsigned char* base, size_t off, const unsigned char* endbuf, ScalarType t, double& out);
 std::uint32_t read_list_count_bin_(const unsigned char*& p, const unsigned char* end, ScalarType ct);
-bool     read_face_indices_bin_(const unsigned char*& p, const unsigned char* end, ScalarType vt, std::uint32_t n,
-                                 std::vector<int>& idx_out);
-bool     append_triangle_(TopoDS_Compound& comp, BRep_Builder& bb, const gp_Pnt& p0, const gp_Pnt& p1, const gp_Pnt& p2,
-                          int& ntri);
+bool          read_face_indices_bin_(const unsigned char*& p, const unsigned char* end, ScalarType vt, std::uint32_t n,
+                                     std::vector<int>& idx_out);
+bool append_triangle_(TopoDS_Compound& comp, BRep_Builder& bb, const gp_Pnt& p0, const gp_Pnt& p1, const gp_Pnt& p2, int& ntri);
 } // namespace
 
 Status import_ply_shape(const std::string& file_bytes, TopoDS_Shape& out_shape)

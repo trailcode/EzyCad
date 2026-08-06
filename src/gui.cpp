@@ -184,7 +184,7 @@ void GUI::initialize_toolbar_()
       {load_texture("res/icons/Assembly_AxialMove.png"),              false, "Shape move",                        Mode::Move},
       {load_texture("res/icons/Draft_Rotate.png"),                    false, "Shape rotate",                      Mode::Rotate},
       {load_texture("res/icons/Part_Scale.png"),                      false, "Shape Scale",                       Mode::Scale},
-      {load_texture("res/icons/Assembly_Move.png"),                   false, "Align shafts",                      Mode::Shape_cyl_align},
+      {load_texture("res/icons/Assembly_Move.png"),                   false, "Align shafts",                      Mode::Shape_shaft_align},
       {load_texture("res/icons/Macro_FaceToSketch_48.png"),           false, "Create a sketch from planar face",  Mode::Sketch_from_planar_face},
       {load_texture("res/icons/Sketcher_MirrorSketch.png"),           false, "Operational axis",                  Mode::Sketch_operation_axis},
       {load_texture("res/icons/Sketcher_CreatePoint.png"),            false, "Add node",                          Mode::Sketch_add_node},
@@ -219,6 +219,7 @@ void GUI::sync_toolbar_hotkey_tooltips_()
     {
       if (b.data.index() != 0 || std::get<Mode>(b.data) != mode)
         continue;
+
       const std::string chord = Gui_hotkeys::format_chord(m_hotkeys.chord_for(action));
       b.tooltip               = std::string(base) + " (" + chord + ")";
       return;
@@ -230,6 +231,7 @@ void GUI::sync_toolbar_hotkey_tooltips_()
     {
       if (b.data.index() != 1 || std::get<Command>(b.data) != cmd)
         continue;
+
       const std::string chord = Gui_hotkeys::format_chord(m_hotkeys.chord_for(action));
       b.tooltip               = std::string(base) + " (" + chord + ")";
       return;
@@ -240,7 +242,7 @@ void GUI::sync_toolbar_hotkey_tooltips_()
   tip_mode(Mode::Move,                          "Shape move",                      Gui_action::Mode_move);
   tip_mode(Mode::Rotate,                        "Shape rotate",                    Gui_action::Mode_rotate);
   tip_mode(Mode::Scale,                         "Shape Scale",                     Gui_action::Mode_scale);
-  tip_mode(Mode::Shape_cyl_align,               "Align shafts",                    Gui_action::Mode_cyl_align);
+  tip_mode(Mode::Shape_shaft_align,               "Align shafts",                    Gui_action::Mode_cyl_align);
   tip_mode(Mode::Sketch_dim_anno,               "Length dimension",                Gui_action::Mode_dimension);
   tip_mode(Mode::Sketch_face_extrude,           "Extrude sketch face",             Gui_action::Mode_extrude);
   tip_mode(Mode::Shape_chamfer,                 "Chamfer",                         Gui_action::Mode_chamfer);
@@ -393,16 +395,16 @@ void GUI::menu_bar_()
       const Project_unit cur = m_view->get_project_unit();
       if (ImGui::MenuItem("Inches", nullptr, cur == Project_unit::Inch))
         m_view->set_project_unit(Project_unit::Inch);
+
       if (ImGui::MenuItem("Millimeters", nullptr, cur == Project_unit::Millimeter))
         m_view->set_project_unit(Project_unit::Millimeter);
+
       ImGui::EndMenu();
     }
 
     if (ui_show_feature(2))
-    {
       if (ImGui::MenuItem("Import"))
         import_file_dialog_();
-    }
 
     if (ImGui::BeginMenu("Export"))
     {
@@ -459,7 +461,6 @@ void GUI::menu_bar_()
       m_view->redo();
 
     add_menu_items_();
-
     ImGui::EndMenu();
   }
 
@@ -731,6 +732,7 @@ void GUI::ensure_about_assets_()
       m_about_splash_size.x = std::get<1>(*dec);
       m_about_splash_size.y = std::get<2>(*dec);
     }
+
     m_about_splash_gl = load_texture(p);
     break;
   }
@@ -2720,6 +2722,12 @@ void GUI::shape_list_()
 
       if (ImGui::BeginPopupContextItem("mat_btn_ctx"))
       {
+        if (ImGui::MenuItem("Zoom to"))
+        {
+          select_shape_row(shape);
+          m_view->fit_shapes_in_view(shape);
+        }
+
         if (ImGui::MenuItem("Shape info..."))
           open_shape_info_(shape);
 
@@ -2808,6 +2816,13 @@ void GUI::shape_list_()
     row_hovered |= ImGui::IsItemHovered();
     if (ImGui::BeginPopupContextItem("shape_name_ctx"))
     {
+      const bool can_zoom = is_group ? !m_view->shape_descendant_solids(shape->get_id()).empty() : !shape->Shape().IsNull();
+      if (ImGui::MenuItem("Zoom to", nullptr, false, can_zoom))
+      {
+        select_shape_row(shape);
+        m_view->fit_shapes_in_view(shape);
+      }
+
       if (!is_group && ImGui::MenuItem("Shape info..."))
         open_shape_info_(shape);
 
@@ -3848,7 +3863,7 @@ void GUI::on_mouse_pos(const ScreenCoords& screen_coords)
 
     break;
 
-  case Mode::Shape_cyl_align:
+  case Mode::Shape_shaft_align:
     if (m_view->shp_cyl_align().is_twist_phase())
     {
       if (Status s = m_view->shp_cyl_align().drag_twist(screen_coords); !s.is_ok())
@@ -3894,7 +3909,7 @@ void GUI::on_left_click_(const ScreenCoords& screen_coords)
   case Mode::Move:                m_view->shp_move().finalize();                      break;
   case Mode::Rotate:              m_view->shp_rotate().finalize();                    break;
   case Mode::Scale:               m_view->shp_scale().finalize();                     break;
-  case Mode::Shape_cyl_align:
+  case Mode::Shape_shaft_align:
     if (m_view->shp_cyl_align().is_dragging())
       m_view->shp_cyl_align().on_left_click();
     else if (Status s = m_view->shp_cyl_align().pick(screen_coords); !s.is_ok())
