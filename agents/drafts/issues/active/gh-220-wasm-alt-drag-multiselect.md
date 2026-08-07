@@ -1,6 +1,8 @@
 ---
 github_issue: 220
+github_pr: 250
 status: active
+paired_draft: ../prs/active/gh-250-wasm-alt-drag-multiselect.md
 ---
 
 # WASM: Alt + LMB drag does not multi-select shapes
@@ -37,10 +39,12 @@ Desktop: **Alt + LMB drag** rubber-band multi-selects shapes via OCCT `AIS_ViewC
 - [x] Desktop gesture map unchanged
 - [x] Docs note Alt+drag (and Web Alt caveat)
 - [x] Plan updated: `agents/plans/wasm-alt-drag-multiselect.md`
-- [ ] Close GitHub #220
+- [x] PR opened: https://github.com/trailcode/EzyCad/pull/250 (`Fixes #220`)
+- [ ] Close GitHub #220 (on PR merge)
 
 ### Related
 
 - Issue: https://github.com/trailcode/EzyCad/issues/220
+- PR: https://github.com/trailcode/EzyCad/pull/250
 - Plan: `agents/plans/wasm-alt-drag-multiselect.md`
 - Related: #93 / `gh-93-emscripten-web-hotkeys-followup.md`

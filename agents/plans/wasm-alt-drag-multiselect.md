@@ -39,7 +39,8 @@ On the WASM build the same gesture did **not** multi-select (Alt never reached O
 - [x] `src/doc/gui.md` (GLFW pointer, AABB supplement, Shape List tint).
 - [x] `CHANGELOG.md` `[Unreleased]`.
 - [x] Manual: native + WASM Alt+LMB (including complex solids under groups).
-- [ ] Close #220 on GitHub when ready.
+- [x] PR: https://github.com/trailcode/EzyCad/pull/250 (`Fixes #220`).
+- [ ] Close #220 on merge.
 
 ## Out of scope
 
