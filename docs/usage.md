@@ -682,7 +682,7 @@ These tools are in the main toolbar (after the polar duplicate button). They are
 **How to Use:**
 
 1. Make sure you are in **Normal** (inspection) mode.
-2. **Select two or more shapes** in the 3D viewer. Hold <kbd>Ctrl</kbd> (or the platform equivalent) to multi-select, or drag a selection box. Use the selection filter if you only want to pick whole solids.
+2. **Select two or more shapes** in the 3D viewer. Hold <kbd>Ctrl</kbd> (or the platform equivalent) to multi-select, or hold <kbd>Alt</kbd> and drag a selection box. Use the selection filter if you only want to pick whole solids.
 3. Click the appropriate toolbar button:
    - ![Part_Cut](res/icons/Part_Cut.png) **Shape cut** for difference/subtract
    - ![Part_Fuse](res/icons/Part_Fuse.png) **Shape fuse** for union
@@ -823,10 +823,13 @@ Open or close the **Lua** or **Python** consoles from **View -> Lua Console** or
 | -------------------------------------------------------------------------------------: | ---------------------------------------------------------------------------------- |
 | **Left Click**                                                                         | Select object                                                                      |
 | **Left drag**                                                                          | Orbit view                                                                         |
+| <kbd>Alt</kbd>+**Left drag**                                                           | Rectangle multi-select (shapes inside the box)                                     |
 | **Middle drag**                                                                        | Pan view                                                                           |
 | **Right drag**                                                                         | Zoom                                                                               |
 | **Scroll Wheel**                                                                       | Zoom in/out (**Zoom scroll scale** in Settings; hold **Shift** for finer steps)    |
 | <kbd>NumPad +</kbd> / <kbd>NumPad -</kbd>, <kbd>Shift</kbd>+<kbd>=</kbd>, <kbd>-</kbd> | Zoom in/out ([keyboard](#view-navigation); settings scale; <kbd>Shift</kbd> finer) |
+
+On the **web (WASM)** build, keep the canvas focused while holding <kbd>Alt</kbd>. Some browsers use <kbd>Alt</kbd> for the menu bar; if rectangle select fails, click the 3D view first, or use <kbd>Ctrl</kbd>+click to multi-select.
 
 ### View orbit (NumPad)
 

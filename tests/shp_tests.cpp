@@ -12,6 +12,7 @@
 #include <TopAbs_ShapeEnum.hxx>
 #include <TopExp_Explorer.hxx>
 #include <TopoDS_Compound.hxx>
+#include <NCollection_List.hxx>
 #include <gp_Ax1.hxx>
 #include <gp_Pln.hxx>
 #include <gp_Trsf.hxx>
@@ -1178,4 +1179,38 @@ TEST_F(Shp_test, New_file_keeps_shape_clipboard)
       ++leaves;
 
   EXPECT_EQ(leaves, 1u);
+}
+
+TEST_F(Shp_test, Grouped_solids_stay_displayed_and_selectable)
+{
+  view().add_box(0, 0, 0, 1, 1, 1);
+  view().add_box(3, 0, 0, 1, 1, 1);
+
+  std::vector<Shp_ptr> boxes;
+  for (const Shp_ptr& s : view().get_shapes())
+    if (!s.IsNull() && !s->is_group())
+      boxes.push_back(s);
+
+  ASSERT_EQ(boxes.size(), 2u);
+  ASSERT_TRUE(view().group_shapes(boxes).is_ok());
+
+  AIS_InteractiveContext& ctx = view().ctx();
+  for (const Shp_ptr& s : boxes)
+  {
+    EXPECT_NE(s->get_parent_id(), 0u);
+    EXPECT_TRUE(ctx.IsDisplayed(s));
+    NCollection_List<int> modes;
+    ctx.ActivatedModes(s, modes);
+    bool has_shape_mode = false;
+    for (NCollection_List<int>::Iterator it(modes); it.More(); it.Next())
+      if (it.Value() == AIS_Shape::SelectionMode(TopAbs_SHAPE))
+        has_shape_mode = true;
+
+    EXPECT_TRUE(has_shape_mode) << "id=" << s->get_id();
+
+    ctx.ClearSelected(true);
+    ctx.AddOrRemoveSelected(s, true);
+    EXPECT_EQ(view().get_selected_shps().size(), 1u);
+    EXPECT_EQ(view().get_selected_shps().front()->get_id(), s->get_id());
+  }
 }

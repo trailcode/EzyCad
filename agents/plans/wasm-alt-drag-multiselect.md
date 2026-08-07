@@ -1,5 +1,5 @@
 ---
-status: planning
+status: implemented
 topic: wasm-alt-drag-multiselect
 depends_on: []
 blocks: []
@@ -16,13 +16,13 @@ github_issue: 220
 
 On desktop, holding **Alt** and **left-dragging** in the 3D view activates OCCT `AIS_ViewController` rectangle selection (`SelectRectangle` / rubber band) and multi-selects shapes under the box.
 
-On the WASM build the same gesture does **not** multi-select.
+On the WASM build the same gesture did **not** multi-select.
 
-EzyCad already maps modifiers into OCCT flags:
+EzyCad maps modifiers into OCCT flags:
 
 - `Occt_view::key_flags_from_glfw_` — `GLFW_MOD_ALT` → `Aspect_VKeyFlags_ALT`
 - Mouse press/release: `PressMouseButton` / `ReleaseMouseButton` with `theMods`
-- Mouse move: `UpdateMousePosition(..., key_flags_from_glfw_window_(), ...)` which polls `glfwGetKey(... LEFT/RIGHT_ALT ...)`
+- Mouse move: `UpdateMousePosition(..., key_flags_from_glfw_window_(), ...)` which polls Alt via `glfwGetKey`
 
 Related input/hotkey tracking: [#93](https://github.com/trailcode/EzyCad/issues/93), draft `agents/drafts/issues/active/gh-93-emscripten-web-hotkeys-followup.md`. OCCT desktop vs wasm kit: [occt-wasm-dual-version](../conventions/occt-wasm-dual-version.md).
 
@@ -30,32 +30,29 @@ Related input/hotkey tracking: [#93](https://github.com/trailcode/EzyCad/issues/
 
 Make **Alt + LMB drag** multi-select on WASM match desktop, without changing desktop gesture mapping or selection schemes.
 
-## Likely causes (investigate in order)
+## Root cause (confirmed in code)
 
-1. **Alt not present on pointer events under Emscripten/GLFW** — browser menu focus, `preventDefault`, or incomplete `mods` on `glfwSetMouseButtonCallback`.
-2. **`glfwGetKey(ALT)` false during drag** — rubber-band gesture needs Alt on move updates (`key_flags_from_glfw_window_`), not only on button press.
-3. **ImGui / focus** — canvas loses keyboard focus when Alt is pressed; Alt never reaches GLFW.
-4. **OCCT 7.9.3 wasm kit** — confirm default `MouseGestureMap` still binds Alt+LMB to select-rectangle (unlikely difference, but verify if input looks correct).
+WASM `init_window` skipped creating `Occt_glfw_win` (correct: `Close()` would destroy the shared canvas). `key_flags_from_glfw_window_()` then always returned `NONE` because it only read modifiers from `m_occt_window`. OCCT rebinds when modifiers drop (`myMouseModifiers != theModifiers`), so Alt+LMB `SelectRectangle` became plain LMB orbit on the next move.
 
-## Approach
+## Approach (landed)
 
 ### Phase 0 — reproduce and instrument
 
-- [ ] Confirm desktop Alt+LMB rubber band still works.
-- [ ] On WASM, log (temporary) `mods` on LMB press/release and Alt from `key_flags_from_glfw_window_` during drag.
-- [ ] Note browser (Chrome/Firefox/Edge) and whether the OS/browser steals Alt.
+- [x] Root cause identified from code path (null `m_occt_window` on WASM → no Alt on move).
+- [ ] Manual WASM retest after fix (Chrome/Firefox): Alt+LMB box select; Ctrl+click still works; desktop unchanged.
 
 ### Phase 1 — fix input path
 
-- [ ] Ensure Alt is forwarded for press, move, and release while the gesture is active (Emscripten/GLFW and/or synthetic modifier from `event.altKey` if GLFW is incomplete).
-- [ ] Avoid focusing browser chrome on Alt when the canvas has focus (as far as the platform allows).
-- [ ] Keep `GUI::on_mouse_button` / sketch `mods == 0` click paths unchanged for unmodified LMB.
+- [x] Store non-owning `GLFWwindow* m_glfw_window` in `Occt_view::init_window`.
+- [x] Poll modifiers and cursor from `m_glfw_window` (`key_flags_from_glfw_window_`, `cursor_position_`).
+- [x] Do not wrap WASM window in owning `Occt_glfw_win`.
 
 ### Phase 2 — docs and parity
 
-- [ ] Document Alt+drag multi-select in `docs/usage.md` and/or `docs/usage-occt-view.md`; call out any remaining Web limitation.
-- [ ] Manual check: Ctrl+click multi-select still works on WASM if it already does; Alt+drag matches desktop.
-- [ ] Close #220 when done; update this plan status.
+- [x] Document Alt+drag in `docs/usage.md` and `docs/usage-occt-view.md`; note web Alt/menu caveat.
+- [x] `src/doc/gui.md` notes non-owning GLFW pointer for WASM modifier polling.
+- [x] `CHANGELOG.md` `[Unreleased]` Fixed entry.
+- [ ] Close #220 when verified on WASM.
 
 ## Out of scope
 

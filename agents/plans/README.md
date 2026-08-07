@@ -35,5 +35,5 @@ sketch-mode-shape-faint  (done; parallel UX)
 | [shape-list-hierarchy-phase3.md](shape-list-hierarchy-phase3.md) | deferred   | parent transform inheritance, Parts/planes, Boolean history (#214)     |
 | [assembly-inspection-mode.md](assembly-inspection-mode.md)       | deferred   | assembly idle/inspection mode, Part vs arrange context, Move semantics |
 | [wasm-multithreading.md](wasm-multithreading.md)                 | planning   | WASM/Emscripten pthreads, SharedArrayBuffer, parallel OCCT on web      |
-| [wasm-alt-drag-multiselect.md](wasm-alt-drag-multiselect.md)     | planning   | WASM Alt+LMB drag rectangle multi-select broken (#220)                 |
+| [wasm-alt-drag-multiselect.md](wasm-alt-drag-multiselect.md)     | implemented | WASM Alt+LMB drag rectangle multi-select (#220); verify on WASM then close |
 | [configurable-hotkeys.md](configurable-hotkeys.md)               | done       | remappable shortcuts, keybindings, `gui.hotkeys`, free Dimension off D |

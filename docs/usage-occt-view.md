@@ -5,6 +5,7 @@ EzyCad's 3D viewport uses **Open CASCADE Technology (OCCT)** for displaying soli
 ## Navigation
 
 - **Orbit, pan, zoom** — See [Mouse Controls](usage.md#mouse-controls) in the usage guide.
+- **Rectangle multi-select** — Hold <kbd>Alt</kbd> and left-drag to rubber-band select shapes (same Open CASCADE `AIS_ViewController` gesture as desktop). On the web build, click the canvas first if the browser steals <kbd>Alt</kbd> for its menu.
 - **Num Lock** — <kbd>Num Lock</kbd> off is recommended for all <kbd>NumPad</kbd> view shortcuts (orbit, roll, zoom, axis snap). With <kbd>Num Lock</kbd> on, the OS may remap the keypad so those keys no longer match the docs; use main-row alternatives listed in [View navigation](usage.md#view-navigation).
 - **View orbit / roll** — <kbd>NumPad 8</kbd>/<kbd>2</kbd>/<kbd>4</kbd>/<kbd>6</kbd> orbit (same axes as LMB drag); <kbd>Shift</kbd>+<kbd>NumPad 4</kbd>/<kbd>6</kbd>, <kbd>Shift</kbd>+main <kbd>4</kbd>/<kbd>6</kbd>, or <kbd>Shift</kbd>+<kbd>Left</kbd>/<kbd>Right</kbd> roll around the screen axis (repeat while held). Step size is **Settings → 3D view navigation** (**View rotation step**). See [View navigation](usage.md#view-navigation).
 - **Zoom** — mouse wheel, **right-drag**, <kbd>NumPad +</kbd>/<kbd>-</kbd>, <kbd>Shift</kbd>+<kbd>=</kbd>, and main <kbd>-</kbd> share one path. Strength is **Zoom scroll scale** in Settings (`gui.view_zoom_scroll_scale`, default **4**). Hold <kbd>Shift</kbd> while zooming for a Blender-style finer step (**x0.1**). See [View Controls](usage.md#view-controls).

@@ -25,6 +25,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- **WASM Alt+LMB rectangle select**: multi-select via Alt+left-drag works again. WASM never created `Occt_glfw_win`, so live modifier polling during mouse move always returned no Alt and OCCT rebound the gesture to orbit. `Occt_view` now keeps a non-owning `GLFWwindow*` for modifiers and cursor (desktop unchanged).
+
+- **Alt+LMB rectangle select misses some solids**: after OCCT `SelectRectangle`, also select displayed document solids whose projected AABB intersects the rubber band. Fixes complex / STEP parts (often under Shape List groups) that stock sensitive-entity picking skipped while simple root boxes were selected. On WASM, map projections from OCCT window pixels into GLFW cursor space (canvas size can drift).
+
+- **Shape List current group highlight**: the current group row no longer uses the same strong selection tint as AIS-selected solids. That made Alt-drag / cleared selection look like grouped shapes stayed selected when only the current-group marker was lit.
+
 - **Sketch from face profile wire**: the dark-red originating-face boundary no longer stays drawn after leaving sketch mode (e.g. after Revolve returns to Normal). It follows sketch edge visibility and only appears while sketch tools (or polar duplicate) show the sketch.
 
 - **`gui.hotkeys` load**: duplicate-chord cleanup no longer leaves two actions on the same key when the later row's factory chord is the colliding key (e.g. Move and Rotate both `"R"`). Earlier remaps that steal a later action's factory chord are restored to defaults so each binding stays unique.

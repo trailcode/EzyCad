@@ -2622,13 +2622,17 @@ void GUI::shape_list_()
     const std::vector<Shp_ptr> children         = m_view->shape_children(shape->get_id());
     const bool                 has_children     = !children.empty();
     const bool                 is_current_group = is_group && shape->get_id() == m_view->current_group_id();
-    const bool                 row_selected     = is_current_group || row_is_selected(shape);
-    bool                       row_hovered      = false;
+    // Selection highlight follows the 3D viewer only. Current group uses a distinct tint so
+    // Alt-drag / clear-selection cannot look like the group (or its children) stayed selected.
+    const bool row_selected = row_is_selected(shape);
+    bool       row_hovered  = false;
 
     ImGui::PushID(static_cast<int>(shape->get_id()));
     ImGui::TableNextRow();
     if (row_selected)
       ImGui::TableSetBgColor(ImGuiTableBgTarget_RowBg0, ImGui::GetColorU32(ImGuiCol_Header, 0.45f));
+    else if (is_current_group)
+      ImGui::TableSetBgColor(ImGuiTableBgTarget_RowBg0, ImGui::GetColorU32(ImGuiCol_Header, 0.18f));
 
     char name_buffer[1024];
     safe_cstr_copy(name_buffer, sizeof(name_buffer), shape->get_name().c_str());
@@ -2767,8 +2771,13 @@ void GUI::shape_list_()
       select_shape_row(shape);
 
     row_hovered |= ImGui::IsItemHovered();
-    if (row_selected && ui_show_contextual_help() && ImGui::IsItemHovered())
-      ImGui::SetTooltip(is_current_group ? "Current group (new shapes go here)" : "Selected in 3D viewer");
+    if (ui_show_contextual_help() && ImGui::IsItemHovered())
+    {
+      if (row_selected)
+        ImGui::SetTooltip("Selected in 3D viewer");
+      else if (is_current_group)
+        ImGui::SetTooltip("Current group (new shapes go here)");
+    }
 
     if (ImGui::BeginDragDropSource(ImGuiDragDropFlags_SourceAllowNullID))
     {

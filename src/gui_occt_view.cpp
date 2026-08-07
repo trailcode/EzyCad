@@ -1,6 +1,7 @@
 #include "gui_occt_view.h"
 
 #include <AIS_ViewCube.hxx>
+#include <AIS_RubberBand.hxx>
 #include <Aspect_GradientFillMethod.hxx>
 #include <Aspect_Grid.hxx>
 #include <Aspect_RectangularGrid.hxx>
@@ -111,6 +112,8 @@ Occt_view::~Occt_view() {}
 // Initialization related.
 void Occt_view::init_window(GLFWwindow* GlfwWindow)
 {
+  // Non-owning: needed on WASM where Occt_glfw_win is not created (Close would destroy the shared canvas).
+  m_glfw_window = GlfwWindow;
 #ifndef __EMSCRIPTEN__
   m_occt_window = new Occt_glfw_win(GlfwWindow);
 #endif
@@ -2574,6 +2577,174 @@ void Occt_view::flush_view_events()
   }
 }
 
+void Occt_view::handleSelectionPoly(const Handle(AIS_InteractiveContext)& theCtx,
+                                    const Handle(V3d_View)&               theView)
+{
+  // Capture apply state and rect before the base class clears the rubber band / ToApplyTool.
+  const bool                     to_apply = myGL.Selection.ToApplyTool;
+  const AIS_ViewSelectionTool    tool     = myGL.Selection.Tool;
+  int                            xmin     = 0;
+  int                            ymin     = 0;
+  int                            xmax     = 0;
+  int                            ymax     = 0;
+  bool                           have_rubber = false;
+
+  auto set_rect_from_points = [&](int x0, int y0, int x1, int y1)
+  {
+    xmin         = std::min(x0, x1);
+    xmax         = std::max(x0, x1);
+    ymin         = std::min(y0, y1);
+    ymax         = std::max(y0, y1);
+    have_rubber  = xmax > xmin && ymax > ymin;
+  };
+
+  if (to_apply && tool == AIS_ViewSelectionTool_RubberBand)
+  {
+    // Prefer gesture mouse points (GLFW / UpdateMousePosition space). On WASM these stay
+    // aligned with cursor coords even when OCCT Wasm_Window size drifts from GLFW.
+    set_rect_from_points(myMousePressPoint.x(), myMousePressPoint.y(), myMouseProgressPoint.x(),
+                         myMouseProgressPoint.y());
+
+    if (!have_rubber && !myRubberBand.IsNull() && theCtx->IsDisplayed(myRubberBand))
+    {
+      const NCollection_Sequence<NCollection_Vec2<int>>& pts = myRubberBand->Points();
+      if (pts.Size() >= 2)
+      {
+        int rx0 = pts.First().x();
+        int ry0 = -pts.First().y(); // Rubber-band stores Y negated.
+        int rx1 = rx0;
+        int ry1 = ry0;
+        for (NCollection_Sequence<NCollection_Vec2<int>>::Iterator it(pts); it.More(); it.Next())
+        {
+          const int x = it.Value().x();
+          const int y = -it.Value().y();
+          rx0 = std::min(rx0, x);
+          rx1 = std::max(rx1, x);
+          ry0 = std::min(ry0, y);
+          ry1 = std::max(ry1, y);
+        }
+        set_rect_from_points(rx0, ry0, rx1, ry1);
+      }
+    }
+  }
+
+  AIS_ViewController::handleSelectionPoly(theCtx, theView);
+
+  if (have_rubber)
+    select_shps_intersecting_screen_rect_(xmin, ymin, xmax, ymax);
+}
+
+void Occt_view::select_shps_intersecting_screen_rect_(int xmin, int ymin, int xmax, int ymax)
+{
+  if (m_ctx.IsNull() || m_view.IsNull() || is_headless())
+    return;
+
+#ifdef __EMSCRIPTEN__
+  // Keep Wasm_Window size in sync with the shared canvas before projecting.
+  if (!m_view->Window().IsNull())
+  {
+    m_view->Window()->DoResize();
+    m_view->MustBeResized();
+  }
+#endif
+
+  // Map V3d_View::Convert pixels into the same space as the rubber-band / GLFW cursor.
+  // On WASM, Wasm_Window canvas size can disagree with the GLFW window ImGui sized (CSS*DPR).
+  int occt_w = 0;
+  int occt_h = 0;
+  if (!m_view->Window().IsNull())
+    m_view->Window()->Size(occt_w, occt_h);
+
+  int glfw_w = occt_w;
+  int glfw_h = occt_h;
+  if (m_glfw_window != nullptr)
+    glfwGetWindowSize(m_glfw_window, &glfw_w, &glfw_h);
+
+  const double scale_x = (occt_w > 0) ? double(glfw_w) / double(occt_w) : 1.0;
+  const double scale_y = (occt_h > 0) ? double(glfw_h) / double(occt_h) : 1.0;
+
+  bool added = false;
+  for (const Shp_ptr& shp : m_shps)
+  {
+    if (shp.IsNull() || shp->is_group() || shp->sketch_faint_active())
+      continue;
+
+    if (!m_ctx->IsDisplayed(shp) || m_ctx->IsSelected(shp))
+      continue;
+
+    const TopoDS_Shape& geom = shp->Shape();
+    if (geom.IsNull())
+      continue;
+
+    Bnd_Box local;
+    BRepBndLib::Add(geom, local);
+    if (local.IsVoid())
+      continue;
+
+    const gp_Trsf& tr = shp->LocalTransformation();
+    if (tr.Form() != gp_Identity)
+      local = local.Transformed(tr);
+
+    double x0 = 0.0;
+    double y0 = 0.0;
+    double z0 = 0.0;
+    double x1 = 0.0;
+    double y1 = 0.0;
+    double z1 = 0.0;
+    local.Get(x0, y0, z0, x1, y1, z1);
+
+    int  sx_min  = 0;
+    int  sy_min  = 0;
+    int  sx_max  = 0;
+    int  sy_max  = 0;
+    bool have_pt = false;
+    // clang-format off
+    const gp_Pnt corners[8] = {
+        gp_Pnt(x0, y0, z0), gp_Pnt(x1, y0, z0), gp_Pnt(x0, y1, z0), gp_Pnt(x1, y1, z0),
+        gp_Pnt(x0, y0, z1), gp_Pnt(x1, y0, z1), gp_Pnt(x0, y1, z1), gp_Pnt(x1, y1, z1),
+    };
+    // clang-format on
+    for (const gp_Pnt& p : corners)
+    {
+      int sx = 0;
+      int sy = 0;
+      m_view->Convert(p.X(), p.Y(), p.Z(), sx, sy);
+      sx = static_cast<int>(std::lround(sx * scale_x));
+      sy = static_cast<int>(std::lround(sy * scale_y));
+      if (!have_pt)
+      {
+        sx_min = sx_max = sx;
+        sy_min = sy_max = sy;
+        have_pt         = true;
+      }
+      else
+      {
+        sx_min = std::min(sx_min, sx);
+        sx_max = std::max(sx_max, sx);
+        sy_min = std::min(sy_min, sy);
+        sy_max = std::max(sy_max, sy);
+      }
+    }
+
+    if (!have_pt)
+      continue;
+
+    // Overlap: any part of the projected AABB inside the rubber band.
+    if (sx_max < xmin || sx_min > xmax || sy_max < ymin || sy_min > ymax)
+      continue;
+
+    // AddOrRemoveSelected (not AddSelect): works when GlobalSelOwner is unset but local mode is active.
+    m_ctx->AddOrRemoveSelected(shp, false);
+    added = true;
+  }
+
+  if (added)
+  {
+    m_ctx->HilightSelected(true);
+    m_ctx->UpdateCurrentViewer();
+  }
+}
+
 void Occt_view::do_frame()
 {
   flush_view_events();
@@ -2628,7 +2799,7 @@ void Occt_view::on_mouse_scroll(double theOffsetX, double theOffsetY, bool shift
 {
   (void)theOffsetX;
   if (!m_view.IsNull())
-    UpdateZoom(Aspect_ScrollDelta(m_occt_window->CursorPosition(), zoom_scroll_delta_int_(theOffsetY, shift_finer_zoom)));
+    UpdateZoom(Aspect_ScrollDelta(cursor_position_(), zoom_scroll_delta_int_(theOffsetY, shift_finer_zoom)));
 }
 
 void Occt_view::zoom_view_wheel_notches(double wheel_notches, bool shift_finer_zoom)
@@ -2636,7 +2807,7 @@ void Occt_view::zoom_view_wheel_notches(double wheel_notches, bool shift_finer_z
   if (m_view.IsNull())
     return;
 
-  UpdateZoom(Aspect_ScrollDelta(m_occt_window->CursorPosition(), zoom_scroll_delta_int_(wheel_notches, shift_finer_zoom)));
+  UpdateZoom(Aspect_ScrollDelta(cursor_position_(), zoom_scroll_delta_int_(wheel_notches, shift_finer_zoom)));
 }
 
 void Occt_view::on_mouse_button(int theButton, int theAction, int theMods)
@@ -2644,7 +2815,7 @@ void Occt_view::on_mouse_button(int theButton, int theAction, int theMods)
   if (m_view.IsNull())
     return;
 
-  const NCollection_Vec2<int> pos = m_occt_window->CursorPosition();
+  const NCollection_Vec2<int> pos = cursor_position_();
   if (theAction == GLFW_PRESS)
   {
     // Planar-face picking uses InteractiveContext::MoveTo() in get_face_(). Run it before
@@ -3516,24 +3687,36 @@ Aspect_VKeyFlags Occt_view::key_flags_from_glfw_(int theFlags)
 
 Aspect_VKeyFlags Occt_view::key_flags_from_glfw_window_() const
 {
-  if (m_occt_window.IsNull() || m_occt_window->getGlfwWindow() == nullptr)
+  if (m_glfw_window == nullptr)
     return Aspect_VKeyFlags_NONE;
 
-  GLFWwindow* const window = m_occt_window->getGlfwWindow();
-  int               mods   = 0;
-  if (glfwGetKey(window, GLFW_KEY_LEFT_SHIFT) == GLFW_PRESS || glfwGetKey(window, GLFW_KEY_RIGHT_SHIFT) == GLFW_PRESS)
+  int mods = 0;
+  if (glfwGetKey(m_glfw_window, GLFW_KEY_LEFT_SHIFT) == GLFW_PRESS ||
+      glfwGetKey(m_glfw_window, GLFW_KEY_RIGHT_SHIFT) == GLFW_PRESS)
     mods |= GLFW_MOD_SHIFT;
 
-  if (glfwGetKey(window, GLFW_KEY_LEFT_CONTROL) == GLFW_PRESS || glfwGetKey(window, GLFW_KEY_RIGHT_CONTROL) == GLFW_PRESS)
+  if (glfwGetKey(m_glfw_window, GLFW_KEY_LEFT_CONTROL) == GLFW_PRESS ||
+      glfwGetKey(m_glfw_window, GLFW_KEY_RIGHT_CONTROL) == GLFW_PRESS)
     mods |= GLFW_MOD_CONTROL;
 
-  if (glfwGetKey(window, GLFW_KEY_LEFT_ALT) == GLFW_PRESS || glfwGetKey(window, GLFW_KEY_RIGHT_ALT) == GLFW_PRESS)
+  if (glfwGetKey(m_glfw_window, GLFW_KEY_LEFT_ALT) == GLFW_PRESS ||
+      glfwGetKey(m_glfw_window, GLFW_KEY_RIGHT_ALT) == GLFW_PRESS)
     mods |= GLFW_MOD_ALT;
 
-  if (glfwGetKey(window, GLFW_KEY_LEFT_SUPER) == GLFW_PRESS || glfwGetKey(window, GLFW_KEY_RIGHT_SUPER) == GLFW_PRESS)
+  if (glfwGetKey(m_glfw_window, GLFW_KEY_LEFT_SUPER) == GLFW_PRESS ||
+      glfwGetKey(m_glfw_window, GLFW_KEY_RIGHT_SUPER) == GLFW_PRESS)
     mods |= GLFW_MOD_SUPER;
 
   return key_flags_from_glfw_(mods);
+}
+
+NCollection_Vec2<int> Occt_view::cursor_position_() const
+{
+  EZY_ASSERT(m_glfw_window != nullptr);
+  double x = 0.0;
+  double y = 0.0;
+  glfwGetCursorPos(m_glfw_window, &x, &y);
+  return NCollection_Vec2<int>(static_cast<int>(x), static_cast<int>(y));
 }
 
 Occt_view::Sketch_list&       Occt_view::get_sketches() { return m_sketches; }
