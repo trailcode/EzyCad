@@ -467,6 +467,14 @@ private:
   static Aspect_VKeyMouse mouse_button_from_glfw_(int theButton);
   static Aspect_VKeyFlags key_flags_from_glfw_(int theFlags);
   Aspect_VKeyFlags        key_flags_from_glfw_window_() const;
+  /// Cursor in GLFW client pixels (same space as mouse-move ScreenCoords).
+  NCollection_Vec2<int> cursor_position_() const;
+
+  /// After OCCT rubber-band SelectRectangle, add any displayed document solid whose
+  /// projected AABB intersects the rect (OCCT can miss complex / imported BREPs).
+  void handleSelectionPoly(const Handle(AIS_InteractiveContext)& theCtx,
+                           const Handle(V3d_View)&               theView) override;
+  void select_shps_intersecting_screen_rect_(int xmin, int ymin, int xmax, int ymax);
 
   /// Maps wheel delta to OCCT zoom units using \ref m_zoom_scroll_scale and optional Shift (x0.1).
   int zoom_scroll_delta_int_(double wheel_y, bool shift_finer_zoom) const;
@@ -474,6 +482,8 @@ private:
   GUI&                       m_gui;
   AIS_InteractiveContext_ptr m_ctx;
   V3d_View_ptr               m_view;
+  /// Non-owning GLFW window for modifier/cursor polling (WASM has no Occt_glfw_win).
+  GLFWwindow*                m_glfw_window{nullptr};
   Occt_glfw_win_ptr          m_occt_window;
   // Undo / redo
   static constexpr size_t k_max_undo{50};
