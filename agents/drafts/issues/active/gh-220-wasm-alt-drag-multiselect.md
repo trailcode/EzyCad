@@ -21,20 +21,23 @@ See https://github.com/trailcode/EzyCad/issues/220
 
 ### Summary
 
-Desktop: **Alt + LMB drag** rubber-band multi-selects shapes via OCCT `AIS_ViewController`. WASM: same gesture did not select multiple shapes because live Alt was never polled (`m_occt_window` null on Emscripten).
+Desktop: **Alt + LMB drag** rubber-band multi-selects shapes via OCCT `AIS_ViewController`. WASM: same gesture did not multi-select because live Alt was never polled (`m_occt_window` null on Emscripten). Follow-up: stock `SelectRectangle` also missed some complex / STEP solids; Shape List current-group tint looked like selection.
 
 ### Fix (working tree)
 
-- `Occt_view` stores non-owning `GLFWwindow* m_glfw_window` for modifier/cursor polling.
-- Docs: `usage.md`, `usage-occt-view.md`, `gui.md`, CHANGELOG, plan `wasm-alt-drag-multiselect.md`.
+- Non-owning `GLFWwindow* m_glfw_window` for modifier/cursor polling on WASM.
+- After `SelectRectangle`, select displayed solids whose projected AABB intersects the band (GLFW/OCCT size mapping on WASM).
+- Shape List: AIS selection tint vs weaker current-group tint.
+- Docs: `usage.md`, `usage-occt-view.md`, `gui.md`, CHANGELOG, plan.
 
 ### Acceptance criteria
 
 - [x] Code path: WASM can poll Alt during drag (same as desktop)
-- [ ] Manual WASM: Alt + LMB drag multi-selects like desktop
+- [x] Manual WASM: Alt + LMB drag multi-selects like desktop (incl. complex solids under groups)
 - [x] Desktop gesture map unchanged
 - [x] Docs note Alt+drag (and Web Alt caveat)
 - [x] Plan updated: `agents/plans/wasm-alt-drag-multiselect.md`
+- [ ] Close GitHub #220
 
 ### Related
 

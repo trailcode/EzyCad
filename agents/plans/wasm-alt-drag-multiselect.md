@@ -16,55 +16,42 @@ github_issue: 220
 
 On desktop, holding **Alt** and **left-dragging** in the 3D view activates OCCT `AIS_ViewController` rectangle selection (`SelectRectangle` / rubber band) and multi-selects shapes under the box.
 
-On the WASM build the same gesture did **not** multi-select.
+On the WASM build the same gesture did **not** multi-select (Alt never reached OCCT on mouse-move). Separately, stock `SelectRectangle` could miss complex / STEP solids even when simple root boxes were selected (desktop and web).
 
-EzyCad maps modifiers into OCCT flags:
+## Root causes (confirmed)
 
-- `Occt_view::key_flags_from_glfw_` — `GLFW_MOD_ALT` → `Aspect_VKeyFlags_ALT`
-- Mouse press/release: `PressMouseButton` / `ReleaseMouseButton` with `theMods`
-- Mouse move: `UpdateMousePosition(..., key_flags_from_glfw_window_(), ...)` which polls Alt via `glfwGetKey`
-
-Related input/hotkey tracking: [#93](https://github.com/trailcode/EzyCad/issues/93), draft `agents/drafts/issues/active/gh-93-emscripten-web-hotkeys-followup.md`. OCCT desktop vs wasm kit: [occt-wasm-dual-version](../conventions/occt-wasm-dual-version.md).
-
-## Goal
-
-Make **Alt + LMB drag** multi-select on WASM match desktop, without changing desktop gesture mapping or selection schemes.
-
-## Root cause (confirmed in code)
-
-WASM `init_window` skipped creating `Occt_glfw_win` (correct: `Close()` would destroy the shared canvas). `key_flags_from_glfw_window_()` then always returned `NONE` because it only read modifiers from `m_occt_window`. OCCT rebinds when modifiers drop (`myMouseModifiers != theModifiers`), so Alt+LMB `SelectRectangle` became plain LMB orbit on the next move.
+1. **WASM Alt polling** — `init_window` skipped `Occt_glfw_win` (correct: `Close()` would destroy the shared canvas). `key_flags_from_glfw_window_()` always returned `NONE`, so OCCT rebound Alt+LMB `SelectRectangle` to orbit on the next move.
+2. **Sensitive-entity miss** — OCCT rubber-band pick skipped some imported BREPs; fixed by projecting document-solid AABBs into screen space after `SelectRectangle`.
+3. **WASM pixel space** — map projected corners from OCCT/`Wasm_Window` size into GLFW cursor space; keep canvas size synced before project.
+4. **Shape List UX** — current-group row used the same strong tint as AIS selection (looked like grouped solids stayed selected).
 
 ## Approach (landed)
 
-### Phase 0 — reproduce and instrument
+### Phase 1 — input path
 
-- [x] Root cause identified from code path (null `m_occt_window` on WASM → no Alt on move).
-- [ ] Manual WASM retest after fix (Chrome/Firefox): Alt+LMB box select; Ctrl+click still works; desktop unchanged.
-
-### Phase 1 — fix input path
-
-- [x] Store non-owning `GLFWwindow* m_glfw_window` in `Occt_view::init_window`.
-- [x] Poll modifiers and cursor from `m_glfw_window` (`key_flags_from_glfw_window_`, `cursor_position_`).
-- [x] Do not wrap WASM window in owning `Occt_glfw_win`.
+- [x] Non-owning `GLFWwindow* m_glfw_window` for modifier/cursor polling (no owning `Occt_glfw_win` on WASM).
+- [x] `handleSelectionPoly` + `select_shps_intersecting_screen_rect_` (overlap AABB; `Handle(...)` for OCCT 7.9.3 / 8).
+- [x] Shape List: selection tint from AIS only; weaker tint for current group.
 
 ### Phase 2 — docs and parity
 
-- [x] Document Alt+drag in `docs/usage.md` and `docs/usage-occt-view.md`; note web Alt/menu caveat.
-- [x] `src/doc/gui.md` notes non-owning GLFW pointer for WASM modifier polling.
-- [x] `CHANGELOG.md` `[Unreleased]` Fixed entry.
-- [ ] Close #220 when verified on WASM.
+- [x] `docs/usage.md`, `docs/usage-occt-view.md` (Alt+drag + web Alt caveat).
+- [x] `src/doc/gui.md` (GLFW pointer, AABB supplement, Shape List tint).
+- [x] `CHANGELOG.md` `[Unreleased]`.
+- [x] Manual: native + WASM Alt+LMB (including complex solids under groups).
+- [ ] Close #220 on GitHub when ready.
 
 ## Out of scope
 
-- WASM pthreads / parallel OCCT ([wasm-multithreading.md](wasm-multithreading.md)).
-- Broader #93 hotkey parity beyond what this gesture needs.
+- WASM pthreads ([wasm-multithreading.md](wasm-multithreading.md)).
+- Broader #93 hotkey parity.
 - Changing default OCCT mouse gesture map on desktop.
 
 ## Related code
 
-| Area                         | Path                                      |
-| ---------------------------- | ----------------------------------------- |
-| Modifier → OCCT flags        | `src/gui_occt_view.cpp` (`key_flags_*`)   |
-| Mouse → view controller      | `src/gui_occt_view.cpp` (`on_mouse_*`)    |
-| GLFW → GUI                   | `src/main.cpp`, `src/gui.cpp`             |
-| Draft                        | `agents/drafts/issues/active/gh-220-*.md` |
+| Area                    | Path                                                    |
+| ----------------------- | ------------------------------------------------------- |
+| Modifier / cursor       | `src/gui_occt_view.cpp` (`key_flags_*`, `cursor_position_`) |
+| Rubber-band supplement  | `handleSelectionPoly`, `select_shps_intersecting_screen_rect_` |
+| Shape List tint         | `src/gui.cpp` (`shape_list_`)                           |
+| Draft                   | `agents/drafts/issues/active/gh-220-*.md`               |
