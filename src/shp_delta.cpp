@@ -19,8 +19,11 @@ Shape_rec capture_shape_rec(const Shp& shp)
   rec.frame         = shp.get_frame();
   rec.parent_id     = shp.get_parent_id();
   rec.sibling_order = shp.get_sibling_order();
-  rec.is_group      = shp.is_group();
-  rec.visible       = shp.get_visible();
+  rec.is_group         = shp.is_group();
+  rec.visible          = shp.get_visible();
+  rec.show_frame_axes  = shp.show_frame_axes();
+  rec.show_frame_plane = shp.show_frame_plane();
+  rec.show_frame_up    = shp.show_frame_up();
   return rec;
 }
 

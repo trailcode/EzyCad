@@ -2735,6 +2735,53 @@ void GUI::shape_list_()
         if (ImGui::MenuItem("Shape info..."))
           open_shape_info_(shape);
 
+      if (true)
+      {
+        ImGui::Separator();
+        bool show_axes = shape->show_frame_axes();
+        if (ImGui::MenuItem("Show axes", nullptr, show_axes))
+          shape->set_show_frame_axes(!show_axes);
+        bool show_plane = shape->show_frame_plane();
+        if (ImGui::MenuItem("Show plane", nullptr, show_plane))
+          shape->set_show_frame_plane(!show_plane);
+        bool show_up = shape->show_frame_up();
+        if (ImGui::MenuItem("Show up", nullptr, show_up))
+          shape->set_show_frame_up(!show_up);
+        ImGui::Separator();
+        if (ImGui::MenuItem("Reset frame to bbox"))
+        {
+          select_shape_row(shape);
+          m_view->set_shape_frame(shape, Shp::default_frame_for(shape->Shape()));
+          shape->set_show_frame_axes(true);
+        }
+        if (ImGui::MenuItem("Set from planar face..."))
+        {
+          select_shape_row(shape);
+          m_view->shp_set_frame().begin(shape, Shp_set_frame::Pick::Planar_face);
+          set_mode(Mode::Shape_set_frame);
+        }
+        if (ImGui::MenuItem("Set from cylindrical face..."))
+        {
+          select_shape_row(shape);
+          m_view->shp_set_frame().begin(shape, Shp_set_frame::Pick::Cylindrical_face);
+          set_mode(Mode::Shape_set_frame);
+        }
+        if (ImGui::MenuItem("Flip up"))
+        {
+          select_shape_row(shape);
+          gp_Ax3 f = shape->get_frame();
+          f.XReverse();
+          m_view->set_shape_frame(shape, f);
+        }
+        if (ImGui::MenuItem("Flip axis (Z)"))
+        {
+          select_shape_row(shape);
+          gp_Ax3 f = shape->get_frame();
+          f.ZReverse();
+          m_view->set_shape_frame(shape, f);
+        }
+      }
+
         if (ImGui::MenuItem("Delete"))
           shape_to_delete = shape;
 
@@ -2837,6 +2884,53 @@ void GUI::shape_list_()
 
       if (is_group && ImGui::MenuItem("Ungroup"))
         shape_to_ungroup_id = shape->get_id();
+
+      if (!is_group)
+      {
+        ImGui::Separator();
+        bool show_axes = shape->show_frame_axes();
+        if (ImGui::MenuItem("Show axes", nullptr, show_axes))
+          shape->set_show_frame_axes(!show_axes);
+        bool show_plane = shape->show_frame_plane();
+        if (ImGui::MenuItem("Show plane", nullptr, show_plane))
+          shape->set_show_frame_plane(!show_plane);
+        bool show_up = shape->show_frame_up();
+        if (ImGui::MenuItem("Show up", nullptr, show_up))
+          shape->set_show_frame_up(!show_up);
+        ImGui::Separator();
+        if (ImGui::MenuItem("Reset frame to bbox"))
+        {
+          select_shape_row(shape);
+          m_view->set_shape_frame(shape, Shp::default_frame_for(shape->Shape()));
+          shape->set_show_frame_axes(true);
+        }
+        if (ImGui::MenuItem("Set from planar face..."))
+        {
+          select_shape_row(shape);
+          m_view->shp_set_frame().begin(shape, Shp_set_frame::Pick::Planar_face);
+          set_mode(Mode::Shape_set_frame);
+        }
+        if (ImGui::MenuItem("Set from cylindrical face..."))
+        {
+          select_shape_row(shape);
+          m_view->shp_set_frame().begin(shape, Shp_set_frame::Pick::Cylindrical_face);
+          set_mode(Mode::Shape_set_frame);
+        }
+        if (ImGui::MenuItem("Flip up"))
+        {
+          select_shape_row(shape);
+          gp_Ax3 f = shape->get_frame();
+          f.XReverse();
+          m_view->set_shape_frame(shape, f);
+        }
+        if (ImGui::MenuItem("Flip axis (Z)"))
+        {
+          select_shape_row(shape);
+          gp_Ax3 f = shape->get_frame();
+          f.ZReverse();
+          m_view->set_shape_frame(shape, f);
+        }
+      }
 
       if (ImGui::MenuItem("Delete"))
         shape_to_delete = shape;
@@ -3922,6 +4016,10 @@ void GUI::on_left_click_(const ScreenCoords& screen_coords)
     if (m_view->shp_cyl_align().is_dragging())
       m_view->shp_cyl_align().on_left_click();
     else if (Status s = m_view->shp_cyl_align().pick(screen_coords); !s.is_ok())
+      show_message(s.message());
+    break;
+  case Mode::Shape_set_frame:
+    if (Status s = m_view->shp_set_frame().pick(screen_coords); !s.is_ok())
       show_message(s.message());
     break;
   case Mode::Sketch_face_extrude: m_view->sketch_face_extrude(screen_coords, false);  break;

@@ -30,7 +30,8 @@
   X(Sketch_add_slot)                                                                                                           \
   X(Sketch_dim_anno)                                                                                                           \
   X(Shape_cross_section)                                                                                                       \
-  X(Shape_shaft_align)
+  X(Shape_shaft_align)                                                                                                         \
+  X(Shape_set_frame) /* Shape List only: pick face for local frame */
 
 enum class Mode
 {

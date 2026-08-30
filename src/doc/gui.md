@@ -44,7 +44,7 @@ Typical responsibilities:
 
 ### New mode or toolbar command (hotkeys)
 
-When adding a `Mode` to [`mode.h`](../mode.h) (`EZY_MODE_LIST`), a toolbar button, or a one-shot `Command`, update remappable hotkeys in the **same change**. Skip only for modes that must stay toolbar-only (document that choice).
+When adding a `Mode` to [`mode.h`](../mode.h) (`EZY_MODE_LIST`), a toolbar button, or a one-shot `Command`, update remappable hotkeys in the **same change**. Skip only for modes that must stay toolbar-only (document that choice). `Mode::Shape_set_frame` is Shape List-only (no toolbar button / remappable hotkey).
 
 | Step | Touch                                                                                                                                                                                                                          |
 | ---- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
@@ -182,6 +182,7 @@ See also [`src/doc/sketch.md`](sketch.md) and [`src/doc/shape.md`](shape.md) for
 | `Rotate`                                            | `shp_rotate().rotate_selected`              |
 | `Scale`                                             | `shp_scale().scale_selected`                |
 | `Shape_shaft_align`                                   | `shp_cyl_align().drag_depth` / `drag_twist` |
+| `Shape_set_frame`                   | `options_shape_set_frame_mode_` (Shape List only; no toolbar/hotkey)                                                    |
 | `Shape_polar_duplicate`                             | `shp_polar_dup().move_point`                |
 | Sketch tool modes (line, arc, rect, dim, axis, ...) | `curr_sketch().sketch_pt_move`              |
 | `Sketch_face_extrude`                               | `sketch_face_extrude(..., true)`            |
