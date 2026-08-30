@@ -34,7 +34,9 @@ Shp::~Shp()
 {
   // Do not call m_ctx.Remove here: on app exit AIS may release Shp after the context
   // is already dying (shapes stay alive via Display handles). Nullify only.
-  m_frame_axes_ais.Nullify();
+  m_frame_axis_x_ais.Nullify();
+  m_frame_axis_y_ais.Nullify();
+  m_frame_axis_z_ais.Nullify();
   m_frame_plane_fill_ais.Nullify();
   m_frame_plane_lines_ais.Nullify();
   m_frame_up_ais.Nullify();
@@ -202,7 +204,9 @@ void Shp::clear_frame_display()
     ais.Nullify();
   };
 
-  remove(m_frame_axes_ais);
+  remove(m_frame_axis_x_ais);
+  remove(m_frame_axis_y_ais);
+  remove(m_frame_axis_z_ais);
   remove(m_frame_plane_fill_ais);
   remove(m_frame_plane_lines_ais);
   remove(m_frame_up_ais);
@@ -217,7 +221,9 @@ void Shp::sync_frame_display_trsf()
       ais->SetLocalTransformation(trsf);
   };
 
-  apply(m_frame_axes_ais);
+  apply(m_frame_axis_x_ais);
+  apply(m_frame_axis_y_ais);
+  apply(m_frame_axis_z_ais);
   apply(m_frame_plane_fill_ais);
   apply(m_frame_plane_lines_ais);
   apply(m_frame_up_ais);
@@ -256,13 +262,11 @@ void Shp::update_frame_display()
 
   if (m_show_frame_axes)
   {
-    TopoDS_Compound axes;
-    BRep_Builder builder;
-    builder.MakeCompound(axes);
-    builder.Add(axes, BRepBuilderAPI_MakeEdge(o, o.Translated(x * arm)).Edge());
-    builder.Add(axes, BRepBuilderAPI_MakeEdge(o, o.Translated(y * arm)).Edge());
-    builder.Add(axes, BRepBuilderAPI_MakeEdge(o, o.Translated(z * (arm * 1.15))).Edge());
-    m_frame_axes_ais = display_wire(axes, Quantity_NOC_BLUE1, 2.0);
+    // Standard CAD triad: X red, Y green, Z blue.
+    m_frame_axis_x_ais = display_wire(BRepBuilderAPI_MakeEdge(o, o.Translated(x * arm)).Edge(), Quantity_NOC_RED, 2.0);
+    m_frame_axis_y_ais = display_wire(BRepBuilderAPI_MakeEdge(o, o.Translated(y * arm)).Edge(), Quantity_NOC_GREEN, 2.0);
+    m_frame_axis_z_ais =
+        display_wire(BRepBuilderAPI_MakeEdge(o, o.Translated(z * (arm * 1.15))).Edge(), Quantity_NOC_BLUE1, 2.5);
   }
 
   if (m_show_frame_plane)
