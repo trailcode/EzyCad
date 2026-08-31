@@ -104,7 +104,7 @@ See `scripts/build-occt-793-wasm.ps1`, `scripts/build-occt-v8-wasm.ps1`, and sha
 
   Requires `clang-format` (either in PATH or at the default LLVM location).
 
-- **ASCII-only** is also in `scripts/check-nonascii-src.ps1` / `.cmd` (CI). Prefer `agent_check.py` after edits so you do not launch a second checker.
+- **ASCII-only** is also in `scripts/check-nonascii-src.ps1` / `.cmd`. CI (`.github/workflows/source-hygiene.yml`) runs `python scripts/agent_check.py`. Prefer that after edits so you do not launch a second checker.
 
 ## Other scripts
 

@@ -52,7 +52,7 @@ def check_ascii(files: list[Path], root: Path) -> int:
             for col, ch in enumerate(line, start=1):
                 cp = ord(ch)
                 if cp > 0x7F:
-                    print(f"{rel_path(path, root)}:{line_num}:{col}: non-ASCII U+{cp:04X} ({ch})")
+                    print(f"{rel_path(path, root)}:{line_num}:{col}: non-ASCII U+{cp:04X} ({ch!r})")
                     found += 1
     if found:
         print(f"Total non-ASCII character occurrences: {found}")

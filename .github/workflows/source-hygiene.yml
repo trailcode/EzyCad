@@ -8,11 +8,16 @@ on:
     branches: [main, master]
 
 jobs:
-  ascii-src:
+  agent-check:
     runs-on: windows-latest
+    env:
+      PYTHONUTF8: "1"
     steps:
       - uses: actions/checkout@v4
 
-      - name: Check src/ for non-ASCII (comments and strings)
-        shell: cmd
-        run: scripts\check-nonascii-src.cmd
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+
+      - name: ASCII + code style (src/ and tests/)
+        run: python scripts/agent_check.py
