@@ -4,4 +4,4 @@ Use this as a **Cursor rule** or paste into your assistant context when editing 
 
 In `src/` and `tests/`, keep **comments and string literals 7-bit ASCII** (no Unicode punctuation or symbols: smart quotes, en/em dashes, arrows, ellipsis, etc.). Use ASCII equivalents (`-`, `...`, `->`, `sqrt(2)`, plain `'`).
 
-Project style: [docs/ezycad_code_style.md](../../docs/ezycad_code_style.md) (sections **Formatting** / line endings and **Source encoding**). After editing or creating `src/` or `tests/` C++, run `python scripts/agent_check.py <touched paths>` (ASCII + code style in one process). CI: `.github/workflows/source-hygiene.yml`. Standalone ASCII: `scripts/check-nonascii-src.ps1` or `check-nonascii-src.cmd`.
+Project style: [docs/ezycad_code_style.md](../../docs/ezycad_code_style.md) (sections **Formatting** / line endings and **Source encoding**). After editing or creating `src/` or `tests/` C++, run `python scripts/agent_check.py <touched paths>` (ASCII). CI: `.github/workflows/source-hygiene.yml`. Standalone ASCII: `scripts/check-nonascii-src.ps1` or `check-nonascii-src.cmd`. Optional style (not CI): `python scripts/code_style_check.py`.

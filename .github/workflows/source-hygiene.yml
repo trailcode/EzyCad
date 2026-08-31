@@ -8,7 +8,7 @@ on:
     branches: [main, master]
 
 jobs:
-  agent-check:
+  ascii-src:
     runs-on: windows-latest
     env:
       PYTHONUTF8: "1"
@@ -19,5 +19,5 @@ jobs:
         with:
           python-version: "3.13"
 
-      - name: ASCII + code style (src/ and tests/)
+      - name: ASCII in src/ and tests/
         run: python scripts/agent_check.py

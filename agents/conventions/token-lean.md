@@ -7,7 +7,7 @@ Goal: give assistants **only what they need** for the task at hand. Full style g
 1. Root [AGENTS.md](../../AGENTS.md) — pointers only (~20 lines).
 2. [ascii-source.md](ascii-source.md) — when touching `src/` or `tests/`.
 3. [docs/ezycad_code_style.md](../../docs/ezycad_code_style.md) — when writing C++ (do not duplicate in chat).
-4. After creating or editing C++ or Markdown tables: `python scripts/agent_check.py <touched paths>` (do not run `check-nonascii-src` / `code_style_check` / `align_md_tables --check` separately).
+4. After creating or editing C++ or Markdown tables: `python scripts/agent_check.py <touched paths>` (ASCII; MD tables if `.md`). Do not run `check-nonascii-src` / `align_md_tables --check` separately. `code_style_check.py` is optional, not CI.
 
 **Do not** auto-load: `workflows/release.md`, `outreach/`, `drafts/archive/`, `plans/` (except the one plan matching the prompt), or full `local-dev.md` unless building/releasing.
 

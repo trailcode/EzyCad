@@ -12,7 +12,7 @@ Pointer for AI coding assistants. Details live in [agents/README.md](agents/READ
 
 - [agents/conventions/ascii-source.md](agents/conventions/ascii-source.md) for `src/` and `tests/`
 - [docs/ezycad_code_style.md](docs/ezycad_code_style.md) for C++ style
-- After creating or editing C++ (`src/`, `tests/`) or Markdown tables: `python scripts/agent_check.py <touched paths>` (ASCII, code style, table alignment). Do not run the individual check scripts unless that one failed.
+- After creating or editing C++ (`src/`, `tests/`) or Markdown tables: `python scripts/agent_check.py <touched paths>` (ASCII; table alignment for `.md`). Optional local style: `python scripts/code_style_check.py`. Do not run the individual ASCII scripts unless that one failed.
 
 ## When needed
 

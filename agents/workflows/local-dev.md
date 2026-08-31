@@ -94,7 +94,7 @@ See `scripts/build-occt-793-wasm.ps1`, `scripts/build-occt-v8-wasm.ps1`, and sha
   python scripts/agent_check.py src/gui.cpp src/gui.h
   ```
 
-  Runs ASCII + [code style](../../docs/ezycad_code_style.md) (vertical rhythm, ...) in one Python process. With `.md` paths, also checks table alignment. Default (no args): `src/` and `tests/`. IDE: `ezycad_agent_check` CMake target.
+  Runs ASCII on C++. With `.md` paths, also checks table alignment. Default (no args): `src/` and `tests/`. IDE: `ezycad_agent_check` CMake target. Optional local [code style](../../docs/ezycad_code_style.md) (not CI): `python scripts/code_style_check.py`.
 
 - **Format C++** (run before committing changes under `src/`):
 
@@ -110,8 +110,8 @@ See `scripts/build-occt-793-wasm.ps1`, `scripts/build-occt-v8-wasm.ps1`, and sha
 
 - `scripts/ezycad/` — Importable remote client (put `scripts/` on `PYTHONPATH`, then `import ezycad`). Typed `ezy` / `view` / `sketch` API for IPython completion; see [docs/scripting.md](../../docs/scripting.md#remote-python---listen).
 - `scripts/ezycad_remote.py` — CLI wrapper (`python scripts/ezycad_remote.py`, or `python -m ezycad` with `scripts/` on the path). Smoke: `EzyCad --listen 127.0.0.1:8765`, then `python -c "import sys; sys.path.insert(0,'scripts'); import ezycad; print(ezycad.connect().view.sketch_count())"`.
-- `scripts/agent_check.py` — Master post-edit check (ASCII + code style; Markdown tables if `.md` paths). Agents run this instead of the individual checkers.
-- `scripts/code_style_check.py` — Style rules from [docs/ezycad_code_style.md](../../docs/ezycad_code_style.md) (invoked by `agent_check.py`).
+- `scripts/agent_check.py` — Post-edit ASCII check (Markdown tables if `.md` paths). Agents run this instead of `check-nonascii-src`. Optional `--style` runs `code_style_check.py`.
+- `scripts/code_style_check.py` — Optional local style from [docs/ezycad_code_style.md](../../docs/ezycad_code_style.md) (not CI).
 - `scripts/align_md_tables.py` — Align GFM pipe tables in `.md` files for source + preview readability (see [conventions/markdown-tables.md](../conventions/markdown-tables.md)).
 - `scripts/sync-github-pages-html.ps1` — Sync `web/` changes (EzyCad.html etc.) to the GitHub Pages wasm demo site.
 - `scripts/pbf-to-png.ps1` / `.py` — Icon / asset conversion helpers.

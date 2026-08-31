@@ -3,13 +3,14 @@
 
 Runs in a single Python process (no PowerShell):
   - 7-bit ASCII in C/C++ under src/ and tests/ (or given paths)
-  - code_style_check.py rules (vertical rhythm, ...)
   - Markdown table alignment --check when .md paths are given
+  - Optional: code_style_check.py (vertical rhythm) with --style; not CI
 
 Usage (from repo root):
   python scripts/agent_check.py
   python scripts/agent_check.py src/gui.cpp src/gui.h
   python scripts/agent_check.py docs/usage.md
+  python scripts/code_style_check.py src/gui.cpp
 
 Default paths: src/ and tests/. Pass the files you just edited so the report
 stays small. Exit 1 if any check fails.
@@ -103,6 +104,11 @@ def main() -> int:
         default=[root / "src", root / "tests"],
         help="Files or directories you edited (default: src/ and tests/)",
     )
+    ap.add_argument(
+        "--style",
+        action="store_true",
+        help="Also run code_style_check.py (optional; not used by CI)",
+    )
     args = ap.parse_args()
     paths = [p if p.is_absolute() else (Path.cwd() / p) for p in args.paths]
 
@@ -122,7 +128,8 @@ def main() -> int:
     rc = 0
     if cpp_files:
         rc |= check_ascii(cpp_files, root)
-        rc |= check_style(cpp_files, root)
+        if args.style:
+            rc |= check_style(cpp_files, root)
     if md_paths:
         rc |= check_md_tables(md_paths, root)
     return 1 if rc else 0

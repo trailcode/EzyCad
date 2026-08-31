@@ -1,11 +1,13 @@
 #!/usr/bin/env python3
-"""Check EzyCad C++ sources against docs/ezycad_code_style.md.
+"""Optional local check of C++ against docs/ezycad_code_style.md.
 
-Start with Vertical rhythm (blank lines). More rule groups can be added later.
+Not part of CI or the default agent_check.py run. Start with Vertical rhythm
+(blank lines). Do not add groups here to CI unless a rule is as objective as ASCII.
 
 Usage:
   python scripts/code_style_check.py [paths...]
   python scripts/code_style_check.py --rule vertical-rhythm src/gui.cpp
+  python scripts/agent_check.py --style src/gui.cpp
 
 Default paths: <repo>/src
 Exit 1 if any finding is reported.

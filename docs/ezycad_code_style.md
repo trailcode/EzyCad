@@ -105,7 +105,7 @@ Not enforced by clang-format. Treat each **logical beat** as its own short parag
 
 Do not sprinkle blank lines inside a tight expression or a one-line `if` body; the goal is readable beats, not sparse files.
 
-After editing `src/` or `tests/` C++, run `python scripts/agent_check.py <touched paths>` (covers this section plus ASCII). Direct: `python scripts/code_style_check.py`.
+Optional local check (not CI): `python scripts/code_style_check.py`. After C++ edits, run `python scripts/agent_check.py <touched paths>` for ASCII only.
 
 ### Control flow polarity
 
@@ -207,7 +207,7 @@ Prefer **`CHK_RET(expr)`** when a callee returns `Status` or `Result<T>` and the
   - Ranges: `0-255`, `1-9` (hyphen), not en dash.
   - Punctuation in prose: `-` for dash; `...` for ellipsis; `->` for “maps to” / arrows in comments; plain `'` for apostrophes.
   - Math in comments: spell out (`sqrt(2)`, `theta`) or use ASCII operators (`x` for cross-product context, `*` for multiply).
-- After editing `src/` or `tests/`, run `python scripts/agent_check.py <touched paths>`. CI: `.github/workflows/source-hygiene.yml`. Standalone ASCII: `scripts/check-nonascii-src.ps1` (or `check-nonascii-src.cmd`).
+- After editing `src/` or `tests/`, run `python scripts/agent_check.py <touched paths>` (ASCII). CI: `.github/workflows/source-hygiene.yml`. Standalone ASCII: `scripts/check-nonascii-src.ps1` (or `check-nonascii-src.cmd`).
 - For AI tools: the same rule is summarized in `agents/conventions/ascii-source.md`.
 
 ## C++ usage

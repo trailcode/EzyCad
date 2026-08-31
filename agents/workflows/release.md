@@ -20,7 +20,7 @@ See also the comment in `src/version.h`, the project declaration in `CHANGELOG.m
    - Help > About should start with a bold **EzyCad X.Y.Z** header (pulled from `EZYCAD_VERSION_STRING`).
 5. Run pre-commit checks:
    - `.\scripts\format-src.ps1`
-   - `python scripts/agent_check.py` (ASCII + code style; covers `check-nonascii-src.ps1`)
+   - `python scripts/agent_check.py` (ASCII; covers `check-nonascii-src.ps1`)
 6. Commit the release prep changes (version bump + changelog + any doc tweaks).
 7. **Create and push only the annotated tag** (this is the trigger):
    ```powershell
