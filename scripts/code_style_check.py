@@ -487,9 +487,9 @@ def skip_generic_statement(src: Source, i: int, end: int) -> int:
                 i += 1
             continue
         if ch == "=" and paren == 0 and bracket == 0:
-            if i + 1 >= n or src.masked[i + 1] != "=":
+            i, is_assign = skip_equals_token(src.masked, i, n)
+            if is_assign:
                 saw_eq = True
-            i += 1
             continue
         if ch == "(":
             paren += 1
@@ -509,9 +509,9 @@ def skip_generic_statement(src: Source, i: int, end: int) -> int:
             continue
         if ch == "{":
             if paren == 0 and bracket == 0:
-                prev = _prev_non_ws(src.masked, i, end)
+                close_as_fn = is_type_def or (not saw_eq and _opens_function_body(src.masked, i))
                 i = skip_balanced(src.masked, i, end, "{", "}")
-                if is_type_def or (prev == ")" and not saw_eq):
+                if close_as_fn:
                     i = skip_ws(src.masked, i, end)
                     if i < n and src.masked[i] == ";":
                         i += 1
@@ -595,9 +595,72 @@ def _control_bodies(src: Source, start: int, end: int) -> tuple[tuple[int, int],
     return ((i, end),)
 
 
+def skip_equals_token(masked: str, i: int, n: int) -> tuple[int, bool]:
+    """Advance past `=` / `==` / `!=` / `<=` / `>=` / `<=>`. True if assignment `=`."""
+    nxt = masked[i + 1] if i + 1 < n else ""
+    prev = masked[i - 1] if i > 0 else ""
+    if nxt == ">":
+        return i + 2, False
+    if nxt == "=":
+        return i + 2, False
+    if prev in "!<>=":
+        return i + 1, False
+    return i + 1, True
+
+
+FUNC_TRAIL_IDENTS = frozenset({"const", "noexcept", "override", "final", "volatile", "mutable"})
+
+
+def _opens_function_body(masked: str, brace_at: int) -> bool:
+    """True if `{` starts a function/method body (not a brace-init)."""
+    prev = _prev_non_ws(masked, brace_at, len(masked))
+    if prev == ")":
+        return True
+    ident = _prev_ident(masked, brace_at)
+    return ident in FUNC_TRAIL_IDENTS
+
+
+def _prev_ident(masked: str, i: int) -> str:
+    j = i - 1
+    while j >= 0 and masked[j] in " \t\n\r":
+        j -= 1
+    if j < 0 or masked[j] not in IDENT_CONT:
+        return ""
+    end = j + 1
+    while j >= 0 and masked[j] in IDENT_CONT:
+        j -= 1
+    return masked[j + 1 : end]
+
+
+def _prefix_has_assignment(masked: str, start: int, brace_at: int) -> bool:
+    i = start
+    paren = 0
+    bracket = 0
+    n = brace_at
+    while i < n:
+        ch = masked[i]
+        if ch == "(":
+            paren += 1
+        elif ch == ")":
+            paren = max(0, paren - 1)
+        elif ch == "[":
+            bracket += 1
+        elif ch == "]":
+            bracket = max(0, bracket - 1)
+        elif ch == "=" and paren == 0 and bracket == 0:
+            i, is_assign = skip_equals_token(masked, i, n)
+            if is_assign:
+                return True
+            continue
+        i += 1
+    return False
+
+
 def _looks_like_function_body(src: Source, start: int, end: int) -> bool:
-    text = src.masked[start:end]
-    if "=" in text.split("{", 1)[0]:
+    brace_at = src.masked.find("{", start, end)
+    if brace_at < 0:
+        return False
+    if _prefix_has_assignment(src.masked, start, brace_at):
         return False
     i = start
     last_rparen = -1

@@ -644,7 +644,7 @@ TEST_F(Sketch_test, OriginatingFaceSnapPointsCircle)
 
   // For a circle, the implementation extracts:
   // - Start vertex (at angle 0, where the circle starts)
-  // - Midpoint (at angle π, 180 degrees)
+  // - Midpoint (at angle pi, 180 degrees)
   // - End vertex (same as start for closed circle, so not added again)
   // So we expect exactly 2 points: start vertex and midpoint
   std::vector<gp_Pnt> expected = {

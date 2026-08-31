@@ -3820,12 +3820,16 @@ void GUI::apply_sketch_list_ui_from_json_(const nlohmann::json& j)
     Sketch_list_row_ui& ui_row = m_sketch_list_ui[id];
     if (row.contains("expanded") && row["expanded"].is_boolean())
       ui_row.expanded = row["expanded"].get<bool>();
+
     if (row.contains("dimensions") && row["dimensions"].is_boolean())
       ui_row.dimensions = row["dimensions"].get<bool>();
+
     if (row.contains("nodes") && row["nodes"].is_boolean())
       ui_row.nodes = row["nodes"].get<bool>();
+
     if (row.contains("edges") && row["edges"].is_boolean())
       ui_row.edges = row["edges"].get<bool>();
+
     if (row.contains("faces") && row["faces"].is_boolean())
       ui_row.faces = row["faces"].get<bool>();
   }

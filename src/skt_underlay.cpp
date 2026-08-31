@@ -897,6 +897,7 @@ void Sketch_underlay::Impl::build_ais_(const gp_Pln& pln)
             std::swap(r1[c], r2[c]);
         }
       }
+
       if (m_flip_image_u)
       {
         // horizontal flip (U / image columns)

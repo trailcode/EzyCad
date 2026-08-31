@@ -856,6 +856,7 @@ bool Occt_view::sketch_plane_view_aabb_2d(const gp_Pln& pln, double display_w, d
     min_u -= 1.0;
     max_u += 1.0;
   }
+
   if (max_v - min_v < k_eps)
   {
     min_v -= 1.0;
