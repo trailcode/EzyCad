@@ -208,6 +208,7 @@ void GUI::initialize_toolbar_()
       {load_texture("res/icons/Part_Common.png"),                     false, "Shape common",                      Command::Shape_common},
       // clang-format on
   };
+
   sync_toolbar_hotkey_tooltips_();
 }
 
@@ -225,6 +226,7 @@ void GUI::sync_toolbar_hotkey_tooltips_()
       return;
     }
   };
+
   auto tip_cmd = [this](Command cmd, const char* base, Gui_action action)
   {
     for (Toolbar_button& b : m_toolbar_buttons)
@@ -439,6 +441,7 @@ void GUI::menu_bar_()
       ImGui::EndMenu();
     }
 #ifdef __EMSCRIPTEN__
+
     if (ImGui::MenuItem("Save settings"))
     {
       save_occt_view_settings();
@@ -518,12 +521,14 @@ void GUI::menu_bar_()
       }
     }
 #ifndef NDEBUG
+
     if (ImGui::MenuItem("Debug", nullptr, m_show_dbg))
     {
       m_show_dbg = !m_show_dbg;
       save_panes = true;
     }
 #endif
+
     if (save_panes)
       save_occt_view_settings();
 
@@ -717,6 +722,7 @@ void GUI::ensure_about_assets_()
 #endif
       "res/AI-gen-splashscreen_05_01_2026_512.png",
   };
+
   for (const char* p : png_paths)
   {
     if (!std::filesystem::exists(p))
@@ -1336,6 +1342,7 @@ void GUI::sketch_list_inspector_(const Sketch::sptr& sketch, int index, Sketch_l
             sketch_list_extrude_face_(sketch, i);
           ImGui::EndPopup();
         }
+
         ImGui::SameLine();
         if (ImGui::SmallButton("E"))
           sketch_list_extrude_face_(sketch, i);
@@ -1512,6 +1519,7 @@ void GUI::sketch_list_()
         sketch->underlay().set_visible_sync(ul_vis, sketch->get_plane());
         if (m_underlay_panel_sketch == sketch.get())
           m_underlay_vis = ul_vis;
+
         if (m_view->sketch_list_hover() == sketch)
         {
           m_view->set_sketch_list_hover(nullptr);
@@ -1807,6 +1815,7 @@ void GUI::sketch_underlay_panel_settings_(const Sketch::sptr& sk)
     sketch_underlay_import_dialog_();
   }
 #else
+
   if (ImGui::Button("Import image..."))
   {
     m_underlay_import_sketch_target = sk;
@@ -1860,6 +1869,7 @@ void GUI::sketch_underlay_panel_settings_(const Sketch::sptr& sk)
         const float x = std::clamp(c, 0.f, 1.f) * 255.f;
         return static_cast<uint8_t>(x + 0.5f);
       };
+
       ul.set_line_tint_rgba(to_u8(m_underlay_tint_col[0]), to_u8(m_underlay_tint_col[1]), to_u8(m_underlay_tint_col[2]),
                             to_u8(m_underlay_tint_col[3]));
       ul.rebuild_display(ul_pln, ul_sketch_shown);
@@ -2064,6 +2074,7 @@ void GUI::sketch_underlay_panel_settings_(const Sketch::sptr& sk)
           ul.set_flip_image_u(m_underlay_flip_u);
           ul.rebuild_display(ul_pln, ul_sketch_shown);
         }
+
         if (ImGui::Checkbox("Reverse image V (flip vertical in source)", &m_underlay_flip_v))
         {
           ul.set_flip_image_v(m_underlay_flip_v);
@@ -2099,8 +2110,10 @@ void GUI::sketch_underlay_panel_settings_(const Sketch::sptr& sk)
                                                  ImGuiSliderFlags_ClampOnInput);
         if (ImGui::IsItemActivated())
           begin_underlay_undo_(*sk);
+
         if (ImGui::IsItemDeactivatedAfterEdit())
           commit_underlay_undo_(*sk);
+
         if (changed)
           apply_affine();
       }
@@ -2110,8 +2123,10 @@ void GUI::sketch_underlay_panel_settings_(const Sketch::sptr& sk)
                                                  ImGuiSliderFlags_ClampOnInput);
         if (ImGui::IsItemActivated())
           begin_underlay_undo_(*sk);
+
         if (ImGui::IsItemDeactivatedAfterEdit())
           commit_underlay_undo_(*sk);
+
         if (changed)
           apply_affine();
       }
@@ -3282,10 +3297,12 @@ void GUI::file_inspector_dialog_()
           "Flat solids",
           "Union shapes",
       };
+
       int mode_i = static_cast<int>(m_file_inspector_step_mode);
       ImGui::SetNextItemWidth(220.0f);
       if (ImGui::Combo("Import as", &mode_i, k_step_import_labels, IM_ARRAYSIZE(k_step_import_labels)))
         m_file_inspector_step_mode = static_cast<Step_import_mode>(mode_i);
+
       if (ui_show_contextual_help() && ImGui::IsItemHovered())
         ImGui::SetTooltip("Preserve hierarchy: Shape List groups from the STEP assembly (default).\n"
                           "Flat solids: leaf solids only at the document root.\n"
@@ -3507,6 +3524,7 @@ void GUI::lua_console_()
 {
   if (!show_lua_console_effective())
     return;
+
   if (!m_lua_console)
     m_lua_console = std::make_unique<Lua_console>(this);
   m_lua_console->render(&m_show_lua_console);
@@ -3633,6 +3651,7 @@ void GUI::load_default_project_()
     log_message("EzyCad: startup document loaded (saved startup).");
     return;
   }
+
   if (!user_startup.empty())
   {
     log_message("EzyCad: saved startup project is invalid or incomplete; falling back to install default.");
@@ -3745,12 +3764,16 @@ nlohmann::json GUI::sketch_list_ui_to_json_() const
     json row;
     if (ui.expanded)
       row["expanded"] = true;
+
     if (ui.dimensions)
       row["dimensions"] = true;
+
     if (ui.nodes)
       row["nodes"] = true;
+
     if (ui.edges)
       row["edges"] = true;
+
     if (ui.faces)
       row["faces"] = true;
     rows[std::to_string(sketch->get_id())] = std::move(row);
@@ -4124,6 +4147,7 @@ void GUI::export_units_dialog_()
 
   if (ImGui::RadioButton("Inches", m_export_unit == Export_unit::Inch))
     m_export_unit = Export_unit::Inch;
+
   if (ImGui::RadioButton("Millimeters", m_export_unit == Export_unit::Millimeter))
     m_export_unit = Export_unit::Millimeter;
 
@@ -4140,6 +4164,7 @@ void GUI::export_units_dialog_()
     m_export_units_modal_open = false;
     export_file_dialog_(fmt, unit);
   }
+
   ImGui::SameLine();
   if (ImGui::Button("Cancel", ImVec2(120.0f, 0.0f)))
   {
@@ -4438,6 +4463,7 @@ void GUI::on_file(const std::string& file_path, const std::string& file_bytes, b
   if (file_path != "(startup)" && !file_path.empty() && file_path != "res/default.ezy")
     persist_last_opened_project_path_(file_path);
 #endif
+
   if (announce_load)
     show_message("Opened: " + std::filesystem::path(file_path).filename().string());
 }

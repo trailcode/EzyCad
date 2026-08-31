@@ -954,6 +954,7 @@ void Lua_console::execute(const std::string& code)
     lua_pop(m_L, 1);
     return;
   }
+
   if (lua_pcall(m_L, 0, LUA_MULTRET, 0) != LUA_OK)
   {
     append_line(lua_tostring(m_L, -1), true);

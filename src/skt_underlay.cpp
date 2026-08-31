@@ -715,6 +715,7 @@ void Sketch_underlay::Impl::ctx_erase()
     m_ctx.Remove(m_ais, false);
     m_ais.Nullify();
   }
+
   if (!m_border.IsNull())
   {
     m_ctx.Remove(m_border, false);

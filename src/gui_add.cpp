@@ -44,6 +44,7 @@ void GUI::add_box_dialog_()
       ImGui::CloseCurrentPopup();
     }
   }
+
   ImGui::SameLine();
   if (ImGui::Button("Cancel"))
     ImGui::CloseCurrentPopup();
@@ -58,6 +59,7 @@ void GUI::add_pyramid_dialog_()
     ImGui::OpenPopup("Add pyramid");
     m_open_add_pyramid_popup = false;
   }
+
   if (!ImGui::BeginPopupModal("Add pyramid", nullptr, ImGuiWindowFlags_AlwaysAutoResize))
     return;
 
@@ -80,6 +82,7 @@ void GUI::add_pyramid_dialog_()
 
     ImGui::CloseCurrentPopup();
   }
+
   ImGui::SameLine();
   if (ImGui::Button("Cancel"))
     ImGui::CloseCurrentPopup();
@@ -158,6 +161,7 @@ void GUI::add_cylinder_dialog_()
 
     ImGui::CloseCurrentPopup();
   }
+
   ImGui::SameLine();
   if (ImGui::Button("Cancel"))
     ImGui::CloseCurrentPopup();
@@ -198,6 +202,7 @@ void GUI::add_cone_dialog_()
 
     ImGui::CloseCurrentPopup();
   }
+
   ImGui::SameLine();
   if (ImGui::Button("Cancel"))
     ImGui::CloseCurrentPopup();
@@ -237,6 +242,7 @@ void GUI::add_torus_dialog_()
 
     ImGui::CloseCurrentPopup();
   }
+
   ImGui::SameLine();
   if (ImGui::Button("Cancel"))
     ImGui::CloseCurrentPopup();
@@ -300,6 +306,7 @@ void GUI::add_sketch_dialog_()
     m_view->add_sketch(pln, base);
     ImGui::CloseCurrentPopup();
   }
+
   ImGui::SameLine();
   if (ImGui::Button("Cancel"))
     ImGui::CloseCurrentPopup();

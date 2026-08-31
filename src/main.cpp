@@ -113,6 +113,7 @@ int main(int argc, char** argv)
     std::fprintf(stderr, "EzyCad: %s\n", listen_cli_error.c_str());
     return 1;
   }
+
 #if !defined(EZYCAD_HAVE_PYTHON)
   if (want_listen)
   {
@@ -227,6 +228,7 @@ int main(int argc, char** argv)
         auto try_cousine = (exe_dir / "Cousine-Regular.ttf").string();
         if (std::filesystem::exists(try_droid))
           droid_font_path = try_droid;
+
         if (std::filesystem::exists(try_cousine))
           cousine_font_path = try_cousine;
       }

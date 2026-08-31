@@ -292,6 +292,7 @@ std::optional<Status> Shp_cross_section::poll()
     m_running_active = false;
   }
 #else
+
   if (m_chunked.has_value())
   {
     Chunked_job& job = *m_chunked;

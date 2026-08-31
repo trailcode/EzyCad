@@ -101,6 +101,7 @@ private:
   {
     if (n.deleted)
       return false;
+
     if (n.origin && !m_origin_snap_enabled)
       return false;
     return true;
@@ -222,6 +223,7 @@ size_t Sketch_nodes::Impl::get_node_exact(const gp_Pnt2d& pt, bool permanent_for
         continue;
       }
       // If caller requests permanence (e.g. add-node tool), preserve/promote it.
+
       if (permanent_for_new)
         n.permanent = true;
 
