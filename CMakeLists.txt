@@ -767,7 +767,7 @@ if(RES_FILES)
 endif()
 
 # Utility scripts: show scripts/ in the IDE (not compiled; same pattern as res/).
-# Includes agent_check.py / code_style_check.py (post-edit quality) via this glob.
+# Includes agent_check.py (ASCII) and optional code_style_check.py via this glob.
 file(GLOB_RECURSE EZYCAD_SCRIPT_FILES CONFIGURE_DEPENDS
   LIST_DIRECTORIES false
   "${CMAKE_SOURCE_DIR}/scripts/*")
@@ -783,7 +783,8 @@ if(EZYCAD_SCRIPT_FILES)
   set_source_files_properties(${EZYCAD_SCRIPT_FILES_REL} PROPERTIES HEADER_FILE_ONLY TRUE)
 endif()
 
-# Runnable IDE target: ASCII + code-style on src/ and tests/ (python scripts/agent_check.py).
+# Runnable IDE target: ASCII on src/ and tests/ (python scripts/agent_check.py).
+# Style (code_style_check.py) is optional/local, not this target or CI.
 if(NOT Python3_EXECUTABLE)
   find_package(Python3 3.8 QUIET COMPONENTS Interpreter)
 endif()
@@ -791,10 +792,9 @@ if(Python3_EXECUTABLE)
   add_custom_target(ezycad_agent_check
     COMMAND "${Python3_EXECUTABLE}" "${CMAKE_SOURCE_DIR}/scripts/agent_check.py"
     WORKING_DIRECTORY "${CMAKE_SOURCE_DIR}"
-    COMMENT "EzyCad agent_check: ASCII + code style (src/ and tests/)"
+    COMMENT "EzyCad agent_check: ASCII (src/ and tests/)"
     SOURCES
       "${CMAKE_SOURCE_DIR}/scripts/agent_check.py"
-      "${CMAKE_SOURCE_DIR}/scripts/code_style_check.py"
     VERBATIM
   )
   set_target_properties(ezycad_agent_check PROPERTIES
