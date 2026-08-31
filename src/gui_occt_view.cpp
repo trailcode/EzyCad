@@ -3645,6 +3645,9 @@ void Occt_view::sync_sketch_shape_faint_style()
     const bool hide_overlay = hide_all || (sketch && hide_in_sketch);
     const bool show         = own_ok && !hide_overlay;
 
+    // Local-frame AIS (axes/plane/up) stay off in sketch modes.
+    shp->set_frame_display_suppressed(sketch);
+
     if (faint_active && show)
     {
       // Ghost (1) or Wire (2) while sketching; strength drives transparency for both.

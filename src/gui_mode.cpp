@@ -675,7 +675,7 @@ void GUI::options_shape_set_frame_mode_()
 
   const auto pick = m_view->shp_set_frame().get_pick();
   if (pick == Shp_set_frame::Pick::Planar_face)
-    ImGui::TextWrapped("Click a planar face on the selected solid. Z becomes the face normal; origin is the solid center projected onto the plane.");
+    ImGui::TextWrapped("Click a planar face on the selected solid. Z becomes the face normal; origin is the face area center (circle center for a disk).");
   else
     ImGui::TextWrapped("Click a cylindrical face on the selected solid. Z becomes the cylinder axis; origin is the solid center projected onto the axis.");
 

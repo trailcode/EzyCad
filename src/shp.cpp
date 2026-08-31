@@ -194,6 +194,14 @@ void Shp::set_show_frame_up(bool show)
   update_frame_display();
 }
 
+void Shp::set_frame_display_suppressed(bool suppressed)
+{
+  if (m_frame_display_suppressed == suppressed)
+    return;
+  m_frame_display_suppressed = suppressed;
+  update_frame_display();
+}
+
 void Shp::clear_frame_display()
 {
   auto remove = [&](AIS_Shape_ptr& ais)
@@ -214,8 +222,8 @@ void Shp::clear_frame_display()
 
 void Shp::sync_frame_display_trsf()
 {
-  const gp_Trsf& trsf = LocalTransformation();
-  auto apply = [&](const AIS_Shape_ptr& ais)
+  const gp_Trsf& trsf  = LocalTransformation();
+  auto           apply = [&](const AIS_Shape_ptr& ais)
   {
     if (!ais.IsNull())
       ais->SetLocalTransformation(trsf);
@@ -232,7 +240,7 @@ void Shp::sync_frame_display_trsf()
 void Shp::update_frame_display()
 {
   clear_frame_display();
-  if (m_is_group || !m_visible)
+  if (m_is_group || !m_visible || m_frame_display_suppressed)
     return;
 
   if (!m_show_frame_axes && !m_show_frame_plane && !m_show_frame_up)
@@ -242,10 +250,10 @@ void Shp::update_frame_display()
   if (arm <= 0.0)
     return;
 
-  const gp_Pnt o = m_frame.Location();
-  const gp_Vec x(m_frame.XDirection());
-  const gp_Vec y(m_frame.YDirection());
-  const gp_Vec z(m_frame.Direction());
+  const gp_Pnt  o = m_frame.Location();
+  const gp_Vec  x(m_frame.XDirection());
+  const gp_Vec  y(m_frame.YDirection());
+  const gp_Vec  z(m_frame.Direction());
   const gp_Trsf trsf = LocalTransformation();
 
   auto display_wire = [&](const TopoDS_Shape& geom, Quantity_NameOfColor color, double width) -> AIS_Shape_ptr
@@ -271,8 +279,8 @@ void Shp::update_frame_display()
 
   if (m_show_frame_plane)
   {
-    const double half = arm * 0.75;
-    const gp_Pln pln(m_frame);
+    const double      half = arm * 0.75;
+    const gp_Pln      pln(m_frame);
     const TopoDS_Face face = BRepBuilderAPI_MakeFace(pln, -half, half, -half, half).Face();
     m_frame_plane_fill_ais = new AIS_Shape(face);
     m_frame_plane_fill_ais->SetColor(Quantity_NOC_CYAN);
@@ -292,11 +300,11 @@ void Shp::update_frame_display()
 
   if (m_show_frame_up)
   {
-    const gp_Pnt tip = o.Translated(y * arm);
-    const gp_Pnt arrow_left = tip.Translated(y * (-arm * 0.2) + x * (arm * 0.1));
-    const gp_Pnt arrow_right = tip.Translated(y * (-arm * 0.2) - x * (arm * 0.1));
+    const gp_Pnt    tip         = o.Translated(y * arm);
+    const gp_Pnt    arrow_left  = tip.Translated(y * (-arm * 0.2) + x * (arm * 0.1));
+    const gp_Pnt    arrow_right = tip.Translated(y * (-arm * 0.2) - x * (arm * 0.1));
     TopoDS_Compound up;
-    BRep_Builder builder;
+    BRep_Builder    builder;
     builder.MakeCompound(up);
     builder.Add(up, BRepBuilderAPI_MakeEdge(o, tip).Edge());
     builder.Add(up, BRepBuilderAPI_MakeEdge(arrow_left, tip).Edge());
@@ -336,9 +344,9 @@ double frame_arm_length_(const TopoDS_Shape& shape)
 
   double x_min, y_min, z_min, x_max, y_max, z_max;
   bounds.Get(x_min, y_min, z_min, x_max, y_max, z_max);
-  const double dx = x_max - x_min;
-  const double dy = y_max - y_min;
-  const double dz = z_max - z_min;
+  const double dx   = x_max - x_min;
+  const double dy   = y_max - y_min;
+  const double dz   = z_max - z_min;
   const double diag = std::sqrt(dx * dx + dy * dy + dz * dz);
   return std::max(diag * 0.35, 1e-3);
 }

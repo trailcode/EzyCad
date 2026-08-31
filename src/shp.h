@@ -62,6 +62,9 @@ public:
   /// Match frame AIS LocalTransformation to this shape (live move/rotate preview).
   void sync_frame_display_trsf();
   void clear_frame_display();
+  /// When true, frame AIS stay cleared (e.g. while in sketch mode). Flags are unchanged.
+  void set_frame_display_suppressed(bool suppressed);
+  bool frame_display_suppressed() const { return m_frame_display_suppressed; }
 
   /// Show or erase in the interactive context without changing get_visible().
   /// No-op for group nodes.
@@ -92,7 +95,10 @@ protected:
   bool                    m_show_frame_axes{false};
   bool                    m_show_frame_plane{false};
   bool                    m_show_frame_up{false};
-  AIS_Shape_ptr           m_frame_axes_ais;
+  bool                    m_frame_display_suppressed{false};
+  AIS_Shape_ptr           m_frame_axis_x_ais; // red
+  AIS_Shape_ptr           m_frame_axis_y_ais; // green
+  AIS_Shape_ptr           m_frame_axis_z_ais; // blue
   AIS_Shape_ptr           m_frame_plane_fill_ais;
   AIS_Shape_ptr           m_frame_plane_lines_ais;
   AIS_Shape_ptr           m_frame_up_ais;

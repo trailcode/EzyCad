@@ -1,7 +1,9 @@
 #include "shp_set_frame.h"
 
 #include <BRepBndLib.hxx>
+#include <BRepGProp.hxx>
 #include <Bnd_Box.hxx>
+#include <GProp_GProps.hxx>
 #include <optional>
 
 #include "gui.h"
@@ -35,6 +37,17 @@ gp_Pnt project_onto_plane_(const gp_Pln& pln, const gp_Pnt& p)
   const gp_Vec n(pln.Axis().Direction());
   const gp_Vec v(pln.Location(), p);
   return p.Translated(-n * v.Dot(n));
+}
+
+/// Area centroid of a planar face (circle center for a disk); falls back to face AABB center.
+gp_Pnt planar_face_origin_(const TopoDS_Face& face, const gp_Pln& pln)
+{
+  GProp_GProps props;
+  BRepGProp::SurfaceProperties(face, props);
+  if (props.Mass() > 0.0)
+    return project_onto_plane_(pln, props.CentreOfMass());
+
+  return project_onto_plane_(pln, bbox_center_(face));
 }
 } // namespace
 
@@ -79,7 +92,7 @@ Status Shp_set_frame::pick(const ScreenCoords& screen_coords)
     if (!pln)
       return Status::user_error("Selected face is not planar.");
 
-    const gp_Pnt origin = project_onto_plane_(*pln, bbox_center_(m_target->Shape()));
+    const gp_Pnt origin = planar_face_origin_(*face, *pln);
     frame               = gp_Ax3(origin, pln->Axis().Direction(), pln->XAxis().Direction());
   }
   else
