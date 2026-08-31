@@ -791,6 +791,7 @@ TEST_F(Sketch_test, AddNode_splits_linear_edge_interior)
       double x1 = std::max(pa.X(), pb.X());
       if (std::abs(x0 - 0.0) < 1e-6 && std::abs(x1 - 7.0) < 1e-6)
         found_0_7 = true;
+
       if (std::abs(x0 - 7.0) < 1e-6 && std::abs(x1 - 20.0) < 1e-6)
         found_7_20 = true;
     }
