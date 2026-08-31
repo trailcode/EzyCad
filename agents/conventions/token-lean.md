@@ -7,6 +7,7 @@ Goal: give assistants **only what they need** for the task at hand. Full style g
 1. Root [AGENTS.md](../../AGENTS.md) — pointers only (~20 lines).
 2. [ascii-source.md](ascii-source.md) — when touching `src/` or `tests/`.
 3. [docs/ezycad_code_style.md](../../docs/ezycad_code_style.md) — when writing C++ (do not duplicate in chat).
+4. After creating or editing C++ or Markdown tables: `python scripts/agent_check.py <touched paths>` (do not run `check-nonascii-src` / `code_style_check` / `align_md_tables --check` separately).
 
 **Do not** auto-load: `workflows/release.md`, `outreach/`, `drafts/archive/`, `plans/` (except the one plan matching the prompt), or full `local-dev.md` unless building/releasing.
 
@@ -24,7 +25,7 @@ Goal: give assistants **only what they need** for the task at hand. Full style g
 | Script consoles (`src/scr*`, bindings)                                               | [src/doc/script.md](../../src/doc/script.md) — read before editing; update when `ezy`/`view` API or console UI changes                         |
 | Utilities (`src/utl*`, results, I/O, geometry)                                       | [src/doc/utility.md](../../src/doc/utility.md) — read before editing; update when shared helper contracts change                               |
 | Docs build                                                                           | [workflows/docs-build.md](../workflows/docs-build.md)                                                                                          |
-| Editing Markdown tables                                                              | [markdown-tables.md](markdown-tables.md) — align GFM pipes; `python scripts/align_md_tables.py`                                                |
+| Editing Markdown tables                                                              | [markdown-tables.md](markdown-tables.md) — align GFM pipes; after edits: `python scripts/agent_check.py <md files>`                            |
 | Release                                                                              | [workflows/release.md](../workflows/release.md)                                                                                                |
 | Specific issue/PR                                                                    | One file under `drafts/issues/active/` or `drafts/prs/active/`                                                                                 |
 | Feature plan under `plans/`                                                          | **Only** the matching file when the prompt is clearly about that feature (see [plans/README.md](../plans/README.md)); never bulk-load `plans/` |

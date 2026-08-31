@@ -43,7 +43,7 @@ Run **`scripts/format-src.ps1`** (or `clang-format -i` on individual files) befo
 - **`AccessModifierOffset: -1`** — Access specifiers are outdented one space: `` ` public:` ``, `` ` private:` ``, `` ` protected:` `` (one leading space).
 - **`PointerAlignment: Left`** — Attach `*` / `&` to the type: `int* p`, `const Shp& shp`.
 - **`AlignConsecutiveDeclarations: true`** — Align types and names across consecutive declarations in the same block when it helps readability.
-- **`AlignConsecutiveAssignments: true`** — Align `=` across consecutive assignments in the same block when it helps readability.
+- **`AlignConsecutiveAssignments: true`** — Align `=` across consecutive assignments in the same block when it helps readability. Initialize with `=` (`bool ok = false;`) so names and values can line up; brace-init (`bool ok {false};`) does not participate in that alignment.
 - **`AllowShortIfStatementsOnASingleLine: false`** — Do not put an entire `if` (condition + body) on one line; condition and statement stay on separate lines. You may still omit braces for a single-statement body.
 - **`AllowShortLambdasOnASingleLine: Inline`** — Very short **inline** lambdas may stay on one line; longer lambdas break across lines.
 - **`IndentCaseLabels: false`** — `case` / `default` labels align with the surrounding `switch`, not extra-indented under it.
@@ -105,6 +105,8 @@ Not enforced by clang-format. Treat each **logical beat** as its own short parag
 
 Do not sprinkle blank lines inside a tight expression or a one-line `if` body; the goal is readable beats, not sparse files.
 
+After editing `src/` or `tests/` C++, run `python scripts/agent_check.py <touched paths>` (covers this section plus ASCII). Direct: `python scripts/code_style_check.py`.
+
 ### Control flow polarity
 
 When both branches are short and one is the normal success path, prefer **happy-path first**:
@@ -122,7 +124,7 @@ rather than leading with the failure `if` and putting the main work in `else`, u
 
 ### Other conventions (not enforced by clang-format)
 
-- Brace-initialize members (`bool ok {false};`).
+- Initialize members and locals with `=` (`bool ok = false;`), not brace-init (`bool ok {false};`), so clang-format can align consecutive declarations and assignments.
 - Declare locals close to first use.
 - Omit braces on single-statement `if`/`for`/`while` bodies when clear.
 
@@ -205,7 +207,7 @@ Prefer **`CHK_RET(expr)`** when a callee returns `Status` or `Result<T>` and the
   - Ranges: `0-255`, `1-9` (hyphen), not en dash.
   - Punctuation in prose: `-` for dash; `...` for ellipsis; `->` for “maps to” / arrows in comments; plain `'` for apostrophes.
   - Math in comments: spell out (`sqrt(2)`, `theta`) or use ASCII operators (`x` for cross-product context, `*` for multiply).
-- Run `scripts/check-nonascii-src.ps1` (or `check-nonascii-src.cmd`) before committing when touching `src/`.
+- After editing `src/` or `tests/`, run `python scripts/agent_check.py <touched paths>`. CI / standalone: `scripts/check-nonascii-src.ps1` (or `check-nonascii-src.cmd`).
 - For AI tools: the same rule is summarized in `agents/conventions/ascii-source.md`.
 
 ## C++ usage

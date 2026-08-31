@@ -45,9 +45,12 @@ Padding/alignment can make rows slightly longer; that is intentional for source 
 ## Re-align helper
 
 ```bash
+python scripts/agent_check.py docs/usage.md
 python scripts/align_md_tables.py
 python scripts/align_md_tables.py --check
 ```
+
+After editing tables, agents should run `python scripts/agent_check.py <md files>` (check only). Use `align_md_tables.py` without `--check` to write aligned files.
 
 Skips `third_party/`, local `build*` trees, `_deps`, and similar vendor/output dirs.
 
