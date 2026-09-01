@@ -644,7 +644,7 @@ TEST_F(Sketch_test, OriginatingFaceSnapPointsCircle)
 
   // For a circle, the implementation extracts:
   // - Start vertex (at angle 0, where the circle starts)
-  // - Midpoint (at angle π, 180 degrees)
+  // - Midpoint (at angle pi, 180 degrees)
   // - End vertex (same as start for closed circle, so not added again)
   // So we expect exactly 2 points: start vertex and midpoint
   std::vector<gp_Pnt> expected = {
@@ -791,6 +791,7 @@ TEST_F(Sketch_test, AddNode_splits_linear_edge_interior)
       double x1 = std::max(pa.X(), pb.X());
       if (std::abs(x0 - 0.0) < 1e-6 && std::abs(x1 - 7.0) < 1e-6)
         found_0_7 = true;
+
       if (std::abs(x0 - 7.0) < 1e-6 && std::abs(x1 - 20.0) < 1e-6)
         found_7_20 = true;
     }

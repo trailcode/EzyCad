@@ -932,6 +932,7 @@ void Sketch_tools::add_sketch_pt_(const ScreenCoords& screen_coords, size_t requ
     if (m_tmp_node_idxs.size() >= required_num_pts)
       callback(m_tmp_node_idxs.back());
   };
+
   move_sketch_pt_(screen_coords, l);
 }
 

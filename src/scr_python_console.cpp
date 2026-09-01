@@ -49,6 +49,7 @@ const TextEditor::LanguageDefinition& python_language_definition()
         "del",    "elif",     "else", "except", "finally", "for",    "from",   "global", "if",    "import", "in",       "is",
         "lambda", "nonlocal", "not",  "or",     "pass",    "raise",  "return", "try",    "while", "with",   "yield",
     };
+
     for (const char* kw : keywords)
       lang_def.mKeywords.insert(kw);
 
@@ -1119,6 +1120,7 @@ void Python_console::render(bool* p_open)
         m_log_display_buf.push_back('\0');
         m_log_display_built_version = m_log_display_version;
       }
+
       if (m_log_display_buf.empty())
         m_log_display_buf.push_back('\0');
 

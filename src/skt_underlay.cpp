@@ -715,6 +715,7 @@ void Sketch_underlay::Impl::ctx_erase()
     m_ctx.Remove(m_ais, false);
     m_ais.Nullify();
   }
+
   if (!m_border.IsNull())
   {
     m_ctx.Remove(m_border, false);
@@ -896,6 +897,7 @@ void Sketch_underlay::Impl::build_ais_(const gp_Pln& pln)
             std::swap(r1[c], r2[c]);
         }
       }
+
       if (m_flip_image_u)
       {
         // horizontal flip (U / image columns)

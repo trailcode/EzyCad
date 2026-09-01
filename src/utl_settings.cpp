@@ -87,12 +87,14 @@ std::string load_with_defaults()
   const std::filesystem::path user_p = user_settings_json_path();
   if (!user_p.empty())
     content = read_file(user_p);
+
   if (content.empty())
   {
     // Legacy: cwd ezycad_settings.json (same directory as exe when launched that way).
     content = read_file(std::filesystem::path("ezycad_settings.json"));
   }
 #endif
+
   if (content.empty())
   {
     content = load_defaults();

@@ -349,6 +349,7 @@ void GUI::parse_gui_panes_settings_(const std::string& content)
 
       return out;
     };
+
     m_edge_dim_line_width = parse_bounded_float("edge_dim_line_width", 0.5f, 8.0f, k_gui_edge_dim_line_width_default);
     m_edge_dim_arrow_size = parse_bounded_float("edge_dim_arrow_size", 1.0f, 24.0f, k_gui_edge_dim_arrow_size_default);
     m_edge_dim_text_scale = parse_bounded_float("edge_dim_text_scale", k_gui_edge_dim_text_scale_min,
@@ -364,6 +365,7 @@ void GUI::parse_gui_panes_settings_(const std::string& content)
 
       return default_v;
     };
+
     m_edge_dim_text_render_mode = parse_dim_int("edge_dim_text_render_mode", 0, k_gui_edge_dim_text_render_mode_max,
                                                 k_gui_edge_dim_text_render_mode_default);
     if (g.contains("edge_dim_color") && g["edge_dim_color"].is_array() && g["edge_dim_color"].size() >= 3)
@@ -700,6 +702,7 @@ void GUI::load_occt_view_settings_()
 
       return false;
     };
+
     const bool version_ok = settings_version_matches(j);
     if (!version_ok)
     {
@@ -841,6 +844,7 @@ void GUI::settings_()
 
       ImGui::EndTable();
     }
+
     if (verb_changed)
       save_occt_view_settings();
   }
@@ -1209,6 +1213,7 @@ void GUI::settings_()
 
       ImGui::EndTable();
     }
+
     if (grid_changed)
       m_view->set_grid_colors(g1[0], g1[1], g1[2], g2[0], g2[1], g2[2]);
 
@@ -1525,6 +1530,7 @@ void GUI::settings_()
           constexpr std::array<const char*, 6> k_labels = {
               "Opaque 2D text", "SetCommonColor", "2D screen text", "3D text", "Z-layer Top", "Z-layer Topmost",
           };
+
           int rm = m_edge_dim_text_render_mode;
           if (rm < 0 || rm >= static_cast<int>(k_labels.size()))
             rm = k_gui_edge_dim_text_render_mode_default;
@@ -1821,6 +1827,7 @@ void GUI::settings_()
               "Both",
               "None",
           };
+
           int mode = static_cast<int>(Sketch_nodes::get_snap_guide_mode());
           ImGui::SetNextItemWidth(160.0f);
           if (ImGui::BeginCombo("##settings_snap_guide_mode", k_snap_guide_mode_labels[static_cast<size_t>(mode)],
@@ -1835,6 +1842,7 @@ void GUI::settings_()
 
             ImGui::EndCombo();
           }
+
           ImGui::SameLine(0.0f, ImGui::GetStyle().ItemInnerSpacing.x);
           GUI_DOC_HELP_("Traditional: compact local snap marker.\nFullscreen: full-view crosshair/axis guides.\nBoth: show "
                         "compact marker and fullscreen guides together.\nNone: disable snap-to-node and snap guides. Click ? "
@@ -2023,6 +2031,7 @@ void GUI::settings_()
                     doc_urls::k_startup_project);
       ImGui::EndTable();
     }
+
     if (ui_show_contextual_help() && !m_last_opened_project_path.empty())
       ImGui::TextWrapped("Last opened path: %s", m_last_opened_project_path.c_str());
     else

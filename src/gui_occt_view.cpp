@@ -856,6 +856,7 @@ bool Occt_view::sketch_plane_view_aabb_2d(const gp_Pln& pln, double display_w, d
     min_u -= 1.0;
     max_u += 1.0;
   }
+
   if (max_v - min_v < k_eps)
   {
     min_v -= 1.0;
@@ -2308,6 +2309,7 @@ Occt_view::Grid_layout Occt_view::compute_grid_layout_() const
     min_u -= step;
     max_u += step;
   }
+
   if (max_v - min_v < k_min_span)
   {
     min_v -= step;
@@ -2396,6 +2398,7 @@ Occt_grid_rect_params Occt_view::clamp_occt_grid_rect_params_(Occt_grid_rect_par
 
   if (!std::isfinite(g.grid_padding) || g.grid_padding < 0.0)
     g.grid_padding = default_padding;
+
   if (!std::isfinite(g.graphic_z_offset))
     g.graphic_z_offset = 0.0;
 
@@ -3152,11 +3155,13 @@ void Occt_view::refresh_shape_list_hover_highlight()
     update_sketch_list_hover_face_drawer_();
     apply_sketch_list_hover_ais_state_(m_sketch_list_hover_face, m_sketch_list_hover_face_drawer, AIS_Shaded);
   }
+
   if (!m_sketch_list_hover_edge.ais.IsNull())
   {
     update_sketch_list_hover_edge_drawer_();
     apply_sketch_list_hover_ais_state_(m_sketch_list_hover_edge, m_sketch_list_hover_edge_drawer, AIS_WireFrame);
   }
+
   if (!m_sketch_list_hover_node.ais.IsNull())
   {
     update_sketch_list_hover_node_drawer_();
@@ -3197,10 +3202,13 @@ Sketch* Occt_view::sketch_owner_of_list_ais_(const AIS_Shape_ptr& ais)
 {
   if (ais.IsNull())
     return nullptr;
+
   if (auto* face = dynamic_cast<Sketch_face_shp*>(ais.get()))
     return &face->owner_sketch;
+
   if (auto* edge = dynamic_cast<Sketch_AIS_edge*>(ais.get()))
     return &edge->owner_sketch;
+
   if (auto* node = dynamic_cast<Sketch_AIS_node_mark*>(ais.get()))
     return &node->owner_sketch;
   return nullptr;
@@ -3219,6 +3227,7 @@ void Occt_view::clear_sketch_list_hover_ais_state_(Sketch_list_hover_ais& hover)
       hover.ais->SetZLayer(hover.prev_zlayer);
       hover.zlayer_override = false;
     }
+
     if (hover.temp_display)
       m_ctx->Erase(hover.ais, false);
   }
@@ -4498,6 +4507,7 @@ bool Occt_view::import_ply(const std::string& ply_bytes)
     m_gui.log_message("PLY import failed: " + st.message());
     return false;
   }
+
   if (shape.IsNull())
     return false;
 
@@ -4628,6 +4638,7 @@ TopoDS_Shape scale_shape_about_origin_(const TopoDS_Shape& shape, double factor)
 {
   if (shape.IsNull())
     return shape;
+
   if (std::abs(factor - 1.0) <= Precision::Confusion())
     return shape;
 

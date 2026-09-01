@@ -667,6 +667,7 @@ void Sketch_op_data::capture_linear_edges_at_start_(Sketch& sketch, std::vector<
     Prev_edge_rec rec{sketch.m_nodes[e.node_idx_a], sketch.m_nodes[*e.node_idx_b], std::nullopt, e.name};
     if (e.node_idx_mid.has_value())
       rec.pt_mid = sketch.m_nodes[*e.node_idx_mid];
+
     if (std::find_if(out.begin(), out.end(), [&](const Prev_edge_rec& x) { return prev_linear_equal_(x, rec); }) == out.end())
       out.push_back(std::move(rec));
   }

@@ -460,7 +460,7 @@ TEST_F(Sketch_test, MirrorSelectedEdges_Arc)
   sketch.add_sketch_pt(ScreenCoords(dvec2(10.0, 0.0)));
 
   // Add a simple arc above the axis (using three points)
-  // Arc from (-1,1) through (0,2) to (1,1) — a bump above x axis
+  // Arc from (-1,1) through (0,2) to (1,1) - a bump above x axis
   gp_Pnt2d a(-1.0, 1.0);
   gp_Pnt2d b(0.0, 2.0);
   gp_Pnt2d c(1.0, 1.0);
@@ -633,11 +633,11 @@ TEST_F(Sketch_test, RevolveSelected_SimpleEdgeProfile)
 
 // Revolve a closed edge profile (rectangle) by selecting its boundary edges.
 // This exercises the selected_edges path in revolve_selected (multiple edges in compound).
-// Revolving a closed profile 360° around an external axis produces a solid of revolution.
+// Revolving a closed profile 360 deg around an external axis produces a solid of revolution.
 
 // Revolve a closed edge profile (rectangle) by selecting its boundary edges.
 // This exercises the selected_edges path in revolve_selected (multiple edges in compound).
-// Revolving a closed profile 360° around an external axis produces a solid of revolution.
+// Revolving a closed profile 360 deg around an external axis produces a solid of revolution.
 TEST_F(Sketch_test, RevolveSelected_ClosedEdgeProfile)
 {
   gp_Pln default_plane(gp::Origin(), gp::DZ());
@@ -736,7 +736,7 @@ TEST_F(Sketch_test, RevolveSelected_ClosedEdgeProfile)
   EXPECT_NEAR(aymax, eymax, 1e-8);
   EXPECT_NEAR(azmax, ezmax, 1e-8);
 
-  // For a closed profile revolved 360°, we expect a solid of revolution.
+  // For a closed profile revolved 360 deg, we expect a solid of revolution.
   EXPECT_EQ(actual.ShapeType(), TopAbs_SOLID) << "Closed edge profile revolved 360 deg should be a solid";
 }
 

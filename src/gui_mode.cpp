@@ -465,12 +465,14 @@ bool GUI::try_capture_hotkey_press_(int key, int mods)
     show_message(m_hotkey_capture_error);
     return true;
   }
+
   if (Gui_hotkeys::is_reserved_chord(chord))
   {
     m_hotkey_capture_error = "Reserved: " + Gui_hotkeys::format_chord(chord) + " is a fixed shortcut and cannot be remapped.";
     show_message(m_hotkey_capture_error);
     return true;
   }
+
   if (!m_hotkeys.set_chord(*m_hotkey_capture_action, chord))
   {
     m_hotkey_capture_error = "Conflict: " + Gui_hotkeys::format_chord(chord) + " is already assigned.";
@@ -738,6 +740,7 @@ void GUI::options_shape_chamfer_mode_()
           m_view->shp_chamfer().set_chamfer_dist(p * scale);
       }
     }
+
     ImGui::SameLine(0.0f, ImGui::GetStyle().ItemInnerSpacing.x);
     ImGui::TextUnformatted(m_view->project_unit_suffix());
     ImGui::PopID();
@@ -803,6 +806,7 @@ void GUI::options_shape_fillet_mode_()
           m_view->shp_fillet().set_fillet_radius(p * scale);
       }
     }
+
     ImGui::SameLine(0.0f, ImGui::GetStyle().ItemInnerSpacing.x);
     ImGui::TextUnformatted(m_view->project_unit_suffix());
     ImGui::PopID();
@@ -1146,6 +1150,7 @@ void GUI::options_sketch_add_edge_mode_()
       m_edge_from_center = from_center;
       Sketch::set_edge_from_center(from_center);
     }
+
     ImGui::SameLine(0.0f, ImGui::GetStyle().ItemInnerSpacing.x);
     GUI_DOC_HELP_("First click sets the edge midpoint. The second click or Tab length input uses the full edge "
                   "length. Click ? to open the user guide.",
@@ -1261,6 +1266,7 @@ void GUI::options_sketch_common_()
         "Both",
         "None",
     };
+
     int snap_mode = static_cast<int>(Sketch_nodes::get_snap_guide_mode());
     ImGui::SetNextItemWidth(140.0f);
     if (ImGui::BeginCombo("##snap_guide_mode", k_snap_guide_mode_labels[static_cast<size_t>(snap_mode)],

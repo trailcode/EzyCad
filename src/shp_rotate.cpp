@@ -248,6 +248,7 @@ void Shp_rotate::clear_rotation_vis_()
 {
   if (!m_rotation_axis_vis.IsNull())
     ctx().Remove(m_rotation_axis_vis, false);
+
   if (!m_rotation_center_vis.IsNull())
     ctx().Remove(m_rotation_center_vis, false);
   clear_all(m_rotation_axis_vis, m_rotation_center_vis);
