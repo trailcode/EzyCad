@@ -139,6 +139,7 @@ void Shp_operation_base::replace_picked_shape_(Shp_ptr& old_shp, Shp_ptr& new_sh
 
   ctx().ClearSelected(false);
   ctx().Unhilight(old_shp, false);
+  old_shp->clear_frame_display();
   ctx().Remove(old_shp, false);
   v.get_shapes().remove(old_shp);
 

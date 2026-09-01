@@ -40,7 +40,7 @@ Typical responsibilities:
 | 3    | `sync_sketch_add_mid_pt_edges_if_applicable_()` |
 | 4    | Update toolbar active state                     |
 
-`set_parent_mode()` maps each tool mode back to `Normal` or `Sketch_inspection_mode` via `GUI::parent_mode_of` (see parent map in `gui_mode.cpp`). Undo/redo uses the same map so stored `Move` / `Rotate` / `Scale` restore their parent instead of re-entering the free-drag tool (see [undo-redo.md](undo-redo.md#mode-restoration)).
+`set_parent_mode()` maps each tool mode back to `Normal` or `Sketch_inspection_mode` via `GUI::parent_mode_of` (see parent map in `gui_mode.cpp`). Undo/redo uses the same map so stored `Move` / `Rotate` / `Scale` / `Shape_shaft_align` / `Shape_set_frame` restore their parent instead of re-entering a free-drag or face-pick tool (see [undo-redo.md](undo-redo.md#mode-restoration)).
 
 ### New mode or toolbar command (hotkeys)
 

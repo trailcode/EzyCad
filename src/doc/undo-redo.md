@@ -50,7 +50,7 @@ This prevents re-entrant history pushes while applying a step.
 
 ### Mode restoration
 
-After applying a delta or reloading a snapshot, `Occt_view` restores a UI mode via `GUI::set_mode`. Stored `Move` / `Rotate` / `Scale` are mapped to their parent mode (`GUI::parent_mode_of`, normally `Normal`) so undo/redo does not re-enter a free-drag tool that would immediately move the current selection under the cursor. Other stored modes are restored as-is. If the restored mode is `Sketch_inspection_mode`, the sketch list pane is shown again.
+After applying a delta or reloading a snapshot, `Occt_view` restores a UI mode via `GUI::set_mode`. Stored `Move` / `Rotate` / `Scale` / `Shape_shaft_align` / `Shape_set_frame` are mapped to their parent mode (`GUI::parent_mode_of`, normally `Normal`) so undo/redo does not re-enter a free-drag tool or face-pick with no target. Other stored modes are restored as-is. If the restored mode is `Sketch_inspection_mode`, the sketch list pane is shown again.
 
 ### View camera
 

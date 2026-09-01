@@ -105,10 +105,12 @@ Status Shp_set_frame::pick(const ScreenCoords& screen_coords)
     frame               = gp_Ax3(gp_Ax2(origin, cyl->axis.Direction()));
   }
 
-  view().set_shape_frame(m_target, *frame);
-  m_target->set_show_frame_axes(true);
+  // Leave pick mode before the undo push so history stores Normal, not Shape_set_frame.
+  const Shp_ptr target = m_target;
   clear_all(m_target);
   gui().set_mode(Mode::Normal);
+  view().set_shape_frame(target, *frame);
+  target->set_show_frame_axes(true);
   gui().show_message("Local frame updated.");
   return Status::ok();
 }

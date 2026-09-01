@@ -105,7 +105,12 @@ void Shp::apply_context_shown(bool shown)
     m_ctx.Erase(this, false);
   }
 
-  update_frame_display();
+  // Overlay hide (Hide all, hidden ancestor, sketch-hide) must drop frame AIS even when
+  // get_visible() is still true. update_frame_display() keys off m_visible + suppressed.
+  if (shown)
+    update_frame_display();
+  else
+    clear_frame_display();
 }
 
 void Shp::set_selection_mode(const TopAbs_ShapeEnum mode)

@@ -62,7 +62,7 @@ public:
   /// Match frame AIS LocalTransformation to this shape (live move/rotate preview).
   void sync_frame_display_trsf();
   void clear_frame_display();
-  /// When true, frame AIS stay cleared (e.g. while in sketch mode). Flags are unchanged.
+  /// When true, frame AIS stay cleared (sketch tools, Hide all, hidden ancestor). Flags unchanged.
   void set_frame_display_suppressed(bool suppressed);
   bool frame_display_suppressed() const { return m_frame_display_suppressed; }
 

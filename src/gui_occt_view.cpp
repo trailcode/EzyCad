@@ -3645,8 +3645,9 @@ void Occt_view::sync_sketch_shape_faint_style()
     const bool hide_overlay = hide_all || (sketch && hide_in_sketch);
     const bool show         = own_ok && !hide_overlay;
 
-    // Local-frame AIS (axes/plane/up) stay off in sketch modes.
-    shp->set_frame_display_suppressed(sketch);
+    // Frame AIS follow effective visibility, not only get_visible(): sketch tools, Hide all,
+    // and a hidden ancestor group all keep axes/plane/up off (flags unchanged).
+    shp->set_frame_display_suppressed(sketch || !show);
 
     if (faint_active && show)
     {
@@ -3872,8 +3873,8 @@ void Occt_view::set_dynamic_highlight_enabled(bool enabled)
 // Undo / redo: interactive edits use typed deltas; JSON snapshots for mixed delete / file open.
 namespace
 {
-/// Move/Rotate/Scale follow the mouse while active. Restoring those modes on undo/redo would
-/// immediately drag whatever is selected; use the tool's parent mode instead.
+/// Move/Rotate/Scale/shaft-align follow the mouse while active; Shape_set_frame needs a
+/// Shape List target that undo does not restore. Map those modes to their parent instead.
 Mode mode_for_history_restore_(Mode mode);
 } // namespace
 
@@ -4686,6 +4687,7 @@ Mode mode_for_history_restore_(Mode mode)
   case Mode::Rotate:
   case Mode::Scale:
   case Mode::Shape_shaft_align:
+  case Mode::Shape_set_frame:
     return GUI::parent_mode_of(mode);
   default:
     return mode;
