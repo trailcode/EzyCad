@@ -63,6 +63,13 @@ void select_shapes(Occt_view& view, const std::vector<Shp_ptr>& shapes)
   for (const Shp_ptr& shp : shapes)
     cctx.AddOrRemoveSelected(shp, true);
 }
+
+int displayed_object_count(AIS_InteractiveContext& ctx)
+{
+  NCollection_List<AIS_InteractiveObject_ptr> displayed;
+  ctx.DisplayedObjects(displayed);
+  return displayed.Extent();
+}
 } // namespace
 
 // Headless Occt_view fixture shared with sketch tests.
@@ -637,6 +644,34 @@ TEST_F(Shp_test, Undo_delete_shape_restores_brep)
   EXPECT_NEAR(volume_of(view().get_shapes().back()->Shape()), 1000.0, 1e-6);
 }
 
+TEST_F(Shp_test, Delete_shape_clears_frame_ais)
+{
+  // Static GUI can be left in a sketch mode by an earlier test; that suppresses frame AIS.
+  gui().set_mode(Mode::Normal);
+
+  view().add_box(0, 0, 0, 10, 10, 10);
+  ASSERT_EQ(view().get_shapes().size(), 1u);
+  const Shp_ptr shp       = view().get_shapes().back();
+  const int     after_box = displayed_object_count(view().ctx());
+
+  shp->set_show_frame_axes(true);
+  shp->set_show_frame_plane(true);
+  shp->set_show_frame_up(true);
+  const int with_frame = displayed_object_count(view().ctx());
+  ASSERT_GT(with_frame, after_box);
+
+  view().delete_shapes({shp});
+  EXPECT_EQ(view().get_shapes().size(), 0u);
+  EXPECT_EQ(displayed_object_count(view().ctx()), after_box - 1);
+
+  EXPECT_TRUE(view().undo());
+  ASSERT_EQ(view().get_shapes().size(), 1u);
+  EXPECT_TRUE(view().get_shapes().back()->show_frame_axes());
+  EXPECT_TRUE(view().get_shapes().back()->show_frame_plane());
+  EXPECT_TRUE(view().get_shapes().back()->show_frame_up());
+  EXPECT_EQ(displayed_object_count(view().ctx()), with_frame);
+}
+
 TEST_F(Shp_test, Undo_fuse_restores_inputs)
 {
   view().add_box(0, 0, 0, 10, 10, 10);
@@ -686,6 +721,39 @@ TEST_F(Shp_test, Undo_interleaves_sketch_delta_and_shape_add)
   EXPECT_EQ(Sketch_access::get_linear_edge_count(sketch), 1u);
   EXPECT_TRUE(view().redo());
   EXPECT_EQ(view().get_shapes().size(), 1u);
+}
+
+TEST_F(Shp_test, Set_frame_undo_stays_in_normal)
+{
+  gui().set_mode(Mode::Normal);
+  gui().set_hide_all_shapes(false);
+
+  view().add_box(0, 0, 0, 10, 10, 10);
+  Shp_ptr shp = view().get_shapes().back();
+  ASSERT_FALSE(shp.IsNull());
+  const gp_Ax3 before = shp->get_frame();
+  gp_Ax3       after  = before;
+  after.ZReverse();
+
+  gui().set_mode(Mode::Shape_set_frame);
+  view().shp_set_frame().begin(shp, Shp_set_frame::Pick::Planar_face);
+  ASSERT_TRUE(view().shp_set_frame().has_target());
+
+  // Same order as the old pick() bug: push undo while still in Shape_set_frame, then leave.
+  view().set_shape_frame(shp, after);
+  shp->set_show_frame_axes(true);
+  view().shp_set_frame().cancel();
+  EXPECT_EQ(gui().get_mode(), Mode::Normal);
+  EXPECT_FALSE(view().shp_set_frame().has_target());
+
+  EXPECT_TRUE(view().undo());
+  EXPECT_EQ(gui().get_mode(), Mode::Normal);
+  EXPECT_FALSE(view().shp_set_frame().has_target());
+  EXPECT_TRUE(shp->get_frame().Direction().IsEqual(before.Direction(), 1e-9));
+
+  EXPECT_TRUE(view().redo());
+  EXPECT_EQ(gui().get_mode(), Mode::Normal);
+  EXPECT_TRUE(shp->get_frame().Direction().IsEqual(after.Direction(), 1e-9));
 }
 
 TEST_F(Shp_test, Shape_ids_persist_in_json)
@@ -889,6 +957,69 @@ TEST_F(Shp_test, Hide_all_preserves_per_shape_visibility)
   gui().set_hide_all_shapes(false);
   view().sync_sketch_shape_faint_style();
   EXPECT_FALSE(shp->get_visible());
+}
+
+TEST_F(Shp_test, Hide_all_clears_frame_ais)
+{
+  gui().set_mode(Mode::Normal);
+  gui().set_hide_all_shapes(false);
+
+  view().add_box(0, 0, 0, 10, 10, 10);
+  ASSERT_EQ(view().get_shapes().size(), 1u);
+  const Shp_ptr shp       = view().get_shapes().back();
+  const int     after_box = displayed_object_count(view().ctx());
+
+  shp->set_show_frame_axes(true);
+  shp->set_show_frame_plane(true);
+  shp->set_show_frame_up(true);
+  const int with_frame = displayed_object_count(view().ctx());
+  ASSERT_GT(with_frame, after_box);
+
+  gui().set_hide_all_shapes(true);
+  view().sync_sketch_shape_faint_style();
+  EXPECT_TRUE(shp->get_visible());
+  EXPECT_TRUE(shp->show_frame_axes());
+  EXPECT_EQ(displayed_object_count(view().ctx()), after_box - 1);
+
+  shp->set_show_frame_axes(false);
+  shp->set_show_frame_axes(true);
+  EXPECT_EQ(displayed_object_count(view().ctx()), after_box - 1);
+
+  gui().set_hide_all_shapes(false);
+  view().sync_sketch_shape_faint_style();
+  EXPECT_EQ(displayed_object_count(view().ctx()), with_frame);
+}
+
+TEST_F(Shp_test, Hidden_group_clears_child_frame_ais)
+{
+  gui().set_mode(Mode::Normal);
+  gui().set_hide_all_shapes(false);
+
+  view().add_box(0, 0, 0, 10, 10, 10);
+  Shp_ptr box = view().get_shapes().back();
+  box->set_show_frame_axes(true);
+  box->set_show_frame_plane(true);
+  box->set_show_frame_up(true);
+  const int with_frame = displayed_object_count(view().ctx());
+
+  ASSERT_TRUE(view().group_shapes({box}).is_ok());
+  Shp_ptr grp;
+  for (const Shp_ptr& s : view().get_shapes())
+    if (s->is_group())
+      grp = s;
+
+  ASSERT_FALSE(grp.IsNull());
+  EXPECT_EQ(displayed_object_count(view().ctx()), with_frame);
+
+  grp->set_visible(false);
+  view().sync_sketch_shape_faint_style();
+  EXPECT_TRUE(box->get_visible());
+  EXPECT_TRUE(box->show_frame_axes());
+  EXPECT_LT(displayed_object_count(view().ctx()), with_frame);
+
+  grp->set_visible(true);
+  view().sync_sketch_shape_faint_style();
+  EXPECT_EQ(displayed_object_count(view().ctx()), with_frame);
 }
 
 TEST_F(Shp_test, Fuse_keeps_shared_parent)

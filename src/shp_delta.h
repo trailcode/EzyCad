@@ -21,6 +21,9 @@ struct Shape_rec
   int          sibling_order{0};
   bool         is_group{false};
   bool         visible{true};
+  bool         show_frame_axes{false};
+  bool         show_frame_plane{false};
+  bool         show_frame_up{false};
 };
 
 Shape_rec capture_shape_rec(const Shp& shp);

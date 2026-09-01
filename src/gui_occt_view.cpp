@@ -96,6 +96,7 @@ Occt_view::Occt_view(GUI& gui)
     , m_shp_rotate(*this)
     , m_shp_scale(*this)
     , m_shp_cyl_align(*this)
+    , m_shp_set_frame(*this)
     , m_shp_chamfer(*this)
     , m_shp_fillet(*this)
     , m_shp_cut(*this)
@@ -107,7 +108,15 @@ Occt_view::Occt_view(GUI& gui)
 {
 }
 
-Occt_view::~Occt_view() {}
+Occt_view::~Occt_view()
+{
+  // Remove frame AIS while the interactive context is still alive.
+  for (Shp_ptr& shp : m_shps)
+    if (!shp.IsNull())
+      shp->clear_frame_display();
+
+  m_shps.clear();
+}
 
 // Initialization related.
 void Occt_view::init_window(GLFWwindow* GlfwWindow)
@@ -536,6 +545,8 @@ void Occt_view::bake_transform_into_geometry(AIS_Shape_ptr& shape, bool update_v
   // Reset the local transformation to identity
   gp_Trsf identity_transform;
   shape->SetLocalTransformation(identity_transform);
+  if (Shp_ptr document_shape = Shp_ptr::DownCast(shape); !document_shape.IsNull())
+    document_shape->update_frame_display();
 
   // Redisplay to update the viewer and selection
   m_ctx->Redisplay(shape, update_viewer);
@@ -588,6 +599,11 @@ void Occt_view::cancel(Set_parent_mode set_parent_mode)
 
   case Mode::Shape_shaft_align:
     shp_cyl_align().cancel();
+    operation_canceled = true;
+    break;
+
+  case Mode::Shape_set_frame:
+    shp_set_frame().cancel();
     operation_canceled = true;
     break;
 
@@ -1409,6 +1425,12 @@ void Occt_view::insert_shape_rec(const Shape_rec& rec)
   adopt_shape_id(rec.id);
   shp->set_name(rec.name);
   shp->set_frame(rec.frame);
+  if (!shp->is_group())
+  {
+    shp->set_show_frame_axes(rec.show_frame_axes);
+    shp->set_show_frame_plane(rec.show_frame_plane);
+    shp->set_show_frame_up(rec.show_frame_up);
+  }
   shp->set_parent_id(rec.parent_id);
   shp->set_sibling_order(rec.sibling_order);
   // Prefer writing the flag without relying on Display order; sync applies context.
@@ -1431,7 +1453,10 @@ void Occt_view::remove_shape_by_id(Shape_id id)
       set_shape_list_hover(nullptr);
 
     if (!shp->is_group())
+    {
+      shp->clear_frame_display();
       m_ctx->Remove(shp, false);
+    }
 
     m_shps.erase(it);
     ensure_current_group_valid_();
@@ -1450,8 +1475,20 @@ void Occt_view::set_shape_geom_by_id(Shape_id id, const TopoDS_Shape& geom, cons
   shp->set_frame(frame);
   gp_Trsf identity;
   shp->SetLocalTransformation(identity);
+  shp->sync_frame_display_trsf();
   m_ctx->Redisplay(shp, true);
   m_ctx->UpdateCurrentViewer();
+}
+
+void Occt_view::set_shape_frame(const Shp_ptr& shp, const gp_Ax3& frame)
+{
+  if (shp.IsNull() || shp->is_group())
+    return;
+
+  std::vector<Shape_geom_delta::Geom_change> changes;
+  changes.push_back(Shape_geom_delta::Geom_change{shp->get_id(), shp->Shape(), shp->Shape(), shp->get_frame(), frame});
+  shp->set_frame(frame);
+  push_undo_delta(std::make_unique<Shape_geom_delta>(std::move(changes)));
 }
 
 void Occt_view::undo_insert_sketch(const nlohmann::json& sketch_json, bool make_current)
@@ -3534,6 +3571,7 @@ void Occt_view::on_mode()
       case Mode::Rotate:                  set_shp_selection_mode(TopAbs_SHAPE);     break;
       case Mode::Scale:                   set_shp_selection_mode(TopAbs_SHAPE);     break;
       case Mode::Shape_shaft_align:         set_shp_selection_mode(TopAbs_FACE);      break;
+      case Mode::Shape_set_frame:          set_shp_selection_mode(TopAbs_FACE);      break;
       case Mode::Shape_cross_section:     set_shp_selection_mode(TopAbs_COMPOUND);  break;
       default:
         if(m_modes_selection_mode_map.count(get_mode()))
@@ -3615,6 +3653,10 @@ void Occt_view::sync_sketch_shape_faint_style()
     const bool own_ok       = shp->get_visible() && shape_ancestors_visible(*shp);
     const bool hide_overlay = hide_all || (sketch && hide_in_sketch);
     const bool show         = own_ok && !hide_overlay;
+
+    // Frame AIS follow effective visibility, not only get_visible(): sketch tools, Hide all,
+    // and a hidden ancestor group all keep axes/plane/up off (flags unchanged).
+    shp->set_frame_display_suppressed(sketch || !show);
 
     if (faint_active && show)
     {
@@ -3817,6 +3859,8 @@ Shp_move&      Occt_view::shp_move()      { return m_shp_move;       }
 Shp_rotate&    Occt_view::shp_rotate()    { return m_shp_rotate;     }
 Shp_scale&     Occt_view::shp_scale()     { return m_shp_scale;      }
 Shp_cyl_align& Occt_view::shp_cyl_align() { return m_shp_cyl_align; }
+
+Shp_set_frame& Occt_view::shp_set_frame() { return m_shp_set_frame; }
 Shp_chamfer&   Occt_view::shp_chamfer()   { return m_shp_chamfer;    }
 Shp_fillet&    Occt_view::shp_fillet()    { return m_shp_fillet;     }
 Shp_cut&       Occt_view::shp_cut()       { return m_shp_cut;        }
@@ -3838,8 +3882,8 @@ void Occt_view::set_dynamic_highlight_enabled(bool enabled)
 // Undo / redo: interactive edits use typed deltas; JSON snapshots for mixed delete / file open.
 namespace
 {
-/// Move/Rotate/Scale follow the mouse while active. Restoring those modes on undo/redo would
-/// immediately drag whatever is selected; use the tool's parent mode instead.
+/// Move/Rotate/Scale/shaft-align follow the mouse while active; Shape_set_frame needs a
+/// Shape List target that undo does not restore. Map those modes to their parent instead.
 Mode mode_for_history_restore_(Mode mode);
 } // namespace
 
@@ -3998,6 +4042,17 @@ std::string Occt_view::to_json() const
       shp_json["material"] = s->Material();
       shp_json["geom"]     = oss.str();
       shp_json["frame"]    = ::to_json(gp_Pln(s->get_frame()));
+      if (s->show_frame_axes() || s->show_frame_plane() || s->show_frame_up())
+      {
+        json fd;
+        if (s->show_frame_axes())
+          fd["axes"] = true;
+        if (s->show_frame_plane())
+          fd["plane"] = true;
+        if (s->show_frame_up())
+          fd["up"] = true;
+        shp_json["frameDisplay"] = fd;
+      }
     }
     shps.push_back(shp_json);
   }
@@ -4037,7 +4092,11 @@ void Occt_view::load(const std::string& json_str, bool restore_view)
 {
   using namespace nlohmann;
   for (AIS_Shape_ptr& s : m_shps)
+  {
+    if (Shp_ptr shp = Shp_ptr::DownCast(s); !shp.IsNull())
+      shp->clear_frame_display();
     m_ctx->Remove(s, false);
+  }
 
   clear_all(m_sketches, m_cur_sketch, m_shps);
 
@@ -4090,6 +4149,16 @@ void Occt_view::load(const std::string& json_str, bool restore_view)
       shp = new Shp(*m_ctx, shape);
       if (s.contains("frame") && s["frame"].is_object())
         shp->set_frame(from_json_pln(s["frame"]).Position());
+      if (s.contains("frameDisplay") && s["frameDisplay"].is_object())
+      {
+        const json& fd = s["frameDisplay"];
+        if (fd.contains("axes") && fd["axes"].is_boolean())
+          shp->set_show_frame_axes(fd["axes"].get<bool>());
+        if (fd.contains("plane") && fd["plane"].is_boolean())
+          shp->set_show_frame_plane(fd["plane"].get<bool>());
+        if (fd.contains("up") && fd["up"].is_boolean())
+          shp->set_show_frame_up(fd["up"].get<bool>());
+      }
       int mat_idx = static_cast<int>(m_default_material.Name());
       if (s.contains("material") && s["material"].is_number_integer())
         mat_idx = s["material"].get<int>();
@@ -4628,6 +4697,7 @@ Mode mode_for_history_restore_(Mode mode)
   case Mode::Rotate:
   case Mode::Scale:
   case Mode::Shape_shaft_align:
+  case Mode::Shape_set_frame:
     return GUI::parent_mode_of(mode);
   default:
     return mode;

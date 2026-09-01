@@ -3,6 +3,7 @@
 #include <AIS_Shape.hxx>
 #include <AIS_DisplayMode.hxx>
 #include <gp_Ax3.hxx>
+#include <TopoDS_Shape.hxx>
 #include <cstdint>
 
 #include "utl.h"
@@ -41,10 +42,29 @@ public:
   void     set_sibling_order(int order) { m_sibling_order = order; }
 
   /// Shape-local frame metadata. New shapes default to a world-aligned frame
-  /// centered on their bounding box.
+  /// centered on their bounding box. Z is the primary axis; Y is "up".
   const gp_Ax3& get_frame() const { return m_frame; }
-  void          set_frame(const gp_Ax3& frame) { m_frame = frame; }
-  void          transform_frame(const gp_Trsf& transform) { m_frame.Transform(transform); }
+  void          set_frame(const gp_Ax3& frame);
+  void          transform_frame(const gp_Trsf& transform);
+
+  /// World-aligned frame at the shape bounding-box center (same as ctor default).
+  static gp_Ax3 default_frame_for(const TopoDS_Shape& shape);
+
+  bool show_frame_axes() const { return m_show_frame_axes; }
+  bool show_frame_plane() const { return m_show_frame_plane; }
+  bool show_frame_up() const { return m_show_frame_up; }
+  void set_show_frame_axes(bool show);
+  void set_show_frame_plane(bool show);
+  void set_show_frame_up(bool show);
+
+  /// Rebuild axis/plane/up AIS from get_frame() (and current LocalTransformation).
+  void update_frame_display();
+  /// Match frame AIS LocalTransformation to this shape (live move/rotate preview).
+  void sync_frame_display_trsf();
+  void clear_frame_display();
+  /// When true, frame AIS stay cleared (sketch tools, Hide all, hidden ancestor). Flags unchanged.
+  void set_frame_display_suppressed(bool suppressed);
+  bool frame_display_suppressed() const { return m_frame_display_suppressed; }
 
   /// Show or erase in the interactive context without changing get_visible().
   /// No-op for group nodes.
@@ -72,6 +92,16 @@ protected:
   Shape_id                m_parent_id{0};
   int                     m_sibling_order{0};
   gp_Ax3                  m_frame;
+  bool                    m_show_frame_axes{false};
+  bool                    m_show_frame_plane{false};
+  bool                    m_show_frame_up{false};
+  bool                    m_frame_display_suppressed{false};
+  AIS_Shape_ptr           m_frame_axis_x_ais; // red
+  AIS_Shape_ptr           m_frame_axis_y_ais; // green
+  AIS_Shape_ptr           m_frame_axis_z_ais; // blue
+  AIS_Shape_ptr           m_frame_plane_fill_ais;
+  AIS_Shape_ptr           m_frame_plane_lines_ais;
+  AIS_Shape_ptr           m_frame_up_ais;
 };
 
 using Shp_rslt = Result<Shp_ptr>;

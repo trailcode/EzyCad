@@ -20,6 +20,7 @@
 #include "shp_common.h"
 #include "shp_cut.h"
 #include "shp_cyl_align.h"
+#include "shp_set_frame.h"
 #include "shp_extrude.h"
 #include "shp_fillet.h"
 #include "shp_fuse.h"
@@ -150,6 +151,8 @@ public:
   void remove_shape_by_id(Shape_id id);
   /// Replace BREP of an existing shape (identity local transform).
   void set_shape_geom_by_id(Shape_id id, const TopoDS_Shape& geom, const gp_Ax3& frame);
+  /// Frame-only edit with undo (geometry unchanged). Also used by Shape_set_frame.
+  void set_shape_frame(const Shp_ptr& shp, const gp_Ax3& frame);
 
   /// Next sibling_order among children of \a parent_id (0 = document root).
   int next_sibling_order(Shape_id parent_id) const;
@@ -263,6 +266,7 @@ public:
   Shp_rotate&        shp_rotate();
   Shp_scale&         shp_scale();
   Shp_cyl_align&     shp_cyl_align();
+  Shp_set_frame&     shp_set_frame();
   Shp_chamfer&       shp_chamfer();
   Shp_fillet&        shp_fillet();
   Shp_cut&           shp_cut();
@@ -574,6 +578,7 @@ private:
   Shp_rotate    m_shp_rotate;
   Shp_scale     m_shp_scale;
   Shp_cyl_align m_shp_cyl_align;
+  Shp_set_frame m_shp_set_frame;
   // --------------------------------------------------------------------
   // Commands
   Shp_chamfer       m_shp_chamfer;

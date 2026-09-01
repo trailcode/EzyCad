@@ -139,6 +139,7 @@ void Shp_operation_base::replace_picked_shape_(Shp_ptr& old_shp, Shp_ptr& new_sh
 
   ctx().ClearSelected(false);
   ctx().Unhilight(old_shp, false);
+  old_shp->clear_frame_display();
   ctx().Remove(old_shp, false);
   v.get_shapes().remove(old_shp);
 
@@ -173,5 +174,9 @@ void Shp_operation_base::redisplay_operation_shps_after_transform_()
   // from the B-Rep (re-triangulate faces, rebuild sensitive BVH) - very slow for dense shapes.
   // Dynamic highlight is disabled for Move/Rotate/Scale in Occt_view::on_mode() so stale
   // selection BVHs cannot paint a wireframe ghost at the original pose.
+  for (Shp_ptr& shape : m_shps)
+    if (!shape.IsNull())
+      shape->sync_frame_display_trsf();
+
   ctx().UpdateCurrentViewer();
 }

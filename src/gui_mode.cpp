@@ -66,6 +66,7 @@ std::string GUI::get_doc_url_for_mode(Mode mode)
       {Mode::Sketch_add_slot,                 "https://ezycad.readthedocs.io/en/latest/usage-sketch.html#slot-creation-tool"},
       {Mode::Sketch_dim_anno,                 "https://ezycad.readthedocs.io/en/latest/usage-sketch.html#dimension-tool"},
       {Mode::Shape_cross_section,                   "https://ezycad.readthedocs.io/en/latest/usage.html#shape-cross-section-tool"},
+      {Mode::Shape_set_frame,                 "https://ezycad.readthedocs.io/en/latest/usage.html#shape-list"},
       // clang-format on
   };
 
@@ -86,6 +87,10 @@ const char* GUI::current_mode_description_() const
     if (b.data.index() == 0) // holds a Mode
       if (std::get<Mode>(b.data) == m_mode)
         return b.tooltip.c_str();
+
+  // Modes entered only from Shape List / menus (no toolbar button).
+  if (m_mode == Mode::Shape_set_frame)
+    return "Set local frame";
 
   EZY_ASSERT_MSG(false, "Current mode not found in toolbar buttons");
   return "";
@@ -145,6 +150,7 @@ Mode GUI::parent_mode_of(Mode mode)
       {Mode::Sketch_add_slot,                 Mode::Sketch_inspection_mode},
       {Mode::Sketch_dim_anno,                 Mode::Sketch_inspection_mode},
       {Mode::Shape_cross_section,                   Mode::Normal},
+      {Mode::Shape_set_frame,                 Mode::Normal},
       // clang-format on
   };
 
@@ -512,6 +518,7 @@ void GUI::options_()
     case Mode::Shape_fillet:                    options_shape_fillet_mode_();                 break;
     case Mode::Shape_polar_duplicate:           options_shape_polar_duplicate_mode_();        break;
     case Mode::Shape_cross_section:             options_shape_cross_section_mode_();          break;
+    case Mode::Shape_set_frame:                 options_shape_set_frame_mode_();              break;
     
       // Sketch related modes:
     case Mode::Sketch_inspection_mode:          options_sketch_inspection_mode_();            break;
@@ -659,6 +666,25 @@ void GUI::options_shape_shaft_align_mode_()
   ImGui::Separator();
   options_orthographic_projection_();
 }
+
+void GUI::options_shape_set_frame_mode_()
+{
+  EZY_ASSERT(get_mode() == Mode::Shape_set_frame);
+
+  ImGui::TextUnformatted("Set local frame");
+  options_doc_help_button_();
+  ImGui::Separator();
+
+  const auto pick = m_view->shp_set_frame().get_pick();
+  if (pick == Shp_set_frame::Pick::Planar_face)
+    ImGui::TextWrapped("Click a planar face on the selected solid. Z becomes the face normal; origin is the face area center (circle center for a disk).");
+  else
+    ImGui::TextWrapped("Click a cylindrical face on the selected solid. Z becomes the cylinder axis; origin is the solid center projected onto the axis.");
+
+  ImGui::Separator();
+  options_orthographic_projection_();
+}
+
 
 void GUI::options_rotate_mode_()
 {
