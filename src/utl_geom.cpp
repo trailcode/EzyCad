@@ -48,6 +48,7 @@
 #include <V3d_View.hxx>
 #include <algorithm>
 #include <cmath>
+#include <limits>
 #include <gp_Ax1.hxx>
 #include <gp_Ax2.hxx>
 #include <gp_Ax3.hxx>
@@ -366,6 +367,215 @@ TopoDS_Wire make_slot_wire(const gp_Pln& plane, const gp_Pnt2d& pt_a, const gp_P
   wire_maker.Add(line_2.Edge());
 
   return wire_maker.Wire();
+}
+
+namespace
+{
+gp_Pnt2d mirror_across_axis_(const gp_Pnt2d& p, const gp_Pnt2d& c1, const gp_Vec2d& axis)
+{
+  const double len = axis.Magnitude();
+  if (len <= Precision::Confusion())
+    return p;
+
+  const gp_Vec2d a(axis / len);
+  gp_Vec2d       v(c1, p);
+  const double   along = v.Dot(a);
+  gp_Vec2d       perp  = v - a * along;
+  return gp_Pnt2d(c1).Translated(a * along - perp);
+}
+
+std::optional<gp_Pnt2d> circle_circle_intersect_pick_side_(const gp_Pnt2d& c1, double ra, const gp_Pnt2d& c2, double rb,
+                                                         const gp_Pnt2d& mid, const gp_Vec2d& n, bool positive_n_side)
+{
+  const double eps = Precision::Confusion();
+  gp_Vec2d     axis(c1, c2);
+  const double d = axis.Magnitude();
+  if (d <= eps || ra <= eps || rb <= eps)
+    return std::nullopt;
+
+  if (d > ra + rb + eps || d + eps < std::fabs(ra - rb))
+    return std::nullopt;
+
+  const double a  = (ra * ra - rb * rb + d * d) / (2.0 * d);
+  const double h2 = ra * ra - a * a;
+  if (h2 < -eps)
+    return std::nullopt;
+
+  const double h   = std::sqrt(std::max(0.0, h2));
+  const gp_Vec2d ad(axis / d);
+  gp_Pnt2d       p2 = gp_Pnt2d(c1).Translated(ad * a);
+  gp_Vec2d       perp(-ad.Y() * h, ad.X() * h);
+
+  const gp_Pnt2d i0 = p2.Translated(perp);
+  const gp_Pnt2d i1 = p2.Translated(-perp);
+
+  const double d0 = gp_Vec2d(mid, i0).Dot(n);
+  const double d1 = gp_Vec2d(mid, i1).Dot(n);
+  if (positive_n_side)
+    return d0 >= d1 ? i0 : i1;
+  return d0 <= d1 ? i0 : i1;
+}
+
+double bone_waist_gap_(const gp_Pnt2d& c_top, const gp_Pnt2d& c_bot, double cut_r, const gp_Vec2d& n)
+{
+  return gp_Vec2d(c_bot, c_top).Dot(n) - 2.0 * cut_r;
+}
+
+std::optional<Bone_geom> bone_geom_with_cut_radius_(const gp_Pnt2d& c1, const gp_Pnt2d& c2, double r1, double r2,
+                                                    double cut_r, const gp_Vec2d& axis, const gp_Vec2d& n,
+                                                    const gp_Pnt2d& mid, double vx, double vy, double a, double h)
+{
+  const double eps = Precision::Confusion();
+  if (cut_r <= eps)
+    return std::nullopt;
+
+  const std::optional<gp_Pnt2d> c_top =
+      circle_circle_intersect_pick_side_(c1, cut_r + r1, c2, cut_r + r2, mid, n, true);
+  if (!c_top)
+    return std::nullopt;
+
+  Bone_geom g;
+  g.c1         = c1;
+  g.c2         = c2;
+  g.r1         = r1;
+  g.r2         = r2;
+  g.cut_radius = cut_r;
+  g.cut_plus   = *c_top;
+  g.cut_minus  = mirror_across_axis_(*c_top, c1, axis);
+  g.waist      = bone_waist_gap_(g.cut_plus, g.cut_minus, cut_r, n);
+
+  auto tangent_pair = [&](double sign, gp_Pnt2d& t1, gp_Pnt2d& t2)
+  {
+    const double nx = vx * a - sign * vy * h;
+    const double ny = vy * a + sign * vx * h;
+    t1              = gp_Pnt2d(c1.X() + r1 * nx, c1.Y() + r1 * ny);
+    t2              = gp_Pnt2d(c2.X() + r2 * nx, c2.Y() + r2 * ny);
+  };
+
+  tangent_pair(1.0, g.tan_top_a, g.tan_top_b);
+  tangent_pair(-1.0, g.tan_bot_a, g.tan_bot_b);
+  return g;
+}
+
+double bone_waist_for_cut_radius_(const gp_Pnt2d& c1, const gp_Pnt2d& c2, double r1, double r2, double cut_r,
+                                  const gp_Vec2d& axis, const gp_Vec2d& n, const gp_Pnt2d& mid, double vx, double vy,
+                                  double a, double h)
+{
+  const std::optional<Bone_geom> g = bone_geom_with_cut_radius_(c1, c2, r1, r2, cut_r, axis, n, mid, vx, vy, a, h);
+  if (!g)
+    return std::numeric_limits<double>::quiet_NaN();
+  return g->waist;
+}
+
+std::optional<double> solve_cut_radius_for_waist_(const gp_Pnt2d& c1, const gp_Pnt2d& c2, double r1, double r2,
+                                                  double target_waist, const gp_Vec2d& axis, const gp_Vec2d& n,
+                                                  const gp_Pnt2d& mid, double vx, double vy, double a, double h)
+{
+  const double eps = Precision::Confusion();
+  if (target_waist <= eps)
+    return std::nullopt;
+
+  const double dist = axis.Magnitude();
+  double       r_lo = (dist - r1 - r2) / 2.0;
+  if (r_lo <= eps)
+    r_lo = eps;
+
+  double w_lo = bone_waist_for_cut_radius_(c1, c2, r1, r2, r_lo, axis, n, mid, vx, vy, a, h);
+  if (!std::isfinite(w_lo))
+    return std::nullopt;
+
+  if (w_lo >= target_waist)
+    return std::nullopt;
+
+  double r_hi = std::max(r_lo + 1.0, r1 + r2);
+  for (int i = 0; i < 48; ++i)
+  {
+    const double w_hi = bone_waist_for_cut_radius_(c1, c2, r1, r2, r_hi, axis, n, mid, vx, vy, a, h);
+    if (!std::isfinite(w_hi) || w_hi < target_waist)
+      r_hi *= 2.0;
+    else
+      break;
+  }
+
+  const double w_hi = bone_waist_for_cut_radius_(c1, c2, r1, r2, r_hi, axis, n, mid, vx, vy, a, h);
+  if (!std::isfinite(w_hi) || w_hi < target_waist)
+    return std::nullopt;
+
+  for (int i = 0; i < 64; ++i)
+  {
+    const double r_mid = (r_lo + r_hi) * 0.5;
+    const double w_mid = bone_waist_for_cut_radius_(c1, c2, r1, r2, r_mid, axis, n, mid, vx, vy, a, h);
+    if (!std::isfinite(w_mid))
+      return std::nullopt;
+
+    if (w_mid < target_waist)
+      r_lo = r_mid;
+    else
+      r_hi = r_mid;
+  }
+
+  return (r_lo + r_hi) * 0.5;
+}
+} // namespace
+
+std::optional<Bone_geom> compute_bone_geom(const Bone_params& p)
+{
+  const double eps = Precision::Confusion();
+  if (p.r1 <= eps || p.r2 <= eps)
+    return std::nullopt;
+
+  if (p.drive == Bone_drive::Cut_radius && p.cut_radius <= eps)
+    return std::nullopt;
+  if (p.drive == Bone_drive::Waist && p.waist <= eps)
+    return std::nullopt;
+
+  const gp_Vec2d axis(p.c1, p.c2);
+  const double   dist = axis.Magnitude();
+  if (dist <= eps)
+    return std::nullopt;
+
+  if (dist + eps < std::fabs(p.r1 - p.r2))
+    return std::nullopt;
+
+  const double vx = axis.X() / dist;
+  const double vy = axis.Y() / dist;
+  const double a  = (p.r1 - p.r2) / dist;
+  const double h2 = 1.0 - a * a;
+  if (h2 < -eps)
+    return std::nullopt;
+
+  const double h   = std::sqrt(std::max(0.0, h2));
+  const gp_Pnt2d mid = get_midpoint(p.c1, p.c2);
+  const gp_Vec2d n   = gp_Vec2d(vx, vy).Rotated(std::numbers::pi / 2.0);
+
+  double cut_r = p.cut_radius;
+  if (p.drive == Bone_drive::Waist)
+  {
+    const std::optional<double> solved =
+        solve_cut_radius_for_waist_(p.c1, p.c2, p.r1, p.r2, p.waist, axis, n, mid, vx, vy, a, h);
+    if (!solved)
+      return std::nullopt;
+    cut_r = *solved;
+  }
+
+  return bone_geom_with_cut_radius_(p.c1, p.c2, p.r1, p.r2, cut_r, axis, n, mid, vx, vy, a, h);
+}
+
+TopoDS_Shape make_bone_preview_shape(const gp_Pln& pln, const Bone_geom& g)
+{
+  auto circle_at = [&](const gp_Pnt2d& c, double r) -> TopoDS_Wire
+  { return make_circle_wire(pln, c, gp_Pnt2d(c.X() + r, c.Y())); };
+
+  TopoDS_Compound comp;
+  BRep_Builder    bb;
+  bb.MakeCompound(comp);
+  bb.Add(comp, circle_at(g.c1, g.r1));
+  bb.Add(comp, circle_at(g.c2, g.r2));
+  bb.Add(comp, circle_at(g.cut_plus, g.cut_radius));
+  bb.Add(comp, circle_at(g.cut_minus, g.cut_radius));
+  bb.Add(comp, BRepBuilderAPI_MakeEdge(to_3d(pln, g.tan_top_a), to_3d(pln, g.tan_top_b)).Edge());
+  bb.Add(comp, BRepBuilderAPI_MakeEdge(to_3d(pln, g.tan_bot_a), to_3d(pln, g.tan_bot_b)).Edge());
+  return comp;
 }
 
 // Function to get the directional vectors at the start and end of a Geom_TrimmedCurve

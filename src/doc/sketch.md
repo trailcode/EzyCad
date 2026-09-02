@@ -12,7 +12,7 @@ The class is a **coordinator**: it holds shared state (plane, viewer context, vi
 
 Typical uses:
 
-- Interactive creation and editing via sketch tools (line, arc, rectangle, slot, add-node, dimension, operation axis).
+- Interactive creation and editing via sketch tools (line, arc, rectangle, slot, bone, add-node, dimension, operation axis).
 - Face extraction for extrusion and revolve into 3D solids.
 - Mirror selected edges about an operation axis.
 - JSON save/load and undo/redo through stable sketch and node identity.

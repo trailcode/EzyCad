@@ -7,6 +7,7 @@
 #include <gp_Ax1.hxx>
 #include <gp_Dir2d.hxx>
 #include <gp_Pnt.hxx>
+#include <gp_Pnt2d.hxx>
 #include <gp_Trsf.hxx>
 #include <numbers> // For Pi
 #include <optional>
@@ -75,6 +76,47 @@ struct Slot_pnts
 Slot_pnts get_slot_points(const gp_Pnt2d& pt_a, const gp_Pnt2d& pt_b, const gp_Pnt2d& pt_c);
 
 TopoDS_Wire make_slot_wire(const gp_Pln& plane, const gp_Pnt2d& pt_a, const gp_Pnt2d& pt_b, const gp_Pnt2d& pt_c);
+
+/// Which dialog value drives the waist cutter radius (the other is derived).
+enum class Bone_drive
+{
+  Cut_radius,
+  Waist,
+};
+
+/// Two end circles, two waist cutters, and the capsule external tangents.
+struct Bone_params
+{
+  gp_Pnt2d   c1;
+  gp_Pnt2d   c2;
+  double     r1{0};
+  double     r2{0};
+  double     cut_radius{0};
+  double     waist{0};
+  Bone_drive drive{Bone_drive::Waist};
+};
+
+struct Bone_geom
+{
+  gp_Pnt2d c1;
+  gp_Pnt2d c2;
+  gp_Pnt2d cut_plus;
+  gp_Pnt2d cut_minus;
+  double   r1{0};
+  double   r2{0};
+  double   cut_radius{0};
+  double   waist{0};
+  gp_Pnt2d tan_top_a;
+  gp_Pnt2d tan_top_b;
+  gp_Pnt2d tan_bot_a;
+  gp_Pnt2d tan_bot_b;
+};
+
+/// Null when centers coincide, a circle is inside the other, or waist/cut radius cannot be solved.
+std::optional<Bone_geom> compute_bone_geom(const Bone_params& p);
+
+/// Four circle wires plus the two external tangent edges (preview / debug).
+TopoDS_Shape make_bone_preview_shape(const gp_Pln& pln, const Bone_geom& g);
 
 // Function to get the directional vectors at the start and end of a Geom_TrimmedCurve
 std::pair<gp_Vec, gp_Vec> get_start_end_tangents(const Geom_TrimmedCurve_ptr& curve);

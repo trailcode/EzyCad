@@ -53,6 +53,7 @@
       "mode.add_circle": "O",
       "mode.add_circle_3_pts": "Shift+O",
       "mode.add_slot": "U",
+      "mode.add_bone": "Shift+U",
       "mode.polar_duplicate": "Shift+P",
       "mode.cross_section": "Shift+X",
       "mode.cyl_align": "J",

@@ -2,9 +2,11 @@
 
 #include <gp_Pnt2d.hxx>
 #include <optional>
+#include <utility>
 #include <vector>
 
 #include "skt_edge.h"
+#include "utl_geom.h"
 #include "utl_types.h"
 
 class Sketch;
@@ -38,6 +40,10 @@ public:
   /// Clears rubber-band / tmp geometry. Returns true if tmp edges were present (used by `cancel()`).
   bool clear_tmps();
 
+  void update_bone_preview(double r1, double r2, double cut_radius, double waist, Bone_drive drive);
+  [[nodiscard]] bool commit_pending_bone(double r1, double r2, double cut_radius, double waist, Bone_drive drive);
+  [[nodiscard]] const std::optional<Bone_geom>& last_bone_preview_geom() const { return m_last_bone_geom; }
+
   void clear_tmp_node_idxs() { m_tmp_node_idxs.clear(); }
 
   [[nodiscard]] size_t tmp_node_count() const { return m_tmp_node_idxs.size(); }
@@ -70,6 +76,10 @@ private:
   void move_slot_pt_(const ScreenCoords& screen_coords);
   void finalize_slot_(Sketch_op_recorder& rec);
 
+  void add_bone_pt_(const ScreenCoords& screen_coords);
+  void move_bone_pt_(const ScreenCoords& screen_coords);
+  void begin_bone_dialog_from_centers_(const gp_Pnt2d& c1, const gp_Pnt2d& c2);
+
   void add_operation_axis_pt_(const ScreenCoords& screen_coords);
   void finalize_operation_axis_(Sketch_op_recorder& rec);
 
@@ -86,4 +96,6 @@ private:
   std::vector<size_t>      m_tmp_node_idxs;
   std::vector<Sketch_edge> m_tmp_edges;
   AIS_Shape_ptr            m_tmp_shp;
+  std::optional<std::pair<gp_Pnt2d, gp_Pnt2d>> m_bone_centers;
+  std::optional<Bone_geom>                    m_last_bone_geom;
 };

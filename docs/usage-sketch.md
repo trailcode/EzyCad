@@ -14,11 +14,12 @@ This guide covers all 2D sketching tools and operations in EzyCad. For the main 
 9. [Arc Segment Creation Tool](#arc-segment-creation-tool)
 10. [Rectangle and Square Creation Tools](#rectangle-and-square-creation-tools)
 11. [Slot Creation Tool](#slot-creation-tool)
-12. [Operation Axis Tool](#operation-axis-tool)
-13. [Dimension Tool](#dimension-tool)
-14. [Add Node Tool](#add-node-tool)
-15. [Create Sketch from Planar Face Tool](#create-sketch-from-planar-face-tool)
-16. [Image underlay](#image-underlay)
+12. [Bone Creation Tool](#bone-creation-tool)
+13. [Operation Axis Tool](#operation-axis-tool)
+14. [Dimension Tool](#dimension-tool)
+15. [Add Node Tool](#add-node-tool)
+16. [Create Sketch from Planar Face Tool](#create-sketch-from-planar-face-tool)
+17. [Image underlay](#image-underlay)
 
 ---
 
@@ -31,6 +32,7 @@ This guide covers all 2D sketching tools and operations in EzyCad. For the main 
    - ![Circle Tool](res/icons/Sketcher_CreateCircle.png) [Create circles](#circle-creation-tools)
    - ![Rectangle Tool](res/icons/Sketcher_CreateRectangle.png) ![Square Tool](res/icons/Sketcher_CreateSquare.png) [Draw rectangles and squares](#rectangle-and-square-creation-tools)
    - ![Slot Tool](res/icons/Sketcher_CreateSlot.png) [Add slots](#slot-creation-tool)
+   - ![Bone Tool](res/icons/Sketcher_CreateCircle.png) [Add bone](#bone-creation-tool)
    - ![Dimension Tool](res/icons/TechDraw_LengthDimension.png) [Dimension tool](#dimension-tool)
    - ![Add Node Tool](res/icons/Sketcher_CreatePoint.png) [Add nodes](#add-node-tool)
 
@@ -109,6 +111,7 @@ Common keyboard shortcuts (hotkeys) while working in 2D sketch mode or with sket
 | <kbd>Q</kbd> / <kbd>B</kbd> / <kbd>Shift</kbd>+<kbd>B</kbd>              | Add square / rectangle / rectangle from center (defaults; remappable)                        |
 | <kbd>O</kbd> / <kbd>Shift</kbd>+<kbd>O</kbd>                             | Add circle / three-point circle (defaults; remappable)                                       |
 | <kbd>U</kbd>                                                             | Add slot (default; remappable)                                                               |
+| <kbd>Shift</kbd>+<kbd>U</kbd>                                            | Add bone (default; remappable)                                                               |
 | <kbd>P</kbd>                                                             | Sketch from planar face (default; remappable)                                                |
 | <kbd>D</kbd>                                                             | Activate the Dimension tool (default; remappable)                                            |
 | <kbd>Shift</kbd>+<kbd>D</kbd> / <kbd>Delete</kbd> / <kbd>Backspace</kbd> | Delete the selected sketch element(s) or dimension                                           |
@@ -704,6 +707,34 @@ The slot tool allows you to create an oblong or oval-shaped slot with rounded en
 - Designing elongated holes for adjustment
 - Creating rounded-end cutouts in parts
 - Designing slots for sliding mechanisms
+
+(bone-creation-tool)=
+## Bone Creation Tool
+
+![Bone Tool](res/icons/Sketcher_CreateCircle.png)
+
+The bone tool builds a connecting-rod profile: two end circles, two waist cut circles, and the capsule's external tangents. Topology splits those edges into a bone-shaped face you can extrude. Permanent nodes **Bone A** and **Bone B** stay at the two centers for later holes, dimensions, or an operation axis.
+
+**How to use:**
+
+1. Select **Add bone** on the toolbar (default <kbd>Shift</kbd>+<kbd>U</kbd>).
+2. Click the first circle center (normal sketch snap).
+3. Click the second circle center. <kbd>Tab</kbd> sets the center-to-center distance; <kbd>Shift</kbd>+<kbd>Tab</kbd> sets the bone-axis angle.
+4. In the **Add bone** dialog, enter:
+   - **Radius 1** / **Radius 2** — end circle radii
+   - **Cut radius** — both waist cutters (mirrored across the bone axis)
+   - **Waist** — remaining thickness at the midpoint, perpendicular to the center line
+5. A live preview updates as you edit. **Add** commits one undo step; **Cancel** or <kbd>Esc</kbd> drops the preview.
+
+Values are in project units (same as other Add dialogs). **Add** stays disabled when a radius or the waist is not positive. Waist cutters are tangent to both end circles; edit **Waist** or **Cut radius** and the other value updates to match. Geometry also fails when the two centers coincide or one circle sits inside the other (no external tangents).
+
+The sketch keeps the four full circles plus the two tangent segments. Extrude the leftover bone face with the normal **Extrude sketch face** tool.
+
+**Tips:**
+
+- Snap the two centers to existing nodes, or to the sketch origin.
+- After Add, use **Add circle** snapped to **Bone A** / **Bone B** if you want a different hole radius than the end circles.
+- **Waist** and **Cut radius** are linked: the last field you edit drives the solve; the other updates in the dialog.
 
 ## Operation Axis Tool
 

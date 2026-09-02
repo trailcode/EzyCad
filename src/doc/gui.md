@@ -184,7 +184,7 @@ See also [`src/doc/sketch.md`](sketch.md) and [`src/doc/shape.md`](shape.md) for
 | `Shape_shaft_align`                                   | `shp_cyl_align().drag_depth` / `drag_twist` |
 | `Shape_set_frame`                   | `options_shape_set_frame_mode_` (Shape List only; no toolbar/hotkey)                                                    |
 | `Shape_polar_duplicate`                             | `shp_polar_dup().move_point`                |
-| Sketch tool modes (line, arc, rect, dim, axis, ...) | `curr_sketch().sketch_pt_move`              |
+| Sketch tool modes (line, arc, rect, dim, axis, bone, ...) | `curr_sketch().sketch_pt_move`              |
 | `Sketch_face_extrude`                               | `sketch_face_extrude(..., true)`            |
 
 Always calls `m_view->on_mouse_move(screen_coords)` first.

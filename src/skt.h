@@ -167,6 +167,11 @@ public:
   void add_arc_circle(const gp_Pnt2d& pt_a, const gp_Pnt2d& pt_mid, const gp_Pnt2d& pt_c);
   /// Rebuild closed-face topology after bulk edge import.
   void rebuild_faces();
+  /// Add a bone profile (end circles, waist cutters, capsule tangents) and permanent center nodes.
+  void add_bone(const gp_Pnt2d& c1, const gp_Pnt2d& c2, double r1, double r2, double cut_radius, double waist);
+  void update_bone_preview(double r1, double r2, double cut_radius, double waist, Bone_drive drive);
+  [[nodiscard]] bool commit_pending_bone(double r1, double r2, double cut_radius, double waist, Bone_drive drive);
+  [[nodiscard]] const std::optional<Bone_geom>& last_bone_preview_geom() const;
 
 private:
   friend class Sketch_json;

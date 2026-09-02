@@ -9,6 +9,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **Add bone** sketch tool (<kbd>Shift</kbd>+<kbd>U</kbd>): click two circle centers, then a dialog for the two end radii, waist cut radius, and waist thickness. Waist cutters are tangent to both end circles; edit **Waist** or **Cut radius** and the other value updates. Commits end circles, waist cutters, capsule tangents, and permanent **Bone A** / **Bone B** center nodes. Remappable as **`mode.add_bone`**.
+
 - **Shape local frame**: Shape List right-click on a solid toggles **Show axes** / **Show plane** / **Show up**, **Reset frame to bbox**, **Set from planar/cylindrical face**, and **Flip up** / **Flip axis (Z)**. Frame display flags persist in `.ezy` as `frameDisplay`. Face picks use `Mode::Shape_set_frame` (no toolbar hotkey).
 
 - **Shape List Zoom to**: right-click a shape or group name (or the **M** button on a solid) and choose **Zoom to** to frame that solid, or all descendant solids of a group, in the 3D view while keeping the current camera orientation.

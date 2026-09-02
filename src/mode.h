@@ -28,6 +28,7 @@
   X(Sketch_add_circle)                                                                                                         \
   X(Sketch_add_circle_3_pts)                                                                                                   \
   X(Sketch_add_slot)                                                                                                           \
+  X(Sketch_add_bone) /* two centers, then radii / waist dialog */                                                              \
   X(Sketch_dim_anno)                                                                                                           \
   X(Shape_cross_section)                                                                                                       \
   X(Shape_shaft_align)                                                                                                         \

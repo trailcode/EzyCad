@@ -9,6 +9,7 @@
 #include <TopoDS.hxx>
 #include <TopoDS_Edge.hxx>
 #include <TopoDS_Wire.hxx>
+#include <array>
 #include <functional>
 #include <iterator>
 
@@ -150,6 +151,70 @@ void Sketch::add_arc_circle(const gp_Pnt2d& pt_a, const gp_Pnt2d& pt_mid, const 
 }
 
 void Sketch::rebuild_faces() { update_faces_(); }
+
+void Sketch::add_bone(const gp_Pnt2d& c1, const gp_Pnt2d& c2, double r1, double r2, double cut_radius, double waist)
+{
+  Bone_params params;
+  params.c1         = c1;
+  params.c2         = c2;
+  params.r1         = r1;
+  params.r2         = r2;
+  params.cut_radius = cut_radius;
+  params.waist      = waist;
+  params.drive      = Bone_drive::Cut_radius;
+  const std::optional<Bone_geom> g = compute_bone_geom(params);
+  if (!g)
+    return;
+
+  Sketch_op_recorder rec(m_view, *this);
+  {
+    auto add_circle = [&](const gp_Pnt2d& center, double radius)
+    {
+      const gp_Pnt2d          edge(center.X() + radius, center.Y());
+      std::array<gp_Pnt2d, 4> pts = xy_stencil_pnts(center, edge);
+      add_arc_circle_(pts[0], pts[2], pts[1], rec);
+      add_arc_circle_(pts[0], pts[3], pts[1], rec);
+    };
+
+    auto mark_center = [&](const gp_Pnt2d& c, const char* name)
+    {
+      const size_t        idx = m_nodes.get_node_exact(c, true);
+      Sketch_nodes::Node& n   = m_nodes[idx];
+      n.permanent             = true;
+      n.name                  = name;
+      rec.note_curr_node(idx);
+    };
+
+    mark_center(g->c1, "Bone A");
+    mark_center(g->c2, "Bone B");
+    add_circle(g->c1, g->r1);
+    add_circle(g->c2, g->r2);
+    add_circle(g->cut_plus, g->cut_radius);
+    add_circle(g->cut_minus, g->cut_radius);
+    add_edge_(g->tan_top_a, g->tan_top_b, rec);
+    add_edge_(g->tan_bot_a, g->tan_bot_b, rec);
+    rec.commit();
+  }
+
+  m_nodes.finalize();
+  m_node_marks.sync();
+  update_faces_();
+}
+
+void Sketch::update_bone_preview(double r1, double r2, double cut_radius, double waist, Bone_drive drive)
+{
+  m_tools.update_bone_preview(r1, r2, cut_radius, waist, drive);
+}
+
+bool Sketch::commit_pending_bone(double r1, double r2, double cut_radius, double waist, Bone_drive drive)
+{
+  return m_tools.commit_pending_bone(r1, r2, cut_radius, waist, drive);
+}
+
+const std::optional<Bone_geom>& Sketch::last_bone_preview_geom() const
+{
+  return m_tools.last_bone_preview_geom();
+}
 
 void Sketch::add_edge_(const gp_Pnt2d& pt_a, const gp_Pnt2d& pt_b, Sketch_op_recorder& rec)
 {

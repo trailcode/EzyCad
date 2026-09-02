@@ -5,8 +5,11 @@
 #include <TopoDS.hxx>
 #include <TopoDS_Wire.hxx>
 #include <algorithm>
+#include <cmath>
 #include <numbers>
 #include <vector>
+
+#include <Precision.hxx>
 
 #include "skt_edge.h"
 #include "skt_json.h"
@@ -940,4 +943,87 @@ TEST_F(Sketch_test, ProjectUnit_displayConversionAndJsonRoundTrip)
 
   view().new_file();
   EXPECT_EQ(view().get_project_unit(), Project_unit::Inch);
+}
+
+TEST_F(Sketch_test, BoneGeom_equalRadiiTangentCuttersAndWaistFromCutRadius)
+{
+  Bone_params p;
+  p.c1         = gp_Pnt2d(-2.0, 0.0);
+  p.c2         = gp_Pnt2d(2.0, 0.0);
+  p.r1         = 1.0;
+  p.r2         = 1.0;
+  p.cut_radius = 2.0;
+  p.drive      = Bone_drive::Cut_radius;
+
+  const std::optional<Bone_geom> g = compute_bone_geom(p);
+  ASSERT_TRUE(g.has_value());
+  EXPECT_NEAR(g->cut_plus.X(), 0.0, 1e-9);
+  EXPECT_NEAR(g->cut_minus.X(), 0.0, 1e-9);
+  EXPECT_NEAR(g->cut_plus.Y(), std::sqrt(5.0), 1e-9);
+  EXPECT_NEAR(g->cut_plus.Y(), -g->cut_minus.Y(), 1e-9);
+  EXPECT_NEAR(g->tan_top_a.Y(), g->tan_top_b.Y(), 1e-9);
+
+  const double d1 = std::hypot(g->cut_plus.X() - p.c1.X(), g->cut_plus.Y() - p.c1.Y());
+  EXPECT_NEAR(d1, g->cut_radius + p.r1, 1e-9);
+  const double d2 = std::hypot(g->cut_plus.X() - p.c2.X(), g->cut_plus.Y() - p.c2.Y());
+  EXPECT_NEAR(d2, g->cut_radius + p.r2, 1e-9);
+  EXPECT_NEAR(g->waist, 2.0 * std::sqrt(5.0) - 4.0, 1e-9);
+
+  p.c1 = p.c2;
+  EXPECT_FALSE(compute_bone_geom(p).has_value());
+}
+
+TEST_F(Sketch_test, BoneGeom_waistDriveSolvesCutRadius)
+{
+  Bone_params p;
+  p.c1    = gp_Pnt2d(-2.0, 0.0);
+  p.c2    = gp_Pnt2d(2.0, 0.0);
+  p.r1    = 1.0;
+  p.r2    = 1.0;
+  p.waist = 0.4;
+  p.drive = Bone_drive::Waist;
+
+  const std::optional<Bone_geom> g = compute_bone_geom(p);
+  ASSERT_TRUE(g.has_value());
+  EXPECT_NEAR(g->waist, 0.4, 1e-6);
+  EXPECT_GT(g->cut_radius, 0.0);
+}
+
+TEST_F(Sketch_test, AddBone_createsFacesAndPermanentCenters)
+{
+  Headless_guard guard(view());
+
+  gp_Pln default_plane(gp::Origin(), gp::DZ());
+  Sketch sketch("BoneSketch", view(), default_plane);
+  sketch.add_bone(gp_Pnt2d(-2.0, 0.0), gp_Pnt2d(2.0, 0.0), 1.0, 0.5, 2.0, 0.4);
+
+  EXPECT_GE(sketch.face_count(), 1u);
+  EXPECT_GE(Sketch_access::get_edge_count(sketch), 8u);
+
+  bool found_a = false;
+  bool found_b = false;
+  for (size_t i = 0; i < sketch.get_nodes().size(); ++i)
+  {
+    const Sketch_nodes::Node& n = sketch.get_nodes()[i];
+    if (n.deleted || !n.permanent)
+      continue;
+
+    if (n.name == "Bone A")
+    {
+      found_a = true;
+      EXPECT_TRUE(n.IsEqual(gp_Pnt2d(-2.0, 0.0), Precision::Confusion()));
+    }
+    if (n.name == "Bone B")
+    {
+      found_b = true;
+      EXPECT_TRUE(n.IsEqual(gp_Pnt2d(2.0, 0.0), Precision::Confusion()));
+    }
+  }
+
+  EXPECT_TRUE(found_a);
+  EXPECT_TRUE(found_b);
+
+  const std::vector<std::string> labels = sketch.inspector_node_labels();
+  EXPECT_NE(std::find(labels.begin(), labels.end(), "Bone A"), labels.end());
+  EXPECT_NE(std::find(labels.begin(), labels.end(), "Bone B"), labels.end());
 }

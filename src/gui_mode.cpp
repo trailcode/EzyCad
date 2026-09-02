@@ -64,6 +64,7 @@ std::string GUI::get_doc_url_for_mode(Mode mode)
       {Mode::Sketch_add_circle,               "https://ezycad.readthedocs.io/en/latest/usage-sketch.html#circle-creation-tools"},
       {Mode::Sketch_add_circle_3_pts,         ""}, // planned feature - no specific section in the docs yet; falls back to main guide
       {Mode::Sketch_add_slot,                 "https://ezycad.readthedocs.io/en/latest/usage-sketch.html#slot-creation-tool"},
+      {Mode::Sketch_add_bone,                 "https://ezycad.readthedocs.io/en/latest/usage-sketch.html#bone-creation-tool"},
       {Mode::Sketch_dim_anno,                 "https://ezycad.readthedocs.io/en/latest/usage-sketch.html#dimension-tool"},
       {Mode::Shape_cross_section,                   "https://ezycad.readthedocs.io/en/latest/usage.html#shape-cross-section-tool"},
       {Mode::Shape_set_frame,                 "https://ezycad.readthedocs.io/en/latest/usage.html#shape-list"},
@@ -148,6 +149,7 @@ Mode GUI::parent_mode_of(Mode mode)
       {Mode::Sketch_add_circle,               Mode::Sketch_inspection_mode},
       {Mode::Sketch_add_circle_3_pts,         Mode::Sketch_inspection_mode},
       {Mode::Sketch_add_slot,                 Mode::Sketch_inspection_mode},
+      {Mode::Sketch_add_bone,                 Mode::Sketch_inspection_mode},
       {Mode::Sketch_dim_anno,                 Mode::Sketch_inspection_mode},
       {Mode::Shape_cross_section,                   Mode::Normal},
       {Mode::Shape_set_frame,                 Mode::Normal},
@@ -402,6 +404,7 @@ void GUI::dispatch_hotkey_action_(Gui_action action)
   case Gui_action::Mode_add_circle:           set_mode(Mode::Sketch_add_circle);              break;
   case Gui_action::Mode_add_circle_3_pts:     set_mode(Mode::Sketch_add_circle_3_pts);        break;
   case Gui_action::Mode_add_slot:             set_mode(Mode::Sketch_add_slot);                break;
+  case Gui_action::Mode_add_bone:             set_mode(Mode::Sketch_add_bone);                break;
   case Gui_action::Mode_polar_duplicate:      set_mode(Mode::Shape_polar_duplicate);          break;
   case Gui_action::Mode_cross_section:        set_mode(Mode::Shape_cross_section);            break;
   case Gui_action::Cmd_shape_cut:
@@ -536,6 +539,7 @@ void GUI::options_()
     case Mode::Sketch_add_circle:               options_sketch_add_circle_mode_();            break;
     case Mode::Sketch_add_circle_3_pts:         options_sketch_add_circle_three_pts_mode_();  break;
     case Mode::Sketch_add_slot:                 options_sketch_add_slot_mode_();              break;
+    case Mode::Sketch_add_bone:                 options_sketch_add_bone_mode_();              break;
     default:
       EZY_ASSERT_MSG(false, "Options panel: unhandled mode");
       break;
@@ -1250,6 +1254,16 @@ void GUI::options_sketch_add_slot_mode_()
   options_sketch_common_();
   options_sketch_len_angle_hotkeys_();
   options_sketch_add_midpoint_nodes_(m_add_mid_pt_slot_edges);
+}
+
+void GUI::options_sketch_add_bone_mode_()
+{
+  EZY_ASSERT(get_mode() == Mode::Sketch_add_bone);
+
+  options_sketch_common_();
+  options_sketch_len_angle_hotkeys_();
+  ImGui::Separator();
+  ImGui::TextWrapped("Click the two circle centers, then enter radii and waist thickness.");
 }
 
 void GUI::options_orthographic_projection_()
