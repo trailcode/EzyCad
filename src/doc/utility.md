@@ -18,21 +18,21 @@ Typical uses:
 
 ## Module map
 
-| File                                                                           | Responsibility                                                                             |
-| ------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------ |
-| [`utl.h`](../utl.h) / [`utl.cpp`](../utl.cpp)                                  | `Status`, `Result<T>`, `CHK_RET`, `clear_all`, textures, image decode, name uniquification |
-| [`utl_types.h`](../utl_types.h)                                                | OCCT/AIS handle typedefs, `ScreenCoords`, `Export_format`, `Export_unit`, `DECL_PTR`, `SafeType` |
-| [`utl_geom.h`](../utl_geom.h) / [`.cpp`](../utl_geom.cpp)                      | 2D/3D geometry, wires, dimensions, Boost polygon tests, plane projection                   |
-| [`utl_geom_boost.inl`](../utl_geom_boost.inl)                                  | `ezy_geom` Boost.Geometry aliases                                                          |
-| [`utl_occt.h`](../utl_occt.h) / [`.cpp`](../utl_occt.cpp)                      | `TopAbs` name table, `try_make_solid`, `append_cad_import_bodies`, `standard_failure_message` |
-| [`utl_json.h`](../utl_json.h) / [`.cpp`](../utl_json.cpp)                      | JSON serializers for `gp_Pnt`, `gp_Pln`, etc.                                              |
-| [`utl_io.h`](../utl_io.h) / [`.cpp`](../utl_io.cpp)                            | `.ezy` zip v3 pack/unpack, format sniff, base64                                            |
-| [`utl_asset_store.h`](../utl_asset_store.h) / [`.cpp`](../utl_asset_store.cpp) | Content-addressed RGBA blobs for sketch underlay assets                                    |
-| [`utl_settings.h`](../utl_settings.h) / [`.cpp`](../utl_settings.cpp)          | User settings file paths, startup project blob I/O                                         |
-| [`utl_ply_io.h`](../utl_ply_io.h) / [`.cpp`](../utl_ply_io.cpp)                | PLY import/export for mesh shapes                                                          |
-| [`utl_cad_file_info.h`](../utl_cad_file_info.h) / [`.cpp`](../utl_cad_file_info.cpp) | Read-only STEP/IGES/STL/PLY metadata for **File -> Import** (no document mutation until Import) |
-| [`utl_log.h`](../utl_log.h) / [`.cpp`](../utl_log.cpp)                         | `Log_strm` redirecting stdout/stderr to `GUI::log_message`                                 |
-| [`utl_dbg.h`](../utl_dbg.h)                                                    | `EZY_ASSERT`, `DBG_MSG`, debug break macros                                                |
+| File                                                                                 | Responsibility                                                                                   |
+| ------------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------ |
+| [`utl.h`](../utl.h) / [`utl.cpp`](../utl.cpp)                                        | `Status`, `Result<T>`, `CHK_RET`, `clear_all`, textures, image decode, name uniquification       |
+| [`utl_types.h`](../utl_types.h)                                                      | OCCT/AIS handle typedefs, `ScreenCoords`, `Export_format`, `Export_unit`, `DECL_PTR`, `SafeType` |
+| [`utl_geom.h`](../utl_geom.h) / [`.cpp`](../utl_geom.cpp)                            | 2D/3D geometry, wires, dimensions, Boost polygon tests, plane projection                         |
+| [`utl_geom_boost.inl`](../utl_geom_boost.inl)                                        | `ezy_geom` Boost.Geometry aliases                                                                |
+| [`utl_occt.h`](../utl_occt.h) / [`.cpp`](../utl_occt.cpp)                            | `TopAbs` name table, `try_make_solid`, `append_cad_import_bodies`, `standard_failure_message`    |
+| [`utl_json.h`](../utl_json.h) / [`.cpp`](../utl_json.cpp)                            | JSON serializers for `gp_Pnt`, `gp_Pln`, etc.                                                    |
+| [`utl_io.h`](../utl_io.h) / [`.cpp`](../utl_io.cpp)                                  | `.ezy` zip v3 pack/unpack, format sniff, base64                                                  |
+| [`utl_asset_store.h`](../utl_asset_store.h) / [`.cpp`](../utl_asset_store.cpp)       | Content-addressed RGBA blobs for sketch underlay assets                                          |
+| [`utl_settings.h`](../utl_settings.h) / [`.cpp`](../utl_settings.cpp)                | User settings file paths, startup project blob I/O                                               |
+| [`utl_ply_io.h`](../utl_ply_io.h) / [`.cpp`](../utl_ply_io.cpp)                      | PLY import/export for mesh shapes                                                                |
+| [`utl_cad_file_info.h`](../utl_cad_file_info.h) / [`.cpp`](../utl_cad_file_info.cpp) | Read-only STEP/IGES/STL/PLY metadata for **File -> Import** (no document mutation until Import)  |
+| [`utl_log.h`](../utl_log.h) / [`.cpp`](../utl_log.cpp)                               | `Log_strm` redirecting stdout/stderr to `GUI::log_message`                                       |
+| [`utl_dbg.h`](../utl_dbg.h)                                                          | `EZY_ASSERT`, `DBG_MSG`, debug break macros                                                      |
 
 CMake IDE group: `src\utl` (pattern `^utl(_|\.)`).
 
@@ -48,13 +48,13 @@ CMake IDE group: `src\utl` (pattern `^utl(_|\.)`).
 
 ### General helpers
 
-| API                                      | Purpose                                          |
-| ---------------------------------------- | ------------------------------------------------ |
+| API                                      | Purpose                                                                               |
+| ---------------------------------------- | ------------------------------------------------------------------------------------- |
 | `clear_all(...)`                         | Reset optional/containers/arithmetic/handles (`Nullify`)/enums/aggregates in one call |
-| `unique_sequential_name(base, existing)` | `Name`, `Name.001`, ... for sketches/shapes      |
-| `load_texture(path)`                     | Toolbar icon loading                             |
-| `decode_image_bytes(bytes)`              | stb_image -> RGBA for underlay import            |
-| `safe_cstr_copy`                         | ImGui fixed-buffer copies (MSVC-safe)            |
+| `unique_sequential_name(base, existing)` | `Name`, `Name.001`, ... for sketches/shapes                                           |
+| `load_texture(path)`                     | Toolbar icon loading                                                                  |
+| `decode_image_bytes(bytes)`              | stb_image -> RGBA for underlay import                                                 |
+| `safe_cstr_copy`                         | ImGui fixed-buffer copies (MSVC-safe)                                                 |
 
 ## Geometry (`utl_geom`)
 
@@ -63,7 +63,7 @@ Large module; grouped by concern:
 | Area              | Examples                                                                                                                                                                                                                                                                            |
 | ----------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | Plane / 2D        | `to_2d`, `to_3d`, `xy_plane`, `sketch_reference_plane`, `Plane_side`                                                                                                                                                                                                                |
-| Profile wires     | `make_square_wire`, `make_circle_wire`, `make_slot_wire`, `create_wire_box`                                                                                                                                                                                                         |
+| Profile wires     | `make_square_wire`, `make_circle_wire`, `make_slot_wire`, `make_bone_wire`, `create_wire_box`                                                                                                                                                                                       |
 | Sketch dimensions | `Length_dimension_style`, `create_distance_annotation`, `create_angle_annotation`, `apply_length_dimension_style`, `apply_angle_dimension_style`                                                                                                                                    |
 | Analysis          | `to_boost` (polygon), `to_boost_ls` (edge `linestring_2d`), `get_shape_bbox_center`, `plane_from_face`, `side_of_plane`                                                                                                                                                             |
 | Tests / debug     | `to_wkt_string` (linestring / ring / polygon), `ezy_geom::area`, `is_valid`; Geometry Watch in `scripts/ezycad_graphical_debugging.xml` (`ring_2d` inherits vector as Ring; `linestring_2d` uses named `points` as Linestring). Re-select the XML path in Options after editing it. |
@@ -74,10 +74,10 @@ Includes [`utl_geom_boost.inl`](../utl_geom_boost.inl) for `ezy_geom` polygon / 
 
 ### `.ezy` v3 zip layout
 
-| Path in archive    | Content                                                       |
-| ------------------ | ------------------------------------------------------------- |
+| Path in archive    | Content                                                                                   |
+| ------------------ | ----------------------------------------------------------------------------------------- |
 | `manifest.json`    | Document JSON (`ezyFormat`, `projectUnit`, sketches, shapes, view, mode, `ui.sketchList`) |
-| `assets/<id>.rgba` | Raw RGBA pixels for underlay `"asset"` references             |
+| `assets/<id>.rgba` | Raw RGBA pixels for underlay `"asset"` references                                         |
 
 | Function                       | Role                                                            |
 | ------------------------------ | --------------------------------------------------------------- |
@@ -127,13 +127,13 @@ Raw PLY parse/write only (no unit conversion). `Occt_view::import_ply` / `export
 
 Used by **File -> Import**. Reads file bytes only until the user confirms import; does not add shapes by itself.
 
-| API                         | Role                                                              |
-| --------------------------- | ----------------------------------------------------------------- |
-| `detect(path, bytes)`       | Format from extension, then content sniff                         |
-| `can_import(fmt)`           | True for STEP and PLY                                             |
-| `collect(path, bytes)`      | Label/value rows (size, roots/shapes, mesh header, bbox, etc.)    |
-| `read_step_named_bodies`    | STEPCAF/XCAF bodies + product names (flat; falls back to plain reader)  |
-| `read_step_named_tree`      | STEPCAF/XCAF assembly tree as group/leaf `Named_node`s (falls back flat) |
+| API                      | Role                                                                     |
+| ------------------------ | ------------------------------------------------------------------------ |
+| `detect(path, bytes)`    | Format from extension, then content sniff                                |
+| `can_import(fmt)`        | True for STEP and PLY                                                    |
+| `collect(path, bytes)`   | Label/value rows (size, roots/shapes, mesh header, bbox, etc.)           |
+| `read_step_named_bodies` | STEPCAF/XCAF bodies + product names (flat; falls back to plain reader)   |
+| `read_step_named_tree`   | STEPCAF/XCAF assembly tree as group/leaf `Named_node`s (falls back flat) |
 
 `Occt_view::import_step` takes `Step_import_mode` (`utl_types.h`): preserve hierarchy (default), flat root leaves, or union. Heavy work splits into `prepare_step_import` (thread-safe geometry) + `commit_step_import` (UI thread). STEP Transfer accepts optional `Atomic_progress_indicator` / `Message_ProgressRange` (`utl_occt_progress.h`). `collect` remains available for tooling but is not shown in the Import dialog.
 

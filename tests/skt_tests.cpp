@@ -969,6 +969,12 @@ TEST_F(Sketch_test, BoneGeom_equalRadiiTangentCuttersAndWaistFromCutRadius)
   EXPECT_NEAR(d2, g->cut_radius + p.r2, 1e-9);
   EXPECT_NEAR(g->waist, 2.0 * std::sqrt(5.0) - 4.0, 1e-9);
 
+  const Bone_profile pr = get_bone_profile(*g);
+  EXPECT_NEAR(pr.c1_plus.Distance(p.c1), p.r1, 1e-9);
+  EXPECT_NEAR(pr.c1_plus.Distance(g->cut_plus), g->cut_radius, 1e-9);
+  EXPECT_NEAR(pr.c2_plus.Distance(p.c2), p.r2, 1e-9);
+  EXPECT_NEAR(pr.c1_outer.X(), p.c1.X() - p.r1, 1e-9);
+
   p.c1 = p.c2;
   EXPECT_FALSE(compute_bone_geom(p).has_value());
 }
@@ -997,8 +1003,8 @@ TEST_F(Sketch_test, AddBone_createsFacesAndPermanentCenters)
   Sketch sketch("BoneSketch", view(), default_plane);
   sketch.add_bone(gp_Pnt2d(-2.0, 0.0), gp_Pnt2d(2.0, 0.0), 1.0, 0.5, 0.4);
 
-  EXPECT_GE(sketch.face_count(), 1u);
-  EXPECT_GE(Sketch_access::get_edge_count(sketch), 8u);
+  EXPECT_EQ(sketch.face_count(), 1u);
+  EXPECT_EQ(Sketch_access::get_edge_count(sketch), 4u);
 
   bool found_a = false;
   bool found_b = false;

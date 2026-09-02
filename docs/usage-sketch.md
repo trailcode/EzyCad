@@ -713,7 +713,7 @@ The slot tool allows you to create an oblong or oval-shaped slot with rounded en
 
 ![Bone Tool](res/icons/Sketcher_CreateCircle.png)
 
-The bone tool builds a connecting-rod profile: two end circles, two waist cut circles, and the capsule's external tangents. Topology splits those edges into a bone-shaped face you can extrude. Permanent nodes **Bone A** and **Bone B** stay at the two centers for later holes, dimensions, or an operation axis.
+The bone tool builds a connecting-rod outline: the outer arcs of the two end circles and the inward waist arcs where the cutters touch those circles. The result is one closed face you can extrude. Permanent nodes **Bone A** and **Bone B** stay at the two centers for later holes, dimensions, or an operation axis.
 
 **How to use:**
 
@@ -726,7 +726,7 @@ The bone tool builds a connecting-rod profile: two end circles, two waist cut ci
 
 Waist cutters are tangent to both end circles (cut radius is solved from the waist). Geometry fails when the two centers coincide, one circle sits inside the other, or the waist cannot be realized.
 
-The sketch keeps the four full circles plus the two tangent segments. Extrude the leftover bone face with the normal **Extrude sketch face** tool.
+The sketch keeps only that trimmed outline (four arcs). Extrude it with the normal **Extrude sketch face** tool.
 
 **Tips:**
 

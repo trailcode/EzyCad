@@ -561,21 +561,55 @@ std::optional<Bone_geom> compute_bone_geom(const Bone_params& p)
   return bone_geom_with_cut_radius_(p.c1, p.c2, p.r1, p.r2, cut_r, axis, n, mid, vx, vy, a, h);
 }
 
+Bone_profile get_bone_profile(const Bone_geom& g)
+{
+  gp_Vec2d     axis(g.c1, g.c2);
+  const double dist = axis.Magnitude();
+  EZY_ASSERT(dist > Precision::Confusion());
+  const gp_Vec2d ad(axis / dist);
+  const gp_Vec2d n = ad.Rotated(std::numbers::pi / 2.0);
+
+  auto contact = [](const gp_Pnt2d& c, double r, const gp_Pnt2d& cut) -> gp_Pnt2d
+  {
+    gp_Vec2d     v(c, cut);
+    const double d = v.Magnitude();
+    EZY_ASSERT(d > Precision::Confusion());
+    return gp_Pnt2d(c).Translated(v * (r / d));
+  };
+
+  Bone_profile p;
+  p.c1_plus     = contact(g.c1, g.r1, g.cut_plus);
+  p.c1_minus    = contact(g.c1, g.r1, g.cut_minus);
+  p.c2_plus     = contact(g.c2, g.r2, g.cut_plus);
+  p.c2_minus    = contact(g.c2, g.r2, g.cut_minus);
+  p.c1_outer    = gp_Pnt2d(g.c1).Translated(-ad * g.r1);
+  p.c2_outer    = gp_Pnt2d(g.c2).Translated(ad * g.r2);
+  p.waist_plus  = gp_Pnt2d(g.cut_plus).Translated(-n * g.cut_radius);
+  p.waist_minus = gp_Pnt2d(g.cut_minus).Translated(n * g.cut_radius);
+  return p;
+}
+
+TopoDS_Wire make_bone_wire(const gp_Pln& pln, const Bone_geom& g)
+{
+  const Bone_profile p = get_bone_profile(g);
+
+  auto arc = [&](const gp_Pnt2d& a, const gp_Pnt2d& mid, const gp_Pnt2d& b) -> TopoDS_Edge
+  {
+    GC_MakeArcOfCircle maker(to_3d(pln, a), to_3d(pln, mid), to_3d(pln, b));
+    return BRepBuilderAPI_MakeEdge(maker.Value()).Edge();
+  };
+
+  BRepBuilderAPI_MakeWire wire;
+  wire.Add(arc(p.c1_minus, p.c1_outer, p.c1_plus));
+  wire.Add(arc(p.c1_plus, p.waist_plus, p.c2_plus));
+  wire.Add(arc(p.c2_plus, p.c2_outer, p.c2_minus));
+  wire.Add(arc(p.c2_minus, p.waist_minus, p.c1_minus));
+  return wire.Wire();
+}
+
 TopoDS_Shape make_bone_preview_shape(const gp_Pln& pln, const Bone_geom& g)
 {
-  auto circle_at = [&](const gp_Pnt2d& c, double r) -> TopoDS_Wire
-  { return make_circle_wire(pln, c, gp_Pnt2d(c.X() + r, c.Y())); };
-
-  TopoDS_Compound comp;
-  BRep_Builder    bb;
-  bb.MakeCompound(comp);
-  bb.Add(comp, circle_at(g.c1, g.r1));
-  bb.Add(comp, circle_at(g.c2, g.r2));
-  bb.Add(comp, circle_at(g.cut_plus, g.cut_radius));
-  bb.Add(comp, circle_at(g.cut_minus, g.cut_radius));
-  bb.Add(comp, BRepBuilderAPI_MakeEdge(to_3d(pln, g.tan_top_a), to_3d(pln, g.tan_top_b)).Edge());
-  bb.Add(comp, BRepBuilderAPI_MakeEdge(to_3d(pln, g.tan_bot_a), to_3d(pln, g.tan_bot_b)).Edge());
-  return comp;
+  return make_bone_wire(pln, g);
 }
 
 // Function to get the directional vectors at the start and end of a Geom_TrimmedCurve

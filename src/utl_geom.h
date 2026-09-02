@@ -112,10 +112,28 @@ struct Bone_geom
   gp_Pnt2d tan_bot_b;
 };
 
+/// Trimmed bone outline: outer end-circle caps and inner waist arcs (no full circles, no capsule tangents).
+struct Bone_profile
+{
+  gp_Pnt2d c1_plus;   // contact, end 1 / waist cutter +
+  gp_Pnt2d c1_outer;  // outer pole of end 1
+  gp_Pnt2d c1_minus;  // contact, end 1 / waist cutter -
+  gp_Pnt2d c2_plus;
+  gp_Pnt2d c2_outer;
+  gp_Pnt2d c2_minus;
+  gp_Pnt2d waist_plus;  // inner bulge of cutter +
+  gp_Pnt2d waist_minus;
+};
+
 /// Null when centers coincide, a circle is inside the other, or waist/cut radius cannot be solved.
 std::optional<Bone_geom> compute_bone_geom(const Bone_params& p);
 
-/// Four circle wires plus the two external tangent edges (preview / debug).
+Bone_profile get_bone_profile(const Bone_geom& g);
+
+/// Closed wire of the four outline arcs (preview and extrusion profile).
+TopoDS_Wire make_bone_wire(const gp_Pln& pln, const Bone_geom& g);
+
+/// Same as \\a make_bone_wire (AIS preview).
 TopoDS_Shape make_bone_preview_shape(const gp_Pln& pln, const Bone_geom& g);
 
 // Function to get the directional vectors at the start and end of a Geom_TrimmedCurve

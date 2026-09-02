@@ -9,7 +9,6 @@
 #include <TopoDS.hxx>
 #include <TopoDS_Edge.hxx>
 #include <TopoDS_Wire.hxx>
-#include <array>
 #include <functional>
 #include <iterator>
 
@@ -167,14 +166,6 @@ void Sketch::add_bone(const gp_Pnt2d& c1, const gp_Pnt2d& c2, double r1, double 
 
   Sketch_op_recorder rec(m_view, *this);
   {
-    auto add_circle = [&](const gp_Pnt2d& center, double radius)
-    {
-      const gp_Pnt2d          edge(center.X() + radius, center.Y());
-      std::array<gp_Pnt2d, 4> pts = xy_stencil_pnts(center, edge);
-      add_arc_circle_(pts[0], pts[2], pts[1], rec);
-      add_arc_circle_(pts[0], pts[3], pts[1], rec);
-    };
-
     auto mark_center = [&](const gp_Pnt2d& c, const char* name)
     {
       const size_t        idx = m_nodes.get_node_exact(c, true);
@@ -184,14 +175,13 @@ void Sketch::add_bone(const gp_Pnt2d& c1, const gp_Pnt2d& c2, double r1, double 
       rec.note_curr_node(idx);
     };
 
+    const Bone_profile p = get_bone_profile(*g);
     mark_center(g->c1, "Bone A");
     mark_center(g->c2, "Bone B");
-    add_circle(g->c1, g->r1);
-    add_circle(g->c2, g->r2);
-    add_circle(g->cut_plus, g->cut_radius);
-    add_circle(g->cut_minus, g->cut_radius);
-    add_edge_(g->tan_top_a, g->tan_top_b, rec);
-    add_edge_(g->tan_bot_a, g->tan_bot_b, rec);
+    add_arc_circle_(p.c1_minus, p.c1_outer, p.c1_plus, rec);
+    add_arc_circle_(p.c1_plus, p.waist_plus, p.c2_plus, rec);
+    add_arc_circle_(p.c2_plus, p.c2_outer, p.c2_minus, rec);
+    add_arc_circle_(p.c2_minus, p.waist_minus, p.c1_minus, rec);
     rec.commit();
   }
 
