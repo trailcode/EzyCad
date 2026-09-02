@@ -1,14 +1,17 @@
 #include "skt_tools.h"
 
 #include <BRepBuilderAPI_MakeEdge.hxx>
+#include <BRep_Builder.hxx>
 #include <GC_MakeArcOfCircle.hxx>
 #include <Precision.hxx>
 #include <TopoDS.hxx>
+#include <TopoDS_Compound.hxx>
 #include <TopoDS_Edge.hxx>
 #include <TopoDS_Wire.hxx>
 #include <array>
 #include <cmath>
 #include <functional>
+#include <numbers>
 #include <utility>
 #include <gp_Dir2d.hxx>
 #include <gp_Vec2d.hxx>
@@ -118,9 +121,7 @@ void Sketch_tools::on_enter()
       break;
 
     case Mode::Sketch_add_bone:
-      if (m_bone_centers)
-        break;
-      if (!m_tmp_edges.empty() && m_sketch.m_dims.entered_edge_len().has_value())
+      if (!m_tmp_edges.empty() && !m_bone_centers && m_sketch.m_dims.entered_edge_len().has_value())
       {
         Sketch_edge&    edge = m_tmp_edges.back();
         const gp_Pnt2d& pt_a = m_sketch.m_nodes[edge.node_idx_a];
@@ -131,10 +132,40 @@ void Sketch_tools::on_enter()
 
         m_sketch.m_dims.clear_typed_constraints();
       }
-      if (!m_tmp_edges.empty() && m_tmp_edges.back().node_idx_b.has_value())
+      if (!m_bone_centers && !m_tmp_edges.empty() && m_tmp_edges.back().node_idx_b.has_value())
       {
         const Sketch_edge& e = m_tmp_edges.back();
-        begin_bone_dialog_from_centers_(m_sketch.m_nodes[e.node_idx_a], m_sketch.m_nodes[*e.node_idx_b]);
+        bone_on_centers_ready_(m_sketch.m_nodes[e.node_idx_a], m_sketch.m_nodes[*e.node_idx_b]);
+        break;
+      }
+      if (!m_bone_centers || !m_sketch.m_dims.entered_edge_len().has_value())
+        break;
+
+      {
+        const double len = m_sketch.m_dims.entered_edge_len()->len;
+        if (len <= Precision::Confusion())
+          break;
+
+        Sketch_edge&    edge = m_tmp_edges.back();
+        const gp_Pnt2d& pt_a = m_sketch.m_nodes[edge.node_idx_a];
+        m_last_pt            = gp_Pnt2d(pt_a).Translated(gp_Vec2d(m_sketch.m_dims.entered_edge_len()->dir) * len);
+        if (unique(pt_a, *m_last_pt))
+          m_sketch.update_edge_end_pt_(edge, m_sketch.m_nodes.get_node_exact(*m_last_pt));
+
+        m_sketch.m_dims.clear_typed_constraints();
+
+        if (m_tmp_edges.size() == 2)
+        {
+          m_bone_r1 = len;
+          bone_begin_next_edge_from_(m_bone_centers->second);
+        }
+        else if (m_tmp_edges.size() == 3)
+        {
+          m_bone_r2 = len;
+          bone_begin_next_edge_from_(get_midpoint(m_bone_centers->first, m_bone_centers->second));
+        }
+        else if (m_tmp_edges.size() == 4)
+          (void)bone_try_commit_(len);
       }
       break;
 
@@ -170,7 +201,7 @@ void Sketch_tools::finalize()
     case Mode::Sketch_add_circle:       finalize_circle_(rec);            break;
     case Mode::Sketch_add_node:         finalize_add_node_elm_cleanup_(); break;
     case Mode::Sketch_add_slot:         finalize_slot_(rec);              break;
-    case Mode::Sketch_add_bone:         break;
+    case Mode::Sketch_add_bone:         finalize_bone_();                 break;
     case Mode::Sketch_operation_axis:   finalize_operation_axis_(rec);    break;
       // clang-format on
     default:
@@ -891,117 +922,274 @@ void Sketch_tools::move_slot_pt_(const ScreenCoords& screen_coords)
 
 void Sketch_tools::add_bone_pt_(const ScreenCoords& screen_coords)
 {
-  if (m_bone_centers)
-    return;
-
   if (m_tmp_edges.empty())
   {
     add_line_string_pt_(screen_coords, Linestring_type::Multiple);
     return;
   }
 
-  auto on_second = [&](size_t node_idx)
+  if (!m_bone_centers)
+  {
+    auto on_second = [&](size_t node_idx)
+    {
+      Sketch_edge& last = m_tmp_edges.back();
+      if (node_idx == last.node_idx_a)
+        return;
+
+      m_sketch.update_edge_end_pt_(last, node_idx);
+      bone_on_centers_ready_(m_sketch.m_nodes[last.node_idx_a], m_sketch.m_nodes[node_idx]);
+    };
+
+    if (m_sketch.m_dims.entered_edge_angle().has_value() && !m_tmp_edges.empty())
+    {
+      std::optional<gp_Pnt2d> pt_opt = m_sketch.m_view.pt_on_plane(screen_coords, m_sketch.m_pln);
+      if (!pt_opt)
+        return;
+
+      const gp_Pnt2d& pt_a      = m_sketch.m_nodes[m_tmp_edges.back().node_idx_a];
+      const double    angle_rad = to_radians(*m_sketch.m_dims.entered_edge_angle());
+      gp_Dir2d        constrained_dir(std::cos(angle_rad), std::sin(angle_rad));
+      gp_Vec2d        to_click(pt_opt->X() - pt_a.X(), pt_opt->Y() - pt_a.Y());
+      const double    dist_along = to_click.Dot(gp_Vec2d(constrained_dir));
+      gp_Pnt2d        final_pt   = gp_Pnt2d(pt_a).Translated(gp_Vec2d(constrained_dir) * dist_along);
+      if (!unique(pt_a, final_pt))
+        return;
+
+      const size_t node_idx = m_sketch.m_nodes.get_node_exact(final_pt);
+      m_tmp_node_idxs.push_back(node_idx);
+      on_second(node_idx);
+      return;
+    }
+
+    add_sketch_pt_(screen_coords, 1, on_second);
+    return;
+  }
+
+  auto on_dim = [&](size_t node_idx)
   {
     Sketch_edge& last = m_tmp_edges.back();
     if (node_idx == last.node_idx_a)
       return;
 
+    const gp_Pnt2d& pt_a = m_sketch.m_nodes[last.node_idx_a];
+    const gp_Pnt2d& pt_b = m_sketch.m_nodes[node_idx];
+    if (!unique(pt_a, pt_b))
+      return;
+
     m_sketch.update_edge_end_pt_(last, node_idx);
-    begin_bone_dialog_from_centers_(m_sketch.m_nodes[last.node_idx_a], m_sketch.m_nodes[node_idx]);
+    const double len = pt_a.Distance(pt_b);
+
+    if (m_tmp_edges.size() == 2)
+    {
+      m_bone_r1 = len;
+      bone_begin_next_edge_from_(m_bone_centers->second);
+    }
+    else if (m_tmp_edges.size() == 3)
+    {
+      m_bone_r2 = len;
+      bone_begin_next_edge_from_(get_midpoint(m_bone_centers->first, m_bone_centers->second));
+    }
+    else if (m_tmp_edges.size() == 4)
+    {
+      const std::optional<double> waist = bone_waist_from_pt_(pt_b);
+      if (waist)
+        (void)bone_try_commit_(*waist);
+    }
   };
 
-  if (m_sketch.m_dims.entered_edge_angle().has_value() && !m_tmp_edges.empty())
-  {
-    std::optional<gp_Pnt2d> pt_opt = m_sketch.m_view.pt_on_plane(screen_coords, m_sketch.m_pln);
-    if (!pt_opt)
-      return;
-
-    const gp_Pnt2d& pt_a      = m_sketch.m_nodes[m_tmp_edges.back().node_idx_a];
-    const double    angle_rad = to_radians(*m_sketch.m_dims.entered_edge_angle());
-    gp_Dir2d        constrained_dir(std::cos(angle_rad), std::sin(angle_rad));
-    gp_Vec2d        to_click(pt_opt->X() - pt_a.X(), pt_opt->Y() - pt_a.Y());
-    const double    dist_along = to_click.Dot(gp_Vec2d(constrained_dir));
-    gp_Pnt2d        final_pt   = gp_Pnt2d(pt_a).Translated(gp_Vec2d(constrained_dir) * dist_along);
-    if (!unique(pt_a, final_pt))
-      return;
-
-    const size_t node_idx = m_sketch.m_nodes.get_node_exact(final_pt);
-    m_tmp_node_idxs.push_back(node_idx);
-    on_second(node_idx);
-    return;
-  }
-
-  add_sketch_pt_(screen_coords, 1, on_second);
+  add_sketch_pt_(screen_coords, 1, on_dim);
 }
 
 void Sketch_tools::move_bone_pt_(const ScreenCoords& screen_coords)
 {
-  if (m_bone_centers)
+  if (!m_bone_centers || m_tmp_edges.size() <= 1)
+  {
+    move_line_string_pt_(screen_coords);
+    return;
+  }
+
+  if (m_tmp_edges.size() < 4)
+  {
+    move_line_string_pt_(screen_coords);
+    bone_update_preview_();
+    return;
+  }
+
+  const std::optional<gp_Vec2d> n = bone_axis_perp_();
+  if (!n)
     return;
 
-  move_line_string_pt_(screen_coords);
+  const gp_Pnt2d mid = get_midpoint(m_bone_centers->first, m_bone_centers->second);
+
+  auto l = [&](const std::optional<size_t>&, const gp_Pnt2d& pt_b)
+  {
+    Sketch_edge& edge = m_tmp_edges.back();
+    double       half = std::abs(gp_Vec2d(mid, pt_b).Dot(*n));
+    if (m_sketch.m_dims.entered_edge_len().has_value())
+      half = m_sketch.m_dims.entered_edge_len()->len * 0.5;
+
+    if (half <= Precision::Confusion())
+    {
+      m_sketch.m_dims.clear_tmp_dim_anno();
+      m_sketch.m_view.remove(m_tmp_shp);
+      m_tmp_shp = nullptr;
+      return;
+    }
+
+    const gp_Pnt2d span_a = gp_Pnt2d(mid).Translated(-(*n) * half);
+    const gp_Pnt2d span_b = gp_Pnt2d(mid).Translated((*n) * half);
+    m_last_pt             = span_b;
+    m_sketch.update_edge_shp_(edge, span_a, span_b);
+
+    const double dist = (2.0 * half) / m_sketch.m_view.get_display_to_model_scale();
+    m_sketch.m_dims.show_tmp_dim_preview(span_a, span_b);
+    m_sketch.m_dims.offer_dist_edit_for_segment(span_a, span_b, dist);
+    bone_update_preview_();
+  };
+
+  move_sketch_pt_(screen_coords, l);
 }
 
-void Sketch_tools::begin_bone_dialog_from_centers_(const gp_Pnt2d& c1, const gp_Pnt2d& c2)
+void Sketch_tools::bone_begin_next_edge_from_(const gp_Pnt2d& origin)
+{
+  m_sketch.m_dims.clear_typed_constraints();
+  m_sketch.m_dims.set_show_angle_input(false);
+  m_sketch.m_view.gui().hide_angle_edit();
+  m_sketch.m_view.gui().hide_dist_edit(false);
+  m_tmp_edges.push_back({m_sketch.m_nodes.get_node_exact(origin)});
+}
+
+void Sketch_tools::bone_on_centers_ready_(const gp_Pnt2d& c1, const gp_Pnt2d& c2)
 {
   if (!unique(c1, c2))
     return;
 
   m_bone_centers = std::make_pair(c1, c2);
-  for (Sketch_edge& e : m_tmp_edges)
-    m_sketch.m_view.remove(e.shp);
-
-  m_sketch.m_view.gui().open_add_bone_dialog();
+  bone_begin_next_edge_from_(c1);
 }
 
-void Sketch_tools::update_bone_preview(double r1, double r2, double cut_radius, double waist, Bone_drive drive)
+bool Sketch_tools::bone_try_commit_(double waist)
+{
+  if (!m_bone_centers || !m_bone_r1 || !m_bone_r2)
+    return false;
+
+  Bone_params params;
+  params.c1    = m_bone_centers->first;
+  params.c2    = m_bone_centers->second;
+  params.r1    = *m_bone_r1;
+  params.r2    = *m_bone_r2;
+  params.waist = waist;
+  params.drive = Bone_drive::Waist;
+  if (!compute_bone_geom(params))
+    return false;
+
+  m_sketch.add_bone(params.c1, params.c2, params.r1, params.r2, waist);
+  clear_tmps();
+  return true;
+}
+
+void Sketch_tools::finalize_bone_()
+{
+  if (!m_bone_centers || !m_bone_r1 || !m_bone_r2 || m_tmp_edges.size() != 4 || !m_last_pt)
+    return;
+
+  const std::optional<double> waist = bone_waist_from_pt_(*m_last_pt);
+  if (waist)
+    (void)bone_try_commit_(*waist);
+}
+
+std::optional<gp_Vec2d> Sketch_tools::bone_axis_perp_() const
+{
+  if (!m_bone_centers)
+    return std::nullopt;
+
+  gp_Vec2d     axis(m_bone_centers->first, m_bone_centers->second);
+  const double dist = axis.Magnitude();
+  if (dist <= Precision::Confusion())
+    return std::nullopt;
+
+  return gp_Vec2d(axis / dist).Rotated(std::numbers::pi / 2.0);
+}
+
+std::optional<double> Sketch_tools::bone_waist_from_pt_(const gp_Pnt2d& pt) const
+{
+  const std::optional<gp_Vec2d> n = bone_axis_perp_();
+  if (!n || !m_bone_centers)
+    return std::nullopt;
+
+  const gp_Pnt2d mid   = get_midpoint(m_bone_centers->first, m_bone_centers->second);
+  const double   waist = 2.0 * std::abs(gp_Vec2d(mid, pt).Dot(*n));
+  if (waist <= Precision::Confusion())
+    return std::nullopt;
+
+  return waist;
+}
+
+void Sketch_tools::bone_update_preview_()
 {
   if (!m_bone_centers)
     return;
 
-  Bone_params params;
-  params.c1         = m_bone_centers->first;
-  params.c2         = m_bone_centers->second;
-  params.r1         = r1;
-  params.r2         = r2;
-  params.cut_radius = cut_radius;
-  params.waist      = waist;
-  params.drive      = drive;
+  const gp_Pnt2d& c1 = m_bone_centers->first;
+  const gp_Pnt2d& c2 = m_bone_centers->second;
 
-  const std::optional<Bone_geom> g = compute_bone_geom(params);
-  if (!g)
+  auto circle_at = [&](const gp_Pnt2d& c, double r) -> TopoDS_Wire
+  { return make_circle_wire(m_sketch.m_pln, c, gp_Pnt2d(c.X() + r, c.Y())); };
+
+  const double r1 = m_bone_r1.value_or(
+      (m_tmp_edges.size() == 2 && m_last_pt) ? c1.Distance(*m_last_pt) : 0.0);
+  const double r2 = m_bone_r2.value_or(
+      (m_tmp_edges.size() == 3 && m_last_pt) ? c2.Distance(*m_last_pt) : 0.0);
+
+  if (m_tmp_edges.size() >= 4 && m_bone_r1 && m_bone_r2)
   {
-    m_last_bone_geom.reset();
+    const std::optional<double> waist =
+        m_sketch.m_dims.entered_edge_len().has_value() ? std::optional<double>(m_sketch.m_dims.entered_edge_len()->len)
+                                                       : (m_last_pt ? bone_waist_from_pt_(*m_last_pt) : std::nullopt);
+    if (waist)
+    {
+      Bone_params params;
+      params.c1    = c1;
+      params.c2    = c2;
+      params.r1    = *m_bone_r1;
+      params.r2    = *m_bone_r2;
+      params.waist = *waist;
+      params.drive = Bone_drive::Waist;
+      if (const std::optional<Bone_geom> g = compute_bone_geom(params))
+      {
+        show(m_sketch.m_ctx, m_tmp_shp, make_bone_preview_shape(m_sketch.m_pln, *g));
+        return;
+      }
+    }
+
     m_sketch.m_view.remove(m_tmp_shp);
     m_tmp_shp = nullptr;
     return;
   }
 
-  m_last_bone_geom = g;
-  show(m_sketch.m_ctx, m_tmp_shp, make_bone_preview_shape(m_sketch.m_pln, *g));
-}
+  TopoDS_Compound comp;
+  BRep_Builder    bb;
+  bb.MakeCompound(comp);
+  bool any = false;
+  if (r1 > Precision::Confusion())
+  {
+    bb.Add(comp, circle_at(c1, r1));
+    any = true;
+  }
+  if (r2 > Precision::Confusion())
+  {
+    bb.Add(comp, circle_at(c2, r2));
+    any = true;
+  }
 
-bool Sketch_tools::commit_pending_bone(double r1, double r2, double cut_radius, double waist, Bone_drive drive)
-{
-  if (!m_bone_centers)
-    return false;
+  if (!any)
+  {
+    m_sketch.m_view.remove(m_tmp_shp);
+    m_tmp_shp = nullptr;
+    return;
+  }
 
-  Bone_params params;
-  params.c1         = m_bone_centers->first;
-  params.c2         = m_bone_centers->second;
-  params.r1         = r1;
-  params.r2         = r2;
-  params.cut_radius = cut_radius;
-  params.waist      = waist;
-  params.drive      = drive;
-
-  const std::optional<Bone_geom> g = compute_bone_geom(params);
-  if (!g)
-    return false;
-
-  m_sketch.add_bone(m_bone_centers->first, m_bone_centers->second, r1, r2, g->cut_radius, g->waist);
-  clear_tmps();
-  return true;
+  show(m_sketch.m_ctx, m_tmp_shp, comp);
 }
 
 void Sketch_tools::finalize_slot_(Sketch_op_recorder& rec)
@@ -1055,8 +1243,8 @@ bool Sketch_tools::clear_tmps()
 
   const bool operation_canceled = !m_tmp_edges.empty() || m_bone_centers.has_value();
   m_bone_centers.reset();
-  m_last_bone_geom.reset();
-  m_sketch.m_view.gui().dismiss_add_bone_dialog();
+  m_bone_r1.reset();
+  m_bone_r2.reset();
   clear_all(m_tmp_node_idxs, m_tmp_shp, m_tmp_edges);
   m_sketch.m_dims.on_clear_tmps();
 

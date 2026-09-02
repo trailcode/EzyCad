@@ -1,12 +1,12 @@
 #pragma once
 
 #include <gp_Pnt2d.hxx>
+#include <gp_Vec2d.hxx>
 #include <optional>
 #include <utility>
 #include <vector>
 
 #include "skt_edge.h"
-#include "utl_geom.h"
 #include "utl_types.h"
 
 class Sketch;
@@ -39,10 +39,6 @@ public:
   [[nodiscard]] std::optional<gp_Pnt2d>&        last_pt() { return m_last_pt; }
   /// Clears rubber-band / tmp geometry. Returns true if tmp edges were present (used by `cancel()`).
   bool clear_tmps();
-
-  void update_bone_preview(double r1, double r2, double cut_radius, double waist, Bone_drive drive);
-  [[nodiscard]] bool commit_pending_bone(double r1, double r2, double cut_radius, double waist, Bone_drive drive);
-  [[nodiscard]] const std::optional<Bone_geom>& last_bone_preview_geom() const { return m_last_bone_geom; }
 
   void clear_tmp_node_idxs() { m_tmp_node_idxs.clear(); }
 
@@ -78,7 +74,13 @@ private:
 
   void add_bone_pt_(const ScreenCoords& screen_coords);
   void move_bone_pt_(const ScreenCoords& screen_coords);
-  void begin_bone_dialog_from_centers_(const gp_Pnt2d& c1, const gp_Pnt2d& c2);
+  void finalize_bone_();
+  void bone_begin_next_edge_from_(const gp_Pnt2d& origin);
+  void bone_on_centers_ready_(const gp_Pnt2d& c1, const gp_Pnt2d& c2);
+  [[nodiscard]] bool bone_try_commit_(double waist);
+  void bone_update_preview_();
+  [[nodiscard]] std::optional<gp_Vec2d> bone_axis_perp_() const;
+  [[nodiscard]] std::optional<double>   bone_waist_from_pt_(const gp_Pnt2d& pt) const;
 
   void add_operation_axis_pt_(const ScreenCoords& screen_coords);
   void finalize_operation_axis_(Sketch_op_recorder& rec);
@@ -97,5 +99,6 @@ private:
   std::vector<Sketch_edge> m_tmp_edges;
   AIS_Shape_ptr            m_tmp_shp;
   std::optional<std::pair<gp_Pnt2d, gp_Pnt2d>> m_bone_centers;
-  std::optional<Bone_geom>                    m_last_bone_geom;
+  std::optional<double>                        m_bone_r1;
+  std::optional<double>                        m_bone_r2;
 };

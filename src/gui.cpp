@@ -165,7 +165,6 @@ void GUI::render_gui()
   add_cone_dialog_();
   add_torus_dialog_();
   add_sketch_dialog_();
-  add_bone_dialog_();
   log_window_();
   lua_console_();
   python_console_();

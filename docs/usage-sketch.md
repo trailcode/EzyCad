@@ -720,13 +720,11 @@ The bone tool builds a connecting-rod profile: two end circles, two waist cut ci
 1. Select **Add bone** on the toolbar (default <kbd>Shift</kbd>+<kbd>U</kbd>).
 2. Click the first circle center (normal sketch snap).
 3. Click the second circle center. <kbd>Tab</kbd> sets the center-to-center distance; <kbd>Shift</kbd>+<kbd>Tab</kbd> sets the bone-axis angle.
-4. In the **Add bone** dialog, enter:
-   - **Radius 1** / **Radius 2** — end circle radii
-   - **Cut radius** — both waist cutters (mirrored across the bone axis)
-   - **Waist** — remaining thickness at the midpoint, perpendicular to the center line
-5. A live preview updates as you edit. **Add** commits one undo step; **Cancel** or <kbd>Esc</kbd> drops the preview.
+4. Click to set **radius 1** (distance from the first center). <kbd>Tab</kbd> enters an exact radius.
+5. Click to set **radius 2** (distance from the second center). <kbd>Tab</kbd> enters an exact radius.
+6. Click a point to set **waist width** (remaining thickness at the midpoint, perpendicular to the center line). The live dimension spans the full waist. <kbd>Tab</kbd> enters an exact waist. The tool commits after this click.
 
-Values are in project units (same as other Add dialogs). **Add** stays disabled when a radius or the waist is not positive. Waist cutters are tangent to both end circles; edit **Waist** or **Cut radius** and the other value updates to match. Geometry also fails when the two centers coincide or one circle sits inside the other (no external tangents).
+Waist cutters are tangent to both end circles (cut radius is solved from the waist). Geometry fails when the two centers coincide, one circle sits inside the other, or the waist cannot be realized.
 
 The sketch keeps the four full circles plus the two tangent segments. Extrude the leftover bone face with the normal **Extrude sketch face** tool.
 
@@ -734,7 +732,7 @@ The sketch keeps the four full circles plus the two tangent segments. Extrude th
 
 - Snap the two centers to existing nodes, or to the sketch origin.
 - After Add, use **Add circle** snapped to **Bone A** / **Bone B** if you want a different hole radius than the end circles.
-- **Waist** and **Cut radius** are linked: the last field you edit drives the solve; the other updates in the dialog.
+- For waist, click on one side of the neck; the distance from the bone axis to that point is half the waist.
 
 ## Operation Axis Tool
 
@@ -901,12 +899,12 @@ Edge dimension tool creates/removes **length dimensions between two sketch nodes
 
 **Technical Details:**
 
-|                      |                                                                                |
-| -------------------: | ------------------------------------------------------------------------------ |
-| **Dimension source** | Calculated from the two referenced nodes                                       |
+|                      |                                                                                    |
+| -------------------: | ---------------------------------------------------------------------------------- |
+| **Dimension source** | Calculated from the two referenced nodes                                           |
 | **Unit system**      | **File -> Project units** (Inches or Millimeters); dims and length entry follow it |
-| **Auto-update**      | Dimensions update automatically when geometry is modified                      |
-| **View-only**        | Does not affect the underlying geometry                                        |
+| **Auto-update**      | Dimensions update automatically when geometry is modified                          |
+| **View-only**        | Does not affect the underlying geometry                                            |
 
 ## Add Node Tool
 

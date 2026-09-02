@@ -995,7 +995,7 @@ TEST_F(Sketch_test, AddBone_createsFacesAndPermanentCenters)
 
   gp_Pln default_plane(gp::Origin(), gp::DZ());
   Sketch sketch("BoneSketch", view(), default_plane);
-  sketch.add_bone(gp_Pnt2d(-2.0, 0.0), gp_Pnt2d(2.0, 0.0), 1.0, 0.5, 2.0, 0.4);
+  sketch.add_bone(gp_Pnt2d(-2.0, 0.0), gp_Pnt2d(2.0, 0.0), 1.0, 0.5, 0.4);
 
   EXPECT_GE(sketch.face_count(), 1u);
   EXPECT_GE(Sketch_access::get_edge_count(sketch), 8u);

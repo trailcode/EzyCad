@@ -1263,7 +1263,7 @@ void GUI::options_sketch_add_bone_mode_()
   options_sketch_common_();
   options_sketch_len_angle_hotkeys_();
   ImGui::Separator();
-  ImGui::TextWrapped("Click the two circle centers, then enter radii and waist thickness.");
+  ImGui::TextWrapped("Click center A, center B, radius 1, radius 2, then the waist width.");
 }
 
 void GUI::options_orthographic_projection_()

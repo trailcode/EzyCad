@@ -152,16 +152,15 @@ void Sketch::add_arc_circle(const gp_Pnt2d& pt_a, const gp_Pnt2d& pt_mid, const 
 
 void Sketch::rebuild_faces() { update_faces_(); }
 
-void Sketch::add_bone(const gp_Pnt2d& c1, const gp_Pnt2d& c2, double r1, double r2, double cut_radius, double waist)
+void Sketch::add_bone(const gp_Pnt2d& c1, const gp_Pnt2d& c2, double r1, double r2, double waist)
 {
   Bone_params params;
-  params.c1         = c1;
-  params.c2         = c2;
-  params.r1         = r1;
-  params.r2         = r2;
-  params.cut_radius = cut_radius;
-  params.waist      = waist;
-  params.drive      = Bone_drive::Cut_radius;
+  params.c1    = c1;
+  params.c2    = c2;
+  params.r1    = r1;
+  params.r2    = r2;
+  params.waist = waist;
+  params.drive = Bone_drive::Waist;
   const std::optional<Bone_geom> g = compute_bone_geom(params);
   if (!g)
     return;
@@ -199,21 +198,6 @@ void Sketch::add_bone(const gp_Pnt2d& c1, const gp_Pnt2d& c2, double r1, double 
   m_nodes.finalize();
   m_node_marks.sync();
   update_faces_();
-}
-
-void Sketch::update_bone_preview(double r1, double r2, double cut_radius, double waist, Bone_drive drive)
-{
-  m_tools.update_bone_preview(r1, r2, cut_radius, waist, drive);
-}
-
-bool Sketch::commit_pending_bone(double r1, double r2, double cut_radius, double waist, Bone_drive drive)
-{
-  return m_tools.commit_pending_bone(r1, r2, cut_radius, waist, drive);
-}
-
-const std::optional<Bone_geom>& Sketch::last_bone_preview_geom() const
-{
-  return m_tools.last_bone_preview_geom();
 }
 
 void Sketch::add_edge_(const gp_Pnt2d& pt_a, const gp_Pnt2d& pt_b, Sketch_op_recorder& rec)

@@ -336,8 +336,6 @@ public:
   void show_message(const std::string& message);
   /// Queue an ImGui error modal (logs title: message once; short title toast). Native and wasm.
   void show_error_dialog(const std::string& title, const std::string& message);
-  void open_add_bone_dialog();
-  void dismiss_add_bone_dialog();
   void log_message(const std::string& message);
   void set_show_options(bool v) { m_show_options = v; }
   void set_show_sketch_list(bool v) { m_show_sketch_list = v; }
@@ -514,7 +512,6 @@ private:
   void add_cone_dialog_();
   void add_torus_dialog_();
   void add_sketch_dialog_();
-  void add_bone_dialog_();
   void add_menu_items_();
 
   void         about_dialog_();
@@ -767,13 +764,6 @@ private:
   glm::dvec3  m_add_torus_origin{0.0, 0.0, 0.0};
   double      m_add_torus_R1{1}, m_add_torus_R2{0.5};
   bool        m_open_add_sketch_popup{false};
-  bool        m_open_add_bone_popup{false};
-  bool        m_add_bone_dialog_open{false};
-  double      m_add_bone_r1{1.0};
-  double      m_add_bone_r2{0.5};
-  double      m_add_bone_cut_radius{2.0};
-  double      m_add_bone_waist{0.4};
-  Bone_drive  m_add_bone_drive{Bone_drive::Waist};
   int         m_new_sketch_plane{0}; // 0=XY, 1=XZ, 2=YZ
   double      m_new_sketch_offset{};
   bool        m_hide_all_shapes{false};

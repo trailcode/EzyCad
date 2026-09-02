@@ -168,10 +168,8 @@ public:
   /// Rebuild closed-face topology after bulk edge import.
   void rebuild_faces();
   /// Add a bone profile (end circles, waist cutters, capsule tangents) and permanent center nodes.
-  void add_bone(const gp_Pnt2d& c1, const gp_Pnt2d& c2, double r1, double r2, double cut_radius, double waist);
-  void update_bone_preview(double r1, double r2, double cut_radius, double waist, Bone_drive drive);
-  [[nodiscard]] bool commit_pending_bone(double r1, double r2, double cut_radius, double waist, Bone_drive drive);
-  [[nodiscard]] const std::optional<Bone_geom>& last_bone_preview_geom() const;
+  /// Waist cutters are tangent to both end circles; cut radius is solved from \\a waist.
+  void add_bone(const gp_Pnt2d& c1, const gp_Pnt2d& c2, double r1, double r2, double waist);
 
 private:
   friend class Sketch_json;
