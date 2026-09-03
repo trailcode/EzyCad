@@ -56,8 +56,9 @@ struct Sketch_op_data
 
   struct Curr_node_record
   {
-    gp_Pnt2d pt;
-    bool     permanent{false};
+    gp_Pnt2d    pt;
+    bool        permanent{false};
+    std::string name;
   };
 
   Sketch*                                m_sketch{nullptr};
@@ -129,7 +130,12 @@ public:
   Sketch_op_recorder*                        m_owner{nullptr};
   bool                                       m_active{true};
   bool                                       m_committed{false};
-  std::vector<gp_Pnt2d>                      m_live_node_pts_at_start;
+  struct Live_node_at_start
+  {
+    gp_Pnt2d pt;
+    bool     permanent{false};
+  };
+  std::vector<Live_node_at_start>            m_live_nodes_at_start;
   std::vector<Sketch_op_data::Prev_edge_rec> m_linear_edges_at_start;
   Sketch_op_data                             m_data;
 
@@ -222,7 +228,7 @@ Sketch_op_recorder::Impl::Impl(Occt_view& view, Sketch& sketch)
 {
   for (size_t i = 0, n = sketch.m_nodes.size(); i < n; ++i)
     if (!sketch.m_nodes[i].deleted)
-      m_live_node_pts_at_start.push_back(sketch.m_nodes[i]);
+      m_live_nodes_at_start.push_back({sketch.m_nodes[i], sketch.m_nodes[i].permanent});
 
   Sketch_op_data::capture_linear_edges_at_start_(sketch, m_linear_edges_at_start);
   m_data.m_sketch    = &sketch;
@@ -307,17 +313,27 @@ void Sketch_op_recorder::Impl::note_curr_node(size_t node_idx)
   if (!m_active)
     return;
 
-  const gp_Pnt2d pt = m_sketch.m_nodes[node_idx];
+  const gp_Pnt2d pt            = m_sketch.m_nodes[node_idx];
+  const bool     now_permanent = m_sketch.m_nodes[node_idx].permanent;
 
-  for (const gp_Pnt2d& live : m_live_node_pts_at_start)
-    if (pts_equal_(live, pt))
+  for (const Live_node_at_start& live : m_live_nodes_at_start)
+  {
+    if (!pts_equal_(live.pt, pt))
+      continue;
+
+    // Pre-existing permanent nodes are not owned by this op. Pre-existing non-permanent
+    // nodes stay owned by topology unless this op promotes them to permanent (e.g. bone centers).
+    if (live.permanent || !now_permanent)
       return;
+
+    break;
+  }
 
   for (const Sketch_op_data::Curr_node_record& x : m_data.curr_nodes)
     if (pts_equal_(x.pt, pt))
       return;
 
-  m_data.curr_nodes.push_back({pt, m_sketch.m_nodes[node_idx].permanent});
+  m_data.curr_nodes.push_back({pt, now_permanent, m_sketch.m_nodes[node_idx].name});
 }
 
 void Sketch_op_recorder::Impl::note_prev_length_dim(size_t lo, size_t hi, bool visible, std::optional<double> flyout,
@@ -463,6 +479,7 @@ void Sketch_op_data::apply_reverse_(Occt_view& view) const
   for (const Curr_node_record& node : curr_nodes)
     tombstone_node_at_pt_(*sketch, node.pt);
 
+  sketch->m_node_marks.sync();
   sketch->m_nodes.hide_snap_annos();
   sketch->update_faces_();
 }
@@ -615,6 +632,9 @@ void Sketch_op_data::restore_curr_node_at_pt_(Sketch& sketch, const Curr_node_re
   }
 
   const size_t node_idx = sketch.m_nodes.get_node_exact(rec.pt, rec.permanent);
+  if (!rec.name.empty())
+    sketch.m_nodes[node_idx].name = rec.name;
+
   if (is_arc_bulge)
     return;
 

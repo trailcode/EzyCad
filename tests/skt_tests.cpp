@@ -1033,3 +1033,54 @@ TEST_F(Sketch_test, AddBone_createsFacesAndPermanentCenters)
   EXPECT_NE(std::find(labels.begin(), labels.end(), "Bone A"), labels.end());
   EXPECT_NE(std::find(labels.begin(), labels.end(), "Bone B"), labels.end());
 }
+
+TEST_F(Sketch_test, AddBone_undoRemovesPromotedCenters)
+{
+  Headless_guard guard(view());
+
+  gp_Pln default_plane(gp::Origin(), gp::DZ());
+  Sketch sketch("BoneSketch", view(), default_plane);
+
+  const gp_Pnt2d c1(-2.0, 0.0);
+  const gp_Pnt2d c2(2.0, 0.0);
+  // Interactive tool creates non-permanent center nodes before commit; undo must still remove them.
+  sketch.get_nodes().get_node_exact(c1);
+  sketch.get_nodes().get_node_exact(c2);
+
+  sketch.add_bone(c1, c2, 1.0, 0.5, 0.4);
+  EXPECT_EQ(sketch.face_count(), 1u);
+  EXPECT_EQ(Sketch_access::get_edge_count(sketch), 4u);
+  EXPECT_EQ(Sketch_access::count_permanent_nodes(sketch), 3u) << "Origin plus Bone A and Bone B";
+
+  ASSERT_GT(view().undo_stack_size(), 0u);
+  EXPECT_TRUE(view().undo());
+  EXPECT_EQ(Sketch_access::get_edge_count(sketch), 0u);
+  EXPECT_EQ(Sketch_access::count_permanent_nodes(sketch), 1u) << "Undo should remove Bone A/B centers";
+
+  EXPECT_TRUE(view().redo());
+  EXPECT_EQ(Sketch_access::get_edge_count(sketch), 4u);
+  EXPECT_EQ(Sketch_access::count_permanent_nodes(sketch), 3u);
+
+  bool found_a = false;
+  bool found_b = false;
+  for (size_t i = 0; i < sketch.get_nodes().size(); ++i)
+  {
+    const Sketch_nodes::Node& n = sketch.get_nodes()[i];
+    if (n.deleted || !n.permanent)
+      continue;
+
+    if (n.name == "Bone A")
+    {
+      found_a = true;
+      EXPECT_TRUE(n.IsEqual(c1, Precision::Confusion()));
+    }
+    if (n.name == "Bone B")
+    {
+      found_b = true;
+      EXPECT_TRUE(n.IsEqual(c2, Precision::Confusion()));
+    }
+  }
+
+  EXPECT_TRUE(found_a);
+  EXPECT_TRUE(found_b);
+}
