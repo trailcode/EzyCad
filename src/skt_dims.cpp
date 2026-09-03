@@ -66,7 +66,13 @@ void Sketch_dims::on_finalize_elm_start()
   clear_tmp_dim_anno();
 }
 
-void Sketch_dims::on_clear_tmps() { clear_all(m_entered_edge_len, m_show_dim_input, m_entered_edge_angle, m_show_angle_input); }
+void Sketch_dims::on_clear_tmps()
+{
+  clear_all(m_entered_edge_len, m_show_dim_input, m_entered_edge_angle, m_show_angle_input);
+  m_sketch.m_view.gui().hide_dist_edit(false);
+  m_sketch.m_view.gui().hide_angle_edit();
+  clear_tmp_dim_anno();
+}
 
 void Sketch_dims::clear_typed_constraints()
 {
