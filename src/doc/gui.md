@@ -224,7 +224,18 @@ Tests use `sketch_left_click` to simulate sketch LMB without ImGui mouse positio
 | `Sketch_operation_axis`          | Mirror / Revolve / Clear axis                                                                                       |
 | `Sketch_face_extrude`            | Both sides, Twist, material; help mentions Settings fast preview                                                    |
 
-Shared sketch controls (snap, midpoint nodes, place-from-center) live in `options_sketch_common_` and helpers in `gui_mode.cpp`.
+### Options panel layout (sketch tools)
+
+Vertical order for sketch tool Options panes:
+
+1. Mode title + doc **?** (`options_sketch_mode_header_`)
+2. Tool-specific **Options** (checkboxes, combos, tool help) — **above** shared sketch controls
+3. **Sketch options** (`options_sketch_shared_controls_`: snap guide mode, snap dist, faint shapes, …)
+4. Optional **Shortcuts** / other footers (`options_sketch_len_angle_hotkeys_`, …)
+
+`options_sketch_common_()` is header + shared controls only (no tool-specific block). Prefer composing header → tool Options → shared when a tool has its own controls (see `options_sketch_add_bone_mode_`). Do not put tool-specific controls below **Sketch options**.
+
+Shared sketch controls (snap, faint shapes) live in `options_sketch_shared_controls_`. Midpoint / place-from-center helpers still append after `options_sketch_common_` in older tools — new work should use the order above.
 
 ## ImGui frame order (`render_gui`)
 

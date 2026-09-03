@@ -215,6 +215,7 @@ inline constexpr const char* k_line_edge_place_from_center  = "https://ezycad.re
 inline constexpr const char* k_revolve_solid_conversion     = "https://ezycad.readthedocs.io/en/latest/usage-sketch.html#revolve-solid-conversion";
 inline constexpr const char* k_shape_selection_filter       = "https://ezycad.readthedocs.io/en/latest/usage.html#shape-selection-filter-normal-mode-only";
 inline constexpr const char* k_add_node_tool                = "https://ezycad.readthedocs.io/en/latest/usage-sketch.html#add-node-tool";
+inline constexpr const char* k_bone_creation_tool           = "https://ezycad.readthedocs.io/en/latest/usage-sketch.html#bone-creation-tool";
 inline constexpr const char* k_image_underlay               = "https://ezycad.readthedocs.io/en/latest/usage-sketch.html#image-underlay";
 inline constexpr const char* k_usage_settings_options       = "https://ezycad.readthedocs.io/en/latest/usage-settings.html#options-panel";
 inline constexpr const char* k_occt_view                    = "https://ezycad.readthedocs.io/en/latest/usage-occt-view.html";
@@ -304,6 +305,10 @@ public:
   bool get_add_mid_pt_line_edges() const { return m_add_mid_pt_line_edges; }
   bool get_add_mid_pt_rect_edges() const { return m_add_mid_pt_rect_edges; }
   bool get_add_mid_pt_slot_edges() const { return m_add_mid_pt_slot_edges; }
+  /// Add-bone Options: permanent Bone A / Bone B nodes (`gui.bone_add_center_nodes`).
+  bool get_bone_add_center_nodes() const { return m_bone_add_center_nodes; }
+  /// Add-bone Options: hole clicks after waist (`gui.bone_holes`).
+  Bone_holes get_bone_holes() const { return m_bone_holes; }
   bool get_edge_from_center() const { return m_edge_from_center; }
   bool get_hide_all_shapes() const { return m_hide_all_shapes; }
   void set_hide_all_shapes(bool hide) { m_hide_all_shapes = hide; }
@@ -481,6 +486,10 @@ private:
   void doc_help_button_(const char* scope, int line, const char* tooltip, const char* doc_url, bool trailing_same_line = false);
   void options_orthographic_projection_();
   void options_sketch_common_();
+  /// Mode title + doc ? + separator (call before tool-specific Options).
+  void options_sketch_mode_header_();
+  /// Shared **Sketch options** block (snap, faint shapes). Goes below tool-specific Options.
+  void options_sketch_shared_controls_();
   void options_sketch_len_angle_hotkeys_();
   void sync_sketch_add_mid_pt_edges_if_applicable_();
   bool add_mid_pt_edges_for_mode_(Mode mode) const;
@@ -651,6 +660,8 @@ private:
   bool  m_add_mid_pt_line_edges               = false;
   bool  m_add_mid_pt_rect_edges               = true;
   bool  m_add_mid_pt_slot_edges               = false;
+  bool  m_bone_add_center_nodes               = true;
+  Bone_holes m_bone_holes                     = Bone_holes::None;
   bool  m_edge_from_center                    = false;
   /// Degrees per numpad orbit (8/2/4/6) and Blender-style roll (Shift+NumPad 4/6); persisted in `gui.view_roll_step_deg`.
   double m_view_roll_step_deg = k_gui_view_roll_step_deg_default;

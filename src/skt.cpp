@@ -9,6 +9,7 @@
 #include <TopoDS.hxx>
 #include <TopoDS_Edge.hxx>
 #include <TopoDS_Wire.hxx>
+#include <array>
 #include <functional>
 #include <iterator>
 
@@ -151,7 +152,8 @@ void Sketch::add_arc_circle(const gp_Pnt2d& pt_a, const gp_Pnt2d& pt_mid, const 
 
 void Sketch::rebuild_faces() { update_faces_(); }
 
-void Sketch::add_bone(const gp_Pnt2d& c1, const gp_Pnt2d& c2, double r1, double r2, double waist)
+void Sketch::add_bone(const gp_Pnt2d& c1, const gp_Pnt2d& c2, double r1, double r2, double waist,
+                      bool add_center_nodes, std::optional<double> hole_r1, std::optional<double> hole_r2)
 {
   Bone_params params;
   params.c1    = c1;
@@ -162,6 +164,15 @@ void Sketch::add_bone(const gp_Pnt2d& c1, const gp_Pnt2d& c2, double r1, double 
   params.drive = Bone_drive::Waist;
   const std::optional<Bone_geom> g = compute_bone_geom(params);
   if (!g)
+    return;
+
+  auto hole_ok = [](double outer_r, const std::optional<double>& hole) -> bool
+  {
+    if (!hole)
+      return true;
+    return *hole > Precision::Confusion() && *hole + Precision::Confusion() < outer_r;
+  };
+  if (!hole_ok(r1, hole_r1) || !hole_ok(r2, hole_r2))
     return;
 
   Sketch_op_recorder rec(m_view, *this);
@@ -175,13 +186,28 @@ void Sketch::add_bone(const gp_Pnt2d& c1, const gp_Pnt2d& c2, double r1, double 
       rec.note_curr_node(idx);
     };
 
+    auto add_hole_circle = [&](const gp_Pnt2d& center, double radius)
+    {
+      const gp_Pnt2d              rim(center.X() + radius, center.Y());
+      const std::array<gp_Pnt2d, 4> pts = xy_stencil_pnts(center, rim);
+      add_arc_circle_(pts[0], pts[2], pts[1], rec);
+      add_arc_circle_(pts[0], pts[3], pts[1], rec);
+    };
+
     const Bone_profile p = get_bone_profile(*g);
-    mark_center(g->c1, "Bone A");
-    mark_center(g->c2, "Bone B");
+    if (add_center_nodes)
+    {
+      mark_center(g->c1, "Bone A");
+      mark_center(g->c2, "Bone B");
+    }
     add_arc_circle_(p.c1_minus, p.c1_outer, p.c1_plus, rec);
     add_arc_circle_(p.c1_plus, p.waist_plus, p.c2_plus, rec);
     add_arc_circle_(p.c2_plus, p.c2_outer, p.c2_minus, rec);
     add_arc_circle_(p.c2_minus, p.waist_minus, p.c1_minus, rec);
+    if (hole_r1)
+      add_hole_circle(g->c1, *hole_r1);
+    if (hole_r2)
+      add_hole_circle(g->c2, *hole_r2);
     rec.commit();
   }
 

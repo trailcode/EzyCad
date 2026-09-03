@@ -722,7 +722,15 @@ The bone tool builds a connecting-rod outline: the outer arcs of the two end cir
 3. Click the second circle center. <kbd>Tab</kbd> sets the center-to-center distance; <kbd>Shift</kbd>+<kbd>Tab</kbd> sets the bone-axis angle.
 4. Click to set **radius 1** (distance from the first center). <kbd>Tab</kbd> enters an exact radius.
 5. Click to set **radius 2** (distance from the second center). <kbd>Tab</kbd> enters an exact radius.
-6. Click a point to set **waist width** (minimum remaining thickness between the waist arcs, perpendicular to the center line). The live dimension spans that neck; when the end radii differ, the neck is offset toward the smaller end, not at the center midpoint. <kbd>Tab</kbd> enters an exact waist. The tool commits after this click.
+6. Click a point to set **waist width** (minimum remaining thickness between the waist arcs, perpendicular to the center line). The live dimension spans that neck; when the end radii differ, the neck is offset toward the smaller end, not at the center midpoint. <kbd>Tab</kbd> enters an exact waist. If **Holes** is **None**, the tool commits after this click.
+7. If **Holes** is **One radius**, click once from the first center to set both hole radii. If **Two radii**, click hole radius at end A, then at end B. Each hole must be smaller than that end's outer radius.
+
+**Options** (while Add bone is active):
+
+| Option               | Default | Meaning                                                                                     |
+| -------------------- | ------- | ------------------------------------------------------------------------------------------- |
+| **Add center nodes** | On      | Commit permanent **Bone A** / **Bone B** nodes at the two centers                           |
+| **Holes**            | None    | **None** (outline only), **One radius** (both holes match), or **Two radii** (set each end) |
 
 Waist cutters are tangent to both end circles (cut radius is solved from the waist). Geometry fails when the two centers coincide, one circle sits inside the other, or the waist cannot be realized.
 
@@ -731,8 +739,9 @@ The sketch keeps only that trimmed outline (four arcs). Extrude it with the norm
 **Tips:**
 
 - Snap the two centers to existing nodes, or to the sketch origin.
-- After Add, use **Add circle** snapped to **Bone A** / **Bone B** if you want a different hole radius than the end circles.
+- After Add with no holes, use **Add circle** snapped to **Bone A** / **Bone B** if you want holes later.
 - For waist, click on either side of the bone axis; the distance from the axis to that point is half the waist (the dim then snaps to the true neck).
+- Preferences **Add center nodes** and **Holes** are saved as `gui.bone_add_center_nodes` and `gui.bone_holes`.
 
 ## Operation Axis Tool
 

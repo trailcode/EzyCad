@@ -79,7 +79,10 @@ private:
   void finalize_bone_();
   void bone_begin_next_edge_from_(const gp_Pnt2d& origin);
   void bone_on_centers_ready_(const gp_Pnt2d& c1, const gp_Pnt2d& c2);
-  [[nodiscard]] bool bone_try_commit_(double waist);
+  [[nodiscard]] bool bone_after_waist_(double waist);
+  [[nodiscard]] bool bone_after_hole_a_(double hole_r);
+  [[nodiscard]] bool bone_after_hole_b_(double hole_r);
+  [[nodiscard]] bool bone_try_commit_();
   void bone_update_preview_();
   [[nodiscard]] std::optional<gp_Vec2d> bone_axis_perp_() const;
   [[nodiscard]] std::optional<double>   bone_waist_from_pt_(const gp_Pnt2d& pt) const;
@@ -103,4 +106,7 @@ private:
   std::optional<std::pair<gp_Pnt2d, gp_Pnt2d>> m_bone_centers;
   std::optional<double>                        m_bone_r1;
   std::optional<double>                        m_bone_r2;
+  std::optional<double>                        m_bone_waist;
+  std::optional<double>                        m_bone_hole_r1;
+  std::optional<double>                        m_bone_hole_r2;
 };

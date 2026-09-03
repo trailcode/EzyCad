@@ -9,7 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
-- **Add bone** sketch tool (<kbd>Shift</kbd>+<kbd>U</kbd>): click the two circle centers, then radius 1, radius 2, and waist width (like other sketch tools). Waist is the minimum neck thickness (live dim sits on that section; offset from mid when end radii differ). Waist cutters are tangent to both end circles. Commits the trimmed outline (outer end arcs and inner waist arcs) and permanent **Bone A** / **Bone B** center nodes. Remappable as **`mode.add_bone`**.
+- **Add bone** sketch tool (<kbd>Shift</kbd>+<kbd>U</kbd>): click the two circle centers, then radius 1, radius 2, and waist width (like other sketch tools). Waist is the minimum neck thickness (live dim sits on that section; offset from mid when end radii differ). Options: **Add center nodes** (default on) and **Holes** (**None** / **One radius** / **Two radii**). Waist cutters are tangent to both end circles. Commits the trimmed outline (outer end arcs and inner waist arcs), optional hole circles, and optional permanent **Bone A** / **Bone B** center nodes. Remappable as **`mode.add_bone`**.
 
 - **Shape local frame**: Shape List right-click on a solid toggles **Show axes** / **Show plane** / **Show up**, **Reset frame to bbox**, **Set from planar/cylindrical face**, and **Flip up** / **Flip axis (Z)**. Frame display flags persist in `.ezy` as `frameDisplay`. Face picks use `Mode::Shape_set_frame` (no toolbar hotkey).
 

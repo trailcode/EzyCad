@@ -93,6 +93,23 @@ static_assert(c_fillet_mode_strs.size() == static_cast<std::size_t>(Fillet_mode:
 
 #undef EZY_CHAMFER_FILLET_MODE_LIST
 
+/// Add-bone Options: optional end holes after the waist click.
+enum class Bone_holes
+{
+  None,       // outline only
+  One_radius, // one click sets both hole radii
+  Two_radii,  // hole at end A, then hole at end B
+  _count
+};
+
+constexpr std::array<const char*, static_cast<std::size_t>(Bone_holes::_count)> c_bone_holes_strs = {
+    "None",
+    "One radius",
+    "Two radii",
+};
+
+static_assert(c_bone_holes_strs.size() == static_cast<std::size_t>(Bone_holes::_count));
+
 bool is_sketch_mode(const Mode mode);
 
 /// Return Mode for a name (e.g. "Normal", "Sketch_add_edge"). Returns Normal if not found.

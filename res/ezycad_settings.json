@@ -3,6 +3,8 @@
     "add_mid_pt_edges": false,
     "add_mid_pt_rect_edges": true,
     "add_mid_pt_slot_edges": true,
+    "bone_add_center_nodes": true,
+    "bone_holes": 0,
     "annotate_all_coaxial_nodes": true,
     "dark_mode": true,
     "edge_dim_arrow_orientation": 0,

@@ -12,12 +12,21 @@
 
 #include "gui.h"
 #include "gui_occt_view.h"
+#include "mode.h"
 #include "skt.h"
 #include "utl_geom.h"
 #include "utl_occt.h"
 #include "utl.h"
 
 #include "skt_tools.inl"
+
+namespace
+{
+bool bone_hole_radius_ok_(double outer_r, double hole_r)
+{
+  return hole_r > Precision::Confusion() && hole_r + Precision::Confusion() < outer_r;
+}
+} // namespace
 
 void Sketch_tools::bone_on_enter_()
 {
@@ -64,7 +73,11 @@ void Sketch_tools::bone_on_enter_()
     bone_begin_next_edge_from_(get_midpoint(m_bone_centers->first, m_bone_centers->second));
   }
   else if (m_tmp_edges.size() == 4)
-    (void)bone_try_commit_(len);
+    (void)bone_after_waist_(len);
+  else if (m_tmp_edges.size() == 5)
+    (void)bone_after_hole_a_(len);
+  else if (m_tmp_edges.size() == 6)
+    (void)bone_after_hole_b_(len);
 }
 
 void Sketch_tools::add_bone_pt_(const ScreenCoords& screen_coords)
@@ -140,8 +153,12 @@ void Sketch_tools::add_bone_pt_(const ScreenCoords& screen_coords)
     {
       const std::optional<double> waist = bone_waist_from_pt_(pt_b);
       if (waist)
-        (void)bone_try_commit_(*waist);
+        (void)bone_after_waist_(*waist);
     }
+    else if (m_tmp_edges.size() == 5)
+      (void)bone_after_hole_a_(len);
+    else if (m_tmp_edges.size() == 6)
+      (void)bone_after_hole_b_(len);
   };
 
   add_sketch_pt_(screen_coords, 1, on_dim);
@@ -156,6 +173,13 @@ void Sketch_tools::move_bone_pt_(const ScreenCoords& screen_coords)
   }
 
   if (m_tmp_edges.size() < 4)
+  {
+    move_line_string_pt_(screen_coords);
+    bone_update_preview_();
+    return;
+  }
+
+  if (m_tmp_edges.size() >= 5)
   {
     move_line_string_pt_(screen_coords);
     bone_update_preview_();
@@ -235,7 +259,7 @@ void Sketch_tools::bone_on_centers_ready_(const gp_Pnt2d& c1, const gp_Pnt2d& c2
   bone_begin_next_edge_from_(c1);
 }
 
-bool Sketch_tools::bone_try_commit_(double waist)
+bool Sketch_tools::bone_after_waist_(double waist)
 {
   if (!m_bone_centers || !m_bone_r1 || !m_bone_r2)
     return false;
@@ -250,19 +274,100 @@ bool Sketch_tools::bone_try_commit_(double waist)
   if (!compute_bone_geom(params))
     return false;
 
-  m_sketch.add_bone(params.c1, params.c2, params.r1, params.r2, waist);
+  m_bone_waist = waist;
+  const Bone_holes holes = m_sketch.m_view.gui().get_bone_holes();
+  if (holes == Bone_holes::None)
+    return bone_try_commit_();
+
+  bone_begin_next_edge_from_(m_bone_centers->first);
+  return true;
+}
+
+bool Sketch_tools::bone_after_hole_a_(double hole_r)
+{
+  if (!m_bone_centers || !m_bone_r1 || !m_bone_r2 || !m_bone_waist)
+    return false;
+
+  const Bone_holes holes = m_sketch.m_view.gui().get_bone_holes();
+  if (holes == Bone_holes::One_radius)
+  {
+    if (!bone_hole_radius_ok_(*m_bone_r1, hole_r) || !bone_hole_radius_ok_(*m_bone_r2, hole_r))
+      return false;
+    m_bone_hole_r1 = hole_r;
+    m_bone_hole_r2 = hole_r;
+    return bone_try_commit_();
+  }
+
+  if (holes != Bone_holes::Two_radii)
+    return false;
+  if (!bone_hole_radius_ok_(*m_bone_r1, hole_r))
+    return false;
+
+  m_bone_hole_r1 = hole_r;
+  bone_begin_next_edge_from_(m_bone_centers->second);
+  return true;
+}
+
+bool Sketch_tools::bone_after_hole_b_(double hole_r)
+{
+  if (!m_bone_centers || !m_bone_r2 || !m_bone_waist || !m_bone_hole_r1)
+    return false;
+  if (!bone_hole_radius_ok_(*m_bone_r2, hole_r))
+    return false;
+
+  m_bone_hole_r2 = hole_r;
+  return bone_try_commit_();
+}
+
+bool Sketch_tools::bone_try_commit_()
+{
+  if (!m_bone_centers || !m_bone_r1 || !m_bone_r2 || !m_bone_waist)
+    return false;
+
+  Bone_params params;
+  params.c1    = m_bone_centers->first;
+  params.c2    = m_bone_centers->second;
+  params.r1    = *m_bone_r1;
+  params.r2    = *m_bone_r2;
+  params.waist = *m_bone_waist;
+  params.drive = Bone_drive::Waist;
+  if (!compute_bone_geom(params))
+    return false;
+
+  const bool add_centers = m_sketch.m_view.gui().get_bone_add_center_nodes();
+  m_sketch.add_bone(params.c1, params.c2, params.r1, params.r2, *m_bone_waist, add_centers, m_bone_hole_r1,
+                    m_bone_hole_r2);
   clear_tmps();
   return true;
 }
 
 void Sketch_tools::finalize_bone_()
 {
-  if (!m_bone_centers || !m_bone_r1 || !m_bone_r2 || m_tmp_edges.size() != 4 || !m_last_pt)
+  if (!m_bone_centers || !m_bone_r1 || !m_bone_r2 || !m_last_pt)
     return;
 
-  const std::optional<double> waist = bone_waist_from_pt_(*m_last_pt);
-  if (waist)
-    (void)bone_try_commit_(*waist);
+  if (m_tmp_edges.size() == 4)
+  {
+    if (m_sketch.m_view.gui().get_bone_holes() != Bone_holes::None)
+      return;
+    const std::optional<double> waist = bone_waist_from_pt_(*m_last_pt);
+    if (waist)
+      (void)bone_after_waist_(*waist);
+    return;
+  }
+
+  if (m_tmp_edges.size() == 5 && m_bone_waist)
+  {
+    const gp_Pnt2d& c1 = m_bone_centers->first;
+    (void)bone_after_hole_a_(c1.Distance(*m_last_pt));
+    return;
+  }
+
+  if (m_tmp_edges.size() == 6 && m_bone_waist && m_bone_hole_r1)
+  {
+    const gp_Pnt2d& c2 = m_bone_centers->second;
+    (void)bone_after_hole_b_(c2.Distance(*m_last_pt));
+  }
 }
 
 std::optional<gp_Vec2d> Sketch_tools::bone_axis_perp_() const
@@ -308,11 +413,17 @@ void Sketch_tools::bone_update_preview_()
   const double r2 = m_bone_r2.value_or(
       (m_tmp_edges.size() == 3 && m_last_pt) ? c2.Distance(*m_last_pt) : 0.0);
 
+  auto show_compound = [&](const TopoDS_Compound& comp)
+  { show(m_sketch.m_ctx, m_tmp_shp, comp); };
+
   if (m_tmp_edges.size() >= 4 && m_bone_r1 && m_bone_r2)
   {
     const std::optional<double> waist =
-        m_sketch.m_dims.entered_edge_len().has_value() ? std::optional<double>(m_sketch.m_dims.entered_edge_len()->len)
-                                                       : (m_last_pt ? bone_waist_from_pt_(*m_last_pt) : std::nullopt);
+        m_bone_waist
+            ? m_bone_waist
+            : (m_sketch.m_dims.entered_edge_len().has_value()
+                   ? std::optional<double>(m_sketch.m_dims.entered_edge_len()->len)
+                   : (m_last_pt ? bone_waist_from_pt_(*m_last_pt) : std::nullopt));
     if (waist)
     {
       Bone_params params;
@@ -324,7 +435,43 @@ void Sketch_tools::bone_update_preview_()
       params.drive = Bone_drive::Waist;
       if (const std::optional<Bone_geom> g = compute_bone_geom(params))
       {
-        show(m_sketch.m_ctx, m_tmp_shp, make_bone_preview_shape(m_sketch.m_pln, *g));
+        TopoDS_Compound comp;
+        BRep_Builder    bb;
+        bb.MakeCompound(comp);
+        bb.Add(comp, make_bone_preview_shape(m_sketch.m_pln, *g));
+
+        auto maybe_hole = [&](const gp_Pnt2d& c, double outer_r, const std::optional<double>& fixed,
+                              bool live_from_center) -> void
+        {
+          double hr = 0.0;
+          if (fixed)
+            hr = *fixed;
+          else if (live_from_center && m_last_pt)
+            hr = c.Distance(*m_last_pt);
+          if (bone_hole_radius_ok_(outer_r, hr))
+            bb.Add(comp, circle_at(c, hr));
+        };
+
+        if (m_tmp_edges.size() >= 5)
+        {
+          const Bone_holes holes = m_sketch.m_view.gui().get_bone_holes();
+          if (holes == Bone_holes::One_radius)
+          {
+            const double hr = m_bone_hole_r1 ? *m_bone_hole_r1
+                                            : (m_last_pt ? c1.Distance(*m_last_pt) : 0.0);
+            if (bone_hole_radius_ok_(*m_bone_r1, hr))
+              bb.Add(comp, circle_at(c1, hr));
+            if (bone_hole_radius_ok_(*m_bone_r2, hr))
+              bb.Add(comp, circle_at(c2, hr));
+          }
+          else if (holes == Bone_holes::Two_radii)
+          {
+            maybe_hole(c1, *m_bone_r1, m_bone_hole_r1, m_tmp_edges.size() == 5);
+            maybe_hole(c2, *m_bone_r2, m_bone_hole_r2, m_tmp_edges.size() == 6);
+          }
+        }
+
+        show_compound(comp);
         return;
       }
     }
@@ -356,5 +503,5 @@ void Sketch_tools::bone_update_preview_()
     return;
   }
 
-  show(m_sketch.m_ctx, m_tmp_shp, comp);
+  show_compound(comp);
 }

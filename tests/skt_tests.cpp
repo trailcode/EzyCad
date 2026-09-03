@@ -1056,6 +1056,27 @@ TEST_F(Sketch_test, AddBone_createsFacesAndPermanentCenters)
   EXPECT_NE(std::find(labels.begin(), labels.end(), "Bone B"), labels.end());
 }
 
+TEST_F(Sketch_test, AddBone_optionalHolesAndNoCenterNodes)
+{
+  Headless_guard guard(view());
+
+  gp_Pln default_plane(gp::Origin(), gp::DZ());
+  Sketch sketch("BoneHoles", view(), default_plane);
+  sketch.add_bone(gp_Pnt2d(-2.0, 0.0), gp_Pnt2d(2.0, 0.0), 1.0, 0.8, 0.4, false, 0.3, 0.25);
+
+  // Outer face plus two hole face metas (holes assigned under the outer).
+  EXPECT_EQ(sketch.face_count(), 3u);
+  EXPECT_EQ(Sketch_access::get_edge_count(sketch), 8u);
+
+  for (size_t i = 0; i < sketch.get_nodes().size(); ++i)
+  {
+    const Sketch_nodes::Node& n = sketch.get_nodes()[i];
+    if (n.deleted)
+      continue;
+    EXPECT_FALSE(n.permanent && (n.name == "Bone A" || n.name == "Bone B"));
+  }
+}
+
 TEST_F(Sketch_test, AddBone_undoRemovesPromotedCenters)
 {
   Headless_guard guard(view());

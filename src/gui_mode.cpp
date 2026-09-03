@@ -1260,11 +1260,44 @@ void GUI::options_sketch_add_bone_mode_()
 {
   EZY_ASSERT(get_mode() == Mode::Sketch_add_bone);
 
-  options_sketch_common_();
-  options_sketch_len_angle_hotkeys_();
-  ImGui::Separator();
+  // Tool-specific Options above shared Sketch options (see src/doc/gui.md Options panel layout).
+  options_sketch_mode_header_();
+
+  ImGui::TextUnformatted("Options");
+
+  bool add_centers = m_bone_add_center_nodes;
+  if (ImGui::Checkbox("Add center nodes", &add_centers))
+  {
+    m_bone_add_center_nodes = add_centers;
+    save_occt_view_settings();
+  }
+  ImGui::SameLine(0.0f, ImGui::GetStyle().ItemInnerSpacing.x);
+  GUI_DOC_HELP_("When on, commits permanent Bone A and Bone B nodes at the end centers. "
+                "Click ? to open the user guide.",
+                doc_urls::k_bone_creation_tool);
+
+  ImGui::AlignTextToFramePadding();
+  ImGui::TextUnformatted("Holes");
+  ImGui::SameLine();
+  int holes = static_cast<int>(m_bone_holes);
+  if (ImGui::Combo("##bone_holes", &holes, c_bone_holes_strs.data(), static_cast<int>(Bone_holes::_count)))
+  {
+    if (holes >= 0 && holes < static_cast<int>(Bone_holes::_count))
+    {
+      m_bone_holes = static_cast<Bone_holes>(holes);
+      save_occt_view_settings();
+    }
+  }
+  ImGui::SameLine(0.0f, ImGui::GetStyle().ItemInnerSpacing.x);
+  GUI_DOC_HELP_("None: outline only. One radius: one click sets both holes. Two radii: set each end. "
+                "Hole radius must be smaller than that end's outer radius. Click ? to open the user guide.",
+                doc_urls::k_bone_creation_tool);
+
   ImGui::TextWrapped(
-      "Click center A, center B, radius 1, radius 2, then the waist (minimum neck width).");
+      "Click center A, center B, radius 1, radius 2, waist, then holes if enabled.");
+
+  options_sketch_shared_controls_();
+  options_sketch_len_angle_hotkeys_();
 }
 
 void GUI::options_orthographic_projection_()
@@ -1287,11 +1320,19 @@ void GUI::options_orthographic_projection_()
 
 void GUI::options_sketch_common_()
 {
+  options_sketch_mode_header_();
+  options_sketch_shared_controls_();
+}
+
+void GUI::options_sketch_mode_header_()
+{
   ImGui::TextUnformatted(current_mode_description_());
   options_doc_help_button_();
-
   ImGui::Separator();
+}
 
+void GUI::options_sketch_shared_controls_()
+{
   ImGui::TextUnformatted("Sketch options");
   if (ImGui::BeginTable("options_sketch_sketch", 2, k_options_table_flags))
   {
