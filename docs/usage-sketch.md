@@ -722,7 +722,7 @@ The bone tool builds a connecting-rod outline: the outer arcs of the two end cir
 3. Click the second circle center. <kbd>Tab</kbd> sets the center-to-center distance; <kbd>Shift</kbd>+<kbd>Tab</kbd> sets the bone-axis angle.
 4. Click to set **radius 1** (distance from the first center). <kbd>Tab</kbd> enters an exact radius.
 5. Click to set **radius 2** (distance from the second center). <kbd>Tab</kbd> enters an exact radius.
-6. Click a point to set **waist width** (remaining thickness at the midpoint, perpendicular to the center line). The live dimension spans the full waist. <kbd>Tab</kbd> enters an exact waist. The tool commits after this click.
+6. Click a point to set **waist width** (minimum remaining thickness between the waist arcs, perpendicular to the center line). The live dimension spans that neck; when the end radii differ, the neck is offset toward the smaller end, not at the center midpoint. <kbd>Tab</kbd> enters an exact waist. The tool commits after this click.
 
 Waist cutters are tangent to both end circles (cut radius is solved from the waist). Geometry fails when the two centers coincide, one circle sits inside the other, or the waist cannot be realized.
 
@@ -732,7 +732,7 @@ The sketch keeps only that trimmed outline (four arcs). Extrude it with the norm
 
 - Snap the two centers to existing nodes, or to the sketch origin.
 - After Add, use **Add circle** snapped to **Bone A** / **Bone B** if you want a different hole radius than the end circles.
-- For waist, click on one side of the neck; the distance from the bone axis to that point is half the waist.
+- For waist, click on either side of the bone axis; the distance from the axis to that point is half the waist (the dim then snaps to the true neck).
 
 ## Operation Axis Tool
 

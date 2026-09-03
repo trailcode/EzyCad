@@ -995,6 +995,28 @@ TEST_F(Sketch_test, BoneGeom_waistDriveSolvesCutRadius)
   EXPECT_GT(g->cut_radius, 0.0);
 }
 
+TEST_F(Sketch_test, BoneGeom_unequalRadiiNeckOffsetFromMid)
+{
+  Bone_params p;
+  p.c1    = gp_Pnt2d(-2.0, 0.0);
+  p.c2    = gp_Pnt2d(2.0, 0.0);
+  p.r1    = 1.0;
+  p.r2    = 0.5;
+  p.waist = 0.4;
+  p.drive = Bone_drive::Waist;
+
+  const std::optional<Bone_geom> g = compute_bone_geom(p);
+  ASSERT_TRUE(g.has_value());
+  EXPECT_NEAR(g->waist, 0.4, 1e-6);
+
+  const Bone_profile pr = get_bone_profile(*g);
+  EXPECT_NEAR(pr.waist_plus.Distance(pr.waist_minus), p.waist, 1e-6);
+  // Neck lies toward the smaller end (c2), not at the center midpoint.
+  EXPECT_GT(pr.waist_plus.X(), 0.0);
+  EXPECT_NEAR(pr.waist_plus.X(), pr.waist_minus.X(), 1e-9);
+  EXPECT_NEAR(pr.waist_plus.X(), g->cut_plus.X(), 1e-9);
+}
+
 TEST_F(Sketch_test, AddBone_createsFacesAndPermanentCenters)
 {
   Headless_guard guard(view());

@@ -416,9 +416,10 @@ std::optional<gp_Pnt2d> circle_circle_intersect_pick_side_(const gp_Pnt2d& c1, d
   return d0 <= d1 ? i0 : i1;
 }
 
-double bone_waist_gap_(const gp_Pnt2d& c_top, const gp_Pnt2d& c_bot, double cut_r, const gp_Vec2d& n)
+double bone_waist_gap_(const gp_Pnt2d& c_top, const gp_Pnt2d& c_bot, double cut_r)
 {
-  return gp_Vec2d(c_bot, c_top).Dot(n) - 2.0 * cut_r;
+  // Min gap between the two cutter circles (along the line of centers).
+  return c_top.Distance(c_bot) - 2.0 * cut_r;
 }
 
 std::optional<Bone_geom> bone_geom_with_cut_radius_(const gp_Pnt2d& c1, const gp_Pnt2d& c2, double r1, double r2,
@@ -442,7 +443,7 @@ std::optional<Bone_geom> bone_geom_with_cut_radius_(const gp_Pnt2d& c1, const gp
   g.cut_radius = cut_r;
   g.cut_plus   = *c_top;
   g.cut_minus  = mirror_across_axis_(*c_top, c1, axis);
-  g.waist      = bone_waist_gap_(g.cut_plus, g.cut_minus, cut_r, n);
+  g.waist      = bone_waist_gap_(g.cut_plus, g.cut_minus, cut_r);
 
   auto tangent_pair = [&](double sign, gp_Pnt2d& t1, gp_Pnt2d& t2)
   {
@@ -567,7 +568,6 @@ Bone_profile get_bone_profile(const Bone_geom& g)
   const double dist = axis.Magnitude();
   EZY_ASSERT(dist > Precision::Confusion());
   const gp_Vec2d ad(axis / dist);
-  const gp_Vec2d n = ad.Rotated(std::numbers::pi / 2.0);
 
   auto contact = [](const gp_Pnt2d& c, double r, const gp_Pnt2d& cut) -> gp_Pnt2d
   {
@@ -578,14 +578,21 @@ Bone_profile get_bone_profile(const Bone_geom& g)
   };
 
   Bone_profile p;
-  p.c1_plus     = contact(g.c1, g.r1, g.cut_plus);
-  p.c1_minus    = contact(g.c1, g.r1, g.cut_minus);
-  p.c2_plus     = contact(g.c2, g.r2, g.cut_plus);
-  p.c2_minus    = contact(g.c2, g.r2, g.cut_minus);
-  p.c1_outer    = gp_Pnt2d(g.c1).Translated(-ad * g.r1);
-  p.c2_outer    = gp_Pnt2d(g.c2).Translated(ad * g.r2);
-  p.waist_plus  = gp_Pnt2d(g.cut_plus).Translated(-n * g.cut_radius);
-  p.waist_minus = gp_Pnt2d(g.cut_minus).Translated(n * g.cut_radius);
+  p.c1_plus  = contact(g.c1, g.r1, g.cut_plus);
+  p.c1_minus = contact(g.c1, g.r1, g.cut_minus);
+  p.c2_plus  = contact(g.c2, g.r2, g.cut_plus);
+  p.c2_minus = contact(g.c2, g.r2, g.cut_minus);
+  p.c1_outer = gp_Pnt2d(g.c1).Translated(-ad * g.r1);
+  p.c2_outer = gp_Pnt2d(g.c2).Translated(ad * g.r2);
+
+  // Skinniest section: points of closest approach between the two cutter circles.
+  // When r1 != r2 this is offset along the bone axis from the center midpoint.
+  gp_Vec2d     to_minus(g.cut_plus, g.cut_minus);
+  const double cut_sep = to_minus.Magnitude();
+  EZY_ASSERT(cut_sep > Precision::Confusion());
+  to_minus /= cut_sep;
+  p.waist_plus  = gp_Pnt2d(g.cut_plus).Translated(to_minus * g.cut_radius);
+  p.waist_minus = gp_Pnt2d(g.cut_minus).Translated(-to_minus * g.cut_radius);
   return p;
 }
 

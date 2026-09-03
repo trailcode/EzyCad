@@ -163,15 +163,18 @@ void Sketch_tools::move_bone_pt_(const ScreenCoords& screen_coords)
   }
 
   const std::optional<gp_Vec2d> n = bone_axis_perp_();
-  if (!n)
+  if (!n || !m_bone_r1 || !m_bone_r2)
     return;
 
-  const gp_Pnt2d mid = get_midpoint(m_bone_centers->first, m_bone_centers->second);
+  const gp_Pnt2d& c1  = m_bone_centers->first;
+  const gp_Pnt2d& c2  = m_bone_centers->second;
+  const gp_Pnt2d  mid = get_midpoint(c1, c2);
 
   auto l = [&](const std::optional<size_t>&, const gp_Pnt2d& pt_b)
   {
     Sketch_edge& edge = m_tmp_edges.back();
-    double       half = std::abs(gp_Vec2d(mid, pt_b).Dot(*n));
+    // Waist value is twice the distance from the bone axis (independent of click along-axis).
+    double half = std::abs(gp_Vec2d(c1, pt_b).Dot(*n));
     if (m_sketch.m_dims.entered_edge_len().has_value())
       half = m_sketch.m_dims.entered_edge_len()->len * 0.5;
 
@@ -183,12 +186,29 @@ void Sketch_tools::move_bone_pt_(const ScreenCoords& screen_coords)
       return;
     }
 
-    const gp_Pnt2d span_a = gp_Pnt2d(mid).Translated(-(*n) * half);
-    const gp_Pnt2d span_b = gp_Pnt2d(mid).Translated((*n) * half);
-    m_last_pt             = span_b;
+    const double waist = 2.0 * half;
+    gp_Pnt2d     span_a = gp_Pnt2d(mid).Translated(-(*n) * half);
+    gp_Pnt2d     span_b = gp_Pnt2d(mid).Translated((*n) * half);
+
+    Bone_params params;
+    params.c1    = c1;
+    params.c2    = c2;
+    params.r1    = *m_bone_r1;
+    params.r2    = *m_bone_r2;
+    params.waist = waist;
+    params.drive = Bone_drive::Waist;
+    if (const std::optional<Bone_geom> g = compute_bone_geom(params))
+    {
+      // Place the live dim on the true neck (offset from mid when r1 != r2).
+      const Bone_profile pr = get_bone_profile(*g);
+      span_a                = pr.waist_plus;
+      span_b                = pr.waist_minus;
+    }
+
+    m_last_pt = span_b;
     m_sketch.update_edge_shp_(edge, span_a, span_b);
 
-    const double dist = (2.0 * half) / m_sketch.m_view.get_display_to_model_scale();
+    const double dist = waist / m_sketch.m_view.get_display_to_model_scale();
     m_sketch.m_dims.show_tmp_dim_preview(span_a, span_b);
     m_sketch.m_dims.offer_dist_edit_for_segment(span_a, span_b, dist);
     bone_update_preview_();
@@ -264,8 +284,8 @@ std::optional<double> Sketch_tools::bone_waist_from_pt_(const gp_Pnt2d& pt) cons
   if (!n || !m_bone_centers)
     return std::nullopt;
 
-  const gp_Pnt2d mid   = get_midpoint(m_bone_centers->first, m_bone_centers->second);
-  const double   waist = 2.0 * std::abs(gp_Vec2d(mid, pt).Dot(*n));
+  // Twice the distance from the bone axis (c1->c2); matches min neck when cutters solve.
+  const double waist = 2.0 * std::abs(gp_Vec2d(m_bone_centers->first, pt).Dot(*n));
   if (waist <= Precision::Confusion())
     return std::nullopt;
 
