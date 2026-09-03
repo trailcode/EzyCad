@@ -1296,6 +1296,7 @@ void GUI::options_sketch_add_bone_mode_()
   ImGui::TextWrapped(
       "Click center A, center B, radius 1, radius 2, waist, then holes if enabled.");
 
+  ImGui::Separator();
   options_sketch_shared_controls_();
   options_sketch_len_angle_hotkeys_();
 }
