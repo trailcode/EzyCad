@@ -72,6 +72,8 @@ private:
   void move_slot_pt_(const ScreenCoords& screen_coords);
   void finalize_slot_(Sketch_op_recorder& rec);
 
+  // Implementations in skt_tools_bone.cpp
+  void bone_on_enter_();
   void add_bone_pt_(const ScreenCoords& screen_coords);
   void move_bone_pt_(const ScreenCoords& screen_coords);
   void finalize_bone_();

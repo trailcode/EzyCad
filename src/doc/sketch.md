@@ -66,7 +66,7 @@ Sketch  (coordinator: skt.cpp, skt.h)
   +-- Sketch_edges        persistent edge list; add, split, remove, pick
   +-- Sketch_topo         planar graph -> closed faces, edge splitting
   +-- Sketch_dims         length dimensions, typed distance/angle input
-  +-- Sketch_tools        interactive drawing session (tmp state)
+  +-- Sketch_tools        interactive drawing session (tmp state; bone in skt_tools_bone.cpp)
   +-- Sketch_underlay     raster image on the sketch plane
 
 Supporting (not owned sub-objects):
@@ -203,7 +203,8 @@ Prefer these visitors in JSON/delta/topo code over iterating `std::list<Sketch_e
 | `skt_nodes.h`        | Node storage, snap, snap guides, outside-sketch snap points                                                                         |
 | `skt_node_marks.h`   | AIS "+" markers for permanent nodes only                                                                                            |
 | `skt_dims.h`         | Length dimensions between node pairs; Tab/Shift+Tab input; dimension-tool pick state                                                |
-| `skt_tools.h`        | Mode-specific click/move/finalize/cancel for all sketch creation tools                                                              |
+| `skt_tools.h`        | Mode-specific click/move/finalize/cancel; shared helpers in `skt_tools.inl`                                                         |
+| `skt_tools_bone.cpp` | Add-bone tool implementation (`Sketch_tools` members)                                                                               |
 | `skt_underlay.h`     | Calibrated raster underlay on the sketch plane                                                                                      |
 | `skt_ais.h`          | OCCT AIS wrappers tied back to owning `Sketch`                                                                                      |
 | `skt_display.cpp`    | Visibility, edge/face styling, `set_current`, list hover                                                                            |
