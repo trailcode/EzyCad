@@ -82,8 +82,8 @@ Full guide: **[docs/building-occt.md](docs/building-occt.md)** (Windows prebuilt
 - **OCCT 7.9.3 for wasm (recommended):** `scripts\build-occt-793-wasm.ps1` (or `.cmd`) after `emsdk_env` — see [docs/building-occt.md](docs/building-occt.md#webassembly-emscripten). OCCT 8.x has a GLES shading regression on wasm (see [docs/bugs.md](docs/bugs.md)).
 - **OCCT 8.0.0.p1 for wasm:** `scripts\build-occt-v8-wasm.ps1` for regression testing against upstream.
 - Configure the EzyCad project with Emscripten (Ninja recommended):
-  - `emcmake cmake -S . -B build-em-7-9-3 -Wno-dev -G Ninja -DOpenCASCADE_DIR=C:/Users/you/occt-wasm-build/V7_9_3/install/lib/cmake/opencascade -DCMAKE_BUILD_TYPE=Release`
-  - Add **-Wno-dev** to suppress any remaining CMake developer warnings.
+  - `emcmake cmake -S . -B build-em-7-9-3 -Wno-dev -G Ninja "-DOpenCASCADE_DIR=%USERPROFILE%/occt-wasm-build/V7_9_3/install/lib/cmake/opencascade" -DCMAKE_BUILD_TYPE=Release`
+  - Replace `%USERPROFILE%` with your home if the shell does not expand it (path must contain `OpenCASCADEConfig.cmake`). Add **-Wno-dev** to suppress remaining CMake developer warnings.
   - If configure **freezes** after that warning, the hang is often in `find_package(OpenCASCADE)` or Emscripten compiler detection. Run with `--debug-output` to see where it stops.
   - Build:
     - `ninja -C build-em-7-9-3` (or `emmake cmake --build . --config Release`)

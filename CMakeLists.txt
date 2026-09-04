@@ -14,8 +14,10 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 # Add custom CMake modules path
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}/cmake/")
 
-# Detect Emscripten early (for optional branching)
-if(CMAKE_CXX_COMPILER MATCHES "em\\+\\+")
+# Detect Emscripten early (for optional branching).
+# Modern emsdk toolchains force CMAKE_CXX_COMPILER_ID to Clang and set EMSCRIPTEN=1 /
+# CMAKE_SYSTEM_NAME=Emscripten; do not rely on matching "em++" in the compiler path.
+if(EMSCRIPTEN OR CMAKE_SYSTEM_NAME STREQUAL "Emscripten" OR CMAKE_CXX_COMPILER MATCHES "em\\+\\+")
   set(EMSCRIPTEN_BUILD TRUE)
 endif()
 
@@ -84,8 +86,9 @@ target_compile_features(lua PUBLIC c_std_99)
 # Combines CMAKE_BINARY_DIR and project-specific binary dir for flexibility
 set(BINARY_DIR ${${PROJECT_NAME}_BINARY_DIR})
 
-# Detect if we're using Emscripten compiler (for WebAssembly builds)
-if(CMAKE_CXX_COMPILER MATCHES "/em\\+\\+(-[a-zA-Z0-9.])?(\.bat)?$")
+# EzyCad branches on CMAKE_CXX_COMPILER_ID STREQUAL "Emscripten" (wasm link flags,
+# TKOpenGles, no gtest/GLFW nuget). Override the Clang ID that emsdk forces.
+if(EMSCRIPTEN_BUILD)
   message(" * C++ compiler: Emscripten")
   set(CMAKE_CXX_COMPILER_ID "Emscripten")
 else()
@@ -198,6 +201,24 @@ else()
   message(WARNING "Could not find OpenCASCADE, please set OpenCASCADE_DIR variable." )
   set(OCCT_LIBRARY_DIR)
   set(OCCT_BIN_DIR)
+endif()
+
+# Wasm OCCT (scripts/build-occt-*-wasm.ps1) installs FreeType under install/freetype.
+# OCCT INTERFACE libs use $<LINK_ONLY:freetype>; without this package CMake emits bare -lfreetype.
+if(EMSCRIPTEN_BUILD AND OpenCASCADE_FOUND)
+  get_filename_component(_ezy_occt_cmake "${OpenCASCADE_DIR}" ABSOLUTE)
+  get_filename_component(_ezy_occt_lib_cmake "${_ezy_occt_cmake}" DIRECTORY)
+  get_filename_component(_ezy_occt_lib "${_ezy_occt_lib_cmake}" DIRECTORY)
+  get_filename_component(_ezy_occt_prefix "${_ezy_occt_lib}" DIRECTORY)
+  set(freetype_DIR "${_ezy_occt_prefix}/freetype/lib/cmake/freetype" CACHE PATH
+      "FreeType CMake package from OCCT wasm install" FORCE)
+  if(NOT EXISTS "${freetype_DIR}/freetype-config.cmake")
+    message(FATAL_ERROR
+      "Wasm FreeType CMake package not found at ${freetype_DIR}. "
+      "Build OCCT with scripts/build-occt-793-wasm.ps1 (or build-occt-v8-wasm.ps1).")
+  endif()
+  find_package(freetype CONFIG REQUIRED)
+  message(STATUS "Using FreeType (wasm) from \"${freetype_DIR}\"")
 endif()
 
 # OCCT 3rd-party DLL path must not contain backticks — a common mistake is pasting
@@ -390,7 +411,8 @@ if(CMAKE_CXX_COMPILER_ID STREQUAL "Emscripten")
     target_link_libraries(
         ${PROJECT_NAME}
         lua
-        ${OpenCASCADE_LIBS})
+        ${OpenCASCADE_LIBS}
+        freetype)
 
 else()
 

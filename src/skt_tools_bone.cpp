@@ -171,79 +171,75 @@ void Sketch_tools::add_bone_pt_(const ScreenCoords& screen_coords)
 
 void Sketch_tools::move_bone_pt_(const ScreenCoords& screen_coords)
 {
+  // Only center-to-center shows an AIS length dim. End radii / holes use the circle
+  // preview; waist uses the bone outline. Tab distance entry still works.
   if (!m_bone_centers || m_tmp_edges.size() <= 1)
   {
     move_line_string_pt_(screen_coords);
     return;
   }
 
-  if (m_tmp_edges.size() < 4)
+  if (m_tmp_edges.size() == 4)
   {
-    move_line_string_pt_(screen_coords);
-    bone_update_preview_();
-    return;
-  }
-
-  if (m_tmp_edges.size() >= 5)
-  {
-    move_line_string_pt_(screen_coords);
-    bone_update_preview_();
-    return;
-  }
-
-  const std::optional<gp_Vec2d> n = bone_axis_perp_();
-  if (!n || !m_bone_r1 || !m_bone_r2)
-    return;
-
-  const gp_Pnt2d& c1  = m_bone_centers->first;
-  const gp_Pnt2d& c2  = m_bone_centers->second;
-  const gp_Pnt2d  mid = get_midpoint(c1, c2);
-
-  auto l = [&](const std::optional<size_t>&, const gp_Pnt2d& pt_b)
-  {
-    Sketch_edge& edge = m_tmp_edges.back();
-    // Waist value is twice the distance from the bone axis (independent of click along-axis).
-    double half = std::abs(gp_Vec2d(c1, pt_b).Dot(*n));
-    if (m_sketch.m_dims.entered_edge_len().has_value())
-      half = m_sketch.m_dims.entered_edge_len()->len * 0.5;
-
-    if (half <= Precision::Confusion())
-    {
-      m_sketch.m_dims.clear_tmp_dim_anno();
-      m_sketch.m_view.remove(m_tmp_shp);
-      m_tmp_shp = nullptr;
+    const std::optional<gp_Vec2d> n = bone_axis_perp_();
+    if (!n || !m_bone_r1 || !m_bone_r2)
       return;
-    }
 
-    const double waist = 2.0 * half;
-    gp_Pnt2d     span_a = gp_Pnt2d(mid).Translated(-(*n) * half);
-    gp_Pnt2d     span_b = gp_Pnt2d(mid).Translated((*n) * half);
+    const gp_Pnt2d& c1  = m_bone_centers->first;
+    const gp_Pnt2d& c2  = m_bone_centers->second;
+    const gp_Pnt2d  mid = get_midpoint(c1, c2);
 
-    Bone_params params;
-    params.c1    = c1;
-    params.c2    = c2;
-    params.r1    = *m_bone_r1;
-    params.r2    = *m_bone_r2;
-    params.waist = waist;
-    params.drive = Bone_drive::Waist;
-    if (const std::optional<Bone_geom> g = compute_bone_geom(params))
+    auto l = [&](const std::optional<size_t>&, const gp_Pnt2d& pt_b)
     {
-      // Place the live dim on the true neck (offset from mid when r1 != r2).
-      const Bone_profile pr = get_bone_profile(*g);
-      span_a                = pr.waist_plus;
-      span_b                = pr.waist_minus;
-    }
+      Sketch_edge& edge = m_tmp_edges.back();
+      // Waist value is twice the distance from the bone axis (independent of click along-axis).
+      double half = std::abs(gp_Vec2d(c1, pt_b).Dot(*n));
+      if (m_sketch.m_dims.entered_edge_len().has_value())
+        half = m_sketch.m_dims.entered_edge_len()->len * 0.5;
 
-    m_last_pt = span_b;
-    m_sketch.update_edge_shp_(edge, span_a, span_b);
+      if (half <= Precision::Confusion())
+      {
+        m_sketch.m_dims.clear_tmp_dim_anno();
+        m_sketch.m_view.remove(m_tmp_shp);
+        m_tmp_shp = nullptr;
+        return;
+      }
 
-    const double dist = waist / m_sketch.m_view.get_display_to_model_scale();
-    m_sketch.m_dims.show_tmp_dim_preview(span_a, span_b);
-    m_sketch.m_dims.offer_dist_edit_for_segment(span_a, span_b, dist);
-    bone_update_preview_();
-  };
+      const double waist  = 2.0 * half;
+      gp_Pnt2d     span_a = gp_Pnt2d(mid).Translated(-(*n) * half);
+      gp_Pnt2d     span_b = gp_Pnt2d(mid).Translated((*n) * half);
 
-  move_sketch_pt_(screen_coords, l);
+      Bone_params params;
+      params.c1    = c1;
+      params.c2    = c2;
+      params.r1    = *m_bone_r1;
+      params.r2    = *m_bone_r2;
+      params.waist = waist;
+      params.drive = Bone_drive::Waist;
+      if (const std::optional<Bone_geom> g = compute_bone_geom(params))
+      {
+        // Place the live rubber-band on the true neck (offset from mid when r1 != r2).
+        const Bone_profile pr = get_bone_profile(*g);
+        span_a                = pr.waist_plus;
+        span_b                = pr.waist_minus;
+      }
+
+      m_last_pt = span_b;
+      m_sketch.update_edge_shp_(edge, span_a, span_b);
+
+      const double dist = waist / m_sketch.m_view.get_display_to_model_scale();
+      m_sketch.m_dims.clear_tmp_dim_anno();
+      m_sketch.m_dims.offer_dist_edit_for_segment(span_a, span_b, dist);
+      bone_update_preview_();
+    };
+
+    move_sketch_pt_(screen_coords, l);
+    return;
+  }
+
+  move_line_string_pt_(screen_coords);
+  m_sketch.m_dims.clear_tmp_dim_anno();
+  bone_update_preview_();
 }
 
 void Sketch_tools::bone_begin_next_edge_from_(const gp_Pnt2d& origin)
@@ -355,6 +351,7 @@ bool Sketch_tools::bone_try_commit_()
   m_sketch.add_bone(params.c1, params.c2, params.r1, params.r2, *m_bone_waist, add_centers, m_bone_hole_r1,
                     m_bone_hole_r2);
   clear_tmps();
+  m_sketch.m_view.gui().set_parent_mode();
   return true;
 }
 
