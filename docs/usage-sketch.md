@@ -32,7 +32,7 @@ This guide covers all 2D sketching tools and operations in EzyCad. For the main 
    - ![Circle Tool](res/icons/Sketcher_CreateCircle.png) [Create circles](#circle-creation-tools)
    - ![Rectangle Tool](res/icons/Sketcher_CreateRectangle.png) ![Square Tool](res/icons/Sketcher_CreateSquare.png) [Draw rectangles and squares](#rectangle-and-square-creation-tools)
    - ![Slot Tool](res/icons/Sketcher_CreateSlot.png) [Add slots](#slot-creation-tool)
-   - ![Bone Tool](res/icons/Sketcher_CreateCircle.png) [Add bone](#bone-creation-tool)
+   - ![Bone Tool](res/icons/Sketcher_CreateBone.png) [Add bone](#bone-creation-tool)
    - ![Dimension Tool](res/icons/TechDraw_LengthDimension.png) [Dimension tool](#dimension-tool)
    - ![Add Node Tool](res/icons/Sketcher_CreatePoint.png) [Add nodes](#add-node-tool)
 
@@ -711,7 +711,7 @@ The slot tool allows you to create an oblong or oval-shaped slot with rounded en
 (bone-creation-tool)=
 ## Bone Creation Tool
 
-![Bone Tool](res/icons/Sketcher_CreateCircle.png)
+![Bone Tool](res/icons/Sketcher_CreateBone.png)
 
 The bone tool builds a connecting-rod outline: the outer arcs of the two end circles and the inward waist arcs where the cutters touch those circles. The result is one closed face you can extrude. Permanent nodes **Bone A** and **Bone B** stay at the two centers for later holes, dimensions, or an operation axis.
 

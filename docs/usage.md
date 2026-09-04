@@ -929,7 +929,7 @@ Contributors should follow **[ezycad_code_style.md](ezycad_code_style.md)** for 
 - ![Sketcher_CreateCircle](res/icons/Sketcher_CreateCircle.png) - Add circle (center and radius)
 - ![Sketcher_Create3PointCircle](res/icons/Sketcher_Create3PointCircle.png) - Add circle from three points *(planned feature)*
 - ![Sketcher_CreateSlot](res/icons/Sketcher_CreateSlot.png) - Add slot
-- ![Sketcher_CreateCircle](res/icons/Sketcher_CreateCircle.png) - Add bone (<kbd>Shift</kbd>+<kbd>U</kbd>)
+- ![Sketcher_CreateBone](res/icons/Sketcher_CreateBone.png) - Add bone (<kbd>Shift</kbd>+<kbd>U</kbd>)
 - ![TechDraw_LengthDimension](res/icons/TechDraw_LengthDimension.png) - Dimension tool (<kbd>D</kbd>)
 
 ### 3D Operations
