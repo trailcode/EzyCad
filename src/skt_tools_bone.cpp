@@ -26,6 +26,11 @@ bool bone_hole_radius_ok_(double outer_r, double hole_r)
 {
   return hole_r > Precision::Confusion() && hole_r + Precision::Confusion() < outer_r;
 }
+
+bool bone_hole_radius_too_large_(double outer_r, double hole_r)
+{
+  return hole_r + Precision::Confusion() >= outer_r;
+}
 } // namespace
 
 void Sketch_tools::bone_on_enter_()
@@ -292,7 +297,11 @@ bool Sketch_tools::bone_after_hole_a_(double hole_r)
   if (holes == Bone_holes::One_radius)
   {
     if (!bone_hole_radius_ok_(*m_bone_r1, hole_r) || !bone_hole_radius_ok_(*m_bone_r2, hole_r))
+    {
+      if (bone_hole_radius_too_large_(*m_bone_r1, hole_r) || bone_hole_radius_too_large_(*m_bone_r2, hole_r))
+        m_sketch.m_view.gui().show_message("Hole radius must be smaller than the end circle.");
       return false;
+    }
     m_bone_hole_r1 = hole_r;
     m_bone_hole_r2 = hole_r;
     return bone_try_commit_();
@@ -301,7 +310,11 @@ bool Sketch_tools::bone_after_hole_a_(double hole_r)
   if (holes != Bone_holes::Two_radii)
     return false;
   if (!bone_hole_radius_ok_(*m_bone_r1, hole_r))
+  {
+    if (bone_hole_radius_too_large_(*m_bone_r1, hole_r))
+      m_sketch.m_view.gui().show_message("Hole radius must be smaller than the end circle.");
     return false;
+  }
 
   m_bone_hole_r1 = hole_r;
   bone_begin_next_edge_from_(m_bone_centers->second);
@@ -313,7 +326,11 @@ bool Sketch_tools::bone_after_hole_b_(double hole_r)
   if (!m_bone_centers || !m_bone_r2 || !m_bone_waist || !m_bone_hole_r1)
     return false;
   if (!bone_hole_radius_ok_(*m_bone_r2, hole_r))
+  {
+    if (bone_hole_radius_too_large_(*m_bone_r2, hole_r))
+      m_sketch.m_view.gui().show_message("Hole radius must be smaller than the end circle.");
     return false;
+  }
 
   m_bone_hole_r2 = hole_r;
   return bone_try_commit_();

@@ -741,6 +741,7 @@ The sketch keeps only that trimmed outline (four arcs). Extrude it with the norm
 - Snap the two centers to existing nodes, or to the sketch origin.
 - After Add with no holes, use **Add circle** snapped to **Bone A** / **Bone B** if you want holes later.
 - For waist, click on either side of the bone axis; the distance from the axis to that point is half the waist (the dim then snaps to the true neck).
+- If a hole radius is greater than or equal to that end's outer radius, a toast explains the hole must be smaller; the click is ignored.
 - Preferences **Add center nodes** and **Holes** are saved as `gui.bone_add_center_nodes` and `gui.bone_holes`.
 
 ## Operation Axis Tool
