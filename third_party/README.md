@@ -2,7 +2,7 @@
 
 Vendored sources and binaries for EzyCad live under **`third_party/`** (lowercase, underscore). CMake and scripts assume this layout.
 
-The **`thirdParty/`** directory name (camel case) is **not** used by this project; it may appear in older docs or external tool defaults. Ignore or remove stray `thirdParty` trees to avoid confusion with Conan/NuGet outputs (see repo `.gitignore`).
+The **`thirdParty/`** directory name (camel case) is **not** used by this project; it may appear in older docs or external tool defaults. Ignore or remove stray `thirdParty` trees to avoid confusion with legacy NuGet outputs (see repo `.gitignore`). GLFW/GLEW for desktop MSVC come from **vcpkg** (`vcpkg.json`), not from this folder.
 
 ## ImGuiColorTextEdit
 

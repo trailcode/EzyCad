@@ -44,6 +44,15 @@ endif()
 # Lua (for script console) - built for native and Emscripten (C sources compile with emcc)
 # Tarball has no CMake; we build the lib from sources
 include(FetchContent)
+# Prefer extraction-time stamps for URL downloads (CMP0135 NEW).
+if(POLICY CMP0135)
+  cmake_policy(SET CMP0135 NEW)
+endif()
+# Third-party FetchContent trees (pybind11) still declare cmake_minimum_required
+# below 3.10; raise the effective policy floor so CMake 3.31+/4.x does not warn.
+if(CMAKE_VERSION VERSION_GREATER_EQUAL "3.31")
+  set(CMAKE_POLICY_VERSION_MINIMUM 3.10)
+endif()
 if(EZYCAD_HAVE_PYTHON)
   set(PYBIND11_FINDPYTHON ON)
   FetchContent_Declare(
@@ -57,7 +66,8 @@ FetchContent_Declare(
   lua
   URL https://www.lua.org/ftp/lua-5.4.6.tar.gz
 )
-FetchContent_Populate(lua)
+# Lua has no top-level CMakeLists.txt; MakeAvailable only populates (no add_subdirectory).
+FetchContent_MakeAvailable(lua)
 set(LUA_SRC_DIR ${lua_SOURCE_DIR}/lua-5.4.6/src)
 if(NOT EXISTS ${LUA_SRC_DIR})
   set(LUA_SRC_DIR ${lua_SOURCE_DIR}/src)
@@ -87,25 +97,12 @@ target_compile_features(lua PUBLIC c_std_99)
 set(BINARY_DIR ${${PROJECT_NAME}_BINARY_DIR})
 
 # EzyCad branches on CMAKE_CXX_COMPILER_ID STREQUAL "Emscripten" (wasm link flags,
-# TKOpenGles, no gtest/GLFW nuget). Override the Clang ID that emsdk forces.
+# TKOpenGles, no gtest / no desktop GLFW+GLEW). Override the Clang ID that emsdk forces.
 if(EMSCRIPTEN_BUILD)
   message(" * C++ compiler: Emscripten")
   set(CMAKE_CXX_COMPILER_ID "Emscripten")
 else()
   message(" * C++ compiler: ${CMAKE_CXX_COMPILER_ID}")
-endif()
-
-set(GLFW_VERSION  "3.3.0.1")
-set(GLEW_VERSION  "2.1.0")
-
-if(MSVC_VERSION AND NOT CMAKE_TOOLCHAIN_FILE)
-  find_program(NUGET nuget)
-  if(NOT NUGET)
-    message(FATAL_ERROR "Cannot find nuget command line tool.\nInstall it with e.g. choco install nuget.commandline")
-  endif()
-  # Output must be under the build tree (CMAKE_BINARY_DIR), not the shell CWD, or clean out-of-source configures fail.
-  execute_process(COMMAND ${NUGET} install glfw                     -Version ${GLFW_VERSION}    -OutputDirectory "${CMAKE_BINARY_DIR}/thirdParty")
-  execute_process(COMMAND ${NUGET} install unofficial-flayan-glew   -Version ${GLEW_VERSION}    -OutputDirectory "${CMAKE_BINARY_DIR}/thirdParty")
 endif()
 
 # imgui_demo.cpp omitted: large and unused here; add back if you need ImGui::ShowDemoWindow.
@@ -418,15 +415,42 @@ else()
 
     list(APPEND OpenCASCADE_LIBS TKOpenGl)
 
-    set(GLEW_LOCATION ${BINARY_DIR}/thirdParty/unofficial-flayan-glew.${GLEW_VERSION}/build/native)
-    set(GLFW_ROOT_DIR ${BINARY_DIR}/thirdParty/glfw.${GLFW_VERSION}/build/native)
+    # Desktop GLFW/GLEW: vcpkg manifest (vcpkg.json). MSVC requires the vcpkg toolchain
+    # (same path as CI). Non-MSVC may use vcpkg CONFIG packages or system MODULE finds.
+    if(MSVC AND NOT DEFINED VCPKG_TARGET_TRIPLET)
+      message(FATAL_ERROR
+        "MSVC desktop builds require vcpkg (see vcpkg.json).\n"
+        "  set VCPKG_ROOT to your vcpkg clone, then configure with:\n"
+        "  -DCMAKE_TOOLCHAIN_FILE=%VCPKG_ROOT%/scripts/buildsystems/vcpkg.cmake\n"
+        "Manifest mode installs glfw3/glew on configure. See README and agents/workflows/local-dev.md.")
+    endif()
 
     set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}/cmake/modules")
 
-    # For non-Emscripten builds, find and link required libraries
     find_package(OpenGL REQUIRED)
-    find_package(glfw3  REQUIRED)
-    
+    find_package(glfw3 CONFIG QUIET)
+    if(glfw3_FOUND)
+      set(EZYCAD_GLFW_LIBS glfw)
+    else()
+      find_package(GLFW3 REQUIRED)
+      set(EZYCAD_GLFW_LIBS ${GLFW3_LIBRARY})
+    endif()
+    find_package(GLEW CONFIG QUIET)
+    if(GLEW_FOUND)
+      set(EZYCAD_GLEW_LIBS GLEW::GLEW)
+    else()
+      find_package(GLEW REQUIRED)
+      set(EZYCAD_GLEW_LIBS ${GLEW_LIBRARY})
+    endif()
+    # imgui_impl_glfw / opengl3 compile inside EzyCad_lib; propagate includes via targets.
+    target_link_libraries(${PROJECT_NAME}_lib PUBLIC ${EZYCAD_GLFW_LIBS} ${EZYCAD_GLEW_LIBS})
+    if(NOT glfw3_FOUND AND GLFW3_INCLUDE_PATH)
+      target_include_directories(${PROJECT_NAME}_lib PUBLIC ${GLFW3_INCLUDE_PATH})
+    endif()
+    if(NOT GLEW_FOUND AND GLEW_INCLUDE_DIR)
+      target_include_directories(${PROJECT_NAME}_lib PUBLIC ${GLEW_INCLUDE_DIR})
+    endif()
+
     add_executable(${PROJECT_NAME} "src/main.cpp")
 
     # Copy default settings and examples so native build finds res/ at runtime
@@ -507,15 +531,6 @@ else()
     endif()
 
     target_link_libraries(${PROJECT_NAME} ${PROJECT_NAME}_lib)
-    if(MSVC_VERSION AND NOT CMAKE_TOOLCHAIN_FILE)
-      target_link_libraries(${PROJECT_NAME} ${BINARY_DIR}/thirdParty/unofficial-flayan-glew.${GLEW_VERSION}/build/native/lib/x64/dynamic/glew32.lib)
-    endif()
-    if(NOT MSVC)
-      target_link_libraries(${PROJECT_NAME} -Wl,--no-as-needed ${GLFW3_LIBRARY} -Wl,--as-needed)
-    else()
-      target_link_libraries(${PROJECT_NAME} ${GLFW3_LIBRARY})
-    endif()
-    
     target_link_libraries(${PROJECT_NAME} ${OpenCASCADE_LIBS})
 
     if(EZYCAD_HAVE_PYTHON AND EZYCAD_PYTHON_LINK_MODE STREQUAL "imported_target"
@@ -526,13 +541,6 @@ else()
               "${EZYCAD_PYTHON_RUNTIME_DLL}"
               $<TARGET_FILE_DIR:${PROJECT_NAME}>
           COMMENT "Copy Python DLL next to EzyCad.exe")
-    endif()
-
-    if(MSVC_VERSION AND NOT CMAKE_TOOLCHAIN_FILE)
-      include_directories(${BINARY_DIR}/thirdParty/unofficial-flayan-glew.${GLEW_VERSION}/build/native/include)
-    endif()
-    if(GLFW3_INCLUDE_PATH)
-      include_directories(${GLFW3_INCLUDE_PATH})
     endif()
 
     # MSVC-specific configuration
@@ -560,32 +568,38 @@ else()
           ${OCCT_3RD_PARTY_DIR}/tbb-2021.13.0-x64/bin/tbb12.dll
           ${OCCT_3RD_PARTY_DIR}/jemalloc-vc14-64/bin/jemalloc.dll
       )
-      if(MSVC_VERSION AND NOT CMAKE_TOOLCHAIN_FILE)
-        list(APPEND DLLS_COMMON
-          ${BINARY_DIR}/thirdParty/unofficial-flayan-glew.redist.${GLEW_VERSION}/build/native/bin/x64/dynamic/glew32.dll
-          ${BINARY_DIR}/thirdParty/glfw.${GLFW_VERSION}/build/native/bin/dynamic/v142/x64/glfw3.dll
-        )
+      # Stage glfw/glew DLLs from vcpkg: release bin vs debug/bin (GLEW debug is glew32d.dll).
+      # Multi-config MSVC links the matching import libs; copy matching runtimes per output dir.
+      set(_vcpkg_root "")
+      if(DEFINED VCPKG_INSTALLED_DIR AND DEFINED VCPKG_TARGET_TRIPLET)
+        set(_vcpkg_root "${VCPKG_INSTALLED_DIR}/${VCPKG_TARGET_TRIPLET}")
       endif()
-
-      # When building with vcpkg toolchain (e.g. the GitHub CI), the nuget glew/glfw
-      # were never installed, so also stage the DLLs from the vcpkg manifest install
-      # (typically <source>/vcpkg_installed/x64-windows/bin or under the build tree).
-      # This ensures the Release/ folder contains a runnable EzyCad.exe.
-      if(CMAKE_TOOLCHAIN_FILE)
-        set(_vcpkg_bin "${CMAKE_SOURCE_DIR}/vcpkg_installed/x64-windows/bin")
-        if(NOT EXISTS "${_vcpkg_bin}/glfw3.dll")
-          set(_vcpkg_bin "${BINARY_DIR}/vcpkg_installed/x64-windows/bin")
-        endif()
-        if(NOT EXISTS "${_vcpkg_bin}/glfw3.dll")
-          # Fallback to common vcpkg classic location (if any packages landed there)
-          set(_vcpkg_bin "C:/vcpkg/installed/x64-windows/bin")
-        endif()
-        if(EXISTS "${_vcpkg_bin}/glfw3.dll")
-          list(APPEND DLLS_COMMON "${_vcpkg_bin}/glfw3.dll")
-        endif()
-        if(EXISTS "${_vcpkg_bin}/glew32.dll")
-          list(APPEND DLLS_COMMON "${_vcpkg_bin}/glew32.dll")
-        endif()
+      if(NOT _vcpkg_root OR NOT EXISTS "${_vcpkg_root}/bin/glfw3.dll")
+        set(_vcpkg_root "${CMAKE_SOURCE_DIR}/vcpkg_installed/x64-windows")
+      endif()
+      if(NOT EXISTS "${_vcpkg_root}/bin/glfw3.dll")
+        set(_vcpkg_root "${BINARY_DIR}/vcpkg_installed/x64-windows")
+      endif()
+      if(NOT EXISTS "${_vcpkg_root}/bin/glfw3.dll" AND DEFINED ENV{VCPKG_ROOT})
+        set(_vcpkg_root "$ENV{VCPKG_ROOT}/installed/x64-windows")
+      endif()
+      set(_vcpkg_bin_rel "${_vcpkg_root}/bin")
+      set(_vcpkg_bin_dbg "${_vcpkg_root}/debug/bin")
+      if(EXISTS "${_vcpkg_bin_rel}/glfw3.dll")
+        list(APPEND DLLS_RELEASE "${_vcpkg_bin_rel}/glfw3.dll")
+      endif()
+      if(EXISTS "${_vcpkg_bin_rel}/glew32.dll")
+        list(APPEND DLLS_RELEASE "${_vcpkg_bin_rel}/glew32.dll")
+      endif()
+      if(EXISTS "${_vcpkg_bin_dbg}/glfw3.dll")
+        list(APPEND DLLS_DEBUG "${_vcpkg_bin_dbg}/glfw3.dll")
+      elseif(EXISTS "${_vcpkg_bin_rel}/glfw3.dll")
+        list(APPEND DLLS_DEBUG "${_vcpkg_bin_rel}/glfw3.dll")
+      endif()
+      if(EXISTS "${_vcpkg_bin_dbg}/glew32d.dll")
+        list(APPEND DLLS_DEBUG "${_vcpkg_bin_dbg}/glew32d.dll")
+      elseif(EXISTS "${_vcpkg_bin_rel}/glew32.dll")
+        list(APPEND DLLS_DEBUG "${_vcpkg_bin_rel}/glew32.dll")
       endif()
 
       foreach(lib ${OpenCASCADE_LIBS})
@@ -597,11 +611,7 @@ else()
       
       set(CONFIG_ASSETS ${CMAKE_SOURCE_DIR}/imgui.ini)
 
-      # Copy DLLs and assets to Release configurations.
-      # Only copy files that actually exist on disk. This prevents configure errors in
-      # the vcpkg-toolchain CI case (and prebuilt-OCCT path) where the nuget-populated
-      # thirdParty/glew/glfw redist paths are never created (the early nuget block is
-      # skipped when CMAKE_TOOLCHAIN_FILE is present).
+      # Copy DLLs and assets to Release configurations (skip paths that do not exist).
       foreach(file ${DLLS_RELEASE} ${DLLS_COMMON} ${FONT_ASSETS} ${CONFIG_ASSETS})
         if(file AND EXISTS "${file}")
           file(COPY "${file}" DESTINATION "${CMAKE_CURRENT_BINARY_DIR}/Release")
@@ -730,7 +740,7 @@ if(NOT CMAKE_CXX_COMPILER_ID STREQUAL "Emscripten")
     FetchContent_Declare(
         googletest
         GIT_REPOSITORY https://github.com/google/googletest.git
-        GIT_TAG release-1.12.1  # Adjust version as needed
+        GIT_TAG v1.15.2
     )
     # For Windows: Prevent overriding the parent project's compiler/linker settings
     set(gtest_force_shared_crt ON CACHE BOOL "" FORCE)
@@ -757,11 +767,6 @@ if(NOT CMAKE_CXX_COMPILER_ID STREQUAL "Emscripten")
         ${OPENGL_LIBRARIES}
         ${OPENGL_gl_LIBRARY}
     )
-    if(NOT MSVC)
-      target_link_libraries(${PROJECT_NAME}_tests -Wl,--no-as-needed ${GLFW3_LIBRARY} -Wl,--as-needed)
-    else()
-      target_link_libraries(${PROJECT_NAME}_tests ${GLFW3_LIBRARY})
-    endif()
 
 
     

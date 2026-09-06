@@ -62,20 +62,20 @@ Full guide: **[docs/building-occt.md](docs/building-occt.md)** (Windows prebuilt
 
 ### Steps to Build
 1. Clone the repository.
-2. Create a build directory, e.g., `C:\src\EzyCad\build`.
-3. Configure the project in the build directory using CMake:
+2. Install [vcpkg](https://vcpkg.io/) and set `VCPKG_ROOT` (GLFW and GLEW come from the repo `vcpkg.json` manifest; same path as CI).
+3. Create a build directory, e.g., `C:\src\EzyCad\build`.
+4. Configure the project in the build directory using CMake:
    - After extracting the V8.0.0 combined prebuilt zip under `C:\bin` (see [docs/building-occt.md](docs/building-occt.md)):
-     `cmake -S C:\src\EzyCad -B build -G "Visual Studio 18 2026" -A x64 -DOpenCASCADE_DIR=C:\bin\opencascade-8.0.0-vc14-64\cmake -DOCCT_3RD_PARTY_DIR=C:\bin\3rdparty-vc14-64`
+     `cmake -S C:\src\EzyCad -B build -G "Visual Studio 18 2026" -A x64 -DCMAKE_TOOLCHAIN_FILE=%VCPKG_ROOT%/scripts/buildsystems/vcpkg.cmake -DOpenCASCADE_DIR=C:\bin\opencascade-8.0.0-vc14-64\cmake -DOCCT_3RD_PARTY_DIR=C:\bin\3rdparty-vc14-64`
    - `OpenCASCADE_DIR` must be the folder that contains `OpenCASCADEConfig.cmake` (for the combined package that is `...\opencascade-8.0.0-vc14-64\cmake`).
    - `OCCT_3RD_PARTY_DIR` should point to the OCCT 3rd-party distribution (`...\3rdparty-vc14-64`).
    - Prefer CMake 4.3+ (PATH or VS 2026 bundled) so generator **Visual Studio 18 2026** is available. After deleting `build/`, re-run this configure step before building.
-   - CMake will use `nuget` to download additional dependencies (GLFW, GLEW).
-4. Build the project (`cmake --build build --config Release`).
+5. Build the project (`cmake --build build --config Release`).
 
 ### Notes for Windows Users
-- Ensure `nuget` is installed for fetching dependencies like GLFW and GLEW.
+- Desktop MSVC builds **require** the vcpkg toolchain (`CMAKE_TOOLCHAIN_FILE=.../vcpkg.cmake`). NuGet is not used.
 - Use Visual Studio 2026 as the IDE for debugging and building (generator `Visual Studio 18 2026`). Do not configure with `Visual Studio 17 2022` on a machine that only has VS 2026.
-- If configure fails after wiping `build/`, confirm both OCCT paths exist on disk and that your CMake lists `Visual Studio 18 2026` in `cmake --help`.
+- If configure fails after wiping `build/`, confirm both OCCT paths exist on disk, that `VCPKG_ROOT` is set, and that your CMake lists `Visual Studio 18 2026` in `cmake --help`.
 
 ### Notes for Emscripten Builds
 - Install Emscripten and activate its environment (`emsdk_env`).
@@ -127,4 +127,4 @@ The **`third_party/`** folder holds other libraries **shipped inside the EzyCad 
 
 **ImGuiColorTextEdit:** Prefer a full checkout under `third_party/ImGuiColorTextEdit/` (see `third_party/README.md`). If that folder is missing, CMake **FetchContent** downloads upstream at a **fixed commit** (`ca2f9f1462e3b60e56351bc466acda448c5ea50d`) because the upstream repo has **no release tags**. To upgrade the editor, bump that SHA in `CMakeLists.txt` and refresh any vendored copy.
 
-**Windows note:** GLFW and GLEW for MSVC are **not** stored under `third_party/`; NuGet installs them into **`${CMAKE_BINARY_DIR}/thirdParty`** when you configure (see [Notes for Windows Users](#notes-for-windows-users)).
+**Windows note:** GLFW and GLEW for MSVC come from **vcpkg** (`vcpkg.json` + `-DCMAKE_TOOLCHAIN_FILE=.../vcpkg.cmake`). They are not under `third_party/`.

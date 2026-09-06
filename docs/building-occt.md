@@ -202,9 +202,15 @@ powershell -NoProfile -ExecutionPolicy Bypass -File C:\src\EzyCad\scripts\build-
 curl -L -o occt-combined.zip https://github.com/Open-Cascade-SAS/OCCT/releases/download/V8_0_0/occt-combined-release-no-pch.zip
 ```
 
-### vcpkg (alternative desktop path)
+### vcpkg (GLFW / GLEW)
 
-OCCT 8 supports vcpkg (`USE_VTK=ON` only if needed). EzyCad’s `CMakeLists.txt` is written for `find_package(OpenCASCADE)` + manual `OCCT_3RD_PARTY_DIR` DLL copies — vcpkg integration is **not** wired in-tree.
+Desktop MSVC builds use the repo **`vcpkg.json`** manifest for **glfw3** and **glew** (same as CI). Pass the vcpkg toolchain when configuring:
+
+```text
+-DCMAKE_TOOLCHAIN_FILE=%VCPKG_ROOT%/scripts/buildsystems/vcpkg.cmake
+```
+
+**Open CASCADE is not installed via vcpkg** for EzyCad. Keep using a prebuilt or self-built OCCT tree with `OpenCASCADE_DIR` and `OCCT_3RD_PARTY_DIR` (DLL staging). Upstream OCCT 8 has a vcpkg port (`USE_VTK=ON` only if needed); that path is separate from EzyCad’s current CMake wiring.
 
 ---
 
@@ -225,10 +231,11 @@ OCCT 8 supports vcpkg (`USE_VTK=ON` only if needed). EzyCad’s `CMakeLists.txt`
 
 ## Quick reference: EzyCad CMake variables
 
-| Variable             | Platform        | Purpose                                     |
-| -------------------- | --------------- | ------------------------------------------- |
-| `OpenCASCADE_DIR`    | All             | Path to `OpenCASCADEConfig.cmake` directory |
-| `OCCT_3RD_PARTY_DIR` | Windows desktop | Root of 3rdparty bundle for runtime DLLs    |
-| `CMAKE_BUILD_TYPE`   | Native / wasm   | `Release` recommended                       |
+| Variable               | Platform        | Purpose                                           |
+| ---------------------- | --------------- | ------------------------------------------------- |
+| `OpenCASCADE_DIR`      | All             | Path to `OpenCASCADEConfig.cmake` directory       |
+| `OCCT_3RD_PARTY_DIR`   | Windows desktop | Root of 3rdparty bundle for runtime DLLs          |
+| `CMAKE_TOOLCHAIN_FILE` | Windows desktop | vcpkg toolchain (`.../vcpkg.cmake`) for glfw/glew |
+| `CMAKE_BUILD_TYPE`     | Native / wasm   | `Release` recommended                             |
 
 EzyCad wasm also sets `TKOpenGles` in `OpenCASCADE_LIBS` when `CMAKE_CXX_COMPILER_ID` is `Emscripten`.

@@ -3,6 +3,8 @@
 /.vscode/settings.json
 # Legacy name; some toolchains write here. Primary vendored deps live in third_party/.
 /thirdParty
+# vcpkg manifest install (when installed into the source tree)
+/vcpkg_installed
 /.vs
 # AI/IDE local rule directories (Cursor, Claude, etc.). Shared repo-wide assistant notes live in agents/.
 /.cursor/
