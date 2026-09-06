@@ -442,6 +442,14 @@ else()
       find_package(GLEW REQUIRED)
       set(EZYCAD_GLEW_LIBS ${GLEW_LIBRARY})
     endif()
+    # imgui_impl_glfw / opengl3 compile inside EzyCad_lib; propagate includes via targets.
+    target_link_libraries(${PROJECT_NAME}_lib PUBLIC ${EZYCAD_GLFW_LIBS} ${EZYCAD_GLEW_LIBS})
+    if(NOT glfw3_FOUND AND GLFW3_INCLUDE_PATH)
+      target_include_directories(${PROJECT_NAME}_lib PUBLIC ${GLFW3_INCLUDE_PATH})
+    endif()
+    if(NOT GLEW_FOUND AND GLEW_INCLUDE_DIR)
+      target_include_directories(${PROJECT_NAME}_lib PUBLIC ${GLEW_INCLUDE_DIR})
+    endif()
 
     add_executable(${PROJECT_NAME} "src/main.cpp")
 
@@ -523,12 +531,6 @@ else()
     endif()
 
     target_link_libraries(${PROJECT_NAME} ${PROJECT_NAME}_lib)
-    if(NOT MSVC AND NOT glfw3_FOUND)
-      target_link_libraries(${PROJECT_NAME} -Wl,--no-as-needed ${EZYCAD_GLFW_LIBS} -Wl,--as-needed)
-    else()
-      target_link_libraries(${PROJECT_NAME} ${EZYCAD_GLFW_LIBS})
-    endif()
-    target_link_libraries(${PROJECT_NAME} ${EZYCAD_GLEW_LIBS})
     target_link_libraries(${PROJECT_NAME} ${OpenCASCADE_LIBS})
 
     if(EZYCAD_HAVE_PYTHON AND EZYCAD_PYTHON_LINK_MODE STREQUAL "imported_target"
@@ -539,13 +541,6 @@ else()
               "${EZYCAD_PYTHON_RUNTIME_DLL}"
               $<TARGET_FILE_DIR:${PROJECT_NAME}>
           COMMENT "Copy Python DLL next to EzyCad.exe")
-    endif()
-
-    if(NOT glfw3_FOUND AND GLFW3_INCLUDE_PATH)
-      include_directories(${GLFW3_INCLUDE_PATH})
-    endif()
-    if(NOT GLEW_FOUND AND GLEW_INCLUDE_DIR)
-      include_directories(${GLEW_INCLUDE_DIR})
     endif()
 
     # MSVC-specific configuration
@@ -759,12 +754,6 @@ if(NOT CMAKE_CXX_COMPILER_ID STREQUAL "Emscripten")
         ${OPENGL_LIBRARIES}
         ${OPENGL_gl_LIBRARY}
     )
-    if(NOT MSVC AND NOT glfw3_FOUND)
-      target_link_libraries(${PROJECT_NAME}_tests -Wl,--no-as-needed ${EZYCAD_GLFW_LIBS} -Wl,--as-needed)
-    else()
-      target_link_libraries(${PROJECT_NAME}_tests ${EZYCAD_GLFW_LIBS})
-    endif()
-    target_link_libraries(${PROJECT_NAME}_tests ${EZYCAD_GLEW_LIBS})
 
 
     
