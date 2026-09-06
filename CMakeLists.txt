@@ -44,6 +44,15 @@ endif()
 # Lua (for script console) - built for native and Emscripten (C sources compile with emcc)
 # Tarball has no CMake; we build the lib from sources
 include(FetchContent)
+# Prefer extraction-time stamps for URL downloads (CMP0135 NEW).
+if(POLICY CMP0135)
+  cmake_policy(SET CMP0135 NEW)
+endif()
+# Third-party FetchContent trees (pybind11) still declare cmake_minimum_required
+# below 3.10; raise the effective policy floor so CMake 3.31+/4.x does not warn.
+if(CMAKE_VERSION VERSION_GREATER_EQUAL "3.31")
+  set(CMAKE_POLICY_VERSION_MINIMUM 3.10)
+endif()
 if(EZYCAD_HAVE_PYTHON)
   set(PYBIND11_FINDPYTHON ON)
   FetchContent_Declare(
@@ -57,7 +66,8 @@ FetchContent_Declare(
   lua
   URL https://www.lua.org/ftp/lua-5.4.6.tar.gz
 )
-FetchContent_Populate(lua)
+# Lua has no top-level CMakeLists.txt; MakeAvailable only populates (no add_subdirectory).
+FetchContent_MakeAvailable(lua)
 set(LUA_SRC_DIR ${lua_SOURCE_DIR}/lua-5.4.6/src)
 if(NOT EXISTS ${LUA_SRC_DIR})
   set(LUA_SRC_DIR ${lua_SOURCE_DIR}/src)
@@ -425,7 +435,7 @@ else()
 
     # For non-Emscripten builds, find and link required libraries
     find_package(OpenGL REQUIRED)
-    find_package(glfw3  REQUIRED)
+    find_package(GLFW3 REQUIRED)
     
     add_executable(${PROJECT_NAME} "src/main.cpp")
 
@@ -730,7 +740,7 @@ if(NOT CMAKE_CXX_COMPILER_ID STREQUAL "Emscripten")
     FetchContent_Declare(
         googletest
         GIT_REPOSITORY https://github.com/google/googletest.git
-        GIT_TAG release-1.12.1  # Adjust version as needed
+        GIT_TAG v1.15.2
     )
     # For Windows: Prevent overriding the parent project's compiler/linker settings
     set(gtest_force_shared_crt ON CACHE BOOL "" FORCE)
