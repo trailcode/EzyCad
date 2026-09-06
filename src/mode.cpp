@@ -24,6 +24,7 @@ bool is_sketch_mode(const Mode mode)
   case Mode::Sketch_add_circle:
   case Mode::Sketch_add_circle_3_pts:
   case Mode::Sketch_add_slot:
+  case Mode::Sketch_add_bone:
   case Mode::Sketch_operation_axis:
   case Mode::Sketch_dim_anno:
   case Mode::Sketch_face_extrude:

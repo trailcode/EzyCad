@@ -74,7 +74,7 @@ private:
   PrsDim_LengthDimension_ptr m_tmp_dim;
   PrsDim_AngleDimension_ptr  m_tmp_angle_dim;
   Plane_side                 m_extrude_side;
-  bool                       m_extrude_both_sides{false};
+  bool                       m_extrude_both_sides{true};
   bool                       m_twist_enabled{false};
   Phase                      m_phase{Phase::Height};
   double                     m_twist_angle{0.0}; // radians, CCW about face centroid / plane normal

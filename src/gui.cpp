@@ -197,6 +197,7 @@ void GUI::initialize_toolbar_()
       {load_texture("res/icons/Sketcher_CreateCircle.png"),           false, "Add circle",                        Mode::Sketch_add_circle},
       {load_texture("res/icons/Sketcher_Create3PointCircle.png"),     false, "Add circle from three points",      Mode::Sketch_add_circle_3_pts},
       {load_texture("res/icons/Sketcher_CreateSlot.png"),             false, "Add slot",                          Mode::Sketch_add_slot},
+      {load_texture("res/icons/Sketcher_CreateBone.png"),             false, "Add bone",                          Mode::Sketch_add_bone},
       {load_texture("res/icons/TechDraw_LengthDimension.png"),        false, "Length dimension",                  Mode::Sketch_dim_anno},
       {load_texture("res/icons/Design456_Extrude.png"),               false, "Extrude sketch face",               Mode::Sketch_face_extrude},
       {load_texture("res/icons/PartDesign_Chamfer.png"),              false, "Chamfer",                           Mode::Shape_chamfer},
@@ -262,6 +263,7 @@ void GUI::sync_toolbar_hotkey_tooltips_()
   tip_mode(Mode::Sketch_add_circle,             "Add circle",                      Gui_action::Mode_add_circle);
   tip_mode(Mode::Sketch_add_circle_3_pts,       "Add circle from three points",    Gui_action::Mode_add_circle_3_pts);
   tip_mode(Mode::Sketch_add_slot,               "Add slot",                        Gui_action::Mode_add_slot);
+  tip_mode(Mode::Sketch_add_bone,               "Add bone",                        Gui_action::Mode_add_bone);
   tip_mode(Mode::Shape_polar_duplicate,         "Shape polar duplicate",           Gui_action::Mode_polar_duplicate);
   tip_mode(Mode::Shape_cross_section,           "Shape cross-section",             Gui_action::Mode_cross_section);
   tip_cmd(Command::Shape_cut,                   "Shape cut",                       Gui_action::Cmd_shape_cut);
@@ -4020,6 +4022,7 @@ void GUI::on_mouse_pos(const ScreenCoords& screen_coords)
     case Mode::Sketch_add_rectangle_center_pt:
     case Mode::Sketch_add_circle:
     case Mode::Sketch_add_slot:
+    case Mode::Sketch_add_bone:
     case Mode::Sketch_add_seg_circle_arc:
     case Mode::Sketch_dim_anno:           m_view->curr_sketch().sketch_pt_move(screen_coords);  break;
     case Mode::Sketch_face_extrude:       m_view->sketch_face_extrude(screen_coords, true);     break;
@@ -4061,6 +4064,7 @@ void GUI::on_left_click_(const ScreenCoords& screen_coords)
   case Mode::Sketch_add_rectangle_center_pt:
   case Mode::Sketch_add_circle:
   case Mode::Sketch_add_slot:
+  case Mode::Sketch_add_bone:
     hide_dist_edit();
     m_view->curr_sketch().add_sketch_pt(screen_coords);
     break;

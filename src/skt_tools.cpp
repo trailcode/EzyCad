@@ -9,6 +9,9 @@
 #include <array>
 #include <cmath>
 #include <functional>
+#include <utility>
+#include <gp_Dir2d.hxx>
+#include <gp_Vec2d.hxx>
 
 #include "gui.h"
 #include "mode.h"
@@ -19,6 +22,8 @@
 #include "utl_geom.h"
 #include "utl_occt.h"
 #include "utl.h"
+
+#include "skt_tools.inl"
 
 using namespace glm;
 
@@ -55,6 +60,7 @@ void Sketch_tools::on_click(const ScreenCoords& screen_coords)
     case Mode::Sketch_add_node:           add_node_pt_          (screen_coords);                            break;
     case Mode::Sketch_add_edge:           add_line_string_pt_   (screen_coords, Linestring_type::Single);   break;
     case Mode::Sketch_add_slot:           add_line_string_pt_   (screen_coords, Linestring_type::Two);      break;
+    case Mode::Sketch_add_bone:           add_bone_pt_          (screen_coords);                            break;
     case Mode::Sketch_add_multi_edges:    add_line_string_pt_   (screen_coords, Linestring_type::Multiple); break;
     case Mode::Sketch_add_seg_circle_arc: add_arc_circle_pt_    (screen_coords);                            break;
     case Mode::Sketch_operation_axis:     add_operation_axis_pt_(screen_coords);                            break;
@@ -74,6 +80,7 @@ void Sketch_tools::on_move(const ScreenCoords& screen_coords)
     case Mode::Sketch_add_square:          move_square_pt_      (screen_coords); break;
     case Mode::Sketch_add_circle:          move_circle_pt_      (screen_coords); break;
     case Mode::Sketch_add_slot:            move_slot_pt_        (screen_coords); break;
+    case Mode::Sketch_add_bone:            move_bone_pt_        (screen_coords); break;
 
     case Mode::Sketch_add_edge:
     case Mode::Sketch_operation_axis:
@@ -112,6 +119,10 @@ void Sketch_tools::on_enter()
       m_sketch.m_dims.check_dimension_seg_(static_cast<int>(Linestring_type::Two));
       break;
 
+    case Mode::Sketch_add_bone:
+      bone_on_enter_();
+      break;
+
     case Mode::Sketch_add_multi_edges:
       m_sketch.m_dims.check_dimension_seg_(static_cast<int>(Linestring_type::Multiple));
       break;
@@ -144,6 +155,7 @@ void Sketch_tools::finalize()
     case Mode::Sketch_add_circle:       finalize_circle_(rec);            break;
     case Mode::Sketch_add_node:         finalize_add_node_elm_cleanup_(); break;
     case Mode::Sketch_add_slot:         finalize_slot_(rec);              break;
+    case Mode::Sketch_add_bone:         finalize_bone_();                 break;
     case Mode::Sketch_operation_axis:   finalize_operation_axis_(rec);    break;
       // clang-format on
     default:
@@ -911,54 +923,17 @@ bool Sketch_tools::clear_tmps()
     m_tmp_shp = nullptr;
   }
 
-  const bool operation_canceled = !m_tmp_edges.empty();
+  const bool operation_canceled = !m_tmp_edges.empty() || m_bone_centers.has_value();
+  m_bone_centers.reset();
+  m_bone_r1.reset();
+  m_bone_r2.reset();
+  m_bone_waist.reset();
+  m_bone_hole_r1.reset();
+  m_bone_hole_r2.reset();
   clear_all(m_tmp_node_idxs, m_tmp_shp, m_tmp_edges);
   m_sketch.m_dims.on_clear_tmps();
 
   return operation_canceled;
-}
-
-// General sketch point related
-template <typename Callback>
-void Sketch_tools::add_sketch_pt_(const ScreenCoords& screen_coords, size_t required_num_pts, Callback&& callback)
-{
-  auto l = [&](const std::optional<size_t>& node_idx, const gp_Pnt2d& pt)
-  {
-    if (node_idx)
-      m_tmp_node_idxs.push_back(*node_idx);
-    else
-      m_tmp_node_idxs.push_back(m_sketch.m_nodes.add_new_node(pt));
-
-    if (m_tmp_node_idxs.size() >= required_num_pts)
-      callback(m_tmp_node_idxs.back());
-  };
-
-  move_sketch_pt_(screen_coords, l);
-}
-
-template <typename Callback> void Sketch_tools::move_sketch_pt_(const ScreenCoords& screen_coords, Callback&& callback)
-{
-  m_last_pt = m_sketch.m_view.pt_on_plane(screen_coords, m_sketch.m_pln);
-  if (!m_last_pt)
-    // View plane and sketch plane must be perpendicular.
-    return;
-
-  std::optional<size_t> node_idx = m_sketch.m_nodes.try_get_node_idx_snap(*m_last_pt);
-
-  callback(node_idx, *m_last_pt);
-}
-
-/// Invokes callback(e, pt_a, pt_b) with the last tmp edge only when it exists and is non-degenerate.
-template <typename Callback> void Sketch_tools::if_edge_pt_valid_(Callback&& callback)
-{
-  if (m_tmp_edges.empty())
-    return;
-
-  Sketch_edge&    e    = m_tmp_edges.back();
-  const gp_Pnt2d& pt_a = m_sketch.m_nodes[e.node_idx_a];
-  if (m_last_pt.has_value())
-    if (unique(pt_a, *m_last_pt))
-      callback(e, pt_a, *m_last_pt);
 }
 
 void Sketch_tools::finalize_add_node_elm_cleanup_()

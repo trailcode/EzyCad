@@ -136,15 +136,17 @@ FreeType wasm configure also disables optional zlib/png/harfbuzz finds to simpli
 
 ### Wasm troubleshooting
 
-| Symptom                                                               | Fix                                                                                                                                                                         |
-| --------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `running scripts is disabled`                                         | `Set-ExecutionPolicy -Scope CurrentUser RemoteSigned` **or** use `build-occt-793-wasm.cmd` / `build-occt-v8-wasm.cmd` **or** `powershell -ExecutionPolicy Bypass -File ...` |
-| `Can't initialize filter; xz`                                         | Script uses `.tar.gz` for FreeType; delete stale `*.tar.xz` under `src/` and re-run                                                                                         |
-| `source directory .../build/freetype does not contain CMakeLists.txt` | Fixed: do not name a PowerShell function parameter `$Args` (shadows automatic `$Args`)                                                                                      |
-| `emcc` not found                                                      | Run `emsdk_env.bat` / `emsdk_env.ps1` in the same shell                                                                                                                     |
-| EzyCad configure hangs on `find_package(OpenCASCADE)`                 | `emcmake cmake ... --debug-output`; verify `OpenCASCADE_DIR` path                                                                                                           |
-| OCCT 8 + ghosted dimension labels                                     | Retest `gui.edge_dim_text_render_mode` (Z-layer Topmost); grid compositing changed in 8.0                                                                                   |
-| Shaded faces missing / wireframe-only solids (wasm, OCCT 8.x)         | Use **7.9.3** (`build-occt-793-wasm.ps1`); see [bugs.md](bugs.md)                                                                                                           |
+| Symptom                                                               | Fix                                                                                                                                                                                      |
+| --------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `running scripts is disabled`                                         | `Set-ExecutionPolicy -Scope CurrentUser RemoteSigned` **or** use `build-occt-793-wasm.cmd` / `build-occt-v8-wasm.cmd` **or** `powershell -ExecutionPolicy Bypass -File ...`              |
+| `Can't initialize filter; xz`                                         | Script uses `.tar.gz` for FreeType; delete stale `*.tar.xz` under `src/` and re-run                                                                                                      |
+| `source directory .../build/freetype does not contain CMakeLists.txt` | Fixed: do not name a PowerShell function parameter `$Args` (shadows automatic `$Args`)                                                                                                   |
+| `emcc` not found                                                      | Run `emsdk_env.bat` / `emsdk_env.ps1` in the same shell                                                                                                                                  |
+| EzyCad configure hangs on `find_package(OpenCASCADE)`                 | `emcmake cmake ... --debug-output`; verify `OpenCASCADE_DIR` path                                                                                                                        |
+| `GLFW3_LIBRARY-NOTFOUND` / `* C++ compiler: Clang` under `emcmake`    | Stale/broken Emscripten detect: wipe `build-em-*` and reconfigure. CMake must print `* C++ compiler: Emscripten` (uses `EMSCRIPTEN` / `CMAKE_SYSTEM_NAME`, not path regex).              |
+| `unable to find library -lfreetype` at wasm link                      | FreeType must come from the same OCCT wasm install (`...\install\freetype\lib\cmake\freetype`). Reconfigure after `build-occt-793-wasm.ps1`; CMake should print `Using FreeType (wasm)`. |
+| OCCT 8 + ghosted dimension labels                                     | Retest `gui.edge_dim_text_render_mode` (Z-layer Topmost); grid compositing changed in 8.0                                                                                                |
+| Shaded faces missing / wireframe-only solids (wasm, OCCT 8.x)         | Use **7.9.3** (`build-occt-793-wasm.ps1`); see [bugs.md](bugs.md)                                                                                                                        |
 
 ---
 

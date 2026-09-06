@@ -5,8 +5,11 @@
 #include <TopoDS.hxx>
 #include <TopoDS_Wire.hxx>
 #include <algorithm>
+#include <cmath>
 #include <numbers>
 #include <vector>
+
+#include <Precision.hxx>
 
 #include "skt_edge.h"
 #include "skt_json.h"
@@ -940,4 +943,187 @@ TEST_F(Sketch_test, ProjectUnit_displayConversionAndJsonRoundTrip)
 
   view().new_file();
   EXPECT_EQ(view().get_project_unit(), Project_unit::Inch);
+}
+
+TEST_F(Sketch_test, BoneGeom_equalRadiiTangentCuttersAndWaistFromCutRadius)
+{
+  Bone_params p;
+  p.c1         = gp_Pnt2d(-2.0, 0.0);
+  p.c2         = gp_Pnt2d(2.0, 0.0);
+  p.r1         = 1.0;
+  p.r2         = 1.0;
+  p.cut_radius = 2.0;
+  p.drive      = Bone_drive::Cut_radius;
+
+  const std::optional<Bone_geom> g = compute_bone_geom(p);
+  ASSERT_TRUE(g.has_value());
+  EXPECT_NEAR(g->cut_plus.X(), 0.0, 1e-9);
+  EXPECT_NEAR(g->cut_minus.X(), 0.0, 1e-9);
+  EXPECT_NEAR(g->cut_plus.Y(), std::sqrt(5.0), 1e-9);
+  EXPECT_NEAR(g->cut_plus.Y(), -g->cut_minus.Y(), 1e-9);
+  EXPECT_NEAR(g->tan_top_a.Y(), g->tan_top_b.Y(), 1e-9);
+
+  const double d1 = std::hypot(g->cut_plus.X() - p.c1.X(), g->cut_plus.Y() - p.c1.Y());
+  EXPECT_NEAR(d1, g->cut_radius + p.r1, 1e-9);
+  const double d2 = std::hypot(g->cut_plus.X() - p.c2.X(), g->cut_plus.Y() - p.c2.Y());
+  EXPECT_NEAR(d2, g->cut_radius + p.r2, 1e-9);
+  EXPECT_NEAR(g->waist, 2.0 * std::sqrt(5.0) - 4.0, 1e-9);
+
+  const Bone_profile pr = get_bone_profile(*g);
+  EXPECT_NEAR(pr.c1_plus.Distance(p.c1), p.r1, 1e-9);
+  EXPECT_NEAR(pr.c1_plus.Distance(g->cut_plus), g->cut_radius, 1e-9);
+  EXPECT_NEAR(pr.c2_plus.Distance(p.c2), p.r2, 1e-9);
+  EXPECT_NEAR(pr.c1_outer.X(), p.c1.X() - p.r1, 1e-9);
+
+  p.c1 = p.c2;
+  EXPECT_FALSE(compute_bone_geom(p).has_value());
+}
+
+TEST_F(Sketch_test, BoneGeom_waistDriveSolvesCutRadius)
+{
+  Bone_params p;
+  p.c1    = gp_Pnt2d(-2.0, 0.0);
+  p.c2    = gp_Pnt2d(2.0, 0.0);
+  p.r1    = 1.0;
+  p.r2    = 1.0;
+  p.waist = 0.4;
+  p.drive = Bone_drive::Waist;
+
+  const std::optional<Bone_geom> g = compute_bone_geom(p);
+  ASSERT_TRUE(g.has_value());
+  EXPECT_NEAR(g->waist, 0.4, 1e-6);
+  EXPECT_GT(g->cut_radius, 0.0);
+}
+
+TEST_F(Sketch_test, BoneGeom_unequalRadiiNeckOffsetFromMid)
+{
+  Bone_params p;
+  p.c1    = gp_Pnt2d(-2.0, 0.0);
+  p.c2    = gp_Pnt2d(2.0, 0.0);
+  p.r1    = 1.0;
+  p.r2    = 0.5;
+  p.waist = 0.4;
+  p.drive = Bone_drive::Waist;
+
+  const std::optional<Bone_geom> g = compute_bone_geom(p);
+  ASSERT_TRUE(g.has_value());
+  EXPECT_NEAR(g->waist, 0.4, 1e-6);
+
+  const Bone_profile pr = get_bone_profile(*g);
+  EXPECT_NEAR(pr.waist_plus.Distance(pr.waist_minus), p.waist, 1e-6);
+  // Neck lies toward the smaller end (c2), not at the center midpoint.
+  EXPECT_GT(pr.waist_plus.X(), 0.0);
+  EXPECT_NEAR(pr.waist_plus.X(), pr.waist_minus.X(), 1e-9);
+  EXPECT_NEAR(pr.waist_plus.X(), g->cut_plus.X(), 1e-9);
+}
+
+TEST_F(Sketch_test, AddBone_createsFacesAndPermanentCenters)
+{
+  Headless_guard guard(view());
+
+  gp_Pln default_plane(gp::Origin(), gp::DZ());
+  Sketch sketch("BoneSketch", view(), default_plane);
+  sketch.add_bone(gp_Pnt2d(-2.0, 0.0), gp_Pnt2d(2.0, 0.0), 1.0, 0.5, 0.4);
+
+  EXPECT_EQ(sketch.face_count(), 1u);
+  EXPECT_EQ(Sketch_access::get_edge_count(sketch), 4u);
+
+  bool found_a = false;
+  bool found_b = false;
+  for (size_t i = 0; i < sketch.get_nodes().size(); ++i)
+  {
+    const Sketch_nodes::Node& n = sketch.get_nodes()[i];
+    if (n.deleted || !n.permanent)
+      continue;
+
+    if (n.name == "Bone A")
+    {
+      found_a = true;
+      EXPECT_TRUE(n.IsEqual(gp_Pnt2d(-2.0, 0.0), Precision::Confusion()));
+    }
+    if (n.name == "Bone B")
+    {
+      found_b = true;
+      EXPECT_TRUE(n.IsEqual(gp_Pnt2d(2.0, 0.0), Precision::Confusion()));
+    }
+  }
+
+  EXPECT_TRUE(found_a);
+  EXPECT_TRUE(found_b);
+
+  const std::vector<std::string> labels = sketch.inspector_node_labels();
+  EXPECT_NE(std::find(labels.begin(), labels.end(), "Bone A"), labels.end());
+  EXPECT_NE(std::find(labels.begin(), labels.end(), "Bone B"), labels.end());
+}
+
+TEST_F(Sketch_test, AddBone_optionalHolesAndNoCenterNodes)
+{
+  Headless_guard guard(view());
+
+  gp_Pln default_plane(gp::Origin(), gp::DZ());
+  Sketch sketch("BoneHoles", view(), default_plane);
+  sketch.add_bone(gp_Pnt2d(-2.0, 0.0), gp_Pnt2d(2.0, 0.0), 1.0, 0.8, 0.4, false, 0.3, 0.25);
+
+  // Outer face plus two hole face metas (holes assigned under the outer).
+  EXPECT_EQ(sketch.face_count(), 3u);
+  EXPECT_EQ(Sketch_access::get_edge_count(sketch), 8u);
+
+  for (size_t i = 0; i < sketch.get_nodes().size(); ++i)
+  {
+    const Sketch_nodes::Node& n = sketch.get_nodes()[i];
+    if (n.deleted)
+      continue;
+    EXPECT_FALSE(n.permanent && (n.name == "Bone A" || n.name == "Bone B"));
+  }
+}
+
+TEST_F(Sketch_test, AddBone_undoRemovesPromotedCenters)
+{
+  Headless_guard guard(view());
+
+  gp_Pln default_plane(gp::Origin(), gp::DZ());
+  Sketch sketch("BoneSketch", view(), default_plane);
+
+  const gp_Pnt2d c1(-2.0, 0.0);
+  const gp_Pnt2d c2(2.0, 0.0);
+  // Interactive tool creates non-permanent center nodes before commit; undo must still remove them.
+  sketch.get_nodes().get_node_exact(c1);
+  sketch.get_nodes().get_node_exact(c2);
+
+  sketch.add_bone(c1, c2, 1.0, 0.5, 0.4);
+  EXPECT_EQ(sketch.face_count(), 1u);
+  EXPECT_EQ(Sketch_access::get_edge_count(sketch), 4u);
+  EXPECT_EQ(Sketch_access::count_permanent_nodes(sketch), 3u) << "Origin plus Bone A and Bone B";
+
+  ASSERT_GT(view().undo_stack_size(), 0u);
+  EXPECT_TRUE(view().undo());
+  EXPECT_EQ(Sketch_access::get_edge_count(sketch), 0u);
+  EXPECT_EQ(Sketch_access::count_permanent_nodes(sketch), 1u) << "Undo should remove Bone A/B centers";
+
+  EXPECT_TRUE(view().redo());
+  EXPECT_EQ(Sketch_access::get_edge_count(sketch), 4u);
+  EXPECT_EQ(Sketch_access::count_permanent_nodes(sketch), 3u);
+
+  bool found_a = false;
+  bool found_b = false;
+  for (size_t i = 0; i < sketch.get_nodes().size(); ++i)
+  {
+    const Sketch_nodes::Node& n = sketch.get_nodes()[i];
+    if (n.deleted || !n.permanent)
+      continue;
+
+    if (n.name == "Bone A")
+    {
+      found_a = true;
+      EXPECT_TRUE(n.IsEqual(c1, Precision::Confusion()));
+    }
+    if (n.name == "Bone B")
+    {
+      found_b = true;
+      EXPECT_TRUE(n.IsEqual(c2, Precision::Confusion()));
+    }
+  }
+
+  EXPECT_TRUE(found_a);
+  EXPECT_TRUE(found_b);
 }

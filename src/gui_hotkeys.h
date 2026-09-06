@@ -30,6 +30,7 @@ enum class Gui_action
   Mode_add_circle,
   Mode_add_circle_3_pts,
   Mode_add_slot,
+  Mode_add_bone,
   Mode_polar_duplicate,
   Mode_cross_section,
   Mode_cyl_align,

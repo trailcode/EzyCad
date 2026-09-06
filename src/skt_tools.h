@@ -1,7 +1,9 @@
 #pragma once
 
 #include <gp_Pnt2d.hxx>
+#include <gp_Vec2d.hxx>
 #include <optional>
+#include <utility>
 #include <vector>
 
 #include "skt_edge.h"
@@ -70,6 +72,21 @@ private:
   void move_slot_pt_(const ScreenCoords& screen_coords);
   void finalize_slot_(Sketch_op_recorder& rec);
 
+  // Implementations in skt_tools_bone.cpp
+  void bone_on_enter_();
+  void add_bone_pt_(const ScreenCoords& screen_coords);
+  void move_bone_pt_(const ScreenCoords& screen_coords);
+  void finalize_bone_();
+  void bone_begin_next_edge_from_(const gp_Pnt2d& origin);
+  void bone_on_centers_ready_(const gp_Pnt2d& c1, const gp_Pnt2d& c2);
+  [[nodiscard]] bool bone_after_waist_(double waist);
+  [[nodiscard]] bool bone_after_hole_a_(double hole_r);
+  [[nodiscard]] bool bone_after_hole_b_(double hole_r);
+  [[nodiscard]] bool bone_try_commit_();
+  void bone_update_preview_();
+  [[nodiscard]] std::optional<gp_Vec2d> bone_axis_perp_() const;
+  [[nodiscard]] std::optional<double>   bone_waist_from_pt_(const gp_Pnt2d& pt) const;
+
   void add_operation_axis_pt_(const ScreenCoords& screen_coords);
   void finalize_operation_axis_(Sketch_op_recorder& rec);
 
@@ -86,4 +103,10 @@ private:
   std::vector<size_t>      m_tmp_node_idxs;
   std::vector<Sketch_edge> m_tmp_edges;
   AIS_Shape_ptr            m_tmp_shp;
+  std::optional<std::pair<gp_Pnt2d, gp_Pnt2d>> m_bone_centers;
+  std::optional<double>                        m_bone_r1;
+  std::optional<double>                        m_bone_r2;
+  std::optional<double>                        m_bone_waist;
+  std::optional<double>                        m_bone_hole_r1;
+  std::optional<double>                        m_bone_hole_r2;
 };

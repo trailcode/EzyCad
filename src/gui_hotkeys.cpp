@@ -42,6 +42,7 @@ constexpr Action_meta c_actions[] = {
     {Gui_action::Mode_add_circle,           "mode.add_circle",           "Add circle",              {GLFW_KEY_O, 0}},
     {Gui_action::Mode_add_circle_3_pts,     "mode.add_circle_3_pts",     "Add circle (3 pts)",      {GLFW_KEY_O, GLFW_MOD_SHIFT}},
     {Gui_action::Mode_add_slot,             "mode.add_slot",             "Add slot",                {GLFW_KEY_U, 0}},
+    {Gui_action::Mode_add_bone,             "mode.add_bone",             "Add bone",                {GLFW_KEY_U, GLFW_MOD_SHIFT}},
     {Gui_action::Mode_polar_duplicate,      "mode.polar_duplicate",      "Polar duplicate",         {GLFW_KEY_P, GLFW_MOD_SHIFT}},
     {Gui_action::Mode_cross_section,        "mode.cross_section",        "Cross-section",           {GLFW_KEY_X, GLFW_MOD_SHIFT}},
     {Gui_action::Mode_cyl_align,            "mode.cyl_align",            "Align shafts",            {GLFW_KEY_J, 0}},

@@ -167,6 +167,13 @@ public:
   void add_arc_circle(const gp_Pnt2d& pt_a, const gp_Pnt2d& pt_mid, const gp_Pnt2d& pt_c);
   /// Rebuild closed-face topology after bulk edge import.
   void rebuild_faces();
+  /// Add a bone outline (outer end arcs and inner waist arcs).
+  /// Waist cutters are tangent to both end circles; cut radius is solved from \\a waist.
+  /// Optional permanent **Bone A** / **Bone B** centers; optional hole circles (radii must be
+  /// positive and smaller than the matching end radii).
+  void add_bone(const gp_Pnt2d& c1, const gp_Pnt2d& c2, double r1, double r2, double waist,
+                bool add_center_nodes = true, std::optional<double> hole_r1 = std::nullopt,
+                std::optional<double> hole_r2 = std::nullopt);
 
 private:
   friend class Sketch_json;

@@ -64,6 +64,7 @@ std::string GUI::get_doc_url_for_mode(Mode mode)
       {Mode::Sketch_add_circle,               "https://ezycad.readthedocs.io/en/latest/usage-sketch.html#circle-creation-tools"},
       {Mode::Sketch_add_circle_3_pts,         ""}, // planned feature - no specific section in the docs yet; falls back to main guide
       {Mode::Sketch_add_slot,                 "https://ezycad.readthedocs.io/en/latest/usage-sketch.html#slot-creation-tool"},
+      {Mode::Sketch_add_bone,                 "https://ezycad.readthedocs.io/en/latest/usage-sketch.html#bone-creation-tool"},
       {Mode::Sketch_dim_anno,                 "https://ezycad.readthedocs.io/en/latest/usage-sketch.html#dimension-tool"},
       {Mode::Shape_cross_section,                   "https://ezycad.readthedocs.io/en/latest/usage.html#shape-cross-section-tool"},
       {Mode::Shape_set_frame,                 "https://ezycad.readthedocs.io/en/latest/usage.html#shape-list"},
@@ -148,6 +149,7 @@ Mode GUI::parent_mode_of(Mode mode)
       {Mode::Sketch_add_circle,               Mode::Sketch_inspection_mode},
       {Mode::Sketch_add_circle_3_pts,         Mode::Sketch_inspection_mode},
       {Mode::Sketch_add_slot,                 Mode::Sketch_inspection_mode},
+      {Mode::Sketch_add_bone,                 Mode::Sketch_inspection_mode},
       {Mode::Sketch_dim_anno,                 Mode::Sketch_inspection_mode},
       {Mode::Shape_cross_section,                   Mode::Normal},
       {Mode::Shape_set_frame,                 Mode::Normal},
@@ -402,6 +404,7 @@ void GUI::dispatch_hotkey_action_(Gui_action action)
   case Gui_action::Mode_add_circle:           set_mode(Mode::Sketch_add_circle);              break;
   case Gui_action::Mode_add_circle_3_pts:     set_mode(Mode::Sketch_add_circle_3_pts);        break;
   case Gui_action::Mode_add_slot:             set_mode(Mode::Sketch_add_slot);                break;
+  case Gui_action::Mode_add_bone:             set_mode(Mode::Sketch_add_bone);                break;
   case Gui_action::Mode_polar_duplicate:      set_mode(Mode::Shape_polar_duplicate);          break;
   case Gui_action::Mode_cross_section:        set_mode(Mode::Shape_cross_section);            break;
   case Gui_action::Cmd_shape_cut:
@@ -536,6 +539,7 @@ void GUI::options_()
     case Mode::Sketch_add_circle:               options_sketch_add_circle_mode_();            break;
     case Mode::Sketch_add_circle_3_pts:         options_sketch_add_circle_three_pts_mode_();  break;
     case Mode::Sketch_add_slot:                 options_sketch_add_slot_mode_();              break;
+    case Mode::Sketch_add_bone:                 options_sketch_add_bone_mode_();              break;
     default:
       EZY_ASSERT_MSG(false, "Options panel: unhandled mode");
       break;
@@ -1252,6 +1256,51 @@ void GUI::options_sketch_add_slot_mode_()
   options_sketch_add_midpoint_nodes_(m_add_mid_pt_slot_edges);
 }
 
+void GUI::options_sketch_add_bone_mode_()
+{
+  EZY_ASSERT(get_mode() == Mode::Sketch_add_bone);
+
+  // Tool-specific Options above shared Sketch options (see src/doc/gui.md Options panel layout).
+  options_sketch_mode_header_();
+
+  ImGui::TextUnformatted("Options");
+
+  bool add_centers = m_bone_add_center_nodes;
+  if (ImGui::Checkbox("Add center nodes", &add_centers))
+  {
+    m_bone_add_center_nodes = add_centers;
+    save_occt_view_settings();
+  }
+  ImGui::SameLine(0.0f, ImGui::GetStyle().ItemInnerSpacing.x);
+  GUI_DOC_HELP_("When on, commits permanent Bone A and Bone B nodes at the end centers. "
+                "Click ? to open the user guide.",
+                doc_urls::k_bone_creation_tool);
+
+  ImGui::AlignTextToFramePadding();
+  ImGui::TextUnformatted("Holes");
+  ImGui::SameLine();
+  int holes = static_cast<int>(m_bone_holes);
+  if (ImGui::Combo("##bone_holes", &holes, c_bone_holes_strs.data(), static_cast<int>(Bone_holes::_count)))
+  {
+    if (holes >= 0 && holes < static_cast<int>(Bone_holes::_count))
+    {
+      m_bone_holes = static_cast<Bone_holes>(holes);
+      save_occt_view_settings();
+    }
+  }
+  ImGui::SameLine(0.0f, ImGui::GetStyle().ItemInnerSpacing.x);
+  GUI_DOC_HELP_("None: outline only. One radius: one click sets both holes. Two radii: set each end. "
+                "Hole radius must be smaller than that end's outer radius. Click ? to open the user guide.",
+                doc_urls::k_bone_creation_tool);
+
+  ImGui::TextWrapped(
+      "Click center A, center B, radius 1, radius 2, waist, then holes if enabled.");
+
+  ImGui::Separator();
+  options_sketch_shared_controls_();
+  options_sketch_len_angle_hotkeys_();
+}
+
 void GUI::options_orthographic_projection_()
 {
   ImGui::Separator();
@@ -1272,11 +1321,19 @@ void GUI::options_orthographic_projection_()
 
 void GUI::options_sketch_common_()
 {
+  options_sketch_mode_header_();
+  options_sketch_shared_controls_();
+}
+
+void GUI::options_sketch_mode_header_()
+{
   ImGui::TextUnformatted(current_mode_description_());
   options_doc_help_button_();
-
   ImGui::Separator();
+}
 
+void GUI::options_sketch_shared_controls_()
+{
   ImGui::TextUnformatted("Sketch options");
   if (ImGui::BeginTable("options_sketch_sketch", 2, k_options_table_flags))
   {

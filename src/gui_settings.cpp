@@ -64,6 +64,8 @@ std::string GUI::occt_view_settings_json() const
       {"add_mid_pt_edges",                   m_add_mid_pt_line_edges},
       {"add_mid_pt_rect_edges",              m_add_mid_pt_rect_edges},
       {"add_mid_pt_slot_edges",              m_add_mid_pt_slot_edges},
+      {"bone_add_center_nodes",              m_bone_add_center_nodes},
+      {"bone_holes",                         static_cast<int>(m_bone_holes)},
       {"view_roll_step_deg",                 m_view_roll_step_deg},
       {"view_zoom_scroll_scale",             m_view_zoom_scroll_scale},
       {"default_2d_view_width",              m_default_2d_view_width},
@@ -156,6 +158,8 @@ void GUI::save_occt_view_settings()
       {"add_mid_pt_edges",                   m_add_mid_pt_line_edges},
       {"add_mid_pt_rect_edges",              m_add_mid_pt_rect_edges},
       {"add_mid_pt_slot_edges",              m_add_mid_pt_slot_edges},
+      {"bone_add_center_nodes",              m_bone_add_center_nodes},
+      {"bone_holes",                         static_cast<int>(m_bone_holes)},
       {"load_last_opened_on_startup",        m_load_last_opened_on_startup},
       {"last_opened_project_path",           m_last_opened_project_path},
       {"imgui_style_dark",                   imgui_style_to_json_(m_imgui_style_dark)},
@@ -462,6 +466,14 @@ void GUI::parse_gui_panes_settings_(const std::string& content)
 
     m_add_mid_pt_rect_edges       = b("add_mid_pt_rect_edges", true);
     m_add_mid_pt_slot_edges       = b("add_mid_pt_slot_edges", false);
+    m_bone_add_center_nodes       = b("bone_add_center_nodes", true);
+    m_bone_holes                  = Bone_holes::None;
+    if (g.contains("bone_holes") && g["bone_holes"].is_number_integer())
+    {
+      const int holes = g["bone_holes"].get<int>();
+      if (holes >= 0 && holes < static_cast<int>(Bone_holes::_count))
+        m_bone_holes = static_cast<Bone_holes>(holes);
+    }
     m_load_last_opened_on_startup = b("load_last_opened_on_startup", b("load_last_saved_on_startup", false));
 
     if (g.contains("last_opened_project_path") && g["last_opened_project_path"].is_string())

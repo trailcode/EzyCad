@@ -1,6 +1,7 @@
 #include "gui.h"
 #include "utl_geom.h"
 #include "gui_occt_view.h"
+#include "skt.h"
 
 namespace
 {
