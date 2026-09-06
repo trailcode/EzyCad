@@ -7,7 +7,7 @@ Short notes for day-to-day build, test, and quality checks.
 **Prerequisites**
 - CMake that supports generator **Visual Studio 18 2026** (VS 2026 bundled CMake 4.3+ is fine; older PATH CMake may lack this generator)
 - Visual Studio 2026 (C++ workload) — primary local toolchain
-- nuget CLI (for GLFW/GLEW)
+- [vcpkg](https://vcpkg.io/) with `VCPKG_ROOT` set (GLFW/GLEW via repo `vcpkg.json` manifest)
 - OCCT 8.0.0 prebuilts + 3rdparty-vc14-64 (strongly recommended — see [docs/building-occt.md](../../docs/building-occt.md))
 
 **Typical configure** (run from repo root):
@@ -16,11 +16,12 @@ Short notes for day-to-day build, test, and quality checks.
 # Prefer VS-bundled cmake if PATH cmake is too old for the VS 18 generator:
 #   "C:\Program Files\Microsoft Visual Studio\18\Community\Common7\IDE\CommonExtensions\Microsoft\CMake\CMake\bin\cmake.exe"
 cmake -S . -B build -G "Visual Studio 18 2026" -A x64 `
+  -DCMAKE_TOOLCHAIN_FILE="$env:VCPKG_ROOT/scripts/buildsystems/vcpkg.cmake" `
   -DOpenCASCADE_DIR=C:\bin\opencascade-8.0.0-vc14-64\cmake `
   -DOCCT_3RD_PARTY_DIR=C:\bin\3rdparty-vc14-64
 ```
 
-Paths above match the V8.0.0 combined prebuilt extracted under `C:\bin` (see [docs/building-occt.md](../../docs/building-occt.md)). Adjust if your install lives elsewhere.
+Paths above match the V8.0.0 combined prebuilt extracted under `C:\bin` (see [docs/building-occt.md](../../docs/building-occt.md)). Adjust if your install lives elsewhere. Manifest mode installs `glfw3` and `glew` from `vcpkg.json` on configure (first run may take a few minutes).
 
 Do **not** use `-G "Visual Studio 17 2022"` on a machine that only has VS 2026 installed — configure fails with a generator/instance mismatch. CI still uses VS 2022 (`windows-msvc.yml`). After wiping `build/`, re-run this configure step (do not open a stale `.sln` alone).
 

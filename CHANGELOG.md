@@ -9,6 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- **Desktop deps**: MSVC GLFW/GLEW come from **vcpkg** (`vcpkg.json` + toolchain) instead of NuGet; local configure matches CI.
 - **Extrude Both sides**: Options **Both sides** defaults to on (session sticky; not a Settings key).
 
 ### Fixed
