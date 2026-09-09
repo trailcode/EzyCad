@@ -1,5 +1,7 @@
 #pragma once
 
+#include "config.h"
+
 #include <gp_Pnt2d.hxx>
 #include <optional>
 
@@ -19,11 +21,11 @@ struct Bone_params
 {
   gp_Pnt2d   c1;
   gp_Pnt2d   c2;
-  double     r1{0};
-  double     r2{0};
-  double     cut_radius{0};
-  double     waist{0};
-  Bone_drive drive{Bone_drive::Waist};
+  double     r1 = 0;
+  double     r2 = 0;
+  double     cut_radius = 0;
+  double     waist = 0;
+  Bone_drive drive = Bone_drive::Waist;
 };
 
 struct Bone_geom
@@ -32,10 +34,10 @@ struct Bone_geom
   gp_Pnt2d c2;
   gp_Pnt2d cut_plus;
   gp_Pnt2d cut_minus;
-  double   r1{0};
-  double   r2{0};
-  double   cut_radius{0};
-  double   waist{0};
+  double   r1 = 0;
+  double   r2 = 0;
+  double   cut_radius = 0;
+  double   waist = 0;
   gp_Pnt2d tan_top_a;
   gp_Pnt2d tan_top_b;
   gp_Pnt2d tan_bot_a;
@@ -65,3 +67,21 @@ TopoDS_Wire make_bone_wire(const gp_Pln& pln, const Bone_geom& g);
 
 /// Same as \\a make_bone_wire (AIS preview).
 TopoDS_Shape make_bone_preview_shape(const gp_Pln& pln, const Bone_geom& g);
+
+#if DEV_MODE
+/// Session-only Add-bone construction overlays (Options checkboxes; not persisted).
+struct Bone_debug_flags
+{
+  bool cut_circles      = false;
+  bool end_circles      = false;
+  bool capsule_tangents = false;
+  bool cutter_centers   = false;
+  bool contacts         = false;
+  bool bone_axis        = false;
+  bool waist_span       = false;
+  bool cutter_radials   = false;
+};
+
+/// Construction geometry for the live bone preview. Null when every flag is off.
+std::optional<TopoDS_Shape> make_bone_debug_shape(const gp_Pln& pln, const Bone_geom& g, const Bone_debug_flags& flags);
+#endif

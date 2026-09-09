@@ -97,6 +97,8 @@ GUI (gui.h / gui.cpp)
   +-- scr_lua_console / scr_python_console (scripting UI)
 ```
 
+Compile-time `DEV_MODE` lives in [`config.h`](../config.h) (default on). When it is 1, Add-bone Options shows **Debug vis** checkboxes for construction overlays (cut circles, tangents, contacts, ...). The flags are session-only.
+
 CMake IDE group: `src\gui` (files matching `gui*` or `occt*` prefix).
 
 ## ImGui docking and viewports
@@ -223,6 +225,7 @@ Tests use `sketch_left_click` to simulate sketch LMB without ImGui mouse positio
 | Each sketch tool mode            | Matching `options_sketch_*_mode_`                                                                                   |
 | `Sketch_operation_axis`          | Mirror / Revolve / Clear axis                                                                                       |
 | `Sketch_face_extrude`            | **Extrude** (Both sides, Twist, material) above Sketch options; help mentions Settings fast preview                 |
+| `Sketch_add_bone`                | Center nodes, holes; when `DEV_MODE` in `config.h`, **Debug vis** construction overlays (not persisted)             |
 
 ### Options panel layout (sketch tools)
 

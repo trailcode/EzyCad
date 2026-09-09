@@ -14,6 +14,7 @@
 #include "skt_edge.h"
 #include "skt_json.h"
 #include "skt_nodes.h"
+#include "skt_bone.h"
 #include "utl_geom.h"
 #include "utl_types.h"
 

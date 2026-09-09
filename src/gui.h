@@ -19,6 +19,10 @@
 #include <variant>
 #include <vector>
 
+#include "config.h"
+#if DEV_MODE
+#include "skt_bone.h"
+#endif
 #include "utl_geom.h"
 #include "imgui.h"
 #include "imgui_markdown.h"
@@ -309,6 +313,10 @@ public:
   bool get_bone_add_center_nodes() const { return m_bone_add_center_nodes; }
   /// Add-bone Options: hole clicks after waist (`gui.bone_holes`).
   Bone_holes get_bone_holes() const { return m_bone_holes; }
+#if DEV_MODE
+  /// Add-bone construction overlays (DEV_MODE Options checkboxes; not persisted).
+  const Bone_debug_flags& get_bone_debug_flags() const { return m_bone_debug; }
+#endif
   bool get_edge_from_center() const { return m_edge_from_center; }
   bool get_hide_all_shapes() const { return m_hide_all_shapes; }
   void set_hide_all_shapes(bool hide) { m_hide_all_shapes = hide; }
@@ -662,6 +670,9 @@ private:
   bool  m_add_mid_pt_slot_edges               = false;
   bool  m_bone_add_center_nodes               = true;
   Bone_holes m_bone_holes                     = Bone_holes::None;
+#if DEV_MODE
+  Bone_debug_flags m_bone_debug;
+#endif
   bool  m_edge_from_center                    = false;
   /// Degrees per numpad orbit (8/2/4/6) and Blender-style roll (Shift+NumPad 4/6); persisted in `gui.view_roll_step_deg`.
   double m_view_roll_step_deg = k_gui_view_roll_step_deg_default;

@@ -2,7 +2,10 @@
 
 #include <BRep_Builder.hxx>
 #include <Precision.hxx>
+#include <Quantity_NameOfColor.hxx>
+#include <AIS_Shape.hxx>
 #include <TopoDS_Compound.hxx>
+#include <TopoDS_Shape.hxx>
 #include <TopoDS_Wire.hxx>
 #include <cmath>
 #include <numbers>
@@ -10,10 +13,12 @@
 #include <gp_Dir2d.hxx>
 #include <gp_Vec2d.hxx>
 
+#include "config.h"
 #include "gui.h"
 #include "gui_occt_view.h"
 #include "mode.h"
 #include "skt.h"
+#include "skt_bone.h"
 #include "utl_geom.h"
 #include "utl_occt.h"
 #include "utl.h"
@@ -411,10 +416,41 @@ std::optional<double> Sketch_tools::bone_waist_from_pt_(const gp_Pnt2d& pt) cons
   return waist;
 }
 
+void Sketch_tools::refresh_bone_preview() { bone_update_preview_(); }
+
+#if DEV_MODE
+void Sketch_tools::bone_hide_debug_()
+{
+  m_sketch.m_view.remove(m_tmp_debug_shp);
+  m_tmp_debug_shp = nullptr;
+}
+
+void Sketch_tools::bone_show_debug_(const Bone_geom& g)
+{
+  const std::optional<TopoDS_Shape> dbg =
+      make_bone_debug_shape(m_sketch.m_pln, g, m_sketch.m_view.gui().get_bone_debug_flags());
+  if (!dbg)
+  {
+    bone_hide_debug_();
+    return;
+  }
+
+  show(m_sketch.m_ctx, m_tmp_debug_shp, *dbg);
+  m_tmp_debug_shp->SetColor(Quantity_NOC_CYAN);
+  m_tmp_debug_shp->SetWidth(1.5);
+  m_sketch.m_ctx.Deactivate(m_tmp_debug_shp);
+}
+#endif
+
 void Sketch_tools::bone_update_preview_()
 {
   if (!m_bone_centers)
+  {
+#if DEV_MODE
+    bone_hide_debug_();
+#endif
     return;
+  }
 
   const gp_Pnt2d& c1 = m_bone_centers->first;
   const gp_Pnt2d& c2 = m_bone_centers->second;
@@ -486,12 +522,18 @@ void Sketch_tools::bone_update_preview_()
         }
 
         show_compound(comp);
+#if DEV_MODE
+        bone_show_debug_(*g);
+#endif
         return;
       }
     }
 
     m_sketch.m_view.remove(m_tmp_shp);
     m_tmp_shp = nullptr;
+#if DEV_MODE
+    bone_hide_debug_();
+#endif
     return;
   }
 
@@ -514,8 +556,14 @@ void Sketch_tools::bone_update_preview_()
   {
     m_sketch.m_view.remove(m_tmp_shp);
     m_tmp_shp = nullptr;
+#if DEV_MODE
+    bone_hide_debug_();
+#endif
     return;
   }
 
   show_compound(comp);
+#if DEV_MODE
+  bone_hide_debug_();
+#endif
 }

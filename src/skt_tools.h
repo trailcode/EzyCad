@@ -6,11 +6,13 @@
 #include <utility>
 #include <vector>
 
+#include "config.h"
 #include "skt_edge.h"
 #include "utl_types.h"
 
 class Sketch;
 class Sketch_op_recorder;
+struct Bone_geom;
 
 /// Interactive sketch drawing session: tmp edges/nodes, previews, finalize/cancel.
 class Sketch_tools
@@ -39,6 +41,9 @@ public:
   [[nodiscard]] std::optional<gp_Pnt2d>&        last_pt() { return m_last_pt; }
   /// Clears rubber-band / tmp geometry. Returns true if tmp edges were present (used by `cancel()`).
   bool clear_tmps();
+
+  /// Rebuild Add-bone preview from current tmp state (Options debug checkboxes).
+  void refresh_bone_preview();
 
   void clear_tmp_node_idxs() { m_tmp_node_idxs.clear(); }
 
@@ -84,6 +89,10 @@ private:
   [[nodiscard]] bool bone_after_hole_b_(double hole_r);
   [[nodiscard]] bool bone_try_commit_();
   void bone_update_preview_();
+#if DEV_MODE
+  void bone_hide_debug_();
+  void bone_show_debug_(const Bone_geom& g);
+#endif
   [[nodiscard]] std::optional<gp_Vec2d> bone_axis_perp_() const;
   [[nodiscard]] std::optional<double>   bone_waist_from_pt_(const gp_Pnt2d& pt) const;
 
@@ -103,6 +112,9 @@ private:
   std::vector<size_t>      m_tmp_node_idxs;
   std::vector<Sketch_edge> m_tmp_edges;
   AIS_Shape_ptr            m_tmp_shp;
+#if DEV_MODE
+  AIS_Shape_ptr            m_tmp_debug_shp;
+#endif
   std::optional<std::pair<gp_Pnt2d, gp_Pnt2d>> m_bone_centers;
   std::optional<double>                        m_bone_r1;
   std::optional<double>                        m_bone_r2;

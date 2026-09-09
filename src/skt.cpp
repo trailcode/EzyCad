@@ -14,6 +14,7 @@
 #include <iterator>
 
 #include "utl_geom.h"
+#include "skt_bone.h"
 #include "mode.h"
 #include "gui_occt_view.h"
 #include "skt_op_recorder.h"
@@ -151,6 +152,8 @@ void Sketch::add_arc_circle(const gp_Pnt2d& pt_a, const gp_Pnt2d& pt_mid, const 
 }
 
 void Sketch::rebuild_faces() { update_faces_(); }
+
+void Sketch::refresh_bone_preview() { m_tools.refresh_bone_preview(); }
 
 void Sketch::add_bone(const gp_Pnt2d& c1, const gp_Pnt2d& c2, double r1, double r2, double waist,
                       bool add_center_nodes, std::optional<double> hole_r1, std::optional<double> hole_r2)
