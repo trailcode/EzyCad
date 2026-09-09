@@ -1092,8 +1092,10 @@ void GUI::options_sketch_face_extrude_mode_()
 {
   EZY_ASSERT(get_mode() == Mode::Sketch_face_extrude);
 
-  options_sketch_common_();
+  // Tool-specific Extrude options above shared Sketch options (see src/doc/gui.md Options panel layout).
+  options_sketch_mode_header_();
 
+  ImGui::TextUnformatted("Extrude");
   if (ImGui::BeginTable("options_sketch_extrude", 2, k_options_table_flags))
   {
     options_table_setup_columns_(options_sketch_label_col_w_(), k_options_sketch_control_col_w);
@@ -1133,6 +1135,9 @@ void GUI::options_sketch_face_extrude_mode_()
 
     ImGui::EndTable();
   }
+
+  ImGui::Separator();
+  options_sketch_shared_controls_();
 }
 
 void GUI::options_sketch_dim_anno_mode_()

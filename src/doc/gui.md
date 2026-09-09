@@ -222,7 +222,7 @@ Tests use `sketch_left_click` to simulate sketch LMB without ImGui mouse positio
 | `Sketch_inspection_mode`         | `options_sketch_common_`                                                                                            |
 | Each sketch tool mode            | Matching `options_sketch_*_mode_`                                                                                   |
 | `Sketch_operation_axis`          | Mirror / Revolve / Clear axis                                                                                       |
-| `Sketch_face_extrude`            | Both sides, Twist, material; help mentions Settings fast preview                                                    |
+| `Sketch_face_extrude`            | **Extrude** (Both sides, Twist, material) above Sketch options; help mentions Settings fast preview                 |
 
 ### Options panel layout (sketch tools)
 
