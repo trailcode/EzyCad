@@ -32,8 +32,8 @@ struct Bone_geom
 {
   gp_Pnt2d c1;
   gp_Pnt2d c2;
-  gp_Pnt2d cut_plus;
-  gp_Pnt2d cut_minus;
+  gp_Pnt2d cut_plus;   // waist cutter center, + side of the bone axis
+  gp_Pnt2d cut_minus;  // mirrored cutter center
   double   r1 = 0;
   double   r2 = 0;
   double   cut_radius = 0;
@@ -45,15 +45,19 @@ struct Bone_geom
 };
 
 /// Trimmed bone outline: outer end-circle caps and inner waist arcs (no full circles, no capsule tangents).
+///
+/// Each `c*_plus` / `c*_minus` contact is the external tangency of that end circle with a waist
+/// cutter. Because the circles are externally tangent, cutter center, contact, and end center are
+/// collinear: the Debug vis "Cutter radials" segments are exactly those shared radii.
 struct Bone_profile
 {
-  gp_Pnt2d c1_plus;   // contact, end 1 / waist cutter +
+  gp_Pnt2d c1_plus;   // tangency, end 1 / cutter +  (on line cut_plus -> c1)
   gp_Pnt2d c1_outer;  // outer pole of end 1
-  gp_Pnt2d c1_minus;  // contact, end 1 / waist cutter -
-  gp_Pnt2d c2_plus;
+  gp_Pnt2d c1_minus;  // tangency, end 1 / cutter -
+  gp_Pnt2d c2_plus;   // tangency, end 2 / cutter +  (on line cut_plus -> c2)
   gp_Pnt2d c2_outer;
   gp_Pnt2d c2_minus;
-  gp_Pnt2d waist_plus;  // inner bulge of cutter +
+  gp_Pnt2d waist_plus;  // inner bulge of cutter + (closest approach of the two cutters)
   gp_Pnt2d waist_minus;
 };
 
@@ -77,8 +81,7 @@ struct Bone_debug_flags
   bool capsule_tangents = false;
   bool cutter_centers   = false;
   bool contacts         = false;
-  bool bone_axis        = false;
-  bool waist_span       = false;
+  /// Cutter center to end-circle tangency (shared radius of the tangent pair).
   bool cutter_radials   = false;
 };
 

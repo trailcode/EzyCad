@@ -78,6 +78,9 @@ std::optional<Bone_geom> bone_geom_with_cut_radius_(const gp_Pnt2d& c1, const gp
   if (cut_r <= eps)
     return std::nullopt;
 
+  // External tangency with both ends: cutter center lies on the circle of radius (cut_r + r1)
+  // around c1 and (cut_r + r2) around c2. That intersection is the cutter center. The bone
+  // outline later meets each end circle on the line of those centers (see get_bone_profile).
   const std::optional<gp_Pnt2d> c_top =
       circle_circle_intersect_pick_side_(c1, cut_r + r1, c2, cut_r + r2, mid, n, true);
   if (!c_top)
@@ -235,6 +238,9 @@ Bone_profile get_bone_profile(const Bone_geom& g)
   EZY_ASSERT(dist > Precision::Confusion());
   const gp_Vec2d ad(axis / dist);
 
+  // External tangency of end circle (c, r) with cutter (cut, cut_radius):
+  // |c - cut| = r + cut_radius, so the contact sits on the line of centers, a fraction
+  // r / |c - cut| from the end center toward the cutter (equivalently cut_radius from the cutter).
   auto contact = [](const gp_Pnt2d& c, double r, const gp_Pnt2d& cut) -> gp_Pnt2d
   {
     gp_Vec2d     v(c, cut);
@@ -273,6 +279,8 @@ TopoDS_Wire make_bone_wire(const gp_Pln& pln, const Bone_geom& g)
   };
 
   BRepBuilderAPI_MakeWire wire;
+  // End-cap arcs (outer poles) then waist arcs. Join points are the cutter/end contacts
+  // (the far ends of the Debug vis cutter radials).
   wire.Add(arc(p.c1_minus, p.c1_outer, p.c1_plus));
   wire.Add(arc(p.c1_plus, p.waist_plus, p.c2_plus));
   wire.Add(arc(p.c2_plus, p.c2_outer, p.c2_minus));
@@ -289,7 +297,7 @@ TopoDS_Shape make_bone_preview_shape(const gp_Pln& pln, const Bone_geom& g)
 std::optional<TopoDS_Shape> make_bone_debug_shape(const gp_Pln& pln, const Bone_geom& g, const Bone_debug_flags& flags)
 {
   if (!flags.cut_circles && !flags.end_circles && !flags.capsule_tangents && !flags.cutter_centers && !flags.contacts &&
-      !flags.bone_axis && !flags.waist_span && !flags.cutter_radials)
+      !flags.cutter_radials)
     return std::nullopt;
 
   const Bone_profile pr = get_bone_profile(g);
@@ -322,18 +330,10 @@ std::optional<TopoDS_Shape> make_bone_debug_shape(const gp_Pln& pln, const Bone_
     mark();
   }
 
-  if (flags.bone_axis)
-  {
-    add_debug_seg_(comp, bb, pln, g.c1, g.c2);
-    mark();
-  }
-
-  if (flags.waist_span)
-  {
-    add_debug_seg_(comp, bb, pln, pr.waist_plus, pr.waist_minus);
-    mark();
-  }
-
+  // Four spokes, one per (cutter, end) pair. Each is the cutter radius to the tangency
+  // with that end circle. Continuing the same line past the contact would hit the end
+  // center: cutter, contact, and end center are collinear. The committed outline switches
+  // from end-cap arc to waist arc at that contact.
   if (flags.cutter_radials)
   {
     add_debug_seg_(comp, bb, pln, g.cut_plus, pr.c1_plus);

@@ -1313,8 +1313,6 @@ void GUI::options_sketch_add_bone_mode_()
   vis_changed |= ImGui::Checkbox("Capsule tangents", &m_bone_debug.capsule_tangents);
   vis_changed |= ImGui::Checkbox("Cutter centers", &m_bone_debug.cutter_centers);
   vis_changed |= ImGui::Checkbox("Contact points", &m_bone_debug.contacts);
-  vis_changed |= ImGui::Checkbox("Bone axis", &m_bone_debug.bone_axis);
-  vis_changed |= ImGui::Checkbox("Waist span", &m_bone_debug.waist_span);
   vis_changed |= ImGui::Checkbox("Cutter radials", &m_bone_debug.cutter_radials);
   if (vis_changed)
     m_view->curr_sketch().refresh_bone_preview();
