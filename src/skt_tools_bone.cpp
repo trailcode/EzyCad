@@ -51,12 +51,14 @@ void Sketch_tools::bone_on_enter_()
 
     m_sketch.m_dims.clear_typed_constraints();
   }
+
   if (!m_bone_centers && !m_tmp_edges.empty() && m_tmp_edges.back().node_idx_b.has_value())
   {
     const Sketch_edge& e = m_tmp_edges.back();
     bone_on_centers_ready_(m_sketch.m_nodes[e.node_idx_a], m_sketch.m_nodes[*e.node_idx_b]);
     return;
   }
+
   if (!m_bone_centers || !m_sketch.m_dims.entered_edge_len().has_value())
     return;
 
@@ -310,6 +312,7 @@ bool Sketch_tools::bone_after_hole_a_(double hole_r)
 
   if (holes != Bone_holes::Two_radii)
     return false;
+
   if (!bone_hole_radius_ok_(*m_bone_r1, hole_r))
   {
     if (bone_hole_radius_too_large_(*m_bone_r1, hole_r))
@@ -326,6 +329,7 @@ bool Sketch_tools::bone_after_hole_b_(double hole_r)
 {
   if (!m_bone_centers || !m_bone_r2 || !m_bone_waist || !m_bone_hole_r1)
     return false;
+
   if (!bone_hole_radius_ok_(*m_bone_r2, hole_r))
   {
     if (bone_hole_radius_too_large_(*m_bone_r2, hole_r))
@@ -511,6 +515,7 @@ void Sketch_tools::bone_update_preview_()
                                             : (m_last_pt ? c1.Distance(*m_last_pt) : 0.0);
             if (bone_hole_radius_ok_(*m_bone_r1, hr))
               bb.Add(comp, circle_at(c1, hr));
+
             if (bone_hole_radius_ok_(*m_bone_r2, hr))
               bb.Add(comp, circle_at(c2, hr));
           }
@@ -546,6 +551,7 @@ void Sketch_tools::bone_update_preview_()
     bb.Add(comp, circle_at(c1, r1));
     any = true;
   }
+
   if (r2 > Precision::Confusion())
   {
     bb.Add(comp, circle_at(c2, r2));

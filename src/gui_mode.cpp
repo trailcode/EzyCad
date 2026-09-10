@@ -1277,6 +1277,7 @@ void GUI::options_sketch_add_bone_mode_()
     m_bone_add_center_nodes = add_centers;
     save_occt_view_settings();
   }
+
   ImGui::SameLine(0.0f, ImGui::GetStyle().ItemInnerSpacing.x);
   GUI_DOC_HELP_("When on, commits permanent Bone A and Bone B nodes at the end centers. "
                 "Click ? to open the user guide.",
@@ -1294,6 +1295,7 @@ void GUI::options_sketch_add_bone_mode_()
       save_occt_view_settings();
     }
   }
+
   ImGui::SameLine(0.0f, ImGui::GetStyle().ItemInnerSpacing.x);
   GUI_DOC_HELP_("None: outline only. One radius: one click sets both holes. Two radii: set each end. "
                 "Hole radius must be smaller than that end's outer radius. Click ? to open the user guide.",

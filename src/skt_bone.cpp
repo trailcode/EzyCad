@@ -196,6 +196,7 @@ std::optional<Bone_geom> compute_bone_geom(const Bone_params& p)
 
   if (p.drive == Bone_drive::Cut_radius && p.cut_radius <= eps)
     return std::nullopt;
+
   if (p.drive == Bone_drive::Waist && p.waist <= eps)
     return std::nullopt;
 

@@ -175,6 +175,7 @@ void Sketch::add_bone(const gp_Pnt2d& c1, const gp_Pnt2d& c2, double r1, double 
       return true;
     return *hole > Precision::Confusion() && *hole + Precision::Confusion() < outer_r;
   };
+
   if (!hole_ok(r1, hole_r1) || !hole_ok(r2, hole_r2))
     return;
 
@@ -209,6 +210,7 @@ void Sketch::add_bone(const gp_Pnt2d& c1, const gp_Pnt2d& c2, double r1, double 
     add_arc_circle_(p.c2_minus, p.waist_minus, p.c1_minus, rec);
     if (hole_r1)
       add_hole_circle(g->c1, *hole_r1);
+
     if (hole_r2)
       add_hole_circle(g->c2, *hole_r2);
     rec.commit();
