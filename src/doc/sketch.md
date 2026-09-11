@@ -71,6 +71,7 @@ Sketch  (coordinator: skt.cpp, skt.h)
 
 Supporting (not owned sub-objects):
   skt_edge.*           Sketch_edge type, linear/arc predicates
+  skt_bone.*           bone outline / waist cutters (`compute_bone_geom`); DEV_MODE debug overlay
   skt_ais.*            Sketch_AIS_edge, Sketch_AIS_node_mark, Sketch_face_shp
   skt_display.cpp      visibility, edge styling, list hover, set_current
   skt_operations.cpp   operation axis, mirror, revolve
@@ -204,6 +205,7 @@ Prefer these visitors in JSON/delta/topo code over iterating `std::list<Sketch_e
 | `skt_node_marks.h`   | AIS "+" markers for permanent nodes only                                                                                            |
 | `skt_dims.h`         | Length dimensions between node pairs; Tab/Shift+Tab input; dimension-tool pick state                                                |
 | `skt_tools.h`        | Mode-specific click/move/finalize/cancel; shared helpers in `skt_tools.inl`                                                         |
+| `skt_bone.h`         | Bone outline geom (`compute_bone_geom`, `make_bone_wire`); `DEV_MODE` construction overlay (`make_bone_debug_shape`)                |
 | `skt_tools_bone.cpp` | Add-bone tool (`Sketch_tools` members; Options: center nodes / holes; successful commit exits to `Sketch_inspection_mode`)          |
 | `skt_underlay.h`     | Calibrated raster underlay on the sketch plane                                                                                      |
 | `skt_ais.h`          | OCCT AIS wrappers tied back to owning `Sketch`                                                                                      |
@@ -211,6 +213,8 @@ Prefer these visitors in JSON/delta/topo code over iterating `std::list<Sketch_e
 | `skt_operations.cpp` | Operation axis, mirror, revolve                                                                                                     |
 | `skt_json.h`         | `.ezy` / project JSON for sketches                                                                                                  |
 | `skt_op_recorder.h`  | Undo/redo recorder; `Sketch_op_delta` lives in `.cpp`                                                                               |
+
+A waist cutter is externally tangent to both end circles, so cutter center, contact, and end center are collinear. `DEV_MODE` Debug vis **Cutter radials** draws the four cutter-radius segments to those contacts; the outline switches from end-cap arc to waist arc there.
 
 ## Edge and face model
 

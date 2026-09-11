@@ -720,8 +720,8 @@ The bone tool builds a connecting-rod outline: the outer arcs of the two end cir
 1. Select **Add bone** on the toolbar (default <kbd>Shift</kbd>+<kbd>U</kbd>).
 2. Click the first circle center (normal sketch snap).
 3. Click the second circle center. <kbd>Tab</kbd> sets the center-to-center distance; <kbd>Shift</kbd>+<kbd>Tab</kbd> sets the bone-axis angle.
-4. Click to set **radius 1** (distance from the first center). <kbd>Tab</kbd> enters an exact radius.
-5. Click to set **radius 2** (distance from the second center). <kbd>Tab</kbd> enters an exact radius.
+4. Click to set **radius 2** (distance from the second center, where the cursor just finished). <kbd>Tab</kbd> enters an exact radius.
+5. Click to set **radius 1** (distance from the first center). <kbd>Tab</kbd> enters an exact radius.
 6. Click a point to set **waist width** (minimum remaining thickness between the waist arcs, perpendicular to the center line). When the end radii differ, the neck is offset toward the smaller end, not at the center midpoint. <kbd>Tab</kbd> enters an exact waist. If **Holes** is **None**, the tool commits after this click.
 7. If **Holes** is **One radius**, click once from the first center to set both hole radii. If **Two radii**, click hole radius at end A, then at end B. Each hole must be smaller than that end's outer radius.
 

@@ -1838,6 +1838,7 @@ void Occt_view::angle_input(const ScreenCoords& screen_coords)
     m_shp_extrude.begin_angle_input(screen_coords);
     return;
   }
+
   curr_sketch().angle_input(screen_coords);
 }
 
@@ -3248,6 +3249,7 @@ Sketch* Occt_view::sketch_owner_of_list_ais_(const AIS_Shape_ptr& ais)
 
   if (auto* node = dynamic_cast<Sketch_AIS_node_mark*>(ais.get()))
     return &node->owner_sketch;
+
   return nullptr;
 }
 
@@ -4047,8 +4049,10 @@ std::string Occt_view::to_json() const
         json fd;
         if (s->show_frame_axes())
           fd["axes"] = true;
+
         if (s->show_frame_plane())
           fd["plane"] = true;
+
         if (s->show_frame_up())
           fd["up"] = true;
         shp_json["frameDisplay"] = fd;
@@ -4149,13 +4153,16 @@ void Occt_view::load(const std::string& json_str, bool restore_view)
       shp = new Shp(*m_ctx, shape);
       if (s.contains("frame") && s["frame"].is_object())
         shp->set_frame(from_json_pln(s["frame"]).Position());
+
       if (s.contains("frameDisplay") && s["frameDisplay"].is_object())
       {
         const json& fd = s["frameDisplay"];
         if (fd.contains("axes") && fd["axes"].is_boolean())
           shp->set_show_frame_axes(fd["axes"].get<bool>());
+
         if (fd.contains("plane") && fd["plane"].is_boolean())
           shp->set_show_frame_plane(fd["plane"].get<bool>());
+
         if (fd.contains("up") && fd["up"].is_boolean())
           shp->set_show_frame_up(fd["up"].get<bool>());
       }
@@ -4661,6 +4668,7 @@ Section_import_counts import_section_edges_into_sketch_(Sketch& sketch, const To
         ++counts.skipped;
         break;
       }
+
       sketch.add_linear_edge(pt_a, pt_b);
       ++counts.imported;
       break;

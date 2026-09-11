@@ -743,6 +743,7 @@ Lua_console::Lua_console(GUI* gui)
   m_L = luaL_newstate();
   if (!m_L)
     return;
+
   luaL_openlibs(m_L);
   lua_pushlightuserdata(m_L, m_gui);
   lua_setfield(m_L, LUA_REGISTRYINDEX, k_registry_gui);
@@ -889,6 +890,7 @@ void Lua_console::load_scripts()
   if (!m_L)
     return;
 #ifdef __EMSCRIPTEN__
+
   const std::filesystem::path scripts_dir("/res/scripts/lua");
 #else
   const std::filesystem::path scripts_dir("res/scripts/lua");
@@ -901,6 +903,7 @@ void Lua_console::load_scripts()
   {
     if (!entry.is_regular_file() || entry.path().extension() != ".lua")
       continue;
+
     lua_files.push_back(entry.path());
   }
   std::sort(lua_files.begin(), lua_files.end());
@@ -961,6 +964,7 @@ void Lua_console::execute(const std::string& code)
     lua_pop(m_L, 1);
     return;
   }
+
   int n = lua_gettop(m_L);
   if (n > 0)
   {

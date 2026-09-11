@@ -2,7 +2,10 @@
 
 #include <BRep_Builder.hxx>
 #include <Precision.hxx>
+#include <Quantity_NameOfColor.hxx>
+#include <AIS_Shape.hxx>
 #include <TopoDS_Compound.hxx>
+#include <TopoDS_Shape.hxx>
 #include <TopoDS_Wire.hxx>
 #include <cmath>
 #include <numbers>
@@ -10,10 +13,12 @@
 #include <gp_Dir2d.hxx>
 #include <gp_Vec2d.hxx>
 
+#include "config.h"
 #include "gui.h"
 #include "gui_occt_view.h"
 #include "mode.h"
 #include "skt.h"
+#include "skt_bone.h"
 #include "utl_geom.h"
 #include "utl_occt.h"
 #include "utl.h"
@@ -46,12 +51,14 @@ void Sketch_tools::bone_on_enter_()
 
     m_sketch.m_dims.clear_typed_constraints();
   }
+
   if (!m_bone_centers && !m_tmp_edges.empty() && m_tmp_edges.back().node_idx_b.has_value())
   {
     const Sketch_edge& e = m_tmp_edges.back();
     bone_on_centers_ready_(m_sketch.m_nodes[e.node_idx_a], m_sketch.m_nodes[*e.node_idx_b]);
     return;
   }
+
   if (!m_bone_centers || !m_sketch.m_dims.entered_edge_len().has_value())
     return;
 
@@ -67,20 +74,23 @@ void Sketch_tools::bone_on_enter_()
 
   m_sketch.m_dims.clear_typed_constraints();
 
+  // Radii after centers: second end first (mouse is near c2), then first end.
   if (m_tmp_edges.size() == 2)
   {
-    m_bone_r1 = len;
-    bone_begin_next_edge_from_(m_bone_centers->second);
+    m_bone_r2 = len;
+    bone_begin_next_edge_from_(m_bone_centers->first);
   }
   else if (m_tmp_edges.size() == 3)
   {
-    m_bone_r2 = len;
+    m_bone_r1 = len;
     bone_begin_next_edge_from_(get_midpoint(m_bone_centers->first, m_bone_centers->second));
   }
   else if (m_tmp_edges.size() == 4)
     (void)bone_after_waist_(len);
+
   else if (m_tmp_edges.size() == 5)
     (void)bone_after_hole_a_(len);
+
   else if (m_tmp_edges.size() == 6)
     (void)bone_after_hole_b_(len);
 }
@@ -144,14 +154,15 @@ void Sketch_tools::add_bone_pt_(const ScreenCoords& screen_coords)
     m_sketch.update_edge_end_pt_(last, node_idx);
     const double len = pt_a.Distance(pt_b);
 
+    // Radii after centers: second end first (mouse is near c2), then first end.
     if (m_tmp_edges.size() == 2)
     {
-      m_bone_r1 = len;
-      bone_begin_next_edge_from_(m_bone_centers->second);
+      m_bone_r2 = len;
+      bone_begin_next_edge_from_(m_bone_centers->first);
     }
     else if (m_tmp_edges.size() == 3)
     {
-      m_bone_r2 = len;
+      m_bone_r1 = len;
       bone_begin_next_edge_from_(get_midpoint(m_bone_centers->first, m_bone_centers->second));
     }
     else if (m_tmp_edges.size() == 4)
@@ -162,6 +173,7 @@ void Sketch_tools::add_bone_pt_(const ScreenCoords& screen_coords)
     }
     else if (m_tmp_edges.size() == 5)
       (void)bone_after_hole_a_(len);
+
     else if (m_tmp_edges.size() == 6)
       (void)bone_after_hole_b_(len);
   };
@@ -257,7 +269,8 @@ void Sketch_tools::bone_on_centers_ready_(const gp_Pnt2d& c1, const gp_Pnt2d& c2
     return;
 
   m_bone_centers = std::make_pair(c1, c2);
-  bone_begin_next_edge_from_(c1);
+  // Start radius at the second center (where the cursor just placed c2).
+  bone_begin_next_edge_from_(c2);
 }
 
 bool Sketch_tools::bone_after_waist_(double waist)
@@ -298,6 +311,7 @@ bool Sketch_tools::bone_after_hole_a_(double hole_r)
         m_sketch.m_view.gui().show_message("Hole radius must be smaller than the end circle.");
       return false;
     }
+
     m_bone_hole_r1 = hole_r;
     m_bone_hole_r2 = hole_r;
     return bone_try_commit_();
@@ -305,6 +319,7 @@ bool Sketch_tools::bone_after_hole_a_(double hole_r)
 
   if (holes != Bone_holes::Two_radii)
     return false;
+
   if (!bone_hole_radius_ok_(*m_bone_r1, hole_r))
   {
     if (bone_hole_radius_too_large_(*m_bone_r1, hole_r))
@@ -321,6 +336,7 @@ bool Sketch_tools::bone_after_hole_b_(double hole_r)
 {
   if (!m_bone_centers || !m_bone_r2 || !m_bone_waist || !m_bone_hole_r1)
     return false;
+
   if (!bone_hole_radius_ok_(*m_bone_r2, hole_r))
   {
     if (bone_hole_radius_too_large_(*m_bone_r2, hole_r))
@@ -364,6 +380,7 @@ void Sketch_tools::finalize_bone_()
   {
     if (m_sketch.m_view.gui().get_bone_holes() != Bone_holes::None)
       return;
+
     const std::optional<double> waist = bone_waist_from_pt_(*m_last_pt);
     if (waist)
       (void)bone_after_waist_(*waist);
@@ -411,10 +428,41 @@ std::optional<double> Sketch_tools::bone_waist_from_pt_(const gp_Pnt2d& pt) cons
   return waist;
 }
 
+void Sketch_tools::refresh_bone_preview() { bone_update_preview_(); }
+
+#if DEV_MODE
+void Sketch_tools::bone_hide_debug_()
+{
+  m_sketch.m_view.remove(m_tmp_debug_shp);
+  m_tmp_debug_shp = nullptr;
+}
+
+void Sketch_tools::bone_show_debug_(const Bone_geom& g)
+{
+  const std::optional<TopoDS_Shape> dbg =
+      make_bone_debug_shape(m_sketch.m_pln, g, m_sketch.m_view.gui().get_bone_debug_flags());
+  if (!dbg)
+  {
+    bone_hide_debug_();
+    return;
+  }
+
+  show(m_sketch.m_ctx, m_tmp_debug_shp, *dbg);
+  m_tmp_debug_shp->SetColor(Quantity_NOC_CYAN);
+  m_tmp_debug_shp->SetWidth(1.5);
+  m_sketch.m_ctx.Deactivate(m_tmp_debug_shp);
+}
+#endif
+
 void Sketch_tools::bone_update_preview_()
 {
   if (!m_bone_centers)
+  {
+#if DEV_MODE
+    bone_hide_debug_();
+#endif
     return;
+  }
 
   const gp_Pnt2d& c1 = m_bone_centers->first;
   const gp_Pnt2d& c2 = m_bone_centers->second;
@@ -422,10 +470,11 @@ void Sketch_tools::bone_update_preview_()
   auto circle_at = [&](const gp_Pnt2d& c, double r) -> TopoDS_Wire
   { return make_circle_wire(m_sketch.m_pln, c, gp_Pnt2d(c.X() + r, c.Y())); };
 
+  // Live preview: edge 2 sizes c2, edge 3 sizes c1 (same order as placement).
   const double r1 = m_bone_r1.value_or(
-      (m_tmp_edges.size() == 2 && m_last_pt) ? c1.Distance(*m_last_pt) : 0.0);
+      (m_tmp_edges.size() == 3 && m_last_pt) ? c1.Distance(*m_last_pt) : 0.0);
   const double r2 = m_bone_r2.value_or(
-      (m_tmp_edges.size() == 3 && m_last_pt) ? c2.Distance(*m_last_pt) : 0.0);
+      (m_tmp_edges.size() == 2 && m_last_pt) ? c2.Distance(*m_last_pt) : 0.0);
 
   auto show_compound = [&](const TopoDS_Compound& comp)
   { show(m_sketch.m_ctx, m_tmp_shp, comp); };
@@ -475,6 +524,7 @@ void Sketch_tools::bone_update_preview_()
                                             : (m_last_pt ? c1.Distance(*m_last_pt) : 0.0);
             if (bone_hole_radius_ok_(*m_bone_r1, hr))
               bb.Add(comp, circle_at(c1, hr));
+
             if (bone_hole_radius_ok_(*m_bone_r2, hr))
               bb.Add(comp, circle_at(c2, hr));
           }
@@ -486,12 +536,18 @@ void Sketch_tools::bone_update_preview_()
         }
 
         show_compound(comp);
+#if DEV_MODE
+        bone_show_debug_(*g);
+#endif
         return;
       }
     }
 
     m_sketch.m_view.remove(m_tmp_shp);
     m_tmp_shp = nullptr;
+#if DEV_MODE
+    bone_hide_debug_();
+#endif
     return;
   }
 
@@ -504,6 +560,7 @@ void Sketch_tools::bone_update_preview_()
     bb.Add(comp, circle_at(c1, r1));
     any = true;
   }
+
   if (r2 > Precision::Confusion())
   {
     bb.Add(comp, circle_at(c2, r2));
@@ -514,8 +571,14 @@ void Sketch_tools::bone_update_preview_()
   {
     m_sketch.m_view.remove(m_tmp_shp);
     m_tmp_shp = nullptr;
+#if DEV_MODE
+    bone_hide_debug_();
+#endif
     return;
   }
 
   show_compound(comp);
+#if DEV_MODE
+  bone_hide_debug_();
+#endif
 }

@@ -175,6 +175,9 @@ public:
                 bool add_center_nodes = true, std::optional<double> hole_r1 = std::nullopt,
                 std::optional<double> hole_r2 = std::nullopt);
 
+  /// Rebuild Add-bone AIS preview (outline + DEV_MODE construction overlays).
+  void refresh_bone_preview();
+
 private:
   friend class Sketch_json;
   friend class Sketch_access;

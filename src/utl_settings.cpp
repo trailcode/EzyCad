@@ -118,6 +118,7 @@ std::string load_defaults()
 
     return {};
   }
+
   std::ostringstream os;
   os << f.rdbuf();
   std::string result = os.str();

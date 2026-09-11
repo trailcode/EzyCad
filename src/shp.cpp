@@ -179,6 +179,7 @@ void Shp::set_show_frame_axes(bool show)
 {
   if (m_show_frame_axes == show)
     return;
+
   m_show_frame_axes = show;
   update_frame_display();
 }
@@ -187,6 +188,7 @@ void Shp::set_show_frame_plane(bool show)
 {
   if (m_show_frame_plane == show)
     return;
+
   m_show_frame_plane = show;
   update_frame_display();
 }
@@ -195,6 +197,7 @@ void Shp::set_show_frame_up(bool show)
 {
   if (m_show_frame_up == show)
     return;
+
   m_show_frame_up = show;
   update_frame_display();
 }
@@ -203,6 +206,7 @@ void Shp::set_frame_display_suppressed(bool suppressed)
 {
   if (m_frame_display_suppressed == suppressed)
     return;
+
   m_frame_display_suppressed = suppressed;
   update_frame_display();
 }

@@ -65,5 +65,6 @@ Status Shp_common::selected_common()
   Shp_rslt r = common(std::move(m_shps));
   if (!r.is_ok())
     return Status(r.status(), r.message());
+
   return Status::ok();
 }

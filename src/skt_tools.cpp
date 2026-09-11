@@ -914,6 +914,10 @@ void Sketch_tools::finalize_operation_axis_(Sketch_op_recorder& rec)
 bool Sketch_tools::clear_tmps()
 {
   m_sketch.m_view.remove(m_tmp_shp);
+#if DEV_MODE
+  m_sketch.m_view.remove(m_tmp_debug_shp);
+  m_tmp_debug_shp = nullptr;
+#endif
   for (Sketch_edge& e : m_tmp_edges)
     m_sketch.m_view.remove(e.shp);
 

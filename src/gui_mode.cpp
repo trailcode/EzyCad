@@ -13,6 +13,7 @@
 #include <unordered_map>
 #include <vector>
 
+#include "config.h"
 #include "utl_geom.h"
 #include "gui.h"
 #include "imgui.h"
@@ -303,6 +304,7 @@ void GUI::on_key(int key, int scancode, int action, int mods)
       m_hotkey_capture_error.clear();
       return;
     }
+
     cancel_underlay_calib_();
     hide_sketch_origin_set_edit(false);
     hide_dist_edit(false);
@@ -329,6 +331,7 @@ void GUI::on_key(int key, int scancode, int action, int mods)
     // Rotate / Align shafts finalize on Enter in their mode key handlers.
     if (get_mode() == Mode::Rotate || get_mode() == Mode::Shape_shaft_align)
       break;
+
     hide_sketch_origin_set_edit(true);
     hide_dist_edit();
     hide_angle_edit();
@@ -1092,8 +1095,10 @@ void GUI::options_sketch_face_extrude_mode_()
 {
   EZY_ASSERT(get_mode() == Mode::Sketch_face_extrude);
 
-  options_sketch_common_();
+  // Tool-specific Extrude options above shared Sketch options (see src/doc/gui.md Options panel layout).
+  options_sketch_mode_header_();
 
+  ImGui::TextUnformatted("Extrude");
   if (ImGui::BeginTable("options_sketch_extrude", 2, k_options_table_flags))
   {
     options_table_setup_columns_(options_sketch_label_col_w_(), k_options_sketch_control_col_w);
@@ -1133,6 +1138,9 @@ void GUI::options_sketch_face_extrude_mode_()
 
     ImGui::EndTable();
   }
+
+  ImGui::Separator();
+  options_sketch_shared_controls_();
 }
 
 void GUI::options_sketch_dim_anno_mode_()
@@ -1271,6 +1279,7 @@ void GUI::options_sketch_add_bone_mode_()
     m_bone_add_center_nodes = add_centers;
     save_occt_view_settings();
   }
+
   ImGui::SameLine(0.0f, ImGui::GetStyle().ItemInnerSpacing.x);
   GUI_DOC_HELP_("When on, commits permanent Bone A and Bone B nodes at the end centers. "
                 "Click ? to open the user guide.",
@@ -1288,6 +1297,7 @@ void GUI::options_sketch_add_bone_mode_()
       save_occt_view_settings();
     }
   }
+
   ImGui::SameLine(0.0f, ImGui::GetStyle().ItemInnerSpacing.x);
   GUI_DOC_HELP_("None: outline only. One radius: one click sets both holes. Two radii: set each end. "
                 "Hole radius must be smaller than that end's outer radius. Click ? to open the user guide.",
@@ -1295,6 +1305,22 @@ void GUI::options_sketch_add_bone_mode_()
 
   ImGui::TextWrapped(
       "Click center A, center B, radius 1, radius 2, waist, then holes if enabled.");
+
+#if DEV_MODE
+  ImGui::Separator();
+  ImGui::TextUnformatted("Debug vis");
+  ImGui::TextDisabled("Construction overlays (DEV_MODE; not saved).");
+
+  bool vis_changed = false;
+  vis_changed |= ImGui::Checkbox("Cut circles", &m_bone_debug.cut_circles);
+  vis_changed |= ImGui::Checkbox("End circles", &m_bone_debug.end_circles);
+  vis_changed |= ImGui::Checkbox("Capsule tangents", &m_bone_debug.capsule_tangents);
+  vis_changed |= ImGui::Checkbox("Cutter centers", &m_bone_debug.cutter_centers);
+  vis_changed |= ImGui::Checkbox("Contact points", &m_bone_debug.contacts);
+  vis_changed |= ImGui::Checkbox("Cutter radials", &m_bone_debug.cutter_radials);
+  if (vis_changed)
+    m_view->curr_sketch().refresh_bone_preview();
+#endif
 
   ImGui::Separator();
   options_sketch_shared_controls_();

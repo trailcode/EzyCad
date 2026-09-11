@@ -161,6 +161,7 @@ int main(int argc, char** argv)
   GLFWwindow* window     = glfwCreateWindow((int)(1280 * main_scale), (int)(800 * main_scale), "EzyCad", nullptr, nullptr);
   if (window == nullptr)
     return 1;
+
   glfwMakeContextCurrent(window);
   glfwSwapInterval(1); // Enable vsync
 #ifndef __EMSCRIPTEN__
@@ -278,6 +279,7 @@ int main(int argc, char** argv)
       std::fprintf(stderr, "EzyCad: --listen: %s\n", parse_err.c_str());
       return 1;
     }
+
     gui.ensure_python_console();
     Python_console* console = gui.get_python_console();
     if (!console || !console->is_python_ok())
@@ -285,6 +287,7 @@ int main(int argc, char** argv)
       std::fprintf(stderr, "EzyCad: --listen requires a working Python interpreter\n");
       return 1;
     }
+
     py_queue  = std::make_unique<Python_execution_queue>();
     py_remote = std::make_unique<Python_remote_server>(*py_queue);
     std::string start_err;
@@ -293,6 +296,7 @@ int main(int argc, char** argv)
       std::fprintf(stderr, "EzyCad: remote listen failed: %s\n", start_err.c_str());
       return 1;
     }
+
     std::fprintf(stderr, "EzyCad: Python remote listening on %s:%u\n", ep.host.c_str(), static_cast<unsigned>(ep.port));
   }
 #endif
@@ -497,6 +501,7 @@ bool parse_cli_listen_(int argc, char** argv, bool& want_listen, std::string& li
         error = "--listen requires [host:]port";
         return false;
       }
+
       want_listen = true;
       listen_arg  = argv[++i];
     }

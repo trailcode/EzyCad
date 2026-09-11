@@ -14,6 +14,7 @@
 #include <iterator>
 
 #include "utl_geom.h"
+#include "skt_bone.h"
 #include "mode.h"
 #include "gui_occt_view.h"
 #include "skt_op_recorder.h"
@@ -152,6 +153,8 @@ void Sketch::add_arc_circle(const gp_Pnt2d& pt_a, const gp_Pnt2d& pt_mid, const 
 
 void Sketch::rebuild_faces() { update_faces_(); }
 
+void Sketch::refresh_bone_preview() { m_tools.refresh_bone_preview(); }
+
 void Sketch::add_bone(const gp_Pnt2d& c1, const gp_Pnt2d& c2, double r1, double r2, double waist,
                       bool add_center_nodes, std::optional<double> hole_r1, std::optional<double> hole_r2)
 {
@@ -172,6 +175,7 @@ void Sketch::add_bone(const gp_Pnt2d& c1, const gp_Pnt2d& c2, double r1, double 
       return true;
     return *hole > Precision::Confusion() && *hole + Precision::Confusion() < outer_r;
   };
+
   if (!hole_ok(r1, hole_r1) || !hole_ok(r2, hole_r2))
     return;
 
@@ -206,6 +210,7 @@ void Sketch::add_bone(const gp_Pnt2d& c1, const gp_Pnt2d& c2, double r1, double 
     add_arc_circle_(p.c2_minus, p.waist_minus, p.c1_minus, rec);
     if (hole_r1)
       add_hole_circle(g->c1, *hole_r1);
+
     if (hole_r2)
       add_hole_circle(g->c2, *hole_r2);
     rec.commit();
@@ -570,6 +575,7 @@ Sketch_face_shp_ptr Sketch::inspector_face(size_t index) const
 {
   if (index >= m_topo.faces().size())
     return {};
+
   return m_topo.faces()[index];
 }
 
