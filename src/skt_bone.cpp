@@ -97,6 +97,9 @@ std::optional<Bone_geom> bone_geom_with_cut_radius_(const gp_Pnt2d& c1, const gp
   g.cut_minus  = mirror_across_axis_(*c_top, c1, axis);
   g.waist      = bone_waist_gap_(g.cut_plus, g.cut_minus, cut_r);
 
+  // Capsule (external common) tangents of the end circles, ignoring waist cutters.
+  // (nx, ny) is the shared unit direction from each center to its contact; same n on both
+  // circles keeps the radii parallel so t1--t2 is the tangent segment. sign picks the side.
   auto tangent_pair = [&](double sign, gp_Pnt2d& t1, gp_Pnt2d& t2)
   {
     const double nx = vx * a - sign * vy * h;
@@ -210,6 +213,9 @@ std::optional<Bone_geom> compute_bone_geom(const Bone_params& p)
   if (dist + eps < std::fabs(p.r1 - p.r2))
     return std::nullopt;
 
+  // Similar-triangles setup for external common tangents of unequal circles:
+  // (vx, vy) unit bone axis, a = (r1 - r2) / dist, h = sqrt(1 - a^2) perpendicular part.
+  // Passed into bone_geom_with_cut_radius_ for the capsule tangent endpoints.
   const double   vx = axis.X() / dist;
   const double   vy = axis.Y() / dist;
   const double   a  = (p.r1 - p.r2) / dist;
@@ -327,6 +333,7 @@ std::optional<TopoDS_Shape> make_bone_debug_shape(const gp_Pln& pln, const Bone_
     mark();
   }
 
+  // Stadium-side segments between the two end circles (see tangent_pair in bone_geom_with_cut_radius_).
   if (flags.capsule_tangents)
   {
     add_debug_seg_(comp, bb, pln, g.tan_top_a, g.tan_top_b);

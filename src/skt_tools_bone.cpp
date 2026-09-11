@@ -86,8 +86,10 @@ void Sketch_tools::bone_on_enter_()
   }
   else if (m_tmp_edges.size() == 4)
     (void)bone_after_waist_(len);
+
   else if (m_tmp_edges.size() == 5)
     (void)bone_after_hole_a_(len);
+
   else if (m_tmp_edges.size() == 6)
     (void)bone_after_hole_b_(len);
 }
@@ -169,6 +171,7 @@ void Sketch_tools::add_bone_pt_(const ScreenCoords& screen_coords)
     }
     else if (m_tmp_edges.size() == 5)
       (void)bone_after_hole_a_(len);
+
     else if (m_tmp_edges.size() == 6)
       (void)bone_after_hole_b_(len);
   };

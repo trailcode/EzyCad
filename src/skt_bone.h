@@ -38,8 +38,10 @@ struct Bone_geom
   double   r2 = 0;
   double   cut_radius = 0;
   double   waist = 0;
-  gp_Pnt2d tan_top_a;
-  gp_Pnt2d tan_top_b;
+  // External common tangents of the two end circles alone (Debug vis "Capsule tangents";
+  // not part of the trimmed bone outline). Each pair is one stadium-side segment.
+  gp_Pnt2d tan_top_a;  // contact on end 1
+  gp_Pnt2d tan_top_b;  // contact on end 2
   gp_Pnt2d tan_bot_a;
   gp_Pnt2d tan_bot_b;
 };
@@ -78,6 +80,7 @@ struct Bone_debug_flags
 {
   bool cut_circles      = false;
   bool end_circles      = false;
+  /// External common tangents of the end circles (stadium sides; not the trimmed outline).
   bool capsule_tangents = false;
   bool cutter_centers   = false;
   bool contacts         = false;
