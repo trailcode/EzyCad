@@ -575,6 +575,7 @@ Sketch_face_shp_ptr Sketch::inspector_face(size_t index) const
 {
   if (index >= m_topo.faces().size())
     return {};
+
   return m_topo.faces()[index];
 }
 

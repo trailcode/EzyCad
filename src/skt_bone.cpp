@@ -61,6 +61,7 @@ std::optional<gp_Pnt2d> circle_circle_intersect_pick_side_(const gp_Pnt2d& c1, d
   const double d1 = gp_Vec2d(mid, i1).Dot(n);
   if (positive_n_side)
     return d0 >= d1 ? i0 : i1;
+
   return d0 <= d1 ? i0 : i1;
 }
 
@@ -116,6 +117,7 @@ double bone_waist_for_cut_radius_(const gp_Pnt2d& c1, const gp_Pnt2d& c2, double
   const std::optional<Bone_geom> g = bone_geom_with_cut_radius_(c1, c2, r1, r2, cut_r, axis, n, mid, vx, vy, a, h);
   if (!g)
     return std::numeric_limits<double>::quiet_NaN();
+
   return g->waist;
 }
 
@@ -226,6 +228,7 @@ std::optional<Bone_geom> compute_bone_geom(const Bone_params& p)
         solve_cut_radius_for_waist_(p.c1, p.c2, p.r1, p.r2, p.waist, axis, n, mid, vx, vy, a, h);
     if (!solved)
       return std::nullopt;
+
     cut_r = *solved;
   }
 

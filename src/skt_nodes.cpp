@@ -104,6 +104,7 @@ private:
 
     if (n.origin && !m_origin_snap_enabled)
       return false;
+
     return true;
   }
 

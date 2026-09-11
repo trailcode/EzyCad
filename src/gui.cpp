@@ -3452,6 +3452,7 @@ void GUI::dbg_()
     return;
   }
   // Undo / redo stack
+
   ImGui::Text("Undo: %zu (Ctrl+Z)  |  Redo: %zu (Ctrl+Y)  [max 50]", m_view->undo_stack_size(), m_view->redo_stack_size());
   ImGui::Separator();
   // Get the available content region width
@@ -4351,12 +4352,14 @@ void GUI::export_file_dialog_(Export_format fmt, Export_unit unit)
     show_message(s.message());
     return;
   }
+
   std::ifstream in(mem_path, std::ios::binary);
   if (!in)
   {
     show_message("Export read failed.");
     return;
   }
+
   const std::string bytes((std::istreambuf_iterator<char>(in)), std::istreambuf_iterator<char>());
   download_blob_async(download_name, bytes);
   show_message("Exported: " + download_name);
@@ -4523,6 +4526,7 @@ void GUI::save_file_dialog_()
                       "changed.");
     return;
   }
+
   std::string default_file =
       m_last_saved_path.empty() ? "project.ezy" : std::filesystem::path(m_last_saved_path).filename().string();
   save_file_dialog_async("Save EzyCad project", default_file, ezy_bytes);
@@ -4626,6 +4630,7 @@ std::string format_log_line_(const std::string& base, size_t repeat_count)
 {
   if (repeat_count <= 1)
     return base;
+
   return base + " #" + std::to_string(repeat_count);
 }
 

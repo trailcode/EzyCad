@@ -91,6 +91,7 @@ std::optional<std::tuple<std::vector<uint8_t>, int, int>> decode_image_bytes(con
 
     return std::nullopt;
   }
+
   const std::size_t    n = static_cast<std::size_t>(w) * static_cast<std::size_t>(h) * 4u;
   std::vector<uint8_t> rgba(n);
   std::memcpy(rgba.data(), data, n);

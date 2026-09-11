@@ -96,6 +96,7 @@ default:                   ++result.other_curve_count; break;
 Not enforced by clang-format. Treat each **logical beat** as its own short paragraph:
 
 - Put a **blank line between consecutive `if` statements** that have no `else` (each is its own block).
+- After an `if` with no `else` whose then-body **exits** (`return` / `continue` / `break` / `CHK_RET`), put a blank line before the next statement in the same block (the success path).
 - After a **local lambda or helper** closes (`};`), put a blank line before the first use or following statement.
 - Inside a short helper, separate **setup**, **early return**, and **main body** with blank lines when each is a distinct step.
 - After a multi-statement `if { ... }` (or single-statement `if` that mutates state), put a blank line before trailing same-row UI such as `ImGui::SameLine`, unit labels, or `GUI_DOC_HELP_`.

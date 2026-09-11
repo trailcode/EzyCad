@@ -305,6 +305,7 @@ bool Sketch_tools::bone_after_hole_a_(double hole_r)
         m_sketch.m_view.gui().show_message("Hole radius must be smaller than the end circle.");
       return false;
     }
+
     m_bone_hole_r1 = hole_r;
     m_bone_hole_r2 = hole_r;
     return bone_try_commit_();
@@ -373,6 +374,7 @@ void Sketch_tools::finalize_bone_()
   {
     if (m_sketch.m_view.gui().get_bone_holes() != Bone_holes::None)
       return;
+
     const std::optional<double> waist = bone_waist_from_pt_(*m_last_pt);
     if (waist)
       (void)bone_after_waist_(*waist);

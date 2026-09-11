@@ -1316,6 +1316,7 @@ bool ezy_geom::is_valid(const polygon_2d& poly)
     return false;
   // The construction logic in to_boost already guarantees closed, oriented rings.
   // This is intentionally lightweight.
+
   return true;
 }
 

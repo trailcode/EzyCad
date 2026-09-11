@@ -873,6 +873,7 @@ void Python_console::load_scripts()
   if (!m_python_ok)
     return;
 #ifdef __EMSCRIPTEN__
+
   const std::filesystem::path scripts_dir("/res/scripts/python");
 #else
   const std::filesystem::path scripts_dir("res/scripts/python");

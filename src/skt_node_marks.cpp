@@ -129,6 +129,7 @@ Sketch_AIS_node_mark_ptr Sketch_node_marks::get(size_t node_idx) const
 {
   if (node_idx >= m_marks.size())
     return {};
+
   return m_marks[node_idx];
 }
 

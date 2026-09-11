@@ -416,6 +416,7 @@ void Python_remote_server::accept_loop_()
       closesocket_compat(client);
       break;
     }
+
     handle_client_(static_cast<uintptr_t>(client));
   }
 }

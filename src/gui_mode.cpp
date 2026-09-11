@@ -304,6 +304,7 @@ void GUI::on_key(int key, int scancode, int action, int mods)
       m_hotkey_capture_error.clear();
       return;
     }
+
     cancel_underlay_calib_();
     hide_sketch_origin_set_edit(false);
     hide_dist_edit(false);
@@ -330,6 +331,7 @@ void GUI::on_key(int key, int scancode, int action, int mods)
     // Rotate / Align shafts finalize on Enter in their mode key handlers.
     if (get_mode() == Mode::Rotate || get_mode() == Mode::Shape_shaft_align)
       break;
+
     hide_sketch_origin_set_edit(true);
     hide_dist_edit();
     hide_angle_edit();

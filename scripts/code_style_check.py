@@ -2,7 +2,9 @@
 """Optional local check of C++ against docs/ezycad_code_style.md.
 
 Not part of CI or the default agent_check.py run. Start with Vertical rhythm
-(blank lines). Do not add groups here to CI unless a rule is as objective as ASCII.
+(blank lines), including a blank line after an early-exit `if` (return / continue /
+break / CHK_RET) before the next statement in the same block. Do not add groups
+here to CI unless a rule is as objective as ASCII.
 
 Usage:
   python scripts/code_style_check.py [paths...]
@@ -46,6 +48,7 @@ SAME_ROW_UI_PREFIXES = ("ImGui::SameLine", "GUI_DOC_HELP_")
 IMGUI_TEXT_BEATS = ("ImGui::TextWrapped", "ImGui::TextDisabled")
 IMGUI_SPACING = "ImGui::Spacing"
 IMGUI_BUTTON = "ImGui::Button"
+EARLY_EXIT_IDENTS = frozenset({"return", "continue", "break", "CHK_RET"})
 
 
 @dataclass(frozen=True)
@@ -705,6 +708,26 @@ def starts_with_any(code: str, prefixes: tuple[str, ...]) -> bool:
     return any(code.startswith(p) for p in prefixes)
 
 
+def if_then_exits(src: Source, stmt: Stmt) -> bool:
+    """True when an `if` (no else required here) then-body ends with return/continue/break/CHK_RET."""
+    if stmt.kind != "if" or not stmt.bodies:
+        return False
+    b0, b1 = stmt.bodies[0]
+    i = skip_ws_and_pp(src.masked, b0, b1)
+    if i >= b1:
+        return False
+    if src.masked[i] == "{":
+        close = skip_balanced(src.masked, i, b1, "{", "}")
+        inner = parse_statements(src, i + 1, close - 1)
+    else:
+        inner = parse_statements(src, b0, b1)
+    if not inner:
+        return peek_ident(src.masked, i, b1) in EARLY_EXIT_IDENTS
+    last = inner[-1]
+    lead = skip_ws_and_pp(src.masked, last.start, last.end)
+    return peek_ident(src.masked, lead, last.end) in EARLY_EXIT_IDENTS
+
+
 def check_vertical_rhythm(src: Source) -> list[Finding]:
     findings: list[Finding] = []
     _check_span(src, 0, len(src.masked), findings)
@@ -736,6 +759,17 @@ def _check_span(src: Source, start: int, end: int, findings: list[Finding]) -> N
                     line,
                     "vertical-rhythm",
                     "blank line required between consecutive if statements that have no else",
+                )
+            )
+            continue
+
+        if a.kind == "if" and not a.has_else and if_then_exits(src, a):
+            findings.append(
+                Finding(
+                    src.path,
+                    line,
+                    "vertical-rhythm",
+                    "blank line required after early-return if before the next statement",
                 )
             )
             continue
