@@ -124,6 +124,16 @@ double bone_waist_for_cut_radius_(const gp_Pnt2d& c1, const gp_Pnt2d& c2, double
   return g->waist;
 }
 
+// Find the cookie-cutter radius that leaves a leftover neck of width target_waist.
+//
+// Picture a dog bone: two end knobs (circles r1, r2) on an axis. Two matching cutter
+// circles press in from opposite sides, each kissing both knobs. The waist is the
+// leftover meat between those cutters - the skinniest gap.
+//
+// A small cutter nestles into the notch between the knobs and takes a deep bite
+// (skinny neck). A large cutter sits farther off-axis, like a giant coin grazing
+// the knobs, so the bite is shallower and more neck remains. Bigger cutter -> fatter
+// waist. Search for the radius whose leftover gap matches the target.
 std::optional<double> solve_cut_radius_for_waist_(const gp_Pnt2d& c1, const gp_Pnt2d& c2, double r1, double r2,
                                                   double target_waist, const gp_Vec2d& axis, const gp_Vec2d& n,
                                                   const gp_Pnt2d& mid, double vx, double vy, double a, double h)
@@ -133,6 +143,8 @@ std::optional<double> solve_cut_radius_for_waist_(const gp_Pnt2d& c1, const gp_P
     return std::nullopt;
 
   const double dist = axis.Magnitude();
+  // Tiniest cutter that can still kiss both knobs: half the leftover axis after
+  // laying the two end circles end-to-end. Any smaller and it cannot reach both.
   double       r_lo = (dist - r1 - r2) / 2.0;
   if (r_lo <= eps)
     r_lo = eps;
@@ -141,15 +153,19 @@ std::optional<double> solve_cut_radius_for_waist_(const gp_Pnt2d& c1, const gp_P
   if (!std::isfinite(w_lo))
     return std::nullopt;
 
+  // Even that deepest bite already left a thicker neck than asked. The target is too
+  // skinny: it would need a cutter that cannot reach both knobs.
   if (w_lo >= target_waist)
     return std::nullopt;
 
+  // Inflate the cutter (double the radius) until the bite is shallow enough that the
+  // leftover neck is at least the target. Start from a guess on the order of the knobs.
   double r_hi = std::max(r_lo + 1.0, r1 + r2);
   for (int i = 0; i < 48; ++i)
   {
     const double w_hi = bone_waist_for_cut_radius_(c1, c2, r1, r2, r_hi, axis, n, mid, vx, vy, a, h);
     if (!std::isfinite(w_hi) || w_hi < target_waist)
-      r_hi *= 2.0;
+      r_hi *= 2.0;  // still too pinched; grow the scoop
     else
       break;
   }
@@ -158,6 +174,7 @@ std::optional<double> solve_cut_radius_for_waist_(const gp_Pnt2d& c1, const gp_P
   if (!std::isfinite(w_hi) || w_hi < target_waist)
     return std::nullopt;
 
+  // Close the calipers: bisect cutter radius until leftover waist matches.
   for (int i = 0; i < 64; ++i)
   {
     const double r_mid = (r_lo + r_hi) * 0.5;
@@ -166,9 +183,9 @@ std::optional<double> solve_cut_radius_for_waist_(const gp_Pnt2d& c1, const gp_P
       return std::nullopt;
 
     if (w_mid < target_waist)
-      r_lo = r_mid;
+      r_lo = r_mid;  // still too skinny; need a bigger (shallower) cutter
     else
-      r_hi = r_mid;
+      r_hi = r_mid;  // too fat; shrink the cutter to pinch more
   }
 
   return (r_lo + r_hi) * 0.5;
