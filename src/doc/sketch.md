@@ -214,7 +214,7 @@ Prefer these visitors in JSON/delta/topo code over iterating `std::list<Sketch_e
 | `skt_json.h`         | `.ezy` / project JSON for sketches                                                                                                  |
 | `skt_op_recorder.h`  | Undo/redo recorder; `Sketch_op_delta` lives in `.cpp`                                                                               |
 
-A waist cutter is externally tangent to both end circles, so cutter center, contact, and end center are collinear. `DEV_MODE` Debug vis **Cutter radials** draws the four cutter-radius segments to those contacts; the outline switches from end-cap arc to waist arc there.
+A waist cutter is externally tangent to both end circles, so cutter center, contact, and end center are collinear. `DEV_MODE` Debug vis **Cutter radials** draws the four cutter-radius segments to those contacts; the outline switches from end-cap arc to waist arc there. Geom recipe in [`skt_bone.cpp`](../skt_bone.cpp): `Bone_frame` (axis and stadium-rail tilt) -> place cutters (`bone_geom_with_cut_radius_`) -> four join points (`get_bone_profile`) -> four arcs (`make_bone_wire`).
 
 ## Edge and face model
 
