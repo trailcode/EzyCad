@@ -372,12 +372,13 @@ void Sketch::add_arc_circle_(const gp_Pnt2d& pt_a, const gp_Pnt2d& pt_b, const g
   const size_t node_idx_c = m_nodes.get_node_exact(pt_c);
   const size_t node_idx_b = m_nodes.get_node_exact(pt_b);
 
-  rec.note_curr_arc_edge(pt_a, pt_b, pt_c);
-  rec.note_curr_node(node_idx_a);
-  rec.note_curr_node(node_idx_c);
-  rec.note_curr_node(node_idx_b);
-
-  add_arc_circle_(std::vector<size_t>{node_idx_a, node_idx_c, node_idx_b}, rec);
+  if (m_edges.add_arc_circle_edges({node_idx_a, node_idx_c, node_idx_b}, &rec))
+  {
+    rec.note_curr_arc_edge(pt_a, pt_b, pt_c);
+    rec.note_curr_node(node_idx_a);
+    rec.note_curr_node(node_idx_c);
+    rec.note_curr_node(node_idx_b);
+  }
 }
 
 void Sketch::add_arc_circle_(const std::vector<size_t>& node_idxs) { m_edges.add_arc_circle_edges(node_idxs, nullptr); }

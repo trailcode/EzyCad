@@ -435,141 +435,26 @@ void Sketch_tools::finalize_edges_(Sketch_op_recorder& rec)
   if (m_tmp_edges.empty())
     return;
 
-  // Record user-intent edges before any split/append side effects.
+  struct Seg
+  {
+    gp_Pnt2d a;
+    gp_Pnt2d b;
+  };
+
+  std::vector<Seg> segs;
+  segs.reserve(m_tmp_edges.size());
   for (const Sketch_edge& te : m_tmp_edges)
   {
     EZY_ASSERT(te.node_idx_b.has_value());
-    rec.note_curr_linear_edge(m_sketch.m_nodes[te.node_idx_a], m_sketch.m_nodes[*te.node_idx_b]);
+    segs.push_back({m_sketch.m_nodes[te.node_idx_a], m_sketch.m_nodes[*te.node_idx_b]});
+    if (te.shp)
+      m_sketch.m_ctx.Remove(te.shp, false);
   }
 
-  std::vector<size_t> split_mid_points;
-  for (Sketch_edge& e : m_tmp_edges)
-  {
-    EZY_ASSERT(e.node_idx_b.has_value());
-    if (m_sketch.m_nodes[e.node_idx_a].midpoint)
-      split_mid_points.push_back(e.node_idx_a);
-
-    if (m_sketch.m_nodes[e.node_idx_b].midpoint)
-      split_mid_points.push_back(*e.node_idx_b);
-  }
-
-  // Split any *existing* (pre this batch) linear edges that intersect or touch the
-  // new segments being committed (the tmp ones). This fulfills the requirement that
-  // adding edges from the GUI splits existing intersecting/touching edges.
-  std::vector<gp_Pnt2d> batch_inters;
-  {
-    for (const Sketch_edge& te : m_tmp_edges)
-    {
-      // All remaining tmp edges must be complete at this point:
-      // - The code above already popped any trailing incomplete one.
-      // - The split_mid_points loop immediately before this used EZY_ASSERT on every te.
-      // Therefore we can (and should) assert rather than silently continue.
-      // (A defensive "if (!...) continue" would be appropriate for filtering *old* edges
-      // in m_sketch.m_edges, which may contain arcs or other non-linear things, but not here.)
-      EZY_ASSERT(te.node_idx_b.has_value());
-
-      gp_Pnt2d pa = m_sketch.m_nodes[te.node_idx_a];
-      gp_Pnt2d pb = m_sketch.m_nodes[te.node_idx_b];
-      for (const Sketch_edge& oe : m_sketch.m_edges.edges()) // pre-batch olds only
-      {
-        if (Sketch::is_linear_edge_(oe))
-        {
-          gp_Pnt2d qa = m_sketch.m_nodes[oe.node_idx_a];
-          gp_Pnt2d qb = m_sketch.m_nodes[oe.node_idx_b];
-          if (auto inter = segment_intersection_2d(pa, pb, qa, qb, Segment_inclusion::Closed))
-            add_unique_point(batch_inters, *inter);
-        }
-        else if (sketch_edge_is_arc(oe))
-        {
-          for (const gp_Pnt2d& inter :
-               segment_arc_intersections_2d(pa, pb, TopoDS::Edge(oe.shp->Shape()), m_sketch.m_pln, Segment_inclusion::Closed))
-            add_unique_point(batch_inters, inter);
-        }
-      }
-    }
-
-    // Only split olds at interior hits (avoid snap on endpoint-touch inters from the batch, same reason as add_edge_).
-    std::vector<gp_Pnt2d> batch_to_split;
-    for (const auto& ip : batch_inters)
-    {
-      bool is_old_interior = false;
-      for (const Sketch_edge& e : m_sketch.m_edges.edges())
-      {
-        if (Sketch::is_linear_edge_(e))
-        {
-          gp_Pnt2d qa = m_sketch.m_nodes[e.node_idx_a];
-          gp_Pnt2d qb = m_sketch.m_nodes[e.node_idx_b];
-          if (point_on_open_segment_2d(ip, qa, qb))
-          {
-            is_old_interior = true;
-            break;
-          }
-        }
-        else if (sketch_edge_is_arc(e))
-        {
-          if (point_on_open_arc_interior_2d(ip, TopoDS::Edge(e.shp->Shape()), m_sketch.m_pln))
-          {
-            is_old_interior = true;
-            break;
-          }
-        }
-      }
-
-      if (is_old_interior)
-        add_unique_point(batch_to_split, ip);
-    }
-
-    for (const auto& ip : batch_to_split)
-    {
-      const size_t nidx = m_sketch.m_nodes.get_node_exact(ip);
-      m_sketch.m_topo.split_linear_edges_at_node_if_interior(nidx, rec);
-      m_sketch.m_topo.split_arcs_at_node_if_interior(nidx, rec);
-    }
-  }
-
-  append(m_sketch.m_edges.edges(), m_tmp_edges);
   m_tmp_edges.clear();
 
-  // Ensure topology is correct if snapping on a midpoint happened.
-  // These edges need to be split. (Kept for compatibility with current midpoint marking during draw.)
-  for (size_t mid_pt_idx : split_mid_points)
-    for (auto itr = m_sketch.m_edges.edges().begin(), end = m_sketch.m_edges.edges().end(); itr != end; ++itr)
-      if (itr->node_idx_mid.has_value() && *itr->node_idx_mid == mid_pt_idx)
-        if (sketch_edge_is_linear(*itr))
-        {
-          // Split the edge.
-          Sketch_edge edge_a{itr->node_idx_a, mid_pt_idx};
-          Sketch_edge edge_b{mid_pt_idx, *itr->node_idx_b};
-          m_sketch.update_edge_shp_(edge_a, m_sketch.m_nodes[itr->node_idx_a], m_sketch.m_nodes[mid_pt_idx]);
-          m_sketch.update_edge_shp_(edge_b, m_sketch.m_nodes[itr->node_idx_b], m_sketch.m_nodes[mid_pt_idx]);
-          rec.note_prev_linear_edge(itr->node_idx_a, *itr->node_idx_b, itr->node_idx_mid, itr->name);
-          // Set midpoints for the new split edges so they can be snapped to
-          edge_a.node_idx_mid = m_sketch.m_nodes.add_new_node(
-              get_midpoint(m_sketch.m_nodes[itr->node_idx_a], m_sketch.m_nodes[mid_pt_idx]), true);
-          edge_b.node_idx_mid = m_sketch.m_nodes.add_new_node(
-              get_midpoint(m_sketch.m_nodes[mid_pt_idx], m_sketch.m_nodes[itr->node_idx_b]), true);
-          rec.note_curr_node(edge_a.node_idx_mid.value());
-          rec.note_curr_node(edge_b.node_idx_mid.value());
-          m_sketch.m_ctx.Remove(itr->shp, false);
-          m_sketch.m_edges.edges().erase(itr);
-          m_sketch.m_nodes[mid_pt_idx].midpoint = false;
-          m_sketch.m_edges.edges().emplace_back(edge_a);
-          m_sketch.m_edges.edges().emplace_back(edge_b);
-          break;
-        }
-
-  // Subdivide any *newly committed* edges (the ones from m_tmp) at interior intersections
-  // discovered in the pre-pass. The pre-pass already handled olds; re-calling split here
-  // will target the news (olds' original long edges no longer exist). This ensures the
-  // GUI finalize path produces the same atomic edge count as direct add_edge_ (e.g. 4
-  // edges for a cross, whether or not the cross is at an existing mid).
-  for (const auto& ip : batch_inters)
-  {
-    const size_t nidx = m_sketch.m_nodes.get_node_exact(ip);
-    rec.note_curr_node(nidx);
-    m_sketch.m_topo.split_linear_edges_at_node_if_interior(nidx, rec);
-    m_sketch.m_topo.split_arcs_at_node_if_interior(nidx, rec);
-  }
+  for (const Seg& s : segs)
+    m_sketch.add_edge_(s.a, s.b, rec);
 
   m_sketch.m_nodes.hide_snap_annos();
   m_sketch.update_faces_();

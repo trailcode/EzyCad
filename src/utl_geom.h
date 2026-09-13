@@ -249,10 +249,22 @@ enum class Segment_inclusion
 
 /// Returns the intersection point of the two line *segments* [a1-a2] and [b1-b2] if they intersect,
 /// according to the given \a inclusion mode. Uses a tolerance for floating-point robustness.
-/// Returns nullopt if the lines are (nearly) parallel/collinear (overlaps not supported) or if the
-/// intersection point does not lie on the segments per the inclusion mode.
+/// Returns nullopt if the lines are (nearly) parallel/collinear (use `same_line_support_2d` /
+/// `collinear_overlap_cut_points_2d` for overlap) or if the intersection does not lie on both
+/// segments per the inclusion mode.
 std::optional<gp_Pnt2d> segment_intersection_2d(const gp_Pnt2d& a1, const gp_Pnt2d& a2, const gp_Pnt2d& b1, const gp_Pnt2d& b2,
                                                 Segment_inclusion inclusion = Segment_inclusion::Closed);
+
+/// True when both segments have length and [b1,b2] lies on the infinite line through [a1,a2].
+[[nodiscard]] bool same_line_support_2d(const gp_Pnt2d& a1, const gp_Pnt2d& a2, const gp_Pnt2d& b1, const gp_Pnt2d& b2);
+
+/// Endpoints of either segment that lie in the open interior of the other, when the segments
+/// share a line and overlap on a range. Empty when disjoint, endpoint-touch only, or not collinear.
+[[nodiscard]] std::vector<gp_Pnt2d> collinear_overlap_cut_points_2d(const gp_Pnt2d& a1, const gp_Pnt2d& a2, const gp_Pnt2d& b1,
+                                                                    const gp_Pnt2d& b2);
+
+/// True when both edges are circles with the same center and radius (in \a pln).
+[[nodiscard]] bool same_circle_support_2d(const TopoDS_Edge& arc_a, const TopoDS_Edge& arc_b, const gp_Pln& pln);
 
 /// Adds \a p to the vector only if no existing point is within Precision::Confusion() distance.
 /// Used to collect unique intersection points without duplicates.

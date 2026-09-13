@@ -1,12 +1,14 @@
 #include "skt_test_fixture.h"
 
 #include <BRepGProp.hxx>
+#include <Precision.hxx>
 #include <BRepTools.hxx>
 #include <BRepTools_WireExplorer.hxx>
 #include <GProp_GProps.hxx>
 #include <TopoDS.hxx>
 #include <TopoDS_Wire.hxx>
 #include <algorithm>
+#include <array>
 #include <cmath>
 #include <numbers>
 #include <vector>
@@ -1332,4 +1334,181 @@ TEST_F(Sketch_test, SplitEdge_HasMidpoints)
   ASSERT_EQ(midpoint_x_coords.size(), 2);
   EXPECT_NEAR(midpoint_x_coords[0], 5.0, Precision::Confusion()) << "First split edge should have midpoint at x=5";
   EXPECT_NEAR(midpoint_x_coords[1], 15.0, Precision::Confusion()) << "Second split edge should have midpoint at x=15";
+}
+
+namespace
+{
+bool has_linear_seg_(Sketch& sketch, const gp_Pnt2d& a, const gp_Pnt2d& b)
+{
+  const double tol = Precision::Confusion();
+  for (const auto& e : Sketch_access::get_edges(sketch))
+  {
+    if (!sketch_edge_is_linear(e) || !e.node_idx_b.has_value())
+      continue;
+
+    const gp_Pnt2d ea = sketch.get_nodes()[e.node_idx_a];
+    const gp_Pnt2d eb = sketch.get_nodes()[*e.node_idx_b];
+    if ((ea.Distance(a) <= tol && eb.Distance(b) <= tol) || (ea.Distance(b) <= tol && eb.Distance(a) <= tol))
+      return true;
+  }
+
+  return false;
+}
+} // namespace
+
+TEST(Geom2d, CollinearOverlapHelpers)
+{
+  const gp_Pnt2d a(0.0, 0.0);
+  const gp_Pnt2d b(2.0, 0.0);
+  const gp_Pnt2d c(1.0, 0.0);
+  const gp_Pnt2d d(3.0, 0.0);
+
+  EXPECT_TRUE(same_line_support_2d(a, b, c, d));
+  EXPECT_FALSE(same_line_support_2d(a, b, gp_Pnt2d(0.0, 1.0), gp_Pnt2d(2.0, 1.0)));
+
+  const std::vector<gp_Pnt2d> cuts = collinear_overlap_cut_points_2d(a, b, c, d);
+  ASSERT_EQ(cuts.size(), 2u);
+  EXPECT_TRUE((cuts[0].Distance(c) <= Precision::Confusion() && cuts[1].Distance(b) <= Precision::Confusion()) ||
+              (cuts[0].Distance(b) <= Precision::Confusion() && cuts[1].Distance(c) <= Precision::Confusion()));
+
+  EXPECT_TRUE(collinear_overlap_cut_points_2d(a, b, a, b).empty());
+  EXPECT_TRUE(collinear_overlap_cut_points_2d(a, gp_Pnt2d(1.0, 0.0), gp_Pnt2d(2.0, 0.0), d).empty());
+}
+
+TEST_F(Sketch_test, Overlap_IdenticalLinearEdgeIsKeptOnce)
+{
+  gp_Pln default_plane(gp::Origin(), gp::DZ());
+  Sketch sketch("test_sketch", view(), default_plane);
+
+  Sketch_access::add_edge_(sketch, gp_Pnt2d(0.0, 0.0), gp_Pnt2d(10.0, 0.0));
+  Sketch_access::add_edge_(sketch, gp_Pnt2d(0.0, 0.0), gp_Pnt2d(10.0, 0.0));
+  Sketch_access::add_edge_(sketch, gp_Pnt2d(10.0, 0.0), gp_Pnt2d(0.0, 0.0));
+
+  EXPECT_EQ(Sketch_access::get_linear_edge_count(sketch), 1u);
+  EXPECT_TRUE(has_linear_seg_(sketch, gp_Pnt2d(0.0, 0.0), gp_Pnt2d(10.0, 0.0)));
+}
+
+TEST_F(Sketch_test, Overlap_PartialCollinearSplitsAndMerges)
+{
+  gp_Pln default_plane(gp::Origin(), gp::DZ());
+  Sketch sketch("test_sketch", view(), default_plane);
+
+  Sketch_access::add_edge_(sketch, gp_Pnt2d(0.0, 0.0), gp_Pnt2d(2.0, 0.0));
+  Sketch_access::add_edge_(sketch, gp_Pnt2d(1.0, 0.0), gp_Pnt2d(3.0, 0.0));
+
+  EXPECT_EQ(Sketch_access::get_linear_edge_count(sketch), 3u);
+  EXPECT_TRUE(has_linear_seg_(sketch, gp_Pnt2d(0.0, 0.0), gp_Pnt2d(1.0, 0.0)));
+  EXPECT_TRUE(has_linear_seg_(sketch, gp_Pnt2d(1.0, 0.0), gp_Pnt2d(2.0, 0.0)));
+  EXPECT_TRUE(has_linear_seg_(sketch, gp_Pnt2d(2.0, 0.0), gp_Pnt2d(3.0, 0.0)));
+}
+
+TEST_F(Sketch_test, Overlap_SubsetCollinearDoesNotDuplicate)
+{
+  gp_Pln default_plane(gp::Origin(), gp::DZ());
+  Sketch sketch("test_sketch", view(), default_plane);
+
+  Sketch_access::add_edge_(sketch, gp_Pnt2d(0.0, 0.0), gp_Pnt2d(3.0, 0.0));
+  Sketch_access::add_edge_(sketch, gp_Pnt2d(1.0, 0.0), gp_Pnt2d(2.0, 0.0));
+
+  EXPECT_EQ(Sketch_access::get_linear_edge_count(sketch), 3u);
+  EXPECT_TRUE(has_linear_seg_(sketch, gp_Pnt2d(0.0, 0.0), gp_Pnt2d(1.0, 0.0)));
+  EXPECT_TRUE(has_linear_seg_(sketch, gp_Pnt2d(1.0, 0.0), gp_Pnt2d(2.0, 0.0)));
+  EXPECT_TRUE(has_linear_seg_(sketch, gp_Pnt2d(2.0, 0.0), gp_Pnt2d(3.0, 0.0)));
+}
+
+TEST_F(Sketch_test, Overlap_CoveringSegmentUsesExistingPieces)
+{
+  gp_Pln default_plane(gp::Origin(), gp::DZ());
+  Sketch sketch("test_sketch", view(), default_plane);
+
+  Sketch_access::add_edge_(sketch, gp_Pnt2d(0.0, 0.0), gp_Pnt2d(1.0, 0.0));
+  Sketch_access::add_edge_(sketch, gp_Pnt2d(1.0, 0.0), gp_Pnt2d(2.0, 0.0));
+  Sketch_access::add_edge_(sketch, gp_Pnt2d(0.0, 0.0), gp_Pnt2d(2.0, 0.0));
+
+  EXPECT_EQ(Sketch_access::get_linear_edge_count(sketch), 2u);
+  EXPECT_TRUE(has_linear_seg_(sketch, gp_Pnt2d(0.0, 0.0), gp_Pnt2d(1.0, 0.0)));
+  EXPECT_TRUE(has_linear_seg_(sketch, gp_Pnt2d(1.0, 0.0), gp_Pnt2d(2.0, 0.0)));
+}
+
+TEST_F(Sketch_test, Overlap_CollinearDisjointStaysTwoEdges)
+{
+  gp_Pln default_plane(gp::Origin(), gp::DZ());
+  Sketch sketch("test_sketch", view(), default_plane);
+
+  Sketch_access::add_edge_(sketch, gp_Pnt2d(0.0, 0.0), gp_Pnt2d(1.0, 0.0));
+  Sketch_access::add_edge_(sketch, gp_Pnt2d(2.0, 0.0), gp_Pnt2d(3.0, 0.0));
+
+  EXPECT_EQ(Sketch_access::get_linear_edge_count(sketch), 2u);
+}
+
+TEST_F(Sketch_test, Overlap_PartialCollinearUndoRestoresFirstEdge)
+{
+  gp_Pln default_plane(gp::Origin(), gp::DZ());
+  Sketch sketch("test_sketch", view(), default_plane);
+
+  {
+    Sketch_op_recorder rec(view(), sketch);
+    Sketch_access::add_edge_(sketch, gp_Pnt2d(0.0, 0.0), gp_Pnt2d(2.0, 0.0), rec);
+    rec.commit();
+  }
+
+  {
+    Sketch_op_recorder rec(view(), sketch);
+    Sketch_access::add_edge_(sketch, gp_Pnt2d(1.0, 0.0), gp_Pnt2d(3.0, 0.0), rec);
+    rec.commit();
+  }
+
+  EXPECT_EQ(Sketch_access::get_linear_edge_count(sketch), 3u);
+  EXPECT_TRUE(view().undo());
+  EXPECT_EQ(Sketch_access::get_linear_edge_count(sketch), 1u);
+  EXPECT_TRUE(has_linear_seg_(sketch, gp_Pnt2d(0.0, 0.0), gp_Pnt2d(2.0, 0.0)));
+  EXPECT_TRUE(view().redo());
+  EXPECT_EQ(Sketch_access::get_linear_edge_count(sketch), 3u);
+}
+
+TEST_F(Sketch_test, Overlap_IdenticalCircleArcsAreKeptOnce)
+{
+  gp_Pln default_plane(gp::Origin(), gp::DZ());
+  Sketch sketch("test_sketch", view(), default_plane);
+
+  const std::array<gp_Pnt2d, 4> pts = xy_stencil_pnts(gp_Pnt2d(0.0, 0.0), gp_Pnt2d(0.5, 0.0));
+  Sketch_access::add_arc_circle_(sketch, pts[0], pts[2], pts[1]);
+  Sketch_access::add_arc_circle_(sketch, pts[0], pts[3], pts[1]);
+  EXPECT_EQ(Sketch_access::get_arc_internal_edge_count(sketch), 2u);
+
+  Sketch_access::add_arc_circle_(sketch, pts[0], pts[2], pts[1]);
+  Sketch_access::add_arc_circle_(sketch, pts[0], pts[3], pts[1]);
+  EXPECT_EQ(Sketch_access::get_arc_internal_edge_count(sketch), 2u);
+}
+
+TEST_F(Sketch_test, Overlap_SameCircleCapPlusFullCircleDoesNotDuplicateCap)
+{
+  gp_Pln default_plane(gp::Origin(), gp::DZ());
+  Sketch sketch("test_sketch", view(), default_plane);
+
+  // Semicircle on r=0.5, then the full circle of the same support (the reported crash case).
+  Sketch_access::add_arc_circle_(sketch, gp_Pnt2d(-0.5, 0.0), gp_Pnt2d(0.0, 0.5), gp_Pnt2d(0.5, 0.0));
+  EXPECT_EQ(Sketch_access::get_arc_internal_edge_count(sketch), 1u);
+
+  const std::array<gp_Pnt2d, 4> pts = xy_stencil_pnts(gp_Pnt2d(0.0, 0.0), gp_Pnt2d(0.5, 0.0));
+  Sketch_access::add_arc_circle_(sketch, pts[0], pts[2], pts[1]);
+  Sketch_access::add_arc_circle_(sketch, pts[0], pts[3], pts[1]);
+
+  EXPECT_EQ(Sketch_access::get_arc_internal_edge_count(sketch), 2u);
+}
+
+TEST_F(Sketch_test, Overlap_QuarterThenFullCircleKeepsThreeArcs)
+{
+  gp_Pln default_plane(gp::Origin(), gp::DZ());
+  Sketch sketch("test_sketch", view(), default_plane);
+
+  Sketch_access::add_arc_circle_(sketch, gp_Pnt2d(0.5, 0.0), gp_Pnt2d(0.5 / std::sqrt(2.0), 0.5 / std::sqrt(2.0)),
+                                 gp_Pnt2d(0.0, 0.5));
+  EXPECT_EQ(Sketch_access::get_arc_internal_edge_count(sketch), 1u);
+
+  const std::array<gp_Pnt2d, 4> pts = xy_stencil_pnts(gp_Pnt2d(0.0, 0.0), gp_Pnt2d(0.5, 0.0));
+  Sketch_access::add_arc_circle_(sketch, pts[0], pts[2], pts[1]);
+  Sketch_access::add_arc_circle_(sketch, pts[0], pts[3], pts[1]);
+
+  EXPECT_EQ(Sketch_access::get_arc_internal_edge_count(sketch), 3u);
 }

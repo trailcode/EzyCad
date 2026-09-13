@@ -223,7 +223,7 @@ A waist cutter is externally tangent to both end circles, so cutter center, cont
 | **Linear edge** | `Sketch_edge` in `Sketch_edges` | `node_idx_a`, `node_idx_b`; optional `node_idx_mid` when add-midpoint is on                   |
 | **Arc edge**    | same                            | Start, end, arc midpoint nodes; `node_idx_arc_pt` for curve snap                              |
 | **Face**        | Derived in `Sketch_topo`        | Rebuilt by `update_faces()` into `Sketch_face_shp`; drives extrude/revolve and face selection |
-| **Auto-split**  | `Sketch_topo` / edge add        | New edges crossing existing ones split at intersections (T-junctions, divided regions)        |
+| **Auto-split**  | `Sketch_topo` / edge add        | Crossings split at points; same-line / same-circle overlap is partitioned and kept once       |
 
 ### Face extraction (`Sketch_topo::update_faces`)
 
