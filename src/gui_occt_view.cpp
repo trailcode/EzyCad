@@ -2873,10 +2873,12 @@ void Occt_view::on_mouse_button(int theButton, int theAction, int theMods)
     // release cannot replace the restored multi-selection with the single shape under the cursor.
     if (theButton == GLFW_MOUSE_BUTTON_LEFT)
     {
-      const bool finalize_transform = (get_mode() == Mode::Move && shp_move().has_operation_shps()) ||
-                                      (get_mode() == Mode::Rotate && shp_rotate().has_operation_shps()) ||
-                                      (get_mode() == Mode::Scale && shp_scale().has_operation_shps()) ||
-                                      (get_mode() == Mode::Shape_shaft_align && shp_cyl_align().is_dragging());
+      // clang-format off
+      const bool finalize_transform = (get_mode() == Mode::Move               && shp_move().has_operation_shps())   ||
+                                      (get_mode() == Mode::Rotate             && shp_rotate().has_operation_shps()) ||
+                                      (get_mode() == Mode::Scale              && shp_scale().has_operation_shps())  ||
+                                      (get_mode() == Mode::Shape_shaft_align  && shp_cyl_align().is_dragging());
+      // clang-format on
       if (finalize_transform)
       {
         m_transform_finalize_lmb_skipped_view_controller = true;
