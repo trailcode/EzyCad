@@ -61,7 +61,7 @@ Snap distance, guide mode (*Traditional* / *Fullscreen* / *Both* / *None*), and 
 ```
 Sketch  (coordinator: skt.cpp, skt.h)
   |
-  +-- Sketch_nodes        vertices, snapping, outside-sketch snap points
+  +-- Sketch_nodes        vertices, snapping, outside-sketch and tool-session snap points
   +-- Sketch_node_marks   permanent "+" markers for user-placed nodes; origin uses cyan + with circle
   +-- Sketch_edges        persistent edge list; add, split, remove, pick
   +-- Sketch_topo         planar graph -> closed faces, edge splitting
@@ -201,12 +201,12 @@ Prefer these visitors in JSON/delta/topo code over iterating `std::list<Sketch_e
 | `skt_edge.h`         | `Sketch_edge` struct; `sketch_edge_is_linear` / `sketch_edge_is_arc`; `sketch_edge_outgoing_dir_2d` / `sketch_edge_incoming_dir_2d` |
 | `skt_edges.h`        | Persistent `std::list<Sketch_edge>`; add linear/arc edges; split at intersections; pick and selection                               |
 | `skt_topo.h`         | Planar face extraction from edge graph; automatic splitting at interior nodes and arc crossings                                     |
-| `skt_nodes.h`        | Node storage, snap, snap guides, outside-sketch snap points                                                                         |
+| `skt_nodes.h`        | Node storage, snap, snap guides, outside-sketch and tool-session snap points                                                        |
 | `skt_node_marks.h`   | AIS "+" markers for permanent nodes only                                                                                            |
 | `skt_dims.h`         | Length dimensions between node pairs; Tab/Shift+Tab input; dimension-tool pick state                                                |
 | `skt_tools.h`        | Mode-specific click/move/finalize/cancel; shared helpers in `skt_tools.inl`                                                         |
 | `skt_bone.h`         | Bone outline geom (`compute_bone_geom`, `make_bone_wire`); `DEV_MODE` construction overlay (`make_bone_debug_shape`)                |
-| `skt_tools_bone.cpp` | Add-bone tool (`Sketch_tools` members; Options: center nodes / holes; successful commit exits to `Sketch_inspection_mode`)          |
+| `skt_tools_bone.cpp` | Add-bone tool; tmp length segs for centers/radii/waist/holes; session snap on circle 2; commit axis-tangent nodes                   |
 | `skt_underlay.h`     | Calibrated raster underlay on the sketch plane                                                                                      |
 | `skt_ais.h`          | OCCT AIS wrappers tied back to owning `Sketch`                                                                                      |
 | `skt_display.cpp`    | Visibility, edge/face styling, `set_current`, list hover                                                                            |

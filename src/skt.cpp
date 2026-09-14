@@ -12,6 +12,7 @@
 #include <array>
 #include <functional>
 #include <iterator>
+#include <numbers>
 
 #include "utl_geom.h"
 #include "skt_bone.h"
@@ -181,13 +182,13 @@ void Sketch::add_bone(const gp_Pnt2d& c1, const gp_Pnt2d& c2, double r1, double 
 
   Sketch_op_recorder rec(m_view, *this);
   {
-    auto mark_center = [&](const gp_Pnt2d& c, const char* name)
+    auto mark_center = [&](const gp_Pnt2d& c, const char* name, bool split_edges = true)
     {
       const size_t        idx = m_nodes.get_node_exact(c, true);
       Sketch_nodes::Node& n   = m_nodes[idx];
       n.permanent             = true;
       n.name                  = name;
-      rec.note_curr_node(idx);
+      rec.note_curr_node(idx, split_edges);
     };
 
     auto add_hole_circle = [&](const gp_Pnt2d& center, double radius)
@@ -203,6 +204,17 @@ void Sketch::add_bone(const gp_Pnt2d& c1, const gp_Pnt2d& c2, double r1, double 
     {
       mark_center(g->c1, "Bone A");
       mark_center(g->c2, "Bone B");
+    }
+
+    gp_Vec2d     axis(g->c1, g->c2);
+    const double dist = axis.Magnitude();
+    if (dist > Precision::Confusion())
+    {
+      const gp_Vec2d n = gp_Vec2d(axis / dist).Rotated(std::numbers::pi / 2.0);
+      mark_center(gp_Pnt2d(g->c1).Translated(n * g->r1), "Bone A+", false);
+      mark_center(gp_Pnt2d(g->c1).Translated(-n * g->r1), "Bone A-", false);
+      mark_center(gp_Pnt2d(g->c2).Translated(n * g->r2), "Bone B+", false);
+      mark_center(gp_Pnt2d(g->c2).Translated(-n * g->r2), "Bone B-", false);
     }
     add_arc_circle_(p.c1_minus, p.c1_outer, p.c1_plus, rec);
     add_arc_circle_(p.c1_plus, p.waist_plus, p.c2_plus, rec);

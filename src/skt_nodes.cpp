@@ -73,6 +73,8 @@ public:
 
   void clear_outside_snap_pnts();
   void add_outside_snap_pnt(const gp_Pnt& pt3d);
+  void clear_session_snap_pnts();
+  void add_session_snap_pnt(const gp_Pnt2d& pt);
 
   void               set_origin_snap_enabled(bool enabled) { m_origin_snap_enabled = enabled; }
   [[nodiscard]] bool origin_snap_enabled() const { return m_origin_snap_enabled; }
@@ -81,6 +83,7 @@ private:
   Sketch_nodes*           m_owner;
   std::vector<Node>       m_nodes;
   std::set<gp_Pnt2d>      m_outside_snap_pts; // Projected snap points from other sketches.
+  std::set<gp_Pnt2d>      m_session_snap_pts; // Active-tool extras (e.g. bone radius).
   AIS_Shape_ptr           m_snap_anno_axis[2];
   AIS_Shape_ptr           m_snap_anno_axis_fs[2];
   std::optional<gp_Pnt2d> m_last_snap_pt; // Used for snap annotation
@@ -398,6 +401,9 @@ void Sketch_nodes::Impl::update_global_coaxial_annotations_(double snap_dist)
   for (const auto& p : m_outside_snap_pts)
     all_pts.push_back(p);
 
+  for (const auto& p : m_session_snap_pts)
+    all_pts.push_back(p);
+
   if (all_pts.empty())
     return;
 
@@ -516,6 +522,17 @@ std::optional<size_t> Sketch_nodes::Impl::try_get_node_idx_snap(
   m_owner->hide_snap_annos();
 
   gp_Pnt2d              pt_original = pt;
+  const double          session_hit = snap_dist * 0.25 * snap_dist;
+  for (const gp_Pnt2d& sp : m_session_snap_pts)
+  {
+    if (pt_original.SquareDistance(sp) <= session_hit)
+    {
+      pt = sp;
+      update_node_snap_anno_(pt, sqrt(snap_dist));
+      m_ctx.UpdateCurrentViewer();
+      return {};
+    }
+  }
   std::optional<size_t> snap_node_idx[2];
   for (int axis_idx = 0; axis_idx < 2; ++axis_idx)
   {
@@ -566,6 +583,9 @@ std::optional<size_t> Sketch_nodes::Impl::try_get_node_idx_snap(
     }
 
     for (const gp_Pnt2d& nd_pt : m_outside_snap_pts)
+      try_nd_pt(nd_pt);
+
+    for (const gp_Pnt2d& nd_pt : m_session_snap_pts)
       try_nd_pt(nd_pt);
 
     // If the "annotate all coaxial" option is on we keep the full list (dedup later if wanted).
@@ -622,6 +642,13 @@ std::optional<size_t> Sketch_nodes::Impl::try_get_node_idx_snap(
       }
 
       for (const auto& p : m_outside_snap_pts)
+      {
+        double axis_diff = std::fabs(guide_val - p.XY().Coord(axis_idx + 1));
+        if (axis_diff <= Precision::Confusion())
+          matches.push_back(p);
+      }
+
+      for (const auto& p : m_session_snap_pts)
       {
         double axis_diff = std::fabs(guide_val - p.XY().Coord(axis_idx + 1));
         if (axis_diff <= Precision::Confusion())
@@ -724,6 +751,10 @@ void Sketch_nodes::Impl::clear_outside_snap_pnts() { m_outside_snap_pts.clear();
 
 void Sketch_nodes::Impl::add_outside_snap_pnt(const gp_Pnt& pt3d) { m_outside_snap_pts.insert(to_2d(m_pln, pt3d)); }
 
+void Sketch_nodes::Impl::clear_session_snap_pnts() { m_session_snap_pts.clear(); }
+
+void Sketch_nodes::Impl::add_session_snap_pnt(const gp_Pnt2d& pt) { m_session_snap_pts.insert(pt); }
+
 Sketch_nodes::Sketch_nodes(Occt_view& view, const gp_Pln& pln)
     : m_impl(std::make_unique<Impl>(this, view, pln))
 {
@@ -816,6 +847,10 @@ void Sketch_nodes::restore_node_at(size_t idx, const gp_Pnt2d& pt, bool deleted,
 void Sketch_nodes::clear_outside_snap_pnts() { m_impl->clear_outside_snap_pnts(); }
 
 void Sketch_nodes::add_outside_snap_pnt(const gp_Pnt& pt3d) { m_impl->add_outside_snap_pnt(pt3d); }
+
+void Sketch_nodes::clear_session_snap_pnts() { m_impl->clear_session_snap_pnts(); }
+
+void Sketch_nodes::add_session_snap_pnt(const gp_Pnt2d& pt) { m_impl->add_session_snap_pnt(pt); }
 
 // === Snap settings =========================================================
 

@@ -819,6 +819,7 @@ bool Sketch_tools::clear_tmps()
   m_bone_waist.reset();
   m_bone_hole_r1.reset();
   m_bone_hole_r2.reset();
+  m_sketch.m_nodes.clear_session_snap_pnts();
   clear_all(m_tmp_node_idxs, m_tmp_shp, m_tmp_edges);
   m_sketch.m_dims.on_clear_tmps();
 

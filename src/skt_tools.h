@@ -82,8 +82,12 @@ private:
   void add_bone_pt_(const ScreenCoords& screen_coords);
   void move_bone_pt_(const ScreenCoords& screen_coords);
   void finalize_bone_();
-  void bone_begin_next_edge_from_(const gp_Pnt2d& origin);
   void bone_on_centers_ready_(const gp_Pnt2d& c1, const gp_Pnt2d& c2);
+  void bone_refresh_radius_session_snap_();
+  void bone_ensure_measure_from_(const gp_Pnt2d& origin);
+  void bone_show_len_seg_(const gp_Pnt2d& a, const gp_Pnt2d& b);
+  [[nodiscard]] gp_Pnt2d bone_perp_rim_(const gp_Pnt2d& center, double radius, const gp_Pnt2d& hint) const;
+  [[nodiscard]] std::optional<gp_Pnt2d> bone_pick_snapped_(const ScreenCoords& screen_coords);
   [[nodiscard]] bool bone_after_waist_(double waist);
   [[nodiscard]] bool bone_after_hole_a_(double hole_r);
   [[nodiscard]] bool bone_after_hole_b_(double hole_r);
@@ -95,6 +99,8 @@ private:
 #endif
   [[nodiscard]] std::optional<gp_Vec2d> bone_axis_perp_() const;
   [[nodiscard]] std::optional<double>   bone_waist_from_pt_(const gp_Pnt2d& pt) const;
+  /// Radius at the first center: session snap on circle 2 means match r2.
+  [[nodiscard]] std::optional<double>   bone_r1_from_pick_(const gp_Pnt2d& pt) const;
 
   void add_operation_axis_pt_(const ScreenCoords& screen_coords);
   void finalize_operation_axis_(Sketch_op_recorder& rec);

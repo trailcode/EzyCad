@@ -25,7 +25,9 @@ public:
   void note_curr_linear_edge(const gp_Pnt2d& pt_a, const gp_Pnt2d& pt_b);
   void note_prev_arc_edge(const gp_Pnt2d& pt_a, const gp_Pnt2d& pt_b, const gp_Pnt2d& pt_c);
   void note_curr_arc_edge(const gp_Pnt2d& pt_a, const gp_Pnt2d& pt_b, const gp_Pnt2d& pt_c);
-  void note_curr_node(size_t node_idx);
+  /// When \\a split_edges is false, redo restores the node without splitting edges at it
+  /// (snap-only markers that happen to lie on existing arcs).
+  void note_curr_node(size_t node_idx, bool split_edges = true);
   void note_prev_length_dim(size_t lo, size_t hi, bool visible, std::optional<double> flyout, const std::string& name);
   void note_curr_length_dim(size_t lo, size_t hi, bool visible, std::optional<double> flyout, const std::string& name);
   void note_prev_operation_axis(size_t node_idx_a, size_t node_idx_b);
