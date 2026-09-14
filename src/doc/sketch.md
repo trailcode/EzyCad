@@ -206,7 +206,7 @@ Prefer these visitors in JSON/delta/topo code over iterating `std::list<Sketch_e
 | `skt_dims.h`         | Length dimensions between node pairs; Tab/Shift+Tab input; dimension-tool pick state                                                |
 | `skt_tools.h`        | Mode-specific click/move/finalize/cancel; shared helpers in `skt_tools.inl`                                                         |
 | `skt_bone.h`         | Bone outline geom (`compute_bone_geom`, `make_bone_wire`); `DEV_MODE` construction overlay (`make_bone_debug_shape`)                |
-| `skt_tools_bone.cpp` | Add-bone tool; tmp length segs for centers/radii/waist/holes; session snap on circle 2; commit axis-tangent nodes                   |
+| `skt_tools_bone.cpp` | Add-bone tool; tmp length segs; session snap; commit nodes; colored step / reject / success toasts                                  |
 | `skt_underlay.h`     | Calibrated raster underlay on the sketch plane                                                                                      |
 | `skt_ais.h`          | OCCT AIS wrappers tied back to owning `Sketch`                                                                                      |
 | `skt_display.cpp`    | Visibility, edge/face styling, `set_current`, list hover                                                                            |

@@ -31,6 +31,7 @@
 #include "gui_hotkeys.h"
 #include "gui_occt_view.h"
 #include "shp_info.h"
+#include "utl.h"
 #include "utl_cad_file_info.h"
 #include "utl_types.h"
 
@@ -48,6 +49,22 @@ enum class Command
   Shape_common,
   _count
 };
+
+/// Kind for the transient status toast (`GUI::show_message` / `ezy.msg`).
+enum class Status_msg : std::uint8_t
+{
+  Success,
+  Info,
+  Constraint,
+  Warning,
+  Error
+};
+
+/// Parse a script/API name (`"success"`, `"info"`, `"constraint"`, `"warning"`, `"error"`).
+/// Unknown names become `Info`.
+Status_msg parse_status_msg(std::string_view name);
+/// Stable lowercase name for \\a kind (`"info"`, `"error"`, ...).
+const char* status_msg_name(Status_msg kind);
 
 /// Two-segment picks for underlay X/Y calibration (Sketch properties pane).
 enum class Underlay_calib_phase : std::uint8_t
@@ -349,9 +366,11 @@ public:
   /// True when dist or angle edit is visible; Tab should be routed to on_key() instead of ImGui.
   bool is_dist_or_angle_edit_active() const;
   bool is_sketch_origin_set_edit_active() const;
-  /// Transient bottom-right status toast; also appends to the Log window.
-  void show_message(const std::string& message);
-  /// Queue an ImGui error modal (logs title: message once; short title toast). Native and wasm.
+  /// Transient bottom-right status toast (colored by \\a kind); also appends to the Log window.
+  void show_message(const std::string& message, Status_msg kind = Status_msg::Info);
+  /// Toast `status.message()` using `Result_status` (ok -> Info, User_error -> Constraint, else Error).
+  void show_status(const Status& status);
+  /// Queue an ImGui error modal (logs title: message once; short title toast as Error). Native and wasm.
   void show_error_dialog(const std::string& title, const std::string& message);
   void log_message(const std::string& message);
   void set_show_options(bool v) { m_show_options = v; }
@@ -693,6 +712,7 @@ private:
 
   // Message status window
   std::string                           m_message;
+  Status_msg                            m_message_kind    = Status_msg::Info;
   bool                                  m_message_visible = false;
   std::chrono::steady_clock::time_point m_message_start_time;
 

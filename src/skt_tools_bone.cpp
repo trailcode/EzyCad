@@ -36,7 +36,56 @@ bool bone_hole_radius_too_large_(double outer_r, double hole_r)
 {
   return hole_r + Precision::Confusion() >= outer_r;
 }
+
+void bone_toast_(GUI& gui, const char* text, Status_msg kind)
+{
+  gui.show_message(text, kind);
+}
+
+void bone_toast_hole_reject_(GUI& gui, double outer_r, double hole_r)
+{
+  if (bone_hole_radius_too_large_(outer_r, hole_r))
+    bone_toast_(gui, "Hole radius must be smaller than the end circle.", Status_msg::Constraint);
+  else
+    bone_toast_(gui, "Hole radius must be positive.", Status_msg::Constraint);
+}
 } // namespace
+
+void Sketch_tools::bone_prompt_next_()
+{
+  GUI& gui = m_sketch.m_view.gui();
+  if (!m_bone_centers)
+  {
+    bone_toast_(m_sketch.m_view.gui(), "Add bone: click the two circle centers.", Status_msg::Info);
+    return;
+  }
+
+  if (!m_bone_r2)
+  {
+    bone_toast_(m_sketch.m_view.gui(), "Click to set radius 2 (at the second center).", Status_msg::Info);
+    return;
+  }
+
+  if (!m_bone_r1)
+  {
+    bone_toast_(m_sketch.m_view.gui(), "Click to set radius 1 (snap on circle 2 to match).", Status_msg::Info);
+    return;
+  }
+
+  if (!m_bone_waist)
+  {
+    bone_toast_(m_sketch.m_view.gui(), "Click to set waist width.", Status_msg::Info);
+    return;
+  }
+
+  const Bone_holes holes = gui.get_bone_holes();
+  if (holes == Bone_holes::One_radius && !m_bone_hole_r1)
+    bone_toast_(m_sketch.m_view.gui(), "Click to set the hole radius (both ends).", Status_msg::Info);
+  else if (holes == Bone_holes::Two_radii && !m_bone_hole_r1)
+    bone_toast_(m_sketch.m_view.gui(), "Click to set hole radius at end A.", Status_msg::Info);
+  else if (holes == Bone_holes::Two_radii && !m_bone_hole_r2)
+    bone_toast_(m_sketch.m_view.gui(), "Click to set hole radius at end B.", Status_msg::Info);
+}
 
 void Sketch_tools::bone_on_enter_()
 {
@@ -48,6 +97,8 @@ void Sketch_tools::bone_on_enter_()
                                          m_sketch.m_dims.entered_edge_len()->len);
     if (unique(pt_a, *m_last_pt))
       m_sketch.update_edge_end_pt_(edge, m_sketch.m_nodes.get_node_exact(*m_last_pt));
+    else
+      bone_toast_(m_sketch.m_view.gui(), "Circle centers must be different.", Status_msg::Constraint);
 
     m_sketch.m_dims.clear_typed_constraints();
   }
@@ -64,7 +115,10 @@ void Sketch_tools::bone_on_enter_()
 
   const double len = m_sketch.m_dims.entered_edge_len()->len;
   if (len <= Precision::Confusion())
+  {
+    bone_toast_(m_sketch.m_view.gui(), "Distance must be positive.", Status_msg::Constraint);
     return;
+  }
 
   m_sketch.m_dims.clear_typed_constraints();
 
@@ -75,6 +129,7 @@ void Sketch_tools::bone_on_enter_()
     bone_ensure_measure_from_(m_bone_centers->first);
     bone_refresh_radius_session_snap_();
     bone_update_preview_();
+    bone_prompt_next_();
     return;
   }
 
@@ -84,6 +139,7 @@ void Sketch_tools::bone_on_enter_()
     m_last_pt.reset();
     bone_refresh_radius_session_snap_();
     bone_update_preview_();
+    bone_prompt_next_();
     return;
   }
 
@@ -111,7 +167,10 @@ void Sketch_tools::add_bone_pt_(const ScreenCoords& screen_coords)
     {
       Sketch_edge& last = m_tmp_edges.back();
       if (node_idx == last.node_idx_a)
+      {
+        bone_toast_(m_sketch.m_view.gui(), "Circle centers must be different.", Status_msg::Constraint);
         return;
+      }
 
       m_sketch.update_edge_end_pt_(last, node_idx);
       bone_on_centers_ready_(m_sketch.m_nodes[last.node_idx_a], m_sketch.m_nodes[node_idx]);
@@ -130,7 +189,10 @@ void Sketch_tools::add_bone_pt_(const ScreenCoords& screen_coords)
       const double    dist_along = to_click.Dot(gp_Vec2d(constrained_dir));
       gp_Pnt2d        final_pt   = gp_Pnt2d(pt_a).Translated(gp_Vec2d(constrained_dir) * dist_along);
       if (!unique(pt_a, final_pt))
+      {
+        bone_toast_(m_sketch.m_view.gui(), "Circle centers must be different.", Status_msg::Constraint);
         return;
+      }
 
       const size_t node_idx = m_sketch.m_nodes.get_node_exact(final_pt);
       m_tmp_node_idxs.push_back(node_idx);
@@ -154,13 +216,17 @@ void Sketch_tools::add_bone_pt_(const ScreenCoords& screen_coords)
   {
     const double r = c2.Distance(*pt);
     if (r <= Precision::Confusion())
+    {
+      bone_toast_(m_sketch.m_view.gui(), "Radius must be positive.", Status_msg::Constraint);
       return;
+    }
 
     m_bone_r2 = r;
     m_last_pt.reset();
     bone_ensure_measure_from_(c1);
     bone_refresh_radius_session_snap_();
     bone_update_preview_();
+    bone_prompt_next_();
     return;
   }
 
@@ -168,12 +234,16 @@ void Sketch_tools::add_bone_pt_(const ScreenCoords& screen_coords)
   {
     const std::optional<double> r = bone_r1_from_pick_(*pt);
     if (!r)
+    {
+      bone_toast_(m_sketch.m_view.gui(), "Radius must be positive.", Status_msg::Constraint);
       return;
+    }
 
     m_bone_r1 = r;
     m_last_pt.reset();
     bone_refresh_radius_session_snap_();
     bone_update_preview_();
+    bone_prompt_next_();
     return;
   }
 
@@ -181,6 +251,8 @@ void Sketch_tools::add_bone_pt_(const ScreenCoords& screen_coords)
   {
     if (const std::optional<double> waist = bone_waist_from_pt_(*pt))
       (void)bone_after_waist_(*waist);
+    else
+      bone_toast_(m_sketch.m_view.gui(), "Waist must be greater than zero.", Status_msg::Constraint);
 
     return;
   }
@@ -253,7 +325,10 @@ void Sketch_tools::move_bone_pt_(const ScreenCoords& screen_coords)
 void Sketch_tools::bone_on_centers_ready_(const gp_Pnt2d& c1, const gp_Pnt2d& c2)
 {
   if (!unique(c1, c2))
+  {
+    bone_toast_(m_sketch.m_view.gui(), "Circle centers must be different.", Status_msg::Constraint);
     return;
+  }
 
   m_bone_centers = std::make_pair(c1, c2);
   m_sketch.m_dims.clear_typed_constraints();
@@ -262,6 +337,7 @@ void Sketch_tools::bone_on_centers_ready_(const gp_Pnt2d& c1, const gp_Pnt2d& c2
   m_sketch.m_view.gui().hide_dist_edit(false);
   m_sketch.m_dims.show_tmp_dim_preview(c1, c2);
   bone_ensure_measure_from_(c2);
+  bone_prompt_next_();
 }
 
 void Sketch_tools::bone_refresh_radius_session_snap_()
@@ -343,13 +419,18 @@ bool Sketch_tools::bone_after_waist_(double waist)
   params.waist = waist;
   params.drive = Bone_drive::Waist;
   if (!compute_bone_geom(params))
+  {
+    bone_toast_(m_sketch.m_view.gui(), "Cannot form a bone with that waist (too wide, or one circle inside the other).",
+                Status_msg::Constraint);
     return false;
+  }
 
   m_bone_waist = waist;
   const Bone_holes holes = m_sketch.m_view.gui().get_bone_holes();
   if (holes == Bone_holes::None)
     return bone_try_commit_();
 
+  bone_prompt_next_();
   return true;
 }
 
@@ -363,8 +444,8 @@ bool Sketch_tools::bone_after_hole_a_(double hole_r)
   {
     if (!bone_hole_radius_ok_(*m_bone_r1, hole_r) || !bone_hole_radius_ok_(*m_bone_r2, hole_r))
     {
-      if (bone_hole_radius_too_large_(*m_bone_r1, hole_r) || bone_hole_radius_too_large_(*m_bone_r2, hole_r))
-        m_sketch.m_view.gui().show_message("Hole radius must be smaller than the end circle.");
+      const double outer = bone_hole_radius_too_large_(*m_bone_r1, hole_r) ? *m_bone_r1 : *m_bone_r2;
+      bone_toast_hole_reject_(m_sketch.m_view.gui(), outer, hole_r);
       return false;
     }
 
@@ -378,12 +459,12 @@ bool Sketch_tools::bone_after_hole_a_(double hole_r)
 
   if (!bone_hole_radius_ok_(*m_bone_r1, hole_r))
   {
-    if (bone_hole_radius_too_large_(*m_bone_r1, hole_r))
-      m_sketch.m_view.gui().show_message("Hole radius must be smaller than the end circle.");
+    bone_toast_hole_reject_(m_sketch.m_view.gui(), *m_bone_r1, hole_r);
     return false;
   }
 
   m_bone_hole_r1 = hole_r;
+  bone_prompt_next_();
   return true;
 }
 
@@ -394,8 +475,7 @@ bool Sketch_tools::bone_after_hole_b_(double hole_r)
 
   if (!bone_hole_radius_ok_(*m_bone_r2, hole_r))
   {
-    if (bone_hole_radius_too_large_(*m_bone_r2, hole_r))
-      m_sketch.m_view.gui().show_message("Hole radius must be smaller than the end circle.");
+    bone_toast_hole_reject_(m_sketch.m_view.gui(), *m_bone_r2, hole_r);
     return false;
   }
 
@@ -416,13 +496,17 @@ bool Sketch_tools::bone_try_commit_()
   params.waist = *m_bone_waist;
   params.drive = Bone_drive::Waist;
   if (!compute_bone_geom(params))
+  {
+    bone_toast_(m_sketch.m_view.gui(), "Could not create bone.", Status_msg::Error);
     return false;
+  }
 
   const GUI& gui = m_sketch.m_view.gui();
   m_sketch.add_bone(params.c1, params.c2, params.r1, params.r2, *m_bone_waist, gui.get_bone_add_center_nodes(),
                     m_bone_hole_r1, m_bone_hole_r2, gui.get_bone_add_radius_nodes(),
                     gui.get_bone_add_total_length_nodes());
   clear_tmps();
+  bone_toast_(m_sketch.m_view.gui(), "Bone added.", Status_msg::Success);
   m_sketch.m_view.gui().set_parent_mode();
   return true;
 }

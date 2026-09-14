@@ -156,6 +156,8 @@ void Sketch::rebuild_faces() { update_faces_(); }
 
 void Sketch::refresh_bone_preview() { m_tools.refresh_bone_preview(); }
 
+void Sketch::prompt_add_bone() { m_tools.bone_prompt_next_(); }
+
 void Sketch::add_bone(const gp_Pnt2d& c1, const gp_Pnt2d& c2, double r1, double r2, double waist,
                       bool add_center_nodes, std::optional<double> hole_r1, std::optional<double> hole_r2,
                       bool add_radius_nodes, bool add_total_length_nodes)
@@ -416,6 +418,8 @@ void Sketch::on_mode()
   cancel_elm();
   sync_operation_axis_display_();
   m_node_marks.sync();
+  if (get_mode() == Mode::Sketch_add_bone && m_view.curr_sketch_shared().get() == this)
+    m_tools.bone_prompt_next_();
 }
 
 Mode Sketch::get_mode() const { return m_view.get_mode(); }

@@ -166,7 +166,15 @@ void Sketch_tools::finalize()
   }
 }
 
-bool Sketch_tools::cancel() { return clear_tmps(); }
+bool Sketch_tools::cancel()
+{
+  const bool bone     = m_sketch.get_mode() == Mode::Sketch_add_bone;
+  const bool canceled = clear_tmps();
+  if (bone && canceled)
+    m_sketch.m_view.gui().show_message("Add bone canceled.", Status_msg::Info);
+
+  return canceled;
+}
 
 bool Sketch_tools::edge_from_center_active() const
 {

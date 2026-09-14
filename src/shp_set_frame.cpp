@@ -111,7 +111,7 @@ Status Shp_set_frame::pick(const ScreenCoords& screen_coords)
   gui().set_mode(Mode::Normal);
   view().set_shape_frame(target, *frame);
   target->set_show_frame_axes(true);
-  gui().show_message("Local frame updated.");
+  gui().show_message("Local frame updated.", Status_msg::Success);
   return Status::ok();
 }
 

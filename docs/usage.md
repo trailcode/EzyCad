@@ -73,7 +73,7 @@ EzyCad (Easy CAD) is an open-source CAD application for hobbyist machinists to d
 6. **Log Window**
    - View operation history
    - Check for errors and warnings
-   - Monitor system status (including status toast messages)
+   - Monitor system status (including status toast messages: green success, light info, amber constraint, yellow warning, red error)
 
 ### Help menu
 

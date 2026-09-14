@@ -180,6 +180,8 @@ public:
 
   /// Rebuild Add-bone AIS preview (outline + DEV_MODE construction overlays).
   void refresh_bone_preview();
+  /// Info toast for the next Add-bone click.
+  void prompt_add_bone();
 
 private:
   friend class Sketch_json;

@@ -49,7 +49,7 @@ void Sketch::mirror_selected_edges()
   if (mirror_edges.empty())
   {
     rec.cancel();
-    m_view.gui().show_message(ERROR_NO_EDGES_SELECTED);
+    m_view.gui().show_message(ERROR_NO_EDGES_SELECTED, Status_msg::Constraint);
     return;
   }
 

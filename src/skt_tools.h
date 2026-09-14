@@ -44,6 +44,8 @@ public:
 
   /// Rebuild Add-bone preview from current tmp state (Options debug checkboxes).
   void refresh_bone_preview();
+  /// Info toast for the next Add-bone click (centers, radii, waist, or holes).
+  void bone_prompt_next_();
 
   void clear_tmp_node_idxs() { m_tmp_node_idxs.clear(); }
 

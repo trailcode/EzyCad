@@ -636,7 +636,7 @@ void Occt_view::revolve_selected(const double angle)
   }
   else
   {
-    gui().show_message("Revolve failed, ensure edges or faces on one side of operation axis.");
+    gui().show_message("Revolve failed, ensure edges or faces on one side of operation axis.", Status_msg::Error);
     DBG_MSG(revolved.message());
   }
 }
@@ -660,7 +660,7 @@ void Occt_view::create_sketch_from_planar_face_(const ScreenCoords& screen_coord
       m_gui.set_mode(Mode::Sketch_inspection_mode);
     }
     else
-      gui().show_message("Error: Selected face is not planar. Please select a planar face.");
+      gui().show_message("Error: Selected face is not planar. Please select a planar face.", Status_msg::Constraint);
 }
 
 void Occt_view::create_default_sketch_()
@@ -3620,7 +3620,7 @@ void Occt_view::on_mode()
   if (mode == Mode::Shape_cross_section && !enter_selection.empty())
   {
     const Status status = shp_cross_section().preview(enter_selection);
-    gui().show_message(status.message());
+    gui().show_status(status);
   }
 }
 

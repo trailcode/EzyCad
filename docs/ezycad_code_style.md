@@ -118,7 +118,7 @@ if (!content.empty())
   // apply / succeed
 }
 else
-  show_message("Failed...");
+  show_message("Failed...", Status_msg::Error);
 ```
 
 rather than leading with the failure `if` and putting the main work in `else`, unless an early-return failure keeps the success path flatter.

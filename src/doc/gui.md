@@ -254,7 +254,7 @@ Shared sketch controls (snap, faint shapes) live in `options_sketch_shared_contr
 | 8     | `add_*_dialog_`                                               | Primitive / sketch creation popups    |
 | 9     | `log_window_`, consoles, `settings_`, `dbg_`                  | Log, Lua/Python, Settings             |
 
-`GUI::show_message` drives the transient status toast (`message_status_window_`) and also appends via `log_message`. `show_error_dialog` logs `title: message` once and toasts the title only.
+`GUI::show_message` drives the transient status toast (`message_status_window_`) and also appends via `log_message`. The toast color comes from `Status_msg` (`Success`, `Info`, `Constraint`, `Warning`, `Error`; default `Info`). `show_status` maps `Result_status` (`User_error` -> Constraint, `Error` / `Topo_error` -> Error, ok -> Info). `show_error_dialog` logs `title: message` once and toasts the title as Error.
 
 Sketch List expand **Faces**: each face row supports **`E`** and right-click **Extrude** via `GUI::sketch_list_extrude_face_` (`set_mode(Sketch_face_extrude)` + `Occt_view::begin_sketch_face_extrude` / `Shp_extrude::begin_face_extrude`). Hovering a **Faces**, **Edges**, or **Nodes** row calls `Occt_view::set_sketch_list_hover_{face,edge,node}` (temporarily displays the AIS when hidden outside sketch modes; uses `Graphic3d_ZLayerId_Topmost` so solids do not occlude the highlight).
 

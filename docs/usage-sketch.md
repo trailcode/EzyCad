@@ -750,7 +750,7 @@ The sketch keeps only that trimmed outline (four arcs). Extrude it with the norm
 - To match both end radii, snap radius 1 to the axis-tangent mark on the second circle.
 - After Add with no holes, use **Add circle** snapped to **Bone A** / **Bone B** if you want holes later.
 - For waist, click on either side of the bone axis; the distance from the axis to that point is half the waist.
-- If a hole radius is greater than or equal to that end's outer radius, a toast explains the hole must be smaller; the click is ignored.
+- Status toasts follow the click sequence (info for the next pick), turn amber when a click is rejected (hole too large, waist that cannot be formed, zero radius), green when the bone is added, and red only if commit fails.
 - Preferences **Add center nodes**, **Add radius nodes**, **Add total length nodes**, and **Holes** are saved as `gui.bone_add_center_nodes`, `gui.bone_add_radius_nodes`, `gui.bone_add_total_length_nodes`, and `gui.bone_holes`.
 
 ## Operation Axis Tool

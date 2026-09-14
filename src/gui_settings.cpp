@@ -2006,7 +2006,7 @@ void GUI::settings_()
           {
             m_hotkey_capture_error =
                 "Conflict: " + Gui_hotkeys::format_chord(Gui_hotkeys::default_chord(action)) + " is already assigned.";
-            show_message(m_hotkey_capture_error);
+            show_message(m_hotkey_capture_error, Status_msg::Constraint);
           }
           else
           {
@@ -2095,7 +2095,7 @@ void GUI::settings_()
           }
         }
 
-        show_message("Default settings applied.");
+        show_message("Default settings applied.", Status_msg::Success);
         if (m_view)
         {
           m_view->refresh_sketch_annotations(
@@ -2107,11 +2107,11 @@ void GUI::settings_()
       }
       catch (...)
       {
-        show_message("Failed to apply default settings.");
+        show_message("Failed to apply default settings.", Status_msg::Error);
       }
     }
     else
-      show_message("Failed to load default settings.");
+      show_message("Failed to load default settings.", Status_msg::Error);
   }
 
   ImGui::End();
