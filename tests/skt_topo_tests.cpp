@@ -1541,3 +1541,33 @@ TEST_F(Sketch_test, Overlap_QuarterThenFullCircleKeepsThreeArcs)
 
   EXPECT_EQ(Sketch_access::get_arc_internal_edge_count(sketch), 3u);
 }
+
+TEST_F(Sketch_test, Overlap_SameCircleCapPlusFullCircleUndoRemovesLeftovers)
+{
+  gp_Pln default_plane(gp::Origin(), gp::DZ());
+  Sketch sketch("test_sketch", view(), default_plane);
+
+  {
+    Sketch_op_recorder rec(view(), sketch);
+    Sketch_access::add_arc_circle_(sketch, gp_Pnt2d(0.5, 0.0), gp_Pnt2d(0.5 / std::sqrt(2.0), 0.5 / std::sqrt(2.0)),
+                                   gp_Pnt2d(0.0, 0.5), rec);
+    rec.commit();
+  }
+  EXPECT_EQ(Sketch_access::get_arc_internal_edge_count(sketch), 1u);
+
+  {
+    Sketch_op_recorder            rec(view(), sketch);
+    const std::array<gp_Pnt2d, 4> pts = xy_stencil_pnts(gp_Pnt2d(0.0, 0.0), gp_Pnt2d(0.5, 0.0));
+    Sketch_access::add_arc_circle_(sketch, pts[0], pts[2], pts[1], rec);
+    Sketch_access::add_arc_circle_(sketch, pts[0], pts[3], pts[1], rec);
+    rec.commit();
+  }
+  EXPECT_EQ(Sketch_access::get_arc_internal_edge_count(sketch), 3u);
+
+  EXPECT_TRUE(view().undo());
+  EXPECT_EQ(Sketch_access::get_arc_internal_edge_count(sketch), 1u)
+      << "Undo must remove leftover same-circle pieces, not look up the original circle triple";
+
+  EXPECT_TRUE(view().redo());
+  EXPECT_EQ(Sketch_access::get_arc_internal_edge_count(sketch), 3u);
+}

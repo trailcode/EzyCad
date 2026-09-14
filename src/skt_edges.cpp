@@ -331,13 +331,25 @@ bool Sketch_edges::add_arc_circle_edges(const std::vector<size_t>& node_idxs, Sk
       unique_cuts.push_back(u);
   }
 
+  auto add_stored_arc_ = [&](size_t idx_a, size_t idx_b, size_t bulge_idx)
+  {
+    add_arc_raw_(idx_a, idx_b, bulge_idx);
+    if (rec)
+    {
+      rec->note_curr_arc_edge(m_sketch.m_nodes[idx_a], m_sketch.m_nodes[bulge_idx], m_sketch.m_nodes[idx_b]);
+      rec->note_curr_node(idx_a);
+      rec->note_curr_node(bulge_idx);
+      rec->note_curr_node(idx_b);
+    }
+  };
+
   bool added_any = false;
   if (unique_cuts.size() == 2)
   {
     const gp_Pnt2d bulge = m_sketch.m_nodes[node_idxs[2]];
     if (!has_equivalent_arc_(pt_start, pt_end, bulge))
     {
-      add_arc_raw_(node_idxs[0], node_idxs[1], node_idxs[2]);
+      add_stored_arc_(node_idxs[0], node_idxs[1], node_idxs[2]);
       added_any = true;
     }
   }
@@ -354,8 +366,8 @@ bool Sketch_edges::add_arc_circle_edges(const std::vector<size_t>& node_idxs, Sk
       if (has_equivalent_arc_(p0, p1, bulge))
         continue;
 
-      add_arc_raw_(m_sketch.m_nodes.get_node_exact(p0), m_sketch.m_nodes.get_node_exact(p1),
-                   m_sketch.m_nodes.get_node_exact(bulge));
+      add_stored_arc_(m_sketch.m_nodes.get_node_exact(p0), m_sketch.m_nodes.get_node_exact(p1),
+                      m_sketch.m_nodes.get_node_exact(bulge));
       added_any = true;
     }
   }

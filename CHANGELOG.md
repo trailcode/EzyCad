@@ -14,7 +14,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
-- **Sketch overlapping edges**: Drawing the same line or circle twice, or adding a collinear / same-circle overlap, no longer stacks a second copy. The sketch splits at overlap ends and keeps each atomic piece once. Undo records only the new atomic pieces, so extending a line past an existing collinear edge no longer deletes the original on undo. Fixes an access violation in `TKGeomBase` when a new circle coincided with an existing arc (for example a bone end-cap).
+- **Sketch overlapping edges**: Drawing the same line or circle twice, or adding a collinear / same-circle overlap, no longer stacks a second copy. The sketch splits at overlap ends and keeps each atomic piece once. Undo records only the new atomic pieces (for arcs, each leftover start/bulge/end, not the input triple), so extending a line past an existing collinear edge no longer deletes the original on undo, and a circle over an existing same-circle cap reverses fully. Fixes an access violation in `TKGeomBase` when a new circle coincided with an existing arc (for example a bone end-cap).
 - **Wasm configure/link**: Detect Emscripten via `EMSCRIPTEN` / `CMAKE_SYSTEM_NAME` (modern emsdk reports Clang). Link the FreeType package from the OCCT wasm install so `wasm-ld` finds `libfreetype.a` instead of bare `-lfreetype`.
 
 ### Added

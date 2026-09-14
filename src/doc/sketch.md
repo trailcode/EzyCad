@@ -227,6 +227,8 @@ A waist cutter is externally tangent to both end circles, so cutter center, cont
 
 Undo `curr` for a new linear edge is the input span (redo re-runs merge). Pieces already on that span that were not split are also stored in `prev`, so undo does not drop an original that only overlapped.
 
+Undo `curr` for a new arc is each **stored** start/bulge/end piece, not the input triple. Same-circle overlap skips the existing span; leftover parametric pieces have different endpoints, so recording the input triple would miss them on undo (for example a full circle over a bone end-cap).
+
 ### Face extraction (`Sketch_topo::update_faces`)
 
 Faces are the bounded regions of the planar graph formed by the edges. The extractor:

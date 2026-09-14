@@ -398,7 +398,7 @@ void Sketch::add_arc_circle_(const gp_Pnt2d& pt_a, const gp_Pnt2d& pt_b, const g
 
   if (m_edges.add_arc_circle_edges({node_idx_a, node_idx_c, node_idx_b}, &rec))
   {
-    rec.note_curr_arc_edge(pt_a, pt_b, pt_c);
+    // Stored pieces are noted in add_arc_circle_edges (leftovers, not the input triple).
     rec.note_curr_node(node_idx_a);
     rec.note_curr_node(node_idx_c);
     rec.note_curr_node(node_idx_b);
