@@ -180,6 +180,8 @@ public:
 
   /// Rebuild Add-bone AIS preview (outline + DEV_MODE construction overlays).
   void refresh_bone_preview();
+  /// Apply Options Holes (commit outline when waist is set and Holes is None).
+  void apply_bone_holes_option();
   /// Info toast for the next Add-bone click.
   void prompt_add_bone();
 

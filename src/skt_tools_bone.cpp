@@ -145,10 +145,10 @@ void Sketch_tools::bone_on_enter_()
 
   if (!m_bone_waist)
     (void)bone_after_waist_(len);
-
+  else if (m_sketch.m_view.gui().get_bone_holes() == Bone_holes::None)
+    (void)bone_try_commit_();
   else if (!m_bone_hole_r1)
     (void)bone_after_hole_a_(len);
-
   else if (!m_bone_hole_r2)
     (void)bone_after_hole_b_(len);
 }
@@ -254,6 +254,12 @@ void Sketch_tools::add_bone_pt_(const ScreenCoords& screen_coords)
     else
       bone_toast_(m_sketch.m_view.gui(), "Waist must be greater than zero.", Status_msg::Constraint);
 
+    return;
+  }
+
+  if (m_sketch.m_view.gui().get_bone_holes() == Bone_holes::None)
+  {
+    (void)bone_try_commit_();
     return;
   }
 
@@ -502,6 +508,12 @@ bool Sketch_tools::bone_try_commit_()
   }
 
   const GUI& gui = m_sketch.m_view.gui();
+  if (gui.get_bone_holes() == Bone_holes::None)
+  {
+    m_bone_hole_r1.reset();
+    m_bone_hole_r2.reset();
+  }
+
   m_sketch.add_bone(params.c1, params.c2, params.r1, params.r2, *m_bone_waist, gui.get_bone_add_center_nodes(),
                     m_bone_hole_r1, m_bone_hole_r2, gui.get_bone_add_radius_nodes(),
                     gui.get_bone_add_total_length_nodes());
@@ -513,12 +525,12 @@ bool Sketch_tools::bone_try_commit_()
 
 void Sketch_tools::finalize_bone_()
 {
-  if (!m_bone_centers || !m_bone_r1 || !m_bone_r2 || !m_last_pt)
+  if (!m_bone_centers || !m_bone_r1 || !m_bone_r2)
     return;
 
   if (!m_bone_waist)
   {
-    if (m_sketch.m_view.gui().get_bone_holes() != Bone_holes::None)
+    if (!m_last_pt || m_sketch.m_view.gui().get_bone_holes() != Bone_holes::None)
       return;
 
     if (const std::optional<double> waist = bone_waist_from_pt_(*m_last_pt))
@@ -526,6 +538,15 @@ void Sketch_tools::finalize_bone_()
 
     return;
   }
+
+  if (m_sketch.m_view.gui().get_bone_holes() == Bone_holes::None)
+  {
+    (void)bone_try_commit_();
+    return;
+  }
+
+  if (!m_last_pt)
+    return;
 
   if (!m_bone_hole_r1)
   {
@@ -587,6 +608,18 @@ std::optional<double> Sketch_tools::bone_waist_from_pt_(const gp_Pnt2d& pt) cons
 }
 
 void Sketch_tools::refresh_bone_preview() { bone_update_preview_(); }
+
+void Sketch_tools::apply_bone_holes_option()
+{
+  if (m_bone_waist && m_sketch.m_view.gui().get_bone_holes() == Bone_holes::None)
+  {
+    (void)bone_try_commit_();
+    return;
+  }
+
+  bone_update_preview_();
+  bone_prompt_next_();
+}
 
 #if DEV_MODE
 void Sketch_tools::bone_hide_debug_()

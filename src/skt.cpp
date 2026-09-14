@@ -156,6 +156,8 @@ void Sketch::rebuild_faces() { update_faces_(); }
 
 void Sketch::refresh_bone_preview() { m_tools.refresh_bone_preview(); }
 
+void Sketch::apply_bone_holes_option() { m_tools.apply_bone_holes_option(); }
+
 void Sketch::prompt_add_bone() { m_tools.bone_prompt_next_(); }
 
 void Sketch::add_bone(const gp_Pnt2d& c1, const gp_Pnt2d& c2, double r1, double r2, double waist,

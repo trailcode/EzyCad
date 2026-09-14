@@ -44,6 +44,8 @@ public:
 
   /// Rebuild Add-bone preview from current tmp state (Options debug checkboxes).
   void refresh_bone_preview();
+  /// Holes combo: commit if waist is set and Holes is None; otherwise preview + prompt.
+  void apply_bone_holes_option();
   /// Info toast for the next Add-bone click (centers, radii, waist, or holes).
   void bone_prompt_next_();
 

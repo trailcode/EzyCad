@@ -1319,8 +1319,7 @@ void GUI::options_sketch_add_bone_mode_()
     {
       m_bone_holes = static_cast<Bone_holes>(holes);
       save_occt_view_settings();
-      m_view->curr_sketch().refresh_bone_preview();
-      m_view->curr_sketch().prompt_add_bone();
+      m_view->curr_sketch().apply_bone_holes_option();
     }
   }
 

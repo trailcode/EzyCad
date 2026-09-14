@@ -724,7 +724,7 @@ The bone tool builds a connecting-rod outline: the outer arcs of the two end cir
 3. Click the second circle center. <kbd>Tab</kbd> sets the center-to-center distance; <kbd>Shift</kbd>+<kbd>Tab</kbd> sets the bone-axis angle.
 4. Click to set **radius 2** (distance from the second center, where the cursor just finished). <kbd>Tab</kbd> enters an exact radius.
 5. Click to set **radius 1** (distance from the first center). After radius 2 is set, snap targets appear on the **second** circle where a line parallel to the bone axis is tangent (so you can match the two radii in one snap). <kbd>Tab</kbd> enters an exact radius.
-6. Click a point to set **waist width** (minimum remaining thickness between the waist arcs, perpendicular to the center line). When the end radii differ, the neck is offset toward the smaller end, not at the center midpoint. <kbd>Tab</kbd> enters an exact waist. If **Holes** is **None**, the tool commits after this click.
+6. Click a point to set **waist width** (minimum remaining thickness between the waist arcs, perpendicular to the center line). When the end radii differ, the neck is offset toward the smaller end, not at the center midpoint. <kbd>Tab</kbd> enters an exact waist. If **Holes** is **None**, the tool commits after this click. Switching **Holes** to **None** after the waist is set also commits (outline only).
 7. If **Holes** is **One radius**, click once from the first center to set both hole radii. If **Two radii**, click hole radius at end A, then at end B. Each hole must be smaller than that end's outer radius.
 
 After a successful commit, the mode switches to **Sketch inspection** (ready to select the face or Extrude). Unlike circle or slot, Add bone does not stay active for another bone.
