@@ -649,22 +649,25 @@ void Occt_view::revolve_selected(const double angle)
 // Sketch related
 void Occt_view::create_sketch_from_planar_face_(const ScreenCoords& screen_coords)
 {
-  if (auto face = get_face_(screen_coords); face)
-    if (auto pln = plane_from_face(*face); pln)
-    {
-      // Get the outer wire of the face
-      TopoDS_Wire outer_wire = BRepTools::OuterWire(*face);
-      EZY_ASSERT(!outer_wire.IsNull());
-      m_cur_sketch = std::make_shared<Sketch>("Sketch from face", *this, *pln, outer_wire);
-      m_sketches.push_back(m_cur_sketch);
-      m_cur_sketch->set_current();
-      refresh_viewer_grid_();
-      push_undo_delta(std::make_unique<Sketch_struct_delta>(Sketch_struct_delta::Kind::Add,
-                                                            Sketch_json::to_json(*m_cur_sketch, m_assets), true));
-      // fit_face_in_view(*face);
-      m_gui.set_mode(Mode::Sketch_inspection_mode);
-      return;
-    }
+  const TopoDS_Face* face = get_face_(screen_coords);
+  if (!face)
+    return;
+
+  if (auto pln = plane_from_face(*face); pln)
+  {
+    // Get the outer wire of the face
+    TopoDS_Wire outer_wire = BRepTools::OuterWire(*face);
+    EZY_ASSERT(!outer_wire.IsNull());
+    m_cur_sketch = std::make_shared<Sketch>("Sketch from face", *this, *pln, outer_wire);
+    m_sketches.push_back(m_cur_sketch);
+    m_cur_sketch->set_current();
+    refresh_viewer_grid_();
+    push_undo_delta(std::make_unique<Sketch_struct_delta>(Sketch_struct_delta::Kind::Add,
+                                                          Sketch_json::to_json(*m_cur_sketch, m_assets), true));
+    // fit_face_in_view(*face);
+    m_gui.set_mode(Mode::Sketch_inspection_mode);
+    return;
+  }
 
   gui().show_message("Error: Selected face is not planar. Please select a planar face.", Status_msg::Constraint);
 }
