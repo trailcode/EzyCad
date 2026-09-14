@@ -260,7 +260,6 @@ bool Sketch_edges::add_arc_circle_edges(const std::vector<size_t>& node_idxs, Sk
   {
     bool split_here = false;
     for (const Sketch_edge& e : m_edges)
-    {
       if (is_linear(e))
       {
         const gp_Pnt2d qa = m_sketch.m_nodes[e.node_idx_a];
@@ -279,7 +278,7 @@ bool Sketch_edges::add_arc_circle_edges(const std::vector<size_t>& node_idxs, Sk
           break;
         }
       }
-    }
+
     if (split_here)
       add_unique_point(inters_to_split, ip);
   }

@@ -663,9 +663,10 @@ void Occt_view::create_sketch_from_planar_face_(const ScreenCoords& screen_coord
                                                             Sketch_json::to_json(*m_cur_sketch, m_assets), true));
       // fit_face_in_view(*face);
       m_gui.set_mode(Mode::Sketch_inspection_mode);
+      return;
     }
-    else
-      gui().show_message("Error: Selected face is not planar. Please select a planar face.", Status_msg::Constraint);
+
+  gui().show_message("Error: Selected face is not planar. Please select a planar face.", Status_msg::Constraint);
 }
 
 void Occt_view::create_default_sketch_()
