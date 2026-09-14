@@ -3485,10 +3485,13 @@ Status_msg parse_status_msg(std::string_view name)
 
   if (s == "success")
     return Status_msg::Success;
+
   if (s == "constraint")
     return Status_msg::Constraint;
+
   if (s == "warning")
     return Status_msg::Warning;
+
   if (s == "error")
     return Status_msg::Error;
 
