@@ -418,9 +418,10 @@ bool Sketch_tools::bone_try_commit_()
   if (!compute_bone_geom(params))
     return false;
 
-  const bool add_centers = m_sketch.m_view.gui().get_bone_add_center_nodes();
-  m_sketch.add_bone(params.c1, params.c2, params.r1, params.r2, *m_bone_waist, add_centers, m_bone_hole_r1,
-                    m_bone_hole_r2);
+  const GUI& gui = m_sketch.m_view.gui();
+  m_sketch.add_bone(params.c1, params.c2, params.r1, params.r2, *m_bone_waist, gui.get_bone_add_center_nodes(),
+                    m_bone_hole_r1, m_bone_hole_r2, gui.get_bone_add_radius_nodes(),
+                    gui.get_bone_add_total_length_nodes());
   clear_tmps();
   m_sketch.m_view.gui().set_parent_mode();
   return true;

@@ -311,6 +311,10 @@ public:
   bool get_add_mid_pt_slot_edges() const { return m_add_mid_pt_slot_edges; }
   /// Add-bone Options: permanent Bone A / Bone B nodes (`gui.bone_add_center_nodes`).
   bool get_bone_add_center_nodes() const { return m_bone_add_center_nodes; }
+  /// Add-bone Options: permanent axis-tangent radius nodes (`gui.bone_add_radius_nodes`).
+  bool get_bone_add_radius_nodes() const { return m_bone_add_radius_nodes; }
+  /// Add-bone Options: permanent outer-tip nodes for overall length (`gui.bone_add_total_length_nodes`).
+  bool get_bone_add_total_length_nodes() const { return m_bone_add_total_length_nodes; }
   /// Add-bone Options: hole clicks after waist (`gui.bone_holes`).
   Bone_holes get_bone_holes() const { return m_bone_holes; }
 #if DEV_MODE
@@ -669,6 +673,8 @@ private:
   bool  m_add_mid_pt_rect_edges               = true;
   bool  m_add_mid_pt_slot_edges               = false;
   bool  m_bone_add_center_nodes               = true;
+  bool  m_bone_add_radius_nodes               = true;
+  bool  m_bone_add_total_length_nodes         = true;
   Bone_holes m_bone_holes                     = Bone_holes::None;
 #if DEV_MODE
   Bone_debug_flags m_bone_debug;

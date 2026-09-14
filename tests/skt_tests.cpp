@@ -1067,6 +1067,8 @@ TEST_F(Sketch_test, AddBone_createsFacesAndPermanentCenters)
   EXPECT_TRUE(has_named("Bone A-", gp_Pnt2d(-2.0, -1.0)));
   EXPECT_TRUE(has_named("Bone B+", gp_Pnt2d(2.0, 0.5)));
   EXPECT_TRUE(has_named("Bone B-", gp_Pnt2d(2.0, -0.5)));
+  EXPECT_TRUE(has_named("Bone A tip", gp_Pnt2d(-3.0, 0.0)));
+  EXPECT_TRUE(has_named("Bone B tip", gp_Pnt2d(2.5, 0.0)));
 
   const std::vector<std::string> labels = sketch.inspector_node_labels();
   EXPECT_NE(std::find(labels.begin(), labels.end(), "Bone A"), labels.end());
@@ -1093,7 +1095,8 @@ TEST_F(Sketch_test, AddBone_optionalHolesAndNoCenterNodes)
     EXPECT_FALSE(n.permanent && (n.name == "Bone A" || n.name == "Bone B"));
   }
 
-  EXPECT_EQ(Sketch_access::count_permanent_nodes(sketch), 5u) << "Origin plus four axis-tangent nodes";
+  EXPECT_EQ(Sketch_access::count_permanent_nodes(sketch), 7u)
+      << "Origin, four axis-tangent nodes, and two total-length tip nodes";
 }
 
 TEST_F(Sketch_test, AddBone_undoRemovesPromotedCenters)
@@ -1112,7 +1115,8 @@ TEST_F(Sketch_test, AddBone_undoRemovesPromotedCenters)
   sketch.add_bone(c1, c2, 1.0, 0.5, 0.4);
   EXPECT_EQ(sketch.face_count(), 1u);
   EXPECT_EQ(Sketch_access::get_edge_count(sketch), 4u);
-  EXPECT_EQ(Sketch_access::count_permanent_nodes(sketch), 7u) << "Origin, Bone A/B, and four axis-tangent nodes";
+  EXPECT_EQ(Sketch_access::count_permanent_nodes(sketch), 9u)
+      << "Origin, Bone A/B, four axis-tangent nodes, and two tip nodes";
 
   ASSERT_GT(view().undo_stack_size(), 0u);
   EXPECT_TRUE(view().undo());
@@ -1121,7 +1125,7 @@ TEST_F(Sketch_test, AddBone_undoRemovesPromotedCenters)
 
   EXPECT_TRUE(view().redo());
   EXPECT_EQ(Sketch_access::get_edge_count(sketch), 4u);
-  EXPECT_EQ(Sketch_access::count_permanent_nodes(sketch), 7u);
+  EXPECT_EQ(Sketch_access::count_permanent_nodes(sketch), 9u);
 
   bool found_a = false;
   bool found_b = false;

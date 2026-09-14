@@ -65,6 +65,8 @@ std::string GUI::occt_view_settings_json() const
       {"add_mid_pt_rect_edges",              m_add_mid_pt_rect_edges},
       {"add_mid_pt_slot_edges",              m_add_mid_pt_slot_edges},
       {"bone_add_center_nodes",              m_bone_add_center_nodes},
+      {"bone_add_radius_nodes",              m_bone_add_radius_nodes},
+      {"bone_add_total_length_nodes",        m_bone_add_total_length_nodes},
       {"bone_holes",                         static_cast<int>(m_bone_holes)},
       {"view_roll_step_deg",                 m_view_roll_step_deg},
       {"view_zoom_scroll_scale",             m_view_zoom_scroll_scale},
@@ -159,6 +161,8 @@ void GUI::save_occt_view_settings()
       {"add_mid_pt_rect_edges",              m_add_mid_pt_rect_edges},
       {"add_mid_pt_slot_edges",              m_add_mid_pt_slot_edges},
       {"bone_add_center_nodes",              m_bone_add_center_nodes},
+      {"bone_add_radius_nodes",              m_bone_add_radius_nodes},
+      {"bone_add_total_length_nodes",        m_bone_add_total_length_nodes},
       {"bone_holes",                         static_cast<int>(m_bone_holes)},
       {"load_last_opened_on_startup",        m_load_last_opened_on_startup},
       {"last_opened_project_path",           m_last_opened_project_path},
@@ -467,6 +471,8 @@ void GUI::parse_gui_panes_settings_(const std::string& content)
     m_add_mid_pt_rect_edges       = b("add_mid_pt_rect_edges", true);
     m_add_mid_pt_slot_edges       = b("add_mid_pt_slot_edges", false);
     m_bone_add_center_nodes       = b("bone_add_center_nodes", true);
+    m_bone_add_radius_nodes       = b("bone_add_radius_nodes", true);
+    m_bone_add_total_length_nodes = b("bone_add_total_length_nodes", true);
     m_bone_holes                  = Bone_holes::None;
     if (g.contains("bone_holes") && g["bone_holes"].is_number_integer())
     {

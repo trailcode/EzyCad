@@ -157,7 +157,8 @@ void Sketch::rebuild_faces() { update_faces_(); }
 void Sketch::refresh_bone_preview() { m_tools.refresh_bone_preview(); }
 
 void Sketch::add_bone(const gp_Pnt2d& c1, const gp_Pnt2d& c2, double r1, double r2, double waist,
-                      bool add_center_nodes, std::optional<double> hole_r1, std::optional<double> hole_r2)
+                      bool add_center_nodes, std::optional<double> hole_r1, std::optional<double> hole_r2,
+                      bool add_radius_nodes, bool add_total_length_nodes)
 {
   Bone_params params;
   params.c1    = c1;
@@ -211,10 +212,19 @@ void Sketch::add_bone(const gp_Pnt2d& c1, const gp_Pnt2d& c2, double r1, double 
     if (dist > Precision::Confusion())
     {
       const gp_Vec2d n = gp_Vec2d(axis / dist).Rotated(std::numbers::pi / 2.0);
-      mark_center(gp_Pnt2d(g->c1).Translated(n * g->r1), "Bone A+", false);
-      mark_center(gp_Pnt2d(g->c1).Translated(-n * g->r1), "Bone A-", false);
-      mark_center(gp_Pnt2d(g->c2).Translated(n * g->r2), "Bone B+", false);
-      mark_center(gp_Pnt2d(g->c2).Translated(-n * g->r2), "Bone B-", false);
+      if (add_radius_nodes)
+      {
+        mark_center(gp_Pnt2d(g->c1).Translated(n * g->r1), "Bone A+", false);
+        mark_center(gp_Pnt2d(g->c1).Translated(-n * g->r1), "Bone A-", false);
+        mark_center(gp_Pnt2d(g->c2).Translated(n * g->r2), "Bone B+", false);
+        mark_center(gp_Pnt2d(g->c2).Translated(-n * g->r2), "Bone B-", false);
+      }
+
+      if (add_total_length_nodes)
+      {
+        mark_center(p.c1_outer, "Bone A tip", false);
+        mark_center(p.c2_outer, "Bone B tip", false);
+      }
     }
     add_arc_circle_(p.c1_minus, p.c1_outer, p.c1_plus, rec);
     add_arc_circle_(p.c1_plus, p.waist_plus, p.c2_plus, rec);

@@ -715,7 +715,7 @@ The slot tool allows you to create an oblong or oval-shaped slot with rounded en
 
 ![Bone Tool](res/icons/Sketcher_CreateBone.png)
 
-The bone tool builds a connecting-rod outline: the outer arcs of the two end circles and the inward waist arcs where the cutters touch those circles. The result is one closed face you can extrude. Permanent nodes **Bone A** and **Bone B** stay at the two centers (when **Add center nodes** is on). Each end circle also gets permanent nodes at the points of tangency with a line parallel to the bone axis (**Bone A+** / **A-**, **Bone B+** / **B-**).
+The bone tool builds a connecting-rod outline: the outer arcs of the two end circles and the inward waist arcs where the cutters touch those circles. The result is one closed face you can extrude. Options control permanent nodes: **Bone A** / **Bone B** at the centers, **Bone A+** / **A-** / **B+** / **B-** at the axis-tangent points on each end circle, and **Bone A tip** / **Bone B tip** at the outer ends (overall length).
 
 **How to use:**
 
@@ -733,10 +733,12 @@ A live length dimension and rubber-band segment are shown for the two centers, t
 
 **Options** (while Add bone is active):
 
-| Option               | Default | Meaning                                                                                     |
-| -------------------- | ------- | ------------------------------------------------------------------------------------------- |
-| **Add center nodes** | On      | Commit permanent **Bone A** / **Bone B** nodes at the two centers                           |
-| **Holes**            | None    | **None** (outline only), **One radius** (both holes match), or **Two radii** (set each end) |
+| Option                     | Default | Meaning                                                                                     |
+| -------------------------- | ------- | ------------------------------------------------------------------------------------------- |
+| **Add center nodes**       | On      | Commit permanent **Bone A** / **Bone B** nodes at the two centers                           |
+| **Add radius nodes**       | On      | Commit permanent **Bone A+** / **A-** / **B+** / **B-** at the axis-tangent points          |
+| **Add total length nodes** | On      | Commit permanent **Bone A tip** / **Bone B tip** at the outer ends (overall bone length)    |
+| **Holes**                  | None    | **None** (outline only), **One radius** (both holes match), or **Two radii** (set each end) |
 
 Waist cutters are tangent to both end circles (cut radius is solved from the waist). Geometry fails when the two centers coincide, one circle sits inside the other, or the waist cannot be realized.
 
@@ -749,7 +751,7 @@ The sketch keeps only that trimmed outline (four arcs). Extrude it with the norm
 - After Add with no holes, use **Add circle** snapped to **Bone A** / **Bone B** if you want holes later.
 - For waist, click on either side of the bone axis; the distance from the axis to that point is half the waist.
 - If a hole radius is greater than or equal to that end's outer radius, a toast explains the hole must be smaller; the click is ignored.
-- Preferences **Add center nodes** and **Holes** are saved as `gui.bone_add_center_nodes` and `gui.bone_holes`.
+- Preferences **Add center nodes**, **Add radius nodes**, **Add total length nodes**, and **Holes** are saved as `gui.bone_add_center_nodes`, `gui.bone_add_radius_nodes`, `gui.bone_add_total_length_nodes`, and `gui.bone_holes`.
 
 ## Operation Axis Tool
 

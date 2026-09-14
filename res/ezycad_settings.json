@@ -4,6 +4,8 @@
     "add_mid_pt_rect_edges": true,
     "add_mid_pt_slot_edges": true,
     "bone_add_center_nodes": true,
+    "bone_add_radius_nodes": true,
+    "bone_add_total_length_nodes": true,
     "bone_holes": 0,
     "annotate_all_coaxial_nodes": true,
     "dark_mode": true,

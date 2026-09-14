@@ -1285,6 +1285,30 @@ void GUI::options_sketch_add_bone_mode_()
                 "Click ? to open the user guide.",
                 doc_urls::k_bone_creation_tool);
 
+  bool add_radius = m_bone_add_radius_nodes;
+  if (ImGui::Checkbox("Add radius nodes", &add_radius))
+  {
+    m_bone_add_radius_nodes = add_radius;
+    save_occt_view_settings();
+  }
+
+  ImGui::SameLine(0.0f, ImGui::GetStyle().ItemInnerSpacing.x);
+  GUI_DOC_HELP_("When on, commits permanent Bone A+ / A- and Bone B+ / B- nodes at the "
+                "axis-tangent points on each end circle. Click ? to open the user guide.",
+                doc_urls::k_bone_creation_tool);
+
+  bool add_total = m_bone_add_total_length_nodes;
+  if (ImGui::Checkbox("Add total length nodes", &add_total))
+  {
+    m_bone_add_total_length_nodes = add_total;
+    save_occt_view_settings();
+  }
+
+  ImGui::SameLine(0.0f, ImGui::GetStyle().ItemInnerSpacing.x);
+  GUI_DOC_HELP_("When on, commits permanent Bone A tip and Bone B tip nodes at the outer "
+                "ends (overall bone length). Click ? to open the user guide.",
+                doc_urls::k_bone_creation_tool);
+
   ImGui::AlignTextToFramePadding();
   ImGui::TextUnformatted("Holes");
   ImGui::SameLine();

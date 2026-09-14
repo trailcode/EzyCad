@@ -225,7 +225,7 @@ Tests use `sketch_left_click` to simulate sketch LMB without ImGui mouse positio
 | Each sketch tool mode            | Matching `options_sketch_*_mode_`                                                                                   |
 | `Sketch_operation_axis`          | Mirror / Revolve / Clear axis                                                                                       |
 | `Sketch_face_extrude`            | **Extrude** (Both sides, Twist, material) above Sketch options; help mentions Settings fast preview                 |
-| `Sketch_add_bone`                | Center nodes, holes; when `DEV_MODE` in `config.h`, **Debug vis** construction overlays (not persisted)             |
+| `Sketch_add_bone`                | Center / radius / total-length nodes, holes; when `DEV_MODE` in `config.h`, **Debug vis** overlays (not persisted)  |
 
 ### Options panel layout (sketch tools)
 
