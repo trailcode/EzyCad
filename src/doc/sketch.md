@@ -225,6 +225,8 @@ A waist cutter is externally tangent to both end circles, so cutter center, cont
 | **Face**        | Derived in `Sketch_topo`        | Rebuilt by `update_faces()` into `Sketch_face_shp`; drives extrude/revolve and face selection |
 | **Auto-split**  | `Sketch_topo` / edge add        | Crossings split at points; same-line / same-circle overlap is partitioned and kept once       |
 
+Undo `curr` for a new linear edge is the input span (redo re-runs merge). Pieces already on that span that were not split are also stored in `prev`, so undo does not drop an original that only overlapped.
+
 ### Face extraction (`Sketch_topo::update_faces`)
 
 Faces are the bounded regions of the planar graph formed by the edges. The extractor:

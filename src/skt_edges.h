@@ -55,7 +55,8 @@ private:
   void add_edge_impl_(const gp_Pnt2d& pt_a, const gp_Pnt2d& pt_b, Sketch_op_recorder* rec);
   void add_arc_raw_(size_t idx_a, size_t idx_b, size_t bulge_idx);
   void split_arc_at_node_(std::list<Sketch_edge>::iterator itr, size_t split_idx, Sketch_op_recorder* rec);
-  [[nodiscard]] bool has_linear_edge_(const gp_Pnt2d& pt_a, const gp_Pnt2d& pt_b) const;
+  [[nodiscard]] const Sketch_edge* find_linear_edge_(const gp_Pnt2d& pt_a, const gp_Pnt2d& pt_b) const;
+  [[nodiscard]] bool               has_linear_edge_(const gp_Pnt2d& pt_a, const gp_Pnt2d& pt_b) const;
   [[nodiscard]] bool has_equivalent_arc_(const gp_Pnt2d& start, const gp_Pnt2d& end, const gp_Pnt2d& bulge) const;
 
   Sketch&                m_sketch;

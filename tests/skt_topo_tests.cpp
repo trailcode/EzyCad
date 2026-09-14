@@ -1441,6 +1441,35 @@ TEST_F(Sketch_test, Overlap_CollinearDisjointStaysTwoEdges)
   EXPECT_EQ(Sketch_access::get_linear_edge_count(sketch), 2u);
 }
 
+TEST_F(Sketch_test, Overlap_CollinearExtensionUndoKeepsOriginal)
+{
+  gp_Pln default_plane(gp::Origin(), gp::DZ());
+  Sketch sketch("test_sketch", view(), default_plane);
+
+  {
+    Sketch_op_recorder rec(view(), sketch);
+    Sketch_access::add_edge_(sketch, gp_Pnt2d(0.0, 0.0), gp_Pnt2d(1.0, 0.0), rec);
+    rec.commit();
+  }
+
+  {
+    Sketch_op_recorder rec(view(), sketch);
+    Sketch_access::add_edge_(sketch, gp_Pnt2d(0.0, 0.0), gp_Pnt2d(2.0, 0.0), rec);
+    rec.commit();
+  }
+
+  EXPECT_EQ(Sketch_access::get_linear_edge_count(sketch), 2u);
+  EXPECT_TRUE(has_linear_seg_(sketch, gp_Pnt2d(0.0, 0.0), gp_Pnt2d(1.0, 0.0)));
+  EXPECT_TRUE(has_linear_seg_(sketch, gp_Pnt2d(1.0, 0.0), gp_Pnt2d(2.0, 0.0)));
+  EXPECT_TRUE(view().undo());
+  EXPECT_EQ(Sketch_access::get_linear_edge_count(sketch), 1u);
+  EXPECT_TRUE(has_linear_seg_(sketch, gp_Pnt2d(0.0, 0.0), gp_Pnt2d(1.0, 0.0)));
+  EXPECT_TRUE(view().redo());
+  EXPECT_EQ(Sketch_access::get_linear_edge_count(sketch), 2u);
+  EXPECT_TRUE(has_linear_seg_(sketch, gp_Pnt2d(0.0, 0.0), gp_Pnt2d(1.0, 0.0)));
+  EXPECT_TRUE(has_linear_seg_(sketch, gp_Pnt2d(1.0, 0.0), gp_Pnt2d(2.0, 0.0)));
+}
+
 TEST_F(Sketch_test, Overlap_PartialCollinearUndoRestoresFirstEdge)
 {
   gp_Pln default_plane(gp::Origin(), gp::DZ());

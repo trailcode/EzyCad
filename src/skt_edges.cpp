@@ -156,10 +156,17 @@ void Sketch_edges::add_edge_impl_(const gp_Pnt2d& pt_a, const gp_Pnt2d& pt_b, Sk
   bool added_any = false;
   for (size_t i = 0; i + 1 < div_node_idxs.size(); ++i)
   {
-    const gp_Pnt2d& pa = m_sketch.m_nodes[div_node_idxs[i]];
-    const gp_Pnt2d& pb = m_sketch.m_nodes[div_node_idxs[i + 1]];
-    if (has_linear_edge_(pa, pb))
+    const gp_Pnt2d pa = m_sketch.m_nodes[div_node_idxs[i]];
+    const gp_Pnt2d pb = m_sketch.m_nodes[div_node_idxs[i + 1]];
+    if (const Sketch_edge* existing = find_linear_edge_(pa, pb))
+    {
+      // Unsplit original on the new span is not in prev from a split. Undo removes every
+      // linear edge on curr (the full new span), so record that piece if it existed at start.
+      if (rec)
+        rec->note_prev_linear_edge(existing->node_idx_a, *existing->node_idx_b, existing->node_idx_mid, existing->name);
+
       continue;
+    }
 
     add_edge_raw_(pa, pb);
     added_any = true;
@@ -427,7 +434,7 @@ void Sketch_edges::add_arc_raw_(size_t idx_a, size_t idx_b, size_t bulge_idx)
   m_edges.push_back({idx_a, idx_b, arc_pt_idx, std::nullopt, shp});
 }
 
-bool Sketch_edges::has_linear_edge_(const gp_Pnt2d& pt_a, const gp_Pnt2d& pt_b) const
+const Sketch_edge* Sketch_edges::find_linear_edge_(const gp_Pnt2d& pt_a, const gp_Pnt2d& pt_b) const
 {
   const double tol = Precision::Confusion();
   for (const Sketch_edge& e : m_edges)
@@ -438,10 +445,15 @@ bool Sketch_edges::has_linear_edge_(const gp_Pnt2d& pt_a, const gp_Pnt2d& pt_b) 
     const gp_Pnt2d ea = m_sketch.m_nodes[e.node_idx_a];
     const gp_Pnt2d eb = m_sketch.m_nodes[*e.node_idx_b];
     if ((ea.Distance(pt_a) <= tol && eb.Distance(pt_b) <= tol) || (ea.Distance(pt_b) <= tol && eb.Distance(pt_a) <= tol))
-      return true;
+      return &e;
   }
 
-  return false;
+  return nullptr;
+}
+
+bool Sketch_edges::has_linear_edge_(const gp_Pnt2d& pt_a, const gp_Pnt2d& pt_b) const
+{
+  return find_linear_edge_(pt_a, pt_b) != nullptr;
 }
 
 bool Sketch_edges::has_equivalent_arc_(const gp_Pnt2d& start, const gp_Pnt2d& end, const gp_Pnt2d& bulge) const
