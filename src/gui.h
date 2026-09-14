@@ -131,6 +131,11 @@ inline constexpr float k_gui_sketch_face_selection_color_default[4] = {0.799043f
 inline constexpr float k_gui_sketch_face_highlight_color_default[4] = {0.822967f, 0.0f, 1.0f, 1.0f};
 /// 3D shape selection (AIS SelectionStyle) RGBA (`gui.shape_selection_color`).
 inline constexpr float k_gui_shape_selection_color_default[4] = {0.754312f, 0.072938f, 0.846890f, 1.0f};
+/// OCCT AIS curve tessellation: max segment angle in degrees (`gui.curve_deviation_angle_deg`).
+/// Smaller is smoother. OCCT library default is 20 deg; EzyCad default is tighter.
+inline constexpr float k_gui_curve_deviation_angle_deg_min     = 2.0f;
+inline constexpr float k_gui_curve_deviation_angle_deg_max     = 20.0f;
+inline constexpr float k_gui_curve_deviation_angle_deg_default = 6.0f;
 /// `gui.sketch_shape_faint_style`: 0 = Off (hide shapes in sketch mode), 1 = Ghost, 2 = Wire.
 inline constexpr int k_gui_sketch_shape_faint_style_min     = 0;
 inline constexpr int k_gui_sketch_shape_faint_style_max     = 2;
@@ -314,6 +319,8 @@ public:
   const float* sketch_face_highlight_color_rgba() const { return m_sketch_face_highlight_color; }
   /// 3D shape selection (AIS SelectionStyle) RGBA (0-1; alpha = opacity).
   const float* shape_selection_color_rgba() const { return m_shape_selection_color; }
+  /// Max AIS curve segment angle in degrees (`gui.curve_deviation_angle_deg`).
+  float curve_deviation_angle_deg() const { return m_curve_deviation_angle_deg; }
   /// How 3D shapes appear while in sketch mode (`gui.sketch_shape_faint_style`).
   int   sketch_shape_faint_style() const { return m_sketch_shape_faint_style; }
   float sketch_shape_faint_opacity() const { return m_sketch_shape_faint_opacity; }
@@ -437,7 +444,8 @@ public:
   /// RGBA (0-255) for Shape List row hover highlight in the 3D viewer (see Settings).
   void elm_list_hover_color_rgba(uint8_t& r, uint8_t& g, uint8_t& b, uint8_t& a) const;
   /// For scripting (Lua console): access the 3D view.
-  Occt_view* get_view() { return m_view.get(); }
+  Occt_view*       get_view() { return m_view.get(); }
+  const Occt_view* get_view() const { return m_view.get(); }
 
 private:
   friend class GUI_access;
@@ -883,6 +891,7 @@ private:
   /// AIS SelectionStyle for selected 3D shapes (0-1 RGBA; Settings -> View presentation).
   float m_shape_selection_color[4] = {k_gui_shape_selection_color_default[0], k_gui_shape_selection_color_default[1],
                                       k_gui_shape_selection_color_default[2], k_gui_shape_selection_color_default[3]};
+  float m_curve_deviation_angle_deg = k_gui_curve_deviation_angle_deg_default;
 
   std::unique_ptr<Lua_console>    m_lua_console;
   bool                            m_show_python_console{false};

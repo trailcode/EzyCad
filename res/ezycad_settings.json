@@ -33,6 +33,7 @@
       0.8468899726867676,
       1.0
     ],
+    "curve_deviation_angle_deg": 6.0,
     "sketch_shape_faint_style": 1,
     "sketch_shape_faint_opacity": 0.14,
     "sketch_shape_faint_enabled": true,

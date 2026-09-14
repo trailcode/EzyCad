@@ -26,6 +26,7 @@
 #include <Graphic3d_Camera.hxx>
 #include <Prs3d_ShadingAspect.hxx>
 #include <NCollection_IndexedDataMap.hxx>
+#include <NCollection_List.hxx>
 #include <NCollection_Vec2.hxx>
 #include <IGESControl_Writer.hxx>
 #include <Interface_Static.hxx>
@@ -34,6 +35,8 @@
 #include <Prs3d_DatumAspect.hxx>
 #include <Standard_Failure.hxx>
 #include <Standard_Version.hxx>
+#include <AIS_InteractiveObject.hxx>
+#include <AIS_Shape.hxx>
 #include <Prs3d_Drawer.hxx>
 #include <Graphic3d_AspectFillArea3d.hxx>
 #include <Prs3d_LineAspect.hxx>
@@ -42,6 +45,7 @@
 #include <STEPControl_Writer.hxx>
 #include <StdSelect_BRepOwner.hxx>
 #include <StlAPI_Writer.hxx>
+#include <TopAbs_ShapeEnum.hxx>
 #include <TopExp_Explorer.hxx>
 #include <TopoDS.hxx>
 #include <TopoDS_Compound.hxx>
@@ -270,6 +274,7 @@ void Occt_view::init_viewer()
 
   m_ctx->SetHighlightStyle(highlight_style);
   apply_shape_selection_style();
+  apply_curve_deviation();
   m_ctx->SetPixelTolerance(10); // Picking?
 
   m_ctx->UpdateCurrentViewer();
@@ -3022,6 +3027,108 @@ void Occt_view::apply_shape_selection_style()
   m_ctx->UpdateCurrentViewer();
 }
 
+namespace
+{
+// OCCT default relative coefficient. AIS_Shape::SetAngleAndDeviation pairs the angle with
+// HLRBRep::PolyHLRAngleAndDeflection, which yields ~0.04 and makes curves coarser, not smoother.
+constexpr double k_ais_rel_deviation_coeff = 0.001;
+
+void set_drawer_curve_tessellation_(const Prs3d_Drawer_ptr& drawer, const double ang_rad)
+{
+  if (drawer.IsNull())
+    return;
+
+  drawer->SetDeviationAngle(ang_rad);
+  drawer->SetDeviationCoefficient(k_ais_rel_deviation_coeff);
+}
+
+bool ais_shape_is_edge_or_wire_(const AIS_Shape& shp)
+{
+  if (shp.Shape().IsNull())
+    return false;
+
+  const TopAbs_ShapeEnum t = shp.Shape().ShapeType();
+  return t == TopAbs_EDGE || t == TopAbs_WIRE;
+}
+
+// Default Clean() leaves PolygonOnTriangulation that belongs to other faces (shared TEdge).
+void clean_ais_polygons_(AIS_Shape& shp)
+{
+  if (!shp.Shape().IsNull())
+    BRepTools::Clean(shp.Shape(), true);
+}
+
+void apply_curve_tessellation_to_ais_shape_(AIS_Shape& shp, const double ang_rad)
+{
+  set_drawer_curve_tessellation_(shp.Attributes(), ang_rad);
+  shp.SetOwnDeviationAngle(ang_rad);
+  shp.SetOwnDeviationCoefficient(k_ais_rel_deviation_coeff);
+  if (ais_shape_is_edge_or_wire_(shp))
+    shp.Attributes()->SetAutoTriangulation(false);
+
+  clean_ais_polygons_(shp);
+  shp.SetToUpdate();
+}
+} // namespace
+
+void Occt_view::apply_curve_deviation_to_shape(AIS_Shape& shp) const
+{
+  apply_curve_tessellation_to_ais_shape_(shp, to_radians(static_cast<double>(gui().curve_deviation_angle_deg())));
+}
+
+void Occt_view::apply_curve_deviation()
+{
+  if (m_ctx.IsNull())
+    return;
+
+  const double ang = to_radians(static_cast<double>(gui().curve_deviation_angle_deg()));
+  set_drawer_curve_tessellation_(m_ctx->DefaultDrawer(), ang);
+  m_ctx->SetDeviationAngle(ang);
+  m_ctx->SetDeviationCoefficient(k_ais_rel_deviation_coeff);
+
+  NCollection_List<AIS_InteractiveObject_ptr> objs;
+  m_ctx->ObjectsInside(objs);
+  NCollection_List<AIS_Shape_ptr>             edge_wires;
+  for (NCollection_List<AIS_InteractiveObject_ptr>::Iterator it(objs); it.More(); it.Next())
+  {
+    const AIS_InteractiveObject_ptr& obj = it.Value();
+    if (obj.IsNull())
+      continue;
+
+    set_drawer_curve_tessellation_(obj->Attributes(), ang);
+    set_drawer_curve_tessellation_(obj->HilightAttributes(), ang);
+    set_drawer_curve_tessellation_(obj->DynamicHilightAttributes(), ang);
+    if (const AIS_Shape_ptr shape = AIS_Shape_ptr::DownCast(obj); !shape.IsNull())
+    {
+      apply_curve_tessellation_to_ais_shape_(*shape, ang);
+      if (ais_shape_is_edge_or_wire_(*shape))
+      {
+        edge_wires.Append(shape);
+        continue;
+      }
+    }
+
+    m_ctx->Redisplay(obj, false);
+  }
+
+  // Faces remesh first (needed so shaded fillets pick up the new angle; IsTessellated
+  // ignores angle). That reattaches PolygonOnTriangulation on shared sketch TEdges.
+  // Force-clean those edges so wireframe uses StdPrs_DeflectionCurve (the slider).
+  for (NCollection_List<AIS_Shape_ptr>::Iterator it(edge_wires); it.More(); it.Next())
+  {
+    const AIS_Shape_ptr& shape = it.Value();
+    if (shape.IsNull())
+      continue;
+
+    clean_ais_polygons_(*shape);
+    shape->Attributes()->SetAutoTriangulation(false);
+    shape->SetToUpdate();
+    m_ctx->Redisplay(shape, false);
+  }
+
+  m_ctx->UpdateCurrentViewer();
+}
+
 void Occt_view::update_shape_list_hover_drawer_()
 {
   uint8_t r{}, g{}, b{}, a{};
@@ -4597,7 +4704,8 @@ bool Occt_view::import_ply(const std::string& ply_bytes)
   return true;
 }
 
-GUI& Occt_view::gui() { return m_gui; }
+GUI&       Occt_view::gui() { return m_gui; }
+const GUI& Occt_view::gui() const { return m_gui; }
 
 AIS_InteractiveContext& Occt_view::ctx() { return *m_ctx; }
 
