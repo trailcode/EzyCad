@@ -1441,6 +1441,61 @@ TEST_F(Sketch_test, Overlap_CollinearDisjointStaysTwoEdges)
   EXPECT_EQ(Sketch_access::get_linear_edge_count(sketch), 2u);
 }
 
+TEST_F(Sketch_test, Overlap_DuplicateLineDoesNotPushUndo)
+{
+  gp_Pln default_plane(gp::Origin(), gp::DZ());
+  Sketch sketch("test_sketch", view(), default_plane);
+
+  {
+    Sketch_op_recorder rec(view(), sketch);
+    Sketch_access::add_edge_(sketch, gp_Pnt2d(0.0, 0.0), gp_Pnt2d(10.0, 0.0), rec);
+    rec.commit();
+  }
+
+  const size_t undo_before = view().undo_stack_size();
+  {
+    Sketch_op_recorder rec(view(), sketch);
+    Sketch_access::add_edge_(sketch, gp_Pnt2d(0.0, 0.0), gp_Pnt2d(10.0, 0.0), rec);
+    rec.commit();
+  }
+
+  EXPECT_EQ(Sketch_access::get_linear_edge_count(sketch), 1u);
+  EXPECT_EQ(view().undo_stack_size(), undo_before) << "Redrawing an existing line must not push a no-op undo";
+  EXPECT_TRUE(view().undo());
+  EXPECT_EQ(Sketch_access::get_linear_edge_count(sketch), 0u)
+      << "First undo after a duplicate add must remove the original line";
+}
+
+TEST_F(Sketch_test, Overlap_CoveringSegmentDoesNotPushUndo)
+{
+  gp_Pln default_plane(gp::Origin(), gp::DZ());
+  Sketch sketch("test_sketch", view(), default_plane);
+
+  {
+    Sketch_op_recorder rec(view(), sketch);
+    Sketch_access::add_edge_(sketch, gp_Pnt2d(0.0, 0.0), gp_Pnt2d(1.0, 0.0), rec);
+    rec.commit();
+  }
+  {
+    Sketch_op_recorder rec(view(), sketch);
+    Sketch_access::add_edge_(sketch, gp_Pnt2d(1.0, 0.0), gp_Pnt2d(2.0, 0.0), rec);
+    rec.commit();
+  }
+
+  const size_t undo_before = view().undo_stack_size();
+  {
+    Sketch_op_recorder rec(view(), sketch);
+    Sketch_access::add_edge_(sketch, gp_Pnt2d(0.0, 0.0), gp_Pnt2d(2.0, 0.0), rec);
+    rec.commit();
+  }
+
+  EXPECT_EQ(Sketch_access::get_linear_edge_count(sketch), 2u);
+  EXPECT_EQ(view().undo_stack_size(), undo_before) << "A span already covered by pieces must not push a no-op undo";
+  EXPECT_TRUE(view().undo());
+  EXPECT_EQ(Sketch_access::get_linear_edge_count(sketch), 1u);
+  EXPECT_TRUE(has_linear_seg_(sketch, gp_Pnt2d(0.0, 0.0), gp_Pnt2d(1.0, 0.0)));
+}
+
 TEST_F(Sketch_test, Overlap_CollinearExtensionUndoKeepsOriginal)
 {
   gp_Pln default_plane(gp::Origin(), gp::DZ());

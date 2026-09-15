@@ -153,18 +153,15 @@ void Sketch_edges::add_edge_impl_(const gp_Pnt2d& pt_a, const gp_Pnt2d& pt_b, Sk
     m_sketch.m_topo.split_arcs_at_node_if_interior(nidx, rec);
   }
 
-  bool added_any = false;
+  std::vector<const Sketch_edge*> unsplit;
+  bool                            added_any = false;
   for (size_t i = 0; i + 1 < div_node_idxs.size(); ++i)
   {
     const gp_Pnt2d pa = m_sketch.m_nodes[div_node_idxs[i]];
     const gp_Pnt2d pb = m_sketch.m_nodes[div_node_idxs[i + 1]];
     if (const Sketch_edge* existing = find_linear_edge_(pa, pb))
     {
-      // Unsplit original on the new span is not in prev from a split. Undo removes every
-      // linear edge on curr (the full new span), so record that piece if it existed at start.
-      if (rec)
-        rec->note_prev_linear_edge(existing->node_idx_a, *existing->node_idx_b, existing->node_idx_mid, existing->name);
-
+      unsplit.push_back(existing);
       continue;
     }
 
@@ -172,8 +169,16 @@ void Sketch_edges::add_edge_impl_(const gp_Pnt2d& pt_a, const gp_Pnt2d& pt_b, Sk
     added_any = true;
   }
 
+  // Unsplit originals on the new span are not in prev from a split. Undo removes every
+  // linear edge on curr (the full new span), so record those pieces when curr is recorded.
+  // A no-op add (already covered) must not write prev alone or commit() pushes a dead undo.
   if (rec && (added_any || !inters_to_split.empty()))
+  {
+    for (const Sketch_edge* existing : unsplit)
+      rec->note_prev_linear_edge(existing->node_idx_a, *existing->node_idx_b, existing->node_idx_mid, existing->name);
+
     rec->note_curr_linear_edge(pt_a, pt_b);
+  }
 }
 
 void Sketch_edges::sketch_json_add_linear_edge(size_t idx_a, size_t idx_b, std::optional<size_t> idx_mid)
