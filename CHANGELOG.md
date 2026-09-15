@@ -15,6 +15,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- **Shape List right-click**: the row context menu opens from the whole entry (checkboxes, **M**, tree arrow, name field, and padding), not only from some widgets. Right-click on the name field opens the same menu.
 - **Shape rotate axis**: Choosing X/Y/Z (or view-to-object) before the first drag is kept. Constrained rotation uses the plane perpendicular to that axis when the view faces it. Local space rotates about the assigned frame, not only world XYZ through the bbox.
 - **Add bone Holes**: switching **Holes** to **None** after the waist is set commits the outline. Clicks and finalize no longer run hole handlers when holes are off (those handlers reject `None` and left the tool stuck).
 - **Sketch overlapping edges**: Drawing the same line or circle twice, or adding a collinear / same-circle overlap, no longer stacks a second copy. The sketch splits at overlap ends and keeps each atomic piece once. Undo records only the new atomic pieces (for arcs, each leftover start/bulge/end, not the input triple), so extending a line past an existing collinear edge no longer deletes the original on undo, and a circle over an existing same-circle cap reverses fully. A no-op redraw of an already-covered span does not push undo. Fixes an access violation in `TKGeomBase` when a new circle coincided with an existing arc (for example a bone end-cap).

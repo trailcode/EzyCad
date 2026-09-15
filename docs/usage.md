@@ -123,11 +123,11 @@ Each row (left to right):
 
 - **Visibility** - Checkbox to show or hide that node. Hiding a **group** hides its whole subtree in the 3D view.
 - **Solid / wire** - Checkbox (solids only) to switch **shaded** or **wireframe**.
-- **M** - Solids only: material popup; right-click for **Zoom to**, **Shape info...**, or **Delete**.
+- **M** - Solids only: left-click opens the material popup. Right-click uses the same row menu as the rest of the entry.
 - **Name** - Expandable tree row with an editable name. Click the row to select that solid (or all descendant solids for a group) and update the current group. **Ctrl+click** toggles multi-select. Drag to reparent (empty area below the list = document root).
 - **Copy / Paste** - <kbd>Ctrl</kbd>+<kbd>C</kbd> / <kbd>Ctrl</kbd>+<kbd>V</kbd> (remappable) copy selected solids, or a whole group subtree when you clicked that group (all its descendant solids are selected). Paste inserts an independent deep copy under the current group, at the same pose. If you still have that copied group as the current group, paste places a sibling copy beside it (not nested inside it). This is an in-app clipboard (survives **New**; it does not use the system clipboard). Sketch edges are not copied.
-- **Right-click the name** - Solids: **Zoom to** / **Shape info...** / local-frame display and edit (below) / **Delete**. Groups: **Zoom to** (fits all descendant solids; disabled when the group has none) / **Ungroup** (moves **all** direct children to the group's parent, then removes the group) / **Delete** (cascade-deletes the whole subtree). **Zoom to** keeps the current camera orientation and frames the solid or group with a little padding.
-- **Local frame (solids)** - Each solid has a local `XYZ` frame (default: world-aligned at the bounding-box center; **Z** is the primary axis, **Y** is up). Right-click the name or **M** for:
+- **Right-click the row** - Works on the whole entry (checkboxes, **M**, tree arrow, name field, and row padding). Solids: **Zoom to** / **Shape info...** / local-frame display and edit (below) / **Delete**. Groups: **Zoom to** (fits all descendant solids; disabled when the group has none) / **Ungroup** (moves **all** direct children to the group's parent, then removes the group) / **Delete** (cascade-deletes the whole subtree). **Zoom to** keeps the current camera orientation and frames the solid or group with a little padding.
+- **Local frame (solids)** - Each solid has a local `XYZ` frame (default: world-aligned at the bounding-box center; **Z** is the primary axis, **Y** is up). Right-click the row for:
   - **Show axes** / **Show plane** / **Show up** - toggle 3D annotations (off by default; saved in the `.ezy` file; hidden while any sketch tool is active, when **Hide all** is on, or when the solid or an ancestor group is hidden).
   - **Reset frame to bbox** - world-aligned frame at the bbox center (turns **Show axes** on).
   - **Set from planar face...** / **Set from cylindrical face...** - pick a face on that solid; plane sets **Z** = normal with origin at the face area center (circle center for a disk); cylinder sets **Z** = axis with origin = solid center projected onto the axis.
@@ -142,7 +142,7 @@ The window can be closed with its close button; use **View -> Shape List** again
 
 #### Shape info
 
-Right-click a shape **name** or the **M** button in the Shape List and choose **Shape info...** to open a property dialog for that 3D shape. Use **Refresh** to recompute the values after the geometry changes.
+Right-click a Shape List row and choose **Shape info...** to open a property dialog for that 3D shape. Use **Refresh** to recompute the values after the geometry changes.
 
 The dialog reports document fields (name, material, shaded vs wireframe display, visibility) and Open CASCADE (OCCT) topology and measurements, including:
 
