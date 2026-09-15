@@ -1,10 +1,13 @@
 #include "shp_scale.h"
 
+#include <Precision.hxx>
+
 #include "utl_geom.h"
 #include "gui.h"
 #include "mode.h"
 #include "gui_occt_view.h"
 #include "shp_delta.h"
+#include "shp_transform.h"
 #include "utl.h"
 
 Shp_scale::Shp_scale(Occt_view& view)
@@ -51,7 +54,7 @@ Status Shp_scale::ensure_start_state_()
   CHK_RET(ensure_operation_shps_());
 
   if (!m_center.has_value())
-    m_center = get_shape_bbox_center(m_shps[0]->Shape());
+    m_center = transform_axes_for(m_shps, gui().get_transform_space()).origin;
 
   if (!m_scale_pln.has_value())
     m_scale_pln = view().get_view_plane(*m_center);
@@ -117,4 +120,15 @@ void Shp_scale::cancel()
   operation_shps_cancel_();
   reset();
   restore_operation_selection_();
+}
+
+void Shp_scale::on_transform_space_changed()
+{
+  m_center.reset();
+  m_scale_pln.reset();
+  if (m_shps.empty() || m_initial_distance < Precision::Confusion())
+    return;
+
+  if (ensure_start_state_().is_ok())
+    preview_scale_();
 }

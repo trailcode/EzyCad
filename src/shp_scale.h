@@ -19,6 +19,8 @@ public:
   void                 finalize();
   void                 cancel();
   void                 reset();
+  /// Re-seed pivot after Options Local/World change.
+  void                 on_transform_space_changed();
 
 private:
   [[nodiscard]] Status ensure_start_state_();

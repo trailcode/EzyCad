@@ -1,13 +1,14 @@
 #pragma once
 
 #include "shp_operation.h"
+#include "shp_transform.h"
 
 enum class Rotation_axis
 {
-  View_to_object, // Rotate around view axis through object center
-  X_axis,         // Rotate around global X axis
-  Y_axis,         // Rotate around global Y axis
-  Z_axis          // Rotate around global Z axis
+  View_to_object, // Rotate around view axis through the current pivot
+  X_axis,         // Local or world X (see Transform_space)
+  Y_axis,
+  Z_axis
 };
 
 class Shp_rotate : private Shp_operation_base
@@ -26,14 +27,19 @@ public:
 
   void          set_rotation_axis(Rotation_axis axis);
   Rotation_axis get_rotation_axis() const { return m_rotation_axis; }
+  /// Pivot / axis vis after Options Local/World change.
+  void on_transform_space_changed();
 
 private:
-  [[nodiscard]] Status ensure_start_state_();
-  void                 preview_rotate_();
-  void                 reset();
-  void                 update_rotation_axis_();
-  void                 update_rotation_center_();
-  void                 clear_rotation_vis_();
+  [[nodiscard]] Status          ensure_start_state_();
+  [[nodiscard]] Transform_axes  current_axes_();
+  [[nodiscard]] gp_Dir          current_axis_dir_();
+  void                          refresh_guides_();
+  void                          preview_rotate_();
+  void                          reset();
+  void                          update_rotation_axis_();
+  void                          update_rotation_center_();
+  void                          clear_rotation_vis_();
 
   std::optional<gp_Pln> m_rotate_pln;
   std::optional<gp_Pnt> m_initial_mouse_pos;

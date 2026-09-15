@@ -68,6 +68,7 @@ std::string GUI::occt_view_settings_json() const
       {"bone_add_radius_nodes",              m_bone_add_radius_nodes},
       {"bone_add_total_length_nodes",        m_bone_add_total_length_nodes},
       {"bone_holes",                         static_cast<int>(m_bone_holes)},
+      {"transform_space",                    static_cast<int>(m_transform_space)},
       {"view_roll_step_deg",                 m_view_roll_step_deg},
       {"view_zoom_scroll_scale",             m_view_zoom_scroll_scale},
       {"default_2d_view_width",              m_default_2d_view_width},
@@ -165,6 +166,7 @@ void GUI::save_occt_view_settings()
       {"bone_add_radius_nodes",              m_bone_add_radius_nodes},
       {"bone_add_total_length_nodes",        m_bone_add_total_length_nodes},
       {"bone_holes",                         static_cast<int>(m_bone_holes)},
+      {"transform_space",                    static_cast<int>(m_transform_space)},
       {"load_last_opened_on_startup",        m_load_last_opened_on_startup},
       {"last_opened_project_path",           m_last_opened_project_path},
       {"imgui_style_dark",                   imgui_style_to_json_(m_imgui_style_dark)},
@@ -484,6 +486,13 @@ void GUI::parse_gui_panes_settings_(const std::string& content)
       const int holes = g["bone_holes"].get<int>();
       if (holes >= 0 && holes < static_cast<int>(Bone_holes::_count))
         m_bone_holes = static_cast<Bone_holes>(holes);
+    }
+    m_transform_space = Transform_space::Local;
+    if (g.contains("transform_space") && g["transform_space"].is_number_integer())
+    {
+      const int space = g["transform_space"].get<int>();
+      if (space == static_cast<int>(Transform_space::Local) || space == static_cast<int>(Transform_space::World))
+        m_transform_space = static_cast<Transform_space>(space);
     }
     m_load_last_opened_on_startup = b("load_last_opened_on_startup", b("load_last_saved_on_startup", false));
 

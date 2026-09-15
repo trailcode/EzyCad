@@ -14,14 +14,19 @@
 #include <TopoDS_Compound.hxx>
 #include <NCollection_List.hxx>
 #include <gp_Ax1.hxx>
+#include <gp_Ax3.hxx>
+#include <gp_Dir.hxx>
 #include <gp_Pln.hxx>
 #include <gp_Trsf.hxx>
+#include <optional>
 #include <numbers>
 
 #include "shp.h"
 #include "shp_create.h"
 #include "shp_info.h"
 #include "shp_cross_section.h"
+#include "shp_rotate.h"
+#include "shp_transform.h"
 #include "skt_op_recorder.h"
 #include "utl.h"
 
@@ -1344,4 +1349,66 @@ TEST_F(Shp_test, Grouped_solids_stay_displayed_and_selectable)
     EXPECT_EQ(view().get_selected_shps().size(), 1u);
     EXPECT_EQ(view().get_selected_shps().front()->get_id(), s->get_id());
   }
+}
+
+TEST_F(Shp_test, Transform_axes_world_uses_bbox_center)
+{
+  view().add_box(0, 0, 0, 10, 10, 10);
+  Shp_ptr shp = view().get_shapes().back();
+  ASSERT_FALSE(shp.IsNull());
+
+  const Transform_axes axes = transform_axes_for({shp}, Transform_space::World);
+  EXPECT_TRUE(axes.origin.IsEqual(gp_Pnt(5.0, 5.0, 5.0), 1e-9));
+  EXPECT_TRUE(axes.x.IsEqual(gp_Dir(1.0, 0.0, 0.0), 1e-9));
+  EXPECT_TRUE(axes.z.IsEqual(gp_Dir(0.0, 0.0, 1.0), 1e-9));
+}
+
+TEST_F(Shp_test, Transform_axes_local_uses_assigned_frame)
+{
+  view().add_box(0, 0, 0, 10, 10, 10);
+  Shp_ptr shp = view().get_shapes().back();
+  ASSERT_FALSE(shp.IsNull());
+
+  const gp_Ax3 tilted(gp_Pnt(1.0, 2.0, 3.0), gp_Dir(0.0, 1.0, 0.0), gp_Dir(1.0, 0.0, 0.0));
+  view().set_shape_frame(shp, tilted);
+
+  const Transform_axes local = transform_axes_for({shp}, Transform_space::Local);
+  EXPECT_TRUE(local.origin.IsEqual(gp_Pnt(1.0, 2.0, 3.0), 1e-9));
+  EXPECT_TRUE(local.x.IsEqual(gp_Dir(1.0, 0.0, 0.0), 1e-9));
+  EXPECT_TRUE(local.z.IsEqual(gp_Dir(0.0, 1.0, 0.0), 1e-9));
+
+  const Transform_axes world = transform_axes_for({shp}, Transform_space::World);
+  EXPECT_TRUE(world.origin.IsEqual(gp_Pnt(5.0, 5.0, 5.0), 1e-9));
+  EXPECT_TRUE(world.z.IsEqual(gp_Dir(0.0, 0.0, 1.0), 1e-9));
+}
+
+TEST_F(Shp_test, Transform_translation_local_x_constraint)
+{
+  Transform_axes axes;
+  axes.origin = gp_Pnt(0.0, 0.0, 0.0);
+  axes.x      = gp_Dir(0.0, 1.0, 0.0);
+  axes.y      = gp_Dir(0.0, 0.0, 1.0);
+  axes.z      = gp_Dir(1.0, 0.0, 0.0);
+
+  const gp_Vec mouse(1.0, 4.0, 0.0);
+  const gp_Vec delta =
+      transform_translation(axes, mouse, true, false, false, std::nullopt, std::nullopt, std::nullopt);
+  EXPECT_NEAR(delta.X(), 0.0, 1e-9);
+  EXPECT_NEAR(delta.Y(), 4.0, 1e-9);
+  EXPECT_NEAR(delta.Z(), 0.0, 1e-9);
+}
+
+TEST_F(Shp_test, Rotate_axis_can_be_set_before_first_drag)
+{
+  gui().set_mode(Mode::Normal);
+  gui().set_hide_all_shapes(false);
+  view().add_box(0, 0, 0, 10, 10, 10);
+  Shp_ptr shp = view().get_shapes().back();
+  ASSERT_FALSE(shp.IsNull());
+  select_shapes(view(), {shp});
+
+  gui().set_mode(Mode::Rotate);
+  EXPECT_TRUE(view().shp_rotate().has_operation_shps());
+  view().shp_rotate().set_rotation_axis(Rotation_axis::Z_axis);
+  EXPECT_EQ(view().shp_rotate().get_rotation_axis(), Rotation_axis::Z_axis);
 }

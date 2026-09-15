@@ -28,6 +28,7 @@
 #include "imgui_markdown.h"
 #include "utl_log.h"
 #include "mode.h"
+#include "shp_transform.h"
 #include "gui_hotkeys.h"
 #include "gui_occt_view.h"
 #include "shp_info.h"
@@ -242,6 +243,7 @@ inline constexpr const char* k_revolve_solid_conversion     = "https://ezycad.re
 inline constexpr const char* k_shape_selection_filter       = "https://ezycad.readthedocs.io/en/latest/usage.html#shape-selection-filter-normal-mode-only";
 inline constexpr const char* k_add_node_tool                = "https://ezycad.readthedocs.io/en/latest/usage-sketch.html#add-node-tool";
 inline constexpr const char* k_bone_creation_tool           = "https://ezycad.readthedocs.io/en/latest/usage-sketch.html#bone-creation-tool";
+inline constexpr const char* k_shape_rotate_tool            = "https://ezycad.readthedocs.io/en/latest/usage.html#shape-rotate-tool-r";
 inline constexpr const char* k_image_underlay               = "https://ezycad.readthedocs.io/en/latest/usage-sketch.html#image-underlay";
 inline constexpr const char* k_usage_settings_options       = "https://ezycad.readthedocs.io/en/latest/usage-settings.html#options-panel";
 inline constexpr const char* k_occt_view                    = "https://ezycad.readthedocs.io/en/latest/usage-occt-view.html";
@@ -341,6 +343,8 @@ public:
   bool get_bone_add_total_length_nodes() const { return m_bone_add_total_length_nodes; }
   /// Add-bone Options: hole clicks after waist (`gui.bone_holes`).
   Bone_holes get_bone_holes() const { return m_bone_holes; }
+  /// Move / rotate / scale axis space (`gui.transform_space`). Default Local.
+  Transform_space get_transform_space() const { return m_transform_space; }
 #if DEV_MODE
   /// Add-bone construction overlays (DEV_MODE Options checkboxes; not persisted).
   const Bone_debug_flags& get_bone_debug_flags() const { return m_bone_debug; }
@@ -496,6 +500,7 @@ private:
   void options_move_mode_();
   void options_scale_mode_();
   void options_rotate_mode_();
+  void options_transform_space_();
   void options_shape_chamfer_mode_();
   void options_shape_fillet_mode_();
   void options_shape_polar_duplicate_mode_();
@@ -702,7 +707,8 @@ private:
   bool  m_bone_add_center_nodes               = true;
   bool  m_bone_add_radius_nodes               = true;
   bool  m_bone_add_total_length_nodes         = true;
-  Bone_holes m_bone_holes                     = Bone_holes::None;
+  Bone_holes      m_bone_holes        = Bone_holes::None;
+  Transform_space m_transform_space   = Transform_space::Local;
 #if DEV_MODE
   Bone_debug_flags m_bone_debug;
 #endif
