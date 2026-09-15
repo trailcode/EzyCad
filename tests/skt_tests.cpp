@@ -1052,6 +1052,24 @@ TEST_F(Sketch_test, AddBone_createsFacesAndPermanentCenters)
   EXPECT_TRUE(found_a);
   EXPECT_TRUE(found_b);
 
+  auto has_named = [&](const char* name, const gp_Pnt2d& pt) -> bool
+  {
+    for (size_t i = 0; i < sketch.get_nodes().size(); ++i)
+    {
+      const Sketch_nodes::Node& n = sketch.get_nodes()[i];
+      if (!n.deleted && n.permanent && n.name == name)
+        return n.IsEqual(pt, Precision::Confusion());
+    }
+    return false;
+  };
+
+  EXPECT_TRUE(has_named("Bone A+", gp_Pnt2d(-2.0, 1.0)));
+  EXPECT_TRUE(has_named("Bone A-", gp_Pnt2d(-2.0, -1.0)));
+  EXPECT_TRUE(has_named("Bone B+", gp_Pnt2d(2.0, 0.5)));
+  EXPECT_TRUE(has_named("Bone B-", gp_Pnt2d(2.0, -0.5)));
+  EXPECT_TRUE(has_named("Bone A tip", gp_Pnt2d(-3.0, 0.0)));
+  EXPECT_TRUE(has_named("Bone B tip", gp_Pnt2d(2.5, 0.0)));
+
   const std::vector<std::string> labels = sketch.inspector_node_labels();
   EXPECT_NE(std::find(labels.begin(), labels.end(), "Bone A"), labels.end());
   EXPECT_NE(std::find(labels.begin(), labels.end(), "Bone B"), labels.end());
@@ -1076,6 +1094,9 @@ TEST_F(Sketch_test, AddBone_optionalHolesAndNoCenterNodes)
       continue;
     EXPECT_FALSE(n.permanent && (n.name == "Bone A" || n.name == "Bone B"));
   }
+
+  EXPECT_EQ(Sketch_access::count_permanent_nodes(sketch), 7u)
+      << "Origin, four axis-tangent nodes, and two total-length tip nodes";
 }
 
 TEST_F(Sketch_test, AddBone_undoRemovesPromotedCenters)
@@ -1094,16 +1115,17 @@ TEST_F(Sketch_test, AddBone_undoRemovesPromotedCenters)
   sketch.add_bone(c1, c2, 1.0, 0.5, 0.4);
   EXPECT_EQ(sketch.face_count(), 1u);
   EXPECT_EQ(Sketch_access::get_edge_count(sketch), 4u);
-  EXPECT_EQ(Sketch_access::count_permanent_nodes(sketch), 3u) << "Origin plus Bone A and Bone B";
+  EXPECT_EQ(Sketch_access::count_permanent_nodes(sketch), 9u)
+      << "Origin, Bone A/B, four axis-tangent nodes, and two tip nodes";
 
   ASSERT_GT(view().undo_stack_size(), 0u);
   EXPECT_TRUE(view().undo());
   EXPECT_EQ(Sketch_access::get_edge_count(sketch), 0u);
-  EXPECT_EQ(Sketch_access::count_permanent_nodes(sketch), 1u) << "Undo should remove Bone A/B centers";
+  EXPECT_EQ(Sketch_access::count_permanent_nodes(sketch), 1u) << "Undo should remove Bone A/B and tangent nodes";
 
   EXPECT_TRUE(view().redo());
   EXPECT_EQ(Sketch_access::get_edge_count(sketch), 4u);
-  EXPECT_EQ(Sketch_access::count_permanent_nodes(sketch), 3u);
+  EXPECT_EQ(Sketch_access::count_permanent_nodes(sketch), 9u);
 
   bool found_a = false;
   bool found_b = false;

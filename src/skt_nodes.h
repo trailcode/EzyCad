@@ -76,6 +76,9 @@ public:
 
   void clear_outside_snap_pnts();
   void add_outside_snap_pnt(const gp_Pnt& pt3d);
+  /// Tool-session snap targets (not cleared when other-sketch snaps are rebuilt).
+  void clear_session_snap_pnts();
+  void add_session_snap_pnt(const gp_Pnt2d& pt);
 
   // Snap distance related
   static void            set_snap_dist(double snap_dist_pixels);

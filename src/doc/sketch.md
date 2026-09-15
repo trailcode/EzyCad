@@ -61,7 +61,7 @@ Snap distance, guide mode (*Traditional* / *Fullscreen* / *Both* / *None*), and 
 ```
 Sketch  (coordinator: skt.cpp, skt.h)
   |
-  +-- Sketch_nodes        vertices, snapping, outside-sketch snap points
+  +-- Sketch_nodes        vertices, snapping, outside-sketch and tool-session snap points
   +-- Sketch_node_marks   permanent "+" markers for user-placed nodes; origin uses cyan + with circle
   +-- Sketch_edges        persistent edge list; add, split, remove, pick
   +-- Sketch_topo         planar graph -> closed faces, edge splitting
@@ -201,12 +201,12 @@ Prefer these visitors in JSON/delta/topo code over iterating `std::list<Sketch_e
 | `skt_edge.h`         | `Sketch_edge` struct; `sketch_edge_is_linear` / `sketch_edge_is_arc`; `sketch_edge_outgoing_dir_2d` / `sketch_edge_incoming_dir_2d` |
 | `skt_edges.h`        | Persistent `std::list<Sketch_edge>`; add linear/arc edges; split at intersections; pick and selection                               |
 | `skt_topo.h`         | Planar face extraction from edge graph; automatic splitting at interior nodes and arc crossings                                     |
-| `skt_nodes.h`        | Node storage, snap, snap guides, outside-sketch snap points                                                                         |
+| `skt_nodes.h`        | Node storage, snap, snap guides, outside-sketch and tool-session snap points                                                        |
 | `skt_node_marks.h`   | AIS "+" markers for permanent nodes only                                                                                            |
 | `skt_dims.h`         | Length dimensions between node pairs; Tab/Shift+Tab input; dimension-tool pick state                                                |
 | `skt_tools.h`        | Mode-specific click/move/finalize/cancel; shared helpers in `skt_tools.inl`                                                         |
 | `skt_bone.h`         | Bone outline geom (`compute_bone_geom`, `make_bone_wire`); `DEV_MODE` construction overlay (`make_bone_debug_shape`)                |
-| `skt_tools_bone.cpp` | Add-bone tool (`Sketch_tools` members; Options: center nodes / holes; successful commit exits to `Sketch_inspection_mode`)          |
+| `skt_tools_bone.cpp` | Add-bone tool; tmp length segs; session snap; Holes None after waist commits; colored toasts                                        |
 | `skt_underlay.h`     | Calibrated raster underlay on the sketch plane                                                                                      |
 | `skt_ais.h`          | OCCT AIS wrappers tied back to owning `Sketch`                                                                                      |
 | `skt_display.cpp`    | Visibility, edge/face styling, `set_current`, list hover                                                                            |
@@ -223,7 +223,11 @@ A waist cutter is externally tangent to both end circles, so cutter center, cont
 | **Linear edge** | `Sketch_edge` in `Sketch_edges` | `node_idx_a`, `node_idx_b`; optional `node_idx_mid` when add-midpoint is on                   |
 | **Arc edge**    | same                            | Start, end, arc midpoint nodes; `node_idx_arc_pt` for curve snap                              |
 | **Face**        | Derived in `Sketch_topo`        | Rebuilt by `update_faces()` into `Sketch_face_shp`; drives extrude/revolve and face selection |
-| **Auto-split**  | `Sketch_topo` / edge add        | New edges crossing existing ones split at intersections (T-junctions, divided regions)        |
+| **Auto-split**  | `Sketch_topo` / edge add        | Crossings split at points; same-line / same-circle overlap is partitioned and kept once       |
+
+Undo `curr` for a new linear edge is the input span (redo re-runs merge). Pieces already on that span that were not split are also stored in `prev`, so undo does not drop an original that only overlapped. A no-op add (duplicate or already-covered span) records neither, so it does not push an undo step.
+
+Undo `curr` for a new arc is each **stored** start/bulge/end piece, not the input triple. Same-circle overlap skips the existing span; leftover parametric pieces have different endpoints, so recording the input triple would miss them on undo (for example a full circle over a bone end-cap).
 
 ### Face extraction (`Sketch_topo::update_faces`)
 

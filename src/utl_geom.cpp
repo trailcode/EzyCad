@@ -11,6 +11,7 @@
 #include <BRepTools.hxx>
 #include <BRep_Builder.hxx>
 #include <BRep_Tool.hxx>
+#include <GeomAbs_CurveType.hxx>
 #include <GeomAbs_SurfaceType.hxx>
 #include <GC_MakeArcOfCircle.hxx>
 #include <GC_MakeSegment.hxx>
@@ -49,6 +50,7 @@
 #include <algorithm>
 #include <cmath>
 #include <limits>
+#include <gp_Circ.hxx>
 #include <gp_Ax1.hxx>
 #include <gp_Ax2.hxx>
 #include <gp_Ax3.hxx>
@@ -1442,7 +1444,7 @@ std::optional<gp_Pnt2d> segment_intersection_2d(const gp_Pnt2d& a1, const gp_Pnt
 
   double den = (x1 - x2) * (y3 - y4) - (y1 - y2) * (x3 - x4);
   if (std::abs(den) < tol)
-    return std::nullopt; // parallel/collinear (overlap not handled)
+    return std::nullopt; // parallel/collinear (overlap handled by same_line_support_2d)
 
   double t = ((x1 - x3) * (y3 - y4) - (y1 - y3) * (x3 - x4)) / den;
   double u = -((x1 - x2) * (y1 - y3) - (y1 - y2) * (x1 - x3)) / den;
@@ -1480,6 +1482,59 @@ std::optional<gp_Pnt2d> segment_intersection_2d(const gp_Pnt2d& a1, const gp_Pnt
     return inter;
 
   return std::nullopt;
+}
+
+bool same_line_support_2d(const gp_Pnt2d& a1, const gp_Pnt2d& a2, const gp_Pnt2d& b1, const gp_Pnt2d& b2)
+{
+  const double tol = Precision::Confusion();
+  if (a1.Distance(a2) <= tol || b1.Distance(b2) <= tol)
+    return false;
+
+  auto on_infinite_line = [&](const gp_Pnt2d& p, const gp_Pnt2d& a, const gp_Pnt2d& b) -> bool
+  {
+    gp_Vec2d     ab(a, b);
+    const double len = ab.Magnitude();
+    if (len < tol)
+      return p.Distance(a) <= tol;
+
+    gp_Vec2d ap(a, p);
+    return std::abs(ap.X() * ab.Y() - ap.Y() * ab.X()) <= tol * len;
+  };
+
+  return on_infinite_line(b1, a1, a2) && on_infinite_line(b2, a1, a2);
+}
+
+std::vector<gp_Pnt2d> collinear_overlap_cut_points_2d(const gp_Pnt2d& a1, const gp_Pnt2d& a2, const gp_Pnt2d& b1,
+                                                      const gp_Pnt2d& b2)
+{
+  std::vector<gp_Pnt2d> ret;
+  if (!same_line_support_2d(a1, a2, b1, b2))
+    return ret;
+
+  auto add_if_interior = [&](const gp_Pnt2d& p, const gp_Pnt2d& s, const gp_Pnt2d& e)
+  {
+    if (point_on_open_segment_2d(p, s, e))
+      add_unique_point(ret, p);
+  };
+
+  add_if_interior(a1, b1, b2);
+  add_if_interior(a2, b1, b2);
+  add_if_interior(b1, a1, a2);
+  add_if_interior(b2, a1, a2);
+  return ret;
+}
+
+bool same_circle_support_2d(const TopoDS_Edge& arc_a, const TopoDS_Edge& arc_b, const gp_Pln& pln)
+{
+  const BRepAdaptor_Curve ca(arc_a);
+  const BRepAdaptor_Curve cb(arc_b);
+  if (ca.GetType() != GeomAbs_Circle || cb.GetType() != GeomAbs_Circle)
+    return false;
+
+  const gp_Circ a   = ca.Circle();
+  const gp_Circ b   = cb.Circle();
+  const double  tol = Precision::Confusion();
+  return to_2d(pln, a.Location()).Distance(to_2d(pln, b.Location())) <= tol && std::abs(a.Radius() - b.Radius()) <= tol;
 }
 
 /// Adds \a p to \a points only if it is not already present (within Precision::Confusion()).
@@ -1586,7 +1641,10 @@ std::vector<gp_Pnt2d> segment_arc_intersections_2d(const gp_Pnt2d& seg_a, const 
 
 std::vector<gp_Pnt2d> arc_arc_intersections_2d(const TopoDS_Edge& arc_a, const TopoDS_Edge& arc_b, const gp_Pln& pln)
 {
-  std::vector<gp_Pnt2d>     ret;
+  std::vector<gp_Pnt2d> ret;
+  if (same_circle_support_2d(arc_a, arc_b, pln))
+    return ret;
+
   Geom_TrimmedCurve_ptr     curve_a = edge_trimmed_curve_(arc_a);
   Geom_TrimmedCurve_ptr     curve_b = edge_trimmed_curve_(arc_b);
   GeomAPI_ExtremaCurveCurve ext(curve_a, curve_b);

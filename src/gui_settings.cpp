@@ -65,6 +65,8 @@ std::string GUI::occt_view_settings_json() const
       {"add_mid_pt_rect_edges",              m_add_mid_pt_rect_edges},
       {"add_mid_pt_slot_edges",              m_add_mid_pt_slot_edges},
       {"bone_add_center_nodes",              m_bone_add_center_nodes},
+      {"bone_add_radius_nodes",              m_bone_add_radius_nodes},
+      {"bone_add_total_length_nodes",        m_bone_add_total_length_nodes},
       {"bone_holes",                         static_cast<int>(m_bone_holes)},
       {"view_roll_step_deg",                 m_view_roll_step_deg},
       {"view_zoom_scroll_scale",             m_view_zoom_scroll_scale},
@@ -91,6 +93,7 @@ std::string GUI::occt_view_settings_json() const
                                               m_elm_list_hover_color[2], m_elm_list_hover_color[3]}},
       {"shape_selection_color",              {m_shape_selection_color[0], m_shape_selection_color[1],
                                               m_shape_selection_color[2], m_shape_selection_color[3]}},
+      {"curve_deviation_angle_deg",          m_curve_deviation_angle_deg},
       {"sketch_shape_faint_style",           m_sketch_shape_faint_style},
       {"sketch_shape_faint_opacity",         m_sketch_shape_faint_opacity},
       {"sketch_shape_faint_enabled",         m_sketch_shape_faint_enabled},
@@ -159,6 +162,8 @@ void GUI::save_occt_view_settings()
       {"add_mid_pt_rect_edges",              m_add_mid_pt_rect_edges},
       {"add_mid_pt_slot_edges",              m_add_mid_pt_slot_edges},
       {"bone_add_center_nodes",              m_bone_add_center_nodes},
+      {"bone_add_radius_nodes",              m_bone_add_radius_nodes},
+      {"bone_add_total_length_nodes",        m_bone_add_total_length_nodes},
       {"bone_holes",                         static_cast<int>(m_bone_holes)},
       {"load_last_opened_on_startup",        m_load_last_opened_on_startup},
       {"last_opened_project_path",           m_last_opened_project_path},
@@ -194,6 +199,7 @@ void GUI::save_occt_view_settings()
                                               m_elm_list_hover_color[2], m_elm_list_hover_color[3]}},
       {"shape_selection_color",              {m_shape_selection_color[0], m_shape_selection_color[1],
                                               m_shape_selection_color[2], m_shape_selection_color[3]}},
+      {"curve_deviation_angle_deg",          m_curve_deviation_angle_deg},
       {"sketch_shape_faint_style",           m_sketch_shape_faint_style},
       {"sketch_shape_faint_opacity",         m_sketch_shape_faint_opacity},
       {"sketch_shape_faint_enabled",         m_sketch_shape_faint_enabled},
@@ -419,6 +425,9 @@ void GUI::parse_gui_panes_settings_(const std::string& content)
                                                    k_gui_sketch_edge_line_width_max, k_gui_sketch_edge_line_width_default);
 
     parse_rgba4("shape_selection_color", m_shape_selection_color, k_gui_shape_selection_color_default);
+    m_curve_deviation_angle_deg =
+        parse_bounded_float("curve_deviation_angle_deg", k_gui_curve_deviation_angle_deg_min,
+                            k_gui_curve_deviation_angle_deg_max, k_gui_curve_deviation_angle_deg_default);
 
     if (g.contains("sketch_shape_faint_style") && g["sketch_shape_faint_style"].is_number_integer())
     {
@@ -467,6 +476,8 @@ void GUI::parse_gui_panes_settings_(const std::string& content)
     m_add_mid_pt_rect_edges       = b("add_mid_pt_rect_edges", true);
     m_add_mid_pt_slot_edges       = b("add_mid_pt_slot_edges", false);
     m_bone_add_center_nodes       = b("bone_add_center_nodes", true);
+    m_bone_add_radius_nodes       = b("bone_add_radius_nodes", true);
+    m_bone_add_total_length_nodes = b("bone_add_total_length_nodes", true);
     m_bone_holes                  = Bone_holes::None;
     if (g.contains("bone_holes") && g["bone_holes"].is_number_integer())
     {
@@ -751,6 +762,7 @@ void GUI::load_occt_view_settings_()
   {
     apply_sketch_dimensions_visibility();
     m_view->apply_shape_selection_style();
+    m_view->apply_curve_deviation();
     m_view->sync_sketch_shape_faint_style();
   }
 
@@ -1123,6 +1135,40 @@ void GUI::settings_()
     if (shape_sel_changed)
     {
       m_view->apply_shape_selection_style();
+      save_occt_view_settings();
+    }
+
+    bool curve_dev_changed = false;
+    if (ImGui::BeginTable("settings_curve_deviation", 2, ImGuiTableFlags_SizingStretchProp))
+    {
+      ImGui::TableSetupColumn("label", ImGuiTableColumnFlags_WidthFixed, k_label_col_w);
+      ImGui::TableSetupColumn("control", ImGuiTableColumnFlags_WidthStretch);
+
+      ImGui::TableNextRow();
+      ImGui::TableSetColumnIndex(0);
+      ImGui::AlignTextToFramePadding();
+      ImGui::TextUnformatted("Curve segment angle");
+      ImGui::TableSetColumnIndex(1);
+      if (ImGui::SliderFloat("##curve_dev_ang", &m_curve_deviation_angle_deg, k_gui_curve_deviation_angle_deg_min,
+                             k_gui_curve_deviation_angle_deg_max, "%.1f deg",
+                             ImGuiSliderFlags_AlwaysClamp | ImGuiSliderFlags_ClampOnInput))
+        curve_dev_changed = true;
+
+      m_curve_deviation_angle_deg =
+          std::clamp(m_curve_deviation_angle_deg, k_gui_curve_deviation_angle_deg_min, k_gui_curve_deviation_angle_deg_max);
+
+      ImGui::SameLine(0.0f, ImGui::GetStyle().ItemInnerSpacing.x);
+      GUI_DOC_HELP_("Maximum angle between consecutive segments when Open CASCADE draws curves (sketch arcs, circles, "
+                    "fillets). Smaller is smoother and uses more segments. Display only; stored geometry is unchanged. "
+                    "Ctrl+click the slider to type a value.",
+                    doc_urls::k_occt_view);
+
+      ImGui::EndTable();
+    }
+
+    if (curve_dev_changed)
+    {
+      m_view->apply_curve_deviation();
       save_occt_view_settings();
     }
   }
@@ -2000,7 +2046,7 @@ void GUI::settings_()
           {
             m_hotkey_capture_error =
                 "Conflict: " + Gui_hotkeys::format_chord(Gui_hotkeys::default_chord(action)) + " is already assigned.";
-            show_message(m_hotkey_capture_error);
+            show_message(m_hotkey_capture_error, Status_msg::Constraint);
           }
           else
           {
@@ -2089,23 +2135,24 @@ void GUI::settings_()
           }
         }
 
-        show_message("Default settings applied.");
+        show_message("Default settings applied.", Status_msg::Success);
         if (m_view)
         {
           m_view->refresh_sketch_annotations(
               {.length_dimensions = true, .permanent_node_marks = true, .edge_face_style = true});
           m_view->apply_shape_selection_style();
+          m_view->apply_curve_deviation();
           m_view->sync_sketch_shape_faint_style();
           m_view->refresh_shape_list_hover_highlight();
         }
       }
       catch (...)
       {
-        show_message("Failed to apply default settings.");
+        show_message("Failed to apply default settings.", Status_msg::Error);
       }
     }
     else
-      show_message("Failed to load default settings.");
+      show_message("Failed to load default settings.", Status_msg::Error);
   }
 
   ImGui::End();

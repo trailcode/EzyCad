@@ -437,7 +437,7 @@ void GUI::menu_bar_()
           if (file.good() && !file_bytes.empty())
             on_file(ex.path, file_bytes);
           else
-            show_message("Error opening example: " + ex.label);
+            show_message("Error opening example: " + ex.label, Status_msg::Error);
         }
 
       ImGui::EndMenu();
@@ -447,7 +447,7 @@ void GUI::menu_bar_()
     if (ImGui::MenuItem("Save settings"))
     {
       save_occt_view_settings();
-      show_message("Settings saved");
+      show_message("Settings saved", Status_msg::Success);
     }
 #endif
 
@@ -819,19 +819,19 @@ void GUI::toolbar_()
         {
         case Command::Shape_cut:
           if (Status s = m_view->shp_cut().selected_cut(); !s.is_ok())
-            show_message(s.message());
+            show_status(s);
 
           break;
 
         case Command::Shape_fuse:
           if (Status s = m_view->shp_fuse().selected_fuse(); !s.is_ok())
-            show_message(s.message());
+            show_status(s);
 
           break;
 
         case Command::Shape_common:
           if (Status s = m_view->shp_common().selected_common(); !s.is_ok())
-            show_message(s.message());
+            show_status(s);
 
           break;
 
@@ -1618,7 +1618,7 @@ void GUI::sketch_underlay_import_dialog_()
     std::ifstream file(selected, std::ios::binary);
     if (!file.is_open())
     {
-      show_message("Error opening: " + std::filesystem::path(selected).filename().string());
+      show_message("Error opening: " + std::filesystem::path(selected).filename().string(), Status_msg::Error);
       return;
     }
 
@@ -1626,7 +1626,7 @@ void GUI::sketch_underlay_import_dialog_()
     if (!file_bytes.empty())
       on_sketch_underlay_file(selected, file_bytes);
     else
-      show_message("Error opening: " + std::filesystem::path(selected).filename().string());
+      show_message("Error opening: " + std::filesystem::path(selected).filename().string(), Status_msg::Error);
   }
 #else
   sketch_underlay_file_dialog_async();
@@ -2203,7 +2203,7 @@ void GUI::on_sketch_underlay_file(const std::string& file_path, const std::strin
   if (!sk->underlay().load_from_file_bytes(file_bytes, m_view->asset_store(), hr, hg, hb, ha, sk->get_plane(),
                                            sk->is_visible()))
   {
-    show_message("Could not decode image: " + std::filesystem::path(file_path).filename().string());
+    show_message("Could not decode image: " + std::filesystem::path(file_path).filename().string(), Status_msg::Error);
     return;
   }
 
@@ -2211,7 +2211,7 @@ void GUI::on_sketch_underlay_file(const std::string& file_path, const std::strin
   m_underlay_calib_x_done = false;
   m_underlay_calib_y_done = false;
   m_underlay_panel_sketch = nullptr;
-  show_message("Underlay: " + std::filesystem::path(file_path).filename().string());
+  show_message("Underlay: " + std::filesystem::path(file_path).filename().string(), Status_msg::Success);
 }
 
 void GUI::cancel_underlay_calib_()
@@ -2292,7 +2292,7 @@ void GUI::begin_underlay_calib_set_x_(const Sketch::sptr& sk)
 
   if (m_view->curr_sketch_shared() != sk)
   {
-    show_message("Make this sketch current in the sketch list, then try again.");
+    show_message("Make this sketch current in the sketch list, then try again.", Status_msg::Constraint);
     return;
   }
 
@@ -2311,7 +2311,7 @@ void GUI::begin_underlay_calib_set_y_(const Sketch::sptr& sk)
 
   if (m_view->curr_sketch_shared() != sk)
   {
-    show_message("Make this sketch current in the sketch list, then try again.");
+    show_message("Make this sketch current in the sketch list, then try again.", Status_msg::Constraint);
     return;
   }
 
@@ -2351,7 +2351,7 @@ void GUI::underlay_calib_prompt_x_distance_(const Sketch::sptr& sk)
     const double Dx = static_cast<double>(new_dist) * m_view->get_display_to_model_scale();
     if (Dx <= 1e-12)
     {
-      show_message("Distance must be positive.");
+      show_message("Distance must be positive.", Status_msg::Constraint);
       return;
     }
 
@@ -2359,7 +2359,7 @@ void GUI::underlay_calib_prompt_x_distance_(const Sketch::sptr& sk)
     if (!s->underlay().rescale_uv_chord_to_length(m_underlay_calib_x0, m_underlay_calib_x1, Dx, s->get_plane(),
                                                   s->is_visible()))
     {
-      show_message("Could not calibrate X (underlay axes degenerate or segment too short).");
+      show_message("Could not calibrate X (underlay axes degenerate or segment too short).", Status_msg::Error);
       return;
     }
 
@@ -2377,7 +2377,8 @@ void GUI::underlay_calib_prompt_x_distance_(const Sketch::sptr& sk)
     m_dist_callback        = nullptr;
     m_underlay_calib_phase = Underlay_calib_phase::None;
     show_message("X distance applied to the picked segment. Use Set Y from edge for the vertical span if needed, or adjust "
-                 "transforms.");
+                 "transforms.",
+                 Status_msg::Success);
   };
 
   set_dist_edit(dist_show, std::move(on_dist), spos);
@@ -2410,7 +2411,7 @@ void GUI::underlay_calib_prompt_y_distance_(const Sketch::sptr& sk)
     const double Dy = static_cast<double>(new_dist) * m_view->get_display_to_model_scale();
     if (Dy <= 1e-12)
     {
-      show_message("Distance must be positive.");
+      show_message("Distance must be positive.", Status_msg::Constraint);
       return;
     }
 
@@ -2418,7 +2419,8 @@ void GUI::underlay_calib_prompt_y_distance_(const Sketch::sptr& sk)
     if (!s->underlay().rescale_v_chord_to_length(m_underlay_calib_y0, m_underlay_calib_y1, Dy, s->get_plane(), s->is_visible()))
     {
       show_message("Set Y: picks need a clear span along image height (not along the same edge as X only). Try two points "
-                   "further apart in V.");
+                   "further apart in V.",
+                   Status_msg::Constraint);
       return;
     }
 
@@ -2436,7 +2438,8 @@ void GUI::underlay_calib_prompt_y_distance_(const Sketch::sptr& sk)
     m_dist_callback = nullptr;
     cancel_underlay_calib_();
     show_message("Y distance applied to the picked segment. Use Set X from edge for the horizontal span if needed, or adjust "
-                 "transforms.");
+                 "transforms.",
+                 Status_msg::Success);
   };
 
   set_dist_edit(dist_show, std::move(on_dist), spos);
@@ -2488,7 +2491,7 @@ bool GUI::try_underlay_calib_click_(const ScreenCoords& screen_coords)
   case Underlay_calib_phase::PickX2:
     if (too_short(m_underlay_calib_x0, *pt))
     {
-      show_message("X segment too short.");
+      show_message("X segment too short.", Status_msg::Constraint);
       return true;
     }
 
@@ -2506,7 +2509,7 @@ bool GUI::try_underlay_calib_click_(const ScreenCoords& screen_coords)
   case Underlay_calib_phase::PickY2:
     if (too_short(m_underlay_calib_y0, *pt))
     {
-      show_message("Y segment too short.");
+      show_message("Y segment too short.", Status_msg::Constraint);
       return true;
     }
 
@@ -3225,19 +3228,19 @@ void GUI::finish_step_import_(Status st, Occt_view::Step_import_geom& geom)
 
   if (cancelled || (!st.is_ok() && st.message().find("cancelled") != std::string::npos))
   {
-    show_message("STEP import cancelled.");
+    show_message("STEP import cancelled.", Status_msg::Info);
     return;
   }
 
   if (!st.is_ok())
   {
-    show_message(st.message());
+    show_status(st);
     return;
   }
 
   if (Status commit = m_view->commit_step_import(geom); !commit.is_ok())
   {
-    show_message(commit.message());
+    show_status(commit);
     return;
   }
 
@@ -3245,13 +3248,13 @@ void GUI::finish_step_import_(Status st, Occt_view::Step_import_geom& geom)
   switch (m_cad_busy_import_mode)
   {
   case Step_import_mode::Union_shapes:
-    show_message("Imported (union): " + name);
+    show_message("Imported (union): " + name, Status_msg::Success);
     break;
   case Step_import_mode::Flat_solids:
-    show_message("Imported (flat): " + name);
+    show_message("Imported (flat): " + name, Status_msg::Success);
     break;
   default:
-    show_message("Imported: " + name);
+    show_message("Imported: " + name, Status_msg::Success);
     break;
   }
   close_file_inspector_();
@@ -3474,12 +3477,97 @@ void GUI::dbg_()
 void GUI::dbg_() {}
 #endif
 
-void GUI::show_message(const std::string& message)
+Status_msg parse_status_msg(std::string_view name)
+{
+  std::string s(name);
+  for (char& c : s)
+    c = static_cast<char>(std::tolower(static_cast<unsigned char>(c)));
+
+  if (s == "success")
+    return Status_msg::Success;
+
+  if (s == "constraint")
+    return Status_msg::Constraint;
+
+  if (s == "warning")
+    return Status_msg::Warning;
+
+  if (s == "error")
+    return Status_msg::Error;
+
+  return Status_msg::Info;
+}
+
+const char* status_msg_name(Status_msg kind)
+{
+  switch (kind)
+  {
+  case Status_msg::Success:
+    return "success";
+  case Status_msg::Constraint:
+    return "constraint";
+  case Status_msg::Warning:
+    return "warning";
+  case Status_msg::Error:
+    return "error";
+  case Status_msg::Info:
+  default:
+    return "info";
+  }
+}
+
+namespace
+{
+Status_msg toast_kind_from_status_(const Status& status)
+{
+  switch (status.status())
+  {
+  case Result_status::User_error:
+    return Status_msg::Constraint;
+  case Result_status::Error:
+  case Result_status::Topo_error:
+    return Status_msg::Error;
+  case Result_status::Success:
+  case Result_status::Null:
+  default:
+    return Status_msg::Info;
+  }
+}
+
+ImVec4 toast_text_color_(Status_msg kind, float alpha)
+{
+  switch (kind)
+  {
+  case Status_msg::Success:
+    return ImVec4(0.35f, 0.85f, 0.40f, alpha);
+  case Status_msg::Constraint:
+    return ImVec4(1.00f, 0.72f, 0.22f, alpha);
+  case Status_msg::Warning:
+    return ImVec4(1.00f, 0.88f, 0.25f, alpha);
+  case Status_msg::Error:
+    return ImVec4(1.00f, 0.28f, 0.28f, alpha);
+  case Status_msg::Info:
+  default:
+    return ImVec4(0.80f, 0.88f, 0.95f, alpha);
+  }
+}
+} // namespace
+
+void GUI::show_message(const std::string& message, Status_msg kind)
 {
   m_message            = message;
+  m_message_kind       = kind;
   m_message_visible    = true;
   m_message_start_time = std::chrono::steady_clock::now();
   log_message(message);
+}
+
+void GUI::show_status(const Status& status)
+{
+  if (status.message().empty())
+    return;
+
+  show_message(status.message(), toast_kind_from_status_(status));
 }
 
 void GUI::show_error_dialog(const std::string& title, const std::string& message)
@@ -3487,6 +3575,7 @@ void GUI::show_error_dialog(const std::string& title, const std::string& message
   // Log full detail once; toast title only (do not call show_message - that would log twice).
   log_message(title + ": " + message);
   m_message             = title;
+  m_message_kind        = Status_msg::Error;
   m_message_visible     = true;
   m_message_start_time  = std::chrono::steady_clock::now();
   m_error_modal_title   = title;
@@ -3554,8 +3643,7 @@ void GUI::message_status_window_()
                ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_AlwaysAutoResize |
                    ImGuiWindowFlags_NoSavedSettings | ImGuiWindowFlags_NoFocusOnAppearing | ImGuiWindowFlags_NoNav);
 
-  // Set text color with alpha for fade effect
-  ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(1.0f, 0.0f, 0.0f, alpha));
+  ImGui::PushStyleColor(ImGuiCol_Text, toast_text_color_(m_message_kind, alpha));
   ImGui::TextWrapped("%s", m_message.c_str());
   ImGui::PopStyleColor();
 
@@ -3720,7 +3808,7 @@ void GUI::load_default_project_()
           }
 
           log_message("EzyCad: last opened project JSON is invalid; falling back to startup/default.");
-          show_message("Last opened project file is invalid; loading startup/default.");
+          show_message("Last opened project file is invalid; loading startup/default.", Status_msg::Warning);
         }
       }
       else
@@ -3752,7 +3840,7 @@ void GUI::load_default_project_()
   if (!user_startup.empty())
   {
     log_message("EzyCad: saved startup project is invalid or incomplete; falling back to install default.");
-    show_message("Saved startup project is invalid; loading install default.");
+    show_message("Saved startup project is invalid; loading install default.", Status_msg::Warning);
   }
   else
     log_message("EzyCad: no saved startup project; trying bundled default.");
@@ -3954,7 +4042,7 @@ void GUI::save_startup_project_()
   const std::vector<uint8_t> ezy_bytes = serialized_project_ezy_();
   if (!settings::save_user_startup_project(ezy_bytes))
   {
-    show_message("Could not save startup project.");
+    show_message("Could not save startup project.", Status_msg::Error);
     return;
   }
 
@@ -3963,13 +4051,13 @@ void GUI::save_startup_project_()
   if (!p.empty())
     log_message("Startup saved to: " + p.string());
 #endif
-  show_message("Startup project saved. It will load automatically the next time you start EzyCad.");
+  show_message("Startup project saved. It will load automatically the next time you start EzyCad.", Status_msg::Success);
 }
 
 void GUI::clear_saved_startup_project_()
 {
   settings::clear_user_startup_project();
-  show_message("Saved startup cleared. Next launch uses the install default (res/default.ezy).");
+  show_message("Saved startup cleared. Next launch uses the install default (res/default.ezy).", Status_msg::Success);
 }
 
 void GUI::on_mouse_pos(const ScreenCoords& screen_coords)
@@ -3980,19 +4068,19 @@ void GUI::on_mouse_pos(const ScreenCoords& screen_coords)
   {
   case Mode::Move:
     if (Status s = m_view->shp_move().move_selected(screen_coords); !s.is_ok())
-      show_message(s.message());
+      show_status(s);
 
     break;
 
   case Mode::Rotate:
     if (Status s = m_view->shp_rotate().rotate_selected(screen_coords); !s.is_ok())
-      show_message(s.message());
+      show_status(s);
 
     break;
 
   case Mode::Scale:
     if (Status s = m_view->shp_scale().scale_selected(screen_coords); !s.is_ok())
-      show_message(s.message());
+      show_status(s);
 
     break;
 
@@ -4000,16 +4088,16 @@ void GUI::on_mouse_pos(const ScreenCoords& screen_coords)
     if (m_view->shp_cyl_align().is_twist_phase())
     {
       if (Status s = m_view->shp_cyl_align().drag_twist(screen_coords); !s.is_ok())
-        show_message(s.message());
+        show_status(s);
     }
     else if (Status s = m_view->shp_cyl_align().drag_depth(screen_coords); !s.is_ok())
-      show_message(s.message());
+      show_status(s);
 
     break;
 
   case Mode::Shape_polar_duplicate:
     if (Status s = m_view->shp_polar_dup().move_point(screen_coords); !s.is_ok())
-      show_message(s.message());
+      show_status(s);
 
     break;
 
@@ -4047,11 +4135,11 @@ void GUI::on_left_click_(const ScreenCoords& screen_coords)
     if (m_view->shp_cyl_align().is_dragging())
       m_view->shp_cyl_align().on_left_click();
     else if (Status s = m_view->shp_cyl_align().pick(screen_coords); !s.is_ok())
-      show_message(s.message());
+      show_status(s);
     break;
   case Mode::Shape_set_frame:
     if (Status s = m_view->shp_set_frame().pick(screen_coords); !s.is_ok())
-      show_message(s.message());
+      show_status(s);
     break;
   case Mode::Sketch_face_extrude: m_view->sketch_face_extrude(screen_coords, false);  break;
     // clang-format on
@@ -4085,19 +4173,19 @@ void GUI::on_left_click_(const ScreenCoords& screen_coords)
 
   case Mode::Shape_chamfer:
     if (Status s = m_view->shp_chamfer().add_chamfer(screen_coords, m_chamfer_mode); !s.is_ok())
-      show_message(s.message());
+      show_status(s);
 
     break;
 
   case Mode::Shape_fillet:
     if (Status s = m_view->shp_fillet().add_fillet(screen_coords, m_fillet_mode); !s.is_ok())
-      show_message(s.message());
+      show_status(s);
 
     break;
 
   case Mode::Shape_polar_duplicate:
     if (Status s = m_view->shp_polar_dup().add_point(screen_coords); !s.is_ok())
-      show_message(s.message());
+      show_status(s);
 
     break;
 
@@ -4317,15 +4405,15 @@ void GUI::export_file_dialog_(Export_format fmt, Export_unit unit)
   char const* selected           = tinyfd_saveFileDialog(title, def_name, 1, filter_patterns, filter_desc);
   if (!selected)
   {
-    show_message("Export canceled");
+    show_message("Export canceled", Status_msg::Info);
     return;
   }
 
   const Status s = m_view->export_document(fmt, unit, selected);
   if (!s.is_ok())
-    show_message(s.message());
+    show_status(s);
   else
-    show_message("Exported: " + std::filesystem::path(selected).filename().string());
+    show_message("Exported: " + std::filesystem::path(selected).filename().string(), Status_msg::Success);
 #else
   const char* mem_path = "/ezycad_export.step";
   std::string download_name{"export.step"};
@@ -4349,20 +4437,20 @@ void GUI::export_file_dialog_(Export_format fmt, Export_unit unit)
   const Status s = m_view->export_document(fmt, unit, mem_path);
   if (!s.is_ok())
   {
-    show_message(s.message());
+    show_status(s);
     return;
   }
 
   std::ifstream in(mem_path, std::ios::binary);
   if (!in)
   {
-    show_message("Export read failed.");
+    show_message("Export read failed.", Status_msg::Error);
     return;
   }
 
   const std::string bytes((std::istreambuf_iterator<char>(in)), std::istreambuf_iterator<char>());
   download_blob_async(download_name, bytes);
-  show_message("Exported: " + download_name);
+  show_message("Exported: " + download_name, Status_msg::Success);
 #endif
 }
 
@@ -4379,7 +4467,7 @@ void GUI::import_file_dialog_()
     std::ifstream file(selected, std::ios::binary);
     if (!file.is_open())
     {
-      show_message("Error opening: " + std::filesystem::path(selected).filename().string());
+      show_message("Error opening: " + std::filesystem::path(selected).filename().string(), Status_msg::Error);
       return;
     }
 
@@ -4387,7 +4475,7 @@ void GUI::import_file_dialog_()
     if (!file_bytes.empty())
       on_inspector_file(selected, file_bytes);
     else
-      show_message("Error opening: " + std::filesystem::path(selected).filename().string());
+      show_message("Error opening: " + std::filesystem::path(selected).filename().string(), Status_msg::Error);
   }
 #else
   import_file_dialog_async();
@@ -4422,7 +4510,7 @@ void GUI::open_file_dialog_()
       on_file(selected, file_bytes);
 
     else
-      show_message("Error opening: " + std::filesystem::path(selected).filename().string());
+      show_message("Error opening: " + std::filesystem::path(selected).filename().string(), Status_msg::Error);
   }
 #else
   // Emscripten: Call async version (synchronous fallback for simplicity)
@@ -4511,12 +4599,12 @@ void GUI::save_file_dialog_()
         if (!out)
           show_error_dialog("Save failed", describe_save_failure("closing the file"));
         else
-          show_message("Saved: " + std::filesystem::path(file).filename().string());
+          show_message("Saved: " + std::filesystem::path(file).filename().string(), Status_msg::Success);
       }
     }
   }
   else
-    show_message("Save canceled");
+    show_message("Save canceled", Status_msg::Info);
 #else
   if (ezy_bytes.empty())
   {
@@ -4551,7 +4639,7 @@ void GUI::on_file(const std::string& file_path, const std::string& file_bytes, b
   if (!manifest || !is_valid_project_manifest_(*manifest))
   {
     m_view->pop_undo_snapshot();
-    show_message("Invalid EzyCad project: " + std::filesystem::path(file_path).filename().string());
+    show_message("Invalid EzyCad project: " + std::filesystem::path(file_path).filename().string(), Status_msg::Error);
     return;
   }
 
@@ -4575,7 +4663,7 @@ void GUI::on_file(const std::string& file_path, const std::string& file_bytes, b
 #endif
 
   if (announce_load)
-    show_message("Opened: " + std::filesystem::path(file_path).filename().string());
+    show_message("Opened: " + std::filesystem::path(file_path).filename().string(), Status_msg::Success);
 }
 
 bool GUI::on_import_file(const std::string& file_path, const std::string& file_data, const Step_import_mode step_mode)
@@ -4588,17 +4676,17 @@ bool GUI::on_import_file(const std::string& file_path, const std::string& file_d
   {
     if (!m_view->import_ply(file_data))
     {
-      show_message("PLY import failed.");
+      show_message("PLY import failed.", Status_msg::Error);
       return false;
     }
 
-    show_message("Imported: " + std::filesystem::path(file_path).filename().string());
+    show_message("Imported: " + std::filesystem::path(file_path).filename().string(), Status_msg::Success);
     return true;
   }
 
   if (Status st = m_view->import_step(file_data, step_mode); !st.is_ok())
   {
-    show_message(st.message());
+    show_status(st);
     return false;
   }
 
@@ -4606,14 +4694,14 @@ bool GUI::on_import_file(const std::string& file_path, const std::string& file_d
   switch (step_mode)
   {
   case Step_import_mode::Union_shapes:
-    show_message("Imported (union): " + std::filesystem::path(file_path).filename().string());
+    show_message("Imported (union): " + std::filesystem::path(file_path).filename().string(), Status_msg::Success);
     break;
   case Step_import_mode::Flat_solids:
-    show_message("Imported (flat): " + std::filesystem::path(file_path).filename().string());
+    show_message("Imported (flat): " + std::filesystem::path(file_path).filename().string(), Status_msg::Success);
     break;
   case Step_import_mode::Preserve_hierarchy:
   default:
-    show_message(base);
+    show_message(base, Status_msg::Success);
     break;
   }
   return true;
@@ -4830,7 +4918,7 @@ extern "C" void on_save_file_selected(const char* file_name)
   if (file_name)
     g.note_saved_project_filename(file_name);
 
-  g.show_message(std::string("Saved: ") + (file_name ? file_name : ""));
+  g.show_message(std::string("Saved: ") + (file_name ? file_name : ""), Status_msg::Success);
 }
 extern "C" void on_save_file_failed(const char* reason)
 {

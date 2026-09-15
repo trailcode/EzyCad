@@ -16,6 +16,7 @@
 #include "gui.h"
 #include "gui_occt_view.h"
 #include "utl.h"
+#include "utl_geom.h"
 
 namespace
 {
@@ -28,8 +29,9 @@ constexpr float k_edge_highlight_line_width = 2.0f;
 Quantity_Color   rgb_from_rgba_(const float* rgba);
 float            transparency_from_rgba_(const float* rgba);
 void             apply_rgba_style_(AIS_Shape& shp, const float* rgba, float line_width);
-Prs3d_Drawer_ptr make_edge_hilight_drawer_(const float* rgba, float line_width);
-Prs3d_Drawer_ptr make_face_hilight_drawer_(const float* rgba);
+void             apply_drawer_curve_angle_(const Prs3d_Drawer_ptr& drawer, const GUI& gui);
+Prs3d_Drawer_ptr make_edge_hilight_drawer_(const GUI& gui, const float* rgba, float line_width);
+Prs3d_Drawer_ptr make_face_hilight_drawer_(const GUI& gui, const float* rgba);
 void             apply_edge_hilight_(AIS_Shape& shp, const GUI& gui);
 void             apply_face_hilight_(AIS_Shape& shp, const GUI& gui);
 } // namespace
@@ -279,6 +281,17 @@ void Sketch::set_edge_style(Edge_style style)
 
   update_all_face_styles_();
   update_originating_face_style();
+
+  // Face remesh writes PolygonOnTriangulation onto shared TEdges; strip it so the
+  // curve-angle slider (StdPrs_DeflectionCurve) is what you see, not the face mesh.
+  for (Edge& e : m_edges.edges())
+  {
+    if (e.shp.IsNull())
+      continue;
+
+    m_view.apply_curve_deviation_to_shape(*e.shp);
+    m_ctx.Redisplay(e.shp, false);
+  }
 }
 
 namespace
@@ -291,6 +304,15 @@ Quantity_Color rgb_from_rgba_(const float* rgba)
 
 float transparency_from_rgba_(const float* rgba) { return std::clamp(1.f - rgba[3], 0.f, 1.f); }
 
+void apply_drawer_curve_angle_(const Prs3d_Drawer_ptr& drawer, const GUI& gui)
+{
+  if (drawer.IsNull())
+    return;
+
+  drawer->SetDeviationAngle(to_radians(static_cast<double>(gui.curve_deviation_angle_deg())));
+  drawer->SetDeviationCoefficient(0.001);
+}
+
 void apply_rgba_style_(AIS_Shape& shp, const float* rgba, float line_width)
 {
   shp.SetWidth(static_cast<double>(line_width));
@@ -298,9 +320,10 @@ void apply_rgba_style_(AIS_Shape& shp, const float* rgba, float line_width)
   shp.SetTransparency(static_cast<double>(transparency_from_rgba_(rgba)));
 }
 
-Prs3d_Drawer_ptr make_edge_hilight_drawer_(const float* rgba, float line_width)
+Prs3d_Drawer_ptr make_edge_hilight_drawer_(const GUI& gui, const float* rgba, float line_width)
 {
   Prs3d_Drawer_ptr     drawer = new Prs3d_Drawer();
+  apply_drawer_curve_angle_(drawer, gui);
   const Quantity_Color qc     = rgb_from_rgba_(rgba);
   drawer->SetColor(qc);
   drawer->SetTransparency(transparency_from_rgba_(rgba));
@@ -312,10 +335,11 @@ Prs3d_Drawer_ptr make_edge_hilight_drawer_(const float* rgba, float line_width)
   return drawer;
 }
 
-Prs3d_Drawer_ptr make_face_hilight_drawer_(const float* rgba)
+Prs3d_Drawer_ptr make_face_hilight_drawer_(const GUI& gui, const float* rgba)
 {
   Prs3d_Drawer_ptr drawer = new Prs3d_Drawer();
   drawer->SetupOwnDefaults();
+  apply_drawer_curve_angle_(drawer, gui);
   const Quantity_Color qc     = rgb_from_rgba_(rgba);
   const float          transp = transparency_from_rgba_(rgba);
   drawer->SetColor(qc);
@@ -341,19 +365,27 @@ Prs3d_Drawer_ptr make_face_hilight_drawer_(const float* rgba)
 
 void apply_edge_hilight_(AIS_Shape& shp, const GUI& gui)
 {
-  Prs3d_Drawer_ptr selected = make_edge_hilight_drawer_(gui.sketch_edge_selection_color_rgba(), k_edge_highlight_line_width);
-  Prs3d_Drawer_ptr hover    = make_edge_hilight_drawer_(gui.sketch_edge_highlight_color_rgba(), k_edge_highlight_line_width);
+  Prs3d_Drawer_ptr selected =
+      make_edge_hilight_drawer_(gui, gui.sketch_edge_selection_color_rgba(), k_edge_highlight_line_width);
+  Prs3d_Drawer_ptr hover =
+      make_edge_hilight_drawer_(gui, gui.sketch_edge_highlight_color_rgba(), k_edge_highlight_line_width);
   shp.SetHilightAttributes(selected);
   shp.SetDynamicHilightAttributes(hover);
+  apply_drawer_curve_angle_(shp.Attributes(), gui);
+  if (const Occt_view* view = gui.get_view())
+    view->apply_curve_deviation_to_shape(shp);
 }
 
 void apply_face_hilight_(AIS_Shape& shp, const GUI& gui)
 {
   // Use shaded hilight so selection/hover tint the face fill, not only a wire outline.
   shp.SetHilightMode(AIS_Shaded);
-  Prs3d_Drawer_ptr selected = make_face_hilight_drawer_(gui.sketch_face_selection_color_rgba());
-  Prs3d_Drawer_ptr hover    = make_face_hilight_drawer_(gui.sketch_face_highlight_color_rgba());
+  Prs3d_Drawer_ptr selected = make_face_hilight_drawer_(gui, gui.sketch_face_selection_color_rgba());
+  Prs3d_Drawer_ptr hover    = make_face_hilight_drawer_(gui, gui.sketch_face_highlight_color_rgba());
   shp.SetHilightAttributes(selected);
   shp.SetDynamicHilightAttributes(hover);
+  apply_drawer_curve_angle_(shp.Attributes(), gui);
+  if (const Occt_view* view = gui.get_view())
+    view->apply_curve_deviation_to_shape(shp);
 }
 } // namespace

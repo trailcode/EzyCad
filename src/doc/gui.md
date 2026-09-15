@@ -225,7 +225,7 @@ Tests use `sketch_left_click` to simulate sketch LMB without ImGui mouse positio
 | Each sketch tool mode            | Matching `options_sketch_*_mode_`                                                                                   |
 | `Sketch_operation_axis`          | Mirror / Revolve / Clear axis                                                                                       |
 | `Sketch_face_extrude`            | **Extrude** (Both sides, Twist, material) above Sketch options; help mentions Settings fast preview                 |
-| `Sketch_add_bone`                | Center nodes, holes; when `DEV_MODE` in `config.h`, **Debug vis** construction overlays (not persisted)             |
+| `Sketch_add_bone`                | Center / radius / total-length nodes, holes; None after waist commits; `DEV_MODE` **Debug vis**                     |
 
 ### Options panel layout (sketch tools)
 
@@ -254,7 +254,7 @@ Shared sketch controls (snap, faint shapes) live in `options_sketch_shared_contr
 | 8     | `add_*_dialog_`                                               | Primitive / sketch creation popups    |
 | 9     | `log_window_`, consoles, `settings_`, `dbg_`                  | Log, Lua/Python, Settings             |
 
-`GUI::show_message` drives the transient status toast (`message_status_window_`) and also appends via `log_message`. `show_error_dialog` logs `title: message` once and toasts the title only.
+`GUI::show_message` drives the transient status toast (`message_status_window_`) and also appends via `log_message`. The toast color comes from `Status_msg` (`Success`, `Info`, `Constraint`, `Warning`, `Error`; default `Info`). `show_status` maps `Result_status` (`User_error` -> Constraint, `Error` / `Topo_error` -> Error, ok -> Info). `show_error_dialog` logs `title: message` once and toasts the title as Error.
 
 Sketch List expand **Faces**: each face row supports **`E`** and right-click **Extrude** via `GUI::sketch_list_extrude_face_` (`set_mode(Sketch_face_extrude)` + `Occt_view::begin_sketch_face_extrude` / `Shp_extrude::begin_face_extrude`). Hovering a **Faces**, **Edges**, or **Nodes** row calls `Occt_view::set_sketch_list_hover_{face,edge,node}` (temporarily displays the AIS when hidden outside sketch modes; uses `Graphic3d_ZLayerId_Topmost` so solids do not occlude the highlight).
 
@@ -273,7 +273,7 @@ Sketch List expand **Faces**: each face row supports **`E`** and right-click **E
 | `load_occt_view_settings_`  | Called from `GUI::init`                                             |
 | `occt_view_settings_json()` | Scripting API for settings blob                                     |
 
-Sketch edge/face display colors live under `gui.sketch_edge_*` / `gui.sketch_face_*` and are applied live via `Sketch_annotation_refresh::edge_face_style`. Sketch-mode shape ghost/wire uses `gui.sketch_shape_faint_style` / `gui.sketch_shape_faint_opacity` via `Occt_view::sync_sketch_shape_faint_style`. 3D shape selection highlight uses `gui.shape_selection_color` applied through `Occt_view::apply_shape_selection_style` (`AIS_InteractiveContext::SelectionStyle`). Settings collapsing-header open state is stored in `gui.settings_headers` (Sketch nests **Appearance**, **Dimensions**, **Nodes**, **Snap**, **Underlay**; also **Keyboard shortcuts** / `hotkeys`). Remappable chords: `gui.hotkeys` object via `Gui_hotkeys::to_json` / `merge_from_json`.
+Sketch edge/face display colors live under `gui.sketch_edge_*` / `gui.sketch_face_*` and are applied live via `Sketch_annotation_refresh::edge_face_style`. Sketch-mode shape ghost/wire uses `gui.sketch_shape_faint_style` / `gui.sketch_shape_faint_opacity` via `Occt_view::sync_sketch_shape_faint_style`. 3D shape selection highlight uses `gui.shape_selection_color` applied through `Occt_view::apply_shape_selection_style` (`AIS_InteractiveContext::SelectionStyle`). AIS curve tessellation uses `gui.curve_deviation_angle_deg` via `Occt_view::apply_curve_deviation` (`Prs3d_Drawer::SetDeviationAngle`). Settings collapsing-header open state is stored in `gui.settings_headers` (Sketch nests **Appearance**, **Dimensions**, **Nodes**, **Snap**, **Underlay**; also **Keyboard shortcuts** / `hotkeys`). Remappable chords: `gui.hotkeys` object via `Gui_hotkeys::to_json` / `merge_from_json`.
 
 User-visible key tables: [`docs/usage-settings.md`](../../docs/usage-settings.md). When adding a Settings control, follow [agents/conventions/user-docs-sync.md](../../agents/conventions/user-docs-sync.md).
 

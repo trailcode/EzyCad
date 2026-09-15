@@ -412,27 +412,27 @@ void GUI::dispatch_hotkey_action_(Gui_action action)
   case Gui_action::Mode_cross_section:        set_mode(Mode::Shape_cross_section);            break;
   case Gui_action::Cmd_shape_cut:
     if (Status s = m_view->shp_cut().selected_cut(); !s.is_ok())
-      show_message(s.message());
+      show_status(s);
     break;
 
   case Gui_action::Cmd_shape_fuse:
     if (Status s = m_view->shp_fuse().selected_fuse(); !s.is_ok())
-      show_message(s.message());
+      show_status(s);
     break;
 
   case Gui_action::Cmd_shape_common:
     if (Status s = m_view->shp_common().selected_common(); !s.is_ok())
-      show_message(s.message());
+      show_status(s);
     break;
 
   case Gui_action::Edit_delete:               m_view->delete_selected();  break;
   case Gui_action::Edit_copy:
     if (Status s = m_view->copy_selected_shapes(); !s.is_ok())
-      show_message(s.message());
+      show_status(s);
     break;
   case Gui_action::Edit_paste:
     if (Status s = m_view->paste_clipboard_shapes(); !s.is_ok())
-      show_message(s.message());
+      show_status(s);
     break;
   case Gui_action::File_new:                  new_project_();             break;
   case Gui_action::File_open:                 open_file_dialog_();        break;
@@ -474,21 +474,21 @@ bool GUI::try_capture_hotkey_press_(int key, int mods)
   if (!Gui_hotkeys::is_bindable_key(key))
   {
     m_hotkey_capture_error = "Unsupported key. Use a letter, digit, or Space (modifiers allowed).";
-    show_message(m_hotkey_capture_error);
+    show_message(m_hotkey_capture_error, Status_msg::Constraint);
     return true;
   }
 
   if (Gui_hotkeys::is_reserved_chord(chord))
   {
     m_hotkey_capture_error = "Reserved: " + Gui_hotkeys::format_chord(chord) + " is a fixed shortcut and cannot be remapped.";
-    show_message(m_hotkey_capture_error);
+    show_message(m_hotkey_capture_error, Status_msg::Constraint);
     return true;
   }
 
   if (!m_hotkeys.set_chord(*m_hotkey_capture_action, chord))
   {
     m_hotkey_capture_error = "Conflict: " + Gui_hotkeys::format_chord(chord) + " is already assigned.";
-    show_message(m_hotkey_capture_error);
+    show_message(m_hotkey_capture_error, Status_msg::Constraint);
     return true;
   }
 
@@ -909,7 +909,7 @@ void GUI::options_shape_polar_duplicate_mode_()
     ImGui::TableSetColumnIndex(1);
     if (ImGui::Button("Dup"))
       if (Status s = polar_dup.dup(); !s.is_ok())
-        show_message(s.message());
+        show_status(s);
 
     ImGui::TableNextRow();
     ImGui::TableSetColumnIndex(0);
@@ -1019,21 +1019,21 @@ void GUI::options_shape_cross_section_mode_()
       section.acknowledge_current_selection();
     }
     else if (const Status status = section.request_preview_selected(); !status.is_ok())
-      show_message(status.message());
+      show_status(status);
   }
 
   if (std::optional<Status> finished = section.poll())
   {
     // Toast failures only; success edge-count spam on Offset drag is noise.
     if (!finished->is_ok())
-      show_message(finished->message());
+      show_status(*finished);
   }
 
   ImGui::BeginDisabled(!have_selection);
   if (ImGui::Button("Clip"))
   {
     const Status status = section.clip_selected();
-    show_message(status.message());
+    show_status(status);
   }
   ImGui::EndDisabled();
 
@@ -1041,7 +1041,7 @@ void GUI::options_shape_cross_section_mode_()
   if (ImGui::Button("Cross section sketch"))
   {
     const Status status = m_view->create_sketch_from_cross_section();
-    show_message(status.message());
+    show_status(status);
   }
   ImGui::EndDisabled();
 
@@ -1285,6 +1285,30 @@ void GUI::options_sketch_add_bone_mode_()
                 "Click ? to open the user guide.",
                 doc_urls::k_bone_creation_tool);
 
+  bool add_radius = m_bone_add_radius_nodes;
+  if (ImGui::Checkbox("Add radius nodes", &add_radius))
+  {
+    m_bone_add_radius_nodes = add_radius;
+    save_occt_view_settings();
+  }
+
+  ImGui::SameLine(0.0f, ImGui::GetStyle().ItemInnerSpacing.x);
+  GUI_DOC_HELP_("When on, commits permanent Bone A+ / A- and Bone B+ / B- nodes at the "
+                "axis-tangent points on each end circle. Click ? to open the user guide.",
+                doc_urls::k_bone_creation_tool);
+
+  bool add_total = m_bone_add_total_length_nodes;
+  if (ImGui::Checkbox("Add total length nodes", &add_total))
+  {
+    m_bone_add_total_length_nodes = add_total;
+    save_occt_view_settings();
+  }
+
+  ImGui::SameLine(0.0f, ImGui::GetStyle().ItemInnerSpacing.x);
+  GUI_DOC_HELP_("When on, commits permanent Bone A tip and Bone B tip nodes at the outer "
+                "ends (overall bone length). Click ? to open the user guide.",
+                doc_urls::k_bone_creation_tool);
+
   ImGui::AlignTextToFramePadding();
   ImGui::TextUnformatted("Holes");
   ImGui::SameLine();
@@ -1295,6 +1319,7 @@ void GUI::options_sketch_add_bone_mode_()
     {
       m_bone_holes = static_cast<Bone_holes>(holes);
       save_occt_view_settings();
+      m_view->curr_sketch().apply_bone_holes_option();
     }
   }
 
@@ -1303,8 +1328,7 @@ void GUI::options_sketch_add_bone_mode_()
                 "Hole radius must be smaller than that end's outer radius. Click ? to open the user guide.",
                 doc_urls::k_bone_creation_tool);
 
-  ImGui::TextWrapped(
-      "Click center A, center B, radius 1, radius 2, waist, then holes if enabled.");
+  ImGui::TextWrapped("Click center A, center B, radius 2, radius 1, waist, then holes if enabled.");
 
 #if DEV_MODE
   ImGui::Separator();
@@ -1584,7 +1608,7 @@ void GUI::on_key_rotate_mode_(int key)
 
   case GLFW_KEY_TAB:
     if (Status s = m_view->shp_rotate().show_angle_edit(screen_coords); !s.is_ok())
-      show_message(s.message());
+      show_status(s);
     break;
 
   case GLFW_KEY_X:

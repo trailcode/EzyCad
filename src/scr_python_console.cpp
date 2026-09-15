@@ -271,8 +271,8 @@ def _ezycad_bootstrap():
             self.Shp = _n.Shp
         def log(self, msg):
             return _n.ezy_log(msg)
-        def msg(self, text):
-            return _n.ezy_msg(text)
+        def msg(self, text, kind="info"):
+            return _n.ezy_msg(text, kind)
         def get_mode(self):
             return _n.ezy_get_mode()
         def set_mode(self, name):
@@ -321,12 +321,13 @@ PYBIND11_EMBEDDED_MODULE(ezycad_native, m)
 
   m.def(
       "ezy_msg",
-      [](const std::string& text)
+      [](const std::string& text, const std::string& kind)
       {
         if (g_py_gui)
-          g_py_gui->show_message(text);
+          g_py_gui->show_message(text, parse_status_msg(kind));
       },
-      py::arg("text"));
+      py::arg("text"),
+      py::arg("kind") = "info");
 
   m.def("ezy_get_mode",
         []
@@ -354,7 +355,7 @@ PYBIND11_EMBEDDED_MODULE(ezycad_native, m)
             return;
 
           const char* help_text = "ezy (public scripting API):\n"
-                                  "  ezy.log(msg) / ezy.msg(text) / ezy.help()\n"
+                                  "  ezy.log(msg) / ezy.msg(text [, kind]) / ezy.help()\n"
                                   "  ezy.get_mode() / ezy.set_mode(name)\n"
                                   "  ezy.save_occt_view_settings() / ezy.occt_view_settings_json()\n"
                                   "ezy.view:\n"

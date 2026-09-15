@@ -250,8 +250,8 @@ class Ezy(_Remote):
     def log(self, msg: Any) -> Optional[str]:
         return self._call_void("ezy.log", msg)
 
-    def msg(self, text: str) -> None:
-        self._call_void("ezy.msg", text)
+    def msg(self, text: str, kind: str = "info") -> None:
+        self._call_void("ezy.msg", text, kind)
 
     def get_mode(self) -> str:
         return str(self._call("ezy.get_mode"))

@@ -169,14 +169,21 @@ public:
   void rebuild_faces();
   /// Add a bone outline (outer end arcs and inner waist arcs).
   /// Waist cutters are tangent to both end circles; cut radius is solved from \\a waist.
-  /// Optional permanent **Bone A** / **Bone B** centers; optional hole circles (radii must be
+  /// Optional permanent **Bone A** / **Bone B** centers, axis-tangent radius nodes
+  /// (**Bone A+** / **A-**, **Bone B+** / **B-**), and outer-tip nodes for overall length
+  /// (**Bone A tip** / **Bone B tip**). Optional hole circles (radii must be
   /// positive and smaller than the matching end radii).
   void add_bone(const gp_Pnt2d& c1, const gp_Pnt2d& c2, double r1, double r2, double waist,
                 bool add_center_nodes = true, std::optional<double> hole_r1 = std::nullopt,
-                std::optional<double> hole_r2 = std::nullopt);
+                std::optional<double> hole_r2 = std::nullopt, bool add_radius_nodes = true,
+                bool add_total_length_nodes = true);
 
   /// Rebuild Add-bone AIS preview (outline + DEV_MODE construction overlays).
   void refresh_bone_preview();
+  /// Apply Options Holes (commit outline when waist is set and Holes is None).
+  void apply_bone_holes_option();
+  /// Info toast for the next Add-bone click.
+  void prompt_add_bone();
 
 private:
   friend class Sketch_json;

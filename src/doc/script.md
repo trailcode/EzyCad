@@ -109,12 +109,14 @@ Aliases: global `view` == `ezy.view`; `Shp` == `ezy.Shp`; `view.add_sketch` / `f
 | Method                          | C++ delegate                           |
 | ------------------------------- | -------------------------------------- |
 | `ezy.log(msg)`                  | `GUI::log_message` + console history   |
-| `ezy.msg(text)`                 | `GUI::show_message` (toast + Log)      |
+| `ezy.msg(text [, kind])`        | `GUI::show_message` (toast + Log)      |
 | `ezy.get_mode()`                | `GUI::get_mode()` -> mode name string  |
 | `ezy.set_mode(name)`            | `GUI::set_mode(mode_from_string(...))` |
 | `ezy.save_occt_view_settings()` | `GUI::save_occt_view_settings()`       |
 | `ezy.occt_view_settings_json()` | `GUI::occt_view_settings_json()`       |
 | `ezy.help()` / global `help()`  | Prints binding summary to console      |
+
+Optional `kind` for `ezy.msg` is `success`, `info` (default), `constraint`, `warning`, or `error` (`parse_status_msg`).
 
 Lua overrides global `print` to call `ezy.log`. Python bootstrap assigns `builtins.print` similarly.
 

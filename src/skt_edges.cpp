@@ -7,6 +7,8 @@
 #include <Precision.hxx>
 #include <TopoDS.hxx>
 #include <algorithm>
+#include <cmath>
+#include <optional>
 #include <vector>
 
 #include "gui_occt_view.h"
@@ -52,7 +54,6 @@ void Sketch_edges::add_edge(const gp_Pnt2d& pt_a, const gp_Pnt2d& pt_b) { add_ed
 
 void Sketch_edges::add_edge(const gp_Pnt2d& pt_a, const gp_Pnt2d& pt_b, Sketch_op_recorder& rec)
 {
-  rec.note_curr_linear_edge(pt_a, pt_b);
   add_edge_impl_(pt_a, pt_b, &rec);
 }
 
@@ -71,7 +72,12 @@ void Sketch_edges::add_edge_impl_(const gp_Pnt2d& pt_a, const gp_Pnt2d& pt_b, Sk
       gp_Pnt2d qa = m_sketch.m_nodes[e.node_idx_a];
       gp_Pnt2d qb = m_sketch.m_nodes[e.node_idx_b];
 
-      if (auto inter = segment_intersection_2d(pt_a, pt_b, qa, qb, Segment_inclusion::Closed))
+      if (same_line_support_2d(pt_a, pt_b, qa, qb))
+      {
+        for (const gp_Pnt2d& ip : collinear_overlap_cut_points_2d(pt_a, pt_b, qa, qb))
+          add_unique_point(inters, ip);
+      }
+      else if (auto inter = segment_intersection_2d(pt_a, pt_b, qa, qb, Segment_inclusion::Closed))
         add_unique_point(inters, *inter);
     }
     else if (sketch_edge_is_arc(e))
@@ -147,11 +153,31 @@ void Sketch_edges::add_edge_impl_(const gp_Pnt2d& pt_a, const gp_Pnt2d& pt_b, Sk
     m_sketch.m_topo.split_arcs_at_node_if_interior(nidx, rec);
   }
 
+  std::vector<const Sketch_edge*> unsplit;
+  bool                            added_any = false;
   for (size_t i = 0; i + 1 < div_node_idxs.size(); ++i)
   {
-    const gp_Pnt2d& pa = m_sketch.m_nodes[div_node_idxs[i]];
-    const gp_Pnt2d& pb = m_sketch.m_nodes[div_node_idxs[i + 1]];
+    const gp_Pnt2d pa = m_sketch.m_nodes[div_node_idxs[i]];
+    const gp_Pnt2d pb = m_sketch.m_nodes[div_node_idxs[i + 1]];
+    if (const Sketch_edge* existing = find_linear_edge_(pa, pb))
+    {
+      unsplit.push_back(existing);
+      continue;
+    }
+
     add_edge_raw_(pa, pb);
+    added_any = true;
+  }
+
+  // Unsplit originals on the new span are not in prev from a split. Undo removes every
+  // linear edge on curr (the full new span), so record those pieces when curr is recorded.
+  // A no-op add (already covered) must not write prev alone or commit() pushes a dead undo.
+  if (rec && (added_any || !inters_to_split.empty()))
+  {
+    for (const Sketch_edge* existing : unsplit)
+      rec->note_prev_linear_edge(existing->node_idx_a, *existing->node_idx_b, existing->node_idx_mid, existing->name);
+
+    rec->note_curr_linear_edge(pt_a, pt_b);
   }
 }
 
@@ -184,14 +210,14 @@ void Sketch_edges::update_end_pt(Sketch_edge& edge, size_t end_pt_idx)
     edge.node_idx_mid = std::nullopt;
 }
 
-void Sketch_edges::add_arc_circle_edges(const std::vector<size_t>& node_idxs, Sketch_op_recorder* rec)
+bool Sketch_edges::add_arc_circle_edges(const std::vector<size_t>& node_idxs, Sketch_op_recorder* rec)
 {
   EZY_ASSERT(node_idxs.size() == 3);
   // node_idxs[2] is the user pick (may be toward the circle center); it defines the arc only.
   Geom_TrimmedCurve_ptr arc_of_circle =
       GC_MakeArcOfCircle(m_sketch.to_3d_(node_idxs[0]), m_sketch.to_3d_(node_idxs[2]), m_sketch.to_3d_(node_idxs[1]));
   if (!arc_of_circle)
-    return;
+    return false;
 
   const TopoDS_Edge new_edge = BRepBuilderAPI_MakeEdge(arc_of_circle).Edge();
   const gp_Pnt2d    pt_start = m_sketch.m_nodes[node_idxs[0]];
@@ -216,8 +242,28 @@ void Sketch_edges::add_arc_circle_edges(const std::vector<size_t>& node_idxs, Sk
     }
     else if (sketch_edge_is_arc(e))
     {
-      for (const gp_Pnt2d& ip : arc_arc_intersections_2d(TopoDS::Edge(e.shp->Shape()), new_edge, m_sketch.m_pln))
-        add_unique_point(inters, ip);
+      const TopoDS_Edge old_arc = TopoDS::Edge(e.shp->Shape());
+      if (same_circle_support_2d(old_arc, new_edge, m_sketch.m_pln))
+      {
+        const gp_Pnt2d ea = m_sketch.m_nodes[e.node_idx_a];
+        const gp_Pnt2d eb = m_sketch.m_nodes[*e.node_idx_b];
+        if (point_on_open_arc_interior_2d(ea, new_edge, m_sketch.m_pln))
+          add_unique_point(inters, ea);
+
+        if (point_on_open_arc_interior_2d(eb, new_edge, m_sketch.m_pln))
+          add_unique_point(inters, eb);
+
+        if (point_on_open_arc_interior_2d(pt_start, old_arc, m_sketch.m_pln))
+          add_unique_point(inters, pt_start);
+
+        if (point_on_open_arc_interior_2d(pt_end, old_arc, m_sketch.m_pln))
+          add_unique_point(inters, pt_end);
+      }
+      else
+      {
+        for (const gp_Pnt2d& ip : arc_arc_intersections_2d(old_arc, new_edge, m_sketch.m_pln))
+          add_unique_point(inters, ip);
+      }
     }
   }
 
@@ -226,7 +272,6 @@ void Sketch_edges::add_arc_circle_edges(const std::vector<size_t>& node_idxs, Sk
   {
     bool split_here = false;
     for (const Sketch_edge& e : m_edges)
-    {
       if (is_linear(e))
       {
         const gp_Pnt2d qa = m_sketch.m_nodes[e.node_idx_a];
@@ -245,7 +290,7 @@ void Sketch_edges::add_arc_circle_edges(const std::vector<size_t>& node_idxs, Sk
           break;
         }
       }
-    }
+
     if (split_here)
       add_unique_point(inters_to_split, ip);
   }
@@ -260,28 +305,79 @@ void Sketch_edges::add_arc_circle_edges(const std::vector<size_t>& node_idxs, Sk
     m_sketch.m_topo.split_arcs_at_node_if_interior(nidx, rec);
   }
 
-  std::optional<size_t> arc_pt_idx;
-  if (Sketch::get_add_mid_pt_edges())
-    arc_pt_idx = m_sketch.m_nodes.add_new_node(arc_curve_midpoint_2d(new_edge, m_sketch.m_pln), true);
+  const BRepAdaptor_Curve curve(new_edge);
+  const Geom_Curve_ptr    geom    = curve.Curve().Curve();
+  const double            u_first = curve.FirstParameter();
+  const double            u_last  = curve.LastParameter();
 
-  Sketch_AIS_edge_ptr shp = new Sketch_AIS_edge(m_sketch, new_edge);
-  m_sketch.update_edge_style_(shp);
-  m_sketch.m_ctx.Display(shp, false);
+  auto param_of = [&](const gp_Pnt2d& p) -> std::optional<double>
+  {
+    GeomAPI_ProjectPointOnCurve proj(to_3d(m_sketch.m_pln, p), geom, u_first, u_last);
+    if (proj.NbPoints() == 0 || proj.LowerDistance() > Precision::Confusion())
+      return std::nullopt;
 
-  // One graph edge per arc; endpoints are start and end only.
-  m_edges.push_back({node_idxs[0], node_idxs[1], arc_pt_idx, std::nullopt, shp});
+    return proj.LowerDistanceParameter();
+  };
 
+  std::vector<double> cuts{u_first, u_last};
   for (const gp_Pnt2d& ip : inters)
   {
-    if (!point_on_open_arc_interior_2d(ip, new_edge, m_sketch.m_pln))
-      continue;
-
-    const size_t nidx = m_sketch.m_nodes.get_node_exact(ip);
-    if (rec)
-      rec->note_curr_node(nidx);
-
-    m_sketch.m_topo.split_arcs_at_node_if_interior(nidx, rec);
+    if (const std::optional<double> u = param_of(ip))
+      cuts.push_back(*u);
   }
+
+  std::sort(cuts.begin(), cuts.end());
+  const double span   = u_last - u_first;
+  const double margin = std::max(Precision::Confusion(), std::abs(span) * 1e-9);
+  std::vector<double> unique_cuts;
+  for (double u : cuts)
+  {
+    if (unique_cuts.empty() || std::abs(u - unique_cuts.back()) > margin)
+      unique_cuts.push_back(u);
+  }
+
+  auto add_stored_arc_ = [&](size_t idx_a, size_t idx_b, size_t bulge_idx)
+  {
+    add_arc_raw_(idx_a, idx_b, bulge_idx);
+    if (rec)
+    {
+      rec->note_curr_arc_edge(m_sketch.m_nodes[idx_a], m_sketch.m_nodes[bulge_idx], m_sketch.m_nodes[idx_b]);
+      rec->note_curr_node(idx_a);
+      rec->note_curr_node(bulge_idx);
+      rec->note_curr_node(idx_b);
+    }
+  };
+
+  bool added_any = false;
+  if (unique_cuts.size() == 2)
+  {
+    const gp_Pnt2d bulge = m_sketch.m_nodes[node_idxs[2]];
+    if (!has_equivalent_arc_(pt_start, pt_end, bulge))
+    {
+      add_stored_arc_(node_idxs[0], node_idxs[1], node_idxs[2]);
+      added_any = true;
+    }
+  }
+  else
+  {
+    for (size_t i = 0; i + 1 < unique_cuts.size(); ++i)
+    {
+      if (unique_cuts[i + 1] - unique_cuts[i] <= margin)
+        continue;
+
+      const gp_Pnt2d p0    = to_2d(m_sketch.m_pln, curve.Value(unique_cuts[i]));
+      const gp_Pnt2d p1    = to_2d(m_sketch.m_pln, curve.Value(unique_cuts[i + 1]));
+      const gp_Pnt2d bulge = to_2d(m_sketch.m_pln, curve.Value(0.5 * (unique_cuts[i] + unique_cuts[i + 1])));
+      if (has_equivalent_arc_(p0, p1, bulge))
+        continue;
+
+      add_stored_arc_(m_sketch.m_nodes.get_node_exact(p0), m_sketch.m_nodes.get_node_exact(p1),
+                      m_sketch.m_nodes.get_node_exact(bulge));
+      added_any = true;
+    }
+  }
+
+  return added_any || !inters_to_split.empty();
 }
 
 void Sketch_edges::split_arc_at_node_(std::list<Sketch_edge>::iterator itr, size_t split_idx, Sketch_op_recorder* rec)
@@ -326,8 +422,8 @@ void Sketch_edges::split_arc_at_node_(std::list<Sketch_edge>::iterator itr, size
   const size_t bulge1_idx = m_sketch.m_nodes.get_node_exact(bulge1);
   const size_t bulge2_idx = m_sketch.m_nodes.get_node_exact(bulge2);
 
-  add_arc_circle_edges({idx_a, split_idx, bulge1_idx});
-  add_arc_circle_edges({split_idx, idx_b, bulge2_idx});
+  add_arc_raw_(idx_a, split_idx, bulge1_idx);
+  add_arc_raw_(split_idx, idx_b, bulge2_idx);
 
   if (rec)
   {
@@ -335,6 +431,72 @@ void Sketch_edges::split_arc_at_node_(std::list<Sketch_edge>::iterator itr, size
     rec->note_curr_arc_edge(m_sketch.m_nodes[idx_a], m_sketch.m_nodes[bulge1_idx], m_sketch.m_nodes[split_idx]);
     rec->note_curr_arc_edge(m_sketch.m_nodes[split_idx], m_sketch.m_nodes[bulge2_idx], m_sketch.m_nodes[idx_b]);
   }
+}
+
+void Sketch_edges::add_arc_raw_(size_t idx_a, size_t idx_b, size_t bulge_idx)
+{
+  Geom_TrimmedCurve_ptr arc =
+      GC_MakeArcOfCircle(m_sketch.to_3d_(idx_a), m_sketch.to_3d_(bulge_idx), m_sketch.to_3d_(idx_b));
+  if (!arc)
+    return;
+
+  const TopoDS_Edge occ = BRepBuilderAPI_MakeEdge(arc).Edge();
+  std::optional<size_t> arc_pt_idx;
+  if (Sketch::get_add_mid_pt_edges())
+    arc_pt_idx = m_sketch.m_nodes.add_new_node(arc_curve_midpoint_2d(occ, m_sketch.m_pln), true);
+
+  Sketch_AIS_edge_ptr shp = new Sketch_AIS_edge(m_sketch, occ);
+  m_sketch.update_edge_style_(shp);
+  m_sketch.m_ctx.Display(shp, false);
+  m_edges.push_back({idx_a, idx_b, arc_pt_idx, std::nullopt, shp});
+}
+
+const Sketch_edge* Sketch_edges::find_linear_edge_(const gp_Pnt2d& pt_a, const gp_Pnt2d& pt_b) const
+{
+  const double tol = Precision::Confusion();
+  for (const Sketch_edge& e : m_edges)
+  {
+    if (!is_linear(e) || !e.node_idx_b.has_value())
+      continue;
+
+    const gp_Pnt2d ea = m_sketch.m_nodes[e.node_idx_a];
+    const gp_Pnt2d eb = m_sketch.m_nodes[*e.node_idx_b];
+    if ((ea.Distance(pt_a) <= tol && eb.Distance(pt_b) <= tol) || (ea.Distance(pt_b) <= tol && eb.Distance(pt_a) <= tol))
+      return &e;
+  }
+
+  return nullptr;
+}
+
+bool Sketch_edges::has_linear_edge_(const gp_Pnt2d& pt_a, const gp_Pnt2d& pt_b) const
+{
+  return find_linear_edge_(pt_a, pt_b) != nullptr;
+}
+
+bool Sketch_edges::has_equivalent_arc_(const gp_Pnt2d& start, const gp_Pnt2d& end, const gp_Pnt2d& bulge) const
+{
+  const double tol = Precision::Confusion();
+  for (const Sketch_edge& e : m_edges)
+  {
+    if (!sketch_edge_is_arc(e) || !e.node_idx_b.has_value() || e.shp.IsNull())
+      continue;
+
+    const gp_Pnt2d ea = m_sketch.m_nodes[e.node_idx_a];
+    const gp_Pnt2d eb = m_sketch.m_nodes[*e.node_idx_b];
+    const bool     ends_fwd = ea.Distance(start) <= tol && eb.Distance(end) <= tol;
+    const bool     ends_rev = ea.Distance(end) <= tol && eb.Distance(start) <= tol;
+    if (!ends_fwd && !ends_rev)
+      continue;
+
+    const TopoDS_Edge occ = TopoDS::Edge(e.shp->Shape());
+    if (point_on_open_arc_interior_2d(bulge, occ, m_sketch.m_pln))
+      return true;
+
+    if (arc_curve_midpoint_2d(occ, m_sketch.m_pln).Distance(bulge) <= tol)
+      return true;
+  }
+
+  return false;
 }
 
 void Sketch_edges::for_each_linear(const Linear_visitor& fn) const

@@ -59,6 +59,7 @@ struct Sketch_op_data
     gp_Pnt2d    pt;
     bool        permanent{false};
     std::string name;
+    bool        split_edges{true};
   };
 
   Sketch*                                m_sketch{nullptr};
@@ -148,7 +149,7 @@ public:
   void note_curr_linear_edge(const gp_Pnt2d& pt_a, const gp_Pnt2d& pt_b);
   void note_prev_arc_edge(const gp_Pnt2d& pt_a, const gp_Pnt2d& pt_b, const gp_Pnt2d& pt_c);
   void note_curr_arc_edge(const gp_Pnt2d& pt_a, const gp_Pnt2d& pt_b, const gp_Pnt2d& pt_c);
-  void note_curr_node(size_t node_idx);
+  void note_curr_node(size_t node_idx, bool split_edges = true);
   void note_prev_length_dim(size_t lo, size_t hi, bool visible, std::optional<double> flyout, const std::string& name);
   void note_curr_length_dim(size_t lo, size_t hi, bool visible, std::optional<double> flyout, const std::string& name);
   void note_prev_operation_axis(size_t node_idx_a, size_t node_idx_b);
@@ -194,7 +195,7 @@ void Sketch_op_recorder::note_curr_arc_edge(const gp_Pnt2d& pt_a, const gp_Pnt2d
   m_impl->note_curr_arc_edge(pt_a, pt_b, pt_c);
 }
 
-void Sketch_op_recorder::note_curr_node(size_t node_idx) { m_impl->note_curr_node(node_idx); }
+void Sketch_op_recorder::note_curr_node(size_t node_idx, bool split_edges) { m_impl->note_curr_node(node_idx, split_edges); }
 
 void Sketch_op_recorder::note_prev_length_dim(size_t lo, size_t hi, bool visible, std::optional<double> flyout,
                                               const std::string& name)
@@ -308,7 +309,7 @@ void Sketch_op_recorder::Impl::note_curr_arc_edge(const gp_Pnt2d& pt_a, const gp
   m_data.curr_arc_edges.push_back(rec);
 }
 
-void Sketch_op_recorder::Impl::note_curr_node(size_t node_idx)
+void Sketch_op_recorder::Impl::note_curr_node(size_t node_idx, bool split_edges)
 {
   if (!m_active)
     return;
@@ -333,7 +334,7 @@ void Sketch_op_recorder::Impl::note_curr_node(size_t node_idx)
     if (pts_equal_(x.pt, pt))
       return;
 
-  m_data.curr_nodes.push_back({pt, now_permanent, m_sketch.m_nodes[node_idx].name});
+  m_data.curr_nodes.push_back({pt, now_permanent, m_sketch.m_nodes[node_idx].name, split_edges});
 }
 
 void Sketch_op_recorder::Impl::note_prev_length_dim(size_t lo, size_t hi, bool visible, std::optional<double> flyout,
@@ -635,7 +636,7 @@ void Sketch_op_data::restore_curr_node_at_pt_(Sketch& sketch, const Curr_node_re
   if (!rec.name.empty())
     sketch.m_nodes[node_idx].name = rec.name;
 
-  if (is_arc_bulge)
+  if (is_arc_bulge || !rec.split_edges)
     return;
 
   sketch.m_topo.split_linear_edges_at_node_if_interior(node_idx);

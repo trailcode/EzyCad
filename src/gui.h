@@ -31,6 +31,7 @@
 #include "gui_hotkeys.h"
 #include "gui_occt_view.h"
 #include "shp_info.h"
+#include "utl.h"
 #include "utl_cad_file_info.h"
 #include "utl_types.h"
 
@@ -48,6 +49,22 @@ enum class Command
   Shape_common,
   _count
 };
+
+/// Kind for the transient status toast (`GUI::show_message` / `ezy.msg`).
+enum class Status_msg : std::uint8_t
+{
+  Success,
+  Info,
+  Constraint,
+  Warning,
+  Error
+};
+
+/// Parse a script/API name (`"success"`, `"info"`, `"constraint"`, `"warning"`, `"error"`).
+/// Unknown names become `Info`.
+Status_msg parse_status_msg(std::string_view name);
+/// Stable lowercase name for \\a kind (`"info"`, `"error"`, ...).
+const char* status_msg_name(Status_msg kind);
 
 /// Two-segment picks for underlay X/Y calibration (Sketch properties pane).
 enum class Underlay_calib_phase : std::uint8_t
@@ -114,6 +131,11 @@ inline constexpr float k_gui_sketch_face_selection_color_default[4] = {0.799043f
 inline constexpr float k_gui_sketch_face_highlight_color_default[4] = {0.822967f, 0.0f, 1.0f, 1.0f};
 /// 3D shape selection (AIS SelectionStyle) RGBA (`gui.shape_selection_color`).
 inline constexpr float k_gui_shape_selection_color_default[4] = {0.754312f, 0.072938f, 0.846890f, 1.0f};
+/// OCCT AIS curve tessellation: max segment angle in degrees (`gui.curve_deviation_angle_deg`).
+/// Smaller is smoother. OCCT library default is 20 deg; EzyCad default is tighter.
+inline constexpr float k_gui_curve_deviation_angle_deg_min     = 2.0f;
+inline constexpr float k_gui_curve_deviation_angle_deg_max     = 20.0f;
+inline constexpr float k_gui_curve_deviation_angle_deg_default = 6.0f;
 /// `gui.sketch_shape_faint_style`: 0 = Off (hide shapes in sketch mode), 1 = Ghost, 2 = Wire.
 inline constexpr int k_gui_sketch_shape_faint_style_min     = 0;
 inline constexpr int k_gui_sketch_shape_faint_style_max     = 2;
@@ -297,6 +319,8 @@ public:
   const float* sketch_face_highlight_color_rgba() const { return m_sketch_face_highlight_color; }
   /// 3D shape selection (AIS SelectionStyle) RGBA (0-1; alpha = opacity).
   const float* shape_selection_color_rgba() const { return m_shape_selection_color; }
+  /// Max AIS curve segment angle in degrees (`gui.curve_deviation_angle_deg`).
+  float curve_deviation_angle_deg() const { return m_curve_deviation_angle_deg; }
   /// How 3D shapes appear while in sketch mode (`gui.sketch_shape_faint_style`).
   int   sketch_shape_faint_style() const { return m_sketch_shape_faint_style; }
   float sketch_shape_faint_opacity() const { return m_sketch_shape_faint_opacity; }
@@ -311,6 +335,10 @@ public:
   bool get_add_mid_pt_slot_edges() const { return m_add_mid_pt_slot_edges; }
   /// Add-bone Options: permanent Bone A / Bone B nodes (`gui.bone_add_center_nodes`).
   bool get_bone_add_center_nodes() const { return m_bone_add_center_nodes; }
+  /// Add-bone Options: permanent axis-tangent radius nodes (`gui.bone_add_radius_nodes`).
+  bool get_bone_add_radius_nodes() const { return m_bone_add_radius_nodes; }
+  /// Add-bone Options: permanent outer-tip nodes for overall length (`gui.bone_add_total_length_nodes`).
+  bool get_bone_add_total_length_nodes() const { return m_bone_add_total_length_nodes; }
   /// Add-bone Options: hole clicks after waist (`gui.bone_holes`).
   Bone_holes get_bone_holes() const { return m_bone_holes; }
 #if DEV_MODE
@@ -345,9 +373,11 @@ public:
   /// True when dist or angle edit is visible; Tab should be routed to on_key() instead of ImGui.
   bool is_dist_or_angle_edit_active() const;
   bool is_sketch_origin_set_edit_active() const;
-  /// Transient bottom-right status toast; also appends to the Log window.
-  void show_message(const std::string& message);
-  /// Queue an ImGui error modal (logs title: message once; short title toast). Native and wasm.
+  /// Transient bottom-right status toast (colored by \\a kind); also appends to the Log window.
+  void show_message(const std::string& message, Status_msg kind = Status_msg::Info);
+  /// Toast `status.message()` using `Result_status` (ok -> Info, User_error -> Constraint, else Error).
+  void show_status(const Status& status);
+  /// Queue an ImGui error modal (logs title: message once; short title toast as Error). Native and wasm.
   void show_error_dialog(const std::string& title, const std::string& message);
   void log_message(const std::string& message);
   void set_show_options(bool v) { m_show_options = v; }
@@ -414,7 +444,8 @@ public:
   /// RGBA (0-255) for Shape List row hover highlight in the 3D viewer (see Settings).
   void elm_list_hover_color_rgba(uint8_t& r, uint8_t& g, uint8_t& b, uint8_t& a) const;
   /// For scripting (Lua console): access the 3D view.
-  Occt_view* get_view() { return m_view.get(); }
+  Occt_view*       get_view() { return m_view.get(); }
+  const Occt_view* get_view() const { return m_view.get(); }
 
 private:
   friend class GUI_access;
@@ -669,6 +700,8 @@ private:
   bool  m_add_mid_pt_rect_edges               = true;
   bool  m_add_mid_pt_slot_edges               = false;
   bool  m_bone_add_center_nodes               = true;
+  bool  m_bone_add_radius_nodes               = true;
+  bool  m_bone_add_total_length_nodes         = true;
   Bone_holes m_bone_holes                     = Bone_holes::None;
 #if DEV_MODE
   Bone_debug_flags m_bone_debug;
@@ -687,6 +720,7 @@ private:
 
   // Message status window
   std::string                           m_message;
+  Status_msg                            m_message_kind    = Status_msg::Info;
   bool                                  m_message_visible = false;
   std::chrono::steady_clock::time_point m_message_start_time;
 
@@ -857,6 +891,7 @@ private:
   /// AIS SelectionStyle for selected 3D shapes (0-1 RGBA; Settings -> View presentation).
   float m_shape_selection_color[4] = {k_gui_shape_selection_color_default[0], k_gui_shape_selection_color_default[1],
                                       k_gui_shape_selection_color_default[2], k_gui_shape_selection_color_default[3]};
+  float m_curve_deviation_angle_deg = k_gui_curve_deviation_angle_deg_default;
 
   std::unique_ptr<Lua_console>    m_lua_console;
   bool                            m_show_python_console{false};

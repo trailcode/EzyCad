@@ -82,13 +82,18 @@ int l_ezy_log(lua_State* L)
   return 0;
 }
 
-// ezy.msg(text) -> show_message
+// ezy.msg(text [, kind]) -> show_message
 int l_ezy_msg(lua_State* L)
 {
   const char* text = luaL_checkstring(L, 1);
-  GUI*        gui  = get_gui(L);
+  Status_msg  kind = Status_msg::Info;
+  if (lua_gettop(L) >= 2 && !lua_isnoneornil(L, 2))
+    kind = parse_status_msg(luaL_checkstring(L, 2));
+
+  GUI* gui = get_gui(L);
   if (gui)
-    gui->show_message(text);
+    gui->show_message(text, kind);
+
   return 0;
 }
 
@@ -697,7 +702,7 @@ int l_ezy_help(lua_State* L)
   if (!con)
     return 0;
   const char* help_text = "ezy (public scripting API):\n"
-                          "  ezy.log(msg) / ezy.msg(text) / ezy.help()\n"
+                          "  ezy.log(msg) / ezy.msg(text [, kind]) / ezy.help()\n"
                           "  ezy.get_mode() / ezy.set_mode(name)\n"
                           "  ezy.save_occt_view_settings() / ezy.occt_view_settings_json()\n"
                           "ezy.view:\n"

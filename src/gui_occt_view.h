@@ -360,6 +360,7 @@ public:
   void snap_view_to_nearest_standard_axis();
 
   GUI&                    gui();
+  const GUI&              gui() const;
   AIS_InteractiveContext& ctx();
 
   // Selection related
@@ -391,6 +392,10 @@ public:
   void refresh_shape_list_hover_highlight();
   /// Apply AIS SelectionStyle from Settings (shape selection color).
   void apply_shape_selection_style();
+  /// Apply AIS curve tessellation angle from Settings (`gui.curve_deviation_angle_deg`) and redisplay.
+  void apply_curve_deviation();
+  /// Apply the current curve tessellation settings to one AIS shape (sketch edges/faces).
+  void apply_curve_deviation_to_shape(AIS_Shape& shp) const;
   /// Apply or clear sketch-mode shape ghost/wire/hide from current GUI settings and mode.
   void sync_sketch_shape_faint_style();
 
