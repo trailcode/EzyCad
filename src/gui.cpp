@@ -2747,6 +2747,15 @@ void GUI::shape_list_()
 
     // Columns 0-2: fixed actions on the left (no tree indent).
     ImGui::TableSetColumnIndex(0);
+    // Full-row hit target under the widgets so padding / gaps between controls
+    // still select and open the context menu (widgets draw on top via AllowOverlap).
+    const ImVec2 cell0_pos = ImGui::GetCursorScreenPos();
+    ImGui::Selectable("##row_hit", false, ImGuiSelectableFlags_SpanAllColumns | ImGuiSelectableFlags_AllowOverlap);
+    row_hovered |= ImGui::IsItemHovered();
+    if (ImGui::IsItemClicked())
+      select_shape_row(shape);
+    ImGui::SetCursorScreenPos(cell0_pos);
+
     bool visible = shape->get_visible();
     if (ImGui::Checkbox("##vis", &visible))
     {
@@ -2893,17 +2902,19 @@ void GUI::shape_list_()
 
     row_hovered |= ImGui::IsItemHovered(ImGuiHoveredFlags_AllowWhenOverlapped | ImGuiHoveredFlags_AllowWhenBlockedByActiveItem);
 
+    // Last-column clip would miss gaps between vis / shaded / M; test the full row.
     if (const ImGuiTable* table = ImGui::GetCurrentTable())
     {
-      const ImRect row_bb(ImVec2(table->WorkRect.Min.x, table->RowPosY1), ImVec2(table->WorkRect.Max.x, table->RowPosY2));
-      row_hovered |= ImGui::IsMouseHoveringRect(row_bb.Min, row_bb.Max);
+      if (ImGui::TableGetHoveredColumn() >= 0)
+      {
+        const ImRect row_bb(ImVec2(table->WorkRect.Min.x, table->RowPosY1), ImVec2(table->WorkRect.Max.x, table->RowPosY2));
+        row_hovered |= ImGui::IsMouseHoveringRect(row_bb.Min, row_bb.Max, false);
+      }
     }
 
-    const ImGuiPayload* dd            = ImGui::GetDragDropPayload();
-    const bool          dragging_row  = dd != nullptr && dd->IsDataType("EZY_SHAPE_ID");
-    const bool          row_rclick_ok = row_hovered && !dragging_row && ImGui::IsMouseReleased(ImGuiMouseButton_Right) &&
-                               ImGui::IsWindowHovered(ImGuiHoveredFlags_AllowWhenBlockedByActiveItem);
-    if (row_rclick_ok)
+    const ImGuiPayload* dd           = ImGui::GetDragDropPayload();
+    const bool          dragging_row = dd != nullptr && dd->IsDataType("EZY_SHAPE_ID");
+    if (row_hovered && !dragging_row && ImGui::IsMouseReleased(ImGuiMouseButton_Right))
       ImGui::OpenPopup("shape_row_ctx");
 
     if (ImGui::BeginPopup("shape_row_ctx"))
