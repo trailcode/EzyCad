@@ -43,6 +43,13 @@ class Python_console;
 class Sketch;
 struct GLFWwindow;
 
+// Defined in gui_shp_pane.cpp (Shape List row walk). Friend so it can call open_shape_info_
+// and read/write m_shape_list_expanded without a public API.
+namespace gui_shp_detail
+{
+struct Shape_list_row_drawer;
+}
+
 enum class Command
 {
   Shape_cut,
@@ -479,6 +486,7 @@ private:
   void                         sketch_properties_dialog_();
   void                         sketch_origin_panel_settings_(const std::shared_ptr<Sketch>& sk);
   // Shape List + Shape info (gui_shp_pane.cpp)
+  friend struct gui_shp_detail::Shape_list_row_drawer;
   [[nodiscard]] nlohmann::json shape_list_ui_to_json_() const;
   void                         apply_shape_list_ui_from_json_(const nlohmann::json& j);
   void                         shape_list_();
