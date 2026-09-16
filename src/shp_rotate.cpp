@@ -11,6 +11,7 @@
 #include <TopoDS_Edge.hxx>
 #include <cmath>
 #include <gp_Ax1.hxx>
+#include <gp_Trsf.hxx>
 
 #include "utl_geom.h"
 #include "gui.h"
@@ -43,7 +44,12 @@ Status Shp_rotate::rotate_selected(const ScreenCoords& screen_coords)
   if (!mouse_wc_pos)
     return Status::user_error("Adjust view, cannot get point on plane.");
 
-  if (m_center->IsEqual(*mouse_wc_pos, Precision::Confusion()))
+  return update_rotate_from_world_(*mouse_wc_pos, axis_dir, pln);
+}
+
+Status Shp_rotate::update_rotate_from_world_(const gp_Pnt& mouse_wc_pos, const gp_Dir& axis_dir, const gp_Pln& pln)
+{
+  if (m_center->IsEqual(mouse_wc_pos, Precision::Confusion()))
     return Status::user_error("Move mouse further from rotation center to start rotation.");
 
   if (!m_rotate_pln)
@@ -53,10 +59,20 @@ Status Shp_rotate::rotate_selected(const ScreenCoords& screen_coords)
   }
 
   if (!m_initial_mouse_pos)
-    m_initial_mouse_pos = mouse_wc_pos;
+  {
+    // Recapture so a mid-drag Local/World (or axis) change keeps the current angle.
+    if (std::abs(m_angle) > Precision::Confusion())
+    {
+      gp_Trsf back;
+      back.SetRotation(gp_Ax1(*m_center, m_rotate_pln->Axis().Direction()), -m_angle);
+      m_initial_mouse_pos = mouse_wc_pos.Transformed(back);
+    }
+    else
+      m_initial_mouse_pos = mouse_wc_pos;
+  }
 
   gp_Vec v0(*m_center, *m_initial_mouse_pos);
-  gp_Vec v1(*m_center, *mouse_wc_pos);
+  gp_Vec v1(*m_center, mouse_wc_pos);
 
   gp_Vec v0_proj = project_onto_plane(v0, *m_rotate_pln);
   gp_Vec v1_proj = project_onto_plane(v1, *m_rotate_pln);
@@ -305,6 +321,7 @@ void Shp_rotate::on_transform_space_changed()
   if (m_shps.empty())
     return;
 
+  // Drop the world-space mouse anchor; update_rotate_from_world_ recaptures so the angle stays.
   clear_all(m_initial_mouse_pos, m_rotate_pln, m_captured_axis_dir);
   refresh_guides_();
   if (std::abs(m_angle) > Precision::Confusion())

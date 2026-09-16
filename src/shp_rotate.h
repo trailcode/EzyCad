@@ -29,7 +29,7 @@ public:
 
   void          set_rotation_axis(Rotation_axis axis);
   Rotation_axis get_rotation_axis() const { return m_rotation_axis; }
-  /// Pivot / axis vis after Options Local/World change.
+  /// Pivot / axis vis after Options Local/World change; mid-drag re-baselines the angle.
   void on_transform_space_changed();
 
 private:
@@ -37,6 +37,7 @@ private:
   [[nodiscard]] Transform_axes current_axes_();
   [[nodiscard]] gp_Dir         current_axis_dir_();
   [[nodiscard]] gp_Pln         choose_rotate_pln_(const gp_Dir& axis_dir);
+  [[nodiscard]] Status         update_rotate_from_world_(const gp_Pnt& mouse_wc_pos, const gp_Dir& axis_dir, const gp_Pln& pln);
   void                         capture_drag_frame_();
   void                         refresh_guides_();
   void                         preview_rotate_();

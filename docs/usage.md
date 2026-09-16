@@ -452,6 +452,7 @@ The shape rotate tool enables precise rotation of selected shapes around a speci
 - Use view-to-object rotation for intuitive free-form rotation (through the same pivot as Local/World)
 - Use X/Y/Z for precise rotations; with **Local**, Z is the assigned primary axis (for example a cylinder axis from **Set from cylindrical face**)
 - After the first mouse sample, orbit or pan keeps that axis and plane so the angle preview does not jump
+- Switching **Local** / **World** mid-drag keeps the current angle; the next mouse move re-baselines from the new pivot
 - The pivot is a red cross on top of the solids (shaded or wireframe)
 - You can combine rotation with other operations for complex transformations
 
