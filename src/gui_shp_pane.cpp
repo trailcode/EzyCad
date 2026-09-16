@@ -389,6 +389,7 @@ bool Shape_list_row_drawer::row_is_selected_(const Shp_ptr& shape) const
 
     return false;
   }
+
   return m_selected_in_viewer.count(shape.get()) != 0;
 }
 
@@ -422,6 +423,7 @@ void Shape_list_row_drawer::apply_material_(const Shp_ptr& shape, int i)
   // OwnColor (e.g. from older wasm SetColor workarounds) overrides material presets.
   if (shape->HasColor())
     shape->UnsetColor();
+
   shape->SetMaterial(Graphic3d_MaterialAspect(static_cast<Graphic3d_NameOfMaterial>(i)));
   m_view.refresh_shape_shading_(shape);
   m_view.ctx().Redisplay(shape, true);
@@ -462,18 +464,21 @@ void Shape_list_row_drawer::draw_ctx_menu_(const Shp_ptr& shape, bool is_group)
       m_view.set_shape_frame(shape, Shp::default_frame_for(shape->Shape()));
       shape->set_show_frame_axes(true);
     }
+
     if (ImGui::MenuItem("Set from planar face..."))
     {
       select_row_(shape);
       m_view.shp_set_frame().begin(shape, Shp_set_frame::Pick::Planar_face);
       m_gui.set_mode(Mode::Shape_set_frame);
     }
+
     if (ImGui::MenuItem("Set from cylindrical face..."))
     {
       select_row_(shape);
       m_view.shp_set_frame().begin(shape, Shp_set_frame::Pick::Cylindrical_face);
       m_gui.set_mode(Mode::Shape_set_frame);
     }
+
     if (ImGui::MenuItem("Flip up"))
     {
       select_row_(shape);
@@ -481,6 +486,7 @@ void Shape_list_row_drawer::draw_ctx_menu_(const Shp_ptr& shape, bool is_group)
       f.XReverse();
       m_view.set_shape_frame(shape, f);
     }
+
     if (ImGui::MenuItem("Flip axis (Z)"))
     {
       select_row_(shape);
