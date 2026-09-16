@@ -476,10 +476,11 @@ private:
   void clear_sketch_list_ui_();
   void apply_sketch_list_ui_from_json_(const nlohmann::json& j);
   [[nodiscard]] nlohmann::json sketch_list_ui_to_json_() const;
-  [[nodiscard]] nlohmann::json shape_list_ui_to_json_() const;
-  void                         apply_shape_list_ui_from_json_(const nlohmann::json& j);
   void                         sketch_properties_dialog_();
   void                         sketch_origin_panel_settings_(const std::shared_ptr<Sketch>& sk);
+  // Shape List + Shape info (gui_shp_pane.cpp)
+  [[nodiscard]] nlohmann::json shape_list_ui_to_json_() const;
+  void                         apply_shape_list_ui_from_json_(const nlohmann::json& j);
   void                         shape_list_();
   void                         shape_info_dialog_();
   void                         open_shape_info_(const Shp_ptr& shape);
