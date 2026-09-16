@@ -19,12 +19,15 @@ public:
   void                 finalize();
   void                 cancel();
   void                 reset();
-  /// Re-seed pivot after Options Local/World change.
+  /// Re-seed pivot after Options Local/World change; mid-drag re-baselines the factor.
   void                 on_transform_space_changed();
 
 private:
   [[nodiscard]] Status ensure_start_state_();
+  [[nodiscard]] Status update_scale_from_distance_(double dist);
   void                 preview_scale_();
+
+  friend class Shp_scale_access;
 
   std::optional<gp_Pln> m_scale_pln;
   std::optional<gp_Pnt> m_center;

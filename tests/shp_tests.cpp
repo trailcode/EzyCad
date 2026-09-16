@@ -28,6 +28,7 @@
 #include "shp_info.h"
 #include "shp_cross_section.h"
 #include "shp_rotate.h"
+#include "shp_scale.h"
 #include "shp_transform.h"
 #include "skt_op_recorder.h"
 #include "utl.h"
@@ -95,6 +96,35 @@ public:
   static const std::optional<gp_Dir>& captured_axis_dir(const Shp_rotate& rotate)
   {
     return rotate.m_captured_axis_dir;
+  }
+};
+
+class Shp_scale_access
+{
+public:
+  static Status ensure_start(Shp_scale& scale)
+  {
+    return scale.ensure_start_state_();
+  }
+
+  static Status apply_distance(Shp_scale& scale, double dist)
+  {
+    return scale.update_scale_from_distance_(dist);
+  }
+
+  static double scale_factor(const Shp_scale& scale)
+  {
+    return scale.m_scale_factor;
+  }
+
+  static double initial_distance(const Shp_scale& scale)
+  {
+    return scale.m_initial_distance;
+  }
+
+  static const std::optional<gp_Pnt>& center(const Shp_scale& scale)
+  {
+    return scale.m_center;
   }
 };
 
@@ -1490,4 +1520,48 @@ TEST_F(Shp_test, Rotate_constrained_keeps_axis_plane_when_facing_test_would_flip
 
   Shp_rotate_access::capture_drag_frame(view().shp_rotate());
   EXPECT_TRUE(Shp_rotate_access::rotate_pln(view().shp_rotate())->Axis().Direction().IsEqual(gp_Dir(1.0, 0.0, 0.0), 1e-6));
+}
+
+TEST_F(Shp_test, Scale_space_change_mid_drag_keeps_factor)
+{
+  gui().set_mode(Mode::Normal);
+  gui().set_hide_all_shapes(false);
+  const Transform_space saved_space = gui().get_transform_space();
+  struct Restore_space
+  {
+    GUI&            gui;
+    Transform_space saved;
+    ~Restore_space() { GUI_access::set_transform_space(gui, saved); }
+  } restore{gui(), saved_space};
+  GUI_access::set_transform_space(gui(), Transform_space::Local);
+
+  view().add_box(0, 0, 0, 10, 10, 10);
+  Shp_ptr shp = view().get_shapes().back();
+  ASSERT_FALSE(shp.IsNull());
+  view().set_shape_frame(shp, gp_Ax3(gp_Pnt(0.0, 0.0, 0.0), gp_Dir(0.0, 0.0, 1.0), gp_Dir(1.0, 0.0, 0.0)));
+  select_shapes(view(), {shp});
+
+  gui().set_mode(Mode::Scale);
+  ASSERT_TRUE(view().shp_scale().has_operation_shps());
+  ASSERT_TRUE(Shp_scale_access::ensure_start(view().shp_scale()).is_ok());
+  ASSERT_TRUE(Shp_scale_access::center(view().shp_scale())->IsEqual(gp_Pnt(0.0, 0.0, 0.0), 1e-6));
+
+  ASSERT_TRUE(Shp_scale_access::apply_distance(view().shp_scale(), 20.0).is_ok());
+  EXPECT_NEAR(Shp_scale_access::scale_factor(view().shp_scale()), 1.0, 1e-9);
+
+  ASSERT_TRUE(Shp_scale_access::apply_distance(view().shp_scale(), 40.0).is_ok());
+  const double factor_before = Shp_scale_access::scale_factor(view().shp_scale());
+  EXPECT_NEAR(factor_before, 2.0, 1e-9);
+
+  GUI_access::set_transform_space(gui(), Transform_space::World);
+  ASSERT_TRUE(Shp_scale_access::center(view().shp_scale()).has_value());
+  EXPECT_TRUE(Shp_scale_access::center(view().shp_scale())->IsEqual(gp_Pnt(5.0, 5.0, 5.0), 1e-6));
+  EXPECT_NEAR(Shp_scale_access::scale_factor(view().shp_scale()), factor_before, 1e-9);
+  EXPECT_LT(Shp_scale_access::initial_distance(view().shp_scale()), 1e-9);
+
+  const double dist_after = gp_Pnt(5.0, 5.0, 5.0).Distance(gp_Pnt(40.0, 0.0, 0.0));
+  ASSERT_TRUE(Shp_scale_access::apply_distance(view().shp_scale(), dist_after).is_ok());
+  EXPECT_NEAR(Shp_scale_access::scale_factor(view().shp_scale()), factor_before, 1e-6);
+
+  gui().set_mode(Mode::Normal);
 }

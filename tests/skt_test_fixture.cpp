@@ -40,6 +40,13 @@ void GUI_access::sketch_left_click(GUI& gui, const ScreenCoords& screen_coords) 
 
 void GUI_access::mirror_selected_edges(GUI& gui) { gui.mirror_selected_sketch_edges(); }
 
+void GUI_access::set_transform_space(GUI& gui, Transform_space space)
+{
+  gui.m_transform_space = space;
+  if (gui.m_view)
+    gui.m_view->on_transform_space_changed();
+}
+
 void Sketch_access::add_edge_(Sketch& sketch, const gp_Pnt2d& pt_a, const gp_Pnt2d& pt_b) { sketch.add_edge_(pt_a, pt_b); }
 
 void Sketch_access::add_edge_(Sketch& sketch, const gp_Pnt2d& pt_a, const gp_Pnt2d& pt_b, Sketch_op_recorder& rec)

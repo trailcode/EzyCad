@@ -30,12 +30,17 @@ Status Shp_scale::scale_selected(const ScreenCoords& screen_coords)
   if (!mouse_wc_pos)
     return Status::user_error("Adjust view, cannot get point on plane.");
 
-  const double dist = m_center->Distance(*mouse_wc_pos);
+  return update_scale_from_distance_(m_center->Distance(*mouse_wc_pos));
+}
+
+Status Shp_scale::update_scale_from_distance_(double dist)
+{
   if (dist < Precision::Confusion())
     return Status::user_error("Move mouse further from scale center to start scaling.");
 
+  // Recapture so a mid-drag Local/World pivot change keeps the current factor.
   if (m_initial_distance < Precision::Confusion())
-    m_initial_distance = dist;
+    m_initial_distance = dist / m_scale_factor;
 
   m_scale_factor = dist / m_initial_distance;
   if (m_scale_factor < 0.01)
@@ -124,9 +129,9 @@ void Shp_scale::cancel()
 
 void Shp_scale::on_transform_space_changed()
 {
-  m_center.reset();
-  m_scale_pln.reset();
-  if (m_shps.empty() || m_initial_distance < Precision::Confusion())
+  const bool mid_drag = m_initial_distance >= Precision::Confusion();
+  clear_all(m_center, m_scale_pln, m_initial_distance);
+  if (m_shps.empty() || !mid_drag)
     return;
 
   if (ensure_start_state_().is_ok())

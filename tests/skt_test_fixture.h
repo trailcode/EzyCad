@@ -29,6 +29,7 @@ public:
   static std::string get_message(const GUI& gui);
   static void        sketch_left_click(GUI& gui, const ScreenCoords& screen_coords);
   static void        mirror_selected_edges(GUI& gui);
+  static void        set_transform_space(GUI& gui, Transform_space space);
 };
 
 class Sketch_access
