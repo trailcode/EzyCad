@@ -3,6 +3,8 @@
 #include "shp_operation.h"
 #include "shp_transform.h"
 
+#include <gp_Pln.hxx>
+
 enum class Rotation_axis
 {
   View_to_object, // Rotate around view axis through the current pivot
@@ -31,17 +33,22 @@ public:
   void on_transform_space_changed();
 
 private:
-  [[nodiscard]] Status          ensure_start_state_();
-  [[nodiscard]] Transform_axes  current_axes_();
-  [[nodiscard]] gp_Dir          current_axis_dir_();
-  void                          refresh_guides_();
-  void                          preview_rotate_();
-  void                          reset();
-  void                          update_rotation_axis_();
-  void                          update_rotation_center_();
-  void                          clear_rotation_vis_();
+  [[nodiscard]] Status         ensure_start_state_();
+  [[nodiscard]] Transform_axes current_axes_();
+  [[nodiscard]] gp_Dir         current_axis_dir_();
+  [[nodiscard]] gp_Pln         choose_rotate_pln_(const gp_Dir& axis_dir);
+  void                         capture_drag_frame_();
+  void                         refresh_guides_();
+  void                         preview_rotate_();
+  void                         reset();
+  void                         update_rotation_axis_();
+  void                         update_rotation_center_();
+  void                         clear_rotation_vis_();
+
+  friend class Shp_rotate_access;
 
   std::optional<gp_Pln> m_rotate_pln;
+  std::optional<gp_Dir> m_captured_axis_dir;
   std::optional<gp_Pnt> m_initial_mouse_pos;
   std::optional<gp_Pnt> m_center;
   double                m_angle{0};

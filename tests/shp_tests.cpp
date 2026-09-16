@@ -13,11 +13,13 @@
 #include <TopExp_Explorer.hxx>
 #include <TopoDS_Compound.hxx>
 #include <NCollection_List.hxx>
+#include <V3d_View.hxx>
 #include <gp_Ax1.hxx>
 #include <gp_Ax3.hxx>
 #include <gp_Dir.hxx>
 #include <gp_Pln.hxx>
 #include <gp_Trsf.hxx>
+#include <cmath>
 #include <optional>
 #include <numbers>
 
@@ -76,6 +78,25 @@ int displayed_object_count(AIS_InteractiveContext& ctx)
   return displayed.Extent();
 }
 } // namespace
+
+class Shp_rotate_access
+{
+public:
+  static void capture_drag_frame(Shp_rotate& rotate)
+  {
+    rotate.capture_drag_frame_();
+  }
+
+  static const std::optional<gp_Pln>& rotate_pln(const Shp_rotate& rotate)
+  {
+    return rotate.m_rotate_pln;
+  }
+
+  static const std::optional<gp_Dir>& captured_axis_dir(const Shp_rotate& rotate)
+  {
+    return rotate.m_captured_axis_dir;
+  }
+};
 
 // Headless Occt_view fixture shared with sketch tests.
 class Shp_test : public Sketch_test
@@ -1411,4 +1432,62 @@ TEST_F(Shp_test, Rotate_axis_can_be_set_before_first_drag)
   EXPECT_TRUE(view().shp_rotate().has_operation_shps());
   view().shp_rotate().set_rotation_axis(Rotation_axis::Z_axis);
   EXPECT_EQ(view().shp_rotate().get_rotation_axis(), Rotation_axis::Z_axis);
+}
+
+TEST_F(Shp_test, Rotate_view_to_object_keeps_drag_frame_after_orbit)
+{
+  gui().set_mode(Mode::Normal);
+  gui().set_hide_all_shapes(false);
+  view().add_box(0, 0, 0, 10, 10, 10);
+  Shp_ptr shp = view().get_shapes().back();
+  ASSERT_FALSE(shp.IsNull());
+  select_shapes(view(), {shp});
+
+  gui().set_mode(Mode::Rotate);
+  ASSERT_TRUE(view().shp_rotate().has_operation_shps());
+  EXPECT_EQ(view().shp_rotate().get_rotation_axis(), Rotation_axis::View_to_object);
+
+  view().view_handle()->SetProj(0, 0, 1);
+  Shp_rotate_access::capture_drag_frame(view().shp_rotate());
+  ASSERT_TRUE(Shp_rotate_access::rotate_pln(view().shp_rotate()).has_value());
+  ASSERT_TRUE(Shp_rotate_access::captured_axis_dir(view().shp_rotate()).has_value());
+
+  const gp_Dir frozen_axis = *Shp_rotate_access::captured_axis_dir(view().shp_rotate());
+  const gp_Dir frozen_pln  = Shp_rotate_access::rotate_pln(view().shp_rotate())->Axis().Direction();
+
+  view().view_handle()->SetProj(1, 0, 0);
+  const gp_Dir live_after = view().get_view_plane(gp_Pnt(5.0, 5.0, 5.0)).Axis().Direction();
+  ASSERT_FALSE(live_after.IsEqual(frozen_axis, 1e-3));
+
+  Shp_rotate_access::capture_drag_frame(view().shp_rotate());
+  EXPECT_TRUE(Shp_rotate_access::captured_axis_dir(view().shp_rotate())->IsEqual(frozen_axis, 1e-9));
+  EXPECT_TRUE(Shp_rotate_access::rotate_pln(view().shp_rotate())->Axis().Direction().IsEqual(frozen_pln, 1e-9));
+}
+
+TEST_F(Shp_test, Rotate_constrained_keeps_axis_plane_when_facing_test_would_flip)
+{
+  gui().set_mode(Mode::Normal);
+  gui().set_hide_all_shapes(false);
+  view().add_box(0, 0, 0, 10, 10, 10);
+  Shp_ptr shp = view().get_shapes().back();
+  ASSERT_FALSE(shp.IsNull());
+  select_shapes(view(), {shp});
+
+  gui().set_mode(Mode::Rotate);
+  ASSERT_TRUE(view().shp_rotate().has_operation_shps());
+  view().shp_rotate().set_rotation_axis(Rotation_axis::X_axis);
+
+  // Look along +X so the view faces the rotation axis (dot ~ 1) and the axis plane is used.
+  view().view_handle()->SetProj(1, 0, 0);
+  Shp_rotate_access::capture_drag_frame(view().shp_rotate());
+  ASSERT_TRUE(Shp_rotate_access::rotate_pln(view().shp_rotate()).has_value());
+  EXPECT_TRUE(Shp_rotate_access::rotate_pln(view().shp_rotate())->Axis().Direction().IsEqual(gp_Dir(1.0, 0.0, 0.0), 1e-6));
+
+  // Edge-on to X: live facing test would fall back to the view plane (normal ~ Z).
+  view().view_handle()->SetProj(0, 0, 1);
+  const gp_Dir live_view = view().get_view_plane(gp_Pnt(5.0, 5.0, 5.0)).Axis().Direction();
+  ASSERT_LT(std::abs(live_view.Dot(gp_Dir(1.0, 0.0, 0.0))), 0.15);
+
+  Shp_rotate_access::capture_drag_frame(view().shp_rotate());
+  EXPECT_TRUE(Shp_rotate_access::rotate_pln(view().shp_rotate())->Axis().Direction().IsEqual(gp_Dir(1.0, 0.0, 0.0), 1e-6));
 }

@@ -25,7 +25,7 @@ Shp_rotate::Shp_rotate(Occt_view& view)
 
 void Shp_rotate::begin(std::vector<Shp_ptr> shps)
 {
-  clear_all(m_angle, m_initial_mouse_pos, m_rotate_pln, m_center);
+  clear_all(m_angle, m_initial_mouse_pos, m_rotate_pln, m_captured_axis_dir, m_center);
   clear_rotation_vis_();
   set_operation_shps_(std::move(shps));
   if (!m_shps.empty())
@@ -37,18 +37,20 @@ Status Shp_rotate::rotate_selected(const ScreenCoords& screen_coords)
   CHK_RET(ensure_start_state_());
 
   const gp_Dir axis_dir = current_axis_dir_();
-  const gp_Pln view_pln = view().get_view_plane(*m_center);
-  const gp_Pln axis_pln(*m_center, axis_dir);
-  const bool   use_axis_pln =
-      m_rotation_axis != Rotation_axis::View_to_object && std::abs(view_pln.Axis().Direction().Dot(axis_dir)) >= 0.15;
-  m_rotate_pln = use_axis_pln ? axis_pln : view_pln;
+  const gp_Pln pln      = m_rotate_pln ? *m_rotate_pln : choose_rotate_pln_(axis_dir);
 
-  std::optional<gp_Pnt> mouse_wc_pos = view().pt3d_on_plane(screen_coords, *m_rotate_pln);
+  std::optional<gp_Pnt> mouse_wc_pos = view().pt3d_on_plane(screen_coords, pln);
   if (!mouse_wc_pos)
     return Status::user_error("Adjust view, cannot get point on plane.");
 
   if (m_center->IsEqual(*mouse_wc_pos, Precision::Confusion()))
     return Status::user_error("Move mouse further from rotation center to start rotation.");
+
+  if (!m_rotate_pln)
+  {
+    m_rotate_pln        = pln;
+    m_captured_axis_dir = axis_dir;
+  }
 
   if (!m_initial_mouse_pos)
     m_initial_mouse_pos = mouse_wc_pos;
@@ -84,6 +86,9 @@ Transform_axes Shp_rotate::current_axes_()
 
 gp_Dir Shp_rotate::current_axis_dir_()
 {
+  if (m_captured_axis_dir)
+    return *m_captured_axis_dir;
+
   EZY_ASSERT(m_center.has_value());
   switch (m_rotation_axis)
   {
@@ -97,6 +102,30 @@ gp_Dir Shp_rotate::current_axis_dir_()
   }
 
   return gp_Dir(0.0, 0.0, 1.0);
+}
+
+gp_Pln Shp_rotate::choose_rotate_pln_(const gp_Dir& axis_dir)
+{
+  EZY_ASSERT(m_center.has_value());
+  const gp_Pln view_pln = view().get_view_plane(*m_center);
+  const gp_Pln axis_pln(*m_center, axis_dir);
+  // Constrained X/Y/Z: use the plane perpendicular to the axis when the view faces it.
+  // Edge-on views stay on the view plane so the mouse still has a usable lever.
+  const bool use_axis_pln =
+      m_rotation_axis != Rotation_axis::View_to_object && std::abs(view_pln.Axis().Direction().Dot(axis_dir)) >= 0.15;
+
+  return use_axis_pln ? axis_pln : view_pln;
+}
+
+void Shp_rotate::capture_drag_frame_()
+{
+  if (m_rotate_pln)
+    return;
+
+  EZY_ASSERT(m_center.has_value());
+  const gp_Dir axis_dir = current_axis_dir_();
+  m_captured_axis_dir   = axis_dir;
+  m_rotate_pln          = choose_rotate_pln_(axis_dir);
 }
 
 void Shp_rotate::refresh_guides_()
@@ -242,7 +271,7 @@ void Shp_rotate::cancel()
 
 void Shp_rotate::reset()
 {
-  clear_all(m_angle, m_shps, m_initial_mouse_pos, m_rotate_pln, m_center);
+  clear_all(m_angle, m_shps, m_initial_mouse_pos, m_rotate_pln, m_captured_axis_dir, m_center);
   clear_rotation_vis_();
   gui().set_mode(Mode::Normal);
 }
@@ -260,7 +289,7 @@ void Shp_rotate::clear_rotation_vis_()
 void Shp_rotate::set_rotation_axis(Rotation_axis axis)
 {
   m_rotation_axis = axis;
-  m_initial_mouse_pos.reset();
+  clear_all(m_initial_mouse_pos, m_rotate_pln, m_captured_axis_dir);
   if (m_shps.empty())
     return;
 
@@ -276,6 +305,7 @@ void Shp_rotate::on_transform_space_changed()
   if (m_shps.empty())
     return;
 
+  clear_all(m_initial_mouse_pos, m_rotate_pln, m_captured_axis_dir);
   refresh_guides_();
   if (std::abs(m_angle) > Precision::Confusion())
     preview_rotate_();
