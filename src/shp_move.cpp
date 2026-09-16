@@ -4,6 +4,7 @@
 #include "gui.h"
 #include "gui_occt_view.h"
 #include "shp_delta.h"
+#include "shp_transform.h"
 #include "utl.h"
 
 Shp_move::Shp_move(Occt_view& view)
@@ -21,10 +22,8 @@ Status Shp_move::move_selected(const ScreenCoords& screen_coords)
 {
   CHK_RET(ensure_operation_shps_());
 
-  if (!m_center.has_value())
-    // Get the estimate of the center.
-    // TODO consider all shapes.
-    m_center = get_shape_bbox_center(m_shps[0]->Shape());
+  const Transform_axes axes = transform_axes_for(m_shps, gui().get_transform_space());
+  m_center                  = axes.origin;
 
   if (!m_move_pln.has_value())
     // Remember, if the user can change the view via a hot key this will be invalid.
@@ -34,25 +33,12 @@ Status Shp_move::move_selected(const ScreenCoords& screen_coords)
   if (!mouse_wc_pos)
     return Status::user_error("Adjust view, cannot get point on plane.");
 
-  bool no_axis_constraints = !m_opts.constr_axis_x && !m_opts.constr_axis_y && !m_opts.constr_axis_z;
-
-  if (m_delta.override_x.has_value())
-    m_delta.delta.SetX(*m_delta.override_x);
-  else
-    m_delta.delta.SetX(no_axis_constraints || m_opts.constr_axis_x ? mouse_wc_pos->X() - m_center->X() : 0);
-
-  if (m_delta.override_y.has_value())
-    m_delta.delta.SetY(*m_delta.override_y);
-  else
-    m_delta.delta.SetY(no_axis_constraints || m_opts.constr_axis_y ? mouse_wc_pos->Y() - m_center->Y() : 0);
-
-  if (m_delta.override_z.has_value())
-    m_delta.delta.SetZ(*m_delta.override_z);
-  else
-    m_delta.delta.SetZ(no_axis_constraints || m_opts.constr_axis_z ? mouse_wc_pos->Z() - m_center->Z() : 0);
+  const gp_Vec mouse_vec(*m_center, *mouse_wc_pos);
+  m_delta.delta = transform_axis_magnitudes(axes, mouse_vec, m_opts.constr_axis_x, m_opts.constr_axis_y, m_opts.constr_axis_z,
+                                            m_delta.override_x, m_delta.override_y, m_delta.override_z);
 
   gp_Trsf translation;
-  translation.SetTranslation(gp_Vec(m_delta.delta));
+  translation.SetTranslation(transform_translation(axes, m_delta.delta));
 
   for (const Shp_ptr& shape : m_shps)
     shape->SetLocalTransformation(translation);
@@ -163,3 +149,9 @@ void Shp_move::reset()
 }
 
 Move_options& Shp_move::get_opts() { return m_opts; }
+
+void Shp_move::on_transform_space_changed()
+{
+  m_center.reset();
+  m_move_pln.reset();
+}

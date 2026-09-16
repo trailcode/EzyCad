@@ -13,15 +13,23 @@
 #include <TopExp_Explorer.hxx>
 #include <TopoDS_Compound.hxx>
 #include <NCollection_List.hxx>
+#include <V3d_View.hxx>
 #include <gp_Ax1.hxx>
+#include <gp_Ax3.hxx>
+#include <gp_Dir.hxx>
 #include <gp_Pln.hxx>
 #include <gp_Trsf.hxx>
+#include <cmath>
+#include <optional>
 #include <numbers>
 
 #include "shp.h"
 #include "shp_create.h"
 #include "shp_info.h"
 #include "shp_cross_section.h"
+#include "shp_rotate.h"
+#include "shp_scale.h"
+#include "shp_transform.h"
 #include "skt_op_recorder.h"
 #include "utl.h"
 
@@ -71,6 +79,79 @@ int displayed_object_count(AIS_InteractiveContext& ctx)
   return displayed.Extent();
 }
 } // namespace
+
+class Shp_rotate_access
+{
+public:
+  static void capture_drag_frame(Shp_rotate& rotate)
+  {
+    rotate.capture_drag_frame_();
+  }
+
+  static Status ensure_start(Shp_rotate& rotate)
+  {
+    return rotate.ensure_start_state_();
+  }
+
+  static Status apply_world(Shp_rotate& rotate, const gp_Pnt& mouse_wc_pos, const gp_Dir& axis_dir, const gp_Pln& pln)
+  {
+    return rotate.update_rotate_from_world_(mouse_wc_pos, axis_dir, pln);
+  }
+
+  static double angle(const Shp_rotate& rotate)
+  {
+    return rotate.m_angle;
+  }
+
+  static const std::optional<gp_Pnt>& initial_mouse_pos(const Shp_rotate& rotate)
+  {
+    return rotate.m_initial_mouse_pos;
+  }
+
+  static const std::optional<gp_Pnt>& center(const Shp_rotate& rotate)
+  {
+    return rotate.m_center;
+  }
+
+  static const std::optional<gp_Pln>& rotate_pln(const Shp_rotate& rotate)
+  {
+    return rotate.m_rotate_pln;
+  }
+
+  static const std::optional<gp_Dir>& captured_axis_dir(const Shp_rotate& rotate)
+  {
+    return rotate.m_captured_axis_dir;
+  }
+};
+
+class Shp_scale_access
+{
+public:
+  static Status ensure_start(Shp_scale& scale)
+  {
+    return scale.ensure_start_state_();
+  }
+
+  static Status apply_distance(Shp_scale& scale, double dist)
+  {
+    return scale.update_scale_from_distance_(dist);
+  }
+
+  static double scale_factor(const Shp_scale& scale)
+  {
+    return scale.m_scale_factor;
+  }
+
+  static double initial_distance(const Shp_scale& scale)
+  {
+    return scale.m_initial_distance;
+  }
+
+  static const std::optional<gp_Pnt>& center(const Shp_scale& scale)
+  {
+    return scale.m_center;
+  }
+};
 
 // Headless Occt_view fixture shared with sketch tests.
 class Shp_test : public Sketch_test
@@ -1344,4 +1425,214 @@ TEST_F(Shp_test, Grouped_solids_stay_displayed_and_selectable)
     EXPECT_EQ(view().get_selected_shps().size(), 1u);
     EXPECT_EQ(view().get_selected_shps().front()->get_id(), s->get_id());
   }
+}
+
+TEST_F(Shp_test, Transform_axes_world_uses_bbox_center)
+{
+  view().add_box(0, 0, 0, 10, 10, 10);
+  Shp_ptr shp = view().get_shapes().back();
+  ASSERT_FALSE(shp.IsNull());
+
+  const Transform_axes axes = transform_axes_for({shp}, Transform_space::World);
+  EXPECT_TRUE(axes.origin.IsEqual(gp_Pnt(5.0, 5.0, 5.0), 1e-9));
+  EXPECT_TRUE(axes.x.IsEqual(gp_Dir(1.0, 0.0, 0.0), 1e-9));
+  EXPECT_TRUE(axes.z.IsEqual(gp_Dir(0.0, 0.0, 1.0), 1e-9));
+}
+
+TEST_F(Shp_test, Transform_axes_local_uses_assigned_frame)
+{
+  view().add_box(0, 0, 0, 10, 10, 10);
+  Shp_ptr shp = view().get_shapes().back();
+  ASSERT_FALSE(shp.IsNull());
+
+  const gp_Ax3 tilted(gp_Pnt(1.0, 2.0, 3.0), gp_Dir(0.0, 1.0, 0.0), gp_Dir(1.0, 0.0, 0.0));
+  view().set_shape_frame(shp, tilted);
+
+  const Transform_axes local = transform_axes_for({shp}, Transform_space::Local);
+  EXPECT_TRUE(local.origin.IsEqual(gp_Pnt(1.0, 2.0, 3.0), 1e-9));
+  EXPECT_TRUE(local.x.IsEqual(gp_Dir(1.0, 0.0, 0.0), 1e-9));
+  EXPECT_TRUE(local.z.IsEqual(gp_Dir(0.0, 1.0, 0.0), 1e-9));
+
+  const Transform_axes world = transform_axes_for({shp}, Transform_space::World);
+  EXPECT_TRUE(world.origin.IsEqual(gp_Pnt(5.0, 5.0, 5.0), 1e-9));
+  EXPECT_TRUE(world.z.IsEqual(gp_Dir(0.0, 0.0, 1.0), 1e-9));
+}
+
+TEST_F(Shp_test, Transform_translation_local_x_constraint)
+{
+  Transform_axes axes;
+  axes.origin = gp_Pnt(0.0, 0.0, 0.0);
+  axes.x      = gp_Dir(0.0, 1.0, 0.0);
+  axes.y      = gp_Dir(0.0, 0.0, 1.0);
+  axes.z      = gp_Dir(1.0, 0.0, 0.0);
+
+  const gp_Vec mouse(1.0, 4.0, 0.0);
+  const gp_Vec delta =
+      transform_translation(axes, mouse, true, false, false, std::nullopt, std::nullopt, std::nullopt);
+  EXPECT_NEAR(delta.X(), 0.0, 1e-9);
+  EXPECT_NEAR(delta.Y(), 4.0, 1e-9);
+  EXPECT_NEAR(delta.Z(), 0.0, 1e-9);
+}
+
+TEST_F(Shp_test, Rotate_axis_can_be_set_before_first_drag)
+{
+  gui().set_mode(Mode::Normal);
+  gui().set_hide_all_shapes(false);
+  view().add_box(0, 0, 0, 10, 10, 10);
+  Shp_ptr shp = view().get_shapes().back();
+  ASSERT_FALSE(shp.IsNull());
+  select_shapes(view(), {shp});
+
+  gui().set_mode(Mode::Rotate);
+  EXPECT_TRUE(view().shp_rotate().has_operation_shps());
+  view().shp_rotate().set_rotation_axis(Rotation_axis::Z_axis);
+  EXPECT_EQ(view().shp_rotate().get_rotation_axis(), Rotation_axis::Z_axis);
+}
+
+TEST_F(Shp_test, Rotate_view_to_object_keeps_drag_frame_after_orbit)
+{
+  gui().set_mode(Mode::Normal);
+  gui().set_hide_all_shapes(false);
+  view().add_box(0, 0, 0, 10, 10, 10);
+  Shp_ptr shp = view().get_shapes().back();
+  ASSERT_FALSE(shp.IsNull());
+  select_shapes(view(), {shp});
+
+  gui().set_mode(Mode::Rotate);
+  ASSERT_TRUE(view().shp_rotate().has_operation_shps());
+  EXPECT_EQ(view().shp_rotate().get_rotation_axis(), Rotation_axis::View_to_object);
+
+  view().view_handle()->SetProj(0, 0, 1);
+  Shp_rotate_access::capture_drag_frame(view().shp_rotate());
+  ASSERT_TRUE(Shp_rotate_access::rotate_pln(view().shp_rotate()).has_value());
+  ASSERT_TRUE(Shp_rotate_access::captured_axis_dir(view().shp_rotate()).has_value());
+
+  const gp_Dir frozen_axis = *Shp_rotate_access::captured_axis_dir(view().shp_rotate());
+  const gp_Dir frozen_pln  = Shp_rotate_access::rotate_pln(view().shp_rotate())->Axis().Direction();
+
+  view().view_handle()->SetProj(1, 0, 0);
+  const gp_Dir live_after = view().get_view_plane(gp_Pnt(5.0, 5.0, 5.0)).Axis().Direction();
+  ASSERT_FALSE(live_after.IsEqual(frozen_axis, 1e-3));
+
+  Shp_rotate_access::capture_drag_frame(view().shp_rotate());
+  EXPECT_TRUE(Shp_rotate_access::captured_axis_dir(view().shp_rotate())->IsEqual(frozen_axis, 1e-9));
+  EXPECT_TRUE(Shp_rotate_access::rotate_pln(view().shp_rotate())->Axis().Direction().IsEqual(frozen_pln, 1e-9));
+}
+
+TEST_F(Shp_test, Rotate_constrained_keeps_axis_plane_when_facing_test_would_flip)
+{
+  gui().set_mode(Mode::Normal);
+  gui().set_hide_all_shapes(false);
+  view().add_box(0, 0, 0, 10, 10, 10);
+  Shp_ptr shp = view().get_shapes().back();
+  ASSERT_FALSE(shp.IsNull());
+  select_shapes(view(), {shp});
+
+  gui().set_mode(Mode::Rotate);
+  ASSERT_TRUE(view().shp_rotate().has_operation_shps());
+  view().shp_rotate().set_rotation_axis(Rotation_axis::X_axis);
+
+  // Look along +X so the view faces the rotation axis (dot ~ 1) and the axis plane is used.
+  view().view_handle()->SetProj(1, 0, 0);
+  Shp_rotate_access::capture_drag_frame(view().shp_rotate());
+  ASSERT_TRUE(Shp_rotate_access::rotate_pln(view().shp_rotate()).has_value());
+  EXPECT_TRUE(Shp_rotate_access::rotate_pln(view().shp_rotate())->Axis().Direction().IsEqual(gp_Dir(1.0, 0.0, 0.0), 1e-6));
+
+  // Edge-on to X: live facing test would fall back to the view plane (normal ~ Z).
+  view().view_handle()->SetProj(0, 0, 1);
+  const gp_Dir live_view = view().get_view_plane(gp_Pnt(5.0, 5.0, 5.0)).Axis().Direction();
+  ASSERT_LT(std::abs(live_view.Dot(gp_Dir(1.0, 0.0, 0.0))), 0.15);
+
+  Shp_rotate_access::capture_drag_frame(view().shp_rotate());
+  EXPECT_TRUE(Shp_rotate_access::rotate_pln(view().shp_rotate())->Axis().Direction().IsEqual(gp_Dir(1.0, 0.0, 0.0), 1e-6));
+}
+
+TEST_F(Shp_test, Scale_space_change_mid_drag_keeps_factor)
+{
+  gui().set_mode(Mode::Normal);
+  gui().set_hide_all_shapes(false);
+  const Transform_space saved_space = gui().get_transform_space();
+  struct Restore_space
+  {
+    GUI&            gui;
+    Transform_space saved;
+    ~Restore_space() { GUI_access::set_transform_space(gui, saved); }
+  } restore{gui(), saved_space};
+  GUI_access::set_transform_space(gui(), Transform_space::Local);
+
+  view().add_box(0, 0, 0, 10, 10, 10);
+  Shp_ptr shp = view().get_shapes().back();
+  ASSERT_FALSE(shp.IsNull());
+  view().set_shape_frame(shp, gp_Ax3(gp_Pnt(0.0, 0.0, 0.0), gp_Dir(0.0, 0.0, 1.0), gp_Dir(1.0, 0.0, 0.0)));
+  select_shapes(view(), {shp});
+
+  gui().set_mode(Mode::Scale);
+  ASSERT_TRUE(view().shp_scale().has_operation_shps());
+  ASSERT_TRUE(Shp_scale_access::ensure_start(view().shp_scale()).is_ok());
+  ASSERT_TRUE(Shp_scale_access::center(view().shp_scale())->IsEqual(gp_Pnt(0.0, 0.0, 0.0), 1e-6));
+
+  ASSERT_TRUE(Shp_scale_access::apply_distance(view().shp_scale(), 20.0).is_ok());
+  EXPECT_NEAR(Shp_scale_access::scale_factor(view().shp_scale()), 1.0, 1e-9);
+
+  ASSERT_TRUE(Shp_scale_access::apply_distance(view().shp_scale(), 40.0).is_ok());
+  const double factor_before = Shp_scale_access::scale_factor(view().shp_scale());
+  EXPECT_NEAR(factor_before, 2.0, 1e-9);
+
+  GUI_access::set_transform_space(gui(), Transform_space::World);
+  ASSERT_TRUE(Shp_scale_access::center(view().shp_scale()).has_value());
+  EXPECT_TRUE(Shp_scale_access::center(view().shp_scale())->IsEqual(gp_Pnt(5.0, 5.0, 5.0), 1e-6));
+  EXPECT_NEAR(Shp_scale_access::scale_factor(view().shp_scale()), factor_before, 1e-9);
+  EXPECT_LT(Shp_scale_access::initial_distance(view().shp_scale()), 1e-9);
+
+  const double dist_after = gp_Pnt(5.0, 5.0, 5.0).Distance(gp_Pnt(40.0, 0.0, 0.0));
+  ASSERT_TRUE(Shp_scale_access::apply_distance(view().shp_scale(), dist_after).is_ok());
+  EXPECT_NEAR(Shp_scale_access::scale_factor(view().shp_scale()), factor_before, 1e-6);
+
+  gui().set_mode(Mode::Normal);
+}
+
+TEST_F(Shp_test, Rotate_space_change_mid_drag_keeps_angle)
+{
+  gui().set_mode(Mode::Normal);
+  gui().set_hide_all_shapes(false);
+  const Transform_space saved_space = gui().get_transform_space();
+  struct Restore_space
+  {
+    GUI&            gui;
+    Transform_space saved;
+    ~Restore_space() { GUI_access::set_transform_space(gui, saved); }
+  } restore{gui(), saved_space};
+  GUI_access::set_transform_space(gui(), Transform_space::Local);
+
+  view().add_box(0, 0, 0, 10, 10, 10);
+  Shp_ptr shp = view().get_shapes().back();
+  ASSERT_FALSE(shp.IsNull());
+  view().set_shape_frame(shp, gp_Ax3(gp_Pnt(0.0, 0.0, 0.0), gp_Dir(0.0, 0.0, 1.0), gp_Dir(1.0, 0.0, 0.0)));
+  select_shapes(view(), {shp});
+
+  gui().set_mode(Mode::Rotate);
+  ASSERT_TRUE(view().shp_rotate().has_operation_shps());
+  view().shp_rotate().set_rotation_axis(Rotation_axis::Z_axis);
+  ASSERT_TRUE(Shp_rotate_access::ensure_start(view().shp_rotate()).is_ok());
+  ASSERT_TRUE(Shp_rotate_access::center(view().shp_rotate())->IsEqual(gp_Pnt(0.0, 0.0, 0.0), 1e-6));
+
+  const gp_Dir axis_z(0.0, 0.0, 1.0);
+  const gp_Pln local_pln(gp_Pnt(0.0, 0.0, 0.0), axis_z);
+  ASSERT_TRUE(Shp_rotate_access::apply_world(view().shp_rotate(), gp_Pnt(20.0, 0.0, 0.0), axis_z, local_pln).is_ok());
+  ASSERT_TRUE(Shp_rotate_access::apply_world(view().shp_rotate(), gp_Pnt(0.0, 20.0, 0.0), axis_z, local_pln).is_ok());
+  const double angle_before = Shp_rotate_access::angle(view().shp_rotate());
+  EXPECT_NEAR(angle_before, std::numbers::pi / 2.0, 1e-6);
+  ASSERT_TRUE(Shp_rotate_access::initial_mouse_pos(view().shp_rotate()).has_value());
+
+  GUI_access::set_transform_space(gui(), Transform_space::World);
+  ASSERT_TRUE(Shp_rotate_access::center(view().shp_rotate()).has_value());
+  EXPECT_TRUE(Shp_rotate_access::center(view().shp_rotate())->IsEqual(gp_Pnt(5.0, 5.0, 5.0), 1e-6));
+  EXPECT_NEAR(Shp_rotate_access::angle(view().shp_rotate()), angle_before, 1e-9);
+  EXPECT_FALSE(Shp_rotate_access::initial_mouse_pos(view().shp_rotate()).has_value());
+
+  const gp_Pln world_pln(gp_Pnt(5.0, 5.0, 5.0), axis_z);
+  ASSERT_TRUE(Shp_rotate_access::apply_world(view().shp_rotate(), gp_Pnt(0.0, 20.0, 0.0), axis_z, world_pln).is_ok());
+  EXPECT_NEAR(Shp_rotate_access::angle(view().shp_rotate()), angle_before, 1e-6);
+
+  gui().set_mode(Mode::Normal);
 }

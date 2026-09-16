@@ -9,11 +9,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- **Move / rotate / scale space**: Options **Local** (default) or **World**. Local uses the first selected solid's frame (origin and X/Y/Z from **Show axes**). World keeps global XYZ at that solid's bounding-box center. Persisted as **`gui.transform_space`**.
 - **Desktop deps**: MSVC GLFW/GLEW come from **vcpkg** (`vcpkg.json` + toolchain) instead of NuGet; local configure matches CI.
 - **Extrude Both sides**: Options **Both sides** defaults to on (session sticky; not a Settings key).
 
 ### Fixed
 
+- **Shape List right-click**: the row context menu opens from the whole entry (checkboxes, **M**, tree arrow, name field, and padding), not only from some widgets. Right-click on the name field opens the same menu.
+- **Shape rotate axis**: Choosing X/Y/Z (or view-to-object) before the first drag is kept. Constrained rotation uses the plane perpendicular to that axis when the view faces it. Local space rotates about the assigned frame, not only world XYZ through the bbox.
+- **Shape rotate drag**: View-to-object axis and the constrained axis-vs-view plane are captured on the first mouse sample. Orbit or pan during rotate no longer changes the axis/plane against the original mouse anchor.
+- **Shape rotate space**: Switching Options **Local** / **World** mid-drag keeps the current angle. The next mouse move re-baselines against the new pivot instead of measuring from the old world-space sample.
+- **Shape scale space**: Switching Options **Local** / **World** mid-drag keeps the current scale factor. The next mouse move re-baselines against the new pivot instead of jumping.
 - **Add bone Holes**: switching **Holes** to **None** after the waist is set commits the outline. Clicks and finalize no longer run hole handlers when holes are off (those handlers reject `None` and left the tool stuck).
 - **Sketch overlapping edges**: Drawing the same line or circle twice, or adding a collinear / same-circle overlap, no longer stacks a second copy. The sketch splits at overlap ends and keeps each atomic piece once. Undo records only the new atomic pieces (for arcs, each leftover start/bulge/end, not the input triple), so extending a line past an existing collinear edge no longer deletes the original on undo, and a circle over an existing same-circle cap reverses fully. A no-op redraw of an already-covered span does not push undo. Fixes an access violation in `TKGeomBase` when a new circle coincided with an existing arc (for example a bone end-cap).
 - **Wasm configure/link**: Detect Emscripten via `EMSCRIPTEN` / `CMAKE_SYSTEM_NAME` (modern emsdk reports Clang). Link the FreeType package from the OCCT wasm install so `wasm-ld` finds `libfreetype.a` instead of bare `-lfreetype`.

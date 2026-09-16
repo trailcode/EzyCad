@@ -30,6 +30,8 @@ public:
   void                 cancel();
   void                 reset();
   Move_options&        get_opts();
+  /// Re-seed pivot after Options Local/World change.
+  void                 on_transform_space_changed();
 
 private:
   struct Deltas

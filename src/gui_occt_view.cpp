@@ -3986,6 +3986,13 @@ Shp_extrude&   Occt_view::shp_extrude()   { return m_shp_extrude;    }
 Shp_cross_section&   Occt_view::shp_cross_section()   { return m_shp_cross_section;    }
 // clang-format on
 
+void Occt_view::on_transform_space_changed()
+{
+  shp_move().on_transform_space_changed();
+  shp_rotate().on_transform_space_changed();
+  shp_scale().on_transform_space_changed();
+}
+
 void Occt_view::set_dynamic_highlight_enabled(bool enabled)
 {
   SetAllowHighlight(enabled);

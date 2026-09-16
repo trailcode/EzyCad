@@ -88,6 +88,7 @@ GUI (gui.h / gui.cpp)
   +-- gui_mode.cpp       set_mode, on_key, Options panel per Mode
   +-- gui_hotkeys.*      remappable Gui_action <-> Key_chord map
   +-- gui_add.cpp        Add menu dialogs (primitives, new sketch)
+  +-- gui_shp_pane.cpp   Shape List pane, Shape info dialog, ui.shapeList
   +-- gui_settings.cpp   Settings dialog, load/save ezycad_settings.json
   |
   +-- Occt_view (gui_occt_view.h / gui_occt_view.cpp / .inl)
@@ -216,7 +217,7 @@ Tests use `sketch_left_click` to simulate sketch LMB without ImGui mouse positio
 | `Mode`                           | Options function                                                                                                    |
 | -------------------------------- | ------------------------------------------------------------------------------------------------------------------- |
 | `Normal`                         | `options_normal_mode_` (selection filter, orthographic)                                                             |
-| `Move` / `Rotate` / `Scale`      | `options_*_mode_` (constraints, axis, material)                                                                     |
+| `Move` / `Rotate` / `Scale`      | `options_*_mode_` (Local/World space, constraints, axis)                                                            |
 | `Shape_shaft_align`              | `options_shape_shaft_align_mode_` (Flip direction, Clock rotation; pick / depth / clock help)                       |
 | `Shape_chamfer` / `Shape_fillet` | mode + radius/distance                                                                                              |
 | `Shape_polar_duplicate`          | angle, count, rotate/combine, **Dup** button                                                                        |
@@ -242,23 +243,23 @@ Shared sketch controls (snap, faint shapes) live in `options_sketch_shared_contr
 
 ## ImGui frame order (`render_gui`)
 
-| Order | Function                                                      | Purpose                               |
-| ----- | ------------------------------------------------------------- | ------------------------------------- |
-| 1     | `flush_view_events`                                           | Sync camera before UI uses projection |
-| 2     | `menu_bar_`, `toolbar_`                                       | File / View / mode tools              |
-| 3     | `dist_edit_`, `angle_edit_`                                   | Floating numeric entry                |
-| 4     | `sketch_list_`, `sketch_properties_dialog_`                   | Sketch List + underlay/properties     |
-| 5     | `shape_list_`, `shape_info_dialog_`, `file_inspector_dialog_` | Shape List + info + Import dialog     |
-| 6     | `options_`                                                    | Mode-specific Options pane            |
-| 7     | `message_status_window_`, `about_dialog_`                     | Status + About                        |
-| 8     | `add_*_dialog_`                                               | Primitive / sketch creation popups    |
-| 9     | `log_window_`, consoles, `settings_`, `dbg_`                  | Log, Lua/Python, Settings             |
+| Order | Function                                                      | Purpose                                         |
+| ----- | ------------------------------------------------------------- | ----------------------------------------------- |
+| 1     | `flush_view_events`                                           | Sync camera before UI uses projection           |
+| 2     | `menu_bar_`, `toolbar_`                                       | File / View / mode tools                        |
+| 3     | `dist_edit_`, `angle_edit_`                                   | Floating numeric entry                          |
+| 4     | `sketch_list_`, `sketch_properties_dialog_`                   | Sketch List + underlay/properties               |
+| 5     | `shape_list_`, `shape_info_dialog_`, `file_inspector_dialog_` | Shape List + info (`gui_shp_pane.cpp`) + Import |
+| 6     | `options_`                                                    | Mode-specific Options pane                      |
+| 7     | `message_status_window_`, `about_dialog_`                     | Status + About                                  |
+| 8     | `add_*_dialog_`                                               | Primitive / sketch creation popups              |
+| 9     | `log_window_`, consoles, `settings_`, `dbg_`                  | Log, Lua/Python, Settings                       |
 
 `GUI::show_message` drives the transient status toast (`message_status_window_`) and also appends via `log_message`. The toast color comes from `Status_msg` (`Success`, `Info`, `Constraint`, `Warning`, `Error`; default `Info`). `show_status` maps `Result_status` (`User_error` -> Constraint, `Error` / `Topo_error` -> Error, ok -> Info). `show_error_dialog` logs `title: message` once and toasts the title as Error.
 
 Sketch List expand **Faces**: each face row supports **`E`** and right-click **Extrude** via `GUI::sketch_list_extrude_face_` (`set_mode(Sketch_face_extrude)` + `Occt_view::begin_sketch_face_extrude` / `Shp_extrude::begin_face_extrude`). Hovering a **Faces**, **Edges**, or **Nodes** row calls `Occt_view::set_sketch_list_hover_{face,edge,node}` (temporarily displays the AIS when hidden outside sketch modes; uses `Graphic3d_ZLayerId_Topmost` so solids do not occlude the highlight).
 
-**Shape List outliner:** `shape_list_` draws a tree of document shapes/groups via `shape_children(0)` and recursive `TreeNodeEx` rows. Fixed-width vis/disp/mat columns are on the left; the name column stretches on the right with tree indent (`IndentEnable` on name only). An empty pad row after the last item is a drag-drop target for document root (`reparent_shape(..., 0)`); it shows a "Move to root" hint while dragging. Groups support expand/collapse (`ui.shapeList.expanded`), drag-drop reparent (`EZY_SHAPE_ID` payload), Group / New group / Ungroup, and cascade delete. Clicking a group sets `Occt_view::current_group_id` (including empty groups) and selects descendant solids; clicking a solid selects it and sets current group to its parent. New primitives/extrudes/revolves parent under the current group. Ctrl+click multi-selects. Row highlight for **selection** follows AIS only; the **current group** uses a weaker tint so it is not mistaken for a selected subtree after Alt-drag rectangle select clears AIS. Copy/paste (Ctrl+C/V) deep-copies the current group subtree when the selection matches that group's descendant solids. Context menu **Zoom to** calls `Occt_view::fit_shapes_in_view` (solid or group descendant solids; keeps camera orientation). Hover uses `set_shape_list_hover` on leaf solids only. `ui.shapeList.currentGroupId` is persisted in `.ezy`.
+**Shape List outliner:** `shape_list_` (`gui_shp_pane.cpp`) draws a tree of document shapes/groups via `shape_children(0)` and recursive `gui_shp_detail::Shape_list_row_drawer` rows (`TreeNodeEx`). Fixed-width vis/disp/mat columns are on the left; the name column stretches on the right with tree indent (`IndentEnable` on name only). An empty pad row after the last item is a drag-drop target for document root (`reparent_shape(..., 0)`); it shows a "Move to root" hint while dragging. Groups support expand/collapse (`ui.shapeList.expanded`), drag-drop reparent (`EZY_SHAPE_ID` payload), Group / New group / Ungroup, and cascade delete. Clicking a group sets `Occt_view::current_group_id` (including empty groups) and selects descendant solids; clicking a solid selects it and sets current group to its parent. New primitives/extrudes/revolves parent under the current group. Ctrl+click multi-selects. Row highlight for **selection** follows AIS only; the **current group** uses a weaker tint so it is not mistaken for a selected subtree after Alt-drag rectangle select clears AIS. Copy/paste (Ctrl+C/V) deep-copies the current group subtree when the selection matches that group's descendant solids. Row context menu opens on right-click anywhere on the table row (not only `InputText` / **M**). **Zoom to** calls `Occt_view::fit_shapes_in_view` (solid or group descendant solids; keeps camera orientation). Hover uses `set_shape_list_hover` on leaf solids only. `ui.shapeList.currentGroupId` is persisted in `.ezy`.
 
 **Sketch List UI in the project file:** `GUI::serialized_project_json_` writes `ui.sketchList` (scroll Y plus per-sketch `rows` keyed by sketch `id`: `expanded`, `dimensions`, `nodes`, `edges`, `faces`). `GUI::on_file` restores via `apply_sketch_list_ui_from_json_`. Subsection open state is app-owned (`Sketch_list_row_ui` + `SetNextItemOpen`), not ImGui ini storage.
 
@@ -268,6 +269,7 @@ Sketch List expand **Faces**: each face row supports **`E`** and right-click **E
 
 | File                        | Role                                                                |
 | --------------------------- | ------------------------------------------------------------------- |
+| `gui_shp_pane.cpp`          | Shape List, Shape info dialog, `.ezy` `ui.shapeList`                |
 | `gui_settings.cpp`          | Settings dialog UI; read/write `ezycad_settings.json`               |
 | `save_occt_view_settings`   | Persists `gui.*`, `occt_view.*`, pane visibility, last project path |
 | `load_occt_view_settings_`  | Called from `GUI::init`                                             |

@@ -28,6 +28,7 @@
 #include "imgui_markdown.h"
 #include "utl_log.h"
 #include "mode.h"
+#include "shp_transform.h"
 #include "gui_hotkeys.h"
 #include "gui_occt_view.h"
 #include "shp_info.h"
@@ -41,6 +42,13 @@ class Lua_console;
 class Python_console;
 class Sketch;
 struct GLFWwindow;
+
+// Defined in gui_shp_pane.cpp (Shape List row walk). Friend so it can call open_shape_info_
+// and read/write m_shape_list_expanded without a public API.
+namespace gui_shp_detail
+{
+struct Shape_list_row_drawer;
+}
 
 enum class Command
 {
@@ -242,6 +250,7 @@ inline constexpr const char* k_revolve_solid_conversion     = "https://ezycad.re
 inline constexpr const char* k_shape_selection_filter       = "https://ezycad.readthedocs.io/en/latest/usage.html#shape-selection-filter-normal-mode-only";
 inline constexpr const char* k_add_node_tool                = "https://ezycad.readthedocs.io/en/latest/usage-sketch.html#add-node-tool";
 inline constexpr const char* k_bone_creation_tool           = "https://ezycad.readthedocs.io/en/latest/usage-sketch.html#bone-creation-tool";
+inline constexpr const char* k_shape_rotate_tool            = "https://ezycad.readthedocs.io/en/latest/usage.html#shape-rotate-tool-r";
 inline constexpr const char* k_image_underlay               = "https://ezycad.readthedocs.io/en/latest/usage-sketch.html#image-underlay";
 inline constexpr const char* k_usage_settings_options       = "https://ezycad.readthedocs.io/en/latest/usage-settings.html#options-panel";
 inline constexpr const char* k_occt_view                    = "https://ezycad.readthedocs.io/en/latest/usage-occt-view.html";
@@ -341,6 +350,8 @@ public:
   bool get_bone_add_total_length_nodes() const { return m_bone_add_total_length_nodes; }
   /// Add-bone Options: hole clicks after waist (`gui.bone_holes`).
   Bone_holes get_bone_holes() const { return m_bone_holes; }
+  /// Move / rotate / scale axis space (`gui.transform_space`). Default Local.
+  Transform_space get_transform_space() const { return m_transform_space; }
 #if DEV_MODE
   /// Add-bone construction overlays (DEV_MODE Options checkboxes; not persisted).
   const Bone_debug_flags& get_bone_debug_flags() const { return m_bone_debug; }
@@ -472,10 +483,12 @@ private:
   void clear_sketch_list_ui_();
   void apply_sketch_list_ui_from_json_(const nlohmann::json& j);
   [[nodiscard]] nlohmann::json sketch_list_ui_to_json_() const;
-  [[nodiscard]] nlohmann::json shape_list_ui_to_json_() const;
-  void                         apply_shape_list_ui_from_json_(const nlohmann::json& j);
   void                         sketch_properties_dialog_();
   void                         sketch_origin_panel_settings_(const std::shared_ptr<Sketch>& sk);
+  // Shape List + Shape info (gui_shp_pane.cpp)
+  friend struct gui_shp_detail::Shape_list_row_drawer;
+  [[nodiscard]] nlohmann::json shape_list_ui_to_json_() const;
+  void                         apply_shape_list_ui_from_json_(const nlohmann::json& j);
   void                         shape_list_();
   void                         shape_info_dialog_();
   void                         open_shape_info_(const Shp_ptr& shape);
@@ -496,6 +509,7 @@ private:
   void options_move_mode_();
   void options_scale_mode_();
   void options_rotate_mode_();
+  void options_transform_space_();
   void options_shape_chamfer_mode_();
   void options_shape_fillet_mode_();
   void options_shape_polar_duplicate_mode_();
@@ -702,7 +716,8 @@ private:
   bool  m_bone_add_center_nodes               = true;
   bool  m_bone_add_radius_nodes               = true;
   bool  m_bone_add_total_length_nodes         = true;
-  Bone_holes m_bone_holes                     = Bone_holes::None;
+  Bone_holes      m_bone_holes        = Bone_holes::None;
+  Transform_space m_transform_space   = Transform_space::Local;
 #if DEV_MODE
   Bone_debug_flags m_bone_debug;
 #endif

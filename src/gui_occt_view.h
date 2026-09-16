@@ -276,6 +276,9 @@ public:
   Shp_extrude&       shp_extrude();
   Shp_cross_section& shp_cross_section();
 
+  /// Re-seed Move / Rotate / Scale pivot after Options Local/World change.
+  void on_transform_space_changed();
+
   /// Enable/disable AIS_ViewController dynamic highlight (MoveTo hover). Off during transform drag.
   void set_dynamic_highlight_enabled(bool enabled);
 

@@ -131,6 +131,8 @@ Common keyboard shortcuts (hotkeys) while working in 2D sketch mode or with sket
 | <kbd>Y</kbd> | Toggle / cycle Y                                                          |
 | <kbd>Z</kbd> | Toggle / cycle Z                                                          |
 
+Those X/Y/Z directions follow Options **Local** (first selected solid's frame) or **World** (global XYZ). Polar duplicate still uses the current sketch plane.
+
 See the individual tool sections (and [usage.md#hotkeys](usage.md#hotkeys)) for full context and additional view / general hotkeys.
 
 (line-edge-creation-tools)=

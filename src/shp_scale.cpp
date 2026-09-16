@@ -1,10 +1,13 @@
 #include "shp_scale.h"
 
+#include <Precision.hxx>
+
 #include "utl_geom.h"
 #include "gui.h"
 #include "mode.h"
 #include "gui_occt_view.h"
 #include "shp_delta.h"
+#include "shp_transform.h"
 #include "utl.h"
 
 Shp_scale::Shp_scale(Occt_view& view)
@@ -27,12 +30,17 @@ Status Shp_scale::scale_selected(const ScreenCoords& screen_coords)
   if (!mouse_wc_pos)
     return Status::user_error("Adjust view, cannot get point on plane.");
 
-  const double dist = m_center->Distance(*mouse_wc_pos);
+  return update_scale_from_distance_(m_center->Distance(*mouse_wc_pos));
+}
+
+Status Shp_scale::update_scale_from_distance_(double dist)
+{
   if (dist < Precision::Confusion())
     return Status::user_error("Move mouse further from scale center to start scaling.");
 
+  // Recapture so a mid-drag Local/World pivot change keeps the current factor.
   if (m_initial_distance < Precision::Confusion())
-    m_initial_distance = dist;
+    m_initial_distance = dist / m_scale_factor;
 
   m_scale_factor = dist / m_initial_distance;
   if (m_scale_factor < 0.01)
@@ -51,7 +59,7 @@ Status Shp_scale::ensure_start_state_()
   CHK_RET(ensure_operation_shps_());
 
   if (!m_center.has_value())
-    m_center = get_shape_bbox_center(m_shps[0]->Shape());
+    m_center = transform_axes_for(m_shps, gui().get_transform_space()).origin;
 
   if (!m_scale_pln.has_value())
     m_scale_pln = view().get_view_plane(*m_center);
@@ -117,4 +125,15 @@ void Shp_scale::cancel()
   operation_shps_cancel_();
   reset();
   restore_operation_selection_();
+}
+
+void Shp_scale::on_transform_space_changed()
+{
+  const bool mid_drag = m_initial_distance >= Precision::Confusion();
+  clear_all(m_center, m_scale_pln, m_initial_distance);
+  if (m_shps.empty() || !mid_drag)
+    return;
+
+  if (ensure_start_state_().is_ok())
+    preview_scale_();
 }

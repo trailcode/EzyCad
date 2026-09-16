@@ -618,6 +618,33 @@ void GUI::options_normal_mode_()
   options_orthographic_projection_();
 }
 
+void GUI::options_transform_space_()
+{
+  ImGui::AlignTextToFramePadding();
+  ImGui::TextUnformatted("Space");
+  ImGui::SameLine();
+  int  space   = static_cast<int>(m_transform_space);
+  bool changed = false;
+  if (ImGui::RadioButton("Local", &space, static_cast<int>(Transform_space::Local)))
+    changed = true;
+
+  ImGui::SameLine();
+  if (ImGui::RadioButton("World", &space, static_cast<int>(Transform_space::World)))
+    changed = true;
+
+  if (changed && (space == static_cast<int>(Transform_space::Local) || space == static_cast<int>(Transform_space::World)))
+  {
+    m_transform_space = static_cast<Transform_space>(space);
+    save_occt_view_settings();
+    m_view->on_transform_space_changed();
+  }
+
+  ImGui::SameLine(0.0f, ImGui::GetStyle().ItemInnerSpacing.x);
+  GUI_DOC_HELP_("Local uses the first selected solid's frame (Show axes): origin and X/Y/Z. "
+                "World uses global XYZ at the first solid's bounding-box center. Click ? to open the user guide.",
+                doc_urls::k_shape_rotate_tool);
+}
+
 void GUI::options_move_mode_()
 {
   EZY_ASSERT(get_mode() == Mode::Move);
@@ -625,6 +652,7 @@ void GUI::options_move_mode_()
   ImGui::TextUnformatted(current_mode_description_());
   options_doc_help_button_();
   ImGui::Separator();
+  options_transform_space_();
   ImGui::TextUnformatted("Constrain axis:");
 
   Move_options& opts = m_view->shp_move().get_opts();
@@ -645,6 +673,7 @@ void GUI::options_scale_mode_()
   ImGui::TextUnformatted(current_mode_description_());
   options_doc_help_button_();
   ImGui::Separator();
+  options_transform_space_();
 
   options_orthographic_projection_();
 }
@@ -700,18 +729,19 @@ void GUI::options_rotate_mode_()
   ImGui::TextUnformatted(current_mode_description_());
   options_doc_help_button_();
   ImGui::Separator();
+  options_transform_space_();
 
   int selected_axis = static_cast<int>(m_view->shp_rotate().get_rotation_axis());
   if (ImGui::RadioButton("View to object axis", &selected_axis, static_cast<int>(Rotation_axis::View_to_object)))
     m_view->shp_rotate().set_rotation_axis(Rotation_axis::View_to_object);
 
-  if (ImGui::RadioButton("Around X axis", &selected_axis, static_cast<int>(Rotation_axis::X_axis)))
+  if (ImGui::RadioButton("Around X", &selected_axis, static_cast<int>(Rotation_axis::X_axis)))
     m_view->shp_rotate().set_rotation_axis(Rotation_axis::X_axis);
 
-  if (ImGui::RadioButton("Around Y axis", &selected_axis, static_cast<int>(Rotation_axis::Y_axis)))
+  if (ImGui::RadioButton("Around Y", &selected_axis, static_cast<int>(Rotation_axis::Y_axis)))
     m_view->shp_rotate().set_rotation_axis(Rotation_axis::Y_axis);
 
-  if (ImGui::RadioButton("Around Z axis", &selected_axis, static_cast<int>(Rotation_axis::Z_axis)))
+  if (ImGui::RadioButton("Around Z", &selected_axis, static_cast<int>(Rotation_axis::Z_axis)))
     m_view->shp_rotate().set_rotation_axis(Rotation_axis::Z_axis);
 
   options_orthographic_projection_();

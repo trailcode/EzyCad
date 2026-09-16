@@ -123,15 +123,16 @@ Each row (left to right):
 
 - **Visibility** - Checkbox to show or hide that node. Hiding a **group** hides its whole subtree in the 3D view.
 - **Solid / wire** - Checkbox (solids only) to switch **shaded** or **wireframe**.
-- **M** - Solids only: material popup; right-click for **Zoom to**, **Shape info...**, or **Delete**.
+- **M** - Solids only: left-click opens the material popup. Right-click uses the same row menu as the rest of the entry.
 - **Name** - Expandable tree row with an editable name. Click the row to select that solid (or all descendant solids for a group) and update the current group. **Ctrl+click** toggles multi-select. Drag to reparent (empty area below the list = document root).
 - **Copy / Paste** - <kbd>Ctrl</kbd>+<kbd>C</kbd> / <kbd>Ctrl</kbd>+<kbd>V</kbd> (remappable) copy selected solids, or a whole group subtree when you clicked that group (all its descendant solids are selected). Paste inserts an independent deep copy under the current group, at the same pose. If you still have that copied group as the current group, paste places a sibling copy beside it (not nested inside it). This is an in-app clipboard (survives **New**; it does not use the system clipboard). Sketch edges are not copied.
-- **Right-click the name** - Solids: **Zoom to** / **Shape info...** / local-frame display and edit (below) / **Delete**. Groups: **Zoom to** (fits all descendant solids; disabled when the group has none) / **Ungroup** (moves **all** direct children to the group's parent, then removes the group) / **Delete** (cascade-deletes the whole subtree). **Zoom to** keeps the current camera orientation and frames the solid or group with a little padding.
-- **Local frame (solids)** - Each solid has a local `XYZ` frame (default: world-aligned at the bounding-box center; **Z** is the primary axis, **Y** is up). Right-click the name or **M** for:
+- **Right-click the row** - Works on the whole entry (checkboxes, **M**, tree arrow, name field, and row padding). Solids: **Zoom to** / **Shape info...** / local-frame display and edit (below) / **Delete**. Groups: **Zoom to** (fits all descendant solids; disabled when the group has none) / **Ungroup** (moves **all** direct children to the group's parent, then removes the group) / **Delete** (cascade-deletes the whole subtree). **Zoom to** keeps the current camera orientation and frames the solid or group with a little padding.
+- **Local frame (solids)** - Each solid has a local `XYZ` frame (default: world-aligned at the bounding-box center; **Z** is the primary axis, **Y** is up). Right-click the row for:
   - **Show axes** / **Show plane** / **Show up** - toggle 3D annotations (off by default; saved in the `.ezy` file; hidden while any sketch tool is active, when **Hide all** is on, or when the solid or an ancestor group is hidden).
   - **Reset frame to bbox** - world-aligned frame at the bbox center (turns **Show axes** on).
   - **Set from planar face...** / **Set from cylindrical face...** - pick a face on that solid; plane sets **Z** = normal with origin at the face area center (circle center for a disk); cylinder sets **Z** = axis with origin = solid center projected onto the axis.
   - **Flip up** / **Flip axis (Z)** - reverse the up direction or primary axis (undoable).
+  - **Move / rotate / scale** default to this frame (**Options -> Local**): X/Y/Z and the pivot are the assigned triad, not world XYZ.
 
 Boolean results stay under the shared parent of their inputs when all inputs share one parent; otherwise they are placed at the document root. **File -> Import** STEP assemblies use **Import as** (default **Preserve hierarchy**) to keep product/assembly groups in the tree, import **Flat solids** at the root, or **Union shapes** into one solid.
 
@@ -141,7 +142,7 @@ The window can be closed with its close button; use **View -> Shape List** again
 
 #### Shape info
 
-Right-click a shape **name** or the **M** button in the Shape List and choose **Shape info...** to open a property dialog for that 3D shape. Use **Refresh** to recompute the values after the geometry changes.
+Right-click a Shape List row and choose **Shape info...** to open a property dialog for that 3D shape. Use **Refresh** to recompute the values after the geometry changes.
 
 The dialog reports document fields (name, material, shaded vs wireframe display, visibility) and Open CASCADE (OCCT) topology and measurements, including:
 
@@ -386,7 +387,7 @@ The shape move tool allows you to reposition selected shapes in the 3D viewer wi
 
 |                                  |                                                                                                                                         |
 | -------------------------------: | --------------------------------------------------------------------------------------------------------------------------------------- |
-| **Axis Constraints**             | Restrict movement to the X, Y, or Z axis by toggling axis constraints in the options panel or using keyboard shortcuts.                 |
+| **Axis Constraints**             | Restrict movement to X, Y, or Z. Those axes are the first selected solid's frame (**Local**, default) or world XYZ (**World**).         |
 | **Interactive Distance Editing** | Enter or adjust the distance moved along each axis for precise control. Real-time feedback is provided in the viewer and options panel. |
 | **Improved Plane Handling**      | The move plane is automatically estimated based on the center of the selected shapes, making movement more intuitive.                   |
 | **Finalization Logic**           | The move operation completes when you confirm the action (e.g., <kbd>left mouse button</kbd>).                                          |
@@ -394,7 +395,7 @@ The shape move tool allows you to reposition selected shapes in the 3D viewer wi
 
 **How to Use:**
 1. ![Assembly_AxialMove](res/icons/Assembly_AxialMove.png) **Activate Move Tool:** Select one or more shapes and press <kbd>G</kbd> or click the icon.
-2. **Constrain Movement (Optional):** Use the options panel to lock movement to a specific axis, or use keyboard shortcuts (e.g., <kbd>X</kbd>, <kbd>Y</kbd>, <kbd>Z</kbd>).
+2. **Choose space and constrain (Optional):** In Options, **Local** uses the first selected solid's frame (same triad as **Show axes**); **World** uses global XYZ at that solid's bounding-box center. Then lock X/Y/Z in Options or with <kbd>X</kbd>, <kbd>Y</kbd>, <kbd>Z</kbd>.
 
    ![Move constrain axis example](images/move_constrain_axis.png)
    
@@ -417,23 +418,25 @@ The shape rotate tool enables precise rotation of selected shapes around a speci
 
 **Features:**
 
-|                               |                                                                                                  |
-| ----------------------------: | ------------------------------------------------------------------------------------------------ |
-| **Rotation Axis Options**     | Choose between view-to-object rotation or constrain rotation to X, Y, or Z axis.                 |
-| **Interactive Angle Editing** | Enter or adjust the rotation angle for precise control with real-time preview.                   |
-| **Visual Feedback**           | The rotation axis is displayed with color-coded indicators (Red for X, Green for Y, Blue for Z). |
+|                               |                                                                                                |
+| ----------------------------: | ---------------------------------------------------------------------------------------------- |
+| **Rotation Axis Options**     | View-to-object, or constrain to X, Y, or Z in **Local** (assigned frame) or **World** space.   |
+| **Interactive Angle Editing** | Enter or adjust the rotation angle for precise control with real-time preview.                 |
+| **Visual Feedback**           | The rotation axis is displayed (red X, green Y, blue Z, cyan view-to-object) plus a red pivot. |
 
 **How to Use:**
 1. **Activate Rotate Tool:** ![Draft_Rotate](res/icons/Draft_Rotate.png) Select one or more shapes and press <kbd>R</kbd> or click the icon. You can also activate the tool and select the shape(s) to rotate afterwards.
-2. **Select Rotation Axis: (Optional)**
+2. **Select space and rotation axis (Optional):**
    
    ![Rotate constrain axis example](images/rotate_constrain_axis.png)
 
-   *Example: Rotation around on the X axis.*
-   - Press <kbd>X</kbd> to rotate around the X-axis (Red)
-   - Press <kbd>Y</kbd> to rotate around the Y-axis (Green)
-   - Press <kbd>Z</kbd> to rotate around the Z-axis (Blue)
-   - Press the same axis key again to switch to view-to-object rotation
+   *Example: Rotation around the X axis.*
+   - In Options, **Local** (default) uses the first selected solid's frame origin and axes. **World** uses global XYZ at the bounding-box center.
+   - Press <kbd>X</kbd> to rotate around X (red)
+   - Press <kbd>Y</kbd> to rotate around Y (green)
+   - Press <kbd>Z</kbd> to rotate around Z (blue)
+   - Press the same axis key again to switch to view-to-object rotation (cyan)
+   - You can pick the axis in Options before moving the mouse.
 
 3. **Edit Angle (Optional):**
    - Press <kbd>Tab</kbd> to activate the angle input box
@@ -446,23 +449,24 @@ The shape rotate tool enables precise rotation of selected shapes around a speci
    - Press <kbd>Esc</kbd> to cancel and revert to the original position
 
 **Tips:**
-- Use view-to-object rotation for intuitive free-form rotation
-- Use axis constraints for precise rotations around specific axes
-- The rotation center point is displayed as a red dot for reference
-   - Visible in wirefame rendering of the shape(s)
+- Use view-to-object rotation for intuitive free-form rotation (through the same pivot as Local/World)
+- Use X/Y/Z for precise rotations; with **Local**, Z is the assigned primary axis (for example a cylinder axis from **Set from cylindrical face**)
+- After the first mouse sample, orbit or pan keeps that axis and plane so the angle preview does not jump
+- Switching **Local** / **World** mid-drag keeps the current angle; the next mouse move re-baselines from the new pivot
+- The pivot is a red cross on top of the solids (shaded or wireframe)
 - You can combine rotation with other operations for complex transformations
 
 #### Shape Scale Tool (S)
 
 ![Shape Scale Tool](res/icons/Part_Scale.png)
 
-The shape scale tool allows you to uniformly scale selected shapes around a computed center point.
+The shape scale tool allows you to uniformly scale selected shapes around a pivot: the first selected solid's frame origin (**Local**) or that solid's bounding-box center (**World**).
 
 **Features:**
 
 |                                |                                                                                                                                  |
 | -----------------------------: | -------------------------------------------------------------------------------------------------------------------------------- |
-| **Automatic center detection** | The scale center is estimated from the bounding box center of the selected shapes.                                               |
+| **Automatic center detection** | Pivot is the first selected solid's frame origin (**Local**) or bounding-box center (**World**).                                 |
 | **Screen-plane scaling**       | Scaling happens in a plane derived from the current view, making the interaction intuitive.                                      |
 | **Interactive preview**        | Moving the mouse adjusts the scale factor and updates the shapes in real time.                                                   |
 | **Safe bounds**                | The scale factor is clamped to a reasonable range (e.g., between very small and very large values) to avoid degenerate geometry. |
@@ -471,11 +475,12 @@ The shape scale tool allows you to uniformly scale selected shapes around a comp
 
 1. **Select shapes:** Select one or more shapes in the 3D view or Shape List.
 2. ![Shape Scale Tool](res/icons/Part_Scale.png) **Activate Scale Tool:** Click the *Shape scale* icon in the toolbar (or choose Scale from the Edit/Transform area if present).  
-3. **Move the mouse:**  
-   - The tool computes a scale center and a view-aligned plane.  
+3. **Choose space (Optional):** Options **Local** (default) scales about the first selected solid's frame origin. **World** uses that solid's bounding-box center.
+4. **Move the mouse:**  
+   - The tool uses that pivot and a view-aligned plane.  
    - Moving the mouse away from or toward the center changes the scale factor and previews the scaled result.
-4. **Finalize:** Confirm the operation (e.g., by clicking to complete the interaction) to apply the scale permanently.
-5. **Cancel:** Press <kbd>Esc</kbd> to cancel and revert to the original shape sizes.
+5. **Finalize:** Confirm the operation (e.g., by clicking to complete the interaction) to apply the scale permanently.
+6. **Cancel:** Press <kbd>Esc</kbd> to cancel and revert to the original shape sizes.
 
 **Tips:**
 

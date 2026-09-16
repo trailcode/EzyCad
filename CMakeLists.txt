@@ -133,6 +133,10 @@ set(gui_mode_cpp ${CMAKE_CURRENT_SOURCE_DIR}/src/gui_mode.cpp)
 list(REMOVE_ITEM srcs "src/gui_mode.cpp" ${gui_mode_cpp})
 list(APPEND srcs ${gui_mode_cpp})
 
+set(gui_shp_pane_cpp ${CMAKE_CURRENT_SOURCE_DIR}/src/gui_shp_pane.cpp)
+list(REMOVE_ITEM srcs "src/gui_shp_pane.cpp" ${gui_shp_pane_cpp})
+list(APPEND srcs ${gui_shp_pane_cpp})
+
 # Define source files for the application
 # Including ImGui sources and main application file
 set(App_SRCS ${imguiSrc} ${srcs})
