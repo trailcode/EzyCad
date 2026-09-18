@@ -145,7 +145,7 @@ void Shp_move::cancel()
 void Shp_move::reset()
 {
   clear_all(m_opts, m_delta, m_move_pln, m_center, m_shps);
-  gui().set_mode(Mode::Normal);
+  gui().set_mode(Mode::Workbench_inspection);
 }
 
 Move_options& Shp_move::get_opts() { return m_opts; }

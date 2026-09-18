@@ -48,9 +48,9 @@ EzyCad (Easy CAD) is an open-source CAD application for hobbyist machinists to d
    - **Help** - [About](#help-menu), [Usage Guide](#help-menu), and the separate **[Settings guide](usage-settings.md)**
 
 2. **Toolbar**
-   - Quick access to commonly used tools
-   - Mode selection buttons
-   - Operation tools
+   - **Task** buttons (Sketch, Design, Workbench) pick the work context and enter that task's idle / inspection mode.
+   - The **tools** row shows only the modes and commands for the current task (unrelated tools are hidden).
+   - Hotkeys still work from any task: G / R / J switch to Workbench and enter Move / Rotate / Align shafts; <kbd>S</kbd> switches to Design and enters Scale; sketch letters switch to Sketch.
 
 3. **Sketch List**
    - [View and manage 2D sketches](#sketch-list)
@@ -221,9 +221,10 @@ Press <kbd>Esc</kbd> to cancel the current action or step back to a broader mode
 - **If something is in progress:** <kbd>Esc</kbd> cancels it and discards the change. Examples: cancel a line you are drawing, revert an unconfirmed [move](#shape-move-tool-g)/[rotate](#shape-rotate-tool-r)/[scale](#shape-scale-tool-s), cancel [extrude](#extrude-sketch-face-tool-e) preview, clear the distance or angle input dialog.
 - **If nothing is in progress:** <kbd>Esc</kbd> steps the application to the **parent mode** (one level up):
   - From a **sketch tool** (e.g. Add line, Add circle, Operation axis) -> **Sketch inspection mode**.
-  - From **Sketch inspection**, **Normal**, or any **shape tool** ([Move](#shape-move-tool-g), [Rotate](#shape-rotate-tool-r), [Scale](#shape-scale-tool-s), [Extrude](#extrude-sketch-face-tool-e), [Chamfer](#other-feature-operations) (<kbd>C</kbd>), [Fillet](#other-feature-operations) (<kbd>F</kbd>), [Polar duplicate](#shape-polar-duplicate-tool), [Create sketch from face](usage-sketch.md#create-sketch-from-planar-face-tool)) -> **Normal** (inspection) mode.
+  - From **Sketch inspection**, **Design** tools ([Extrude](#extrude-sketch-face-tool-e), [Scale](#shape-scale-tool-s), [Chamfer](#other-feature-operations) (<kbd>C</kbd>), [Fillet](#other-feature-operations) (<kbd>F</kbd>), [Polar duplicate](#shape-polar-duplicate-tool), [Create sketch from face](usage-sketch.md#create-sketch-from-planar-face-tool)), or Design **Inspection** -> **Design inspection**.
+  - From a **Workbench** tool ([Move](#shape-move-tool-g), [Rotate](#shape-rotate-tool-r), [Align shafts](#align-shafts-tool-j)) -> **Workbench** idle (not Design inspection). Use the task buttons to jump between Sketch, Design, and Workbench.
 
-So repeated <kbd>Esc</kbd> from a sketch drawing tool first cancels the current element, then returns to Sketch inspection, then to Normal.
+So repeated <kbd>Esc</kbd> from a sketch drawing tool first cancels the current element, then returns to Sketch inspection, then to Design inspection. Workbench tools step back to Workbench idle.
 
 ## Modeling Tools
 
@@ -474,7 +475,7 @@ The shape scale tool allows you to uniformly scale selected shapes around a pivo
 **How to Use:**
 
 1. **Select shapes:** Select one or more shapes in the 3D view or Shape List.
-2. ![Shape Scale Tool](res/icons/Part_Scale.png) **Activate Scale Tool:** Click the *Shape scale* icon in the toolbar (or choose Scale from the Edit/Transform area if present).  
+2. ![Shape Scale Tool](res/icons/Part_Scale.png) **Activate Scale Tool:** Click the *Shape scale* icon on the **Design** tools toolbar (or press <kbd>S</kbd>).  
 3. **Choose space (Optional):** Options **Local** (default) scales about the first selected solid's frame origin. **World** uses that solid's bounding-box center.
 4. **Move the mouse:**  
    - The tool uses that pivot and a view-aligned plane.  
@@ -674,7 +675,7 @@ Boolean operations (also called CSG or boolean tools) combine or modify 3D solid
 
 ![Shape Common](res/icons/Part_Common.png) **Common** — keep only the overlapping volume (intersection) of the selected bodies.
 
-These tools are in the main toolbar (after the polar duplicate button). They are **immediate commands**, not persistent modes like Move (G) or Extrude (E).
+These tools are on the **Design** tools toolbar (after polar duplicate). They are **immediate commands**, not persistent modes like Move (G) or Extrude (E).
 
 **Features:**
 
@@ -727,7 +728,7 @@ If fewer than two shapes are selected you will see an error message and nothing 
 
 **Keyboard notes:**
 
-There are default chords for the boolean tools (<kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>C</kbd> cut, <kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>F</kbd> fuse, <kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>M</kbd> common; remappable in **Settings -> Keyboard shortcuts**). You can also activate them from the toolbar after multi-selecting in Normal mode. General selection and view hotkeys still apply.
+There are default chords for the boolean tools (<kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>C</kbd> cut, <kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>F</kbd> fuse, <kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>M</kbd> common; remappable in **Settings -> Keyboard shortcuts**). You can also activate them from the Design tools toolbar after multi-selecting in Inspection mode. General selection and view hotkeys still apply.
 
 For more on 3D solids and the viewer, see [3D viewer (Open CASCADE)](usage-occt-view.md).
 
@@ -754,35 +755,35 @@ Mode, file, and edit chords in the **General Operations** and **Modeling Shortcu
 
 ### Modeling Shortcuts
 
-|                                               |                            |
-| --------------------------------------------: | -------------------------- |
-| <kbd>G</kbd>                                  | Move mode                  |
-| <kbd>R</kbd>                                  | Rotate mode                |
-| <kbd>S</kbd>                                  | Scale mode                 |
-| <kbd>J</kbd>                                  | Align shafts mode          |
-| <kbd>E</kbd>                                  | Extrude mode               |
-| <kbd>C</kbd>                                  | Chamfer mode               |
-| <kbd>F</kbd>                                  | Fillet mode                |
-| <kbd>D</kbd>                                  | Dimension tool (sketch)    |
-| <kbd>I</kbd>                                  | Sketch inspection          |
-| <kbd>P</kbd>                                  | Sketch from planar face    |
-| <kbd>Shift</kbd>+<kbd>A</kbd>                 | Operation axis             |
-| <kbd>N</kbd>                                  | Add node                   |
-| <kbd>L</kbd>                                  | Add line edge              |
-| <kbd>Shift</kbd>+<kbd>L</kbd>                 | Add multi-line edge        |
-| <kbd>A</kbd>                                  | Add arc                    |
-| <kbd>Q</kbd>                                  | Add square                 |
-| <kbd>B</kbd>                                  | Add rectangle (two points) |
-| <kbd>Shift</kbd>+<kbd>B</kbd>                 | Add rectangle (center)     |
-| <kbd>O</kbd>                                  | Add circle                 |
-| <kbd>Shift</kbd>+<kbd>O</kbd>                 | Add circle (three points)  |
-| <kbd>U</kbd>                                  | Add slot                   |
-| <kbd>Shift</kbd>+<kbd>U</kbd>                 | Add bone                   |
-| <kbd>Shift</kbd>+<kbd>P</kbd>                 | Polar duplicate            |
-| <kbd>Shift</kbd>+<kbd>X</kbd>                 | Cross-section              |
-| <kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>C</kbd> | Shape cut                  |
-| <kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>F</kbd> | Shape fuse                 |
-| <kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>M</kbd> | Shape common               |
+|                                               |                                           |
+| --------------------------------------------: | ----------------------------------------- |
+| <kbd>G</kbd>                                  | Move mode (switches to Workbench)         |
+| <kbd>R</kbd>                                  | Rotate mode (switches to Workbench)       |
+| <kbd>S</kbd>                                  | Scale mode (switches to Design)           |
+| <kbd>J</kbd>                                  | Align shafts mode (switches to Workbench) |
+| <kbd>E</kbd>                                  | Extrude mode                              |
+| <kbd>C</kbd>                                  | Chamfer mode                              |
+| <kbd>F</kbd>                                  | Fillet mode                               |
+| <kbd>D</kbd>                                  | Dimension tool (sketch)                   |
+| <kbd>I</kbd>                                  | Sketch inspection                         |
+| <kbd>P</kbd>                                  | Sketch from planar face                   |
+| <kbd>Shift</kbd>+<kbd>A</kbd>                 | Operation axis                            |
+| <kbd>N</kbd>                                  | Add node                                  |
+| <kbd>L</kbd>                                  | Add line edge                             |
+| <kbd>Shift</kbd>+<kbd>L</kbd>                 | Add multi-line edge                       |
+| <kbd>A</kbd>                                  | Add arc                                   |
+| <kbd>Q</kbd>                                  | Add square                                |
+| <kbd>B</kbd>                                  | Add rectangle (two points)                |
+| <kbd>Shift</kbd>+<kbd>B</kbd>                 | Add rectangle (center)                    |
+| <kbd>O</kbd>                                  | Add circle                                |
+| <kbd>Shift</kbd>+<kbd>O</kbd>                 | Add circle (three points)                 |
+| <kbd>U</kbd>                                  | Add slot                                  |
+| <kbd>Shift</kbd>+<kbd>U</kbd>                 | Add bone                                  |
+| <kbd>Shift</kbd>+<kbd>P</kbd>                 | Polar duplicate                           |
+| <kbd>Shift</kbd>+<kbd>X</kbd>                 | Cross-section                             |
+| <kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>C</kbd> | Shape cut                                 |
+| <kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>F</kbd> | Shape fuse                                |
+| <kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>M</kbd> | Shape common                              |
 
 
 ### View navigation
@@ -802,11 +803,11 @@ Mode, file, and edit chords in the **General Operations** and **Modeling Shortcu
 
 **Num Lock (numeric keypad):** **Num Lock off** is what we test against and recommend. The shortcuts below assume the keypad produces **NumPad** key codes (orbit, axis snap, zoom, roll, and keypad selection digits). With **Num Lock on**, Windows and other systems often remap the keypad (digits vs arrow/Home/End behavior), so numpad shortcuts may not match this document. Use the alternatives in the table (main-row <kbd>4</kbd> / <kbd>6</kbd>, <kbd>Shift</kbd>+<kbd>Left</kbd> / <kbd>Right</kbd>, main <kbd>+</kbd> / <kbd>-</kbd>, main <kbd>1</kbd>-<kbd>9</kbd> for selection) or turn **Num Lock off**.
 
-Same idea as Blender **View Roll** for <kbd>Shift</kbd>+<kbd>NumPad 4</kbd> / <kbd>NumPad 6</kbd>, <kbd>Shift</kbd>+<kbd>4</kbd> / <kbd>6</kbd>, or <kbd>Shift</kbd>+<kbd>Left</kbd> / <kbd>Right</kbd>. Plain <kbd>NumPad 8</kbd> / <kbd>NumPad 2</kbd> / <kbd>NumPad 4</kbd> / <kbd>NumPad 6</kbd> (no modifiers) **orbit** instead of setting the [selection filter](#shape-selection-filter-normal-mode-only); use the main keyboard **<kbd>4</kbd>** / **<kbd>6</kbd>** / **<kbd>2</kbd>** / **<kbd>8</kbd>** for Shell, Wire, CompSolid, or Vertex in **Normal** mode. **<kbd>NumPad 5</kbd>** is reserved for axis snap (not the Face filter); use main keyboard **<kbd>5</kbd>** for Face in **Normal** mode.
+Same idea as Blender **View Roll** for <kbd>Shift</kbd>+<kbd>NumPad 4</kbd> / <kbd>NumPad 6</kbd>, <kbd>Shift</kbd>+<kbd>4</kbd> / <kbd>6</kbd>, or <kbd>Shift</kbd>+<kbd>Left</kbd> / <kbd>Right</kbd>. Plain <kbd>NumPad 8</kbd> / <kbd>NumPad 2</kbd> / <kbd>NumPad 4</kbd> / <kbd>NumPad 6</kbd> (no modifiers) **orbit** instead of setting the [selection filter](#shape-selection-filter-inspection-and-workbench); use the main keyboard **<kbd>4</kbd>** / **<kbd>6</kbd>** / **<kbd>2</kbd>** / **<kbd>8</kbd>** for Shell, Wire, CompSolid, or Vertex in **Inspection** or **Workbench**. **<kbd>NumPad 5</kbd>** is reserved for axis snap (not the Face filter); use main keyboard **<kbd>5</kbd>** for Face in those modes.
 
-### Shape selection filter (Normal mode only)
+### Shape selection filter (Inspection and Workbench)
 
-In **Normal** mode, number keys set the **Selection Mode** filter for picking 3D shapes (same control as **Options -> Selection Mode**). Main keyboard **<kbd>1</kbd>-<kbd>9</kbd>** and keypad **<kbd>1</kbd>-<kbd>9</kbd>** are supported, except **keypad <kbd>5</kbd>** and **keypad <kbd>2</kbd>**, **<kbd>4</kbd>**, **<kbd>6</kbd>**, **<kbd>8</kbd>** (see [View navigation](#view-navigation)). The key order matches the list in the **Selection Mode** control (from compound down to whole shape):
+In **Design Inspection** and **Workbench** idle, number keys set the **Selection Mode** filter for picking 3D shapes (same control as **Options -> Selection Mode**). Main keyboard **<kbd>1</kbd>-<kbd>9</kbd>** and keypad **<kbd>1</kbd>-<kbd>9</kbd>** are supported, except **keypad <kbd>5</kbd>** and **keypad <kbd>2</kbd>**, **<kbd>4</kbd>**, **<kbd>6</kbd>**, **<kbd>8</kbd>** (see [View navigation](#view-navigation)). The key order matches the list in the **Selection Mode** control (from compound down to whole shape):
 
 | Key          | Filter    |
 | -----------: | --------- |
@@ -913,16 +914,24 @@ Contributors should follow **[ezycad_code_style.md](ezycad_code_style.md)** for 
 
 ## Tool Icons
 
-### Basic Operations
+### Tasks
+- ![Workbench_Sketcher](res/icons/Workbench_Sketcher.png) - Sketch task
+- ![User](res/icons/User.png) - Design task
+- ![Workbench_Assembly](res/icons/Workbench_Assembly.png) - Workbench task
+
+### Design
 - ![User](res/icons/User.png) - Inspection mode
+- ![Macro_FaceToSketch_48](res/icons/Macro_FaceToSketch_48.png) - Create sketch from planar face
+- ![Part_Scale](res/icons/Part_Scale.png) - Shape scale (<kbd>S</kbd>)
+
+### Workbench
+- ![Workbench_Assembly](res/icons/Workbench_Assembly.png) - Workbench idle
 - ![Assembly_AxialMove](res/icons/Assembly_AxialMove.png) - Shape move (<kbd>G</kbd>)
 - ![Draft_Rotate](res/icons/Draft_Rotate.png) - Shape rotate (<kbd>R</kbd>)
-- ![Part_Scale](res/icons/Part_Scale.png) - Shape scale (<kbd>S</kbd>)
 - ![Assembly_Move](res/icons/Assembly_Move.png) - Align shafts (<kbd>J</kbd>)
 
 ### Sketch Tools
 - ![Workbench_Sketcher_none](res/icons/Workbench_Sketcher_none.png) - Sketch inspection mode
-- ![Macro_FaceToSketch_48](res/icons/Macro_FaceToSketch_48.png) - Create sketch from planar face
 - ![Sketcher_MirrorSketch](res/icons/Sketcher_MirrorSketch.png) - Operational axis (then use Mirror/Revolve buttons + angle field in the Options panel; Clear axis)
 - ![Sketcher_CreatePoint](res/icons/Sketcher_CreatePoint.png) - Add node
 - ![Sketcher_Element_Line_Edge](res/icons/Sketcher_Element_Line_Edge.png) - Add line edge

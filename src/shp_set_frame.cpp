@@ -108,7 +108,7 @@ Status Shp_set_frame::pick(const ScreenCoords& screen_coords)
   // Leave pick mode before the undo push so history stores Normal, not Shape_set_frame.
   const Shp_ptr target = m_target;
   clear_all(m_target);
-  gui().set_mode(Mode::Normal);
+  gui().set_mode(Mode::Design_inspection);
   view().set_shape_frame(target, *frame);
   target->set_show_frame_axes(true);
   gui().show_message("Local frame updated.", Status_msg::Success);
@@ -118,5 +118,5 @@ Status Shp_set_frame::pick(const ScreenCoords& screen_coords)
 void Shp_set_frame::cancel()
 {
   clear_all(m_target);
-  gui().set_mode(Mode::Normal);
+  gui().set_mode(Mode::Design_inspection);
 }

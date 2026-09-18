@@ -101,7 +101,7 @@ If you resize the pane narrower than its controls, a **horizontal scrollbar** ap
 
 Under **Selection**:
 
-- **Selection Mode** — combo for the 3D pick filter (vertices, edges, faces, solids, and combinations). The **?** button links to [shape selection filter hotkeys](usage.md#shape-selection-filter-normal-mode-only) in the usage guide.
+- **Selection Mode** — combo for the 3D pick filter (vertices, edges, faces, solids, and combinations). The **?** button links to [shape selection filter hotkeys](usage.md#shape-selection-filter-inspection-and-workbench) in the usage guide. The same digits apply in **Workbench** idle.
 - **Orthographic projection** — checkbox (appears in the Options panel for all non-sketch modes) toggling an orthographic camera (sketch modes still force orthographic). Persisted as **`gui.inspection_orthographic`**.
 
 Under **Material**:

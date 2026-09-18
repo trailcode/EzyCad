@@ -585,14 +585,14 @@ void Occt_view::cancel(Set_parent_mode set_parent_mode)
 
   switch (get_mode())
   {
-  // Transform tools already return to Normal in their reset() and re-select the operands;
+  // Transform tools already return to Workbench_inspection in their reset() and re-select the operands;
   // a further set_mode() here would redisplay shapes and drop that selection again.
-  case Mode::Move:
+  case Mode::Workbench_move:
     shp_move().cancel();
     operation_canceled = true;
     break;
 
-  case Mode::Rotate:
+  case Mode::Workbench_rotate:
     shp_rotate().cancel();
     operation_canceled = true;
     break;
@@ -602,7 +602,7 @@ void Occt_view::cancel(Set_parent_mode set_parent_mode)
     operation_canceled = true;
     break;
 
-  case Mode::Shape_shaft_align:
+  case Mode::Workbench_shaft_align:
     shp_cyl_align().cancel();
     operation_canceled = true;
     break;
@@ -614,7 +614,7 @@ void Occt_view::cancel(Set_parent_mode set_parent_mode)
 
   case Mode::Shape_cross_section:
     shp_cross_section().clear();
-    gui().set_mode(Mode::Normal);
+    gui().set_mode(Mode::Design_inspection);
     break;
 
   default:
@@ -637,7 +637,7 @@ void Occt_view::revolve_selected(const double angle)
     add_shp_(*revolved, true);
     push_undo_delta(std::make_unique<Shape_add_delta>(std::vector<Shape_rec>{capture_shape_rec(**revolved)}));
     // Leave sketch mode so the new solid is shown at full strength (sketch tools use faint/hide).
-    gui().set_mode(Mode::Normal);
+    gui().set_mode(Mode::Design_inspection);
   }
   else
   {
@@ -665,7 +665,7 @@ void Occt_view::create_sketch_from_planar_face_(const ScreenCoords& screen_coord
     push_undo_delta(std::make_unique<Sketch_struct_delta>(Sketch_struct_delta::Kind::Add,
                                                           Sketch_json::to_json(*m_cur_sketch, m_assets), true));
     // fit_face_in_view(*face);
-    m_gui.set_mode(Mode::Sketch_inspection_mode);
+    m_gui.set_mode(Mode::Sketch_inspection);
     return;
   }
 
@@ -717,7 +717,7 @@ void Occt_view::add_sketch(const gp_Pln& pln, const std::string& base_name)
   refresh_viewer_grid_();
   push_undo_delta(std::make_unique<Sketch_struct_delta>(Sketch_struct_delta::Kind::Add,
                                                         Sketch_json::to_json(*m_cur_sketch, m_assets), true));
-  m_gui.set_mode(Mode::Sketch_inspection_mode);
+  m_gui.set_mode(Mode::Sketch_inspection);
 }
 
 void Occt_view::add_sketch_on_ref_plane(Sketch_ref_plane plane, double offset_display, const std::string& base_name)
@@ -773,7 +773,7 @@ Status Occt_view::create_sketch_from_cross_section(const std::string& base_name)
   refresh_viewer_grid_();
   push_undo_delta(std::make_unique<Sketch_struct_delta>(Sketch_struct_delta::Kind::Add,
                                                         Sketch_json::to_json(*m_cur_sketch, m_assets), true));
-  m_gui.set_mode(Mode::Sketch_inspection_mode);
+  m_gui.set_mode(Mode::Sketch_inspection);
 
   std::ostringstream msg;
   msg << "Created sketch '" << name << "' with " << counts.imported
@@ -2883,10 +2883,10 @@ void Occt_view::on_mouse_button(int theButton, int theAction, int theMods)
     if (theButton == GLFW_MOUSE_BUTTON_LEFT)
     {
       // clang-format off
-      const bool finalize_transform = (get_mode() == Mode::Move               && shp_move().has_operation_shps())   ||
-                                      (get_mode() == Mode::Rotate             && shp_rotate().has_operation_shps()) ||
+      const bool finalize_transform = (get_mode() == Mode::Workbench_move               && shp_move().has_operation_shps())   ||
+                                      (get_mode() == Mode::Workbench_rotate             && shp_rotate().has_operation_shps()) ||
                                       (get_mode() == Mode::Scale              && shp_scale().has_operation_shps())  ||
-                                      (get_mode() == Mode::Shape_shaft_align  && shp_cyl_align().is_dragging());
+                                      (get_mode() == Mode::Workbench_shaft_align  && shp_cyl_align().is_dragging());
       // clang-format on
       if (finalize_transform)
       {
@@ -3611,7 +3611,7 @@ void Occt_view::on_mode()
   // stay at the pre-transform pose. Disable AIS_ViewController dynamic highlight (skips MoveTo
   // while idle) so hover cannot paint a wireframe ghost there; orbit/pan still get mouse updates.
   const Mode mode              = get_mode();
-  const bool transform_preview = mode == Mode::Move || mode == Mode::Rotate || mode == Mode::Scale;
+  const bool transform_preview = mode == Mode::Workbench_move || mode == Mode::Workbench_rotate || mode == Mode::Scale;
   SetAllowHighlight(!transform_preview);
   if (transform_preview && !m_ctx.IsNull())
     m_ctx->ClearDetected(false);
@@ -3682,10 +3682,10 @@ void Occt_view::on_mode()
       case Mode::Sketch_from_planar_face: set_shp_selection_mode(TopAbs_FACE);      break;
       case Mode::Shape_chamfer:           on_chamfer_mode();                        break; // Will update selection mode
       case Mode::Shape_fillet:            on_fillet_mode();                         break; // Will update selection mode
-      case Mode::Move:                    set_shp_selection_mode(TopAbs_SHAPE);     break;
-      case Mode::Rotate:                  set_shp_selection_mode(TopAbs_SHAPE);     break;
+      case Mode::Workbench_move:                    set_shp_selection_mode(TopAbs_SHAPE);     break;
+      case Mode::Workbench_rotate:                  set_shp_selection_mode(TopAbs_SHAPE);     break;
       case Mode::Scale:                   set_shp_selection_mode(TopAbs_SHAPE);     break;
-      case Mode::Shape_shaft_align:         set_shp_selection_mode(TopAbs_FACE);      break;
+      case Mode::Workbench_shaft_align:         set_shp_selection_mode(TopAbs_FACE);      break;
       case Mode::Shape_set_frame:          set_shp_selection_mode(TopAbs_FACE);      break;
       case Mode::Shape_cross_section:     set_shp_selection_mode(TopAbs_COMPOUND);  break;
       default:
@@ -3711,10 +3711,10 @@ void Occt_view::on_mode()
   {
     switch (mode)
     {
-    case Mode::Move:
+    case Mode::Workbench_move:
       shp_move().begin(enter_selection);
       break;
-    case Mode::Rotate:
+    case Mode::Workbench_rotate:
       shp_rotate().begin(enter_selection);
       break;
     case Mode::Scale:
@@ -3725,7 +3725,7 @@ void Occt_view::on_mode()
     }
   }
 
-  if (mode == Mode::Shape_shaft_align)
+  if (mode == Mode::Workbench_shaft_align)
     shp_cyl_align().begin();
 
   if (mode == Mode::Shape_cross_section && !enter_selection.empty())
@@ -4071,7 +4071,7 @@ bool Occt_view::undo()
   m_redo_stack.push_back(std::move(redo_entry));
   const Mode restore_mode = mode_for_history_restore_(state.mode);
   m_gui.set_mode(restore_mode);
-  if (restore_mode == Mode::Sketch_inspection_mode)
+  if (restore_mode == Mode::Sketch_inspection)
     m_gui.set_show_sketch_list(true);
 
   m_restoring = false;
@@ -4104,7 +4104,7 @@ bool Occt_view::redo()
   m_undo_stack.push_back(std::move(undo_entry));
   const Mode restore_mode = mode_for_history_restore_(state.mode);
   m_gui.set_mode(restore_mode);
-  if (restore_mode == Mode::Sketch_inspection_mode)
+  if (restore_mode == Mode::Sketch_inspection)
     m_gui.set_show_sketch_list(true);
 
   m_restoring = false;
@@ -4738,7 +4738,7 @@ void Occt_view::new_file()
   create_default_sketch_();
   refresh_viewer_grid_();
   reset_default_view();
-  m_gui.set_mode(Mode::Normal);
+  m_gui.set_mode(Mode::Design_inspection);
 }
 
 namespace
@@ -4822,10 +4822,10 @@ Mode mode_for_history_restore_(Mode mode)
 {
   switch (mode)
   {
-  case Mode::Move:
-  case Mode::Rotate:
+  case Mode::Workbench_move:
+  case Mode::Workbench_rotate:
   case Mode::Scale:
-  case Mode::Shape_shaft_align:
+  case Mode::Workbench_shaft_align:
   case Mode::Shape_set_frame:
     return GUI::parent_mode_of(mode);
   default:

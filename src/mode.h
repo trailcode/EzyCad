@@ -7,11 +7,11 @@
 // Single source of truth: order here defines enum numeric values and c_mode_strs indices
 // (mode_from_string, persistence, etc.). Do not reorder without migrating saved data.
 #define EZY_MODE_LIST(X)                                                                                                       \
-  X(Normal)                                                                                                                    \
-  X(Move)                                                                                                                      \
+  X(Design_inspection)                                                                                                         \
+  X(Workbench_move)                                                                                                            \
   X(Scale)                                                                                                                     \
-  X(Rotate)                                                                                                                    \
-  X(Sketch_inspection_mode)  /* inspecting sketch elements */                                                                  \
+  X(Workbench_rotate)                                                                                                          \
+  X(Sketch_inspection)       /* inspecting sketch elements */                                                                  \
   X(Sketch_from_planar_face) /* sketch from a planar face */                                                                   \
   X(Sketch_face_extrude)     /* extrude a sketch face */                                                                       \
   X(Shape_chamfer)                                                                                                             \
@@ -31,8 +31,9 @@
   X(Sketch_add_bone) /* two centers, then r1, r2, waist clicks */                                                              \
   X(Sketch_dim_anno)                                                                                                           \
   X(Shape_cross_section)                                                                                                       \
-  X(Shape_shaft_align)                                                                                                         \
-  X(Shape_set_frame) /* Shape List only: pick face for local frame */
+  X(Workbench_shaft_align)                                                                                                     \
+  X(Shape_set_frame) /* Shape List only: pick face for local frame */                                                          \
+  X(Workbench_inspection) /* Workbench browse/select home; not Mode::Design_inspection */
 
 enum class Mode
 {
@@ -110,7 +111,26 @@ constexpr std::array<const char*, static_cast<std::size_t>(Bone_holes::_count)> 
 
 static_assert(c_bone_holes_strs.size() == static_cast<std::size_t>(Bone_holes::_count));
 
-bool is_sketch_mode(const Mode mode);
+/// Toolbar task switcher (Sketch / Design / Workbench). Distinct from Mode.
+enum class Task
+{
+  Sketch,
+  Design,
+  Workbench,
+  _count
+};
 
-/// Return Mode for a name (e.g. "Normal", "Sketch_add_edge"). Returns Normal if not found.
+bool is_sketch_mode(const Mode mode);
+/// Workbench idle + Move / Rotate / Align shafts.
+bool is_workbench_mode(const Mode mode);
+/// Workbench Move / Rotate / Align shafts (not idle; Scale is Design).
+bool is_workbench_transform_mode(const Mode mode);
+/// Design Inspection or Workbench idle (solid browse / selection-filter digits).
+bool is_shape_browse_mode(const Mode mode);
+
+Task task_of(Mode mode);
+Mode idle_mode_of(Task task);
+
+/// Return Mode for a name (e.g. "Design_inspection", "Sketch_add_edge"). Returns Design_inspection if not found.
+/// Also accepts retired names: Normal, Sketch_inspection_mode, Move, Rotate, Workbench_scale, Shape_shaft_align.
 Mode mode_from_string(std::string_view name);

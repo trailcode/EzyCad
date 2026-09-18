@@ -175,36 +175,48 @@ void GUI::render_occt() { m_view->do_frame(); }
 // Initialize toolbar buttons
 void GUI::initialize_toolbar_()
 {
+  m_task_buttons = {
+      // clang-format off
+      {load_texture("res/icons/Workbench_Sketcher.png"),  Task::Sketch,    "Sketch"},
+      {load_texture("res/icons/User.png"),                Task::Design,    "Design"},
+      {load_texture("res/icons/Workbench_Assembly.png"),  Task::Workbench, "Workbench"},
+      // clang-format on
+  };
+
   m_toolbar_buttons = {
       // clang-format off
-      {load_texture("res/icons/User.png"),                            true,  "Inspection mode",                   Mode::Normal},
-      {load_texture("res/icons/Workbench_Sketcher_none.png"),         false, "Sketch inspection mode",            Mode::Sketch_inspection_mode},
-      {load_texture("res/icons/Assembly_AxialMove.png"),              false, "Shape move",                        Mode::Move},
-      {load_texture("res/icons/Draft_Rotate.png"),                    false, "Shape rotate",                      Mode::Rotate},
-      {load_texture("res/icons/Part_Scale.png"),                      false, "Shape Scale",                       Mode::Scale},
-      {load_texture("res/icons/Assembly_Move.png"),                   false, "Align shafts",                      Mode::Shape_shaft_align},
-      {load_texture("res/icons/Macro_FaceToSketch_48.png"),           false, "Create a sketch from planar face",  Mode::Sketch_from_planar_face},
-      {load_texture("res/icons/Sketcher_MirrorSketch.png"),           false, "Operational axis",                  Mode::Sketch_operation_axis},
-      {load_texture("res/icons/Sketcher_CreatePoint.png"),            false, "Add node",                          Mode::Sketch_add_node},
-      {load_texture("res/icons/Sketcher_Element_Line_Edge.png"),      false, "Add line edge",                     Mode::Sketch_add_edge},
-      {load_texture("res/icons/ls.png"),                              false, "Add multi-line edge",               Mode::Sketch_add_multi_edges},
-      {load_texture("res/icons/Sketcher_Element_Arc_Edge.png"),       false, "Add arc circle",                    Mode::Sketch_add_seg_circle_arc},
-      {load_texture("res/icons/Sketcher_CreateSquare.png"),           false, "Add square",                        Mode::Sketch_add_square},
-      {load_texture("res/icons/Sketcher_CreateRectangle.png"),        false, "Add rectangle from two points",     Mode::Sketch_add_rectangle},
-      {load_texture("res/icons/Sketcher_CreateRectangle_Center.png"), false, "Add rectangle with center point",   Mode::Sketch_add_rectangle_center_pt},
-      {load_texture("res/icons/Sketcher_CreateCircle.png"),           false, "Add circle",                        Mode::Sketch_add_circle},
-      {load_texture("res/icons/Sketcher_Create3PointCircle.png"),     false, "Add circle from three points",      Mode::Sketch_add_circle_3_pts},
-      {load_texture("res/icons/Sketcher_CreateSlot.png"),             false, "Add slot",                          Mode::Sketch_add_slot},
-      {load_texture("res/icons/Sketcher_CreateBone.png"),             false, "Add bone",                          Mode::Sketch_add_bone},
-      {load_texture("res/icons/TechDraw_LengthDimension.png"),        false, "Length dimension",                  Mode::Sketch_dim_anno},
-      {load_texture("res/icons/Design456_Extrude.png"),               false, "Extrude sketch face",               Mode::Sketch_face_extrude},
-      {load_texture("res/icons/PartDesign_Chamfer.png"),              false, "Chamfer",                           Mode::Shape_chamfer},
-      {load_texture("res/icons/PartDesign_Fillet.png"),               false, "Fillet",                            Mode::Shape_fillet},
-      {load_texture("res/icons/Draft_PolarArray.png"),                false, "Shape polar duplicate",             Mode::Shape_polar_duplicate},
-      {load_texture("res/icons/Curves_ExtractSubshape.png"),          false, "Shape cross-section",               Mode::Shape_cross_section},
-      {load_texture("res/icons/Part_Cut.png"),                        false, "Shape cut",                         Command::Shape_cut},
-      {load_texture("res/icons/Part_Fuse.png"),                       false, "Shape fuse",                        Command::Shape_fuse},
-      {load_texture("res/icons/Part_Common.png"),                     false, "Shape common",                      Command::Shape_common},
+      // Sketch
+      {load_texture("res/icons/Workbench_Sketcher_none.png"),         false, "Sketch inspection mode",            Mode::Sketch_inspection,           Task::Sketch},
+      {load_texture("res/icons/Sketcher_MirrorSketch.png"),           false, "Operational axis",                  Mode::Sketch_operation_axis,            Task::Sketch},
+      {load_texture("res/icons/Sketcher_CreatePoint.png"),            false, "Add node",                          Mode::Sketch_add_node,                  Task::Sketch},
+      {load_texture("res/icons/Sketcher_Element_Line_Edge.png"),      false, "Add line edge",                     Mode::Sketch_add_edge,                  Task::Sketch},
+      {load_texture("res/icons/ls.png"),                              false, "Add multi-line edge",               Mode::Sketch_add_multi_edges,           Task::Sketch},
+      {load_texture("res/icons/Sketcher_Element_Arc_Edge.png"),       false, "Add arc circle",                    Mode::Sketch_add_seg_circle_arc,        Task::Sketch},
+      {load_texture("res/icons/Sketcher_CreateSquare.png"),           false, "Add square",                        Mode::Sketch_add_square,                Task::Sketch},
+      {load_texture("res/icons/Sketcher_CreateRectangle.png"),        false, "Add rectangle from two points",     Mode::Sketch_add_rectangle,            Task::Sketch},
+      {load_texture("res/icons/Sketcher_CreateRectangle_Center.png"), false, "Add rectangle with center point",   Mode::Sketch_add_rectangle_center_pt,  Task::Sketch},
+      {load_texture("res/icons/Sketcher_CreateCircle.png"),           false, "Add circle",                        Mode::Sketch_add_circle,                Task::Sketch},
+      {load_texture("res/icons/Sketcher_Create3PointCircle.png"),     false, "Add circle from three points",      Mode::Sketch_add_circle_3_pts,         Task::Sketch},
+      {load_texture("res/icons/Sketcher_CreateSlot.png"),             false, "Add slot",                          Mode::Sketch_add_slot,                 Task::Sketch},
+      {load_texture("res/icons/Sketcher_CreateBone.png"),             false, "Add bone",                          Mode::Sketch_add_bone,                 Task::Sketch},
+      {load_texture("res/icons/TechDraw_LengthDimension.png"),        false, "Length dimension",                  Mode::Sketch_dim_anno,                 Task::Sketch},
+      // Design
+      {load_texture("res/icons/User.png"),                            true,  "Inspection mode",                   Mode::Design_inspection,                           Task::Design},
+      {load_texture("res/icons/Macro_FaceToSketch_48.png"),           false, "Create a sketch from planar face",  Mode::Sketch_from_planar_face,          Task::Design},
+      {load_texture("res/icons/Design456_Extrude.png"),               false, "Extrude sketch face",               Mode::Sketch_face_extrude,              Task::Design},
+      {load_texture("res/icons/Part_Scale.png"),                      false, "Shape Scale",                       Mode::Scale,                           Task::Design},
+      {load_texture("res/icons/PartDesign_Chamfer.png"),              false, "Chamfer",                           Mode::Shape_chamfer,                    Task::Design},
+      {load_texture("res/icons/PartDesign_Fillet.png"),               false, "Fillet",                            Mode::Shape_fillet,                     Task::Design},
+      {load_texture("res/icons/Draft_PolarArray.png"),                false, "Shape polar duplicate",             Mode::Shape_polar_duplicate,            Task::Design},
+      {load_texture("res/icons/Curves_ExtractSubshape.png"),          false, "Shape cross-section",               Mode::Shape_cross_section,              Task::Design},
+      {load_texture("res/icons/Part_Cut.png"),                        false, "Shape cut",                         Command::Shape_cut,                     Task::Design},
+      {load_texture("res/icons/Part_Fuse.png"),                       false, "Shape fuse",                        Command::Shape_fuse,                    Task::Design},
+      {load_texture("res/icons/Part_Common.png"),                     false, "Shape common",                      Command::Shape_common,                  Task::Design},
+      // Workbench
+      {load_texture("res/icons/Workbench_Assembly.png"),              false, "Workbench",                         Mode::Workbench_inspection,             Task::Workbench},
+      {load_texture("res/icons/Assembly_AxialMove.png"),              false, "Shape move",                        Mode::Workbench_move,                   Task::Workbench},
+      {load_texture("res/icons/Draft_Rotate.png"),                    false, "Shape rotate",                      Mode::Workbench_rotate,                 Task::Workbench},
+      {load_texture("res/icons/Assembly_Move.png"),                   false, "Align shafts",                      Mode::Workbench_shaft_align,            Task::Workbench},
       // clang-format on
   };
 
@@ -240,15 +252,15 @@ void GUI::sync_toolbar_hotkey_tooltips_()
   };
 
   // clang-format off
-  tip_mode(Mode::Move,                          "Shape move",                      Gui_action::Mode_move);
-  tip_mode(Mode::Rotate,                        "Shape rotate",                    Gui_action::Mode_rotate);
+  tip_mode(Mode::Workbench_move,                          "Shape move",                      Gui_action::Mode_move);
+  tip_mode(Mode::Workbench_rotate,                        "Shape rotate",                    Gui_action::Mode_rotate);
   tip_mode(Mode::Scale,                         "Shape Scale",                     Gui_action::Mode_scale);
-  tip_mode(Mode::Shape_shaft_align,               "Align shafts",                    Gui_action::Mode_cyl_align);
+  tip_mode(Mode::Workbench_shaft_align,               "Align shafts",                    Gui_action::Mode_cyl_align);
   tip_mode(Mode::Sketch_dim_anno,               "Length dimension",                Gui_action::Mode_dimension);
   tip_mode(Mode::Sketch_face_extrude,           "Extrude sketch face",             Gui_action::Mode_extrude);
   tip_mode(Mode::Shape_chamfer,                 "Chamfer",                         Gui_action::Mode_chamfer);
   tip_mode(Mode::Shape_fillet,                  "Fillet",                          Gui_action::Mode_fillet);
-  tip_mode(Mode::Sketch_inspection_mode,        "Sketch inspection mode",          Gui_action::Mode_sketch_inspection);
+  tip_mode(Mode::Sketch_inspection,        "Sketch inspection mode",          Gui_action::Mode_sketch_inspection);
   tip_mode(Mode::Sketch_from_planar_face,       "Create a sketch from planar face", Gui_action::Mode_sketch_from_face);
   tip_mode(Mode::Sketch_operation_axis,         "Operational axis",                Gui_action::Mode_operation_axis);
   tip_mode(Mode::Sketch_add_node,               "Add node",                        Gui_action::Mode_add_node);
@@ -792,56 +804,89 @@ void GUI::toolbar_()
   ImGui::Begin("Toolbar", nullptr,
                ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoDocking);
 
-  ImVec2 button_size(32, 32);
+  const ImVec2 button_size(32, 32);
+  const Task   active_task = task_of(m_mode);
 
-  for (int i = 0; i < m_toolbar_buttons.size(); i++)
+  auto push_active = [](bool active)
   {
-    ImGui::PushID(i);
+    if (!active)
+      return false;
 
-    bool was_active = false;
-    if (m_toolbar_buttons[i].is_active)
+    ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.26f, 0.59f, 0.98f, 1.00f));
+    ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(0.26f, 0.59f, 0.98f, 1.00f));
+    ImGui::PushStyleColor(ImGuiCol_ButtonActive, ImVec4(0.06f, 0.53f, 0.98f, 1.00f));
+    return true;
+  };
+
+  auto run_command = [this](Command cmd)
+  {
+    switch (cmd)
     {
-      ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.26f, 0.59f, 0.98f, 1.00f));
-      ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(0.26f, 0.59f, 0.98f, 1.00f));
-      ImGui::PushStyleColor(ImGuiCol_ButtonActive, ImVec4(0.06f, 0.53f, 0.98f, 1.00f));
-      was_active = true;
+    case Command::Shape_cut:
+      if (Status s = m_view->shp_cut().selected_cut(); !s.is_ok())
+        show_status(s);
+      break;
+
+    case Command::Shape_fuse:
+      if (Status s = m_view->shp_fuse().selected_fuse(); !s.is_ok())
+        show_status(s);
+      break;
+
+    case Command::Shape_common:
+      if (Status s = m_view->shp_common().selected_common(); !s.is_ok())
+        show_status(s);
+      break;
+
+    default:
+      EZY_ASSERT(false);
+      break;
     }
+  };
 
-    // Add a unique string ID (e.g., "button0", "button1", etc.)
-    char button_id[16];
+  int widget_id = 0;
+  for (const Task_button& tb : m_task_buttons)
+  {
+    ImGui::PushID(widget_id++);
+    const bool was_active = push_active(tb.task == active_task);
+    char       button_id[16];
+    snprintf(button_id, sizeof(button_id), "task%d", static_cast<int>(tb.task));
+    if (ImGui::ImageButton(button_id, (ImTextureID)(intptr_t)tb.texture_id, button_size))
+      set_mode(idle_mode_of(tb.task));
+
+    if (ui_show_help(1) && ImGui::IsItemHovered())
+      ImGui::SetTooltip("%s", tb.tooltip);
+
+    if (was_active)
+      ImGui::PopStyleColor(3);
+
+    ImGui::SameLine();
+    ImGui::PopID();
+  }
+
+  ImGui::SameLine();
+  ImGui::TextDisabled("|");
+  ImGui::SameLine();
+
+  for (int i = 0; i < static_cast<int>(m_toolbar_buttons.size()); ++i)
+  {
+    Toolbar_button& b = m_toolbar_buttons[static_cast<size_t>(i)];
+    if (b.task != active_task)
+      continue;
+
+    ImGui::PushID(widget_id++);
+    const bool was_active = push_active(b.is_active);
+    char       button_id[16];
     snprintf(button_id, sizeof(button_id), "button%d", i);
-    if (ImGui::ImageButton(button_id, (ImTextureID)(intptr_t)m_toolbar_buttons[i].texture_id, button_size))
+    if (ImGui::ImageButton(button_id, (ImTextureID)(intptr_t)b.texture_id, button_size))
     {
-      if (m_toolbar_buttons[i].data.index() == 1)
-        switch (std::get<Command>(m_toolbar_buttons[i].data))
-        {
-        case Command::Shape_cut:
-          if (Status s = m_view->shp_cut().selected_cut(); !s.is_ok())
-            show_status(s);
-
-          break;
-
-        case Command::Shape_fuse:
-          if (Status s = m_view->shp_fuse().selected_fuse(); !s.is_ok())
-            show_status(s);
-
-          break;
-
-        case Command::Shape_common:
-          if (Status s = m_view->shp_common().selected_common(); !s.is_ok())
-            show_status(s);
-
-          break;
-
-        default:
-          EZY_ASSERT(false);
-        }
+      if (b.data.index() == 1)
+        run_command(std::get<Command>(b.data));
       else
-        set_mode(std::get<Mode>(m_toolbar_buttons[i].data));
+        set_mode(std::get<Mode>(b.data));
     }
 
     if (ui_show_help(1) && ImGui::IsItemHovered())
-      ImGui::SetTooltip("%s", m_toolbar_buttons[i].tooltip.c_str());
+      ImGui::SetTooltip("%s", b.tooltip.c_str());
 
     if (was_active)
       ImGui::PopStyleColor(3);
@@ -1462,7 +1507,7 @@ void GUI::sketch_list_()
     {
       m_view->set_curr_sketch(sketch);
       if (!is_sketch_mode(get_mode()))
-        set_mode(Mode::Sketch_inspection_mode);
+        set_mode(Mode::Sketch_inspection);
     }
 
     if (ui_show_contextual_help() && ImGui::IsItemHovered())
@@ -1545,7 +1590,7 @@ void GUI::sketch_list_()
         {
           m_view->set_curr_sketch(sketch);
           if (!is_sketch_mode(get_mode()))
-            set_mode(Mode::Sketch_inspection_mode);
+            set_mode(Mode::Sketch_inspection);
           m_sketch_properties_sketch = sketch;
           m_sketch_properties_open   = true;
         }
@@ -3361,13 +3406,13 @@ void GUI::on_mouse_pos(const ScreenCoords& screen_coords)
 
   switch (get_mode())
   {
-  case Mode::Move:
+  case Mode::Workbench_move:
     if (Status s = m_view->shp_move().move_selected(screen_coords); !s.is_ok())
       show_status(s);
 
     break;
 
-  case Mode::Rotate:
+  case Mode::Workbench_rotate:
     if (Status s = m_view->shp_rotate().rotate_selected(screen_coords); !s.is_ok())
       show_status(s);
 
@@ -3379,7 +3424,7 @@ void GUI::on_mouse_pos(const ScreenCoords& screen_coords)
 
     break;
 
-  case Mode::Shape_shaft_align:
+  case Mode::Workbench_shaft_align:
     if (m_view->shp_cyl_align().is_twist_phase())
     {
       if (Status s = m_view->shp_cyl_align().drag_twist(screen_coords); !s.is_ok())
@@ -3423,10 +3468,10 @@ void GUI::on_left_click_(const ScreenCoords& screen_coords)
   switch (m_mode)
   {
     // clang-format off
-  case Mode::Move:                m_view->shp_move().finalize();                      break;
-  case Mode::Rotate:              m_view->shp_rotate().finalize();                    break;
+  case Mode::Workbench_move:                m_view->shp_move().finalize();                      break;
+  case Mode::Workbench_rotate:              m_view->shp_rotate().finalize();                    break;
   case Mode::Scale:               m_view->shp_scale().finalize();                     break;
-  case Mode::Shape_shaft_align:
+  case Mode::Workbench_shaft_align:
     if (m_view->shp_cyl_align().is_dragging())
       m_view->shp_cyl_align().on_left_click();
     else if (Status s = m_view->shp_cyl_align().pick(screen_coords); !s.is_ok())
@@ -3944,7 +3989,7 @@ void GUI::on_file(const std::string& file_path, const std::string& file_bytes, b
   apply_sketch_list_ui_from_json_(j);
   apply_shape_list_ui_from_json_(j);
   m_last_saved_path = file_path;
-  Mode opened_mode  = Mode::Normal;
+  Mode opened_mode  = Mode::Design_inspection;
   if (j.contains("mode") && j["mode"].is_number_integer())
   {
     const int idx = j["mode"].get<int>();

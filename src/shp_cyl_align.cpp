@@ -339,5 +339,5 @@ void Shp_cyl_align::cancel()
 void Shp_cyl_align::reset()
 {
   begin();
-  gui().set_mode(Mode::Normal);
+  gui().set_mode(Mode::Workbench_inspection);
 }

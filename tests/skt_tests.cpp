@@ -554,7 +554,7 @@ TEST_F(Sketch_test, SketchOriginNodeSurvivesOnMode)
   TopoDS_Wire outer_wire = create_wire_box(default_plane, center, 20.0, 10.0);
   Sketch      sketch("FaceOrigin", view(), default_plane, outer_wire);
 
-  // Same path as create_sketch_from_planar_face_ -> set_mode(Sketch_inspection_mode).
+  // Same path as create_sketch_from_planar_face_ -> set_mode(Sketch_inspection).
   sketch.on_mode();
 
   std::optional<size_t> origin_idx;

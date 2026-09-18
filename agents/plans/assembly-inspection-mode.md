@@ -25,7 +25,7 @@ Post-v1 product design. Do **not** ship Assembly inspection until [phase 3 place
 
 Two phases of work, two kinds of idle mode:
 
-1. **Make geometry** — Sketch inspection + Inspection (`Mode::Normal`): draw profiles, see solids alongside (or faint), extrude, fillet, boolean.
+1. **Make geometry** — Sketch inspection + Inspection (`Mode::Design_inspection`): draw profiles, see solids alongside (or faint), extrude, fillet, boolean.
 2. **Arrange components** — Assembly inspection (future): duplicate / place / move Parts relative to each other; later mates and instances.
 
 That split matches SolidWorks / Inventor / Fusion (sketch nested in part, part nested in assembly). EzyCad names the idle states “inspection” (= browse/select + launch tools + Esc parent), not metrology “Inspect.”
@@ -46,12 +46,12 @@ flowchart TB
 
 ## What exists today
 
-| UI label               | Mode                           | Role                                                                          |
-| ---------------------- | ------------------------------ | ----------------------------------------------------------------------------- |
-| Inspection mode        | `Mode::Normal`                 | Idle 3D solids: selection filter, materials, booleans, transforms             |
-| Sketch inspection mode | `Mode::Sketch_inspection_mode` | Idle 2D sketch: show sketch, ortho, faint solids; Esc parent for sketch tools |
+| UI label               | Mode                      | Role                                                                          |
+| ---------------------- | ------------------------- | ----------------------------------------------------------------------------- |
+| Inspection mode        | `Mode::Design_inspection` | Idle 3D solids: selection filter, materials, booleans, transforms             |
+| Sketch inspection mode | `Mode::Sketch_inspection` | Idle 2D sketch: show sketch, ortho, faint solids; Esc parent for sketch tools |
 
-Esc ladder (see [docs/usage.md](../../docs/usage.md)): sketch tool → sketch inspection → Normal.
+Esc ladder (see [docs/usage.md](../../docs/usage.md)): sketch tool → sketch inspection → `Design_inspection`.
 
 **Not first-class yet:** Parts, instances, mates, inherited parent transforms. Shape List **groups** are organizational (STEP XCAF hierarchy on import). Move / Rotate / Scale / Align shafts **bake** into leaf BREP — one-shot geometry edits, not assembly placement. Toolbar icons named `Assembly_*.png` are FreeCAD-style assets for those shape tools, not an assembly workbench.
 
@@ -125,7 +125,7 @@ Shared idea: layered contexts with Esc / finish stepping outward. EzyCad’s “
 
 ## Product stance (fixed for this plan)
 
-1. Keep `Mode::Normal` as the 3D idle mode through hierarchy phase 1–2; keep bake Move/Duplicate there until placement lands.
+1. Keep `Mode::Design_inspection` as the 3D idle mode through hierarchy phase 1–2; keep bake Move/Duplicate there until placement lands.
 2. Introduce `Assembly_inspection` (name TBD in code) only with phase 3+ Part + relative placement; mates/instances can follow.
 3. Then: Inspection = make/edit geometry; Assembly inspection = arrange Parts; Sketch inspection stays under Part.
 4. No v1 Assembly inspection mode.

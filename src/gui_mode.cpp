@@ -43,12 +43,13 @@ std::string GUI::get_doc_url_for_mode(Mode mode)
 {
   static const std::unordered_map<Mode, std::string> doc_urls = {
       // clang-format off
-      {Mode::Normal,                          "https://ezycad.readthedocs.io/en/latest/usage.html#user-interface"},
-      {Mode::Move,                            "https://ezycad.readthedocs.io/en/latest/usage.html#shape-move-tool-g"},
-      {Mode::Rotate,                          "https://ezycad.readthedocs.io/en/latest/usage.html#shape-rotate-tool-r"},
-      {Mode::Scale,                           "https://ezycad.readthedocs.io/en/latest/usage.html#shape-scale-tool-s"},
-      {Mode::Shape_shaft_align,                 "https://ezycad.readthedocs.io/en/latest/usage.html#align-shafts-tool-j"},
-      {Mode::Sketch_inspection_mode,          "https://ezycad.readthedocs.io/en/latest/usage-sketch.html#sketch-origin"},
+      {Mode::Design_inspection,                          "https://ezycad.readthedocs.io/en/latest/usage.html#user-interface"},
+      {Mode::Workbench_inspection,            "https://ezycad.readthedocs.io/en/latest/usage.html#user-interface"},
+      {Mode::Workbench_move,                  "https://ezycad.readthedocs.io/en/latest/usage.html#shape-move-tool-g"},
+      {Mode::Workbench_rotate,                "https://ezycad.readthedocs.io/en/latest/usage.html#shape-rotate-tool-r"},
+      {Mode::Scale,                 "https://ezycad.readthedocs.io/en/latest/usage.html#shape-scale-tool-s"},
+      {Mode::Workbench_shaft_align,           "https://ezycad.readthedocs.io/en/latest/usage.html#align-shafts-tool-j"},
+      {Mode::Sketch_inspection,          "https://ezycad.readthedocs.io/en/latest/usage-sketch.html#sketch-origin"},
       {Mode::Sketch_from_planar_face,         "https://ezycad.readthedocs.io/en/latest/usage-sketch.html#create-sketch-from-planar-face-tool"},
       {Mode::Sketch_face_extrude,             "https://ezycad.readthedocs.io/en/latest/usage.html#extrude-sketch-face-tool-e"},
       {Mode::Shape_chamfer,                   "https://ezycad.readthedocs.io/en/latest/usage.html#other-feature-operations"},
@@ -128,32 +129,33 @@ Mode GUI::parent_mode_of(Mode mode)
 {
   static const std::map<Mode, Mode> parent_modes = {
       // clang-format off
-      {Mode::Normal,                          Mode::Normal},
-      {Mode::Move,                            Mode::Normal},
-      {Mode::Scale,                           Mode::Normal},
-      {Mode::Rotate,                          Mode::Normal},
-      {Mode::Shape_shaft_align,                 Mode::Normal},
-      {Mode::Sketch_inspection_mode,          Mode::Normal},
-      {Mode::Sketch_from_planar_face,         Mode::Normal},
-      {Mode::Sketch_face_extrude,             Mode::Normal},
-      {Mode::Shape_chamfer,                   Mode::Normal},
-      {Mode::Shape_fillet,                    Mode::Normal},
-      {Mode::Shape_polar_duplicate,           Mode::Normal},
-      {Mode::Sketch_add_node,                 Mode::Sketch_inspection_mode},
-      {Mode::Sketch_add_edge,                 Mode::Sketch_inspection_mode},
-      {Mode::Sketch_add_multi_edges,          Mode::Sketch_inspection_mode},
-      {Mode::Sketch_add_seg_circle_arc,       Mode::Sketch_inspection_mode},
-      {Mode::Sketch_operation_axis,           Mode::Sketch_inspection_mode},
-      {Mode::Sketch_add_square,               Mode::Sketch_inspection_mode},
-      {Mode::Sketch_add_rectangle,            Mode::Sketch_inspection_mode},
-      {Mode::Sketch_add_rectangle_center_pt,  Mode::Sketch_inspection_mode},
-      {Mode::Sketch_add_circle,               Mode::Sketch_inspection_mode},
-      {Mode::Sketch_add_circle_3_pts,         Mode::Sketch_inspection_mode},
-      {Mode::Sketch_add_slot,                 Mode::Sketch_inspection_mode},
-      {Mode::Sketch_add_bone,                 Mode::Sketch_inspection_mode},
-      {Mode::Sketch_dim_anno,                 Mode::Sketch_inspection_mode},
-      {Mode::Shape_cross_section,                   Mode::Normal},
-      {Mode::Shape_set_frame,                 Mode::Normal},
+      {Mode::Design_inspection,                          Mode::Design_inspection},
+      {Mode::Workbench_inspection,            Mode::Workbench_inspection},
+      {Mode::Workbench_move,                  Mode::Workbench_inspection},
+      {Mode::Scale,                           Mode::Design_inspection},
+      {Mode::Workbench_rotate,                Mode::Workbench_inspection},
+      {Mode::Workbench_shaft_align,           Mode::Workbench_inspection},
+      {Mode::Sketch_inspection,          Mode::Design_inspection},
+      {Mode::Sketch_from_planar_face,         Mode::Design_inspection},
+      {Mode::Sketch_face_extrude,             Mode::Design_inspection},
+      {Mode::Shape_chamfer,                   Mode::Design_inspection},
+      {Mode::Shape_fillet,                    Mode::Design_inspection},
+      {Mode::Shape_polar_duplicate,           Mode::Design_inspection},
+      {Mode::Sketch_add_node,                 Mode::Sketch_inspection},
+      {Mode::Sketch_add_edge,                 Mode::Sketch_inspection},
+      {Mode::Sketch_add_multi_edges,          Mode::Sketch_inspection},
+      {Mode::Sketch_add_seg_circle_arc,       Mode::Sketch_inspection},
+      {Mode::Sketch_operation_axis,           Mode::Sketch_inspection},
+      {Mode::Sketch_add_square,               Mode::Sketch_inspection},
+      {Mode::Sketch_add_rectangle,            Mode::Sketch_inspection},
+      {Mode::Sketch_add_rectangle_center_pt,  Mode::Sketch_inspection},
+      {Mode::Sketch_add_circle,               Mode::Sketch_inspection},
+      {Mode::Sketch_add_circle_3_pts,         Mode::Sketch_inspection},
+      {Mode::Sketch_add_slot,                 Mode::Sketch_inspection},
+      {Mode::Sketch_add_bone,                 Mode::Sketch_inspection},
+      {Mode::Sketch_dim_anno,                 Mode::Sketch_inspection},
+      {Mode::Shape_cross_section,                   Mode::Design_inspection},
+      {Mode::Shape_set_frame,                 Mode::Design_inspection},
       // clang-format on
   };
 
@@ -279,7 +281,7 @@ void GUI::on_key(int key, int scancode, int action, int mods)
   //
   // Other modes: chamfer/fillet/sketch may override selection mode via Occt_view::on_mode().
   // -------------------------------------------------------------------------
-  if (get_mode() == Mode::Normal)
+  if (is_shape_browse_mode(get_mode()))
   {
     int idx = -1;
     if (key >= GLFW_KEY_1 && key <= GLFW_KEY_9)
@@ -316,7 +318,7 @@ void GUI::on_key(int key, int scancode, int action, int mods)
   {
     // Move / Rotate / Align shafts handle Tab in their mode key handlers (distance / angle / depth / twist).
     const Mode mode = get_mode();
-    if (mode == Mode::Move || mode == Mode::Rotate || mode == Mode::Shape_shaft_align)
+    if (mode == Mode::Workbench_move || mode == Mode::Workbench_rotate || mode == Mode::Workbench_shaft_align)
       break;
 
     bool shift_pressed = (mods & GLFW_MOD_SHIFT) != 0;
@@ -329,7 +331,7 @@ void GUI::on_key(int key, int scancode, int action, int mods)
 
   case GLFW_KEY_ENTER:
     // Rotate / Align shafts finalize on Enter in their mode key handlers.
-    if (get_mode() == Mode::Rotate || get_mode() == Mode::Shape_shaft_align)
+    if (get_mode() == Mode::Workbench_rotate || get_mode() == Mode::Workbench_shaft_align)
       break;
 
     hide_sketch_origin_set_edit(true);
@@ -364,15 +366,15 @@ void GUI::on_key(int key, int scancode, int action, int mods)
 
   switch (get_mode())
   {
-  case Mode::Move:
+  case Mode::Workbench_move:
     on_key_move_mode_(key);
     break;
 
-  case Mode::Rotate:
+  case Mode::Workbench_rotate:
     on_key_rotate_mode_(key);
     break;
 
-  case Mode::Shape_shaft_align:
+  case Mode::Workbench_shaft_align:
     on_key_cyl_align_mode_(key, mods);
     break;
 
@@ -386,15 +388,15 @@ void GUI::dispatch_hotkey_action_(Gui_action action)
   // clang-format off
   switch (action)
   {
-  case Gui_action::Mode_move:                 set_mode(Mode::Move);                           break;
-  case Gui_action::Mode_rotate:               set_mode(Mode::Rotate);                         break;
+  case Gui_action::Mode_move:                 set_mode(Mode::Workbench_move);                           break;
+  case Gui_action::Mode_rotate:               set_mode(Mode::Workbench_rotate);                         break;
   case Gui_action::Mode_scale:                set_mode(Mode::Scale);                          break;
-  case Gui_action::Mode_cyl_align:            set_mode(Mode::Shape_shaft_align);                break;
+  case Gui_action::Mode_cyl_align:            set_mode(Mode::Workbench_shaft_align);                break;
   case Gui_action::Mode_extrude:              set_mode(Mode::Sketch_face_extrude);            break;
   case Gui_action::Mode_chamfer:              set_mode(Mode::Shape_chamfer);                  break;
   case Gui_action::Mode_fillet:               set_mode(Mode::Shape_fillet);                   break;
   case Gui_action::Mode_dimension:            set_mode(Mode::Sketch_dim_anno);                break;
-  case Gui_action::Mode_sketch_inspection:    set_mode(Mode::Sketch_inspection_mode);         break;
+  case Gui_action::Mode_sketch_inspection:    set_mode(Mode::Sketch_inspection);         break;
   case Gui_action::Mode_sketch_from_face:     set_mode(Mode::Sketch_from_planar_face);        break;
   case Gui_action::Mode_operation_axis:       set_mode(Mode::Sketch_operation_axis);          break;
   case Gui_action::Mode_add_node:             set_mode(Mode::Sketch_add_node);                break;
@@ -515,11 +517,12 @@ void GUI::options_()
   // clang-format off
   switch (get_mode())
   {
-    case Mode::Normal:                          options_normal_mode_();                       break;
-    case Mode::Move:                            options_move_mode_();                         break;
-    case Mode::Rotate:                          options_rotate_mode_();                       break;
-    case Mode::Scale:                           options_scale_mode_();                        break;
-    case Mode::Shape_shaft_align:                 options_shape_shaft_align_mode_();              break;
+    case Mode::Design_inspection:                          options_normal_mode_();                       break;
+    case Mode::Workbench_inspection:            options_normal_mode_();                       break;
+    case Mode::Workbench_move:                  options_move_mode_();                         break;
+    case Mode::Workbench_rotate:                options_rotate_mode_();                       break;
+    case Mode::Scale:                 options_scale_mode_();                        break;
+    case Mode::Workbench_shaft_align:           options_shape_shaft_align_mode_();              break;
     case Mode::Shape_chamfer:                   options_shape_chamfer_mode_();                break;
     case Mode::Shape_fillet:                    options_shape_fillet_mode_();                 break;
     case Mode::Shape_polar_duplicate:           options_shape_polar_duplicate_mode_();        break;
@@ -527,7 +530,7 @@ void GUI::options_()
     case Mode::Shape_set_frame:                 options_shape_set_frame_mode_();              break;
     
       // Sketch related modes:
-    case Mode::Sketch_inspection_mode:          options_sketch_inspection_mode_();            break;
+    case Mode::Sketch_inspection:          options_sketch_inspection_mode_();            break;
     case Mode::Sketch_from_planar_face:         options_sketch_from_planer_face_mode_();      break;
     case Mode::Sketch_operation_axis:           options_sketch_operation_axis_mode_();        break;
     case Mode::Sketch_face_extrude:             options_sketch_face_extrude_mode_();          break;
@@ -555,14 +558,14 @@ void GUI::options_()
 
 void GUI::options_sketch_inspection_mode_()
 {
-  EZY_ASSERT(get_mode() == Mode::Sketch_inspection_mode);
+  EZY_ASSERT(get_mode() == Mode::Sketch_inspection);
 
   options_sketch_common_();
 }
 
 void GUI::options_normal_mode_()
 {
-  EZY_ASSERT(get_mode() == Mode::Normal);
+  EZY_ASSERT(is_shape_browse_mode(get_mode()));
 
   ImGui::TextUnformatted(current_mode_description_());
   options_doc_help_button_();
@@ -592,7 +595,7 @@ void GUI::options_normal_mode_()
     }
 
     ImGui::SameLine(0.0f, ImGui::GetStyle().ItemInnerSpacing.x);
-    GUI_DOC_HELP_("Hotkeys: 1-9 (Normal mode) set filter when the 3D view has focus, not while typing in UI. Click ? to "
+    GUI_DOC_HELP_("Hotkeys: 1-9 (Inspection / Workbench) set filter when the 3D view has focus, not while typing in UI. Click ? to "
                   "open the user guide.",
                   doc_urls::k_shape_selection_filter);
 
@@ -647,7 +650,7 @@ void GUI::options_transform_space_()
 
 void GUI::options_move_mode_()
 {
-  EZY_ASSERT(get_mode() == Mode::Move);
+  EZY_ASSERT(get_mode() == Mode::Workbench_move);
 
   ImGui::TextUnformatted(current_mode_description_());
   options_doc_help_button_();
@@ -680,7 +683,7 @@ void GUI::options_scale_mode_()
 
 void GUI::options_shape_shaft_align_mode_()
 {
-  EZY_ASSERT(get_mode() == Mode::Shape_shaft_align);
+  EZY_ASSERT(get_mode() == Mode::Workbench_shaft_align);
 
   ImGui::TextUnformatted(current_mode_description_());
   options_doc_help_button_();
@@ -724,7 +727,7 @@ void GUI::options_shape_set_frame_mode_()
 
 void GUI::options_rotate_mode_()
 {
-  EZY_ASSERT(get_mode() == Mode::Rotate);
+  EZY_ASSERT(get_mode() == Mode::Workbench_rotate);
 
   ImGui::TextUnformatted(current_mode_description_());
   options_doc_help_button_();

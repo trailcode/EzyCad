@@ -289,7 +289,7 @@ void Shp_rotate::reset()
 {
   clear_all(m_angle, m_shps, m_initial_mouse_pos, m_rotate_pln, m_captured_axis_dir, m_center);
   clear_rotation_vis_();
-  gui().set_mode(Mode::Normal);
+  gui().set_mode(Mode::Workbench_inspection);
 }
 
 void Shp_rotate::clear_rotation_vis_()

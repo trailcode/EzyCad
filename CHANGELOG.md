@@ -9,6 +9,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- **Task toolbar**: Sketch / Design / Workbench switcher; the tools row shows only the current task. Move / Rotate / Align shafts live under Workbench; Scale stays on Design. G / R / J (and S for Scale) still enter those tools from any task.
+- **Mode names**: Design idle is `Design_inspection` (was `Normal`); Sketch idle is `Sketch_inspection` (was `Sketch_inspection_mode`). `ezy.get_mode()` / `ezy.set_mode` use the new names; `Normal` and `Sketch_inspection_mode` still parse.
 - **Move / rotate / scale space**: Options **Local** (default) or **World**. Local uses the first selected solid's frame (origin and X/Y/Z from **Show axes**). World keeps global XYZ at that solid's bounding-box center. Persisted as **`gui.transform_space`**.
 - **Desktop deps**: MSVC GLFW/GLEW come from **vcpkg** (`vcpkg.json` + toolchain) instead of NuGet; local configure matches CI.
 - **Extrude Both sides**: Options **Both sides** defaults to on (session sticky; not a Settings key).

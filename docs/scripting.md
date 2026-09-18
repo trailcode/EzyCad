@@ -44,15 +44,15 @@ ezy.Shp
 
 ### `ezy`
 
-| Method                          | Purpose                                         |
-| ------------------------------- | ----------------------------------------------- |
-| `ezy.log(msg)`                  | Print to the console and the main **Log** pane  |
-| `ezy.msg(text [, kind])`        | Status toast and Log; optional kind (see below) |
-| `ezy.get_mode()`                | Current application mode name (string)          |
-| `ezy.set_mode(name)`            | Switch mode by name                             |
-| `ezy.save_occt_view_settings()` | Write settings JSON (including view colors)     |
-| `ezy.occt_view_settings_json()` | Settings JSON string                            |
-| `ezy.help()`                    | Print binding summary                           |
+| Method                          | Purpose                                                                                                                                                                                                                     |
+| ------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `ezy.log(msg)`                  | Print to the console and the main **Log** pane                                                                                                                                                                              |
+| `ezy.msg(text [, kind])`        | Status toast and Log; optional kind (see below)                                                                                                                                                                             |
+| `ezy.get_mode()`                | Current application mode name (string)                                                                                                                                                                                      |
+| `ezy.set_mode(name)`            | Switch mode by name (`Design_inspection`, `Sketch_inspection`, `Workbench_move`, `Scale`, ...). Retired names `Normal` / `Sketch_inspection_mode` / `Move` / `Rotate` / `Workbench_scale` / `Shape_shaft_align` still work. |
+| `ezy.save_occt_view_settings()` | Write settings JSON (including view colors)                                                                                                                                                                                 |
+| `ezy.occt_view_settings_json()` | Settings JSON string                                                                                                                                                                                                        |
+| `ezy.help()`                    | Print binding summary                                                                                                                                                                                                       |
 
 Optional `kind` for `ezy.msg` is `success`, `info` (default), `constraint`, `warning`, or `error`. Unknown names use info. Toast color follows the kind.
 

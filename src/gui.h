@@ -247,7 +247,7 @@ inline constexpr const char* k_sketching_2d                 = "https://ezycad.re
 inline constexpr const char* k_line_edge_midpoint_nodes     = "https://ezycad.readthedocs.io/en/latest/usage-sketch.html#line-edge-option-add-midpoint-nodes";
 inline constexpr const char* k_line_edge_place_from_center  = "https://ezycad.readthedocs.io/en/latest/usage-sketch.html#line-edge-option-place-from-center";
 inline constexpr const char* k_revolve_solid_conversion     = "https://ezycad.readthedocs.io/en/latest/usage-sketch.html#revolve-solid-conversion";
-inline constexpr const char* k_shape_selection_filter       = "https://ezycad.readthedocs.io/en/latest/usage.html#shape-selection-filter-normal-mode-only";
+inline constexpr const char* k_shape_selection_filter       = "https://ezycad.readthedocs.io/en/latest/usage.html#shape-selection-filter-inspection-and-workbench";
 inline constexpr const char* k_add_node_tool                = "https://ezycad.readthedocs.io/en/latest/usage-sketch.html#add-node-tool";
 inline constexpr const char* k_bone_creation_tool           = "https://ezycad.readthedocs.io/en/latest/usage-sketch.html#bone-creation-tool";
 inline constexpr const char* k_shape_rotate_tool            = "https://ezycad.readthedocs.io/en/latest/usage.html#shape-rotate-tool-r";
@@ -372,7 +372,7 @@ public:
   ImVec4       get_clear_color() const;
   void         set_mode(Mode mode); // gui_mode.cpp
   void         set_parent_mode();   // gui_mode.cpp
-  /// Parent mode for Escape / tool exit (e.g. Move -> Normal, sketch tools -> Sketch_inspection_mode).
+  /// Parent mode for Escape / tool exit (e.g. Workbench_move -> Workbench_inspection, sketch tools -> Sketch_inspection).
   static Mode parent_mode_of(Mode mode); // gui_mode.cpp
   void        set_dist_edit(float dist, std::function<void(float, bool)>&& callback,
                             const std::optional<ScreenCoords> screen_coords = std::nullopt);
@@ -467,6 +467,13 @@ private:
     bool                        is_active;
     std::string                 tooltip;
     std::variant<Mode, Command> data;
+    Task                        task;
+  };
+  struct Task_button
+  {
+    uint32_t    texture_id;
+    Task        task;
+    const char* tooltip;
   };
   void dist_edit_();
   void angle_edit_();
@@ -672,7 +679,7 @@ private:
   bool                             m_angle_edit_focus_pending{false};
 
   // Mode related
-  Mode         m_mode                           = Mode::Normal;
+  Mode         m_mode                           = Mode::Design_inspection;
   Chamfer_mode m_chamfer_mode                   = Chamfer_mode::Shape;
   Fillet_mode  m_fillet_mode                    = Fillet_mode::Shape;
   int          m_edge_dim_label_h               = 3;
@@ -732,6 +739,7 @@ private:
   Project_unit                m_default_project_unit    = Project_unit::Inch;
   bool                        m_inspection_orthographic = false;
   std::vector<Toolbar_button> m_toolbar_buttons;
+  std::vector<Task_button>    m_task_buttons;
 
   // Message status window
   std::string                           m_message;

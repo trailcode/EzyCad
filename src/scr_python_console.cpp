@@ -333,7 +333,7 @@ PYBIND11_EMBEDDED_MODULE(ezycad_native, m)
         []
         {
           if (!g_py_gui)
-            return std::string("Normal");
+            return std::string("Design_inspection");
 
           Mode mmode = g_py_gui->get_mode();
           return std::string(c_mode_strs[static_cast<int>(mmode)]);

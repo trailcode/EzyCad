@@ -117,7 +117,7 @@ void Shp_scale::reset()
 
   m_scale_factor = 1.0;
 
-  gui().set_mode(Mode::Normal);
+  gui().set_mode(Mode::Design_inspection);
 }
 
 void Shp_scale::cancel()

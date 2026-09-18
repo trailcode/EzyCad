@@ -103,7 +103,7 @@ int l_ezy_get_mode(lua_State* L)
   GUI* gui = get_gui(L);
   if (!gui)
   {
-    lua_pushstring(L, "Normal");
+    lua_pushstring(L, "Design_inspection");
     return 1;
   }
   Mode m = gui->get_mode();

@@ -519,7 +519,7 @@ TEST_F(Shp_test, Cross_section_sketch_imports_box_midplane_lines)
   const Status status          = view().create_sketch_from_cross_section();
   ASSERT_TRUE(status.is_ok()) << status.message();
   EXPECT_EQ(view().get_sketches().size(), sketches_before + 1u);
-  EXPECT_EQ(gui().get_mode(), Mode::Sketch_inspection_mode);
+  EXPECT_EQ(gui().get_mode(), Mode::Sketch_inspection);
   EXPECT_GE(Sketch_access::get_linear_edge_count(view().curr_sketch()), 4u);
 }
 
@@ -728,7 +728,7 @@ TEST_F(Shp_test, Undo_delete_shape_restores_brep)
 TEST_F(Shp_test, Delete_shape_clears_frame_ais)
 {
   // Static GUI can be left in a sketch mode by an earlier test; that suppresses frame AIS.
-  gui().set_mode(Mode::Normal);
+  gui().set_mode(Mode::Design_inspection);
 
   view().add_box(0, 0, 0, 10, 10, 10);
   ASSERT_EQ(view().get_shapes().size(), 1u);
@@ -804,9 +804,9 @@ TEST_F(Shp_test, Undo_interleaves_sketch_delta_and_shape_add)
   EXPECT_EQ(view().get_shapes().size(), 1u);
 }
 
-TEST_F(Shp_test, Set_frame_undo_stays_in_normal)
+TEST_F(Shp_test, Set_frame_undo_stays_in_design_inspection)
 {
-  gui().set_mode(Mode::Normal);
+  gui().set_mode(Mode::Design_inspection);
   gui().set_hide_all_shapes(false);
 
   view().add_box(0, 0, 0, 10, 10, 10);
@@ -824,16 +824,16 @@ TEST_F(Shp_test, Set_frame_undo_stays_in_normal)
   view().set_shape_frame(shp, after);
   shp->set_show_frame_axes(true);
   view().shp_set_frame().cancel();
-  EXPECT_EQ(gui().get_mode(), Mode::Normal);
+  EXPECT_EQ(gui().get_mode(), Mode::Design_inspection);
   EXPECT_FALSE(view().shp_set_frame().has_target());
 
   EXPECT_TRUE(view().undo());
-  EXPECT_EQ(gui().get_mode(), Mode::Normal);
+  EXPECT_EQ(gui().get_mode(), Mode::Design_inspection);
   EXPECT_FALSE(view().shp_set_frame().has_target());
   EXPECT_TRUE(shp->get_frame().Direction().IsEqual(before.Direction(), 1e-9));
 
   EXPECT_TRUE(view().redo());
-  EXPECT_EQ(gui().get_mode(), Mode::Normal);
+  EXPECT_EQ(gui().get_mode(), Mode::Design_inspection);
   EXPECT_TRUE(shp->get_frame().Direction().IsEqual(after.Direction(), 1e-9));
 }
 
@@ -1042,7 +1042,7 @@ TEST_F(Shp_test, Hide_all_preserves_per_shape_visibility)
 
 TEST_F(Shp_test, Hide_all_clears_frame_ais)
 {
-  gui().set_mode(Mode::Normal);
+  gui().set_mode(Mode::Design_inspection);
   gui().set_hide_all_shapes(false);
 
   view().add_box(0, 0, 0, 10, 10, 10);
@@ -1073,7 +1073,7 @@ TEST_F(Shp_test, Hide_all_clears_frame_ais)
 
 TEST_F(Shp_test, Hidden_group_clears_child_frame_ais)
 {
-  gui().set_mode(Mode::Normal);
+  gui().set_mode(Mode::Design_inspection);
   gui().set_hide_all_shapes(false);
 
   view().add_box(0, 0, 0, 10, 10, 10);
@@ -1476,14 +1476,14 @@ TEST_F(Shp_test, Transform_translation_local_x_constraint)
 
 TEST_F(Shp_test, Rotate_axis_can_be_set_before_first_drag)
 {
-  gui().set_mode(Mode::Normal);
+  gui().set_mode(Mode::Design_inspection);
   gui().set_hide_all_shapes(false);
   view().add_box(0, 0, 0, 10, 10, 10);
   Shp_ptr shp = view().get_shapes().back();
   ASSERT_FALSE(shp.IsNull());
   select_shapes(view(), {shp});
 
-  gui().set_mode(Mode::Rotate);
+  gui().set_mode(Mode::Workbench_rotate);
   EXPECT_TRUE(view().shp_rotate().has_operation_shps());
   view().shp_rotate().set_rotation_axis(Rotation_axis::Z_axis);
   EXPECT_EQ(view().shp_rotate().get_rotation_axis(), Rotation_axis::Z_axis);
@@ -1491,14 +1491,14 @@ TEST_F(Shp_test, Rotate_axis_can_be_set_before_first_drag)
 
 TEST_F(Shp_test, Rotate_view_to_object_keeps_drag_frame_after_orbit)
 {
-  gui().set_mode(Mode::Normal);
+  gui().set_mode(Mode::Design_inspection);
   gui().set_hide_all_shapes(false);
   view().add_box(0, 0, 0, 10, 10, 10);
   Shp_ptr shp = view().get_shapes().back();
   ASSERT_FALSE(shp.IsNull());
   select_shapes(view(), {shp});
 
-  gui().set_mode(Mode::Rotate);
+  gui().set_mode(Mode::Workbench_rotate);
   ASSERT_TRUE(view().shp_rotate().has_operation_shps());
   EXPECT_EQ(view().shp_rotate().get_rotation_axis(), Rotation_axis::View_to_object);
 
@@ -1521,14 +1521,14 @@ TEST_F(Shp_test, Rotate_view_to_object_keeps_drag_frame_after_orbit)
 
 TEST_F(Shp_test, Rotate_constrained_keeps_axis_plane_when_facing_test_would_flip)
 {
-  gui().set_mode(Mode::Normal);
+  gui().set_mode(Mode::Design_inspection);
   gui().set_hide_all_shapes(false);
   view().add_box(0, 0, 0, 10, 10, 10);
   Shp_ptr shp = view().get_shapes().back();
   ASSERT_FALSE(shp.IsNull());
   select_shapes(view(), {shp});
 
-  gui().set_mode(Mode::Rotate);
+  gui().set_mode(Mode::Workbench_rotate);
   ASSERT_TRUE(view().shp_rotate().has_operation_shps());
   view().shp_rotate().set_rotation_axis(Rotation_axis::X_axis);
 
@@ -1549,7 +1549,7 @@ TEST_F(Shp_test, Rotate_constrained_keeps_axis_plane_when_facing_test_would_flip
 
 TEST_F(Shp_test, Scale_space_change_mid_drag_keeps_factor)
 {
-  gui().set_mode(Mode::Normal);
+  gui().set_mode(Mode::Design_inspection);
   gui().set_hide_all_shapes(false);
   const Transform_space saved_space = gui().get_transform_space();
   struct Restore_space
@@ -1588,12 +1588,12 @@ TEST_F(Shp_test, Scale_space_change_mid_drag_keeps_factor)
   ASSERT_TRUE(Shp_scale_access::apply_distance(view().shp_scale(), dist_after).is_ok());
   EXPECT_NEAR(Shp_scale_access::scale_factor(view().shp_scale()), factor_before, 1e-6);
 
-  gui().set_mode(Mode::Normal);
+  gui().set_mode(Mode::Design_inspection);
 }
 
 TEST_F(Shp_test, Rotate_space_change_mid_drag_keeps_angle)
 {
-  gui().set_mode(Mode::Normal);
+  gui().set_mode(Mode::Design_inspection);
   gui().set_hide_all_shapes(false);
   const Transform_space saved_space = gui().get_transform_space();
   struct Restore_space
@@ -1610,7 +1610,7 @@ TEST_F(Shp_test, Rotate_space_change_mid_drag_keeps_angle)
   view().set_shape_frame(shp, gp_Ax3(gp_Pnt(0.0, 0.0, 0.0), gp_Dir(0.0, 0.0, 1.0), gp_Dir(1.0, 0.0, 0.0)));
   select_shapes(view(), {shp});
 
-  gui().set_mode(Mode::Rotate);
+  gui().set_mode(Mode::Workbench_rotate);
   ASSERT_TRUE(view().shp_rotate().has_operation_shps());
   view().shp_rotate().set_rotation_axis(Rotation_axis::Z_axis);
   ASSERT_TRUE(Shp_rotate_access::ensure_start(view().shp_rotate()).is_ok());
@@ -1634,5 +1634,5 @@ TEST_F(Shp_test, Rotate_space_change_mid_drag_keeps_angle)
   ASSERT_TRUE(Shp_rotate_access::apply_world(view().shp_rotate(), gp_Pnt(0.0, 20.0, 0.0), axis_z, world_pln).is_ok());
   EXPECT_NEAR(Shp_rotate_access::angle(view().shp_rotate()), angle_before, 1e-6);
 
-  gui().set_mode(Mode::Normal);
+  gui().set_mode(Mode::Design_inspection);
 }
