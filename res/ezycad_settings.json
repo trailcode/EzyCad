@@ -137,6 +137,7 @@
     "show_python_console": false,
     "show_settings_dialog": false,
     "show_shape_list": true,
+    "show_workbench_list": true,
     "show_sketch_dimensions": true,
     "show_sketch_list": true,
     "sketch_edge_color": [

@@ -33,7 +33,10 @@
   X(Shape_cross_section)                                                                                                       \
   X(Workbench_shaft_align)                                                                                                     \
   X(Shape_set_frame) /* Shape List only: pick face for local frame */                                                          \
-  X(Workbench_inspection) /* Workbench browse/select home; not Mode::Design_inspection */
+  X(Workbench_inspection) /* Workbench browse/select home; not Mode::Design_inspection */                          \
+  X(Design_move)          /* Design CSG placement; bake BREP. Workbench_move is instance pose. */                  \
+  X(Design_rotate)        /* Design CSG rotation; bake BREP. Workbench_rotate is instance pose. */                  \
+  X(Design_shaft_align)   /* Design CSG shaft align; bake BREP. Workbench_shaft_align is instance pose. */
 
 enum class Mode
 {
@@ -125,6 +128,12 @@ bool is_sketch_mode(const Mode mode);
 bool is_workbench_mode(const Mode mode);
 /// Workbench Move / Rotate / Align shafts (not idle; Scale is Design).
 bool is_workbench_transform_mode(const Mode mode);
+/// Design or Workbench Move (same tool, different bake / parent).
+bool is_move_mode(const Mode mode);
+/// Design or Workbench Rotate.
+bool is_rotate_mode(const Mode mode);
+/// Design or Workbench Align shafts.
+bool is_shaft_align_mode(const Mode mode);
 /// Design Inspection or Workbench idle (solid browse / selection-filter digits).
 bool is_shape_browse_mode(const Mode mode);
 
@@ -132,5 +141,5 @@ Task task_of(Mode mode);
 Mode idle_mode_of(Task task);
 
 /// Return Mode for a name (e.g. "Design_inspection", "Sketch_add_edge"). Returns Design_inspection if not found.
-/// Also accepts retired names: Normal, Sketch_inspection_mode, Move, Rotate, Workbench_scale, Shape_shaft_align.
+/// Also accepts retired names: Normal, Sketch_inspection_mode, Move (Design_move), Rotate (Design_rotate), Workbench_scale, Shape_shaft_align.
 Mode mode_from_string(std::string_view name);

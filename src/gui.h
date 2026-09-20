@@ -359,6 +359,8 @@ public:
   bool get_edge_from_center() const { return m_edge_from_center; }
   bool get_hide_all_shapes() const { return m_hide_all_shapes; }
   void set_hide_all_shapes(bool hide) { m_hide_all_shapes = hide; }
+  bool get_hide_all_workbench() const { return m_hide_all_workbench; }
+  void set_hide_all_workbench(bool hide) { m_hide_all_workbench = hide; }
   /// Orthographic camera toggle for non-sketch modes (forces ortho in sketch modes); persisted as
   /// `gui.inspection_orthographic`.
   bool inspection_orthographic() const { return m_inspection_orthographic; }
@@ -394,6 +396,7 @@ public:
   void set_show_options(bool v) { m_show_options = v; }
   void set_show_sketch_list(bool v) { m_show_sketch_list = v; }
   void set_show_shape_list(bool v) { m_show_shape_list = v; }
+  void set_show_workbench_list(bool v) { m_show_workbench_list = v; }
   void set_log_window_visible(bool v) { m_log_window_visible = v; }
   void set_show_settings_dialog(bool v) { m_show_settings_dialog = v; }
   int  ui_verbosity() const { return m_ui_verbosity; }
@@ -418,6 +421,7 @@ public:
   bool show_options_effective() const { return m_show_options && ui_show_feature(1); }
   bool show_sketch_list_effective() const { return m_show_sketch_list && ui_show_feature(1); }
   bool show_shape_list_effective() const { return m_show_shape_list && ui_show_feature(1); }
+  bool show_workbench_list_effective() const { return m_show_workbench_list && ui_show_feature(1); }
   bool log_window_visible_effective() const { return m_log_window_visible && ui_show_feature(1); }
   bool show_lua_console_effective() const { return m_show_lua_console && ui_show_feature(2); }
   bool show_python_console_effective() const { return m_show_python_console && ui_show_feature(2); }
@@ -496,7 +500,10 @@ private:
   friend struct gui_shp_detail::Shape_list_row_drawer;
   [[nodiscard]] nlohmann::json shape_list_ui_to_json_() const;
   void                         apply_shape_list_ui_from_json_(const nlohmann::json& j);
+  [[nodiscard]] nlohmann::json workbench_list_ui_to_json_() const;
+  void                         apply_workbench_list_ui_from_json_(const nlohmann::json& j);
   void                         shape_list_();
+  void                         workbench_list_();
   void                         shape_info_dialog_();
   void                         open_shape_info_(const Shp_ptr& shape);
   void                         file_inspector_dialog_();
@@ -783,11 +790,13 @@ private:
   std::unordered_map<size_t, Sketch_list_row_ui> m_sketch_list_ui;
   /// Shape List group expand state (project `ui.shapeList.expanded`); missing id defaults to open.
   std::unordered_map<Shape_id, bool> m_shape_list_expanded;
+  std::unordered_map<Shape_id, bool> m_workbench_list_expanded;
   float                              m_sketch_list_scroll_y{0.f};
   bool                               m_sketch_list_scroll_restore{false};
 
   bool                        m_show_sketch_list{true};
   bool                        m_show_shape_list{true};
+  bool                        m_show_workbench_list{true};
   bool                        m_show_options{true};
   bool                        m_show_settings_dialog{false};
   bool                        m_open_about_popup{false};
@@ -846,6 +855,7 @@ private:
   int         m_new_sketch_plane{0}; // 0=XY, 1=XZ, 2=YZ
   double      m_new_sketch_offset{};
   bool        m_hide_all_shapes{false};
+  bool        m_hide_all_workbench{false};
   int         m_ui_verbosity{k_gui_ui_verbosity_default};
   bool        m_dark_mode{false};
 #ifndef NDEBUG

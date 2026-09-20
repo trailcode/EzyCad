@@ -10,7 +10,7 @@ Maintainers: update this file when GUI input routing, mode/options behavior, set
 
 Typical responsibilities:
 
-- ImGui frame: menu bar, dock space (passthrough central node for 3D input), task+tools toolbar, Sketch List, Shape List, Options, Settings, dist/angle popups.
+- ImGui frame: menu bar, dock space (passthrough central node for 3D input), task+tools toolbar, Sketch List, Shape List, Workbench List, Options, Settings, dist/angle popups.
 - Mode switching (`Mode` enum in [`mode.h`](../mode.h)), **task** (`Task`: Sketch / Design / Workbench), and parent-mode Esc behavior.
 - Persisted preferences (`ezycad_settings.json` via [`gui_settings.cpp`](../gui_settings.cpp)).
 - Project I/O (`.ezy` load/save, import/export dialogs; **File -> Import** confirms STEP/PLY with **Import as** for hierarchy / flat / union). STEP **Import into project** shows an Importing modal; desktop uses `Atomic_progress_indicator` + background Transfer + Cancel; WASM paints the modal for two frames then runs Transfer on the main thread (no Cancel).
@@ -40,13 +40,13 @@ Typical responsibilities:
 | 3    | `sync_sketch_add_mid_pt_edges_if_applicable_()` |
 | 4    | Update toolbar active state                     |
 
-`set_parent_mode()` maps each tool mode via `GUI::parent_mode_of` (see parent map in `gui_mode.cpp`): sketch drawing tools -> `Sketch_inspection`; Design tools (including `Scale`) -> `Design_inspection`; Workbench Move / Rotate / Align shafts -> `Workbench_inspection`. Undo/redo uses the same map so stored `Workbench_move` / `Workbench_rotate` / `Scale` / `Workbench_shaft_align` / `Shape_set_frame` restore their parent instead of re-entering a free-drag or face-pick tool (see [undo-redo.md](undo-redo.md#mode-restoration)). `Workbench_inspection` parents to itself (Esc does not jump to `Design_inspection`).
+`set_parent_mode()` maps each tool mode via `GUI::parent_mode_of` (see parent map in `gui_mode.cpp`): sketch drawing tools -> `Sketch_inspection`; Design tools (`Design_move` / `Design_rotate` / `Design_shaft_align` / `Scale` / ...) -> `Design_inspection`; Workbench Move / Rotate / Align shafts -> `Workbench_inspection`. Undo/redo uses the same map so stored transform tools restore their parent instead of re-entering a free-drag tool (see [undo-redo.md](undo-redo.md#mode-restoration)). `Workbench_inspection` parents to itself (Esc does not jump to `Design_inspection`).
 
 ### Tasks / toolbar (filter)
 
-The chrome toolbar is one ImGui window with two regions: **task** switcher (Sketch / Design / Workbench) then a `|` then **tools** for `task_of(get_mode())` only (option 1: hide unrelated modes). Clicking a task button calls `set_mode(idle_mode_of(task))`. Workbench idle (`Mode::Workbench_inspection`) is the task button only — not repeated on the tools row. Hotkeys still call `set_mode` on the tool; that updates the active task so the tools row follows (G/R/J from Sketch/Design enter Workbench; S enters Design Scale). Helpers: `task_of`, `idle_mode_of`, `is_workbench_mode`, `is_workbench_transform_mode`, `is_shape_browse_mode` in [`mode.h`](../mode.h).
+The chrome toolbar is one ImGui window with two regions: **task** switcher (Sketch / Design / Workbench) then a `|` then **tools** for `task_of(get_mode())` only (option 1: hide unrelated modes). Clicking a task button calls `set_mode(idle_mode_of(task))`. Workbench idle (`Mode::Workbench_inspection`) is the task button only — not repeated on the tools row. `mode.move` / `mode.rotate` / `mode.cyl_align` pick the Design or Workbench pair from the current task. `mode.scale` is always Design `Scale`. Helpers: `task_of`, `idle_mode_of`, `is_move_mode`, `is_rotate_mode`, `is_shaft_align_mode`, `is_workbench_mode` in [`mode.h`](../mode.h).
 
-`Mode::Design_inspection`, `Mode::Workbench_inspection`, and the three task buttons are toolbar-only (no remappable `Gui_action`). Transform tools keep `mode.move` / `mode.rotate` / `mode.scale` / `mode.cyl_align`. Retired script names `Normal` / `Sketch_inspection_mode` / `Move` / `Rotate` / `Workbench_scale` / `Shape_shaft_align` still parse via `mode_from_string`.
+`Mode::Design_inspection`, `Mode::Workbench_inspection`, and the three task buttons are toolbar-only (no remappable `Gui_action`). `Design_move` / `Design_rotate` / `Design_shaft_align` share `mode.move` / `mode.rotate` / `mode.cyl_align` with the Workbench pair (no extra `Gui_action`). Retired script names `Normal` / `Sketch_inspection_mode` / `Move` (`Design_move`) / `Rotate` (`Design_rotate`) / `Workbench_scale` / `Shape_shaft_align` still parse via `mode_from_string`.
 
 ### New mode or toolbar command (hotkeys)
 
@@ -62,11 +62,11 @@ When adding a `Mode` to [`mode.h`](../mode.h) (`EZY_MODE_LIST`), a toolbar butto
 
 Pick a default that does not collide with existing `c_actions` chords or fixed keys (Esc, Enter, Tab, digits, unmodified X/Y/Z axis toggles — reserved via `is_reserved_chord`). Also wire parent-mode / Options / doc URL maps as usual for new modes.
 
-`Occt_view::on_mode` also sets `AIS_ViewController::SetAllowHighlight(false)` for `Workbench_move` / `Workbench_rotate` / `Scale` (and `ClearDetected`) so idle mouse moves do not run dynamic `MoveTo` while transform preview leaves selection BVHs at the pre-transform pose; other modes restore highlight. Orbit/pan still receive `UpdateMousePosition` when buttons are held. When LMB finalizes an active transform (operands loaded), `on_mouse_button` skips `PressMouseButton` / `ReleaseMouseButton` for that click so AIS `SelectDetected` on release cannot replace the restored multi-selection with the single shape under the cursor.
+`Occt_view::on_mode` also sets `AIS_ViewController::SetAllowHighlight(false)` for `is_move_mode` / `is_rotate_mode` / `Scale` (and `ClearDetected`) so idle mouse moves do not run dynamic `MoveTo` while transform preview leaves selection BVHs at the pre-transform pose; other modes restore highlight. Orbit/pan still receive `UpdateMousePosition` when buttons are held. When LMB finalizes an active transform (operands loaded), `on_mouse_button` skips `PressMouseButton` / `ReleaseMouseButton` for that click so AIS `SelectDetected` on release cannot replace the restored multi-selection with the single shape under the cursor.
 
-Because the faint/selection-mode redisplay `Erase`s shapes (dropping the AIS selection), `on_mode` snapshots the entered selection for `Workbench_move` / `Workbench_rotate` / `Scale` / `Shape_cross_section` and restores it via `Occt_view::set_selected_shps` after `sync_sketch_shape_faint_style()`. The same helper restores the operands when a transform tool finishes (see `restore_operation_selection_` in [shape.md](shape.md)); `Occt_view::cancel` therefore treats those transform modes as already handled instead of switching mode again. Transform tools are also seeded via `Shp_move` / `Shp_rotate` / `Shp_scale::begin(enter_selection)` so multi-select operands do not depend on AIS selection surviving the mode switch (`ensure_operation_shps_` still falls back to the AIS selection when the seed was empty). Move/Rotate/Scale use `TopAbs_SHAPE` (whole-object) selection mode.
+Because the faint/selection-mode redisplay `Erase`s shapes (dropping the AIS selection), `on_mode` snapshots the entered selection for Move / Rotate / Scale / `Shape_cross_section` and restores it via `Occt_view::set_selected_shps` after `sync_sketch_shape_faint_style()`. The same helper restores the operands when a transform tool finishes (see `restore_operation_selection_` in [shape.md](shape.md)); `Occt_view::cancel` therefore treats those transform modes as already handled instead of switching mode again. Transform tools are also seeded via `Shp_move` / `Shp_rotate` / `Shp_scale::begin(enter_selection)` so multi-select operands do not depend on AIS selection surviving the mode switch (`ensure_operation_shps_` still falls back to the AIS selection when the seed was empty). Move/Rotate/Scale use `TopAbs_SHAPE` (whole-object) selection mode.
 
-`Occt_view::on_mode` ends with `sync_sketch_shape_faint_style()`: while `is_sketch_mode`, document shapes follow **Options/Settings** `gui.sketch_shape_faint_enabled` (master) plus `gui.sketch_shape_faint_style` (**0** hide / **1** ghost / **2** wire) and `gui.sketch_shape_faint_opacity` (ghost). Outside sketch mode, faint overrides clear and shapes show at full strength (unless Shape List **Hide all**). New shapes call the same sync from `add_shp_` / `insert_shape_rec`. The **Faint shapes** checkbox lives in `options_sketch_common_` (every sketch tool).
+`Occt_view::on_mode` ends with `sync_sketch_shape_faint_style()`: while `is_sketch_mode`, Design shapes follow **Options/Settings** `gui.sketch_shape_faint_enabled` (master) plus `gui.sketch_shape_faint_style` (**0** hide / **1** ghost / **2** wire) and `gui.sketch_shape_faint_opacity` (ghost). Workbench modes hide `m_shps` and show `m_wbk_shps`; Sketch/Design hide workbench instances. **Hide all** is per list. New shapes call the same sync from `add_shp_` / `add_wbk_shp_` / `insert_shape_rec`. The **Faint shapes** checkbox lives in `options_sketch_common_` (every sketch tool).
 
 ### UI verbosity
 
@@ -94,7 +94,7 @@ GUI (gui.h / gui.cpp)
   +-- gui_mode.cpp       set_mode, on_key, Options panel per Mode
   +-- gui_hotkeys.*      remappable Gui_action <-> Key_chord map
   +-- gui_add.cpp        Add menu dialogs (primitives, new sketch)
-  +-- gui_shp_pane.cpp   Shape List pane, Shape info dialog, ui.shapeList
+  +-- gui_shp_pane.cpp   Shape List + Workbench List panes, Shape info, ui.shapeList / ui.workbenchList
   +-- gui_settings.cpp   Settings dialog, load/save ezycad_settings.json
   |
   +-- Occt_view (gui_occt_view.h / gui_occt_view.cpp / .inl)
@@ -158,24 +158,24 @@ Overlay popups (`FloatEdit`, `AngleEdit`, `MessageStatus`, modals) keep `NoSaved
 
 Remappable chords live in `Gui_hotkeys` (`gui_hotkeys.h` / `.cpp`), owned by `GUI::m_hotkeys`. Stable action ids (e.g. `mode.move`, `mode.add_edge`, `cmd.shape_cut`, `edit.undo`) map to `Key_chord { key, mods }`. Persistence: `gui.hotkeys` in `ezycad_settings.json` as human-readable strings (`"G"`, `"Shift+L"`, `"Ctrl+Shift+C"`); missing keys merge to built-in defaults. On load, `merge_from_json` drops reserved/invalid chords, then resolves duplicate chords: later actions reset to factory; if that factory chord is still held by an earlier remap, that earlier row is also restored to factory (defaults are unique, so `action_for` never keeps a silent collision). Settings **Keyboard shortcuts** captures the next `GLFW_PRESS` (Esc cancels; `set_chord` rejects conflicts and **reserved** fixed chords via `is_reserved_chord`). Per-row **Reset** calls `reset_action` (factory chord via `set_chord`, so duplicates are rejected with the same inline conflict message). Capture is cleared when Settings closes. Toolbar tooltips for remappable modes and boolean commands are rebuilt via `sync_toolbar_hotkey_tooltips_()`.
 
-| Input                             | Condition                       | Handler                                                                                                     |
-| --------------------------------- | ------------------------------- | ----------------------------------------------------------------------------------------------------------- |
-| `+` / `-` / numpad +/-            | No Ctrl/Alt                     | `Occt_view::zoom_view_wheel_notches`                                                                        |
-| Shift + 4/6 / arrows / numpad 4/6 | No Ctrl/Alt                     | `Occt_view::roll_view_z_deg`                                                                                |
-| Numpad 5                          | No modifiers                    | `Occt_view::snap_view_to_nearest_standard_axis`                                                             |
-| Numpad 2/4/6/8                    | No modifiers                    | `Occt_view::orbit_view_screen_step_deg`                                                                     |
-| Hotkey capture active             | Settings                        | `try_capture_hotkey_press_` (assign / Esc cancel / conflict message)                                        |
-| `1`-`9` / numpad `1`-`9`          | `is_shape_browse_mode`          | `set_shp_selection_mode` (TopAbs enum index); fixed; Design Inspection + Workbench idle                     |
-| Esc                               |                                 | cancel capture if listening; else `cancel_underlay_calib_`, `Occt_view::cancel`, hide dist/angle edit       |
-| Tab                               | not Workbench move/rotate/align | `Occt_view::dimension_input`; those modes: `break` into mode handlers                                       |
-| Shift+Tab                         | not Workbench move/rotate/align | `Occt_view::angle_input`; those modes: `break` into mode handlers (cyl-align: clock/angle)                  |
-| Enter                             | not Workbench rotate/align      | hide edits, `Occt_view::on_enter`; those modes: `break` into mode handlers (finalize)                       |
-| Delete / Backspace                |                                 | `Occt_view::delete_selected` (fixed aliases; remapping `edit.delete` does not remove these)                 |
-| Ctrl+Shift+Z                      |                                 | `Occt_view::redo` (fixed second redo; remappable `edit.redo` defaults to Ctrl+Y)                            |
-| Remappable chord                  | `m_hotkeys` hit                 | `dispatch_hotkey_action_` (`Gui_action`: sketch/shape modes, booleans, delete, copy/paste, file, undo/redo) |
-| Move-mode keys                    | `Mode::Workbench_move`          | `on_key_move_mode_` (axis constraints X/Y/Z); hardcoded                                                     |
-| Rotate-mode keys                  | `Mode::Workbench_rotate`        | `on_key_rotate_mode_` (axis pick, Tab angle); hardcoded                                                     |
-| Align-shafts keys                 | `Mode::Workbench_shaft_align`   | `on_key_cyl_align_mode_` (Tab depth, Shift+Tab clock/angle, Enter finalize); hardcoded                      |
+| Input                             | Condition                                      | Handler                                                                                                     |
+| --------------------------------- | ---------------------------------------------- | ----------------------------------------------------------------------------------------------------------- |
+| `+` / `-` / numpad +/-            | No Ctrl/Alt                                    | `Occt_view::zoom_view_wheel_notches`                                                                        |
+| Shift + 4/6 / arrows / numpad 4/6 | No Ctrl/Alt                                    | `Occt_view::roll_view_z_deg`                                                                                |
+| Numpad 5                          | No modifiers                                   | `Occt_view::snap_view_to_nearest_standard_axis`                                                             |
+| Numpad 2/4/6/8                    | No modifiers                                   | `Occt_view::orbit_view_screen_step_deg`                                                                     |
+| Hotkey capture active             | Settings                                       | `try_capture_hotkey_press_` (assign / Esc cancel / conflict message)                                        |
+| `1`-`9` / numpad `1`-`9`          | `is_shape_browse_mode`                         | `set_shp_selection_mode` (TopAbs enum index); fixed; Design Inspection + Workbench idle                     |
+| Esc                               |                                                | cancel capture if listening; else `cancel_underlay_calib_`, `Occt_view::cancel`, hide dist/angle edit       |
+| Tab                               | not Design/Workbench move/rotate/align         | `Occt_view::dimension_input`; those modes: `break` into mode handlers                                       |
+| Shift+Tab                         | not Design/Workbench move/rotate/align         | `Occt_view::angle_input`; those modes: `break` into mode handlers (cyl-align: clock/angle)                  |
+| Enter                             | not Design/Workbench rotate/align              | hide edits, `Occt_view::on_enter`; those modes: `break` into mode handlers (finalize)                       |
+| Delete / Backspace                |                                                | `Occt_view::delete_selected` (fixed aliases; remapping `edit.delete` does not remove these)                 |
+| Ctrl+Shift+Z                      |                                                | `Occt_view::redo` (fixed second redo; remappable `edit.redo` defaults to Ctrl+Y)                            |
+| Remappable chord                  | `m_hotkeys` hit                                | `dispatch_hotkey_action_` (`Gui_action`: sketch/shape modes, booleans, delete, copy/paste, file, undo/redo) |
+| Move-mode keys                    | `Design_move` / `Workbench_move`               | `on_key_move_mode_` (axis constraints X/Y/Z); hardcoded                                                     |
+| Rotate-mode keys                  | `Design_rotate` / `Workbench_rotate`           | `on_key_rotate_mode_` (axis pick, Tab angle); hardcoded                                                     |
+| Align-shafts keys                 | `Design_shaft_align` / `Workbench_shaft_align` | `on_key_cyl_align_mode_` (Tab depth, Shift+Tab clock/angle, Enter finalize); hardcoded                      |
 
 Default remappable chords include G/R/S/J/E/C/F/D shape tools; sketch tools N/L/A/Q/B/O/U/I/P and Shift variants; Shift+P polar, Shift+X cross-section; Ctrl+Shift+C/F/M booleans; Shift+D delete; Ctrl+C / Ctrl+V copy/paste (in-app shape clipboard); Ctrl+N/O/S; Ctrl+Z / Ctrl+Y. Unmodified X/Y/Z are reserved for Move/Rotate axis toggles (`is_reserved_chord`); Shift+X remains free for cross-section. Remappable keys must pass `is_bindable_key` (letters, digits, Space, and named keys that round-trip in settings JSON); punctuation such as `,` / `.` and numpad keys are rejected. Settings **Keyboard shortcuts** has a `?` to `doc_urls::k_hotkeys` ([usage-settings.md#keyboard-shortcuts](../../docs/usage-settings.md#keyboard-shortcuts)).
 
@@ -187,10 +187,10 @@ See also [`src/doc/sketch.md`](sketch.md) and [`src/doc/shape.md`](shape.md) for
 
 | `Mode`                                                    | Delegate                                                             |
 | --------------------------------------------------------- | -------------------------------------------------------------------- |
-| `Workbench_move`                                          | `shp_move().move_selected`                                           |
-| `Workbench_rotate`                                        | `shp_rotate().rotate_selected`                                       |
+| `Design_move` / `Workbench_move`                          | `shp_move().move_selected`                                           |
+| `Design_rotate` / `Workbench_rotate`                      | `shp_rotate().rotate_selected`                                       |
 | `Scale`                                                   | `shp_scale().scale_selected`                                         |
-| `Workbench_shaft_align`                                   | `shp_cyl_align().drag_depth` / `drag_twist`                          |
+| `Design_shaft_align` / `Workbench_shaft_align`            | `shp_cyl_align().drag_depth` / `drag_twist`                          |
 | `Shape_set_frame`                                         | `options_shape_set_frame_mode_` (Shape List only; no toolbar/hotkey) |
 | `Shape_polar_duplicate`                                   | `shp_polar_dup().move_point`                                         |
 | Sketch tool modes (line, arc, rect, dim, axis, bone, ...) | `curr_sketch().sketch_pt_move`                                       |
@@ -220,19 +220,19 @@ Tests use `sketch_left_click` to simulate sketch LMB without ImGui mouse positio
 
 `GUI::options_()` switches on `get_mode()`:
 
-| `Mode`                                          | Options function                                                                                                    |
-| ----------------------------------------------- | ------------------------------------------------------------------------------------------------------------------- |
-| `Design_inspection` / `Workbench_inspection`    | `options_normal_mode_` (selection filter, orthographic)                                                             |
-| `Workbench_move` / `Workbench_rotate` / `Scale` | `options_*_mode_` (Local/World space, constraints, axis)                                                            |
-| `Workbench_shaft_align`                         | `options_shape_shaft_align_mode_` (Flip direction, Clock rotation; pick / depth / clock help)                       |
-| `Shape_chamfer` / `Shape_fillet`                | mode + radius/distance                                                                                              |
-| `Shape_polar_duplicate`                         | angle, count, rotate/combine, **Dup** button                                                                        |
-| `Shape_cross_section`                           | local XY/XZ/YZ, invert normal, hide back side, show section outline, bbox-ranged offset, Clip, Cross section sketch |
-| `Sketch_inspection`                             | `options_sketch_common_`                                                                                            |
-| Each sketch tool mode                           | Matching `options_sketch_*_mode_`                                                                                   |
-| `Sketch_operation_axis`                         | Mirror / Revolve / Clear axis                                                                                       |
-| `Sketch_face_extrude`                           | **Extrude** (Both sides, Twist, material) above Sketch options; help mentions Settings fast preview                 |
-| `Sketch_add_bone`                               | Center / radius / total-length nodes, holes; None after waist commits; `DEV_MODE` **Debug vis**                     |
+| `Mode`                                                                            | Options function                                                                                                    |
+| --------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------- |
+| `Design_inspection` / `Workbench_inspection`                                      | `options_normal_mode_` (selection filter, orthographic)                                                             |
+| `Design_move` / `Workbench_move` / `Design_rotate` / `Workbench_rotate` / `Scale` | `options_*_mode_` (Local/World space, constraints, axis)                                                            |
+| `Design_shaft_align` / `Workbench_shaft_align`                                    | `options_shape_shaft_align_mode_` (Flip direction, Clock rotation; pick / depth / clock help)                       |
+| `Shape_chamfer` / `Shape_fillet`                                                  | mode + radius/distance                                                                                              |
+| `Shape_polar_duplicate`                                                           | angle, count, rotate/combine, **Dup** button                                                                        |
+| `Shape_cross_section`                                                             | local XY/XZ/YZ, invert normal, hide back side, show section outline, bbox-ranged offset, Clip, Cross section sketch |
+| `Sketch_inspection`                                                               | `options_sketch_common_`                                                                                            |
+| Each sketch tool mode                                                             | Matching `options_sketch_*_mode_`                                                                                   |
+| `Sketch_operation_axis`                                                           | Mirror / Revolve / Clear axis                                                                                       |
+| `Sketch_face_extrude`                                                             | **Extrude** (Both sides, Twist, material) above Sketch options; help mentions Settings fast preview                 |
+| `Sketch_add_bone`                                                                 | Center / radius / total-length nodes, holes; None after waist commits; `DEV_MODE` **Debug vis**                     |
 
 ### Options panel layout (sketch tools)
 
@@ -249,21 +249,23 @@ Shared sketch controls (snap, faint shapes) live in `options_sketch_shared_contr
 
 ## ImGui frame order (`render_gui`)
 
-| Order | Function                                                      | Purpose                                         |
-| ----- | ------------------------------------------------------------- | ----------------------------------------------- |
-| 1     | `flush_view_events`                                           | Sync camera before UI uses projection           |
-| 2     | `menu_bar_`, `toolbar_`                                       | File / View / mode tools                        |
-| 3     | `dist_edit_`, `angle_edit_`                                   | Floating numeric entry                          |
-| 4     | `sketch_list_`, `sketch_properties_dialog_`                   | Sketch List + underlay/properties               |
-| 5     | `shape_list_`, `shape_info_dialog_`, `file_inspector_dialog_` | Shape List + info (`gui_shp_pane.cpp`) + Import |
-| 6     | `options_`                                                    | Mode-specific Options pane                      |
-| 7     | `message_status_window_`, `about_dialog_`                     | Status + About                                  |
-| 8     | `add_*_dialog_`                                               | Primitive / sketch creation popups              |
-| 9     | `log_window_`, consoles, `settings_`, `dbg_`                  | Log, Lua/Python, Settings                       |
+| Order | Function                                                                         | Purpose                                     |
+| ----- | -------------------------------------------------------------------------------- | ------------------------------------------- |
+| 1     | `flush_view_events`                                                              | Sync camera before UI uses projection       |
+| 2     | `menu_bar_`, `toolbar_`                                                          | File / View / mode tools                    |
+| 3     | `dist_edit_`, `angle_edit_`                                                      | Floating numeric entry                      |
+| 4     | `sketch_list_`, `sketch_properties_dialog_`                                      | Sketch List + underlay/properties           |
+| 5     | `shape_list_`, `workbench_list_`, `shape_info_dialog_`, `file_inspector_dialog_` | Shape List + Workbench List + info + Import |
+| 6     | `options_`                                                                       | Mode-specific Options pane                  |
+| 7     | `message_status_window_`, `about_dialog_`                                        | Status + About                              |
+| 8     | `add_*_dialog_`                                                                  | Primitive / sketch creation popups          |
+| 9     | `log_window_`, consoles, `settings_`, `dbg_`                                     | Log, Lua/Python, Settings                   |
 
 `GUI::show_message` drives the transient status toast (`message_status_window_`) and also appends via `log_message`. The toast color comes from `Status_msg` (`Success`, `Info`, `Constraint`, `Warning`, `Error`; default `Info`). `show_status` maps `Result_status` (`User_error` -> Constraint, `Error` / `Topo_error` -> Error, ok -> Info). `show_error_dialog` logs `title: message` once and toasts the title as Error.
 
 Sketch List expand **Faces**: each face row supports **`E`** and right-click **Extrude** via `GUI::sketch_list_extrude_face_` (`set_mode(Sketch_face_extrude)` + `Occt_view::begin_sketch_face_extrude` / `Shp_extrude::begin_face_extrude`). Hovering a **Faces**, **Edges**, or **Nodes** row calls `Occt_view::set_sketch_list_hover_{face,edge,node}` (temporarily displays the AIS when hidden outside sketch modes; uses `Graphic3d_ZLayerId_Topmost` so solids do not occlude the highlight).
+
+**Workbench List:** `workbench_list_()` in `gui_shp_pane.cpp` uses the same row drawer on `m_wbk_shps` (`EZY_WBK_ID` payload; accepts `EZY_SHAPE_ID` drops as `add_to_workbench`). `.ezy` `ui.workbenchList` mirrors `ui.shapeList`. Design **Add to Workbench** (toolbar button, context menu, drag).
 
 **Shape List outliner:** `shape_list_` (`gui_shp_pane.cpp`) draws a tree of document shapes/groups via `shape_children(0)` and recursive `gui_shp_detail::Shape_list_row_drawer` rows (`TreeNodeEx`). Fixed-width vis/disp/mat columns are on the left; the name column stretches on the right with tree indent (`IndentEnable` on name only). An empty pad row after the last item is a drag-drop target for document root (`reparent_shape(..., 0)`); it shows a "Move to root" hint while dragging. Groups support expand/collapse (`ui.shapeList.expanded`), drag-drop reparent (`EZY_SHAPE_ID` payload), Group / New group / Ungroup, and cascade delete. Clicking a group sets `Occt_view::current_group_id` (including empty groups) and selects descendant solids; clicking a solid selects it and sets current group to its parent. New primitives/extrudes/revolves parent under the current group. Ctrl+click multi-selects. Row highlight for **selection** follows AIS only; the **current group** uses a weaker tint so it is not mistaken for a selected subtree after Alt-drag rectangle select clears AIS. Copy/paste (Ctrl+C/V) deep-copies the current group subtree when the selection matches that group's descendant solids. Row context menu opens on right-click anywhere on the table row (not only `InputText` / **M**). **Zoom to** calls `Occt_view::fit_shapes_in_view` (solid or group descendant solids; keeps camera orientation). Hover uses `set_shape_list_hover` on leaf solids only. `ui.shapeList.currentGroupId` is persisted in `.ezy`.
 
@@ -273,13 +275,13 @@ Sketch List expand **Faces**: each face row supports **`E`** and right-click **E
 
 ## Settings and persistence
 
-| File                        | Role                                                                |
-| --------------------------- | ------------------------------------------------------------------- |
-| `gui_shp_pane.cpp`          | Shape List, Shape info dialog, `.ezy` `ui.shapeList`                |
-| `gui_settings.cpp`          | Settings dialog UI; read/write `ezycad_settings.json`               |
-| `save_occt_view_settings`   | Persists `gui.*`, `occt_view.*`, pane visibility, last project path |
-| `load_occt_view_settings_`  | Called from `GUI::init`                                             |
-| `occt_view_settings_json()` | Scripting API for settings blob                                     |
+| File                        | Role                                                                                |
+| --------------------------- | ----------------------------------------------------------------------------------- |
+| `gui_shp_pane.cpp`          | Shape List + Workbench List, Shape info, `.ezy` `ui.shapeList` / `ui.workbenchList` |
+| `gui_settings.cpp`          | Settings dialog UI; read/write `ezycad_settings.json`                               |
+| `save_occt_view_settings`   | Persists `gui.*`, `occt_view.*`, pane visibility, last project path                 |
+| `load_occt_view_settings_`  | Called from `GUI::init`                                                             |
+| `occt_view_settings_json()` | Scripting API for settings blob                                                     |
 
 Sketch edge/face display colors live under `gui.sketch_edge_*` / `gui.sketch_face_*` and are applied live via `Sketch_annotation_refresh::edge_face_style`. Sketch-mode shape ghost/wire uses `gui.sketch_shape_faint_style` / `gui.sketch_shape_faint_opacity` via `Occt_view::sync_sketch_shape_faint_style`. 3D shape selection highlight uses `gui.shape_selection_color` applied through `Occt_view::apply_shape_selection_style` (`AIS_InteractiveContext::SelectionStyle`). AIS curve tessellation uses `gui.curve_deviation_angle_deg` via `Occt_view::apply_curve_deviation` (`Prs3d_Drawer::SetDeviationAngle`). Settings collapsing-header open state is stored in `gui.settings_headers` (Sketch nests **Appearance**, **Dimensions**, **Nodes**, **Snap**, **Underlay**; also **Keyboard shortcuts** / `hotkeys`). Remappable chords: `gui.hotkeys` object via `Gui_hotkeys::to_json` / `merge_from_json`.
 

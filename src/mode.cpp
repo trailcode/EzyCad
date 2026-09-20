@@ -14,10 +14,10 @@ Mode mode_from_string(std::string_view name)
     return Mode::Sketch_inspection;
 
   if (name == "Move")
-    return Mode::Workbench_move;
+    return Mode::Design_move;
 
   if (name == "Rotate")
-    return Mode::Workbench_rotate;
+    return Mode::Design_rotate;
 
   if (name == "Workbench_scale")
     return Mode::Scale;
@@ -71,6 +71,21 @@ bool is_workbench_transform_mode(const Mode mode)
 bool is_workbench_mode(const Mode mode)
 {
   return mode == Mode::Workbench_inspection || is_workbench_transform_mode(mode);
+}
+
+bool is_move_mode(const Mode mode)
+{
+  return mode == Mode::Design_move || mode == Mode::Workbench_move;
+}
+
+bool is_rotate_mode(const Mode mode)
+{
+  return mode == Mode::Design_rotate || mode == Mode::Workbench_rotate;
+}
+
+bool is_shaft_align_mode(const Mode mode)
+{
+  return mode == Mode::Design_shaft_align || mode == Mode::Workbench_shaft_align;
 }
 
 bool is_shape_browse_mode(const Mode mode)

@@ -53,7 +53,7 @@ In progress: typed nodes, relative placement, Part/Origin/planes, Workbench vs D
 
 ## 5. Complete lifecycle, UI, and interchange semantics
 
-- Shape List pane: Design shows the modeling tree; Workbench filters to Parts/groups/root bodies (hide inner Body trees under a Part). One document, two views. See [assembly-inspection-mode.md](assembly-inspection-mode.md#lists-design-vs-workbench).
+- Shape List is the Design tree (`m_shps`). Workbench List is a second store of geometry links (`m_wbk_shps`). See [tasks-workbenches.md](tasks-workbenches.md) and [assembly-inspection-mode.md](assembly-inspection-mode.md#lists-design-vs-workbench).
 - Expand Boolean rows as Base/Tool or numbered Operand children; add operation change, reorder, recompute, show operands, remove operand, and dissolve actions in [`src/gui.cpp`](../../src/gui.cpp).
 - Cascade-delete Group, Part, and Boolean subtrees. Dissolve promotes ordinary children preserve-world; Part drops system references; Boolean removes its result and promotes operands.
 - Traverse logical outputs for export: Body exports world geometry, Boolean exports its cached result once, Group/Part recurse, and Origin/Plane export nothing. Keep STEP/IGES/STL/PLY flattened; only `.ezy` preserves history.
@@ -73,4 +73,4 @@ In progress: typed nodes, relative placement, Part/Origin/planes, Workbench vs D
 2. Inherited transforms and Part references must be stable before Boolean history depends on them.
 3. Boolean history ships only after nested recompute, failure recovery, persistence, undo, and export tests pass.
 4. Sketches remain in `m_sketches` / Sketch List; no sketch Shape List parent.
-5. Design vs Workbench lists are **views** of one `m_shps` document (not two stores). Design: bodies/features (Origin/Plane locked). Workbench: Parts (and groups / unwrapped root bodies) as placeable units. Polar array of parts belongs on Workbench after instances exist.
+5. Design vs Workbench are two lists: `m_shps` (bodies) and `m_wbk_shps` (links with own placement). Polar array of parts belongs on Workbench after instances exist.

@@ -145,6 +145,8 @@ public:
   Shape_id allocate_shape_id();
   void     adopt_shape_id(Shape_id id);
   Shp_ptr  find_shape_by_id(Shape_id id) const;
+  Shp_ptr  find_design_shape_by_id(Shape_id id) const;
+  Shp_ptr  find_workbench_shape_by_id(Shape_id id) const;
   /// Insert a shape from an undo snapshot (keeps \a rec.id). Displays solids in the viewer (not groups).
   void insert_shape_rec(const Shape_rec& rec);
   /// Remove a shape by stable id (viewer + document list).
@@ -181,6 +183,24 @@ public:
   Shape_id current_group_id() const { return m_current_group_id; }
   /// Set current group; \a id must be 0 or an existing group. Invalid ids clear to root.
   void set_current_group_id(Shape_id id);
+
+  std::list<Shp_ptr>&       get_workbench_shapes() { return m_wbk_shps; }
+  const std::list<Shp_ptr>& get_workbench_shapes() const { return m_wbk_shps; }
+  /// Children of \a parent_id in the Workbench list (0 = workbench roots).
+  std::vector<Shp_ptr> workbench_children(Shape_id parent_id) const;
+  /// Descendant leaf instances under a workbench node.
+  std::vector<Shp_ptr> workbench_descendant_solids(Shape_id id) const;
+  Shape_id             current_workbench_group_id() const { return m_current_wbk_group_id; }
+  void                 set_current_workbench_group_id(Shape_id id);
+  /// Copy Design nodes into the Workbench list as geometry links (own placement).
+  [[nodiscard]] Status add_to_workbench(const std::vector<Shp_ptr>& design_nodes);
+  Shp_ptr              create_workbench_group(const std::string& name, Shape_id parent_id = 0);
+  [[nodiscard]] Status group_workbench_shapes(const std::vector<Shp_ptr>& nodes);
+  [[nodiscard]] Status ungroup_workbench_shape(Shape_id group_id);
+  [[nodiscard]] Status reparent_workbench_shape(Shape_id id, Shape_id new_parent, int sibling_order = -1,
+                                                bool push_undo = true);
+  /// Refresh every workbench instance that links to \a source_id (0 = all links).
+  void sync_workbench_links(Shape_id source_id = 0);
 
   /// Insert a sketch from JSON for undo/redo (adopts sketch id from JSON).
   void undo_insert_sketch(const nlohmann::json& sketch_json, bool make_current);
@@ -450,6 +470,8 @@ private:
 
   /// Register shape. When \a use_current_group, solids still at parent 0 are placed under current_group_id().
   void        add_shp_(Shp_ptr& shp, bool use_current_group = false);
+  void        add_wbk_shp_(Shp_ptr& shp);
+  Shp_ptr     clone_design_to_workbench_(const Shp_ptr& src, Shape_id wbk_parent, std::vector<Shape_rec>& added);
   void        ensure_current_group_valid_();
   std::string unique_shape_name_(const char* base_name) const;
   /// Snapshot one shape for the in-app clipboard (independent BREP; local transform baked).
@@ -513,6 +535,8 @@ private:
   size_t                  m_next_sketch_id{1};
   Shape_id                m_next_shape_id{1};
   Shape_id                m_current_group_id{0};
+  Shape_id                m_current_wbk_group_id{0};
+  std::list<Shp_ptr>      m_wbk_shps;
   /// In-app clipboard: forest of Shape_rec (roots have parent_id 0; independent BREP).
   std::vector<Shape_rec> m_shape_clipboard;
   /// Live document ids of clipboard roots at copy time (for paste-as-sibling when still current).

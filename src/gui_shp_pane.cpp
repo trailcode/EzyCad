@@ -19,9 +19,16 @@
 namespace gui_shp_detail
 {
 
+enum class Shp_list_kind
+{
+  Design,
+  Workbench
+};
+
 struct Shape_list_row_drawer
 {
-  Shape_list_row_drawer(GUI& gui, const std::vector<std::string>& mat_names, int nmat, float mat_popup_w);
+  Shape_list_row_drawer(GUI& gui, const std::vector<std::string>& mat_names, int nmat, float mat_popup_w,
+                        Shp_list_kind kind);
 
   void draw(const Shp_ptr& shape);
 
@@ -30,7 +37,10 @@ struct Shape_list_row_drawer
   Shape_id to_ungroup_id = 0;
 
 private:
-  [[nodiscard]] bool row_is_selected_(const Shp_ptr& shape) const;
+  [[nodiscard]] bool                   row_is_selected_(const Shp_ptr& shape) const;
+  [[nodiscard]] std::vector<Shp_ptr>   children_(Shape_id parent_id) const;
+  [[nodiscard]] std::vector<Shp_ptr>   descendant_solids_(Shape_id id) const;
+  [[nodiscard]] std::unordered_map<Shape_id, bool>& expanded_();
   void               select_row_(const Shp_ptr& shape);
   void               apply_material_(const Shp_ptr& shape, int i);
   void               draw_ctx_menu_(const Shp_ptr& shape, bool is_group);
@@ -38,8 +48,9 @@ private:
 
   GUI&                                   m_gui;
   Occt_view&                             m_view;
+  Shp_list_kind                          m_kind;
   const std::vector<std::string>&        m_mat_names;
-  int                                    m_nmat       = 0;
+  int                                    m_nmat        = 0;
   float                                  m_mat_popup_w = 0.0f;
   std::unordered_set<const AIS_Shape*>   m_selected_in_viewer;
   std::unordered_set<Shape_id>           m_ancestors;
@@ -91,6 +102,31 @@ void GUI::shape_list_()
       ImGui::EndDisabled();
   }
 
+  ImGui::SameLine();
+  {
+    const std::vector<Shp_ptr> sel     = m_view->get_selected_shps();
+    const bool                 can_add = !sel.empty() || m_view->current_group_id() != 0;
+    if (!can_add)
+      ImGui::BeginDisabled();
+
+    if (ImGui::SmallButton("Add to Workbench"))
+    {
+      std::vector<Shp_ptr> nodes = sel;
+      if (nodes.empty() && m_view->current_group_id() != 0)
+        if (Shp_ptr g = m_view->find_design_shape_by_id(m_view->current_group_id()); !g.IsNull())
+          nodes.push_back(g);
+
+      const Status st = m_view->add_to_workbench(nodes);
+      if (!st.is_ok())
+        show_status(st);
+      else
+        show_message("Added to Workbench.", Status_msg::Success);
+    }
+
+    if (!can_add)
+      ImGui::EndDisabled();
+  }
+
   ImGui::Separator();
 
   const std::vector<std::string>& mat_names       = occt_material_combo_labels_();
@@ -105,7 +141,7 @@ void GUI::shape_list_()
   const float       check_col_w = ImGui::GetFrameHeight();
   const float       mat_col_w   = ImGui::CalcTextSize("M").x + st_mat.FramePadding.x * 2.0f;
 
-  gui_shp_detail::Shape_list_row_drawer row(*this, mat_names, nmat, mat_popup_w);
+  gui_shp_detail::Shape_list_row_drawer row(*this, mat_names, nmat, mat_popup_w, gui_shp_detail::Shp_list_kind::Design);
 
   const ImGuiTableFlags table_flags =
       ImGuiTableFlags_ScrollY | ImGuiTableFlags_RowBg | ImGuiTableFlags_NoBordersInBody | ImGuiTableFlags_SizingFixedFit;
@@ -202,6 +238,187 @@ void GUI::shape_list_()
   ImGui::End();
 }
 
+void GUI::workbench_list_()
+{
+  if (!show_workbench_list_effective())
+  {
+    if (m_view->shape_list_hover() && m_view->shape_list_hover()->is_workbench())
+      m_view->set_shape_list_hover(nullptr);
+
+    return;
+  }
+
+  if (!ImGui::Begin("Workbench List", &m_show_workbench_list, ImGuiWindowFlags_None))
+  {
+    if (m_view->shape_list_hover() && m_view->shape_list_hover()->is_workbench())
+      m_view->set_shape_list_hover(nullptr);
+
+    ImGui::End();
+    return;
+  }
+
+  if (ImGui::Checkbox("Hide all", &m_hide_all_workbench))
+  {
+    if (m_hide_all_workbench && m_view->shape_list_hover() && m_view->shape_list_hover()->is_workbench())
+      m_view->set_shape_list_hover(nullptr);
+
+    m_view->sync_sketch_shape_faint_style();
+  }
+
+  ImGui::SameLine();
+  if (ImGui::SmallButton("New group"))
+  {
+    Shp_ptr grp = m_view->create_workbench_group("Group", m_view->current_workbench_group_id());
+    if (!grp.IsNull())
+      m_view->set_current_workbench_group_id(grp->get_id());
+  }
+
+  ImGui::SameLine();
+  {
+    const std::vector<Shp_ptr> sel       = m_view->get_selected_shps();
+    std::vector<Shp_ptr>       wbk_sel;
+    for (const Shp_ptr& s : sel)
+      if (!s.IsNull() && s->is_workbench())
+        wbk_sel.push_back(s);
+
+    const bool can_group = !wbk_sel.empty();
+    if (!can_group)
+      ImGui::BeginDisabled();
+
+    if (ImGui::SmallButton("Group"))
+      (void)m_view->group_workbench_shapes(wbk_sel);
+
+    if (!can_group)
+      ImGui::EndDisabled();
+  }
+
+  ImGui::Separator();
+
+  const std::vector<std::string>& mat_names       = occt_material_combo_labels_();
+  const int                       nmat            = static_cast<int>(mat_names.size());
+  float                           mat_label_w_max = 0.0f;
+  for (int mi = 0; mi < nmat; ++mi)
+    mat_label_w_max = std::max(mat_label_w_max, ImGui::CalcTextSize(mat_names[static_cast<size_t>(mi)].c_str()).x);
+
+  const ImGuiStyle& st_mat      = ImGui::GetStyle();
+  const float       mat_popup_w = std::min(440.0f, std::max(280.0f, mat_label_w_max + st_mat.WindowPadding.x * 2.0f +
+                                                                        st_mat.FramePadding.x * 2.0f + st_mat.ScrollbarSize + 8.0f));
+  const float       check_col_w = ImGui::GetFrameHeight();
+  const float       mat_col_w   = ImGui::CalcTextSize("M").x + st_mat.FramePadding.x * 2.0f;
+
+  gui_shp_detail::Shape_list_row_drawer row(*this, mat_names, nmat, mat_popup_w, gui_shp_detail::Shp_list_kind::Workbench);
+
+  const ImGuiTableFlags table_flags =
+      ImGuiTableFlags_ScrollY | ImGuiTableFlags_RowBg | ImGuiTableFlags_NoBordersInBody | ImGuiTableFlags_SizingFixedFit;
+  if (ImGui::BeginTable("##workbench_outliner", 4, table_flags, ImVec2(0.f, 0.f)))
+  {
+    ImGui::TableSetupColumn(
+        "vis", ImGuiTableColumnFlags_WidthFixed | ImGuiTableColumnFlags_NoResize | ImGuiTableColumnFlags_IndentDisable,
+        check_col_w);
+    ImGui::TableSetupColumn(
+        "disp", ImGuiTableColumnFlags_WidthFixed | ImGuiTableColumnFlags_NoResize | ImGuiTableColumnFlags_IndentDisable,
+        check_col_w);
+    ImGui::TableSetupColumn(
+        "mat", ImGuiTableColumnFlags_WidthFixed | ImGuiTableColumnFlags_NoResize | ImGuiTableColumnFlags_IndentDisable,
+        mat_col_w);
+    ImGui::TableSetupColumn("name", ImGuiTableColumnFlags_WidthStretch | ImGuiTableColumnFlags_IndentEnable, 1.0f);
+
+    ImGui::PushStyleVar(ImGuiStyleVar_FramePadding,
+                        ImVec2(st_mat.FramePadding.x, std::max(1.0f, st_mat.FramePadding.y * 0.65f)));
+    ImGui::PushStyleVar(ImGuiStyleVar_CellPadding, ImVec2(st_mat.CellPadding.x, std::max(1.0f, st_mat.CellPadding.y * 0.5f)));
+
+    for (const Shp_ptr& root : m_view->workbench_children(0))
+      row.draw(root);
+
+    {
+      const float        min_pad_h = ImGui::GetFrameHeight();
+      const ImGuiWindow* inner     = ImGui::GetCurrentWindow();
+      const float visible_remain = inner->InnerClipRect.Max.y - ImGui::GetCursorScreenPos().y - ImGui::GetStyle().CellPadding.y;
+      const float pad_h          = std::max(min_pad_h, visible_remain);
+      ImGui::TableNextRow(ImGuiTableRowFlags_None, pad_h);
+      ImGui::TableSetColumnIndex(0);
+
+      const ImGuiPayload* active_payload = ImGui::GetDragDropPayload();
+      const bool          dragging_wbk   = active_payload != nullptr && active_payload->IsDataType("EZY_WBK_ID") &&
+                                active_payload->DataSize == sizeof(Shape_id);
+      const bool dragging_design = active_payload != nullptr && active_payload->IsDataType("EZY_SHAPE_ID") &&
+                                   active_payload->DataSize == sizeof(Shape_id);
+
+      if (dragging_wbk || dragging_design)
+        ImGui::TableSetBgColor(ImGuiTableBgTarget_RowBg0, ImGui::GetColorU32(ImGuiCol_Header, 0.20f));
+
+      ImGui::Selectable("##wbk_root_drop", false,
+                        ImGuiSelectableFlags_SpanAllColumns | ImGuiSelectableFlags_AllowOverlap | ImGuiSelectableFlags_Disabled,
+                        ImVec2(0.0f, pad_h));
+
+      bool root_drop_hovered = false;
+      if (ImGui::BeginDragDropTarget())
+      {
+        if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("EZY_WBK_ID", ImGuiDragDropFlags_AcceptBeforeDelivery))
+        {
+          root_drop_hovered = payload->Preview;
+          if (payload->IsDelivery())
+          {
+            Shape_id drag_id = 0;
+            std::memcpy(&drag_id, payload->Data, sizeof(drag_id));
+            (void)m_view->reparent_workbench_shape(drag_id, 0, -1, true);
+          }
+        }
+
+        if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("EZY_SHAPE_ID", ImGuiDragDropFlags_AcceptBeforeDelivery))
+        {
+          root_drop_hovered = payload->Preview;
+          if (payload->IsDelivery())
+          {
+            Shape_id drag_id = 0;
+            std::memcpy(&drag_id, payload->Data, sizeof(drag_id));
+            if (Shp_ptr src = m_view->find_design_shape_by_id(drag_id); !src.IsNull())
+            {
+              const Status st = m_view->add_to_workbench({src});
+              if (!st.is_ok())
+                show_status(st);
+            }
+          }
+        }
+        ImGui::EndDragDropTarget();
+      }
+
+      if (dragging_wbk || dragging_design)
+      {
+        const ImVec2 rmin = ImGui::GetItemRectMin();
+        const ImVec2 rmax = ImGui::GetItemRectMax();
+        if (root_drop_hovered)
+          ImGui::GetWindowDrawList()->AddRectFilled(rmin, rmax, ImGui::GetColorU32(ImGuiCol_HeaderHovered, 0.55f));
+
+        const char*  hint = dragging_design ? "Add to Workbench" : "Move to root";
+        const ImVec2 ts   = ImGui::CalcTextSize(hint);
+        ImGui::GetWindowDrawList()->AddText(
+            ImVec2(rmin.x + (rmax.x - rmin.x - ts.x) * 0.5f, rmin.y + (rmax.y - rmin.y - ts.y) * 0.5f),
+            ImGui::GetColorU32(ImGuiCol_TextDisabled), hint);
+      }
+    }
+
+    ImGui::PopStyleVar(2);
+    ImGui::EndTable();
+  }
+
+  if (row.hover)
+    m_view->set_shape_list_hover(row.hover);
+  else if (m_view->shape_list_hover() && m_view->shape_list_hover()->is_workbench())
+    m_view->set_shape_list_hover(nullptr);
+
+  if (row.to_ungroup_id != 0)
+  {
+    m_workbench_list_expanded.erase(row.to_ungroup_id);
+    (void)m_view->ungroup_workbench_shape(row.to_ungroup_id);
+  }
+
+  if (row.to_delete)
+    m_view->delete_shapes({row.to_delete});
+
+  ImGui::End();
+}
+
 void GUI::open_shape_info_(const Shp_ptr& shape)
 {
   if (shape.IsNull() || shape->is_group())
@@ -241,6 +458,14 @@ void GUI::shape_info_dialog_()
       shape_still_exists = true;
       break;
     }
+
+  if (!shape_still_exists)
+    for (const Shp_ptr& s : m_view->get_workbench_shapes())
+      if (s == m_shape_info_shp)
+      {
+        shape_still_exists = true;
+        break;
+      }
 
   if (!shape_still_exists)
   {
@@ -360,13 +585,70 @@ void GUI::apply_shape_list_ui_from_json_(const nlohmann::json& j)
     m_view->set_current_group_id(sl["currentGroupId"].get<Shape_id>());
 }
 
+nlohmann::json GUI::workbench_list_ui_to_json_() const
+{
+  using namespace nlohmann;
+  json out;
+  json expanded = json::object();
+  for (const auto& [id, is_open] : m_workbench_list_expanded)
+  {
+    if (!is_open)
+      expanded[std::to_string(id)] = false;
+  }
+  if (!expanded.empty())
+    out["expanded"] = std::move(expanded);
+
+  if (m_view && m_view->current_workbench_group_id() != 0)
+    out["currentGroupId"] = m_view->current_workbench_group_id();
+
+  return out;
+}
+
+void GUI::apply_workbench_list_ui_from_json_(const nlohmann::json& j)
+{
+  using namespace nlohmann;
+  m_workbench_list_expanded.clear();
+  if (m_view)
+    m_view->set_current_workbench_group_id(0);
+
+  if (!j.contains("ui") || !j["ui"].is_object())
+    return;
+
+  const json& ui = j["ui"];
+  if (!ui.contains("workbenchList") || !ui["workbenchList"].is_object())
+    return;
+
+  const json& sl = ui["workbenchList"];
+  if (sl.contains("expanded") && sl["expanded"].is_object())
+  {
+    for (auto it = sl["expanded"].begin(); it != sl["expanded"].end(); ++it)
+    {
+      if (!it.value().is_boolean())
+        continue;
+
+      try
+      {
+        const Shape_id id             = static_cast<Shape_id>(std::stoull(it.key()));
+        m_workbench_list_expanded[id] = it.value().get<bool>();
+      }
+      catch (...)
+      {
+      }
+    }
+  }
+
+  if (m_view && sl.contains("currentGroupId") && sl["currentGroupId"].is_number_unsigned())
+    m_view->set_current_workbench_group_id(sl["currentGroupId"].get<Shape_id>());
+}
+
 namespace gui_shp_detail
 {
 
 Shape_list_row_drawer::Shape_list_row_drawer(GUI& gui, const std::vector<std::string>& mat_names, int nmat,
-                                             float mat_popup_w)
+                                             float mat_popup_w, Shp_list_kind kind)
   : m_gui(gui)
   , m_view(*gui.get_view())
+  , m_kind(kind)
   , m_mat_names(mat_names)
   , m_nmat(nmat)
   , m_mat_popup_w(mat_popup_w)
@@ -376,6 +658,21 @@ Shape_list_row_drawer::Shape_list_row_drawer(GUI& gui, const std::vector<std::st
       m_selected_in_viewer.insert(ais.get());
 }
 
+std::vector<Shp_ptr> Shape_list_row_drawer::children_(Shape_id parent_id) const
+{
+  return m_kind == Shp_list_kind::Workbench ? m_view.workbench_children(parent_id) : m_view.shape_children(parent_id);
+}
+
+std::vector<Shp_ptr> Shape_list_row_drawer::descendant_solids_(Shape_id id) const
+{
+  return m_kind == Shp_list_kind::Workbench ? m_view.workbench_descendant_solids(id) : m_view.shape_descendant_solids(id);
+}
+
+std::unordered_map<Shape_id, bool>& Shape_list_row_drawer::expanded_()
+{
+  return m_kind == Shp_list_kind::Workbench ? m_gui.m_workbench_list_expanded : m_gui.m_shape_list_expanded;
+}
+
 bool Shape_list_row_drawer::row_is_selected_(const Shp_ptr& shape) const
 {
   if (shape.IsNull())
@@ -383,7 +680,7 @@ bool Shape_list_row_drawer::row_is_selected_(const Shp_ptr& shape) const
 
   if (shape->is_group())
   {
-    for (const Shp_ptr& leaf : m_view.shape_descendant_solids(shape->get_id()))
+    for (const Shp_ptr& leaf : descendant_solids_(shape->get_id()))
       if (m_selected_in_viewer.count(leaf.get()) != 0)
         return true;
 
@@ -402,13 +699,21 @@ void Shape_list_row_drawer::select_row_(const Shp_ptr& shape)
 
   if (shape->is_group())
   {
-    m_view.set_current_group_id(shape->get_id());
-    for (const Shp_ptr& leaf : m_view.shape_descendant_solids(shape->get_id()))
+    if (m_kind == Shp_list_kind::Workbench)
+      m_view.set_current_workbench_group_id(shape->get_id());
+    else
+      m_view.set_current_group_id(shape->get_id());
+
+    for (const Shp_ptr& leaf : descendant_solids_(shape->get_id()))
       ctx.AddOrRemoveSelected(leaf, true);
   }
   else
   {
-    m_view.set_current_group_id(shape->get_parent_id());
+    if (m_kind == Shp_list_kind::Workbench)
+      m_view.set_current_workbench_group_id(shape->get_parent_id());
+    else
+      m_view.set_current_group_id(shape->get_parent_id());
+
     ctx.AddOrRemoveSelected(shape, true);
   }
 
@@ -432,7 +737,7 @@ void Shape_list_row_drawer::apply_material_(const Shp_ptr& shape, int i)
 
 void Shape_list_row_drawer::draw_ctx_menu_(const Shp_ptr& shape, bool is_group)
 {
-  const bool can_zoom = is_group ? !m_view.shape_descendant_solids(shape->get_id()).empty() : !shape->Shape().IsNull();
+  const bool can_zoom = is_group ? !descendant_solids_(shape->get_id()).empty() : !shape->Shape().IsNull();
   if (ImGui::MenuItem("Zoom to", nullptr, false, can_zoom))
   {
     select_row_(shape);
@@ -496,6 +801,15 @@ void Shape_list_row_drawer::draw_ctx_menu_(const Shp_ptr& shape, bool is_group)
     }
   }
 
+  if (m_kind == Shp_list_kind::Design && ImGui::MenuItem("Add to Workbench"))
+  {
+    const Status st = m_view.add_to_workbench({shape});
+    if (!st.is_ok())
+      m_gui.show_status(st);
+    else
+      m_gui.show_message("Added to Workbench.", Status_msg::Success);
+  }
+
   if (ImGui::MenuItem("Delete"))
     to_delete = shape;
 }
@@ -505,13 +819,33 @@ void Shape_list_row_drawer::accept_reparent_drop_(const Shp_ptr& shape, bool is_
   if (!ImGui::BeginDragDropTarget())
     return;
 
-  if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("EZY_SHAPE_ID"))
+  const char* payload_type = m_kind == Shp_list_kind::Workbench ? "EZY_WBK_ID" : "EZY_SHAPE_ID";
+  if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload(payload_type))
   {
     Shape_id drag_id = 0;
     std::memcpy(&drag_id, payload->Data, sizeof(drag_id));
     const Shape_id new_parent = is_group ? shape->get_id() : shape->get_parent_id();
-    (void)m_view.reparent_shape(drag_id, new_parent, -1, true);
+    if (m_kind == Shp_list_kind::Workbench)
+      (void)m_view.reparent_workbench_shape(drag_id, new_parent, -1, true);
+    else
+      (void)m_view.reparent_shape(drag_id, new_parent, -1, true);
   }
+
+  if (m_kind == Shp_list_kind::Workbench)
+    if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("EZY_SHAPE_ID"))
+    {
+      Shape_id drag_id = 0;
+      std::memcpy(&drag_id, payload->Data, sizeof(drag_id));
+      if (Shp_ptr src = m_view.find_design_shape_by_id(drag_id); !src.IsNull())
+      {
+        if (is_group)
+          m_view.set_current_workbench_group_id(shape->get_id());
+
+        const Status st = m_view.add_to_workbench({src});
+        if (!st.is_ok())
+          m_gui.show_status(st);
+      }
+    }
   ImGui::EndDragDropTarget();
 }
 
@@ -522,9 +856,11 @@ void Shape_list_row_drawer::draw(const Shp_ptr& shape)
     return; // Parent cycle: skip rather than hang the Shape List.
 
   const bool                 is_group         = shape->is_group();
-  const std::vector<Shp_ptr> children         = m_view.shape_children(shape->get_id());
+  const std::vector<Shp_ptr> children         = children_(shape->get_id());
   const bool                 has_children     = !children.empty();
-  const bool                 is_current_group = is_group && shape->get_id() == m_view.current_group_id();
+  const Shape_id             cur_group =
+      m_kind == Shp_list_kind::Workbench ? m_view.current_workbench_group_id() : m_view.current_group_id();
+  const bool                 is_current_group = is_group && shape->get_id() == cur_group;
   // Selection highlight follows the 3D viewer only. Current group uses a distinct tint so
   // Alt-drag / clear-selection cannot look like the group (or its children) stayed selected.
   const bool row_selected = row_is_selected_(shape);
@@ -638,15 +974,15 @@ void Shape_list_row_drawer::draw(const Shp_ptr& shape)
   bool open = true;
   if (has_children)
   {
-    const auto exp_it = m_gui.m_shape_list_expanded.find(shape->get_id());
-    open              = (exp_it == m_gui.m_shape_list_expanded.end()) ? true : exp_it->second;
+    const auto exp_it = expanded_().find(shape->get_id());
+    open              = (exp_it == expanded_().end()) ? true : exp_it->second;
     ImGui::SetNextItemOpen(open);
   }
 
   ImGui::SetNextItemAllowOverlap();
   const bool node_open = ImGui::TreeNodeEx("##node", node_flags);
   if (has_children && node_open != open)
-    m_gui.m_shape_list_expanded[shape->get_id()] = node_open;
+    expanded_()[shape->get_id()] = node_open;
 
   if (ImGui::IsItemClicked() && !ImGui::IsItemToggledOpen())
     select_row_(shape);
@@ -660,10 +996,11 @@ void Shape_list_row_drawer::draw(const Shp_ptr& shape)
       ImGui::SetTooltip("Current group (new shapes go here)");
   }
 
+  const char* drag_type = m_kind == Shp_list_kind::Workbench ? "EZY_WBK_ID" : "EZY_SHAPE_ID";
   if (ImGui::BeginDragDropSource(ImGuiDragDropFlags_SourceAllowNullID))
   {
     const Shape_id drag_id = shape->get_id();
-    ImGui::SetDragDropPayload("EZY_SHAPE_ID", &drag_id, sizeof(drag_id));
+    ImGui::SetDragDropPayload(drag_type, &drag_id, sizeof(drag_id));
     ImGui::TextUnformatted(shape->get_name().c_str());
     ImGui::EndDragDropSource();
   }
@@ -683,7 +1020,7 @@ void Shape_list_row_drawer::draw(const Shp_ptr& shape)
   if (ImGui::BeginDragDropSource(ImGuiDragDropFlags_SourceAllowNullID))
   {
     const Shape_id drag_id = shape->get_id();
-    ImGui::SetDragDropPayload("EZY_SHAPE_ID", &drag_id, sizeof(drag_id));
+    ImGui::SetDragDropPayload(drag_type, &drag_id, sizeof(drag_id));
     ImGui::TextUnformatted(shape->get_name().c_str());
     ImGui::EndDragDropSource();
   }
@@ -702,7 +1039,7 @@ void Shape_list_row_drawer::draw(const Shp_ptr& shape)
   }
 
   const ImGuiPayload* dd           = ImGui::GetDragDropPayload();
-  const bool          dragging_row = dd != nullptr && dd->IsDataType("EZY_SHAPE_ID");
+  const bool          dragging_row = dd != nullptr && (dd->IsDataType("EZY_SHAPE_ID") || dd->IsDataType("EZY_WBK_ID"));
   if (row_hovered && !dragging_row && ImGui::IsMouseReleased(ImGuiMouseButton_Right))
     ImGui::OpenPopup("shape_row_ctx");
 

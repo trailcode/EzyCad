@@ -41,7 +41,7 @@ Status Shp_move::move_selected(const ScreenCoords& screen_coords)
   translation.SetTranslation(transform_translation(axes, m_delta.delta));
 
   for (const Shp_ptr& shape : m_shps)
-    shape->SetLocalTransformation(translation);
+    shape->SetLocalTransformation(translation * shape->placement_trsf());
 
   redisplay_operation_shps_after_transform_();
 
@@ -144,8 +144,9 @@ void Shp_move::cancel()
 
 void Shp_move::reset()
 {
+  const Mode parent = GUI::parent_mode_of(gui().get_mode());
   clear_all(m_opts, m_delta, m_move_pln, m_center, m_shps);
-  gui().set_mode(Mode::Workbench_inspection);
+  gui().set_mode(parent);
 }
 
 Move_options& Shp_move::get_opts() { return m_opts; }

@@ -49,7 +49,7 @@ Esc from Workbench tools returns to Workbench idle (not Design). Task buttons ju
 
 | UI label               | Mode                         | Role                                                                          |
 | ---------------------- | ---------------------------- | ----------------------------------------------------------------------------- |
-| Design inspection      | `Mode::Design_inspection`    | Idle 3D modeling: selection filter, materials, booleans, Scale                |
+| Design inspection      | `Mode::Design_inspection`    | Idle 3D modeling: selection filter, materials, booleans, Scale, Align shafts  |
 | Workbench inspection   | `Mode::Workbench_inspection` | Idle 3D arrange: Move / Rotate / Align shafts; Workbench list of Parts        |
 | Sketch inspection mode | `Mode::Sketch_inspection`    | Idle 2D sketch: show sketch, ortho, faint solids; Esc parent for sketch tools |
 
@@ -127,22 +127,20 @@ Shared idea: layered contexts with Esc / finish stepping outward. EzyCad’s “
 
 ## Lists (Design vs Workbench)
 
-Same document (`Occt_view::m_shps`), **different views**. Not a second shape store.
+Two stores: Design `m_shps` (Shape List) and Workbench `m_wbk_shps` (Workbench List). Leaves in the workbench are **links** (`source_id` + own frame), not a second BREP and not a filter of `m_shps`.
 
-| Task          | List shows                                                                               | Duplicate                                                |
-| ------------- | ---------------------------------------------------------------------------------------- | -------------------------------------------------------- |
-| **Design**    | Bodies / features / groups you are editing (Part Origin/planes locked)                   | Clone or feature-array geometry                          |
-| **Workbench** | Parts (and groups / root bodies until wrapped) as placeable units; hide inner body trees | New placement of the same Part (instances after Phase 3) |
+| Task          | List shows                                  | Copy / instance                               |
+| ------------- | ------------------------------------------- | --------------------------------------------- |
+| **Design**    | Bodies / features / groups you are editing  | Clone or feature-array geometry               |
+| **Workbench** | Linked placements of Design solids / groups | `add_to_workbench`; later true Part instances |
 
-Polar array of **parts** belongs on Workbench after placement. Polar array of a body can stay Design. Sketch List stays Sketch-only.
-
-Do **not** ship a second pane that lists the same baked solids, or two independent `m_shps` lists.
+Design geometry edits (same `Shape_id`) refresh links. Design move/rotate/scale do not move instances. Workbench transforms edit the instance frame. Polar array of parts can follow on Workbench. Sketch List stays Sketch-only. See [tasks-workbenches.md](tasks-workbenches.md).
 
 ## Product stance (fixed for this plan)
 
 1. Design idle is `Mode::Design_inspection`; Workbench idle is `Mode::Workbench_inspection`.
 2. Phase 3 placement / Parts: Move/Rotate on a Part updates relative placement (`world = parent * local`); children follow. Bake stays only for true geometry edits (fillet, scale-as-feature if needed).
-3. Workbench list is the arrange tree (Parts). Design list is the modeling tree (bodies). Duplicate-many-parts is instance/array, not 50 unique BREPs.
+3. Workbench List is the arrange tree (links with own pose). Design list is the modeling tree. Do not duplicate BREP for each placement.
 4. True mates stay later. Sketch inspection stays under Part.
 
 ## Related

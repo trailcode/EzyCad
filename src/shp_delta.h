@@ -20,6 +20,8 @@ struct Shape_rec
   Shape_id     parent_id{0};
   int          sibling_order{0};
   bool         is_group{false};
+  bool         is_workbench{false};
+  Shape_id     source_id{0};
   bool         visible{true};
   bool         show_frame_axes{false};
   bool         show_frame_plane{false};

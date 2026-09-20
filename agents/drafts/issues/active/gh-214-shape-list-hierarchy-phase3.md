@@ -18,7 +18,7 @@ Shape List hierarchy phase 3: parent transforms and advanced assembly model
 
 ### Summary
 
-Longer-term Shape List / document hierarchy. Phase 1 delivered folder-style groups. Phase 3 (in progress): inherited placement, Part/Origin/planes, Workbench vs Design list views. Editable Boolean history remains deferred (fuse/cut/common still replace inputs; they now evaluate world BREP).
+Longer-term Shape List / document hierarchy. Phase 1 delivered folder-style groups. Phase 3 (in progress): inherited placement, Part/Origin/planes. Workbench List is a second store of geometry links (`m_wbk_shps`), not a filter of `m_shps`. Editable Boolean history remains deferred (fuse/cut/common still replace inputs; they now evaluate world BREP).
 
 ### Context
 

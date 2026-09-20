@@ -95,7 +95,7 @@ void Shp_operation_base::operation_shps_cancel_()
     m_completed_shps = m_shps;
 
   for (Shp_ptr& shape : m_shps)
-    shape->ResetTransformation();
+    shape->SetLocalTransformation(shape->placement_trsf());
 }
 
 void Shp_operation_base::restore_operation_selection_()
@@ -144,11 +144,14 @@ void Shp_operation_base::replace_picked_shape_(Shp_ptr& old_shp, Shp_ptr& new_sh
   v.get_shapes().remove(old_shp);
 
   new_shp->set_name(name);
+  new_shp->set_id(old_shp->get_id());
+  new_shp->set_frame(old_shp->get_frame());
   new_shp->set_parent_id(old_shp->get_parent_id());
   new_shp->set_sibling_order(old_shp->get_sibling_order());
   add_shp_(new_shp);
   copy_shape_material_from_(new_shp, old_shp);
   ctx().Display(new_shp, new_shp->get_disp_mode(), AIS_Shape::SelectionMode(v.get_shp_selection_mode()), true);
+  v.sync_workbench_links(new_shp->get_id());
   v.redraw_view();
 }
 

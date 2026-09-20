@@ -146,6 +146,7 @@ void GUI::render_gui()
   sketch_list_();
   sketch_properties_dialog_();
   shape_list_();
+  workbench_list_();
   shape_info_dialog_();
   file_inspector_dialog_();
   // Paint the busy modal before poll so WASM can show "Importing..." for a frame first.
@@ -204,7 +205,10 @@ void GUI::initialize_toolbar_()
       {load_texture("res/icons/User.png"),                            true,  "Inspection mode",                   Mode::Design_inspection,                           Task::Design},
       {load_texture("res/icons/Macro_FaceToSketch_48.png"),           false, "Create a sketch from planar face",  Mode::Sketch_from_planar_face,          Task::Design},
       {load_texture("res/icons/Design456_Extrude.png"),               false, "Extrude sketch face",               Mode::Sketch_face_extrude,              Task::Design},
+      {load_texture("res/icons/Assembly_AxialMove.png"),              false, "Shape move",                        Mode::Design_move,                      Task::Design},
+      {load_texture("res/icons/Draft_Rotate.png"),                    false, "Shape rotate",                      Mode::Design_rotate,                    Task::Design},
       {load_texture("res/icons/Part_Scale.png"),                      false, "Shape Scale",                       Mode::Scale,                           Task::Design},
+      {load_texture("res/icons/Assembly_Move.png"),                   false, "Align shafts",                      Mode::Design_shaft_align,               Task::Design},
       {load_texture("res/icons/PartDesign_Chamfer.png"),              false, "Chamfer",                           Mode::Shape_chamfer,                    Task::Design},
       {load_texture("res/icons/PartDesign_Fillet.png"),               false, "Fillet",                            Mode::Shape_fillet,                     Task::Design},
       {load_texture("res/icons/Draft_PolarArray.png"),                false, "Shape polar duplicate",             Mode::Shape_polar_duplicate,            Task::Design},
@@ -252,9 +256,12 @@ void GUI::sync_toolbar_hotkey_tooltips_()
 
   // clang-format off
   tip_mode(Mode::Workbench_move,                          "Shape move",                      Gui_action::Mode_move);
+  tip_mode(Mode::Design_move,                              "Shape move",                      Gui_action::Mode_move);
   tip_mode(Mode::Workbench_rotate,                        "Shape rotate",                    Gui_action::Mode_rotate);
+  tip_mode(Mode::Design_rotate,                            "Shape rotate",                    Gui_action::Mode_rotate);
   tip_mode(Mode::Scale,                         "Shape Scale",                     Gui_action::Mode_scale);
   tip_mode(Mode::Workbench_shaft_align,               "Align shafts",                    Gui_action::Mode_cyl_align);
+  tip_mode(Mode::Design_shaft_align,                  "Align shafts",                    Gui_action::Mode_cyl_align);
   tip_mode(Mode::Sketch_dim_anno,               "Length dimension",                Gui_action::Mode_dimension);
   tip_mode(Mode::Sketch_face_extrude,           "Extrude sketch face",             Gui_action::Mode_extrude);
   tip_mode(Mode::Shape_chamfer,                 "Chamfer",                         Gui_action::Mode_chamfer);
@@ -327,6 +334,7 @@ void GUI::seed_default_dock_layout_(ImGuiID dockspace_id)
   ImGuiID dock_left_top    = ImGui::DockBuilderSplitNode(dock_left, ImGuiDir_Down, 0.52f, &dock_left_bottom, &dock_left);
 
   ImGui::DockBuilderDockWindow("Shape List", dock_left_top);
+  ImGui::DockBuilderDockWindow("Workbench List", dock_left_top);
   ImGui::DockBuilderDockWindow("Sketch List", dock_left_bottom);
   ImGui::DockBuilderDockWindow("Options", dock_right);
   ImGui::DockBuilderDockWindow("Log", dock_bottom);
@@ -505,6 +513,12 @@ void GUI::menu_bar_()
       {
         m_show_shape_list = !m_show_shape_list;
         save_panes        = true;
+      }
+
+      if (ImGui::MenuItem("Workbench List", nullptr, m_show_workbench_list))
+      {
+        m_show_workbench_list = !m_show_workbench_list;
+        save_panes            = true;
       }
 
       if (ImGui::MenuItem("Log", nullptr, m_log_window_visible))
@@ -3265,6 +3279,7 @@ void GUI::clear_sketch_list_ui_()
   m_sketch_list_scroll_y       = 0.f;
   m_sketch_list_scroll_restore = false;
   m_shape_list_expanded.clear();
+  m_workbench_list_expanded.clear();
 }
 
 nlohmann::json GUI::sketch_list_ui_to_json_() const
@@ -3367,6 +3382,7 @@ std::string GUI::serialized_project_json_() const
   j["mode"]                = static_cast<int>(get_mode());
   j["ui"]["sketchList"]    = sketch_list_ui_to_json_();
   j["ui"]["shapeList"]     = shape_list_ui_to_json_();
+  j["ui"]["workbenchList"] = workbench_list_ui_to_json_();
   return j.dump(2);
 }
 
@@ -3406,12 +3422,14 @@ void GUI::on_mouse_pos(const ScreenCoords& screen_coords)
   switch (get_mode())
   {
   case Mode::Workbench_move:
+  case Mode::Design_move:
     if (Status s = m_view->shp_move().move_selected(screen_coords); !s.is_ok())
       show_status(s);
 
     break;
 
   case Mode::Workbench_rotate:
+  case Mode::Design_rotate:
     if (Status s = m_view->shp_rotate().rotate_selected(screen_coords); !s.is_ok())
       show_status(s);
 
@@ -3424,6 +3442,7 @@ void GUI::on_mouse_pos(const ScreenCoords& screen_coords)
     break;
 
   case Mode::Workbench_shaft_align:
+  case Mode::Design_shaft_align:
     if (m_view->shp_cyl_align().is_twist_phase())
     {
       if (Status s = m_view->shp_cyl_align().drag_twist(screen_coords); !s.is_ok())
@@ -3467,10 +3486,13 @@ void GUI::on_left_click_(const ScreenCoords& screen_coords)
   switch (m_mode)
   {
     // clang-format off
-  case Mode::Workbench_move:                m_view->shp_move().finalize();                      break;
-  case Mode::Workbench_rotate:              m_view->shp_rotate().finalize();                    break;
+  case Mode::Workbench_move:
+  case Mode::Design_move:                    m_view->shp_move().finalize();                      break;
+  case Mode::Workbench_rotate:
+  case Mode::Design_rotate:                  m_view->shp_rotate().finalize();                    break;
   case Mode::Scale:               m_view->shp_scale().finalize();                     break;
   case Mode::Workbench_shaft_align:
+  case Mode::Design_shaft_align:
     if (m_view->shp_cyl_align().is_dragging())
       m_view->shp_cyl_align().on_left_click();
     else if (Status s = m_view->shp_cyl_align().pick(screen_coords); !s.is_ok())
@@ -3987,6 +4009,7 @@ void GUI::on_file(const std::string& file_path, const std::string& file_bytes, b
   log_message("on_file: load complete");
   apply_sketch_list_ui_from_json_(j);
   apply_shape_list_ui_from_json_(j);
+  apply_workbench_list_ui_from_json_(j);
   m_last_saved_path = file_path;
   Mode opened_mode  = Mode::Design_inspection;
   if (j.contains("mode") && j["mode"].is_number_integer())

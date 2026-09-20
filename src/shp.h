@@ -3,6 +3,7 @@
 #include <AIS_Shape.hxx>
 #include <AIS_DisplayMode.hxx>
 #include <gp_Ax3.hxx>
+#include <gp_Trsf.hxx>
 #include <TopoDS_Shape.hxx>
 #include <cstdint>
 
@@ -40,6 +41,19 @@ public:
   void     set_parent_id(Shape_id parent_id) { m_parent_id = parent_id; }
   int      get_sibling_order() const { return m_sibling_order; }
   void     set_sibling_order(int order) { m_sibling_order = order; }
+
+  /// Workbench list node (instance or workbench-only group). Design nodes are false.
+  bool is_workbench() const { return m_is_workbench; }
+  void set_is_workbench(bool v) { m_is_workbench = v; }
+  /// Design shape this instance links to (0 = workbench group or orphan).
+  Shape_id get_source_id() const { return m_source_id; }
+  void     set_source_id(Shape_id id) { m_source_id = id; }
+  bool     is_workbench_link() const { return m_is_workbench && !m_is_group && m_source_id != 0; }
+
+  /// World placement from get_frame() for workbench nodes; identity for Design.
+  gp_Trsf placement_trsf() const;
+  /// gp_Trsf that maps frame-local coordinates to world.
+  static gp_Trsf trsf_from_frame(const gp_Ax3& frame);
 
   /// Shape-local frame metadata. New shapes default to a world-aligned frame
   /// centered on their bounding box. Z is the primary axis; Y is "up".
@@ -89,6 +103,8 @@ protected:
   bool                    m_sketch_faint_active{false};
   AIS_DisplayMode         m_faint_disp_mode{AIS_Shaded};
   bool                    m_is_group{false};
+  bool                    m_is_workbench{false};
+  Shape_id                m_source_id{0};
   Shape_id                m_parent_id{0};
   int                     m_sibling_order{0};
   gp_Ax3                  m_frame;

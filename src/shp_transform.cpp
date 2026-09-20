@@ -36,7 +36,8 @@ Transform_axes transform_axes_for(const std::vector<Shp_ptr>& shps, Transform_sp
     return axes;
   }
 
-  axes.origin = get_shape_bbox_center(s->Shape());
+  const gp_Pnt local_c = get_shape_bbox_center(s->Shape());
+  axes.origin          = s->is_workbench() ? local_c.Transformed(s->placement_trsf()) : local_c;
   return axes;
 }
 

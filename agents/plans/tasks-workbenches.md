@@ -10,18 +10,20 @@ github_issue: null
 
 **Load only when** the prompt is about Sketch / Design / Workbench task buttons, the tools-row filter, or Workbench vs Design Shape List. Skip otherwise ([token-lean](../conventions/token-lean.md)). Index: [plans/README.md](README.md).
 
-Shipped: three tasks; tools row shows only the current task (option 1: hide unrelated modes). Workbench idle is `Mode::Workbench_inspection`. Move / Rotate / Align shafts are Workbench; Scale stays Design. Hotkeys auto-switch task (G / R / J -> Workbench, S -> Design).
+Shipped: three tasks; tools row shows only the current task. Design has `Design_move` / `Design_rotate` / `Scale` / `Design_shaft_align` (bake for CSG). Workbench has `Workbench_move` / `Workbench_rotate` / `Workbench_shaft_align` (instance pose). G / R / J follow the current task; S enters Design Scale.
 
 ## Workbench vs Design lists
 
-Same `Occt_view::m_shps`, **different views**. Do not add a second shape store.
+Two stores, one document: Design `Occt_view::m_shps` and Workbench `Occt_view::m_wbk_shps`. Workbench leaves are **geometry links** (`source_id`), not BREP copies.
 
-| Task      | List shows                                               | Duplicate / array                                        |
-| --------- | -------------------------------------------------------- | -------------------------------------------------------- |
-| Design    | Bodies / features / groups (Part Origin / planes locked) | Clone or feature-array of geometry                       |
-| Workbench | Parts (groups / root bodies until wrapped); hide inners  | New placement of the same Part (instances after phase 3) |
+| Task      | Store / pane                  | What a row is                                     |
+| --------- | ----------------------------- | ------------------------------------------------- |
+| Design    | `m_shps` / Shape List         | Bodies / groups you model                         |
+| Workbench | `m_wbk_shps` / Workbench List | Linked instances with their own frame (placement) |
 
-Polar array of **parts** belongs on Workbench after placement. Polar array of a body can stay Design.
+Copy Shape List solids or groups onto the Workbench (**Add to Workbench**, context menu, or drag). Design fillet/chamfer (same `Shape_id`) refreshes linked local geom. Design move/rotate bake does not move instances. Workbench Move/Rotate/Align update the instance frame only. Deleting a Design source removes its Workbench links. `.ezy` writes `workbench[]` (ids, `sourceId`, frame; no geom).
+
+Polar array of **parts** can follow on Workbench after instances exist. Polar array of a body stays Design.
 
 ## Related
 

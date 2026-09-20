@@ -161,6 +161,23 @@ void Shp::update_display_()
   m_ctx.UpdateCurrentViewer();
 }
 
+gp_Trsf Shp::trsf_from_frame(const gp_Ax3& frame)
+{
+  // Two-arg form: coordinates in `frame` -> world. Single-arg SetTransformation(frame)
+  // is the inverse (world -> frame) on both OCCT 7.9 and 8.
+  gp_Trsf t;
+  t.SetTransformation(frame, gp_Ax3());
+  return t;
+}
+
+gp_Trsf Shp::placement_trsf() const
+{
+  if (!m_is_workbench)
+    return gp_Trsf();
+
+  return trsf_from_frame(m_frame);
+}
+
 void Shp::set_frame(const gp_Ax3& frame)
 {
   m_frame = frame;
@@ -259,10 +276,13 @@ void Shp::update_frame_display()
   if (arm <= 0.0)
     return;
 
-  const gp_Pnt  o = m_frame.Location();
-  const gp_Vec  x(m_frame.XDirection());
-  const gp_Vec  y(m_frame.YDirection());
-  const gp_Vec  z(m_frame.Direction());
+  // Workbench placement lives on LocalTransformation; draw the triad in local
+  // space so preview transforms carry the annotations. Design bakes to identity.
+  const gp_Ax3  draw = m_is_workbench ? gp_Ax3() : m_frame;
+  const gp_Pnt  o    = draw.Location();
+  const gp_Vec  x(draw.XDirection());
+  const gp_Vec  y(draw.YDirection());
+  const gp_Vec  z(draw.Direction());
   const gp_Trsf trsf = LocalTransformation();
 
   auto display_wire = [&](const TopoDS_Shape& geom, Quantity_NameOfColor color, double width) -> AIS_Shape_ptr
@@ -289,7 +309,7 @@ void Shp::update_frame_display()
   if (m_show_frame_plane)
   {
     const double      half = arm * 0.75;
-    const gp_Pln      pln(m_frame);
+    const gp_Pln      pln(draw);
     const TopoDS_Face face = BRepBuilderAPI_MakeFace(pln, -half, half, -half, half).Face();
     m_frame_plane_fill_ais = new AIS_Shape(face);
     m_frame_plane_fill_ais->SetColor(Quantity_NOC_CYAN);

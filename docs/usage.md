@@ -50,7 +50,7 @@ EzyCad (Easy CAD) is an open-source CAD application for hobbyist machinists to d
 2. **Toolbar**
    - **Task** buttons (Sketch, Design, Workbench) pick the work context and enter that task's idle / inspection mode.
    - The **tools** row shows only the modes and commands for the current task (unrelated tools are hidden).
-   - Hotkeys still work from any task: G / R / J switch to Workbench and enter Move / Rotate / Align shafts; <kbd>S</kbd> switches to Design and enters Scale; sketch letters switch to Sketch.
+   - Hotkeys follow the current task: <kbd>G</kbd> / <kbd>R</kbd> / <kbd>J</kbd> enter that task's Move / Rotate / Align shafts (Design bakes the body for CSG; Workbench places a linked instance). <kbd>S</kbd> enters Design Scale. Sketch letters switch to Sketch.
 
 3. **Sketch List**
    - [View and manage 2D sketches](#sketch-list)
@@ -62,7 +62,10 @@ EzyCad (Easy CAD) is an open-source CAD application for hobbyist machinists to d
    - [List 3D solids, materials, and display options](#shape-list)
    - [Inspect shape topology and properties](#shape-info)
 
-5. **Options Panel**
+5. **Workbench List**
+   - [Place linked copies of Shape List solids](#workbench-list)
+
+6. **Options Panel**
    - The top of the panel always shows the name of the current tool/mode (matching the toolbar tooltip), followed immediately by a small **"?"** button. Clicking the "?" opens the online user guide directly to the section describing that specific tool (contextual help; see the per-mode links in the source `get_doc_url_for_mode` map).
    - Related controls are grouped by headings (for example **Sketch options**, **Extrude**, **Selection**, **Material**, **Polar duplicate**), depending on the active tool.
    - In non-sketch modes the Options panel shows **Selection** (in Normal/Inspection), tool-specific controls, **Orthographic projection** (toggles the camera mode, and **Material**. Sketch modes force orthographic projection and show sketch-specific options instead. **Face extrude** reads the same preset in its Options **Material** row.
@@ -70,7 +73,7 @@ EzyCad (Easy CAD) is an open-source CAD application for hobbyist machinists to d
    - **Move**, **Rotate**, and **Scale**: transform options only (no material row there).
    - Sketch-related options (snap, length dimension placement, face extrude, shortcuts) are summarized in **[usage-settings.md](usage-settings.md#options-panel)**.
 
-6. **Log Window**
+7. **Log Window**
    - View operation history
    - Check for errors and warnings
    - Monitor system status (including status toast messages: green success, light info, amber constraint, yellow warning, red error)
@@ -114,6 +117,7 @@ At the top:
 - **Hide all** - When checked, hides every solid in the 3D view without changing each row's visibility checkbox; when cleared, solids return to their previous per-row visibility (and group visibility).
 - **New group** - Creates an empty organizational group under the **current group** (document root when none is set) and makes it current.
 - **Group** - Places the currently selected solids under a new group (enabled when one or more solids are selected in the 3D view) and makes that group current.
+- **Add to Workbench** - Copies the current selection (or the current group) onto the [Workbench List](#workbench-list) as geometry links. You can also right-click a row and choose **Add to Workbench**, or drag a Shape List row onto the Workbench List.
 
 Shapes form a parent/child outliner. Groups are folders only (they do not move children when transformed). Drag a row onto a group to reparent it, onto a solid to place it under that solid's parent, or into the empty space below the list to move it to the document root.
 
@@ -154,6 +158,18 @@ The dialog reports document fields (name, material, shaded vs wireframe display,
 | **Mass properties** | Volume and center of mass (when the shape encloses volume), surface area, length (for wire-like geometry)                                        |
 
 This is useful after **Revolve**, **Extrude**, booleans, or imports when you need to confirm whether a result is a closed **Solid** or an open **Shell** / surface, or to check face and edge counts and overall size. The dialog closes automatically if the shape is deleted from the document.
+
+### Workbench List
+
+The **Workbench List** is a second pane for arranging solids in the Workbench task. Open it from **View -> Workbench List**. It is not a second copy of the Shape List: each solid row is a **link** to a Shape List body.
+
+- Adding a shape or group from the Shape List creates Workbench rows that share that body's geometry. Fillet, chamfer, and other Design geometry edits update the Workbench solids. Moving, rotating, or scaling a body in Design does not move its Workbench instances.
+- Each Workbench solid has its own local frame. **Move** / **Rotate** / **Align shafts** in the Workbench task change that instance pose only.
+- The pane matches the Shape List for **Hide all**, visibility, shaded/wireframe, material, rename, groups, drag-to-reparent, and right-click **Zoom to** / **Delete**.
+- Deleting a Shape List solid removes Workbench rows that link to it. Deleting a Workbench row does not delete the Design body.
+- The 3D view shows Shape List solids in Sketch and Design, and Workbench solids in the Workbench task (so the two trees do not overlap).
+
+The window can be closed with its close button; use **View -> Workbench List** again to show it.
 
 ## File Operations
 
@@ -221,7 +237,7 @@ Press <kbd>Esc</kbd> to cancel the current action or step back to a broader mode
 - **If something is in progress:** <kbd>Esc</kbd> cancels it and discards the change. Examples: cancel a line you are drawing, revert an unconfirmed [move](#shape-move-tool-g)/[rotate](#shape-rotate-tool-r)/[scale](#shape-scale-tool-s), cancel [extrude](#extrude-sketch-face-tool-e) preview, clear the distance or angle input dialog.
 - **If nothing is in progress:** <kbd>Esc</kbd> steps the application to the **parent mode** (one level up):
   - From a **sketch tool** (e.g. Add line, Add circle, Operation axis) -> **Sketch inspection mode**.
-  - From **Sketch inspection**, **Design** tools ([Extrude](#extrude-sketch-face-tool-e), [Scale](#shape-scale-tool-s), [Chamfer](#other-feature-operations) (<kbd>C</kbd>), [Fillet](#other-feature-operations) (<kbd>F</kbd>), [Polar duplicate](#shape-polar-duplicate-tool), [Create sketch from face](usage-sketch.md#create-sketch-from-planar-face-tool)), or Design **Inspection** -> **Design inspection**.
+  - From **Sketch inspection**, **Design** tools ([Move](#shape-move-tool-g), [Rotate](#shape-rotate-tool-r), [Align shafts](#align-shafts-tool-j), [Extrude](#extrude-sketch-face-tool-e), [Scale](#shape-scale-tool-s), [Chamfer](#other-feature-operations) (<kbd>C</kbd>), [Fillet](#other-feature-operations) (<kbd>F</kbd>), [Polar duplicate](#shape-polar-duplicate-tool), [Create sketch from face](usage-sketch.md#create-sketch-from-planar-face-tool)), or Design **Inspection** -> **Design inspection**.
   - From a **Workbench** tool ([Move](#shape-move-tool-g), [Rotate](#shape-rotate-tool-r), [Align shafts](#align-shafts-tool-j)) -> **Workbench** idle (not Design inspection). Use the task buttons to jump between Sketch, Design, and Workbench.
 
 So repeated <kbd>Esc</kbd> from a sketch drawing tool first cancels the current element, then returns to Sketch inspection, then to Design inspection. Workbench tools step back to Workbench idle.
@@ -382,7 +398,7 @@ More detail: [Sketch snapping](usage-sketch.md#sketch-snapping) in the sketch gu
 
 ![Shape Move Tool](res/icons/Assembly_AxialMove.png)
 
-The shape move tool allows you to reposition selected shapes in the 3D viewer with precision and flexibility.
+The shape move tool allows you to reposition selected shapes in the 3D viewer with precision and flexibility. In **Design**, the move is baked into the body (use this to line solids up for cut / fuse / common). In **Workbench**, only that instance's placement changes; the Design body stays put. <kbd>G</kbd> uses whichever task you are already in.
 
 **Features:**
 
@@ -415,7 +431,7 @@ While moving a shape, you can press <kbd>Tab</kbd> to activate a floating distan
 
 ![Shape Rotate Tool](res/icons/Draft_Rotate.png)
 
-The shape rotate tool enables precise rotation of selected shapes around a specified axis in the 3D viewer.
+The shape rotate tool enables precise rotation of selected shapes around a specified axis in the 3D viewer. In **Design**, rotation is baked into the body (CSG setup). In **Workbench**, only the instance pose changes. <kbd>R</kbd> uses the current task.
 
 **Features:**
 
@@ -492,7 +508,7 @@ The shape scale tool allows you to uniformly scale selected shapes around a pivo
 
 ![Align Shafts Tool](res/icons/Assembly_Move.png)
 
-Place a shaft into a hole (or the reverse) by aligning two cylindrical faces, sliding along the shared axis for insert depth, and optionally clocking rotation about that axis (splines, keyways). This is a one-shot transform that bakes into the solid geometry (same as Move / Rotate), not a persistent assembly mate.
+Place a shaft into a hole (or the reverse) by aligning two cylindrical faces, sliding along the shared axis for insert depth, and optionally clocking rotation about that axis (splines, keyways). In **Design**, the align is baked into the body (same as Move / Rotate, for CSG setup). In **Workbench**, only that instance's placement changes. <kbd>J</kbd> uses whichever task you are already in. This is not a persistent assembly mate.
 
 **Features:**
 
@@ -755,35 +771,35 @@ Mode, file, and edit chords in the **General Operations** and **Modeling Shortcu
 
 ### Modeling Shortcuts
 
-|                                               |                                           |
-| --------------------------------------------: | ----------------------------------------- |
-| <kbd>G</kbd>                                  | Move mode (switches to Workbench)         |
-| <kbd>R</kbd>                                  | Rotate mode (switches to Workbench)       |
-| <kbd>S</kbd>                                  | Scale mode (switches to Design)           |
-| <kbd>J</kbd>                                  | Align shafts mode (switches to Workbench) |
-| <kbd>E</kbd>                                  | Extrude mode                              |
-| <kbd>C</kbd>                                  | Chamfer mode                              |
-| <kbd>F</kbd>                                  | Fillet mode                               |
-| <kbd>D</kbd>                                  | Dimension tool (sketch)                   |
-| <kbd>I</kbd>                                  | Sketch inspection                         |
-| <kbd>P</kbd>                                  | Sketch from planar face                   |
-| <kbd>Shift</kbd>+<kbd>A</kbd>                 | Operation axis                            |
-| <kbd>N</kbd>                                  | Add node                                  |
-| <kbd>L</kbd>                                  | Add line edge                             |
-| <kbd>Shift</kbd>+<kbd>L</kbd>                 | Add multi-line edge                       |
-| <kbd>A</kbd>                                  | Add arc                                   |
-| <kbd>Q</kbd>                                  | Add square                                |
-| <kbd>B</kbd>                                  | Add rectangle (two points)                |
-| <kbd>Shift</kbd>+<kbd>B</kbd>                 | Add rectangle (center)                    |
-| <kbd>O</kbd>                                  | Add circle                                |
-| <kbd>Shift</kbd>+<kbd>O</kbd>                 | Add circle (three points)                 |
-| <kbd>U</kbd>                                  | Add slot                                  |
-| <kbd>Shift</kbd>+<kbd>U</kbd>                 | Add bone                                  |
-| <kbd>Shift</kbd>+<kbd>P</kbd>                 | Polar duplicate                           |
-| <kbd>Shift</kbd>+<kbd>X</kbd>                 | Cross-section                             |
-| <kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>C</kbd> | Shape cut                                 |
-| <kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>F</kbd> | Shape fuse                                |
-| <kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>M</kbd> | Shape common                              |
+|                                               |                                                  |
+| --------------------------------------------: | ------------------------------------------------ |
+| <kbd>G</kbd>                                  | Move (Design or Workbench, current task)         |
+| <kbd>R</kbd>                                  | Rotate (Design or Workbench, current task)       |
+| <kbd>S</kbd>                                  | Scale mode (Design)                              |
+| <kbd>J</kbd>                                  | Align shafts (Design or Workbench, current task) |
+| <kbd>E</kbd>                                  | Extrude mode                                     |
+| <kbd>C</kbd>                                  | Chamfer mode                                     |
+| <kbd>F</kbd>                                  | Fillet mode                                      |
+| <kbd>D</kbd>                                  | Dimension tool (sketch)                          |
+| <kbd>I</kbd>                                  | Sketch inspection                                |
+| <kbd>P</kbd>                                  | Sketch from planar face                          |
+| <kbd>Shift</kbd>+<kbd>A</kbd>                 | Operation axis                                   |
+| <kbd>N</kbd>                                  | Add node                                         |
+| <kbd>L</kbd>                                  | Add line edge                                    |
+| <kbd>Shift</kbd>+<kbd>L</kbd>                 | Add multi-line edge                              |
+| <kbd>A</kbd>                                  | Add arc                                          |
+| <kbd>Q</kbd>                                  | Add square                                       |
+| <kbd>B</kbd>                                  | Add rectangle (two points)                       |
+| <kbd>Shift</kbd>+<kbd>B</kbd>                 | Add rectangle (center)                           |
+| <kbd>O</kbd>                                  | Add circle                                       |
+| <kbd>Shift</kbd>+<kbd>O</kbd>                 | Add circle (three points)                        |
+| <kbd>U</kbd>                                  | Add slot                                         |
+| <kbd>Shift</kbd>+<kbd>U</kbd>                 | Add bone                                         |
+| <kbd>Shift</kbd>+<kbd>P</kbd>                 | Polar duplicate                                  |
+| <kbd>Shift</kbd>+<kbd>X</kbd>                 | Cross-section                                    |
+| <kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>C</kbd> | Shape cut                                        |
+| <kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>F</kbd> | Shape fuse                                       |
+| <kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>M</kbd> | Shape common                                     |
 
 
 ### View navigation
@@ -922,11 +938,13 @@ Contributors should follow **[ezycad_code_style.md](ezycad_code_style.md)** for 
 ### Design
 - ![User](res/icons/User.png) - Inspection mode
 - ![Macro_FaceToSketch_48](res/icons/Macro_FaceToSketch_48.png) - Create sketch from planar face
+- ![Assembly_AxialMove](res/icons/Assembly_AxialMove.png) - Shape move (<kbd>G</kbd>, bake body)
+- ![Draft_Rotate](res/icons/Draft_Rotate.png) - Shape rotate (<kbd>R</kbd>, bake body)
 - ![Part_Scale](res/icons/Part_Scale.png) - Shape scale (<kbd>S</kbd>)
 
 ### Workbench
-- ![Assembly_AxialMove](res/icons/Assembly_AxialMove.png) - Shape move (<kbd>G</kbd>)
-- ![Draft_Rotate](res/icons/Draft_Rotate.png) - Shape rotate (<kbd>R</kbd>)
+- ![Assembly_AxialMove](res/icons/Assembly_AxialMove.png) - Shape move (<kbd>G</kbd>, instance placement)
+- ![Draft_Rotate](res/icons/Draft_Rotate.png) - Shape rotate (<kbd>R</kbd>, instance placement)
 - ![Assembly_Move](res/icons/Assembly_Move.png) - Align shafts (<kbd>J</kbd>)
 
 ### Sketch Tools

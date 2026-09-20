@@ -32,7 +32,7 @@ sketch-mode-shape-faint  (done; parallel UX)
 | [cross-section-tool.md](cross-section-tool.md)                   | done        | cross-section tool, section cut preview, cutting-plane experiment              |
 | [sketch-from-shape-section.md](sketch-from-shape-section.md)     | partial     | "sketch from shape", section → editable sketch                                 |
 | [sketch-mode-shape-faint.md](sketch-mode-shape-faint.md)         | done        | faint/ghost/wireframe shapes in sketch mode, alpha blending solids             |
-| [tasks-workbenches.md](tasks-workbenches.md)                     | partial     | Sketch/Design/Workbench task toolbar, tools-row filter, list views             |
+| [tasks-workbenches.md](tasks-workbenches.md)                     | partial     | Sketch/Design/Workbench task toolbar, Workbench List links                     |
 | [shape-list-hierarchy-phase3.md](shape-list-hierarchy-phase3.md) | partial     | parent transform inheritance, Parts/planes, Boolean history (#214)             |
 | [assembly-inspection-mode.md](assembly-inspection-mode.md)       | deferred    | assembly idle/inspection mode, Part vs arrange context, Workbench list         |
 | [wasm-multithreading.md](wasm-multithreading.md)                 | planning    | WASM/Emscripten pthreads, SharedArrayBuffer, parallel OCCT on web              |

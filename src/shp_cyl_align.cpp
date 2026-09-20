@@ -152,7 +152,7 @@ void Shp_cyl_align::apply_preview_()
   const gp_Trsf trsf   = cyl_align_trsf(*m_moving_axis, *m_fixed_axis, m_opts.flip_direction, offset, twist);
 
   for (const Shp_ptr& shape : m_shps)
-    shape->SetLocalTransformation(trsf);
+    shape->SetLocalTransformation(trsf * shape->placement_trsf());
 
   redisplay_operation_shps_after_transform_();
 }
@@ -338,6 +338,7 @@ void Shp_cyl_align::cancel()
 
 void Shp_cyl_align::reset()
 {
+  const Mode parent = GUI::parent_mode_of(gui().get_mode());
   begin();
-  gui().set_mode(Mode::Workbench_inspection);
+  gui().set_mode(parent);
 }

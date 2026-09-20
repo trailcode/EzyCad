@@ -9,7 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
-- **Task toolbar**: Sketch / Design / Workbench switcher; the tools row shows only the current task. Move / Rotate / Align shafts live under Workbench; Scale stays on Design. G / R / J (and S for Scale) still enter those tools from any task.
+- **Task toolbar**: Sketch / Design / Workbench switcher; the tools row shows only the current task. Design has its own Move / Rotate / Scale / Align shafts (bake bodies for CSG). Workbench has Move / Rotate / Align shafts (instance pose). <kbd>G</kbd> / <kbd>R</kbd> / <kbd>J</kbd> stay on the current task; <kbd>S</kbd> enters Design Scale.
 - **Mode names**: Design idle is `Design_inspection` (was `Normal`); Sketch idle is `Sketch_inspection` (was `Sketch_inspection_mode`). `ezy.get_mode()` / `ezy.set_mode` use the new names; `Normal` and `Sketch_inspection_mode` still parse.
 - **Move / rotate / scale space**: Options **Local** (default) or **World**. Local uses the first selected solid's frame (origin and X/Y/Z from **Show axes**). World keeps global XYZ at that solid's bounding-box center. Persisted as **`gui.transform_space`**.
 - **Desktop deps**: MSVC GLFW/GLEW come from **vcpkg** (`vcpkg.json` + toolchain) instead of NuGet; local configure matches CI.
@@ -28,6 +28,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Wasm configure/link**: Detect Emscripten via `EMSCRIPTEN` / `CMAKE_SYSTEM_NAME` (modern emsdk reports Clang). Link the FreeType package from the OCCT wasm install so `wasm-ld` finds `libfreetype.a` instead of bare `-lfreetype`.
 
 ### Added
+
+- **Workbench List**: separate pane of geometry **links** to Shape List solids (own location/rotation). **Add to Workbench** from the Shape List (button, context menu, or drag). Design geometry edits update links; Design move/rotate/scale do not move instances. Workbench Move / Rotate / Align shafts edit the instance frame only. `.ezy` stores `workbench[]` (no BREP). Settings: **`gui.show_workbench_list`**.
 
 - **Status toast kinds**: the bottom-right toast is colored by kind (**success**, **info**, **constraint**, **warning**, **error**) instead of always red. Failed `Status` toasts follow `Result_status` (`User_error` is amber constraint). Scripts: `ezy.msg(text [, kind])`. **Add bone** uses info for the next click, amber for rejected input, green on commit, and red if create fails.
 
