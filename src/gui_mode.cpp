@@ -91,7 +91,9 @@ const char* GUI::current_mode_description_() const
       if (std::get<Mode>(b.data) == m_mode)
         return b.tooltip.c_str();
 
-  // Modes entered only from Shape List / menus (no toolbar button).
+  // Modes entered only from Shape List / menus / task buttons (no tools-row button).
+  if (m_mode == Mode::Workbench_inspection)
+    return "Workbench";
   if (m_mode == Mode::Shape_set_frame)
     return "Set local frame";
 

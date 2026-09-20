@@ -925,7 +925,6 @@ Contributors should follow **[ezycad_code_style.md](ezycad_code_style.md)** for 
 - ![Part_Scale](res/icons/Part_Scale.png) - Shape scale (<kbd>S</kbd>)
 
 ### Workbench
-- ![Workbench_Assembly](res/icons/Workbench_Assembly.png) - Workbench idle
 - ![Assembly_AxialMove](res/icons/Assembly_AxialMove.png) - Shape move (<kbd>G</kbd>)
 - ![Draft_Rotate](res/icons/Draft_Rotate.png) - Shape rotate (<kbd>R</kbd>)
 - ![Assembly_Move](res/icons/Assembly_Move.png) - Align shafts (<kbd>J</kbd>)

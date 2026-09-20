@@ -18,7 +18,7 @@ Shape List hierarchy phase 3: parent transforms and advanced assembly model
 
 ### Summary
 
-Longer-term Shape List / document hierarchy work that should **not** ship with the organizational outliner. Phase 1 delivered folder-style groups without changing leaf BREP or transform semantics. Phase 2 covers outliner polish (reorder, duplicate, selection). Phase 3 is the product decision layer: inherited placement, optional boolean history, and part-local frames.
+Longer-term Shape List / document hierarchy. Phase 1 delivered folder-style groups. Phase 3 (in progress): inherited placement, Part/Origin/planes, Workbench vs Design list views. Editable Boolean history remains deferred (fuse/cut/common still replace inputs; they now evaluate world BREP).
 
 ### Context
 

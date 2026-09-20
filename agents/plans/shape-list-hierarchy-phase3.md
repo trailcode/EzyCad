@@ -1,8 +1,8 @@
 ---
-status: deferred
+status: partial
 topic: shape-list-hierarchy-phase3
 depends_on: null
-blocks: null
+blocks: [assembly-inspection-mode]
 github_issue: 214
 ---
 
@@ -10,7 +10,7 @@ github_issue: 214
 
 **Load only when** the prompt is about parent transform inheritance, Part/Origin/plane objects, editable Boolean history, or Shape List hierarchy phase 3 (#214). Skip otherwise ([token-lean](../conventions/token-lean.md)). Index: [plans/README.md](README.md).
 
-Post-v1 work. Do **not** ship any of this in v1.
+In progress: typed nodes, relative placement, Part/Origin/planes, Workbench vs Design list filter. Editable Boolean history (section 4) can follow; fuse/cut/common still replace inputs but evaluate **world** BREP so placed parts boolean correctly.
 
 ## Scope and fixed decisions
 
@@ -53,6 +53,7 @@ Post-v1 work. Do **not** ship any of this in v1.
 
 ## 5. Complete lifecycle, UI, and interchange semantics
 
+- Shape List pane: Design shows the modeling tree; Workbench filters to Parts/groups/root bodies (hide inner Body trees under a Part). One document, two views. See [assembly-inspection-mode.md](assembly-inspection-mode.md#lists-design-vs-workbench).
 - Expand Boolean rows as Base/Tool or numbered Operand children; add operation change, reorder, recompute, show operands, remove operand, and dissolve actions in [`src/gui.cpp`](../../src/gui.cpp).
 - Cascade-delete Group, Part, and Boolean subtrees. Dissolve promotes ordinary children preserve-world; Part drops system references; Boolean removes its result and promotes operands.
 - Traverse logical outputs for export: Body exports world geometry, Boolean exports its cached result once, Group/Part recurse, and Origin/Plane export nothing. Keep STEP/IGES/STL/PLY flattened; only `.ezy` preserves history.
@@ -71,4 +72,5 @@ Post-v1 work. Do **not** ship any of this in v1.
 1. Placement/migration/reparent/export tests must pass before enabling inherited transforms.
 2. Inherited transforms and Part references must be stable before Boolean history depends on them.
 3. Boolean history ships only after nested recompute, failure recovery, persistence, undo, and export tests pass.
-4. No phase 3 behavior is included in v1; sketches remain structurally unchanged throughout.
+4. Sketches remain in `m_sketches` / Sketch List; no sketch Shape List parent.
+5. Design vs Workbench lists are **views** of one `m_shps` document (not two stores). Design: bodies/features (Origin/Plane locked). Workbench: Parts (and groups / unwrapped root bodies) as placeable units. Polar array of parts belongs on Workbench after instances exist.

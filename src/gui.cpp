@@ -212,8 +212,7 @@ void GUI::initialize_toolbar_()
       {load_texture("res/icons/Part_Cut.png"),                        false, "Shape cut",                         Command::Shape_cut,                     Task::Design},
       {load_texture("res/icons/Part_Fuse.png"),                       false, "Shape fuse",                        Command::Shape_fuse,                    Task::Design},
       {load_texture("res/icons/Part_Common.png"),                     false, "Shape common",                      Command::Shape_common,                  Task::Design},
-      // Workbench
-      {load_texture("res/icons/Workbench_Assembly.png"),              false, "Workbench",                         Mode::Workbench_inspection,             Task::Workbench},
+      // Workbench (idle is the task button; do not repeat Workbench_inspection here)
       {load_texture("res/icons/Assembly_AxialMove.png"),              false, "Shape move",                        Mode::Workbench_move,                   Task::Workbench},
       {load_texture("res/icons/Draft_Rotate.png"),                    false, "Shape rotate",                      Mode::Workbench_rotate,                 Task::Workbench},
       {load_texture("res/icons/Assembly_Move.png"),                   false, "Align shafts",                      Mode::Workbench_shaft_align,            Task::Workbench},

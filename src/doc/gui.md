@@ -44,7 +44,7 @@ Typical responsibilities:
 
 ### Tasks / toolbar (filter)
 
-The chrome toolbar is one ImGui window with two regions: **task** switcher (Sketch / Design / Workbench) then a `|` then **tools** for `task_of(get_mode())` only (option 1: hide unrelated modes). Clicking a task button calls `set_mode(idle_mode_of(task))`. Hotkeys still call `set_mode` on the tool; that updates the active task so the tools row follows (G/R/J from Sketch/Design enter Workbench; S enters Design Scale). Helpers: `task_of`, `idle_mode_of`, `is_workbench_mode`, `is_workbench_transform_mode`, `is_shape_browse_mode` in [`mode.h`](../mode.h).
+The chrome toolbar is one ImGui window with two regions: **task** switcher (Sketch / Design / Workbench) then a `|` then **tools** for `task_of(get_mode())` only (option 1: hide unrelated modes). Clicking a task button calls `set_mode(idle_mode_of(task))`. Workbench idle (`Mode::Workbench_inspection`) is the task button only — not repeated on the tools row. Hotkeys still call `set_mode` on the tool; that updates the active task so the tools row follows (G/R/J from Sketch/Design enter Workbench; S enters Design Scale). Helpers: `task_of`, `idle_mode_of`, `is_workbench_mode`, `is_workbench_transform_mode`, `is_shape_browse_mode` in [`mode.h`](../mode.h).
 
 `Mode::Design_inspection`, `Mode::Workbench_inspection`, and the three task buttons are toolbar-only (no remappable `Gui_action`). Transform tools keep `mode.move` / `mode.rotate` / `mode.scale` / `mode.cyl_align`. Retired script names `Normal` / `Sketch_inspection_mode` / `Move` / `Rotate` / `Workbench_scale` / `Shape_shaft_align` still parse via `mode_from_string`.
 
