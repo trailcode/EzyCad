@@ -692,6 +692,8 @@ bool Shape_list_row_drawer::row_is_selected_(const Shp_ptr& shape) const
 
 void Shape_list_row_drawer::select_row_(const Shp_ptr& shape)
 {
+  m_gui.ensure_task_(m_kind == Shp_list_kind::Workbench ? Task::Workbench : Task::Design);
+
   AIS_InteractiveContext& ctx  = m_view.ctx();
   const bool              ctrl = ImGui::GetIO().KeyCtrl;
   if (!ctrl)
@@ -1042,10 +1044,14 @@ void Shape_list_row_drawer::draw(const Shp_ptr& shape)
   const ImGuiPayload* dd           = ImGui::GetDragDropPayload();
   const bool          dragging_row = dd != nullptr && (dd->IsDataType("EZY_SHAPE_ID") || dd->IsDataType("EZY_WBK_ID"));
   if (row_hovered && !dragging_row && ImGui::IsMouseReleased(ImGuiMouseButton_Right))
+  {
+    m_gui.ensure_task_(m_kind == Shp_list_kind::Workbench ? Task::Workbench : Task::Design);
     ImGui::OpenPopup("shape_row_ctx");
+  }
 
   if (ImGui::BeginPopup("shape_row_ctx"))
   {
+    m_gui.ensure_task_(m_kind == Shp_list_kind::Workbench ? Task::Workbench : Task::Design);
     draw_ctx_menu_(shape, is_group);
     ImGui::EndPopup();
   }

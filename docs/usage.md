@@ -110,7 +110,7 @@ The window can be closed with its close button; use **View -> Sketch List** agai
 
 ### Shape List
 
-The **Shape List** pane lists every **3D shape** and **group** in the current document (extrudes, imports, booleans, etc.). Open it from **View -> Shape List**.
+The **Shape List** pane lists every **3D shape** and **group** in the current document (extrudes, imports, booleans, etc.). Open it from **View -> Shape List**. Selecting or right-clicking a row switches to the **Design** task so the 3D view shows those solids.
 
 At the top:
 
@@ -161,7 +161,7 @@ This is useful after **Revolve**, **Extrude**, booleans, or imports when you nee
 
 ### Workbench List
 
-The **Workbench List** is a second pane for arranging solids in the Workbench task. Open it from **View -> Workbench List**. It is not a second copy of the Shape List: each solid row is a **link** to a Shape List body.
+The **Workbench List** is a second pane for arranging solids in the Workbench task. Open it from **View -> Workbench List**. Selecting or right-clicking a row switches to the **Workbench** task so the 3D view shows those instances. It is not a second copy of the Shape List: each solid row is a **link** to a Shape List body.
 
 - Adding a shape or group from the Shape List creates Workbench rows that share that body's geometry. Fillet, chamfer, and other Design geometry edits update the Workbench solids. Moving, rotating, or scaling a body in Design does not move its Workbench instances.
 - Each Workbench solid has its own instance pose and a local tool frame (Show axes / Local move). Right-click **Set from planar face...** / **Set from cylindrical face...** stays in Workbench and does not move the instance.

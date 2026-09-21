@@ -372,8 +372,10 @@ public:
   Project_unit default_project_unit() const { return m_default_project_unit; }
   bool         get_dark_mode() const { return m_dark_mode; }
   ImVec4       get_clear_color() const;
-  void         set_mode(Mode mode); // gui_mode.cpp
-  void         set_parent_mode();   // gui_mode.cpp
+  void         set_mode(Mode mode);     // gui_mode.cpp
+  /// Enter \a task idle if the current mode is not already on that task.
+  void         ensure_task_(Task task); // gui_mode.cpp
+  void         set_parent_mode();       // gui_mode.cpp
   /// Parent mode for Escape / tool exit (e.g. Workbench_move -> Workbench_inspection, sketch tools -> Sketch_inspection).
   static Mode parent_mode_of(Mode mode); // gui_mode.cpp
   void        set_dist_edit(float dist, std::function<void(float, bool)>&& callback,

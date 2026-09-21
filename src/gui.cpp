@@ -1538,6 +1538,7 @@ void GUI::sketch_list_()
     // This will open a popup when you right-click on the InputText
     if (ImGui::BeginPopupContextItem("Sketch_InputTextContextMenu"))
     {
+      ensure_task_(Task::Sketch);
       if (ImGui::MenuItem("Delete"))
         sketch_to_delete = sketch;
 

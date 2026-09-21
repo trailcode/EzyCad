@@ -131,6 +131,14 @@ void GUI::set_mode(Mode mode)
       b.is_active = std::get<Mode>(b.data) == mode;
 }
 
+void GUI::ensure_task_(Task task)
+{
+  if (task_of(m_mode) == task)
+    return;
+
+  set_mode(idle_mode_of(task));
+}
+
 Mode GUI::parent_mode_of(Mode mode)
 {
   static const std::map<Mode, Mode> parent_modes = {
