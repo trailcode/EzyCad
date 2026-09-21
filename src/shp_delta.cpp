@@ -17,6 +17,7 @@ Shape_rec capture_shape_rec(const Shp& shp)
   rec.material      = shp.Material();
   rec.geom          = shp.Shape();
   rec.frame         = shp.get_frame();
+  rec.local_frame   = shp.get_local_frame();
   rec.parent_id     = shp.get_parent_id();
   rec.sibling_order = shp.get_sibling_order();
   rec.is_group         = shp.is_group();
@@ -59,13 +60,21 @@ Shape_geom_delta::Shape_geom_delta(std::vector<Geom_change> changes)
 void Shape_geom_delta::apply_forward(Occt_view& view)
 {
   for (const Geom_change& ch : m_changes)
+  {
     view.set_shape_geom_by_id(ch.id, ch.after_geom, ch.after_frame);
+    if (ch.has_local_frame)
+      view.set_shape_local_frame_by_id(ch.id, ch.after_local_frame);
+  }
 }
 
 void Shape_geom_delta::apply_reverse(Occt_view& view)
 {
   for (const Geom_change& ch : m_changes)
+  {
     view.set_shape_geom_by_id(ch.id, ch.before_geom, ch.before_frame);
+    if (ch.has_local_frame)
+      view.set_shape_local_frame_by_id(ch.id, ch.before_local_frame);
+  }
 }
 
 std::unique_ptr<Delta> Shape_geom_delta::clone() const { return std::make_unique<Shape_geom_delta>(m_changes); }

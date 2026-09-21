@@ -105,10 +105,11 @@ Status Shp_set_frame::pick(const ScreenCoords& screen_coords)
     frame               = gp_Ax3(gp_Ax2(origin, cyl->axis.Direction()));
   }
 
-  // Leave pick mode before the undo push so history stores Normal, not Shape_set_frame.
+  // Leave pick mode before the undo push so history stores the parent idle.
   const Shp_ptr target = m_target;
+  const Mode    parent = GUI::parent_mode_of(gui().get_mode());
   clear_all(m_target);
-  gui().set_mode(Mode::Design_inspection);
+  gui().set_mode(parent);
   view().set_shape_frame(target, *frame);
   target->set_show_frame_axes(true);
   gui().show_message("Local frame updated.", Status_msg::Success);
@@ -117,6 +118,7 @@ Status Shp_set_frame::pick(const ScreenCoords& screen_coords)
 
 void Shp_set_frame::cancel()
 {
+  const Mode parent = GUI::parent_mode_of(gui().get_mode());
   clear_all(m_target);
-  gui().set_mode(Mode::Design_inspection);
+  gui().set_mode(parent);
 }

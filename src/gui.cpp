@@ -3499,6 +3499,7 @@ void GUI::on_left_click_(const ScreenCoords& screen_coords)
       show_status(s);
     break;
   case Mode::Shape_set_frame:
+  case Mode::Workbench_set_frame:
     if (Status s = m_view->shp_set_frame().pick(screen_coords); !s.is_ok())
       show_status(s);
     break;

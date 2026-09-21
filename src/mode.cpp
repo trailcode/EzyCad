@@ -61,6 +61,7 @@ bool is_workbench_transform_mode(const Mode mode)
   case Mode::Workbench_move:
   case Mode::Workbench_rotate:
   case Mode::Workbench_shaft_align:
+  case Mode::Workbench_set_frame:
     return true;
 
   default:
@@ -86,6 +87,11 @@ bool is_rotate_mode(const Mode mode)
 bool is_shaft_align_mode(const Mode mode)
 {
   return mode == Mode::Design_shaft_align || mode == Mode::Workbench_shaft_align;
+}
+
+bool is_set_frame_mode(const Mode mode)
+{
+  return mode == Mode::Shape_set_frame || mode == Mode::Workbench_set_frame;
 }
 
 bool is_shape_browse_mode(const Mode mode)

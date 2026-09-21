@@ -73,6 +73,7 @@ std::string GUI::get_doc_url_for_mode(Mode mode)
       {Mode::Sketch_dim_anno,                 "https://ezycad.readthedocs.io/en/latest/usage-sketch.html#dimension-tool"},
       {Mode::Shape_cross_section,                   "https://ezycad.readthedocs.io/en/latest/usage.html#shape-cross-section-tool"},
       {Mode::Shape_set_frame,                 "https://ezycad.readthedocs.io/en/latest/usage.html#shape-list"},
+      {Mode::Workbench_set_frame,             "https://ezycad.readthedocs.io/en/latest/usage.html#workbench-list"},
       // clang-format on
   };
 
@@ -97,7 +98,7 @@ const char* GUI::current_mode_description_() const
   // Modes entered only from Shape List / menus / task buttons (no tools-row button).
   if (m_mode == Mode::Workbench_inspection)
     return "Workbench";
-  if (m_mode == Mode::Shape_set_frame)
+  if (m_mode == Mode::Shape_set_frame || m_mode == Mode::Workbench_set_frame)
     return "Set local frame";
 
   EZY_ASSERT_MSG(false, "Current mode not found in toolbar buttons");
@@ -164,6 +165,7 @@ Mode GUI::parent_mode_of(Mode mode)
       {Mode::Sketch_dim_anno,                 Mode::Sketch_inspection},
       {Mode::Shape_cross_section,                   Mode::Design_inspection},
       {Mode::Shape_set_frame,                 Mode::Design_inspection},
+      {Mode::Workbench_set_frame,             Mode::Workbench_inspection},
       // clang-format on
   };
 
@@ -548,6 +550,7 @@ void GUI::options_()
     case Mode::Shape_polar_duplicate:           options_shape_polar_duplicate_mode_();        break;
     case Mode::Shape_cross_section:             options_shape_cross_section_mode_();          break;
     case Mode::Shape_set_frame:                 options_shape_set_frame_mode_();              break;
+    case Mode::Workbench_set_frame:             options_shape_set_frame_mode_();              break;
     
       // Sketch related modes:
     case Mode::Sketch_inspection:          options_sketch_inspection_mode_();            break;
@@ -728,7 +731,7 @@ void GUI::options_shape_shaft_align_mode_()
 
 void GUI::options_shape_set_frame_mode_()
 {
-  EZY_ASSERT(get_mode() == Mode::Shape_set_frame);
+  EZY_ASSERT(is_set_frame_mode(get_mode()));
 
   ImGui::TextUnformatted("Set local frame");
   options_doc_help_button_();

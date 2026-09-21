@@ -193,6 +193,12 @@ void Shp::transform_frame(const gp_Trsf& transform)
   update_frame_display();
 }
 
+void Shp::set_local_frame(const gp_Ax3& frame)
+{
+  m_local_frame = frame;
+  update_frame_display();
+}
+
 gp_Ax3 Shp::default_frame_for(const TopoDS_Shape& shape) { return default_shape_frame_(shape); }
 
 void Shp::set_show_frame_axes(bool show)
@@ -280,8 +286,9 @@ void Shp::update_frame_display()
     return;
 
   // Workbench placement lives on LocalTransformation; draw the triad in local
-  // space so preview transforms carry the annotations. Design bakes to identity.
-  const gp_Ax3  draw = m_is_workbench ? gp_Ax3() : m_frame;
+  // space (m_local_frame, identity = instance origin) so preview transforms
+  // carry the annotations. Design bakes to identity and draws m_frame in world.
+  const gp_Ax3  draw = m_is_workbench ? m_local_frame : m_frame;
   const gp_Pnt  o    = draw.Location();
   const gp_Vec  x(draw.XDirection());
   const gp_Vec  y(draw.YDirection());

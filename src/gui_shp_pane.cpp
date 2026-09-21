@@ -770,24 +770,25 @@ void Shape_list_row_drawer::draw_ctx_menu_(const Shp_ptr& shape, bool is_group)
       shape->set_show_frame_axes(true);
     }
 
+    const Mode set_frame_mode = shape->is_workbench() ? Mode::Workbench_set_frame : Mode::Shape_set_frame;
     if (ImGui::MenuItem("Set from planar face..."))
     {
       select_row_(shape);
       m_view.shp_set_frame().begin(shape, Shp_set_frame::Pick::Planar_face);
-      m_gui.set_mode(Mode::Shape_set_frame);
+      m_gui.set_mode(set_frame_mode);
     }
 
     if (ImGui::MenuItem("Set from cylindrical face..."))
     {
       select_row_(shape);
       m_view.shp_set_frame().begin(shape, Shp_set_frame::Pick::Cylindrical_face);
-      m_gui.set_mode(Mode::Shape_set_frame);
+      m_gui.set_mode(set_frame_mode);
     }
 
     if (ImGui::MenuItem("Flip up"))
     {
       select_row_(shape);
-      gp_Ax3 f = shape->get_frame();
+      gp_Ax3 f = shape->is_workbench() ? shape->get_local_frame() : shape->get_frame();
       f.XReverse();
       m_view.set_shape_frame(shape, f);
     }
@@ -795,7 +796,7 @@ void Shape_list_row_drawer::draw_ctx_menu_(const Shp_ptr& shape, bool is_group)
     if (ImGui::MenuItem("Flip axis (Z)"))
     {
       select_row_(shape);
-      gp_Ax3 f = shape->get_frame();
+      gp_Ax3 f = shape->is_workbench() ? shape->get_local_frame() : shape->get_frame();
       f.ZReverse();
       m_view.set_shape_frame(shape, f);
     }

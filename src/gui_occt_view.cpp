@@ -615,6 +615,7 @@ void Occt_view::cancel(Set_parent_mode set_parent_mode)
     break;
 
   case Mode::Shape_set_frame:
+  case Mode::Workbench_set_frame:
     shp_set_frame().cancel();
     operation_canceled = true;
     break;
@@ -1907,6 +1908,7 @@ void Occt_view::insert_shape_rec(const Shape_rec& rec)
   shp->set_is_workbench(rec.is_workbench);
   shp->set_source_id(rec.source_id);
   shp->set_frame(rec.frame);
+  shp->set_local_frame(rec.local_frame);
   if (!shp->is_group())
   {
     shp->set_show_frame_axes(rec.show_frame_axes);
@@ -2011,14 +2013,41 @@ void Occt_view::set_shape_geom_by_id(Shape_id id, const TopoDS_Shape& geom, cons
     sync_workbench_links(id);
 }
 
+void Occt_view::set_shape_local_frame_by_id(Shape_id id, const gp_Ax3& local_frame)
+{
+  Shp_ptr shp = find_shape_by_id(id);
+  if (shp.IsNull())
+    return;
+
+  shp->set_local_frame(local_frame);
+}
+
 void Occt_view::set_shape_frame(const Shp_ptr& shp, const gp_Ax3& frame)
 {
   if (shp.IsNull() || shp->is_group())
     return;
 
   std::vector<Shape_geom_delta::Geom_change> changes;
-  changes.push_back(Shape_geom_delta::Geom_change{shp->get_id(), shp->Shape(), shp->Shape(), shp->get_frame(), frame});
-  shp->set_frame(frame);
+  if (shp->is_workbench())
+  {
+    Shape_geom_delta::Geom_change ch;
+    ch.id                = shp->get_id();
+    ch.before_geom       = shp->Shape();
+    ch.after_geom        = shp->Shape();
+    ch.before_frame      = shp->get_frame();
+    ch.after_frame       = shp->get_frame();
+    ch.has_local_frame   = true;
+    ch.before_local_frame = shp->get_local_frame();
+    ch.after_local_frame  = frame;
+    changes.push_back(ch);
+    shp->set_local_frame(frame);
+  }
+  else
+  {
+    changes.push_back(Shape_geom_delta::Geom_change{shp->get_id(), shp->Shape(), shp->Shape(), shp->get_frame(), frame});
+    shp->set_frame(frame);
+  }
+
   push_undo_delta(std::make_unique<Shape_geom_delta>(std::move(changes)));
 }
 
@@ -4237,7 +4266,8 @@ void Occt_view::on_mode()
       case Mode::Scale:                   set_shp_selection_mode(TopAbs_SHAPE);     break;
       case Mode::Workbench_shaft_align:
       case Mode::Design_shaft_align:            set_shp_selection_mode(TopAbs_FACE);      break;
-      case Mode::Shape_set_frame:          set_shp_selection_mode(TopAbs_FACE);      break;
+      case Mode::Shape_set_frame:
+      case Mode::Workbench_set_frame:      set_shp_selection_mode(TopAbs_FACE);      break;
       case Mode::Shape_cross_section:     set_shp_selection_mode(TopAbs_COMPOUND);  break;
       default:
         if(m_modes_selection_mode_map.count(get_mode()))
@@ -4767,6 +4797,13 @@ std::string Occt_view::to_json() const
       shp_json["material"] = s->Material();
       shp_json["dispMode"] = static_cast<int>(s->get_disp_mode());
       shp_json["frame"]    = ::to_json(gp_Pln(s->get_frame()));
+      {
+        const gp_Ax3& lf = s->get_local_frame();
+        const gp_Ax3  identity;
+        if (!lf.Location().IsEqual(identity.Location(), 1e-12) || !lf.Direction().IsEqual(identity.Direction(), 1e-12) ||
+            !lf.XDirection().IsEqual(identity.XDirection(), 1e-12))
+          shp_json["localFrame"] = ::to_json(gp_Pln(lf));
+      }
       if (s->show_frame_axes() || s->show_frame_plane() || s->show_frame_up())
       {
         json fd;
@@ -4960,6 +4997,9 @@ void Occt_view::load(const std::string& json_str, bool restore_view)
         shp->set_source_id(source_id);
         if (s.contains("frame") && s["frame"].is_object())
           shp->set_frame(from_json_pln(s["frame"]).Position());
+
+        if (s.contains("localFrame") && s["localFrame"].is_object())
+          shp->set_local_frame(from_json_pln(s["localFrame"]).Position());
 
         if (s.contains("frameDisplay") && s["frameDisplay"].is_object())
         {
@@ -5527,6 +5567,7 @@ Mode mode_for_history_restore_(Mode mode)
   case Mode::Workbench_shaft_align:
   case Mode::Design_shaft_align:
   case Mode::Shape_set_frame:
+  case Mode::Workbench_set_frame:
     return GUI::parent_mode_of(mode);
   default:
     return mode;

@@ -32,11 +32,12 @@
   X(Sketch_dim_anno)                                                                                                           \
   X(Shape_cross_section)                                                                                                       \
   X(Workbench_shaft_align)                                                                                                     \
-  X(Shape_set_frame) /* Shape List only: pick face for local frame */                                                          \
+  X(Shape_set_frame) /* Shape List: pick face for local frame */                                                               \
   X(Workbench_inspection) /* Workbench browse/select home; not Mode::Design_inspection */                          \
   X(Design_move)          /* Design CSG placement; bake BREP. Workbench_move is instance pose. */                  \
   X(Design_rotate)        /* Design CSG rotation; bake BREP. Workbench_rotate is instance pose. */                  \
-  X(Design_shaft_align)   /* Design CSG shaft align; bake BREP. Workbench_shaft_align is instance pose. */
+  X(Design_shaft_align)   /* Design CSG shaft align; bake BREP. Workbench_shaft_align is instance pose. */ \
+  X(Workbench_set_frame)  /* Workbench List: pick face for instance local frame (pose unchanged). */
 
 enum class Mode
 {
@@ -134,6 +135,8 @@ bool is_move_mode(const Mode mode);
 bool is_rotate_mode(const Mode mode);
 /// Design or Workbench Align shafts.
 bool is_shaft_align_mode(const Mode mode);
+/// Design or Workbench set-local-frame pick.
+bool is_set_frame_mode(const Mode mode);
 /// Design Inspection or Workbench idle (solid browse / selection-filter digits).
 bool is_shape_browse_mode(const Mode mode);
 

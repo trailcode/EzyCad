@@ -50,7 +50,7 @@ The chrome toolbar is one ImGui window with two regions: **task** switcher (Sket
 
 ### New mode or toolbar command (hotkeys)
 
-When adding a `Mode` to [`mode.h`](../mode.h) (`EZY_MODE_LIST`), a toolbar button, or a one-shot `Command`, update remappable hotkeys in the **same change**. Skip only for modes that must stay toolbar-only (document that choice). `Mode::Shape_set_frame` is Shape List-only (no toolbar button / remappable hotkey). `Mode::Design_inspection`, `Mode::Workbench_inspection`, and the Sketch / Design / Workbench task buttons are toolbar-only (no remappable hotkey).
+When adding a `Mode` to [`mode.h`](../mode.h) (`EZY_MODE_LIST`), a toolbar button, or a one-shot `Command`, update remappable hotkeys in the **same change**. Skip only for modes that must stay toolbar-only (document that choice). `Mode::Shape_set_frame` / `Mode::Workbench_set_frame` are list-only (no toolbar button / remappable hotkey). `Mode::Design_inspection`, `Mode::Workbench_inspection`, and the Sketch / Design / Workbench task buttons are toolbar-only (no remappable hotkey).
 
 | Step | Touch                                                                                                                                                                                                                          |
 | ---- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
@@ -185,16 +185,16 @@ See also [`src/doc/sketch.md`](sketch.md) and [`src/doc/shape.md`](shape.md) for
 
 ### Mouse move (`GUI::on_mouse_pos`)
 
-| `Mode`                                                    | Delegate                                                             |
-| --------------------------------------------------------- | -------------------------------------------------------------------- |
-| `Design_move` / `Workbench_move`                          | `shp_move().move_selected`                                           |
-| `Design_rotate` / `Workbench_rotate`                      | `shp_rotate().rotate_selected`                                       |
-| `Scale`                                                   | `shp_scale().scale_selected`                                         |
-| `Design_shaft_align` / `Workbench_shaft_align`            | `shp_cyl_align().drag_depth` / `drag_twist`                          |
-| `Shape_set_frame`                                         | `options_shape_set_frame_mode_` (Shape List only; no toolbar/hotkey) |
-| `Shape_polar_duplicate`                                   | `shp_polar_dup().move_point`                                         |
-| Sketch tool modes (line, arc, rect, dim, axis, bone, ...) | `curr_sketch().sketch_pt_move`                                       |
-| `Sketch_face_extrude`                                     | `sketch_face_extrude(..., true)`                                     |
+| `Mode`                                                    | Delegate                                                       |
+| --------------------------------------------------------- | -------------------------------------------------------------- |
+| `Design_move` / `Workbench_move`                          | `shp_move().move_selected`                                     |
+| `Design_rotate` / `Workbench_rotate`                      | `shp_rotate().rotate_selected`                                 |
+| `Scale`                                                   | `shp_scale().scale_selected`                                   |
+| `Design_shaft_align` / `Workbench_shaft_align`            | `shp_cyl_align().drag_depth` / `drag_twist`                    |
+| `Shape_set_frame` / `Workbench_set_frame`                 | `options_shape_set_frame_mode_` (list-only; no toolbar/hotkey) |
+| `Shape_polar_duplicate`                                   | `shp_polar_dup().move_point`                                   |
+| Sketch tool modes (line, arc, rect, dim, axis, bone, ...) | `curr_sketch().sketch_pt_move`                                 |
+| `Sketch_face_extrude`                                     | `sketch_face_extrude(..., true)`                               |
 
 Always calls `m_view->on_mouse_move(screen_coords)` first.
 

@@ -164,8 +164,8 @@ This is useful after **Revolve**, **Extrude**, booleans, or imports when you nee
 The **Workbench List** is a second pane for arranging solids in the Workbench task. Open it from **View -> Workbench List**. It is not a second copy of the Shape List: each solid row is a **link** to a Shape List body.
 
 - Adding a shape or group from the Shape List creates Workbench rows that share that body's geometry. Fillet, chamfer, and other Design geometry edits update the Workbench solids. Moving, rotating, or scaling a body in Design does not move its Workbench instances.
-- Each Workbench solid has its own local frame. **Move** / **Rotate** / **Align shafts** in the Workbench task change that instance pose only.
-- The pane matches the Shape List for **Hide all**, visibility, shaded/wireframe, material, rename, groups, drag-to-reparent, and right-click **Zoom to** / **Delete**.
+- Each Workbench solid has its own instance pose and a local tool frame (Show axes / Local move). Right-click **Set from planar face...** / **Set from cylindrical face...** stays in Workbench and does not move the instance.
+- The pane matches the Shape List for **Hide all**, visibility, shaded/wireframe, material, rename, groups, drag-to-reparent, and right-click **Zoom to** / **Delete** / local-frame actions.
 - Deleting a Shape List solid removes Workbench rows that link to it. Deleting a Workbench row does not delete the Design body.
 - The 3D view shows Shape List solids in Sketch and Design, and Workbench solids in the Workbench task (so the two trees do not overlap).
 

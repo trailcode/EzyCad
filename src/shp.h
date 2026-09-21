@@ -61,6 +61,10 @@ public:
   void          set_frame(const gp_Ax3& frame);
   void          transform_frame(const gp_Trsf& transform);
 
+  /// Workbench tool frame in local geom (identity = instance origin). Design unused.
+  const gp_Ax3& get_local_frame() const { return m_local_frame; }
+  void          set_local_frame(const gp_Ax3& frame);
+
   /// World-aligned frame at the shape bounding-box center (same as ctor default).
   static gp_Ax3 default_frame_for(const TopoDS_Shape& shape);
 
@@ -108,6 +112,7 @@ protected:
   Shape_id                m_parent_id{0};
   int                     m_sibling_order{0};
   gp_Ax3                  m_frame;
+  gp_Ax3                  m_local_frame;
   bool                    m_show_frame_axes{false};
   bool                    m_show_frame_plane{false};
   bool                    m_show_frame_up{false};

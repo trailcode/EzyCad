@@ -28,6 +28,17 @@ Transform_axes transform_axes_for(const std::vector<Shp_ptr>& shps, Transform_sp
 
   if (space == Transform_space::Local)
   {
+    if (s->is_workbench())
+    {
+      const gp_Trsf pl  = s->placement_trsf();
+      const gp_Ax3& loc = s->get_local_frame();
+      axes.origin       = loc.Location().Transformed(pl);
+      axes.x            = loc.XDirection().Transformed(pl);
+      axes.y            = loc.YDirection().Transformed(pl);
+      axes.z            = loc.Direction().Transformed(pl);
+      return axes;
+    }
+
     const gp_Ax3& f = s->get_frame();
     axes.origin     = f.Location();
     axes.x          = f.XDirection();

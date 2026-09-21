@@ -1665,6 +1665,10 @@ TEST(Mode_helpers, Design_move_rotate_stay_on_design_task)
   EXPECT_EQ(GUI::parent_mode_of(Mode::Design_shaft_align), Mode::Design_inspection);
   EXPECT_EQ(GUI::parent_mode_of(Mode::Workbench_move), Mode::Workbench_inspection);
   EXPECT_EQ(GUI::parent_mode_of(Mode::Workbench_shaft_align), Mode::Workbench_inspection);
+  EXPECT_EQ(task_of(Mode::Workbench_set_frame), Task::Workbench);
+  EXPECT_TRUE(is_set_frame_mode(Mode::Workbench_set_frame));
+  EXPECT_TRUE(is_workbench_mode(Mode::Workbench_set_frame));
+  EXPECT_EQ(GUI::parent_mode_of(Mode::Workbench_set_frame), Mode::Workbench_inspection);
   EXPECT_EQ(mode_from_string("Move"), Mode::Design_move);
   EXPECT_EQ(mode_from_string("Rotate"), Mode::Design_rotate);
 }
@@ -1781,6 +1785,22 @@ TEST_F(Shp_test, Workbench_cyl_align_uses_instance_placement)
 
   const gp_Pnt after = moving_world.Location().Transformed(world_align);
   EXPECT_NEAR(gp_Lin(fixed_world).Distance(after), 0.0, 1e-6);
+}
+
+TEST_F(Shp_test, Workbench_set_frame_keeps_instance_pose)
+{
+  view().add_cylinder(0, 0, 0, 1.0, 4.0);
+  Shp_ptr src = view().get_shapes().back();
+  ASSERT_TRUE(view().add_to_workbench({src}).is_ok());
+  Shp_ptr inst = view().get_workbench_shapes().back();
+  const gp_Pnt pose0 = inst->get_frame().Location();
+
+  const gp_Ax3 local(gp_Pnt(0.0, 0.0, 1.0), gp_Dir(0.0, 0.0, 1.0), gp_Dir(1.0, 0.0, 0.0));
+  view().set_shape_frame(inst, local);
+
+  EXPECT_TRUE(inst->get_frame().Location().IsEqual(pose0, 1e-9));
+  EXPECT_TRUE(inst->get_local_frame().Location().IsEqual(local.Location(), 1e-9));
+  EXPECT_TRUE(inst->get_local_frame().Direction().IsEqual(local.Direction(), 1e-9));
 }
 
 TEST_F(Shp_test, Design_geom_change_syncs_workbench_link)

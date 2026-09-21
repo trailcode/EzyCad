@@ -153,7 +153,9 @@ public:
   void remove_shape_by_id(Shape_id id);
   /// Replace BREP of an existing shape (identity local transform).
   void set_shape_geom_by_id(Shape_id id, const TopoDS_Shape& geom, const gp_Ax3& frame);
-  /// Frame-only edit with undo (geometry unchanged). Also used by Shape_set_frame.
+  /// Workbench tool-frame restore (pose / placement unchanged).
+  void set_shape_local_frame_by_id(Shape_id id, const gp_Ax3& local_frame);
+  /// Frame-only edit with undo (geometry unchanged). Workbench sets local tool frame.
   void set_shape_frame(const Shp_ptr& shp, const gp_Ax3& frame);
 
   /// Next sibling_order among children of \a parent_id (0 = document root).
