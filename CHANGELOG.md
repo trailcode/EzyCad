@@ -18,6 +18,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Fixed
 
 - **Workbench toolbar**: the tools row no longer repeats the Workbench task icon; idle is the task button only.
+- **Workbench Align shafts**: cylindrical face picking uses Face selection on Workbench instances (same as Design). Insert position uses the instance placement (axis direction was already correct).
 - **Shape List right-click**: the row context menu opens from the whole entry (checkboxes, **M**, tree arrow, name field, and padding), not only from some widgets. Right-click on the name field opens the same menu.
 - **Shape rotate axis**: Choosing X/Y/Z (or view-to-object) before the first drag is kept. Constrained rotation uses the plane perpendicular to that axis when the view faces it. Local space rotates about the assigned frame, not only world XYZ through the bbox.
 - **Shape rotate drag**: View-to-object axis and the constrained axis-vs-view plane are captured on the first mouse sample. Orbit or pan during rotate no longer changes the axis/plane against the original mouse anchor.

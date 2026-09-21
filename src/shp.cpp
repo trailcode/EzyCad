@@ -115,6 +115,9 @@ void Shp::apply_context_shown(bool shown)
 
 void Shp::set_selection_mode(const TopAbs_ShapeEnum mode)
 {
+  if (m_selection_mode == mode)
+    return;
+
   m_selection_mode = mode;
   if (!m_is_group)
     update_display_();

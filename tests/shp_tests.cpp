@@ -11,11 +11,13 @@
 #include <GProp_GProps.hxx>
 #include <TopAbs_ShapeEnum.hxx>
 #include <TopExp_Explorer.hxx>
+#include <TopoDS.hxx>
 #include <TopoDS_Compound.hxx>
 #include <NCollection_List.hxx>
 #include <V3d_View.hxx>
 #include <gp_Ax1.hxx>
 #include <gp_Ax3.hxx>
+#include <gp_Lin.hxx>
 #include <gp_Dir.hxx>
 #include <gp_Pln.hxx>
 #include <gp_Trsf.hxx>
@@ -1735,6 +1737,50 @@ TEST_F(Shp_test, Workbench_move_bakes_instance_frame_only)
 
   const Transform_axes world_axes = transform_axes_for({inst}, Transform_space::World);
   EXPECT_TRUE(world_axes.origin.IsEqual(disp1, 1e-6));
+}
+
+TEST_F(Shp_test, Workbench_cyl_align_uses_instance_placement)
+{
+  view().add_cylinder(0, 0, 0, 1.0, 4.0);
+  Shp_ptr src = view().get_shapes().back();
+  ASSERT_TRUE(view().add_to_workbench({src}).is_ok());
+  ASSERT_TRUE(view().add_to_workbench({src}).is_ok());
+  auto it = view().get_workbench_shapes().begin();
+  Shp_ptr moving = *it++;
+  Shp_ptr fixed  = *it;
+  ASSERT_FALSE(moving.IsNull());
+  ASSERT_FALSE(fixed.IsNull());
+
+  gp_Ax3 placed = moving->get_frame();
+  placed.SetLocation(placed.Location().Translated(gp_Vec(50.0, 0.0, 0.0)));
+  moving->set_frame(placed);
+  moving->SetLocalTransformation(moving->placement_trsf());
+
+  auto first_cyl = [](const TopoDS_Shape& s) -> std::optional<Cyl_face_info>
+  {
+    for (TopExp_Explorer ex(s, TopAbs_FACE); ex.More(); ex.Next())
+      if (std::optional<Cyl_face_info> c = cylinder_from_face(TopoDS::Face(ex.Current())))
+        return c;
+
+    return std::nullopt;
+  };
+
+  const std::optional<Cyl_face_info> moving_local = first_cyl(moving->Shape());
+  const std::optional<Cyl_face_info> fixed_local  = first_cyl(fixed->Shape());
+  ASSERT_TRUE(moving_local.has_value());
+  ASSERT_TRUE(fixed_local.has_value());
+
+  const gp_Ax1 moving_world = moving_local->axis.Transformed(moving->LocalTransformation());
+  const gp_Ax1 fixed_world  = fixed_local->axis.Transformed(fixed->LocalTransformation());
+  const gp_Trsf local_only  = cyl_align_trsf(moving_local->axis, fixed_local->axis, false, 0.0, 0.0);
+  const gp_Trsf world_align = cyl_align_trsf(moving_world, fixed_world, false, 0.0, 0.0);
+
+  // Same linked local geom: local-only align does not close the instance gap.
+  EXPECT_LT(local_only.TranslationPart().Modulus(), 1.0);
+  EXPECT_GT(world_align.TranslationPart().Modulus(), 40.0);
+
+  const gp_Pnt after = moving_world.Location().Transformed(world_align);
+  EXPECT_NEAR(gp_Lin(fixed_world).Distance(after), 0.0, 1e-6);
 }
 
 TEST_F(Shp_test, Design_geom_change_syncs_workbench_link)

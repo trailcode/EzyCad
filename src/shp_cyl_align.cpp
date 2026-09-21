@@ -65,10 +65,13 @@ Status Shp_cyl_align::pick(const ScreenCoords& screen_coords)
   if (!cyl)
     return Status::user_error("Selected face is not cylindrical.");
 
+  // AIS face geom is local BREP. Workbench pose is LocalTransformation (identity on Design).
+  const gp_Ax1 world_axis = cyl->axis.Transformed(shp->LocalTransformation());
+
   if (m_phase == Phase::Pick_moving)
   {
     m_moving_shp    = shp;
-    m_moving_axis   = cyl->axis;
+    m_moving_axis   = world_axis;
     m_moving_radius = cyl->radius;
     m_phase         = Phase::Pick_fixed;
     gui().show_message("Pick the fixed cylindrical face (hole or shaft).");
@@ -80,7 +83,7 @@ Status Shp_cyl_align::pick(const ScreenCoords& screen_coords)
     return Status::user_error("Pick a cylindrical face on a different shape.");
 
   m_fixed_shp    = shp;
-  m_fixed_axis   = cyl->axis;
+  m_fixed_axis   = world_axis;
   m_fixed_radius = cyl->radius;
 
   if (std::abs(m_moving_radius - m_fixed_radius) > Precision::Confusion())

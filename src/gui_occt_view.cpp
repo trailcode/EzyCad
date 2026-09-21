@@ -4070,16 +4070,20 @@ void Occt_view::set_shp_selection_mode(const TopAbs_ShapeEnum selection_mode)
 {
   m_modes_selection_mode_map[get_mode()] = selection_mode;
 
-  if (m_shp_selection_mode == selection_mode)
-    return;
+  if (m_shp_selection_mode != selection_mode)
+  {
+    m_shp_selection_mode  = selection_mode;
+    const std::size_t idx = static_cast<std::size_t>(selection_mode);
+    EZY_ASSERT(idx < c_names_TopAbs_ShapeEnum.size());
+    m_gui.log_message(std::string("Selection mode: ") + std::string(c_names_TopAbs_ShapeEnum[idx]));
+  }
 
-  m_shp_selection_mode  = selection_mode;
-  const std::size_t idx = static_cast<std::size_t>(selection_mode);
-  EZY_ASSERT(idx < c_names_TopAbs_ShapeEnum.size());
-  m_gui.log_message(std::string("Selection mode: ") + std::string(c_names_TopAbs_ShapeEnum[idx]));
-
-  for (auto& shp : m_shps)
-    shp->set_selection_mode(selection_mode);
+  // Apply to the on-screen store even when the document filter is unchanged
+  // (Design FACE then Workbench Align shafts still needs FACE on instances).
+  std::list<Shp_ptr>& store = is_workbench_mode(get_mode()) ? m_wbk_shps : m_shps;
+  for (auto& shp : store)
+    if (!shp.IsNull() && !shp->is_group())
+      shp->set_selection_mode(selection_mode);
 }
 
 // Material related
