@@ -663,6 +663,55 @@ TEST_F(Shp_test, Cut_box_from_box)
   EXPECT_NEAR(volume_of(view().get_shapes().back()->Shape()), 500.0, 1e-3);
 }
 
+TEST_F(Shp_test, Cut_keeps_object_id_and_workbench_links)
+{
+  view().add_box(0, 0, 0, 10, 10, 10);
+  view().add_box(0, 0, 0, 5, 10, 10);
+  Shp_ptr        object    = *view().get_shapes().begin();
+  Shp_ptr        tool      = view().get_shapes().back();
+  const Shape_id object_id = object->get_id();
+  ASSERT_TRUE(view().add_to_workbench({object}).is_ok());
+  ASSERT_TRUE(view().add_to_workbench({object}).is_ok());
+  ASSERT_TRUE(view().add_to_workbench({tool}).is_ok());
+  ASSERT_EQ(view().get_workbench_shapes().size(), 3u);
+
+  std::vector<Shp_ptr> to_select(view().get_shapes().begin(), view().get_shapes().end());
+  select_shapes(view(), to_select);
+  Status st = view().shp_cut().selected_cut();
+  ASSERT_TRUE(st.is_ok()) << st.message();
+
+  ASSERT_EQ(view().get_shapes().size(), 1u);
+  EXPECT_EQ(view().get_shapes().back()->get_id(), object_id);
+  ASSERT_EQ(view().get_workbench_shapes().size(), 2u);
+  for (const Shp_ptr& inst : view().get_workbench_shapes())
+  {
+    EXPECT_EQ(inst->get_source_id(), object_id);
+    EXPECT_NEAR(volume_of(inst->Shape()), 500.0, 1e-3);
+  }
+
+  EXPECT_TRUE(view().undo());
+  ASSERT_EQ(view().get_shapes().size(), 2u);
+  Shp_ptr restored;
+  for (const Shp_ptr& s : view().get_shapes())
+    if (s->get_id() == object_id)
+      restored = s;
+
+  ASSERT_FALSE(restored.IsNull());
+  EXPECT_NEAR(volume_of(restored->Shape()), 1000.0, 1e-3);
+  ASSERT_EQ(view().get_workbench_shapes().size(), 2u);
+  for (const Shp_ptr& inst : view().get_workbench_shapes())
+  {
+    EXPECT_EQ(inst->get_source_id(), object_id);
+    EXPECT_NEAR(volume_of(inst->Shape()), 1000.0, 1e-3);
+  }
+
+  EXPECT_TRUE(view().redo());
+  ASSERT_EQ(view().get_shapes().size(), 1u);
+  EXPECT_EQ(view().get_shapes().back()->get_id(), object_id);
+  ASSERT_EQ(view().get_workbench_shapes().size(), 2u);
+  EXPECT_NEAR(volume_of(view().get_workbench_shapes().back()->Shape()), 500.0, 1e-3);
+}
+
 TEST_F(Shp_test, Common_overlapping_boxes)
 {
   view().add_box(0, 0, 0, 10, 10, 10);
@@ -1650,6 +1699,8 @@ TEST(Mode_helpers, Design_move_rotate_stay_on_design_task)
   EXPECT_EQ(task_of(Mode::Design_rotate), Task::Design);
   EXPECT_EQ(task_of(Mode::Design_shaft_align), Task::Design);
   EXPECT_EQ(task_of(Mode::Scale), Task::Design);
+  EXPECT_EQ(task_of(Mode::Sketch_face_extrude), Task::Sketch);
+  EXPECT_EQ(GUI::parent_mode_of(Mode::Sketch_face_extrude), Mode::Sketch_inspection);
   EXPECT_EQ(task_of(Mode::Workbench_move), Task::Workbench);
   EXPECT_EQ(task_of(Mode::Workbench_rotate), Task::Workbench);
   EXPECT_EQ(task_of(Mode::Workbench_shaft_align), Task::Workbench);

@@ -201,10 +201,10 @@ void GUI::initialize_toolbar_()
       {load_texture("res/icons/Sketcher_CreateSlot.png"),             false, "Add slot",                          Mode::Sketch_add_slot,                 Task::Sketch},
       {load_texture("res/icons/Sketcher_CreateBone.png"),             false, "Add bone",                          Mode::Sketch_add_bone,                 Task::Sketch},
       {load_texture("res/icons/TechDraw_LengthDimension.png"),        false, "Length dimension",                  Mode::Sketch_dim_anno,                 Task::Sketch},
+      {load_texture("res/icons/Design456_Extrude.png"),               false, "Extrude sketch face",               Mode::Sketch_face_extrude,              Task::Sketch},
       // Design
       {load_texture("res/icons/User.png"),                            true,  "Inspection mode",                   Mode::Design_inspection,                           Task::Design},
       {load_texture("res/icons/Macro_FaceToSketch_48.png"),           false, "Create a sketch from planar face",  Mode::Sketch_from_planar_face,          Task::Design},
-      {load_texture("res/icons/Design456_Extrude.png"),               false, "Extrude sketch face",               Mode::Sketch_face_extrude,              Task::Design},
       {load_texture("res/icons/Assembly_AxialMove.png"),              false, "Shape move",                        Mode::Design_move,                      Task::Design},
       {load_texture("res/icons/Draft_Rotate.png"),                    false, "Shape rotate",                      Mode::Design_rotate,                    Task::Design},
       {load_texture("res/icons/Part_Scale.png"),                      false, "Shape Scale",                       Mode::Scale,                           Task::Design},

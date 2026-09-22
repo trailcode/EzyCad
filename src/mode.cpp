@@ -120,6 +120,7 @@ Task task_of(Mode mode)
   case Mode::Sketch_add_bone:
   case Mode::Sketch_operation_axis:
   case Mode::Sketch_dim_anno:
+  case Mode::Sketch_face_extrude:
     return Task::Sketch;
 
   default:

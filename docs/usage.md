@@ -236,8 +236,8 @@ Press <kbd>Esc</kbd> to cancel the current action or step back to a broader mode
 
 - **If something is in progress:** <kbd>Esc</kbd> cancels it and discards the change. Examples: cancel a line you are drawing, revert an unconfirmed [move](#shape-move-tool-g)/[rotate](#shape-rotate-tool-r)/[scale](#shape-scale-tool-s), cancel [extrude](#extrude-sketch-face-tool-e) preview, clear the distance or angle input dialog.
 - **If nothing is in progress:** <kbd>Esc</kbd> steps the application to the **parent mode** (one level up):
-  - From a **sketch tool** (e.g. Add line, Add circle, Operation axis) -> **Sketch inspection mode**.
-  - From **Sketch inspection**, **Design** tools ([Move](#shape-move-tool-g), [Rotate](#shape-rotate-tool-r), [Align shafts](#align-shafts-tool-j), [Extrude](#extrude-sketch-face-tool-e), [Scale](#shape-scale-tool-s), [Chamfer](#other-feature-operations) (<kbd>C</kbd>), [Fillet](#other-feature-operations) (<kbd>F</kbd>), [Polar duplicate](#shape-polar-duplicate-tool), [Create sketch from face](usage-sketch.md#create-sketch-from-planar-face-tool)), or Design **Inspection** -> **Design inspection**.
+  - From a **sketch tool** (e.g. Add line, Add circle, Operation axis, [Extrude](#extrude-sketch-face-tool-e)) -> **Sketch inspection mode**.
+  - From **Sketch inspection**, **Design** tools ([Move](#shape-move-tool-g), [Rotate](#shape-rotate-tool-r), [Align shafts](#align-shafts-tool-j), [Scale](#shape-scale-tool-s), [Chamfer](#other-feature-operations) (<kbd>C</kbd>), [Fillet](#other-feature-operations) (<kbd>F</kbd>), [Polar duplicate](#shape-polar-duplicate-tool), [Create sketch from face](usage-sketch.md#create-sketch-from-planar-face-tool)), or Design **Inspection** -> **Design inspection**.
   - From a **Workbench** tool ([Move](#shape-move-tool-g), [Rotate](#shape-rotate-tool-r), [Align shafts](#align-shafts-tool-j)) -> **Workbench** idle (not Design inspection). Use the task buttons to jump between Sketch, Design, and Workbench.
 
 So repeated <kbd>Esc</kbd> from a sketch drawing tool first cancels the current element, then returns to Sketch inspection, then to Design inspection. Workbench tools step back to Workbench idle.
@@ -974,9 +974,9 @@ Contributors should follow **[ezycad_code_style.md](ezycad_code_style.md)** for 
 - ![Sketcher_CreateSlot](res/icons/Sketcher_CreateSlot.png) - Add slot
 - ![Sketcher_CreateBone](res/icons/Sketcher_CreateBone.png) - Add bone (<kbd>Shift</kbd>+<kbd>U</kbd>)
 - ![TechDraw_LengthDimension](res/icons/TechDraw_LengthDimension.png) - Dimension tool (<kbd>D</kbd>)
+- ![Design456_Extrude](res/icons/Design456_Extrude.png) - Extrude sketch face (<kbd>E</kbd>)
 
 ### 3D Operations
-- ![Design456_Extrude](res/icons/Design456_Extrude.png) - Extrude sketch face (<kbd>E</kbd>)
 - ![PartDesign_Chamfer](res/icons/PartDesign_Chamfer.png) - Chamfer (<kbd>C</kbd>)
 - ![PartDesign_Fillet](res/icons/PartDesign_Fillet.png) - Fillet (<kbd>F</kbd>)
 - ![Draft_PolarArray](res/icons/Draft_PolarArray.png) - Shape polar duplicate

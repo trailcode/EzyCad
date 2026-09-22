@@ -1943,7 +1943,7 @@ void Occt_view::insert_shape_rec(const Shape_rec& rec)
     sync_workbench_links(rec.id);
 }
 
-void Occt_view::remove_shape_by_id(Shape_id id)
+void Occt_view::remove_shape_by_id(Shape_id id, bool cascade_workbench_links)
 {
   auto remove_from = [&](std::list<Shp_ptr>& store, bool design)
   {
@@ -1966,13 +1966,16 @@ void Occt_view::remove_shape_by_id(Shape_id id)
       if (design)
       {
         ensure_current_group_valid_();
-        std::vector<Shape_id> dead;
-        for (const Shp_ptr& w : m_wbk_shps)
-          if (!w.IsNull() && w->get_source_id() == id)
-            dead.push_back(w->get_id());
+        if (cascade_workbench_links)
+        {
+          std::vector<Shape_id> dead;
+          for (const Shp_ptr& w : m_wbk_shps)
+            if (!w.IsNull() && w->get_source_id() == id)
+              dead.push_back(w->get_id());
 
-        for (Shape_id wid : dead)
-          remove_shape_by_id(wid);
+          for (Shape_id wid : dead)
+            remove_shape_by_id(wid, false);
+        }
       }
       else if (m_current_wbk_group_id == id)
         m_current_wbk_group_id = 0;
@@ -2803,7 +2806,7 @@ void Occt_view::remove_selected_length_dimensions_from_sketches_()
         break;
 }
 
-void Occt_view::delete_(std::vector<AIS_Shape_ptr>& to_delete)
+void Occt_view::delete_(std::vector<AIS_Shape_ptr>& to_delete, const std::vector<Shape_id>& keep_workbench_sources)
 {
   for (AIS_Shape_ptr& shp : to_delete)
     try_remove_sketch_permanent_node_mark(shp.get());
@@ -2812,9 +2815,14 @@ void Occt_view::delete_(std::vector<AIS_Shape_ptr>& to_delete)
     if (auto wire = dynamic_cast<Sketch_AIS_edge*>(shp.get()); wire)
       wire->owner_sketch.remove_edge(*wire);
 
+  auto keep_links = [&](Shape_id id)
+  {
+    return std::find(keep_workbench_sources.begin(), keep_workbench_sources.end(), id) != keep_workbench_sources.end();
+  };
+
   std::unordered_set<Shape_id> deleted_design_ids;
   for (const AIS_Shape_ptr& obj : to_delete)
-    if (Shp_ptr s = Shp_ptr::DownCast(obj); !s.IsNull() && !s->is_workbench())
+    if (Shp_ptr s = Shp_ptr::DownCast(obj); !s.IsNull() && !s->is_workbench() && !keep_links(s->get_id()))
       deleted_design_ids.insert(s->get_id());
 
   for (const Shp_ptr& w : m_wbk_shps)

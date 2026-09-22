@@ -24,7 +24,10 @@ protected:
   void                 assign_result_parent_(Shp_ptr& result, const std::vector<Shp_ptr>& operands);
   [[nodiscard]] Status ensure_operation_shps_();
   [[nodiscard]] Status ensure_operation_multi_shps_();
-  void                 delete_operation_shps_();
+  /// \a keep_workbench_sources: Design ids whose workbench links must survive (the id is reused by the result).
+  void                 delete_operation_shps_(const std::vector<Shape_id>& keep_workbench_sources = {});
+  /// First operand's Shape_id, frame, and list slot stay on \a result. Other operands are deleted.
+  void                 replace_operands_keeping_first_id_(Shp_ptr& result, const std::string& name);
   void                 operation_shps_finalize_();
   void                 operation_shps_cancel_();
   /// Seed operands (e.g. selection snapshot at mode enter). Empty clears.

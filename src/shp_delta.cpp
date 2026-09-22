@@ -1,12 +1,24 @@
 #include "shp_delta.h"
 
+#include <unordered_set>
+
 #include "gui_occt_view.h"
 
 namespace
 {
-void remove_recs_(Occt_view& view, const std::vector<Shape_rec>& recs);
+void remove_recs_(Occt_view& view, const std::vector<Shape_rec>& recs, const std::unordered_set<Shape_id>& keep_links);
 void insert_recs_(Occt_view& view, const std::vector<Shape_rec>& recs);
 void apply_links_(Occt_view& view, const std::vector<Shape_tree_delta::Link_change>& links, bool forward);
+
+std::unordered_set<Shape_id> design_ids_(const std::vector<Shape_rec>& recs)
+{
+  std::unordered_set<Shape_id> ids;
+  for (const Shape_rec& rec : recs)
+    if (!rec.is_workbench)
+      ids.insert(rec.id);
+
+  return ids;
+}
 } // namespace
 
 Shape_rec capture_shape_rec(const Shp& shp)
@@ -37,7 +49,7 @@ Shape_add_delta::Shape_add_delta(std::vector<Shape_rec> added)
 
 void Shape_add_delta::apply_forward(Occt_view& view) { insert_recs_(view, m_added); }
 
-void Shape_add_delta::apply_reverse(Occt_view& view) { remove_recs_(view, m_added); }
+void Shape_add_delta::apply_reverse(Occt_view& view) { remove_recs_(view, m_added, {}); }
 
 std::unique_ptr<Delta> Shape_add_delta::clone() const { return std::make_unique<Shape_add_delta>(m_added); }
 
@@ -46,7 +58,7 @@ Shape_remove_delta::Shape_remove_delta(std::vector<Shape_rec> removed)
 {
 }
 
-void Shape_remove_delta::apply_forward(Occt_view& view) { remove_recs_(view, m_removed); }
+void Shape_remove_delta::apply_forward(Occt_view& view) { remove_recs_(view, m_removed, {}); }
 
 void Shape_remove_delta::apply_reverse(Occt_view& view) { insert_recs_(view, m_removed); }
 
@@ -87,13 +99,15 @@ Shape_replace_delta::Shape_replace_delta(std::vector<Shape_rec> removed, std::ve
 
 void Shape_replace_delta::apply_forward(Occt_view& view)
 {
-  remove_recs_(view, m_removed);
+  // Ids that return in m_added are the same part (cut/fuse/common/fillet). Do not drop their workbench links
+  // in the gap before insert; insert_shape_rec syncs geometry.
+  remove_recs_(view, m_removed, design_ids_(m_added));
   insert_recs_(view, m_added);
 }
 
 void Shape_replace_delta::apply_reverse(Occt_view& view)
 {
-  remove_recs_(view, m_added);
+  remove_recs_(view, m_added, design_ids_(m_removed));
   insert_recs_(view, m_removed);
 }
 
@@ -110,14 +124,14 @@ void Shape_tree_delta::apply_forward(Occt_view& view)
 {
   insert_recs_(view, m_added);
   apply_links_(view, m_links, true);
-  remove_recs_(view, m_removed);
+  remove_recs_(view, m_removed, {});
 }
 
 void Shape_tree_delta::apply_reverse(Occt_view& view)
 {
   insert_recs_(view, m_removed);
   apply_links_(view, m_links, false);
-  remove_recs_(view, m_added);
+  remove_recs_(view, m_added, {});
 }
 
 std::unique_ptr<Delta> Shape_tree_delta::clone() const
@@ -127,10 +141,10 @@ std::unique_ptr<Delta> Shape_tree_delta::clone() const
 
 namespace
 {
-void remove_recs_(Occt_view& view, const std::vector<Shape_rec>& recs)
+void remove_recs_(Occt_view& view, const std::vector<Shape_rec>& recs, const std::unordered_set<Shape_id>& keep_links)
 {
   for (const Shape_rec& rec : recs)
-    view.remove_shape_by_id(rec.id);
+    view.remove_shape_by_id(rec.id, keep_links.find(rec.id) == keep_links.end());
 }
 
 void insert_recs_(Occt_view& view, const std::vector<Shape_rec>& recs)

@@ -150,7 +150,8 @@ public:
   /// Insert a shape from an undo snapshot (keeps \a rec.id). Displays solids in the viewer (not groups).
   void insert_shape_rec(const Shape_rec& rec);
   /// Remove a shape by stable id (viewer + document list).
-  void remove_shape_by_id(Shape_id id);
+  /// \a cascade_workbench_links drops Design-linked workbench copies. Pass false when this id is replaced in the same edit.
+  void remove_shape_by_id(Shape_id id, bool cascade_workbench_links = true);
   /// Replace BREP of an existing shape (identity local transform).
   void set_shape_geom_by_id(Shape_id id, const TopoDS_Shape& geom, const gp_Ax3& frame);
   /// Workbench tool-frame restore (pose / placement unchanged).
@@ -230,7 +231,8 @@ public:
   // Delete related.
   void delete_selected();
   void delete_shapes(std::vector<AIS_Shape_ptr> to_delete);
-  void delete_(std::vector<AIS_Shape_ptr>& to_delete);
+  /// \a keep_workbench_sources are Design ids replaced in this delete (links stay; caller syncs them).
+  void delete_(std::vector<AIS_Shape_ptr>& to_delete, const std::vector<Shape_id>& keep_workbench_sources = {});
 
   /// Copy selected solids / current-group subtree into the in-app shape clipboard.
   [[nodiscard]] Status copy_selected_shapes();

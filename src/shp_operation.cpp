@@ -66,14 +66,32 @@ void Shp_operation_base::set_operation_shps_(std::vector<Shp_ptr> shps) { m_shps
   return Status::ok();
 }
 
-void Shp_operation_base::delete_operation_shps_()
+void Shp_operation_base::delete_operation_shps_(const std::vector<Shape_id>& keep_workbench_sources)
 {
   std::vector<AIS_Shape_ptr> to_delete;
   for (Shp_ptr& shp : m_shps)
     to_delete.push_back(shp);
 
-  m_view.delete_(to_delete);
+  m_view.delete_(to_delete, keep_workbench_sources);
   m_shps.clear();
+}
+
+void Shp_operation_base::replace_operands_keeping_first_id_(Shp_ptr& result, const std::string& name)
+{
+  if (result.IsNull() || m_shps.empty() || m_shps.front().IsNull())
+    return;
+
+  Shp_ptr survivor = m_shps.front();
+  result->set_name(name);
+  result->set_id(survivor->get_id());
+  result->set_frame(survivor->get_frame());
+  result->set_parent_id(survivor->get_parent_id());
+  result->set_sibling_order(survivor->get_sibling_order());
+
+  delete_operation_shps_({survivor->get_id()});
+  add_shp_(result, false);
+  copy_shape_material_from_(result, survivor);
+  view().sync_workbench_links(result->get_id());
 }
 
 void Shp_operation_base::operation_shps_finalize_()

@@ -154,7 +154,7 @@ Mode GUI::parent_mode_of(Mode mode)
       {Mode::Design_shaft_align,              Mode::Design_inspection},
       {Mode::Sketch_inspection,          Mode::Design_inspection},
       {Mode::Sketch_from_planar_face,         Mode::Design_inspection},
-      {Mode::Sketch_face_extrude,             Mode::Design_inspection},
+      {Mode::Sketch_face_extrude,             Mode::Sketch_inspection},
       {Mode::Shape_chamfer,                   Mode::Design_inspection},
       {Mode::Shape_fillet,                    Mode::Design_inspection},
       {Mode::Shape_polar_duplicate,           Mode::Design_inspection},
