@@ -1787,6 +1787,22 @@ TEST_F(Shp_test, Workbench_cyl_align_uses_instance_placement)
   EXPECT_NEAR(gp_Lin(fixed_world).Distance(after), 0.0, 1e-6);
 }
 
+TEST(Shp_cyl_align, Prefers_smaller_rotation)
+{
+  const gp_Ax1 fixed(gp_Pnt(0.0, 0.0, 0.0), gp_Dir(0.0, 0.0, 1.0));
+  const gp_Ax1 anti(gp_Pnt(8.0, 0.0, 0.0), gp_Dir(0.0, 0.0, -1.0));
+
+  const gp_Trsf keep = cyl_align_trsf(anti, fixed, false, 0.0, 0.0);
+  EXPECT_GT(gp_Vec(0.0, 0.0, 1.0).Transformed(keep).Z(), 0.9);
+
+  const gp_Trsf flipped = cyl_align_trsf(anti, fixed, true, 0.0, 0.0);
+  EXPECT_LT(gp_Vec(0.0, 0.0, 1.0).Transformed(flipped).Z(), -0.9);
+
+  const gp_Ax1  same(gp_Pnt(8.0, 0.0, 0.0), gp_Dir(0.0, 0.0, 1.0));
+  const gp_Trsf par = cyl_align_trsf(same, fixed, false, 0.0, 0.0);
+  EXPECT_GT(gp_Vec(0.0, 0.0, 1.0).Transformed(par).Z(), 0.9);
+}
+
 TEST_F(Shp_test, Workbench_set_frame_keeps_instance_pose)
 {
   view().add_cylinder(0, 0, 0, 1.0, 4.0);

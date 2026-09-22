@@ -512,14 +512,26 @@ Place a shaft into a hole (or the reverse) by aligning two cylindrical faces, sl
 
 **Features:**
 
-|                      |                                                                                                    |
-| -------------------: | -------------------------------------------------------------------------------------------------- |
-| **Face picks**       | Click a cylindrical face on the shape to move, then a cylindrical face on the fixed shape.         |
-| **Coaxial align**    | The moving shape snaps so the two cylinder axes coincide.                                          |
-| **Axial depth drag** | After align, drag to set how far the moving shape slides along the shared axis.                    |
-| **Clock rotation**   | Options **Clock rotation** (default off): after depth, rotate about the shared axis to mesh teeth. |
-| **Flip direction**   | Options **Flip direction** reverses which way the moving axis points along the fixed axis.         |
-| **Radius mismatch**  | Placement is still allowed when radii differ (clearance / press fits); a log warning is recorded.  |
+|                      |                                                                                                                                                                                                                         |
+| -------------------: | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Face picks**       | Click a cylindrical face on the shape to move, then a cylindrical face on the fixed shape.                                                                                                                              |
+| **Coaxial align**    | The moving shape snaps so the two cylinder axes coincide.                                                                                                                                                               |
+| **Axial depth drag** | After align, drag to set how far the moving shape slides along the shared axis.                                                                                                                                         |
+| **Clock rotation**   | Options **Clock rotation** (default off): after depth, rotate about the shared axis to mesh teeth. See [Align shafts option: Clock rotation](#align-shafts-option-clock-rotation).                                      |
+| **Flip direction**   | Default keeps the smaller rotation (cylinder faces have no preferred +/−). Options **Flip direction** forces the opposite sense (180°). See [Align shafts option: Flip direction](#align-shafts-option-flip-direction). |
+| **Radius mismatch**  | Placement is still allowed when radii differ (clearance / press fits); a log warning is recorded.                                                                                                                       |
+
+While Align shafts is active, Options shows **Flip direction** and **Clock rotation**. Each row has a small **?** button: hover for a short summary, click to open the matching section on Read the Docs.
+
+(align-shafts-option-flip-direction)=
+##### Align shafts option: Flip direction
+
+Cylinder faces have no preferred +/− along the axis, so the default align keeps the **smaller** rotation. Check **Flip direction** to force the opposite sense (180°)—useful when you want to insert from the other side.
+
+(align-shafts-option-clock-rotation)=
+##### Align shafts option: Clock rotation
+
+When **Clock rotation** is on (default off), after you set insert depth you can rotate the moving body about the shared axis (splines, keyways, tooth meshing). Use <kbd>left mouse button</kbd> or <kbd>Shift</kbd>+<kbd>Tab</kbd> to lock depth and enter clocking; drag or type an angle. With **Clock rotation** off, LMB finalizes after depth. <kbd>Enter</kbd> during the depth phase always finalizes immediately without clocking.
 
 **How to Use:**
 
@@ -533,7 +545,7 @@ Place a shaft into a hole (or the reverse) by aligning two cylindrical faces, sl
 **Tips:**
 
 - The first face you pick is the body that moves. To move the hole body onto the shaft, pick the hole face first.
-- Use **Flip direction** in Options if the shaft points the wrong way after align.
+- Use **Flip direction** in Options if you want the moving part turned 180° along the axis (insert from the other side).
 - Pick cylindrical faces (root / major diameter or smooth lands), not spline tooth flanks.
 - This tool only places solids; use [Cut](#boolean-operations) afterward if you need a boolean.
 

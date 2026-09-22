@@ -729,9 +729,19 @@ void GUI::options_shape_shaft_align_mode_()
   if (ImGui::Checkbox("Flip direction", &opts.flip_direction))
     m_view->shp_cyl_align().apply_preview();
 
+  ImGui::SameLine(0.0f, ImGui::GetStyle().ItemInnerSpacing.x);
+  GUI_DOC_HELP_("Default keeps the smaller axis rotation. When on, forces the opposite sense (180 deg) so you can "
+                "insert from the other side. Click ? to open the user guide.",
+                doc_urls::k_align_shafts_flip_direction);
+
   bool clock_rotation = opts.clock_rotation;
   if (ImGui::Checkbox("Clock rotation", &clock_rotation))
     m_view->shp_cyl_align().set_clock_rotation_enabled(clock_rotation);
+
+  ImGui::SameLine(0.0f, ImGui::GetStyle().ItemInnerSpacing.x);
+  GUI_DOC_HELP_("When on (default off), after depth you can rotate about the shared axis to mesh teeth. "
+                "LMB or Shift+Tab enters clocking; Enter during depth skips it. Click ? to open the user guide.",
+                doc_urls::k_align_shafts_clock_rotation);
 
   ImGui::Separator();
   options_orthographic_projection_();

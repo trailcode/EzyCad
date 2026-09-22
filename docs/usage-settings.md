@@ -110,6 +110,7 @@ Under **Material**:
 - Document preset for new solids that do not inherit from a clicked shape (toolbar **Box**, **polar duplicate** output, and similar). To change material on an existing solid, use the [Shape List](usage.md#shape-list).
 
 - **Move / rotate / scale**: **Local** (default) or **World** axis space. Local uses the first selected solid's frame (origin and X/Y/Z; same triad as Shape List **Show axes**). World uses global XYZ at that solid's bounding-box center. Persisted as **`gui.transform_space`**. Rotate also has view-to-object / X / Y / Z. See [Move](usage.md#shape-move-tool-g), [Rotate](usage.md#shape-rotate-tool-r), and [Scale](usage.md#shape-scale-tool).
+- **Align shafts**: **Flip direction** ([usage.md#align-shafts-option-flip-direction](usage.md#align-shafts-option-flip-direction)) and **Clock rotation** ([usage.md#align-shafts-option-clock-rotation](usage.md#align-shafts-option-clock-rotation)); each has a **?** link. See [Align shafts](usage.md#align-shafts-tool-j).
 
 For other non-sketch Options content, see the matching tool section in the usage guide. In particular, **Shape cross-section** provides local **XY/XZ/YZ**, **Invert normal**, **Hide back side**, **Show section outline**, a bbox-ranged **Offset** slider (Ctrl+click to type), **Clip** (half-space cut, replaces selection), **Cross section sketch** (new sketch from section outline), and automatic preview updates when the selection changes; see [Shape cross-section tool](usage.md#shape-cross-section-tool).
 

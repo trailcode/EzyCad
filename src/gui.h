@@ -256,6 +256,8 @@ inline constexpr const char* k_usage_settings_options       = "https://ezycad.re
 inline constexpr const char* k_occt_view                    = "https://ezycad.readthedocs.io/en/latest/usage-occt-view.html";
 inline constexpr const char* k_startup_project              = "https://ezycad.readthedocs.io/en/latest/usage-settings.html#startup-project";
 inline constexpr const char* k_extrude_sketch_face          = "https://ezycad.readthedocs.io/en/latest/usage.html#extrude-sketch-face-tool-e";
+inline constexpr const char* k_align_shafts_flip_direction  = "https://ezycad.readthedocs.io/en/latest/usage.html#align-shafts-option-flip-direction";
+inline constexpr const char* k_align_shafts_clock_rotation  = "https://ezycad.readthedocs.io/en/latest/usage.html#align-shafts-option-clock-rotation";
 inline constexpr const char* k_hotkeys                      = "https://ezycad.readthedocs.io/en/latest/usage-settings.html#keyboard-shortcuts";
 // clang-format on
 } // namespace doc_urls
