@@ -3,7 +3,7 @@ status: partial
 topic: tasks-workbenches
 depends_on: null
 blocks: [assembly-inspection-mode]
-github_issue: null
+github_issue: 268
 ---
 
 # Tasks / workbenches (toolbar filter)
