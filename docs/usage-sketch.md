@@ -168,9 +168,12 @@ While the **Line Edge** tool is active, the Options panel (under the **Options**
 
 When checked, each new straight edge created with this tool (and with **Add multi-line edge**) gets an automatic **midpoint node** at the center of the segment. That node is a snap target but does not show a **+** marker and is not listed under **Nodes** in the [Sketch List](usage.md#sketch-list).
 
-- Default is **off** (no midpoint nodes on new edges).
-- The same preference is available globally and persistently in **Settings -> Sketch -> Add midpoints to new linear edges** (saved as `gui.add_mid_pt_edges`). The Options checkbox mirrors that setting for the current session while you use line tools and the **Arc Segment** tool.
-- Affects **future** edges from the Line, Multi-line, and Arc Segment tools.
+**Add midpoint nodes** is the same control for every tool that places straight edges, so those tools share this page. A new straight-edge tool uses this section rather than a page of its own. Square, rectangle from two points, rectangle with center point, and slot are built from straight edges, so their Options checkbox and the matching **Settings -> Sketch -> Nodes** rows open here.
+
+- **Line**, **multi-line**, and **arc**: default **off**. Saved as **Add midpoints to line edges** (`gui.add_mid_pt_edges`). The Options checkbox mirrors that row while those tools are active. Older settings files may still have `add_midpoints_to_linear_edges`; that value is read when `add_mid_pt_edges` is absent.
+- **Square** and both **rectangle** tools: default **on**. Saved as **Add midpoints to square/rectangle** (`gui.add_mid_pt_rect_edges`).
+- **Slot**: straight edges only, default **off**. Saved as **Add midpoints to slot edges** (`gui.add_mid_pt_slot_edges`).
+- Affects **future** edges from the tool you are using.
 - Midpoint snapping on **intersection splits** (when a new edge crosses an existing one) is separate topology behavior; see [Automatic splitting on edge intersections](#sketch-snapping).
 
 (line-edge-option-place-from-center)=
@@ -218,7 +221,7 @@ When checked, the **first click** sets the **midpoint** of the new edge (not an 
 - Lines can be used as construction geometry or as part of your final design
 - The line tool works in any sketch plane
 - Multiple line edges can be created in sequence by right-clicking after each line
-- **New straight edges automatically split existing straight edges** at interior intersection points (or when snapping to an existing midpoint, if midpoints were created). This is how you divide a closed profile into multiple faces (for separate extrusions, etc.) — just draw the crossing or connecting line; no extra "split" step is required. The same logic applies to multi-line sequences. Collinear overlaps (including drawing the same segment twice) merge to a single copy of each piece. Midpoint creation for new edges is controlled by **Add midpoint nodes** in the Line Edge Options panel or **Settings > Sketch > Add midpoints to new linear edges** (default off).
+- **New straight edges automatically split existing straight edges** at interior intersection points (or when snapping to an existing midpoint, if midpoints were created). This is how you divide a closed profile into multiple faces (for separate extrusions, etc.) — just draw the crossing or connecting line; no extra "split" step is required. The same logic applies to multi-line sequences. Collinear overlaps (including drawing the same segment twice) merge to a single copy of each piece. Midpoint creation for new edges is controlled by **Add midpoint nodes** in the Line Edge Options panel or **Settings -> Sketch -> Nodes -> Add midpoints to line edges** (default off). Square, rectangle, and slot use the same control with their own defaults; see [Line edge option: Add midpoint nodes](#line-edge-option-add-midpoint-nodes).
 - **Place from center** is useful for symmetric segments (e.g. a divider through the middle of a rectangle) without measuring half-lengths manually.
 
 ## Multi-Line Edge Tool
@@ -429,7 +432,7 @@ While the **Arc Segment** tool is active, the Options panel shows the same **Add
 
 - When **on**, each new arc gets an automatic **midpoint node** at the geometric center of the arc curve (parametric half). That node is a snap target only; it does not show a **+** marker and is not listed under **Nodes** in the [Sketch List](usage.md#sketch-list).
 - When **off** (default), only the three clicked points (start, bulge, end) are stored as nodes.
-- The setting mirrors **Settings -> Sketch -> Add midpoints to new linear edges** (`gui.add_mid_pt_edges`) for the current session.
+- The setting mirrors **Settings -> Sketch -> Nodes -> Add midpoints to line edges** (`gui.add_mid_pt_edges`) for the current session.
 
 **Tips:**
 - The three clicks define a unique circular arc; the second click controls bulge direction (which side of the chord the arc curves toward).
@@ -950,7 +953,7 @@ In both cases, Add node never leaves a **permanent edge** between two clicks the
 
 Each sketch includes a built-in **Origin** (see [Sketch origin](#sketch-origin)) — shown as a permanent **+ inside a circle** on the **active sketch** when enabled in **Sketch properties**.
 
-Nodes you place with **Add node** are treated as **user-placed** points. When the sketch is visible, eligible points can show a red **+** marker in the 3D view so you can see and pick them; you can delete user-placed markers from the selection. Geometry that exists only as automatic **edge midpoints** for snapping is separate (those nodes are not shown the same way; controlled by the **Add midpoints to new linear edges** setting in Settings > Sketch, default off).
+Nodes you place with **Add node** are treated as **user-placed** points. When the sketch is visible, eligible points can show a red **+** marker in the 3D view so you can see and pick them; you can delete user-placed markers from the selection. Geometry that exists only as automatic **edge midpoints** for snapping is separate (those nodes are not shown the same way). Whether a tool adds them is set per tool group under **Settings -> Sketch -> Nodes**; see [Line edge option: Add midpoint nodes](#line-edge-option-add-midpoint-nodes).
 
 ### How to use
 

@@ -237,7 +237,7 @@ Press <kbd>Esc</kbd> to cancel the current action or step back to a broader mode
 - **If something is in progress:** <kbd>Esc</kbd> cancels it and discards the change. Examples: cancel a line you are drawing, revert an unconfirmed [move](#shape-move-tool-g)/[rotate](#shape-rotate-tool-r)/[scale](#shape-scale-tool-s), cancel [extrude](#extrude-sketch-face-tool-e) preview, clear the distance or angle input dialog.
 - **If nothing is in progress:** <kbd>Esc</kbd> steps the application to the **parent mode** (one level up):
   - From a **sketch tool** (e.g. Add line, Add circle, Operation axis, [Extrude](#extrude-sketch-face-tool-e)) -> **Sketch inspection mode**.
-  - From **Sketch inspection**, **Design** tools ([Move](#shape-move-tool-g), [Rotate](#shape-rotate-tool-r), [Align shafts](#align-shafts-tool-j), [Scale](#shape-scale-tool-s), [Chamfer](#other-feature-operations) (<kbd>C</kbd>), [Fillet](#other-feature-operations) (<kbd>F</kbd>), [Polar duplicate](#shape-polar-duplicate-tool), [Create sketch from face](usage-sketch.md#create-sketch-from-planar-face-tool)), or Design **Inspection** -> **Design inspection**.
+  - From **Sketch inspection**, **Design** tools ([Move](#shape-move-tool-g), [Rotate](#shape-rotate-tool-r), [Align shafts](#align-shafts-tool-j), [Scale](#shape-scale-tool-s), [Chamfer](#chamfer-tool-c) (<kbd>C</kbd>), [Fillet](#fillet-tool-f) (<kbd>F</kbd>), [Polar duplicate](#shape-polar-duplicate-tool), [Create sketch from face](usage-sketch.md#create-sketch-from-planar-face-tool)), or Design **Inspection** -> **Design inspection**.
   - From a **Workbench** tool ([Move](#shape-move-tool-g), [Rotate](#shape-rotate-tool-r), [Align shafts](#align-shafts-tool-j)) -> **Workbench** idle (not Design inspection). Use the task buttons to jump between Sketch, Design, and Workbench.
 
 So repeated <kbd>Esc</kbd> from a sketch drawing tool first cancels the current element, then returns to Sketch inspection, then to Design inspection. Workbench tools step back to Workbench idle.
@@ -258,7 +258,7 @@ The typical modeling workflow in EzyCad follows these steps:
 
 4. **Modify 3D Shapes**: Use [3D Modeling tools](#3d-modeling) to transform shapes ([move](#shape-move-tool-g), [rotate](#shape-rotate-tool-r), [scale](#shape-scale-tool-s), [align shafts](#align-shafts-tool-j)) or create patterns ([polar duplicate](#shape-polar-duplicate-tool)).
 
-5. **Apply Feature Operations**: Use [boolean operations](#boolean-operations) (cut, fuse, common) or edge-based feature operations (chamfer with <kbd>C</kbd>, fillet with <kbd>F</kbd>) to refine your 3D model.
+5. **Apply Feature Operations**: Use [boolean operations](#boolean-operations) (cut, fuse, common) or edge-based feature operations ([chamfer](#chamfer-tool-c) with <kbd>C</kbd>, [fillet](#fillet-tool-f) with <kbd>F</kbd>) to refine your 3D model.
 
 **Key Concepts:**
 
@@ -687,10 +687,84 @@ Each solid has a local frame used for orientation. New solids start with a world
 
 If any selected item is not a solid, or Open CASCADE cannot compute a section for a solid, that solid is skipped. If the plane misses some solids but still intersects others, the preview continues for the solids it cuts and the status notes how many were missed. Only when the plane misses the entire selection is the preview cleared. Section edges may be lines, circles, ellipses, B-splines, or other OCCT curves. The status message reports the curve counts.
 
+(chamfer-tool-c)=
+### Chamfer Tool (C)
+
+![Chamfer Tool](res/icons/PartDesign_Chamfer.png)
+
+Bevel edges on a solid. The tool is on the **Design** toolbar. The default hotkey is <kbd>C</kbd> (remappable in **Settings -> Keyboard shortcuts** as **`mode.chamfer`**). The **?** next to the tool name in Options opens this section.
+
+A left click applies the chamfer immediately and replaces that solid. The result keeps the same Shape List identity, material, and local frame, and is named **Chamfered shape**. Workbench links to that body follow the new geometry. <kbd>Ctrl</kbd>+<kbd>Z</kbd> restores the previous solid. If Open CASCADE cannot build the chamfer, the status shows that error and the solid stays as it was.
+
+**Chamfer Mode** chooses which edges the click bevels. Entering the tool, and changing the combo, sets the pick filter to match.
+
+|           |                                                              |
+| --------: | ------------------------------------------------------------ |
+| **Shape** | Default. Click the solid. Every edge of that solid.          |
+| **Face**  | Click a face. Every edge of that face.                       |
+| **Wire**  | Click a wire (a connected chain of edges). Every edge in it. |
+| **Edge**  | Click one edge. That edge only.                              |
+
+The combo lists **Edge**, **Wire**, **Face**, and **Shape**, in that order. **Shape** is the starting mode.
+
+If the click misses a solid, the status says **Click on a shape.** If the click is not on the sub-shape the mode expects, the status says **No chamfer face detected.**, **No chamfer wire detected.**, or **No chamfer edge detected.**
+
+**Chamfer dist** is the bevel size, typed in the current project unit. The suffix beside the field is `in` or `mm` (**File -> Project units**). Changing units remaps the number the same way as other length fields. The value is the diagonal width of the new chamfer face. EzyCad divides it by sqrt(2) and uses that as an equal setback along each face that meets the edge, so a square corner becomes a 45-degree chamfer of that face width. The field starts at 1 model unit, which shows as **0.01** in an inch project and **0.254** in a millimeter project when the dimension scale is the default **100**.
+
+**How to use:**
+
+1. ![PartDesign_Chamfer](res/icons/PartDesign_Chamfer.png) Press <kbd>C</kbd> or click **Chamfer** on the Design toolbar.
+2. In Options, set **Chamfer Mode** and **Chamfer dist**.
+3. Click the solid, or the face, wire, or edge, depending on the mode.
+
+**Shortcuts:**
+
+|                   |                                                |
+| ----------------: | ---------------------------------------------- |
+| <kbd>C</kbd>      | Chamfer mode (default; remappable)             |
+| <kbd>Escape</kbd> | Leave the tool and return to Design inspection |
+
+(fillet-tool-f)=
+### Fillet Tool (F)
+
+![Fillet Tool](res/icons/PartDesign_Fillet.png)
+
+Round edges on a solid. The tool is on the **Design** toolbar. The default hotkey is <kbd>F</kbd> (remappable as **`mode.fillet`**). The **?** next to the tool name in Options opens this section.
+
+A left click applies the fillet immediately and replaces that solid. The result keeps the same Shape List identity, material, and local frame, and is named **Filleted shape**. Workbench links to that body follow the new geometry. <kbd>Ctrl</kbd>+<kbd>Z</kbd> restores the previous solid. If Open CASCADE cannot build the fillet, the status shows that error and the solid stays as it was.
+
+**Fillet Mode** chooses which edges the click rounds. Entering the tool, and changing the combo, sets the pick filter to match.
+
+|           |                                                              |
+| --------: | ------------------------------------------------------------ |
+| **Shape** | Default. Click the solid. Every edge of that solid.          |
+| **Face**  | Click a face. Every edge of that face.                       |
+| **Wire**  | Click a wire (a connected chain of edges). Every edge in it. |
+| **Edge**  | Click one edge. That edge only.                              |
+
+The combo lists **Edge**, **Wire**, **Face**, and **Shape**, in that order. **Shape** is the starting mode.
+
+If the click misses a solid, the status says **Click on a shape.** If the click is not on the sub-shape the mode expects, the status says **No fillet face detected.**, **No fillet wire detected.**, or **No fillet edge detected.**
+
+**Fillet radius** is the round size, typed in the current project unit. The suffix beside the field is `in` or `mm` (**File -> Project units**). Changing units remaps the number the same way as other length fields. The value is the fillet radius applied to each chosen edge. The field starts at 1 model unit, which shows as **0.01** in an inch project and **0.254** in a millimeter project when the dimension scale is the default **100**.
+
+**How to use:**
+
+1. ![PartDesign_Fillet](res/icons/PartDesign_Fillet.png) Press <kbd>F</kbd> or click **Fillet** on the Design toolbar.
+2. In Options, set **Fillet Mode** and **Fillet radius**.
+3. Click the solid, or the face, wire, or edge, depending on the mode.
+
+**Shortcuts:**
+
+|                   |                                                |
+| ----------------: | ---------------------------------------------- |
+| <kbd>F</kbd>      | Fillet mode (default; remappable)              |
+| <kbd>Escape</kbd> | Leave the tool and return to Design inspection |
+
 ### Other Feature Operations
 
-- Create chamfers (<kbd>C</kbd>)
-- Add fillets (<kbd>F</kbd>)
+- [Chamfer](#chamfer-tool-c) (<kbd>C</kbd>)
+- [Fillet](#fillet-tool-f) (<kbd>F</kbd>)
 - [Boolean operations](#boolean-operations) (Cut, Fuse, Common)
 
 ### Boolean Operations
