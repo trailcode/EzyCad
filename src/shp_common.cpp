@@ -21,6 +21,8 @@ Shp_rslt Shp_common::common(std::vector<Shp_ptr> shps)
       return Shp_rslt(Result_status::User_error, "common: null shape");
 
   m_shps = std::move(shps);
+  if (Status st = ensure_design_operands_(); !st.is_ok())
+    return Shp_rslt(st.status(), st.message());
 
   std::vector<Shape_rec> removed;
   removed.reserve(m_shps.size());
@@ -50,10 +52,7 @@ Shp_rslt Shp_common::common(std::vector<Shp_ptr> shps)
 
   // Create a new shape from the common result
   Shp_ptr shp = new Shp(ctx(), result);
-  shp->set_name("Common");
-  assign_result_parent_(shp, m_shps);
-  delete_operation_shps_();
-  add_shp_(shp);
+  replace_operands_keeping_first_id_(shp, "Common");
   view().push_undo_delta(
       std::make_unique<Shape_replace_delta>(std::move(removed), std::vector<Shape_rec>{capture_shape_rec(*shp)}));
   return Shp_rslt(shp);

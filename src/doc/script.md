@@ -106,15 +106,15 @@ Aliases: global `view` == `ezy.view`; `Shp` == `ezy.Shp`; `view.add_sketch` / `f
 
 ### `ezy` (root)
 
-| Method                          | C++ delegate                           |
-| ------------------------------- | -------------------------------------- |
-| `ezy.log(msg)`                  | `GUI::log_message` + console history   |
-| `ezy.msg(text [, kind])`        | `GUI::show_message` (toast + Log)      |
-| `ezy.get_mode()`                | `GUI::get_mode()` -> mode name string  |
-| `ezy.set_mode(name)`            | `GUI::set_mode(mode_from_string(...))` |
-| `ezy.save_occt_view_settings()` | `GUI::save_occt_view_settings()`       |
-| `ezy.occt_view_settings_json()` | `GUI::occt_view_settings_json()`       |
-| `ezy.help()` / global `help()`  | Prints binding summary to console      |
+| Method                          | C++ delegate                                                                                                      |
+| ------------------------------- | ----------------------------------------------------------------------------------------------------------------- |
+| `ezy.log(msg)`                  | `GUI::log_message` + console history                                                                              |
+| `ezy.msg(text [, kind])`        | `GUI::show_message` (toast + Log)                                                                                 |
+| `ezy.get_mode()`                | `GUI::get_mode()` -> mode name string (`c_mode_strs`; Design/Workbench Move are `Design_move` / `Workbench_move`) |
+| `ezy.set_mode(name)`            | `GUI::set_mode(mode_from_string(...))` (`Move` / `Rotate` / `Shape_shaft_align` -> Design)         |
+| `ezy.save_occt_view_settings()` | `GUI::save_occt_view_settings()`                                                                                  |
+| `ezy.occt_view_settings_json()` | `GUI::occt_view_settings_json()`                                                                                  |
+| `ezy.help()` / global `help()`  | Prints binding summary to console                                                                                 |
 
 Optional `kind` for `ezy.msg` is `success`, `info` (default), `constraint`, `warning`, or `error` (`parse_status_msg`).
 

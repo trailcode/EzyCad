@@ -9,12 +9,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- **Task toolbar**: Sketch / Design / Workbench switcher; the tools row shows only the current task. Design has its own Move / Rotate / Scale / Align shafts (bake bodies for CSG). Workbench has Move / Rotate / Align shafts (instance pose). <kbd>G</kbd> / <kbd>R</kbd> / <kbd>J</kbd> stay on the current task; <kbd>S</kbd> enters Design Scale.
+- **Mode names**: Design idle is `Design_inspection` (was `Normal`); Sketch idle is `Sketch_inspection` (was `Sketch_inspection_mode`). `ezy.get_mode()` / `ezy.set_mode` use the new names; `Normal` and `Sketch_inspection_mode` still parse.
 - **Move / rotate / scale space**: Options **Local** (default) or **World**. Local uses the first selected solid's frame (origin and X/Y/Z from **Show axes**). World keeps global XYZ at that solid's bounding-box center. Persisted as **`gui.transform_space`**.
 - **Desktop deps**: MSVC GLFW/GLEW come from **vcpkg** (`vcpkg.json` + toolchain) instead of NuGet; local configure matches CI.
 - **Extrude Both sides**: Options **Both sides** defaults to on (session sticky; not a Settings key).
 
 ### Fixed
 
+- **Workbench task icon**: `res/icons/Workbench_Assembly.png` is included so the task button and the usage guide can load it (Sphinx `-W` failed on the missing image).
+- **Workbench toolbar**: the tools row no longer repeats the Workbench task icon; idle is the task button only.
+- **Workbench Align shafts**: cylindrical face picking uses Face selection on Workbench instances (same as Design). Insert position uses the instance placement (axis direction was already correct).
+- **Workbench set frame**: **Set from planar/cylindrical face** from the Workbench List stays in Workbench and updates the instance tool frame (pose unchanged).
+- **List panes**: selecting or right-clicking a Shape List / Workbench List / Sketch List row switches to that task so the 3D view matches the pane.
+- **Align shafts**: default axial sense is the smaller rotation so a hole whose face parametrization is opposite does not flip the part. **Flip direction** still forces the 180°.
 - **Shape List right-click**: the row context menu opens from the whole entry (checkboxes, **M**, tree arrow, name field, and padding), not only from some widgets. Right-click on the name field opens the same menu.
 - **Shape rotate axis**: Choosing X/Y/Z (or view-to-object) before the first drag is kept. Constrained rotation uses the plane perpendicular to that axis when the view faces it. Local space rotates about the assigned frame, not only world XYZ through the bbox.
 - **Shape rotate drag**: View-to-object axis and the constrained axis-vs-view plane are captured on the first mouse sample. Orbit or pan during rotate no longer changes the axis/plane against the original mouse anchor.
@@ -25,6 +33,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Wasm configure/link**: Detect Emscripten via `EMSCRIPTEN` / `CMAKE_SYSTEM_NAME` (modern emsdk reports Clang). Link the FreeType package from the OCCT wasm install so `wasm-ld` finds `libfreetype.a` instead of bare `-lfreetype`.
 
 ### Added
+
+- **Workbench List**: separate pane of geometry **links** to Shape List solids (own location/rotation). **Add to Workbench** from the Shape List (button, context menu, or drag). Design geometry edits update links; Design move/rotate/scale do not move instances. Workbench Move / Rotate / Align shafts edit the instance frame only. `.ezy` stores `workbench[]` (no BREP). Settings: **`gui.show_workbench_list`**.
 
 - **Status toast kinds**: the bottom-right toast is colored by kind (**success**, **info**, **constraint**, **warning**, **error**) instead of always red. Failed `Status` toasts follow `Result_status` (`User_error` is amber constraint). Scripts: `ezy.msg(text [, kind])`. **Add bone** uses info for the next click, amber for rejected input, green on commit, and red if create fails.
 

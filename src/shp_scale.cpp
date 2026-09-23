@@ -75,7 +75,7 @@ void Shp_scale::preview_scale_()
   scale_trsf.SetScale(*m_center, m_scale_factor);
 
   for (const Shp_ptr& shape : m_shps)
-    shape->SetLocalTransformation(scale_trsf);
+    shape->SetLocalTransformation(scale_trsf * shape->placement_trsf());
 
   redisplay_operation_shps_after_transform_();
 }
@@ -117,7 +117,7 @@ void Shp_scale::reset()
 
   m_scale_factor = 1.0;
 
-  gui().set_mode(Mode::Normal);
+  gui().set_mode(Mode::Design_inspection);
 }
 
 void Shp_scale::cancel()

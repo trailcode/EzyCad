@@ -20,6 +20,7 @@ This guide covers the **Settings** pane (what is on screen), the **View** menu (
 - **Options** - Show or hide the Options panel.
 - **Sketch List** - Show or hide the Sketch List pane.
 - **Shape List** - Show or hide the Shape List pane.
+- **Workbench List** - Show or hide the Workbench List pane.
 - **Log** - Show or hide the Log window.
 - **Lua Console** - Show or hide the interactive Lua prompt and `res/scripts/lua` editors. See [Scripting](scripting.md).
 - **Python Console** - Same for Python when the app is built with embedded Python (native only; not in the WebAssembly build).
@@ -101,7 +102,7 @@ If you resize the pane narrower than its controls, a **horizontal scrollbar** ap
 
 Under **Selection**:
 
-- **Selection Mode** — combo for the 3D pick filter (vertices, edges, faces, solids, and combinations). The **?** button links to [shape selection filter hotkeys](usage.md#shape-selection-filter-normal-mode-only) in the usage guide.
+- **Selection Mode** — combo for the 3D pick filter (vertices, edges, faces, solids, and combinations). The **?** button links to [shape selection filter hotkeys](usage.md#shape-selection-filter-inspection-and-workbench) in the usage guide. The same digits apply in **Workbench** idle.
 - **Orthographic projection** — checkbox (appears in the Options panel for all non-sketch modes) toggling an orthographic camera (sketch modes still force orthographic). Persisted as **`gui.inspection_orthographic`**.
 
 Under **Material**:
@@ -109,6 +110,7 @@ Under **Material**:
 - Document preset for new solids that do not inherit from a clicked shape (toolbar **Box**, **polar duplicate** output, and similar). To change material on an existing solid, use the [Shape List](usage.md#shape-list).
 
 - **Move / rotate / scale**: **Local** (default) or **World** axis space. Local uses the first selected solid's frame (origin and X/Y/Z; same triad as Shape List **Show axes**). World uses global XYZ at that solid's bounding-box center. Persisted as **`gui.transform_space`**. Rotate also has view-to-object / X / Y / Z. See [Move](usage.md#shape-move-tool-g), [Rotate](usage.md#shape-rotate-tool-r), and [Scale](usage.md#shape-scale-tool).
+- **Align shafts**: **Flip direction** ([usage.md#align-shafts-option-flip-direction](usage.md#align-shafts-option-flip-direction)) and **Clock rotation** ([usage.md#align-shafts-option-clock-rotation](usage.md#align-shafts-option-clock-rotation)); each has a **?** link. See [Align shafts](usage.md#align-shafts-tool-j).
 
 For other non-sketch Options content, see the matching tool section in the usage guide. In particular, **Shape cross-section** provides local **XY/XZ/YZ**, **Invert normal**, **Hide back side**, **Show section outline**, a bbox-ranged **Offset** slider (Ctrl+click to type), **Clip** (half-space cut, replaces selection), **Cross section sketch** (new sketch from section outline), and automatic preview updates when the selection changes; see [Shape cross-section tool](usage.md#shape-cross-section-tool).
 
@@ -220,6 +222,7 @@ If saved layout text has no `[Docking]` section (older installs), a default dock
 | `show_options`                        | boolean            | Options panel visible.                                                                                                                                                                                                                                                                                                                                                                            |
 | `show_sketch_list`                    | boolean            | Sketch List pane visible.                                                                                                                                                                                                                                                                                                                                                                         |
 | `show_shape_list`                     | boolean            | Shape List pane visible.                                                                                                                                                                                                                                                                                                                                                                          |
+| `show_workbench_list`                 | boolean            | Workbench List pane visible (default **true**).                                                                                                                                                                                                                                                                                                                                                   |
 | `log_window_visible`                  | boolean            | Log window visible.                                                                                                                                                                                                                                                                                                                                                                               |
 | `show_settings_dialog`                | boolean            | Whether the Settings pane was open when last saved (usually false).                                                                                                                                                                                                                                                                                                                               |
 | `show_lua_console`                    | boolean            | Lua console pane visible (default **false**).                                                                                                                                                                                                                                                                                                                                                     |

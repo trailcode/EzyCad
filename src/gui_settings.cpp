@@ -129,6 +129,7 @@ void GUI::save_occt_view_settings()
       {"show_options",                       m_show_options},
       {"show_sketch_list",                   m_show_sketch_list},
       {"show_shape_list",                    m_show_shape_list},
+      {"show_workbench_list",                m_show_workbench_list},
       {"log_window_visible",                 m_log_window_visible},
       {"show_settings_dialog",               m_show_settings_dialog},
       {"dark_mode",                          m_dark_mode},
@@ -337,6 +338,7 @@ void GUI::parse_gui_panes_settings_(const std::string& content)
     set_show_options(b("show_options", true));
     set_show_sketch_list(b("show_sketch_list", true));
     set_show_shape_list(b("show_shape_list", true));
+    set_show_workbench_list(b("show_workbench_list", true));
     set_log_window_visible(b("log_window_visible", true));
     set_show_settings_dialog(b("show_settings_dialog", false));
     m_dark_mode           = b("dark_mode", m_dark_mode);

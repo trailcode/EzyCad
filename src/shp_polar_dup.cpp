@@ -174,7 +174,7 @@ Status Shp_polar_dup::dup()
 
   delete_operation_shps_();
   view().push_undo_delta(std::make_unique<Shape_replace_delta>(std::move(removed), std::move(added)));
-  gui().set_mode(Mode::Normal); // Will call reset()
+  gui().set_mode(Mode::Design_inspection); // Will call reset()
   return Status::ok();
 }
 

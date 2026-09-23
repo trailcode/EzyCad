@@ -530,30 +530,34 @@ std::optional<gp_Pnt> Occt_view::pt3d_on_plane(const ScreenCoords& screen_coords
 
 void Occt_view::bake_transform_into_geometry(AIS_Shape_ptr& shape, bool update_viewer)
 {
-  // Function to bake the local transformation into the geometry
-  // Get the current local transformation
   gp_Trsf current_transform = shape->LocalTransformation();
 
-  // Get the current TopoDS_Shape
+  if (Shp_ptr document_shape = Shp_ptr::DownCast(shape); !document_shape.IsNull() && document_shape->is_workbench())
+  {
+    const gp_Trsf old_pl = document_shape->placement_trsf();
+    const gp_Trsf delta  = current_transform * old_pl.Inverted();
+    document_shape->transform_frame(delta);
+    document_shape->SetLocalTransformation(document_shape->placement_trsf());
+    document_shape->update_frame_display();
+    m_ctx->Redisplay(shape, update_viewer);
+    return;
+  }
+
   TopoDS_Shape original_shape = shape->Shape();
 
-  // Apply the transformation to the geometry
   BRepBuilderAPI_Transform transformer(original_shape, current_transform, true);
 
   TopoDS_Shape transformed_shape = transformer.Shape();
 
-  // Update the AIS_Shape with the new geometry
   shape->Set(transformed_shape);
   if (Shp_ptr document_shape = Shp_ptr::DownCast(shape); !document_shape.IsNull())
     document_shape->transform_frame(current_transform);
 
-  // Reset the local transformation to identity
   gp_Trsf identity_transform;
   shape->SetLocalTransformation(identity_transform);
   if (Shp_ptr document_shape = Shp_ptr::DownCast(shape); !document_shape.IsNull())
     document_shape->update_frame_display();
 
-  // Redisplay to update the viewer and selection
   m_ctx->Redisplay(shape, update_viewer);
 }
 
@@ -585,14 +589,16 @@ void Occt_view::cancel(Set_parent_mode set_parent_mode)
 
   switch (get_mode())
   {
-  // Transform tools already return to Normal in their reset() and re-select the operands;
+  // Transform tools already return to Workbench_inspection in their reset() and re-select the operands;
   // a further set_mode() here would redisplay shapes and drop that selection again.
-  case Mode::Move:
+  case Mode::Workbench_move:
+  case Mode::Design_move:
     shp_move().cancel();
     operation_canceled = true;
     break;
 
-  case Mode::Rotate:
+  case Mode::Workbench_rotate:
+  case Mode::Design_rotate:
     shp_rotate().cancel();
     operation_canceled = true;
     break;
@@ -602,19 +608,21 @@ void Occt_view::cancel(Set_parent_mode set_parent_mode)
     operation_canceled = true;
     break;
 
-  case Mode::Shape_shaft_align:
+  case Mode::Workbench_shaft_align:
+  case Mode::Design_shaft_align:
     shp_cyl_align().cancel();
     operation_canceled = true;
     break;
 
   case Mode::Shape_set_frame:
+  case Mode::Workbench_set_frame:
     shp_set_frame().cancel();
     operation_canceled = true;
     break;
 
   case Mode::Shape_cross_section:
     shp_cross_section().clear();
-    gui().set_mode(Mode::Normal);
+    gui().set_mode(Mode::Design_inspection);
     break;
 
   default:
@@ -637,7 +645,7 @@ void Occt_view::revolve_selected(const double angle)
     add_shp_(*revolved, true);
     push_undo_delta(std::make_unique<Shape_add_delta>(std::vector<Shape_rec>{capture_shape_rec(**revolved)}));
     // Leave sketch mode so the new solid is shown at full strength (sketch tools use faint/hide).
-    gui().set_mode(Mode::Normal);
+    gui().set_mode(Mode::Design_inspection);
   }
   else
   {
@@ -665,7 +673,7 @@ void Occt_view::create_sketch_from_planar_face_(const ScreenCoords& screen_coord
     push_undo_delta(std::make_unique<Sketch_struct_delta>(Sketch_struct_delta::Kind::Add,
                                                           Sketch_json::to_json(*m_cur_sketch, m_assets), true));
     // fit_face_in_view(*face);
-    m_gui.set_mode(Mode::Sketch_inspection_mode);
+    m_gui.set_mode(Mode::Sketch_inspection);
     return;
   }
 
@@ -717,7 +725,7 @@ void Occt_view::add_sketch(const gp_Pln& pln, const std::string& base_name)
   refresh_viewer_grid_();
   push_undo_delta(std::make_unique<Sketch_struct_delta>(Sketch_struct_delta::Kind::Add,
                                                         Sketch_json::to_json(*m_cur_sketch, m_assets), true));
-  m_gui.set_mode(Mode::Sketch_inspection_mode);
+  m_gui.set_mode(Mode::Sketch_inspection);
 }
 
 void Occt_view::add_sketch_on_ref_plane(Sketch_ref_plane plane, double offset_display, const std::string& base_name)
@@ -773,7 +781,7 @@ Status Occt_view::create_sketch_from_cross_section(const std::string& base_name)
   refresh_viewer_grid_();
   push_undo_delta(std::make_unique<Sketch_struct_delta>(Sketch_struct_delta::Kind::Add,
                                                         Sketch_json::to_json(*m_cur_sketch, m_assets), true));
-  m_gui.set_mode(Mode::Sketch_inspection_mode);
+  m_gui.set_mode(Mode::Sketch_inspection);
 
   std::ostringstream msg;
   msg << "Created sketch '" << name << "' with " << counts.imported
@@ -1077,7 +1085,7 @@ void Occt_view::ensure_current_group_valid_()
   if (m_current_group_id == 0)
     return;
 
-  Shp_ptr g = find_shape_by_id(m_current_group_id);
+  Shp_ptr g = find_design_shape_by_id(m_current_group_id);
   if (g.IsNull() || !g->is_group())
     m_current_group_id = 0;
 }
@@ -1090,7 +1098,7 @@ void Occt_view::set_current_group_id(Shape_id id)
     return;
   }
 
-  Shp_ptr g = find_shape_by_id(id);
+  Shp_ptr g = find_design_shape_by_id(id);
   if (g.IsNull() || !g->is_group())
   {
     m_current_group_id = 0;
@@ -1098,6 +1106,452 @@ void Occt_view::set_current_group_id(Shape_id id)
   }
 
   m_current_group_id = id;
+}
+
+namespace
+{
+TopoDS_Shape local_geom_of_source_(const Shp& src)
+{
+  gp_Trsf to_local = Shp::trsf_from_frame(src.get_frame());
+  to_local.Invert();
+  to_local = to_local * src.LocalTransformation();
+  if (to_local.Form() == gp_Identity)
+    return src.Shape();
+
+  BRepBuilderAPI_Transform xf(src.Shape(), to_local, true);
+  return xf.Shape();
+}
+
+void apply_workbench_placement_(const Shp_ptr& inst)
+{
+  if (inst.IsNull() || inst->is_group())
+    return;
+
+  inst->SetLocalTransformation(inst->placement_trsf());
+  inst->sync_frame_display_trsf();
+}
+
+std::vector<Shp_ptr> list_children_(const std::list<Shp_ptr>& store, Shape_id parent_id)
+{
+  std::vector<Shp_ptr> kids;
+  for (const Shp_ptr& s : store)
+    if (!s.IsNull() && s->get_parent_id() == parent_id)
+      kids.push_back(s);
+
+  std::sort(kids.begin(), kids.end(),
+            [](const Shp_ptr& a, const Shp_ptr& b)
+            {
+              if (a->get_sibling_order() != b->get_sibling_order())
+                return a->get_sibling_order() < b->get_sibling_order();
+              return a->get_id() < b->get_id();
+            });
+  return kids;
+}
+
+int next_order_in_store_(const std::list<Shp_ptr>& store, Shape_id parent_id)
+{
+  int max_order = -1;
+  for (const Shp_ptr& s : store)
+  {
+    if (s.IsNull() || s->get_parent_id() != parent_id)
+      continue;
+
+    max_order = std::max(max_order, s->get_sibling_order());
+  }
+  return max_order + 1;
+}
+
+std::string unique_name_in_store_(const std::list<Shp_ptr>& store, const char* base_name)
+{
+  std::vector<std::string> existing;
+  existing.reserve(store.size());
+  for (const Shp_ptr& s : store)
+    if (!s.IsNull())
+      existing.push_back(s->get_name());
+
+  return unique_sequential_name(base_name, existing);
+}
+
+bool would_cycle_in_store_(const std::list<Shp_ptr>& store, Shape_id id, Shape_id new_parent)
+{
+  if (new_parent == 0)
+    return false;
+
+  if (new_parent == id)
+    return true;
+
+  std::unordered_set<Shape_id> seen;
+  Shape_id                     walk = new_parent;
+  while (walk != 0)
+  {
+    if (walk == id)
+      return true;
+
+    if (!seen.insert(walk).second)
+      break;
+
+    Shp_ptr p;
+    for (const Shp_ptr& s : store)
+      if (!s.IsNull() && s->get_id() == walk)
+      {
+        p = s;
+        break;
+      }
+
+    if (p.IsNull())
+      break;
+
+    walk = p->get_parent_id();
+  }
+  return false;
+}
+} // namespace
+
+void Occt_view::set_current_workbench_group_id(Shape_id id)
+{
+  if (id == 0)
+  {
+    m_current_wbk_group_id = 0;
+    return;
+  }
+
+  Shp_ptr g = find_workbench_shape_by_id(id);
+  if (g.IsNull() || !g->is_group())
+  {
+    m_current_wbk_group_id = 0;
+    return;
+  }
+
+  m_current_wbk_group_id = id;
+}
+
+std::vector<Shp_ptr> Occt_view::workbench_children(Shape_id parent_id) const
+{
+  return list_children_(m_wbk_shps, parent_id);
+}
+
+std::vector<Shp_ptr> Occt_view::workbench_descendant_solids(Shape_id id) const
+{
+  std::vector<Shp_ptr> out;
+  Shp_ptr              root = find_workbench_shape_by_id(id);
+  if (root.IsNull())
+    return out;
+
+  std::unordered_set<Shape_id> seen;
+  std::vector<Shp_ptr>         stack = {root};
+  while (!stack.empty())
+  {
+    Shp_ptr n = stack.back();
+    stack.pop_back();
+    if (n.IsNull() || !seen.insert(n->get_id()).second)
+      continue;
+
+    if (!n->is_group())
+    {
+      out.push_back(n);
+      continue;
+    }
+
+    for (const Shp_ptr& c : workbench_children(n->get_id()))
+      stack.push_back(c);
+  }
+  return out;
+}
+
+void Occt_view::sync_workbench_links(Shape_id source_id)
+{
+  bool any = false;
+  for (Shp_ptr& inst : m_wbk_shps)
+  {
+    if (inst.IsNull() || !inst->is_workbench_link())
+      continue;
+
+    if (source_id != 0 && inst->get_source_id() != source_id)
+      continue;
+
+    Shp_ptr src = find_design_shape_by_id(inst->get_source_id());
+    if (src.IsNull() || src->is_group())
+      continue;
+
+    inst->Set(local_geom_of_source_(*src));
+    apply_workbench_placement_(inst);
+    if (!m_ctx.IsNull())
+      m_ctx->Redisplay(inst, false);
+
+    any = true;
+  }
+
+  if (any && !m_ctx.IsNull())
+    m_ctx->UpdateCurrentViewer();
+}
+
+void Occt_view::add_wbk_shp_(Shp_ptr& shp)
+{
+  if (shp.IsNull())
+    return;
+
+  if (shp->get_id() == 0)
+    shp->set_id(allocate_shape_id());
+
+  shp->set_is_workbench(true);
+  if (!shp->is_group())
+  {
+    shp->set_selection_mode(m_shp_selection_mode);
+    apply_workbench_placement_(shp);
+    if (!m_ctx.IsNull())
+      m_ctx->Redisplay(shp, false);
+  }
+
+  m_wbk_shps.push_back(shp);
+}
+
+Shp_ptr Occt_view::clone_design_to_workbench_(const Shp_ptr& src, Shape_id wbk_parent, std::vector<Shape_rec>& added)
+{
+  if (src.IsNull())
+    return Shp_ptr();
+
+  Shp_ptr inst;
+  if (src->is_group())
+  {
+    inst = Shp::create_group(*m_ctx, unique_name_in_store_(m_wbk_shps, src->get_name().c_str()));
+    inst->set_source_id(0);
+  }
+  else
+  {
+    inst = new Shp(*m_ctx, local_geom_of_source_(*src));
+    inst->set_name(unique_name_in_store_(m_wbk_shps, src->get_name().c_str()));
+    inst->set_source_id(src->get_id());
+    inst->set_frame(src->get_frame());
+    inst->SetLocalTransformation(inst->placement_trsf());
+    inst->SetMaterial(Graphic3d_MaterialAspect(static_cast<Graphic3d_NameOfMaterial>(src->Material())));
+    refresh_shape_shading_(inst);
+    inst->set_disp_mode(src->get_disp_mode());
+    inst->set_visible(src->get_visible());
+  }
+
+  inst->set_parent_id(wbk_parent);
+  inst->set_sibling_order(next_order_in_store_(m_wbk_shps, wbk_parent));
+  add_wbk_shp_(inst);
+  added.push_back(capture_shape_rec(*inst));
+
+  if (src->is_group())
+    for (const Shp_ptr& child : shape_children(src->get_id()))
+      clone_design_to_workbench_(child, inst->get_id(), added);
+
+  return inst;
+}
+
+Status Occt_view::add_to_workbench(const std::vector<Shp_ptr>& design_nodes)
+{
+  std::vector<Shp_ptr> roots;
+  roots.reserve(design_nodes.size());
+  for (const Shp_ptr& n : design_nodes)
+  {
+    if (n.IsNull() || n->is_workbench())
+      continue;
+
+    if (find_design_shape_by_id(n->get_id()).IsNull())
+      continue;
+
+    roots.push_back(n);
+  }
+
+  if (roots.empty())
+    return Status::user_error("Select a Shape List solid or group to add to the Workbench.");
+
+  std::vector<Shape_id> root_ids;
+  root_ids.reserve(roots.size());
+  for (const Shp_ptr& n : roots)
+    root_ids.push_back(n->get_id());
+
+  std::vector<Shape_id> collapsed;
+  collapsed.reserve(root_ids.size());
+  for (Shape_id id : root_ids)
+  {
+    bool under_other = false;
+    for (Shape_id other : root_ids)
+    {
+      if (other == id)
+        continue;
+
+      if (would_reparent_create_cycle(other, id))
+      {
+        under_other = true;
+        break;
+      }
+    }
+
+    if (!under_other)
+      collapsed.push_back(id);
+  }
+
+  ensure_current_group_valid_();
+  if (m_current_wbk_group_id != 0)
+  {
+    Shp_ptr g = find_workbench_shape_by_id(m_current_wbk_group_id);
+    if (g.IsNull() || !g->is_group())
+      m_current_wbk_group_id = 0;
+  }
+
+  const Shape_id         wbk_parent = m_current_wbk_group_id;
+  std::vector<Shape_rec> added;
+  for (Shape_id id : collapsed)
+  {
+    Shp_ptr src = find_design_shape_by_id(id);
+    if (src.IsNull())
+      continue;
+
+    clone_design_to_workbench_(src, wbk_parent, added);
+  }
+
+  if (added.empty())
+    return Status::user_error("Nothing to add to the Workbench.");
+
+  push_undo_delta(std::make_unique<Shape_add_delta>(std::move(added)));
+  sync_sketch_shape_faint_style();
+  if (!m_ctx.IsNull())
+    m_ctx->UpdateCurrentViewer();
+
+  return Status::ok();
+}
+
+Shp_ptr Occt_view::create_workbench_group(const std::string& name, Shape_id parent_id)
+{
+  if (parent_id != 0)
+  {
+    Shp_ptr p = find_workbench_shape_by_id(parent_id);
+    if (p.IsNull() || !p->is_group())
+      parent_id = 0;
+  }
+
+  Shp_ptr grp = Shp::create_group(*m_ctx, unique_name_in_store_(m_wbk_shps, name.c_str()));
+  grp->set_parent_id(parent_id);
+  grp->set_sibling_order(next_order_in_store_(m_wbk_shps, parent_id));
+  add_wbk_shp_(grp);
+  push_undo_delta(std::make_unique<Shape_add_delta>(std::vector<Shape_rec>{capture_shape_rec(*grp)}));
+  return grp;
+}
+
+Status Occt_view::group_workbench_shapes(const std::vector<Shp_ptr>& nodes)
+{
+  std::vector<Shp_ptr> to_group;
+  to_group.reserve(nodes.size());
+  for (const Shp_ptr& n : nodes)
+    if (!n.IsNull() && n->is_workbench())
+      to_group.push_back(n);
+
+  if (to_group.empty())
+    return Status::user_error("Select one or more Workbench items to group.");
+
+  Shape_id parent = to_group[0]->get_parent_id();
+  for (size_t i = 1; i < to_group.size(); ++i)
+    if (to_group[i]->get_parent_id() != parent)
+      parent = 0;
+
+  Shp_ptr grp = Shp::create_group(*m_ctx, unique_name_in_store_(m_wbk_shps, "Group"));
+  grp->set_parent_id(parent);
+  grp->set_sibling_order(next_order_in_store_(m_wbk_shps, parent));
+  add_wbk_shp_(grp);
+
+  std::vector<Shape_tree_delta::Link_change> links;
+  links.reserve(to_group.size());
+  int order = 0;
+  for (const Shp_ptr& n : to_group)
+  {
+    Shape_tree_delta::Link_change ch;
+    ch.id         = n->get_id();
+    ch.old_parent = n->get_parent_id();
+    ch.old_order  = n->get_sibling_order();
+    ch.new_parent = grp->get_id();
+    ch.new_order  = order++;
+    links.push_back(ch);
+  }
+
+  for (const Shape_tree_delta::Link_change& ch : links)
+  {
+    Shp_ptr n = find_workbench_shape_by_id(ch.id);
+    if (!n.IsNull())
+    {
+      n->set_parent_id(ch.new_parent);
+      n->set_sibling_order(ch.new_order);
+    }
+  }
+
+  push_undo_delta(std::make_unique<Shape_tree_delta>(std::vector<Shape_rec>{capture_shape_rec(*grp)}, std::vector<Shape_rec>{},
+                                                     std::move(links)));
+  set_current_workbench_group_id(grp->get_id());
+  sync_sketch_shape_faint_style();
+  return Status::ok();
+}
+
+Status Occt_view::ungroup_workbench_shape(Shape_id group_id)
+{
+  Shp_ptr grp = find_workbench_shape_by_id(group_id);
+  if (grp.IsNull() || !grp->is_group())
+    return Status::user_error("Workbench group not found.");
+
+  const Shape_id                             parent = grp->get_parent_id();
+  std::vector<Shape_tree_delta::Link_change> links;
+  int                                        order = next_order_in_store_(m_wbk_shps, parent);
+  for (const Shp_ptr& c : workbench_children(group_id))
+  {
+    Shape_tree_delta::Link_change ch;
+    ch.id         = c->get_id();
+    ch.old_parent = c->get_parent_id();
+    ch.old_order  = c->get_sibling_order();
+    ch.new_parent = parent;
+    ch.new_order  = order++;
+    links.push_back(ch);
+    c->set_parent_id(ch.new_parent);
+    c->set_sibling_order(ch.new_order);
+  }
+
+  Shape_rec removed = capture_shape_rec(*grp);
+  if (m_current_wbk_group_id == group_id)
+    m_current_wbk_group_id = parent;
+
+  remove_shape_by_id(group_id);
+  push_undo_delta(std::make_unique<Shape_tree_delta>(std::vector<Shape_rec>{}, std::vector<Shape_rec>{std::move(removed)},
+                                                     std::move(links)));
+  sync_sketch_shape_faint_style();
+  return Status::ok();
+}
+
+Status Occt_view::reparent_workbench_shape(Shape_id id, Shape_id new_parent, int sibling_order, bool push_undo)
+{
+  Shp_ptr shp = find_workbench_shape_by_id(id);
+  if (shp.IsNull())
+    return Status::user_error("Workbench item not found.");
+
+  if (new_parent != 0)
+  {
+    Shp_ptr p = find_workbench_shape_by_id(new_parent);
+    if (p.IsNull() || !p->is_group())
+      return Status::user_error("Parent must be a Workbench group (or root).");
+  }
+
+  if (would_cycle_in_store_(m_wbk_shps, id, new_parent))
+    return Status::user_error("Cannot reparent: would create a cycle.");
+
+  const int new_order = (sibling_order < 0) ? next_order_in_store_(m_wbk_shps, new_parent) : sibling_order;
+
+  Shape_tree_delta::Link_change ch;
+  ch.id         = id;
+  ch.old_parent = shp->get_parent_id();
+  ch.old_order  = shp->get_sibling_order();
+  ch.new_parent = new_parent;
+  ch.new_order  = new_order;
+
+  if (ch.old_parent == ch.new_parent && ch.old_order == ch.new_order)
+    return Status::ok();
+
+  shp->set_parent_id(new_parent);
+  shp->set_sibling_order(new_order);
+  if (push_undo)
+    push_undo_delta(std::make_unique<Shape_tree_delta>(std::vector<Shape_rec>{}, std::vector<Shape_rec>{},
+                                                       std::vector<Shape_tree_delta::Link_change>{ch}));
+  sync_sketch_shape_faint_style();
+  return Status::ok();
 }
 
 Shape_id Occt_view::allocate_shape_id() { return m_next_shape_id++; }
@@ -1108,13 +1562,31 @@ void Occt_view::adopt_shape_id(Shape_id id)
     m_next_shape_id = id + 1;
 }
 
-Shp_ptr Occt_view::find_shape_by_id(Shape_id id) const
+Shp_ptr Occt_view::find_design_shape_by_id(Shape_id id) const
 {
   for (const Shp_ptr& s : m_shps)
     if (!s.IsNull() && s->get_id() == id)
       return s;
 
   return Shp_ptr();
+}
+
+Shp_ptr Occt_view::find_workbench_shape_by_id(Shape_id id) const
+{
+  for (const Shp_ptr& s : m_wbk_shps)
+    if (!s.IsNull() && s->get_id() == id)
+      return s;
+
+  return Shp_ptr();
+}
+
+Shp_ptr Occt_view::find_shape_by_id(Shape_id id) const
+{
+  Shp_ptr s = find_design_shape_by_id(id);
+  if (!s.IsNull())
+    return s;
+
+  return find_workbench_shape_by_id(id);
 }
 
 int Occt_view::next_sibling_order(Shape_id parent_id) const
@@ -1433,7 +1905,10 @@ void Occt_view::insert_shape_rec(const Shape_rec& rec)
   shp->set_id(rec.id);
   adopt_shape_id(rec.id);
   shp->set_name(rec.name);
+  shp->set_is_workbench(rec.is_workbench);
+  shp->set_source_id(rec.source_id);
   shp->set_frame(rec.frame);
+  shp->set_local_frame(rec.local_frame);
   if (!shp->is_group())
   {
     shp->set_show_frame_axes(rec.show_frame_axes);
@@ -1446,32 +1921,76 @@ void Occt_view::insert_shape_rec(const Shape_rec& rec)
   if (shp->get_visible() != rec.visible)
     shp->set_visible(rec.visible);
 
-  m_shps.push_back(shp);
-  sync_sketch_shape_faint_style();
-}
-
-void Occt_view::remove_shape_by_id(Shape_id id)
-{
-  for (auto it = m_shps.begin(); it != m_shps.end(); ++it)
+  if (rec.is_workbench)
   {
-    if ((*it).IsNull() || (*it)->get_id() != id)
-      continue;
-
-    Shp_ptr shp = *it;
-    if (m_shape_list_hover == shp)
-      set_shape_list_hover(nullptr);
-
-    if (!shp->is_group())
+    if (!shp->is_group() && rec.source_id != 0)
     {
-      shp->clear_frame_display();
-      m_ctx->Remove(shp, false);
+      Shp_ptr src = find_design_shape_by_id(rec.source_id);
+      if (!src.IsNull())
+        shp->Set(local_geom_of_source_(*src));
     }
 
-    m_shps.erase(it);
-    ensure_current_group_valid_();
-    m_ctx->UpdateCurrentViewer();
-    return;
+    if (!shp->is_group())
+      shp->SetLocalTransformation(shp->placement_trsf());
+
+    m_wbk_shps.push_back(shp);
   }
+  else
+    m_shps.push_back(shp);
+
+  sync_sketch_shape_faint_style();
+  if (!rec.is_workbench)
+    sync_workbench_links(rec.id);
+}
+
+void Occt_view::remove_shape_by_id(Shape_id id, bool cascade_workbench_links)
+{
+  auto remove_from = [&](std::list<Shp_ptr>& store, bool design)
+  {
+    for (auto it = store.begin(); it != store.end(); ++it)
+    {
+      if ((*it).IsNull() || (*it)->get_id() != id)
+        continue;
+
+      Shp_ptr shp = *it;
+      if (m_shape_list_hover == shp)
+        set_shape_list_hover(nullptr);
+
+      if (!shp->is_group())
+      {
+        shp->clear_frame_display();
+        m_ctx->Remove(shp, false);
+      }
+
+      store.erase(it);
+      if (design)
+      {
+        ensure_current_group_valid_();
+        if (cascade_workbench_links)
+        {
+          std::vector<Shape_id> dead;
+          for (const Shp_ptr& w : m_wbk_shps)
+            if (!w.IsNull() && w->get_source_id() == id)
+              dead.push_back(w->get_id());
+
+          for (Shape_id wid : dead)
+            remove_shape_by_id(wid, false);
+        }
+      }
+      else if (m_current_wbk_group_id == id)
+        m_current_wbk_group_id = 0;
+
+      m_ctx->UpdateCurrentViewer();
+      return true;
+    }
+
+    return false;
+  };
+
+  if (remove_from(m_shps, true))
+    return;
+
+  remove_from(m_wbk_shps, false);
 }
 
 void Occt_view::set_shape_geom_by_id(Shape_id id, const TopoDS_Shape& geom, const gp_Ax3& frame)
@@ -1482,11 +2001,28 @@ void Occt_view::set_shape_geom_by_id(Shape_id id, const TopoDS_Shape& geom, cons
 
   shp->Set(geom);
   shp->set_frame(frame);
-  gp_Trsf identity;
-  shp->SetLocalTransformation(identity);
+  if (shp->is_workbench())
+    shp->SetLocalTransformation(shp->placement_trsf());
+  else
+  {
+    gp_Trsf identity;
+    shp->SetLocalTransformation(identity);
+  }
+
   shp->sync_frame_display_trsf();
   m_ctx->Redisplay(shp, true);
   m_ctx->UpdateCurrentViewer();
+  if (!shp->is_workbench())
+    sync_workbench_links(id);
+}
+
+void Occt_view::set_shape_local_frame_by_id(Shape_id id, const gp_Ax3& local_frame)
+{
+  Shp_ptr shp = find_shape_by_id(id);
+  if (shp.IsNull())
+    return;
+
+  shp->set_local_frame(local_frame);
 }
 
 void Occt_view::set_shape_frame(const Shp_ptr& shp, const gp_Ax3& frame)
@@ -1495,8 +2031,26 @@ void Occt_view::set_shape_frame(const Shp_ptr& shp, const gp_Ax3& frame)
     return;
 
   std::vector<Shape_geom_delta::Geom_change> changes;
-  changes.push_back(Shape_geom_delta::Geom_change{shp->get_id(), shp->Shape(), shp->Shape(), shp->get_frame(), frame});
-  shp->set_frame(frame);
+  if (shp->is_workbench())
+  {
+    Shape_geom_delta::Geom_change ch;
+    ch.id                = shp->get_id();
+    ch.before_geom       = shp->Shape();
+    ch.after_geom        = shp->Shape();
+    ch.before_frame      = shp->get_frame();
+    ch.after_frame       = shp->get_frame();
+    ch.has_local_frame   = true;
+    ch.before_local_frame = shp->get_local_frame();
+    ch.after_local_frame  = frame;
+    changes.push_back(ch);
+    shp->set_local_frame(frame);
+  }
+  else
+  {
+    changes.push_back(Shape_geom_delta::Geom_change{shp->get_id(), shp->Shape(), shp->Shape(), shp->get_frame(), frame});
+    shp->set_frame(frame);
+  }
+
   push_undo_delta(std::make_unique<Shape_geom_delta>(std::move(changes)));
 }
 
@@ -1935,8 +2489,12 @@ void Occt_view::delete_shapes(std::vector<AIS_Shape_ptr> to_delete)
 
       expanded.push_back(cur);
       if (cur->is_group())
-        for (const Shp_ptr& c : shape_children(cur->get_id()))
+      {
+        const std::vector<Shp_ptr> kids =
+            cur->is_workbench() ? workbench_children(cur->get_id()) : shape_children(cur->get_id());
+        for (const Shp_ptr& c : kids)
           stack.push_back(c);
+      }
     }
   }
   to_delete = std::move(expanded);
@@ -1949,6 +2507,33 @@ void Occt_view::delete_shapes(std::vector<AIS_Shape_ptr> to_delete)
       removed_shapes.push_back(capture_shape_rec(*shp));
     else
       has_non_shape = true;
+  }
+
+  // delete_ cascade-removes Workbench links of deleted Design ids. Record them or undo cannot put them back.
+  if (!has_non_shape)
+  {
+    std::unordered_set<Shape_id> deleted_design_ids;
+    std::unordered_set<Shape_id> captured_ids;
+    for (const Shape_rec& rec : removed_shapes)
+    {
+      captured_ids.insert(rec.id);
+      if (!rec.is_workbench)
+        deleted_design_ids.insert(rec.id);
+    }
+
+    for (const Shp_ptr& w : m_wbk_shps)
+    {
+      if (w.IsNull() || w->get_source_id() == 0)
+        continue;
+
+      if (deleted_design_ids.find(w->get_source_id()) == deleted_design_ids.end())
+        continue;
+
+      if (!captured_ids.insert(w->get_id()).second)
+        continue;
+
+      removed_shapes.push_back(capture_shape_rec(*w));
+    }
   }
 
   if (has_non_shape)
@@ -2248,7 +2833,7 @@ void Occt_view::remove_selected_length_dimensions_from_sketches_()
         break;
 }
 
-void Occt_view::delete_(std::vector<AIS_Shape_ptr>& to_delete)
+void Occt_view::delete_(std::vector<AIS_Shape_ptr>& to_delete, const std::vector<Shape_id>& keep_workbench_sources)
 {
   for (AIS_Shape_ptr& shp : to_delete)
     try_remove_sketch_permanent_node_mark(shp.get());
@@ -2257,13 +2842,36 @@ void Occt_view::delete_(std::vector<AIS_Shape_ptr>& to_delete)
     if (auto wire = dynamic_cast<Sketch_AIS_edge*>(shp.get()); wire)
       wire->owner_sketch.remove_edge(*wire);
 
+  auto keep_links = [&](Shape_id id)
+  {
+    return std::find(keep_workbench_sources.begin(), keep_workbench_sources.end(), id) != keep_workbench_sources.end();
+  };
+
+  std::unordered_set<Shape_id> deleted_design_ids;
+  for (const AIS_Shape_ptr& obj : to_delete)
+    if (Shp_ptr s = Shp_ptr::DownCast(obj); !s.IsNull() && !s->is_workbench() && !keep_links(s->get_id()))
+      deleted_design_ids.insert(s->get_id());
+
+  for (const Shp_ptr& w : m_wbk_shps)
+    if (!w.IsNull() && w->get_source_id() != 0 &&
+        deleted_design_ids.find(w->get_source_id()) != deleted_design_ids.end())
+      to_delete.push_back(w);
+
   for (auto itr = m_shps.begin(); itr != m_shps.end();)
     if (std::find(to_delete.begin(), to_delete.end(), *itr) != to_delete.end())
       itr = m_shps.erase(itr);
     else
       ++itr;
 
+  for (auto itr = m_wbk_shps.begin(); itr != m_wbk_shps.end();)
+    if (std::find(to_delete.begin(), to_delete.end(), *itr) != to_delete.end())
+      itr = m_wbk_shps.erase(itr);
+    else
+      ++itr;
+
   ensure_current_group_valid_();
+  if (m_current_wbk_group_id != 0 && find_workbench_shape_by_id(m_current_wbk_group_id).IsNull())
+    m_current_wbk_group_id = 0;
 
   for (const AIS_Shape_ptr& shp : to_delete)
     if (m_shape_list_hover == shp)
@@ -2883,10 +3491,10 @@ void Occt_view::on_mouse_button(int theButton, int theAction, int theMods)
     if (theButton == GLFW_MOUSE_BUTTON_LEFT)
     {
       // clang-format off
-      const bool finalize_transform = (get_mode() == Mode::Move               && shp_move().has_operation_shps())   ||
-                                      (get_mode() == Mode::Rotate             && shp_rotate().has_operation_shps()) ||
+      const bool finalize_transform = (is_move_mode(get_mode())                         && shp_move().has_operation_shps())   ||
+                                      (is_rotate_mode(get_mode())                       && shp_rotate().has_operation_shps()) ||
                                       (get_mode() == Mode::Scale              && shp_scale().has_operation_shps())  ||
-                                      (get_mode() == Mode::Shape_shaft_align  && shp_cyl_align().is_dragging());
+                                      (is_shaft_align_mode(get_mode()) && shp_cyl_align().is_dragging());
       // clang-format on
       if (finalize_transform)
       {
@@ -3526,16 +4134,20 @@ void Occt_view::set_shp_selection_mode(const TopAbs_ShapeEnum selection_mode)
 {
   m_modes_selection_mode_map[get_mode()] = selection_mode;
 
-  if (m_shp_selection_mode == selection_mode)
-    return;
+  if (m_shp_selection_mode != selection_mode)
+  {
+    m_shp_selection_mode  = selection_mode;
+    const std::size_t idx = static_cast<std::size_t>(selection_mode);
+    EZY_ASSERT(idx < c_names_TopAbs_ShapeEnum.size());
+    m_gui.log_message(std::string("Selection mode: ") + std::string(c_names_TopAbs_ShapeEnum[idx]));
+  }
 
-  m_shp_selection_mode  = selection_mode;
-  const std::size_t idx = static_cast<std::size_t>(selection_mode);
-  EZY_ASSERT(idx < c_names_TopAbs_ShapeEnum.size());
-  m_gui.log_message(std::string("Selection mode: ") + std::string(c_names_TopAbs_ShapeEnum[idx]));
-
-  for (auto& shp : m_shps)
-    shp->set_selection_mode(selection_mode);
+  // Apply to the on-screen store even when the document filter is unchanged
+  // (Design FACE then Workbench Align shafts still needs FACE on instances).
+  std::list<Shp_ptr>& store = is_workbench_mode(get_mode()) ? m_wbk_shps : m_shps;
+  for (auto& shp : store)
+    if (!shp.IsNull() && !shp->is_group())
+      shp->set_selection_mode(selection_mode);
 }
 
 // Material related
@@ -3611,7 +4223,7 @@ void Occt_view::on_mode()
   // stay at the pre-transform pose. Disable AIS_ViewController dynamic highlight (skips MoveTo
   // while idle) so hover cannot paint a wireframe ghost there; orbit/pan still get mouse updates.
   const Mode mode              = get_mode();
-  const bool transform_preview = mode == Mode::Move || mode == Mode::Rotate || mode == Mode::Scale;
+  const bool transform_preview = is_move_mode(mode) || is_rotate_mode(mode) || mode == Mode::Scale;
   SetAllowHighlight(!transform_preview);
   if (transform_preview && !m_ctx.IsNull())
     m_ctx->ClearDetected(false);
@@ -3682,11 +4294,15 @@ void Occt_view::on_mode()
       case Mode::Sketch_from_planar_face: set_shp_selection_mode(TopAbs_FACE);      break;
       case Mode::Shape_chamfer:           on_chamfer_mode();                        break; // Will update selection mode
       case Mode::Shape_fillet:            on_fillet_mode();                         break; // Will update selection mode
-      case Mode::Move:                    set_shp_selection_mode(TopAbs_SHAPE);     break;
-      case Mode::Rotate:                  set_shp_selection_mode(TopAbs_SHAPE);     break;
+      case Mode::Workbench_move:
+      case Mode::Design_move:                       set_shp_selection_mode(TopAbs_SHAPE);     break;
+      case Mode::Workbench_rotate:
+      case Mode::Design_rotate:                     set_shp_selection_mode(TopAbs_SHAPE);     break;
       case Mode::Scale:                   set_shp_selection_mode(TopAbs_SHAPE);     break;
-      case Mode::Shape_shaft_align:         set_shp_selection_mode(TopAbs_FACE);      break;
-      case Mode::Shape_set_frame:          set_shp_selection_mode(TopAbs_FACE);      break;
+      case Mode::Workbench_shaft_align:
+      case Mode::Design_shaft_align:            set_shp_selection_mode(TopAbs_FACE);      break;
+      case Mode::Shape_set_frame:
+      case Mode::Workbench_set_frame:      set_shp_selection_mode(TopAbs_FACE);      break;
       case Mode::Shape_cross_section:     set_shp_selection_mode(TopAbs_COMPOUND);  break;
       default:
         if(m_modes_selection_mode_map.count(get_mode()))
@@ -3711,10 +4327,12 @@ void Occt_view::on_mode()
   {
     switch (mode)
     {
-    case Mode::Move:
+    case Mode::Workbench_move:
+    case Mode::Design_move:
       shp_move().begin(enter_selection);
       break;
-    case Mode::Rotate:
+    case Mode::Workbench_rotate:
+    case Mode::Design_rotate:
       shp_rotate().begin(enter_selection);
       break;
     case Mode::Scale:
@@ -3725,7 +4343,7 @@ void Occt_view::on_mode()
     }
   }
 
-  if (mode == Mode::Shape_shaft_align)
+  if (is_shaft_align_mode(mode))
     shp_cyl_align().begin();
 
   if (mode == Mode::Shape_cross_section && !enter_selection.empty())
@@ -3738,7 +4356,9 @@ void Occt_view::on_mode()
 void Occt_view::sync_sketch_shape_faint_style()
 {
   const bool  hide_all     = gui().get_hide_all_shapes();
+  const bool  hide_wbk     = gui().get_hide_all_workbench();
   const bool  sketch       = is_sketch_mode(get_mode());
+  const bool  workbench    = is_workbench_mode(get_mode());
   const bool  enabled      = gui().sketch_shape_faint_enabled();
   const int   style        = gui().sketch_shape_faint_style();
   const float opacity      = std::clamp(gui().sketch_shape_faint_opacity(), k_gui_sketch_shape_faint_opacity_min,
@@ -3766,12 +4386,12 @@ void Occt_view::sync_sketch_shape_faint_style()
 
     // Hide all / sketch-hide are overlays: do not write get_visible().
     const bool own_ok       = shp->get_visible() && shape_ancestors_visible(*shp);
-    const bool hide_overlay = hide_all || (sketch && hide_in_sketch);
+    const bool hide_overlay = hide_all || workbench || (sketch && hide_in_sketch);
     const bool show         = own_ok && !hide_overlay;
 
     // Frame AIS follow effective visibility, not only get_visible(): sketch tools, Hide all,
     // and a hidden ancestor group all keep axes/plane/up off (flags unchanged).
-    shp->set_frame_display_suppressed(sketch || !show);
+    shp->set_frame_display_suppressed(sketch || workbench || !show);
 
     if (faint_active && show)
     {
@@ -3788,6 +4408,20 @@ void Occt_view::sync_sketch_shape_faint_style()
       shp->set_sketch_faint(false, AIS_Shaded, 0.0f);
       shp->apply_context_shown(show);
     }
+  }
+
+  for (Shp_ptr& shp : m_wbk_shps)
+  {
+    if (shp.IsNull() || shp->is_group())
+      continue;
+
+    const bool own_ok = shp->get_visible() && shape_ancestors_visible(*shp);
+    const bool show   = workbench && own_ok && !hide_wbk;
+    shp->set_frame_display_suppressed(!show);
+    shp->set_sketch_faint(false, AIS_Shaded, 0.0f);
+    shp->apply_context_shown(show);
+    if (show)
+      apply_workbench_placement_(shp);
   }
 
   if (!m_ctx.IsNull())
@@ -4071,7 +4705,7 @@ bool Occt_view::undo()
   m_redo_stack.push_back(std::move(redo_entry));
   const Mode restore_mode = mode_for_history_restore_(state.mode);
   m_gui.set_mode(restore_mode);
-  if (restore_mode == Mode::Sketch_inspection_mode)
+  if (restore_mode == Mode::Sketch_inspection)
     m_gui.set_show_sketch_list(true);
 
   m_restoring = false;
@@ -4104,7 +4738,7 @@ bool Occt_view::redo()
   m_undo_stack.push_back(std::move(undo_entry));
   const Mode restore_mode = mode_for_history_restore_(state.mode);
   m_gui.set_mode(restore_mode);
-  if (restore_mode == Mode::Sketch_inspection_mode)
+  if (restore_mode == Mode::Sketch_inspection)
     m_gui.set_show_sketch_list(true);
 
   m_restoring = false;
@@ -4133,6 +4767,7 @@ std::string Occt_view::to_json() const
   j["projectUnit"] = (m_project_unit == Project_unit::Millimeter) ? "millimeter" : "inch";
   json& sketches = j["sketches"] = json::array();
   json& shps = j["shapes"] = json::array();
+  json& wbk  = j["workbench"] = json::array();
 
   const auto pnt_to_json = [](double x, double y, double z)
   {
@@ -4181,6 +4816,46 @@ std::string Occt_view::to_json() const
     shps.push_back(shp_json);
   }
 
+  for (const Shp_ptr& s : m_wbk_shps)
+  {
+    json shp_json;
+    shp_json["id"]       = s->get_id();
+    shp_json["name"]     = s->get_name();
+    shp_json["parentId"] = s->get_parent_id();
+    shp_json["order"]    = s->get_sibling_order();
+    shp_json["visible"]  = s->get_visible();
+    if (s->is_group())
+      shp_json["isGroup"] = true;
+    else
+    {
+      shp_json["sourceId"] = s->get_source_id();
+      shp_json["material"] = s->Material();
+      shp_json["dispMode"] = static_cast<int>(s->get_disp_mode());
+      shp_json["frame"]    = ::to_json(gp_Pln(s->get_frame()));
+      {
+        const gp_Ax3& lf = s->get_local_frame();
+        const gp_Ax3  identity;
+        if (!lf.Location().IsEqual(identity.Location(), 1e-12) || !lf.Direction().IsEqual(identity.Direction(), 1e-12) ||
+            !lf.XDirection().IsEqual(identity.XDirection(), 1e-12))
+          shp_json["localFrame"] = ::to_json(gp_Pln(lf));
+      }
+      if (s->show_frame_axes() || s->show_frame_plane() || s->show_frame_up())
+      {
+        json fd;
+        if (s->show_frame_axes())
+          fd["axes"] = true;
+
+        if (s->show_frame_plane())
+          fd["plane"] = true;
+
+        if (s->show_frame_up())
+          fd["up"] = true;
+        shp_json["frameDisplay"] = fd;
+      }
+    }
+    wbk.push_back(shp_json);
+  }
+
   // ---------------------------------------------------------------------------
   // View / camera state
   if (!m_view.IsNull())
@@ -4222,7 +4897,15 @@ void Occt_view::load(const std::string& json_str, bool restore_view)
     m_ctx->Remove(s, false);
   }
 
-  clear_all(m_sketches, m_cur_sketch, m_shps);
+  for (AIS_Shape_ptr& s : m_wbk_shps)
+  {
+    if (Shp_ptr shp = Shp_ptr::DownCast(s); !shp.IsNull())
+      shp->clear_frame_display();
+    m_ctx->Remove(s, false);
+  }
+
+  clear_all(m_sketches, m_cur_sketch, m_shps, m_wbk_shps);
+  m_current_wbk_group_id = 0;
 
   if (!m_restoring)
   {
@@ -4322,6 +5005,93 @@ void Occt_view::load(const std::string& json_str, bool restore_view)
 
     m_shps.push_back(shp);
   }
+
+  if (j.contains("workbench") && j["workbench"].is_array())
+  {
+    for (const json& s : j["workbench"])
+    {
+      const bool is_group = s.contains("isGroup") && s["isGroup"].is_boolean() && s["isGroup"].get<bool>();
+      Shp_ptr    shp;
+      if (is_group)
+        shp = Shp::create_group(*m_ctx, s.value("name", "Group"));
+      else
+      {
+        const Shape_id source_id = s.value("sourceId", Shape_id{0});
+        TopoDS_Shape   local;
+        Shp_ptr        src = find_design_shape_by_id(source_id);
+        if (!src.IsNull())
+          local = local_geom_of_source_(*src);
+        else
+        {
+          TopoDS_Compound comp;
+          BRep_Builder().MakeCompound(comp);
+          local = comp;
+        }
+
+        shp = new Shp(*m_ctx, local);
+        shp->set_source_id(source_id);
+        if (s.contains("frame") && s["frame"].is_object())
+          shp->set_frame(from_json_pln(s["frame"]).Position());
+
+        if (s.contains("localFrame") && s["localFrame"].is_object())
+          shp->set_local_frame(from_json_pln(s["localFrame"]).Position());
+
+        if (s.contains("frameDisplay") && s["frameDisplay"].is_object())
+        {
+          const json& fd = s["frameDisplay"];
+          if (fd.contains("axes") && fd["axes"].is_boolean())
+            shp->set_show_frame_axes(fd["axes"].get<bool>());
+
+          if (fd.contains("plane") && fd["plane"].is_boolean())
+            shp->set_show_frame_plane(fd["plane"].get<bool>());
+
+          if (fd.contains("up") && fd["up"].is_boolean())
+            shp->set_show_frame_up(fd["up"].get<bool>());
+        }
+
+        int mat_idx = static_cast<int>(m_default_material.Name());
+        if (s.contains("material") && s["material"].is_number_integer())
+          mat_idx = s["material"].get<int>();
+
+        const int nmat = Graphic3d_MaterialAspect::NumberOfMaterials();
+        if (mat_idx < 0 || mat_idx >= nmat)
+          mat_idx = static_cast<int>(m_default_material.Name());
+
+        shp->SetMaterial(Graphic3d_MaterialAspect(static_cast<Graphic3d_NameOfMaterial>(mat_idx)));
+        refresh_shape_shading_(shp);
+        if (s.contains("dispMode") && s["dispMode"].is_number_integer())
+          shp->set_disp_mode(s["dispMode"].get<int>() == static_cast<int>(AIS_WireFrame) ? AIS_WireFrame : AIS_Shaded);
+
+        shp->SetLocalTransformation(shp->placement_trsf());
+      }
+
+      shp->set_is_workbench(true);
+      if (s.contains("id") && s["id"].is_number_unsigned())
+      {
+        shp->set_id(s["id"].get<Shape_id>());
+        adopt_shape_id(shp->get_id());
+      }
+      else
+        shp->set_id(allocate_shape_id());
+
+      shp->set_name(s.value("name", shp->get_name()));
+      if (s.contains("parentId") && s["parentId"].is_number_unsigned())
+        shp->set_parent_id(s["parentId"].get<Shape_id>());
+
+      if (s.contains("order") && s["order"].is_number_integer())
+        shp->set_sibling_order(s["order"].get<int>());
+
+      if (s.contains("visible") && s["visible"].is_boolean())
+      {
+        const bool vis = s["visible"].get<bool>();
+        if (shp->get_visible() != vis)
+          shp->set_visible(vis);
+      }
+
+      m_wbk_shps.push_back(shp);
+    }
+  }
+
   sync_sketch_shape_faint_style();
 
   // ---------------------------------------------------------------------------
@@ -4725,20 +5495,22 @@ void Occt_view::new_file()
   m_undo_stack.clear();
   m_redo_stack.clear();
   remove(m_shps);
-  clear_all(m_shps, m_sketches, m_cur_sketch);
+  remove(m_wbk_shps);
+  clear_all(m_shps, m_wbk_shps, m_sketches, m_cur_sketch);
   m_assets.clear();
   // Keep m_shape_clipboard so Copy then New then Paste can seed a fresh document.
   // Live source-root ids are invalid after the document is cleared.
   m_shape_clipboard_source_roots.clear();
-  m_next_sketch_id   = 1;
-  m_next_shape_id    = 1;
-  m_current_group_id = 0;
-  m_project_unit     = m_gui.default_project_unit();
+  m_next_sketch_id         = 1;
+  m_next_shape_id          = 1;
+  m_current_group_id       = 0;
+  m_current_wbk_group_id   = 0;
+  m_project_unit           = m_gui.default_project_unit();
 
   create_default_sketch_();
   refresh_viewer_grid_();
   reset_default_view();
-  m_gui.set_mode(Mode::Normal);
+  m_gui.set_mode(Mode::Design_inspection);
 }
 
 namespace
@@ -4822,11 +5594,15 @@ Mode mode_for_history_restore_(Mode mode)
 {
   switch (mode)
   {
-  case Mode::Move:
-  case Mode::Rotate:
+  case Mode::Workbench_move:
+  case Mode::Design_move:
+  case Mode::Workbench_rotate:
+  case Mode::Design_rotate:
   case Mode::Scale:
-  case Mode::Shape_shaft_align:
+  case Mode::Workbench_shaft_align:
+  case Mode::Design_shaft_align:
   case Mode::Shape_set_frame:
+  case Mode::Workbench_set_frame:
     return GUI::parent_mode_of(mode);
   default:
     return mode;

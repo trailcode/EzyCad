@@ -28,6 +28,17 @@ Transform_axes transform_axes_for(const std::vector<Shp_ptr>& shps, Transform_sp
 
   if (space == Transform_space::Local)
   {
+    if (s->is_workbench())
+    {
+      const gp_Trsf pl  = s->placement_trsf();
+      const gp_Ax3& loc = s->get_local_frame();
+      axes.origin       = loc.Location().Transformed(pl);
+      axes.x            = loc.XDirection().Transformed(pl);
+      axes.y            = loc.YDirection().Transformed(pl);
+      axes.z            = loc.Direction().Transformed(pl);
+      return axes;
+    }
+
     const gp_Ax3& f = s->get_frame();
     axes.origin     = f.Location();
     axes.x          = f.XDirection();
@@ -36,7 +47,8 @@ Transform_axes transform_axes_for(const std::vector<Shp_ptr>& shps, Transform_sp
     return axes;
   }
 
-  axes.origin = get_shape_bbox_center(s->Shape());
+  const gp_Pnt local_c = get_shape_bbox_center(s->Shape());
+  axes.origin          = s->is_workbench() ? local_c.Transformed(s->placement_trsf()) : local_c;
   return axes;
 }
 

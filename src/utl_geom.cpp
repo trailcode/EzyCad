@@ -480,8 +480,12 @@ std::optional<Cyl_face_info> cylinder_from_face(const TopoDS_Face& face)
 gp_Trsf cyl_align_trsf(const gp_Ax1& moving_axis, const gp_Ax1& fixed_axis, bool flip, double axial_offset, double twist_rad)
 {
   const gp_Dir from_dir  = moving_axis.Direction();
-  const gp_Dir to_dir    = flip ? fixed_axis.Direction().Reversed() : fixed_axis.Direction();
   const gp_Dir fixed_dir = fixed_axis.Direction();
+  // OCCT cylinder dirs follow face parametrization, not part Z. Default = acute
+  // rotation so already-aligned solids are not flipped; Flip inverts that choice.
+  gp_Dir to_dir = fixed_dir;
+  if ((from_dir.Dot(to_dir) < 0.0) != flip)
+    to_dir.Reverse();
 
   const gp_Vec to_moving(fixed_axis.Location(), moving_axis.Location());
   const double param0 = to_moving.Dot(gp_Vec(fixed_dir));

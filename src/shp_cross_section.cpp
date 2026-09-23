@@ -511,23 +511,36 @@ Status Shp_cross_section::clip(const std::vector<Shp_ptr>& shapes)
   for (const Shp_ptr& shp : plane_ctx.shapes)
     removed.push_back(capture_shape_rec(*shp));
 
-  std::vector<Shape_rec> added;
-  added.reserve(survivors.size());
-  m_shps = plane_ctx.shapes;
+  std::vector<Shp_ptr> replacements;
+  replacements.reserve(survivors.size());
+  std::vector<Shape_id> keep_links;
+  keep_links.reserve(survivors.size());
 
   for (size_t i = 0; i < survivors.size(); ++i)
   {
     const Shp_ptr& old_shp = survivors[i];
     Shp_ptr        new_shp = new Shp(ctx(), clipped_geoms[i]);
     new_shp->set_name(old_shp->get_name());
+    new_shp->set_id(old_shp->get_id());
     new_shp->set_frame(frame_world_(*old_shp));
-    assign_result_parent_(new_shp, std::vector<Shp_ptr>{old_shp});
-    add_shp_(new_shp);
-    copy_shape_material_from_(new_shp, old_shp);
-    added.push_back(capture_shape_rec(*new_shp));
+    new_shp->set_parent_id(old_shp->get_parent_id());
+    new_shp->set_sibling_order(old_shp->get_sibling_order());
+    replacements.push_back(new_shp);
+    keep_links.push_back(old_shp->get_id());
   }
 
-  delete_operation_shps_();
+  m_shps = plane_ctx.shapes;
+  delete_operation_shps_(keep_links);
+
+  std::vector<Shape_rec> added;
+  added.reserve(replacements.size());
+  for (size_t i = 0; i < replacements.size(); ++i)
+  {
+    add_shp_(replacements[i], false);
+    copy_shape_material_from_(replacements[i], survivors[i]);
+    view().sync_workbench_links(replacements[i]->get_id());
+    added.push_back(capture_shape_rec(*replacements[i]));
+  }
   view().push_undo_delta(std::make_unique<Shape_replace_delta>(std::move(removed), std::move(added)));
   clear();
 

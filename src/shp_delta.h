@@ -17,9 +17,12 @@ struct Shape_rec
   int          material{0};
   TopoDS_Shape geom;
   gp_Ax3       frame;
+  gp_Ax3       local_frame;
   Shape_id     parent_id{0};
   int          sibling_order{0};
   bool         is_group{false};
+  bool         is_workbench{false};
+  Shape_id     source_id{0};
   bool         visible{true};
   bool         show_frame_axes{false};
   bool         show_frame_plane{false};
@@ -67,6 +70,9 @@ public:
     TopoDS_Shape after_geom;
     gp_Ax3       before_frame;
     gp_Ax3       after_frame;
+    bool         has_local_frame{false};
+    gp_Ax3       before_local_frame;
+    gp_Ax3       after_local_frame;
   };
 
   explicit Shape_geom_delta(std::vector<Geom_change> changes);

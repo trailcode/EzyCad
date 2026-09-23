@@ -11,11 +11,13 @@
 #include <GProp_GProps.hxx>
 #include <TopAbs_ShapeEnum.hxx>
 #include <TopExp_Explorer.hxx>
+#include <TopoDS.hxx>
 #include <TopoDS_Compound.hxx>
 #include <NCollection_List.hxx>
 #include <V3d_View.hxx>
 #include <gp_Ax1.hxx>
 #include <gp_Ax3.hxx>
+#include <gp_Lin.hxx>
 #include <gp_Dir.hxx>
 #include <gp_Pln.hxx>
 #include <gp_Trsf.hxx>
@@ -30,6 +32,7 @@
 #include "shp_rotate.h"
 #include "shp_scale.h"
 #include "shp_transform.h"
+#include "utl_geom.h"
 #include "skt_op_recorder.h"
 #include "utl.h"
 
@@ -480,9 +483,12 @@ TEST_F(Shp_test, Cross_section_selection_stale_after_selection_change)
   const Shape_id clipped_id = boxes[1]->get_id();
   ASSERT_TRUE(view().shp_cross_section().clip_selected().is_ok());
   EXPECT_FALSE(view().shp_cross_section().has_preview());
-  EXPECT_TRUE(view().find_shape_by_id(clipped_id).IsNull());
+  // Clip reuses the solid's Shape_id so workbench links stay attached.
+  const Shp_ptr clipped = view().find_shape_by_id(clipped_id);
+  EXPECT_FALSE(clipped.IsNull());
   ASSERT_FALSE(view().get_shapes().empty());
-  EXPECT_TRUE(contains_solid_like(view().get_shapes().back()->Shape()));
+  EXPECT_TRUE(contains_solid_like(clipped->Shape()));
+  EXPECT_FALSE(view().find_shape_by_id(boxes[0]->get_id()).IsNull());
 }
 
 TEST_F(Shp_test, Cross_section_clip_removes_fully_discarded_solids)
@@ -502,8 +508,10 @@ TEST_F(Shp_test, Cross_section_clip_removes_fully_discarded_solids)
   const Status clip_status = view().shp_cross_section().clip_selected();
   ASSERT_TRUE(clip_status.is_ok()) << clip_status.message();
   EXPECT_TRUE(view().find_shape_by_id(short_id).IsNull());
-  EXPECT_TRUE(view().find_shape_by_id(tall_id).IsNull());
+  // The cut solid keeps its id; only the fully discarded box is removed.
+  EXPECT_FALSE(view().find_shape_by_id(tall_id).IsNull());
   ASSERT_EQ(view().get_shapes().size(), 1u);
+  EXPECT_EQ(view().get_shapes().front()->get_id(), tall_id);
   EXPECT_TRUE(contains_solid_like(view().get_shapes().front()->Shape()));
 }
 
@@ -519,7 +527,7 @@ TEST_F(Shp_test, Cross_section_sketch_imports_box_midplane_lines)
   const Status status          = view().create_sketch_from_cross_section();
   ASSERT_TRUE(status.is_ok()) << status.message();
   EXPECT_EQ(view().get_sketches().size(), sketches_before + 1u);
-  EXPECT_EQ(gui().get_mode(), Mode::Sketch_inspection_mode);
+  EXPECT_EQ(gui().get_mode(), Mode::Sketch_inspection);
   EXPECT_GE(Sketch_access::get_linear_edge_count(view().curr_sketch()), 4u);
 }
 
@@ -660,6 +668,55 @@ TEST_F(Shp_test, Cut_box_from_box)
   EXPECT_NEAR(volume_of(view().get_shapes().back()->Shape()), 500.0, 1e-3);
 }
 
+TEST_F(Shp_test, Cut_keeps_object_id_and_workbench_links)
+{
+  view().add_box(0, 0, 0, 10, 10, 10);
+  view().add_box(0, 0, 0, 5, 10, 10);
+  Shp_ptr        object    = *view().get_shapes().begin();
+  Shp_ptr        tool      = view().get_shapes().back();
+  const Shape_id object_id = object->get_id();
+  ASSERT_TRUE(view().add_to_workbench({object}).is_ok());
+  ASSERT_TRUE(view().add_to_workbench({object}).is_ok());
+  ASSERT_TRUE(view().add_to_workbench({tool}).is_ok());
+  ASSERT_EQ(view().get_workbench_shapes().size(), 3u);
+
+  std::vector<Shp_ptr> to_select(view().get_shapes().begin(), view().get_shapes().end());
+  select_shapes(view(), to_select);
+  Status st = view().shp_cut().selected_cut();
+  ASSERT_TRUE(st.is_ok()) << st.message();
+
+  ASSERT_EQ(view().get_shapes().size(), 1u);
+  EXPECT_EQ(view().get_shapes().back()->get_id(), object_id);
+  ASSERT_EQ(view().get_workbench_shapes().size(), 2u);
+  for (const Shp_ptr& inst : view().get_workbench_shapes())
+  {
+    EXPECT_EQ(inst->get_source_id(), object_id);
+    EXPECT_NEAR(volume_of(inst->Shape()), 500.0, 1e-3);
+  }
+
+  EXPECT_TRUE(view().undo());
+  ASSERT_EQ(view().get_shapes().size(), 2u);
+  Shp_ptr restored;
+  for (const Shp_ptr& s : view().get_shapes())
+    if (s->get_id() == object_id)
+      restored = s;
+
+  ASSERT_FALSE(restored.IsNull());
+  EXPECT_NEAR(volume_of(restored->Shape()), 1000.0, 1e-3);
+  ASSERT_EQ(view().get_workbench_shapes().size(), 2u);
+  for (const Shp_ptr& inst : view().get_workbench_shapes())
+  {
+    EXPECT_EQ(inst->get_source_id(), object_id);
+    EXPECT_NEAR(volume_of(inst->Shape()), 1000.0, 1e-3);
+  }
+
+  EXPECT_TRUE(view().redo());
+  ASSERT_EQ(view().get_shapes().size(), 1u);
+  EXPECT_EQ(view().get_shapes().back()->get_id(), object_id);
+  ASSERT_EQ(view().get_workbench_shapes().size(), 2u);
+  EXPECT_NEAR(volume_of(view().get_workbench_shapes().back()->Shape()), 500.0, 1e-3);
+}
+
 TEST_F(Shp_test, Common_overlapping_boxes)
 {
   view().add_box(0, 0, 0, 10, 10, 10);
@@ -728,7 +785,7 @@ TEST_F(Shp_test, Undo_delete_shape_restores_brep)
 TEST_F(Shp_test, Delete_shape_clears_frame_ais)
 {
   // Static GUI can be left in a sketch mode by an earlier test; that suppresses frame AIS.
-  gui().set_mode(Mode::Normal);
+  gui().set_mode(Mode::Design_inspection);
 
   view().add_box(0, 0, 0, 10, 10, 10);
   ASSERT_EQ(view().get_shapes().size(), 1u);
@@ -804,9 +861,9 @@ TEST_F(Shp_test, Undo_interleaves_sketch_delta_and_shape_add)
   EXPECT_EQ(view().get_shapes().size(), 1u);
 }
 
-TEST_F(Shp_test, Set_frame_undo_stays_in_normal)
+TEST_F(Shp_test, Set_frame_undo_stays_in_design_inspection)
 {
-  gui().set_mode(Mode::Normal);
+  gui().set_mode(Mode::Design_inspection);
   gui().set_hide_all_shapes(false);
 
   view().add_box(0, 0, 0, 10, 10, 10);
@@ -824,16 +881,16 @@ TEST_F(Shp_test, Set_frame_undo_stays_in_normal)
   view().set_shape_frame(shp, after);
   shp->set_show_frame_axes(true);
   view().shp_set_frame().cancel();
-  EXPECT_EQ(gui().get_mode(), Mode::Normal);
+  EXPECT_EQ(gui().get_mode(), Mode::Design_inspection);
   EXPECT_FALSE(view().shp_set_frame().has_target());
 
   EXPECT_TRUE(view().undo());
-  EXPECT_EQ(gui().get_mode(), Mode::Normal);
+  EXPECT_EQ(gui().get_mode(), Mode::Design_inspection);
   EXPECT_FALSE(view().shp_set_frame().has_target());
   EXPECT_TRUE(shp->get_frame().Direction().IsEqual(before.Direction(), 1e-9));
 
   EXPECT_TRUE(view().redo());
-  EXPECT_EQ(gui().get_mode(), Mode::Normal);
+  EXPECT_EQ(gui().get_mode(), Mode::Design_inspection);
   EXPECT_TRUE(shp->get_frame().Direction().IsEqual(after.Direction(), 1e-9));
 }
 
@@ -1042,7 +1099,7 @@ TEST_F(Shp_test, Hide_all_preserves_per_shape_visibility)
 
 TEST_F(Shp_test, Hide_all_clears_frame_ais)
 {
-  gui().set_mode(Mode::Normal);
+  gui().set_mode(Mode::Design_inspection);
   gui().set_hide_all_shapes(false);
 
   view().add_box(0, 0, 0, 10, 10, 10);
@@ -1073,7 +1130,7 @@ TEST_F(Shp_test, Hide_all_clears_frame_ais)
 
 TEST_F(Shp_test, Hidden_group_clears_child_frame_ais)
 {
-  gui().set_mode(Mode::Normal);
+  gui().set_mode(Mode::Design_inspection);
   gui().set_hide_all_shapes(false);
 
   view().add_box(0, 0, 0, 10, 10, 10);
@@ -1476,14 +1533,14 @@ TEST_F(Shp_test, Transform_translation_local_x_constraint)
 
 TEST_F(Shp_test, Rotate_axis_can_be_set_before_first_drag)
 {
-  gui().set_mode(Mode::Normal);
+  gui().set_mode(Mode::Design_inspection);
   gui().set_hide_all_shapes(false);
   view().add_box(0, 0, 0, 10, 10, 10);
   Shp_ptr shp = view().get_shapes().back();
   ASSERT_FALSE(shp.IsNull());
   select_shapes(view(), {shp});
 
-  gui().set_mode(Mode::Rotate);
+  gui().set_mode(Mode::Workbench_rotate);
   EXPECT_TRUE(view().shp_rotate().has_operation_shps());
   view().shp_rotate().set_rotation_axis(Rotation_axis::Z_axis);
   EXPECT_EQ(view().shp_rotate().get_rotation_axis(), Rotation_axis::Z_axis);
@@ -1491,14 +1548,14 @@ TEST_F(Shp_test, Rotate_axis_can_be_set_before_first_drag)
 
 TEST_F(Shp_test, Rotate_view_to_object_keeps_drag_frame_after_orbit)
 {
-  gui().set_mode(Mode::Normal);
+  gui().set_mode(Mode::Design_inspection);
   gui().set_hide_all_shapes(false);
   view().add_box(0, 0, 0, 10, 10, 10);
   Shp_ptr shp = view().get_shapes().back();
   ASSERT_FALSE(shp.IsNull());
   select_shapes(view(), {shp});
 
-  gui().set_mode(Mode::Rotate);
+  gui().set_mode(Mode::Workbench_rotate);
   ASSERT_TRUE(view().shp_rotate().has_operation_shps());
   EXPECT_EQ(view().shp_rotate().get_rotation_axis(), Rotation_axis::View_to_object);
 
@@ -1521,14 +1578,14 @@ TEST_F(Shp_test, Rotate_view_to_object_keeps_drag_frame_after_orbit)
 
 TEST_F(Shp_test, Rotate_constrained_keeps_axis_plane_when_facing_test_would_flip)
 {
-  gui().set_mode(Mode::Normal);
+  gui().set_mode(Mode::Design_inspection);
   gui().set_hide_all_shapes(false);
   view().add_box(0, 0, 0, 10, 10, 10);
   Shp_ptr shp = view().get_shapes().back();
   ASSERT_FALSE(shp.IsNull());
   select_shapes(view(), {shp});
 
-  gui().set_mode(Mode::Rotate);
+  gui().set_mode(Mode::Workbench_rotate);
   ASSERT_TRUE(view().shp_rotate().has_operation_shps());
   view().shp_rotate().set_rotation_axis(Rotation_axis::X_axis);
 
@@ -1549,7 +1606,7 @@ TEST_F(Shp_test, Rotate_constrained_keeps_axis_plane_when_facing_test_would_flip
 
 TEST_F(Shp_test, Scale_space_change_mid_drag_keeps_factor)
 {
-  gui().set_mode(Mode::Normal);
+  gui().set_mode(Mode::Design_inspection);
   gui().set_hide_all_shapes(false);
   const Transform_space saved_space = gui().get_transform_space();
   struct Restore_space
@@ -1588,12 +1645,12 @@ TEST_F(Shp_test, Scale_space_change_mid_drag_keeps_factor)
   ASSERT_TRUE(Shp_scale_access::apply_distance(view().shp_scale(), dist_after).is_ok());
   EXPECT_NEAR(Shp_scale_access::scale_factor(view().shp_scale()), factor_before, 1e-6);
 
-  gui().set_mode(Mode::Normal);
+  gui().set_mode(Mode::Design_inspection);
 }
 
 TEST_F(Shp_test, Rotate_space_change_mid_drag_keeps_angle)
 {
-  gui().set_mode(Mode::Normal);
+  gui().set_mode(Mode::Design_inspection);
   gui().set_hide_all_shapes(false);
   const Transform_space saved_space = gui().get_transform_space();
   struct Restore_space
@@ -1610,7 +1667,7 @@ TEST_F(Shp_test, Rotate_space_change_mid_drag_keeps_angle)
   view().set_shape_frame(shp, gp_Ax3(gp_Pnt(0.0, 0.0, 0.0), gp_Dir(0.0, 0.0, 1.0), gp_Dir(1.0, 0.0, 0.0)));
   select_shapes(view(), {shp});
 
-  gui().set_mode(Mode::Rotate);
+  gui().set_mode(Mode::Workbench_rotate);
   ASSERT_TRUE(view().shp_rotate().has_operation_shps());
   view().shp_rotate().set_rotation_axis(Rotation_axis::Z_axis);
   ASSERT_TRUE(Shp_rotate_access::ensure_start(view().shp_rotate()).is_ok());
@@ -1634,5 +1691,318 @@ TEST_F(Shp_test, Rotate_space_change_mid_drag_keeps_angle)
   ASSERT_TRUE(Shp_rotate_access::apply_world(view().shp_rotate(), gp_Pnt(0.0, 20.0, 0.0), axis_z, world_pln).is_ok());
   EXPECT_NEAR(Shp_rotate_access::angle(view().shp_rotate()), angle_before, 1e-6);
 
-  gui().set_mode(Mode::Normal);
+  gui().set_mode(Mode::Design_inspection);
+}
+
+// ---------------------------------------------------------------------------
+// Workbench list (geometry links, own placement)
+// ---------------------------------------------------------------------------
+
+TEST(Mode_helpers, Design_move_rotate_stay_on_design_task)
+{
+  EXPECT_EQ(task_of(Mode::Design_move), Task::Design);
+  EXPECT_EQ(task_of(Mode::Design_rotate), Task::Design);
+  EXPECT_EQ(task_of(Mode::Design_shaft_align), Task::Design);
+  EXPECT_EQ(task_of(Mode::Scale), Task::Design);
+  EXPECT_EQ(task_of(Mode::Sketch_face_extrude), Task::Sketch);
+  EXPECT_EQ(GUI::parent_mode_of(Mode::Sketch_face_extrude), Mode::Sketch_inspection);
+  EXPECT_EQ(task_of(Mode::Workbench_move), Task::Workbench);
+  EXPECT_EQ(task_of(Mode::Workbench_rotate), Task::Workbench);
+  EXPECT_EQ(task_of(Mode::Workbench_shaft_align), Task::Workbench);
+  EXPECT_TRUE(is_move_mode(Mode::Design_move));
+  EXPECT_TRUE(is_rotate_mode(Mode::Design_rotate));
+  EXPECT_TRUE(is_shaft_align_mode(Mode::Design_shaft_align));
+  EXPECT_TRUE(is_shaft_align_mode(Mode::Workbench_shaft_align));
+  EXPECT_FALSE(is_workbench_mode(Mode::Design_move));
+  EXPECT_FALSE(is_workbench_mode(Mode::Design_rotate));
+  EXPECT_FALSE(is_workbench_mode(Mode::Design_shaft_align));
+  EXPECT_EQ(GUI::parent_mode_of(Mode::Design_move), Mode::Design_inspection);
+  EXPECT_EQ(GUI::parent_mode_of(Mode::Design_rotate), Mode::Design_inspection);
+  EXPECT_EQ(GUI::parent_mode_of(Mode::Design_shaft_align), Mode::Design_inspection);
+  EXPECT_EQ(GUI::parent_mode_of(Mode::Workbench_move), Mode::Workbench_inspection);
+  EXPECT_EQ(GUI::parent_mode_of(Mode::Workbench_shaft_align), Mode::Workbench_inspection);
+  EXPECT_EQ(task_of(Mode::Workbench_set_frame), Task::Workbench);
+  EXPECT_TRUE(is_set_frame_mode(Mode::Workbench_set_frame));
+  EXPECT_TRUE(is_workbench_mode(Mode::Workbench_set_frame));
+  EXPECT_EQ(GUI::parent_mode_of(Mode::Workbench_set_frame), Mode::Workbench_inspection);
+  EXPECT_EQ(mode_from_string("Move"), Mode::Design_move);
+  EXPECT_EQ(mode_from_string("Rotate"), Mode::Design_rotate);
+  EXPECT_EQ(mode_from_string("Shape_shaft_align"), Mode::Design_shaft_align);
+  EXPECT_EQ(static_cast<int>(Mode::Design_move), 1);
+  EXPECT_EQ(static_cast<int>(Mode::Design_rotate), 3);
+  EXPECT_EQ(static_cast<int>(Mode::Design_shaft_align), 24);
+  EXPECT_NE(static_cast<int>(Mode::Workbench_move), static_cast<int>(Mode::Design_move));
+  EXPECT_NE(static_cast<int>(Mode::Workbench_rotate), static_cast<int>(Mode::Design_rotate));
+  EXPECT_NE(static_cast<int>(Mode::Workbench_shaft_align), static_cast<int>(Mode::Design_shaft_align));
+}
+
+TEST(Shp_frame, Trsf_from_frame_maps_local_origin_to_world)
+{
+  const gp_Ax3 f(gp_Pnt(10.0, 20.0, 30.0), gp_Dir(0.0, 0.0, 1.0), gp_Dir(1.0, 0.0, 0.0));
+  const gp_Pnt world = gp_Pnt(0.0, 0.0, 0.0).Transformed(Shp::trsf_from_frame(f));
+  EXPECT_TRUE(world.IsEqual(gp_Pnt(10.0, 20.0, 30.0), 1e-9));
+}
+
+TEST_F(Shp_test, Add_to_workbench_creates_geometry_link)
+{
+  view().add_box(0, 0, 0, 10, 10, 10);
+  ASSERT_EQ(view().get_shapes().size(), 1u);
+  Shp_ptr src = view().get_shapes().back();
+  const Shape_id src_id = src->get_id();
+  const double   vol    = volume_of(src->Shape());
+
+  ASSERT_TRUE(view().add_to_workbench({src}).is_ok());
+  ASSERT_EQ(view().get_workbench_shapes().size(), 1u);
+  Shp_ptr inst = view().get_workbench_shapes().back();
+  EXPECT_TRUE(inst->is_workbench());
+  EXPECT_TRUE(inst->is_workbench_link());
+  EXPECT_EQ(inst->get_source_id(), src_id);
+  EXPECT_NE(inst->get_id(), src_id);
+  EXPECT_NEAR(volume_of(inst->Shape()), vol, 1e-6);
+}
+
+TEST_F(Shp_test, Design_move_does_not_move_workbench_instance)
+{
+  view().add_box(0, 0, 0, 10, 10, 10);
+  Shp_ptr src = view().get_shapes().back();
+  ASSERT_TRUE(view().add_to_workbench({src}).is_ok());
+  Shp_ptr inst = view().get_workbench_shapes().back();
+  const gp_Pnt inst_origin = inst->get_frame().Location();
+  const gp_Pnt src_origin  = src->get_frame().Location();
+
+  gp_Trsf move;
+  move.SetTranslation(gp_Vec(40.0, 0.0, 0.0));
+  src->SetLocalTransformation(move);
+  AIS_Shape_ptr ais = src;
+  view().bake_transform_into_geometry(ais);
+  view().sync_workbench_links(src->get_id());
+
+  EXPECT_TRUE(src->get_frame().Location().IsEqual(src_origin.Translated(gp_Vec(40.0, 0.0, 0.0)), 1e-6));
+  EXPECT_TRUE(inst->get_frame().Location().IsEqual(inst_origin, 1e-6));
+  EXPECT_NEAR(volume_of(inst->Shape()), volume_of(src->Shape()), 1e-6);
+}
+
+TEST_F(Shp_test, Workbench_move_bakes_instance_frame_only)
+{
+  view().add_box(0, 0, 0, 10, 10, 10);
+  Shp_ptr src = view().get_shapes().back();
+  ASSERT_TRUE(view().add_to_workbench({src}).is_ok());
+  Shp_ptr inst = view().get_workbench_shapes().back();
+  const gp_Pnt frame0 = inst->get_frame().Location();
+  const gp_Pnt disp0  = get_shape_bbox_center(inst->Shape()).Transformed(inst->placement_trsf());
+
+  gp_Trsf move;
+  move.SetTranslation(gp_Vec(25.0, 0.0, 0.0));
+  inst->SetLocalTransformation(move * inst->placement_trsf());
+  AIS_Shape_ptr ais = inst;
+  view().bake_transform_into_geometry(ais);
+
+  EXPECT_TRUE(inst->get_frame().Location().IsEqual(frame0.Translated(gp_Vec(25.0, 0.0, 0.0)), 1e-6));
+  const gp_Pnt disp1 = get_shape_bbox_center(inst->Shape()).Transformed(inst->placement_trsf());
+  EXPECT_TRUE(disp1.IsEqual(disp0.Translated(gp_Vec(25.0, 0.0, 0.0)), 1e-6));
+  EXPECT_NEAR(volume_of(inst->Shape()), volume_of(src->Shape()), 1e-6);
+
+  const Transform_axes world_axes = transform_axes_for({inst}, Transform_space::World);
+  EXPECT_TRUE(world_axes.origin.IsEqual(disp1, 1e-6));
+}
+
+TEST_F(Shp_test, Workbench_cyl_align_uses_instance_placement)
+{
+  view().add_cylinder(0, 0, 0, 1.0, 4.0);
+  Shp_ptr src = view().get_shapes().back();
+  ASSERT_TRUE(view().add_to_workbench({src}).is_ok());
+  ASSERT_TRUE(view().add_to_workbench({src}).is_ok());
+  auto it = view().get_workbench_shapes().begin();
+  Shp_ptr moving = *it++;
+  Shp_ptr fixed  = *it;
+  ASSERT_FALSE(moving.IsNull());
+  ASSERT_FALSE(fixed.IsNull());
+
+  gp_Ax3 placed = moving->get_frame();
+  placed.SetLocation(placed.Location().Translated(gp_Vec(50.0, 0.0, 0.0)));
+  moving->set_frame(placed);
+  moving->SetLocalTransformation(moving->placement_trsf());
+
+  auto first_cyl = [](const TopoDS_Shape& s) -> std::optional<Cyl_face_info>
+  {
+    for (TopExp_Explorer ex(s, TopAbs_FACE); ex.More(); ex.Next())
+      if (std::optional<Cyl_face_info> c = cylinder_from_face(TopoDS::Face(ex.Current())))
+        return c;
+
+    return std::nullopt;
+  };
+
+  const std::optional<Cyl_face_info> moving_local = first_cyl(moving->Shape());
+  const std::optional<Cyl_face_info> fixed_local  = first_cyl(fixed->Shape());
+  ASSERT_TRUE(moving_local.has_value());
+  ASSERT_TRUE(fixed_local.has_value());
+
+  const gp_Ax1 moving_world = moving_local->axis.Transformed(moving->LocalTransformation());
+  const gp_Ax1 fixed_world  = fixed_local->axis.Transformed(fixed->LocalTransformation());
+  const gp_Trsf local_only  = cyl_align_trsf(moving_local->axis, fixed_local->axis, false, 0.0, 0.0);
+  const gp_Trsf world_align = cyl_align_trsf(moving_world, fixed_world, false, 0.0, 0.0);
+
+  // Same linked local geom: local-only align does not close the instance gap.
+  EXPECT_LT(local_only.TranslationPart().Modulus(), 1.0);
+  EXPECT_GT(world_align.TranslationPart().Modulus(), 40.0);
+
+  const gp_Pnt after = moving_world.Location().Transformed(world_align);
+  EXPECT_NEAR(gp_Lin(fixed_world).Distance(after), 0.0, 1e-6);
+}
+
+TEST(Shp_cyl_align, Prefers_smaller_rotation)
+{
+  const gp_Ax1 fixed(gp_Pnt(0.0, 0.0, 0.0), gp_Dir(0.0, 0.0, 1.0));
+  const gp_Ax1 anti(gp_Pnt(8.0, 0.0, 0.0), gp_Dir(0.0, 0.0, -1.0));
+
+  const gp_Trsf keep = cyl_align_trsf(anti, fixed, false, 0.0, 0.0);
+  EXPECT_GT(gp_Vec(0.0, 0.0, 1.0).Transformed(keep).Z(), 0.9);
+
+  const gp_Trsf flipped = cyl_align_trsf(anti, fixed, true, 0.0, 0.0);
+  EXPECT_LT(gp_Vec(0.0, 0.0, 1.0).Transformed(flipped).Z(), -0.9);
+
+  const gp_Ax1  same(gp_Pnt(8.0, 0.0, 0.0), gp_Dir(0.0, 0.0, 1.0));
+  const gp_Trsf par = cyl_align_trsf(same, fixed, false, 0.0, 0.0);
+  EXPECT_GT(gp_Vec(0.0, 0.0, 1.0).Transformed(par).Z(), 0.9);
+}
+
+TEST_F(Shp_test, Workbench_set_frame_keeps_instance_pose)
+{
+  view().add_cylinder(0, 0, 0, 1.0, 4.0);
+  Shp_ptr src = view().get_shapes().back();
+  ASSERT_TRUE(view().add_to_workbench({src}).is_ok());
+  Shp_ptr inst = view().get_workbench_shapes().back();
+  const gp_Pnt pose0 = inst->get_frame().Location();
+
+  const gp_Ax3 local(gp_Pnt(0.0, 0.0, 1.0), gp_Dir(0.0, 0.0, 1.0), gp_Dir(1.0, 0.0, 0.0));
+  view().set_shape_frame(inst, local);
+
+  EXPECT_TRUE(inst->get_frame().Location().IsEqual(pose0, 1e-9));
+  EXPECT_TRUE(inst->get_local_frame().Location().IsEqual(local.Location(), 1e-9));
+  EXPECT_TRUE(inst->get_local_frame().Direction().IsEqual(local.Direction(), 1e-9));
+}
+
+TEST_F(Shp_test, Design_geom_change_syncs_workbench_link)
+{
+  view().add_box(0, 0, 0, 10, 10, 10);
+  Shp_ptr src = view().get_shapes().back();
+  ASSERT_TRUE(view().add_to_workbench({src}).is_ok());
+  Shp_ptr inst = view().get_workbench_shapes().back();
+  EXPECT_NEAR(volume_of(inst->Shape()), 1000.0, 1e-4);
+
+  const TopoDS_Shape bigger = shp_create::create_box(0, 0, 0, 20, 20, 20);
+  view().set_shape_geom_by_id(src->get_id(), bigger, src->get_frame());
+  EXPECT_NEAR(volume_of(inst->Shape()), 8000.0, 1e-3);
+  EXPECT_TRUE(inst->get_frame().Location().IsEqual(src->get_frame().Location(), 1e-6));
+}
+
+TEST_F(Shp_test, Workbench_json_round_trip_and_source_delete)
+{
+  view().add_box(0, 0, 0, 4, 5, 6);
+  Shp_ptr src = view().get_shapes().back();
+  const Shape_id src_id = src->get_id();
+  ASSERT_TRUE(view().add_to_workbench({src}).is_ok());
+  Shp_ptr inst = view().get_workbench_shapes().back();
+  const Shape_id inst_id = inst->get_id();
+  gp_Ax3 placed = inst->get_frame();
+  placed.SetLocation(gp_Pnt(15.0, 0.0, 0.0));
+  inst->set_frame(placed);
+
+  const std::string json = view().to_json();
+  view().new_file();
+  EXPECT_TRUE(view().get_shapes().empty());
+  EXPECT_TRUE(view().get_workbench_shapes().empty());
+
+  view().load(json, false);
+  ASSERT_EQ(view().get_shapes().size(), 1u);
+  ASSERT_EQ(view().get_workbench_shapes().size(), 1u);
+  Shp_ptr loaded = view().get_workbench_shapes().back();
+  EXPECT_EQ(loaded->get_id(), inst_id);
+  EXPECT_EQ(loaded->get_source_id(), src_id);
+  EXPECT_TRUE(loaded->is_workbench_link());
+  EXPECT_TRUE(loaded->get_frame().Location().IsEqual(gp_Pnt(15.0, 0.0, 0.0), 1e-6));
+  EXPECT_NEAR(volume_of(loaded->Shape()), volume_of(view().get_shapes().back()->Shape()), 1e-6);
+
+  view().delete_shapes({view().get_shapes().back()});
+  EXPECT_TRUE(view().get_shapes().empty());
+  EXPECT_TRUE(view().get_workbench_shapes().empty());
+}
+
+TEST_F(Shp_test, Undo_delete_design_restores_workbench_links)
+{
+  view().add_box(0, 0, 0, 4, 5, 6);
+  Shp_ptr        src    = view().get_shapes().back();
+  const Shape_id src_id = src->get_id();
+  ASSERT_TRUE(view().add_to_workbench({src}).is_ok());
+  ASSERT_TRUE(view().add_to_workbench({src}).is_ok());
+  ASSERT_EQ(view().get_workbench_shapes().size(), 2u);
+  const Shape_id inst_a = view().get_workbench_shapes().front()->get_id();
+  const Shape_id inst_b = view().get_workbench_shapes().back()->get_id();
+
+  view().delete_shapes({src});
+  EXPECT_TRUE(view().get_shapes().empty());
+  EXPECT_TRUE(view().get_workbench_shapes().empty());
+
+  EXPECT_TRUE(view().undo());
+  ASSERT_EQ(view().get_shapes().size(), 1u);
+  EXPECT_EQ(view().get_shapes().back()->get_id(), src_id);
+  ASSERT_EQ(view().get_workbench_shapes().size(), 2u);
+  EXPECT_EQ(view().get_workbench_shapes().front()->get_id(), inst_a);
+  EXPECT_EQ(view().get_workbench_shapes().back()->get_id(), inst_b);
+  for (const Shp_ptr& inst : view().get_workbench_shapes())
+  {
+    EXPECT_EQ(inst->get_source_id(), src_id);
+    EXPECT_NEAR(volume_of(inst->Shape()), volume_of(view().get_shapes().back()->Shape()), 1e-6);
+  }
+
+  EXPECT_TRUE(view().redo());
+  EXPECT_TRUE(view().get_shapes().empty());
+  EXPECT_TRUE(view().get_workbench_shapes().empty());
+}
+
+TEST_F(Shp_test, Cut_rejects_workbench_instances)
+{
+  view().add_box(0, 0, 0, 10, 10, 10);
+  view().add_box(0, 0, 0, 5, 10, 10);
+  std::vector<Shp_ptr> design(view().get_shapes().begin(), view().get_shapes().end());
+  ASSERT_TRUE(view().add_to_workbench({design[0]}).is_ok());
+  ASSERT_TRUE(view().add_to_workbench({design[1]}).is_ok());
+  std::vector<Shp_ptr> instances(view().get_workbench_shapes().begin(), view().get_workbench_shapes().end());
+  select_shapes(view(), instances);
+
+  Status st = view().shp_cut().selected_cut();
+  EXPECT_FALSE(st.is_ok());
+  EXPECT_EQ(view().get_shapes().size(), 2u);
+  EXPECT_EQ(view().get_workbench_shapes().size(), 2u);
+  EXPECT_EQ(view().get_shapes().front()->get_id(), design[0]->get_id());
+  EXPECT_EQ(view().get_workbench_shapes().front()->get_id(), instances[0]->get_id());
+}
+
+TEST_F(Shp_test, Add_design_group_to_workbench)
+{
+  view().add_box(0, 0, 0, 1, 1, 1);
+  view().add_box(3, 0, 0, 1, 1, 1);
+  std::vector<Shp_ptr> boxes(view().get_shapes().begin(), view().get_shapes().end());
+  ASSERT_TRUE(view().group_shapes(boxes).is_ok());
+  Shp_ptr grp;
+  for (const Shp_ptr& s : view().get_shapes())
+    if (s->is_group())
+      grp = s;
+
+  ASSERT_FALSE(grp.IsNull());
+  ASSERT_TRUE(view().add_to_workbench({grp}).is_ok());
+  EXPECT_EQ(view().get_workbench_shapes().size(), 3u);
+
+  size_t wbk_groups = 0;
+  size_t wbk_links  = 0;
+  for (const Shp_ptr& s : view().get_workbench_shapes())
+  {
+    if (s->is_group())
+      ++wbk_groups;
+    else if (s->is_workbench_link())
+      ++wbk_links;
+  }
+
+  EXPECT_EQ(wbk_groups, 1u);
+  EXPECT_EQ(wbk_links, 2u);
 }

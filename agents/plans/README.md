@@ -26,14 +26,15 @@ shp-origin-orientation  -->  cross-section-tool  -->  sketch-from-shape-section
 sketch-mode-shape-faint  (done; parallel UX)
 ```
 
-| Plan                                                             | Status     | Load only when prompt is about                                         |
-| ---------------------------------------------------------------- | ---------- | ---------------------------------------------------------------------- |
-| [shp-origin-orientation.md](shp-origin-orientation.md)           | partial    | shape origin, shape frame, shape axes / orientation annotation         |
-| [cross-section-tool.md](cross-section-tool.md)                   | done       | cross-section tool, section cut preview, cutting-plane experiment      |
-| [sketch-from-shape-section.md](sketch-from-shape-section.md)     | partial    | "sketch from shape", section → editable sketch                         |
-| [sketch-mode-shape-faint.md](sketch-mode-shape-faint.md)         | done       | faint/ghost/wireframe shapes in sketch mode, alpha blending solids     |
-| [shape-list-hierarchy-phase3.md](shape-list-hierarchy-phase3.md) | deferred   | parent transform inheritance, Parts/planes, Boolean history (#214)     |
-| [assembly-inspection-mode.md](assembly-inspection-mode.md)       | deferred   | assembly idle/inspection mode, Part vs arrange context, Move semantics |
-| [wasm-multithreading.md](wasm-multithreading.md)                 | planning   | WASM/Emscripten pthreads, SharedArrayBuffer, parallel OCCT on web      |
+| Plan                                                             | Status      | Load only when prompt is about                                                 |
+| ---------------------------------------------------------------- | ----------- | ------------------------------------------------------------------------------ |
+| [shp-origin-orientation.md](shp-origin-orientation.md)           | partial     | shape origin, shape frame, shape axes / orientation annotation                 |
+| [cross-section-tool.md](cross-section-tool.md)                   | done        | cross-section tool, section cut preview, cutting-plane experiment              |
+| [sketch-from-shape-section.md](sketch-from-shape-section.md)     | partial     | "sketch from shape", section → editable sketch                                 |
+| [sketch-mode-shape-faint.md](sketch-mode-shape-faint.md)         | done        | faint/ghost/wireframe shapes in sketch mode, alpha blending solids             |
+| [tasks-workbenches.md](tasks-workbenches.md)                     | partial     | Sketch/Design/Workbench task toolbar, Workbench List links                     |
+| [shape-list-hierarchy-phase3.md](shape-list-hierarchy-phase3.md) | partial     | parent transform inheritance, Parts/planes, Boolean history (#214)             |
+| [assembly-inspection-mode.md](assembly-inspection-mode.md)       | deferred    | assembly idle/inspection mode, Part vs arrange context, Workbench list         |
+| [wasm-multithreading.md](wasm-multithreading.md)                 | planning    | WASM/Emscripten pthreads, SharedArrayBuffer, parallel OCCT on web              |
 | [wasm-alt-drag-multiselect.md](wasm-alt-drag-multiselect.md)     | implemented | WASM Alt+LMB multi-select (#220); AABB pick supplement; close issue when ready |
-| [configurable-hotkeys.md](configurable-hotkeys.md)               | done       | remappable shortcuts, keybindings, `gui.hotkeys`, free Dimension off D |
+| [configurable-hotkeys.md](configurable-hotkeys.md)               | done        | remappable shortcuts, keybindings, `gui.hotkeys`, free Dimension off D         |

@@ -5,13 +5,15 @@
 
 // --- Mode ------------------------------------------------------------------
 // Single source of truth: order here defines enum numeric values and c_mode_strs indices
-// (mode_from_string, persistence, etc.). Do not reorder without migrating saved data.
+// (mode_from_string, persistence, etc.). .ezy stores mode as this integer.
+// Slots 0/1/2/3/24 match released files: Normal, Move, Scale, Rotate, Shape_shaft_align.
+// Do not reorder those slots. New modes go at the end.
 #define EZY_MODE_LIST(X)                                                                                                       \
-  X(Normal)                                                                                                                    \
-  X(Move)                                                                                                                      \
+  X(Design_inspection) /* 0: was Normal */                                                                                     \
+  X(Design_move)       /* 1: was Move. Design CSG placement; bake BREP. */                                                     \
   X(Scale)                                                                                                                     \
-  X(Rotate)                                                                                                                    \
-  X(Sketch_inspection_mode)  /* inspecting sketch elements */                                                                  \
+  X(Design_rotate) /* 3: was Rotate. Design CSG rotation; bake BREP. */                                                        \
+  X(Sketch_inspection)       /* inspecting sketch elements */                                                                  \
   X(Sketch_from_planar_face) /* sketch from a planar face */                                                                   \
   X(Sketch_face_extrude)     /* extrude a sketch face */                                                                       \
   X(Shape_chamfer)                                                                                                             \
@@ -31,8 +33,13 @@
   X(Sketch_add_bone) /* two centers, then r1, r2, waist clicks */                                                              \
   X(Sketch_dim_anno)                                                                                                           \
   X(Shape_cross_section)                                                                                                       \
-  X(Shape_shaft_align)                                                                                                         \
-  X(Shape_set_frame) /* Shape List only: pick face for local frame */
+  X(Design_shaft_align) /* 24: was Shape_shaft_align. Design CSG shaft align; bake BREP. */                                    \
+  X(Shape_set_frame)    /* Shape List: pick face for local frame */                                                            \
+  X(Workbench_inspection) /* Workbench browse/select home; not Mode::Design_inspection */                                      \
+  X(Workbench_move)       /* instance pose; not the old Move slot */                                                           \
+  X(Workbench_rotate)     /* instance pose; not the old Rotate slot */                                                         \
+  X(Workbench_shaft_align) /* instance pose; not the old Shape_shaft_align slot */                                             \
+  X(Workbench_set_frame)   /* Workbench List: pick face for instance local frame (pose unchanged). */
 
 enum class Mode
 {
@@ -49,6 +56,13 @@ constexpr std::array<std::string_view, static_cast<std::size_t>(Mode::_count)> c
 };
 
 static_assert(c_mode_strs.size() == static_cast<std::size_t>(Mode::_count));
+// Released .ezy files stored these tools at fixed integers. Keep the slots.
+static_assert(static_cast<int>(Mode::Design_inspection) == 0);
+static_assert(static_cast<int>(Mode::Design_move) == 1);
+static_assert(static_cast<int>(Mode::Scale) == 2);
+static_assert(static_cast<int>(Mode::Design_rotate) == 3);
+static_assert(static_cast<int>(Mode::Design_shaft_align) == 24);
+static_assert(static_cast<int>(Mode::Shape_set_frame) == 25);
 
 #undef EZY_MODE_LIST
 
@@ -110,7 +124,34 @@ constexpr std::array<const char*, static_cast<std::size_t>(Bone_holes::_count)> 
 
 static_assert(c_bone_holes_strs.size() == static_cast<std::size_t>(Bone_holes::_count));
 
-bool is_sketch_mode(const Mode mode);
+/// Toolbar task switcher (Sketch / Design / Workbench). Distinct from Mode.
+enum class Task
+{
+  Sketch,
+  Design,
+  Workbench,
+  _count
+};
 
-/// Return Mode for a name (e.g. "Normal", "Sketch_add_edge"). Returns Normal if not found.
+bool is_sketch_mode(const Mode mode);
+/// Workbench idle + Move / Rotate / Align shafts.
+bool is_workbench_mode(const Mode mode);
+/// Workbench Move / Rotate / Align shafts (not idle; Scale is Design).
+bool is_workbench_transform_mode(const Mode mode);
+/// Design or Workbench Move (same tool, different bake / parent).
+bool is_move_mode(const Mode mode);
+/// Design or Workbench Rotate.
+bool is_rotate_mode(const Mode mode);
+/// Design or Workbench Align shafts.
+bool is_shaft_align_mode(const Mode mode);
+/// Design or Workbench set-local-frame pick.
+bool is_set_frame_mode(const Mode mode);
+/// Design Inspection or Workbench idle (solid browse / selection-filter digits).
+bool is_shape_browse_mode(const Mode mode);
+
+Task task_of(Mode mode);
+Mode idle_mode_of(Task task);
+
+/// Return Mode for a name (e.g. "Design_inspection", "Sketch_add_edge"). Returns Design_inspection if not found.
+/// Also accepts retired names: Normal, Sketch_inspection_mode, Move (Design_move), Rotate (Design_rotate), Workbench_scale, Shape_shaft_align (Design_shaft_align).
 Mode mode_from_string(std::string_view name);

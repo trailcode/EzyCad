@@ -66,14 +66,41 @@ void Shp_operation_base::set_operation_shps_(std::vector<Shp_ptr> shps) { m_shps
   return Status::ok();
 }
 
-void Shp_operation_base::delete_operation_shps_()
+Status Shp_operation_base::ensure_design_operands_() const
+{
+  for (const Shp_ptr& shp : m_shps)
+    if (!shp.IsNull() && shp->is_workbench())
+      return Status::user_error("Select Design solids. Boolean operations do not edit Workbench instances.");
+
+  return Status::ok();
+}
+
+void Shp_operation_base::delete_operation_shps_(const std::vector<Shape_id>& keep_workbench_sources)
 {
   std::vector<AIS_Shape_ptr> to_delete;
   for (Shp_ptr& shp : m_shps)
     to_delete.push_back(shp);
 
-  m_view.delete_(to_delete);
+  m_view.delete_(to_delete, keep_workbench_sources);
   m_shps.clear();
+}
+
+void Shp_operation_base::replace_operands_keeping_first_id_(Shp_ptr& result, const std::string& name)
+{
+  if (result.IsNull() || m_shps.empty() || m_shps.front().IsNull())
+    return;
+
+  Shp_ptr survivor = m_shps.front();
+  result->set_name(name);
+  result->set_id(survivor->get_id());
+  result->set_frame(survivor->get_frame());
+  result->set_parent_id(survivor->get_parent_id());
+  result->set_sibling_order(survivor->get_sibling_order());
+
+  delete_operation_shps_({survivor->get_id()});
+  add_shp_(result, false);
+  copy_shape_material_from_(result, survivor);
+  view().sync_workbench_links(result->get_id());
 }
 
 void Shp_operation_base::operation_shps_finalize_()
@@ -95,7 +122,7 @@ void Shp_operation_base::operation_shps_cancel_()
     m_completed_shps = m_shps;
 
   for (Shp_ptr& shape : m_shps)
-    shape->ResetTransformation();
+    shape->SetLocalTransformation(shape->placement_trsf());
 }
 
 void Shp_operation_base::restore_operation_selection_()
@@ -144,11 +171,14 @@ void Shp_operation_base::replace_picked_shape_(Shp_ptr& old_shp, Shp_ptr& new_sh
   v.get_shapes().remove(old_shp);
 
   new_shp->set_name(name);
+  new_shp->set_id(old_shp->get_id());
+  new_shp->set_frame(old_shp->get_frame());
   new_shp->set_parent_id(old_shp->get_parent_id());
   new_shp->set_sibling_order(old_shp->get_sibling_order());
   add_shp_(new_shp);
   copy_shape_material_from_(new_shp, old_shp);
   ctx().Display(new_shp, new_shp->get_disp_mode(), AIS_Shape::SelectionMode(v.get_shp_selection_mode()), true);
+  v.sync_workbench_links(new_shp->get_id());
   v.redraw_view();
 }
 

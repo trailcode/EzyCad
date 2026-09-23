@@ -229,7 +229,7 @@ void Shp_rotate::preview_rotate_()
   rotation.SetRotation(gp_Ax1(*m_center, current_axis_dir_()), m_angle);
 
   for (const Shp_ptr& shape : m_shps)
-    shape->SetLocalTransformation(rotation);
+    shape->SetLocalTransformation(rotation * shape->placement_trsf());
 
   redisplay_operation_shps_after_transform_();
 }
@@ -287,9 +287,10 @@ void Shp_rotate::cancel()
 
 void Shp_rotate::reset()
 {
+  const Mode parent = GUI::parent_mode_of(gui().get_mode());
   clear_all(m_angle, m_shps, m_initial_mouse_pos, m_rotate_pln, m_captured_axis_dir, m_center);
   clear_rotation_vis_();
-  gui().set_mode(Mode::Normal);
+  gui().set_mode(parent);
 }
 
 void Shp_rotate::clear_rotation_vis_()

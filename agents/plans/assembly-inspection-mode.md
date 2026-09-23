@@ -25,37 +25,39 @@ Post-v1 product design. Do **not** ship Assembly inspection until [phase 3 place
 
 Two phases of work, two kinds of idle mode:
 
-1. **Make geometry** — Sketch inspection + Inspection (`Mode::Normal`): draw profiles, see solids alongside (or faint), extrude, fillet, boolean.
-2. **Arrange components** — Assembly inspection (future): duplicate / place / move Parts relative to each other; later mates and instances.
+1. **Make geometry** — Sketch inspection + Design inspection (`Mode::Design_inspection`): draw profiles, see solids alongside (or faint), extrude, fillet, boolean.
+2. **Arrange components** — Workbench inspection (`Mode::Workbench_inspection`): duplicate / place / move Parts relative to each other; later mates and instances.
 
-That split matches SolidWorks / Inventor / Fusion (sketch nested in part, part nested in assembly). EzyCad names the idle states “inspection” (= browse/select + launch tools + Esc parent), not metrology “Inspect.”
+That split matches SolidWorks / Inventor / Fusion (sketch nested in part, part nested in assembly). EzyCad names the idle states "inspection" (= browse/select + launch tools + Esc parent), not metrology "Inspect." Workbench is the arrange task today; a later `Assembly_inspection` name can replace it if mates/instances need a fourth idle.
 
 ```mermaid
 flowchart TB
-  assemblyIdle[Assembly_inspection]
-  partIdle[Inspection_Normal]
+  workbenchIdle[Workbench_inspection]
+  designIdle[Design_inspection]
   sketchIdle[Sketch_inspection]
   sketchTools[Sketch_tools]
-  assemblyIdle -->|"edit part"| partIdle
-  partIdle -->|"edit sketch"| sketchIdle
+  workbenchIdle -->|"edit part"| designIdle
+  designIdle -->|"edit sketch"| sketchIdle
   sketchIdle --> sketchTools
   sketchTools -->|"Esc"| sketchIdle
-  sketchIdle -->|"Esc"| partIdle
-  partIdle -->|"Esc"| assemblyIdle
+  sketchIdle -->|"Esc"| designIdle
 ```
+
+Esc from Workbench tools returns to Workbench idle (not Design). Task buttons jump between Sketch, Design, and Workbench.
 
 ## What exists today
 
-| UI label               | Mode                           | Role                                                                          |
-| ---------------------- | ------------------------------ | ----------------------------------------------------------------------------- |
-| Inspection mode        | `Mode::Normal`                 | Idle 3D solids: selection filter, materials, booleans, transforms             |
-| Sketch inspection mode | `Mode::Sketch_inspection_mode` | Idle 2D sketch: show sketch, ortho, faint solids; Esc parent for sketch tools |
+| UI label               | Mode                         | Role                                                                          |
+| ---------------------- | ---------------------------- | ----------------------------------------------------------------------------- |
+| Design inspection      | `Mode::Design_inspection`    | Idle 3D modeling: selection filter, materials, booleans, Scale, Align shafts  |
+| Workbench inspection   | `Mode::Workbench_inspection` | Idle 3D arrange: Move / Rotate / Align shafts; Workbench list of Parts        |
+| Sketch inspection mode | `Mode::Sketch_inspection`    | Idle 2D sketch: show sketch, ortho, faint solids; Esc parent for sketch tools |
 
-Esc ladder (see [docs/usage.md](../../docs/usage.md)): sketch tool → sketch inspection → Normal.
+Esc ladder (see [docs/usage.md](../../docs/usage.md)): sketch tool -> sketch inspection -> `Design_inspection`. Workbench tools -> `Workbench_inspection`.
 
-**Not first-class yet:** Parts, instances, mates, inherited parent transforms. Shape List **groups** are organizational (STEP XCAF hierarchy on import). Move / Rotate / Scale / Align shafts **bake** into leaf BREP — one-shot geometry edits, not assembly placement. Toolbar icons named `Assembly_*.png` are FreeCAD-style assets for those shape tools, not an assembly workbench.
+**Phase 3 engine:** relative placement, typed nodes (Body, Group, Part, Origin, Plane), Move/Rotate/Scale update placement. Shape List **groups** remain folders. Toolbar icons named `Assembly_*.png` are FreeCAD-style assets for Workbench tools. True mates / shared instances remain later.
 
-Planned model: [shape-list-hierarchy-phase3.md](shape-list-hierarchy-phase3.md) (#214) — relative placement, typed nodes (Body, Group, Part, …), non-baking transforms.
+See [shape-list-hierarchy-phase3.md](shape-list-hierarchy-phase3.md) (#214).
 
 ## The awkward nuance (and why it feels wrong)
 
@@ -123,16 +125,28 @@ CAD products rarely brand the idle state “inspection”; they use document or 
 
 Shared idea: layered contexts with Esc / finish stepping outward. EzyCad’s “inspection” vocabulary can stay for consistency, or later rename all three to Sketch / Part / Assembly **context** (larger UX rename).
 
+## Lists (Design vs Workbench)
+
+Two stores: Design `m_shps` (Shape List) and Workbench `m_wbk_shps` (Workbench List). Leaves in the workbench are **links** (`source_id` + own frame), not a second BREP and not a filter of `m_shps`.
+
+| Task          | List shows                                  | Copy / instance                               |
+| ------------- | ------------------------------------------- | --------------------------------------------- |
+| **Design**    | Bodies / features / groups you are editing  | Clone or feature-array geometry               |
+| **Workbench** | Linked placements of Design solids / groups | `add_to_workbench`; later true Part instances |
+
+Design geometry edits (same `Shape_id`) refresh links. Design move/rotate/scale do not move instances. Workbench transforms edit the instance frame. Polar array of parts can follow on Workbench. Sketch List stays Sketch-only. See [tasks-workbenches.md](tasks-workbenches.md).
+
 ## Product stance (fixed for this plan)
 
-1. Keep `Mode::Normal` as the 3D idle mode through hierarchy phase 1–2; keep bake Move/Duplicate there until placement lands.
-2. Introduce `Assembly_inspection` (name TBD in code) only with phase 3+ Part + relative placement; mates/instances can follow.
-3. Then: Inspection = make/edit geometry; Assembly inspection = arrange Parts; Sketch inspection stays under Part.
-4. No v1 Assembly inspection mode.
+1. Design idle is `Mode::Design_inspection`; Workbench idle is `Mode::Workbench_inspection`.
+2. Phase 3 placement / Parts: Move/Rotate on a Part updates relative placement (`world = parent * local`); children follow. Bake stays only for true geometry edits (fillet, scale-as-feature if needed).
+3. Workbench List is the arrange tree (links with own pose). Design list is the modeling tree. Do not duplicate BREP for each placement.
+4. True mates stay later. Sketch inspection stays under Part.
 
 ## Related
 
 - Implementation of placement / Parts: [shape-list-hierarchy-phase3.md](shape-list-hierarchy-phase3.md)
+- Task toolbars: Workbench vs Design tools row (see `src/doc/gui.md`)
 - Modes / Esc parent map: [src/doc/gui.md](../../src/doc/gui.md), [src/mode.h](../../src/mode.h)
 - User Esc ladder / tool docs: [docs/usage.md](../../docs/usage.md)
-- Shape List groups today: [src/doc/shape.md](../../src/doc/shape.md)
+- Shape List: [src/doc/shape.md](../../src/doc/shape.md)

@@ -2,7 +2,8 @@
 
 #include "shp_operation.h"
 
-/// Pick a planar or cylindrical face to redefine a solid's local frame (Shape List only).
+/// Pick a planar or cylindrical face to redefine a solid's local frame
+/// (Shape List or Workbench List).
 class Shp_set_frame : private Shp_operation_base
 {
 public:

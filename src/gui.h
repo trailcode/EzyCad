@@ -247,7 +247,7 @@ inline constexpr const char* k_sketching_2d                 = "https://ezycad.re
 inline constexpr const char* k_line_edge_midpoint_nodes     = "https://ezycad.readthedocs.io/en/latest/usage-sketch.html#line-edge-option-add-midpoint-nodes";
 inline constexpr const char* k_line_edge_place_from_center  = "https://ezycad.readthedocs.io/en/latest/usage-sketch.html#line-edge-option-place-from-center";
 inline constexpr const char* k_revolve_solid_conversion     = "https://ezycad.readthedocs.io/en/latest/usage-sketch.html#revolve-solid-conversion";
-inline constexpr const char* k_shape_selection_filter       = "https://ezycad.readthedocs.io/en/latest/usage.html#shape-selection-filter-normal-mode-only";
+inline constexpr const char* k_shape_selection_filter       = "https://ezycad.readthedocs.io/en/latest/usage.html#shape-selection-filter-inspection-and-workbench";
 inline constexpr const char* k_add_node_tool                = "https://ezycad.readthedocs.io/en/latest/usage-sketch.html#add-node-tool";
 inline constexpr const char* k_bone_creation_tool           = "https://ezycad.readthedocs.io/en/latest/usage-sketch.html#bone-creation-tool";
 inline constexpr const char* k_shape_rotate_tool            = "https://ezycad.readthedocs.io/en/latest/usage.html#shape-rotate-tool-r";
@@ -256,6 +256,8 @@ inline constexpr const char* k_usage_settings_options       = "https://ezycad.re
 inline constexpr const char* k_occt_view                    = "https://ezycad.readthedocs.io/en/latest/usage-occt-view.html";
 inline constexpr const char* k_startup_project              = "https://ezycad.readthedocs.io/en/latest/usage-settings.html#startup-project";
 inline constexpr const char* k_extrude_sketch_face          = "https://ezycad.readthedocs.io/en/latest/usage.html#extrude-sketch-face-tool-e";
+inline constexpr const char* k_align_shafts_flip_direction  = "https://ezycad.readthedocs.io/en/latest/usage.html#align-shafts-option-flip-direction";
+inline constexpr const char* k_align_shafts_clock_rotation  = "https://ezycad.readthedocs.io/en/latest/usage.html#align-shafts-option-clock-rotation";
 inline constexpr const char* k_hotkeys                      = "https://ezycad.readthedocs.io/en/latest/usage-settings.html#keyboard-shortcuts";
 // clang-format on
 } // namespace doc_urls
@@ -359,6 +361,8 @@ public:
   bool get_edge_from_center() const { return m_edge_from_center; }
   bool get_hide_all_shapes() const { return m_hide_all_shapes; }
   void set_hide_all_shapes(bool hide) { m_hide_all_shapes = hide; }
+  bool get_hide_all_workbench() const { return m_hide_all_workbench; }
+  void set_hide_all_workbench(bool hide) { m_hide_all_workbench = hide; }
   /// Orthographic camera toggle for non-sketch modes (forces ortho in sketch modes); persisted as
   /// `gui.inspection_orthographic`.
   bool inspection_orthographic() const { return m_inspection_orthographic; }
@@ -370,9 +374,11 @@ public:
   Project_unit default_project_unit() const { return m_default_project_unit; }
   bool         get_dark_mode() const { return m_dark_mode; }
   ImVec4       get_clear_color() const;
-  void         set_mode(Mode mode); // gui_mode.cpp
-  void         set_parent_mode();   // gui_mode.cpp
-  /// Parent mode for Escape / tool exit (e.g. Move -> Normal, sketch tools -> Sketch_inspection_mode).
+  void         set_mode(Mode mode);     // gui_mode.cpp
+  /// Enter \a task idle if the current mode is not already on that task.
+  void         ensure_task_(Task task); // gui_mode.cpp
+  void         set_parent_mode();       // gui_mode.cpp
+  /// Parent mode for Escape / tool exit (e.g. Workbench_move -> Workbench_inspection, sketch tools -> Sketch_inspection).
   static Mode parent_mode_of(Mode mode); // gui_mode.cpp
   void        set_dist_edit(float dist, std::function<void(float, bool)>&& callback,
                             const std::optional<ScreenCoords> screen_coords = std::nullopt);
@@ -394,6 +400,7 @@ public:
   void set_show_options(bool v) { m_show_options = v; }
   void set_show_sketch_list(bool v) { m_show_sketch_list = v; }
   void set_show_shape_list(bool v) { m_show_shape_list = v; }
+  void set_show_workbench_list(bool v) { m_show_workbench_list = v; }
   void set_log_window_visible(bool v) { m_log_window_visible = v; }
   void set_show_settings_dialog(bool v) { m_show_settings_dialog = v; }
   int  ui_verbosity() const { return m_ui_verbosity; }
@@ -418,6 +425,7 @@ public:
   bool show_options_effective() const { return m_show_options && ui_show_feature(1); }
   bool show_sketch_list_effective() const { return m_show_sketch_list && ui_show_feature(1); }
   bool show_shape_list_effective() const { return m_show_shape_list && ui_show_feature(1); }
+  bool show_workbench_list_effective() const { return m_show_workbench_list && ui_show_feature(1); }
   bool log_window_visible_effective() const { return m_log_window_visible && ui_show_feature(1); }
   bool show_lua_console_effective() const { return m_show_lua_console && ui_show_feature(2); }
   bool show_python_console_effective() const { return m_show_python_console && ui_show_feature(2); }
@@ -467,6 +475,13 @@ private:
     bool                        is_active;
     std::string                 tooltip;
     std::variant<Mode, Command> data;
+    Task                        task;
+  };
+  struct Task_button
+  {
+    uint32_t    texture_id;
+    Task        task;
+    const char* tooltip;
   };
   void dist_edit_();
   void angle_edit_();
@@ -489,7 +504,10 @@ private:
   friend struct gui_shp_detail::Shape_list_row_drawer;
   [[nodiscard]] nlohmann::json shape_list_ui_to_json_() const;
   void                         apply_shape_list_ui_from_json_(const nlohmann::json& j);
+  [[nodiscard]] nlohmann::json workbench_list_ui_to_json_() const;
+  void                         apply_workbench_list_ui_from_json_(const nlohmann::json& j);
   void                         shape_list_();
+  void                         workbench_list_();
   void                         shape_info_dialog_();
   void                         open_shape_info_(const Shp_ptr& shape);
   void                         file_inspector_dialog_();
@@ -672,7 +690,7 @@ private:
   bool                             m_angle_edit_focus_pending{false};
 
   // Mode related
-  Mode         m_mode                           = Mode::Normal;
+  Mode         m_mode                           = Mode::Design_inspection;
   Chamfer_mode m_chamfer_mode                   = Chamfer_mode::Shape;
   Fillet_mode  m_fillet_mode                    = Fillet_mode::Shape;
   int          m_edge_dim_label_h               = 3;
@@ -732,6 +750,7 @@ private:
   Project_unit                m_default_project_unit    = Project_unit::Inch;
   bool                        m_inspection_orthographic = false;
   std::vector<Toolbar_button> m_toolbar_buttons;
+  std::vector<Task_button>    m_task_buttons;
 
   // Message status window
   std::string                           m_message;
@@ -775,11 +794,13 @@ private:
   std::unordered_map<size_t, Sketch_list_row_ui> m_sketch_list_ui;
   /// Shape List group expand state (project `ui.shapeList.expanded`); missing id defaults to open.
   std::unordered_map<Shape_id, bool> m_shape_list_expanded;
+  std::unordered_map<Shape_id, bool> m_workbench_list_expanded;
   float                              m_sketch_list_scroll_y{0.f};
   bool                               m_sketch_list_scroll_restore{false};
 
   bool                        m_show_sketch_list{true};
   bool                        m_show_shape_list{true};
+  bool                        m_show_workbench_list{true};
   bool                        m_show_options{true};
   bool                        m_show_settings_dialog{false};
   bool                        m_open_about_popup{false};
@@ -838,6 +859,7 @@ private:
   int         m_new_sketch_plane{0}; // 0=XY, 1=XZ, 2=YZ
   double      m_new_sketch_offset{};
   bool        m_hide_all_shapes{false};
+  bool        m_hide_all_workbench{false};
   int         m_ui_verbosity{k_gui_ui_verbosity_default};
   bool        m_dark_mode{false};
 #ifndef NDEBUG
