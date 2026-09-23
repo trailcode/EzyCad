@@ -17,6 +17,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- **Workbench task icon**: `res/icons/Workbench_Assembly.png` is included so the task button and the usage guide can load it (Sphinx `-W` failed on the missing image).
 - **Workbench toolbar**: the tools row no longer repeats the Workbench task icon; idle is the task button only.
 - **Workbench Align shafts**: cylindrical face picking uses Face selection on Workbench instances (same as Design). Insert position uses the instance placement (axis direction was already correct).
 - **Workbench set frame**: **Set from planar/cylindrical face** from the Workbench List stays in Workbench and updates the instance tool frame (pose unchanged).
