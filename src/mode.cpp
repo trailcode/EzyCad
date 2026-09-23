@@ -23,7 +23,7 @@ Mode mode_from_string(std::string_view name)
     return Mode::Scale;
 
   if (name == "Shape_shaft_align" || name == "Shape_cyl_align")
-    return Mode::Workbench_shaft_align;
+    return Mode::Design_shaft_align;
 
   return Mode::Design_inspection;
 }

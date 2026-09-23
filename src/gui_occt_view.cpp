@@ -2509,6 +2509,33 @@ void Occt_view::delete_shapes(std::vector<AIS_Shape_ptr> to_delete)
       has_non_shape = true;
   }
 
+  // delete_ cascade-removes Workbench links of deleted Design ids. Record them or undo cannot put them back.
+  if (!has_non_shape)
+  {
+    std::unordered_set<Shape_id> deleted_design_ids;
+    std::unordered_set<Shape_id> captured_ids;
+    for (const Shape_rec& rec : removed_shapes)
+    {
+      captured_ids.insert(rec.id);
+      if (!rec.is_workbench)
+        deleted_design_ids.insert(rec.id);
+    }
+
+    for (const Shp_ptr& w : m_wbk_shps)
+    {
+      if (w.IsNull() || w->get_source_id() == 0)
+        continue;
+
+      if (deleted_design_ids.find(w->get_source_id()) == deleted_design_ids.end())
+        continue;
+
+      if (!captured_ids.insert(w->get_id()).second)
+        continue;
+
+      removed_shapes.push_back(capture_shape_rec(*w));
+    }
+  }
+
   if (has_non_shape)
     push_undo_snapshot();
   else if (!removed_shapes.empty())

@@ -24,6 +24,8 @@ protected:
   void                 assign_result_parent_(Shp_ptr& result, const std::vector<Shp_ptr>& operands);
   [[nodiscard]] Status ensure_operation_shps_();
   [[nodiscard]] Status ensure_operation_multi_shps_();
+  /// Cut / fuse / common edit Design BREP. Workbench rows are placements.
+  [[nodiscard]] Status ensure_design_operands_() const;
   /// \a keep_workbench_sources: Design ids whose workbench links must survive (the id is reused by the result).
   void                 delete_operation_shps_(const std::vector<Shape_id>& keep_workbench_sources = {});
   /// First operand's Shape_id, frame, and list slot stay on \a result. Other operands are deleted.

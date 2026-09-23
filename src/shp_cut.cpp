@@ -22,6 +22,8 @@ Shp_rslt Shp_cut::cut(std::vector<Shp_ptr> shps)
       return Shp_rslt(Result_status::User_error, "cut: null shape");
 
   m_shps = std::move(shps);
+  if (Status st = ensure_design_operands_(); !st.is_ok())
+    return Shp_rslt(st.status(), st.message());
 
   std::vector<Shape_rec> removed;
   removed.reserve(m_shps.size());

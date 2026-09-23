@@ -66,6 +66,15 @@ void Shp_operation_base::set_operation_shps_(std::vector<Shp_ptr> shps) { m_shps
   return Status::ok();
 }
 
+Status Shp_operation_base::ensure_design_operands_() const
+{
+  for (const Shp_ptr& shp : m_shps)
+    if (!shp.IsNull() && shp->is_workbench())
+      return Status::user_error("Select Design solids. Boolean operations do not edit Workbench instances.");
+
+  return Status::ok();
+}
+
 void Shp_operation_base::delete_operation_shps_(const std::vector<Shape_id>& keep_workbench_sources)
 {
   std::vector<AIS_Shape_ptr> to_delete;

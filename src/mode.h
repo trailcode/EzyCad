@@ -5,12 +5,14 @@
 
 // --- Mode ------------------------------------------------------------------
 // Single source of truth: order here defines enum numeric values and c_mode_strs indices
-// (mode_from_string, persistence, etc.). Do not reorder without migrating saved data.
+// (mode_from_string, persistence, etc.). .ezy stores mode as this integer.
+// Slots 0/1/2/3/24 match released files: Normal, Move, Scale, Rotate, Shape_shaft_align.
+// Do not reorder those slots. New modes go at the end.
 #define EZY_MODE_LIST(X)                                                                                                       \
-  X(Design_inspection)                                                                                                         \
-  X(Workbench_move)                                                                                                            \
+  X(Design_inspection) /* 0: was Normal */                                                                                     \
+  X(Design_move)       /* 1: was Move. Design CSG placement; bake BREP. */                                                     \
   X(Scale)                                                                                                                     \
-  X(Workbench_rotate)                                                                                                          \
+  X(Design_rotate) /* 3: was Rotate. Design CSG rotation; bake BREP. */                                                        \
   X(Sketch_inspection)       /* inspecting sketch elements */                                                                  \
   X(Sketch_from_planar_face) /* sketch from a planar face */                                                                   \
   X(Sketch_face_extrude)     /* extrude a sketch face */                                                                       \
@@ -31,13 +33,13 @@
   X(Sketch_add_bone) /* two centers, then r1, r2, waist clicks */                                                              \
   X(Sketch_dim_anno)                                                                                                           \
   X(Shape_cross_section)                                                                                                       \
-  X(Workbench_shaft_align)                                                                                                     \
-  X(Shape_set_frame) /* Shape List: pick face for local frame */                                                               \
-  X(Workbench_inspection) /* Workbench browse/select home; not Mode::Design_inspection */                          \
-  X(Design_move)          /* Design CSG placement; bake BREP. Workbench_move is instance pose. */                  \
-  X(Design_rotate)        /* Design CSG rotation; bake BREP. Workbench_rotate is instance pose. */                  \
-  X(Design_shaft_align)   /* Design CSG shaft align; bake BREP. Workbench_shaft_align is instance pose. */ \
-  X(Workbench_set_frame)  /* Workbench List: pick face for instance local frame (pose unchanged). */
+  X(Design_shaft_align) /* 24: was Shape_shaft_align. Design CSG shaft align; bake BREP. */                                    \
+  X(Shape_set_frame)    /* Shape List: pick face for local frame */                                                            \
+  X(Workbench_inspection) /* Workbench browse/select home; not Mode::Design_inspection */                                      \
+  X(Workbench_move)       /* instance pose; not the old Move slot */                                                           \
+  X(Workbench_rotate)     /* instance pose; not the old Rotate slot */                                                         \
+  X(Workbench_shaft_align) /* instance pose; not the old Shape_shaft_align slot */                                             \
+  X(Workbench_set_frame)   /* Workbench List: pick face for instance local frame (pose unchanged). */
 
 enum class Mode
 {
@@ -54,6 +56,13 @@ constexpr std::array<std::string_view, static_cast<std::size_t>(Mode::_count)> c
 };
 
 static_assert(c_mode_strs.size() == static_cast<std::size_t>(Mode::_count));
+// Released .ezy files stored these tools at fixed integers. Keep the slots.
+static_assert(static_cast<int>(Mode::Design_inspection) == 0);
+static_assert(static_cast<int>(Mode::Design_move) == 1);
+static_assert(static_cast<int>(Mode::Scale) == 2);
+static_assert(static_cast<int>(Mode::Design_rotate) == 3);
+static_assert(static_cast<int>(Mode::Design_shaft_align) == 24);
+static_assert(static_cast<int>(Mode::Shape_set_frame) == 25);
 
 #undef EZY_MODE_LIST
 
@@ -144,5 +153,5 @@ Task task_of(Mode mode);
 Mode idle_mode_of(Task task);
 
 /// Return Mode for a name (e.g. "Design_inspection", "Sketch_add_edge"). Returns Design_inspection if not found.
-/// Also accepts retired names: Normal, Sketch_inspection_mode, Move (Design_move), Rotate (Design_rotate), Workbench_scale, Shape_shaft_align.
+/// Also accepts retired names: Normal, Sketch_inspection_mode, Move (Design_move), Rotate (Design_rotate), Workbench_scale, Shape_shaft_align (Design_shaft_align).
 Mode mode_from_string(std::string_view name);
