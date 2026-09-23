@@ -9,6 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- **User guide**: Chamfer (<kbd>C</kbd>) and Fillet (<kbd>F</kbd>) have their own sections. The Options **?** for those modes opens the matching section. **Add midpoint nodes** for square, both rectangle tools, and slot stays on the line-edge midpoint section (those shapes are built from straight edges). Settings **Sketch -> Nodes** has three midpoint rows: line edges (default off), square/rectangle (default on), and slot straight edges (default off).
 - **Task toolbar**: Sketch / Design / Workbench switcher; the tools row shows only the current task. Design has its own Move / Rotate / Scale / Align shafts (bake bodies for CSG). Workbench has Move / Rotate / Align shafts (instance pose). <kbd>G</kbd> / <kbd>R</kbd> / <kbd>J</kbd> stay on the current task; <kbd>S</kbd> enters Design Scale.
 - **Mode names**: Design idle is `Design_inspection` (was `Normal`); Sketch idle is `Sketch_inspection` (was `Sketch_inspection_mode`). `ezy.get_mode()` / `ezy.set_mode` use the new names; `Normal` and `Sketch_inspection_mode` still parse.
 - **Move / rotate / scale space**: Options **Local** (default) or **World**. Local uses the first selected solid's frame (origin and X/Y/Z from **Show axes**). World keeps global XYZ at that solid's bounding-box center. Persisted as **`gui.transform_space`**.
