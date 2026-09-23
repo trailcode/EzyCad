@@ -483,9 +483,12 @@ TEST_F(Shp_test, Cross_section_selection_stale_after_selection_change)
   const Shape_id clipped_id = boxes[1]->get_id();
   ASSERT_TRUE(view().shp_cross_section().clip_selected().is_ok());
   EXPECT_FALSE(view().shp_cross_section().has_preview());
-  EXPECT_TRUE(view().find_shape_by_id(clipped_id).IsNull());
+  // Clip reuses the solid's Shape_id so workbench links stay attached.
+  const Shp_ptr clipped = view().find_shape_by_id(clipped_id);
+  EXPECT_FALSE(clipped.IsNull());
   ASSERT_FALSE(view().get_shapes().empty());
-  EXPECT_TRUE(contains_solid_like(view().get_shapes().back()->Shape()));
+  EXPECT_TRUE(contains_solid_like(clipped->Shape()));
+  EXPECT_FALSE(view().find_shape_by_id(boxes[0]->get_id()).IsNull());
 }
 
 TEST_F(Shp_test, Cross_section_clip_removes_fully_discarded_solids)
@@ -505,8 +508,10 @@ TEST_F(Shp_test, Cross_section_clip_removes_fully_discarded_solids)
   const Status clip_status = view().shp_cross_section().clip_selected();
   ASSERT_TRUE(clip_status.is_ok()) << clip_status.message();
   EXPECT_TRUE(view().find_shape_by_id(short_id).IsNull());
-  EXPECT_TRUE(view().find_shape_by_id(tall_id).IsNull());
+  // The cut solid keeps its id; only the fully discarded box is removed.
+  EXPECT_FALSE(view().find_shape_by_id(tall_id).IsNull());
   ASSERT_EQ(view().get_shapes().size(), 1u);
+  EXPECT_EQ(view().get_shapes().front()->get_id(), tall_id);
   EXPECT_TRUE(contains_solid_like(view().get_shapes().front()->Shape()));
 }
 
