@@ -1415,6 +1415,61 @@ Status Occt_view::add_to_workbench(const std::vector<Shp_ptr>& design_nodes)
   return Status::ok();
 }
 
+Status Occt_view::unlink_workbench(const std::vector<Shp_ptr>& nodes)
+{
+  std::vector<Shp_ptr>         leaves;
+  std::unordered_set<Shape_id> seen;
+  for (const Shp_ptr& n : nodes)
+  {
+    if (n.IsNull() || !n->is_workbench())
+      continue;
+
+    for (const Shp_ptr& s : workbench_descendant_solids(n->get_id()))
+    {
+      if (s.IsNull() || !s->is_workbench_link())
+        continue;
+
+      if (!seen.insert(s->get_id()).second)
+        continue;
+
+      leaves.push_back(s);
+    }
+  }
+
+  if (leaves.empty())
+    return Status::user_error("Select a linked Workbench solid to unlink.");
+
+  std::vector<Shape_geom_delta::Geom_change> changes;
+  changes.reserve(leaves.size());
+  for (const Shp_ptr& inst : leaves)
+  {
+    BRepBuilderAPI_Copy copier(inst->Shape());
+    TopoDS_Shape        frozen = copier.Shape();
+    if (frozen.IsNull())
+      frozen = inst->Shape();
+
+    Shape_geom_delta::Geom_change ch;
+    ch.id               = inst->get_id();
+    ch.before_geom      = inst->Shape();
+    ch.after_geom       = frozen;
+    ch.before_frame     = inst->get_frame();
+    ch.after_frame      = inst->get_frame();
+    ch.has_source_id    = true;
+    ch.before_source_id = inst->get_source_id();
+    ch.after_source_id  = 0;
+    changes.push_back(std::move(ch));
+  }
+
+  for (const Shape_geom_delta::Geom_change& ch : changes)
+  {
+    set_shape_geom_by_id(ch.id, ch.after_geom, ch.after_frame);
+    set_shape_source_id(ch.id, ch.after_source_id);
+  }
+
+  push_undo_delta(std::make_unique<Shape_geom_delta>(std::move(changes)));
+  return Status::ok();
+}
+
 Shp_ptr Occt_view::create_workbench_group(const std::string& name, Shape_id parent_id)
 {
   if (parent_id != 0)
@@ -2014,6 +2069,15 @@ void Occt_view::set_shape_geom_by_id(Shape_id id, const TopoDS_Shape& geom, cons
   m_ctx->UpdateCurrentViewer();
   if (!shp->is_workbench())
     sync_workbench_links(id);
+}
+
+void Occt_view::set_shape_source_id(Shape_id id, Shape_id source_id)
+{
+  Shp_ptr shp = find_workbench_shape_by_id(id);
+  if (shp.IsNull() || shp->is_group())
+    return;
+
+  shp->set_source_id(source_id);
 }
 
 void Occt_view::set_shape_local_frame_by_id(Shape_id id, const gp_Ax3& local_frame)
@@ -4829,6 +4893,13 @@ std::string Occt_view::to_json() const
     else
     {
       shp_json["sourceId"] = s->get_source_id();
+      if (s->get_source_id() == 0)
+      {
+        const TopoDS_Shape& shape = s->Shape();
+        std::ostringstream  oss;
+        BRepTools::Write(shape, oss, false, false, TopTools_FormatVersion_CURRENT);
+        shp_json["geom"] = oss.str();
+      }
       shp_json["material"] = s->Material();
       shp_json["dispMode"] = static_cast<int>(s->get_disp_mode());
       shp_json["frame"]    = ::to_json(gp_Pln(s->get_frame()));
@@ -5018,10 +5089,19 @@ void Occt_view::load(const std::string& json_str, bool restore_view)
       {
         const Shape_id source_id = s.value("sourceId", Shape_id{0});
         TopoDS_Shape   local;
-        Shp_ptr        src = find_design_shape_by_id(source_id);
-        if (!src.IsNull())
-          local = local_geom_of_source_(*src);
-        else
+        if (source_id != 0)
+        {
+          Shp_ptr src = find_design_shape_by_id(source_id);
+          if (!src.IsNull())
+            local = local_geom_of_source_(*src);
+        }
+        else if (s.contains("geom") && s["geom"].is_string())
+        {
+          std::istringstream iss(s["geom"].get<std::string>());
+          BRepTools::Read(local, iss, BRep_Builder());
+        }
+
+        if (local.IsNull())
         {
           TopoDS_Compound comp;
           BRep_Builder().MakeCompound(comp);

@@ -161,12 +161,13 @@ This is useful after **Revolve**, **Extrude**, booleans, or imports when you nee
 
 ### Workbench List
 
-The **Workbench List** is a second pane for arranging solids in the Workbench task. Open it from **View -> Workbench List**. Selecting or right-clicking a row switches to the **Workbench** task so the 3D view shows those instances. It is not a second copy of the Shape List: each solid row is a **link** to a Shape List body.
+The **Workbench List** is a second pane for arranging solids in the Workbench task. Open it from **View -> Workbench List**. Selecting or right-clicking a row switches to the **Workbench** task so the 3D view shows those instances. A solid you add starts as a **link** to a Shape List body. **Unlink** turns that row into its own copy.
 
-- Adding a shape or group from the Shape List creates Workbench rows that share that body's geometry. Fillet, chamfer, and other Design geometry edits update the Workbench solids. Moving, rotating, or scaling a body in Design does not move its Workbench instances.
+- Adding a shape or group from the Shape List creates Workbench rows that share that body's geometry. Fillet, chamfer, and other Design geometry edits update linked Workbench solids. Moving, rotating, or scaling a body in Design does not move its Workbench instances.
+- **Unlink** (button at the top of the pane, or right-click a linked solid or a group of links) keeps the current shape and pose, and Design edits no longer change it. **Undo** links it again.
 - Each Workbench solid has its own instance pose and a local tool frame (Show axes / Local move). Right-click **Set from planar face...** / **Set from cylindrical face...** stays in Workbench and does not move the instance.
 - The pane matches the Shape List for **Hide all**, visibility, shaded/wireframe, material, rename, groups, drag-to-reparent, and right-click **Zoom to** / **Delete** / local-frame actions.
-- Deleting a Shape List solid removes Workbench rows that link to it. Deleting a Workbench row does not delete the Design body.
+- Deleting a Shape List solid removes Workbench rows that still link to it. An unlinked Workbench solid stays. Deleting a Workbench row does not delete the Design body.
 - The 3D view shows Shape List solids in Sketch and Design, and Workbench solids in the Workbench task (so the two trees do not overlap).
 
 The window can be closed with its close button; use **View -> Workbench List** again to show it.

@@ -14,14 +14,14 @@ Shipped: three tasks; tools row shows only the current task. Design has `Design_
 
 ## Workbench vs Design lists
 
-Two stores, one document: Design `Occt_view::m_shps` and Workbench `Occt_view::m_wbk_shps`. Workbench leaves are **geometry links** (`source_id`), not BREP copies.
+Two stores, one document: Design `Occt_view::m_shps` and Workbench `Occt_view::m_wbk_shps`. Workbench leaves start as **geometry links** (`source_id`). **Unlink** deep-copies local geom and clears `source_id`.
 
-| Task      | Store / pane                  | What a row is                                     |
-| --------- | ----------------------------- | ------------------------------------------------- |
-| Design    | `m_shps` / Shape List         | Bodies / groups you model                         |
-| Workbench | `m_wbk_shps` / Workbench List | Linked instances with their own frame (placement) |
+| Task      | Store / pane                  | What a row is                                 |
+| --------- | ----------------------------- | --------------------------------------------- |
+| Design    | `m_shps` / Shape List         | Bodies / groups you model                     |
+| Workbench | `m_wbk_shps` / Workbench List | Instances with their own frame (link or copy) |
 
-Copy Shape List solids or groups onto the Workbench (**Add to Workbench**, context menu, or drag). Design fillet/chamfer (same `Shape_id`) refreshes linked local geom. Design move/rotate bake does not move instances. Workbench Move/Rotate/Align update the instance frame only. Deleting a Design source removes its Workbench links. `.ezy` writes `workbench[]` (ids, `sourceId`, frame; no geom). Selecting or right-clicking a list row switches to that pane's task (`GUI::ensure_task_`) so Reset / Show axes / set-from-face run against the visible store.
+Copy Shape List solids or groups onto the Workbench (**Add to Workbench**, context menu, or drag). Design fillet/chamfer (same `Shape_id`) refreshes linked local geom. Design move/rotate bake does not move instances. Workbench Move/Rotate/Align update the instance frame only. **Unlink** (Workbench List button or row menu, `unlink_workbench`) freezes the instance; undo restores the link. Deleting a Design source removes its Workbench links and leaves unlinked copies. `.ezy` writes `workbench[]` (ids, `sourceId`, frame; `geom` only when unlinked). Selecting or right-clicking a list row switches to that pane's task (`GUI::ensure_task_`) so Reset / Show axes / set-from-face run against the visible store.
 
 Polar array of **parts** can follow on Workbench after instances exist. Polar array of a body stays Design.
 

@@ -154,6 +154,8 @@ public:
   void remove_shape_by_id(Shape_id id, bool cascade_workbench_links = true);
   /// Replace BREP of an existing shape (identity local transform).
   void set_shape_geom_by_id(Shape_id id, const TopoDS_Shape& geom, const gp_Ax3& frame);
+  /// Workbench link target (0 = independent copy). Does not refresh geometry.
+  void set_shape_source_id(Shape_id id, Shape_id source_id);
   /// Workbench tool-frame restore (pose / placement unchanged).
   void set_shape_local_frame_by_id(Shape_id id, const gp_Ax3& local_frame);
   /// Frame-only edit with undo (geometry unchanged). Workbench sets local tool frame.
@@ -197,6 +199,8 @@ public:
   void                 set_current_workbench_group_id(Shape_id id);
   /// Copy Design nodes into the Workbench list as geometry links (own placement).
   [[nodiscard]] Status add_to_workbench(const std::vector<Shp_ptr>& design_nodes);
+  /// Freeze Workbench links as independent copies. Design edits no longer update them.
+  [[nodiscard]] Status unlink_workbench(const std::vector<Shp_ptr>& nodes);
   Shp_ptr              create_workbench_group(const std::string& name, Shape_id parent_id = 0);
   [[nodiscard]] Status group_workbench_shapes(const std::vector<Shp_ptr>& nodes);
   [[nodiscard]] Status ungroup_workbench_shape(Shape_id group_id);

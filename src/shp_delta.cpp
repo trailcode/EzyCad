@@ -76,6 +76,8 @@ void Shape_geom_delta::apply_forward(Occt_view& view)
     view.set_shape_geom_by_id(ch.id, ch.after_geom, ch.after_frame);
     if (ch.has_local_frame)
       view.set_shape_local_frame_by_id(ch.id, ch.after_local_frame);
+    if (ch.has_source_id)
+      view.set_shape_source_id(ch.id, ch.after_source_id);
   }
 }
 
@@ -86,6 +88,8 @@ void Shape_geom_delta::apply_reverse(Occt_view& view)
     view.set_shape_geom_by_id(ch.id, ch.before_geom, ch.before_frame);
     if (ch.has_local_frame)
       view.set_shape_local_frame_by_id(ch.id, ch.before_local_frame);
+    if (ch.has_source_id)
+      view.set_shape_source_id(ch.id, ch.before_source_id);
   }
 }
 

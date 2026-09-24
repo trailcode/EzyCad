@@ -34,6 +34,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **Workbench unlink**: Workbench List **Unlink** (toolbar, or right-click a linked solid or group) freezes the current geometry. Later Design edits and deleting the Shape List body no longer change that Workbench solid. **Undo** links it again. Unlinked rows in `.ezy` `workbench[]` store their own BREP.
+
 - **Workbench List**: separate pane of geometry **links** to Shape List solids (own location/rotation). **Add to Workbench** from the Shape List (button, context menu, or drag). Design geometry edits update links; Design move/rotate/scale do not move instances. Workbench Move / Rotate / Align shafts edit the instance frame only. `.ezy` stores `workbench[]` (no BREP). Settings: **`gui.show_workbench_list`**.
 
 - **Status toast kinds**: the bottom-right toast is colored by kind (**success**, **info**, **constraint**, **warning**, **error**) instead of always red. Failed `Status` toasts follow `Result_status` (`User_error` is amber constraint). Scripts: `ezy.msg(text [, kind])`. **Add bone** uses info for the next click, amber for rejected input, green on commit, and red if create fails.

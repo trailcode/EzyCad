@@ -292,6 +292,33 @@ void GUI::workbench_list_()
       ImGui::EndDisabled();
   }
 
+  ImGui::SameLine();
+  {
+    const std::vector<Shp_ptr> sel = m_view->get_selected_shps();
+    std::vector<Shp_ptr>       links;
+    for (const Shp_ptr& s : sel)
+      if (!s.IsNull() && s->is_workbench_link())
+        links.push_back(s);
+
+    const bool can_unlink = !links.empty();
+    if (!can_unlink)
+      ImGui::BeginDisabled();
+
+    if (ImGui::SmallButton("Unlink"))
+    {
+      const Status st = m_view->unlink_workbench(links);
+      if (!st.is_ok())
+        show_status(st);
+      else
+        show_message("Unlinked from Design.", Status_msg::Success);
+    }
+    if (ImGui::IsItemHovered(ImGuiHoveredFlags_AllowWhenDisabled))
+      ImGui::SetTooltip("Keep the current shape. Design edits will no longer update it.");
+
+    if (!can_unlink)
+      ImGui::EndDisabled();
+  }
+
   ImGui::Separator();
 
   const std::vector<std::string>& mat_names       = occt_material_combo_labels_();
@@ -811,6 +838,26 @@ void Shape_list_row_drawer::draw_ctx_menu_(const Shp_ptr& shape, bool is_group)
       m_gui.show_status(st);
     else
       m_gui.show_message("Added to Workbench.", Status_msg::Success);
+  }
+
+  if (m_kind == Shp_list_kind::Workbench)
+  {
+    bool linked = false;
+    for (const Shp_ptr& leaf : descendant_solids_(shape->get_id()))
+      if (!leaf.IsNull() && leaf->is_workbench_link())
+      {
+        linked = true;
+        break;
+      }
+
+    if (linked && ImGui::MenuItem("Unlink"))
+    {
+      const Status st = m_view.unlink_workbench({shape});
+      if (!st.is_ok())
+        m_gui.show_status(st);
+      else
+        m_gui.show_message("Unlinked from Design.", Status_msg::Success);
+    }
   }
 
   if (ImGui::MenuItem("Delete"))

@@ -1928,6 +1928,116 @@ TEST_F(Shp_test, Workbench_json_round_trip_and_source_delete)
   EXPECT_TRUE(view().get_workbench_shapes().empty());
 }
 
+TEST_F(Shp_test, Unlink_workbench_freezes_geom)
+{
+  view().add_box(0, 0, 0, 10, 10, 10);
+  Shp_ptr        src    = view().get_shapes().back();
+  const Shape_id src_id = src->get_id();
+  ASSERT_TRUE(view().add_to_workbench({src}).is_ok());
+  Shp_ptr        inst    = view().get_workbench_shapes().back();
+  const Shape_id inst_id = inst->get_id();
+  gp_Ax3         placed  = inst->get_frame();
+  placed.SetLocation(gp_Pnt(12.0, 0.0, 0.0));
+  inst->set_frame(placed);
+
+  ASSERT_TRUE(view().unlink_workbench({inst}).is_ok());
+  EXPECT_FALSE(inst->is_workbench_link());
+  EXPECT_EQ(inst->get_source_id(), 0u);
+  EXPECT_NEAR(volume_of(inst->Shape()), 1000.0, 1e-4);
+  EXPECT_TRUE(inst->get_frame().Location().IsEqual(gp_Pnt(12.0, 0.0, 0.0), 1e-6));
+  EXPECT_FALSE(view().unlink_workbench({inst}).is_ok());
+
+  const TopoDS_Shape bigger = shp_create::create_box(0, 0, 0, 20, 20, 20);
+  view().set_shape_geom_by_id(src_id, bigger, src->get_frame());
+  EXPECT_NEAR(volume_of(src->Shape()), 8000.0, 1e-3);
+  EXPECT_NEAR(volume_of(inst->Shape()), 1000.0, 1e-3);
+
+  const std::string json = view().to_json();
+  view().new_file();
+  view().load(json, false);
+  ASSERT_EQ(view().get_shapes().size(), 1u);
+  ASSERT_EQ(view().get_workbench_shapes().size(), 1u);
+  Shp_ptr loaded = view().get_workbench_shapes().back();
+  EXPECT_EQ(loaded->get_id(), inst_id);
+  EXPECT_EQ(loaded->get_source_id(), 0u);
+  EXPECT_FALSE(loaded->is_workbench_link());
+  EXPECT_NEAR(volume_of(view().get_shapes().back()->Shape()), 8000.0, 1e-3);
+  EXPECT_NEAR(volume_of(loaded->Shape()), 1000.0, 1e-3);
+  EXPECT_TRUE(loaded->get_frame().Location().IsEqual(gp_Pnt(12.0, 0.0, 0.0), 1e-6));
+
+  view().delete_shapes({view().get_shapes().back()});
+  ASSERT_EQ(view().get_workbench_shapes().size(), 1u);
+  EXPECT_EQ(view().get_workbench_shapes().back()->get_id(), inst_id);
+  EXPECT_NEAR(volume_of(view().get_workbench_shapes().back()->Shape()), 1000.0, 1e-3);
+}
+
+TEST_F(Shp_test, Undo_unlink_restores_workbench_link)
+{
+  view().add_box(0, 0, 0, 10, 10, 10);
+  Shp_ptr        src    = view().get_shapes().back();
+  const Shape_id src_id = src->get_id();
+  ASSERT_TRUE(view().add_to_workbench({src}).is_ok());
+  Shp_ptr inst = view().get_workbench_shapes().back();
+
+  ASSERT_TRUE(view().unlink_workbench({inst}).is_ok());
+  EXPECT_TRUE(view().undo());
+  EXPECT_TRUE(inst->is_workbench_link());
+  EXPECT_EQ(inst->get_source_id(), src_id);
+  EXPECT_NEAR(volume_of(inst->Shape()), 1000.0, 1e-3);
+
+  EXPECT_TRUE(view().redo());
+  EXPECT_FALSE(inst->is_workbench_link());
+  EXPECT_EQ(inst->get_source_id(), 0u);
+  EXPECT_NEAR(volume_of(inst->Shape()), 1000.0, 1e-3);
+
+  const TopoDS_Shape bigger = shp_create::create_box(0, 0, 0, 20, 20, 20);
+  view().set_shape_geom_by_id(src_id, bigger, src->get_frame());
+  EXPECT_NEAR(volume_of(src->Shape()), 8000.0, 1e-3);
+  EXPECT_NEAR(volume_of(inst->Shape()), 1000.0, 1e-3);
+
+  EXPECT_TRUE(view().undo());
+  EXPECT_TRUE(inst->is_workbench_link());
+  EXPECT_EQ(inst->get_source_id(), src_id);
+  view().sync_workbench_links(src_id);
+  EXPECT_NEAR(volume_of(inst->Shape()), 8000.0, 1e-3);
+}
+
+TEST_F(Shp_test, Unlink_workbench_group)
+{
+  view().add_box(0, 0, 0, 1, 1, 1);
+  view().add_box(3, 0, 0, 2, 2, 2);
+  std::vector<Shp_ptr> boxes(view().get_shapes().begin(), view().get_shapes().end());
+  ASSERT_TRUE(view().group_shapes(boxes).is_ok());
+  Shp_ptr grp;
+  for (const Shp_ptr& s : view().get_shapes())
+    if (s->is_group())
+      grp = s;
+
+  ASSERT_FALSE(grp.IsNull());
+  ASSERT_TRUE(view().add_to_workbench({grp}).is_ok());
+  Shp_ptr wbk_grp;
+  for (const Shp_ptr& s : view().get_workbench_shapes())
+    if (s->is_group())
+      wbk_grp = s;
+
+  ASSERT_FALSE(wbk_grp.IsNull());
+  ASSERT_TRUE(view().unlink_workbench({wbk_grp}).is_ok());
+  size_t copies = 0;
+  for (const Shp_ptr& s : view().get_workbench_shapes())
+  {
+    if (s->is_group())
+      continue;
+
+    EXPECT_FALSE(s->is_workbench_link());
+    EXPECT_EQ(s->get_source_id(), 0u);
+    ++copies;
+  }
+  EXPECT_EQ(copies, 2u);
+
+  view().delete_shapes({grp});
+  EXPECT_EQ(view().get_workbench_shapes().size(), 3u);
+}
+
 TEST_F(Shp_test, Undo_delete_design_restores_workbench_links)
 {
   view().add_box(0, 0, 0, 4, 5, 6);

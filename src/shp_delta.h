@@ -60,6 +60,7 @@ private:
 };
 
 /// Replaces geometry of existing shapes in place (same ids).
+/// When Geom_change::has_source_id, also sets the workbench link target (unlink).
 class Shape_geom_delta : public Delta
 {
 public:
@@ -73,6 +74,9 @@ public:
     bool         has_local_frame{false};
     gp_Ax3       before_local_frame;
     gp_Ax3       after_local_frame;
+    bool         has_source_id{false};
+    Shape_id     before_source_id{0};
+    Shape_id     after_source_id{0};
   };
 
   explicit Shape_geom_delta(std::vector<Geom_change> changes);
