@@ -130,6 +130,7 @@ Each row (left to right):
 - **M** - Solids only: left-click opens the material popup. Right-click uses the same row menu as the rest of the entry.
 - **Name** - Expandable tree row with an editable name. Click the row to select that solid (or all descendant solids for a group) and update the current group. **Ctrl+click** toggles multi-select. Drag to reparent (empty area below the list = document root).
 - **Copy / Paste** - <kbd>Ctrl</kbd>+<kbd>C</kbd> / <kbd>Ctrl</kbd>+<kbd>V</kbd> (remappable) copy selected solids, or a whole group subtree when you clicked that group (all its descendant solids are selected). Paste inserts an independent deep copy under the current group, at the same pose. If you still have that copied group as the current group, paste places a sibling copy beside it (not nested inside it). This is an in-app clipboard (survives **New**; it does not use the system clipboard). Sketch edges are not copied.
+- **Duplicate** - <kbd>Shift</kbd>+<kbd>D</kbd> (remappable) clones the selection in place and switches to [Move](#shape-move-tool-g). See [Duplicate shapes](#duplicate-shapes).
 - **Right-click the row** - Works on the whole entry (checkboxes, **M**, tree arrow, name field, and row padding). Solids: **Zoom to** / **Shape info...** / local-frame display and edit (below) / **Delete**. Groups: **Zoom to** (fits all descendant solids; disabled when the group has none) / **Ungroup** (moves **all** direct children to the group's parent, then removes the group) / **Delete** (cascade-deletes the whole subtree). **Zoom to** keeps the current camera orientation and frames the solid or group with a little padding.
 - **Local frame (solids)** - Each solid has a local `XYZ` frame (default: world-aligned at the bounding-box center; **Z** is the primary axis, **Y** is up). Right-click the row for:
   - **Show axes** / **Show plane** / **Show up** - toggle 3D annotations (off by default; saved in the `.ezy` file; hidden while any sketch tool is active, when **Hide all** is on, or when the solid or an ancestor group is hidden).
@@ -166,6 +167,7 @@ The **Workbench List** is a second pane for arranging solids in the Workbench ta
 - Adding a shape or group from the Shape List creates Workbench rows that share that body's geometry. Fillet, chamfer, and other Design geometry edits update the Workbench solids. Moving, rotating, or scaling a body in Design does not move its Workbench instances.
 - Each Workbench solid has its own instance pose and a local tool frame (Show axes / Local move). Right-click **Set from planar face...** / **Set from cylindrical face...** stays in Workbench and does not move the instance.
 - The pane matches the Shape List for **Hide all**, visibility, shaded/wireframe, material, rename, groups, drag-to-reparent, and right-click **Zoom to** / **Delete** / local-frame actions.
+- **Duplicate** (<kbd>Shift</kbd>+<kbd>D</kbd>) adds another Workbench instance of the selected link (same Design body, same pose) and switches to Workbench **Move**. See [Duplicate shapes](#duplicate-shapes).
 - Deleting a Shape List solid removes Workbench rows that link to it. Deleting a Workbench row does not delete the Design body.
 - The 3D view shows Shape List solids in Sketch and Design, and Workbench solids in the Workbench task (so the two trees do not overlap).
 
@@ -210,8 +212,11 @@ EzyCad can load a **default document** when it starts (geometry, camera, tool mo
 Edit operations change your model (sketches or 3D shapes) and can be navigated with undo/redo.
 
 - **Delete selected**
-  - Use <kbd>Shift</kbd>+<kbd>D</kbd>, <kbd>Delete</kbd>, or <kbd>Backspace</kbd> to remove the currently selected sketch elements or shapes.
+  - Use <kbd>Ctrl</kbd>+<kbd>D</kbd> (remappable), <kbd>Delete</kbd>, or <kbd>Backspace</kbd> to remove the currently selected sketch elements or shapes.
   - Deletions are recorded in the undo history and can be undone/redone.
+
+- **Duplicate shapes**
+  - In **Design** or **Workbench**, <kbd>Shift</kbd>+<kbd>D</kbd> clones the selection and switches to Move. See [Duplicate shapes](#duplicate-shapes).
 
 - **Undo and Redo**
 
@@ -256,7 +261,7 @@ The typical modeling workflow in EzyCad follows these steps:
 
 3. **Create a Sketch from a Planar Face**: Once you have 3D shapes, use [Create sketch from planar face](usage-sketch.md#create-sketch-from-planar-face-tool) to pick a flat face on a solid. EzyCad extracts the face boundary into a new sketch aligned with that face (Origin at the face bounding-box center). Edit the sketch, then extrude again to add or cut features on the existing model.
 
-4. **Modify 3D Shapes**: Use [3D Modeling tools](#3d-modeling) to transform shapes ([move](#shape-move-tool-g), [rotate](#shape-rotate-tool-r), [scale](#shape-scale-tool-s), [align shafts](#align-shafts-tool-j)) or create patterns ([polar duplicate](#shape-polar-duplicate-tool)).
+4. **Modify 3D Shapes**: Use [3D Modeling tools](#3d-modeling) to transform shapes ([move](#shape-move-tool-g), [rotate](#shape-rotate-tool-r), [scale](#shape-scale-tool-s), [align shafts](#align-shafts-tool-j)), [duplicate](#duplicate-shapes) them, or create patterns ([polar duplicate](#shape-polar-duplicate-tool)).
 
 5. **Apply Feature Operations**: Use [boolean operations](#boolean-operations) (cut, fuse, common) or edge-based feature operations (chamfer with <kbd>C</kbd>, fillet with <kbd>F</kbd>) to refine your 3D model.
 
@@ -391,8 +396,22 @@ More detail: [Sketch snapping](usage-sketch.md#sketch-snapping) in the sketch gu
    - ![Shape Rotate Tool](res/icons/Draft_Rotate.png) [Rotate objects (R)](#shape-rotate-tool-r)
    - ![Shape Scale Tool](res/icons/Part_Scale.png) [Scale elements (S)](#shape-scale-tool)
    - ![Align Shafts Tool](res/icons/Assembly_Move.png) [Align shafts (J)](#align-shafts-tool-j)
+   - [Duplicate shapes (Shift+D)](#duplicate-shapes)
    - ![Polar Duplicate Tool](res/icons/Draft_PolarArray.png) [Polar duplicate](#shape-polar-duplicate-tool)
    - ![Cross-section Tool](res/icons/Curves_ExtractSubshape.png) [Preview a local-plane cross-section](#shape-cross-section-tool)
+
+#### Duplicate shapes
+
+<kbd>Shift</kbd>+<kbd>D</kbd> clones the selected shapes and switches to [Move](#shape-move-tool-g) so you can place the copies (same pattern as Blender). It is available in the **Design** and **Workbench** tasks. Remap it in **Settings -> Keyboard shortcuts** (`edit.duplicate`).
+
+- **Design** copies each selected solid as a new body at the same pose, with its own geometry. Click a Shape List **group** first (so that group is current and its solids are selected) to clone the whole subtree as a sibling of the group.
+- **Workbench** adds another instance of the same Design body at the same pose. Both rows stay links to that one body.
+- Copies keep the original parent. Names gain a numeric suffix (`Box.001`, `Box.002`, ...). One undo step removes the copies.
+- The copy/paste clipboard is left unchanged.
+
+<kbd>Delete</kbd>, <kbd>Backspace</kbd>, and the remappable **Delete** shortcut (<kbd>Ctrl</kbd>+<kbd>D</kbd> by default) remove the selection, including sketch elements. In **Sketch**, use those delete keys.
+
+If Move, Rotate, Scale, or Align shafts is already in progress, <kbd>Shift</kbd>+<kbd>D</kbd> drops that preview and duplicates the last committed shapes.
 
 #### Shape Move Tool (G)
 
@@ -762,7 +781,7 @@ For more on 3D solids and the viewer, see [3D viewer (Open CASCADE)](usage-occt-
 
 ## Hotkeys
 
-Mode, file, and edit chords in the **General Operations** and **Modeling Shortcuts** tables below are the **defaults**. Remap them in **View -> Settings -> Keyboard shortcuts** — see [usage-settings.md -> Keyboard shortcuts](usage-settings.md#keyboard-shortcuts) for bindable keys, reserved chords, Reset/Defaults, and **`gui.hotkeys`** persistence. Toolbar tooltips for remappable modes show the current chord. **Delete** and **Backspace** always delete the selection even if **Delete** is remapped off <kbd>Shift</kbd>+<kbd>D</kbd>. <kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>Z</kbd> remains a fixed redo alias alongside the remappable <kbd>Ctrl</kbd>+<kbd>Y</kbd>.
+Mode, file, and edit chords in the **General Operations** and **Modeling Shortcuts** tables below are the **defaults**. Remap them in **View -> Settings -> Keyboard shortcuts** — see [usage-settings.md -> Keyboard shortcuts](usage-settings.md#keyboard-shortcuts) for bindable keys, reserved chords, Reset/Defaults, and **`gui.hotkeys`** persistence. Toolbar tooltips for remappable modes show the current chord. **Delete** and **Backspace** always delete the selection even if **Delete** is remapped off <kbd>Ctrl</kbd>+<kbd>D</kbd>. <kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>Z</kbd> remains a fixed redo alias alongside the remappable <kbd>Ctrl</kbd>+<kbd>Y</kbd>.
 
 ### General Operations
 
@@ -777,7 +796,8 @@ Mode, file, and edit chords in the **General Operations** and **Modeling Shortcu
 | <kbd>Enter</kbd>                                                             | Confirm current operation                                                        |
 | <kbd>Tab</kbd>                                                               | Distance/dimension input                                                         |
 | <kbd>Shift</kbd>+<kbd>Tab</kbd>                                              | Angle input (for line edges with angle constraint)                               |
-| <kbd>Shift</kbd>+<kbd>D</kbd>, <kbd>Delete</kbd>, or <kbd>Backspace</kbd>    | Remove selected elements                                                         |
+| <kbd>Ctrl</kbd>+<kbd>D</kbd>, <kbd>Delete</kbd>, or <kbd>Backspace</kbd>     | Remove selected elements                                                         |
+| <kbd>Shift</kbd>+<kbd>D</kbd>                                                | [Duplicate](#duplicate-shapes) selected shapes, then Move                        |
 | <kbd>Ctrl</kbd>+<kbd>C</kbd>                                                 | Copy selected shapes (or current group subtree) to the in-app clipboard          |
 | <kbd>Ctrl</kbd>+<kbd>V</kbd>                                                 | Paste clipboard shapes under the current group (same pose; undoable)             |
 

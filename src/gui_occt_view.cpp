@@ -2811,6 +2811,255 @@ Status Occt_view::paste_clipboard_shapes()
   return Status::ok();
 }
 
+Status Occt_view::duplicate_selected_shapes()
+{
+  const Task task = task_of(get_mode());
+  if (task == Task::Sketch)
+    return Status::user_error("Duplicate shapes in Design or Workbench.");
+
+  const bool workbench = (task == Task::Workbench);
+
+  // Drop an in-progress transform so the copy matches committed geometry.
+  // cancel() returns to that task's idle and restores the operand selection.
+  switch (get_mode())
+  {
+  case Mode::Design_move:
+  case Mode::Workbench_move:
+    shp_move().cancel();
+    break;
+
+  case Mode::Design_rotate:
+  case Mode::Workbench_rotate:
+    shp_rotate().cancel();
+    break;
+
+  case Mode::Scale:
+    shp_scale().cancel();
+    break;
+
+  case Mode::Design_shaft_align:
+  case Mode::Workbench_shaft_align:
+    shp_cyl_align().cancel();
+    break;
+
+  default:
+    break;
+  }
+
+  const std::vector<Shp_ptr> selected_all = get_selected_shps();
+  std::vector<Shp_ptr>       selected;
+  selected.reserve(selected_all.size());
+  for (const Shp_ptr& s : selected_all)
+    if (!s.IsNull() && s->is_workbench() == workbench)
+      selected.push_back(s);
+
+  if (selected.empty())
+    return Status::user_error("Nothing to duplicate.");
+
+  std::unordered_set<Shape_id> selected_ids;
+  selected_ids.reserve(selected.size());
+  for (const Shp_ptr& s : selected)
+    selected_ids.insert(s->get_id());
+
+  const auto descendants_of = [&](Shape_id id)
+  {
+    return workbench ? workbench_descendant_solids(id) : shape_descendant_solids(id);
+  };
+  const auto children_of = [&](Shape_id id) { return workbench ? workbench_children(id) : shape_children(id); };
+  const auto find_in_store = [&](Shape_id id) -> Shp_ptr
+  {
+    return workbench ? find_workbench_shape_by_id(id) : find_design_shape_by_id(id);
+  };
+
+  std::vector<Shape_id> root_ids;
+  const Shape_id        gid = workbench ? current_workbench_group_id() : current_group_id();
+  if (gid != 0)
+  {
+    const std::vector<Shp_ptr> desc = descendants_of(gid);
+    if (!desc.empty() && desc.size() == selected.size())
+    {
+      bool exact = true;
+      for (const Shp_ptr& d : desc)
+        if (selected_ids.find(d->get_id()) == selected_ids.end())
+        {
+          exact = false;
+          break;
+        }
+
+      if (exact)
+        root_ids.push_back(gid);
+    }
+  }
+
+  if (root_ids.empty())
+    for (const Shp_ptr& s : selected)
+      root_ids.push_back(s->get_id());
+
+  std::vector<Shape_id> collapsed;
+  collapsed.reserve(root_ids.size());
+  for (Shape_id id : root_ids)
+  {
+    bool under_other = false;
+    for (Shape_id other : root_ids)
+    {
+      if (other == id)
+        continue;
+
+      if (would_reparent_create_cycle(other, id))
+      {
+        under_other = true;
+        break;
+      }
+    }
+    if (!under_other)
+      collapsed.push_back(id);
+  }
+
+  std::vector<Shape_rec>       snap;
+  std::unordered_set<Shape_id> seen;
+  for (Shape_id root_id : collapsed)
+  {
+    Shp_ptr root = find_in_store(root_id);
+    if (root.IsNull())
+      continue;
+
+    std::vector<Shp_ptr> stack = {root};
+    std::vector<Shp_ptr> ordered;
+    while (!stack.empty())
+    {
+      Shp_ptr cur = stack.back();
+      stack.pop_back();
+      if (cur.IsNull() || !seen.insert(cur->get_id()).second)
+        continue;
+
+      ordered.push_back(cur);
+      if (cur->is_group())
+      {
+        const std::vector<Shp_ptr> kids = children_of(cur->get_id());
+        for (auto it = kids.rbegin(); it != kids.rend(); ++it)
+          stack.push_back(*it);
+      }
+    }
+
+    for (const Shp_ptr& n : ordered)
+      snap.push_back(capture_shape_rec(*n));
+  }
+
+  if (snap.empty())
+    return Status::user_error("Nothing to duplicate.");
+
+  std::unordered_map<Shape_id, Shape_id> id_map;
+  id_map.reserve(snap.size());
+  for (const Shape_rec& rec : snap)
+  {
+    const Shape_id new_id = allocate_shape_id();
+    if (!find_shape_by_id(new_id).IsNull())
+      return Status::user_error("Internal error: shape id collision on duplicate.");
+
+    id_map[rec.id] = new_id;
+  }
+
+  const std::list<Shp_ptr>& store = workbench ? m_wbk_shps : m_shps;
+  std::vector<std::string>  existing_names;
+  existing_names.reserve(store.size() + snap.size());
+  for (const Shp_ptr& s : store)
+    if (!s.IsNull())
+      existing_names.push_back(s->get_name());
+
+  std::unordered_map<Shape_id, int> next_order;
+  auto                              alloc_order = [&](Shape_id parent) -> int
+  {
+    const auto it = next_order.find(parent);
+    if (it != next_order.end())
+      return it->second++;
+
+    const int n = workbench ? next_order_in_store_(m_wbk_shps, parent) : next_sibling_order(parent);
+    next_order.emplace(parent, n + 1);
+    return n;
+  };
+
+  std::vector<Shape_rec> added;
+  added.reserve(snap.size());
+  Shape_id first_group = 0;
+  std::vector<Shape_id> new_roots;
+  new_roots.reserve(collapsed.size());
+
+  for (const Shape_rec& src : snap)
+  {
+    Shape_rec rec = src;
+    rec.id        = id_map[src.id];
+
+    const auto parent_it = id_map.find(src.parent_id);
+    const bool is_root   = (parent_it == id_map.end());
+    if (is_root)
+    {
+      rec.sibling_order = alloc_order(src.parent_id);
+      new_roots.push_back(rec.id);
+      if (rec.is_group && first_group == 0)
+        first_group = rec.id;
+    }
+    else
+      rec.parent_id = parent_it->second;
+
+    if (rec.parent_id == rec.id || would_reparent_create_cycle(rec.id, rec.parent_id))
+      return Status::user_error("Internal error: duplicate would create a parent cycle.");
+
+    rec.name = unique_sequential_name(src.name, existing_names);
+    existing_names.push_back(rec.name);
+
+    if (!rec.is_group)
+    {
+      if (!workbench)
+      {
+        Shp_ptr live = find_in_store(src.id);
+        if (!live.IsNull())
+        {
+          const gp_Trsf& tr = live->LocalTransformation();
+          if (tr.Form() != gp_Identity)
+          {
+            BRepBuilderAPI_Transform transformer(live->Shape(), tr, true);
+            rec.geom = transformer.Shape();
+            rec.frame.Transform(tr);
+          }
+        }
+      }
+
+      if (rec.geom.IsNull())
+        return Status::user_error("Solid has no geometry.");
+
+      BRepBuilderAPI_Copy copier(rec.geom);
+      rec.geom = copier.Shape();
+      if (rec.geom.IsNull())
+        return Status::user_error("Failed to copy solid geometry.");
+    }
+
+    added.push_back(std::move(rec));
+  }
+
+  for (const Shape_rec& rec : added)
+    insert_shape_rec(rec);
+
+  if (first_group != 0)
+  {
+    if (workbench)
+      set_current_workbench_group_id(first_group);
+    else
+      set_current_group_id(first_group);
+  }
+
+  push_undo_delta(std::make_unique<Shape_add_delta>(std::move(added)));
+  sync_sketch_shape_faint_style();
+
+  std::vector<Shp_ptr> to_select;
+  for (Shape_id root : new_roots)
+    for (const Shp_ptr& s : descendants_of(root))
+      to_select.push_back(s);
+
+  set_selected_shps(to_select);
+  gui().set_mode(workbench ? Mode::Workbench_move : Mode::Design_move);
+  return Status::ok();
+}
+
 void Occt_view::remove_selected_length_dimensions_from_sketches_()
 {
   std::vector<PrsDim_LengthDimension_ptr> selected_dims;

@@ -360,7 +360,7 @@ void GUI::on_key(int key, int scancode, int action, int mods)
 
   case GLFW_KEY_DELETE:
   case GLFW_KEY_BACKSPACE:
-    // Fixed aliases: remapping edit.delete (default Shift+D) must not remove these keys.
+    // Fixed aliases: remapping edit.delete (default Ctrl+D) must not remove these keys.
     m_view->delete_selected();
     return;
 
@@ -455,6 +455,10 @@ void GUI::dispatch_hotkey_action_(Gui_action action)
     break;
 
   case Gui_action::Edit_delete:               m_view->delete_selected();  break;
+  case Gui_action::Edit_duplicate:
+    if (Status s = m_view->duplicate_selected_shapes(); !s.is_ok())
+      show_status(s);
+    break;
   case Gui_action::Edit_copy:
     if (Status s = m_view->copy_selected_shapes(); !s.is_ok())
       show_status(s);

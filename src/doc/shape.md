@@ -27,6 +27,7 @@ Typical uses:
 - Fillet/chamfer by shape, face, wire, or edge pick mode.
 - Polar duplicate selected shapes about an arm on the current sketch plane.
 - In-app copy/paste of solids and group subtrees (`copy_selected_shapes` / `paste_clipboard_shapes`).
+- In-place duplicate (`duplicate_selected_shapes`): Design deep-copies solids or the current group subtree; Workbench adds links with the same `source_id` and frame. Selects the copies and enters Move.
 
 ## Requirements and invariants
 
@@ -194,13 +195,13 @@ Full GLFW -> `GUI` routing before these delegates: [`src/doc/gui.md`](gui.md).
 
 Shape ops use typed deltas from [`shp_delta.h`](../shp_delta.h) (see [undo-redo.md](undo-redo.md)). No full-document JSON for these paths.
 
-| Mechanism                         | When                                                          |
-| --------------------------------- | ------------------------------------------------------------- |
-| `Shape_add_delta`                 | Primitives, extrude, revolve, STEP/PLY import, shape paste    |
-| `Shape_remove_delta`              | Delete selection when only `Shp` objects are selected         |
-| `Shape_geom_delta`                | Move / rotate / scale **finalize** (not preview)              |
-| `Shape_replace_delta`             | Fuse / cut / common / fillet / chamfer / polar duplicate      |
-| `push_undo_snapshot()` (fallback) | Delete when selection also includes sketch edges / dimensions |
+| Mechanism                         | When                                                                  |
+| --------------------------------- | --------------------------------------------------------------------- |
+| `Shape_add_delta`                 | Primitives, extrude, revolve, STEP/PLY import, shape paste, duplicate |
+| `Shape_remove_delta`              | Delete selection when only `Shp` objects are selected                 |
+| `Shape_geom_delta`                | Move / rotate / scale **finalize** (not preview)                      |
+| `Shape_replace_delta`             | Fuse / cut / common / fillet / chamfer / polar duplicate              |
+| `push_undo_snapshot()` (fallback) | Delete when selection also includes sketch edges / dimensions         |
 
 Shapes carry a stable `Shape_id` persisted as `shapes[].id` in project JSON.
 
