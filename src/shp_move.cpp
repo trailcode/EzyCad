@@ -121,14 +121,11 @@ void Shp_move::finalize()
   operation_shps_finalize_();
 
   for (Shape_geom_delta::Geom_change& ch : changes)
-  {
-    Shp_ptr shp = view().find_shape_by_id(ch.id);
-    if (!shp.IsNull())
+    if (Shp_ptr shp = view().find_shape_by_id(ch.id); !shp.IsNull())
     {
       ch.after_geom  = shp->Shape();
       ch.after_frame = shp->get_frame();
     }
-  }
 
   view().push_undo_delta(std::make_unique<Shape_geom_delta>(std::move(changes)));
   reset();

@@ -204,11 +204,9 @@ void Occt_view::init_viewer()
   aViewer->SetLightOn();
   for (NCollection_List<Graphic3d_CLight_ptr>::Iterator aLightIter(aViewer->ActiveLights()); aLightIter.More();
        aLightIter.Next())
-  {
-    const Graphic3d_CLight_ptr& aLight = aLightIter.Value();
-    if (aLight->Type() == Graphic3d_TypeOfLightSource_Directional)
+    if (const Graphic3d_CLight_ptr& aLight = aLightIter.Value();
+        aLight->Type() == Graphic3d_TypeOfLightSource_Directional)
       aLight->SetCastShadows(true);
-  }
 
   // ImGui owns HiDPI: canvas + GLFW window are CSS * DPR (see imgui_impl_glfw OnCanvasSizeChange).
   // ToScaleBacking=false so OCCT does not resize the shared canvas again; DevicePixelRatio=1 so
@@ -376,14 +374,11 @@ void Occt_view::snap_view_to_nearest_standard_axis()
   int    best_i   = 0;
   double best_dot = -2.0;
   for (int i = 0; i < 6; ++i)
-  {
-    const double d = fwd.X() * k_axes[i].X() + fwd.Y() * k_axes[i].Y() + fwd.Z() * k_axes[i].Z();
-    if (d > best_dot)
+    if (const double d = fwd.X() * k_axes[i].X() + fwd.Y() * k_axes[i].Y() + fwd.Z() * k_axes[i].Z(); d > best_dot)
     {
       best_dot = d;
       best_i   = i;
     }
-  }
 
   const gp_Dir f = k_axes[best_i];
 
@@ -1468,14 +1463,11 @@ Status Occt_view::group_workbench_shapes(const std::vector<Shp_ptr>& nodes)
   }
 
   for (const Shape_tree_delta::Link_change& ch : links)
-  {
-    Shp_ptr n = find_workbench_shape_by_id(ch.id);
-    if (!n.IsNull())
+    if (Shp_ptr n = find_workbench_shape_by_id(ch.id); !n.IsNull())
     {
       n->set_parent_id(ch.new_parent);
       n->set_sibling_order(ch.new_order);
     }
-  }
 
   push_undo_delta(std::make_unique<Shape_tree_delta>(std::vector<Shape_rec>{capture_shape_rec(*grp)}, std::vector<Shape_rec>{},
                                                      std::move(links)));
@@ -5437,20 +5429,17 @@ Status Occt_view::build_export_shape_(TopoDS_Shape& out_shape) const
   std::vector<TopoDS_Shape>  parts;
   const std::vector<Shp_ptr> selected = get_selected_shps();
   if (!selected.empty())
+  {
     for (const Shp_ptr& shp : selected)
-    {
-      TopoDS_Shape t = shape_with_local_transform_(shp);
-      if (!t.IsNull())
+      if (TopoDS_Shape t = shape_with_local_transform_(shp); !t.IsNull())
         parts.push_back(t);
-    }
-
+  }
   else
+  {
     for (const Shp_ptr& shp : m_shps)
-    {
-      TopoDS_Shape t = shape_with_local_transform_(shp);
-      if (!t.IsNull())
+      if (TopoDS_Shape t = shape_with_local_transform_(shp); !t.IsNull())
         parts.push_back(t);
-    }
+  }
 
   if (parts.empty())
     return Status::user_error("Nothing to export (no shapes).");

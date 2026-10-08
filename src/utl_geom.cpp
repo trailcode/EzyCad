@@ -918,17 +918,11 @@ const gp_Pnt& closest_to_camera(const V3d_View_ptr& view, const std::vector<gp_P
   gp_Pnt camera_pos = view->Camera()->Eye();
 
   for (size_t idx = 0, num = pnts.size(); idx < num; ++idx)
-  {
-    // Compute Euclidean distance to camera
-    double distance = pnts[idx].Distance(camera_pos);
-
-    // Update closest point if this distance is smaller
-    if (distance < min_distance)
+    if (double distance = pnts[idx].Distance(camera_pos); distance < min_distance)
     {
       min_distance = distance;
       best_idx     = idx;
     }
-  }
 
   return pnts[best_idx];
 }
