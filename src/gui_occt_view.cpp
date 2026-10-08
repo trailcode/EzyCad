@@ -2857,6 +2857,7 @@ Status Occt_view::duplicate_selected_shapes()
   {
     return workbench ? workbench_descendant_solids(id) : shape_descendant_solids(id);
   };
+
   const auto children_of = [&](Shape_id id) { return workbench ? workbench_children(id) : shape_children(id); };
   const auto find_in_store = [&](Shape_id id) -> Shp_ptr
   {

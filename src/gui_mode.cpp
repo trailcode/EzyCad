@@ -98,6 +98,7 @@ const char* GUI::current_mode_description_() const
   // Modes entered only from Shape List / menus / task buttons (no tools-row button).
   if (m_mode == Mode::Workbench_inspection)
     return "Workbench";
+
   if (m_mode == Mode::Shape_set_frame || m_mode == Mode::Workbench_set_frame)
     return "Set local frame";
 
