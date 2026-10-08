@@ -48,13 +48,13 @@ CMake IDE group: `src\utl` (pattern `^utl(_|\.)`).
 
 ### General helpers
 
-| API                                      | Purpose                                                                               |
-| ---------------------------------------- | ------------------------------------------------------------------------------------- |
-| `clear_all(...)`                         | Reset optional/containers/arithmetic/handles (`Nullify`)/enums/aggregates in one call |
-| `unique_sequential_name(base, existing)` | `Name`, `Name.001`, ... for sketches/shapes                                           |
-| `load_texture(path)`                     | Toolbar icon loading                                                                  |
-| `decode_image_bytes(bytes)`              | stb_image -> RGBA for underlay import                                                 |
-| `safe_cstr_copy`                         | ImGui fixed-buffer copies (MSVC-safe)                                                 |
+| API                                      | Purpose                                                                                                                        |
+| ---------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------ |
+| `clear_all(...)`                         | Reset optional/containers/arithmetic/handles (`Nullify`)/enums/aggregates in one call                                          |
+| `unique_sequential_name(base, existing)` | `Name`, `Name.001`, ... First free slot. A trailing `.NNN` on `base` is the suffix, not a new stem (`Name.001` -> `Name.002`). |
+| `load_texture(path)`                     | Toolbar icon loading                                                                                                           |
+| `decode_image_bytes(bytes)`              | stb_image -> RGBA for underlay import                                                                                          |
+| `safe_cstr_copy`                         | ImGui fixed-buffer copies (MSVC-safe)                                                                                          |
 
 ## Geometry (`utl_geom`)
 

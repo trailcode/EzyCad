@@ -406,7 +406,7 @@ More detail: [Sketch snapping](usage-sketch.md#sketch-snapping) in the sketch gu
 
 - **Design** copies each selected solid as a new body at the same pose, with its own geometry. Click a Shape List **group** first (so that group is current and its solids are selected) to clone the whole subtree as a sibling of the group.
 - **Workbench** adds another instance of the same Design body at the same pose. Both rows stay links to that one body.
-- Copies keep the original parent. Names gain a numeric suffix (`Box.001`, `Box.002`, ...). One undo step removes the copies.
+- Copies keep the original parent. Names use the next free slot in that sequence (`Box` then `Box.001`; copying `Box.001` yields `Box.002`, or an earlier gap such as `Box` when that name is unused). One undo step removes the copies.
 - The copy/paste clipboard is left unchanged.
 
 <kbd>Delete</kbd>, <kbd>Backspace</kbd>, and the remappable **Delete** shortcut (<kbd>Ctrl</kbd>+<kbd>D</kbd> by default) remove the selection, including sketch elements. In **Sketch**, use those delete keys.

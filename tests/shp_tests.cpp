@@ -597,6 +597,21 @@ TEST_F(Shp_test, UniqueShapeNames_increment)
   EXPECT_EQ(view().get_shapes().back()->get_name(), "Box.001");
 }
 
+TEST_F(Shp_test, UniqueShapeNames_suffixed_source_uses_next_free_slot)
+{
+  view().add_box(0, 0, 0, 1, 1, 1);
+  view().get_shapes().back()->set_name("Box.001");
+  EXPECT_EQ(view().get_unique_shape_name("Box.001"), "Box");
+  EXPECT_EQ(view().get_unique_shape_name("Box.001.001"), "Box");
+
+  view().get_shapes().back()->set_name("Box");
+  view().add_box(2, 0, 0, 1, 1, 1);
+  EXPECT_EQ(view().get_unique_shape_name("Box.001"), "Box.002");
+
+  view().get_shapes().back()->set_name("Box.003");
+  EXPECT_EQ(view().get_unique_shape_name("Box.003"), "Box.001");
+}
+
 TEST_F(Shp_test, AddSphere_and_SetVisible)
 {
   view().add_sphere(0, 0, 0, 2.0);
