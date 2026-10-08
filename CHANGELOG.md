@@ -9,6 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- **Delete shortcut**: remappable **Delete** defaults to <kbd>Ctrl</kbd>+<kbd>D</kbd> (`edit.delete`). <kbd>Shift</kbd>+<kbd>D</kbd> is now **Duplicate**. <kbd>Delete</kbd> and <kbd>Backspace</kbd> still always delete the selection. A saved `gui.hotkeys` entry that still has **Delete** on <kbd>Shift</kbd>+<kbd>D</kbd> moves **Delete** back to <kbd>Ctrl</kbd>+<kbd>D</kbd> so **Duplicate** can take <kbd>Shift</kbd>+<kbd>D</kbd>.
 - **Task toolbar**: Sketch / Design / Workbench switcher; the tools row shows only the current task. Design has its own Move / Rotate / Scale / Align shafts (bake bodies for CSG). Workbench has Move / Rotate / Align shafts (instance pose). <kbd>G</kbd> / <kbd>R</kbd> / <kbd>J</kbd> stay on the current task; <kbd>S</kbd> enters Design Scale.
 - **Mode names**: Design idle is `Design_inspection` (was `Normal`); Sketch idle is `Sketch_inspection` (was `Sketch_inspection_mode`). `ezy.get_mode()` / `ezy.set_mode` use the new names; `Normal` and `Sketch_inspection_mode` still parse.
 - **Move / rotate / scale space**: Options **Local** (default) or **World**. Local uses the first selected solid's frame (origin and X/Y/Z from **Show axes**). World keeps global XYZ at that solid's bounding-box center. Persisted as **`gui.transform_space`**.
@@ -17,6 +18,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- **Shape and Workbench copy names**: duplicating `Box.001` takes the next free `Box` / `Box.NNN` slot. It no longer stacks another `.001` (`Box.001.001`).
 - **Workbench task icon**: `res/icons/Workbench_Assembly.png` is included so the task button and the usage guide can load it (Sphinx `-W` failed on the missing image).
 - **Workbench toolbar**: the tools row no longer repeats the Workbench task icon; idle is the task button only.
 - **Workbench Align shafts**: cylindrical face picking uses Face selection on Workbench instances (same as Design). Insert position uses the instance placement (axis direction was already correct).
@@ -33,6 +35,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Wasm configure/link**: Detect Emscripten via `EMSCRIPTEN` / `CMAKE_SYSTEM_NAME` (modern emsdk reports Clang). Link the FreeType package from the OCCT wasm install so `wasm-ld` finds `libfreetype.a` instead of bare `-lfreetype`.
 
 ### Added
+
+- **Duplicate shapes** (<kbd>Shift</kbd>+<kbd>D</kbd>, `edit.duplicate`): in **Design**, clones selected solids (or the current group's subtree) as independent bodies at the same pose. In **Workbench**, adds another link to the same Design body at the same pose. Copies stay under the original parent, then the tool switches to **Move** on the current task. One undo step. Leaves the copy/paste clipboard unchanged.
 
 - **Workbench List**: separate pane of geometry **links** to Shape List solids (own location/rotation). **Add to Workbench** from the Shape List (button, context menu, or drag). Design geometry edits update links; Design move/rotate/scale do not move instances. Workbench Move / Rotate / Align shafts edit the instance frame only. `.ezy` stores `workbench[]` (no BREP). Settings: **`gui.show_workbench_list`**.
 

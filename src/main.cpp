@@ -492,9 +492,7 @@ bool parse_cli_listen_(int argc, char** argv, bool& want_listen, std::string& li
   listen_arg.clear();
   error.clear();
   for (int i = 1; i < argc; ++i)
-  {
-    const std::string a = argv[i] ? argv[i] : "";
-    if (a == "--listen")
+    if (const std::string a = argv[i] ? argv[i] : ""; a == "--listen")
     {
       if (i + 1 >= argc || argv[i + 1] == nullptr || argv[i + 1][0] == '\0')
       {
@@ -505,7 +503,6 @@ bool parse_cli_listen_(int argc, char** argv, bool& want_listen, std::string& li
       want_listen = true;
       listen_arg  = argv[++i];
     }
-  }
   return true;
 }
 #endif

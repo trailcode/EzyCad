@@ -239,6 +239,10 @@ public:
   /// Paste clipboard shapes under current_group_id (undoable deep copy).
   /// If current_group_id is still a copied group root, pastes as a sibling of that group.
   [[nodiscard]] Status paste_clipboard_shapes();
+  /// Clone the selection in place (same parent and pose), select the copies, and enter Move.
+  /// Design: independent solids. Workbench: new links to the same Design bodies.
+  /// Does not use the shape clipboard. Sketch task is rejected.
+  [[nodiscard]] Status duplicate_selected_shapes();
   /// True when the in-app shape clipboard holds at least one node.
   [[nodiscard]] bool has_shape_clipboard() const { return !m_shape_clipboard.empty(); }
   /// Clear the in-app shape clipboard (New project leaves it intact).

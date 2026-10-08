@@ -123,10 +123,9 @@ void Sketch_dims::rebuild_length_dimension_display_(Length_dimension& d)
 void Sketch_dims::purge_stale_length_dimensions()
 {
   for (auto it = m_length_dimensions.begin(); it != m_length_dimensions.end();)
-  {
-    const bool bad = it->node_idx_lo >= m_sketch.m_nodes.size() || it->node_idx_hi >= m_sketch.m_nodes.size() ||
-                     m_sketch.m_nodes[it->node_idx_lo].deleted || m_sketch.m_nodes[it->node_idx_hi].deleted;
-    if (bad)
+    if (const bool bad = it->node_idx_lo >= m_sketch.m_nodes.size() || it->node_idx_hi >= m_sketch.m_nodes.size() ||
+                         m_sketch.m_nodes[it->node_idx_lo].deleted || m_sketch.m_nodes[it->node_idx_hi].deleted;
+        bad)
     {
       if (!it->dim.IsNull())
         m_sketch.m_ctx.Remove(it->dim, true);
@@ -135,7 +134,6 @@ void Sketch_dims::purge_stale_length_dimensions()
     }
     else
       ++it;
-  }
 }
 
 void Sketch_dims::refresh_all_length_dimensions()

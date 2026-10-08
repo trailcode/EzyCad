@@ -580,13 +580,10 @@ void Sketch_topo::update_faces()
   {
     Face_meta& face_a = face_metas[face_i];
     for (size_t face_j = face_i + 1; face_j < num; ++face_j)
-    {
-      Face_meta& face_b = face_metas[face_j];
-      if (is_face_contained(face_b.shp->Shape(), face_a.shp->Shape()))
+      if (Face_meta& face_b = face_metas[face_j]; is_face_contained(face_b.shp->Shape(), face_a.shp->Shape()))
         // Check if face_a is better (smaller) parent than the current one
         if (face_b.parent_idx == -1 || face_a.area < face_metas[face_a.parent_idx].area)
           face_b.parent_idx = static_cast<int>(face_i);
-    }
   }
 
   // Assign holes

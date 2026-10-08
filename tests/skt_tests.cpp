@@ -503,14 +503,11 @@ TEST_F(Sketch_test, SketchOriginNodePlane)
 
   std::optional<size_t> origin_idx;
   for (size_t i = 0; i < sketch.get_nodes().size(); ++i)
-  {
-    const Sketch_nodes::Node& n = sketch.get_nodes()[i];
-    if (!n.deleted && n.origin)
+    if (const Sketch_nodes::Node& n = sketch.get_nodes()[i]; !n.deleted && n.origin)
     {
       origin_idx = i;
       break;
     }
-  }
 
   ASSERT_TRUE(origin_idx.has_value());
   const Sketch_nodes::Node& origin = sketch.get_nodes()[*origin_idx];
@@ -530,14 +527,11 @@ TEST_F(Sketch_test, SketchOriginNodeFromFaceBBoxCenter)
 
   std::optional<size_t> origin_idx;
   for (size_t i = 0; i < sketch.get_nodes().size(); ++i)
-  {
-    const Sketch_nodes::Node& n = sketch.get_nodes()[i];
-    if (!n.deleted && n.origin)
+    if (const Sketch_nodes::Node& n = sketch.get_nodes()[i]; !n.deleted && n.origin)
     {
       origin_idx = i;
       break;
     }
-  }
 
   ASSERT_TRUE(origin_idx.has_value());
   const Sketch_nodes::Node& origin = sketch.get_nodes()[*origin_idx];
@@ -559,14 +553,11 @@ TEST_F(Sketch_test, SketchOriginNodeSurvivesOnMode)
 
   std::optional<size_t> origin_idx;
   for (size_t i = 0; i < sketch.get_nodes().size(); ++i)
-  {
-    const Sketch_nodes::Node& n = sketch.get_nodes()[i];
-    if (!n.deleted && n.origin)
+    if (const Sketch_nodes::Node& n = sketch.get_nodes()[i]; !n.deleted && n.origin)
     {
       origin_idx = i;
       break;
     }
-  }
 
   ASSERT_TRUE(origin_idx.has_value());
   EXPECT_NEAR(sketch.get_nodes()[*origin_idx].X(), 5.0, Precision::Confusion());

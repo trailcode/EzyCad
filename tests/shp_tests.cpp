@@ -75,6 +75,12 @@ void select_shapes(Occt_view& view, const std::vector<Shp_ptr>& shapes)
     cctx.AddOrRemoveSelected(shp, true);
 }
 
+struct Restore_design_inspection
+{
+  GUI& gui;
+  ~Restore_design_inspection() { gui.set_mode(Mode::Design_inspection); }
+};
+
 int displayed_object_count(AIS_InteractiveContext& ctx)
 {
   NCollection_List<AIS_InteractiveObject_ptr> displayed;
@@ -589,6 +595,21 @@ TEST_F(Shp_test, UniqueShapeNames_increment)
   EXPECT_EQ(view().get_unique_shape_name("Box"), "Box.002");
   EXPECT_EQ(view().get_shapes().front()->get_name(), "Box");
   EXPECT_EQ(view().get_shapes().back()->get_name(), "Box.001");
+}
+
+TEST_F(Shp_test, UniqueShapeNames_suffixed_source_uses_next_free_slot)
+{
+  view().add_box(0, 0, 0, 1, 1, 1);
+  view().get_shapes().back()->set_name("Box.001");
+  EXPECT_EQ(view().get_unique_shape_name("Box.001"), "Box");
+  EXPECT_EQ(view().get_unique_shape_name("Box.001.001"), "Box");
+
+  view().get_shapes().back()->set_name("Box");
+  view().add_box(2, 0, 0, 1, 1, 1);
+  EXPECT_EQ(view().get_unique_shape_name("Box.001"), "Box.002");
+
+  view().get_shapes().back()->set_name("Box.003");
+  EXPECT_EQ(view().get_unique_shape_name("Box.003"), "Box.001");
 }
 
 TEST_F(Shp_test, AddSphere_and_SetVisible)
@@ -1448,6 +1469,178 @@ TEST_F(Shp_test, New_file_keeps_shape_clipboard)
       ++leaves;
 
   EXPECT_EQ(leaves, 1u);
+}
+
+TEST_F(Shp_test, Duplicate_design_solid_copies_geometry_and_enters_move)
+{
+  Restore_design_inspection restore{gui()};
+  gui().set_mode(Mode::Design_inspection);
+
+  view().add_box(0, 0, 0, 2, 3, 4);
+  Shp_ptr src = view().get_shapes().back();
+  ASSERT_FALSE(src.IsNull());
+  const Shape_id src_id = src->get_id();
+  const gp_Pnt   origin = src->get_frame().Location();
+  select_shapes(view(), {src});
+
+  ASSERT_TRUE(view().duplicate_selected_shapes().is_ok());
+  EXPECT_EQ(gui().get_mode(), Mode::Design_move);
+  EXPECT_TRUE(view().shp_move().has_operation_shps());
+
+  size_t leaves = 0;
+  Shp_ptr copy;
+  for (const Shp_ptr& s : view().get_shapes())
+    if (!s.IsNull() && !s->is_group())
+    {
+      ++leaves;
+      if (s->get_id() != src_id)
+        copy = s;
+    }
+
+  EXPECT_EQ(leaves, 2u);
+  ASSERT_FALSE(copy.IsNull());
+  EXPECT_EQ(copy->get_parent_id(), src->get_parent_id());
+  EXPECT_EQ(copy->get_name(), "Box.001");
+  EXPECT_FALSE(copy->Shape().IsPartner(src->Shape()));
+  EXPECT_NEAR(volume_of(copy->Shape()), volume_of(src->Shape()), 1e-6);
+  EXPECT_TRUE(copy->get_frame().Location().IsEqual(origin, 1e-6));
+
+  const std::vector<Shp_ptr> selected = view().get_selected_shps();
+  ASSERT_EQ(selected.size(), 1u);
+  EXPECT_EQ(selected[0]->get_id(), copy->get_id());
+
+  EXPECT_TRUE(view().undo());
+  leaves = 0;
+  for (const Shp_ptr& s : view().get_shapes())
+    if (!s.IsNull() && !s->is_group())
+      ++leaves;
+
+  EXPECT_EQ(leaves, 1u);
+}
+
+TEST_F(Shp_test, Duplicate_design_group_is_sibling)
+{
+  Restore_design_inspection restore{gui()};
+  gui().set_mode(Mode::Design_inspection);
+
+  view().add_box(0, 0, 0, 1, 1, 1);
+  view().add_box(3, 0, 0, 1, 1, 1);
+  std::vector<Shp_ptr> boxes;
+  for (const Shp_ptr& s : view().get_shapes())
+    if (!s.IsNull() && !s->is_group())
+      boxes.push_back(s);
+
+  ASSERT_TRUE(view().group_shapes(boxes).is_ok());
+  Shp_ptr grp;
+  for (const Shp_ptr& s : view().get_shapes())
+    if (!s.IsNull() && s->is_group())
+      grp = s;
+
+  ASSERT_FALSE(grp.IsNull());
+  const Shape_id gid = grp->get_id();
+  view().set_current_group_id(gid);
+  select_shapes(view(), view().shape_descendant_solids(gid));
+
+  ASSERT_TRUE(view().duplicate_selected_shapes().is_ok());
+  EXPECT_EQ(gui().get_mode(), Mode::Design_move);
+
+  int groups = 0;
+  int solids = 0;
+  Shp_ptr copy_grp;
+  for (const Shp_ptr& s : view().get_shapes())
+  {
+    if (s.IsNull())
+      continue;
+
+    if (s->is_group())
+    {
+      ++groups;
+      if (s->get_id() != gid)
+        copy_grp = s;
+    }
+    else
+      ++solids;
+  }
+
+  EXPECT_EQ(groups, 2);
+  EXPECT_EQ(solids, 4);
+  ASSERT_FALSE(copy_grp.IsNull());
+  EXPECT_EQ(copy_grp->get_parent_id(), grp->get_parent_id());
+  EXPECT_EQ(view().shape_descendant_solids(copy_grp->get_id()).size(), 2u);
+  EXPECT_EQ(view().shape_descendant_solids(gid).size(), 2u);
+  EXPECT_EQ(view().current_group_id(), copy_grp->get_id());
+}
+
+TEST_F(Shp_test, Duplicate_workbench_link_keeps_source_and_enters_move)
+{
+  Restore_design_inspection restore{gui()};
+  view().add_box(1, 2, 3, 4, 5, 6);
+  Shp_ptr src = view().get_shapes().back();
+  ASSERT_TRUE(view().add_to_workbench({src}).is_ok());
+  Shp_ptr inst = view().get_workbench_shapes().back();
+  ASSERT_FALSE(inst.IsNull());
+  const Shape_id inst_id = inst->get_id();
+  const gp_Pnt   origin  = inst->get_frame().Location();
+
+  gui().set_mode(Mode::Workbench_inspection);
+  select_shapes(view(), {inst});
+  ASSERT_TRUE(view().duplicate_selected_shapes().is_ok());
+  EXPECT_EQ(gui().get_mode(), Mode::Workbench_move);
+  EXPECT_TRUE(view().shp_move().has_operation_shps());
+  EXPECT_EQ(view().get_shapes().size(), 1u);
+  EXPECT_EQ(view().get_workbench_shapes().size(), 2u);
+
+  Shp_ptr copy;
+  for (const Shp_ptr& s : view().get_workbench_shapes())
+    if (!s.IsNull() && s->get_id() != inst_id)
+      copy = s;
+
+  ASSERT_FALSE(copy.IsNull());
+  EXPECT_TRUE(copy->is_workbench_link());
+  EXPECT_EQ(copy->get_source_id(), src->get_id());
+  EXPECT_EQ(copy->get_parent_id(), inst->get_parent_id());
+  EXPECT_TRUE(copy->get_frame().Location().IsEqual(origin, 1e-6));
+
+  const std::vector<Shp_ptr> selected = view().get_selected_shps();
+  ASSERT_EQ(selected.size(), 1u);
+  EXPECT_EQ(selected[0]->get_id(), copy->get_id());
+
+  EXPECT_TRUE(view().undo());
+  EXPECT_EQ(view().get_workbench_shapes().size(), 1u);
+  EXPECT_EQ(view().get_shapes().size(), 1u);
+}
+
+TEST_F(Shp_test, Duplicate_in_sketch_is_rejected)
+{
+  Restore_design_inspection restore{gui()};
+  view().add_box(0, 0, 0, 1, 1, 1);
+  select_shapes(view(), {view().get_shapes().back()});
+  gui().set_mode(Mode::Sketch_inspection);
+
+  EXPECT_FALSE(view().duplicate_selected_shapes().is_ok());
+  EXPECT_EQ(gui().get_mode(), Mode::Sketch_inspection);
+  EXPECT_EQ(view().get_shapes().size(), 1u);
+}
+
+TEST_F(Shp_test, Duplicate_leaves_shape_clipboard)
+{
+  Restore_design_inspection restore{gui()};
+  gui().set_mode(Mode::Design_inspection);
+  view().add_box(0, 0, 0, 1, 1, 1);
+  select_shapes(view(), {view().get_shapes().back()});
+  ASSERT_TRUE(view().copy_selected_shapes().is_ok());
+  ASSERT_TRUE(view().duplicate_selected_shapes().is_ok());
+  EXPECT_TRUE(view().has_shape_clipboard());
+
+  gui().set_mode(Mode::Design_inspection);
+  ASSERT_TRUE(view().paste_clipboard_shapes().is_ok());
+
+  size_t leaves = 0;
+  for (const Shp_ptr& s : view().get_shapes())
+    if (!s.IsNull() && !s->is_group())
+      ++leaves;
+
+  EXPECT_EQ(leaves, 3u);
 }
 
 TEST_F(Shp_test, Grouped_solids_stay_displayed_and_selectable)

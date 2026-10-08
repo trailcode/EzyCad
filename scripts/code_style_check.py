@@ -1,10 +1,14 @@
 #!/usr/bin/env python3
 """Optional local check of C++ against docs/ezycad_code_style.md.
 
-Not part of CI or the default agent_check.py run. Start with Vertical rhythm
-(blank lines), including a blank line after an early-exit `if` (return / continue /
-break / CHK_RET) before the next statement in the same block. Do not add groups
-here to CI unless a rule is as objective as ASCII.
+Not part of CI or the default agent_check.py run. Groups:
+
+- vertical-rhythm: blank lines, including after an early-exit `if` (return /
+  continue / break / CHK_RET) before the next statement in the same block.
+- if-initializer: a `for` / `while` whose body is only `Type name = init;` plus
+  an `if` that tests `name` should be `for (...) if (Type name = init; cond)`.
+
+Do not add groups here to CI unless a rule is as objective as ASCII.
 
 Usage:
   python scripts/code_style_check.py [paths...]
@@ -820,6 +824,198 @@ def _check_span(src: Source, start: int, end: int, findings: list[Finding]) -> N
             )
 
 
+# A declaration-then-if loop body should be an if-with-initializer, not a braced block.
+# `using` / control keywords are not declarators.
+_DECL_LEAD_REJECT = CONTROL_STARTS | frozenset(
+    {
+        "using",
+        "typedef",
+        "return",
+        "else",
+        "case",
+        "goto",
+        "co_return",
+        "co_await",
+        "static_assert",
+    }
+)
+_DECL_QUALIFIERS = frozenset(
+    {"const", "volatile", "constexpr", "static", "mutable", "register", "extern", "inline", "thread_local"}
+)
+
+
+def check_if_initializer(src: Source) -> list[Finding]:
+    findings: list[Finding] = []
+    _check_if_initializer_span(src, 0, len(src.masked), findings, None)
+    return findings
+
+
+def _check_if_initializer_span(
+    src: Source, start: int, end: int, findings: list[Finding], parent: Stmt | None
+) -> None:
+    if start >= end:
+        return
+    for stmt in parse_statements(src, start, end):
+        for b0, b1 in stmt.bodies:
+            _check_if_initializer_span(src, b0, b1, findings, stmt)
+        if stmt.kind not in ("for", "while"):
+            continue
+        if src.in_clang_format_off(stmt.start):
+            continue
+        if not _loop_body_is_braced(src, stmt):
+            continue
+        # Dropping the loop braces would make a following else bind to the inner if.
+        if _unbraced_then_of_if_else(src, stmt, parent):
+            continue
+        if len(stmt.bodies) != 1:
+            continue
+        b0, b1 = stmt.bodies[0]
+        body = parse_statements(src, b0, b1)
+        if len(body) != 2 or body[1].kind != "if":
+            continue
+        name = _init_decl_name(src, body[0])
+        if not name or not _ident_in_if_condition(src, body[1], name):
+            continue
+        findings.append(
+            Finding(
+                src.path,
+                src.line_of(stmt.start),
+                "if-initializer",
+                "loop body is a declaration plus if; prefer "
+                "for/while (...) if (Type name = init; condition) { ... } "
+                "(no braces around the loop)",
+            )
+        )
+
+
+def _unbraced_then_of_if_else(src: Source, loop: Stmt, parent: Stmt | None) -> bool:
+    """True when `loop` is the unbraced then-branch of an if that has an else."""
+    if parent is None or parent.kind != "if" or not parent.has_else or not parent.bodies:
+        return False
+    b0, b1 = parent.bodies[0]
+    i = skip_ws_and_pp(src.masked, b0, b1)
+    if i < b1 and src.masked[i] == "{":
+        return False
+    return b0 <= loop.start and loop.end <= b1
+
+
+def _loop_body_is_braced(src: Source, stmt: Stmt) -> bool:
+    i = skip_ident(src.masked, stmt.start, stmt.end)
+    i = skip_ws(src.masked, i, stmt.end)
+    if i < stmt.end and src.masked[i] == "(":
+        i = skip_balanced(src.masked, i, stmt.end, "(", ")")
+    i = skip_ws_and_pp(src.masked, i, stmt.end)
+    return i < stmt.end and src.masked[i] == "{"
+
+
+def _init_decl_name(src: Source, stmt: Stmt) -> str:
+    """Variable name of `Type name = init;`, or empty when it is not that form."""
+    if stmt.kind != "stmt":
+        return ""
+    masked = src.masked
+    end = stmt.end
+    i = skip_ws_and_pp(masked, stmt.start, end)
+    first = peek_ident(masked, i, end)
+    if not first or first in _DECL_LEAD_REJECT:
+        return ""
+
+    paren = 0
+    bracket = 0
+    angle = 0
+    eq = -1
+    while i < end:
+        ch = masked[i]
+        if ch == "(":
+            paren += 1
+        elif ch == ")":
+            paren = max(0, paren - 1)
+        elif ch == "[":
+            bracket += 1
+        elif ch == "]":
+            bracket = max(0, bracket - 1)
+        elif ch == "<" and paren == 0 and bracket == 0:
+            angle += 1
+        elif ch == ">" and paren == 0 and bracket == 0 and angle:
+            angle -= 1
+        elif ch == "," and paren == 0 and bracket == 0 and angle == 0:
+            # Another declarator (`T a = x, b = y`) or a comma before `=`.
+            return ""
+        elif ch == "{":
+            return ""
+        elif ch == "=" and paren == 0 and bracket == 0 and angle == 0 and eq < 0:
+            nxt, is_assign = skip_equals_token(masked, i, end)
+            if is_assign:
+                eq = i
+                i = nxt
+                continue
+            i = nxt
+            continue
+        i += 1
+
+    if eq < 0:
+        return ""
+
+    name = _prev_ident(masked, eq)
+    if not name or name in _DECL_LEAD_REJECT or name in _DECL_QUALIFIERS:
+        return ""
+
+    name_start = eq - 1
+    while name_start >= stmt.start and masked[name_start] in " \t\n\r*&":
+        name_start -= 1
+    name_start = name_start - len(name) + 1
+    if name_start < stmt.start or not _span_has_type(masked, stmt.start, name_start):
+        return ""
+    return name
+
+
+def _span_has_type(masked: str, start: int, end: int) -> bool:
+    p = start
+    while p < end:
+        p = skip_ws_and_pp(masked, p, end)
+        if p >= end:
+            break
+        ident = peek_ident(masked, p, end)
+        if ident and ident not in _DECL_QUALIFIERS:
+            return True
+        if not ident:
+            if masked[p] in "*&":
+                p += 1
+                continue
+            return False
+        p = skip_ident(masked, p, end)
+    return False
+
+
+def _ident_in_if_condition(src: Source, stmt: Stmt, name: str) -> bool:
+    """True when `name` appears in the `if (` ... `)` header (the test, not only the body)."""
+    masked = src.masked
+    i = skip_ws_and_pp(masked, stmt.start, stmt.end)
+    if peek_ident(masked, i, stmt.end) != "if":
+        return False
+    i = skip_ident(masked, i, stmt.end)
+    i = skip_ws(masked, i, stmt.end)
+    if i >= stmt.end or masked[i] != "(":
+        return False
+    close = skip_balanced(masked, i, stmt.end, "(", ")")
+    return _ident_used(masked, name, i + 1, close - 1)
+
+
+def _ident_used(masked: str, name: str, start: int, end: int) -> bool:
+    i = start
+    n = min(end, len(masked))
+    while i < n:
+        if masked[i] in IDENT_START:
+            j = i + 1
+            while j < n and masked[j] in IDENT_CONT:
+                j += 1
+            if masked[i:j] == name:
+                return True
+            i = j
+            continue
+        i += 1
+    return False
+
+
 def iter_cpp_files(paths: list[Path]) -> list[Path]:
     files: list[Path] = []
     for path in paths:
@@ -845,6 +1041,7 @@ def repo_root() -> Path:
 
 RULES = {
     "vertical-rhythm": check_vertical_rhythm,
+    "if-initializer": check_if_initializer,
 }
 
 

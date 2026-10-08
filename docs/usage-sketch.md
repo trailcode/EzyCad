@@ -99,24 +99,24 @@ Common keyboard shortcuts (hotkeys) while working in 2D sketch mode or with sket
 
 ### Common sketch hotkeys
 
-| Hotkey                                                                   | Action                                                                                       |
-| ------------------------------------------------------------------------ | -------------------------------------------------------------------------------------------- |
-| <kbd>Tab</kbd>                                                           | Open precise distance / length / radius / size input dialog (most creation tools)            |
-| <kbd>Shift</kbd>+<kbd>Tab</kbd>                                          | Open angle (degrees) input dialog for constrained line / multi-line / add-node placement     |
-| <kbd>Esc</kbd>                                                           | Cancel the current tool, step, or rubber-band preview                                        |
-| <kbd>Enter</kbd>                                                         | Confirm current numeric input or finalize the step                                           |
-| <kbd>I</kbd>                                                             | Sketch inspection mode (default; remappable)                                                 |
-| <kbd>N</kbd>                                                             | Add node (default; remappable)                                                               |
-| <kbd>L</kbd> / <kbd>Shift</kbd>+<kbd>L</kbd>                             | Add line / multi-line edge (defaults; remappable)                                            |
-| <kbd>A</kbd> / <kbd>Shift</kbd>+<kbd>A</kbd>                             | Add arc / operation axis (defaults; remappable)                                              |
-| <kbd>Q</kbd> / <kbd>B</kbd> / <kbd>Shift</kbd>+<kbd>B</kbd>              | Add square / rectangle / rectangle from center (defaults; remappable)                        |
-| <kbd>O</kbd> / <kbd>Shift</kbd>+<kbd>O</kbd>                             | Add circle / three-point circle (defaults; remappable)                                       |
-| <kbd>U</kbd>                                                             | Add slot (default; remappable)                                                               |
-| <kbd>Shift</kbd>+<kbd>U</kbd>                                            | Add bone (default; remappable)                                                               |
-| <kbd>P</kbd>                                                             | Sketch from planar face (default; remappable)                                                |
-| <kbd>D</kbd>                                                             | Activate the Dimension tool (default; remappable)                                            |
-| <kbd>Shift</kbd>+<kbd>D</kbd> / <kbd>Delete</kbd> / <kbd>Backspace</kbd> | Delete the selected sketch element(s) or dimension                                           |
-| <kbd>Right-click</kbd>                                                   | In multi-line / sequences: complete current item and continue, or finish the whole operation |
+| Hotkey                                                                  | Action                                                                                                                   |
+| ----------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------ |
+| <kbd>Tab</kbd>                                                          | Open precise distance / length / radius / size input dialog (most creation tools)                                        |
+| <kbd>Shift</kbd>+<kbd>Tab</kbd>                                         | Open angle (degrees) input dialog for constrained line / multi-line / add-node placement                                 |
+| <kbd>Esc</kbd>                                                          | Cancel the current tool, step, or rubber-band preview                                                                    |
+| <kbd>Enter</kbd>                                                        | Confirm current numeric input or finalize the step                                                                       |
+| <kbd>I</kbd>                                                            | Sketch inspection mode (default; remappable)                                                                             |
+| <kbd>N</kbd>                                                            | Add node (default; remappable)                                                                                           |
+| <kbd>L</kbd> / <kbd>Shift</kbd>+<kbd>L</kbd>                            | Add line / multi-line edge (defaults; remappable)                                                                        |
+| <kbd>A</kbd> / <kbd>Shift</kbd>+<kbd>A</kbd>                            | Add arc / operation axis (defaults; remappable)                                                                          |
+| <kbd>Q</kbd> / <kbd>B</kbd> / <kbd>Shift</kbd>+<kbd>B</kbd>             | Add square / rectangle / rectangle from center (defaults; remappable)                                                    |
+| <kbd>O</kbd> / <kbd>Shift</kbd>+<kbd>O</kbd>                            | Add circle / three-point circle (defaults; remappable)                                                                   |
+| <kbd>U</kbd>                                                            | Add slot (default; remappable)                                                                                           |
+| <kbd>Shift</kbd>+<kbd>U</kbd>                                           | Add bone (default; remappable)                                                                                           |
+| <kbd>P</kbd>                                                            | Sketch from planar face (default; remappable)                                                                            |
+| <kbd>D</kbd>                                                            | Activate the Dimension tool (default; remappable)                                                                        |
+| <kbd>Ctrl</kbd>+<kbd>D</kbd> / <kbd>Delete</kbd> / <kbd>Backspace</kbd> | Delete the selected sketch element(s) or dimension (<kbd>Ctrl</kbd>+<kbd>D</kbd> is the default remappable Delete chord) |
+| <kbd>Right-click</kbd>                                                  | In multi-line / sequences: complete current item and continue, or finish the whole operation                             |
 
 **Notes:**
 - <kbd>Tab</kbd> / <kbd>Shift+Tab</kbd> work even when focus is in the 3D view (they are routed to the active sketch tool for precise entry).
@@ -882,15 +882,15 @@ Edge dimension tool creates/removes **length dimensions between two sketch nodes
 | **Node-pair dimensions**     | Dimensions are defined by two sketch nodes                                                                                                                                                                                                   |
 | **Fast edge workflow**       | Click a straight edge to toggle a dimension between its two endpoint nodes                                                                                                                                                                   |
 | **Two-node workflow**        | Click one node, then a second node, to toggle a dimension between them; after the first node, a **preview line** follows the cursor (same idea as the line-edge rubber band), so two-node mode is visually distinct from a single edge click |
-| **Selectable/deletable**     | Dimension objects can be selected in sketch mode and deleted (for example with <kbd>Shift</kbd>+<kbd>D</kbd>, <kbd>Delete</kbd>, or <kbd>Backspace</kbd>)                                                                                    |
+| **Selectable/deletable**     | Dimension objects can be selected in sketch mode and deleted (for example with <kbd>Ctrl</kbd>+<kbd>D</kbd>, <kbd>Delete</kbd>, or <kbd>Backspace</kbd>)                                                                                     |
 | **Helpful for verification** | Quickly verify that your sketch has the correct dimensions                                                                                                                                                                                   |
 
 **Shortcuts:**
 
-|                                                                           |                                                |
-| ------------------------------------------------------------------------: | ---------------------------------------------- |
-| <kbd>D</kbd>                                                              | Activate dimension tool                        |
-| <kbd>Shift</kbd>+<kbd>D</kbd>, <kbd>Delete</kbd>, or <kbd>Backspace</kbd> | Delete selected dimension (or other selection) |
+|                                                                          |                                                |
+| -----------------------------------------------------------------------: | ---------------------------------------------- |
+| <kbd>D</kbd>                                                             | Activate dimension tool                        |
+| <kbd>Ctrl</kbd>+<kbd>D</kbd>, <kbd>Delete</kbd>, or <kbd>Backspace</kbd> | Delete selected dimension (or other selection) |
 
 **How to Use:**
 1. ![TechDraw_LengthDimension](res/icons/TechDraw_LengthDimension.png) Press <kbd>D</kbd> or select the **Edge Dimensions** tool from the toolbar
@@ -898,7 +898,7 @@ Edge dimension tool creates/removes **length dimensions between two sketch nodes
    - **Edge click:** Click a straight edge to toggle the dimension between its endpoints
    - **Node pair:** Click node A, then click node B to toggle the dimension between A and B
 3. Click the same edge (or same node pair) again to remove that dimension
-4. To delete directly, select the dimension object and press <kbd>Shift</kbd>+<kbd>D</kbd>, <kbd>Delete</kbd>, or <kbd>Backspace</kbd>
+4. To delete directly, select the dimension object and press <kbd>Ctrl</kbd>+<kbd>D</kbd>, <kbd>Delete</kbd>, or <kbd>Backspace</kbd>
 
 **When to Use:**
 
