@@ -127,7 +127,9 @@ template <typename Container, typename Value> bool contains(const Container& con
   return it != container.end();
 }
 
-/// Returns \a base_name or \a base_name.NNN (three-digit suffix) not used in \a existing_names.
+/// Returns the stem or stem.NNN (three-digit suffix) not used in \a existing_names.
+/// A trailing .NNN on \a base_name is a sequence suffix, not part of the stem
+/// (copying Name.001 yields the first free slot: Name, Name.002, ...).
 std::string unique_sequential_name(const std::string& base_name, std::span<const std::string> existing_names);
 
 uint32_t load_texture(const std::string& path);

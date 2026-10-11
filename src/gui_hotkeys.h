@@ -38,6 +38,7 @@ enum class Gui_action
   Cmd_shape_fuse,
   Cmd_shape_common,
   Edit_delete,
+  Edit_duplicate,
   Edit_copy,
   Edit_paste,
   File_new,

@@ -128,6 +128,20 @@ rather than leading with the failure `if` and putting the main work in `else`, u
 - Initialize members and locals with `=` (`bool ok = false;`), not brace-init (`bool ok {false};`), so clang-format can align consecutive declarations and assignments.
 - Declare locals close to first use.
 - Omit braces on single-statement `if`/`for`/`while` bodies when clear.
+- When a `for` or `while` body is only a declaration and an `if` that tests that name, fold it into an if-with-initializer and drop the loop braces:
+
+```cpp
+for (Shape_geom_delta::Geom_change& ch : changes)
+  if (Shp_ptr shp = view().find_shape_by_id(ch.id); !shp.IsNull())
+  {
+    ch.after_geom  = shp->Shape();
+    ch.after_frame = shp->get_frame();
+  }
+```
+
+Keep the loop braces when the loop is the unbraced then-branch of an `if` that has an `else`: dropping them would bind `else` to the inner `if`.
+
+Optional local check: `python scripts/code_style_check.py --rule if-initializer`.
 
 ## Documentation
 

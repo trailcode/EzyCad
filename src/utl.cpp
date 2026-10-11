@@ -2,6 +2,7 @@
 
 #include <GLFW/glfw3.h>
 
+#include <algorithm>
 #include <cctype>
 #include <cstdio>
 #include <cstring>
@@ -12,14 +13,42 @@
 #define STB_IMAGE_IMPLEMENTATION
 #include <stb_image/stb_image.h>
 
+namespace
+{
+bool is_digit_suffix_(const std::string& suffix)
+{
+  return !suffix.empty() &&
+         std::all_of(suffix.begin(), suffix.end(), [](unsigned char c) { return std::isdigit(c) != 0; });
+}
+
+/// "Shape.001.001" and "Shape.001" share the stem "Shape". A non-numeric tail stays put.
+std::string name_sequence_stem_(const std::string& name)
+{
+  std::string stem = name;
+  while (true)
+  {
+    const size_t dot = stem.rfind('.');
+    if (dot == std::string::npos || dot == 0)
+      break;
+
+    if (!is_digit_suffix_(stem.substr(dot + 1)))
+      break;
+
+    stem.resize(dot);
+  }
+  return stem;
+}
+} // namespace
+
 std::string unique_sequential_name(const std::string& base_name, std::span<const std::string> existing_names)
 {
+  const std::string stem   = name_sequence_stem_(base_name);
   std::set<int>     used;
-  const std::string prefix = base_name + ".";
+  const std::string prefix = stem + ".";
 
   for (const std::string& n : existing_names)
   {
-    if (n == base_name)
+    if (n == stem)
       used.insert(0);
     else if (n.size() > prefix.size() && n.compare(0, prefix.size(), prefix) == 0)
     {
@@ -47,11 +76,11 @@ std::string unique_sequential_name(const std::string& base_name, std::span<const
     ++next;
 
   if (next == 0)
-    return base_name;
+    return stem;
 
   char buf[32];
   snprintf(buf, sizeof(buf), ".%03d", next);
-  return base_name + buf;
+  return stem + buf;
 }
 
 uint32_t load_texture(const std::string& path)

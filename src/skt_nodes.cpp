@@ -642,18 +642,12 @@ std::optional<size_t> Sketch_nodes::Impl::try_get_node_idx_snap(
       }
 
       for (const auto& p : m_outside_snap_pts)
-      {
-        double axis_diff = std::fabs(guide_val - p.XY().Coord(axis_idx + 1));
-        if (axis_diff <= Precision::Confusion())
+        if (double axis_diff = std::fabs(guide_val - p.XY().Coord(axis_idx + 1)); axis_diff <= Precision::Confusion())
           matches.push_back(p);
-      }
 
       for (const auto& p : m_session_snap_pts)
-      {
-        double axis_diff = std::fabs(guide_val - p.XY().Coord(axis_idx + 1));
-        if (axis_diff <= Precision::Confusion())
+        if (double axis_diff = std::fabs(guide_val - p.XY().Coord(axis_idx + 1)); axis_diff <= Precision::Confusion())
           matches.push_back(p);
-      }
 
       if (!matches.empty())
       {

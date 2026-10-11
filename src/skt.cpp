@@ -340,9 +340,7 @@ std::vector<std::string> Sketch::inspector_node_labels() const
 {
   std::vector<std::string> labels;
   for (size_t i = 0; i < m_nodes.size(); ++i)
-  {
-    const Sketch_nodes::Node& n = m_nodes[i];
-    if (n.permanent && !n.deleted)
+    if (const Sketch_nodes::Node& n = m_nodes[i]; n.permanent && !n.deleted)
     {
       std::string lbl;
       if (n.origin)
@@ -352,7 +350,6 @@ std::vector<std::string> Sketch::inspector_node_labels() const
 
       labels.push_back(std::move(lbl));
     }
-  }
 
   return labels;
 }

@@ -141,14 +141,11 @@ TopoDS_Shape solids_from_shells_(const TopoDS_Shape& shape)
 
   int solid_count = 0;
   for (TopExp_Explorer exp(shape, TopAbs_SHELL); exp.More(); exp.Next())
-  {
-    const TopoDS_Shape solid = solid_from_shell_(TopoDS::Shell(exp.Current()));
-    if (!solid.IsNull())
+    if (const TopoDS_Shape solid = solid_from_shell_(TopoDS::Shell(exp.Current())); !solid.IsNull())
     {
       builder.Add(out, solid);
       ++solid_count;
     }
-  }
 
   if (solid_count == 0)
     return TopoDS_Shape();

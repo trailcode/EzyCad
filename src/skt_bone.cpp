@@ -423,13 +423,10 @@ std::optional<double> solve_cut_radius_for_waist_(const Bone_frame& f, double ta
   // leftover neck is at least the target. Start from a guess on the order of the knobs.
   double r_hi = std::max(r_lo + 1.0, f.r1 + f.r2);
   for (int i = 0; i < 48; ++i)
-  {
-    const double w_hi = leftover_neck(r_hi);
-    if (!std::isfinite(w_hi) || w_hi < target_waist)
+    if (const double w_hi = leftover_neck(r_hi); !std::isfinite(w_hi) || w_hi < target_waist)
       r_hi *= 2.0; // still too pinched; grow the scoop
     else
       break;
-  }
 
   const double w_hi = leftover_neck(r_hi);
   if (!std::isfinite(w_hi) || w_hi < target_waist)
