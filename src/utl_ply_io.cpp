@@ -528,6 +528,7 @@ bool read_scalar_bin_at_(const unsigned char* base, size_t off, const unsigned c
     out = static_cast<double>(*reinterpret_cast<const std::int8_t*>(p));
     return true;
   }
+
   case ScalarType::UInt8:
   {
     if (!need(1))
@@ -536,6 +537,7 @@ bool read_scalar_bin_at_(const unsigned char* base, size_t off, const unsigned c
     out = static_cast<double>(*p);
     return true;
   }
+
   case ScalarType::Int16:
   {
     if (!need(2))
@@ -546,6 +548,7 @@ bool read_scalar_bin_at_(const unsigned char* base, size_t off, const unsigned c
     out = static_cast<double>(v);
     return true;
   }
+
   case ScalarType::UInt16:
   {
     if (!need(2))
@@ -556,6 +559,7 @@ bool read_scalar_bin_at_(const unsigned char* base, size_t off, const unsigned c
     out = static_cast<double>(v);
     return true;
   }
+
   case ScalarType::Int32:
   {
     if (!need(4))
@@ -566,6 +570,7 @@ bool read_scalar_bin_at_(const unsigned char* base, size_t off, const unsigned c
     out = static_cast<double>(v);
     return true;
   }
+
   case ScalarType::UInt32:
   {
     if (!need(4))
@@ -576,6 +581,7 @@ bool read_scalar_bin_at_(const unsigned char* base, size_t off, const unsigned c
     out = static_cast<double>(v);
     return true;
   }
+
   case ScalarType::Float32:
   {
     if (!need(4))
@@ -586,6 +592,7 @@ bool read_scalar_bin_at_(const unsigned char* base, size_t off, const unsigned c
     out = static_cast<double>(v);
     return true;
   }
+
   case ScalarType::Float64:
   {
     if (!need(8))
@@ -594,6 +601,7 @@ bool read_scalar_bin_at_(const unsigned char* base, size_t off, const unsigned c
     std::memcpy(&out, p, 8);
     return true;
   }
+
   default:
     return false;
   }
@@ -612,6 +620,7 @@ std::uint32_t read_list_count_bin_(const unsigned char*& p, const unsigned char*
     ++p;
     return v;
   }
+
   case ScalarType::UInt16:
   {
     if (static_cast<size_t>(end - p) < 2)
@@ -622,6 +631,7 @@ std::uint32_t read_list_count_bin_(const unsigned char*& p, const unsigned char*
     p += 2;
     return v;
   }
+
   case ScalarType::UInt32:
   {
     if (static_cast<size_t>(end - p) < 4)
@@ -632,6 +642,7 @@ std::uint32_t read_list_count_bin_(const unsigned char*& p, const unsigned char*
     p += 4;
     return v;
   }
+
   default:
     return 0;
   }

@@ -1121,6 +1121,7 @@ ezy_geom::polygon_2d to_boost(const TopoDS_Shape& shape, const gp_Pln& pln2)
         }
         break;
       }
+
       case GeomAbs_CurveType::GeomAbs_Circle:
       {
         // Get the parameter range of the curve
@@ -1135,6 +1136,7 @@ ezy_geom::polygon_2d to_boost(const TopoDS_Shape& shape, const gp_Pln& pln2)
         }
         break;
       }
+
       default:
         EZY_ASSERT(false); // Implement!
       }
