@@ -74,7 +74,7 @@ Status Shp_cyl_align::pick(const ScreenCoords& screen_coords)
     m_moving_axis   = world_axis;
     m_moving_radius = cyl->radius;
     m_phase         = Phase::Pick_fixed;
-    gui().show_message("Pick the fixed cylindrical face (hole or shaft).");
+    gui().show_message("Pick the fixed cylindrical face (hole or shaft).", Status_msg::Info, true);
     return Status::ok();
   }
 
@@ -92,9 +92,10 @@ Status Shp_cyl_align::pick(const ScreenCoords& screen_coords)
 
   enter_drag_();
   if (m_opts.clock_rotation)
-    gui().show_message("Drag along the axis for insert depth, then LMB or Shift+Tab for clock rotation (or Enter to finish).");
+    gui().show_message("Drag along the axis for insert depth, then LMB or Shift+Tab for clock rotation (or Enter to finish).",
+                       Status_msg::Info, true);
   else
-    gui().show_message("Drag along the axis for insert depth, then LMB or Enter to confirm.");
+    gui().show_message("Drag along the axis for insert depth, then LMB or Enter to confirm.", Status_msg::Info, true);
 
   return Status::ok();
 }
@@ -131,7 +132,7 @@ void Shp_cyl_align::enter_twist_()
   m_twist_pln          = gp_Pln(seed, fixed_dir);
 
   m_phase = Phase::Drag_twist;
-  gui().show_message("Drag to clock about the axis, then LMB or Enter to confirm.");
+  gui().show_message("Drag to clock about the axis, then LMB or Enter to confirm.", Status_msg::Info, true);
   apply_preview_();
 }
 
@@ -142,7 +143,7 @@ void Shp_cyl_align::exit_twist_to_depth_()
   gui().hide_angle_edit(false);
   m_phase = Phase::Drag_depth;
   apply_preview_();
-  gui().show_message("Drag along the axis for insert depth, then LMB or Enter to confirm.");
+  gui().show_message("Drag along the axis for insert depth, then LMB or Enter to confirm.", Status_msg::Info, true);
 }
 
 void Shp_cyl_align::apply_preview_()

@@ -155,6 +155,7 @@ void GUI::render_gui()
   options_();
   message_status_window_();
   error_modal_dialog_();
+  unsaved_changes_dialog_();
   export_units_dialog_();
   about_dialog_();
   add_box_dialog_();
@@ -277,7 +278,6 @@ void GUI::sync_toolbar_hotkey_tooltips_()
   tip_mode(Mode::Sketch_add_rectangle,          "Add rectangle from two points",   Gui_action::Mode_add_rectangle);
   tip_mode(Mode::Sketch_add_rectangle_center_pt,"Add rectangle with center point", Gui_action::Mode_add_rectangle_center);
   tip_mode(Mode::Sketch_add_circle,             "Add circle",                      Gui_action::Mode_add_circle);
-  tip_mode(Mode::Sketch_add_circle_3_pts,       "Add circle from three points",    Gui_action::Mode_add_circle_3_pts);
   tip_mode(Mode::Sketch_add_slot,               "Add slot",                        Gui_action::Mode_add_slot);
   tip_mode(Mode::Sketch_add_bone,               "Add bone",                        Gui_action::Mode_add_bone);
   tip_mode(Mode::Shape_polar_duplicate,         "Shape polar duplicate",           Gui_action::Mode_polar_duplicate);
@@ -286,6 +286,10 @@ void GUI::sync_toolbar_hotkey_tooltips_()
   tip_cmd(Command::Shape_fuse,                  "Shape fuse",                      Gui_action::Cmd_shape_fuse);
   tip_cmd(Command::Shape_common,                "Shape common",                    Gui_action::Cmd_shape_common);
   // clang-format on
+
+  for (Toolbar_button& b : m_toolbar_buttons)
+    if (b.data.index() == 0 && std::get<Mode>(b.data) == Mode::Sketch_add_circle_3_pts)
+      b.tooltip = "Add circle from three points (not available yet)";
 }
 
 void GUI::load_examples_list_()
@@ -397,19 +401,35 @@ void GUI::menu_bar_()
     // Use separate `if` (not `else if`) for each entry. `BeginMenu` stays true while the submenu
     // is open; chaining with `else if` would skip later items (e.g. Examples hidden while Export open).
     if (ImGui::MenuItem("New", "Ctrl+N"))
-      new_project_();
+      request_doc_close_(Doc_close_action::New);
 
     if (ImGui::MenuItem("Open", "Ctrl+O"))
-      open_file_dialog_();
+      request_doc_close_(Doc_close_action::Open);
+
+#ifndef __EMSCRIPTEN__
+    if (!m_last_opened_project_path.empty())
+    {
+      std::string recent_label = "Open recent";
+      try
+      {
+        const std::string name = std::filesystem::path(m_last_opened_project_path).filename().string();
+        if (!name.empty())
+          recent_label = "Open recent: " + name;
+      }
+      catch (...)
+      {
+      }
+
+      if (ImGui::MenuItem(recent_label.c_str()))
+        request_doc_close_(Doc_close_action::Open_recent);
+    }
+#endif
 
     if (ImGui::MenuItem("Save", "Ctrl+S"))
       save_file_dialog_();
 
     if (ImGui::MenuItem("Save as"))
-    {
-      m_last_saved_path.clear(); // Force save as dialog
-      save_file_dialog_();
-    }
+      save_file_dialog_(true);
 
     if (ImGui::BeginMenu("Project units"))
     {
@@ -446,16 +466,9 @@ void GUI::menu_bar_()
 
     if (ui_show_feature(2) && ImGui::BeginMenu("Examples"))
     {
-      for (const Example_file& ex : m_example_files)
-        if (ImGui::MenuItem(ex.label.c_str()))
-        {
-          std::ifstream     file(ex.path, std::ios::binary);
-          const std::string file_bytes{std::istreambuf_iterator<char>(file), std::istreambuf_iterator<char>()};
-          if (file.good() && !file_bytes.empty())
-            on_file(ex.path, file_bytes);
-          else
-            show_message("Error opening example: " + ex.label, Status_msg::Error);
-        }
+      for (int i = 0; i < static_cast<int>(m_example_files.size()); ++i)
+        if (ImGui::MenuItem(m_example_files[static_cast<size_t>(i)].label.c_str()))
+          request_doc_close_(Doc_close_action::Example, i);
 
       ImGui::EndMenu();
     }
@@ -469,7 +482,7 @@ void GUI::menu_bar_()
 #endif
 
     if (ImGui::MenuItem("Exit"))
-      exit(0);
+      request_doc_close_(Doc_close_action::Exit);
 
     ImGui::EndMenu();
   }
@@ -637,7 +650,9 @@ void GUI::update_window_title_()
 {
   EZY_ASSERT(m_glfw_window != nullptr);
 
-  const std::string title = std::string("EzyCad ") + EZYCAD_VERSION_STRING + " - " + project_title_segment_();
+  std::string title = std::string("EzyCad ") + EZYCAD_VERSION_STRING + " - " + project_title_segment_();
+  if (m_document_dirty)
+    title += "*";
   if (title == m_cached_window_title)
     return;
 
@@ -887,10 +902,14 @@ void GUI::toolbar_()
       continue;
 
     ImGui::PushID(widget_id++);
-    const bool was_active = push_active(b.is_active);
-    char       button_id[16];
+    const bool unavailable = b.data.index() == 0 && std::get<Mode>(b.data) == Mode::Sketch_add_circle_3_pts;
+    const bool was_active  = push_active(b.is_active);
+    if (unavailable)
+      ImGui::BeginDisabled();
+
+    char button_id[16];
     snprintf(button_id, sizeof(button_id), "button%d", i);
-    if (ImGui::ImageButton(button_id, (ImTextureID)(intptr_t)b.texture_id, button_size))
+    if (ImGui::ImageButton(button_id, (ImTextureID)(intptr_t)b.texture_id, button_size) && !unavailable)
     {
       if (b.data.index() == 1)
         run_command(std::get<Command>(b.data));
@@ -898,8 +917,11 @@ void GUI::toolbar_()
         set_mode(std::get<Mode>(b.data));
     }
 
-    if (ui_show_help(1) && ImGui::IsItemHovered())
+    if (ui_show_help(1) && ImGui::IsItemHovered(unavailable ? ImGuiHoveredFlags_AllowWhenDisabled : 0))
       ImGui::SetTooltip("%s", b.tooltip.c_str());
+
+    if (unavailable)
+      ImGui::EndDisabled();
 
     if (was_active)
       ImGui::PopStyleColor(3);
@@ -1329,7 +1351,10 @@ void GUI::sketch_list_inspector_(const Sketch::sptr& sketch, int index, Sketch_l
 
           ImGui::TableSetColumnIndex(0);
           if (ImGui::Checkbox("##dim_visible", &visible))
+          {
             sketch->set_dimension_visible(i, visible);
+            note_document_edited();
+          }
 
           row_hovered |= ImGui::IsItemHovered();
 
@@ -1339,14 +1364,20 @@ void GUI::sketch_list_inspector_(const Sketch::sptr& sketch, int index, Sketch_l
           safe_cstr_copy(name_buf, sizeof(name_buf), cur_name.c_str());
           ImGui::SetNextItemWidth(-FLT_MIN);
           if (ImGui::InputText("##dim_name", name_buf, sizeof(name_buf)))
+          {
             sketch->set_dimension_name(i, std::string(name_buf));
+            note_document_edited();
+          }
 
           row_hovered |= ImGui::IsItemHovered();
 
           ImGui::TableSetColumnIndex(2);
           ImGui::SetNextItemWidth(86.f);
           if (ImGui::InputDouble("##dim_offset", &offset, 0.5, 2.0, "%.2f"))
+          {
             sketch->set_dimension_offset(i, offset);
+            note_document_edited();
+          }
 
           row_hovered |= ImGui::IsItemHovered();
 
@@ -1533,7 +1564,10 @@ void GUI::sketch_list_()
     ImGui::PushID(("name" + id_suffix).c_str());
     ImGui::SetNextItemWidth(name_field_w);
     if (ImGui::InputText("", name_buffer, sizeof(name_buffer)))
+    {
       sketch->set_name(std::string(name_buffer));
+      note_document_edited();
+    }
 
     // This will open a popup when you right-click on the InputText
     if (ImGui::BeginPopupContextItem("Sketch_InputTextContextMenu"))
@@ -1556,6 +1590,7 @@ void GUI::sketch_list_()
         m_view->set_sketch_list_hover(nullptr);
 
       sketch->set_visible(visible);
+      note_document_edited();
     }
 
     if (ui_show_contextual_help() && ImGui::IsItemHovered())
@@ -1576,6 +1611,7 @@ void GUI::sketch_list_()
       if (ImGui::Checkbox("", vptr) && has_ul)
       {
         sketch->underlay().set_visible_sync(ul_vis, sketch->get_plane());
+        note_document_edited();
         if (m_underlay_panel_sketch == sketch.get())
           m_underlay_vis = ul_vis;
 
@@ -1747,6 +1783,7 @@ void GUI::sketch_origin_panel_settings_(const Sketch::sptr& sk)
   if (ImGui::Checkbox("Show origin marker", &show_origin))
   {
     sk->set_show_origin_marker(show_origin);
+    note_document_edited();
     m_view->ctx().UpdateCurrentViewer();
   }
 
@@ -1962,22 +1999,28 @@ void GUI::sketch_underlay_panel_settings_(const Sketch::sptr& sk)
       case Underlay_calib_phase::PickX1:
         hint = "First click: bitmap corner (0,0) in the current underlay transform (sliders / rotation).";
         break;
+
       case Underlay_calib_phase::PickX2:
         hint = "Second click: along bitmap +U from that corner; calibration refines scale from this placement.";
         break;
+
       case Underlay_calib_phase::AwaitDistX:
         hint = "Enter the drawing distance for X (dimension popup). If Y is not calibrated yet, its scale still follows "
                "image aspect.";
         break;
+
       case Underlay_calib_phase::PickY1:
         hint = "First click: along bitmap height (+V) using the current underlay transform.";
         break;
+
       case Underlay_calib_phase::PickY2:
         hint = "Second click: farther along +V; calibration refines Y from this placement.";
         break;
+
       case Underlay_calib_phase::AwaitDistY:
         hint = "Enter the drawing distance for Y (dimension popup).";
         break;
+
       default:
         break;
       }
@@ -2358,7 +2401,8 @@ void GUI::begin_underlay_calib_set_x_(const Sketch::sptr& sk)
                            m_underlay_rot);
   m_underlay_calib_sketch_wk = sk;
   m_underlay_calib_phase     = Underlay_calib_phase::PickX1;
-  show_message("Underlay X: uses the current transform. Click bitmap corner (0,0), then along +U; then enter the distance.");
+  show_message("Underlay X: uses the current transform. Click bitmap corner (0,0), then along +U; then enter the distance.",
+               Status_msg::Info, true);
 }
 
 void GUI::begin_underlay_calib_set_y_(const Sketch::sptr& sk)
@@ -2378,7 +2422,8 @@ void GUI::begin_underlay_calib_set_y_(const Sketch::sptr& sk)
 
   m_underlay_calib_sketch_wk = sk;
   m_underlay_calib_phase     = Underlay_calib_phase::PickY1;
-  show_message("Underlay Y: uses the current transform. Click two points along +V; then enter the drawing distance.");
+  show_message("Underlay Y: uses the current transform. Click two points along +V; then enter the drawing distance.",
+               Status_msg::Info, true);
 }
 
 void GUI::underlay_calib_prompt_x_distance_(const Sketch::sptr& sk)
@@ -2542,36 +2587,36 @@ bool GUI::try_underlay_calib_click_(const ScreenCoords& screen_coords)
   case Underlay_calib_phase::PickX1:
     m_underlay_calib_x0    = *pt;
     m_underlay_calib_phase = Underlay_calib_phase::PickX2;
-    show_message("Underlay X: click second point (end of width / +U).");
+    show_message("Underlay X: click second point (end of width / +U).", Status_msg::Info, true);
     return true;
 
   case Underlay_calib_phase::PickX2:
     if (too_short(m_underlay_calib_x0, *pt))
     {
-      show_message("X segment too short.", Status_msg::Constraint);
+      show_message("X segment too short. Click the second point again.", Status_msg::Constraint, true);
       return true;
     }
 
     m_underlay_calib_x1 = *pt;
-    show_message("Enter drawing distance for X (same unit convention as sketch edge dimensions).");
+    show_message("Enter drawing distance for X (same unit convention as sketch edge dimensions).", Status_msg::Info, true);
     underlay_calib_prompt_x_distance_(sk);
     return true;
 
   case Underlay_calib_phase::PickY1:
     m_underlay_calib_y0    = *pt;
     m_underlay_calib_phase = Underlay_calib_phase::PickY2;
-    show_message("Underlay Y: click second point (end of height / +V).");
+    show_message("Underlay Y: click second point (end of height / +V).", Status_msg::Info, true);
     return true;
 
   case Underlay_calib_phase::PickY2:
     if (too_short(m_underlay_calib_y0, *pt))
     {
-      show_message("Y segment too short.", Status_msg::Constraint);
+      show_message("Y segment too short. Click the second point again.", Status_msg::Constraint, true);
       return true;
     }
 
     m_underlay_calib_y1 = *pt;
-    show_message("Enter drawing distance for Y.");
+    show_message("Enter drawing distance for Y.", Status_msg::Info, true);
     underlay_calib_prompt_y_distance_(sk);
     return true;
 
@@ -2660,9 +2705,11 @@ void GUI::finish_step_import_(Status st, Occt_view::Step_import_geom& geom)
   case Step_import_mode::Union_shapes:
     show_message("Imported (union): " + name, Status_msg::Success);
     break;
+
   case Step_import_mode::Flat_solids:
     show_message("Imported (flat): " + name, Status_msg::Success);
     break;
+
   default:
     show_message("Imported: " + name, Status_msg::Success);
     break;
@@ -2963,13 +3010,43 @@ ImVec4 toast_text_color_(Status_msg kind, float alpha)
 }
 } // namespace
 
-void GUI::show_message(const std::string& message, Status_msg kind)
+void GUI::show_message(const std::string& message, Status_msg kind, bool sticky)
 {
   m_message            = message;
   m_message_kind       = kind;
+  m_message_sticky     = sticky;
   m_message_visible    = true;
   m_message_start_time = std::chrono::steady_clock::now();
   log_message(message);
+}
+
+void GUI::note_document_edited()
+{
+  if (m_suppress_document_dirty || m_document_dirty)
+    return;
+
+  m_document_dirty = true;
+}
+
+void GUI::note_document_saved() { m_document_dirty = false; }
+
+void GUI::dismiss_sticky_message_()
+{
+  if (!m_message_sticky)
+    return;
+
+  m_message_sticky  = false;
+  m_message_visible = false;
+  m_message.clear();
+}
+
+bool GUI::allow_window_close()
+{
+  if (m_close_accepted || !m_document_dirty)
+    return true;
+
+  request_doc_close_(Doc_close_action::Exit);
+  return false;
 }
 
 void GUI::show_status(const Status& status)
@@ -2986,6 +3063,7 @@ void GUI::show_error_dialog(const std::string& title, const std::string& message
   log_message(title + ": " + message);
   m_message             = title;
   m_message_kind        = Status_msg::Error;
+  m_message_sticky      = false;
   m_message_visible     = true;
   m_message_start_time  = std::chrono::steady_clock::now();
   m_error_modal_title   = title;
@@ -3027,34 +3105,42 @@ void GUI::message_status_window_()
   if (!m_message_visible || m_message.empty())
     return;
 
-  // Check if 3 seconds have passed
-  auto now     = std::chrono::steady_clock::now();
-  auto elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(now - m_message_start_time).count();
-  if (elapsed > 6000) // 6 seconds
+  // Timed toasts stay readable, then fade. Sticky prompts stay until replaced or the mode changes.
+  float alpha = 1.0f;
+  if (!m_message_sticky)
   {
-    m_message_visible = false;
-    m_message.clear();
-    return;
+    constexpr int k_hold_ms = 5500;
+    constexpr int k_fade_ms = 500;
+    const auto    now       = std::chrono::steady_clock::now();
+    const auto    elapsed   = std::chrono::duration_cast<std::chrono::milliseconds>(now - m_message_start_time).count();
+    if (elapsed >= k_hold_ms + k_fade_ms)
+    {
+      m_message_visible = false;
+      m_message.clear();
+      return;
+    }
+
+    if (elapsed > k_hold_ms)
+      alpha = 1.0f - static_cast<float>(elapsed - k_hold_ms) / static_cast<float>(k_fade_ms);
+
+    alpha = std::clamp(alpha, 0.0f, 1.0f);
   }
 
-  // Calculate fade effect (optional, for visual polish)
-  float alpha = 1.0f;
-  if (elapsed > 2500)                            // Start fading after 2.5 seconds
-    alpha = 1.0f - (elapsed - 2500.0f) / 500.0f; // Fade over last 0.5 seconds
-
-  // Set window position (bottom-right corner)
-  ImGuiIO& io = ImGui::GetIO();
-  ImVec2   window_pos(io.DisplaySize.x - 250.0f, io.DisplaySize.y - 50.0f); // Adjust as needed
-  ImGui::SetNextWindowPos(window_pos, ImGuiCond_Always);
-  ImGui::SetNextWindowSize(ImVec2(240.0f, 40.0f), ImGuiCond_Once);
-
-  // Begin window with minimal flags
+  ImGuiIO&          io     = ImGui::GetIO();
+  constexpr float   margin = 12.0f;
+  const float       max_w  = std::min(480.0f, std::max(160.0f, io.DisplaySize.x - margin * 2.0f));
+  const float       wrap_w = max_w - ImGui::GetStyle().WindowPadding.x * 2.0f;
+  ImGui::SetNextWindowPos(ImVec2(io.DisplaySize.x - margin, io.DisplaySize.y - margin), ImGuiCond_Always, ImVec2(1.0f, 1.0f));
+  ImGui::SetNextWindowSizeConstraints(ImVec2(0.0f, 0.0f), ImVec2(max_w, std::max(40.0f, io.DisplaySize.y * 0.5f)));
   ImGui::Begin("MessageStatus##unique_id", nullptr,
                ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_AlwaysAutoResize |
-                   ImGuiWindowFlags_NoSavedSettings | ImGuiWindowFlags_NoFocusOnAppearing | ImGuiWindowFlags_NoNav);
+                   ImGuiWindowFlags_NoSavedSettings | ImGuiWindowFlags_NoFocusOnAppearing | ImGuiWindowFlags_NoNav |
+                   ImGuiWindowFlags_NoNavFocus);
 
   ImGui::PushStyleColor(ImGuiCol_Text, toast_text_color_(m_message_kind, alpha));
+  ImGui::PushTextWrapPos(ImGui::GetCursorPos().x + wrap_w);
   ImGui::TextWrapped("%s", m_message.c_str());
+  ImGui::PopTextWrapPos();
   ImGui::PopStyleColor();
 
   ImGui::End();
@@ -3499,11 +3585,13 @@ void GUI::on_left_click_(const ScreenCoords& screen_coords)
     else if (Status s = m_view->shp_cyl_align().pick(screen_coords); !s.is_ok())
       show_status(s);
     break;
+
   case Mode::Shape_set_frame:
   case Mode::Workbench_set_frame:
     if (Status s = m_view->shp_set_frame().pick(screen_coords); !s.is_ok())
       show_status(s);
     break;
+
   case Mode::Sketch_face_extrude: m_view->sketch_face_extrude(screen_coords, false);  break;
     // clang-format on
 
@@ -3664,6 +3752,7 @@ void GUI::open_export_units_dialog_(Export_format fmt)
   case Export_format::Iges:
     m_export_unit = Export_unit::Millimeter;
     break;
+
   case Export_format::Stl:
   case Export_format::Ply:
     m_export_unit = Export_unit::Inch;
@@ -3692,9 +3781,11 @@ void GUI::export_units_dialog_()
   case Export_format::Iges:
     fmt_label = "IGES";
     break;
+
   case Export_format::Stl:
     fmt_label = "STL";
     break;
+
   case Export_format::Ply:
     fmt_label = "PLY";
     break;
@@ -3750,12 +3841,14 @@ void GUI::export_file_dialog_(Export_format fmt, Export_unit unit)
     filter_pat  = "*.igs";
     filter_desc = "IGES files";
     break;
+
   case Export_format::Stl:
     title       = "Export STL";
     def_name    = "export.stl";
     filter_pat  = "*.stl";
     filter_desc = "STL files";
     break;
+
   case Export_format::Ply:
     title       = "Export PLY";
     def_name    = "export.ply";
@@ -3764,8 +3857,9 @@ void GUI::export_file_dialog_(Export_format fmt, Export_unit unit)
     break;
   }
 
-  char const* filter_patterns[1] = {filter_pat};
-  char const* selected           = tinyfd_saveFileDialog(title, def_name, 1, filter_patterns, filter_desc);
+  const std::string start        = dialog_start_path_(def_name);
+  char const*       filter_patterns[1] = {filter_pat};
+  char const*       selected           = tinyfd_saveFileDialog(title, start.c_str(), 1, filter_patterns, filter_desc);
   if (!selected)
   {
     show_message("Export canceled", Status_msg::Info);
@@ -3788,10 +3882,12 @@ void GUI::export_file_dialog_(Export_format fmt, Export_unit unit)
     mem_path      = "/ezycad_export.igs";
     download_name = "export.igs";
     break;
+
   case Export_format::Stl:
     mem_path      = "/ezycad_export.stl";
     download_name = "export.stl";
     break;
+
   case Export_format::Ply:
     mem_path      = "/ezycad_export.ply";
     download_name = "export.ply";
@@ -3821,8 +3917,10 @@ void GUI::import_file_dialog_()
 {
 #ifndef __EMSCRIPTEN__
   // Native: Use tinyfiledialogs
-  char const* filter_patterns[3] = {"*.step", "*.stp", "*.ply"};
-  char const* selected           = tinyfd_openFileDialog("Import STEP or PLY", "", 3, filter_patterns, "STEP / PLY files", 0);
+  const std::string start               = dialog_start_path_(nullptr);
+  char const*       filter_patterns[3] = {"*.step", "*.stp", "*.ply"};
+  char const*       selected =
+      tinyfd_openFileDialog("Import STEP or PLY", start.c_str(), 3, filter_patterns, "STEP / PLY files", 0);
 
   if (selected)
   {
@@ -3846,20 +3944,63 @@ void GUI::import_file_dialog_()
 }
 
 // New, open, save related
+bool GUI::has_user_save_path_() const
+{
+  const std::string& p = m_last_saved_path;
+  if (p.empty() || p == "(startup)")
+    return false;
+
+  if (p.rfind("res/", 0) == 0 || p.rfind("res\\", 0) == 0 || p.rfind("/res/", 0) == 0)
+    return false;
+
+  return true;
+}
+
+std::string GUI::dialog_start_path_(const char* fallback_filename) const
+{
+  std::string src;
+  if (has_user_save_path_())
+    src = m_last_saved_path;
+  else if (!m_last_opened_project_path.empty())
+    src = m_last_opened_project_path;
+
+  if (src.empty())
+    return fallback_filename ? std::string(fallback_filename) : std::string();
+
+  try
+  {
+    const std::filesystem::path p(src);
+    if (!fallback_filename)
+      return p.string();
+
+    const std::filesystem::path parent = p.has_parent_path() ? p.parent_path() : std::filesystem::path();
+    if (parent.empty())
+      return fallback_filename;
+
+    return (parent / fallback_filename).string();
+  }
+  catch (...)
+  {
+    return fallback_filename ? std::string(fallback_filename) : std::string();
+  }
+}
+
 void GUI::new_project_()
 {
   m_last_saved_path.clear();
   clear_sketch_list_ui_();
   m_view->new_file();
+  note_document_saved();
 }
 
 void GUI::open_file_dialog_()
 {
 #ifndef __EMSCRIPTEN__
   // Native: Use tinyfiledialogs
+  const std::string start = dialog_start_path_(nullptr);
   char const* filter_patterns[1] = {"*.ezy"};                                   // Restrict to .ezy files
   char const* selected           = tinyfd_openFileDialog("Open EzyCad project", // Dialog title
-                                                         "",                    // Default path (empty for OS default)
+                                                         start.c_str(),         // Last project folder
                                                          1,                     // Number of filter patterns
                                                          filter_patterns,       // Filter patterns (*.ezy)
                                                          "EzyCad Files",        // Filter description
@@ -3881,25 +4022,37 @@ void GUI::open_file_dialog_()
 #endif
 }
 
-void GUI::save_file_dialog_()
+bool GUI::save_file_dialog_(bool save_as)
 {
   const std::vector<uint8_t> ezy_bytes = serialized_project_ezy_();
+  if (ezy_bytes.empty())
+  {
+    show_error_dialog("Save failed",
+                      "Could not save the project.\n\nFailed while: building project data\n\n"
+                      "The serialized project was empty. Try again, or use File -> Save settings if only preferences "
+                      "changed.");
+    return false;
+  }
 
 #ifndef __EMSCRIPTEN__
   std::string file;
-  if (!m_last_saved_path.empty())
-    file = m_last_saved_path; // Reuse last saved path
+  if (!save_as && has_user_save_path_())
+    file = m_last_saved_path;
   else
   {
-    char const* filter_patterns[1] = {"*.ezy"};
-    char const* selected = tinyfd_saveFileDialog("Save EzyCad Project", "project.ezy", 1, filter_patterns, "EzyCad Files");
-    if (selected)
+    const std::string suggested = save_as && has_user_save_path_() ? m_last_saved_path : dialog_start_path_("project.ezy");
+    char const*       filter_patterns[1] = {"*.ezy"};
+    char const*       selected =
+        tinyfd_saveFileDialog("Save EzyCad Project", suggested.c_str(), 1, filter_patterns, "EzyCad Files");
+    if (!selected)
     {
-      file              = selected;
-      m_last_saved_path = file; // Update last saved path
+      show_message("Save canceled", Status_msg::Info);
+      return false;
     }
+
+    file = selected;
   }
-  if (!file.empty())
+
   {
     auto describe_save_failure = [&](const char* stage) -> std::string
     {
@@ -3960,28 +4113,154 @@ void GUI::save_file_dialog_()
       {
         out.close();
         if (!out)
+        {
           show_error_dialog("Save failed", describe_save_failure("closing the file"));
-        else
-          show_message("Saved: " + std::filesystem::path(file).filename().string(), Status_msg::Success);
+          return false;
+        }
+
+        m_last_saved_path = file;
+        note_document_saved();
+        persist_last_opened_project_path_(file);
+        show_message("Saved: " + std::filesystem::path(file).filename().string(), Status_msg::Success);
+        return true;
       }
     }
   }
-  else
-    show_message("Save canceled", Status_msg::Info);
+  return false;
 #else
-  if (ezy_bytes.empty())
+  m_project_save_succeeded = false;
+  const std::string default_file =
+      m_last_saved_path.empty() ? "project.ezy" : std::filesystem::path(m_last_saved_path).filename().string();
+  save_file_dialog_async("Save EzyCad project", default_file, ezy_bytes);
+  return m_project_save_succeeded;
+#endif
+}
+
+void GUI::open_recent_project_()
+{
+#ifndef __EMSCRIPTEN__
+  if (m_last_opened_project_path.empty())
+    return;
+
+  std::ifstream     file(m_last_opened_project_path, std::ios::binary);
+  const std::string file_bytes{std::istreambuf_iterator<char>(file), std::istreambuf_iterator<char>()};
+  if (file.good() && !file_bytes.empty())
+    on_file(m_last_opened_project_path, file_bytes);
+  else
+    show_message("Error opening: " + std::filesystem::path(m_last_opened_project_path).filename().string(), Status_msg::Error);
+#else
+  (void)0;
+#endif
+}
+
+void GUI::request_doc_close_(Doc_close_action action, int example_index)
+{
+  if (!m_document_dirty)
   {
-    show_error_dialog("Save failed",
-                      "Could not save the project.\n\nFailed while: building project data\n\n"
-                      "The serialized project was empty. Try again, or use File -> Save settings if only preferences "
-                      "changed.");
+    run_doc_close_(action, example_index);
     return;
   }
 
-  std::string default_file =
-      m_last_saved_path.empty() ? "project.ezy" : std::filesystem::path(m_last_saved_path).filename().string();
-  save_file_dialog_async("Save EzyCad project", default_file, ezy_bytes);
+  m_doc_close_action   = action;
+  m_doc_close_example  = example_index;
+  m_open_unsaved_modal = true;
+}
+
+void GUI::run_doc_close_(Doc_close_action action, int example_index)
+{
+  switch (action)
+  {
+  case Doc_close_action::New:
+    new_project_();
+    break;
+
+  case Doc_close_action::Open:
+    open_file_dialog_();
+    break;
+
+  case Doc_close_action::Open_recent:
+    open_recent_project_();
+    break;
+
+  case Doc_close_action::Example:
+    if (example_index >= 0 && example_index < static_cast<int>(m_example_files.size()))
+    {
+      const Example_file& ex = m_example_files[static_cast<size_t>(example_index)];
+      std::ifstream       file(ex.path, std::ios::binary);
+      const std::string   file_bytes{std::istreambuf_iterator<char>(file), std::istreambuf_iterator<char>()};
+      if (file.good() && !file_bytes.empty())
+        on_file(ex.path, file_bytes);
+      else
+        show_message("Error opening example: " + ex.label, Status_msg::Error);
+    }
+    break;
+
+  case Doc_close_action::Exit:
+    m_close_accepted = true;
+#ifdef __EMSCRIPTEN__
+    exit(0);
+#else
+    if (m_glfw_window)
+      glfwSetWindowShouldClose(m_glfw_window, GLFW_TRUE);
 #endif
+    break;
+
+  case Doc_close_action::None:
+    break;
+  }
+}
+
+void GUI::unsaved_changes_dialog_()
+{
+  if (m_open_unsaved_modal)
+  {
+    ImGui::OpenPopup("Unsaved changes");
+    m_unsaved_modal_open = true;
+    m_open_unsaved_modal = false;
+  }
+
+  if (!ImGui::BeginPopupModal("Unsaved changes", &m_unsaved_modal_open, ImGuiWindowFlags_AlwaysAutoResize))
+  {
+    if (!m_unsaved_modal_open)
+      m_doc_close_action = Doc_close_action::None;
+
+    return;
+  }
+
+  const std::string name = project_title_segment_();
+  ImGui::TextWrapped("Save changes to \"%s\" before continuing?", name.c_str());
+  ImGui::Spacing();
+
+  if (ImGui::Button("Save", ImVec2(120.0f, 0.0f)) && save_file_dialog_())
+  {
+    const Doc_close_action action = m_doc_close_action;
+    const int              ex     = m_doc_close_example;
+    m_doc_close_action            = Doc_close_action::None;
+    m_unsaved_modal_open          = false;
+    ImGui::CloseCurrentPopup();
+    run_doc_close_(action, ex);
+  }
+
+  ImGui::SameLine();
+  if (ImGui::Button("Discard", ImVec2(120.0f, 0.0f)))
+  {
+    const Doc_close_action action = m_doc_close_action;
+    const int              ex     = m_doc_close_example;
+    m_doc_close_action            = Doc_close_action::None;
+    m_unsaved_modal_open          = false;
+    ImGui::CloseCurrentPopup();
+    run_doc_close_(action, ex);
+  }
+
+  ImGui::SameLine();
+  if (ImGui::Button("Cancel", ImVec2(120.0f, 0.0f)))
+  {
+    m_doc_close_action   = Doc_close_action::None;
+    m_unsaved_modal_open = false;
+    ImGui::CloseCurrentPopup();
+  }
+
+  ImGui::EndPopup();
 }
 
 void GUI::on_file(const std::string& file_path, const std::string& file_bytes, bool announce_load)
@@ -3991,6 +4270,8 @@ void GUI::on_file(const std::string& file_path, const std::string& file_bytes, b
   log_message("on_file: path=" + file_path + " bytes=" + std::to_string(file_bytes.size()) +
               " zip=" + (is_ezy_zip(file_bytes) ? "yes" : "no") + " json=" + (is_ezy_json(file_bytes) ? "yes" : "no"));
 
+  const bool dirty_before     = m_document_dirty;
+  m_suppress_document_dirty   = true;
   m_view->push_undo_snapshot();
   const std::optional<std::string> manifest = manifest_from_project_file_(file_bytes, *m_view, true);
   if (!manifest)
@@ -4002,12 +4283,17 @@ void GUI::on_file(const std::string& file_path, const std::string& file_bytes, b
   if (!manifest || !is_valid_project_manifest_(*manifest))
   {
     m_view->pop_undo_snapshot();
+    m_suppress_document_dirty = false;
+    m_document_dirty          = dirty_before;
     show_message("Invalid EzyCad project: " + std::filesystem::path(file_path).filename().string(), Status_msg::Error);
     return;
   }
 
-  const json j = json::parse(*manifest);
+  m_suppress_document_dirty = false;
+  const json j              = json::parse(*manifest);
+  m_suppress_document_dirty = true;
   m_view->load(*manifest);
+  m_suppress_document_dirty = false;
   log_message("on_file: load complete");
   apply_sketch_list_ui_from_json_(j);
   apply_shape_list_ui_from_json_(j);
@@ -4026,6 +4312,7 @@ void GUI::on_file(const std::string& file_path, const std::string& file_bytes, b
     persist_last_opened_project_path_(file_path);
 #endif
 
+  note_document_saved();
   if (announce_load)
     show_message("Opened: " + std::filesystem::path(file_path).filename().string(), Status_msg::Success);
 }
@@ -4060,9 +4347,11 @@ bool GUI::on_import_file(const std::string& file_path, const std::string& file_d
   case Step_import_mode::Union_shapes:
     show_message("Imported (union): " + std::filesystem::path(file_path).filename().string(), Status_msg::Success);
     break;
+
   case Step_import_mode::Flat_solids:
     show_message("Imported (flat): " + std::filesystem::path(file_path).filename().string(), Status_msg::Success);
     break;
+
   case Step_import_mode::Preserve_hierarchy:
   default:
     show_message(base, Status_msg::Success);
@@ -4235,6 +4524,14 @@ void GUI::note_saved_project_filename(const std::string& filename)
   if (!filename.empty())
     m_last_saved_path = filename;
 }
+void GUI::note_wasm_project_saved(const char* file_name)
+{
+  if (file_name && file_name[0] != '\0')
+    note_saved_project_filename(file_name);
+
+  note_document_saved();
+  m_project_save_succeeded = true;
+}
 void GUI::download_blob_async(const std::string& default_filename, const std::string& data)
 {
   EM_ASM_ARGS(
@@ -4279,9 +4576,7 @@ extern "C" void on_sketch_underlay_selected(const char* file_path, char* content
 extern "C" void on_save_file_selected(const char* file_name)
 {
   GUI& g = GUI::instance();
-  if (file_name)
-    g.note_saved_project_filename(file_name);
-
+  g.note_wasm_project_saved(file_name);
   g.show_message(std::string("Saved: ") + (file_name ? file_name : ""), Status_msg::Success);
 }
 extern "C" void on_save_file_failed(const char* reason)

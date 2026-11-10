@@ -18,6 +18,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- **Save as**: canceling the dialog keeps the current project path and window title.
+- **Unsaved changes**: **File -> New**, **Open**, **Open recent**, **Examples**, **Exit**, and the window close button ask Save, Discard, or Cancel. The title shows a trailing `*` while the project has unsaved edits.
+- **File dialogs**: Open, Save, Save as, Import, and Export start in the current project folder, or the last opened project folder.
+- **Three-point circle**: the toolbar button is disabled and <kbd>Shift</kbd>+<kbd>O</kbd> no longer enters an empty tool.
+- **Status toasts**: stay readable for the full hold, then fade, and wrap long text. Step prompts (bone, align shafts, set frame, underlay calibration) stay up until the next message or a mode change.
 - **Shape and Workbench copy names**: duplicating `Box.001` takes the next free `Box` / `Box.NNN` slot. It no longer stacks another `.001` (`Box.001.001`).
 - **Workbench task icon**: `res/icons/Workbench_Assembly.png` is included so the task button and the usage guide can load it (Sphinx `-W` failed on the missing image).
 - **Workbench toolbar**: the tools row no longer repeats the Workbench task icon; idle is the task button only.
@@ -36,6 +41,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **File -> Open recent** reopens the last opened `.ezy` (desktop; same path as **Load last opened on startup**).
 - **Duplicate shapes** (<kbd>Shift</kbd>+<kbd>D</kbd>, `edit.duplicate`): in **Design**, clones selected solids (or the current group's subtree) as independent bodies at the same pose. In **Workbench**, adds another link to the same Design body at the same pose. Copies stay under the original parent, then the tool switches to **Move** on the current task. One undo step. Leaves the copy/paste clipboard unchanged.
 
 - **Workbench List**: separate pane of geometry **links** to Shape List solids (own location/rotation). **Add to Workbench** from the Shape List (button, context menu, or drag). Design geometry edits update links; Design move/rotate/scale do not move instances. Workbench Move / Rotate / Align shafts edit the instance frame only. `.ezy` stores `workbench[]` (no BREP). Settings: **`gui.show_workbench_list`**.

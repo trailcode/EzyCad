@@ -42,7 +42,7 @@ EzyCad (Easy CAD) is an open-source CAD application for hobbyist machinists to d
 
 ### Main Components
 1. **Menu Bar**
-   - **File** - [New](#new-project), [Open](#open-project), [Save](#save-project), Save as, [Project units](#project-units), [Import](#importing-3d-geometries), [Export](#exporting-3d-geometries), Examples, Exit
+   - **File** - [New](#new-project), [Open](#open-project), [Open recent](#open-recent), [Save](#save-project), Save as, [Project units](#project-units), [Import](#importing-3d-geometries), [Export](#exporting-3d-geometries), Examples, Exit
    - **Edit** - [Undo](#edit-operations), [Redo](#edit-operations)
    - **View** - [Settings, panes, Lua/Python consoles](usage-settings.md#view-menu)
    - **Help** - [About](#help-menu), [Usage Guide](#help-menu), and the separate **[Settings guide](usage-settings.md)**
@@ -76,7 +76,7 @@ EzyCad (Easy CAD) is an open-source CAD application for hobbyist machinists to d
 7. **Log Window**
    - View operation history
    - Check for errors and warnings
-   - Monitor system status (including status toast messages: green success, light info, amber constraint, yellow warning, red error)
+   - Monitor system status (status toasts: green success, light info, amber constraint, yellow warning, red error). Timed toasts stay readable, then fade. Step-by-step prompts (for example bone, align shafts, set frame, underlay calibration) stay until the next message or a mode change
 
 ### Help menu
 
@@ -191,15 +191,27 @@ The window can be closed with its close button; use **View -> Workbench List** a
 
 3. #### Save Project
    - Save current work to `.ezy` file (includes `projectUnit`)
+   - **Save** overwrites that file when you opened or saved it yourself
+   - Opening an example or the install default does not point **Save** at the bundled file; **Save** asks for a path
+   - **Save as** always asks. Canceling the dialog keeps the previous path and window title
+   - **Open**, **Save**, **Save as**, **Import**, and **Export** start in the folder of the current project, or the last opened project when there is no user path yet
 
-4. #### Project units
+4. #### Open recent
+   - **File -> Open recent** reopens the last `.ezy` you opened (desktop). That path is the one **Load last opened on startup** uses
+
+5. #### Unsaved changes
+   - The window title is `EzyCad`, the version, then the file name. A trailing `*` means the open project has edits that are not saved
+   - **File -> New**, **Open**, **Open recent**, **Examples**, **Exit**, and the window close button ask **Save**, **Discard**, or **Cancel** while the `*` is showing
+   - **Save** writes the project, then continues. **Discard** continues without writing. **Cancel** stays on the current project
+
+6. #### Project units
    - **File -> Project units -> Inches** or **Millimeters** sets how sketch lengths, dimensions, Tab distance entry, grid Settings fields, and related length inputs are shown and typed for the **open** project
    - Changing units does **not** rescale stored geometry; a length that was **1** inch becomes **25.4** mm in the UI
    - Stored in the `.ezy` manifest as `projectUnit` (`inch` or `millimeter`); older files without the field load as **Inches**
    - Default for **File -> New** comes from **Settings -> New project defaults -> Project units**
    - Independent of **File -> Export** units (export still asks separately)
 
-5. **Import/Export**
+7. **Import/Export**
    - [Import STEP or PLY](#importing-3d-geometries)
    - [Export to STEP, IGES, binary STL, or binary PLY](#exporting-3d-geometries)
 
@@ -824,7 +836,7 @@ Mode, file, and edit chords in the **General Operations** and **Modeling Shortcu
 | <kbd>B</kbd>                                  | Add rectangle (two points)                       |
 | <kbd>Shift</kbd>+<kbd>B</kbd>                 | Add rectangle (center)                           |
 | <kbd>O</kbd>                                  | Add circle                                       |
-| <kbd>Shift</kbd>+<kbd>O</kbd>                 | Add circle (three points)                        |
+| <kbd>Shift</kbd>+<kbd>O</kbd>                 | Add circle (three points, not available yet)     |
 | <kbd>U</kbd>                                  | Add slot                                         |
 | <kbd>Shift</kbd>+<kbd>U</kbd>                 | Add bone                                         |
 | <kbd>Shift</kbd>+<kbd>P</kbd>                 | Polar duplicate                                  |
@@ -990,7 +1002,7 @@ Contributors should follow **[ezycad_code_style.md](ezycad_code_style.md)** for 
 - ![Sketcher_CreateRectangle](res/icons/Sketcher_CreateRectangle.png) - Add rectangle from two points
 - ![Sketcher_CreateRectangle_Center](res/icons/Sketcher_CreateRectangle_Center.png) - Add rectangle with center point
 - ![Sketcher_CreateCircle](res/icons/Sketcher_CreateCircle.png) - Add circle (center and radius)
-- ![Sketcher_Create3PointCircle](res/icons/Sketcher_Create3PointCircle.png) - Add circle from three points *(planned feature)*
+- ![Sketcher_Create3PointCircle](res/icons/Sketcher_Create3PointCircle.png) - Add circle from three points *(planned; button disabled, Shift+O does not start the tool)*
 - ![Sketcher_CreateSlot](res/icons/Sketcher_CreateSlot.png) - Add slot
 - ![Sketcher_CreateBone](res/icons/Sketcher_CreateBone.png) - Add bone (<kbd>Shift</kbd>+<kbd>U</kbd>)
 - ![TechDraw_LengthDimension](res/icons/TechDraw_LengthDimension.png) - Dimension tool (<kbd>D</kbd>)
