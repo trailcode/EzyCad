@@ -390,8 +390,15 @@ public:
   /// True when dist or angle edit is visible; Tab should be routed to on_key() instead of ImGui.
   bool is_dist_or_angle_edit_active() const;
   bool is_sketch_origin_set_edit_active() const;
-  /// Transient bottom-right status toast (colored by \\a kind); also appends to the Log window.
-  void show_message(const std::string& message, Status_msg kind = Status_msg::Info);
+  /// Bottom-right status toast (colored by \\a kind); also appends to the Log window.
+  /// Timed toasts stay opaque, then fade out. \\a sticky prompts stay until the next message or a mode change.
+  void show_message(const std::string& message, Status_msg kind = Status_msg::Info, bool sticky = false);
+  /// Mark the open project dirty (window title `*`, unsaved prompt). Ignored while a file is loading.
+  void note_document_edited();
+  /// Clear the dirty flag after a successful save, open, or new project.
+  void note_document_saved();
+  /// Title-bar close. When the project is dirty, keeps the window open and shows the unsaved prompt.
+  [[nodiscard]] bool allow_window_close();
   /// Toast `status.message()` using `Result_status` (ok -> Info, User_error -> Constraint, else Error).
   void show_status(const Status& status);
   /// Queue an ImGui error modal (logs title: message once; short title toast as Error). Native and wasm.
@@ -443,6 +450,8 @@ public:
   void download_blob_async(const std::string& default_filename, const std::string& data);
   /// After browser download save, remember basename for window title and Save-as default.
   void note_saved_project_filename(const std::string& filename);
+  /// Wasm download finished: remember the name, clear the dirty flag, and report success to Save.
+  void note_wasm_project_saved(const char* file_name);
 #endif
 
   void               on_file(const std::string& file_path, const std::string& file_bytes, bool announce_load = true);
@@ -630,10 +639,32 @@ private:
 #endif
 
   // Open/save related
+  enum class Doc_close_action : std::uint8_t
+  {
+    None,
+    New,
+    Open,
+    Open_recent,
+    Example,
+    Exit
+  };
   void new_project_();
   void open_file_dialog_();
-  void save_file_dialog_();
-  void error_modal_dialog_();
+  void open_recent_project_();
+  /// \\a save_as always asks for a path. Returns true when the project was written.
+  [[nodiscard]] bool save_file_dialog_(bool save_as = false);
+  void               error_modal_dialog_();
+  void               unsaved_changes_dialog_();
+  void               request_doc_close_(Doc_close_action action, int example_index = -1);
+  void               run_doc_close_(Doc_close_action action, int example_index);
+  void               dismiss_sticky_message_();
+  /// True while the unsaved-changes or error modal is open (or queued to open).
+  [[nodiscard]] bool blocking_modal_active_() const;
+  void               finish_error_modal_();
+  void               maybe_reopen_unsaved_after_error_();
+  [[nodiscard]] bool has_user_save_path_() const;
+  /// Folder (and file, when \\a fallback_filename is null) for native Open / Save / Import / Export dialogs.
+  [[nodiscard]] std::string dialog_start_path_(const char* fallback_filename) const;
 
   void save_startup_project_();
   void clear_saved_startup_project_();
@@ -756,6 +787,7 @@ private:
   std::string                           m_message;
   Status_msg                            m_message_kind    = Status_msg::Info;
   bool                                  m_message_visible = false;
+  bool                                  m_message_sticky  = false;
   std::chrono::steady_clock::time_point m_message_start_time;
 
   // ImGui error modal (File save failures, etc.; works on native and wasm)
@@ -785,8 +817,19 @@ private:
   Log_strm*       m_cerr_log_buf      = nullptr; // Custom stderr buffer
 
   std::string m_last_saved_path; // Session path for Ctrl+S / Save as
-  bool        m_load_last_opened_on_startup{false};
-  std::string m_last_opened_project_path; // Persisted in settings (native)
+  bool        m_document_dirty{false};
+  bool        m_suppress_document_dirty{false};
+  bool        m_close_accepted{false};
+  bool        m_open_unsaved_modal{false};
+  bool        m_unsaved_modal_open{false};
+  /// Close the unsaved modal first, then Save on the next frame so an error modal can open.
+  bool        m_pending_unsaved_save{false};
+  bool        m_reopen_unsaved_after_error{false};
+  bool        m_project_save_succeeded{false};
+  Doc_close_action m_doc_close_action{Doc_close_action::None};
+  int              m_doc_close_example{-1};
+  bool             m_load_last_opened_on_startup{false};
+  std::string      m_last_opened_project_path; // Persisted in settings (native)
 
   using Example_file_list = std::vector<Example_file>;
   Example_file_list m_example_files;

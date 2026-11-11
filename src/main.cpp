@@ -401,6 +401,12 @@ int main(int argc, char** argv)
     // application based on those two flags.
     glfwPollEvents();
 
+#ifndef __EMSCRIPTEN__
+    // Title-bar close: keep the window up until Save / Discard when the project is dirty.
+    if (glfwWindowShouldClose(window) && !gui.allow_window_close())
+      glfwSetWindowShouldClose(window, GLFW_FALSE);
+#endif
+
 #if !defined(__EMSCRIPTEN__) && defined(EZYCAD_HAVE_PYTHON)
     if (py_queue)
       if (Python_console* console = gui.get_python_console())

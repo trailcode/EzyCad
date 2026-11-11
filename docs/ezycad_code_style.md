@@ -86,7 +86,7 @@ default:                   ++result.other_curve_count; break;
 
 - Put the comma **immediately after** the key (`{"key",  value}`), then pad spaces so the value column lines up.
 - Use one entry per line for object/map-like initializers when aligning.
-- For a **`switch` of short, parallel cases**, put each `case`/`default` on **one line** and align the label, statement(s), and trailing `break;` into columns. Keep `IndentCaseLabels: false` (labels align with `switch`), and prefer this only when every case is a simple one-liner.
+- For a **`switch` of short, parallel cases**, put each `case`/`default` on **one line** and align the label, statement(s), and trailing `break;` into columns. Keep `IndentCaseLabels: false` (labels align with `switch`), and prefer this only when every case is a simple one-liner. An arm whose body spans more than one line takes a blank line before the next arm (see **Vertical rhythm**).
 - Keep `off`/`on` tight to the table; leave surrounding code under normal clang-format.
 
 `AlignConsecutiveDeclarations` / `AlignConsecutiveAssignments` already help many declaration and assignment runs; use explicit `off`/`on` when clang-format would still break a hand-aligned key/value or argument table.
@@ -97,6 +97,7 @@ Not enforced by clang-format. Treat each **logical beat** as its own short parag
 
 - Put a **blank line between consecutive `if` statements** that have no `else` (each is its own block).
 - After an `if` with no `else` whose then-body **exits** (`return` / `continue` / `break` / `CHK_RET`), put a blank line before the next statement in the same block (the success path).
+- After a **`switch` arm whose body spans more than one line**, put a blank line before the next `case` or `default`. Keep a one-line body adjacent to the next arm, including a column-aligned table and fall-through labels whose statement sits on the last label's line (`case A:` / `case B: foo(); break;`). A single statement on the line after its label (`case Kind::A:` / `return x;`) is still a one-line body.
 - After a **local lambda or helper** closes (`};`), put a blank line before the first use or following statement.
 - Inside a short helper, separate **setup**, **early return**, and **main body** with blank lines when each is a distinct step.
 - After a multi-statement `if { ... }` (or single-statement `if` that mutates state), put a blank line before trailing same-row UI such as `ImGui::SameLine`, unit labels, or `GUI_DOC_HELP_`.
@@ -104,7 +105,23 @@ Not enforced by clang-format. Treat each **logical beat** as its own short parag
 - Before a final **`return`**, put a blank line when the function already performed a side effect (e.g. save) above.
 - Between sequential but distinct ImGui actions (e.g. `TextWrapped` / `TextDisabled`, then `Spacing`; or one `Button` then `SameLine` / next `Button`), prefer a blank line so the chain does not read as one run-on block.
 
-Do not sprinkle blank lines inside a tight expression or a one-line `if` body; the goal is readable beats, not sparse files.
+Separate a multi-line arm from the next arm:
+
+```cpp
+// clang-format off
+switch (action)
+{
+case Gui_action::Cmd_shape_common:
+  if (Status s = m_view->shp_common().selected_common(); !s.is_ok())
+    show_status(s);
+  break;
+
+case Gui_action::Edit_delete:               m_view->delete_selected();  break;
+}
+// clang-format on
+```
+
+Do not sprinkle blank lines inside a tight expression, a one-line `if` body, or a run of one-line `case` bodies; the goal is readable beats, not sparse files.
 
 Optional local check (not CI): `python scripts/code_style_check.py`. After C++ edits, run `python scripts/agent_check.py <touched paths>` for ASCII only.
 

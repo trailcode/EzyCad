@@ -67,9 +67,9 @@ void Shp_set_frame::begin(const Shp_ptr& target, Pick pick)
   }
 
   if (m_pick == Pick::Planar_face)
-    gui().show_message("Pick a planar face to set the local frame (Z = normal).");
+    gui().show_message("Pick a planar face to set the local frame (Z = normal).", Status_msg::Info, true);
   else
-    gui().show_message("Pick a cylindrical face to set the local frame (Z = axis).");
+    gui().show_message("Pick a cylindrical face to set the local frame (Z = axis).", Status_msg::Info, true);
 }
 
 Status Shp_set_frame::pick(const ScreenCoords& screen_coords)
