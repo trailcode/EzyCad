@@ -3071,6 +3071,29 @@ void GUI::show_error_dialog(const std::string& title, const std::string& message
   m_open_error_modal    = true;
 }
 
+bool GUI::blocking_modal_active_() const
+{
+  return m_open_unsaved_modal || m_unsaved_modal_open || m_pending_unsaved_save || m_open_error_modal ||
+         m_error_modal_open;
+}
+
+void GUI::maybe_reopen_unsaved_after_error_()
+{
+  if (!m_reopen_unsaved_after_error)
+    return;
+
+  m_reopen_unsaved_after_error = false;
+  if (m_document_dirty && m_doc_close_action != Doc_close_action::None)
+    m_open_unsaved_modal = true;
+}
+
+void GUI::finish_error_modal_()
+{
+  m_error_modal_open = false;
+  ImGui::CloseCurrentPopup();
+  maybe_reopen_unsaved_after_error_();
+}
+
 void GUI::error_modal_dialog_()
 {
   if (m_open_error_modal)
@@ -3082,7 +3105,13 @@ void GUI::error_modal_dialog_()
   }
 
   if (!ImGui::BeginPopupModal("##EzyCadErrorModal", &m_error_modal_open, ImGuiWindowFlags_AlwaysAutoResize))
+  {
+    // Title-bar / Esc close: &open became false while the popup was up.
+    if (!m_error_modal_open)
+      maybe_reopen_unsaved_after_error_();
+
     return;
+  }
 
   ImGui::PushTextWrapPos(ImGui::GetCursorPos().x + 440.0f);
   ImGui::TextUnformatted(m_error_modal_title.c_str());
@@ -3092,10 +3121,8 @@ void GUI::error_modal_dialog_()
   ImGui::Spacing();
 
   if (ImGui::Button("OK", ImVec2(120.0f, 0.0f)))
-  {
-    m_error_modal_open = false;
-    ImGui::CloseCurrentPopup();
-  }
+    finish_error_modal_();
+
   ImGui::SetItemDefaultFocus();
   ImGui::EndPopup();
 }
@@ -4212,6 +4239,23 @@ void GUI::run_doc_close_(Doc_close_action action, int example_index)
 
 void GUI::unsaved_changes_dialog_()
 {
+  // Save after this popup has closed so show_error_dialog can open as the active modal.
+  if (m_pending_unsaved_save && !m_unsaved_modal_open && !m_open_unsaved_modal)
+  {
+    m_pending_unsaved_save        = false;
+    const Doc_close_action action = m_doc_close_action;
+    const int              ex     = m_doc_close_example;
+    if (save_file_dialog_())
+    {
+      m_doc_close_action = Doc_close_action::None;
+      run_doc_close_(action, ex);
+    }
+    else if (m_open_error_modal || m_error_modal_open)
+      m_reopen_unsaved_after_error = true;
+    else if (m_document_dirty && action != Doc_close_action::None)
+      m_open_unsaved_modal = true;
+  }
+
   if (m_open_unsaved_modal)
   {
     ImGui::OpenPopup("Unsaved changes");
@@ -4221,8 +4265,11 @@ void GUI::unsaved_changes_dialog_()
 
   if (!ImGui::BeginPopupModal("Unsaved changes", &m_unsaved_modal_open, ImGuiWindowFlags_AlwaysAutoResize))
   {
-    if (!m_unsaved_modal_open)
-      m_doc_close_action = Doc_close_action::None;
+    if (!m_unsaved_modal_open && !m_pending_unsaved_save && !m_reopen_unsaved_after_error)
+    {
+      m_doc_close_action  = Doc_close_action::None;
+      m_doc_close_example = -1;
+    }
 
     return;
   }
@@ -4231,14 +4278,11 @@ void GUI::unsaved_changes_dialog_()
   ImGui::TextWrapped("Save changes to \"%s\" before continuing?", name.c_str());
   ImGui::Spacing();
 
-  if (ImGui::Button("Save", ImVec2(120.0f, 0.0f)) && save_file_dialog_())
+  if (ImGui::Button("Save", ImVec2(120.0f, 0.0f)))
   {
-    const Doc_close_action action = m_doc_close_action;
-    const int              ex     = m_doc_close_example;
-    m_doc_close_action            = Doc_close_action::None;
-    m_unsaved_modal_open          = false;
+    m_pending_unsaved_save = true;
+    m_unsaved_modal_open   = false;
     ImGui::CloseCurrentPopup();
-    run_doc_close_(action, ex);
   }
 
   ImGui::SameLine();
@@ -4246,8 +4290,9 @@ void GUI::unsaved_changes_dialog_()
   {
     const Doc_close_action action = m_doc_close_action;
     const int              ex     = m_doc_close_example;
-    m_doc_close_action            = Doc_close_action::None;
-    m_unsaved_modal_open          = false;
+    m_doc_close_action             = Doc_close_action::None;
+    m_doc_close_example            = -1;
+    m_unsaved_modal_open           = false;
     ImGui::CloseCurrentPopup();
     run_doc_close_(action, ex);
   }
@@ -4256,6 +4301,7 @@ void GUI::unsaved_changes_dialog_()
   if (ImGui::Button("Cancel", ImVec2(120.0f, 0.0f)))
   {
     m_doc_close_action   = Doc_close_action::None;
+    m_doc_close_example  = -1;
     m_unsaved_modal_open = false;
     ImGui::CloseCurrentPopup();
   }

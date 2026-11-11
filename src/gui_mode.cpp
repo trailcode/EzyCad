@@ -204,6 +204,10 @@ void GUI::set_parent_mode() { set_mode(parent_mode_of(get_mode())); }
 void GUI::on_key(int key, int scancode, int action, int mods)
 {
   (void)scancode;
+  // Unsaved / error modals own the keyboard until dismissed (Escape, Delete, Ctrl+N, ...).
+  if (blocking_modal_active_())
+    return;
+
   const bool press_or_repeat = (action == GLFW_PRESS || action == GLFW_REPEAT);
 
   // Capture before fixed view/nav handlers so reserved chords can be rejected with a message.

@@ -19,7 +19,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Fixed
 
 - **Save as**: canceling the dialog keeps the current project path and window title.
-- **Unsaved changes**: **File -> New**, **Open**, **Open recent**, **Examples**, **Exit**, and the window close button ask Save, Discard, or Cancel. The title shows a trailing `*` while the project has unsaved edits.
+- **Unsaved changes**: **File -> New**, **Open**, **Open recent**, **Examples**, **Exit**, and the window close button ask Save, Discard, or Cancel. The title shows a trailing `*` while the project has unsaved edits. App hotkeys are ignored while that prompt or the error modal is open. Save from the prompt closes it first so a failed save can show the full error dialog, then the prompt returns if the project is still dirty.
 - **File dialogs**: Open, Save, Save as, Import, and Export start in the current project folder, or the last opened project folder.
 - **Three-point circle**: the toolbar button is disabled and <kbd>Shift</kbd>+<kbd>O</kbd> no longer enters an empty tool.
 - **Status toasts**: stay readable for the full hold, then fade, and wrap long text. Step prompts (bone, align shafts, set frame, underlay calibration) stay up until the next message or a mode change.

@@ -658,6 +658,10 @@ private:
   void               request_doc_close_(Doc_close_action action, int example_index = -1);
   void               run_doc_close_(Doc_close_action action, int example_index);
   void               dismiss_sticky_message_();
+  /// True while the unsaved-changes or error modal is open (or queued to open).
+  [[nodiscard]] bool blocking_modal_active_() const;
+  void               finish_error_modal_();
+  void               maybe_reopen_unsaved_after_error_();
   [[nodiscard]] bool has_user_save_path_() const;
   /// Folder (and file, when \\a fallback_filename is null) for native Open / Save / Import / Export dialogs.
   [[nodiscard]] std::string dialog_start_path_(const char* fallback_filename) const;
@@ -818,6 +822,9 @@ private:
   bool        m_close_accepted{false};
   bool        m_open_unsaved_modal{false};
   bool        m_unsaved_modal_open{false};
+  /// Close the unsaved modal first, then Save on the next frame so an error modal can open.
+  bool        m_pending_unsaved_save{false};
+  bool        m_reopen_unsaved_after_error{false};
   bool        m_project_save_succeeded{false};
   Doc_close_action m_doc_close_action{Doc_close_action::None};
   int              m_doc_close_example{-1};
