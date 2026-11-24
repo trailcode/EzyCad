@@ -757,13 +757,22 @@ void Shape_list_row_drawer::draw_ctx_menu_(const Shp_ptr& shape, bool is_group)
     ImGui::Separator();
     bool show_axes = shape->show_frame_axes();
     if (ImGui::MenuItem("Show axes", nullptr, show_axes))
+    {
       shape->set_show_frame_axes(!show_axes);
+      m_gui.note_document_edited();
+    }
     bool show_plane = shape->show_frame_plane();
     if (ImGui::MenuItem("Show plane", nullptr, show_plane))
+    {
       shape->set_show_frame_plane(!show_plane);
+      m_gui.note_document_edited();
+    }
     bool show_up = shape->show_frame_up();
     if (ImGui::MenuItem("Show up", nullptr, show_up))
+    {
       shape->set_show_frame_up(!show_up);
+      m_gui.note_document_edited();
+    }
     ImGui::Separator();
     if (ImGui::MenuItem("Reset frame to bbox"))
     {
@@ -905,6 +914,7 @@ void Shape_list_row_drawer::draw(const Shp_ptr& shape)
       m_view.set_shape_list_hover(nullptr);
 
     shape->set_visible(visible);
+    m_gui.note_document_edited();
     m_view.sync_sketch_shape_faint_style();
   }
   row_hovered |= ImGui::IsItemHovered();
@@ -918,7 +928,10 @@ void Shape_list_row_drawer::draw(const Shp_ptr& shape)
   {
     bool shaded = shape->get_disp_mode() == AIS_Shaded;
     if (ImGui::Checkbox("##shaded", &shaded))
+    {
       shape->set_disp_mode(shaded ? AIS_Shaded : AIS_WireFrame);
+      m_gui.note_document_edited();
+    }
 
     row_hovered |= ImGui::IsItemHovered();
     if (m_gui.ui_show_contextual_help() && ImGui::IsItemHovered())
@@ -952,6 +965,7 @@ void Shape_list_row_drawer::draw(const Shp_ptr& shape)
           if (ImGui::Selectable(m_mat_names[static_cast<size_t>(i)].c_str(), i == mat_idx))
           {
             apply_material_(shape, i);
+            m_gui.note_document_edited();
             ImGui::CloseCurrentPopup();
           }
 
@@ -1015,7 +1029,10 @@ void Shape_list_row_drawer::draw(const Shp_ptr& shape)
   ImGui::SameLine();
   ImGui::SetNextItemWidth(std::max(1.0f, ImGui::GetContentRegionAvail().x));
   if (ImGui::InputText("##name", name_buffer, sizeof(name_buffer)))
+  {
     shape->set_name(std::string(name_buffer));
+    m_gui.note_document_edited();
+  }
 
   if (ImGui::IsItemClicked())
     select_row_(shape);

@@ -92,6 +92,7 @@ void Sketch_tools::on_move(const ScreenCoords& screen_coords)
     case Mode::Sketch_add_rectangle_center_pt:
       move_rectangle_pt_(screen_coords);
       break;
+
     // clang-format on
   default:
     break;
@@ -126,6 +127,7 @@ void Sketch_tools::on_enter()
     case Mode::Sketch_add_multi_edges:
       m_sketch.m_dims.check_dimension_seg_(static_cast<int>(Linestring_type::Multiple));
       break;
+
     // clang-format on
   default:
     break;

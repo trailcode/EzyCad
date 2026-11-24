@@ -37,9 +37,9 @@ bool bone_hole_radius_too_large_(double outer_r, double hole_r)
   return hole_r + Precision::Confusion() >= outer_r;
 }
 
-void bone_toast_(GUI& gui, const char* text, Status_msg kind)
+void bone_toast_(GUI& gui, const char* text, Status_msg kind, bool sticky = false)
 {
-  gui.show_message(text, kind);
+  gui.show_message(text, kind, sticky);
 }
 
 void bone_toast_hole_reject_(GUI& gui, double outer_r, double hole_r)
@@ -56,35 +56,35 @@ void Sketch_tools::bone_prompt_next_()
   GUI& gui = m_sketch.m_view.gui();
   if (!m_bone_centers)
   {
-    bone_toast_(m_sketch.m_view.gui(), "Add bone: click the two circle centers.", Status_msg::Info);
+    bone_toast_(m_sketch.m_view.gui(), "Add bone: click the two circle centers.", Status_msg::Info, true);
     return;
   }
 
   if (!m_bone_r2)
   {
-    bone_toast_(m_sketch.m_view.gui(), "Click to set radius 2 (at the second center).", Status_msg::Info);
+    bone_toast_(m_sketch.m_view.gui(), "Click to set radius 2 (at the second center).", Status_msg::Info, true);
     return;
   }
 
   if (!m_bone_r1)
   {
-    bone_toast_(m_sketch.m_view.gui(), "Click to set radius 1 (snap on circle 2 to match).", Status_msg::Info);
+    bone_toast_(m_sketch.m_view.gui(), "Click to set radius 1 (snap on circle 2 to match).", Status_msg::Info, true);
     return;
   }
 
   if (!m_bone_waist)
   {
-    bone_toast_(m_sketch.m_view.gui(), "Click to set waist width.", Status_msg::Info);
+    bone_toast_(m_sketch.m_view.gui(), "Click to set waist width.", Status_msg::Info, true);
     return;
   }
 
   const Bone_holes holes = gui.get_bone_holes();
   if (holes == Bone_holes::One_radius && !m_bone_hole_r1)
-    bone_toast_(m_sketch.m_view.gui(), "Click to set the hole radius (both ends).", Status_msg::Info);
+    bone_toast_(m_sketch.m_view.gui(), "Click to set the hole radius (both ends).", Status_msg::Info, true);
   else if (holes == Bone_holes::Two_radii && !m_bone_hole_r1)
-    bone_toast_(m_sketch.m_view.gui(), "Click to set hole radius at end A.", Status_msg::Info);
+    bone_toast_(m_sketch.m_view.gui(), "Click to set hole radius at end A.", Status_msg::Info, true);
   else if (holes == Bone_holes::Two_radii && !m_bone_hole_r2)
-    bone_toast_(m_sketch.m_view.gui(), "Click to set hole radius at end B.", Status_msg::Info);
+    bone_toast_(m_sketch.m_view.gui(), "Click to set hole radius at end B.", Status_msg::Info, true);
 }
 
 void Sketch_tools::bone_on_enter_()

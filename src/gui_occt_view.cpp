@@ -2424,6 +2424,7 @@ void Occt_view::set_project_unit(Project_unit unit)
 
   m_project_unit = unit;
   refresh_sketch_annotations({.length_dimensions = true});
+  m_gui.note_document_edited();
 }
 
 const char* Occt_view::project_unit_suffix() const { return m_project_unit == Project_unit::Millimeter ? "mm" : "in"; }
@@ -4573,13 +4574,16 @@ void Occt_view::on_mode()
     case Mode::Design_move:
       shp_move().begin(enter_selection);
       break;
+
     case Mode::Workbench_rotate:
     case Mode::Design_rotate:
       shp_rotate().begin(enter_selection);
       break;
+
     case Mode::Scale:
       shp_scale().begin(enter_selection);
       break;
+
     default:
       break;
     }
@@ -4897,6 +4901,8 @@ void Occt_view::push_undo_snapshot()
   m_undo_stack.push_back(std::move(entry));
   if (m_undo_stack.size() > k_max_undo)
     m_undo_stack.erase(m_undo_stack.begin());
+
+  m_gui.note_document_edited();
 }
 
 void Occt_view::push_undo_delta(std::unique_ptr<Delta> delta)
@@ -4911,6 +4917,8 @@ void Occt_view::push_undo_delta(std::unique_ptr<Delta> delta)
   m_undo_stack.push_back(std::move(entry));
   if (m_undo_stack.size() > k_max_undo)
     m_undo_stack.erase(m_undo_stack.begin());
+
+  m_gui.note_document_edited();
 }
 
 void Occt_view::pop_undo_snapshot()
@@ -4951,6 +4959,7 @@ bool Occt_view::undo()
     m_gui.set_show_sketch_list(true);
 
   m_restoring = false;
+  m_gui.note_document_edited();
   return true;
 }
 
@@ -4984,6 +4993,7 @@ bool Occt_view::redo()
     m_gui.set_show_sketch_list(true);
 
   m_restoring = false;
+  m_gui.note_document_edited();
   return true;
 }
 
@@ -5491,6 +5501,7 @@ Status Occt_view::export_document(Export_format fmt, Export_unit unit, const std
 
     return Status::ok();
   }
+
   case Export_format::Iges:
   {
     // Geometry is already in \a unit; declare the same unit so translators do not apply another factor.
@@ -5505,6 +5516,7 @@ Status Occt_view::export_document(Export_format fmt, Export_unit unit, const std
 
     return Status::ok();
   }
+
   case Export_format::Stl:
   {
     // Tessellate in export units (0.1 model units, scaled like the geometry).
@@ -5519,6 +5531,7 @@ Status Occt_view::export_document(Export_format fmt, Export_unit unit, const std
 
     return Status::ok();
   }
+
   case Export_format::Ply:
   {
     constexpr double               k_lin_deflection_model = 0.1;
@@ -5750,6 +5763,7 @@ void Occt_view::new_file()
   refresh_viewer_grid_();
   reset_default_view();
   m_gui.set_mode(Mode::Design_inspection);
+  m_gui.note_document_saved();
 }
 
 namespace
@@ -5805,12 +5819,14 @@ Section_import_counts import_section_edges_into_sketch_(Sketch& sketch, const To
       ++counts.imported;
       break;
     }
+
     case GeomAbs_Circle:
       if (import_section_circle_edge_(sketch, edge, pln))
         ++counts.imported;
       else
         ++counts.skipped;
       break;
+
     default:
       ++counts.skipped;
       break;

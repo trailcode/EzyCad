@@ -339,7 +339,7 @@ The center-radius circle tool allows you to create circles by defining a center 
 
 ### Three-Point Circle Tool (Planned Feature)
 
-**Status**: Not yet implemented
+**Status**: Not yet implemented. The toolbar button stays disabled. <kbd>Shift</kbd>+<kbd>O</kbd> reports that the tool is not available yet.
 
 The three-point circle tool is planned for future development. This feature would allow creating circles by defining three points that lie on the circle's circumference.
 
@@ -351,7 +351,7 @@ The three-point circle tool is planned for future development. This feature woul
 | **Automatic center and radius calculation** | The system would compute the center and radius from the three points |
 | **Geometric validation**                    | Ensure the three points are not collinear                            |
 
-**Note**: ![Sketcher_Create3PointCircle](res/icons/Sketcher_Create3PointCircle.png) The toolbar icon exists but the functionality is not yet implemented.
+**Note**: ![Sketcher_Create3PointCircle](res/icons/Sketcher_Create3PointCircle.png) The toolbar icon is shown disabled until the tool is implemented.
 
 ## Circle Creation Workflow
 

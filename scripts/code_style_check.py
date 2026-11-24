@@ -4,7 +4,11 @@
 Not part of CI or the default agent_check.py run. Groups:
 
 - vertical-rhythm: blank lines, including after an early-exit `if` (return /
-  continue / break / CHK_RET) before the next statement in the same block.
+  continue / break / CHK_RET) before the next statement in the same block,
+  and after a `case` / `default` whose body spans more than one line, before
+  the next switch arm. A one-line body stays adjacent (including fall-through
+  labels above that line). This case rule also applies inside `clang-format off`
+  regions (column-aligned switch tables).
 - if-initializer: a `for` / `while` whose body is only `Type name = init;` plus
   an `if` that tests `name` should be `for (...) if (Type name = init; cond)`.
 
@@ -735,7 +739,173 @@ def if_then_exits(src: Source, stmt: Stmt) -> bool:
 def check_vertical_rhythm(src: Source) -> list[Finding]:
     findings: list[Finding] = []
     _check_span(src, 0, len(src.masked), findings)
+    _check_switch_case_gaps(src, findings)
     return findings
+
+
+def _check_switch_case_gaps(src: Source, findings: list[Finding]) -> None:
+    """Blank line after a case body that spans lines, including inside clang-format off.
+
+    A body that occupies one line stays adjacent to the next arm. That covers a
+    column-aligned `case Label: stmt; break;` row and fall-through labels whose
+    statement sits on the last label's line. Those tables live in clang-format
+    off regions, so this check does not skip them.
+    """
+    masked = src.masked
+    for body_start, body_end in _switch_body_spans(masked):
+        labels = _switch_arm_labels(masked, body_start, body_end)
+        if len(labels) < 2:
+            continue
+        arm_at = [0]
+        for idx in range(len(labels) - 1):
+            if not _span_is_blank(masked, labels[idx][1], labels[idx + 1][0]):
+                arm_at.append(idx + 1)
+        for arm_i in range(len(arm_at) - 1):
+            next_i = arm_at[arm_i + 1]
+            last_label = labels[next_i - 1]
+            next_label = labels[next_i]
+            body_lo = skip_ws_and_pp(masked, last_label[1], next_label[0])
+            if body_lo >= next_label[0]:
+                continue
+            body_hi = _last_non_ws(masked, body_lo, next_label[0])
+            if body_hi < 0 or src.line_of(body_lo) == src.line_of(body_hi):
+                continue
+            if src.has_blank_line_between(body_hi + 1, next_label[0]):
+                continue
+            findings.append(
+                Finding(
+                    src.path,
+                    src.line_of(next_label[0]),
+                    "vertical-rhythm",
+                    "blank line required after a multi-line case before the next case",
+                )
+            )
+
+
+def _switch_body_spans(masked: str) -> list[tuple[int, int]]:
+    spans: list[tuple[int, int]] = []
+    n = len(masked)
+    i = 0
+    while i < n:
+        if masked[i] not in IDENT_START:
+            i += 1
+            continue
+        ident = peek_ident(masked, i, n)
+        if ident == "switch":
+            j = i + len(ident)
+            j = skip_ws(masked, j, n)
+            if j < n and masked[j] == "(":
+                j = skip_balanced(masked, j, n, "(", ")")
+            j = skip_ws_and_pp(masked, j, n)
+            if j < n and masked[j] == "{":
+                close = skip_balanced(masked, j, n, "{", "}")
+                if close > j + 1:
+                    spans.append((j + 1, close - 1))
+        i += len(ident) if ident else 1
+    return spans
+
+
+def _switch_arm_labels(masked: str, start: int, end: int) -> list[tuple[int, int]]:
+    """`(label_start, index_after_colon)` for `case` / `default` at this switch's depth."""
+    labels: list[tuple[int, int]] = []
+    i = start
+    depth = 0
+    while i < end:
+        ch = masked[i]
+        if ch == "{":
+            depth += 1
+            i += 1
+            continue
+        if ch == "}":
+            depth = max(0, depth - 1)
+            i += 1
+            continue
+        if depth != 0:
+            i += 1
+            continue
+        if ch == "#" and _at_line_start(masked, i):
+            while i < end and masked[i] != "\n":
+                i += 1
+            continue
+        if ch not in IDENT_START:
+            i += 1
+            continue
+        ident = peek_ident(masked, i, end)
+        if ident == "case":
+            after = _skip_case_colon(masked, i, end)
+            if after > i:
+                labels.append((i, after))
+                i = after
+                continue
+        elif ident == "default":
+            k = skip_ident(masked, i, end)
+            k = skip_ws(masked, k, end)
+            if k < end and masked[k] == ":" and (k + 1 >= end or masked[k + 1] != ":"):
+                labels.append((i, k + 1))
+                i = k + 1
+                continue
+        i += len(ident) if ident else 1
+    return labels
+
+
+def _skip_case_colon(masked: str, i: int, end: int) -> int:
+    """Index after a `case` label's colon, or `i` when `i` is not a case label."""
+    k = skip_ident(masked, i, end)
+    paren = 0
+    bracket = 0
+    while k < end:
+        ch = masked[k]
+        if ch == "(":
+            paren += 1
+        elif ch == ")":
+            paren = max(0, paren - 1)
+        elif ch == "[":
+            bracket += 1
+        elif ch == "]":
+            bracket = max(0, bracket - 1)
+        elif ch in "{;" and paren == 0 and bracket == 0:
+            return i
+        elif ch == ":" and paren == 0 and bracket == 0:
+            if k + 1 < end and masked[k + 1] == ":":
+                k += 2
+                continue
+            return k + 1
+        k += 1
+    return i
+
+
+def _span_is_blank(masked: str, start: int, end: int) -> bool:
+    i = start
+    while i < end:
+        i = skip_ws_and_pp(masked, i, end)
+        if i < end:
+            return False
+    return True
+
+
+def _last_non_ws(masked: str, start: int, end: int) -> int:
+    """Last code index in [start, end), skipping whitespace and preprocessor lines."""
+    j = end - 1
+    while j >= start:
+        if masked[j] in " \t\n\r\f\v":
+            j -= 1
+            continue
+        if _on_pp_line(masked, j):
+            while j >= start and masked[j] != "\n":
+                j -= 1
+            continue
+        return j
+    return -1
+
+
+def _on_pp_line(masked: str, i: int) -> bool:
+    j = i
+    while j >= 0 and masked[j] != "\n":
+        j -= 1
+    k = j + 1
+    while k < len(masked) and masked[k] in " \t":
+        k += 1
+    return k < len(masked) and masked[k] == "#"
 
 
 def _check_span(src: Source, start: int, end: int, findings: list[Finding]) -> None:

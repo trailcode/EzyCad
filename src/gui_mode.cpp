@@ -43,16 +43,16 @@ std::string GUI::get_doc_url_for_mode(Mode mode)
 {
   static const std::unordered_map<Mode, std::string> doc_urls = {
       // clang-format off
-      {Mode::Design_inspection,                          "https://ezycad.readthedocs.io/en/latest/usage.html#user-interface"},
+      {Mode::Design_inspection,               "https://ezycad.readthedocs.io/en/latest/usage.html#user-interface"},
       {Mode::Workbench_inspection,            "https://ezycad.readthedocs.io/en/latest/usage.html#user-interface"},
       {Mode::Workbench_move,                  "https://ezycad.readthedocs.io/en/latest/usage.html#shape-move-tool-g"},
       {Mode::Workbench_rotate,                "https://ezycad.readthedocs.io/en/latest/usage.html#shape-rotate-tool-r"},
       {Mode::Design_move,                     "https://ezycad.readthedocs.io/en/latest/usage.html#shape-move-tool-g"},
       {Mode::Design_rotate,                   "https://ezycad.readthedocs.io/en/latest/usage.html#shape-rotate-tool-r"},
-      {Mode::Scale,                 "https://ezycad.readthedocs.io/en/latest/usage.html#shape-scale-tool-s"},
+      {Mode::Scale,                           "https://ezycad.readthedocs.io/en/latest/usage.html#shape-scale-tool-s"},
       {Mode::Workbench_shaft_align,           "https://ezycad.readthedocs.io/en/latest/usage.html#align-shafts-tool-j"},
       {Mode::Design_shaft_align,              "https://ezycad.readthedocs.io/en/latest/usage.html#align-shafts-tool-j"},
-      {Mode::Sketch_inspection,          "https://ezycad.readthedocs.io/en/latest/usage-sketch.html#sketch-origin"},
+      {Mode::Sketch_inspection,               "https://ezycad.readthedocs.io/en/latest/usage-sketch.html#sketch-origin"},
       {Mode::Sketch_from_planar_face,         "https://ezycad.readthedocs.io/en/latest/usage-sketch.html#create-sketch-from-planar-face-tool"},
       {Mode::Sketch_face_extrude,             "https://ezycad.readthedocs.io/en/latest/usage.html#extrude-sketch-face-tool-e"},
       {Mode::Shape_chamfer,                   "https://ezycad.readthedocs.io/en/latest/usage.html#chamfer-tool-c"},
@@ -71,7 +71,7 @@ std::string GUI::get_doc_url_for_mode(Mode mode)
       {Mode::Sketch_add_slot,                 "https://ezycad.readthedocs.io/en/latest/usage-sketch.html#slot-creation-tool"},
       {Mode::Sketch_add_bone,                 "https://ezycad.readthedocs.io/en/latest/usage-sketch.html#bone-creation-tool"},
       {Mode::Sketch_dim_anno,                 "https://ezycad.readthedocs.io/en/latest/usage-sketch.html#dimension-tool"},
-      {Mode::Shape_cross_section,                   "https://ezycad.readthedocs.io/en/latest/usage.html#shape-cross-section-tool"},
+      {Mode::Shape_cross_section,             "https://ezycad.readthedocs.io/en/latest/usage.html#shape-cross-section-tool"},
       {Mode::Shape_set_frame,                 "https://ezycad.readthedocs.io/en/latest/usage.html#shape-list"},
       {Mode::Workbench_set_frame,             "https://ezycad.readthedocs.io/en/latest/usage.html#workbench-list"},
       // clang-format on
@@ -123,6 +123,13 @@ void GUI::options_doc_help_button_()
 
 void GUI::set_mode(Mode mode)
 {
+  // Planned tool: do not leave the session in a mode that has no click handler.
+  if (mode == Mode::Sketch_add_circle_3_pts)
+    mode = Mode::Sketch_inspection;
+
+  if (mode != m_mode)
+    dismiss_sticky_message_();
+
   cancel_underlay_calib_();
   m_mode = mode;
   m_view->on_mode();
@@ -144,7 +151,7 @@ Mode GUI::parent_mode_of(Mode mode)
 {
   static const std::map<Mode, Mode> parent_modes = {
       // clang-format off
-      {Mode::Design_inspection,                          Mode::Design_inspection},
+      {Mode::Design_inspection,               Mode::Design_inspection},
       {Mode::Workbench_inspection,            Mode::Workbench_inspection},
       {Mode::Workbench_move,                  Mode::Workbench_inspection},
       {Mode::Scale,                           Mode::Design_inspection},
@@ -153,7 +160,7 @@ Mode GUI::parent_mode_of(Mode mode)
       {Mode::Design_rotate,                   Mode::Design_inspection},
       {Mode::Workbench_shaft_align,           Mode::Workbench_inspection},
       {Mode::Design_shaft_align,              Mode::Design_inspection},
-      {Mode::Sketch_inspection,          Mode::Design_inspection},
+      {Mode::Sketch_inspection,               Mode::Design_inspection},
       {Mode::Sketch_from_planar_face,         Mode::Design_inspection},
       {Mode::Sketch_face_extrude,             Mode::Sketch_inspection},
       {Mode::Shape_chamfer,                   Mode::Design_inspection},
@@ -172,7 +179,7 @@ Mode GUI::parent_mode_of(Mode mode)
       {Mode::Sketch_add_slot,                 Mode::Sketch_inspection},
       {Mode::Sketch_add_bone,                 Mode::Sketch_inspection},
       {Mode::Sketch_dim_anno,                 Mode::Sketch_inspection},
-      {Mode::Shape_cross_section,                   Mode::Design_inspection},
+      {Mode::Shape_cross_section,             Mode::Design_inspection},
       {Mode::Shape_set_frame,                 Mode::Design_inspection},
       {Mode::Workbench_set_frame,             Mode::Workbench_inspection},
       // clang-format on
@@ -182,6 +189,7 @@ Mode GUI::parent_mode_of(Mode mode)
   {
     for (size_t idx = 0; idx < size_t(Mode::_count); ++idx)
       EZY_ASSERT(parent_modes.find(Mode(idx)) != parent_modes.end());
+
     return true;
   }();
   (void)check;
@@ -196,6 +204,10 @@ void GUI::set_parent_mode() { set_mode(parent_mode_of(get_mode())); }
 void GUI::on_key(int key, int scancode, int action, int mods)
 {
   (void)scancode;
+  // Unsaved / error modals own the keyboard until dismissed (Escape, Delete, Ctrl+N, ...).
+  if (blocking_modal_active_())
+    return;
+
   const bool press_or_repeat = (action == GLFW_PRESS || action == GLFW_REPEAT);
 
   // Capture before fixed view/nav handlers so reserved chords can be rejected with a message.
@@ -345,6 +357,7 @@ void GUI::on_key(int key, int scancode, int action, int mods)
       m_view->angle_input(screen_coords);
     else
       m_view->dimension_input(screen_coords);
+
     return;
   }
 
@@ -413,13 +426,16 @@ void GUI::dispatch_hotkey_action_(Gui_action action)
   case Gui_action::Mode_move:
     set_mode(task_of(get_mode()) == Task::Workbench ? Mode::Workbench_move : Mode::Design_move);
     break;
+
   case Gui_action::Mode_rotate:
     set_mode(task_of(get_mode()) == Task::Workbench ? Mode::Workbench_rotate : Mode::Design_rotate);
     break;
+
   case Gui_action::Mode_scale:                set_mode(Mode::Scale);                          break;
   case Gui_action::Mode_cyl_align:
     set_mode(task_of(get_mode()) == Task::Workbench ? Mode::Workbench_shaft_align : Mode::Design_shaft_align);
     break;
+
   case Gui_action::Mode_extrude:              set_mode(Mode::Sketch_face_extrude);            break;
   case Gui_action::Mode_chamfer:              set_mode(Mode::Shape_chamfer);                  break;
   case Gui_action::Mode_fillet:               set_mode(Mode::Shape_fillet);                   break;
@@ -435,7 +451,10 @@ void GUI::dispatch_hotkey_action_(Gui_action action)
   case Gui_action::Mode_add_rectangle:        set_mode(Mode::Sketch_add_rectangle);           break;
   case Gui_action::Mode_add_rectangle_center: set_mode(Mode::Sketch_add_rectangle_center_pt); break;
   case Gui_action::Mode_add_circle:           set_mode(Mode::Sketch_add_circle);              break;
-  case Gui_action::Mode_add_circle_3_pts:     set_mode(Mode::Sketch_add_circle_3_pts);        break;
+  case Gui_action::Mode_add_circle_3_pts:
+    show_message("Add circle from three points is not available yet.", Status_msg::Info);
+    break;
+
   case Gui_action::Mode_add_slot:             set_mode(Mode::Sketch_add_slot);                break;
   case Gui_action::Mode_add_bone:             set_mode(Mode::Sketch_add_bone);                break;
   case Gui_action::Mode_polar_duplicate:      set_mode(Mode::Shape_polar_duplicate);          break;
@@ -460,16 +479,25 @@ void GUI::dispatch_hotkey_action_(Gui_action action)
     if (Status s = m_view->duplicate_selected_shapes(); !s.is_ok())
       show_status(s);
     break;
+
   case Gui_action::Edit_copy:
     if (Status s = m_view->copy_selected_shapes(); !s.is_ok())
       show_status(s);
     break;
+
   case Gui_action::Edit_paste:
     if (Status s = m_view->paste_clipboard_shapes(); !s.is_ok())
       show_status(s);
     break;
-  case Gui_action::File_new:                  new_project_();             break;
-  case Gui_action::File_open:                 open_file_dialog_();        break;
+
+  case Gui_action::File_new:
+    request_doc_close_(Doc_close_action::New);
+    break;
+
+  case Gui_action::File_open:
+    request_doc_close_(Doc_close_action::Open);
+    break;
+
   case Gui_action::File_save:                 save_file_dialog_();        break;
   case Gui_action::Edit_undo:                 m_view->undo();             break;
   case Gui_action::Edit_redo:                 m_view->redo();             break;
@@ -500,6 +528,7 @@ bool GUI::try_capture_hotkey_press_(int key, int mods)
     m_hotkey_capture_action.reset();
     m_hotkey_capture_error.clear();
     return true;
+
   default:
     break;
   }
@@ -549,15 +578,15 @@ void GUI::options_()
   // clang-format off
   switch (get_mode())
   {
-    case Mode::Design_inspection:                          options_normal_mode_();                       break;
+    case Mode::Design_inspection:               options_normal_mode_();                       break;
     case Mode::Workbench_inspection:            options_normal_mode_();                       break;
     case Mode::Workbench_move:                  options_move_mode_();                         break;
     case Mode::Design_move:                     options_move_mode_();                         break;
     case Mode::Workbench_rotate:                options_rotate_mode_();                       break;
     case Mode::Design_rotate:                   options_rotate_mode_();                       break;
-    case Mode::Scale:                 options_scale_mode_();                        break;
-    case Mode::Workbench_shaft_align:           options_shape_shaft_align_mode_();              break;
-    case Mode::Design_shaft_align:              options_shape_shaft_align_mode_();              break;
+    case Mode::Scale:                           options_scale_mode_();                        break;
+    case Mode::Workbench_shaft_align:           options_shape_shaft_align_mode_();            break;
+    case Mode::Design_shaft_align:              options_shape_shaft_align_mode_();            break;
     case Mode::Shape_chamfer:                   options_shape_chamfer_mode_();                break;
     case Mode::Shape_fillet:                    options_shape_fillet_mode_();                 break;
     case Mode::Shape_polar_duplicate:           options_shape_polar_duplicate_mode_();        break;
@@ -566,7 +595,7 @@ void GUI::options_()
     case Mode::Workbench_set_frame:             options_shape_set_frame_mode_();              break;
     
       // Sketch related modes:
-    case Mode::Sketch_inspection:          options_sketch_inspection_mode_();            break;
+    case Mode::Sketch_inspection:               options_sketch_inspection_mode_();            break;
     case Mode::Sketch_from_planar_face:         options_sketch_from_planer_face_mode_();      break;
     case Mode::Sketch_operation_axis:           options_sketch_operation_axis_mode_();        break;
     case Mode::Sketch_face_extrude:             options_sketch_face_extrude_mode_();          break;
