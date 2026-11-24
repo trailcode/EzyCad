@@ -398,6 +398,7 @@ public:
   /// Clear the dirty flag after a successful save, open, or new project.
   void note_document_saved();
   /// Title-bar close. When the project is dirty, keeps the window open and shows the unsaved prompt.
+  /// A prompt, deferred Save, or error modal already on screen is left as-is.
   [[nodiscard]] bool allow_window_close();
   /// Toast `status.message()` using `Result_status` (ok -> Info, User_error -> Constraint, else Error).
   void show_status(const Status& status);

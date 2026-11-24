@@ -653,6 +653,7 @@ void GUI::update_window_title_()
   std::string title = std::string("EzyCad ") + EZYCAD_VERSION_STRING + " - " + project_title_segment_();
   if (m_document_dirty)
     title += "*";
+
   if (title == m_cached_window_title)
     return;
 
@@ -3045,6 +3046,12 @@ bool GUI::allow_window_close()
   if (m_close_accepted || !m_document_dirty)
     return true;
 
+  // Failed Save leaves the error modal up with the original New/Open/Exit action.
+  // Requesting Exit here would replace that action and queue the unsaved prompt
+  // under the error popup. A deferred Save must also stay queued.
+  if (blocking_modal_active_())
+    return false;
+
   request_doc_close_(Doc_close_action::Exit);
   return false;
 }
@@ -4188,6 +4195,12 @@ void GUI::request_doc_close_(Doc_close_action action, int example_index)
     return;
   }
 
+  // Do not replace a close waiting on the error modal, and do not open the
+  // unsaved prompt over it. Setting m_open_unsaved_modal also skips a deferred
+  // Save and used to leave m_pending_unsaved_save set.
+  if (blocking_modal_active_())
+    return;
+
   m_doc_close_action   = action;
   m_doc_close_example  = example_index;
   m_open_unsaved_modal = true;
@@ -4240,9 +4253,11 @@ void GUI::run_doc_close_(Doc_close_action action, int example_index)
 void GUI::unsaved_changes_dialog_()
 {
   // Save after this popup has closed so show_error_dialog can open as the active modal.
-  if (m_pending_unsaved_save && !m_unsaved_modal_open && !m_open_unsaved_modal)
+  // Always drop the flag. A skipped Save used to stay set, so Cancel still wrote the file.
+  const bool run_deferred_save = m_pending_unsaved_save && !m_unsaved_modal_open && !m_open_unsaved_modal;
+  m_pending_unsaved_save       = false;
+  if (run_deferred_save)
   {
-    m_pending_unsaved_save        = false;
     const Doc_close_action action = m_doc_close_action;
     const int              ex     = m_doc_close_example;
     if (save_file_dialog_())
@@ -4276,6 +4291,7 @@ void GUI::unsaved_changes_dialog_()
 
   const std::string name = project_title_segment_();
   ImGui::TextWrapped("Save changes to \"%s\" before continuing?", name.c_str());
+
   ImGui::Spacing();
 
   if (ImGui::Button("Save", ImVec2(120.0f, 0.0f)))
